@@ -51,7 +51,8 @@ exit;
 ?section clean_up
 set schema t132sch;
 drop sequence t132_team_number_sequence;
-drop schema t132sch cascade;
+cleanup schema t132sch;
+drop schema t132sch_private cascade;
 
 ?section set_up
 create shared schema t132sch;
@@ -324,6 +325,7 @@ invoke t132_home_teams_games;
 -- privileges.  To update stats, you must:
 --   be DB__ROOT
 --   be table owner
+--   have SELECT privilege 
 --   have the MANAGE_STATISTICS privilege (DB__ROOTROLE has priv)
 -- =================================================================
 
@@ -382,6 +384,38 @@ grant SELECT on t132t1 to sql_user4;
 showddl t132t1;
 sh sqlci -i "TEST132(show_stats)" -u sql_user4;
 
+-- testcase for trafodion-2188 fix
+create schema t132sch_private;
+set schema t132sch_private;
+CREATE TABLE t132t3
+( c1 char(12) not null, c2 char(12) not null, c3 char(12) not null, 
+  PRIMARY KEY (C1 ASC))
+SALT USING 4 PARTITIONS
+ON (C1);
+
+upsert using load into t132t3
+select
+  x1 || x2 || x3 || x4 || x5,
+  x2 || x4 || x1,
+  x5 || x3
+-- the from clause below creates 100,000 rows, the cross product of
+-- 5 copies of { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' }
+  from (values('a'),('b'),('c'),('d'),('e'),('f'),('g'),('h'),('i'),('j')) T(x1)
+transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x2
+transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x3
+transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x4
+transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x5;
+;
+select count(*) from t132t3;
+
+grant component privilege MANAGE_STATISTICS on sql_operations to sql_user3;
+get privileges on component sql_operations for sql_user3;
+sh sqlci -i "TEST132(update_stats1)" -u sql_user3;
+revoke component privilege MANAGE_STATISTICS on sql_operations from sql_user3;
+drop table t132t3 cascade;
+drop schema t132sch_private cascade;
+set schema t132sch;
+
 -- reset
 revoke SELECT on t132t1 from sql_user4;
 grant component privilege "SHOW" on sql_operations to "PUBLIC";
@@ -400,6 +434,11 @@ log LOG132;
 
 update statistics for table t132t1 on every column;
 update statistics for table t132t2 on every column;
+
+?section update_stats1
+set schema t132sch_private;
+log LOG132;
+update statistics for table t132t3 create sample random 10 percent;
 
 ?section show_stats
 set schema t132sch;

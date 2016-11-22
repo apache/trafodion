@@ -75,21 +75,92 @@
 
 --- SQL operation complete.
 >>
->>obey TEST006(negative_tests);
+>>create table t006tao(a int, b int, c int);
+
+--- SQL operation complete.
 >>
->>-- Error 2055
->>control query default mp_subvolume 'raydddddd';
+>>insert into t006tao values
++>(0,NULL,3),
++>(1,NULL,3),
++>(1,2,3),
++>(3,4,5),
++>(3,8,5),
++>(3,10,5),
++>(10,5,8),
++>(10,6,9),
++>(10,7,8),
++>(10,8,9),
++>(10,9,8),
++>(10,10,9),
++>(10,11,8),
++>(10,12,9),
++>(10,13,9),
++>(10,14,9)
++>;
 
-*** ERROR[2055] The specified value 'RAYDDDDDD' for DEFAULTS attribute MP_SUBVOLUME is not valid.
+--- 16 row(s) inserted.
+>>
+>>CREATE TABLE t006_employees
++>(emp_name VARCHAR(10) NOT NULL,
++> dept_name VARCHAR(15) NOT NULL,
++> salary_amt DECIMAL (8,2) NOT NULL,
++> PRIMARY KEY (emp_name, dept_name)
++>);
 
-*** ERROR[8822] The statement was not prepared.
+--- SQL operation complete.
+>>
+>>INSERT INTO t006_employees
++>VALUES
++>('Aaron','acct',3100.00),
++>('Abaddon','acct',3200.00),
++>('Abbott','acct',3300.00),
++>('Abel','acct',3500.00),
++>('Absalom','acct', 5500.00),
++>('Shannen','ship', 1000.00),
++>('Shannon','ship', 2000.00),
++>('Shaquille','ship', 3400.00),
++>('Sheamus','ship', 4000.00),
++>('Shelah','ship', 3600.00),
++>('Shelby','ship', 4500.00),
++>('Sheldon','ship', 5500.00),
++>('Hamilton','HR',2300.00),
++>('Hamish', 'HR', 1600.00),
++>('Hamlet', 'HR', 1200.00),
++>('Hammond', 'HR', 800.00),
++>('Hamuel', 'HR', 700.00),
++>('Hanael', 'HR', 600.00),
++>('Hanan', 'HR', 1000.00);
 
->>control query default mp_subvolume 'raydd~@';
+--- 19 row(s) inserted.
+>>
+>>create table t006taoc(a char(10), b char(10), c varchar(10));
 
-*** ERROR[2055] The specified value 'RAYDD~@' for DEFAULTS attribute MP_SUBVOLUME is not valid.
+--- SQL operation complete.
+>>
+>>insert into t006taoc values
++>('0',NULL,'3'),
++>('a',NULL,'3'),
++>('a','2','3'),
++>('3bc','4','5'),
++>('3bc','8','5'),
++>('3bc','10','5'),
++>('10','5','8'),
++>('10','6','9'),
++>('10','7','8'),
++>('10','8','9'),
++>('10','9','8'),
++>('10','10','9'),
++>('10','11','8'),
++>('10','12','9'),
++>('10','13','9'),
++>('10','14','9')
++>;
 
-*** ERROR[8822] The statement was not prepared.
-
+--- 16 row(s) inserted.
+>>
+>>
+>>
+>>obey TEST006(negative_tests);
 >>
 >>-- Error 3233
 >>prepare xx from update with no rollback t006t4 set a = b;
@@ -123,40 +194,6 @@
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>-- Error 4026
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY 'ON';
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 'ON';
->>#endif
->>control query default MODE_SPECIAL_1 'ON';
-
---- SQL operation complete.
->>control query default R2_HALLOWEEN_SUPPORT 'ON';
-
---- SQL operation complete.
->>prepare s1 from insert into t006t3 select * from t006t3 where a in (select a from t006t3);
-
-*** ERROR[4026] Reading from and inserting into, or updating in, or deleting from the same table, TRAFODION.SCH.T006T3, is not currently supported.
-
-*** ERROR[8822] The statement was not prepared.
-
->>control query default R2_HALLOWEEN_SUPPORT reset;
-
---- SQL operation complete.
->>control query default MODE_SPECIAL_1 reset;
-
---- SQL operation complete.
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY reset;
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 reset;
->>#endif
->>
 >>-- Error 4034
 >>prepare xx from select * from t006t1 where a = 1234 collate default;
 
@@ -180,24 +217,15 @@
 >>-- Error 4039
 >>prepare xx from insert into t006t3 values ('a');
 
-*** ERROR[4039] Column A is of type INTEGER, incompatible with the value's type, CHAR(1).
-
-*** ERROR[8822] The statement was not prepared.
-
+--- SQL command prepared.
 >>
 >>-- Error 4043
->>control query default MODE_SPECIAL_3 'ON';
-
---- SQL operation complete.
 >>prepare xx from select * from t006t1 where to_number(1112) = A;
 
 *** ERROR[4043] The operand of function TO_NUMBER must be character.
 
 *** ERROR[8822] The statement was not prepared.
 
->>control query default MODE_SPECIAL_3 reset;
-
---- SQL operation complete.
 >>prepare xx from select tokenstr('a', a) from t006t2;
 
 *** ERROR[4043] The operand of function TOKENSTR must be character.
@@ -275,19 +303,6 @@
 
 *** ERROR[8822] The statement was not prepared.
 
->>
->>control query default MODE_SPECIAL_4 'ON';
-
---- SQL operation complete.
->>prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
-
-*** ERROR[4045] The operand of function TO_DATE must be numeric.
-
-*** ERROR[8822] The statement was not prepared.
-
->>control query default MODE_SPECIAL_4 reset;
-
---- SQL operation complete.
 >>
 >>-- Error 4046
 >>prepare xx from select ~(a) from t006t7;
@@ -443,33 +458,6 @@
 *** ERROR[8822] The statement was not prepared.
 
 >>
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY 'ON';
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 'ON';
->>#endif
->>control query default MODE_SPECIAL_1 'ON';
-
---- SQL operation complete.
->>prepare xx from select rows since(a = 11, a) from t006t1 sequence by a;
-
-*** ERROR[4052] The second operand of function ROWS SINCE must be numeric.
-
-*** ERROR[8822] The statement was not prepared.
-
->>control query default MODE_SPECIAL_1 reset;
-
---- SQL operation complete.
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY reset;
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 reset;
->>#endif
->>
 >>-- Error 4053
 >>prepare xx from select bitextract(a, a, b) from t006t5;
 
@@ -529,44 +517,18 @@
 
 *** ERROR[8822] The statement was not prepared.
 
->>control query default MODE_SPECIAL_3 'ON';
-
---- SQL operation complete.
 >>prepare xx from select trunc(a) from t006t1;
 
 *** ERROR[4059] The first operand of function TRUNC must be numeric.
 
 *** ERROR[8822] The statement was not prepared.
 
->>control query default MODE_SPECIAL_3 reset;
-
---- SQL operation complete.
 >>prepare xx from select a**a from t006t1;
 
 *** ERROR[4059] The first operand of function '**' must be numeric.
 
 *** ERROR[8822] The statement was not prepared.
 
->>
->>-- Error 4065
->>control query default MODE_SPECIAL_4 'ON';
-
---- SQL operation complete.
->>prepare xx from select * from t006t1 where to_date(A, '201005') = A;
-
-*** ERROR[4065] The format, "201005", specified in the TO_DATE function is not supported.
-
-*** ERROR[8822] The statement was not prepared.
-
->>prepare xx from select * from t006t2 where to_date(A, 'YYYYMM') = A;
-
-*** ERROR[4041] Type DATE cannot be compared with type INTEGER.
-
-*** ERROR[8822] The statement was not prepared.
-
->>control query default MODE_SPECIAL_4 reset;
-
---- SQL operation complete.
 >>
 >>-- Error 4067
 >>prepare xx from select * from table (explain(NULL, 5));
@@ -593,18 +555,12 @@
 
 >>
 >>-- Error 4071
->>control query default MODE_SPECIAL_3 'ON';
-
---- SQL operation complete.
 >>prepare xx from select * from t006t1 where last_day(A) = A;
 
 *** ERROR[4071] The first operand of function LAST_DAY must be a datetime.
 
 *** ERROR[8822] The statement was not prepared.
 
->>control query default MODE_SPECIAL_3 reset;
-
---- SQL operation complete.
 >>
 >>prepare xx from select juliantimestamp(a) from t006t1;
 
@@ -743,54 +699,6 @@
 >>prepare xx from select replace(a, a, a) from t006t4;
 
 --- SQL command prepared.
->>
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY 'ON';
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 'ON';
->>#endif
->>control query default MODE_SPECIAL_1 'ON';
-
---- SQL operation complete.
->>prepare xx from select substring(a for 3) from t006t1;
-
---- SQL command prepared.
->>prepare xx from select substring(a for 3) from t006t3;
-
---- SQL command prepared.
->>prepare xx from select substring(c for 3) from t006t5;
-
---- SQL command prepared.
->>prepare xx from select a from t006t1 group by 1 order by 1;
-
---- SQL command prepared.
->>prepare xx from select a from t006t1 group by A order by A;
-
---- SQL command prepared.
->>prepare xx from select * from t006t5 where c = 1231999;
-
---- SQL command prepared.
->>prepare xx from select * from t006t5 where a = date'12/31/1999';
-
---- SQL command prepared.
->>prepare xx from select * from t006t5 where cast(a as interval day) = 1;
-
---- SQL command prepared.
->>prepare xx from select * from t006t5 where 1 = interval '1' day;
-
---- SQL command prepared.
->>control query default MODE_SPECIAL_1 reset;
-
---- SQL operation complete.
->>#ifdef SEABASE_REGRESS
->>control query default DISABLE_READ_ONLY reset;
-
---- SQL operation complete.
->>#else
->>control query default COMP_BOOL_58 reset;
->>#endif
 >>
 >>prepare xx from select date_trunc('YEAR',a) from t006t1;
 
@@ -1196,21 +1104,6 @@
 >>--cqd PUBLISHING_ROLES 'a.b';
 >>--cqd PUBLISHING_ROLES reset;
 >>
->>cqd POS 'off';
-
---- SQL operation complete.
->>cqd HIST_SCRATCH_VOL '\n.$a.b.c';
-
-*** ERROR[2055] The specified value '\n.$a.b.c' for DEFAULTS attribute HIST_SCRATCH_VOL is not valid.
-
-*** ERROR[8822] The statement was not prepared.
-
->>cqd HIST_SCRATCH_VOL reset;
-
---- SQL operation complete.
->>cqd POS reset;
-
---- SQL operation complete.
 >>
 >>cqd EID_TRACE_STR 'abc';
 
@@ -1255,4 +1148,531 @@
 
 --- SQL operation complete.
 >>
+>>obey TEST006(mode_special_tests);
+>>-- Error 4026
+>>control query default MODE_SPECIAL_1 'ON';
+
+--- SQL operation complete.
+>>control query default R2_HALLOWEEN_SUPPORT 'ON';
+
+--- SQL operation complete.
+>>prepare s1 from insert into t006t3 select * from t006t3 where a in (select a from t006t3);
+
+*** ERROR[4026] Reading from and inserting into, or updating in, or deleting from the same table, TRAFODION.SCH.T006T3, is not currently supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default R2_HALLOWEEN_SUPPORT reset;
+
+--- SQL operation complete.
+>>
+>>prepare xx from select substring(a for 3) from t006t1;
+
+--- SQL command prepared.
+>>prepare xx from select substring(a for 3) from t006t3;
+
+--- SQL command prepared.
+>>prepare xx from select substring(c for 3) from t006t5;
+
+--- SQL command prepared.
+>>prepare xx from select a from t006t1 group by 1 order by 1;
+
+--- SQL command prepared.
+>>prepare xx from select a from t006t1 group by A order by A;
+
+--- SQL command prepared.
+>>prepare xx from select * from t006t5 where c = 1231999;
+
+--- SQL command prepared.
+>>prepare xx from select * from t006t5 where a = date'12/31/1999';
+
+--- SQL command prepared.
+>>prepare xx from select * from t006t5 where cast(a as interval day) = 1;
+
+--- SQL command prepared.
+>>prepare xx from select * from t006t5 where 1 = interval '1' day;
+
+--- SQL command prepared.
+>>
+>>prepare xx from select rows since(a = 11, a) from t006t1 sequence by a;
+
+*** ERROR[4052] The second operand of function ROWS SINCE must be numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default MODE_SPECIAL_1 reset;
+
+--- SQL operation complete.
+>>
+>>control query default MODE_SPECIAL_4 'ON';
+
+--- SQL operation complete.
+>>prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
+
+*** ERROR[4045] The operand of function TO_DATE must be numeric.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- Error 4065
+>>prepare xx from select * from t006t1 where to_date(A, '201005') = A;
+
+*** ERROR[4065] The format, "201005", specified in the TO_DATE function is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare xx from select * from t006t2 where to_date(A, 'YYYYMM') = A;
+
+*** ERROR[4041] Type DATE cannot be compared with type INTEGER.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>control query default MODE_SPECIAL_4 reset;
+
+--- SQL operation complete.
+>>
+>>
+>>obey TEST006(olap_functions);
+>>
+>>select a, b, 
++>lead(b, 2) over(partition by a order by b),
++>max(c) over(partition by a order by b)
++>from t006tao
++>;
+
+A            B            (EXPR)       (EXPR)     
+-----------  -----------  -----------  -----------
+
+          0            ?            ?            3
+          1            2            ?            3
+          1            ?            ?            3
+          3            4           10            5
+          3            8            ?            5
+          3           10            ?            5
+         10            5            7            8
+         10            6            8            9
+         10            7            9            9
+         10            8           10            9
+         10            9           11            9
+         10           10           12            9
+         10           11           13            9
+         10           12           14            9
+         10           13            ?            9
+         10           14            ?            9
+
+--- 16 row(s) selected.
+>>
+>>select emp_name, dept_name, salary_amt,
++>lead(salary_amt, 3) over (partition by dept_name order by emp_name),
++>lead(salary_amt, 2) over (partition by dept_name order by emp_name)
++>from t006_employees;
+
+EMP_NAME    DEPT_NAME        SALARY_AMT  (EXPR)      (EXPR)    
+----------  ---------------  ----------  ----------  ----------
+
+Hamilton    HR                  2300.00      800.00     1200.00
+Hamish      HR                  1600.00      700.00      800.00
+Hamlet      HR                  1200.00      600.00      700.00
+Hammond     HR                   800.00     1000.00      600.00
+Hamuel      HR                   700.00           ?     1000.00
+Hanael      HR                   600.00           ?           ?
+Hanan       HR                  1000.00           ?           ?
+Aaron       acct                3100.00     3500.00     3300.00
+Abaddon     acct                3200.00     5500.00     3500.00
+Abbott      acct                3300.00           ?     5500.00
+Abel        acct                3500.00           ?           ?
+Absalom     acct                5500.00           ?           ?
+Shannen     ship                1000.00     4000.00     3400.00
+Shannon     ship                2000.00     3600.00     4000.00
+Shaquille   ship                3400.00     4500.00     3600.00
+Sheamus     ship                4000.00     5500.00     4500.00
+Shelah      ship                3600.00           ?     5500.00
+Shelby      ship                4500.00           ?           ?
+Sheldon     ship                5500.00           ?           ?
+
+--- 19 row(s) selected.
+>>
+>>-- this will destroy the output order of the lead function, and make it
+>>-- less obvious on the correctness of the result.
+>>select
++>a, b, lead(b, 2)
++>over(partition by a order by b)
++>from t006taoc <<+ cardinality 10e6 >>
++>order by 1, 2, 3
++>;
+
+A           B           (EXPR)    
+----------  ----------  ----------
+
+0           ?           ?         
+10          10          12        
+10          11          13        
+10          12          14        
+10          13          5         
+10          14          6         
+10          5           7         
+10          6           8         
+10          7           9         
+10          8           ?         
+10          9           ?         
+3bc         10          8         
+3bc         4           ?         
+3bc         8           ?         
+a           2           ?         
+a           ?           ?         
+
+--- 16 row(s) selected.
+>>
+>>select emp_name, dept_name, salary_amt,
++>lead(salary_amt, 5-3, cast(0 as DECIMAL (8,2))) over (partition by dept_name order by emp_name)
++>from t006_employees;
+
+EMP_NAME    DEPT_NAME        SALARY_AMT  (EXPR)    
+----------  ---------------  ----------  ----------
+
+Hamilton    HR                  2300.00     1200.00
+Hamish      HR                  1600.00      800.00
+Hamlet      HR                  1200.00      700.00
+Hammond     HR                   800.00      600.00
+Hamuel      HR                   700.00     1000.00
+Hanael      HR                   600.00         .00
+Hanan       HR                  1000.00         .00
+Aaron       acct                3100.00     3300.00
+Abaddon     acct                3200.00     3500.00
+Abbott      acct                3300.00     5500.00
+Abel        acct                3500.00         .00
+Absalom     acct                5500.00         .00
+Shannen     ship                1000.00     3400.00
+Shannon     ship                2000.00     4000.00
+Shaquille   ship                3400.00     3600.00
+Sheamus     ship                4000.00     4500.00
+Shelah      ship                3600.00     5500.00
+Shelby      ship                4500.00         .00
+Sheldon     ship                5500.00         .00
+
+--- 19 row(s) selected.
+>>
+>>-- LAG() Function Tests --
+>>-- default offset of LAG() is 1.
+>>select emp_name, dept_name, salary_amt, 
++>lag(salary_amt) over (partition by dept_name order by emp_name)
++>from T006_EMPLOYEES;
+
+EMP_NAME    DEPT_NAME        SALARY_AMT  (EXPR)    
+----------  ---------------  ----------  ----------
+
+Hamilton    HR                  2300.00           ?
+Hamish      HR                  1600.00     2300.00
+Hamlet      HR                  1200.00     1600.00
+Hammond     HR                   800.00     1200.00
+Hamuel      HR                   700.00      800.00
+Hanael      HR                   600.00      700.00
+Hanan       HR                  1000.00      600.00
+Aaron       acct                3100.00           ?
+Abaddon     acct                3200.00     3100.00
+Abbott      acct                3300.00     3200.00
+Abel        acct                3500.00     3300.00
+Absalom     acct                5500.00     3500.00
+Shannen     ship                1000.00           ?
+Shannon     ship                2000.00     1000.00
+Shaquille   ship                3400.00     2000.00
+Sheamus     ship                4000.00     3400.00
+Shelah      ship                3600.00     4000.00
+Shelby      ship                4500.00     3600.00
+Sheldon     ship                5500.00     4500.00
+
+--- 19 row(s) selected.
+>>
+>>select emp_name, dept_name, salary_amt, 
++>lag(salary_amt, 0) over (partition by dept_name order by emp_name)
++>from T006_EMPLOYEES;
+
+EMP_NAME    DEPT_NAME        SALARY_AMT  (EXPR)    
+----------  ---------------  ----------  ----------
+
+Hamilton    HR                  2300.00     2300.00
+Hamish      HR                  1600.00     1600.00
+Hamlet      HR                  1200.00     1200.00
+Hammond     HR                   800.00      800.00
+Hamuel      HR                   700.00      700.00
+Hanael      HR                   600.00      600.00
+Hanan       HR                  1000.00     1000.00
+Aaron       acct                3100.00     3100.00
+Abaddon     acct                3200.00     3200.00
+Abbott      acct                3300.00     3300.00
+Abel        acct                3500.00     3500.00
+Absalom     acct                5500.00     5500.00
+Shannen     ship                1000.00     1000.00
+Shannon     ship                2000.00     2000.00
+Shaquille   ship                3400.00     3400.00
+Sheamus     ship                4000.00     4000.00
+Shelah      ship                3600.00     3600.00
+Shelby      ship                4500.00     4500.00
+Sheldon     ship                5500.00     5500.00
+
+--- 19 row(s) selected.
+>>
+>>-- negative offset is flipped
+>>select emp_name, dept_name, salary_amt, 
++>lag(salary_amt, -2) over (partition by dept_name order by emp_name)
++>from T006_EMPLOYEES;
+
+*** ERROR[8440] The size of the history buffer is too small to execute one or more of the OLAP Windowed Functions in the query.
+
+--- 0 row(s) selected.
+>>
+>>prepare xx from select emp_name, dept_name, salary_amt, 
++>lag(salary_amt, CAST(? as INT)) over (partition by dept_name order by emp_name)
++>from T006_EMPLOYEES;
+
+--- SQL command prepared.
+>>execute xx using 2;
+
+EMP_NAME    DEPT_NAME        SALARY_AMT  (EXPR)    
+----------  ---------------  ----------  ----------
+
+Hamilton    HR                  2300.00           ?
+Hamish      HR                  1600.00           ?
+Hamlet      HR                  1200.00     2300.00
+Hammond     HR                   800.00     1600.00
+Hamuel      HR                   700.00     1200.00
+Hanael      HR                   600.00      800.00
+Hanan       HR                  1000.00      700.00
+Aaron       acct                3100.00           ?
+Abaddon     acct                3200.00           ?
+Abbott      acct                3300.00     3100.00
+Abel        acct                3500.00     3200.00
+Absalom     acct                5500.00     3300.00
+Shannen     ship                1000.00           ?
+Shannon     ship                2000.00           ?
+Shaquille   ship                3400.00     1000.00
+Sheamus     ship                4000.00     2000.00
+Shelah      ship                3600.00     3400.00
+Shelby      ship                4500.00     4000.00
+Sheldon     ship                5500.00     3600.00
+
+--- 19 row(s) selected.
+>>
+>>select emp_name, dept_name, salary_amt, 
++>lag(salary_amt, 3) over (partition by dept_name order by emp_name),
++>lead(salary_amt, 2) over (partition by dept_name order by emp_name)
++>from T006_EMPLOYEES;
+
+EMP_NAME    DEPT_NAME        SALARY_AMT  (EXPR)      (EXPR)    
+----------  ---------------  ----------  ----------  ----------
+
+Hamilton    HR                  2300.00           ?     1200.00
+Hamish      HR                  1600.00           ?      800.00
+Hamlet      HR                  1200.00           ?      700.00
+Hammond     HR                   800.00     2300.00      600.00
+Hamuel      HR                   700.00     1600.00     1000.00
+Hanael      HR                   600.00     1200.00           ?
+Hanan       HR                  1000.00      800.00           ?
+Aaron       acct                3100.00           ?     3300.00
+Abaddon     acct                3200.00           ?     3500.00
+Abbott      acct                3300.00           ?     5500.00
+Abel        acct                3500.00     3100.00           ?
+Absalom     acct                5500.00     3200.00           ?
+Shannen     ship                1000.00           ?     3400.00
+Shannon     ship                2000.00           ?     4000.00
+Shaquille   ship                3400.00           ?     3600.00
+Sheamus     ship                4000.00     1000.00     4500.00
+Shelah      ship                3600.00     2000.00     5500.00
+Shelby      ship                4500.00     3400.00           ?
+Sheldon     ship                5500.00     4000.00           ?
+
+--- 19 row(s) selected.
+>>
+>>select emp_name, dept_name, salary_amt, 
++>lag(salary_amt, 3) over (partition by dept_name order by emp_name),
++>lag(salary_amt, 2) over (partition by dept_name order by emp_name)
++>from T006_EMPLOYEES;
+
+EMP_NAME    DEPT_NAME        SALARY_AMT  (EXPR)      (EXPR)    
+----------  ---------------  ----------  ----------  ----------
+
+Hamilton    HR                  2300.00           ?           ?
+Hamish      HR                  1600.00           ?           ?
+Hamlet      HR                  1200.00           ?     2300.00
+Hammond     HR                   800.00     2300.00     1600.00
+Hamuel      HR                   700.00     1600.00     1200.00
+Hanael      HR                   600.00     1200.00      800.00
+Hanan       HR                  1000.00      800.00      700.00
+Aaron       acct                3100.00           ?           ?
+Abaddon     acct                3200.00           ?           ?
+Abbott      acct                3300.00           ?     3100.00
+Abel        acct                3500.00     3100.00     3200.00
+Absalom     acct                5500.00     3200.00     3300.00
+Shannen     ship                1000.00           ?           ?
+Shannon     ship                2000.00           ?           ?
+Shaquille   ship                3400.00           ?     1000.00
+Sheamus     ship                4000.00     1000.00     2000.00
+Shelah      ship                3600.00     2000.00     3400.00
+Shelby      ship                4500.00     3400.00     4000.00
+Sheldon     ship                5500.00     4000.00     3600.00
+
+--- 19 row(s) selected.
+>>
+>>select emp_name, dept_name, salary_amt,
++>lag(salary_amt, 5-3, cast(0 as DECIMAL (8,2))) over (partition by dept_name order by emp_name)
++>from t006_employees;
+
+EMP_NAME    DEPT_NAME        SALARY_AMT  (EXPR)    
+----------  ---------------  ----------  ----------
+
+Hamilton    HR                  2300.00         .00
+Hamish      HR                  1600.00         .00
+Hamlet      HR                  1200.00     2300.00
+Hammond     HR                   800.00     1600.00
+Hamuel      HR                   700.00     1200.00
+Hanael      HR                   600.00      800.00
+Hanan       HR                  1000.00      700.00
+Aaron       acct                3100.00         .00
+Abaddon     acct                3200.00         .00
+Abbott      acct                3300.00     3100.00
+Abel        acct                3500.00     3200.00
+Absalom     acct                5500.00     3300.00
+Shannen     ship                1000.00         .00
+Shannon     ship                2000.00         .00
+Shaquille   ship                3400.00     1000.00
+Sheamus     ship                4000.00     2000.00
+Shelah      ship                3600.00     3400.00
+Shelby      ship                4500.00     4000.00
+Sheldon     ship                5500.00     3600.00
+
+--- 19 row(s) selected.
+>>
+>>select a, b, c,
++>lag(b, 2) over(partition by a order by b),
++>max(c) over(partition by a order by b)
++>from t006tao;
+
+A            B            C            (EXPR)       (EXPR)     
+-----------  -----------  -----------  -----------  -----------
+
+          0            ?            3            ?            3
+          1            2            3            ?            3
+          1            ?            3            ?            3
+          3            4            5            ?            5
+          3            8            5            ?            5
+          3           10            5            4            5
+         10            5            8            ?            8
+         10            6            9            ?            9
+         10            7            8            5            9
+         10            8            9            6            9
+         10            9            8            7            9
+         10           10            9            8            9
+         10           11            8            9            9
+         10           12            9           10            9
+         10           13            9           11            9
+         10           14            9           12            9
+
+--- 16 row(s) selected.
+>>
+>>select emp_name, dept_name, salary_amt, 
++>lag(salary_amt, 3) over (partition by dept_name order by emp_name),
++>max(salary_amt) over (partition by dept_name)
++>from T006_EMPLOYEES;
+
+EMP_NAME    DEPT_NAME        SALARY_AMT  (EXPR)      (EXPR)    
+----------  ---------------  ----------  ----------  ----------
+
+Hamilton    HR                  2300.00           ?     2300.00
+Hamish      HR                  1600.00           ?     2300.00
+Hamlet      HR                  1200.00           ?     2300.00
+Hammond     HR                   800.00     2300.00     2300.00
+Hamuel      HR                   700.00     1600.00     2300.00
+Hanael      HR                   600.00     1200.00     2300.00
+Hanan       HR                  1000.00      800.00     2300.00
+Aaron       acct                3100.00           ?     5500.00
+Abaddon     acct                3200.00           ?     5500.00
+Abbott      acct                3300.00           ?     5500.00
+Abel        acct                3500.00     3100.00     5500.00
+Absalom     acct                5500.00     3200.00     5500.00
+Shannen     ship                1000.00           ?     5500.00
+Shannon     ship                2000.00           ?     5500.00
+Shaquille   ship                3400.00           ?     5500.00
+Sheamus     ship                4000.00     1000.00     5500.00
+Shelah      ship                3600.00     2000.00     5500.00
+Shelby      ship                4500.00     3400.00     5500.00
+Sheldon     ship                5500.00     4000.00     5500.00
+
+--- 19 row(s) selected.
+>>
+>>select a, b, lag(b, 2) 
++>over(partition by a order by b)
++>from t006taoc <<+ cardinality 10e6 >>
++>order by 1, 2, 3;
+
+A           B           (EXPR)    
+----------  ----------  ----------
+
+0           ?           ?         
+10          10          ?         
+10          11          ?         
+10          12          10        
+10          13          11        
+10          14          12        
+10          5           13        
+10          6           14        
+10          7           5         
+10          8           6         
+10          9           7         
+3bc         10          ?         
+3bc         4           ?         
+3bc         8           10        
+a           2           ?         
+a           ?           ?         
+
+--- 16 row(s) selected.
+>>
+>>select emp_name, dept_name, salary_amt, 
++>lag(salary_amt, 3) over (partition by dept_name order by emp_name)
++>from T006_EMPLOYEES <<+ cardinality 10e6 >> order by emp_name;
+
+EMP_NAME    DEPT_NAME        SALARY_AMT  (EXPR)    
+----------  ---------------  ----------  ----------
+
+Aaron       acct                3100.00           ?
+Abaddon     acct                3200.00           ?
+Abbott      acct                3300.00           ?
+Abel        acct                3500.00     3100.00
+Absalom     acct                5500.00     3200.00
+Hamilton    HR                  2300.00           ?
+Hamish      HR                  1600.00           ?
+Hamlet      HR                  1200.00           ?
+Hammond     HR                   800.00     2300.00
+Hamuel      HR                   700.00     1600.00
+Hanael      HR                   600.00     1200.00
+Hanan       HR                  1000.00      800.00
+Shannen     ship                1000.00           ?
+Shannon     ship                2000.00           ?
+Shaquille   ship                3400.00           ?
+Sheamus     ship                4000.00     1000.00
+Shelah      ship                3600.00     2000.00
+Shelby      ship                4500.00     3400.00
+Sheldon     ship                5500.00     4000.00
+
+--- 19 row(s) selected.
+>>
+>>select md5('10'), crc32(10), sha('10') from dual;
+
+(EXPR)                            (EXPR)      (EXPR)
+--------------------------------  ----------  --------------------------------------------------------------------------------------------------------------------------------
+
+d3d9446802a44259755d38e6d163e820   852952723  b1d5781111d84f7b3fe45a0852e59758cd7a87e5
+
+--- 1 row(s) selected.
+>>select md5(10) from dual;
+
+*** ERROR[4067] The operands of function MD5 must be character data types.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select sha1(10) from dual;
+
+*** ERROR[4067] The operands of function SHA must be character data types.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>log;

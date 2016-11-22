@@ -46,6 +46,7 @@
 // -----------------------------------------------------------------------
 class Union;
 class Intersect;
+class Except;
 
 // The following are physical operators
 class MergeUnion;
@@ -77,11 +78,37 @@ public:
 
   const NAString getText() const;
 
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL, CollHeap* outHeap = 0);
+
   // a virtual function for performing name binding within the query tree
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 };
 
 
+
+// Except Operator
+// -----------------------------------------------------------------------
+
+class Except: public RelExpr
+{
+public:
+  // constructor
+  Except(RelExpr *leftChild,
+	RelExpr *rightChild);
+
+  // virtual destructor
+  virtual ~Except();
+
+  // get the degree of this node (it is a binary op).
+  virtual Int32 getArity() const;
+
+  const NAString getText() const;
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL, CollHeap* outHeap = 0);
+
+  // a virtual function for performing name binding within the query tree
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+};
 
 
 // -----------------------------------------------------------------------
@@ -227,6 +254,15 @@ public:
 
   // The set of values that I can potentially produce as output.
   virtual void getPotentialOutputValues(ValueIdSet & vs) const;
+
+  // methods for common subexpressions
+  virtual NABoolean prepareTreeForCSESharing(
+       const ValueIdSet &outputsToAdd,
+       const ValueIdSet &predicatesToRemove,
+       const ValueIdSet &commonPredicatesToAdd,
+       const ValueIdSet &inputsToRemove,
+       CSEInfo *info,
+       NABoolean testRun);
 
   // ---------------------------------------------------------------------
   // Function for testing the eligibility of this

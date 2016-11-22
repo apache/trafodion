@@ -35,6 +35,7 @@ exit;
 --------------------------------------------------------------------------
 
 cqd query_cache '0';
+cqd traf_aligned_row_format 'OFF';
 
 ?section clnup
 drop table T011T1;

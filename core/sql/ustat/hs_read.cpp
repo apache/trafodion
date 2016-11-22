@@ -790,7 +790,6 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
                     , StatsList & colStatsList
                     , NABoolean isSQLMPTable
                     , NAMemory * heap
-                    , Int64 & histModTime
                     , Int64 & statsTime
                     , NABoolean & allFakeStat
                     , const NABoolean preFetch
@@ -811,7 +810,6 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
   ComUID tableUID;
   TotalHistintsDBG = 0;
   TotalHistogramDBG = 0;
-  histModTime = 0;                               // default value
   double defaultFakeRowCount = CostPrimitives::getBasicCostFactor(HIST_NO_STATS_ROWCOUNT);
   double defaultFakeUec = CostPrimitives::getBasicCostFactor(HIST_NO_STATS_UEC);
   NABoolean isEstimate = TRUE;
@@ -1251,9 +1249,6 @@ Lng32 FetchHistograms( const QualifiedName & qualifiedName
 
   LM->StopTimer();  // FetchHistograms()
 
-  if (NOT specialTable && fileType == SQLMP)
-    GetHSModifyTime(actualQualifiedName, actualType, histModTime, isSQLMPTable);
-
   HSClearCLIDiagnostics(); // Clear CLI diagnostics area.
   LM->LogTimeDiff("\nExiting FetchHistograms() ---------------------------------");
   // to prevent false alarms for statement heap memory allocation "tabDef"
@@ -1430,45 +1425,6 @@ Lng32 readHistograms(HSTableDef *tabDef
     return 0;
 }
 
-/******************************************************************************/
-/*                             GetHSModifyTime()                              */
-/* FUNCTION   Provides the last modification time the the HISTOGRAM table.    */
-/*            For example, CAT.SCH.HISTOGRM                                   */
-/*                                                                            */
-/* RETCODE    Success: (0)                                                    */
-/*                                                                            */
-/* NOTES      If unable to determine modified time, the result is zero(0)     */
-/******************************************************************************/
-Lng32 GetHSModifyTime( const QualifiedName & qualifiedName,
-                      const ExtendedQualName::SpecialTableType type,
-                      Int64 &histModTime,
-                      NABoolean isSQLMPTable)
-  {
-    return 0;
-  }
-
-
-/******************************************************************************/
-/*                           FetchStatsTime()                                 */
-/* FUNCTION   Provide the most recent STATS_TIME value for the table in       */
-/*            question.  This function will also update the READ_TIME value   */
-/*            of the histogram if update stats automation is on.  This is     */
-/*            necessary so that update stats can keep track of the optimizer's*/
-/*            use of histograms (even if they're from the cache).             */
-/*                                                                            */
-/* RETCODE    Success: (0)                                                    */
-/*                                                                            */
-/* NOTES      If unable to determine modified time, the result is zero(0)     */
-/******************************************************************************/
-Lng32 FetchStatsTime ( const QualifiedName & qualifiedName,
-                      const ExtendedQualName::SpecialTableType type,
-                      const NAColumnArray & colArray,
-                      Int64 &histModTime,
-                      NABoolean isSQLMPTable
-                    )
-  {
-    return 0;
-  }
 
 
 // -----------------------------------------------------------------------
@@ -2075,8 +2031,10 @@ Lng32 updateHistogram(const char *histogramTableName, Int32 stmtNum, short readC
   qry.append(count_str);
   qry.append(" WHERE CURRENT OF CURSOR106_MX_2300");
 
+  // Note that the UPDATE cannot be retried since the transaction will
+  // likely abort on any failure, invalidating the cursor.
   Lng32 retcode = HSFuncExecQuery(qry.data(), -UERR_INTERNAL_ERROR, NULL,
-                                  HS_QUERY_ERROR, NULL, NULL, TRUE);
+                                  HS_QUERY_ERROR, NULL, NULL);
   HSFilterWarning(retcode);
   if (LM->LogNeeded())
   {

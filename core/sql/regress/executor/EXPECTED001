@@ -33,7 +33,7 @@
 >>invoke t001t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001T1
--- Definition current  Thu Feb 25 07:44:34 2016
+-- Definition current  Tue Aug  9 03:54:49 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -54,7 +54,7 @@
 >>invoke t001t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001T2
--- Definition current  Thu Feb 25 07:44:36 2016
+-- Definition current  Tue Aug  9 03:54:50 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -70,7 +70,7 @@
 >>invoke t001t3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001T3
--- Definition current  Thu Feb 25 07:44:38 2016
+-- Definition current  Tue Aug  9 03:54:50 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -88,7 +88,7 @@
 >>invoke $$TEST_SCHEMA$$.t001ut1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001UT1
--- Definition current  Thu Feb 25 07:44:38 2016
+-- Definition current  Tue Aug  9 03:54:50 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -104,7 +104,7 @@
 >>invoke $$TEST_SCHEMA_NAME$$.t001ut2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001UT2
--- Definition current  Thu Feb 25 07:44:39 2016
+-- Definition current  Tue Aug  9 03:54:50 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -120,7 +120,7 @@
 >>invoke         t001ut3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T001UT3
--- Definition current  Thu Feb 25 07:44:40 2016
+-- Definition current  Tue Aug  9 03:54:51 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -226,10 +226,13 @@ A            B                   C            D
 >>-- Error case
 >>select 0, '0' + 1 from t001t1;
 
-*** ERROR[4034] The operation (CHAR(1) + NUMERIC(1))  is not allowed.
+(EXPR)  (EXPR)              
+------  --------------------
 
-*** ERROR[8822] The statement was not prepared.
+     0                     1
+     0                     1
 
+--- 2 row(s) selected.
 >>-- should get type incompatibility error
 >>
 >>select cast(b as ansivarchar(8)) from t001t1;
@@ -357,10 +360,13 @@ A            B          C            D
 >>#ifMX
 >>select 0, N'0' + 1 from t001ut1;
 
-*** ERROR[4034] The operation (CHAR(1) + NUMERIC(1))  is not allowed.
+(EXPR)  (EXPR)              
+------  --------------------
 
-*** ERROR[8822] The statement was not prepared.
+     0                     1
+     0                     1
 
+--- 2 row(s) selected.
 >>-- should get type incompatibility error
 >>
 >>select * from (select * from t001ut1) x;
@@ -471,10 +477,9 @@ select a from t001t1 where b like _SJIS'sj';
 
 >>select a from t001t1 where trim(b from 2) = '';
 
-*** ERROR[4133] Both trim character and source have to be CHARACTER typed.
+*** ERROR[8404] The trim character argument of function TRIM must be one character in length.
 
-*** ERROR[8822] The statement was not prepared.
-
+--- 0 row(s) selected.
 >>
 >>-- comment out because of the behavior change to NATIONAL_CHARSET in R2.
 >>-- It is a read-only CQD.

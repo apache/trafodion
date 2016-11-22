@@ -179,7 +179,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212321995066139995
+PLAN_ID .................. 212341125600218829
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 553.48
 STATEMENT ................ select f,count(f)
@@ -216,7 +216,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
-  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_ALIGNED_ROW_FORMAT  ON
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
@@ -224,7 +224,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 6789829250703131337
+  ObjectUIDs ............. 4615735661077609573
   select_list ............ TRAFODION.HBASE.MCSTATPART7.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART7.
                              F)))
@@ -262,8 +262,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART7.A,
                              TRAFODION.HBASE.MCSTATPART7.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -297,7 +295,7 @@ DESCRIPTION
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
-  column_retrieved ....... #1:2,#1:3
+  column_retrieved ....... #1:1
   key_columns ............ _SALT_, A, B
   begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
                              8)), (A = <min>), (B = <min>)
@@ -327,7 +325,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212321995066491810
+PLAN_ID .................. 212341125600682569
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 568.59
 STATEMENT ................ select f,count(f)
@@ -364,7 +362,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
-  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_ALIGNED_ROW_FORMAT  ON
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
@@ -372,7 +370,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 6789829250703135855
+  ObjectUIDs ............. 4615735661077611408
   select_list ............ TRAFODION.HBASE.MCSTATPART5.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART5.
                              F)))
@@ -410,8 +408,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART5.A,
                              TRAFODION.HBASE.MCSTATPART5.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -445,7 +441,7 @@ DESCRIPTION
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
-  column_retrieved ....... #1:2,#1:3
+  column_retrieved ....... #1:1
   key_columns ............ _SALT_, A, B
   begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
                              8)), (A = <min>), (B = <min>)
@@ -475,7 +471,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212321995066791768
+PLAN_ID .................. 212341125601113093
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 553.48
 STATEMENT ................ select f,count(f)
@@ -512,7 +508,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
-  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_ALIGNED_ROW_FORMAT  ON
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
@@ -520,7 +516,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 6789829250703137455
+  ObjectUIDs ............. 4615735661077612835
   select_list ............ TRAFODION.HBASE.MCSTATPART3.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART3.
                              F)))
@@ -558,8 +554,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART3.A,
                              TRAFODION.HBASE.MCSTATPART3.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -593,7 +587,7 @@ DESCRIPTION
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
-  column_retrieved ....... #1:2,#1:3
+  column_retrieved ....... #1:1
   key_columns ............ _SALT_, A, B
   begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
                              8)), (A = <min>), (B = <min>)
@@ -623,7 +617,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212321995067094379
+PLAN_ID .................. 212341125601513932
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 523.92
 STATEMENT ................ select f,count(f)
@@ -660,7 +654,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
-  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_ALIGNED_ROW_FORMAT  ON
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
@@ -668,7 +662,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 6789829250703138642
+  ObjectUIDs ............. 4615735661077614228
   select_list ............ TRAFODION.HBASE.MCSTATPART6.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART6.
                              F)))
@@ -706,8 +700,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART6.A,
                              TRAFODION.HBASE.MCSTATPART6.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -741,7 +733,7 @@ DESCRIPTION
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
-  column_retrieved ....... #1:2,#1:3
+  column_retrieved ....... #1:1
   key_columns ............ _SALT_, A, B
   begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
                              8)), (A = <min>), (B = <min>)
@@ -771,7 +763,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212321995067459222
+PLAN_ID .................. 212341125601934693
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 523.92
 STATEMENT ................ select f,count(f)
@@ -808,7 +800,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
-  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_ALIGNED_ROW_FORMAT  ON
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
@@ -816,7 +808,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 6789829250703139741
+  ObjectUIDs ............. 4615735661077615714
   select_list ............ TRAFODION.HBASE.MCSTATPART2.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART2.
                              F)))
@@ -854,8 +846,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART2.A,
                              TRAFODION.HBASE.MCSTATPART2.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -889,7 +879,7 @@ DESCRIPTION
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
-  column_retrieved ....... #1:2,#1:3
+  column_retrieved ....... #1:1
   key_columns ............ _SALT_, A, B
   begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
                              8)), (A = <min>), (B = <min>)
@@ -919,7 +909,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212321995067792542
+PLAN_ID .................. 212341125602445711
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 538.3
 STATEMENT ................ select f,count(f)
@@ -956,7 +946,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
-  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_ALIGNED_ROW_FORMAT  ON
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
@@ -964,7 +954,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 6789829250703141227
+  ObjectUIDs ............. 4615735661077617072
   select_list ............ TRAFODION.HBASE.MCSTATPART1.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART1.
                              F)))
@@ -1002,8 +992,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART1.A,
                              TRAFODION.HBASE.MCSTATPART1.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -1037,7 +1025,7 @@ DESCRIPTION
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
-  column_retrieved ....... #1:2,#1:3
+  column_retrieved ....... #1:1
   key_columns ............ _SALT_, A, B
   begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
                              8)), (A = <min>), (B = '<min>')
@@ -1067,7 +1055,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... ST1
-PLAN_ID .................. 212321995068129313
+PLAN_ID .................. 212341125602861602
 ROWS_OUT ................. 1
 EST_TOTAL_COST ......... 553.48
 STATEMENT ................ select f,count(f)
@@ -1104,7 +1092,7 @@ DESCRIPTION
   HBASE_SERIALIZATION .... ON
   HBASE_SMALL_SCANNER .... SYSTEM
   HBASE_FILTER_PREDS ..... 2
-  TRAF_ALIGNED_ROW_FORMAT  OFF
+  TRAF_ALIGNED_ROW_FORMAT  ON
   TRAF_INDEX_CREATE_OPT    ON
   SCHEMA ................. TRAFODION.HBASE
   QUERY_CACHE ............ 0
@@ -1112,7 +1100,7 @@ DESCRIPTION
   HBASE_MIN_BYTES_PER_ESP  1
   USTAT_COLLECT_MC_SKEW_V  ON
   PARALLEL_NUM_ESPS ...... 4
-  ObjectUIDs ............. 6789829250703142594
+  ObjectUIDs ............. 4615735661077618405
   select_list ............ TRAFODION.HBASE.MCSTATPART8.F,
                              cast(sum(count_nonull(TRAFODION.HBASE.MCSTATPART8.
                              F)))
@@ -1150,8 +1138,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART8.A,
                              TRAFODION.HBASE.MCSTATPART8.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -1185,7 +1171,7 @@ DESCRIPTION
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
-  column_retrieved ....... #1:2,#1:3
+  column_retrieved ....... #1:1
   key_columns ............ _SALT_, A, B
   begin_key .............. (_SALT_ = (\:_sys_HostVarLoHashPart Hash2Distrib
                              8)), (A = <min>), (B = '<min>')

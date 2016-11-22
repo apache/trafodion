@@ -48,6 +48,8 @@ exit;
 ?section clean_up
 -- drop database
 drop schema t139sch cascade;
+revoke role1 from sq1_user1;
+drop role role1;
 
 ?section create_db
 create shared schema t139sch;
@@ -266,6 +268,22 @@ showddl games;
 revoke all_dml on teams from sql_user3;
 showddl teams;
 
+-- test for JIRA 2177
+create role role1;
+grant role role1 to sql_user1;
+grant insert(team_contact,team_contact_number), select on teams to role1;
+showddl teams;
+revoke insert(team_contact,team_contact_number), select on teams from role1;
+showddl teams;
+
+-- test for JIRA 2196/2197
+grant select,insert ,delete, update ,references(game_time) on games to sql_user1 with grant option;
+showddl games;
+sh sqlci -i "TEST139(user1_grants)" -u sql_user1;
+revoke select,insert ,delete, update ,references(game_time) on games 
+   from sql_user1;
+revoke role role1 from sql_user1;
+drop role role1;
 
 ?section user1_dml
 set schema t139sch;
@@ -322,4 +340,20 @@ insert into teams values (6, 'Angels','Ophelia','2344652934');
 delete from teams where team_number = 6;
 grant select on teams to sql_user4;
 grant update on teams to sql_user4;
+
+?section user1_grants
+set schema t139sch;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+log LOG139;
+grant select(home_team_number,game_time),
+      insert(home_team_number),
+      update(visitor_team_number,game_time),
+      references(game_time) 
+on games to role1;
+showddl games;
+revoke select(home_team_number,game_time),
+      insert(home_team_number),
+      update(visitor_team_number,game_time),
+      references(game_time)
+on games from role1;
 

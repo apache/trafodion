@@ -1087,6 +1087,50 @@ control query default hash_joins reset;
 control query default nested_joins reset;
 control query default merge_joins reset;
 
+drop table if exists student;
+create table student( student_name char(10), test_score int );
+insert into student values('s1', 88);
+insert into student values('s1', 79);
+insert into student values('s2', 88);
+insert into student values('s3', 90);
+insert into student values('s1', 88);
+insert into student values('s1', 60);
+insert into student values('s1', 100);
+insert into student values('s1', 50);
+insert into student values('s1', 101);
+insert into student values('s1', 40);
+insert into student values('s3', 40);
+insert into student values('s3', 40);
+insert into student values('s3', 100);
+insert into student values('s2', 88);
+insert into student values('s2', 188);
+insert into student values('s2', 18);
+insert into student values('s2', 58);
+
+SELECT student_name,
+          GROUP_CONCAT(DISTINCT test_score
+                    ORDER BY test_score SEPARATOR '-')
+          FROM student
+          GROUP BY student_name;
+
+SELECT student_name,
+          GROUP_CONCAT(test_score
+                    ORDER BY test_score SEPARATOR '-')
+          FROM student
+          GROUP BY student_name;
+
+cqd ATTEMPT_ESP_PARALLELISM 'ON';
+control query shape exchange(cut);
+prepare s1 from SELECT student_name,
+          GROUP_CONCAT(DISTINCT test_score
+                    ORDER BY test_score desc SEPARATOR '-')
+          FROM student
+          GROUP BY student_name;
+explain options 'f' s1;
+execute s1;
+control query shape cut;
+cqd ATTEMPT_ESP_PARALLELISM 'OFF';
+drop table student;
 ------------------------------------------------------------------------
 
 obey TEST002(BR0198_MULTI);

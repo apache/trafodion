@@ -31,137 +31,42 @@
 :icons: font
 :experimental:
 
-The terms "representational state transfer" and "REST" were introduced in 2000 in the doctoral dissertation of 
-Roy Fielding, one of the principal authors of the Hypertext Transfer Protocol (HTTP) specification. In a nutshell
-
-A GET to an resource requests a copy of the information. 
-
-A PUT to an resource replaces the resource.  
-
-POST adds resources. 
-
-DELETE eliminates resources. 
-  
 [[rest]]
-== Resource Identifiers
+== REST APIs
+
 The URIs for the REST-based web services have the following syntax:
 
   http://{hostname:port}/{version}/{resourcepath}
 
 The elements in this syntax are as follows:
 
-  {hostname} - The http address of the service to get information about. 
-                                 Currently supported are the Trafodion DTM, RMS and DCS components. 
-  {version} - The version of the APIs. In this release, the version is v1.
-  {resourcepath} - A path that defines a singleton resource or a collection of resources. 
+ {hostname} - The http address of the service to get information about.
+ {version} - The version of the APIs. In this release, the version is v1.
+ {resourcepath} - A path that defines a singleton resource or a collection of resources. 
   
-== HTTP Requests
-To invoke a REST API, your application calls an HTTP operation on the URI associated with a resource. 
+There are many ways/languages to use the REST API's. The following examples use the curl command line interface to do the REST calls.
 
-.Headers 
-This release ignores Accept and Accept-Encoding headers.
+[cols="15%,10%,40%,35%"]
+|===
+| *EndPoint*          | *HTTP Verb*  | *Description*                 | *Example*
+| /servers           | GET          | Displays the status of various Trafodion components |<<server-status,Status of Trafodion components>>
+| /dtm        | GET          | Displays the status of Distributed Transaction Manager(DTM) |<<dtm-status, Status of DTM>>
+| /rms        | GET          | Displays the status of Runtime Management Statistics(RMS) |<<rms-status, Status of RMS>>
+| /dcs        | GET          | Displays the status of Database Connectivity Servers(DCS) |<<dcs-status,Status of DCS>>
+| /dcs/summary        | GET          | Displays the configuration information of Database Connectivity Servers(DCS) |<<summary-status, DCS configuration information>>
+| /dcs/connections        | GET          | Displays the client/server information of Database Connectivity Servers(DCS) from zookeeper |<<dcs-connection-status, Client-Server information>>
+| /nodes        | GET          | Displays the status of Trafodion nodes |<<node-status,Status of nodes>>
+| /pstack       | GET          | Displays the call stack for a collection of Trafodion processes |<<pstack-process, Various call stack information>>
+| /pstack/program/{program}   | GET          | Displays call stack for a specific Trafodion process |<<pstack-per-process, Call stack of a specific process>>
+| /jstack/program/{program}   | GET          | Displays call stack for a specific java process |<<jstack-process, Call stack of java process>>
+| /transactions     | GET          | Displays the status of Distributed Transaction manager(DTM) |<<dtm-transactions,Status of transactions >>
+| /transactions/stats    | GET          | Displays the status of Distributed Transaction manager(DTM) service statistics |<<dtm-service-stats, Service statistics of transactions>>
+|===
 
-== HTTP Responses
-The following sections describe the syntax of HTTP Responses.
-
-.Compression
-This release does not support compression.
-
-.Response Formats
-This release of the REST APIs supports responses in JSON format only.
-
-.Response Examples
-
-.JSON response with single resource
-
-HTTP Request: 
-----
-GET http://{hostname:4200}/v1/servers
-----
-
-Response Status Line: 
-----
-HTTP/1.1 200 OK
-----
-
-Response Header:
-----
- HTTP/1.1 200 OK
- Cache-Control: no-cache
- Content-Type: application/json
- Transfer-Encoding: chunked
-----
-
-Response Body:
-----
-{
-  "STATE":"UP",
-  "SUBSTATE":"OPERATIONAL",
-  "PROCESSES":
-  [
-    {
-      "PROCESS":"DTM",
-      "CONFIGURED":2,
-      "ACTUAL":2,
-      "DOWN":""},
-    {
-      "PROCESS":"RMS",
-      "CONFIGURED":4,
-      "ACTUAL":4,
-      "DOWN":""
-    },
-    {
-      "PROCESS":"DCSMASTER",
-      "CONFIGURED":2,
-      "ACTUAL":2,
-      "DOWN":""
-    },
-    {
-      "PROCESS":"MXOSRVR",
-      "CONFIGURED":4,
-      "ACTUAL":4,
-      "DOWN":""
-    }
-  ]
-}
-----
-
-.JSON response with Error response
-
-Here we request information about DCS client connections when DCS is stopped.
-
-HTTP Request: 
-----
-GET http://{hostname:4200}/v1/servers/dcs/connections
-----
-
-Response Status Line: 
-----
-HTTP/1.1 404 Not Found
-----
-
-Response Header:
-----
-  HTTP/1.1 404 Not Found
-  Content-Type: application/json
-  Transfer-Encoding: chunked
-----
-
-Response Body:
-----
-{
-   "RemoteException" : {
-      "javaClassName" : "org.trafodion.rest.NotFoundException",
-      "exception" : "NotFoundException",
-      "message" : "DCS connection resources not found"
-   }
-}
-----
-
-== Example Usage
-There are many ways/languages to use the REST API's. The following examples use the curl command line interface to do the REST GET calls.
-
-In this example the user wishes to know the status of all Trafodion resources.
+<<<
+[[server-status]]
+=== Displays the status of various components
+In this example the user wishes to know the status of all Trafodion components.
 This a jsonized version of the _sqcheck -c all_ command.
 
 .Http command
@@ -201,7 +106,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/
   ]
 }
 ----
-
+[[dtm-status]]
+=== Displays the status of Distributed Transaction Manager(DTM)
 In this example the user wishes to know the status of Trafodion DTM.
 This a jsonized version of the _sqcheck -c dtm_ command.
 
@@ -212,7 +118,7 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/dtm
 
 .Response
 ----
-{
+
   "STATE":"UP",
   "SUBSTATE":"OPERATIONAL",
   "PROCESSES":
@@ -226,7 +132,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/dtm
   ]
 }
 ----
-
+[[rms-status]]
+=== Status of RMS
 In this example the user wishes to know the status of Trafodion RMS. 
 This a jsonized version of the _sqcheck -c rms_ command.
 
@@ -252,7 +159,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/rms
   ]
 }
 ----
-
+[[dcs-status]]
+=== Status of Database Connectivity Service (DCS)
 In this example the user wishes to know the status of Trafodion DCS components. 
 This a jsonized version of the _sqcheck -c dcs_ command.
 
@@ -283,7 +191,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/dcs
   ]
 }
 ----
-
+[[summary-status]]
+=== Summary of DCS Configuration
 In this example the user wishes to see a summary of the Trafodion DCS configuration.
 The server retrieves this information by executing dcscheck script.
 
@@ -303,6 +212,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/dcs
   "Active DcsMaster": "\"node1\", pid 8526"
 }
 ----
+[[dcs-connection-status]]
+=== Displays the client/server information 
 
 In this example the user wishes to see the Trafodion DCS server/client connection information.
 The server retrieves this information from ZooKeeper.
@@ -349,7 +260,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/dcs
   }
 ]
 ----
-
+[[node-status]]
+=== Displays status of Trafodion nodes
 In this example the user wishes to know the status of Trafodion nodes. 
 This is a jsonized version of the _sqnodestatus_ command.
 
@@ -379,7 +291,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/nod
   }
 ]
 ----
-
+[[pstack-process]]
+=== Gets the collection of stack for various Trafodion process
 In this example the user wishes to see the call stack for a collection of Trafodion processes. 
 This is a jsonized version of the _sqpstack_ command. Newlines are added to all lines
 in the response so clients can recognize each end of line.
@@ -545,6 +458,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/pst
   #3  0x000000000041c48a in CCluster::exchangeNodeData() ()\n
   #4  0x0000000000409c9c in main ()\n"}]
 ----
+[[pstack-per-process]]
+=== Displays call stack information for a specific process
 
 In this example the user wishes to see the call stack for Trafodion process id 20642. 
 This is a jsonized version of the _sqpstack [<program>]_ command. Newlines are added to all lines
@@ -628,6 +543,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/pst
   }
 ]
 ----
+[[jstack-process]]
+=== Displays the call stack for a specific java process
 
 In this example the user wishes to see the call Java stack for Trafodion process id 20642. 
 This is a jsonized version of the _jstack [<program>]_ command. Newlines are added to all lines
@@ -765,7 +682,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/servers/jst
   }
 ]
 ----
-
+[[dtm-transactions]]
+=== Displays status of transactions
 In this example the user wishes to know the status of Trafodion DTM service. 
 This is a jsonized version of the _dtmci status tm_ command.
 
@@ -795,6 +713,8 @@ curl  -X GET -H "Accept: application/json" http://{hostname}:4200/v1/transaction
   }
 ]
 ----
+[[dtm-service-stats]]
+=== Displays the transaction service statistics
 
 In this example the user wishes to know the Trafodion DTM service statistics. 
 This is a jsonized version of the _dtmci stats_ command.

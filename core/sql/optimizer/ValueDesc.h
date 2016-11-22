@@ -890,9 +890,10 @@ public:
   //
   // This method removes from the this valueid set those values that
   // are covered by the available inputs.
+  // It returns the number of elements removed.
   // --------------------------------------------------------------------
-  void removeCoveredExprs(const ValueIdSet & newExternalInputs, 
-                          ValueIdSet* usedInputs = NULL);
+  Int32 removeCoveredExprs(const ValueIdSet & newExternalInputs, 
+                           ValueIdSet* usedInputs = NULL);
 
   //-------------------------------------------------------
   //removeCoveredVidSet()
@@ -907,8 +908,9 @@ public:
   //
   // This method removes from the valueid set that values that
   // are NOT covered by the available inputs.
+  // It returns the number of elements removed.
   // --------------------------------------------------------------------
-  void removeUnCoveredExprs(const ValueIdSet & newExternalInputs);
+  Int32 removeUnCoveredExprs(const ValueIdSet & newExternalInputs);
 
   // ---------------------------------------------------------------------
   // simplifyOrderExpr()
@@ -1410,6 +1412,17 @@ public:
   // -----------------------------------------------------------------------
   void findAllEqualityCols(ValueIdSet & result) const;
 
+  // -----------------------------------------------------------------------
+  // This method finds all itemExpr with the type referenced directly 
+  // -----------------------------------------------------------------------
+  void findAllOpType(OperatorTypeEnum type, ValueIdSet & result) const;
+
+  // -----------------------------------------------------------------------
+  // This method collects all child expressions, for each member of the 
+  // set. This method does not recursively go below the current set.
+  // -----------------------------------------------------------------------
+  void findAllChildren(ValueIdSet & result) const;
+
   // ---------------------------------------------------------------------
   // ValueIdSet::getAllTables()
   // This method will get all tables whose columns are included in the set
@@ -1468,7 +1481,10 @@ public:
   // ---------------------------------------------------------------------
   NABoolean containsAnyTrue(ValueId &refAnyTrue ) const;
 
-
+  // for each OLAP LEAD function cotnained in this, add the equivalent
+  // OLAP LEAD function for each element (as the child of LEAD) in input, 
+  // and save the new function in result
+  void addOlapLeadFuncs(const ValueIdSet& input, ValueIdSet& result);
 
 /////////////////////////////////////////////////////////////
 
@@ -1539,6 +1555,15 @@ public:
 
   // flip the top and bottom maps
   void flipSides();
+
+  // add VEGPreds for VEGRefs contained in the map
+  void augmentForVEG(NABoolean addVEGPreds,
+                     NABoolean addVEGRefs,
+                     NABoolean compareConstants,
+                     const ValueIdSet *topInputsToCheck,
+                     const ValueIdSet *bottomInputsToCheck,
+                     ValueIdSet *vegRefsWithDifferentConstants = NULL,
+                     ValueIdSet *vegRefsWithDifferentInputs = NULL);
 
   // Normalize the map replacing valueIds with VEGRefs
   NABoolean normalizeNode(NormWA & normWARef);

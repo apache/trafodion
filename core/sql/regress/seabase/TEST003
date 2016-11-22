@@ -111,7 +111,9 @@ select * from t003t1 where a = -1;
 select * from t003t1 where a < 1;
 select * from t003t1 where a <= -1;
 select * from t003t1 where a < 1000;
+select * from t003t1 where a < 100000;
 select * from t003t1 where a > -1000;
+select * from t003t1 where a > -100000;
 
 select * from t003t1 where d = 4;
 select * from t003t1 where d < -1;
@@ -158,6 +160,7 @@ select * from hive.hive.ttiny;
 
 ?section errors_tiny
 update t003t1 set b = b + 1;
+select cast(1.0 as numeric(1,1) not null) from (values(1)) x(a);
 
 delete from t003t1;
 
@@ -217,6 +220,9 @@ select * from t003t2 where b > -1000;
 select * from t003t2 where b = 18446744073709551615;
 
 select a, cast(cast(a as varchar(40)) as largeint unsigned) from t003t2;
+
+select cast('-9223372036854775808' as largeint) from (values(1)) x(a);
+select cast('-9223372036854775809' as largeint) from (values(1)) x(a);
 
 select a+10 from t003t2 where a = 1 or a = -1;
 

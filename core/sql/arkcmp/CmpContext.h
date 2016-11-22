@@ -87,6 +87,7 @@ class OptDefaults;
 struct MDDescsInfo;
 class CmpStatementISP;
 class EstLogProp;
+class HiveClient_JNI;
 typedef IntrusiveSharedPtr<EstLogProp> EstLogPropSharedPtr;
 namespace tmudr {
   class UDRInvocationInfo;
@@ -284,6 +285,11 @@ public :
     (v ? flags_ |= IS_AUTHORIZATION_READY : flags_ &= ~IS_AUTHORIZATION_READY);
   }
   
+  UInt32 getStatementNum() const { return statementNum_; }
+
+  HiveClient_JNI *getHiveClient(ComDiagsArea *diags = NULL);
+  NABoolean execHiveSQL(const char* hiveSQL, ComDiagsArea *diags = NULL);
+
   // access the NAHeap* for context
   NAHeap* statementHeap();
   NAHeap* heap() { return heap_; }
@@ -350,8 +356,6 @@ public :
   // PUBLIC FOR NOW
   CursorSelectColumns staticCursors_;
   CollIndex saveRetrievedCols_;
-
-  void * &recompLateNameInfoList() { return recompLateNameInfoList_; };
 
   // get/set storage for SQLMX_REGRESS environment variable
   Int32 getSqlmxRegress() const { return sqlmxRegress_; }
@@ -481,6 +485,8 @@ public :
 
   NAList<DDLObjInfo>& ddlObjsList() { return ddlObjs_; }
 
+  void clearAllCaches();
+
 // MV
 private:
 // Adding support for multi threaded requestor (multi transactions) handling
@@ -534,12 +540,6 @@ private:
   // Examples of internal mdf files are those that catman uses, or rfork, etc.
   // See methods isInternalMdf and isInternalModName in arkcmp/StaticCompiler.C.
   InternalCompileEnum internalCompile_;
-
-  // pointer to class executor/ex_latebind.h/RecompLateNameInfoList.
-  // Used to get to the actual name of a host/env var at recomp time
-  // that was originally specified
-  // as a PROTOTYPE value for table name at compile time.
-  void * recompLateNameInfoList_;
 
   // Node and Disk autonomy must distinguish run-time compiles.
   NABoolean isRuntimeCompile_;
@@ -641,7 +641,12 @@ private:
   // a transactional begin/commit(rollback) session.
   // Used at commit time for NATable cache invalidation.
   NAList<DDLObjInfo> ddlObjs_;
-  
+
+  // a count of how many statements have been compiled
+  UInt32 statementNum_;
+
+  // for any Hive SQL operations we may want to do
+  HiveClient_JNI* hiveClient_;
 }; // end of CmpContext 
 #pragma warn(1506)  // warning elimination 
 

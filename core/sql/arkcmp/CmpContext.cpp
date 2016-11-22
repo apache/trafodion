@@ -73,6 +73,7 @@
 #include "hs_globals.h"
 
 #include "PCodeExprCache.h"
+#include "HBaseClient_JNI.h"
 #ifdef NA_CMPDLL
 #include "CompException.h"
 #include "CostMethod.h"
@@ -139,7 +140,14 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   optPCodeCache_(NULL),                       // just to be safe ...
   CDBList_(NULL),
   allControlCount_(0),
-  optSimulator_(NULL)
+  optSimulator_(NULL),
+  hosts_(h),
+  invocationInfos_(h),
+  planInfos_(h),
+  routineHandles_(h),
+  ddlObjs_(h),
+  statementNum_(0),
+  hiveClient_(NULL)
 {
   SetMode(isDynamicSQL() ? STMT_DYNAMIC : STMT_STATIC);
 
@@ -175,7 +183,6 @@ CmpContext::CmpContext(UInt32 f, CollHeap * h)
   diags_ = ComDiagsArea::allocate(heap_);
   SqlParser_Diags = diags_;
 
-  recompLateNameInfoList_ = NULL;
   char* streamName;
   outFstream_ = NULL;
 
@@ -533,12 +540,65 @@ NABoolean CmpContext::isAuthorizationEnabled( NABoolean errIfNotReady)
   return FALSE;
 }
 
+HiveClient_JNI * CmpContext::getHiveClient(ComDiagsArea *diags)
+{
+  if(NULL == hiveClient_)
+    {
+        hiveClient_ = HiveClient_JNI::getInstance();
+        if ( hiveClient_->isInitialized() == FALSE ||
+             hiveClient_->isConnected() == FALSE)
+        {
+            HVC_RetCode retCode = hiveClient_->init();
+            if (retCode != HVC_OK)
+            {
+              hiveClient_ = NULL;
+            }
+        }  
+    }
+
+  if (hiveClient_ == NULL && diags)
+    *diags << DgSqlCode(-1213);
+
+  return hiveClient_;
+}
+
+NABoolean CmpContext::execHiveSQL(const char* hiveSQL, ComDiagsArea *diags)
+{
+  NABoolean result = FALSE;
+
+  if (!hiveClient_)
+    getHiveClient(diags);
+
+  if (hiveClient_)
+    {
+      HVC_RetCode retcode = hiveClient_->executeHiveSQL(hiveSQL);
+
+      switch (retcode)
+        {
+        case HVC_OK:
+          result = TRUE;
+          break;
+
+        default:
+          result = FALSE;
+        }
+
+      if (!result && diags)
+        *diags << DgSqlCode(-1214)
+               << DgString0(GetCliGlobals()->getJniErrorStrPtr())
+               << DgString1(hiveSQL);
+    }
+
+  return result;
+}
+
 // -----------------------------------------------------------------------
 // The CmpStatement related methods
 // -----------------------------------------------------------------------
 
 void CmpContext::setStatement(CmpStatement* s)
 {
+  init();
   statements_.insert(s);
   s->setPrvCmpStatement(statements_[currentStatement_]);
 #pragma nowarn(1506)   // warning elimination
@@ -578,12 +638,13 @@ void CmpContext::setCurrentStatement(CmpStatement* s)
   // diags()->clear();
 }
 
-// Method to initialize the context at the beginning of statement: **A NO-OP**
+// Method to initialize the context at the beginning of statement
 void CmpContext::init()
 {
   // initSchemaDB();		-- This was done in the ctor.
   // diags()->clear();		-- This loses any initialization errors;
   //				-- clear() is done in unsetStatement above.
+  statementNum_++;
 }
 
 // -----------------------------------------------------------------------
@@ -1153,4 +1214,16 @@ void CmpContext::resetLogmxEventSqlText()
    delete sqlTextBuf_ ;
    sqlTextBuf_ = NULL ;
 }
+
+void CmpContext::clearAllCaches()
+{
+   qcache_->makeEmpty();
+   schemaDB_->getNATableDB()->setCachingOFF();
+   schemaDB_->getNATableDB()->setCachingON();
+   schemaDB_->getNARoutineDB()->setCachingOFF();
+   schemaDB_->getNARoutineDB()->setCachingON();
+   if(histogramCache_)
+      histogramCache_->invalidateCache();
+}
+
 #endif // NA_CMPDLL

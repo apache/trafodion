@@ -128,6 +128,9 @@ insert into t031t1 values (8, repeat('a', 1000000, 1000000) , null);
 insert into t031t1 values (9, repeat('a', 500000, 500000) , null);
 insert into t031t1 values (10, repeat('a', 100, 100) , null);
 
+-- should return error, maxlength not sufficient
+insert into t031t1 values (11, repeat('a', 100, 10), null);
+
 select char_length(a), char_length(b) from t031t1;
 select substring(a, 1, 10), cast(b as char(10)) from t031t1;
 select [last 0] * from t031t1;
@@ -165,6 +168,25 @@ for hive.hive.t031hive;
 delete from t031t1;
 insert into t031t1 select * from hive.hive.t031hive;
 select count(*) from t031t1;
+
+control query shape sort_groupby(exchange(cut));
+cqd hive_min_bytes_per_esp_partition '2000000' ;
+prepare s2 from select count(*) from hive.hive.t031hive;
+explain options 'f' s2 ;
+execute s2 ;
+
+cqd hive_min_bytes_per_esp_partition '1000000' ;
+prepare s2 from select count(*) from hive.hive.t031hive;
+explain options 'f' s2 ;
+execute s2 ;
+
+-- test error
+cqd hdfs_io_buffersize '3' ;
+prepare s2 from select count(*) from hive.hive.t031hive;
+
+control query shape cut ;
+cqd hdfs_io_buffersize reset ;
+cqd hive_min_bytes_per_esp_partition reset;
 
 -- default USER
 drop table if exists t031t1;
@@ -224,5 +246,17 @@ showddl t031t1;
 
 set parserflags 1;
 invoke table(index_table t031t1i1);
+reset parserflags;
+
+-- volatile and external table operation in default hive schema
+drop external table t031hive for hive.hive.t031hive;
+set schema hive.hive;
+create volatile table vtt (a int);
+create volatile index vtti on vtt(a);
+drop volatile index vtti;
+drop volatile table vtt;
+
+create external table t031hive for t031hive;
+drop external table t031hive for t031hive;
 
 log;

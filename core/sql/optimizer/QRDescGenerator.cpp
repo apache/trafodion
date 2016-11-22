@@ -228,8 +228,7 @@ NABoolean QRDescGenerator::typeSupported(const NAType* type)
 
       case NA_CHARACTER_TYPE:
         {
-          if ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)||
-              (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)) 
+          if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
             return FALSE;
           return ((CharType*)type)->getCollation() == CharInfo::DefaultCollation;
 	      }
@@ -2612,7 +2611,7 @@ void QRDescGenerator::processReferencingPreds(CANodeIdSet* nodeSet,
 
   // Identify equality sets implied by vegpreds and equality conditions, and
   // translate these to joinpred/range/residual predicates in the descriptor.
-  NAList<EqualitySet*> equalitySets;
+  NAList<EqualitySet*> equalitySets(mvqrHeap_);
   formEqualitySets(preds, equalitySets);
   for (CollIndex i=0; i<equalitySets.entries(); i++)
     processEqualitySet(jbbElem, *equalitySets[i]);

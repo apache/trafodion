@@ -950,8 +950,8 @@ NABoolean OptRangeSpec::buildRange(ItemExpr* origPredExpr)
   // that tells us where we are in the buildRange() code for the ItemExpr
   // node that we are currently working on.
   //
-  ARRAY( ItemExpr * ) IEarray(10) ; //Initially 10 elements (no particular reason to choose 10)
-  ARRAY( Int16 )      state(10)   ; //These ARRAYs will grow automatically as needed.)
+  ARRAY( ItemExpr * ) IEarray(mvqrHeap_, 10) ; //Initially 10 elements (no particular reason to choose 10)
+  ARRAY( Int16 )      state(mvqrHeap_, 10)   ; //These ARRAYs will grow automatically as needed.)
 
   Int32 currIdx     = 0 ;
   IEarray.insertAt( currIdx, origPredExpr ) ; //Initialize 1st element in the ARRAYs
@@ -2429,7 +2429,18 @@ double getDoubleValue(ConstValue* val, logLevel level)
 
   switch (valueStorageSize)
     {
-      case 2:
+      case 1: // tinyint
+        {
+          assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
+                           isExactNumeric, QRDescriptorException,
+                           "const value of size 1 not exact numeric: %d",
+                           constValType->getTypeQualifier());
+          Int8 i8val;
+          memcpy(&i8val, valuePtr, valueStorageSize);
+          return i8val / scaleDivisor;
+        }
+
+      case 2: // smallint
         {
           assertLogAndThrow1(CAT_SQL_COMP_RANGE, level,
                            isExactNumeric, QRDescriptorException,
@@ -2440,7 +2451,7 @@ double getDoubleValue(ConstValue* val, logLevel level)
           return i16val / scaleDivisor;
         }
 
-      case 4:
+      case 4: //  int
         if (isExactNumeric)
           {
             Lng32 i32val;
@@ -2454,7 +2465,7 @@ double getDoubleValue(ConstValue* val, logLevel level)
             return fltval;
           }
       
-      case 8:
+      case 8: // largeint
         if (isExactNumeric)
           {
             // possible loss of data

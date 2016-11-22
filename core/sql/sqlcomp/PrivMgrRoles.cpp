@@ -722,6 +722,65 @@ PrivStatus privStatus = myTable.selectAllWhere(whereClause,orderByClause,rows);
 }
 //****************** End of PrivMgrRoles::fetchUsersForRole ********************
 
+// *****************************************************************************
+// *                                                                           *
+// * Function: PrivMgrRoles::fetchUsersForRoles                                *
+// *                                                                           *
+// *    Returns all users granted the list of roles                            *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// *  Parameters:                                                              *
+// *                                                                           *
+// *  <roleIDs>                       const std::vector<int32_t> &    In       *
+// *    is a list of roles.                                                    *
+// *                                                                           *
+// *  <userIDs>                       std::vector<std::int32_t> &     Out      *
+// *    passes back a list of user grantees for the roles.                     *
+// *                                                                           *
+// *****************************************************************************
+// *                                                                           *
+// * Returns: PrivStatus                                                       *
+// *                                                                           *
+// *   STATUS_GOOD: Zero or more userIDs were returned                         *
+// *             *: Grants for roles were not returned due to SQL error.       *
+// *                A CLI error is put into the diags area.                    *
+// *                                                                           *
+// *****************************************************************************
+PrivStatus PrivMgrRoles::fetchUsersForRoles(
+   const std::vector<int32_t> & userIDs,
+   std::vector<std::int32_t> & granteeIDs)
+{
+   std::string whereClause(" WHERE ROLE_ID IN( ");
+   for (size_t i = 0; i < userIDs.size(); i++)
+   {
+      if (i > 0)
+        whereClause += ", ";
+      whereClause += authIDToString(userIDs[i]);
+   }
+   whereClause += ")";
+   std::string orderByClause(" ORDER BY GRANTEE_ID");
+
+   std::vector<MyRow> rows;
+   MyTable &myTable = static_cast<MyTable &>(myTable_);
+   if (myTable.selectAllWhere(whereClause,orderByClause,rows) == STATUS_ERROR)
+      return STATUS_ERROR;
+
+   // When we support hierarchical roles, then we need to save all grants to
+   // roles and recursively check for user grantees.
+   for (size_t r = 0; r < rows.size(); r++)
+   {
+      MyRow &row = rows[r];
+
+      if (CmpSeabaseDDLauth::isUserID(row.granteeID_))
+         granteeIDs.push_back(row.granteeID_);
+   }
+
+   return STATUS_GOOD;
+}
+//****************** End of PrivMgrRoles::fetchUsersForRole ********************
+
+
 
 // *****************************************************************************
 // *                                                                           *
@@ -1605,7 +1664,7 @@ PrivStatus PrivMgrRoles::revokeRole(
    const std::vector<int32_t> & grantorIDs,
    const bool isGOFSpecified,
    const int32_t newGrantDepth,
-   PrivDropBehavior dropBehavior) 
+   PrivDropBehavior dropBehavior)
   
 {
 
@@ -1617,7 +1676,7 @@ PrivStatus PrivMgrRoles::revokeRole(
       return STATUS_ERROR;
    }
    
-PrivStatus privStatus = STATUS_GOOD;
+   PrivStatus privStatus = STATUS_GOOD;
 
    for (size_t r = 0; r < roleIDs.size(); r++)
    {
@@ -1699,10 +1758,10 @@ PrivStatus privStatus = STATUS_GOOD;
       }
    }
 
-// All checks completed, all dependent grants revoked, and when CASCADE is
-// supported, all dependent objects dropped. It's now safe to revoke the roles.
+   // All checks completed, all dependent grants revoked, and when CASCADE is
+   // supported, all dependent objects dropped. It's now safe to revoke the roles.
 
-std::string setClause("SET GRANT_DEPTH = ");
+   std::string setClause("SET GRANT_DEPTH = ");
 
    if (isGOFSpecified)
    {
@@ -1712,9 +1771,9 @@ std::string setClause("SET GRANT_DEPTH = ");
       setClause += grantDepthString;
    }
    
-int32_t numKeys = roleIDs.size() * granteeIDs.size();
-SQL_QIKEY siKeyList[numKeys];
-size_t siIndex = 0;
+   int32_t numKeys = roleIDs.size() * granteeIDs.size();
+   SQL_QIKEY siKeyList[numKeys];
+   size_t siIndex = 0;
 
    for (size_t r2 = 0; r2 < roleIDs.size(); r2++)
    {
@@ -1749,9 +1808,9 @@ size_t siIndex = 0;
             return STATUS_ERROR;
          }
          
-         ComSecurityKey secKey(granteeIDs[g2],roleIDs[r2], 
+         ComSecurityKey secKey(granteeIDs[g2],roleIDs[r2],
                                ComSecurityKey::SUBJECT_IS_USER);
-                               
+
          siKeyList[siIndex].revokeKey.subject = secKey.getSubjectHashValue();
          siKeyList[siIndex].revokeKey.object = secKey.getObjectHashValue();
          std::string actionString;
@@ -1761,7 +1820,7 @@ size_t siIndex = 0;
       }
    }  
     
-// Call the CLI to send details to RMS
+   // Call the CLI to send details to RMS
    SQL_EXEC_SetSecInvalidKeys(siIndex,siKeyList);
       
    return STATUS_GOOD;

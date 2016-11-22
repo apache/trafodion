@@ -1,0 +1,463 @@
+-- ============================================================================
+-- Test: TEST143 
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- ============================================================================
+-- Functionality: Test view privilege propagation for objects and columns
+--
+-- Expected files: EXPECTED143
+-- ============================================================================
+
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd traf_store_object_desc 'ON';
+cqd traf_read_object_desc 'ON';
+obey TEST143(clean_up);
+log LOG143 clear ;
+obey TEST143(set_up);
+obey TEST143(test_view_object_priv_propagation);
+obey TEST143(test_view_column_priv_propagation);
+obey TEST143(test_view_role_priv_propagation);
+obey TEST143(test_view_misc_priv_propagation);
+log;
+obey TEST143(clean_up);
+exit;
+
+-- ============================================================================
+?section clean_up
+-- ============================================================================
+-- Cleaning up test environment
+drop schema if exists t143_udr cascade;
+drop schema if exists t143_user1 cascade;
+drop schema if exists t143_user2 cascade;
+drop schema if exists t143_user3 cascade;
+drop schema if exists t143_user5 cascade;
+
+revoke role user2_role from sql_user2;
+revoke role user3_role from sql_user3;
+drop role user2_role;
+drop role user3_role;
+
+
+-- ============================================================================
+?section set_up
+-- ============================================================================
+-- Setup the test environment
+
+-- create function to display bitmaps as a bitmap rather than longs
+-- use the function from privs2/TEST140
+sh rm -f ./etest140.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh etest140.cpp
+  2>&1 | tee LOG140-SECONDARY;
+set pattern $$DLL$$ etest140.dll;
+set pattern $$QUOTE$$ '''';
+
+create schema t143_udr;
+set schema t143_udr;
+create library t143_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
+language c parameter style sql external name 'translateBitmap'
+library t143_l1
+deterministic no sql final call allow any parallelism state area size 1024 ;
+grant execute on function t143_udr.translateBitmap to "PUBLIC";
+
+-- query to read privs from metadata
+prepare get_obj_privs from
+select distinct
+   substring (object_name,11,15) as object_name,
+   object_type as type,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
+   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".object_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where object_name like 'U%' and schema_name like 'T143_USER%')
+  order by 1, 2, 3
+;
+
+prepare get_col_privs from
+select distinct
+   substring (object_name,11,15) as object_name,
+   column_number,
+   substring(authname(grantor_id),1,10) as grantor,
+   substring(authname(grantee_id),1,10) as grantee,
+   t143_udr.translateBitmap(privileges_bitmap) as granted_privs,
+   t143_udr.translateBitmap(grantable_bitmap) as grantable_privs
+from "_PRIVMGR_MD_".column_privileges
+where object_uid in
+     (select object_uid
+      from "_MD_".objects
+      where object_name like 'U%' and schema_name like 'T143_USER%')
+  order by 1, 2, 3, 4
+;
+
+-- set up role infrastructure
+create role user2_role;
+create role user3_role;
+grant role user2_role to sql_user2;
+grant role user3_role to sql_user3;
+
+-- ============================================================================
+?section test_view_object_priv_propagation
+-- ============================================================================
+values (user);
+
+-- remove schemas 
+drop schema if exists t143_user1 cascade;
+drop schema if exists t143_user2 cascade;
+
+-- setup database with private schemas owned by users
+create schema t143_user1 authorization sql_user1;
+create schema t143_user2 authorization sql_user2;
+
+-- create some tables owned by user1
+set schema t143_user1;
+create table u1t1 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t1 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+create table u1t2 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t2 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+
+-- grant privileges to sql_user2 on tables
+grant select, delete on u1t1 to sql_user2;
+grant select, delete on u1t2 to sql_user2 with grant option;
+
+execute get_obj_privs;
+
+-- user2 creates some views
+sh sqlci -i "TEST143(user2_views)" -u sql_user2;
+
+execute get_obj_privs;
+
+-- user1 grants insert privilege on tables
+--    u2v1 should have insert priv
+--    u2v2 should have insert priv WGO
+grant insert on u1t1 to sql_user2;
+grant insert on u1t2 to sql_user2 with grant option;
+execute get_obj_privs;
+
+-- remove with grant option for some privileges
+--    u2v2 should have insert, delete without WGO
+--    u2v2 should have select WGO
+revoke grant option for insert, delete on u1t2 from sql_user2;
+execute get_obj_privs;
+
+-- Add back the with grant option for delete
+--    u2v2 should have select, delete with WGO
+grant delete on u1t2 to sql_user2 with grant option;
+execute get_obj_privs;
+
+-- Remove insert, and delete entirely
+--    u2v2 has select WGO
+revoke insert, delete on u1t1 from sql_user2;
+revoke insert, delete on u1t2 from sql_user2;
+execute get_obj_privs;
+
+-- ============================================================================
+?section test_view_column_priv_propagation
+-- ============================================================================
+
+-- regression test 129 tests that views can be created based on column privs
+--  and that revoke works (or fails) according to specifications.
+-- this section tests that privileges are propagated to dependent views when 
+--  privs are changed on referenced objects
+values (user);
+
+-- remove schemas
+drop schema if exists t143_user1 cascade;
+drop schema if exists t143_user3 cascade;
+
+-- setup database with private schemas owned by users
+create schema t143_user1 authorization sql_user1;
+create schema t143_user3 authorization sql_user3;
+
+-- create some tables owned by user1
+set schema t143_user1;
+create table u1t1 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t1 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+create table u1t2 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t2 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+create table u1t3 (c1 int not null primary key, c2 int, c3 int, c4 int);
+insert into u1t3 values (1,1,1,1), (2,2,2,2), (3,3,3,3), (4,4,4,4), (5,5,5,5);
+
+-- grant column level privileges to sql_user3
+grant select (c1,c2) on t143_user1.u1t1 to sql_user3;
+grant select (c1,c3) on t143_user1.u1t2 to sql_user3 with grant option;
+grant select (c2,c3,c1,c4) on t143_user1.u1t3 to sql_user3;
+execute get_col_privs;
+
+-- user3 can create all views
+sh sqlci -i "TEST143(user3_views)" -u sql_user3;
+
+-- Add column privs to tables that are propagated to views
+--   u3v1 can now insert without WGO
+--   u3v2 still cannot insert
+--   u3v3 can insert without WGO
+--   u3v4 can update without WGO
+grant insert (c1, c2) on t143_user1.u1t1 to sql_user3;
+grant insert (c1) on t143_user1.u1t2 to sql_user3;
+grant update on t143_user1.u1t3 to sql_user3;
+execute get_obj_privs;
+execute get_col_privs;
+
+-- Revoke privileges
+--   u3v1 can no longer insert even though one column has insert priv
+--   u3v3 can no longer insert
+--   u3v4 can not longer update
+revoke insert (c1) on t143_user1.u1t1 from sql_user3;
+revoke insert (c1) on t143_user1.u1t2 from sql_user3;
+revoke update  on t143_user1.u1t3 from sql_user3;
+execute get_obj_privs;
+execute get_col_privs;
+
+-- Test WGO grants 
+--  grant WGO
+grant references (c1, c2, c3) on t143_user1.u1t1 to sql_user3 with grant option;
+execute get_obj_privs;
+-- revoke WGO
+revoke grant option for references (c1) on t143_user1.u1t1 from sql_user3;
+execute get_obj_privs;
+execute get_col_privs;
+
+-- ============================================================================
+?section test_view_role_priv_propagation
+-- ============================================================================
+values (user);
+
+-- remove schemas
+drop schema if exists t143_user1 cascade;
+drop schema if exists t143_user2 cascade;
+drop schema if exists t143_user3 cascade;
+
+-- setup database with private schemas owned by users
+create schema t143_user1 authorization sql_user1;
+create schema t143_user2 authorization sql_user2;
+create schema t143_user3 authorization sql_user3;
+
+-- create some tables owned by user1
+set schema t143_user1;
+create table u1t1 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t1 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+create table u1t2 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t2 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+create table u1t3 (c1 int not null primary key, c2 int, c3 int, c4 int);
+insert into u1t3 values (1,1,1,1), (2,2,2,2), (3,3,3,3), (4,4,4,4), (5,5,5,5);
+
+-- grant privileges to roles on tables
+grant select (c1,c2,c3) on t143_user1.u1t1 to user2_role;
+grant select (c1,c2) on t143_user1.u1t1 to user3_role;
+grant select (c1,c2,c3) on t143_user1.u1t2 to user2_role with grant option;
+grant select (c1,c3) on t143_user1.u1t2 to user3_role with grant option;
+grant select (c2,c3,c1,c4) on t143_user1.u1t3 to user3_role;
+
+-- create views
+grant role user2_role to sql_user2;
+grant role user3_role to sql_user3;
+sh sqlci -i "TEST143(user2_views)" -u sql_user2;
+sh sqlci -i "TEST143(user3_views)" -u sql_user3;
+
+-- user1 grants insert privilege on tables to roles
+--    u2v1 should have insert priv without WGO
+--    u2v2 should have insert priv WGO
+--    u3v1 should have insert priv without WGO
+--    u3v2 should not be granted insert, only one col
+--    u3v3 should have insert priv without WGO
+--    u3v4 shoud have update without WGO, select with WGO
+grant insert on u1t1 to user2_role;
+grant insert on u1t2 to user2_role with grant option;
+grant insert (c1, c2) on t143_user1.u1t1 to user3_role;
+grant insert (c1) on t143_user1.u1t2 to user3_role;
+grant update on t143_user1.u1t3 to user3_role;
+grant select (c2, c3, c1,c4) on t143_user1.u1t3 to user3_role with grant option;
+execute get_obj_privs;
+execute get_col_privs;
+
+-- Reset privs
+revoke insert on u1t1 from user2_role;
+revoke grant option for insert on u1t2 from user2_role;
+revoke insert (c1, c2) on t143_user1.u1t1 from user3_role;
+revoke insert (c1) on t143_user1.u1t2 from user3_role;
+revoke update on t143_user1.u1t3 from user3_role;
+revoke grant option for select (c2, c3) on t143_user1.u1t3 from user3_role; 
+execute get_obj_privs;
+execute get_col_privs;
+
+-- ============================================================================
+?section test_view_misc_priv_propagation
+-- ============================================================================
+--
+-- Verifies that multiple views with different owners don't cause issues
+-- 
+--  Views:
+--
+-- u1v1 -> u1t1
+-- u5v1 -> u1t1
+-- u5v2 -> u1t1
+-- u2v1 -> u1v1 -> u1t1
+-- u3v1 -> u2v1 -> u1v1 ->u1t1
+-- u3v2 -> u3v1 -> u2v1 -> u1v1 -> u1t1
+
+values (user);
+
+-- remove schemas
+drop schema if exists t143_user1 cascade;
+drop schema if exists t143_user2 cascade;
+drop schema if exists t143_user3 cascade;
+drop schema if exists t143_user5 cascade;
+
+-- setup database with private schemas owned by users
+create schema t143_user1 authorization sql_user1;
+create schema t143_user2 authorization user2_role;
+create schema t143_user3 authorization sql_user3;
+create schema t143_user5 authorization sql_user5;
+
+-- create objects owned by sql_user1
+set schema t143_user1;
+create table u1t1 (c1 int not null primary key, c2 int, c3 int);
+insert into u1t1 values (1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5);
+grant select (c1) on u1t1 to sql_user5;
+grant select (c2, c3) on u1t1 to sql_user5 with grant option;
+
+create view u1v1 (u1v1_c1, u1v1_c2) as select c2, c3 from u1t1;
+grant select on u1v1 to user2_role with grant option;
+grant select on u1v1 to sql_user5;
+
+-- create objects for role user2_role;
+set schema t143_user2;
+create view u2v1 (u2v1_c1, u2v1_c2) as
+  select u1v1_c2, u1v1_c1 from t143_user1.u1v1;
+grant select (u2v1_c1, u2v1_c2) on u2v1 to sql_user3;
+grant select on u2v1 to sql_user6 with grant option;
+grant select (u2v1_c2) on u2v1 to sql_user6;
+
+-- create objects for user sql_user3
+set schema t143_user3;
+create view u3v1 (u3v1_c1, u3v1_c2) as
+  select u2v1_c2, u2v1_c1 
+  from t143_user2.u2v1;
+
+-- create objects for user sq1_user5
+set schema t143_user5;
+create view u5v1(u5v1_c1, u5v1_c2, u5v1_c3) as 
+   select * from t143_user1.u1t1;
+create view u5v2 (u5v1_c1) as
+  select u5v1_c2 from t143_user5.u5v1, t143_user1.u1v1;
+ 
+-- u1v1 user1 grants: select user2_role WGO, select user5
+-- u2v1 user2-role grants: select user6 WGO
+execute get_obj_privs;
+
+-- u1t1 user1 grants: c1-select, c2/c3-select WGO user5
+-- u2v1 user2_role grants: c1/c2-select user3, select-c2 user6
+execute get_col_privs;
+
+-- Run some different tests:
+
+-- fails with no priv
+grant select (u3v1_c1, u3v1_c2) on t143_user3.u3v1 to sql_user4;
+
+-- user2_role grants to user3 WGO
+grant select (u2v1_c1, u2v1_c2) on t143_user2.u2v1 to sql_user3 with grant option;
+
+-- now user3's grant works, user4 can create views on u3v1
+grant select (u3v1_c1, u3v1_c2) on t143_user3.u3v1 to sql_user4;
+
+-- grant insert on user1's table, doesn't affect any views
+grant insert on t143_user1.u1t1 to user2_role with grant option;
+
+-- u1t1 user1 grants: insert user2_role WGO
+execute get_obj_privs;
+-- u2v1 user2_role grants: + c1/c2 WGO user3 
+-- u3v1 user3 grants: select-c1/c2 user4
+execute get_col_privs;
+
+-- grant insert on user1's view
+-- fails because u1v1 is not an insertable view
+-- unfortunately, the returned error is not the best
+grant insert on t143_user1.u1v1 to user2_role;
+
+-- grant update on user1's view, this works
+grant update on t143_user1.u1v1 to user2_role;
+
+-- grant privileges by user5, these fail
+grant select on t143_user5.u5v1 to sql_user4;
+grant select (u5v1_c1, u5v1_c2, u5v1_c3) on t143_user5.u5v1 to sql_user4; 
+
+-- this fails, sql_user5 has WGO for the underlying column (u5v1_c2) but the
+-- columns cannot be split
+grant select (u5v1_c2) on t143_user5.u5v1 to sql_user4; 
+
+-- this succeeds
+grant select on t143_user5.u5v2 to sql_user4; 
+
+-- u1v1 user1 grants: + update user2_role
+-- u5v2 user5 grants: c1-select user4
+execute get_obj_privs;
+execute get_col_privs;
+
+-- ============================================================================
+?section user2_views
+-- ============================================================================
+-- executed by sql_user2
+log LOG143;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd traf_store_object_desc 'ON';
+cqd traf_read_object_desc 'ON';
+values (user);
+set schema t143_user2;
+
+create view u2v1 as select * from t143_user1.u1t1;
+create view u2v2 as select * from t143_user1.u1t2;
+
+-- ============================================================================
+?section user3_views
+-- ============================================================================
+-- executed by sql_user3
+log LOG143;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd traf_store_object_desc 'ON';
+cqd traf_read_object_desc 'ON';
+values (user);
+set schema t143_user3;
+
+-- following views can be created based on granted privs
+create view u3v1 as select c1, c2 from t143_user1.u1t1;
+showddl u3v1;
+create view u3v2 as select c1, c3 from t143_user1.u1t2;
+showddl u3v2;
+create view u3v3 as select c1 from t143_user1.u1t2;
+showddl u3v3;
+create view u3v4 as select c2, c1, c4 from t143_user1.u1t3;
+showddl u3v4;
+
+get tables;
+get views;
+
+?section show_views
+showddl t143_user2.u2v1;
+showddl t143_user2.u2v2;
+showddl t143_user3.u3v1;
+showddl t143_user3.u3v2;
+showddl t143_user3.u3v3;
+showddl t143_user3.u3v4;
+

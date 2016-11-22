@@ -3687,7 +3687,7 @@ GroupByAgg::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
       //                   to check for dependencies
 
       ValueIdSet baseColumnSet ;
-      LIST(ValueIdSet ) columnsOfThisVEG;
+      LIST(ValueIdSet ) columnsOfThisVEG(STMTHEAP);
       ValueIdSet probableRedundantColSet;
       SET(TableDesc *) * groupByTables = NULL;
 
@@ -4792,6 +4792,25 @@ MapValueIds::synthLogProp(NormWA * normWAPtr)
   // Synthesize log. properties for me and my children.
   RelExpr::synthLogProp(normWAPtr);
 
+  GroupAttributes &myGA = *getGroupAttr();
+
+  ValueIdSet nonRIConstraints;
+  for (ValueId x= child(0).getGroupAttr()->getConstraints().init();
+       child(0).getGroupAttr()->getConstraints().next(x);
+       child(0).getGroupAttr()->getConstraints().advance(x) )
+  {
+    if (x.getItemExpr()->getOperatorType() == ITM_UNIQUE_OPT_CONSTRAINT)
+    {
+      ValueIdSet uniqueCols ;
+      getMap().rewriteValueIdSetUp
+	(uniqueCols, ((UniqueOptConstraint *)x.getItemExpr())->uniqueCols());
+      myGA.addConstraint(new(CmpCommon::statementHeap())
+			 UniqueOptConstraint(uniqueCols));
+    }
+    else if (x.getItemExpr()->getOperatorType() == ITM_CARD_CONSTRAINT)
+      myGA.addConstraint(x);
+    // func. dependency and check opt constraints can be added here if needed
+  }
 } //  MapValueIds::synthLogProp()
 
 // -----------------------------------------------------------------------
@@ -4951,6 +4970,24 @@ Scan::synthLogProp(NormWA * normWAPtr)
 
   NABoolean addCardConstraint = TRUE;
 
+  // check for empty scans
+  for (ValueId p=getSelectionPred().init();
+       getSelectionPred().next(p);
+       getSelectionPred().advance(p))
+    {
+      NABoolean negateIt = FALSE;
+      ConstValue *cv = p.getItemExpr()->castToConstValue(negateIt);
+
+      if (cv && !negateIt && cv->isAFalseConstant())
+        {
+          // this scan doesn't produce any outputs at all
+          getGroupAttr()->addConstraint(
+               new(CmpCommon::statementHeap())
+                 CardConstraint((Cardinality)0,(Cardinality)0));
+          addCardConstraint = FALSE;
+        }
+    }
+
   for (CollIndex indexNo = 0; indexNo < ixlist.entries(); indexNo++)
     {
       IndexDesc *idesc = ixlist[indexNo];
@@ -4964,11 +5001,12 @@ Scan::synthLogProp(NormWA * normWAPtr)
       // all those who contain the clustering key (except for the clustering
       // index itself, of course).
 
+      const ValueIdList &indexKey(idesc->getIndexKey());
       ValueIdList tempUniqueCols;
       ValueIdSet uniqueCols;
 
       // get the VEGReferences of the key columns into a ValueIdSet
-      tabId_->getEquivVEGCols(idesc->getIndexKey(),
+      tabId_->getEquivVEGCols(indexKey,
 			      tempUniqueCols);
       uniqueCols = tempUniqueCols;
 
@@ -4979,6 +5017,35 @@ Scan::synthLogProp(NormWA * normWAPtr)
           // by the inputs. If the key ends up empty then add a
           // cardinality constraint.
           uniqueCols.removeCoveredExprs(getGroupAttr()->getCharacteristicInputs());
+
+          // Remove any columns that are computed from the remaining
+          // unique columns
+          for (ValueId cc=uniqueCols.init();
+               uniqueCols.next(cc);
+               uniqueCols.advance(cc))
+            {
+              BaseColumn *bc = cc.castToBaseColumn();
+              ValueId computedExpr(bc->getComputedColumnExpr());
+
+              if (computedExpr != NULL_VALUE_ID)
+                {
+                  // Check whether the underlying base columns
+                  // are part of the unique key. If so, then
+                  // this computed column can be computed from
+                  // the other columns and therefore is not
+                  // part of the minimal unique key
+                  ValueIdSet underlyingCols;
+                  ValueIdSet underlyingVEGCols;
+
+                  bc->getUnderlyingColumnsForCC(underlyingCols);
+                  tabId_->getEquivVEGCols(underlyingCols,
+                                          underlyingVEGCols);
+
+                  if (uniqueCols.contains(underlyingVEGCols))
+                    uniqueCols -= cc;
+                }
+            }
+
           if (uniqueCols.isEmpty())
             {
               if (addCardConstraint)
@@ -5064,15 +5131,8 @@ Scan::synthLogProp(NormWA * normWAPtr)
   // to the equivalent VEG cols if not done already.
   ColStatDescList & initialStats = getTableDesc()->tableColStats();
   for (CollIndex i = 0; i < initialStats.entries(); i++)
-  {
-    // $$$ someday should change getEquivVEGCols -> getEquivVEGCol
-    ValueIdList input, output ;
-    input.insert (initialStats[i]->getColumn()) ;
-
-    getTableDesc()->getEquivVEGCols (input, /*input*/
-                                     output /*output*/);
-    initialStats[i]->VEGColumn() = output[0] ;
-  }
+    initialStats[i]->VEGColumn() =
+      getTableDesc()->getEquivVEGCol(initialStats[i]->getColumn());
 
   // set if this scan node is trafodion SMD table
   if ( getTableDesc()->getNATable()->isSeabaseMDTable() )
@@ -5456,15 +5516,9 @@ GenericUpdate::synthLogProp(NormWA * normWAPtr)
     // to the equivalent VEG cols.
     ColStatDescList & initialStats = getTableDesc()->tableColStats();
     for (CollIndex i = 0; i < initialStats.entries(); i++)
-    {
-      // $$$ someday should change getEquivVEGCols -> getEquivVEGCol
-      ValueIdList input, output ;
-      input.insert (initialStats[i]->getColumn()) ;
+      initialStats[i]->VEGColumn() =
+        getTableDesc()->getEquivVEGCol(initialStats[i]->getColumn());
 
-      getTableDesc()->getEquivVEGCols (input, /*input*/
-                                       output /*output*/);
-      initialStats[i]->VEGColumn() = output[0] ;
-    }
     numBaseTables = 1; // a leaf update counts as one base table
   }
   else
@@ -6003,6 +6057,29 @@ Pack::synthLogProp(NormWA * normWAPtr)
   // Synthesize things like my record length and drive synthesis for child.
   RelExpr::synthLogProp(normWAPtr);
 }
+
+void CommonSubExprRef::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
+{
+  if (getGroupAttr()->isPropSynthesized(inputEstLogProp))
+    return ; // already done this
+
+  // make the child's est log props my own
+  getGroupAttr()->addInputOutputLogProp (
+       inputEstLogProp,
+       child(0).getGroupAttr()->outputLogProp(inputEstLogProp));
+}
+
+void CommonSubExprRef::synthLogProp(NormWA * normWAPtr)
+{
+  // Follow the RelExpr base class logic first
+  if (getGroupAttr()->existsLogExprForSynthesis())
+    return;
+
+  RelExpr::synthLogProp(normWAPtr);
+
+  // simply propagate the child's constraints
+  getGroupAttr()->addConstraints(child(0).getGroupAttr()->getConstraints());
+} // RelRoutine::synthLogProp()
 
 void RelRoutine::synthLogProp(NormWA * normWAPtr)
 {

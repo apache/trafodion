@@ -196,7 +196,7 @@ class ExExeUtilTcb : public ex_tcb
   ex_queue_pair getParentQueue() const;
   Int32 orderedQueueProtocol() const;
 
-  void freeResources();
+  virtual void freeResources();
 
   virtual Int32 numChildren() const;
   virtual const ex_tcb* getChild(Int32 pos) const;
@@ -245,6 +245,9 @@ class ExExeUtilTcb : public ex_tcb
                      short &rc,
 		     NABoolean monitorThis=FALSE);
     
+  ex_expr::exp_return_type evalScanExpr(char * ptr, Lng32 len, 
+                                        NABoolean copyToVCbuf);
+
   char * getStatusString(const char * operation,
                          const char * status,
                          const char * object,
@@ -986,7 +989,9 @@ class ExExeUtilVolatileTablesTcb : public ExExeUtilTcb
                                                  Lng32 &pstateLength); // out, length of one element
 
  protected:
-  short isCreatorProcessObsolete(char * schemaName, NABoolean includesCat);
+  short isCreatorProcessObsolete(const char * name,
+                                 NABoolean includesCat,
+                                 NABoolean isCSETableName);
 };
 
 class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
@@ -1012,6 +1017,7 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
                                   ex_globals *globals = NULL,
                                   ComDiagsArea * diagsArea = NULL);
   static short dropVolatileTables(ContextCli * currContext, CollHeap * heap);
+  short dropHiveTempTablesForCSEs(ComDiagsArea * diagsArea = NULL);
 
  private:
   enum Step
@@ -1024,6 +1030,7 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
       DO_CLEANUP_,
       COMMIT_WORK_,
       END_CLEANUP_,
+      CLEANUP_HIVE_TABLES_,
       DONE_,
       ERROR_
     };
@@ -2477,8 +2484,6 @@ protected:
                       NABoolean isShorthandView,
                       char* &viewName, Lng32 &len);
 
-  ex_expr::exp_return_type evalScanExpr(char * ptr, Lng32 len);
-
 private:
 
   Lng32 setupObjectTypeForUserQuery();
@@ -3342,6 +3347,7 @@ class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
 
   ~ExExeUtilHiveTruncateTcb();
 
+  virtual void freeResources();
   virtual short work();
 
   NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
@@ -3766,6 +3772,7 @@ private:
     EVAL_INPUT_,
     COLLECT_STATS_,
     POPULATE_STATS_BUF_,
+    EVAL_EXPR_,
     RETURN_STATS_BUF_,
     HANDLE_ERROR_,
     DONE_
@@ -3793,6 +3800,8 @@ protected:
   NAArray<HbaseStr> *regionInfoList_;
 
   Int32 currIndex_;
+
+  Int32 numRegionStatsEntries_;
 
   char * catName_;
   char * schName_;
@@ -3851,6 +3860,46 @@ public:
 protected:
 };
 
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilClusterStatsTcb
+// -----------------------------------------------------------------------
+class ExExeUtilClusterStatsTcb : public ExExeUtilRegionStatsTcb
+{
+  friend class ExExeUtilClusterStatsTdb;
+  friend class ExExeUtilPrivateState;
+
+public:
+  // Constructor
+  ExExeUtilClusterStatsTcb(const ComTdbExeUtilRegionStats & exe_util_tdb,
+                           ex_globals * glob = 0);
+
+  ~ExExeUtilClusterStatsTcb();
+
+  virtual short work();
+
+private:
+  enum Step
+  {
+    INITIAL_,
+    EVAL_INPUT_,
+    COLLECT_STATS_,
+    POPULATE_STATS_BUF_,
+    EVAL_EXPR_,
+    RETURN_STATS_BUF_,
+    HANDLE_ERROR_,
+    DONE_
+  };
+  Step step_;
+
+  short collectStats();
+  short populateStats(Int32 currIndex, NABoolean nullTerminate = FALSE);
+
+protected:
+  ComTdbClusterStatsVirtTableColumnStruct* stats_;  
+
+};
 
 //////////////////////////////////////////////////////////////////////////
 // -----------------------------------------------------------------------

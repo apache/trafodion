@@ -96,6 +96,9 @@ class MVInfoForDDL;
 class PlanPriority;
 class Hint;
 class TableMappingUDF;
+class RelSequence;
+class CSEInfo;
+
 
 ////////////////////
 class CANodeIdSet;
@@ -566,6 +569,11 @@ public:
   // phase
   void eliminateFilterChild();
 
+  // used duirng SQO, to check if the child or grandchild of current
+  // node is a filter. Two acceptable patterns are (a) child(0) is filter
+  // child(0) is groupby an child(0)->child(0) is filter
+  NABoolean hasFilterChild();
+
   // used during SQO phase to make the left sub tree of the join
   // being unnested produce the extra outputs that is necessary to
   // group by a set of unique columns of of the left sub tree
@@ -580,6 +588,49 @@ public:
   // and flows CompRefOpt constraints up the query tree.
   virtual void processCompRefOptConstraints(NormWA * normWAPtr) ;
 
+  // Used during SQO to prepare the child tree of a CommonSubExprRef
+  // for sharing between multiple consumers. This basically undoes
+  // some of the normalizations, like eliminating unneeded outputs
+  // and pushing predicates down. This is a recursive tree walk
+  // method, most nodes don't override this one.
+  // Returns TRUE for success, FALSE if it was unable to prepare
+  // (diags will be set).
+  // Tree remains unchanged if testRun is TRUE.
+  virtual NABoolean prepareTreeForCSESharing(
+       const ValueIdSet &outputsToAdd,
+       const ValueIdSet &predicatesToRemove,
+       const ValueIdSet &commonPredicatesToAdd,
+       const ValueIdSet &inputsToRemove,
+       CSEInfo *info,
+       NABoolean testRun);
+
+  // A virtual method called on every node from prepareTreeForCSESharing(),
+  // use this to do the actual work of removing predicates other than
+  // selection predicates, and to indicate that the node supports this
+  // method (the default implementation returns FALSE).
+  //
+  // This method needs to
+  // - make sure no changes are done to the node when testRun is TRUE
+  // - add any required new outputs to the char. outputs, unless they
+  //   are produced by a child
+  // - make sure no local expression reference any of the inputs to
+  //   be removed
+  // - indicate in its return value whether it was successful doing so
+  //
+  // This method doesn't need to take care of the following, since the
+  // caller of this method already does it:
+  // - removing predicates from selectionPred()
+  // - adding new common predicates to selectionPred(), unless
+  //   they are covered by the children's group attributes
+  // - adding required outputs that are produced by children
+  // - removing char. inputs that are requested to be removed
+  virtual NABoolean prepareMeForCSESharing(
+       const ValueIdSet &outputsToAdd,
+       const ValueIdSet &predicatesToRemove,
+       const ValueIdSet &commonPredicatesToAdd,
+       const ValueIdSet &inputsToRemove,
+       CSEInfo *info,
+       NABoolean testRun);
 
   // --------------------------------------------------------------------
   // Create a query execution plan.
@@ -631,9 +682,9 @@ public:
 
   Scan *getScanNode(NABoolean assertExactlyOneScanNode = TRUE) const;
   Scan *getLeftmostScanNode() const;
-
   Scan *getAnyScanNode() const;
-
+  Join *getLeftJoinChild() const;
+  RelSequence *getOlapChild() const;
   void getAllTableDescs(TableDescList &tableDescs);
 
   TableDesc *findFirstTableDescAndValueIdMap(RelExpr *currentNode,
@@ -1942,8 +1993,7 @@ private:
 
 class UDFForceWildCard : public WildCardOp
 {
-  // to be used with operator type REL_FORCE_ANY_UDF or 
-  // REL_FORCE_ANY_SCLAR_UDF.
+  // to be used with operator type REL_FORCE_ANY_SCLAR_UDF.
 public:
 
   // Constructor used when parsing ISOLATED_SCALAR_UDF in controlDB.cpp.

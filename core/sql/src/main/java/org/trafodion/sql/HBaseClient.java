@@ -37,7 +37,6 @@ import java.net.URISyntaxException;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Admin;
@@ -73,6 +72,7 @@ import org.apache.hadoop.hbase.regionserver.BloomType;
 import org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy;
 import org.apache.hadoop.hbase.client.Durability;
 import org.trafodion.sql.HTableClient;
+import org.trafodion.sql.TrafConfiguration;
 import org.apache.hadoop.hbase.ServerLoad;
 import org.apache.hadoop.hbase.RegionLoad;
 import org.apache.hadoop.hbase.client.HTable;
@@ -101,11 +101,17 @@ import com.google.protobuf.ServiceException;
 public class HBaseClient {
 
     static Logger logger = Logger.getLogger(HBaseClient.class.getName());
-    private static Configuration config = HBaseConfiguration.create();
+    private static Configuration config = null;
     private RMInterface table = null;
 
-    private PoolMap<String, HTableClient> hTableClientsFree;
-    private PoolMap<String, HTableClient> hTableClientsInUse;
+    // variables used for getRegionStats() and getClusterStats()
+    private int regionStatsEntries = 0;
+    private int clusterStatsState = 1;
+    private TrafRegionStats rsc;
+    private byte[][] regionInfo = null;
+    private int currRegion = 0;
+    private static final int MAX_REGION_INFO_ROWS = 100;
+
     // this set of constants MUST be kept in sync with the C++ enum in
     // ExpHbaseDefs.h
     public static final int HBASE_NAME = 0;
@@ -134,11 +140,6 @@ public class HBaseClient {
 
     private static Connection connection; 
     public HBaseClient() {
-      if (hTableClientsFree == null)
-         hTableClientsFree = new PoolMap<String, HTableClient>
-                 (PoolType.Reusable, Integer.MAX_VALUE);
-      hTableClientsInUse = new PoolMap<String, HTableClient>
-               (PoolType.Reusable, Integer.MAX_VALUE);
     }
 
     static {
@@ -154,6 +155,7 @@ public class HBaseClient {
     		confFile = System.getenv("MY_SQROOT") + "/conf/log4j.hdfs.config";
     	}
     	PropertyConfigurator.configure(confFile);
+        config = TrafConfiguration.create();
     }
 
     
@@ -169,69 +171,26 @@ public class HBaseClient {
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.init(" + connectParam1 + ", " + connectParam2
                          + ") called.");
         if (connection != null)
-           connection = ConnectionFactory.createConnection(config); 
+           connection = getConnection(); 
         table = new RMInterface(connection);
         return true;
     }
+
+    private void addCoprocessor(HTableDescriptor desc) throws IOException {
+        String[] coprocessors = config.getStrings("hbase.coprocessor.region.classes");
+        if (coprocessors != null) {
+           for (int i = 0; i < coprocessors.length ; i++) {
+               desc.addCoprocessor(coprocessors[i].trim());
+           }
+        }
+    }
  
-    private void  cleanup(PoolMap hTableClientsPool) throws IOException
-    {
-       Collection hTableClients;
-       Iterator<HTableClient> iter;
-       HTableClient htable;
-       boolean clearRegionCache = false;
-       boolean cleanJniObject = true;
-
-       hTableClients = hTableClientsPool.values();
-       iter = hTableClients.iterator();
-       while (iter.hasNext())
-       {
-         htable = iter.next();
-         htable.close(clearRegionCache, cleanJniObject);          
-       }
-       hTableClientsPool.clear();
-    }
-
-    public boolean cleanup() throws IOException {
-       cleanup(hTableClientsInUse);
-       cleanup(hTableClientsFree);
-       return true;
-    }
-
-   public void cleanupCache(Collection hTableClients) throws IOException
-    {
-       Iterator<HTableClient> iter;
-       HTableClient htable;
-       boolean clearRegionCache = true;
-       boolean cleanJniObject = false;
- 
-       iter = hTableClients.iterator();
-       while (iter.hasNext())
-       {
-          htable = iter.next();
-          htable.close(clearRegionCache, cleanJniObject);     
-       }
-    }
-
-    public boolean cleanupCache(String tblName) throws IOException
-    {
-       Collection hTableClients;
-       hTableClients = hTableClientsFree.values(tblName);
-       cleanupCache(hTableClients);  
-       hTableClientsFree.remove(tblName);
-       hTableClients = hTableClientsInUse.values(tblName);
-       cleanupCache(hTableClients);  
-       hTableClientsInUse.remove(tblName);
-       return true;
-    }
-
     public boolean create(String tblName, Object[]  colFamNameList,
                           boolean isMVCC) 
         throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.create(" + tblName + ") called, and MVCC is " + isMVCC + ".");
-            cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
-            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc, isMVCC);
+            addCoprocessor(desc);
             for (int i = 0; i < colFamNameList.length ; i++) {
 		String  colFam = (String)colFamNameList[i];
                 HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
@@ -481,9 +440,8 @@ public class HBaseClient {
        throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
-            cleanupCache(tblName);
             HTableDescriptor desc = new HTableDescriptor(tblName);
-            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc, isMVCC);
+            addCoprocessor(desc);
             int defaultVersionsValue = 0;
             if (isMVCC)
                 defaultVersionsValue = DtmConst.MVCC_MAX_VERSION;
@@ -574,7 +532,6 @@ public class HBaseClient {
         throws IOException, MasterNotRunningException {
 
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.alter(" + tblName + ") called.");
-        cleanupCache(tblName);
         Admin admin = getConnection().getAdmin();
         HTableDescriptor htblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));       
         HColumnDescriptor[] families = htblDesc.getColumnFamilies();
@@ -638,7 +595,6 @@ public class HBaseClient {
                 }
                 admin.close();
             }
-        cleanupCache(tblName);
         return true;
     }
 
@@ -656,7 +612,6 @@ public class HBaseClient {
                    admin.disableTable(tableName);
               admin.deleteTable(tableName);
            }
-           cleanupCache(tblName);
         } finally {
            admin.close();
         }
@@ -702,7 +657,6 @@ public class HBaseClient {
                         ioExc.addSuppressed(e);
                     if (logger.isDebugEnabled()) logger.debug("HbaseClient.dropAll  error" + e);
                 }
-                cleanupCache(tblName);
             }
 
             admin.close();
@@ -728,17 +682,113 @@ public class HBaseClient {
 	    }
  	    
             admin.close();
-            cleanup();
             
             return hbaseTables;
     }
 
+    public byte[][]  getClusterStats() 
+             throws MasterNotRunningException, IOException {
+            if (logger.isDebugEnabled()) logger.debug("HBaseClient.getClusterStats called.");
+
+            while (true) {
+                switch (clusterStatsState) {
+                case 1: // open
+                    {
+                        rsc = new TrafRegionStats();
+                        rsc.Open();
+
+                        regionInfo = new byte[MAX_REGION_INFO_ROWS][];
+
+                        currRegion = 0;
+
+                        clusterStatsState = 2;
+                    }
+                    break;
+                    
+                case 3: // close
+                    {
+                        rsc.Close();
+                        
+                        clusterStatsState = 1;
+
+                        return null;
+                    }
+                    
+                case 2: // fetch
+                    {
+                        if (currRegion >= MAX_REGION_INFO_ROWS) {
+
+                            regionStatsEntries = currRegion;
+
+                            currRegion = 0;
+                            return regionInfo;
+                        }
+                            
+                        if (! rsc.GetNextRegion()) {
+                            if (currRegion > 0) {
+                                clusterStatsState = 3;
+
+                                regionStatsEntries = currRegion;
+
+                                currRegion = 0;
+                                return Arrays.copyOf(regionInfo, regionStatsEntries);
+                            }
+
+                            clusterStatsState = 3;
+                            break;
+                        }
+                     
+                        SizeInfo regionSizeInfo  = rsc.getCurrRegionSizeInfo();
+
+                        String serverName = regionSizeInfo.serverName;
+                        String regionName = regionSizeInfo.regionName;
+                        String tableName  = regionSizeInfo.tableName;
+                        
+                        int  numStores           = regionSizeInfo.numStores;
+                        int  numStoreFiles       = regionSizeInfo.numStoreFiles;
+                        Long storeUncompSize     = regionSizeInfo.storeUncompSize;
+                        Long storeFileSize       = regionSizeInfo.storeFileSize;
+                        Long memStoreSize        = regionSizeInfo.memStoreSize;
+                        Long readRequestsCount   = regionSizeInfo.readRequestsCount;
+                        Long writeRequestsCount   = regionSizeInfo.writeRequestsCount;
+                        
+                        String oneRegion = "";
+                        oneRegion += serverName + "|";
+                        oneRegion += regionName + "|";
+                        oneRegion += tableName  + "|";
+                        oneRegion += String.valueOf(numStores) + "|";
+                        oneRegion += String.valueOf(numStoreFiles) + "|";
+                        oneRegion += String.valueOf(storeUncompSize) + "|";
+                        oneRegion += String.valueOf(storeFileSize) + "|";
+                        oneRegion += String.valueOf(memStoreSize) + "|";
+                        oneRegion += String.valueOf(readRequestsCount) + "|";
+                        oneRegion += String.valueOf(writeRequestsCount) + "|";
+                        
+                        regionInfo[currRegion++] = oneRegion.getBytes();
+
+                    }
+
+                } // switch
+            }
+
+    }
+
+    // number of regionInfo entries returned by getRegionStats.
+    public int getRegionStatsEntries() {
+ 
+        return regionStatsEntries;
+    }
 
     public byte[][]  getRegionStats(String tableName) 
              throws MasterNotRunningException, IOException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.getRegionStats(" + tableName + ") called.");
 
             Admin admin = getConnection().getAdmin();
+            if (tableName == null) //tableName.isEmpty())
+                return getClusterStats();
+
+            //            HBaseAdmin admin = new HBaseAdmin(config);
+
             HTable htbl = new HTable(config, tableName);
             HRegionInfo hregInfo = null;
             byte[][] regionInfo = null;
@@ -748,27 +798,31 @@ public class HBaseClient {
                 NavigableMap<HRegionInfo, ServerName> locations
                     = htbl.getRegionLocations();
                 regionInfo = new byte[locations.size()][]; 
-                int i = 0; 
+                regionStatsEntries = 0; 
  
                 for (Map.Entry<HRegionInfo, ServerName> entry: 
                          locations.entrySet()) {
                 
                     hregInfo = entry.getKey();                    
-                    byte[] regionName = hregInfo.getRegionName();
+                    ServerName serverName = entry.getValue();
+                     byte[] regionName = hregInfo.getRegionName();
                     String encodedRegionName = hregInfo.getEncodedName();
                     String ppRegionName = HRegionInfo.prettyPrint(encodedRegionName);
-                    SizeInfo regionSizeInfo = rsc.getRegionSizeInfo(regionName);
+                    SizeInfo regionSizeInfo  = rsc.getRegionSizeInfo(regionName);
+                    String serverNameStr     = regionSizeInfo.serverName;
                     int  numStores           = regionSizeInfo.numStores;
                     int  numStoreFiles       = regionSizeInfo.numStoreFiles;
                     Long storeUncompSize     = regionSizeInfo.storeUncompSize;
                     Long storeFileSize       = regionSizeInfo.storeFileSize;
                     Long memStoreSize        = regionSizeInfo.memStoreSize;
                     Long readRequestsCount   = regionSizeInfo.readRequestsCount;
-                    Long writeRequestsCount   = regionSizeInfo.writeRequestsCount;
+                    Long writeRequestsCount  = regionSizeInfo.writeRequestsCount;
 
+                    String ppTableName = regionSizeInfo.tableName;
+                    ppRegionName = regionSizeInfo.regionName;
                     String oneRegion;
-                    //                    oneRegion  = "/hbase/data/hbase/default/" + tableName + "/" + ppRegionName + "|";
-                    oneRegion  = tableName + "/" + ppRegionName + "|";
+                    oneRegion = serverNameStr + "|";
+                    oneRegion += ppTableName + "/" + ppRegionName + "|";
                     oneRegion += String.valueOf(numStores) + "|";
                     oneRegion += String.valueOf(numStoreFiles) + "|";
                     oneRegion += String.valueOf(storeUncompSize) + "|";
@@ -777,7 +831,7 @@ public class HBaseClient {
                     oneRegion += String.valueOf(readRequestsCount) + "|";
                     oneRegion += String.valueOf(writeRequestsCount) + "|";
                     
-                    regionInfo[i++] = oneRegion.getBytes();
+                    regionInfo[regionStatsEntries++] = oneRegion.getBytes();
 
                 }
             }
@@ -840,39 +894,13 @@ public class HBaseClient {
     {
        if (logger.isDebugEnabled()) logger.debug("HBaseClient.getHTableClient(" + tblName
                          + (useTRex ? ", use TRX" : ", no TRX") + ") called.");
-       HTableClient htable = hTableClientsFree.get(tblName);
-       if (htable == null) {
-          htable = new HTableClient(getConnection());
-          if (htable.init(tblName, useTRex) == false) {
-             if (logger.isDebugEnabled()) logger.debug("  ==> Error in init(), returning empty.");
+       HTableClient htable = new HTableClient(getConnection());
+       if (htable.init(tblName, useTRex) == false) {
+          if (logger.isDebugEnabled()) logger.debug("  ==> Error in init(), returning empty.");
              return null;
-          }
-
-          Admin admin = getConnection().getAdmin();
-          HTableDescriptor tblDesc = admin.getTableDescriptor(TableName.valueOf(tblName));
-          if (logger.isDebugEnabled()) logger.debug("check coprocessor num for tbl : "+ tblName+". coprocessor size : "+tblDesc.getCoprocessors().size());
-          boolean added = CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), tblDesc);
-          if (added) {
-              if (logger.isDebugEnabled())
-                  logger.debug("  ==> add coprocessor for table : " + tblName);
-              synchronized (admin) {
-                  TableName table = TableName.valueOf(tblName);
-                  admin.disableTable(table);
-                  admin.modifyTable(table, tblDesc);
-                  admin.enableTable(table);
-              }
-          }
-
-          if (logger.isDebugEnabled()) logger.debug("  ==> Created new object.");
-          hTableClientsInUse.put(htable.getTableName(), htable);
-          htable.setJniObject(jniObject);
-          return htable;
-       } else {
-            if (logger.isDebugEnabled()) logger.debug("  ==> Returning existing object, removing from container.");
-            hTableClientsInUse.put(htable.getTableName(), htable);
-           htable.setJniObject(jniObject);
-            return htable;
        }
+       htable.setJniObject(jniObject);
+       return htable;
     }
 
 
@@ -883,19 +911,7 @@ public class HBaseClient {
 	                
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.releaseHTableClient(" + htable.getTableName() + ").");
         boolean cleanJniObject = false;
-        if (htable.release(cleanJniObject))
-        // If the thread is interrupted, then remove the table from cache
-        // because the table connection is retried when the table is used
-        // next time
-
-           cleanupCache(htable.getTableName());
-        else
-        {
-           if (hTableClientsInUse.removeValue(htable.getTableName(), htable))
-              hTableClientsFree.put(htable.getTableName(), htable);
-           else
-              if (logger.isDebugEnabled()) logger.debug("Table not found in inUse Pool");
-        }
+        htable.release(cleanJniObject);
     }
 
     public boolean grant(byte[] user, byte[] tblName,
@@ -1601,14 +1617,15 @@ public class HBaseClient {
   }
 
   public boolean insertRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
-                         Object row,
-                         long timestamp,
-                         boolean checkAndPut,
-                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+                           Object row,
+                           long timestamp,
+                           boolean checkAndPut,
+                           boolean asyncOperation,
+                           boolean useRegionXn) throws IOException, InterruptedException, ExecutionException {
 
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.putRow(transID, rowID, row, null, null,
-                                checkAndPut, asyncOperation);
+                               checkAndPut, asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
@@ -1617,14 +1634,15 @@ public class HBaseClient {
   }
 
   public boolean checkAndUpdateRow(long jniObject, String tblName, boolean useTRex, long transID, byte[] rowID,
-                         Object columnsToUpdate,
-                         byte[] columnToCheck, byte[] columnValToCheck,
-                         long timestamp,
-                         boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
+                                   Object columnsToUpdate,
+                                   byte[] columnToCheck, byte[] columnValToCheck,
+                                   long timestamp,
+                                   boolean asyncOperation,
+                                   boolean useRegionXn) throws IOException, InterruptedException, ExecutionException {
       boolean checkAndPut = true;
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
       boolean ret = htc.putRow(transID, rowID, columnsToUpdate, columnToCheck, columnValToCheck,
-                                checkAndPut, asyncOperation);
+                               checkAndPut, asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
@@ -1648,11 +1666,13 @@ public class HBaseClient {
   }
 
   public boolean deleteRow(long jniObject, String tblName, boolean useTRex, long transID, 
-                                 byte[] rowID,
-                                 Object[] columns,
-                                 long timestamp, boolean asyncOperation) throws IOException {
+                           byte[] rowID,
+                           Object[] columns,
+                           long timestamp, 
+                           boolean asyncOperation, boolean useRegionXn) throws IOException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.deleteRow(transID, rowID, columns, timestamp, asyncOperation);
+      boolean ret = htc.deleteRow(transID, rowID, columns, timestamp, 
+                                  asyncOperation, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else
@@ -1673,11 +1693,13 @@ public class HBaseClient {
   }
 
   public boolean checkAndDeleteRow(long jniObject, String tblName, boolean useTRex, long transID, 
-                                 byte[] rowID,
-                                 byte[] columnToCheck, byte[] colValToCheck,
-                                 long timestamp, boolean asyncOperation) throws IOException {
+                                   byte[] rowID,
+                                   byte[] columnToCheck, byte[] colValToCheck,
+                                   long timestamp, boolean asyncOperation,
+                                   boolean useRegionXn
+                                   ) throws IOException {
       HTableClient htc = getHTableClient(jniObject, tblName, useTRex);
-      boolean ret = htc.checkAndDeleteRow(transID, rowID, columnToCheck, colValToCheck, timestamp);
+      boolean ret = htc.checkAndDeleteRow(transID, rowID, columnToCheck, colValToCheck, timestamp, useRegionXn);
       if (asyncOperation == true)
          htc.setJavaObject(jniObject);
       else

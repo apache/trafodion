@@ -843,17 +843,17 @@ A           B         C
 >>-- negative cases
 >>select cast('2016-01-29Z' as date) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 2016-01-29Z
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2016-01-29Z
 
 --- 0 row(s) selected.
 >>select cast('2016-01-29+05:00' as date) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 2016-01-29+05:00
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2016-01-29+05:00
 
 --- 0 row(s) selected.
 >>select cast('10:11:12-05:000' as time) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 10:11:12-05:000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 10:11:12-05:000
 
 --- 0 row(s) selected.
 >>select date '2016-01-29Z' from t022t1;
@@ -882,17 +882,17 @@ A           B         C
 
 >>select cast ('23:11:61' as time) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 23:11:61-05:000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 23:11:61
 
 --- 0 row(s) selected.
 >>select cast ('23:11:06' as timestamp) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 23:11:06
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 23:11:06
 
 --- 0 row(s) selected.
 >>select cast('2010-01-01' as time) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 2010-01-015:000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2010-01-01
 
 --- 0 row(s) selected.
 >>select timestamp'2010-01-01 10' from t022t1;
@@ -1728,12 +1728,12 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (-10 as numeric(2)) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Min Target Value:-9. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:TINYINT SIGNED(MBIN8S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Min Target Value:-9. Instruction:RANGE_LOW_S8S64 Operation:RANGE_LOW.
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as numeric(2)) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_S16S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:TINYINT SIGNED(MBIN8S) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_S8S64 Operation:RANGE_HIGH.
 
 --- 0 row(s) selected.
 >>select cast (cast (-1 as smallint) as smallint unsigned) from t022t1;
@@ -1810,12 +1810,12 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (-10 as int) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Min Target Value:-9. Instruction:RANGE_LOW_S32S64 Operation:RANGE_LOW.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:INTEGER SIGNED(REC_BIN32_SIGNED) Source Value:-10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as int) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_S32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:INTEGER SIGNED(REC_BIN32_SIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-1 as int) as smallint unsigned) from t022t1;
@@ -1830,7 +1830,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (10 as int) as numeric(1) unsigned) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER SIGNED(MBIN32S) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_S32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:INTEGER SIGNED(REC_BIN32_SIGNED) Source Value:10 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-100000 as int) as numeric(5)) from t022t1;
@@ -1881,7 +1881,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (10 as int unsigned) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER UNSIGNED(MBIN32U) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_U32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (65536 as int unsigned) as smallint unsigned) from t022t1;
@@ -1891,7 +1891,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (10 as int unsigned) as numeric(1) unsigned) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:INTEGER UNSIGNED(MBIN32U) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_U32S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:INTEGER UNSIGNED(REC_BIN32_UNSIGNED) Source Value:10 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (2147483648 as int unsigned) as int) from t022t1;
@@ -1932,12 +1932,12 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (-10 as largeint) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:-10 Target Type:LARGEINT(IBIN64S) Min Target Value:-9. Instruction:RANGE_LOW_S64S64 Operation:RANGE_LOW.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:-10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as largeint) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:LARGEINT(MBIN64S) Source Value:10 Target Type:LARGEINT(IBIN64S) Max Target Value:9. Instruction:RANGE_HIGH_S64S64 Operation:RANGE_HIGH.
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:LARGEINT(REC_BIN64_SIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-1 as largeint) as smallint unsigned) from t022t1;
@@ -2328,22 +2328,22 @@ Hello
 >>-- negative tests for tinyint
 >>select cast(-129 as tinyint) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-129 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-129 Target Type:LARGEINT(IBIN64S) Min Target Value:-128. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
 
 --- 0 row(s) selected.
 >>select cast(128 as tinyint) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:128 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:128 Target Type:LARGEINT(IBIN64S) Max Target Value:127. Instruction:RANGE_HIGH_S16S64 Operation:RANGE_HIGH.
 
 --- 0 row(s) selected.
 >>select cast(256 as tinyint unsigned) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:256 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:256 Target Type:LARGEINT(IBIN64S) Max Target Value:255. Instruction:RANGE_HIGH_S16S64 Operation:RANGE_HIGH.
 
 --- 0 row(s) selected.
 >>select cast(-1 as tinyint unsigned) from t022t1;
 
-*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype.
+*** ERROR[8432] A negative value cannot be converted to an unsigned numeric datatype. Source Type:SMALLINT SIGNED(MBIN16S) Source Value:-1 Target Type:LARGEINT(IBIN64S) Max Target Value:0. Instruction:RANGE_LOW_S16S64 Operation:RANGE_LOW.
 
 --- 0 row(s) selected.
 >>
@@ -2398,28 +2398,28 @@ Hello
 >>-- illegal european format
 >>select cast ('12.13.1987' as date) from t022t2;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 12.13.1987
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 12.13.1987
 
 --- 0 row(s) selected.
 >>
 >>-- illegal US format
 >>select cast ('13/12/1987' as date) from t022t2;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 13/12/1987
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 13/12/1987
 
 --- 0 row(s) selected.
 >>
 >>-- string overflow
 >>select cast (cast ('12.07.1961 03:04:55.123456' as timestamp) as char(18)) from t022t2;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 12.07.1961 03:04:55.123456
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 12.07.1961 03:04:55.123456
 
 --- 0 row(s) selected.
 >>
 >>-- Feb. 30th doesn't exist
 >>select cast('1997-30-02' as DATE) from t022t2;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 1997-30-02
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 1997-30-02
 
 --- 0 row(s) selected.
 >>
@@ -2760,7 +2760,7 @@ A      B
 >>set param ?p '11/20/1997 15:15:08.123456 am';
 >>insert into t022t8 (c1) values ( ?p );
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 11/20/1997 15:15:08.123456 am
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 11/20/1997 15:15:08.123456 am
 
 *** ERROR[15015] PARAM ?p (value 11/20/1997 15:15:08.123456 am) cannot be converted to type TIMESTAMP(6).
 
@@ -2770,9 +2770,9 @@ A      B
 >>set param ?p '2100-01-01:ab:00:47.250000';
 >>insert into t022t8 (c1) values ( ?p );
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61623a30303a34372e323530303030
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 61623a30303a34372e323530303030
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 2100-01-01:ab:00:47.250000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2100-01-01:ab:00:47.250000
 
 *** ERROR[15015] PARAM ?p (value 2100-01-01:ab:00:47.250000) cannot be converted to type TIMESTAMP(6).
 
@@ -2782,7 +2782,7 @@ A      B
 >>set param ?p '1998-03-12 03:15:08.123456 pm';
 >>insert into t022t8 (c1) values ( ?p );
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 1998-03-12 03:15:08.123456 pm
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 1998-03-12 03:15:08.123456 pm
 
 *** ERROR[15015] PARAM ?p (value 1998-03-12 03:15:08.123456 pm) cannot be converted to type TIMESTAMP(6).
 
@@ -2792,7 +2792,7 @@ A      B
 >>set param ?p '1996-05-23 16:15:08.123 am';
 >>insert into t022t8 (c1) values ( ?p );
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 1996-05-23 16:15:08.123 am
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 1996-05-23 16:15:08.123 am
 
 *** ERROR[15015] PARAM ?p (value 1996-05-23 16:15:08.123 am) cannot be converted to type TIMESTAMP(6).
 
@@ -2865,9 +2865,9 @@ C1
 >>set param ?p '00:a1:00';
 >>insert into t022t8 (c2) values ( ?p );
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61313a3030
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 61313a3030
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 00:a1:00
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 00:a1:00
 
 *** ERROR[15015] PARAM ?p (value 00:a1:00) cannot be converted to type TIME(0).
 
@@ -2877,7 +2877,7 @@ C1
 >>set param ?p '14:59:59 am';
 >>insert into t022t8 (c2) values ( ?p );
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 14:59:59 am
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 14:59:59 am
 
 *** ERROR[15015] PARAM ?p (value 14:59:59 am) cannot be converted to type TIME(0).
 
@@ -2887,7 +2887,7 @@ C1
 >>set param ?p '11:60:59 am';
 >>insert into t022t8 (c2) values ( ?p );
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 11:60:59 am
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 11:60:59 am
 
 *** ERROR[15015] PARAM ?p (value 11:60:59 am) cannot be converted to type TIME(0).
 
@@ -3051,64 +3051,64 @@ C1                         C2
 >>-- negative cases (expect errors)
 >>select cast('.-2' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2d32
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2d32
 
 --- 0 row(s) selected.
 >>select cast('.+3' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2b33
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2b33
 
 --- 0 row(s) selected.
 >>select cast('.4-' as numeric(4)) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e342d
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e342d
 
 --- 0 row(s) selected.
 >>select cast('-. 3' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2033
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2033
 
 --- 0 row(s) selected.
 >>select cast('-3 . ' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 33202e20
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 33202e20
 
 --- 0 row(s) selected.
 >>
 >>select c1 from t022t8 where cast('.-2' as int) < 1000;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2d32
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2d32
 
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('.+3' as int) < 1000;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2b33
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2b33
 
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('.4-' as numeric(4)) < 1;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e342d
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e342d
 
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('-. 3' as int) < 1;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2033
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2033
 
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('-3 .' as int) < 1;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 33202e
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 33202e
 
 --- 0 row(s) selected.
 >>
 >>select cast ('123..' as real) from (values(1)) as T;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 3132332e2e
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 3132332e2e
 
 --- 0 row(s) selected.
 >>select cast ('123..12' as real)from (values(1)) as T;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 3132332e2e3132
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 3132332e2e3132
 
 --- 0 row(s) selected.
 >>
@@ -3741,14 +3741,14 @@ Hello
 >>-- illegal european format
 >>select cast (N'12.13.1987' as date) from t022u;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 12.13.1987
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 12.13.1987
 
 --- 0 row(s) selected.
 >>
 >>-- illegal US format
 >>select cast (N'13/12/1987' as date) from t022u;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 13/12/1987
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 13/12/1987
 
 --- 0 row(s) selected.
 >>
@@ -3763,7 +3763,7 @@ Hello
 >>-- Feb. 32th doesn't exist
 >>select cast(N'1997-02-32' as DATE) from t022u;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 1997-02-32
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 1997-02-32
 
 --- 0 row(s) selected.
 >>
@@ -3977,7 +3977,7 @@ Hello
 >>-- negative test on cast VAR/NCAR to DEC 
 >>select cast(N'1009a' as  DEC) from t022u;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 3130303961
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 3130303961
 
 --- 0 row(s) selected.
 >>
@@ -4015,17 +4015,17 @@ Hello
 >>-- negative test on cast VAR/NCAR to float/real/double 
 >>select cast(N'this is not a number.' as float) from t022u;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 74686973206973206e6f742061206e756d6265722e
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 74686973206973206e6f742061206e756d6265722e
 
 --- 0 row(s) selected.
 >>select cast(N'1023u' as real) from t022u;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 3130323375
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 3130323375
 
 --- 0 row(s) selected.
 >>select cast(N'''\2' as double precision) from t022u;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 275c32
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 275c32
 
 --- 0 row(s) selected.
 >>?ifNT
@@ -4261,7 +4261,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-07-10 05:20:08.800751
+10:13:14.0000  10:13:14.0000  2016-08-11 19:03:15.784758
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -5613,17 +5613,17 @@ A           B         C
 >>-- negative cases
 >>select cast('2016-01-29Z' as date) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 2016-01-29Z
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2016-01-29Z
 
 --- 0 row(s) selected.
 >>select cast('2016-01-29+05:00' as date) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 2016-01-29+05:00
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2016-01-29+05:00
 
 --- 0 row(s) selected.
 >>select cast('10:11:12-05:000' as time) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 10:11:12-05:000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 10:11:12-05:000
 
 --- 0 row(s) selected.
 >>select date '2016-01-29Z' from t022t1;
@@ -5652,17 +5652,17 @@ A           B         C
 
 >>select cast ('23:11:61' as time) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 23:11:61-05:000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 23:11:61
 
 --- 0 row(s) selected.
 >>select cast ('23:11:06' as timestamp) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 23:11:06
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 23:11:06
 
 --- 0 row(s) selected.
 >>select cast('2010-01-01' as time) from t022t1;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 2010-01-015:000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2010-01-01
 
 --- 0 row(s) selected.
 >>select timestamp'2010-01-01 10' from t022t1;
@@ -6488,22 +6488,22 @@ Hello
 >>
 >>select cast (cast (-10 as smallint) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-10 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as smallint) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:10 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-10 as numeric(2)) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:-10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:TINYINT SIGNED(REC_BIN8_SIGNED) Source Value:-10 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as numeric(2)) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:TINYINT SIGNED(REC_BIN8_SIGNED) Source Value:10 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-1 as smallint) as smallint unsigned) from t022t1;
@@ -6513,7 +6513,7 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (10 as smallint) as numeric(1) unsigned) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:10 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT SIGNED(REC_BIN16_SIGNED) Source Value:10 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (-1 as smallint) as int unsigned) from t022t1;
@@ -6549,12 +6549,12 @@ Hello
 --- 0 row(s) selected.
 >>select cast (cast (10 as smallint unsigned) as numeric(1)) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED) Source Value:10 to Target Type:SMALLINT SIGNED(REC_BIN16_SIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED) Source Value:10 to Target Type:TINYINT SIGNED(REC_BIN8_SIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as smallint unsigned) as numeric(1)unsigned) from t022t1;
 
-*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED) Source Value:10 to Target Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED).
+*** ERROR[8411] A numeric overflow occurred during an arithmetic computation or data conversion. Conversion of Source Type:SMALLINT UNSIGNED(REC_BIN16_UNSIGNED) Source Value:10 to Target Type:TINYINT UNSIGNED(REC_BIN8_UNSIGNED).
 
 --- 0 row(s) selected.
 >>select cast (cast (10 as smallint unsigned) as decimal(1)) from t022t1;
@@ -7168,28 +7168,28 @@ Hello
 >>-- illegal european format
 >>select cast ('12.13.1987' as date) from t022t2;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 12.13.1987
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 12.13.1987
 
 --- 0 row(s) selected.
 >>
 >>-- illegal US format
 >>select cast ('13/12/1987' as date) from t022t2;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 13/12/1987
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 13/12/1987
 
 --- 0 row(s) selected.
 >>
 >>-- string overflow
 >>select cast (cast ('12.07.1961 03:04:55.123456' as timestamp) as char(18)) from t022t2;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 12.07.1961 03:04:55.123456
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 12.07.1961 03:04:55.123456
 
 --- 0 row(s) selected.
 >>
 >>-- Feb. 30th doesn't exist
 >>select cast('1997-30-02' as DATE) from t022t2;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 1997-30-02
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 1997-30-02
 
 --- 0 row(s) selected.
 >>
@@ -7530,7 +7530,7 @@ A      B
 >>set param ?p '11/20/1997 15:15:08.123456 am';
 >>insert into t022t8 (c1) values ( ?p );
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 11/20/1997 15:15:08.123456 am
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 11/20/1997 15:15:08.123456 am
 
 *** ERROR[15015] PARAM ?p (value 11/20/1997 15:15:08.123456 am) cannot be converted to type TIMESTAMP(6).
 
@@ -7540,9 +7540,9 @@ A      B
 >>set param ?p '2100-01-01:ab:00:47.250000';
 >>insert into t022t8 (c1) values ( ?p );
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61623a30303a34372e323530303030
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 61623a30303a34372e323530303030
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 2100-01-01:ab:00:47.250000
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2100-01-01:ab:00:47.250000
 
 *** ERROR[15015] PARAM ?p (value 2100-01-01:ab:00:47.250000) cannot be converted to type TIMESTAMP(6).
 
@@ -7552,7 +7552,7 @@ A      B
 >>set param ?p '1998-03-12 03:15:08.123456 pm';
 >>insert into t022t8 (c1) values ( ?p );
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 1998-03-12 03:15:08.123456 pm
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 1998-03-12 03:15:08.123456 pm
 
 *** ERROR[15015] PARAM ?p (value 1998-03-12 03:15:08.123456 pm) cannot be converted to type TIMESTAMP(6).
 
@@ -7562,7 +7562,7 @@ A      B
 >>set param ?p '1996-05-23 16:15:08.123 am';
 >>insert into t022t8 (c1) values ( ?p );
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 1996-05-23 16:15:08.123 am
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 1996-05-23 16:15:08.123 am
 
 *** ERROR[15015] PARAM ?p (value 1996-05-23 16:15:08.123 am) cannot be converted to type TIMESTAMP(6).
 
@@ -7635,9 +7635,9 @@ C1
 >>set param ?p '00:a1:00';
 >>insert into t022t8 (c2) values ( ?p );
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 61313a3030
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 61313a3030
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 00:a1:00
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 00:a1:00
 
 *** ERROR[15015] PARAM ?p (value 00:a1:00) cannot be converted to type TIME(0).
 
@@ -7647,7 +7647,7 @@ C1
 >>set param ?p '14:59:59 am';
 >>insert into t022t8 (c2) values ( ?p );
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 14:59:59 am
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 14:59:59 am
 
 *** ERROR[15015] PARAM ?p (value 14:59:59 am) cannot be converted to type TIME(0).
 
@@ -7657,7 +7657,7 @@ C1
 >>set param ?p '11:60:59 am';
 >>insert into t022t8 (c2) values ( ?p );
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 11:60:59 am
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 11:60:59 am
 
 *** ERROR[15015] PARAM ?p (value 11:60:59 am) cannot be converted to type TIME(0).
 
@@ -7821,64 +7821,64 @@ C1                         C2
 >>-- negative cases (expect errors)
 >>select cast('.-2' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2d32
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2d32
 
 --- 0 row(s) selected.
 >>select cast('.+3' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2b33
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2b33
 
 --- 0 row(s) selected.
 >>select cast('.4-' as numeric(4)) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e342d
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e342d
 
 --- 0 row(s) selected.
 >>select cast('-. 3' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2033
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2033
 
 --- 0 row(s) selected.
 >>select cast('-3 . ' as int) from t022t8;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 33202e20
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 33202e20
 
 --- 0 row(s) selected.
 >>
 >>select c1 from t022t8 where cast('.-2' as int) < 1000;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2d32
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2d32
 
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('.+3' as int) < 1000;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2b33
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2b33
 
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('.4-' as numeric(4)) < 1;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e342d
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e342d
 
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('-. 3' as int) < 1;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 2e2033
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 2e2033
 
 --- 0 row(s) selected.
 >>select c1 from t022t8 where cast('-3 .' as int) < 1;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 33202e
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 33202e
 
 --- 0 row(s) selected.
 >>
 >>select cast ('123..' as real) from (values(1)) as T;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 3132332e2e
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 3132332e2e
 
 --- 0 row(s) selected.
 >>select cast ('123..12' as real)from (values(1)) as T;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 3132332e2e3132
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 3132332e2e3132
 
 --- 0 row(s) selected.
 >>
@@ -8511,14 +8511,14 @@ Hello
 >>-- illegal european format
 >>select cast (N'12.13.1987' as date) from t022u;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 12.13.1987
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 12.13.1987
 
 --- 0 row(s) selected.
 >>
 >>-- illegal US format
 >>select cast (N'13/12/1987' as date) from t022u;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 13/12/1987
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 13/12/1987
 
 --- 0 row(s) selected.
 >>
@@ -8533,7 +8533,7 @@ Hello
 >>-- Feb. 32th doesn't exist
 >>select cast(N'1997-02-32' as DATE) from t022u;
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 1997-02-32
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 1997-02-32
 
 --- 0 row(s) selected.
 >>
@@ -8747,7 +8747,7 @@ Hello
 >>-- negative test on cast VAR/NCAR to DEC 
 >>select cast(N'1009a' as  DEC) from t022u;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 3130303961
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 3130303961
 
 --- 0 row(s) selected.
 >>
@@ -8785,17 +8785,17 @@ Hello
 >>-- negative test on cast VAR/NCAR to float/real/double 
 >>select cast(N'this is not a number.' as float) from t022u;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 74686973206973206e6f742061206e756d6265722e
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 74686973206973206e6f742061206e756d6265722e
 
 --- 0 row(s) selected.
 >>select cast(N'1023u' as real) from t022u;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 3130323375
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 3130323375
 
 --- 0 row(s) selected.
 >>select cast(N'''\2' as double precision) from t022u;
 
-*** ERROR[8413] The string argument contains characters that cannot be converted. Source data 275c32
+*** ERROR[8413] The string argument contains characters that cannot be converted. Source data(in hex): 275c32
 
 --- 0 row(s) selected.
 >>?ifNT
@@ -9031,7 +9031,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-07-10 05:23:22.454801
+10:13:14.0000  10:13:14.0000  2016-08-11 19:06:25.121155
 
 --- 1 row(s) selected.
 >>--test on precision of time

@@ -6,6 +6,7 @@ CREATE TABLE TRAFODION.SCH.T056T10
     SWALLOW                          INT DEFAULT 121 NOT NULL NOT DROPPABLE
   , BARNOWL                          INT DEFAULT 1000 NOT NULL NOT DROPPABLE
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE UNIQUE INDEX T056IN5 ON TRAFODION.SCH.T056T10
@@ -29,6 +30,7 @@ CREATE TABLE TRAFODION.SCH.T056T11
   , BLACKBIRD                        INT DEFAULT NULL
   , PRIMARY KEY (WREN ASC, JUNCO ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE UNIQUE INDEX T056IN6 ON TRAFODION.SCH.T056T11
@@ -111,6 +113,7 @@ CREATE TABLE TRAFODION.SCH.T056T10
   , GOSLING                          INT DEFAULT 700 HEADING 'goose'
       /*added_col*/
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 -- The following index is a system created index --
@@ -148,6 +151,7 @@ CREATE TABLE TRAFODION.SCH.T056T11
   , ROBIN                            INT DEFAULT 410 /*added_col*/
   , PRIMARY KEY (WREN ASC, JUNCO ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE UNIQUE INDEX T056IN6 ON TRAFODION.SCH.T056T11
@@ -259,36 +263,36 @@ CREATE VIEW TRAFODION.SCH.T056VW12 AS
 --- 1 row(s) inserted.
 >>select * from T056t27;
 
-C1  N10                    N2      N3      N7           N7U         N2S     N15S                  N3U
---  ---------------------  ------  ------  -----------  ----------  ------  --------------------  -----
+C1  N10                    N2    N3      N7           N7U         N2S   N15S                  N3U
+--  ---------------------  ----  ------  -----------  ----------  ----  --------------------  -----
 
-kk               21.00000     -99      23           24          25      26                    27     28
-kk               21.00000      -1      23           24          25      26                    27     28
-kk               21.00000       0      23           24          25      26                    27     28
-kk               21.00000       1      23           24          25      26                    27     28
-kk               21.00000      99      23           24          25      26                    27     28
-kk               21.00000      22       0           24          25      26                    27     28
-kk               21.00000      22       1           24          25      26                    27     28
-kk               21.00000      22      50           24          25      26                    27     28
-kk               21.00000      22     999           24          25      26                    27     28
-kk               21.00000      22      23     -9999999          25      26                    27     28
-kk               21.00000      22      23           -1          25      26                    27     28
-kk               21.00000      22      23            0          25      26                    27     28
-kk               21.00000      22      23            1          25      26                    27     28
-kk               21.00000      22      23            6          25      26                    27     28
-kk               21.00000      22      23      9999999          25      26                    27     28
-kk               21.00000      22      23           24           0      26                    27     28
-kk               21.00000      22      23           24           1      26                    27     28
-kk               21.00000      22      23           24          50      26                    27     28
-kk               21.00000      22      23           24     9999999      26                    27     28
-kk               21.00000      22      23           24          25      26      -999999999999999     28
-kk               21.00000      22      23           24          25      26                    -1     28
-kk               21.00000      22      23           24          25      26                     0     28
-kk               21.00000      22      23           24          25      26                     1     28
-kk               21.00000      22      23           24          25      26                     6     28
-kk               21.00000      22      23           24          25      26       999999999999999     28
-jk               21.00000      22      23           24          25      26                    27     28
-kk               21.00000      22      23           24          25      26                    27     28
+kk               21.00000   -99      23           24          25    26                    27     28
+kk               21.00000    -1      23           24          25    26                    27     28
+kk               21.00000     0      23           24          25    26                    27     28
+kk               21.00000     1      23           24          25    26                    27     28
+kk               21.00000    99      23           24          25    26                    27     28
+kk               21.00000    22       0           24          25    26                    27     28
+kk               21.00000    22       1           24          25    26                    27     28
+kk               21.00000    22      50           24          25    26                    27     28
+kk               21.00000    22     999           24          25    26                    27     28
+kk               21.00000    22      23     -9999999          25    26                    27     28
+kk               21.00000    22      23           -1          25    26                    27     28
+kk               21.00000    22      23            0          25    26                    27     28
+kk               21.00000    22      23            1          25    26                    27     28
+kk               21.00000    22      23            6          25    26                    27     28
+kk               21.00000    22      23      9999999          25    26                    27     28
+kk               21.00000    22      23           24           0    26                    27     28
+kk               21.00000    22      23           24           1    26                    27     28
+kk               21.00000    22      23           24          50    26                    27     28
+kk               21.00000    22      23           24     9999999    26                    27     28
+kk               21.00000    22      23           24          25    26      -999999999999999     28
+kk               21.00000    22      23           24          25    26                    -1     28
+kk               21.00000    22      23           24          25    26                     0     28
+kk               21.00000    22      23           24          25    26                     1     28
+kk               21.00000    22      23           24          25    26                     6     28
+kk               21.00000    22      23           24          25    26       999999999999999     28
+jk               21.00000    22      23           24          25    26                    27     28
+kk               21.00000    22      23           24          25    26                    27     28
 
 --- 27 row(s) selected.
 >>
@@ -389,39 +393,39 @@ pp   3.1000000E+001   3.20000000000000000E+001   3.30000000000000000E+001   3.40
 --- 1 row(s) inserted.
 >>select * from T056t127;
 
-C1  N10                    N2      N3      N7           N7U         N2S     N15S                  N3U
---  ---------------------  ------  ------  -----------  ----------  ------  --------------------  -----
+C1  N10                    N2    N3      N7           N7U         N2S   N15S                  N3U
+--  ---------------------  ----  ------  -----------  ----------  ----  --------------------  -----
 
-qq               21.00000      22      23           24          25      26                    27     28
-rr               21.00000      22      23           24          25      26                    27     28
-ss               21.00000      22      23           24          25      26                    27     28
-kk               21.00000     -99      23           24          25      26                    27     28
-kk               21.00000      -1      23           24          25      26                    27     28
-kk               21.00000       0      23           24          25      26                    27     28
-kk               21.00000       1      23           24          25      26                    27     28
-kk               21.00000      99      23           24          25      26                    27     28
-kk               21.00000      22       0           24          25      26                    27     28
-kk               21.00000      22       1           24          25      26                    27     28
-kk               21.00000      22      50           24          25      26                    27     28
-kk               21.00000      22     999           24          25      26                    27     28
-kk               21.00000      22      23     -9999999          25      26                    27     28
-kk               21.00000      22      23           -1          25      26                    27     28
-kk               21.00000      22      23            0          25      26                    27     28
-kk               21.00000      22      23            1          25      26                    27     28
-kk               21.00000      22      23            6          25      26                    27     28
-kk               21.00000      22      23      9999999          25      26                    27     28
-kk               21.00000      22      23           24           0      26                    27     28
-kk               21.00000      22      23           24           1      26                    27     28
-kk               21.00000      22      23           24          50      26                    27     28
-kk               21.00000      22      23           24     9999999      26                    27     28
-kk               21.00000      22      23           24          25      26      -999999999999999     28
-kk               21.00000      22      23           24          25      26                    -1     28
-kk               21.00000      22      23           24          25      26                     0     28
-kk               21.00000      22      23           24          25      26                     1     28
-kk               21.00000      22      23           24          25      26                     6     28
-kk               21.00000      22      23           24          25      26       999999999999999     28
-jk               21.00000      22      23           24          25      26                    27     28
-kk               21.00000      22      23           24          25      26                    27     28
+qq               21.00000    22      23           24          25    26                    27     28
+rr               21.00000    22      23           24          25    26                    27     28
+ss               21.00000    22      23           24          25    26                    27     28
+kk               21.00000   -99      23           24          25    26                    27     28
+kk               21.00000    -1      23           24          25    26                    27     28
+kk               21.00000     0      23           24          25    26                    27     28
+kk               21.00000     1      23           24          25    26                    27     28
+kk               21.00000    99      23           24          25    26                    27     28
+kk               21.00000    22       0           24          25    26                    27     28
+kk               21.00000    22       1           24          25    26                    27     28
+kk               21.00000    22      50           24          25    26                    27     28
+kk               21.00000    22     999           24          25    26                    27     28
+kk               21.00000    22      23     -9999999          25    26                    27     28
+kk               21.00000    22      23           -1          25    26                    27     28
+kk               21.00000    22      23            0          25    26                    27     28
+kk               21.00000    22      23            1          25    26                    27     28
+kk               21.00000    22      23            6          25    26                    27     28
+kk               21.00000    22      23      9999999          25    26                    27     28
+kk               21.00000    22      23           24           0    26                    27     28
+kk               21.00000    22      23           24           1    26                    27     28
+kk               21.00000    22      23           24          50    26                    27     28
+kk               21.00000    22      23           24     9999999    26                    27     28
+kk               21.00000    22      23           24          25    26      -999999999999999     28
+kk               21.00000    22      23           24          25    26                    -1     28
+kk               21.00000    22      23           24          25    26                     0     28
+kk               21.00000    22      23           24          25    26                     1     28
+kk               21.00000    22      23           24          25    26                     6     28
+kk               21.00000    22      23           24          25    26       999999999999999     28
+jk               21.00000    22      23           24          25    26                    27     28
+kk               21.00000    22      23           24          25    26                    27     28
 
 --- 30 row(s) selected.
 >>
@@ -2036,6 +2040,7 @@ CREATE TABLE TRAFODION.SCH.T056T57
     A1                               NUMERIC(2, 2) DEFAULT 0 NOT NULL NOT
       DROPPABLE
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -2044,10 +2049,10 @@ CREATE TABLE TRAFODION.SCH.T056T57
 --- 1 row(s) inserted.
 >>select * from t056t57;
 
-A1     
--------
+A1   
+-----
 
-    .00
+  .00
 
 --- 1 row(s) selected.
 >>
@@ -2061,6 +2066,7 @@ CREATE TABLE TRAFODION.SCH.T056T58
     A1                               DECIMAL(4, 4) DEFAULT -0.0000 NOT NULL NOT
       DROPPABLE
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -2086,6 +2092,7 @@ CREATE TABLE TRAFODION.SCH.T056T59
     A1                               DECIMAL(3, 3) DEFAULT -0000.12 NOT NULL
       NOT DROPPABLE
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -2108,9 +2115,10 @@ A1
 
 CREATE TABLE TRAFODION.SCH.T056T60
   (
-    A1                               NUMERIC(2, 2) UNSIGNED DEFAULT 0.00 NOT
+    A1                               NUMERIC(2, 2)  UNSIGNED DEFAULT 0.00 NOT
       NULL NOT DROPPABLE
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -2119,10 +2127,10 @@ CREATE TABLE TRAFODION.SCH.T056T60
 --- 1 row(s) inserted.
 >>select * from t056t60;
 
-A1    
-------
+A1  
+----
 
-   .00
+ .00
 
 --- 1 row(s) selected.
 >>
@@ -2136,6 +2144,7 @@ CREATE TABLE TRAFODION.SCH.T056T61
     A1                               NUMERIC(2, 2) DEFAULT -0.0 NOT NULL NOT
       DROPPABLE
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -2144,10 +2153,10 @@ CREATE TABLE TRAFODION.SCH.T056T61
 --- 1 row(s) inserted.
 >>select * from t056t61;
 
-A1     
--------
+A1   
+-----
 
-    .00
+  .00
 
 --- 1 row(s) selected.
 >>
@@ -2162,7 +2171,7 @@ A1
 +>                      i2 numeric(18,7) default 69, 
 +>                      i3 largeint default 39 
 +>                        primary key desc not null)
-+>                      location $$partition$$;
++>                      location $DATA;
 
 --- SQL operation complete.
 >>
@@ -2172,7 +2181,7 @@ A1
 +>                      s0Integer PIC S9(4) default 85 not null,
 +>                      i1 decimal(18) default 12734 not null)
 +>                      store by primary key
-+>                      location $$partition2$$;
++>                      location $DATA2;
 
 --- SQL operation complete.
 >>
@@ -2267,7 +2276,7 @@ I1                    I2                     I3                    S0INTEGER
 +>                      i2 numeric(18,7) default 69, 
 +>                      i3 largeint default 39 
 +>                        primary key desc not null)
-+>                      location $$partition$$;
++>                      location $DATA;
 
 --- SQL operation complete.
 >>
@@ -2277,7 +2286,7 @@ I1                    I2                     I3                    S0INTEGER
 +>                      s0Integer PIC S9(4) default 85 not null,
 +>                      i1 decimal(18) default 12734 not null)
 +>                      store by primary key
-+>                      location $$partition2$$;
++>                      location $DATA2;
 
 --- SQL operation complete.
 >>
@@ -2362,7 +2371,7 @@ I1                    I2                     I3                    S0INTEGER
 +>                      i2 numeric(18,7) default 69, 
 +>                      i3 largeint default 39 
 +>                        primary key desc not null)
-+>                      location $$partition$$;
++>                      location $DATA;
 
 --- SQL operation complete.
 >>
@@ -2372,7 +2381,7 @@ I1                    I2                     I3                    S0INTEGER
 +>                      s0Integer PIC S9(4) default 85 not null,
 +>                      i1 decimal(18) default 12734 not null)
 +>                      store by primary key
-+>                      location $$partition2$$;
++>                      location $DATA2;
 
 --- SQL operation complete.
 >>
@@ -2444,7 +2453,7 @@ I1                    I2                     I3                    S0INTEGER
 +>                      i2 numeric(18,7) default 69, 
 +>                      i3 largeint default 39 
 +>                        primary key desc not null)
-+>                      location $$partition$$;
++>                      location $DATA;
 
 --- SQL operation complete.
 >>
@@ -2454,7 +2463,7 @@ I1                    I2                     I3                    S0INTEGER
 +>                      s0Integer PIC S9(4) default 85 not null,
 +>                      i1 decimal(18) default 12734 not null)
 +>                      store by primary key
-+>                      location $$partition2$$;
++>                      location $DATA2;
 
 --- SQL operation complete.
 >>
@@ -2549,7 +2558,7 @@ I1                    I2                     I3                    S0INTEGER
 +>                      i2 numeric(18,7) default 69, 
 +>                      i3 largeint default 39 
 +>                        primary key desc not null)
-+>                      location $$partition$$;
++>                      location $DATA;
 
 --- SQL operation complete.
 >>
@@ -2559,7 +2568,7 @@ I1                    I2                     I3                    S0INTEGER
 +>                      s0Integer PIC S9(4) default 85 not null,
 +>                      i1 decimal(18) default 12734 not null)
 +>                      store by primary key
-+>                      location $$partition2$$;
++>                      location $DATA2;
 
 --- SQL operation complete.
 >>
@@ -2644,7 +2653,7 @@ I1                    I2                     I3                    S0INTEGER
 +>                      i2 numeric(18,7) default 69, 
 +>                      i3 largeint default 39 
 +>                        primary key desc not null)
-+>                      location $$partition$$;
++>                      location $DATA;
 
 --- SQL operation complete.
 >>
@@ -2654,7 +2663,7 @@ I1                    I2                     I3                    S0INTEGER
 +>                      s0Integer PIC S9(4) default 85 not null,
 +>                      i1 decimal(18) default 12734 not null)
 +>                      store by primary key
-+>                      location $$partition2$$;
++>                      location $DATA2;
 
 --- SQL operation complete.
 >>
@@ -2756,7 +2765,7 @@ I2
 +>    a1 decimal (18) not null not droppable,
 +>    a2 numeric (9, 2) default 49,
 +>    a4 decimal (9,0) ) 
-+>    location $$partition2$$
++>    location $DATA2
 +>    store by (a1 asc);
 
 --- SQL operation complete.
@@ -2817,7 +2826,7 @@ I2
 +>    a1 decimal (18) not null not droppable,
 +>    a2 numeric (9, 2) default 49,
 +>    a4 decimal (9,0) ) 
-+>    location $$partition2$$
++>    location $DATA2
 +>    store by (a1 asc);
 
 --- SQL operation complete.

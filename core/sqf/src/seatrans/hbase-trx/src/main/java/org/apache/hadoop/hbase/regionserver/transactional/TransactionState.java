@@ -110,6 +110,7 @@ public class TransactionState {
     protected boolean splitRetry = false;
     protected boolean earlyLogging = false;
     protected boolean commit_TS_CC = false;
+    protected boolean isRegionTx = false;
     protected WAL tHLog = null;
     protected Object xaOperation = new Object();;
     protected CommitProgress commitProgress = CommitProgress.NONE; // 0 is no commit yet, 1 is a commit is under way, 2 is committed
@@ -117,21 +118,28 @@ public class TransactionState {
 
     public static final int TS_ACTIVE = 0;
     public static final int TS_COMMIT_REQUEST = 1;
-    public static byte TS_TRAFODION_TXN_TAG_TYPE = 41;
+    public static final int TS_REGION_TX_ACTIVE = 5;
+    public static final int TS_REGION_TX_COMMIT_REQUEST = 6;
+    public static final int TS_REGION_TX_COMMIT = 7;
+    public static final byte TS_TRAFODION_TXN_TAG_TYPE = 41;
 
     public TransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId, final HRegionInfo regionInfo,
-                                                 HTableDescriptor htd, WAL hLog, boolean logging) {
+                                                 HTableDescriptor htd, WAL hLog, boolean logging, boolean isRegionTx) {
         Tag transactionalTag = null;
         if (LOG.isTraceEnabled()) LOG.trace("Create TS object for " + transactionId + " early logging " + logging);
         this.transactionId = transactionId;
         this.hLogStartSequenceId = rLogStartSequenceId;
         this.logSeqId = hlogSeqId;
         this.regionInfo = regionInfo;
+        this.isRegionTx = isRegionTx;
         this.status = Status.PENDING;
         this.tabledescriptor = htd;
         this.earlyLogging = logging;
         this.tHLog = hLog;
-        if (earlyLogging) {
+        if(isRegionTx){ // RegionTX takes precedence
+           transactionalTag = this.formTransactionalContextTag(TS_REGION_TX_COMMIT_REQUEST);
+        }
+        else if (earlyLogging) {
            transactionalTag = this.formTransactionalContextTag(TS_ACTIVE);
         }
         else {
@@ -189,7 +197,17 @@ public class TransactionState {
             }
         }
     }
-    /**
+   /**
+    * Returns a boolean indicating whether or not this is a region transaction.
+    *
+    * @return Return the isRegionTx boolean.
+    */
+   public boolean getIsRegionTx() {
+
+       return isRegionTx;
+   }
+
+   /**
      * Get the originating node of the transaction.
      *
      * @return Return the nodeId.
@@ -362,8 +380,8 @@ public class TransactionState {
 
     @Override
     public String toString() {
-        return "transactionId: " + transactionId + ", status: " + status +
-               ", regionInfo: " + regionInfo;
+        return "transactionId: " + transactionId + ", regionTX: " + getIsRegionTx()
+                + ", status: " + status + ", regionInfo: " + regionInfo;
     }
 
 

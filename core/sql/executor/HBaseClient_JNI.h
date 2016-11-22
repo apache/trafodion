@@ -341,7 +341,6 @@ typedef enum {
  ,HBC_DONE   = HBC_FIRST
  ,HBC_ERROR_INIT_PARAM
  ,HBC_ERROR_INIT_EXCEPTION
- ,HBC_ERROR_CLEANUP_EXCEPTION
  ,HBC_ERROR_GET_HTC_EXCEPTION
  ,HBC_ERROR_REL_HTC_EXCEPTION
  ,HBC_ERROR_CREATE_PARAM
@@ -421,7 +420,6 @@ public:
     return isConnected_;
   }
 
-  HBC_RetCode cleanup();
   HTableClient_JNI* getHTableClient(NAHeap *heap, const char* tableName, 
                bool useTRex, ExHbaseAccessStats *hbs);
   HBulkLoadClient_JNI* getHBulkLoadClient(NAHeap *heap);
@@ -439,6 +437,7 @@ public:
                    NABoolean force);
   NAArray<HbaseStr>* listAll(NAHeap *heap, const char* pattern);
   NAArray<HbaseStr>* getRegionStats(NAHeap *heap, const char* tblName);
+  Int32 getRegionStatsEntries();
 
   HBC_RetCode exists(const char* fileName, Int64 transID);
   HBC_RetCode grant(const Text& user, const Text& tableName, const TextVec& actionCodes); 
@@ -477,28 +476,36 @@ public:
                  const char * qualName , Int64 incr, Int64 & count);
   HBC_RetCode createCounterTable( const char * tabName,  const char * famName);
   HBC_RetCode insertRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
-      HbaseStr row, Int64 timestamp,bool checkAndPut, bool asyncOperation,
-      HTableClient_JNI **outHtc);
+                        ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, 
+                        HbaseStr rowID,
+                        HbaseStr row, Int64 timestamp,bool checkAndPut, 
+                        bool asyncOperation, bool useRegionXn, 
+                        HTableClient_JNI **outHtc);
   HBC_RetCode insertRows(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs,
       HbaseStr rows, Int64 timestamp,  bool asyncOperation,
       HTableClient_JNI **outHtc);
   HBC_RetCode checkAndUpdateRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID,
-      HbaseStr row, HbaseStr columnToCheck, HbaseStr columnValToCheck,
-       Int64 timestamp, bool asyncOperation,
-      HTableClient_JNI **outHtc);
+                                ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, 
+                                HbaseStr rowID,
+                                HbaseStr row, HbaseStr columnToCheck, HbaseStr columnValToCheck,
+                                Int64 timestamp, bool asyncOperation, bool useRegionXn,
+                                HTableClient_JNI **outHtc);
   HBC_RetCode deleteRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, const LIST(HbaseStr) *cols, 
-      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
+                        const LIST(HbaseStr) *cols, 
+                        Int64 timestamp, 
+                        bool asyncOperation, 
+                        bool useRegionXn,
+                        HTableClient_JNI **outHtc);
   HBC_RetCode deleteRows(NAHeap *heap, const char *tableName,
       ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, short rowIDLen, HbaseStr rowIDs, 
       Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
   HBC_RetCode checkAndDeleteRow(NAHeap *heap, const char *tableName,
-      ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
-      HbaseStr columnToCheck, HbaseStr columnValToCheck,
-      Int64 timestamp, bool asyncOperation, HTableClient_JNI **outHtc);
+                                ExHbaseAccessStats *hbs, bool useTRex, Int64 transID, HbaseStr rowID, 
+                                HbaseStr columnToCheck, HbaseStr columnValToCheck,
+                                Int64 timestamp, bool asyncOperation, bool useRegionXn,
+                                HTableClient_JNI **outHtc);
   NAArray<HbaseStr>* getStartKeys(NAHeap *heap, const char *tableName, bool useTRex);
   NAArray<HbaseStr>* getEndKeys(NAHeap *heap, const char * tableName, bool useTRex);
 
@@ -514,7 +521,6 @@ private:
   enum JAVA_METHODS {
     JM_CTOR = 0
    ,JM_INIT
-   ,JM_CLEANUP   
    ,JM_GET_HTC
    ,JM_REL_HTC
    ,JM_CREATE
@@ -525,6 +531,7 @@ private:
    ,JM_DROP_ALL
    ,JM_LIST_ALL
    ,JM_GET_REGION_STATS
+   ,JM_GET_REGION_STATS_ENTRIES
    ,JM_COPY
    ,JM_EXISTS
    ,JM_GRANT

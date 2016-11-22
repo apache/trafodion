@@ -335,6 +335,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>control query shape tmudf(sort(scan));
+
+--- SQL operation complete.
 >>-- predicate on IPADDR is evaluated in child,
 >>-- predicate on SESSION_ID is evaluated in the UDF
 >>prepare s from
@@ -351,6 +354,9 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 +>      IPADDR = '12.345.567.345';
 
 --- SQL command prepared.
+>>control query shape anything;
+
+--- SQL operation complete.
 >>select count(*) from table(explain(null,'S'))
 +>where operator = 'TMUDF'
 +>  and description like '% preds_evaluated_by_udf: (SESSION_ID < 2) %';
@@ -539,6 +545,9 @@ ORDINAL      FIBONACCI_NUMBER
 
 --- 1 row(s) selected.
 >>
+>>control query shape join(tmudf, tmudf);
+
+--- SQL operation complete.
 >>select *
 +>from UDF(fibonacci(1,10)) natural join UDF(fibonacci_java(1,10));
 
@@ -557,6 +566,9 @@ ORDINAL      FIBONACCI_NUMBER
          10                    55
 
 --- 10 row(s) selected.
+>>control query shape off;
+
+--- SQL operation complete.
 >>
 >>select *
 +>from UDF(fibonacci(1,10)) cpp1 natural join

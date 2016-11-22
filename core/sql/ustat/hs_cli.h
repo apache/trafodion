@@ -57,6 +57,7 @@ class HSDataBuffer;
 class HSTableDef;
 struct HSColDesc;
 struct HSColGroupStruct;
+struct HSColumnStruct;
 class ISFixedChar;
 class ISVarChar;
 class MCWrapper;
@@ -66,15 +67,58 @@ template <class T> class HSPtrArray;
 // -----------------------------------------------------------------------
 // Functions.
 // -----------------------------------------------------------------------
-// Execute a standalone dml/ddl operation.
+// Execute a standalone dml/ddl operation, without retry.
 Lng32 HSFuncExecQuery( const char *dml
                     , short sqlcode = - UERR_INTERNAL_ERROR
                     , Int64 *rowsAffected = NULL
                     , const char *errorToken = HS_QUERY_ERROR
                     , Int64 *srcTabRowCount = NULL
                     , const HSTableDef *tabDef = NULL
-                    , NABoolean doRetry = FALSE
                     , short errorToIgnore = 0
+                    , NABoolean checkMdam = FALSE
+                    , NABoolean inactivateErrorCatcher = FALSE
+                    );
+
+// Body shared between HSFuncExecQuery and 
+// HSFuncExecTransactionalQueryWithRetry
+Lng32 HSFuncExecQueryBody( const char *dml
+                    , short sqlcode
+                    , Int64 *rowsAffected
+                    , const char *errorToken
+                    , Int64 *srcTabRowCount
+                    , const HSTableDef *tabDef
+                    , short errorToIgnore
+                    , NABoolean checkMdam
+                    );
+
+// Execute a standalone dml/ddl operation, with retry. Note
+// that this method handles starting and committing or rolling
+// back the transaction (as that needs to be part of the retry
+// loop since Trafodion often aborts transactions when
+// statements fail). Therefore, this function cannot be called
+// within a transaction. In fact it guards against this and will
+// return an error if it is called within a transaction. One
+// consequence is that calls to this function cannot be
+// done within the scope of an HSTranController object.
+//
+// Some thought should go into the choice of whether to use
+// this function vs. HSFuncExecQuery. It is appropriate to use
+// this function if the effect on the database is idempotent.
+// Examples of this are most DDL operations, DELETE, UPDATE
+// and INSERT statements that don't depend on prior state and
+// don't include non-deterministic semantics such as SAMPLE.
+// Operations that have non-transactional effects and non-
+// deterministic semantics (such as UPSERT USING LOAD with a
+// SAMPLE clause) should not be retried at this level.
+//
+Lng32 HSFuncExecTransactionalQueryWithRetry( const char *dml
+                    , short sqlcode = - UERR_INTERNAL_ERROR
+                    , Int64 *rowsAffected = NULL
+                    , const char *errorToken = HS_QUERY_ERROR
+                    , Int64 *srcTabRowCount = NULL
+                    , const HSTableDef *tabDef = NULL
+                    , short errorToIgnore = 0
+                    , NABoolean checkMdam = FALSE
                     );
 
 Lng32 HSFuncExecDDL( const char *dml
@@ -92,6 +136,7 @@ Lng32 CreateHistView   (const HSGlobalsClass* hsGlobal);
 // Drop the sample table.
 Lng32 DropSampleTable();
 
+Lng32 checkMdam(SQLSTMT_ID *stmt);
 Lng32 printPlan(SQLSTMT_ID *stmt);
 void getRowCountFromStats(Int64 * rowsAffected , const HSTableDef *tabDef = NULL);
 
@@ -175,14 +220,11 @@ class HSSample
               NABoolean unpartitioned=FALSE, //input - used to specify if the 
                                             // method is being called to create
                                             // unpartitioned persistent sample 
-              NABoolean createDandI=FALSE,  //input - if table D and I
-                                            // should be created
               Int64 minRowCtPerPartition = -1 // minimal row RC per partition
               );
     // Create sample table (called by make).
     Lng32 create(NABoolean unpartitioned = FALSE,
-                NABoolean isPersSample = FALSE,
-                NABoolean createDandI = FALSE
+                NABoolean isPersSample = FALSE
                 );
     Lng32 create(NAString& tblName,
                 NABoolean unpartitioned = FALSE,
@@ -193,6 +235,9 @@ class HSSample
     Lng32 drop() { return dropSample(sampleTable, objDef); }
 
     NABoolean isIUS() { return isIUS_; }
+
+    void addTruncatedSelectList(NAString & qry);
+    static void addTruncatedColumnReference(NAString & qry, HSColumnStruct & colInfo);
 
   private:
     // Member function
@@ -307,9 +352,13 @@ class HSTranMan
   {
     public:
          static HSTranMan* Instance();
-         Lng32 Begin(const char *title = ""); /* Begin Transaction            */
-         Lng32 Commit();                   /* Commit Transaction              */
-         Lng32 Rollback();                 /* Rollback Transaction            */
+         /* Begin Transaction               */
+         Lng32 Begin(const char *title = "",
+                     NABoolean inactivateErrorCatcher=FALSE);
+         /* Commit Transaction              */
+         Lng32 Commit(NABoolean inactivateErrorCatcher=FALSE);
+         /* Rollback Transaction            */
+         Lng32 Rollback(NABoolean inactivateErrorCatcher=FALSE);
 
          // This method will tell you if there is currently a transaction
          // running. The transaction could have been started by USER or this
@@ -379,6 +428,14 @@ class HSPrologEpilog
 /* The decision as to whether the transaction should be committed or rolled  */
 /* back in the dtor is determined by the value of a return code, the address */
 /* of which is passed to HSTranController's ctor.                            */
+/*                                                                           */
+/* Limitations: Unfortunately, Trafodion often aborts transactions when DDL  */
+/* or DML statements fail. This precludes using HSTranController in retry    */
+/* scenarios as the retry would either fail due to lack of a transaction or  */
+/* (worse) succeed in a separate transaction. The latter is worse because    */
+/* any other work done in the original transaction would silently be undone. */
+/* To guard against this, HSFuncExecTransactionalQueryWithRetry raises an    */
+/* error if done within the scope of an HSTranController object.             */
 /*****************************************************************************/
 class HSTranController
   {
@@ -388,9 +445,6 @@ class HSTranController
 
       // Function to stop current transaction and start a new one.
       void stopStart(const char* title);
-
-      // Static function to acquire a lock on a table.
-      static Lng32 lockTable(const char* tableName, NABoolean exclusive = TRUE);
 
     private:
       HSTranMan* tranMan_;
@@ -414,18 +468,22 @@ class HSPersSamples
     public:
          // Creates or returns instance.
          static HSPersSamples* Instance(const NAString &catalog,
-                                        NABoolean createTable = TRUE);
+                                        const NAString &schema);
 
-         static Lng32 updIUSUpdateInfo(HSTableDef* tblDef,
-                                       char* updHistory,
-                                       char* updTimestampStr);
+         Lng32 updIUSUpdateInfo(HSTableDef* tblDef,
+                                const char* updHistory,
+                                const char* updTimestampStr,
+                                const char* updWhereCondition,
+                                const Int64* requestedSampleRows = NULL,
+                                const Int64* actualSampleRows = NULL);
 
-         static Lng32 readIUSUpdateInfo(HSTableDef* tblDef,
-                                        char* updHistory,
-                                        Int64* updTimestamp);
+         Lng32 readIUSUpdateInfo(HSTableDef* tblDef,
+                                 char* updHistory,
+                                 Int64* updTimestamp);
 
-         // finds a persistent sample table for UID and reason code and returns in 'table'.
-         Lng32 find(HSTableDef *tabDef, char reason_code, NAString &table,
+         // finds a persistent sample table for UID and reason code and returns it in 'table'.
+         // (returns ' ' in table if none is found).
+         Lng32 find(HSTableDef *tabDef, char reason, NAString &table,
                     Int64 &requestedRows, Int64 &sampleRows, double &sampleRate);
 
          // finds a persistent sample table for UID and sample size and returns in 'table'.
@@ -439,10 +497,6 @@ class HSPersSamples
                               NABoolean isEstimate, char reason,
                               NABoolean createDandI=FALSE,
                               Int64 minRowsCtPerPartition = -1);
-         Lng32 createAndInsert(HSTableDef *tabDef, NAString &sampleName,
-                              Int64 &sampleRows, Int64 &actualRows, 
-                              NABoolean isEstimate, NABoolean isManual,
-                              Int64 minRowsCtPerPartition = -1);
 
           // remove persistent sample table(s) based on uid, sampleRows, and the
           // allowed difference between the number of rows and sampleRows.
@@ -451,15 +505,24 @@ class HSPersSamples
          // drop the named sample table and remove its entry from the
          // PERSISTENT_SAMPLES table.
          Lng32 removeSample(HSTableDef* tabDef, NAString& sampTblName,
-                            NABoolean useTransaction, const char* txnLabel);
+                            char reason, const char* txnLabel);
 
-    protected:
-         HSPersSamples();                     /* ensure only 1 instance of class */
+         ~HSPersSamples();
+
+    protected:  /* ensure only 1 instance of class */
+
+         HSPersSamples(const NAString &catalog,
+                       const NAString &schema);    
+
+         void setCatalogSchema(const NAString &catalog,
+                               const NAString &schema); 
+      
     private:
+
          static THREAD_P HSPersSamples* instance_;     /* 1 and only 1 instance           */
-         static THREAD_P NAList<NAString>* persSampleTablesList_;
-         static THREAD_P NAString* catalog_;
-         static THREAD_P NAString* schema_;
+         NAString* catalog_;
+         NAString* schema_;
+         NABoolean triedCreatingSBPersistentSamples_;
   };
 
 /*****************************************************************************/
@@ -492,6 +555,7 @@ class HSPersData
 #define HS_MODULE "HP_SYSTEM_CATALOG.SYSTEM_SCHEMA.SQLHIST_N29_000"
 #define HS_MODULE_LENGTH  50  // more than needed
 #define HS_STMTID "HS_CLI_DYNSTMT"
+#define HS_INTERVAL_STMT_ID "HS_INTERVAL_STMT_ID"
 #define HS_STMTID_LENGTH  50  
 #define HS_FUNC_EXEC_QUERY_STMTID "HS_FUNC_EXEC_QUERY_DYNSTMT"
 
@@ -884,7 +948,7 @@ public:
 
   // Functions below used when the HSCursor is instantiated for a dynamic query.
   Lng32 prepareQuery(const char *cliStr, Lng32 numParams, Lng32 numResults);
-  Lng32 open(Lng32 numParams = 0);
+  Lng32 open(Lng32 numParams = 0, void *in01 = NULL);
   Lng32 fetch(Lng32 numResults,
               void* out01,        void* out02 = NULL, void* out03 = NULL,
               void* out04 = NULL, void* out05 = NULL, void* out06 = NULL,
@@ -895,20 +959,8 @@ public:
               void* out19 = NULL, void* out20 = NULL, void* out21 = NULL,
               void* out22 = NULL, void* out23 = NULL, void* out24 = NULL,
               void* out25 = NULL);
-  Lng32 close()
-    {
-      // This is done by the dtor ordinarily. This function exists just to avoid
-      // the need for ifdefs around calls to close() on a variable that is either
-      // an HSCliStatement or HSCursor depending on the value of NA_USTAT_USE_STATIC.
-      Lng32 retcode = 0;
-      if (closeStmtNeeded_)
-        {
-          retcode = SQL_EXEC_CloseStmt(stmt_);
-          if (!retcode)
-            closeStmtNeeded_ = FALSE;
-        }
-      return retcode;
-    }
+  Lng32 close();
+
   SQLSTMT_ID* getStmt() {return stmt_;}
   SQLDESC_ID* getOutDesc() {return outputDesc_;}
   SQLDESC_ID* getInDesc() {return inputDesc_;}
@@ -971,6 +1023,8 @@ private:
   Lng32 retcode_;
   
   NAHeap *heap_;
+
+  NABoolean lastFetchReturned100_;
 
   // prepare a dynamic sql statement.
   Lng32 prepare(const char *cliStr, const Lng32 outDescEntries = 500);

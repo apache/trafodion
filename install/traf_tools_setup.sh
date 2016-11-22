@@ -383,6 +383,27 @@ else
 fi
 
 # -----------------------------------------------------------------------------
+# install protobuf, if version 2.5 not available already
+PROTOC_VERSION=`protoc --version 2>/dev/null | grep 'libprotoc' | cut -f 2 -d ' '`
+if [[ ! "$PROTOC_VERSION" =~ "^2.5" ]]; then
+  cd $BASEDIR
+  echo
+  echo "INFO: Installing Protobuf on $(date)" | tee -a $LOGFILE
+  if [ -d $TOOLSDIR/protobuf-2.5.0/bin ]; then
+    echo "INFO: Protobuf is already installed, skipping to next tool" | tee -a $LOGFILE
+  else
+    downloadSource https://github.com/google/protobuf/releases/download/v2.5.0/protobuf-2.5.0.tar.gz protobuf-2.5.0
+    cd protobuf-2.5.0
+    ./configure --prefix=$TOOLSDIR/protobuf-2.5.0 >>$LOGFILE 2>&1
+    echo "INFO:   configure complete" | tee -a $LOGFILE
+    bkgBuild "protobuf" "" "install" "$TOOLSDIR/protobuf-2.5.0/bin"
+  fi
+  echo " *********************************************************** " | tee -a $LOGFILE
+else
+  echo "INFO:  Protobuf is already installed, skipping to next tool" | tee -a $LOGFILE
+fi
+
+# -----------------------------------------------------------------------------
 # install log4cxx, if not installed
 if [[ !  -e /usr/lib64/liblog4cxx.so ]]; then
   cd $BASEDIR

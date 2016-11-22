@@ -1,4 +1,3 @@
-
 /**********************************************************************
 // @@@ START COPYRIGHT @@@
 //
@@ -483,14 +482,19 @@ Lng32 ExHdfsFastExtractTcb::lobInterfaceCreate()
 
 }
 
-Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck()
+Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck
+(Int64 &failedModTS,
+ char * failedLocBuf,
+ Int32 &failedLocBufLen)
 {
   return ExpLOBinterfaceDataModCheck(lobGlob_,
                                      targetLocation_,
                                      hdfsHost_,
                                      hdfsPort_,
                                      myTdb().getModTSforDir(),
-                                     0);
+                                     0,
+                                     failedModTS,
+                                     failedLocBuf, failedLocBufLen);
 }
 
 
@@ -523,15 +527,15 @@ ExHdfsFastExtractTcb::ExHdfsFastExtractTcb(
 ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 {
 
-  if (lobGlob_ != NULL)
-  {
+  if (lobGlob_) {
+    ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
     lobGlob_ = NULL;
   }
 
   if (sequenceFileWriter_ != NULL) {
      NADELETE(sequenceFileWriter_, SequenceFileWriter, getHeap());
+     sequenceFileWriter_ = NULL;
   }
-
 } // ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
 
@@ -612,7 +616,7 @@ void ExHdfsFastExtractTcb::convertSQRowToString(ULng32 nullLen,
       targetData += nullLen;
       currBuffer_->bytesLeft_ -= nullLen;
     } else {
-      switch ((conv_case_index) sourceFieldsConvIndex_[i]) {
+      switch ((ConvInstruction) sourceFieldsConvIndex_[i]) {
       case CONV_ASCII_V_V:
       case CONV_ASCII_F_V:
       case CONV_UNICODE_V_V:
@@ -631,7 +635,7 @@ void ExHdfsFastExtractTcb::convertSQRowToString(ULng32 nullLen,
             targetData, attr2->getLength(), attr2->getDatatype(),
             attr2->getPrecision(), attr2->getScale(), (char*) &vcActualLen,
             sizeof(vcActualLen), 0, 0,             // diags may need to be added
-            (conv_case_index) sourceFieldsConvIndex_[i]);
+            (ConvInstruction) sourceFieldsConvIndex_[i]);
 
         if (err == ex_expr::EXPR_ERROR) {
           convError = TRUE;
@@ -720,7 +724,11 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       memset (targetLocation_, '\0', sizeof(targetLocation_));
       snprintf(targetLocation_,999, "%s", myTdb().getTargetName());
 
-      retcode = lobInterfaceDataModCheck();
+      Int64 failedModTS = -1;
+      Lng32 failedLocBufLen = 1000;
+      char failedLocBuf[failedLocBufLen];
+      retcode = 
+        lobInterfaceDataModCheck(failedModTS, failedLocBuf, failedLocBufLen);
       if (retcode < 0)
       {
         Lng32 cliError = 0;
@@ -742,9 +750,15 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       
       if (retcode == 1) // check failed
       {
+        char errStr[200];
+        str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+                    myTdb().getModTSforDir(), failedModTS);
+        
         ComDiagsArea * diagsArea = NULL;
         ExRaiseSqlError(getHeap(), &diagsArea, 
-                        (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                        (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
+                        NULL, NULL, NULL,
+                        errStr);
         pentry_down->setDiagsArea(diagsArea);
         pstate.step_ = EXTRACT_ERROR;
         break;
@@ -889,7 +903,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
         ex_conv_clause tempClause;
         int convIndex = 0;
         sourceFieldsConvIndex_[i] =
-            tempClause.find_case_index(
+            tempClause.findInstruction(
                 attr->getDatatype(),
                 0,
                 attr2->getDatatype(),

@@ -57,14 +57,12 @@ fi
 cd $UNTAR_DIR
 
 if [[ $CDH_5_3_HDP_2_2_SUPPORT == "N" ]]; then
-   if [[ $CDH_5_4_SUPPORT == "Y" ]] || [[ $CDH_5_5_SUPPORT == "Y" ]]; then
-      if [[ $CDH_VERSION == "5.4" ]]; then
-         hbase_trx_jar="hbase-trx-cdh5_4-*.jar"
-      else
-         hbase_trx_jar="hbase-trx-cdh5_5-*.jar"
-      fi
-   else
-      hbase_trx_jar="hbase-trx-*.jar" 
+   if [[ $cdhVersion == "5.4" ]]; then
+      hbase_trx_jar="hbase-trx-cdh5_4-*.jar"
+   elif [[ $cdhVersion == "5.5" ]]; then
+      hbase_trx_jar="hbase-trx-cdh5_5-*.jar"
+   elif [[ $cdhVersion == "5.7" ]]; then
+      hbase_trx_jar="hbase-trx-cdh5_7-*.jar" 
    fi 
 else
     hbase_trx_jar="hbase-trx-cdh5_3-*.jar"
@@ -207,20 +205,7 @@ rm $HOME/traf_hbase_config_temp 2> /dev/null
 
 # change the hdfs configuration using Cloudera's REST API
 curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
-'{ "roleTypeConfigs" :  [ {
-        "roleType" : "NAMENODE",
-        "items": [ {
-                "name" : "namenode_java_heapsize",
-        "value" : "1073741824"
-                } ]
-   }, {
-        "roleType" : "SECONDARYNAMENODE",
-        "items":[ {
-                "name" : "secondary_namenode_java_heapsize",
-        "value" : "1073741824"
-                } ]
-     } ],
-    "items": [ {
+'{ "items": [ {
              "name":"dfs_namenode_acls_enabled",
              "value":"true"
              }, {
@@ -272,8 +257,17 @@ curl -k -X PUT -H 'Content-Type:application/json' -u $ADMIN:$PASSWORD  --data \
                 "value" : "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"
 		}, {
 		"name" : "hbase_regionserver_lease_period", 
-		"value" : "600000"
+		"value" : "3600000"
 		}, {
+                "name" : "hbase_hregion_memstore_flush_size",
+                "value" : "536870912"
+                }, {
+                "name" : "hbase_hregion_memstore_block_multiplier",
+                "value" : "7"
+                }, {
+                "name" : "hbase_hstore_blockingStoreFiles",
+                "value" : "200"
+                }, {
 		"name" : "hbase_regionserver_config_safety_valve", 
 		"value" : "<property>\r\n   <name>hbase.hregion.impl</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>\r\n</property>\r\n <property>\r\n   <name>hbase.regionserver.region.split.policy</name>\r\n   <value>org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy</value>\r\n</property>\r\n  <property>\r\n   <name>hbase.snapshot.enabled</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.region.timeout</name>\r\n   <value>600000</value>\r\n</property>\r\n "
 		} ] 

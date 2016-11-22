@@ -1284,7 +1284,7 @@ NABoolean CacheData::backpatchParams
   CollIndex y=0;
   Int32 countP2 = formals_.entries();
   Int32 countS2 = fSels_.entries();
-  LIST(NAType*) hqcTypes;
+  LIST(NAType*) hqcTypes(STMTHEAP);
 
   for (CollIndex j = 0; j < (countP2+countS2); j ++)
   {
@@ -2625,33 +2625,38 @@ void QCache::free_entries_with_QI_keys( Int32 pNumKeys, SQL_QIKEY * pSiKeyEntry 
         SiKeyOpVal[1] = pSiKeyEntry[jj].operation[1];
         ComQIActionType siKeyType =
           ComQIActionTypeLiteralToEnum( SiKeyOpVal );
-        if ((siKeyType == COM_QI_OBJECT_REDEF) &&
-             rootTdb->getNumObjectUIDs() > 0)
+        if (siKeyType == COM_QI_OBJECT_REDEF)
         {
-          // this key passed in as a param is for object redefinition
-          // (DDL) so look for matching ObjectUIDs.
-          const Int64 *planObjectUIDs = rootTdb->
-            getUnpackedPtrToObjectUIDs(base);
-          for (Int32 ii = 0; ii < rootTdb->getNumObjectUIDs() &&
-                             !found; ii++)  
+          if (rootTdb->getNumObjectUIDs() > 0)
           {
-            if (planObjectUIDs[ii] ==  pSiKeyEntry[jj].ddlObjectUID)
-              found = TRUE;
+            // this key passed in as a param is for object redefinition
+            // (DDL) so look for matching ObjectUIDs.
+            const Int64 *planObjectUIDs = rootTdb->
+              getUnpackedPtrToObjectUIDs(base);
+            for (Int32 ii = 0; ii < rootTdb->getNumObjectUIDs() &&
+                               !found; ii++)  
+            {
+              if (planObjectUIDs[ii] ==  pSiKeyEntry[jj].ddlObjectUID)
+                found = TRUE;
+            }
           }
         }
-        else
+        else if (siKeyType != COM_QI_STATS_UPDATED)
         {
           // this key passed in as a param is for REVOKE so look
           // thru the plan's revoke keys.
-          for ( CollIndex ii = 0; ii < numPlanSecKeys &&
-                                  !found; ii ++ )
+          for ( CollIndex ii = 0; ii < numPlanSecKeys && !found; ii ++ )
           {
-            if ( ( (pSiKeyEntry[jj]).revokeKey.subject == 
-                      planSet[ii].getSubjectHashValue() ) &&
-                 ( (pSiKeyEntry[jj]).revokeKey.object ==
-                      planSet[ii].getObjectHashValue() ) &&
-                 ( siKeyType == planSet[ii].getSecurityKeyType() ) )
-            found = TRUE;
+            // If user ID's (subjects match)
+            if ( (pSiKeyEntry[jj]).revokeKey.subject ==
+                    planSet[ii].getSubjectHashValue() ) 
+            {
+               // Remove all plans for user
+               if ( ( pSiKeyEntry[jj]).revokeKey.object ==
+                       planSet[ii].getObjectHashValue() &&
+                    ( siKeyType == planSet[ii].getSecurityKeyType() ) )
+              found = TRUE;
+            }
           }
         }
      } // end loop thru the keys passed as params
@@ -3871,6 +3876,7 @@ HQCCacheKey::HQCCacheKey(const HQCParseKey& hkey, NAHeap* h)
 HQCParseKey::HQCParseKey(CompilerEnv* e, NAHeap* h)
                 : HQCCacheKey(e, h)
                 , params_(h)
+		, HQCDynParamMap_(h)
                 , isCacheable_(FALSE)
                 , isStringNormalized_(FALSE)
                 , nOfTokens_(0)

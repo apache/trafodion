@@ -30,9 +30,12 @@
 #include <iterator>
 #include "PrivMgrMD.h"
 #include "PrivMgrDefs.h"
+#include "TrafDDLdesc.h"
+#include "ComSecurityKey.h"
 
 class ComDiagsArea;
 class ComSecurityKey;
+struct TrafDesc;
 
 // *****************************************************************************
 // This file contains classes used by callers of privilege manager
@@ -128,7 +131,9 @@ class PrivMgrUserPrivs
 {
   public:
 
-  PrivMgrUserPrivs(const int32_t nbrCols = 0){};
+  PrivMgrUserPrivs()
+  : hasPublicPriv_(false)
+  {}
 
   static std::string convertPrivTypeToLiteral(PrivType which)
   {
@@ -387,16 +392,26 @@ class PrivMgrUserPrivs
   void setSchemaGrantableBitmap (PrivSchemaBitmap schemaGrantableBitmap)
      {schemaGrantableBitmap_ = schemaGrantableBitmap;}
 
+  bool getHasPublicPriv() { return hasPublicPriv_; }
+  void setHasPublicPriv(bool hasPublicPriv) {hasPublicPriv_ = hasPublicPriv;}
+  void initUserPrivs (PrivMgrDesc &privsOfTheGrantor);
+  bool initUserPrivs ( const std::vector<int32_t> &roleIDs,
+                       const TrafDesc *priv_desc,
+                       const int32_t userID,
+                       const int64_t objectUID,
+                       NASet<ComSecurityKey> & secKeySet);
 
  private:
-   std::bitset<NBR_OF_PRIVS> objectBitmap_;
-   std::bitset<NBR_OF_PRIVS> grantableBitmap_;
+   PrivObjectBitmap objectBitmap_;
+   PrivObjectBitmap grantableBitmap_;
    PrivColList colPrivsList_;
    PrivColList colGrantableList_;
    PrivSchemaBitmap schemaPrivBitmap_;
    PrivSchemaBitmap schemaGrantableBitmap_;
    PrivColumnBitmap emptyBitmap_;
+   bool hasPublicPriv_;
 };
+
 
 // *****************************************************************************
 // *
@@ -461,6 +476,11 @@ public:
    PrivStatus getPrivileges(
       const int64_t objectUID,
       ComObjectType objectType,
+      std::vector<PrivMgrDesc> &userPrivileges);
+     
+   PrivStatus getPrivileges(
+      const int64_t objectUID,
+      ComObjectType objectType,
       const int32_t granteeUID,
       PrivMgrUserPrivs &userPrivileges,
       std::vector <ComSecurityKey *>* secKeySet = NULL);
@@ -469,6 +489,10 @@ public:
       const int64_t objectUID,
       std::vector<ObjectPrivsRow> & objectPrivsRows);
       
+   PrivStatus getRoles(
+      const int32_t grantee,
+      std::vector<int32_t> &roleIDs);
+
    PrivStatus givePrivForObjects(
          const int32_t currentOwnerID,
          const int32_t newOwnerID,

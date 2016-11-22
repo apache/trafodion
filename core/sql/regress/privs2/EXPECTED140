@@ -9,7 +9,7 @@ LIST_COUNT         4294967295
 LOG FILE           LOG140
 MESSAGEFILE        /mnt/rmarton/gitws/incubator-trafodion/core/sqf/export/ ...
 MESSAGEFILE LANG   US English
-MESSAGEFILE VRSN   {2016-02-08 16:33 LINUX:EDEV05/rmarton} 
+MESSAGEFILE VRSN   {2016-09-23 23:03 LINUX:EDEV05/rmarton} 
 SQL CATALOG        TRAFODION
 SQL SCHEMA         T140_SHARED_VIEWS
 SQL USER CONNECTED user not connected
@@ -206,6 +206,7 @@ GAMES
 PLAYERS
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
+SB_PERSISTENT_SAMPLES
 TEAMS
 
 --- SQL operation complete.
@@ -318,6 +319,7 @@ TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GAMES                                     
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GAMES                                                                                                                                                               VI    SQL_USER1   SQL_USER2   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAMS                                                                                                                                                                 BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAM_INTERVALS                                                                                                                                                        BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
+TRAFODION.T140_SHARED_VIEWS.SB_PERSISTENT_SAMPLES                                                                                                                                                         BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                                                                       LB    -2          DB__ROOT    ---UG--               ---UG--             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    -2          DB__ROOT    ------E               ------E             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    DB__ROOT    -1          ------E               NONE                
@@ -327,10 +329,11 @@ TRAFODION.T140_USER1_PRIVATE.PLAYERS                                            
 TRAFODION.T140_USER1_PRIVATE.PLAYERS                                                                                                                                                                      BT    SQL_USER1   SQL_USER2   SI-----               SI-----             
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAMS                                                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAM_INTERVAL                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
+TRAFODION.T140_USER1_PRIVATE.SB_PERSISTENT_SAMPLES                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER1   SQL_USER2   SIDU-R-               SIDU-R-             
 
---- 16 row(s) selected.
+--- 18 row(s) selected.
 >>
 >>exit;
 
@@ -486,6 +489,7 @@ TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GAMES                                     
 TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GAMES                                                                                                                                                               VI    SQL_USER1   SQL_USER2   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAMS                                                                                                                                                                 BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAM_INTERVALS                                                                                                                                                        BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
+TRAFODION.T140_SHARED_VIEWS.SB_PERSISTENT_SAMPLES                                                                                                                                                         BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                                                                       LB    -2          DB__ROOT    ---UG--               ---UG--             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    -2          DB__ROOT    ------E               ------E             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    DB__ROOT    -1          ------E               NONE                
@@ -496,11 +500,12 @@ TRAFODION.T140_USER1_PRIVATE.PLAYERS                                            
 TRAFODION.T140_USER1_PRIVATE.PLAYERS                                                                                                                                                                      BT    SQL_USER2   SQL_USER3   SI-----               -I-----             
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAMS                                                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAM_INTERVAL                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
+TRAFODION.T140_USER1_PRIVATE.SB_PERSISTENT_SAMPLES                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER1   SQL_USER2   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER2   SQL_USER3   S-D----               S-D----             
 
---- 19 row(s) selected.
+--- 21 row(s) selected.
 >>
 >>exit;
 
@@ -611,6 +616,8 @@ Tom                                                 White Socks
 >>-- user3 can propagate select but no insert on table teams
 >>grant select, insert on teams to sql_user4;
 
+*** WARNING[1013] Not all privileges were granted.  You lack grant option for the INSERT privilege.
+
 --- SQL operation complete.
 >>
 >>-- user3 can propagate insert on table players
@@ -630,6 +637,7 @@ TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GAMES                                     
 TRAFODION.T140_SHARED_VIEWS.PLAYERS_ON_TEAM                                                                                                                                                               VI    -2          SQL_USER3   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAMS                                                                                                                                                                 BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAM_INTERVALS                                                                                                                                                        BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
+TRAFODION.T140_SHARED_VIEWS.SB_PERSISTENT_SAMPLES                                                                                                                                                         BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                                                                       LB    -2          DB__ROOT    ---UG--               ---UG--             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    -2          DB__ROOT    ------E               ------E             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    DB__ROOT    -1          ------E               NONE                
@@ -641,12 +649,13 @@ TRAFODION.T140_USER1_PRIVATE.PLAYERS                                            
 TRAFODION.T140_USER1_PRIVATE.PLAYERS                                                                                                                                                                      BT    SQL_USER3   SQL_USER4   -I-----               NONE                
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAMS                                                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAM_INTERVAL                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
+TRAFODION.T140_USER1_PRIVATE.SB_PERSISTENT_SAMPLES                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER1   SQL_USER2   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER2   SQL_USER3   S-D----               S-D----             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER3   SQL_USER4   S------               NONE                
 
---- 22 row(s) selected.
+--- 24 row(s) selected.
 >>
 >>exit;
 
@@ -736,6 +745,7 @@ TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GAMES                                     
 TRAFODION.T140_SHARED_VIEWS.PLAYERS_ON_TEAM                                                                                                                                                               VI    -2          SQL_USER3   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAMS                                                                                                                                                                 BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAM_INTERVALS                                                                                                                                                        BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
+TRAFODION.T140_SHARED_VIEWS.SB_PERSISTENT_SAMPLES                                                                                                                                                         BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                                                                       LB    -2          DB__ROOT    ---UG--               ---UG--             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    -2          DB__ROOT    ------E               ------E             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    DB__ROOT    -1          ------E               NONE                
@@ -748,12 +758,13 @@ TRAFODION.T140_USER1_PRIVATE.PLAYERS                                            
 TRAFODION.T140_USER1_PRIVATE.PLAYERS                                                                                                                                                                      BT    SQL_USER3   SQL_USER4   -I-----               NONE                
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAMS                                                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAM_INTERVAL                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
+TRAFODION.T140_USER1_PRIVATE.SB_PERSISTENT_SAMPLES                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER1   SQL_USER2   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER2   SQL_USER3   S-D----               S-D----             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER3   SQL_USER4   S------               NONE                
 
---- 23 row(s) selected.
+--- 25 row(s) selected.
 >>
 >>exit;
 
@@ -867,6 +878,7 @@ TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GAMES                                     
 TRAFODION.T140_SHARED_VIEWS.PLAYERS_ON_TEAM                                                                                                                                                               VI    -2          SQL_USER3   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAMS                                                                                                                                                                 BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAM_INTERVALS                                                                                                                                                        BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
+TRAFODION.T140_SHARED_VIEWS.SB_PERSISTENT_SAMPLES                                                                                                                                                         BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                                                                       LB    -2          DB__ROOT    ---UG--               ---UG--             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    -2          DB__ROOT    ------E               ------E             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    DB__ROOT    -1          ------E               NONE                
@@ -886,12 +898,13 @@ TRAFODION.T140_USER1_PRIVATE.PLAYERS                                            
 TRAFODION.T140_USER1_PRIVATE.PLAYERS                                                                                                                                                                      BT    SQL_USER3   SQL_USER4   -I-----               NONE                
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAMS                                                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAM_INTERVAL                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
+TRAFODION.T140_USER1_PRIVATE.SB_PERSISTENT_SAMPLES                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER1   SQL_USER2   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER2   SQL_USER3   S-D----               S-D----             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER3   SQL_USER4   S------               NONE                
 
---- 30 row(s) selected.
+--- 32 row(s) selected.
 >>
 >>-- user6 tries to grant select to user7
 >>grant select on games to sql_user7 by sql_user6;
@@ -943,6 +956,7 @@ TRAFODION.T140_SHARED_VIEWS.HOME_TEAM_GAMES                                     
 TRAFODION.T140_SHARED_VIEWS.PLAYERS_ON_TEAM                                                                                                                                                               VI    -2          SQL_USER3   S------               NONE                
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAMS                                                                                                                                                                 BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.SB_HISTOGRAM_INTERVALS                                                                                                                                                        BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
+TRAFODION.T140_SHARED_VIEWS.SB_PERSISTENT_SAMPLES                                                                                                                                                         BT    -2          DB__ROOT    SIDU-R-               SIDU-R-             
 TRAFODION.T140_SHARED_VIEWS.T140_L1                                                                                                                                                                       LB    -2          DB__ROOT    ---UG--               ---UG--             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    -2          DB__ROOT    ------E               ------E             
 TRAFODION.T140_SHARED_VIEWS.T140_TRANSLATEPRIVSBIT                                                                                                                                                        UR    DB__ROOT    -1          ------E               NONE                
@@ -960,11 +974,12 @@ TRAFODION.T140_USER1_PRIVATE.PLAYERS                                            
 TRAFODION.T140_USER1_PRIVATE.PLAYERS                                                                                                                                                                      BT    SQL_USER3   SQL_USER4   -I-----               NONE                
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAMS                                                                                                                                                                BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.SB_HISTOGRAM_INTERVAL                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
+TRAFODION.T140_USER1_PRIVATE.SB_PERSISTENT_SAMPLES                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    -2          SQL_USER1   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER1   SQL_USER2   SIDU-R-               SIDU-R-             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER2   SQL_USER3   S-D----               S-D----             
 TRAFODION.T140_USER1_PRIVATE.TEAMS                                                                                                                                                                        BT    SQL_USER3   SQL_USER4   S------               NONE                
 
---- 28 row(s) selected.
+--- 30 row(s) selected.
 >>
 >>log;

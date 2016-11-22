@@ -848,7 +848,8 @@ public:
 				   Context * context,
 				   RuleSubstituteMemory * & memory);
 
-   virtual NABoolean isImplementationRule () const { return TRUE; }
+  virtual NABoolean isImplementationRule () const { return TRUE; }
+  virtual NABoolean canMatchPattern (const RelExpr * pattern) const;
 };
 
 class PhysicalFastExtractRule : public Rule

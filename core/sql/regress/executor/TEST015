@@ -48,6 +48,7 @@ drop table ot;
 drop table odt cascade;
 drop table de cascade ;
 drop table dec1 cascade;
+drop table t015t16 cascade;
 
 --control query default POS 'OFF';
 
@@ -260,6 +261,11 @@ PRIMARY KEY (ID)
 ALTER TABLE OT 
 ADD CONSTRAINT UI1_OT UNIQUE (objectCode, version);
 
+create table t015t16 (a largeint  not null, b int not null, 
+c int, d int, e int, primary key(a,b)) ;
+create index t015t16i1 on t015t16(c) ;
+create unique index t015t16i2 on t015t16(d) ;
+
 prepare explainIt from
 select substring(operator,1,16) operator
 from table (explain(NULL,'XX')) t
@@ -402,6 +408,10 @@ merge into t015t3 using (select * from t015t4) as t015t4
   on t015t3.a = t015t4.a 
   when matched then update set (b,c) = (3,4)
   when not matched then insert values (t015t4.a,t015t4.b,t015t4.c);
+select * from t015t3;
+
+merge into t015t3 on a = 1
+  when matched then update set b = 20, c = 40;
 select * from t015t3;
 
 -- test fix to bugzilla 3405
@@ -861,5 +871,24 @@ prepare XX from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)
 VALUES  (1,  (select d.id from DEC1 d where d.codeValue = 'aa'),  3 ) ;
 execute explainIt;
 
+--upsert transformation to eff tree tests
+cqd traf_upsert_to_eff_tree 'ON';
+prepare xx from upsert into t015t16 values (1,2,3,4,5),(6,7,8,9,10);
+explain options 'f' xx;
+execute xx;
+select * from t015t16 order by a;
+prepare xx2 from upsert into t015t16 values (10,11,12,13,14);
+execute xx2;
+select * from t015t16 order by a;
+
+prepare xx2 from upsert into t015t16 values (1,2,30,40,50);
+execute xx2;
+select * from t015t16 order by a;
+
+prepare xx2 from upsert into t015t16 values (3,4,1,1,1),(6,7,80,90,100),(6,7,81,91,101);
+execute xx2;
+select * from t015t16 order by a;
+
+cqd traf_upsert_to_eff_tree 'OFF';
 log;
 

@@ -49,6 +49,7 @@
 class tupp_descriptor;
 class ex_queue;
 
+#define NA_DEBUG_TUPP 1
 //
 // tupp is simply a pointer to a tupp descriptor.
 // we want to control the copying of pointers to tupp descriptors
@@ -82,7 +83,8 @@ NA_EIDPROC
   inline char *	getDataPointer() const;
 NA_EIDPROC 
   inline void   setDataPointer(char *dp);
-  
+NA_EIDPROC 
+  inline tupp_descriptor* get_tupp_descriptor();  
 NA_EIDPROC 
   inline unsigned short getRefCount() const;
 NA_EIDPROC
@@ -95,10 +97,8 @@ NA_EIDPROC
 NA_EIDPROC
   NABoolean isAllocated(){return (tuppDescPointer ? TRUE : FALSE);};
 
-#ifdef _DEBUG
 NA_EIDPROC
   void display();
-#endif
 
 };
 
@@ -426,6 +426,10 @@ inline void tupp::setDataPointer(char *dp)
   tuppDescPointer->tupleAddress_ = dp;
 };
 
+inline tupp_descriptor* tupp::get_tupp_descriptor()
+{
+  return tuppDescPointer;
+}
 
 
 /////////////////////////////////////////////////

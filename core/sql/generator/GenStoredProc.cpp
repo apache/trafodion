@@ -84,9 +84,9 @@ short generateSPIOExpr(RelInternalSP * sp,
 			       ExpTupleDesc::LONG_FORMAT) == -1)
     return -1;
 
-  conv_case_index * cia = 
-    (conv_case_index *)space->allocateMemory(sp->procTypes().entries() * 
-					    sizeof(conv_case_index));
+  ConvInstruction * cia = 
+    (ConvInstruction *)space->allocateMemory(sp->procTypes().entries() * 
+					    sizeof(ConvInstruction));
 
   ULng32 totalLen = space->getAllocatedSpaceSize();
  
@@ -123,14 +123,14 @@ short generateSPIOExpr(RelInternalSP * sp,
     return -1;
 
   cia = 
-    (conv_case_index *)space->allocateMemory(sp->getTableDesc()->getColumnList().entries() * 
-					    sizeof(conv_case_index));
+    (ConvInstruction *)space->allocateMemory(sp->getTableDesc()->getColumnList().entries() * 
+					    sizeof(ConvInstruction));
 
   for (short i = 0; i < (short) tupleDesc->numAttrs(); i++)
     {
       ex_conv_clause tempClause;
 
-      cia[i] = tempClause.find_case_index(REC_BYTE_V_ASCII, 
+      cia[i] = tempClause.findInstruction(REC_BYTE_V_ASCII, 
 					  -1, // no op 
 					  tupleDesc->getAttr(i)->getDatatype(), 
 					  tupleDesc->getAttr(i)->getLength(),

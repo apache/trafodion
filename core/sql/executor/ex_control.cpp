@@ -182,7 +182,7 @@ short ExControlTcb::work()
   
 
   // Only a STATIC compile will actually affect Arkcmp's context.
-  CmpCompileInfo c(buf, usedlen, sqlTextCharSet, NULL, 0, NULL, 0, NULL, 0, 0, 0);
+  CmpCompileInfo c(buf, usedlen, sqlTextCharSet, NULL, 0, NULL, 0, 0, 0);
   size_t dataLen = c.getLength();
 #ifdef NA_CMPDLL
   NABoolean saveControl = FALSE;  // if save controls in exe ControlInfoTables

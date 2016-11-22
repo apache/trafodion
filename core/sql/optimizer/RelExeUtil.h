@@ -1051,7 +1051,8 @@ public:
          doParallelDeleteIfXn_(FALSE),
          offlineTable_(FALSE),
          doLabelPurgedata_(FALSE),
-         numLOBs_(0)
+         numLOBs_(0),
+         lobNumArray_(oHeap)
   {
   };
 
@@ -1106,9 +1107,8 @@ public:
                       CollHeap *oHeap = CmpCommon::statementHeap())
        : ExeUtilExpr(HIVE_TRUNCATE_, name, NULL, NULL, NULL, 
                      CharInfo::UnknownCharSet, oHeap),
-         pl_(pl)
-  {
-  };
+         pl_(pl), suppressModCheck_(FALSE), dropTableOnDealloc_(FALSE)
+  { }
 
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
 
@@ -1124,7 +1124,7 @@ public:
   // method to do code generation
   virtual short codeGen(Generator*);
   
-  virtual NABoolean aqrSupported() { return FALSE; }
+  virtual NABoolean aqrSupported() { return TRUE; }
 
   const NAString &getHiveTableLocation() const
   {
@@ -1143,6 +1143,12 @@ public:
 
   ConstStringList* &partnList() { return pl_; }
 
+  NABoolean getSuppressModCheck() const           { return suppressModCheck_; }
+  NABoolean getDropTableOnDealloc() const       { return dropTableOnDealloc_; }
+
+  void setSuppressModCheck(NABoolean v=TRUE)         { suppressModCheck_ = v; }
+  void setDropTableOnDealloc(NABoolean v=TRUE)     { dropTableOnDealloc_ = v; }
+
 private:
   NAString  hiveTableLocation_;
   NAString hiveHostName_;
@@ -1153,6 +1159,8 @@ private:
 
   // list of partitions to be truncated
   ConstStringList * pl_;
+  NABoolean suppressModCheck_;
+  NABoolean dropTableOnDealloc_;
 };
 
 class ExeUtilMaintainObject : public ExeUtilExpr
@@ -1751,15 +1759,24 @@ public:
                      NABoolean summaryOnly,
                      NABoolean isIndex,
                      NABoolean forDisplay,
-                     RelExpr * child = NULL,
+                     NABoolean clusterView,
+                     RelExpr * child,
                      CollHeap *oHeap = CmpCommon::statementHeap());
   
   ExeUtilRegionStats():
        summaryOnly_(FALSE),
        isIndex_(FALSE),
-       displayFormat_(FALSE)
+       displayFormat_(FALSE),
+       clusterView_(FALSE)
   {}
- 
+
+  ExeUtilRegionStats(NABoolean clusterView):
+       summaryOnly_(FALSE),
+       isIndex_(FALSE),
+       displayFormat_(FALSE),
+       clusterView_(clusterView)
+  {}
+
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
 
   // a method used for recomputing the outer references (external dataflow
@@ -1775,13 +1792,17 @@ public:
   virtual const char 	*getVirtualTableName();
   static const char * getVirtualTableNameStr() 
   { return "EXE_UTIL_REGION_STATS__";}
+
   virtual TrafDesc 	*createVirtualTableDesc();
+
+  static const char * getVirtualTableClusterViewNameStr() 
+  { return "EXE_UTIL_CLUSTER_STATS__"; }
 
   virtual NABoolean producesOutput() { return TRUE; }
 
   virtual int getArity() const { return ((child(0) == NULL) ? 0 : 1); }
 
- virtual NABoolean aqrSupported() { return TRUE; }
+  virtual NABoolean aqrSupported() { return TRUE; }
 
 private:
   ItemExpr * inputColList_;
@@ -1791,6 +1812,8 @@ private:
   NABoolean isIndex_;
 
   NABoolean displayFormat_;
+
+  NABoolean clusterView_;
 
   NABoolean errorInParams_;
 };

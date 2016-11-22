@@ -388,16 +388,6 @@ Lng32 ExpHbaseInterface_JNI::cleanup()
 }
 
 //----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::cleanupClient()
-{
-  if (client_)
-  {
-    client_->cleanup();
-  }
-  return HBASE_ACCESS_SUCCESS;
-}
-
-//----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::close()
 {
 //  HBaseClient_JNI::logIt("ExpHbaseInterface_JNI::close() called.");
@@ -430,7 +420,7 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 				    NAText * hbaseCreateOptionsArray,
                                     int numSplits, int keyLength,
                                     const char ** splitValues,
-                                    NABoolean noXn,
+                                    NABoolean useHbaseXn,
                                     NABoolean isMVCC)
 {
   if (client_ == NULL)
@@ -440,7 +430,7 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
   }
   
   Int64 transID;
-  if (noXn)
+  if (useHbaseXn)
     transID = 0;
   else
     transID = getTransactionIDFromContext();
@@ -458,7 +448,7 @@ Lng32 ExpHbaseInterface_JNI::create(HbaseStr &tblName,
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::alter(HbaseStr &tblName,
 				   NAText * hbaseCreateOptionsArray,
-                                   NABoolean noXn)
+                                   NABoolean useHbaseXn)
 {
   if (client_ == NULL)
   {
@@ -467,7 +457,7 @@ Lng32 ExpHbaseInterface_JNI::alter(HbaseStr &tblName,
   }
   
   Int64 transID = 0;
-  if (!noXn)
+  if (!useHbaseXn)
     transID = getTransactionIDFromContext();
  
   retCode_ = client_->alter(tblName.val, hbaseCreateOptionsArray, transID);
@@ -479,7 +469,7 @@ Lng32 ExpHbaseInterface_JNI::alter(HbaseStr &tblName,
 }
 
 //----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::registerTruncateOnAbort(HbaseStr &tblName, NABoolean noXn)
+Lng32 ExpHbaseInterface_JNI::registerTruncateOnAbort(HbaseStr &tblName, NABoolean useHbaseXn)
 {
   if (client_ == NULL)
   {
@@ -488,7 +478,7 @@ Lng32 ExpHbaseInterface_JNI::registerTruncateOnAbort(HbaseStr &tblName, NABoolea
   }
 
   Int64 transID;
-  if (noXn)
+  if (useHbaseXn)
     transID = 0;
   else
     transID = getTransactionIDFromContext();
@@ -503,7 +493,7 @@ Lng32 ExpHbaseInterface_JNI::registerTruncateOnAbort(HbaseStr &tblName, NABoolea
 
 
 //----------------------------------------------------------------------------
-Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async, NABoolean noXn)
+Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async, NABoolean useHbaseXn)
 {
   if (client_ == NULL)
   {
@@ -512,7 +502,7 @@ Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async, NABoolean 
   }
    
   Int64 transID;
-  if (noXn)
+  if (useHbaseXn)
     transID = 0;
   else
     transID = getTransactionIDFromContext();
@@ -528,7 +518,7 @@ Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async, NABoolean 
 
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::dropAll(const char * pattern, NABoolean async, 
-                                     NABoolean noXn)
+                                     NABoolean useHbaseXn)
 {
   if (client_ == NULL)
   {
@@ -537,7 +527,7 @@ Lng32 ExpHbaseInterface_JNI::dropAll(const char * pattern, NABoolean async,
   }
 
   Int64 transID;
-  if (noXn)
+  if (useHbaseXn)
     transID = 0;
   else
     transID = getTransactionIDFromContext();
@@ -618,7 +608,7 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
 				      const Text& stopRow, 
 				      const LIST(HbaseStr) & columns,
 				      const int64_t timestamp,
-				      const NABoolean noXn,
+				      const NABoolean useHbaseXn,
 				      const NABoolean cacheBlocks,
 				      const NABoolean smallScanner,
 				      const Lng32 numCacheRows,
@@ -643,7 +633,7 @@ Lng32 ExpHbaseInterface_JNI::scanOpen(
   }
 
   // if this scan is running under a transaction, pass that
-  // transid even if noXn is set. This will ensure that selected
+  // transid even if useHbaseXn is set. This will ensure that selected
   // rows are returned from the transaction cache instead of underlying
   // storage engine.
   Int64 transID;
@@ -722,19 +712,21 @@ Lng32 ExpHbaseInterface_JNI::deleteRow(
 	  HbaseStr tblName,
 	  HbaseStr row, 
 	  const LIST(HbaseStr) *columns,
-	  NABoolean noXn,
+	  NABoolean useHbaseXn,
+          NABoolean useRegionXn,
 	  const int64_t timestamp,
           NABoolean asyncOperation)
-
 {
   HTableClient_JNI *htc;
   Int64 transID;
 
-  if (noXn)
+  if (useHbaseXn)
     transID = 0;
   else
     transID = getTransactionIDFromContext();
-  retCode_ = client_->deleteRow((NAHeap *)heap_, tblName.val, hbs_, useTRex_, transID, row, columns, timestamp, asyncOperation, &htc);
+  retCode_ = client_->deleteRow((NAHeap *)heap_, tblName.val, hbs_, useTRex_, 
+                                transID, row, columns, timestamp, 
+                                asyncOperation, useRegionXn, &htc);
   if (retCode_ != HBC_OK) {
     return -HBASE_ACCESS_ERROR;
   }
@@ -750,14 +742,14 @@ Lng32 ExpHbaseInterface_JNI::deleteRows(
 	  HbaseStr tblName,
           short rowIDLen,
 	  HbaseStr rowIDs,
-	  NABoolean noXn,
+	  NABoolean useHbaseXn,
 	  const int64_t timestamp,
           NABoolean asyncOperation)
 {
   HTableClient_JNI *htc;
   Int64 transID;
 
-  if (noXn)
+  if (useHbaseXn)
     transID = 0;
   else
     transID = getTransactionIDFromContext();
@@ -778,19 +770,23 @@ Lng32 ExpHbaseInterface_JNI::checkAndDeleteRow(
 	  HbaseStr& rowID, 
 	  HbaseStr& columnToCheck,
 	  HbaseStr& columnValToCheck,
-	  NABoolean noXn,
+	  NABoolean useHbaseXn,
+          NABoolean useRegionXn,
 	  const int64_t timestamp)
 
 {
   HTableClient_JNI *htc;
   bool asyncOperation = false;
   Int64 transID;
-  if (noXn)
+  if (useHbaseXn)
     transID = 0;
   else
     transID = getTransactionIDFromContext();
-  retCode_ = client_->checkAndDeleteRow((NAHeap *)heap_, tblName.val, hbs_, useTRex_, transID, rowID, columnToCheck, 
-                     columnValToCheck,timestamp, asyncOperation, &htc);
+  retCode_ = client_->checkAndDeleteRow((NAHeap *)heap_, tblName.val, hbs_, 
+                                        useTRex_, transID, rowID, 
+                                        columnToCheck, 
+                                        columnValToCheck, timestamp, 
+                                        asyncOperation, useRegionXn, &htc);
   if (retCode_ == HBC_ERROR_CHECKANDDELETEROW_NOTFOUND) {
     return HBASE_ROW_NOTFOUND_ERROR;
   } else
@@ -809,7 +805,8 @@ Lng32 ExpHbaseInterface_JNI::insertRow(
 	  HbaseStr tblName,
 	  HbaseStr rowID, 
           HbaseStr row,
-	  NABoolean noXn,
+	  NABoolean useHbaseXn,
+          NABoolean useRegionXn,
 	  const int64_t timestamp,
           NABoolean asyncOperation)
 {
@@ -817,12 +814,13 @@ Lng32 ExpHbaseInterface_JNI::insertRow(
   Int64 transID; 
   NABoolean checkAndPut = FALSE;
 
-  if (noXn)
+  if (useHbaseXn)
     transID = 0;
   else
     transID = getTransactionIDFromContext();
   retCode_ = client_->insertRow((NAHeap *)heap_, tblName.val, hbs_,
-                      useTRex_, transID, rowID, row, timestamp, checkAndPut, asyncOperation, &htc);
+                                useTRex_, transID, rowID, row, timestamp, 
+                                checkAndPut, asyncOperation, useRegionXn, &htc);
   if (retCode_ != HBC_OK) {
     return -HBASE_ACCESS_ERROR;
   }
@@ -839,14 +837,14 @@ Lng32 ExpHbaseInterface_JNI::insertRows(
           short rowIDLen,
           HbaseStr rowIDs,
           HbaseStr rows,
-	  NABoolean noXn,
+	  NABoolean useHbaseXn,
 	  const int64_t timestamp,
           NABoolean asyncOperation)
 {
   HTableClient_JNI *htc;
   Int64 transID;
 
-  if (noXn)
+  if (useHbaseXn)
     transID = 0;
   else
     transID = getTransactionIDFromContext();
@@ -1171,7 +1169,8 @@ Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
 	  HbaseStr &tblName,
 	  HbaseStr &rowID, 
 	  HbaseStr &row,
-	  NABoolean noXn,
+	  NABoolean useHbaseXn,
+          NABoolean useRegionXn,
 	  const int64_t timestamp,
           NABoolean asyncOperation)
 {
@@ -1179,12 +1178,14 @@ Lng32 ExpHbaseInterface_JNI::checkAndInsertRow(
   Int64 transID; 
   NABoolean checkAndPut = TRUE;
 
-  if (noXn)
+  if (useHbaseXn)
     transID = 0; 
   else 
     transID = getTransactionIDFromContext();
   retCode_ = client_->insertRow((NAHeap *)heap_, tblName.val, hbs_,
-                      useTRex_, transID, rowID, row, timestamp, checkAndPut, asyncOperation, &htc);
+                                useTRex_, transID, rowID, row, timestamp, 
+                                checkAndPut, asyncOperation, useRegionXn,
+                                &htc);
 
   if (retCode_ == HBC_ERROR_INSERTROW_DUP_ROWID) {
      return HBASE_DUP_ROW_ERROR;
@@ -1206,7 +1207,8 @@ Lng32 ExpHbaseInterface_JNI::checkAndUpdateRow(
 	  HbaseStr &row,
 	  HbaseStr& columnToCheck,
 	  HbaseStr& colValToCheck,
-          NABoolean noXn,
+          NABoolean useHbaseXn,
+          NABoolean useRegionXn,
 	  const int64_t timestamp,
           NABoolean asyncOperation)
 
@@ -1214,12 +1216,15 @@ Lng32 ExpHbaseInterface_JNI::checkAndUpdateRow(
   HTableClient_JNI *htc;
   Int64 transID; 
 
-  if (noXn)
+  if (useHbaseXn)
     transID = 0; 
   else 
     transID = getTransactionIDFromContext();
   retCode_ = client_->checkAndUpdateRow((NAHeap *)heap_, tblName.val, hbs_,
-                      useTRex_, transID, rowID, row, columnToCheck, colValToCheck, timestamp, asyncOperation, &htc);
+                                        useTRex_, transID, rowID, row, 
+                                        columnToCheck, colValToCheck, 
+                                        timestamp, asyncOperation, useRegionXn,
+                                        &htc);
 
   if (retCode_  == HBC_ERROR_CHECKANDUPDATEROW_NOTFOUND) {
      return HBASE_ROW_NOTFOUND_ERROR;
@@ -1559,7 +1564,27 @@ NAArray<HbaseStr> * ExpHbaseInterface_JNI::getRegionStats(const HbaseStr& tblNam
   NAArray<HbaseStr>* regionStats = client_->getRegionStats((NAHeap *)heap_, tblName.val);
   if (regionStats == NULL)
     return NULL;
+
+  Int32 numEntries = client_->getRegionStatsEntries();
+
+  return regionStats;
+}
+
+NAArray<HbaseStr> * ExpHbaseInterface_JNI::getClusterStats(Int32 &numEntries)
+{
+  if (client_ == NULL)
+    {
+      if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+        return NULL;
+    }
   
+  NAArray<HbaseStr>* regionStats = 
+    client_->getRegionStats((NAHeap *)heap_, NULL);
+  if (regionStats == NULL)
+    return NULL;
+  
+  numEntries = client_->getRegionStatsEntries();
+
   return regionStats;
 }
 

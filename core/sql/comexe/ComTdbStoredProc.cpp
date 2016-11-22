@@ -141,7 +141,7 @@ ExSPInputOutput::ExSPInputOutput() : NAVersionedObject(-1)
 
 void ExSPInputOutput::initialize(ExpTupleDesc * tupleDesc,
 				 ULng32 totalLen,
-				 conv_case_index * caseIndexArray)
+				 ConvInstruction * caseIndexArray)
 {
   tupleDesc_ = tupleDesc;
   totalLen_ = totalLen;

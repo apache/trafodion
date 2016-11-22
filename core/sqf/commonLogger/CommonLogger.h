@@ -32,6 +32,8 @@
 #include <log4cxx/appender.h>
 #include <log4cxx/helpers/exception.h>
 
+extern bool gv_commonLoggerInitialized;
+
 using namespace log4cxx;
 using namespace log4cxx::helpers;
 

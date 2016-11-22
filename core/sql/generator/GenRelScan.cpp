@@ -366,8 +366,13 @@ short FileScan::genForTextAndSeq(Generator * generator,
   
   // determine host and port from dir name
   NAString dummy, hostName;
-  NABoolean result = ((HHDFSTableStats*)hTabStats)->splitLocation
-    (hTabStats->tableDir().data(), hostName, hdfsPort, dummy) ;
+  NABoolean result = TableDesc::splitHiveLocation(
+       hTabStats->tableDir().data(),
+       hostName,
+       hdfsPort,
+       dummy,
+       CmpCommon::diags(),
+       hTabStats->getPortOverride());
   GenAssert(result, "Invalid Hive directory name");
   hdfsHostName = 
         space->AllocateAndCopyToAlignedSpace(hostName, 0);
@@ -758,6 +763,8 @@ short FileScan::codeGenForHive(Generator * generator)
     
   }
 
+  setRetrievedCols(neededHdfsVals);
+
   ex_expr *executor_expr = 0;
   ex_expr *proj_expr = 0;
   ex_expr *convert_expr = 0;
@@ -1117,7 +1124,8 @@ short FileScan::codeGenForHive(Generator * generator)
   if (expirationTimestamp > 0)
     expirationTimestamp += 1000000 *
       (Int64) CmpCommon::getDefaultLong(HIVE_METADATA_REFRESH_INTERVAL);
-  generator->setPlanExpirationTimestamp(expirationTimestamp);
+  if (!getCommonSubExpr())
+    generator->setPlanExpirationTimestamp(expirationTimestamp);
 
   short type = (short)ComTdbHdfsScan::UNKNOWN_;
   if (hTabStats->isTextFile())
@@ -1174,7 +1182,6 @@ if (hTabStats->isOrcFile())
    {
      hdfsBufSize = (Int64)CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE);
      hdfsBufSize = hdfsBufSize * 1024; // convert to bytes
-     
      Int64 hdfsBufSizeTesting = (Int64)
        CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE_BYTES);
      if (hdfsBufSizeTesting)
@@ -1183,6 +1190,18 @@ if (hTabStats->isOrcFile())
 
   UInt32 rangeTailIOSize = (UInt32)
       CmpCommon::getDefaultNumeric(HDFS_IO_RANGE_TAIL);
+  if (rangeTailIOSize == 0) 
+    {
+      rangeTailIOSize = getTableDesc()->getNATable()->getRecordLength() +
+	(getTableDesc()->getNATable()->getClusteringIndex()->
+	 getAllColumns().entries())*2 + 16*1024;
+      // for each range we look ahead in the next range upto the maximum
+      // record length to find the end of record delimiter. The 16KB is 
+      // old default setting which worked fine till we started testing
+      // wide columns. We need to keep the 16 KB as additional fudge factor
+      // as recordlength in compiler is different from what it would be
+      // in a Hive text file
+    }
 
   char * tablename = 
     space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
@@ -1201,12 +1220,21 @@ if (hTabStats->isOrcFile())
   Int64 modTS = -1;
   Lng32 numOfPartLevels = -1;
   Queue * hdfsDirsToCheck = NULL;
-  if (CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON)
+
+  hdfsRootDir =
+    space->allocateAndCopyToAlignedSpace(hTabStats->tableDir().data(),
+                                         hTabStats->tableDir().length(),
+                                         0);
+
+  // Right now, timestamp info is not being generated correctly for
+  // partitioned files. Skip data mod check for them.
+  // Remove this check when partitioned info is set up correctly.
+
+  if ((CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
+      (CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) != DF_OFF) &&
+      (hTabStats->numOfPartCols() <= 0) &&
+      (!getCommonSubExpr()))
     {
-      hdfsRootDir =
-        space->allocateAndCopyToAlignedSpace(hTabStats->tableDir().data(),
-                                             hTabStats->tableDir().length(),
-                                             0);
       modTS = hTabStats->getModificationTS();
       numOfPartLevels = hTabStats->numOfPartCols();
 
@@ -1216,10 +1244,33 @@ if (hTabStats->isOrcFile())
       // At runtime, only these dirs will be checked for data modification.
       // ** TBD **
 
-      // Right now, timestamp info is not being generated correctly for
-      // partitioned files. Skip data mod check for them.
-      if (numOfPartLevels > 0)
-        hdfsRootDir = NULL;
+      if ((CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) == DF_ROOT) ||
+          (CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) == DF_ON))
+        {
+          char * tiName = new(generator->wHeap()) char[strlen(tablename)+1];
+          strcpy(tiName, tablename);
+          TrafSimilarityTableInfo * ti = 
+            new(generator->wHeap()) TrafSimilarityTableInfo(
+                 tiName,
+                 TRUE, // isHive
+                 (char*)hTabStats->tableDir().data(), // root dir
+                 hTabStats->getModificationTS(),
+                 numOfPartLevels,
+                 hdfsDirsToCheck,
+                 hdfsHostName, hdfsPort);
+          
+          generator->addTrafSimTableInfo(ti);
+        }
+      else
+        {
+          // sim check done at leaf operators.
+          hdfsRootDir =
+            space->allocateAndCopyToAlignedSpace(hTabStats->tableDir().data(),
+                                                 hTabStats->tableDir().length(),
+                                                 0);
+          modTS = hTabStats->getModificationTS();
+          numOfPartLevels = hTabStats->numOfPartCols();
+        }
     }
 
   // create hdfsscan_tdb
@@ -1274,6 +1325,9 @@ if (hTabStats->isOrcFile())
   hdfsscan_tdb->setDoSplitFileOpt(doSplitFileOpt);
 
   hdfsscan_tdb->setHiveScanMode(hiveScanMode);
+
+  if (getCommonSubExpr())
+    hdfsscan_tdb->setAssignRangesAtRuntime(TRUE);
 
   NABoolean hdfsPrefetch = FALSE;
   if (CmpCommon::getDefault(HDFS_PREFETCH) == DF_ON)
@@ -2506,7 +2560,14 @@ short HbaseAccess::codeGen(Generator * generator)
     {
       colArray = &getIndexDesc()->getAllColumns();
 
-      expGen->setPCodeMode(ex_expr::PCODE_NONE);
+      // current pcode does not handle added columns in aligned format rows.
+      // Generated pcode assumes that the row does not have missing columns.
+      // Missing columns can only be evaluated using regular clause expressions.
+      // Set this flag so both pcode and clauses are saved in generated expr.
+      // At runtime, if a row has missing/added columns, the clause expression 
+      // is evaluated. Otherwise it is evaluated using pcode.
+      // See ExHbaseAccess.cpp::missingValuesInAlignedFormatRow for details.
+      expGen->setSaveClausesInExpr(TRUE);
     }
 
   expGen->processValIdList(
@@ -2560,6 +2621,7 @@ short HbaseAccess::codeGen(Generator * generator)
       (hasAddedColumns))
     {
       expGen->setPCodeMode(pcm);
+      expGen->setSaveClausesInExpr(FALSE);
     }
 
   work_cri_desc->setTupleDescriptor(convertTuppIndex, convertTupleDesc);
@@ -2698,7 +2760,7 @@ short HbaseAccess::codeGen(Generator * generator)
     {
       listOfFetchedColNames = new(space) Queue(space);
 
-      NAList<NAString> sortedColList;
+      NAList<NAString> sortedColList(generator->wHeap());
       sortValues(retHbaseColRefSet_, sortedColList);
       
       for (Lng32 ij = 0; ij < sortedColList.entries(); ij++)

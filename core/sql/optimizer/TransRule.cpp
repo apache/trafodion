@@ -702,6 +702,18 @@ void CreateTransformationRules(RuleSet* set)
   set->enable(r->getNumber(),
                         set->getSecondPassNumber());
 
+  r = new(CmpCommon::contextHeap()) CommonSubExprRule
+   ("Eliminate any CommonSubExpr nodes left from the normalizer - for now",
+    new(CmpCommon::contextHeap())
+      CommonSubExprRef(new(CmpCommon::contextHeap())
+                         CutOp(0, CmpCommon::contextHeap()),
+                       "",
+                       CmpCommon::contextHeap()),
+    new(CmpCommon::contextHeap())
+      CutOp(0, CmpCommon::contextHeap()));
+  set->insert(r);
+  set->enable(r->getNumber());
+
    r = new (CmpCommon::contextHeap()) SampleScanRule
              ("Transform RelSample above a Scan",
               new (CmpCommon::contextHeap())
@@ -1757,7 +1769,7 @@ RelExpr * OrOptimizationRule::nextSubstitute(
 
   // a sparse array that can be used to look up which index we have selected
   // for predicates on a particular column (identified by column number)
-  ARRAY(CollIndex)    indexInfoByColNum;
+  ARRAY(CollIndex)    indexInfoByColNum(CmpCommon::statementHeap());
 
   // a sparse array that stores the associated disjuncts for each index,
   // arranged by index number in the scan node
@@ -3910,6 +3922,10 @@ NABoolean GroupByEliminationRule::topMatch(RelExpr * expr,
   if (grby->groupExpr().isEmpty())
     return FALSE;
 
+  // do not eliminate group by if rollup is being done
+  if (grby->isRollup())
+    return FALSE;
+
   return (grby->child(0).getGroupAttr()->isUnique(grby->groupExpr()));
 }
 
@@ -4013,10 +4029,15 @@ RelExpr * GroupByEliminationRule::nextSubstitute(RelExpr * before,
       // needed to rewrite VEGReferences into actual columns in the generator.
       // NOTE: this might cause some unnecessary expressions to be carried to
       // this node, but the cost for this shouldn't be too high.
-      ValueIdSet valuesForRewrite;
 
-      grby->getValuesRequiredForEvaluatingAggregate(valuesForRewrite);
-      mvi->addValuesForVEGRewrite(valuesForRewrite);
+      // Removed 10/10/16 as part of fix for TRAFODION-2127
+      // These values were not used in MapValueIds::preCodeGen.
+      // Could consider adding this if there are issue in preCodeGen.
+
+      // ValueIdSet valuesForRewrite;
+
+      // grby->getValuesRequiredForEvaluatingAggregate(valuesForRewrite);
+      // mvi->addValuesForVEGRewrite(valuesForRewrite);
 
       // If there are having predicates, put a filter below the mvi
       // node. Then map the having predicates and attach them to
@@ -4994,7 +5015,13 @@ NABoolean GroupByOnJoinRule::topMatch (RelExpr * expr,
 
   // Do not split the group by if it can be eliminated
   if (NOT bef->groupExpr().isEmpty())
-    return NOT (bef->child(0).getGroupAttr()->isUnique(bef->groupExpr()));
+    {
+      // do not eliminate group by if rollup is being done
+      if (bef->isRollup())
+        return FALSE;
+      
+      return NOT (bef->child(0).getGroupAttr()->isUnique(bef->groupExpr()));
+    }
 
   // the functional dependencies shown below won't hold if this is an
   // aggregate (ok, there are some sick examples where they do, but
@@ -5931,7 +5958,7 @@ RelExpr * ShortCutGroupByRule::nextSubstitute(RelExpr * before,
       // Genesis case: 10-010315-1747. Synthesizing MapValueId outputs correctly
       // MapValueIds should produce uppervalues as output, if required.
       // This also fixes genesis case 10-010320-1817.
-      ValueIdSet valuesForRewrite;
+      // ValueIdSet valuesForRewrite;
 
       mvi->setGroupAttr(bef->getGroupAttr());
 
@@ -5949,8 +5976,12 @@ RelExpr * ShortCutGroupByRule::nextSubstitute(RelExpr * before,
 
       result->getGroupAttr()->addCharacteristicOutputs(resultOutputs);
 
-      bef->getValuesRequiredForEvaluatingAggregate(valuesForRewrite);
-      mvi->addValuesForVEGRewrite(valuesForRewrite);
+      // Removed 10/10/16 as part of fix for TRAFODION-2127
+      // These values were not used in MapValueIds::preCodeGen.
+      // Could consider adding this if there are issue in preCodeGen.
+
+      // bef->getValuesRequiredForEvaluatingAggregate(valuesForRewrite);
+      // mvi->addValuesForVEGRewrite(valuesForRewrite);
 
       // perform synthesis on the new child node
       mvi->child(0)->synthLogProp();
@@ -5973,6 +6004,28 @@ NABoolean ShortCutGroupByRule::canMatchPattern(
 {
   // The ShortCutGroupByRule can generate potentially several different
   // expressions.  So, just return TRUE for now.
+  return TRUE;
+}
+
+
+// -----------------------------------------------------------------------
+// methods for class CommonSubExprRule
+// -----------------------------------------------------------------------
+
+CommonSubExprRule::~CommonSubExprRule() {}
+
+RelExpr * CommonSubExprRule::nextSubstitute(RelExpr * before,
+                                            Context * /*context*/,
+                                            RuleSubstituteMemory *& /*memory*/)
+{
+  // eliminate this node
+  return before->child(0);
+}
+
+NABoolean CommonSubExprRule::canMatchPattern(
+            const RelExpr * /*pattern*/) const
+{
+  // The CommonSubExprRule can potentially help with nearly any pattern
   return TRUE;
 }
 

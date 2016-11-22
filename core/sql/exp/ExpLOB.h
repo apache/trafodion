@@ -74,6 +74,7 @@ class LobLoadInfo
  public:
   LobLoadInfo(CollHeap * heap)
     : heap_(heap)
+    , lobEntryList_(heap)
   {};
   ~LobLoadInfo(){}
   void setLobLoadEntries(Lng32 num)
@@ -123,7 +124,8 @@ class LOBglobals : public NABasicObject {
  public:
  LOBglobals(CollHeap * heap) : heap_(heap),
     lobAccessGlobals_(NULL),
-    xnId_(-1)
+    xnId_(-1),
+    lobOperInProgressList_(heap)
       {
 	lobLoadInfo_ = new(heap) LobLoadInfo(heap);
       };

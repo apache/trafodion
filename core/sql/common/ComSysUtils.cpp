@@ -98,6 +98,11 @@ void copyInteger (void *destination, Int32 targetLength,
 {
   switch (targetLength)
     {
+    case SQL_TINY_SIZE: {
+      Int8 *target = (Int8 *)destination;
+      copyToInteger1 (target, sourceAddress, sourceLength);
+      break;
+    }
     case SQL_SMALL_SIZE: {
       short *target = (short *)destination;
       copyToInteger2 (target, sourceAddress, sourceLength);
@@ -118,6 +123,42 @@ void copyInteger (void *destination, Int32 targetLength,
     default :
       break;
     }
+
+}
+
+void copyToInteger1 (Int8 *destination, void *sourceAddress, Int32 sourceSize)
+{
+  switch (sourceSize)
+    {
+    case SQL_TINY_SIZE: {
+      Int8 *source = (Int8 *)sourceAddress;
+      *destination = *source;
+      break;
+    }
+
+    case SQL_SMALL_SIZE: {
+      short *source = (short *)sourceAddress;
+      *destination = (Int8)*source;
+      break;
+    }
+
+    case SQL_INT_SIZE: {
+      Lng32 *source = (Lng32 *)sourceAddress;
+      *destination = (Int8)*source;
+      break;
+    }
+
+    case SQL_LARGE_SIZE: {
+      Int64 *source = (Int64 *)sourceAddress;
+      *destination = (Int8)*source;
+      break;
+    }
+
+    default :
+      break;
+
+    }
+
 
 }
 
@@ -150,6 +191,7 @@ void copyToInteger2 (short *destination, void *sourceAddress, Int32 sourceSize)
 
 
 }
+
 
 void copyToInteger4 (Lng32 *destination, void *sourceAddress, Int32 sourceSize)
 {

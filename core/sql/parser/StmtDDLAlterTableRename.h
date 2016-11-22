@@ -65,10 +65,12 @@ public:
 
   // constructor
   StmtDDLAlterTableRename(const NAString & newName,
-                          ComBoolean isCascade)
+                          ComBoolean isCascade,
+                          ComBoolean skipViewCheck)
   : StmtDDLAlterTable(DDL_ALTER_TABLE_RENAME),
     newName_(newName, PARSERHEAP()),
-    isCascade_(isCascade)
+    isCascade_(isCascade),
+    skipViewCheck_(skipViewCheck)
   { }
 
   // virtual destructor
@@ -80,6 +82,7 @@ public:
   // accessors
   inline const NAString & getNewName() const;
   inline ComBoolean isCascade() const;
+  inline ComBoolean skipViewCheck() const;
 
   inline const NAString getNewNameAsAnsiString() const;
 
@@ -91,6 +94,7 @@ private:
 
   NAString   newName_;
   ComBoolean isCascade_;
+  ComBoolean skipViewCheck_;
 
 }; // class StmtDDLAlterTableRename
 
@@ -116,6 +120,13 @@ ComBoolean
 StmtDDLAlterTableRename::isCascade() const
 {
   return isCascade_;
+}
+
+inline
+ComBoolean
+StmtDDLAlterTableRename::skipViewCheck() const
+{
+  return skipViewCheck_;
 }
 
 #endif // STMTDDLALTERTABLERENAME_H

@@ -33,11 +33,23 @@
 #include <vector>
 #include "exp_function.h"
 #include "ComDistribution.h"
+#include "ComUser.h"
+#include "PrivMgrDefs.h"
 
+// ****************************************************************************
+// function: qiCheckForInvalidObject
+//
+// This function compares the list of query invalidate keys that changed to
+// the list of invalidation keys associated with the object.
+//
+// If the changed invalidation key matches one of the keys for the object,
+// return TRUE.  TRUE indicates that the object should be reloaded to pick up
+// DDL or privilege changes.
+// ****************************************************************************
 NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
                                    const SQL_QIKEY* invalidationKeys,
                                    const Int64 objectUID,
-                                   const ComSecurityKeySet objectKeys)
+                                   const ComSecurityKeySet & objectKeys)
 {
   NABoolean found = FALSE;
   ComQIActionType invalidationKeyType = COM_QI_INVALID_ACTIONTYPE;
@@ -47,31 +59,197 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
   for ( Int32 i = 0; i < numInvalidationKeys && !found; i++ )
   {
     invalidationKeyType = ComQIActionTypeLiteralToEnum( invalidationKeys[i].operation );
+    Int32 numObjectKeys = objectKeys.entries();
 
-    // if the object redef time changed and this is the object, remove entry
-    if (invalidationKeyType == COM_QI_OBJECT_REDEF &&
-        invalidationKeys[i].ddlObjectUID == objectUID)
-      found = TRUE;
-    else
+    switch (invalidationKeyType)
     {
-      // Scan the passed-in object keys to find any that match the 
-      // invalidation key 
-      Int32 numObjectKeys = objectKeys.entries();
-      for (Int32 j = 0; j < numObjectKeys && !found; j++ )
+      // Indicates that the DDL of the object has changed. 
+      case COM_QI_OBJECT_REDEF:
+      // Indicates that the histogram statistics of the object has changed.
+      case COM_QI_STATS_UPDATED:
       {
-        ComSecurityKey keyValue = objectKeys[j];
-        if ( ( invalidationKeys[i].revokeKey.subject ==
-                 keyValue.getSubjectHashValue() ) &&
-           ( invalidationKeys[i].revokeKey.object ==
-                 keyValue.getObjectHashValue() )  &&
-           ( invalidationKeyType ==
-                 keyValue.getSecurityKeyType() ) ) 
+        if (invalidationKeys[i].ddlObjectUID == objectUID)
           found = TRUE;
+        break;
       }
+
+      // Scan the passed-in object keys to find any that match the subject, 
+      // object, and key type. That is, the subject has the privilege
+      // (invalidation key type) on the object or a column of the object.
+      case COM_QI_OBJECT_SELECT:
+      case COM_QI_OBJECT_INSERT:
+      case COM_QI_OBJECT_DELETE:
+      case COM_QI_OBJECT_UPDATE:
+      case COM_QI_OBJECT_USAGE:
+      case COM_QI_OBJECT_REFERENCES: 
+      case COM_QI_OBJECT_EXECUTE:
+      case COM_QI_USER_GRANT_SPECIAL_ROLE:
+      case COM_QI_USER_GRANT_ROLE:
+      {
+        for (Int32 j = 0; j < numObjectKeys && !found; j++ )
+        {
+          ComSecurityKey keyValue = objectKeys[j];
+          if ( ( invalidationKeys[i].revokeKey.subject ==
+                   keyValue.getSubjectHashValue() ) &&
+               ( invalidationKeys[i].revokeKey.object ==
+                   keyValue.getObjectHashValue() )  &&
+               ( invalidationKeyType ==
+                   keyValue.getSecurityKeyType() ) )
+            found = TRUE;
+        }
+        break;
+      }
+
+      default:
+        found = TRUE;
+        break;
     }
   }
   return found;
 }
+
+// ****************************************************************************
+// Function that builds query invalidation keys for privileges. A separate
+// invalidation key is added for each granted DML privilege. 
+//
+// Types of keys available for privs:
+//   OBJECT_IS_SCHEMA - not supported until we support schema level privs
+//   OBJECT_IS_OBJECT - supported for granting privs to user
+//   OBJECT_IS_COLUMN - not supported at this time
+//   OBJECT_IS_SPECIAL_ROLE - key for PUBLIC authorization ID
+//   SUBJECT_IS_USER - support for granting roles to user
+//   SUBJECT_IS_ROLE - not supported until we grant roles to roles
+//
+// ****************************************************************************
+bool buildSecurityKeys( const int32_t granteeID,
+                        const int32_t roleID,
+                        const int64_t objectUID,
+                        const PrivMgrCoreDesc &privs,
+                        ComSecurityKeySet &secKeySet )
+{
+  if (privs.isNull())
+    return STATUS_GOOD;
+
+  // Only need to generate keys for DML privileges
+  for ( size_t i = FIRST_DML_PRIV; i <= LAST_DML_PRIV; i++ )
+  {
+    if ( privs.getPriv(PrivType(i)))
+    {
+      if (roleID != NA_UserIdDefault && ComUser::isPublicUserID(roleID))
+      {
+        ComSecurityKey key(granteeID, ComSecurityKey::OBJECT_IS_SPECIAL_ROLE);
+        if (key.isValid())
+          secKeySet.insert(key);
+        else
+          false;
+      }
+          
+      else if (roleID != NA_UserIdDefault && PrivMgr::isRoleID(roleID))
+      {
+        ComSecurityKey key (granteeID, roleID, ComSecurityKey::SUBJECT_IS_USER);
+        if (key.isValid())
+         secKeySet.insert(key);
+        else
+          false;
+      }
+
+      else
+      {
+        ComSecurityKey key (granteeID, objectUID, PrivType(i), 
+                            ComSecurityKey::OBJECT_IS_OBJECT);
+        if (key.isValid())
+         secKeySet.insert(key);
+        else
+          false;
+      }
+    }
+  }
+
+  return true;
+}
+
+// ****************************************************************************
+// Function that returns the types of invalidation to perform
+//   For DDL invalidation keys, always need to update caches
+//   For security invalidation keys
+//      update caches if key is for an object revoke from the current user
+//      reset list of roles if key is a revoke role from the current user
+//
+// returns:
+//    resetRoleList -- need to reset the list of roles for the current user
+//    updateCaches -- need to update cache entries related for the keys
+// ****************************************************************************
+void qiInvalidationType (const Int32 numInvalidationKeys,
+                         const SQL_QIKEY* invalidationKeys,
+                         const Int32 userID,
+                         bool &resetRoleList,
+                         bool &updateCaches)
+{
+  resetRoleList = false;
+  updateCaches = false;
+  ComQIActionType invalidationKeyType = COM_QI_INVALID_ACTIONTYPE;
+
+  // Have the ComSecurityKey constructor compute the hash value for the the User's ID.
+  // Note: The following code doesn't care about the object's hash value or the resulting 
+  // ComSecurityKey's ActionType....we just need the hash value for the User's ID.
+  // Perhaps a new constructor would be good (also done in RelRoot::checkPrivileges)
+  int64_t objectUID = 12345;
+  ComSecurityKey userKey( userID, objectUID
+                         , SELECT_PRIV
+                         , ComSecurityKey::OBJECT_IS_OBJECT
+                        );
+  uint32_t userHashValue = userKey.getSubjectHashValue();
+
+  for ( Int32 i = 0; i < numInvalidationKeys && !resetRoleList && !updateCaches; i++ )
+  {
+    invalidationKeyType = ComQIActionTypeLiteralToEnum( invalidationKeys[i].operation );
+    switch (invalidationKeyType)
+    {
+      // Object changed, need to update caches
+      case COM_QI_OBJECT_REDEF:
+      case COM_QI_STATS_UPDATED:
+        updateCaches = true;
+        break;
+
+      // Privilege changed on an object, need to update caches if
+      // any QI keys are associated with the current user
+      case COM_QI_OBJECT_SELECT:
+      case COM_QI_OBJECT_INSERT:
+      case COM_QI_OBJECT_DELETE:
+      case COM_QI_OBJECT_UPDATE:
+      case COM_QI_OBJECT_USAGE:
+      case COM_QI_OBJECT_REFERENCES:
+      case COM_QI_OBJECT_EXECUTE:
+        if (invalidationKeys[i].revokeKey.subject == userHashValue)
+          updateCaches = true;
+        break;
+
+      // For public user (SPECIAL_ROLE), the subject is a special hash
+      case COM_QI_USER_GRANT_SPECIAL_ROLE:
+        if (invalidationKeys[i].revokeKey.subject == ComSecurityKey::SPECIAL_SUBJECT_HASH)
+          updateCaches = true;
+        break;
+
+      // A revoke role from a user was performed.  Need to reset role list
+      // if QI key associated with the current user and remove any plans
+      // that include the role key
+      case COM_QI_USER_GRANT_ROLE:
+        if (invalidationKeys[i].revokeKey.subject == userHashValue)
+        {
+          resetRoleList = true;
+          updateCaches = true;
+        }
+        break;
+
+      // unknown key type, search and update cache (should not happen)
+      default:
+        resetRoleList = true;
+        updateCaches = true;
+        break;
+      }
+  }
+}
+
 
 // *****************************************************************************
 //    ComSecurityKey methods
@@ -141,7 +319,7 @@ ComSecurityKey::ComSecurityKey(
     if (typeOfObject == OBJECT_IS_SPECIAL_ROLE)
     {
       actionType_ = COM_QI_USER_GRANT_SPECIAL_ROLE;
-      subjectHash_ = generateHash(subjectUserID);
+      subjectHash_ = SPECIAL_SUBJECT_HASH;
       objectHash_ = SPECIAL_OBJECT_HASH;
     }
   }
@@ -282,7 +460,7 @@ void ComSecurityKey::getSecurityKeyTypeAsLit (std::string &actionString) const
       actionString = COM_QI_SCHEMA_EXECUTE_LIT;
       break;
     case COM_QI_USER_GRANT_SPECIAL_ROLE:
-      actionString = COM_QI_USER_GRANT_SPECIAL_ROLE;
+      actionString = COM_QI_USER_GRANT_SPECIAL_ROLE_LIT;
       break;
     default:
       actionString = COM_QI_INVALID_ACTIONTYPE_LIT;

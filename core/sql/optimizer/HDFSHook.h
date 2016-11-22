@@ -288,10 +288,15 @@ public:
   // checking for diagnostics is optional.
   NABoolean validateAndRefresh(Int64 expirationTimestamp=-1, NABoolean refresh=TRUE);
 
-  NABoolean splitLocation(const char *tableLocation,
-                          NAString &hdfsHost,
-                          Int32 &hdfsPort,
-                          NAString &tableDir);
+  // Split a location into its parts.
+  // If you want to set a ComDiagsArea for errors, use
+  // TableDesc::splitHiveLocation
+  static NABoolean splitLocation(const char *tableLocation,
+                                 NAString &hdfsHost,
+                                 Int32 &hdfsPort,
+                                 NAString &tableDir,
+                                 HHDFSDiags &diags,
+                                 int hdfsPortOverride);
 
   void processDirectory(const NAString &dir, Int32 numOfBuckets, 
                         NABoolean doEstimation, char recordTerminator);

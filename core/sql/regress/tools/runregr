@@ -37,6 +37,7 @@ concurrent_execution=0
 exclusive_execution=0
 log_qualifier=
 diffs=0
+failed=0
 
 # Parse command line options.  Options must appear on the command line before
 # test names.
@@ -56,12 +57,17 @@ while [ "$#" -gt 0 ]; do
     -sb)
       sqlmxtbls=1
       table_format='sb'
-        export SEABASE_REGRESS=2
+      export SEABASE_REGRESS=2
       shift
       ;;
 
     -diff)
       diffs=1
+      shift
+      ;;
+
+    -failed)
+      failed=1
       shift
       ;;
 
@@ -240,7 +246,27 @@ if [ ! -d "$FilteredLogs/expfiles" ]; then
 fi
 echo "Using the following directory for filtered logs:   $FilteredLogs"
 
-if [ "$diffs" -eq 1 ]; then
+if [ "$failed" -eq 1 ]; then
+  rm -f $REGRRUNDIR/runregr-failed.log 2>$NULL
+  echo "Command executed: $tool -diff $* "
+  $tool -diff $* > $REGRRUNDIR/runregr-failed.log
+  ff=`cat $REGRRUNDIR/runregr-failed.log | grep ' ### FAIL ' | cut -c 22-28 ` 2>$NULL
+
+  if [ "$ff" == "" ]; then
+     echo "No failed tests, nothing to execute."
+     rm -f $REGRRUNDIR/runregr-failed.log 2>$NULL
+     echo "No failed tests." > $REGRRUNDIR/runregr-failed.log
+  else
+    failedTests=
+    for i in $ff; do
+      failedTests="$failedTests $i"
+    done
+    echo "Command executed: $tool $failedTests"
+    $tool $failedTests
+    rm -f $REGRRUNDIR/runregr-failed.log 2>$NULL
+    cp $rgrlog $REGRRUNDIR/runregr-failed.log 2>$NULL
+  fi
+elif [ "$diffs" -eq 1 ]; then
   echo "Command executed: $tool -diff $*"
   $tool -diff $*
 else

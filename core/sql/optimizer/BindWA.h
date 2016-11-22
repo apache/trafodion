@@ -84,6 +84,7 @@ struct TrafDesc;
 class NARoutine;
 class HbaseColUsageInfo;
 class ExeUtilHbaseCoProcAggr;
+class CommonSubExprRef;
 
 // ***********************************************************************
 // BindContext
@@ -135,6 +136,7 @@ public:
   , inRowsSince_                (FALSE)
   , inOtherSequenceFunction_    (FALSE)
   , inGroupByOrdinal_           (FALSE)
+  , inGroupByExpr_              (FALSE)
   , inCreateAfterTrigger_       (FALSE)
   , inCheckOption_              (FALSE)
   , inCreateView_               (FALSE)
@@ -214,6 +216,7 @@ public:
   NABoolean        &inRowsSince()             { return inRowsSince_; }
   NABoolean        &inOtherSequenceFunction() { return inOtherSequenceFunction_; }
   NABoolean        &inGroupByOrdinal() { return inGroupByOrdinal_; }
+  NABoolean        &inGroupByExpr() { return inGroupByExpr_; }
   NABoolean        &inQualifyClause() { return inQualifyClause_; }
   NABoolean        &inTDFunction() { return inTDFunction_; }
   NABoolean        &inUDFunction() { return inUDFunction_; }
@@ -435,6 +438,9 @@ private:
   // belong to group by list. Check done in ColReference::bindNode.
   // Set when a group by element is an ordinal.
   NABoolean inGroupByOrdinal_;
+
+  // Set when a group by element is an expr.
+  NABoolean inGroupByExpr_;
 
   // --------------------------------------------------------------------
   // A pointer a the trigger object.
@@ -679,6 +685,9 @@ public:
   // --------------------------------------------------------------------
   RelExpr *&getSequenceNode() { return sequenceNode_; };
 
+  const ValueIdMap &getNcToOldMap() { return ncToOldMap_;}
+  void setNCToOldMap(ValueIdMap vmap) {ncToOldMap_ = vmap; }
+
   ValueIdList getOlapPartition() const {return OlapPartition_; };
 
   ValueIdList getOlapOrder() const {return OlapOrder_; };
@@ -780,7 +789,7 @@ private:
   // node, an error is issued.
   //
   RelExpr *sequenceNode_;
-
+  ValueIdMap ncToOldMap_;
   // --------------------------------------------------------------------
   // Context info for this scope.
   // --------------------------------------------------------------------
@@ -1416,7 +1425,7 @@ public:
   NABoolean inViewDefinition() const;
   NABoolean inMVDefinition() const;
   NABoolean inCheckConstraintDefinition() const;
-
+ 
   //----------------------------------------------------------------------
   // Get the NARoutine associated with this routine name
   //----------------------------------------------------------------------
@@ -1562,6 +1571,9 @@ public:
     return r;
   }
 
+  CommonSubExprRef *inCSE() const       { return currCSE_; }
+  void setInCSE(CommonSubExprRef *cte)  { currCSE_ = cte; }
+  
   NABoolean inCTAS() const		{ return inCTAS_; }
   void setInCTAS(NABoolean t)
   {
@@ -1881,6 +1893,9 @@ private:
   ValueIdMap updateToScanValueIds_;
   // QSTUFF
 
+  // set if we are currently under a CommonSubExprRef node
+  CommonSubExprRef *currCSE_;
+
   NABoolean  inCTAS_;
 
   // names of referenced views. used by query caching to guard against false
@@ -1993,7 +2008,7 @@ class HbaseColUsageInfo : public NABasicObject
   
   void insert(QualifiedName *tableName)
   {
-    NASet<NAString> * v = new(heap_) NASet<NAString>;
+    NASet<NAString> * v = new(heap_) NASet<NAString>(heap_);
     usageInfo_->insert(tableName, v);
   }
  

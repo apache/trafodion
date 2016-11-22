@@ -980,13 +980,6 @@ enum DefaultConstants
   CACHE_HISTOGRAMS_TRACE_OUTPUT_FILE,
 
   //------------------------------------------------------------------------
-  // Following default is used to skip reading fetchStatsTime
-  // -----------------------------------------------------------------------
-
-  CACHE_HISTOGRAMS_REFRESH_INTERVAL,
-  HIST_NO_STATS_REFRESH_INTERVAL,
-
-  //------------------------------------------------------------------------
   //NATable Cache Size in MBs
   //------------------------------------------------------------------------
   METADATA_CACHE_SIZE,
@@ -1300,12 +1293,8 @@ enum DefaultConstants
   // For Scratch files
   // -------------------------------------------------------------------------
 
-  SCRATCH_DISKS,
-  SCRATCH_DISKS_EXCLUDED,
-  SCRATCH_DISKS_PREFERRED,
-  SCRATCH_DRIVE_LETTERS,
-  SCRATCH_DRIVE_LETTERS_EXCLUDED,
-  SCRATCH_DRIVE_LETTERS_PREFERRED,
+  SCRATCH_DIRS,
+  
 
   // -------------------------------------------------------------------------
   // For SortGroupBy.
@@ -1418,7 +1407,6 @@ enum DefaultConstants
   //How many blocks do we read ahead for a sequential scan of a file.
   READ_AHEAD_MAX_BLOCKS,
 
-  SIMILARITY_CHECK,
   SYNCDEPTH,
   TABLELOCK,
   TIMEOUT,
@@ -1443,10 +1431,6 @@ enum DefaultConstants
   RECOMPILATION_WARNINGS,
 
   SHOWCONTROL_SHOW_ALL,
-  MP_CATALOG,
-  MP_SUBVOLUME,
-  MP_SYSTEM,
-  MP_VOLUME,
   NAMETYPE,
 
 
@@ -1684,6 +1668,7 @@ enum DefaultConstants
   DO_RUNTIME_SPACE_OPTIMIZATION,
 
   GEN_SORT_MAX_NUM_BUFFERS,
+  GEN_SORT_TOPN,
 
   SORT_ALGO,            // Sort algorithm choice
   // Not used anymore. OVERRIDE_SYSKEY takes its place.
@@ -1701,7 +1686,7 @@ enum DefaultConstants
   // -------------------------------------------------------------------------
   HIST_JOIN_CARD_LOWBOUND,
 
-  // allow any/first N in qubqueries.
+  // allow any/first N in subqueries.
   ALLOW_FIRSTN_IN_SUBQUERIES,
 
   // ------------------------------------------------------------------------
@@ -1886,8 +1871,6 @@ enum DefaultConstants
   QUERY_CACHE_TABLENAME,
 
   QUERY_CACHE_RUNTIME,
-
-  GROUP_BY_USING_ORDINAL,
 
   SKIP_UNAVAILABLE_PARTITION,
 
@@ -2519,6 +2502,10 @@ enum DefaultConstants
   // Histogram boundary value maximum length.
   USTAT_MAX_CHAR_BOUNDARY_LEN,
 
+  // When update statistics computes UECs on character columns or
+  // creates a sample table, it limits them to this size in bytes.
+  USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES,
+
   // Maximum number of MC histograms to create for any one MC key.
   USTAT_NUM_MC_GROUPS_FOR_KEYS,
 
@@ -2549,10 +2536,6 @@ enum DefaultConstants
 
   // caller is nvci (scripts) process
   NVCI_PROCESS,
-
-  // if set to ON, turns on a subset of the 'special' features which are
-  // enabled using mode_special_1..
-  MODE_SPECIAL_2,
 
   // if this is set, then find a suitable key among all the columns of
   // a volatile table.
@@ -2596,13 +2579,11 @@ enum DefaultConstants
 
 
  PARTIAL_SORT_ADJST_FCTR,
-
   SCRATCH_MAX_OPENS_HASH,
   SCRATCH_MAX_OPENS_SORT,
-
+  SCRATCH_DISK_LOGGING,
   SCRATCH_MGMT_OPTION,
   SCRATCH_PREALLOCATE_EXTENTS,
-  SCRATCH_DISK_LOGGING,
   SCRATCH_IO_BLOCKSIZE_SORT,
   SCRATCH_IO_VECTOR_SIZE_HASH,
   SCRATCH_IO_VECTOR_SIZE_SORT,
@@ -2981,8 +2962,6 @@ enum DefaultConstants
   // PUBLISH/UNPUBLISH command
   PUBLISHING_ROLES,
 
-  // enable special features
-  MODE_SPECIAL_3,
 
   // default used to test catman features
   CAT_TEST_BOOL,
@@ -3337,8 +3316,6 @@ enum DefaultConstants
 
   USTAT_IUS_NO_BLOCK,
 
-  USTAT_IUS_SIMPLE_SYNTAX,
-
   // Collect reorg stats. Default is ON and stats are collected. 
   // This cqd is added in case
   // one need to go back to the old behavior of no reorg stats, or if a problem
@@ -3605,6 +3582,10 @@ enum DefaultConstants
   // It is run using underlying hbase single row transaction consistency.
   TRAF_NO_DTM_XN,
 
+  // if set to ON, then query is run as part of localized region transaction.
+  // No external transaction is started to run it.
+  TRAF_USE_REGION_XN,
+
   // HBASE_HASH2_PARTITIONING (ON - OFF for now):
   // - OFF: Treat salted table like a non-salted table
   // - ON: Always use HASH2 for salted table
@@ -3700,9 +3681,6 @@ enum DefaultConstants
   HBASE_BLOCK_SIZE,
   // hbase table index level, when zero, index level will be read from Hfile 
   HBASE_INDEX_LEVEL,
-
-  // enable special features for certain vendors.
-  MODE_SPECIAL_5,
 
   // enable self referencing foreign key constraints
   TRAF_ALLOW_SELF_REF_CONSTR,
@@ -3856,6 +3834,9 @@ enum DefaultConstants
   // if FALSE, create unsigned literal for +ve and signed literal for -ve nums.
   TRAF_CREATE_SIGNED_NUMERIC_LITERAL,
 
+
+  TRAF_UPSERT_TO_EFF_TREE,
+
   // if TRUE, create tinyint literal insteadl of smallint.
   TRAF_CREATE_TINYINT_LITERAL,
 
@@ -3864,6 +3845,31 @@ enum DefaultConstants
 
   // if ON, read object descriptor from metadata, if it was stored.
   TRAF_READ_OBJECT_DESC,
+
+  ALLOW_INCOMPATIBLE_OPERATIONS, 
+
+  // if ON: expr and renamed cols allowed in groupby/orderby expr.
+  GROUP_OR_ORDER_BY_EXPR,
+
+  // allow ORDER BY in subqueries.
+  ALLOW_ORDER_BY_IN_SUBQUERIES,
+
+  // if the schema specified in a create stmt doesn't exist, automatically
+  // create it.
+  TRAF_AUTO_CREATE_SCHEMA,
+
+  // controls if sim check is to be done and where (root or leaf)
+  TRAF_SIMILARITY_CHECK,
+
+  // Common subexpressions in RelExpr trees
+  CSE_DEBUG_WARNINGS,
+  CSE_FOR_WITH,
+  CSE_USE_TEMP,
+  CSE_HIVE_TEMP_TABLE,
+  CSE_PRINT_DEBUG_INFO,
+  CSE_CLEANUP_HIVE_TABLES,
+  CSE_CACHE_TEMP_QUERIES,
+
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
@@ -3947,6 +3953,7 @@ enum DefaultToken {
  DF_KEYINDEXES,
  DF_LASTROW,
  DF_LATEST,
+ DF_LEAF,
  DF_LOADNODUP,
  DF_LOCAL,
  DF_LOCAL_NODE,
@@ -3982,6 +3989,7 @@ enum DefaultToken {
  DF_REPSEL,
  DF_RESOURCES,
  DF_RETURN,
+ DF_ROOT,
  DF_SAMPLE,
  DF_SERIALIZABLE,
  DF_SHORTANSI,

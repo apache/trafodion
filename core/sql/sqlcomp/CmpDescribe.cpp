@@ -200,6 +200,7 @@ short CmpDescribeSeabaseTable (
                              NABoolean withPartns = FALSE,
                              NABoolean withoutSalt = FALSE,
                              NABoolean withoutDivisioning = FALSE,
+                             UInt32 columnLengthLimit = UINT_MAX,
                              NABoolean noTrailingSemi = FALSE,
 
                              // used to add,rem,alter column definition from col list.
@@ -1784,6 +1785,9 @@ inline static NABoolean identMatches2(const NAString &id, const char *c1, const 
 
 #define IDENTMATCHES(c1,c2)     identMatches2(ident, c1, c2, exactMatch)
 
+// defined in generator/GenExplain.cpp
+NABoolean displayDuringRegressRun(DefaultConstants attr);
+
 // these CQDs are used for internal purpose and are set/sent by SQL.
 // Do not display them.
 static NABoolean isInternalCQD(DefaultConstants attr)
@@ -1798,7 +1802,8 @@ static NABoolean isInternalCQD(DefaultConstants attr)
     return TRUE;
   
   if ((getenv("SQLMX_REGRESS")) &&
-      (attr == TRAF_ALIGNED_ROW_FORMAT))
+      ((NOT displayDuringRegressRun(attr)) ||
+       (attr == TRAF_ALIGNED_ROW_FORMAT)))
     return TRUE;
   
   return FALSE;
@@ -2107,9 +2112,6 @@ static short CmpDescribeShape(
   outbuflen = space.getAllocatedSpaceSize();
   outbuf = new (heap) char[outbuflen];
   space.makeContiguous(outbuf, outbuflen);
-#ifdef _DEBUG
-  printf ("%s\n", outbuf );
-#endif
   return 0;
 }
 
@@ -2283,9 +2285,9 @@ short CmpDescribeHiveTable (
       
       NAString nas;
       if (type == 1)
-        ((NAType*)nat)->getMyTypeAsText(&nas, FALSE);
+        nat->getMyTypeAsText(&nas, FALSE);
       else
-        ((NAType*)nat)->getMyTypeAsHiveText(&nas);
+        nat->getMyTypeAsHiveText(&nas);
       
       sprintf(&buf[strlen(buf)], "%s", nas.data());
 
@@ -2352,7 +2354,7 @@ short CmpDescribeHiveTable (
                                          type,
                                          dummyBuf, dummyLen, heap, 
                                          NULL, 
-                                         TRUE, FALSE, FALSE, TRUE,
+                                         TRUE, FALSE, FALSE, UINT_MAX, TRUE,
                                          NULL, 0, NULL, NULL, &space);
 
       outputShortLine(space, ";");
@@ -2378,7 +2380,9 @@ short cmpDisplayColumn(const NAColumn *nac,
                        NABoolean namesOnly,
                        NABoolean &identityCol,
                        NABoolean isExternalTable,
-                       NABoolean isAlignedRowFormat)
+                       NABoolean isAlignedRowFormat,
+                       UInt32 columnLengthLimit,
+                       NAList<const NAColumn *> * truncatedColumnList)
 {
   Space lSpace;
   
@@ -2441,7 +2445,27 @@ short cmpDisplayColumn(const NAColumn *nac,
   const NAType * nat = (inNAT ? inNAT : nac->getType());
   
   NAString nas;
-  ((NAType*)nat)->getMyTypeAsText(&nas, FALSE);
+  nat->getMyTypeAsText(&nas, FALSE);
+
+  // if it is a character type and it is longer than the length
+  // limit in bytes, then shorten the target type
+  
+  if ((nat->getTypeQualifier() == NA_CHARACTER_TYPE) &&
+      (!nat->isLob()) &&
+      (columnLengthLimit < UINT_MAX) &&
+      (truncatedColumnList))
+    {
+      const CharType * natc = (const CharType *)nat;
+      if (natc->getDataStorageSize() > columnLengthLimit)
+        {
+          CharType * newType = (CharType *)natc->newCopy(NULL);
+          newType->setDataStorageSize(columnLengthLimit);
+          nas.clear();
+          newType->getMyTypeAsText(&nas, FALSE);
+          delete newType;
+          truncatedColumnList->insert(nac);
+        }
+    }
   
   NAString attrStr;
   
@@ -2551,11 +2575,13 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
                         NABoolean namesOnly,
                         Lng32 &identityColPos,
                         NABoolean isExternalTable,
-			NABoolean isAlignedRowFormat,
+                        NABoolean isAlignedRowFormat,
                         char * inColName = NULL,
                         short ada = 0, // 0,add. 1,drop. 2,alter
                         const NAColumn * nacol = NULL,
-                        const NAType * natype = NULL)
+                        const NAType * natype = NULL,
+                        UInt32 columnLengthLimit = UINT_MAX,
+                        NAList<const NAColumn *> * truncatedColumnList = NULL)
 {
   Lng32 ii = 0;
   identityColPos = -1;
@@ -2582,13 +2608,13 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
           (ada == 2) && (nacol) && (natype))
         {
           if (cmpDisplayColumn(nac, NULL, natype, displayType, &space, buf, ii, namesOnly, identityCol, 
-                               isExternalTable, isAlignedRowFormat))
+                               isExternalTable, isAlignedRowFormat, columnLengthLimit, truncatedColumnList))
             return -1;
         }
       else
         {
           if (cmpDisplayColumn(nac, NULL, NULL, displayType, &space, buf, ii, namesOnly, identityCol, 
-                               isExternalTable, isAlignedRowFormat))
+                               isExternalTable, isAlignedRowFormat, columnLengthLimit, truncatedColumnList))
             return -1;
         }
 
@@ -2601,7 +2627,7 @@ short cmpDisplayColumns(const NAColumnArray & naColArr,
   if ((inColName) && (ada == 0) && (nacol))
     {
       if (cmpDisplayColumn(nacol, NULL, NULL, displayType, &space, buf, ii, namesOnly, identityCol, 
-                           isExternalTable, isAlignedRowFormat))
+                           isExternalTable, isAlignedRowFormat, columnLengthLimit, truncatedColumnList))
         return -1;
     }
 
@@ -2696,6 +2722,7 @@ short CmpDescribeSeabaseTable (
                                NABoolean withPartns,
                                NABoolean withoutSalt,
                                NABoolean withoutDivisioning,
+                               UInt32 columnLengthLimit,
                                NABoolean noTrailingSemi,
                                char * colName,
                                short ada,
@@ -2912,6 +2939,7 @@ short CmpDescribeSeabaseTable (
 
   Lng32 identityColPos = -1;
   NABoolean closeParan = FALSE;
+  NAList<const NAColumn *> truncatedColumnList(heap);
   if ((NOT isExternalTable) ||
       ((isExternalTable) && 
        ((isExternalHbaseTable && (type == 1)) ||
@@ -2925,17 +2953,20 @@ short CmpDescribeSeabaseTable (
                         FALSE,
                         identityColPos,
                         isExternalTable, naTable->isSQLMXAlignedTable(),
-                        colName, ada, nacol, natype);
+                        colName, ada, nacol, natype,
+                        columnLengthLimit,
+                        &truncatedColumnList);
       closeParan = TRUE;
     }
 
   Int32 nonSystemKeyCols = 0;
   NABoolean isStoreBy = FALSE;
+  NABoolean forceStoreBy = FALSE;
   NABoolean isSalted = FALSE;
   NABoolean isDivisioned = FALSE;
   ItemExpr *saltExpr;
-  LIST(NAString) divisioningExprs;
-  LIST(NABoolean) divisioningExprAscOrders;
+  LIST(NAString) divisioningExprs(heap);
+  LIST(NABoolean) divisioningExprAscOrders(heap);
 
   if (naTable->getClusteringIndex())
     {
@@ -2966,10 +2997,23 @@ short CmpDescribeSeabaseTable (
             nonSystemKeyCols++;
           else if (nac->isSyskeyColumn())
             isStoreBy = TRUE;
+
+          // if we are shortening a column, set isStoreBy to TRUE since truncating
+          // a character string may cause formerly distinct values to become equal
+          // (that is, we want to change PRIMARY KEY to STORE BY)
+          for (Lng32 j = 0; j < truncatedColumnList.entries(); j++)
+            {
+              const NAColumn * truncatedColumn = truncatedColumnList[j];
+              if (nac->getColName() == truncatedColumn->getColName())
+                {
+                  isStoreBy = TRUE;
+                  forceStoreBy = TRUE;
+                }
+            }
         }
     }
   
-  if (nonSystemKeyCols == 0)
+  if ((nonSystemKeyCols == 0) && (!forceStoreBy))
     isStoreBy = FALSE;
 
   if (type == 1)

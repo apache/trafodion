@@ -237,16 +237,8 @@ class HSHiveTableDef : public HSTableDef
       {
         return FALSE;
       };
-    NAString getNodeName() const
-      {
-        HS_ASSERT(FALSE);  // MP only
-        return "";
-      }
-    NAString getCatalogLoc(formatType format = INTERNAL_FORMAT) const
-      {
-        HS_ASSERT(FALSE);  // MP only
-        return "";
-      }
+    NAString getNodeName() const;
+    NAString getCatalogLoc(formatType format = INTERNAL_FORMAT) const;
     NAString getHistLoc(formatType format = INTERNAL_FORMAT) const;
     Lng32 getFileType()  const
       {
@@ -348,16 +340,8 @@ class HSHbaseTableDef : public HSTableDef
       {
         return FALSE;
       };
-    NAString getNodeName() const
-      {
-        HS_ASSERT(FALSE);  // MP only
-        return "";
-      }
-    NAString getCatalogLoc(formatType format = INTERNAL_FORMAT) const
-      {
-        HS_ASSERT(FALSE);  // MP only
-        return "";
-      }
+    NAString getNodeName() const;
+    NAString getCatalogLoc(formatType format = INTERNAL_FORMAT) const;
     NAString getHistLoc(formatType format = INTERNAL_FORMAT) const;
 
     Lng32 getFileType()  const

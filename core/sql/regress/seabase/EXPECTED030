@@ -111,7 +111,7 @@
 2016-03-01 10:11:12.000000
 
 --- 1 row(s) selected.
->>select to_date('01.03.2016:10:11:12', 'DD.MM.YYYY:HH24:MI:SS') from (values(1)) x(a);
+>>select to_date('01.03.2016 10.11.12', 'DD.MM.YYYY HH24.MI.SS') from (values(1)) x(a);
 
 (EXPR)                    
 --------------------------
@@ -296,12 +296,12 @@
 2016030100:00:
 
 --- 1 row(s) selected.
->>select to_char(DATE '2016-03-01', 'DD.MM.YYYY:HH24:MI:SS') from (values(1)) x(a);
+>>select to_char(DATE '2016-03-01', 'DD.MM.YYYY HH24.MI.SS') from (values(1)) x(a);
 
 (EXPR)             
 -------------------
 
-01.03.2016:00:00:00
+01.03.2016 00:00:00
 
 --- 1 row(s) selected.
 >>select to_char(DATE '2016-03-01', 'YYYY-MM-DD HH24:MI:SS') from (values(1)) x(a);
@@ -336,12 +336,12 @@
 20160301101112
 
 --- 1 row(s) selected.
->>select to_char(TIMESTAMP '2016-03-01 10:11:12', 'DD.MM.YYYY:HH24:MI:SS') from (values(1)) x(a);
+>>select to_char(TIMESTAMP '2016-03-01 10:11:12', 'DD.MM.YYYY HH24.MI.SS') from (values(1)) x(a);
 
 (EXPR)             
 -------------------
 
-01.03.2016:10:11:12
+01.03.2016 10.11.12
 
 --- 1 row(s) selected.
 >>select to_char(TIMESTAMP '2016-03-01 10:11:12', 'YYYY-MM-DD HH24:MI:SS') from (values(1)) x(a);
@@ -463,7 +463,7 @@ March 01, 2016, 10:11:12
 (EXPR)                 
 -----------------------
 
-01.03.2016 10:11:12.123
+01.03.2016 10.11.12.123
 
 --- 1 row(s) selected.
 >>select dateformat(timestamp '2016-03-01 10:11:12.12', usa) from (values(1)) x(a);
@@ -488,6 +488,63 @@ March 01, 2016, 10:11:12
 ------------------------------
 
 06/11/1990 07:00:09.00 AM     
+
+--- 1 row(s) selected.
+>>
+>>select YEAR(interval '10-05' year to month) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+    10
+
+--- 1 row(s) selected.
+>>select MONTH(interval '02-05' year to month) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     5
+
+--- 1 row(s) selected.
+>>select DAY(interval '5' day) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     5
+
+--- 1 row(s) selected.
+>>select HOUR(interval '5:2:15:36.33' day to second(2)) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+     2
+
+--- 1 row(s) selected.
+>>select MINUTE(interval '5:13:25:2.12' day to second(2)) from (values(1)) as t(a);
+
+(EXPR)
+------
+
+    25
+
+--- 1 row(s) selected.
+>>select extract (year from INTERVAL '97-02' YEAR TO MONTH) from (values (1)) as t(a);
+
+(EXPR)
+------
+
+    97
+
+--- 1 row(s) selected.
+>>select interval '8' year / 4 from dual;
+
+(EXPR)
+------
+
+     2
 
 --- 1 row(s) selected.
 >>
@@ -557,7 +614,7 @@ A           B                               C
 
 >>select to_date('0103.2016', 'DD.MM.YYYY') from (values(1)) x(a);
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data 0103.2016
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 0103.2016
 
 --- 0 row(s) selected.
 >>select to_char('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
@@ -580,7 +637,21 @@ A           B                               C
 
 >>select * from t030t1 where to_date(c, 'YYYY-MM-DD') = '2016-03-01';
 
-*** ERROR[4041] Type DATE cannot be compared with type CHAR(10).
+A           B                               C
+----------  ------------------------------  ------------------------------
+
+2016-03-01  2016-03-01                      2016-03-01                    
+
+--- 1 row(s) selected.
+>>select to_date('01.03.2016:10:11:12', 'DD.MM.YYYY:HH24:MI:SS') from (values(1)) x(a);
+
+*** ERROR[4065] The format, "DD.MM.YYYY:HH24:MI:SS", specified in the TO_DATE function is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select to_date('01.03.2016:10:11:12', 'DD.MM.YYYY HH24:MI:SS') from (values(1)) x(a);
+
+*** ERROR[4065] The format, "DD.MM.YYYY HH24:MI:SS", specified in the TO_DATE function is not supported.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -617,14 +688,14 @@ A           B                               C
 >>-- ms4 error cases
 >>select to_date(123456789, '99:99:99:99') from (values(1)) x(a);
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data ?
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 1
 
 *** ERROR[8001] An internal executor error occurred.
 
 --- 0 row(s) selected.
 >>select to_date(-12345678, '99:99:99:99') from (values(1)) x(a);
 
-*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data ?
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: -12345678
 
 *** ERROR[8001] An internal executor error occurred.
 

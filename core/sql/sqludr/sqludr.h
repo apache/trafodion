@@ -1307,6 +1307,7 @@ namespace tmudr
     // for convenient adding of columns of a common type
     void addIntColumn(const char *colName, bool isNullable = false);
     void addLongColumn(const char *colName, bool isNullable = false);
+	void addDoubleColumn(const char *colName, bool isNullable = false);
     void addCharColumn(
          const char *colName,
          int length,

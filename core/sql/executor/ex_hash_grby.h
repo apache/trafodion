@@ -160,9 +160,9 @@ class ex_hash_grby_tcb : public ex_tcb {
   ex_expr      * hbMoveInExpr_;
   ex_expr      * ofMoveInExpr_;
   ex_expr      * resMoveInExpr_;
-  ex_expr      * hbAggrExpr_;
-  ex_expr      * ofAggrExpr_;
-  ex_expr      * resAggrExpr_;
+  AggrExpr     * hbAggrExpr_;
+  AggrExpr     * ofAggrExpr_;
+  AggrExpr     * resAggrExpr_;
   ex_expr      * havingExpr_;
   ex_expr      * moveOutExpr_;
   ex_expr      * hbSearchExpr_;
@@ -302,7 +302,7 @@ NA_EIDPROC
   void returnResultCurrentRow(HashRow * dataPointer = NULL);
 
 NA_EIDPROC
-void resetClusterAndReadFromChild(); // Tmobile.
+  void resetClusterAndReadFromChild(); // Tmobile.
 
 public:
 

@@ -3135,9 +3135,13 @@ void Subquery::transformToRelExpr(NormWA & normWARef,
           GroupByAgg *aggNode = (GroupByAgg *)childOfRoot;
 
           // If the group by has a group by list and no aggregate
-          // functions we can eliminate it
+          // functions we can eliminate it. Keep ROLLUP groupbys
+          // for now. This could later be improved, if we have
+          // "null-rejecting" predicates that exclude the extra
+          // rows included by the rollup.
           if (!aggNode->groupExpr().isEmpty() &&
-              aggNode->aggregateExpr().isEmpty())
+              aggNode->aggregateExpr().isEmpty() &&
+              !aggNode->isRollup())
             {
               // Remove the aggNode and pass the selection predicates
               // and inputs to the new child of the Root
@@ -4688,6 +4692,38 @@ void ItmSeqOffset::transformNode(NormWA & normWARef,
   }
 
 } // ItmSeqOffset::transformNode()
+
+void ItmLagOlapFunction::transformNode(NormWA & normWARef,
+                                 ExprValueId & locationOfPointerToMe,
+                                 ExprGroupId & introduceSemiJoinHere,
+                                 const ValueIdSet & externalInputs)
+{
+  if (nodeIsTransformed())
+    {
+      locationOfPointerToMe = getReplacementExpr();
+      return;
+    }
+
+  ItemExpr::transformNode(normWARef, locationOfPointerToMe,
+                          introduceSemiJoinHere, externalInputs);
+
+} // ItmSeqOffset::transformNode()
+
+void ItmLeadOlapFunction::transformNode(NormWA & normWARef,
+                                 ExprValueId & locationOfPointerToMe,
+                                 ExprGroupId & introduceSemiJoinHere,
+                                 const ValueIdSet & externalInputs)
+{
+  if (nodeIsTransformed())
+    {
+      locationOfPointerToMe = getReplacementExpr();
+      return;
+    }
+
+  ItemExpr::transformNode(normWARef, locationOfPointerToMe,
+                          introduceSemiJoinHere, externalInputs);
+
+} // ItmLeadOlapFunction::transformNode()
 
 // ***********************************************************************
 // $$$$ ItmSeqDiff1

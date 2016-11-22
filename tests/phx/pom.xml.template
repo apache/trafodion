@@ -208,7 +208,7 @@
       <artifactId>trafodion-dtm</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.MY_SQROOT}/export/lib/trafodion-dtm-${env.TRAFODION_VER}.jar</systemPath>
+      <systemPath>${env.MY_SQROOT}/export/lib/${env.DTM_COMMON_JAR}</systemPath>
      </dependency>
 
     <dependency>
@@ -216,7 +216,7 @@
       <artifactId>trafodion-sql</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.MY_SQROOT}/export/lib/trafodion-sql-${env.TRAFODION_VER}.jar</systemPath>
+      <systemPath>${env.MY_SQROOT}/export/lib/${env.SQL_JAR}</systemPath>
      </dependency>
 
     <!-- END_FOR_T2_ONLY -->

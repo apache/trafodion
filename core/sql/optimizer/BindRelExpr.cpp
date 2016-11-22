@@ -1315,6 +1315,11 @@ TrafDesc *generateSpecialDesc(const CorrName& corrName)
           ExeUtilRegionStats eudss;
           desc = eudss.createVirtualTableDesc();
         }
+      else if (corrName.getQualifiedNameObj().getObjectName() == ExeUtilRegionStats::getVirtualTableClusterViewNameStr())
+        {
+          ExeUtilRegionStats eudss(TRUE);
+          desc = eudss.createVirtualTableDesc();
+        }
     }
 
   return desc;
@@ -1324,22 +1329,6 @@ TrafDesc *generateSpecialDesc(const CorrName& corrName)
 // -----------------------------------------------------------------------
 // member functions for class BindWA
 // -----------------------------------------------------------------------
-// LCOV_EXCL_START - cnu
-/*
-static NABoolean checkForReservedObjectName(QualifiedName &inName)
-{
-  if ((inName.getCatalogName() == "NEO") &&
-      (inName.getSchemaName() == "PUBLIC_ACCESS_SCHEMA") &&
-      (inName.getObjectName() == "_MAINTAIN_CONTROL_INFO_"))
-    {
-      return TRUE;
-    }
-
-  return FALSE;
-}
-*/
-
-// LCOV_EXCL_STOP
 
 NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
 {
@@ -2435,6 +2424,7 @@ Scan *RelExpr::getScanNode(NABoolean assertExactlyOneScanNode) const
   return (Scan *)result;
 }
 
+
 Scan *RelExpr::getLeftmostScanNode() const
 {
   RelExpr *result = (RelExpr *)this;   // cast away constness, big whoop
@@ -2445,6 +2435,34 @@ Scan *RelExpr::getLeftmostScanNode() const
   }
 
   return (Scan *)result;
+}
+
+
+
+Join * RelExpr::getLeftJoinChild() const
+{
+  RelExpr *result = (RelExpr *)this;
+  
+  while(result)
+    {
+      if (result->getOperatorType() == REL_LEFT_JOIN) 
+        break;
+      result = result->child(0);
+    }
+  return (Join *)result;
+}
+
+RelSequence* RelExpr::getOlapChild() const
+{
+  RelExpr *result = (RelExpr *)this;
+  
+  while(result)
+    {
+      if (result->getOperatorType() == REL_SEQUENCE) 
+        break;
+      result = result->child(0);
+    }
+  return (RelSequence *)result;
 }
 
 // QSTUFF
@@ -2975,7 +2993,7 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
   //
   if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
   {
-    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## INTERSECT not yet supported , not fully tested
         << DgString0("INTERSECT");             // ##
     bindWA->setErrStatus();                    // ##
     if (bindWA->errStatus()) return NULL;      // ##
@@ -3032,6 +3050,98 @@ RelExpr *Intersect::bindNode(BindWA *bindWA)
 
   return join;
 } // Intersect::bindNode()
+// LCOV_EXCL_STOP
+
+// -----------------------------------------------------------------------
+// member functions for class Except 
+// -----------------------------------------------------------------------
+
+// LCOV_EXCL_START - cnu
+RelExpr *Except::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound())
+  {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  // Bind the child nodes.
+  //
+  bindChildren(bindWA);
+  if (bindWA->errStatus()) return this;
+
+  // Check that there are an equal number of select items on both sides.
+  //
+  const RETDesc &leftTable = *child(0)->getRETDesc();
+  const RETDesc &rightTable = *child(1)->getRETDesc();
+  if (leftTable.getDegree() != rightTable.getDegree()) {
+    // 4014 The operands of an intersect must be of equal degree.
+    *CmpCommon::diags() << DgSqlCode(-4014);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  // Join the columns of both sides. 
+  //
+  if(CmpCommon::getDefault(MODE_SPECIAL_4) != DF_ON)
+  {
+    *CmpCommon::diags() << DgSqlCode(-3022)    // ## EXCEPT not yet supported: not fully tested
+        << DgString0("EXCEPT");             // ##
+    bindWA->setErrStatus();                    // ##
+    if (bindWA->errStatus()) return NULL;      // ##
+  }
+  //
+  ItemExpr *predicate = intersectColumns(leftTable, rightTable, bindWA);
+  RelExpr *join = new (bindWA->wHeap())
+    Join(child(0)->castToRelExpr(),
+         child(1)->castToRelExpr(),
+         REL_ANTI_SEMIJOIN,
+         predicate);
+
+  // Bind the join.
+  //
+  join = join->bindNode(bindWA)->castToRelExpr();
+  if (bindWA->errStatus()) return join;
+
+  // Change the output of the join to just the left side.
+  //
+  delete join->getRETDesc();
+  join->setRETDesc(new (bindWA->wHeap()) RETDesc(bindWA, leftTable));
+  bindWA->getCurrentScope()->setRETDesc(join->getRETDesc());
+
+  // QSTUFF
+  NAString fmtdList1(bindWA->wHeap());
+  LIST(TableNameMap*) xtnmList1(bindWA->wHeap());
+  NAString fmtdList2(bindWA->wHeap());
+  LIST(TableNameMap*) xtnmList2(bindWA->wHeap());
+
+  leftTable.getTableList(xtnmList1, &fmtdList1);
+  rightTable.getTableList(xtnmList2, &fmtdList2);
+
+  if (child(0)->getGroupAttr()->isStream() &&
+      child(1)->getGroupAttr()->isStream()){
+    *CmpCommon::diags() << DgSqlCode(-4159)
+                << DgString0(fmtdList1) << DgString1(fmtdList2);
+    bindWA->setErrStatus();
+    return this;
+  }
+
+  // Needs to be removed when supporting get_next for EXCEPT
+  if (getGroupAttr()->isEmbeddedUpdateOrDelete()) {
+    *CmpCommon::diags() << DgSqlCode(-4160)
+                << DgString0(fmtdList1)
+                << DgString1(fmtdList2)
+                << (child(0)->getGroupAttr()->isEmbeddedUpdate() ?
+                             DgString2("UPDATE"):DgString2("DELETE"))
+                << (child(1)->getGroupAttr()->isEmbeddedUpdate() ?
+                             DgString3("UPDATE"):DgString3("DELETE"));
+    bindWA->setErrStatus();
+    return this;
+  }
+  // QSTUFF
+
+  return join;
+} // Excpet::bindNode()
 // LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
@@ -3396,7 +3506,8 @@ void Union::copyLeftRightListsToPreviousIF(Union * previousIF, BindWA * bindWA)
 void Union::dumpChildrensRETDescs(const RETDesc& leftTable,
                                   const RETDesc& rightTable)
 {
-#ifndef NDEBUG
+// turn this code on when you need it by changing the #if below
+#if 0   
   // -- MVs. Debugging code !!!!! TBD
   fprintf(stdout, " #    Left                                Right\n");
   CollIndex maxIndex, minIndex;
@@ -3715,11 +3826,9 @@ static void fixUpSelectIndeciesInSet(ValueIdSet & expr,
 
 RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
 {
-  NABoolean specialMode = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
-  
+  NABoolean specialMode = (CmpCommon::getDefault(GROUP_OR_ORDER_BY_EXPR) == DF_ON);
   if (NOT specialMode)
     return this;
-  
   ItemExprList origSelectList(bindWA->wHeap());
   ItemExprList origOrderByList(bindWA->wHeap());
   
@@ -3777,9 +3886,17 @@ RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
           NABoolean found = FALSE;
           Lng32 selListIndex = 0;
           ItemExpr * selItem = NULL;
+          ItemExpr * renameColEntry = NULL;
           while ((NOT found) && (selListIndex < selListCount))
             {
               selItem = origSelectList[selListIndex];
+              
+              if (selItem->getOperatorType() == ITM_RENAME_COL)
+                {
+                  renameColEntry = selItem;
+                  selItem = selItem->child(0);
+                }
+              
               found = currOrderByItemExpr->duplicateMatch(*selItem);
               if (NOT found)
                 selListIndex++;
@@ -3816,6 +3933,62 @@ RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
   return this;
 }
 
+//////////////////////////////////////////////////////////////////////
+// GROUPING functions returns a 1 or 0 depending on whether a null
+// value was moved as a rollup group or not.
+//
+// GROUPING_ID(a,b,c) returns a value corresponding to the bit vector 
+// where each bit entry represents the GROUPING result for the argument
+// of GROUPING_ID function.
+//
+// For ex: GROUPING_ID(a,b,c) will have 3 bit entries, 
+// and is equivalent to:
+//   GROUPING(a)*4 + GROUPING(b)*2 + GROUPING(c)*1
+//////////////////////////////////////////////////////////////////////
+ItemExpr * RelRoot::processGroupingID(ItemExpr * ie, BindWA *bindWA)
+{
+  if (ie->getOperatorType() != ITM_GROUPING_ID)
+    return ie;
+
+  ItemExpr * groupingIdExpr = NULL;
+
+  ItemExprList childExprList(bindWA->wHeap());
+  childExprList.insertTree(ie->child(0)->castToItemExpr());
+  
+  Int64 multiplier = (Int64)pow(2, (childExprList.entries()-1));
+  SQLLargeInt * li = 
+    new(bindWA->wHeap()) SQLLargeInt(FALSE, FALSE); // +ve value, no nulls
+  for (CollIndex i = 0; i < (CollIndex)childExprList.entries(); i++)
+    {
+      ItemExpr * currChildIE = 
+        ((ItemExpr *) childExprList[i])->castToItemExpr();
+      
+      ItemExpr * groupingClause =
+        new(bindWA->wHeap()) Aggregate(ITM_GROUPING, currChildIE, FALSE);
+      
+      ItemExpr * multiplierClause = new(bindWA->wHeap()) 
+        ConstValue(li, (void*)&multiplier, sizeof(Int64));
+      ItemExpr * groupingExpr = new(bindWA->wHeap()) 
+        BiArith(ITM_TIMES, groupingClause, multiplierClause);
+      
+      if (i == 0)
+        {
+          groupingIdExpr = groupingExpr;
+        }
+      else
+        {
+          groupingIdExpr = new(bindWA->wHeap())
+            BiArith(ITM_PLUS, groupingIdExpr, groupingExpr);
+        }
+      
+      multiplier = multiplier / 2;
+    }
+  
+  groupingIdExpr = new(bindWA->wHeap()) Cast(groupingIdExpr, li);
+
+  return groupingIdExpr;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 //
 // This methods performs the following in this order:
@@ -3843,17 +4016,10 @@ RelRoot * RelRoot::transformOrderByWithExpr(BindWA *bindWA)
 RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
 {
   NABoolean specialMode =
-    ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON));
-
-  if ((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) == DF_OFF) &&
-      (NOT specialMode))
-    return this;
+    (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
 
   // make sure child of root is a groupby node.or a sequence node 
   // whose child is a group by node
-  // And has groupby clause, if in specialMode
   if (child(0)->getOperatorType() != REL_GROUPBY && 
       (child(0)->getOperatorType() != REL_SEQUENCE || 
        (child(0)->child(0) && child(0)->child(0)->getOperatorType()!=REL_GROUPBY)))
@@ -3893,8 +4059,40 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
   {
     origGrbyList.insertTree(groupExprTree);
   }
+
   if (NOT compExprTreeIsNull)
   {
+    // expand GROUPING_ID in terms of GROUPING aggregates
+    if (grby->isRollup())
+      {
+        NABoolean groupingIDfound = FALSE;
+
+        ItemExprList selList(getCompExprTree(), bindWA->wHeap());
+        ItemExprList newSelList(bindWA->wHeap());
+        for (CollIndex ii = 0; ii < selList.entries(); ii++)
+          {
+            ItemExpr * ie = selList[ii];
+            if (ie->getOperatorType() == ITM_GROUPING_ID)
+              {
+                ItemExpr * newIE = processGroupingID(ie, bindWA);
+                if (bindWA->errStatus())
+                  return this;
+                
+                groupingIDfound = TRUE;
+                newSelList.insert(newIE);
+              }
+            else
+              newSelList.insert(ie);
+          } // for
+
+        if (groupingIDfound)
+          {
+            ItemExpr * newCompExprTree = newSelList.convertToItemExpr();
+            removeCompExprTree();
+            addCompExprTree(newCompExprTree);
+          }
+       }
+
     origSelectList.insertTree(getCompExprTree());
     origSelectListCount = origSelectList.entries();
   }
@@ -3904,7 +4102,7 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
   NABoolean foundSelIndex = FALSE;
 
   NABoolean lookForRenamedCols = TRUE;
-  if ((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) != DF_ALL) &&
+  if ((CmpCommon::getDefault(GROUP_OR_ORDER_BY_EXPR) == DF_OFF) &&
       (NOT specialMode))
     lookForRenamedCols = FALSE;
 
@@ -3992,10 +4190,11 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
 			selListIndex = j;
 			listOfExpressions.insert(j);
 			
-			selectListEntry->setInGroupByOrdinal(TRUE);  		    
+                        selectListEntry->setInGroupByOrdinal(TRUE);
+                        selectListEntry->setIsGroupByExpr(TRUE);
 
 			if (renameColEntry)
-			  renameColEntry->setInGroupByOrdinal(TRUE);  		      
+			  renameColEntry->setInGroupByOrdinal(TRUE);
 		      }
 		      else
 			found = FALSE;
@@ -4035,7 +4234,6 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
         }
       if (compExprTreeIsNull)
         return this;
-
 
       if (currGroupByItemExpr->getOperatorType() == ITM_SEL_INDEX)
         {
@@ -4166,16 +4364,13 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
       grby->addGroupExprTree(newGroupByList.convertToItemExpr());
     }
 
-  if ((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) != DF_OFF) ||
-      (specialMode)) {
-    grby->setParentRootSelectList(getCompExprTree());
-  }
+  grby->setParentRootSelectList(getCompExprTree());
 
   // if order by and group by are specified, check to see that
   // all columns specified in the order by clause are also present
   // in the group by clause.
   allOrderByRefsInGby_ = FALSE;
-  if ((specialMode) &&
+  if (
       (getOrderByTree()) &&
       (grby->getGroupExprTree() != NULL))
     {
@@ -4225,11 +4420,9 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase1(BindWA *bindWA)
 RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
 {
   NABoolean specialMode =
-    ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON));
+    (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
 
-  // make sure child of root is a groupby node.or a sequence node 
+  // make sure child of root is a groupby node or a sequence node 
   // whose child is a group by node
   if (child(0)->getOperatorType() != REL_GROUPBY && 
        (child(0)->getOperatorType() != REL_SEQUENCE || 
@@ -4251,6 +4444,104 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
 
   DCMPASSERT(grby != NULL);
 
+  if (grby->isRollup())
+    {
+      if (grby->groupExpr().entries() != grby->rollupGroupExprList().entries())
+        {
+          *CmpCommon::diags() << DgSqlCode(-4384)
+                              << DgString0("Cannot have duplicate entries.");
+          
+          bindWA->setErrStatus();
+          return NULL;
+        }
+
+      for (ValueId valId = grby->aggregateExpr().init();
+           grby->aggregateExpr().next(valId);
+           grby->aggregateExpr().advance(valId))
+        {
+          ItemExpr * ae = valId.getItemExpr();
+
+          // right now, only support groupby rollup on min/max/sum/avg/count
+          if (NOT ((ae->getOperatorType() == ITM_MIN) ||
+                   (ae->getOperatorType() == ITM_MAX) ||
+                   (ae->getOperatorType() == ITM_SUM) ||
+                   (ae->getOperatorType() == ITM_AVG) ||
+                   (ae->getOperatorType() == ITM_COUNT) ||
+                   (ae->getOperatorType() == ITM_COUNT_NONULL) ||
+                   (ae->getOperatorType() == ITM_GROUPING)))
+            {
+              *CmpCommon::diags() << DgSqlCode(-4384)
+                                  << DgString0("Unsupported rollup aggregate function.");
+              
+              bindWA->setErrStatus();
+              return NULL;
+            }
+          
+          // right now, only support groupby rollup on non-distinct aggrs
+          Aggregate * ag = (Aggregate*)ae;
+          if (ag->isDistinct())
+            {
+              *CmpCommon::diags() << DgSqlCode(-4384)
+                                  << DgString0("Distinct rollup aggregates not supported.");
+              
+              bindWA->setErrStatus();
+              return NULL;
+            }
+
+          // if grouping aggr, find the rollup group it corresponds to.
+          if (ae->getOperatorType() == ITM_GROUPING)
+            {
+              NABoolean found = FALSE;
+              ItemExpr * aggrChild = ae->child(0);
+              int i = 0;
+              while ((NOT found) and (i < grby->rollupGroupExprList().entries()))
+                {
+                  ValueId vid =  grby->rollupGroupExprList()[i];
+                  if (vid.getItemExpr()->getOperatorType() == ITM_SEL_INDEX)
+                    {
+                      SelIndex * si = (SelIndex*)vid.getItemExpr();
+                      vid = compExpr()[si->getSelIndex()-1];
+                    }
+                  found =  aggrChild->duplicateMatch(*vid.getItemExpr());
+                  if (found)
+                    ag->setRollupGroupIndex(i);
+                  i++;
+                } // while
+
+              if (NOT found)
+                {
+                  // must find it.
+                  *CmpCommon::diags() << DgSqlCode(-4384)
+                                      << DgString0("GROUPING function can only be specified on a GROUP BY ROLLUP entry.");
+                  
+                  bindWA->setErrStatus();
+                  return NULL;
+                }
+            }
+        } // for
+    }
+  else
+    {
+      // not groupby rollup
+      for (ValueId valId = grby->aggregateExpr().init();
+           grby->aggregateExpr().next(valId);
+           grby->aggregateExpr().advance(valId))
+        {
+          ItemExpr * ae = valId.getItemExpr();
+
+          // grouping can only be specified with 'groupby rollup' clause
+          if (ae->getOperatorType() == ITM_GROUPING)
+            {
+              *CmpCommon::diags() << DgSqlCode(-3242)
+                                  << DgString0("GROUPING function can only be specified with GROUP BY ROLLUP clause.");
+              
+              bindWA->setErrStatus();
+              return NULL;
+            }
+ 
+        } // for
+    }
+
   ValueIdSet &groupExpr = grby->groupExpr();
   // copy of groupExpr used to identify the changed
   // value ids
@@ -4260,8 +4551,6 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
   // these gets expanded at bind time, and so the select index have to
   // be offset with the expansion number since the sel_index number 
   // reflects the select list at parse time.
-
-
   for (ValueId vid = groupExpr.init(); 
        groupExpr.next(vid);
        groupExpr.advance(vid))
@@ -4275,8 +4564,13 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
           si->setValueId(grpById);
           if (child(0)->getOperatorType() != REL_SEQUENCE)
           {
-          groupExprCpy.remove(vid);
-          groupExprCpy.insert(grpById);
+            groupExprCpy.remove(vid);
+            groupExprCpy.insert(grpById);
+            if (grby->isRollup())
+              {
+                CollIndex idx = grby->rollupGroupExprList().index(vid);
+                grby->rollupGroupExprList()[idx] = grpById;
+              }
           }
           else
           {  //sequence
@@ -4397,12 +4691,48 @@ RelRoot * RelRoot::transformGroupByWithOrdinalPhase2(BindWA *bindWA)
        } // found Sel Index
     }
 
+  ValueId valId;
+  if (grby->isRollup())
+    {
+      for (CollIndex i = 0; i < grby->rollupGroupExprList().entries(); i++)
+        {
+          valId = grby->rollupGroupExprList()[i];
+          
+          if (NOT valId.getType().supportsSQLnull())
+            {
+              *CmpCommon::diags() << DgSqlCode(-4384)
+                                  << DgString0("Grouped columns must be nullable.");
+              bindWA->setErrStatus();
+              return NULL;
+            }
+        }
+    }
+
+  //looking for extra order requirement, currently, aggregate function PIVOT_GROUP will need extra order 
+  //so loop through the aggregation expression and check if there is PIVOT_GROUP and it needs explicit order
+  //if found, populate the extraOrderExpr for the GroupAggBy
+  //so later optimizer can add correct sort key 
+  ValueIdSet &groupAggExpr = grby->aggregateExpr();
+
+  for (ValueId vid = groupAggExpr.init(); 
+       groupAggExpr.next(vid);
+       groupAggExpr.advance(vid))
+    {
+      if (vid.getItemExpr()->getOperatorType() == ITM_PIVOT_GROUP)
+      {
+        if( ((PivotGroup*)vid.getItemExpr())->orderBy() ) 
+        {
+          grby->setExtraGrpOrderby(((PivotGroup*)vid.getItemExpr())->getOrderbyItemExpr());
+          ValueIdList tmpList;
+          grby->getExtraGrpOrderby()->convertToValueIdList(tmpList, bindWA, ITM_ITEM_LIST);
+          grby->setExtraOrderExpr(tmpList);
+        }
+      }
+    }
   // recreate the groupExpr expression after updating the value ids
   grby->setGroupExpr (groupExprCpy);
 
-  if (((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) != DF_OFF) ||
-       (specialMode)) &&
-      (grby->selPredTree()) &&
+  if ((grby->selPredTree()) &&
       (grby->selIndexInHaving()))
     {
       setValueIdForRenamedColsInHaving(bindWA, grby->selPredTree(),
@@ -4968,13 +5298,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 		 NULL, NULL, NULL, child(0), PARSERHEAP());
 	      le->setHandleInStringFormat(FALSE);
 	      setChild(0, le);
-	 
 	    }
-	     
-
 	}
-	
-      
 
       processRownum(bindWA);
       
@@ -5305,7 +5630,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
     bindWA->setHostArraysArea(tempWA);
   }
 
-  if (bindWA->errStatus()) return NULL;
+  if (bindWA->errStatus()) 
+    return NULL;
 
   // For SPJ, store the spOutParams_ from the bindWA in RelRoot,
   // We need it at codegen
@@ -5611,7 +5937,6 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
   if (! returnedRoot)
     return NULL;
 
-  //  ItemExpr *orderByTree = removeOrderByTree();
   ItemExpr *orderByTree = removeOrderByTree();
   if (orderByTree) {
     //
@@ -5690,11 +6015,9 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
       }
       //10-031125-1549 -end
 
-      NABoolean specialMode =
-        ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-         (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON) ||
-         (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON));
+      NABoolean specialMode = TRUE;
       
+
       // In specialMode, we want to support order by on columns
       // which are not explicitely specified in the select list.
       // Ex: select a+1 from t group by a order by a;
@@ -6592,7 +6915,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
       if (retcode != STATUS_GOOD)
       {
         bindWA->setFailedForPrivileges( TRUE );
-        RemoveNATableEntryFromCache = TRUE;
+        tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
         *CmpCommon::diags() << DgSqlCode( -1034 );
         return FALSE;
       }
@@ -6650,7 +6973,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
       if (retcode != STATUS_GOOD)
       {
         bindWA->setFailedForPrivileges(TRUE);
-        RemoveNATableEntryFromCache = TRUE;
+        tab->setRemoveFromCacheBNC(TRUE); // Not used until sequences stored in table cache
         *CmpCommon::diags() << DgSqlCode( -1034 );
         return FALSE;
       }
@@ -6672,7 +6995,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
     else
     {
       bindWA->setFailedForPrivileges( TRUE );
-      RemoveNATableEntryFromCache = TRUE;
+      tab->setRemoveFromCacheBNC(TRUE); // To be removed by CmpMain before Compilation retry
       *CmpCommon::diags()
         << DgSqlCode( -4491 )
         << DgString0( "USAGE" )
@@ -6683,78 +7006,96 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
   return !bindWA->failedForPrivileges() ;
 }
 
+// ****************************************************************************
+// method: findKeyAndInsertInOutputList
+//
+// This method searches through the list of security keys associated with the
+// object to find the best candidate to save in the plan based on the
+// privilege required.  If it finds a candidate, it inserts the best candidate 
+// into securityKeySet_ member of the RelRoot class.
+//
+// Security key types currently include:
+//   COM_QI_OBJECT_<priv>:   privileges granted directly to the user
+//   COM_QI_USER_GRANT_ROLE: privileges granted to the user via a role 
+//   COM_QI_USER_GRANT_SPECIAL_ROLE: privileges granted to PUBLIC
+//
+// COM_QI_OBJECT_<priv> types are preferred over COM_QI_USER_GRANT_ROLE.
+// ****************************************************************************
 void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
                                           , const uint32_t userHashValue
                                           , const PrivType which
                                           )
 {
-   ComSecurityKey  dummyKey;
+   // If no keys associated with object, just return
+   if (KeysForTab.entries() == 0)
+     return;
 
+   ComSecurityKey * UserObjectKey = NULL;
+   ComSecurityKey * RoleObjectKey = NULL;
+   ComSecurityKey * UserObjectPublicKey = NULL;
+   
+   // These may be implemented at a later time
+   ComSecurityKey * UserSchemaKey = NULL; //privs granted at schema level to user
+   ComSecurityKey * RoleSchemaKey = NULL; //privs granted at schema level to role
+
+   // Get action type for UserObjectKey based on the privilege (which)
+   // so if (which) is SELECT, then the objectActionType is COM_QI_OBJECT_SELECT
+   ComSecurityKey  dummyKey;
    ComQIActionType objectActionType =
                    dummyKey.convertBitmapToQIActionType ( which, ComSecurityKey::OBJECT_IS_OBJECT );
 
-   ComSecurityKey * UserSchemaKey = NULL;
-   ComSecurityKey * UserObjectKey = NULL;
-   ComSecurityKey * RoleSchemaKey = NULL;
-   ComSecurityKey * RoleObjectKey = NULL;
-   ComSecurityKey * BestKey = NULL;
-
-   ComSecurityKey * thisKey = &(KeysForTab[0]);
-
-   uint32_t hashValueOfPublic = 0;
+   ComSecurityKey * thisKey = NULL;
 
    // NOTE: hashValueOfPublic will be the same for all keys, so we generate it only once.
-   if ( KeysForTab.entries() > 0 )
-      hashValueOfPublic = thisKey->generateHash(PUBLIC_USER);
+   uint32_t hashValueOfPublic = ComSecurityKey::SPECIAL_OBJECT_HASH;
 
    // Traverse List looking for ANY appropriate ComSecurityKey 
    for ( Int32 ii = 0; ii < (Int32)(KeysForTab.entries()); ii++ )
    {
       thisKey = &(KeysForTab[ii]);
+  
+      // See if the key is object related
       if ( thisKey->getSecurityKeyType() == objectActionType )
       {
-         if ( thisKey->getSubjectHashValue() == hashValueOfPublic ||
-              thisKey->getSubjectHashValue() == userHashValue )
+         if ( thisKey->getSubjectHashValue() == userHashValue )
          {
-              if ( ! UserObjectKey ) UserObjectKey = thisKey;
+            // Found a security key for the objectActionType
+            if ( ! UserObjectKey ) 
+               UserObjectKey = thisKey;
          }
-         else if ( ! RoleObjectKey ) RoleObjectKey = thisKey;
       }
+     
+      // See if the security key is role related
+      else if (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_ROLE) 
+      {
+         if ( thisKey->getSubjectHashValue() == userHashValue )
+         {
+            if (! RoleObjectKey ) 
+               RoleObjectKey = thisKey;
+         }
+      }
+
+      else if (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_SPECIAL_ROLE)
+      {
+         if (thisKey->getObjectHashValue() == hashValueOfPublic )
+         {
+            if (! UserObjectPublicKey )
+               UserObjectPublicKey = thisKey;
+         }
+      }
+
       else {;} // Not right action type, just continue traversing.
    }
 
-   if ( UserObjectKey ) BestKey = UserObjectKey ;
-   else if ( RoleObjectKey ) BestKey = RoleObjectKey ;
-   if ( BestKey == NULL)
-     return;  // Sometimes there aren't any security keys
-   securityKeySet_.insert(*BestKey);
+   // Determine best key, UserObjectKeys are better than RoleObjectKeys
+   ComSecurityKey * BestKey = (UserObjectKey) ? UserObjectKey : RoleObjectKey;
 
-   uint32_t SubjHashValue = BestKey->getSubjectHashValue();
-   hashValueOfPublic = BestKey->generateHash(PUBLIC_USER);
+   if ( BestKey != NULL)
+      securityKeySet_.insert(*BestKey);
 
-   // Check whether this privilege was granted to PUBLIC.  If so, nothing more to check.
-   if ( SubjHashValue == hashValueOfPublic )
-      return;
-   while ( SubjHashValue != userHashValue ) //While we see a ComSecurityKey for a Role
-   {
-      NABoolean found = FALSE;
-      for ( Int32 ii = 0; ii < (Int32)(KeysForTab.entries()); ii++ )
-      {
-         // If this ComSecurityKey is a GRANT type and the grantee (the object)
-         // is the Role specified by SubjHashValue, then break out of inner loop.
-         ComSecurityKey * thisKey = &(KeysForTab[ii]);
-         if ( (   thisKey->getObjectHashValue() == SubjHashValue ) &&
-              (  (thisKey->getSecurityKeyType() == COM_QI_USER_GRANT_ROLE ) ) )
-         {
-            securityKeySet_.insert(*thisKey); // Insert this GRANT type ComSecurityKey into the Plan
-            found = TRUE;
-            SubjHashValue = thisKey->getSubjectHashValue();
-            break; // We found the user or Role which granted the user the privilege
-         }
-      }
-      // found should never be FALSE
-      CMPASSERT(found)
-   }
+   // Add public if it exists
+   if ( UserObjectPublicKey != NULL )
+     securityKeySet_.insert(*UserObjectPublicKey); 
 }
 
 
@@ -6764,10 +7105,6 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
 
 RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
 {
-  NABoolean specialMode =
-    ((CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON) ||
-     (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON));
-
   if (nodeIsBound())
   {
     bindWA->getCurrentScope()->setRETDesc(getRETDesc());
@@ -6826,20 +7163,22 @@ RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
     currScope->context()->inGroupByClause() = TRUE;
     groupExprTree->convertToValueIdSet(groupExpr(), bindWA, ITM_ITEM_LIST);
 
+    if (isRollup())
+      groupExprTree->convertToValueIdList(
+           rollupGroupExprList(), bindWA, ITM_ITEM_LIST);
+
     currScope->context()->inGroupByClause() = FALSE;
     if (bindWA->errStatus()) return this;
 
     ValueIdList groupByList(groupExpr());
+ 
     for (CollIndex i = 0; i < groupByList.entries(); i++)
     {
       ValueId vid = groupByList[i];
       vid.getItemExpr()->setIsGroupByExpr(TRUE);
     }
 
-
-    if (((CmpCommon::getDefault(GROUP_BY_USING_ORDINAL) != DF_OFF) ||
-        (specialMode)) &&
-        (groupExprTree != NULL) &&
+    if ((groupExprTree != NULL) &&
         (getParentRootSelectList() != NULL))
       {
         RETDesc * childRETDesc = child(0)->getRETDesc();
@@ -6863,6 +7202,13 @@ RelExpr *GroupByAgg::bindNode(BindWA *bindWA)
                       {
                         groupExpr().remove(vid);
                         groupExpr().insert(baseColExpr->getValueId());
+
+                        if (isRollup())
+                          {
+                            CollIndex idx = rollupGroupExprList().index(vid);
+                            rollupGroupExprList()[idx] = baseColExpr->getValueId();
+                          }
+ 
                         baseColExpr->getColumnDesc()->setGroupedFlag();
                         origSelectList[indx]->setInGroupByOrdinal(FALSE);
                       }
@@ -7367,7 +7713,6 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
 
     // Second we make sure the the underlying base table is key sequenced
     // in case of embedded d/u and streams
-    // -- for as long as we don't support entry sequenced tables
     if (boundView->getLeftmostScanNode()) {
       // this is not a "create view V(a) as values(3)" kind of a view
       const NATable * baseTable =
@@ -7582,6 +7927,24 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
         }
     }
 
+   if (naTable->isHiveTable() && 
+       !(naTable->getClusteringIndex()->getHHDFSTableStats()->isOrcFile() ||
+	 naTable->getClusteringIndex()->getHHDFSTableStats()
+	 ->isSequenceFile()) &&
+       (CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE_BYTES) == 0) && 
+       (naTable->getRecordLength() >
+	CmpCommon::getDefaultNumeric(HDFS_IO_BUFFERSIZE)*1024))
+     {
+       // do not raise error if buffersize is set though buffersize_bytes.
+       // Typically this setting is used for testing alone.
+       *CmpCommon::diags() << DgSqlCode(-4226)
+			   << DgTableName(
+					  naTable->getTableName().
+					  getQualifiedNameAsAnsiString())
+			   << DgInt0(naTable->getRecordLength());
+       bindWA->setErrStatus();
+       return NULL;
+     }
   // Bind the base class.
   //
   RelExpr *boundExpr = bindSelf(bindWA);
@@ -7600,7 +7963,6 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
   // QSTUFF
   // Second we make sure the the underlying base table is key sequenced in case
   // of embedded d/u and streams
-  // -- for as long as we don't support entry sequenced tables
   if (getGroupAttr()->isStream()){
 
     if (!naTable->getClusteringIndex()->isKeySequenced() ||
@@ -9128,41 +9490,6 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
         return this;
       }
 
-    RelExpr * mychild = child(0);
-
-    const HHDFSTableStats* hTabStats = 
-      getTableDesc()->getNATable()->getClusteringIndex()->getHHDFSTableStats();
-				 
-    const char * hiveTablePath;
-    NAString hostName;
-    Int32 hdfsPort;
-    NAString tableDir;
-    NABoolean result;
-
-    char fldSep[2];
-    char recSep[2];
-    memset(fldSep,'\0',2);
-    memset(recSep,'\0',2);
-    fldSep[0] = hTabStats->getFieldTerminator();
-    recSep[0] = hTabStats->getRecordTerminator();
-
-    // don't rely on timeouts to invalidate the HDFS stats for the target table,
-    // make sure that we invalidate them right after compiling this statement,
-    // at least for this process
-    ((NATable*)(getTableDesc()->getNATable()))->setClearHDFSStatsAfterStmt(TRUE);
-
-    // inserting into tables with multiple partitions is not yet supported
-    CMPASSERT(hTabStats->entries() == 1);
-    hiveTablePath = (*hTabStats)[0]->getDirName();
-    result = ((HHDFSTableStats* )hTabStats)->splitLocation
-      (hiveTablePath, hostName, hdfsPort, tableDir) ;       
-    if (!result) {
-       *CmpCommon::diags() << DgSqlCode(-4224)
-                            << DgString0(hiveTablePath);
-        bindWA->setErrStatus();
-        return this;
-    }
-
     // specifying a list of column names to insert to is not yet supported
     if (insertColTree_) {
       *CmpCommon::diags() << DgSqlCode(-4223)
@@ -9171,48 +9498,24 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       return this;
     }
      
-    //    NABoolean isSequenceFile = (*hTabStats)[0]->isSequenceFile();
-    const NABoolean isSequenceFile = hTabStats->isSequenceFile();
-    
-    RelExpr * unloadRelExpr =
-                    new (bindWA->wHeap())
-                    FastExtract( mychild,
-                                 new (bindWA->wHeap()) NAString(hiveTablePath),
-                                 new (bindWA->wHeap()) NAString(hostName),
-                                 hdfsPort,
-                                 getTableDesc(),
-                                 new (bindWA->wHeap()) NAString(getTableName().getQualifiedNameObj().getObjectName()),
-                                 FastExtract::FILE,
-                                 bindWA->wHeap());
-    RelExpr * boundUnloadRelExpr = unloadRelExpr->bindNode(bindWA);
-    if (bindWA->errStatus())
-      return NULL;
+    RelExpr *feResult = FastExtract::makeFastExtractTree(
+         getTableDesc(),
+         child(0).getPtr(),
+         getOverwriteHiveTable(),
+         TRUE,  // called from within binder
+         FALSE, // not a common subexpr
+         bindWA);
 
-    ((FastExtract*)boundUnloadRelExpr)->setRecordSeparator(recSep);
-    ((FastExtract*)boundUnloadRelExpr)->setDelimiter(fldSep);
-    ((FastExtract*)boundUnloadRelExpr)->setOverwriteHiveTable(getOverwriteHiveTable());
-    ((FastExtract*)boundUnloadRelExpr)->setSequenceFile(isSequenceFile);
-    if (getOverwriteHiveTable())
-    {
-      RelExpr * newRelExpr =  new (bindWA->wHeap())
-        ExeUtilHiveTruncate(getTableName(), NULL, bindWA->wHeap());
+    if (feResult)
+      {
+        feResult = feResult->bindNode(bindWA);
+        if (bindWA->errStatus())
+          return NULL;
 
-      //new root to prevent  error 4056 when binding
-      newRelExpr = new (bindWA->wHeap()) RelRoot(newRelExpr);
-
-      RelExpr *blockedUnion = new (bindWA->wHeap()) Union(newRelExpr, boundUnloadRelExpr);
-      ((Union*)blockedUnion)->setBlockedUnion();
-      ((Union*)blockedUnion)->setSerialUnion();
-
-      RelExpr *boundBlockedUnion = blockedUnion->bindNode(bindWA);
-      if (bindWA->errStatus())
-        return NULL;
-
-      return boundBlockedUnion;
-
-    }
-
-    return boundUnloadRelExpr;
+        return feResult;
+      }
+    else
+      return this;
   }
 
   if(!(getOperatorType() == REL_UNARY_INSERT &&
@@ -9340,7 +9643,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   //
   NABoolean view = bindWA->getNATable(getTableName())->getViewText() != NULL;
   ValueIdList tgtColList, userColList, sysColList, *userColListPtr;
-  CollIndexList colnoList;
+  CollIndexList colnoList(STMTHEAP);
   CollIndex totalColCount, defaultColCount, i;
 
   getTableDesc()->getSystemColumnList(sysColList);
@@ -9457,9 +9760,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   }
 
   // Compute total number of columns. Note that there may be some unused
-  // entries in newRecExprArray(), in the following cases:
-  // - An SQL/MP entry sequenced table, entry 0 will not be used as
-  //   the syskey (col 0) is not stored in that type of table
+  // entries in newRecExprArray(), in the following case:
   // - For computed columns that are not stored on disk
   totalColCount = userColListPtr->entries() + sysColList.entries();
   newRecExprArray().resize(totalColCount);
@@ -9507,6 +9808,10 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       return boundExpr;
     }
   }
+
+ 
+
+
    
   bindChildren(bindWA);
   if (bindWA->errStatus()) return this;
@@ -9641,6 +9946,8 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
      if (bulkLoadIndex) {
        setRETDesc(child(0)->getRETDesc());
       } 
+
+
 
     for (i = 0; i < tgtColList.entries() && i2 < newTgtColList.entries(); i++) {
       if(tgtColList[i] != newTgtColList[i2])
@@ -9785,7 +10092,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
             // If we allow incompatible type assignments, also include the
             // added cast into the updateToSelectMap
             assignSrcType.getTypeQualifier() !=  sourceType.getTypeQualifier() &&
-            CmpCommon::getDefault(ALLOW_INCOMPATIBLE_ASSIGNMENT) == DF_ON))
+            CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON))
         {
           updateToSelectMap().addMapEntry(target,assign->getSource());
         }
@@ -9847,8 +10154,7 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       
       // if we need to add the default value, we don't have a new rec expr yet
       if (NOT newRecExprArray().used(i)) {
-        // check for SQL/MP entry sequenced tables omitted above
-
+       
         const char* defaultValueStr = NULL;
         ItemExpr *  defaultValueExpr = NULL;
         NABoolean needToDeallocateColDefaultValueStr = FALSE;
@@ -10125,19 +10431,26 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
     const NodeMap* np;
     Lng32 partns = 1;
     if ( pf && (np = pf->getNodeMap()) )
-    {
-       partns = np->getNumEntries();
-       if(partns > 1  && CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) == DF_OFF)
-         // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
-         *CmpCommon::diags() << DgSqlCode(-4490);
-    }
+      {
+        partns = np->getNumEntries();
+        if(partns > 1  && CmpCommon::getDefault(ATTEMPT_ESP_PARALLELISM) == DF_OFF)
+          // 4490 - BULK LOAD into a salted table is not supported if ESP parallelism is turned off
+          *CmpCommon::diags() << DgSqlCode(-4490);
+      }
   }
 
   if (isUpsertThatNeedsMerge(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols)) {
-    boundExpr = xformUpsertToMerge(bindWA);
-    return boundExpr;
+    if (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) 	
+      {
+	boundExpr = xformUpsertToMerge(bindWA);  
+	return boundExpr;
+      }
+    else 
+      boundExpr = xformUpsertToEfficientTree(bindWA);
+    
+    
   }
-  else if (NOT (isMerge() || noIMneeded()))
+  if (NOT (isMerge() || noIMneeded()))
     boundExpr = handleInlining(bindWA, boundExpr);
 
   // turn OFF Non-atomic Inserts for ODBC if we have detected that Inlining is needed
@@ -10219,6 +10532,313 @@ NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean
      return FALSE;
 }
 
+/** commenting the following method out for future work. This may be enabled as a further performance improvement if we can eliminate the sort node that gets geenrated as part of the Sequence Node. In case of no duplicates we won't need the Sequence node at all. 
+
+// take an insert(src) node and transform it into
+// a tuple_flow with old/new rows flowing to the IM tree.
+// with a newly created input_scan
+RelExpr* Insert::xformUpsertToEfficientTreeNoDup(BindWA *bindWA) 
+{
+  NATable *naTable = bindWA->getNATable(getTableName());
+  if (bindWA->errStatus())
+    return NULL;
+  if ((naTable->getViewText() != NULL) && (naTable->getViewCheck()))		
+    {		
+      *CmpCommon::diags() << DgSqlCode(-3241) 		
+			  << DgString0(" View with check option not allowed.");	    		
+      bindWA->setErrStatus();		
+      return NULL;		
+    }
+
+  RelExpr *topNode = this;
+  // Create a new BindScope, to encompass the new nodes 
+  // upsert(left_join(input_scan, tuple))
+  // and any inlining nodes that will be created. Any values the upsert
+  // and children will need from src will be marked as outer references in that
+  // new BindScope. We assume that "src" is already bound.
+  ValueIdSet currOuterRefs = bindWA->getCurrentScope()->getOuterRefs();
+
+  CMPASSERT(child(0)->nodeIsBound());
+
+  BindScope *upsertScope = bindWA->getCurrentScope();
+
+  // columns of the target table
+  const ValueIdList &tableCols = updateToSelectMap().getTopValues();
+  const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
+
+  // create a Join node - left join of the base table columns with the columns to be upserted.
+  // columns of the target table
+  CMPASSERT(child(0)->nodeIsBound());
+  
+  Scan * targetTableScan =
+    new (bindWA->wHeap())
+    Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
+
+ 
+  //join predicate between source columns and target table.
+  ItemExpr * keyPred = NULL;
+  ItemExpr * keyPredPrev = NULL;
+  BaseColumn* baseCol;
+  ColReference * targetColRef;
+  int predCount = 0;
+  ValueIdSet newOuterRefs;
+  ItemExpr * pkeyValPrev;
+  ItemExpr * pkeyVals;
+  for (CollIndex i = 0; i < tableCols.entries(); i++)
+    {
+      baseCol = (BaseColumn *)(tableCols[i].getItemExpr()) ;
+      if (baseCol->getNAColumn()->isSystemColumn())
+	continue;
+
+      targetColRef = new(bindWA->wHeap()) ColReference(
+						       new(bindWA->wHeap()) ColRefName(
+										       baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
+    
+
+      if (baseCol->getNAColumn()->isClusteringKey())
+	{
+	  // create a join/key predicate between source and target table,
+	  // on the clustering key columns of the target table, making
+	  // ColReference nodes for the target table, so that we can bind
+	  // those to the new scan
+	  keyPredPrev = keyPred;
+	  keyPred = new (bindWA->wHeap())
+	    BiRelat(ITM_EQUAL, targetColRef, 
+		    sourceVals[i].getItemExpr(),
+		    baseCol->getType().supportsSQLnull());
+	  predCount++;
+	  if (predCount > 1) 
+	    {
+	      keyPred = new(bindWA->wHeap()) BiLogic(ITM_AND,
+						     keyPredPrev,
+						     keyPred);  
+	    }
+	  pkeyValPrev = pkeyVals;
+    
+	  pkeyVals = tableCols[i].getItemExpr();
+	  if (i > 0) 
+	    {
+	      pkeyVals = new(bindWA->wHeap()) ItemList(pkeyVals,pkeyValPrev);
+      
+	    }
+	}
+     
+    }
+ 
+  // Map the table's primary key values to the source lists key values
+  ValueIdList tablePKeyVals = NULL;
+  ValueIdList sourcePKeyVals = NULL;
+  
+  pkeyVals->convertToValueIdList(tablePKeyVals,bindWA,ITM_ITEM_LIST);
+  updateToSelectMap().mapValueIdListDown(tablePKeyVals,sourcePKeyVals);
+  
+  Join *lj = new(bindWA->wHeap()) Join(child(0),targetTableScan,REL_LEFT_JOIN,keyPred);
+  lj->doNotTransformToTSJ();	  
+  lj->setTSJForWrite(TRUE);
+   bindWA->getCurrentScope()->xtnmStack()->createXTNM();
+  RelExpr *boundLJ = lj->bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+  bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
+  setChild(0,boundLJ);
+  topNode = handleInlining(bindWA,topNode);
+
+
+  return topNode; 
+}
+*/
+
+// take an insert(src) node and transform it into
+// a tuple_flow with old/new rows flowing to the IM tree.
+// with a newly created sequence node used to eliminate duplicates.
+/*
+               NJ
+            /      \
+         Sequence   NJ
+        /            \  
+     Left Join        IM Tree 
+     /        \
+    /          \
+Input Tuplelist  Target Table Scan
+or select list
+*/
+         
+RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA) 
+{
+  NATable *naTable = bindWA->getNATable(getTableName());
+  if (bindWA->errStatus())
+    return NULL;
+  if ((naTable->getViewText() != NULL) && (naTable->getViewCheck()))		
+    {		
+      *CmpCommon::diags() << DgSqlCode(-3241) 		
+			  << DgString0(" View with check option not allowed.");	    		
+      bindWA->setErrStatus();		
+      return NULL;		
+    }
+
+  RelExpr *topNode = this;
+ 
+  CMPASSERT(child(0)->nodeIsBound());
+
+  BindScope *upsertScope = bindWA->getCurrentScope();
+  // Create a new BindScope, to encompass the new nodes 
+  // upsert(left_join(input_scan, tuple))
+  // and any inlining nodes that will be created. Any values the upsert
+  // and children will need from src will be marked as outer references in that
+  // new BindScope. We assume that "src" is already bound.
+  ValueIdSet currOuterRefs = bindWA->getCurrentScope()->getOuterRefs();
+  // Save the current RETDesc.
+  RETDesc *prevRETDesc = bindWA->getCurrentScope()->getRETDesc();
+
+  // columns of the target table
+  const ValueIdList &tableCols = updateToSelectMap().getTopValues();
+  const ValueIdList &sourceVals = updateToSelectMap().getBottomValues();
+
+  // create a Join node - left join of the base table columns with the columns to be upserted.
+  // columns of the target table
+  CMPASSERT(child(0)->nodeIsBound());
+  
+  Scan * targetTableScan =
+    new (bindWA->wHeap())
+    Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
+
+ 
+  //join predicate between source columns and target table.
+  ItemExpr * keyPred = NULL;
+  ItemExpr * keyPredPrev = NULL;
+  BaseColumn* baseCol;
+  ColReference * targetColRef;
+  int predCount = 0;
+  ValueIdSet newOuterRefs;
+  ItemExpr * pkeyValPrev = NULL;
+  ItemExpr * pkeyVals = NULL;
+  for (CollIndex i = 0; i < tableCols.entries(); i++)
+    {
+      baseCol = (BaseColumn *)(tableCols[i].getItemExpr()) ;
+      if (baseCol->getNAColumn()->isSystemColumn())
+	continue;
+
+      targetColRef = new(bindWA->wHeap()) ColReference(
+						       new(bindWA->wHeap()) ColRefName(
+										       baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
+    
+
+      if (baseCol->getNAColumn()->isClusteringKey())
+	{
+	  // create a join/key predicate between source and target table,
+	  // on the clustering key columns of the target table, making
+	  // ColReference nodes for the target table, so that we can bind
+	  // those to the new scan
+	  keyPredPrev = keyPred;
+	  keyPred = new (bindWA->wHeap())
+	    BiRelat(ITM_EQUAL, targetColRef, 
+		    sourceVals[i].getItemExpr(),
+		    baseCol->getType().supportsSQLnull());
+	  predCount++;
+	  if (predCount > 1) 
+	    {
+	      keyPred = new(bindWA->wHeap()) BiLogic(ITM_AND,
+						     keyPredPrev,
+						     keyPred);  
+	    }
+          
+          pkeyValPrev = pkeyVals;
+    
+	  pkeyVals = tableCols[i].getItemExpr();
+	  
+	  if (pkeyValPrev != NULL ) 
+	    {
+	      pkeyVals = new(bindWA->wHeap()) ItemList(pkeyVals,pkeyValPrev);
+      
+	    }
+	}
+     
+    }
+ 
+  // Map the table's primary key values to the source lists key values
+  ValueIdList tablePKeyVals ;
+  ValueIdList sourcePKeyVals ;
+  
+  pkeyVals->convertToValueIdList(tablePKeyVals,bindWA,ITM_ITEM_LIST);
+  updateToSelectMap().mapValueIdListDown(tablePKeyVals,sourcePKeyVals);
+  
+
+
+  Join *lj = new(bindWA->wHeap()) Join(child(0),targetTableScan,REL_LEFT_JOIN,keyPred);
+  
+  bindWA->getCurrentScope()->xtnmStack()->createXTNM();
+
+  
+  RelExpr *boundLJ = lj->bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+  bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
+ 
+ 
+  ValueIdSet sequenceFunction ;		
+ 
+  ItemExpr *constOne = new (bindWA->wHeap()) ConstValue(1);
+ 
+  //Retrieve all the system and user columns of the left join output
+  ValueIdList  ljOutCols = NULL;
+  boundLJ->getRETDesc()->getValueIdList(ljOutCols);
+  //Retrieve the null instantiated part of the LJ output
+  ValueIdList ljNullInstColumns = lj->nullInstantiatedOutput();
+  
+  //Create the olap node and use the primary key of the table as the 
+  //"partition by" columns for the olap node.
+  CMPASSERT(!bindWA->getCurrentScope()->getSequenceNode());
+  RelSequence *seqNode = new(bindWA->wHeap()) RelSequence(boundLJ, sourcePKeyVals.rebuildExprTree(ITM_ITEM_LIST),  (ItemExpr *)NULL);
+ 
+
+  // Create a LEAD Item Expr for a random value 999. 
+  // Use this to eliminate rows which have a NULL for this LEAD value within 
+  // a particular partition range.
+  ItemExpr *leadItem, *boundLeadItem = NULL;
+  ItemExpr *constLead999 = new (bindWA->wHeap()) ConstValue( 999);
+
+  leadItem = new(bindWA->wHeap()) ItmLeadOlapFunction(constLead999,1);
+  ((ItmLeadOlapFunction *)leadItem)->setIsOLAP(TRUE);
+  boundLeadItem = leadItem->bindNode(bindWA);
+  if (bindWA->errStatus()) return this;
+  boundLeadItem->convertToValueIdSet(sequenceFunction);
+  seqNode->setSequenceFunctions(sequenceFunction);
+  
+  // Add a selection predicate (post predicate) to check if the LEAD item is NULL
+  ItemExpr *selPredOnLead = NULL;
+  selPredOnLead = new (bindWA->wHeap()) UnLogic(ITM_IS_NULL,leadItem);
+  selPredOnLead = selPredOnLead->bindNode(bindWA);
+  if (bindWA->errStatus()) return this;
+  seqNode->selectionPred() += selPredOnLead->getValueId();
+  seqNode->setChild(0,boundLJ);
+
+ 
+  RelExpr *boundSeqNode = seqNode->bindNode(bindWA);  
+   
+  setChild(0,boundSeqNode);
+
+  // Fixup the newRecExpr() and newRecExprArray() to refer to the new 
+  // valueIds of the new child - i.e RelSequence. Use the saved off valueIdMap
+  // from the current bindScope for this.
+  ValueIdSet newNewRecExpr;
+  ValueIdMap notCoveredMap = bindWA->getCurrentScope()->getNcToOldMap();
+  notCoveredMap.rewriteValueIdSetUp(newNewRecExpr, newRecExpr());
+  newRecExpr() = newNewRecExpr;
+  
+  ValueIdList oldRecArrList(newRecExprArray());
+  ValueIdList newRecArrList;
+  notCoveredMap.rewriteValueIdListUp(newRecArrList, oldRecArrList);
+  ValueIdArray newNewRecArray(newRecArrList.entries());
+  
+  for (CollIndex i = 0; i < newRecArrList.entries(); i++)
+    {
+      newNewRecArray.insertAt(i,newRecArrList.at(i));
+    }
+  newRecExprArray() = newNewRecArray;
+  return topNode; 
+}
+
+
 // take an insert(src) node and transform it into
 // tsj_flow(src, merge_update(input_scan))
 // with a newly created input_scan
@@ -10249,7 +10869,6 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
 
   CMPASSERT(child(0)->nodeIsBound());
   bindWA->initNewScope();
-
   BindScope *mergeScope = bindWA->getCurrentScope();
 
   // create a new scan of the target table, to be used in the merge
@@ -10299,6 +10918,7 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
                                                 keyPredPrev,
                                                 keyPred);  
       }
+
     }
     if (sourceVals[i].getItemExpr()->getOperatorType() != ITM_CONSTANT)
       {
@@ -10707,7 +11327,7 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
   if (needsBindScope_)
     bindWA->initNewScope();
 
-  // For an xformaed upsert any UDF or subquery is guaranteed to be 
+  // For an xformed upsert any UDF or subquery is guaranteed to be 
   // in the using clause. Upsert will not generate a merge without using 
   // clause. ON clause, when matched SET clause and when not matched INSERT
   // clauses all use expressions from the using clause. (same vid).
@@ -10936,16 +11556,6 @@ RelExpr *Delete::bindNode(BindWA *bindWA)
     getTableDesc()->checkConstraints().clear();
     checkConstraints().clear();
   }
-
-  if (getTableDesc()->getClusteringIndex()->getNAFileSet()->isEntrySequenced())
-    {
-      // 4018 DELETE query cannot be used against an Entry-Seq table.
-      *CmpCommon::diags() << DgSqlCode(-4018) <<
-        DgTableName(getTableDesc()->getNATable()->getTableName().
-                      getQualifiedNameAsAnsiString());
-      bindWA->setErrStatus();
-      return this;
-    }
 
   if (NOT getTableDesc()->getVerticalPartitions().isEmpty())
     {
@@ -11269,7 +11879,7 @@ void GenericUpdate::bindUpdateExpr(BindWA        *bindWA,
   }
 
   CollIndex     i, j;
-  CollIndexList colnoList;                  // map of col nums (row positions)
+  CollIndexList colnoList(STMTHEAP);   // map of col nums (row positions)
   CollIndex a = assignList.entries();
 
   const ColumnDescList *viewColumns = NULL;
@@ -11890,21 +12500,6 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
      bindWA->setErrStatus();
      return NULL;
   }
-
-  // By setting the CQD OVERRIDE_SYSKEY to 'ON', the users
-  // are allowed to specify a SYSKEY value on an INSERT.
-  // We achieve this by treating a system column as a user column.
-  // This support is only provided for key sequenced files
-  // for MX and MP tables.
-  if (getOperatorType() == REL_UNARY_INSERT &&
-      naTable->hasSystemColumnUsedAsUserColumn() &&
-      naTable->getClusteringIndex()->isEntrySequenced())
-    {
-      *CmpCommon::diags() << DgSqlCode(-3410) 
-                          << DgTableName(naTable->getTableName().getQualifiedNameAsString());
-      bindWA->setErrStatus();
-      return this;
-    }
   
   Int32 beforeRefcount = naTable->getReferenceCount();
 
@@ -13803,7 +14398,8 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
                   (CmpCommon::diags()->mainSQLCODE() == -4193) ||
                   (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
                   (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
-                  (CmpCommon::diags()->mainSQLCODE() == -30044))  // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
                     return this;
       
               CmpCommon::diags()->clear();
@@ -15645,7 +16241,7 @@ RelExpr *CallSP::bindNode(BindWA *bindWA)
   LIST (ItemExpr *) &bWA_HVorDPs = bindWA->getSpHVDPs();
   CollIndex numHVorDPs = bWA_HVorDPs.entries();
 
-  ARRAY(ItemExpr *) local_HVorDPs(numHVorDPs);
+  ARRAY(ItemExpr *) local_HVorDPs(HEAP, numHVorDPs);
   CollIndex idx, idx1, idx2;
 
   // Sort the ItemExpr in the order they appeared in the stmt
@@ -16390,7 +16986,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
     RETDesc *childRetDesc = child(i)->getRETDesc();
     
     // Get Name
-    LIST(CorrName*) nameList;
+    LIST(CorrName*) nameList(STMTHEAP);
     childRetDesc->getXTNM().dumpKeys(nameList);
     if (nameList.entries() == 1)
     {
@@ -16949,6 +17545,45 @@ bool ControlRunningQuery::isUserAuthorized(BindWA *bindWA)
   return true;
   
 }// ControlRunningQuery::isUserAuthorized()
+
+RelExpr * CommonSubExprRef::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  CSEInfo *info = CmpCommon::statement()->getCSEInfo(internalName_);
+  CommonSubExprRef *parentCSE = bindWA->inCSE();
+
+  DCMPASSERT(info);
+
+  bindWA->setInCSE(this);
+
+  if (parentCSE)
+    // establish the parent/child relationship, if not done already
+    CmpCommon::statement()->getCSEInfo(parentCSE->getName())->addChildCSE(info);
+
+  bindChildren(bindWA);
+  if (bindWA->errStatus())
+    return this;
+
+  // eliminate any CommonSubExprRef nodes that are not truly common,
+  // i.e. those that are referenced only once
+  if (CmpCommon::statement()->getCSEInfo(internalName_)->getNumConsumers() <= 1)
+    return child(0).getPtr();
+
+  // we know that our child is a RenameTable (same name as this CSE,
+  // whose child is a RelRoot, defining the CTE. Copy the bound select
+  // list of the CTE.
+  CMPASSERT(child(0)->getOperatorType() == REL_RENAME_TABLE &&
+            child(0)->child(0)->getOperatorType() == REL_ROOT);
+  columnList_ = static_cast<RelRoot *>(child(0)->child(0).getPtr())->compExpr();
+
+  bindWA->setInCSE(parentCSE);
+
+  return bindSelf(bindWA);
+}
 
 RelExpr * OSIMControl::bindNode(BindWA *bindWA)
 {

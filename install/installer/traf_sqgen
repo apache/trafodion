@@ -29,6 +29,12 @@ STARTING_NODE=$(hostname)
 #==========================================
 echo "***INFO: starting sqgen" | tee -a $INSTALL_LOG
 cd $SQ_ROOT/sql/scripts
+
+#If sqconfig.db exists remove it and then sqgen can be run
+if [[ -e $SQ_ROOT/sql/scripts/sqconfig.db ]]; then
+   $TRAF_PDSH rm -rf $SQ_ROOT/sql/scripts/sqconfig.db
+fi
+
 $SQ_ROOT/sql/scripts/sqgen
 SQGEN_RC=$?
 if [ "$SQGEN_RC" != "0" ]; then

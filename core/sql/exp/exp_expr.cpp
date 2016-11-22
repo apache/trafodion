@@ -451,7 +451,7 @@ int ex_expr::formatARow2(const char** srcFldsPtr,
                                             sizeof(vcActualLen),
                                             heap,
                                             diags,
-                                            (conv_case_index)srcFieldsConvIndex[index]
+                                            (ConvInstruction)srcFieldsConvIndex[index]
                                             );
 
     if(err == ex_expr::EXPR_ERROR) return -1;
@@ -525,11 +525,20 @@ void AggrExpr::displayContents(Space * space, short mode, const char * displaySt
       finalExpr_->displayContents(space, mode, buf, flag);
     }
 
-#ifndef __EID
-  str_sprintf(buf, "%s::perrecExpr_", displayStr);
-#endif
+  if (groupingExpr_)
+    {
+      str_sprintf(buf, "%s::groupingExpr_", displayStr);
+      
+      groupingExpr_->displayContents(space, mode, buf, flag);
+    }
 
-  ex_expr::displayContents(space, mode, buf, flag);
+  if (perrecExpr_)
+    {
+      str_sprintf(buf, "%s::perrecExpr_", displayStr);
+
+      perrecExpr_->displayContents(space, mode, buf, flag);
+    }
+
 }
 
 

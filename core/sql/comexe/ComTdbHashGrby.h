@@ -178,6 +178,10 @@ NA_EIDPROC
 NA_EIDPROC
   Int32 orderedQueueProtocol() const;
 
+  AggrExpr * hbAggrExpr()  const { return (AggrExpr*)((ex_expr*)hbAggrExpr_); }
+  AggrExpr * ofAggrExpr()  const { return (AggrExpr*)((ex_expr*)ofAggrExpr_); }
+  AggrExpr * resAggrExpr() const { return (AggrExpr*)((ex_expr*)resAggrExpr_); }
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------

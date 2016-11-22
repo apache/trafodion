@@ -35,7 +35,7 @@ using std::ofstream;
 #include "ex_globals.h"
 
 Lng32 ExpLOBinterfaceInit(void *& exLobGlob, void * lobHeap,
-                          void *currContext,NABoolean isHive,
+                          void *currContext,NABoolean isHiveRead,
                           char *hdfsServer, 
                           Int32 port)
 {
@@ -64,9 +64,8 @@ Lng32 ExpLOBinterfaceInit(void *& exLobGlob, void * lobHeap,
 		   0);
   if (exLobGlob)
     {
-      ((ExLobGlobals *)exLobGlob)->setIsHive(isHive);
       NAHeap *heap = new ((NAHeap *)lobHeap) NAHeap("LOB Heap", (NAHeap *)lobHeap);
-      if (isHive)
+      if (isHiveRead)
         ((ExLobGlobals *)exLobGlob)->startWorkerThreads();
       heap->setThreadSafe();
       ((ExLobGlobals *)exLobGlob)->setHeap(heap);
@@ -256,7 +255,10 @@ Lng32 ExpLOBinterfaceDataModCheck(void * exLobGlob,
                                   char * lobHdfsServer,
                                   Lng32  lobHdfsPort,
                                   Int64  modTS,
-                                  Lng32  numOfPartLevels)
+                                  Lng32  numOfPartLevels,
+                                  Int64 &failedModTS,
+                                  char * failedLocBuf, // OUT: path/name
+                                  Int32 &failedLocBufLen) // INOUT: buflen
 {
   Ex_Lob_Error err;
 
@@ -265,15 +267,22 @@ Lng32 ExpLOBinterfaceDataModCheck(void * exLobGlob,
   Ex_Lob_Error status;
   Int64 cliError = -1;
 
-  char dirInfoBuf[100];
-  *(Int64*)dirInfoBuf = modTS;
-  *(Lng32*)&dirInfoBuf[sizeof(modTS)] = numOfPartLevels;
-  Lng32 dirInfoBufLen = sizeof(modTS) + sizeof(numOfPartLevels);
+  Lng32 blackBoxLen = 
+    sizeof(modTS) + sizeof(numOfPartLevels) 
+    + sizeof(failedLocBufLen) + failedLocBufLen;
+  char blackBox[blackBoxLen];
+  *(Int64*)blackBox = modTS;
+  *(Lng32*)&blackBox[sizeof(modTS)] = numOfPartLevels;
+  *(Lng32*)&blackBox[sizeof(modTS)+sizeof(numOfPartLevels)] = failedLocBufLen;
+  failedModTS = -1;
   err = ExLobsOper((char*)"",
                    NULL, 0,
                    lobHdfsServer, lobHdfsPort,
-                   NULL, dummyParam2, 0, dummyParam,
-                   dummyParam, 0, dummyParam, status, cliError,
+                   NULL, dummyParam2, 
+                   0, failedModTS,
+                   dummyParam, 
+                   0, dummyParam,
+                   status, cliError,
                    dirPath, (LobsStorage)Lob_HDFS_File,
                    NULL, 0,
 		   0,NULL,
@@ -282,11 +291,22 @@ Lng32 ExpLOBinterfaceDataModCheck(void * exLobGlob,
                    1, // waited op
                    exLobGlob,
                    0, 
-                   dirInfoBuf, dirInfoBufLen
+                   blackBox, blackBoxLen
                    );
-
   if (err == LOB_DATA_MOD_CHECK_ERROR)
-    return 1;
+    {
+      failedLocBufLen = 
+        *(Lng32*)&blackBox[sizeof(modTS)+sizeof(numOfPartLevels)];
+
+      if (failedLocBufLen > 0)
+        {
+          str_cpy_and_null(failedLocBuf, 
+                           &blackBox[sizeof(modTS)+sizeof(numOfPartLevels)+sizeof(failedLocBufLen)], 
+                           failedLocBufLen, '\0', ' ', TRUE);
+        }
+
+      return 1;
+    }
   else if (err != LOB_OPER_OK)
     return -err;
   else

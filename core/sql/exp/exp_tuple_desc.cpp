@@ -149,16 +149,17 @@ ExpTupleDesc::~ExpTupleDesc()
 // were added.
 NA_EIDPROC
 static Int16 orderFixedFieldsByAlignment( Attributes    ** attrs,
-                                          NAList<UInt32> * fixedFields )
+                                          NAList<UInt32> * fixedFields)
 {
   Int16  rc = 0;
 
   Attributes *attr;
-  NAList<UInt32> align8(4);
-  NAList<UInt32> align4(10);
-  NAList<UInt32> align2(10);
-  NAList<UInt32> align1(4);
-  NAList<UInt32> addedCols(4);
+  NAList<UInt32> align8(NULL,4);
+  NAList<UInt32> align4(NULL,10);
+  NAList<UInt32> align2(NULL,10);
+  NAList<UInt32> align1(NULL,4);
+  NAList<UInt32> addedCols(NULL,4); // on C++ heap, wil get dellocated when
+                                    // we return
 
   UInt32 fieldIdx = 0;
   UInt32 numFixed = fixedFields->entries();
@@ -170,7 +171,7 @@ static Int16 orderFixedFieldsByAlignment( Attributes    ** attrs,
     fixedFields->getFirst( fieldIdx );
     attr    = attrs[ fieldIdx ];
 
-    if (attr->isSpecialField())   // an added column
+    if (attr->isAddedCol())   // an added column
     {
       addedCols.insert( fieldIdx );
       continue;
@@ -259,7 +260,16 @@ void computeOffsetOfFixedField(Attributes **  attrs,
     attrs[prevIdx]->setNextFieldIndex(fieldIdx);
 
   if (alignFormat)
-    fixedOffset = ADJUST(fixedOffset, field->getDataAlignmentSize());
+    {
+      if ((field->isAddedCol()) && (field->getDataAlignmentSize() == 8))
+        {
+          fixedOffset = ADJUST(fixedOffset, 4);
+        }
+      else
+        {
+          fixedOffset = ADJUST(fixedOffset, field->getDataAlignmentSize());
+        }
+    }
 
   if (firstField == ExpOffsetMax)
   {
@@ -371,7 +381,7 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
                 // determine offset at compile time. Remember 
                 // the position of this field (as a negative number
                 // coz all positive values could be valid offsets).
-                attrs[i]->setSpecialField();
+                attrs[i]->setAddedCol();
              	attrs[i]->setOffset(ExpOffsetMax);
 		attrs[i]->setRelOffset(i);
 
@@ -619,9 +629,9 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
         // GU attributes are materialized view columns that are projected out
         // during an update.
         // Variable length fields get their VOA offset set here too.
-	NAList<UInt32> fixedColumns(10);
-	NAList<UInt32> varFields(10);
-	NAList<UInt32> guFields(3);
+	NAList<UInt32> fixedColumns(NULL,10);
+	NAList<UInt32> varFields(NULL,10);
+	NAList<UInt32> guFields(NULL,3);
 
         NAList<UInt32> *fixedFields = &fixedColumns;
 
@@ -689,7 +699,7 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
           else   // have a fixed field, add it to list to process next
             fixedFields->insert(i);
 
-          if (attrs[i]->isSpecialField())
+          if (attrs[i]->isAddedCol())
           {
             *rtnFlags |= ExpTupleDesc::ADDED_COLUMN;
 
@@ -718,7 +728,7 @@ Int16 ExpTupleDesc::computeOffsets(UInt32 num_attrs,        /* IN  */
         if ( alignedFormat )
         {
           // This call destructively rearranges the list of fixed fields.
-          orderFixedFieldsByAlignment( attrs, fixedFields );
+          orderFixedFieldsByAlignment( attrs, fixedFields);
 
           // No variable fields present so adjust the first fixed for the
           // pad bytes.

@@ -1270,12 +1270,17 @@ public:
   void setCleanupAllTables(NABoolean v)
   {(v ? flags_ |= CLEANUP_ALL_TABLES : flags_ &= ~CLEANUP_ALL_TABLES); };
   NABoolean cleanupAllTables() { return (flags_ & CLEANUP_ALL_TABLES) != 0; };
+  void setCleanupHiveCSETables(NABoolean v)
+  {(v ? flags_ |= CLEANUP_HIVE_CSE_TABLES : flags_ &= ~CLEANUP_HIVE_CSE_TABLES); }
+  NABoolean cleanupHiveCSETables() { return (flags_ & CLEANUP_HIVE_CSE_TABLES) != 0; }
 
 private:
   enum
   {
     // cleanup obsolete and active schemas/tables.
-    CLEANUP_ALL_TABLES          = 0x0001
+    CLEANUP_ALL_TABLES          = 0x0001,
+    // cleanup Hive tables used for common subexpressions
+    CLEANUP_HIVE_CSE_TABLES     = 0x0002
   };
 
   UInt32 flags_;                                             // 00-03
@@ -1620,12 +1625,19 @@ private:
 class ComTdbExeUtilHiveTruncate : public ComTdbExeUtil
 {
 public:
+  // flags
+  enum
+  {
+    TRUNC_DROP_TABLE_ON_DEALLOC = 0x0001
+  };
+
   ComTdbExeUtilHiveTruncate()
   : ComTdbExeUtil()
   {}
 
   ComTdbExeUtilHiveTruncate(char * tableName,
                             ULng32 tableNameLen,
+                            char * hiveTableName,
                             char * tableLocation,
                             char * partnLocation,
                             char * hostName,
@@ -1677,18 +1689,28 @@ public:
     return partnLocation_;
   }
 
+  char * getHiveTableName() const
+  {
+    return hiveTableName_;
+  }
+
+  void setDropOnDealloc(NABoolean v)
+  {(v ? flags_ |= TRUNC_DROP_TABLE_ON_DEALLOC : flags_ &= ~TRUNC_DROP_TABLE_ON_DEALLOC); }
+  NABoolean getDropOnDealloc() { return (flags_ & TRUNC_DROP_TABLE_ON_DEALLOC) != 0; }
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
   NA_EIDPROC void displayContents(Space *space, ULng32 flag);
 
 private:
-  NABasicPtr tableLocation_;                     // 00-07
-  NABasicPtr partnLocation_;                     // 08-15
-  NABasicPtr hdfsHost_;                          // 16-23
-  Int64 modTS_;                                  // 24-31
-  Int32 hdfsPort_;                               // 32-35
-  UInt32 flags_;                                 // 36-39
+  NABasicPtr hiveTableName_;                     // 00-07
+  NABasicPtr tableLocation_;                     // 08-15
+  NABasicPtr partnLocation_;                     // 16-23
+  NABasicPtr hdfsHost_;                          // 24-31
+  Int64 modTS_;                                  // 32-39
+  Int32 hdfsPort_;                               // 40-43
+  UInt32 flags_;                                 // 44-47
 };
 
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil
@@ -3509,31 +3531,66 @@ private:
   char         fillersExeUtilHbaseUnLoad_[16];          // 38 - 53
 };
 
+#define STATS_NAME_MAX_LEN 256
+#define STATS_REGION_NAME_MAX_LEN 512
+
 static const ComTdbVirtTableColumnInfo comTdbRegionStatsVirtTableColumnInfo[] =
   {
     { "CATALOG_NAME",                   0, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
     { "SCHEMA_NAME",                    1, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
     { "OBJECT_NAME",                    2, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
-    { "REGION_NUM",                     3, COM_USER_COLUMN, REC_BIN64_SIGNED,  4, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
-    { "REGION_NAME",                    4, COM_USER_COLUMN, REC_BYTE_F_ASCII,  512, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
-    { "NUM_STORES",                     5, COM_USER_COLUMN, REC_BIN32_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
-    { "NUM_STORE_FILES",                6, COM_USER_COLUMN, REC_BIN32_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
-    { "STORE_FILE_UNCOMP_SIZE",         7, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
-    { "STORE_FILE_SIZE",                8, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
-    { "MEM_STORE_SIZE",                 9, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
-    { "READ_REQUESTS_COUNT",           10, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
-    { "WRITE_REQUESTS_COUNT",          11, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  }
+    { "REGION_SERVER",                  3, COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "REGION_NUM",                     4, COM_USER_COLUMN, REC_BIN64_SIGNED,  4, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "REGION_NAME",                    5, COM_USER_COLUMN, REC_BYTE_F_ASCII,  512, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "NUM_STORES",                     6, COM_USER_COLUMN, REC_BIN32_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "NUM_STORE_FILES",                7, COM_USER_COLUMN, REC_BIN32_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "STORE_FILE_UNCOMP_SIZE",         8, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "STORE_FILE_SIZE",                9, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "MEM_STORE_SIZE",                10, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "READ_REQUESTS_COUNT",           11, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "WRITE_REQUESTS_COUNT",          12, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  }
   };
 
-#define STATS_NAME_MAX_LEN 256
-#define STATS_REGION_NAME_MAX_LEN 512
 struct ComTdbRegionStatsVirtTableColumnStruct
 {
   char   catalogName[STATS_NAME_MAX_LEN];
   char   schemaName[STATS_NAME_MAX_LEN];
   char   objectName[STATS_NAME_MAX_LEN];
+  char   regionServer[STATS_NAME_MAX_LEN];
   Int64  regionNum;
   char   regionName[STATS_REGION_NAME_MAX_LEN];
+  Lng32  numStores;
+  Lng32  numStoreFiles;
+  Int64  storeFileUncompSize;
+  Int64  storeFileSize;
+  Int64  memStoreSize;
+  Int64  readRequestsCount;
+  Int64  writeRequestsCount;
+};
+
+static const ComTdbVirtTableColumnInfo comTdbClusterStatsVirtTableColumnInfo[] =
+  {
+    { "REGION_SERVER",                  0, COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "REGION_NAME",                    1, COM_USER_COLUMN, REC_BYTE_F_ASCII,  512, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "CATALOG_NAME",                   1, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "SCHEMA_NAME",                    2, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "OBJECT_NAME",                    3, COM_USER_COLUMN, REC_BYTE_F_ASCII,  256, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "NUM_STORES",                     4, COM_USER_COLUMN, REC_BIN32_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "NUM_STORE_FILES",                5, COM_USER_COLUMN, REC_BIN32_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "STORE_FILE_UNCOMP_SIZE",         6, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "STORE_FILE_SIZE",                7, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "MEM_STORE_SIZE",                 8, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "READ_REQUESTS_COUNT",            9, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  },
+    { "WRITE_REQUESTS_COUNT",          10, COM_USER_COLUMN, REC_BIN64_SIGNED,    8, FALSE, SQLCHARSETCODE_UTF8 , 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL, COM_UNKNOWN_DIRECTION_LIT, 0  }
+  };
+
+struct ComTdbClusterStatsVirtTableColumnStruct
+{
+  char   regionServer[STATS_NAME_MAX_LEN];
+  char   regionName[STATS_REGION_NAME_MAX_LEN];
+  char   catalogName[STATS_NAME_MAX_LEN];
+  char   schemaName[STATS_NAME_MAX_LEN];
+  char   objectName[STATS_NAME_MAX_LEN];
   Lng32  numStores;
   Lng32  numStoreFiles;
   Int64  storeFileUncompSize;
@@ -3558,6 +3615,7 @@ public:
        char * tableName,
        ex_expr_base * input_expr,
        ULng32 input_rowlen,
+       ex_expr_base * scan_expr,
        ex_cri_desc * work_cri_desc,
        const unsigned short work_atp_index,
        ex_cri_desc * given_cri_desc,
@@ -3567,9 +3625,6 @@ public:
        Lng32 num_buffers,
        ULng32 buffer_size
        );
-  
-  //  Long pack (void *);
-  //  Lng32 unpack(void *, void * reallocator);
   
   void setIsIndex(NABoolean v)
   {(v ? flags_ |= IS_INDEX : flags_ &= ~IS_INDEX); };
@@ -3583,6 +3638,11 @@ public:
   {(v ? flags_ |= SUMMARY_ONLY : flags_ &= ~SUMMARY_ONLY); };
   NABoolean summaryOnly() { return (flags_ & SUMMARY_ONLY) != 0; };
 
+  void setClusterView(NABoolean v)
+  {(v ? flags_ |= CLUSTER_VIEW : flags_ &= ~CLUSTER_VIEW); };
+  NABoolean clusterView() { return (flags_ & CLUSTER_VIEW) != 0; };
+  const NABoolean clusterView() const { return (flags_ & CLUSTER_VIEW) != 0; };
+
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
@@ -3590,25 +3650,31 @@ public:
 
   virtual const char *getNodeName() const 
   { 
-    return "GET_REGION_STATS";
+    return (clusterView() ? "GET_CLUSTER_STATS" : "GET_REGION_STATS");
   };
 
-  static int getVirtTableNumCols()
+  int getVirtTableNumCols()
   {
-    return sizeof(comTdbRegionStatsVirtTableColumnInfo)/sizeof(ComTdbVirtTableColumnInfo);
+    return 
+      (clusterView() 
+       ? sizeof(comTdbClusterStatsVirtTableColumnInfo)/sizeof(ComTdbVirtTableColumnInfo)
+       : sizeof(comTdbRegionStatsVirtTableColumnInfo)/sizeof(ComTdbVirtTableColumnInfo));
   }
 
-  static ComTdbVirtTableColumnInfo * getVirtTableColumnInfo()
+  ComTdbVirtTableColumnInfo * getVirtTableColumnInfo()
   {
-    return (ComTdbVirtTableColumnInfo*)comTdbRegionStatsVirtTableColumnInfo;
+    return (ComTdbVirtTableColumnInfo*)
+      (clusterView() 
+       ? comTdbClusterStatsVirtTableColumnInfo 
+       : comTdbRegionStatsVirtTableColumnInfo);
   }
 
-  static int getVirtTableNumKeys()
+  int getVirtTableNumKeys()
   {
     return 0;
   }
 
-  static ComTdbVirtTableKeyInfo * getVirtTableKeyInfo()
+  ComTdbVirtTableKeyInfo * getVirtTableKeyInfo()
   {
     return NULL;
   }
@@ -3618,7 +3684,8 @@ private:
   {
     IS_INDEX       = 0x0001,
     DISPLAY_FORMAT = 0x0002,
-    SUMMARY_ONLY   = 0x0004
+    SUMMARY_ONLY   = 0x0004,
+    CLUSTER_VIEW   = 0x0008
   };
 
   UInt32 flags_;                                     // 00-03

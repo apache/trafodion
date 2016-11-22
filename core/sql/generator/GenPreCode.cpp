@@ -1648,7 +1648,8 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       isCIFOn_ = FALSE;
 
       if ((CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) == DF_ON )||
-          generator->isFastExtract())
+          generator->isFastExtract() ||
+          generator->containsFastExtract())
       {
          isCIFOn_ = TRUE;
          generator->setCompressedInternalFormat();
@@ -2842,7 +2843,8 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
              (ddlNode->getOperatorType() == DDL_ALTER_SCHEMA) ||
              (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
-             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE)))
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME)))
      {
         // transaction will be started and commited in called methods.
         xnCanBeStarted = FALSE;
@@ -5048,22 +5050,28 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
   generator->setUpdSavepointOnError(FALSE);
   generator->setUpdPartialOnError(FALSE);
   
-  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
-    noDTMxn() = TRUE;
-  
   // if unique oper with no index maintanence and autocommit is on, then
-  // do not require a trnsaction. Hbase guarantees single row consistency.
+  // do not require a trnsaction. 
+  // Use hbase or region transactions. 
+  // Hbase guarantees single row consistency.
   Int64 transId = -1;
-  if (((uniqueHbaseOper()) &&
-       (NOT cursorHbaseOper()) &&
-       (NOT uniqueRowsetHbaseOper()) &&
-       (NOT inlinedActions) &&
-       (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
-       (! NAExecTrans(0, transId)) &&
-       (NOT generator->oltOptInfo()->multipleRowsReturned())) ||
-      (noDTMxn()))
+  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
     {
       // no transaction needed
+      noDTMxn() = TRUE;
+    }
+  else if ((uniqueHbaseOper()) &&
+           (NOT cursorHbaseOper()) &&
+           (NOT uniqueRowsetHbaseOper()) &&
+           (NOT inlinedActions) &&
+           (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
+           (! NAExecTrans(0, transId)) &&
+           (NOT generator->oltOptInfo()->multipleRowsReturned()))
+    {
+      // no DTM transaction needed
+      useRegionXn() = FALSE;
+      if (CmpCommon::getDefault(TRAF_USE_REGION_XN) == DF_ON)
+        useRegionXn() = TRUE;
     }
   else
     {
@@ -5319,30 +5327,29 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
   generator->setUpdSavepointOnError(FALSE);
   generator->setUpdPartialOnError(FALSE);
 
-  // if seq gen metadata is being updated through an internal query 
-  // and we are running under a user Xn,
-  // do not mark this stmt as a transactional stmt.
-  // This is done so those updates can run in its own transaction and not be
-  // part of the enclosing user Xn.
-  // When we have support for local transactions and repeatable read, we
-  // will then run this update in local transactional mode.
-  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
-    noDTMxn() = TRUE;
-
   // if unique oper with no index maintanence and autocommit is on, then
-  // do not require a transaction. Hbase guarantees single row consistency.
+  // do not require a transaction. 
+  // Use hbase or region transactions. 
+  // Hbase guarantees single row consistency.
   Int64 transId = -1;
-  if (((uniqueHbaseOper()) &&
-       (NOT isMerge()) &&
-       (NOT cursorHbaseOper()) &&
-       (NOT uniqueRowsetHbaseOper()) &&
-       (NOT inlinedActions) &&
-       (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
-       (! NAExecTrans(0, transId)) &&
-       (NOT generator->oltOptInfo()->multipleRowsReturned())) ||
-      (noDTMxn()))
+  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
     {
       // no transaction needed
+      noDTMxn() = TRUE;
+    }
+  else if ((uniqueHbaseOper()) &&
+           (NOT isMerge()) &&
+           (NOT cursorHbaseOper()) &&
+           (NOT uniqueRowsetHbaseOper()) &&
+           (NOT inlinedActions) &&
+           (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
+           (! NAExecTrans(0, transId)) &&
+           (NOT generator->oltOptInfo()->multipleRowsReturned()))
+    {
+      // no DTM transaction needed
+      useRegionXn() = FALSE;
+      if (CmpCommon::getDefault(TRAF_USE_REGION_XN) == DF_ON)
+        useRegionXn() = TRUE;
     }
   else
     {
@@ -5611,23 +5618,29 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
   generator->setUpdSavepointOnError(FALSE);
   generator->setUpdPartialOnError(FALSE);
 
-  if (CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON)
-    noDTMxn() = TRUE;
-  
   // if unique oper with no index maintanence and autocommit is on, then
-  // do not require a trnsaction. Hbase guarantees single row consistency.
+  // do not require a trnsaction. 
+  // Use hbase or region transactions. 
+  // Hbase guarantees single row consistency.
   Int64 transId = -1;
-  if (((uniqueHbaseOper()) &&
-       (NOT uniqueRowsetHbaseOper()) &&
-       (NOT inlinedActions) &&
-       (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
-       (! NAExecTrans(0, transId)) &&
-       (NOT generator->oltOptInfo()->multipleRowsReturned())) ||
+  if ((CmpCommon::getDefault(TRAF_NO_DTM_XN) == DF_ON) ||
       (isNoRollback()) ||
-      ((isUpsert()) && (insertType_ == UPSERT_LOAD)) ||
-      (noDTMxn()))
+      ((isUpsert()) && (insertType_ == UPSERT_LOAD)))
     {
       // no transaction needed
+      noDTMxn() = TRUE;
+    }
+  else if ((uniqueHbaseOper()) &&
+           (NOT uniqueRowsetHbaseOper()) &&
+           (NOT inlinedActions) &&
+           (generator->getTransMode()->getAutoCommit() == TransMode::ON_) &&
+           (! NAExecTrans(0, transId)) &&
+           (NOT generator->oltOptInfo()->multipleRowsReturned()))
+    {
+      // no DTM transaction needed
+      useRegionXn() = FALSE;
+      if (CmpCommon::getDefault(TRAF_USE_REGION_XN) == DF_ON)
+        useRegionXn() = TRUE;
     }
   else
     {
@@ -5733,7 +5746,6 @@ RelExpr * HashGroupBy::preCodeGen(Generator * generator,
   return GroupByAgg::preCodeGen(generator, externalInputs, pulledNewInputs);
 
 }
-
 RelExpr * GroupByAgg::preCodeGen(Generator * generator,
 				 const ValueIdSet & externalInputs,
 				 ValueIdSet &pulledNewInputs)
@@ -5801,6 +5813,15 @@ RelExpr * GroupByAgg::preCodeGen(Generator * generator,
 
   // Rebuild the grouping expressions tree. Use bridge values, if possible
   groupExpr().replaceVEGExpressions
+                 (availableValues,
+		  getGroupAttr()->getCharacteristicInputs(),
+                  FALSE, // No key predicates need to be generated here
+		  NULL,
+		  replicatePredicates,
+                  &getGroupAttr()->getCharacteristicOutputs());
+
+  // Rebuild the rollup grouping expressions tree. Use bridge values, if possible
+  rollupGroupExprList().replaceVEGExpressions
                  (availableValues,
 		  getGroupAttr()->getCharacteristicInputs(),
                   FALSE, // No key predicates need to be generated here
@@ -6039,6 +6060,101 @@ RelExpr * MapValueIds::preCodeGen(Generator * generator,
 
   getGroupAttr()->addCharacteristicInputs(pulledNewInputs);
 
+  if (cseRef_)
+    {
+      // -------------------------------------------------------------
+      // This MapValueIds represents a common subexpression.
+      //
+      // We need to take some actions here to help with VEG rewrite,
+      // since we eliminated some nodes from the tree, while the
+      // VEGies still contain all equated values, including those that
+      // got eliminated. Furthermore, the one tree that was chosen for
+      // materialization got moved and we need to make sure that the
+      // place where we scan the temp table produces the same ValueIds
+      // that were marked as "Bridge Values" when we processed the
+      // insert into temp statement.
+      // -------------------------------------------------------------
+
+      ValueIdSet cseVEGPreds;
+      const ValueIdList &vegCols(cseRef_->getColumnList());
+      ValueIdSet nonVegCols(cseRef_->getNonVEGColumns());
+      NABoolean isAnalyzingConsumer =
+        (CmpCommon::statement()->getCSEInfo(cseRef_->getName())->
+           getIdOfAnalyzingConsumer() == cseRef_->getId());
+      ValueIdSet availableValues(
+           getGroupAttr()->getCharacteristicInputs());
+
+      valuesNeededForVEGRewrite_ += cseRef_->getNonVEGColumns();
+      availableValues += valuesNeededForVEGRewrite_;
+
+      // find all the VEG predicates of the original columns that this
+      // common subexpression represents...
+      for (CollIndex v=0; v<vegCols.entries(); v++)
+        if (vegCols[v].getItemExpr()->getOperatorType() == ITM_VEG_REFERENCE)
+          {
+            // look at one particular VEG that is produced by this
+            // query tree
+            VEG *veg =
+              static_cast<VEGReference *>(vegCols[v].getItemExpr())->getVEG();
+
+            if (isAnalyzingConsumer && veg->getBridgeValues().entries() > 0)
+              {
+                // If we are looking at the analyzing consumer, then
+                // its child tree "C" got transformed into an
+                // "insert overwrite table "temp" select * from "C".
+
+                // This insert into temp statement chose some VEG
+                // member(s) as the "bridge value(s)". Find these bridge
+                // values and choose one to represent the VEG here.
+                const ValueIdSet &vegMembers(veg->getAllValues());
+
+                // collect all VEG members produced and subtract them
+                // from the values to be used for VEG rewrite
+                ValueIdSet subtractions(cseRef_->getNonVEGColumns());
+                // then add back only the bridge value
+                ValueIdSet additions;
+
+                // get the VEG members produced by child C
+                subtractions.intersectSet(vegMembers);
+
+                // augment the base columns with their index columns,
+                // the bridge value is likely an index column
+                for (ValueId v=subtractions.init();
+                     subtractions.next(v);
+                     subtractions.advance(v))
+                  if (v.getItemExpr()->getOperatorType() == ITM_BASECOLUMN)
+                    {
+                      subtractions +=
+                        static_cast<BaseColumn *>(v.getItemExpr())->getEIC();
+                    }
+
+                // now find a bridge value (or values) that we can
+                // produce
+                additions = subtractions;
+                additions.intersectSet(veg->getBridgeValues());
+
+                // if we found it, then adjust availableValues
+                if (additions.entries() > 0)
+                  {
+                    availableValues -= subtractions;
+                    availableValues += additions;
+                  }
+              }
+
+            cseVEGPreds += veg->getVEGPredicate()->getValueId();
+          } // a VEGRef
+
+      // Replace the VEGPredicates, pretending that we still have
+      // the original tree below us, not the materialized temp
+      // table. This will hopefully keep the bookkeeping in the
+      // VEGies correct by setting the right referenced values
+      // and choosing the right bridge values.
+      cseVEGPreds.replaceVEGExpressions(
+           availableValues,
+           getGroupAttr()->getCharacteristicInputs());
+
+    } // this MapValueIds is for a common subexpression
+
   // ---------------------------------------------------------------------
   // The MapValueIds node describes a mapping between expressions used
   // by its child tree and expressions used by its parent tree. The
@@ -6107,10 +6223,9 @@ RelExpr * MapValueIds::preCodeGen(Generator * generator,
     x.getItemExpr()->getLeafValueIds(leafValues);
   lowerAvailableValues += leafValues;
 
-  // upperAvailableValues is needed for mvqr. The addition of the lower 
-  // available values is only necessary to avoid an assertion failure in
-  // VEGReference::replaceVEGReference().
-  ValueIdSet upperAvailableValues(valuesForVEGRewrite());
+  ValueIdSet upperAvailableValues(valuesNeededForVEGRewrite_);
+  // The addition of the lower available values is only necessary to
+  // avoid an assertion failure in VEGReference::replaceVEGReference().
   upperAvailableValues += lowerAvailableValues;
 
   // ---------------------------------------------------------------------
@@ -6161,11 +6276,12 @@ RelExpr * MapValueIds::preCodeGen(Generator * generator,
           {
              if (newUpper->getOperatorType() == ITM_VEG_REFERENCE) 
              {
-               if (usedByMvqr())
-                 // If this node is used to map the outputs of an MV added by
-                 // MVQR, upperAvailableValues has been constructed to
-                 // contain the base column a vegref should map to, so we use
-                 // that instead of a created surrogate.
+               if (valuesNeededForVEGRewrite_.entries() > 0)
+                 // If this node is used to map the outputs of one
+                 // table to those of another, upperAvailableValues
+                 // has been constructed to contain the base column a
+                 // vegref should map to, so we use that instead of a
+                 // created surrogate.
                  newUpper = newUpper->replaceVEGExpressions
                                 (upperAvailableValues,
 				 getGroupAttr()->getCharacteristicInputs());
@@ -7665,7 +7781,7 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
       child(0) = generator->getExpGenerator()->convertNumericToInterval(
                                                  child(0)->getValueId(),
                                                  *result_type);
-      strcpy(str, "1");
+      strcpy(str, "001"); // to make sure it is not a tinyint
       child(1) = generator->getExpGenerator()->createExprTree(str, CharInfo::ISO88591);
       child(1)->bindNode(generator->getBindWA());
       type_op2 = (NAType *)(&(child(1)->getValueId().getType()));
@@ -7714,7 +7830,7 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
       child(0) = generator->getExpGenerator()->convertNumericToInterval(
                                                  child(0)->getValueId(),
                                                  *result_type);
-      strcpy(str, "1");
+      strcpy(str, "001"); // to make sure it is not a tinyint
       child(1) = generator->getExpGenerator()->createExprTree(str, CharInfo::ISO88591);
       child(1)->bindNode(generator->getBindWA());
       type_op2 = (NAType *)(&(child(1)->getValueId().getType()));
@@ -8305,12 +8421,12 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 
   ex_comp_clause temp_clause;
 
-  temp_clause.set_case_index(getOperatorType(),
+  temp_clause.setInstruction(getOperatorType(),
 			     attr_op1,
 			     attr_op2
 			     );
 
-  if ((temp_clause.get_case_index() == ex_comp_clause::COMP_NOT_SUPPORTED) &&
+  if ((temp_clause.getInstruction() == COMP_NOT_SUPPORTED) &&
       (type1B.getTypeQualifier() == NA_NUMERIC_TYPE) &&
       (type2B.getTypeQualifier() == NA_NUMERIC_TYPE))
     {
@@ -8364,17 +8480,17 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
                      newOp1->getValueId().getType(), generator->wHeap()));
            }
 
-          temp_clause.set_case_index(getOperatorType(),
+          temp_clause.setInstruction(getOperatorType(),
                                      attr_op1,
                                      attr_op2
                                      );
         } // convert
     }
   
-  if (temp_clause.get_case_index() != ex_comp_clause::COMP_NOT_SUPPORTED)
+  if (temp_clause.getInstruction() != COMP_NOT_SUPPORTED)
     {
       NABoolean doConstFolding = FALSE;
-      if ((temp_clause.get_case_index() == ex_comp_clause::ASCII_COMP) &&
+      if ((temp_clause.getInstruction() == ASCII_COMP) &&
 	  (CmpCommon::getDefault(CONSTANT_FOLDING) == DF_ON))
 	{
 	  if (((child(0)->getOperatorType() == ITM_CONSTANT) &&
@@ -8408,7 +8524,11 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
   UInt32 flags =
             ((CmpCommon::getDefault(LIMIT_MAX_NUMERIC_PRECISION) == DF_ON)
             ? NAType::LIMIT_MAX_NUMERIC_PRECISION : 0);
-
+  if (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON)
+    {
+      flags |= NAType::ALLOW_INCOMP_OPER;
+    }
+  
   const NAType *result_type = type_op1->synthesizeType(SYNTH_RULE_UNION,
                                                        *type_op1,
                                                        *type_op2,
@@ -8723,6 +8843,35 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	  setChild(0, newChild);
 	}
 
+    } // numeric to date conversion
+
+  if ((CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
+      (sourceTypeQual == NA_NUMERIC_TYPE) &&
+      (targetTypeQual == NA_INTERVAL_TYPE))
+    { 
+      NumericType &sourceType =
+	(NumericType &)(child(0)->getValueId().getType());
+
+      if (NOT sourceType.isExact())
+        {
+	  // doing a float numeric to interval conversion.
+	  // convert source to corresponding exact numeric (largeint).
+          // This is the largest interval type that is supported.
+	  ItemExpr * newChild =
+	    new (generator->wHeap())
+	    Cast(child(0),
+		 new (generator->wHeap())
+		 SQLLargeInt(TRUE,
+                             child(0)->castToItemExpr()->
+                             getValueId().getType().supportsSQLnull()));
+	  newChild = newChild->bindNode(generator->getBindWA());
+	  newChild = newChild->preCodeGen(generator);
+	  if (! newChild)
+	    return NULL;
+          
+	  setChild(0, newChild);
+	}
+      
     } // numeric to date conversion
 
   if ((sourceTypeQual == NA_DATETIME_TYPE) &&
@@ -10663,7 +10812,10 @@ RelExpr * PhysicalFastExtract::preCodeGen (Generator * generator,
   if (nodeIsPreCodeGenned())
     return this;
 
-  generator->setIsFastExtract(TRUE);  
+  if (getIsMainQueryOperator())
+    generator->setIsFastExtract(TRUE);
+  else
+    generator->setContainsFastExtract(TRUE);
 
   if (!RelExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;

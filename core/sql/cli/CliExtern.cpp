@@ -44,6 +44,7 @@
 #include "cli_stdh.h"
 
 #include "ExpError.h"
+#include "exp_clause_derived.h"
 #include "NLSConversion.h"
 
 #include "Cli.h"
@@ -89,7 +90,8 @@ CLISemaphore globalSemaphore ;
 #include "SqlStats.h"
 #include "ComExeTrace.h"
 #include "Context.h"
-
+#include <unistd.h>
+#include "QRLogger.h"
 
 #ifndef CLI_PRIV_SRL
 #pragma warning (disable : 4273)   //warning elimination
@@ -892,12 +894,18 @@ short sqInit()
     try
     {
       short retcode = my_mpi_setup(&largc, &largv);
+      QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
     }
     catch (...)
     {
       cerr << "Error while initializing messaging system. Exiting..." << endl;
       exit(1);
     }
+
+
+    // Initialize an Instruction Info array's offset index
+    ex_conv_clause::populateInstrOffsetIndex();
+
   }
 
   return 0;
@@ -4482,7 +4490,7 @@ Lng32 retcode;
    return retcode;
 
 }
-
+ 
 
 SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetAuthName_Internal(
@@ -4697,6 +4705,85 @@ Lng32 SQL_EXEC_SetSessionAttr_Internal(
    return retcode;
 }
 
+
+Lng32 SQL_EXEC_GetRoleList(
+   Int32 &numRoles,
+   Int32 *&roleIDs)
+
+{
+
+   Lng32 retcode;
+   CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
+
+   CLI_NONPRIV_PROLOGUE(retcode);
+   try
+   {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode =
+      SQLCLI_GetRoleList(GetCliGlobals(),
+                         numRoles,
+                         roleIDs);
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
+         throw;
+       }
+#endif
+   }
+
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
+   return retcode;
+
+}
+
+ 
+SQLCLI_LIB_FUNC
+Lng32 SQL_EXEC_ResetRoleList_Internal()
+{
+   Lng32 retcode;
+   CLISemaphore *tmpSemaphore;
+   ContextCli   *threadContext;
+
+   CLI_NONPRIV_PROLOGUE(retcode);
+
+   try
+   {
+      tmpSemaphore = getCliSemaphore(threadContext);
+      tmpSemaphore->get();
+      threadContext->incrNumOfCliCalls();
+      retcode =
+      SQLCLI_ResetRoleList(GetCliGlobals());
+   }
+   catch(...)
+   {
+     retcode = -CLI_INTERNAL_ERROR;
+#if defined(_THROW_EXCEPTIONS)
+     if (cliWillThrow())
+       {
+         threadContext->decrNumOfCliCalls();
+         tmpSemaphore->release();
+         throw;
+       }
+#endif
+   }
+
+   threadContext->decrNumOfCliCalls();
+   tmpSemaphore->release();
+   return retcode;
+
+}
+
+ 
 SQLCLI_LIB_FUNC
 Lng32 SQL_EXEC_GetUniqueQueryIdAttrs(
                 /*IN*/    char * uniqueQueryId,
@@ -7483,57 +7570,6 @@ Lng32 SQL_EXEC_LOBddlInterface
   return retcode;
 }
 
-#ifdef __ignore
-Lng32 SQL_EXEC_LOBloader2sqlInterface
-(
- /*IN*/     char * lobHandle,
- /*IN*/     Lng32  lobHandleLen,
- /*IN*/     char * lobInfo,
- /*IN*/     Lng32  lobInfoLen,
- /*IN*/     LOBcliQueryType qType,
- /*INOUT*/  char * dataLoc, /* IN: for load, OUT: for extract */
- /*INOUT*/  Int64 &dataLen,   /* length of data. 0 indicates EOD */
- /*INOUT*/  void* *cliInterface  /* INOUT: if returned, save it and 
-           				   pass it back in on the next call */
- )
-{
-  Lng32 retcode;
-   CLISemaphore *tmpSemaphore;
-   ContextCli   *threadContext;
-  CLI_NONPRIV_PROLOGUE(retcode);
-  try
-    {
-      tmpSemaphore = getCliSemaphore(threadContext);
-      tmpSemaphore->get();
-      threadContext->incrNumOfCliCalls();
-      retcode = SQLCLI_LOBloader2sqlInterface(GetCliGlobals(),
-					      lobHandle,
-					      lobHandleLen,
-					      lobInfo,
-					      lobInfoLen,
-					      qType,
-					      dataLoc,
-					      dataLen,
-					      cliInterface);
-    }
-  catch(...)
-    {
-      retcode = -CLI_INTERNAL_ERROR;
-#if defined(_THROW_EXCEPTIONS)
-      if (cliWillThrow())
-	{
-          threadContext->decrNumOfCliCalls();
-	  tmpSemaphore->release();
-	  throw;
-	}
-#endif
-    }
-  threadContext->decrNumOfCliCalls();
-  tmpSemaphore->release();
-  RecordError(NULL, retcode);
-  return retcode;
-}
-#endif
 Int32 SQL_EXEC_SWITCH_TO_COMPILER_TYPE
 (
  /*IN*/     Int32 cmpCntxtType

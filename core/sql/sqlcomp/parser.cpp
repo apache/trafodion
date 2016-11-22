@@ -99,6 +99,9 @@ void Parser::reset(NABoolean on_entry_reset_was_needed)
   //
   if (!Get_SqlParser_Flags(DELAYED_RESET))
     Set_SqlParser_Flags(0);
+
+  if (with_clauses_)
+    with_clauses_->clear();
 }
 
 ULng32 cmmHashFunc_NAString(const NAString& str)
@@ -108,6 +111,8 @@ ULng32 cmmHashFunc_NAString(const NAString& str)
 
 
 Parser::Parser(const CmpContext* cmpContext) 
+  : hasOlapFunctions_(NULL),
+    hasTDFunctions_(NULL)
 {
   cmpContext_ = const_cast<CmpContext*>(cmpContext);
 
@@ -143,7 +148,6 @@ Parser::Parser(const CmpContext* cmpContext)
   internalExpr_ = NORMAL_TOKEN;
 
   modeSpecial1_ = (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON);
-  modeSpecial2_ = (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON);
   modeSpecial4_ = (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON);
 
   defaultColCharset_ = CharInfo::UnknownCharSet;
@@ -152,7 +156,8 @@ Parser::Parser(const CmpContext* cmpContext)
     {
       defaultColCharset_ = CharInfo::getCharSetEnum(cs);
     }
- 
+  hasOlapFunctions_.setHeap(wHeap_);
+  hasTDFunctions_.setHeap(wHeap_);
   clearHasOlapFunctions();
 
   HQCKey_ = NULL;
@@ -640,7 +645,7 @@ Int32 Parser::parseSQL
   // if (ParScannedTokens == NULL)
     ParScannedTokens = new(wHeap()) ParScannedTokenQueue();
   // if (TheHostVarRoles == NULL)
-    TheHostVarRoles = new(wHeap()) HostVarRole_vec();
+    TheHostVarRoles = new(wHeap()) HostVarRole_vec(wHeap());
 
   // End of setting parser globals
 

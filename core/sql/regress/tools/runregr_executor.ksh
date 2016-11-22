@@ -181,23 +181,23 @@ cd $REGRTSTDIR 2>$NULL
 
 if [ `uname` = "Linux" ]; then
   # upcase all test*, expected*, filters and known diff files
-  lctestfiles=`ls -1 test???* | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
+  lctestfiles=`ls -1 test???* 2>$NULL | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
 
   for lcfile in $lctestfiles; do
     ucfile=`echo $lcfile | tr a-z A-Z`
     cp -f $lcfile $ucfile 2>$NULL
   done
-  lcxptdfiles=`ls -1 expected???* | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
+  lcxptdfiles=`ls -1 expected???* 2>$NULL | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
   for lcfile in $lcxptdfiles; do
     ucfile=`echo $lcfile | tr a-z A-Z`
     cp -f $lcfile $ucfile 2>$NULL
   done
-  lcfiltfiles=`ls -1 filter???* | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
+  lcfiltfiles=`ls -1 filter???* 2>$NULL | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
   for lcfile in $lcfiltfiles; do
     ucfile=`echo $lcfile | tr a-z A-Z`
     cp -f $lcfile $ucfile 2>$NULL
   done
-  lcknownfiles=`ls -1 *.known* | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
+  lcknownfiles=`ls -1 *.known* 2>$NULL | sed -e /~$/d -e /.bak$/d | sort -fu` 2>$NULL
   for lcfile in $lcknownfiles; do
     ucfile=`echo $lcfile | tr a-z A-Z`
     cp -f $lcfile $ucfile 2>$NULL
@@ -574,7 +574,6 @@ for i in $prettyfiles; do
       cp $REGRTSTDIR/QDROPj01 $REGRRUNDIR/QDROPJ01
       cp $REGRTSTDIR/QINSERTj01 $REGRRUNDIR/QINSERTJ01
       cp $REGRTSTDIR/QSELECTj01 $REGRRUNDIR/QSELECTJ01
-      cp $REGRTSTDIR/cidefs $REGRRUNDIR/cidefs
     fi
 
     if [ "$diffOnly" -eq 0 ]; then
@@ -589,7 +588,6 @@ for i in $prettyfiles; do
       rm -f $REGRRUNDIR/QDROPJ01
       rm -f $REGRRUNDIR/QINSERTJ01
       rm -f $REGRRUNDIR/QSELECTJ01
-      rm -f $REGRRUNDIR/cidefs
     fi
 
     continue
@@ -599,13 +597,6 @@ for i in $prettyfiles; do
   if test "$tnum" = "042C" ; then
     if [ "$REGRTSTDIR" != "$REGRRUNDIR" ]; then
       cp $REGRTSTDIR/SetupTPCC $REGRRUNDIR/SetupTPCC 
-    fi
-  fi
-
-  #Special case for sqlmp alias tests, test075
-  if test "$tnum" = "075" ; then
-    if [ "$REGRTSTDIR" != "$REGRRUNDIR" ]; then
-      cp $REGRTSTDIR/cidefs $REGRRUNDIR/cidefs
     fi
   fi
 
@@ -640,9 +631,9 @@ for i in $prettyfiles; do
 
       if [ "$REGRCONCURRENT" -eq 1 ]; then
         echo "create schema ${TEST_SCHEMA}; set schema ${TEST_SCHEMA};" \
-          | cat $REGRTSTDIR/cidefs $sbdefsfile $defsfile - $testrun > $test.tmp
+          | cat $sbdefsfile $defsfile - $testrun > $test.tmp
       else
-        cat $REGRTSTDIR/cidefs $sbdefsfile $defsfile $testrun > $test.tmp
+        cat $sbdefsfile $defsfile $testrun > $test.tmp
       fi
 
       if [ $tnum = "103" ]; then

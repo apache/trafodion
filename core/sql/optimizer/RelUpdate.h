@@ -139,6 +139,7 @@ GenericUpdate(const CorrName &name,
     uniqueRowsetHbaseOper_(FALSE),
     canDoCheckAndUpdel_(FALSE),
     noDTMxn_(FALSE),
+    useRegionXn_(FALSE),
     noCheck_(FALSE),
     noIMneeded_(FALSE),
     useMVCC_(FALSE),
@@ -520,6 +521,7 @@ GenericUpdate(const CorrName &name,
   NABoolean &canDoCheckAndUpdel() { return canDoCheckAndUpdel_; }
 
   NABoolean &noDTMxn() { return noDTMxn_; }
+  NABoolean &useRegionXn() { return useRegionXn_; }
 
   NABoolean noCheck() { return noCheck_; }
   void setNoCheck(NABoolean v) { noCheck_ = v; }
@@ -907,6 +909,10 @@ private:
   // It is executed using underlying hbase single row transaction consistency.
   NABoolean noDTMxn_;
 
+  // if set to ON, then query is run as part of localized region transaction.
+  // No external transaction is started to run it.
+  NABoolean useRegionXn_;
+
   // If set, then for seabase tables, no check of rows existence or non-existence
   // is done during an insert or delete operation. 
   // For insert, row overwrites an existing row, dup error is not returned. (upsert)
@@ -1149,10 +1155,9 @@ public:
     baseColRefs_ = val;
   }
 
-  NABoolean isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,
-                                   NABoolean omittedCurrentDefaultCols) const;
+  NABoolean isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,NABoolean omittedCurrentDefaultCols) const;
   RelExpr* xformUpsertToMerge(BindWA *bindWA) ;
-
+  RelExpr* xformUpsertToEfficientTree(BindWA *bindWA) ;
 protected:
 
   InsertType       insertType_;

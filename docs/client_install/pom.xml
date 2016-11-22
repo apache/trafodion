@@ -189,7 +189,7 @@
                 <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
                 <project-support>user@trafodion.incubator.apache.org</project-support>
                 <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
-                <download-url>http://http://trafodion.incubator.apache.org/download.html</download-url>
+                <download-url>http://trafodion.incubator.apache.org/download.html</download-url>
                 <build-date>${maven.build.timestamp}</build-date>
                 <google-analytics-account>UA-72491210-1</google-analytics-account>
               </attributes>

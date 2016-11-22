@@ -326,7 +326,7 @@ if (targetLen == SQL_LARGE_SIZE)
 else 
   {
   short physicalTargetType = (short) REC_BIN16_SIGNED;
-  conv_case_index index = CONV_BIN64S_BIN16S;
+  ConvInstruction index = CONV_BIN64S_BIN16S;
 
   if (targetLen == SQL_INT_SIZE)
     {
@@ -513,7 +513,7 @@ else
   else 
   {
     short physicalTargetType = (short) REC_BIN16_SIGNED;
-    conv_case_index index = CONV_BIN64S_BIN16S;
+    ConvInstruction index = CONV_BIN64S_BIN16S;
 
     if (targetLen == SQL_INT_SIZE)
     {
@@ -1585,7 +1585,7 @@ ex_expr::exp_return_type convAsciiToFloat64(char * target,
 
     // string contains only blanks.
     char hexstr[MAX_OFFENDING_SOURCE_DATA_DISPLAY_LEN];
-    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_DATETIME_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
+    ExRaiseSqlError(heap, diagsArea, EXE_CONVERT_STRING_ERROR,NULL,NULL,NULL,NULL,stringToHex(hexstr, sizeof(hexstr), source, sourceLen ));
     return ex_expr::EXPR_ERROR;
   };
 
@@ -2091,8 +2091,11 @@ ex_expr::exp_return_type convAsciiToInt64(Int64 &target,
                           heap, diagsArea, flags);
   if (ert == ex_expr::EXPR_ERROR)
     return ert;
-
-  if (tempTgt > LLONG_MAX)
+  UInt64 maxLongPlus1 = LLONG_MAX ;
+  maxLongPlus1 ++; // min 64bit long integer is -9223372036854775808
+                   // max 64bit long integer is 9223372036854775807
+                   // so if negative value convert to non-negative value, should check with LLONG_MAX + 1
+  if ((tempTgt > LLONG_MAX && NOT negative) || (tempTgt > maxLongPlus1) )
     {
       ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
                             source, sourceLen, REC_BYTE_F_ASCII,
@@ -2106,6 +2109,10 @@ ex_expr::exp_return_type convAsciiToInt64(Int64 &target,
       target = (Int64)tempTgt;
       return ex_expr::EXPR_OK;
     }
+  /* remove below code according to discussion in github
+   * https://github.com/apache/incubator-trafodion/pull/706
+   * with above validation, below checking is no longer needed
+   * comment out
   
   if (-(Int64)tempTgt < LLONG_MIN)
     {
@@ -2115,7 +2122,7 @@ ex_expr::exp_return_type convAsciiToInt64(Int64 &target,
                             REC_BIN64_SIGNED, flags);
       return ex_expr::EXPR_ERROR;
     }
-
+  */
   target = - (Int64)tempTgt;
 
   return ex_expr::EXPR_OK;
@@ -4966,7 +4973,7 @@ convDoIt(char * source,
          Lng32 varCharLenSize,    // 0 if not a varChar
 	 CollHeap *heap,
 	 ComDiagsArea** diagsArea,
-	 conv_case_index index,
+	 ConvInstruction index,
          Lng32 * dataConversionErrorFlag,
 	 ULng32 flags) {
 
@@ -5020,7 +5027,7 @@ convDoIt(char * source,
     if (index == CONV_UNKNOWN_LEFTPAD)
       leftPad = TRUE;
 
-    index = tempClause.find_case_index(sourceType, 
+    index = tempClause.findInstruction(sourceType, 
                                        sourceLen, 
                                        targetType, 
                                        targetLen, 
@@ -5091,16 +5098,158 @@ convDoIt(char * source,
 
   case CONV_BIN8S_BIN8S:
     {
-      *(Int8 *)target = *(Int8 *)source;
+      if (dataConversionErrorFlag != 0)
+        {
+          *(Int8 *)target = *(Int8 *)source;
+        }
+      else
+        {
+          if (checkPrecision((Int64)*(Int8 *)source,
+			     sourceLen,
+		             sourceType,
+		             sourcePrecision,
+                             sourceScale,
+		             targetType,
+		             targetPrecision,
+                             targetScale,
+		             heap,
+		             diagsArea,
+                             tempFlags) == ex_expr::EXPR_OK)
+            {
+              *(Int8 *)target = *(Int8 *)source;
+            }
+          else
+            {
+              return ex_expr::EXPR_ERROR;
+            }
+        }
     }
   break;
 
   case CONV_BIN8U_BIN8U:
     {
-      *(UInt8 *)target = *(UInt8 *)source;
+      if (dataConversionErrorFlag != 0)
+        {
+          *(UInt8 *)target = *(UInt8 *)source;
+        }
+      else
+        {
+          if (checkPrecision((Int64)*(UInt8 *)source,
+                             sourceLen,
+                             sourceType,
+                             sourcePrecision,
+                             sourceScale,
+                             targetType,
+                             targetPrecision,
+                             targetScale,
+                             heap,
+                             diagsArea,
+                             tempFlags) == ex_expr::EXPR_OK)
+            {
+              *(UInt8 *)target = *(UInt8 *)source;
+            }
+          else
+            {
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+    }
+    break;
+
+  case CONV_BIN8S_BIN8U:
+    {
+      if (*(Int8 *)source < 0)
+        {
+          if (dataConversionErrorFlag != 0)  // Capture error in variable?
+            {
+              *(UInt8 *)target = 0;
+              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN;
+            }
+          else
+            {
+              ExRaiseSqlError(heap, diagsArea, EXE_UNSIGNED_OVERFLOW);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+      else
+        {
+          if (dataConversionErrorFlag != 0)
+            {
+              *(UInt8 *)target = *(Int8 *)source;
+            }
+          else
+            {
+              if (checkPrecision((Int64)*(Int8 *)source,
+                                 sourceLen,
+                                 sourceType,
+                                 sourcePrecision,
+                                 sourceScale,
+                                 targetType,
+                                 targetPrecision,
+                                 targetScale,
+                                 heap,
+                                 diagsArea,
+                                 tempFlags) == ex_expr::EXPR_OK)
+                {
+                  *(UInt8 *)target = *(Int8 *)source;
+                }
+              else
+                {
+                  return ex_expr::EXPR_ERROR;
+                }
+            }
+        }
     }
   break;
 
+  case CONV_BIN8U_BIN8S:
+    {
+      if (*(UInt8 *)source > CHAR_MAX)
+        {
+          if (dataConversionErrorFlag != 0)  // Capture error in variable?
+            {
+              *(Int8 *)target = CHAR_MAX;
+              *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX;
+            }
+          else
+            {
+              ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW,
+                                    source, sourceLen, sourceType, sourceScale,
+                                    targetType, tempFlags);
+              return ex_expr::EXPR_ERROR;
+            }
+        }
+      else
+        {
+          if (dataConversionErrorFlag != 0)
+            { // Set the target value.
+              *(Int8 *)target = *(UInt8 *)source;
+            }
+          else
+            { // Check target precision. Then set target value.
+              if (checkPrecision((Int64)*(UInt8 *)source,
+				 sourceLen,
+                                 sourceType,
+                                 sourcePrecision,
+                                 sourceScale,
+		                 targetType,
+                                 targetPrecision,
+                                 targetScale,
+                                 heap,
+                                 diagsArea,
+                                 tempFlags) == ex_expr::EXPR_OK)
+                {
+                  *(Int8 *)target = *(UInt8 *)source;
+                }
+              else
+                {
+                  return ex_expr::EXPR_ERROR;
+                }
+            }
+        }
+    }
+  break;
+    
   case CONV_BIN8S_BIN16S:
     {
       *(Int16 *)target = *(Int8 *)source;
@@ -5362,6 +5511,81 @@ convDoIt(char * source,
         }
     }
   break;
+
+  case CONV_NUMERIC_BIN8S:
+  case CONV_NUMERIC_BIN8U:
+    {
+      // convert source to smallint and detect data conversion error.
+      if (dataConversionErrorFlag)
+        *dataConversionErrorFlag = ex_conv_clause::CONV_RESULT_OK;
+      Int16 temp;
+      ex_expr::exp_return_type rc =
+        convDoIt(source,
+                 sourceLen,
+                 sourceType,
+                 sourcePrecision,
+                 sourceScale,
+                 (char*)&temp,
+                 sizeof(Int16),
+                 (index == CONV_NUMERIC_BIN8S 
+                  ? REC_BIN16_SIGNED : REC_BIN16_UNSIGNED),
+                 targetPrecision,
+                 targetScale,
+                 NULL, // varCharLen
+                 0,    // varCharLenSize
+                 heap,
+                 diagsArea,
+                 CONV_UNKNOWN,
+                 dataConversionErrorFlag,
+                 0);
+      if (rc == ex_expr::EXPR_ERROR)
+        return ex_expr::EXPR_ERROR;
+      
+      if ((! dataConversionErrorFlag) ||
+          (*dataConversionErrorFlag == ex_conv_clause::CONV_RESULT_OK))
+        {
+          // no conversion error when converting to smallint.
+          // Now check to see if there is an error converting to tinyint.
+          rc = convDoIt((char*)&temp,
+                        sizeof(Int16),
+                        (index == CONV_NUMERIC_BIN8S 
+                         ? REC_BIN16_SIGNED : REC_BIN16_UNSIGNED),
+                        targetPrecision,
+                        targetScale,
+                        target,
+                        targetLen,
+                        targetType,
+                        targetPrecision,
+                        targetScale,
+                        NULL, // varCharLen
+                        0,    // varCharLenSize
+                        heap,
+                        diagsArea,
+                        CONV_UNKNOWN,
+                        dataConversionErrorFlag,
+                        0);
+          if (rc == ex_expr::EXPR_ERROR)
+            return ex_expr::EXPR_ERROR;
+        }
+      else // data conversion error. Move tinyint max/min to target.
+        {
+          if (*dataConversionErrorFlag == ex_conv_clause::CONV_RESULT_ROUNDED_UP_TO_MIN)
+            {
+              if (index == CONV_NUMERIC_BIN8S)
+                *(Int8 *)target = CHAR_MIN;
+              else
+                *(UInt8 *)target = 0;
+            }
+          else if (*dataConversionErrorFlag == ex_conv_clause::CONV_RESULT_ROUNDED_DOWN_TO_MAX)
+            {
+              if (index == CONV_NUMERIC_BIN8S)
+                *(Int8 *)target = CHAR_MAX;
+              else
+                *(UInt8 *)target = UCHAR_MAX;
+            }
+        }
+    }
+    break;
 
   case CONV_BIN8S_ASCII: {
     if (convInt64ToAscii(target,
@@ -9846,7 +10070,7 @@ convDoIt(char * source,
   case CONV_DECS_UNICODE: 
   case CONV_BIGNUM_UNICODE: 
   {
-   conv_case_index cci = CONV_UNKNOWN; // next switch will change.
+   ConvInstruction cci = CONV_UNKNOWN; // next switch will change.
    switch (index) {
            case CONV_BIN16S_UNICODE:  cci = CONV_BIN16S_ASCII;break;
            case CONV_BIN16U_UNICODE:  cci = CONV_BIN16U_ASCII;break;
@@ -9946,7 +10170,7 @@ convDoIt(char * source,
 
       if ( cBuf -> getStrLen() == sourceLen/BYTES_PER_NAWCHAR ) {
 
-         conv_case_index cci = CONV_UNKNOWN;
+         ConvInstruction cci = CONV_UNKNOWN;
          switch (index) {
            case CONV_UNICODE_BIN16S:  cci = CONV_ASCII_BIN16S;break;
            case CONV_UNICODE_BIN16U:  cci = CONV_ASCII_BIN16U;break;
@@ -11352,7 +11576,7 @@ convDoIt(char * source,
                           sourceType,
                           sourceScale,
                           targetType,
-                          0,
+                          flags,
                           targetLen,
                           targetScale);
     
@@ -11447,7 +11671,7 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
       warningMark = 0;
 
 
-  switch (get_case_index()) {
+  switch (getInstruction()) {
 
 
   case CONV_COMPLEX_TO_COMPLEX: {
@@ -11516,7 +11740,7 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
 			tgt->getVCIndicatorLength(),
 			heap,
 			diagsArea,
-			get_case_index(),
+			getInstruction(),
 			dataConversionErrorFlag,
 			convFlags
                         );

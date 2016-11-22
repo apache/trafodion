@@ -60,7 +60,7 @@
 #include "ExpLOBexternal.h"
 #include "NAVersionedObject.h"
 #include "ComQueue.h"
-
+#include "QRLogger.h"
 #include "NAMemory.h"
 #include <seabed/ms.h>
 #include <seabed/fserr.h>
@@ -373,7 +373,10 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
 Ex_Lob_Error ExLob::dataModCheck2(
        char * dirPath, 
        Int64  inputModTS,
-       Lng32  numOfPartLevels)
+       Lng32  numOfPartLevels,
+       Int64 &failedModTS,
+       char  *failedLocBuf,
+       Int32 *failedLocBufLen)
 {
   if (numOfPartLevels == 0)
     return LOB_OPER_OK;
@@ -394,8 +397,23 @@ Ex_Lob_Error ExLob::dataModCheck2(
         {
           Int64 currModTS = fileInfo.mLastMod;
           if ((inputModTS > 0) &&
-              (currModTS > inputModTS))
-            failed = TRUE;
+              (currModTS > inputModTS) &&
+	      (!strstr(fileInfo.mName, ".hive-staging_hive_")))
+            {
+              failed = TRUE;
+              failedModTS = currModTS;
+
+              if (failedLocBuf && failedLocBufLen)
+                {
+                  Lng32 failedFileLen = strlen(fileInfo.mName);
+                  Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
+                                   ? (*failedLocBufLen-1) : failedFileLen);
+                  
+                  str_cpy_and_null(failedLocBuf, fileInfo.mName, copyLen,
+                                   '\0', ' ', TRUE);
+                  *failedLocBufLen = copyLen;
+                }
+            }
         }
     }
 
@@ -410,7 +428,8 @@ Ex_Lob_Error ExLob::dataModCheck2(
       for (Lng32 i = 0; ((NOT failed) && (i < currNumFilesInDir)); i++)
         {
           hdfsFileInfo &fileInfo = fileInfos[i];
-          err = dataModCheck2(fileInfo.mName, inputModTS, numOfPartLevels);
+          err = dataModCheck2(fileInfo.mName, inputModTS, numOfPartLevels,
+                              failedModTS, failedLocBuf, failedLocBufLen);
           if (err != LOB_OPER_OK)
             return err;
         }
@@ -421,12 +440,18 @@ Ex_Lob_Error ExLob::dataModCheck2(
 
 // numOfPartLevels: 0, if not partitioned
 //                  N, number of partitioning cols
+// failedModTS: timestamp value that caused the mismatch
 Ex_Lob_Error ExLob::dataModCheck(
        char * dirPath, 
        Int64  inputModTS,
        Lng32  numOfPartLevels,
-       ExLobGlobals *lobGlobals)
+       ExLobGlobals *lobGlobals,
+       Int64 &failedModTS,
+       char  *failedLocBuf,
+       Int32 *failedLocBufLen)
 {
+  failedModTS = -1;
+
   // find mod time of root dir
   hdfsFileInfo *fileInfos = hdfsGetPathInfo(fs_, dirPath);
   if (fileInfos == NULL)
@@ -435,14 +460,33 @@ Ex_Lob_Error ExLob::dataModCheck(
     }
     
   Int64 currModTS = fileInfos[0].mLastMod;
-  hdfsFreeFileInfo(fileInfos, 1);
   if ((inputModTS > 0) &&
       (currModTS > inputModTS))
-    return LOB_DATA_MOD_CHECK_ERROR;
+    {
+      hdfsFileInfo &fileInfo = fileInfos[0];
 
+      failedModTS = currModTS;
+
+      if (failedLocBuf && failedLocBufLen)
+        {
+          Lng32 failedFileLen = strlen(fileInfo.mName);
+          Lng32 copyLen = (failedFileLen > (*failedLocBufLen-1) 
+                           ? (*failedLocBufLen-1) : failedFileLen);
+          
+          str_cpy_and_null(failedLocBuf, fileInfo.mName, copyLen,
+                           '\0', ' ', TRUE);
+          *failedLocBufLen = copyLen;
+        }
+
+      hdfsFreeFileInfo(fileInfos, 1);
+      return LOB_DATA_MOD_CHECK_ERROR;
+    }
+
+  hdfsFreeFileInfo(fileInfos, 1);
   if (numOfPartLevels > 0)
     {
-      return dataModCheck2(dirPath, inputModTS, numOfPartLevels);
+      return dataModCheck2(dirPath, inputModTS, numOfPartLevels, 
+                           failedModTS, failedLocBuf, failedLocBufLen);
     }
 
   return LOB_OPER_OK;
@@ -1444,41 +1488,6 @@ Ex_Lob_Error ExLob::closeCursor(char *handleIn, Int32 handleInLen)
     return LOB_OPER_OK;
 }
 
-#ifdef __ignore
-Ex_Lob_Error ExLob::doSanityChecks(char *dir, LobsStorage storage,
-                                   Int32 handleInLen, Int32 handleOutLen, 
-                                   Int32 blackBoxLen)
-{
-
-#ifdef SQ_USE_HDFS
-    if (!fs_)
-      return LOB_HDFS_CONNECT_ERROR;
-#else
-    if (fdData_ == -1)
-      return LOB_DATA_FILE_OPEN_ERROR;
-#endif
-
-    if (dir_.compare(dir) != 0)
-      return LOB_DIR_NAME_ERROR;
-
-    if (storage_ != storage)
-      return LOB_STORAGE_TYPE_ERROR;
-
-    if (handleInLen > MAX_HANDLE_IN_LEN) {
-      return LOB_HANDLE_IN_LEN_ERROR;
-    }
-
-    if (handleOutLen > MAX_HANDLE_IN_LEN) {
-      return LOB_HANDLE_OUT_LEN_ERROR;
-    }
-
-    if (blackBoxLen > MAX_HANDLE_IN_LEN) {
-      return LOB_BLACK_BOX_LEN_ERROR;
-    }
-
-    return LOB_OPER_OK;
-}
-#endif
 Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset, Int64 lobMaxSize, Int64 lobMaxChunkMemLen, char *handleIn, Int32 handleInLen, Int64 lobGCLimit, void *lobGlobals)
 {
   NABoolean GCDone = FALSE;
@@ -2188,23 +2197,33 @@ Ex_Lob_Error ExLob::initStats()
 
 Ex_Lob_Error ExLobsOper (
 			 char        *lobName,          // lob name
+
 			 char        *handleIn,         // input handle (for cli calls)
 			 Int32       handleInLen,       // input handle len
+
 			 char        *hdfsServer,       // server where hdfs fs resides
 			 Int64       hdfsPort,          // port number to access hdfs server
+
 			 char        *handleOut,        // output handle (for cli calls)
 			 Int32       &handleOutLen,     // output handle len
+
 			 Int64       descNumIn,         // input desc Num (for flat files only)
 			 Int64       &descNumOut,       // output desc Num (for flat files only)
+
 			 Int64       &retOperLen,       // length of data involved in this operation
+
 			 Int64       requestTagIn,      // only for checking status
 			 Int64       &requestTagOut,    // returned with every request other than check status
+
 			 Ex_Lob_Error  &requestStatus,  // returned req status
 			 Int64       &cliError,         // err returned by cli call
+
 			 char        *lobStorageLocation,              // directory in the storage
 			 LobsStorage storage,           // storage type
+
 			 char        *source,           // source (memory addr, filename, foreign lob etc)
 			 Int64       sourceLen,         // source len (memory len, foreign desc offset etc)
+
 			 Int64       cursorBytes,
 			 char        *cursorId,
 			 LobsOper    operation,         // LOB operation
@@ -2261,8 +2280,10 @@ Ex_Lob_Error ExLobsOper (
 	  return LOB_GLOB_PTR_ERROR;
 	}
     }
-
-  if ((globPtr != NULL) && (operation != Lob_Init))
+  if (globPtr != NULL)
+  {
+    lobGlobals = (ExLobGlobals *)globPtr;
+    if ((operation != Lob_Init) && (operation != Lob_Cleanup))
     {
       lobGlobals = (ExLobGlobals *)globPtr;
 
@@ -2295,6 +2316,7 @@ Ex_Lob_Error ExLobsOper (
 	}
       lobPtr->lobTrace_ = lobGlobals->lobTrace_;
     }
+  }
   /* 
 // **Note** This is code that needs to get called before sneding a request to the 
 //mxlobsrvr process. It's inactive code currently   
@@ -2506,8 +2528,19 @@ Ex_Lob_Error ExLobsOper (
         Int64 inputModTS = *(Int64*)blackBox;
         Int32 inputNumOfPartLevels = 
           *(Lng32*)&((char*)blackBox)[sizeof(inputModTS)];
-        err = lobPtr->dataModCheck(lobStorageLocation, inputModTS, inputNumOfPartLevels,
-                                   lobGlobals);
+        Int32 * failedLocBufLen = 
+          (Int32*)&((char*)blackBox)[sizeof(inputModTS)+
+                                     sizeof(inputNumOfPartLevels)];
+        char * failedLocBuf = &((char*)blackBox)[sizeof(inputModTS)+
+                                                 sizeof(inputNumOfPartLevels)+
+                                                 sizeof(*failedLocBufLen)];
+        Int64 failedModTS = -1;
+        err = 
+          lobPtr->dataModCheck(lobStorageLocation, 
+                               inputModTS, inputNumOfPartLevels,
+                               lobGlobals, failedModTS, 
+                               failedLocBuf, failedLocBufLen);
+        descNumOut = failedModTS;
       }
       break;
 
@@ -2800,7 +2833,7 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
           buf->data_ = (char *) (getHeap())->allocateMemory( cursor->bufMaxSize_);
           lobPtr->stats_.buffersUsed++;
         }
-        size = min(cursor->bufMaxSize_, (cursor->maxBytes_ - cursor->bytesRead_ + (16 * 1024)));
+        size = min(cursor->bufMaxSize_, (cursor->maxBytes_ - cursor->bytesRead_));
         if (buf->data_) {
           lobPtr->readCursorDataSimple(buf->data_, size, *cursor, buf->bytesRemaining_);
           buf->bytesUsed_ = 0;
@@ -2971,20 +3004,9 @@ Ex_Lob_Error ExLob::deleteCursor(char *cursorName, ExLobGlobals *lobGlobals)
 //*** Note - sample code to send and receive  
 Ex_Lob_Error ExLob::sendReqToLobServer() 
 {
-
-    Ex_Lob_Error err; 
-#ifdef __ignore
-    request_.setType(Lob_Req_Get_Desc);
-
-    err = request_.send();
-
-    if (err != LOB_OPER_OK) {
-       return err;
-    }
-
-    err = request_.getError();
-#endif
-    return err;
+  Ex_Lob_Error err; 
+  
+  return err;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2995,9 +3017,9 @@ ExLobGlobals::ExLobGlobals() :
     lobMap_(NULL), 
     fs_(NULL),
     isCliInitialized_(FALSE),
-    isHive_(FALSE),
     threadTraceFile_(NULL),
     lobTrace_(FALSE),
+    numWorkerThreads_(0),
     heap_(NULL)
 {
   //initialize the log file
@@ -3024,12 +3046,21 @@ ExLobGlobals::~ExLobGlobals()
     if (lobMap_) 
       delete lobMap_;
 
-    for (int i=0; i<NUM_WORKER_THREADS; i++) {
-      enqueueShutdownRequest();
-    }
-
-    for (int i=0; i<NUM_WORKER_THREADS; i++) {
-      pthread_join(threadId_[i], NULL);
+    if (numWorkerThreads_ > 0) { 
+       for (int i=0; numWorkerThreads_-i > 0 && i < NUM_WORKER_THREADS; i++) {
+           QRLogger::log(CAT_SQL_EXE, LL_DEBUG, 0, NULL,  
+           "Worker Thread Shutdown Requested %ld ", 
+           threadId_[i]);
+           enqueueShutdownRequest();
+       }
+     
+       for (int i=0; numWorkerThreads_ > 0 && i < NUM_WORKER_THREADS; i++) {
+           pthread_join(threadId_[i], NULL);
+           QRLogger::log(CAT_SQL_EXE, LL_DEBUG, 0, NULL,  
+           "Worker Thread Completed %ld ", 
+           threadId_[i]);
+           numWorkerThreads_--;
+       }
     }
     // Free the post fetch bugf list AFTER the worker threads have left to 
     // avoid slow worker thread being stuck and master deallocating these 
@@ -3090,6 +3121,10 @@ Ex_Lob_Error ExLobGlobals::startWorkerThreads()
      rc = pthread_create(&threadId_[i], NULL, workerThreadMain, this);
      if (rc != 0)
       return LOB_HDFS_THREAD_CREATE_ERROR;
+      QRLogger::log(CAT_SQL_EXE, LL_DEBUG, 0, NULL,  
+           "Worker Thread Created %ld ",
+           threadId_[i]);
+     numWorkerThreads_++;
    }
    
    return LOB_OPER_OK;
@@ -3145,19 +3180,6 @@ void ExLobLock::wait()
     waiters_--;
 }
 
-#ifdef __ignore
-ExLobHdfsRequest::ExLobHdfsRequest(LobsHdfsRequestType reqType, hdfsFS fs, 
-                                   hdfsFile file, char *buffer, int size) :
-   reqType_(reqType),
-   fs_(fs),
-   file_(file),
-   buffer_(buffer),
-   size_(size)
-{
-  lobPtr_ = 0;
-  error_ = LOB_OPER_OK;
-}
-#endif
 ExLobHdfsRequest::ExLobHdfsRequest(LobsHdfsRequestType reqType, ExLobCursor *cursor) :
    reqType_(reqType),
    cursor_(cursor)

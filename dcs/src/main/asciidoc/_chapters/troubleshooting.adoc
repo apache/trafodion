@@ -58,7 +58,7 @@ The DcsMaster web UI allows navigation to each DcsServer's web UI.
               
 [[trouble-tools-builtin-webserver]]
 ==== DcsServer Web Interface
-DcsServers starts a web-interface on port 24420 by default.
+DcsServers starts a web-interface on port 24410 by default.
               
 The DcsServer web UI lists its server metrics (build info, zookeeper quorum, usedHeap, maxHeap, etc.).
 
@@ -152,3 +152,17 @@ It has suggestions and tools for checking disk and networking performance; i.e. 
 and DCS are running in.
 
 Additionally, the utility <<trouble-tools-builtin-zkcli,zkcli>> may help investigate ZooKeeper issues.
+
+[[trouble-ha]]
+== High Availability
+On Linux cluster, if you run into issues please check dcs log files located in $DCS_INSTALL_DIR/logs folder. 
+
+Validate that the interace is set up correctly. This command should only show one additional interface for HA configuration
+----
+pdsh $MY_NODES "sudo /sbin/ip addr show |grep 23400"
+----
+
+Validate to get the list of  all the DcsMaster that are configured and started in the cluster
+----
+pdsh $MY_NODES $JAVA_HOME/bin/jps |grep -i dcsmaster
+----

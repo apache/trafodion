@@ -190,16 +190,24 @@ public:
     LOB_FUNC_SUBSTR          =105,
     FUNC_HIVEHASH_ID         =106,
     FUNC_HIVEHASHCOMB_ID     =107,
-    FUNC_UNIQUE_ID                  = 108,
-    FUNC_HBASE_COLUMN_LOOKUP      = 109,
-    FUNC_HBASE_COLUMNS_DISPLAY     = 110,
+    FUNC_UNIQUE_ID           = 108,
+    FUNC_HBASE_COLUMN_LOOKUP = 109,
+    FUNC_HBASE_COLUMNS_DISPLAY   = 110,
     FUNC_HBASE_COLUMN_CREATE = 111,
-    FUNC_CAST_TYPE = 112,
-    FUNC_SEQUENCE_VALUE = 113,
-    FUNC_PIVOT_GROUP = 114,
-    FUNC_ROWNUM    = 115,
+    FUNC_CAST_TYPE           = 112,
+    FUNC_SEQUENCE_VALUE      = 113,
+    FUNC_PIVOT_GROUP         = 114,
+    FUNC_ROWNUM              = 115,
     FUNC_HBASE_TIMESTAMP     = 116,
-    FUNC_HBASE_VERSION = 117
+    FUNC_HBASE_VERSION       = 117,
+    FUNC_ISIP_ID             = 118,
+    FUNC_INETATON_ID         = 119,
+    FUNC_INETNTOA_ID         = 120,
+    AGGR_GROUPING_ID         = 121,
+    FUNC_CRC32_ID            = 122,
+    FUNC_MD5_ID              = 123,
+    FUNC_SHA1_ID             = 124,
+    FUNC_SHA2_ID             = 125
   };
 
   // max number of operands (including result) in a clause.
@@ -444,9 +452,12 @@ public:
   //
   NA_EIDPROC virtual void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
-
- NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
-				 Int32 clauseNum, char * constsArea, UInt32 clauseFlags);
+  
+  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+                                  Int32 clauseNum, char * constsArea, 
+                                  UInt32 clauseFlags,
+                                  Int16 instruction = -1,
+                                  const char * instrText = NULL);
 
   NA_EIDPROC static void clearVOA(Attributes *attr, atp_struct *atp)
   {
@@ -526,6 +537,9 @@ public:
     globals_ = glob;
   }
 
+  Int16 getInstrArrayIndex() { return instrArrayIndex_; }
+  void setInstrArrayIndex(Int16 index) { instrArrayIndex_ = index; }
+
 protected:
   NA_EIDPROC ex_globals * getExeGlobals() 
   {
@@ -557,7 +571,11 @@ private:
   Int16 /*OperatorTypeEnum*/ operType_;            // 34-35
   Int16 /*clause_type*/      clauseType_;          // 36-37
 
-  Int16 filler1_;                                  // 38-39
+  // index into static clause array struct containing details about
+  // this clause (datatypes, operation, etc) if derived clause has
+  // this array defined.
+  // See derived clauses for details.
+  Int16 instrArrayIndex_;                       // 48-49
 
   // this field is set at runtime when this clause is fixed up.
   // It is used in eval for cases where an expression needs to access 
@@ -571,7 +589,7 @@ private:
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char                       fillers_[16];          // 48-63
+  char                       fillers_[16];          // 52-63
 };
 #pragma warn(1506)  // warning elimination 
 

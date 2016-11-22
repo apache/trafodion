@@ -51,20 +51,7 @@ This edition includes updates for these new features:
 [cols="50%,50%",options="header"]
 |===
 | New Feature                                           | Location in the Manual
-| On Line Analytical Process (OLAP) window functions    | <<olap_functions,OLAP Functions>>
-| Ability to cancel DDL, update statistics, and
-additional child query operations in addition to
-DML statements                                          | <<control_query_cancel_statement,CONTROL QUERY CANCEL Statement>> 
-| Authorization required to run the CONTROL QUERY
-CANCEL Statement                                        | <<control_query_cancel_statement,CONTROL QUERY CANCEL Statement>>
-| Ability to grant privileges on behalf of a role
-using the GRANTED BY clause.                            | <<grant_component_privilege_statement,GRANT COMPONENT PRIVILEGE Statement>>
-| Authorization required for all SHOWDDL commands       | <<showddl_statement,SHOWDDL Statement>> +
-<<SHOWDDL_SCHEMA_Statement,SHOWDDL SCHEMA Statement>>
-| Ability to display the DDL syntax of a library object
-using the SHOWDDL LIBRARY command                       | <<showddl_statement,SHOWDDL Statement>>
-| Listing of HBase objects using the GET HBASE OBJECTS
-command through an SQL interface                        | <<get_hbase_objects_statement,GET HBASE OBJECTS Statement>>
+| Incremental UPDATE STATISTICS                         | <<update_statistics_statement,UPDATE STATISTICS Statement>>
 |===
 
 <<<

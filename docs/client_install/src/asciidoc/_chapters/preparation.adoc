@@ -1,0 +1,273 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+= Preparation
+
+{project-name} provides JDBC and ODBC drivers plus clients that use those drivers.
+In addition, you can configure third-party JDBC- and ODBC-based tools to work
+with {project-name}.
+
+Typically, you install and configure the client software in the following order:
+
+. JDBC and/or ODBC drivers. (Depending on what clients you plan to use.)
+. {project-name} clients. For example, trafci and odb.
+. Third-party clients. For example, DBVisualizer, SQuirell, and/or Tableau.
+
+If you don't plan to use JDBC-based clients, then please skip ahead to
+<<download-client-software, Download Client Software>>.
+
+[[java-setup]]
+== Java Setup
+
+The {project-name} JDBC Type 4 Driver requires Java 1.7 or higher. You need to set
+the Java path to the correct location.
+
+Depending on your planned usage, you install
+the Java Development Kit (JDK, if you plan to develop Java-based applications)
+or the Java Runtime Environment (JRE, if you plan to use packaged JDBC-based
+products only).
+
+[[java-validation]]
+=== Verify Java Version
+
+To display the Java version of the client workstation on the screen, enter:
+
+```
+java -version
+```
+
+.Example 1: Java Installed and PATH Variable Set Correctly
+
+```
+C:\> java -version
+
+java version "1.7.0_45" # This is the version you need to check
+Java(TM) SE Runtime Environment (build 1.7.0_45-b18)
+Java HotSpot(TM) Client VM (build 24.45-b08, mixed mode, sharing)
+C:\>
+```
+
+If the version is not 1.7 or higher, then please upgrade you Java installation
+See <<java-install, Install Java>>.
+
+If the version is 1.7 or higher, then skip ahead to <<download-client-software, Download Client Software>>.
+
+.Example 2: Path Not Set
+
+```
+'java' is not recognized as an internal or external command, operable program or batch file.`
+```
+
+If you have installed Java, then this message indicates that you've not included
+the Java directory in your search path. See <<howto-setup-path, Set Up PATH Variable>>.
+
+[[java-install]]
+=== Install Java
+
+Refer to: http://www.java.com/en/download.
+
+Once installed, follow the instruction in <<howto-setup-path, Set Up PATH Variable>>
+to ensure that your Java environment has been set up properly.
+
+[[download-client-software]]
+== Download Client Software
+
+The {project-name} client software is available from the {download-url}[{project-name} Download] page. There is one
+`{project-name} Clients` package per release listed under *<version> Binaries*.
+
+The `{project-name} Clients` package consists of a zipped tar file that contains the {project-name} Clients tar file.
+The {project-name} Client binaries are in the `clients` folder, which contains the following files:
+
+[cols="30%,70%", options="header"]
+|===
+| File                               | Usage
+| `DISCLAIMER`                       | {project-name} Apache incubation disclaimer.
+| `JDBCT4.zip`                       | {project-name} JDBC Type 4 Driver.
+| `LICENCE`                          | Apache license.
+| `NOTICE`                           | Apache notice.
+| `odbc64_linux.tar.gz`              | {project-name} odb tool.
+| `TRAF_ODBC_Linux_Driver_64.tar.gz` | {project-name} ODBC driver for Linux.
+| `trafci.zip`                       | The {project-name} command interpreter `trafci`.
+| `TFODBC64-*.exe`                   | *[Not included in this release]*^1^ {project-name} ODBC Driver for Windows.
+|===
+
+^1^ License issues prevent us from including the ODBC Driver for Windows in this release. Contact 
+{project-support} for help obtaining the driver.
+
+<<<
+[[download-windows]]
+=== Windows Download
+
+Do the following:
+
+. Create a download folder on the client workstation. For example, `c:\trafodion`.
+
+. Open a Web browser and navigate to the {project-name} downloads site {download-url}.
+
+.  Orient yourself to the binaries for the release you're installing.
+Click on the `{project-name} Clients` link to start downloading the {project-name} clients tar file to your workstation.
+
+.  Place the `apache-trafodion-clients-*.tar.gz` file into the download folder.
+*  Unpack the `apache-trafodion-clients-\*.tar.gz` file using an unzip program of your choice. This creates
+an `apache-trafodion-clients-*.tar` file.
+* Unpack the `apache-trafodion-clients-*.tar` file using an unzip program of your choice.
+
+. Verify content of the `clients` directory:
++
+```
+DISCLAIMER JDBCT4.zip LICENSE NOTICE odb64_linux.tar.gz trafci.zip TRAF_ODBC_Linux_Driver_64.tar.gz
+```
++
+You use these files to install the different {project-name} clients.
+
+<<<
+[[download-linux]]
+=== Linux Download
+
+Do the following:
+
+. Create a download directory on the client workstation. For example, `$HOME/trafodion`.
+
+. Open a Web browser and navigate to the {project-name} downloads site {download-url}.
+
+.  Orient yourself to the binaries for the release you're installing.
+Right-click on the `{project-name} Clients` link and select *Copy link address*.
+
+.  Go to the download directory on the client workstation and use `wget` to download the client package
+using the URL you copied in step 3 above.
+
+.  Unpack the `apache-trafodion-clients-*.tar.gz` using `tar`.
++
+*Example*
++
+```
+$ mkdir $HOME/trafodion
+$ cd $HOME/trafodion
+$ wget <link to package>
+$ tar -xzvf apache-trafodion_clients-*-incubating.tar.gz
+$ cd clients
+$ ls
+DISCLAIMER  LICENSE  odb64_linux.tar.gz  TRAF_ODBC_Linux_Driver_64.tar.gz
+JDBCT4.zip  NOTICE   trafci.zip
+$
+```
++
+You use these files to install the different {project-name} clients.
+
+<<<
+[[unpack-client-software]]
+== Unpack Client Software
+
+The client packages are located on the `client` subdirectory where you unpacked
+the {project-name} distribution file. For example, `c:\trafodion\clients` (Windows)
+or `$HOME/trafodion/clients` (Linux).
+
+Unpack the client software and its dependencies you intend to use as follows.
+
+=== Unpack JDBC-Based Client Software
+
+[cols="30%,30%,40%a", options="header"]
+|===
+| File | Description | Recommended Target Directory 
+| `JDBCT4.zip` | JDBC Type 4 Driver | * *Windows:* `c:\trafodion\jdbct4`
++
+* *Linux:* `$HOME/trafodion/jdbct4`
+| `trafci.zip` | Command Interface | * *Windows:* `c:\trafodion\trafci`
++
+* *Linux:* `$HOME/trafodion/trafci`
+|===
+
+*Windows*
+
+Use your favorite compress/uncompress utility to unpack the file to the target directory
+defined in the table above.
+
+*Linux*
+
+Unpack the `.zip` file using the `unzip <file> -d <target-directory>` command:
+
+```
+$ cd $HOME/trafodion/clients
+$ unzip JDBCT4.zip -d $HOME/trafodion/jdbct4
+.
+.
+.
+$ unzip trafci.zip -d $HOME/trafodion/trafci
+.
+.
+.
+$ cd ..
+$ ls
+apache-trafodion_clients-2.0.1-incubating.tar.gz  clients  jdbct4  trafci
+$
+```
+
+Once complete, a fully-installed `c:\trafodion` (Windows) or
+`$HOME/trafodion` directory should contain the following directories:
+
+* `clients`: The compressed client software.
+* `jdbct4`: The {project-name} JDBC Type 4 driver installation directory.
+* `trafci`: The {project-name} Command Interpreter installation directory.
+
+=== Unpack ODBC-Based Client Software
+
+[cols="30%,30%,40%",options="header"]
+|===
+| File | Description | Recommended Target Directory 
+| `TRAF_ODBC_Linux_Driver_64.tar.gz` | Linux ODBC Driver | `$HOME/trafodion/odbc` 
+| `odb64_linux.tar.gz` | Linux odb Utility | `$HOME/trafodion/odb` 
+|===
+
+*Linux*
+
+Unpack the `.tar.gz` file using the `tar -xzvf <file> -C <target-directory>` command.
+
+```
+$ cd $HOME/trafodion/clients
+$ mkdir $HOME/trafodion/odbc
+$ tar -xzvf TRAF_ODBC_Linux_Driver_64.tar.gz -C $HOME/trafodion/odbc
+.
+.
+.
+$ mkdir $HOME/trafodion/odb
+$ tar -xzvf odb64_linux.tar.gz -C $HOME/trafodion/odb
+.
+.
+.
+$ cd ..
+$ ls
+apache-trafodion_clients-2.0.1-incubating.tar.gz  clients  odb  odbc
+```
+
+
+Once complete, a fully-installed `c:\trafodion` (Windows) or
+`$HOME/trafodion` directory should contain:
+
+* `clients`: The compressed client software.
+* `odb`: The {project-name} odb utility installation directory.
+* `odbc`: The {project-name} ODBC driver installation directory.
+
+
+

@@ -195,10 +195,6 @@ struct DefaultDefault
 
 #define  DDcoll_(name,value)		 DD(name,value,&validateCollList)
 
-#define  DDdskNS(name,value)		 DD(name,value,&validateDiskListNSK)
-#define SDDdskNS(name,value)		SDD(name,value,&validateDiskListNSK)
-//SCARTCH_DRIVE_LETTERS* made internal RV 06/21/01 CR 10-010425-2440
-#define  DDdskNT(name,value)		 DD(name,value,&validateDiskListNT)
 #define  DDint__(name,value)		 DD(name,value,&validateInt)
 #define SDDint__(name,value)		SDD(name,value,&validateInt)
 #define XDDint__(name,value)		XDD(name,value,&validateInt)
@@ -259,16 +255,10 @@ struct DefaultDefault
 #define SDDkwd__(name,value)		SDD(name,value,&validateKwd)
 #define  DDSkwd__(name,value)		 DDS(name,value,&validateKwd)
 #define SDDSkwd__(name,value)		SDDS(name,value,&validateKwd)
-#define  DDnskv_(name,value)		 DD(name,value,&validateNSKV)
-#define  DDnsksv(name,value)		 DD(name,value,&validateNSKSV)
-#define  DDnsksy(name,value)		 DD(name,value,&validateNSKSY)
-#define  DDnsklo(name,value)		DD(name,value,&validateNSKMPLoc)
 #define  DD1_4096(name,value)	         DD(name,value,&validate1_4096)
 #define  DD0_18(name,value)	         DD(name,value,&validate0_18)
 #define DD0_64(name,value)	        DD(name,value,&validate0_64)
 #define DD16_64(name,value)	        DD(name,value,&validate16_64)
-#define  DDvol__(name,value)		 DD(name,value,&validateVol)
-#define SDDvol__(name,value)		SDD(name,value,&validateVol)
 #define  DDalis_(name,value)		 DD(name,value,&validateAnsiList)
 #define XDDalis_(name,value)		XDD(name,value,&validateAnsiList)
 #define XDDpos__(name,value)            XDD(name,value,&validatePOSTableSizes)
@@ -288,8 +278,7 @@ struct DefaultDefault
 
 const DefaultValidator	validateUnknown;
 const DefaultValidator	validateAnsiName(CASE_SENSITIVE_ANSI); // e.g. 'c.s.tbl'
-const ValidateDiskListNSK	validateDiskListNSK;
-const ValidateDiskListNT	validateDiskListNT;
+
       ValidateCollationList	validateCollList(TRUE/*mp-format*/);  // list collations
 const ValidateInt		validateInt;	// allows neg, zero, pos ints
 const ValidateIntNeg1         validateIntNeg1;// allows -1 to +infinity ints
@@ -322,11 +311,6 @@ const ValidateFltMin1		validateFlt1;	// allows pos only (>= 1)
 const ValidateSelectivity	ValidateSelectivity;	// allows 0 to 1 (float)
 const ValidateFlt_0_1		validateFlt_0_1;	// allows 0 to 1 (float)
 const ValidateKeyword		validateKwd;	// allows relevant keywords only
-const ValidateNSKVol		validateNSKV;	// allows NSK volumes ($X, e.g.)
-const ValidateNSKSubVol	validateNSKSV;	// allows NSK subvols
-const ValidateVolumeList      validateVol;    // allows ':' separ. list of $volumes
-const ValidateNSKSystem	validateNSKSY;	// allows NSK system names
-const ValidateNSKMPLoc	validateNSKMPLoc;	// allows NSK MP cat names($X.Y)
 const Validate_1_4096		validate1_4096;	    // allows 1 to 4096 (integer) which is max character size supported.
 const Validate_0_18		validate0_18;	    // allows 0 to 18 (integer) because 18 is max precision supported.
 const Validate_1_1024     validate1_1024;     // allows 1 to 1024 (integer).
@@ -370,7 +354,7 @@ SDDkwd__(ALLOW_AUDIT_ATTRIBUTE_CHANGE,	       "FALSE"), // Used to control if ro
 
 SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
 
- DDkwd__(ALLOW_FIRSTN_IN_SUBQUERIES,	       "FALSE"),
+ DDkwd__(ALLOW_FIRSTN_IN_SUBQUERIES,	       "TRUE"),
 
  // ON/OFF flag to invoke ghost objects from non-licensed process (non-super.super user) who can not use parserflags
  DDkwd__(ALLOW_GHOST_OBJECTS, "OFF"),
@@ -384,13 +368,19 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
  // assignment, like string to int. The assignment will be done by
  // implicitely CASTing one operand to another as long as CAST between
  // the two is supported. See binder for details.
-  DDkwd__(ALLOW_INCOMPATIBLE_ASSIGNMENT,	"OFF"),
+  DDkwd__(ALLOW_INCOMPATIBLE_ASSIGNMENT,	"ON"),
 
  // this default, if set to ON, will allow certain incompatible
  // comparisons, like string to int. The comparison will be done by
  // implicitely CASTing one operand to another as long as CAST between
  // the two is supported. See binder for details.
-  DDkwd__(ALLOW_INCOMPATIBLE_COMPARISON,	"OFF"),
+  DDkwd__(ALLOW_INCOMPATIBLE_COMPARISON,	"ON"),
+
+ // this default, if set to ON, will allow certain incompatible
+ // comparisons. This includes incompatible comparisons, assignments,
+ // conversions, UNION, arith, string and case stmts.
+ // See binder(BindItemExpr.cpp, SynthType.cpp) for details.
+  DDkwd__(ALLOW_INCOMPATIBLE_OPERATIONS,	"ON"),
 
   // if set to 2, the replicateNonKeyVEGPred() mdamkey method
   // will try to use inputs to filter out VEG elements that are not
@@ -418,8 +408,10 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
   // specified in a regular CREATE VIEW (not a create MV) statement.
   DDkwd__(ALLOW_ORDER_BY_IN_CREATE_VIEW,	"ON"),
 
+  DDkwd__(ALLOW_ORDER_BY_IN_SUBQUERIES,	        "ON"),
+
   // rand() function in sql is disabled unless this CQD is turned on
-  DDkwd__(ALLOW_RAND_FUNCTION,			"OFF"),
+  DDkwd__(ALLOW_RAND_FUNCTION,			"ON"),
 
   DDkwd__(ALLOW_RANGE_PARTITIONING,	        "TRUE"),
 
@@ -494,15 +486,6 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
   DDkwd__(CACHE_HISTOGRAMS_MONITOR_MEM_DETAIL,  "OFF"),
   DD_____(CACHE_HISTOGRAMS_MONITOR_OUTPUT_FILE, ""),
 
-// This is the default time interval, during which we ensure that
-// the histograms in the cache are correct. If the histograms in the
-// cache are older than this default interval, and the HISTOGRAMS
-// table last modification time is older than this, any requested
-// histograms will be checked to see if it was modified more recently
-// than the histograms in cache (the READ_TIME fields will also be
-// updated).  If so, the optimizer will refetch histograms.
-
- XDDui___(CACHE_HISTOGRAMS_REFRESH_INTERVAL,  "3600"),
  DD_____(CACHE_HISTOGRAMS_TRACE_OUTPUT_FILE, ""),
  DDkwd__(CALL_EMBEDDED_ARKCMP,       "OFF"),
  DDui___(CANCEL_MINIMUM_BLOCKING_INTERVAL,      "60"),
@@ -1161,7 +1144,23 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
  DDkwd__(CREATE_METADATA_TABLE,                "OFF"),
  DDkwd__(CREATE_OBJECTS_IN_METADATA_ONLY,      "OFF"),
 
- DDkwd__(CROSS_PRODUCT_CONTROL,		"ON"),
+ DDkwd__(CROSS_PRODUCT_CONTROL,	               "ON"),
+
+ // CQDs for Common Subexpressions (CSEs)
+ // cache queries containing temp tables for common subexpressions
+ DDkwd__(CSE_CACHE_TEMP_QUERIES,               "OFF"),
+ // "cleanup obsolete volatile tables" command cleans up Hive temp tables
+ DDkwd__(CSE_CLEANUP_HIVE_TABLES,              "OFF"),
+ // emit warnings that help diagnose why CSEs are not shared
+ DDkwd__(CSE_DEBUG_WARNINGS,                   "OFF"),
+ // create a CommonSubExpr node for CTEs defined in WITH clauses (OFF/ON)
+ DDkwd__(CSE_FOR_WITH,                         "OFF"),
+ // use Hive tables as temp tables
+ DDkwd__(CSE_HIVE_TEMP_TABLE,                  "ON"),
+ // print debugging info on stdout
+ DDkwd__(CSE_PRINT_DEBUG_INFO,                 "OFF"),
+ // implement CommonSubExpr as a temp table (OFF/SYSTEM/ON)
+ DDkwd__(CSE_USE_TEMP,                         "ON"),
 
 SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
 
@@ -1170,7 +1169,7 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDkwd__(DATA_FLOW_OPTIMIZATION,		"ON"),
 
   // DDL Default location support
- DDdskNS(DDL_DEFAULT_LOCATIONS,                ""),
+ DD_____(DDL_DEFAULT_LOCATIONS,                ""),
 
   DDkwd__(DDL_EXPLAIN,                           "OFF"),
   DDkwd__(DDL_TRANSACTIONS,         "ON"),
@@ -1637,6 +1636,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_SORT_NUM_BUFFERS,			"4"),
   DDui1__(GEN_SORT_SIZE_DOWN,			"2"),
   DDui1__(GEN_SORT_SIZE_UP,			"1024"),
+  DDkwd__(GEN_SORT_TOPN,		        "ON"),
   DDui1__(GEN_SPLB_BUFFER_SIZE,			"2"),
   DDui1__(GEN_SPLB_NUM_BUFFERS,			"1"),
   DDui1__(GEN_SPLB_SIZE_DOWN,			"2"),
@@ -1707,12 +1707,11 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_XPLN_SIZE_DOWN,			"8"),
   DDui1__(GEN_XPLN_SIZE_UP,			"16"),
 
-
   // When less or equal to this CQD (5000 rows by default), a partial root 
   // will be running in the Master. Set to 0 to disable the feature.
   DDint__(GROUP_BY_PARTIAL_ROOT_THRESHOLD,	"5000"),
 
-  DDkwd__(GROUP_BY_USING_ORDINAL,		"MINIMUM"),
+  DDkwd__(GROUP_OR_ORDER_BY_EXPR,		"ON"),
 
   // HASH_JOINS ON means do HASH_JOINS
  XDDkwd__(HASH_JOINS,				"ON"),
@@ -1796,7 +1795,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDui1__(HDFS_IO_BUFFERSIZE,                            "65536"),
   DDui___(HDFS_IO_BUFFERSIZE_BYTES,               "0"),
-  DDui1__(HDFS_IO_RANGE_TAIL,                     "16384"),
+  // The value 0 denotes RangeTail = max record length of table.
+  DDui___(HDFS_IO_RANGE_TAIL,                     "0"),
   DDkwd__(HDFS_PREFETCH,                           "ON"),
   DDkwd__(HDFS_READ_CONTINUE_ON_ERROR,                           "OFF"),
   DDui1__(HDFS_REPLICATION,                            "1"),
@@ -1912,15 +1912,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // Default behavior is to generate all warnings
   XDDui___(HIST_MISSING_STATS_WARNING_LEVEL,	"4"),
 
-  // This specifies the time interval after which the fake statistics
-  // should be refreshed. This was done primarirly for users
-  // which did not want to update statistics on temporary tables.
-  // If this statistics is cached, then this results in bad plans
-  // These users can have this default set to 0, in which case histograms
-  // with fake statistics will never be cached.  Note that when ustat
-  // automation is on, this value divided by 360 is used.
-
- XDDui___(HIST_NO_STATS_REFRESH_INTERVAL,       "3600"),
   DDflt1_(HIST_NO_STATS_ROWCOUNT,               "100"),
   DDflt1_(HIST_NO_STATS_UEC,                    "2"),
   DDflt1_(HIST_NO_STATS_UEC_CHAR1,              "10"),
@@ -1932,7 +1923,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDansi_(HIST_ROOT_NODE,                            ""),
  XDDflt1_(HIST_ROWCOUNT_REQUIRING_STATS,        "500"),
   DDflt0_(HIST_SAME_TABLE_PRED_REDUCTION,       "0.0"),
-  DDvol__(HIST_SCRATCH_VOL,                     ""),
+  DD_____(HIST_SCRATCH_VOL,                     ""),
   // control the amount of data in each partition of the sample tble.
   DDflt1_(HIST_SCRATCH_VOL_THRESHOLD,           "10240000"),
   DDflt_0_1(HIST_SKEW_COST_ADJUSTMENT,            "0.2"),
@@ -2289,17 +2280,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
  SDDkwd__(MODE_SPECIAL_1,                       "OFF"),
 
- SDDkwd__(MODE_SPECIAL_2,                       "OFF"),
-
-  // enable special  features in R2.93
-  DDkwd__(MODE_SPECIAL_3,                       "OFF"),
   DDkwd__(MODE_SPECIAL_4,                       "OFF"),
-  DDkwd__(MODE_SPECIAL_5,                       "OFF"),
-
-  DDnsklo(MP_CATALOG,				"$SYSTEM.SQL"),
-  DDnsksv(MP_SUBVOLUME,				"SUBVOL"),
-  DDnsksy(MP_SYSTEM,				""),
-  DDnskv_(MP_VOLUME,                            "$VOL"),
 
   DDflt0_(MSCF_CONCURRENCY_IO,			"0.10"),
   DDflt0_(MSCF_CONCURRENCY_MSG,			"0.10"),
@@ -2877,10 +2858,10 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
 
    // default to 72GB 
    DDui___(POS_DEFAULT_SMALLEST_DISK_SIZE_GB,            "72"),
-   DDdskNS(POS_DISKS_IN_SEGMENT,                 ""),
-  SDDui___(POS_DISK_POOL,			"0"),
+   DD_____(POS_DISKS_IN_SEGMENT,                 ""),
+   DD_____(POS_DISK_POOL,			"0"),
    DD_____(POS_FILE_OPTIONS,                    ""),
-  SDDdskNS(POS_LOCATIONS,                        ""),
+   DD_____(POS_LOCATIONS,                        ""),
    DDkwd__(POS_MAP_HASH_TO_HASH2,               "ON"),
    DDpos__(POS_MAX_EXTENTS,                     ""),
   SDDui___(POS_NUM_DISK_POOLS,                  "0"),
@@ -2891,7 +2872,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   SDDpos__(POS_SEC_EXT_SIZE,			""),
   SDDpos__(POS_TABLE_SIZE,			""),
   SDDpct__(POS_TEMP_TABLE_FREESPACE_THRESHOLD_PERCENT,      "0"),
-  SDDdskNS(POS_TEMP_TABLE_LOCATIONS,            ""),
+  DD_____(POS_TEMP_TABLE_LOCATIONS,            ""),
   SDDpos__(POS_TEMP_TABLE_SIZE,                 ""),
    DDkwd__(POS_TEST_MODE,      "OFF"),
    DDui___(POS_TEST_NUM_NODES,  "0"),
@@ -3121,14 +3102,12 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDkwd__(SAP_PREFER_KEY_NESTED_JOIN,           "OFF"),
   DDint__(SAP_TUPLELIST_SIZE_THRESHOLD,         "5000"),
  XDDkwd__(SAVE_DROPPED_TABLE_DDL,               "OFF"),
- XDDansi_(SCHEMA,                               "SEABASE"),
- SDDdskNS(SCRATCH_DISKS,                        ""),
- SDDdskNS(SCRATCH_DISKS_EXCLUDED,               "$SYSTEM"),
-  DDdskNS(SCRATCH_DISKS_PREFERRED,              ""),
-  DDkwd__(SCRATCH_DISK_LOGGING,                 "OFF"),
-  DDdskNT(SCRATCH_DRIVE_LETTERS,                ""),
-  DDdskNT(SCRATCH_DRIVE_LETTERS_EXCLUDED,       ""),
-  DDdskNT(SCRATCH_DRIVE_LETTERS_PREFERRED,      ""),
+ XDDansi_(SCHEMA,                               "SEABASE"), 
+ //specify a : separated list of full path names where scratch files
+ //should reside. Ensure each specified directoy exisst on each node and 
+ //Trafodion user has permissions to access them.
+ DD_____(SCRATCH_DIRS,                        ""),
+ DDkwd__(SCRATCH_DISK_LOGGING,                 "OFF"),
  SDDpct__(SCRATCH_FREESPACE_THRESHOLD_PERCENT,      "1"),
   DDui___(SCRATCH_IO_BLOCKSIZE_SORT,            "524288"),
   //On LINUX, writev and readv calls are used to perform
@@ -3183,7 +3162,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
   DDkwd__(SHOWWARN_OPT,		"ON"),
   DDkwd__(SHOW_MEMO_STATS,		"OFF"),
 
-  DDkwd__(SIMILARITY_CHECK,			"ON "),
  DDkwd__(SIMPLE_COST_MODEL,                    "ON"),
 
  XDDkwd__(SKEW_EXPLAIN,                         "ON"),
@@ -3296,7 +3274,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // TARGET_MSG_REMOTE_TIME are seconds
   DDflte_(TARGET_MSG_REMOTE_TIME,		"0.00125"),
 
-  DDvol__(TEMPORARY_TABLE_HASH_PARTITIONS,     	"" ),
+  DD_____(TEMPORARY_TABLE_HASH_PARTITIONS,     	"" ),
   DDkwd__(TERMINAL_CHARSET,             (char *)SQLCHARSETSTRING_ISO88591),
 
   DDint__(TEST_PASS_ONE_ASSERT_TASK_NUMBER,	"-1"),
@@ -3311,7 +3289,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
   DDint__(TRAF_ALIGNED_FORMAT_ADD_COL_METHOD,	"2"),
  
-  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "OFF"),   
+  DDkwd__(TRAF_ALIGNED_ROW_FORMAT,                 "ON"),   
  
   DDkwd__(TRAF_ALLOW_ESP_COLOCATION,             "OFF"),   
  
@@ -3320,6 +3298,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_ALLOW_SELF_REF_CONSTR,                 "ON"),   
 
   DDkwd__(TRAF_ALTER_COL_ATTRS,                 "ON"),   
+
+  DDkwd__(TRAF_AUTO_CREATE_SCHEMA,                 "OFF"),   
 
   DDkwd__(TRAF_BLOB_AS_VARCHAR,                 "ON"), //set to OFF to enable Lobs support  
 
@@ -3389,6 +3369,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/sample/"),
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
 
+  DDkwd__(TRAF_SIMILARITY_CHECK,			"ROOT"),
+
   DDkwd__(TRAF_STORE_OBJECT_DESC,                    "OFF"),   
 
   DDkwd__(TRAF_STRING_AUTO_TRUNCATE,      "OFF"),
@@ -3427,8 +3409,11 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,           "OFF"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
   DDkwd__(TRAF_UPSERT_MODE,                            "MERGE"),
+  DDkwd__(TRAF_UPSERT_TO_EFF_TREE,                     "OFF"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
+
+  DDkwd__(TRAF_USE_REGION_XN,                          "OFF"),
 
   DDkwd__(TRAF_USE_RWRS_FOR_MD_INSERT,                   "ON"),
 
@@ -3566,11 +3551,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_IUS_NO_BLOCK,                   "OFF"),
   DDansi_(USTAT_IUS_PERSISTENT_CBF_PATH,        "SYSTEM"),
 
-  // if turned on, IUS incremental statements will not take any "on existing" or
-  // "on necessary" clause
-  DDkwd__(USTAT_IUS_SIMPLE_SYNTAX,                "OFF"),
-
-
   DDflt0_(USTAT_IUS_TOTAL_ROWCOUNT_CHANGE_THRESHOLD, "0.05"),
   DDflt0_(USTAT_IUS_TOTAL_UEC_CHANGE_THRESHOLD, "0.05"),
   DDkwd__(USTAT_IUS_USE_PERIODIC_SAMPLING,        "OFF"),
@@ -3580,6 +3560,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_LOCK_HIST_TABLES,               "OFF"),
   DD_____(USTAT_LOG,                            "ULOG"),
   DDui30_246(USTAT_MAX_CHAR_BOUNDARY_LEN,       "30"),   // Values can be 30-246.
+  DDui___(USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES,   "256"),  // When computing UECs, char cols are limited to this many bytes
   DDflt0_   (USTAT_MAX_CHAR_DATASIZE_FOR_IS,    "1000"),  // max data size in MB for char type to use 
  XDDui___(USTAT_MAX_READ_AGE_IN_MIN,            "5760"),
   DDui___(USTAT_MAX_SAMPLE_AGE,                 "365"),  // For R2.5 set to a year so user created samples won't be removed.
@@ -4061,9 +4042,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
 
   if(resetNeoDefaults)
   {
-    // turn similarity check OFF stats during regressions run.
-    currentDefaults_[SIMILARITY_CHECK] = "OFF";
-
     // turn on ALL stats during regressions run.
     currentDefaults_[COMP_BOOL_157] = "ON";
 
@@ -4148,6 +4126,7 @@ NADefaults::NADefaults(NAMemory * h)
   , heap_(h)
   , resetAll_(FALSE)
   , defFlags_(0)
+  , tablesRead_(h)
 {
   static THREAD_P NABoolean systemParamterUpdated = FALSE;
   // First (but only if NSK-LITE Services exist),
@@ -5185,8 +5164,6 @@ NABoolean NADefaults::isReadonlyAttribute(const char* attrName) const
      return FALSE; // for internal development and testing purposes
 
    if (( stricmp(attrName, "ISO_MAPPING") == 0 )||
-       ( stricmp(attrName, "MODE_SPECIAL_1") == 0 ) ||
-       ( stricmp(attrName, "MODE_SPECIAL_2") == 0 ) ||
        ( stricmp(attrName, "NATIONAL_CHARSET") == 0 ) ||
        ( stricmp(attrName, "VALIDATE_VIEWS_AT_OPEN_TIME") == 0 ) ||
        ( stricmp(attrName, "USER_EXPERIENCE_LEVEL") == 0 ) ||
@@ -5199,7 +5176,7 @@ NABoolean NADefaults::isReadonlyAttribute(const char* attrName) const
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_PA") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE") == 0 ) ||
-	   ( stricmp(attrName, "SORT_ALGO") == 0 ) ||
+       ( stricmp(attrName, "SORT_ALGO") == 0 ) ||
        ( stricmp(attrName, "OVERFLOW_MODE") == 0 )
      )
      return TRUE;
@@ -5415,10 +5392,7 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	    }
 	}
     }
-    else if (attrEnum == MP_SUBVOLUME && value.first('.') != NA_NPOS) {
-      if (!setMPLoc(value, errOrWarn, overwriteIfNotYet))
-        attrEnum = __INVALID_DEFAULT_ATTRIBUTE;
-    }
+   
     else {
       if ( attrEnum == MAX_LONG_VARCHAR_DEFAULT_SIZE ||
            attrEnum == MAX_LONG_WVARCHAR_DEFAULT_SIZE ) {
@@ -5549,12 +5523,7 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 
 	      // Now fall thru to insert the string "SYSTEM" or ""
 	    }
-	    if (attrEnum == MP_CATALOG) {
-	      // This will apply default \sys to value if only $v.sv was specified.
-	      ComMPLoc loc(value, ComMPLoc::SUBVOL);
-	      value = loc.getMPName();
-	    }
-
+	   
 	    if (!insert(attrEnum, value, errOrWarn))
 	      attrEnum = __INVALID_DEFAULT_ATTRIBUTE;
 	  }	  // overwrite (i.e. insert)
@@ -5572,14 +5541,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	}
 
       switch (attrEnum) {
-
-      case MP_SYSTEM:
-      case MP_VOLUME:
-      case MP_SUBVOLUME:
-	//
-	// Signal to reconstruct MPLOC and MPLOC_as_SchemaName
-	// on the next query, i.e. next call to getSqlParser_NADefaults().
-	SqlParser_NADefaults_->MPLOC_.setUnknown();
 
       case CATALOG:
       case SCHEMA:
@@ -5610,15 +5571,30 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
       //}
       //break;
 
+      case ALLOW_INCOMPATIBLE_ASSIGNMENT:
+      case ALLOW_INCOMPATIBLE_COMPARISON:
+	{
+	  NAString val;
+          
+          if (value == "ON")
+            val = "ON";
+          else
+            val = "OFF";
+                    
+          insert(ALLOW_INCOMPATIBLE_OPERATIONS, val, errOrWarn);
+        }
+        break;
+
       case MODE_SPECIAL_1:
 	{
-	  if (getToken(MODE_SPECIAL_2) == DF_ON)
-	    {
-	      // MS1 was already set by now. Reset it and return an error.
-	      insert(MODE_SPECIAL_1, "OFF", errOrWarn);
+	  NAString val;
+          
+          if (value == "ON")
+            val = "ON";
+          else
+            val = "OFF";
 
-	      attrEnum = __INVALID_DEFAULT_ATTRIBUTE;
-	    }
+          insert(ALLOW_INCOMPATIBLE_OPERATIONS, val, errOrWarn);
 
 	  // find_suitable_key to be turned off in this mode, unless
 	  // it has been explicitely set.
@@ -5626,36 +5602,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	    {
 	      insert(VOLATILE_TABLE_FIND_SUITABLE_KEY, "OFF", errOrWarn);
 	    }
-	}
-      break;
-
-      case MODE_SPECIAL_2:
-	{
-	  NAString val;
-	  if (getToken(MODE_SPECIAL_1) == DF_ON)
-	    {
-	      // MS2 was already set by now. Reset it and return an error.
-	      insert(MODE_SPECIAL_2, "OFF", errOrWarn);
-
-	      attrEnum = __INVALID_DEFAULT_ATTRIBUTE;
-	      break;
-	    }
-
-	  if (value == "ON")
-	    val = "ON";
-	  else
-	    val = resetToDefaults_[LIMIT_MAX_NUMERIC_PRECISION];
-
-	  if (getToken(LIMIT_MAX_NUMERIC_PRECISION) == DF_SYSTEM)
-	    {
-	      insert(LIMIT_MAX_NUMERIC_PRECISION, val, errOrWarn);
-	    }
-
-	  if (value == "ON")
-	    val = "2";
-	  else
-	    val = resetToDefaults_[ROUNDING_MODE];
-	  insert(ROUNDING_MODE, val, errOrWarn);
 	}
       break;
 
@@ -5667,15 +5613,10 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
             val = "ON";
           else
             val = "OFF";
-          
-          insert(ALLOW_INCOMPATIBLE_COMPARISON, val, errOrWarn);
-          
-          insert(ALLOW_INCOMPATIBLE_ASSIGNMENT, val, errOrWarn);
-          
+                    
+          insert(ALLOW_INCOMPATIBLE_OPERATIONS, val, errOrWarn);
           insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
-          
-          insert(MODE_SPECIAL_3, val, errOrWarn);
-          
+                    
           NAString csVal;
           if (value == "ON")
             csVal = SQLCHARSETSTRING_UTF8;
@@ -5710,25 +5651,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
             Set_SqlParser_Flags(IN_MODE_SPECIAL_4);
           else
             Reset_SqlParser_Flags(IN_MODE_SPECIAL_4);
-	}
-      break;
-
-      case MODE_SPECIAL_5:
-	{
-	  NAString val;
-          
-          if (value == "ON")
-            val = "ON";
-          else
-            val = "OFF";
-          
-          insert(ALLOW_INCOMPATIBLE_COMPARISON, val, errOrWarn);
-          
-          insert(ALLOW_INCOMPATIBLE_ASSIGNMENT, val, errOrWarn);
-          
-          insert(ALLOW_NULLABLE_UNIQUE_KEY_CONSTRAINT, val, errOrWarn);
-
-          insert(TRAF_ALLOW_SELF_REF_CONSTR, val, errOrWarn);
 	}
       break;
 
@@ -5817,7 +5739,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	{
 	  if (value == "ON")
 	    {
-	      insert(SIMILARITY_CHECK, "OFF", errOrWarn);
 	      insert(COMP_BOOL_157, "ON", errOrWarn);
 	      insert(SHOWDDL_DISPLAY_FORMAT, "INTERNAL", errOrWarn);
 	      insert(MODE_SPECIAL_1, "OFF", errOrWarn);
@@ -5834,7 +5755,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	    }
 	  else
 	    {
-	      insert(SIMILARITY_CHECK, "ON", errOrWarn);
 	      insert(COMP_BOOL_157, "OFF", errOrWarn);
 	      insert(SHOWDDL_DISPLAY_FORMAT, "EXTERNAL", errOrWarn);
 
@@ -6169,35 +6089,6 @@ enum DefaultConstants NADefaults::holdOrRestore	(const char *attrName,
 
 const SqlParser_NADefaults *NADefaults::getSqlParser_NADefaults()
 {
-  // "Precompile" the MPLOC into a handier format for name resolution.
-  // The pure ComMPLoc is used in a few places, and the SchemaName form
-  // is used when NAMETYPE is NSK.
-  //
-  if (SqlParser_NADefaults_->MPLOC_.getFormat() == ComMPLoc::UNKNOWN) {
-    NAString sys, vol, subvol;
-    getValue(MP_SYSTEM, sys);
-    getValue(MP_VOLUME, vol);
-    getValue(MP_SUBVOLUME, subvol);
-    if (!sys.isNull())
-      sys += ".";
-    sys += vol + "." + subvol;
-    SqlParser_NADefaults_->MPLOC_.parse(sys, ComMPLoc::SUBVOL);
-
-    // For NAMETYPE NSK, catalog name is e.g. "\AZTEC.$FOO"
-    SqlParser_NADefaults_->MPLOC_as_SchemaName_.setCatalogName(
-    SqlParser_NADefaults_->MPLOC_.getSysDotVol());
-
-    // For NAMETYPE NSK, schema name is e.g. "
-    SqlParser_NADefaults_->MPLOC_as_SchemaName_.setSchemaName(
-    SqlParser_NADefaults_->MPLOC_.getSubvolName());
-
-    // We've already validated the heck out of this
-    // in validateAndInsert() and setMPLoc()!
-#if defined(NA_NSK) || defined(_DEBUG)
-    CMPASSERT(SqlParser_NADefaults_->MPLOC_.isValid(ComMPLoc::SUBVOL));
-#endif  // defined(NA_NSK) || defined(_DEBUG)
-  }
-
   return SqlParser_NADefaults_;
 }
 
@@ -6307,43 +6198,7 @@ NABoolean NADefaults::setCatalog(NAString &value,
   }
 }
 
-NABoolean NADefaults::setMPLoc(const NAString &value,
-			       Int32 errOrWarn,
-			       Provenance overwriteIfNotYet)
-{
-  NABoolean isValid = TRUE;
 
-  // Validate the entire string all at once,
-  // so that if any namepart is in error,
-  // we insert NONE of the MP_xxx values.
-  ComMPLoc loc(value, ComMPLoc::SUBVOL);
-
-  if (!loc.isValid(ComMPLoc::SUBVOL)) {
-    // Call the MPLOC validator solely to emit proper errmsg
-    validateNSKMPLoc.validate(value, this, MP_SUBVOLUME, errOrWarn);
-    isValid = FALSE;
-  }
-  else {
-    NAString v;
-    DefaultConstants e;
-
-    if (loc.hasSystemName()) {
-      v = loc.getSystemName();
-      e = validateAndInsert("MP_SYSTEM", v, 0, errOrWarn, overwriteIfNotYet);
-      CMPASSERT(e >= 0);			// this is just double-checking!
-    }
-
-    v = loc.getVolumeName();
-    e = validateAndInsert("MP_VOLUME", v, 0, errOrWarn, overwriteIfNotYet);
-    CMPASSERT(e >= 0);				// this is just double-checking!
-
-    v = loc.getSubvolName();
-    e = validateAndInsert("MP_SUBVOLUME", v, 0, errOrWarn, overwriteIfNotYet);
-    CMPASSERT(e >= 0);				// this is just double-checking!
-  }
-
-  return isValid;
-}
 
 NABoolean NADefaults::setSchema(NAString &value,
 				Int32 errOrWarn,
@@ -6449,6 +6304,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "KEYINDEXES",
   "LASTROW",
   "LATEST",
+  "LEAF",
   "LOADNODUP",
   "LOCAL",
   "LOCAL_NODE",
@@ -6484,6 +6340,7 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "REPSEL",
   "RESOURCES",
   "RETURN",
+  "ROOT",
   "SAMPLE",
   "SERIALIZABLE",
   "SHORTANSI",
@@ -6704,12 +6561,6 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       if (tok == DF_ALL || tok == DF_MEASURE ||
 	  tok == DF_ACCUMULATED || tok == DF_OPERATOR ||
 	  tok == DF_PERTABLE || tok == DF_OFF)
-	isValid = TRUE;
-      break;
-
-    case GROUP_BY_USING_ORDINAL:
-      if (tok == DF_ALL || tok == DF_MINIMUM ||
-	  tok == DF_OFF)
 	isValid = TRUE;
       break;
 
@@ -6963,6 +6814,11 @@ DefaultToken NADefaults::token(Int32 attrEnum,
         isValid = TRUE;
       break;
 
+    case SUBQUERY_UNNESTING_P2:
+      if (tok == DF_OFF || tok == DF_ON || tok == DF_INTERNAL)
+         isValid = TRUE;
+      break;
+
     case SORT_INTERMEDIATE_SCRATCH_CLEANUP:
       if(tok == DF_ON || tok == DF_OFF)
         isValid = TRUE;
@@ -7098,6 +6954,12 @@ DefaultToken NADefaults::token(Int32 attrEnum,
     case USE_HIVE_SOURCE:
       isValid = TRUE;
       break;
+
+    case TRAF_SIMILARITY_CHECK:
+      if (tok == DF_ROOT || tok == DF_LEAF || tok == DF_ON || tok == DF_OFF)
+	isValid = TRUE;
+      break;
+
     case TRAF_TABLE_SNAPSHOT_SCAN:
       if (tok  == DF_NONE || tok == DF_SUFFIX || tok == DF_LATEST)
         isValid = TRUE;

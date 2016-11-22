@@ -424,7 +424,7 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
 		      // datalen, then this varchar field either is a null
 		      // value or has a length of zero.
 		      // A varchar field is missing if its offset is > datalen.
-		      if (((*op)->isSpecialField()) &&
+		      if (((*op)->isAddedCol()) &&
 			  (((*op)->getOffset() == ExpOffsetMax) ||
 			   ((datalen > 0) &&
 			    ((((*op)->getVCIndicatorLength() > 0) &&
@@ -810,10 +810,8 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
               (*nulldata) = 0;
             }
           }
-	  
 
 	} // for
-
 	  
       // -----------------------------------------------------------------
       // Call the NULL processing method for this clause and, if still
@@ -2289,6 +2287,7 @@ ex_expr::exp_return_type ex_expr::evalPCodeAligned(PCodeBinary* pCode32,
 ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 					    atp_struct *atp1,
 					    atp_struct *atp2,
+                                            Lng32 datalen,
 					    ULng32 *rowLen)
 {
   ComDiagsArea *diagsArea;
@@ -6802,6 +6801,41 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       pCode += RANGE_INST_LEN;
       break;
     }
+    case PCIT::RANGE_LOW_S8S64:
+    {
+      DEF_ASSIGN(Lng32, op, RANGE_INST_LEN );  // the next op
+      PTR_DEF_ASSIGN(Int8, valPtr, 0 );
+      PTR_TO_PCODE(Int64, minvalPtr, 2 );
+
+      if ( *valPtr < *minvalPtr )
+	{
+	  goto Error1_;
+	}
+
+      pCode += RANGE_INST_LEN;
+
+      if (op != PCIT::RANGE_HIGH_S8S64) {
+        break;
+      }
+
+      pCode++;
+      //
+      // Do NOT break here...
+      // The next instruction is a matching RANGE_HIGH
+    }
+
+    case PCIT::RANGE_HIGH_S8S64:
+    {
+      PTR_DEF_ASSIGN(Int8, valPtr, 0 );
+      PTR_TO_PCODE(Int64, maxvalPtr, 2 );
+      if ( *valPtr > *maxvalPtr )
+        {
+          goto Error1_;
+        }
+      pCode += RANGE_INST_LEN;
+      break;
+    }  
+
     case PCIT::RANGE_LOW_S16S64:
     {
       DEF_ASSIGN(Lng32, op, RANGE_INST_LEN );  // the next op
@@ -6872,6 +6906,43 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       pCode += RANGE_INST_LEN;
       break;
     }
+
+    case PCIT::RANGE_LOW_U8S64:
+    {
+      DEF_ASSIGN(Lng32, op, RANGE_INST_LEN );  // the next op
+      PTR_DEF_ASSIGN(UInt8, valPtr, 0 );
+      PTR_TO_PCODE(Int64, minvalPtr, 2 );
+
+      if ( *valPtr < *minvalPtr )
+        {
+	  goto Error1_;
+        }
+
+      pCode += RANGE_INST_LEN;
+
+      if (op != PCIT::RANGE_HIGH_U8S64) {
+        break;
+      }
+
+      pCode++;
+      //
+      // Do NOT break here...
+      // The next instruction is a matching RANGE_HIGH
+    }
+
+    case PCIT::RANGE_HIGH_U8S64:
+    {
+      PTR_DEF_ASSIGN(UInt8, valPtr, 0 );
+      PTR_TO_PCODE(Int64, maxvalPtr, 2 );
+
+      if ( *valPtr > *maxvalPtr )
+        {
+	  goto Error1_;
+        }
+      pCode += RANGE_INST_LEN;
+      break;
+    }
+
     case PCIT::REPLACE_NULL_MATTR3_MBIN32S:
     case PCIT::REPLACE_NULL_MATTR3_MBIN32U:
     case PCIT::REPLACE_NULL_MATTR3_MBIN16S: 
@@ -8409,19 +8480,6 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
 
       break;
 
-    case PCIT::RANGE_LOW_U32S64:
-    case PCIT::RANGE_LOW_U16S64:
-    case PCIT::RANGE_HIGH_S64S64:
-    case PCIT::RANGE_HIGH_S32S64:
-    case PCIT::RANGE_HIGH_U32S64:
-    case PCIT::RANGE_HIGH_S16S64:
-    case PCIT::RANGE_HIGH_U16S64:
-      op1 = ((char*)(stack[pCode[0]] + pCode[1]));
-      op2 = (char*)(&pCode[2]);
-      ovfl = EXE_NUMERIC_OVERFLOW;
-
-      break;
-
     case PCIT::RANGE_LOW_S16S64:
       op1 = ((char*)(stack[pCode[0]] + pCode[1]));
       op2 = (char*)(&pCode[2]);
@@ -8434,6 +8492,37 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
       else {
         ovfl = EXE_NUMERIC_OVERFLOW;
       }
+
+      break;
+
+    case PCIT::RANGE_LOW_S8S64:
+      op1 = ((char*)(stack[pCode[0]] + pCode[1]));
+      op2 = (char*)(&pCode[2]);
+
+      if (((*((Int8*)(stack[pCode[0]]+pCode[1]))) < 0) &&
+          ((*(Int64*)&pCode[2]) >= 0))
+      { // conversion of -ve num to unsigned field
+        ovfl = EXE_UNSIGNED_OVERFLOW;
+      }
+      else {
+        ovfl = EXE_NUMERIC_OVERFLOW;
+      }
+
+      break;
+
+    case PCIT::RANGE_LOW_U32S64:
+    case PCIT::RANGE_LOW_U16S64:
+    case PCIT::RANGE_LOW_U8S64:
+    case PCIT::RANGE_HIGH_S64S64:
+    case PCIT::RANGE_HIGH_S32S64:
+    case PCIT::RANGE_HIGH_U32S64:
+    case PCIT::RANGE_HIGH_S16S64:
+    case PCIT::RANGE_HIGH_U16S64:
+    case PCIT::RANGE_HIGH_S8S64:
+    case PCIT::RANGE_HIGH_U8S64:
+      op1 = ((char*)(stack[pCode[0]] + pCode[1]));
+      op2 = (char*)(&pCode[2]);
+      ovfl = EXE_NUMERIC_OVERFLOW;
 
       break;
 
@@ -8458,9 +8547,10 @@ ex_expr::exp_return_type ex_expr_base::reportOverflowError(
       break;
 
     case PCIT::GENFUNC_MATTR5_MATTR5_MBIN32S_IBIN32S:
-      op1 = ((char*)(stack[pCode[10]] + pCode[11]));
-      op2 = ((char*)(stack[pCode[10]] + pCode[11]));
-      ovfl = EXE_NUMERIC_OVERFLOW;
+      ExRaiseFunctionSqlError(getHeap(), &diagsArea, EXE_STRING_OVERFLOW,FALSE);
+      if(diagsArea != atp1->getDiagsArea())
+        atp1->setDiagsArea(diagsArea);
+      return ex_expr::EXPR_ERROR;
       break;
 
     case PCIT::CONCAT_MATTR5_MATTR5_MATTR5:
@@ -8496,40 +8586,4 @@ ex_expr::exp_return_type ex_clause::eval(char * /*op_data*/[],
   // default eval method does nothing and returns OK
   return ex_expr::EXPR_OK;
 };
-
-ex_expr::exp_return_type AggrExpr::initializeAggr(atp_struct * atp)
-{
-  if (initExpr_)
-    {
-      if (initExpr_->eval(atp, atp) == ex_expr::EXPR_ERROR)
-	return ex_expr::EXPR_ERROR;
-    }
-
-  ex_clause *clause = getClauses();
-  while (clause)
-    {
-      if (clause->getType() == ex_clause::AGGREGATE_TYPE)
-	{
-	  if (((ex_aggregate_clause *)clause)->init() == ex_expr::EXPR_ERROR)
-	    return ex_expr::EXPR_ERROR;
-	}
-      
-      clause = clause->getNextClause();
-    }
-
-  return ex_expr::EXPR_OK;
-}
-
-ex_expr::exp_return_type AggrExpr::finalizeAggr(atp_struct * /*atp*/)
-{
-  return ex_expr::EXPR_OK;
-}
-
-ex_expr::exp_return_type AggrExpr::finalizeNullAggr(atp_struct * atp)
-{
-  if (finalNullExpr_)
-    return finalNullExpr_->eval(atp, atp);
-  else
-    return ex_expr::EXPR_OK;
-}
 

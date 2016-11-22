@@ -33,6 +33,9 @@ using namespace std;
 #include <signal.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/epoll.h>
 #include <sys/file.h>
 #include <sys/time.h>
@@ -58,10 +61,12 @@ using namespace std;
 #include "lnode.h"
 #include "pnode.h"
 #include "reqqueue.h"
+#include "zclient.h"
 
 extern bool IAmIntegrating;
 extern bool IAmIntegrated;
 extern bool IsRealCluster;
+extern bool ZClientEnabled;
 extern char IntegratingMonitorPort[MPI_MAX_PORT_NAME];
 extern char MyCommPort[MPI_MAX_PORT_NAME];
 extern char MyMPICommPort[MPI_MAX_PORT_NAME];
@@ -85,6 +90,7 @@ extern CMonStats *MonStats;
 extern CRedirector Redirector;
 extern CMonLog *MonLog;
 extern CHealthCheck HealthCheck;
+extern CZClient    *ZClient;
 
 extern long next_test_delay;
 extern CReplicate Replicator;
@@ -296,6 +302,8 @@ void CCluster::NodeTmReady( int nid )
         {
             MyNode->ResetSoftNodeDown();
 
+            MyNode->SetPhase( Phase_Ready );
+
             char la_buf[MON_STRING_BUF_SIZE];
             sprintf( la_buf, "[%s], Soft Node up! pnid=%d, name=(%s)\n"
                    , method_name, MyNode->GetPNid(), MyNode->GetName());
@@ -402,6 +410,18 @@ void CCluster::AssignTmLeader(int pnid)
 
     if (TmLeaderPNid != pnid) 
     {
+        node = LNode[TmLeaderNid]->GetNode();
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+        {
+            trace_printf( "%s@%d - Node pnid=%d (%s), phase=%s, isSoftNodeDown=%d\n"
+                        , method_name, __LINE__
+                        , node->GetPNid()
+                        , node->GetName()
+                        , NodePhaseString(node->GetPhase())
+                        , node->IsSoftNodeDown());
+        }
+    
         return;
     }
 
@@ -427,6 +447,16 @@ void CCluster::AssignTmLeader(int pnid)
         }
 
         node = Node[TmLeaderPNid];
+
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+        {
+            trace_printf( "%s@%d - Node pnid=%d (%s), phase=%s, isSoftNodeDown=%d\n"
+                        , method_name, __LINE__
+                        , node->GetPNid()
+                        , node->GetName()
+                        , NodePhaseString(node->GetPhase())
+                        , node->IsSoftNodeDown());
+        }
 
         if ( node->IsSpareNode() ||
              node->IsSoftNodeDown() ||
@@ -490,7 +520,7 @@ CCluster::CCluster (void)
       seqNum_(0),
       waitForWatchdogExit_(false)
       ,checkSeqNum_(false)
-      ,validateNodeDown_(true)
+      ,validateNodeDown_(false)
       ,enqueuedDown_(false)
       ,nodeDownDeathNotices_(true)
       ,verifierNum_(0)
@@ -892,6 +922,10 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
             {
                 lnode->Down();
             }
+            if ( ZClientEnabled )
+            {
+                ZClient->WatchNodeDelete( node->GetName() );
+            }
         }
     }
 
@@ -926,14 +960,21 @@ void CCluster::SoftNodeDown( int pnid )
     node = Nodes->GetNode(pnid);
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-       trace_printf( "%s@%d - pnid=%d, state=%s, isInQuiesceState=%d,"
-                     " (local pnid=%d, state=%s, isInQuiesceState=%d, "
-                     "shutdown level=%d)\n"
-                   , method_name, __LINE__
-                   , pnid, StateString(node->GetState())
-                   , node->isInQuiesceState()
-                   , MyPNID, StateString(MyNode->GetState())
-                   , MyNode->isInQuiesceState(), MyNode->GetShutdownLevel() );
+    {
+        trace_printf( "%s@%d - pnid=%d, state=%s, phase=%s, isInQuiesceState=%d, isSoftNodeDown=%d"
+                      " (local pnid=%d, state=%s, phase=%s, isInQuiesceState=%d, isSoftNodeDown=%d "
+                      "shutdown level=%d)\n"
+                    , method_name, __LINE__
+                    , pnid, StateString(node->GetState())
+                    , NodePhaseString(node->GetPhase())
+                    , node->isInQuiesceState()
+                    , node->IsSoftNodeDown()
+                    , MyPNID, StateString(MyNode->GetState())
+                    , NodePhaseString(MyNode->GetPhase())
+                    , MyNode->isInQuiesceState()
+                    , MyNode->IsSoftNodeDown()
+                    , MyNode->GetShutdownLevel() );
+    }
 
     if (( MyPNID == pnid              ) &&
         ( MyNode->GetState() == State_Down ||
@@ -954,12 +995,6 @@ void CCluster::SoftNodeDown( int pnid )
     {
         node->SetSoftNodeDown();            // Set soft down flag
         node->SetPhase( Phase_SoftDown );   // Suspend TMSync on node
-        node->KillAllDownSoft();            // Kill all processes
-
-        snprintf( buf, sizeof(buf)
-                , "[%s], Node %s (%d) executed soft down.\n"
-                , method_name, node->GetName(), node->GetPNid() );
-        mon_log_write(MON_CLUSTER_SOFTNODEDOWN_2, SQ_LOG_ERR, buf);
 
         if ( node->GetPNid() == MyPNID )
         {
@@ -967,6 +1002,13 @@ void CCluster::SoftNodeDown( int pnid )
             CReplSoftNodeDown *repl = new CReplSoftNodeDown( MyPNID );
             Replicator.addItem(repl);
         }
+
+        node->KillAllDownSoft();            // Kill all processes
+
+        snprintf( buf, sizeof(buf)
+                , "[%s], Node %s (%d) executed soft down.\n"
+                , method_name, node->GetName(), node->GetPNid() );
+        mon_log_write(MON_CLUSTER_SOFTNODEDOWN_2, SQ_LOG_ERR, buf);
     }
     else
     {
@@ -989,6 +1031,16 @@ void CCluster::SoftNodeDown( int pnid )
         Monitor->SetAbortPendingTmSync();
         if (trace_settings & (TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
            trace_printf("%s@%d - Node %s (pnid=%d) TmSyncState updated (%d)(%s)\n", method_name, __LINE__, MyNode->GetName(), MyPNID, MyNode->GetTmSyncState(), SyncStateString( MyNode->GetTmSyncState() ));
+    }
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY | TRACE_REQUEST | TRACE_SYNC | TRACE_TMSYNC))
+    {
+        trace_printf( "%s@%d - Node pnid=%d (%s), phase=%s, isSoftNodeDown=%d\n"
+                    , method_name, __LINE__
+                    , node->GetPNid()
+                    , node->GetName()
+                    , NodePhaseString(node->GetPhase())
+                    , node->IsSoftNodeDown());
     }
 
     IAmIntegrated = false;
@@ -1380,6 +1432,17 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                 // when complete, this will call HardNodeUp again.
                 ReqQueue.enqueueReviveReq( ); 
             }
+            else
+            {
+                if ( ZClientEnabled )
+                {
+                    rc = ZClient->WatchNode( node->GetName() );
+                    if ( rc != ZOK )
+                    {
+                        abort();
+                    }
+                }
+            }
         }
         else if ( nodeState == State_Joining )
         {
@@ -1541,6 +1604,10 @@ int CCluster::SoftNodeUpPrepare( int pnid )
     }
 
     node->SetKillingNode( false );
+
+    node->ResetSoftNodeDown( );
+
+    node->SetPhase( Phase_Ready );
 
     if ( MyPNID == pnid )
     {
@@ -4249,11 +4316,18 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
         int p_n2recv;
         bool p_sending;
         bool p_receiving;
+        int p_timeout_count;
+        bool p_initial_check;
         char *p_buff;
+        struct timespec znodeFailedTime;
     } peer_t;
     peer_t p[cfgPNodes_];
     memset( p, 0, sizeof(p) );
     tag = 0; // make compiler happy
+    struct timespec currentTime;
+    // Set to twice the ZClient session timeout
+    static int sessionTimeout = ZClientEnabled 
+                                ? (ZClient->GetSessionTimeout() * 2) : 120;
 
     int nsent = 0, nrecv = 0;
     for ( int iPeer = 0; iPeer < cfgPNodes_; iPeer++ )
@@ -4271,17 +4345,56 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
         {
             peer->p_sending = peer->p_receiving = true;
             peer->p_sent = peer->p_received = 0;
+            peer->p_timeout_count = 0;
+            peer->p_initial_check = true;
             peer->p_n2recv = -1;
             peer->p_buff = ((char *) rbuf) + (iPeer * CommBufSize);
             struct epoll_event event;
             event.data.fd = socks_[iPeer];
-            event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+            event.events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
             EpollCtl( epollFD_, EPOLL_CTL_ADD, socks_[iPeer], &event );
         }
     }
 
     inBarrier_ = true;
     MonStats->BarrierWaitIncr( );
+
+    static int sv_epoll_wait_timeout = -2;
+    static int sv_epoll_retry_count = 1;
+    if ( sv_epoll_wait_timeout == -2 )
+    {
+        char *lv_epoll_wait_timeout_env = getenv( "SQ_MON_EPOLL_WAIT_TIMEOUT" );
+        if ( lv_epoll_wait_timeout_env )
+        {
+            // convert to milliseconds
+            sv_epoll_wait_timeout = atoi( lv_epoll_wait_timeout_env ) * 1000;
+            char *lv_epoll_retry_count_env = getenv( "SQ_MON_EPOLL_RETRY_COUNT" );
+            if ( lv_epoll_retry_count_env )
+            {
+                sv_epoll_retry_count = atoi( lv_epoll_retry_count_env );
+            }
+            if ( sv_epoll_retry_count > 180 )
+            {
+                sv_epoll_retry_count = 180;
+            }
+        }
+        else
+        {
+            // default to 64 seconds
+            sv_epoll_wait_timeout = 4000;
+            sv_epoll_retry_count = 16;
+        }
+
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s@%d] EPOLL timeout wait_timeout=%d msecs, retry_count=%d\n"
+                , method_name
+                ,  __LINE__
+                , sv_epoll_wait_timeout
+                , sv_epoll_retry_count );
+
+        mon_log_write( MON_CLUSTER_ALLGATHERSOCK_1, SQ_LOG_INFO, buf );
+    }
 
     // do the work
     struct epoll_event events[2*cfgPNodes_ + 1];
@@ -4290,11 +4403,130 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
         int maxEvents = 2*cfgPNodes_ - nsent - nrecv;
         if ( maxEvents == 0 ) break;
         int nw;
+        int zerr = ZOK;
         while ( 1 )
         {
-            nw = epoll_wait( epollFD_, events, maxEvents, -1 );
+            nw = epoll_wait( epollFD_, events, maxEvents, sv_epoll_wait_timeout );
             if ( nw >= 0 || errno != EINTR ) break;
         }
+        if ( nw == 0 )
+        {
+            for ( int iPeer = 0; iPeer < cfgPNodes_; iPeer++ )
+            {
+                peer_t *peer = &p[iPeer];
+                if ( (iPeer != MyPNID) &&
+                    (socks_[iPeer] != -1) )
+                {
+                    if ( (peer->p_receiving) ||
+                        (peer->p_sending) )
+                    {
+                        if ( ! ZClientEnabled )
+                        {
+                            peer->p_timeout_count++;
+    
+                            if ( peer->p_timeout_count < sv_epoll_retry_count )
+                            {
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            if (peer->p_initial_check)
+                            {
+                                peer->p_initial_check = false;
+                                clock_gettime(CLOCK_REALTIME, &peer->znodeFailedTime);
+                                peer->znodeFailedTime.tv_sec += sessionTimeout;
+                                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                {
+                                    trace_printf( "%s@%d" " - Znode Fail Time %ld(secs)\n"
+                                                , method_name, __LINE__
+                                                , peer->znodeFailedTime.tv_sec);
+                                }
+                                
+                            }
+                            // If not expired, stay in the loop
+                            if ( ! ZClient->IsZNodeExpired( Node[iPeer]->GetName(), zerr ))
+                            {
+                                if ( zerr == ZCONNECTIONLOSS || zerr == ZOPERATIONTIMEOUT )
+                                {
+                                    // Ignore transient errors with the quorum.
+                                    // However, if longer than the session
+                                    // timeout, handle it as a hard error.
+                                    clock_gettime(CLOCK_REALTIME, &currentTime);
+                                    if (currentTime.tv_sec < peer->znodeFailedTime.tv_sec)
+                                    {
+                                        continue;
+                                    }
+                                    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                    {
+                                        trace_printf( "%s@%d - Znode Failed triggered\n"
+                                                      "        Current Time    %ld(secs)\n"
+                                                      "        Znode Fail Time %ld(secs)\n"
+                                                    , method_name, __LINE__
+                                                    , currentTime.tv_sec
+                                                    , peer->znodeFailedTime.tv_sec);
+                                    }
+                                    
+                                }
+                                else
+                                {
+                                    continue;
+                                }
+                            }
+                        }
+
+                        char buf[MON_STRING_BUF_SIZE];
+                        snprintf( buf, sizeof(buf)
+                                , "[%s@%d] Not heard from peer=%d (node=%s) "
+                                  "(current seq # is %lld)\n"
+                                , method_name
+                                ,  __LINE__
+                                , iPeer
+                                , Node[iPeer]->GetName()
+                                , seqNum_ );
+                        mon_log_write( MON_CLUSTER_ALLGATHERSOCK_1, SQ_LOG_CRIT, buf );
+
+                        stats[iPeer].MPI_ERROR = MPI_ERR_EXITED;
+                        err = MPI_ERR_IN_STATUS;
+                        if ( peer->p_sending )
+                        {
+                            peer->p_sending = false;
+                            nsent++;
+                        }
+                        if ( peer->p_receiving )
+                        {
+                            peer->p_receiving = false;
+                            nrecv++;
+                        }
+
+                        // setup the epoll structures 
+                        struct epoll_event event;
+                        event.data.fd = socks_[iPeer];
+                        int op = 0;
+                        if ( !peer->p_sending && !peer->p_receiving )
+                        {
+                            op = EPOLL_CTL_DEL;
+                            event.events = 0;
+                        }
+                        else if ( peer->p_sending )
+                        {
+                            op = EPOLL_CTL_MOD;
+                            event.events = EPOLLOUT | EPOLLET | EPOLLRDHUP;
+                        }
+                        else if ( peer->p_receiving )
+                        {
+                            op = EPOLL_CTL_MOD;
+                            event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;
+                        }
+                        if ( op == EPOLL_CTL_DEL || op == EPOLL_CTL_MOD )
+                        {
+                            EpollCtl( epollFD_, op, socks_[iPeer], &event );
+                        }
+                    }
+                }
+            }
+        }
+ 
         if ( nw < 0 )
         {
             char ebuff[256];
@@ -4302,7 +4534,7 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
             snprintf( buf, sizeof(buf), "[%s@%d] epoll_wait(%d, %d) error: %s\n",
                 method_name, __LINE__, epollFD_, maxEvents,
                 strerror_r( errno, ebuff, 256 ) );
-            mon_log_write( MON_CLUSTER_ALLGATHERSOCK_1, SQ_LOG_CRIT, buf );
+            mon_log_write( MON_CLUSTER_ALLGATHERSOCK_2, SQ_LOG_CRIT, buf );
             MPI_Abort( MPI_COMM_SELF,99 );
         }
         for ( int iEvent = 0; iEvent < nw; iEvent++ )
@@ -4321,7 +4553,7 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                 char buf[MON_STRING_BUF_SIZE];
                 snprintf( buf, sizeof(buf), "[%s@%d] invalid peer %d\n",
                     method_name, __LINE__, iPeer );
-                mon_log_write( MON_CLUSTER_ALLGATHERSOCK_2, SQ_LOG_CRIT, buf );
+                mon_log_write( MON_CLUSTER_ALLGATHERSOCK_3, SQ_LOG_CRIT, buf );
                 MPI_Abort( MPI_COMM_SELF,99 );
             }
             peer_t *peer = &p[iPeer];
@@ -4340,7 +4572,7 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                         , events[iEvent].data.fd
                         , iEvent
                         , EpollEventString(events[iEvent].events) );
-                mon_log_write( MON_CLUSTER_ALLGATHERSOCK_3, SQ_LOG_CRIT, buf );
+                mon_log_write( MON_CLUSTER_ALLGATHERSOCK_4, SQ_LOG_CRIT, buf );
                 stats[iPeer].MPI_ERROR = MPI_ERR_EXITED;
                 err = MPI_ERR_IN_STATUS;
                 if ( peer->p_sending )
@@ -4392,7 +4624,7 @@ read_again:
                                 , "[%s@%d] recv[%d](%d) error %d (%s)\n"
                                 , method_name, __LINE__
                                 , iPeer, nr , err, strerror(err) );
-                        mon_log_write( MON_CLUSTER_ALLGATHERSOCK_4, SQ_LOG_CRIT, buf );
+                        mon_log_write( MON_CLUSTER_ALLGATHERSOCK_5, SQ_LOG_CRIT, buf );
                         peer->p_receiving = false;
                         nrecv++;
                         if ( peer->p_sending )
@@ -4437,7 +4669,7 @@ read_again:
                             snprintf( buf, sizeof(buf),
                                 "[%s@%d] error n2recv %d\n",
                                 method_name, __LINE__, peer->p_n2recv );
-                            mon_log_write( MON_CLUSTER_ALLGATHERSOCK_5, SQ_LOG_CRIT, buf );
+                            mon_log_write( MON_CLUSTER_ALLGATHERSOCK_6, SQ_LOG_CRIT, buf );
                             MPI_Abort( MPI_COMM_SELF,99 );
                         }
                         if ( peer->p_n2recv == 0 )
@@ -4471,7 +4703,7 @@ read_again:
                             , "[%s@%d] send[%d](%d) error=%d (%s)\n"
                             , method_name, __LINE__
                             , iPeer, ns, err, strerror(err) );
-                    mon_log_write( MON_CLUSTER_ALLGATHERSOCK_6, SQ_LOG_CRIT, buf );
+                    mon_log_write( MON_CLUSTER_ALLGATHERSOCK_7, SQ_LOG_CRIT, buf );
                     peer->p_sending = false;
                     nsent++;
                     if ( peer->p_receiving )
@@ -4509,12 +4741,12 @@ early_exit:
                 else if ( peer->p_sending )
                 {
                     op = EPOLL_CTL_MOD;
-                    event.events = EPOLLOUT | EPOLLET;
+                    event.events = EPOLLOUT | EPOLLET | EPOLLRDHUP;
                 }
                 else if ( peer->p_receiving )
                 {
                     op = EPOLL_CTL_MOD;
-                    event.events = EPOLLIN | EPOLLET;
+                    event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;
                 }
                 if ( op == EPOLL_CTL_DEL || op == EPOLL_CTL_MOD )
                 {
@@ -6256,6 +6488,7 @@ int CCluster::AcceptSock( int sock )
     int csock; // connected socket
     struct sockaddr_in  sockinfo;   // socket address info
 
+    size = sizeof(struct sockaddr *);
     if ( getsockname( sock, (struct sockaddr *) &sockinfo, &size ) )
     {
         char buf[MON_STRING_BUF_SIZE];
@@ -6634,6 +6867,12 @@ int CCluster::MkSrvSock( int *pport )
                     , pport?*pport:0);
     }
 
+    int lv_retcode = SetKeepAliveSockOpt( sock );
+    if ( lv_retcode != 0 )
+    {
+        return lv_retcode;
+    }
+
     // Listen
     if ( listen( sock, SOMAXCONN ) )
     {
@@ -6806,6 +7045,94 @@ int CCluster::MkCltSock( const char *portName )
     return ( sock );
 }
 
+int CCluster::SetKeepAliveSockOpt( int sock )
+{
+    const char method_name[] = "CCluster::SetKeepAliveSockOpt";
+    TRACE_ENTRY;
+
+    static int sv_keepalive = -1;
+    static int sv_keepidle  = 120;
+    static int sv_keepintvl = 12;
+    static int sv_keepcnt   = 5;
+
+    if ( sv_keepalive == -1 )
+    {
+        char *lv_keepalive_env = getenv( "SQ_MON_KEEPALIVE" );
+        if ( lv_keepalive_env )
+        {
+            sv_keepalive = atoi( lv_keepalive_env );
+        }
+        if ( sv_keepalive == 1 )
+        {
+            char *lv_keepidle_env = getenv( "SQ_MON_KEEPIDLE" );
+            if ( lv_keepidle_env )
+            {
+                sv_keepidle = atoi( lv_keepidle_env );
+            }
+            char *lv_keepintvl_env = getenv( "SQ_MON_KEEPINTVL" );
+            if ( lv_keepintvl_env )
+            {
+                sv_keepintvl = atoi( lv_keepintvl_env );
+            }
+            char *lv_keepcnt_env = getenv( "SQ_MON_KEEPCNT" );
+            if ( lv_keepcnt_env )
+            {
+                sv_keepcnt = atoi( lv_keepcnt_env );
+            }
+        }
+    }
+
+    if ( sv_keepalive == 1 )
+    {
+        if ( setsockopt( sock, SOL_SOCKET, SO_KEEPALIVE, &sv_keepalive, sizeof(int) ) )
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            int err = errno;
+            sprintf( la_buf, "[%s], setsockopt so_keepalive() failed! errno=%d (%s)\n"
+                   , method_name, err, strerror( err ) );
+            mon_log_write( MON_CLUSTER_SETKEEPALIVESOCKOPT_1, SQ_LOG_ERR, la_buf );
+            close( sock );
+            return ( -2 );
+        }
+
+        if ( setsockopt( sock, SOL_TCP, TCP_KEEPIDLE, &sv_keepidle, sizeof(int) ) )
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            int err = errno;
+            sprintf( la_buf, "[%s], setsockopt tcp_keepidle() failed! errno=%d (%s)\n"
+                   , method_name, err, strerror( err ) );
+            mon_log_write( MON_CLUSTER_SETKEEPALIVESOCKOPT_2, SQ_LOG_ERR, la_buf );
+            close( sock );
+            return ( -2 );
+        }
+
+        if ( setsockopt( sock, SOL_TCP, TCP_KEEPINTVL, &sv_keepintvl, sizeof(int) ) )
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            int err = errno;
+            sprintf( la_buf, "[%s], setsockopt tcp_keepintvl() failed! errno=%d (%s)\n"
+                   , method_name, err, strerror( err ) );
+            mon_log_write( MON_CLUSTER_SETKEEPALIVESOCKOPT_3, SQ_LOG_ERR, la_buf );
+            close( sock );
+            return ( -2 );
+        }
+
+        if ( setsockopt( sock, SOL_TCP, TCP_KEEPCNT, &sv_keepcnt, sizeof(int) ) )
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            int err = errno;
+            sprintf( la_buf, "[%s], setsockopt tcp_keepcnt() failed! errno=%d (%s)\n"
+                   , method_name, err, strerror( err ) );
+            mon_log_write( MON_CLUSTER_SETKEEPALIVESOCKOPT_4, SQ_LOG_ERR, la_buf );
+            close( sock );
+            return ( -2 );
+        }
+    }
+
+    TRACE_EXIT;
+    return ( 0 );
+}
+
 int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int port )
 {
     const char method_name[] = "CCluster::MkCltSock";
@@ -6929,9 +7256,15 @@ int CCluster::MkCltSock( unsigned char srcip[4], unsigned char dstip[4], int por
         int err = errno;
         sprintf( la_buf, "[%s], setsockopt() failed! errno=%d (%s)\n"
                , method_name, err, strerror( err ));
-        mon_log_write(MON_CLUSTER_MKCLTSOCK_8, SQ_LOG_ERR, la_buf); 
+        mon_log_write(MON_CLUSTER_MKCLTSOCK_9, SQ_LOG_ERR, la_buf); 
         close( sock );
         return ( -2 );
+    }
+
+    int lv_retcode = SetKeepAliveSockOpt( sock );
+    if ( lv_retcode != 0 )
+    {
+        return lv_retcode;
     }
 
     TRACE_EXIT;

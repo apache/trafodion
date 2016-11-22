@@ -462,15 +462,19 @@ Lng32 AddTableName( const hs_table_type type
 
         *hs_globals->hsintval_table = getHistogramsTableLocation(hs_globals->catSch->data(), FALSE);
 
+        *hs_globals->hsperssamp_table = getHistogramsTableLocation(hs_globals->catSch->data(), FALSE);
+
         NABoolean isHbaseOrHive = HSGlobalsClass::isHbaseCat(catName) ||
                                   HSGlobalsClass::isHiveCat(catName);
 
         if (isHbaseOrHive) {
           hs_globals->hstogram_table->append(".").append(HBASE_HIST_NAME);
           hs_globals->hsintval_table->append(".").append(HBASE_HISTINT_NAME);
+          hs_globals->hsperssamp_table->append(".").append(HBASE_PERS_SAMP_NAME);
         } else {
           hs_globals->hstogram_table->append(".HISTOGRAMS");
           hs_globals->hsintval_table->append(".HISTOGRAM_INTERVALS");
+          hs_globals->hsperssamp_table->append(".PERSISTENT_SAMPLES");
         }
       }
     else
@@ -515,6 +519,13 @@ HSColGroupStruct* AddSingleColumn(const Lng32 colNumber, HSColGroupStruct*& grou
     HSGlobalsClass *hs_globals = GetHSContext();
     HSColGroupStruct *newGroup = new(STMTHEAP) HSColGroupStruct;
     HSColumnStruct   newColumn = HSColumnStruct(hs_globals->objDef->getColInfo(colNumber));
+
+    bool isOverSized = DFS2REC::isAnyCharacter(newColumn.datatype) &&
+              (newColumn.length > hs_globals->maxCharColumnLengthInBytes);
+    if (isOverSized)
+      {
+        hs_globals->hasOversizedColumns = TRUE;
+      }
 
     newColumn.colnum  = colNumber;
     newGroup->colSet.insert((const HSColumnStruct) newColumn);
@@ -930,7 +941,7 @@ Lng32 AddKeyGroups()
 
         while (numKeys >= minMCGroupSz)  // Create only MC groups not single cols
           {
-            HSColSet colSet;
+            HSColSet colSet(STMTHEAP);
 
             autoGroup = "(";
             for (j = 0; j < numKeys; j++)
@@ -1006,7 +1017,7 @@ Lng32 AddKeyGroups()
               minMCGroupSz = numKeys - maxMCGroups + 1;
             while (numKeys >= minMCGroupSz)  // MinMCGroupSz is greater than 1.
               {
-              HSColSet colSet;
+		HSColSet colSet(STMTHEAP);
 
               tempColList = "";
               autoGroup = "(";

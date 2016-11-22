@@ -418,6 +418,28 @@ void GroupByAgg::generateCacheKey(CacheWA &cwa) const
     groupExpr_.rebuildExprTree(ITM_ITEM_LIST);
   if (grpExpr) { 
     cwa += " gBy:"; 
+
+    if (isRollup())
+      {
+        cwa += " roll:";
+
+        ItemExpr * ie = rollupGroupExprList().rebuildExprTree(ITM_ITEM_LIST);
+        if (ie)
+          {
+            ie->generateCacheKey(cwa);
+          }
+      }
+    if (NOT extraOrderExpr().isEmpty() )
+    {
+        cwa += " extraOrder:";
+
+        ItemExpr * ie = extraOrderExpr().rebuildExprTree(ITM_ITEM_LIST);
+        if (ie)
+          {
+            ie->generateCacheKey(cwa);
+          }
+    }
+
     grpExpr->generateCacheKey(cwa); 
   }
 }

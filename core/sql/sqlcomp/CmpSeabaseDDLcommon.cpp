@@ -639,7 +639,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
       ComTdbVirtTableKeyInfo * indexKeyInfoArray = NULL;
       ComTdbVirtTableKeyInfo * indexNonKeyInfoArray = NULL;
       
-      NAList<NAString> selColList;
+      NAList<NAString> selColList(STMTHEAP);
       NAString defaultColFam(SEABASE_DEFAULT_COL_FAMILY);
       if (createIndexColAndKeyInfoArrays(indexColRefArray,
                                          createIndexNode->isUniqueSpecified(),
@@ -949,11 +949,21 @@ ComBoolean CmpSeabaseDDL::isHbase(const ComObjectName &name)
 bool CmpSeabaseDDL::isHistogramTable(const NAString &name) 
 {
 
-  if (name == HBASE_HIST_NAME || name == HBASE_HISTINT_NAME)
+  if (name == HBASE_HIST_NAME || 
+      name == HBASE_HISTINT_NAME ||
+      name == HBASE_PERS_SAMP_NAME )
     return true;
     
   return false;
 
+}
+
+bool CmpSeabaseDDL::isSampleTable(const NAString &name)
+{
+  if (name(0,min((sizeof(TRAF_SAMPLE_PREFIX)-1), name.length())) == TRAF_SAMPLE_PREFIX)
+    return true;
+
+  return false;
 }
 
 NABoolean CmpSeabaseDDL::isLOBDependentNameMatch(const NAString &name)
@@ -2418,7 +2428,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   // metadata. It creates the corresponding hbase table.
   short retcode = 0;
 
-  HBASE_NAMELIST colFamList;
+  HBASE_NAMELIST colFamList(STMTHEAP);
   HbaseStr colFam;
 
   retcode = -1;
@@ -2539,7 +2549,7 @@ short CmpSeabaseDDL::createHbaseTable(ExpHbaseInterface *ehi,
   std::vector<NAString> colFamVec;
   colFamVec.push_back(cf1);
 
-  NAList<HbaseCreateOption*> lHbaseCreateOptions;
+  NAList<HbaseCreateOption*> lHbaseCreateOptions(STMTHEAP);
   NAText lHbaseCreateOptionsArray[HBASE_MAX_OPTIONS];
 
   NAList<HbaseCreateOption*> * hbaseCreateOptions = inHbaseCreateOptions;
@@ -4145,7 +4155,7 @@ short CmpSeabaseDDL::genHbaseCreateOptions(
   if (numHBO == 0)
     return 0;
 
-  hbaseCreateOptions = new(heap) NAList<HbaseCreateOption*>;
+  hbaseCreateOptions = new(heap) NAList<HbaseCreateOption*>(heap);
 
   const char * optionStart = startNumHBO + 4;
   
@@ -4294,7 +4304,7 @@ short CmpSeabaseDDL::updateHbaseOptionsInMetadata(
   // old list is empty.
 
   if (!hbaseCreateOptions)
-    hbaseCreateOptions = new(STMTHEAP) NAList<HbaseCreateOption *>;
+    hbaseCreateOptions = new(STMTHEAP) NAList<HbaseCreateOption *>(STMTHEAP);
 
   NAList<HbaseCreateOption *> & newHbaseCreateOptions = edhbo->getHbaseOptions(); 
   for (CollIndex i = 0; i < newHbaseCreateOptions.entries(); i++)
@@ -5388,7 +5398,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
 
   char buf[4000];
 
-  Int64 redefTime = (rt == -1 ? NA_JulianTimestamp() : rt);
+  Int64 redefTime = ((rt == -1) ? NA_JulianTimestamp() : rt);
 
   NAString quotedSchName;
   ToQuotedString(quotedSchName, NAString(schName), FALSE);
@@ -5430,6 +5440,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
       CmpSeabaseDDL::setMDflags(flags, MD_OBJECTS_STORED_DESC);
     }
 
+  buf[0] = 0;
   if ((flags & MD_OBJECTS_STORED_DESC) != 0)
     {
       if (rt == -2)
@@ -5446,7 +5457,7 @@ short CmpSeabaseDDL::updateObjectRedefTime(
                     catName.data(), quotedSchName.data(), quotedObjName.data(),
                     objType);
     }
-  else
+  else if (rt != -2)
     {
       str_sprintf(buf, "update %s.\"%s\".%s set redef_time = %Ld where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
@@ -5455,14 +5466,17 @@ short CmpSeabaseDDL::updateObjectRedefTime(
                   objType);
     }
 
-  cliRC = cliInterface->executeImmediate(buf);
-  
-  if (cliRC < 0)
+  if (strlen(buf) > 0)
     {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return -1;
+      cliRC = cliInterface->executeImmediate(buf);
+      
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
     }
-  
+
   return 0;
 }
 
@@ -6162,7 +6176,7 @@ short CmpSeabaseDDL::updateTextTable(ExeCliInterface *cliInterface,
 
   Int32 maxLen = TEXTLEN;
   char queryBuf[1000];
-  Lng32 numRows = (dataLen / maxLen) + 1;
+  Lng32 numRows = ((dataLen -1) / maxLen) + 1;
   Lng32 currPos = 0;
   Lng32 currDataLen = 0;
 
@@ -6828,31 +6842,72 @@ short CmpSeabaseDDL::dropSeabaseStats(ExeCliInterface *cliInterface,
 {
   Lng32 cliRC = 0;
   char buf[4000];
+
+  // delete any histogram statistics
   
   str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %Ld",
               catName, schName, HBASE_HIST_NAME, tableUID);
 
   cliRC = cliInterface->executeImmediate(buf);
-  // if histogram table does not exist, return now without error
-  // (could return on cliRC == 100, but that seems to happen
-  // even when we deleted some histogram rows)
-  if (cliRC == -4082)
-    return 0;
 
-  if (cliRC < 0)
+  // If the histogram table does not exist, don't bother checking
+  // the histogram intervals table. 
+  //
+  // Note: cliRC == 100 happens when we delete some histogram rows
+  // and also when there are no histogram rows to delete, so we
+  // can't decide based on that.
+ 
+  if (cliRC != -4082)
+    {
+
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+
+      str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %Ld",
+                  catName, schName, HBASE_HISTINT_NAME, tableUID);
+      cliRC = cliInterface->executeImmediate(buf);
+
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
+    }
+
+  // Drop any persistent sample tables also. (It is possible that these
+  // might exist even if the histograms table does not exist.)
+
+  // Delete the row in the persistent_samples table if one exists
+
+  str_sprintf(buf, "select translate(sample_name using ucs2toutf8) from "
+                   " (delete from %s.\"%s\".%s where table_uid = %Ld) as t",
+              catName, schName, HBASE_PERS_SAMP_NAME, tableUID);
+    
+  Lng32 len = 0;
+  char sampleTableName[1000];
+
+  cliRC = cliInterface->executeImmediate(buf, (char*)&sampleTableName, &len, NULL);
+  if (cliRC == -4082)  // if persistent_samples table does not exist
+    cliRC = 0;         // then there isn't a persistent sample table
+  else if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
       return -1;
     }
-
-  str_sprintf(buf, "delete from %s.\"%s\".%s where table_uid = %Ld",
-              catName, schName, HBASE_HISTINT_NAME, tableUID);
-  cliRC = cliInterface->executeImmediate(buf);
-
-  if (cliRC < 0)
+  else if ((len > 0) && (sampleTableName[0])) // if we got a sample table name back
     {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-      return -1;
+      // try to drop the sample table
+      sampleTableName[len] = '\0';
+      str_sprintf(buf, "drop table %s", sampleTableName);
+      cliRC = cliInterface->executeImmediate(buf);
+      if (cliRC < 0)
+        {
+          cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+          return -1;
+        }
     }
 
   return 0;
@@ -7026,9 +7081,6 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
 
     } // for
  
-  // cleanup cached entries in client object.
-  ehi->cleanupClient();
-
   deallocEHI(ehi); 
   ehi = NULL;
 
@@ -8873,8 +8925,9 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           else
             {
               createSeabaseTable(createTableParseNode, currCatName, currSchName);
-              
-              if ((getenv("SQLMX_REGRESS")) &&
+
+              if (((getenv("SQLMX_REGRESS")) ||
+                   (CmpCommon::getDefault(TRAF_AUTO_CREATE_SCHEMA) == DF_ON)) &&
                   (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_)) &&
                   (CmpCommon::diags()->mainSQLCODE() == -CAT_SCHEMA_DOES_NOT_EXIST_ERROR))
                 {
@@ -8886,17 +8939,43 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
                   const NAString schemaNamePart = 
                     tableName.getSchemaNamePartAsAnsiString(TRUE);
 
-                  if (schemaNamePart == SEABASE_REGRESS_DEFAULT_SCHEMA)
+                  char query[1000];
+                  if ((getenv("SQLMX_REGRESS")) &&
+                      (schemaNamePart == SEABASE_REGRESS_DEFAULT_SCHEMA))
+                    {
+                      CmpCommon::diags()->clear();
+                      str_sprintf(query, "create shared schema %s.%s",
+                                  TRAFODION_SYSCAT_LIT, 
+                                  SEABASE_REGRESS_DEFAULT_SCHEMA);
+                      cliRC = cliInterface.executeImmediate(query);
+                      if (cliRC >= 0)
+                        {
+                          str_sprintf(query, "upsert into %s.\"%s\".%s values ('SCHEMA ', '%s.%s ', 'inserted during regressions run', 0);",
+                                      TRAFODION_SYSCAT_LIT, 
+                                      SEABASE_MD_SCHEMA,
+                                      SEABASE_DEFAULTS,
+                                      TRAFODION_SYSCAT_LIT,
+                                      SEABASE_REGRESS_DEFAULT_SCHEMA);
+                          cliRC = cliInterface.executeImmediate(query);
+                          if (cliRC >= 0)
+                            {
+                              createSeabaseTable(createTableParseNode, currCatName, currSchName);
+                            }
+                        }
+                    } // if
+                  else if (CmpCommon::getDefault(TRAF_AUTO_CREATE_SCHEMA) == DF_ON)
                     {
                       // create this schema
                       CmpCommon::diags()->clear();
-                      cliRC = cliInterface.executeImmediate("create shared schema trafodion.sch");
+                      str_sprintf(query, "create schema %s.\"%s\";",
+                                  TRAFODION_SYSCAT_LIT, schemaNamePart.data());
+                      cliRC = cliInterface.executeImmediate(query);
                       if (cliRC >= 0)
                         {
                           createSeabaseTable(createTableParseNode, currCatName, currSchName);
                         }
                     }
-                }
+                }     
             }
         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_HBASE_TABLE)
@@ -9548,26 +9627,20 @@ char objectTypeString[20] = {0};
    str_sprintf(buf,"DROP %s %s %s CASCADE",
                volatileString,objectTypeString,objectName);
                
-// Save the current parserflags setting
-   ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
+   // Turn on the internal query parser flag; note that when
+   // this object is destroyed, the flags will be reset to
+   // their original state
+   PushAndSetSqlParserFlags savedParserFlags(INTERNAL_QUERY_FROM_EXEUTIL);
    Lng32 cliRC = 0;
 
    try
-   {            
-      Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
-               
+   {                      
       cliRC = cliInterface.executeImmediate(buf);
    }
    catch (...)
-   {
-      // Restore parser flags settings to what they originally were
-      Assign_SqlParser_Flags(savedParserFlags);
-      
+   {      
       throw;
    }
-   
-// Restore parser flags settings to what they originally were
-   Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
    
    if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
       someObjectsCouldNotBeDropped = true;
@@ -9632,17 +9705,17 @@ int32_t CmpSeabaseDDL::verifyDDLCreateOperationAuthorized(
 
 {
 
-int32_t currentUser = ComUser::getCurrentUser(); 
-NAString privMgrMDLoc;
+   int32_t currentUser = ComUser::getCurrentUser(); 
+   NAString privMgrMDLoc;
 
    CONCAT_CATSCH(privMgrMDLoc,getSystemCatalog(),SEABASE_PRIVMGR_SCHEMA);
    
-PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
-                                               CmpCommon::diags());
+   PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
+                                                  CmpCommon::diags());
                                                
-// CREATE SCHEMA is a special case.  There is no existing schema with an 
-// an owner or class.  A new schema may be created if the user is DB__ROOT,
-// authorization is not enabled, or the user has the CREATE_SCHEMA privilege. 
+   // CREATE SCHEMA is a special case.  There is no existing schema with an 
+   // an owner or class.  A new schema may be created if the user is DB__ROOT,
+   // authorization is not enabled, or the user has the CREATE_SCHEMA privilege. 
 
    if (operation == SQLOperation::CREATE_SCHEMA)
    {
@@ -9663,9 +9736,9 @@ PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
       return CAT_NOT_AUTHORIZED;
    }
 
-// 
-// Not CREATE SCHEMA, but verify the operation is a create operation.
-//
+   // 
+   // Not CREATE SCHEMA, but verify the operation is a create operation.
+   //
    if (!PrivMgr::isSQLCreateOperation(operation))
    {
       SEABASEDDL_INTERNAL_ERROR("Unknown create operation");   
@@ -9673,12 +9746,12 @@ PrivMgrComponentPrivileges componentPrivileges(std::string(privMgrMDLoc.data()),
       return CAT_INTERNAL_EXCEPTION_ERROR; 
    }
       
-// User is asking to create an object in an existing schema.  Determine if this
-// schema exists, and if it exists, the owner of the schema.  The schema class     
-// and owner will determine if this user can create an object in the schema and 
-// who will own the object.
+   // User is asking to create an object in an existing schema.  Determine if this
+   // schema exists, and if it exists, the owner of the schema.  The schema class     
+   // and owner will determine if this user can create an object in the schema and 
+   // who will own the object.
        
-ComObjectType objectType;
+   ComObjectType objectType;
 
    if (getObjectTypeandOwner(cliInterface,catalogName.data(),schemaName.data(),
                              SEABASE_SCHEMA_OBJECTNAME,objectType,schemaOwner) == -1)
@@ -9707,29 +9780,33 @@ ComObjectType objectType;
    objectOwner = schemaOwner;
 
 
-// Root user is authorized for all create operations in private schemas.  For 
-// installations with no authentication, all users are mapped to root database  
-// user, so all users have full DDL create authority.
+   // Root user is authorized for all create operations in private schemas.  For 
+   // installations with no authentication, all users are mapped to root database  
+   // user, so all users have full DDL create authority.
 
    if (currentUser == ComUser::getRootUserID())
       return 0;
 
-// If authorization is not enabled, then authentication should not be enabled
-// either, and the previous check should have already returned.  But just in 
-// case, verify authorization is enabled before proceeding.  Eventually this 
-// state should be recorded somewhere, e.g. CLI globals.
+   // If authorization is not enabled, then authentication should not be enabled
+   // either, and the previous check should have already returned.  But just in 
+   // case, verify authorization is enabled before proceeding.  Eventually this 
+   // state should be recorded somewhere, e.g. CLI globals.
 
    if (!isAuthorizationEnabled())
       return 0;
-      
-// To create an object in a private schema, one of three conditions must be true:
-//
-// 1) The user is the owner of the schema.
-// 2) The schema is owned by a role, and the user has been granted the role.
-// 3) The user has been granted the requisite system-level SQL_OPERATIONS
-//    component create privilege.
-//
-// NOTE: In the future, schema-level create authority will be supported.
+
+   // If this is an internal operation, allow the operation.
+  if (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+      return 0;   
+
+   // To create an object in a private schema, one of three conditions must be true:
+   //
+   // 1) The user is the owner of the schema.
+   // 2) The schema is owned by a role, and the user has been granted the role.
+   // 3) The user has been granted the requisite system-level SQL_OPERATIONS
+   //    component create privilege.
+   //
+   // NOTE: In the future, schema-level create authority will be supported.
       
    if (currentUser == schemaOwner)
       return 0;
@@ -9744,14 +9821,14 @@ ComObjectType objectType;
          return 0;              
    }
    
-// Current user is not the schema owner.  See if they have been granted the
-// requisite create privilege.
+   // Current user is not the schema owner.  See if they have been granted the
+   // requisite create privilege.
   
    if (componentPrivileges.hasSQLPriv(currentUser,operation,true))
       return 0;   
    
-// TODO: When schema-level privileges are implemented, see if user has the 
-// requisite create privilege for this specific schema.
+   // TODO: When schema-level privileges are implemented, see if user has the 
+   // requisite create privilege for this specific schema.
 
    objectOwner = schemaOwner = NA_UserIdDefault; 
    return CAT_NOT_AUTHORIZED;
@@ -10279,6 +10356,27 @@ std::string commandString;
       SEABASEDDL_INTERNAL_ERROR(commandString.c_str());
    }
    
+   // update the redef timestamp for the role in auths table
+   char buf[(roleIDs.size()*12) + 500];
+   Int64 redefTime = NA_JulianTimestamp();
+   std::string roleList;
+   for (size_t i = 0; i < roleIDs.size(); i++)
+   {
+     if (i > 0)
+       roleList += ", ";
+     roleList += to_string((long long int)roleIDs[i]);
+   }
+
+   str_sprintf(buf, "update %s.\"%s\".%s set auth_redef_time = %Ld "
+                    "where auth_id in (%s)",
+              systemCatalog.c_str(), SEABASE_MD_SCHEMA, SEABASE_AUTHS,
+              redefTime, roleList.c_str());
+ 
+   ExeCliInterface cliInterface(STMTHEAP);
+   Int32 cliRC = cliInterface.executeImmediate(buf);
+   if (cliRC < 0)
+      cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
 }
 //********************** End of grantRevokeSeabaseRole *************************
 

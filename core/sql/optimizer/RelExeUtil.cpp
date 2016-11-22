@@ -852,6 +852,8 @@ RelExpr * ExeUtilHiveTruncate::copyTopNode(RelExpr *derivedNode, CollHeap* outHe
   result->hiveTableLocation_= hiveTableLocation_;
   result->hiveHostName_ = hiveHostName_;
   result->hiveHdfsPort_ = hiveHdfsPort_;
+  result->suppressModCheck_ = suppressModCheck_;
+  result->dropTableOnDealloc_ = dropTableOnDealloc_;
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
@@ -3111,6 +3113,7 @@ ExeUtilRegionStats::ExeUtilRegionStats
  NABoolean summaryOnly,
  NABoolean isIndex,
  NABoolean forDisplay,
+ NABoolean clusterView,
  RelExpr * child,
  CollHeap *oHeap)
      : ExeUtilExpr(REGION_STATS_, objectName,
@@ -3118,6 +3121,7 @@ ExeUtilRegionStats::ExeUtilRegionStats
        summaryOnly_(summaryOnly),
        isIndex_(isIndex),
        displayFormat_(forDisplay),
+       clusterView_(clusterView),
        errorInParams_(FALSE),
        inputColList_(NULL)
 {
@@ -3131,6 +3135,7 @@ RelExpr * ExeUtilRegionStats::copyTopNode(RelExpr *derivedNode, CollHeap* outHea
     result = new (outHeap) ExeUtilRegionStats(getTableName(),
                                               summaryOnly_, isIndex_, 
                                               displayFormat_,
+                                              clusterView_,
                                               NULL,
                                               outHeap);
   else
@@ -3159,7 +3164,8 @@ RelExpr * ExeUtilRegionStats::bindNode(BindWA *bindWA)
     return this;
   }
 
-  if (getTableName().getQualifiedNameObj().getObjectName().isNull())
+  if ((NOT clusterView_) &&
+      (getTableName().getQualifiedNameObj().getObjectName().isNull()))
     {
       *CmpCommon::diags() << DgSqlCode(-4218) << DgString0("REGION STATS");
       
@@ -3167,7 +3173,8 @@ RelExpr * ExeUtilRegionStats::bindNode(BindWA *bindWA)
       return this;
     }
 
-  if (! child(0))
+  if ((! child(0)) &&
+      (NOT getTableName().getQualifiedNameObj().getObjectName().isNull()))
     {
       NATable * naTable = bindWA->getNATable(getTableName());
       if ((!naTable) || (bindWA->errStatus()))
@@ -3929,7 +3936,8 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean alterColRename = FALSE;
   NABoolean alterLibrary = FALSE;
   NABoolean externalTable = FALSE;
-  
+  NABoolean isVolatile = FALSE;
+
   returnStatus_ = FALSE;
 
   NABoolean specialType = FALSE;
@@ -3974,6 +3982,9 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     {
       StmtDDLCreateTable * createTableNode =
         getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateTable();
+
+      if (createTableNode->isVolatile())
+        isVolatile = TRUE;
 
       isCreate_ = TRUE;
       isTable_ = TRUE;
@@ -4054,6 +4065,12 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       isCreate_ = TRUE;
       isIndex_ = TRUE;
 
+      StmtDDLCreateIndex * createIndexNode =
+        getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateIndex();
+
+      if (createIndexNode->isVolatile())
+        isVolatile = TRUE;
+
       objName_ =
         getDDLNode()->castToStmtDDLNode()->castToStmtDDLCreateIndex()->
         getIndexName();
@@ -4083,6 +4100,9 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       StmtDDLDropTable * dropTableNode =
         getExprNode()->castToStmtDDLNode()->castToStmtDDLDropTable();
 
+      if (dropTableNode->isVolatile())
+        isVolatile = TRUE;
+
       qualObjName_ = dropTableNode->getTableNameAsQualifiedName();
 
       // Normally, when a drop table is executed and DDL transactions is not
@@ -4092,6 +4112,9 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       if ((dropTableNode->isVolatile()) &&
           (NOT getExprNode()->castToStmtDDLNode()->ddlXns()))
         hbaseDDLNoUserXn_ = TRUE;
+
+      if (dropTableNode->isExternal())
+         qualObjName_.applyDefaults(bindWA->getDefaultSchema());
 
       // Drops of Hive and HBase external tables are allowed 
       if (qualObjName_.isHive() || (qualObjName_.isHbase()))
@@ -4122,6 +4145,12 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
     }
     else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLDropIndex())
     {
+      StmtDDLDropIndex * dropIndexNode =
+        getExprNode()->castToStmtDDLNode()->castToStmtDDLDropIndex();
+
+      if (dropIndexNode->isVolatile())
+        isVolatile = TRUE;
+
       isDrop_ = TRUE;
       isIndex_ = TRUE;
 
@@ -4384,7 +4413,8 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
                         alterIdentityCol || alterColDatatype || alterColRename ||
                         alterHBaseOptions || alterLibrary || otherAlters)))))
       {
-	if (NOT isNative_)
+	if ((NOT isNative_) &&
+            (NOT isVolatile))
 	  {
 	    qualObjName_.applyDefaults(bindWA->getDefaultSchema());
 	    
@@ -4394,6 +4424,12 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 	      }
 	  }
 	
+        // volatile tables are traf tables
+        if (isVolatile)
+          {
+            isHbase_ = TRUE;
+          }
+
 	if (isHbase_ && otherAlters)
 	  {
 	    *CmpCommon::diags() << DgSqlCode(-4222) << DgString0("ALTER");
@@ -4434,7 +4470,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   if (bindWA->errStatus())
     return NULL;
 
-  if (isHbase_ || externalTable)
+  if (isHbase_ || externalTable || isVolatile)
     return boundExpr;
 
   *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL operations can only be done on trafodion or external tables.");
@@ -4514,25 +4550,8 @@ RelExpr * ExeUtilProcessVolatileTable::bindNode(BindWA *bindWA)
   RelExpr * boundExpr = DDLExpr::bindNode(bindWA);
   if (bindWA->errStatus()) 
     return NULL;
-  
-  isHbase_ = FALSE;
-  if ((CmpCommon::getDefault(MODE_SEABASE) == DF_ON) &&
-      (CmpCommon::getDefault(SEABASE_VOLATILE_TABLES) == DF_ON))
-    {
-      volTabName_.applyDefaults(bindWA->getDefaultSchema());
-      if (volTabName_.isSeabase())
-	{
-	  isHbase_ = TRUE;
-	}
-    }
-  
-  if (NOT isHbase_)
-    {
-      // non-hbase tables not supported in open source
-      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Non-hbase tables not supported.");
-      bindWA->setErrStatus();
-      return NULL;
-    }
+
+  isHbase_ = TRUE;
 
   return boundExpr;
 }
@@ -4644,32 +4663,44 @@ RelExpr * ExeUtilCreateTableAs::bindNode(BindWA *bindWA)
     createTableNode =
       getExprNode()->castToStmtDDLNode()->castToStmtDDLCreateTable();
 
+  isVolatile_ = FALSE;
+  if (createTableNode && (createTableNode->isVolatile()))
+    {    
+      isVolatile_ = TRUE;
+    }
+
   CorrName savedTableName = getTableName();
   RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
   if (bindWA->errStatus()) 
     return NULL;
 
+  if ((NOT isVolatile_) &&
+      (NOT getTableName().isSeabase())) // can only create traf tables
+    {
+      *CmpCommon::diags() << DgSqlCode(-3242)
+                          << DgString0("DDL operations can only be done on trafodion or external tables.");
+
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
   // open source path
-  if ((NOT getTableName().isSeabase()) ||
-      (createTableNode->isInMemoryObjectDefn()) ||
+  if ((createTableNode->isInMemoryObjectDefn()) ||
       (createTableNode->isMultiSetTable()) ||
       (createTableNode->isSetTable()))
     {
       return NULL;
     }
 
-
   NABoolean isSeabase = FALSE;
-  //  if (NATableDB::isHbaseTable(getTableName()))
   if (getTableName().isSeabase())
     {
       isSeabase = TRUE;
     }
 
-  if (createTableNode && (createTableNode->isVolatile()))
+  if (isVolatile_)
     {    
       getTableName() = savedTableName;
-      isVolatile_ = TRUE;
     }
 
   Int32 scannedInputCharset = createTableNode->getCreateTableAsScannedInputCharset();
@@ -5095,9 +5126,11 @@ RelExpr * ExeUtilHiveTruncate::bindNode(BindWA *bindWA)
   NAString hostName;
   Int32 hdfsPort;
   NAString tableDir;
+  HHDFSDiags hhdfsDiags;
   
-  NABoolean result = ((HHDFSTableStats* )hTabStats)->splitLocation
-    (hiveTablePath, hostName, hdfsPort, tableDir) ;       
+  NABoolean result = TableDesc::splitHiveLocation
+    (hiveTablePath, hostName, hdfsPort, tableDir,
+     CmpCommon::diags(), hTabStats->getPortOverride()) ;       
   if (!result) 
     {
       *CmpCommon::diags() << DgSqlCode(-4224)

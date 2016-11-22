@@ -15,14 +15,14 @@
 >>    -- Result should be 5 rows: -99, -1, 0, 1, 99.
 >>    select * from t032t01;
 
-A     
-------
+A   
+----
 
-   -99
-    -1
-     0
-     1
-    99
+ -99
+  -1
+   0
+   1
+  99
 
 --- 5 row(s) selected.
 >>
@@ -63,10 +63,10 @@ A
 >>    -- Result should be 1 row: 1.
 >>    select a from t032t01 where a = cast(1 as smallint signed);
 
-A     
-------
+A   
+----
 
-     1
+   1
 
 --- 1 row(s) selected.
 >>
@@ -123,14 +123,14 @@ A
 >>    -- Result should be 5 rows: -99, -1, 0, 1, 99.
 >>    select a from t032t01 where a < cast(100 as smallint unsigned);
 
-A     
-------
+A   
+----
 
-   -99
-    -1
-     0
-     1
-    99
+ -99
+  -1
+   0
+   1
+  99
 
 --- 5 row(s) selected.
 >>
@@ -166,14 +166,14 @@ A
 >>    -- Result should be 5 rows: -99, -1, 0, 1, 99.
 >>    select a from t032t01 where a > cast(-500 as integer signed);
 
-A     
-------
+A   
+----
 
-   -99
-    -1
-     0
-     1
-    99
+ -99
+  -1
+   0
+   1
+  99
 
 --- 5 row(s) selected.
 >>
@@ -195,14 +195,14 @@ A
 >>    -- Result should be 5 rows: -99, -1, 0, 1, 99.
 >>    select a from t032t01 where a <= cast(500 as integer unsigned);
 
-A     
-------
+A   
+----
 
-   -99
-    -1
-     0
-     1
-    99
+ -99
+  -1
+   0
+   1
+  99
 
 --- 5 row(s) selected.
 >>
@@ -239,14 +239,14 @@ A
 >>    -- Result should be 5 rows: -99, -1, 0, 1, 99.
 >>    select a from t032t01 where a <= cast(10000 as largeint signed);
 
-A     
-------
+A   
+----
 
-   -99
-    -1
-     0
-     1
-    99
+ -99
+  -1
+   0
+   1
+  99
 
 --- 5 row(s) selected.
 >>
@@ -280,13 +280,13 @@ A
 >>    select a from t032t01 where a >= cast(-50 as decimal(3) signed)
 +>                            and a < cast(100 as decimal(3) signed);
 
-A     
-------
+A   
+----
 
-    -1
-     0
-     1
-    99
+  -1
+   0
+   1
+  99
 
 --- 4 row(s) selected.
 >>
@@ -318,11 +318,11 @@ A
 >>    select a from t032t01 where a >= cast(1 as decimal(7) unsigned)
 +>                            and a < cast(100 as decimal(3) unsigned);
 
-A     
-------
+A   
+----
 
-     1
-    99
+   1
+  99
 
 --- 2 row(s) selected.
 >>
@@ -359,14 +359,14 @@ A
 >>    -- Result should be 5 rows: -99, -1, 0, 1, 99.
 >>    select a from t032t01 where a <= cast(3e38 as real);
 
-A     
-------
+A   
+----
 
-   -99
-    -1
-     0
-     1
-    99
+ -99
+  -1
+   0
+   1
+  99
 
 --- 5 row(s) selected.
 >>
@@ -444,27 +444,27 @@ A
 >>    -- Result should be 5 rows: -99, -1, 0, 1, 99.
 >>    select a from t032t01 where a <= cast(1e50 as double precision);
 
-A     
-------
+A   
+----
 
-   -99
-    -1
-     0
-     1
-    99
+ -99
+  -1
+   0
+   1
+  99
 
 --- 5 row(s) selected.
 >>
 >>    -- Result should be 4 rows: -99, -1, 0, 1.  Case #10-981208-4368.
 >>    select a from t032t01 where a < cast(1.1e0 as double precision);
 
-A     
-------
+A   
+----
 
-   -99
-    -1
-     0
-     1
+ -99
+  -1
+   0
+   1
 
 --- 4 row(s) selected.
 >>

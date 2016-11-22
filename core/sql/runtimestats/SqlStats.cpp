@@ -1205,8 +1205,9 @@ void StatsGlobals::mergeNewSikeys(Int32 numSikeys, SQL_QIKEY sikeys[])
     memset(&newKey, 0, sizeof(SQL_QIKEY));
     newKey.operation[0] = sikeys[i].operation[0];
     newKey.operation[1] = sikeys[i].operation[1];
-    if (COM_QI_OBJECT_REDEF ==
-            ComQIActionTypeLiteralToEnum(newKey.operation))
+    ComQIActionType siKeyType = ComQIActionTypeLiteralToEnum(newKey.operation);
+    if (siKeyType == COM_QI_OBJECT_REDEF ||
+        siKeyType == COM_QI_STATS_UPDATED)
     {    
       newKey.ddlObjectUID = sikeys[i].ddlObjectUID;
     }

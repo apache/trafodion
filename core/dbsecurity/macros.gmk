@@ -43,7 +43,13 @@ CXXFLAGS	+= $(DEFINES) $(CXXWARN) -std=c++0x $(GCCMODEXX)
 
 
 # Modules in current directory
-$(OUTDIR)/%.o: src/%.cpp
+$(OUTDIR)/%.o: src/%.cpp 
+#	echo " *****FLAGS::: $(CXX) *****"
+	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -fPIC -o $@ $<
+
+# Modules in logging directory
+$(OUTDIR)/%.o: $(MY_SQROOT)/commonLogger/CommonLogger.cpp
 #	echo " *****FLAGS::: $(CXX) *****"
 	@if [ -d "$(OUTDIR)" ]; then x=1; else mkdir -p "$(OUTDIR)"; fi
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -fPIC -o $@ $<

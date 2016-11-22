@@ -145,7 +145,7 @@ causes the Bulk Loader to ignore duplicates in the source data. By
 default, the Bulk Loader checks if there are duplicates in the source
 data and generates an error when it detects duplicates.
 
-** `NO OUTPUT
+** `NO OUTPUT`
 +
 prevents the LOAD statement from displaying status messages. By default,
 the LOAD statement prints status messages listing the steps that the
@@ -686,11 +686,12 @@ devise optimized access plans.
 UPDATE STATISTICS is a {project-name} SQL extension.
 
 ```
-UPDATE STATISTICS FOR TABLE table [CLEAR | on-clause]
+UPDATE STATISTICS FOR TABLE table [CLEAR | on-clause | sample-table-clause ]
 
 on-clause is:
     ON column-group-list CLEAR
   | ON column-group-list [histogram-option]...
+  | ON column-group-list INCREMENTAL WHERE predicate
 
 column-group-list is:
     column-list [,column-list]...
@@ -716,8 +717,12 @@ histogram-option is:
 
 sample-option is:
     [r ROWS]
-  | RANDOM percent PERCENT
+  | RANDOM percent PERCENT [PERSISTENT]
   | PERIODIC size ROWS EVERY period ROWS
+
+sample-table-clause is:
+    CREATE SAMPLE RANDOM percent PERCENT
+  | REMOVE SAMPLE
 ```
 
 [[update_statistics_syntax]]
@@ -872,7 +877,6 @@ than specified, or if the sample size is greater than the system limit,
 A row sample is used to read _r_ rows from the table. The value _r_ must
 be an integer that is greater than zero 
 
-<<<
 **** `RANDOM _percent_ PERCENT`
 +
 directs {project-name} SQL to choose rows randomly from the table. The value
@@ -880,6 +884,12 @@ percent must be a value between zero and 100 (0 < percent &#60;= 100). In
 addition, only the first four digits to the right of the decimal point
 are significant. For example, value 0.00001 is considered to be 0.0000,
 Value 1.23456 is considered to be 1.2345.
+
+***** `PERSISTENT`
++
+directs {project-name} SQL to create a persistent sample table and store the
+random sample in it. This table can then be used later for updating statistics
+incrementally.
 
 **** `PERIODIC _size_ ROWS EVERY _period_ ROW`
 +
@@ -889,6 +899,28 @@ greater than zero and less than or equal to the value _period_. (0 <
 _size_ &#60;= _period_). The size of the _period_ is defined by the number
 of rows specified for _period_. The value _period_ must be an integer
 that is greater than zero (_period_ > 0).
+
+* `INCREMENTAL WHERE _predicate_`
++
+directs {project-name} SQL to update statistics incrementally. That is, instead
+of taking a fresh sample of the entire table, {project-name} SQL will use a previously
+created persistent sample table. {project-name} SQL will update the persistent sample
+by replacing any rows satisfying the _predicate_ with a fresh sample of rows from
+the original table satisfying the _predicate_. The sampling rate used is the
+_percent_ specified when the persistent sample table was created. Statistics
+are then generated from this updated sample. See also
+<<update_statistics_incremental_update_statistics,
+Incremental Update Statistics>>.
+
+* `CREATE SAMPLE RANDOM _percent_ PERCENT`
++
+Creates a persistent sample table associated with this table. The sample is
+created using a random sample of _percent_ percent of the rows. The table
+can then be used for later incremental statistics update.
+
+* `REMOVE SAMPLE`
++
+Drops the persistent sample table associated with this table.
 
 [[update_statistics_considerations]]
 === Considerations for UPDATE STATISTICS
@@ -1046,6 +1078,35 @@ NECESSARY COLUMN[S] to generate the needed histograms:
 update statistics for table _table-name_ on necessary columns sample;
 ```
 
+[[update_statistics_incremental_update_statistics]]
+==== Incremental Update Statistics
+
+UPDATE STATISTICS processing time can be lengthy for very large tables.
+One strategy for reducing the time is to create histograms only for
+columns that actually need them (for example, using the ON NECESSARY COLUMNS 
+column group). Another strategy is to update statistics incrementally. These
+strategies can be used together if desired.
+
+To use the incremental update statistics feature, you must first create
+statistics for the table and create a persistent sample table. One way to
+do this is to perform a normal update statistics command, adding the
+PERSISTENT keyword to the _sample-option_. Another way to do this if you
+already have reasonably up-to-date statistics for the table, is to create
+a persistent sample table separately using the CREATE SAMPLE option.
+
+You can then perform update statistics incrementally by using the INCREMENTAL
+WHERE _predicate_ syntax in the on-clause. The _predicate_ should be chosen
+to describe the set of rows that have changed since the last statistics update
+was performed. For example, if your table contains a column with a timestamp
+giving the date and time of last update, this is a particularly useful column
+to use in the _predicate_.
+
+If you decide later that you wish to change the _percent_ sampling rate used
+for the persistent sample table, you can do so by dropping the persistent
+sample table (using REMOVE SAMPLE) and creating a new one (by using the
+CREATE SAMPLE option). Using a higher _percent_ results in more accurate
+histograms, but at the price of a longer-running operation.
+
 <<<
 [[update_statistics_examples]]
 === Examples of UPDATE STATISTICS
@@ -1108,4 +1169,23 @@ table ADDRESS:
 UPDATE STATISTICS FOR TABLE address ON street CLEAR;
 ```
 
+* This example generates statistics but also creates a persistent 
+sample table for use when updating statistics incrementally:
++
+```
+UPDATE STATISTICS FOR TABLE address
+ON (street), (city), (state), (zip, type)
+SAMPLE RANDOM 5 PERCENT PERSISTENT;
+```
 
+* This example updates statistics incrementally. It assumes that
+a persistent sample table has already been created. The predicate
+in the WHERE clause describes the set of rows that have changed
+since statistics were last updated. Here we assume that rows
+with a state of California are the only rows that have changed:
++
+```
+UPDATE STATISTICS FOR TABLE address
+ON EXISTING COLUMNS
+INCREMENTAL WHERE state = 'CA';
+```

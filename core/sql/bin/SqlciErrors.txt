@@ -12,9 +12,9 @@
 1010 0A000 99999 ADVANCED MINOR DBADMIN The statement just entered is currently not supported.
 1011 ZZZZZ 99999 ADVANCED MINOR DBADMIN Only one grantee per grant or revoke is allowed.
 1012 01007 99999 BEGINNER MAJOR DBADMIN No privileges were granted.  You lack grant option on the specified privileges.
-1013 01007 99999 BEGINNER MAJOR DBADMIN Not all privileges were granted.  You lack grant option on some of the specified privileges.
+1013 01007 99999 BEGINNER MAJOR DBADMIN Not all privileges were granted.  You lack grant option for the $0~string0 privilege.
 1014 2B000 99999 BEGINNER MAJOR DBADMIN Privileges were not revoked.  Dependent privilege descriptors still exist.
-1015 01006 99999 BEGINNER MAJOR DBADMIN Some of the specified privileges could not be revoked.
+1015 01006 99999 BEGINNER MAJOR DBADMIN Not all privileges were revoked. You lack the grant option for the $0~string0 privilege.
 1016 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Redundant references to column $0~ColumnName were specified in the constraint or trigger definition.
 1017 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You are not authorized to perform this operation.
 1018 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Grant of role or privilege $0~String0 from $1~String1 to $2~String2 not found, revoke request ignored.
@@ -26,7 +26,7 @@
 1024 ZZZZZ 99999 BEGINNER MINOR DBADMIN File system error $0~NSKCode occurred on $1~String0. $2~String1
 1025 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed.  Dependent object $0~string0 exists.
 1026 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only the schema owner or super ID can drop a schema.
-1027 ZZZZZ 99999 BEGINNER MINOR DBADMIN The definition schema $0~SchemaName is dropped when its catalog is dropped.
+1027 ZZZZZ 99999 BEGINNER MINOR DBADMIN The view $0~TableName was created before column privileges were supported. To grant column privileges, please recreate the view.
 1028 ZZZZZ 99999 BEGINNER MINOR DBADMIN The schema must be empty.  It contains at least one object $0~TableName.
 1029 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be created.
 1030 ZZZZZ 99999 BEGINNER MINOR DBADMIN The HBase name has a length of $0~Int0 which is too long. Maximum length supported is $1~Int1.  
@@ -212,6 +212,9 @@
 1210 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Column $0~String0 is not allowed at position $1~Int0 in the SPLIT BY clause, because SPLIT BY must specify a prefix of the clustering key columns and the next clustering key column is $2~String1.
 1211 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU The column values of the SPLIT BY first key in position $0~Int0 (one-based) are not greater (for ascending columns) or less (for descending columns) than its predecessor.
 1212 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An HBase region start key provided only part of the value for Trafodion key column $0~Int0. This could in some unusual situations cause errors.
+1213 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Unable to create or initialize a connection to Apache Hive.
+1214 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Error $0~String0 encountered when executing HiveQL statement $1~String1.
+1215 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU An error occurred while determining host, port, or file name for HDFS URI $0~string0. Cause: $1~string1.
 1220 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Code must contain two non-blank characters.
 1221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only system components may contain system operations.
 1222 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Command not supported when authorization is not enabled.
@@ -399,11 +402,11 @@
 1404 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be altered. Reason: $0~string0
 1420 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped or altered as it is part of the table's primary key.
 1421 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped or altered as it is used in the secondary index $1~TableName.
-1422 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid hbase name was specified in this DDL statement. A valid name can only contain these characters: [a-zA-Z_0-9-.]
+1422 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid HBase name was specified in this DDL statement. A valid name can only contain these characters: [a-zA-Z_0-9-.]
 1423 ZZZZZ 99999 BEGINNER MINOR DBADMIN Insert into metadata table $0~string0 failed.
 1424 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as that would leave the table with no user defined columns.
 1425 ZZZZZ 99999 BEGINNER MINOR DBADMIN This operation could not be performed on $0~TableName. $0~String0
-1426 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid hbase column name $0~String0 was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
+1426 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid HBase column name $0~String0 was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
 1427 ZZZZZ 99999 BEGINNER MINOR DBADMIN Table cannot be renamed. $0~String0
 1428 ZZZZZ 99999 BEGINNER MINOR DBADMIN Metadata definitions could not be created and preloaded in global MDdescInfo struct. Make sure that metadata table definition syntax is correct.
 1429 ZZZZZ 99999 BEGINNER MINOR DBADMIN Inserts into _ROW_ format external hbase tables can only use the VALUES clause and must use the column_create function to create values.
@@ -1040,7 +1043,7 @@ $1~String1 --------------------------------
 3407 42000 99999 BEGINNER MAJOR DBADMIN Duplicate TABLE SIZE clauses were specified.
 3408 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused in this stream  ---
 3409 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Declaring a cursor on an embedded INSERT statement is not yet supported.
-3410 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Users cannot specify a value for SYSKEY column on an entry-sequenced table $1~TableName.
+3410 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- unused --
 3411 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expressions are not allowed as IDENTITY column values. Specify DEFAULT or supply a valid numeric value.
 3412 ZZZZZ 99999 BEGINNER MAJOR DBADMIN IDENTITY column $0~ColumnName must be the primary key or must have a unique index on it.
 3413 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The NOT NULL constraint on IDENTITY column $0~ColumnName must be NOT DROPPABLE.
@@ -1080,11 +1083,11 @@ $1~String1 --------------------------------
 4011 42000 99999 BEGINNER MAJOR DBADMIN Reference made to column $0~ColumnName via star (*) is ambiguous.
 4012 42000 99999 BEGINNER MAJOR DBADMIN Column reference $0~ColumnName must be a grouping column or be specified within an aggregate.  On this grouped table a star reference is not allowed.
 4013 42000 99999 BEGINNER MAJOR DBADMIN Column $0~ColumnName is a system column and cannot be updated or inserted into.
-4014 42000 99999 BEGINNER MAJOR DBADMIN The operands of an INTERSECT must be of equal degree.
+4014 42000 99999 BEGINNER MAJOR DBADMIN The operands of an INTERSECT or EXCEPT must be of equal degree.
 4015 42000 99999 BEGINNER MAJOR DBADMIN Aggregate functions are placed incorrectly: $0~string0.
 4016 42000 99999 BEGINNER MAJOR DBADMIN The number of derived columns ($0~int0) must equal the degree of the derived table ($1~int1).
 4017 42000 99999 BEGINNER MAJOR DBADMIN Derived column name $0~ColumnName was specified more than once.
-4018 42000 99999 BEGINNER MAJOR DBADMIN Rows cannot be deleted from an entry-sequenced table.
+4018 42000 99999 BEGINNER MAJOR DBADMIN -- unused --
 4019 42000 99999 BEGINNER MAJOR DBADMIN The select list of a subquery in a select list must be scalar (degree of one).
 4020 42000 99999 BEGINNER MAJOR DBADMIN Arithmetic operations on row value constructors are not allowed.
 4021 42000 99999 BEGINNER MAJOR DBADMIN The select list contains a nongrouping non-aggregated column, $0~ColumnName.
@@ -1206,6 +1209,8 @@ $1~String1 --------------------------------
 4137 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A DELETE [FIRST N] statement was specified on table $0~TableName which has more than one partition, without using the PARTITION clause. 
 4138 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of a subquery in the WHERE clause of a DELETE [FIRST N] statement is not supported.
 4139 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of a subquery in the WHERE clause of a Long Running Update statement is not supported.
+4140 42000 99999 BEGINNER MAJOR DBADMIN The second operand of function $0~string0 must be of interger type.
+4141 42000 99999 BEGINNER MAJOR DBADMIN The default value operand of function $0~string0 must be of the same type as the 1st operand.
 4150 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Primary key of table expression $0~string0 must be used for join with embedded $0~string1 expression.  Tables in scope: $2~string2.
 4151 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Stream access is supported only on updatable views. View: $0~TableName.
 4152 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Table $0~TableName cannot be both read and updated.
@@ -1282,6 +1287,7 @@ $1~String1 --------------------------------
 4223 42000 99999 BEGINNER MAJOR DBADMIN $0~String0 not supported in this software version.
 4224 42000 99999 BEGINNER MAJOR DBADMIN The directory $0~String0 is not a valid Hive location.
 4225 42000 99999 BEGINNER MAJOR DBADMIN Number of column families cannot exceed 32.
+4226 42000 99999 BEGINNER MAJOR DBADMIN Table $0~TableName has a maximum record length of $0~Int0 which is greater than the HDFS_IO_BUFFERSIZE default. Increase buffer size setting, or reduce the HIVE_MAX_STRING_LENGTH default.
 4240 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expression $0~string0 in the DIVISION BY clause references columns other than clustering key columns.
 4241 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The value $0~string0 is not supported at this place in the DIVISION BY clause, only constants are allowed.
 4242 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The value $0~string0 is not supported at this place in the DIVISION BY clause, only key columns are allowed.
@@ -1291,6 +1297,7 @@ $1~String1 --------------------------------
 4246 ZZZZZ 99999 BEGINNER MINOR DBADMIN All column values must be specified when loading data by UPSERT USING LOAD syntax.
 4247 0A000 99999 BEGINNER MAJOR DBADMIN Specified size in bytes ($0~Int0) exceeds the maximum size allowed ($1~Int1) for column $0~ColumnName.
 4248 ZZZZZ 99999 BEGINNER MINOR DBADMIN Index $0~string1 cannot be divisioned like a table since table $0~string0 is not divisioned.
+4249 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only non-negative constant offset value is supported in the $0~string0  function.
 4250 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object name could not be retrieved from metadata based on the provided uid. The underlying hbase object will not be removed.
 4251 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object UID could not be retrieved from metadata based on the provided object name. Metadata cleanup will not be performed but the underlying hbase object will be removed, if it exists.
 4252 ZZZZZ 99999 BEGINNER MINOR DBADMIN This metadata cleanup option is not yet supported.
@@ -1368,6 +1375,7 @@ $1~String1 --------------------------------
 4381 42000 99999 BEGINNER MINOR LOGONLY Holdable cursor attribute is incompatible for the isolation level.
 4382 42000 99999 BEGINNER MINOR LOGONLY Holdable cursor attribute cannot be set for a CALL statement.
 4383 ZZZZZ 99999 BEGINNER MINOR DBADMIN A float value cannot be inserted into a numeric data type column $0~ColumnName, if the column is part of the partitioning key.
+4384 ZZZZZ 99999 BEGINNER MINOR DBADMIN GROUP BY ROLLUP clause not allowed for this statement. Reason: $0~String0
 4390 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The OLAP History row size exceeds the limit of $0~Int0 bytes
 4391 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Paramaters and outer references in the PARTITION BY or ORDER BY clause of a window function are not supported.
 4400 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Internal error
@@ -1435,6 +1443,7 @@ $1~String1 --------------------------------
 4492 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option UPDATE STATISTICS cannot be used with UPSERT USING LOAD option.
 4493 ZZZZZ 99999 BEGINNER MINOR LOGONLY Stored Descriptor Status: $0~String0
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
+5001 ZZZZZ 99999 ADVANDED MINOR LOGONLY Common subexpression $0~String0 cannot be shared among multiple consumers. Reason: $1~String1.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.
 6001 0A000 99999 BEGINNER MAJOR DBADMIN DISTINCT aggregates can be computed for only one column per table expression.
 6002 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The metadata table HISTOGRAMS or HISTOGRAM_INTERVALS contains invalid values.  If you have manually modified the metadata table, then you should undo your changes using the CLEAR option in UPDATE STATISTICS.
@@ -1534,9 +1543,9 @@ $1~String1 --------------------------------
 8410 22025 99999 BEGINNER MINOR LOGONLY An escape character in a LIKE pattern must be followed by another escape character, an underscore, or a percent character.
 8411 22003 99999 BEGINNER MINOR LOGONLY A numeric overflow occurred during an arithmetic computation or data conversion.$0~string0
 8412 22024 99999 BEGINNER MINOR LOGONLY An input character host variable is missing its null terminator.
-8413 22007 99999 BEGINNER MINOR LOGONLY The string argument contains characters that cannot be converted. Source data $0~string0
+8413 22007 99999 BEGINNER MINOR LOGONLY The string argument contains characters that cannot be converted. Source data(in hex): $0~string0
 8414 0A000 99999 BEGINNER MINOR LOGONLY The attempted conversion is not supported on this platform.$0~string0
-8415 22007 99999 BEGINNER MINOR LOGONLY The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data $0~string0
+8415 22007 99999 BEGINNER MINOR LOGONLY The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: $0~string0
 8416 22008 99999 BEGINNER MINOR LOGONLY A datetime expression evaluated to an invalid datetime value.
 8417 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred during the evaluation of USER function. The provided userid $0~string0 is invalid, incorrect, obsolete or inexistent and could not be converted to username.
 8418 0A000 99999 BEGINNER MINOR LOGONLY The USER function is not supported on this platform.
@@ -1557,7 +1566,7 @@ $1~String1 --------------------------------
 8433 22003 99999 BEGINNER MINOR LOGONLY Invalid $0~string0 character encountered in $1~string1.
 8434 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Invalid target column for LOB function. The column needs to be blob/clob type. 
 8435 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
-8436 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between compiletime and runtime hive table definitions.
+8436 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: $0~string0
 8437 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatch detected between external table and underlying hive table definitions.
 8440 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The size of the history buffer is too small to execute one or more of the OLAP Windowed Functions in the query. 
 8441 ZZZZZ 99999 BEGINNER MAJOR DBADMIN one or more of the OLAP Windowed Functions in the query may require overflow which is not supported yet.
@@ -1570,6 +1579,7 @@ $1~String1 --------------------------------
 8448 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to access Hbase interface. Call to $0~string0 returned error $1~string1($0~int0). Cause: $2~string2.
 8449 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid HBase table option or option value was specified: ($0~string0 = $1~string1)
 8450 ZZZZZ 99999 BEGINNER MINOR LOGONLY ESP number ($0~Int0) has processed ($1~Int1) transactions of the LRU operation on table $2~String0.
+8451 ZZZZZ 99999 BEGINNER MINOR LOGONLY Error returned while retrieving region stats from hbase.
 8550 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the Data Access Manager.
 8551 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~NSKCode was returned by the file system on $0~string0$1~string1.
 8552 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Error $0~int0 was returned by the file system while fetching the version of the system $0~string0.
@@ -1861,8 +1871,8 @@ drop the default context
 9216 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS cannot be on EVERY COLUMN for LOG tables. 
 9217 ZZZZZ 99999 BEGINNER INFRM DBADMIN The statement will have no effect because no histograms are currently maintained for the table.
 9218 ZZZZZ 99999 BEGINNER INFRM DBADMIN The statement will have no effect because no histograms need to be updated.
-9219 ZZZZZ 99999 ADVANCED MAJOR DBADMIN The NECESSARY clause is only allowed on tables of schema version 2300 or higher.
-9220 ZZZZZ 99999 BEGINNER INFRM DBADMIN The temporary workspace schema $0~string0.PUBLIC_ACCESS_SCHEMA does not exist. Query plan could be improved if PUBLIC_ACCESS_SCHEMA is created in $0~string0 catalog.
+9219 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: An operation failed, possibly due to an invalid WHERE clause.
+9220 ZZZZZ 99999 BEGINNER INFRM DBADMIN The table is empty, so no persistent sample table was created.
 9221 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS cannot be performed due to the absence of the IUS persistent sample table for $0~string0.  Use a regular UPDATE STATISTICS command with the sample clause and PERSISTENT first to create such a persistent sample table.
 9222 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: the rowcount in an interval for column $0~String0 changed more than the percentage specified by CQD USTAT_IUS_INTERVAL_ROWCOUNT_CHANGE_THRESHOLD. A regular UPDATE STATISTICS is performed instead.
 9223 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: the total rowcount for column $0~String0 changed more than the percentage specified by CQD USTAT_IUS_TOTAL_ROWCOUNT_CHANGE_THRESHOLD. A regular UPDATE STATISTICS is performed instead.
@@ -1870,12 +1880,13 @@ drop the default context
 9225 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: the total unique count for column $0~String0 changed more than the percentage specified by CQD USTAT_IUS_TOTAL_UEC_CHANGE_THRESHOLD. A regular UPDATE STATISTICS is performed instead.
 9226 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: one interval for column $0~String0 is reset to zero. A regular UPDATE STATISTICS is performed instead.
 9227 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: an interval for column $0~String0 is reduced to zero rows using IUS. A regular UPDATE STATISTICS is performed instead.
-9230 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: cannot allocate enough memory. A regular UPDATE STATISTICS is performed instead. 
+9228 ZZZZZ 99999 BEGINNER MINOR LOGONLY There were no sample tables to drop.
+9230 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: $0~int0 columns could not be processed due to insufficient memory, and are being processed by regular UPDATE STATISTICS instead.
 9231 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: only RANDOM <percentage> PERCENT is allowed as the sampling specification with PERSISTENT.
 9232 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: cannot proceed because of the on-going IUS transaction originated at $0~String0. 
-9233 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS: could not store search condition used for IUS because it exceeds $0~int0 characters. 
+9233 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused --- 
 9234 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: a new high frequency value is detected for column $0~string0. A regular UPDATE STATISTICS is performed instead.
-9235 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS $0~String0.
+9235 ZZZZZ 99999 BEGINNER MINOR LOGONLY --- unused ---
 9236 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: the histogram for column $0~string0 is empty. A regular UPDATE STATISTICS is performed instead.
 9237 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: WHERE clause of an IUS statement cannot contain $0~String0.
 9238 ZZZZZ 99999 BEGINNER INFRM DBADMIN Histograms were updated successfully, but partition statistics could not be updated from file labels.
@@ -1885,10 +1896,14 @@ drop the default context
 9242 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to create schema for Hive statistics.
 9243 ZZZZZ 99999 BEGINNER MAJOR DBADMIN This UPDATE STATISTICS command may take too long. It is recommended to use the SAMPLE clause instead. If you wish to do this without a SAMPLE clause, specify NO SAMPLE explicitly.
 9244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS is not allowed in a user transaction.
-9245 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
+9245 ZZZZZ 99999 BEGINNER INFRM DBADMIN Unexpected out-of-order data encountered during histogram construction on column $0~string0; this might result in later 6004 warnings.
 9246 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS is not supported on LOB columns. Column $0~String0 is a LOB column.
 9247 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS is not supported on volatile tables presently.
-9250 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Last UPDATE STATISTICS error.
+9248 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UPDATE STATISTICS failed due to a memory allocation failure.
+9249 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS is disabled.
+9250 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: non-NULL values added to previously all-NULL histogram for column $0~string0. A regular UPDATE STATISTICS is performed instead.
+9251 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A persistent sample table already exists. Use UPDATE STATISTICS ... REMOVE SAMPLE to drop it first if desired.
+9259 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Last UPDATE STATISTICS error.
 10000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Sort Error: First Sort error
 10001 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Sort Error : No error text defined. Unexpected error. $0~String0
 10002 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ---- 

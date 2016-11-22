@@ -77,7 +77,7 @@ enum ExpLOBinterfaceInputFlags
     ERROR_IF_TGT_FILE_EXISTS_ =  0x0004
   };
 
-Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, void *currContext,NABoolean isHive=FALSE, char *hdfsServer="default", Int32 port=0);
+Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, void *currContext,NABoolean isHiveRead, char *hdfsServer="default", Int32 port=0);
 
 Lng32 ExpLOBinterfaceCleanup(void *& lobGlob, void * lobHeap);
 
@@ -295,13 +295,20 @@ Lng32 ExpLOBinterfacePurgeBackupLobDataFile(void *& lobGlob,  char *hdfsServer, 
 // dirPath: path to needed directory (includes directory name)
 // modTS is the latest timestamp on any file/dir under dirPath.
 // This method validates that current modTS is not greater then input modTS.
+// On return:
+//   failedModTS contains current timestamp that caused mismatch.
+//   failedLocBuf: buffer where path/name of failed dir/file will be returned.
+//   failedLocBufLen: IN: max len of buf. OUT: actual length of data.
 // Return: 1, if check fails. 0, if passes. -1, if error.
 Lng32 ExpLOBinterfaceDataModCheck(void * lobGlob,
                                   char * dirPath,
                                   char * lobHdfsServer,
                                   Lng32  lobHdfsPort,
                                   Int64  modTS,
-                                  Lng32  numOfPartLevels);
+                                  Lng32  numOfPartLevels,
+                                  Int64 &failedModTS,
+                                  char * failedLocBuf,
+                                  Int32 &failedLocBufLen);
 
 Lng32 ExpLOBinterfaceEmptyDirectory(void * lobGlob,
                             char * lobName,

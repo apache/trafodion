@@ -90,6 +90,15 @@ TrafDesc *TrafAllocateDDLdesc(desc_nodetype nodetype, Space * space)
     case DESC_USING_MV_TYPE: 
       desc_ptr = new GENHEAP(space) TrafUsingMvDesc();
       break;
+    case DESC_PRIV_TYPE: 
+      desc_ptr = new GENHEAP(space) TrafPrivDesc();
+      break;
+    case DESC_PRIV_GRANTEE_TYPE: 
+      desc_ptr = new GENHEAP(space) TrafPrivGranteeDesc();
+      break;
+    case DESC_PRIV_BITMAP_TYPE: 
+      desc_ptr = new GENHEAP(space) TrafPrivBitmapDesc();
+      break;
     default:
       assert(FALSE);
       break;
@@ -210,6 +219,15 @@ char *TrafDesc::findVTblPtr(short classID)
       break;	       
     case DESC_USING_MV_TYPE: 
       GetVTblPtr(vtblptr, TrafUsingMvDesc);
+      break;
+    case DESC_PRIV_TYPE: 
+      GetVTblPtr(vtblptr, TrafPrivDesc);
+      break;
+    case DESC_PRIV_GRANTEE_TYPE: 
+      GetVTblPtr(vtblptr, TrafPrivGranteeDesc);
+      break;
+    case DESC_PRIV_BITMAP_TYPE: 
+      GetVTblPtr(vtblptr, TrafPrivBitmapDesc);
       break;
     default:
       assert(FALSE);
@@ -556,6 +574,7 @@ Long TrafTableDesc::pack(void * space)
   files_desc.pack(space);
   hbase_regionkey_desc.pack(space);
   sequence_generator_desc.pack(space);
+  priv_desc.pack(space);
 
   return TrafDesc::pack(space);  
 }
@@ -578,6 +597,7 @@ Lng32 TrafTableDesc::unpack(void * base, void * reallocator)
   if (files_desc.unpack(base, reallocator)) return -1;
   if (hbase_regionkey_desc.unpack(base, reallocator)) return -1;
   if (sequence_generator_desc.unpack(base, reallocator)) return -1;
+  if (priv_desc.unpack(base, reallocator)) return -1;
 
   return TrafDesc::unpack(base, reallocator);
 }
@@ -603,6 +623,7 @@ Long TrafViewDesc::pack(void * space)
 
   viewtext = (viewtext ? (char*)(((Space*)space)->convertToOffset(viewtext)) : NULL);
   viewchecktext = (viewchecktext ? (char*)(((Space*)space)->convertToOffset(viewchecktext)) : NULL);
+  viewcolusages = (viewcolusages ? (char*)(((Space*)space)->convertToOffset(viewcolusages)) : NULL);
 
   return TrafDesc::pack(space);
 }
@@ -614,6 +635,37 @@ Lng32 TrafViewDesc::unpack(void * base, void * reallocator)
 
   viewtext = (viewtext ? (char*)((char*)base - (Long)viewtext) : NULL);
   viewchecktext = (viewchecktext ? (char*)((char*)base - (Long)viewchecktext) : NULL);
+  viewcolusages = (viewcolusages ? (char*)((char*)base - (Long)viewcolusages) : NULL);
 
   return TrafDesc::unpack(base, reallocator);
 }
+ 
+Long TrafPrivDesc::pack (void * space)
+{
+   privGrantees.pack(space);
+
+   return TrafDesc::pack(space);
+}
+ 
+Lng32 TrafPrivDesc::unpack(void * base, void * reallocator)
+{
+  if (privGrantees.unpack(base, reallocator)) return -1;
+  return TrafDesc::unpack(base, reallocator);
+}
+
+Long TrafPrivGranteeDesc::pack(void * space)
+{
+  objectBitmap.pack(space);
+  columnBitmaps.pack(space);
+
+  return TrafDesc::pack(space);
+}
+
+Lng32 TrafPrivGranteeDesc::unpack(void * base, void *reallocator)
+{
+  if (objectBitmap.unpack(base, reallocator)) return -1;
+  if (columnBitmaps.unpack(base, reallocator)) return -1;
+
+  return TrafDesc::unpack(base, reallocator);
+}
+

@@ -347,6 +347,8 @@ Int32 RelExpr::getArity() const
     case REL_LEFT_TSJ:
     case REL_NESTED_JOIN:
     case REL_MERGE_JOIN:
+    case REL_INTERSECT:
+    case REL_EXCEPT:
       return 2;
 
     default:
@@ -2228,12 +2230,14 @@ Int32 WildCardOp::getArity() const
     case REL_FORCE_ANY_SCALAR_UDF:
     case REL_ANY_SCALAR_UDF_ROUTINE:
     case REL_ANY_LEAF_GEN_UPDATE:
+    case REL_ANY_LEAF_TABLE_MAPPING_UDF:
       return 0;
 
     case REL_ANY_UNARY_GEN_UPDATE:
     case REL_ANY_UNARY_OP:
     case REL_ANY_GROUP:
     case REL_FORCE_EXCHANGE:
+    case REL_ANY_UNARY_TABLE_MAPPING_UDF:
       return 1;
 
     case REL_ANY_BINARY_OP:
@@ -2258,6 +2262,7 @@ Int32 WildCardOp::getArity() const
     case REL_FORCE_HYBRID_HASH_JOIN:
     case REL_FORCE_MERGE_JOIN:
     case REL_FORCE_ORDERED_CROSS_PRODUCT:
+    case REL_ANY_BINARY_TABLE_MAPPING_UDF:
       return 2;
 
     default:
@@ -3804,6 +3809,8 @@ NABoolean RelExpr::isAnyJoin() const
     case REL_FORCE_ORDERED_HASH_JOIN:
     case REL_FORCE_HYBRID_HASH_JOIN:
     case REL_FORCE_MERGE_JOIN:
+    case REL_INTERSECT:
+    case REL_EXCEPT:
       return TRUE;
 
     default:
@@ -5139,6 +5146,39 @@ NABoolean Join::duplicateMatch(const RelExpr & other) const
     return FALSE;
 
   return TRUE;
+}
+
+ 
+RelExpr * Intersect::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  RelExpr *result;
+
+  if (derivedNode == NULL)
+    {
+      result = new (outHeap) Intersect(NULL,
+                                        NULL
+                                        );
+    }
+  else
+    result = derivedNode;
+
+  return RelExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * Except::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  RelExpr *result;
+
+  if (derivedNode == NULL)
+    {
+      result = new (outHeap) Except(NULL,
+                                        NULL
+                                        );
+    }
+  else
+    result = derivedNode;
+
+  return RelExpr::copyTopNode(result, outHeap);
 }
 
 RelExpr * Join::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
@@ -6630,6 +6670,23 @@ const NAString Intersect::getText() const
 }
 
 // -----------------------------------------------------------------------
+// // member functions for class Except
+// // -----------------------------------------------------------------------
+Except::Except(RelExpr *leftChild,
+             RelExpr *rightChild)
+: RelExpr(REL_EXCEPT, leftChild, rightChild)
+{ setNonCacheable(); }
+
+Except::~Except() {}
+
+Int32 Except::getArity() const { return 2; }
+
+const NAString Except::getText() const
+{
+  return "except";
+}
+
+// -----------------------------------------------------------------------
 // member functions for class Union
 // -----------------------------------------------------------------------
 Union::Union(RelExpr *leftChild,
@@ -6650,8 +6707,10 @@ Union::Union(RelExpr *leftChild,
   ,rightList_(NULL)
   ,currentChild_(-1)
   ,alternateRightChildOrderExprTree_(NULL) //++MV
-  ,isSystemGenerated_(sysGenerated),
-  isSerialUnion_(FALSE)
+  ,isSystemGenerated_(sysGenerated)
+  ,isSerialUnion_(FALSE)
+  ,variablesSet_(oHeap)
+  
 {
   if ( NOT mayBeCacheable )
     setNonCacheable();
@@ -7503,6 +7562,7 @@ RelExpr * GroupByAgg::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
     result->aggregateExprTree_ = aggregateExprTree_->copyTree(outHeap);
 
   result->groupExpr_     = groupExpr_;
+  result->rollupGroupExprList_ = rollupGroupExprList_;
   result->aggregateExpr_ = aggregateExpr_;
   result->formEnum_      = formEnum_;
   result->gbAggPushedBelowTSJ_ = gbAggPushedBelowTSJ_;
@@ -7515,6 +7575,10 @@ RelExpr * GroupByAgg::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   result->selIndexInHaving_ = selIndexInHaving_;
   result->aggrExprsToBeDeleted_ = aggrExprsToBeDeleted_;
+
+  result->isRollup_ = isRollup_;
+  result->extraGrpOrderby_= extraGrpOrderby_;
+  result->extraOrderExpr_= extraOrderExpr_;
 
   return RelExpr::copyTopNode(result, outHeap);
 }
@@ -7652,6 +7716,8 @@ void GroupByAgg::addLocalExpr(LIST(ExprNode *) &xlist,
     {
       if (groupExpr_.isEmpty())
 	xlist.insert(groupExprTree_);
+      else if (isRollup() && (NOT rollupGroupExprList_.isEmpty()))
+ 	xlist.insert(rollupGroupExprList_.rebuildExprTree(ITM_ITEM_LIST));
       else
 	xlist.insert(groupExpr_.rebuildExprTree(ITM_ITEM_LIST));
       llist.insert("grouping_columns");
@@ -7807,7 +7873,10 @@ NABoolean SortGroupBy::isPhysical() const {return TRUE;}
 
 const NAString SortGroupBy::getText() const
 {
-  return "sort_" + GroupByAgg::getText();
+  if (isRollup())
+    return "sort_" + GroupByAgg::getText() + "_rollup";
+  else
+    return "sort_" + GroupByAgg::getText();
 }
 
 RelExpr * SortGroupBy::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
@@ -8114,10 +8183,9 @@ void Scan::getPotentialOutputValuesAsVEGs(ValueIdSet& outputs) const
 {
   outputs.clear();
   ValueIdSet tempSet ;
-  ValueIdList tempList ;
+
   getPotentialOutputValues(tempSet);
-  getTableDesc()->getEquivVEGCols(tempSet, tempList); 
-  outputs = tempList ;
+  getTableDesc()->getEquivVEGCols(tempSet, outputs); 
 }
 
 
@@ -8216,8 +8284,8 @@ RelExpr * Scan::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->setExtraOutputColumns(getExtraOutputColumns());
   result->isRewrittenMV_ = isRewrittenMV_;
   result->matchingMVs_ = matchingMVs_;
-
   result->hbaseAccessOptions_ = hbaseAccessOptions_;
+  result->commonSubExpr_ = commonSubExpr_;
 
   // don't copy values that can be calculated by addIndexInfo()
   // (could be done, but we are lazy and just call addIndexInfo() again)
@@ -10003,10 +10071,12 @@ HbaseAccess::HbaseAccess(CorrName &corrName,
 			 OperatorTypeEnum otype,
 			 CollHeap *oHeap)
   : FileScan(corrName, NULL, NULL, otype, oHeap),
-    listOfSearchKeys_(oHeap)
+    listOfSearchKeys_(oHeap),
+    snpType_(SNP_NONE),
+    retHbaseColRefSet_(oHeap),
+    opList_(oHeap)
 {
   accessType_ = SELECT_;
-  
   uniqueHbaseOper_ = FALSE;
   uniqueRowsetHbaseOper_ = FALSE;
 }
@@ -10030,11 +10100,12 @@ HbaseAccess::HbaseAccess(CorrName &corrName,
              generatedCCPreds,
              otype),
     listOfSearchKeys_(oHeap),
-    snpType_(SNP_NONE)
+    snpType_(SNP_NONE),
+    retHbaseColRefSet_(oHeap),
+    opList_(oHeap)
 {
   accessType_ = SELECT_;
   //setTableDesc(tableDesc);
-
   uniqueHbaseOper_ = FALSE;
   uniqueRowsetHbaseOper_ = FALSE;
 }
@@ -10046,10 +10117,11 @@ HbaseAccess::HbaseAccess(CorrName &corrName,
     isRW_(isRW),
     isCW_(isCW),
     listOfSearchKeys_(oHeap),
-    snpType_(SNP_NONE)
+    snpType_(SNP_NONE),
+    retHbaseColRefSet_(oHeap),
+    opList_(oHeap)
 {
   accessType_ = SELECT_;
-
   uniqueHbaseOper_ = FALSE;
   uniqueRowsetHbaseOper_ = FALSE;
 }
@@ -10058,10 +10130,11 @@ HbaseAccess::HbaseAccess( OperatorTypeEnum otype,
 			  CollHeap *oHeap)
   : FileScan(CorrName(), NULL, NULL, otype, oHeap),
     listOfSearchKeys_(oHeap),
-    snpType_(SNP_NONE)
+    snpType_(SNP_NONE),
+    retHbaseColRefSet_(oHeap),
+    opList_(oHeap)
 {
   accessType_ = SELECT_;
-
   uniqueHbaseOper_ = FALSE;
   uniqueRowsetHbaseOper_ = FALSE;
 }
@@ -11895,6 +11968,39 @@ void MapValueIds::pushdownCoveredExpr(
 				 translatedOutputs);
   requiredValues += translatedOutputs;
 
+  if (cseRef_)
+    {
+      // If this MapValueIds node represents a common subexpression,
+      // then don't try to push predicates again that already have
+      // been pushed down before. VEGPredicates may not be pushable
+      // at all to the rewritten child, and other predicates might
+      // be duplicated with different ValueIds for the internal
+      // operators such as "=", "+", ">".
+      predicatesOnParent -= cseRef_->getPushedPredicates();
+
+      // Also, don't push down VEGPredicates on columns that are
+      // characteristic outputs of the MapValueIds. Those predicates
+      // (or their equivalents) should have already been pushed down.
+      for (ValueId g=predicatesOnParent.init();
+           predicatesOnParent.next(g);
+           predicatesOnParent.advance(g))
+        if (g.getItemExpr()->getOperatorType() == ITM_VEG_PREDICATE)
+          {
+            VEG *veg =
+              static_cast<VEGPredicate *>(g.getItemExpr())->getVEG();
+            ValueIdSet vegMembers(veg->getAllValues());
+
+            vegMembers += veg->getVEGReference()->getValueId();
+            vegMembers.intersectSet(
+                 getGroupAttr()->getCharacteristicOutputs());
+            if (!vegMembers.isEmpty())
+              // a VEGPred on one of my characteristic outputs,
+              // assume that my child tree already has the
+              // associated VEGPreds
+              predicatesOnParent -= g;
+          }
+    }
+
   // rewrite the predicates so they can be applied in the child node
   getMap().rewriteValueIdSetDown(predicatesOnParent,predsRewrittenForChild);
 
@@ -11941,6 +12047,14 @@ void MapValueIds::getPotentialOutputValues(ValueIdSet & outputValues) const
   outputValues.insertList((getMap2()).getTopValues());
 } // MapValueIds::getPotentialOutputValues()
 
+void MapValueIds::addSameMapEntries(const ValueIdSet & newTopBottomValues)
+{
+  for (ValueId x = newTopBottomValues.init();
+	    newTopBottomValues.next(x);
+	    newTopBottomValues.advance(x))
+    addMapEntry(x,x);
+}
+
 void MapValueIds::addLocalExpr(LIST(ExprNode *) &xlist,
 			       LIST(NAString) &llist) const
 {
@@ -11972,7 +12086,7 @@ NABoolean MapValueIds::duplicateMatch(const RelExpr & other) const
   if (includesFavoriteMV_ != o.includesFavoriteMV_)
     return FALSE;
 
-  if (usedByMvqr_ != o.usedByMvqr_)
+  if (cseRef_ != o.cseRef_)
     return FALSE;
 
   if (map_ != o.map_)
@@ -11991,7 +12105,7 @@ RelExpr * MapValueIds::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
     result = static_cast<MapValueIds*>(derivedNode);
 
   result->includesFavoriteMV_ = includesFavoriteMV_;
-  result->usedByMvqr_ = usedByMvqr_;
+  result->cseRef_ = cseRef_;
 
   return RelExpr::copyTopNode(result, outHeap);
 }
@@ -12118,6 +12232,293 @@ void ControlRunningQuery::setComment(NAString &comment)
   NAString cancelComment (comment, CmpCommon::statementHeap());
   comment_ = cancelComment;
 }
+
+// -----------------------------------------------------------------------
+// member functions for class CSEInfo (helper for CommonSubExprRef)
+// -----------------------------------------------------------------------
+
+CSEInfo::CSEAnalysisOutcome CSEInfo::getAnalysisOutcome(Int32 id) const
+{
+  if (idOfAnalyzingConsumer_ != id &&
+      analysisOutcome_ == CREATE_TEMP)
+    // only the analyzing consumer creates and reads the temp, the
+    // others only read it
+    return TEMP;
+  else
+    return analysisOutcome_;
+}
+
+void CSEInfo::addChildCSE(CSEInfo *child)
+{
+  if (!childCSEs_.contains(child))
+    childCSEs_.insert(child);
+}
+
+void CSEInfo::addCSERef(CommonSubExprRef *cse)
+{
+  CMPASSERT(name_ == cse->getName());
+  cse->setId(consumers_.entries());
+  consumers_.insert(cse);
+}
+
+// -----------------------------------------------------------------------
+// member functions for class CommonSubExprRef
+// -----------------------------------------------------------------------
+
+CommonSubExprRef::~CommonSubExprRef()
+{
+}
+
+Int32 CommonSubExprRef::getArity() const
+{
+  // always return 1 for now, that may change in the future
+  return 1;
+}
+
+void CommonSubExprRef::addToCmpStatement()
+{
+  NABoolean alreadySeen = TRUE;
+
+  // look up whether a CSE with this name already exists
+  CSEInfo *info = CmpCommon::statement()->getCSEInfo(internalName_);
+
+  if (!info)
+    {
+      // make a new object to hold a list of all references
+      // to this CSE (the first one of them will be "this")
+      info = new(CmpCommon::statementHeap())
+        CSEInfo(internalName_,
+                CmpCommon::statementHeap());
+      alreadySeen = FALSE;
+    }
+
+  info->addCSERef(this);
+
+  if (!alreadySeen)
+    CmpCommon::statement()->addCSEInfo(info);
+}
+
+NABoolean CommonSubExprRef::isFirstReference()
+{
+  return (
+       // this is the first reference added, or
+       id_ == 0 ||
+       // this is not yet added an no other reference has been added yet
+       id_ < 0 && CmpCommon::statement()->getCSEInfo(internalName_) == NULL);
+}
+
+void CommonSubExprRef::addLocalExpr(LIST(ExprNode *) &xlist,
+                                    LIST(NAString) &llist) const
+{
+  if (NOT columnList_.isEmpty())
+    {
+      xlist.insert(columnList_.rebuildExprTree(ITM_ITEM_LIST));
+      llist.insert("column_list");
+    }
+
+  if(NOT pushedPredicates_.isEmpty())
+  {
+    xlist.insert(pushedPredicates_.rebuildExprTree());
+    llist.insert("pushed_predicates");
+  }
+}
+
+HashValue CommonSubExprRef::topHash()
+{
+  HashValue result = RelExpr::topHash();
+
+  result ^= internalName_;
+  result ^= id_;
+  result ^= columnList_;
+  result ^= pushedPredicates_;
+
+  return result;
+}
+
+NABoolean CommonSubExprRef::duplicateMatch(const RelExpr & other) const
+{
+  if (NOT RelExpr::duplicateMatch(other))
+    return FALSE;
+
+  const CommonSubExprRef &o = static_cast<const CommonSubExprRef &>(other);
+
+  return (internalName_ == o.internalName_ &&
+          id_ == o.id_ &&
+          columnList_ == o.columnList_ &&
+          pushedPredicates_ == o.pushedPredicates_);
+}
+
+RelExpr * CommonSubExprRef::copyTopNode(RelExpr *derivedNode,
+                                        CollHeap* outHeap)
+{
+  CommonSubExprRef *result = NULL;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) CommonSubExprRef(NULL,
+                                            internalName_.data(),
+                                            outHeap);
+  else
+    result = static_cast<CommonSubExprRef *>(derivedNode);
+
+  if (nodeIsBound())
+    {
+      // if the node is bound, we assume that the copy is serving the same function
+      // as the original
+      result->setId(id_);
+      result->columnList_ = columnList_;
+      result->pushedPredicates_ = pushedPredicates_;
+    }
+  else
+    // if the node is not bound, we assume that we created a new
+    // reference to a common subexpression, for example by referencing
+    // a CTE that itself contains another reference to a CTE (Common
+    // Table Expression)
+    result->addToCmpStatement();
+
+  return result;
+}
+
+const NAString CommonSubExprRef::getText() const
+{
+  NAString result("cse ");
+  char buf[20];
+
+  result += ToAnsiIdentifier(internalName_);
+
+  snprintf(buf, sizeof(buf), " %d", id_);
+  result += buf;
+
+  return result;
+}
+
+Union * CommonSubExprRef::makeUnion(RelExpr *lc,
+                                    RelExpr *rc,
+                                    NABoolean blocked)
+{
+  // Make a regular or blocked union with no characteristic outputs
+  Union *result;
+  ValueIdSet newInputs(lc->getGroupAttr()->getCharacteristicInputs());
+
+  result = new(CmpCommon::statementHeap()) Union(lc, rc);
+
+  newInputs += rc->getGroupAttr()->getCharacteristicInputs();
+
+  result->setGroupAttr(new (CmpCommon::statementHeap()) GroupAttributes());
+  result->getGroupAttr()->addCharacteristicInputs(newInputs);
+
+  if(blocked)
+    result->setBlockedUnion();
+
+  return result;
+}
+
+void CommonSubExprRef::display()
+{
+  printf("Original columns:\n");
+  columnList_.display();
+  printf("\nCommon inputs:\n");
+  commonInputs_.display();
+  printf("\nPushed predicates:\n");
+  pushedPredicates_.display();
+}
+
+void CommonSubExprRef::displayAll(const char *optionalId)
+{
+  const LIST(CSEInfo *) *cses = CmpCommon::statement()->getCSEInfoList();
+
+  if (cses)
+    for (CollIndex i=0; i<cses->entries(); i++)
+      if (!optionalId ||
+          strlen(optionalId) == 0 ||
+          cses->at(i)->getName() == optionalId)
+        {
+          CSEInfo *info = cses->at(i);
+          CollIndex nc = info->getNumConsumers();
+
+          printf("==========================\n");
+          printf("CSE: %s (%d consumers)\n",
+                 info->getName().data(),
+                 nc);
+
+          const LIST(CSEInfo *) &children(info->getChildCSEs());
+
+          for (CollIndex j=0; j<children.entries(); j++)
+            printf("       references CSE: %s\n", children[j]->getName().data());
+
+          if (info->getIdOfAnalyzingConsumer() >= 0)
+            {
+              const char *outcome = "?";
+              ValueIdList cols;
+              CommonSubExprRef *consumer =
+                info->getConsumer(info->getIdOfAnalyzingConsumer());
+              const ValueIdList &cCols(consumer->getColumnList());
+
+              switch (info->getAnalysisOutcome(0))
+                {
+                case CSEInfo::UNKNOWN_ANALYSIS:
+                  outcome = "UNKNOWN";
+                  break;
+                case CSEInfo::EXPAND:
+                  outcome = "EXPAND";
+                  break;
+                case CSEInfo::CREATE_TEMP:
+                  outcome = "CREATE_TEMP";
+                  break;
+                case CSEInfo::TEMP:
+                  outcome = "TEMP";
+                  break;
+                case CSEInfo::ERROR:
+                  outcome = "ERROR";
+                  break;
+                default:
+                  outcome = "???";
+                  break;
+                }
+
+              printf("  analyzed by consumer %d, outcome: %s\n",
+                     info->getIdOfAnalyzingConsumer(),
+                     outcome);
+
+              makeValueIdListFromBitVector(cols,
+                                           cCols,
+                                           info->getNeededColumns());
+              printf("  \ncolumns of temp table:\n");
+              cols.display();
+              printf("  \ncommonPredicates:\n");
+              info->getCommonPredicates().display();
+              if (info->getVEGRefsWithDifferingConstants().entries() > 0)
+                {
+                  printf("  \nvegRefsWithDifferingConstants:\n");
+                  info->getVEGRefsWithDifferingConstants().display();
+                }
+              if (info->getVEGRefsWithDifferingInputs().entries() > 0)
+                {
+                  printf("  \nvegRefsWithDifferingInputs:\n");
+                  info->getVEGRefsWithDifferingInputs().display();
+                }
+              printf("  \ntempTableName: %s\n",
+                     info->getTempTableName().
+                     getQualifiedNameAsAnsiString().data());
+              printf("  \nDDL of temp table:\n%s\n",
+                     info->getTempTableDDL().data());
+            }
+
+          for (int c=0; c<nc; c++)
+            {
+              printf("\n----- Consumer %d:\n", c);
+              info->getConsumer(c)->display();
+            }
+        }
+}
+
+void CommonSubExprRef::makeValueIdListFromBitVector(ValueIdList &tgt,
+                                                    const ValueIdList &src,
+                                                    const NABitVector &vec)
+{
+  for (CollIndex b=0; vec.nextUsed(b); b++)
+    tgt.insert(src[b]);
+}
+
 
 // -----------------------------------------------------------------------
 // member functions for class GenericUpdate
@@ -15285,7 +15686,7 @@ NABoolean Join::childNodeContainMultiColumnSkew(
    // A list of valueIdSets, each valueIdSet element contains a set of 
    // columns from the join predicates. Each set has all columns from the
    // same table participating in the join predicates.
-   ARRAY(ValueIdSet) mcArray(joinPreds.entries());
+   ARRAY(ValueIdSet) mcArray(CmpCommon::statementHeap(), joinPreds.entries());
 
    Int32 skews = 0, leastSkewList = 0;
    EncodedValue mostFreqVal;
@@ -15523,13 +15924,10 @@ NABoolean Insert::isSideTreeInsertFeasible()
       return FALSE;
    }
 
-   NABoolean isEntrySequencedTable = getTableDesc()->getClusteringIndex()
-        ->getNAFileSet()->isEntrySequenced();
-
    if ( !getInliningInfo().hasPipelinedActions() ) 
      return TRUE;
 
-   if (isEntrySequencedTable || getInliningInfo().isEffectiveGU() ||
+   if (getInliningInfo().isEffectiveGU() ||
        getTolerateNonFatalError() == RelExpr::NOT_ATOMIC_)
       return FALSE;
 

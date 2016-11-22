@@ -268,7 +268,6 @@ OptimizerSimulator::OptimizerSimulator(CollHeap *heap)
  queue_(NULL),
  sysCallsDisabled_(0),
  forceLoad_(FALSE),
- hiveClient_(NULL),
  heap_(heap)
 {
   for (sysCall sc=FIRST_SYSCALL; sc<NUM_OF_SYSCALLS; sc = sysCall(sc+1))
@@ -1106,31 +1105,24 @@ NABoolean OptimizerSimulator::massageTableUID(OsimHistogramEntry* entry, NAHashD
 }
 
 void OptimizerSimulator::execHiveSQL(const char* hiveSQL)
-{        
-    if(NULL == hiveClient_)
-    {
-        hiveClient_ = HiveClient_JNI::getInstance();
-        if ( hiveClient_->isInitialized() == FALSE ||
-             hiveClient_->isConnected() == FALSE)
-        {
-            HVC_RetCode retCode = hiveClient_->init();
-            if (retCode != HVC_OK)
-            {
-                NAString errMsg;
-                errMsg = "Error initialize hive client.";
-                OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
-            }
-        }  
-    }
+{
+  HiveClient_JNI *hiveClient = CmpCommon::context()->getHiveClient();
 
-    HVC_RetCode retCode = hiveClient_->executeHiveSQL(hiveSQL);
-    if (retCode != HVC_OK)
+  if (hiveClient == NULL)
     {
-        NAString errMsg;
-        errMsg = "Error running hive SQL.";
-        OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
+      NAString errMsg;
+      errMsg = "Error initialize hive client.";
+      OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
     }
-    
+  else
+    {
+      if (!CmpCommon::context()->execHiveSQL(hiveSQL))
+        {
+          NAString errMsg;
+          errMsg = "Error running hive SQL.";
+          OsimLogException(errMsg.data(), __FILE__, __LINE__).throwException();
+        }
+    }
 }
 
 short OptimizerSimulator::loadHistogramsTable(NAString* modifiedPath, QualifiedName * qualifiedName, unsigned int bufLen)
@@ -2138,19 +2130,6 @@ void OptimizerSimulator::capture_TableOrView(NATable * naTab)
       (*viewsListFile) << objQualifiedName.getQualifiedNameAsAnsiString().data() <<endl;
       
       ofstream * viewLogfile = writeSysCallStream_[VIEWDDLS];
-
-      // Need to set CQDs to enable special syntax if running in special modes
-      if (CmpCommon::getDefault(MODE_SPECIAL_1) == DF_ON)
-      {
-          (*viewLogfile) << "control query default DISABLE_READ_ONLY 'ON';" << endl;
-          (*viewLogfile) << "control query default MODE_SPECIAL_1 'ON';" << endl;
-      }
-
-      if (CmpCommon::getDefault(MODE_SPECIAL_2) == DF_ON)
-      {
-          (*viewLogfile) << "control query default DISABLE_READ_ONLY 'ON';" << endl;
-          (*viewLogfile) << "control query default MODE_SPECIAL_2 'ON';" << endl;
-      }
 
       (*viewLogfile) << viewText <<endl;
 

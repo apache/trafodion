@@ -1246,6 +1246,10 @@ NABoolean PCodeInst::isRange()
     case PCIT::RANGE_HIGH_S16S64:
     case PCIT::RANGE_LOW_U16S64:
     case PCIT::RANGE_HIGH_U16S64:
+    case PCIT::RANGE_LOW_S8S64:
+    case PCIT::RANGE_HIGH_S8S64:
+    case PCIT::RANGE_LOW_U8S64:
+    case PCIT::RANGE_HIGH_U8S64:
     case PCIT::RANGE_MFLT64:
       return TRUE;
   }
@@ -4410,7 +4414,7 @@ void PCodeCfg::setupForCSE(INSTLIST** cseList)
 
   // Set up cseList to keep track of like PCODE instructions
   for (i=0; i < MAX_NUM_PCODE_INSTS; i++)
-    cseList[i] = new(heap_) INSTLIST;
+    cseList[i] = new(heap_) INSTLIST(heap_);
 
   FOREACH_BLOCK_REV_DFO(block, firstInst, lastInst, index) {
     FOREACH_INST_IN_BLOCK(block, inst) {
@@ -4476,12 +4480,12 @@ NABoolean PCodeCfg::localCSE(INSTLIST** parent, PCodeBlock* tailBlock,
         switch (clauseHead->getClassID()) {
           case ex_clause::CONV_TYPE:
             match =
-              ((((ex_conv_clause*)clauseHead)->get_case_index() ==
-               ((ex_conv_clause*)clauseTail)->get_case_index()) &&
+              ((((ex_conv_clause*)clauseHead)->getInstruction() ==
+               ((ex_conv_clause*)clauseTail)->getInstruction()) &&
               (((ex_conv_clause*)clauseHead)->treatAllSpacesAsZero() ==
                ((ex_conv_clause*)clauseTail)->treatAllSpacesAsZero()));
             if ( match ) {
-               if ( ((ex_conv_clause*)clauseHead)->get_case_index() ==
+               if ( ((ex_conv_clause*)clauseHead)->getInstruction() ==
                     CONV_DATETIME_DATETIME )
                {
                   Attributes *tgtH = ((ex_conv_clause*)clauseHead)->getOperand(0);
@@ -4502,8 +4506,8 @@ NABoolean PCodeCfg::localCSE(INSTLIST** parent, PCodeBlock* tailBlock,
 
           case ex_clause::ARITH_TYPE:
             match =
-              (((ex_arith_clause*)clauseHead)->get_case_index() ==
-               ((ex_arith_clause*)clauseTail)->get_case_index());
+              (((ex_arith_clause*)clauseHead)->getInstruction() ==
+               ((ex_arith_clause*)clauseTail)->getInstruction());
             break;
         }
 
@@ -7704,6 +7708,26 @@ void PCodeCfg::loadOperandsOfInst (PCodeInst* newInst)
       addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN8, 1);
       break;
 
+    case PCIT::MOVE_MBIN8S_MBIN16S:
+      addOperand(pcode, newInst->getWOps(), 0, 1, -1, PCIT::MBIN8S, 1);
+      addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN16S, 2);
+      break;
+
+    case PCIT::MOVE_MBIN8U_MBIN16U:
+      addOperand(pcode, newInst->getWOps(), 0, 1, -1, PCIT::MBIN8U, 1);
+      addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN16U, 2);
+      break;
+
+    case PCIT::MOVE_MBIN8U_MBIN16S:
+      addOperand(pcode, newInst->getWOps(), 0, 1, -1, PCIT::MBIN8U, 1);
+      addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN16S, 2);
+      break;
+
+    case PCIT::MOVE_MBIN8S_MBIN16U:
+      addOperand(pcode, newInst->getWOps(), 0, 1, -1, PCIT::MBIN8S, 1);
+      addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN16U, 2);
+      break;
+
     case PCIT::MOVE_MBIN32S_MBIN8S:
       addOperand(pcode, newInst->getWOps(), 0, 1, -1, PCIT::MBIN32S, 4);
       addOperand(pcode, newInst->getROps(), 2, 3, -1, PCIT::MBIN8S, 1);
@@ -8231,6 +8255,16 @@ void PCodeCfg::loadOperandsOfInst (PCodeInst* newInst)
     case PCIT::RANGE_LOW_U16S64:
     case PCIT::RANGE_HIGH_U16S64:
       addOperand(pcode, newInst->getROps(), 0, 1, -1, PCIT::MBIN16U, 2);
+      break;
+
+    case PCIT::RANGE_LOW_S8S64:
+    case PCIT::RANGE_HIGH_S8S64:
+      addOperand(pcode, newInst->getROps(), 0, 1, -1, PCIT::MBIN8S, 2);
+      break;
+
+    case PCIT::RANGE_LOW_U8S64:
+    case PCIT::RANGE_HIGH_U8S64:
+      addOperand(pcode, newInst->getROps(), 0, 1, -1, PCIT::MBIN8U, 2);
       break;
 
     case PCIT::CLAUSE_EVAL:

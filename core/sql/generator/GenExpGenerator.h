@@ -389,8 +389,12 @@ class ExpGenerator : public NABasicObject
     // case - here the entire fetched row is copied to the update buffer, then
     // specific fields are updated.  The header clause is part of the entire
     // fetched row thus does not need to be generated.
-    GEN_NO_HDR_            = 0x0080
+    GEN_NO_HDR_            = 0x0080,
 
+    // if pcode has been generated, then expression generator removes the
+    // clauses (except for in case of showplan or clause_eval).
+    // If this flag is set, then clauses are not removed.
+    SAVE_CLAUSES_IN_EXPR = 0x0100
   };
 
   UInt16 pCodeMode_;
@@ -1054,6 +1058,17 @@ public:
   {
     return (flags_ & CASE_STMT_GENERATED_) != 0;
   }
+
+  void setSaveClausesInExpr(NABoolean value) {
+    if (value) 
+      flags_ |= SAVE_CLAUSES_IN_EXPR;
+    else 
+      flags_ &= ~SAVE_CLAUSES_IN_EXPR;
+  };
+
+  NA_EIDPROC NABoolean saveClausesInExpr() {
+    return ((flags_ & SAVE_CLAUSES_IN_EXPR) != 0);
+  };
 
   // The working heap for dynamic memory allocation, will be
   // be destroyed at the end of each statement.

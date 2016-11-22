@@ -48,23 +48,23 @@ create table docs
 
 create table docs_part
   ( seqno int not null not droppable primary key, text_data varchar(4000) )
- location $$partition$$
+ location $DATA
  hash2 partition
  (
-     add location $$partition1$$
-   , add location $$partition2$$
-   , add location $$partition3$$
+     add location $DATA1
+   , add location $DATA2
+   , add location $DATA3
  );
 
 create table clicks
   ( seqno int not null primary key, userid varchar(40), ts timestamp(6),
     ipaddr char(20) )
- location $$partition$$
+ location $DATA
  hash2 partition
  (
-     add location $$partition1$$
-   , add location $$partition2$$
-   , add location $$partition3$$
+     add location $DATA1
+   , add location $DATA2
+   , add location $DATA3
  );
 
 create library TEST108 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL2$$ $$QUOTE$$;

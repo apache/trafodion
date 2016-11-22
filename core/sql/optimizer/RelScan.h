@@ -87,6 +87,7 @@ class QRDescGenerator;
 class RangeSpecRef;
 
 class MVMatch;
+class CommonSubExprRef;
 
 
 /*************************
@@ -232,9 +233,10 @@ public:
 	 forcedIndexInfo_(FALSE),
          baseCardinality_(0),
           // QSTUFF
-         isRewrittenMV_(FALSE)
-         ,matchingMVs_(oHeap)
-           , hbaseAccessOptions_(NULL)
+         isRewrittenMV_(FALSE),
+         matchingMVs_(oHeap),
+         hbaseAccessOptions_(NULL),
+         commonSubExpr_(NULL)
      {} 
 
   Scan(const CorrName& name,
@@ -260,9 +262,10 @@ public:
 	 forcedIndexInfo_(FALSE),
          baseCardinality_(0),
           // QSTUFF
-         isRewrittenMV_(FALSE)
-         ,matchingMVs_(CmpCommon::statementHeap())
-           , hbaseAccessOptions_(NULL)
+         isRewrittenMV_(FALSE),
+         matchingMVs_(CmpCommon::statementHeap()),
+         hbaseAccessOptions_(NULL),
+         commonSubExpr_(NULL)
      {} 
 
   Scan(const CorrName& name,
@@ -291,9 +294,10 @@ public:
 	 forcedIndexInfo_(FALSE),
          baseCardinality_(0),
           // QSTUFF
-         isRewrittenMV_(FALSE)
-         ,matchingMVs_(oHeap)
-           ,hbaseAccessOptions_(NULL)
+         isRewrittenMV_(FALSE),
+         matchingMVs_(oHeap),
+         hbaseAccessOptions_(NULL),
+         commonSubExpr_(NULL)
      {} 
 
   Scan(OperatorTypeEnum otype,
@@ -319,9 +323,11 @@ public:
 	 cardinalityHint_(-1.0),
 	 forcedIndexInfo_(FALSE),
          baseCardinality_(0),
-          // QSTUFF
-           isRewrittenMV_(FALSE),
-           hbaseAccessOptions_(NULL)
+         // QSTUFF
+         isRewrittenMV_(FALSE),
+         hbaseAccessOptions_(NULL),
+         matchingMVs_(CmpCommon::statementHeap()),
+         commonSubExpr_(NULL)
      {} 
 
   // virtual destructor
@@ -488,6 +494,14 @@ public:
   // ---------------------------------------------------------------------
   RelExpr * normalizeNode ( NormWA & normWARef );
  
+  virtual NABoolean prepareMeForCSESharing(
+       const ValueIdSet &outputsToAdd,
+       const ValueIdSet &predicatesToRemove,
+       const ValueIdSet &commonPredicatesToAdd,
+       const ValueIdSet &inputsToRemove,
+       CSEInfo *info,
+       NABoolean testRun);
+
  // synthesizes compRefOpt constraints.
   virtual void processCompRefOptConstraints(NormWA * normWAPtr) ;
 
@@ -612,6 +626,9 @@ public:
     else
       matchingMVs_.insert(match);
   }
+
+  CommonSubExprRef *getCommonSubExpr() const        { return commonSubExpr_; }
+  void setCommonSubExpr(CommonSubExprRef *cse)       { commonSubExpr_ = cse; }
 
 protected:
 
@@ -761,6 +778,10 @@ private:
 
   // List of MV matches that can be substituted for the SCAN using query rewrite.
   NAList<MVMatch*> matchingMVs_;
+
+  // pointer to the common subexpression, if this is a scan of a
+  // materialized common subexpr
+  CommonSubExprRef *commonSubExpr_;
 };
 
 // -----------------------------------------------------------------------
@@ -1022,6 +1043,11 @@ public:
            const ValueIdList& partitioningKeyColumnsOrder);
 
   Int32 getComputedNumOfActivePartiions()  const { return computedNumOfActivePartitions_; }
+
+protected:
+
+  void setRetrievedCols(const ValueIdSet &retrievedCols)
+                                           { retrievedCols_ = retrievedCols; }
 
 private:
 

@@ -1096,8 +1096,6 @@ public:
 
   virtual short codeGen(Generator *);
 
-  virtual short generateShape(CollHeap * space, char * buf, NAString * shapeStr = NULL);
-  
   virtual ExplainTuple *addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 					    ComTdb * tdb,
 					    Generator *generator);

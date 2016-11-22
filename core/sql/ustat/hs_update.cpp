@@ -308,6 +308,19 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_LARGEINT_UNSIGNED_IO 'ON'");
     HSExitIfError(retcode);
 
+    // Set the following CQD to allow "_SALT_", "_DIV_" and similar system columns
+    // in a sample table when the table is created using CREATE TABLE AS SELECT
+    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_ALLOW_RESERVED_COLNAMES 'ON'");
+    HSExitIfError(retcode);
+
+    // Set the following so we will see LOB columns as LOB columns and not as
+    // varchars
+    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_BLOB_AS_VARCHAR 'OFF'");
+    HSExitIfError(retcode);
+    retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_CLOB_AS_VARCHAR 'OFF'");
+    HSExitIfError(retcode);
+
+
     LM->StopTimer();
 
     LM->StartTimer("Parse statement");
@@ -444,9 +457,15 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     if (hs_globals_obj.StatsNeeded())
       {
         retcode = hs_globals_obj.CollectStatistics();
+        hs_globals_obj.resetCQDs();
         HSExitIfError(retcode);
       }
-
+    else if (hs_globals_obj.optFlags & IUS_PERSIST)
+      {
+        // The user asked for a persistent sample, but the table is empty
+        // so we didn't create one. Tell the user that.
+        HSFuncMergeDiags(UERR_WARNING_NO_SAMPLE_TABLE_CREATED);
+      }
 
     // do not care about warning messages now  
     retcode = HSFuncExecQuery("CONTROL QUERY DEFAULT HIST_MISSING_STATS_WARNING_LEVEL RESET");
@@ -501,9 +520,6 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
 
     HSClearCLIDiagnostics();
 
-    if ( hs_globals_obj.canDoIUS() )
-      hs_globals_obj.end_IUS_work();
-
     hs_globals_y = NULL;
 
     // Remove IUS persistent sample if necessary.
@@ -534,6 +550,11 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
           }
       }
 #endif
+
+    // Reset CQDs set above; ignore errors
+    HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_BLOB_AS_VARCHAR RESET");
+    HSFuncExecQuery("CONTROL QUERY DEFAULT TRAF_CLOB_AS_VARCHAR RESET");
+
     LM->StopTimer();
 
     return retcode;

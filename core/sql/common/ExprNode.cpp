@@ -359,6 +359,8 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_HYBRID_HASH_SEMIJOIN:
 	    case REL_HYBRID_HASH_ANTI_SEMIJOIN:
 	    case REL_MERGE_UNION:
+            case REL_INTERSECT:
+            case REL_EXCEPT:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -401,6 +403,8 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_HYBRID_HASH_SEMIJOIN:
 	    case REL_HYBRID_HASH_ANTI_SEMIJOIN:
 	    case REL_FULL_JOIN:
+            case REL_INTERSECT:
+            case REL_EXCEPT:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -564,6 +568,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_HASH_ANTI_SEMIJOIN:
 	    case REL_HYBRID_HASH_ANTI_SEMIJOIN:
 	    case REL_ORDERED_HASH_ANTI_SEMIJOIN:
+            case REL_EXCEPT:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -686,6 +691,36 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
             case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
             case REL_TABLE_MAPPING_BUILTIN_JDBC:
+	      return TRUE;
+	    default:
+	      return FALSE;
+	    }
+
+        case REL_ANY_LEAF_TABLE_MAPPING_UDF:
+	  switch (op_)
+	    {
+	    case REL_TABLE_MAPPING_UDF:
+	    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
+            case REL_TABLE_MAPPING_BUILTIN_JDBC:
+	      return TRUE;
+	    default:
+	      return FALSE;
+	    }
+
+        case REL_ANY_UNARY_TABLE_MAPPING_UDF:
+	  switch (op_)
+	    {
+	    case REL_TABLE_MAPPING_UDF:
+            case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
+	      return TRUE;
+	    default:
+	      return FALSE;
+	    }
+
+        case REL_ANY_BINARY_TABLE_MAPPING_UDF:
+	  switch (op_)
+	    {
+	    case REL_TABLE_MAPPING_UDF:
 	      return TRUE;
 	    default:
 	      return FALSE;

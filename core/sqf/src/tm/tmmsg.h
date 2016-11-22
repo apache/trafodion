@@ -46,23 +46,23 @@ public:
          abort();
       memset(&iv_req, 0, sizeof(Tm_Req_Msg_Type));
       memcpy(&iv_req, pp_req, sizeof(Tm_Req_Msg_Type));
-      memset(ia_EID, 0, EID_SIZE+1);
-      //set_EID();
+      set_EID();
    }
    CTmMessage(short pv_reqType)
    {
       memset(&iv_req, 0, sizeof(Tm_Req_Msg_Type));
       requestType(pv_reqType);
-      memset(ia_EID, 0, EID_SIZE+1);
-      //set_EID();
+      set_EID();
    }
    CTmMessage(CTmMessage *pp_msg)
    {
       memcpy(&iv_req, pp_msg->request(), sizeof(iv_req));
-      memset(ia_EID, 0, EID_SIZE+1);
-      //set_EID();
+      set_EID();
    }
-   ~CTmMessage() {}
+   ~CTmMessage()
+   {
+      memset(ia_EID, 0, EID_SIZE+1);
+   }
 
    Tm_Req_Msg_Type * request() {return &iv_req;}
 
@@ -73,12 +73,17 @@ public:
    {
        strcpy((char *) &ia_EID, (char *) EID_CTmMessage);
    }
-    void validate()
+
+   bool validate(bool detectDoubleDelete = false)
     {
        if (strcmp((char *) &ia_EID, (char *) &EID_CTmMessage) != 0)
        {
-          ;// abort();
+          if (! detectDoubleDelete)
+             abort();
+          else
+             return false;
        }
+       return true;
     } //validate
 };
 

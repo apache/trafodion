@@ -780,12 +780,20 @@ public:
   GroupByAgg* pullUpGroupByTransformation(NormWA& NormWARef);
 
   // the other main transformation for subquery unnesting
-  GroupByAgg* moveUpGroupByTransformation(const GroupByAgg* newGrby, 
+  GroupByAgg* moveUpGroupByTransformation(GroupByAgg* newGrby, 
 					  NormWA & normWARef);
 
   // heuristic to unnest subquery if inner table has keyed access.
   NABoolean applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby, 
 					       NormWA & normWARef);
+
+  virtual NABoolean prepareMeForCSESharing(
+       const ValueIdSet &outputsToAdd,
+       const ValueIdSet &predicatesToRemove,
+       const ValueIdSet &commonPredicatesToAdd,
+       const ValueIdSet &inputsToRemove,
+       CSEInfo *info,
+       NABoolean testRun);
 
   // Detect whether rows coming from the ith child contain multi-column skew for
   // a set of join predicates. The output argument vidOfEquiJoinWithSkew is the

@@ -2252,6 +2252,28 @@ ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
 
 ExExeUtilHiveTruncateTcb::~ExExeUtilHiveTruncateTcb()
 {
+  freeResources();
+}
+
+void ExExeUtilHiveTruncateTcb::freeResources()
+{
+  if (htTdb().getDropOnDealloc())
+    {
+      NAString hiveDropDDL("drop table ");
+      HiveClient_JNI *hiveClient = HiveClient_JNI::getInstance();
+
+      hiveDropDDL += htTdb().getHiveTableName();
+
+      // ignore errors on drop
+      if (!hiveClient->isInitialized() ||
+          !hiveClient->isConnected())
+        hiveClient->init();
+      hiveClient->executeHiveSQL(hiveDropDDL);
+    }
+  if (lobGlob_) {
+    ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+    lobGlob_ = NULL;
+  }
 }
 
 Int32 ExExeUtilHiveTruncateTcb::fixup()
@@ -2260,7 +2282,7 @@ Int32 ExExeUtilHiveTruncateTcb::fixup()
 
   ExpLOBinterfaceInit
     (lobGlob_, getGlobals()->getDefaultHeap(),
-     getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, 
+     getGlobals()->castToExExeStmtGlobals()->getContext(),FALSE, 
      htTdb().getHdfsHost(),
      htTdb().getHdfsPort());
 
@@ -2302,6 +2324,9 @@ short ExExeUtilHiveTruncateTcb::work()
 
       case DATA_MOD_CHECK_:
       {
+        Int64 failedModTS = -1;
+        Lng32 failedLocBufLen = 1000;
+        char failedLocBuf[failedLocBufLen];
         cliRC = ExpLOBinterfaceDataModCheck
           (lobGlob_,
            (htTdb().getPartnLocation() ? 
@@ -2310,7 +2335,9 @@ short ExExeUtilHiveTruncateTcb::work()
            htTdb().getHdfsHost(),
            htTdb().getHdfsPort(),
            htTdb().getModTS(),
-           0);
+           0,
+           failedModTS,
+           failedLocBuf, failedLocBufLen);
 
         if (cliRC < 0)
         {
@@ -2333,9 +2360,15 @@ short ExExeUtilHiveTruncateTcb::work()
 
         if (cliRC == 1) // data mod check failed
         {
+          char errStr[200];
+          str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+                      htTdb().getModTS(), failedModTS);
+          
           ComDiagsArea * diagsArea = NULL;
           ExRaiseSqlError(getHeap(), &diagsArea, 
-                          (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                          (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
+                          NULL, NULL, NULL,
+                          errStr);
           pentry_down->setDiagsArea(diagsArea);
           
           step_ = ERROR_;

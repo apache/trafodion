@@ -30,6 +30,7 @@ CREATE TABLE TRAFODION.T040SCH.T040SALT
   , PRIMARY KEY (A ASC, B ASC)
   )
   SALT USING 4 PARTITIONS
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -47,6 +48,42 @@ CREATE TABLE TRAFODION.T040SCH.T040NOSALT
   , C                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC, B ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>
+>>create table t040bigcols(a int not null,
++>                         b char(1000) character set iso88591,
++>                         c varchar(1001) character set iso88591,
++>                         d char(1002) character set utf8,
++>                         e varchar(1003) character set utf8,
++>                         f char(1004) character set ucs2,
++>                         g varchar(1005) character set ucs2,
++>                         primary key (a));
+
+--- SQL operation complete.
+>>
+>>showddl t040bigcols;
+
+CREATE TABLE TRAFODION.T040SCH.T040BIGCOLS
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                CHAR(1000) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                VARCHAR(1001) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL
+  , D                                CHAR(1002 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , E                                VARCHAR(1003 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , F                                CHAR(1004) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  , G                                VARCHAR(1005) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -68,6 +105,7 @@ CREATE TABLE TRAFODION.T040SCH.T040SALT1
   , C                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC, B ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -86,6 +124,7 @@ CREATE TABLE TRAFODION.T040SCH.T040SALT5
   , PRIMARY KEY (A ASC, B ASC)
   )
   SALT USING 5 PARTITIONS
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -105,6 +144,7 @@ CREATE TABLE TRAFODION.T040SCH.T040SALT6
   )
   SALT USING 6 PARTITIONS
        ON (A)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -124,6 +164,7 @@ CREATE TABLE TRAFODION.T040SCH.T040SALT7
   )
   SALT USING 7 PARTITIONS
        ON (B)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -142,6 +183,7 @@ CREATE TABLE TRAFODION.T040SCH.T040SALT8
   , PRIMARY KEY (A ASC, B ASC)
   )
   SALT USING 8 PARTITIONS
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -159,6 +201,7 @@ CREATE TABLE TRAFODION.T040SCH.T040NOSALT1
   , C                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC, B ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -177,6 +220,7 @@ CREATE TABLE TRAFODION.T040SCH.T040NOSALT4
   , PRIMARY KEY (A ASC, B ASC)
   )
   SALT USING 4 PARTITIONS
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -195,6 +239,7 @@ CREATE TABLE TRAFODION.T040SCH.T040SALTSAME
   , PRIMARY KEY (A ASC, B ASC)
   )
   SALT USING 4 PARTITIONS
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -212,6 +257,123 @@ CREATE TABLE TRAFODION.T040SCH.T040NOSALTSAME
   , C                                INT DEFAULT NULL
   , PRIMARY KEY (A ASC, B ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>
+>>create table t040limitedcols like t040bigcols 
++>limit column length to 256;
+
+--- SQL operation complete.
+>>
+>>showddl t040limitedcols;
+
+CREATE TABLE TRAFODION.T040SCH.T040LIMITEDCOLS
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                CHAR(256) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                VARCHAR(256) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL
+  , D                                CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
+      DEFAULT DEFAULT NULL
+  , E                                VARCHAR(256 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , F                                CHAR(128) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  , G                                VARCHAR(128) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>
+>>create table t040somelimitedcols like t040bigcols 
++>limit column length to 1002;
+
+--- SQL operation complete.
+>>
+>>showddl t040somelimitedcols;
+
+CREATE TABLE TRAFODION.T040SCH.T040SOMELIMITEDCOLS
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                CHAR(1000) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                VARCHAR(1001) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL
+  , D                                CHAR(1002 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , E                                VARCHAR(1002 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , F                                CHAR(501) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  , G                                VARCHAR(501) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>
+>>create table t040fewerlimitedcols like t040bigcols 
++>limit column length to 2010;
+
+--- SQL operation complete.
+>>
+>>showddl t040fewerlimitedcols;
+
+CREATE TABLE TRAFODION.T040SCH.T040FEWERLIMITEDCOLS
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                CHAR(1000) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                VARCHAR(1001) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL
+  , D                                CHAR(2010 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , E                                VARCHAR(2010 BYTES) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , F                                CHAR(1004) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  , G                                VARCHAR(1005) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
+>>
+>>create table t040nolimitedcols like t040bigcols 
++>limit column length to 4012;
+
+--- SQL operation complete.
+>>
+>>showddl t040nolimitedcols;
+
+CREATE TABLE TRAFODION.T040SCH.T040NOLIMITEDCOLS
+  (
+    A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                CHAR(1000) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , C                                VARCHAR(1001) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL
+  , D                                CHAR(1002 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , E                                VARCHAR(1003 CHARS) CHARACTER SET UTF8
+      COLLATE DEFAULT DEFAULT NULL
+  , F                                CHAR(1004) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  , G                                VARCHAR(1005) CHARACTER SET UCS2 COLLATE
+      DEFAULT DEFAULT NULL
+  , PRIMARY KEY (A ASC)
+  )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.

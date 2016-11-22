@@ -860,9 +860,17 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
              UnmarkMarkedNATableCacheEntries();
           return rs;
        }
+
+       // Update the list of roles incase a grant came in since last attempt
+       // Ignore errors from Reset.  A check is made later that returns
+       // an error if unable to reset the list at this time
+       SQL_EXEC_ResetRoleList_Internal();
+
        RemoveMarkedNATableCacheEntries();
        Retried_for_priv_failure = TRUE;
     }
+
+    CmpCommon::statement()->prepareForCompilationRetry();
 
     // We will retry Compilation, so toss pre-retry errors/warnings
     CmpCommon::diags()->rewind(here, TRUE/*update maxDiagsId_*/);
@@ -1165,11 +1173,25 @@ void CmpMain:: getAndProcessAnySiKeys(TimeVal begTime)
      }
      else if ( returnedNumSiKeys > 0 )
      {
-       CheckForSpecialRoleRevoke(returnedNumSiKeys, sikKeyArray);
-       CURRENTQCACHE->free_entries_with_QI_keys(returnedNumSiKeys, 
-         sikKeyArray);
-       InvalidateNATableCacheEntries(returnedNumSiKeys, sikKeyArray);
-       InvalidateNARoutineCacheEntries(returnedNumSiKeys, sikKeyArray);
+       bool resetRoleList = false;
+       bool updateCaches = false;
+       qiInvalidationType(returnedNumSiKeys, sikKeyArray, 
+                          ComUser::getCurrentUser(), 
+                          resetRoleList, updateCaches); 
+
+       if (updateCaches)
+       {
+         CURRENTQCACHE->free_entries_with_QI_keys(returnedNumSiKeys, 
+           sikKeyArray);
+         InvalidateNATableCacheEntries(returnedNumSiKeys, sikKeyArray);
+         InvalidateNARoutineCacheEntries(returnedNumSiKeys, sikKeyArray);
+         InvalidateHistogramCacheEntries(returnedNumSiKeys, sikKeyArray);
+       }
+      
+       // Ignore errors from ResetRoleList.  A check is made later that returns
+       // an error if unable to reset the list at this time
+       if (resetRoleList)
+         SQL_EXEC_ResetRoleList_Internal();
      }
    }
   // Always update previous QI time 
@@ -1190,9 +1212,6 @@ Int32 CmpMain::getAnySiKeys(TimeVal      begTime,
 
   // SQL_EXEC_GetSecInvalidKeys() is coded to work in JulianTimeStamp values
   // so add number of microseconds between 4713 B.C., Jan 1 and the Epoc (Jan 1, 1970).
-  //
-  // NOTE: Conversion is not needed for NT because SQL_EXEC_GetSecInvalidKeys(...)
-  //       never returns any SI_KEYs and that's because QVP doesn't run on NT.
   prev_QI_Time += HS_EPOCH_TIMESTAMP ;
   Int64 Max_QI_Time = prev_QI_Time ;
 
@@ -1334,11 +1353,6 @@ Int32 CmpMain::getAnySiKeys(TimeVal      begTime,
   return sqlcode;
 } 
 
-void CmpMain::CheckForSpecialRoleRevoke( Int32 NumSiKeys, SQL_QIKEY * SiKeyArray )
-{
-
-}
-
 void CmpMain::InvalidateNATableCacheEntries(Int32 returnedNumQiKeys,
                                             SQL_QIKEY * qiKeyArray)
 {
@@ -1352,6 +1366,14 @@ void CmpMain::InvalidateNARoutineCacheEntries(Int32 returnedNumQiKeys,
 {
    ActiveSchemaDB()->getNARoutineDB()->free_entries_with_QI_key(
      returnedNumQiKeys, qiKeyArray);
+   return ;
+}
+
+void CmpMain::InvalidateHistogramCacheEntries(Int32 returnedNumQiKeys,
+                                              SQL_QIKEY * qiKeyArray)
+{
+   if (CURRCONTEXT_HISTCACHE)
+     CURRCONTEXT_HISTCACHE->freeInvalidEntries(returnedNumQiKeys,qiKeyArray);
    return ;
 }
 
@@ -1659,7 +1681,7 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(const char *input_str,           //IN
                                        NABoolean* cacheable,            //OUT
                                        TimeVal* begTime,                //IN
                                        NABoolean shouldLog)             //IN
-{
+{                               // 
   CmpExceptionEnvWatcher guard;
 
   ComDiagsArea & d = *CmpCommon::diags();
@@ -2422,7 +2444,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
             //    has a parameterized equality predicate then
             // do NOT cache it because it can result in a false hit
             // that can cause wrong results
-            if (!generator.isNonCacheableMVQRplan()) {
+            if (!generator.isNonCacheablePlan()) {
               tkey = 
                 cachewa.getTextKey(input_str, charset, getStmtAttributes());
 

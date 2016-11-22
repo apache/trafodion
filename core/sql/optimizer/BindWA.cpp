@@ -75,6 +75,7 @@ BindScope::BindScope(BindWA* bindWA) :
   xtnm_(bindWA ? bindWA->wHeap() : NULL),
   RETDesc_(NULL),
   sequenceNode_(NULL),
+  ncToOldMap_(NULL),
   OlapPartitionChange_ (NULL),
   HasOlapSeqFunctions_ ( BindScope::OLAPUNKNOWN_ ),
   isFirstOlapWindowSpec_( TRUE ),
@@ -163,6 +164,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
      , renameToScanTable_ (FALSE)
      , inViewExpansion_ (FALSE)
      , inliningInfoFlagsToSetRecursivly_(0)
+     , currCSE_(NULL)
      , inCTAS_(FALSE)
      , viewsUsed_("", wHeap())
      , hasDynamicRowsetsInQuery_(FALSE)
@@ -187,6 +189,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
      , hasCallStmts_(FALSE)
      , isTrafLoadPrep_(FALSE)
      , flags_(0)
+     , udfList_(wHeap())
 {
   // get current default schema, using NAMETYPE NSK or ANSI rules
   defaultSchema_ = schemaDB_->getDefaultSchema(SchemaDB::APPLY_NAMETYPE_RULES);

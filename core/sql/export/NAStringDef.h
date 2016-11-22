@@ -364,6 +364,7 @@ public:
 
   size_t        capacity() const                {return fbstring_.capacity();}
   size_t        capacity(size_t N);
+  void          clear();
 #ifndef RW_NO_LOCALE
   Int32           collate(const char* cs) const   {return ::strcoll(data(), cs);}
 

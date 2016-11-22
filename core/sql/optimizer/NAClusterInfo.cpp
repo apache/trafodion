@@ -338,7 +338,7 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
       maps *cpuList=new(heap) maps(heap);
       smpCount_ = 0;
 
-      NAList<CollIndex> storageList(nodeCount);
+      NAList<CollIndex> storageList(heap, nodeCount);
 
       for (Int32 i = 0; i < nodeCount; i++)
       {

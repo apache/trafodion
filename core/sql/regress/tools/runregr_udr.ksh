@@ -736,9 +736,9 @@ function DO_TEST
       fi
       if [ "$REGRCONCURRENT" -eq 1 ]; then
         echo "create schema ${TEST_SCHEMA}; set schema ${TEST_SCHEMA};" \
-          | cat $REGRTSTDIR/cidefs $defsfile - $REGRTSTDIR/$T > $T.tmp
+          | cat $defsfile - $REGRTSTDIR/$T > $T.tmp
       else
-        cat $REGRTSTDIR/cidefs $defsfile $sbdefsfile $REGRTSTDIR/$T > $T.tmp
+        cat $defsfile $sbdefsfile $REGRTSTDIR/$T > $T.tmp
       fi
       $mxci -i$T.tmp
     else

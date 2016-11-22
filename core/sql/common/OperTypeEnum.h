@@ -94,6 +94,9 @@ enum OperatorTypeEnum {
                         REL_TABLE_MAPPING_BUILTIN_TIMESERIES,
                         REL_TABLE_MAPPING_BUILTIN_JDBC,
                         REL_ANY_TABLE_MAPPING_UDF,
+                        REL_ANY_LEAF_TABLE_MAPPING_UDF,
+                        REL_ANY_UNARY_TABLE_MAPPING_UDF,
+                        REL_ANY_BINARY_TABLE_MAPPING_UDF,
                         REL_ISOLATED_NON_TABLE_UDR,
                         REL_ISOLATED_SCALAR_UDF,
                         REL_FORCE_ANY_SCALAR_UDF,
@@ -180,6 +183,7 @@ enum OperatorTypeEnum {
                         REL_LEFT_TSJ,
                         REL_UNION,
                         REL_INTERSECT,
+                        REL_EXCEPT,
                         REL_CHOICE,
                         REL_UPDATE,
                         REL_DELETE,
@@ -278,15 +282,14 @@ enum OperatorTypeEnum {
                         REL_HIVE_INSERT,
                         REL_BULK_UNLOAD,
 
+                        REL_COMMON_SUBEXPR_REF,
+
                         REL_LAST_REL_OP = 1999,
 
                         // item operators (predicates)
                         // ---------------------------------------------------
                         // NOTE: the numbers for ITM operator types are also
-                        // used for expressions in the executor. Do NOT
-                        // change any numbers in this range without adding
-                        // versioning support in DP2. Try to add new numbers
-                        // rather than changing existing numbers.
+                        // used for expressions in the executor.
                         // ---------------------------------------------------
                         ITM_FIRST_ITEM_OP = 2000,
                         // binary logic operators
@@ -312,6 +315,9 @@ enum OperatorTypeEnum {
                         // new operator type used in the hash anti semi join optimization project
                         //
                         ITM_NOT_IN = 2026,
+
+                        ITM_ANY_COMP = 2027,
+
                         // unary arithmetic operators
                         ITM_NEGATE = 2030,
                         ITM_INVERSE = 2031,
@@ -345,6 +351,10 @@ enum OperatorTypeEnum {
                         ITM_ONEROW = 2076,
   
                         ITM_PIVOT_GROUP = 2077,
+
+                        ITM_GROUPING = 2078,
+                        ITM_AGGR_GROUPING_FUNC = 2079,
+                        ITM_GROUPING_ID = 2080,
 
                         // custom functions
                         ITM_USER_DEF_FUNCTION = 2100,
@@ -457,6 +467,8 @@ enum OperatorTypeEnum {
                         ITM_CURRENT_TIME_UTC = 2174,
 
                         ITM_COMP_DECODE = 2175,
+                        ITM_OLAP_LEAD = 2176,
+                        ITM_OLAP_LAG = 2177,
 
                         // numeric functions
                         ITM_ABS = 2200,
@@ -495,6 +507,7 @@ enum OperatorTypeEnum {
                         ITM_BITNOT = 2234,
                         ITM_BITEXTRACT = 2235,
                         ITM_CONVERTTOBITS = 2236,
+                        ITM_LOG2= 2237,
 
                         // string functions
                         ITM_TRUNC = 2250,
@@ -769,6 +782,16 @@ enum OperatorTypeEnum {
                         ITM_SET_TRANS_ROLLBACK_MODE = 2604,
                         ITM_SET_TRANS_AUTOABORT_INTERVAL = 2605,
                         ITM_SET_TRANS_MULTI_COMMIT = 2606,
+
+                        // Item expressions for MySQL/Oracle/DB2/SQL-Server compatibility
+                        ITM_ISIPV4 = 2630,
+                        ITM_ISIPV6 = 2631,
+                        ITM_INET_ATON = 2632,
+                        ITM_INET_NTOA = 2633,
+                        ITM_CRC32     = 2634,
+                        ITM_MD5       = 2635,
+                        ITM_SHA1      = 2636,
+                        ITM_SHA2      = 2637,
 
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,
@@ -1049,6 +1072,7 @@ enum OperatorTypeEnum {
                         ELM_LIKE_OPT_WITHOUT_SALT_ELEM,
                         ELM_LIKE_OPT_SALT_CLAUSE_ELEM,
                         ELM_LIKE_OPT_WITHOUT_DIVISION_ELEM,
+                        ELM_LIKE_OPT_LIMIT_COLUMN_LENGTH,
                         ELM_LOCATION_ELEM,
                         ELM_OPTION_LIST,
                         ELM_PARALLEL_EXEC_ELEM,

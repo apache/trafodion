@@ -174,6 +174,8 @@ ex_clause::ex_clause(clause_type type,
   pciLink_     = NULL;
   nextClause_  = NULL;
   flags_       = 0;
+  //  instruction_   = -1;
+  instrArrayIndex_ = -1;
 
   str_pad(fillers_, sizeof(fillers_), '\0');
 
@@ -336,6 +338,28 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_CURR_TRANSID:
 	  setClassID(FUNC_CURR_TRANSID_ID);
 	  break;
+        case ITM_SHA1:
+          setClassID(FUNC_SHA1_ID);
+          break;
+        case ITM_SHA2:
+          setClassID(FUNC_SHA2_ID);
+          break;
+        case ITM_MD5:
+          setClassID(FUNC_MD5_ID);
+          break; 
+        case ITM_CRC32:
+          setClassID(FUNC_CRC32_ID);
+          break; 
+	case ITM_ISIPV4:
+	case ITM_ISIPV6:
+	  setClassID(FUNC_ISIP_ID);
+	  break;
+        case ITM_INET_ATON:
+          setClassID(FUNC_INETATON_ID);
+          break;
+        case ITM_INET_NTOA:
+          setClassID(FUNC_INETNTOA_ID);
+          break;
 	case ITM_USER:
 	case ITM_USERID:
 	case ITM_AUTHTYPE:
@@ -413,6 +437,7 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_FLOOR:
 	case ITM_LOG:
 	case ITM_LOG10:
+	case ITM_LOG2:
 	case ITM_SIN:
 	case ITM_SINH:
 	case ITM_SQRT:
@@ -438,6 +463,9 @@ ex_clause::ex_clause(clause_type type,
 	  break;
 	case ITM_AGGR_MIN_MAX:
 	  setClassID(AGGR_MIN_MAX_ID);
+	  break;
+	case ITM_AGGR_GROUPING_FUNC:
+	  setClassID(AGGR_GROUPING_ID);
 	  break;
 	case ITM_CURRENTEPOCH:
 	case ITM_VSBBROWTYPE:
@@ -884,6 +912,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::AGGR_MIN_MAX_ID:
       GetVTblPtr(vtblPtr, ex_aggr_min_max_clause);
       break;
+    case ex_clause::AGGR_GROUPING_ID:
+      GetVTblPtr(vtblPtr, ExFunctionGrouping);
+      break;
     case ex_clause::AGGREGATE_TYPE:
       GetVTblPtr(vtblPtr, ex_aggregate_clause);
       break;
@@ -970,6 +1001,27 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_HBASE_VERSION:
       GetVTblPtr(vtblPtr, ExFunctionHbaseVersion);
+      break;
+    case ex_clause::FUNC_SHA1_ID:
+      GetVTblPtr(vtblPtr, ExFunctionSha);
+      break;
+    case ex_clause::FUNC_SHA2_ID:
+      GetVTblPtr(vtblPtr, ExFunctionSha2);
+      break;
+    case ex_clause::FUNC_MD5_ID:
+      GetVTblPtr(vtblPtr, ExFunctionMd5);
+      break;
+    case ex_clause::FUNC_CRC32_ID:
+      GetVTblPtr(vtblPtr, ExFunctionCrc32);
+      break;
+    case ex_clause::FUNC_ISIP_ID:
+      GetVTblPtr(vtblPtr, ExFunctionIsIP);
+      break;
+    case ex_clause::FUNC_INETATON_ID:
+      GetVTblPtr(vtblPtr, ExFunctionInetAton);
+      break;
+    case ex_clause::FUNC_INETNTOA_ID:
+      GetVTblPtr(vtblPtr, ExFunctionInetNtoa);
       break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);
@@ -1131,6 +1183,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // LCOV_EXCL_STOP
     case ITM_AGGR_MIN_MAX: return "ITM_AGGR_MIN_MAX";
+    case ITM_AGGR_GROUPING_FUNC: return "ITM_AGGR_GROUPING_FUNC";
 
     // custom functions
     // LCOV_EXCL_START
@@ -1216,6 +1269,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_FLOOR: return "ITM_FLOOR";
     case ITM_LOG: return "ITM_LOG";
     case ITM_LOG10: return "ITM_LOG10";
+    case ITM_LOG2: return "ITM_LOG2";
     case ITM_MOD: return "ITM_MOD";
     case ITM_POWER: return "ITM_POWER";
     case ITM_ROUND: return "ITM_ROUND";
@@ -1497,9 +1551,11 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
 }
 
 void ex_clause::displayContents(Space * space, const char * displayStr,
-				Int32 clauseNum, char * constsArea, UInt32 clauseFlags)
+				Int32 clauseNum, char * constsArea, 
+                                UInt32 clauseFlags,
+                                Int16 instruction,
+                                const char * instrText)
 {
-#ifndef __EID
   char buf[100];
   if (displayStr)
     {
@@ -1530,7 +1586,17 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
       str_sprintf(buf, "    PCODE  = supported ");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
-#endif
+
+  if (instruction >= 0)
+    {
+      if (instrText)
+        str_sprintf(buf, "    instruction: %s(%d), instrArrayIndex_: %d", 
+                    instrText, instruction, instrArrayIndex_);
+      else
+        str_sprintf(buf, "    instruction: UNKNOWN(%d), instrArrayIndex_: %d", 
+                    instruction, instrArrayIndex_);
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+    }
   
   if (numOperands_ == 0)
     return;
@@ -1580,7 +1646,7 @@ ex_arith_clause::ex_arith_clause(OperatorTypeEnum oper_type,
     setDivToDownscale(TRUE);
 
   if (attr)
-    set_case_index();
+    setInstruction();
 }
  
 ex_arith_clause::ex_arith_clause(clause_type type,
@@ -1592,7 +1658,7 @@ ex_arith_clause::ex_arith_clause(clause_type type,
 				   flags_(0)
  
 {
-  set_case_index(); 
+  setInstruction(); 
 }
 
 ex_arith_sum_clause::ex_arith_sum_clause(OperatorTypeEnum oper_type,
@@ -1619,10 +1685,12 @@ ex_comp_clause::ex_comp_clause(OperatorTypeEnum oper_type,
 			       Space * space,
 			       ULng32 flags)
      : ex_clause (ex_clause::COMP_TYPE, oper_type, 3, attr, space),
-     flags_(0)
+       flags_(0),
+       rollupColumnNum_(-1)
 {
-  if(flags) setSpecialNulls();
-  set_case_index();
+  if(flags) 
+    setSpecialNulls();
+  setInstruction();
 }
  
 ///////////////////////////////////////////////////////////
@@ -1636,7 +1704,6 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
                                NABoolean noStringTruncWarnings,
                                NABoolean convertToNullWhenErrorFlag)
      : ex_clause (ex_clause::CONV_TYPE, oper_type, num_operands, attr, space),
-       case_index(CONV_UNKNOWN),
        lastVOAoffset_(0),
        lastVcIndicatorLength_(0),
        lastNullIndicatorLength_(0),
@@ -1660,7 +1727,7 @@ ex_conv_clause::ex_conv_clause(OperatorTypeEnum oper_type,
   if (convertToNullWhenErrorFlag)
     flags_ |= CONV_TO_NULL_WHEN_ERROR;
 
-  set_case_index(); 
+  setInstruction(); 
 }
 #pragma warn(1506)  // warning elimination 
 
@@ -1802,9 +1869,19 @@ void ex_pivot_group_clause::displayContents(Space * space, const char * /*displa
   ex_clause::displayContents(space, "ex_pivot_group_clause", clauseNum, constsArea);
 }
 
+void ExFunctionGrouping::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  ex_clause::displayContents(space, "ExFunctionGrouping", clauseNum, constsArea);
+
+  char buf[100];
+  str_sprintf(buf, "    rollupGroupIndex_ = %d\n",
+              rollupGroupIndex_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+}
+
 void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
-  set_case_index();
+  setInstruction();
 
 #ifndef __EID
   char buf[100];
@@ -1817,17 +1894,19 @@ void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/
 		  (short)arithRoundingMode_, (getDivToDownscale() ? 1 : 0));
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
+
 #endif
 
-  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea);
-  //  cout << "Case Index  = " << get_case_index() << endl;
+  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea, 0,
+                             ex_arith_clause::getInstruction(getInstrArrayIndex()),
+                             ex_arith_clause::getInstructionStr(getInstrArrayIndex()));
 }
 
 void ex_arith_sum_clause::displayContents(Space * space, 
 					  const char * /*displayStr*/, 
 					  Int32 clauseNum, char * constsArea)
 {
-  set_case_index();
+  setInstruction();
   ex_clause::displayContents(space, "ex_arith_sum_clause", clauseNum, constsArea);
 }
 
@@ -1835,7 +1914,7 @@ void ex_arith_count_clause::displayContents(Space * space,
 					    const char * /*displayStr*/, 
 					    Int32 clauseNum, char * constsArea)
 {
-  set_case_index();
+  setInstruction();
   ex_clause::displayContents(space, "ex_arith_count_clause", clauseNum, constsArea);
 }
 
@@ -1905,17 +1984,32 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
 
 void ex_comp_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
-  set_case_index();
-  ex_clause::displayContents(space, "ex_comp_clause", clauseNum, constsArea, flags_);
-  //  cout << "Case Index  = " << get_case_index() << endl;
+  setInstruction();
+
+  char buf[100];
+  str_sprintf(buf, "  Clause #%d: ex_comp_clause", clauseNum);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    ex_comp_clause::rollupColumnNum_ = %d", rollupColumnNum_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  str_sprintf(buf, "    ex_comp_clause::flags_ = %b", flags_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+
+  ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea, 
+                             0,
+                             ex_comp_clause::getInstruction(getInstrArrayIndex()),                             
+                             ex_comp_clause::getInstructionStr(getInstrArrayIndex()));
+
 }
 
 void ex_conv_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
-  set_case_index();
+  setInstruction();
   ex_clause::displayContents(space, "ex_conv_clause", clauseNum, constsArea, 
-			     flags_);
-  //  cout << "Case Index  = " << get_case_index() << endl;
+                             flags_,
+                             ex_conv_clause::getInstruction(getInstrArrayIndex()),
+                             ex_conv_clause::getInstructionStr(getInstrArrayIndex()));
 }
 
 void ex_function_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)

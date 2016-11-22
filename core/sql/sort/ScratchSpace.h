@@ -173,54 +173,24 @@ class ScratchSpace : public NABasicObject {
      {
        return logDone_;
      }
-   const ExScratchDiskDrive * getScratchDiskListSpec()
+   const ExScratchDiskDrive * getScratchDirListSpec()
    {
-     return scratchDiskListSpec_;
+     return scratchDirListSpec_;
    }
-   void setScratchDiskListSpec(const ExScratchDiskDrive * scratch_disk_list_spec)
+   void setScratchDirListSpec(const ExScratchDiskDrive * scratch_disk_list_spec)
   {
-    scratchDiskListSpec_ = scratch_disk_list_spec;
+    scratchDirListSpec_ = scratch_disk_list_spec;
   }
-  const ExScratchDiskDrive * getScratchDiskListPref()
+ 
+  void setNumDirsSpec(ULng32 nd)
   {
-    return scratchDiskListPref_;
-   }
-  void setScratchDiskListPref(const ExScratchDiskDrive * scratch_disk_list_pref)
-  {
-    scratchDiskListPref_ = scratch_disk_list_pref;
+    numDirsSpec_ = nd;
   }
-  const ExScratchDiskDrive * getScratchDiskListExcl()
+  ULng32 getNumDirsSpec()
   {
-    return scratchDiskListExcl_;
+  return numDirsSpec_;
   }
-  void setScratchDiskListExcl(const ExScratchDiskDrive * scratch_disk_list_excl)
-  {
-    scratchDiskListExcl_ = scratch_disk_list_excl;
- }
-  void setNumDisksSpec(ULng32 nd)
-  {
-    numDisksSpec_ = nd;
-  }
-  ULng32 getNumDisksSpec()
-  {
-  return numDisksSpec_;
-  }
- void setNumDisksPref(ULng32 nd)
-  {
-   numDisksPref_ = nd;
-  }
-  ULng32 getNumDisksPref()
-  {
-  return numDisksPref_;
-  }
- void setNumDisksExcl(ULng32 nd)
-  {
-   numDisksExcl_ = nd;
-  }
-  ULng32 getNumDisksExcl()
-  {
-  return numDisksExcl_;
-  }
+
    void setEspInstance(ULng32 espnum)
    {
    espInstance_ = espnum;
@@ -301,12 +271,8 @@ protected:
   Int32 explainNodeId_;  //For logging support. 
   NABoolean logInfoEvent_;
   NABoolean logDone_;
-  const ExScratchDiskDrive * scratchDiskListSpec_;   // Information about scratchvols to  include or exclude.
-  ULng32 numDisksSpec_;
-  const ExScratchDiskDrive * scratchDiskListPref_;
-  ULng32 numDisksPref_;
-  const ExScratchDiskDrive * scratchDiskListExcl_;
-  ULng32 numDisksExcl_;
+  const ExScratchDiskDrive * scratchDirListSpec_;   // Information about scratchvols to  include or exclude.
+  ULng32 numDirsSpec_;
   ULng32 espInstance_;
   ULng32 numEsps_;
   unsigned short scratchThreshold_;

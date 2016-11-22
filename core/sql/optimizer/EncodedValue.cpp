@@ -220,9 +220,8 @@ NormValue::NormValue(const ConstValue * constant, NABoolean negate)
   void * theValue = constant->getConstValue();
 
   NABoolean reset = FALSE;
-  if (((CmpCommon::getDefault(::MODE_SPECIAL_1) == DF_ON) ||
-       (CmpCommon::getDefault(::MODE_SPECIAL_2) == DF_ON)) && 
-      (theType->getTypeQualifier() == NA_CHARACTER_TYPE)) 
+  if ((CmpCommon::getDefault(::MODE_SPECIAL_1) == DF_ON) &&
+      (theType->getTypeQualifier() == NA_CHARACTER_TYPE))
     {
       CharType *cType = (CharType *)theType;
       if((! cType->isCaseinsensitive()) &&
@@ -277,7 +276,8 @@ void NormValue::display (FILE *f, const char * prefix, const char * suffix,
 // LCOV_EXCL_STOP
 
 NormValueList::NormValueList(const NormValueList & nvl, NAMemory *h)
-:heap_(h ? h : CmpCommon::statementHeap())
+  :NAArray<NormValue>(h ? h : CmpCommon::statementHeap(),nvl.entries()),
+  heap_(h ? h : CmpCommon::statementHeap())
 {
   for(CollIndex i=0; i<nvl.entries(); i++)
   {
@@ -592,6 +592,8 @@ EncodedValue::minMaxValue(const NAType *pType, const NABoolean wantMin)
       buf[0] = buf[1] = '\0';
       len -= nullHdrSize;
     }
+
+
 
   if (wantMin)
     pType->minRepresentableValue(pt, &len, NULL, CmpCommon::statementHeap());

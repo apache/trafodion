@@ -24,4 +24,4 @@
 # Most of this was stolen from WMScheck...  which may have started as NDCScheck
 
 echo "Timestamp                           Id    Status "
-sqlci -i rmscheck.sql | grep 'Node\|ERROR' | grep -v varchar
+sqlci -i $MY_SQROOT/sql/scripts/rmscheck.sql | grep 'Node\|ERROR' | grep -v varchar

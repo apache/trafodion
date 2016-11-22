@@ -319,7 +319,7 @@ void TableMappingUDFChildInfo::removeColumn(CollIndex i)
 
 //! TableMappingUDF::TableMappingUDF Copy Constructor
 TableMappingUDF::TableMappingUDF(const TableMappingUDF & other)
-: TableValuedFunction(other)
+  : TableValuedFunction(other),childInfo_(STMTHEAP)
 {
   selectivityFactor_ = other.selectivityFactor_;
   cardinalityHint_ = other.cardinalityHint_;
@@ -1149,12 +1149,6 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
 // methods for class PhysicalTableMappingUDF
 // -----------------------------------------------------------------------
 double PhysicalTableMappingUDF::getEstimatedRunTimeMemoryUsage(ComTdb * tdb) {return 0;}
-
-short PhysicalTableMappingUDF::generateShape(CollHeap * space, char * buf, NAString * shapeStr)
-{
-  CMPASSERT(0);
-  return 0;
-};
 
 RelExpr * PhysicalTableMappingUDF::copyTopNode(RelExpr *derivedNode,
                                                CollHeap* outHeap)

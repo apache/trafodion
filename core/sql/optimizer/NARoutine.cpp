@@ -604,7 +604,7 @@ NARoutine::NARoutine(const QualifiedName   &name,
     }
     
      
-  setupPrivInfo();
+  getPrivileges(routine_desc->routineDesc()->priv_desc);
 
   heapSize_ = (heap ? heap->getTotalSize() : 0);
 }
@@ -642,64 +642,89 @@ void NARoutine::setSasFormatWidth(NAString &width)
 }
 
 // ----------------------------------------------------------------------------
-// method: setupPrivInfo
+// method: getPrivileges
 //
-// If authorization is enabled, go retrieve privilege information
-// and set up query invalidation (security) keys for the table.
+// If authorization is enabled, set privs based on the passed in priv_desc
+// and set up query invalidation (security) keys for the routine.
 // ----------------------------------------------------------------------------
-void NARoutine::setupPrivInfo(void)
+void NARoutine::getPrivileges(TrafDesc *priv_desc)
 {
-  privInfo_ = new(heap_) PrivMgrUserPrivs;
   if ( !CmpCommon::context()->isAuthorizationEnabled() || ComUser::isRootUserID())
   {
+    privInfo_ = new(heap_) PrivMgrUserPrivs;
     privInfo_->setOwnerDefaultPrivs();
     return;
   }
 
-  NAString privMDLoc;
-  CONCAT_CATSCH(privMDLoc,CmpSeabaseDDL::getSystemCatalogStatic(),SEABASE_PRIVMGR_SCHEMA);
+  NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
+  privMDLoc += ".\"";
+  privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+  privMDLoc += "\"";
   PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(),PrivMgr::PRIV_INITIALIZED);
 
-
-  // use embedded compiler.
-  CmpSeabaseDDL cmpSBD(STMTHEAP);
-  if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+  if (priv_desc == NULL)
   {
-    if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-      *CmpCommon::diags() << DgSqlCode( -4400 );
+    privInfo_ = new(heap_) PrivMgrUserPrivs;
 
-    return;
+    CmpSeabaseDDL cmpSBD(STMTHEAP);
+    if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        *CmpCommon::diags() << DgSqlCode( -4400 );
+
+      return;
+    }
+
+    ComObjectType objectType = (UDRType_ == COM_PROCEDURE_TYPE ?
+                                COM_STORED_PROCEDURE_OBJECT :
+                                COM_USER_DEFINED_ROUTINE_OBJECT);
+
+    std::vector <ComSecurityKey *>* secKeyVec = new(heap_) std::vector<ComSecurityKey *>;
+    if (privInterface.getPrivileges(objectUID_, objectType,
+                                    ComUser::getCurrentUser(), 
+                                   *privInfo_, secKeyVec) != STATUS_GOOD)
+    {
+      NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
+      privInfo_ = NULL;
+    }
+
+    cmpSBD.switchBackCompiler();
+
+    if (privInfo_)
+    {
+      for (std::vector<ComSecurityKey*>::iterator iter = secKeyVec->begin();
+           iter != secKeyVec->end();
+           iter++)
+      {
+        // Insertion of the dereferenced pointer results in NASet making
+        // a copy of the object, and then we delete the original.
+        routineSecKeySet_.insert(**iter);
+          delete *iter;
+      }
+    }
   }
-
-  // gather privileges
-  std::vector <ComSecurityKey *> secKeyVec;
-  ComObjectType objectType = (UDRType_ == COM_PROCEDURE_TYPE ? 
-                              COM_STORED_PROCEDURE_OBJECT : 
-                              COM_USER_DEFINED_ROUTINE_OBJECT);
-  if (STATUS_GOOD != privInterface.getPrivileges(objectUID_, objectType,
-                                                 ComUser::getCurrentUser(),
-                                                 *privInfo_, &secKeyVec))
+  else
   {
-    NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
-    privInfo_ = NULL;
+    // get roles granted to current user 
+    // SQL_EXEC_GetRoleList returns the list of roles from the CliContext
+    std::vector<int32_t> myRoles;
+    Int32 numRoles = 0;
+    Int32 *roleIDs = NULL;
+    if (SQL_EXEC_GetRoleList(numRoles, roleIDs) < 0)
+    {
+      *CmpCommon::diags() << DgSqlCode(-1034);
+      return;
+    }
+
+    // At this time we should have at least one entry in roleIDs (PUBLIC_USER)
+    CMPASSERT (roleIDs && numRoles > 0);
+
+    for (Int32 i = 0; i < numRoles; i++)
+      myRoles.push_back(roleIDs[i]);
+
+    privInfo_ = new (heap_) PrivMgrUserPrivs;
+    privInfo_->initUserPrivs(myRoles, priv_desc, ComUser::getCurrentUser(),objectUID_, routineSecKeySet_);
   }
-
-  cmpSBD.switchBackCompiler();
-
-  // generate list of query invalidation (security) keys for the
-  // routine and current user
-  // getPrivileges allocates space, this routine should delete it
-  //   (should a heap pointer to set up for this?)
-  for (std::vector<ComSecurityKey*>::iterator iter = secKeyVec.begin();
-       iter != secKeyVec.end();
-       iter++)
-  {
-    // Insertion of the dereferenced pointer results in NASet making
-    // a copy of the object, and then we delete the original.
-    routineSecKeySet_.insert(**iter);
-    delete *iter;
-  }
-
 }
 
 ULng32 NARoutineDBKey::hash() const

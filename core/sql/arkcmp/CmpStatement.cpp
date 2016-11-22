@@ -86,6 +86,7 @@
 #include "opt.h"	    // to initialize the memo and task_list variables
 
 #include "RelExeUtil.h"
+#include "RelMisc.h"
 #include "CmpSeabaseDDL.h"
 #include "CmpSeabaseDDLupgrade.h"
 #include "NAUserId.h"
@@ -140,6 +141,7 @@ CmpStatement::error(Lng32 no, const char* s)
 CmpStatement::CmpStatement(CmpContext* context,
                            CollHeap* outHeap,
                            NAMemory::NAMemoryType memoryType)
+ : parserStmtLiteralList_(outHeap)
 {
   exceptionRaised_ = FALSE;
   reply_ = 0;
@@ -155,7 +157,9 @@ CmpStatement::CmpStatement(CmpContext* context,
   isSMDRecompile_ = FALSE;
   isParallelLabelOp_ = FALSE;
   displayGraph_ = FALSE;
+  cses_ = NULL;
   detailsOnRefusedRequirements_ = NULL;
+  numOfCompilationRetries_ = 0;
 
 #ifndef NDEBUG
   if ( getenv("ARKCMP_NO_STATEMENTHEAP") )
@@ -202,6 +206,7 @@ CmpStatement::CmpStatement(CmpContext* context,
 
   simpleFSOTaskMonitor_ = new (heap_) TaskMonitor();
   //simpleFSOMonPtr = simpleFSOTaskMonitor_;
+  parserStmtLiteralList_.setHeap(heap_);
 }
 
 CmpStatement::~CmpStatement()
@@ -326,13 +331,10 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
 					    NABoolean &aqrPrepare,
 					    NABoolean &standaloneQuery)
 {
-  RecompLateNameInfoList * rlnil = NULL;
   char * catSchStr = NULL;
-  cmpInfo->getUnpackedFields(sqlStr, rlnil, catSchStr, recompControlInfo);
+  cmpInfo->getUnpackedFields(sqlStr, catSchStr, recompControlInfo);
   sqlStrLen = cmpInfo->getSqlTextLen();
   
-  context->recompLateNameInfoList() = rlnil;
-
   catSchNameRecvd = FALSE;
   nametypeNsk = FALSE;
   odbcProcess = FALSE;
@@ -1663,6 +1665,19 @@ QueryAnalysis* CmpStatement::initQueryAnalysis()
   return queryAnalysis_;
 }
 
+void CmpStatement::prepareForCompilationRetry()
+{
+  // The compiler may retry compiling a statement several times,
+  // sharing the same CmpStatement object. Initialize any data
+  // structures that need it here.
+  numOfCompilationRetries_++;
+
+  if (cses_)
+    cses_->clear();
+  if (detailsOnRefusedRequirements_)
+    detailsOnRefusedRequirements_->clear();
+}
+
 void CmpStatement::initCqsWA()  
 { 
    cqsWA_ = new (heap_) CqsWA(); 
@@ -1688,4 +1703,27 @@ void CmpStatement::setTMUDFRefusedRequirements(const char *details)
     }
 
   detailsOnRefusedRequirements_->insert(new(heap_) NAString(details, heap_));
+}
+
+void CmpStatement::addCSEInfo(CSEInfo *info)
+{
+  if (cses_ == NULL)
+    cses_ = new(CmpCommon::statementHeap())
+      LIST(CSEInfo *)(CmpCommon::statementHeap());
+
+  info->setCSEId(cses_->entries());
+  cses_->insert(info);
+}
+
+CSEInfo * CmpStatement::getCSEInfo(const char *cseName)
+{
+  if (cses_)
+    for (CollIndex i=0; i<cses_->entries(); i++)
+      {
+        if ((*cses_)[i]->getName() == cseName)
+          return (*cses_)[i];
+      }
+
+  // no match found
+  return NULL;
 }

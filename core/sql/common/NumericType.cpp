@@ -113,6 +113,8 @@ unsigned short getBinaryStorageSize(Lng32 precision)
   if (precision < 1 || precision > 19) {
     return 0;
   }
+  if (precision < 3)
+    return SQL_TINY_SIZE;
   if (precision < 5)
     return SQL_SMALL_SIZE;
   if (precision < 10)
@@ -521,8 +523,6 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
 
   NABoolean modeSpecial1 = 
     ((flags) && ((*flags & NAType::MODE_SPECIAL_1) != 0));
-  NABoolean modeSpecial2 = 
-    ((flags) && ((*flags & NAType::MODE_SPECIAL_2) != 0));
   NABoolean limitPrecision =
     ((flags) && ((*flags & NAType::LIMIT_MAX_NUMERIC_PRECISION) != 0));
   NABoolean makeUnionResultBinary =
@@ -572,6 +572,10 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
     if (((magnitude % 10) > 0) ||
 	(makeUnionResultBinary)) {
       Lng32 size = getBinaryStorageSize(precision);
+
+      // convert tinyint to smallint.
+      if (size == SQL_TINY_SIZE)
+        size = SQL_SMALL_SIZE;
 
       // for now, make result to be an int32 or int64.
       if ((makeUnionResultBinary) &&
@@ -632,7 +636,7 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                 scale;
     if (limitPrecision)
       {
-	if (((modeSpecial1) || (modeSpecial2)) &&
+	if ((modeSpecial1) &&
 	    (scale > MAX_NUMERIC_PRECISION))
 	  // scale overflow, return error.
 	  return NULL;
@@ -729,6 +733,11 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
   // Compute the storage size of the binary result.
   //
   Lng32 size = getBinaryStorageSize(precision);
+
+  // convert tinyint to smallint for arithmetic results.
+  if (size == SQL_TINY_SIZE)
+    size = SQL_SMALL_SIZE;
+
   //
   // The result is NUMERIC.
   //
@@ -781,7 +790,7 @@ NABoolean NumericType::createSQLLiteral(const char * buf,
              sizeof(resultLen),
              h,
              &diags,
-             conv_case_index::CONV_UNKNOWN,
+             ConvInstruction::CONV_UNKNOWN,
              0);
 
    if ( ok != ex_expr::EXPR_OK || resultLen == 0)
@@ -1521,12 +1530,27 @@ double SQLNumeric::encode (void* bufPtr) const
   ULng32 usLongTemp;
   short shrtTemp;
   unsigned short usShrtTemp;
+  Int8 charTemp;
+  UInt8 usCharTemp;
 
   char * valPtr = (char *)bufPtr;
   if (supportsSQLnull())
     valPtr += getSQLnullHdrSize();
 
-  if (getNominalSize() <= 2)
+  if (getNominalSize() <= 1)
+  {
+    if (isUnsigned())
+    {
+      str_cpy_all ((char *)&usCharTemp, valPtr, getNominalSize());
+      return ((double)usCharTemp * pow(10.0, -1 * getScale()));
+    }
+    else
+    {
+      str_cpy_all ((char *)&charTemp, valPtr, getNominalSize());
+      return ((double)charTemp * pow(10.0, -1 * getScale()));
+    }
+  }
+  else if (getNominalSize() <= 2)
   {
     if (isUnsigned())
     {
@@ -1604,12 +1628,7 @@ void SQLNumeric::minRepresentableValue(void* bufPtr, Lng32* bufLen,
           }
           break;
           
-#ifdef NA_64BIT
-          // dg64 - a bit of a guess
         case sizeof(Int32):
-#else
-        case sizeof(Lng32):
-#endif
           {
             Lng32 temp = 0;
             Lng32 i=0;
@@ -1623,28 +1642,42 @@ void SQLNumeric::minRepresentableValue(void* bufPtr, Lng32* bufLen,
               ((char *)bufPtr)[i] = ((char *)&temp)[i];
             signedLongToAscii(temp, nameBuf);
           }
-        break;
+          break;
         
-        case sizeof(short):
+        case sizeof(Int16):
           {
             short temp = 0;
             Lng32 i=0;
             for (; i<getPrecision(); i++)
               {
-#pragma nowarn(1506)   // warning elimination
                 temp = temp * 10 + 9;
-#pragma warn(1506)  // warning elimination
               }
-#pragma nowarn(1506)   // warning elimination
             temp = -temp;
-#pragma warn(1506)  // warning elimination
             
             for (i = 0; i < getNominalSize(); i++)
               ((char *)bufPtr)[i] = ((char *)&temp)[i];
             signedLongToAscii((Lng32)temp, nameBuf);
           }
           break;
-        }
+
+      case sizeof(Int8):
+          {
+            Int8 temp = 0;
+            Lng32 i=0;
+            for (; i<getPrecision(); i++)
+              {
+                temp = temp * 10 + 9;
+              }
+            temp = -temp;
+            
+            for (i = 0; i < getNominalSize(); i++)
+              ((char *)bufPtr)[i] = ((char *)&temp)[i];
+            signedLongToAscii((Lng32)temp, nameBuf);
+          }
+          break;
+
+        } // switch
+ 
     }
   
   if (stringLiteral != NULL)
@@ -1680,12 +1713,7 @@ void SQLNumeric::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
       }
       break;
       
-#ifdef NA_64BIT
-      // dg64 - a bit of a guess
     case sizeof(Int32):
-#else
-    case sizeof(Lng32):
-#endif
       {
         Lng32 temp = 0;
         Lng32 i=0;
@@ -1700,7 +1728,7 @@ void SQLNumeric::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
       }
     break;
     
-    case sizeof(short):
+    case sizeof(Int16):
       {
         short temp = 0;
         Lng32 i=0;
@@ -1716,6 +1744,22 @@ void SQLNumeric::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
         signedLongToAscii((Lng32)temp, nameBuf);
       }
       break;
+
+    case sizeof(Int8):
+      {
+        Int8 temp = 0;
+        Lng32 i=0;
+        for (; i<getPrecision(); i++)
+          {
+            temp = temp * 10 + 9;
+          }
+        
+        for (i = 0; i < getNominalSize(); i++)
+          ((char *)bufPtr)[i] = ((char *)&temp)[i];
+        signedLongToAscii((Lng32)temp, nameBuf);
+      }
+      break;
+
     }
 
   if (stringLiteral != NULL)
@@ -2480,6 +2524,12 @@ void LSDecimal::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
       insertScaleIndicator(*stringLiteral, getScale());
     }
 } // LSDecimal::maxRepresentableValue()
+
+NABoolean NumericType::isInteger() const      
+{ 
+  return ( qualifier_ == SQLInt_TYPE || qualifier_ == SQLSmall_TYPE ||
+           (getTypeQualifier() == NA_NUMERIC_TYPE && getPrecision() > 0 && getScale() == 0) ); 
+}
 
 // -----------------------------------------------------------------------
 // Type synthesis for binary operators

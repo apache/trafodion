@@ -40,8 +40,8 @@ JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMIn
 
    char *la_err_str = 0;
    int la_err_len = 0;
-   char* str_key = 0;
-   str_key = new char[TM_MAX_DDLREQUEST_STRING];
+   char* str_key;
+   str_key = new char[pv_keyLength];
    char** la_keys;
    la_keys = new char *[TM_MAX_DDLREQUEST_STRING];
    int lv_error = FEOK;

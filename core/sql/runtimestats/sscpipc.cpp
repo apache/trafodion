@@ -845,8 +845,9 @@ void SscpNewIncomingConnectionStream::processSecInvReq()
         // for each new invalidation key
         for (Int32 i = 0; i < numSiks && !keysAreInvalid; i++)
         {
-          if (COM_QI_OBJECT_REDEF == 
-            ComQIActionTypeLiteralToEnum(request->getSik()[i].operation))
+          ComQIActionType siKeyType =
+            ComQIActionTypeLiteralToEnum(request->getSik()[i].operation);
+          if (siKeyType == COM_QI_OBJECT_REDEF)
           {
             // compare the new DDL invalidation key to each key in the
             // master stats.
@@ -861,7 +862,7 @@ void SscpNewIncomingConnectionStream::processSecInvReq()
               }
             }
           }
-          else
+          else if (siKeyType != COM_QI_STATS_UPDATED)
           {
             // compare the new REVOKE invalidation key to each key in the 
             // master stats.

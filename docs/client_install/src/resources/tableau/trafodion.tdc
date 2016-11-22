@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<connection-customization class='genericodbc' enabled='true' version='9.3' dbname='TRAFODION' odbc-native-protocol='yes' odbc-use-connection-pooling='yes'> 
+  <vendor name='Trafodion' /> 
+  <driver name='TRAF ODBC 2.1' /> 
+  <customizations> 
+    <customization name='CAP_ISOLATION_LEVEL_SERIALIZABLE' value='no'/> 
+    <customization name='CAP_ISOLATION_LEVEL_READ_UNCOMMITTED' value='yes' /> 
+    <customization name='CAP_SET_ISOLATION_LEVEL_VIA_ODBC_API' value='no' /> 
+    <customization name='CAP_CREATE_TEMP_TABLES' value='no' />
+    <customization name='CAP_SUPPRESS_DISCOVERY_QUERIES' value='yes' />
+    <customization name='CAP_ODBC_METADATA_SUPPRESS_PREPARED_QUERY' value='yes' />
+    <customization name='CAP_ODBC_METADATA_SUPPRESS_SELECT_STAR' value='yes' />
+    <customization name='CAP_ODBC_METADATA_SUPPRESS_EXECUTED_QUERY' value='yes' />
+    <customization name='CAP_ODBC_METADATA_SUPRESS_SQLSTATISTICS_API' value='yes' />
+  </customizations> 
+</connection-customization>

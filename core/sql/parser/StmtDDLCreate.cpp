@@ -6089,7 +6089,8 @@ StmtDDLCreateMV::StmtDDLCreateMV( const QualifiedName	&MVQualName,
     pAttributeTableLists_(pAttributeTableLists),
     pIgnoreChangesList_(0),
     StmtDDLNode(DDL_CREATE_MV),
-    partitionKeyColRefArray_(heap)
+    partitionKeyColRefArray_(heap),
+    udfList_(heap)
 {
   // MV file options are a subset of Table's file options.
   // Since we use the same parsing rule as a Table's, we need to check that all file 
@@ -6830,7 +6831,8 @@ StmtDDLCreateView::StmtDDLCreateView(const QualifiedName & viewQualName,
           pQueryExpression_(queryExpression),
           pWithCheckOption_(optionalWithCheckOption),
           columnDefArray_(heap),
-          viewUsages_(heap)
+          viewUsages_(heap),
+	  udfList_(heap)
 {
   setChild(INDEX_VIEW_OWNER, pOwner);
 }

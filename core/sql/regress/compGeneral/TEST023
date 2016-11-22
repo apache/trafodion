@@ -1,0 +1,295 @@
+-- Test: TEST023 (CompGeneral)
+-- Functionality: Tests of the incremental UPDATE STATISTICS feature.
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+?section clean_up
+
+set schema compgeneral_test023;
+
+drop schema compgeneral_test023 cascade;
+
+?section create_db
+
+log LOG023 clear;
+-- create the database used for the tests
+
+create schema compgeneral_test023;
+
+set schema compgeneral_test023;
+
+get tables;
+
+CREATE TABLE stest
+(
+c1 integer not null,
+c2 integer not null,
+c3 integer not null,
+PRIMARY KEY (C1 ASC)
+)
+SALT USING 4 PARTITIONS
+ON (C1)
+;
+
+
+upsert using load into stest
+select 
+  x1+10*x2+100*x3+1000*x4+10000*x5,
+  x2,
+  x3
+-- the from clause below creates 100,000 rows, the cross product of
+-- 5 copies of { 0, ... 9 } 
+  from (values(0),(1),(2),(3),(4),(5),(6),(7),(8),(9)) T(x1)
+transpose 0,1,2,3,4,5,6,7,8,9 as x2
+transpose 0,1,2,3,4,5,6,7,8,9 as x3
+transpose 0,1,2,3,4,5,6,7,8,9 as x4
+transpose 0,1,2,3,4,5,6,7,8,9 as x5;
+;
+
+CREATE TABLE stestc
+(
+c1 char(12) not null,
+c2 char(12) not null,
+c3 char(12) not null,
+bigcol varchar(1024) not null,
+PRIMARY KEY (C1 ASC)
+)
+SALT USING 4 PARTITIONS
+ON (C1)
+;
+
+upsert using load into stestc
+select 
+  x1 || x2 || x3 || x4 || x5,
+  x2 || x4 || x1,
+  x5 || x3,
+  'Wow this is really big ' || x1 || x2 || x3 || x4 || x5 ||
+  ' and now we concatenate lots more junk, more junk than you' ||
+  ' can shake a stick at because we like to use up storage' ||
+  ' and exercise code paths that result in string truncation.' ||
+  ' And you thought you had better things to do.'
+-- the from clause below creates 100,000 rows, the cross product of
+-- 5 copies of { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' }
+  from (values('a'),('b'),('c'),('d'),('e'),('f'),('g'),('h'),('i'),('j')) T(x1)
+transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x2
+transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x3
+transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x4
+transpose 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j' as x5;
+;
+
+create table stest_empty like stest with partitions;
+
+get tables;  -- should be just stest, stest_empty, stestc, and the sb_* tables
+
+?section ustat1p
+
+-- positive tests
+
+-- create a persistent sample
+update statistics for table stest create sample random 20 percent;
+
+prepare s1 from
+select object_name,sample_name,reason,last_where_predicate
+  from "_MD_".objects o join sb_persistent_samples s
+   on o.object_uid = s.table_uid
+  where object_name = ? and object_type = 'BT';
+
+execute s1 using 'STEST';
+-- should see one row
+
+get tables; -- should be stest, stest_empty, stestc, sb_* tables + a sample table
+
+-- create another one, showing its replacement
+update statistics for table stest remove sample;
+update statistics for table stest create sample random 10 percent;
+
+get tables; -- should be stest, stest_empty, stestc, sb_* tables + a different sample table
+
+execute s1 using 'STEST';
+-- should see one row
+
+-- remove a persistent sample table
+update statistics for table stest remove sample;
+
+get tables; -- should be stest, stest_empty, stestc, sb_* tables only
+
+execute s1 using 'STEST';
+-- should see zero rows
+
+-- create a persistent sample table using PERSISTENT
+
+update statistics for table stest on every column sample random 10 percent persistent;
+
+get tables; -- should be stest, stest_empty, stestc, sb_* tables + another sample table
+
+execute s1 using 'STEST';
+-- should see one row
+
+-- do it again showing its replacement
+update statistics for table stest remove sample;
+update statistics for table stest on every column sample random 10 percent persistent;
+
+get tables; -- should be stest, stest_empty, stestc, sb_* tables + another sample table
+
+execute s1 using 'STEST';
+-- should see one row
+
+-- change the data in the table and do an INCREMENTAL update stats
+insert into stest values (100000,1,1),
+  (100001,1,1),
+  (100002,1,1),
+  (100003,1,1),
+  (100004,1,1),
+  (100005,1,1),
+  (100006,1,1),
+  (100007,1,1),
+  (100008,1,1),
+  (100009,1,1),
+  (100010,2,1),
+  (100011,2,1),
+  (100012,2,1),
+  (100013,2,1),
+  (100014,2,1),
+  (100015,2,1),
+  (100016,2,1),
+  (100017,2,1),
+  (100018,2,1),
+  (100019,2,1),
+  (100020,3,1),
+  (100021,3,1),
+  (100022,3,1),
+  (100023,3,1),
+  (100024,3,1),
+  (100025,3,1),
+  (100026,3,1),
+  (100027,3,1),
+  (100028,3,1),
+  (100029,3,1);
+
+-- These two CQDs are to get around annoying 9222 and 9224 warnings
+-- that happen non-deterministically due to "gaps" in the sample histograms.
+-- Note: The warnings now only appear if "update statistics log on" is in 
+-- force, which it isn't here. Nevertheless the CQDs encourage the exercise
+-- of a particular code path within the incremental update stats code so
+-- we leave them here.
+cqd USTAT_IUS_INTERVAL_ROWCOUNT_CHANGE_THRESHOLD '0.15';
+cqd USTAT_IUS_INTERVAL_UEC_CHANGE_THRESHOLD '0.15'; 
+
+update statistics for table stest on existing columns incremental where c1 >= 100000;
+
+execute s1 using 'STEST';
+
+-- similar tests, but using character data types
+update statistics for table stestc on every column sample random 10 percent persistent;
+
+insert into stestc values ('naaaa','abc','ba','Hava Nagila'),
+  ('naaab','abc','ba','Le Marseillais'),
+  ('naaac','abc','ba','some other song'),
+  ('naaad','abc','ba','more data'),
+  ('naaae','abc','ba','more data'),
+  ('naaaf','abc','ba','more data'),
+  ('naaag','abc','ba','more data'),
+  ('naaah','abc','ba','more data'),
+  ('naaai','abc','ba','more data'),
+  ('naaaj','abc','ba','more data'),
+  ('naaba','bhe','ba','more data'),
+  ('naabb','bhe','ba','more data'),
+  ('naabc','bhe','ba','more data'),
+  ('naabd','bhe','ba','more data'),
+  ('naabe','bhe','ba','more data'),
+  ('naabf','bhe','ba','more data'),
+  ('naabg','bhe','ba','Ha! caught you sleeping!'),
+  ('naabh','bhe','ba','more data'),
+  ('naabi','bhe','ba','more data'),
+  ('naabj','bhe','ba','more data'),
+  ('naaca','fib','ba','more data'),
+  ('naacb','fib','ba','more data'),
+  ('naacc','fib','ba','more data'),
+  ('naacd','fib','ba','more data'),
+  ('naace','fib','ba','more data'),
+  ('naacf','fib','ba','more data'),
+  ('naacg','fib','ba','more data'),
+  ('naach','fib','ba','more data'),
+  ('naaci','fib','ba','more data'),
+  ('naacj','fib','ba','more data');
+
+update statistics for table stestc on existing columns incremental where c1 >= 'naaaa';
+
+get tables;
+
+execute s1 using 'STESTC';
+
+?section ustat1n
+-- negative tests
+
+-- attempt to create a sample on an empty table
+update statistics for table stest_empty create sample random 10 percent;
+
+get tables; -- should be the same as previous "get tables"
+
+execute s1 using 'STEST_EMPTY';
+-- should be zero rows
+
+update statistics for table stest_empty on every column sample random 10 percent persistent;
+
+get tables; -- should be the same as previous "get tables"
+
+execute s1 using 'STEST_EMPTY';
+-- should be zero rows
+
+-- attempt to remove a non-existant persistent sample
+update statistics for table stest_empty remove sample;
+
+get tables; -- should be the same as previous "get tables"
+
+-- attempt to do incremental with an invalid where clause
+update statistics for table stest on existing columns incremental where 1;
+
+get tables; -- should be the same as previous "get tables"
+
+-- attempt to do incremental with a syntactically valid but semantically invalid where clause
+update statistics for table stest on existing columns incremental where badcol > 5;
+
+-- attempt to do incremental when no persistent sample exists
+update statistics for table stestc remove sample;
+update statistics for table stestc on existing columns incremental where c1 >= 'naaaa';
+
+-- attempt to create a persistent sample when one already exists, syntax 1
+update statistics for table stest on every column sample random 10 percent persistent;
+
+-- attempt to create a persistent sample when one already exists, syntax 2
+update statistics for table stest create sample random 20 percent;
+
+get tables; -- should be the same as previous "get tables" except only one sample table
+
+
+?section clnup
+
+drop table stest;
+drop table stestc;
+drop table stest_empty;
+
+get tables;  -- sample tables should be gone too
+
+drop schema compgeneral_test023 cascade; -- cascade needed because of sb_* tables
+
+log;

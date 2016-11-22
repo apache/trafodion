@@ -93,6 +93,11 @@ public class RMInterface {
     private Connection connection;
     static {
         System.loadLibrary("stmlib");
+        String envset = System.getenv("TM_USE_SSCC");
+        if (envset != null)
+           envTransactionAlgorithm = (Integer.parseInt(envset) == 1) ? AlgorithmType.SSCC : AlgorithmType.MVCC;
+        else
+           envTransactionAlgorithm = AlgorithmType.MVCC;
     }
 
     private native void registerRegion(int port, byte[] hostname, long startcode, byte[] regionInfo);
@@ -112,17 +117,13 @@ public class RMInterface {
        MVCC, SSCC
     }
 
+    private static AlgorithmType envTransactionAlgorithm;
     private AlgorithmType transactionAlgorithm;
 
     public RMInterface(final String tableName, Connection connection) throws IOException {
         //super(conf, Bytes.toBytes(tableName));
         this.connection = connection;
-        transactionAlgorithm = AlgorithmType.MVCC;
-        String envset = System.getenv("TM_USE_SSCC");
-        if( envset != null)
-        {
-            transactionAlgorithm = (Integer.parseInt(envset) == 1) ? AlgorithmType.SSCC : AlgorithmType.MVCC;
-        }
+        transactionAlgorithm = envTransactionAlgorithm;
         if( transactionAlgorithm == AlgorithmType.MVCC) //MVCC
         {
             ttable = new TransactionalTable(Bytes.toBytes(tableName), connection);
@@ -224,6 +225,26 @@ public class RMInterface {
         return ts;
     }
 
+    public long getTmId() throws IOException {
+        if (LOG.isTraceEnabled()) LOG.trace("Enter getTmId");
+
+        long IdVal = -1;
+        IdTmId Id;
+        try {
+           Id = new IdTmId();
+           if (LOG.isTraceEnabled()) LOG.trace("getTmId getting new Id with timeout " + ID_TM_SERVER_TIMEOUT);
+           idServer.id(ID_TM_SERVER_TIMEOUT, Id);
+           if (LOG.isTraceEnabled()) LOG.trace("getTmId idServer.id returned: " + Id.val);
+        } catch (IdTmException exc) {
+           LOG.error("getTmId: IdTm threw exception " , exc);
+           throw new IOException("getTmId: IdTm threw exception ", exc);
+        }
+        IdVal = Id.val;
+
+        if (LOG.isTraceEnabled()) LOG.trace("Exit getTmId, ID: " + IdVal);
+        return IdVal;
+    }
+
     public void createTable(HTableDescriptor desc, byte[][] keys, int numSplits, int keyLength, long transID) throws IOException {
     	if (LOG.isTraceEnabled()) LOG.trace("Enter createTable, txid: " + transID + " Table: " + desc.getNameAsString());
         byte[] lv_byte_desc = desc.toByteArray();
@@ -313,6 +334,12 @@ public class RMInterface {
         ttable.delete(ts, delete, false);
     }
 
+    public synchronized void deleteRegionTx(final Delete delete, final boolean autoCommit) throws IOException {
+        long tid = getTmId();
+        if (LOG.isTraceEnabled()) LOG.trace("deleteRegionTx tid: " + tid);
+        ttable.deleteRegionTx(tid, delete, autoCommit);
+    }
+
     public synchronized void delete(final long transactionID, final List<Delete> deletes) throws IOException {
         if (LOG.isTraceEnabled()) LOG.trace("Enter delete (list of deletes) txid: " + transactionID);
         TransactionState ts = null;
@@ -332,6 +359,13 @@ public class RMInterface {
         ResultScanner res = ttable.getScanner(ts, scan);
         if (LOG.isTraceEnabled()) LOG.trace("EXIT getScanner");
         return res;
+    }
+
+    public synchronized void putRegionTx(final Put put, final boolean autoCommit) throws IOException {
+        long tsId = getTmId();
+        if (LOG.isTraceEnabled()) LOG.trace("Enter putRegionTx, autoCommit: " + autoCommit + ", tsId " + tsId);
+        ttable.putRegionTx(tsId, put, autoCommit);
+        if (LOG.isTraceEnabled()) LOG.trace("Exit putRegionTx tsId: " + tsId);
     }
 
     public synchronized void put(final long transactionID, final Put put) throws IOException {
@@ -362,12 +396,29 @@ public class RMInterface {
         return ttable.checkAndPut(ts, row, family, qualifier, value, put);
     }
 
+    public synchronized boolean checkAndPutRegionTx(byte[] row, byte[] family,
+    		byte[] qualifier, byte[] value, Put put, final boolean autoCommit) throws IOException {
+
+        long tsId = getTmId();
+        if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndPutRegionTx tsId: " + tsId
+        		           + ": autoCommit " + autoCommit );
+        return ttable.checkAndPutRegionTx(tsId, row, family, qualifier, value,
+        		                          put, autoCommit);
+    }
+
     public synchronized boolean checkAndDelete(final long transactionID, byte[] row, byte[] family, byte[] qualifier,
                        byte[] value, Delete delete) throws IOException {
 
         if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndDelete txid: " + transactionID);
         TransactionState ts = registerTransaction(transactionID, row);
         return ttable.checkAndDelete(ts, row, family, qualifier, value, delete);
+    }
+
+    public synchronized boolean checkAndDeleteRegionTx(byte[] row, byte[] family, byte[] qualifier,
+            byte[] value, Delete delete, final boolean autoCommit) throws IOException {
+       long tid = getTmId();
+       if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndDeleteRegionTx tid: " + tid);
+       return ttable.checkAndDeleteRegionTx(tid, row, family, qualifier, value, delete, autoCommit);
     }
 
     public void close()  throws IOException

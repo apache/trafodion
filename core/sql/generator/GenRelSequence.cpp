@@ -90,6 +90,8 @@ void PhysSequence::getHistoryAttributes(const ValueIdSet &sequenceFunctions,
         {
           // The child needs to be in the history row.
           //
+        case ITM_OLAP_LEAD:
+        case ITM_OLAP_LAG:
         case ITM_OFFSET:
         case ITM_ROWS_SINCE:
         case ITM_THIS:
@@ -345,6 +347,10 @@ void PhysSequence::computeHistoryRows(const ValueIdSet &sequenceFunctions,//hist
         case ITM_LAST_NOT_NULL:
           computedHistoryRows = MAXOF(computedHistoryRows, 2);
           break;
+
+        case ITM_OLAP_LEAD:
+            value = ((ItmLeadOlapFunction*)itmExpr)->getOffset();
+
         ///set to unable to compute for now-- will change later to compte values from frameStart_ and frameEnd_
         case ITM_OLAP_SUM:
         case ITM_OLAP_COUNT:
@@ -406,7 +412,7 @@ void PhysSequence::computeHistoryRows(const ValueIdSet &sequenceFunctions,//hist
         case ITM_MOVING_MIN:
         case ITM_MOVING_MAX:
         case ITM_OFFSET:
-         
+        case ITM_OLAP_LAG: 
           for(Lng32 i = 1; i < itmExpr->getArity(); i++)
           {
             if (itmExpr->child(i)->getOperatorType() != ITM_NOTCOVERED)
@@ -881,8 +887,26 @@ PhysSequence::codeGen(Generator *generator)
 
   getHistoryAttributes(readSeqFunctions(),outputFromChild, historyIds, TRUE, wHeap);
 
+  // remove LEAD from readSeqFunctions() and remeber it in leadFuncs
+  // Its child has CONVERT added in getHistoryAttributes() call.
+  ValueIdSet leadFuncs;
+  ValueIdSet leadFuncChildren;
+
+  readSeqFunctions().findAllOpType(ITM_OLAP_LEAD, leadFuncs);
+  leadFuncs.findAllChildren(leadFuncChildren);
+  readSeqFunctions() -= leadFuncs;
+  readSeqFunctions() += leadFuncChildren;
+
   // Add in the top level sequence functions.
   historyIds += readSeqFunctions();
+
+  // remove LEAD in old form from the return function
+  ValueIdSet leadFuncsInReturn;
+  returnSeqFunctions().findAllOpType(ITM_OLAP_LEAD, leadFuncsInReturn);
+  returnSeqFunctions() -= leadFuncsInReturn;
+
+  // add in the LEAD in new form
+  returnSeqFunctions() += leadFuncs;
 
   getHistoryAttributes(returnSeqFunctions(),outputFromChild, historyIds, TRUE, wHeap);
   // Add in the top level functions.
@@ -1172,6 +1196,10 @@ void PhysSequence::transformOlapFunctions(CollHeap *wHeap)
 
       itmExpr = ((ItmSeqOlapFunction*)itmExpr)->transformOlapFunction(wHeap);
 
+      if ( itmExpr->getOperatorType() == ITM_OLAP_LEAD ) {
+        computeAndSetMinFollowingRows(((ItmLeadOlapFunction*)itmExpr)->getOffset());
+      }
+
       CMPASSERT(itmExpr);
       if(itmExpr->getValueId() != valId)
       {
@@ -1378,6 +1406,30 @@ void PhysSequence::computeReadNReturnItems( ValueId topSeqVid,
   {
     return;
   }
+
+  // Make sure both the return and returning function
+  // contain the same LEAD function. later on in
+  // Sequence::codeGen() near seperateReadAndReturnItems(),
+  // the function is separated as follows.
+  //
+  // LEAD in old form: LEAD(c)
+  // LEAD in new form: LEAD(CONVERT(c))
+  //
+  // After separation:
+  //
+  //    readFunction: COVNERT(C)
+  //    returnFunction: LEAD(CONVERT(C))
+  //
+  //  In particular, both functions refer to CONVERT(C)
+  //  with the same valueId.
+  //
+  if ( itmExpr->getOperatorType() == ITM_OLAP_LEAD )
+  {
+    readSeqFunctions() += topSeqVid;
+    returnSeqFunctions() += topSeqVid;
+    return;
+  }
+
   //test if itm_minus and then if negative offset ....
   if ( itmExpr->getOperatorType() == ITM_OFFSET &&
       ((ItmSeqOffset *)itmExpr)->getOffsetConstantValue() < 0)

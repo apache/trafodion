@@ -73,7 +73,7 @@ class AbstractFastStatsHist;
 Lng32 AddNecessaryColumns();
 Lng32 AddAllColumnsForIUS();
 
-Lng32 createSampleOption(Lng32 sampleType, double samplePercent, NAString &sampleOpt,
+void createSampleOption(Lng32 sampleType, double samplePercent, NAString &sampleOpt,
                         Int64 sampleValue1=0, Int64 sampleValue2=0);
 Lng32 doubleToHSDataBuffer(const double dbl, HSDataBuffer& dbf);
 Lng32 managePersistentSamples();
@@ -1001,6 +1001,7 @@ class MCWrapper
 struct HSColumnStruct : public NABasicObject
   {
     NAString         *colname;        /* column name              */
+    NAString         *externalColumnName;  /* column name to use in SQL (e.g. with delimiters) */
     Lng32              colnum;         /* column position in table */
     Lng32              position;       /* position in grouplist    */
     Lng32              datatype;
@@ -1016,6 +1017,7 @@ struct HSColumnStruct : public NABasicObject
 
     HSColumnStruct()
       : colname(new(STMTHEAP) NAString(STMTHEAP)),
+        externalColumnName(new(STMTHEAP) NAString(STMTHEAP)),
         colnum(-1), position(0), datatype(-1), nullflag(-1),
         charset(CharInfo::UnknownCharSet),
         length(-1), precision(-1), scale(-1),
@@ -1135,6 +1137,7 @@ struct HSColGroupStruct : public NABasicObject
     Int64            prevUEC;                      /* uec from existing histogram */
     Int64            colSecs;                      /* Time to sort/group data for column */
     CountingBloomFilter* cbf;                      /* A bloom filter for IUS */
+    NAString& cbfFileNameSuffix() { return *colSet[0].colname; }
 
     void* boundaryValues;                          /* List of bounary values for IUS */
     void* MFVValues;                               /* List of MFV values for IUS */
@@ -1157,6 +1160,7 @@ struct HSColGroupStruct : public NABasicObject
                                                    /* are used by its neighbors. Used to compute group weight */
 
     NABoolean allKeysInsertedIntoCBF;
+    Int32            backwardWarningCount;          // for UERR_UNEXPECTED_BACKWARDS_DATA warnings
 
     #ifdef _TEST_ALLOC_FAILURE
     // Stuff used to test memory allocation failures.
@@ -1202,13 +1206,7 @@ class IUSValueIterator
     virtual ~IUSValueIterator()
     {}
     
-    void init(HSColGroupStruct* group)
-    {
-      // Strings must be contiguous in the strData buffer for this iterator to
-      // work correctly.
-      HS_ASSERT(group->strDataConsecutive);
-      vp = (T*)group->data;
-    }
+    void init(HSColGroupStruct* group);
     
     void next()
     {
@@ -1341,7 +1339,13 @@ public:
 
     // Set CQDs controlling min/max HBase cache size to minimize risk of
     // scanner timeout.
-    static NABoolean setHBaseCacheSize(double sampleRatio);
+    NABoolean setHBaseCacheSize(double sampleRatio);
+
+    // Set CQD HIVE_MAX_STRING_LENGTH_IN_BYTES if necessary
+    NABoolean setHiveMaxStringLengthInBytes(void);
+
+    // Reset any CQDs set above
+    void resetCQDs(void);
 
     // Static fns for determining minimum table sizes for sampling, and for
     // using lowest sampling rate, under default sampling protocol.
@@ -1357,6 +1361,9 @@ public:
     void getMemoryRequirementsForOneMCGroup(HSColGroupStruct* group, Int64 rows);
 
     static Int32 allocateMemoryForColumns(HSColGroupStruct* group, Int64 rows, HSColGroupStruct* mgr = NULL /* used for MC IS */);
+    static Int32 allocateMemoryForIUSColumns(HSColGroupStruct* group, Int64 rows,
+                                             HSColGroupStruct* delGroup, Int64 delRows,
+                                             HSColGroupStruct* insGroup, Int64 insRows);
 
     // For internal sort or IUS, remove and count nulls for each column from the
     // rowset just read.
@@ -1484,6 +1491,9 @@ public:
     //Log the current contents of this class.
     void log(HSLogMan* LM);
 
+    // Takes action necessary before throwing exception for an assertion failure.
+    void preAssertionFailure(const char* condition, const char* fileName, Lng32 lineNum);
+
     // Derive a return code from the contents of the diagnostics area.
     Lng32 getRetcodeFromDiags();
 
@@ -1502,14 +1512,20 @@ public:
                                              NABoolean forceToFetch = TRUE);
     Lng32 updatePersistentSampleTableForIUS(NAString& sampleTableName, double sampleRate,
                                             NAString& targetTableName);
+    void generateIUSDeleteQuery(const NAString& smplTable, NAString& queryText);
+    void generateIUSSelectInsertQuery(const NAString& smplTable,
+                                      const NAString& sourceTable,
+                                      NAString& queryText);
+    void getCBFFilePrefix(NAString& sampleTableName, NAString& filePrefix);
     void detectPersistentCBFsForIUS(NAString& sampleTableName, HSColGroupStruct *group);
+    Lng32 UpdateIUSPersistentSampleTable(Int64 oldSampleSize, Int64 requestedSampleSize, Int64& newSampleSize);
     Lng32 readCBFsIntoMemForIUS(NAString& sampleTableName, HSColGroupStruct* group);
     Lng32 writeCBFstoDiskForIUS(NAString& sampleTableName, HSColGroupStruct* group);
-    Lng32 deletePersistentCBFsForIUS(NAString& sampleTableName, HSColGroupStruct* group);
+    Lng32 deletePersistentCBFsForIUS(NAString& sampleTableName, HSColGroupStruct* group, SortState stateToDelete);
 
     void logDiagArea(const char* title);
 
-    Lng32 begin_IUS_work(char* buffer);
+    Lng32 begin_IUS_work();
     Lng32 end_IUS_work();
 
     // Populate the hash table used to determine when a ustat statement has run
@@ -1575,10 +1591,13 @@ public:
     NAString      *user_table;                     /* object name             */
     NABoolean     isHbaseTable;                    /* ustat on HBase table    */
     NABoolean     isHiveTable;                     /* ustat on Hive table     */
+    NABoolean     hasOversizedColumns;             /* set to TRUE for tables  */
+                                                   /* having gigantic columns */
     ComAnsiNameSpace nameSpace;                    /* object namespace    ++MV*/
     Int64          numPartitions;                  /* # of partns in object   */
     NAString      *hstogram_table;                 /* HISTOGRM table          */
     NAString      *hsintval_table;                 /* HISTINTS table          */
+    NAString      *hsperssamp_table;               /* PERSISTENT_SAMPLES table */
     NAString      *hssample_table;                 /* SAMPLING table          */
     NABoolean      externalSampleTable;            /* ownership of sample tab */
     hs_table_type  tableType;                      /* GUARDIAN | ANSI format  */
@@ -1643,7 +1662,17 @@ public:
                                                           for one instance of persistent 
                                                           sample table */
 
-     NABoolean            sample_I_generated;
+    NABoolean            sample_I_generated;
+
+    Lng32          maxCharColumnLengthInBytes;   /* the value of USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES */
+
+    // Error recovery flags so we can reset CQDs that we set
+    // during CollectStatistics() (We do this because the
+    // HSHandleError macro commonly used makes it hard to
+    // do the resets reliably in CollectStatistics itself. Sigh.)
+
+    NABoolean hbaseCacheSizeCQDsSet_;
+    NABoolean hiveMaxStringLengthCQDSet_;
 
 private:
     //++ MV
@@ -1727,6 +1756,10 @@ private:
                          NABoolean internalSortWhenBetter,
                          NABoolean trySampleTableBypass = FALSE);
 
+    // After an allocation failure, this is called to reduce the amount of
+    // memory we estimate is available.
+    static void memReduceAllowance();
+
     // When a memory allocation fails, return any memory already allocated for
     // the group for internal sort, and set any PENDING columns back to
     // UNPROCESSED state.  This function cannot fail.
@@ -1756,6 +1789,17 @@ private:
 
     // Collect statistics by incrementally updating persistent sample table and
     // possibly histograms as well.
+    Lng32 doIUS(NABoolean& done);
+
+    // Collect stats by incrementally updating histograms where possible. Persistent
+    // sample is also incrementally updated.
+    Lng32 doFullIUS(Int64 currentSampleSize, Int64 futureSampleSize, NABoolean& done);
+
+    // Causes persistent sample table to be incrementally updated, and other
+    // preparatory tasks so RUS can be performed using persistent sample.
+    Lng32 prepareToUsePersistentSample (Int64 currentSampleSize, Int64 futureSampleSize);
+
+    // Incrementally update histograms for a selected batch of columns
     Lng32 CollectStatisticsForIUS(Int64 currentSampleSize, Int64 futureSampleSize);
 
     //
@@ -1797,6 +1841,18 @@ private:
     //HSInMemoryTable* iusSampleInMem;
     HSInMemoryTable* iusSampleDeletedInMem;
     HSInMemoryTable* iusSampleInsertedInMem;
+
+    // used by IUS code for clean up purposes
+    NABoolean sampleIExists_;
+
+    // For IUS, once the persistent sample table has been successfully updated
+    // in accordance with the IUS predicate, these ptrs will point to the requested
+    // (expected) and actual number of rows in the sample table. end_IUS_work will
+    // pass these ptrs to the function that updates the sample table's row in
+    // SB_PERSISTENT_SAMPLES. If non-null, the values are used for the corresponding
+    // columns in that table.
+    Int64* PST_IUSrequestedSampleRows_;
+    Int64* PST_IUSactualSampleRows_;
 
     template <class T>
     Int32 processIUSColumn(T* ptr,
@@ -1883,6 +1939,36 @@ private:
                        HSColGroupStruct* insGroup, Int64 insrows);
 
     template <class T>
+    class HSHiLowValues
+      {
+        public:
+
+          NABoolean seenAtLeastOneValue_;  // initially FALSE
+          // the next two are valid only if seenAtLeastOneValue_ is TRUE
+          T hiValue_;  // highest value seen so far
+          T lowValue_; // lowest value seen so far
+
+          HSHiLowValues() : seenAtLeastOneValue_(FALSE) { };
+
+          void findHiLowValues(T& val)
+            {
+              if (seenAtLeastOneValue_)
+                {
+                  if (val < lowValue_)
+                    lowValue_ = val;
+                  else if (val > hiValue_)
+                    hiValue_ = val;
+                }
+              else
+                {
+                  seenAtLeastOneValue_ = TRUE;
+                  lowValue_ = val;
+                  hiValue_ = val;
+                } 
+            };
+      };
+
+    template <class T>
     Int16 findInterval(Int16 numInt, T* boundaries, T& val)
       {
         Int16 low = 1;
@@ -1915,6 +2001,13 @@ private:
     double jitLogThreshold;
     Int64 stmtStartTime;
     NABoolean jitLogOn;
+
+    // For IUS, was the SB_PERSISTENT_SAMPLES row for the source table updated?
+    // The change is undone by the HSGlobalsClass dtor, so we need to account for
+    // the possibility that an IUS statement failed prior to making the change.
+    // Otherwise, a concurrent IUS operation could have its changes to the row
+    // overwritten.
+    NABoolean PSRowUpdated;
 
     static THREAD_P NABoolean performISForMC_;
 
@@ -2165,6 +2258,8 @@ public:
     void setHasNull(NABoolean val) { hasNull_ = val; }
     void setIntBoundary(const Lng32 intNum, const char* value, Int16 len)
       { intArry_[intNum].boundary_.copyFrom(value, len, TRUE); }
+    void setIntBoundary(const Lng32 intNum, const HSDataBuffer & newBoundary)
+      { intArry_[intNum].boundary_ = newBoundary; }
     void setIntMFVValue(const Lng32 intNum, const char* value, Int16 len)
       { intArry_[intNum].mostFreqVal_.copyFrom(value, len, TRUE); }
 
@@ -2449,11 +2544,6 @@ class HSInMemoryTable : public NABasicObject
     void generateSelectDQuery(NAString& smplTable, NAString& queryTex);
     void generateSelectIQuery(NAString& smplTable, NAString& queryText);
 
-    void generateDeleteQuery(NAString& smplTable, NAString& queryText);
-
-    void generateSelectInsertQuery(NAString& smplTable, NAString& sourceTable,
-                                   NAString& queryText);
-
 
     // method for algorithm 1
     void generateDeleteQuery(NAString& smplTable, NAString& queryText, NABoolean rollback);
@@ -2461,6 +2551,16 @@ class HSInMemoryTable : public NABasicObject
                              NAString& queryText, NABoolean rollback);
    
     Lng32 populate(NAString& queryText);
+
+    // The data is actually deallocated by calling freeISMemory() from
+    // HSGlobalsClass::incrementHistograms() for each column as soon as the
+    // column is successfully handled by IUS (the data is preserved for use
+    // by RUS/IS if IUS can't be performed). This function just resets the
+    // flag that would cause assertion failure when populate() is called, as
+    // it must be to load data for the next batch of IUS columns.
+    void depopulate() {
+      isPopulated_ = FALSE;
+    }
 
     void logState(const char* title);
 

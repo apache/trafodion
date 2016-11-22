@@ -481,17 +481,24 @@ class ExLob
   // dirPath: path to needed directory (includes directory name)
   // modTS is the latest timestamp on any file/dir under dirPath.
   // This method validates that current modTS is not greater then input modTS.
+  // On return, failedModTS contains current timestamp that caused mismatch.
   // Return: LOB_OPER_OK, if passes. LOB_DATA_MOD_CHECK_ERROR, if fails.
   Ex_Lob_Error dataModCheck(
        char * dirPath, 
        Int64  modTS,
        Lng32  numOfPartLevels,
-       ExLobGlobals *lobGlobals);
+       ExLobGlobals *lobGlobals,
+       Int64 &failedModTS,
+       char  *failedLocBuf,
+       Int32 *failedLocBufLen);
 
   Ex_Lob_Error dataModCheck2(
        char * dirPath, 
        Int64  modTS,
-       Lng32  numOfPartLevels);
+       Lng32  numOfPartLevels,
+       Int64 &failedModTS,
+       char  *failedLocBuf,
+       Int32 *failedLocBufLen);
 
   Ex_Lob_Error emptyDirectory(char* dirPath, ExLobGlobals* lobGlobals);
 
@@ -521,9 +528,6 @@ class ExLob
     ExLobStats stats_;
     bool prefetchQueued_;
     NAHeap *lobGlobalHeap_;
-#ifdef __ignore
-    ExLobRequest request_;
-#endif
     NABoolean lobTrace_;
 };
 
@@ -537,9 +541,6 @@ typedef map<string, ExLob *>::iterator lobMap_it;
 class ExLobHdfsRequest
 {
   public:
-#ifdef __ignore
-    ExLobHdfsRequest(LobsHdfsRequestType reqType, hdfsFS fs, hdfsFile file, char *buffer, int size);
-#endif
     ExLobHdfsRequest(LobsHdfsRequestType reqType, ExLobCursor *cursor);
     ExLobHdfsRequest(LobsHdfsRequestType reqType, ExLob *lobPtr, ExLobCursor *cursor);
     ExLobHdfsRequest(LobsHdfsRequestType reqType);
@@ -617,15 +618,7 @@ class ExLobGlobals
     {
       isCliInitialized_ = TRUE;
     }
-     NABoolean isHive()
-    {
-      return isHive_;
-    }
- 
-    void setIsHive(NABoolean TorF)
-    {
-      isHive_ = TorF;
-    }
+
     void setHeap(void * heap)
     {
       heap_ = (NAHeap *) heap;
@@ -653,6 +646,7 @@ class ExLobGlobals
     FILE *threadTraceFile_;
     NAHeap *heap_;
     NABoolean lobTrace_;
+    long numWorkerThreads_; 
 };
 
 

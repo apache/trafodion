@@ -13,7 +13,7 @@
 >>invoke t014t1t;
 
 -- Definition of Trafodion table TRAFODION.SCH.T014T1T
--- Definition current  Thu Feb 25 08:03:23 2016
+-- Definition current  Tue Sep 20 07:41:13 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -41,7 +41,7 @@ A            B
 >>invoke t014t1t;
 
 -- Definition of Trafodion table TRAFODION.SCH.T014T1T
--- Definition current  Thu Feb 25 08:03:30 2016
+-- Definition current  Tue Sep 20 07:41:21 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -69,7 +69,7 @@ A            B
 >>invoke t014t1t;
 
 -- Definition of Trafodion table TRAFODION.SCH.T014T1T
--- Definition current  Thu Feb 25 08:03:35 2016
+-- Definition current  Tue Sep 20 07:41:32 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -98,7 +98,7 @@ A                     B
 >>invoke t014t1t;
 
 -- Definition of Trafodion table TRAFODION.SCH.T014T1T
--- Definition current  Thu Feb 25 08:03:42 2016
+-- Definition current  Tue Sep 20 07:41:42 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -126,7 +126,7 @@ C            D
 >>invoke t014t1t;
 
 -- Definition of Trafodion table TRAFODION.SCH.T014T1T
--- Definition current  Thu Feb 25 08:03:46 2016
+-- Definition current  Tue Sep 20 07:41:52 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -154,7 +154,7 @@ C            D
 >>invoke t014t1t;
 
 -- Definition of Trafodion table TRAFODION.SCH.T014T1T
--- Definition current  Thu Feb 25 08:03:51 2016
+-- Definition current  Tue Sep 20 07:42:01 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -183,7 +183,7 @@ C                     D
 >>invoke t014t1t;
 
 -- Definition of Trafodion table TRAFODION.SCH.T014T1T
--- Definition current  Thu Feb 25 08:03:55 2016
+-- Definition current  Tue Sep 20 07:42:12 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -212,7 +212,7 @@ C                     D
 >>invoke t014t1t;
 
 -- Definition of Trafodion table TRAFODION.SCH.T014T1T
--- Definition current  Thu Feb 25 08:04:00 2016
+-- Definition current  Tue Sep 20 07:42:21 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -243,7 +243,7 @@ A            B
 >>invoke t014t1t;
 
 -- Definition of Trafodion table TRAFODION.SCH.T014T1T
--- Definition current  Thu Feb 25 08:04:04 2016
+-- Definition current  Tue Sep 20 07:42:31 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -287,6 +287,7 @@ CREATE TABLE TRAFODION.SCH.T014T1T
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (B ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -314,6 +315,7 @@ CREATE TABLE TRAFODION.SCH.T014T1T
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (D ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -341,6 +343,7 @@ CREATE TABLE TRAFODION.SCH.T014T1T
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   STORE BY (D ASC)
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -367,6 +370,7 @@ CREATE TABLE TRAFODION.SCH.T014T1T
     A                                INT DEFAULT NULL
   , B                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -406,7 +410,7 @@ A            B
 >>-- datatype of AS query columns and target tables must match
 >>create table t014t1t (a char(10), b date) as select * from t014t1s;
 
-*** ERROR[4039] Column A is of type CHAR(10), incompatible with the value's type, INTEGER.
+*** ERROR[4035] Type INTEGER cannot be cast to type DATE.
 
 *** ERROR[8822] The statement was not prepared.
 

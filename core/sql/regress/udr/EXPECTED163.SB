@@ -213,9 +213,7 @@ A            (EXPR)
 >>-- only ordinals.
 >>select a from t1 order by add2(t1.a,t1.b);
 
-*** ERROR[15001] A syntax error occurred at or before: 
-select a from t1 order by add2(t1.a,t1.b);
-                                         ^ (42 characters from start of SQL statement)
+*** ERROR[4197] This expression cannot be used in the ORDER BY clause.
 
 *** ERROR[8822] The statement was not prepared.
 

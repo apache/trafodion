@@ -1028,7 +1028,7 @@ UnPackRows::synthLogProp(NormWA * normWAPtr)
   // Find out the base columns of all entries in unPackExpr_ and stored them
   // in an array for later use.
   //
-  LIST(BaseColumn *) packedBaseColList;
+  LIST(BaseColumn *) packedBaseColList(STMTHEAP);
   for(ValueId unPackCol = unPackExpr().init(); unPackExpr().next(unPackCol);
       unPackExpr().advance(unPackCol))
     {

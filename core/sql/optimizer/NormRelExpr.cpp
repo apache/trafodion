@@ -582,9 +582,9 @@ ItemExpr * Scan::applyAssociativityAndCommutativity(
   //   fashion because the code does not assign to 'newRightNode' until *after*
   //   all recursion is finished.
   //
-  ARRAY( ItemExpr * ) IEarray(10) ; //Initially 10 elements (no particular reason to choose 10)
-  ARRAY( Int16 )      state(10)   ; //These ARRAYs will grow automatically as needed.)
-  ARRAY( ItemExpr *) leftNodeArray(10, heap);
+  ARRAY( ItemExpr * ) IEarray(heap, 10) ; //Initially 10 elements (no particular reason to choose 10)
+  ARRAY( Int16 )      state(heap, 10)   ; //These ARRAYs will grow automatically as needed.)
+  ARRAY( ItemExpr *) leftNodeArray(heap, 10);
 
   Int32   currIdx = 0;
   IEarray.insertAt( currIdx, origPtrToOldTree );
@@ -1142,7 +1142,10 @@ NABoolean RelExpr::getMoreOutputsIfPossible(ValueIdSet& outputsNeeded)
       maxOutputs,
       outputsNeeded);
       child(i)->getGroupAttr()->addCharacteristicOutputs(outputsToAdd);
-
+      if (getOperatorType() == REL_MAP_VALUEIDS) 
+      {
+	((MapValueIds *)this)->addSameMapEntries(outputsToAdd);
+      }
      // child(i).getGroupAttr()->computeCharacteristicIO
 //	                                            (emptySet,  // no additional inputs
   //                                                   outputsNeeded);
@@ -2358,7 +2361,15 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
   GroupByAgg * gbyNode = (GroupByAgg *) child(1)->castToRelExpr();
   RelExpr * oldRightGrandChild = child(1)->child(0)->castToRelExpr();
   NABoolean candidateForLeftJoin = candidateForSubqueryLeftJoinConversion();
+  NABoolean nestedAggInSubQ = FALSE;
+  GroupByAgg * subQGby = NULL ;
 
+  if (oldRightGrandChild->getOperator().match(REL_GROUPBY))
+  {
+    subQGby = (GroupByAgg *) oldRightGrandChild ;
+    oldRightGrandChild = oldRightGrandChild->child(0)->castToRelExpr();
+    nestedAggInSubQ = TRUE ;
+  }
   if (oldRightGrandChild->getOperator().match(REL_ANY_SEMIJOIN) ||   
       oldRightGrandChild->getOperator().match(REL_ANY_ANTI_SEMIJOIN) ||
       oldRightGrandChild->getOperator().match(REL_GROUPBY))
@@ -2369,7 +2380,7 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
     if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
     {
       *CmpCommon::diags() << DgSqlCode(2997)
-                          << DgString1("Subquery was not unnested. Reason: Right grandchild of TSJ is a semijoin or a group by");
+                          << DgString1("Subquery was not unnested. Reason: Right grandchild of TSJ is a semijoin or has more than one group by");
     }
   }
   // -----------------------------------------------------------------------
@@ -2404,8 +2415,13 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
   if (doNotUnnest == FALSE)
   {
     nonLocalPreds.clear();
-    if (oldRightGrandChild->selectionPred().getReferencedPredicates
-                                        (outerReferences, nonLocalPreds))
+    oldRightGrandChild->selectionPred().getReferencedPredicates
+      (outerReferences, nonLocalPreds) ;
+    if (nestedAggInSubQ)
+      subQGby->selectionPred().getReferencedPredicates
+	(outerReferences, nonLocalPreds);
+
+    if (!nonLocalPreds.isEmpty())
     {
       // Right grandchild selection pred has outer references
 
@@ -2436,15 +2452,22 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
 
       if ((doNotUnnest == FALSE) && candidateForLeftJoin && 
           (CmpCommon::getDefault(SUBQUERY_UNNESTING_P2) != DF_INTERNAL) &&
-          (normWARef.getLeftJoinConversionCount() >= 1))
+          ((normWARef.getLeftJoinConversionCount() >= 2)||nestedAggInSubQ))
       {
         doNotUnnest = TRUE;
-        // For phase 2 we only unnest 1 level of subqueries 
-        // containing NonNullRejecting Predicates
+        // For phase 2 we only unnest 2 subqueries 
+        // containing NonNullRejecting Predicates. Later we will ensure
+	// that these 2 subqueries are not nested.
 
-        if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
+        if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG) 
+        {
+          if (!nestedAggInSubQ)
             *CmpCommon::diags() << DgSqlCode(2997)
-              << DgString1("Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than one subquery");
+              << DgString1("Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than two subqueries");
+          else
+             *CmpCommon::diags() << DgSqlCode(2997)
+              << DgString1("Skipping unnesting of Subquery since we have both NonNullRejecting predicate and nested aggregate in subquery.");
+        }
 
       }
 
@@ -2455,9 +2478,18 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
                                     Filter(oldRightGrandChild);
         predFilterNode->selectionPred() += nonLocalPreds;
         oldRightGrandChild->selectionPred() -= nonLocalPreds;
-  
-        predFilterNode->getGroupAttr()->setCharacteristicInputs
+	if (nestedAggInSubQ)
+	{
+	  subQGby->selectionPred() -= nonLocalPreds;
+	  predFilterNode->getGroupAttr()->setCharacteristicInputs
+            (subQGby->getGroupAttr()->getCharacteristicInputs());
+	  subQGby->recomputeOuterReferences();
+	}
+	else
+	{
+	  predFilterNode->getGroupAttr()->setCharacteristicInputs
             (oldRightGrandChild->getGroupAttr()->getCharacteristicInputs());
+	}
   
         oldRightGrandChild->recomputeOuterReferences();
 
@@ -2490,7 +2522,10 @@ void Join::createAFilterGrandChildIfNeeded(NormWA & normWARef)
           if (candidateForLeftJoin)
             normWARef.incrementLeftJoinConversionCount();
   
-          gbyNode->child(0) = predFilterNode;
+          if (nestedAggInSubQ)
+	    gbyNode->child(0)->child(0) = predFilterNode;
+	  else
+	    gbyNode->child(0) = predFilterNode;
         }
       }
     }
@@ -3045,10 +3080,49 @@ Join::pullUpGroupByTransformation()
 //             The predicates in the new groupBy and the new Join will have
 //             changed according to the comments above.
 //
+// If there is an explicit groupby in the subquery the transformation above is extended as
+//      TSJ                            GroupBy {pred3,agg2(agg1)}(grouping cols:  
+//     /   \                              |    cluster_key of X (leftUniqueCols)+ 
+//    /     \                             |    other necessary columns of X)
+//   X      ScalarAgg {pred3}   -->   SubQ_GroupBy {agg1} (grouping cols: g1 + 
+//             | {agg2(agg1)}             |    cluster_key of X (leftUniqueCols) +   
+//             |                          |    other necessary columns of X) 
+//          SubQ_GroupBy {agg1}        newJoin {pred2}
+//             | {grouping cols: g1}    /    \
+//             |                       /      \
+//          Filter {pred2}        newLeft  newRight {pred1}
+//             |                  Child    Child
+//             |
+//             Y {pred1}
+//
+// If there is an explicy groupby in the subquery then the flag nestedAggInSubQ is set.
+
 ------------------------------------------------------------------------------*/
 GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
 {
   CollHeap *stmtHeap = CmpCommon::statementHeap() ;
+
+   RelExpr *oldGB = child(1)->castToRelExpr();
+  // note that typically child of oldGB is actually a Filter node, here 
+  // oldGBgrandchild is the child of oldGB before the Filter was added.
+  RelExpr *oldGBgrandchild ;
+  NABoolean nestedAggInSubQ = FALSE;
+  
+  if ((oldGB->child(0)->getOperatorType() == REL_GROUPBY) &&
+    (oldGB->child(0)->child(0)->getOperatorType() == REL_FILTER))
+  {
+    oldGBgrandchild = oldGB->child(0)->child(0)->child(0)->castToRelExpr();
+    nestedAggInSubQ = TRUE;
+  }
+  else if (oldGB->child(0)->getOperatorType() == REL_FILTER)
+    oldGBgrandchild = oldGB->child(0)->child(0)->castToRelExpr();
+  else
+    oldGBgrandchild = oldGB->child(0)->castToRelExpr();
+
+  RelExpr *filterParent = nestedAggInSubQ ? 
+    oldGB->child(0)->castToRelExpr() : oldGB;
+
+  RelExpr *oldLeftChild = child(0)->castToRelExpr();
 
   // Determine a set of unique columns for the left sub-tree.
 
@@ -3065,7 +3139,7 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
     // Could not find a set of unique cols.
     // If the left sub-tree contains a UNION/TRANSPOSE/SEQUENCE or SAMPLE
     // then we will fail to unnest the subquery for this reason.
-    child(1)->eliminateFilterChild();
+    filterParent->eliminateFilterChild();
     // left child does not have a unique constraint
     // cannot unnest this subquery
     if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
@@ -3103,18 +3177,6 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
     return NULL ;
   }
 
-  RelExpr *oldGB = child(1)->castToRelExpr();
-  // note that the child of oldGB is actually a Filter node, here 
-  // oldGBgrandchild is the child of oldGB before the Filter was added.
-  RelExpr *oldGBgrandchild ;
-
-  if (oldGB->child(0)->getOperatorType() == REL_FILTER)
-   oldGBgrandchild = oldGB->child(0)->child(0)->castToRelExpr();
-  else
-    oldGBgrandchild = oldGB->child(0)->castToRelExpr();
-
-  RelExpr *oldLeftChild = child(0)->castToRelExpr();
-
   // if subquery needs left joins some additional checks are done here to
   // see if pull up groupby transformation can be done while preserving 
   // semantic correctness. No changes for left joins or preserving nulls
@@ -3131,7 +3193,7 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
          *CmpCommon::diags() << DgSqlCode(2997)   
                 << DgString1("Subquery was not unnested. Reason: Join with selectionPreds cannot be converted to LeftJoin."); 
       }
-      oldGB->eliminateFilterChild();
+      filterParent->eliminateFilterChild();
       return NULL ;
     }
   }
@@ -3155,7 +3217,13 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
   GroupByAgg *newGrby = (GroupByAgg *) copyNode(oldGB, stmtHeap);
       newGrby->setRETDesc(getRETDesc()); 
   newGrby->getGroupAttr()->clearLogProperties(); //logical prop. must be resynthesized
-
+  GroupByAgg *newSubQGrby = NULL;
+  if (nestedAggInSubQ)
+  {
+    newSubQGrby = (GroupByAgg *) copyNode(oldGB->child(0)->castToRelExpr(), 
+					  stmtHeap);
+    newSubQGrby->getGroupAttr()->clearLogProperties();  
+  }
       
   // For multi-level subqueries it is possible that this Join is 
   // not a TSJ, but still contains outer references. This happens 
@@ -3172,8 +3240,25 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
   { 
       // The join contains aggregates
       // Skip such this subquery . 
-     oldGB->eliminateFilterChild();
+     filterParent->eliminateFilterChild();
      return NULL ;
+  }
+
+  if (nestedAggInSubQ)
+  {
+    safeToPullUpGrby = newJoin->pullUpPredsWithAggrs(newSubQGrby); 
+    if (NOT safeToPullUpGrby )
+    {  
+      filterParent->eliminateFilterChild();
+      return NULL ;
+    }
+    // inputs of newSubQGroupBy are same as the old
+    // TSJ/Join that we are replacing. Outputs are join's + aggregates
+    newSubQGrby->getGroupAttr()->addCharacteristicOutputs
+      (getGroupAttr()->getCharacteristicOutputs());
+    newSubQGrby->getGroupAttr()->setCharacteristicInputs
+      (getGroupAttr()->getCharacteristicInputs());
+    newSubQGrby->child(0) = newJoin ;
   }
       
   // inputs and outputs of new GroupBy are same as the old
@@ -3182,7 +3267,11 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
     (getGroupAttr()->getCharacteristicOutputs());
   newGrby->getGroupAttr()->setCharacteristicInputs
     (getGroupAttr()->getCharacteristicInputs());
-  newGrby->child(0) = newJoin ;
+
+  if (nestedAggInSubQ)
+    newGrby->child(0) = newSubQGrby;
+  else
+    newGrby->child(0) = newJoin ;
 
 
   // set the grouping cols for new GroupBy
@@ -3198,6 +3287,16 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
 		oldLeftChildOutputs, 
 		normWARef
 			   );
+  if (nestedAggInSubQ) 
+  {
+    newSubQGrby->getGroupAttr()->
+      addCharacteristicOutputs(newGrby->groupExpr());
+    newSubQGrby->computeGroupExpr(newGrby->groupExpr(), 
+				  oldLeftChildOutputs, 
+				  normWARef); 
+  }
+  
+
 
   // The newGrby cannot be a scalar groupby under any circumstance
   // So if the group expression is empty, add a constant to the 
@@ -3221,6 +3320,10 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
   // decide to not unnest. 
   if (oldGB->child(0)->getOperatorType() == REL_FILTER)
     newJoin->selectionPred() += oldGB->child(0)->castToRelExpr()->selectionPred();
+  else if (nestedAggInSubQ && 
+	   oldGB->child(0)->child(0)->getOperatorType() == REL_FILTER)
+    newJoin->selectionPred() += 
+      oldGB->child(0)->child(0)->castToRelExpr()->selectionPred();  
 
   // If the new GroupBy contains any outer references (i.e. requiredInputs
   // that are not provided by the user) then mark it as needing
@@ -3230,7 +3333,16 @@ GroupByAgg* Join::pullUpGroupByTransformation(NormWA& normWARef)
 					getOuterReferences(outerReferences);
   if (NOT(outerReferences.isEmpty()))
   {
-    newGrby->setRequiresMoveUp(TRUE) ;
+    if (!nestedAggInSubQ)
+      newGrby->setRequiresMoveUp(TRUE) ;
+    else
+    {
+       filterParent->eliminateFilterChild();
+       if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
+         *CmpCommon::diags() << DgSqlCode(2997)   
+                             << DgString1("Subquery was not unnested. Reason: More than 1 level of nested subquery and nested aggregate are both present");
+       return NULL;
+    }
   }
  
   return newGrby ;
@@ -3350,26 +3462,6 @@ RelExpr* GroupByAgg::nullPreservingTransformation(GroupByAgg* oldGB,
   // that far.
   ValueId ignoreReturnedVid;
   ValueId oneTrueVid;
-  NABoolean  replaceOneTrue = FALSE;
-
-  replaceOneTrue = newGrby->aggregateExpr().containsOneTrue(oneTrueVid);
-  if( replaceOneTrue && 
-      newGrby->getGroupAttr()->getCharacteristicOutputs().referencesTheGivenValue(oneTrueVid, ignoreReturnedVid, FALSE,FALSE))
-  { 
-    // If someone above us needs the oneTrue, skip unnesting it as
-    // we cannot map between a count(1) > 0 expression to 
-    // a oneTrue(return TRUE) one.
-    // This since the only way to do so would be to add "count(1) > 0" to the
-    // grouping expression. For phase 3 we want to evaluate if doing so would be
-    // safe from a semantic point of view.
-    if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
-    {
-       *CmpCommon::diags() << DgSqlCode(2997)   
-          << DgString1("Subquery was not unnested. Reason: Upper expressions require OneTrue."); 
-    }
-    oldGB->eliminateFilterChild();
-    return NULL ;
-  } 
 
   // change newJoin into a left join and move preds into the join predicate
   // we have already guaranteed that all selection preds in the newJoin are
@@ -3863,15 +3955,14 @@ RelExpr* GroupByAgg::nullPreserveMyExprs( NormWA& normWARef)
 //             an aggregate from the original groupBy.
 
 -------------------------------------------------------------------------------*/
-GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby, 
+GroupByAgg* Join::moveUpGroupByTransformation(GroupByAgg* topGrby, 
                                               NormWA & normWARef)
 {
   GroupByAgg *moveUpGrby;
   ValueIdSet emptySet ;
-  GroupByAgg *movedUpGrbyTail = (GroupByAgg*) topGrby;
+  GroupByAgg *movedUpGrbyTail = topGrby;
   RelExpr * joinRightChild = child(1)->castToRelExpr();
   CollHeap *stmtHeap = CmpCommon::statementHeap() ;
-
 
   MapValueIds *moveUpMap = NULL;
   while ((joinRightChild->getOperatorType() == REL_GROUPBY) &&
@@ -3931,9 +4022,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 
     if (NOT safeToMoveGrby )
     { 
-        // The join contains aggregates
-        // Skip such this subquery .
-      
+      // The join contains aggregates, skip this subquery.
        return NULL ;
     }
     child(1) = joinRightChild ;
@@ -3981,7 +4070,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 
     // Sometimes the moveUpMap ends up being empty after being moved
     // on top of a Join. Eliminate it if we don't need it, otherwise 
-    // it will impeeded output flow.
+    // it will impede output flow.
 
     if ( moveUpMap != NULL && 
          moveUpMap->getGroupAttr()->getCharacteristicOutputs().isEmpty()) 
@@ -4046,7 +4135,7 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 // sufficient outputs cannot be produced to compute left side's 
 // unique columns
 //
-// Expects: Child(0) to be a Join.
+// Expects: Child(0) to be a Join or a subQ groupby.
 // Sideffects: recomputed inputs and outputs of the join child's children
 //             recomputed inputs and outputs of the join.
 //             pushes any of the groupBy's predicates down that can go down.
@@ -4056,7 +4145,11 @@ GroupByAgg* Join::moveUpGroupByTransformation(const GroupByAgg* topGrby,
 NABoolean GroupByAgg::subqueryUnnestFinalize(ValueIdSet& newGrbyGroupExpr, 
 					     NormWA& normWARef)
 {
-  Join * newJoin = (Join*) child(0)->castToRelExpr();
+  Join * newJoin = NULL ;
+  if (child(0)->getOperatorType() == REL_GROUPBY)
+    newJoin = (Join*) child(0)->child(0)->castToRelExpr();
+  else
+    newJoin = (Join*) child(0)->castToRelExpr();
   RelExpr * newLeftChild  = newJoin->child(0)->castToRelExpr();
   RelExpr * newRightChild = newJoin->child(1)->castToRelExpr();
 
@@ -4276,7 +4369,7 @@ NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby,
 //  2) If the children of the join are marked for removal
 //         
 //	parent
-//          |                  parent
+//        |                  parent
 //	Join                   |
 //	/   \       ------>    X
 //     X    Y   
@@ -4286,9 +4379,8 @@ NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby,
 //  3) If its a left join and has been markedForElimination by the normalize 
 //     phase then
 //
-//        parent
-//          |                  parent
-//
+//      parent
+//        |                    parent
 //      LeftJoin                 |
 //	/   \       ------>      X
 //     X    Y   
@@ -4307,12 +4399,18 @@ NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby,
 //      Here t2.a is a unique key of table t2.
 //      
 //      The following transformation is made
-//        Semi Join {pred : t1.b = t2.a}          Join {pred : t1.b = t2.a} 
+//        Semi Join {pred : t1.b = t2.a}  ------>  Join {pred : t1.b = t2.a} 
 //
 //   b) If the right child is not unique in the joining column then 
 //      we transform the semijoin into an inner join followed by a groupby
 //      as the join's right child. This transformation is enabled by default
 //      only if the right side is an IN list, otherwise a CQD has to be used.
+//
+//                                          groupby  (X.key)
+//          SemiJoin                           |
+//           /    \        ------>           Join
+//          X      Y                         /  \
+//                                          X    Y
 //
 // SUBQUERY UNNESTING 
 // The subquery unnesting consist of two main transformations:
@@ -4320,14 +4418,15 @@ NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby,
 // which are based on Dayal and Muralikrishna's algorithm (see below).
 //
 // a) pullUpGroupBy transformation:
+//
 // For a single level subquery this is the only transformation required for 
 // subquery unnesting. 
 // 
-//      TSJ                            GroupBy 
+//      TSJ                             GroupBy 
 //     /   \                              |    
-//   X      ScalarAgg           -->      Join 
+//   X      ScalarAgg           -->      Join  (pred)
 //             |                         /   \
-//          Filter                      X     Y 
+//          Filter (pred)               X     Y 
 //             |
 //             Y 
 //
@@ -4336,35 +4435,37 @@ NABoolean Join::applyInnerKeyedAccessHeuristic(const GroupByAgg* newGrby,
 // to apply the moveupGroupBy transformation.
 //
 // b) moveUpGroupBy transformation:
+//
 // When the pullUpGroupBy transformation has to be applied more than once 
 // on a query tree (for multi-level subqueries), then it is possible that 
 // that a groupBy below still contains outer references. For example with
-// a two level query:
+// a two level query, this is what the tree will look like after applying
+// the pullUpGroupBy transformation twice:
 //
-//      TSJ2                           GroupBy2
-//     /   \            pullUpGroupBy     |    
-//   X      ScalarAgg2 transformation   Join2 
-//             |           --->         /   \
-//          Filter2                     X     GroupBy1 
-//             |                                 \
-//             TSJ1                              Join1
-//            /   \                                \
-//           Y    ScalarAgg1                        Z
+//      TSJ2                               GroupBy2
+//     /   \               pullUpGroupBy      |    
+//   X      ScalarAgg2    transformation    Join2 
+//             |             (2 times)      /   \
+//          Filter2         ---------->    X     GroupBy1 
+//             |                                   \
+//             TSJ1                                Join1
+//            /   \                                /  \
+//           Y    ScalarAgg1                      Y    Z
 //                   \
 //                 Filter1
 //                     \
 //                      Z
 //
-// After the transformation the new tree looks like:
-      // GroupBy2(Join2(X2,GroupBy1(Join1(X1,Y1)))).
-// If the selection pred. of GroubBy1 and/or Join1 contain outer references
-      // those predicates will have to be pulled up so that Join2 does not have
-// to be a TSJ. 
+// If the selection pred. of GroubBy1 and/or Join1 contain outer
+// references after the transformation, those predicates will have to
+// be pulled up so that Join2 does not have to be a TSJ. See the comment
+// in Join::moveUpGroupByTransformation() for how the right side
+// of the picture above gets transformed further.
 // 
-// One additional compilcation occurs when we need to convert any of the
-// TSJs into a LeftJoin. This convertion occurs during either or both
+// One additional complication occurs when we need to convert any of the
+// TSJs into a LeftJoin. This conversion occurs during either or both
 // the pullUpGroupBy or moveUpGroupBy transformation. If we require a LeftJoin
-// we manipulate the predicates and nullinstantiates outputs of the LeftJoin
+// we manipulate the predicates and null-instantiated outputs of the LeftJoin
 // that is from the right subtree in order to preserve correctness. Refer
 // to the infamous count bug!
 // For more details, please refer to 
@@ -4449,7 +4550,7 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
     // If comp_bool_221 is on we will unnest even if there is no filter node.
     if ((CmpCommon::getDefault(COMP_BOOL_221) == DF_OFF) &&
         ((child(1)->getArity() != 1) ||
-        child(1)->child(0)->getOperatorType() != REL_FILTER))
+	 !(child(1)->castToRelExpr()->hasFilterChild())))
     {
         if (CmpCommon::getDefault(SUBQUERY_UNNESTING) == DF_DEBUG)
           *CmpCommon::diags() << DgSqlCode(2997)
@@ -4497,9 +4598,19 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
     // Apply MoveUp GroupBy transformation. Relevant only for subqueries with
     // two or more levels of nesting. If moveUpGroupBy is not needed
     // movedUpGroupByTail will be set to newGrby.
-    Join * newJoin = (Join*) newGrby->child(0)->castToRelExpr();
+    RelExpr* gbChild = newGrby->child(0)->castToRelExpr();
+    Join * newJoin = NULL;
+    GroupByAgg * newJoinParent = newGrby;
+    if (gbChild->getOperatorType() == REL_GROUPBY) 
+    {
+      newJoin = (Join*) gbChild->child(0)->castToRelExpr();
+      newJoinParent = (GroupByAgg*) gbChild;
+    }
+    else
+      newJoin = (Join*) gbChild;
+
     GroupByAgg* movedUpGrbyTail = 
-      newJoin->moveUpGroupByTransformation(newGrby, normWARef);
+      newJoin->moveUpGroupByTransformation(newJoinParent, normWARef);
 
     NABoolean hasNoErrors;
     if (movedUpGrbyTail != NULL) 
@@ -4550,12 +4661,39 @@ RelExpr * Join::semanticQueryOptimizeNode(NormWA & normWARef)
         (child(1)->getGroupAttr()->getNumJoinedTables() <= 
          ActiveSchemaDB()->getDefaults().getAsLong(COMP_INT_11)))
     {
-      return leftLinearizeJoinTree(normWARef, SEMI_JOIN_TO_INNER_JOIN);
+      return leftLinearizeJoinTree(normWARef, SEMI_JOIN_TO_INNER_JOIN); // 
     }
   }
 /*---------------------------------------------------------------------------------------*/
   return this;
 } // Join::semanticQueryOptimizeNode()
+
+NABoolean Join::prepareMeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &commonPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  if (isTSJForWrite() ||
+      isTSJForUndo() ||
+      isTSJForMerge() ||
+      getIsForTrafLoadPrep())
+    return FALSE;
+
+  if (!testRun)
+    {
+      // The caller of this methods added "commonPredicatesToAdd" to
+      // predicates_ (the generic selection predicates stored in the
+      // RelExpr). That works for both inner and non-inner joins.  The
+      // only thing we have left to do is to recompute the equi-join
+      // predicates.
+      findEquiJoinPredicates();
+    }
+
+  return TRUE;
+}
 
 // ***********************************************************************
 // $$$$ Union
@@ -4870,6 +5008,72 @@ RelExpr * Union::semanticQueryOptimizeNode(NormWA & normWARef)
 
 } // Union::semanticQueryOptimizeNode()
 
+NABoolean Union::prepareTreeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &commonPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  NABoolean result = TRUE;
+
+  // we only support UNION nodes without local predicates, which
+  // should be all cases, since there should not be any predicates on
+  // a UNION
+  if (getSelectionPred().entries() > 0)
+    {
+      info->getConsumer(0)->emitCSEDiagnostics(
+           "Selection predicates on union node not supported",
+           !testRun);
+      return FALSE;
+    }
+
+  // recursively call this for the children
+  for (CollIndex i=0; i<2 && result; i++)
+    {
+      ValueIdSet locOutputsToAdd(outputsToAdd);
+      ValueIdSet childOutputsToAdd;
+      ValueIdSet childPredsToRemove;
+      ValueIdSet childPredsToAdd;
+      ValueIdMap *map = (i==0 ? &getLeftMap() : &getRightMap());
+      ValueIdSet availableValues(map->getTopValues());
+
+      // if there are outputs to add, we can only do that for
+      // outputs that already exist in the ValueIdMap
+      availableValues += getGroupAttr()->getCharacteristicInputs();
+      if (locOutputsToAdd.removeUnCoveredExprs(availableValues))
+        {
+          info->getConsumer(0)->emitCSEDiagnostics(
+               "Not able to add output values unknown to union operator",
+               !testRun);
+          result = FALSE;
+        }
+
+      map->rewriteValueIdSetDown(outputsToAdd, childOutputsToAdd);
+      map->rewriteValueIdSetDown(predicatesToRemove, childPredsToRemove);
+      map->rewriteValueIdSetDown(commonPredicatesToAdd, childPredsToAdd);
+      
+      result = child(i)->prepareTreeForCSESharing(
+           childOutputsToAdd,
+           childPredsToRemove,
+           childPredsToAdd,
+           inputsToRemove,
+           info,
+           testRun);
+    }
+
+  if (result && !testRun)
+    {
+      getGroupAttr()->addCharacteristicOutputs(outputsToAdd);
+      getGroupAttr()->removeCharacteristicInputs(inputsToRemove);
+    }
+
+  // there is no need to call prepareMeForCSESharing() here
+
+  return result;
+}
+
 // ***********************************************************************
 // $$$$ GroupByAgg
 // member functions for class GroupByAgg
@@ -5110,6 +5314,15 @@ void GroupByAgg::rewriteNode(NormWA & normWARef)
     {
     }
   // ---------------------------------------------------------------------
+  // Rewrite the expressions that are rollup grouping expressions
+  // ---------------------------------------------------------------------
+  if (rollupGroupExprList().normalizeNode(normWARef))
+    {
+    }
+ 
+  normalizeExtraOrderExpr(normWARef);
+
+  // ---------------------------------------------------------------------
   // Rewrite the expressions that are aggregate expressions
   // ---------------------------------------------------------------------
   if (aggregateExpr().normalizeNode(normWARef))
@@ -5238,10 +5451,26 @@ RelExpr * GroupByAgg::normalizeNode(NormWA & normWARef)
   // Check if any of the HAVING clause predicates can be pushed down
   // (only when a Group By list is given).
   // ---------------------------------------------------------------------
-  pushdownCoveredExpr(getGroupAttr()->getCharacteristicOutputs(),
-                      getGroupAttr()->getCharacteristicInputs(),
-                      selectionPred()
-                      );
+  
+  // if this is a rollup groupby, then do not pushdown having pred to
+  // child node. If pushdown is done, then it might incorrectly process rows that
+  // are generated during rollup groupby processing.
+  // For ex:
+  //  insert into t values (1);
+  //  select a from t group by rollup(a) having a is not null;
+  //  If 'having' pred is pushdown to scan node as a where pred, 
+  //  then SortGroupBy will return all rollup groups generated 
+  //  and represented as null. They will not be filtered out which
+  //  they would if having pred is applied after rollup group materialization.
+  //  Maybe later we can optimize so this pushdown is done if possible,
+  //  for ex, if there are no 'is null/not null' having preds on grouping cols.
+  if (NOT isRollup())
+    {
+      pushdownCoveredExpr(getGroupAttr()->getCharacteristicOutputs(),
+                          getGroupAttr()->getCharacteristicInputs(),
+                          selectionPred()
+                          );
+    }
 
   NABoolean needsNewVEGRegion = FALSE;
 
@@ -5466,6 +5695,47 @@ void GroupByAgg::eliminateCascadedGroupBy(NormWA & normWARef)
       child(0) = child(0)->child(0);
     }
   }
+}
+
+NABoolean GroupByAgg::prepareMeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &commonPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  // The caller of this method took care of most adjustments to
+  // make. The main thing the groupby node needs to do is to add any
+  // outputs that are required to its characteristic outputs.
+
+  if (!testRun)
+    {
+      ValueIdSet myAvailableValues(groupExpr_);
+      ValueIdSet referencedValues;
+      ValueIdSet myOutputsToAdd;
+      ValueIdSet unCoveredExpr;
+
+      myAvailableValues += aggregateExpr_;
+
+      // The caller may be asking for expressions on columns, maybe
+      // even an expression involving grouping columns and aggregates
+      // and multiple tables, therefore use the isCovered method to
+      // determine those subexpressions that we can produce here.
+      NABoolean allCovered =
+        outputsToAdd.isCovered(myAvailableValues,
+                               *(getGroupAttr()),
+                               referencedValues,
+                               myOutputsToAdd,
+                               unCoveredExpr);
+
+      if (allCovered)
+        myOutputsToAdd = outputsToAdd;
+
+      getGroupAttr()->addCharacteristicOutputs(myOutputsToAdd);
+    }
+
+  return TRUE;
 }
 
 
@@ -5825,6 +6095,41 @@ RelExpr * Scan::normalizeNode
   }
   return ((RelExpr *)newJoin);
 } // Scan::normalizeNode()
+
+NABoolean Scan::prepareMeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &commonPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  // The caller of this method took care of most adjustments to
+  // make. The main thing the scan node needs to do is to add any
+  // outputs that are required to its characteristic outputs.
+
+  if (!testRun)
+    {
+      ValueIdSet myColSet(getTableDesc()->getColumnVEGList());
+      ValueIdSet referencedCols;
+      ValueIdSet myOutputsToAdd;
+      ValueIdSet unCoveredExpr;
+
+      // The caller may be asking for expressions on columns, maybe
+      // even an expression involving multiple tables, therefore use
+      // the isCovered method to determine those subexpressions that we
+      // can produce here.
+      outputsToAdd.isCovered(myColSet,
+                             *(getGroupAttr()),
+                             referencedCols,
+                             myOutputsToAdd,
+                             unCoveredExpr);
+
+      getGroupAttr()->addCharacteristicOutputs(myOutputsToAdd);
+    }
+
+  return TRUE;
+}
 
 /* This method applies a long list of heuristics to determine whether
  its better to use a semijoin to evaluate the OR pred or if we should
@@ -7328,6 +7633,8 @@ RelExpr * RelRoot::semanticQueryOptimizeNode(NormWA & normWARef)
 	// ---------------------------------------------------------------------
 	child(0) = child(0)->semanticQueryOptimizeNode(normWARef);
 
+        child(0) = inlineTempTablesForCSEs(normWARef);
+
 	normWARef.restoreOriginalVEGRegion();
 
         normWARef.setExtraHubVertex(NULL);
@@ -7371,6 +7678,176 @@ RelExpr * RelRoot::semanticQueryOptimizeNode(NormWA & normWARef)
 
 } // RelRoot::semanticQueryOptimizeNode()
 
+RelExpr * RelRoot::inlineTempTablesForCSEs(NormWA & normWARef)
+{
+  RelExpr *result = NULL;
+  const LIST(CSEInfo *) * cses = CmpCommon::statement()->getCSEInfoList();
+
+  if (cses && cses->entries() > 0)
+    {
+      // If this query tree has any common subexpressions that need
+      // to be materialized as temp tables, then insert these
+      // materialization steps (called CTi below) between the root
+      // and its child node, Q, like this:
+      //
+      //     Root                                    Root
+      //       |                                       |
+      //       Q                                  MapValueIds
+      //                                               |
+      //                                          BlockedUnion
+      //                                           /        \
+      //                                        Union        Q
+      //                                        /   \
+      //                                      ...    CTn
+      //                                      /
+      //                                   Union
+      //                                   /   \
+      //                                 CT1   CT2
+      //
+      // The common subexpressions may depend on each other, so make
+      // sure to create them in the right order and to use blocked
+      // union instead of a regular union if there are such
+      // dependencies.
+      NABitVector toDoVec;   // still to be done
+      NABitVector readyVec;  // ready, all predecessors are done
+      NABitVector doneVec;   // already done
+
+      // first, figure out all the CSEs that we have to process
+      for (CollIndex i=0; i<cses->entries(); i++)
+        if (cses->at(i)->getInsertIntoTemp() != NULL)
+          toDoVec += i;
+
+      // loop over the to-do list, finding new entries for which we
+      // already processed all of their predecessors
+      while (toDoVec.entries() > 0)
+        {
+          RelExpr *thisLevelOfInserts = NULL;
+
+          for (CollIndex c=0; toDoVec.nextUsed(c); c++)
+            {
+              CSEInfo *info = cses->at(c);
+              // predecessor CSEs that have to be computed before we
+              // can attempt to compute this one
+              const LIST(CSEInfo *) &predecessors(info->getChildCSEs());
+              NABoolean isReady = TRUE;
+
+              for (CollIndex p=0; p<predecessors.entries(); p++)
+                {
+                  if (!doneVec.contains(p) &&
+                      cses->at(p)->getInsertIntoTemp() != NULL)
+                    // a predecessor CSE for which we have to
+                    // materialize a temp table has not yet
+                    // been processed - can't do this one
+                    isReady = FALSE;
+                }
+
+              if (isReady)
+                {
+                  // no predecessors or all predecessors have been
+                  // done
+                  readyVec += c;
+                }
+            }
+
+          // At this point we will have one or more CSEs in readyVec.
+          // All of their predecessors (if any) have already been
+          // processed.  Now make a Union backbone to process all the
+          // CSEs in readyVec in parallel.
+
+          // If we find nothing, we may have circular dependencies,
+          // and this is not allowed
+          // (recursive queries will have to be handled separately)
+          CMPASSERT(readyVec.entries() > 0);
+
+          for (CollIndex r=0; readyVec.nextUsed(r); r++)
+            {
+              CSEInfo *info = cses->at(r);
+              
+              if (thisLevelOfInserts == NULL)
+                thisLevelOfInserts = info->getInsertIntoTemp();
+              else
+                {
+                  thisLevelOfInserts = CommonSubExprRef::makeUnion(
+                       thisLevelOfInserts,
+                       info->getInsertIntoTemp(),
+                       FALSE);
+                }
+            } // loop over ready list
+
+          if (result == NULL)
+            result = thisLevelOfInserts;
+          else
+            result = CommonSubExprRef::makeUnion(
+                 result,
+                 thisLevelOfInserts,
+                 TRUE);
+
+          toDoVec -= readyVec;
+          doneVec += readyVec;
+          readyVec.clear();
+        } // while loop over to-do-list
+    } // CSEs exist for this statement
+
+  if (result)
+    {
+      const ValueIdSet &childOutputs(
+           child(0).getGroupAttr()->getCharacteristicOutputs());
+      ValueIdList outputValueList;
+      ValueIdList unionValueList;
+
+      // make a final blocked union between the inlined
+      // insert statements and the actual query
+      Union *topUnion = CommonSubExprRef::makeUnion(
+           result,
+           child(0),
+           TRUE);
+
+      // This top-level union has a right child that produces the
+      // desired outputs. The left child produces fake dummy ValueIds,
+      // it doesn't produce any rows. Since the root expects the right
+      // child's ValueIds, we put a MapValueIds on top that maps the
+      // values back to what they were in the right child.
+      for (ValueId o=childOutputs.init();
+           childOutputs.next(o);
+           childOutputs.advance(o))
+        {
+          ItemExpr *leftFake = new(CmpCommon::statementHeap())
+            NATypeToItem(o.getType().newCopy(CmpCommon::statementHeap()));
+
+          leftFake->synthTypeAndValueId();
+
+	  ValueIdUnion *vidUnion = new(CmpCommon::statementHeap())
+	    ValueIdUnion(leftFake->getValueId(),
+                         o,
+                         NULL_VALUE_ID,
+			 topUnion->getUnionFlags());
+	  vidUnion->synthTypeAndValueId();
+	  topUnion->addValueIdUnion(vidUnion->getValueId(),
+                                    CmpCommon::statementHeap());
+          outputValueList.insert(o);
+          unionValueList.insert(vidUnion->getValueId());
+          topUnion->getGroupAttr()->addCharacteristicOutput(
+               vidUnion->getValueId());
+        }
+
+      result = new(CmpCommon::statementHeap())
+        MapValueIds(topUnion,
+                    ValueIdMap(outputValueList, unionValueList),
+                    CmpCommon::statementHeap());
+
+      result->setGroupAttr(new (CmpCommon::statementHeap()) GroupAttributes());
+      result->getGroupAttr()->addCharacteristicInputs(
+           topUnion->getGroupAttr()->getCharacteristicInputs());
+      result->getGroupAttr()->setCharacteristicOutputs(childOutputs);
+
+      result->synthLogProp(&normWARef);
+    }
+  else
+    // no change, return child pointer
+    result = child(0);
+
+  return result;
+}
 
 // -----------------------------------------------------------------------
 // Filter::normalizeNode()
@@ -7427,6 +7904,16 @@ RelExpr * SortLogical::normalizeNode(NormWA & normWARef)
   return child(0);
 } // SortLogical::normalizeNode()
 
+NABoolean RelExpr::hasFilterChild()
+ {
+   if (getArity() == 1 && child(0)->getOperatorType() == REL_FILTER)
+     return TRUE;
+   else if (getArity() == 1  && child(0)->getArity() == 1 && 
+	    child(0)->child(0)->getOperatorType() == REL_FILTER)
+     return TRUE;
+   else
+     return FALSE;
+ }
 // If subquery unnesting fails for some reason at a particular level
 // then the Filter node at that level can be elimated by pushing
 // its selection predicate to its child. This is not strictly necessary
@@ -7525,6 +8012,138 @@ void RelExpr::processCompRefOptConstraints(NormWA * normWAPtr)
 {
 }
 
+NABoolean RelExpr::prepareTreeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &newPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  NABoolean result = TRUE;
+  CollIndex nc = getArity();
+  ValueIdSet newLocalPredicates(newPredicatesToAdd);
+  ValueIdSet newVEGPreds;
+
+  newLocalPredicates.findAllOpType(ITM_VEG_PREDICATE, newVEGPreds);
+
+  // recursively call this for the children
+  for (CollIndex i=0; i<nc && result; i++)
+    {
+      ValueIdSet childPredsToRemove(predicatesToRemove);
+      ValueIdSet childPredsToAdd(newPredicatesToAdd);
+      ValueIdSet childAvailValues(outputsToAdd);
+
+      childAvailValues += child(i).getGroupAttr()->getCharacteristicOutputs();
+      childAvailValues += child(i).getGroupAttr()->getCharacteristicInputs();
+
+      childPredsToRemove.removeUnCoveredExprs(childAvailValues);
+      childPredsToAdd.removeUnCoveredExprs(childAvailValues);
+
+      result = child(i)->prepareTreeForCSESharing(
+           outputsToAdd,
+           childPredsToRemove,
+           childPredsToAdd,
+           inputsToRemove,
+           info,
+           testRun);
+
+      if (!testRun)
+        {
+          // if the child already had or has added any of the requested
+          // outputs, then add them to our own char. outputs
+          ValueIdSet childAddedOutputs(
+               child(i).getGroupAttr()->getCharacteristicOutputs());
+
+          childAddedOutputs.intersectSet(outputsToAdd);
+          getGroupAttr()->addCharacteristicOutputs(childAddedOutputs);
+        }
+
+      // Todo: CSE: consider using recursivePushDownCoveredExpr
+      // instead of pushing these new predicates in this method
+      newVEGPreds.intersectSet(childPredsToAdd);
+      newLocalPredicates -= childPredsToAdd;
+    }
+
+  if (result && !testRun)
+    {
+      // Remove the predicates from our selection predicates.
+      // Note that the virtual method above is supposed to remove
+      // these predicates from all other places in the node.
+      predicates_ -= predicatesToRemove;
+
+      // Todo: CSE: need to remove predicates that are "similar" to
+      // the ones requested, e.g. same columns and constants, but
+      // an "=" operator with a different ValudId?
+
+      // add any predicates that aren't covered by one of the children
+      // and also add VEGPredicates that are covered by both of the
+      // children
+
+      newLocalPredicates += newVEGPreds;
+      predicates_ += newLocalPredicates;
+
+      // Remove the char. inputs the caller asked to remove.
+      // At this time we are not doing additional checks to
+      // ensure these inputs aren't referenced anymore in
+      // our node. We rely on the caller to ensure that
+      // these extra inputs are only needed by the predicates
+      // that we removed.
+      getGroupAttr()->removeCharacteristicInputs(inputsToRemove);
+    }
+
+  // Call a virtual method on this node to give it a chance to
+  // remove the predicates from any other places where they might be
+  // storing them, and to add any outputs it produces locally. Also
+  // give it a chance to say "no" to the whole idea of pulling out
+  // predicates and changing char. inputs and outputs (the default
+  // behavior).
+  if (result)
+    result = prepareMeForCSESharing(outputsToAdd,
+                                    predicatesToRemove,
+                                    newLocalPredicates,
+                                    inputsToRemove,
+                                    info,
+                                    testRun);
+
+  return result;
+}
+
+// Note that the caller of this method is responsible for adding those
+// new outputs to the group attributes that come from the children and
+// for removing the requested inputs. The caller also removes
+// "predicatesToRemove" from the selection predicates. This method
+// only needs to do the following:
+
+// - Add any new outputs to the char. outputs that are generated
+//   directly by this node (not by its children)
+// - Add "newPredicatesToAdd" to any other places where predicates
+//   are needed, remove then from the selection predicates if they
+//   should be stored elsewhere
+// - Remove "predicatesToRemove" from this node
+//   (not from the children, that is done by the caller)
+// - Make sure that "inputsToRemove" isn't referenced anywhere else
+//   in this node
+NABoolean RelExpr::prepareMeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &newPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     CSEInfo *info,
+     NABoolean testRun)
+{
+  // A class derived from RelExpr must explicitly define
+  // this method to support being part of a shared CSE
+
+  char buf[100];
+
+  snprintf(buf, sizeof(buf), "Operator %s not supported",
+           getText().data());
+
+  info->getConsumer(0)->emitCSEDiagnostics(buf, !testRun);
+
+  return FALSE;
+}
 
 void Join::processCompRefOptConstraints(NormWA * normWAPtr)
 {
@@ -8357,6 +8976,830 @@ void Pack::rewriteNode(NormWA& normWA)
   getGroupAttr()->normalizeInputsAndOutputs(normWA);
 }
 
+// ***********************************************************************
+// $$$$ CommonSubExprRef
+// member functions for class CommonSubExprRef
+// ***********************************************************************
+
+void CommonSubExprRef::transformNode(NormWA & normWARef,
+                                     ExprGroupId & locationOfPointerToMe)
+{
+  CMPASSERT( locationOfPointerToMe.getPtr() == this );
+
+  if (nodeIsTransformed())
+    return;
+  markAsTransformed();
+
+  // Allocate a new VEG region for the child, to prevent VEGies that
+  // cross the potentially common part and the rest of the query tree.
+  //normWARef.allocateAndSetVEGRegion(EXPORT_ONLY, this);
+  child(0)->getGroupAttr()->addCharacteristicInputs(
+       getGroupAttr()->getCharacteristicInputs());
+  child(0)->transformNode(normWARef, child(0)); 
+  pullUpPreds();
+  transformSelectPred(normWARef, locationOfPointerToMe);
+  //normWARef.restoreOriginalVEGRegion();
+}
+
+void CommonSubExprRef::pullUpPreds()
+{
+  // To preserve the commonality of common subexpressions, we
+  // don't allow to pull predicates out of them.
+
+  // so do nothing here, preventing predicate pull-up
+
+  // alternatively, we could do the pull-up and record the
+  // pulled-up predicates here
+  // RelExpr::pullUpPreds();
+  // pulledPredicates_ += selectionPred();
+
+  // this is also the time to record the original set of inputs
+  // for this node, before predicate pushdown can alter the inputs
+  commonInputs_ = getGroupAttr()->getCharacteristicInputs();
+}
+
+void CommonSubExprRef::pushdownCoveredExpr(
+     const ValueIdSet & outputExpr,
+     const ValueIdSet & newExternalInputs,
+     ValueIdSet & predicatesOnParent,
+     const ValueIdSet * setOfValuesReqdByParent,
+     Lng32 childIndex)
+{
+  // Remember the predicates we pushed down, since other consumers of
+  // this CSE may not have pushed the equivalent
+  // predicates. Therefore, if we want to materialize a common
+  // subexpressions, any predicates that were pushed down and are not
+  // common to all the consumers must be pulled back out before we can
+  // share a common query tree.
+  ValueIdSet predsPushedThisTime(predicatesOnParent);
+
+  RelExpr::pushdownCoveredExpr(outputExpr,
+                               newExternalInputs,
+                               predicatesOnParent,
+                               setOfValuesReqdByParent,
+                               childIndex);
+
+  predsPushedThisTime -= predicatesOnParent;
+  pushedPredicates_   += predsPushedThisTime;
+}
+
+void CommonSubExprRef::rewriteNode(NormWA & normWARef)
+{
+  RelExpr::rewriteNode(normWARef);
+
+  nonVEGColumns_ = columnList_;
+  columnList_.normalizeNode(normWARef);
+  commonInputs_.normalizeNode(normWARef);
+
+  normWARef.incrementCommonSubExprRefCount();
+}
+
+RelExpr * CommonSubExprRef::semanticQueryOptimizeNode(NormWA & normWARef)
+{
+  RelExpr *result = this;
+  NABoolean ok = TRUE;
+  CSEInfo *info = CmpCommon::statement()->getCSEInfo(internalName_);
+  CSEInfo::CSEAnalysisOutcome action = CSEInfo::UNKNOWN_ANALYSIS;
+
+  RelExpr::semanticQueryOptimizeNode(normWARef);
+
+  action = analyzeAndPrepareForSharing(*info);
+
+  switch (action)
+    {
+    case CSEInfo::EXPAND:
+      // Not able to share the CSE, expand the CSE by eliminating
+      // this node and putting its child tree in its place. In this
+      // case, analyzeAndPrepareForSharing() left the tree unchanged.
+      result = child(0).getPtr();
+      break;
+
+    case CSEInfo::CREATE_TEMP:
+      determineTempTableType(*info);
+      if (createTempTable(*info))
+        {
+          RelExpr *ins = createInsertIntoTemp(*info, normWARef);
+
+          if (ins)
+            info->setInsertIntoTemp(ins);
+          else
+            result = NULL;
+        }
+      else
+        result = NULL;
+
+      if (!result)
+        break;
+      // fall through to the next case
+
+    case CSEInfo::TEMP:
+      // We are able to share this CSE between multiple consumers.
+      // Replace this node with a scan on the temp table that
+      // holds the CSE results.
+      result = createTempScan(*info, normWARef);
+      break;
+
+    case CSEInfo::ERROR:
+      // diags should be set
+      CMPASSERT(CmpCommon::diags()->mainSQLCODE() < 0);
+      break;
+
+    default:
+      CMPASSERT(0);
+    }
+
+  // for debugging
+  if (CmpCommon::getDefault(CSE_PRINT_DEBUG_INFO) == DF_ON &&
+      info->getIdOfAnalyzingConsumer() == id_)
+    displayAll(internalName_);
+
+  if (result == NULL)
+    emitCSEDiagnostics("Error in creating temp table or temp table insert",
+                       TRUE);
+
+  return result;
+}
+
+CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInfo &info)
+{
+  // do a few simple shortcuts first
+
+  // If another consumer has already done the analysis, return its result.
+  // Note: Right now, all the consumers do the same, in the future, we could
+  // expand some and share others.
+  if (info.getIdOfAnalyzingConsumer() >= 0)
+    return info.getAnalysisOutcome(id_);
+
+  info.setIdOfAnalyzingConsumer(id_);
+
+  if (CmpCommon::getDefault(CSE_USE_TEMP) == DF_OFF)
+    {
+      emitCSEDiagnostics("Forced with CQD CSE_USE_TEMP CQD 'off'");
+      info.setAnalysisOutcome(CSEInfo::EXPAND);
+      return CSEInfo::EXPAND;
+    }
+
+  CSEInfo::CSEAnalysisOutcome result = CSEInfo::UNKNOWN_ANALYSIS;
+  NABoolean canShare = TRUE;
+  NABitVector neededColumnsBitmap;
+  ValueIdList tempTableColumns;
+  const ValueIdSet &charOutputs(getGroupAttr()->getCharacteristicOutputs());
+  CollIndex numConsumers = info.getNumConsumers();
+
+  // A laundry list of changes to undo the effects of normalization,
+  // specifically of pushing predicates down and of minimizing the
+  // outputs. Also, a list of new common selection predicates to add.
+  ValueIdSet outputsToAdd;
+  ValueIdSet predicatesToRemove(pushedPredicates_);
+  ValueIdSet newPredicatesToAdd;
+  ValueIdSet commonPredicates(pushedPredicates_);
+  ValueIdSet inputsToRemove(child(0).getGroupAttr()->getCharacteristicInputs());
+  ValueIdSet *nonCommonPredicatesArray =
+    new(CmpCommon::statementHeap()) ValueIdSet[numConsumers];
+  ValueIdMap *myColsToConsumerMaps =
+    new(CmpCommon::statementHeap()) ValueIdMap[numConsumers];
+  ItemExpr *nonCommonPredicatesORed = NULL;
+  int numORedPreds = 0;
+
+  // ------------------------------------------------------------------
+  // CSE Analysis phase
+  // ------------------------------------------------------------------
+
+  // loop over the consumers of the CSE to negotiate a common set
+  // of columns to retrieve and a common set of predicates that can
+  // remain pushed down
+  for (CollIndex c=0; c<numConsumers && canShare; c++)
+    {
+      CommonSubExprRef *consumer = info.getConsumer(c);
+
+      const ValueIdList &cCols(consumer->columnList_);
+      ValueIdSet availableValues(cCols);
+      ValueIdSet requiredValues(
+           consumer->getGroupAttr()->getCharacteristicOutputs());
+      const ValueIdSet &cPreds(consumer->pushedPredicates_);
+      ValueIdSet mappedPreds;
+      ValueId dummy;
+
+      requiredValues += cPreds;
+      availableValues +=
+        consumer->getGroupAttr()->getCharacteristicInputs();
+
+      // Do a sanity check whether we can produce the required
+      // values (outputs and predicates) from the available values
+      // (tables of the original subexpression, to be a temp table).
+      // If not, one reason could be that we copied an expression
+      // and now have different ValueIds. This could be improved.
+      if (requiredValues.removeUnCoveredExprs(availableValues))
+        {
+          emitCSEDiagnostics(
+               "Characteristic outputs not covered by common subexpression");
+          canShare = FALSE;
+        }
+
+      // Check the required values of this consumer and add all of
+      // them (by position number of the original list) to the bit
+      // vector of required columns. Note that we might be able to
+      // optimize this somewhat for expressions.
+      for (CollIndex i=0; i<cCols.entries(); i++)
+        if (requiredValues.referencesTheGivenValue(cCols[i],
+                                                   dummy,
+                                                   TRUE,
+                                                   TRUE))
+          neededColumnsBitmap += i;
+
+      if (!cPreds.isEmpty())
+        if (consumer->id_ == id_)
+          {
+            // Assert for now that we are still seeing the same node,
+            // not a copy.  If this fails, think about whether making
+            // a copy might cause issues here, e.g. because some of
+            // the information has diverged.
+            DCMPASSERT(consumer == this);
+
+            // consumer is the same as "this"
+            mappedPreds = cPreds;
+          }
+        else
+          {
+            // another consumer, likely to use different ValueIds
+
+            // a ValueIdMap that maps my columns (top) to those of the
+            // other consumer (bottom)
+            ValueIdSet vegRefsWithDifferingConsts;
+            ValueIdSet vegRefsWithDifferingInputs;
+
+            myColsToConsumerMaps[c] = ValueIdMap(columnList_, cCols);
+
+            // make sure we can also map VEGPreds for any VEGRefs in the map
+            myColsToConsumerMaps[c].augmentForVEG(
+                 TRUE,  // add VEGPreds for existing VEGRefs
+                 FALSE, // no need to add more VEGRefs
+                 TRUE,  // only do this if constants match
+                 // only do this if the VEGies refer to
+                 // the same outputs
+                 &(getGroupAttr()->getCharacteristicInputs()),
+                 &(consumer->getGroupAttr()->getCharacteristicInputs()),
+                 &vegRefsWithDifferingConsts,
+                 &vegRefsWithDifferingInputs);
+
+            // for now, don't work on trees that have VEGies with differing
+            // constants or inputs
+            if (vegRefsWithDifferingConsts.entries() > 0)
+              {
+                info.addVEGRefsWithDifferingConstants(vegRefsWithDifferingConsts);
+                emitCSEDiagnostics(
+                     "Encountered VEGs with different constants in different consumers");
+                canShare = FALSE;
+              }
+
+            if (vegRefsWithDifferingInputs.entries() > 0)
+              {
+                info.addVEGRefsWithDifferingInputs(vegRefsWithDifferingInputs);
+                emitCSEDiagnostics("Encountered VEGs with different characteristic inputs");
+                canShare = FALSE;
+              }
+
+            // Check the inputs, all of the consumers must have the same inputs
+            // (parameters). We could see differences if query caching decides
+            // to parameterize the copies of the CTEs differently.
+            if (consumer->commonInputs_ != commonInputs_)
+              {
+                emitCSEDiagnostics(
+                     "Differing inputs in CTE references, try CQD QUERY_CACHE '0'");
+                canShare = FALSE;
+              }
+
+            // rewrite the predicates on the consumer in terms of my
+            // own ValueIds
+            myColsToConsumerMaps[c].rewriteValueIdSetUp(mappedPreds, cPreds);
+
+            commonPredicates.findCommonSubexpressions(mappedPreds, TRUE);
+
+          }
+      // Save the mapped preds for later.
+      // Note: These are not final yet, until we have found
+      // common predicates among all the consumers.
+      nonCommonPredicatesArray[c] = mappedPreds;
+    }
+
+  // translate the bit vector of required columns into a set of values
+  // that are required (by other consumers) but are not produced by my
+  // child tree
+  makeValueIdListFromBitVector(tempTableColumns,
+                               columnList_,
+                               neededColumnsBitmap);
+  outputsToAdd.insertList(tempTableColumns);
+  info.setNeededColumns(neededColumnsBitmap);
+  predicatesToRemove -= commonPredicates;
+  info.setCommonPredicates(commonPredicates);
+
+  // Make an ORed predicate of all those non-common predicates of the
+  // consumers, to be applied on the common subexpression when creating
+  // the temp table. Also determine non-common predicates to be applied
+  // when scanning the temp table.
+  for (CollIndex n=0; n<numConsumers && canShare; n++)
+    {
+      // Now that we have the definitive set of common predicates,
+      // we can get the "uncommon" predicates, i.e. those that
+      // have to be evaluated on the individual scans of the temp
+      // tables. What we can do, however, is to OR these "uncommon"
+      // predicates and apply that OR predicate when building the
+      // temp table.
+      nonCommonPredicatesArray[n] -= commonPredicates;
+
+      if (nonCommonPredicatesArray[n].entries() > 0)
+        {
+          if (numORedPreds == n)
+            {
+              // build the ORed predicate
+              ItemExpr *uncommonPreds =
+                nonCommonPredicatesArray[n].rebuildExprTree();
+
+              if (nonCommonPredicatesORed)
+                nonCommonPredicatesORed =
+                  new(CmpCommon::statementHeap()) BiLogic(
+                       ITM_OR,
+                       nonCommonPredicatesORed,
+                       uncommonPreds);
+              else
+                nonCommonPredicatesORed = uncommonPreds;
+
+              numORedPreds++;
+            }
+          
+          // rewrite the non-common predicates in terms of the consumer
+          // (the ValueIdMap should in many cases already have the
+          // correct translation)
+          myColsToConsumerMaps[n].rewriteValueIdSetDown(
+               nonCommonPredicatesArray[n],
+               info.getConsumer(n)->nonSharedPredicates_);
+        }
+    }
+
+  // adding the ORed non-common predicates makes sense only if all
+  // consumers have some such predicate. If at least one consumer
+  // doesn't, that's equivalent to a TRUE predicate, and TRUE OR x is
+  // always TRUE.
+  if (numORedPreds == numConsumers)
+    {
+      nonCommonPredicatesORed->synthTypeAndValueId();
+
+      newPredicatesToAdd += nonCommonPredicatesORed->getValueId();
+      info.addCommonPredicates(newPredicatesToAdd);
+    }
+
+  outputsToAdd -= child(0).getGroupAttr()->getCharacteristicOutputs();
+  inputsToRemove -= commonInputs_;
+
+  // do a dry-run first, before we change the child tree,
+  // because if we can't prepare the tree for CSE sharing,
+  // we'll need it in its original form to be able to expand it
+  if (canShare)
+    canShare = child(0)->prepareTreeForCSESharing(
+         outputsToAdd,
+         predicatesToRemove,
+         newPredicatesToAdd,
+         inputsToRemove,
+         &info,
+         TRUE);
+
+  if (canShare &&
+      CmpCommon::getDefault(CSE_USE_TEMP) != DF_ON)
+    {
+      // Todo: CSE: make a heuristic decision
+      emitCSEDiagnostics("Heuristically decided not to materialize");
+      canShare = FALSE;
+    }
+
+  if (canShare && info.getNeededColumns().entries() == 0)
+    {
+      // Temp table has no columns, looks like all we care about is
+      // the number of rows returned. This is not yet supported. We
+      // could make a table with a dummy column.
+      emitCSEDiagnostics("Temp table with no columns is not supported");
+      canShare = FALSE;
+    }
+
+
+  // ------------------------------------------------------------------
+  // Preparation phase
+  // ------------------------------------------------------------------
+
+  if (canShare)
+    {
+      canShare = child(0)->prepareTreeForCSESharing(
+           outputsToAdd,
+           predicatesToRemove,
+           newPredicatesToAdd,
+           inputsToRemove,
+           &info,
+           FALSE);
+
+      // If this failed we are in trouble, we potentially changed the
+      // child tree, preventing us from expanding it. Therefore we
+      // have to error out. We should therefore find most problems
+      // in the dry run above.
+      if (!canShare)
+        {
+          emitCSEDiagnostics("Failed to prepare child tree for materialization",
+                             TRUE);
+          result = CSEInfo::ERROR;
+        }
+      else if (!child(0).getGroupAttr()->getCharacteristicOutputs().contains(
+                    outputsToAdd))
+        {
+          // we failed to produce the requested additional outputs
+          emitCSEDiagnostics("Failed to produce all the required output columns",
+                             TRUE);
+          canShare = FALSE;
+          result = CSEInfo::ERROR;
+        }
+
+    }
+
+  if (canShare)
+    result = CSEInfo::CREATE_TEMP;
+  else if (result == CSEInfo::UNKNOWN_ANALYSIS)
+    result = CSEInfo::EXPAND;
+
+  info.setAnalysisOutcome(result);
+
+  return result;
+}
+
+void CommonSubExprRef::determineTempTableType(CSEInfo &info)
+{
+  NABoolean createHiveTable =
+    (CmpCommon::getDefault(CSE_HIVE_TEMP_TABLE) == DF_ON);
+
+  if (createHiveTable)
+    info.setTempTableType(CSEInfo::HIVE_TEMP_TABLE);
+  else
+    info.setTempTableType(CSEInfo::VOLATILE_TEMP_TABLE);
+}
+
+NABoolean CommonSubExprRef::createTempTable(CSEInfo &info)
+{
+  int result = TRUE;
+  const int maxCSENameLen = 12;
+  NAString tempTableName(COM_CSE_TABLE_PREFIX);
+  NAString tempTableSchema;
+  NAString tempTableCatalog;
+  CSEInfo::CSETempTableType tempTableType = info.getTempTableType();
+  char buf[32];
+  NAString tempTableDDL;
+  ValueIdList cols;
+  NAString cseNamePrefix(internalName_.data(),
+                         MINOF(internalName_.length(),16));
+
+  // Note: Errors at this stage of the process may be recoverable, so
+  // we emit only warning diagnostics and just return FALSE if the
+  // temp table cannot be created
+
+
+  // Step 1: Create temp table name
+  // ------------------------------
+
+  // we create a name of this form:
+  // CSE_TEMP_ppppp_MXIDiiiii_Ssss_ccc
+  // where
+  //   ppp... is a prefix of the CTE name or an internal name
+  //          (just to make it easier to identify, not really needed,
+  //           we only use letters, digits, underscores)
+  //   iii... is the SQL session id
+  //          (Hive tables only, to keep different sessions apart)
+  //   sss    is the statement number in this session
+  //   ccc    is the CSE number in this statement
+
+  // Overall name length is 256, and both HDFS directory and file name
+  // can be quite long, so don't allow long user names as well. Note
+  // that the user name is just here to improve readability by humans,
+  // it's not needed for uniqueness.
+  if (cseNamePrefix.length() > maxCSENameLen)
+    cseNamePrefix.remove(maxCSENameLen);
+
+  cseNamePrefix.toUpper();
+  
+  for (int p=0; p<cseNamePrefix.length(); p++)
+    {
+      char c = cseNamePrefix[p];
+
+      if (!(c >= '0' && c <= '9' ||
+            c >= 'A' && c <= 'Z' ||
+            c == '_'))
+        cseNamePrefix.replace(p,1,"_");
+    }
+
+  tempTableName += cseNamePrefix;
+  if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
+    {
+      tempTableName += "_";
+      tempTableName +=
+        CmpCommon::context()->sqlSession()->getSessionId();
+    }
+  snprintf(buf, sizeof(buf), "_S%u_%d",
+           CmpCommon::context()->getStatementNum(),
+           info.getCSEId());
+  tempTableName += buf;
+
+  if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
+    {
+      tempTableSchema  = HIVE_SYSTEM_SCHEMA;
+      tempTableCatalog = HIVE_SYSTEM_CATALOG;
+    }
+
+  info.setTempTableName(QualifiedName(tempTableName,
+                                      tempTableSchema,
+                                      tempTableCatalog));
+
+  // Step 2: Create the DDL for the temp table
+  // -----------------------------------------
+       
+  tempTableDDL += "CREATE ";
+  if (tempTableType == CSEInfo::VOLATILE_TEMP_TABLE)
+    tempTableDDL += "VOLATILE ";
+  tempTableDDL += "TABLE ";
+  if (tempTableType == CSEInfo::HIVE_TEMP_TABLE &&
+      tempTableSchema == HIVE_SYSTEM_SCHEMA ||
+      tempTableType == CSEInfo::VOLATILE_TEMP_TABLE)
+    {
+      // Hive table in default schema or volatile table,
+      // juse a one-part name
+      tempTableDDL += tempTableName;
+    }
+  else if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
+    {
+      // Hive table in a different schema, use a 2 part name
+      // (not yet supported)
+      tempTableDDL += tempTableSchema;
+      tempTableDDL += '.';
+      tempTableDDL += tempTableName;
+    }
+  else
+    {
+      // use a regular 3-part name
+      // (not yet supported)
+      tempTableDDL +=
+        info.getTempTableName().
+          getQualifiedNameAsAnsiString();
+    }
+
+  tempTableDDL += "(\n";
+
+  makeValueIdListFromBitVector(cols, columnList_, info.getNeededColumns());
+
+  for (CollIndex c=0; c<cols.entries(); c++)
+    {
+      char colName[10];
+      NAString colType;
+
+      snprintf(colName, sizeof(colName),"  C%05d ", c);
+      tempTableDDL +=  colName;
+      if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
+        cols[c].getType().getMyTypeAsHiveText(&colType);
+      else
+        cols[c].getType().getMyTypeAsText(&colType);
+
+      if (colType == "unknown")
+        {
+          char buf[100];
+
+          colType = "";
+          cols[c].getType().getMyTypeAsText(&colType);
+          snprintf(buf, sizeof(buf),
+                   "Unsupported data type for Hive temp table: %s",
+                   colType.data());
+          emitCSEDiagnostics(buf, FALSE);
+          result = FALSE;
+        }
+
+      tempTableDDL += colType;
+      if (c+1 < cols.entries())
+        tempTableDDL += ",\n";
+      else
+        tempTableDDL += ")";
+    }
+
+  if (result)
+    info.setTempTableDDL(tempTableDDL);
+
+  // Step 3: Create the temp table
+  // -----------------------------
+
+  if (result)
+    if (tempTableType == CSEInfo::HIVE_TEMP_TABLE)
+      {
+        int m = CmpCommon::diags()->mark();
+        if (!CmpCommon::context()->execHiveSQL(tempTableDDL,
+                                               CmpCommon::diags()))
+          {
+            if (CmpCommon::statement()->recompiling() ||
+                CmpCommon::statement()->getNumOfCompilationRetries() > 0)
+              // ignore temp table creation errors if we are
+              // recompiling, the temp table may have been
+              // created in a previous compilation attempt
+              // (if not, we will run into other errors later)
+              CmpCommon::diags()->rewind(m);
+            else
+              {
+                result = FALSE;
+                // we will fall back to a previous tree and try to
+                // recover, make sure there are no errors from our
+                // failed attempt in the diags area
+                CmpCommon::diags()->negateAllErrors();
+                emitCSEDiagnostics(
+                     "Error in creating Hive temp table");
+              }
+          }
+      }
+    else
+      {
+        // Todo: CSE: create volatile table
+        emitCSEDiagnostics("Volatile temp tables not yet supported");
+        result = FALSE;
+      }
+
+  // Step 4: Get the NATable for the temp table
+  // ------------------------------------------
+
+  if (result)
+    {
+      BindWA bindWA(ActiveSchemaDB(), CmpCommon::context());
+      CorrName cn(info.getTempTableName());
+      NATable *tempNATable =
+        ActiveSchemaDB()->getNATableDB()->get(cn,
+                                              &bindWA,
+                                              NULL);
+
+      if (!tempNATable)
+        emitCSEDiagnostics("Unable to read metadata for temporary table");
+      else
+        info.setTempNATable(tempNATable);
+    }
+
+  return result;
+}
+
+RelExpr * CommonSubExprRef::createInsertIntoTemp(CSEInfo &info, NormWA & normWARef)
+{
+  RelExpr *result = NULL;
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context());
+  CorrName cn(info.getTempTableName());
+
+  if (!info.getTempNATable())
+    // an earlier failure
+    return NULL;
+
+  TableDesc *tableDesc =
+    bindWA.createTableDesc(info.getTempNATable(),
+                           cn,
+                           FALSE);
+  ValueIdList srcValueList;
+
+  if (info.getTempTableType() == CSEInfo::HIVE_TEMP_TABLE)
+    {
+      // Create this tree:
+      //
+      //     BlockedUnion
+      //      /        \
+      //  Truncate  FastExtract temp
+      //    temp         |
+      //                cse
+      //
+      // In this tree "cse" is the child of this node and "temp" is
+      // the name of the Hive table. The tree is equivalent to what
+      // would be generated by an SQL statement
+      // "insert overwite table <temp> <cse>".
+
+      result = FastExtract::makeFastExtractTree(
+         tableDesc,
+         child(0).getPtr(),
+         TRUE,   // overwrite the table
+         FALSE,  // called outside the binder
+         TRUE,   // this is a table for a common subexpression
+         &bindWA);
+
+      CMPASSERT(result->getOperatorType() == REL_UNION &&
+                result->child(1)->getOperatorType() == REL_FAST_EXTRACT);
+      RelExpr *fe = result->child(1);
+
+      makeValueIdListFromBitVector(srcValueList, columnList_, info.getNeededColumns());
+      CMPASSERT(fe->getOperatorType() == REL_FAST_EXTRACT);
+      static_cast<FastExtract *>(fe)->setSelectList(srcValueList);
+      fe->setGroupAttr(new (CmpCommon::statementHeap()) GroupAttributes());
+      fe->getGroupAttr()->addCharacteristicInputs(
+           fe->child(0).getGroupAttr()->getCharacteristicInputs());
+      result->child(0)->setGroupAttr(
+           new (CmpCommon::statementHeap()) GroupAttributes());
+      result->setGroupAttr(new (CmpCommon::statementHeap()) GroupAttributes());
+      result->getGroupAttr()->addCharacteristicInputs(
+           fe->getGroupAttr()->getCharacteristicInputs());
+
+    }
+  else
+    {
+      emitCSEDiagnostics(
+           "Unsupported temp table type in createInsertIntoTemp()",
+           TRUE);
+    }
+
+  info.setInsertIntoTemp(result);
+
+  return result;
+}
+
+RelExpr * CommonSubExprRef::createTempScan(CSEInfo &info, NormWA & normWARef) // 
+{
+  // check for earlier errors
+  if (!info.getInsertIntoTemp())
+    return NULL;
+
+  MapValueIds *result = NULL;
+  BindWA bindWA(ActiveSchemaDB(), CmpCommon::context());
+  CorrName cn(info.getTempTableName(),
+              CmpCommon::statementHeap(),
+              internalName_);
+  TableDesc *tableDesc =
+    bindWA.createTableDesc(info.getTempNATable(),
+                           cn,
+                           FALSE,
+                           getHint());
+
+  Scan *scan =
+    new(CmpCommon::statementHeap()) Scan(cn, tableDesc);
+
+  // Run the new scan through bind and normalization phases, like the
+  // rest of the nodes have
+  ExprGroupId x(scan);
+
+  scan->bindSelf(&bindWA);
+  normWARef.allocateAndSetVEGRegion(IMPORT_ONLY, scan);
+  scan->transformNode(normWARef, x);
+  CMPASSERT(x.getPtr() == scan);
+  scan->rewriteNode(normWARef);
+  scan->normalizeNode(normWARef);
+  scan->synthLogProp(&normWARef);
+  normWARef.restoreOriginalVEGRegion();
+
+  scan->setCommonSubExpr(this);
+
+  // At this point we have a scan node on the temp table, with a new
+  // TableDesc that has new ValueIds. Make a map from the new ids to
+  // my own.
+  ValueIdList myOutputs;
+  ValueIdList tempTableOutputList;
+  ValueIdList tempTableVEGOutputList;
+  ValueIdSet tempTableOutputs;
+  ValueIdSet tempTablePreds;
+
+  makeValueIdListFromBitVector(myOutputs, columnList_, info.getNeededColumns());
+  tableDesc->getUserColumnList(tempTableOutputList);
+  tableDesc->getEquivVEGCols(tempTableOutputList, tempTableVEGOutputList);
+  CMPASSERT(myOutputs.entries() == tempTableVEGOutputList.entries());
+
+  ValueIdMap outToTempMap(myOutputs, tempTableVEGOutputList);
+
+  result = new(CmpCommon::statementHeap()) MapValueIds(scan,
+                                                       outToTempMap,
+                                                       CmpCommon::statementHeap());
+
+  result->setCSERef(this);
+  result->addValuesForVEGRewrite(nonVEGColumns_);
+  outToTempMap.rewriteValueIdSetDown(getGroupAttr()->getCharacteristicOutputs(),
+                                     tempTableOutputs);
+  // Todo: CSE: the rewrite below doesn't work with VEGPreds, and the
+  // augment method also isn't sufficient
+  outToTempMap.rewriteValueIdSetDown(nonSharedPredicates_, tempTablePreds);
+  scan->getGroupAttr()->setCharacteristicInputs(
+       getGroupAttr()->getCharacteristicInputs());
+  scan->getGroupAttr()->setCharacteristicOutputs(tempTableOutputs);
+  scan->setSelectionPredicates(tempTablePreds);
+
+  result->setGroupAttr(getGroupAttr());
+
+  return result;
+}
+
+void CommonSubExprRef::emitCSEDiagnostics(const char *message, NABoolean forceError)
+{
+  // Normally this does nothing.
+  // With CQD CSE_DEBUG_WARNINGS ON, it emits diagnostics about the reason(s) why
+  //      we don't share some common subexpressions.
+  // With forceError set to TRUE, it generates an internal error that causes the
+  //      query to fail. This should be avoided as best as possible, since expanding
+  //      the CSEs should have given us a successful plan.
+
+  if (CmpCommon::getDefault(CSE_DEBUG_WARNINGS) == DF_ON || forceError)
+    {
+      *CmpCommon::diags() << DgSqlCode(5001)
+                          << DgString0(internalName_.data())
+                          << DgString1(message);
+      if (forceError)
+        // throw an exception that forces the normalizer to skip the
+        // SQO phase and to revert to the original tree
+        AssertException(message, __FILE__, __LINE__).throwException();
+    }
+}
 
 // -----------------------------------------------------------------------
 // IsolatedNonTableUDR::transformNode()

@@ -465,8 +465,8 @@ z     y             25
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T0          1.000E+002   100 fragment   
+ROOT                          1.000E+001   10 fragment_   
+TRAFODION_SCAN    T0          1.000E+001   10 fragment_   
 
 --- 2 row(s) selected.
 >>
@@ -493,8 +493,8 @@ TRAFODION_SCAN    T6          1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T8          1.000E+002   100 fragment   
+ROOT                          1.000E+003   1000 fragmen   
+TRAFODION_SCAN    T8          1.000E+003   1000 fragmen   
 
 --- 2 row(s) selected.
 >>
@@ -507,8 +507,8 @@ TRAFODION_SCAN    T8          1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T9          1.000E+002   100 fragment   
+ROOT                          1.000E+004   10000 fragme   
+TRAFODION_SCAN    T9          1.000E+004   10000 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -521,8 +521,8 @@ TRAFODION_SCAN    T9          1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -535,8 +535,8 @@ TRAFODION_SCAN    T10         1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.300E+001   100 fragment   
-TRAFODION_SCAN    T10         1.300E+001   100 fragment   
+ROOT                          1.250E+004   100000 fragm   
+TRAFODION_SCAN    T10         1.250E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>select count(*) from (SELECT * FROM t10 WHERE d like 'one%') as t;
@@ -557,8 +557,8 @@ TRAFODION_SCAN    T10         1.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          8.900E+001   100 fragment   
-TRAFODION_SCAN    T10         8.900E+001   100 fragment   
+ROOT                          8.750E+004   100000 fragm   
+TRAFODION_SCAN    T10         8.750E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>select count(*) from (SELECT * FROM t10 WHERE d not like 'one%') as t;
@@ -618,8 +618,8 @@ TRAFODION_SCAN    T10         1.000E+000   1 fragment_i
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.000E+001   99 fragment_   
-TRAFODION_SCAN    T10         1.000E+001   99 fragment_   
+ROOT                          1.000E+004   10000 fragme   
+TRAFODION_SCAN    T10         1.000E+004   10000 fragme   
 
 --- 2 row(s) selected.
 >>select count(*) from (SELECT * FROM t10 WHERE d = 'one') as t;
@@ -641,8 +641,8 @@ TRAFODION_SCAN    T10         1.000E+001   99 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          5.000E+001   50 fragment_   
-TRAFODION_SCAN    T10         5.000E+001   50 fragment_   
+ROOT                          1.000E+004   10000 fragme   
+TRAFODION_SCAN    T10         1.000E+004   10000 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -656,8 +656,8 @@ TRAFODION_SCAN    T10         5.000E+001   50 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   50 fragment_   
-TRAFODION_SCAN    T10         3.300E+001   50 fragment_   
+ROOT                          9.999E+004   99999 fragme   
+TRAFODION_SCAN    T10         9.999E+004   99999 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -670,8 +670,8 @@ TRAFODION_SCAN    T10         3.300E+001   50 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.400E+001   50 fragment_   
-TRAFODION_SCAN    T10         3.300E+001   50 fragment_   
+ROOT                          9.999E+004   99999 fragme   
+TRAFODION_SCAN    T10         9.999E+004   99999 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -684,8 +684,8 @@ TRAFODION_SCAN    T10         3.300E+001   50 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   50 fragment_   
-TRAFODION_SCAN    T10         3.300E+001   50 fragment_   
+ROOT                          1.000E+000   1 fragment_i   
+TRAFODION_SCAN    T10         1.000E+000   1 fragment_i   
 
 --- 2 row(s) selected.
 >>
@@ -698,8 +698,8 @@ TRAFODION_SCAN    T10         3.300E+001   50 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   51 fragment_   
-TRAFODION_SCAN    T10         3.300E+001   51 fragment_   
+ROOT                          2.000E+000   2 fragment_i   
+TRAFODION_SCAN    T10         2.000E+000   2 fragment_i   
 
 --- 2 row(s) selected.
 >>
@@ -712,8 +712,8 @@ TRAFODION_SCAN    T10         3.300E+001   51 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          6.700E+001   100 fragment   
-TRAFODION_SCAN    T10         6.700E+001   100 fragment   
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -727,8 +727,8 @@ TRAFODION_SCAN    T10         6.700E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   56 fragment_   
-TRAFODION_SCAN    T10         3.300E+001   56 fragment_   
+ROOT                          5.000E+004   50000 fragme   
+TRAFODION_SCAN    T10         5.000E+004   50000 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -741,8 +741,8 @@ TRAFODION_SCAN    T10         3.300E+001   56 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   78 fragment_   
-TRAFODION_SCAN    T10         3.300E+001   78 fragment_   
+ROOT                          6.000E+004   60000 fragme   
+TRAFODION_SCAN    T10         6.000E+004   60000 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -755,8 +755,8 @@ TRAFODION_SCAN    T10         3.300E+001   78 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   44 fragment_   
-TRAFODION_SCAN    T10         3.300E+001   44 fragment_   
+ROOT                          4.000E+004   40000 fragme   
+TRAFODION_SCAN    T10         4.000E+004   40000 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -769,8 +769,8 @@ TRAFODION_SCAN    T10         3.300E+001   44 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   72 fragment_   
-TRAFODION_SCAN    T10         3.300E+001   72 fragment_   
+ROOT                          5.000E+004   50000 fragme   
+TRAFODION_SCAN    T10         5.000E+004   50000 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -783,8 +783,8 @@ TRAFODION_SCAN    T10         3.300E+001   72 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          6.700E+001   100 fragment   
-TRAFODION_SCAN    T10         6.700E+001   100 fragment   
+ROOT                          9.000E+004   90000 fragme   
+TRAFODION_SCAN    T10         9.000E+004   90000 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -797,8 +797,8 @@ TRAFODION_SCAN    T10         6.700E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -811,8 +811,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -825,8 +825,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -839,8 +839,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -853,8 +853,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          5.000E+001   100 fragment   
-TRAFODION_SCAN    T10         5.000E+001   100 fragment   
+ROOT                          9.999E+004   100000 fragm   
+TRAFODION_SCAN    T10         9.999E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -867,8 +867,8 @@ TRAFODION_SCAN    T10         5.000E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -881,8 +881,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -895,8 +895,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -909,8 +909,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -923,8 +923,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          5.000E+001   100 fragment   
-TRAFODION_SCAN    T10         5.000E+001   100 fragment   
+ROOT                          9.000E+004   100000 fragm   
+TRAFODION_SCAN    T10         9.000E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -951,8 +951,8 @@ TRAFODION_SCAN    T10         1.000E+000   1 fragment_i
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -979,8 +979,8 @@ TRAFODION_SCAN    T10         1.000E+000   1 fragment_i
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          9.900E+001   100 fragment   
-TRAFODION_SCAN    T10         9.900E+001   100 fragment   
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -993,8 +993,8 @@ TRAFODION_SCAN    T10         9.900E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          5.000E+001   100 fragment   
-TRAFODION_SCAN    T10         5.000E+001   100 fragment   
+ROOT                          5.000E+004   100000 fragm   
+TRAFODION_SCAN    T10         5.000E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -1007,8 +1007,8 @@ TRAFODION_SCAN    T10         5.000E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -1021,8 +1021,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -1035,8 +1035,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -1049,8 +1049,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.300E+001   100 fragment   
-TRAFODION_SCAN    T10         3.300E+001   100 fragment   
+ROOT                          3.333E+004   100000 fragm   
+TRAFODION_SCAN    T10         3.333E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -1063,8 +1063,8 @@ TRAFODION_SCAN    T10         3.300E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          5.000E+001   100 fragment   
-TRAFODION_SCAN    T10         5.000E+001   100 fragment   
+ROOT                          5.000E+004   100000 fragm   
+TRAFODION_SCAN    T10         5.000E+004   100000 fragm   
 
 --- 2 row(s) selected.
 >>
@@ -1077,8 +1077,8 @@ TRAFODION_SCAN    T10         5.000E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.500E+001   15 fragment_   
-TRAFODION_SCAN    T10         1.100E+001   11 fragment_   
+ROOT                          3.000E+000   3 fragment_i   
+TRAFODION_SCAN    T10         3.000E+000   3 fragment_i   
 
 --- 2 row(s) selected.
 >>
@@ -1091,8 +1091,8 @@ TRAFODION_SCAN    T10         1.100E+001   11 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.100E+001   78 fragment_   
-TRAFODION_SCAN    T10         1.100E+001   78 fragment_   
+ROOT                          5.000E+004   50000 fragme   
+TRAFODION_SCAN    T10         5.000E+004   50000 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -1133,8 +1133,8 @@ TRAFODION_SCAN    T10         1.000E+000   1 fragment_i
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.100E+001   51 fragment_   
-TRAFODION_SCAN    T10         1.100E+001   51 fragment_   
+ROOT                          1.000E+004   10001 fragme   
+TRAFODION_SCAN    T10         1.000E+004   10001 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -1147,8 +1147,8 @@ TRAFODION_SCAN    T10         1.100E+001   51 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          7.500E+001   100 fragment   
-TRAFODION_SCAN    T10         7.500E+001   100 fragment   
+ROOT                          1.000E+004   10001 fragme   
+TRAFODION_SCAN    T10         1.000E+004   10001 fragme   
 
 --- 2 row(s) selected.
 >>
@@ -1174,8 +1174,8 @@ TRAFODION_SCAN    T10         1.000E+000   1 fragment_i
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.300E+001   50 fragment_   
-TRAFODION_SCAN    T10         1.300E+001   50 fragment_   
+ROOT                          1.250E+004   12500 fragme   
+TRAFODION_SCAN    T10         1.250E+004   12500 fragme   
 
 --- 2 row(s) selected.
 >> -- min(1e5, 1e4) should = 1e4
@@ -1202,8 +1202,8 @@ TRAFODION_SCAN    T10         1.000E+000   1 fragment_i
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.000E+001   99 fragment_   
-TRAFODION_SCAN    T10         1.000E+001   99 fragment_   
+ROOT                          1.000E+000   10000 fragme   
+TRAFODION_SCAN    T10         1.000E+000   10000 fragme   
 
 --- 2 row(s) selected.
 >> -- min(1e4, 1e5) should = 1e4
@@ -1220,8 +1220,8 @@ TRAFODION_SCAN    T10         1.000E+001   99 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          2.000E+001   100 fragment   
-TRAFODION_SCAN    T10         2.000E+001   100 fragment   
+ROOT                          2.000E+002   200 fragment   
+TRAFODION_SCAN    T10         2.000E+002   200 fragment   
 
 --- 2 row(s) selected.
 >>-- maxSel("b in (1,2)") is min(maxSel("b=1")+maxSel("b=2"),1.)
@@ -1234,8 +1234,8 @@ TRAFODION_SCAN    T10         2.000E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          3.000E+000   3 fragment_i   
-TRAFODION_SCAN    T10         2.000E+000   2 fragment_i   
+ROOT                          2.000E+000   3 fragment_i   
+TRAFODION_SCAN    T10         2.000E+000   3 fragment_i   
 
 --- 2 row(s) selected.
 >> -- maxSel(p1 and p2) is min(maxSel(p1), maxSel(p2))
@@ -1248,8 +1248,8 @@ TRAFODION_SCAN    T10         2.000E+000   2 fragment_i
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          2.700E+001   100 fragment   
-TRAFODION_SCAN    T10         2.700E+001   100 fragment   
+ROOT                          2.030E+002   203 fragment   
+TRAFODION_SCAN    T10         2.030E+002   203 fragment   
 
 --- 2 row(s) selected.
 >> -- maxSel(p1 or p2) is min(maxSel(p1)+maxSel(p2),1)
@@ -1265,10 +1265,10 @@ TRAFODION_SCAN    T10         2.700E+001   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-HYBRID_HASH_JOIN              1.000E+002   100 fragment   
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T1          1.000E+002   100 fragment   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
+NESTED_JOIN                   1.000E+001   10 fragment_   
+ROOT                          1.000E+001   10 fragment_   
+TRAFODION_SCAN    T1          1.000E+001   10 fragment_   
+TRAFODION_VSBB_S  T10         1.000E+000   10 fragment_   
 
 --- 4 row(s) selected.
 >>
@@ -1281,10 +1281,10 @@ TRAFODION_SCAN    T10         1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-HYBRID_HASH_JOIN              1.000E+002   100 fragment   
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T1          1.000E+002   100 fragment   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
+HYBRID_HASH_JOIN              1.000E+003   1000 fragmen   
+ROOT                          1.000E+003   1000 fragmen   
+TRAFODION_SCAN    T1          1.000E+001   10 fragment_   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
 
 --- 4 row(s) selected.
 >>
@@ -1297,12 +1297,13 @@ TRAFODION_SCAN    T10         1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-HYBRID_HASH_JOIN              1.000E+002   100 fragment   
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T1          1.000E+002   100 fragment   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
+NESTED_JOIN                   1.000E+001   10 fragment_   
+PROBE_CACHE                   1.000E+000   10 fragment_   
+ROOT                          1.000E+001   10 fragment_   
+TRAFODION_SCAN    T1          1.000E+001   10 fragment_   
+TRAFODION_VSBB_S  T10         1.000E+000   10 fragment_   
 
---- 4 row(s) selected.
+--- 5 row(s) selected.
 >>
 >>-- test max cardinality for equi-joins where one side is complex
 >>prepare xx from
@@ -1314,12 +1315,13 @@ TRAFODION_SCAN    T10         1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-HYBRID_HASH_JOIN              1.000E+002   100 fragment   
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
-TRAFODION_SCAN    T8          1.000E+002   100 fragment   
+NESTED_JOIN                   1.000E+003   1000 fragmen   
+PROBE_CACHE                   1.000E+000   1000 fragmen   
+ROOT                          1.000E+003   1000 fragmen   
+TRAFODION_SCAN    T8          1.000E+003   1000 fragmen   
+TRAFODION_VSBB_S  T10         1.000E+000   1000 fragmen   
 
---- 4 row(s) selected.
+--- 5 row(s) selected.
 >>
 >>prepare xx from
 +>SELECT * FROM t9, t10 WHERE t9.a = t10.b-1;
@@ -1330,10 +1332,10 @@ TRAFODION_SCAN    T8          1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-HYBRID_HASH_JOIN              1.000E+002   100 fragment   
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
-TRAFODION_SCAN    T9          1.000E+002   100 fragment   
+HYBRID_HASH_JOIN              1.000E+005   100000 fragm   
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
+TRAFODION_SCAN    T9          1.000E+004   10000 fragme   
 
 --- 4 row(s) selected.
 >>
@@ -1346,10 +1348,10 @@ TRAFODION_SCAN    T9          1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-HYBRID_HASH_JOIN              5.000E+003   5000 fragmen   
-ROOT                          5.000E+003   5000 fragmen   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
-TRAFODION_SCAN    T9          1.000E+002   100 fragment   
+HYBRID_HASH_JOIN              1.000E+006   1e+06 fragme   
+ROOT                          1.000E+006   1e+06 fragme   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
+TRAFODION_SCAN    T9          1.000E+004   10000 fragme   
 
 --- 4 row(s) selected.
 >>
@@ -1367,8 +1369,8 @@ TRAFODION_SCAN    T9          1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-ROOT                          1.000E+002   100 fragment   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
 
 --- 2 row(s) selected.
 >>select count(*) from (SELECT a,b,c,d FROM t10 GROUP BY a,b,c,d) as t;
@@ -1389,9 +1391,9 @@ TRAFODION_SCAN    T10         1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-HASH_GROUPBY                  8.000E+000   8 fragment_i   
-ROOT                          8.000E+000   8 fragment_i   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
+HASH_GROUPBY                  1.000E+005   100000 fragm   
+ROOT                          1.000E+005   100000 fragm   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
 
 --- 3 row(s) selected.
 >>select count(*) from (SELECT b,c,d FROM t10 GROUP BY b,c,d) as t;
@@ -1412,9 +1414,9 @@ TRAFODION_SCAN    T10         1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-HASH_GROUPBY                  4.000E+000   4 fragment_i   
-ROOT                          4.000E+000   4 fragment_i   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
+HASH_GROUPBY                  1.000E+002   100 fragment   
+ROOT                          1.000E+002   100 fragment   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
 
 --- 3 row(s) selected.
 >>select count(*) from (SELECT c,d FROM t10 GROUP BY c,d) as t;
@@ -1435,9 +1437,9 @@ TRAFODION_SCAN    T10         1.000E+002   100 fragment
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-HASH_GROUPBY                  2.000E+000   2 fragment_i   
-ROOT                          2.000E+000   2 fragment_i   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
+HASH_GROUPBY                  1.000E+001   10 fragment_   
+ROOT                          1.000E+001   10 fragment_   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
 
 --- 3 row(s) selected.
 >>select count(*) from (SELECT d FROM t10 GROUP BY d) as t;
@@ -1462,7 +1464,7 @@ OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 
 ROOT                          1.000E+000   1 fragment_i   
 SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
-TRAFODION_SCAN    T10         1.000E+001   99 fragment_   
+TRAFODION_SCAN    T10         1.000E+002   100 fragment   
 
 --- 3 row(s) selected.
 >>prepare xx from SELECT count(*) FROM t10 where c = 1;
@@ -1475,7 +1477,7 @@ OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 
 ROOT                          1.000E+000   1 fragment_i   
 SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
-TRAFODION_SCAN    T10         1.000E+001   99 fragment_   
+TRAFODION_SCAN    T10         1.000E+003   1000 fragmen   
 
 --- 3 row(s) selected.
 >>prepare xx from SELECT count(*) FROM t10 where b = 1 and c = 1;
@@ -1488,7 +1490,7 @@ OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 
 ROOT                          1.000E+000   1 fragment_i   
 SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
-TRAFODION_SCAN    T10         1.000E+000   99 fragment_   
+TRAFODION_SCAN    T10         1.000E+000   100 fragment   
 
 --- 3 row(s) selected.
 >>
@@ -1504,7 +1506,7 @@ OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 
 ROOT                          1.000E+000   1 fragment_i   
 SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
-TRAFODION_SCAN    T10         3.300E+001   50 fragment_   
+TRAFODION_SCAN    T10         1.000E+003   1000 fragmen   
 
 --- 3 row(s) selected.
 >>execute xx;
@@ -1526,7 +1528,7 @@ OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 
 ROOT                          1.000E+000   1 fragment_i   
 SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
-TRAFODION_SCAN    T10         3.300E+001   50 fragment_   
+TRAFODION_SCAN    T10         1.000E+003   1000 fragmen   
 
 --- 3 row(s) selected.
 >>execute xx;
@@ -1582,11 +1584,11 @@ TRAFODION_SCAN    T10         3.300E+001   50 fragment_
 OPERATOR          TAB_NAME    CARDINALITY  MAX_CARDINALITY
 ----------------  ----------  -----------  ---------------
 
-HYBRID_HASH_JOIN              1.000E+002   100 fragment   
+HYBRID_HASH_JOIN              1.000E+004   10000 fragme   
 ROOT                          1.000E+000   1 fragment_i   
 SORT_SCALAR_AGGR              1.000E+000   1 fragment_i   
-TRAFODION_SCAN    T10         1.000E+002   100 fragment   
-TRAFODION_SCAN    T9          1.000E+002   100 fragment   
+TRAFODION_SCAN    T10         1.000E+005   100000 fragm   
+TRAFODION_SCAN    T9          1.000E+004   10000 fragme   
 
 --- 5 row(s) selected.
 >>execute xx;
@@ -2255,7 +2257,7 @@ OPERATOR
 ----------------
 
 ROOT            
-HYBRID_HASH_JOIN
+NESTED_JOIN     
 
 --- 2 row(s) selected.
 >>
@@ -2268,7 +2270,7 @@ OPERATOR
 ----------------
 
 ROOT            
-HYBRID_HASH_JOIN
+NESTED_JOIN     
 
 --- 2 row(s) selected.
 >>
@@ -2282,7 +2284,7 @@ OPERATOR
 ----------------
 
 ROOT            
-HYBRID_HASH_JOIN
+NESTED_JOIN     
 
 --- 2 row(s) selected.
 >>
@@ -2686,7 +2688,12 @@ A            B
 --- SQL command prepared.
 >>execute explainIt;
 
---- 0 row(s) selected.
+OPERATOR        
+----------------
+
+TUPLELIST       
+
+--- 1 row(s) selected.
 >>execute XX;
 
 A            B            C          
@@ -2724,7 +2731,12 @@ A            B            C
 --- SQL command prepared.
 >>execute explainIt;
 
---- 0 row(s) selected.
+OPERATOR        
+----------------
+
+TUPLELIST       
+
+--- 1 row(s) selected.
 >>execute XX;
 
 A            B            C          

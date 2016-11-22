@@ -119,6 +119,11 @@ short GenericUtilExpr::processOutputRow(Generator * generator,
 {
   ExpGenerator * expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
+  TableDesc *virtTableDesc = getVirtualTableDesc();
+
+  if (!virtTableDesc)
+    // this operator produces no outputs (e.g. truncate used with a temp table)
+    return 0;
   
   // Assumption (for now): retrievedCols contains ALL columns from
   // the table/index. This is because this operator does
@@ -130,7 +135,7 @@ short GenericUtilExpr::processOutputRow(Generator * generator,
 
   Attributes ** attrs =
     new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
+    Attributes * [virtTableDesc->getColumnList().entries()];
 
   for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
     {
@@ -811,6 +816,9 @@ short ExeUtilCleanupVolatileTables::codeGen(Generator * generator)
   
   if (type_ == ALL_TABLES_IN_ALL_CATS)
     exe_util_tdb->setCleanupAllTables(TRUE);
+
+  if (CmpCommon::getDefault(CSE_CLEANUP_HIVE_TABLES) != DF_OFF)
+    exe_util_tdb->setCleanupHiveCSETables(TRUE);
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
@@ -3324,6 +3332,21 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
   tablename = space->AllocateAndCopyToAlignedSpace
     (generator->genGetNameAsAnsiNAString(getTableName()), 0);
 
+  NAString hiveTableNameStr;
+  char * hiveTableName = NULL;
+
+  if (!getTableName().isInHiveDefaultSchema())
+    {
+      hiveTableNameStr =
+        getTableName().getQualifiedNameObj().getSchemaName();
+      hiveTableNameStr += ".";
+    }
+
+  hiveTableNameStr +=
+    getTableName().getQualifiedNameObj().getObjectName();
+  hiveTableName = space->AllocateAndCopyToAlignedSpace(
+       hiveTableNameStr, 0);
+
   char * hiveTableLocation = NULL;
   char * hiveHdfsHost = NULL;
   Int32 hiveHdfsPort = getHiveHdfsPort();
@@ -3332,12 +3355,20 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
     space->AllocateAndCopyToAlignedSpace (getHiveTableLocation(), 0);
   hiveHdfsHost =
     space->AllocateAndCopyToAlignedSpace (getHiveHostName(), 0);
+  if (getSuppressModCheck())
+    hiveModTS_ = 0;
+
+  NABoolean doSimCheck = FALSE;
+  if ((CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
+      (CmpCommon::getDefault(TRAF_SIMILARITY_CHECK) == DF_LEAF))
+    doSimCheck = TRUE;
 
   ComTdbExeUtilHiveTruncate * exe_util_tdb = new(space) 
     ComTdbExeUtilHiveTruncate(tablename, strlen(tablename),
+                              hiveTableName,
                               hiveTableLocation, partn_loc,
                               hiveHdfsHost, hiveHdfsPort,
-                              hiveModTS_,
+                              (doSimCheck ? hiveModTS_ : -1),
                               (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
                               (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
                               (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
@@ -3346,6 +3377,9 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
                               getDefault(GEN_DDL_BUFFER_SIZE));
 
   generator->initTdbFields(exe_util_tdb);
+
+  if (getDropTableOnDealloc())
+    exe_util_tdb->setDropOnDealloc(TRUE);
   
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
@@ -3366,20 +3400,25 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
 // class ExeUtilRegionStats
 ////////////////////////////////////////////////////////////////////
 const char * ExeUtilRegionStats::getVirtualTableName()
-{ return ("EXE_UTIL_REGION_STATS__"); }
+{ return (clusterView_ ? "EXE_UTIL_CLUSTER_STATS__" : "EXE_UTIL_REGION_STATS__"); }
 
 TrafDesc *ExeUtilRegionStats::createVirtualTableDesc()
 {
   TrafDesc * table_desc = NULL;
+
+  ComTdbExeUtilRegionStats rs;
+  rs.setClusterView(clusterView_);
+
   if (displayFormat_)
     table_desc = ExeUtilExpr::createVirtualTableDesc();
   else
     table_desc = Generator::createVirtualTableDesc(
 	 getVirtualTableName(),
-	 ComTdbExeUtilRegionStats::getVirtTableNumCols(),
-	 ComTdbExeUtilRegionStats::getVirtTableColumnInfo(),
-	 ComTdbExeUtilRegionStats::getVirtTableNumKeys(),
-	 ComTdbExeUtilRegionStats::getVirtTableKeyInfo());
+	 rs.getVirtTableNumCols(),
+	 rs.getVirtTableColumnInfo(),
+	 rs.getVirtTableNumKeys(),
+	 rs.getVirtTableKeyInfo());
+
   return table_desc;
 }
 short ExeUtilRegionStats::codeGen(Generator * generator)
@@ -3400,8 +3439,11 @@ short ExeUtilRegionStats::codeGen(Generator * generator)
   const int work_atp = 1;
   const int exe_util_row_atp_index = 2;
 
+  // if selection pred, then assign work atp/atpindex to attrs.
+  // Once selection pred has been generated, atp/atpindex will be
+  // changed to returned atp/atpindex.
   short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
-                              returnedDesc);
+                              returnedDesc, (NOT selectionPred().isEmpty()));
   if (rc)
     {
       return -1;
@@ -3440,7 +3482,21 @@ short ExeUtilRegionStats::codeGen(Generator * generator)
                                    &input_expr);
     }
 
-  char * tableName = space->AllocateAndCopyToAlignedSpace
+  ex_expr *scanExpr = NULL;
+  // generate tuple selection expression, if present
+  if (NOT selectionPred().isEmpty())
+    {
+      ItemExpr* pred = selectionPred().rebuildExprTree(ITM_AND,TRUE,TRUE);
+      expGen->generateExpr(pred->getValueId(),ex_expr::exp_SCAN_PRED,&scanExpr);
+
+      // The output row will be returned as the last entry of the returned atp.
+      // Change the atp and atpindex of the returned values to indicate that.
+      expGen->assignAtpAndAtpIndex(getVirtualTableDesc()->getColumnList(),
+                                   0, returnedDesc->noTuples()-1);
+    }
+  
+  char * tableName = NULL;
+  tableName = space->AllocateAndCopyToAlignedSpace
     (generator->genGetNameAsAnsiNAString(getTableName()), 0);
 
   ComTdbExeUtilRegionStats * exe_util_tdb = new(space) 
@@ -3448,6 +3504,7 @@ short ExeUtilRegionStats::codeGen(Generator * generator)
          tableName,
 	 input_expr,
 	 inputRowLen,
+         scanExpr,
 	 workCriDesc,
 	 exe_util_row_atp_index,
 	 givenDesc,
@@ -3463,6 +3520,8 @@ short ExeUtilRegionStats::codeGen(Generator * generator)
   exe_util_tdb->setDisplayFormat(displayFormat_);
 
   exe_util_tdb->setSummaryOnly(summaryOnly_);
+
+  exe_util_tdb->setClusterView(clusterView_);
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(

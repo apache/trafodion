@@ -40,10 +40,6 @@ CPPSRC := cmpargs.cpp \
 	rtdu2.cpp \
 	vers_libarkcmp.cpp
 
-# The Windows part of this should be temporary.
-DEFS += -DWIN32 -D_WINDOWS -D__SHADOW -DCOPYRIGHT_VERSION_H=\"$(TRAFODION_VER)\"
-
-
 INCLUDE_DIRS := sqludr
 
 SRCPATH := arkcmp cli

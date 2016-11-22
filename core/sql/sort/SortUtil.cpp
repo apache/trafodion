@@ -45,6 +45,7 @@
 #include "ex_sort.h"
 #include "SortUtil.h"
 #include "Qsort.h"
+#include "SortTopN.h"
 #include "ComCextdecs.h"
 #include "logmxevent.h"
 #include "ExStats.h"
@@ -100,26 +101,22 @@ NABoolean SortUtil::scratchInitialize(void)
                                              &sortError_,
                                              explainNodeId_,
                                              config_->scratchIOBlockSize_,
-						 config_->logInfoEvent_,
+                                             config_->logInfoEvent_,
                                              config_->scratchMgmtOption_
-					       );  
+                                              );  
 
     if (scratch_ == NULL)
       {
         sortError_.setErrorInfo( EScrNoMemory   //sort error
-			         ,NULL          //syserr: the actual FS error
-			         ,NULL          //syserrdetail
-			         ,"SortUtil::scratchInitialize"     //methodname
-			         );
+                                 ,NULL          //syserr: the actual FS error
+                                 ,NULL          //syserrdetail
+                                 ,"SortUtil::scratchInitialize"  //methodname
+                                );
         return SORT_FAILURE;
       }
 
-    scratch_->setScratchDiskListSpec(config_->scratchDiskListSpec_);
-    scratch_->setNumDisksSpec(config_->numDisksSpec_);
-    scratch_->setScratchDiskListExcl(config_->scratchDiskListExcl_);
-    scratch_->setNumDisksExcl(config_->numDisksExcl_);
-    scratch_->setScratchDiskListPref(config_->scratchDiskListPref_);
-    scratch_->setNumDisksPref(config_->numDisksPref_);
+    scratch_->setScratchDirListSpec(config_->scratchDirListSpec_);
+    scratch_->setNumDirsSpec(config_->numDirsSpec_);
     scratch_->setNumEsps(config_->numEsps_);
     scratch_->setEspInstance(config_->espInstance_);
 
@@ -152,7 +149,7 @@ NABoolean SortUtil::scratchInitialize(void)
 //   SORT_FAILURE if any error encounterd. 
 //
 //----------------------------------------------------------------------
-NABoolean SortUtil::sortInitialize(SortUtilConfig& config)
+NABoolean SortUtil::sortInitialize(SortUtilConfig& config, ULng32 topNSize)
 {
   
   //---------------------------------------------------------------
@@ -162,28 +159,47 @@ NABoolean SortUtil::sortInitialize(SortUtilConfig& config)
   //---------------------------------------------------------------
   doCleanUp();
   
-  sortAlgo_ =
-	new (config.heapAddr_) Qsort(config.runSize_,
-								 config.maxMem_,
-								 config.recSize_,
-								 config.sortType_.doNotAllocRec_,
-								 config.keySize_,
-								 scratch_,
-								 TRUE,
-								 config.heapAddr_,
-								 &sortError_,
-								 explainNodeId_,
-								 this);
-	if (sortAlgo_ == NULL)
-	{
-		sortError_.setErrorInfo( EScrNoMemory   //sort error
-			   ,NULL          //syserr: the actual FS error
-			   ,NULL          //syserrdetail
-			   ,"SortUtil::sortInitialize"     //methodname
-			   );
-		 return SORT_FAILURE;
-	}
-	  
+  //if topNSize_ is set, then use TopN.
+  if(config.topNSort_ && topNSize)
+  {
+    sortAlgo_ =
+      new (config.heapAddr_) SortTopN(topNSize,
+                                  config.maxMem_,
+                                  config.recSize_,
+                                  config.sortType_.doNotAllocRec_,
+                                  config.keySize_,
+                                  scratch_,
+                                  TRUE,
+                                  config.heapAddr_,
+                                  &sortError_,
+                                  explainNodeId_,
+                                  this);
+
+  }
+  else
+  {
+    sortAlgo_ =
+      new (config.heapAddr_) Qsort(config.runSize_,
+                                   config.maxMem_,
+                                   config.recSize_,
+                                   config.sortType_.doNotAllocRec_,
+                                   config.keySize_,
+                                   scratch_,
+                                   TRUE,
+                                   config.heapAddr_,
+                                   &sortError_,
+                                   explainNodeId_,
+                                   this);
+  }
+  if (sortAlgo_ == NULL)
+  {
+    sortError_.setErrorInfo(EScrNoMemory   //sort error
+                            ,NULL          //syserr: the actual FS error
+                            ,NULL          //syserrdetail
+                            ,"SortUtil::sortInitialize"     //methodname
+                            );
+    return SORT_FAILURE;
+  }
 
   //The maximum memory that sort can consume is governed by three parameters.
   //(config.maxNumBuffers_ * sorttdb.maxbufferSize) + config..maxMem_.

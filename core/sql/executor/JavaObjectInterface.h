@@ -57,6 +57,7 @@ typedef enum {
  ,JOI_ERROR_FINDCLASS           // JNI FindClass() failed
  ,JOI_ERROR_GETMETHOD           // JNI GetMethodID() failed
  ,JOI_ERROR_NEWOBJ              // JNI NewObject() failed
+ ,JOI_ERROR_INIT_JNI            // initJNIEnv failed
  ,JOI_LAST
 } JOI_RetCode;
 
@@ -140,7 +141,8 @@ protected:
   {
     return isHBaseCompatibilityMode_;
   }
-
+  
+  JOI_RetCode initJNIEnv();
   char* buildClassPath();  
   
 public:
@@ -160,6 +162,7 @@ public:
   // Pass in jenv if the thread where the object is created is different than
   // the thread where exception occurred
   NABoolean getExceptionDetails(JNIEnv *jenv = NULL);  
+  void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, NAString &error_msg);
   
   NAHeap *getHeap() { return heap_; }
 protected:
@@ -169,6 +172,7 @@ protected:
   static jmethodID gGetStackTraceMethodID;
   static jmethodID gThrowableToStringMethodID;
   static jmethodID gStackFrameToStringMethodID;
+  static jmethodID gGetCauseMethodID;
   static jint jniHandleCapacity_;
 
   jobject   javaObj_;

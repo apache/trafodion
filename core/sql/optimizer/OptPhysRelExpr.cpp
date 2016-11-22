@@ -11680,7 +11680,12 @@ Context* GroupByAgg::createContextForAChild(Context* myContext,
   // Also don't specify a required number of partitions for a scalar
   // aggregate, because a scalar aggregate cannot execute in parallel.
   // ---------------------------------------------------------------------
-  if ( !isAPartialGroupByLeaf1() && !isAPartialGroupByLeaf2() &&
+  if (isRollup())
+    {
+      // GROUP BY ROLLUP needs to be evaluated in a single process
+      rg.addNumOfPartitions(1);
+    }
+  else if ( !isAPartialGroupByLeaf1() && !isAPartialGroupByLeaf2() &&
        okToAttemptESPParallelism(myContext,
                                    pws,
                                    childNumPartsRequirement,
@@ -11800,15 +11805,33 @@ void SortGroupBy::addArrangementAndOrderRequirements(
   // columns.
   // Once we have "partial" arrangement requirements we
   // could indicate those for partial groupbys.
-  if (NOT groupExpr().isEmpty())
-  {
-    // Shouldn't/Can't add a sort order type requirement
-    // if we are in DP2
-    if (rg.getStartRequirements()->executeInDP2())
-      rg.addArrangement(groupExpr(),NO_SOT);
-    else
-      rg.addArrangement(groupExpr(),ESP_SOT);
-  }
+  // A GROUP BY ROLLUP needs the exact order as specified.
+  if (isRollup() && (NOT rollupGroupExprList().isEmpty()))
+    {
+      if( NOT extraOrderExpr().isEmpty())
+      {
+        ValueIdList groupExprCpy(rollupGroupExprList());
+        groupExprCpy.insert(extraOrderExpr());
+        rg.addSortKey(groupExprCpy);
+      }
+      else
+        rg.addSortKey(rollupGroupExprList());
+    }
+  else if (NOT groupExpr().isEmpty())
+    {
+      if( NOT extraOrderExpr().isEmpty())
+      {
+        ValueIdList groupExprCpy(groupExpr());
+        groupExprCpy.insert(extraOrderExpr());
+        rg.addSortKey(groupExprCpy);
+      }
+      else {
+        if (rg.getStartRequirements()->executeInDP2())
+          rg.addArrangement(groupExpr(),NO_SOT);
+        else
+          rg.addArrangement(groupExpr(),ESP_SOT);
+      }
+    }
 }
 
 //<pb>
@@ -11848,7 +11871,7 @@ SortGroupBy::synthPhysicalProperty(const Context* myContext,
 
   PhysicalProperty* sppForMe =
     new (CmpCommon::statementHeap())
-      PhysicalProperty(sppOfChild->getSortKey(),
+      PhysicalProperty((isRollup() ? ValueIdList() : sppOfChild->getSortKey()),
                        sppOfChild->getSortOrderType(),
                        sppOfChild->getDp2SortOrderPartFunc(),
                        sppOfChild->getPartitioningFunction(),

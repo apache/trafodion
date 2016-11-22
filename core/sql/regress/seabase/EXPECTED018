@@ -51,7 +51,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 5    .    6    sort_partial_aggr_ro                                  1.00E+000
 4    .    5    esp_exchange                    1:2(hash2)            1.00E+000
 3    .    4    sort_partial_aggr_le                                  1.00E+000
-2    1    3    hybrid_hash_join                                      5.00E+012
+2    1    3    hybrid_hash_join      u                               5.00E+012
 .    .    2    trafodion_scan                  T018_LINEITEM         1.00E+007
 .    .    1    trafodion_scan                  T018_ORDERS           1.00E+006
 
@@ -77,7 +77,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 6    .    7    sort_partial_aggr_ro                                  1.00E+000
 5    .    6    esp_exchange                    1:2(range)            1.00E+000
 4    .    5    sort_partial_aggr_le                                  1.00E+000
-3    2    4    hybrid_hash_join                                      5.00E+012
+3    2    4    hybrid_hash_join      u                               5.00E+012
 .    .    3    trafodion_scan                  T018_LINEITEM         1.00E+007
 1    .    2    esp_exchange                    2(rep-b):2(range)     1.00E+006
 .    .    1    trafodion_scan                  T018_ORDERS           1.00E+006
@@ -135,7 +135,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 7    .    8    sort_partial_aggr_ro                                  1.00E+000
 6    .    7    esp_exchange                    1:98(hash2)           1.00E+000
 5    .    6    sort_partial_aggr_le                                  1.00E+000
-4    2    5    hybrid_hash_join                                      5.00E+012
+4    2    5    hybrid_hash_join      u                               5.00E+012
 3    .    4    esp_exchange                    98(hash2):4(hash2)    1.00E+007
 .    .    3    trafodion_scan                  T018_LINEITEM         1.00E+007
 1    .    2    esp_exchange                    98(hash2):4(hash2)    1.00E+006

@@ -834,7 +834,7 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
   ComTdbVirtTableColumnInfo * colInfoArray = NULL;
   ComTdbVirtTableKeyInfo * keyInfoArray = NULL;
 
-  NAList<NAString> selColList;
+  NAList<NAString> selColList(STMTHEAP);
 
   if (createIndexColAndKeyInfoArrays(indexColRefArray,
 				     createIndexNode->isUniqueSpecified(),
@@ -912,7 +912,7 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
   ii->nonKeyColCount = nonKeyColCount;
   ii->keyInfoArray = NULL; //keyInfoArray;
 
-  NAList<HbaseCreateOption*> hbaseCreateOptions;
+  NAList<HbaseCreateOption*> hbaseCreateOptions(STMTHEAP);
   NAString hco;
 
   if (alignedFormat)
@@ -1076,8 +1076,7 @@ short CmpSeabaseDDL::populateSeabaseIndexFromTable(
   NABoolean useHiveSrc = FALSE;
   NAString saltText;
   NAString hiveSrc = CmpCommon::getDefaultString(USE_HIVE_SOURCE);
-  if ((CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) &&
-      (! hiveSrc.isNull()))
+  if (! hiveSrc.isNull())
     {
       for (CollIndex i = 0; i < selColList.entries(); i++)
       {
@@ -1346,7 +1345,7 @@ void CmpSeabaseDDL::populateSeabaseIndex(
 	  if (isValid)
 	    continue;
 
-	  NAList<NAString> selColList;
+	  NAList<NAString> selColList(STMTHEAP);
 
 	  for (Lng32 ii = 0; ii < naf->getAllColumns().entries(); ii++)
 	    {
@@ -2141,7 +2140,7 @@ void CmpSeabaseDDL::alterSeabaseIndexHBaseOptions(
 
   // tell HBase to change the options
 
-  NAList<NAString> nal;
+  NAList<NAString> nal(STMTHEAP);
   nal.insert(naTable->defaultColFam());
   HbaseStr hbaseTable;
   hbaseTable.val = (char*)extNameForHbase.data();

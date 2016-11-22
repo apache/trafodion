@@ -117,6 +117,8 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , checkRangeDelimiter_(FALSE)
   , dataModCheckDone_(FALSE)
   , loggingErrorDiags_(NULL)
+  , runTimeRanges_(NULL)
+  , numRunTimeRanges_(0)
 {
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
@@ -228,6 +230,11 @@ void ExHdfsScanTcb::freeResources()
     NADELETEBASIC(hdfsAsciiSourceBuffer_, getSpace());
     hdfsAsciiSourceBuffer_ = NULL;
   }
+  if(sequenceFileReader_)
+  {
+    NADELETE(sequenceFileReader_,SequenceFileReader, getHeap());
+    sequenceFileReader_ = NULL;
+  }
  
   // hdfsSqlTupp_.release() ; // ??? 
   if (hdfsSqlBuffer_)
@@ -255,12 +262,14 @@ void ExHdfsScanTcb::freeResources()
     delete qparent_.down;
     qparent_.down = NULL;
   }
-
-   ExpLOBinterfaceCleanup
-   (lobGlob_, getGlobals()->getDefaultHeap());
-
-  
+  if (runTimeRanges_)
+    deallocateRuntimeRanges();
+  if (lobGlob_) { 
+     ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+     lobGlob_ = NULL;
+  }
 }
+
 NABoolean ExHdfsScanTcb::needStatsEntry()
 {
   // stats are collected for ALL and OPERATOR options.
@@ -402,13 +411,21 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    hdfsOffset_ = 0;
             checkRangeDelimiter_ = FALSE;
 
-	    if (hdfsScanTdb().getHdfsFileInfoList()->isEmpty())
+            dataModCheckDone_ = FALSE;
+
+	    myInstNum_ = getGlobals()->getMyInstanceNumber();
+	    hdfsScanBufMaxSize_ = hdfsScanTdb().hdfsBufSize_;
+
+            if (hdfsScanTdb().getAssignRangesAtRuntime())
+              {
+                step_ = ASSIGN_RANGES_AT_RUNTIME;
+                break;
+              }
+	    else if (hdfsScanTdb().getHdfsFileInfoList()->isEmpty())
 	      {
                 step_ = CHECK_FOR_DATA_MOD_AND_DONE;
 		break;
 	      }
-
-	    myInstNum_ = getGlobals()->getMyInstanceNumber();
 
 	    beginRangeNum_ =  
 	      *(Lng32*)hdfsScanTdb().getHdfsFileRangeBeginList()->get(myInstNum_);
@@ -418,16 +435,21 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	    currRangeNum_ = beginRangeNum_;
 
-	    hdfsScanBufMaxSize_ = hdfsScanTdb().hdfsBufSize_;
-
-            dataModCheckDone_ = FALSE;
-
 	    if (numRanges_ > 0)
               step_ = CHECK_FOR_DATA_MOD;
             else
               step_ = CHECK_FOR_DATA_MOD_AND_DONE;
 	  }          
 	  break;
+
+        case ASSIGN_RANGES_AT_RUNTIME:
+          computeRangesAtRuntime();
+          currRangeNum_ = beginRangeNum_;
+          if (numRanges_ > 0)
+            step_ = INIT_HDFS_CURSOR;
+          else
+            step_ = DONE;
+          break;
 
         case CHECK_FOR_DATA_MOD:
         case CHECK_FOR_DATA_MOD_AND_DONE:
@@ -439,6 +461,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
             if (NOT dataModCheckDone_)
               {
+                dataModCheckDone_ = TRUE;
+
                 Lng32 numOfPartLevels = hdfsScanTdb().numOfPartCols_;
 
                 if (hdfsScanTdb().hdfsDirsToCheck())
@@ -446,13 +470,18 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                     // TBD
                   }
              
+                Int64 failedModTS = -1;
+                Lng32 failedLocBufLen = 1000;
+                char failedLocBuf[failedLocBufLen];
                 retcode = ExpLOBinterfaceDataModCheck
                   (lobGlob_,
                    dirPath,
                    hdfsScanTdb().hostName_,
                    hdfsScanTdb().port_,
                    modTS,
-                   numOfPartLevels);
+                   numOfPartLevels,
+                   failedModTS,
+                   failedLocBuf, failedLocBufLen);
               
                 if (retcode < 0)
                   {
@@ -475,15 +504,19 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
                 if (retcode == 1) // check failed
                   {
+                    char errStr[200];
+                    str_sprintf(errStr, "genModTS = %Ld, failedModTS = %Ld", 
+                                modTS, failedModTS);
+
                     ComDiagsArea * diagsArea = NULL;
                     ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR), NULL,
+                                    NULL, NULL, NULL,
+                                    errStr);
                     pentry_down->setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_AND_DONE;
                     break;
                   }
-
-                dataModCheckDone_ = TRUE;
               }
 
             if (step_ == CHECK_FOR_DATA_MOD_AND_DONE)
@@ -495,8 +528,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	case INIT_HDFS_CURSOR:
 	  {
-            hdfo_ = (HdfsFileInfo*)
-              hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_);
+            hdfo_ = getRange(currRangeNum_);
             if ((hdfo_->getBytesToRead() == 0) && 
                 (beginRangeNum_ == currRangeNum_) && (numRanges_ > 1))
               {
@@ -505,8 +537,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 // since the file may neeed to be closed. The first 
                 // range being 0 is common with sqoop generated files
                 currRangeNum_++;
-                hdfo_ = (HdfsFileInfo*)
-                  hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_);
+                hdfo_ = getRange(currRangeNum_);
               }
                
             hdfsOffset_ = hdfo_->getStartOffset();
@@ -526,8 +557,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	    retcode = 0;
 	    if (isSequenceFile() && !sequenceFileReader_)
 	      {
-	        sequenceFileReader_ = new(getSpace()) 
-                    SequenceFileReader((NAHeap *)getSpace());
+	        sequenceFileReader_ = new(getHeap()) 
+                    SequenceFileReader((NAHeap *)getHeap());
 	        sfrRetCode = sequenceFileReader_->init();
 	        
 	        if (sfrRetCode != JNI_OK)
@@ -563,7 +594,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      }
 	    else
 	      {
-               
+                Int64 rangeTail  = hdfo_->fileIsSplitEnd() ? 
+                  hdfsScanTdb().rangeTailIOSize_ : 0;
                 openType = 2; // must open
                 retcode = ExpLOBInterfaceSelectCursor
                   (lobGlob_,
@@ -573,7 +605,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    hdfsScanTdb().hostName_,
                    hdfsScanTdb().port_,
                    0, NULL, // handle not valid for non lob access
-                   bytesLeft_, // max bytes
+                   bytesLeft_ + rangeTail, // max bytes
                    cursorId_, 
 		       
                    requestTag_, Lob_Memory,
@@ -603,11 +635,13 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 // preopen next range. 
                 if ( (currRangeNum_ + 1) < (beginRangeNum_ + numRanges_) ) 
                   {
-                    hdfo = (HdfsFileInfo*)
-                      hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_ + 1);
+                    hdfo = getRange(currRangeNum_ + 1);
                 
                     hdfsFileName_ = hdfo->fileName();
                     sprintf(cursorId, "%d", currRangeNum_ + 1);
+		    rangeTail  = hdfo->fileIsSplitEnd() ? 
+		      hdfsScanTdb().rangeTailIOSize_ : 0;
+
                     openType = 1; // preOpen
                 
                     retcode = ExpLOBInterfaceSelectCursor
@@ -618,7 +652,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                        hdfsScanTdb().hostName_,
                        hdfsScanTdb().port_,
                        0, NULL,//handle not relevant for non lob access
-                       hdfo->getBytesToRead(), // max bytes
+                       hdfo->getBytesToRead() + rangeTail, // max bytes
                        cursorId, 
                            
                        requestTag_, Lob_Memory,
@@ -812,23 +846,39 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	      {
 		// Position in the hdfsScanBuffer_ to the
 		// first record delimiter.  
-		hdfsBufNextRow_ = hdfs_strchr(hdfsScanBuffer_,
-                                         hdfsScanTdb().recordDelimiter_, hdfsScanBuffer_+trailingPrevRead_+ bytesRead_, checkRangeDelimiter_, hdfsScanTdb().getHiveScanMode(), &changedLen);
+		hdfsBufNextRow_ = 
+		  hdfs_strchr(hdfsScanBuffer_,
+			      hdfsScanTdb().recordDelimiter_, 
+			      hdfsScanBuffer_+trailingPrevRead_+ 
+			      min(bytesRead_, hdfo_->bytesToRead_), 
+			      checkRangeDelimiter_, 
+			      hdfsScanTdb().getHiveScanMode(), &changedLen);
 		// May be that the record is too long? Or data isn't ascii?
 		// Or delimiter is incorrect.
 		if (! hdfsBufNextRow_)
 		  {
-		    ComDiagsArea *diagsArea = NULL;
-
-		    ExRaiseSqlError(getHeap(), &diagsArea, 
-				    (ExeErrorCode)(8446), NULL, 
-				    NULL, NULL, NULL,
-				    (char*)"No record delimiter found in buffer from hdfsRead.",
-				    NULL);
-		    // no need to log errors in this case (bulk load) since this is a major issue
-		    // and need to be correxted
-		    pentry_down->setDiagsArea(diagsArea);
-		    step_ = HANDLE_ERROR_WITH_CLOSE;
+		    if (hdfo_->bytesToRead_ < hdfsScanTdb().rangeTailIOSize_)
+		      {
+			// for wide rows it is not an error if a whole range
+			// does not include a record delimiter. RangeTaileIOSize
+			// is set to max row size in generator by default.
+			// It is also checked in the compiler that rowsize
+			// is less than buffer size.
+			step_ = CLOSE_HDFS_CURSOR;
+		      }
+		    else 
+		      {
+			ComDiagsArea *diagsArea = NULL;
+			ExRaiseSqlError(getHeap(), &diagsArea, 
+					(ExeErrorCode)(8446), NULL, 
+					NULL, NULL, NULL,
+					(char*)"No record delimiter found in buffer from hdfsRead.",
+					NULL);
+			// no need to log errors in this case (bulk load) since
+			// this is a major issue and needs to be corrected
+			pentry_down->setDiagsArea(diagsArea);
+			step_ = HANDLE_ERROR_WITH_CLOSE;
+		      }
 		    break;
 		  }
 		
@@ -1397,7 +1447,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                  ((currRangeNum_ + 1) < (beginRangeNum_ + numRanges_))) 
                  
             {   
-                hdfo = (HdfsFileInfo*) hdfsScanTdb().getHdfsFileInfoList()->get(currRangeNum_ + 1);
+                hdfo = getRange(currRangeNum_ + 1);
                 if (strcmp(hdfsFileName_, hdfo->fileName()) == 0) 
                     closeFile = false;
             }
@@ -1429,10 +1479,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                     getLobErrStr(intParam1));
                     pentry_down->setDiagsArea(diagsArea);
                   }
-                // sss This is one place that is unconditionally closing the 
-                // hdfsFs that's part of this thread's JNIenv.
-                // if (ehi_)
-                //   retcode = ehi_->hdfsClose();
+                  retcode = ehi_->hdfsClose();
             } 
 	    if (step_ == CLOSE_FILE)
 	      {
@@ -1669,6 +1716,138 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
   return NULL;
 }
 
+void ExHdfsScanTcb::computeRangesAtRuntime()
+{
+  int numFiles = 0;
+  Int64 totalSize = 0;
+  Int64 myShare = 0;
+  Int64 runningSum = 0;
+  Int64 myStartPositionInBytes = 0;
+  Int64 firstFileStartingOffset = 0;
+  Int64 lastFileBytesToRead = -1;
+  Int32 numParallelInstances = MAXOF(getGlobals()->getNumOfInstances(),1);
+  hdfsFS fs = ((GetCliGlobals()->currContext())->getHdfsServerConnection(
+                    hdfsScanTdb().hostName_,
+                    hdfsScanTdb().port_));
+  hdfsFileInfo *fileInfos = hdfsListDirectory(fs,
+                                              hdfsScanTdb().hdfsRootDir_,
+                                              &numFiles);
+
+  if (runTimeRanges_)
+    deallocateRuntimeRanges();
+
+  // in a first round, count the total number of bytes
+  for (int f=0; f<numFiles; f++)
+    {
+      ex_assert(fileInfos[f].mKind == kObjectKindFile,
+                "subdirectories not supported with runtime HDFS ranges");
+      totalSize += (Int64) fileInfos[f].mSize;
+    }
+
+  // compute my share, in bytes
+  // (the last of the ESPs may read a bit more)
+  myShare = totalSize / numParallelInstances;
+  myStartPositionInBytes = myInstNum_ * myShare;
+  beginRangeNum_ = -1;
+  numRanges_ = 0;
+
+  if (totalSize > 0)
+    {
+      // second round, find out the range of files I need to read
+      for (int g=0; g<numFiles; g++)
+        {
+          Int64 prevSum = runningSum;
+
+          runningSum += (Int64) fileInfos[g].mSize;
+
+          if (runningSum >= myStartPositionInBytes)
+            {
+              if (beginRangeNum_ < 0)
+                {
+                  // I have reached the first file that I need to read
+                  beginRangeNum_ = g;
+                  firstFileStartingOffset =
+                    myStartPositionInBytes - prevSum;
+                }
+
+              numRanges_++;
+
+              if (runningSum > (myStartPositionInBytes + myShare) &&
+                  myInstNum_ < numParallelInstances-1)
+                // the next file is beyond the range that I need to read
+                lastFileBytesToRead =
+                  myStartPositionInBytes + myShare - prevSum;
+                break;
+            }
+        }
+
+      // now that we now how many ranges we need, allocate them
+      numRunTimeRanges_ = numRanges_;
+      runTimeRanges_ = new(getHeap()) HdfsFileInfo[numRunTimeRanges_];
+    }
+  else
+    beginRangeNum_ = 0;
+
+  // third round, populate the ranges that this ESP needs to read
+  for (int h=beginRangeNum_; h<beginRangeNum_+numRanges_; h++)
+    {
+      HdfsFileInfo &e(runTimeRanges_[h-beginRangeNum_]);
+      const char *fileName = fileInfos[h].mName;
+      Int32 fileNameLen = strlen(fileName) + 1;
+
+      e.entryNum_ = h;
+      e.flags_    = 0;
+      e.fileName_ = new(getHeap()) char[fileNameLen];
+      str_cpy_all(e.fileName_, fileName, fileNameLen);
+      if (h == beginRangeNum_ &&
+          firstFileStartingOffset > 0)
+        {
+          e.startOffset_ = firstFileStartingOffset;
+          e.setFileIsSplitBegin(TRUE);
+        }
+      else
+        e.startOffset_ = 0;
+
+      
+      if (h == beginRangeNum_+numRanges_-1 && lastFileBytesToRead > 0)
+        {
+          e.bytesToRead_ = lastFileBytesToRead;
+          e.setFileIsSplitEnd(TRUE);
+        }
+      else
+        e.bytesToRead_ = (Int64) fileInfos[h].mSize;
+    }
+}
+
+void ExHdfsScanTcb::deallocateRuntimeRanges()
+{
+  if (runTimeRanges_)
+    {
+      for (int i=0; i<numRunTimeRanges_; i++)
+        NADELETEBASIC(runTimeRanges_[i].fileName_.getPointer(), getHeap());
+      NADELETEBASIC(runTimeRanges_, getHeap());
+      runTimeRanges_ = NULL;
+      numRunTimeRanges_ = 0;
+    }
+}
+
+HdfsFileInfo * ExHdfsScanTcb::getRange(Int32 r)
+{
+  ex_assert(r >= beginRangeNum_ &&
+            r < beginRangeNum_+numRanges_,
+            "HDFS scan range num out of range");
+
+  if (hdfsScanTdb().getAssignRangesAtRuntime())
+    {
+      ex_assert(numRunTimeRanges_ == numRanges_,
+                "numRunTimeRanges_ != numRanges_");
+      return &runTimeRanges_[r-beginRangeNum_];
+    }
+  else
+    return (HdfsFileInfo*)
+      hdfsScanTdb().getHdfsFileInfoList()->get(r);
+}
+
 short ExHdfsScanTcb::moveRowToUpQueue(const char * row, Lng32 len, 
                                       short * rc, NABoolean isVarchar)
 {
@@ -1787,6 +1966,15 @@ ExOrcScanTcb::ExOrcScanTcb(
 ExOrcScanTcb::~ExOrcScanTcb()
 {
 }
+
+Int32 ExOrcScanTcb::fixup()
+{
+  lobGlob_ = NULL;
+
+  return 0;
+}
+
+
 
 short ExOrcScanTcb::extractAndTransformOrcSourceToSqlRow(
                                                          char * orcRow,

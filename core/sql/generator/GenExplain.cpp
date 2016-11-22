@@ -77,7 +77,7 @@ void RelExpr::addExplainPredicates(ExplainTupleMaster * explainTuple,
   // labelList is on global heap to avoid memory lekas; if it were on
   // statement heap, it would cause memory leak as the elements of the
   // list on global heap CR 10-010813-4515
-  NAList<NAString>   labelList;
+  NAList<NAString>   labelList(generator->wHeap());
 
   ExprNode           *currExpr = NULL;
   NAString           unParsed((size_t)4096, generator->wHeap());
@@ -472,7 +472,7 @@ RelExpr::addExplainInfo(ComTdb * tdb,
   //calls virtual subclass-specific function
   addSpecificExplainInfo(explainTuple, tdb, generator);
 
-  //finishes up the processing, used to be inside of ifndef __ignore
+  //finishes up the processing
   addExplainPredicates(explainTuple, generator);
 
   explainTuple->genExplainTupleData(space);
@@ -570,8 +570,7 @@ FileScan::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   // now get columns_retrieved
   description += "columns_retrieved: ";
   char buf[27];
-  //sprintf(buf, "%d ", retrievedCols().entries());
-  sprintf(buf, "%d ", getIndexDesc()->getIndexColumns().entries());
+  sprintf(buf, "%d ", retrievedCols().entries());
   description += buf;
 
   // now get the probe counters
@@ -1136,10 +1135,11 @@ GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 					      Generator *generator)
 {
   
+  NAString buffer;
   if (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT_EXPLAIN)==DF_ON &&
       tdb->getNodeType() == ComTdb::ex_HASH_GRBY)
   {
-    NAString buffer = "variable_length_tuples: ";
+    buffer += "variable_length_tuples: ";
     if(((ComTdbHashGrby*)tdb)->useVariableLength())
     {
       buffer += "yes ";
@@ -1157,11 +1157,16 @@ GroupByAgg::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     {
       buffer += "CIF: OFF ";
     }
-
-    explainTuple->setDescription(buffer);
   }
 
- return(explainTuple);
+  if (isRollup())
+    {
+      buffer += "groupby_rollup: specified ";
+    }
+
+  explainTuple->setDescription(buffer);
+
+  return(explainTuple);
 }
 
 ExplainTuple*
@@ -1357,10 +1362,16 @@ static NABoolean isInternalCQD(DefaultConstants attr)
 // regressions run. That can cause explain plan diffs.
 // Specify those cqds in these methods so they are not displayed.
 // This method is only called during regressions run.
-static NABoolean displayDuringRegressRun(DefaultConstants attr)
+NABoolean displayDuringRegressRun(DefaultConstants attr)
 {
   if ((attr == TRAF_READ_OBJECT_DESC) ||
-      (attr == TRAF_STORE_OBJECT_DESC))
+      (attr == TRAF_STORE_OBJECT_DESC) ||
+      (attr == ALLOW_INCOMPATIBLE_ASSIGNMENT) ||
+      (attr == ALLOW_INCOMPATIBLE_COMPARISON) ||
+      (attr == ALLOW_INCOMPATIBLE_OPERATIONS) ||
+      (attr == ALLOW_FIRSTN_IN_SUBQUERIES) ||
+      (attr == ALLOW_ORDER_BY_IN_SUBQUERIES) ||
+      (attr == GROUP_OR_ORDER_BY_EXPR))
     return FALSE;
   else
     return TRUE;
@@ -1881,13 +1892,9 @@ Exchange::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 
   if (splitBottomTdb->getQueryUsesSM())
     description += "seamonster_query: yes ";
-  else
-    description += "seamonster_query: no ";
 
   if (splitBottomTdb->getExchangeUsesSM())
     description += "seamonster_exchange: yes ";
-  else
-    description += "seamonster_exchange: no ";
 
   explainTuple->setDescription(description);  // save what we have built
 
@@ -2029,6 +2036,14 @@ GenericUpdate::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     sprintf(lbuf, "%d ", ((ComTdbHbaseAccess *)tdb)->getTrafLoadFlushSize());
     description += lbuf;
   }
+
+  if (natable->isSeabaseTable())
+    {
+      if (((ComTdbHbaseAccess *)tdb)->useRegionXn())
+        description += "region_transaction: enabled ";
+      else if (((ComTdbHbaseAccess *)tdb)->useHbaseXn())
+        description += "hbase_transaction: used ";
+    }
 
   return 0;
 }

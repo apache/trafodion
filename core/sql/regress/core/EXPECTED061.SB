@@ -10,7 +10,7 @@
 >>invoke t2421;
 
 -- Definition of Trafodion table TRAFODION.SCH.T2421
--- Definition current  Thu Feb 25 06:40:41 2016
+-- Definition current  Tue Sep 20 05:37:10 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -48,7 +48,7 @@ A  B   C                     D     E    F   H
 >>invoke        t101t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T101T2
--- Definition current  Thu Feb 25 06:40:43 2016
+-- Definition current  Tue Sep 20 05:37:14 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -76,6 +76,7 @@ CREATE TABLE TRAFODION.SCH.T101T2
   , C13                              CHAR(21) CHARACTER SET ISO88591 COLLATE
       DEFAULT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.
@@ -98,14 +99,14 @@ ab   4    abcdefghijklmnopqrstu  1
 >>-- the NCHAR default value bug; reproduced here to avoid breaking it again.
 >>create table  t104t2 (c char(15) not null, d int not null,
 +>                      primary key (c, d))
-+>  range partition (add first key ('Mickey''s', 2) location $$partition$$,
-+>                   add first key ('sad"story', 10) location $$partition2$$);
++>  range partition (add first key ('Mickey''s', 2) location $DATA,
++>                   add first key ('sad"story', 10) location $DATA1);
 
 --- SQL operation complete.
 >>invoke t104t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T104T2
--- Definition current  Thu Feb 25 06:40:45 2016
+-- Definition current  Tue Sep 20 05:37:18 2016
 
   (
     C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
@@ -124,6 +125,7 @@ CREATE TABLE TRAFODION.SCH.T104T2
   , D                                INT NO DEFAULT NOT NULL NOT DROPPABLE
   , PRIMARY KEY (C ASC, D ASC)
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 --- SQL operation complete.

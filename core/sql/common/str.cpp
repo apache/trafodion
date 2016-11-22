@@ -954,7 +954,9 @@ Lng32 str_decode(void *tgt, Lng32 tgtMaxLen, const char *src, Lng32 srcLen)
 
   Lng32 length = str_decoded_len(srcLen);
 
-  assert(tgtMaxLen >= length);
+  //  assert(tgtMaxLen >= length);
+  if (NOT (tgtMaxLen >= length))
+    return -1;
 
   Lng32 srcix = 0;
   Lng32 tgtix = 0;
@@ -964,29 +966,30 @@ Lng32 str_decode(void *tgt, Lng32 tgtMaxLen, const char *src, Lng32 srcLen)
   while (srcix+1 < srcLen)
     {
       // first byte comes from 6 bits of first char and 2 bits of second char
-      assert(src1[srcix]-minChar < 64 && src1[srcix+1]-minChar < 64);
-#pragma nowarn(1506)   // warning elimination
+      if (NOT (src1[srcix]-minChar < 64 && src1[srcix+1]-minChar < 64))
+        return -1;
+
+      //      assert(src1[srcix]-minChar < 64 && src1[srcix+1]-minChar < 64);
       target[tgtix]  = (src1[srcix]-minChar) << 2;
-#pragma warn(1506)  // warning elimination
       target[tgtix] |= (src1[srcix+1]-minChar) >> 4;
 
       if (srcix+2 < srcLen)
 	{
           // second byte gets 4 bits from second and 4 bits from third char
-          assert(src1[srcix+2]-minChar < 64);
-#pragma nowarn(1506)   // warning elimination
+          if (NOT (src1[srcix+2]-minChar < 64))
+            return -1;
+          //          assert(src1[srcix+2]-minChar < 64);
           target[tgtix+1]  = ((src1[srcix+1]-minChar) & 0xf) << 4;
-#pragma warn(1506)  // warning elimination
 	  target[tgtix+1] |= (src1[srcix+2]-minChar) >> 2;
 	}
 
       if (srcix+3 < srcLen)
 	{
 	  // third byte gets 2 bits from third and 6 bits from fourth char
-          assert(src1[srcix+3]-minChar < 64);
-#pragma nowarn(1506)   // warning elimination
+          if (NOT (src1[srcix+3]-minChar < 64))
+            return -1;
+          //          assert(src1[srcix+3]-minChar < 64);
           target[tgtix+2]  = ((src1[srcix+2]-minChar) & 0x3) << 6;
-#pragma warn(1506)  // warning elimination
 	  target[tgtix+2] |= ((src1[srcix+3]-minChar) & 0x3f);
 	}
 
@@ -1610,155 +1613,165 @@ Int32 str_convertToHexAscii(const char * src,               // in
   return computedHexAsciiStrLen;
 }
 
-void printBrief(char* dataPointer, Lng32 keyLen) 
+// Print the data pointed at by a tupp. The data type
+// is inferred from the characters. The arguments
+// are obtained from a tupp as follows.
+//
+//    char * dataPointer = getDataPointer();
+//    Lng32 len = tupp_.getAllocatedSize();
+//
+//    printBrief(dataPointer, len) 
+//    
+void printBrief(char* dataPointer, Lng32 len) 
 {
-  // We don't know what the data type is, but we do know how
-  // long the field is. So we will guess the data type.
+   // We don't know what the data type is, but we do know how
+   // long the field is. So we will guess the data type.
+ 
+   // Note that varchar length fields are not handled here. For
+   // certain Tupp such as MdamPoint, this is OK because the Generator 
+   // transforms varchars to chars.
+ 
+   // We might have a null indicator, but we have no way of knowing
+   // that here. So we will ignore that possibility. (Sorry!)
+ 
+   // If the length is 2 or 4 or 8, we'll guess that it is an
+   // integer and print a signed integer interpretation.
+ 
+   // If the length is 7 and the first two bytes, when interpreted
+   // as Big Endian, looks like a year within 100 years of 2000,
+   // we'll interpret it as a TIMESTAMP(0).
+ 
+   // There are other possibilities of course which can be added
+   // over time but a better solution would be to change the 
+   // Generator and Executor to simply give us the data type info.
+ 
+   char local[1001];  // will assume our length is <= 1000
+   local[0] = '\0';
+ 
+   if (dataPointer)
+     {
+     bool allNulls = true;
+     bool allFFs = true;
+     bool allPrintable = true;
+     size_t i = 0;
+     while (i < len && (allNulls || allFFs))
+       {
+       if (dataPointer[i] != '\0') allNulls = false;
+       if (dataPointer[i] != -1) allFFs = false;
+       if (!isprint(dataPointer[i])) allPrintable = false;
+       i++;
+       }
+     if (allNulls)
+       {
+       strcpy(local,"*lo*");  // hopefully there won't be a legitimate value of *lo*
+       }
+     else if (allFFs)
+       {
+       strcpy(local,"*hi*");  // hopefully there won't be a legitimate value of *hi*
+       }
+     else if (allPrintable)
+       {
+       size_t lengthToMove = sizeof(local) - 1;
+       if (len < lengthToMove)
+         lengthToMove = len;
+       strncpy(local,dataPointer,lengthToMove);
+       local[lengthToMove] = '\0';
+       }
+     else  
+       {
+       // create a hex representation of the first 498 characters
+       strcpy(local,"hex ");
+       char * nextTarget = local + strlen(local);
+       size_t repdChars = ((sizeof(local) - 1)/2) - 4; // -4 to allow for "hex "
+       if (len < repdChars)
+         repdChars = len;
+ 
+       for (size_t i = 0; i < repdChars; i++)
+         {
+         unsigned char nibbles[2];
+         nibbles[0] = ((unsigned char)dataPointer[i] & 
+                       (unsigned char)0xf0)/16;
+         nibbles[1] = (unsigned char)dataPointer[i] & (unsigned char)0x0f;
+         for (size_t j = 0; j < 2; j++)
+           {
+           if (nibbles[j] < 10)
+             *nextTarget = '0' + nibbles[j];
+           else
+             *nextTarget = 'a' + (nibbles[j] - 10);
+           nextTarget++;
+           }  // for j
+         }  // for i
+ 
+       *nextTarget = '\0';         
+       }
+ 
+     if (len == 2)  // if it might be a short
+       {
+       // append an interpretation as a short (note that there
+       // is room in local for this purpose)
+ 
+       // the value is big-endian hence the weird computation
+       long value = 256 * dataPointer[0] + 
+                    (unsigned char)dataPointer[1];                  
+       sprintf(local + strlen(local), " (short %ld)",value);
+       }
+     else if (len == 4)  // if it might be a long
+       {
+       // append an interpretation as a long (note that there
+       // is room in local for this purpose)
+ 
+       // the value is big-endian hence the weird computation
+       long value = 256 * 256 * 256 * dataPointer[0] + 
+                    256 * 256 * (unsigned char)dataPointer[1] +  
+                    256 * (unsigned char)dataPointer[2] + 
+                    (unsigned char)dataPointer[3];           
+       sprintf(local + strlen(local), " (long %ld)",value);
+       }
+     else if (len == 8)  // if it might be a 64-bit integer
+       {
+       // append an interpretation as a short (note that there
+       // is room in local for this purpose)
+ 
+       // the value is big-endian hence the weird computation
+       long long value = 256 * 256 * 256 * dataPointer[0] + 
+                    256 * 256 * (unsigned char)dataPointer[1] +  
+                    256 * (unsigned char)dataPointer[2] + 
+                    (unsigned char)dataPointer[3]; 
+       value = (long long)256 * 256 * 256 * 256 * value +   
+                    256 * 256 * 256 * (unsigned char)dataPointer[4] + 
+                    256 * 256 * (unsigned char)dataPointer[5] +  
+                    256 * (unsigned char)dataPointer[6] + 
+                    (unsigned char)dataPointer[7];        
+       sprintf(local + strlen(local), " (long long %lld)",value);
+       }
+     else if (len == 7)  // a TIMESTAMP(0) perhaps?
+       {
+       long year = 256 * dataPointer[0] +
+                           (unsigned char)dataPointer[1];
+       if ((year >= 1900) && (year <= 2100))
+         {
+         // looks like a TIMESTAMP(0); look further
+         long month = (unsigned char)dataPointer[2];
+         long day = (unsigned char)dataPointer[3];
+         long hour = (unsigned char)dataPointer[4];
+         long minute = (unsigned char)dataPointer[5];
+         long second = (unsigned char)dataPointer[6];
+ 
+         if ((month >= 1) && (month <= 12) &&
+             (day >= 1) && (day <= 31) &&
+             (hour >= 0) && (hour <= 23) &&
+             (minute >= 0) && (minute <= 59) &&
+             (second >= 0) && (second <= 59))
+           {
+           sprintf(local + strlen(local), 
+                   " (TIMESTAMP(0) %ld-%02ld-%02ld %02ld:%02ld:%02ld)",
+                   year,month,day,hour,minute,second);
+           }
+         }
+       }
+     }    
+   cout << local;
+   // cout << *(Lng32 *)dataPointer;
+   // End test change
+ }
 
-  // Note that varchar length fields are not handled here. For
-  // certain Tupp such as MdamPoint, this is OK because the Generator 
-  // transforms varchars to chars.
-
-  // We might have a null indicator, but we have no way of knowing
-  // that here. So we will ignore that possibility. (Sorry!)
-
-  // If the length is 2 or 4 or 8, we'll guess that it is an
-  // integer and print a signed integer interpretation.
-
-  // If the length is 7 and the first two bytes, when interpreted
-  // as Big Endian, looks like a year within 100 years of 2000,
-  // we'll interpret it as a TIMESTAMP(0).
-
-  // There are other possibilities of course which can be added
-  // over time but a better solution would be to change the 
-  // Generator and Executor to simply give us the data type info.
-
-  char local[1001];  // will assume our length is <= 1000
-  local[0] = '\0';
-
-  if (dataPointer)
-    {
-    bool allNulls = true;
-    bool allFFs = true;
-    bool allPrintable = true;
-    size_t i = 0;
-    while (i < keyLen && (allNulls || allFFs))
-      {
-      if (dataPointer[i] != '\0') allNulls = false;
-      if (dataPointer[i] != -1) allFFs = false;
-      if (!isprint(dataPointer[i])) allPrintable = false;
-      i++;
-      }
-    if (allNulls)
-      {
-      strcpy(local,"*lo*");  // hopefully there won't be a legitimate value of *lo*
-      }
-    else if (allFFs)
-      {
-      strcpy(local,"*hi*");  // hopefully there won't be a legitimate value of *hi*
-      }
-    else if (allPrintable)
-      {
-      size_t lengthToMove = sizeof(local) - 1;
-      if (keyLen < lengthToMove)
-        lengthToMove = keyLen;
-      strncpy(local,dataPointer,lengthToMove);
-      local[lengthToMove] = '\0';
-      }
-    else  
-      {
-      // create a hex representation of the first 498 characters
-      strcpy(local,"hex ");
-      char * nextTarget = local + strlen(local);
-      size_t repdChars = ((sizeof(local) - 1)/2) - 4; // -4 to allow for "hex "
-      if (keyLen < repdChars)
-        repdChars = keyLen;
-
-      for (size_t i = 0; i < repdChars; i++)
-        {
-        unsigned char nibbles[2];
-        nibbles[0] = ((unsigned char)dataPointer[i] & 
-                      (unsigned char)0xf0)/16;
-        nibbles[1] = (unsigned char)dataPointer[i] & (unsigned char)0x0f;
-        for (size_t j = 0; j < 2; j++)
-          {
-          if (nibbles[j] < 10)
-            *nextTarget = '0' + nibbles[j];
-          else
-            *nextTarget = 'a' + (nibbles[j] - 10);
-          nextTarget++;
-          }  // for j
-        }  // for i
-
-      *nextTarget = '\0';         
-      }
-
-    if (keyLen == 2)  // if it might be a short
-      {
-      // append an interpretation as a short (note that there
-      // is room in local for this purpose)
-
-      // the value is big-endian hence the weird computation
-      long value = 256 * dataPointer[0] + 
-                   (unsigned char)dataPointer[1];                  
-      sprintf(local + strlen(local), " (short %ld)",value);
-      }
-    else if (keyLen == 4)  // if it might be a long
-      {
-      // append an interpretation as a long (note that there
-      // is room in local for this purpose)
-
-      // the value is big-endian hence the weird computation
-      long value = 256 * 256 * 256 * dataPointer[0] + 
-                   256 * 256 * (unsigned char)dataPointer[1] +  
-                   256 * (unsigned char)dataPointer[2] + 
-                   (unsigned char)dataPointer[3];           
-      sprintf(local + strlen(local), " (long %ld)",value);
-      }
-    else if (keyLen == 8)  // if it might be a 64-bit integer
-      {
-      // append an interpretation as a short (note that there
-      // is room in local for this purpose)
-
-      // the value is big-endian hence the weird computation
-      long long value = 256 * 256 * 256 * dataPointer[0] + 
-                   256 * 256 * (unsigned char)dataPointer[1] +  
-                   256 * (unsigned char)dataPointer[2] + 
-                   (unsigned char)dataPointer[3]; 
-      value = (long long)256 * 256 * 256 * 256 * value +   
-                   256 * 256 * 256 * (unsigned char)dataPointer[4] + 
-                   256 * 256 * (unsigned char)dataPointer[5] +  
-                   256 * (unsigned char)dataPointer[6] + 
-                   (unsigned char)dataPointer[7];        
-      sprintf(local + strlen(local), " (long long %lld)",value);
-      }
-    else if (keyLen == 7)  // a TIMESTAMP(0) perhaps?
-      {
-      long year = 256 * dataPointer[0] +
-                          (unsigned char)dataPointer[1];
-      if ((year >= 1900) && (year <= 2100))
-        {
-        // looks like a TIMESTAMP(0); look further
-        long month = (unsigned char)dataPointer[2];
-        long day = (unsigned char)dataPointer[3];
-        long hour = (unsigned char)dataPointer[4];
-        long minute = (unsigned char)dataPointer[5];
-        long second = (unsigned char)dataPointer[6];
-
-        if ((month >= 1) && (month <= 12) &&
-            (day >= 1) && (day <= 31) &&
-            (hour >= 0) && (hour <= 23) &&
-            (minute >= 0) && (minute <= 59) &&
-            (second >= 0) && (second <= 59))
-          {
-          sprintf(local + strlen(local), 
-                  " (TIMESTAMP(0) %ld-%02ld-%02ld %02ld:%02ld:%02ld)",
-                  year,month,day,hour,minute,second);
-          }
-        }
-      }
-    }    
-  cout << local;
-  // cout << *(Lng32 *)dataPointer;
-  // End test change
-}

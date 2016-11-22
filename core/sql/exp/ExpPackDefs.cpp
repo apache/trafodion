@@ -134,6 +134,8 @@ NA_EIDPROC Long AggrExpr::pack(void * space_)
   perrecExpr_.pack(space_);
   finalNullExpr_.pack(space_);
   finalExpr_.pack(space_);
+  groupingExpr_.pack(space_);
+
   return ex_expr::pack(space_);
 }
 
@@ -584,6 +586,40 @@ Long ExHeaderClause::pack(void * space)
   return packClause(space, sizeof(ExHeaderClause));
 }  
 
+NA_EIDPROC Long ExFunctionSha::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionSha));
+}
+
+NA_EIDPROC Long ExFunctionSha2::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionSha2));
+}
+
+NA_EIDPROC Long ExFunctionMd5::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionMd5));
+}
+
+NA_EIDPROC Long ExFunctionCrc32::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionCrc32));
+}
+
+NA_EIDPROC Long ExFunctionIsIP::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionIsIP));
+}
+
+NA_EIDPROC Long ExFunctionInetAton::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionInetAton));
+}
+
+NA_EIDPROC Long ExFunctionInetNtoa::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionInetNtoa));
+}
 
 // -----------------------------------------------------------------------
 // U N P A C K
@@ -670,6 +706,8 @@ NA_EIDPROC Lng32 AggrExpr::unpack(void *base, void * reallocator)
   if (perrecExpr_.unpack(base, reallocator)) return -1;
   if (finalNullExpr_.unpack(base, reallocator)) return -1;
   if (finalExpr_.unpack(base, reallocator)) return -1;
+  if (groupingExpr_.unpack(base, reallocator)) return -1;
+
   return ex_expr::unpack(base, reallocator);
 }
 

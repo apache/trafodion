@@ -231,24 +231,53 @@ sudo chown $(whoami).$(whoami) $PWD/servers
 let per_node=$DCS_SERVERS_PARM/$node_count
 let extras=$DCS_SERVERS_PARM%$node_count
 count=1
-for node_name in $NEW_NODES
+for node_name in $NODE_LIST
 do
-   if [ $count -le $extras ]; then
-      let node_servers=$per_node+1
-   else
-      node_servers=$per_node
+   while read line
+   do
+      if [[ $line  =~ .*$node_name.* ]]; then
+         found=1
+      fi
+   done < $PWD/servers
+   if [[ $found -ne "1" ]]; then
+      if [ $count -le $extras ]; then
+         let node_servers=$per_node+1
+      else
+         node_servers=$per_node
+      fi
+      echo $node_name $node_servers >> $PWD/servers
+      (( count++ ))
    fi
-   echo $node_name $node_servers >> $PWD/servers
-   (( count++ ))
+   found=0
 done
 
 
-$TRAF_PDCP $PWD/servers $HOME
-$TRAF_PDSH sudo cp $HOME/servers $SQ_ROOT/$DCS_DIR/conf
+$TRAF_PDCP $PWD/servers $HOME/tempServers
+$TRAF_PDSH sudo cp $HOME/tempServers $SQ_ROOT/$DCS_DIR/conf/servers
 $TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/$DCS_DIR/conf/servers
 
 
 
+}
+
+function editDCSBackUp {
+
+echo "***INFO: Create DCS Backup Master file"
+
+source $TRAF_CONFIG
+DCS_DIR=$(sudo ls $SQ_ROOT | grep dcs\*)
+
+if [[ ! -z $NEW_BACKUP_DCS_NODES ]]; then
+   for node_name in $BACKUP_DCS_NODES
+   do
+      echo $node_name >> $PWD/tempbackup
+   done
+
+   $TRAF_PDCP $PWD/tempbackup $HOME
+   $TRAF_PDSH sudo cp $HOME/tempbackup $SQ_ROOT/$DCS_DIR/conf/backup-master
+   $TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/$DCS_DIR/conf/backup-master
+
+fi
 }
 
 function copyAll {
@@ -322,7 +351,7 @@ function copySqcert {
 source $TRAF_CONFIG
 
 $TRAF_PDSH mkdir -p $HOME/tmpTraf
-sudo cp -r $HOME_DIR/$TRAF_USER/sqcert $HOME/tmpTraf
+sudo cp -r $HOME_DIR/$TRAF_USER/sqcert/* $HOME/tmpTraf
 sudo chown -R $(whoami).$(whoami) $HOME/tmpTraf
 $TRAF_PDCP -r $HOME/tmpTraf $HOME
 $TRAF_PDSH sudo mkdir -p $HOME_DIR/$TRAF_USER/sqcert
@@ -347,12 +376,26 @@ echo
 
 }
 
+function cleanUp {
+
+$TRAF_PDSH rm -rf $HOME/hbase-site*
+$TRAF_PDSH rm -rf $HOME/hbaseVersion*
+$TRAF_PDSH rm -rf $HOME/sysctl.conf
+$TRAF_PDSH rm -rf $HOME/tempBashrc
+$TRAF_PDSH rm -rf $HOME/tempServers
+$TRAF_PDSH rm -rf $HOME/trafodion_config
+$TRAF_PDSH rm -rf $HOME/trafodion.conf
+
+}
+
+
 
 #Main
 
 echo
 echo "***IMPORTANT: Starting installation on $NEW_NODES"
 echo 
+
 installPackages
 copyLimits
 reserveDCSPorts
@@ -364,9 +407,12 @@ copyTrafbashrc
 copyAll
 trafAcceptKeys
 editDCSServers
+if [[ "$ENABLE_HA" == "true" ]]; then
+   editDCSBackUp
+fi
 addTraftoHBase
 copyClusterConf
 copySQconfig
 copySqcert
 printMessage
-
+cleanUp

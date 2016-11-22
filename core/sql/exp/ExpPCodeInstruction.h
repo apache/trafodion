@@ -726,6 +726,16 @@ public:
     MOVE_MBIN64U_MBIN64S          = 363,
     MOVE_MBIN64U_MBIN64U          = 364,
 
+    RANGE_LOW_S8S64               = 365,
+    RANGE_HIGH_S8S64              = 366,
+    RANGE_LOW_U8S64               = 367,
+    RANGE_HIGH_U8S64              = 368,
+
+    MOVE_MBIN8S_MBIN16S           = 369,
+    MOVE_MBIN8U_MBIN16U           = 370,
+    MOVE_MBIN8U_MBIN16S           = 371,
+    MOVE_MBIN8S_MBIN16U           = 372,
+
     //***************************************************************
     // Add new PCODE instructions immediately above this comment!!!!!
     //***************************************************************

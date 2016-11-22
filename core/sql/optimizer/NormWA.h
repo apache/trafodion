@@ -311,6 +311,11 @@ public:
       ,checkForExtraHubTables_(FALSE)
       ,compilingMVDescriptor_(FALSE)
       ,requiresRecursivePushdown_(FALSE)
+      ,readList_(CmpCommon::statementHeap())
+      ,writeList_(CmpCommon::statementHeap())
+      ,origSeqFunction_(CmpCommon::statementHeap())
+      ,equiTransformedExpr_(CmpCommon::statementHeap())
+      ,commonSubExprCount_(0)
   {
     vegTable_ = new (wHeap()) VEGTable;
     sqoWARef_ = new (CmpCommon::statementHeap()) SqoWA;
@@ -352,6 +357,11 @@ public:
       ,checkForExtraHubTables_(FALSE)
       ,compilingMVDescriptor_(FALSE)
       ,requiresRecursivePushdown_(other.requiresRecursivePushdown_)
+      ,readList_(other.readList_, STMTHEAP)
+      ,writeList_(other.writeList_, STMTHEAP)
+      ,origSeqFunction_(other.origSeqFunction_, STMTHEAP)
+      ,equiTransformedExpr_(other.equiTransformedExpr_, STMTHEAP)
+      ,commonSubExprCount_(0)
   {}
   
   // --------------------------------------------------------------------
@@ -614,7 +624,8 @@ public:
 	    containsJoinsToBeEliminated_ ||
             checkForExtraHubTables_ ||
 	    containsGroupBysToBeEliminated_ ||
-	    containsSemiJoinsToBeTransformed_ ); }
+	    containsSemiJoinsToBeTransformed_ ||
+            commonSubExprCount_ > 0); }
   
   void incrementCorrelatedSubqCount()		{ correlatedSubqCount_++; }
   void decrementCorrelatedSubqCount()	{correlatedSubqCount_--; }
@@ -648,6 +659,9 @@ public:
   RelExpr* getExtraHubVertex() { return extraHubVertex_;}
   void setExtraHubVertex(RelExpr* ptr) 
 	  {extraHubVertex_ = ptr;}
+
+  Int32 getCommonSubExprRefCount() { return commonSubExprCount_; }
+  void incrementCommonSubExprRefCount() { commonSubExprCount_++; }
 
   // Return a reference to the Semantic Query WA
   SqoWA * getSqoWA() { return sqoWARef_;}
@@ -860,6 +874,8 @@ private:
   NABoolean containsSemiJoinsToBeTransformed_ ;
 
   RelExpr * extraHubVertex_;
+
+  Int32 commonSubExprCount_;
 
   // Pointer to Semantic Query Optimization WA. Used for error recovery
   SqoWA * sqoWARef_;

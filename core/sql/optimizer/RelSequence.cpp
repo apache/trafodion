@@ -247,10 +247,14 @@ RelSequence::copyTopNode(RelExpr *derivedNode, CollHeap *outHeap)
   result->cancelExpr() = cancelExpr();
 
   result->checkPartitionChangeExpr_  = checkPartitionChangeExpr_;
+  result->hasOlapFunctions_ = hasOlapFunctions_;
+  result->hasTDFunctions_= hasTDFunctions_;
+  result->movePartIdsExpr_ = movePartIdsExpr_;
 
   //need to review the commented code below
   //result->requiredOrderTree_ = requiredOrderTree_->copyTree(outHeap)->castToItemExpr();
-  //result->partitionBy_ = partitionBy_->copyTree(outHeap)->castToItemExpr();
+  if (partitionBy_)
+    result->partitionBy_ = partitionBy_->copyTree(outHeap)->castToItemExpr();
   //result->cancelExprTree_ = cancelExprTree_->copyTree(outHeap)->castToItemExpr();
   // Copy any data members from the classes lower in the derivation chain.
   //
@@ -1176,20 +1180,21 @@ RelExpr *RelSequence::bindNode(BindWA *bindWA)
 
     sequencedColumns() += newColumn->getValueId();
   }
-  
+  ValueIdMap ncToOldMap;
   for(i = 0; i < colList->entries(); i++) 
   {
     ValueId columnValueId = colList->at(i)->getValueId();
     ItemExpr *newColumn = new (bindWA->wHeap()) 
       NotCovered (columnValueId.getItemExpr());
     newColumn->synthTypeAndValueId();
+    newColumn->setOrigOpType(columnValueId.getItemExpr()->origOpType());
     
     resultTable->addColumn(bindWA,
       colList->at(i)->getColRefNameObj(),
       newColumn->getValueId(),
       USER_COLUMN,
       colList->at(i)->getHeading());
-
+    ncToOldMap.addMapEntry(newColumn->getValueId(),columnValueId);
     if(colList->at(i)->isGrouped()) {
       ColumnNameMap *cnm =
         resultTable->findColumn(colList->at(i)->getColRefNameObj());
@@ -1198,7 +1203,7 @@ RelExpr *RelSequence::bindNode(BindWA *bindWA)
 
     sequencedColumns() += newColumn->getValueId();
   }
-
+  
   // Set the return descriptor
   //
   setRETDesc(resultTable);
@@ -1257,7 +1262,8 @@ RelExpr *RelSequence::bindNode(BindWA *bindWA)
   //CMPASSERT(!bindWA->getCurrentScope()->getSequenceNode());
 
   bindWA->getCurrentScope()->getSequenceNode() = boundExpr;
-
+  // save the ncToOldmap in the current scope. It will be used in Insert::bindnode for a special case.
+  bindWA->getCurrentScope()->setNCToOldMap( ncToOldMap);
   return boundExpr;
 
 } // RelSequence::bindNode()
@@ -1559,6 +1565,12 @@ void PhysSequence::setMinFollowingRows(Lng32 v)
   minFollowingRows_ = v;
 };
 
+void PhysSequence::computeAndSetMinFollowingRows(Lng32 v)
+{
+  if ( v > minFollowingRows_ )
+     minFollowingRows_ = v;
+};
+
 Lng32 PhysSequence::getMinFollowingRows() const
 {
   return minFollowingRows_;
@@ -1582,6 +1594,8 @@ void PhysSequence::estimateHistoryRowLength(const ValueIdSet &sequenceFunctions,
 
       switch(itmExpr->getOperatorType())
       {
+        case ITM_OLAP_LEAD:
+        case ITM_OLAP_LAG:
         case ITM_OFFSET:
         case ITM_ROWS_SINCE:
         case ITM_THIS:

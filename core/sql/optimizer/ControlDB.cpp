@@ -88,13 +88,15 @@ ControlDB * ActiveControlDB()
 				}
 
 ControlDB::ControlDB()
+  :cqdList_(CONTROLDBHEAP),
+   csList_(CONTROLDBHEAP)
 {
   requiredShape_ = NULL;
   requiredShapeWasOnceNonNull_ = FALSE;
   savedRequiredShape_ = NULL;
   outStream_ = NULL;
 
-  ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *);
+  ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *)(CONTROLDBHEAP);
   savedCtList_ = NULL;
 }
 
@@ -1373,7 +1375,7 @@ Lng32 ControlDB::packControlTableOptionsToBuffer(char * buffer)
 Lng32 ControlDB::unpackControlTableOptionsFromBuffer(char * buffer)
 {
   if (!ctList_)
-    ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *);
+    ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *)(CONTROLDBHEAP);
 
   Lng32 numEntries;
   Lng32 curPos = 0;
@@ -1418,7 +1420,7 @@ Lng32 ControlDB::saveCurrentCTO()
 
   savedCtList_ = ctList_;
 
-  ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *);
+  ctList_ = new CONTROLDBHEAP LIST(ControlTableOptions *)(CONTROLDBHEAP);
 
   return 0;
 }
@@ -1980,6 +1982,41 @@ ExprNode *DecodeShapeSyntax(const NAString &fname,
             DgString0("Missing isolated_scalar_udf SCALAR_UDF option.");
           return NULL;
         }
+    }
+  else if (fname == "TMUDF")
+    {
+      Int32 numArgs = args->entries();
+      OperatorTypeEnum op = REL_ANY_LEAF_TABLE_MAPPING_UDF;
+      RelExpr *child0 = NULL;
+      RelExpr *child1 = NULL;
+
+      if (numArgs == 1)
+        {
+          if (badSingleArg(fname,args,diags))
+            return NULL;
+          op = REL_ANY_UNARY_TABLE_MAPPING_UDF;
+          child0 = args->at(0)->castToRelExpr();
+        }
+      else if (numArgs == 2)
+        {
+          if (badTwoArgs(fname,args,diags))
+            return NULL;
+          op = REL_ANY_BINARY_TABLE_MAPPING_UDF;
+          child0 = args->at(0)->castToRelExpr();
+          child1 = args->at(1)->castToRelExpr();
+        }
+      else if (numArgs > 2)
+        {
+          *diags << DgSqlCode(-3113) <<
+	    DgString0("TMUDF operator must have 0, 1 or 2 arguments.");
+          return NULL;
+        }
+
+      result = new (heap) WildCardOp(
+	   op,
+	   0,
+	   child0,
+           child1);
     }
   else
     {

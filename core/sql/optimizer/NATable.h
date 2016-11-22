@@ -45,6 +45,7 @@
 #include "ExpLOBexternal.h"
 #include "ComSecurityKey.h"
 #include "ExpHbaseDefs.h"
+#include "ComViewColUsage.h"
 
 //forward declaration(s)
 // -----------------------------------------------------------------------
@@ -54,6 +55,7 @@ class NATable;
 class NATableDB;
 class HistogramCache;
 class HistogramsCacheEntry;
+
 // -----------------------------------------------------------------------
 // forward references
 // -----------------------------------------------------------------------
@@ -87,139 +89,138 @@ class HistogramsCacheEntry : public NABasicObject
 {
   friend class HistogramCache;
   
- public:
-  // constructor for creating memory efficient representation of colStats
-  HistogramsCacheEntry
+  public:
+    // constructor for creating memory efficient representation of colStats
+    HistogramsCacheEntry
     (const StatsList & colStats,
      const QualifiedName & qualifiedName,
-		              const Int64 & modifTime,
-                      const Int64 & statsTime,
-                      const Int64 & redefTime,
+     Int64 tableUID,
+     const Int64 & statsTime,
+     const Int64 & redefTime,
      NAMemory * heap);
 
-	//destructor
-	virtual ~HistogramsCacheEntry();
+    //destructor
+    virtual ~HistogramsCacheEntry();
 
-	//setter methods
-	//should be called to indicate that histograms for a given table
-	//have been pre-fetched
-	void setPreFetched(NABoolean preFetched = TRUE){preFetched_ = preFetched;};
+    //setter methods
+    //should be called to indicate that histograms for a given table
+    //have been pre-fetched
+    void setPreFetched(NABoolean preFetched = TRUE){preFetched_ = preFetched;};
 
-  const ColStatsSharedPtr getStatsAt(CollIndex x) const;
+    const ColStatsSharedPtr getStatsAt(CollIndex x) const;
 
-  const MultiColumnHistogram* getMultiColumnAt(CollIndex x) const;
+    const MultiColumnHistogram* getMultiColumnAt(CollIndex x) const;
 
-  NABoolean contains(CollIndex colPos) const 
+    NABoolean contains(CollIndex colPos) const 
     { return singleColumnPositions_.contains(colPos); }
 
-  // insert all multicolumns referencing col into list
-  // use singleColsFound to avoid duplicates
-  void getMCStatsForColFromCacheIntoList
+    // insert all multicolumns referencing col into list
+    // use singleColsFound to avoid duplicates
+    void getMCStatsForColFromCacheIntoList
     (StatsList& list, NAColumn& col, ColumnSet& singleColsFound);
 
-  // adds histograms to this cache entry
-  void addToCachedEntry(NAColumnArray & columns, StatsList & list);
+    // adds histograms to this cache entry
+    void addToCachedEntry(NAColumnArray & columns, StatsList & list);
 
-  // add multi-column histogram to this cache entry
-  void addMultiColumnHistogram(const ColStats& mcStat,
-                               ColumnSet* singleColPositions=NULL);
+    // add multi-column histogram to this cache entry
+    void addMultiColumnHistogram(const ColStats& mcStat,
+                                 ColumnSet* singleColPositions=NULL);
 
-	//accessor methods
-  ColStatsSharedPtr const
-    getHistForCol (NAColumn& col) const;
+    //accessor methods
+    ColStatsSharedPtr const getHistForCol (NAColumn& col) const;
 
-  CollIndex singleColumnCount() const 
+    CollIndex singleColumnCount() const 
     { return full_ ? full_->entries() : 0; }
 
-  CollIndex multiColumnCount() const 
+    CollIndex multiColumnCount() const 
     { return multiColumn_ ? multiColumn_->entries() : 0; }
 
-	NABoolean           preFetched() const {return preFetched_;};
-  const QualifiedName* getName() const;
+    NABoolean           preFetched() const {return preFetched_;};
+    const QualifiedName* getName() const;
 
-  NABoolean accessedInCurrentStatement() const 
+    NABoolean accessedInCurrentStatement() const 
     { return accessedInCurrentStatement_; }
 
-  void resetAfterStatement() 
+    void resetAfterStatement() 
     { accessedInCurrentStatement_ = FALSE; }
 
-	//overloaded operator to satisfy hashdictionary
-	inline NABoolean operator==(const HistogramsCacheEntry & other)
+    //overloaded operator to satisfy hashdictionary
+    inline NABoolean operator==(const HistogramsCacheEntry & other)
 	{return (this == &other);};
 
-	Int64 getRefreshTime() const            { return refreshTime_; };
+    Int64 getRefreshTime() const          { return refreshTime_; };
 
-	void setRefreshTime(Int64 refreshTime)
-	{ refreshTime_ = refreshTime ; };
+    void setRefreshTime(Int64 refreshTime) { refreshTime_ = refreshTime ; };
 
-	void updateRefreshTime();
+    void updateRefreshTime();
 
-  void setModifTime(Int64 modifTime) { modifTime_ = modifTime; };
-  void setStatsTime(Int64 statsTime) { statsTime_ = statsTime; };
-  void setRedefTime(Int64 redefTime) { redefTime_ = redefTime; };
+    void setRedefTime(Int64 redefTime) { redefTime_ = redefTime; };
 
-	Int64 getRedefTime() const            { return redefTime_; };
-  Int64 getModifTime() const            { return modifTime_; };
-  Int64 getStatsTime() const            { return statsTime_; };
+    Int64 getRedefTime() const            { return redefTime_; };
 
-	static Int64 getLastUpdateStatsTime();
+    Int64 getStatsTime() const            { return statsTime_; };
 
-	static void setUpdateStatsTime(Int64 updateTime);
+    static Int64 getLastUpdateStatsTime();
 
-	inline NABoolean isAllStatsFake() { return allFakeStats_; };
+    static void setUpdateStatsTime(Int64 updateTime);
 
-	inline void allStatsFake(NABoolean allFakeStats) { allFakeStats_ = allFakeStats; }
+    inline NABoolean isAllStatsFake() { return allFakeStats_; };
 
-  inline ULng32 getSize() {return size_;}
+    inline void allStatsFake(NABoolean allFakeStats) { allFakeStats_ = allFakeStats; }
+
+    inline ULng32 getSize() {return size_;}
+
+    Int64 getTableUID() const { return tableUID_; };
   
-  void display() const;
-  void print( FILE* ofd = stdout,
-	      const char* indent = DEFAULT_INDENT,
-              const char* title = "HistogramsCacheEntry") const;
-  void monitor(FILE* ofd) const;
+    void display() const;
+    void print( FILE* ofd = stdout,
+                const char* indent = DEFAULT_INDENT,
+                const char* title = "HistogramsCacheEntry") const;
+    void monitor(FILE* ofd) const;
 
   private:
   
-  inline void setSize(ULng32 newSize){ size_ = newSize;}
+    inline void setSize(ULng32 newSize){ size_ = newSize;}
 
-	NAMemory * heap_;
+    NAMemory * heap_;
 
-	NABoolean preFetched_;
+    NABoolean preFetched_;
 
-	// ---------------------------------------------------------------------
-	// The time histograms for this table were last refreshed
-	// ---------------------------------------------------------------------
-	Int64 refreshTime_;
+    // ---------------------------------------------------------------------
+    // The time histograms for this table were last refreshed
+    // ---------------------------------------------------------------------
+    Int64 refreshTime_;
 
-	// ---------------------------------------------------------------------
-	// The time this table was last altered
-	// ---------------------------------------------------------------------
-	Int64 redefTime_;
-  Int64 modifTime_;
-  Int64 statsTime_;
+    // ---------------------------------------------------------------------
+    // The time this table was last altered
+    // ---------------------------------------------------------------------
+    Int64 redefTime_;
 
-	// ----------------------------------------------------------------
-	// Do all columns of this table consis of default statistics
-	// ----------------------------------------------------------------
-	NABoolean allFakeStats_;
+    Int64 statsTime_;  // STATS_TIME value from SB_HISTOGRAMS table
 
-	//The full histograms
-  NAList<ColStatsSharedPtr> *full_; 
-  // is the memory-efficient contextheap representation 
-  // of a table's single-column histograms only 
+    // ----------------------------------------------------------------
+    // Do all columns of this table consis of default statistics
+    // ----------------------------------------------------------------
+    NABoolean allFakeStats_;
 
-  ColumnSet singleColumnPositions_; 
-  // tracks single-column histograms that are in cache
+    //The full histograms
+    NAList<ColStatsSharedPtr> *full_; 
+    // is the memory-efficient contextheap representation 
+    // of a table's single-column histograms only 
 
-  // multicolum histograms
-  MultiColumnHistogramList *multiColumn_; 
-  // is the memory-efficient contextheap representation 
-  // of a table's multi-column histograms only
+    ColumnSet singleColumnPositions_; 
+    // tracks single-column histograms that are in cache
 
-	//pointer to qualified name of the table
-	QualifiedName * name_;
-  NABoolean       accessedInCurrentStatement_; 
-  ULng32 size_;
+    // multicolum histograms
+    MultiColumnHistogramList *multiColumn_; 
+    // is the memory-efficient contextheap representation 
+    // of a table's multi-column histograms only
+
+    //pointer to qualified name of the table
+    QualifiedName * name_;
+    Int64 tableUID_;
+    NABoolean       accessedInCurrentStatement_; 
+    ULng32 size_;
 };// class HistogramsCacheEntry
 
 /****************************************************************************
@@ -274,6 +275,9 @@ public:
   void traceTablesFinalize() const;
   void monitor() const;
 
+  void freeInvalidEntries(Int32 returnedNumQiKeys,
+                          SQL_QIKEY * qiKeyArray);
+
  private:
   DISALLOW_COPY_AND_ASSIGN(HistogramCache);
 
@@ -298,7 +302,7 @@ public:
 	void putStatsListIntoCache(StatsList & colStatsList,
                               const NAColumnArray& colArray,
                               const QualifiedName & qualifiedName,
-                              Int64 modifTime,
+                              Int64 tableUID,
                               Int64 statsTime,
                               const Int64 & redefTime,
 			      NABoolean allFakeStats);
@@ -333,6 +337,7 @@ public:
   //The Cache
   NAHashDictionary <QualifiedName, HistogramsCacheEntry> * histogramsCache_;
         
+  Int64 lastTouchTime_;    // last time cache was touched
   ULng32 hits_;            // cache hit counter
   ULng32 lookups_;         // entries lookup counter 
   ULng32 size_;
@@ -565,6 +570,7 @@ public:
   Int32   getViewTextLenInNAWchars() const   { return viewTextInNAWchars_.length(); }
 
   const char *getViewCheck() const              { return viewCheck_; }
+  const NAList<ComViewColUsage*> *getViewColUsages() const  { return viewColUsages_; }
 
   NABoolean hasSaltedColumn(Lng32 * saltColPos = NULL);
   NABoolean hasDivisioningColumn(Lng32 * divColPos = NULL);
@@ -894,7 +900,9 @@ private:
   NATable (const NATable & orig, NAMemory * h=0) ; //not written
 
   void setRecordLength(Int32 recordLength) { recordLength_ = recordLength; }
-  void setupPrivInfo();
+
+  void getPrivileges(TrafDesc * priv_desc);
+  void readPrivileges();
 
   ExpHbaseInterface* getHBaseInterface() const;
   static ExpHbaseInterface* getHBaseInterfaceRaw();
@@ -1085,6 +1093,7 @@ private:
   NAWString viewTextInNAWchars_;
   CharInfo::CharSet viewTextCharSet_;
   char *viewCheck_;
+  NAList<ComViewColUsage *> *viewColUsages_;
 
   // ---------------------------------------------------------------------
   // Flags
@@ -1239,7 +1248,14 @@ public:
   {}
 
   NATableDB (const NATableDB & orig, NAMemory * h) :
-       NAKeyLookup<ExtendedQualName,NATable> (orig, h)
+    NAKeyLookup<ExtendedQualName,NATable> (orig, h),
+    heap_(h),
+    statementTableList_(h),
+    statementCachedTableList_(h),
+    cachedTableList_(h),
+    tablesToDeleteAfterStatement_(h),
+    nonCacheableTableIdents_(h),
+    nonCacheableTableList_(h)
   {}
 
   NAHeap *getHeap() { return (NAHeap *)heap_; }
@@ -1263,7 +1279,7 @@ public:
                      NABoolean ddlXns, NABoolean atCommit);
    
   void RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx );
-  static void remove_entries_marked_for_removal();
+  void remove_entries_marked_for_removal();
   static void unmark_entries_marked_for_removal();
 
   void free_entries_with_QI_key( Int32 numSiKeys, SQL_QIKEY* qiKeyArray );

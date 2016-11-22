@@ -38,6 +38,8 @@
 #include "seabed/ms.h"
 #include "seabed/fserr.h"
 
+BOOL gv_QRLoggerInitialized_ = FALSE;
+
 using namespace log4cxx;
 using namespace log4cxx::helpers;
 
@@ -184,8 +186,14 @@ void getMyNidSuffix(char stringNidSuffix[])
 // **************************************************************************
 NABoolean QRLogger::initLog4cxx(const char* configFileName)
 {
+  if (gv_QRLoggerInitialized_)
+     return TRUE;
+
   NAString logFileName;
 
+  if (gv_QRLoggerInitialized_)
+     return TRUE;
+ 
   // get the log directory
   logFileName = "";
 
@@ -214,8 +222,15 @@ NABoolean QRLogger::initLog4cxx(const char* configFileName)
   if (CommonLogger::initLog4cxx(configFileName, logFileSuffix))
   {
     introduceSelf();
+    gv_QRLoggerInitialized_ = TRUE;
     return TRUE;
   }
+
+/* This code is kept around for the old QMS kind of logging
+   This can be deleted. But keeeping it around if we need
+   to do use the catgory later */
+
+/*
 
   logFileName += "sql_events";
   logFileName += logFileSuffix;
@@ -257,7 +272,7 @@ NABoolean QRLogger::initLog4cxx(const char* configFileName)
   introduceSelf();
 
   // initialize sub categories here - they were removed since they are not currently being used
-
+*/
   return FALSE;
 }
 

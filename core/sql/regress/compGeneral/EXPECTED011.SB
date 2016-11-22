@@ -821,7 +821,7 @@ A
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
 
-*** WARNING[2997]  (Subquery was not unnested. Reason: Right grandchild of TSJ is a semijoin or a group by)
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
 
 VCH7     NINT    CH3  NNUM5       
 -------  ------  ---  ------------
@@ -1106,8 +1106,6 @@ A
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
 
-*** WARNING[2997]  (Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than one subquery)
-
 --- SQL command prepared.
 >>execute explainIt;
 
@@ -1218,8 +1216,6 @@ A
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
 
-*** WARNING[2997]  (Skipping unnesting of Subquery due to NonNullRejecting Predicates in more than one subquery)
-
 --- SQL command prepared.
 >>
 >>execute explainIt;
@@ -1248,7 +1244,7 @@ A
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
 
-*** WARNING[2997]  (Subquery was not unnested. Reason: Right grandchild of TSJ is a semijoin or a group by)
+*** WARNING[2997]  (Subquery was not unnested. Reason: Right grandchild of TSJ is a semijoin or has more than one group by)
 
 --- SQL command prepared.
 >>
@@ -1574,6 +1570,8 @@ A
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
 
+*** WARNING[6007] Multi-column statistics for columns (C, D) from table TRAFODION.SCH.T40 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
+
 --- SQL command prepared.
 >>
 >>execute explainIt;
@@ -1696,6 +1694,8 @@ A
 +>order by 1,2;
 
 *** WARNING[2997]  (Attempting to unnest Subquery)
+
+*** WARNING[6007] Multi-column statistics for columns (C, D) from table TRAFODION.SCH.T40 were not available. The columns were being used by GroupBy operator. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
 >>
@@ -1843,8 +1843,8 @@ A           (EXPR)
 ----------  ----------
 
 xx          ?         
-xx          ?         
 ss          ?         
+xx          ?         
 
 --- 3 row(s) selected.
 >>
@@ -1857,9 +1857,9 @@ ss          ?
 A           (EXPR)    
 ----------  ----------
 
-xx          ?         
-xx          ?         
 ss          ?         
+xx          ?         
+xx          ?         
 
 --- 3 row(s) selected.
 >>
@@ -1967,12 +1967,7 @@ abcedf    abcdef%  aaa
 >>
 >>execute show_join_oper;
 
-OPERATOR                      
-------------------------------
-
-HYBRID_HASH_JOIN              
-
---- 1 row(s) selected.
+--- 0 row(s) selected.
 >>
 >>-- Test LeftJoin to Inner Join transformation for LIKE
 >>-- Should not see a LeftJoin in the explain output
@@ -1986,12 +1981,7 @@ HYBRID_HASH_JOIN
 >>
 >>execute show_join_oper;
 
-OPERATOR                      
-------------------------------
-
-HYBRID_HASH_JOIN              
-
---- 1 row(s) selected.
+--- 0 row(s) selected.
 >>
 >>-- Test LeftJoin to Inner Join transformation for NOT
 >>-- Should not see a LeftJoin in the explain output
@@ -2005,12 +1995,7 @@ HYBRID_HASH_JOIN
 >>
 >>execute show_join_oper;
 
-OPERATOR                      
-------------------------------
-
-HYBRID_HASH_JOIN              
-
---- 1 row(s) selected.
+--- 0 row(s) selected.
 >>
 >>-- bug no. 4138 from bugzilla
 >>-- abs of unsigned type used to give internal error
@@ -2061,5 +2046,253 @@ A            B
 
 --- SQL command prepared.
 >>
+>>-- JIRA [TRAFODION-2159] Unnest correlated subquery with explicit groupby
+>>-- Q51
+>>prepare XX from
++>select t40.a
++>from t40
++>where t40.b >= (select avg(counta) from (select count(a) as counta from t41 where t40.c = t41.b group by t41.c))
++>order by 1 ;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+         11
+         12
+         13
+         14
+         15
+         16
+         17
+         18
+         19
+         20
+         21
+         22
+         23
+         24
+         25
+         26
+         27
+         28
+         29
+         30
+         31
+         32
+         33
+         34
+         35
+         36
+         37
+         38
+         39
+         40
+         41
+         42
+         43
+         44
+         45
+         46
+         47
+         48
+         49
+         50
+         51
+         52
+         53
+         54
+         55
+         56
+         57
+         58
+         59
+         60
+         61
+         62
+         63
+         64
+         65
+         66
+         67
+         68
+         69
+         70
+         71
+         72
+         73
+         74
+         75
+         76
+         77
+         78
+         79
+         80
+         81
+         82
+         83
+         84
+         85
+         86
+         87
+         88
+         89
+         90
+         91
+         92
+         93
+         94
+         95
+         96
+         97
+         98
+         99
+
+--- 99 row(s) selected.
+>>
+>>
+>>-- 2 correlated subqueries that require LOJ transformation. The two subqueries
+>>-- are NOT nested. Use of exists (i.e. oneTrue) predicate
+>>-- Q52
+>>prepare XX from
++>select t40.a
++>from t40
++>where exists (select *
++>                      from t44
++>                      where t40.c = t44.b)
++>  OR
++>      exists (select *
++>                      from t41
++>                      where t40.b = t41.b)
++>order by 1;
+
+--- SQL command prepared.
+>>
+>>execute explainIt;
+
+--- 0 row(s) selected.
+>>execute XX ;
+
+A          
+-----------
+
+          0
+          1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+         11
+         12
+         13
+         14
+         15
+         16
+         17
+         18
+         19
+         20
+         21
+         22
+         23
+         24
+         25
+         26
+         27
+         28
+         29
+         30
+         31
+         32
+         33
+         34
+         35
+         36
+         37
+         38
+         39
+         40
+         41
+         42
+         43
+         44
+         45
+         46
+         47
+         48
+         49
+         50
+         51
+         52
+         53
+         54
+         55
+         56
+         57
+         58
+         59
+         60
+         61
+         62
+         63
+         64
+         65
+         66
+         67
+         68
+         69
+         70
+         71
+         72
+         73
+         74
+         75
+         76
+         77
+         78
+         79
+         80
+         81
+         82
+         83
+         84
+         85
+         86
+         87
+         88
+         89
+         90
+         91
+         92
+         93
+         94
+         95
+         96
+         97
+         98
+         99
+
+--- 100 row(s) selected.
 >>
 >>log;

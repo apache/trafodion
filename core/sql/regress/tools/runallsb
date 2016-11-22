@@ -55,6 +55,7 @@ if [ $? -ne 0 ]; then
 fi
 
 diffOnly=0
+failedOnly=0
 
 OK=-1
 while [ $OK -ne 0 ]; do		# loop to allow options to appear in any order
@@ -68,6 +69,11 @@ while [ $OK -ne 0 ]; do		# loop to allow options to appear in any order
     diffOnly=1
     OK=1
     export SEABASE_REGRESS_DIFFS=1
+  fi
+
+  if [ "$1" = "-failed" ]; then
+    failedOnly=1
+    OK=1
   fi
 
 done
@@ -85,7 +91,10 @@ if [ "$T" != "" ]; then
 fi
 
 diffStr=
-if [ $diffOnly -ne 0 ]; then
+if [ $failedOnly -ne 0 ]; then
+  echo "Running failed tests for $TEST_SUBDIRS"
+  diffStr="-failed "
+elif [ $diffOnly -ne 0 ]; then
   echo "Running diffs for $TEST_SUBDIRS"
   diffStr="-diff "
 else
@@ -126,6 +135,10 @@ for dir in $TEST_SUBDIRS; do
       mkdir -p $rundir/$dir
    else
       echo "Found $rundir/$dir - continuing with tests"
+   fi
+
+   if [ $failedOnly -ne 0 ]; then
+     rm -f $dir/runregr-sb.log 2>/dev/null
    fi
 
    case $dir in
@@ -199,7 +212,11 @@ for dir in $TEST_SUBDIRS; do
  echo "------------------------------------------------------------------"
  echo "-- Showing result for $dir"
  echo "------------------------------------------------------------------"
- cat $dir/runregr-sb.log
+ if [ $failedOnly -ne 0 ]; then
+   cat $dir/runregr-failed.log
+ else
+   cat $dir/runregr-sb.log 
+ fi
 done
 
 echo ""

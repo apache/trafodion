@@ -276,6 +276,13 @@ ABC     ABC
 
 --- 1 row(s) inserted.
 >>
+>>-- should return error, maxlength not sufficient
+>>insert into t031t1 values (11, repeat('a', 100, 10), null);
+
+*** ERROR[8402] A string overflow occurred during the evaluation of a character expression.
+
+--- 0 row(s) inserted.
+>>
 >>select char_length(a), char_length(b) from t031t1;
 
 (EXPR)      (EXPR)    
@@ -431,19 +438,19 @@ Z            Z            (EXPR)  (EXPR)
 --- 1 row(s) selected.
 >>select substring(a, 1, 10), cast(b as char(10)) from hive.hive.t031hive;
 
-(EXPR)      (EXPR)    
-----------  ----------
+(EXPR)                                    (EXPR)
+----------------------------------------  ----------------------------------------
 
-aaaaaaaaaa  def       
-aaaaaaaaaa  zzz       
-aaaaaaaaaa  zzz       
-aaaaaaaaaa  zzz       
-aaaaaaaaaa  zzz       
-aaaaaaaaaa  zzz       
-a           zzz       
-aaaaaaaaaa  ?         
-aaaaaaaaaa  ?         
-aaaaaaaaaa  ?         
+aaaaaaaaaa                                def                                     
+aaaaaaaaaa                                zzz                                     
+aaaaaaaaaa                                zzz                                     
+aaaaaaaaaa                                zzz                                     
+aaaaaaaaaa                                zzz                                     
+aaaaaaaaaa                                zzz                                     
+a                                         zzz                                     
+aaaaaaaaaa                                ?                                       
+aaaaaaaaaa                                ?                                       
+aaaaaaaaaa                                ?                                       
 
 --- 10 row(s) selected.
 >>select [last 0] * from hive.hive.t031hive;
@@ -472,6 +479,84 @@ aaaaaaaaaa  ?
 
 --- 1 row(s) selected.
 >>
+>>control query shape sort_groupby(exchange(cut));
+
+--- SQL operation complete.
+>>cqd hive_min_bytes_per_esp_partition '2000000' ;
+
+--- SQL operation complete.
+>>prepare s2 from select count(*) from hive.hive.t031hive;
+
+--- SQL command prepared.
+>>explain options 'f' s2 ;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+000
+3    .    4    sort_partial_aggr_ro                                  1.00E+000
+2    .    3    esp_exchange                    1:2(hash2)            1.00E+000
+1    .    2    sort_partial_aggr_le                                  1.00E+000
+.    .    1    hive_scan                       T031HIVE              1.00E+000
+
+--- SQL operation complete.
+>>execute s2 ;
+
+(EXPR)              
+--------------------
+
+                  10
+
+--- 1 row(s) selected.
+>>
+>>cqd hive_min_bytes_per_esp_partition '1000000' ;
+
+--- SQL operation complete.
+>>prepare s2 from select count(*) from hive.hive.t031hive;
+
+--- SQL command prepared.
+>>explain options 'f' s2 ;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+4    .    5    root                                                  1.00E+000
+3    .    4    sort_partial_aggr_ro                                  1.00E+000
+2    .    3    esp_exchange                    1:4(hash2)            1.00E+000
+1    .    2    sort_partial_aggr_le                                  1.00E+000
+.    .    1    hive_scan                       T031HIVE              1.00E+000
+
+--- SQL operation complete.
+>>execute s2 ;
+
+(EXPR)              
+--------------------
+
+                  10
+
+--- 1 row(s) selected.
+>>
+>>-- test error
+>>cqd hdfs_io_buffersize '3' ;
+
+--- SQL operation complete.
+>>prepare s2 from select count(*) from hive.hive.t031hive;
+
+*** ERROR[4226] Table HIVE.HIVE.T031HIVE has a maximum record length of 2000016 which is greater than the HDFS_IO_BUFFERSIZE default. Increase buffer size setting, or reduce the HIVE_MAX_STRING_LENGTH default.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>control query shape cut ;
+
+--- SQL operation complete.
+>>cqd hdfs_io_buffersize reset ;
+
+--- SQL operation complete.
+>>cqd hive_min_bytes_per_esp_partition reset;
+
+--- SQL operation complete.
+>>
 >>-- default USER
 >>drop table if exists t031t1;
 
@@ -482,7 +567,7 @@ aaaaaaaaaa  ?
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Aug  2 19:11:21 2016
+-- Definition current  Tue Sep 20 11:39:15 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -513,7 +598,7 @@ A            B
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Aug  2 19:11:28 2016
+-- Definition current  Tue Sep 20 11:39:18 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -564,7 +649,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Aug  2 19:11:35 2016
+-- Definition current  Tue Sep 20 11:39:28 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -593,7 +678,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Aug  2 19:11:42 2016
+-- Definition current  Tue Sep 20 11:39:36 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -618,7 +703,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Aug  2 19:11:51 2016
+-- Definition current  Tue Sep 20 11:39:44 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -638,7 +723,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Aug  2 19:11:53 2016
+-- Definition current  Tue Sep 20 11:39:54 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -653,7 +738,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Aug  2 19:11:54 2016
+-- Definition current  Tue Sep 20 11:39:56 2016
 
   (
     A                                INT DEFAULT NULL
@@ -676,7 +761,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Aug  2 19:11:59 2016
+-- Definition current  Tue Sep 20 11:40:04 2016
 
   (
     A                                INT DEFAULT NULL
@@ -694,7 +779,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Aug  2 19:12:01 2016
+-- Definition current  Tue Sep 20 11:40:09 2016
 
   (
     A                                INT DEFAULT NULL
@@ -711,6 +796,7 @@ CREATE TABLE TRAFODION.SCH.T031T1
   (
     A                                INT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
@@ -739,6 +825,7 @@ CREATE TABLE TRAFODION.SCH.T031T1
   (
     A                                INT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
@@ -762,6 +849,7 @@ CREATE TABLE TRAFODION.SCH.T031T1
   (
     A                                INT DEFAULT NULL
   )
+ ATTRIBUTES ALIGNED FORMAT
 ;
 
 CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
@@ -778,13 +866,43 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 >>invoke table(index_table t031t1i1);
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1I1
--- Definition current  Tue Aug  2 19:12:17 2016
+-- Definition current  Tue Sep 20 11:40:37 2016
 
   (
     "A@"                             INT NO DEFAULT
   , SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
   )
   PRIMARY KEY ("A@" ASC, SYSKEY ASC)
+
+--- SQL operation complete.
+>>reset parserflags;
+
+--- SQL operation complete.
+>>
+>>-- volatile and external table operation in default hive schema
+>>drop external table t031hive for hive.hive.t031hive;
+
+--- SQL operation complete.
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>create volatile table vtt (a int);
+
+--- SQL operation complete.
+>>create volatile index vtti on vtt(a);
+
+--- SQL operation complete.
+>>drop volatile index vtti;
+
+--- SQL operation complete.
+>>drop volatile table vtt;
+
+--- SQL operation complete.
+>>
+>>create external table t031hive for t031hive;
+
+--- SQL operation complete.
+>>drop external table t031hive for t031hive;
 
 --- SQL operation complete.
 >>

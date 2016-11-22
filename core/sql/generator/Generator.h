@@ -71,6 +71,7 @@ class GenOperSimilarityInfo;
 class ComTdb;
 class Attributes;
 class DP2Insert;
+class TrafSimilarityTableInfo;
 
 // this define is used to raise assertion in generator.
 // Calls GeneratorAbort which does a longjmp out of the calling scope.
@@ -219,7 +220,7 @@ class Generator : public NABasicObject
     
     // if set, then sidetreeinsert operator need to be added.
     , ENABLE_TRANSFORM_TO_STI = 0x00000004
-    , FAST_EXTRACT            = 0x00000008   // UNLOAD query
+    , IS_FAST_EXTRACT         = 0x00000008   // UNLOAD query
 
     // if lobs are accessed at runtime 
     , PROCESS_LOB             = 0x00000010
@@ -236,6 +237,7 @@ class Generator : public NABasicObject
 
     // If Hive tables are accessed at runtime
     , HIVE_ACCESS              = 0x00000400
+    , CONTAINS_FAST_EXTRACT    = 0x00000800
   };
  
   // Each operator node receives some tupps in its input atp and
@@ -364,6 +366,8 @@ class Generator : public NABasicObject
 
   LIST(const SqlTableOpenInfo*) stoiList_;
 
+  LIST(const TrafSimilarityTableInfo*) trafSimTableInfoList_;
+
   // Some nodes in the tree may require the root node to compute
   // special internal input values, such as an execution count
   // or the current transaction id. The CURRENT_TIMESTAMP function
@@ -388,6 +392,7 @@ class Generator : public NABasicObject
   NABoolean isInternalRefreshStatement_;
 
   NABoolean nonCacheableMVQRplan_;
+  NABoolean nonCacheableCSEPlan_;
 
   // is set when relroot has an order by requirement
   NABoolean orderRequired_;
@@ -670,12 +675,19 @@ public:
     lateNameInfoList_.clear();
   }
 
+  void addTrafSimTableInfo(TrafSimilarityTableInfo *ti);
+  
   // Accessor and mutators for data members related to similarity check.
   LIST(const GenOperSimilarityInfo*) &genOperSimInfoList()
   {
     return genOperSimInfoList_;
   }
 
+  // Accessor and mutators for data members related to traf similarity check.
+  LIST(const TrafSimilarityTableInfo*) &getTrafSimTableInfoList()
+  {
+    return trafSimTableInfoList_;
+  }
 
   LIST(const SqlTableOpenInfo*) & getSqlTableOpenInfoList()
   {
@@ -1214,10 +1226,17 @@ public:
     { return (flags2_ & DP2_XNS_ENABLED) != 0; }
   void setDp2XnsEnabled(NABoolean v)
     { (v ? flags2_ |= DP2_XNS_ENABLED : flags2_ &= ~DP2_XNS_ENABLED); }	
-  NABoolean isFastExtract() { return (flags2_ & FAST_EXTRACT) != 0; };
+  // statement is a fast extract operation
+  NABoolean isFastExtract() { return (flags2_ & IS_FAST_EXTRACT) != 0; };
   void setIsFastExtract(NABoolean v)
   {
-    (v ? flags2_ |= FAST_EXTRACT : flags2_ &= ~FAST_EXTRACT);
+    (v ? flags2_ |= IS_FAST_EXTRACT : flags2_ &= ~IS_FAST_EXTRACT);
+  }
+  // statement contains a fast extract operator somewhere
+  NABoolean containsFastExtract() { return (flags2_ & CONTAINS_FAST_EXTRACT) != 0; };
+  void setContainsFastExtract(NABoolean v)
+  {
+    (v ? flags2_ |= CONTAINS_FAST_EXTRACT : flags2_ &= ~CONTAINS_FAST_EXTRACT);
   }
 
   /*  NABoolean noTransformToSTI()
@@ -1357,9 +1376,13 @@ public:
 
   void setFoundAnUpdate(NABoolean u) { foundAnUpdate_ = u;}
 
+  NABoolean isNonCacheablePlan() const
+                       { return nonCacheableMVQRplan_ || nonCacheableCSEPlan_;}
   NABoolean isNonCacheableMVQRplan() const { return nonCacheableMVQRplan_;}
+  NABoolean isNonCacheableCSEPlan() const  { return nonCacheableCSEPlan_;}
 
   void setNonCacheableMVQRplan(NABoolean n) { nonCacheableMVQRplan_ = n;}
+  void setNonCacheableCSEPlan(NABoolean n)  { nonCacheableCSEPlan_ = n;}
 
   NABoolean updateWithinCS() const { return updateWithinCS_;}
 
@@ -1390,6 +1413,9 @@ public:
 						  ComTdbVirtTableRefConstraints * refConstrs,
                                                   Space * space);
   
+  static TrafDesc * createPrivDescs( const ComTdbVirtTablePrivInfo * privs,
+                                     Space * space);
+
   static TrafDesc *createVirtualTableDesc(
        const char * tableName, 
        Int32 numCols,
@@ -1408,7 +1434,8 @@ public:
        char * snapshotName = NULL,
        NABoolean genPackedDesc = FALSE,
        Int32 * packedDescLen = NULL,
-       NABoolean isUserTable = FALSE);
+       NABoolean isUserTable = FALSE,
+       ComTdbVirtTablePrivInfo * privInfo = NULL);
 
   static TrafDesc* assembleDescs(
      NAArray<HbaseStr >* keyArray, 
@@ -1420,6 +1447,7 @@ public:
                                   ComTdbVirtTableRoutineInfo *routineInfo,
                                   Int32 numParams,
                                   ComTdbVirtTableColumnInfo *paramsArray,
+                                  ComTdbVirtTablePrivInfo *privInfo,
                                   Space * space);
   static TrafDesc *createVirtualLibraryDesc(
                                   const char *libraryName,

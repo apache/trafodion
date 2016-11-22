@@ -1541,6 +1541,9 @@ private:
 
   // construct a TableAnalysis
   TableAnalysis()
+    :accessPaths_(STMTHEAP),
+    indexOnlyAccessPaths_(STMTHEAP),
+    uniqueIndexes_(STMTHEAP)
   {
     // should never be called
 	// use a constructor that passes NodeAnalysis* and TableDesc*
@@ -2436,6 +2439,8 @@ public:
 private:
 
   JBBSubsetAnalysis(CollHeap *outHeap = CmpCommon::statementHeap())
+    : leftDeepJoinSequence_(outHeap),
+    matchingMVs_(outHeap)
   {
     // should never be called
   }

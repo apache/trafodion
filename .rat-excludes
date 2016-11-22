@@ -112,6 +112,7 @@ resource.h*
 resource.hm*
 odb.sln
 odb.vcxproj.*
+odb.rc
 # BSD licensed files
 swscanf.cpp
 swsprintf.cpp
@@ -164,4 +165,8 @@ VariableLengthPKTest.java
 # asciidoc extention file -- MIT license
 google-analytics-postprocessor.rb
 
-
+# installer JSON config files
+mod_cfgs.json
+prompt.json
+script.json
+version.json

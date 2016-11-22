@@ -34,6 +34,8 @@ obey TEST006(positive_tests);
 obey TEST006(analyzer_tests);
 obey TEST006(defaults_tests);
 obey TEST006(misc_tests);
+obey TEST006(mode_special_tests);
+obey TEST006(olap_functions);
 log;
 obey TEST006(clean_up);
 
@@ -55,7 +57,9 @@ drop table x1 cascade;
 drop table x2 cascade;
 drop table x3 cascade;
 drop mv mvx cascade;
-
+drop table t006tao;
+drop table t006_employees;
+drop table t006taoc;
 
 ?section create_tables
 
@@ -95,11 +99,80 @@ update statistics for table x1 on every column;
 update statistics for table x2 on every column;
 update statistics for table x3 on every column;
 
-?section negative_tests
+create table t006tao(a int, b int, c int);
 
--- Error 2055
-control query default mp_subvolume 'raydddddd';
-control query default mp_subvolume 'raydd~@';
+insert into t006tao values
+(0,NULL,3),
+(1,NULL,3),
+(1,2,3),
+(3,4,5),
+(3,8,5),
+(3,10,5),
+(10,5,8),
+(10,6,9),
+(10,7,8),
+(10,8,9),
+(10,9,8),
+(10,10,9),
+(10,11,8),
+(10,12,9),
+(10,13,9),
+(10,14,9)
+;
+
+CREATE TABLE t006_employees
+(emp_name VARCHAR(10) NOT NULL,
+ dept_name VARCHAR(15) NOT NULL,
+ salary_amt DECIMAL (8,2) NOT NULL,
+ PRIMARY KEY (emp_name, dept_name)
+);
+
+INSERT INTO t006_employees
+VALUES
+('Aaron','acct',3100.00),
+('Abaddon','acct',3200.00),
+('Abbott','acct',3300.00),
+('Abel','acct',3500.00),
+('Absalom','acct', 5500.00),
+('Shannen','ship', 1000.00),
+('Shannon','ship', 2000.00),
+('Shaquille','ship', 3400.00),
+('Sheamus','ship', 4000.00),
+('Shelah','ship', 3600.00),
+('Shelby','ship', 4500.00),
+('Sheldon','ship', 5500.00),
+('Hamilton','HR',2300.00),
+('Hamish', 'HR', 1600.00),
+('Hamlet', 'HR', 1200.00),
+('Hammond', 'HR', 800.00),
+('Hamuel', 'HR', 700.00),
+('Hanael', 'HR', 600.00),
+('Hanan', 'HR', 1000.00);
+
+create table t006taoc(a char(10), b char(10), c varchar(10));
+
+insert into t006taoc values
+('0',NULL,'3'),
+('a',NULL,'3'),
+('a','2','3'),
+('3bc','4','5'),
+('3bc','8','5'),
+('3bc','10','5'),
+('10','5','8'),
+('10','6','9'),
+('10','7','8'),
+('10','8','9'),
+('10','9','8'),
+('10','10','9'),
+('10','11','8'),
+('10','12','9'),
+('10','13','9'),
+('10','14','9')
+;
+
+
+
+?section negative_tests
 
 -- Error 3233
 prepare xx from update with no rollback t006t4 set a = b;
@@ -113,23 +186,6 @@ prepare xx from select sum(max(a)) from t006t1;
 -- Error 4022
 prepare xx from insert into t006t2(a, a) select a, a from t006t3;
 
--- Error 4026
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY 'ON';
-#else
-control query default COMP_BOOL_58 'ON';
-#endif
-control query default MODE_SPECIAL_1 'ON';
-control query default R2_HALLOWEEN_SUPPORT 'ON';
-prepare s1 from insert into t006t3 select * from t006t3 where a in (select a from t006t3);
-control query default R2_HALLOWEEN_SUPPORT reset;
-control query default MODE_SPECIAL_1 reset;
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY reset;
-#else
-control query default COMP_BOOL_58 reset;
-#endif
-
 -- Error 4034
 prepare xx from select * from t006t1 where a = 1234 collate default;
 
@@ -140,9 +196,7 @@ prepare xx from select year(a) from t006t2;
 prepare xx from insert into t006t3 values ('a');
 
 -- Error 4043
-control query default MODE_SPECIAL_3 'ON';
 prepare xx from select * from t006t1 where to_number(1112) = A;
-control query default MODE_SPECIAL_3 reset;
 prepare xx from select tokenstr('a', a) from t006t2;
 prepare xx from select queryid_extract(a, b) from t006t5;
 prepare xx from select os_userid(a) from t006t2;
@@ -158,10 +212,6 @@ prepare xx from select abs(a) from t006t1;
 prepare xx from select user(a) from t006t1;
 prepare xx from select ~a from t006t1;
 prepare xx from select sin(a) from t006t1;
-
-control query default MODE_SPECIAL_4 'ON';
-prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
-control query default MODE_SPECIAL_4 reset;
 
 -- Error 4046
 prepare xx from select ~(a) from t006t7;
@@ -198,20 +248,6 @@ prepare xx from select round(t006t2.a, t006t1.a) from t006t1, t006t2;
 prepare xx from select repeat(a, a) from t006t1;
 prepare xx from select offset(a,a,a) from t006t1;
 
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY 'ON';
-#else
-control query default COMP_BOOL_58 'ON';
-#endif
-control query default MODE_SPECIAL_1 'ON';
-prepare xx from select rows since(a = 11, a) from t006t1 sequence by a;
-control query default MODE_SPECIAL_1 reset;
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY reset;
-#else
-control query default COMP_BOOL_58 reset;
-#endif
-
 -- Error 4053
 prepare xx from select bitextract(a, a, b) from t006t5;
 prepare xx from select substring(a,1,a) from t006t1;
@@ -227,16 +263,8 @@ prepare xx from select movingcount(a, 1, a) from t006t1 sequence by a;
 
 -- Error 4059
 prepare xx from select round(a) from t006t1;
-control query default MODE_SPECIAL_3 'ON';
 prepare xx from select trunc(a) from t006t1;
-control query default MODE_SPECIAL_3 reset;
 prepare xx from select a**a from t006t1;
-
--- Error 4065
-control query default MODE_SPECIAL_4 'ON';
-prepare xx from select * from t006t1 where to_date(A, '201005') = A;
-prepare xx from select * from t006t2 where to_date(A, 'YYYYMM') = A;
-control query default MODE_SPECIAL_4 reset;
 
 -- Error 4067
 prepare xx from select * from table (explain(NULL, 5));
@@ -248,9 +276,7 @@ prepare xx from select convertfromhex(cast(a as char(1))) from t006t1;
 prepare xx from select converttimestamp(a) from t006t1;
 
 -- Error 4071
-control query default MODE_SPECIAL_3 'ON';
 prepare xx from select * from t006t1 where last_day(A) = A;
-control query default MODE_SPECIAL_3 reset;
 
 prepare xx from select juliantimestamp(a) from t006t1;
 
@@ -302,28 +328,6 @@ control query default MODE_SPECIAL_4 reset;
 prepare xx from select current_running from t006t1;
 prepare xx from select position(a in a) from t006t4;
 prepare xx from select replace(a, a, a) from t006t4;
-
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY 'ON';
-#else
-control query default COMP_BOOL_58 'ON';
-#endif
-control query default MODE_SPECIAL_1 'ON';
-prepare xx from select substring(a for 3) from t006t1;
-prepare xx from select substring(a for 3) from t006t3;
-prepare xx from select substring(c for 3) from t006t5;
-prepare xx from select a from t006t1 group by 1 order by 1;
-prepare xx from select a from t006t1 group by A order by A;
-prepare xx from select * from t006t5 where c = 1231999;
-prepare xx from select * from t006t5 where a = date'12/31/1999';
-prepare xx from select * from t006t5 where cast(a as interval day) = 1;
-prepare xx from select * from t006t5 where 1 = interval '1' day;
-control query default MODE_SPECIAL_1 reset;
-#ifdef SEABASE_REGRESS
-control query default DISABLE_READ_ONLY reset;
-#else
-control query default COMP_BOOL_58 reset;
-#endif
 
 prepare xx from select date_trunc('YEAR',a) from t006t1;
 prepare xx from select date_trunc('YEAR',a) from t006t1;
@@ -505,10 +509,6 @@ cqd COMP_INT_51 reset;
 --cqd PUBLISHING_ROLES 'a.b';
 --cqd PUBLISHING_ROLES reset;
 
-cqd POS 'off';
-cqd HIST_SCRATCH_VOL '\n.$a.b.c';
-cqd HIST_SCRATCH_VOL reset;
-cqd POS reset;
 
 cqd EID_TRACE_STR 'abc';
 cqd EID_TRACE_STR reset;
@@ -528,3 +528,114 @@ control query default MEMORY_MONITOR_LOGFILE 'mml.log';
 prepare xx from select * from t006t2;
 control query default MEMORY_MONITOR 'OFF';
 
+?section mode_special_tests
+-- Error 4026
+control query default MODE_SPECIAL_1 'ON';
+control query default R2_HALLOWEEN_SUPPORT 'ON';
+prepare s1 from insert into t006t3 select * from t006t3 where a in (select a from t006t3);
+control query default R2_HALLOWEEN_SUPPORT reset;
+
+prepare xx from select substring(a for 3) from t006t1;
+prepare xx from select substring(a for 3) from t006t3;
+prepare xx from select substring(c for 3) from t006t5;
+prepare xx from select a from t006t1 group by 1 order by 1;
+prepare xx from select a from t006t1 group by A order by A;
+prepare xx from select * from t006t5 where c = 1231999;
+prepare xx from select * from t006t5 where a = date'12/31/1999';
+prepare xx from select * from t006t5 where cast(a as interval day) = 1;
+prepare xx from select * from t006t5 where 1 = interval '1' day;
+
+prepare xx from select rows since(a = 11, a) from t006t1 sequence by a;
+control query default MODE_SPECIAL_1 reset;
+
+control query default MODE_SPECIAL_4 'ON';
+prepare xx from select * from t006t1 where to_date(A, '99:99:99:99') = A;
+
+-- Error 4065
+prepare xx from select * from t006t1 where to_date(A, '201005') = A;
+prepare xx from select * from t006t2 where to_date(A, 'YYYYMM') = A;
+control query default MODE_SPECIAL_4 reset;
+
+
+?section olap_functions
+
+select a, b, 
+lead(b, 2) over(partition by a order by b),
+max(c) over(partition by a order by b)
+from t006tao
+;
+
+select emp_name, dept_name, salary_amt,
+lead(salary_amt, 3) over (partition by dept_name order by emp_name),
+lead(salary_amt, 2) over (partition by dept_name order by emp_name)
+from t006_employees;
+
+-- this will destroy the output order of the lead function, and make it
+-- less obvious on the correctness of the result.
+select
+a, b, lead(b, 2)
+over(partition by a order by b)
+from t006taoc <<+ cardinality 10e6 >>
+order by 1, 2, 3
+;
+
+select emp_name, dept_name, salary_amt,
+lead(salary_amt, 5-3, cast(0 as DECIMAL (8,2))) over (partition by dept_name order by emp_name)
+from t006_employees;
+
+-- LAG() Function Tests --
+-- default offset of LAG() is 1.
+select emp_name, dept_name, salary_amt, 
+lag(salary_amt) over (partition by dept_name order by emp_name)
+from T006_EMPLOYEES;
+
+select emp_name, dept_name, salary_amt, 
+lag(salary_amt, 0) over (partition by dept_name order by emp_name)
+from T006_EMPLOYEES;
+
+-- negative offset is flipped
+select emp_name, dept_name, salary_amt, 
+lag(salary_amt, -2) over (partition by dept_name order by emp_name)
+from T006_EMPLOYEES;
+
+prepare xx from select emp_name, dept_name, salary_amt, 
+lag(salary_amt, CAST(? as INT)) over (partition by dept_name order by emp_name)
+from T006_EMPLOYEES;
+execute xx using 2;
+
+select emp_name, dept_name, salary_amt, 
+lag(salary_amt, 3) over (partition by dept_name order by emp_name),
+lead(salary_amt, 2) over (partition by dept_name order by emp_name)
+from T006_EMPLOYEES;
+
+select emp_name, dept_name, salary_amt, 
+lag(salary_amt, 3) over (partition by dept_name order by emp_name),
+lag(salary_amt, 2) over (partition by dept_name order by emp_name)
+from T006_EMPLOYEES;
+
+select emp_name, dept_name, salary_amt,
+lag(salary_amt, 5-3, cast(0 as DECIMAL (8,2))) over (partition by dept_name order by emp_name)
+from t006_employees;
+
+select a, b, c,
+lag(b, 2) over(partition by a order by b),
+max(c) over(partition by a order by b)
+from t006tao;
+
+select emp_name, dept_name, salary_amt, 
+lag(salary_amt, 3) over (partition by dept_name order by emp_name),
+max(salary_amt) over (partition by dept_name)
+from T006_EMPLOYEES;
+
+select a, b, lag(b, 2) 
+over(partition by a order by b)
+from t006taoc <<+ cardinality 10e6 >>
+order by 1, 2, 3;
+
+select emp_name, dept_name, salary_amt, 
+lag(salary_amt, 3) over (partition by dept_name order by emp_name)
+from T006_EMPLOYEES <<+ cardinality 10e6 >> order by emp_name;
+
+select md5('10'), crc32(10), sha('10') from dual;
+select md5(10) from dual;
+select sha1(10) from dual;

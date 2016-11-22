@@ -54,6 +54,7 @@ jclass JavaObjectInterfaceTM::gStackTraceClass = NULL;
 jmethodID JavaObjectInterfaceTM::gGetStackTraceMethodID = NULL;
 jmethodID JavaObjectInterfaceTM::gThrowableToStringMethodID = NULL;
 jmethodID JavaObjectInterfaceTM::gStackFrameToStringMethodID = NULL;
+jmethodID JavaObjectInterfaceTM::gGetCauseMethodID = NULL;
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -268,6 +269,9 @@ JOI_RetCode JavaObjectInterfaceTM::initJVM()
         gThrowableToStringMethodID = _tlp_jenv->GetMethodID(gThrowableClass,
                       "toString",
                       "()Ljava/lang/String;");
+        gGetCauseMethodID = _tlp_jenv->GetMethodID(gThrowableClass,
+                      "getCause",
+                      "()Ljava/lang/Throwable;");
      }
   }
   if (gStackTraceClass == NULL)
@@ -386,66 +390,71 @@ void JavaObjectInterfaceTM::logError(const char* cat, const char* file, int line
 {
 }
 
+void set_error_msg(std::string &error_msg) 
+{
+   if (_tlp_error_msg != NULL)
+      delete _tlp_error_msg;
+   _tlp_error_msg = new std::string(error_msg); 
+}
+
 
 bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
 {
-   std::string *error_msg;
-
-   if (_tlp_error_msg != NULL)
-   {
-      delete _tlp_error_msg;
-      _tlp_error_msg = NULL;
-   }
+   std::string error_msg;
 
    if (jenv == NULL)
        jenv = _tlp_jenv;
    if (jenv == NULL)
    {
-      error_msg = new std::string("Internal Error - Unable to obtain jenv");
-      _tlp_error_msg = error_msg;
+      error_msg = "Internal Error - Unable to obtain jenv";
+      set_error_msg(error_msg);
       return false;
    }
    if (gThrowableClass == NULL)
    {
       jenv->ExceptionDescribe();
-      error_msg = new std::string("Internal Error - Unable to find Throwable class");
-      _tlp_error_msg = error_msg;
+      error_msg = "Internal Error - Unable to find Throwable class";
+      set_error_msg(error_msg);
       return false;
    }
    jthrowable a_exception = jenv->ExceptionOccurred();
-   if (a_exception != NULL)
-       jenv->ExceptionClear();
-   else
+   if (a_exception == NULL)
    {
-       error_msg = new std::string("No java exception was thrown");
-       _tlp_error_msg = error_msg;
+       error_msg = "No java exception was thrown";
+       set_error_msg(error_msg);
        return false;
    }
+   error_msg = "";
+   appendExceptionMessages(jenv, a_exception, error_msg);
+   set_error_msg(error_msg);
+   jenv->ExceptionClear();
+   return true;
+}
+
+void JavaObjectInterfaceTM::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, std::string &error_msg)
+{
     jstring msg_obj =
        (jstring) jenv->CallObjectMethod(a_exception,
                                          gThrowableToStringMethodID);
     const char *msg_str;
-    error_msg = new std::string("");
-    if (msg_obj != NULL) {
+    if (msg_obj != NULL)
+    {
        msg_str = jenv->GetStringUTFChars(msg_obj, 0);
-       *error_msg += msg_str;
+       error_msg += msg_str;
        jenv->ReleaseStringUTFChars(msg_obj, msg_str);
        jenv->DeleteLocalRef(msg_obj);
     }
-    else {
+    else
        msg_str = "Exception is thrown, but tostring is null";
-       *error_msg += msg_str;
-    }
+
+
     // Get the stack trace
     jobjectArray frames =
         (jobjectArray) jenv->CallObjectMethod(
                                         a_exception,
                                         gGetStackTraceMethodID);
     if (frames == NULL)
-    {
-       _tlp_error_msg = error_msg;
-       return true;
-    }
+       return;
     jsize frames_length = jenv->GetArrayLength(frames);
 
     jsize i = 0;
@@ -457,15 +466,18 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
        if (msg_obj != NULL)
        {
           msg_str = jenv->GetStringUTFChars(msg_obj, 0);
-          *error_msg += "\n";
-          *error_msg += msg_str;
+          error_msg += "\n";
+          error_msg += msg_str;
           jenv->ReleaseStringUTFChars(msg_obj, msg_str);
           jenv->DeleteLocalRef(msg_obj);
           jenv->DeleteLocalRef(frame);
        }
     }
-    *error_msg += "\n";
-    _tlp_error_msg = error_msg;
-    return true;
+    jthrowable j_cause = (jthrowable)jenv->CallObjectMethod(a_exception, gGetCauseMethodID);
+    if (j_cause != NULL) {
+       error_msg += " Caused by \n";
+       appendExceptionMessages(jenv, j_cause, error_msg);
+    }
+    jenv->DeleteLocalRef(a_exception);
 }
 

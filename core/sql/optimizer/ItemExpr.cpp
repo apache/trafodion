@@ -1469,11 +1469,15 @@ void ItemExpr::findAllT(OperatorTypeEnum wantedType,
 	  ValueIdUnion * tempUnion = (ValueIdUnion*) this;
           for (Lng32 i = 0; i < (Lng32)tempUnion->entries(); i++)
             {
-              tempUnion->getSource(i).getItemExpr()->
-                findAllT(wantedType,
-                         result,
-                         visitVEGMembers,
-                         visitIndexColDefs);
+              // guard against loops in the references
+              // (can happen with common subexpressions, for example)
+              if (!tempUnion->getSource(i).getItemExpr()->
+                     referencesTheGivenValue(getValueId()))
+                tempUnion->getSource(i).getItemExpr()->
+                  findAllT(wantedType,
+                           result,
+                           visitVEGMembers,
+                           visitIndexColDefs);
             }
 	  break;
 	}
@@ -4672,14 +4676,17 @@ const NAString ValueIdUnion::getText(UnparseFormatEnum form) const
     result = "ValueIdUnion(";
   }
 
-  getSource(0).getItemExpr()->unparse(result);
-
-  for (CollIndex i = 1; i < entries(); i++)
+  for (CollIndex i = 0; i < entries(); i++)
   {
-    result += delim;
-#pragma nowarn(1506)   // warning elimination
-    getSource(i).getItemExpr()->unparse(result);
-#pragma warn(1506)  // warning elimination
+    if (i > 0)
+      result += delim;
+
+    // guard against loops in the references
+    // (can happen with common subexpressions, for example)
+    if (!getSource(i).getItemExpr()->referencesTheGivenValue(getValueId()))
+      getSource(i).getItemExpr()->unparse(result);
+    else
+      result += "...";
   }
 
   if (form == USER_FORMAT_DELUXE)
@@ -6111,6 +6118,22 @@ NABoolean Aggregate::operator== (const ItemExpr& other) const	// virtual meth
   return TRUE;
 }
 
+NABoolean Aggregate::duplicateMatch(const ItemExpr& other) const
+{
+  if (NOT genericDuplicateMatch(other))
+    return FALSE;
+
+  const Aggregate &ag = (Aggregate &)other;
+
+  if (isDistinct_ != ag.isDistinct_)
+    return FALSE;
+
+  if (NOT isSensitiveToDuplicates())
+    return FALSE;
+
+  return TRUE;
+}
+
 NABoolean Aggregate::isCovered
                       (const ValueIdSet& newExternalInputs,
 		       const GroupAttributes& coveringGA,
@@ -6187,6 +6210,9 @@ const NAString Aggregate::getText() const
         result = "count";
       else
         result = "count_nonull";
+      break;
+    case ITM_GROUPING:
+      result = "grouping";
       break;
     case ITM_ONE_ROW:
       result = "one_Row";
@@ -6308,6 +6334,8 @@ ItemExpr * Aggregate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   result->frameStart_ = frameStart_;
   result->frameEnd_ = frameEnd_;
 
+  result->rollupGroupIndex_ = rollupGroupIndex_;
+
   return ItemExpr::copyTopNode(result, outHeap);
 }
 
@@ -6320,6 +6348,7 @@ NABoolean Aggregate::isSensitiveToDuplicates() const
     case ITM_MIN:
     case ITM_ANY_TRUE:
     case ITM_ONE_TRUE:
+    case ITM_GROUPING:
       return FALSE;
 
     case ITM_SUM:
@@ -6529,12 +6558,19 @@ ItemExpr * Aggregate::rewriteForStagedEvaluation(ValueIdList &initialAggrs,
     case ITM_SUM:
     case ITM_ANY_TRUE:
     case ITM_ONEROW:
+    case ITM_GROUPING:
       // in these cases, just do the same aggregate function twice
       partial = new (CmpCommon::statementHeap())
                      Aggregate(getOperatorType(), child(0));
 
       result = new (CmpCommon::statementHeap())
                     Aggregate(getOperatorType(), partial);
+
+      if (getOperatorType() == ITM_GROUPING)
+        {
+          ((Aggregate *)partial)->setRollupGroupIndex(getRollupGroupIndex());
+          ((Aggregate *)result)->setRollupGroupIndex(getRollupGroupIndex());
+        }
 
       if (inScalarGroupBy())
       {
@@ -7165,7 +7201,8 @@ PivotGroup::PivotGroup(OperatorTypeEnum otype,
             case ORDER_BY_:
               {
                 orderBy_ = TRUE;
-                // TBD: populate reqdOrder. May need to move to bindNode
+                // optionNode_ contains the ItemExpr 
+                orgReqOrder_ = (ItemExpr *)po->optionNode_; 
               }
               break;
             }
@@ -7188,6 +7225,7 @@ ItemExpr * PivotGroup::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   result->delim_ = delim_;
   result->orderBy_ = orderBy_;
   result->reqdOrder_ = reqdOrder_;
+  result->orgReqOrder_ = orgReqOrder_;
   result->maxLen_ = maxLen_;
 
   return Aggregate::copyTopNode(result, outHeap);
@@ -7705,6 +7743,8 @@ const NAString BuiltinFunction::getText() const
     case ITM_LOBLOAD:
       return "lobload";
     
+    case ITM_AGGR_GROUPING_FUNC:
+      return "aggr_grouping";
 
     default:
       return "unknown func";
@@ -9705,6 +9745,8 @@ ItemExpr * BiRelat::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   result->outerNullFilteringDetected_= outerNullFilteringDetected_;
   result->innerNullFilteringDetected_ = innerNullFilteringDetected_;
 
+  result->rollupColumnNum_ = rollupColumnNum_;
+
   result->flags_ = flags_;
 
   return ItemExpr::copyTopNode(result, outHeap);
@@ -10421,6 +10463,20 @@ void ConstValue::changeStringConstant(const NAString* strval)
    }
 
    *text_ = *strval;
+}
+
+NABoolean ConstValue::isAFalseConstant() const
+{
+  NABoolean result = FALSE;
+
+  if (type_->getTypeQualifier() == NA_BOOLEAN_TYPE && !isNull())
+    {
+      CMPASSERT(storageSize_ == sizeof(Int32));
+      if (*(reinterpret_cast<Int32 *>(value_)) == 0)
+        result = TRUE; // that means the constant is FALSE!!
+    }
+
+  return result;          
 }
 
 NABoolean ConstValue::isExactNumeric() const
@@ -11772,6 +11828,23 @@ ItemExpr * AggrMinMax::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   return BuiltinFunction::copyTopNode(result, outHeap);
 }
 
+// --------------------------------------------------------------
+// member functions for AggrGrouping function
+// --------------------------------------------------------------
+ItemExpr * AggrGrouping::copyTopNode(ItemExpr * derivedNode, CollHeap* outHeap)
+{
+  AggrGrouping *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) AggrGrouping(-1);
+  else
+    result = (AggrGrouping*)derivedNode;
+
+  result->rollupGroupIndex_ = rollupGroupIndex_;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+}
+
 // -----------------------------------------------------------------------
 // member functions for Exists subquery operators
 // -----------------------------------------------------------------------
@@ -12052,18 +12125,11 @@ Cast::Cast(ItemExpr *val1Ptr, const NAType *type, OperatorTypeEnum otype,
 {
   ValueId vid = val1Ptr ? val1Ptr->getValueId() : NULL_VALUE_ID;
 
-  if ((type->getFSDatatype() == 132) &&
-      (vid != NULL_VALUE_ID) &&
-      (vid.getType().getFSDatatype() == 136))
-    {
-      Lng32 ij = 1;
-    }
-
   checkForTruncation_ = FALSE;
   if (checkForTrunc)
     if (vid == NULL_VALUE_ID)
       checkForTruncation_ = TRUE;
-    else if ( type->getTypeQualifier()         == NA_CHARACTER_TYPE &&
+    else if ( type && type->getTypeQualifier()         == NA_CHARACTER_TYPE &&
               vid.getType().getTypeQualifier() == NA_CHARACTER_TYPE )
     {
        if ( type->getNominalSize() < vid.getType().getNominalSize() )
@@ -12207,9 +12273,13 @@ ItemExpr * CastType::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   ItemExpr *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) CastType(NULL, getType()->newCopy(outHeap));
+    result = new (outHeap) 
+      CastType(NULL, 
+               (getType() ? getType()->newCopy(outHeap) : NULL));
   else
     result = derivedNode;
+  
+  ((CastType*)result)->makeNullable_ = makeNullable_;
 
   return BuiltinFunction::copyTopNode(result, outHeap);
 }
@@ -12926,6 +12996,7 @@ const NAString MathFunc::getText() const
     case ITM_FLOOR:        return "floor";
     case ITM_LOG:          return "log";
     case ITM_LOG10:        return "log10";
+    case ITM_LOG2:         return "log2";
     case ITM_PI:           return "pi";
     case ITM_POWER:        return "power";
     case ITM_RADIANS:      return "radians";
@@ -15124,3 +15195,73 @@ ConstValue* ItemExpr::evaluate(CollHeap* heap)
 
   return result;
 }
+
+ItemExpr * ItmLagOlapFunction::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+    ItemExpr *result;
+
+    if (derivedNode == NULL)
+    {
+        switch (getArity()) { 
+           case 2:
+               result = new (outHeap) ItmLagOlapFunction(child(0), child(1));
+               break;
+           case 3:
+               result = new (outHeap) ItmLagOlapFunction(child(0), child(1), child(2));
+               break;
+           default:
+               CMPASSERT(FALSE);
+        }
+    }
+    else              
+        result = derivedNode;                 
+
+  return ItmSeqOlapFunction::copyTopNode(result, outHeap);
+}
+
+ItmLeadOlapFunction::~ItmLeadOlapFunction() {}
+
+ItemExpr * 
+ItmLeadOlapFunction::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result;
+
+  if (derivedNode == NULL)
+    {
+     switch (getArity()) { 
+      case 2:
+         result = new (outHeap) ItmLeadOlapFunction(child(0), child(1));
+         break;
+      
+      case 1:
+      default:
+         result = new (outHeap) ItmLeadOlapFunction(child(0));
+         break;
+     }
+    }
+  else              
+    result = derivedNode;                 
+
+  ((ItmLeadOlapFunction*)result)->setOffset(getOffset());
+
+  return ItmSeqOlapFunction::copyTopNode(result, outHeap);
+}
+
+NABoolean ItmLeadOlapFunction::hasEquivalentProperties(ItemExpr * other)
+{
+  if (other == NULL)
+    return FALSE;
+
+  if (getOperatorType() != other->getOperatorType() ||
+        getArity() != other->getArity())
+    return FALSE;
+
+  //return getOffsetExpr()->hasEquivalentProperties(((ItmLeadOlapFunction*)other)->getOffsetExpr());
+  return TRUE;
+}
+
+ItemExpr *ItmLeadOlapFunction::transformOlapFunction(CollHeap *heap)
+{
+   return this;
+}
+

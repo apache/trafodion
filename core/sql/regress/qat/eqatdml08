@@ -75,12 +75,12 @@
 +>         where partnum = 4102
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-INFOMATION STORAGE  
-MAGNETICS CORP      
-DATADRIVE           
+DATADRIVE         
+INFOMATION STORAGE
+MAGNETICS CORP    
 
 --- 3 row(s) selected.
 >>
@@ -94,13 +94,13 @@ DATADRIVE
 +>         where partnum = 4102
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATA TERMINAL CO    
-DISPLAY INC         
-STEELWORK INC       
+DATA TERMINAL CO  
+DISPLAY INC       
+STEELWORK INC     
+TANDEM COMPUTERS  
 
 --- 4 row(s) selected.
 >>
@@ -113,16 +113,16 @@ STEELWORK INC
 +>        (select manager
 +>         from region);
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-ROGER GREEN         
-JACK RAYMOND        
-PAUL WINTER         
-GLENN THOMAS        
-ERIC BROWN          
-DAVID STRAND        
-ALAN TERRY          
+ALAN TERRY        
+DAVID STRAND      
+ERIC BROWN        
+GLENN THOMAS      
+JACK RAYMOND      
+PAUL WINTER       
+ROGER GREEN       
 
 --- 7 row(s) selected.
 >>
@@ -137,28 +137,28 @@ ALAN TERRY
 +>         where branchnum <> 1
 +>         group by branchnum);
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-THOMAS RUDLOFF      
-KLAUS SAFFERT       
-PETER SMITH         
-DONALD TAYLOR       
-STEVE COOK          
-SHERRIE WONG        
-TONY CRAFT          
-GEORGE FORSTER      
-RICHARD BARTON      
-JIMMY SCHNEIDER     
-WALTER LANCASTER    
-JOHN JONES          
-MARLENE BONNY       
-GEORGE FRENCHMAN    
-DAVID TERRY         
-KARL HELMSTED       
-HEIDI WEIGL         
-XAVER SEDLMEYER     
-DAVE CLARK          
+THOMAS RUDLOFF    
+KLAUS SAFFERT     
+PETER SMITH       
+DONALD TAYLOR     
+STEVE COOK        
+SHERRIE WONG      
+TONY CRAFT        
+GEORGE FORSTER    
+RICHARD BARTON    
+JIMMY SCHNEIDER   
+WALTER LANCASTER  
+JOHN JONES        
+MARLENE BONNY     
+GEORGE FRENCHMAN  
+DAVID TERRY       
+KARL HELMSTED     
+HEIDI WEIGL       
+XAVER SEDLMEYER   
+DAVE CLARK        
 
 --- 19 row(s) selected.
 >>
@@ -173,28 +173,28 @@ DAVE CLARK
 +>         where branchnum <> 1
 +>        );
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-THOMAS RUDLOFF      
-KLAUS SAFFERT       
-PETER SMITH         
-DONALD TAYLOR       
-STEVE COOK          
-SHERRIE WONG        
-TONY CRAFT          
-GEORGE FORSTER      
-RICHARD BARTON      
-JIMMY SCHNEIDER     
-WALTER LANCASTER    
-JOHN JONES          
-MARLENE BONNY       
-GEORGE FRENCHMAN    
-DAVID TERRY         
-KARL HELMSTED       
-HEIDI WEIGL         
-XAVER SEDLMEYER     
-DAVE CLARK          
+THOMAS RUDLOFF    
+KLAUS SAFFERT     
+PETER SMITH       
+DONALD TAYLOR     
+STEVE COOK        
+SHERRIE WONG      
+TONY CRAFT        
+GEORGE FORSTER    
+RICHARD BARTON    
+JIMMY SCHNEIDER   
+WALTER LANCASTER  
+JOHN JONES        
+MARLENE BONNY     
+GEORGE FRENCHMAN  
+DAVID TERRY       
+KARL HELMSTED     
+HEIDI WEIGL       
+XAVER SEDLMEYER   
+DAVE CLARK        
 
 --- 19 row(s) selected.
 >>
@@ -209,28 +209,28 @@ DAVE CLARK
 +>         group by branchnum
 +>         having branchnum <> 1);
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-THOMAS RUDLOFF      
-KLAUS SAFFERT       
-PETER SMITH         
-DONALD TAYLOR       
-STEVE COOK          
-SHERRIE WONG        
-TONY CRAFT          
-GEORGE FORSTER      
-RICHARD BARTON      
-JIMMY SCHNEIDER     
-WALTER LANCASTER    
-JOHN JONES          
-MARLENE BONNY       
-GEORGE FRENCHMAN    
-DAVID TERRY         
-KARL HELMSTED       
-HEIDI WEIGL         
-XAVER SEDLMEYER     
-DAVE CLARK          
+THOMAS RUDLOFF    
+KLAUS SAFFERT     
+PETER SMITH       
+DONALD TAYLOR     
+STEVE COOK        
+SHERRIE WONG      
+TONY CRAFT        
+GEORGE FORSTER    
+RICHARD BARTON    
+JIMMY SCHNEIDER   
+WALTER LANCASTER  
+JOHN JONES        
+MARLENE BONNY     
+GEORGE FRENCHMAN  
+DAVID TERRY       
+KARL HELMSTED     
+HEIDI WEIGL       
+XAVER SEDLMEYER   
+DAVE CLARK        
 
 --- 19 row(s) selected.
 >>
@@ -244,14 +244,14 @@ DAVE CLARK
 +>         from empone
 +>         where empnum < 100);
 
-REGNAME       
-------------  
+REGNAME     
+------------
 
-HEADQUARTERS  
-EAST          
-GERMANY       
-WEST          
-ENGLAND       
+EAST        
+WEST        
+GERMANY     
+ENGLAND     
+HEADQUARTERS
 
 --- 5 row(s) selected.
 >>
@@ -265,13 +265,13 @@ ENGLAND
 +>         from fromsup
 +>         where suppnum = 15);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
-      8  
-      2  
+      6
+     15
+      8
+      2
 
 --- 4 row(s) selected.
 >>
@@ -284,13 +284,13 @@ SUPPNUM
 +>         from fromsup Y
 +>         where suppnum = 15);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
-      8  
-      2  
+      6
+     15
+      8
+      2
 
 --- 4 row(s) selected.
 >>
@@ -305,21 +305,21 @@ SUPPNUM
 +>         where  odetail.partnum =  parts.partnum
 +>         and price > 50000);
 
-SALESMAN  ORDERNUM  
---------  --------  
+SALESMAN  ORDERNUM
+--------  --------
 
-     205        21  
-     212        25  
-     222        30  
-     204        32  
-     231        35  
-     218        38  
-     207        41  
-     212        45  
-     225        48  
-     210        51  
-     205        66  
-     221       122  
+     204        32
+     205        21
+     205        66
+     207        41
+     210        51
+     212        25
+     212        45
+     218        38
+     221       122
+     222        30
+     225        48
+     231        35
 
 --- 12 row(s) selected.
 >>
@@ -334,19 +334,19 @@ SALESMAN  ORDERNUM
 +>         where  odetail.partnum =  parts.partnum
 +>         and price > 50000);
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     205  
-     212  
-     222  
-     204  
-     231  
-     218  
-     207  
-     225  
-     210  
-     221  
+     204
+     205
+     207
+     210
+     212
+     218
+     221
+     222
+     225
+     231
 
 --- 10 row(s) selected.
 >>
@@ -358,16 +358,16 @@ SALESMAN
 +>        (select partnum
 +>         from expfroms);
 
-PARTNUM  PARTNAME            INVENTORY  LOCATION  PRICE        
--------  ------------------  ---------  --------  -----------  
+PARTNUM  PARTNAME            INVENTORY  LOCATION  PRICE      
+-------  ------------------  ---------  --------  -----------
 
-    212  SYSTEM 192KB CORE           7  J87          92000.00  
-    244  SYSTEM 192KB SEMI           3  B78          87000.00  
-   1403  PROC     96KB SEMI         21  A21          22000.00  
-   3103  DISC CONT DUAL             -4  H87          10500.00  
-   4102  DISC 50MB                   9  K45          14500.00  
-   4103  DISK 160MB                  7  K43          24500.00  
-   5505  LP  1500LPM                 0  L78          42000.00  
+    212  SYSTEM 192KB CORE           7  J87          92000.00
+    244  SYSTEM 192KB SEMI           3  B78          87000.00
+   1403  PROC     96KB SEMI         21  A21          22000.00
+   3103  DISC CONT DUAL             -4  H87          10500.00
+   4102  DISC 50MB                   9  K45          14500.00
+   4103  DISK 160MB                  7  K43          24500.00
+   5505  LP  1500LPM                 0  L78          42000.00
 
 --- 7 row(s) selected.
 >>
@@ -382,13 +382,13 @@ PARTNUM  PARTNAME            INVENTORY  LOCATION  PRICE
 +>         from supplier
 +>         where suppnum = 1);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -416,13 +416,13 @@ SUPPNUM
 +>         from supplier
 +>         where suppnum = 1);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -436,13 +436,13 @@ SUPPNUM
 +>         from supplier X
 +>         where suppnum = 1);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -456,15 +456,15 @@ SUPPNUM
 +>         from empone
 +>         where empnum = 1);
 
-REGNAME       
-------------  
+REGNAME     
+------------
 
-EAST          
-ENGLAND       
-GERMANY       
-CANADA        
-WEST          
-CENTRAL       
+EAST        
+CENTRAL     
+WEST        
+CANADA      
+GERMANY     
+ENGLAND     
 
 --- 6 row(s) selected.
 >>
@@ -479,10 +479,10 @@ CENTRAL
 +>         where partcost = 6000
 +>         and suppnum <> 10);
 
-PARTNAME            
-------------------  
+PARTNAME          
+------------------
 
-DISC 10MB           
+DISC 10MB         
 
 --- 1 row(s) selected.
 >>
@@ -496,20 +496,20 @@ DISC 10MB
 +>         from partsfor
 +>         where col_2 = 'V67');
 
-CUSTNAME            
-------------------  
+CUSTNAME          
+------------------
 
-CENTRAL UNIVERSITY  
-BROWN MEDICAL CO    
-STEVENS SUPPLY      
-PREMIER INSURANCE   
-FRESNO STATE BANK   
-METALL-AG.          
-DATASPEED           
-DEUTSCHE STAHL      
-VEREINIGTE CHEMIE   
-MOTOR DISTRIBUTING  
-SLEEPWELL HOTELS    
+BROWN MEDICAL CO  
+CENTRAL UNIVERSITY
+DATASPEED         
+DEUTSCHE STAHL    
+FRESNO STATE BANK 
+METALL-AG.        
+MOTOR DISTRIBUTING
+PREMIER INSURANCE 
+SLEEPWELL HOTELS  
+STEVENS SUPPLY    
+VEREINIGTE CHEMIE 
 
 --- 11 row(s) selected.
 >>
@@ -524,20 +524,20 @@ SLEEPWELL HOTELS
 +>               ( odetail.partnum =  parts.partnum) and
 +>               (location = 'V67'));
 
-CUSTNAME            
-------------------  
+CUSTNAME          
+------------------
 
-CENTRAL UNIVERSITY  
-BROWN MEDICAL CO    
-STEVENS SUPPLY      
-PREMIER INSURANCE   
-FRESNO STATE BANK   
-METALL-AG.          
-DATASPEED           
-DEUTSCHE STAHL      
-VEREINIGTE CHEMIE   
-MOTOR DISTRIBUTING  
-SLEEPWELL HOTELS    
+BROWN MEDICAL CO  
+CENTRAL UNIVERSITY
+DATASPEED         
+DEUTSCHE STAHL    
+FRESNO STATE BANK 
+METALL-AG.        
+MOTOR DISTRIBUTING
+PREMIER INSURANCE 
+SLEEPWELL HOTELS  
+STEVENS SUPPLY    
+VEREINIGTE CHEMIE 
 
 --- 11 row(s) selected.
 >>
@@ -552,16 +552,16 @@ SLEEPWELL HOTELS
 +>         where col_2 = 'V67')
 +>      group by state;
 
-STATE         
-------------  
+STATE       
+------------
 
-PENN          
-CALIFORNIA    
-COLORADO      
-TEXAS         
-GERMANY       
-NEW YORK      
-ILLINOIS      
+PENN        
+CALIFORNIA  
+COLORADO    
+TEXAS       
+GERMANY     
+NEW YORK    
+ILLINOIS    
 
 --- 7 row(s) selected.
 >>
@@ -576,16 +576,16 @@ ILLINOIS
 +>      group by state
 +>      having state <> 'Texas';
 
-STATE         
-------------  
+STATE       
+------------
 
-PENN          
-CALIFORNIA    
-COLORADO      
-TEXAS         
-GERMANY       
-NEW YORK      
-ILLINOIS      
+PENN        
+CALIFORNIA  
+COLORADO    
+TEXAS       
+GERMANY     
+NEW YORK    
+ILLINOIS    
 
 --- 7 row(s) selected.
 >>
@@ -601,16 +601,16 @@ ILLINOIS
 +>      having state <> 'Texas'
 +>      order by state;
 
-STATE         
-------------  
+STATE       
+------------
 
-CALIFORNIA    
-COLORADO      
-GERMANY       
-ILLINOIS      
-NEW YORK      
-PENN          
-TEXAS         
+CALIFORNIA  
+COLORADO    
+GERMANY     
+ILLINOIS    
+NEW YORK    
+PENN        
+TEXAS       
 
 --- 7 row(s) selected.
 >>
@@ -626,12 +626,12 @@ TEXAS
 +>         and suppnum = 8)
 +>      AND partnum = 4102;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-      8  
-     15  
+      6
+      8
+     15
 
 --- 3 row(s) selected.
 >>
@@ -646,12 +646,12 @@ SUPPNUM
 +>         where partnum = 4102
 +>         and suppnum = 8);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-      8  
-     15  
+      6
+      8
+     15
 
 --- 3 row(s) selected.
 >>
@@ -679,12 +679,12 @@ SUPPNUM
 +>         from fromsup
 +>         where partnum = 4102);
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-INFOMATION STORAGE  
-MAGNETICS CORP      
-DATADRIVE           
+DATADRIVE         
+INFOMATION STORAGE
+MAGNETICS CORP    
 
 --- 3 row(s) selected.
 >>
@@ -698,12 +698,12 @@ DATADRIVE
 +>         from fromsup
 +>         where partnum = 4102);
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-INFOMATION STORAGE  
-MAGNETICS CORP      
-DATADRIVE           
+DATADRIVE         
+INFOMATION STORAGE
+MAGNETICS CORP    
 
 --- 3 row(s) selected.
 >>
@@ -717,16 +717,16 @@ DATADRIVE
 +>         where partnum = 4102
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATA TERMINAL CO    
-DISPLAY INC         
-INFOMATION STORAGE  
-MAGNETICS CORP      
-STEELWORK INC       
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+DISPLAY INC       
+INFOMATION STORAGE
+MAGNETICS CORP    
+STEELWORK INC     
+TANDEM COMPUTERS  
 
 --- 7 row(s) selected.
 >>
@@ -742,16 +742,16 @@ DATADRIVE
 +>         where partnum = 4102
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATA TERMINAL CO    
-DISPLAY INC         
-INFOMATION STORAGE  
-MAGNETICS CORP      
-STEELWORK INC       
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+DISPLAY INC       
+INFOMATION STORAGE
+MAGNETICS CORP    
+STEELWORK INC     
+TANDEM COMPUTERS  
 
 --- 7 row(s) selected.
 >>
@@ -765,16 +765,16 @@ DATADRIVE
 +>         where partnum = 4102
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATA TERMINAL CO    
-DISPLAY INC         
-INFOMATION STORAGE  
-MAGNETICS CORP      
-STEELWORK INC       
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+DISPLAY INC       
+INFOMATION STORAGE
+MAGNETICS CORP    
+STEELWORK INC     
+TANDEM COMPUTERS  
 
 --- 7 row(s) selected.
 >>
@@ -787,16 +787,16 @@ DATADRIVE
 +>        (select manager
 +>         from region);
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-ROGER GREEN         
-JACK RAYMOND        
-PAUL WINTER         
-GLENN THOMAS        
-ERIC BROWN          
-DAVID STRAND        
-ALAN TERRY          
+ALAN TERRY        
+DAVID STRAND      
+ERIC BROWN        
+GLENN THOMAS      
+JACK RAYMOND      
+PAUL WINTER       
+ROGER GREEN       
 
 --- 7 row(s) selected.
 >>
@@ -811,28 +811,28 @@ ALAN TERRY
 +>         where branchnum <> 1
 +>         group by branchnum);
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-THOMAS RUDLOFF      
-KLAUS SAFFERT       
-PETER SMITH         
-DONALD TAYLOR       
-STEVE COOK          
-SHERRIE WONG        
-TONY CRAFT          
-GEORGE FORSTER      
-RICHARD BARTON      
-JIMMY SCHNEIDER     
-WALTER LANCASTER    
-JOHN JONES          
-MARLENE BONNY       
-GEORGE FRENCHMAN    
-DAVID TERRY         
-KARL HELMSTED       
-HEIDI WEIGL         
-XAVER SEDLMEYER     
-DAVE CLARK          
+THOMAS RUDLOFF    
+KLAUS SAFFERT     
+PETER SMITH       
+DONALD TAYLOR     
+STEVE COOK        
+SHERRIE WONG      
+TONY CRAFT        
+GEORGE FORSTER    
+RICHARD BARTON    
+JIMMY SCHNEIDER   
+WALTER LANCASTER  
+JOHN JONES        
+MARLENE BONNY     
+GEORGE FRENCHMAN  
+DAVID TERRY       
+KARL HELMSTED     
+HEIDI WEIGL       
+XAVER SEDLMEYER   
+DAVE CLARK        
 
 --- 19 row(s) selected.
 >>
@@ -847,28 +847,28 @@ DAVE CLARK
 +>         where branchnum <> 1
 +>        );
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-THOMAS RUDLOFF      
-KLAUS SAFFERT       
-PETER SMITH         
-DONALD TAYLOR       
-STEVE COOK          
-SHERRIE WONG        
-TONY CRAFT          
-GEORGE FORSTER      
-RICHARD BARTON      
-JIMMY SCHNEIDER     
-WALTER LANCASTER    
-JOHN JONES          
-MARLENE BONNY       
-GEORGE FRENCHMAN    
-DAVID TERRY         
-KARL HELMSTED       
-HEIDI WEIGL         
-XAVER SEDLMEYER     
-DAVE CLARK          
+THOMAS RUDLOFF    
+KLAUS SAFFERT     
+PETER SMITH       
+DONALD TAYLOR     
+STEVE COOK        
+SHERRIE WONG      
+TONY CRAFT        
+GEORGE FORSTER    
+RICHARD BARTON    
+JIMMY SCHNEIDER   
+WALTER LANCASTER  
+JOHN JONES        
+MARLENE BONNY     
+GEORGE FRENCHMAN  
+DAVID TERRY       
+KARL HELMSTED     
+HEIDI WEIGL       
+XAVER SEDLMEYER   
+DAVE CLARK        
 
 --- 19 row(s) selected.
 >>
@@ -883,28 +883,28 @@ DAVE CLARK
 +>         group by branchnum
 +>         having branchnum <> 1);
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-THOMAS RUDLOFF      
-KLAUS SAFFERT       
-PETER SMITH         
-DONALD TAYLOR       
-STEVE COOK          
-SHERRIE WONG        
-TONY CRAFT          
-GEORGE FORSTER      
-RICHARD BARTON      
-JIMMY SCHNEIDER     
-WALTER LANCASTER    
-JOHN JONES          
-MARLENE BONNY       
-GEORGE FRENCHMAN    
-DAVID TERRY         
-KARL HELMSTED       
-HEIDI WEIGL         
-XAVER SEDLMEYER     
-DAVE CLARK          
+THOMAS RUDLOFF    
+KLAUS SAFFERT     
+PETER SMITH       
+DONALD TAYLOR     
+STEVE COOK        
+SHERRIE WONG      
+TONY CRAFT        
+GEORGE FORSTER    
+RICHARD BARTON    
+JIMMY SCHNEIDER   
+WALTER LANCASTER  
+JOHN JONES        
+MARLENE BONNY     
+GEORGE FRENCHMAN  
+DAVID TERRY       
+KARL HELMSTED     
+HEIDI WEIGL       
+XAVER SEDLMEYER   
+DAVE CLARK        
 
 --- 19 row(s) selected.
 >>
@@ -918,14 +918,14 @@ DAVE CLARK
 +>         from empone
 +>         where empnum < 100);
 
-REGNAME       
-------------  
+REGNAME     
+------------
 
-HEADQUARTERS  
-EAST          
-GERMANY       
-WEST          
-ENGLAND       
+EAST        
+WEST        
+GERMANY     
+ENGLAND     
+HEADQUARTERS
 
 --- 5 row(s) selected.
 >>
@@ -939,13 +939,13 @@ ENGLAND
 +>         from fromsup
 +>         where suppnum = 15);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
-      8  
-      2  
+      6
+     15
+      8
+      2
 
 --- 4 row(s) selected.
 >>
@@ -958,13 +958,13 @@ SUPPNUM
 +>         from fromsup Y
 +>         where suppnum = 15);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
-      8  
-      2  
+      6
+     15
+      8
+      2
 
 --- 4 row(s) selected.
 >>
@@ -979,21 +979,21 @@ SUPPNUM
 +>         where  odetail.partnum =  parts.partnum
 +>         and price > 50000);
 
-SALESMAN  ORDERNUM  
---------  --------  
+SALESMAN  ORDERNUM
+--------  --------
 
-     205        21  
-     212        25  
-     222        30  
-     204        32  
-     231        35  
-     218        38  
-     207        41  
-     212        45  
-     225        48  
-     210        51  
-     205        66  
-     221       122  
+     204        32
+     205        21
+     205        66
+     207        41
+     210        51
+     212        25
+     212        45
+     218        38
+     221       122
+     222        30
+     225        48
+     231        35
 
 --- 12 row(s) selected.
 >>
@@ -1008,19 +1008,19 @@ SALESMAN  ORDERNUM
 +>         where  odetail.partnum =  parts.partnum
 +>         and price > 5000);
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     205  
-     212  
-     222  
-     204  
-     231  
-     218  
-     207  
-     225  
-     210  
-     221  
+     204
+     205
+     207
+     210
+     212
+     218
+     221
+     222
+     225
+     231
 
 --- 10 row(s) selected.
 >>
@@ -1032,16 +1032,16 @@ SALESMAN
 +>        (select partnum
 +>         from expfroms);
 
-PARTNUM  PARTNAME            INVENTORY  LOCATION  PRICE        
--------  ------------------  ---------  --------  -----------  
+PARTNUM  PARTNAME            INVENTORY  LOCATION  PRICE      
+-------  ------------------  ---------  --------  -----------
 
-    212  SYSTEM 192KB CORE           7  J87          92000.00  
-    244  SYSTEM 192KB SEMI           3  B78          87000.00  
-   1403  PROC     96KB SEMI         21  A21          22000.00  
-   3103  DISC CONT DUAL             -4  H87          10500.00  
-   4102  DISC 50MB                   9  K45          14500.00  
-   4103  DISK 160MB                  7  K43          24500.00  
-   5505  LP  1500LPM                 0  L78          42000.00  
+    212  SYSTEM 192KB CORE           7  J87          92000.00
+    244  SYSTEM 192KB SEMI           3  B78          87000.00
+   1403  PROC     96KB SEMI         21  A21          22000.00
+   3103  DISC CONT DUAL             -4  H87          10500.00
+   4102  DISC 50MB                   9  K45          14500.00
+   4103  DISK 160MB                  7  K43          24500.00
+   5505  LP  1500LPM                 0  L78          42000.00
 
 --- 7 row(s) selected.
 >>
@@ -1056,13 +1056,13 @@ PARTNUM  PARTNAME            INVENTORY  LOCATION  PRICE
 +>         from supplier
 +>         where suppnum = 1);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -1077,11 +1077,11 @@ SUPPNUM
 +>         where partnum = 4102)
 +>      and partnum = 4102;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
+      6
+     15
 
 --- 2 row(s) selected.
 >>
@@ -1095,11 +1095,11 @@ SUPPNUM
 +>         where partnum = 4102)
 +>      and partnum = 4102;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
+      6
+     15
 
 --- 2 row(s) selected.
 >>
@@ -1114,10 +1114,10 @@ SUPPNUM
 +>         where partnum = 4102)
 +>      and partnum = 4102;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
+      6
 
 --- 1 row(s) selected.
 >>
@@ -1132,13 +1132,13 @@ SUPPNUM
 +>         from supplier
 +>         where suppnum = 1);
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -1152,10 +1152,10 @@ SUPPNUM
 +>         from odetail
 +>         where quantity > 25);
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     221  
+     221
 
 --- 1 row(s) selected.
 >>
@@ -1191,10 +1191,10 @@ SALESMAN
 +>         from odetail
 +>         where quantity > 25);
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     221  
+     221
 
 --- 1 row(s) selected.
 >>
@@ -1207,16 +1207,16 @@ SALESMAN
 +>        (select CC.state
 +>         from customer CC);
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATA TERMINAL CO    
-DISPLAY INC         
-INFOMATION STORAGE  
-MAGNETICS CORP      
-STEELWORK INC       
-DATADRIVE           
+TANDEM COMPUTERS  
+DATA TERMINAL CO  
+DISPLAY INC       
+INFOMATION STORAGE
+MAGNETICS CORP    
+STEELWORK INC     
+DATADRIVE         
 
 --- 7 row(s) selected.
 >>
@@ -1229,11 +1229,11 @@ DATADRIVE
 +>        (select state
 +>         from customer);
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-INFOMATION STORAGE  
-MAGNETICS CORP      
+INFOMATION STORAGE
+MAGNETICS CORP    
 
 --- 2 row(s) selected.
 >>
@@ -1247,11 +1247,11 @@ MAGNETICS CORP
 +>         group by state
 +>         having state <> 'Texas');
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-INFOMATION STORAGE  
-MAGNETICS CORP      
+INFOMATION STORAGE
+MAGNETICS CORP    
 
 --- 2 row(s) selected.
 >>
@@ -1264,10 +1264,10 @@ MAGNETICS CORP
 +>        (select col_3
 +>         from partsfor);
 
-COL_11  
-------  
+COL_11
+------
 
-   212  
+   212
 
 --- 1 row(s) selected.
 >>
@@ -1298,11 +1298,11 @@ COL_11
 +>         from fromsup
 +>         where partnum = 5504));
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-INFOMATION STORAGE  
-DATADRIVE           
+INFOMATION STORAGE
+DATADRIVE         
 
 --- 2 row(s) selected.
 >>
@@ -1320,13 +1320,13 @@ DATADRIVE
 +>         from fromsup
 +>         where partnum = 5504));
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-DATA TERMINAL CO    
-INFOMATION STORAGE  
-MAGNETICS CORP      
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+INFOMATION STORAGE
+MAGNETICS CORP    
 
 --- 4 row(s) selected.
 >>
@@ -1345,12 +1345,12 @@ DATADRIVE
 +>         from fromsup
 +>         where partnum = 5504))) ;
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DISPLAY INC         
-STEELWORK INC       
+DISPLAY INC       
+STEELWORK INC     
+TANDEM COMPUTERS  
 
 --- 3 row(s) selected.
 >>
@@ -1372,10 +1372,10 @@ STEELWORK INC
 +>         from fromsup
 +>         where partnum = 5505));
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-DATADRIVE           
+DATADRIVE         
 
 --- 1 row(s) selected.
 >>
@@ -1392,46 +1392,46 @@ DATADRIVE
 +>         from employee
 +>         where age < 30000);
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-ROGER GREEN         
-JERRY HOWARD        
-JACK RAYMOND        
-THOMAS RUDLOFF      
-KLAUS SAFFERT       
-PAUL WINTER         
-SUSAN HENDERSON     
-GLENN THOMAS        
-TIM WALKER          
-ERIC BROWN          
-PETER SMITH         
-DONALD TAYLOR       
-DAVID STRAND        
-STEVE COOK          
-SHERRIE WONG        
-TONY CRAFT          
-LINDA JONES         
-MANFRED CONRAD      
-GEORGE FORSTER      
-JONATHAN MITCHEL    
-ROBERT WHITE        
-JULIA KELLY         
-WALTER LANCASTER    
-JOHN JONES          
-GEORGE FRENCHMAN    
-JOHANN HUBER        
-OTTO SCHNABL        
-MARTIN SCHAEFER     
-KARL HELMSTED       
-XAVER SEDLMEYER     
-PETE WELLINGTON     
-GEORGE STRICKER     
-HERB ALBERT         
-THOMAS SPINNER      
-BILL WINN           
-DAVE CLARK          
-ALAN TERRY          
+ROGER GREEN       
+JERRY HOWARD      
+JACK RAYMOND      
+THOMAS RUDLOFF    
+KLAUS SAFFERT     
+PAUL WINTER       
+SUSAN HENDERSON   
+GLENN THOMAS      
+TIM WALKER        
+ERIC BROWN        
+PETER SMITH       
+DONALD TAYLOR     
+DAVID STRAND      
+STEVE COOK        
+SHERRIE WONG      
+TONY CRAFT        
+LINDA JONES       
+MANFRED CONRAD    
+GEORGE FORSTER    
+JONATHAN MITCHEL  
+ROBERT WHITE      
+JULIA KELLY       
+WALTER LANCASTER  
+JOHN JONES        
+GEORGE FRENCHMAN  
+JOHANN HUBER      
+OTTO SCHNABL      
+MARTIN SCHAEFER   
+KARL HELMSTED     
+XAVER SEDLMEYER   
+PETE WELLINGTON   
+GEORGE STRICKER   
+HERB ALBERT       
+THOMAS SPINNER    
+BILL WINN         
+DAVE CLARK        
+ALAN TERRY        
 
 --- 37 row(s) selected.
 >>
@@ -1486,14 +1486,14 @@ ALAN TERRY
 +>            where inventory < 0)
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATA TERMINAL CO    
-DISPLAY INC         
-INFOMATION STORAGE  
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+DISPLAY INC       
+INFOMATION STORAGE
+TANDEM COMPUTERS  
 
 --- 5 row(s) selected.
 >>
@@ -1510,14 +1510,14 @@ DATADRIVE
 +>            where inventory < 0)
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATA TERMINAL CO    
-DISPLAY INC         
-INFOMATION STORAGE  
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+DISPLAY INC       
+INFOMATION STORAGE
+TANDEM COMPUTERS  
 
 --- 5 row(s) selected.
 >>
@@ -1533,12 +1533,12 @@ DATADRIVE
 +>            from parts
 +>            where partname = 'LP  900 LPM'));
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-DATA TERMINAL CO    
-INFOMATION STORAGE  
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+INFOMATION STORAGE
 
 --- 3 row(s) selected.
 >>
@@ -1557,14 +1557,14 @@ DATADRIVE
 +>           )
 +>        );
 
-AGE    
------  
+AGE
+---
 
-   24  
-   26  
-   19  
-   22  
-   24  
+ 24
+ 26
+ 19
+ 22
+ 24
 
 --- 5 row(s) selected.
 >>
@@ -1583,19 +1583,19 @@ AGE
 +>           from parts
 +>           where price = 8000));
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     205  
-     212  
-     222  
-     204  
-     231  
-     218  
-     207  
-     225  
-     210  
-     221  
+     204
+     205
+     207
+     210
+     212
+     218
+     221
+     222
+     225
+     231
 
 --- 10 row(s) selected.
 >>
@@ -1707,14 +1707,14 @@ SALESMAN
 +>         group by suppnum
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATA TERMINAL CO    
-DISPLAY INC         
-INFOMATION STORAGE  
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+DISPLAY INC       
+INFOMATION STORAGE
+TANDEM COMPUTERS  
 
 --- 5 row(s) selected.
 >>
@@ -1733,13 +1733,13 @@ DATADRIVE
 +>          having suppnum <> 2
 +>         );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DISPLAY INC         
-INFOMATION STORAGE  
-DATADRIVE           
+DATADRIVE         
+DISPLAY INC       
+INFOMATION STORAGE
+TANDEM COMPUTERS  
 
 --- 4 row(s) selected.
 >>
@@ -1763,12 +1763,12 @@ DATADRIVE
 +>       having age <> 22
 +>       order by age;
 
-AGE    
------  
+AGE
+---
 
-   19  
-   24  
-   26  
+ 19
+ 24
+ 26
 
 --- 3 row(s) selected.
 >>-- <end-input>
@@ -1797,13 +1797,13 @@ AGE
 +>        )
 +>      for repeatable access;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      6  
-     15  
-      8  
-      2  
+      6
+     15
+      8
+      2
 
 --- 4 row(s) selected.
 >>
@@ -1820,21 +1820,21 @@ SUPPNUM
 +>         for repeatable access
 +>        );
 
-SALESMAN  ORDERNUM  
---------  --------  
+SALESMAN  ORDERNUM
+--------  --------
 
-     205        21  
-     212        25  
-     222        30  
-     204        32  
-     231        35  
-     218        38  
-     207        41  
-     212        45  
-     225        48  
-     210        51  
-     205        66  
-     221       122  
+     204        32
+     205        21
+     205        66
+     207        41
+     210        51
+     212        25
+     212        45
+     218        38
+     221       122
+     222        30
+     225        48
+     231        35
 
 --- 12 row(s) selected.
 >>
@@ -1851,13 +1851,13 @@ SALESMAN  ORDERNUM
 +>        )
 +>      for repeatable access;
 
-SUPPNUM  
--------  
+SUPPNUM
+-------
 
-      1  
-      2  
-      3  
-     10  
+      1
+      2
+      3
+     10
 
 --- 4 row(s) selected.
 >>
@@ -1873,20 +1873,20 @@ SUPPNUM
 +>         for browse access
 +>        );
 
-CUSTNAME            
-------------------  
+CUSTNAME          
+------------------
 
-CENTRAL UNIVERSITY  
-BROWN MEDICAL CO    
-STEVENS SUPPLY      
-PREMIER INSURANCE   
-FRESNO STATE BANK   
-METALL-AG.          
-DATASPEED           
-DEUTSCHE STAHL      
-VEREINIGTE CHEMIE   
-MOTOR DISTRIBUTING  
-SLEEPWELL HOTELS    
+BROWN MEDICAL CO  
+CENTRAL UNIVERSITY
+DATASPEED         
+DEUTSCHE STAHL    
+FRESNO STATE BANK 
+METALL-AG.        
+MOTOR DISTRIBUTING
+PREMIER INSURANCE 
+SLEEPWELL HOTELS  
+STEVENS SUPPLY    
+VEREINIGTE CHEMIE 
 
 --- 11 row(s) selected.
 >>
@@ -1903,20 +1903,20 @@ SLEEPWELL HOTELS
 +>         for repeatable access
 +>        );
 
-CUSTNAME            
-------------------  
+CUSTNAME          
+------------------
 
-CENTRAL UNIVERSITY  
-BROWN MEDICAL CO    
-STEVENS SUPPLY      
-PREMIER INSURANCE   
-FRESNO STATE BANK   
-METALL-AG.          
-DATASPEED           
-DEUTSCHE STAHL      
-VEREINIGTE CHEMIE   
-MOTOR DISTRIBUTING  
-SLEEPWELL HOTELS    
+BROWN MEDICAL CO  
+CENTRAL UNIVERSITY
+DATASPEED         
+DEUTSCHE STAHL    
+FRESNO STATE BANK 
+METALL-AG.        
+MOTOR DISTRIBUTING
+PREMIER INSURANCE 
+SLEEPWELL HOTELS  
+STEVENS SUPPLY    
+VEREINIGTE CHEMIE 
 
 --- 11 row(s) selected.
 >>
@@ -1938,11 +1938,11 @@ SLEEPWELL HOTELS
 +>         for stable access
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-INFOMATION STORAGE  
-DATADRIVE           
+INFOMATION STORAGE
+DATADRIVE         
 
 --- 2 row(s) selected.
 >>
@@ -1965,14 +1965,14 @@ DATADRIVE
 +>        )
 +>      for stable access;
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATA TERMINAL CO    
-DISPLAY INC         
-INFOMATION STORAGE  
-DATADRIVE           
+DATA TERMINAL CO  
+DATADRIVE         
+DISPLAY INC       
+INFOMATION STORAGE
+TANDEM COMPUTERS  
 
 --- 5 row(s) selected.
 >>
@@ -1993,14 +1993,14 @@ DATADRIVE
 +>        )
 +>      for browse access;
 
-AGE    
------  
+AGE
+---
 
-   24  
-   26  
-   19  
-   22  
-   24  
+ 24
+ 26
+ 19
+ 22
+ 24
 
 --- 5 row(s) selected.
 >>
@@ -2024,19 +2024,19 @@ AGE
 +>        )
 +>      for stable access;
 
-SALESMAN  
---------  
+SALESMAN
+--------
 
-     205  
-     212  
-     222  
-     204  
-     231  
-     218  
-     207  
-     225  
-     210  
-     221  
+     204
+     205
+     207
+     210
+     212
+     218
+     221
+     222
+     225
+     231
 
 --- 10 row(s) selected.
 >>
@@ -2084,41 +2084,41 @@ SALESMAN
 +>          from employee
 +>         );
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-ROGER GREEN         
-ALAN TERRY          
-DAVE CLARK          
-BILL WINN           
-HERB ALBERT         
-GEORGE STRICKER     
-PETE WELLINGTON     
-KARL HELMSTED       
-MARTIN SCHAEFER     
-OTTO SCHNABL        
-JOHANN HUBER        
-GEORGE FRENCHMAN    
-WALTER LANCASTER    
-JULIA KELLY         
-JONATHAN MITCHEL    
-MANFRED CONRAD      
-LINDA JONES         
-TONY CRAFT          
-SHERRIE WONG        
-STEVE COOK          
-DAVID STRAND        
-DONALD TAYLOR       
-PETER SMITH         
-ERIC BROWN          
-TIM WALKER          
-GLENN THOMAS        
-SUSAN HENDERSON     
-PAUL WINTER         
-KLAUS SAFFERT       
-THOMAS RUDLOFF      
-JACK RAYMOND        
-JERRY HOWARD        
+ROGER GREEN       
+JERRY HOWARD      
+JACK RAYMOND      
+THOMAS RUDLOFF    
+KLAUS SAFFERT     
+PAUL WINTER       
+SUSAN HENDERSON   
+GLENN THOMAS      
+TIM WALKER        
+ERIC BROWN        
+PETER SMITH       
+DONALD TAYLOR     
+DAVID STRAND      
+STEVE COOK        
+SHERRIE WONG      
+TONY CRAFT        
+LINDA JONES       
+MANFRED CONRAD    
+JONATHAN MITCHEL  
+JULIA KELLY       
+WALTER LANCASTER  
+GEORGE FRENCHMAN  
+JOHANN HUBER      
+OTTO SCHNABL      
+MARTIN SCHAEFER   
+KARL HELMSTED     
+PETE WELLINGTON   
+GEORGE STRICKER   
+HERB ALBERT       
+BILL WINN         
+DAVE CLARK        
+ALAN TERRY        
 
 --- 32 row(s) selected.
 >>
@@ -2133,10 +2133,10 @@ JERRY HOWARD
 +>         where  parts.partnum =  fromsup.partnum
 +>        );
 
-PARTNAME            
-------------------  
+PARTNAME          
+------------------
 
-CABINET LARGE       
+CABINET LARGE     
 
 --- 1 row(s) selected.
 >>
@@ -2151,17 +2151,17 @@ CABINET LARGE
 +>         group by regnum, branchnum
 +>        );
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-ROGER GREEN         
-PAUL WINTER         
-GLENN THOMAS        
-ERIC BROWN          
-DAVID STRAND        
-SHERRIE WONG        
-JULIA KELLY         
-ALAN TERRY          
+ROGER GREEN       
+PAUL WINTER       
+GLENN THOMAS      
+ERIC BROWN        
+DAVID STRAND      
+SHERRIE WONG      
+JULIA KELLY       
+ALAN TERRY        
 
 --- 8 row(s) selected.
 >>
@@ -2176,10 +2176,10 @@ ALAN TERRY
 +>         group by regnum, branchnum
 +>        );
 
-(EXPR)                (EXPR)                
---------------------  --------------------  
+(EXPR)                (EXPR)              
+--------------------  --------------------
 
-               40875                327000  
+               40875                327000
 
 --- 1 row(s) selected.
 >>
@@ -2195,10 +2195,10 @@ ALAN TERRY
 +>         group by regnum, branchnum
 +>        );
 
-(EXPR)                (EXPR)                
---------------------  --------------------  
+(EXPR)                (EXPR)              
+--------------------  --------------------
 
-               42125                327000  
+               42125                327000
 
 --- 1 row(s) selected.
 >>
@@ -2213,52 +2213,52 @@ ALAN TERRY
 +>         where regnum = 1 and branchnum = 1
 +>        );
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-ROGER GREEN         
-ALAN TERRY          
-DAVE CLARK          
-BILL WINN           
-TED MCDONNALDS      
-THOMAS SPINNER      
-HERB ALBERT         
-GEORGE STRICKER     
-PETE WELLINGTON     
-XAVER SEDLMEYER     
-KARL HELMSTED       
-HERBERT KARAJAN     
-MARTIN SCHAEFER     
-OTTO SCHNABL        
-JOHANN HUBER        
-DAVID TERRY         
-GEORGE FRENCHMAN    
-JOHN JONES          
-WALTER LANCASTER    
-JULIA KELLY         
-ROBERT WHITE        
-JONATHAN MITCHEL    
-JIMMY SCHNEIDER     
-RICHARD BARTON      
-GEORGE FORSTER      
-TOM HALL            
-MANFRED CONRAD      
-LINDA JONES         
-TONY CRAFT          
-SHERRIE WONG        
-STEVE COOK          
-DAVID STRAND        
-DONALD TAYLOR       
-PETER SMITH         
-ERIC BROWN          
-TIM WALKER          
-GLENN THOMAS        
-SUSAN HENDERSON     
-PAUL WINTER         
-KLAUS SAFFERT       
-THOMAS RUDLOFF      
-JACK RAYMOND        
-JERRY HOWARD        
+ROGER GREEN       
+JERRY HOWARD      
+JACK RAYMOND      
+THOMAS RUDLOFF    
+KLAUS SAFFERT     
+PAUL WINTER       
+SUSAN HENDERSON   
+GLENN THOMAS      
+TIM WALKER        
+ERIC BROWN        
+PETER SMITH       
+DONALD TAYLOR     
+DAVID STRAND      
+STEVE COOK        
+SHERRIE WONG      
+TONY CRAFT        
+LINDA JONES       
+MANFRED CONRAD    
+TOM HALL          
+GEORGE FORSTER    
+RICHARD BARTON    
+JIMMY SCHNEIDER   
+JONATHAN MITCHEL  
+ROBERT WHITE      
+JULIA KELLY       
+WALTER LANCASTER  
+JOHN JONES        
+GEORGE FRENCHMAN  
+DAVID TERRY       
+JOHANN HUBER      
+OTTO SCHNABL      
+MARTIN SCHAEFER   
+HERBERT KARAJAN   
+KARL HELMSTED     
+XAVER SEDLMEYER   
+PETE WELLINGTON   
+GEORGE STRICKER   
+HERB ALBERT       
+THOMAS SPINNER    
+TED MCDONNALDS    
+BILL WINN         
+DAVE CLARK        
+ALAN TERRY        
 
 --- 43 row(s) selected.
 >>
@@ -2275,17 +2275,17 @@ JERRY HOWARD
 +>         having min(salary) > 20000
 +>        );
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-ROGER GREEN         
-PAUL WINTER         
-GLENN THOMAS        
-ERIC BROWN          
-DAVID STRAND        
-SHERRIE WONG        
-JULIA KELLY         
-ALAN TERRY          
+ROGER GREEN       
+PAUL WINTER       
+GLENN THOMAS      
+ERIC BROWN        
+DAVID STRAND      
+SHERRIE WONG      
+JULIA KELLY       
+ALAN TERRY        
 
 --- 8 row(s) selected.
 >>
@@ -2303,11 +2303,11 @@ ALAN TERRY
 +>         from parts
 +>        );
 
-PARTNAME            PRICE        
-------------------  -----------  
+PARTNAME            PRICE      
+------------------  -----------
 
-SYSTEM 192KB CORE      92000.00  
-COBOL MICRO              500.00  
+SYSTEM 192KB CORE      92000.00
+COBOL MICRO              500.00
 
 --- 2 row(s) selected.
 >>-- <comment> get supplier names for suppliers whose total cost of all
@@ -2322,11 +2322,11 @@ COBOL MICRO              500.00
 +>         having sum(partcost) > 50000
 +>        );
 
-SUPPNAME            
-------------------  
+SUPPNAME          
+------------------
 
-TANDEM COMPUTERS    
-DATADRIVE           
+DATADRIVE         
+TANDEM COMPUTERS  
 
 --- 2 row(s) selected.
 >>
@@ -2342,39 +2342,39 @@ DATADRIVE
 +>         having count(*) >= 3
 +>        );
 
-EMPNAME             
-------------------  
+EMPNAME           
+------------------
 
-JERRY HOWARD        
-THOMAS RUDLOFF      
-PAUL WINTER         
-SUSAN HENDERSON     
-GLENN THOMAS        
-TIM WALKER          
-PETER SMITH         
-DONALD TAYLOR       
-STEVE COOK          
-SHERRIE WONG        
-TONY CRAFT          
-LINDA JONES         
-MANFRED CONRAD      
-GEORGE FORSTER      
-RICHARD BARTON      
-JONATHAN MITCHEL    
-ROBERT WHITE        
-WALTER LANCASTER    
-JOHN JONES          
-JOHANN HUBER        
-OTTO SCHNABL        
-HERBERT KARAJAN     
-KARL HELMSTED       
-XAVER SEDLMEYER     
-PETE WELLINGTON     
-HERB ALBERT         
-THOMAS SPINNER      
-TED MCDONNALDS      
-BILL WINN           
-DAVE CLARK          
+JERRY HOWARD      
+THOMAS RUDLOFF    
+PAUL WINTER       
+SUSAN HENDERSON   
+GLENN THOMAS      
+TIM WALKER        
+PETER SMITH       
+DONALD TAYLOR     
+STEVE COOK        
+SHERRIE WONG      
+TONY CRAFT        
+LINDA JONES       
+MANFRED CONRAD    
+GEORGE FORSTER    
+RICHARD BARTON    
+JONATHAN MITCHEL  
+ROBERT WHITE      
+WALTER LANCASTER  
+JOHN JONES        
+JOHANN HUBER      
+OTTO SCHNABL      
+HERBERT KARAJAN   
+KARL HELMSTED     
+XAVER SEDLMEYER   
+PETE WELLINGTON   
+HERB ALBERT       
+THOMAS SPINNER    
+TED MCDONNALDS    
+BILL WINN         
+DAVE CLARK        
 
 --- 30 row(s) selected.
 >>
@@ -2388,12 +2388,12 @@ DAVE CLARK
 +>         from parts
 +>        );
 
-PARTNAME            
-------------------  
+PARTNAME          
+------------------
 
-SYSTEM 192KB CORE   
-CABINET LARGE       
-SYSTEM 192KB SEMI   
+SYSTEM 192KB CORE 
+SYSTEM 192KB SEMI 
+CABINET LARGE     
 
 --- 3 row(s) selected.
 >>

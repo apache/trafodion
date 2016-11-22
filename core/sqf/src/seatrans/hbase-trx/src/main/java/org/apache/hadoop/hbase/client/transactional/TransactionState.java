@@ -35,6 +35,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.HConstants;
 
 /**
  * Holds client-side transaction information. Client's use them as opaque objects passed around to transaction
@@ -64,12 +65,13 @@ public class TransactionState {
     private Object countLock;
     private boolean commitSendDone;
     private Object commitSendLock;
-    private boolean hasError;
+    private Throwable hasError;
     private boolean localTransaction;
+    private static boolean envLocalTransaction;
     private boolean ddlTrans;
     private static boolean useConcurrentHM = false;
-    private static boolean getCHMVariable = true;
     private boolean hasRetried = false;
+    private boolean uteLogged = false;
 
     public Set<String> tableNames = Collections.synchronizedSet(new HashSet<String>());
     public Set<TransactionRegionLocation> participatingRegions;
@@ -85,6 +87,23 @@ public class TransactionState {
       return localTransaction;
     }
 
+    static {
+       String concurrentHM = System.getenv("DTM_USE_CONCURRENTHM");
+       if (concurrentHM != null) 
+           useConcurrentHM = (Integer.parseInt(concurrentHM) == 0) ? false : true;
+       else
+           useConcurrentHM = false;
+       if (useConcurrentHM) 
+          LOG.info("Using ConcurrentHashMap synchronization to synchronize participatingRegions");
+       else 
+          LOG.info("Using synchronizedSet to synchronize participatingRegions");
+       String localTxns = System.getenv("DTM_LOCAL_TRANSACTIONS");
+       if (localTxns != null) 
+          envLocalTransaction = (Integer.parseInt(localTxns) == 0) ? false : true;
+       else
+          envLocalTransaction = false; 
+    }
+
     public TransactionState(final long transactionId) {
         this.transactionId = transactionId;
         setStatus(TransState.STATE_ACTIVE);
@@ -93,24 +112,9 @@ public class TransactionState {
         requestPendingCount = 0;
         requestReceivedCount = 0;
         commitSendDone = false;
-        hasError = false;
+        hasError = null;
         ddlTrans = false;
 
-        if(getCHMVariable) {
-          String concurrentHM = System.getenv("DTM_USE_CONCURRENTHM");
-          if (concurrentHM != null) {
-            useConcurrentHM = (Integer.parseInt(concurrentHM)==0)?false:true;
-          }
-          if(LOG.isTraceEnabled()) {
-            if(useConcurrentHM) {
-              LOG.trace("Using ConcurrentHashMap synchronization to synchronize participatingRegions");
-            }
-            else {
-              LOG.trace("Using synchronizedSet to synchronize participatingRegions");
-            }
-          }
-          getCHMVariable = false;
-        }
         if(useConcurrentHM) {
           participatingRegions = Collections.newSetFromMap((new ConcurrentHashMap<TransactionRegionLocation, Boolean>()));
         }
@@ -118,14 +122,11 @@ public class TransactionState {
           participatingRegions = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
         }
 
-        String localTxns = System.getenv("DTM_LOCAL_TRANSACTIONS");
-        if (localTxns != null) {
-          localTransaction = (Integer.parseInt(localTxns)==0)?false:true;
-          //System.out.println("TS begin local txn id " + transactionId);
+        localTransaction = envLocalTransaction;
+        if (localTransaction) {
           if (LOG.isTraceEnabled()) LOG.trace("TransactionState local transaction begun: " + transactionId);
         }
         else {
-          localTransaction = false;
           if (LOG.isTraceEnabled()) LOG.trace("TransactionState global transaction begun: " + transactionId);
         }
     }
@@ -175,34 +176,29 @@ public class TransactionState {
     {
         synchronized (countLock)
         {
-            hasError = false;  // reset, just in case
+            hasError = null;  // reset, just in case
             requestPendingCount = count;
         }
     }
 
     /**
      * 
-     * Method  : requestPendingCountDec
-     * Params  : None
-     * Return  : void
-     * Purpose : Decrease number of outstanding replies needed and wake up any waiters
-     *           if we receive the last one or if the wakeUp value is true (which means
-     *           we received an exception)
+     * method  : requestpendingcountdec
+     * params  : none
+     * return  : void
+     * purpose : decrease number of outstanding replies needed and wake up any waiters
+     *           if we receive the last one 
      */
-    public void  requestPendingCountDec(boolean wakeUp)
+    public void  requestPendingCountDec(Throwable exception)
     {
-        synchronized (countLock)
-        {
-            requestReceivedCount++;
-            if ((requestReceivedCount == requestPendingCount) || (wakeUp == true))
-            {
-                //Signal waiters that an error occurred
-                if (wakeUp == true)
-                    hasError = true;
-
-                countLock.notify();
-        }
-    }
+       synchronized (countLock)
+       {
+          requestReceivedCount++;
+          if (exception != null && hasError == null)
+             hasError = exception;
+          if (requestReceivedCount == requestPendingCount)
+             countLock.notify();
+       }
     }
 
     /**
@@ -212,7 +208,7 @@ public class TransactionState {
      * Return  : Void
      * Purpose : Hang thread until all replies have been received
      */
-    public void completeRequest() throws InterruptedException, CommitUnsuccessfulException
+    public void completeRequest() throws InterruptedException, IOException
     {
         // Make sure we've completed sending all requests first, if not, then wait
         synchronized (commitSendLock)
@@ -230,9 +226,10 @@ public class TransactionState {
                 countLock.wait();
         }
 
-        if (hasError)
-            throw new CommitUnsuccessfulException();
-
+        if (hasError != null)  {
+            hasError.fillInStackTrace();
+            throw new IOException("Exception at completeRequest()", hasError);
+        }
         return;
 
     }
@@ -353,7 +350,6 @@ public class TransactionState {
         retryRegions.add(region);
     }
 
-
     /**
      * Get the transactionId.
      *
@@ -361,6 +357,46 @@ public class TransactionState {
      */
     public long getTransactionId() {
         return transactionId;
+    }
+
+    /**
+     * Get the sequenceNum portion of the transactionId.
+     *
+     * @return Return the sequenceNum.
+     */
+    public long getTransSeqNum() {
+
+       return transactionId & 0xFFFFFFFFL;
+    }
+
+    /**
+     * Get the sequenceNum portion of the passed in transId.
+     *
+     * @return Return the sequenceNum.
+     */
+    public static long getTransSeqNum(long transId) {
+
+       return transId & 0xFFFFFFFFL;
+    }
+
+    /**
+     * Get the originating node of the transaction.
+     *
+     * @return Return the nodeId.
+     */
+    public long getNodeId() {
+
+       return ((transactionId >> 32) & 0xFFL);
+    }
+
+    /**
+     * Get the originating node of the passed in transaction.
+     *
+     * @return Return the nodeId.
+     */
+    public static long getNodeId(long transId) {
+
+        return ((transId >> 32) & 0xFFL);
     }
 
     /**
@@ -461,4 +497,33 @@ public class TransactionState {
       return this.hasRetried;
     }
 
+    public void logUteDetails()
+    {
+       if (uteLogged)
+          return;
+       int participantNum = 0;
+       byte[] startKey;
+       byte[] endKey_orig;
+       byte[] endKey;
+
+       for (TransactionRegionLocation location : getParticipatingRegions()) {
+          participantNum++;
+          final byte[] regionName = location.getRegionInfo().getRegionName();
+
+          startKey = location.getRegionInfo().getStartKey();
+          endKey_orig = location.getRegionInfo().getEndKey();
+          if (endKey_orig == null || endKey_orig == HConstants.EMPTY_END_ROW)
+              endKey = null;
+          else
+              endKey = TransactionManager.binaryIncrementPos(endKey_orig, -1);
+
+          LOG.warn("UTE for transId: " + getTransactionId()
+                    + " participantNum " + participantNum
+                    + " location " + location.getRegionInfo().getRegionNameAsString()
+                    + " startKey " + ((startKey != null)? Hex.encodeHexString(startKey) : "NULL")
+                    + " endKey " +  ((endKey != null) ? Hex.encodeHexString(endKey) : "NULL")
+                    + " RegionEndKey " + ((endKey_orig != null) ? Hex.encodeHexString(endKey_orig) : "NULL"));
+       }
+       uteLogged = true;
+    }
 }

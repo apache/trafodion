@@ -57,14 +57,13 @@ import org.apache.hadoop.hbase.client.transactional.TransactionMap;
 import org.apache.hadoop.hbase.client.transactional.TransactionalReturn;
 import org.apache.hadoop.hbase.client.transactional.TmDDL;
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.ServerName;
-import org.apache.hadoop.hbase.TableNotFoundException;
+import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.trafodion.dtm.HBaseTmZK;
 import org.trafodion.dtm.TmAuditTlog;
@@ -74,6 +73,7 @@ import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
 
 import org.apache.zookeeper.KeeperException;
+import org.trafodion.sql.TrafConfiguration;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -124,7 +124,7 @@ public class HBaseTxClient {
       if (LOG.isDebugEnabled()) LOG.debug("Enter init, hBasePath:" + hBasePath);
       if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
       if (config == null) {
-         config = HBaseConfiguration.create();
+         config = TrafConfiguration.create();
          connection = ConnectionFactory.createConnection(config);
       }
       config.set("hbase.zookeeper.quorum", zkServers);
@@ -203,7 +203,7 @@ public class HBaseTxClient {
       setupLog4j();
       if (LOG.isDebugEnabled()) LOG.debug("Enter init(" + dtmid + ")");
       if (config == null) {
-         config = HBaseConfiguration.create();
+         config = TrafConfiguration.create();
          connection = ConnectionFactory.createConnection(config);
       }
       config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
@@ -890,7 +890,7 @@ public class HBaseTxClient {
       * Thread to gather recovery information for regions that need to be recovered 
       */
      private static class RecoveryThread extends Thread{
-             final int SLEEP_DELAY = 1000; // Initially set to run every 1sec
+             static final int SLEEP_DELAY = 1000; // Initially set to run every 1sec
              private int sleepTimeInt = 0;
              private boolean skipSleep = false;
              private TmAuditTlog audit;
@@ -905,6 +905,16 @@ public class HBaseTxClient {
              private boolean forceForgotten;
              private boolean useTlog;
              HBaseTxClient hbtx;
+             private static int envSleepTimeInt;
+
+         static {
+            String sleepTime = System.getenv("TMRECOV_SLEEP");
+            if (sleepTime != null) 
+               envSleepTimeInt = Integer.parseInt(sleepTime);
+            else
+               envSleepTimeInt = SLEEP_DELAY;
+            LOG.info("Recovery thread sleep set to: " + envSleepTimeInt + " ms");
+         }
 
          public RecoveryThread(TmAuditTlog audit,
                                HBaseTmZK zookeeper,
@@ -934,13 +944,7 @@ public class HBaseTxClient {
                           this.txnManager = txnManager;
                           this.inDoubtList = new HashSet<Long> ();
                           this.tmID = zookeeper.getTMID();
-
-                          String sleepTime = System.getenv("TMRECOV_SLEEP");
-                          if (sleepTime != null) {
-                                this.sleepTimeInt = Integer.parseInt(sleepTime);
-                                if(LOG.isDebugEnabled()) LOG.debug("Recovery thread sleep set to: " +
-                                                                   this.sleepTimeInt + "ms");
-                          }
+                          this.sleepTimeInt = envSleepTimeInt;
              }
 
              public void stopThread() {
@@ -962,12 +966,6 @@ public class HBaseTxClient {
                  } catch (DeserializationException de) {
                     throw new IOException(de);
                  }
-                 ByteArrayInputStream lv_bis = new ByteArrayInputStream(regionInfo);
-                 DataInputStream lv_dis = new DataInputStream(lv_bis);
-                 regionInfoLoc.readFields(lv_dis);
-                 
-                 //HBase98 TODO: need to set the value of startcode correctly
-                 //HBase98 TODO: Not in CDH 5.1:  ServerName lv_servername = ServerName.valueOf(hostname, port, 0);
 
                  String lv_hostname_port_string = hostname + ":" + port;
                  String lv_servername_string = ServerName.getServerName(lv_hostname_port_string, 0);
@@ -1040,34 +1038,23 @@ public class HBaseTxClient {
                                 }
                                 try {
                                     TxRecoverList = txnManager.recoveryRequest(hostnamePort, regionBytes, tmID);
-                                }catch (NotServingRegionException e) {
-                                   TxRecoverList = null;
-                                   LOG.error("TRAF RCOV THREAD:NotServingRegionException calling recoveryRequest. regionBytes: " + new String(regionBytes) +
-                                             " TM: " + tmID + " hostnamePort: " + hostnamePort, e);
+                                }
+                                catch (IOException e) {
+                                   // For all cases of Exception, we rely on the region to redrive the request.
+                                   // Likely there is nothing to recover, due to a stale region entry, but it is always safe to redrive.
+                                   // We log a warning event and delete the ZKNode entry.
+                                   LOG.warn("TRAF RCOV THREAD:Exception calling txnManager.recoveryRequest. " + "TM: " +
+                                              tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. \n exception: ", e);
+                                   zookeeper.deleteRegionEntry(regionEntry);
 
-                                      // First delete the zookeeper entry
-                                      LOG.error("TRAF RCOV THREAD:recoveryRequest. Deleting region entry Entry: " + regionEntry);
-                                      zookeeper.deleteRegionEntry(regionEntry);
-                                      // Create a local HTable object using the regionInfo
-                                      HTable table = new HTable(config, HRegionInfo.parseFrom(regionBytes).getTable().getNameAsString());
-                                      // Repost a zookeeper entry for all current regions in the table
-                                      zookeeper.postAllRegionEntries(table);
-                                }// NotServingRegionException
-                                catch (TableNotFoundException tnfe) {
-                                   // In this case there is nothing to recover.  We just need to delete the region entry.
-                                      // First delete the zookeeper entry
-                                      LOG.warn("TRAF RCOV THREAD:TableNotFoundException calling txnManager.recoveryRequest. " + "TM: " +
-                                              tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. \n exception: " + tnfe);
-                                      zookeeper.deleteRegionEntry(regionEntry);
-
-                                }// TableNotFoundException
-                                catch (DeserializationException de) {
-                                   // We are unable to parse the region info from ZooKeeper  We just need to delete the region entry.
-                                      // First delete the zookeeper entry
-                                      LOG.warn("TRAF RCOV THREAD:DeserializationException calling txnManager.recoveryRequest. " + "TM: " +
-                                              tmID + " regionBytes: [" + regionBytes + "].  Deleting zookeeper region entry. \n exception: " + de);
-                                      zookeeper.deleteRegionEntry(regionEntry);
-                                }// DeserializationException
+                                   // In the case of NotServingRegionException we will repost the ZKNode after refreshing the table.
+                                   if ((e instanceof NotServingRegionException) || (e.getCause() instanceof NotServingRegionException)){
+                                       // Create a local HTable object using the regionInfo
+                                       HTable table = new HTable(config, HRegionInfo.parseFrom(regionBytes).getTable().getNameAsString());
+                                       // Repost a zookeeper entry for all current regions in the table
+                                       zookeeper.postAllRegionEntries(table);
+                                   }
+                                } // IOException
 
                                 if (TxRecoverList != null) {
                                     if (LOG.isDebugEnabled()) LOG.trace("TRAF RCOV THREAD:size of TxRecoverList " + TxRecoverList.size());
@@ -1110,7 +1097,7 @@ public class HBaseTxClient {
                                                     " and tolerating UnknownTransactionExceptions");
                                         txnManager.doCommit(ts, true /*ignore UnknownTransactionException*/);
                                         if(useTlog && useForgotten) {
-                                            long nextAsn = tLog.getNextAuditSeqNum((int)(txID >> 32));
+                                            long nextAsn = tLog.getNextAuditSeqNum((int)TransactionState.getNodeId(txID));
                                             tLog.putSingleRecord(txID, ts.getCommitId(), "FORGOTTEN", null, forceForgotten, nextAsn);
                                         }
                                     } else if (ts.getStatus().equals(TransState.STATE_ABORTED.toString())) {
@@ -1150,11 +1137,8 @@ public class HBaseTxClient {
                         }
                         try {
                             if(continueThread) {
-                                if(!skipSleep) {
-                                    if (sleepTimeInt > 0)
-                                        Thread.sleep(sleepTimeInt);
-                                    else
-                                        Thread.sleep(SLEEP_DELAY);
+                                if (!skipSleep) {
+                                   Thread.sleep(sleepTimeInt);
                                 }
                             }
                             retryCount = 0;

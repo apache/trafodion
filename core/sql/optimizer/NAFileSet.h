@@ -60,7 +60,6 @@ class HbaseCreateOption;
 // -----------------------------------------------------------------------
 // An enumerated type that describes how data is organized in EVERY
 // file that belongs to this file set.
-// An entry sequenced file is analogous to a FIFO list of records.
 // A key sequenced file is implemented by a B+ tree.
 // A hash file contains records whose key columns compute to the 
 // same hash value when the hash function that is used for 
@@ -68,7 +67,6 @@ class HbaseCreateOption;
 // -----------------------------------------------------------------------
 enum FileOrganizationEnum 
 {
-  ENTRY_SEQUENCED_FILE,
   KEY_SEQUENCED_FILE,
   HASH_FILE
 };
@@ -203,8 +201,6 @@ public:
   // ---------------------------------------------------------------------
   NABoolean isKeySequenced() const  
                      { return (fileOrganization_ == KEY_SEQUENCED_FILE); }
-  NABoolean isEntrySequenced() const  
-                   { return (fileOrganization_ == ENTRY_SEQUENCED_FILE); }
   NABoolean isHashed() const      
                               { return (fileOrganization_ == HASH_FILE); }
   NABoolean isSyskeyLeading() const;

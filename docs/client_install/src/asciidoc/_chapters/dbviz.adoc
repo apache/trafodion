@@ -1,4 +1,4 @@
-////
+﻿////
 /**
  *@@@ START COPYRIGHT @@@
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,64 +20,91 @@
  */
 ////
 
-= Configure DbVisualizer
+= Configure DBVisualizer
 
-== Prerequisite Software
+== Prerequisites
 
-Make sure that you have this software installed on your workstation:
+If you have not done so already, please ensure that you have <<java-setup, setup your Java environment>>,
+<<download-software, unpackaged the {project-name} client software>>, and <<jdbct4, installed the JDBC Type-4 Driver>>.
 
-* Java Runtime Environment (JRE) 1.7 or higher. See <<jdbct4-java-environment, Java Environment>> in the <<jdbct4, Install JDBC Type-4 Driver>> chapter above.
-+
-In addition, see DbVisualizer’s FAQ “How to” page:
-http://confluence.dbvis.com/pages/viewpage.action?pageId=3146120[_How do I change the Java version that DbVisualizer uses?_]
-* {project-name} JDBC Type-4 Driver. See <<jdbct4,Install JDBC Type-4 Driver>> above.
-* DbVisualizer 9.x.x. See the http://www.dbvis.com/[_DbVisualizer website_].
+You also need DBVisualizer 9.x.x. See the http://www.dbvis.com/[_DbVisualizer website_].
+In addition, see DBVisualizer’s FAQ “How to” page:
+http://confluence.dbvis.com/pages/viewpage.action?pageId=3146120[_How do I change the Java version that DBVisualizer uses?_]
+
+The examples in this chapter assumes that you have unpackaged the trafci installation file 
+to `c:\trafodion\trafci` (Windows) or `$HOME/trafodion/trafci` (Linux).
 
 == Configuration Instructions
 
+=== Register JDBC Type-4 Driver
+
+. Select *Tools>Driver Manager*.
+. Click on the green plus sign to add a new driver. 
++
+image:{images}/DbVisualizer_Driver_Manager.jpg[height=500,width=500,alt="DBVizualizer Add New Driver"]
++
+* Use the Open File icon and locate the {project-name} JDBC Type-4 Driver.
+`c:\trafodion\jdbct4\lib\jdbcT4.jar` (Windows) or `$HOME/trafodion/jdbct4/lib/jdbcT4.jar` (Linux).
+* Use the JDBC URL format (literary, do not replace the placeholders):
++
+```
+jdbc:t4jdbc://<host-name or ip-address>:23400/:
+```
+
+. Close the dialog box to save the settings.
+
+=== Create Database Connection
+
+. Select *Database>Create Database Connection*.
+. Click on the *Driver (JDBC)* field. This presents you with a drop-down list of drivers.
+. Select the driver you created in the step above. (`Trafodion`)
+. Right-click the *Database URL* field. Select the URL format that pops up.
++
+The field should be populated with: `jdbc:t4jdbc://<host-name or ip-address>:23400/:`
+
+. Edit (double-click the field) the database URL to match your target host name and port number.
++
+*Example*
++
+```
+jdbc:t4jdbc://node01.host.com:23400/:
+```
+. Add your *Database Userid*.
+. Add your *Database Password*.
++
+image:{images}/Database_Connection_in_DbVisualizer.jpg[height=500,width=500,alt="DBVizualizer Make Connection"]
+
+<<<
 === Disable Connection Validation Select Option
 
-==== DbVisualizer 9.1 (or an earlier version)
-Edit the `_DbVisualizer-Install-Dir_\resources\dbvis-custom.prefs` file and
+==== DBVisualizer 9.2 (or a later version)
+
+Set the *Physical Connection* property to keep your connections alive. Follow these steps:
+
+. Open the database connection you created earlier if it's not open.
+. Select the *Properties* tab.
+. In the left navigation tree, expand the *Generic* connection properties, and select *Physical Connection*.
+. Under *Validation SQL*, enter `values(current_timestamp)` and click *Apply*.
++
+image:{images}/Physical_Connection.jpg[height=500,width=500,alt="DBVisualizer Physical Connection"]
+
+==== DBVisualizer 9.1 (or an earlier version)
+Edit the `_DBVisualizer-Install-Dir_\resources\dbvis-custom.prefs` file and
 disable the `ConnectionValidationSelect` option as shown below:
 
 ```
 dbvis.generic.-ConnectionValidationSelect=disabled
 ```
 
-==== DbVisualizer 9.2 (or a later version)
-Set the *Physical Connection* property to keep your connections alive. Follow these steps:
-
-1.  Double-click the database connection, select the *Properties* tab.
-2.  In the left navigation tree, expand the *Generic* connection properties, and select *Physical Connection*.
-3.  Under *Validation SQL*, enter `values(current_timestamp)` and click *Apply*.
-+
-<<<
-image:{images}/Physical_Connection.jpg[width=600,height=600,alt="DbVisualizer Physical Connection"]
-
-<<<
-=== Register JDBC Type-4 Driver
-
-Use the DbVisualizer Driver Manager and register the {project-name} JDBC Type-4 Driver.
-
-image:{images}/DbVisualizer_Driver_Manager.jpg[image]
-
-* Use the Open File icon and locate the {project-name} JDBC Type-4 Driver.
-* Use the JDBC URL format:
-+
-```
-jdbc:t4jdbc://<host-name or ip-address>:23400/:
-```
-+
-*NOTE*: This example uses a modified port number (*37800*) rather than the default port number (*23400*).
-
-<<<
 === Connect to {project-name}
 
-Create a new connection by selecting the {project-name} JDBC Type-4 Driver and filling in the connection parameters. Edit the database URL to match
-your {project-name} system’s host name and port number; for example: `jdbc:t4jdbc://<host-name or ip-address>:37800/:` (default is: *23400*).
+. Right click on the database connection.
+. Select *Connect*.
 
-image:{images}/Database_Connection_in_DbVisualizer.jpg[image]
+Once connected:
 
-Once you have connected successfully, execute a query using SQL Commander to confirm the connection.
+. Select *SQL Commander>New SQL Commander*. (CTRL+T)
+. Browse the tree structure in the left pane under *Connections*.
+. Try a query.
+
 

@@ -60,12 +60,8 @@ SortUtilConfig::SortUtilConfig(CollHeap* heap)
  heapAddr_                   = heap;
  minMem_                     = 150000L;
  maxMem_                     = 10000000L; //arbitrarily chosen 10MB max memory
- scratchDiskListSpec_		 = NULL;   // Information about scratchvols to  include or exclude.
- numDisksSpec_				 = 0;
- scratchDiskListPref_		 = NULL;
- numDisksPref_				 = 0;
- scratchDiskListExcl_		 = NULL;
- numDisksExcl_				 = 0;
+ scratchDirListSpec_		 = NULL;   // Information about scratchvols to  include or exclude.
+ numDirsSpec_				 = 0;
  espInstance_				 = 0;
  numEsps_					 = 0;
  useBufferedWrites_ = TRUE;
@@ -93,6 +89,7 @@ SortUtilConfig::SortUtilConfig(CollHeap* heap)
  sortMemEstInMbPerCpu_ = 0;
  bmoMaxMemThresholdMB_ = 0;
  intermediateScratchCleanup_ = TRUE;
+ topNSort_ = FALSE;
  }
 
 SortUtilConfig::~SortUtilConfig(void)
@@ -228,48 +225,6 @@ NABoolean SortUtilConfig::setKeyInfo(ULng32 keysize)
   keySize_ = keysize;
   return SORT_SUCCESS;
 }
-
-
-
-//----------------------------------------------------------------------
-// Name         : setTemps
-// 
-// Parameters   : ...
-//
-// Description  : 
-//
-// Return Value :
-//   SORT_SUCCESS if everything goes on well.
-//   SORT_FAILURE if any error encounterd. 
-//
-//----------------------------------------------------------------------
-NABoolean SortUtilConfig::setTemps(ULng32 runsize=100L,
-                                   ULng32 mergeorder=10L)
-{
-  runSize_    = runsize;
-  mergeOrder_ = mergeorder;
- 
-  return SORT_SUCCESS;
-}
-
-
-//----------------------------------------------------------------------
-// Name         : getTemps
-// 
-// Parameters   : ...
-//
-// Description  : 
-//
-// Return Value :
-//   SORT_SUCCESS if everything goes on well.
-//   SORT_FAILURE if any error encounterd. 
-//
-//----------------------------------------------------------------------
-NABoolean SortUtilConfig::getTemps() const
-{
- return SORT_SUCCESS;
-}
-
 
 void SortUtilConfig::setUseBuffered(NABoolean torf)
 {

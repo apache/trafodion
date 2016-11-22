@@ -733,7 +733,7 @@ CmpStoredProc::ExecStatus CmpStoredProc::close(CmpSPDataObject&)
 // Methods of CmpISPFuncs
 // -----------------------------------------------------------------------
 
-NAList<CmpISPFuncs::ProcFuncsStruct> CmpISPFuncs::procFuncsArray_(256);
+NAList<CmpISPFuncs::ProcFuncsStruct> CmpISPFuncs::procFuncsArray_(NULL,256);
 
 CmpISPFuncs::CmpISPFuncs()
 {

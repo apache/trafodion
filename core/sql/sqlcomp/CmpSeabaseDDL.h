@@ -160,6 +160,7 @@ class CmpSeabaseDDL
   static NABoolean isHbase(const NAString &catName);
 
   static bool isHistogramTable(const NAString &tabName);
+  static bool isSampleTable(const NAString &tabName);
   static NABoolean isLOBDependentNameMatch(const NAString &name);
   static NABoolean isSeabaseMD(const NAString &catName,
 			       const NAString &schName,
@@ -196,6 +197,8 @@ class CmpSeabaseDDL
     NAString &tableNotCreated);
 
   static std::vector<std::string> getHistogramTables();
+
+  static short invalidateStats(Int64 tableUID);
 
   NABoolean isAuthorizationEnabled();
 
@@ -833,6 +836,10 @@ protected:
   short buildViewColInfo(StmtDDLCreateView * createViewParseNode,
 			 ElemDDLColDefArray * colDefArray);
   
+  short buildViewTblColUsage(const StmtDDLCreateView * createViewParseNode,
+                             const ComTdbVirtTableColumnInfo * colInfoArray,
+                             const Int64 viewObjUID, NAString &viewColUsageText);
+
   short buildColInfoArray(ElemDDLParamDefArray *paramArray,
                           ComTdbVirtTableColumnInfo * colInfoArray);
   
@@ -855,6 +862,7 @@ protected:
   short gatherViewPrivileges (const StmtDDLCreateView * createViewParseNode,
                               ExeCliInterface * cliInterface,
                               NABoolean viewCreator,
+                              Int32 userID,
                               PrivMgrBitmap &privilegesBitmap,
                               PrivMgrBitmap &grantableBitmap);
 
@@ -1016,11 +1024,13 @@ protected:
 
   // makes a copy of traf metadata and underlying hbase table
   short cloneSeabaseTable(
-       CorrName &cn,
+       const NAString &srcTableNameStr,
+       Int64 srcObjUID,
+       const NAString &clonedTableNameStr,
        const NATable * naTable,
-       const NAString &clonedTabName,
-       ExpHbaseInterface * ehi = NULL,
-       ExeCliInterface * cilInterface = NULL);
+       ExpHbaseInterface * ehi,
+       ExeCliInterface * cilInterface,
+       NABoolean withCreate);
 
   short dropSeabaseTable2(
                           ExeCliInterface *cliInterface,
@@ -1333,6 +1343,8 @@ protected:
                   NABoolean inRecovery = FALSE);
   short alterRenameRepos(ExeCliInterface * cliInterface, NABoolean newToOld);
   short copyOldReposToNew(ExeCliInterface * cliInterface);
+  short dropAndLogReposViews(ExeCliInterface * cliInterface,
+                             NABoolean & someViewSaved /* out */);
 
 public:
 
@@ -1380,6 +1392,10 @@ protected:
 				       const NAString &schName, 
 				       const NAString &seqName);
     
+  ComTdbVirtTablePrivInfo * getSeabasePrivInfo
+    (const Int64 objUID,
+     const ComObjectType objType);
+
   Lng32 getSeabaseColumnInfo(ExeCliInterface *cliInterface,
                              Int64 objUID,
                              const NAString &catName,

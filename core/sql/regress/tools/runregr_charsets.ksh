@@ -493,9 +493,9 @@ for i in $prettyfiles; do
 
       if [ "$REGRCONCURRENT" -eq 1 ]; then
         echo "create schema ${TEST_SCHEMA}; set schema ${TEST_SCHEMA};" \
-          | cat $REGRTSTDIR/cidefs $sbdefsfile $defsfile - $testrun > $test.tmp
+          | cat $sbdefsfile $defsfile - $testrun > $test.tmp
       else
-        cat $REGRTSTDIR/cidefs $sbdefsfile $defsfile $testrun > $test.tmp
+        cat $sbdefsfile $defsfile $testrun > $test.tmp
       fi
 
       #Special case for test100 or test101

@@ -280,6 +280,13 @@ NAString Int64ToNAString(Int64 l)
   return NAString(resultstr);
 }
 
+NAString RealToNAString(double d)
+{
+  char resultstr[200];
+  sprintf(resultstr,"%G",d);
+  return NAString(resultstr);
+}
+
 NAString &replaceAll(NAString &source, const NAString &searchFor,
                      const NAString &replaceWith)
 {
@@ -375,17 +382,7 @@ NAString LookupDefineName(const NAString &ns, NABoolean iterate)
 // an ANSI, PotentialANSI, or Tandem reserved word.
 NABoolean IsSqlReservedWord(const char *sqlText)
 {
-
-  ComASSERT(sqlText != NULL);
-  UInt32 flags = 0;
-
-  if (Get_SqlParser_Flags(ALLOW_OLD_AND_NEW_KEYWORD))
-     flags |= ALLOWOLDNEW_;
-
-  if (Get_SqlParser_Flags(IN_MODE_SPECIAL_4))
-    flags |= MODE_SPECIAL_4_;
-
-  return ComResWords::isSqlReservedWord(sqlText,FALSE,flags);
+  return FALSE;
 }
 
 NABoolean IsCIdentifier(const char *id)
@@ -1153,6 +1150,7 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
 	"FIRSTDAYOFYEAR ",     // Tandem-extension
 	"FLOAT ",              // Datatype with scales/precisions/length
 	"FLOOR ",              // Tandem-extension
+        "GROUP_CONCAT",        // MySQL-extension
 	"HASHPARTFUNC ",       // Tandem-extension
 	"HOUR ",               // Datatype with scales/precisions/length
 	"JULIANTIMESTAMP ",    // Tandem-extension

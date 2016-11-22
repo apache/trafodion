@@ -78,13 +78,15 @@ public:
                        , short sqlcode
                        , const char *msg
                        , Int32 needCLIDiags
+                       , NABoolean inactivate=FALSE
                        )
     : retcode_(retcode),
       sqlcode_(sqlcode),
       string0_(msg),
       needCLIDiags_(needCLIDiags),
       string1_(NULL),
-      isFinalized_(FALSE)
+      isFinalized_(FALSE),
+      inactivated_(inactivate)
     {
       retcode_ = 0;
     }
@@ -108,6 +110,7 @@ public:
     {
       // Add error to diagnostic area if not EOF or float primary key (-1120).
       if ( !isFinalized_ &&
+           !inactivated_ &&
            retcode_ &&
            retcode_ != HS_EOF &&
            retcode_ != -HS_PKEY_FLOAT_ERROR &&
@@ -126,6 +129,16 @@ private:
   const char *string1_;    // optional string1.
   NABoolean isFinalized_;  // becomes true if error caught before object destroyed
                            //   (prevents action by dtor)
+  NABoolean inactivated_;  // Set to TRUE if we want to suppress the action
+                           // of finalize() in the destructor. We might do
+                           // this because this HSErrorCatcher was created
+                           // within the scope of another; if we don't suppress
+                           // we will report the same error twice. Another
+                           // reason for doing this is we might be in a retry
+                           // loop and don't want to report diagnostics for
+                           // failures we will retry. (In this latter case, 
+                           // there typically will be another HSErrorCatcher
+                           // above the retry loop.
 };
 
 // -----------------------------------------------------------------------
@@ -135,33 +148,32 @@ private:
 // Log the location of the error.
 void HSFuncLogError(Lng32 error, char *filename, Lng32 lineno);
 
-// Wrapper to handle assertion failure.
+// Wrapper to handle assertion failure. Do not assert a condition with any
+// side effects, as it is evaluated a second time if false.
 #define HS_ASSERT(b)                                        \
+      {                                                     \
         if (NOT (b))                                        \
           {                                                 \
-            HSTranMan *TM = HSTranMan::Instance();          \
-            HSLogMan *LM = HSLogMan::Instance();            \
-            if (LM->LogNeeded())                            \
-              {                                             \
-                sprintf(LM->msg, "***[ERROR] INTERNAL ASSERTION (%s) AT %s:%i", "" # b "", __FILE__, __LINE__); \
-                LM->Log(LM->msg);                           \
-              }                                             \
-            if (TM->StartedTransaction())                   \
-              TM->Rollback();                               \
+            GetHSContext()->preAssertionFailure("" # b "", __FILE__, __LINE__); \
             CMPASSERT(b);                                   \
-          }
+          }                                                 \
+      }
  
 //Ignore the following WARNINGS
 //    [6008] missing single-column histograms
 //    [6007] missing multi-column histograms
 //    [4030] non-standard DATETIME format
+//    [2053] Optimizer pass two assertion failure (optimizer still attempts to produce a plan)
 //    [4]    internal Warning
 #define HSFilterWarning(retcode) \
+        { \
           if ((retcode == 6008) || \
               (retcode == 6007) || \
               (retcode == 4030) || \
+              (retcode == 2053) || \
               (retcode == HS_WARNING)) \
-            retcode = 0;
+            retcode = 0; \
+        }
 
 // Map any error (<0) code other than HS_PKEY_FLOAT_ERROR to -1.
 #define  HSFilterError(retcode) \

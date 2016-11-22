@@ -141,21 +141,32 @@ export MY_SQROOT=$PWD
 export SQ_HOME=$PWD
 
 # set common version to be consistent between shared lib and maven dependencies
-export HBASE_DEP_VER_CDH=1.0.0-cdh5.5.1
-export HIVE_DEP_VER_CDH=1.1.0-cdh5.5.1
-export HBASE_TRX_ID_CDH=hbase-trx-cdh5_5
-if [[ "$HBASE_DISTRO" = "CDH5.4" ]]; then
+export HBASE_DEP_VER_CDH=1.2.0-cdh5.7.1
+export HIVE_DEP_VER_CDH=1.1.0-cdh5.7.1
+export HBASE_TRX_ID_CDH=hbase-trx-cdh5_7
+
+if [[ "$HBASE_DISTRO" == "CDH5.5" ]]; then
+   export HBASE_DEP_VER_CDH=1.0.0-cdh5.5.1
+   export HIVE_DEP_VER_CDH=1.1.0-cdh5.5.1
+   export HBASE_TRX_ID_CDH=hbase-trx-cdh5_5
+fi
+if [[ "$HBASE_DISTRO" == "CDH5.4" ]]; then
    export HBASE_DEP_VER_CDH=1.0.0-cdh5.4.4
    export HIVE_DEP_VER_CDH=1.1.0-cdh5.4.4
    export HBASE_TRX_ID_CDH=hbase-trx-cdh5_4
 fi
 
-export HBASE_DEP_VER_APACHE=1.1.2
+export HBASE_DEP_VER_APACHE=1.2.0
 export HIVE_DEP_VER_APACHE=1.1.0
-export HBVER=apache1_1_2
-if [[ "$HBASE_DISTRO" = "APACHE1.0" ]]; then
+export HBVER=apache1_2
+
+if [[ "$HBASE_DISTRO" == "APACHE1.1" ]]; then
+   export HBASE_DEP_VER_APACHE=1.1.2
+   export HBVER=apache1_1
+fi
+if [[ "$HBASE_DISTRO" == "APACHE1.0" ]]; then
    export HBASE_DEP_VER_APACHE=1.0.2
-   export HBVER=apache1_0_2
+   export HBVER=apache1_0
 fi
 export HBASE_TRX_ID_APACHE=hbase-trx-${HBVER}
 
@@ -172,22 +183,22 @@ export HADOOP_BLD_INC=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/include
 # general Hadoop & TRX dependencies - not distro specific, choose one to build against
 export HBASE_TRXDIR=$MY_SQROOT/export/lib
 export HBASE_TRX_JAR=${HBASE_TRX_ID_CDH}-${TRAFODION_VER}.jar
-export DTM_COMMON_JAR=trafodion-dtm-${TRAFODION_VER}.jar
-export SQL_JAR=trafodion-sql-${TRAFODION_VER}.jar
+export DTM_COMMON_JAR=trafodion-dtm-cdh-${TRAFODION_VER}.jar
+export SQL_JAR=trafodion-sql-cdh-${TRAFODION_VER}.jar
 export UTIL_JAR=trafodion-utility-${TRAFODION_VER}.jar
 export JDBCT4_JAR=jdbcT4-${TRAFODION_VER}.jar
 
 
-if [[ "$HBASE_DISTRO" = "HDP" ]]; then
+if [[ "$HBASE_DISTRO" == "HDP" ]]; then
     export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
     HBVER="hdp2_3"
-    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
-    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+    export DTM_COMMON_JAR=trafodion-dtm-hdp-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-hdp-${TRAFODION_VER}.jar
 fi
 if [[ "$HBASE_DISTRO" =~ "APACHE" ]]; then
     export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
-    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
-    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+    export DTM_COMMON_JAR=trafodion-dtm-apache-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-apache-${TRAFODION_VER}.jar
 fi
 
 # check for workstation env
@@ -322,7 +333,7 @@ elif [[ -d /opt/cloudera/parcels/CDH ]]; then
   export CURL_INC_DIR=/usr/include
   export CURL_LIB_DIR=/usr/lib64
 
-  lv_hbase_cp=`hbase classpath`
+  lv_hbase_cp=`/opt/cloudera/parcels/CDH/bin/hbase classpath`
 
   # directories with jar files and list of jar files
   # (could try to reduce the number of jars in the classpath)
@@ -391,15 +402,16 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
 
   # directories with jar files and list of jar files
   export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
-                          /usr/hdp/current/hadoop-client/lib"
+                          /usr/hdp/current/hadoop-client/lib
+                          /usr/hdp/current/hadoop-yarn-client"
   export HADOOP_JAR_FILES="/usr/hdp/current/hadoop-client/client/hadoop-hdfs-*.jar"
   export HIVE_JAR_DIRS="/usr/hdp/current/hive-client/lib"
   export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
   export HBASE_TRX_JAR=${HBASE_TRX_ID_HDP}-${TRAFODION_VER}.jar
   HBVER="hdp2_3"
-  export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
-  export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+  export DTM_COMMON_JAR=trafodion-dtm-hdp-${TRAFODION_VER}.jar
+  export SQL_JAR=trafodion-sql-hdp-${TRAFODION_VER}.jar
   
   # Configuration directories
 
@@ -574,8 +586,8 @@ EOF
 
     # end of code for Apache Hadoop/HBase installation w/o distro
     export HBASE_TRX_JAR=${HBASE_TRX_ID_APACHE}-${TRAFODION_VER}.jar
-    export DTM_COMMON_JAR=trafodion-dtm-${HBVER}-${TRAFODION_VER}.jar
-    export SQL_JAR=trafodion-sql-${HBVER}-${TRAFODION_VER}.jar
+    export DTM_COMMON_JAR=trafodion-dtm-apache-${TRAFODION_VER}.jar
+    export SQL_JAR=trafodion-sql-apache-${TRAFODION_VER}.jar
   else
     # print usage information, not enough information about Hadoop/HBase
     if [[ -z $HADOOP_TYPE ]]; then
@@ -664,14 +676,27 @@ export SQ_MON_ALTLOG=0
 # Monitor sync thread responsiveness timeout
 # default 15 mins
 export SQ_MON_SYNC_TIMEOUT=900
+
 export SQ_MON_KEEPALIVE=1
 export SQ_MON_KEEPIDLE=60
 export SQ_MON_KEEPINTVL=6
 export SQ_MON_KEEPCNT=5
 
-# The wait timeout is in seconds
-export SQ_MON_EPOLL_WAIT_TIMEOUT=12
-export SQ_MON_EPOLL_RETRY_COUNT=15
+# Monitor sync thread epoll wait timeout is in seconds
+# Currently set to 64 seconds (4 second timeout, 16 retries)
+export SQ_MON_EPOLL_WAIT_TIMEOUT=4
+# Note: the retry count is ignored when SQ_MON_ZCLIENT_ENABLED=1 (the default)
+export SQ_MON_EPOLL_RETRY_COUNT=16
+
+# Monitor Zookeeper client
+#  - A zero value disables the zclient logic in the monitor process.
+#    It is enabled by default in a real cluster, disabled otherwise.
+#      (must be disabled to debug monitor processes in a real cluster)
+#export SQ_MON_ZCLIENT_ENABLED=0
+#  - Session timeout in seconds defines when Zookeeper quorum determines a
+#    non-responsive monitor zclient which results in a Trafodion node down. 
+#    Default is 60 seconds (1 minute) which is the maximum Zookeeper allows.
+#export SQ_MON_ZCLIENT_SESSION_TIMEOUT=60
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1

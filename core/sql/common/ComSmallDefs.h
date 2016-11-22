@@ -94,8 +94,10 @@ typedef NABoolean               ComBoolean;
 #define SMD_LOCATION  "$SYSTEM"
 #define SMD_VERSION   "1000"
 
-//#define COM_SESSION_ID_PREFIX      "MXID_"
 #define COM_VOLATILE_SCHEMA_PREFIX "VOLATILE_SCHEMA_"
+
+// prefix of temp tables for common subexpressions
+#define COM_CSE_TABLE_PREFIX "CSE_TEMP_"
 
 // 'reserved' tables in public_access_schema for sql internal use
 #define COM_PUBLIC_ACCESS_SCHEMA "PUBLIC_ACCESS_SCHEMA"
@@ -104,18 +106,22 @@ typedef NABoolean               ComBoolean;
 #define HIVE_SYSTEM_SCHEMA           "HIVE"
 #define HIVE_STATS_CATALOG           "TRAFODION"
 #define HIVE_STATS_SCHEMA            "\"_HIVESTATS_\""
+#define HIVE_STATS_SCHEMA_NO_QUOTES  "_HIVESTATS_"
 #define HIVE_EXT_SCHEMA_PREFIX       "_HV_"
 
 #define HBASE_SYSTEM_CATALOG          "HBASE"
 #define HBASE_SYSTEM_SCHEMA           "HBASE"
 #define HBASE_HIST_NAME               "SB_HISTOGRAMS"
 #define HBASE_HISTINT_NAME            "SB_HISTOGRAM_INTERVALS"
+#define HBASE_PERS_SAMP_NAME          "SB_PERSISTENT_SAMPLES"
 #define HBASE_HIST_PK                    "SB_HISTOGRAMS_PK"
 #define HBASE_HISTINT_PK               "SB_HISTOGRAM_INTERVALS_PK"
+#define HBASE_PERS_SAMP_PK            "SB_PERSISTENT_SAMPLES_PK"
 #define HBASE_EXT_SCHEMA_PREFIX       "_HB_"
 
 #define HBASE_STATS_CATALOG          "TRAFODION"
 #define HBASE_STATS_SCHEMA           "\"_HBASESTATS_\""
+#define HBASE_STATS_SCHEMA_NO_QUOTES "_HBASESTATS_"
 
 // default null format for data in hive files.
 #define HIVE_DEFAULT_NULL_STRING             "\\N"
@@ -125,6 +131,7 @@ typedef NABoolean               ComBoolean;
 #define SEABASE_OLD_PRIVMGR_SCHEMA         "PRIVMGR_MD"
 #define SEABASE_PRIVMGR_SCHEMA         "_PRIVMGR_MD_"
 #define SEABASE_UDF_SCHEMA             "_UDF_"
+#define TRAF_SAMPLE_PREFIX             "TRAF_SAMPLE_"  // prefix for a sample table used by update stats
 #define LOB_MD_PREFIX                  "LOBMD_"
 #define LOB_DESC_CHUNK_PREFIX          "LOBDescChunks_"
 #define LOB_DESC_HANDLE_PREFIX         "LOBDescHandle_"
@@ -642,7 +649,8 @@ enum ComTextType {COM_VIEW_TEXT = 0,
                   COM_COMPUTED_COL_TEXT = 4,
                   COM_HBASE_COL_FAMILY_TEXT = 5,
                   COM_HBASE_SPLIT_TEXT = 6,
-                  COM_STORED_DESC_TEXT = 7
+                  COM_STORED_DESC_TEXT = 7,
+                  COM_VIEW_REF_COLS_TEXT = 8
 };
 
 enum ComColumnDirection { COM_UNKNOWN_DIRECTION
@@ -1261,6 +1269,7 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
                      , COM_QI_SCHEMA_EXECUTE
                      , COM_QI_USER_GRANT_SPECIAL_ROLE
                      , COM_QI_OBJECT_REDEF
+                     , COM_QI_STATS_UPDATED
                      } ;
 
 #define COM_QI_INVALID_ACTIONTYPE_LIT  "  "
@@ -1282,6 +1291,7 @@ enum ComQIActionType { COM_QI_INVALID_ACTIONTYPE = 0
 #define COM_QI_SCHEMA_EXECUTE_LIT      "SE"
 #define COM_QI_USER_GRANT_SPECIAL_ROLE_LIT     "UZ"
 #define COM_QI_OBJECT_REDEF_LIT        "OR"
+#define COM_QI_STATS_UPDATED_LIT       "US"
 
 
 

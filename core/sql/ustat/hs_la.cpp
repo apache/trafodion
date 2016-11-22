@@ -291,6 +291,7 @@ Lng32 HSSqTableDef::DescribeColumnNames()
         HSHandleError(retcode_);
         colName[len] = '\0';
         *colInfo_[i].colname = &*colName;
+        *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
                                                   /*== GET COLUMN DATATYPE ==*/
         retcode_ = SQL_EXEC_GetDescItem(outputDesc, entry,
                                         SQLDESC_TYPE_FS,
@@ -952,6 +953,18 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
   return TRUE;
 }
 
+NAString HSHiveTableDef::getNodeName() const
+  {
+    HS_ASSERT(FALSE);  // MP only
+    return "";
+  }
+
+NAString HSHiveTableDef::getCatalogLoc(formatType format) const
+  {
+    HS_ASSERT(FALSE);  // MP only
+    return "";
+  }
+
 NAString HSHiveTableDef::getHistLoc(formatType format) const
 {
   return HIVE_STATS_CATALOG "." HIVE_STATS_SCHEMA;
@@ -998,6 +1011,7 @@ Lng32 HSHiveTableDef::DescribeColumnNames()
     {
       *(colInfo_[i].colname) = hiveColDesc->name_;
       colInfo_[i].colname->toUpper();
+      *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
 
       NAType* natype = getSQColTypeForHive(hiveColDesc->type_, STMTHEAP);
       colInfo_[i].datatype = natype->getFSDatatype();
@@ -1020,6 +1034,18 @@ Lng32 HSHiveTableDef::DescribeColumnNames()
 
 //=====================================================
 //
+NAString HSHbaseTableDef::getNodeName() const
+  {
+    HS_ASSERT(FALSE);  // MP only
+    return "";
+  }
+
+NAString HSHbaseTableDef::getCatalogLoc(formatType format) const
+  {
+    HS_ASSERT(FALSE);  // MP only
+    return "";
+  }
+
 NAString HSHbaseTableDef::getHistLoc(formatType format) const
 {
   if ( HSGlobalsClass::isNativeHbaseCat(getCatName(format))) {
@@ -1214,6 +1240,7 @@ Lng32 HSHbaseTableDef::DescribeColumnNames()
     {
       colInfo_[i].colnum = i;  // position of col in table
       *(colInfo_[i].colname) = colArr[i]->getColName();
+      *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
       natype = colArr[i]->getType();
       colInfo_[i].datatype = natype->getFSDatatype();
       colInfo_[i].nullflag = natype->supportsSQLnullLogical();
