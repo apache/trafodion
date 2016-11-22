@@ -686,6 +686,36 @@ short ExHbaseAccessTcb::moveRowToUpQueue(const char * row, Lng32 len,
   return 0;
 }
 
+short ExHbaseAccessTcb::setupError(NAHeap *heap, ex_queue_pair &qparent, Lng32 retcode, const char * str, const char * str2)
+{
+  ContextCli *currContext = GetCliGlobals()->currContext();
+  // Make sure retcode is positive.
+  if (retcode < 0)
+    retcode = -retcode;
+    
+  if ((ABS(retcode) >= HBASE_MIN_ERROR_NUM) &&
+      (ABS(retcode) <= HBASE_MAX_ERROR_NUM))
+    {
+      ex_queue_entry *pentry_down = qparent.down->getHeadEntry();
+ 
+      Lng32 cliError = 0;
+      
+      Lng32 intParam1 = -retcode;
+      ComDiagsArea * diagsArea = NULL;
+      ExRaiseSqlError(heap, &diagsArea, 
+		      (ExeErrorCode)(8448), NULL, &intParam1, 
+		      &cliError, NULL, 
+		      (str ? (char*)str : (char*)" "),
+		      getHbaseErrStr(retcode),
+                      (str2 ? (char*)str2 : 
+                      (char *)currContext->getJniErrorStr().data())); 
+      pentry_down->setDiagsArea(diagsArea);
+      return -1;
+    }
+
+  return 0;
+}
+
 short ExHbaseAccessTcb::setupError(Lng32 retcode, const char * str, const char * str2)
 {
   ContextCli *currContext = GetCliGlobals()->currContext();
