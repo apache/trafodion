@@ -1,0 +1,86 @@
+<!-- @@@ START COPYRIGHT @@@ (C) Copyright 2015 Esgyn Corporation @@@ END 
+	COPYRIGHT @@@ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.trafodion</groupId>
+	<artifactId>trafciInstaller</artifactId>
+	<packaging>jar</packaging>
+	<version>2.2.0</version>
+	<name>Trafodion Trafci</name>
+	<properties>
+		<basedir>.</basedir>
+		<traf-jdbc-version>${env.TRAFODION_VER}</traf-jdbc-version>
+		<trafci-version>${env.TRAFODION_VER}</trafci-version>
+	</properties>
+	<build>
+		<finalName>trafciInstaller</finalName>
+		<sourceDirectory>install</sourceDirectory>
+		<resources>
+			<resource>
+				<directory>${basedir}/src/main/resources</directory>
+				<excludes>
+					<exclude>install_jar.xml</exclude>
+					<exclude>install_tar.xml</exclude>
+				</excludes>
+			</resource>
+		</resources>
+		<outputDirectory>target/installer-classes</outputDirectory>
+		<plugins>
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<configuration>
+							<target>
+								<copy file="${basedir}/utils/trafci.cmd-tmpl" tofile="${basedir}/utils/trafci.cmd"
+									overwrite="true"></copy>
+								<copy file="${basedir}/utils/trafci.sh-tmpl" tofile="${basedir}/utils/trafci.sh"
+									overwrite="true">
+								</copy>
+								<echo message="BUILD trafodion prod version ${env.TRAFODION_VER_PROD}" />
+								<replace file="${basedir}/utils/trafci.cmd" token="@prodver@"
+									value="${env.TRAFODION_VER_PROD}" />
+								<replace file="${basedir}/utils/trafci.cmd" token="@copyrighthdr@"
+									value="${env.PRODUCT_COPYRIGHT_HEADER}" />
+								<replace file="${basedir}/utils/trafci.sh" token="##prodver##"
+									value="${env.TRAFODION_VER_PROD}" />
+								<replace file="${basedir}/utils/trafci.sh" token="##copyrighthdr##"
+									value="${env.PRODUCT_COPYRIGHT_HEADER}" />
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<appendAssemblyId>false</appendAssemblyId>
+					<descriptors>
+						<descriptor>src/main/resources/install_jar.xml</descriptor>
+						<descriptor>src/main/resources/install_tar.xml</descriptor>
+					</descriptors>
+					<archive>
+						<manifest>
+							<mainClass>Installer</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

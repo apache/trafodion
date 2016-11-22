@@ -1,0 +1,49 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+	<id>install_jar</id>
+	<formats>
+		<format>jar</format>
+	</formats>
+	<includeBaseDirectory>false</includeBaseDirectory>
+	<fileSets>
+		<fileSet>
+			<directory>${basedir}/utils/</directory>
+			<includes>
+			<include>ciencr.sh</include>
+			<include>trafci</include>
+			<include>trafci-perl.pl</include>
+			<include>trafci.cmd</include>
+			<include>trafci.sh</include>
+			<include>trafci-python.py</include>
+			<include>trafci.pl</include>
+			<include>trafci.py</include>
+			</includes>
+			<outputDirectory>/bin</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/lib</directory>
+			<outputDirectory>/lib</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/samples</directory>
+			<outputDirectory>/samples</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/target/installer-classes</directory>
+			<outputDirectory>/</outputDirectory>
+		</fileSet>
+	</fileSets>
+	<!-- <files>
+		<file>
+			<source>${basedir}/utils/trafci.cmd</source>
+			<outputDirectory>/bin</outputDirectory>
+			<destName>trafci.cmd</destName>
+		</file>
+		<file>
+			<source>${basedir}/utils/trafci.sh</source>
+			<outputDirectory>/bin</outputDirectory>
+			<destName>trafci.sh</destName>
+		</file>
+	</files> -->
+</assembly>
