@@ -4859,7 +4859,7 @@ Specifies the  _auth-name_ to which you grant privileges.
 +
 Specifies the name of an authorization id to which you grant privileges. See <<authorization_ids,authorization ids>>. 
 The authorization id must be a registered database username, an existing role name, or public. the name is a regular 
-or delimited case-insensitive identifier. Dee <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
+or delimited case-insensitive identifier. See <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
 If you grant a privilege to public, the privilege remains available to all users, unless it is later revoked from public.
 
 * `WITH GRANT OPTION`
