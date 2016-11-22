@@ -3678,6 +3678,7 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   NAList<struct snapshotStruct *> * snapshotsList_;
   NABoolean emptyTarget_;
   NABoolean oneFile_;
+  ExpHbaseInterface * ehi_;
 };
 
 class ExExeUtilHbaseUnLoadPrivateState : public ex_tcb_private_state
