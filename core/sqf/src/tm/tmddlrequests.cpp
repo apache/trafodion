@@ -40,20 +40,15 @@ JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMIn
 
    char *la_err_str = 0;
    int la_err_len = 0;
-   char* str_key;
-   str_key = new char[pv_keyLength];
    char** la_keys;
-   la_keys = new char *[TM_MAX_DDLREQUEST_STRING];
    int lv_error = FEOK;
 
-   int lv_tblname_len = pp_env->GetArrayLength(pv_tblname);
-   if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING)
+   int lv_tbldesc_length = pp_env->GetArrayLength(pv_tableDescriptor);
+   if(lv_tbldesc_length > TM_MAX_DDLREQUEST_STRING)
    {
-     jstring lv_err_str = pp_env->NewStringUTF("Table name length is larger than max allowed");
+     jstring lv_err_str = pp_env->NewStringUTF("Table Desc length is larger than max allowed");
      return lv_err_str;
    }
-
-   int lv_tbldesc_length = pp_env->GetArrayLength(pv_tableDescriptor);
    jbyte *lp_tbldesc = pp_env->GetByteArrayElements(pv_tableDescriptor, 0);
    jbyte *lp_tblname = pp_env->GetByteArrayElements(pv_tblname, 0);
   
@@ -62,16 +57,14 @@ JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMIn
    // Keys for Salted Tables
    int lv_numSplits = (int) pv_numSplits;
    int lv_keyLength = (int) pv_keyLength;
-
+   la_keys = new char *[lv_numSplits];
+   
    for(int i=0; i<lv_numSplits; i++)
    {
      jbyteArray jba_keyarray = (jbyteArray)(pp_env->GetObjectArrayElement((jobjectArray)pv_keys, i));
      int lv_key_len = pp_env->GetArrayLength(jba_keyarray);
-     pp_env->GetByteArrayRegion(jba_keyarray, 0, lv_key_len, (jbyte*)str_key);
-
      la_keys[i] = new char[lv_key_len];
-     memcpy(la_keys[i], str_key, lv_key_len);
-
+     pp_env->GetByteArrayRegion(jba_keyarray, 0, lv_key_len, (jbyte*)la_keys[i]);
      pp_env->DeleteLocalRef(jba_keyarray);
    }
 
@@ -82,7 +75,6 @@ JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMIn
    pp_env->ReleaseByteArrayElements(pv_tableDescriptor, lp_tbldesc, 0);
    pp_env->ReleaseByteArrayElements(pv_tblname, lp_tblname, 0);
    
-   delete str_key;
    delete [] la_keys;
    if(lv_error)
    {
