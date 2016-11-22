@@ -115,6 +115,9 @@ get indexes in schema trafodion.zschema;
 get views in schema trafodion.zschema;
 
 ?section getStmts
+drop schema if exists zschema1 cascade;
+drop schema if exists zschema2 cascade;
+
 create schema trafodion.zschema1;
 create schema trafodion.zschema2;
 create table zschema1.t (a int);
@@ -123,8 +126,16 @@ create view zschema1.v as select zschema1.t.a a, zschema2.t.a b
    from zschema1.t, zschema2.t;
 create view zschema2.v as select zschema1.t.a a, zschema2.t.a b 
    from zschema1.t, zschema2.t;
+create view zschema2.v2 as select zschema1.v.a a, zschema2.t.a b 
+   from zschema1.v, zschema2.t;
 get tables in view zschema1.v;
 get views on table zschema1.t;
+
+get tables in view zschema2.v2;
+get all tables in view zschema2.v2;
+get views in view zschema2.v2;
+get all objects in view zschema2.v2;
+
 drop schema zschema1 cascade;
 drop schema zschema2 cascade;
 

@@ -1320,6 +1320,14 @@ TrafDesc *generateSpecialDesc(const CorrName& corrName)
           ExeUtilRegionStats eudss(TRUE);
           desc = eudss.createVirtualTableDesc();
         }
+      else if (HiveMDaccessFunc::isHiveMD(corrName.getQualifiedNameObj().getObjectName()))
+        {
+          NAString mdType = 
+            HiveMDaccessFunc::getMDType(corrName.getQualifiedNameObj().getObjectName());
+
+          HiveMDaccessFunc hivemd(&mdType);
+          desc = hivemd.createVirtualTableDesc();
+        }
     }
 
   return desc;
