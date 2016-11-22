@@ -26,7 +26,7 @@
 	<groupId>org.trafodion</groupId>
 	<artifactId>trafciInstaller</artifactId>
 	<packaging>jar</packaging>
-	<version>2.2.0</version>
+	<version>${env.TRAFODION_VER}</version>
 	<name>Trafodion Trafci</name>
 	<properties>
 		<basedir>.</basedir>
