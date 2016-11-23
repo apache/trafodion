@@ -33,5 +33,5 @@ Trafci_installer:
 	export buildId=`head -n 1 buildId`$
 	mvn -f installer_pom.xml -DbldId=${buildId} clean package$
 Trafci_deploy:
-	zip -r ../clients/trafci.zip target/trafciInstaller.jar utils/README
+	zip -r ../clients/trafci.zip -j target/trafciInstaller.jar utils/README
 	java -jar target/trafciInstaller.jar -silent -jdbcFile ${MY_SQROOT}/export/lib/jdbcT4.jar -installDir ${MY_SQROOT}
