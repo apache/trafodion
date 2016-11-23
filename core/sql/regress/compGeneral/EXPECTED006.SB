@@ -1789,9 +1789,10 @@ Lynn L500
 --- 1 row(s) selected.
 >>select sha2('the original data', 128) from dual;
 
-*** ERROR[8428] The argument to function SHA2 is not valid.
+*** ERROR[4045] The operand of function SHA2 must be numeric.
 
---- 0 row(s) selected.
+*** ERROR[8822] The statement was not prepared.
+
 >>select sha2('the original data', 224) from dual;
 
 (EXPR)

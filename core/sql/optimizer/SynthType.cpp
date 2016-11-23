@@ -1034,7 +1034,10 @@ const NAType *BuiltinFunction::synthesizeType()
       }
     break;
 
-    case ITM_SHA2:
+    case ITM_SHA2_256:
+    case ITM_SHA2_224:
+    case ITM_SHA2_384:
+    case ITM_SHA2_512:
       {
         ValueId vid1 = child(0)->getValueId();
         SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
@@ -1048,19 +1051,25 @@ const NAType *BuiltinFunction::synthesizeType()
           return NULL;
         }
 
-        // type cast any params
-        ValueId vid = child(0)->getValueId();
-        vid.coerceType(NA_NUMERIC_TYPE);
-        const NAType &typ2 = child(1)->getValueId().getType();
-
-        if (typ2.getTypeQualifier() != NA_NUMERIC_TYPE)
-        {
-          *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("SHA2");
-          return NULL;
+        Lng32 resultLen = 0;
+        switch (getOperatorType()) {
+        case ITM_SHA2_224:
+            resultLen = (224 * 2) / 8;
+            break;
+        case ITM_SHA2_256:
+            resultLen = (256 * 2) / 8;
+            break;
+        case ITM_SHA2_384:
+            resultLen = (384 * 2) / 8;
+            break;
+        case ITM_SHA2_512:
+            resultLen = (512 * 2) / 8;
+            break;
+        default:
+            break;
         }
-
         retType = new HEAP
-          SQLVarChar(1024, typ1.supportsSQLnull());
+          SQLChar(resultLen, typ1.supportsSQLnull());
       }
     break;
 

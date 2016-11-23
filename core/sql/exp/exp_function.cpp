@@ -251,8 +251,8 @@ ExFunctionSha::ExFunctionSha(OperatorTypeEnum oper_type,
 };
 
 ExFunctionSha2::ExFunctionSha2(OperatorTypeEnum oper_type,
-			       Attributes ** attr, Space * space)
-     : ex_function_clause(oper_type, 3, attr, space)
+			       Attributes ** attr, Space * space, Lng32 mode)
+     : ex_function_clause(oper_type, 2, attr, space), mode(mode)
 {
   
 };
@@ -7974,14 +7974,10 @@ ex_expr::exp_return_type ExFunctionSha2::eval(char * op_data[],
 
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
 
-  Lng32 hash_len= *(Lng32 *)op_data[2];
-
   // the length of result
   Lng32 rlen = SHA512_DIGEST_LENGTH;
 
-  str_pad(op_data[0], rlen, ' ');
-
-  switch (hash_len) {
+  switch (mode) {
     case 0:
     case 256:
       SHA256_CTX sha_ctx_256;
@@ -8037,6 +8033,7 @@ ex_expr::exp_return_type ExFunctionSha2::eval(char * op_data[],
       *(*diags) << DgString0("SHA2");
       return ex_expr::EXPR_ERROR;
   }
+  str_pad(op_data[0], rlen, ' ');
 
   char tmp[3];
   for(int i=0; i < rlen; i++ )
@@ -8045,8 +8042,7 @@ ex_expr::exp_return_type ExFunctionSha2::eval(char * op_data[],
     sprintf(tmp, "%.2x", (int)sha[i]);
     str_cpy_all(op_data[0]+i*2, tmp, 2);
   }
-   
-  getOperand(0)->setVarLength(rlen * 2, op_data[-MAX_OPERANDS]);
+
   return ex_expr::EXPR_OK;
 sha2_error:
   ExRaiseFunctionSqlError(heap, diags, EXE_INTERNAL_ERROR,

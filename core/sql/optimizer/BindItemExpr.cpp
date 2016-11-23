@@ -3169,6 +3169,10 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
     case ITM_SHA1:
     case ITM_SHA2:
     case ITM_SOUNDEX:
+    case ITM_SHA2_224:
+    case ITM_SHA2_256:
+    case ITM_SHA2_384:
+    case ITM_SHA2_512:
       {
          break;
       }
