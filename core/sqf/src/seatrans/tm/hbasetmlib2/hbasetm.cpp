@@ -863,9 +863,9 @@ int CHbaseTM::createTable(int64 pv_transid,
                     j_keys);
   if (getExceptionDetails(NULL)) {
      int errMsgLen = (int)_tlp_error_msg->length();
-	 errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen;
+	 errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen  : errstrlen -1;
 	 strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
-	 errstr[errstrlen -1] = '\0';
+	 errstr[errstrlen] = '\0';
 	 tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::createTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
      return RET_EXCEPTION;
   }
@@ -922,9 +922,9 @@ int CHbaseTM::alterTable(int64 pv_transid,
                     j_tblopts);
    if (getExceptionDetails(NULL)) {
       int errMsgLen = (int)_tlp_error_msg->length();
-      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen;
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen -1;
       strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
-      errstr[errstrlen -1] = '\0';
+      errstr[errstrlen] = '\0';
       tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::alterTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
       return RET_EXCEPTION;
    }
@@ -975,8 +975,9 @@ int CHbaseTM::regTruncateOnAbort(int64 pv_transid,
                     jba_tblname);
    if (getExceptionDetails(NULL)) {
       int errMsgLen = (int)_tlp_error_msg->length();
-      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen;      strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
-      errstr[errstrlen -1] = '\0';
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen -1;
+      strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+      errstr[errstrlen] = '\0';
       tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::regTruncateOnAbort()", (char *)_tlp_error_msg->c_str(), pv_transid);
       return RET_EXCEPTION;
    }
@@ -1025,9 +1026,9 @@ int CHbaseTM::dropTable(int64 pv_transid,
                     jba_tblname);
    if (getExceptionDetails(NULL)) {
       int errMsgLen = (int)_tlp_error_msg->length();
-      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen;
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen -1;
       strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
-      errstr[errstrlen -1] = '\0';
+      errstr[errstrlen] = '\0';
       tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::dropTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
       return RET_EXCEPTION;
    }

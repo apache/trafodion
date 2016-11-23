@@ -206,9 +206,8 @@ JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMIn
    char *la_err_str = 0;
    int la_err_len = 0;
 
-   char** tbl_options;
-   tbl_options = new char *[TM_MAX_DDLREQUEST_STRING];
-
+   char** tbl_options = 0;
+   
    int lv_tblname_len = pp_env->GetArrayLength(pv_tblName);
    if(lv_tblname_len > TM_MAX_DDLREQUEST_STRING)
    {
@@ -218,6 +217,8 @@ JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMIn
    jbyte *lp_tblname = pp_env->GetByteArrayElements(pv_tblName, 0);
    
    int tbloptions_cnt = pp_env->GetArrayLength(pv_tableOptions);
+   if(tbloptions_cnt)
+     tbl_options = new char *[tbloptions_cnt];
 
    for (int i=0; i<tbloptions_cnt; i++) {
 
@@ -245,7 +246,8 @@ JNIEXPORT jstring JNICALL Java_org_apache_hadoop_hbase_client_transactional_RMIn
                           tblopts_len, tbloptions_cnt, lv_transid,
                           la_err_str, la_err_len);
    pp_env->ReleaseByteArrayElements(pv_tblName, lp_tblname, 0);
-   
+   if(tbl_options)
+     delete [] tbl_options;
    if(lv_error)
    {
      jstring lv_err_str;
