@@ -113,12 +113,6 @@
                 <include>**/Vproc.java</include>
              </includes>
           </fileset>
-           <fileset>
-             <directory>${basedir}</directory>
-             <includes>
-                <include>buildId</include>
-             </includes>
-          </fileset>
          </filesets>
         </configuration>
     </plugin>
