@@ -611,6 +611,11 @@ NA_EIDPROC Long ExFunctionIsIP::pack(void * space)
   return packClause(space, sizeof(ExFunctionIsIP));
 }
 
+NA_EIDPROC Long ExFunctionSoundex::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionSoundex));
+}
+
 NA_EIDPROC Long ExFunctionInetAton::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionInetAton));
