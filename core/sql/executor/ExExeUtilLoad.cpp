@@ -66,6 +66,8 @@ using std::ofstream;
 #include  "ExpLOBexternal.h"
 #include  "str.h"
 #include "ExpHbaseInterface.h"
+#include "ExHbaseAccess.h"
+
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilCreateTableAsTdb::build(ex_globals * glob)
 {
@@ -1884,6 +1886,13 @@ ExExeUtilHBaseBulkUnLoadTcb::ExExeUtilHBaseBulkUnLoadTcb(
        oneFile_(FALSE)
 {
   sequenceFileWriter_ = NULL;
+  int jniDebugPort = 0;
+  int jniDebugTimeout = 0;
+  ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
+                                   (char*)"", //Later may need to change to hblTdb.server_,
+                                   (char*)"", //Later may need to change to hblTdb.zkPort_,
+                                   jniDebugPort,
+                                   jniDebugTimeout);
   qparent_.down->allocatePstate(this);
 
 }
@@ -1911,9 +1920,10 @@ void ExExeUtilHBaseBulkUnLoadTcb::freeResources()
     NADELETE(sequenceFileWriter_, SequenceFileWriter, getMyHeap());
     sequenceFileWriter_ = NULL;
   }
-
-
+  NADELETE(ehi_, ExpHbaseInterface, getGlobals()->getDefaultHeap());
+  ehi_ = NULL;
 }
+
 ExExeUtilHBaseBulkUnLoadTcb::~ExExeUtilHBaseBulkUnLoadTcb()
 {
   freeResources();
@@ -2055,10 +2065,9 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
 short ExExeUtilHBaseBulkUnLoadTcb::work()
 {
   Lng32 cliRC = 0;
-  short retcode = 0;
+  Lng32 retcode = 0;
   short rc;
   SFW_RetCode sfwRetCode = SFW_OK;
-
   // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
@@ -2102,6 +2111,14 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
           step_ = UNLOAD_END_ERROR_;
           break;
         }
+      }
+      if ((retcode = ehi_->init(NULL)) != HBASE_ACCESS_SUCCESS)
+      {
+         ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, retcode, 
+                "ExpHbaseInterface_JNI::init"); 
+         handleError();
+         step_ = UNLOAD_END_ERROR_;
+         break;
       }
       if (!hblTdb().getOverwriteMergeFile() &&  hblTdb().getMergePath() != NULL)
       {
@@ -2234,12 +2251,12 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       for ( int i = 0 ; i < snapshotsList_->entries(); i++)
       {
         if (createSnp)
-          sfwRetCode = sequenceFileWriter_->createSnapshot( *snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName);
+          retcode = ehi_->createSnapshot( *snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName);
         else
         {
           NABoolean exist = FALSE;
-          sfwRetCode = sequenceFileWriter_->verifySnapshot(*snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName, exist);
-          if ( sfwRetCode == SFW_OK && !exist)
+          retcode = ehi_->verifySnapshot(*snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName, exist);
+          if ( retcode == HBASE_ACCESS_SUCCESS && !exist)
           {
             ComDiagsArea * da = getDiagsArea();
             *da << DgSqlCode(-8112)
@@ -2249,9 +2266,11 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
             break;
           }
         }
-        if (sfwRetCode != SFW_OK)
+        if (retcode != HBASE_ACCESS_SUCCESS)
         {
-          createHdfsFileError(sfwRetCode);
+          ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, retcode, 
+                "HBaseClient_JNI::createSnapshot/verifySnapshot");
+          handleError();
           step_ = UNLOAD_END_ERROR_;
           break;
         }
@@ -2307,10 +2326,12 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
         return rc;
       for ( int i = 0 ; i < snapshotsList_->entries(); i++)
       {
-        sfwRetCode = sequenceFileWriter_->deleteSnapshot( *snapshotsList_->at(i)->snapshotName);
-        if (sfwRetCode != SFW_OK)
+        retcode = ehi_->deleteSnapshot( *snapshotsList_->at(i)->snapshotName);
+        if (retcode != HBASE_ACCESS_SUCCESS)
         {
-          createHdfsFileError(sfwRetCode);
+          ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, retcode, 
+                "HBaseClient_JNI::createSnapshot/verifySnapshot");
+          handleError();
           step_ = UNLOAD_END_ERROR_;
           break;
         }
@@ -2351,6 +2372,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
     case UNLOAD_END_:
     case UNLOAD_END_ERROR_:
     {
+      ehi_->close();
       if (restoreCQD("TRAF_TABLE_SNAPSHOT_SCAN") < 0)
       {
         step_ = UNLOAD_ERROR_;

@@ -2285,8 +2285,6 @@ Ex_Lob_Error ExLobsOper (
     lobGlobals = (ExLobGlobals *)globPtr;
     if ((operation != Lob_Init) && (operation != Lob_Cleanup))
     {
-      lobGlobals = (ExLobGlobals *)globPtr;
-
       lobMap = lobGlobals->getLobMap();
 
       it = lobMap->find(string(fileName));
