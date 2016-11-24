@@ -207,7 +207,9 @@ public:
     FUNC_CRC32_ID            = 122,
     FUNC_MD5_ID              = 123,
     FUNC_SHA1_ID             = 124,
-    FUNC_SHA2_ID             = 125
+    FUNC_SHA2_ID             = 125,
+    FUNC_AES_ENCRYPT         = 126,
+    FUNC_AES_DECRYPT         = 127
   };
 
   // max number of operands (including result) in a clause.

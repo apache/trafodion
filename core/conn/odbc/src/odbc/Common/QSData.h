@@ -3571,6 +3571,10 @@ enum ExeErrorCode
 	EXE_INTERNALLY_GENERATED_COMMAND      = 8950,
 
 
+    EXE_AES_INVALID_IV                    = 8954,
+    EXE_ERR_PARAMCOUNT_FOR_FUNC           = 8955,
+    EXE_OPTION_IGNORED                    = 8956,
+    EXE_OPENSSL_ERROR                     = 8957,
 //fast transport
 
 	EXE_EXTRACT_ERROR_CREATING_FILE       = 8960,
@@ -4055,6 +4059,14 @@ const string FMT_EXE_ROWLENGTH_EXCEEDS_BUFFER			= "[8943],EXE_ROWLENGTH_EXCEEDS_
 // Error codes for bulk replicate - Part 2
 //-------------------------------------------------------------
 const string FMT_EXE_INTERNALLY_GENERATED_COMMAND		= "[8950],EXE_INTERNALLY_GENERATED_COMMAND";
+
+//-------------------------------------------------------------
+// Error codes for AES encrypt/decrypt functions
+// ------------------------------------------------------------
+const string FMT_EXE_AES_INVALID_IV                     = "[8954],EXE_AES_INVALID_IV";
+const string FMT_EXE_ERR_PARAMCOUNT_FOR_FUNC            = "[8955],EXE_ERR_PARAMCOUNT_FOR_FUNC";
+const string FMT_EXE_OPTION_IGNORED                     = "[8956],EXE_OPTION_IGNORED";
+const string FMT_EXE_OPENSSL_ERROR                      = "[8957],EXE_OPENSSL_ERROR";
 
 
 //fast transport
