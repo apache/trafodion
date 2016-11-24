@@ -363,6 +363,11 @@ histogram_options : CLEAR
                           }
 
                         hs_globals_y->optFlags |= CREATE_SAMPLE_OPT;
+
+                        // read the column groups so we can truncate columns if needed
+                        hs_globals_y->optFlags |= EVERYCOL_OPT;
+                        if (Lng32 retcode = AddEveryColumn())
+                          HSHandleError(retcode);
                       }
                  |  REMOVE SAMPLE
                       {

@@ -282,6 +282,8 @@ enum OperatorTypeEnum {
                         REL_HIVE_INSERT,
                         REL_BULK_UNLOAD,
 
+                        REL_COMMON_SUBEXPR_REF,
+
                         REL_LAST_REL_OP = 1999,
 
                         // item operators (predicates)
@@ -349,6 +351,10 @@ enum OperatorTypeEnum {
                         ITM_ONEROW = 2076,
   
                         ITM_PIVOT_GROUP = 2077,
+
+                        ITM_GROUPING = 2078,
+                        ITM_AGGR_GROUPING_FUNC = 2079,
+                        ITM_GROUPING_ID = 2080,
 
                         // custom functions
                         ITM_USER_DEF_FUNCTION = 2100,
@@ -782,6 +788,10 @@ enum OperatorTypeEnum {
                         ITM_ISIPV6 = 2631,
                         ITM_INET_ATON = 2632,
                         ITM_INET_NTOA = 2633,
+                        ITM_CRC32     = 2634,
+                        ITM_MD5       = 2635,
+                        ITM_SHA1      = 2636,
+                        ITM_SHA2      = 2637,
 
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,
@@ -1062,6 +1072,7 @@ enum OperatorTypeEnum {
                         ELM_LIKE_OPT_WITHOUT_SALT_ELEM,
                         ELM_LIKE_OPT_SALT_CLAUSE_ELEM,
                         ELM_LIKE_OPT_WITHOUT_DIVISION_ELEM,
+                        ELM_LIKE_OPT_LIMIT_COLUMN_LENGTH,
                         ELM_LOCATION_ELEM,
                         ELM_OPTION_LIST,
                         ELM_PARALLEL_EXEC_ELEM,

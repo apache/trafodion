@@ -1,5 +1,4 @@
--- test for CREATE TABLE LIKE
---
+
 -- @@@ START COPYRIGHT @@@
 --
 -- Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +19,9 @@
 -- under the License.
 --
 -- @@@ END COPYRIGHT @@@
+--
+-- test for CREATE TABLE LIKE
+--
 
 log LOG040 clear;
 
@@ -41,6 +43,17 @@ showddl t040salt;
 create table t040nosalt(a int not null, b int not null, c int, primary key (a,b));
 
 showddl t040nosalt;
+
+create table t040bigcols(a int not null,
+                         b char(1000) character set iso88591,
+                         c varchar(1001) character set iso88591,
+                         d char(1002) character set utf8,
+                         e varchar(1003) character set utf8,
+                         f char(1004) character set ucs2,
+                         g varchar(1005) character set ucs2,
+                         primary key (a));
+
+showddl t040bigcols;
 
 ?section positive_tests
 
@@ -81,6 +94,26 @@ showddl t040saltsame;
 create table t040nosaltsame like t040nosalt;
 
 showddl t040nosaltsame;
+
+create table t040limitedcols like t040bigcols 
+limit column length to 256;
+
+showddl t040limitedcols;
+
+create table t040somelimitedcols like t040bigcols 
+limit column length to 1002;
+
+showddl t040somelimitedcols;
+
+create table t040fewerlimitedcols like t040bigcols 
+limit column length to 2010;
+
+showddl t040fewerlimitedcols;
+
+create table t040nolimitedcols like t040bigcols 
+limit column length to 4012;
+
+showddl t040nolimitedcols;
 
 ?section negative_tests
 

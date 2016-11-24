@@ -20,20 +20,25 @@
  */
 ////
 
+[[odbc-linux-install]]
 = Install Linux ODBC Driver
 
 == Installation Requirements
 
-The driver for Linux requires `libgcc 3.4.3` and `libstd++ 6.0`.
+If you have not done so already, please ensure that you have <<download-software, unpackaged the {project-name}
+client software>>.
+
+In addition, the ODBC driver for Linux requires `libgcc 3.4.3` and `libstd++ 6.0`.
 
 If you are building ODBC applications, please use the preferred build platform, RedHat 6.x or CentOS 6.x.
 
-== Installation Instructions
+The examples in this chapter assumes that you have unpackaged the JDBC Type for installation files
+to `$HOME/trafodion/odbc`.
 
-You download and extract the {project-name} client package using the instructions in <<introduction-download, Download Installation Package>> above.
+<<<
+== Validate Install Directory
 
-The package file contains the {project-name} ODBC distribution file, `TRAF_ODBC_Linux_Driver_64.tar.gz`, which is extracted to the `clients` subdirectory.
-It contains the following files:
+`$HOME/trafodion/odbc/PkgTmp` should contain:
 
 ```
 connect_test.cpp 
@@ -48,8 +53,8 @@ MD5SUM
 TRAFDSN 
 ```
 
-By default, a new version of the {project-name} ODBC driver is installed in the following directories unless you specify a different directory
-during installation:
+By default, a new version of the {project-name} ODBC driver is installed in the following directories
+unless you specify a different directory during installation:
 
 * `/usr/lib64`
 * `/etc/odbc`
@@ -61,37 +66,45 @@ NOTE: The following header files are not packaged with the {project-name} ODBC d
 - `sqltypes.h` +
 - `sqlucode.h` +
  +
-To install those header files, <<win_odbc_client_env, Setting Up the Client Environment>>..
+To install those header files, <<linux_odbc_client_env, Set Up Client Environment>> below.
 
-=== Install/Reinstall Linux ODBC Driver
+<<<
+== Install/Reinstall Linux ODBC Driver
 
-NOTE: You must have root access to install the {project-name} ODBC Driver for Linux at the default system location.
+NOTE: You must have root (`sudo`) access to install the {project-name} ODBC Driver for Linux at the default system location.
+If you don't have such access, the install the ODBC driver to an alternate location; for example: `$HOME/trafodion/odbc`.
 
-1.  Change the directory to the clients subdirectory, and decompress the `.tar.gz` distribution file:
+. Install the product by entering these commands:
++
+*With `sudo` Access*
 +
 ```
-gunzip TRAF_ODBC_Linux_Driver_64.tar.gz
-```
-2.  Extract the contents of the `.tar` file. A directory called `PkgTmp` is created.
-+
-```
-tar –xvf TRAF_ODBC_Linux_Driver_64.tar
-```
-
-3.  Install the product by entering these commands:
-+
-```
-cd PkgTmp 
+cd $HOME/trafodion/odbc/PkgTmp 
 sudo ./install.sh
 ```
 +
+*Without `sudo` Access*
++
+```
+cd $HOME/trafodion/odbc/PkgTmp 
+./install.sh
+```
++
 Except for the sample file, the `install.sh` script saves a copy (`.SAV`) of your previous installation files if they exist.
-4.  Accept the terms of the license agreement by entering *yes*.
-5.  Enter a directory for the library files, or press Enter to use the default directory (`/usr/lib64`).
-6.  Enter a directory for the data-source template file, or press *Enter* to use the default directory (`/etc/odbc`).
-7.  Enter a directory for the sample program, or press *Enter* to use the default directory (`/etc/odbc`).
+.  Accept the terms of the license agreement by entering *yes*.
++
+NOTE: Don't use environmental variables when specifying alternative location. Instead, use
+the full path. For example, specify `/opt/user/trafodion/odbc` instead of `$HOME/trafodion/odbc`.
+
+. Enter a directory for the library files, or press Enter to use the default directory (`/usr/lib64`).
+. Enter a directory for the data-source template file, or press *Enter* to use the default directory (`/etc/odbc`).
+. Enter a directory for the sample program, or press *Enter* to use the default directory (`/etc/odbc`).
+. If you installed the library files, data-source template file, and the sample program in an
+  alternative location, then verify the directory content:
 
 <<<
+
+[[linux_odbc_client_env]]
 === Set Up Client Environment
 
 If you selected default options during installation, ensure that:
@@ -99,11 +112,56 @@ If you selected default options during installation, ensure that:
 * The libraries are located in the `/usr/lib64` directory.
 * A `TRAFDSN` file is in the `/etc/odbc` directory.
 
-If you select non-default locations during installation, ensure that the files are installed in the directories that you specified during
-installation.
+If you select non-default locations during installation, ensure that the files are installed
+in the directories that you specified during installation:
 
-The driver expects the `TRAFDSN` file to be present in either the default location (`/etc/odbc`) or the current working directory (`CWD`) of the
-application.
+```
+$ cd $HOME/trafodion/odbc
+$ ls
+connect_test.cpp  libicuuc.so       libtrafodbc_drvr64.so      libtrafodbc_l64.so    PkgTmp
+libicudata.so     libicuuc.so.44    libtrafodbc_l64_drvr.so    libtrafodbc_l64.so.1  TRAFDSN
+libicudata.so.44  libtrafodbc64.so  libtrafodbc_l64_drvr.so.1  MD5SUM
+
+$
+```
+
+The driver expects the `TRAFDSN` file to be present in either the default location (`/etc/odbc`)
+or the current working direct or (`CWD`) of the application. As a best practice, copy
+the `TRAFDSN` file to the application directory.
+
+Edit the `TRAFDSN` file. Make changes to the `Default_DataSource` section. At a minimum,
+change the value for `Server` to the address of the host you are connecting to.
+
+*Before*
+
+```
+[Default_DataSource]
+Description                 = Default Data Source
+Catalog                     = TRAFODION
+Schema                      = SEABASE
+DataLang                    = 0
+FetchBufferSize             = SYSTEM_DEFAULT
+Server                      = TCP:1.2.3.4:23400
+SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
+SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
+SQL_QUERY_TIMEOUT           = NO_TIMEOUT
+```
+
+<<<
+*After*
+
+```
+[Default_DataSource]
+Description                 = Default Data Source
+Catalog                     = TRAFODION
+Schema                      = SEABASE
+DataLang                    = 0
+FetchBufferSize             = SYSTEM_DEFAULT
+Server                      = TCP:node01.host.com:23400
+SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
+SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
+SQL_QUERY_TIMEOUT           = NO_TIMEOUT
+```
 
 If you are building ODBC applications, you need to install these header files in your build environment:
 
@@ -153,38 +211,56 @@ The `_compression-level_` is one of these values:
 * `balance`
 * An integer from `0` to `9`, with `0` being `no compression` and `9` being the `maximum available compression`
 
+*Example*
+
+```
+[Default_DataSource]
+Description                 = Default Data Source
+Catalog                     = TRAFODION
+Schema                      = SEABASE
+DataLang                    = 0
+FetchBufferSize             = SYSTEM_DEFAULT
+Server                      = TCP:node01.host.com:23400
+SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
+SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
+SQL_QUERY_TIMEOUT           = NO_TIMEOUT
+Compression                 = Best Compression
+```
+
 <<<
-=== Use Third-Party Driver Manager
+== Use Third-Party Driver Manager
 
 NOTE: For better performance, we recommend that you use at least version `2.3._x_` of unixODBC.
 
 * If you are using an external driver manager, then you must point to `libtrafodbc_drvr64.so` and not to `libtrafodbc64.so`.
 * The driver, `libtrafodbc_l64_drvr.so`, has been verified with iODBC and unixODBC driver managers.
 * These driver managers, as well as documentation, can be found at these Web sites:
-* http://www.iodbc.org/
-* http://www.unixodbc.org/
+** http://www.iodbc.org/
+** http://www.unixodbc.org/
 * For information on the necessary data-source configuration options, you will need to add to the respective configuration files (for example,
 to `odbc.ini`).
 
 <<<
-=== Run Sample Program (`connect_test`)
+== Run Sample Program (`connect_test`)
 
 NOTE: The examples after each step assume that you have default installation directories.
 
-If you have a previous version of the {project-name} ODBC driver installed, you need to re-link your existing application to ensure that you pick up
-the correct version of the driver. If you are unsure of the version, check the version of your application with this command:
+If you have a previous version of the {project-name} ODBC driver installed,
+you need to re-link your existing application to ensure that you pick up
+the correct version of the driver. If you are unsure of the version,
+check the version of your application with this command:
 
 ```
 ldd object-file
 ```
 
-1.  Move to the directory where you installed the sample program:
+.  Move to the directory where you installed the sample program:
 +
 ```
 cd /etc/odbc
 ```
 
-2.  Set the environment variable `LD_LIBRARY_PATH`:
+.  Set the environment variable `LD_LIBRARY_PATH`:
 +
 ```
 export LD_LIBRARY_PATH=<path-to-odbc-library-files or /usr/lib64>
@@ -196,32 +272,41 @@ export LD_LIBRARY_PATH=<path-to-odbc-library-files or /usr/lib64>
 export LD_LIBRARY_PATH=/usr/lib64
 ```
 
-3.  In the `/etc/odbc/TRAFDSN` file, add the correct IP address to the `Server` parameter for the `Default_DataSource`.
+.  In the `/etc/odbc/TRAFDSN` file, add the correct IP address to the `Server` parameter for the `Default_DataSource`.
 +
-*Example*
+*Example (connecting to `node01.host.com:23400`)*
 +
 ```
 [Default_DataSource]
-Description = Default Data Source
-Catalog = TRAFODION
-Schema = SEABASE
-DataLang = 0
-FetchBufferSize = SYSTEM_DEFAULT
-Server = TCP:1.2.3.4:23400 <- _Set IP Address_
+Description                 = Default Data Source
+Catalog                     = TRAFODION
+Schema                      = SEABASE
+DataLang                    = 0
+FetchBufferSize             = SYSTEM_DEFAULT
+Server                      = TCP:node01.host.com:23400 
 SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
-SQL_LOGIN_TIMEOUT = SYSTEM_DEFAULT
-SQL_QUERY_TIMEOUT = NO_TIMEOUT
+SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
+SQL_QUERY_TIMEOUT           = NO_TIMEOUT
+Compression                 = Best Compression
 ```
 +
 <<<
 
-4.  Compile the sample program.
+.  Compile the sample program.
++
+*Default Installation*
 +
 ```
-sudo g++ -g connect_test.cpp -L/usr/lib64 -I/usr/include/odbc -ltrafodbc64 -o connect_test
+g++ -g connect_test.cpp -L/usr/lib64 -I/usr/include/odbc -ltrafodbc64 -o connect_test
+```
++
+*Alterntiave Installation*
++
+```
+g++ -g connect_test.cpp -L$HOME/trafodion/odbc -I/usr/include/odbc -ltrafodbc64 -o connect_test
 ```
 
-5.  Run the sample program:
+.  Run the sample program:
 +
 ```
 ./connect_test -d Default_DataSource -u username -p password
@@ -236,55 +321,67 @@ Connect Test Passed...
 
 <<<
 [[linux_odbc_run_basicsql]]
-=== Run Sample Program (`basicsql`)
+== Run Sample Program (`basicsql`)
 
 NOTE: The Basic SQL sample program is not currently bundled with the ODBC Linux driver. To obtain the source code for this program, see
 <<odbc_sample_program, `basicsql` (Sample ODBC Program)>>.
 
-If you have a previous version of the {project-name} ODBC driver installed, you need to re-link your existing application to ensure that you pick up
-the correct version of the driver. If you are unsure of the version, check the version of your application with this command:
+If you have a previous version of the {project-name} ODBC driver installed,
+you need to re-link your existing application to ensure that you pick up
+the correct version of the driver.
+
+If you are unsure of the version, check the version of your application with this command:
 
 ```
 ldd object-file
 ```
 
-1.  Move to the directory where you put the `basicsql.cpp` file.
+.  Move to the directory where you put the `basicsql.cpp` file.
 
-2.  Set the environment variable `LD_LIBRARY_PATH`:
+.  Set the environment variable `LD_LIBRARY_PATH`:
 +
 ```
 export LD_LIBRARY_PATH=<path-to-odbc-driver-dlls>
 ```
 
-3.  In the `/etc/odbc/TRAFDSN` file, add the correct IP address to the `Server` parameter for the `Default_DataSource`. For example:
+.  In the `/etc/odbc/TRAFDSN` file, add the correct IP address to the `Server` parameter for the `Default_DataSource`. For example:
 +
-*Example*
+*Example (connecting to `node01.host.com:23400`)*
 +
 ```
 [Default_DataSource]
-Description = Default Data Source
-Catalog = TRAFODION
-Schema = SEABASE
-DataLang = 0
-FetchBufferSize = SYSTEM_DEFAULT
-Server = TCP:1.2.3.4:23400 
+Description                 = Default Data Source
+Catalog                     = TRAFODION
+Schema                      = SEABASE
+DataLang                    = 0
+FetchBufferSize             = SYSTEM_DEFAULT
+Server                      = TCP:node01.host.com:23400 
 SQL_ATTR_CONNECTION_TIMEOUT = SYSTEM_DEFAULT
-SQL_LOGIN_TIMEOUT = SYSTEM_DEFAULT
-SQL_QUERY_TIMEOUT = NO_TIMEOUT
+SQL_LOGIN_TIMEOUT           = SYSTEM_DEFAULT
+SQL_QUERY_TIMEOUT           = NO_TIMEOUT
+Compression                 = Best Compression
 ```
 +
 <<<
 
-4.  Compile the sample program.
+.  Compile the sample program.
++
+*Default Installation*
 +
 ```
-g++ -g basicsql.cpp -L. -I. -ltrafodbc64 -o basicsql
+g++ -g basicsql.cpp -L/usr/lib64 -I/usr/include/odbc -ltrafodbc64 -o basicsql
+```
++
+*Alterntiave Installation*
++
+```
+g++ -g basicsql.cpp -L$HOME/trafodion/odbc -I/usr/include/odbc -ltrafodbc64 -o basicsql
 ```
 
-5.  Run the sample program:
+.  Run the sample program:
 +
 ```
-basicsql Default_DataSource <username> <password>
+./basicsql Default_DataSource <username> <password>
 ```
 
 If the sample program runs successfully, you should see output similar to the following:

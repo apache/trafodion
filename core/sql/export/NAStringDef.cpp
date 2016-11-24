@@ -169,6 +169,13 @@ NAString::capacity(size_t nc)
   return capacity();
 }
 
+// Erase the contents of a string
+void
+NAString::clear(void)
+{
+  fbstring_.clear();
+}
+
 // String comparisons
 Int32
 NAString::compareTo(const char* cs2, caseCompare cmp) const

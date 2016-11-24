@@ -187,6 +187,7 @@ public:
                                const char * loggingFileNamePrefix,
                                Lng32 instId,
                                char * loggingFileName);
+  static short setupError(NAHeap *heap, ex_queue_pair &qparent, Lng32 retcode, const char * str, const char * str2 = NULL);
 
 protected:
 
@@ -295,6 +296,9 @@ protected:
   Lng32 createSQRowFromHbaseFormat(Int64 *lastestRowTimestamp = NULL);
   Lng32 createSQRowFromHbaseFormatMulti();
   Lng32 createSQRowFromAlignedFormat(Int64 *lastestRowTimestamp = NULL);
+  NABoolean missingValuesInAlignedFormatRow(
+       ExpTupleDesc * tdesc, char * alignedRow, Lng32 alignedRowLen);
+
   short copyCell();
   Lng32 createSQRowDirect(Int64 *lastestRowTimestamp = NULL);
   Lng32 setupSQMultiVersionRow();

@@ -3163,6 +3163,11 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
     {
     case ITM_ISIPV4:
     case ITM_ISIPV6:
+    case ITM_MD5:
+    case ITM_CRC32:
+    case ITM_SHA1:
+    case ITM_SHA2:
+    case ITM_SOUNDEX:
       {
          break;
       }
@@ -11950,6 +11955,15 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
 	str_sprintf(buf, "CAST(CURRENT_TIMESTAMP_UTC AS TIME);");
       }
     break;
+
+    case ITM_GROUPING_ID:
+      {
+        *CmpCommon::diags() << DgSqlCode(-3242)
+                            << DgString0("GROUPING_ID function must be specified in the select list of a GROUP BY ROLLUP statement.");
+        bindWA->setErrStatus();
+        return this;
+      }
+      break;
 
     default:
       {

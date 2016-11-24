@@ -890,9 +890,10 @@ public:
   //
   // This method removes from the this valueid set those values that
   // are covered by the available inputs.
+  // It returns the number of elements removed.
   // --------------------------------------------------------------------
-  void removeCoveredExprs(const ValueIdSet & newExternalInputs, 
-                          ValueIdSet* usedInputs = NULL);
+  Int32 removeCoveredExprs(const ValueIdSet & newExternalInputs, 
+                           ValueIdSet* usedInputs = NULL);
 
   //-------------------------------------------------------
   //removeCoveredVidSet()
@@ -907,8 +908,9 @@ public:
   //
   // This method removes from the valueid set that values that
   // are NOT covered by the available inputs.
+  // It returns the number of elements removed.
   // --------------------------------------------------------------------
-  void removeUnCoveredExprs(const ValueIdSet & newExternalInputs);
+  Int32 removeUnCoveredExprs(const ValueIdSet & newExternalInputs);
 
   // ---------------------------------------------------------------------
   // simplifyOrderExpr()
@@ -1553,6 +1555,15 @@ public:
 
   // flip the top and bottom maps
   void flipSides();
+
+  // add VEGPreds for VEGRefs contained in the map
+  void augmentForVEG(NABoolean addVEGPreds,
+                     NABoolean addVEGRefs,
+                     NABoolean compareConstants,
+                     const ValueIdSet *topInputsToCheck,
+                     const ValueIdSet *bottomInputsToCheck,
+                     ValueIdSet *vegRefsWithDifferentConstants = NULL,
+                     ValueIdSet *vegRefsWithDifferentInputs = NULL);
 
   // Normalize the map replacing valueIds with VEGRefs
   NABoolean normalizeNode(NormWA & normWARef);

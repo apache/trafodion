@@ -224,6 +224,31 @@ const NAString ElemDDLLikeOptWithoutDivision::getText() const
 }
 
 
+// -----------------------------------------------------------------------
+// methods for class ElemDDLLikeLimitColumnLength
+// -----------------------------------------------------------------------
+
+// virtual destructor
+ElemDDLLikeLimitColumnLength::~ElemDDLLikeLimitColumnLength()
+{
+}
+
+// casting
+ElemDDLLikeLimitColumnLength * ElemDDLLikeLimitColumnLength::castToElemDDLLikeLimitColumnLength()
+{
+  return this;
+}
+
+//
+// methods for tracing
+//
+
+const NAString ElemDDLLikeLimitColumnLength::getText() const
+{
+  return "ElemDDLLikeLimitColumnLength";
+}
+
+
 //
 // End of File
 //

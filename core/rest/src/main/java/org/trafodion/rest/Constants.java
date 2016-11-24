@@ -48,7 +48,7 @@ public final class Constants {
   public static final String DCS_MASTER_PORT = "dcs.master.port";
 
   /** Default value for DCS master port */
-  public static final int DEFAULT_DCS_MASTER_PORT = 37800;
+  public static final int DEFAULT_DCS_MASTER_PORT = 23400;
   
   /** Name of ZooKeeper quorum configuration parameter. */
   public static final String ZOOKEEPER_QUORUM = "rest.zookeeper.quorum";

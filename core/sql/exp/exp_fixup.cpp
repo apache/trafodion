@@ -307,6 +307,13 @@ ex_expr::exp_return_type AggrExpr::fixup(Lng32 base, unsigned short mode,
 	return retcode;
     }
 
+  if (groupingExpr_)
+    {
+      if ((retcode = groupingExpr_->fixup(base, mode, tcb, space, 
+                                          exHeap, computeSpaceOnly, glob)) != EXPR_OK)
+	return retcode;
+    }
+
   // fixup the expression to do perrec aggregate evaluation.
   if ((retcode = ex_expr::fixup(base, mode, tcb, space, 
 				exHeap, computeSpaceOnly, glob)) != EXPR_OK)

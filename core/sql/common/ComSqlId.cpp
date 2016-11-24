@@ -126,7 +126,7 @@ Lng32 ComSqlId::createSqlQueryId
 
 Lng32 ComSqlId::getSqlIdAttr
 (Lng32 attr,          // which attr (SqlQueryIDAttr)
- char * queryId,     // query ID
+ const char * queryId,// query ID
  Lng32 queryIdLen,    // query ID len
  Int64 &value,       // If returned attr is numeric, 
                      //    this field contains the returned value.
@@ -445,7 +445,7 @@ Lng32 ComSqlId::getSqlSessionIdAttr
 }
 
 Lng32 ComSqlId::extractSqlSessionIdAttrs
-(char * sessionId,            // IN
+(const char * sessionId,       // IN
  Lng32 maxSessionIdLen,        // IN
  Int64 &segmentNumber,         // OUT
  Int64 &cpu,                   // OUT

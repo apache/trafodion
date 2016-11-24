@@ -43,6 +43,7 @@
 #include "ex_error.h"
 #include "Cost.h"      /* for lookups in the defaults table */
 #include "Analyzer.h"
+#include "HDFSHook.h"
 
 // -----------------------------------------------------------------------
 // Constructor (but note that much more useful stuff goes on in
@@ -324,28 +325,24 @@ void TableDesc::getEquivVEGCols (const ValueIdList& columnList,
 				 ValueIdList &VEGColumnList) const
 {
   for (CollIndex i=0; i < columnList.entries(); i++)
-    {
-      ItemExpr   *ie = columnList[i].getItemExpr();
-      BaseColumn *bc = NULL;
+    VEGColumnList.insert(getEquivVEGCol(columnList[i]));
+}
 
-      switch (ie->getOperatorType())
-	{
-	case ITM_BASECOLUMN:
-	  bc = (BaseColumn *) ie;
-	  break;
-	case ITM_INDEXCOLUMN:
-	  bc = (BaseColumn *) ((IndexColumn *) ie)->getDefinition().
-	                                                      getItemExpr();
-	  CMPASSERT(bc->getOperatorType() == ITM_BASECOLUMN);
+void TableDesc::getEquivVEGCols (const ValueIdSet& columnSet,
+				 ValueIdSet &VEGColumnSet) const
+{
+  for (ValueId v=columnSet.init();
+       columnSet.next(v);
+       columnSet.advance(v))
+    VEGColumnSet += getEquivVEGCol(v);
+}
 
-	  break;
-	default:
-	  ABORT("Invalid argument to TableDesc::getEquivVEGCols()\n");
-	}
+ValueId TableDesc::getEquivVEGCol (const ValueId& column) const
+{
+  BaseColumn *bc = column.castToBaseColumn();
 
-      CMPASSERT(bc->getTableDesc() == this);
-      VEGColumnList.insert(getColumnVEGList()[bc->getColNumber()]);
-    }
+  CMPASSERT(bc->getTableDesc() == this);
+  return getColumnVEGList()[bc->getColNumber()];
 }
 
 // -----------------------------------------------------------------------
@@ -956,3 +953,37 @@ void TableDesc::compressHistogramsForCurrentQuery()
 	  histsCompressed(TRUE);
 }
 
+NABoolean TableDesc::splitHiveLocation(const char *tableLocation,
+                                       NAString &hdfsHost,
+                                       Int32 &hdfsPort,
+                                       NAString &tableDir,
+                                       ComDiagsArea *diags,
+                                       int hdfsPortOverride)
+{
+  HHDFSDiags hhdfsDiags;
+
+  NABoolean result = HHDFSTableStats::splitLocation(
+       tableLocation,
+       hdfsHost,
+       hdfsPort,
+       tableDir,
+       hhdfsDiags,
+       hdfsPortOverride);
+
+  if (!result)
+    {
+      if (!hhdfsDiags.isSuccess())
+        {
+          if (diags)
+            (*diags) << DgSqlCode(-1215)
+                     << DgString0(tableLocation)
+                     << DgString1(hhdfsDiags.getErrMsg());
+        }
+      else
+        CMPASSERT(0);
+    }
+  else
+    CMPASSERT(hhdfsDiags.isSuccess());
+
+  return result;
+}

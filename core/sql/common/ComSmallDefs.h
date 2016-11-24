@@ -94,14 +94,21 @@ typedef NABoolean               ComBoolean;
 #define SMD_LOCATION  "$SYSTEM"
 #define SMD_VERSION   "1000"
 
-//#define COM_SESSION_ID_PREFIX      "MXID_"
 #define COM_VOLATILE_SCHEMA_PREFIX "VOLATILE_SCHEMA_"
+
+// prefix of temp tables for common subexpressions
+#define COM_CSE_TABLE_PREFIX "CSE_TEMP_"
 
 // 'reserved' tables in public_access_schema for sql internal use
 #define COM_PUBLIC_ACCESS_SCHEMA "PUBLIC_ACCESS_SCHEMA"
 
 #define HIVE_SYSTEM_CATALOG          "HIVE"
 #define HIVE_SYSTEM_SCHEMA           "HIVE"
+#define HIVE_SYSTEM_SCHEMA_LC        "hive"
+
+// default schema name to be passed to hive methods at runtime
+#define HIVE_DEFAULT_SCHEMA_EXE      "default"
+
 #define HIVE_STATS_CATALOG           "TRAFODION"
 #define HIVE_STATS_SCHEMA            "\"_HIVESTATS_\""
 #define HIVE_STATS_SCHEMA_NO_QUOTES  "_HIVESTATS_"
@@ -434,6 +441,9 @@ enum ComTableType {  COM_REGULAR_TABLE
 
 
 #define EPOCH_INITIAL_VALUE 100
+
+// JulianTimestamp time of UNIX "epoch", 00:00:00 Jan 1, 1970
+const Int64 COM_EPOCH_TIMESTAMP=210866760000000000LL;
 
 // enums used to specify the MV REWRITE PUBLISH operations
 // and SYSTEM DEFAULTS propagation

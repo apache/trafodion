@@ -382,5 +382,13 @@ MxoSrvr_ValidateToken_param_res_(
                 , /* In    */ unsigned char* outToken
 );
 
-
+CEE_status
+odbc_SQLsrvr_ExtractLob_param_res_(
+                  CInterface* pnode
+                , char *&buffer
+                , UInt32 & message_length
+                , const struct odbc_SQLsrvr_ExtractLob_exc_ *exception_
+                , IDL_long_long lobDataLen
+                , IDL_char * lobDataValue
+);
 #endif

@@ -63,6 +63,8 @@ public:
             , const char *instanceZNode );
     ~CZClient( void );
 
+    int     GetSessionTimeout( void) { return( zkSessionTimeout_ ); }
+    bool    IsZNodeExpired( const char *nodeName, int &zerr );
     void    MonitorZCluster( void );
     void    SetCheckCluster( bool checkCluster ) { CAutoLock lock(getLocker()); checkCluster_ = checkCluster; }
     void    SetState( ZClientState_t state ) { CAutoLock lock(getLocker()); state_ = state; }
@@ -84,7 +86,6 @@ private:
     int     InitializeZClient( void );
     bool    IsEnabled( void ) { CAutoLock lock(getLocker()); return( enabled_ ); }
     bool    IsCheckCluster( void ) { CAutoLock lock(getLocker()); return( checkCluster_ ); }
-    bool    IsLunMgrTimerExpired( void );
     int     MakeClusterZNodes( void );
     int     RegisterMyNodeZNode( void );
     int     RegisterZNode( const char *znodePath

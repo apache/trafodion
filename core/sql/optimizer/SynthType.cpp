@@ -1010,7 +1010,64 @@ const NAType *BuiltinFunction::synthesizeType()
 	    SQLChar(maxLength, typ1.supportsSQLnull());
       }
     break;
- 
+    case ITM_SHA1:
+    case ITM_SHA2:
+      {
+        // type cast any params
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+        //input type must be string
+        const NAType &typ1 = child(0)->getValueId().getType();
+
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+	    *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("SHA");
+	    return NULL;
+          }
+
+        retType = new HEAP
+           SQLChar(128, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+	  }
+      }
+    break;
+    case ITM_MD5:
+      {
+        // type cast any params
+        ValueId vid1 = child(0)->getValueId();
+        SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+        vid1.coerceType(c1, NA_CHARACTER_TYPE);
+        //input type must be string
+        const NAType &typ1 = child(0)->getValueId().getType();
+
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+	    *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("MD5");
+	    return NULL;
+          }
+
+        retType = new HEAP
+           SQLChar(32, FALSE);
+	if (typ1.supportsSQLnull())
+	  {
+	    retType->setNullable(TRUE);
+	  }
+      }
+    break;
+    case ITM_CRC32:
+      {
+        const NAType &typ1 = child(0)->getValueId().getType();
+        retType = new HEAP
+           SQLInt(FALSE, FALSE); //unsigned int
+        if (typ1.supportsSQLnull())
+          {
+            retType->setNullable(TRUE);
+          }
+      } 
+    break;
     case ITM_ISIPV4:
     case ITM_ISIPV6:
       {
@@ -1023,7 +1080,7 @@ const NAType *BuiltinFunction::synthesizeType()
 
         if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
           {
-	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("IS_IP");
+	    *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("IS_IP");
 	    return NULL;
           }
         retType = new HEAP
@@ -1046,7 +1103,7 @@ const NAType *BuiltinFunction::synthesizeType()
 
         if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
           {
-	    *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("INET_ATON");
+	    *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("INET_ATON");
 	    return NULL;
           }
         retType = new HEAP
@@ -1217,6 +1274,30 @@ const NAType *BuiltinFunction::synthesizeType()
     case ITM_UNIQUE_ID:
       {
 	retType = new HEAP SQLChar(16, FALSE);
+      }
+      break;
+
+    case ITM_SOUNDEX:
+      {
+          // type cast any params
+          ValueId vid1 = child(0)->getValueId();
+          SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+          vid1.coerceType(c1, NA_CHARACTER_TYPE);
+          
+          //input type must be string
+          const NAType &typ1 = vid1.getType();
+
+          if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+              *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("SOUNDEX");
+              return NULL;
+          }
+
+          retType = new HEAP SQLChar(4, FALSE);
+          if (typ1.supportsSQLnull())
+          {
+              retType->setNullable(TRUE);
+          }
       }
       break;
 
@@ -1499,6 +1580,16 @@ const NAType *Aggregate::synthesizeType()
       result = operand.newCopy(HEAP);
     break;
   }
+
+  case ITM_GROUPING:
+    {
+	  // grouping result is an unsigned int (32 bit)
+      result = new HEAP
+        SQLInt(FALSE /*unsigned*/,
+               FALSE /*not null*/);
+    }
+  break;
+
   case ITM_ONE_ROW:
   case ITM_ONEROW:  
   {
@@ -1534,8 +1625,18 @@ const NAType *AggrMinMax::synthesizeType()
   const NAType *result;
 
   const NAType& operand = child(0)->castToItemExpr()->getValueId().getType();
-  //    result = operand.synthesizeNullableType(HEAP);
   result = operand.newCopy(HEAP);
+
+  return result;
+}
+
+// -----------------------------------------------------------------------
+// member functions for class AggGrouping
+// -----------------------------------------------------------------------
+const NAType *AggrGrouping::synthesizeType()
+{
+  // result unsigned 32 bit integer
+  const NAType *result = new HEAP SQLInt(FALSE, FALSE);
 
   return result;
 }

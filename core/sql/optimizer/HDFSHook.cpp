@@ -849,11 +849,18 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   while (hsd && diags_.isSuccess())
     {
       // split table URL into host, port and filename
-      if (! splitLocation(hsd->location_, hdfsHost, hdfsPort, tableDir))
+      if (! splitLocation(hsd->location_,
+                          hdfsHost,
+                          hdfsPort,
+                          tableDir,
+                          diags_,
+                          hdfsPortOverride_)) {
         return FALSE;
+      }
 
-      if (! connectHDFS(hdfsHost, hdfsPort))
+      if (! connectHDFS(hdfsHost, hdfsPort)) {
         return FALSE; // diags_ is set
+      }
 
       // put back fully qualified URI
       tableDir = hsd->location_;
@@ -896,8 +903,12 @@ NABoolean HHDFSTableStats::validateAndRefresh(Int64 expirationJTimestamp, NABool
       Int32 hdfsPort;
       NAString partDir;
 
-      result = splitLocation(partStats->getDirName(), hdfsHost, hdfsPort, 
-                             partDir);
+      result = splitLocation(partStats->getDirName(),
+                             hdfsHost,
+                             hdfsPort, 
+                             partDir,
+                             diags_,
+                             hdfsPortOverride_);
       if (! result)
         break;
 
@@ -922,7 +933,9 @@ NABoolean HHDFSTableStats::validateAndRefresh(Int64 expirationJTimestamp, NABool
 NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
                                          NAString &hdfsHost,
                                          Int32 &hdfsPort,
-                                         NAString &tableDir)
+                                         NAString &tableDir,
+                                         HHDFSDiags &diags,
+                                         int hdfsPortOverride)
 {
   const char *hostMark = NULL;
   const char *portMark = NULL;
@@ -940,8 +953,8 @@ NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
     tableLocation = fileSysTypeTok + 7; 
   else
     {
-      diags_.recordError(NAString("Expected hdfs: or maprfs: in the HDFS URI ") + tableLocation,
-                         "HHDFSTableStats::splitLocation");
+      diags.recordError(NAString("Expected hdfs: or maprfs: in the HDFS URI ") + tableLocation,
+                        "HHDFSTableStats::splitLocation");
       return FALSE;
     }
 
@@ -956,8 +969,8 @@ NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
       dirMark = strchr(hostMark, '/');
       if (dirMark == NULL)
         {
-          diags_.recordError(NAString("Could not find slash in HDFS directory name ") + tableLocation,
-                             "HHDFSTableStats::splitLocation");
+          diags.recordError(NAString("Could not find slash in HDFS directory name ") + tableLocation,
+                            "HHDFSTableStats::splitLocation");
           return FALSE;
         }
 
@@ -976,8 +989,8 @@ NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
       portMark = NULL;
       if (*tableLocation != '/') 
         {
-          diags_.recordError(NAString("Expected a maprfs:/<filename> URI: ") + tableLocation,
-                             "HHDFSTableStats::splitLocation");
+          diags.recordError(NAString("Expected a maprfs:/<filename> URI: ") + tableLocation,
+                            "HHDFSTableStats::splitLocation");
           return FALSE;
         }
       dirMark = tableLocation;
@@ -990,8 +1003,8 @@ NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
   else
     hdfsHost = NAString("default");
 
-  if (hdfsPortOverride_ > -1)
-    hdfsPort    = hdfsPortOverride_;
+  if (hdfsPortOverride > -1)
+    hdfsPort    = hdfsPortOverride;
   else
     if (portMark)
       hdfsPort  = atoi(portMark);
@@ -1072,6 +1085,7 @@ void HHDFSTableStats::print(FILE *ofd)
   fprintf(ofd,"====================================================================\n");
 }
 
+
 NABoolean HHDFSTableStats::connectHDFS(const NAString &host, Int32 port)
 {
   NABoolean result = TRUE;
@@ -1103,3 +1117,4 @@ void HHDFSTableStats::disconnectHDFS()
   // No op. The disconnect happens at the context level wehn the session 
   // is dropped or the thread exits.
 }
+

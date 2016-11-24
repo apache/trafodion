@@ -67,9 +67,9 @@ public class TransactionState {
     private Object commitSendLock;
     private Throwable hasError;
     private boolean localTransaction;
+    private static boolean envLocalTransaction;
     private boolean ddlTrans;
     private static boolean useConcurrentHM = false;
-    private static boolean getCHMVariable = true;
     private boolean hasRetried = false;
     private boolean uteLogged = false;
 
@@ -87,6 +87,23 @@ public class TransactionState {
       return localTransaction;
     }
 
+    static {
+       String concurrentHM = System.getenv("DTM_USE_CONCURRENTHM");
+       if (concurrentHM != null) 
+           useConcurrentHM = (Integer.parseInt(concurrentHM) == 0) ? false : true;
+       else
+           useConcurrentHM = false;
+       if (useConcurrentHM) 
+          LOG.info("Using ConcurrentHashMap synchronization to synchronize participatingRegions");
+       else 
+          LOG.info("Using synchronizedSet to synchronize participatingRegions");
+       String localTxns = System.getenv("DTM_LOCAL_TRANSACTIONS");
+       if (localTxns != null) 
+          envLocalTransaction = (Integer.parseInt(localTxns) == 0) ? false : true;
+       else
+          envLocalTransaction = false; 
+    }
+
     public TransactionState(final long transactionId) {
         this.transactionId = transactionId;
         setStatus(TransState.STATE_ACTIVE);
@@ -98,21 +115,6 @@ public class TransactionState {
         hasError = null;
         ddlTrans = false;
 
-        if(getCHMVariable) {
-          String concurrentHM = System.getenv("DTM_USE_CONCURRENTHM");
-          if (concurrentHM != null) {
-            useConcurrentHM = (Integer.parseInt(concurrentHM)==0)?false:true;
-          }
-          if(LOG.isTraceEnabled()) {
-            if(useConcurrentHM) {
-              LOG.trace("Using ConcurrentHashMap synchronization to synchronize participatingRegions");
-            }
-            else {
-              LOG.trace("Using synchronizedSet to synchronize participatingRegions");
-            }
-          }
-          getCHMVariable = false;
-        }
         if(useConcurrentHM) {
           participatingRegions = Collections.newSetFromMap((new ConcurrentHashMap<TransactionRegionLocation, Boolean>()));
         }
@@ -120,14 +122,11 @@ public class TransactionState {
           participatingRegions = Collections.synchronizedSet(new HashSet<TransactionRegionLocation>());
         }
 
-        String localTxns = System.getenv("DTM_LOCAL_TRANSACTIONS");
-        if (localTxns != null) {
-          localTransaction = (Integer.parseInt(localTxns)==0)?false:true;
-          //System.out.println("TS begin local txn id " + transactionId);
+        localTransaction = envLocalTransaction;
+        if (localTransaction) {
           if (LOG.isTraceEnabled()) LOG.trace("TransactionState local transaction begun: " + transactionId);
         }
         else {
-          localTransaction = false;
           if (LOG.isTraceEnabled()) LOG.trace("TransactionState global transaction begun: " + transactionId);
         }
     }

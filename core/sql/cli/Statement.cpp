@@ -1880,20 +1880,17 @@ Lng32 Statement::unpackAndInit(ComDiagsArea &diagsArea,
       ex_root_tdb *newRoot = (ex_root_tdb *)
 	root_tdb->driveUnpack((void *) root_tdb, &dummyTdb, unpackSpace_);
       
-      assignRootTdb(newRoot);
-      
-      if (root_tdb == NULL)  
+      if (newRoot == NULL)  
 	{
-	  // ERROR during unpacking. Shouldn't occur here since we have just
-	  // freshly prepared the statement using the latest version of the
-	  // compiler. This is an unexpected error.
-	  //
+	  // ERROR during unpacking. 
 	  if ((indexIntoCompilerArray >= 0) &&
 	      (cliGlobals_->getArkcmp(indexIntoCompilerArray)->getDiags()))
 	    diagsArea.mergeAfter(*cliGlobals_->getArkcmp()->getDiags());
 	  diagsArea << DgSqlCode(- CLI_STMT_NOT_PREPARED);
           return prepareReturn (ERROR); 
 	}
+
+      assignRootTdb(newRoot);
     }
 
 
@@ -2154,7 +2151,7 @@ RETCODE Statement::doQuerySimilarityCheck(TrafQuerySimilarityInfo * qsi,
             {
               ExpLOBinterfaceInit
                 (lobGlob, &heap_, context_,
-                 TRUE, si->hdfsHostName(), si->hdfsPort());
+                 FALSE, si->hdfsHostName(), si->hdfsPort());
               lobGlobInitialized = TRUE;
             }
 

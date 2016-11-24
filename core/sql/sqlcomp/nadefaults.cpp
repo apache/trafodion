@@ -1144,7 +1144,23 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
  DDkwd__(CREATE_METADATA_TABLE,                "OFF"),
  DDkwd__(CREATE_OBJECTS_IN_METADATA_ONLY,      "OFF"),
 
- DDkwd__(CROSS_PRODUCT_CONTROL,		"ON"),
+ DDkwd__(CROSS_PRODUCT_CONTROL,	               "ON"),
+
+ // CQDs for Common Subexpressions (CSEs)
+ // cache queries containing temp tables for common subexpressions
+ DDkwd__(CSE_CACHE_TEMP_QUERIES,               "OFF"),
+ // "cleanup obsolete volatile tables" command cleans up Hive temp tables
+ DDkwd__(CSE_CLEANUP_HIVE_TABLES,              "OFF"),
+ // emit warnings that help diagnose why CSEs are not shared
+ DDkwd__(CSE_DEBUG_WARNINGS,                   "OFF"),
+ // create a CommonSubExpr node for CTEs defined in WITH clauses (OFF/ON)
+ DDkwd__(CSE_FOR_WITH,                         "OFF"),
+ // use Hive tables as temp tables
+ DDkwd__(CSE_HIVE_TEMP_TABLE,                  "ON"),
+ // print debugging info on stdout
+ DDkwd__(CSE_PRINT_DEBUG_INFO,                 "OFF"),
+ // implement CommonSubExpr as a temp table (OFF/SYSTEM/ON)
+ DDkwd__(CSE_USE_TEMP,                         "ON"),
 
 SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
 
@@ -3393,6 +3409,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,           "OFF"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
   DDkwd__(TRAF_UPSERT_MODE,                            "MERGE"),
+  DDkwd__(TRAF_UPSERT_TO_EFF_TREE,                     "OFF"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
 
@@ -3543,6 +3560,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_LOCK_HIST_TABLES,               "OFF"),
   DD_____(USTAT_LOG,                            "ULOG"),
   DDui30_246(USTAT_MAX_CHAR_BOUNDARY_LEN,       "30"),   // Values can be 30-246.
+  DDui___(USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES,   "256"),  // When computing UECs, char cols are limited to this many bytes
   DDflt0_   (USTAT_MAX_CHAR_DATASIZE_FOR_IS,    "1000"),  // max data size in MB for char type to use 
  XDDui___(USTAT_MAX_READ_AGE_IN_MIN,            "5760"),
   DDui___(USTAT_MAX_SAMPLE_AGE,                 "365"),  // For R2.5 set to a year so user created samples won't be removed.

@@ -196,7 +196,7 @@ class ExExeUtilTcb : public ex_tcb
   ex_queue_pair getParentQueue() const;
   Int32 orderedQueueProtocol() const;
 
-  void freeResources();
+  virtual void freeResources();
 
   virtual Int32 numChildren() const;
   virtual const ex_tcb* getChild(Int32 pos) const;
@@ -989,7 +989,9 @@ class ExExeUtilVolatileTablesTcb : public ExExeUtilTcb
                                                  Lng32 &pstateLength); // out, length of one element
 
  protected:
-  short isCreatorProcessObsolete(char * schemaName, NABoolean includesCat);
+  short isCreatorProcessObsolete(const char * name,
+                                 NABoolean includesCat,
+                                 NABoolean isCSETableName);
 };
 
 class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
@@ -1015,6 +1017,7 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
                                   ex_globals *globals = NULL,
                                   ComDiagsArea * diagsArea = NULL);
   static short dropVolatileTables(ContextCli * currContext, CollHeap * heap);
+  short dropHiveTempTablesForCSEs(ComDiagsArea * diagsArea = NULL);
 
  private:
   enum Step
@@ -1027,6 +1030,7 @@ class ExExeUtilCleanupVolatileTablesTcb : public ExExeUtilVolatileTablesTcb
       DO_CLEANUP_,
       COMMIT_WORK_,
       END_CLEANUP_,
+      CLEANUP_HIVE_TABLES_,
       DONE_,
       ERROR_
     };
@@ -3241,6 +3245,7 @@ protected:
   enum Step
   {
     INITIAL_,
+    READ_HIVE_MD_,
     POSITION_,
     FETCH_TABLE_,
     FETCH_COLUMN_,
@@ -3258,14 +3263,16 @@ protected:
   HiveMetaData* hiveMD_;
 
   hive_column_desc * currColDesc_;
+  hive_pkey_desc * currPartnDesc_;
   hive_bkey_desc * currKeyDesc_;
-  
+  Int32 currColNum_;
+
   char * mdRow_;
   LIST (NAText *) tblNames_;
-  short pos_;
 
   char hiveCat_[1024];
   char hiveSch_[1024];
+  char schForHive_[1024];
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -3343,6 +3350,7 @@ class ExExeUtilHiveTruncateTcb : public ExExeUtilTcb
 
   ~ExExeUtilHiveTruncateTcb();
 
+  virtual void freeResources();
   virtual short work();
 
   NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
@@ -3673,6 +3681,7 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   NAList<struct snapshotStruct *> * snapshotsList_;
   NABoolean emptyTarget_;
   NABoolean oneFile_;
+  ExpHbaseInterface * ehi_;
 };
 
 class ExExeUtilHbaseUnLoadPrivateState : public ex_tcb_private_state

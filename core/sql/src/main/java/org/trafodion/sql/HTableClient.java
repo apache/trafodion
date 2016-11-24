@@ -103,6 +103,8 @@ public class HTableClient {
 	private static final int SCAN_FETCH = 3;
 	private boolean useTRex;
 	private boolean useTRexScanner;
+        private static boolean envUseTRex;
+        private static boolean envUseTRexScanner;
 	private String tableName;
         private static Connection connection;
 	private ResultScanner scanner = null;
@@ -334,25 +336,9 @@ public class HTableClient {
 	    else {
 
 		// If the parameter useTRex is false, then do not go thru this logic
-
-		String useTransactions = System.getenv("USE_TRANSACTIONS");
-		if (useTransactions != null) {
-		    int lv_useTransactions = (Integer.parseInt(useTransactions));
-		    if (lv_useTransactions == 0) {
-			this.useTRex = false;
-		    }
-		}
-	    
-		this.useTRexScanner = true;
-		String useTransactionsScanner = System.getenv("USE_TRANSACTIONS_SCANNER");
-		if (useTransactionsScanner != null) {
-		    int lv_useTransactionsScanner = (Integer.parseInt(useTransactionsScanner));
-		    if (lv_useTransactionsScanner == 0) {
-			this.useTRexScanner = false;
-		    }
-		}
+ 	         this.useTRex = envUseTRex;
+	         this.useTRexScanner = envUseTRexScanner;
 	    }
-
 	    table = new RMInterface(tblName, connection);
 	    if (logger.isDebugEnabled()) logger.debug("Exit HTableClient::init, useTRex: " + this.useTRex + ", useTRexScanner: "
 	              + this.useTRexScanner + ", table object: " + table);
@@ -1619,7 +1605,7 @@ public class HTableClient {
 		}	
 	}
     
-    public boolean insertRow(long transID, byte[] rowID, 
+        public boolean insertRow(long transID, byte[] rowID, 
                          Object row, 
 			 long timestamp,
                          boolean asyncOperation) throws IOException, InterruptedException, ExecutionException {
@@ -1880,6 +1866,20 @@ public class HTableClient {
    protected native int setJavaObject(long jniObject);
  
    static {
+     envUseTRex = true;
+     envUseTRexScanner = true;
+     String useTransactions = System.getenv("USE_TRANSACTIONS");
+     if (useTransactions != null) {
+        int lv_useTransactions = (Integer.parseInt(useTransactions));
+        if (lv_useTransactions == 0) 
+           envUseTRex = false;
+     }
+     String useTransactionsScanner = System.getenv("USE_TRANSACTIONS_SCANNER");
+     if (useTransactionsScanner != null) {
+        int lv_useTransactionsScanner = (Integer.parseInt(useTransactionsScanner));
+        if (lv_useTransactionsScanner == 0) 
+           envUseTRexScanner = false;
+     }
      executorService = Executors.newCachedThreadPool();
      System.loadLibrary("executor");
    }

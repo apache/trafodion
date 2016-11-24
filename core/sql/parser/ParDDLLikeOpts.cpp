@@ -113,6 +113,7 @@ ParDDLLikeOptsCreateTable::operator=(
   isLikeOptWithoutSaltSpec_     = likeOptions.isLikeOptWithoutSaltSpec_;
   isLikeOptSaltClauseSpec_      = likeOptions.isLikeOptSaltClauseSpec_;
   isLikeOptWithoutDivisionSpec_ = likeOptions.isLikeOptWithoutDivisionSpec_;
+  isLikeOptLimitColumnLengthSpec_ = likeOptions.isLikeOptLimitColumnLengthSpec_;
 
   isLikeOptWithComments_        = likeOptions.isLikeOptWithComments_;
   isLikeOptWithoutConstraints_  = likeOptions.isLikeOptWithoutConstraints_;
@@ -121,6 +122,7 @@ ParDDLLikeOptsCreateTable::operator=(
   isLikeOptWithHorizontalPartitions_  = likeOptions.isLikeOptWithHorizontalPartitions_;
   isLikeOptWithoutSalt_         = likeOptions.isLikeOptWithoutSalt_;
   isLikeOptWithoutDivision_     = likeOptions.isLikeOptWithoutDivision_;
+  isLikeOptColumnLengthLimit_   = likeOptions.isLikeOptColumnLengthLimit_;
 
   if (this != &likeOptions)  // make sure not assigning to self
     {
@@ -155,6 +157,7 @@ ParDDLLikeOptsCreateTable::initializeDataMembers()
   isLikeOptWithoutSaltSpec_     = FALSE;
   isLikeOptSaltClauseSpec_      = FALSE;
   isLikeOptWithoutDivisionSpec_ = FALSE;
+  isLikeOptLimitColumnLengthSpec_ = FALSE;
 
   isLikeOptWithComments_        = FALSE;
   isLikeOptWithoutConstraints_  = FALSE;
@@ -164,6 +167,7 @@ ParDDLLikeOptsCreateTable::initializeDataMembers()
   isLikeOptWithoutSalt_         = FALSE;
   isLikeOptSaltClause_          = NULL;
   isLikeOptWithoutDivision_     = FALSE;
+  isLikeOptColumnLengthLimit_   = UINT_MAX;
 }
 
 void
@@ -259,6 +263,22 @@ ParDDLLikeOptsCreateTable::setLikeOption(ElemDDLLikeOpt * pLikeOption)
     ComASSERT(pLikeOption->castToElemDDLLikeOptWithoutDivision() != NULL);
     isLikeOptWithoutDivision_ = TRUE;
     isLikeOptWithoutDivisionSpec_ = TRUE;
+    break;
+
+  case ELM_LIKE_OPT_LIMIT_COLUMN_LENGTH:
+    {
+      if (isLikeOptLimitColumnLengthSpec_)
+      {
+        // ERROR[3152] Duplicate LIMIT COLUMN LENGTH phrases were specified
+        //             in LIKE clause in CREATE TABLE statement.
+        *SqlParser_Diags << DgSqlCode(-3152) << DgString0("LIMIT COLUMN LENGTH");
+      }
+      ComASSERT(pLikeOption->castToElemDDLLikeLimitColumnLength() != NULL);
+      ElemDDLLikeLimitColumnLength * limitColumnLength = 
+        pLikeOption->castToElemDDLLikeLimitColumnLength();
+      isLikeOptColumnLengthLimit_ = limitColumnLength->getColumnLengthLimit();
+      isLikeOptLimitColumnLengthSpec_ = TRUE;
+    }
     break;
 
   default :

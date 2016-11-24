@@ -75,6 +75,7 @@ BindScope::BindScope(BindWA* bindWA) :
   xtnm_(bindWA ? bindWA->wHeap() : NULL),
   RETDesc_(NULL),
   sequenceNode_(NULL),
+  ncToOldMap_(NULL),
   OlapPartitionChange_ (NULL),
   HasOlapSeqFunctions_ ( BindScope::OLAPUNKNOWN_ ),
   isFirstOlapWindowSpec_( TRUE ),
@@ -163,6 +164,7 @@ BindWA::BindWA(SchemaDB *schemaDB, CmpContext* cmpContext, NABoolean inDDL, NABo
      , renameToScanTable_ (FALSE)
      , inViewExpansion_ (FALSE)
      , inliningInfoFlagsToSetRecursivly_(0)
+     , currCSE_(NULL)
      , inCTAS_(FALSE)
      , viewsUsed_("", wHeap())
      , hasDynamicRowsetsInQuery_(FALSE)

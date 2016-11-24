@@ -338,6 +338,18 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_CURR_TRANSID:
 	  setClassID(FUNC_CURR_TRANSID_ID);
 	  break;
+        case ITM_SHA1:
+          setClassID(FUNC_SHA1_ID);
+          break;
+        case ITM_SHA2:
+          setClassID(FUNC_SHA2_ID);
+          break;
+        case ITM_MD5:
+          setClassID(FUNC_MD5_ID);
+          break; 
+        case ITM_CRC32:
+          setClassID(FUNC_CRC32_ID);
+          break; 
 	case ITM_ISIPV4:
 	case ITM_ISIPV6:
 	  setClassID(FUNC_ISIP_ID);
@@ -452,6 +464,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_AGGR_MIN_MAX:
 	  setClassID(AGGR_MIN_MAX_ID);
 	  break;
+	case ITM_AGGR_GROUPING_FUNC:
+	  setClassID(AGGR_GROUPING_ID);
+	  break;
 	case ITM_CURRENTEPOCH:
 	case ITM_VSBBROWTYPE:
 	case ITM_VSBBROWCOUNT:
@@ -519,6 +534,9 @@ ex_clause::ex_clause(clause_type type,
 	  break;
 	case ITM_HBASE_VERSION:
 	  setClassID(FUNC_HBASE_VERSION);
+	  break;
+	case ITM_SOUNDEX:
+	  setClassID(FUNC_SOUNDEX_ID);
 	  break;
 	default:
 	  GenAssert(0, "ex_clause: Unknown Class ID.");
@@ -897,6 +915,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::AGGR_MIN_MAX_ID:
       GetVTblPtr(vtblPtr, ex_aggr_min_max_clause);
       break;
+    case ex_clause::AGGR_GROUPING_ID:
+      GetVTblPtr(vtblPtr, ExFunctionGrouping);
+      break;
     case ex_clause::AGGREGATE_TYPE:
       GetVTblPtr(vtblPtr, ex_aggregate_clause);
       break;
@@ -984,6 +1005,18 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_HBASE_VERSION:
       GetVTblPtr(vtblPtr, ExFunctionHbaseVersion);
       break;
+    case ex_clause::FUNC_SHA1_ID:
+      GetVTblPtr(vtblPtr, ExFunctionSha);
+      break;
+    case ex_clause::FUNC_SHA2_ID:
+      GetVTblPtr(vtblPtr, ExFunctionSha2);
+      break;
+    case ex_clause::FUNC_MD5_ID:
+      GetVTblPtr(vtblPtr, ExFunctionMd5);
+      break;
+    case ex_clause::FUNC_CRC32_ID:
+      GetVTblPtr(vtblPtr, ExFunctionCrc32);
+      break;
     case ex_clause::FUNC_ISIP_ID:
       GetVTblPtr(vtblPtr, ExFunctionIsIP);
       break;
@@ -992,6 +1025,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_INETNTOA_ID:
       GetVTblPtr(vtblPtr, ExFunctionInetNtoa);
+      break;
+    case ex_clause::FUNC_SOUNDEX_ID:
+      GetVTblPtr(vtblPtr, ExFunctionSoundex);
       break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);
@@ -1153,6 +1189,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     // LCOV_EXCL_STOP
     case ITM_AGGR_MIN_MAX: return "ITM_AGGR_MIN_MAX";
+    case ITM_AGGR_GROUPING_FUNC: return "ITM_AGGR_GROUPING_FUNC";
 
     // custom functions
     // LCOV_EXCL_START
@@ -1836,6 +1873,16 @@ void ex_aggr_min_max_clause::displayContents(Space * space, const char * /*displ
 void ex_pivot_group_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   ex_clause::displayContents(space, "ex_pivot_group_clause", clauseNum, constsArea);
+}
+
+void ExFunctionGrouping::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  ex_clause::displayContents(space, "ExFunctionGrouping", clauseNum, constsArea);
+
+  char buf[100];
+  str_sprintf(buf, "    rollupGroupIndex_ = %d\n",
+              rollupGroupIndex_);
+  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 }
 
 void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)

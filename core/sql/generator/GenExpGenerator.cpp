@@ -485,9 +485,10 @@ short ExpGenerator::addDefaultValue(NAColumn * col, Attributes * attr,
 
   NAString *castStr;
 
-  if ((col) && (col->isAddedColumn()))
+  if ((col) && 
+      (col->isAddedColumn()))
     {
-      attr->setSpecialField();
+      attr->setAddedCol();
     }
 
   fsDataType = attr->getDatatype();
@@ -714,12 +715,12 @@ void ExpGenerator::addDefaultValues(const ValueIdList & val_id_list,
           // the i-th attribute
           Attributes * ithAttr =
             generator->getMapInfo(val_id_list[i])->getAttr();
-          ithAttr->setSpecialField();
+          ithAttr->setAddedCol();
           ithAttr->setDefaultFieldNum(i);
 
 	  if (attr)
             {
-              attr->setSpecialField();
+              attr->setAddedCol();
               attr->setDefaultFieldNum(i);
             }
 	}
@@ -745,8 +746,8 @@ void ExpGenerator::copyDefaultValues(
       Attributes * srcAttr = srcTupleDesc->getAttr(i);
       Attributes * tgtAttr = tgtTupleDesc->getAttr(i);
 
-      if (srcAttr->isSpecialField())
-	tgtAttr->setSpecialField();
+      if (srcAttr->isAddedCol())
+	tgtAttr->setAddedCol();
       
       tgtAttr->setDefaultClass(srcAttr->getDefaultClass());
 
@@ -1249,7 +1250,7 @@ short ExpGenerator::generateAggrExpr(const ValueIdSet &val_id_set,
 				     ex_expr ** expr,
 				     short gen_last_clause,
 				     NABoolean groupByOperation,
-                                     const ValueIdSet *addedInitSet /*optional*/
+                                     const ValueIdSet *addedInitSet/*optional*/
                                      )
 {
   ///////////////////////////////////////////////////////////////////////
@@ -1946,14 +1947,48 @@ short ExpGenerator::generateAggrExpr(const ValueIdSet &val_id_set,
 
     }
 
-  initExprGen();
-  *expr = new(getSpace()) AggrExpr(init_expr,
-				   0,//perrec_expr,
-				   0, //final_expr,
-				   final_null_expr);
+  // generate expressions to evaluate GROUPING clause
+  ValueIdSet groupingValIdSet;
+  for (val_id = val_id_set.init(); 
+       val_id_set.next(val_id); 
+       val_id_set.advance(val_id))
+    {
+      ItemExpr * item_expr = val_id.getValueDesc()->getItemExpr();
+      if (item_expr->getOperatorType() == ITM_GROUPING)
+        {
+          generator->getMapInfo(val_id)->codeGenerated();
+          Aggregate * ag = (Aggregate*)item_expr;
+          ItemExpr * groupingExpr = 
+            new(wHeap()) AggrGrouping(ag->getRollupGroupIndex());
+	  groupingExpr->bindNode(generator->getBindWA());
+	  groupingValIdSet.insert(groupingExpr->getValueId());
+          
+          Attributes * attr = generator->getMapInfo(val_id)->getAttr();
+          map_info = generator->addMapInfo(groupingExpr->getValueId(), attr);
+          (map_info->getAttr())->copyLocationAttrs(attr);
+        }
+    } // for
 
-  generateSetExpr(*newValIdSet, ex_expr::exp_ARITH_EXPR, expr,
-                  gen_last_clause);
+  ex_expr * grouping_expr = NULL;
+  if (NOT groupingValIdSet.isEmpty())
+    {
+      unsigned short pcm = getPCodeMode();
+      setPCodeMode(ex_expr::PCODE_NONE);
+
+      generateSetExpr(groupingValIdSet, ex_expr::exp_ARITH_EXPR,
+                      &grouping_expr);
+
+      setPCodeMode(pcm);
+    }
+
+  ex_expr * perrec_expr = NULL;
+  generateSetExpr(*newValIdSet, ex_expr::exp_ARITH_EXPR, &perrec_expr);
+
+  *expr = new(getSpace()) AggrExpr(init_expr,
+				   perrec_expr,
+				   0, //final_expr,
+				   final_null_expr,
+                                   grouping_expr);
 
   for (CollIndex ns = 0; ns < NullSwitcharooVidList.entries(); ns++)
     {
@@ -2096,8 +2131,8 @@ short ExpGenerator::generateBulkMoveAligned(
         (tgtAttr->getVCLenIndOffset()    != srcAttr->getVCLenIndOffset()) ||
         (tgtAttr->getNullIndOffset()     != srcAttr->getNullIndOffset())   ||
         (tgtAttr->getVoaOffset()         != srcAttr->getVoaOffset())  ||
-        (srcAttr->isSpecialField()) ||
-        (tgtAttr->isSpecialField()))
+        (srcAttr->isAddedCol()) ||
+        (tgtAttr->isAddedCol()))
     bulkMove = FALSE;
   }
 
@@ -2305,8 +2340,8 @@ short ExpGenerator::generateBulkMove(ValueIdList inValIdList,
              != (srcAttr->getVCLenIndOffset() - firstSrcVCLenIndOffset))) ||
           (srcAttr->getAtpIndex() == 0)     ||
           (srcAttr->getAtpIndex() == 1)     ||
-          (srcAttr->isSpecialField())       ||
-          (tgtAttr->isSpecialField()))
+          (srcAttr->isAddedCol())       ||
+          (tgtAttr->isAddedCol()))
       bulkMove = FALSE;
   }
 
@@ -2472,7 +2507,7 @@ short ExpGenerator::generateContiguousMoveExpr(
            (colArray == NULL) &&
            ((col = valIdList[i].getNAColumn( TRUE )) != NULL) &&
            col->isAddedColumn() )
-        attrs[i]->setSpecialField();
+        attrs[i]->setAddedCol();
 
       convValIdList.insert(convValueId);
     }
@@ -2486,7 +2521,7 @@ short ExpGenerator::generateContiguousMoveExpr(
     {
       col = (*colArray)[i];
       if ( col->isAddedColumn() )
-        attrs[i]->setSpecialField();
+        attrs[i]->setAddedCol();
     }
   }
 
@@ -4508,7 +4543,7 @@ short ExpGenerator::processValIdList(ValueIdList valIdList,
            ( colArray == NULL ) &&
            ((col = valIdList[i].getNAColumn( TRUE )) != NULL) &&
            col->isAddedColumn() )
-        attrs[i]->setSpecialField();
+        attrs[i]->setAddedCol();
     }
 
   // Ensure added columns are tagged before computing offset for the aligned
@@ -4519,7 +4554,7 @@ short ExpGenerator::processValIdList(ValueIdList valIdList,
     {
       col = (*colArray)[i];
       if (( col->isAddedColumn() ) && (!isIndex))
-        attrs[i]->setSpecialField();
+        attrs[i]->setAddedCol();
     }
   }
 
@@ -4828,7 +4863,7 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
 
   ComSpace * tempSpace = generator->getTempSpace();
 
-  NABoolean genShowPlan = getShowplan();
+  NABoolean saveClauses = (getShowplan() || saveClausesInExpr());
 
   if (tempSpace)
   {
@@ -4890,7 +4925,7 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
 
       // Walk through clauses list if expression contains EVAL instruction.
       // Otherwise we're pretty much done since PCODE was already copied over.
-      if((*expr)->getPCodeSegment()->containsClauseEval() || genShowPlan) {
+      if((*expr)->getPCodeSegment()->containsClauseEval() || saveClauses) {
         for (ex_clause* clause = (*expr)->getClauses();
             clause;
             clause = clause->getNextClause())
@@ -4900,7 +4935,7 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
           // If this has pCode, then we don't need to copy the clause.  Change
           // retCode, however, to reflect the fact that we got rid of a clause.
           // If we're generating a showplan, all clauses are to be emitted.
-          if (!clause->noPCodeAvailable() && !genShowPlan)
+          if (!clause->noPCodeAvailable() && !saveClauses)
           {
             retCode = 1;
             continue;
@@ -4982,7 +5017,7 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
             // will already get emitted.  This way we don't falsely report that
             // no pcode is available.
 
-            if (!genShowPlan) {
+            if (!saveClauses) {
               branchClause->get_branch_clause()->setNoPCodeAvailable(TRUE);
               branchClause->get_saved_next()->setNoPCodeAvailable(TRUE);
             }
@@ -4995,7 +5030,7 @@ short ExpGenerator::endExprGen(ex_expr ** expr, short gen_last_clause)
 
           // If showplan is being generated, make sure to discount the size of
           // those clauses which would be deleted if this wasn't a showplan.
-          if (genShowPlan)
+          if (saveClauses)
             len1 += (afterSize - beforeSize);
 
           prevClause = newClause;

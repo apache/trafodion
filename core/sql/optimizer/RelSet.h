@@ -255,6 +255,15 @@ public:
   // The set of values that I can potentially produce as output.
   virtual void getPotentialOutputValues(ValueIdSet & vs) const;
 
+  // methods for common subexpressions
+  virtual NABoolean prepareTreeForCSESharing(
+       const ValueIdSet &outputsToAdd,
+       const ValueIdSet &predicatesToRemove,
+       const ValueIdSet &commonPredicatesToAdd,
+       const ValueIdSet &inputsToRemove,
+       CSEInfo *info,
+       NABoolean testRun);
+
   // ---------------------------------------------------------------------
   // Function for testing the eligibility of this
   // Union to form a plan using the given required physical properties.

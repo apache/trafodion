@@ -98,6 +98,8 @@ NA_EIDPROC
 NA_EIDPROC
   ~ComTdbSortGrby();
 
+  AggrExpr * aggrExpr() { return (AggrExpr*)((ex_expr*)aggrExpr_); }
+
   void setNumRollupGroups(Int16 v) { numRollupGroups_ = v; }
   Int16 numRollupGroups() { return numRollupGroups_; }
 

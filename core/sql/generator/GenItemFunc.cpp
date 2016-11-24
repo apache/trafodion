@@ -218,6 +218,42 @@ short BuiltinFunction::codeGen(Generator * generator)
       
       break;
 
+   case ITM_SHA1:
+      {
+         function_clause =
+           new(generator->getSpace()) ExFunctionSha(getOperatorType(),
+                                                         attr, space);
+      }
+     
+      break;
+
+   case ITM_SHA2:
+      {
+         function_clause =
+           new(generator->getSpace()) ExFunctionSha2(getOperatorType(),
+                                                         attr, space);
+      }
+     
+      break;
+
+   case ITM_MD5:
+      {
+         function_clause =
+           new(generator->getSpace()) ExFunctionMd5(getOperatorType(),
+                                                         attr, space);
+      }
+     
+      break;
+
+   case ITM_CRC32:
+      {
+         function_clause =
+           new(generator->getSpace()) ExFunctionCrc32(getOperatorType(),
+                                                         attr, space);
+      }
+     
+      break;
+
    case ITM_ISIPV4:
    case ITM_ISIPV6:
       {
@@ -591,6 +627,15 @@ short BuiltinFunction::codeGen(Generator * generator)
 							space);
       }
     break;
+   
+    case ITM_SOUNDEX:
+    {
+        function_clause =
+            new(generator->getSpace()) ExFunctionSoundex(getOperatorType(),
+                    attr,
+                    space);
+    }
+    break;
       
     default:
       break;
@@ -687,6 +732,30 @@ short AggrMinMax::codeGen(Generator * generator)
     new(generator->getSpace()) ex_aggr_min_max_clause(getOperatorType(),
 						      (short) (1+getArity()),
 						      attr, generator->getSpace());
+  
+  generator->getExpGenerator()->linkClause(this, function_clause);
+  
+  return 0;
+}
+
+short AggrGrouping::codeGen(Generator * generator)
+{
+  Attributes ** attr;
+  
+  Space * space = generator->getSpace();
+  
+  if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
+    return 0;
+  
+  GenAssert((rollupGroupIndex_ >= 0), 
+            "AggrGrouping::codeGen. rollupGroupIndex_ must be >= 0.");
+
+  ex_clause * function_clause = 
+    new(generator->getSpace()) ExFunctionGrouping(getOperatorType(),
+                                                  1,
+                                                  attr, 
+                                                  rollupGroupIndex_,
+                                                  generator->getSpace());
   
   generator->getExpGenerator()->linkClause(this, function_clause);
   

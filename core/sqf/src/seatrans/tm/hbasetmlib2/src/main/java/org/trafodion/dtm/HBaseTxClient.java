@@ -57,7 +57,6 @@ import org.apache.hadoop.hbase.client.transactional.TransactionMap;
 import org.apache.hadoop.hbase.client.transactional.TransactionalReturn;
 import org.apache.hadoop.hbase.client.transactional.TmDDL;
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
@@ -74,6 +73,7 @@ import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
 
 import org.apache.zookeeper.KeeperException;
+import org.trafodion.sql.TrafConfiguration;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -124,7 +124,7 @@ public class HBaseTxClient {
       if (LOG.isDebugEnabled()) LOG.debug("Enter init, hBasePath:" + hBasePath);
       if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
       if (config == null) {
-         config = HBaseConfiguration.create();
+         config = TrafConfiguration.create();
          connection = ConnectionFactory.createConnection(config);
       }
       config.set("hbase.zookeeper.quorum", zkServers);
@@ -203,7 +203,7 @@ public class HBaseTxClient {
       setupLog4j();
       if (LOG.isDebugEnabled()) LOG.debug("Enter init(" + dtmid + ")");
       if (config == null) {
-         config = HBaseConfiguration.create();
+         config = TrafConfiguration.create();
          connection = ConnectionFactory.createConnection(config);
       }
       config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
@@ -890,7 +890,7 @@ public class HBaseTxClient {
       * Thread to gather recovery information for regions that need to be recovered 
       */
      private static class RecoveryThread extends Thread{
-             final int SLEEP_DELAY = 1000; // Initially set to run every 1sec
+             static final int SLEEP_DELAY = 1000; // Initially set to run every 1sec
              private int sleepTimeInt = 0;
              private boolean skipSleep = false;
              private TmAuditTlog audit;
@@ -905,6 +905,16 @@ public class HBaseTxClient {
              private boolean forceForgotten;
              private boolean useTlog;
              HBaseTxClient hbtx;
+             private static int envSleepTimeInt;
+
+         static {
+            String sleepTime = System.getenv("TMRECOV_SLEEP");
+            if (sleepTime != null) 
+               envSleepTimeInt = Integer.parseInt(sleepTime);
+            else
+               envSleepTimeInt = SLEEP_DELAY;
+            LOG.info("Recovery thread sleep set to: " + envSleepTimeInt + " ms");
+         }
 
          public RecoveryThread(TmAuditTlog audit,
                                HBaseTmZK zookeeper,
@@ -934,13 +944,7 @@ public class HBaseTxClient {
                           this.txnManager = txnManager;
                           this.inDoubtList = new HashSet<Long> ();
                           this.tmID = zookeeper.getTMID();
-
-                          String sleepTime = System.getenv("TMRECOV_SLEEP");
-                          if (sleepTime != null) {
-                                this.sleepTimeInt = Integer.parseInt(sleepTime);
-                                if(LOG.isDebugEnabled()) LOG.debug("Recovery thread sleep set to: " +
-                                                                   this.sleepTimeInt + "ms");
-                          }
+                          this.sleepTimeInt = envSleepTimeInt;
              }
 
              public void stopThread() {
@@ -1133,11 +1137,8 @@ public class HBaseTxClient {
                         }
                         try {
                             if(continueThread) {
-                                if(!skipSleep) {
-                                    if (sleepTimeInt > 0)
-                                        Thread.sleep(sleepTimeInt);
-                                    else
-                                        Thread.sleep(SLEEP_DELAY);
+                                if (!skipSleep) {
+                                   Thread.sleep(sleepTimeInt);
                                 }
                             }
                             retryCount = 0;

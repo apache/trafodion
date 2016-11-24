@@ -106,8 +106,6 @@ PerformanceMeasure *perf = 0;
 #include <pthread.h>
 
 #include <queue>
-#include <fstream>
-using namespace std;
 
 extern zhandle_t *zh;
 extern stringstream availSrvrNode;
@@ -524,6 +522,29 @@ static void* SessionWatchDog(void* arg)
                 okToGo = false;
             }
         }
+        if (okToGo)
+        {
+            retcode = pSrvrStmt->ExecDirect(NULL, "CQD HIST_MISSING_STATS_WARNING_LEVEL '0'", INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+            if (retcode < 0)
+            {
+                errMsg.str("");
+                if(pSrvrStmt->sqlError.errorList._length > 0)
+                    p_buffer = pSrvrStmt->sqlError.errorList._buffer;
+                else if(pSrvrStmt->sqlWarning._length > 0)
+                    p_buffer = pSrvrStmt->sqlWarning._buffer;
+                if(p_buffer != NULL && p_buffer->errorText)
+                    errMsg << "Failed to turn off missing statistics warning - " << p_buffer->errorText;
+                else
+                    errMsg << "Failed to turn off missing statistics warning - " << " no additional information";
+
+                errStr = errMsg.str();
+                SendEventMsg(MSG_ODBC_NSK_ERROR, EVENTLOG_ERROR_TYPE,
+                                        0, ODBCMX_SERVER, srvrGlobal->srvrObjRef,
+                                        1, errStr.c_str());
+                okToGo = false;
+            }
+        }
+
 
 		while(!record_session_done && okToGo)
 		{
@@ -1026,6 +1047,9 @@ static void* SessionWatchDog(void* arg)
                                           }
 				}
 			}
+
+			pSrvrStmt->cleanupAll();
+			REALLOCSQLMXHDLS(pSrvrStmt);
 		}//End while
 
 	}
@@ -8500,6 +8524,33 @@ odbc_SQLSrvr_EndTransaction_ame_(
 
 //LCOV_EXCL_STOP
 
+void
+odbc_SQLSrvr_ExtractLob_ame_(
+    /* In   */ CEE_tag_def objtag_
+  , /* In   */ const CEE_handle_def *call_id_
+  , /* In   */ IDL_long    extractLobAPI
+  , /* In   */ IDL_string  lobHandle)
+{
+    ERROR_DESC_LIST_def sqlWarning = {0, 0};
+    IDL_long_long lobDataLen = 0;
+    IDL_char * lobDataValue = NULL;
+
+    odbc_SQLsrvr_ExtractLob_exc_ exception_ = {0, 0};
+
+    odbc_SQLSrvr_ExtractLob_sme_(objtag_,
+                                 call_id_,
+                                 &exception_,
+                                 extractLobAPI,
+                                 lobHandle,
+                                 lobDataLen,
+                                 lobDataValue);
+
+    odbc_SQLSrvr_ExtractLob_ts_res_(objtag_,
+                                    call_id_,
+                                    &exception_,
+                                    lobDataLen,
+                                    lobDataValue);
+}
 
 
 void getCurrentCatalogSchema()

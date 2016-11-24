@@ -60,6 +60,9 @@ drop mv mvx cascade;
 drop table t006tao;
 drop table t006_employees;
 drop table t006taoc;
+-- Used for builtin function SOUNDEX() tests
+drop table t006emp1;
+drop table t006emp2;
 
 ?section create_tables
 
@@ -170,7 +173,26 @@ insert into t006taoc values
 ('10','14','9')
 ;
 
+-- Used for builtin function SOUNDEX() tests
+create table t006emp1(name varchar(20));
 
+create table t006emp2(name varchar(20) character set UCS2);
+
+insert into t006emp1 values
+('Smith'),
+('Lynn'),
+('Ruoyu'),
+('John'),
+('Lane')
+;
+
+insert into t006emp2 values
+('Smith'),
+('Lynn'),
+('Ruoyu'),
+('John'),
+('Lane')
+;
 
 ?section negative_tests
 
@@ -636,3 +658,18 @@ select emp_name, dept_name, salary_amt,
 lag(salary_amt, 3) over (partition by dept_name order by emp_name)
 from T006_EMPLOYEES <<+ cardinality 10e6 >> order by emp_name;
 
+select md5('10'), crc32(10), sha('10') from dual;
+select md5(10) from dual;
+select sha1(10) from dual;
+
+select SOUNDEX('Jon') from dual;
+select SOUNDEX('Roy') from dual;
+select SOUNDEX('Lynn') from dual;
+
+select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Jon');
+select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Roy');
+select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Lynn');
+
+select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Jon');
+select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Roy');
+select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Lynn');

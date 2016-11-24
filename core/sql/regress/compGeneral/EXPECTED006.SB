@@ -158,7 +158,34 @@
 
 --- 16 row(s) inserted.
 >>
+>>-- Used for builtin function SOUNDEX() tests
+>>create table t006emp1(name varchar(20));
+
+--- SQL operation complete.
 >>
+>>create table t006emp2(name varchar(20) character set UCS2);
+
+--- SQL operation complete.
+>>
+>>insert into t006emp1 values
++>('Smith'),
++>('Lynn'),
++>('Ruoyu'),
++>('John'),
++>('Lane')
++>;
+
+--- 5 row(s) inserted.
+>>
+>>insert into t006emp2 values
++>('Smith'),
++>('Lynn'),
++>('Ruoyu'),
++>('John'),
++>('Lane')
++>;
+
+--- 5 row(s) inserted.
 >>
 >>obey TEST006(negative_tests);
 >>
@@ -1655,4 +1682,101 @@ Sheldon     ship                5500.00     4000.00
 
 --- 19 row(s) selected.
 >>
+>>select md5('10'), crc32(10), sha('10') from dual;
+
+(EXPR)                            (EXPR)      (EXPR)
+--------------------------------  ----------  --------------------------------------------------------------------------------------------------------------------------------
+
+d3d9446802a44259755d38e6d163e820   852952723  b1d5781111d84f7b3fe45a0852e59758cd7a87e5
+
+--- 1 row(s) selected.
+>>select md5(10) from dual;
+
+*** ERROR[4067] The operands of function MD5 must be character data types.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select sha1(10) from dual;
+
+*** ERROR[4067] The operands of function SHA must be character data types.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select SOUNDEX('Jon') from dual;
+
+(EXPR)
+------
+
+J500
+
+--- 1 row(s) selected.
+>>select SOUNDEX('Roy') from dual;
+
+(EXPR)
+------
+
+R000
+
+--- 1 row(s) selected.
+>>select SOUNDEX('Lynn') from dual;
+
+(EXPR)
+------
+
+L500
+
+--- 1 row(s) selected.
+>>
+>>select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Jon');
+
+NAME (EXPR)
+----------
+
+John J500
+
+--- 1 row(s) selected.
+>>select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Roy');
+
+NAME (EXPR)
+----------
+
+Ruoyu R000
+
+--- 1 row(s) selected.
+>>select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Lynn');
+
+NAME (EXPR)
+----------
+
+Lane L500
+Lynn L500
+
+--- 2 row(s) selected.
+>>
+>>select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Jon');
+
+NAME (EXPR)
+----------
+
+John J500
+
+--- 1 row(s) selected.
+>>select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Roy');
+
+NAME (EXPR)
+----------
+
+Ruoyu R000
+
+--- 1 row(s) selected.
+>>select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Lynn');
+
+NAME (EXPR)
+----------
+
+Lane L500
+Lynn L500
+
+--- 2 row(s) selected.
 >>log;

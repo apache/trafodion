@@ -560,9 +560,9 @@ public:
 				 short displayCaseSpecific = 0);
 
   short getMyTypeAsText(NAString * outputStr, 
-			NABoolean addNullability = TRUE); // output
+			NABoolean addNullability = TRUE) const; // output
 
-  short getMyTypeAsHiveText(NAString * outputStr);  // output
+  short getMyTypeAsHiveText(NAString * outputStr) const;  // output
 
   // used for query caching
   Lng32 getSize() const;
@@ -586,6 +586,8 @@ public:
   // is supported by expr evaluator.
   virtual NABoolean expConvSupported
   (const NAType &otherNAType) const { return TRUE; }
+
+  static NAType* getNATypeForHive(const char* hiveType, NAMemory* heap);
 
 protected:
 

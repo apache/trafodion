@@ -112,6 +112,7 @@ public:
     isMarkedForElimination_(FALSE),
     aggDistElimRuleCreates_(FALSE),
     groupByOnJoinRuleCreates_(FALSE),
+    extraGrpOrderby_(NULL),
     isRollup_(FALSE)
   {}
 
@@ -130,6 +131,7 @@ public:
     isMarkedForElimination_(FALSE),
     aggDistElimRuleCreates_(FALSE),
     groupByOnJoinRuleCreates_(FALSE),
+    extraGrpOrderby_(NULL),
     isRollup_(FALSE)
   {}
 
@@ -152,6 +154,10 @@ public:
   inline void setGroupExpr(ValueIdSet &expr) { groupExpr_ = expr;}
   inline void addGroupExpr(ValueIdSet &expr) { groupExpr_ += expr;}
 
+  inline void setExtraOrderExpr(const ValueIdList &newExtraOrder) { extraOrderExpr_ = newExtraOrder; }
+  inline const ValueIdList & extraOrderExpr() const { return extraOrderExpr_; }
+  void normalizeExtraOrderExpr( NormWA & normWARef  ) { extraOrderExpr_.normalizeNode(normWARef); }
+  
   ValueIdList & rollupGroupExprList() { return rollupGroupExprList_; }
   const ValueIdList & rollupGroupExprList() const { return rollupGroupExprList_; }
   void setRollupGroupExprList(ValueIdList &expr) { rollupGroupExprList_ = expr;}
@@ -211,6 +217,14 @@ public:
   virtual void checkForCascadedGroupBy(NormWA &normWaRef);
 
   virtual void eliminateCascadedGroupBy(NormWA &normWaRef);
+
+  virtual NABoolean prepareMeForCSESharing(
+       const ValueIdSet &outputsToAdd,
+       const ValueIdSet &predicatesToRemove,
+       const ValueIdSet &commonPredicatesToAdd,
+       const ValueIdSet &inputsToRemove,
+       CSEInfo *info,
+       NABoolean testRun);
 
   // flows compRefOpt constraints up the query tree.
   virtual void processCompRefOptConstraints(NormWA * normWAPtr) ;
@@ -528,6 +542,9 @@ public:
   NABoolean isRollup() { return isRollup_; }
   const NABoolean isRollup() const { return isRollup_; }
 
+  ItemExpr * getExtraGrpOrderby() { return extraGrpOrderby_; }
+  void setExtraGrpOrderby(ItemExpr *ie) { extraGrpOrderby_ = ie; }
+
 //////////////////////////////////////////////////////
 
 private:
@@ -552,7 +569,9 @@ private:
   // ---------------------------------------------------------------------
   ItemExpr    * groupExprTree_;
   ValueIdSet  groupExpr_;
-
+  
+  ItemExpr  * extraGrpOrderby_;
+  ValueIdList  extraOrderExpr_;
   // --------------------------------------
   // used for processing groupby rollup
   // --------------------------------------

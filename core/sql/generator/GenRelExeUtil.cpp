@@ -119,6 +119,11 @@ short GenericUtilExpr::processOutputRow(Generator * generator,
 {
   ExpGenerator * expGen = generator->getExpGenerator();
   Space * space = generator->getSpace();
+  TableDesc *virtTableDesc = getVirtualTableDesc();
+
+  if (!virtTableDesc)
+    // this operator produces no outputs (e.g. truncate used with a temp table)
+    return 0;
   
   // Assumption (for now): retrievedCols contains ALL columns from
   // the table/index. This is because this operator does
@@ -130,7 +135,7 @@ short GenericUtilExpr::processOutputRow(Generator * generator,
 
   Attributes ** attrs =
     new(generator->wHeap())
-    Attributes * [getVirtualTableDesc()->getColumnList().entries()];
+    Attributes * [virtTableDesc->getColumnList().entries()];
 
   for (CollIndex i = 0; i < getVirtualTableDesc()->getColumnList().entries(); i++)
     {
@@ -811,6 +816,9 @@ short ExeUtilCleanupVolatileTables::codeGen(Generator * generator)
   
   if (type_ == ALL_TABLES_IN_ALL_CATS)
     exe_util_tdb->setCleanupAllTables(TRUE);
+
+  if (CmpCommon::getDefault(CSE_CLEANUP_HIVE_TABLES) != DF_OFF)
+    exe_util_tdb->setCleanupHiveCSETables(TRUE);
 
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
@@ -3324,6 +3332,21 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
   tablename = space->AllocateAndCopyToAlignedSpace
     (generator->genGetNameAsAnsiNAString(getTableName()), 0);
 
+  NAString hiveTableNameStr;
+  char * hiveTableName = NULL;
+
+  if (!getTableName().isInHiveDefaultSchema())
+    {
+      hiveTableNameStr =
+        getTableName().getQualifiedNameObj().getSchemaName();
+      hiveTableNameStr += ".";
+    }
+
+  hiveTableNameStr +=
+    getTableName().getQualifiedNameObj().getObjectName();
+  hiveTableName = space->AllocateAndCopyToAlignedSpace(
+       hiveTableNameStr, 0);
+
   char * hiveTableLocation = NULL;
   char * hiveHdfsHost = NULL;
   Int32 hiveHdfsPort = getHiveHdfsPort();
@@ -3332,6 +3355,8 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
     space->AllocateAndCopyToAlignedSpace (getHiveTableLocation(), 0);
   hiveHdfsHost =
     space->AllocateAndCopyToAlignedSpace (getHiveHostName(), 0);
+  if (getSuppressModCheck())
+    hiveModTS_ = 0;
 
   NABoolean doSimCheck = FALSE;
   if ((CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
@@ -3340,6 +3365,7 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
 
   ComTdbExeUtilHiveTruncate * exe_util_tdb = new(space) 
     ComTdbExeUtilHiveTruncate(tablename, strlen(tablename),
+                              hiveTableName,
                               hiveTableLocation, partn_loc,
                               hiveHdfsHost, hiveHdfsPort,
                               (doSimCheck ? hiveModTS_ : -1),
@@ -3351,6 +3377,9 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
                               getDefault(GEN_DDL_BUFFER_SIZE));
 
   generator->initTdbFields(exe_util_tdb);
+
+  if (getDropTableOnDealloc())
+    exe_util_tdb->setDropOnDealloc(TRUE);
   
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
@@ -4317,6 +4346,23 @@ const char * HiveMDaccessFunc::getVirtualTableName()
     return "HIVEMD__"; 
 }
 
+NABoolean HiveMDaccessFunc::isHiveMD(const NAString &name)
+{
+  if (memcmp(name.data(), (char*)"HIVEMD_", strlen("HIVEMD_")) == 0)
+    return TRUE;
+
+  return FALSE;
+}
+
+NAString HiveMDaccessFunc::getMDType(const NAString &name)
+{
+  NAString mdType(name);
+  mdType = mdType.remove(0, strlen("HIVEMD_"));
+  mdType = mdType.strip(NAString::trailing, '_');
+
+  return mdType;
+}
+
 TrafDesc *HiveMDaccessFunc::createVirtualTableDesc()
 {
   TrafDesc * table_desc =
@@ -4324,7 +4370,8 @@ TrafDesc *HiveMDaccessFunc::createVirtualTableDesc()
 				      getVirtualTableName(),
 				      ComTdbExeUtilHiveMDaccess::getVirtTableNumCols((char*)mdType_.data()),
 				      ComTdbExeUtilHiveMDaccess::getVirtTableColumnInfo((char*)mdType_.data()),
-				      0, NULL);
+				      ComTdbExeUtilHiveMDaccess::getVirtTableNumKeys((char*)mdType_.data()),
+				      ComTdbExeUtilHiveMDaccess::getVirtTableKeyInfo((char*)mdType_.data()));
 
   return table_desc;
 }
@@ -4541,18 +4588,27 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
        }
    }
 
+  char * catalogName = NULL;
+  NAString catalogNameInt;
+  catalogNameInt = CmpCommon::getDefaultString(HIVE_CATALOG);
+  catalogNameInt.toLower();
+  catalogName = space->allocateAlignedSpace(catalogNameInt.length() + 1);
+  strcpy(catalogName, catalogNameInt.data());
+
   char * schemaName = NULL;
   NAString schemaNameInt ;
-  if (schemaName_.getSchemaName().isNull()) {
-    const CorrName& name = getTableDesc()->getNATable()->getTableName();
-    schemaNameInt = name.getQualifiedNameObj().getSchemaName();
-  }
-  else {
-    schemaNameInt = schemaName_.getSchemaName();
-  }
-  schemaNameInt.toLower();
+  if (schemaName_.isNull())
+    schemaNameInt = HIVE_SYSTEM_SCHEMA_LC;
+  else
+    schemaNameInt = schemaName_;
   schemaName = space->allocateAlignedSpace(schemaNameInt.length() + 1);
   strcpy(schemaName, schemaNameInt.data());
+
+  char * objectName = NULL;
+  if (NOT objectName_.isNull()) {
+    objectName = space->allocateAlignedSpace(objectName_.length() + 1);
+    strcpy(objectName, objectName_.data());
+  }
 
   // add this descriptor to the work cri descriptor.
 #pragma nowarn(1506)   // warning elimination
@@ -4577,25 +4633,25 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
   else if (mdType_ == "SYSTEM_TABLES")
     type = ComTdbExeUtilHiveMDaccess::SYSTEM_TABLES_;
    
-#pragma nowarn(1506)   // warning elimination
   ComTdbExeUtilHiveMDaccess *hiveTdb
     = new(space)
       ComTdbExeUtilHiveMDaccess(
-		   type,
-		   tupleLength,
-		   givenDesc,	                 // given_cri_desc
-		   returnedDesc,		 // returned cri desc
-		   workCriDesc,
-		   work_atp_index,
-		   8,				 // Down queue size
-		   16,				 // Up queue size0
-		   3,				 // Number of buffers to allocate   
-		   36000,			 // Size of each buffer
-		   scanExpr,			 // predicate
-		   hivePredStr,
-                   schemaName);
-		   
-#pragma warn(1506)  // warning elimination
+           type,
+           tupleLength,
+           givenDesc,	                 // given_cri_desc
+           returnedDesc,		 // returned cri desc
+           workCriDesc,
+           work_atp_index,
+           8,				 // Down queue size
+           16,				 // Up queue size0
+           3,				 // Number of buffers to allocate   
+           36000,			 // Size of each buffer
+           scanExpr,			 // predicate
+           hivePredStr,
+           catalogName,
+           schemaName,
+           objectName);
+
   generator->initTdbFields(hiveTdb);
 
   // Add the explain Information for this node to the EXPLAIN

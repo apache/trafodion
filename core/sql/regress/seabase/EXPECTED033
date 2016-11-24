@@ -14,12 +14,12 @@
 --- SQL operation complete.
 >>
 >>-- empty table
->>select a, sum(b) from t033t1 group by rollup (a);
+>>select a, sum(b), grouping(a), grouping_id(a) from t033t1 group by rollup (a);
 
-A            (EXPR)              
------------  --------------------
+A            (EXPR)                (EXPR)      (EXPR)              
+-----------  --------------------  ----------  --------------------
 
-          ?                     ?
+          ?                     ?           1                     1
 
 --- 1 row(s) selected.
 >>select b+1, sum(b) from t033t1 group by rollup (b);
@@ -50,7 +50,50 @@ A            B            C            D
 
 --- 6 row(s) selected.
 >>
->>explain options 'f' select a,b,c,sum(d) from t033t1 
+>>select cast(d as nullable), grouping(cast(d as nullable)),
++>       grouping_id(cast(d as nullable)) from t033t1
++>  group by rollup (cast(d as nullable));
+
+(EXPR)       (EXPR)      (EXPR)              
+-----------  ----------  --------------------
+
+          3           0                     0
+          4           0                     0
+          5           0                     0
+          6           0                     0
+          ?           1                     1
+
+--- 5 row(s) selected.
+>>select cast(d as nullable) dd, grouping(cast(d as nullable)) from t033t1
++>  group by rollup (dd);
+
+DD           (EXPR)    
+-----------  ----------
+
+          3           0
+          4           0
+          5           0
+          6           0
+          ?           1
+
+--- 5 row(s) selected.
+>>select cast(d as nullable) dd, grouping(cast(d as nullable)) from t033t1
++>  group by rollup (1);
+
+DD           (EXPR)    
+-----------  ----------
+
+          3           0
+          4           0
+          5           0
+          6           0
+          ?           1
+
+--- 5 row(s) selected.
+>>
+>>explain options 'f' select a,b,c,sum(d),
++>                 grouping(a),grouping(b),grouping(c), grouping_id(a,b,c)
++>                 from t033t1 
 +>                 group by rollup(a,b,c) order by 1,2,3;
 
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
@@ -63,60 +106,76 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 .    .    1    trafodion_scan                  T033T1                1.00E+002
 
 --- SQL operation complete.
->>select a,b,c,min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by rollup(a,b,c) order by 1,2,3,4,5,6,7,8,9,10;
+>>select a,b,c,
++>       grouping(a), grouping(b), grouping(c), grouping_id(a,b,c),
++>       min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) 
++>       from t033t1 group by rollup(a,b,c) 
++>       order by 1,2,3,4,5,6,7,8,9,10,11,12,13;
 
-A            B            C            (EXPR)       (EXPR)       (EXPR)                (EXPR)                (EXPR)                (EXPR)                (EXPR)
------------  -----------  -----------  -----------  -----------  --------------------  --------------------  --------------------  --------------------  --------------------
+A            B            C            (EXPR)      (EXPR)      (EXPR)      (EXPR)                (EXPR)       (EXPR)       (EXPR)                (EXPR)                (EXPR)                (EXPR)                (EXPR)
+-----------  -----------  -----------  ----------  ----------  ----------  --------------------  -----------  -----------  --------------------  --------------------  --------------------  --------------------  --------------------
 
-          1            2            3            4            4                     4                     4                     1                     1                     1
-          1            2            ?            4            4                     4                     4                     1                     1                     1
-          1            3            3            3            3                     3                     3                     1                     1                     1
-          1            3            ?            3            3                     3                     3                     1                     1                     1
-          1            ?            ?            3            4                     7                     3                     2                     2                     2
-          2            3            4            5            5                     5                     5                     1                     1                     1
-          2            3            ?            5            5                     5                     5                     1                     1                     1
-          2            ?            ?            5            5                     5                     5                     1                     1                     1
-          3            3            3            3            3                     3                     3                     1                     1                     1
-          3            3            4            5            5                     5                     5                     1                     1                     1
-          3            3            ?            3            5                     8                     4                     2                     2                     2
-          3            ?            ?            3            5                     8                     4                     2                     2                     2
-          ?            ?            ?            3            6                    26                     4                     6                     6                     5
-          ?            ?            ?            6            6                     6                     6                     1                     1                     0
-          ?            ?            ?            6            6                     6                     6                     1                     1                     0
-          ?            ?            ?            6            6                     6                     6                     1                     1                     0
+          1            2            3           0           0           0                     0            4            4                     4                     4                     1                     1                     1
+          1            2            ?           0           0           1                     1            4            4                     4                     4                     1                     1                     1
+          1            3            3           0           0           0                     0            3            3                     3                     3                     1                     1                     1
+          1            3            ?           0           0           1                     1            3            3                     3                     3                     1                     1                     1
+          1            ?            ?           0           1           1                     3            3            4                     7                     3                     2                     2                     2
+          2            3            4           0           0           0                     0            5            5                     5                     5                     1                     1                     1
+          2            3            ?           0           0           1                     1            5            5                     5                     5                     1                     1                     1
+          2            ?            ?           0           1           1                     3            5            5                     5                     5                     1                     1                     1
+          3            3            3           0           0           0                     0            3            3                     3                     3                     1                     1                     1
+          3            3            4           0           0           0                     0            5            5                     5                     5                     1                     1                     1
+          3            3            ?           0           0           1                     1            3            5                     8                     4                     2                     2                     2
+          3            ?            ?           0           1           1                     3            3            5                     8                     4                     2                     2                     2
+          ?            ?            ?           0           0           0                     0            6            6                     6                     6                     1                     1                     0
+          ?            ?            ?           0           0           1                     1            6            6                     6                     6                     1                     1                     0
+          ?            ?            ?           0           1           1                     3            6            6                     6                     6                     1                     1                     0
+          ?            ?            ?           1           1           1                     7            3            6                    26                     4                     6                     6                     5
 
 --- 16 row(s) selected.
 >>
 >>select * from (
-+>select a,b,c,min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by (a,b,c)
++>select a,b,c,
++>       cast(0 as int unsigned),cast(0 as int unsigned),cast(0 as int unsigned),
++>       min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) 
++>       from t033t1 group by (a,b,c)
 +>union all
-+>select a,b,cast(null as int),min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by (a,b)
++>select a,b,cast(null as int),
++>       cast(0 as int unsigned),cast(0 as int unsigned),cast(1 as int unsigned),
++>       min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) 
++>       from t033t1 group by (a,b)
 +>union all
-+>select a,cast(null as int),cast(null as int),min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1 group by (a)
++>select a,cast(null as int),cast(null as int),
++>       cast(0 as int unsigned),cast(1 as int unsigned),cast(1 as int unsigned),
++>       min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) 
++>       from t033t1 group by (a)
 +>union all
-+>select cast(null as int),cast(null as int),cast(null as int),min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) from t033t1
-+>) x(a,b,c,d,e,f,g,h,i,j)
-+>order by a,b,c,d,e,f,g,h,i,j;
++>select cast(null as int),cast(null as int),cast(null as int),
++>       cast(1 as int unsigned),cast(1 as int unsigned),cast(1 as int unsigned),
++>       min(d),max(d),sum(d),avg(d),count(d),count(*),count(c) 
++>       from t033t1
++>) x(a,b,c,d,e,f,g,h,i,j,k,l,m)
++>order by a,b,c,d,e,f,g,h,i,j,k,l,m;
 
-A            B            C            D            E            F                     G                     H                     I                     J
------------  -----------  -----------  -----------  -----------  --------------------  --------------------  --------------------  --------------------  --------------------
+A            B            C            D           E           F           G            H            I                     J                     K                     L                     M
+-----------  -----------  -----------  ----------  ----------  ----------  -----------  -----------  --------------------  --------------------  --------------------  --------------------  --------------------
 
-          1            2            3            4            4                     4                     4                     1                     1                     1
-          1            2            ?            4            4                     4                     4                     1                     1                     1
-          1            3            3            3            3                     3                     3                     1                     1                     1
-          1            3            ?            3            3                     3                     3                     1                     1                     1
-          1            ?            ?            3            4                     7                     3                     2                     2                     2
-          2            3            4            5            5                     5                     5                     1                     1                     1
-          2            3            ?            5            5                     5                     5                     1                     1                     1
-          2            ?            ?            5            5                     5                     5                     1                     1                     1
-          3            3            3            3            3                     3                     3                     1                     1                     1
-          3            3            4            5            5                     5                     5                     1                     1                     1
-          3            3            ?            3            5                     8                     4                     2                     2                     2
-          3            ?            ?            3            5                     8                     4                     2                     2                     2
-          ?            ?            ?            3            6                    26                     4                     6                     6                     5
-          ?            ?            ?            6            6                     6                     6                     1                     1                     0
-          ?            ?            ?            6            6                     6                     6                     1                     1                     0
-          ?            ?            ?            6            6                     6                     6                     1                     1                     0
+          1            2            3           0           0           0            4            4                     4                     4                     1                     1                     1
+          1            2            ?           0           0           1            4            4                     4                     4                     1                     1                     1
+          1            3            3           0           0           0            3            3                     3                     3                     1                     1                     1
+          1            3            ?           0           0           1            3            3                     3                     3                     1                     1                     1
+          1            ?            ?           0           1           1            3            4                     7                     3                     2                     2                     2
+          2            3            4           0           0           0            5            5                     5                     5                     1                     1                     1
+          2            3            ?           0           0           1            5            5                     5                     5                     1                     1                     1
+          2            ?            ?           0           1           1            5            5                     5                     5                     1                     1                     1
+          3            3            3           0           0           0            3            3                     3                     3                     1                     1                     1
+          3            3            4           0           0           0            5            5                     5                     5                     1                     1                     1
+          3            3            ?           0           0           1            3            5                     8                     4                     2                     2                     2
+          3            ?            ?           0           1           1            3            5                     8                     4                     2                     2                     2
+          ?            ?            ?           0           0           0            6            6                     6                     6                     1                     1                     0
+          ?            ?            ?           0           0           1            6            6                     6                     6                     1                     1                     0
+          ?            ?            ?           0           1           1            6            6                     6                     6                     1                     1                     0
+          ?            ?            ?           1           1           1            3            6                    26                     4                     6                     6                     5
 
 --- 16 row(s) selected.
 >>
@@ -506,7 +565,9 @@ A
 >>control query shape esp_exchange(cut);
 
 --- SQL operation complete.
->>explain options 'f' select a,b,c,sum(d) from t033t2 
+>>explain options 'f' select a,b,c,sum(d), 
++>        grouping(a), grouping(b), grouping(c),
++>        grouping_id(a,b,c) from t033t2 
 +>        group by rollup(a,b,c) order by 1,2,3;
 
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
@@ -523,27 +584,29 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 .    .    1    trafodion_scan                  T033T2                1.00E+002
 
 --- SQL operation complete.
->>select a,b,c,sum(d) from t033t2 group by rollup(a,b,c) order by 1,2,3;
+>>select a,b,c,sum(d),
++>        grouping(a),grouping(b), grouping(c), grouping_id(a,b,c) from t033t2 
++>        group by rollup(a,b,c) order by 1,2,3;
 
-A            B            C            (EXPR)              
------------  -----------  -----------  --------------------
+A            B            C            (EXPR)                (EXPR)      (EXPR)      (EXPR)      (EXPR)
+-----------  -----------  -----------  --------------------  ----------  ----------  ----------  --------------------
 
-          1            2            3                     4
-          1            2            ?                     4
-          1            3            3                     3
-          1            3            ?                     3
-          1            ?            ?                     7
-          2            3            4                     5
-          2            3            ?                     5
-          2            ?            ?                     5
-          3            3            3                     3
-          3            3            4                     5
-          3            3            ?                     8
-          3            ?            ?                     8
-          ?            ?            ?                     6
-          ?            ?            ?                     6
-          ?            ?            ?                     6
-          ?            ?            ?                    26
+          1            2            3                     4           0           0           0                     0
+          1            2            ?                     4           0           0           1                     1
+          1            3            3                     3           0           0           0                     0
+          1            3            ?                     3           0           0           1                     1
+          1            ?            ?                     7           0           1           1                     3
+          2            3            4                     5           0           0           0                     0
+          2            3            ?                     5           0           0           1                     1
+          2            ?            ?                     5           0           1           1                     3
+          3            3            3                     3           0           0           0                     0
+          3            3            4                     5           0           0           0                     0
+          3            3            ?                     8           0           0           1                     1
+          3            ?            ?                     8           0           1           1                     3
+          ?            ?            ?                     6           0           0           0                     0
+          ?            ?            ?                     6           0           0           1                     1
+          ?            ?            ?                     6           0           1           1                     3
+          ?            ?            ?                    26           1           1           1                     7
 
 --- 16 row(s) selected.
 >>control query shape cut;
@@ -599,6 +662,55 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- group by rollup and grouping on hive tables
+>>sh echo "drop table t033hive1;" > TEST033_junk;
+>>sh regrhive.ksh -f TEST033_junk;
+>>sh echo "create table t033hive1(a int, b int);" > TEST033_junk;
+>>sh regrhive.ksh -f TEST033_junk;
+>>sh echo "drop table t033hive2;" > TEST033_junk;
+>>sh regrhive.ksh -f TEST033_junk;
+>>sh echo "create table t033hive2(a int, b int);" > TEST033_junk;
+>>sh regrhive.ksh -f TEST033_junk;
+>>insert into hive.hive.t033hive1 values (1,2), (null, null);
+
+--- 2 row(s) inserted.
+>>insert into hive.hive.t033hive2 values (1,2), (null, null);
+
+--- 2 row(s) inserted.
+>>prepare s from select t1.a, t2.b , grouping(t1.a), grouping(t2.b),
++>       grouping(t1.a)+grouping(t2.b) aa  
++>   from hive.hive.t033hive1 t1, hive.hive.t033hive2 t2 
++>   group by rollup (t1.a, t2.b) order by aa;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+6    .    7    root                                                  4.00E+000
+5    .    6    sort                                                  4.00E+000
+4    .    5    sort_groupby_rollup                                   4.00E+000
+3    .    4    sort                                                  1.00E+004
+2    1    3    hybrid_hash_join                                      1.00E+004
+.    .    2    hive_scan                       T033HIVE1             1.00E+002
+.    .    1    hive_scan                       T033HIVE2             1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+A            B            (EXPR)      (EXPR)      AA                  
+-----------  -----------  ----------  ----------  --------------------
+
+          1            2           0           0                     0
+          ?            ?           0           0                     0
+          ?            2           0           0                     0
+          1            ?           0           0                     0
+          ?            ?           0           1                     1
+          1            ?           0           1                     1
+          ?            ?           1           1                     2
+
+--- 7 row(s) selected.
 >>
 >>-- error cases. Not allowed or currently not supported
 >>select a,a,sum(b) from t033t1 group by rollup (a,a);
@@ -610,6 +722,49 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>select d, sum(b) from t033t1 group by rollup (d);
 
 *** ERROR[4384] GROUP BY ROLLUP clause not allowed for this statement. Reason: Grouped columns must be nullable.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>select grouping(b) from t033t1;
+
+*** ERROR[3242] This statement is not supported. Reason: GROUPING function can only be specified with GROUP BY ROLLUP clause.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a,grouping(b) from t033t1 group by (a);
+
+*** ERROR[3242] This statement is not supported. Reason: GROUPING function can only be specified with GROUP BY ROLLUP clause.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a,grouping(b) from t033t1 group by rollup (a);
+
+*** ERROR[4384] GROUP BY ROLLUP clause not allowed for this statement. Reason: GROUPING function can only be specified on a GROUP BY ROLLUP entry.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select a+1, grouping(a) from t033t1 group by rollup (a+1);
+
+*** ERROR[4384] GROUP BY ROLLUP clause not allowed for this statement. Reason: GROUPING function can only be specified on a GROUP BY ROLLUP entry.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select grouping_id(a) from t033t1;
+
+*** ERROR[3242] This statement is not supported. Reason: GROUPING_ID function must be specified in the select list of a GROUP BY ROLLUP statement.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select grouping_id(a) from t033t1 group by (a);
+
+*** ERROR[3242] This statement is not supported. Reason: GROUPING_ID function must be specified in the select list of a GROUP BY ROLLUP statement.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select * from t033t1 where grouping_id(a) = 1;
+
+*** ERROR[3242] This statement is not supported. Reason: GROUPING_ID function must be specified in the select list of a GROUP BY ROLLUP statement.
 
 *** ERROR[8822] The statement was not prepared.
 

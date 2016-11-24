@@ -158,15 +158,15 @@ fi
 
 export HBASE_DEP_VER_APACHE=1.2.0
 export HIVE_DEP_VER_APACHE=1.1.0
-export HBVER=apache1_2_0
+export HBVER=apache1_2
 
 if [[ "$HBASE_DISTRO" == "APACHE1.1" ]]; then
    export HBASE_DEP_VER_APACHE=1.1.2
-   export HBVER=apache1_1_2
+   export HBVER=apache1_1
 fi
 if [[ "$HBASE_DISTRO" == "APACHE1.0" ]]; then
    export HBASE_DEP_VER_APACHE=1.0.2
-   export HBVER=apache1_0_2
+   export HBVER=apache1_0
 fi
 export HBASE_TRX_ID_APACHE=hbase-trx-${HBVER}
 
@@ -683,9 +683,10 @@ export SQ_MON_KEEPINTVL=6
 export SQ_MON_KEEPCNT=5
 
 # Monitor sync thread epoll wait timeout is in seconds
-# Currently set to 45 seconds
-export SQ_MON_EPOLL_WAIT_TIMEOUT=15
-export SQ_MON_EPOLL_RETRY_COUNT=3
+# Currently set to 64 seconds (4 second timeout, 16 retries)
+export SQ_MON_EPOLL_WAIT_TIMEOUT=4
+# Note: the retry count is ignored when SQ_MON_ZCLIENT_ENABLED=1 (the default)
+export SQ_MON_EPOLL_RETRY_COUNT=16
 
 # Monitor Zookeeper client
 #  - A zero value disables the zclient logic in the monitor process.
@@ -695,7 +696,6 @@ export SQ_MON_EPOLL_RETRY_COUNT=3
 #  - Session timeout in seconds defines when Zookeeper quorum determines a
 #    non-responsive monitor zclient which results in a Trafodion node down. 
 #    Default is 60 seconds (1 minute) which is the maximum Zookeeper allows.
-#      (15 seconds longer than EPOLL timeout above).
 #export SQ_MON_ZCLIENT_SESSION_TIMEOUT=60
 
 # set to 0 to disable phandle verifier

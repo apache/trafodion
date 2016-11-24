@@ -87,8 +87,6 @@
 #include "CmpSeabaseDDL.h"
 
 #define MAX_NODE_NAME 9
-#define MAX_PRECISION_ALLOWED  18
-#define MAX_NUM_LEN     16
 
 #include "SqlParserGlobals.h"
 
@@ -3427,8 +3425,7 @@ NABoolean createNAColumns(TrafDesc *column_desc_list	/*IN*/,
 			       defaultValue,
                                heading,
 			       column_desc->isUpshifted(),
-			       ((column_desc->colclass == 'A') ||
-                                (column_desc->colclass == 'C')),
+                               (column_desc->colclass == 'A'),
                                COM_UNKNOWN_DIRECTION,
                                FALSE,
                                NULL,
@@ -3492,189 +3489,7 @@ NABoolean createNAColumns(TrafDesc *column_desc_list	/*IN*/,
       
 NAType* getSQColTypeForHive(const char* hiveType, NAMemory* heap)
 {
-  if ( !strcmp(hiveType, "tinyint"))
-    {
-      if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
-        return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
-      else
-        return new (heap) SQLTiny(TRUE /* neg */, TRUE /* allow NULL*/, heap);
-    }
-
-  if ( !strcmp(hiveType, "smallint"))
-    return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
- 
-  if ( !strcmp(hiveType, "int")) 
-    return new (heap) SQLInt(TRUE /* neg */, TRUE /* allow NULL*/, heap);
-
-  if ( !strcmp(hiveType, "bigint"))
-    return new (heap) SQLLargeInt(TRUE /* neg */, TRUE /* allow NULL*/, heap);
-
-  if ( !strcmp(hiveType, "boolean"))
-    return new (heap) SQLBooleanNative(TRUE, heap);
- 
-  if ( !strcmp(hiveType, "string"))
-    {
-      Int32 len = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
-      Int32 lenInBytes = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
-      if( lenInBytes != 32000 ) 
-        len = lenInBytes;
-      NAString hiveCharset =
-        ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
-      hiveCharset.toUpper();
-      CharInfo::CharSet hiveCharsetEnum = CharInfo::getCharSetEnum(hiveCharset);
-      Int32 maxNumChars = 0;
-      Int32 storageLen = len;
-      SQLVarChar * nat = 
-        new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
-                              TRUE, // allow NULL
-                              FALSE, // not upshifted
-                              FALSE, // not case-insensitive
-                              CharInfo::getCharSetEnum(hiveCharset),
-                              CharInfo::DefaultCollation,
-                              CharInfo::IMPLICIT);
-      nat->setWasHiveString(TRUE);
-      return nat;
-    }
-  
-  if ( !strcmp(hiveType, "float"))
-    return new (heap) SQLReal(TRUE /* allow NULL*/, heap);
-
-  if ( !strcmp(hiveType, "double"))
-    return new (heap) SQLDoublePrecision(TRUE /* allow NULL*/, heap);
-
-  if ( !strcmp(hiveType, "timestamp"))
-    return new (heap) SQLTimestamp(TRUE /* allow NULL */ , 6, heap);
-
-  if ( !strcmp(hiveType, "date"))
-    return new (heap) SQLDate(TRUE /* allow NULL */ , heap);
-
-  if ( !strncmp(hiveType, "varchar", 7) )
-  {
-    char maxLen[32];
-    memset(maxLen, 0, 32);
-    int i=0,j=0;
-    int copyit = 0;
-    int lenStr = strlen(hiveType);
-    //get length
-    for(i = 0; i < lenStr ; i++)
-    {
-      if(hiveType[i] == '(') //start
-      {
-        copyit=1;
-        continue;
-      }
-      else if(hiveType[i] == ')') //stop
-        break; 
-      if(copyit > 0)
-      {
-        maxLen[j] = hiveType[i];
-        j++;
-      }
-    }
-    Int32 len = atoi(maxLen);
-
-    if(len == 0) return NULL;  //cannot parse correctly
-
-    NAString hiveCharset =
-        ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
-
-    hiveCharset.toUpper();
-    CharInfo::CharSet hiveCharsetEnum = CharInfo::getCharSetEnum(hiveCharset);
-    Int32 maxNumChars = 0;
-    Int32 storageLen = len;
-    if (CharInfo::isVariableWidthMultiByteCharSet(hiveCharsetEnum))
-    {
-      // For Hive VARCHARs, the number specified is the max. number of characters,
-      // while we count in bytes when using HIVE_MAX_STRING_LENGTH for Hive STRING
-      // columns. Set the max character constraint and also adjust the required storage length.
-       maxNumChars = len;
-       storageLen = len * CharInfo::maxBytesPerChar(hiveCharsetEnum);
-    }
-    return new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
-                                   TRUE, // allow NULL
-                                   FALSE, // not upshifted
-                                   FALSE, // not case-insensitive
-                                   CharInfo::getCharSetEnum(hiveCharset),
-                                   CharInfo::DefaultCollation,
-                                   CharInfo::IMPLICIT);
-  } 
-
-  if ( !strncmp(hiveType, "decimal", 7) )
-  {
-    Int32 i=0, pstart=-1, pend=-1, sstart=-1, send=-1, p=-1, s = -1;
-    Int32 hiveTypeLen = strlen(hiveType);
-    char pstr[MAX_NUM_LEN], sstr[MAX_NUM_LEN];
-    memset(pstr,0,sizeof(pstr));
-    memset(sstr,0,sizeof(sstr));
-
-    for( i = 0; i < hiveTypeLen; i++ )
-    {
-      if(hiveType[i] == '(' )
-      {
-        pstart = i+1;
-      }
-      else if(hiveType[i] == ',')
-      {
-        pend = i;
-        sstart = i+1;
-      }
-      else if(hiveType[i] == ')')
-      {
-        send = i;
-      }
-      else
-       continue;
-    }
-    if(pend == -1) // no comma found, so no sstart and send
-    {
-       pend = send;
-       send = -1;
-       s = 0;
-    }  
-    if(pend - pstart > 0)
-    {
-      if( (pend - pstart) >= MAX_NUM_LEN ) // too long
-        return NULL;
-      strncpy(pstr,hiveType+pstart, pend-pstart);
-      p=atoi(pstr);
-    }
-
-    if(send - sstart > 0)
-    {
-      if( (send - sstart) >= MAX_NUM_LEN ) // too long
-        return NULL;
-      strncpy(sstr,hiveType+sstart,send-sstart);
-      s=atoi(sstr);
-    }
-
-    if( (p>0) && (p <= MAX_PRECISION_ALLOWED) ) //have precision between 1 - 18
-    {
-      if( ( s >=0 )  &&  ( s<= p) ) //have valid scale
-        return new (heap) SQLDecimal( p, s, TRUE, TRUE);
-      else
-        return NULL;
-    }
-    else if( p > MAX_PRECISION_ALLOWED)  
-    {
-      if ( (s>=0) && ( s<= p ) ) //have valid scale
-        return new (heap) SQLBigNum( p, s, TRUE, TRUE, TRUE, NULL);
-      else
-        return NULL;
-    }
-    //no p and s given, p and s are all initial value
-    else if( ( p == -1 ) && ( s == -1 ) )
-    {
-      // hive define decimal as decimal ( 10, 0 )
-      return new (heap) SQLDecimal( 10, 0, TRUE, TRUE);
-    }
-    else
-    {
-      return NULL; 
-    }
-
-  }
-
-  return NULL;
+  return NAType::getNATypeForHive(hiveType, heap);
 }
 
 NABoolean createNAColumns(struct hive_column_desc* hcolumn /*IN*/,
@@ -6846,42 +6661,39 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
 
   ComSecurityKeySet secKeyVec(heap_);
   if (priv_desc == NULL)
+  {
+    if (isHiveTable())
+      readPrivileges();
+    else
+      privInfo_ = NULL;
+    return;
+  }
+  else
+  {
+    // get roles granted to current user 
+    // SQL_EXEC_GetRoleList returns the list of roles from the CliContext
+    std::vector<int32_t> myRoles;
+    Int32 numRoles = 0;
+    Int32 *roleIDs = NULL;
+    if (SQL_EXEC_GetRoleList(numRoles, roleIDs) < 0)
     {
-      if (isHiveTable())
-        readPrivileges();
-      else
-        privInfo_ = NULL;
+      *CmpCommon::diags() << DgSqlCode(-1034);
       return;
     }
-  else
-    {
-      // Build privInfo_ based on the priv_desc
-      std::vector<int32_t> roleIDs;
 
-      CmpSeabaseDDL cmpSBD(STMTHEAP);
-      if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
-      {
-        if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-          *CmpCommon::diags() << DgSqlCode( -4400 );
-        return;
-      }
+    // At this time we should have at least one entry in roleIDs (PUBLIC_USER)
+    CMPASSERT (roleIDs && numRoles > 0);
 
-      NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
-      privMDLoc += ".\"";
-      privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-      privMDLoc += "\"";
+    for (Int32 i = 0; i < numRoles; i++)
+      myRoles.push_back(roleIDs[i]);
 
-      PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(),PrivMgr::PRIV_INITIALIZED);
-      PrivStatus retcode = privInterface.getRoles( ComUser::getCurrentUser(), roleIDs);
-      cmpSBD.switchBackCompiler();
-      if (retcode == STATUS_ERROR)
-        return;
-
-      privInfo_ = new(heap_) PrivMgrUserPrivs;
-      privInfo_->initUserPrivs(roleIDs, priv_desc, 
-                               ComUser::getCurrentUser(), 
-                               objectUID_.get_value(), secKeySet_);
+    // Build privInfo_ based on the priv_desc
+    privInfo_ = new(heap_) PrivMgrUserPrivs;
+    privInfo_->initUserPrivs(myRoles, priv_desc, 
+                             ComUser::getCurrentUser(), 
+                             objectUID_.get_value(), secKeySet_);
   }
+
 
   if (privInfo_ == NULL)
     {
@@ -9097,6 +8909,7 @@ NATableDB::RemoveFromNATableCache( NATable * NATablep , UInt32 currIndx )
 //
 // Remove ALL entries from the NATable Cache that have been
 // marked for removal before the next compilation.
+// Remove nonCacheable entries also.
 //
 void
 NATableDB::remove_entries_marked_for_removal()
@@ -9120,6 +8933,17 @@ NATableDB::remove_entries_marked_for_removal()
       }
       else currIndx++ ; //Note: No increment if the entry was removed !
    }
+
+   //remove the nonCacheableTableList and delete the name, 
+   //this is needed to remove objects such as sequence generators which 
+   //are not stored in the cached list
+   for(CollIndex i=0; i < nonCacheableTableList_.entries(); i++){
+     remove(nonCacheableTableList_[i]);
+     delete nonCacheableTableList_[i]; // delete the name only
+   }
+
+   //clear the list of special tables
+   nonCacheableTableList_.clear();
 }
 
 //

@@ -84,16 +84,6 @@ Lng32 setBufferValue(T& value,
                       HSDataBuffer &boundary);
 
 
-
-// This is the max supported length of character strings in UPDATE STATISTICS.
-// We will process longer columns, but we truncate their values to this length
-// during the processing. As a result, we may underestimate UEC, if, for 
-// example, the first 32767 bytes are identical but some difference occurs
-// afterwards. If we someday wish to support longer lengths, at the very least
-// the ISVarChar class needs to change to use a longer length field for varchar
-// values.
-enum { MAX_SUPPORTED_CHAR_LENGTH = 32767 };
-
 // An instance of ISFixedChar represents a value of a fixed-length character
 // string (either single or double-byte) retrieved into memory for use by
 // internal sort. A pointer to the actual string is maintained, and definitions
@@ -1349,7 +1339,13 @@ public:
 
     // Set CQDs controlling min/max HBase cache size to minimize risk of
     // scanner timeout.
-    static NABoolean setHBaseCacheSize(double sampleRatio);
+    NABoolean setHBaseCacheSize(double sampleRatio);
+
+    // Set CQD HIVE_MAX_STRING_LENGTH_IN_BYTES if necessary
+    NABoolean setHiveMaxStringLengthInBytes(void);
+
+    // Reset any CQDs set above
+    void resetCQDs(void);
 
     // Static fns for determining minimum table sizes for sampling, and for
     // using lowest sampling rate, under default sampling protocol.
@@ -1666,7 +1662,17 @@ public:
                                                           for one instance of persistent 
                                                           sample table */
 
-     NABoolean            sample_I_generated;
+    NABoolean            sample_I_generated;
+
+    Lng32          maxCharColumnLengthInBytes;   /* the value of USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES */
+
+    // Error recovery flags so we can reset CQDs that we set
+    // during CollectStatistics() (We do this because the
+    // HSHandleError macro commonly used makes it hard to
+    // do the resets reliably in CollectStatistics itself. Sigh.)
+
+    NABoolean hbaseCacheSizeCQDsSet_;
+    NABoolean hiveMaxStringLengthCQDSet_;
 
 private:
     //++ MV

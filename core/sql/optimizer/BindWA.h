@@ -84,6 +84,7 @@ struct TrafDesc;
 class NARoutine;
 class HbaseColUsageInfo;
 class ExeUtilHbaseCoProcAggr;
+class CommonSubExprRef;
 
 // ***********************************************************************
 // BindContext
@@ -684,6 +685,9 @@ public:
   // --------------------------------------------------------------------
   RelExpr *&getSequenceNode() { return sequenceNode_; };
 
+  const ValueIdMap &getNcToOldMap() { return ncToOldMap_;}
+  void setNCToOldMap(ValueIdMap vmap) {ncToOldMap_ = vmap; }
+
   ValueIdList getOlapPartition() const {return OlapPartition_; };
 
   ValueIdList getOlapOrder() const {return OlapOrder_; };
@@ -785,7 +789,7 @@ private:
   // node, an error is issued.
   //
   RelExpr *sequenceNode_;
-
+  ValueIdMap ncToOldMap_;
   // --------------------------------------------------------------------
   // Context info for this scope.
   // --------------------------------------------------------------------
@@ -1421,7 +1425,7 @@ public:
   NABoolean inViewDefinition() const;
   NABoolean inMVDefinition() const;
   NABoolean inCheckConstraintDefinition() const;
-
+ 
   //----------------------------------------------------------------------
   // Get the NARoutine associated with this routine name
   //----------------------------------------------------------------------
@@ -1567,6 +1571,9 @@ public:
     return r;
   }
 
+  CommonSubExprRef *inCSE() const       { return currCSE_; }
+  void setInCSE(CommonSubExprRef *cte)  { currCSE_ = cte; }
+  
   NABoolean inCTAS() const		{ return inCTAS_; }
   void setInCTAS(NABoolean t)
   {
@@ -1885,6 +1892,9 @@ private:
   NABoolean  inViewExpansion_;
   ValueIdMap updateToScanValueIds_;
   // QSTUFF
+
+  // set if we are currently under a CommonSubExprRef node
+  CommonSubExprRef *currCSE_;
 
   NABoolean  inCTAS_;
 

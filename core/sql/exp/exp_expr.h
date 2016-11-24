@@ -370,7 +370,7 @@ public:
     if (evalPtr_)
       return (*evalPtr_)(pCode, atp1, atp2, this);
     else if (pCode != NULL)
-      return evalPCode(pCode, atp1, atp2, rowLen);
+      return evalPCode(pCode, atp1, atp2, datalen, rowLen);
     else
       return evalClauses(getClauses(), atp1, atp2, datalen, rowLen, 
 			 lastFldIndex, fetchedDataPtr);
@@ -392,6 +392,7 @@ public:
     evalPCode(PCodeBinary*pCode,
 	      atp_struct*,
 	      atp_struct*,
+              Lng32 datalen,
 	      ULng32 *rowlen);
 
   // Inlined implementation of various expressions.  The number after "evalFast"
@@ -896,14 +897,15 @@ class SQLEXP_LIB_FUNC  AggrExpr : public ex_expr {
   ExExprPtr perrecExpr_;        // 08-15
   ExExprPtr finalNullExpr_;     // 16-23
   ExExprPtr finalExpr_;         // 24-31
-  UInt32    flags_;             // 32-35
+  ExExprPtr groupingExpr_;      // 32-39
+  UInt32    flags_;             // 40-43
 
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char                   fillers_[12];  // 36-47
+  char                   fillers_[12];  // 44-55
 
 public:
 NA_EIDPROC
@@ -913,17 +915,22 @@ NA_EIDPROC
   AggrExpr( ex_expr * init_expr, 
 	    ex_expr * perrec_expr, 
 	    ex_expr * final_expr, 
-	    ex_expr * final_null_expr
+	    ex_expr * final_null_expr,
+            ex_expr * grouping_expr
 	  )
-    : ex_expr(ex_expr::exp_AGGR), 
-      initExpr_(init_expr),
-      perrecExpr_(perrec_expr), 
-      finalExpr_(final_expr),
-      finalNullExpr_(final_null_expr),
-      flags_(0)
-  {}
-
+  : ex_expr(ex_expr::exp_AGGR), 
+  initExpr_(init_expr),
+  perrecExpr_(perrec_expr), 
+  finalExpr_(final_expr),
+  finalNullExpr_(final_null_expr),
+  groupingExpr_(grouping_expr),
+  flags_(0)
+    {}
+ 
 NA_EIDPROC ~AggrExpr() {}
+
+ ex_expr * perrecExpr()   { return perrecExpr_;}
+ ex_expr * groupingExpr() { return groupingExpr_;}
 
 NA_EIDPROC
   exp_return_type initializeAggr(atp_struct *);
@@ -931,10 +938,13 @@ NA_EIDPROC
   exp_return_type finalizeAggr(atp_struct *);
 NA_EIDPROC
   exp_return_type finalizeNullAggr(atp_struct *);
+
+ exp_return_type evalGroupingForNull(Int16 startEntry, Int16 endEntry);
+
 NA_EIDPROC
-  Long pack(void *);
+  virtual Long pack(void *);
 NA_EIDPROC
-  Lng32 unpack(void *, void * reallocator);
+  virtual Lng32 unpack(void *, void * reallocator);
 NA_EIDPROC
   virtual exp_return_type fixup(Lng32, unsigned short, const ex_tcb * tcb,
 				ComSpace * space = 0,

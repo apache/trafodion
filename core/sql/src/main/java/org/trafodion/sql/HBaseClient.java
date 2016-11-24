@@ -37,7 +37,6 @@ import java.net.URISyntaxException;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Admin;
@@ -73,6 +72,7 @@ import org.apache.hadoop.hbase.regionserver.BloomType;
 import org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy;
 import org.apache.hadoop.hbase.client.Durability;
 import org.trafodion.sql.HTableClient;
+import org.trafodion.sql.TrafConfiguration;
 import org.apache.hadoop.hbase.ServerLoad;
 import org.apache.hadoop.hbase.RegionLoad;
 import org.apache.hadoop.hbase.client.HTable;
@@ -101,7 +101,7 @@ import com.google.protobuf.ServiceException;
 public class HBaseClient {
 
     static Logger logger = Logger.getLogger(HBaseClient.class.getName());
-    private static Configuration config = HBaseConfiguration.create();
+    private static Configuration config = null;
     private RMInterface table = null;
 
     // variables used for getRegionStats() and getClusterStats()
@@ -155,21 +155,11 @@ public class HBaseClient {
     		confFile = System.getenv("MY_SQROOT") + "/conf/log4j.hdfs.config";
     	}
     	PropertyConfigurator.configure(confFile);
+        config = TrafConfiguration.create();
     }
 
     
     static public Connection getConnection() throws IOException {
-        // On some distributions, the hbase.client.scanner.timeout.period setting is
-        // too small, resulting in annoying SocketTimeoutExceptions during operations
-        // such as UPDATE STATISTICS on very large tables. On CDH 5.4.5 in particular
-        // we have seen this. Unfortunately Cloudera Manager does not allow us to 
-        // change this setting, and setting it manually in hbase-site.xml doesn't work
-        // because a later Cloudera Manager deploy would just overwrite it. So, we
-        // programmatically check the setting here and insure it is at least 1 hour.
-        long configuredTimeout = config.getLong("hbase.client.scanner.timeout.period",0);
-        if (configuredTimeout < 3600000 /* 1 hour */)
-          config.setLong("hbase.client.scanner.timeout.period",3600000);    
- 
         if (connection == null) 
               connection = ConnectionFactory.createConnection(config);
         return connection;
@@ -185,13 +175,22 @@ public class HBaseClient {
         table = new RMInterface(connection);
         return true;
     }
+
+    private void addCoprocessor(HTableDescriptor desc) throws IOException {
+        String[] coprocessors = config.getStrings("hbase.coprocessor.region.classes");
+        if (coprocessors != null) {
+           for (int i = 0; i < coprocessors.length ; i++) {
+               desc.addCoprocessor(coprocessors[i].trim());
+           }
+        }
+    }
  
     public boolean create(String tblName, Object[]  colFamNameList,
                           boolean isMVCC) 
         throws IOException, MasterNotRunningException {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.create(" + tblName + ") called, and MVCC is " + isMVCC + ".");
             HTableDescriptor desc = new HTableDescriptor(tblName);
-            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc, isMVCC);
+            addCoprocessor(desc);
             for (int i = 0; i < colFamNameList.length ; i++) {
 		String  colFam = (String)colFamNameList[i];
                 HColumnDescriptor colDesc = new HColumnDescriptor(colFam);
@@ -442,7 +441,7 @@ public class HBaseClient {
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
             HTableDescriptor desc = new HTableDescriptor(tblName);
-            CoprocessorUtils.addCoprocessor(config.get("hbase.coprocessor.region.classes"), desc, isMVCC);
+            addCoprocessor(desc);
             int defaultVersionsValue = 0;
             if (isMVCC)
                 defaultVersionsValue = DtmConst.MVCC_MAX_VERSION;
@@ -1758,6 +1757,46 @@ public class HBaseClient {
     return endKeys;
   }
 
+  public boolean createSnapshot( String tableName, String snapshotName)
+      throws IOException
+  {
+      Admin admin = getConnection().getAdmin();
+      admin.snapshot(snapshotName, TableName.valueOf(tableName));
+      admin.close();
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.createSnapshot() - Snapshot created: " + snapshotName);
+      return true;
+  }
+
+  public boolean verifySnapshot( String tableName, String snapshotName)
+      throws IOException
+  {
+     Admin admin = getConnection().getAdmin();
+     List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
+     try 
+     {
+        for (SnapshotDescription snpd : lstSnaps) {
+           if (snpd.getName().compareTo(snapshotName) == 0 && 
+                snpd.getTable().compareTo(tableName) == 0) {
+              if (logger.isDebugEnabled()) 
+                 logger.debug("HBaseClient.verifySnapshot() - Snapshot verified: " + snapshotName);
+              return true;
+           }
+        }
+      } finally {
+        admin.close();
+      }
+      return false;
+  }
+ 
+  public boolean deleteSnapshot( String snapshotName)
+      throws IOException 
+  {
+      Admin admin = getConnection().getAdmin();
+      admin.deleteSnapshot(snapshotName);
+      admin.close();
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.deleteSnapshot() - Snapshot deleted: " + snapshotName);
+      return true;
+  }
 }
     
 

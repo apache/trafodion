@@ -852,6 +852,8 @@ RelExpr * ExeUtilHiveTruncate::copyTopNode(RelExpr *derivedNode, CollHeap* outHe
   result->hiveTableLocation_= hiveTableLocation_;
   result->hiveHostName_ = hiveHostName_;
   result->hiveHdfsPort_ = hiveHdfsPort_;
+  result->suppressModCheck_ = suppressModCheck_;
+  result->dropTableOnDealloc_ = dropTableOnDealloc_;
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
@@ -5124,9 +5126,11 @@ RelExpr * ExeUtilHiveTruncate::bindNode(BindWA *bindWA)
   NAString hostName;
   Int32 hdfsPort;
   NAString tableDir;
+  HHDFSDiags hhdfsDiags;
   
-  NABoolean result = ((HHDFSTableStats* )hTabStats)->splitLocation
-    (hiveTablePath, hostName, hdfsPort, tableDir) ;       
+  NABoolean result = TableDesc::splitHiveLocation
+    (hiveTablePath, hostName, hdfsPort, tableDir,
+     CmpCommon::diags(), hTabStats->getPortOverride()) ;       
   if (!result) 
     {
       *CmpCommon::diags() << DgSqlCode(-4224)

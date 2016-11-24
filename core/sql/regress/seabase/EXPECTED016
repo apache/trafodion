@@ -262,8 +262,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART7.A,
                              TRAFODION.HBASE.MCSTATPART7.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -410,8 +408,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART5.A,
                              TRAFODION.HBASE.MCSTATPART5.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -558,8 +554,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART3.A,
                              TRAFODION.HBASE.MCSTATPART3.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -706,8 +700,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART6.A,
                              TRAFODION.HBASE.MCSTATPART6.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -854,8 +846,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART2.A,
                              TRAFODION.HBASE.MCSTATPART2.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -1002,8 +992,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART1.A,
                              TRAFODION.HBASE.MCSTATPART1.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1
@@ -1150,8 +1138,6 @@ DESCRIPTION
   child_partitioning_func  hash2 partitioned 4 ways on
                              (TRAFODION.HBASE.MCSTATPART8.A,
                              TRAFODION.HBASE.MCSTATPART8.B)
-  seamonster_query ....... no
-  seamonster_exchange .... no
 
 
 HASH_PARTIAL_GROUPBY_LEAF =================  SEQ_NO 2        ONLY CHILD 1

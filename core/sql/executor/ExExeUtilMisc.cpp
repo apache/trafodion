@@ -2252,6 +2252,28 @@ ExExeUtilHiveTruncateTcb::ExExeUtilHiveTruncateTcb(
 
 ExExeUtilHiveTruncateTcb::~ExExeUtilHiveTruncateTcb()
 {
+  freeResources();
+}
+
+void ExExeUtilHiveTruncateTcb::freeResources()
+{
+  if (htTdb().getDropOnDealloc())
+    {
+      NAString hiveDropDDL("drop table ");
+      HiveClient_JNI *hiveClient = HiveClient_JNI::getInstance();
+
+      hiveDropDDL += htTdb().getHiveTableName();
+
+      // ignore errors on drop
+      if (!hiveClient->isInitialized() ||
+          !hiveClient->isConnected())
+        hiveClient->init();
+      hiveClient->executeHiveSQL(hiveDropDDL);
+    }
+  if (lobGlob_) {
+    ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+    lobGlob_ = NULL;
+  }
 }
 
 Int32 ExExeUtilHiveTruncateTcb::fixup()
@@ -2260,7 +2282,7 @@ Int32 ExExeUtilHiveTruncateTcb::fixup()
 
   ExpLOBinterfaceInit
     (lobGlob_, getGlobals()->getDefaultHeap(),
-     getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE, 
+     getGlobals()->castToExExeStmtGlobals()->getContext(),FALSE, 
      htTdb().getHdfsHost(),
      htTdb().getHdfsPort());
 

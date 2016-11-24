@@ -524,7 +524,6 @@ Lng32 SQLCLI_GetAuthID(
    const char * authName,
    Lng32 & authID);
                             
-                         
 Lng32 SQLCLI_GetAuthName (
     /*IN*/            CliGlobals *cliGlobals,
     /*IN*/            Lng32       auth_id,
@@ -548,6 +547,14 @@ Int32 SQLCLI_GetAuthState (
     /*OUT*/           bool      &authorizationEnabled,
     /*OUT*/           bool      &authorizationReady,
     /*OUT*/           bool      &auditingEnabled);
+
+Lng32 SQLCLI_GetRoleList(
+   CliGlobals *cliGlobals,
+   Int32 &numRoles,
+   Int32 *&roleIDs);
+                         
+Lng32 SQLCLI_ResetRoleList (
+    /*IN*/            CliGlobals *cliGlobals);
 
 Lng32 SQLCLI_GetUniqueQueryIdAttrs( /*IN*/ CliGlobals *cliGlobals,
 				   /*IN*/    char * queryId,

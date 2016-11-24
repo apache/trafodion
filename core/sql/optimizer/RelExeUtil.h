@@ -1107,9 +1107,8 @@ public:
                       CollHeap *oHeap = CmpCommon::statementHeap())
        : ExeUtilExpr(HIVE_TRUNCATE_, name, NULL, NULL, NULL, 
                      CharInfo::UnknownCharSet, oHeap),
-         pl_(pl)
-  {
-  };
+         pl_(pl), suppressModCheck_(FALSE), dropTableOnDealloc_(FALSE)
+  { }
 
   virtual NABoolean isExeUtilQueryType() { return TRUE; }
 
@@ -1144,6 +1143,12 @@ public:
 
   ConstStringList* &partnList() { return pl_; }
 
+  NABoolean getSuppressModCheck() const           { return suppressModCheck_; }
+  NABoolean getDropTableOnDealloc() const       { return dropTableOnDealloc_; }
+
+  void setSuppressModCheck(NABoolean v=TRUE)         { suppressModCheck_ = v; }
+  void setDropTableOnDealloc(NABoolean v=TRUE)     { dropTableOnDealloc_ = v; }
+
 private:
   NAString  hiveTableLocation_;
   NAString hiveHostName_;
@@ -1154,6 +1159,8 @@ private:
 
   // list of partitions to be truncated
   ConstStringList * pl_;
+  NABoolean suppressModCheck_;
+  NABoolean dropTableOnDealloc_;
 };
 
 class ExeUtilMaintainObject : public ExeUtilExpr

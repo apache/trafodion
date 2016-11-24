@@ -391,6 +391,7 @@ CZClient::~CZClient( void )
 
     if (ZHandle)
     {
+        WatchNodeDelete( Node_name );
         zookeeper_close(ZHandle);
         ZHandle = 0;
     }
@@ -700,6 +701,91 @@ int CZClient::InitializeZClient( void )
 
     TRACE_EXIT;
     return( rc );
+}
+
+bool CZClient::IsZNodeExpired( const char *nodeName, int &zerr )
+{
+    const char method_name[] = "CZClient::IsZNodeExpired";
+    TRACE_ENTRY;
+
+    bool  expired = false;
+    int   rc = -1;
+    Stat  stat;
+    stringstream newpath;
+    newpath.str( "" );
+    newpath << zkRootNode_.c_str() 
+            << zkRootNodeInstance_.c_str() 
+            << ZCLIENT_CLUSTER_ZNODE << "/"
+            << nodeName;
+    string monZnode = newpath.str( );
+
+    zerr = ZOK;
+
+    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+    {
+        trace_printf( "%s@%d monZnode=%s\n"
+                    , method_name, __LINE__, monZnode.c_str() );
+    }
+    rc = zoo_exists( ZHandle, monZnode.c_str( ), 0, &stat );
+    if ( rc == ZNONODE )
+    {
+        expired = true;
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d monZnode=%s does not exist!\n"
+                        , method_name, __LINE__, monZnode.c_str() );
+        }
+    }
+    else if ( rc == ZCONNECTIONLOSS || rc == ZOPERATIONTIMEOUT )
+    {
+        // Treat this as not expired until communication resumes
+        expired = false;
+        zerr = rc;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], zoo_exists() for %s failed with error %s\n"
+                ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
+        mon_log_write(MON_ZCLIENT_ISZNODEEXPIRED_1, SQ_LOG_ERR, buf);
+    }
+    else if ( rc == ZOK )
+    {
+        expired = false;
+        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        {
+            trace_printf( "%s@%d monZnode=%s exist\n"
+                        , method_name, __LINE__, monZnode.c_str() );
+        }
+    }
+    else
+    {
+        expired = true;
+        char buf[MON_STRING_BUF_SIZE];
+        snprintf( buf, sizeof(buf)
+                , "[%s], zoo_exists() for %s failed with error %s\n"
+                ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
+        mon_log_write(MON_ZCLIENT_ISZNODEEXPIRED_2, SQ_LOG_CRIT, buf);
+        switch ( rc )
+        {
+        case ZSYSTEMERROR:
+        case ZRUNTIMEINCONSISTENCY:
+        case ZDATAINCONSISTENCY:
+        case ZMARSHALLINGERROR:
+        case ZUNIMPLEMENTED:
+        case ZBADARGUMENTS:
+        case ZINVALIDSTATE:
+        case ZSESSIONEXPIRED:
+        case ZCLOSING:
+            // Treat these error like a session expiration, since
+            // we can't communicate with quorum servers
+            HandleZSessionExpiration();
+            break;
+        default:
+            break;
+        }
+    }
+
+    TRACE_EXIT;
+    return( expired );
 }
 
 int CZClient::MakeClusterZNodes( void )
@@ -1066,12 +1152,15 @@ int CZClient::SetZNodeWatch( string &monZnode )
                     , method_name, __LINE__, monZnode.c_str() );
     }
     rc = zoo_exists( ZHandle, monZnode.c_str( ), 0, &stat );
-    if ( rc == ZNONODE )
+    if ( rc == ZNONODE ||
+         rc == ZCONNECTIONLOSS || 
+         rc == ZOPERATIONTIMEOUT )
     {
         // return the error
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d monZnode=%s does not exist (ZNONODE)\n"
+            trace_printf( "%s@%d monZnode=%s does not exist or "
+                          "cannot be accessed!\n"
                         , method_name, __LINE__, monZnode.c_str() );
         }
     }
@@ -1094,7 +1183,25 @@ int CZClient::SetZNodeWatch( string &monZnode )
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_exists() for %s failed with error %s\n"
                 ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
-        mon_log_write(MON_ZCLIENT_SETZNODEWATCH_1, SQ_LOG_ERR, buf);
+        mon_log_write(MON_ZCLIENT_SETZNODEWATCH_1, SQ_LOG_CRIT, buf);
+        switch ( rc )
+        {
+        case ZSYSTEMERROR:
+        case ZRUNTIMEINCONSISTENCY:
+        case ZDATAINCONSISTENCY:
+        case ZMARSHALLINGERROR:
+        case ZUNIMPLEMENTED:
+        case ZBADARGUMENTS:
+        case ZINVALIDSTATE:
+        case ZSESSIONEXPIRED:
+        case ZCLOSING:
+            // Treat these error like a session expiration, since
+            // we can't communicate with quorum servers
+            HandleZSessionExpiration();
+            break;
+        default:
+            break;
+        }
     }
 
     TRACE_EXIT;
@@ -1422,12 +1529,14 @@ int CZClient::WatchNodeDelete( const char *nodeName )
                 , method_name, nodeName );
         mon_log_write(MON_ZCLIENT_WATCHNODEDELETE_1, SQ_LOG_INFO, buf);
     }
-    else if ( rc == ZNONODE )
+    else if ( rc == ZNONODE ||
+              rc == ZCONNECTIONLOSS || 
+              rc == ZOPERATIONTIMEOUT )
     {
         rc = ZOK;
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s], znode (%s) already deleted!\n"
+                , "[%s], znode (%s) already deleted or cannot be accessed!\n"
                 , method_name, nodeName );
         mon_log_write(MON_ZCLIENT_WATCHNODEDELETE_2, SQ_LOG_INFO, buf);
     }
@@ -1437,7 +1546,25 @@ int CZClient::WatchNodeDelete( const char *nodeName )
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_delete(%s) failed with error %s\n"
                 , method_name, nodeName, ZooErrorStr(rc) );
-        mon_log_write(MON_ZCLIENT_WATCHNODEDELETE_3, SQ_LOG_INFO, buf);
+        mon_log_write(MON_ZCLIENT_WATCHNODEDELETE_3, SQ_LOG_CRIT, buf);
+        switch ( rc )
+        {
+        case ZSYSTEMERROR:
+        case ZRUNTIMEINCONSISTENCY:
+        case ZDATAINCONSISTENCY:
+        case ZMARSHALLINGERROR:
+        case ZUNIMPLEMENTED:
+        case ZBADARGUMENTS:
+        case ZINVALIDSTATE:
+        case ZSESSIONEXPIRED:
+        case ZCLOSING:
+            // Treat these error like a session expiration, since
+            // we can't communicate with quorum servers
+            HandleZSessionExpiration();
+            break;
+        default:
+            break;
+        }
     }
 
     TRACE_EXIT;

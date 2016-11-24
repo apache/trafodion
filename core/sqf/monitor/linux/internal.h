@@ -83,7 +83,8 @@ enum SyncState
 
 typedef enum {
     State_Default=0,
-    State_Quiesce,                  // node is in quiesce state
+    State_Quiesce,                  // node quiesce state while going down
+    State_SoftDown,                 // node soft down on DTM abort -> restart
     State_Ready_To_Exit
 } IntNodeState; 
 
