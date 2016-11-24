@@ -264,12 +264,12 @@ void ExHdfsScanTcb::freeResources()
   }
   if (runTimeRanges_)
     deallocateRuntimeRanges();
-
-   ExpLOBinterfaceCleanup
-   (lobGlob_, getGlobals()->getDefaultHeap());
-
-  
+  if (lobGlob_) { 
+     ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+     lobGlob_ = NULL;
+  }
 }
+
 NABoolean ExHdfsScanTcb::needStatsEntry()
 {
   // stats are collected for ALL and OPERATOR options.
@@ -1479,10 +1479,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                     getLobErrStr(intParam1));
                     pentry_down->setDiagsArea(diagsArea);
                   }
-                // sss This is one place that is unconditionally closing the 
-                // hdfsFs that's part of this thread's JNIenv.
-                // if (ehi_)
-                //   retcode = ehi_->hdfsClose();
+                  retcode = ehi_->hdfsClose();
             } 
 	    if (step_ == CLOSE_FILE)
 	      {
@@ -1969,6 +1966,15 @@ ExOrcScanTcb::ExOrcScanTcb(
 ExOrcScanTcb::~ExOrcScanTcb()
 {
 }
+
+Int32 ExOrcScanTcb::fixup()
+{
+  lobGlob_ = NULL;
+
+  return 0;
+}
+
+
 
 short ExOrcScanTcb::extractAndTransformOrcSourceToSqlRow(
                                                          char * orcRow,

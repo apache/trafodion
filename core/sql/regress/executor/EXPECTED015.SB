@@ -163,6 +163,17 @@
 
 --- SQL operation complete.
 >>
+>>create table t015t16 (a largeint  not null, b int not null, 
++>c int, d int, e int, primary key(a,b)) ;
+
+--- SQL operation complete.
+>>create index t015t16i1 on t015t16(c) ;
+
+--- SQL operation complete.
+>>create unique index t015t16i2 on t015t16(d) ;
+
+--- SQL operation complete.
+>>
 >>prepare explainIt from
 +>select substring(operator,1,16) operator
 +>from table (explain(NULL,'XX')) t
@@ -1959,4 +1970,101 @@ TRAFODION_MERGE
 
 --- 1 row(s) selected.
 >>
+>>--upsert transformation to eff tree tests
+>>cqd traf_upsert_to_eff_tree 'ON';
+
+--- SQL operation complete.
+>>prepare xx from upsert into t015t16 values (1,2,3,4,5),(6,7,8,9,10);
+
+--- SQL command prepared.
+>>explain options 'f' xx;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+15   .    16   root                            x                     4.00E+000
+7    14   15   nested_join                                           4.00E+000
+10   13   14   merge_union                                           4.00E+000
+11   12   13   blocked_union                                         2.00E+000
+.    .    12   trafodion_insert                T015T16I2             1.00E+000
+.    .    11   trafodion_vsbb_delet            T015T16I2             1.00E+000
+8    9    10   blocked_union                                         2.00E+000
+.    .    9    trafodion_insert                T015T16I1             1.00E+000
+.    .    8    trafodion_vsbb_delet            T015T16I1             1.00E+000
+5    6    7    nested_join                                           1.00E+000
+.    .    6    trafodion_upsert                T015T16               1.00E+000
+4    .    5    sequence                                              1.00E+000
+3    .    4    sort                                                  2.00E+000
+2    1    3    left_hybrid_hash_joi                                  2.00E+000
+.    .    2    tuplelist                                             2.00E+000
+.    .    1    trafodion_scan                  T015T16               1.00E+002
+
+--- SQL operation complete.
+>>execute xx;
+
+--- 2 row(s) inserted.
+>>select * from t015t16 order by a;
+
+A                     B            C            D            E          
+--------------------  -----------  -----------  -----------  -----------
+
+                   1            2            3            4            5
+                   6            7            8            9           10
+
+--- 2 row(s) selected.
+>>prepare xx2 from upsert into t015t16 values (10,11,12,13,14);
+
+--- SQL command prepared.
+>>execute xx2;
+
+--- 1 row(s) inserted.
+>>select * from t015t16 order by a;
+
+A                     B            C            D            E          
+--------------------  -----------  -----------  -----------  -----------
+
+                   1            2            3            4            5
+                   6            7            8            9           10
+                  10           11           12           13           14
+
+--- 3 row(s) selected.
+>>
+>>prepare xx2 from upsert into t015t16 values (1,2,30,40,50);
+
+--- SQL command prepared.
+>>execute xx2;
+
+--- 1 row(s) inserted.
+>>select * from t015t16 order by a;
+
+A                     B            C            D            E          
+--------------------  -----------  -----------  -----------  -----------
+
+                   1            2           30           40           50
+                   6            7            8            9           10
+                  10           11           12           13           14
+
+--- 3 row(s) selected.
+>>
+>>prepare xx2 from upsert into t015t16 values (3,4,1,1,1),(6,7,80,90,100),(6,7,81,91,101);
+
+--- SQL command prepared.
+>>execute xx2;
+
+--- 2 row(s) inserted.
+>>select * from t015t16 order by a;
+
+A                     B            C            D            E          
+--------------------  -----------  -----------  -----------  -----------
+
+                   1            2           30           40           50
+                   3            4            1            1            1
+                   6            7           81           91          101
+                  10           11           12           13           14
+
+--- 4 row(s) selected.
+>>
+>>cqd traf_upsert_to_eff_tree 'OFF';
+
+--- SQL operation complete.
 >>log;

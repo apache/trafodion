@@ -7577,6 +7577,8 @@ RelExpr * GroupByAgg::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->aggrExprsToBeDeleted_ = aggrExprsToBeDeleted_;
 
   result->isRollup_ = isRollup_;
+  result->extraGrpOrderby_= extraGrpOrderby_;
+  result->extraOrderExpr_= extraOrderExpr_;
 
   return RelExpr::copyTopNode(result, outHeap);
 }

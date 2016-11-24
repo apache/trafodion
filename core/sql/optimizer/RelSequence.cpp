@@ -1180,20 +1180,21 @@ RelExpr *RelSequence::bindNode(BindWA *bindWA)
 
     sequencedColumns() += newColumn->getValueId();
   }
-  
+  ValueIdMap ncToOldMap;
   for(i = 0; i < colList->entries(); i++) 
   {
     ValueId columnValueId = colList->at(i)->getValueId();
     ItemExpr *newColumn = new (bindWA->wHeap()) 
       NotCovered (columnValueId.getItemExpr());
     newColumn->synthTypeAndValueId();
+    newColumn->setOrigOpType(columnValueId.getItemExpr()->origOpType());
     
     resultTable->addColumn(bindWA,
       colList->at(i)->getColRefNameObj(),
       newColumn->getValueId(),
       USER_COLUMN,
       colList->at(i)->getHeading());
-
+    ncToOldMap.addMapEntry(newColumn->getValueId(),columnValueId);
     if(colList->at(i)->isGrouped()) {
       ColumnNameMap *cnm =
         resultTable->findColumn(colList->at(i)->getColRefNameObj());
@@ -1202,7 +1203,7 @@ RelExpr *RelSequence::bindNode(BindWA *bindWA)
 
     sequencedColumns() += newColumn->getValueId();
   }
-
+  
   // Set the return descriptor
   //
   setRETDesc(resultTable);
@@ -1261,7 +1262,8 @@ RelExpr *RelSequence::bindNode(BindWA *bindWA)
   //CMPASSERT(!bindWA->getCurrentScope()->getSequenceNode());
 
   bindWA->getCurrentScope()->getSequenceNode() = boundExpr;
-
+  // save the ncToOldmap in the current scope. It will be used in Insert::bindnode for a special case.
+  bindWA->getCurrentScope()->setNCToOldMap( ncToOldMap);
   return boundExpr;
 
 } // RelSequence::bindNode()

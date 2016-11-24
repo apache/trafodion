@@ -3510,6 +3510,32 @@ odbc_SQLSvc_UpdateServerContext_msms_(
   );
 
 /***************************************
+ * Operation 'odbc_SQLsrvr_ExtractLob'
+ * *************************************/
+/*
+ * Exception number constants for
+ * operation 'odbc_SQLsrvr_ExtractLob'
+ */
+#define odbc_SQLsrvr_ExtractLob_ParamError_exn_ 1
+#define odbc_SQLsrvr_ExtractLob_InvalidConnection_exn_ 2
+#define odbc_SQLSrvr_ExtractLob_SQLError_exn_ 3
+#define odbc_SQLSrvr_ExtractLob_SQLInvalidhandle_exn_ 4
+#define obdc_SQLSrvr_ExtractLob_AllocLOBDataError_exn_ 5
+
+/*
+ * Exception struct for
+ * Operation "odbc_SQLSrvr_ExtractLob"
+ */
+struct odbc_SQLsrvr_ExtractLob_exc_ {
+    IDL_long exception_nr;
+    IDL_long exception_detail;
+    union {
+        odbc_SQLSvc_ParamError ParamError;
+        odbc_SQLSvc_SQLError SQLError;
+    } u;
+};
+
+/***************************************
  * Operation 'odbc_SQLSvc_ExecuteCall' *
  ***************************************/
 

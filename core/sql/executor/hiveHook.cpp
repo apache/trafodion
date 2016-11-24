@@ -83,34 +83,13 @@ HiveMetaData::~HiveMetaData()
   }
 }
 
-NABoolean HiveMetaData::init(NABoolean readEntireSchema,
-                             const char * hiveSchemaName,
-			     const char * tabSearchPredStr)
+NABoolean HiveMetaData::init()
 {
   CollHeap *h = CmpCommon::contextHeap();
 
   /* Create a connection */
   if (!connect())
     return FALSE; // errCode_ should be set
-
-  if (!readEntireSchema)
-    return TRUE;
-
-  int i = 0 ;
-  LIST(NAText *) tblNames(h);
-  HVC_RetCode retCode = client_->getAllTables(hiveSchemaName, tblNames);
-  if ((retCode != HVC_OK) && (retCode != HVC_DONE)) {
-    return recordError((Int32)retCode, "HiveClient_JNI::getAllTables()");
-  }
-  
-  while (i < tblNames.entries())
-    {
-      getTableDesc(hiveSchemaName, tblNames[i]->c_str());
-      delete tblNames[i];
-    }
-
-  currDesc_ = 0;
-  //disconnect();
 
   return TRUE;
 }
@@ -283,6 +262,14 @@ struct hive_sd_desc* populateSD(HiveMetaData *md, Int32 mainSdID,
                       outputStr, "populateSD:outputFormat:###"))
     return NULL;
   
+  NAText compressedStr;
+  NABoolean isCompressed = FALSE;
+  if(!extractValueStr(md, tblStr, pos, "compressed:", ",", 
+                      compressedStr, "populateSD:compressed:###"))
+    return NULL;
+  if (compressedStr == "true")
+    isCompressed = TRUE;
+  
   NAText numBucketsStr;
   if(!extractValueStr(md, tblStr, pos, "numBuckets:", ",", 
                       numBucketsStr, "populateSD:numBuckets:###"))
@@ -318,7 +305,8 @@ struct hive_sd_desc* populateSD(HiveMetaData *md, Int32 mainSdID,
                         newSortCols, 
                         newBucketingCols,
                         fieldTerminator,
-                        recordTerminator
+                        recordTerminator,
+                        isCompressed
                         );
   
   result = newSD;
@@ -680,9 +668,11 @@ struct hive_tbl_desc* HiveMetaData::getFakedTableDesc(const char* tblName)
 
    hive_sd_desc* sd1 = new (h)hive_sd_desc(1, "loc", 0, 1, "ift", "oft", NULL,
                                            hive_sd_desc::TABLE_SD, c1, 
-                                           sk1, bk1, '\010', '\n');
+                                           sk1, bk1, '\010', '\n',
+                                           FALSE);
 
-   hive_tbl_desc* tbl1 = new (h) hive_tbl_desc(1, "myHive", "default", 
+   hive_tbl_desc* tbl1 = new (h) hive_tbl_desc(1, "myHive", "default", "me",
+                                               "MANAGED",
                                                0, sd1, 0);
 
    return tbl1;
@@ -758,6 +748,12 @@ struct hive_tbl_desc* HiveMetaData::getTableDesc(const char* schemaName,
                        schNameStr, "getTableDesc::dbName:###"))
      return NULL;
    
+   NAText ownerStr;
+   pos = 0;
+   if(!extractValueStr(this, tblStr, pos, "owner:", ",", 
+                       ownerStr, "getTableDesc:owner:###"))
+     return NULL;
+
    NAText createTimeStr;
    pos = 0;
    if(!extractValueStr(this, tblStr, pos, "createTime:", ",", 
@@ -774,11 +770,19 @@ struct hive_tbl_desc* HiveMetaData::getTableDesc(const char* schemaName,
    struct hive_pkey_desc* pkey = populatePartitionKey(this, 0, 
                                                       tblStr, pos);
    
+   NAText tableTypeStr;
+   pos = 0;
+   if(!extractValueStr(this, tblStr, pos, "tableType:", ")", 
+                       tableTypeStr, "getTableDesc:tableType:###"))
+     return NULL;
+   
    result = 
      new (CmpCommon::contextHeap()) 
      struct hive_tbl_desc(0, // no tblID with JNI 
                           tblNameStr.c_str(), 
                           schNameStr.c_str(),
+                          ownerStr.c_str(),
+                          tableTypeStr.c_str(),
                           creationTS,
                           sd, pkey);
    
@@ -814,6 +818,27 @@ NABoolean HiveMetaData::validate(Int32 tableId, Int64 redefTS,
      return TRUE;
 
   return result;
+}
+
+hive_tbl_desc::hive_tbl_desc(Int32 tblID, const char* name, const char* schName,
+                             const char * owner,
+                             const char * tableType,
+                             Int64 creationTS, struct hive_sd_desc* sd,
+                             struct hive_pkey_desc* pk)
+     : tblID_(tblID), sd_(sd), creationTS_(creationTS), pkey_(pk), next_(NULL)
+{  
+  tblName_ = strduph(name, CmpCommon::contextHeap());
+  schName_ = strduph(schName, CmpCommon::contextHeap()); 
+
+  if (owner)
+    owner_ = strduph(owner, CmpCommon::contextHeap());
+  else
+    owner_ = NULL;
+
+  if (tableType)
+    tableType_ = strduph(tableType, CmpCommon::contextHeap());
+  else
+    tableType_ = NULL;
 }
 
 struct hive_column_desc* hive_tbl_desc::getColumns()
@@ -852,6 +877,18 @@ struct hive_skey_desc* hive_tbl_desc::getSortKeys()
    return NULL;
 }
 
+Int32 hive_tbl_desc::getNumOfCols()
+{
+  Int32 result = 0;
+  hive_column_desc *cd = getColumns();
+  while (cd)
+    {
+      result++;
+      cd = cd->next_;
+    }
+  return result;
+}
+
 Int32 hive_tbl_desc::getNumOfPartCols() const
 {
   Int32 result = 0;
@@ -862,6 +899,87 @@ Int32 hive_tbl_desc::getNumOfPartCols() const
       pk = pk->next_;
     }
   return result;
+}
+
+Int32 hive_tbl_desc::getNumOfSortCols()
+{
+  Int32 result = 0;
+  hive_skey_desc *sk = getSortKeys();
+  while (sk)
+    {
+      result++;
+      sk = sk->next_;
+    }
+  return result;
+}
+
+Int32 hive_tbl_desc::getNumOfBucketCols()
+{
+  Int32 result = 0;
+  hive_bkey_desc *bc = getBucketingKeys();
+  while (bc)
+    {
+      result++;
+      bc = bc->next_;
+    }
+  return result;
+}
+
+Int32 hive_tbl_desc::getPartColNum(const char* name)
+{
+  Int32 num = 0;
+
+  hive_pkey_desc * desc = getPartKey();
+  while (desc)
+    {
+      if (strcmp(name, desc->name_) == 0)
+        {
+          return num;
+        }
+      
+      num++;
+      desc = desc->next_;
+    }
+
+  return -1;
+}
+
+Int32 hive_tbl_desc::getBucketColNum(const char* name)
+{
+  Int32 num = 0;
+
+  hive_bkey_desc * desc = getBucketingKeys();
+  while (desc)
+    {
+      if (strcmp(name, desc->name_) == 0)
+        {
+          return num;
+        }
+      
+      num++;
+      desc = desc->next_;
+    }
+
+  return -1;
+}
+
+Int32 hive_tbl_desc::getSortColNum(const char* name)
+{
+  Int32 num = 0;
+
+  hive_skey_desc * desc = getSortKeys();
+  while (desc)
+    {
+      if (strcmp(name, desc->name_) == 0)
+        {
+          return num;
+        }
+      
+      num++;
+      desc = desc->next_;
+    }
+
+  return -1;
 }
 
 Int64 hive_tbl_desc::redeftime()

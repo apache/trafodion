@@ -1513,6 +1513,48 @@ MONITORCALL_IOMessage(
 	  );
 }
 
+void
+EXTRACTLOB_IOMessage(
+    /* In    */CEE_tag_def objtag_
+  , /* In    */const CEE_handle_def *call_id_
+  )
+{
+    CInterface* pnode = (CInterface *)objtag_;
+    CEE_status sts = CEE_SUCCESS;
+    CEE_status retcode;
+
+    IDL_char     *curptr;
+    IDL_long inputPosition = 0;
+
+    IDL_long extractLobAPI = 0;
+    IDL_long lobHandleLen = 0;
+    IDL_string lobHandle = NULL;
+    IDL_long lobHandleCharset = 0;
+
+    curptr = pnode->r_buffer();
+
+    extractLobAPI = *(IDL_long *)(curptr + inputPosition);
+    inputPosition += sizeof(extractLobAPI);
+
+    lobHandleLen = *(IDL_long*)(curptr + inputPosition);
+    inputPosition += sizeof(lobHandleLen);
+
+    if (lobHandleLen > 0)
+    {
+        lobHandle = curptr + inputPosition;
+        inputPosition += lobHandleLen;
+        lobHandleCharset = *(IDL_long *)(curptr + inputPosition);
+        inputPosition += sizeof(lobHandleCharset);
+    }
+
+    odbc_SQLSrvr_ExtractLob_ame_(
+            objtag_,
+            call_id_,
+            extractLobAPI,
+            lobHandle
+            );
+}
+
 void LOG_MSG(CError* ierror, short level)
 {
 	char buffer[500];
@@ -1828,6 +1870,9 @@ void DISPATCH_TCPIPRequest(
 		FILE_CLOSE_(pnode->m_nSocketFnum);
 		pnode->m_nSocketFnum = -2;
 		break;
+    case SRVR_API_EXTRACTLOB:
+        EXTRACTLOB_IOMessage(objtag_, call_id_);
+        break;
 	default:
 //LCOV_EXCL_START
 		break;

@@ -4840,23 +4840,100 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 	}
 	/**/
 	public Clob getClob(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
+		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, columnIndex);
+			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSet", "getClob", "", p);
+		}
+		if (connection_.props_.getLogWriter() != null) {
+			LogRecord lr = new LogRecord(Level.FINE, "");
+			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, columnIndex);
+			lr.setParameters(p);
+			lr.setSourceClassName("TrafT4ResultSet");
+			lr.setSourceMethodName("getClob");
+			T4LogFormatter lf = new T4LogFormatter();
+			String temp = lf.format(lr);
+			connection_.props_.getLogWriter().println(temp);
+		}
+
+		String lobHandle;
+
+		validateGetInvocation(columnIndex);
+		outputDesc_[columnIndex - 1].checkValidNumericConversion(connection_.getLocale());
+
+		lobHandle = getLocalString(columnIndex);
+
+		if (lobHandle != null) {
+			return new TrafT4Clob(connection_, lobHandle);
+		}
 		return null;
 	}
 	
 	public Clob getClob(String columnName)  throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, columnName);
+			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSet", "getClob", "", p);
+		}
+		if (connection_.props_.getLogWriter() != null) {
+			LogRecord lr = new LogRecord(Level.FINE, "");
+			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, columnName);
+			lr.setParameters(p);
+			lr.setSourceClassName("TrafT4ResultSet");
+			lr.setSourceMethodName("getClob");
+			T4LogFormatter lf = new T4LogFormatter();
+			String tmp = lf.format(lr);
+			connection_.props_.getLogWriter().println(tmp);
+		}
+		int columnIndex = validateGetInvocation(columnName);
+		return getClob(columnIndex);
 	}
 	
 	public Blob getBlob(int columnIndex) throws SQLException {
-		// TODO Auto-generated method stub
+		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, columnIndex);
+			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSet", "getClob", "", p);
+		}
+		if (connection_.props_.getLogWriter() != null) {
+			LogRecord lr = new LogRecord(Level.FINE, "");
+			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, columnIndex);
+			lr.setParameters(p);
+			lr.setSourceClassName("TrafT4ResultSet");
+			lr.setSourceMethodName("getClob");
+			T4LogFormatter lf = new T4LogFormatter();
+			String temp = lf.format(lr);
+			connection_.props_.getLogWriter().println(temp);
+		}
+
+		String lobHandle;
+
+		validateGetInvocation(columnIndex);
+		outputDesc_[columnIndex - 1].checkValidNumericConversion(connection_.getLocale());
+
+		lobHandle = getLocalString(columnIndex);
+
+		if (lobHandle != null) {
+			return new TrafT4Blob(connection_, lobHandle);
+		}
 		return null;
 	}
-	
+
 	public Blob getBlob(String columnName) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, columnName);
+			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSet", "getBlob", "", p);
+		}
+		if (connection_.props_.getLogWriter() != null) {
+			LogRecord lr = new LogRecord(Level.FINE, "");
+			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, columnName);
+			lr.setParameters(p);
+			lr.setSourceClassName("TrafT4ResultSet");
+			lr.setSourceMethodName("getBlob");
+			T4LogFormatter lf = new T4LogFormatter();
+			String tmp = lf.format(lr);
+			connection_.props_.getLogWriter().println(tmp);
+		}
+		int columnIndex = validateGetInvocation(columnName);
+
+		return getBlob(columnIndex);
 	}
     /**/
 	public NClob getNClob(int columnIndex) throws SQLException {

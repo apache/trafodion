@@ -1075,6 +1075,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SPACE
 %token <tokval> TOK_SMALLINT
 %token <tokval> TOK_SOME
+%token <tokval> TOK_SOUNDEX
 %token <tokval> TOK_SORT                /* Tandem extension non-reserved word */
 %token <tokval> TOK_SORT_KEY
 %token <tokval> TOK_SP_RESULT_SET
@@ -5896,12 +5897,17 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
 				}
 | TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ')' ')'
 				{
-				    $$ = new (PARSERHEAP()) HiveMDaccessFunc($5);
+                                  $$ = new (PARSERHEAP()) HiveMDaccessFunc($5);
 				}
-| TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ',' schema_name ')' ')'
+| TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ',' identifier ')' ')'
 				{
                                   $$ = new (PARSERHEAP()) HiveMDaccessFunc($5, $7);
 				}
+| TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ',' identifier ',' identifier ')' ')'
+				{
+                                  $$ = new (PARSERHEAP()) HiveMDaccessFunc($5, $7, $9);
+				}
+
 | TOK_TABLE '(' TOK_QUERY_CACHE '(' value_expression_list ')' ')'
   {
     $$ = new (PARSERHEAP()) RelInternalSP("QUERYCACHE"
@@ -6378,7 +6384,7 @@ index_hint : qualified_name
       }
     | qualified_guardian_name '.' subvolume_name '.' identifier
       {
-		NAString *nam = new (PARSERHEAP()) NAString(($1->data()),PARSERHEAP());
+        NAString *nam = new (PARSERHEAP()) NAString(($1->data()),PARSERHEAP());
         nam->append(".", 1);
         nam->append(($3->data()), $3->length());
         nam->append(".", 1);
@@ -7336,21 +7342,17 @@ set_function_specification : set_function_type '(' set_quantifier value_expressi
 			   }
               | TOK_GROUP_CONCAT '('  set_quantifier value_expression concat_options ')' 
                {
-                       //comehere
-                  CheckModeSpecial4;
                   $$ = new (PARSERHEAP())
                   PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
  
                }
               | TOK_PIVOT '(' set_quantifier value_expression pivot_options ')'
                   {
-                    CheckModeSpecial4;
 
                     $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
                   }
               | TOK_PIVOT_GROUP '(' set_quantifier value_expression pivot_options ')'
                   {
-                    CheckModeSpecial4;
 
                     $$ = new (PARSERHEAP()) PivotGroup(ITM_PIVOT_GROUP, $4, $5, $3);
                   }
@@ -9805,6 +9807,13 @@ misc_function :
                                   $$ = new (PARSERHEAP())
                                     CompEncode ( $3, NOT $4 );
                                 }
+     | TOK_SOUNDEX '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_SOUNDEX,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
      | TOK_SORT_KEY '(' value_expression optional_Collation_type optional_sort_direction ')'
                                 {
                                   if ($5 != CollationInfo::DefaultDir  && $4 != CollationInfo::Sort)
@@ -33809,6 +33818,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_SIGN
                       | TOK_SIN
                       | TOK_SINH
+                      | TOK_SOUNDEX
                       | TOK_SORT_KEY
                       | TOK_SPACE
                       | TOK_SQRT
