@@ -1277,6 +1277,30 @@ const NAType *BuiltinFunction::synthesizeType()
       }
       break;
 
+    case ITM_SOUNDEX:
+      {
+          // type cast any params
+          ValueId vid1 = child(0)->getValueId();
+          SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+          vid1.coerceType(c1, NA_CHARACTER_TYPE);
+          
+          //input type must be string
+          const NAType &typ1 = vid1.getType();
+
+          if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+              *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("SOUNDEX");
+              return NULL;
+          }
+
+          retType = new HEAP SQLChar(4, FALSE);
+          if (typ1.supportsSQLnull())
+          {
+              retType->setNullable(TRUE);
+          }
+      }
+      break;
+
     default:
       {
 	retType = (NAType *)ItemExpr::synthesizeType();

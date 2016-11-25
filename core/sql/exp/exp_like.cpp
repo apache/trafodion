@@ -515,6 +515,7 @@ ex_expr::exp_return_type ExRegexpClauseChar::eval(char *op_data[],
   Lng32 cflags, z;
   char * pattern;
   char *srcStr= new (exHeap) char[len1+1];
+  char ebuf[128];
 
   cflags = REG_EXTENDED|REG_NEWLINE;
   pattern = new (exHeap) char[len2+1];
@@ -528,14 +529,24 @@ ex_expr::exp_return_type ExRegexpClauseChar::eval(char *op_data[],
 
   if (z != 0){
     //ERROR
-    ExRaiseSqlError(exHeap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
-    **diagsArea << DgString0("REGEXP");
+    regerror(z, &reg,ebuf, sizeof(ebuf));
+    ExRaiseSqlError(exHeap, diagsArea, (ExeErrorCode)8452);
+    **diagsArea << DgString0(ebuf);
     return ex_expr::EXPR_ERROR;
   }
  
   z = regexec(&reg,srcStr , nmatch, pm, 0);
-  if (z != 0) 
+  if (z == REG_NOMATCH) 
+  {
     matchFlag = false;
+  }
+  else if (z != 0) {
+    regerror(z, &reg,ebuf, sizeof(ebuf));
+    ExRaiseSqlError(exHeap, diagsArea, (ExeErrorCode)8452);
+    **diagsArea << DgString0(ebuf);
+    return ex_expr::EXPR_ERROR;
+  }
+  
 
   *(Lng32 *)op_data[0] = (Lng32)matchFlag;
   regfree(&reg);

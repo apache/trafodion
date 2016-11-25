@@ -538,6 +538,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_HBASE_VERSION:
 	  setClassID(FUNC_HBASE_VERSION);
 	  break;
+	case ITM_SOUNDEX:
+	  setClassID(FUNC_SOUNDEX_ID);
+	  break;
 	default:
 	  GenAssert(0, "ex_clause: Unknown Class ID.");
 	  break;
@@ -1028,6 +1031,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_INETNTOA_ID:
       GetVTblPtr(vtblPtr, ExFunctionInetNtoa);
+      break;
+    case ex_clause::FUNC_SOUNDEX_ID:
+      GetVTblPtr(vtblPtr, ExFunctionSoundex);
       break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);

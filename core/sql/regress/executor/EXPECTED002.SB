@@ -6786,7 +6786,7 @@ C1
 
 --- 1 row(s) selected.
 >>-- utf-8 code
->>select * from regexp_test where c1 regexp '[中文测试]';
+>>select * from regexp_test where c1 regexp '(中文测试)';
 
 C1
 ----------
@@ -6794,6 +6794,11 @@ C1
 中文测试
 
 --- 1 row(s) selected.
+>>select * from regexp_test where c1 regexp '[^\';
+
+*** ERROR[8452] The regular expression is invalid. Cause: Unmatched [ or [^
+
+--- 0 row(s) selected.
 >>drop table regexp_test;
 
 --- SQL operation complete.

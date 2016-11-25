@@ -83,7 +83,8 @@ NA_EIDPROC
   inline char *	getDataPointer() const;
 NA_EIDPROC 
   inline void   setDataPointer(char *dp);
-  
+NA_EIDPROC 
+  inline tupp_descriptor* get_tupp_descriptor();  
 NA_EIDPROC 
   inline unsigned short getRefCount() const;
 NA_EIDPROC
@@ -425,6 +426,10 @@ inline void tupp::setDataPointer(char *dp)
   tuppDescPointer->tupleAddress_ = dp;
 };
 
+inline tupp_descriptor* tupp::get_tupp_descriptor()
+{
+  return tuppDescPointer;
+}
 
 
 /////////////////////////////////////////////////

@@ -471,8 +471,7 @@ enum OperatorTypeEnum {
                         ITM_OLAP_LAG = 2177,
 
                         // Regular Expression
-                        ITM_PATTERNMATCHINGFUNCTION = 2178,
-                        ITM_REGEXP = 2179,
+                        ITM_REGEXP = 2178,
 
                         // numeric functions
                         ITM_ABS = 2200,

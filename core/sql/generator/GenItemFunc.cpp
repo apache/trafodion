@@ -633,6 +633,15 @@ short BuiltinFunction::codeGen(Generator * generator)
 							space);
       }
     break;
+   
+    case ITM_SOUNDEX:
+    {
+        function_clause =
+            new(generator->getSpace()) ExFunctionSoundex(getOperatorType(),
+                    attr,
+                    space);
+    }
+    break;
       
     default:
       break;

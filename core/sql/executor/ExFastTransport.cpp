@@ -527,15 +527,15 @@ ExHdfsFastExtractTcb::ExHdfsFastExtractTcb(
 ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 {
 
-  if (lobGlob_ != NULL)
-  {
+  if (lobGlob_) {
+    ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
     lobGlob_ = NULL;
   }
 
   if (sequenceFileWriter_ != NULL) {
      NADELETE(sequenceFileWriter_, SequenceFileWriter, getHeap());
+     sequenceFileWriter_ = NULL;
   }
-
 } // ExHdfsFastExtractTcb::~ExHdfsFastExtractTcb()
 
 

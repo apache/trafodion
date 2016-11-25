@@ -1006,6 +1006,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("SNAPSHOT",           TOK_SNAPSHOT,    NONRESTOKEN_),
   ParKeyWord("SOFTWARE",           TOK_SOFTWARE,    NONRESTOKEN_),
   ParKeyWord("SOME",               TOK_SOME,        ANS_|RESWORD_|MPWORD_),
+  ParKeyWord("SOUNDEX",            TOK_SOUNDEX,     NONRESTOKEN_),
   ParKeyWord("SORT",               TOK_SORT,        NONRESTOKEN_),
   ParKeyWord("SORT_KEY",           TOK_SORT_KEY,    NONRESTOKEN_),
   ParKeyWord("SOURCE",             TOK_SOURCE,      NONRESTOKEN_),

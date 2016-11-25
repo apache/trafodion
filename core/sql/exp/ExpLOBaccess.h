@@ -618,15 +618,7 @@ class ExLobGlobals
     {
       isCliInitialized_ = TRUE;
     }
-     NABoolean isHive()
-    {
-      return isHive_;
-    }
- 
-    void setIsHive(NABoolean TorF)
-    {
-      isHive_ = TorF;
-    }
+
     void setHeap(void * heap)
     {
       heap_ = (NAHeap *) heap;
@@ -654,6 +646,7 @@ class ExLobGlobals
     FILE *threadTraceFile_;
     NAHeap *heap_;
     NABoolean lobTrace_;
+    long numWorkerThreads_; 
 };
 
 

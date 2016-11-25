@@ -760,6 +760,7 @@
 #define MON_ZCLIENT_WATCHNODEDELETE_2       101371702
 #define MON_ZCLIENT_WATCHNODEDELETE_3       101371703
 #define MON_ZCLIENT_ISZNODEEXPIRED_1        101371801
+#define MON_ZCLIENT_ISZNODEEXPIRED_2        101371802
 
 /**********************************************/
 

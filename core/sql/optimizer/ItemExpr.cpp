@@ -7787,6 +7787,7 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
       switch (getOperatorType())
 	{
 	case ITM_NULLIFZERO:
+	case ITM_SOUNDEX:
 	  {
 	    result = new (outHeap) BuiltinFunction(getOperatorType(),
 						   outHeap, 1, child(0));
@@ -7942,20 +7943,12 @@ ItemExpr * Regexp::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
   if (derivedNode == NULL)
     {
-      switch (getArity())
-	{
-	case 2:
-	  result = new (outHeap) Regexp(child(0), child(1),
+      result = new (outHeap) Regexp(NULL, NULL,
 	    numberOfNonWildcardChars_,
 	    bytesInNonWildcardChars_,
 	    patternAStringLiteral_,
 	    oldDefaultSelForLikeWildCardUsed_,
 	    beginEndKeysApplied_);
-	  break;
-	default:
-	  CMPASSERT(0 == 1);
-	  break;
-	}
     }
   else
     result = derivedNode;
