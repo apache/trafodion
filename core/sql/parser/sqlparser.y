@@ -9600,6 +9600,16 @@ math_function :
 	   $$ = new (PARSERHEAP()) BitOperFunc(ITM_BITEXTRACT, $3, $5, $7);
 	 }
 
+       | TOK_LOG '(' value_expression ')'
+         {
+	   $$ = new (PARSERHEAP()) MathFunc(ITM_LOG, $3);
+	 }
+
+       | TOK_LOG '(' value_expression ',' value_expression ')'
+         {
+	   $$ = new (PARSERHEAP()) MathFunc(ITM_LOG, $3, $5);
+	 }
+
        | math_func_0_operand '(' ')'
          {
 	   $$ = new (PARSERHEAP()) MathFunc($1);
@@ -9631,7 +9641,6 @@ math_func_1_operand :
            |  TOK_DEGREES {$$ = ITM_DEGREES;}
            |  TOK_EXP {$$ = ITM_EXP;}
            |  TOK_FLOOR {$$ = ITM_FLOOR;}
-           |  TOK_LOG {$$ = ITM_LOG;}
            |  TOK_LOG10 {$$ = ITM_LOG10;}
            |  TOK_LOG2 {$$ = ITM_LOG2;}
            |  TOK_RADIANS {$$ = ITM_RADIANS;}
@@ -9645,7 +9654,7 @@ math_func_1_operand :
 /* type operator_type */
 math_func_2_operands :
               TOK_ATAN2 {$$ = ITM_ATAN2;}
-	   |  TOK_POWER {$$ = ITM_POWER;}
+           |  TOK_POWER {$$ = ITM_POWER;}
 //           |  TOK_TRUNCATE {$$ = ITM_SCALE_TRUNC;}
 
 
