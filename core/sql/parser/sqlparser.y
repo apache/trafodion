@@ -1361,6 +1361,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_RANGELOG			/* MV */
 %token <tokval> TOK_REBUILD
 %token <tokval> TOK_REFERENCES
+%token <tokval> TOK_REGEXP
 %token <tokval> TOK_REGION
 %token <tokval> TOK_REGISTER            /* Tandem extension */
 %token <tokval> TOK_UNREGISTER          /* Tandem extension */
@@ -19073,6 +19074,13 @@ like_predicate : value_expression not_like value_expression
 				  if ($2 == TOK_NOT)
 				    $$ = new (PARSERHEAP()) UnLogic(ITM_NOT,$$);
 				}
+              | value_expression TOK_REGEXP value_expression
+                                {
+                                  //TODO
+                                  $$ = new (PARSERHEAP()) Regexp($1,$3);
+				  if ($2 == TOK_NOT)
+				    $$ = new (PARSERHEAP()) UnLogic(ITM_NOT,$$);
+                                } 
 
 /* type item */
 exists_predicate : TOK_EXISTS rel_subquery
@@ -33419,6 +33427,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_MV_TABLE  
 		      | TOK_MVSTATUS	// MV
 		      | TOK_MVS_UMD //
+		      | TOK_REGEXP  
 		      | TOK_REMOVE //
 		      | TOK_OPENBLOWNAWAY //
 		      | TOK_REDEFTIME	// Y_TEST

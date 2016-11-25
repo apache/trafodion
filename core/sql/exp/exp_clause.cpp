@@ -194,6 +194,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_LIKE_DOUBLEBYTE: 
 	  setClassID(LIKE_CLAUSE_DOUBLEBYTE_ID);
 	  break;
+        case ITM_REGEXP:
+          setClassID(REGEXP_CLAUSE_CHAR_ID);
+          break;
 	case ITM_ASCII: 
 	case ITM_CODE_VALUE: 
 	case ITM_UNICODE_CODE_VALUE: 
@@ -685,6 +688,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::LIKE_CLAUSE_DOUBLEBYTE_ID:
       GetVTblPtr(vtblPtr, ex_like_clause_doublebyte);
+      break;
+    case ex_clause::REGEXP_CLAUSE_CHAR_ID:
+            GetVTblPtr(vtblPtr, ExRegexpClauseChar);
       break;
     case ex_clause::FUNC_ASCII_ID:
       GetVTblPtr(vtblPtr, ExFunctionAscii);
@@ -1197,6 +1203,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_BETWEEN: return "ITM_BETWEEN";
     // LCOV_EXCL_STOP
     case ITM_LIKE: return "ITM_LIKE";
+    case ITM_REGEXP: return "ITM_REGEXP";
     // LCOV_EXCL_START
     case ITM_CURRENT_TIMESTAMP: return "ITM_CURRENT_TIMESTAMP";
     case ITM_CURRENT_USER: return "ITM_CURRENT_USER";
@@ -1654,7 +1661,16 @@ ex_arith_clause::ex_arith_clause(OperatorTypeEnum oper_type,
   if (attr)
     setInstruction();
 }
- 
+
+
+ExRegexpClauseChar::ExRegexpClauseChar(OperatorTypeEnum oper_type, 
+			    short num_operands,
+			    Attributes ** attr,
+			    Space * space)
+: ExRegexpClauseBase(oper_type, num_operands,attr,space)
+{
+}
+
 ex_arith_clause::ex_arith_clause(clause_type type,
                                  OperatorTypeEnum oper_type,
                                  Attributes ** attr,
@@ -2058,6 +2074,12 @@ void ex_like_clause_char::displayContents(Space * space, const char * /*displayS
 {
   ex_clause::displayContents(space, "ex_like_clause_char", clauseNum, constsArea);
 }
+
+void ExRegexpClauseChar::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  ex_clause::displayContents(space, "ExRegexpClauseChar", clauseNum, constsArea);
+}
+
 // LCOV_EXCL_START
 void ex_like_clause_doublebyte::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {

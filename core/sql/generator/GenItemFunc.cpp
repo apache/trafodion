@@ -89,7 +89,13 @@ short BuiltinFunction::codeGen(Generator * generator)
 						       attr, space);
       }
     break;
-    
+    case ITM_REGEXP:
+      {
+        function_clause = 
+          new(generator->getSpace()) ExRegexpClauseChar(getOperatorType(), (1+getArity()),
+                                                       attr, space);
+      }
+    break; 
     case ITM_LIKE:
       {
 
