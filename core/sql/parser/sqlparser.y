@@ -9729,7 +9729,7 @@ misc_function :
                         break;
 
                     default:
-                        *SqlParser_Diags << DgSqlCode(-4045) << DgString0("SHA2");
+                        yyerror("The second operand expects 0, 224, 256, 384 or 512");
                         YYERROR;
                         break;
                     }

@@ -1706,7 +1706,7 @@ d3d9446802a44259755d38e6d163e820   852952723  b1d5781111d84f7b3fe45a0852e59758cd
 >>select SOUNDEX('Jon') from dual;
 
 (EXPR)
-------
+----------
 
 J500
 
@@ -1714,7 +1714,7 @@ J500
 >>select SOUNDEX('Roy') from dual;
 
 (EXPR)
-------
+----------
 
 R000
 
@@ -1722,7 +1722,7 @@ R000
 >>select SOUNDEX('Lynn') from dual;
 
 (EXPR)
-------
+----------
 
 L500
 
@@ -1789,7 +1789,7 @@ Lynn L500
 --- 1 row(s) selected.
 >>select sha2('the original data', 128) from dual;
 
-*** ERROR[4045] The operand of function SHA2 must be numeric.
+*** ERROR[15002] Internal parser error: The second operand expects 0, 224, 256, 384 or 512.
 
 *** ERROR[8822] The statement was not prepared.
 
