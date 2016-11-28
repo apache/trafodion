@@ -1361,6 +1361,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_RANGELOG			/* MV */
 %token <tokval> TOK_REBUILD
 %token <tokval> TOK_REFERENCES
+%token <tokval> TOK_REGEXP
 %token <tokval> TOK_REGION
 %token <tokval> TOK_REGISTER            /* Tandem extension */
 %token <tokval> TOK_UNREGISTER          /* Tandem extension */
@@ -9694,12 +9695,45 @@ misc_function :
                             1, $3);
                 }
 
-     | TOK_SHA2 '(' value_expression ')'
+     | TOK_SHA2 '(' value_expression ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                 {
-                    $$ = new (PARSERHEAP())
-                    BuiltinFunction(ITM_SHA2,
-                            CmpCommon::statementHeap(),
-                            1, $3);
+                    int mode = atoInt64($5->data());
+                    switch (mode) {
+                    case 0:
+                    case 256:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_256,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    case 224:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_224,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    case 384:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_384,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    case 512:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_512,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    default:
+                        yyerror("The second operand expects 0, 224, 256, 384 or 512");
+                        YYERROR;
+                        break;
+                    }
+
                 }
 
      | TOK_MD5 '(' value_expression ')'
@@ -19073,6 +19107,13 @@ like_predicate : value_expression not_like value_expression
 				  if ($2 == TOK_NOT)
 				    $$ = new (PARSERHEAP()) UnLogic(ITM_NOT,$$);
 				}
+              | value_expression TOK_REGEXP value_expression
+                                {
+                                  //TODO
+                                  $$ = new (PARSERHEAP()) Regexp($1,$3);
+				  if ($2 == TOK_NOT)
+				    $$ = new (PARSERHEAP()) UnLogic(ITM_NOT,$$);
+                                } 
 
 /* type item */
 exists_predicate : TOK_EXISTS rel_subquery
@@ -33419,6 +33460,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_MV_TABLE  
 		      | TOK_MVSTATUS	// MV
 		      | TOK_MVS_UMD //
+		      | TOK_REGEXP  
 		      | TOK_REMOVE //
 		      | TOK_OPENBLOWNAWAY //
 		      | TOK_REDEFTIME	// Y_TEST
