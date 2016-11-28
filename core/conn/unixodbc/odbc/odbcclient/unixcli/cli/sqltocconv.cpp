@@ -1125,27 +1125,64 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				}
 				else //SQL_LONG_VARCHAR
 				{
-					DataLen = *(USHORT *)srcDataPtr;
-					if (DataLen == 0)
-					return SQL_NO_DATA;
-					if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+					if(isshort)
 					{
-						if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, DataLen/2, (char*)cTmpBuf+2,
-							(sizeof(cTmpBuf) - 2) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+						DataLen = *(USHORT *)srcDataPtr;
+						if (DataLen == 0)
+						return SQL_NO_DATA;
+						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
 						{
-						//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-							return IDS_22_003;
+							if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, DataLen/2, (char*)cTmpBuf,
+								(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+							{
+							//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+								return IDS_22_003;
+							}
+							srcLength = TransStringLength + 1;
 						}
-						*(short *)cTmpBuf = TransStringLength; //reset the length
-						srcLength = TransStringLength + 1;
+						else
+						{
+							if((DataLen + 1) <= sizeof(cTmpBuf))
+							{
+								memcpy(cTmpBuf, (char*)srcDataPtr+2, DataLen);
+								srcLength = DataLen + 1;
+								cTmpBuf[DataLen] = 0;
+							}
+							else
+								return IDS_22_003;
+						}
+						if (!ctoi64(cTmpBuf, tempVal64 ))
+							return IDS_22_003;
 					}
 					else
 					{
-						memcpy(cTmpBuf, (char*)srcDataPtr, DataLen + 2);
-						cTmpBuf[DataLen + 2] = 0;
+						DataLen = *(UINT *)srcDataPtr;
+						if (DataLen == 0)
+						return SQL_NO_DATA;
+						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+						{
+							if(iconv->WCharToUTF8((UChar*)srcDataPtr+2, DataLen/2, (char*)cTmpBuf,
+								(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+							{
+							//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+								return IDS_22_003;
+							}
+							srcLength = TransStringLength + 1;
+						}
+						else
+						{
+							if((DataLen + 1) <= sizeof(cTmpBuf))
+							{
+								memcpy(cTmpBuf, (char*)srcDataPtr+4, DataLen);
+								srcLength = DataLen + 1;
+								cTmpBuf[DataLen] = 0;
+							}
+							else
+								return IDS_22_003;
+						}
+						if (!ctoi64(cTmpBuf, tempVal64 ))
+							return IDS_22_003;
 					}
-					if (!ctoi64(cTmpBuf+2, tempVal64 ))
-						return IDS_22_003;
 				}
 			}
 			if ((retCode = ConvertSQLCharToNumeric(cTmpBuf, srcLength, ODBCDataType, dTmp)) != SQL_SUCCESS)
@@ -1504,25 +1541,59 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				}
 				else //SQL_LONG_VARCHAR
 				{
-					DataLen = *(USHORT *)srcDataPtr;
-					if (DataLen == 0)
-						return SQL_NO_DATA;
-					if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+					if(isshort)
 					{
-						if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, DataLen/2, (char*)cTmpBuf+2,
-							(sizeof(cTmpBuf) - 2) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+						DataLen = *(USHORT *)srcDataPtr;
+						if (DataLen == 0)
+						return SQL_NO_DATA;
+						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
 						{
-						//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-							return IDS_22_003;
+							if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, DataLen/2, (char*)cTmpBuf,
+								(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+							{
+							//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+								return IDS_22_003;
+							}
+							srcLength = TransStringLength + 1;
 						}
-						*(short *)cTmpBuf = TransStringLength; //reset the lengths
-						DataLen = sizeof(DATE_STRUCT); 
-						srcLength = TransStringLength + 1;
+						else
+						{
+							if((DataLen + 1) <= sizeof(cTmpBuf))
+							{
+								memcpy(cTmpBuf, (char*)srcDataPtr+2, DataLen);
+								srcLength = DataLen + 1;
+								cTmpBuf[DataLen] = 0;
+							}
+							else
+								return IDS_22_003;
+						}
 					}
 					else
 					{
-						memcpy(cTmpBuf, (char*)srcDataPtr, DataLen + 2);
-						cTmpBuf[DataLen + 2] = 0;
+						DataLen = *(UINT *)srcDataPtr;
+						if (DataLen == 0)
+						return SQL_NO_DATA;
+						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+						{
+							if(iconv->WCharToUTF8((UChar*)srcDataPtr+2, DataLen/2, (char*)cTmpBuf,
+								(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+							{
+							//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+								return IDS_22_003;
+							}
+							srcLength = TransStringLength + 1;
+						}
+						else
+						{
+							if((DataLen + 1) <= sizeof(cTmpBuf))
+							{
+								memcpy(cTmpBuf, (char*)srcDataPtr+4, DataLen);
+								srcLength = DataLen + 1;
+								cTmpBuf[DataLen] = 0;
+							}
+							else
+								return IDS_22_003;
+						}
 					}
 				}
 			}
@@ -1716,24 +1787,59 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				}
 				else //SQL_LONG_VARCHAR
 				{
-					SQLINTEGER tmpDataLen = *(USHORT *)srcDataPtr;
-					if (tmpDataLen == 0)
-					return SQL_NO_DATA;
-					if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+					if(isshort)
 					{
-						if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, tmpDataLen/2, (char*)cTmpBuf+2,
-							(sizeof(cTmpBuf) - 2) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+						DataLen = *(USHORT *)srcDataPtr;
+						if (DataLen == 0)
+						return SQL_NO_DATA;
+						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
 						{
-						//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-							return IDS_22_003;
+							if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, DataLen/2, (char*)cTmpBuf,
+								(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+							{
+							//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+								return IDS_22_003;
+							}
+							srcLength = TransStringLength + 1;
 						}
-						*(short *)cTmpBuf = TransStringLength; //reset the length
-						srcLength = TransStringLength + 1;
+						else
+						{
+							if((DataLen + 1) <= sizeof(cTmpBuf))
+							{
+								memcpy(cTmpBuf, (char*)srcDataPtr+2, DataLen);
+								srcLength = DataLen + 1;
+								cTmpBuf[DataLen] = 0;
+							}
+							else
+								return IDS_22_003;
+						}
 					}
 					else
 					{
-						memcpy(cTmpBuf, (char*)srcDataPtr , tmpDataLen + 2);
-						cTmpBuf[tmpDataLen + 2] = 0;
+						DataLen = *(UINT *)srcDataPtr;
+						if (DataLen == 0)
+						return SQL_NO_DATA;
+						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+						{
+							if(iconv->WCharToUTF8((UChar*)srcDataPtr+2, DataLen/2, (char*)cTmpBuf,
+								(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+							{
+							//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+								return IDS_22_003;
+							}
+							srcLength = TransStringLength + 1;
+						}
+						else
+						{
+							if((DataLen + 1) <= sizeof(cTmpBuf))
+							{
+								memcpy(cTmpBuf, (char*)srcDataPtr+4, DataLen);
+								srcLength = DataLen + 1;
+								cTmpBuf[DataLen] = 0;
+							}
+							else
+								return IDS_22_003;
+						}
 					}
 				}
 			}
@@ -1898,28 +2004,60 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				}
 				else //SQL_LONG_VARCHAR
 				{
-					DataLen = *(USHORT *)srcDataPtr;
-					if (DataLen == 0)
-					return SQL_NO_DATA;
-					if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+					if(isshort)
 					{
-						if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, DataLen/2, (char*)cTmpBuf+2,
-							(sizeof(cTmpBuf) - 2) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+						DataLen = *(USHORT *)srcDataPtr;
+						if (DataLen == 0)
+						return SQL_NO_DATA;
+						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
 						{
-						// We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-						// But this should never happen!
-							return IDS_22_003;
+							if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, DataLen/2, (char*)cTmpBuf,
+								(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+							{
+							//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+								return IDS_22_003;
+							}
+							srcLength = TransStringLength + 1;
 						}
-						*(short *)cTmpBuf = TransStringLength; //reset the length
-						srcLength = TransStringLength + 1;
+						else
+						{
+							if((DataLen + 1) <= sizeof(cTmpBuf))
+							{
+								memcpy(cTmpBuf, (char*)srcDataPtr+2, DataLen);
+								srcLength = DataLen + 1;
+								cTmpBuf[DataLen] = 0;
+							}
+							else
+								return IDS_22_003;
+						}
 					}
 					else
 					{
-						memcpy(cTmpBuf, (char*)srcDataPtr, DataLen + 2);
-						cTmpBuf[DataLen + 2] = 0;
+						DataLen = *(UINT *)srcDataPtr;
+						if (DataLen == 0)
+						return SQL_NO_DATA;
+						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+						{
+							if(iconv->WCharToUTF8((UChar*)srcDataPtr+2, DataLen/2, (char*)cTmpBuf,
+								(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+							{
+							//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+								return IDS_22_003;
+							}
+							srcLength = TransStringLength + 1;
+						}
+						else
+						{
+							if((DataLen + 1) <= sizeof(cTmpBuf))
+							{
+								memcpy(cTmpBuf, (char*)srcDataPtr+4, DataLen);
+								srcLength = DataLen + 1;
+								cTmpBuf[DataLen] = 0;
+							}
+							else
+								return IDS_22_003;
+						}
 					}
-					//reset DataLen
-					DataLen = sizeof(TIMESTAMP_STRUCT);
 				}
 			}
 			if ((retCode = ConvertSQLCharToDate(ODBCDataType, cTmpBuf, srcLength, SQL_C_TIMESTAMP, 
@@ -2274,6 +2412,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		default:
 			return IDS_07_006;
 		}
+		NullTerminate = TRUE;
 		break; // End of switch for SQL_C_BINARY 
 	case SQL_C_DEFAULT:
 		switch (ODBCDataType)
@@ -2699,28 +2838,62 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
 		case SQL_WVARCHAR:
-			DataLen = *(USHORT *)srcDataPtr;
-			if (DataLen == 0)
-				return SQL_NO_DATA;
-			DataPtr = (char *)srcDataPtr + sizeof(USHORT);
-			if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+			if(isshort)
 			{
-				int TransStringLength = 0;
-				if(iconv->WCharToUTF8((UChar*)DataPtr, DataLen/2, (char*)cTmpBuf,
-					sizeof(cTmpBuf) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+				DataLen = *(USHORT *)srcDataPtr;
+				if (DataLen == 0)
+				return SQL_NO_DATA;
+				if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
 				{
-				//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-				//Add more trace
-					return IDS_07_003;
+					int TransStringLength = 0;
+					if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, DataLen/2, (char*)cTmpBuf,
+						(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+					{
+					//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+						return IDS_07_003;
+					}
+					srcLength = TransStringLength + 1;
 				}
-				srcLength = TransStringLength + 1;
+				else
+				{
+					if((DataLen + 1) <= sizeof(cTmpBuf))
+					{
+						memcpy(cTmpBuf, (char*)srcDataPtr+2, DataLen);
+						srcLength = DataLen + 1;
+						cTmpBuf[DataLen] = 0;
+					}
+					else
+						return IDS_07_003;
+				}
 			}
 			else
 			{
-				if (sizeof(cTmpBuf) < DataLen )
-					return IDS_07_003;
-				memcpy(cTmpBuf, (char*)srcDataPtr + 2 , DataLen);
-				cTmpBuf[DataLen] = 0;
+				DataLen = *(UINT *)srcDataPtr;
+				if (DataLen == 0)
+				return SQL_NO_DATA;
+				if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+				{
+
+					int TransStringLength = 0;
+					if(iconv->WCharToUTF8((UChar*)srcDataPtr+2, DataLen/2, (char*)cTmpBuf,
+						(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+					{
+					//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+						return IDS_07_003;
+					}
+					srcLength = TransStringLength + 1;
+				}
+				else
+				{
+					if((DataLen + 1) <= sizeof(cTmpBuf))
+					{
+						memcpy(cTmpBuf, (char*)srcDataPtr+4, DataLen);
+						srcLength = DataLen + 1;
+						cTmpBuf[DataLen] = 0;
+					}
+					else
+						return IDS_07_003;
+				}
 			}
 			useDouble = FALSE;
 			break;
@@ -3007,28 +3180,59 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				}
 				else //SQL_LONG_VARCHAR
 				{
-					DataLen = *(USHORT *)srcDataPtr;
-					if (DataLen == 0)
-					return SQL_NO_DATA;
-					if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+					if(isshort)
 					{
-						if (sizeof (cTmpBuf) <= DataLen/2) //Avoid a seg-violation
-							return IDS_07_003;
-						if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, DataLen/2, (char*)cTmpBuf+2,
-							(sizeof(cTmpBuf) - 2) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+						DataLen = *(USHORT *)srcDataPtr;
+						if (DataLen == 0)
+						return SQL_NO_DATA;
+						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
 						{
-						//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
-							return IDS_07_003;
+							if(iconv->WCharToUTF8((UChar*)srcDataPtr+1, DataLen/2, (char*)cTmpBuf,
+								(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+							{
+							//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+								return IDS_07_003;
+							}
+							srcLength = TransStringLength + 1;
 						}
-						*(short *)cTmpBuf = TransStringLength; //reset the length
-						srcLength = TransStringLength + 1;
+						else
+						{
+							if((DataLen + 1) <= sizeof(cTmpBuf))
+							{
+								memcpy(cTmpBuf, (char*)srcDataPtr+2, DataLen);
+								srcLength = DataLen + 1;
+								cTmpBuf[DataLen] = 0;
+							}
+							else
+								return IDS_07_003;
+						}
 					}
 					else
 					{
-						if (sizeof (cTmpBuf) <= DataLen + 2)
-							return IDS_07_003;
-						memcpy(cTmpBuf, (char*)srcDataPtr, DataLen + 2);
-						cTmpBuf[DataLen + 2] = 0;
+						DataLen = *(UINT *)srcDataPtr;
+						if (DataLen == 0)
+						return SQL_NO_DATA;
+						if (srcCharSet == SQLCHARSETCODE_UCS2) //convert from UTF-16 to UTF-8
+						{
+							if(iconv->WCharToUTF8((UChar*)srcDataPtr+2, DataLen/2, (char*)cTmpBuf,
+								(sizeof(cTmpBuf)) , &TransStringLength, (char*)errorMsg) != SQL_SUCCESS)
+							{
+							//We don't want to see a data truncation (SQL_SUCCESS_WITH_INFO) here
+								return IDS_07_003;
+							}
+							srcLength = TransStringLength + 1;
+						}
+						else
+						{
+							if((DataLen + 1) <= sizeof(cTmpBuf))
+							{
+								memcpy(cTmpBuf, (char*)srcDataPtr+4, DataLen);
+								srcLength = DataLen + 1;
+								cTmpBuf[DataLen] = 0;
+							}
+							else
+								return IDS_07_003;
+						}
 					}
 				}
 				if ((retCode = ConvertSQLCharToInterval(ODBCDataType, cTmpBuf, srcLength, CDataType, 
@@ -3923,6 +4127,9 @@ unsigned long ODBC::ConvertSQLCharToNumeric(SQLPOINTER srcDataPtr, SQLINTEGER sr
 	switch (ODBCDataType) {
 	case SQL_CHAR:
 	case SQL_WCHAR:
+	case SQL_VARCHAR:
+	case SQL_LONGVARCHAR:
+	case SQL_WVARCHAR:
 		str = (char *)srcDataPtr;
 		tempLen = srcLength-1;
 		if (str[ tempLen - 1 ] == ' ')
@@ -3931,12 +4138,6 @@ unsigned long ODBC::ConvertSQLCharToNumeric(SQLPOINTER srcDataPtr, SQLINTEGER sr
 			rTrim( str);
 			tempLen = strlen(str);
 		}
-		break;
-	case SQL_VARCHAR:
-	case SQL_LONGVARCHAR:
-	case SQL_WVARCHAR:
-		tempLen = *(USHORT *)srcDataPtr;
-		str = (char *)srcDataPtr+sizeof(USHORT);
 		break;
 	case SQL_INTERVAL_MONTH:
 	case SQL_INTERVAL_YEAR:
@@ -3987,6 +4188,9 @@ unsigned long ODBC::ConvertSQLCharToDate(SQLSMALLINT ODBCDataType,
 	{
 	case SQL_CHAR:
 	case SQL_WCHAR:
+	case SQL_VARCHAR:
+	case SQL_LONGVARCHAR:
+	case SQL_WVARCHAR:
 		len = srcLength-1;
 		strPtr = (char *)srcDataPtr;
 		if (strPtr[ len - 1 ] == ' ')
@@ -3995,12 +4199,6 @@ unsigned long ODBC::ConvertSQLCharToDate(SQLSMALLINT ODBCDataType,
 			rTrim( strPtr);
 			len = strlen(strPtr);
 		}
-		break;
-	case SQL_VARCHAR:
-	case SQL_LONGVARCHAR:
-	case SQL_WVARCHAR:
-		len = *(USHORT *)srcDataPtr;
-		strPtr = (char *)srcDataPtr + sizeof(USHORT);
 		break;
 	default:
 		return IDS_07_006;
@@ -4228,6 +4426,9 @@ unsigned long ODBC::ConvertSQLCharToInterval(SQLSMALLINT ODBCDataType,
 	{
 	case SQL_CHAR:
 	case SQL_WCHAR:
+	case SQL_VARCHAR:
+	case SQL_LONGVARCHAR:
+	case SQL_WVARCHAR:
 		len = srcLength-1;
 		strPtr = (char *)srcDataPtr;
 		if (strPtr[ len - 1 ] == ' ')
@@ -4236,12 +4437,6 @@ unsigned long ODBC::ConvertSQLCharToInterval(SQLSMALLINT ODBCDataType,
 			rTrim( strPtr);
 			len = strlen(strPtr);
 		}
-		break;
-	case SQL_VARCHAR:
-	case SQL_LONGVARCHAR:
-	case SQL_WVARCHAR:
-		len = *(USHORT *)srcDataPtr;
-		strPtr = (char *)srcDataPtr + sizeof(USHORT);
 		break;
 	case SQL_INTERVAL_MONTH:
 	case SQL_INTERVAL_YEAR:
