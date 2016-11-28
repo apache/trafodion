@@ -113,12 +113,6 @@ resource.hm*
 odb.sln
 odb.vcxproj.*
 odb.rc
-# BSD licensed files
-ComJSON.h
-ComJSON.cpp
-ComJSONFuncs.cpp
-ComJSONStringInfo.h
-ComJSONStringInfo.cpp
 swscanf.cpp
 swsprintf.cpp
 ulexer.h
