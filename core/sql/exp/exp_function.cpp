@@ -213,6 +213,8 @@ ExFunctionSha2::ExFunctionSha2(){};
 ExFunctionIsIP::ExFunctionIsIP(){};
 ExFunctionInetAton::ExFunctionInetAton(){};
 ExFunctionInetNtoa::ExFunctionInetNtoa(){};
+ExFunctionSoundex::ExFunctionSoundex(){};
+
 ExFunctionAscii::ExFunctionAscii(OperatorTypeEnum oper_type,
 				 Attributes ** attr, Space * space)
      : ex_function_clause(oper_type, 2, attr, space)
@@ -249,8 +251,8 @@ ExFunctionSha::ExFunctionSha(OperatorTypeEnum oper_type,
 };
 
 ExFunctionSha2::ExFunctionSha2(OperatorTypeEnum oper_type,
-			       Attributes ** attr, Space * space)
-     : ex_function_clause(oper_type, 2, attr, space)
+			       Attributes ** attr, Space * space, Lng32 mode)
+     : ex_function_clause(oper_type, 2, attr, space), mode(mode)
 {
   
 };
@@ -758,6 +760,13 @@ ExFunctionInternalTimestamp::ExFunctionInternalTimestamp(OperatorTypeEnum oper_t
 														 Space *space)
   : ex_function_clause(oper_type, 1, attr, space)
 {}
+
+ExFunctionSoundex::ExFunctionSoundex(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+
+};
 
 
 // Triggers
@@ -7953,37 +7962,93 @@ ex_expr::exp_return_type ExFunctionCrc32::eval(char * op_data[],
   return ex_expr::EXPR_OK;
 }
 
-//only support SHA 256 for this version
-//TBD: add 224 and 384, 512 in next version
 ex_expr::exp_return_type ExFunctionSha2::eval(char * op_data[],
                                                         CollHeap *heap,
                                                         ComDiagsArea **diags)
 {
 
-  unsigned char sha[SHA256_DIGEST_LENGTH+ 1]={0};  
+  unsigned char sha[SHA512_DIGEST_LENGTH + 1] = {0};
 
   Attributes *resultAttr   = getOperand(0);
   Attributes *srcAttr   = getOperand(1);
 
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
-  Lng32 rlen = resultAttr->getLength();
 
+  // the length of result
+  Lng32 rlen = SHA512_DIGEST_LENGTH;
+
+  switch (mode) {
+    case 0:
+    case 256:
+      SHA256_CTX sha_ctx_256;
+      if (!SHA256_Init(&sha_ctx_256))
+        goto sha2_error;
+      if (!SHA256_Update(&sha_ctx_256, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA256_Final((unsigned char *)sha, &sha_ctx_256))
+        goto sha2_error;
+
+      rlen = SHA256_DIGEST_LENGTH;
+      break;
+
+    case 224:
+      SHA256_CTX sha_ctx_224;
+
+      if (!SHA224_Init(&sha_ctx_224))
+        goto sha2_error;
+      if (!SHA224_Update(&sha_ctx_224, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA224_Final((unsigned char *)sha, &sha_ctx_224))
+        goto sha2_error;
+
+      rlen = SHA224_DIGEST_LENGTH;
+      break;
+
+    case 384:
+      SHA512_CTX sha_ctx_384;
+      if (!SHA384_Init(&sha_ctx_384))
+        goto sha2_error;
+      if (!SHA384_Update(&sha_ctx_384, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA384_Final((unsigned char *)sha, &sha_ctx_384))
+        goto sha2_error;
+
+      rlen = SHA384_DIGEST_LENGTH;
+      break;
+
+    case 512:
+      SHA512_CTX sha_ctx_512;
+      if (!SHA512_Init(&sha_ctx_512))
+        goto sha2_error;
+      if (!SHA512_Update(&sha_ctx_512, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA512_Final((unsigned char *)sha, &sha_ctx_512))
+        goto sha2_error;
+
+      rlen = SHA512_DIGEST_LENGTH;
+      break;
+
+    default:
+      ExRaiseSqlError(heap, diags, EXE_BAD_ARG_TO_MATH_FUNC);
+      *(*diags) << DgString0("SHA2");
+      return ex_expr::EXPR_ERROR;
+  }
   str_pad(op_data[0], rlen, ' ');
 
-  SHA256_CTX  sha_ctx;
-
-  SHA256_Init(&sha_ctx);  
-  SHA256_Update(&sha_ctx, op_data[1], slen);
-  SHA256_Final((unsigned char*) sha,&sha_ctx); 
   char tmp[3];
-  for(int i=0; i < SHA256_DIGEST_LENGTH; i++ )
+  for(int i=0; i < rlen; i++ )
   {
     tmp[0]=tmp[1]=tmp[2]='0';
     sprintf(tmp, "%.2x", (int)sha[i]);
     str_cpy_all(op_data[0]+i*2, tmp, 2);
   }
-   
+
   return ex_expr::EXPR_OK;
+sha2_error:
+  ExRaiseFunctionSqlError(heap, diags, EXE_INTERNAL_ERROR,
+                          derivedFunction(),
+                          origFunctionOperType());
+  return ex_expr::EXPR_ERROR;
 }
 
 ex_expr::exp_return_type ExFunctionSha::eval(char * op_data[],
@@ -8233,6 +8298,119 @@ ex_expr::exp_return_type ExFunctionIsIP::eval(char * op_data[],
     *(Int16 *)op_data[0] = 1; 
     return ex_expr::EXPR_OK;
   }
+}
+
+/*
+ * SOUNDEX(str) returns a character string containing the phonetic
+ * representation of the input string. It lets you compare words that
+ * are spelled differently, but sound alike in English.
+ * The phonetic representation is defined in "The Art of Computer Programming",
+ * Volume 3: Sorting and Searching, by Donald E. Knuth, as follows:
+ *
+ *  1. Retain the first letter of the string and remove all other occurrences
+ *  of the following letters: a, e, h, i, o, u, w, y.
+ *
+ *  2. Assign numbers to the remaining letters (after the first) as follows:
+ *        b, f, p, v = 1
+ *        c, g, j, k, q, s, x, z = 2
+ *        d, t = 3
+ *        l = 4
+ *        m, n = 5
+ *        r = 6
+ *
+ *  3. If two or more letters with the same number were adjacent in the original
+ *  name (before step 1), or adjacent except for any intervening h and w, then
+ *  omit all but the first.
+ *
+ *  4. Return the first four bytes padded with 0.
+ * */
+ex_expr::exp_return_type ExFunctionSoundex::eval(char *op_data[],
+						     CollHeap *heap,
+						     ComDiagsArea** diagsArea)
+{
+    ULng32 previous = 0;
+    ULng32 current = 0;
+
+    char *srcStr = op_data[1];
+    char *tgtStr = op_data[0];
+    Lng32 srcLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+    Lng32 tgtLen = getOperand(0)->getLength();
+    
+    CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
+
+    str_pad(tgtStr, tgtLen, '\0');
+
+    tgtStr[0] = toupper(srcStr[0]);    // Retain the first letter, convert to capital anyway
+    Int16 setLen = 1;                  // The first character is set already
+
+    for(int i=1; i < srcLen; ++i)
+    {
+        char chr = toupper(srcStr[i]);
+        switch(chr)
+        {
+            case 'A':
+            case 'E':
+            case 'H':
+            case 'I':
+            case 'O':
+            case 'U':
+            case 'W':
+            case 'Y':
+                current = 0;
+                break;
+            case 'B':
+            case 'F':
+            case 'P':
+            case 'V':
+                current = 1;
+                break;
+            case 'C':
+            case 'G':
+            case 'J':
+            case 'K':
+            case 'Q':
+            case 'S':
+            case 'X':
+            case 'Z':
+                current = 2;
+                break;
+            case 'D':
+            case 'T':
+                current = 3;
+                break;
+            case 'L':
+                current = 4;
+                break;
+            case 'M':
+            case 'N':
+                current = 5;
+                break;
+            case 'R':
+                current = 6;
+                break;
+            default:
+                break;
+        }
+
+        if(current)    // Only non-zero valued letter shall ve retained, 0 will be discarded
+        {
+            if(previous != current)
+            {
+                str_itoa(current, &tgtStr[setLen]);
+                setLen++;    // A new character is set in target
+            }
+        }
+
+        previous = current;
+
+        if(setLen == tgtLen)    // Don't overhit the target string
+            break;
+    } // end of for loop
+
+    if(setLen < tgtLen)
+        str_pad(tgtStr+setLen, (tgtLen - setLen), '0');
+    
+    return ex_expr::EXPR_OK;
 }
 
 // LCOV_EXCL_STOP

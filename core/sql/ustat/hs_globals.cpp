@@ -9308,6 +9308,20 @@ Lng32 HSGlobalsClass::FixSamplingCounts(HSColGroupStruct *group)
                   start = i;
                 continue;
               }
+
+            // If the interval after this one is the last non-null interval,
+            // and that interval has UEC > (UEC_FRACTION_UPPER * 
+            // # rows in sample interval), then combine this one with that one
+            // (and we'll ignore the MAX_INTERVAL_JOIN limit for that one).
+            if ( ( ((i == lastInterval - 2) && groupHist->hasNullInterval()) ||
+                   ((i == lastInterval - 1) && !groupHist->hasNullInterval())  ) &&
+                 (groupHist->getIntUec(i+1) > UEC_FRACTION_UPPER * groupHist->getIntRowCount(i+1))  )
+              {
+                if (start < 1)
+                  start = i;
+                continue;            
+              }
+
             intJoinCount = 0;
 
             // Cannot combine any more intervals, adjust current interval with calculated ratio.
