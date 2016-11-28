@@ -233,11 +233,32 @@ short BuiltinFunction::codeGen(Generator * generator)
      
       break;
 
-   case ITM_SHA2:
+   case ITM_SHA2_256:
+   case ITM_SHA2_224:
+   case ITM_SHA2_384:
+   case ITM_SHA2_512:
       {
+          Lng32 mode = 0;
+          switch (getOperatorType()) {
+          case ITM_SHA2_256:
+              mode = 256;
+              break;
+
+          case ITM_SHA2_224:
+              mode = 224;
+              break;
+
+          case ITM_SHA2_384:
+              mode = 384;
+              break;
+
+          case ITM_SHA2_512:
+              mode = 512;
+              break;
+          }
          function_clause =
            new(generator->getSpace()) ExFunctionSha2(getOperatorType(),
-                                                         attr, space);
+                                                         attr, space, mode);
       }
      
       break;

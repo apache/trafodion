@@ -344,7 +344,10 @@ ex_clause::ex_clause(clause_type type,
         case ITM_SHA1:
           setClassID(FUNC_SHA1_ID);
           break;
-        case ITM_SHA2:
+        case ITM_SHA2_224:
+        case ITM_SHA2_256:
+        case ITM_SHA2_384:
+        case ITM_SHA2_512:
           setClassID(FUNC_SHA2_ID);
           break;
         case ITM_MD5:

@@ -9695,12 +9695,45 @@ misc_function :
                             1, $3);
                 }
 
-     | TOK_SHA2 '(' value_expression ')'
+     | TOK_SHA2 '(' value_expression ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                 {
-                    $$ = new (PARSERHEAP())
-                    BuiltinFunction(ITM_SHA2,
-                            CmpCommon::statementHeap(),
-                            1, $3);
+                    int mode = atoInt64($5->data());
+                    switch (mode) {
+                    case 0:
+                    case 256:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_256,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    case 224:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_224,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    case 384:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_384,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    case 512:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_512,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    default:
+                        yyerror("The second operand expects 0, 224, 256, 384 or 512");
+                        YYERROR;
+                        break;
+                    }
+
                 }
 
      | TOK_MD5 '(' value_expression ')'
