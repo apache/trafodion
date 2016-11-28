@@ -2249,6 +2249,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <comObjectName>           user_defined_function_name
 %type <objectTypeEnum>          givable_object_type
 %type <tokval>                  nonreserved_word
+%type <tokval>                  nonreserved_word_for_explain
 %type <tokval>                  nonreserved_func_word
 %type <tokval>                  MP_nonreserved_word
 %type <tokval>                  MP_nonreserved_func_word
@@ -16724,6 +16725,19 @@ explain_identifier : IDENTIFIER
 			   YYERROR;
 			 $$ = $1;
 		       }
+                     | nonreserved_word_for_explain
+                       {
+                         NAString temp = *(unicodeToChar
+                                          (ToTokvalPlusYYText(&$1)->yytext,
+                                           ToTokvalPlusYYText(&$1)->yyleng,
+                                           (CharInfo::CharSet) (
+                                                                ComGetNameInterfaceCharSet()
+                                                                ),
+                                           PARSERHEAP()) );
+                         temp.toUpper();
+                         $$ = new (PARSERHEAP())NAString(temp);
+                       }
+
 
 exe_util_display_explain: explain_starting_tokens TOK_PROCEDURE '(' QUOTED_STRING ',' QUOTED_STRING ')'
                {
@@ -33727,6 +33741,43 @@ nonreserved_word :      TOK_ABORT
 // QSTUFF
                       | TOK_VALIDATE
                       | TOK_RMS
+
+// This was added for JIRA Trafodion 2367. There are oddities in
+// how PREPARE is parsed vs. how EXPLAIN is parsed, along with
+// pecularities in the specific syntax of EXPLAIN that prevent
+// us from recognizing the same identifiers for both. In sqlci,
+// for example, sqlci's own parser picks off the PREPARE <identifier>
+// part, and this parser only sees the query text afterwards. So,
+// sqlci has its own rules for what <identifier>s are allowed.
+// EXPLAIN on the other hand is fully parsed here in this parser.
+// Trafci seems to have different processing yet. EXPLAIN itself
+// has some confounding syntax: One can say "EXPLAIN <query text>"
+// as well as "EXPLAIN <statement identifier>", so the identifier
+// can conflict with any token that can start a statement. This
+// anomaly is unique to EXPLAIN. That means that we can't simply
+// plug in nonreserved_word as an alternative production for
+// explain_identifier; we'll get a boatload of additional
+// shift/reduce and reduce/reduce conflicts. It is possible in
+// principle to create a subset of nonreserved_word for EXPLAIN,
+// but in light of the fact that the PREPARE rules are in different
+// parsers (and differ between sqlci and trafci), this seems a
+// fool's errand.
+// 
+// So, up until this JIRA, only regular identifiers (that is,
+// non-keywords) and delimited identifiers were allowed for EXPLAIN.
+// Unfortunately, C is a keyword, since it is a language name on
+// CREATE FUNCTION. So, EXPLAIN C; gives a syntax error. Since
+// humans are sometimes prone to using one-letter identifiers,
+// this can be highly irritating. So, to remove this irritation,
+// we've supplied a separate nonreserved_word production just for
+// EXPLAIN that contains all the one-letter tokens.
+
+nonreserved_word_for_explain: TOK_C
+                      | TOK_D
+                      | TOK_G
+                      | TOK_K
+                      | TOK_M
+                      | TOK_T
 
 // Formerly declared as FUNC_ in ulexer.cpp keywordTable.  Now defined
 // as nonreserved_func_word.  This works better and does not increase the
