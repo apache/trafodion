@@ -3678,7 +3678,8 @@ privilege granted to the remaining role.
 the role. The only way to revoke any such privilege is to revoke the
 role from the user. For more information, see
 <<roles,Roles>> .
-
+* Privileges granted on an object can be for all the columns of the object or just a subset of the columns. 
+Only the following subset of privileges is applicable at the column-level: INSERT, REFERENCES, SELECT, and UPDATE.  
 
 You can manage privileges by using the GRANT and REVOKE statements.
 
