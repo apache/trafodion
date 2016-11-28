@@ -679,3 +679,10 @@ select sha2('the original data', 224) from dual;
 select sha2('the original data', 256) from dual;
 select sha2('the original data', 384) from dual;
 select sha2('the original data', 512) from dual;
+
+-- Test LOG() for any radix with 2 parameters
+select log(2,8) from dual;
+select log(5,10) from dual;
+select log(10,100) from dual;
+select log(2) from dual;
+select log(2.71828) from dual;

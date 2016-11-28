@@ -1825,4 +1825,46 @@ bc0050f3ff7a540c74a42664c53a7f9fd485622374a43eb4a62cd84e48f483237bed50f6562f8c6e
 18091a172d94aae1ae530ced02bde7f022229f446348f5d3b36989c2e6fd59f5252c7a7f8ecb71a74cb724448243ff71651f87aed155aee7340fad1b02567b60
 
 --- 1 row(s) selected.
+>>
+>>-- Test LOG() for any radix with 2 parameters
+>>select log(2,8) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 3.00000000000000000E+000
+
+--- 1 row(s) selected.
+>>select log(5,10) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 1.43067655807339328E+000
+
+--- 1 row(s) selected.
+>>select log(10,100) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 2.00000000000000000E+000
+
+--- 1 row(s) selected.
+>>select log(2) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 6.93147180559945344E-001
+
+--- 1 row(s) selected.
+>>select log(2.71828) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 9.99999327347282176E-001
+
+--- 1 row(s) selected.
 >>log;
