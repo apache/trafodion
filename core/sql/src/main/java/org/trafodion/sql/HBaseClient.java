@@ -1757,6 +1757,46 @@ public class HBaseClient {
     return endKeys;
   }
 
+  public boolean createSnapshot( String tableName, String snapshotName)
+      throws IOException
+  {
+      Admin admin = getConnection().getAdmin();
+      admin.snapshot(snapshotName, TableName.valueOf(tableName));
+      admin.close();
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.createSnapshot() - Snapshot created: " + snapshotName);
+      return true;
+  }
+
+  public boolean verifySnapshot( String tableName, String snapshotName)
+      throws IOException
+  {
+     Admin admin = getConnection().getAdmin();
+     List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
+     try 
+     {
+        for (SnapshotDescription snpd : lstSnaps) {
+           if (snpd.getName().compareTo(snapshotName) == 0 && 
+                snpd.getTable().compareTo(tableName) == 0) {
+              if (logger.isDebugEnabled()) 
+                 logger.debug("HBaseClient.verifySnapshot() - Snapshot verified: " + snapshotName);
+              return true;
+           }
+        }
+      } finally {
+        admin.close();
+      }
+      return false;
+  }
+ 
+  public boolean deleteSnapshot( String snapshotName)
+      throws IOException 
+  {
+      Admin admin = getConnection().getAdmin();
+      admin.deleteSnapshot(snapshotName);
+      admin.close();
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.deleteSnapshot() - Snapshot deleted: " + snapshotName);
+      return true;
+  }
 }
     
 
