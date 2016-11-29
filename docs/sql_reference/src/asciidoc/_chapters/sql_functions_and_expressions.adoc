@@ -3659,9 +3659,7 @@ IS_IPV4( expression )
 +
 specifies an expression that determines the values to include in the
 validation of the IP address. The _expression_ cannot contain an aggregate
-function or a subquery. All nulls are eliminated before the function is
-applied to the set of values. If the result table is empty, IS_IPV4 
-returns NULL.
+function or a subquery. If the input value is NULL, IS_IPV4 returns NULL.
 See <<expressions,Expressions>>.
 
 [[examples_of_is_ipv4]]
@@ -3692,9 +3690,7 @@ IS_IPV6( expression )
 +
 specifies an expression that determines the values to include in the
 validation of the IP address. The _expression_ cannot contain an aggregate
-function or a subquery. All nulls are eliminated before the function is
-applied to the set of values. If the result table is empty, IS_IPV6 
-returns NULL.
+function or a subquery. If the input value is NULL, IS_IPV6 returns NULL.
 See <<expressions,Expressions>>.
 
 [[examples_of_is_ipv6]]
@@ -3725,9 +3721,7 @@ INET_ATON( expression )
 +
 specifies an expression that determines the values to include in the
 conversion of the IP address. The _expression_ cannot contain an aggregate
-function or a subquery. All nulls are eliminated before the function 
-is applied to the set of values. If the result table is empty,
-INET_ATON returns NULL.
+function or a subquery. If the input value is NULL, INET_ATON returns NULL.
 See <<expressions,Expressions>>.
 
 [[examples_of_inet_aton]]
@@ -3758,9 +3752,8 @@ INET_NTOA( expression )
 +
 specifies an expression that determines the values to include in the
 conversion of the number to IP address. The _expression_ cannot contain 
-an aggregate function or a subquery. All nulls are eliminated before the function
-is applied to the set of values. If the result table is empty, INET_NTOA 
-returns NULL.
+an aggregate function or a subquery. If the input value is NULL, INET_NTOA 
+returns NULL. 
 See <<expressions,Expressions>>.
 
 [[examples_of_inet_ntoa]]
@@ -4402,9 +4395,7 @@ MD5( _expression_)
 +
 specifies an expression that determines the values to include in the
 computation of the MD5. The _expression_ cannot contain an aggregate
-function or a subquery. All nulls are eliminated before the function
-is applied to the set of values. If the result table is empty, 
-MD5 returns NULL.
+function or a subquery. If the input value is NULL, MD5 returns NULL.
 See <<expressions,Expressions>>.
 
 [[examples_of_md5]]

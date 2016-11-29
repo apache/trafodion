@@ -7785,6 +7785,8 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
       switch (getOperatorType())
 	{
 	case ITM_NULLIFZERO:
+        case ITM_ISIPV4:
+        case ITM_ISIPV6:
 	  {
 	    result = new (outHeap) BuiltinFunction(getOperatorType(),
 						   outHeap, 1, child(0));
