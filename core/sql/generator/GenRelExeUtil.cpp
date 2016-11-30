@@ -4346,6 +4346,23 @@ const char * HiveMDaccessFunc::getVirtualTableName()
     return "HIVEMD__"; 
 }
 
+NABoolean HiveMDaccessFunc::isHiveMD(const NAString &name)
+{
+  if (memcmp(name.data(), (char*)"HIVEMD_", strlen("HIVEMD_")) == 0)
+    return TRUE;
+
+  return FALSE;
+}
+
+NAString HiveMDaccessFunc::getMDType(const NAString &name)
+{
+  NAString mdType(name);
+  mdType = mdType.remove(0, strlen("HIVEMD_"));
+  mdType = mdType.strip(NAString::trailing, '_');
+
+  return mdType;
+}
+
 TrafDesc *HiveMDaccessFunc::createVirtualTableDesc()
 {
   TrafDesc * table_desc =
@@ -4353,7 +4370,8 @@ TrafDesc *HiveMDaccessFunc::createVirtualTableDesc()
 				      getVirtualTableName(),
 				      ComTdbExeUtilHiveMDaccess::getVirtTableNumCols((char*)mdType_.data()),
 				      ComTdbExeUtilHiveMDaccess::getVirtTableColumnInfo((char*)mdType_.data()),
-				      0, NULL);
+				      ComTdbExeUtilHiveMDaccess::getVirtTableNumKeys((char*)mdType_.data()),
+				      ComTdbExeUtilHiveMDaccess::getVirtTableKeyInfo((char*)mdType_.data()));
 
   return table_desc;
 }
@@ -4570,18 +4588,27 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
        }
    }
 
+  char * catalogName = NULL;
+  NAString catalogNameInt;
+  catalogNameInt = CmpCommon::getDefaultString(HIVE_CATALOG);
+  catalogNameInt.toLower();
+  catalogName = space->allocateAlignedSpace(catalogNameInt.length() + 1);
+  strcpy(catalogName, catalogNameInt.data());
+
   char * schemaName = NULL;
   NAString schemaNameInt ;
-  if (schemaName_.getSchemaName().isNull()) {
-    const CorrName& name = getTableDesc()->getNATable()->getTableName();
-    schemaNameInt = name.getQualifiedNameObj().getSchemaName();
-  }
-  else {
-    schemaNameInt = schemaName_.getSchemaName();
-  }
-  schemaNameInt.toLower();
+  if (schemaName_.isNull())
+    schemaNameInt = HIVE_SYSTEM_SCHEMA_LC;
+  else
+    schemaNameInt = schemaName_;
   schemaName = space->allocateAlignedSpace(schemaNameInt.length() + 1);
   strcpy(schemaName, schemaNameInt.data());
+
+  char * objectName = NULL;
+  if (NOT objectName_.isNull()) {
+    objectName = space->allocateAlignedSpace(objectName_.length() + 1);
+    strcpy(objectName, objectName_.data());
+  }
 
   // add this descriptor to the work cri descriptor.
 #pragma nowarn(1506)   // warning elimination
@@ -4606,25 +4633,25 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
   else if (mdType_ == "SYSTEM_TABLES")
     type = ComTdbExeUtilHiveMDaccess::SYSTEM_TABLES_;
    
-#pragma nowarn(1506)   // warning elimination
   ComTdbExeUtilHiveMDaccess *hiveTdb
     = new(space)
       ComTdbExeUtilHiveMDaccess(
-		   type,
-		   tupleLength,
-		   givenDesc,	                 // given_cri_desc
-		   returnedDesc,		 // returned cri desc
-		   workCriDesc,
-		   work_atp_index,
-		   8,				 // Down queue size
-		   16,				 // Up queue size0
-		   3,				 // Number of buffers to allocate   
-		   36000,			 // Size of each buffer
-		   scanExpr,			 // predicate
-		   hivePredStr,
-                   schemaName);
-		   
-#pragma warn(1506)  // warning elimination
+           type,
+           tupleLength,
+           givenDesc,	                 // given_cri_desc
+           returnedDesc,		 // returned cri desc
+           workCriDesc,
+           work_atp_index,
+           8,				 // Down queue size
+           16,				 // Up queue size0
+           3,				 // Number of buffers to allocate   
+           36000,			 // Size of each buffer
+           scanExpr,			 // predicate
+           hivePredStr,
+           catalogName,
+           schemaName,
+           objectName);
+
   generator->initTdbFields(hiveTdb);
 
   // Add the explain Information for this node to the EXPLAIN

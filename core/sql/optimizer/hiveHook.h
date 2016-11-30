@@ -139,6 +139,8 @@ struct hive_sd_desc
    char recordTerminator_;
    char* nullFormat_;
 
+   NABoolean isCompressed_;
+
    struct hive_sd_desc* next_;
 
    hive_sd_desc(Int32 sdID, const char* loc, Int64 creationTS, Int32 buckets,
@@ -148,13 +150,14 @@ struct hive_sd_desc
                 struct hive_column_desc* column,
                 struct hive_skey_desc* skey,
                 struct hive_bkey_desc* bkey,
-                char fieldTerminator, char recordTerminator
+                char fieldTerminator, char recordTerminator,
+                const NABoolean isCompressed
                 )
-
         : sdID_(sdID), buckets_(buckets), kind_(knd), column_(column),
           skey_(skey), bkey_(bkey), 
           fieldTerminator_(fieldTerminator),
           recordTerminator_(recordTerminator),
+          isCompressed_(isCompressed),
           next_(NULL)
   {
     location_ = strduph(loc, CmpCommon::contextHeap());
@@ -179,75 +182,82 @@ struct hive_sd_desc
 struct hive_tbl_desc
 {
   Int32 tblID_; // not used with JNI
-   char* tblName_;
-   char* schName_;
-   Int64 creationTS_;
-   struct hive_sd_desc* sd_;
-   struct hive_pkey_desc* pkey_;
-
-   struct hive_tbl_desc* next_;
-
-  hive_tbl_desc(Int32 tblID, const char* name, const char* schName, 
-                Int64 creationTS, struct hive_sd_desc* sd,
-                 struct hive_pkey_desc* pk)
-    : tblID_(tblID), sd_(sd), creationTS_(creationTS), pkey_(pk), next_(NULL)
-  {  tblName_ = strduph(name, CmpCommon::contextHeap());
-    schName_ = strduph(schName, CmpCommon::contextHeap()); }
+  char* tblName_;
+  char* schName_;
+  char* owner_;
+  char* tableType_;
+  Int64 creationTS_;
+  struct hive_sd_desc* sd_;
+  struct hive_pkey_desc* pkey_;
   
+  struct hive_tbl_desc* next_;
+  
+  hive_tbl_desc(Int32 tblID, const char* name, const char* schName, 
+                const char * owner,
+                const char * tableType,
+                Int64 creationTS, struct hive_sd_desc* sd,
+                struct hive_pkey_desc* pk);
+
   ~hive_tbl_desc();
 
-   struct hive_sd_desc* getSDs() { return sd_; };
+  struct hive_sd_desc* getSDs() { return sd_; };
+  
+  struct hive_skey_desc* getSortKeys();
+  struct hive_bkey_desc* getBucketingKeys();
+  struct hive_pkey_desc* getPartKey() { return pkey_; };
+  struct hive_column_desc* getColumns();
+  
+  Int32 getNumOfCols();
+  Int32 getNumOfPartCols() const;
+  Int32 getNumOfSortCols();
+  Int32 getNumOfBucketCols();
+  
+  Int32 getPartColNum(const char* name);
+  Int32 getBucketColNum(const char* name);
+  Int32 getSortColNum(const char* name);
 
-   struct hive_skey_desc* getSortKeys();
-   struct hive_bkey_desc* getBucketingKeys();
-   struct hive_pkey_desc* getPartKey() { return pkey_; };
-   struct hive_column_desc* getColumns();
-   Int32 getNumOfPartCols() const;
-
-   Int64 redeftime();
+  Int64 redeftime();
 };
 
 class HiveMetaData
 {
  
 public:
-   HiveMetaData(); 
-   ~HiveMetaData();
-
-  NABoolean init(NABoolean readEntireSchema = FALSE,
-                 const char * hiveSchemaName = "default",
-                 const char * tabSearchPredStr = 0);
-
-   NABoolean connect();
-   NABoolean disconnect();
-
-   struct hive_tbl_desc* getTableDesc(const char* schemaName,
-                                      const char* tblName);
-   struct hive_tbl_desc* getFakedTableDesc(const char* tblName);
-
-   // validate a cached hive table descriptor
+  HiveMetaData(); 
+  ~HiveMetaData();
+  
+  NABoolean init();
+  
+  NABoolean connect();
+  NABoolean disconnect();
+  
+  struct hive_tbl_desc* getTableDesc(const char* schemaName,
+                                     const char* tblName);
+  struct hive_tbl_desc* getFakedTableDesc(const char* tblName);
+  
+  // validate a cached hive table descriptor
   NABoolean validate(Int32 tableId, Int64 redefTS, 
                      const char* schName, const char* tblName);
-
-   // iterator over all tables in a Hive schema (default)
-   // or iterate over all schemas in the Hive metadata
-   void position();
-   struct hive_tbl_desc * getNext();
-   void advance();
-   NABoolean atEnd();
-
-   // what the Hive default schema is called in the Hive metadata
+  
+  // iterator over all tables in a Hive schema (default)
+  // or iterate over all schemas in the Hive metadata
+  void position();
+  struct hive_tbl_desc * getNext();
+  void advance();
+  NABoolean atEnd();
+  
+  // what the Hive default schema is called in the Hive metadata
   static const char *getDefaultSchemaName() { return "default"; }
-
-   // get lower-level error code
+  
+  // get lower-level error code
   Int32 getErrCode() const { return errCode_; }
-
+  
   const char* getErrDetail() const {return errDetail_; }
-
+  
   const char* getErrCodeStr() const {return errCodeStr_; }
-
+  
   const char* getErrMethodName() const {return errMethodName_; }
-
+  
   void resetErrorInfo();
 
    // return TRUE for success, otherwise record error info and return FALSE

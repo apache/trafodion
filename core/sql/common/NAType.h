@@ -587,6 +587,8 @@ public:
   virtual NABoolean expConvSupported
   (const NAType &otherNAType) const { return TRUE; }
 
+  static NAType* getNATypeForHive(const char* hiveType, NAMemory* heap);
+
 protected:
 
   // ---------------------------------------------------------------------

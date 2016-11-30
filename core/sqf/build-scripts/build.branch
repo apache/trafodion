@@ -52,15 +52,13 @@ if [[ "$USE_GIT" == "1" ]];then
     branch=$ZUUL_BRANCH;
   fi
 else
-  rev=`svn info .. 2>/dev/null | grep '^Last Changed Rev:' | sed 's|Last Changed Rev: ||'`
-  url=`svn info .. 2>/dev/null | grep '^URL:' | sed 's|URL: ||'`
-  reporoot=`svn info .. 2>/dev/null | grep '^Repository Root:' | sed 's|Repository Root: ||'`
-  branch=`echo $url | sed "s|$reporoot\/||" | sed 's|\/sqf$||'`
+  rev=$PV_BUILDID
+  branch="git_unavailable"
 fi
 if [ $f = 1 ]; then
   branch=`echo $branch | sed 's|\/|_sl_|g' | sed 's|-|_dh_|g'`
   echo $rev"_dh_"$branch
 else
-  echo $rev"-"$branch
+  echo $rev"_"$branch
 fi
 
