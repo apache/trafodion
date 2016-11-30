@@ -207,7 +207,8 @@ Int64 getDefaultSlidingSampleSize(Int64 tblRowCount);
 // time related routines for use w/ readTime and statsTime
 //
 // Guardian JulianTimestamp time of UNIX "epoch", 00:00:00 Jan 1, 1970
-const Int64 HS_EPOCH_TIMESTAMP=210866760000000000LL;
+//const Int64 HS_EPOCH_TIMESTAMP=210866760000000000LL;
+const Int64 HS_EPOCH_TIMESTAMP=COM_EPOCH_TIMESTAMP;
 
 Int64 hs_getBaseTime();
 Int64 hs_getEpochTime();

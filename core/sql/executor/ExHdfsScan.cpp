@@ -264,12 +264,12 @@ void ExHdfsScanTcb::freeResources()
   }
   if (runTimeRanges_)
     deallocateRuntimeRanges();
-
-   ExpLOBinterfaceCleanup
-   (lobGlob_, getGlobals()->getDefaultHeap());
-
-  
+  if (lobGlob_) { 
+     ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+     lobGlob_ = NULL;
+  }
 }
+
 NABoolean ExHdfsScanTcb::needStatsEntry()
 {
   // stats are collected for ALL and OPERATOR options.
@@ -1966,6 +1966,15 @@ ExOrcScanTcb::ExOrcScanTcb(
 ExOrcScanTcb::~ExOrcScanTcb()
 {
 }
+
+Int32 ExOrcScanTcb::fixup()
+{
+  lobGlob_ = NULL;
+
+  return 0;
+}
+
+
 
 short ExOrcScanTcb::extractAndTransformOrcSourceToSqlRow(
                                                          char * orcRow,

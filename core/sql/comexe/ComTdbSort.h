@@ -307,8 +307,8 @@ public:
   void setSortFromTop(NABoolean v)
   {(v ? flags_ |= SORT_FROM_TOP : flags_ &= ~SORT_FROM_TOP);}
   
-  NABoolean topNSort() { return (flags_ & SORT_TOPN_ENABLE) != 0;}
-  void setTopNSort(NABoolean v)
+  NABoolean topNSortEnabled() { return (flags_ & SORT_TOPN_ENABLE) != 0;}
+  void setTopNSortEnabled(NABoolean v)
   {(v ? flags_ |= SORT_TOPN_ENABLE : flags_ &= ~SORT_TOPN_ENABLE);}
 
   NABoolean userSidetreeInsert()

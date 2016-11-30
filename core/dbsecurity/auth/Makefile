@@ -68,6 +68,7 @@ INCLUDES	= -I. -I./inc -I ../shared/inc \
 	        -I $(MY_SQROOT)/../sql/porting_layer \
 	        -I $(MY_SQROOT)/export/include \
 	        -I $(MY_SQROOT)/commonLogger \
+	        -I $(LOG4CXX_INC_DIR) \
 	        -I ../../sql/common
 
 

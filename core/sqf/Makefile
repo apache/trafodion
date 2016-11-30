@@ -110,7 +110,7 @@ clean: setupdir_clean
 	-cd sqevlog; $(MAKE) clean
 	-cd hbase_utilities; $(MAKE) clean
 	# from genverhdr.ksh
-	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java
+	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java export/include/buildId
 	# from makemsg.ksh
 	rm -f sql/scripts/SqlciErrors.[gm] export/bin*/mxcierrors.cat
 
@@ -125,7 +125,7 @@ cleanall: setupdir_clean
 	-cd sqevlog; $(MAKE) cleanall
 	-cd hbase_utilities; $(MAKE) clean
 	# from genverhdr.ksh
-	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java
+	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java export/include/buildId
 	# from makemsg.ksh
 	rm -f sql/scripts/SqlciErrors.[gm] export/bin*/mxcierrors.cat
 
