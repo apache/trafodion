@@ -223,6 +223,7 @@ Use these mathematical functions within an SQL numeric value expression:
 | <<ceiling_function,CEILING Function>> | Returns the smallest integer greater than or equal to a numeric value expression.
 | <<cos_function,COS Function>>         | Returns the cosine of a numeric value expression, where the expression is an angle expressed in radians.
 | <<cosh_function,COSH Function>>       | Returns the hyperbolic cosine of a numeric value expression, where the expression is an angle expressed in radians.
+| <<crc32_function,CRC32 Function>>     | Returns CRC32 checksum
 | <<degrees_function,DEGREES Function>> | Converts a numeric value expression expressed in radians to the number of degrees.
 | <<exp_function,EXP Function>>         | Returns the exponential value (to the base e) of a numeric value expression.
 | <<floor_function,FLOOR Function>>     | Returns the largest integer less than or equal to a numeric value  expression.
@@ -245,6 +246,17 @@ returns 0. If value is greater than zero, returns 1.
 |===
 
 See the individual entry for the function.
+
+[[encryption_functions]]
+== Encryption Functions
+Use these functions within an SQL value expression to do data encryption or hashing:
+
+[cols="25%,75%"]
+|===
+| <<md5_function,MD5 Function>>         | Returns MD5 checksum
+| <<sha_function,SHA Function>>         | Returns SHA-1 160-bit checksum
+| <<sha2_function,SHA2 Function>>       | Returns SHA-2 checksum
+|===
 
 [[sequence_functions]]
 == Sequence Functions
@@ -341,6 +353,10 @@ the expressions have NULL values, the function returns a NULL value.
 | <<decode_function,DECODE Function>>                             | Compares _expr_ to each _test_expr_ value one by one in the order provided.
 | <<explain_function,EXPLAIN Function>>                           | Generates a result table describing an access plan for a SELECT, INSERT, DELETE, or UPDATE statement.
 | <<isnull_function,ISNULL Function>>                             | Returns the first argument if it is not null, otherwise it returns the second argument.
+| <<is_ipv4_function, IS_IPV4 Function>>                          | Returns 1 if the argument is a valid IPv4 address specified as a string, 0 otherwise.
+| <<is_ipv6_function, IS_IPV6 Function>>                          | Returns 1 if the argument is a valid IPv6 address specified as a string, 0 otherwise.
+| <<inet_aton_function, INET_ATON Function>>                      | Given the dotted-quad representation of an IPv4 network address as a string, returns an integer that represents the numeric value of the address in network byte order (big endian). INET_ATON() returns NULL if it does not understand its argument.
+| <<inet_ntoa_function, INET_NTOA Function>>                      | Given a numeric IPv4 network address in network byte order, returns the dotted-quad string representation of the address as a nonbinary string in the connection character set. INET_NTOA() returns NULL if it does not understand its argument.
 | <<nullif_function,NULLIF Function>>                             | Returns the value of the first operand if the two operands are not equal, otherwise it returns NULL.
 | <<nvl_function,NVL Function>>                                   | Returns the value of the first operand unless it is NULL, in which case it returns the value of the second operand.
 | <<user_function,USER Function>>                                 | Returns either the database user name of the current user who invoked the function or the database user name 
@@ -1845,6 +1861,42 @@ SELECT COUNT (DISTINCT deptnum) FROM persnl.employee;
 --- 1 row(s) selected.
 ```
 
+<<<
+[[crc32_function]]
+== CRC32 Function
+
+Computes a cyclic redundancy check value and returns a 32-bit unsigned value. 
+The result is NULL if the argument is NULL. The argument is expected to be a 
+string and (if possible) is treated as one if it is not.
+
+```
+CRC32{ expression)}
+```
+
+* `_expression_`
++
+specifies a value expression that determines the values to count. The
+_expression_ cannot contain an aggregate function or a subquery. 
+See <<expressions,Expressions>>.
+
+[[examples_of_crc32]]
+=== examples of CR32
+```
+>>SELECT CRC32('Trafodion') from dual;
+
+(EXPR)
+----------
+
+1960931967
+
+>>SELECT CRC32(2016) from dual;
+
+(EXPR)
+----------
+
+2177070256
+
+```
 <<<
 [[current_function]]
 == CURRENT Function
@@ -3570,7 +3622,6 @@ number _length_ must be a value greater than or equal to zero of exact
 numeric data type and with a scale of zero. _length_ must be less than
 or equal to the length of _char-expr-1_.
 
-<<<
 [[examples_of_insert]]
 === Examples of INSERT
 
@@ -3595,6 +3646,129 @@ SALES REP
 --- 1 row(s) selected.
 ```
 
+<<<
+[[is_ipv4_function]]
+== IS_IPV4 Function
+
+For a given argument, if it is a valid IPV4 string, IS_IPV4() returns 1 else returns 0. 
+```
+IS_IPV4( expression )
+```
+
+* `_expression_`
++
+specifies an expression that determines the values to include in the
+validation of the IP address. The _expression_ cannot contain an aggregate
+function or a subquery. If the input value is NULL, IS_IPV4 returns NULL.
+See <<expressions,Expressions>>.
+
+[[examples_of_is_ipv4]]
+=== Examples of IS_IPV4
+
+This function returns 1 for the first input argument, since it is a valid IPV4 string; 
+0 for the second input argument, since it is an invalid IPV4 string.
+
+```
+>>SELECT IS_IPV4('10.0.5.9'), IS_IPV4('10.0.5.256') from dual;
+
+(EXPR)   (EXPR)
+-------  -------
+1        0
+```
+<<<
+[[is_ipv6_function]]
+== IS_IPV6 Function
+
+Returns 1 if the argument is a valid IPv6 address specified as a string, 0 otherwise. 
+This function does not consider IPv4 addresses to be valid IPv6 addresses.
+
+```
+IS_IPV6( expression )
+```
+
+* `_expression_`
++
+specifies an expression that determines the values to include in the
+validation of the IP address. The _expression_ cannot contain an aggregate
+function or a subquery. If the input value is NULL, IS_IPV6 returns NULL.
+See <<expressions,Expressions>>.
+
+[[examples_of_is_ipv6]]
+=== Examples of IS_IPV6
+
+This function returns 0 for the second input argument, since it is a valid IPV6 string; 
+1 for the second input argument, since it is an invalid IPVr6 string.
+
+```
+>>SELECT IS_IPV6('10.0.5.9'), IS_IPV6('::1') from dual;
+(EXPR)   (EXPR)
+-------- -------
+1         0
+```
+<<<
+[[inet_aton_function]]
+== INET_ATON Function
+
+Given the dotted-quad representation of an IPv4 network address as a string, 
+returns an integer that represents the numeric value of the address in network 
+byte order (big endian). INET_ATON() returns NULL if it does not understand its argument.
+
+```
+INET_ATON( expression )
+```
+
+* `_expression_`
++
+specifies an expression that determines the values to include in the
+conversion of the IP address. The _expression_ cannot contain an aggregate
+function or a subquery. If the input value is NULL, INET_ATON returns NULL.
+See <<expressions,Expressions>>.
+
+[[examples_of_inet_aton]]
+=== Examples of INET_ATON
+
+
+```
+>>SELECT INET_ATON('10.0.5.9') from dual;
+
+(EXPR)
+-----------
+167773449 
+```
+<<<
+[[inet_ntoa_function]]
+== INET_NTOA Function
+
+Given a numeric IPv4 network address in network byte order, returns the 
+dotted-quad string representation of the address as a nonbinary string in 
+the connection character set. INET_NTOA() returns NULL if it does 
+not understand its argument.
+
+```
+INET_NTOA( expression )
+```
+
+* `_expression_`
++
+specifies an expression that determines the values to include in the
+conversion of the number to IP address. The _expression_ cannot contain 
+an aggregate function or a subquery. If the input value is NULL, INET_NTOA 
+returns NULL. 
+See <<expressions,Expressions>>.
+
+[[examples_of_inet_ntoa]]
+=== Examples of INET_NTOA
+
+this function will convert an integer into  the dotted-quad string 
+representation of the IP address.
+
+```
+>>SELECT INET_NTOA(167773449) from dual
+
+(EXPR)
+-------------
+'10.0.5.9'
+```
 <<<
 [[isnull_function]]
 == ISNULL Function
@@ -4147,7 +4321,7 @@ See <<trim_function,TRIM Function>> and <<rtrim_function,RTRIM Function>>.
 
 <<<
 [[max_function]]
-=== MAX/MAXIMUM Function
+== MAX/MAXIMUM Function
 
 MAX is an aggregate function that returns the maximum value within a set
 of values. MAXIMUM is the equivalent of MAX wherever the function name
@@ -4192,7 +4366,6 @@ MAX (SALARY * 1.1)
 MAX (PARTCOST * QTY_ORDERED)
 ```
 
-<<<
 [[examples_of_max]]
 === Examples of MAX/MAXIMUM
 
@@ -4206,6 +4379,34 @@ SELECT MAX (salary) FROM persnl.employee;
   175500.00
 
 --- 1 row(s) selected.
+```
+
+<<<
+[[md5_function]]
+== MD5 Function
+
+Calculates an MD5 128-bit checksum for the string. The value is returned
+as a string of 32 hexadecimal digits, or NULL if the argument was NULL. 
+
+```
+MD5( _expression_)
+```
+* `_expression_`
++
+specifies an expression that determines the values to include in the
+computation of the MD5. The _expression_ cannot contain an aggregate
+function or a subquery. If the input value is NULL, MD5 returns NULL.
+See <<expressions,Expressions>>.
+
+[[examples_of_md5]]
+=== Examples of MD5 
+The return value is a nonbinary string in the connection character set.
+```
+>>SELECT MD5('testing') from dual;
+
+(EXPR)
+---------------------------------
+'ae2b1fca515949e5d54fb22b8ed95575'
 ```
 
 <<<
@@ -6485,7 +6686,7 @@ TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
 
 * Return a numeric value that represents the second of the hour from the
 _ship_timestamp_ column:
-+
+
 ```
 SELECT start_date, ship_timestamp, SECOND(ship_timestamp)
 FROM persnl.project
@@ -6496,6 +6697,46 @@ Start/Date Time/Shipped               (EXPR)
 2008-04-10 2008-04-21 08:15:00.000000     .000000
 ```
 
+<<<
+[[sha_function]]
+== SHA Function
+
+Calculates an SHA-1 160-bit checksum for the string, as described in 
+RFC 3174 (Secure Hash Algorithm). The value is returned as a string of 
+40 hexadecimal digits, or NULL if the argument was NULL. 
+
+[[examples_of_sha]]
+=== examples of SHA
+```
+>>SELECT SHA1('abc') from dual;
+
+(EXPR)
+-----------------------------------------
+'a9993e364706816aba3e25717850c26c9cd0d89d'
+```
+
+<<<
+[[sha2_function]]
+== SHA2 Function
+
+Calculates the SHA-2 family of hash functions (SHA-224, SHA-256, SHA-384, 
+and SHA-512). The first argument is the cleartext string to be hashed. 
+The second argument indicates the desired bit length of the result, which 
+must have a value of 224, 256, 384, 512.
+If either argument is NULL or the hash length is not one of the permitted values, 
+the return value is NULL. Otherwise, the function result is a hash value containing 
+the desired number of bits. See the notes at the beginning of this section 
+about storing hash values efficiently.
+
+[[examples_of_sha2]]
+=== examples of SHA2
+```
+>>SELECT SHA2('abc', 224) from dual;
+
+(EXPR)
+--------------------------------------------------------
+'23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7'
+```
 <<<
 [[sign_function]]
 == SIGN Function
