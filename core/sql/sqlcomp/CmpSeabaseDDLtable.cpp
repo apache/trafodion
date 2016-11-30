@@ -3959,6 +3959,12 @@ void CmpSeabaseDDL::renameSeabaseTable(
       return;
     }
 
+  // variables needed to find identity column (have to be declared before
+  // the first goto or C++ will moan because of the initializers)
+  NABoolean found = FALSE;
+  Lng32 idPos = 0;
+  NAColumn *col = NULL;
+
   if ((isSeabaseReservedSchema(tableName)) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
@@ -4204,8 +4210,55 @@ void CmpSeabaseDDL::renameSeabaseTable(
   if (cliRC < 0)
     {
       processReturn();
-      
-      goto label_error;
+      goto label_error_2;
+    }
+
+  // if there is an identity column, rename the sequence corresponding to it
+  found = FALSE;
+  while ((NOT found) && (idPos < naTable->getColumnCount()))
+    {
+
+      col = naTable->getNAColumnArray()[idPos];
+      if (col->isIdentityColumn())
+        {
+          found = TRUE;
+          continue;
+        }
+
+      idPos++;
+    }
+
+  if (found)
+    {
+      NAString oldSeqName;
+      SequenceGeneratorAttributes::genSequenceName
+        (catalogNamePart, schemaNamePart, objectNamePart, col->getColName(),
+         oldSeqName);
+  
+      NAString newSeqName;
+      SequenceGeneratorAttributes::genSequenceName
+        (catalogNamePart, schemaNamePart, newObjectNamePart, col->getColName(),
+         newSeqName);
+
+      Int64 seqUID = getObjectUID(&cliInterface,
+                                  catalogNamePart.data(), schemaNamePart.data(), 
+                                  oldSeqName.data(),
+                                  COM_SEQUENCE_GENERATOR_OBJECT_LIT);
+      if (seqUID < 0)
+        {
+          processReturn();
+          goto label_error_2;
+        }
+
+      cliRC = updateObjectName(&cliInterface,
+                               seqUID,
+                               catalogNamePart.data(), schemaNamePart.data(),
+                               newSeqName.data());
+      if (cliRC < 0)
+        {
+          processReturn();
+          goto label_error_2;
+        }
     }
 
   // rename the underlying hbase object
@@ -4255,9 +4308,10 @@ void CmpSeabaseDDL::renameSeabaseTable(
 
   return;
 
- label_error:
+ label_error:  // come here after HBase copy
   retcode = dropHbaseTable(ehi, &newHbaseTable, FALSE, FALSE);
 
+ label_error_2:  // come here after beginXnIfNotInProgress but before HBase copy
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, cliRC);
   
   deallocEHI(ehi); 
