@@ -30,21 +30,16 @@
 == SQL 1002
 
 ```
-Catalog <catalog> does not exist or has not been registered on node <node>.
+Catalog <catalog> does not exist.
 ```
 
 Where <catalog> is the ANSI name of the target catalog.
 
-Where <node> is the node where the process executes.
-
-*Cause:* The catalog is not visible on the local node, either because it
-does not exist or because it exists elsewhere on the network but has not
-been registered on the local node.
+*Cause:* The catalog does not exist.
 
 *Effect:* The operation fails.
 
-*Recovery:* Enter a valid catalog name (or register the catalog on the
-node indicated) and resubmit.
+*Recovery:* Enter a valid catalog name and resubmit.
 
 [[SQL-1003]]
 == SQL 1003
@@ -55,7 +50,7 @@ Schema <schema> does not exist.
 
 Where <schema> is the ANSI name of the affected schema.
 
-*Cause:* In a replication context: a REPLICATION SCHEMA operation
+*Cause:* The statement
 specified a schema that does not exist.
 
 *Effect:* The operation fails.
@@ -100,40 +95,36 @@ the table specified. You can use the SHOWDDL command to find the names
 of the constraints that exist on a table.
 
 <<<
-[[SQL-1006]]
-== SQL 1006
+[[SQL-1007]]
+== SQL 1007
 
 ```
-Index <index-name> does not exist.
+The WITH GRANT OPTION is not supported.
 ```
 
-Where <index-name> is a {project-name} database object name.
-
-*Cause:* The operation you attempted requires the existence of an index
-named <index-name>.
+*Cause:* You attempted to GRANT privileges on a metadata table using
+the WITH GRANT OPTION. This is not allowed.
 
 *Effect:* The operation fails.
 
-*Recovery:* Check that an index named <index-name> does exist. If you
-did not fully qualify the name, check that the defaults generate the
-correct qualified name.
+*Recovery:* Remove the WITH GRANT OPTION clause and resubmit.
 
 [[SQL-1008]]
 == SQL 1008
 
 ```
-User name <user-name> does not exist.
+Authorization identifier <auth-id> does not exist.
 ```
 
-Where <user-name> is a {project-name} platform user name.
+Where <auth-id> is a {project-name} platform user name or role name.
 
-*Cause:* The user name specified in a GRANT or REVOKE statement, or the
+*Cause:* The name specified in a GRANT or REVOKE statement, or the
 authorization ID in a CREATE SCHEMA statement, does not represent a
-valid {project-name} platform user.
+valid {project-name} platform user or role.
 
 *Effect:* The operation fails.
 
-*Recovery:* Correct the user name and resubmit.
+*Recovery:* Correct the name and resubmit.
 
 <<<
 [[SQL-1009]]
@@ -157,7 +148,7 @@ column (whichever is incorrect) and resubmit.
 == SQL 1010
 
 ```
-The statement just specified is currently not supported.
+The statement just entered is currently not supported.
 ```
 
 *Cause:* The statement that you specified is not available for use.
@@ -167,6 +158,20 @@ The statement just specified is currently not supported.
 *Recovery:* Do not attempt to use this {project-name} database statement.
 
 <<<
+[[SQL-1011]]
+== SQL 1011
+
+```
+Only one grantee per grant or revoke is allowed.
+```
+
+*Cause:* The GRANT or REVOKE statement specified more than one user name or role name.
+This is currently not supported.
+
+*Effect:* The operation fails.
+
+*Recovery:* Resubmit the GRANT or REVOKE for each user name or role name individually.
+
 [[SQL-1012]]
 == SQL 1012
 
@@ -185,11 +190,13 @@ grant options.
 == SQL 1013
 
 ```
-Not all privileges were granted. You lack grant option on some of the specified privileges.
+Not all privileges were granted.  You lack grant option for the <privilege> privilege.
 ```
 
+Where <privilege> is a {project-name} privilege on some {project-name} object..
+
 *Cause:* You attempted to grant privileges, but you do not have grant
-options for at least one of them.
+options for at least the one named.
 
 *Effect:* The {project-name} database granted some privileges, but not all
 that you attempted to grant.
@@ -197,31 +204,14 @@ that you attempted to grant.
 *Recovery:* You must have grant options for privileges to grant them.
 
 <<<
-[[SQL-1014]]
-== SQL 1014
-
-```
-Privileges were not revoked. Dependent privilege descriptors still exist.
-```
-
-*Cause:* You attempted to revoke a privilege for a user who has granted
-privileges to another user. Privileges must be revoked in reverse order
-from how they were granted. If you perform a grant to another user who
-then performs a grant to a third user, you cannot revoke privileges to
-the second user until that user revokes their privileges to the third
-user.
-
-*Effect:* The {project-name} database did not revoke the privileges.
-
-*Recovery:* Make sure that the dependent privileges from the user whose
-privileges you want to revoke are revoked first.
-
 [[SQL-1015]]
 == SQL 1015
 
 ```
-Some of the specified privileges could not be revoked.
+Not all privileges were revoked. You lack the grant option for the <privilege> privilege.
 ```
+
+Where <privilege> is a {project-name} privilege on some {project-name} object..
 
 *Cause:* You attempted to revoke a privilege that does not exist or that
 was granted by another user.

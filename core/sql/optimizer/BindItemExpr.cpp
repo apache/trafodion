@@ -9299,8 +9299,7 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
       {
 	*CmpCommon::diags()
 	  << DgSqlCode(-1002)
-	  << DgCatalogName(functionName1AsQualName.getCatalogName())
-	  << DgString0("");
+	  << DgCatalogName(functionName1AsQualName.getCatalogName());
 	
 	bindWA->setErrStatus();
 	return NULL;

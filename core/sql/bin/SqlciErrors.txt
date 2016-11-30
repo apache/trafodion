@@ -1,11 +1,11 @@
 100  02000 99999 UUUUUUUU UUUUU UUUUUUU The "no data" completion condition (SQLCODE = +100).
 1000 42000 99999 BEGINNER INFRM LOGONLY A syntax error occurred.
 1001 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An internal error occurred in module $0~String0 on line $1~Int0.  DETAILS($2~String1).
-1002 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName does not exist or has not been registered on node $1~String0.
+1002 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName does not exist.
 1003 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName does not exist.
 1004 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not exist or object type is invalid for the current operation.
 1005 ZZZZZ 99999 BEGINNER MINOR DBADMIN Constraint $0~ConstraintName does not exist.
-1006 ZZZZZ 99999 BEGINNER MINOR DBADMIN Index $0~TableName does not exist.
+1006 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1007 ZZZZZ 99999 ADVANCED MAJOR DBADMIN The WITH GRANT OPTION is not supported.
 1008 ZZZZZ 99999 BEGINNER MINOR DBADMIN Authorization identifier $0~String0 does not exist.
 1009 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName does not exist in the specified table.
@@ -13,7 +13,7 @@
 1011 ZZZZZ 99999 ADVANCED MINOR DBADMIN Only one grantee per grant or revoke is allowed.
 1012 01007 99999 BEGINNER MAJOR DBADMIN No privileges were granted.  You lack grant option on the specified privileges.
 1013 01007 99999 BEGINNER MAJOR DBADMIN Not all privileges were granted.  You lack grant option for the $0~string0 privilege.
-1014 2B000 99999 BEGINNER MAJOR DBADMIN Privileges were not revoked.  Dependent privilege descriptors still exist.
+1014 2B000 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1015 01006 99999 BEGINNER MAJOR DBADMIN Not all privileges were revoked. You lack the grant option for the $0~string0 privilege.
 1016 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Redundant references to column $0~ColumnName were specified in the constraint or trigger definition.
 1017 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You are not authorized to perform this operation.
