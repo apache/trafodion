@@ -16058,8 +16058,7 @@ RelExpr *CallSP::bindNode(BindWA *bindWA)
       {
 	*CmpCommon::diags()
 	  << DgSqlCode(-1002)
-	  << DgCatalogName(name.getCatalogName())
-	  << DgString0("");
+	  << DgCatalogName(name.getCatalogName());
 	
 	bindWA->setErrStatus();
 	return NULL;
@@ -16089,8 +16088,7 @@ RelExpr *CallSP::bindNode(BindWA *bindWA)
       {
 	*CmpCommon::diags()
 	  << DgSqlCode(-1002)
-	  << DgCatalogName(getRoutineName().getCatalogName())
-	  << DgString0("");
+	  << DgCatalogName(getRoutineName().getCatalogName());
 	
 	bindWA->setErrStatus();
 	return NULL;
@@ -16917,8 +16915,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
       {
 	*CmpCommon::diags()
 	  << DgSqlCode(-1002)
-	  << DgCatalogName(name.getCatalogName())
-	  << DgString0("");
+	  << DgCatalogName(name.getCatalogName());
 	
 	bindWA->setErrStatus();
 	return NULL;
