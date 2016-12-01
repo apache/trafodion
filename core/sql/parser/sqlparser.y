@@ -1134,6 +1134,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_TS                  /* ODBC extension  */
 %token <tokval> TOK_UCASE               /* ODBC extension  */
 %token <tokval> TOK_CODE_VALUE       /* Tandem extension */
+%token <tokval> TOK_UNHEX
 %token <tokval> TOK_UNION
 %token <tokval> TOK_UNION_JOIN
 %token <tokval> TOK_UNIQUE
@@ -10234,6 +10235,12 @@ misc_function :
        | TOK_GROUPING_ID '(' value_expression_list ')'
              {
                $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_GROUPING_ID, $3);
+             }
+       | TOK_UNHEX '(' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_UNHEX,
+                                                       CmpCommon::statementHeap(),
+                                                       1, $3);
              }
 
 hbase_column_create_list : '(' hbase_column_create_value ')'

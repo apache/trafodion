@@ -1826,6 +1826,26 @@ bc0050f3ff7a540c74a42664c53a7f9fd485622374a43eb4a62cd84e48f483237bed50f6562f8c6e
 
 --- 1 row(s) selected.
 >>
+>>-- Test UNHEX()
+>>select unhex(converttohex('abcdefghijklmnopqrstuvwxyz1234567890')) from dual;
+
+(EXPR)
+----------
+
+abcdefghijklmnopqrstuvwxyz1234567890
+
+--- 1 row(s) selected.
+>>select unhex('616') from dual;
+
+*** ERROR[8428] The argument to function is not valid.
+
+--- 0 row(s) selected.
+>>select unhex('dsaa') from dual;
+
+*** ERROR[8428] The argument to function is not valid.
+
+--- 0 row(s) selected.
+>>
 >>-- Test LOG() for any radix with 2 parameters
 >>select log(2,8) from dual;
 

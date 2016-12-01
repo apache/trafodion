@@ -544,6 +544,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_SOUNDEX:
 	  setClassID(FUNC_SOUNDEX_ID);
 	  break;
+    case ITM_UNHEX:
+      setClassID(FUNC_UNHEX_ID);
+      break;
 	default:
 	  GenAssert(0, "ex_clause: Unknown Class ID.");
 	  break;
@@ -1037,6 +1040,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_SOUNDEX_ID:
       GetVTblPtr(vtblPtr, ExFunctionSoundex);
+      break;
+    case ex_clause::FUNC_UNHEX_ID:
+      GetVTblPtr(vtblPtr, ExFunctionUnhex);
       break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);

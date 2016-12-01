@@ -1136,6 +1136,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("UNBOUNDED",          TOK_UNBOUNDED,   NONRESTOKEN_),
   ParKeyWord("UNCOMMITTED",        TOK_UNCOMMITTED, NONRESTOKEN_),
   ParKeyWord("UNDER",              IDENTIFIER,      POTANS_|RESWORD_),
+  ParKeyWord("UNHEX",              TOK_UNHEX,       NONRESTOKEN_),
   ParKeyWord("UNION",              TOK_UNION,       FIRST_|ANS_|RESWORD_|MPWORD_),
   ParKeyWord("UNIQUE",             TOK_UNIQUE,      ANS_|RESWORD_|MPWORD_),
   ParKeyWord("UNIQUE_ID",             TOK_UNIQUE_ID,      NONRESTOKEN_),

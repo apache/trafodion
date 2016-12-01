@@ -1340,6 +1340,20 @@ const NAType *BuiltinFunction::synthesizeType()
       }
       break;
 
+    case ITM_UNHEX:
+      {
+        const NAType &typ1 = child(0)->getValueId().getType();
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+        {
+          *CmpCommon::diags() << DgSqlCode(-4067) << DgString0("UNHEX");
+          return NULL;
+        }
+
+        retType = new HEAP
+          SQLChar((Lng32)(typ1.getNominalSize() / 2), typ1.supportsSQLnull());
+      }
+      break;
+
     default:
       {
 	retType = (NAType *)ItemExpr::synthesizeType();
