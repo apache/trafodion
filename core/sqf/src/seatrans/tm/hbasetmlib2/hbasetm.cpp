@@ -814,7 +814,9 @@ int CHbaseTM::createTable(int64 pv_transid,
                            int pv_tbldesc_len,
                            char** pv_keys,
                            int pv_numsplits,
-                           int pv_keylen)
+                           int pv_keylen,
+                           char *errstr,
+                           int &errstrlen)
 {
    int lv_error = FEOK;
    jlong jlv_transid = pv_transid;
@@ -849,7 +851,11 @@ int CHbaseTM::createTable(int64 pv_transid,
                     jba_tbldesc,
                     j_keys);
   if (getExceptionDetails(NULL)) {
-     tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::createTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
+     int errMsgLen = (int)_tlp_error_msg->length();
+	 errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen  : errstrlen -1;
+	 strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+	 errstr[errstrlen] = '\0';
+	 tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::createTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
      _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
   }
@@ -869,7 +875,9 @@ int CHbaseTM::alterTable(int64 pv_transid,
                         int pv_tblname_len,
                         char ** buffer_tblopts,
                         int pv_numtblopts,
-                        int pv_tbloptslen)
+                        int pv_tbloptslen,
+                        char *errstr,
+                        int &errstrlen)
 {
    int lv_error = FEOK;
    jlong jlv_transid = pv_transid;
@@ -901,6 +909,10 @@ int CHbaseTM::alterTable(int64 pv_transid,
                     jba_tblname,
                     j_tblopts);
    if (getExceptionDetails(NULL)) {
+      int errMsgLen = (int)_tlp_error_msg->length();
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen -1;
+      strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+      errstr[errstrlen] = '\0';
       tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::alterTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
       _tlp_jenv->PopLocalFrame(NULL);
       return RET_EXCEPTION;
@@ -920,7 +932,9 @@ int CHbaseTM::alterTable(int64 pv_transid,
 // ---------------------------------------------------------------------------
 int CHbaseTM::regTruncateOnAbort(int64 pv_transid,
                            const char* pa_tblname,
-                           int pv_tblname_len)
+                           int pv_tblname_len,
+                           char *errstr,
+                           int &errstrlen)
 {
    int lv_error = FEOK;
    jlong jlv_transid = pv_transid;
@@ -948,6 +962,10 @@ int CHbaseTM::regTruncateOnAbort(int64 pv_transid,
                     jlv_transid,
                     jba_tblname);
    if (getExceptionDetails(NULL)) {
+      int errMsgLen = (int)_tlp_error_msg->length();
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen -1;
+      strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+      errstr[errstrlen] = '\0';
       tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::regTruncateOnAbort()", (char *)_tlp_error_msg->c_str(), pv_transid);
       _tlp_jenv->PopLocalFrame(NULL);
       return RET_EXCEPTION;
@@ -967,7 +985,9 @@ int CHbaseTM::regTruncateOnAbort(int64 pv_transid,
 // ---------------------------------------------------------------------------
 int CHbaseTM::dropTable(int64 pv_transid,
                            const char* pa_tblname,
-                           int pv_tblname_len)
+                           int pv_tblname_len,
+                           char *errstr,
+                           int &errstrlen)
 {
    int lv_error = FEOK;
    jlong jlv_transid = pv_transid;
@@ -995,6 +1015,10 @@ int CHbaseTM::dropTable(int64 pv_transid,
                     jlv_transid,
                     jba_tblname);
    if (getExceptionDetails(NULL)) {
+      int errMsgLen = (int)_tlp_error_msg->length();
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen -1;
+      strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+      errstr[errstrlen] = '\0';
       tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::dropTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
       _tlp_jenv->PopLocalFrame(NULL);
       return RET_EXCEPTION;

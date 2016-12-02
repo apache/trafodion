@@ -158,7 +158,34 @@
 
 --- 16 row(s) inserted.
 >>
+>>-- Used for builtin function SOUNDEX() tests
+>>create table t006emp1(name varchar(20));
+
+--- SQL operation complete.
 >>
+>>create table t006emp2(name varchar(20) character set UCS2);
+
+--- SQL operation complete.
+>>
+>>insert into t006emp1 values
++>('Smith'),
++>('Lynn'),
++>('Ruoyu'),
++>('John'),
++>('Lane')
++>;
+
+--- 5 row(s) inserted.
+>>
+>>insert into t006emp2 values
++>('Smith'),
++>('Lynn'),
++>('Ruoyu'),
++>('John'),
++>('Lane')
++>;
+
+--- 5 row(s) inserted.
 >>
 >>obey TEST006(negative_tests);
 >>
@@ -1675,4 +1702,169 @@ d3d9446802a44259755d38e6d163e820   852952723  b1d5781111d84f7b3fe45a0852e59758cd
 
 *** ERROR[8822] The statement was not prepared.
 
+>>
+>>select SOUNDEX('Jon') from dual;
+
+(EXPR)
+----------
+
+J500
+
+--- 1 row(s) selected.
+>>select SOUNDEX('Roy') from dual;
+
+(EXPR)
+----------
+
+R000
+
+--- 1 row(s) selected.
+>>select SOUNDEX('Lynn') from dual;
+
+(EXPR)
+----------
+
+L500
+
+--- 1 row(s) selected.
+>>
+>>select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Jon');
+
+NAME (EXPR)
+----------
+
+John J500
+
+--- 1 row(s) selected.
+>>select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Roy');
+
+NAME (EXPR)
+----------
+
+Ruoyu R000
+
+--- 1 row(s) selected.
+>>select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Lynn');
+
+NAME (EXPR)
+----------
+
+Lane L500
+Lynn L500
+
+--- 2 row(s) selected.
+>>
+>>select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Jon');
+
+NAME (EXPR)
+----------
+
+John J500
+
+--- 1 row(s) selected.
+>>select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Roy');
+
+NAME (EXPR)
+----------
+
+Ruoyu R000
+
+--- 1 row(s) selected.
+>>select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Lynn');
+
+NAME (EXPR)
+----------
+
+Lane L500
+Lynn L500
+
+--- 2 row(s) selected.
+>>select sha2('the original data', 0) from dual;
+
+(EXPR)
+----------
+
+38fd175fead1af0a96f46a9ed32d443857c16d0069c19e0cd7239340a1f94334
+
+--- 1 row(s) selected.
+>>select sha2('the original data', 128) from dual;
+
+*** ERROR[15002] Internal parser error: The second operand expects 0, 224, 256, 384 or 512.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select sha2('the original data', 224) from dual;
+
+(EXPR)
+----------
+
+82e1dae1bc1b2d862d30ddb6e16a717e5de6a143ab8c56c32a310a5b
+
+--- 1 row(s) selected.
+>>select sha2('the original data', 256) from dual;
+
+(EXPR)
+----------
+
+38fd175fead1af0a96f46a9ed32d443857c16d0069c19e0cd7239340a1f94334
+
+--- 1 row(s) selected.
+>>select sha2('the original data', 384) from dual;
+
+(EXPR)
+----------
+
+bc0050f3ff7a540c74a42664c53a7f9fd485622374a43eb4a62cd84e48f483237bed50f6562f8c6e405454c4dbb0d4a3
+
+--- 1 row(s) selected.
+>>select sha2('the original data', 512) from dual;
+
+(EXPR)
+----------
+
+18091a172d94aae1ae530ced02bde7f022229f446348f5d3b36989c2e6fd59f5252c7a7f8ecb71a74cb724448243ff71651f87aed155aee7340fad1b02567b60
+
+--- 1 row(s) selected.
+>>
+>>-- Test LOG() for any radix with 2 parameters
+>>select log(2,8) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 3.00000000000000000E+000
+
+--- 1 row(s) selected.
+>>select log(5,10) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 1.43067655807339328E+000
+
+--- 1 row(s) selected.
+>>select log(10,100) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 2.00000000000000000E+000
+
+--- 1 row(s) selected.
+>>select log(2) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 6.93147180559945344E-001
+
+--- 1 row(s) selected.
+>>select log(2.71828) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 9.99999327347282176E-001
+
+--- 1 row(s) selected.
 >>log;

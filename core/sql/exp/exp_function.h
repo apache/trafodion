@@ -918,8 +918,41 @@ class SQLEXP_LIB_FUNC ExFunctionSha2: public ex_function_clause {
 public:
   NA_EIDPROC ExFunctionSha2(OperatorTypeEnum oper_type,
 				Attributes ** attr,
-				Space * space);
+				Space * space,
+                Lng32 mode);
   NA_EIDPROC ExFunctionSha2();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+
+private:
+  Lng32 mode;
+};
+
+class SQLEXP_LIB_FUNC ExFunctionSoundex: public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionSoundex(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  NA_EIDPROC ExFunctionSoundex();
 
   NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
 					   ComDiagsArea** = 0);  
