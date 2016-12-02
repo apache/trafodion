@@ -362,7 +362,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 	case SQL_LONGVARCHAR:
 	case SQL_WVARCHAR:
 		{
-			if(targetPrecision > 0x7fff)
+			if(targetPrecision > SHRT_MAX)
 			{
 				Offset = sizeof(UINT);
 			}
@@ -655,7 +655,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 		if (Offset != 0)
 		{
 //#ifndef MXSUN
-			if(targetPrecision > 0x7fff){
+			if(targetPrecision > SHRT_MAX){
 				outDataPtr = (unsigned char *)targetDataPtr + sizeof(int);
 			}
 			else{
@@ -3218,7 +3218,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				}
 				if (Offset != 0)
 				{
-					if(targetPrecision > 0x7fff)
+					if(targetPrecision > SHRT_MAX)
 						*(unsigned int *)targetDataPtr = DataLen;
 					else
 						*(unsigned short *)targetDataPtr = DataLen;
@@ -3269,7 +3269,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				}
 				if (Offset != 0)
 				{
-					if(targetPrecision > 0x7fff)
+					if(targetPrecision > SHRT_MAX)
 					{
 						if(iconv->getUCS2Translation())
 							*(unsigned int *)targetDataPtr = DataLen*2;
@@ -3330,7 +3330,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				}
 				if (Offset != 0)
 				{
-					if(targetPrecision > 0x7fff)
+					if(targetPrecision > SHRT_MAX)
 						*(unsigned int *)targetDataPtr = DataLen;
 					else
 						*(unsigned short *)targetDataPtr = DataLen;

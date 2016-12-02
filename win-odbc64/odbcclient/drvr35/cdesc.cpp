@@ -559,7 +559,7 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		if (m_SQLCharset == SQLCHARSETCODE_UCS2)
 		{
-			if (SQLItemDesc->maxLen > 0x7fff)
+			if (SQLItemDesc->maxLen > SHRT_MAX)
 			{
 				m_SQLOctetLength = SQLItemDesc->maxLen + 6;  //4 bytes for len and 2 bytes of null
 			}
@@ -570,7 +570,7 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 		}
 		else
 		{ 
-			if (SQLItemDesc->maxLen > 0x7fff)
+			if (SQLItemDesc->maxLen > SHRT_MAX)
 			{
 				m_SQLOctetLength = SQLItemDesc->maxLen + 5;  //4 bytes for len and 1 byte of null
 			}

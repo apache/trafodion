@@ -1411,6 +1411,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 	case SQL_C_DATE:
 	case SQL_C_TYPE_DATE:
 		DataPtr = &dateTmp;
+		DataLen = sizeof(DATE_STRUCT);
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
@@ -1656,6 +1657,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 	case SQL_C_TIME:
 	case SQL_C_TYPE_TIME:
 		DataPtr = &timeTmp;
+		DataLen = sizeof(TIME_STRUCT);
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
@@ -1880,6 +1882,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 	case SQL_C_TIMESTAMP:
 	case SQL_C_TYPE_TIMESTAMP:
 		DataPtr = &timestampTmp;
+		DataLen = sizeof(TIMESTAMP_STRUCT);
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
