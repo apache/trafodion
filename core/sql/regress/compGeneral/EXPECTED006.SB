@@ -673,7 +673,7 @@
 >>-- Error 4312
 >>prepare xx from update HP_SYSTEM_CATALOG.mxcs_schema.ASSOC2DS set assoc_id = 100;
 
-*** ERROR[1002] Catalog HP_SYSTEM_CATALOG does not exist or has not been registered on node .
+*** ERROR[1002] Catalog HP_SYSTEM_CATALOG does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 
