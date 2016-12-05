@@ -335,8 +335,7 @@ class MessagesTable:
  
     def analyzeCodeReferences(self,directory):
         fileString = directory + "/*/*.cpp " + directory + "/*/*.h " + directory + "/*/*.y" 
-        for key in ["1002","1004","1008", "1013", "1402"]:  # TODO: remove this testing line
-        # for key in self.dict:
+        for key in self.dict:
             tableEntry = self.dict[key]
             if tableEntry['textsMatch'] == False:
                 if 'enumSymbol' in tableEntry:
