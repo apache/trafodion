@@ -251,8 +251,8 @@ ExFunctionSha::ExFunctionSha(OperatorTypeEnum oper_type,
 };
 
 ExFunctionSha2::ExFunctionSha2(OperatorTypeEnum oper_type,
-			       Attributes ** attr, Space * space)
-     : ex_function_clause(oper_type, 2, attr, space)
+			       Attributes ** attr, Space * space, Lng32 mode)
+     : ex_function_clause(oper_type, 2, attr, space), mode(mode)
 {
   
 };
@@ -7962,37 +7962,93 @@ ex_expr::exp_return_type ExFunctionCrc32::eval(char * op_data[],
   return ex_expr::EXPR_OK;
 }
 
-//only support SHA 256 for this version
-//TBD: add 224 and 384, 512 in next version
 ex_expr::exp_return_type ExFunctionSha2::eval(char * op_data[],
                                                         CollHeap *heap,
                                                         ComDiagsArea **diags)
 {
 
-  unsigned char sha[SHA256_DIGEST_LENGTH+ 1]={0};  
+  unsigned char sha[SHA512_DIGEST_LENGTH + 1] = {0};
 
   Attributes *resultAttr   = getOperand(0);
   Attributes *srcAttr   = getOperand(1);
 
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
-  Lng32 rlen = resultAttr->getLength();
 
+  // the length of result
+  Lng32 rlen = SHA512_DIGEST_LENGTH;
+
+  switch (mode) {
+    case 0:
+    case 256:
+      SHA256_CTX sha_ctx_256;
+      if (!SHA256_Init(&sha_ctx_256))
+        goto sha2_error;
+      if (!SHA256_Update(&sha_ctx_256, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA256_Final((unsigned char *)sha, &sha_ctx_256))
+        goto sha2_error;
+
+      rlen = SHA256_DIGEST_LENGTH;
+      break;
+
+    case 224:
+      SHA256_CTX sha_ctx_224;
+
+      if (!SHA224_Init(&sha_ctx_224))
+        goto sha2_error;
+      if (!SHA224_Update(&sha_ctx_224, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA224_Final((unsigned char *)sha, &sha_ctx_224))
+        goto sha2_error;
+
+      rlen = SHA224_DIGEST_LENGTH;
+      break;
+
+    case 384:
+      SHA512_CTX sha_ctx_384;
+      if (!SHA384_Init(&sha_ctx_384))
+        goto sha2_error;
+      if (!SHA384_Update(&sha_ctx_384, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA384_Final((unsigned char *)sha, &sha_ctx_384))
+        goto sha2_error;
+
+      rlen = SHA384_DIGEST_LENGTH;
+      break;
+
+    case 512:
+      SHA512_CTX sha_ctx_512;
+      if (!SHA512_Init(&sha_ctx_512))
+        goto sha2_error;
+      if (!SHA512_Update(&sha_ctx_512, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA512_Final((unsigned char *)sha, &sha_ctx_512))
+        goto sha2_error;
+
+      rlen = SHA512_DIGEST_LENGTH;
+      break;
+
+    default:
+      ExRaiseSqlError(heap, diags, EXE_BAD_ARG_TO_MATH_FUNC);
+      *(*diags) << DgString0("SHA2");
+      return ex_expr::EXPR_ERROR;
+  }
   str_pad(op_data[0], rlen, ' ');
 
-  SHA256_CTX  sha_ctx;
-
-  SHA256_Init(&sha_ctx);  
-  SHA256_Update(&sha_ctx, op_data[1], slen);
-  SHA256_Final((unsigned char*) sha,&sha_ctx); 
   char tmp[3];
-  for(int i=0; i < SHA256_DIGEST_LENGTH; i++ )
+  for(int i=0; i < rlen; i++ )
   {
     tmp[0]=tmp[1]=tmp[2]='0';
     sprintf(tmp, "%.2x", (int)sha[i]);
     str_cpy_all(op_data[0]+i*2, tmp, 2);
   }
-   
+
   return ex_expr::EXPR_OK;
+sha2_error:
+  ExRaiseFunctionSqlError(heap, diags, EXE_INTERNAL_ERROR,
+                          derivedFunction(),
+                          origFunctionOperType());
+  return ex_expr::EXPR_ERROR;
 }
 
 ex_expr::exp_return_type ExFunctionSha::eval(char * op_data[],

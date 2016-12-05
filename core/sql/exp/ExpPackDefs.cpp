@@ -163,6 +163,11 @@ NA_EIDPROC Long ex_unlogic_clause::pack(void * space_)
   return packClause(space_, sizeof(ex_unlogic_clause));
 }
 
+NA_EIDPROC Long ExRegexpClauseChar::pack(void * space_)
+{
+  return packClause(space_, sizeof(ExRegexpClauseChar));
+}
+
 NA_EIDPROC Long ex_like_clause_char::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_like_clause_char));
