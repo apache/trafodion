@@ -429,6 +429,16 @@ void GroupByAgg::generateCacheKey(CacheWA &cwa) const
             ie->generateCacheKey(cwa);
           }
       }
+    if (NOT extraOrderExpr().isEmpty() )
+    {
+        cwa += " extraOrder:";
+
+        ItemExpr * ie = extraOrderExpr().rebuildExprTree(ITM_ITEM_LIST);
+        if (ie)
+          {
+            ie->generateCacheKey(cwa);
+          }
+    }
 
     grpExpr->generateCacheKey(cwa); 
   }

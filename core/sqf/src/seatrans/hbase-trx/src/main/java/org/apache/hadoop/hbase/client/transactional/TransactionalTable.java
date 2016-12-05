@@ -867,10 +867,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
                                 size++;
    			}
 
-   			final List<Delete> rowsInSameRegion = new ArrayList<Delete>();
                         for (Map.Entry<TransactionRegionLocation, List<Delete>> entry : rows.entrySet()) {
-   				rowsInSameRegion.clear();
-   				rowsInSameRegion.addAll(entry.getValue());
+   				final List<Delete> rowsInSameRegion = entry.getValue();
    				final String regionName = entry.getKey().getRegionInfo().getRegionNameAsString();
    				   				
    			 Batch.Call<TrxRegionService, DeleteMultipleTransactionalResponse> callable =
@@ -965,10 +963,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
                         size++;
 		}
 
-		final List<Put> rowsInSameRegion = new ArrayList<Put>();
 		for (Map.Entry<TransactionRegionLocation, List<Put>> entry : rows.entrySet()) {
-			rowsInSameRegion.clear();
-			rowsInSameRegion.addAll(entry.getValue());
+			final List<Put> rowsInSameRegion = entry.getValue();
 			final String regionName = entry.getKey().getRegionInfo().getRegionNameAsString();
 			Batch.Call<TrxRegionService, PutMultipleTransactionalResponse> callable =
 	        new Batch.Call<TrxRegionService, PutMultipleTransactionalResponse>() {

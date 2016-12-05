@@ -367,11 +367,16 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 getRegionsNodeName(const HbaseStr& tblName,
                                    Int32 partns,
                                    ARRAY(const char *)& nodeNames) = 0;
-
   // get regions and size
   virtual NAArray<HbaseStr> *getRegionStats(const HbaseStr& tblName) = 0;
 
   virtual NAArray<HbaseStr> *getClusterStats(Int32 &numEntries) = 0;
+
+  // Snapshots
+  virtual Lng32 createSnapshot( const NAString&  tableName, const NAString&  snapshotName) = 0;
+  virtual Lng32 deleteSnapshot( const NAString&  snapshotName) = 0;
+  virtual Lng32 verifySnapshot( const NAString&  tableName, const NAString&  snapshotName,
+                                                NABoolean & exist) = 0;
 
 protected:
   enum 
@@ -677,6 +682,11 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
 
   virtual NAArray<HbaseStr>* getRegionStats(const HbaseStr& tblName);
   virtual NAArray<HbaseStr>* getClusterStats(Int32 &numEntries);
+
+  virtual Lng32 createSnapshot( const NAString&  tableName, const NAString&  snapshotName);
+  virtual Lng32 deleteSnapshot( const NAString&  snapshotName);
+  virtual Lng32 verifySnapshot( const NAString&  tableName, const NAString&  snapshotName,
+                                                NABoolean & exist);
 
 private:
   bool  useTRex_;

@@ -455,13 +455,7 @@ static const char* const sfwErrorEnumStr[] =
  ,"JNI NewStringUTF() in hdfsExists()."
  ,"Java exception in hdfsExists()."
  ,"file already exists."
- ,"JNI NewStringUTF() in createSnapshot()."
- ,"Java exception in createSnapshot()."
- ,"JNI NewStringUTF() in deleteSnapshot()."
- ,"Java exception in deleteSnapshot()."
  ,"Java exception in release()."
- ,"JNI NewStringUTF() in verifySnapshot()."
- ,"Java exception in verifySnapshot()."
  ,"JNI NewStringUTF() in hdfsDeletePath()."
  ,"Java exception in hdfsDeletePath()."
 };
@@ -526,12 +520,6 @@ SFW_RetCode SequenceFileWriter::init()
     JavaMethods_[JM_HDFS_CLEAN_UNLOAD_PATH].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_HDFS_EXISTS].jm_name      = "hdfsExists";
     JavaMethods_[JM_HDFS_EXISTS].jm_signature = "(Ljava/lang/String;)Z";
-    JavaMethods_[JM_CREATE_SNAPSHOT].jm_name      = "createSnapshot";
-    JavaMethods_[JM_CREATE_SNAPSHOT].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
-    JavaMethods_[JM_DELETE_SNAPSHOT].jm_name      = "deleteSnapshot";
-    JavaMethods_[JM_DELETE_SNAPSHOT].jm_signature = "(Ljava/lang/String;)Z";
-    JavaMethods_[JM_VERIFY_SNAPSHOT].jm_name      = "verifySnapshot";
-    JavaMethods_[JM_VERIFY_SNAPSHOT].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
     JavaMethods_[JM_HDFS_DELETE_PATH].jm_name      = "hdfsDeletePath";
     JavaMethods_[JM_HDFS_DELETE_PATH].jm_signature = "(Ljava/lang/String;)Z";
 
@@ -807,121 +795,6 @@ SFW_RetCode SequenceFileWriter::hdfsCleanUnloadPath( const NAString& uldPath)
   jenv_->PopLocalFrame(NULL);
   return SFW_OK;
 }
-
-SFW_RetCode SequenceFileWriter::createSnapshot( const NAString&  tableName, const NAString&  snapshotName)
-{
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::createSnapshot(%s, %s) called.",
-      tableName.data(), snapshotName.data());
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return SFW_ERROR_CREATE_SNAPSHOT_EXCEPTION;
-  }
-
-  jstring js_tableName = jenv_->NewStringUTF(tableName.data());
-  if (js_tableName == NULL) {
-     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_CREATE_SNAPSHOT_PARAM));
-     jenv_->PopLocalFrame(NULL);
-     return SFW_ERROR_CREATE_SNAPSHOT_PARAM;
-  }
-  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
-  if (js_snapshotName == NULL) {
-     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_CREATE_SNAPSHOT_PARAM));
-     jenv_->PopLocalFrame(NULL);
-     return SFW_ERROR_CREATE_SNAPSHOT_PARAM;
-  }
-
-  tsRecentJMFromJNI = JavaMethods_[JM_CREATE_SNAPSHOT].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_CREATE_SNAPSHOT].methodID, js_tableName, js_snapshotName);
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::createSnapshot()", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    return SFW_ERROR_CREATE_SNAPSHOT_EXCEPTION;
-  }
-
-  jenv_->PopLocalFrame(NULL);
-  return SFW_OK;
-}
-
-SFW_RetCode SequenceFileWriter::verifySnapshot( const NAString&  tableName, const NAString&  snapshotName,
-                                                NABoolean & exist)
-{
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::verifySnapshot(%s, %s) called.",
-      tableName.data(), snapshotName.data());
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return SFW_ERROR_VERIFY_SNAPSHOT_EXCEPTION;
-  }
-
-  jstring js_tableName = jenv_->NewStringUTF(tableName.data());
-  if (js_tableName == NULL) {
-     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_VERIFY_SNAPSHOT_PARAM));
-     jenv_->PopLocalFrame(NULL);
-     return SFW_ERROR_VERIFY_SNAPSHOT_PARAM;
-  }
-  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
-  if (js_snapshotName == NULL) {
-     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_VERIFY_SNAPSHOT_PARAM));
-     jenv_->PopLocalFrame(NULL);
-     return SFW_ERROR_VERIFY_SNAPSHOT_PARAM;
-  }
-
-  tsRecentJMFromJNI = JavaMethods_[JM_VERIFY_SNAPSHOT].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_VERIFY_SNAPSHOT].methodID, js_tableName, js_snapshotName);
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::verifySnapshot()", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    return SFW_ERROR_VERIFY_SNAPSHOT_EXCEPTION;
-  }
-
-  exist = jresult;
-
-  jenv_->PopLocalFrame(NULL);
-  return SFW_OK;
-}
-
-SFW_RetCode SequenceFileWriter::deleteSnapshot( const NAString&  snapshotName)
-{
-  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "SequenceFileWriter::deleteSnapshot(%s) called.",
-      snapshotName.data());
-
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return SFW_ERROR_DELETE_SNAPSHOT_EXCEPTION;
-  }
-
-  jstring js_snapshotName= jenv_->NewStringUTF(snapshotName.data());
-  if (js_snapshotName == NULL) {
-     GetCliGlobals()->setJniErrorStr(getErrorText(SFW_ERROR_DELETE_SNAPSHOT_PARAM));
-     jenv_->PopLocalFrame(NULL);
-     return SFW_ERROR_DELETE_SNAPSHOT_PARAM;
-  }
-
-  tsRecentJMFromJNI = JavaMethods_[JM_DELETE_SNAPSHOT].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_DELETE_SNAPSHOT].methodID, js_snapshotName);
-
-  if (jenv_->ExceptionCheck())
-  {
-    getExceptionDetails();
-    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
-    logError(CAT_SQL_HBASE, "SequenceFileWriter::deleteSnapshot()", getLastError());
-    jenv_->PopLocalFrame(NULL);
-    return SFW_ERROR_DELETE_SNAPSHOT_EXCEPTION;
-  }
-
-  jenv_->PopLocalFrame(NULL);
-  return SFW_OK;
-}
-
 
 SFW_RetCode SequenceFileWriter::hdfsMergeFiles( const NAString& srcPath,
                                                 const NAString& dstPath)

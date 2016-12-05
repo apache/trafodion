@@ -7201,7 +7201,8 @@ PivotGroup::PivotGroup(OperatorTypeEnum otype,
             case ORDER_BY_:
               {
                 orderBy_ = TRUE;
-                // TBD: populate reqdOrder. May need to move to bindNode
+                // optionNode_ contains the ItemExpr 
+                orgReqOrder_ = (ItemExpr *)po->optionNode_; 
               }
               break;
             }
@@ -7224,6 +7225,7 @@ ItemExpr * PivotGroup::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
   result->delim_ = delim_;
   result->orderBy_ = orderBy_;
   result->reqdOrder_ = reqdOrder_;
+  result->orgReqOrder_ = orgReqOrder_;
   result->maxLen_ = maxLen_;
 
   return Aggregate::copyTopNode(result, outHeap);
@@ -7535,6 +7537,8 @@ const NAString BuiltinFunction::getText() const
     case ITM_LIKE:
     case ITM_LIKE_DOUBLEBYTE:
       return "like";
+    case ITM_REGEXP:
+      return "regexp";
     case ITM_LOWER:
     case ITM_LOWER_UNICODE:
       return "lower";
@@ -7790,6 +7794,11 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
       switch (getOperatorType())
 	{
 	case ITM_NULLIFZERO:
+        case ITM_ISIPV4:
+        case ITM_ISIPV6:
+        case ITM_MD5:
+        case ITM_CRC32:
+	case ITM_SOUNDEX:
 	  {
 	    result = new (outHeap) BuiltinFunction(getOperatorType(),
 						   outHeap, 1, child(0));
@@ -7932,9 +7941,37 @@ ItemExpr * InverseOrder::removeInverseOrder()
 }
 
 // -----------------------------------------------------------------------
+// member functions for PatternMatchingFunction.
+// -----------------------------------------------------------------------
+PatternMatchingFunction::~PatternMatchingFunction() {}
+
+// -----------------------------------------------------------------------
 // member functions for Like
 // -----------------------------------------------------------------------
 Like::~Like() {}
+
+Regexp::~Regexp() {}
+
+
+ItemExpr * Regexp::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result = NULL;
+
+  if (derivedNode == NULL)
+    {
+      result = new (outHeap) Regexp(NULL, NULL,
+	    numberOfNonWildcardChars_,
+	    bytesInNonWildcardChars_,
+	    patternAStringLiteral_,
+	    oldDefaultSelForLikeWildCardUsed_,
+	    beginEndKeysApplied_);
+    }
+  else
+    result = derivedNode;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+
+} // Regexp::copyTopNode()
 
 ItemExpr * Like::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
@@ -7972,7 +8009,7 @@ ItemExpr * Like::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
 } // Like::copyTopNode()
 
-double Like::defaultSel()
+double PatternMatchingFunction::defaultSel()
 {
   // if begin and end keys have been applied to this expression, then this means
   // that the original LIKE predicate was something like a%b. This was transformed
@@ -7994,7 +8031,7 @@ double Like::defaultSel()
   return computeSelForNonWildcardChars(); ;
 }
 
-void Like::setNumberOfNonWildcardChars(const LikePatternString &pattern)
+void PatternMatchingFunction::setNumberOfNonWildcardChars(const LikePatternString &pattern)
 {
   Int32 count = 0;
   Int32 byteCnt = 0;
@@ -8020,7 +8057,7 @@ void Like::setNumberOfNonWildcardChars(const LikePatternString &pattern)
   bytesInNonWildcardChars_  = byteCnt ;
 }
 
-double Like::computeSelForNonWildcardChars()
+double PatternMatchingFunction::computeSelForNonWildcardChars()
 {
 
   // get the default selectivity for like predicate
@@ -8066,7 +8103,7 @@ double Like::computeSelForNonWildcardChars()
   return defaultSelectivity;
 }
 
-NABoolean Like::hasEquivalentProperties(ItemExpr * other)
+NABoolean PatternMatchingFunction::hasEquivalentProperties(ItemExpr * other)
 {
   if (other == NULL)
     return FALSE;
@@ -8085,7 +8122,7 @@ NABoolean Like::hasEquivalentProperties(ItemExpr * other)
 
 }
 
-void Like::unparse(NAString &result,
+void PatternMatchingFunction::unparse(NAString &result,
 		   PhaseEnum phase,
 		   UnparseFormatEnum form,
 		   TableDesc* tabId) const

@@ -39,6 +39,6 @@ if [[ "$USE_GIT" == "1" ]];then
   id=`git rev-parse --verify --short HEAD`
   echo $id
 else
-  id=`svn info .. | grep '^Last Changed Rev:' | sed 's|Last Changed Rev: ||'`
+  id=`date +"%Y%m%d"`
   echo $id
 fi
