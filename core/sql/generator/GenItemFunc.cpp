@@ -663,6 +663,15 @@ short BuiltinFunction::codeGen(Generator * generator)
                     space);
     }
     break;
+
+    case ITM_UNHEX:
+    {
+      function_clause =
+            new(generator->getSpace()) ExFunctionUnhex(getOperatorType(),
+                      attr,
+                      space);
+    }
+    break;
       
     default:
       break;

@@ -7791,7 +7791,13 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
         case ITM_ISIPV6:
         case ITM_MD5:
         case ITM_CRC32:
-	case ITM_SOUNDEX:
+        case ITM_SOUNDEX:
+        case ITM_SHA1:
+        case ITM_SHA2_256:
+        case ITM_SHA2_224:
+        case ITM_SHA2_384:
+        case ITM_SHA2_512:
+        case ITM_UNHEX:
 	  {
 	    result = new (outHeap) BuiltinFunction(getOperatorType(),
 						   outHeap, 1, child(0));

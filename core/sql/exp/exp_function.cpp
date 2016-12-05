@@ -214,6 +214,7 @@ ExFunctionIsIP::ExFunctionIsIP(){};
 ExFunctionInetAton::ExFunctionInetAton(){};
 ExFunctionInetNtoa::ExFunctionInetNtoa(){};
 ExFunctionSoundex::ExFunctionSoundex(){};
+ExFunctionUnhex::ExFunctionUnhex(){}
 
 ExFunctionAscii::ExFunctionAscii(OperatorTypeEnum oper_type,
 				 Attributes ** attr, Space * space)
@@ -767,6 +768,13 @@ ExFunctionSoundex::ExFunctionSoundex(OperatorTypeEnum oper_type,
 {
 
 };
+
+ExFunctionUnhex::ExFunctionUnhex(OperatorTypeEnum oper_type,
+                   Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+
+}
 
 
 // Triggers
@@ -8411,6 +8419,46 @@ ex_expr::exp_return_type ExFunctionSoundex::eval(char *op_data[],
         str_pad(tgtStr+setLen, (tgtLen - setLen), '0');
     
     return ex_expr::EXPR_OK;
+}
+
+inline int hex_to_int(char c)
+{
+  if (c >= '0' && c <= '9')
+    return c - '0';
+  c |= 0x20;
+  if (c >= 'a' && c <= 'f')
+    return c - 'a' + 10;
+  return -1;
+}
+ex_expr::exp_return_type ExFunctionUnhex::eval(char * op_data[],
+                                               CollHeap * heap,
+                                               ComDiagsArea ** diagsArea)
+{
+  Lng32 sourceLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+  unsigned char * source = (unsigned char *)op_data[1];
+
+  Lng32 resultMaxLen = getOperand(0)->getLength();
+
+  if (sourceLen % 2 != 0) {
+    ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+    return ex_expr::EXPR_ERROR;
+  }
+
+  int high = 0;
+  int low = 0;
+
+  for (int i = 0, j = 0; i < sourceLen, j < resultMaxLen; i +=2, j++)
+  {
+    high = hex_to_int(op_data[1][i]);
+    low = hex_to_int(op_data[1][i + 1]);
+    if (high == -1 || low == -1) {
+      ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+      return ex_expr::EXPR_ERROR;
+    }
+    op_data[0][j] = (char )high << 4 | low;
+  }
+
+  return ex_expr::EXPR_OK;
 }
 
 // LCOV_EXCL_STOP

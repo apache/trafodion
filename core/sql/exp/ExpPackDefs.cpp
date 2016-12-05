@@ -631,6 +631,11 @@ NA_EIDPROC Long ExFunctionInetNtoa::pack(void * space)
   return packClause(space, sizeof(ExFunctionInetNtoa));
 }
 
+NA_EIDPROC Long ExFunctionUnhex::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionUnhex));
+}
+
 // -----------------------------------------------------------------------
 // U N P A C K
 // -----------------------------------------------------------------------

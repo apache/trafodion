@@ -4180,6 +4180,35 @@ private:
 
 };
 
+class SQLEXP_LIB_FUNC ExFunctionUnhex: public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionUnhex(OperatorTypeEnum oper_type,
+      Attributes ** attr,
+      Space * space);
+  NA_EIDPROC ExFunctionUnhex();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char * op_data[], CollHeap*,
+      ComDiagsArea** = 0);
+  NA_EIDPROC Long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
 #pragma warning ( default : 4251 )
 
 #ifndef ULONG
