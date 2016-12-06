@@ -773,6 +773,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_IUDLOG	// MV REFRESH
 %token <tokval> TOK_JAVA                /* Tandem extension non-reserved word */
 %token <tokval> TOK_JOIN
+%token <tokval> TOK_JSONOBJECTFIELDTEXT
 %token <tokval> TOK_JULIANTIMESTAMP     /* Tandem extension */
 %token <tokval> TOK_LAG                 /* LAG OLAP Function */
 %token <tokval> TOK_LANGUAGE
@@ -9826,6 +9827,11 @@ misc_function :
 						    2, $3, $5);
 				}
 
+    | TOK_JSONOBJECTFIELDTEXT '(' value_expression ',' value_expression ')'
+    {
+        $$ = new (PARSERHEAP()) 
+        BuiltinFunction(ITM_JSONOBJECTFIELDTEXT, CmpCommon::statementHeap(), 2, $3, $5);
+    }
      | TOK_NULLIF '(' value_expression ',' value_expression ')'
               {
                 $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_NULLIF, $3, $5);
@@ -33859,6 +33865,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_ISIPV4
                       | TOK_ISIPV6
                       | TOK_KEY_RANGE_COMPARE
+                      | TOK_JSONOBJECTFIELDTEXT
                       | TOK_JULIANTIMESTAMP
                       | TOK_LASTNOTNULL
                       | TOK_LAST_DAY

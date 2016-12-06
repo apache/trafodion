@@ -3288,7 +3288,10 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
 
 	break;
       }
-
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+        break;
+    }
     case ITM_QUERYID_EXTRACT:
       {
         // type cast any params

@@ -619,6 +619,13 @@ short BuiltinFunction::codeGen(Generator * generator)
 						     attr, space);
       }
       break;
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+	  function_clause =
+	    new(generator->getSpace()) ex_function_json_object_field_text(getOperatorType(),
+						     attr, space);
+    }
+    break;
       
     case ITM_QUERYID_EXTRACT:
       {

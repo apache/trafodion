@@ -71,6 +71,7 @@
 #include "NAUserId.h"
 #include "ComUser.h"
 #include "ExpSeqGen.h"
+#include "ComJSON.h"
 
 #undef DllImport
 #define DllImport __declspec ( dllimport )
@@ -123,6 +124,10 @@ extern char * exClauseGetText(OperatorTypeEnum ote);
 
 NA_EIDPROC
 void setVCLength(char * VCLen, Lng32 VCLenSize, ULng32 value);
+
+NA_EIDPROC
+static void ExRaiseJSONError(CollHeap* heap, ComDiagsArea** diagsArea, JsonReturnType type);
+
 
 //#define TOUPPER(c) (((c >= 'a') && (c <= 'z')) ? (c - 32) : c);
 //#define TOLOWER(c) (((c >= 'A') && (c <= 'Z')) ? (c + 32) : c);
@@ -181,6 +186,8 @@ ex_function_ansi_user::ex_function_ansi_user(){};
 ex_function_user::ex_function_user(){};
 ex_function_nullifzero::ex_function_nullifzero(){};
 ex_function_nvl::ex_function_nvl(){};
+ex_function_json_object_field_text::ex_function_json_object_field_text(){};
+
 ex_function_queryid_extract::ex_function_queryid_extract(){};
 ExFunctionUniqueId::ExFunctionUniqueId(){};
 ExFunctionRowNum::ExFunctionRowNum(){};
@@ -614,6 +621,13 @@ ex_function_nvl::ex_function_nvl(OperatorTypeEnum oper_type,
      : ex_function_clause(oper_type, 3, attr, space)
 {
 };
+
+ex_function_json_object_field_text::ex_function_json_object_field_text (OperatorTypeEnum oper_type,
+				 Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 3, attr, space)
+{
+};
+
 
 ex_function_queryid_extract::ex_function_queryid_extract(OperatorTypeEnum oper_type,
 							 Attributes ** attr, Space * space)
@@ -6489,6 +6503,54 @@ ex_expr::exp_return_type ex_function_nvl::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 }
 
+ex_expr::exp_return_type ex_function_json_object_field_text::eval(char *op_data[],
+					       CollHeap *heap,
+					       ComDiagsArea** diagsArea)
+{
+    CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
+    // search for operand 1
+#pragma nowarn(1506)   // warning elimination 
+    Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+#pragma warn(1506)  // warning elimination 
+    if ( cs == CharInfo::UTF8 )
+    {
+        Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
+        len1 = Attributes::trimFillerSpaces( op_data[1], prec1, len1, cs );
+    }
+
+    // in operand 2
+#pragma nowarn(1506)   // warning elimination 
+    Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
+#pragma warn(1506)  // warning elimination 
+    if ( cs == CharInfo::UTF8 )
+    {
+        Int32 prec2 = ((SimpleType *)getOperand(2))->getPrecision();
+        len2 = Attributes::trimFillerSpaces( op_data[2], prec2, len2, cs );
+    }
+    char *rltStr = NULL;
+    JsonReturnType ret = json_extract_path_text(&rltStr, op_data[1], 1, op_data[2]);
+    if (ret != JSON_OK)
+    {
+        ExRaiseJSONError(heap, diagsArea, ret);
+        return ex_expr::EXPR_ERROR;
+    }
+    if (rltStr != NULL)
+    {
+        Lng32 rltLen = str_len(rltStr)+1;
+        str_cpy_all(op_data[0], rltStr, rltLen);
+        free(rltStr);
+
+        // If result is a varchar, store the length of substring 
+        // in the varlen indicator.
+        if (getOperand(0)->getVCIndicatorLength() > 0)
+            getOperand(0)->setVarLength(rltLen, op_data[-MAX_OPERANDS]);
+    }
+    else
+        getOperand(0)->setVarLength(0, op_data[-MAX_OPERANDS]);
+
+    return ex_expr::EXPR_OK;
+}
+
 //
 // Clause used to clear header bytes for both disk formats
 // SQLMX_FORMAT and SQLMX_ALIGNED_FORMAT.  The number of bytes to clear
@@ -8300,6 +8362,49 @@ ex_expr::exp_return_type ExFunctionIsIP::eval(char * op_data[],
   }
 }
 
+// Parse json errors
+static void ExRaiseJSONError(CollHeap* heap, ComDiagsArea** diagsArea, JsonReturnType type)
+{
+    switch(type)
+    {
+    case JSON_INVALID_TOKEN:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_TOKEN);
+        break;
+    case JSON_INVALID_VALUE:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_VALUE);
+        break;
+    case JSON_INVALID_STRING:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_STRING);
+        break;
+    case JSON_INVALID_ARRAY_START:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_ARRAY_START);
+        break;
+    case JSON_INVALID_ARRAY_NEXT:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_ARRAY_NEXT);
+        break;
+    case JSON_INVALID_OBJECT_START:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_OBJECT_START);
+        break;
+    case JSON_INVALID_OBJECT_LABEL:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_OBJECT_LABEL);
+        break;
+    case JSON_INVALID_OBJECT_NEXT:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_OBJECT_NEXT);
+        break;
+    case JSON_INVALID_OBJECT_COMMA:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_OBJECT_COMMA);
+        break;
+    case JSON_INVALID_END:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_END);
+        break;
+    case JSON_END_PREMATURELY:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_END_PREMATURELY);
+        break;
+    default:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_UNEXPECTED_ERROR);
+        break;
+    }
+}
 /*
  * SOUNDEX(str) returns a character string containing the phonetic
  * representation of the input string. It lets you compare words that

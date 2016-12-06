@@ -1854,6 +1854,18 @@ drop the default context
 8963 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD encountered a backup TSE switch.
 8964 ZZZZZ 99999 BEGINNER MAJOR DBADMIN LOAD is not currently supported with non empty tables.
 8965 ZZZZZ 99999 BEGINNER MAJOR DBADMIN File $0~String0 already exists.
+8971 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Token is invalid.
+8972 ZZZZZ 99999 BEGINNER MAJOR DBADMIN JSON value is invalid.
+8973 ZZZZZ 99999 BEGINNER MAJOR DBADMIN String is invalid.
+8974 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected array element or "]", but does not found.
+8975 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected "," or "]", but does not found.
+8976 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected string or "}", but does not found.
+8977 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected ":", but does not found.
+8978 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected "," or "}", but does not found.
+8979 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected string, but does not found.
+8980 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected end of input, but does not found.
+8981 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The input string ended unexpectedly.
+8982 ZZZZZ 99999 BEGINNER MAJOR DBADMIN unexpected json parse state.
 9200 ZZZZZ 99999 ADVANCED MAJOR DIALOUT UPDATE STATISTICS for table $0~CatalogName.$1~SchemaName.$2~TableName encountered an error$3~string2 from statement $4~string0.
 9201 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Unable to DROP object $0~string0.
 9202 ZZZZZ 99999 BEGINNER INFRM DBADMIN UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are $0~string0.
