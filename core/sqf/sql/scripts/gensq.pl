@@ -122,7 +122,7 @@ my $gFloatingNodeId = -1;
 my $gFloatingFailoverNodeId = -1;
 
 
-my $SQ_ROOT = $ENV{'MY_SQROOT'};
+my $MY_SQROOT = $ENV{'MY_SQROOT'};
 my $HOME = $ENV{'HOME'};
 my $MPI_TMPDIR = $ENV{'MPI_TMPDIR'};
 my $SQ_SEAMONSTER = $ENV{'SQ_SEAMONSTER'};
@@ -391,7 +391,7 @@ sub printInitialLines {
     printScript(0, "\nset MY_NODES=\$MY_NODES\n");
 
     addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
-    addDbClusterData( "MY_SQROOT", "$SQ_ROOT"); # comes out null
+    addDbClusterData( "MY_SQROOT", "$MY_SQROOT"); # comes out null
 
     $gbInitialLinesPrinted = 1;
 }

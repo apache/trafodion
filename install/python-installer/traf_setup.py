@@ -34,11 +34,11 @@ def run():
 
     TRAF_HOME = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2').strip()
     TRAF_USER = dbcfgs['traf_user']
-    SQ_ROOT = '%s/%s/%s-%s' % (TRAF_HOME, TRAF_USER, dbcfgs['traf_basename'], dbcfgs['traf_version'])
+    MY_SQROOT = '%s/%s/%s-%s' % (TRAF_HOME, TRAF_USER, dbcfgs['traf_basename'], dbcfgs['traf_version'])
 
     TRAF_VER = dbcfgs['traf_version']
     DISTRO = dbcfgs['distro']
-    TRAF_LIB_PATH = SQ_ROOT + '/export/lib'
+    TRAF_LIB_PATH = MY_SQROOT + '/export/lib'
     SCRATCH_LOCS = dbcfgs['scratch_locs'].split(',')
 
     SUDOER_FILE = '/etc/sudoers.d/trafodion'

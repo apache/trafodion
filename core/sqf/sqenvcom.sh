@@ -138,7 +138,7 @@ else
    export RH_MAJ_VERS=6
 fi
 export MY_SQROOT=$PWD
-export SQ_HOME=$PWD
+export MY_SQROOT=$PWD
 
 # set common version to be consistent between shared lib and maven dependencies
 export HBASE_DEP_VER_CDH=1.2.0-cdh5.7.1

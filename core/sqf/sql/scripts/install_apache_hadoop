@@ -955,7 +955,7 @@ else
   echo "Updating files $H_CORE_FILE, $H_HDFS_FILE and $H_MAPRED_FILE ..."
 cat <<EOF >$H_ENV_FILE
 export HADOOP_COMMON_LIB_NATIVE_DIR=${MY_SW_ROOT}/hadoop/lib/native
-export HADOOP_OPTS="-Djava.library.path=$MY_SQ_ROOT/hadoop/lib"
+export HADOOP_OPTS="-Djava.library.path=$MY_SQROOT/hadoop/lib"
 EOF
 
   mv -f $H_CORE_FILE $H_CORE_FILE.orig

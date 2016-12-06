@@ -40,10 +40,10 @@ sub isProd
 
 sub isSingleNode
 {
-   my $SQ_ROOT = $ENV{'MY_SQROOT'};
+   my $MY_SQROOT = $ENV{'MY_SQROOT'};
 
    # Get the number of nodes in the instance
-   my $TempList = `grep 'node-name=.[^A-Za-z].[0-9]*' $SQ_ROOT/sql/scripts/sqconfig | grep -v "\#" | cut -d"=" -f3 | cut -d";" -f1 | sort -u`;
+   my $TempList = `grep 'node-name=.[^A-Za-z].[0-9]*' $MY_SQROOT/sql/scripts/sqconfig | grep -v "\#" | cut -d"=" -f3 | cut -d";" -f1 | sort -u`;
    if (!$TempList)
      {# Single-node development system
       return 1;  # true

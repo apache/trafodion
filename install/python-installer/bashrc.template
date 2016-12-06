@@ -36,15 +36,14 @@ cd $HOME
 #-------------------------------------------
 # full path of your Trafodion installation
 #-------------------------------------------
-export JAVA_HOME="{{ java_home }}"
-export SQ_HOME="{{ sq_home }}"
-export MY_SQROOT=$SQ_HOME
+export MY_SQROOT="{{ my_sqroot }}"
 
 #-------------------------------------------
 # other env vars needed by Trafodion
 #-------------------------------------------
 
 # These env vars define all nodes in the cluster
+export JAVA_HOME="{{ java_home }}"
 export NODE_LIST="{{ node_list }}"
 export MY_NODES="{{ my_nodes }}"
 export node_count="{{ node_count }}"

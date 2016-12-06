@@ -103,7 +103,7 @@ ODBC_OBJS = $(OUTDIR)/odbcas_drvr.o \
 
 OBJS = $(COMMON_OBJS) $(COMPRESS_OBJS) $(DBT_OBJS) $(ODBC_OBJS) $(WMS_OBJS)
 
-INCLUDES     = -I. -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include -I$(SQ_HOME)/commonLogger -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
+INCLUDES     = -I. -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(MY_SQROOT)/export/include/sql -I$(MY_SQROOT)/inc/tmf_tipapi -I$(MY_SQROOT)/inc -I$(MY_SQROOT)/export/include -I$(MY_SQROOT)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(MY_SQROOT)/../sql/cli -I$(MY_SQROOT)/../dbsecurity/cert/inc -I$(MY_SQROOT)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include -I$(MY_SQROOT)/commonLogger -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
 
 
 COMMON_DEFINES = -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DUSE_NEW_PHANDLE -DTIMER_FIXED -w -DNSK_ODBC_SRVR -D__TIME_LOGGER -DTHREADED

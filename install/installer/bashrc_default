@@ -44,8 +44,7 @@ fi
 #-------------------------------------------
 # full path of your Trafodion installation
 #-------------------------------------------
-export SQ_HOME=XXXXXX
-export MY_SQROOT=$SQ_HOME
+export MY_SQROOT=XXXXXX
 
 #-------------------------------------------
 # other env vars needed by Trafodion

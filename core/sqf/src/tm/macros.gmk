@@ -49,7 +49,7 @@ HBASETMLIB   =  $(MY_SQROOT)/src/seatrans/tm/hbasetmlib2
 LIBXARM		= -lxarm
 
 #log4cxx
-LIBCLOGGER = $(SQ_HOME)/commonLogger
+LIBCLOGGER = $(MY_SQROOT)/commonLogger
 
 # seabed
 SBROOT		= ..

@@ -131,8 +131,8 @@ mkdir -p $DCS_INSTALL_PATH
 cd $DCS_INSTALL_PATH
 
 if [[ "$ONE_TAR_INSTALL" == "Y" ]]; then
-   DCS_DIR=$(ls $SQ_ROOT | grep dcs)
-   DCS_DIR=$SQ_ROOT/$DCS_DIR
+   DCS_DIR=$(ls $MY_SQROOT | grep dcs)
+   DCS_DIR=$MY_SQROOT/$DCS_DIR
    echo "***INFO: DCS Install Directory: $DCS_DIR"
 else
    # untar DCS build into install directory
@@ -215,13 +215,13 @@ if [[ "$ENABLE_HA" == "true" ]]; then
   
    ######Configure trafci wrapper script to use Floating IP address
    newHName="HNAME=$FLOATING_IP:23400"
-   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $SQ_ROOT/trafci/bin/trafci
+   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $MY_SQROOT/trafci/bin/trafci
  
 else
 
    ######Configure trafci wrapper script
    newHName="HNAME=$DCS_PRIMARY_MASTER_NODE:23400"
-   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $SQ_ROOT/trafci/bin/trafci
+   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $MY_SQROOT/trafci/bin/trafci
 
 fi
 

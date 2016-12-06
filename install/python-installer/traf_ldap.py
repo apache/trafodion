@@ -33,9 +33,9 @@ def run():
     dbcfgs = json.loads(dbcfgs_json)
 
     DB_ROOT_USER = dbcfgs['db_root_user']
-    SQ_ROOT = os.environ['MY_SQROOT']
-    SQENV_FILE = SQ_ROOT + '/sqenvcom.sh'
-    TRAF_AUTH_CONFIG = '%s/sql/scripts/.traf_authentication_config' % SQ_ROOT
+    MY_SQROOT = os.environ['MY_SQROOT']
+    SQENV_FILE = MY_SQROOT + '/sqenvcom.sh'
+    TRAF_AUTH_CONFIG = '%s/sql/scripts/.traf_authentication_config' % MY_SQROOT
     TRAF_AUTH_TEMPLATE = '%s/traf_authentication_conf.template' % TMP_DIR
 
     # set traf_authentication_config file

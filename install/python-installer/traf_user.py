@@ -45,7 +45,7 @@ def run():
     TRAF_GROUP = TRAF_USER
     TRAF_HOME = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2').strip()
     TRAF_USER_DIR = '%s/%s' % (TRAF_HOME, TRAF_USER)
-    SQ_ROOT = '%s/%s-%s' % (TRAF_USER_DIR, dbcfgs['traf_basename'], dbcfgs['traf_version'])
+    MY_SQROOT = '%s/%s-%s' % (TRAF_USER_DIR, dbcfgs['traf_basename'], dbcfgs['traf_version'])
 
     KEY_FILE = '/tmp/id_rsa'
     AUTH_KEY_FILE = '%s/.ssh/authorized_keys' % TRAF_USER_DIR
@@ -84,7 +84,7 @@ def run():
     nodes = dbcfgs['node_list'].split(',')
     change_items = {
         '{{ java_home }}': dbcfgs['java_home'],
-        '{{ sq_home }}': SQ_ROOT,
+        '{{ my_sqroot }}': MY_SQROOT,
         '{{ hadoop_type }}': hadoop_type,
         '{{ node_list }}': ' '.join(nodes),
         '{{ node_count }}': str(len(nodes)),

@@ -89,7 +89,7 @@ if [[ ! -z ${SQ_VIRTUAL_NODES} ]]; then
     traf_exit 1
 fi
 
-grep_out_mon=`$SQ_ROOT/sql/scripts/cstat | grep "monitor COLD" `
+grep_out_mon=`$MY_SQROOT/sql/scripts/cstat | grep "monitor COLD" `
 lv_ret=$?
 if [[ $lv_ret == 0 ]]; then
     grep_out=`cstat | grep "monitor COLD" | grep -v mpirun | sort | cut -d: -f1`
