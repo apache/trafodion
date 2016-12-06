@@ -62,6 +62,8 @@ lic-.*-src
 lic-.*-bin
 note-.*-bin
 # win generated
+odbc.vcxproj*
+odbc.vcxproj.*
 SetCertificateDirReg_os.vcxproj*
 SetCertificateDirReg_os.vcxproj.*
 SetCertificateDirReg_os.sln*
