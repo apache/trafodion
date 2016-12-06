@@ -165,7 +165,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 							SQLSMALLINT	SQLDatetimeCode,
 							SQLPOINTER	targetDataPtr,
 							SQLINTEGER	targetLength,
-							SQLSMALLINT	targetPrecision,
+							SQLINTEGER	targetPrecision,
 							SQLSMALLINT	targetScale,
 							SQLSMALLINT targetUnsigned,
 							SQLINTEGER      targetCharSet,
@@ -361,7 +361,16 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 	case SQL_VARCHAR:
 	case SQL_LONGVARCHAR:
 	case SQL_WVARCHAR:
-		Offset = sizeof(USHORT);			//Note there is no break, I want it to fall thru
+		{
+			if(targetPrecision > 0x7fff)
+			{
+				Offset = sizeof(UINT);
+			}
+			else
+			{
+				Offset = sizeof(USHORT);
+			}
+		}
 	case SQL_CHAR:
 	case SQL_WCHAR:
 		switch (CDataType)
@@ -646,7 +655,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 		if (Offset != 0)
 		{
 //#ifndef MXSUN
-			if(DataLen>32767){
+			if(targetPrecision > 0x7fff){
 				*(int *)targetDataPtr = DataLen;
 				outDataPtr = (unsigned char *)targetDataPtr + sizeof(int);
 			}
