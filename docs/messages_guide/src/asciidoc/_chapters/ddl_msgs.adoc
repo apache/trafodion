@@ -62,7 +62,7 @@ specified a schema that does not exist.
 == SQL 1004
 
 ```
-Table, view, or stored procedure <object-name> does not exist or object type is invalid for the current operation.
+Object <object-name> does not exist or object type is invalid for the current operation.
 ```
 
 Where <object-name> is the name of a {project-name} database object.
@@ -190,7 +190,7 @@ grant options.
 == SQL 1013
 
 ```
-Not all privileges were granted.  You lack grant option for the <privilege> privilege.
+Not all privileges were granted. You lack grant option for the <privilege> privilege.
 ```
 
 Where <privilege> is a {project-name} privilege on some {project-name} object..
@@ -253,6 +253,24 @@ authorization.
 local super ID can perform a replication operation for a catalog and for
 multiple schemas in a single catalog. Additionally, the schema owner can
 perform a replication operation for a single schema.
+
+[[SQL-1018]]
+== SQL 1018
+
+```
+Grant of role or privilege <privilege> from <user-or-role-1> to <user-or-role-2> not found, revoke request ignored.
+```
+
+Where <privilege> is a {project-name} privilege and <user-or-role-1> and <user-or-role-2> are user IDs or roles.
+
+*Cause:* You attempted to revoke a privilege from <user-or-role-2> via <user-or-role-1>, but <user-or-role-1>
+did not grant that privilege to <user-or-role-2>.
+
+*Effect:* The operation fails.
+
+*Recovery:* If <privilege> or <user-or-role-2> are incorrect, correct
+them and resubmit. If <user-or-role-1> is incorrect, reconnect to
+the {project-name} database via the correct user ID or role.
 
 <<<
 [[SQL-1020]]
@@ -380,21 +398,18 @@ DROP SCHEMA statement.
 == SQL 1027
 
 ```
-The definition schema <definition-schema-name> is dropped when its catalog is dropped.
+The view <view-name> was created before column privileges were supported. To grant column privileges, please recreate the view.
 ```
 
-Where <definition-schema-name> is the name of the definition schema
+Where <view-name> is the name of the view
 specified.
 
-*Cause:* You attempted to drop the schema containing the metadata tables
-for the catalog.
+*Cause:* You attempted to grant column privileges on a view that was created
+on an earlier release of the {project-name} software, before column privileges were supported.
 
-*Effect:* No SQL objects are dropped.
+*Effect:* No column privileges were granted.
 
-*Recovery:* Use DROP SCHEMA statements to drop all the user-created
-schemas in the catalog. Then use the DROP CATALOG statement to drop the
-catalog. The schema <definition-schema-name> is dropped when you drop
-its catalog.
+*Recovery:* Drop and recreate the view, then resubmit the grant request.
 
 <<<
 [[SQL-1028]]
@@ -436,18 +451,20 @@ accompanying error messages to determine the cause.
 == SQL 1030
 
 ```
-File label <file-name> could not be accessed. File system error <error>.
+The HBase name has a length of <actual-length> which is too long. Maximum length supported is <max-length>.
 ```
 
-Where <file-name> is the name of a {project-name} database file.
+Where <actual-length> is the length of the generated HBase name.
 
-Where <error> is a file system error number.
+Where <max-length> is the maximum allowed HBase name length.
 
-*Cause:* See the accompanying error message for the cause.
+*Cause:* You attempted to create a {project-name} object which {project-name} stores in an HBase file.
+The generated HBase name (consisting of catalog name, schema name and object name, separated by periods)
+is too long for HBase.
 
 *Effect:* The operation fails.
 
-*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
+*Recovery:* Use a shorter name and resubmit.
 
 [[SQL-1031]]
 == SQL 1031
@@ -463,6 +480,37 @@ Where <object-name> is the SQL object.
 *Effect:* {project-name} does not drop the object.
 
 *Recovery:* Apply the recovery of the accompanying error message.
+
+[[SQL-1032]]
+== SQL 1032
+
+```
+The DISPLAY command completes and the query is not executed.
+```
+
+*Cause:* You used the DISPLAY command to get insight into the
+plan generated for a particular query. When DISPLAY is used,
+the query is not executed.
+
+*Effect:* The query is not executed.
+
+*Recovery:* If you wish to execute the query, resubmit without
+the DISPLAY command.
+
+[[SQL-1034]]
+== SQL 1034
+
+```
+Unable to obtain privileges.
+```
+
+*Cause:* You attempted a DDL or GRANT/REVOKE operation but {project-name}
+could not retrieve privilege information needed to process the request.
+Additional error messages may give insight to the cause.
+
+*Effect:* The operation is not executed.
+
+*Recovery:* None. Contact the {project-name} Developer Distribution List.
 
 <<<
 [[SQL-1035]]
@@ -486,62 +534,52 @@ catalog name and resubmit.
 == SQL 1036
 
 ```
-Only super ID can execute DROP SQL.
+Authorization ID <auth-id-1> cannot grant to authorization ID <auth-id-2> because it could create a circular dependency.
 ```
 
-*Cause:* An attempt was made to drop SQL by a user who is not the super
-ID.
+Where <auth-id-1> is the authorization ID performing the GRANT.
+
+Where <auth-id-2> is the authorization ID that is the target of the GRANT.
+
+*Cause:* There is a chain of grants leading from <auth-id-2> back to <auth-id-1>. Granting
+this request might create a circular dependency.
 
 *Effect:* The operation fails.
 
-*Recovery:* The super ID needs to issue the DROP SCHEMA statement.
+*Recovery:* None.
 
 <<<
 [[SQL-1037]]
 == SQL 1037
 
 ```
-{project-name} is not installed on system <node>.
+Revoke failed because of a dependent grant between authorization ID <auth-id-1> and authorization ID <auth-id-2>.
 ```
 
-Where <node> is the name of the node referenced by the operation.
+Where <auth-id-1> and <auth-id-2> are authorization IDs.
 
-*Cause:* In a replication or distribution context: An operation
-attempted to create a catalog reference or a partition on a node where
-the {project-name} database has not been installed.
+*Cause:* You attempted to revoke a privilege from <auth-id-1>, but 
+that user or role has granted that privilege to a third authorization ID.
 
 *Effect:* The operation fails.
 
-*Recovery:* Either reissue the statement specifying a different node, or
-install the {project-name} database on <node> and resubmit.
-
-[[SQL-1038]]
-== SQL 1038
-
-```
-Not all user catalogs have been dropped from the system.
-```
-
-*Cause:* You attempted to drop SQL while one or more user-created
-catalogs existed.
-
-*Effect:* The operation fails.
-
-*Recovery:* You must drop all user-created catalogs before dropping SQL.
+*Recovery:* None.
 
 <<<
 [[SQL-1039]]
 == SQL 1039
 
 ```
-The DROP SQL statement could not be executed.
+No privileges were revoked. You lack the grant option for the specified privilege(s).
 ```
 
-*Cause:* See the accompanying error message for the cause.
+*Cause:* You attempted to revoke privileges from an authorization ID
+that does not have the grant option for those privileges.
 
-*Effect:* {project-name} does not drop SQL.
+*Effect:* The operation fails.
 
-*Recovery:* Apply the recovery of the accompanying error message.
+*Recovery:* Reconnect to the {project-name} database using an authorization ID
+that has grant option for these privileges and resubmit.
 
 [[SQL-1040]]
 == SQL 1040
@@ -684,7 +722,7 @@ on the DROP statement for the object.
 == SQL 1048
 
 ```
-The statement currently supports only RESTRICT drop behavior.
+The statement currently supports only RESTRICT behavior.
 ```
 
 *Cause:* Drop behavior CASCADE was specified on a DROP statement that
@@ -743,6 +781,21 @@ insufficient privileges.
 *Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for the required
 security needed to create a view or trigger.
 
+[[SQL-1052]]
+== SQL 1052
+
+```
+Constraint cannot be dropped because it does not belong to the specified table.
+```
+
+*Cause:* You specified ALTER TABLE DROP CONSTRAINT to drop a constraint from a given table.
+The constraint you specified, however, does not belong to the table you specified.
+
+*Effect:* The operation fails.
+
+*Recovery:* To learn if the constraint name is incorrect, use SHOWDDL on the
+table you specified. Correct the name and resubmit.
+
 [[SQL-1053]]
 == SQL 1053
 
@@ -761,40 +814,42 @@ constraint specified in the CREATE INDEX statement.
 change the rows in the table to remove duplicates. Then reissue the
 statement.
 
+[[SQL-1055]]
+== SQL 1055
+
+```
+Object <privilege-object> already exists.
+```
+
+Where <privilege-object> is an object you specified on a REGISTER statement.
+
+*Cause:* You attempted to register a new privilege object in the 
+{project-name} database but this object already exists.
+
+*Effect:* The operation takes no action.
+
+*Recovery:* If the object name is incorrect, correct and resubmit.
+
 <<<
-[[SQL-1057]]
-== SQL 1057
-
-```
-{project-name} objects cannot be created on <volume-name>: File system error <error-number>.
-```
-
-Where <volume-name> is the name of a volume.
-
-Where <error-number> is the file system error number.
-
-*Cause:* An attempt to create a file on volume <volume-name> resulted in
-file system error <error-number>.
-
-*Effect:* The operation fails.
-
-*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
-
 [[SQL-1058]]
 == SQL 1058
 
 ```
-Lock <lock-name> already exists.
+Unable to create histogram table <table-name>.
 ```
 
-Where <lock-name> is the name of the DDL lock.
+Where <table-name> is the name of the histogram table that could not be created.
 
-*Cause:* The statement required creation of a lock with a unique lock
-name, which was not generated.
+*Cause:* You attempted to execute a CREATE SCHEMA statement, but one
+of the histogram tables needed for the schema could not be created.
+This message may be accompanied by other messages that shed more light
+on the problem.
 
 *Effect:* The operation fails.
 
-*Recovery:* Specify a unique lock name and resubmit.
+*Recovery:* None. Contact the {project-name} Developer Distribution List.
+Supply the name of the table that could not be created and any accompanying
+error messages.
 
 <<<
 [[SQL-1059]]
