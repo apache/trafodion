@@ -264,7 +264,8 @@ Grant of role or privilege <privilege> from <user-or-role-1> to <user-or-role-2>
 Where <privilege> is a {project-name} privilege and <user-or-role-1> and <user-or-role-2> are user IDs or roles.
 
 *Cause:* You attempted to revoke a privilege from <user-or-role-2> via <user-or-role-1>, but <user-or-role-1>
-did not grant that privilege to <user-or-role-2>.
+did not grant that privilege to <user-or-role-2>. Note that <user-or-role-2> can be PUBLIC but <user-or-role-1>
+cannot.
 
 *Effect:* The operation fails.
 
@@ -563,7 +564,9 @@ that user or role has granted that privilege to a third authorization ID.
 
 *Effect:* The operation fails.
 
-*Recovery:* None.
+*Recovery:* Reconnect to the {project-name} database using an authorization ID
+that can revoke the dependent privileges, then reconnect again under the
+original authorization ID and resubmit.
 
 <<<
 [[SQL-1039]]
@@ -573,8 +576,8 @@ that user or role has granted that privilege to a third authorization ID.
 No privileges were revoked. You lack the grant option for the specified privilege(s).
 ```
 
-*Cause:* You attempted to revoke privileges from an authorization ID
-that does not have the grant option for those privileges.
+*Cause:* You attempted to revoke privileges from an authorization ID, but you do not
+have the ability (grant option) to perform this operation.
 
 *Effect:* The operation fails.
 
@@ -818,17 +821,17 @@ statement.
 == SQL 1055
 
 ```
-Object <privilege-object> already exists.
+Object <component-name> already exists.
 ```
 
-Where <privilege-object> is an object you specified on a REGISTER statement.
+Where <component-name> is a component name you specified on a REGISTER COMPONENT statement.
 
-*Cause:* You attempted to register a new privilege object in the 
-{project-name} database but this object already exists.
+*Cause:* You attempted to register a new component in the 
+{project-name} database but this component already exists.
 
 *Effect:* The operation takes no action.
 
-*Recovery:* If the object name is incorrect, correct and resubmit.
+*Recovery:* If the component name is incorrect, correct and resubmit.
 
 <<<
 [[SQL-1058]]
@@ -842,8 +845,7 @@ Where <table-name> is the name of the histogram table that could not be created.
 
 *Cause:* You attempted to execute a CREATE SCHEMA statement, but one
 of the histogram tables needed for the schema could not be created.
-This message may be accompanied by other messages that shed more light
-on the problem.
+Additional error messages may give insight to the cause.
 
 *Effect:* The operation fails.
 
