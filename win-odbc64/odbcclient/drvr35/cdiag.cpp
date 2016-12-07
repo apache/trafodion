@@ -389,8 +389,8 @@ SQLRETURN CDiagRec::GetDiagRec(SQLSMALLINT	RecNumber,
 					translateLengthMax/2, (int *)&translateLength, (char *)errorMsg)) != SQL_SUCCESS )
 				rc = SQL_SUCCESS_WITH_INFO; //ERROR;
 
-			strLen = translateLength; 
-			((wchar_t *)MessageText)[strLen] = L'\0' ; 
+			((wchar_t *)MessageText)[translateLength] = L'\0';
+			strLen = tmpStrLen;
 		}
 		if (TextLengthPtr != NULL)
 		*TextLengthPtr = strLen;
