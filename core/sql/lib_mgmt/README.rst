@@ -26,7 +26,7 @@ Trafodion lib_mgmt README
 How to build and initialize default SPJs 
 
   Build
-cd $MY_SQROOT/../sql/lib_mgmt
+cd $TRAF_HOME/../sql/lib_mgmt
 make clean && make all
 
   Initialization

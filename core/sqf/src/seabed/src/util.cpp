@@ -1249,7 +1249,7 @@ void sb_util_write_log(char *pp_buf) {
 
     strncpy(gv_ms_save_log, pp_buf, sizeof(gv_ms_save_log) - 1);
     gv_ms_save_log[sizeof(gv_ms_save_log) - 1] = '\0';
-    lp_root = getenv("MY_SQROOT");
+    lp_root = getenv("TRAF_HOME");
     if (lp_root == NULL)
         lp_log_file_dir = NULL;
     else {

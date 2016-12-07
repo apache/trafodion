@@ -40,8 +40,8 @@ if [ `uname` != "Linux" ]; then
    sys=$1          # The system name
 else
    export SQLMX_TERMINAL_CHARSET=UTF8
-   MXCI=$MY_SQROOT/export/bin32/sqlci
-   autoloc=$MY_SQROOT/export/lib/mx_ustat
+   MXCI=$TRAF_HOME/export/bin32/sqlci
+   autoloc=$TRAF_HOME/export/lib/mx_ustat
    alias print=echo
    sys=NSK
 fi

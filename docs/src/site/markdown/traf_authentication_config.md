@@ -15,20 +15,20 @@
 This page describes the settings in the **```.traf_authentication_config```** file, which is the configuration file related to [Enabling Security Features in Trafodion](enable-secure-trafodion.html).
 
 # File Location
-By default the Trafodion authentication configuration file is located at **```$MY_SQROOT/sql/scripts/.traf_authentication_config```**. If you want to store the configuration file in a different location and/or use a different filename, then Trafodion supports environment variables to specify the alternate location/name.
+By default the Trafodion authentication configuration file is located at **```$TRAF_HOME/sql/scripts/.traf_authentication_config```**. If you want to store the configuration file in a different location and/or use a different filename, then Trafodion supports environment variables to specify the alternate location/name.
 
 Trafodion firsts checks the environment variable **```TRAFAUTH_CONFIGFILE```**. If set, the value is used as the fully qualified Trafodion authentication configuration file.
 
 If the environment variable is not set, then Trafodion next checks the variable **```TRAFAUTH_CONFIGDIR```**. If set, the value is prepended to **```.traf_authentication_config```** and used as the Trafodion authentication file.
 
-If neither is set, Trafodion defaults to **```$MY_SQROOT/sql/scripts/.traf_authentication_config```**.
+If neither is set, Trafodion defaults to **```$TRAF_HOME/sql/scripts/.traf_authentication_config```**.
 
 # Template
 
     # To use authentication in Trafodion, this file must be configured
-    # as described below and placed in $MY_SQROOT/sql/scripts and be named
+    # as described below and placed in $TRAF_HOME/sql/scripts and be named
     # .traf_authentication_config.  You must also enable authentication by
-    # running the script traf_authentication_setup in $MY_SQROOT/sql/scripts.
+    # running the script traf_authentication_setup in $TRAF_HOME/sql/scripts.
     #
     # NOTE: the format of this configuration file is expected to change in the 
     # next release of Trafodion.  Backward compatibility is not guaranteed.

@@ -90,7 +90,7 @@ between executions establishes the time window.  Results, if they exist, will
  appear after the second execution. The SQL commands to list CPU offenders are 
 available at:
 
-$MY_SQROOT/export/limited-support-tools/LSO/cpu_offender.sql
+$TRAF_HOME/export/limited-support-tools/LSO/cpu_offender.sql
 
 To use these queries you can obey these scripts in trafci or sqlci. The first 
 time the offender script is obeyed, the results should be ignored, because 
@@ -139,7 +139,7 @@ executor and IPC above the given threshold, specified in megabytes.
 All of a process’s allocated queries are included in these calculations. 
 
 The SQL command to list the memory offenders are avilable at
-$MY_SQROOT/export/limited-support-tools/LSO/mem_offender.sql
+$TRAF_HOME/export/limited-support-tools/LSO/mem_offender.sql
 
 Example output is shown below:
 CURRENT_TIMESTAMP           NODE         PID          EXE_MEM_HIGH_WM_MB  EXE_MEM_ALLOC_MB  IPC_MEM_HIGH_WM_MB  IPC_MEM_ALLOC_MB
@@ -160,7 +160,7 @@ SQL Engine (either while executing the query. or fetching the output row)
 longer than the given number of seconds.  
 
 The SQL commands to list queries blocked in SQL are available at:
-$MY_SQROOT/export/limited-support-tools/LSO/queries_in_sql.sql
+$TRAF_HOME/export/limited-support-tools/LSO/queries_in_sql.sql
 
 Example output is shown below:
 CURRENT_TIMESTAMP           TIME_IN_SECONDS       QUERY_ID                                                                SOURCE_TEXT                         
@@ -175,7 +175,7 @@ This filtering mechanism lists the querie s which are not blocked in SQL longer
 than the given number of seconds and haven't finished execution. 
 
 The SQL commands to list queries blocked in the client are available at:
-$MY_SQROOT/export/limited-support-tools/LSO/queries_in_client.sql      
+$TRAF_HOME/export/limited-support-tools/LSO/queries_in_client.sql      
 
 Example output is below:   
 CURRENT_TIMESTAMP           TIME_IN_SECONDS       QUERY_ID                                                                      EXECUTE_STATE   SOURCE_TEXT   
@@ -208,7 +208,7 @@ executing the given number of seconds ago. Dead queries, explained in the next
 section, are not selected. 
 
 The SQL commands to list inactive queries are available at:
-$MY_SQROOT/export/limited-support-tools/LSO/inactive_queries.sql
+$TRAF_HOME/export/limited-support-tools/LSO/inactive_queries.sql
 
 Example output is below: 
 CURRENT_TIMESTAMP           LAST_ACTIVITY_SECS    QUERY_ID                                                                              SOURCE_TEXT 
@@ -226,7 +226,7 @@ persisted after the process exit for a period longer than the given number of
 seconds.
 
 The SQL commands to list dead queries are available at:
-$MY_SQROOT/export/limited-support-tools/LSO/dead_queries.sql
+$TRAF_HOME/export/limited-support-tools/LSO/dead_queries.sql
 
 Example output is below:
 CURRENT_TIMESTAMP           LAST_ACTIVITY_SECS    BLOCKED_IN_SQL        BLOCKED_IN_CLIENT     QUERY_ID                                                      SOURCE_TEXT                
@@ -241,7 +241,7 @@ This statement lists the queries for which the statistics collection type is
 set to NO_STATS or ALL_STATS, either by SQL engine or by the user. 
 
 The SQL commands to list UNMONITORED queries are available at:
-$MY_SQROOT/export/limited-support-tools/LSO/uninstrumented.sql  
+$TRAF_HOME/export/limited-support-tools/LSO/uninstrumented.sql  
 
 Example output is below:
 CURRENT_TIMESTAMP           LAST_ACTIVITY_SECS    QUERY_TYPE            QUERY_SUBTYPE    QUERY_STATS_TYPE   QUERY_ID                                                                               SOURCE_TEXT

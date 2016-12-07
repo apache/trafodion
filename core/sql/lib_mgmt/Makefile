@@ -19,8 +19,8 @@
 #
 # @@@ END COPYRIGHT @@@
 
-INSTALL_LIBDIR := ${MY_SQROOT}/export/lib
-INSTALL_SCRIPTSDIR := ${MY_SQROOT}/sql/scripts
+INSTALL_LIBDIR := ${TRAF_HOME}/export/lib
+INSTALL_SCRIPTSDIR := ${TRAF_HOME}/sql/scripts
 CP :=/bin/cp -f
 all:
 	@$(MAVEN) package -DskipTests

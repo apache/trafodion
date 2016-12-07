@@ -23,7 +23,7 @@
 RM='/bin/rm -rf'
 
 function usage() {
-   LOCAL_HADOOP_DIR=\$MY_SQROOT/sql/local_hadoop
+   LOCAL_HADOOP_DIR=\$TRAF_HOME/sql/local_hadoop
    prog=`basename $0`
    echo "$prog { all | dcs | rest | clients | tests }"
    echo "  all     --- Removes all the installed components (dcs, rest and clients) from $LOCAL_HADOOP_DIR"
@@ -54,7 +54,7 @@ function uninstall_rest() {
 
   if [[ -d $REST_INSTALL_DIR ]]; then
      echo "**** Uninstalling REST Server from $REST_INSTALL_DIR"
-     $RM $REST_INSTALL_DIR $MY_SQROOT/sql/scripts/swrest
+     $RM $REST_INSTALL_DIR $TRAF_HOME/sql/scripts/swrest
      status_code=$?
      if [[ $status_code != 0 ]]; then
         echo "**** Failed to uninstall REST from $REST_INSTALL_DIR :"  $status_code
@@ -70,12 +70,12 @@ function uninstall_rest() {
 
 function uninstall_clients_dir() {
 
-  CLIENTS_DIR=$MY_SQROOT/sql/local_hadoop/clients
-  LNXDRVR_DIR=$MY_SQROOT/sql/local_hadoop/lnxdrvr
-  ODB_DIR=$MY_SQROOT/sql/local_hadoop/odb
+  CLIENTS_DIR=$TRAF_HOME/sql/local_hadoop/clients
+  LNXDRVR_DIR=$TRAF_HOME/sql/local_hadoop/lnxdrvr
+  ODB_DIR=$TRAF_HOME/sql/local_hadoop/odb
   if [[ -d $CLIENTS_DIR ]]; then
      echo "**** Uninstalling clients (lnxdrvr and odb) from $CLIENTS_DIR"
-     $RM $CLIENTS_DIR $LNXDRVR_DIR $ODB_DIR $MY_SQROOT/sql/scripts/swodb $MY_SQROOT/sql/scripts/swlnx
+     $RM $CLIENTS_DIR $LNXDRVR_DIR $ODB_DIR $TRAF_HOME/sql/scripts/swodb $TRAF_HOME/sql/scripts/swlnx
      status_code=$?
      if [[ $status_code != 0 ]]; then
         echo "**** Failed to uninstall clients (lnxdrvr and odb) from $CLIENTS_DIR :"  $status_code
@@ -91,11 +91,11 @@ function uninstall_clients_dir() {
 
 function uninstall_tests_dir() {
 
-  DCSTEST_DIR=$MY_SQROOT/sql/local_hadoop/dcstests
-  TESTS_DIR=$MY_SQROOT/sql/local_hadoop/tests
+  DCSTEST_DIR=$TRAF_HOME/sql/local_hadoop/dcstests
+  TESTS_DIR=$TRAF_HOME/sql/local_hadoop/tests
   if [[ -d $DCSTEST_DIR ]]; then
      echo "**** Uninstalling dcs(jdbc/odbc) tests from $DCSTEST_DIR"
-     $RM $DCSTEST_DIR $MY_SQROOT/sql/scripts/swjdbc $MY_SQROOT/sql/scripts/swpyodbc
+     $RM $DCSTEST_DIR $TRAF_HOME/sql/scripts/swjdbc $TRAF_HOME/sql/scripts/swpyodbc
      status_code=$?
      if [[ $status_code != 0 ]]; then
         echo "**** Failed to uninstall odbc/jdbc tests directory from $DCSTEST_DIR :"  $status_code
@@ -110,7 +110,7 @@ function uninstall_tests_dir() {
 
   if [[ -d $TESTS_DIR ]]; then
      echo "**** Uninstalling phoenix tests from $TESTS_DIR"
-     $RM $TESTS_DIR $MY_SQROOT/sql/scripts/swphoenix
+     $RM $TESTS_DIR $TRAF_HOME/sql/scripts/swphoenix
      status_code=$?
      if [[ $status_code != 0 ]]; then
         echo "**** Failed to uninstall phoenix tests directory from $TESTS_DIR :"  $status_code
@@ -126,7 +126,7 @@ function uninstall_tests_dir() {
 
 #Main
 echo
-if [ ! -z ${MY_SQROOT} ]; then
+if [ ! -z ${TRAF_HOME} ]; then
    case "$1" in
       dcs)
         uninstall_dcs

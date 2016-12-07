@@ -25,7 +25,7 @@
 # run the swhbase convenience script if it exists, otherwise run the hbase shell command
 # swhbase is used when Hadoop is installed with install_local_hadoop
 # hbase shell is used otherwise, e.g. on Jenkins
-if [ -x $MY_SQROOT/sql/scripts/swhbase ]; then
+if [ -x $TRAF_HOME/sql/scripts/swhbase ]; then
   swhbase $*
 else
   hbase shell $*

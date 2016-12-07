@@ -900,7 +900,7 @@ void QmpStub::spawnProcess(IpcEnvironment& ipcEnv, short cpu) //, ComDiagsArea *
   SET_ARGV(largv, largc, "-oss");
   //SET_ARGV(largv, largc, NULL);
 
-  strcpy(prog, getenv("MY_SQROOT"));
+  strcpy(prog, getenv("TRAF_HOME"));
   strcat(prog, "/export/bin32/");
   strcat(prog, progFile);
 

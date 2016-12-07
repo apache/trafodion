@@ -30,16 +30,16 @@
 # - Restarts HBase
 # - Repairs HBase (ilh_hbase_repair)
 # - Checks whether HBase is ready (uses ilh_hbcheck)
-# - Deletes the Trafodion env file: $MY_SQROOT/etc/ms.env
+# - Deletes the Trafodion env file: $TRAF_HOME/etc/ms.env
 # - Regenerates Config (sqgen)
 # - Starts up Trafodion (sqstart)
 #
 ####################################################
 
-if [ ! -z $MY_SQROOT ]; then
-    cd $MY_SQROOT/sql/scripts
+if [ ! -z $TRAF_HOME ]; then
+    cd $TRAF_HOME/sql/scripts
 else
-    echo "The environment variable MY_SQROOT does not exist."
+    echo "The environment variable TRAF_HOME does not exist."
     echo "Please ensure sqenv.sh has been sourced."
     echo
     exit 1;
@@ -51,7 +51,7 @@ echo 'This script will do the following:'
 echo ' - Kill the Trafodion env (pkillall)'
 echo " - Kill the HBase env and delete the zookeeper data directory (ilh_cleanhb ${lv_ilh_cleanhb_mode})"
 echo ' - Restart HBase (swstarthbase)'
-echo ' - Delete the env file: $MY_SQROOT/etc/ms.env'
+echo ' - Delete the env file: $TRAF_HOME/etc/ms.env'
 echo ' - sqgen'
 echo ' - sqstart'
 
@@ -87,7 +87,7 @@ echo "Sleeping for 15 seconds before checking the status of HBase"
 sleep 15
 
 echo "--------------------------------------"
-if [ -e $MY_SQROOT/sql/scripts/hbcheck ]; then
+if [ -e $TRAF_HOME/sql/scripts/hbcheck ]; then
     run_util hbcheck 4 10
 else
     run_util ilh_hbcheck
@@ -98,8 +98,8 @@ echo "Repairing HBase (hbase hbck -repair)"
 ilh_hbase_repair y
 
 echo "--------------------------------------"
-echo "deleting $MY_SQROOT/etc/ms.env"
-rm $MY_SQROOT/etc/ms.env
+echo "deleting $TRAF_HOME/etc/ms.env"
+rm $TRAF_HOME/etc/ms.env
 
 run_util sqgen
 

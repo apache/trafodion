@@ -24,13 +24,13 @@
 #!/bin/sh
 
 # Cleanup 
-cd $MY_SQROOT/monitor/linux/Linux-x86_64/dbg
+cd $TRAF_HOME/monitor/linux/Linux-x86_64/dbg
 echo $PWD
 rm -f core* *.log *.lst test*sub*
 rm -f $MPI_TMPDIR/monitor.port.*
 
 # Setup monitor test files
-cd $MY_SQROOT/monitor/linux
+cd $TRAF_HOME/monitor/linux
 echo $PWD
 echo Copying monitor test files to execution directory
 echo cp -p ./test*sub* ./Linux-x86_64/dbg
@@ -40,7 +40,7 @@ cp -p ./test*sub* ./Linux-x86_64/dbg
 export SQ_VIRTUAL_NODES=6
 export SQ_VIRTUAL_NID=0
 
-cd $MY_SQROOT/monitor/linux/Linux-x86_64/dbg
+cd $TRAF_HOME/monitor/linux/Linux-x86_64/dbg
 echo $PWD
 
 shell <<eof 

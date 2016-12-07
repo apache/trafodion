@@ -31,8 +31,8 @@ function msg
 # ******* main ******
 WAIT_INTERVAL=300
 REPORT_INTERVAL=12
-LOCK_FILE=$MY_SQROOT/tmp/krb5check
-LOG_FILE=$MY_SQROOT/logs/krb5check
+LOCK_FILE=$TRAF_HOME/tmp/krb5check
+LOG_FILE=$TRAF_HOME/logs/krb5check
 CACHE_FILE=""
 HOST_NAME=`hostname -f`
 getKeytab

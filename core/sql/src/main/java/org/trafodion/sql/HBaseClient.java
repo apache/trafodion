@@ -151,8 +151,8 @@ public class HBaseClient {
     	//use the default HBaseClient config.
     	String confFile = System.getProperty("hbaseclient.log4j.properties");
     	if(confFile == null) {
-    		System.setProperty("trafodion.hdfs.log", System.getenv("MY_SQROOT") + "/logs/trafodion.hdfs.log");
-    		confFile = System.getenv("MY_SQROOT") + "/conf/log4j.hdfs.config";
+    		System.setProperty("trafodion.hdfs.log", System.getenv("TRAF_HOME") + "/logs/trafodion.hdfs.log");
+    		confFile = System.getenv("TRAF_HOME") + "/conf/log4j.hdfs.config";
     	}
     	PropertyConfigurator.configure(confFile);
         config = TrafConfiguration.create();

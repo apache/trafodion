@@ -43,13 +43,13 @@ LIBSTMB         =  -L$(LIBEXPDIR) -lutil -lsbms
 
 LIBSTMX         =  $(LIBSTMB) $(LIBS) $(DEBUG)
 LIBSTM          =  $(LIBSTMB) -lsxatmlib -lshbasetmlib $(LIBS) $(DEBUG) 
-HBASETMLIB   =  $(MY_SQROOT)/src/seatrans/tm/hbasetmlib2
+HBASETMLIB   =  $(TRAF_HOME)/src/seatrans/tm/hbasetmlib2
 
 #xarm
 LIBXARM		= -lxarm
 
 #log4cxx
-LIBCLOGGER = $(MY_SQROOT)/commonLogger
+LIBCLOGGER = $(TRAF_HOME)/commonLogger
 
 # seabed
 SBROOT		= ..

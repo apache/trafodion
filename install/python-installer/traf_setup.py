@@ -32,13 +32,13 @@ from common import err, cmd_output, run_cmd
 def run():
     dbcfgs = json.loads(dbcfgs_json)
 
-    TRAF_HOME = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2').strip()
+    HOME_DIR = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2').strip()
     TRAF_USER = dbcfgs['traf_user']
-    MY_SQROOT = '%s/%s/%s-%s' % (TRAF_HOME, TRAF_USER, dbcfgs['traf_basename'], dbcfgs['traf_version'])
+    TRAF_HOME = '%s/%s/%s-%s' % (HOME_DIR, TRAF_USER, dbcfgs['traf_basename'], dbcfgs['traf_version'])
 
     TRAF_VER = dbcfgs['traf_version']
     DISTRO = dbcfgs['distro']
-    TRAF_LIB_PATH = MY_SQROOT + '/export/lib'
+    TRAF_LIB_PATH = TRAF_HOME + '/export/lib'
     SCRATCH_LOCS = dbcfgs['scratch_locs'].split(',')
 
     SUDOER_FILE = '/etc/sudoers.d/trafodion'
@@ -56,7 +56,7 @@ def run():
         # don't set permission for HOME folder
         if not os.path.exists(loc):
             run_cmd('mkdir -p %s' % loc)
-        if TRAF_HOME not in loc:
+        if HOME_DIR not in loc:
             run_cmd('chmod 777 %s' % loc)
 
     ### copy jar files ###

@@ -267,10 +267,10 @@ do
    echo
    echo "********************************************************************"
   
-   sudo sed -i -e "s/\<$oldNODENAME\>/$node/g" $MY_SQROOT/tmp/cluster.conf
-   sudo sed -i -e "s/\<$oldNODENAME\>/$node/g" $MY_SQROOT/sql/scripts/sqconfig
-   sudo rm -rf $MY_SQROOT/tmp/se*
-   sudo rm -rf $MY_SQROOT/sql/scripts/se*
+   sudo sed -i -e "s/\<$oldNODENAME\>/$node/g" $TRAF_HOME/tmp/cluster.conf
+   sudo sed -i -e "s/\<$oldNODENAME\>/$node/g" $TRAF_HOME/sql/scripts/sqconfig
+   sudo rm -rf $TRAF_HOME/tmp/se*
+   sudo rm -rf $TRAF_HOME/sql/scripts/se*
    sudo chmod 777 $TRAF_CONFIG
    sed -i '/TRAF_EXCLUDE_LIST\=/d' $TRAF_CONFIG
    echo "export TRAF_EXCLUDE_LIST=\"$TRAF_EXCLUDE_LIST\"" >> $TRAF_CONFIG

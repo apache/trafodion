@@ -3374,7 +3374,7 @@ void ExLobGlobals::traceMessage(const char *logMessage, ExLobCursor *cursor,
 
 //Enable envvar TRACE_LOB_ACTIONS to enable tracing. 
 //The output file will be in the masterexec.<pid> logs in the 
-//$MY_SQROOT/logs directory on each node
+//$TRAF_HOME/logs directory on each node
 
 void lobDebugInfo(const char *logMessage,Int32 errorcode,
                          Int32 line, NABoolean lobTrace)

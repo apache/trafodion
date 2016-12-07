@@ -138,8 +138,8 @@ void ExSM_SetTraceEnabled(bool b, ExSMGlobals *smGlobals)
 
     int node = EXSM_NODE_NUMBER;
     int tid = EXSM_TID;
-    const char *sqRoot = getenv("MY_SQROOT");
-    exsm_assert(sqRoot, "getenv(MY_SQROOT) returned NULL");
+    const char *sqRoot = getenv("TRAF_HOME");
+    exsm_assert(sqRoot, "getenv(TRAF_HOME) returned NULL");
     char *filename = new char[PATH_MAX + 1];
     exsm_assert(filename, "Could not allocate SM trace file name");
 
@@ -149,7 +149,7 @@ void ExSM_SetTraceEnabled(bool b, ExSMGlobals *smGlobals)
     //    * The generated name will be <prefix>.<other-info>
     //      where <other-info> includes the node ID and process ID
     //    * If <prefix> starts with "/", it is an absolute path
-    //    * Otherwise the file is placed under $MY_SQROOT/tmp
+    //    * Otherwise the file is placed under $TRAF_HOME/tmp
     if (!strncmp(smGlobals->getTraceFilePrefix(), "stdout", 6))
     {
       EXSM_OUTFILE = stdout;

@@ -275,20 +275,20 @@ endif
 mavenbuild:
 	# create a jar manifest file with the correct version information
 	mkdir -p ../src/main/resources
-	$(MY_SQROOT)/export/include/SCMBuildJava.sh 1.0.1 >../src/main/resources/trafodion-sql.jar.mf
+	$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 >../src/main/resources/trafodion-sql.jar.mf
 	# run maven
 	set -o pipefail && cd ..; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	cp -pf ../target/trafodion-sql-cdh*.jar $(MY_SQROOT)/export/lib
+	cp -pf ../target/trafodion-sql-cdh*.jar $(TRAF_HOME)/export/lib
 
 # Java files get built through Maven
 mavenbuild_apache:
 	set -o pipefail && cd ..; $(MAVEN) -f pom.xml.apache package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	cp -pf ../target/trafodion-sql-apache*.jar $(MY_SQROOT)/export/lib
+	cp -pf ../target/trafodion-sql-apache*.jar $(TRAF_HOME)/export/lib
 
 # Java files get built through Maven
 mavenbuild_hdp:
 	set -o pipefail && cd ..; $(MAVEN) -f pom.xml.hdp package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
-	cp -pf ../target/trafodion-sql-hdp*.jar $(MY_SQROOT)/export/lib
+	cp -pf ../target/trafodion-sql-hdp*.jar $(TRAF_HOME)/export/lib
 
 # This is where the top-level is declared to build everything.
 buildall: $(FINAL_LIBS) $(FINAL_DLLS) $(FINAL_INSTALL_OBJS) $(FINAL_EXES) mavenbuild mavenbuild_hdp mavenbuild_apache 
@@ -305,4 +305,4 @@ clean:
 	@echo "Removing coverage files"
 	@-find $(TOPDIR) -maxdepth 1 -name '*.gcov' -print | xargs rm -f
 	@cd ..; $(MAVEN) clean
-	@rm -rf $(MY_SQROOT)/export/lib/trafodion-sql-*.jar
+	@rm -rf $(TRAF_HOME)/export/lib/trafodion-sql-*.jar

@@ -124,7 +124,7 @@ EOF
 #!/bin/sh
 VER_PROD=`echo \$TRAFODION_VER_PROD | sed 's/ /_/'`
 echo "Implementation-Version-1: Version \$* \$VER_PROD"
-cat \$MY_SQROOT/export/include/SCMBuildMan.mf
+cat \$TRAF_HOME/export/include/SCMBuildMan.mf
 EOF
 
 	cat > $TMPFILEJ3 <<EOF

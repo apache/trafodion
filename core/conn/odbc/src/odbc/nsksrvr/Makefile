@@ -22,7 +22,7 @@
 # Makefile for building ndcs sql server on Linux
 #
 
-include $(MY_SQROOT)/macros.gmk # top level
+include $(TRAF_HOME)/macros.gmk # top level
 include ../macros.gmk       # odbc level
 
 #
@@ -103,7 +103,7 @@ ODBC_OBJS = $(OUTDIR)/odbcas_drvr.o \
 
 OBJS = $(COMMON_OBJS) $(COMPRESS_OBJS) $(DBT_OBJS) $(ODBC_OBJS) $(WMS_OBJS)
 
-INCLUDES     = -I. -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(MY_SQROOT)/export/include/sql -I$(MY_SQROOT)/inc/tmf_tipapi -I$(MY_SQROOT)/inc -I$(MY_SQROOT)/export/include -I$(MY_SQROOT)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(MY_SQROOT)/../sql/cli -I$(MY_SQROOT)/../dbsecurity/cert/inc -I$(MY_SQROOT)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include -I$(MY_SQROOT)/commonLogger -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
+INCLUDES     = -I. -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(TRAF_HOME)/export/include/sql -I$(TRAF_HOME)/inc/tmf_tipapi -I$(TRAF_HOME)/inc -I$(TRAF_HOME)/export/include -I$(TRAF_HOME)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(TRAF_HOME)/../sql/cli -I$(TRAF_HOME)/../dbsecurity/cert/inc -I$(TRAF_HOME)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include -I$(TRAF_HOME)/commonLogger -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
 
 
 COMMON_DEFINES = -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DUSE_NEW_PHANDLE -DTIMER_FIXED -w -DNSK_ODBC_SRVR -D__TIME_LOGGER -DTHREADED
@@ -136,7 +136,7 @@ GCCMODE        += -Xlinker --copy-dt-needed-entries
 $(BINEXPDIR)/mxosrvr: $(OBJS) $(LIBEXPDIR)/libzookeeper_mt.so
 	$(CXX) $(GCCMODE) -o $@ $(DBG_FLGS)  -L$(LIBEXPDIR) -D_SQ64 -L$(LOC_JSIG) $(EARLY_LIBS) $(COMMON_LIBS) $(DBT_LIBS) -lzookeeper_mt $(HADOOP_LIBS) $(OBJS) -lz
 
-$(OUTDIR)/ndcsversion.o: $(MY_SQROOT)/export/include/SCMBuildStr.h 
+$(OUTDIR)/ndcsversion.o: $(TRAF_HOME)/export/include/SCMBuildStr.h 
 
 # copy in lib & any associate versions & links
 $(LIBEXPDIR)/libzookeeper_mt.so: $(ZOOKEEPER_DIR)/lib/libzookeeper_mt.so

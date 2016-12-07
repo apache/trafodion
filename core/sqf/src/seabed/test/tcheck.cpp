@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     if (!env.load(config_file)) { // try to load default config
-        char *root = getenv("MY_SQROOT");
+        char *root = getenv("TRAF_HOME");
         if (root != NULL) {
             char la_file[BUFSIZ];
             sprintf(la_file, "%s/etc/%s", root, config_file);

@@ -17274,7 +17274,7 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
     }
     else
     {
-      char * sqroot = getenv("MY_SQROOT");
+      char * sqroot = getenv("TRAF_HOME");
       if (sqroot && (! CmpCommon::context()->getSqlmxRegress()) &&
           (strncmp(sqroot, getTargetName().data(),strlen(sqroot)) == 0))
       {

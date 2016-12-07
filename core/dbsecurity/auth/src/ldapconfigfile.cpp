@@ -512,8 +512,8 @@ static Check_Status checkRequiredAttributes(LDAPFileContents & config)
 // *       no other env variables are used if this is present                  *
 // * TRAFAUTH_CONFIGDIR -- If present, directory in which file will be found.  *
 // *       overrides any other defaults from below                             *
-// * MY_SQROOT -- Prefix for standard location:                                *
-// *       $MY_SQROOT/etc/.traf_authentication_config                          *
+// * TRAF_HOME -- Prefix for standard location:                                *
+// *       $TRAF_HOME/etc/.traf_authentication_config                          *
 // *                                                                           *
 // * Our algorithm for picking the name/location for the config file is:       *
 // *  IF AUTHLDAP_CONFIGFILE is set to a non-empty string                      *
@@ -523,7 +523,7 @@ static Check_Status checkRequiredAttributes(LDAPFileContents & config)
 // *       the contents are used as the dir and .traf_authentication_config    *
 // *       is the name of the file in that dir                                 *
 // *    ELSE                                                                   *
-// *        use MY_SQROOT/etc/.traf_authentication_config                      *
+// *        use TRAF_HOME/etc/.traf_authentication_config                      *
 // *                                                                           *
 // *****************************************************************************
 // *                                                                           *
@@ -581,8 +581,8 @@ char *configFile = getenv("TRAFAUTH_CONFIGFILE");
    }    
 
 // If we get here the full name or the explicit directory were
-// not specified.  Append the name to the value of MY_SQROOT.
-char *sqRoot = getenv("MY_SQROOT"); //ACH changing for Trafodion?
+// not specified.  Append the name to the value of TRAF_HOME.
+char *sqRoot = getenv("TRAF_HOME"); //ACH changing for Trafodion?
 
    if (sqRoot == NULL || strlen(sqRoot) == 0)
       return configFilename;
@@ -1534,9 +1534,9 @@ char *valuePtr = NULL;
    }
       
 // Name is not fully qualified.  See if specified filename can be found at
-// $MY_SQROOT/cacerts.
+// $TRAF_HOME/cacerts.
 
-char *sqRoot = getenv("MY_SQROOT");
+char *sqRoot = getenv("TRAF_HOME");
 
    if (sqRoot == NULL)
       return false;
@@ -1559,11 +1559,11 @@ char *certFilename = new char[bufSize];
    TLSCACertFilename = certFilename;
    delete certFilename;
 
-// If the filename exists in $MY_SQROOT/cacerts directory, use it.
+// If the filename exists in $TRAF_HOME/cacerts directory, use it.
    if ((stat(TLSCACertFilename.c_str(),&sts)) == 0)
       return true;
    
-// Certificate was not in $MY_SQROOT/cacerts directory.  Check $CACERTS_DIR.
+// Certificate was not in $TRAF_HOME/cacerts directory.  Check $CACERTS_DIR.
 
 char *CACertsDir = getenv("CACERTS_DIR");
 

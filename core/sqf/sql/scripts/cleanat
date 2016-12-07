@@ -22,7 +22,7 @@
 # @@@ END COPYRIGHT @@@
 
 sqstop
-if [ -f $MY_SQROOT/sql/scripts/swhbase ]
+if [ -f $TRAF_HOME/sql/scripts/swhbase ]
 then swhbase <<EOF
 disable_all 'TRAFODION._DTM_.*'
 y

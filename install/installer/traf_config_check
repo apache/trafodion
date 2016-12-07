@@ -856,10 +856,10 @@ fi
 
 function checkSQROOT {
 
-if [[ -z $MY_SQROOT ]]; then
+if [[ -z $TRAF_HOME ]]; then
    errorFound=1
    echo "SQ ROOT" >> $ERROR_LOG
-   echo "***ERROR: MY_SQROOT variable not set in config file" >> $ERROR_LOG
+   echo "***ERROR: TRAF_HOME variable not set in config file" >> $ERROR_LOG
 fi
 
 }

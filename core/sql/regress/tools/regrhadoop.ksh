@@ -25,7 +25,7 @@
 # run the swhadoop convenience script if it exists, otherwise run the hadoop command
 # swhadoop is used when Hadoop is installed with install_local_hadoop
 # hadoop is used otherwise, e.g. on Jenkins
-if [ -x $MY_SQROOT/sql/scripts/swhadoop ]; then
+if [ -x $TRAF_HOME/sql/scripts/swhadoop ]; then
   swhadoop $*
 else
   hadoop $*

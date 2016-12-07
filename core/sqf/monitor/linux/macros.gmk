@@ -19,7 +19,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-include $(MY_SQROOT)/macros.gmk
+include $(TRAF_HOME)/macros.gmk
 
 # This builds monitor with fork suspend/resume
 #USE_FORK_SUSPEND_RESUME = 1

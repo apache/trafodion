@@ -21,4 +21,4 @@ echo "Generating mon.env"
 #
 # @@@ END COPYRIGHT @@@
 #
-echo "MY_SQROOT=$MY_SQROOT" > mon.env
+echo "TRAF_HOME=$TRAF_HOME" > mon.env

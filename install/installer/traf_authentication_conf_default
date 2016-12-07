@@ -24,9 +24,9 @@
 # directory service configuration.
 #
 # To use authentication in Trafodion, this file must be configured
-# as described below and placed in $MY_SQROOT/sql/scripts and be named
+# as described below and placed in $TRAF_HOME/sql/scripts and be named
 # .traf_authentication_config.  You must also enable authentication by
-# running the script traf_authentication_setup in $MY_SQROOT/sql/scripts.
+# running the script traf_authentication_setup in $TRAF_HOME/sql/scripts.
 #
 # NOTE: the format of this configuration file is expected to change in the
 # next release of Trafodion.  Backward compatilibity is not guaranteed.

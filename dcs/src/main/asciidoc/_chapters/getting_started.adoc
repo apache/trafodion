@@ -59,7 +59,7 @@ Install _java_, edit _conf/dcs-env.sh_, uncommenting the `JAVA_HOME` line pointi
 Is _Trafodion_ installed and running?
 
 DCS presumes a _Trafodion_ instance is installed and running on your machine and available on your path; i.e. the
-`MY_SQROOT` is set and when you type _sqcheck_, you see output that confirms _Trafodion_ is running. If this is not
+`TRAF_HOME` is set and when you type _sqcheck_, you see output that confirms _Trafodion_ is running. If this is not
 the case, DCS may start but you'll see many errors in the DcsServer logs related to user program startup. 
       
 At this point, you are ready to start DCS.

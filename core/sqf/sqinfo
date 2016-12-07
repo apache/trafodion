@@ -88,20 +88,20 @@ function DO_ENV_INFO {
 		echo
 		echo "acquiring other environment info..."
 		if [ $sbi = 0 ]; then
-			if [ -r "$MY_SQROOT/sql/scripts/mon.env" ]; then
+			if [ -r "$TRAF_HOME/sql/scripts/mon.env" ]; then
 				echo "sql/scripts/mon.env:"
-				cat $MY_SQROOT/sql/scripts/mon.env|grep -v '^#'|grep -v '^$'
+				cat $TRAF_HOME/sql/scripts/mon.env|grep -v '^#'|grep -v '^$'
 				echo
 			fi
 		fi
-		if [ -r "$MY_SQROOT/sql/scripts/mon.env" ]; then
+		if [ -r "$TRAF_HOME/sql/scripts/mon.env" ]; then
 			echo "sql/scripts/mon.env:"
-			cat $MY_SQROOT/sql/scripts/mon.env|grep -v '^#'|grep -v '^$'
+			cat $TRAF_HOME/sql/scripts/mon.env|grep -v '^#'|grep -v '^$'
 			echo
 		fi
-		if [ -r "$MY_SQROOT/sql/scripts/shell.env" ]; then
+		if [ -r "$TRAF_HOME/sql/scripts/shell.env" ]; then
 			echo "sql/scripts/shell.env:"
-			cat $MY_SQROOT/sql/scripts/shell.env|grep -v '^#'|grep -v '^$'
+			cat $TRAF_HOME/sql/scripts/shell.env|grep -v '^#'|grep -v '^$'
 			echo
 		fi
 	fi
@@ -214,8 +214,8 @@ function DO_SQL_INFO {
 	echo
 	echo "acquiring sql info..."
 
-	if [ "$MY_SQROOT" ]; then
-		cfg=$MY_SQROOT/sql/scripts/sqconfig
+	if [ "$TRAF_HOME" ]; then
+		cfg=$TRAF_HOME/sql/scripts/sqconfig
 		if [ -r "$cfg" ]; then
 			echo "cat $cfg:"
 			if [ $full = 1 ]; then
@@ -228,7 +228,7 @@ function DO_SQL_INFO {
 			return
 		fi
 	else
-		echo "\$MY_SQROOT not set"
+		echo "\$TRAF_HOME not set"
 		return
 	fi
 }

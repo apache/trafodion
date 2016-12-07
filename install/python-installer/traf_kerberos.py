@@ -101,7 +101,7 @@ fi
 # ---------------------------------------------------------------
 # Start trafodion kerberos ticket manager process
 # ---------------------------------------------------------------
-$MY_SQROOT/sql/scripts/krb5service start >/dev/null 2>&1
+$TRAF_HOME/sql/scripts/krb5service start >/dev/null 2>&1
 """ % (traf_keytab, traf_principal)
 
     traf_bashrc = '/home/%s/.bashrc' % traf_user

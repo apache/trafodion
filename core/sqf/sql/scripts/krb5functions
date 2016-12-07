@@ -114,12 +114,12 @@ function getStatus
 
 function getLogFile
 {
-  LOG_FILE=$MY_SQROOT/logs/krb5check
+  LOG_FILE=$TRAF_HOME/logs/krb5check
 }
 
 function getLockFile
 {
-  LOCK_FILE=$MY_SQROOT/tmp/krb5check
+  LOCK_FILE=$TRAF_HOME/tmp/krb5check
 }
 
 function getKeytab

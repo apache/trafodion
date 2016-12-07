@@ -1093,12 +1093,12 @@ int main (int argc, char *argv[])
     if ( IsRealCluster )
     {
         snprintf(fname, sizeof(fname), "%s/logs/sqmon.%s.log",
-                 getenv("MY_SQROOT"), Node_name);
+                 getenv("TRAF_HOME"), Node_name);
     }
     else
     {
         snprintf(fname, sizeof(fname), "%s/logs/sqmon.%d.%s.log",
-                 getenv("MY_SQROOT"), MyPNID, Node_name);
+                 getenv("TRAF_HOME"), MyPNID, Node_name);
     }
     remove(fname);
     if( freopen (fname, "w", stdout) == NULL )

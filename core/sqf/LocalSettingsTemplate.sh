@@ -31,12 +31,12 @@
 #
 #  This file needs to be copied to ~/.trafodion and updated to override
 #    build tool locations
-#  .trafodion is sourced in when running $MY_SQROOT/sqenvcom.sh
-#    sqenvcom.sh is sourced in by $MY_SQROOT/sqenv.sh
+#  .trafodion is sourced in when running $TRAF_HOME/sqenvcom.sh
+#    sqenvcom.sh is sourced in by $TRAF_HOME/sqenv.sh
 #    sqenv.sh is sourced in by: 
-#      $MY_SQROOT/../../env.sh or
-#      $MY_SQROOT/sqenvd.sh (debug build) or
-#      $MY_SQROOT/sqenvr.sh (release build)
+#      $TRAF_HOME/../../env.sh or
+#      $TRAF_HOME/sqenvd.sh (debug build) or
+#      $TRAF_HOME/sqenvr.sh (release build)
 #
 #  sqenvcom.sh sets up the environment in preparation for building and
 #    running Trafodion.

@@ -3594,7 +3594,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
 // the fully-qualified table names.
 void HSGlobalsClass::initJITLogData()
 {
-  char* sqroot = getenv("MY_SQROOT");
+  char* sqroot = getenv("TRAF_HOME");
   if (!sqroot)
     return;
   
@@ -3665,7 +3665,7 @@ void HSGlobalsClass::startJitLogging(const char* checkPointName, Int64 elapsedSe
   XPROCESSHANDLE_DECOMPOSE_(&procHandle, &nodeNum, &pin);
 
   NAString filePath;
-  char* sqroot = getenv("MY_SQROOT");
+  char* sqroot = getenv("TRAF_HOME");
   if (sqroot)
     {
 	  filePath = sqroot;

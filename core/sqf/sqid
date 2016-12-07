@@ -40,7 +40,7 @@ if ($help) {
 }
 
 my $sq_pdsh = defined $ENV{'SQ_PDSH'} ? $ENV{'SQ_PDSH'} : '';
-my $my_sqroot = defined $ENV{'MY_SQROOT'} ? $ENV{'MY_SQROOT'} : '';
+my $traf_home = defined $ENV{'TRAF_HOME'} ? $ENV{'TRAF_HOME'} : '';
 my $java_home = defined $ENV{'JAVA_HOME'} ? $ENV{'JAVA_HOME'} : '';
 my $host;
 gethost();
@@ -58,18 +58,18 @@ if ($rhrel =~ /^.*release ([0-9][0-9]*)\.([0-9][0-9]*)/) {
 	$rr=$1 . "." . $2
 }
 
-print "MY_SQROOT=$my_sqroot\n";
+print "TRAF_HOME=$traf_home\n";
 print "who\@host=$w\@$host\n";
 print "JAVA_HOME=$java_home\n";
 print "linux=$lr\n";
 print "redhat=$rr\n";
 # can't do much if this env variables is not setup
-if (!defined $ENV{'MY_SQROOT'}) {
-	die "MY_SQROOT is not set!";
+if (!defined $ENV{'TRAF_HOME'}) {
+	die "TRAF_HOME is not set!";
 }
 
 my $sq_mbtype = defined $ENV{'SQ_MBTYPE'} ? $ENV{'SQ_MBTYPE'} : '?';
-my $dir = "$my_sqroot/export/lib" . $sq_mbtype;
+my $dir = "$traf_home/export/lib" . $sq_mbtype;
 chdir($dir) or die "can't chdir to $dir $!";
 my $file = "$dir'/libsbms.so'";
 version($file);

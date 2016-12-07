@@ -53,7 +53,7 @@ public class UserInterface {
 		myArgs = args;
 		int exitCode = 0;
 		boolean doTrace = Boolean.getBoolean(SessionDefaults.PROP_TRACE);
-		String mySQRoot = System.getenv("MY_SQROOT");
+		String mySQRoot = System.getenv("TRAF_HOME");
 		
 
 

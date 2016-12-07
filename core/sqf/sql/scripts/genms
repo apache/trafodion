@@ -152,7 +152,7 @@ echo "CMP_NODE_AFFINITY=1"
 echo ""
 echo "SEAQUEST=1"
 echo "SEAQUEST_NO_ROLLBACK_TXN=0"
-echo "SQLMX_MESSAGEFILE=\$MY_SQROOT/export/bin\$SQ_MBTYPE/mxcierrors.cat"
+echo "SQLMX_MESSAGEFILE=\$TRAF_HOME/export/bin\$SQ_MBTYPE/mxcierrors.cat"
 echo "YYERROR_QUIET=1"
 echo ""
 echo "# this is purely for measure use case analysis at this point"
@@ -166,7 +166,7 @@ echo ""
 echo "# property file for tdm_arkesp"
 echo "SQ_PROPS_TDM_ARKESP=tdm_arkesp.env"
 echo ""
-echo "STFS_HDD_LOCATION=\$MY_SQROOT/tmp"
+echo "STFS_HDD_LOCATION=\$TRAF_HOME/tmp"
 echo ""
 echo "#setting MY_UDR_ROOT"
 if [ -d "/home/udr" ]; then
@@ -177,10 +177,10 @@ if [ -d "/home/udr" ]; then
   fi
   echo "MY_UDR_ROOT=$dircreate"
 else
-  if [ ! -d "$MY_SQROOT/udr" ]; then
-    mkdir $MY_SQROOT/udr 2>/dev/null
+  if [ ! -d "$TRAF_HOME/udr" ]; then
+    mkdir $TRAF_HOME/udr 2>/dev/null
   fi
-  echo "MY_UDR_ROOT=\$MY_SQROOT/udr"
+  echo "MY_UDR_ROOT=\$TRAF_HOME/udr"
 fi
 
 echo ""

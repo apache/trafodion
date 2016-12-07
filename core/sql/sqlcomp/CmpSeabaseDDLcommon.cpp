@@ -7087,7 +7087,7 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
   // Note that this is not an existing jar file, the class
   // loader will attempt to load the class from the CLASSPATH if
   // it can't find this jar
-  NAString installJar(getenv("MY_SQROOT"));
+  NAString installJar(getenv("TRAF_HOME"));
   installJar += "/export/lib/trafodion-sql-currversion.jar";
 
   breadCrumb = 1;

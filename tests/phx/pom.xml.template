@@ -200,7 +200,7 @@
       <artifactId>hbase-trx</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.MY_SQROOT}/export/lib/TRAF_HBASE_TRX_FILE</systemPath>
+      <systemPath>${env.TRAF_HOME}/export/lib/TRAF_HBASE_TRX_FILE</systemPath>
     </dependency>
 
     <dependency>
@@ -208,7 +208,7 @@
       <artifactId>trafodion-dtm</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.MY_SQROOT}/export/lib/${env.DTM_COMMON_JAR}</systemPath>
+      <systemPath>${env.TRAF_HOME}/export/lib/${env.DTM_COMMON_JAR}</systemPath>
      </dependency>
 
     <dependency>
@@ -216,7 +216,7 @@
       <artifactId>trafodion-sql</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.MY_SQROOT}/export/lib/${env.SQL_JAR}</systemPath>
+      <systemPath>${env.TRAF_HOME}/export/lib/${env.SQL_JAR}</systemPath>
      </dependency>
 
     <!-- END_FOR_T2_ONLY -->
@@ -282,7 +282,7 @@
             <HIVE_CNF_DIR>${env.HIVE_CNF_DIR}</HIVE_CNF_DIR>
             <HBASE_TRXDIR>${env.HBASE_TRXDIR}</HBASE_TRXDIR>
             <SQ_MBTYPE>${env.SQ_MBTYPE}</SQ_MBTYPE>
-            <MY_SQROOT>${env.MY_SQROOT}</MY_SQROOT>
+            <TRAF_HOME>${env.TRAF_HOME}</TRAF_HOME>
             <TRAFODION_VER>${env.TRAFODION_VER}</TRAFODION_VER>
             <MPI_TMPDIR>${env.MPI_TMPDIR}</MPI_TMPDIR>
             <LD_PRELOAD>${env.LD_PRELOAD}</LD_PRELOAD>

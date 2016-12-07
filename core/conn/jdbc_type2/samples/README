@@ -45,8 +45,8 @@ To compile this java program, issue the following command:
 Then, run this Java program using the following command:
 
    Set your CLASSPATH and LD_PRELOAD path
-        export CLASSPATH=$MY_SQROOT/export/lib/jdbcT2.jar:.:$CLASSPATH
-        export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib64d/libseabasesig.so
+        export CLASSPATH=$TRAF_HOME/export/lib/jdbcT2.jar:.:$CLASSPATH
+        export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$TRAF_HOME/export/lib64d/libseabasesig.so
 
    java -Dt2jdbc.schema=<defaultCatalog>.<defaultSchema> T2Sample
 

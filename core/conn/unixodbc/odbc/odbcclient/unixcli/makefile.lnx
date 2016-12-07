@@ -20,7 +20,7 @@
 # @@@ END COPYRIGHT @@@
 
 # INCLUDES
-include $(MY_SQROOT)/macros.gmk #top level
+include $(TRAF_HOME)/macros.gmk #top level
 sinclude depend.mk
 
 ODBCVER := $(shell ./bldODBCVer.sh)
@@ -53,7 +53,7 @@ OBJ = .o
 LINK = $(CC)
 ODBC_SO_FILE = libtrafodbc
 
-INCLUDE = -I./cli/ -I./Interface  -I../../dependencies/windows/ -I../../dependencies/security/include -I./sql/ -I../../../../../sql/cli -I../../../../../sql/common -I./inc -I../../Krypton/ -I./common/ -I./TCPIPV4/ -I./trace/ -I./platform -I./security_dll/common -I./security_dll/header -I $(MY_SQROOT)/export/include
+INCLUDE = -I./cli/ -I./Interface  -I../../dependencies/windows/ -I../../dependencies/security/include -I./sql/ -I../../../../../sql/cli -I../../../../../sql/common -I./inc -I../../Krypton/ -I./common/ -I./TCPIPV4/ -I./trace/ -I./platform -I./security_dll/common -I./security_dll/header -I $(TRAF_HOME)/export/include
 
 DMOBJS = dmadmin.o dmcpool.o dmfunctions.o dminstall.o dmmapping.o drvrmanager.o version.o cdatasource.o
 #TROBJS = dotrace.o gettrace.o headers.o init.o traceext.o 

@@ -21,7 +21,7 @@
 
 # Makefile for building ndcs shared library on Linux
 #
-include $(MY_SQROOT)/macros.gmk # top level
+include $(TRAF_HOME)/macros.gmk # top level
 include ../macros.gmk       # odbc level
 
 #
@@ -64,7 +64,7 @@ OBJS  = $(OUTDIR)/CommonDiags.o \
         $(OUTDIR)/srvrothers.o \
         $(OUTDIR)/libmxocore_version.o
 
-INCLUDES = -I. -I../Common -I../EventMsgs -I../SrvrMsg -I../dependencies/include -I../dependencies/linux -I../Krypton/generated_incs  -I$(MY_SQROOT)/export/include/sql -I$(MY_SQROOT)/inc/tmf_tipapi  -I$(MY_SQROOT)/inc  -I$(MY_SQROOT)/export/include -I$(MY_SQROOT)/sql/nq_w/common -I../OssCfgCl/src -I../CmdCfgDll -I$(PROTOBUFS_INC) -I$(MY_SQROOT)/../sql/cli -I$(MY_SQROOT)/commonLogger -I$(MY_SQROOT)/../dbsecurity/cert/inc -I$(MY_SQROOT)/../dbsecurity/auth/inc -I$(LOG4CXX_INC_DIR) -I$(MY_SQROOT)/../mpi/src/include/intern
+INCLUDES = -I. -I../Common -I../EventMsgs -I../SrvrMsg -I../dependencies/include -I../dependencies/linux -I../Krypton/generated_incs  -I$(TRAF_HOME)/export/include/sql -I$(TRAF_HOME)/inc/tmf_tipapi  -I$(TRAF_HOME)/inc  -I$(TRAF_HOME)/export/include -I$(TRAF_HOME)/sql/nq_w/common -I../OssCfgCl/src -I../CmdCfgDll -I$(PROTOBUFS_INC) -I$(TRAF_HOME)/../sql/cli -I$(TRAF_HOME)/commonLogger -I$(TRAF_HOME)/../dbsecurity/cert/inc -I$(TRAF_HOME)/../dbsecurity/auth/inc -I$(LOG4CXX_INC_DIR) -I$(TRAF_HOME)/../mpi/src/include/intern
 
 DEFINES =  -DNA_LINUX -DSIZEOF_LONG_INT=4 -DUSE_NEW_PHANDLE -DSQ_GUARDIAN_CALL -D_M_DG -DINC_QPID_EVENT -w
 
@@ -76,7 +76,7 @@ libmxocore.so: $(OBJS)
 	$(CXX) -shared $(GCCMODE) -o $@ $(DBG_FLGS) -L$(LIBEXPDIR) -levlsq -lsqauth -lsqcert $(OBJS)
 	cp -up $@ $(LIBEXPDIR)
 
-$(OUTDIR)/libmxocore_version.o: $(MY_SQROOT)/export/include/SCMBuildStr.h
+$(OUTDIR)/libmxocore_version.o: $(TRAF_HOME)/export/include/SCMBuildStr.h
 
 clean:
 	$(RM) libmxocore.so $(LIBEXPDIR)/libmxocore.so

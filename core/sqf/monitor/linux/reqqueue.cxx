@@ -2167,7 +2167,7 @@ void CIntSnapshotReq::performRequest()
     // copy sqconfig.db
     char cmd[256];
     sprintf(cmd, "pdcp -p -w %s %s/sql/scripts/sqconfig.db %s/sql/scripts/.", Monitor->GetIntegratingNode()->GetName(), 
-              getenv("MY_SQROOT"), getenv("MY_SQROOT") );
+              getenv("TRAF_HOME"), getenv("TRAF_HOME") );
 
     error = system(cmd);
 

@@ -48,7 +48,7 @@ or wish to start/stop the server independently.
 Is Trafodion installed and running?
 
 The server presumes a Trafodion instance is installed and running on your machine and available on your path; i.e. the
-`MY_SQROOT` environment variable is set and when you type _sqcheck_, you see output that confirms Trafodion is running. If this is not
+`TRAF_HOME` environment variable is set and when you type _sqcheck_, you see output that confirms Trafodion is running. If this is not
 the case, the server may start but you'll see many errors. 
       
 At this point, you are ready to start the server.

@@ -32,7 +32,7 @@ NSK_SQ		= ../../..
 NSK_SQU		= ../../../..
 NSK		= ../../nsk
 
-include $(MY_SQROOT)/macros.gmk
+include $(TRAF_HOME)/macros.gmk
 
 ifeq ($(SQ_MTYPE),64)
 CC	=	$(CC64) $(GCCMODE64)

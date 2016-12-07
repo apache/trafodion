@@ -31,8 +31,8 @@
 # export JAVA_HOME=/usr/java/jdk1.7.0/
 
 # Add Trafodion to the classpath
-if [ "$MY_SQROOT" != "" ]; then
-  if [ -d $MY_SQROOT ]; then
+if [ "$TRAF_HOME" != "" ]; then
+  if [ -d $TRAF_HOME ]; then
     export REST_CLASSPATH=${CLASSPATH}:
   fi
 fi
