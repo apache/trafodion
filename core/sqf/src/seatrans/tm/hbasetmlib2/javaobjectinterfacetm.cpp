@@ -21,6 +21,7 @@
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
 
+#include "tmlogging.h"
 #include "javaobjectinterfacetm.h"
 
 // ===========================================================================
@@ -28,9 +29,11 @@
 // ===========================================================================
 
 JavaVM* JavaObjectInterfaceTM::jvm_  = NULL;
+jint jniHandleCapacity_ = 0;
 
 #define DEFAULT_MAX_TM_HEAP_SIZE "2048" 
 #define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
+#define TRAF_DEFAULT_JNIHANDLE_CAPACITY 32
   
 static const char* const joiErrorEnumStr[] = 
 {
@@ -42,6 +45,7 @@ static const char* const joiErrorEnumStr[] =
  ,"JNI FindClass() failed"
  ,"JNI GetMethodID() failed"
  ,"JNI NewObject() failed"
+ ,"initJNIEnv() failed"
  ,"Error Unknown"
 };
 
@@ -62,10 +66,7 @@ jmethodID JavaObjectInterfaceTM::gGetCauseMethodID = NULL;
 char* JavaObjectInterfaceTM::getErrorText(JOI_RetCode errEnum)
 {
    if (errEnum >= JOI_LAST) {
-      fprintf(stderr,"getErrorText called with out of bounds index %d.\n",errEnum);
-      fflush(stderr);
       abort();
-      //return (char*)joiErrorEnumStr[JOI_LAST];
    }
    else
       return (char*)joiErrorEnumStr[errEnum];
@@ -128,8 +129,6 @@ int JavaObjectInterfaceTM::createJVM()
   char debugOptions[300];
   int numJVMOptions = 0;
 
-  //printf("In JavaObjectInterfaceTM::createJVM\n");
-
   const char *maxHeapSize = getenv("DTM_JVM_MAX_HEAP_SIZE_MB");  
   char heapOptions[100];  
   int heapSize;  
@@ -163,7 +162,6 @@ int JavaObjectInterfaceTM::createJVM()
     abort();
   }
   _tlv_jenv_set = true;
-  fflush(stdout);
   free(classPathArg);
   return ret;
 }
@@ -212,18 +210,27 @@ JOI_RetCode JavaObjectInterfaceTM::initJVM()
     jsize jvm_count = 0;
     // Is there an existing JVM already created?
     result = JNI_GetCreatedJavaVMs (&jvm_, 1, &jvm_count);
-    if (result != JNI_OK)
+    if (result != JNI_OK) {
+      set_error_msg(getErrorText(JOI_ERROR_CHECK_JVM));
       return JOI_ERROR_CHECK_JVM;      
+    }
       
     if (jvm_count == 0)
     {
       // No - create a new one.
       result = createJVM();
-      if (result != JNI_OK)
+      if (result != JNI_OK) {
+        set_error_msg(getErrorText(JOI_ERROR_CHECK_JVM));
         return JOI_ERROR_CREATE_JVM;
+      }
       needToDetach_ = false;
         
     }
+    char *jniHandleCapacityStr =  getenv("TRAF_JNIHANDLE_CAPACITY");
+    if (jniHandleCapacityStr != NULL)
+       jniHandleCapacity_ = atoi(jniHandleCapacityStr);
+    if (jniHandleCapacity_ == 0)
+        jniHandleCapacity_ = TRAF_DEFAULT_JNIHANDLE_CAPACITY;
   }
   if (_tlp_jenv == NULL) {
   // We found a JVM, can we use it?
@@ -234,11 +241,10 @@ JOI_RetCode JavaObjectInterfaceTM::initJVM()
       break;
     
     case JNI_EDETACHED:
-      fprintf(stderr,"initJVM: Detached, Try 2 attach\n");
       result = jvm_->AttachCurrentThread((void**) &_tlp_jenv, NULL);   
       if (result != JNI_OK)
       {
-        fprintf(stderr,"initJVM: Error in attaching\n");
+        set_error_msg(getErrorText(JOI_ERROR_ATTACH_JVM));
         return JOI_ERROR_ATTACH_JVM;
       }
       
@@ -246,10 +252,12 @@ JOI_RetCode JavaObjectInterfaceTM::initJVM()
       break;
        
     case JNI_EVERSION:
+      set_error_msg(getErrorText(JOI_ERROR_JVM_VERSION));
       return JOI_ERROR_JVM_VERSION;
       break;
       
     default:
+      set_error_msg(getErrorText(JOI_ERROR_ATTACH_JVM));
       return JOI_ERROR_ATTACH_JVM;
       break;
   }
@@ -312,20 +320,14 @@ JOI_RetCode JavaObjectInterfaceTM::init(char*           className,
   if (methodsInitialized == false || javaObj_ == NULL)
   {
     // Initialize the class pointer
-    jclass javaClass = _tlp_jenv->FindClass(className); 
-    if (_tlp_jenv->ExceptionCheck()) 
-    {
-      fprintf(stderr,"FindClass failed. javaClass %p.\n", javaClass);
-      _tlp_jenv->ExceptionDescribe();
-      _tlp_jenv->ExceptionClear();
+    jclass lv_javaClass = _tlp_jenv->FindClass(className); 
+    if (getExceptionDetails(NULL)) {
+      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"JavaObjectInterfaceTM::init()", (char *)_tlp_error_msg->c_str(), -1LL);
       return JOI_ERROR_FINDCLASS;
     }
-    
-    if (javaClass == 0) 
-    {
-      return JOI_ERROR_FINDCLASS;
-    }
-    
+    javaClass = (jclass)_tlp_jenv->NewGlobalRef(lv_javaClass);
+    _tlp_jenv->DeleteLocalRef(lv_javaClass);
+ 
     // Initialize the method pointers.
     if (!methodsInitialized)
     {
@@ -334,16 +336,11 @@ JOI_RetCode JavaObjectInterfaceTM::init(char*           className,
         JavaMethods[i].methodID = _tlp_jenv->GetMethodID(javaClass, 
                                                      JavaMethods[i].jm_name.data(), 
                                                      JavaMethods[i].jm_signature.data());
-        if (JavaMethods[i].methodID == 0 || _tlp_jenv->ExceptionCheck())
-        { 
-          fprintf(stderr,"GetMethodID failed returning error. javaClass %p, i %d, "
-                 "name %s, signature %s.\n", javaClass, i, 
-                 JavaMethods[i].jm_name.data(), JavaMethods[i].jm_signature.data());
-          _tlp_jenv->ExceptionDescribe();
-          _tlp_jenv->ExceptionClear();
-          _tlp_jenv->DeleteLocalRef(javaClass);  
-          return JOI_ERROR_GETMETHOD;
-        }      
+        if (getExceptionDetails(NULL)) {
+           tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"JNIEnv->GetMethodID()", 
+                  (char *)_tlp_error_msg->c_str(), -1LL);
+           return JOI_ERROR_GETMETHOD;
+        }
       }
     }
     
@@ -352,12 +349,11 @@ JOI_RetCode JavaObjectInterfaceTM::init(char*           className,
       // Allocate an object of the Java class, and call its constructor.
       // The constructor must be the first entry in the methods array.
       javaObj_ = _tlp_jenv->NewObject(javaClass, JavaMethods[0].methodID);
-      if (javaObj_ == 0 || _tlp_jenv->ExceptionCheck())
-      { 
-        _tlp_jenv->ExceptionDescribe();
-        _tlp_jenv->ExceptionClear();
-        _tlp_jenv->DeleteLocalRef(javaClass);  
-        return JOI_ERROR_NEWOBJ;
+      if (getExceptionDetails(NULL)) {
+         tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"JavaObjectInterfaceTM::init()", 
+             (char *)_tlp_error_msg->c_str(), -1LL);
+         _tlp_jenv->DeleteLocalRef(javaClass);  
+         return JOI_ERROR_NEWOBJ;
       }
       javaObj_ = _tlp_jenv->NewGlobalRef(javaObj_);
     }
@@ -369,25 +365,18 @@ JOI_RetCode JavaObjectInterfaceTM::init(char*           className,
   return JOI_OK;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-void JavaObjectInterfaceTM::logError(const char* cat, const char* methodName, jstring jresult)
+JOI_RetCode JavaObjectInterfaceTM::initJNIEnv()
 {
-  if (jresult == NULL) {}
-  else
-  {
-    const char* char_result = _tlp_jenv->GetStringUTFChars(jresult, 0);
-    _tlp_jenv->ReleaseStringUTFChars(jresult, char_result);
-    _tlp_jenv->DeleteLocalRef(jresult);  
+  JOI_RetCode retcode;
+  if (_tlp_jenv == NULL) {
+     if ((retcode = initJVM()) != JOI_OK)
+         return retcode;
   }
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-//////////////////////////////////////////////////////////////////////////////
-void JavaObjectInterfaceTM::logError(const char* cat, const char* file, int line)
-{
+  if (_tlp_jenv->PushLocalFrame(jniHandleCapacity_) != 0) {
+    getExceptionDetails(NULL);
+    return JOI_ERROR_INIT_JNI;
+  }
+  return JOI_OK;
 }
 
 void set_error_msg(std::string &error_msg) 
@@ -396,6 +385,14 @@ void set_error_msg(std::string &error_msg)
       delete _tlp_error_msg;
    _tlp_error_msg = new std::string(error_msg); 
 }
+
+void set_error_msg(char *error_msg) 
+{
+   if (_tlp_error_msg != NULL)
+      delete _tlp_error_msg;
+   _tlp_error_msg = new std::string(error_msg); 
+}
+
 
 
 bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
