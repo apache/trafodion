@@ -201,6 +201,9 @@ corresponding second of the minute.
 _num_expr_ to _datetime_expr_.
 | <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer value for the number of _interval-ind_
 units of time between _startdate_ and _enddate_.
+| <<to_date_function,TO_DATE Function>>                                     | Converts a character value to a date value.
+| <<to_time_function,TO_TIME Function>>                                     | Converts a character value to a time or timestamp value.
+| <<to_timestamp_function,TO_TIMESTAMP Function>>                           | Converts a character value to a timestamp value.
 | <<week_function,WEEK Function>>                                           | Returns an integer value in the range 1 through 54 that represents the
 corresponding week of the year.
 | <<year_function,YEAR Function>>                                           | Returns an integer value that represents the year.
@@ -7524,6 +7527,138 @@ TIMESTAMPDIFF (SQL_TSI_WEEK, DATE '2006-01-01', DATE '2006-01-09')
 TIMESTAMPDIFF (SQL_TSI_DAY, DATE '2004-03-01', DATE '2004-02-01')
 ```
 
+<<<
+[[to_date_function]]
+== TO_DATE Function
+
+The TO_DATE function converts a character value to a date. The optional
+second argument describes the format of the character value.
+
+```
+TO_DATE(character-expression [,format-string])
+```
+
+* `_character-expression_`
++
+is an expression that gives a character value.
+
+* `_format-string_`
++
+is one of the following character string literals:
+
+** 'YYYY-MM-DD'
+** 'MM/DD/YYYY'
+** 'DD.MM.YYYY'
+** 'YYYY-MM'
+** 'MM/DD/YYYY'
+** 'YYYY/MM/DD'
+** 'YYYYMMDD'
+** 'YY/MM/DD'
+** 'MM/DD/YY'
+** 'MM-DD-YYYY'
+** 'YYYYMM'
+** 'DD-MM-YYYY'
+** 'DD-MON-YYYY'
+** 'DDMONYYYY'
+
+If the _format-string_ argument is omitted, 'YYYY-MM-DD' is used as the
+default.
+
+[[examples_of_to_date]]
+=== Examples of TO_DATE
+
+* This function returns the date value '2016-12-07':
++
+```
+TO_DATE ('2016-12-07')
+```
+
+* This function returns the date value '2016-07-12':
++
+```
+TO_DATE ('12-07-2016', 'DD-MM-YYYY')
+```
+
+* This function returns the date value '2016-12-07':
++
+```
+TO_DATE ('07DEC2016', 'DDMONYYYY')
+```
+
+<<<
+[[to_time_function]]
+== TO_TIME Function
+
+The TO_TIME function converts a character value to a time or timestamp. The
+second argument describes the format of the character value.
+
+```
+TO_TIME(character-expression ,format-string)
+```
+
+* `_character-expression_`
++
+is an expression that gives a character value.
+
+* `_format-string_`
++
+is one of the following character string literals:
+
+** 'HH24:MI:SS'
+** 'YYYYMMDDHH24MISS'
+** 'DD.MM.YYYY:HH24.MI.SS'
+** 'YYYY-MM-DD HH24:MI:SS'
+** 'YYYYMMDD:HH24:MI:SS'
+** 'MMDDYYYY HH24:MI:SS'
+** 'MM/DD/YYYY HH24:MI:SS'
+** 'DD-MON-YYYY HH:MI:SS'
+** 'MONTH DD, YYYY, HH:MI'
+** 'DD.MM.YYYY HH24.MI.SS'
+
+[[considerations_for_to_time]]
+=== Considerations for TO_TIME
+
+If the _format-string_ is 'HH24:MI:SS', then the output data time is time. Otherwise
+the output data type is timestamp.
+
+[[examples_of_to_time]]
+=== Examples of TO_TIME
+
+* This function returns the time value '17:05:01':
++
+```
+TO_TIME ('17:05:01', 'HH24:MI:SS')
+```
+
+* This function returns the timestamp value '2016-12-07 17:05:01.000000':
++
+```
+TO_TIME ('07.12.2016:17.05.01', 'DD.MM.YYYY:HH24.MI.SS')
+```
+			
+<<<
+[[to_timestamp_function]]
+== TO_TIMESTAMP Function
+
+The TO_TIMESTAMP function converts a character value to a timestamp.
+	
+```
+TO_TIMESTAMP(character-expression)
+```
+
+* `_character-expression_`
++
+is an expression that gives a character value.
+
+[[examples_of_to_timestamp]]
+=== Example of TO_TIMESTAMP
+
+* This function returns the timestamp value '2016-12-07 10:01:00':
++
+```
+TO_TIMESTAMP ('2016-12-07 10:01:00')
+```
+	
 <<<
 [[translate_function]]
 == TRANSLATE Function
