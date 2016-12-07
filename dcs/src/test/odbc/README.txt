@@ -22,19 +22,26 @@
 **************************************************************************/
 
 To build odbc test on Windows:
-1.Enter directory [<WHERE_YOU_PLACE_ODBC_FOLDER>]\odbc\build
+1.Enter directory <WHERE_YOU_PLACE_ODBC_FOLDER>\odbc\build
 2.Open odbc.vcxproj in Microsoft visual studio
 3.Choose Platform as "x64" and Configuration as "Debug" in visual studio BUILD--Configuration Manager
 4.Build project "odbc" in visual studio
 
 To run odbc test on Windows using command line tool:
 >cd [<WHERE_YOU_PLACE_ODBC_FOLDER>]\odbc\build\x64\Debug
->odbc -d [<datasource>][-u <userid>][-p <password>]
+>odbc -d <datasource> -u <userid> -p <password>
 
 To build odbc test on Linux:
->cd [<WHERE_YOU_PLACE_ODBC_FOLDER>]\odbc\build
+>cd <WHERE_YOU_PLACE_ODBC_FOLDER>\odbc\build
 >make
 
 To run odbc test on Linux:
->cd [<WHERE_YOU_PLACE_ODBC_FOLDER>]\odbc\build
->./odbc -d [<datasource>][-u <userid>][-p <password>]
+1.Add odbc configuration option "AppUnicodeType" as "utf16" in the installed TRAFDSN file like:
+================================
+[ODBC]
+......
+AppUnicodeType          = utf16
+================================
+2.Type commands as follows:
+>cd <WHERE_YOU_PLACE_ODBC_FOLDER>\odbc\build
+>./odbc -d <datasource> -u <userid> -p <password>

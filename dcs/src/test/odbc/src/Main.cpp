@@ -28,7 +28,7 @@ int main(int argc, char * argv[])
 {
 	if (argc != 7)
 	{
-		std::cout << "Usage: " << argv[0] << " -d [<datasource>][-u <userid>][-p <password>]" << endl;
+		std::cout << "Usage: " << argv[0] << " -d <datasource> -u <userid> -p <password>" << endl;
 		return -1;
 	}
 	char inputArgs[6][100];
@@ -37,7 +37,7 @@ int main(int argc, char * argv[])
 
 	if ((strcmp(inputArgs[0], "-d") != 0) || (strcmp(inputArgs[2], "-u") != 0) || (strcmp(inputArgs[4], "-p") != 0))
 	{
-		std::cout << "Usage: " << argv[0] << " -d [<datasource>][-u <userid>][-p <password>]" << endl;
+		std::cout << "Usage: " << argv[0] << " -d <datasource> -u <userid> -p <password>" << endl;
 		return -1;
 	}
 

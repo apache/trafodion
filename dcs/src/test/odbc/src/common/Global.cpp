@@ -44,7 +44,7 @@ int ConvertCharToCNumeric(SQL_NUMERIC_STRUCT& numericTmp, CHAR* cTmpBuf)
 	SQLCHAR tempSign;
 	SQLCHAR tmpVal[101];
 
-	if (strlen(rTrim(cTmpBuf)) > sizeof(tmpVal))
+	if (strlen(rTrim(cTmpBuf)) >= sizeof(tmpVal))
 		return -1;
 
 	memset(tmpVal, 0, sizeof(tmpVal));
