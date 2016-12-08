@@ -53,25 +53,25 @@ TRAF_NODE_NAME=`uname -n`
 
 
 node_start() {
-echo "Trafodion node UP not implemented"
+echo "trafodion start not implemented"
 }
 
 node_stop() {
 nid=`${TRAF_SUDO_CMD} -c "${SQ_ROOT}/sql/scripts/${TRAF_SHELL_CMD} -c node info | grep -B1 ${TRAF_NODE_NAME} | grep Up | head -1 | cut -d ' ' -f 2"`
 if [ $? != 0 ]; then 
    echo -n `date` >> ${TRAF_OUT} 2>&1 </dev/null 
-   echo " Trafodion on ${TRAF_NODE_NAME} is already stopped" >> ${TRAF_OUT} 2>&1 </dev/null 
-   echo "Trafodion on ${TRAF_NODE_NAME} is already stopped"
+   echo " trafodion on ${TRAF_NODE_NAME} is already stopped" >> ${TRAF_OUT} 2>&1 </dev/null 
+   echo "trafodion on ${TRAF_NODE_NAME} is already stopped"
    return 1
 fi
 if [ "$nid" == "" ]; then
    echo -n `date` >> ${TRAF_OUT} 2>&1 </dev/null 
-   echo " Trafodion on ${TRAF_NODE_NAME} is already stopped" >> ${TRAF_OUT} 2>&1 </dev/null 
-   echo "Trafodion on node ${TRAF_NODE_NAME} is already stopped"
+   echo " trafodion on ${TRAF_NODE_NAME} is already stopped" >> ${TRAF_OUT} 2>&1 </dev/null 
+   echo "trafodion on node ${TRAF_NODE_NAME} is already stopped"
 else
-   echo "Stopping Trafodion node $nid on ${TRAF_NODE_NAME}"
+   echo "Stopping trafodion node $nid on ${TRAF_NODE_NAME}"
    echo -n `date` >> ${TRAF_OUT} 2>&1 </dev/null 
-   echo " Stopping Trafodion node $nid on ${TRAF_NODE_NAME}" >> ${TRAF_OUT} 2>&1 </dev/null 
+   echo " Stopping trafodion node $nid on ${TRAF_NODE_NAME}" >> ${TRAF_OUT} 2>&1 </dev/null 
    ${TRAF_SUDO_CMD} /bin/bash -c "${SQ_ROOT}/sql/scripts/${TRAF_SHELL_CMD} -c down $nid" >> ${TRAF_OUT}  2>&1 </dev/null &
 fi
 return 0
@@ -80,13 +80,13 @@ return 0
 node_status() {
 nid=`${TRAF_SUDO_CMD} -c "${SQ_ROOT}/sql/scripts/${TRAF_SHELL_CMD} -c node info | grep -B1 ${TRAF_NODE_NAME} | grep Up | head -1 | cut -d ' ' -f 2"`
 if [ $? != 0 ]; then 
-   echo "Trafodion on node $nid is not yet started"
+   echo "trafodion on node $nid is not yet started"
    return 0
 fi
 if [ "$nid" == "" ]; then
-   echo "Trafodion on node ${TRAF_NODE_NAME} is not yet started"
+   echo "trafodion on node ${TRAF_NODE_NAME} is not yet started"
 else
-   echo "Trafodion on node ${TRAF_NODE_NAME} is started as logical node $nid"
+   echo "trafodion on node ${TRAF_NODE_NAME} is started as logical node $nid"
 fi
 return 0
 }
