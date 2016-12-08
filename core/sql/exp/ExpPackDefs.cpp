@@ -163,6 +163,11 @@ NA_EIDPROC Long ex_unlogic_clause::pack(void * space_)
   return packClause(space_, sizeof(ex_unlogic_clause));
 }
 
+NA_EIDPROC Long ExRegexpClauseChar::pack(void * space_)
+{
+  return packClause(space_, sizeof(ExRegexpClauseChar));
+}
+
 NA_EIDPROC Long ex_like_clause_char::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_like_clause_char));
@@ -455,6 +460,12 @@ NA_EIDPROC Long ex_function_nvl::pack(void * space_)
   return packClause(space_, sizeof(ex_function_nvl));
 }  
 
+NA_EIDPROC Long ex_function_json_object_field_text::pack(void * space_)
+{
+  return packClause(space_, sizeof(ex_function_json_object_field_text));
+}  
+
+
 NA_EIDPROC Long ex_function_queryid_extract::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_queryid_extract));
@@ -609,6 +620,11 @@ NA_EIDPROC Long ExFunctionCrc32::pack(void * space)
 NA_EIDPROC Long ExFunctionIsIP::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionIsIP));
+}
+
+NA_EIDPROC Long ExFunctionSoundex::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionSoundex));
 }
 
 NA_EIDPROC Long ExFunctionInetAton::pack(void * space)

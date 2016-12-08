@@ -1252,6 +1252,7 @@ Int32 ItemExpr::shouldPushTranslateDown(CharInfo::CharSet chrset) const
      case ITM_LEFT:                  // b) counts characters
      case ITM_RIGHT:                 // b) counts characters
      case ITM_LIKE:                  // b) counts characters
+     case ITM_REGEXP:                  // b) counts characters
      case ITM_SUBSTR:                // b) counts characters
      case ITM_REPLACE:               // b) counts characters
      case ITM_INSERT_STR:            // b) counts characters
@@ -3166,7 +3167,11 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
     case ITM_MD5:
     case ITM_CRC32:
     case ITM_SHA1:
-    case ITM_SHA2:
+    case ITM_SOUNDEX:
+    case ITM_SHA2_224:
+    case ITM_SHA2_256:
+    case ITM_SHA2_384:
+    case ITM_SHA2_512:
       {
          break;
       }
@@ -3283,7 +3288,10 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
 
 	break;
       }
-
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+        break;
+    }
     case ITM_QUERYID_EXTRACT:
       {
         // type cast any params
@@ -6355,7 +6363,7 @@ ItemExpr *Cast::bindNode(BindWA *bindWA)
 // member functions for class Like
 // -----------------------------------------------------------------------
 
-ItemExpr *Like::bindNode(BindWA *bindWA)
+ItemExpr *PatternMatchingFunction::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
     return getValueId().getItemExpr();
@@ -6438,9 +6446,9 @@ ItemExpr *Like::bindNode(BindWA *bindWA)
 
   return applyBeginEndKeys(bindWA, boundExpr, bindWA->wHeap());
 
-} // Like::bindNode()
+} // PatternMatchingFunction::bindNode()
 
-NABoolean Like::beginEndKeysApplied(CollHeap *heap)
+NABoolean PatternMatchingFunction::beginEndKeysApplied(CollHeap *heap)
 {
   // Called by optimizer, long after binding (thus bindNode has already
   // called the common method applyBeginEndKeys and done the appropriate
@@ -6451,7 +6459,13 @@ NABoolean Like::beginEndKeysApplied(CollHeap *heap)
 
   return beginEndKeysApplied_;
 
-} // Like::beginEndKeysApplied()
+} // PatternMatchingFunction::beginEndKeysApplied()
+
+ItemExpr *Regexp::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
+				  CollHeap *heap)
+{
+  return boundExpr;
+}
 
 ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 				  CollHeap *heap)
@@ -9288,8 +9302,7 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
       {
 	*CmpCommon::diags()
 	  << DgSqlCode(-1002)
-	  << DgCatalogName(functionName1AsQualName.getCatalogName())
-	  << DgString0("");
+	  << DgCatalogName(functionName1AsQualName.getCatalogName());
 	
 	bindWA->setErrStatus();
 	return NULL;

@@ -1153,6 +1153,7 @@ static NABoolean tokIsFuncOrParenKeyword(const NAString &sqlText,
         "GROUP_CONCAT",        // MySQL-extension
 	"HASHPARTFUNC ",       // Tandem-extension
 	"HOUR ",               // Datatype with scales/precisions/length
+	"JSON_OBJECT_FIELD_TEXT" //json_object_field_text
 	"JULIANTIMESTAMP ",    // Tandem-extension
 	"LCASE ",              // Tandem-extension
 	"LOCATE ",             // Tandem-extension

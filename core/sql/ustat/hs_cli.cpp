@@ -158,6 +158,7 @@ Lng32 HSExecDirect( SQLSTMT_ID * stmt
 }
 
 
+
 // -----------------------------------------------------------------------
 // DESCRIPTION: Execute a standalone dml/ddl statement.
 // INPUTS:  dml = text string of SQL query.
@@ -169,14 +170,15 @@ Lng32 HSExecDirect( SQLSTMT_ID * stmt
 //                executed (within ustats, ...).  Used for err processing.
 //          tabDef = pointer to HSTableDef of table affected (only used
 //                when rowsAffected, srcTabRowCount are non NULL.
-//          doRetry = if TRUE, retry the statement the configured (via CQD)
-//                number of times if it fails.
 //          errorToIgnore = sqlcode of an inconsequential expected error
 //                that should not disrupt execution, such as "schema already
 //                exists" when executing a Create Schema statement. 0 indicates
 //                there is no such expected error.
 //          checkMdam = if TRUE, determine whether the query uses MDAM, and
 //                include this information in the ulog.
+//          inactivateErrorCatcher = TRUE if the caller already has an
+//                HSErrorCatcher object active (that is, the caller wants
+//                to capture diagnostics itself).
 // -----------------------------------------------------------------------
 Lng32 HSFuncExecQuery( const char *dml
                     , short sqlcode
@@ -184,7 +186,34 @@ Lng32 HSFuncExecQuery( const char *dml
                     , const char *errorToken
                     , Int64 *srcTabRowCount
                     , const HSTableDef *tabDef
-                    , NABoolean doRetry
+                    , short errorToIgnore
+                    , NABoolean checkMdam
+                    , NABoolean inactivateErrorCatcher
+                    )
+{
+  Lng32 retcode;
+  // The HSErrorCatcher captures any diagnostics when it goes out-of-scope,
+  // unless it is inactivated (in which case it does nothing).
+  HSErrorCatcher errorCatcher(retcode, sqlcode, errorToken, TRUE,
+                              inactivateErrorCatcher);
+  retcode = HSFuncExecQueryBody(dml,sqlcode,rowsAffected,errorToken,
+                                srcTabRowCount,tabDef,errorToIgnore,checkMdam);
+  HSHandleError(retcode);
+  return retcode;
+}
+
+// -----------------------------------------------------------------------
+// DESCRIPTION: This is the body of HSFuncExecQuery. It is pulled out
+// as a separate function so it can also be used by 
+// HSFuncExecTransactionalQueryWithRetry. Each of the callers has its
+// own HSErrorCatcher object to capture diagnostics.
+// -----------------------------------------------------------------------
+Lng32 HSFuncExecQueryBody( const char *dml
+                    , short sqlcode
+                    , Int64 *rowsAffected
+                    , const char *errorToken
+                    , Int64 *srcTabRowCount
+                    , const HSTableDef *tabDef
                     , short errorToIgnore
                     , NABoolean checkMdam
                     )
@@ -201,8 +230,7 @@ Lng32 HSFuncExecQuery( const char *dml
   LM->Log(dml);
 
   Lng32 retcode;
-  HSErrorCatcher errorCatcher(retcode, sqlcode, errorToken, TRUE);
-
+ 
   SQLMODULE_ID module;
   SQLSTMT_ID stmt;
   SQLDESC_ID srcDesc;
@@ -274,68 +302,17 @@ Lng32 HSFuncExecQuery( const char *dml
             (char *)CmpCommon::context()->sqlSession()->getParentQid());
   HSHandleError(retcode);
 
-  if (!doRetry)
-  {
-    // execute immediate this statement
-    retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0, checkMdam);
-    // If retcode is > 0 or sqlcode is HS_WARNING, then set to 0 (no error/ignore).
-    if (retcode >= 0) retcode = 0;
-    // If sqlcode is HS_WARNING, then this means failures should be returned as
-    // warnings.  So, don't call HSHandleError, but rather return 0. Also return
-    // 0 if we get an expected and inconsequential error.
-    if ((sqlcode == HS_WARNING && retcode < 0) || retcode == errorToIgnore)
-      retcode = 0;
-    else
-      HSHandleError(retcode);
-  }
-  else // doRetry
-  {
-    // on very busy system, some "update statistics" implementation steps like
-    // "COLLECT FILE STATISTICS" step in HSTableDef::collectFileStatistics()
-    // that calls HSFuncExecQuery may experience transient failures that
-    // may succeed if retried enough times. We want to use AQR for these
-    // but AQR is not done for catapi, static queries, etc. For these, we
-    // are forced to do our own retry here.
-    Int32 centiSecs = getDefaultAsLong(USTAT_RETRY_DELAY);
-    Int32 limit = getDefaultAsLong(USTAT_RETRY_LIMIT);
-    for (Int32 retry = 0; retry <= limit; retry++) {
-
-      // clear the diags to get ready for the next execution attempt
-      if (retry > 0)
-      {
-         retcode = SQL_EXEC_ClearDiagnostics(&stmt);
-         HSHandleError(retcode);
-      }
-
-      // execute immediate this statement
-      retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0, checkMdam);
-
-      // filter retcode for HSHandleError
-      HSFilterWarning(retcode);
-      // If retcode is > 0 or sqlcode is HS_WARNING,
-      // then set to 0 (no error/ignore).
-      if (retcode >= 0) retcode = 0;
-      // If sqlcode is HS_WARNING, then failures should be ignored. Also check
-      // for specific error code to be ignored.
-      if ((sqlcode == HS_WARNING && retcode < 0) || retcode == errorToIgnore)
-        retcode = 0;
-
-      if (!retcode)
-        break; // passed ExecDirect
-      else if (retcode == -SQLCI_SYNTAX_ERROR)
-        break; // don't retry statements with syntax errors
-      else
-        {
-          ComDiagsArea diags(STMTHEAP);
-          SQL_EXEC_MergeDiagnostics_Internal(diags); // copy CLI diags area
-          if (diags.contains(-EXE_CANCELED))
-            break; // don't retry canceled query
-          else if (limit && retry < limit)
-            DELAY_CSEC(centiSecs); // failed & retry is on. so, wait & retry
-        }
-    }
-    if (sqlcode != HS_WARNING || retcode >= 0) HSHandleError(retcode);
-  }
+  // execute immediate this statement
+  retcode = HSExecDirect(&stmt, &srcDesc, srcTabRowCount != 0, checkMdam);
+  // If retcode is > 0 or sqlcode is HS_WARNING, then set to 0 (no error/ignore).
+  if (retcode >= 0) retcode = 0;
+  // If sqlcode is HS_WARNING, then this means failures should be returned as
+  // warnings.  So, don't call HSHandleError, but rather return 0. Also return
+  // 0 if we get an expected and inconsequential error.
+  if ((sqlcode == HS_WARNING && retcode < 0) || retcode == errorToIgnore)
+    retcode = 0;
+  else
+    HSHandleError(retcode);
 
   if (rowsAffected != NULL && tabDef != NULL)
     {
@@ -374,6 +351,127 @@ Lng32 HSFuncExecQuery( const char *dml
   return retcode;
 }
 
+// -----------------------------------------------------------------------
+// DESCRIPTION: Execute a standalone dml/ddl statement within a 
+//              locally-started and committed transaction, with retry.
+//              Many Trafodion errors abort the transaction; in order
+//              to retry statements we need to manage the transaction
+//              here as well.
+// INPUTS:  dml = text string of SQL query.
+//          sqlcode = the error to issue upon failure, or HS_WARNING if
+//                errors should be suppressed.
+//          rowsAffected, srcTabRowCount  = pointers (NULL by default) to
+//                variables that rowcount info for query will be stored in.
+//          errorToken = text string indicating major operation being
+//                executed (within ustats, ...).  Used for err processing.
+//          tabDef = pointer to HSTableDef of table affected (only used
+//                when rowsAffected, srcTabRowCount are non NULL.
+//          errorToIgnore = sqlcode of an inconsequential expected error
+//                that should not disrupt execution, such as "schema already
+//                exists" when executing a Create Schema statement. 0 indicates
+//                there is no such expected error.
+//          checkMdam = if TRUE, determine whether the query uses MDAM, and
+//                include this information in the ulog.
+// -----------------------------------------------------------------------
+Lng32 HSFuncExecTransactionalQueryWithRetry( const char *dml
+                                           , short sqlcode
+                                           , Int64 *rowsAffected
+                                           , const char *errorToken
+                                           , Int64 *srcTabRowCount
+                                           , const HSTableDef *tabDef
+                                           , short errorToIgnore
+                                           , NABoolean checkMdam
+                                           )
+{
+  HSLogMan *LM = HSLogMan::Instance();
+  HSTranMan *TM = HSTranMan::Instance();
+  HSGlobalsClass *hs_globals = GetHSContext();
+  Lng32 retcode = 0;
+
+  if (TM->InTransaction())
+  {
+    // a transaction is already in progress; can't do retry
+    // as we don't know if there is other work already in the
+    // transaction
+    *CmpCommon::diags() << DgSqlCode(-UERR_GENERIC_ERROR)
+                        << DgString0("HSFuncExecTransactionalQueryWithRetry")
+                        << DgString1("-9215")
+                        << DgString2("Unexpected transaction in progress");
+    retcode = -UERR_GENERIC_ERROR;
+    return retcode;
+  }
+
+  // The HSErrorCatcher captures any diagnostics when it goes out-of-scope.
+  HSErrorCatcher errorCatcher(retcode, sqlcode, errorToken, TRUE);
+ 
+  // On very busy system, some "update statistics" implementation steps like
+  // "COLLECT FILE STATISTICS" step in HSTableDef::collectFileStatistics()
+  // may experience transient failures that may succeed if retried enough
+  // times. Note that AQR may do some retries for us under the covers.
+  Int32 centiSecs = getDefaultAsLong(USTAT_RETRY_DELAY);
+  Int32 limit = getDefaultAsLong(USTAT_RETRY_LIMIT);
+  for (Int32 retry = 0; retry <= limit; retry++)
+  {  
+    // start a transaction
+    retcode = TM->Begin("Transaction for retryable Statement",TRUE);
+    if (retcode == 0)
+    {
+      // execute the statement
+ 
+      retcode = HSFuncExecQueryBody(dml, sqlcode, rowsAffected, errorToken,
+                                srcTabRowCount, tabDef, errorToIgnore, checkMdam);
+
+      // Figure out if we want to ignore certain conditions 
+
+      // filter retcode for HSHandleError
+      HSFilterWarning(retcode);
+      // If retcode is > 0 then set to 0 (no error/ignore).
+      if (retcode > 0)
+        retcode = 0;
+      // If sqlcode is HS_WARNING, then failures should be ignored. Also check
+      // for specific error code to be ignored.
+      if ((sqlcode == HS_WARNING && retcode < 0) || retcode == errorToIgnore)
+        retcode = 0;
+
+      // if successful, commit the transaction
+      if (retcode == 0)
+        retcode = TM->Commit(TRUE);
+
+      // analyze any error from the statement or the commit to see
+      // if we should retry
+      if (retcode == 0)
+        retry = limit+1; // exit retry loop on success
+      if (retcode == -SQLCI_SYNTAX_ERROR)
+        retry = limit+1; // don't retry statements with syntax errors
+      else if (retcode)
+      {
+        ComDiagsArea diags(STMTHEAP);
+        SQL_EXEC_MergeDiagnostics_Internal(diags); // copy CLI diags area
+        if (diags.contains(-EXE_CANCELED))
+          retry = limit+1; // don't retry canceled query
+      }
+    }
+
+    // If we had an error (on the begin, the statement or the commit),
+    // try rolling back the transaction. It might have already been
+    // rolled back, in which case the Rollback method just ignores
+    // the error.
+    if (retcode)
+    {
+      TM->Rollback(TRUE);
+      if (retry < limit)  // if there are more retries
+        DELAY_CSEC(centiSecs); // wait before retrying
+    }
+  }
+    
+  if (sqlcode != HS_WARNING || retcode < 0) 
+    HSHandleError(retcode);
+
+  return retcode;
+}
+
+
+
 Lng32 HSFuncExecDDL( const char *dml
                   , short sqlcode
                   , Int64 *rowsAffected
@@ -386,35 +484,9 @@ Lng32 HSFuncExecDDL( const char *dml
   if (!tabDef && hs_globals) tabDef = hs_globals->objDef;
   if (!tabDef) return -1;
 
-  // Whenever a DDL request is made we must always start a transaction prior 
-  // to the request. If we do not, in certain cases, a transaction will be 
-  // started and never committed. See LP bug 1404442 
-  HSTranMan *TM;
-  NABoolean startedTrans = FALSE;
-  TM = HSTranMan::Instance();
-  {
-    // This HSErrorCatcher is in its own block so we'll report a
-    // diagnostic in case the TM->Begin call fails. Note that
-    // HSFuncExecQuery contains its own HSErrorCatcher, so that 
-    // code is outside this block. (If we included it in this
-    // block then any error encountered there would be reported
-    // twice.)
-    HSErrorCatcher errorCatcher(retcode, sqlcode, errorToken, TRUE);
-    startedTrans = (((retcode = TM->Begin("DDL")) == 0) ? TRUE : FALSE);    
-    HSHandleError(retcode);
-  }
+  retcode = HSFuncExecTransactionalQueryWithRetry(dml, sqlcode, 
+                             rowsAffected, errorToken, NULL, tabDef);
 
-  //Special parser flags needed to use the NO AUDIT option.
-  retcode = HSFuncExecQuery(dml, sqlcode, rowsAffected, errorToken,
-                            NULL, tabDef, TRUE/*doRetry*/);
-
-  if (startedTrans)
-    {
-      if (retcode)
-        TM->Rollback();
-      else
-        TM->Commit();
-    }
   HSHandleError(retcode);
 
   return retcode;
@@ -940,9 +1012,13 @@ HSTranMan* HSTranMan::Instance()
 /*                4 - transaction is running   */
 /*          SQLCODE - severe error             */
 /***********************************************/
-Lng32 HSTranMan::Begin(const char *title)
+Lng32 HSTranMan::Begin(const char *title,NABoolean inactivateErrorCatcher)
   {
     HSLogMan *LM = HSLogMan::Instance();
+
+    // if an error occurred on a previous HSTransMan call, try to clean it up here
+    if ((retcode_ < 0) && (!InTransaction()))
+      retcode_ = 0;  // not in a transaction, so OK to try starting one
 
     if (retcode_ < 0)                              /*== ERROR HAD OCCURRED ==*/
       {
@@ -960,7 +1036,7 @@ Lng32 HSTranMan::Begin(const char *title)
           {
             NAString stmtText = "BEGIN WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
-                                       HS_QUERY_ERROR, NULL, NULL, TRUE);
+                                       HS_QUERY_ERROR, NULL, NULL, inactivateErrorCatcher);
             if (retcode_ >= 0)
               {
                 transStarted_ = TRUE;
@@ -997,7 +1073,7 @@ Lng32 HSTranMan::Begin(const char *title)
 /*                    transaction              */
 /*          SQLCODE - severe error             */
 /***********************************************/
-Lng32 HSTranMan::Commit()
+Lng32 HSTranMan::Commit(NABoolean inactivateErrorCatcher)
   {
     HSLogMan *LM = HSLogMan::Instance();
 
@@ -1015,7 +1091,7 @@ Lng32 HSTranMan::Commit()
           {
             NAString stmtText = "COMMIT WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
-                                       HS_QUERY_ERROR, NULL, NULL, TRUE);
+                                       HS_QUERY_ERROR, NULL, NULL, inactivateErrorCatcher);
 
             // transaction has ended
             transStarted_ = FALSE;
@@ -1047,9 +1123,12 @@ void HSTranMan::logXactCode(const char* title)
     if (LM->LogNeeded()) {
       LM->Log(title);
       Lng32 transCode = SQL_EXEC_Xact(SQLTRANS_STATUS, 0);
-      char buf[50];
+      char buf[80];
       snprintf(buf, sizeof(buf), "SQL_EXEC_Xact() code=%d\n", transCode);
       LM->Log(buf);
+      snprintf(buf, sizeof(buf), "transStarted_ = %s, extTrans_ = %s, retcode_ = %d\n",
+        transStarted_ ? "TRUE" : "FALSE", extTrans_ ? "TRUE" : "FALSE", retcode_);
+      LM->Log(buf);   
     }
  }
 
@@ -1064,9 +1143,21 @@ void HSTranMan::logXactCode(const char* title)
 /*                    transaction              */
 /*          SQLCODE - severe error             */
 /***********************************************/
-Lng32 HSTranMan::Rollback()
+Lng32 HSTranMan::Rollback(NABoolean inactivateErrorCatcher)
   {
     HSLogMan *LM = HSLogMan::Instance();
+
+    // if an error occurred on a previous HSTransMan call, try to clean it up here
+    if ((retcode_ < 0) && (!InTransaction()))
+      {
+        retcode_ = 0;  // not in a transaction, and therefore no need to roll back
+        if (LM->LogNeeded())
+          {
+            snprintf(LM->msg, sizeof(LM->msg), "ROBACKWORK(cleaned up; not in transaction)");
+            LM->Log(LM->msg);
+          }       
+        return retcode_;
+      }
 
     if (retcode_ < 0)                              /*== ERROR HAD OCCURRED ==*/
       {
@@ -1082,7 +1173,7 @@ Lng32 HSTranMan::Rollback()
           {
             NAString stmtText = "ROLLBACK WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
-                                       HS_QUERY_ERROR, NULL, NULL, TRUE);
+                                       HS_QUERY_ERROR, NULL, NULL, inactivateErrorCatcher);
             // transaction has ended
             transStarted_ = FALSE;
             if (retcode_ < 0)
@@ -1216,29 +1307,6 @@ void HSTranController::stopStart(const char* title)
   Lng32 retcode = tranMan_->Begin(title);
   if (logMan_->LogNeeded() && retcode >= 0)
     logMan_->LogTimestamp("Transaction started");
-}
-
-/**************************************************/
-/* METHOD:  HSTranController::lockTable           */
-/* PURPOSE: Static function that locks the given  */
-/*          table in either shared or exclusive   */
-/*          mode, as determined by the 'exclusive'*/
-/*          parameter.                            */
-/* RETCODE: 0 if no errors.                       */
-/*          non-zero otherwise.                   */
-/**************************************************/
-Lng32 HSTranController::lockTable(const char* tableName, NABoolean exclusive)
-{
-  NAString lockStmt("lock table ");
-  lockStmt += tableName;
-  if (exclusive)
-    lockStmt += " in exclusive mode";
-  else
-    lockStmt += " in shared mode";
-
-  return HSFuncExecQuery
-    (lockStmt.data(), - UERR_INTERNAL_ERROR, NULL,
-     HS_QUERY_ERROR, NULL, NULL, TRUE/*doRetry*/ );
 }
 
 
@@ -1443,6 +1511,11 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, Int64 &actualRows, NABoolean isEst
       findSampleTableCursor1.close();
     else
       retcode = findSampleTableCursor1.close();
+
+    HSTranMan * TM = HSTranMan::Instance();
+    if (TM->InTransaction())
+      TM->Commit();
+
     return retcode;
   }
 
@@ -1551,7 +1624,8 @@ Lng32 HSPersSamples::find(HSTableDef *objDef, char reason,
       findSampleTableCursor.close();
     else
       retcode = findSampleTableCursor.close();
-   return retcode;
+
+    return retcode;
   }
 
 Lng32 HSPersSamples::removeSample(HSTableDef* tabDef, NAString& sampTblName,
@@ -1562,8 +1636,6 @@ Lng32 HSPersSamples::removeSample(HSTableDef* tabDef, NAString& sampTblName,
 
   if (sampTblName.length() > 0)
     {
-      TM->Begin(txnLabel);
-
       // Delete row in persistent samples table regardless of whether sample
       // could be dropped.
       ComObjectName persSampTblObjName(*catalog_,
@@ -1582,17 +1654,10 @@ Lng32 HSPersSamples::removeSample(HSTableDef* tabDef, NAString& sampTblName,
       dml += Int64ToNAString(objUID);
       // for now, the reason is ignored
 
-      retcode = HSFuncExecQuery(dml, - UERR_INTERNAL_ERROR, NULL,
-                                HS_QUERY_ERROR, NULL, NULL, TRUE/*doRetry*/ );
-      HSHandleError(retcode);
-
+      retcode = HSFuncExecTransactionalQueryWithRetry(dml, - UERR_INTERNAL_ERROR,
+                                 NULL, txnLabel, NULL, NULL);
       HSSample::dropSample(sampTblName, tabDef);
-
-      if (retcode)
-        TM->Rollback();
-      else
-        TM->Commit();
-
+      HSHandleError(retcode);
     }
 
   return retcode;
@@ -1667,6 +1732,7 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
                          );
       // sampleName output & actualRows will get modified if necessary
       //  (based on isEstimate).
+
     if (!retcode)
     {
 
@@ -1683,7 +1749,6 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
                                        STMTHEAP);
       into_table = persSampTblObjName.getExternalName();
       objUID = tabDef->getObjectUID();
-      TM->Begin("INSERT INTO SB_PERSISTENT_SAMPLES TABLE.");
       char timeStr[HS_TIMESTAMP_SIZE];
       hs_formatTimestamp(timeStr);
 
@@ -1721,15 +1786,13 @@ Lng32 HSPersSamples::createAndInsert(HSTableDef *tabDef, NAString &sampleName,
       dml += ",_UCS2''";  // V2
       dml += ");";
 
-      retcode = HSFuncExecQuery(dml, - UERR_INTERNAL_ERROR, NULL,
-                                HS_QUERY_ERROR, NULL, NULL, TRUE/*doRetry*/ );
-      HSHandleError(retcode);
-
-      if (!retcode) TM->Commit();
-      else {
-        TM->Rollback();
+      retcode = HSFuncExecTransactionalQueryWithRetry(dml, - UERR_INTERNAL_ERROR,
+                                 NULL, HS_QUERY_ERROR, NULL, NULL);
+      HSFilterWarning(retcode);  // can't do HSHandleError here since we want to do the drop    
+      if (retcode)
         sample.drop();
-      }
+      
+      HSHandleError(retcode);
     }
 
     return retcode;
@@ -1763,12 +1826,10 @@ Lng32 HSPersSamples::removeMatchingSamples(HSTableDef *tabDef,
                                            Int64 sampleRows,
                                            double allowedDiff)
   {
-    HSTranMan *TM = HSTranMan::Instance();
     Lng32 retcode = 0;
     NAString ddl, table, fromTable;
     NABoolean nothingToDrop = TRUE;
 
-    TM->Begin("DROP PERSISTENT SAMPLE TABLE AND REMOVE FROM LIST.");
     // Loop until all persistent samples matching criteria have been removed.
     Int64 actualRows = -1; // Obsolete samples will not be removed by find().
     NABoolean isEstimate = TRUE;
@@ -1788,8 +1849,6 @@ Lng32 HSPersSamples::removeMatchingSamples(HSTableDef *tabDef,
       if (!retcode)
         retcode = find(tabDef, actualRows, isEstimate, sampleRows, allowedDiff, table);
     }
-    if (retcode) TM->Rollback();
-    else         retcode = TM->Commit();
 
     if (nothingToDrop)
     {

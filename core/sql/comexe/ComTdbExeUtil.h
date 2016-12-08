@@ -2946,9 +2946,21 @@ private:
 
 static const ComTdbVirtTableColumnInfo hiveMDTablesColInfo[] =
 {                                                                                     
-  { "CATALOG_NAME",   0,      COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "SCHEMA_NAME",     1,    COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "TABLE_NAME",        2,     COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}
+  { "CATALOG_NAME",   0,      COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UTF8,     0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "SCHEMA_NAME",    1,      COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UTF8,     0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "TABLE_NAME",     2,      COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UTF8,     0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "FILE_FORMAT",    3,      COM_USER_COLUMN, REC_BYTE_F_ASCII,     24, FALSE , SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "CREATE_TIME",    4,      COM_USER_COLUMN, REC_BIN64_SIGNED,      8, FALSE , SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "NUM_COLS",       5,      COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE , SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "NUM_PART_COLS",  6,      COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE , SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "NUM_BUCKET_COLS",7,      COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE , SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "NUM_SORT_COLS",  8,      COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE , SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "HIVE_OWNER",     9,      COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UTF8,     0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "FIELD_DELIMITER",   10,  COM_USER_COLUMN, REC_BIN16_SIGNED,      2, FALSE, SQLCHARSETCODE_UNKNOWN,   0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "RECORD_TERMINATOR", 11,  COM_USER_COLUMN, REC_BIN16_SIGNED,       2, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "NULL_FORMAT",       12,  COM_USER_COLUMN, REC_BYTE_F_ASCII,       8, FALSE, SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "LOCATION",          13,  COM_USER_COLUMN, REC_BYTE_F_ASCII,    1024, FALSE , SQLCHARSETCODE_UTF8,    0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "HIVE_TABLE_TYPE",   14,  COM_USER_COLUMN, REC_BYTE_F_ASCII,     128, FALSE , SQLCHARSETCODE_UTF8,    0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}
 };
 
 struct HiveMDTablesColInfoStruct
@@ -2956,27 +2968,43 @@ struct HiveMDTablesColInfoStruct
   char catName[256];
   char schName[256];
   char tblName[256];
+  char fileFormat[24];
+  Int64 createTime;
+  Int32 numCols;
+  Int32 numPartCols;
+  Int32 numBucketCols;
+  Int32 numSortCols;
+  char  hiveOwner[256];
+  Int16 fieldDelimiter;
+  Int16 recordTerminator;
+  char nullFormat[8];
+  char location[1024];
+  char hiveTableType[128];
 };
 
 static const ComTdbVirtTableColumnInfo hiveMDColumnsColInfo[] =
 {                                                                                     
-  { "CATALOG_NAME",    0,     COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "SCHEMA_NAME",      1,    COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "TABLE_NAME",          2,   COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
-  { "COLUMN_NAME",       3,  COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
-  { "SQL_DATA_TYPE",     4,  COM_USER_COLUMN, REC_BYTE_F_ASCII,    24,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "FS_DATA_TYPE",        5,  COM_USER_COLUMN, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "COLUMN_SIZE",         6,   COM_USER_COLUMN, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "CHARACTER_SET",     7,   COM_USER_COLUMN, REC_BYTE_F_ASCII,     40,  FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}, 
-  { "COLUMN_PRECISION", 8,  COM_USER_COLUMN, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "COLUMN_SCALE",       9,   COM_USER_COLUMN, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "DT_CODE",                 10,  COM_USER_COLUMN, REC_BIN32_SIGNED,    4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "NULLABLE",                11, COM_USER_COLUMN, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
-  { "COLUMN_NUMBER",    12,     COM_USER_COLUMN, REC_BIN32_SIGNED,     4,    FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}, 
-  { "DATETIME_QUALIFIER", 13,    COM_USER_COLUMN, REC_BYTE_F_ASCII,    28,   FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
-  { "DATETIME_START_FIELD", 14,  COM_USER_COLUMN, REC_BIN32_SIGNED,   4,   FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
-  { "DATETIME_END_FIELD",   15, COM_USER_COLUMN, REC_BIN32_SIGNED,   4,   FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
-  { "DEFAULT_VALUE",        16, COM_USER_COLUMN, REC_BYTE_F_ASCII,    240,   FALSE, SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "",NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0} 
+  { "CATALOG_NAME",          0, COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE, SQLCHARSETCODE_UTF8,     0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "SCHEMA_NAME",           1, COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE, SQLCHARSETCODE_UTF8,     0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "TABLE_NAME",            2, COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE, SQLCHARSETCODE_UTF8,     0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "COLUMN_NAME",           3, COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE, SQLCHARSETCODE_UTF8,     0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "SQL_DATA_TYPE",         4, COM_USER_COLUMN, REC_BYTE_F_ASCII,     32, FALSE, SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "FS_DATA_TYPE",          5, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "HIVE_DATA_TYPE",        6, COM_USER_COLUMN, REC_BYTE_F_ASCII,     32, FALSE, SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "COLUMN_SIZE",           7, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "CHARACTER_SET",         8, COM_USER_COLUMN, REC_BYTE_F_ASCII,     40, FALSE, SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}, 
+  { "COLUMN_PRECISION",      9, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "COLUMN_SCALE",         10, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "DT_CODE",              11, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "NULLABLE",             12, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "COLUMN_NUMBER",        13, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}, 
+  { "PART_COL_NUMBER",      14, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}, 
+  { "BUCKET_COL_NUMBER",    15, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}, 
+  { "SORT_COL_NUMBER",      16, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}, 
+  { "DATETIME_QUALIFIER",   17, COM_USER_COLUMN, REC_BYTE_F_ASCII,     28, FALSE, SQLCHARSETCODE_ISO88591, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "DATETIME_START_FIELD", 18, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "DATETIME_END_FIELD",   19, COM_USER_COLUMN, REC_BIN32_SIGNED,      4, FALSE, SQLCHARSETCODE_UNKNOWN,  0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
+  { "DEFAULT_VALUE",        20, COM_USER_COLUMN, REC_BYTE_F_ASCII,    240, FALSE, SQLCHARSETCODE_UTF8,     0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},
 };
 
 struct HiveMDColumnsColInfoStruct
@@ -2985,8 +3013,9 @@ struct HiveMDColumnsColInfoStruct
   char schName[256];
   char tblName[256];
   char colName[256];
-  char sqlDatatype[24];
+  char sqlDatatype[32];
   Lng32 fsDatatype;
+  char hiveDatatype[32];
   Lng32 colSize;
   char charSet[40];
   Lng32 colPrecision;
@@ -2994,10 +3023,21 @@ struct HiveMDColumnsColInfoStruct
   Lng32 dtCode;
   Lng32 nullable;
   Lng32 colNum;
+  Lng32 partColNum;
+  Lng32 bucketColNum;
+  Lng32 sortColNum;
   char dtQualifier[28];
   Lng32 dtStartField;
   Lng32 dtEndField;
   char defVal[240];
+};
+
+static const ComTdbVirtTableKeyInfo hiveMDColumnsVirtTableKeyInfo[] =
+{
+  //  colname keyseqnumber   tablecolnumber   ordering
+  {    NULL,          1,            0,            0 , 0, NULL, NULL },
+  {    NULL,          2,            1,            0 , 0, NULL, NULL },
+  {    NULL,          2,            2,            0 , 0, NULL, NULL }
 };
 
 static const ComTdbVirtTableColumnInfo hiveMDPKeysColInfo[] =
@@ -3137,11 +3177,15 @@ public:
 	       ULng32 bufferSize,
 	       ex_expr *scanExpr,
 	       char * hivePredStr,
-               char * schemaName
+               char * catalogName,
+               char * schemaName,
+               char * objectName
 	       );
 
   char * hivePredStr() { return hivePredStr_;}
-  char * getSchema() {return schema_;}
+  char * getCatalog()  { return catalog_; }
+  char * getSchema()   { return schema_; }
+  char * getObject()   { return object_; }
 
   // This always returns TRUE for now
   Int32 orderedQueueProtocol() const { return -1; };
@@ -3236,6 +3280,22 @@ public:
       return NULL;
   }
 
+  static Int32 getVirtTableNumKeys(char * name)
+  {
+    if (strcmp(name, "COLUMNS") == 0)
+      return sizeof(hiveMDColumnsVirtTableKeyInfo)/sizeof(ComTdbVirtTableKeyInfo);
+    else
+      return 0;
+  }
+
+  static ComTdbVirtTableKeyInfo * getVirtTableKeyInfo(char * name)
+  {
+    if (strcmp(name, "COLUMNS") == 0)
+      return (ComTdbVirtTableKeyInfo *)hiveMDColumnsVirtTableKeyInfo;
+    else
+      return NULL;
+  }
+
 private:
 
   Int32 mdType_;                                                   // 00 - 03
@@ -3244,7 +3304,11 @@ private:
   
   NABasicPtr hivePredStr_;                                         // 08 - 15
 
-  NABasicPtr schema_;                                              // 16 - 23
+  NABasicPtr catalog_;                                             // 16 - 23
+
+  NABasicPtr schema_;                                              // 24 - 31
+
+  NABasicPtr object_;                                              // 32 - 39
 };
 
 class ComTdbExeUtilHBaseBulkLoad : public ComTdbExeUtil

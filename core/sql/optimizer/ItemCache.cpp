@@ -1201,7 +1201,7 @@ void ItemList::parameterizeMe(CacheWA& cwa, BindWA& bindWA, ExprValueId& child,
 }
 
 // append an ascii-version of LIKE into cachewa.qryText_
-void Like::generateCacheKey(CacheWA& cwa) const
+void PatternMatchingFunction::generateCacheKey(CacheWA& cwa) const
 {
   // we are deliberately excluding from cachekey the data members: 
   // numberOfNonWildcardChars_, patternAStringLiteral_, 
@@ -1212,7 +1212,7 @@ void Like::generateCacheKey(CacheWA& cwa) const
 }
 
 // change literals of a cacheable query into ConstantParameters 
-ItemExpr* Like::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
+ItemExpr* PatternMatchingFunction::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
 {
   if (nodeIsNormalizedForCache()) { 
     return this; 

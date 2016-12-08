@@ -2065,7 +2065,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::getTrafodionScanTables()
 short ExExeUtilHBaseBulkUnLoadTcb::work()
 {
   Lng32 cliRC = 0;
-  short retcode = 0;
+  Lng32 retcode = 0;
   short rc;
   SFW_RetCode sfwRetCode = SFW_OK;
   Lng32 hbcRetCode = HBC_OK;
@@ -2115,6 +2115,8 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       }
       if ((retcode = ehi_->init(NULL)) != HBASE_ACCESS_SUCCESS)
       {
+         ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, retcode, 
+                "ExpHbaseInterface_JNI::init"); 
          handleError();
          step_ = UNLOAD_END_ERROR_;
          break;

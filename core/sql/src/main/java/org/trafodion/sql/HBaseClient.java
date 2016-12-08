@@ -1760,7 +1760,7 @@ public class HBaseClient {
   public boolean createSnapshot( String tableName, String snapshotName)
       throws IOException
   {
-      Admin admin = connection.getAdmin();
+      Admin admin = getConnection().getAdmin();
       admin.snapshot(snapshotName, TableName.valueOf(tableName));
       admin.close();
       if (logger.isDebugEnabled()) logger.debug("HBaseClient.createSnapshot() - Snapshot created: " + snapshotName);
@@ -1770,7 +1770,7 @@ public class HBaseClient {
   public boolean verifySnapshot( String tableName, String snapshotName)
       throws IOException
   {
-     Admin admin = connection.getAdmin();
+     Admin admin = getConnection().getAdmin();
      List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
      try 
      {
@@ -1789,10 +1789,9 @@ public class HBaseClient {
   }
  
   public boolean deleteSnapshot( String snapshotName)
-      throws MasterNotRunningException, IOException, SnapshotCreationException, 
-             InterruptedException, ZooKeeperConnectionException, ServiceException
+      throws IOException 
   {
-      Admin admin = connection.getAdmin();
+      Admin admin = getConnection().getAdmin();
       admin.deleteSnapshot(snapshotName);
       admin.close();
       if (logger.isDebugEnabled()) logger.debug("HBaseClient.deleteSnapshot() - Snapshot deleted: " + snapshotName);
