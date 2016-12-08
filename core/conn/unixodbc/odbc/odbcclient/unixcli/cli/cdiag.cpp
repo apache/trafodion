@@ -430,6 +430,12 @@ SQLRETURN CDiagRec::GetDiagRec(SQLSMALLINT	RecNumber,
 					rc = SQL_SUCCESS_WITH_INFO;
 				strLen = tmpStrLen;
 			}
+			else
+			{
+				rc = SQL_SUCCESS_WITH_INFO;
+				strLen = tmpStrLen;
+			}
+			
 			if (TextLengthPtr != NULL)
 				*TextLengthPtr = strLen;
 		}
