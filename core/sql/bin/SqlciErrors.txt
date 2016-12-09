@@ -18,8 +18,8 @@
 1016 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Redundant references to column $0~ColumnName were specified in the constraint or trigger definition.
 1017 ZZZZZ 99999 BEGINNER MAJOR DBADMIN You are not authorized to perform this operation.
 1018 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Grant of role or privilege $0~String0 from $1~String1 to $2~String2 not found, revoke request ignored.
-1019 ZZZZZ 99999 ADVANCED MAJOR DIALOUT No valid primary partition for $0~TableName could be found.
-1020 ZZZZZ 99999 BEGINNER MINOR DBADMIN Privilege settings on metadata cannot be changed.
+1019 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1020 ZZZZZ 99999 BEGINNER MINOR DBADMIN Privilege settings on metadata tables cannot be changed.
 1021 ZZZZZ 99999 BEGINNER MINOR DBADMIN SQL is already initialized on system $0~string0.
 1022 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName already exists.
 1023 ZZZZZ 99999 BEGINNER MINOR DBADMIN Not authorized to create schema $0~SchemaName.
@@ -33,12 +33,12 @@
 1031 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be dropped.
 1032 ZZZZZ 99999 BEGINNER MINOR DBADMIN The DISPLAY command completes and the query is not executed.
 1033 ZZZZZ 99999 BEGINNER MINOR DBADMIN The table name is not specified.
-1034 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Unable to obtain privileges
+1034 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Unable to obtain privileges.
 1035 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName already exists.
 1036 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Authorization ID $0~String0 cannot grant to authorization ID $1~String1 because it could create a circular dependency.
 1037 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Revoke failed because of a dependent grant between authorization ID $0~string0 and authorization ID $1~string1
-1038 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Not all user catalogs have been dropped from the system.
-1039 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No privileges were revoked.  You lack the grant option for the specified privilege(s).
+1038 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1039 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No privileges were revoked. You lack the grant option for the specified privilege(s).
 1040 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The use of ALTER on metadata tables is not permitted.
 1041 ZZZZZ 99999 BEGINNER MINOR DBADMIN The primary key has already been defined.
 1042 ZZZZZ 99999 BEGINNER MINOR DBADMIN All PRIMARY KEY or UNIQUE constraint columns must be NOT NULL.
@@ -53,10 +53,10 @@
 1051 ZZZZZ 99999 BEGINNER MINOR DBADMIN You do not have the required privilege(s) on $0~TableName.
 1052 ZZZZZ 99999 BEGINNER MINOR LOGONLY Constraint cannot be dropped because it does not belong to the specified table.
 1053 ZZZZZ 99999 BEGINNER MINOR DBADMIN Unique index $0~TableName could not be created because the specified column(s) contain duplicate data.
-1054 ZZZZZ 99999 BEGINNER MINOR LOGONLY Index $0~TableName already exists.
+1054 ZZZZZ 99999 BEGINNER MINOR LOGONLY --- unused ---
 1055 ZZZZZ 99999 BEGINNER MINOR LOGONLY Object $0~TableName already exists.
-1056 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Request: alter view $0~string0 compile failed. Prepare of the view's select statement encountered error  $1~Int1. 
-1057 ZZZZZ 99999 BEGINNER MAJOR DBADMIN SQL objects cannot be created on $0~String0: File system error $1~NSKCode.
+1056 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused --- 
+1057 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1058 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to create histogram table $0~TableName.
 1059 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Request failed.  Dependent constraint $0~ConstraintName exists.
 1060 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed. View $0~string0 is invalid. 
@@ -1854,6 +1854,18 @@ drop the default context
 8963 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD encountered a backup TSE switch.
 8964 ZZZZZ 99999 BEGINNER MAJOR DBADMIN LOAD is not currently supported with non empty tables.
 8965 ZZZZZ 99999 BEGINNER MAJOR DBADMIN File $0~String0 already exists.
+8971 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Token is invalid.
+8972 ZZZZZ 99999 BEGINNER MAJOR DBADMIN JSON value is invalid.
+8973 ZZZZZ 99999 BEGINNER MAJOR DBADMIN String is invalid.
+8974 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected array element or "]", but does not found.
+8975 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected "," or "]", but does not found.
+8976 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected string or "}", but does not found.
+8977 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected ":", but does not found.
+8978 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected "," or "}", but does not found.
+8979 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected string, but does not found.
+8980 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Expected end of input, but does not found.
+8981 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The input string ended unexpectedly.
+8982 ZZZZZ 99999 BEGINNER MAJOR DBADMIN unexpected json parse state.
 9200 ZZZZZ 99999 ADVANCED MAJOR DIALOUT UPDATE STATISTICS for table $0~CatalogName.$1~SchemaName.$2~TableName encountered an error$3~string2 from statement $4~string0.
 9201 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Unable to DROP object $0~string0.
 9202 ZZZZZ 99999 BEGINNER INFRM DBADMIN UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are $0~string0.

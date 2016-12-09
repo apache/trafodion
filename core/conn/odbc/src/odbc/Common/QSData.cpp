@@ -1607,6 +1607,23 @@ string getExeErrorCodeString(ExeErrorCode value)
 	case CLI_RWRS_DECOMPRESS_LENGTH_ERROR: 			return FMT_CLI_RWRS_DECOMPRESS_LENGTH_ERROR;
 	case CLI_NAR_ERROR_DETAILS: 					return FMT_CLI_NAR_ERROR_DETAILS;
 // ---------------------------------------------------------------------
+// Execution errors related to json
+// ---------------------------------------------------------------------
+    case EXE_JSON_INVALID_TOKEN:                    return FMT_EXE_JSON_INVALID_TOKEN;
+    case EXE_JSON_INVALID_VALUE:                    return FMT_EXE_JSON_INVALID_VALUE;
+    case EXE_JSON_INVALID_STRING:                   return FMT_EXE_JSON_INVALID_STRING;
+    case EXE_JSON_INVALID_ARRAY_START:              return FMT_EXE_JSON_INVALID_ARRAY_START;
+    case EXE_JSON_INVALID_ARRAY_NEXT:               return FMT_EXE_JSON_INVALID_ARRAY_NEXT;
+    case EXE_JSON_INVALID_OBJECT_START:             return FMT_EXE_JSON_INVALID_OBJECT_START;
+    case EXE_JSON_INVALID_OBJECT_LABEL:             return FMT_EXE_JSON_INVALID_OBJECT_LABEL;
+    case EXE_JSON_INVALID_OBJECT_NEXT:              return FMT_EXE_JSON_INVALID_OBJECT_NEXT;
+    case EXE_JSON_INVALID_OBJECT_COMMA:             return FMT_EXE_JSON_INVALID_OBJECT_COMMA;
+    case EXE_JSON_INVALID_END:                      return FMT_EXE_JSON_INVALID_END;
+    case EXE_JSON_END_PREMATURELY:                  return FMT_EXE_JSON_END_PREMATURELY;
+    case EXE_JSON_UNEXPECTED_ERROR:                 return FMT_EXE_JSON_UNEXPECTED_ERROR;
+
+    
+// ---------------------------------------------------------------------
 //
 // ---------------------------------------------------------------------
 	default:

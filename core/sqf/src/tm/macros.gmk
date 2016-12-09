@@ -93,7 +93,7 @@ ifeq ($(SQ_USE_INTC),0)
 HPCWARN		= -Wno-unused-parameter
 HPCXXWARN	= -Wno-unused-parameter -Wno-non-virtual-dtor
 endif
-INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS)/include -I$(HBASETMLIB) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/log4cxx -I$(LIBCLOGGER)
+INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS)/include -I$(HBASETMLIB) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/log4cxx -I$(LIBCLOGGER) -I$(MY_SQROOT)/src/tm
 #LIBSX		= -lpthread
 LIBSX		= -pthread
 ifeq ($(USE_THREADED_IO),1)

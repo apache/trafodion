@@ -460,6 +460,12 @@ NA_EIDPROC Long ex_function_nvl::pack(void * space_)
   return packClause(space_, sizeof(ex_function_nvl));
 }  
 
+NA_EIDPROC Long ex_function_json_object_field_text::pack(void * space_)
+{
+  return packClause(space_, sizeof(ex_function_json_object_field_text));
+}  
+
+
 NA_EIDPROC Long ex_function_queryid_extract::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_queryid_extract));
