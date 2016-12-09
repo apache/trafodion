@@ -50,7 +50,7 @@ def run():
     ### kernel settings ###
     run_cmd('sysctl -w kernel.pid_max=65535 2>&1 > /dev/null')
     run_cmd('echo "kernel.pid_max=65535" >> /etc/sysctl.conf')
-    run_cmd('cp %s/sysinstall/etc/init.d/trafodion /etc/init.d' % SQ_ROOT)
+    run_cmd('cp %s/sysinstall/etc/init.d/trafodion /etc/init.d' % TRAF_HOME)
     run_cmd('chkconfig --add trafodion')
     run_cmd('chkconfig --level 06 trafodion on')
 

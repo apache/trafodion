@@ -591,10 +591,10 @@ exitCode = 0
 
 messagesTable = MessagesTable()
 
-# check that $MY_SQROOT is set
-mySQroot = os.getenv('MY_SQROOT')
+# check that $TRAF_HOME is set
+mySQroot = os.getenv('TRAF_HOME')
 if not mySQroot:
-    print "$MY_SQROOT is not defined. Exiting."
+    print "$TRAF_HOME is not defined. Exiting."
     exit(1)
 
 # parse the Messages Guide files
