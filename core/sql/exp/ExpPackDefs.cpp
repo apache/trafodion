@@ -637,6 +637,15 @@ NA_EIDPROC Long ExFunctionInetNtoa::pack(void * space)
   return packClause(space, sizeof(ExFunctionInetNtoa));
 }
 
+NA_EIDPROC Long ExFunctionAESEncrypt::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionAESEncrypt));
+}
+
+NA_EIDPROC Long ExFunctionAESDecrypt::pack(void * space)
+{
+  return packClause(space, sizeof(ExFunctionAESDecrypt));
+}
 // -----------------------------------------------------------------------
 // U N P A C K
 // -----------------------------------------------------------------------

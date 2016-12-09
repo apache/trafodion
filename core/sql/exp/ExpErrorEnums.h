@@ -487,6 +487,13 @@ enum ExeErrorCode
   EXE_SM_FIXUP_REPLY_TIMEOUT            = 8953,
 
   // ---------------------------------------------------------------------
+  // Built-in Function ( encrpt/decrypt )
+  // ---------------------------------------------------------------------
+  EXE_AES_INVALID_IV                    = 8954,
+  EXE_ERR_PARAMCOUNT_FOR_FUNC           = 8955,
+  EXE_OPTION_IGNORED                    = 8956,
+  EXE_OPENSSL_ERROR                     = 8957,
+
   // Execution errors related to JSon parser
   // ---------------------------------------------------------------------
   EXE_JSON_INVALID_TOKEN                  = 8971,

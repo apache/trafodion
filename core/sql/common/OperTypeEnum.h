@@ -801,6 +801,9 @@ enum OperatorTypeEnum {
                         ITM_SHA2_384  = 2639,
                         ITM_SHA2_512  = 2640,
 
+                        ITM_AES_ENCRYPT = 2641,
+                        ITM_AES_DECRYPT = 2642,
+
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,
                         ITM_CURRNT_USER = 2991,

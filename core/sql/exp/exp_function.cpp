@@ -43,7 +43,7 @@
 #include <zlib.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>  
-
+#include "ComSSL.h"
 #define MathSqrt(op, err) sqrt(op)
 
 #include <ctype.h>
@@ -221,6 +221,8 @@ ExFunctionIsIP::ExFunctionIsIP(){};
 ExFunctionInetAton::ExFunctionInetAton(){};
 ExFunctionInetNtoa::ExFunctionInetNtoa(){};
 ExFunctionSoundex::ExFunctionSoundex(){};
+ExFunctionAESEncrypt::ExFunctionAESEncrypt(){};
+ExFunctionAESDecrypt::ExFunctionAESDecrypt(){};
 
 ExFunctionAscii::ExFunctionAscii(OperatorTypeEnum oper_type,
 				 Attributes ** attr, Space * space)
@@ -283,6 +285,18 @@ ExFunctionInetNtoa::ExFunctionInetNtoa(OperatorTypeEnum oper_type,
      : ex_function_clause(oper_type, 2, attr, space)
 {
   
+};
+
+ExFunctionAESEncrypt::ExFunctionAESEncrypt(OperatorTypeEnum oper_type,
+                       Attributes ** attr, Space * space, int args_num, Int32 aes_mode )
+     : ex_function_clause(oper_type, args_num + 1, attr, space), args_num(args_num), aes_mode(aes_mode)
+{
+};
+
+ExFunctionAESDecrypt::ExFunctionAESDecrypt(OperatorTypeEnum oper_type,
+                       Attributes ** attr, Space * space, int args_num, Int32 aes_mode)
+     : ex_function_clause(oper_type, args_num + 1, attr, space), args_num(args_num), aes_mode(aes_mode)
+{
 };
 
 ExFunctionConvertHex::ExFunctionConvertHex(OperatorTypeEnum oper_type,
@@ -8518,5 +8532,164 @@ ex_expr::exp_return_type ExFunctionSoundex::eval(char *op_data[],
     return ex_expr::EXPR_OK;
 }
 
+ex_expr::exp_return_type ExFunctionAESEncrypt::eval(char * op_data[],
+                                                              CollHeap *heap,
+                                                              ComDiagsArea **diagsArea)
+{
+  CharInfo::CharSet cs = ((SimpleType *)getOperand(0))->getCharSet();
+  Attributes *tgt = getOperand(0);
+
+  Lng32 source_len = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]);
+  char * source = op_data[1];
+
+  Lng32 key_len = getOperand(2)->getLength(op_data[-MAX_OPERANDS + 2]);
+  unsigned char * key = (unsigned char *)op_data[2];
+
+  unsigned char * result = (unsigned char *)op_data[0];
+
+  unsigned char rkey[EVP_MAX_KEY_LENGTH];
+  int u_len, f_len;
+  EVP_CIPHER_CTX ctx;
+  const EVP_CIPHER * cipher = aes_algorithm_type[aes_mode];
+
+  int iv_len_need = EVP_CIPHER_iv_length(cipher);
+
+  unsigned char * iv = NULL;
+  if (iv_len_need) {
+    if (args_num == 3) {
+      Lng32 iv_len_input = getOperand(3)->getLength(op_data[-MAX_OPERANDS + 3]);
+      if (iv_len_input == 0 || iv_len_input < iv_len_need) {
+        // the length of iv is too short
+        ExRaiseSqlError(heap, diagsArea, EXE_AES_INVALID_IV);
+        *(*diagsArea) << DgInt0(iv_len_input) << DgInt1(iv_len_need);
+        return ex_expr::EXPR_ERROR;
+      }
+      iv = (unsigned char *)op_data[3];
+    }
+    else {
+      // it does not have iv argument, but the algorithm need iv
+      ExRaiseSqlError(heap, diagsArea,EXE_ERR_PARAMCOUNT_FOR_FUNC);
+      *(*diagsArea) << DgString0("AES_ENCRYPT");
+      return ex_expr::EXPR_ERROR;
+    }
+  }
+  else {
+    if (args_num == 3) {
+      // the algorithm doesn't need iv, give a warning
+      ExRaiseSqlWarning(heap, diagsArea, EXE_OPTION_IGNORED);
+      *(*diagsArea) << DgString0("IV");
+    }
+  }
+
+  aes_create_key(key, key_len, rkey, aes_mode);
+
+  if (!EVP_EncryptInit(&ctx, cipher, (const unsigned char*)rkey, iv))
+      goto aes_encrypt_error;
+
+  if (!EVP_CIPHER_CTX_set_padding(&ctx, true))
+      goto aes_encrypt_error;
+
+  if (!EVP_EncryptUpdate(&ctx, result, &u_len, (const unsigned char *)source, source_len))
+      goto aes_encrypt_error;
+
+  if (!EVP_EncryptFinal(&ctx, result + u_len, &f_len))
+      goto aes_encrypt_error;
+
+  EVP_CIPHER_CTX_cleanup(&ctx);
+
+  tgt->setVarLength(u_len + f_len, op_data[-MAX_OPERANDS]);
+
+  return ex_expr::EXPR_OK;
+
+aes_encrypt_error:
+  ERR_clear_error();
+  EVP_CIPHER_CTX_cleanup(&ctx);
+
+  ExRaiseSqlError(heap, diagsArea, EXE_OPENSSL_ERROR);
+  *(*diagsArea) << DgString0("AES_ENCRYPT FUNCTION");
+
+  return ex_expr::EXPR_ERROR;
+}
+
+ex_expr::exp_return_type ExFunctionAESDecrypt::eval(char * op_data[],
+                                                              CollHeap *heap,
+                                                              ComDiagsArea **diagsArea)
+{
+  Attributes * tgt = getOperand(0);
+
+  Lng32 source_len = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]);
+  const unsigned char * source = (unsigned char *)op_data[1];
+
+  Lng32 key_len = getOperand(2)->getLength(op_data[-MAX_OPERANDS + 2]);
+  const unsigned char * key = (unsigned char *)op_data[2];
+
+  Lng32 maxLength = getOperand(0)->getLength();
+  unsigned char * result = (unsigned char *) op_data[0];
+
+  unsigned char rkey[EVP_MAX_KEY_LENGTH] = {0};
+  int u_len, f_len;
+
+  EVP_CIPHER_CTX ctx;
+
+  const EVP_CIPHER * cipher = aes_algorithm_type[aes_mode];
+
+  int iv_len_need = EVP_CIPHER_iv_length(cipher);
+
+  unsigned char * iv = NULL;
+  if (iv_len_need) {
+    if (args_num == 3) {
+      Lng32 iv_len_input = getOperand(3)->getLength(op_data[-MAX_OPERANDS + 3]);
+      if (iv_len_input == 0 || iv_len_input < iv_len_need) {
+        // the length of iv is too short
+        ExRaiseSqlError(heap, diagsArea, EXE_AES_INVALID_IV);
+        *(*diagsArea) << DgInt0(iv_len_input) << DgInt1(iv_len_need);
+        return ex_expr::EXPR_ERROR;
+      }
+      iv = (unsigned char *)op_data[3];
+    }
+    else {
+      // it does not have iv argument, but the algorithm need iv
+      ExRaiseSqlError(heap, diagsArea, EXE_ERR_PARAMCOUNT_FOR_FUNC);
+      *(*diagsArea) << DgString0("AES_DECRYPT");
+      return ex_expr::EXPR_ERROR;
+    }
+  }
+  else {
+    if (args_num == 3) {
+      // the algorithm doesn't need iv, give a warning
+      ExRaiseSqlWarning(heap, diagsArea, EXE_OPTION_IGNORED);
+      *(*diagsArea) << DgString0("IV");
+    }
+  }
+
+  aes_create_key(key, key_len, rkey, aes_mode);
+
+  if (!EVP_DecryptInit(&ctx, cipher, rkey, iv))
+      goto aes_decrypt_error;
+
+  if (!EVP_CIPHER_CTX_set_padding(&ctx, true))
+      goto aes_decrypt_error;
+
+  if (!EVP_DecryptUpdate(&ctx, result, &u_len, source, source_len))
+      goto aes_decrypt_error;
+
+  if (!EVP_DecryptFinal_ex(&ctx, result + u_len, &f_len))
+      goto aes_decrypt_error;
+
+  EVP_CIPHER_CTX_cleanup(&ctx);
+
+  tgt->setVarLength(u_len + f_len, op_data[-MAX_OPERANDS]);
+
+  return ex_expr::EXPR_OK;
+
+aes_decrypt_error:
+  ERR_clear_error();
+  EVP_CIPHER_CTX_cleanup(&ctx);
+
+  ExRaiseSqlError(heap, diagsArea, EXE_OPENSSL_ERROR);
+  *(*diagsArea) << DgString0("AES_DECRYPT FUNCTION");
+
+  return ex_expr::EXPR_ERROR;
+}
 // LCOV_EXCL_STOP
 #pragma warn(1506)  // warning elimination 

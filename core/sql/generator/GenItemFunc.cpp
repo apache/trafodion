@@ -661,7 +661,7 @@ short BuiltinFunction::codeGen(Generator * generator)
 							space);
       }
     break;
-   
+
     case ITM_SOUNDEX:
     {
         function_clause =
@@ -670,7 +670,28 @@ short BuiltinFunction::codeGen(Generator * generator)
                     space);
     }
     break;
-      
+
+    case ITM_AES_ENCRYPT:
+    {
+      function_clause =
+        new(generator->getSpace()) ExFunctionAESEncrypt(getOperatorType(),
+                                                        attr,
+                                                        space,
+                                                        getArity(),
+                                                        CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE));
+      break;
+    }
+
+    case ITM_AES_DECRYPT:
+    {
+      function_clause =
+        new(generator->getSpace()) ExFunctionAESDecrypt(getOperatorType(),
+                                                        attr,
+                                                        space,
+                                                        getArity(),
+                                                        CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE));
+      break;
+    }
     default:
       break;
     }

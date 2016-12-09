@@ -51,6 +51,7 @@ CPPSRC := \
 	ComSpace.cpp \
 	ComSqlId.cpp \
 	ComSqlText.cpp \
+	ComSSL.cpp \
 	ComSysUtils.cpp \
 	ComTransInfo.cpp \
 	conversionISO88591.cpp \
