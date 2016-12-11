@@ -1076,8 +1076,8 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
    Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
 
 
-    ExHbaseAccessTcb::buildLoggingPath(((ExHbaseAccessTdb &)hbaseAccessTdb).getLoggingLocation(),
-                      (char *)((ExHbaseAccessTdb &)hbaseAccessTdb).getErrCountRowId(),
+    ExHbaseAccessTcb::buildLoggingFileName(((ExHbaseAccessTdb &)hbaseAccessTdb).getLoggingLocation(),
+                      // (char *)((ExHbaseAccessTdb &)hbaseAccessTdb).getErrCountRowId(),
                       ((ExHbaseAccessTdb &)hbaseAccessTdb).getTableName(),
                       "traf_upsert_err",
                       fileNum,

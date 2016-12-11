@@ -187,8 +187,8 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   registerResizeSubtasks();
 
   Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
-  ExHbaseAccessTcb::buildLoggingPath(((ExHdfsScanTdb &)hdfsScanTdb).getLoggingLocation(),
-                     (char *)((ExHdfsScanTdb &)hdfsScanTdb).getErrCountRowId(),
+  ExHbaseAccessTcb::buildLoggingFileName(((ExHdfsScanTdb &)hdfsScanTdb).getLoggingLocation(),
+                     // (char *)((ExHdfsScanTdb &)hdfsScanTdb).getErrCountRowId(),
                      ((ExHdfsScanTdb &)hdfsScanTdb).tableName(),
                      "hive_scan_err",
                      fileNum,

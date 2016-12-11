@@ -184,6 +184,9 @@ public:
   static void buildLoggingPath(const char * loggingLocation,
                                char *logId,
                                const char *tableName,
+                               char * currCmdLoggingLocation);
+  static void buildLoggingFileName(const char * currCmdLoggingLocation,
+                               const char *tableName,
                                const char * loggingFileNamePrefix,
                                Lng32 instId,
                                char * loggingFileName);
