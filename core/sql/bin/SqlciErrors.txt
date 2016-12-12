@@ -1,6 +1,6 @@
 100  02000 99999 UUUUUUUU UUUUU UUUUUUU The "no data" completion condition (SQLCODE = +100).
 1000 42000 99999 BEGINNER INFRM LOGONLY A syntax error occurred.
-1001 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An internal error occurred in module $0~String0 on line $1~Int0.  DETAILS($2~String1).
+1001 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An internal error occurred in module $0~String0 on line $1~Int0. Details($2~String1).
 1002 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName does not exist.
 1003 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName does not exist.
 1004 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName does not exist or object type is invalid for the current operation.
@@ -22,21 +22,21 @@
 1020 ZZZZZ 99999 BEGINNER MINOR DBADMIN Privilege settings on metadata tables cannot be changed.
 1021 ZZZZZ 99999 BEGINNER MINOR DBADMIN SQL is already initialized on system $0~string0.
 1022 ZZZZZ 99999 BEGINNER MINOR DBADMIN Schema $0~SchemaName already exists.
-1023 ZZZZZ 99999 BEGINNER MINOR DBADMIN Not authorized to create schema $0~SchemaName.
-1024 ZZZZZ 99999 BEGINNER MINOR DBADMIN File system error $0~NSKCode occurred on $1~String0. $2~String1
+1023 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1024 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1025 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed.  Dependent object $0~string0 exists.
-1026 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only the schema owner or super ID can drop a schema.
+1026 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1027 ZZZZZ 99999 BEGINNER MINOR DBADMIN The view $0~TableName was created before column privileges were supported. To grant column privileges, please recreate the view.
 1028 ZZZZZ 99999 BEGINNER MINOR DBADMIN The schema must be empty.  It contains at least one object $0~TableName.
 1029 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be created.
 1030 ZZZZZ 99999 BEGINNER MINOR DBADMIN The HBase name has a length of $0~Int0 which is too long. Maximum length supported is $1~Int1.  
 1031 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be dropped.
 1032 ZZZZZ 99999 BEGINNER MINOR DBADMIN The DISPLAY command completes and the query is not executed.
-1033 ZZZZZ 99999 BEGINNER MINOR DBADMIN The table name is not specified.
+1033 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1034 ZZZZZ 99999 BEGINNER MAJOR DIALOUT Unable to obtain privileges.
 1035 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Catalog $0~CatalogName already exists.
 1036 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Authorization ID $0~String0 cannot grant to authorization ID $1~String1 because it could create a circular dependency.
-1037 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Revoke failed because of a dependent grant between authorization ID $0~string0 and authorization ID $1~string1
+1037 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Revoke failed because of a dependent grant between authorization ID $0~string0 and authorization ID $1~string1.
 1038 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1039 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No privileges were revoked. You lack the grant option for the specified privilege(s).
 1040 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The use of ALTER on metadata tables is not permitted.
@@ -59,43 +59,43 @@
 1057 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1058 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to create histogram table $0~TableName.
 1059 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Request failed.  Dependent constraint $0~ConstraintName exists.
-1060 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed. View $0~string0 is invalid. 
-1061 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Dropping metadata catalog $0~CatalogName is not allowed.
+1060 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1061 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1062 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Dropping metadata or reserved schema $0~SchemaName is not allowed.
-1063 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Dropping metadata index $0~TableName is not allowed.
-1064 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Dropping metadata view $0~TableName is not allowed.
-1065 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating constraint $0~ConstraintName in metadata schema is not allowed.
-1066 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating index $0~TableName in metadata schema is not allowed.
-1067 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Creating module $0~String0 in metadata schema is not allowed.
+1063 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1064 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1065 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1066 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1067 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1068 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Initialize authorization completed with warnings.
 1069 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName could not be dropped. $0~String0
 1070 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be created. File error: $1~Int0.
-1071 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be accessed. 
-1072 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unique constraint $0~String0 is disabled, so foreign key constraint $1~ConstraintName could not be created.
-1073 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName was partially dropped, call CLEANUP SCHEMA to remove remaining entries.
-1074 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to create synonym: $0~String0, as part of re-compile for view $0~TableName.
-1075 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The catalog must be empty.  It contains at least one schema $0~SchemaName.
-1076 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to grant privilege: $0~String0, as part of re-compile for view $0~TableName.
-1077 ZZZZZ 99999 ADVANCED MAJOR DIALOUT  Metadata table $0~String0 does not contain information for view $1~TableName.
-1078 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The format of the specified location name '$0~string0' is not valid.
-1079 ZZZZZ 99999 BEGINNER MINOR DBADMIN SQL was not able to prepare the statement.
+1071 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1072 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1073 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName was partially dropped. Use CLEANUP SCHEMA to remove remaining entries.
+1074 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1075 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1076 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1077 ZZZZZ 99999 ADVANCED MAJOR DIALOUT --- unused ---
+1078 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1079 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1080 ZZZZZ 99999 BEGINNER MINOR DBADMIN The DDL request has duplicate references to column $0~ColumnName.
 1081 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Loading of index $0~TableName failed unexpectedly.
 1082 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Validation for constraint $0~ConstraintName failed unexpectedly.
 1083 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Validation for constraint $0~ConstraintName failed; incompatible data exists in table.
 1084 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid default value was specified for column $0~ColumnName.
-1085 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The calculated key length is greater than $0~Int0 bytes.
-1086 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Lock $0~TableName does not exist.
-1087 ZZZZZ 99999 BEGINNER MAJOR DBADMIN DDL Lock cannot be granted; invalid operation has been specified.
-1088 ZZZZZ 99999 BEGINNER MINOR DBADMIN The system generated column SYSKEY must be specified last or not specified at all in the STORE BY column list.
+1085 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1086 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
+1087 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1088 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1089 ZZZZZ 99999 BEGINNER MINOR DBADMIN The system generated column SYSKEY must be specified last or not specified at all in the index column list.
 1090 0A000 99999 BEGINNER MINOR DBADMIN Self-referencing constraints are currently not supported.
-1091 0A000 99999 BEGINNER INFRM LOGONLY The constraint, index, or file option is not supported on a vertically partitioned table.
-1092 ZZZZZ 99999 BEGINNER INFRM LOGONLY Column $0~ColumnName must be assigned to a vertical partition.
-1093 ZZZZZ 99999 BEGINNER INFRM LOGONLY Assigning system column $0~ColumnName to a vertical partition is not allowed.
-1094 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be dropped because it is not of type $1~string0.
-1095 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The PARTITION BY column $0~ColumnName should also be part of the clustering/storage key.
-1096 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Validation for object $0~TableName failed unexpectedly.
+1091 0A000 99999 BEGINNER INFRM LOGONLY --- unused ---
+1092 ZZZZZ 99999 BEGINNER INFRM LOGONLY --- unused ---
+1093 ZZZZZ 99999 BEGINNER INFRM LOGONLY --- unused ---
+1094 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1095 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1096 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1097 ZZZZZ 99999 BEGINNER MINOR DBADMIN The specified partition $0~String0 does not exist.
 1098 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Partition key ($0~String0) already specified for object $1~TableName.
 1099 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Column $0~Int0 is unnamed.  You must specify an AS clause for that column expression, or name all the columns by specifying a view column list.

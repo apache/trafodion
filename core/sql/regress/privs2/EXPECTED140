@@ -924,7 +924,7 @@ TRAFODION.T140_USER1_PRIVATE.TEAMS                                              
 >>-- fails because of user3->user4 and user3->user5 grants
 >>revoke grant option for select on games from sql_user3 by sql_user2;
 
-*** ERROR[1037] Revoke failed because of a dependent grant between authorization ID SQL_USER3 and authorization ID SQL_USER4
+*** ERROR[1037] Revoke failed because of a dependent grant between authorization ID SQL_USER3 and authorization ID SQL_USER4.
 
 --- SQL operation failed with errors.
 >>
@@ -934,7 +934,7 @@ TRAFODION.T140_USER1_PRIVATE.TEAMS                                              
 --- SQL operation complete.
 >>revoke grant option for select on games from sql_user3 by sql_user2;
 
-*** ERROR[1037] Revoke failed because of a dependent grant between authorization ID SQL_USER3 and authorization ID SQL_USER5
+*** ERROR[1037] Revoke failed because of a dependent grant between authorization ID SQL_USER3 and authorization ID SQL_USER5.
 
 --- SQL operation failed with errors.
 >>revoke select on games from sql_user5 by sql_user3;
