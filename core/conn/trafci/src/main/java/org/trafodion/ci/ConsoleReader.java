@@ -51,6 +51,8 @@ public class ConsoleReader
    private MaskingThread mt=null;
    WCIUtils wcs=null;
 
+    jline.console.ConsoleReader cr = null;
+
    ConsoleReader()
    {
       newLine=System.getProperty("line.separator");
@@ -107,6 +109,8 @@ public class ConsoleReader
    public void initialize() throws IOException
    {
       this.in=System.in;
+        cr = new jline.console.ConsoleReader();
+        cr.setPrompt(this.prompt);
    }
 
    public String getLine() throws IOException, UserInterruption
@@ -117,7 +121,7 @@ public class ConsoleReader
 
    public String readLine() throws UnsupportedEncodingException, UserInterruption, IOException
    {
-      StringBuffer lineBuffer=null;
+/*      StringBuffer lineBuffer=null;
       lineBuffer=new StringBuffer();
 	  int i=-1;
             
@@ -172,7 +176,8 @@ public class ConsoleReader
 
          }
       }
-
+*/
+        return cr.readLine();
    }
 
    public boolean next() throws IOException, UserInterruption
