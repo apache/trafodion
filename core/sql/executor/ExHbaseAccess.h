@@ -288,6 +288,11 @@ protected:
 			 short * rc, NABoolean isVarchar);
   short moveRowToUpQueue(short * rc);
   
+  short raiseError(Lng32 errcode, 
+                   Lng32 * intParam1 = NULL,
+                   const char * str1 = NULL, 
+                   const char * str2 = NULL);
+
   short setupError(Lng32 retcode, const char * str, const char * str2 = NULL);
   short handleError(short &rc);
   short handleDone(ExWorkProcRetcode &rc, Int64 rowsAffected = 0);
@@ -316,7 +321,7 @@ protected:
   short evalConstraintExpr(ex_expr *expr, UInt16 tuppIndex = 0,
                   char * tuppRow = NULL);
   short evalEncodedKeyExpr();
-  short evalRowIdExpr(NABoolean noVarchar = FALSE);
+  short evalRowIdExpr(NABoolean isVarchar);
   short evalRowIdAsciiExpr(NABoolean noVarchar = FALSE);
   short evalRowIdAsciiExpr(const char * inputRowIdVals,
 			   char * rowIdBuf, // input: buffer where rowid is created

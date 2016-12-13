@@ -79,7 +79,9 @@ class NAColumn : public NABasicObject
 public:
 
   enum KeyKind	  { NON_KEY = 0,
-		    INDEX_KEY = 0x1, PARTITIONING_KEY = 0x2 , PRIMARY_KEY = 0x4
+		    INDEX_KEY = 0x1, PARTITIONING_KEY = 0x2,
+                    PRIMARY_KEY = 0x4,
+                    PRIMARY_KEY_NOT_SERIALIZED = 0x8
 		  };
   enum NAColumnAssert { MustBeBaseColumn, MustBeColumn, NoError };
 
@@ -266,8 +268,11 @@ public:
   inline void setIndexKey()                    { keyKind_ |= INDEX_KEY; }
   inline NABoolean isPartitioningKey() const   { return keyKind_ & PARTITIONING_KEY; }
   inline void setPartitioningKey()             { keyKind_ |= PARTITIONING_KEY; }
-  inline NABoolean isPrimaryKey() const        { return keyKind_ & PRIMARY_KEY; }
+  inline NABoolean isPrimaryKey() const        { return keyKind_ & PRIMARY_KEY;}
+  inline NABoolean isPrimaryKeyNotSerialized() const 
+  { return keyKind_ & PRIMARY_KEY_NOT_SERIALIZED;}
   inline void setPrimaryKey()                  { keyKind_ |= PRIMARY_KEY; }
+  inline void setPrimaryKeyNotSerialized()     { keyKind_ |= PRIMARY_KEY_NOT_SERIALIZED; }
   inline void setIsStoredOnDisk(NABoolean x)   { storedOnDisk_ = x; }
   inline NABoolean isReferenced() const        { return (referenced_ != NOT_REFERENCED); }
   inline NABoolean isReferencedForHistogram() const

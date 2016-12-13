@@ -670,6 +670,11 @@ NABoolean QualifiedName::isSeabasePrivMgrMD() const
     (getCatalogName(), getSchemaName());
 }
 
+NABoolean QualifiedName::isHbaseMappedName() const
+{
+  return ((isSeabase(getCatalogName())) &&
+          (ComIsHbaseMappedSchemaName(getSchemaName())));
+}
 
 // -----------------------------------------------------------------------
 // Methods for class CorrName
@@ -978,6 +983,11 @@ NABoolean CorrName::isHbaseRow() const
     return TRUE;
   else
     return FALSE;
+}
+
+NABoolean CorrName::isHbaseMap() const
+{
+  return getQualifiedNameObj().isHbaseMappedName();
 }
 
 NAString CorrName::getCorrNameAsString() const

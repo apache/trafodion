@@ -126,7 +126,7 @@
 1124 ZZZZZ 99999 BEGINNER MINOR DBADMIN Metadata version is at $0~Int0. Upgrade/Downgrade to current version cannot be performed.
 1125 ZZZZZ 99999 ADVANCED CRTCL DIALOUT API request version number mismatch.
 1126 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 failed.
-1127 ZZZZZ 99999 BEGINNER MINOR DBADMIN The specified table $0~TableName is not a base table.  Please verify that the correct table was specified.
+1127 ZZZZZ 99999 BEGINNER MINOR DBADMIN The specified table $0~TableName does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 1128 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An invalid API request was encountered.  Details: $0~String0.
 1129 ZZZZZ 99999 BEGINNER MINOR DBADMIN This operation is not allowed on a vertically partitioned table.
 1130 ZZZZZ 99999 BEGINNER MINOR DBADMIN The column requires a default value.
@@ -1307,6 +1307,9 @@ $1~String1 --------------------------------
 4256 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object type specified for this object does not match the object type stored in metadata.
 4257 ZZZZZ 99999 BEGINNER MINOR DBADMIN DIVISION BY with an approximate numeric data type is not supported.
 4258 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Trying to access external table $0~TableName through its external name format. Please use the native table name.
+4259 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Primary Key clause must be specified for an HBase mapped table.
+4260 ZZZZZ 99999 BEGINNER MAJOR DBADMIN HBase table($0~String0) to be mapped as an external table does not exist.
+4261 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The schema name $0~SchemaName is reserved for HBase mapped tables and cannot be explicitly specified.
 4300 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of procedure $0~TableName was not valid - a UDR was invoked within a trigger.
 4301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of routine $0~TableName was not valid - return of result sets is not allowed within a trigger.
 4302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName expects $1~Int0 parameters but was called with $1~int1 parameters.
@@ -1504,7 +1507,7 @@ $1~String1 --------------------------------
 8031 HY018 99999 BEGINNER INFRM LOGONLY Server declined cancel request for query ID $0~String0. $1~String1.
 8032 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information for the provided query id is not available in repository.
 8033 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Explain information is too large to be stored in repository.
-8034 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Column $0~String0 of object $1~string0 does not have a default clause but it is missing in database. This indicates inconsistent data.
+8034 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Column $0~String0 of object $1~string1 does not have a default clause but it is missing in database. This indicates inconsistent data.
 8035 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Truncation of hive table failed. $0~String0
 8036 ZZZZZ 99999 ADVANCED MINOR LOGONLY Error while creating the error logging file or logging the error row to file $0~String0: Details :$1~String1 
 8100 ZZZZZ 99999 BEGINNER MINOR LOGONLY Define $1~string0 does not exist
@@ -1588,6 +1591,7 @@ $1~String1 --------------------------------
 8553 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Stream overflow; subscription rate has fallen too far behind publishing rate.
 8554 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU -- unused, although the error number reservation doc says it is used ---
 8555 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An internal error occurred in the SQL executor in the disk process.
+8556 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred while accessing HBase table $0~string0. $1~string1 
 8570 ZZZZZ 99999 ADVANCED MAJOR DBADMIN SQL could not allocate sufficient memory to build query.
 8571 ZZZZZ 99999 ADVANCED MAJOR DBADMIN SQL could not allocate sufficient memory to execute query.
 8572 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The statement has incurred a fatal error and must be deallocated.

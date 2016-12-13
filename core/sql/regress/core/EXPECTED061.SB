@@ -234,34 +234,34 @@ N1                    C2    C4
 >>
 >>create index  t061i1 on vut4495(a);
 
-*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 is not a base table.  Please verify that the correct table was specified.
+*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 
 --- SQL operation failed with errors.
 >>
 >>create table t061t33(t061t3_c int references vut4495);
 
-*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 is not a base table.  Please verify that the correct table was specified.
+*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 
 *** ERROR[1029] Object TRAFODION.SCH.T061T33 could not be created.
 
 --- SQL operation failed with errors.
 >>create table t061t4(t061t4_c int references vut4495(a));
 
-*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 is not a base table.  Please verify that the correct table was specified.
+*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 
 *** ERROR[1029] Object TRAFODION.SCH.T061T4 could not be created.
 
 --- SQL operation failed with errors.
 >>create table t061t5(t061t5_c int, foreign key(t061t5_c) references vut4495);
 
-*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 is not a base table.  Please verify that the correct table was specified.
+*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 
 *** ERROR[1029] Object TRAFODION.SCH.T061T5 could not be created.
 
 --- SQL operation failed with errors.
 >>create table t061t6(t061t6_c int, foreign key(t061t6_c) references vut4495(a));
 
-*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 is not a base table.  Please verify that the correct table was specified.
+*** ERROR[1127] The specified table TRAFODION.SCH.VUT4495 does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 
 *** ERROR[1029] Object TRAFODION.SCH.T061T6 could not be created.
 

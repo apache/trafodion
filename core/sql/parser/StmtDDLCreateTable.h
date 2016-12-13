@@ -249,11 +249,16 @@ public:
 
   inline const CorrName & getLikeSourceTableCorrName() const;
   inline const NAString getLikeSourceTableName() const;
-  inline const ExtendedQualName::SpecialTableType getLikeSourceTableType() const; //++ MV
+  inline const ExtendedQualName::SpecialTableType getLikeSourceTableType() const; 
+  inline const QualifiedName & getOrigLikeSourceTableName() const;
+  inline       QualifiedName & getOrigLikeSourceTableName();
 
         // returns the name of the source table in the LIKE
         // clause.  If LIKE clause is not specified, an
         // empty string is returned.
+
+
+  void setLikeSourceTableName(CorrName &srcName);
 
   inline const ParDDLLikeOptsCreateTable & getLikeOptions() const;
   inline       ParDDLLikeOptsCreateTable & getLikeOptions();
@@ -532,6 +537,12 @@ public:
   NABoolean createIfNotExists() { return createIfNotExists_; }
   void setCreateIfNotExists(NABoolean v) { createIfNotExists_ = v; }
 
+  NABoolean mapToHbaseTable() { return mapToHbaseTable_; }
+  void setMapToHbaseTable(NABoolean v) { mapToHbaseTable_ = v; }
+
+  NABoolean isHbaseDataFormatString() { return (hbaseDataFormat_ == TRUE); }
+  void setHbaseDataFormat(NABoolean v) { hbaseDataFormat_ = v; }
+
 private:
 
   // ---------------------------------------------------------------------
@@ -632,7 +643,8 @@ private:
   // LIKE clause related information
 
   NABoolean isLikeClauseSpec_;
-  CorrName likeSourceTableCorrName_; //++ MV
+  CorrName likeSourceTableCorrName_; 
+  QualifiedName origLikeSourceTableQualName_;
   ParDDLLikeOptsCreateTable likeOptions_;
 
   // ATTRIBUTES clause
@@ -739,6 +751,15 @@ private:
 
   // Aligned or Packed table data format
   NABoolean isAlignedTableFormatSpecified_;
+
+  // external table to be mapped to hbase table
+  NABoolean mapToHbaseTable_;
+
+  // data format of external mapped table.
+  // TRUE:  data is in string/varchar format
+  // FALSE: data is in native type format (for ex: 2 byte short for integer...)
+  // This field is only valid if mapToHbaseTable_ is set.
+  NABoolean hbaseDataFormat_;
 
   // Each element of the following arrays is a pointer
   // pointing to a StmtDDLAddConstraint parse node in
@@ -1037,6 +1058,23 @@ inline const NAString
 StmtDDLCreateTable::getLikeSourceTableName() const
 {
   return likeSourceTableCorrName_.getQualifiedNameObj().getQualifiedNameAsAnsiString();
+}
+
+inline void StmtDDLCreateTable::setLikeSourceTableName(CorrName &srcName)
+{
+  likeSourceTableCorrName_ = srcName;
+}
+
+inline QualifiedName &
+StmtDDLCreateTable::getOrigLikeSourceTableName()
+{
+  return origLikeSourceTableQualName_;
+}
+
+inline const QualifiedName &
+StmtDDLCreateTable::getOrigLikeSourceTableName() const
+{
+  return origLikeSourceTableQualName_;
 }
 
 //++ MV

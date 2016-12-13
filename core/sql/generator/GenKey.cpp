@@ -70,33 +70,14 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
                                  const SearchKey * searchKey,
                                  const MdamKey * mdamKeyPtr,
                                  const NABoolean reverseScan,
-                                 unsigned short keytag,
-                                 const ExpTupleDesc::TupleDataFormat tf,
-                                 // the next few parameters are here
-                                 // as part of a horrible kludge for
-                                 // the PartitionAccess::codeGen()
-                                 // method, which lacks a SearchKey
-                                 // object and therefore exposes
-                                 // things like the exclusion
-                                 // expressions; with luck, later work
-                                 // in the Optimizer will result in a
-                                 // much cleaner interface
-                                 const NABoolean useTheHorribleKludge,
-                                 ItemExpr * beginKeyExclusionExpr,
-                                 ItemExpr * endKeyExclusionExpr,
-
-                                 ex_expr_lean ** unique_key_expr,
-                                 ULng32 *uniqueKeyLen,
-                                 NABoolean doKeyEncodeOpt,
-                                 Lng32 * firstKeyColOffset,
-				 Int32 in_key_atp_index
+                                 const ExpTupleDesc::TupleDataFormat tf
                                  )
 
 {
   Space * space = generator->getSpace();
 
   const Int32 work_atp = 1;
-  const Int32 key_atp_index = (in_key_atp_index <= 0 ? 2 : in_key_atp_index);
+  const Int32 key_atp_index = 2;
   const Int32 exclude_flag_atp_index = 3;
   const Int32 data_conv_error_atp_index = 4;
   const Int32 key_column_atp_index = 5; // used only for Mdam
@@ -155,29 +136,25 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
           short ekey_excluded = 0;
           
           generateKeyExpr(keyColumns,
-              beginKeyPred,
-              work_atp,
-              key_atp_index,
-              dataConversionErrorFlag,
-              tf,
-              keyLen, // out
-              &bk_expr,  // out
-              doKeyEncodeOpt,
-              firstKeyColOffset,
-              doEquiKeyPredOpt);
-              
+                          beginKeyPred,
+                          work_atp,
+                          key_atp_index,
+                          dataConversionErrorFlag,
+                          tf,
+                          keyLen, // out
+                          &bk_expr,  // out
+                          doEquiKeyPredOpt);
+          
           if (&endKeyPred)
              generateKeyExpr(keyColumns,
-                 endKeyPred,
-                 work_atp,
-                 key_atp_index,
-                 dataConversionErrorFlag,
-                 tf,
-                 keyLen, // out -- should be the same as above
-                 &ek_expr,  // out
-                 doKeyEncodeOpt,
-                 firstKeyColOffset,
-                 doEquiKeyPredOpt);
+                             endKeyPred,
+                             work_atp,
+                             key_atp_index,
+                             dataConversionErrorFlag,
+                             tf,
+                             keyLen, // out -- should be the same as above
+                             &ek_expr,  // out
+                             doEquiKeyPredOpt);
               
           if (reverseScan)
             {
@@ -220,62 +197,30 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
                   bk_excluded_expr = temp;
                 }
             } // if searchKey
-          else if (useTheHorribleKludge)
-            {
-              generateExclusionExpr(beginKeyExclusionExpr,
-                    work_atp,
-                    exclude_flag_atp_index,
-                    &bk_excluded_expr); // out
-              
-              generateExclusionExpr(endKeyExclusionExpr,
-                    work_atp,
-                    exclude_flag_atp_index,
-                    &ek_excluded_expr); // out
-              
-              // note that the old PartitionAccess::codeGen() code didn't
-              // set values for bkey_excluded and ekey_excluded, so the
-              // safest choice is to choose inclusion, i.e. let the flags
-              // retain their initial value of 0.
-            }
           
           // Build key info
-          if (keytag > 0)
-            keyLen += sizeof(short);
 
-          if ((unique_key_expr == NULL) ||
-              (NOT generator->genLeanExpr()))
-            {
-              // the work cri desc is used to build key values (entry 2) and
-              // to compute the exclusion flag (entry 3) to monitor for data
-              // conversion errors (entry 4) and to compute values on a column
-              // basis (entry 5 - Mdam only)
-              ex_cri_desc * work_cri_desc 
-                        = new(space) ex_cri_desc(6, space);
-              
-              *keyInfo = new(space) keySingleSubsetGen(
-                   keyLen,
-                   work_cri_desc,
-                   key_atp_index,
-                   exclude_flag_atp_index,
-                   data_conv_error_atp_index,
-                   bk_expr,
-                   ek_expr,
-                   bk_excluded_expr,
-                   ek_excluded_expr,
-                   // static exclude flags (if exprs are NULL)
-                   bkey_excluded,
-                   ekey_excluded); 
-              if (unique_key_expr)
-                *unique_key_expr = NULL;
-            }
-          else
-            {
-              if (keyInfo)
-                *keyInfo = NULL;
-              *unique_key_expr = (ex_expr_lean*)bk_expr;
-              *uniqueKeyLen = keyLen;
-            }
-        }
+          // the work cri desc is used to build key values (entry 2) and
+          // to compute the exclusion flag (entry 3) to monitor for data
+          // conversion errors (entry 4) and to compute values on a column
+          // basis (entry 5 - Mdam only)
+          ex_cri_desc * work_cri_desc 
+            = new(space) ex_cri_desc(6, space);
+          
+          *keyInfo = new(space) keySingleSubsetGen(
+               keyLen,
+               work_cri_desc,
+               key_atp_index,
+               exclude_flag_atp_index,
+               data_conv_error_atp_index,
+               bk_expr,
+               ek_expr,
+               bk_excluded_expr,
+               ek_excluded_expr,
+               // static exclude flags (if exprs are NULL)
+               bkey_excluded,
+               ekey_excluded); 
+    }
     }  // end of non-mdam case
   else // Mdam case
     {
@@ -658,8 +603,6 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
         } // for every column order list in the array (of disjuncts)
 
       // build the Mdam key info
-      if (keytag > 0)
-        keyLen += sizeof(short);
       *keyInfo = new(space) keyMdamGen(keyLen,
                                        work_cri_desc,
                                        key_atp_index,
@@ -672,9 +615,6 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
                                        generator->wHeap());
 
     }  // end of mdam case
-
-  if (*keyInfo)
-    (*keyInfo)->setKeytag(keytag);
 
   // reset map table to forget about the key object's work Atp
   

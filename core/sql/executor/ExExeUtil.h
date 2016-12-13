@@ -3788,7 +3788,7 @@ protected:
                             NABoolean adjustLen = TRUE);
 
   short collectStats(char * tableName);
-  short populateStats(Int32 currIndex, NABoolean nullTerminate = FALSE);
+  short populateStats(Int32 currIndex);
 
   char * hbaseRootdir_;
 
@@ -3811,6 +3811,8 @@ protected:
   char * schName_;
   char * objName_;
   char * regionName_;
+
+  NAString extNameForHbase_;
 };
 
 //////////////////////////////////////////////////////////////////////////

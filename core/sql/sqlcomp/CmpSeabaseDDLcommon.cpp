@@ -4840,6 +4840,8 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           isAudited = tableInfo->isAudited;
           if (tableInfo->rowFormat == COM_ALIGNED_FORMAT_TYPE)
             strcpy(rowFormat, COM_ALIGNED_FORMAT_LIT);
+          else if (tableInfo->rowFormat == COM_HBASE_STR_FORMAT_TYPE)
+            strcpy(rowFormat, COM_HBASE_STR_FORMAT_LIT);
           numSaltPartns = tableInfo->numSaltPartns;
           hbaseCreateOptions = tableInfo->hbaseCreateOptions;
         }

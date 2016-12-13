@@ -81,6 +81,8 @@ public:
 
   inline ElemDDLNode * getAlterTableAction() const;
   inline const NAString getTableName() const;
+  inline const QualifiedName & getOrigTableNameAsQualifiedName() const;
+  inline       QualifiedName & getOrigTableNameAsQualifiedName();
   inline const QualifiedName & getTableNameAsQualifiedName() const;
   inline       QualifiedName & getTableNameAsQualifiedName();
   
@@ -132,6 +134,10 @@ private:
   // private data members
   // ---------------------------------------------------------------------
   
+  // the tablename specified by user in the alter stmt.
+  // This name is not fully qualified during bind phase.
+  QualifiedName origTableQualName_;
+
   QualifiedName tableQualName_;
 
   //
@@ -205,6 +211,18 @@ inline const NAString
 StmtDDLAlterTable::getTableName() const
 {
   return tableQualName_.getQualifiedNameAsAnsiString();
+}
+
+inline QualifiedName &
+StmtDDLAlterTable::getOrigTableNameAsQualifiedName()
+{
+  return origTableQualName_;
+}
+
+inline const QualifiedName &
+StmtDDLAlterTable::getOrigTableNameAsQualifiedName() const
+{
+  return origTableQualName_;
 }
 
 inline const QualifiedName &

@@ -234,6 +234,13 @@ NABoolean NAFileSet::hasOnlySyskey() const
           (indexKeyColumns_[0]->isSyskeyColumn()));
 }
 
+NABoolean NAFileSet::hasSingleColVarcharKey() const
+{
+  // clustering key is single column varchar 
+  return ((indexKeyColumns_.entries() == 1) &&
+          (indexKeyColumns_[0]->getType()->isVaryingLen()));
+}
+
 //cleanup after statement, so that this can be used for the next statement
 void NAFileSet::resetAfterStatement()
 {

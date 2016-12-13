@@ -1337,7 +1337,6 @@ TrafDesc *generateSpecialDesc(const CorrName& corrName)
 // -----------------------------------------------------------------------
 // member functions for class BindWA
 // -----------------------------------------------------------------------
-
 NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
 {
   NARoutineDBKey key(name, wHeap());
@@ -1396,7 +1395,8 @@ NATable *BindWA::getNATable(CorrName& corrName,
   NAString userName;
   if ((CmpCommon::context()->sqlSession()->volatileSchemaInUse()) &&
       (! inTableDescStruct) &&
-      (corrName.getSpecialType() != ExtendedQualName::VIRTUAL_TABLE))
+      (corrName.getSpecialType() != ExtendedQualName::VIRTUAL_TABLE) &&
+      (corrName.getSpecialType() != ExtendedQualName::HBMAP_TABLE))
     {
       CorrName newCorrName = 
         CmpCommon::context()->sqlSession()->getVolatileCorrName
@@ -1469,7 +1469,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
       NABoolean schNameSpecified =
               (NOT corrName.getQualifiedNameObj().getSchemaName().isNull());
 
-      // try PUBLIC SCHEMA only when no schema was specified
+     // try PUBLIC SCHEMA only when no schema was specified
       // and CQD PUBLIC_SCHEMA_NAME is specified
       NAString publicSchema = "";
       CmpCommon::getDefault(PUBLIC_SCHEMA_NAME, publicSchema, FALSE);
@@ -1484,6 +1484,26 @@ NATable *BindWA::getNATable(CorrName& corrName,
       if (bindWA->errStatus())
         return NULL;      // prototype value parse error
 
+      // cannot use hbase map schema as table name
+      if ((corrName.getQualifiedNameObj().getSchemaName() == HBASE_EXT_MAP_SCHEMA) &&
+          (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+          (! Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE)))
+         {
+          *CmpCommon::diags() << DgSqlCode(-4261)
+                              << DgSchemaName(corrName.getQualifiedNameObj().getSchemaName());
+          
+          bindWA->setErrStatus();
+          return NULL;
+        }
+
+      // if this is an HBase mapped table and schema name is not specified, 
+      // then set schema to hbase map schema.
+      if ((corrName.getSpecialType() == ExtendedQualName::HBMAP_TABLE) &&
+          (NOT schNameSpecified))
+        {
+          corrName.getQualifiedNameObj().setSchemaName(HBASE_EXT_MAP_SCHEMA);
+        }
+ 
       // override schema
       if ( ( overrideSchemaEnabled() )
            // not volatile table
@@ -1543,6 +1563,34 @@ NATable *BindWA::getNATable(CorrName& corrName,
         }
       }
 
+      // if sch name was not specified and table is not found in default schema, then
+      // look for it in HBase mapped schema.
+      if ( !table && ! schNameSpecified)
+        {
+          CorrName pCorrName(corrName);
+          pCorrName.getQualifiedNameObj().setSchemaName(HBASE_EXT_MAP_SCHEMA);
+          
+          bindWA->resetErrStatus();
+          Lng32 diagsMark = CmpCommon::diags()->mark();
+          table = bindWA->getSchemaDB()->getNATableDB()->
+            get(pCorrName, bindWA, inTableDescStruct);
+          if ( !bindWA->errStatus() && table )
+            { // if found in mapped schema, do not show previous error
+              // and replace corrName
+              CmpCommon::diags()->clear();
+              corrName.getQualifiedNameObj().setCatalogName(
+                   pCorrName.getQualifiedNameObj().getCatalogName());
+              corrName.getQualifiedNameObj().setSchemaName(
+                   pCorrName.getQualifiedNameObj().getSchemaName());
+            }
+          else
+            {
+              // discard the errors from failed map table name lookup and only return
+              // the previous error.
+              CmpCommon::diags()->rewind(diagsMark);
+            }
+         }
+
       // move to here, after public schema try because BindUtil_CollectTableUsageInfo
       // saves table info for mv definition, etc.
       // Conditionally (usually) do stuff for Catalog Manager (static func above).
@@ -1583,11 +1631,14 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // native HIVE or HBASE objects unless the allowExternalTables flag is set.  
   // allowExternalTables is set for drop table and SHOWDDL statements.  
   // TDB - may want to merge the Trafodion version with the native version.
-  if ((table) && table->isExternalTable() && (! bindWA->allowExternalTables()))
+  if ((table) && 
+      (table->isExternalTable() && 
+       (NOT table->getTableName().isHbaseMappedName()) &&
+       (! bindWA->allowExternalTables())))    
     {
       *CmpCommon::diags() << DgSqlCode(-4258)
-                          << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-
+			  << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+      
       bindWA->setErrStatus();
       return NULL;
     }
@@ -1595,7 +1646,8 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // If the table is an external table and has an associated native table, 
   // check to see if the external table structure still matches the native table.
   // If not, return an error
-  if ((table) && table->isExternalTable()) 
+  if ((table) && table->isExternalTable() &&
+      (NOT table->getTableName().isHbaseMappedName()))
     {
       NAString adjustedName =ComConvertTrafNameToNativeName 
            (table->getTableName().getCatalogName(),
@@ -1608,10 +1660,16 @@ NATable *BindWA::getNATable(CorrName& corrName,
       CorrName externalCorrName(adjustedQualName, STMTHEAP);
       NATable *nativeNATable = bindWA->getSchemaDB()->getNATableDB()->
                                   get(externalCorrName, bindWA, inTableDescStruct);
-  
+      if ((bindWA->externalTableDrop()) &&
+          (bindWA->errStatus()))
+        {
+          return NULL;
+        }
+      
       // Compare column lists
       // TBD - return what mismatches
-      if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
+      if ( nativeNATable && 
+           !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
            (NOT bindWA->externalTableDrop()))
         {
           *CmpCommon::diags() << DgSqlCode(-3078)
@@ -1638,6 +1696,31 @@ NATable *BindWA::getNATable(CorrName& corrName,
 
   return table;
 } // BindWA::getNATable()
+
+NATable *BindWA::getNATableInternal(
+     CorrName& corrName,
+     NABoolean catmanCollectTableUsages, // default TRUE
+     TrafDesc *inTableDescStruct,     // default NULL
+     NABoolean extTableDrop)
+{
+  ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
+  Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
+  Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+  
+  setAllowExternalTables(TRUE);
+  if (extTableDrop)
+    setExternalTableDrop(TRUE);
+
+  NATable * nat = 
+    getNATable(corrName, catmanCollectTableUsages, inTableDescStruct);
+
+  // Restore parser flags settings to what they originally were
+  Assign_SqlParser_Flags (savedParserFlags);
+  setAllowExternalTables(FALSE);
+  setExternalTableDrop(FALSE);
+
+  return nat;
+}
 
 static TableDesc *createTableDesc2(BindWA *bindWA,
                                    const NATable *naTable,
@@ -9649,7 +9732,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   //   The top value ids are target value ids, the bottom value ids
   //   are those of the source.
   //
-  NABoolean view = bindWA->getNATable(getTableName())->getViewText() != NULL;
+
+  NABoolean view = bindWA->getNATableInternal(getTableName())->getViewText() != NULL;
+
   ValueIdList tgtColList, userColList, sysColList, *userColListPtr;
   CollIndexList colnoList(STMTHEAP);
   CollIndex totalColCount, defaultColCount, i;
@@ -11299,11 +11384,20 @@ RelExpr *Update::bindNode(BindWA *bindWA)
        {
          xnsfrmHbaseUpdate = TRUE;
        }
+      else if (getTableDesc()->getNATable()->isHbaseMapTable())
+       {
+         xnsfrmHbaseUpdate = TRUE;
+       }
      }  
   
   if (xnsfrmHbaseUpdate)
     {
+      ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
+      Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+
       boundExpr = transformHbaseUpdate(bindWA);
+
+      Assign_SqlParser_Flags (savedParserFlags);
     }
   else 
   // till here and remove the function transformHbaseUpdate also
@@ -12313,7 +12407,7 @@ NABoolean GenericUpdate::checkForHalloweenR2(Int32 numScansToFind)
 // whole stack of views) is *exactly one* wbase table -- i.e., no joins
 // allowed.
 //
-RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
+RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
   {
@@ -12496,6 +12590,16 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
   if (naTable && naTable->isHbaseTable())
     hbaseOper() = TRUE;
 
+  if (naTable && naTable->isHbaseMapTable() &&
+      (CmpCommon::getDefault(TRAF_HBASE_MAPPED_TABLES_IUD) == DF_OFF))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4223)
+			  << DgString0("Insert/Update/Delete on HBase mapped tables is");
+      
+      bindWA->setErrStatus();
+      return this;
+    }
+
   if ((CmpCommon::getDefault(ALLOW_DML_ON_NONAUDITED_TABLE) == DF_OFF) &&
       naTable && naTable->getClusteringIndex() && 
       (!naTable->getClusteringIndex()->isAudited())
@@ -12632,7 +12736,7 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
       (CmpCommon::getDefault(HBASE_NATIVE_IUD) == DF_OFF))
     {
       *CmpCommon::diags() << DgSqlCode(-4223)
-			  << DgString0("Insert/Update/Delete on native hbase tables or in CELL/ROW format is");
+			  << DgString0("Insert/Update/Delete on native HBase tables or in CELL/ROW format is");
       
       bindWA->setErrStatus();
       return this;
@@ -14407,6 +14511,7 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
                   (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
                   (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
                   (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -4261) || // reserved schema
                   (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
                     return this;
       

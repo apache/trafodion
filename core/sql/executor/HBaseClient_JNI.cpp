@@ -4621,27 +4621,33 @@ HTC_RetCode HTableClient_JNI::getColVal(int colNo, BYTE *colVal,
     jint kvValLen = p_kvValLen_[idx];
     jint kvValOffset = p_kvValOffset_[idx];
     Lng32 copyLen;
+    Lng32 dataLen;
     jbyte nullByte;
     // If the column is nullable, get the first byte
     // The first byte determines if the column is null(0xff) or not (0)
     if (nullable)
     {
-       copyLen = MINOF(kvValLen-1, colValLen);
-       jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset, 1, &nullByte); 
-       jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset+1, copyLen, 
-               (jbyte *)colVal); 
+      dataLen = kvValLen - 1; 
+      copyLen = MINOF(dataLen, colValLen);
+      jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset, 1, &nullByte); 
+      jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset+1, copyLen, 
+                                (jbyte *)colVal); 
     }
     else 
     {
-        copyLen = MINOF(kvValLen, colValLen);
-        nullByte = 0;
-    	jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset, copyLen,
-             (jbyte *)colVal); 
+      dataLen = kvValLen;
+      copyLen = MINOF(dataLen, colValLen);
+      nullByte = 0;
+      jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset, copyLen,
+                                (jbyte *)colVal); 
     }
     nullVal = nullByte;
-    colValLen = copyLen;
+    if (dataLen > colValLen)
+      colValLen = dataLen;
+    else
+      colValLen = copyLen;
     if (hbs_)
-      hbs_->incBytesRead(colValLen);
+      hbs_->incBytesRead(copyLen);
     return HTC_OK;
 }
 

@@ -1,13 +1,13 @@
 >>obey TEST009(set_up);
 >>prepare get_hv_schemas from
 +>select schema_name from "_MD_".objects
-+>where schema_name like '_HV_%' and object_type = 'PS';
++>where schema_name like '\_HV\_%' escape '\' and object_type = 'PS';
 
 --- SQL command prepared.
 >>
 >>prepare get_hb_schemas from
 +>select schema_name from "_MD_".objects
-+>where schema_name like '_HB_%' and object_type = 'PS';
++>where schema_name like '\_HB\_\_%' escape '\' and object_type = 'PS';
 
 --- SQL command prepared.
 >>

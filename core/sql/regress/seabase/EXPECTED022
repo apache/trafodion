@@ -426,7 +426,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_CELL_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Thu Feb 25 09:47:53 2016
+-- Definition current  Mon Dec 12 23:03:22 2016
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -445,7 +445,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_ROW_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Thu Feb 25 09:47:53 2016
+-- Definition current  Mon Dec 12 23:03:23 2016
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -465,7 +465,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_CELL_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Thu Feb 25 09:47:53 2016
+-- Definition current  Mon Dec 12 23:03:23 2016
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -484,7 +484,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_ROW_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Thu Feb 25 09:47:53 2016
+-- Definition current  Mon Dec 12 23:03:24 2016
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -568,15 +568,871 @@ ROW_ID      (EXPR)
 
 --- 2 row(s) selected.
 >>
->>?section cleanup
->>drop hbase table t022hbt1;
+>>
+>>-- tests to map hbase tables to relational traf tables
+>>cqd traf_hbase_mapped_tables 'ON';
 
 --- SQL operation complete.
->>drop hbase table t022hbt2;
+>>
+>>drop hbase table t022hbm1;
 
 --- SQL operation complete.
->>drop table t022t1;
+>>create hbase table t022hbm1 (column family 'cf');
 
 --- SQL operation complete.
+>>insert into hbase."_ROW_".t022hbm1 values ('a1', 
++>                 column_create(('cf:B', '100 ')));
+
+--- 1 row(s) inserted.
+>>insert into hbase."_ROW_".t022hbm1 values ('a2', column_create(('cf:A', 'a2')));
+
+--- 1 row(s) inserted.
+>>
+>>drop table if exists t022hbm1 cascade;
+
+--- SQL operation complete.
+>>drop external table if exists t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a varchar(4) not null, b char(4))
++>        primary key (a)
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:03:37 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>-- if no schema is specified, table is looked in regular and then mapped schema
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:03:38 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>create table t022hbm1 (a int);
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion table TRAFODION.SCH.T022HBM1
+-- Definition current  Mon Dec 12 23:03:40 2016
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>drop table t022hbm1;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:03:49 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>prepare s from select * from t022hbm1;
+
+--- SQL command prepared.
+>>execute s;
+
+A     B   
+----  ----
+
+a1    100 
+a2    ?   
+
+--- 2 row(s) selected.
+>>select * from t022hbm1 where a = 'a1';
+
+A     B   
+----  ----
+
+a1    100 
+
+--- 1 row(s) selected.
+>>select a, cast(b as int) from t022hbm1;
+
+A     (EXPR)     
+----  -----------
+
+a1            100
+a2              ?
+
+--- 2 row(s) selected.
+>>
+>>alter table t022hbm1 add column "cf".c int;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:03:53 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , "cf".C                           INT DEFAULT NULL /*added_col*/
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>-- create a traf table like a mapped table
+>>cqd schema reset;
+
+--- SQL operation complete.
+>>create table t022hbm1_like like t022hbm1;
+
+--- SQL operation complete.
+>>invoke t022hbm1_like;
+
+-- Definition of Trafodion table TRAFODION.SCH.T022HBM1_LIKE
+-- Definition current  Mon Dec 12 23:03:58 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  , "cf".C                           INT DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>insert into t022hbm1_like select * from t022hbm1;
+
+--- 2 row(s) inserted.
+>>select * from t022hbm1_like;
+
+A     B     C          
+----  ----  -----------
+
+a1    100             ?
+a2    ?               ?
+
+--- 2 row(s) selected.
+>>
+>>create table t022hbm1_ctas as select * from t022hbm1;
+
+--- 2 row(s) inserted.
+>>select * from t022hbm1_ctas;
+
+A     B     C          
+----  ----  -----------
+
+a1    100             ?
+a2    ?               ?
+
+--- 2 row(s) selected.
+>>
+>>-- create view on mapped table
+>>create view t022v1 as select * from t022hbm1;
+
+--- SQL operation complete.
+>>
+>>drop external table t022hbm1 cascade;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+*** ERROR[4082] Object TRAFODION.SCH.T022HBM1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>create external table t022hbm1 ("cf".a varchar(4) not null,
++>            b int)
++>        primary key (a)
++>        map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:04:14 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B                                INT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>alter table t022hbm1 drop column b;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:04:17 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>alter table t022hbm1 add column "cf".b int;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:04:20 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           INT DEFAULT NULL /*added_col*/
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>-- IUD operations on mapped tables
+>>cqd traf_hbase_mapped_tables_iud 'ON';
+
+--- SQL operation complete.
+>>
+>>cqd schema reset;
+
+--- SQL operation complete.
+>>delete from hbase."_ROW_".t022hbm1;
+
+--- 2 row(s) deleted.
+>>drop external table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a varchar(4) not null, b int) 
++>        primary key (a)
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1
++>        data format native;
+
+--- SQL operation complete.
+>>
+>>insert into t022hbm1 values ('a', 1);
+
+--- 1 row(s) inserted.
+>>select * from t022hbm1;
+
+A     B          
+----  -----------
+
+a               1
+
+--- 1 row(s) selected.
+>>update t022hbm1 set b = b + 1;
+
+--- 1 row(s) updated.
+>>select * from t022hbm1;
+
+A     B          
+----  -----------
+
+a               2
+
+--- 1 row(s) selected.
+>>insert into t022hbm1 values ('a', 1);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>> -- should fail
+>>insert into t022hbm1 values ('b', null);
+
+--- 1 row(s) inserted.
+>>select * from t022hbm1;
+
+A     B          
+----  -----------
+
+a               2
+b               ?
+
+--- 2 row(s) selected.
+>>delete from t022hbm1 where a = 'a';
+
+--- 1 row(s) deleted.
+>>select * from t022hbm1;
+
+A     B          
+----  -----------
+
+b               ?
+
+--- 1 row(s) selected.
+>>update t022hbm1 set b = 10;
+
+--- 1 row(s) updated.
+>>select * from t022hbm1;
+
+A     B          
+----  -----------
+
+b              10
+
+--- 1 row(s) selected.
+>>update t022hbm1 set b = null;
+
+--- 1 row(s) updated.
+>>select * from t022hbm1;
+
+A     B          
+----  -----------
+
+b               ?
+
+--- 1 row(s) selected.
+>>delete from t022hbm1;
+
+--- 1 row(s) deleted.
+>>select * from t022hbm1;
+
+--- 0 row(s) selected.
+>>
+>>drop external table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a int not null, b int not null, c int) 
++>        primary key (a, b)
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1
++>        data format native;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:04:35 2016
+
+  (
+    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".C                           INT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC, B ASC)
+
+--- SQL operation complete.
+>>insert into t022hbm1 values (1,2,3);
+
+--- 1 row(s) inserted.
+>>insert into t022hbm1 values (1,2,3);
+
+*** ERROR[8102] The operation is prevented by a unique constraint.
+
+--- 0 row(s) inserted.
+>>insert into t022hbm1 values (1, 1, 1);
+
+--- 1 row(s) inserted.
+>>insert into t022hbm1 values (-1, -2, -3);
+
+--- 1 row(s) inserted.
+>>select * from t022hbm1;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            1            1
+          1            2            3
+         -1           -2           -3
+
+--- 3 row(s) selected.
+>>upsert into t022hbm1 values (1,2,4);
+
+--- 1 row(s) inserted.
+>>select * from t022hbm1;
+
+A            B            C          
+-----------  -----------  -----------
+
+          1            1            1
+          1            2            4
+         -1           -2           -3
+
+--- 3 row(s) selected.
+>>
+>>-- various serialization options
+>>drop external table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a varchar(4) not null, primary key not serialized (a), b int) 
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:04:41 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           INT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>drop external table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a char(4) not null, primary key serialized (a), b int) 
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1
++>        data format native;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:04:49 2016
+
+  (
+    "cf".A                           CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           INT DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>drop external table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a varchar(4) not null, primary key(a), b int) 
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:04:54 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           INT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>drop external table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a varchar(4) not null primary key, b int) 
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:04:58 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           INT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>drop external table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a varchar(4) not null, b int) 
++>        primary key not serialized (a)
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:05:03 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           INT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>drop external table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a char(4) not null, b int) 
++>        primary key serialized (a) 
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1
++>        data format native;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:05:07 2016
+
+  (
+    "cf".A                           CHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           INT DEFAULT NULL
+  )
+  PRIMARY KEY (A ASC)
+
+--- SQL operation complete.
+>>
+>>drop external table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a varchar(4) not null, b int) 
++>        primary key (a)
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:05:15 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           INT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>drop hbase table t022hbm1;
+
+--- SQL operation complete.
+>>create hbase table t022hbm1 (column family 'cf');
+
+--- SQL operation complete.
+>>drop external table if exists t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a varchar(4) not null, b int) 
++>        primary key (a) 
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>insert into hbase."_ROW_".t022hbm1 values ('a1', column_create(('cf:B', '10')));
+
+--- 1 row(s) inserted.
+>>
+>>-- multi column families in mapped table
+>>drop external table if exists t022hbm2;
+
+--- SQL operation complete.
+>>drop hbase table t022hbm2;
+
+--- SQL operation complete.
+>>create hbase table t022hbm2 (column family 'cf1', column family 'cf2');
+
+--- SQL operation complete.
+>>create external table t022hbm2 ("cf1".A int, "cf2".B int, 
++>                           "cf1".Z varchar(4) not null primary key) 
++>     map to hbase table t022hbm2;
+
+--- SQL operation complete.
+>>insert into hbase."_ROW_".t022hbm2 values ('a11', 
++>           column_create(('cf1:A', '10'), ('cf2:B', '20')));
+
+--- 1 row(s) inserted.
+>>invoke t022hbm2;
+
+-- Definition of Trafodion HBase mapped table T022HBM2
+-- Definition current  Mon Dec 12 23:05:29 2016
+
+  (
+    "cf1".A                          INT DEFAULT NULL
+  , "cf2".B                          INT DEFAULT NULL
+  , "cf1".Z                          VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  )
+  PRIMARY KEY NOT SERIALIZED (Z ASC)
+
+--- SQL operation complete.
+>>select * from t022hbm2;
+
+A            B            Z   
+-----------  -----------  ----
+
+         10           20  a11 
+
+--- 1 row(s) selected.
+>>
+>>-- error cases
+>>
+>>-- primary key cannot be missing
+>>select * from t022hbm1;
+
+A     B          
+----  -----------
+
+a1             10
+
+--- 1 row(s) selected.
+>>
+>>-- operations not allowed
+>>alter table t022hbm1 alter column "cf".b largeint;
+
+*** ERROR[3242] This statement is not supported. Reason: This feature not available for an HBase mapped table.
+
+--- SQL operation failed with errors.
+>>invoke t022hbm1;
+
+-- Definition of Trafodion HBase mapped table T022HBM1
+-- Definition current  Mon Dec 12 23:05:32 2016
+
+  (
+    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+  , "cf".B                           INT DEFAULT NULL
+  )
+  PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>set schema trafodion."_HB_MAP_";
+
+--- SQL operation complete.
+>>
+>>-- cannot invoke using map schema name
+>>invoke "_HB_MAP_".t022hbm1;
+
+*** ERROR[4261] The schema name _HB_MAP_ is reserved for HBase mapped tables and cannot be explicitly specified.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- cannot use "_HB_MAP_" in a table name
+>>prepare s from select * from t022hbm1;
+
+*** ERROR[4261] The schema name _HB_MAP_ is reserved for HBase mapped tables and cannot be explicitly specified.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>prepare s from select * from "_HB_MAP_".t022hbm1;
+
+*** ERROR[4261] The schema name _HB_MAP_ is reserved for HBase mapped tables and cannot be explicitly specified.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>drop table "_HB_MAP_".t022hbm1;
+
+*** ERROR[4261] The schema name _HB_MAP_ is reserved for HBase mapped tables and cannot be explicitly specified.
+
+--- SQL operation failed with errors.
+>>alter table trafodion."_HB_MAP_".t022hbm1 drop column b;
+
+*** ERROR[4261] The schema name _HB_MAP_ is reserved for HBase mapped tables and cannot be explicitly specified.
+
+--- SQL operation failed with errors.
+>>
+>>set schema trafodion.sch;
+
+--- SQL operation complete.
+>>
+>>drop external table if exists t022hbm1;
+
+--- SQL operation complete.
+>>
+>>-- cannot specify serialized option
+>>create external table t022hbm1 (a varchar(4) not null, b int) 
++>        primary key serialized (a) 
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1;
+
+*** ERROR[3242] This statement is not supported. Reason: SERIALIZED option cannot be specified for primary key of this table.
+
+--- SQL operation failed with errors.
+>>
+>>-- cannot be aligned format
+>>create external table t022hbm1 (a varchar(4) not null primary key) 
++>  attribute aligned format map to hbase table t022hbm1;
+
+*** ERROR[3242] This statement is not supported. Reason: Aligned format cannot be specified for an HBase mapped table.
+
+--- SQL operation failed with errors.
+>>
+>>-- must specify pkey
+>>create external table t022hbm1 (a char(4)) map to hbase table t022hbm1;
+
+*** ERROR[4259] Primary Key clause must be specified for an HBase mapped table.
+
+--- SQL operation failed with errors.
+>>
+>>-- external and hbase table names must be the same
+>>create external table t022hbm11 (a char(4) not null primary key) 
++>        map to hbase table t022hbm1;
+
+*** ERROR[1180] Trying to create an external HBASE table with a different schema or table name (T022HBM11) than the source table (T022HBM1).  The external schema and table name must be the same as the source.
+
+--- SQL operation failed with errors.
+>>
+>>-- all non-pkey columns must be nullable
+>>create external table t022hbm1 (a varchar(4) not null primary key,
++>              b int not null)
++>              map to hbase table t022hbm1;
+
+*** ERROR[3242] This statement is not supported. Reason: Non-key columns of an HBase mapped table must be nullable with default value of NULL.
+
+--- SQL operation failed with errors.
+>>
+>>-- all non-pkey columns must have default value of null
+>>create external table t022hbm1 (a varchar(4) not null primary key,
++>              b int default 10)
++>              map to hbase table t022hbm1;
+
+*** ERROR[3242] This statement is not supported. Reason: Non-key columns of an HBase mapped table must be nullable with default value of NULL.
+
+--- SQL operation failed with errors.
+>>
+>>-- mapped table already exist
+>>create external table t022hbm1 (a varchar(4) not null primary key) 
++>              map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a varchar(4) not null primary key) 
++>              map to hbase table t022hbm1;
+
+*** ERROR[1390] Object TRAFODION."_HB_MAP_".T022HBM1 already exists in Trafodion.
+
+--- SQL operation failed with errors.
+>>
+>>-- hbase table doesn't exist
+>>create external table t022hbm11 (a char(4) not null primary key) 
++>                map to hbase table t022hbm11;
+
+*** ERROR[4260] HBase table(T022HBM11) to be mapped as an external table does not exist.
+
+--- SQL operation failed with errors.
+>>
+>>-- cannot create view in HB_MAP schema
+>>create view "_HB_MAP_".v as select * from t022hbm1;
+
+*** ERROR[1118] Creating object TRAFODION."_HB_MAP_".V is not allowed in a reserved system schema.
+
+--- SQL operation failed with errors.
+>>
+>>-- cannot create index on an hbase external table
+>>create index ti on t022hbm1 (a);
+
+*** ERROR[3242] This statement is not supported. Reason: Cannot create index on an HBase mapped table.
+
+--- SQL operation failed with errors.
+>>
+>>drop external table if exists t022hbm1;
+
+--- SQL operation complete.
+>>drop hbase table t022hbm1;
+
+--- SQL operation complete.
+>>create hbase table t022hbm1 (column family 'cf');
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a varchar(4) not null, b int) 
++>        primary key (a) 
++>        attribute default column family 'cf'
++>        map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>insert into hbase."_ROW_".t022hbm1 values ('a1', 
++>                               column_create(('cf:A', '10')));
+
+--- 1 row(s) inserted.
+>>-- rowID must match pkey col contents
+>>select * from t022hbm1;
+
+*** ERROR[8556] An error occurred while accessing HBase table T022HBM1.  Details: HBase rowID content must match the primary key column content.
+
+--- 0 row(s) selected.
+>>
+>>drop hbase table t022hbm1;
+
+--- SQL operation complete.
+>>create hbase table t022hbm1 (column family 'cf');
+
+--- SQL operation complete.
+>>insert into hbase."_ROW_".t022hbm1 values ('a1234567', 
++>                               column_create(('cf:B', '10')));
+
+--- 1 row(s) inserted.
+>>-- primary key col length must be big enough to hold rowID
+>>select * from t022hbm1;
+
+*** ERROR[8556] An error occurred while accessing HBase table T022HBM1.  Details: retrieved rowID of length 8 is larger than the specified key size of 4.
+
+--- 0 row(s) selected.
+>>
+>>drop hbase table t022hbm1;
+
+--- SQL operation complete.
+>>create hbase table t022hbm1 (column family 'cf');
+
+--- SQL operation complete.
+>>insert into hbase."_ROW_".t022hbm1 values ('a1', 
++>                               column_create(('cf:B', '1000000')));
+
+--- 1 row(s) inserted.
+>>-- buffer to retrieve column value must be big enough
+>>cqd hbase_max_column_val_length '5';
+
+--- SQL operation complete.
+>>select * from t022hbm1;
+
+*** ERROR[8556] An error occurred while accessing HBase table T022HBM1.  Details: actual column value length of 7 is greater than the expected max buffer size of 5.
+
+--- 0 row(s) selected.
 >>
 >>log;

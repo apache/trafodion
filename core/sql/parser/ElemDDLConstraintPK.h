@@ -61,15 +61,18 @@ class ElemDDLConstraintPK : public ElemDDLConstraintUnique
 {
 
 public:
-
   // constructors
-  ElemDDLConstraintPK(ElemDDLNode * pColumnRefList = NULL)
+  ElemDDLConstraintPK(ElemDDLNode * pColumnRefList = NULL,
+                      ComPkeySerialization ser = COM_SER_NOT_SPECIFIED)
   : ElemDDLConstraintUnique(ELM_CONSTRAINT_PRIMARY_KEY_ELEM,
-                          pColumnRefList)
+                            pColumnRefList),
+    ser_(ser)
   { }
-  ElemDDLConstraintPK(OperatorTypeEnum operatorType)
+  ElemDDLConstraintPK(OperatorTypeEnum operatorType,
+                      ComPkeySerialization ser = COM_SER_NOT_SPECIFIED)
   : ElemDDLConstraintUnique(operatorType,
-                          NULL /*column_reference_list*/)
+                            NULL /*column_reference_list*/),
+    ser_(ser)
   { }
 
   // virtual destructor
@@ -82,8 +85,20 @@ public:
   virtual const NAString displayLabel2() const;
   virtual const NAString getText() const;
 
+  ComPkeySerialization ser() { return ser_; }
+  NABoolean notSerialized() 
+  { return (ser_ == ComPkeySerialization::COM_NOT_SERIALIZED); }
+  NABoolean serialized() 
+  { return (ser_ == ComPkeySerialization::COM_SERIALIZED); }
 
 private:
+  // if set to SERIALIZED, then pkey will be encoded before passint to hbase.
+  // if set to NOT_SERIALIZED, then primary key will not be encoded before 
+  // passing on to HBase.
+  // Used when accessing external HBase tables where data may not be stored
+  // in serialized mode.
+  // if not specified, then will be determined based on table type.
+  ComPkeySerialization ser_;
 
 }; // class ElemDDLConstraintPK
 
@@ -96,12 +111,11 @@ class ElemDDLConstraintPKColumn : public ElemDDLConstraintPK
 public:
 
   // constructor
-  ElemDDLConstraintPKColumn(ComColumnOrdering orderingSpec =
-                                   COM_ASCENDING_ORDER)
-  : ElemDDLConstraintPK(ELM_CONSTRAINT_PRIMARY_KEY_COLUMN_ELEM),
-  columnOrdering_(orderingSpec)
+  ElemDDLConstraintPKColumn(ComColumnOrdering orderingSpec = COM_ASCENDING_ORDER)
+       : ElemDDLConstraintPK(ELM_CONSTRAINT_PRIMARY_KEY_COLUMN_ELEM),
+         columnOrdering_(orderingSpec)
   { }
-
+  
   // virtual destructor
   virtual ~ElemDDLConstraintPKColumn();
 
@@ -113,12 +127,9 @@ public:
 
   // methods for tracing
   virtual const NAString getText() const;
-
-
 private:
 
   ComColumnOrdering columnOrdering_;
-
 }; // class ElemDDLConstraintPKColumn
 
 // -----------------------------------------------------------------------

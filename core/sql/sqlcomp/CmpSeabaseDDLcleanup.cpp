@@ -1099,7 +1099,8 @@ short CmpSeabaseMDcleanup::cleanupOrphanObjectsEntries(ExeCliInterface *cliInter
   char query[1000];
   NABoolean errorSeen = FALSE;
 
-  // find out all entries which do not have corresponsing hbase objects
+  // find out all entries which do not have corresponding hbase objects.
+  // Do not include metadata, repository and external tables.
   str_sprintf(query, "select object_uid, trim(catalog_name) || '.'  || trim(schema_name) || '.' || trim(object_name)  from %s.\"%s\".%s where catalog_name = '%s' and schema_name not in ( '_MD_', '_REPOS_', '_PRIVMGR_MD_') and schema_name not like '|_HV|_%%|_' escape '|'  and schema_name not like '|_HB|_%%|_' escape '|' and (object_type = 'BT' or object_type = 'IX') ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               getSystemCatalog());

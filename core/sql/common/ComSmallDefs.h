@@ -113,6 +113,7 @@ typedef NABoolean               ComBoolean;
 #define HIVE_STATS_SCHEMA            "\"_HIVESTATS_\""
 #define HIVE_STATS_SCHEMA_NO_QUOTES  "_HIVESTATS_"
 #define HIVE_EXT_SCHEMA_PREFIX       "_HV_"
+#define HBASE_EXT_MAP_SCHEMA         "_HB_MAP_"
 
 #define HBASE_SYSTEM_CATALOG          "HBASE"
 #define HBASE_SYSTEM_SCHEMA           "HBASE"
@@ -1107,20 +1108,23 @@ enum ComPartitioningScheme { COM_UNSPECIFIED_PARTITIONING
 #define COM_UNKNOWN_PARTITIONING_LIT         COM_UNSPECIFIED_PARTITIONING_LIT
 
 
+// aligned_format:   All columns are stored in an internal row aligned format,
+//                   and the whole row is stored in one hbase cell.
+// hbase_format:     each col is stored as one hbase cell with data in native
+//                   format (for ex: INT datatype is stored as 4-byte integer)
+// hbase_str_format: same as hbase_format except data is stored in displayable
+//                   string format(for ex: 100 is stored as string '100')
 enum ComRowFormat {  COM_UNKNOWN_FORMAT_TYPE
-                     , COM_PACKED_FORMAT_TYPE
                      , COM_ALIGNED_FORMAT_TYPE
                      , COM_HBASE_FORMAT_TYPE
-                     , COM_HIVE_EXTERNAL_FORMAT_TYPE
-                     , COM_HBASE_EXTERNAL_FORMAT_TYPE
+                     , COM_HBASE_STR_FORMAT_TYPE
 };
 
 #define COM_ROWFORMAT_LIT_LEN                2
 #define COM_UNKNOWN_FORMAT_LIT               "  "
-#define COM_PACKED_FORMAT_LIT                "PF"
 #define COM_ALIGNED_FORMAT_LIT               "AF"
-#define COM_HBASE_FORMAT_LIT                   "HF"
-#define COM_HIVE_EXTERNAL_FORMAT_TYPE_LIT    "EV"
+#define COM_HBASE_FORMAT_LIT                 "HF"
+#define COM_HBASE_STR_FORMAT_LIT             "HS"
 
 // table load action: regular, SET or MULTISET.
 // Regular:  will error out if duplicate key is inserted.
@@ -1778,7 +1782,15 @@ enum ComTransformDependent { COM_TR_DROP_DEPENDENT
 enum ComPrivilegeChecks { COM_PRIV_CHECK_PASS = 0,
                           COM_PRIV_NO_CHECK   = 1,
                           COM_PRIV_CHECK_FAIL = 2 };
-                          
+        
+// for serialization of primary keys
+enum ComPkeySerialization
+  { COM_SER_NOT_SPECIFIED =  0,    // not specified, will be set based on
+                                   // the table type
+    COM_SERIALIZED        =  1,    // pkey is serialized
+    COM_NOT_SERIALIZED    =  2     // pkey is not serialized
+  };
+                  
 // DDL Operation literals
 
 #define COM_OP_NONE_LIT                            "  "

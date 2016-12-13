@@ -3820,7 +3820,9 @@ StmtDDLCreateTable::StmtDDLCreateTable(const QualifiedName & aTableQualName,
 	  isDroppable_(TRUE),
           isInsertOnly_(FALSE),
 	  pSGOptions_(NULL),
-	  createIfNotExists_(FALSE)
+	  createIfNotExists_(FALSE),
+          mapToHbaseTable_(FALSE),
+          hbaseDataFormat_(FALSE)
 {
   setChild(INDEX_TABLE_DEFINITION, pTableDefBody);
   setChild(INDEX_ATTRIBUTE_LIST, pCreateTableAttrList);
@@ -4446,7 +4448,8 @@ StmtDDLCreateTable::synthesize()
 	    {
 	      // make the storeby list the primary key
 	      ElemDDLConstraintPK * pk = 
-		new (PARSERHEAP()) ElemDDLConstraintPK();
+		new (PARSERHEAP()) ElemDDLConstraintPK
+                (NULL, sbkcl->getSerializedOption());
 	      pk->setColumnRefList(keyColsList);
 	      pk->setConstraintKind(ElemDDLConstraint::TABLE_CONSTRAINT_DEF);
 	      pk->setConstraintAttributes(NULL);

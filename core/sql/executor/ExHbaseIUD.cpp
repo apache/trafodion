@@ -514,7 +514,8 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 
 	case EVAL_ROWID_EXPR:
 	  {
-	    if (evalRowIdExpr(TRUE) == -1)
+            NABoolean isVC = hbaseAccessTdb().keyInVCformat();
+	    if (evalRowIdExpr(isVC) == -1)
 	      {
 		step_ = HANDLE_ERROR;
 		break;
@@ -901,7 +902,8 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 
 	case EVAL_ROWID_EXPR:
 	  {
-	    if (evalRowIdExpr(TRUE) == -1)
+            NABoolean isVC = hbaseAccessTdb().keyInVCformat();
+	    if (evalRowIdExpr(isVC) == -1)
 	      {
 		step_ = HANDLE_ERROR;
 		break;
@@ -1422,7 +1424,8 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
       case EVAL_ROWID_EXPR:
       {
-        if (evalRowIdExpr(TRUE) == -1)
+        NABoolean isVC = hbaseAccessTdb().keyInVCformat();
+        if (evalRowIdExpr(isVC) == -1)
         {
           step_ = HANDLE_ERROR;
           break;
@@ -3858,15 +3861,18 @@ Lng32 ExHbaseAccessSQRowsetTcb::setupUniqueKey()
   char * beginKeyRow = keyData.getDataPointer();
   HbaseStr rowIdRowText;
 
-  if (hbaseAccessTdb().sqHbaseTable()) {
-      rowIdRowText.val = beginKeyRow;
-      rowIdRowText.len = hbaseAccessTdb().keyLen_;
-  } else {
-      // hbase table. Key is in varchar format.
+  if ((NOT hbaseAccessTdb().sqHbaseTable()) ||
+      (hbaseAccessTdb().keyInVCformat())) {
+      // Key is in varchar format.
       short keyLen = *(short*)beginKeyRow;
       rowIdRowText.val = beginKeyRow + sizeof(short);
       rowIdRowText.len = keyLen;
+   }
+  else {
+    rowIdRowText.val = beginKeyRow;
+    rowIdRowText.len = hbaseAccessTdb().keyLen_;
   }
+
   if (keyRangeStatus == keyRangeEx::NO_MORE_RANGES)		
   {		
       // To ensure no row is found, add extra byte with "0" value 		
