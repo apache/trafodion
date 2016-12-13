@@ -8877,7 +8877,7 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
     | TOK_TO_TIME '(' value_expression ',' character_string_literal ')'
                                {
                                  $$ = new (PARSERHEAP()) 
-                                   DateFormat($3, *$5, DateFormat::FORMAT_TO_DATE);
+                                   DateFormat($3, *$5, DateFormat::FORMAT_TO_TIME);
 			       }
     | TOK_TO_TIMESTAMP '(' value_expression ')'
                                {

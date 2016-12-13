@@ -7560,13 +7560,30 @@ is one of the following character string literals:
 ** 'DD-MM-YYYY'
 ** 'DD-MON-YYYY'
 ** 'DDMONYYYY'
+** 'YYYYMMDDHH24MISS'
+** 'DD.MM.YYYY:HH24.MI.SS'
+** 'YYYY-MM-DD HH24:MI:SS'
+** 'YYYYMMDD:HH24:MI:SS'
+** 'MMDDYYYY HH24:MI:SS'
+** 'MM/DD/YYYY HH24:MI:SS'
+** 'DD-MON-YYYY HH:MI:SS'
+** 'MONTH DD, YYYY, HH:MI'
+** 'DD.MM.YYYY HH24.MI.SS'
 
 Here, YYYY refers to a 4-digit year. YY refers to a two-digit year. MM refers to a two-digit month. MON refers to
 a three-letter abbreviation for month ('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP',
-'OCT', 'NOV' or 'DEC'). The month may be given in lower case, upper case or any mixture.
+'OCT', 'NOV' or 'DEC'). MONTH refers to the month spelled out. The month in either MON or MONTH form may be given in lower case, upper case or any mixture.
+
+HH and HH24 refer to a 2-digit hour field. MI refers to a two-digit minutes field. SS refers to a 2-digit seconds field.
 
 If the _format-string_ argument is omitted, 'YYYY-MM-DD' is used as the
 default.
+
+[[considerations_for_to_date]]
+=== Considerations for TO_DATE
+
+If the _format-string_ contains hour, minute or seconds fields, the output data type is timestamp. Otherwise,
+the output data type is date.
 
 [[examples_of_to_date]]
 === Examples of TO_DATE
@@ -7589,11 +7606,17 @@ TO_DATE ('12-07-2016', 'DD-MM-YYYY')
 TO_DATE ('07DEC2016', 'DDMONYYYY')
 ```
 
+* This function returns the timestamp value '2016-12-07 17:05:01.000000':
++
+```
+TO_DATE ('07.12.2016:17.05.01', 'DD.MM.YYYY:HH24.MI.SS')
+```
+
 <<<
 [[to_time_function]]
 == TO_TIME Function
 
-The TO_TIME function converts a character value to a time or timestamp. The
+The TO_TIME function converts a character value to a time. The
 second argument describes the format of the character value.
 
 ```
@@ -7608,28 +7631,11 @@ is an expression that gives a character value.
 +
 is one of the following character string literals:
 
+** 'HH:MI:SS'
 ** 'HH24:MI:SS'
-** 'YYYYMMDDHH24MISS'
-** 'DD.MM.YYYY:HH24.MI.SS'
-** 'YYYY-MM-DD HH24:MI:SS'
-** 'YYYYMMDD:HH24:MI:SS'
-** 'MMDDYYYY HH24:MI:SS'
-** 'MM/DD/YYYY HH24:MI:SS'
-** 'DD-MON-YYYY HH:MI:SS'
-** 'MONTH DD, YYYY, HH:MI'
-** 'DD.MM.YYYY HH24.MI.SS'
 
-Here, YYYY refers to a 4-digit year. YY refers to a two-digit year. MM refers to a two-digit month. MON refers to
-a three-letter abbreviation for month ('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP',
-'OCT', 'NOV' or 'DEC'). MONTH refers to the month spelled out. The month in either MON or MONTH form may be given in lower case, upper case or any mixture.
 
-HH and HH24 refer to a 2-digit hour field. MI refers to a two-digit minutes field. SS refers to a 2-digit seconds field.
-
-[[considerations_for_to_time]]
-=== Considerations for TO_TIME
-
-If the _format-string_ is 'HH24:MI:SS', then the output data time is time. Otherwise
-the output data type is timestamp.
+Here, HH and HH24 refer to a 2-digit hour field. MI refers to a two-digit minutes field. SS refers to a 2-digit seconds field.
 
 [[examples_of_to_time]]
 === Examples of TO_TIME
@@ -7638,12 +7644,6 @@ the output data type is timestamp.
 +
 ```
 TO_TIME ('17:05:01', 'HH24:MI:SS')
-```
-
-* This function returns the timestamp value '2016-12-07 17:05:01.000000':
-+
-```
-TO_TIME ('07.12.2016:17.05.01', 'DD.MM.YYYY:HH24.MI.SS')
 ```
 			
 <<<

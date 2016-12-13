@@ -3985,8 +3985,9 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
 {
   Lng32 error = 0;
 
-  NABoolean tc  = (formatType_ == FORMAT_TO_CHAR);
-  NABoolean td  = (formatType_ == FORMAT_TO_DATE);
+  NABoolean toChar  = (formatType_ == FORMAT_TO_CHAR);
+  NABoolean toDate  = (formatType_ == FORMAT_TO_DATE);
+  NABoolean toTime  = (formatType_ == FORMAT_TO_TIME);
   NABoolean df  = ExpDatetime::isDateFormat(frmt);
   NABoolean tf  = ExpDatetime::isTimeFormat(frmt);
   NABoolean tsf = ExpDatetime::isTimestampFormat(frmt);
@@ -4004,7 +4005,22 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
       error = 1; // error 4065
     }
 
-  if (!error && tc)
+  if (toDate && NOT (df || tsf))
+    {
+      // TO_DATE requires date format or timestamp format
+      // unless we are in mode_special_4 in which case
+      // numeric format is accepted
+      if (NOT (ms4 && nf))
+        error = 1; // error 4065
+    }
+
+  if (toTime && NOT tf)
+    {
+      // TO_TIME requires time format
+      error = 1; // error 4065
+    }
+
+  if (!error && toChar)
     {
       // source must be datetime with to_char function
       if (opType->getTypeQualifier() != NA_DATETIME_TYPE)
@@ -4015,7 +4031,7 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
         error = 3; // error 4072
     }
 
-  if (!error && td)
+  if (!error && toDate)
     {
       // source must be char or numeric with to_date
       if ((opType->getTypeQualifier() != NA_CHARACTER_TYPE) &&
@@ -4049,8 +4065,8 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
         case 1: 
           {
             *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
-                                << DgString1((formatType_ == FORMAT_TO_CHAR
-                                              ? "TO_CHAR" : "TO_DATE"));
+                                << DgString1((toChar ? "TO_CHAR" : 
+                                                       (toDate ? "TO_DATE" : "TO_TIME")));
             bindWA->setErrStatus();
           }
           break;

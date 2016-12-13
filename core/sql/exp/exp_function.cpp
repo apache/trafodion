@@ -2668,9 +2668,13 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
                                              diagsArea,
                                              0) < 0) {
             
-            if (diagsArea && (*diagsArea) && 
-                (*diagsArea)->getNumber(DgSqlCode::ERROR_) == 0)
+            if (diagsArea && 
+                (!(*diagsArea) ||
+                  ((*diagsArea) && 
+                  (*diagsArea)->getNumber(DgSqlCode::ERROR_) == 0)))
               {
+                // we expect convAsciiToDate to raise a diagnostic; if it
+                // didn't, raise an internal error here
                 ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
                                         derivedFunction(),
                                         origFunctionOperType());
