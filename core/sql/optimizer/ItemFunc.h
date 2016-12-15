@@ -1821,6 +1821,7 @@ public:
   {
     FORMAT_GENERIC = 0,
     FORMAT_TO_DATE,
+    FORMAT_TO_TIME,
     FORMAT_TO_CHAR
   };
 

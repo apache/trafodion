@@ -151,22 +151,7 @@
 2016-03-01 10:11:00.000000
 
 --- 1 row(s) selected.
->>select to_date ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
-
-(EXPR)  
---------
-
-10:23:34
-
---- 1 row(s) selected.
->>select to_date ('10:23:34', 'HH:MI:SS') from (values(1)) x(a);
-
-(EXPR)  
---------
-
-10:23:34
-
---- 1 row(s) selected.
+>>
 >>select to_time ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
 
 (EXPR)  
@@ -635,6 +620,45 @@ A           B                               C
 
 *** ERROR[8822] The statement was not prepared.
 
+>>select to_date ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
+
+*** ERROR[4065] The format, "HH24:MI:SS", specified in the TO_DATE function is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select to_date ('10:23:34', 'HH:MI:SS') from (values(1)) x(a);
+
+*** ERROR[4065] The format, "HH24:MI:SS", specified in the TO_DATE function is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select to_date('04-DEC-2016','DDMONYYYY') from (values(1)) x(a);
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: -DEC-2016
+
+--- 0 row(s) selected.
+>>select to_time('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
+
+*** ERROR[4065] The format, "YYYY-MM-DD", specified in the TO_TIME function is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select to_time('03/01/2016 10:11:12', 'MM/DD/YYYY HH24:MI:SS') from (values(1)) x(a);
+
+*** ERROR[4065] The format, "MM/DD/YYYY HH24:MI:SS", specified in the TO_TIME function is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select to_time('01:61:01', 'HH24:MI:SS') from (values(1)) x(a);
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 01:61:01
+
+--- 0 row(s) selected.
+>>select to_date('2016-04-33 01:01:01','YYYY-MM-DD HH24:MI:SS') from (values(1)) x(a);
+
+*** ERROR[8415] The provided DATE, TIME, or TIMESTAMP is not valid and cannot be converted. Source data: 2016-04-33 01:01:01
+
+--- 0 row(s) selected.
 >>select * from t030t1 where to_date(c, 'YYYY-MM-DD') = '2016-03-01';
 
 A           B                               C
