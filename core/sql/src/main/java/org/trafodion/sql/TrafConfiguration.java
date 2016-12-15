@@ -33,7 +33,7 @@ public class TrafConfiguration extends HBaseConfiguration {
 
   public static Configuration addTrafResources(Configuration conf) {
     Configuration lv_conf = new Configuration();
-    String trafSiteXml = new String(System.getenv("MY_SQROOT") + "/etc/trafodion-site.xml");
+    String trafSiteXml = new String(System.getenv("TRAF_HOME") + "/etc/trafodion-site.xml");
     Path fileRes = new Path(trafSiteXml);
     lv_conf.addResource(fileRes);
     Iterator<Map.Entry<String,String>> iter = lv_conf.iterator();

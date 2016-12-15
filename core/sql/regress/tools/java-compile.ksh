@@ -82,7 +82,7 @@ if [ "$REGRRUNDIR" = "" ]; then
   REGRRUNDIR=$(pwd)
 fi
 
-export CLASSPATH=$CLASSPATH:$MY_SQROOT/export/lib/spjsql.jar
+export CLASSPATH=$CLASSPATH:$TRAF_HOME/export/lib/spjsql.jar
 
 # Consider using -nowarn to turn off warnings
 echo -- Executing: \$javac -d \$REGRRUNDIR $BaseNameList

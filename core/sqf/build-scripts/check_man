@@ -20,8 +20,8 @@
 #
 # @@@ END COPYRIGHT @@@
 
-echo "MY_SQROOT=$MY_SQROOT"
-cd $MY_SQROOT/sql/scripts
+echo "TRAF_HOME=$TRAF_HOME"
+cd $TRAF_HOME/sql/scripts
 files=`ls`
 hdr=0
 for f in $files; do
@@ -39,7 +39,7 @@ for f in $files; do
 		continue
 	fi
 	MANDIR="export/share/man/man1"
-	if [ ! -r $MY_SQROOT/${MANDIR}/$f.1 ]; then
+	if [ ! -r $TRAF_HOME/${MANDIR}/$f.1 ]; then
 		if [ $hdr = 0 ]; then
 			echo "WARNING:    The following files in sqf/sql/scripts"
 			echo "do not have a matching man page in sqf/${MANDIR} :"

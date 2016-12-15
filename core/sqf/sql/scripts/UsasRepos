@@ -48,7 +48,7 @@ reorgNeeded()
   echo "FALSE"
 }
 
-MXCI="$MY_SQROOT/export/bin$SQ_MBTYPE/sqlci"
+MXCI="$TRAF_HOME/export/bin$SQ_MBTYPE/sqlci"
 cat="MANAGEABILITY"
 log="RALog"
 

@@ -55,7 +55,7 @@ traf_package =
 dcs_cnt_per_node = 4
 
 # scratch file location, seperated by comma if more than one
-scratch_locs = $MY_SQROOT/tmp
+scratch_locs = $TRAF_HOME/tmp
 
 # start trafodion instance after installation completed
 traf_start = Y

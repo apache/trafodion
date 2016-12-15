@@ -32,7 +32,7 @@ date_str="$(date '+%Y%m%d-%H%M')"
 ###############################################################################
 which_environment()
 {
-  if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
+  if [[ -e $TRAF_HOME/sql/scripts/sw_env.sh ]]; then
     # we are on a development system where install_local_hadoop has been executed
     return 1
   elif [[ -n "$(ls /usr/lib/hadoop/hadoop-*cdh*.jar 2>/dev/null)" || -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ||  -d /opt/cloudera/parcels/CDH || -d /opt/mapr  ]]; then
@@ -52,8 +52,8 @@ do_hadoop()
   which_environment
   local wenv=$?
   if [[  ${wenv} -eq 1 ]];  then
-    . $MY_SQROOT/sql/scripts/sw_env.sh
-    $MY_SQROOT/sql/local_hadoop/hadoop/bin/hadoop $*
+    . $TRAF_HOME/sql/scripts/sw_env.sh
+    $TRAF_HOME/sql/local_hadoop/hadoop/bin/hadoop $*
   else
     #cluster
     return 1
@@ -81,8 +81,8 @@ do_hbase()
   which_environment
   local wenv=$?
   if [[  ${wenv} -eq 1 ]];  then
-    . $MY_SQROOT/sql/scripts/sw_env.sh
-    $MY_SQROOT/sql/local_hadoop/hbase/bin/hbase $*
+    . $TRAF_HOME/sql/scripts/sw_env.sh
+    $TRAF_HOME/sql/local_hadoop/hbase/bin/hbase $*
   else
     return 1
   fi
@@ -115,7 +115,7 @@ do_sudo()
   elif [[ $which_env -eq 2  ]]; then
    sudo_cmd="sudo $sudo_options -n -u $sudo_user $cmd"
   else
-   echo "***[ERROR]: Did not find supported Hadoop distribution or $MY_SQROOT is not set" | tee -a  ${log_file}
+   echo "***[ERROR]: Did not find supported Hadoop distribution or $TRAF_HOME is not set" | tee -a  ${log_file}
    return 1
   fi
   #run the command
@@ -379,7 +379,7 @@ validate_environment_and_users()
       return 1
     fi
   else
-    echo "***[ERROR]: Did not find supported Hadoop distribution or $MY_SQROOT is not set."
+    echo "***[ERROR]: Did not find supported Hadoop distribution or $TRAF_HOME is not set."
     return 1
   fi
 
@@ -428,7 +428,7 @@ start_trafodion()
     env1=1
   fi
   if [[ $env1 -eq 1 ]]; then
-    $MY_SQROOT/sql/scripts/sqstart
+    $TRAF_HOME/sql/scripts/sqstart
     sqstart_rc=$?
   elif [[ $env1 -eq 2 ]]; then
     sudo -n -u $traf_user sh -c ". /home/trafodion/.bashrc; sqstart"  

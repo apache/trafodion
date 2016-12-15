@@ -36,15 +36,14 @@ cd $HOME
 #-------------------------------------------
 # full path of your Trafodion installation
 #-------------------------------------------
-export JAVA_HOME="{{ java_home }}"
-export SQ_HOME="{{ sq_home }}"
-export MY_SQROOT=$SQ_HOME
+export TRAF_HOME="{{ traf_home }}"
 
 #-------------------------------------------
 # other env vars needed by Trafodion
 #-------------------------------------------
 
 # These env vars define all nodes in the cluster
+export JAVA_HOME="{{ java_home }}"
 export NODE_LIST="{{ node_list }}"
 export MY_NODES="{{ my_nodes }}"
 export node_count="{{ node_count }}"
@@ -55,9 +54,9 @@ export ENABLE_HA="{{ enable_ha }}"
 # Execute the sqenv.sh script if it exists.
 #-------------------------------------------
 PATH=".:$PATH"
-if [ -f $MY_SQROOT/sqenv.sh ]; then
+if [ -f $TRAF_HOME/sqenv.sh ]; then
 	pushd . >/dev/null
-	cd $MY_SQROOT
+	cd $TRAF_HOME
 	source ./sqenv.sh
 	popd >/dev/null
 	export MANPATH=$MANPATH:$MPI_ROOT/share/man

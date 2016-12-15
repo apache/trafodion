@@ -491,7 +491,7 @@ public final class ServerManager implements Callable {
                 + Constants.DCS_SERVER_USER_PROGRAM
                 + " is false. "
                 + "Please add to your dcs-site.xml file and set <value>false</value> to <value>true</value>.";
-        final String msg2 = "Environment variable $MY_SQROOT is not set.";
+        final String msg2 = "Environment variable $TRAF_HOME is not set.";
 
         boolean ready = false;
         while (!ready) {

@@ -27,7 +27,7 @@ RMS Server                            | **```rmsstart```**   | **```rmsstop```**
 
 **Example: Start Trafodion**
 
-    cd $MY_SQROOT/sql/scripts
+    cd $TRAF_HOME/sql/scripts
     sqstart
     sqcheck
 
@@ -58,5 +58,5 @@ If processes are not running as expected, then:
 
 If problems persist please review logs:
 
-* **```$MY_SQROOT/sql/local_hadoop/\*/log```**: Hadoop, HBase, and Hive logs.
-* **```$MY_SQROOT/logs```**: Trafodion logs.
+* **```$TRAF_HOME/sql/local_hadoop/\*/log```**: Hadoop, HBase, and Hive logs.
+* **```$TRAF_HOME/logs```**: Trafodion logs.

@@ -29,9 +29,9 @@ execNode = 0
 def isDev():
 	mySQROOT = ''
 	try:
-		mySQROOT = os.environ['MY_SQROOT']
+		mySQROOT = os.environ['TRAF_HOME']
 	except:
-		print "ERROR: $MY_SQROOT variable not set.  Please setup SeaQuest environment."
+		print "ERROR: $TRAF_HOME variable not set.  Please setup SeaQuest environment."
 		exit(1)
 
 	sqconfig = "%s/sql/scripts/sqconfig" % mySQROOT

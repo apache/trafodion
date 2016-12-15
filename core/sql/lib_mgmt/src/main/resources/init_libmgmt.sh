@@ -20,7 +20,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-SERVER_JAR=${MY_SQROOT}/export/lib/lib_mgmt.jar
+SERVER_JAR=${TRAF_HOME}/export/lib/lib_mgmt.jar
 CI=sqlci
 CATALOG_NAME=TRAFODION
 LIB_SCHEMA="DB__LIBMGR"

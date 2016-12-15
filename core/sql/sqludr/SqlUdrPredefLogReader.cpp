@@ -455,7 +455,7 @@ void ReadCppEventsUDFInterface::describeDesiredDegreeOfParallelism(
 {
   // check for configurations with virtual nodes. Run the UDF serially
   // in those cases, since all the virtual nodes share the same node.
-  int usesNoVirtualNodes = system("grep '^[ \t]*_virtualnodes ' $MY_SQROOT/sql/scripts/sqconfig >/dev/null");
+  int usesNoVirtualNodes = system("grep '^[ \t]*_virtualnodes ' $TRAF_HOME/sql/scripts/sqconfig >/dev/null");
 
   if (usesNoVirtualNodes != 0 || useParallelExecForVirtualNodes_)
     // this TMUDF needs to run once on each node, since every
@@ -545,7 +545,7 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
     switch (logLocationIndex) 
     {
     case 0: // sqroot, for all logs other than dcs
-      logrootdir = getenv("MY_SQROOT");
+      logrootdir = getenv("TRAF_HOME");
       if (strlen(logrootdir) > 1000)
 	throw UDRException(38001, "SQROOT is longer than 1000 characters");
       break ;

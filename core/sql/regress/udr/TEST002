@@ -169,7 +169,7 @@ where x.log_file_line <100;
 
 -- copy a file with known content to the log directory and see whether
 -- we get the correct results
-sh cp $$scriptsdir$$/udr/TEST002.sample_events $$MY_SQROOT$$/logs/master_exec_regr_999_99999.log;
+sh cp $$scriptsdir$$/udr/TEST002.sample_events $$TRAF_HOME$$/logs/master_exec_regr_999_99999.log;
 
 select count(*) as num_events,
        max(log_file_line) as num_lines,
@@ -185,7 +185,7 @@ where log_file_name = 'master_exec_regr_999_99999.log'
 order by log_file_line;
 -- lines 20, 30 and 31 have parse errors and are also displayed
 
-sh rm $$MY_SQROOT$$/logs/master_exec_regr_999_99999.log;
+sh rm $$TRAF_HOME$$/logs/master_exec_regr_999_99999.log;
 
 -- some negative test cases
 prepare s from select * from udf(event_log_reader(10));
@@ -231,9 +231,9 @@ from udf(timeseries(table(select * from t002_Timeseries
                     'VAL2', 'LLi'));
 
 -- JDBC queries through a TMUDF. Note that this requires the Trafodion T4
--- driver jar to exist in $MY_SQROOT/udr/external_libs.
-sh mkdir -p $$MY_SQROOT$$/udr/external_libs;
-sh cp $$MY_SQROOT$$/export/lib/jdbcT2.jar $$MY_SQROOT$$/udr/external_libs;
+-- driver jar to exist in $TRAF_HOME/udr/external_libs.
+sh mkdir -p $$TRAF_HOME$$/udr/external_libs;
+sh cp $$TRAF_HOME$$/export/lib/jdbcT2.jar $$TRAF_HOME$$/udr/external_libs;
 
 -- with default ports, $$QUOTE$$$$JDBC_T4_URL$$$$QUOTE$$ should be
 -- 'jdbc:t4jdbc://localhost:23400/:'

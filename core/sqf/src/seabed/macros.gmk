@@ -35,7 +35,7 @@ INCMISCDIR     += $(INCMONDIR)
 
 
 # export
-EXPROOT		= $(MY_SQROOT)/export
+EXPROOT		= $(TRAF_HOME)/export
 
 # seabed
 SBROOT		= ..

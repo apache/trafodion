@@ -31,18 +31,18 @@ JAVAE=$JAVA_HOME/bin/java
 JAR=$JAVA_HOME/bin/jar
 PERL=perl
 PYTHON=python
-INSTALL_ROOT=$MY_SQROOT/trafci
+INSTALL_ROOT=$TRAF_HOME/trafci
 INSTALL_LIBDIR=$INSTALL_ROOT/lib
 INSTALL_SAMPLESDIR=$INSTALL_ROOT/samples
 INSTALL_BINDIR=$INSTALL_ROOT/bin
-EXPORTLIBDIR=$MY_SQROOT/export/lib
+EXPORTLIBDIR=$TRAF_HOME/export/lib
 CP=/bin/cp
 TEMPSRC=../temp
 
-sed 's/\#\#TRAFCI_CLASSPATH\#\#/\${MY_SQROOT}\/export\/lib\/jdbcT4-${TRAFODION_VER}.jar:\${MY_SQROOT}\/trafci\/lib\/trafci.jar/g' trafci.sh > lnxplatform.sh
+sed 's/\#\#TRAFCI_CLASSPATH\#\#/\${TRAF_HOME}\/export\/lib\/jdbcT4-${TRAFODION_VER}.jar:\${TRAF_HOME}\/trafci\/lib\/trafci.jar/g' trafci.sh > lnxplatform.sh
 mv -f lnxplatform.sh $TEMPSRC/trafci.sh
 	
-echo "Creating trafci install folder in $MY_SQROOT "
+echo "Creating trafci install folder in $TRAF_HOME "
 if [ ! -d "$INSTALL_LIBDIR" ]; then mkdir -p -m 775 $INSTALL_LIBDIR; fi
 
 echo "Copying library files to trafci install folder "

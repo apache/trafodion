@@ -181,11 +181,11 @@ echo "***IMPORTANT*** Ignore copy errors to new node."
 echo
 sleep 5
 
-sudo cp $SQ_ROOT/tmp/cluster.conf $PWD
+sudo cp $TRAF_HOME/tmp/cluster.conf $PWD
 sudo chown $(whoami).$(whoami) $PWD/cluster.conf
 $TRAF_PDCP $PWD/cluster.conf $HOME
-$TRAF_PDSH sudo cp $HOME/cluster.conf $SQ_ROOT/tmp/cluster.conf 2>&1 > /dev/null
-$TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/tmp/cluster.conf 2>&1 > /dev/null
+$TRAF_PDSH sudo cp $HOME/cluster.conf $TRAF_HOME/tmp/cluster.conf 2>&1 > /dev/null
+$TRAF_PDSH sudo chown $TRAF_USER.trafodion $TRAF_HOME/tmp/cluster.conf 2>&1 > /dev/null
 $TRAF_PDSH sudo rm $HOME/cluster.conf
 
 }
@@ -199,11 +199,11 @@ echo "***IMPORTANT*** Ignore copy errors to new node."
 echo
 sleep 5
 
-sudo cp -r $SQ_ROOT/sql/scripts/sqconfig $PWD
+sudo cp -r $TRAF_HOME/sql/scripts/sqconfig $PWD
 sudo chown $(whoami).$(whoami) $PWD/sqconfig
 $TRAF_PDCP $PWD/sqconfig $HOME
-$TRAF_PDSH sudo cp $HOME/sqconfig $SQ_ROOT/sql/scripts/sqconfig 2>&1 > /dev/null
-$TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/sql/scripts/sqconfig 2>&1 > /dev/null
+$TRAF_PDSH sudo cp $HOME/sqconfig $TRAF_HOME/sql/scripts/sqconfig 2>&1 > /dev/null
+$TRAF_PDSH sudo chown $TRAF_USER.trafodion $TRAF_HOME/sql/scripts/sqconfig 2>&1 > /dev/null
 $TRAF_PDSH sudo rm $HOME/sqconfig
 
 
@@ -223,9 +223,9 @@ function editDCSServers {
 echo "***INFO: Create DCS servers file"
 
 source $TRAF_CONFIG
-DCS_DIR=$(sudo ls $SQ_ROOT | grep dcs\*)
+DCS_DIR=$(sudo ls $TRAF_HOME | grep dcs\*)
 
-sudo cp $SQ_ROOT/$DCS_DIR/conf/servers $PWD
+sudo cp $TRAF_HOME/$DCS_DIR/conf/servers $PWD
 sudo chown $(whoami).$(whoami) $PWD/servers
 
 let per_node=$DCS_SERVERS_PARM/$node_count
@@ -253,8 +253,8 @@ done
 
 
 $TRAF_PDCP $PWD/servers $HOME/tempServers
-$TRAF_PDSH sudo cp $HOME/tempServers $SQ_ROOT/$DCS_DIR/conf/servers
-$TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/$DCS_DIR/conf/servers
+$TRAF_PDSH sudo cp $HOME/tempServers $TRAF_HOME/$DCS_DIR/conf/servers
+$TRAF_PDSH sudo chown $TRAF_USER.trafodion $TRAF_HOME/$DCS_DIR/conf/servers
 
 
 
@@ -265,7 +265,7 @@ function editDCSBackUp {
 echo "***INFO: Create DCS Backup Master file"
 
 source $TRAF_CONFIG
-DCS_DIR=$(sudo ls $SQ_ROOT | grep dcs\*)
+DCS_DIR=$(sudo ls $TRAF_HOME | grep dcs\*)
 
 if [[ ! -z $NEW_BACKUP_DCS_NODES ]]; then
    for node_name in $BACKUP_DCS_NODES
@@ -274,8 +274,8 @@ if [[ ! -z $NEW_BACKUP_DCS_NODES ]]; then
    done
 
    $TRAF_PDCP $PWD/tempbackup $HOME
-   $TRAF_PDSH sudo cp $HOME/tempbackup $SQ_ROOT/$DCS_DIR/conf/backup-master
-   $TRAF_PDSH sudo chown $TRAF_USER.trafodion $SQ_ROOT/$DCS_DIR/conf/backup-master
+   $TRAF_PDSH sudo cp $HOME/tempbackup $TRAF_HOME/$DCS_DIR/conf/backup-master
+   $TRAF_PDSH sudo chown $TRAF_USER.trafodion $TRAF_HOME/$DCS_DIR/conf/backup-master
 
 fi
 }
@@ -294,7 +294,7 @@ $TRAF_NEW_PDSH sudo mkdir -p $HOME_DIR/$TRAF_USER/.ssh
 $TRAF_NEW_PDSH mkdir -p $HOME/tmpTraf
 sudo cp -r $HOME_DIR/$TRAF_USER/.bashrc $HOME/tmpTraf/.bashrc
 sudo cp -r $HOME_DIR/$TRAF_USER/.ssh $HOME/tmpTraf
-sudo cp -r $SQ_ROOT $HOME/tmpTraf
+sudo cp -r $TRAF_HOME $HOME/tmpTraf
 echo "***IMPORTANT: Keep waiting..."
 sudo chown -R $(whoami).$(whoami) $HOME/tmpTraf
 $TRAF_NEW_PDCP -r $HOME/tmpTraf $HOME

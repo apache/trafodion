@@ -66,12 +66,12 @@ all:  $(PROGS) mavenbuild
 mavenbuild:
 	# create a jar manifest file with the correct version information
 	mkdir -p src/main/resources
-	$(MY_SQROOT)/export/include/SCMBuildJava.sh 1.0.1 >src/main/resources/trafodion-dtm.jar.mf
+	$(TRAF_HOME)/export/include/SCMBuildJava.sh 1.0.1 >src/main/resources/trafodion-dtm.jar.mf
 	# run maven
 	set -o pipefail; $(MAVEN) package -DskipTests | tee maven_build.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
 	set -o pipefail; $(MAVEN) -f pom.xml.apache package -DskipTests | tee maven_build_apache.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'
 	set -o pipefail; $(MAVEN) -f pom.xml.hdp package -DskipTests | tee maven_build_hdp.log | grep -e '\[INFO\] Building' -e '\[INFO\] BUILD SUCCESS' -e 'ERROR'	
-	cp -pf target/trafodion-dtm-*.jar $(MY_SQROOT)/export/lib
+	cp -pf target/trafodion-dtm-*.jar $(TRAF_HOME)/export/lib
 
 $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSTMOBJS)
 	$(CXX) $(DTMOBJS) $(LNK_FLGS) $(LIBTMB) -shared -o $@ $(LIBSTMOBJS)
@@ -99,7 +99,7 @@ clean:
 	$(RM) $(PROGS)
 	$(RM) *.gcda *.gcno *.gcov
 	$(RM) -f  $(OUTDIR)/*.o
-	$(RM) -rf $(MY_SQROOT)/export/lib/trafodion-dtm-*.jar
+	$(RM) -rf $(TRAF_HOME)/export/lib/trafodion-dtm-*.jar
 	-$(MAVEN) -f pom.xml clean
 
 cleanall: clean

@@ -91,7 +91,7 @@ public final class ServerManager implements Callable {
     
     private String CLUSTERNAME;
     private String HOME;
-    private String MY_SQROOT;
+    private String TRAF_HOME;
     private byte[] cert;
     private String key;
     private Integer data;
@@ -218,21 +218,21 @@ public final class ServerManager implements Callable {
     }
     
     private void featureCheck() throws IOException{
-        String value = System.getenv("MY_SQROOT");
+        String value = System.getenv("TRAF_HOME");
         if(value == null || value.length() == 0 ) {
-            LOG.error("Environment variable $MY_SQROOT is not set.");
-            throw new IOException("Environment variable $MY_SQROOT is not set.");
+            LOG.error("Environment variable $TRAF_HOME is not set.");
+            throw new IOException("Environment variable $TRAF_HOME is not set.");
         }
-        MY_SQROOT = value;
+        TRAF_HOME = value;
         if(LOG.isDebugEnabled())
-            LOG.info("Environment variable $MY_SQROOT is set [" + MY_SQROOT + "]");
+            LOG.info("Environment variable $TRAF_HOME is set [" + TRAF_HOME + "]");
     }
     
     private void getCertificate() throws IOException {
         String path;
         CLUSTERNAME = System.getenv("CLUSTERNAME");
         if(CLUSTERNAME == null || CLUSTERNAME.length() == 0 ) {
-            path = MY_SQROOT + "/sqcert/server.crt";
+            path = TRAF_HOME + "/sqcert/server.crt";
         }
         else {
             HOME = System.getenv("HOME");

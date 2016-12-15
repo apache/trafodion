@@ -30,7 +30,7 @@
 ##############################################################################
 
 # location of local Hadoop components, we will add Drill here
-MY_SW_ROOT=$MY_SQROOT/sql/local_hadoop
+MY_SW_ROOT=$TRAF_HOME/sql/local_hadoop
 
 # Download info for Drill
 DRILL_VERSION=1.2.0
@@ -66,25 +66,25 @@ fi
 tar -xzf ${DRILL_TAR}
 ln -s ${DRILL_ID} drill
 
-cat <<EOF >${MY_SQROOT}/sql/scripts/swdrill
+cat <<EOF >${TRAF_HOME}/sql/scripts/swdrill
 #!/bin/sh
 $MY_SW_ROOT/drill/bin/drill-conf "\$@"
 EOF
 
-cat <<EOF >${MY_SQROOT}/sql/scripts/swstartdrill
+cat <<EOF >${TRAF_HOME}/sql/scripts/swstartdrill
 #!/bin/sh
 ${MY_SW_ROOT}/drill/bin/drillbit.sh --config $MY_SW_ROOT/drill/conf start
 EOF
 
-cat <<EOF >${MY_SQROOT}/sql/scripts/swstopdrill
+cat <<EOF >${TRAF_HOME}/sql/scripts/swstopdrill
 #!/bin/sh
 ${MY_SW_ROOT}/drill/bin/drillbit.sh --config $MY_SW_ROOT/drill/conf stop
 EOF
 
-chmod +x ${MY_SQROOT}/sql/scripts/sw*drill
+chmod +x ${TRAF_HOME}/sql/scripts/sw*drill
 
 # pick up environment variables with the relevant port numbers
-. ${MY_SQROOT}/sql/scripts/sw_env.sh
+. ${TRAF_HOME}/sql/scripts/sw_env.sh
 
 # customize the embedded Drill configuration to use custom
 # port numbers and files local to ${MY_SW_ROOT}
@@ -105,8 +105,8 @@ drill.exec: {
 EOF
 
 # copy the Drill JDBC driver into the external_libs folder for UDRs
-mkdir -p ${MY_SQROOT}/udr/external_libs
-cp ${MY_SW_ROOT}/drill/jars/jdbc-driver/drill-jdbc-all-${DRILL_VERSION}.jar ${MY_SQROOT}/udr/external_libs
+mkdir -p ${TRAF_HOME}/udr/external_libs
+cp ${MY_SW_ROOT}/drill/jars/jdbc-driver/drill-jdbc-all-${DRILL_VERSION}.jar ${TRAF_HOME}/udr/external_libs
 
 echo "Installed a local copy of Drill. Start a drillbit with the"
 echo "swstartdrill command, connect with swdrill."

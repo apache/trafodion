@@ -25,7 +25,7 @@
 # run the swhive convenience script if it exists, otherwise run the hive command
 # swhive is used when Hadoop is installed with install_local_hadoop
 # hive is used otherwise, e.g. on Jenkins
-if [ -x $MY_SQROOT/sql/scripts/swhive ]; then
+if [ -x $TRAF_HOME/sql/scripts/swhive ]; then
   swhive $*
 else
   hive -hiveconf hive.cli.print.header=true $*

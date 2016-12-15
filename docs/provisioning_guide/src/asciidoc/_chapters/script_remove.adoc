@@ -38,7 +38,7 @@ Do the following:
 
 ```
 su trafodion
-cd $MY_SQROOT/sql/scripts or cds
+cd $TRAF_HOME/sql/scripts or cds
 sqstop
 exit
 ```

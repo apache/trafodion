@@ -260,7 +260,7 @@ eclipseclean:
 	$(RM) .cproject .project
 
 trafinstall:
-	cd $(MY_SQROOT)/sql/scripts && install_traf_components
+	cd $(TRAF_HOME)/sql/scripts && install_traf_components
 
 lib_mgmt:
 	cd sql/lib_mgmt && $(MAKE) all

@@ -177,7 +177,7 @@ distribution manager's REST API.
 | RENEW_LIFETIME^2^  | Number times Kerberos ticket is for the Trafodion principal    | 7days                         | Can be specified when Kerberos is enabled.   
 | REST_BUILD         | Tar file containing the REST component.                        | None | Not needed if using a {project-name} package installation tar file.
 | SECURE_HADOOP^2^   | Indicates whether Hadoop has enabled Kerberos                   | Y only if Kerberos enabled | Based on whether Kerberos is enabled for your Hadoop installation
-| SQ_ROOT            | Target directory for the {project-name} software.                   | $HOME_DIR/trafodion           | {project-name} is installed in this directory on all nodes in `$NODE_LIST`.
+| TRAF_HOME            | Target directory for the {project-name} software.                   | $HOME_DIR/trafodion           | {project-name} is installed in this directory on all nodes in `$NODE_LIST`.
 | START              | Whether to start {project-name} after install/upgrade.              | N                             | Does not apply to Recipe-Based Provisioning.
 | SUSE_LINUX         | Whether your installing {project-name} on SUSE Linux.               | false                         | Auto-detected by the {project-name} Installer.
 | TRAF_KEYTAB^2^     | Name to use when specifying {project-name} keytab              | based on distribution         |  Required if Kerberos is enabled.

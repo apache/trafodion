@@ -47,9 +47,9 @@
 #   stop    - stops the ticket renewal service
 #
 # Location attributes (see krb5functions to change these values):
-#  [LOG_FILE]  : $MY_SQROOT/logs/krb5check - log where all events are stored
+#  [LOG_FILE]  : $TRAF_HOME/logs/krb5check - log where all events are stored
 #    (the log file is recreated each time the krb5service is started)
-#  [LOCK_FILE] : $MY_SQROOT/tmp/krb5check - file to keep track of krb5check process
+#  [LOCK_FILE] : $TRAF_HOME/tmp/krb5check - file to keep track of krb5check process
 #    (acts as a semiphore to prevent multiple occurrances from running)
 #  [CACHE_FILE]: /tmp/krb5cc_(trafodion linux UID) - default location for Kerberos
 #    cache ticket store (CACHE_FILE)
@@ -228,7 +228,7 @@ if [ $doStart -eq 1 ]; then
   fi
 
   # remove log, may want to handle log garbage collection differently 
-  rm $MY_SQROOT/logs/krb5check 
+  rm $TRAF_HOME/logs/krb5check 
 
   # kick off a process that wakes up once in a while and check for 
   # ticket expirations
@@ -240,7 +240,7 @@ if [ $doStart -eq 1 ]; then
   getStatus
   msg "starting service (krb5check)"
   msg "$TICKET_STATUS"
-  $MY_SQROOT/sql/scripts/krb5check -r 2 -w 300 &
+  $TRAF_HOME/sql/scripts/krb5check -r 2 -w 300 &
   krb5checkPID=`echo $!`
 
   # see if process started successfully

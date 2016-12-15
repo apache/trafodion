@@ -422,8 +422,8 @@ alias getRow="sed '1,6 d' | sed '2,6 d' | sed '1,\$s/ //g'"
   
   alias print=echo
   export SQLMX_TERMINAL_CHARSET=UTF8
-  MXCI="$MY_SQROOT/export/bin32/sqlci"
-  autoloc="$MY_SQROOT/export/lib/mx_ustat"
+  MXCI="$TRAF_HOME/export/bin32/sqlci"
+  autoloc="$TRAF_HOME/export/lib/mx_ustat"
   this_node=$(uname -n)
 
 
@@ -458,11 +458,11 @@ AutoTempTable="NEO.PUBLIC_ACCESS_SCHEMA.USTAT_AUTO_TMP_TABLES"
   # First find the total number of SQL storage nodes.
   # this line greps for the node-id text line in sqconfig file, looking for
   # storage nodes. The logical node names are stored in $nodes.
-  nodes=$(grep "^node-id=" $MY_SQROOT/sql/scripts/sqconfig | grep storage | cut -d ';' -f 2 | cut -d '=' -f 2)
+  nodes=$(grep "^node-id=" $TRAF_HOME/sql/scripts/sqconfig | grep storage | cut -d ';' -f 2 | cut -d '=' -f 2)
 
 
   # grep the number of cores per SQ node
-  cores=$(grep "^node-id=" $MY_SQROOT/sql/scripts/sqconfig | grep storage | cut -d ';' -f 3 | cut -d '=' -f 2 | cut -d '-' -f 2)
+  cores=$(grep "^node-id=" $TRAF_HOME/sql/scripts/sqconfig | grep storage | cut -d ';' -f 3 | cut -d '=' -f 2 | cut -d '-' -f 2)
 
   #
   # Uncomment and modify the following two variables to unit test special cases. 
@@ -472,16 +472,16 @@ AutoTempTable="NEO.PUBLIC_ACCESS_SCHEMA.USTAT_AUTO_TMP_TABLES"
   #cores="7 7"
   #nodes="n3 n4"
 
-  headnodes=$(grep "^node-id=" $MY_SQROOT/sql/scripts/sqconfig | grep connection | cut -d ';' -f 2 | cut -d '=' -f 2)
+  headnodes=$(grep "^node-id=" $TRAF_HOME/sql/scripts/sqconfig | grep connection | cut -d ';' -f 2 | cut -d '=' -f 2)
 
   # If no storage text line exists as in workstation environment, grep for
   # _virtualnodes.
   if [ "$nodes" = "" ]; then
-    nodes=$(grep "^_virtualnodes" $MY_SQROOT/sql/scripts/sqconfig)
+    nodes=$(grep "^_virtualnodes" $TRAF_HOME/sql/scripts/sqconfig)
   
     # We can not find node text line. Bail out.
     if [ "$nodes" = "" ]; then
-       log "Ill-formatted sqconfig file at $MY_SQROOT/sql/scripts."
+       log "Ill-formatted sqconfig file at $TRAF_HOME/sql/scripts."
        log "Exit the USAS.sh script."
       
        # In the future, we can hook up this exit with SQ version of EMS log.
@@ -525,7 +525,7 @@ fi
 # PreAuto Step #3. Create progress directory if not already running.
 # This will keep another USAS program from running at the same time.
 
-  doPreAutoStep3="$MY_SQROOT/tmp/doPreAutoStep3"
+  doPreAutoStep3="$TRAF_HOME/tmp/doPreAutoStep3"
 
   echo "rm -fr $PREV" > $doPreAutoStep3
   echo "mv $AUTODIR $PREV" >> $doPreAutoStep3

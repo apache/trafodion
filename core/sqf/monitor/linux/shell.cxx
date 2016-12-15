@@ -354,7 +354,7 @@ MonCwd::MonCwd(): cwdChanged_(false)
     }
     else
     {
-        env = getenv("MY_SQROOT");
+        env = getenv("TRAF_HOME");
         if ( env )
         {
             string monWdir;
@@ -4798,8 +4798,8 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     argv[idx+3] = path;
     idx+=3;
     argv[idx+1] = (char *) "-env";
-    argv[idx+2] = (char *) "MY_SQROOT";
-    env=getenv("MY_SQROOT");
+    argv[idx+2] = (char *) "TRAF_HOME";
+    env=getenv("TRAF_HOME");
     strcpy (sqroot, (env?env:""));
     argv[idx+3] = sqroot;
     idx+=3;
@@ -5309,7 +5309,7 @@ int up_node( int nid, char *node_name, bool nowait )
 
         // remove shared segment on the node
         char cmd[256];
-        sprintf(cmd, "pdsh -w %s \"sqipcrm %s >> $MY_SQROOT/logs/node_up_%s.log\"", node_name, node_name, node_name);
+        sprintf(cmd, "pdsh -w %s \"sqipcrm %s >> $TRAF_HOME/logs/node_up_%s.log\"", node_name, node_name, node_name);
         system(cmd);
 
         // Start a monitor process on the node
@@ -5583,7 +5583,7 @@ void write_startup_log( char *msg )
     char fname[PATH_MAX];
     char msgString[MAX_BUFFER] = { 0 };
 
-    char *tmpDir = getenv( "MY_SQROOT" );
+    char *tmpDir = getenv( "TRAF_HOME" );
     if ( tmpDir )
     {
         snprintf( fname, sizeof(fname), "%s/sql/scripts/startup.log", tmpDir );

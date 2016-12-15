@@ -196,7 +196,7 @@ function dropTable
 function drTab
 {
   echo "dropping REWRITE_PUBLISH table. Please wait...."
-  $MY_SQROOT/export/bin32/sqlci <<aeof >>$NULL
+  $TRAF_HOME/export/bin32/sqlci <<aeof >>$NULL
     log $drTabLog clear;
 --
     drop schema MANAGEABILITY.MV_REWRITE cascade;

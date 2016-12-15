@@ -550,7 +550,7 @@ public class FileMgmt {
 
 	private static String getCodeFilePath(Connection conn) throws SQLException {
 		String user = getCurrentUser(conn);
-		String root = System.getenv("MY_SQROOT");
+		String root = System.getenv("TRAF_HOME");
 		if (root == null || "".equals(root.trim())) {
 			LOG.error("Cant get your traf installation path!");
 			throw new SQLException("Cant get your traf installation path!");

@@ -28,10 +28,10 @@
 #
 ####################################################
 
-if [ ! -z $MY_SQROOT ]; then
-    cd $MY_SQROOT/sql/scripts
+if [ ! -z $TRAF_HOME ]; then
+    cd $TRAF_HOME/sql/scripts
 else
-    echo "The environment variable MY_SQROOT does not exist."
+    echo "The environment variable TRAF_HOME does not exist."
     echo "Please ensure sqenv.sh has been sourced."
     echo
     exit 1;
@@ -54,7 +54,7 @@ fi
 
 lv_starttime=`date`
 
-lv_stderr_file="$MY_SQROOT/logs/hbase_hbck_repair.log"
+lv_stderr_file="$TRAF_HOME/logs/hbase_hbck_repair.log"
 echo "Stderr being written to the file: ${lv_stderr_file}"
 ${HBASE_HOME}/bin/hbase hbck -repair > ${lv_stderr_file} 2>${lv_stderr_file}
 

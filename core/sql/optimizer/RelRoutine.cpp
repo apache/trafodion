@@ -1094,8 +1094,8 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
   NAString libraryPath;
 
   // the libraries for predefined UDRs are in the regular
-  // library directory $MY_SQROOT/export/lib${SQ_MBTYPE}
-  libraryPath += getenv("MY_SQROOT");
+  // library directory $TRAF_HOME/export/lib${SQ_MBTYPE}
+  libraryPath += getenv("TRAF_HOME");
   libraryPath += "/export/lib";
 
   switch (getOperatorType())

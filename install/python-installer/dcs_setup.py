@@ -31,22 +31,22 @@ from common import ParseXML, append_file, write_file, mod_file, cmd_output, run_
 def run():
     dbcfgs = json.loads(dbcfgs_json)
 
-    SQ_ROOT = os.environ['MY_SQROOT']
+    TRAF_HOME = os.environ['TRAF_HOME']
     TRAF_VER = dbcfgs['traf_version']
     HBASE_XML_FILE = dbcfgs['hbase_xml_file']
 
-    DCS_INSTALL_ENV = 'export DCS_INSTALL_DIR=%s/dcs-%s' % (SQ_ROOT, TRAF_VER)
-    REST_INSTALL_ENV = 'export REST_INSTALL_DIR=%s/rest-%s' % (SQ_ROOT, TRAF_VER)
+    DCS_INSTALL_ENV = 'export DCS_INSTALL_DIR=%s/dcs-%s' % (TRAF_HOME, TRAF_VER)
+    REST_INSTALL_ENV = 'export REST_INSTALL_DIR=%s/rest-%s' % (TRAF_HOME, TRAF_VER)
 
-    DCS_CONF_DIR = '%s/dcs-%s/conf' % (SQ_ROOT, TRAF_VER)
+    DCS_CONF_DIR = '%s/dcs-%s/conf' % (TRAF_HOME, TRAF_VER)
     DCS_SRV_FILE = DCS_CONF_DIR + '/servers'
     DCS_MASTER_FILE = DCS_CONF_DIR + '/master'
     DCS_BKMASTER_FILE = DCS_CONF_DIR + '/backup-masters'
     DCS_ENV_FILE = DCS_CONF_DIR + '/dcs-env.sh'
     DCS_SITE_FILE = DCS_CONF_DIR + '/dcs-site.xml'
-    REST_SITE_FILE = '%s/rest-%s/conf/rest-site.xml' % (SQ_ROOT, TRAF_VER)
-    TRAFCI_FILE = SQ_ROOT + '/trafci/bin/trafci'
-    SQENV_FILE = SQ_ROOT + '/sqenvcom.sh'
+    REST_SITE_FILE = '%s/rest-%s/conf/rest-site.xml' % (TRAF_HOME, TRAF_VER)
+    TRAFCI_FILE = TRAF_HOME + '/trafci/bin/trafci'
+    SQENV_FILE = TRAF_HOME + '/sqenvcom.sh'
 
     ### dcs setting ###
     # servers

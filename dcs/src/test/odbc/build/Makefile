@@ -21,7 +21,7 @@
 #// @@@ END COPYRIGHT @@@
 #**************************************************************************/
 
-LIB = -L${MY_SQROOT}/export/lib64 -ltrafodbc64
+LIB = -L${TRAF_HOME}/export/lib64 -ltrafodbc64
 CXX_FLAGS = -c -g -fshort-wchar -I/usr/include/odbc
 CC = /usr/bin/g++
 

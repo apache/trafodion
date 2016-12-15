@@ -46,7 +46,7 @@ coreinfo_environ
 eof
 	rc=$?
 	if [ $rc = 0 ]; then
-		croot=`grep '^MY_SQROOT=' $TMP`
+		croot=`grep '^TRAF_HOME=' $TMP`
 		if [ -z "$croot" ]; then
 			rc=1
 		fi
@@ -88,7 +88,7 @@ eof
 #
 function chk_core_hard {
 	from=`file -L $core | sed "s|^.*from '|'|"`
-	args="-s MY_SQROOT="
+	args="-s TRAF_HOME="
 	if [ $ldpath = 1 ]; then
 		args="$args -s LD_LIBRARY_PATH="
 	fi
@@ -101,7 +101,7 @@ function chk_core_hard {
 	    	LD_LIBRARY_PATH=*)
 			cldpath=$cd
 			;;
-	    	MY_SQROOT=*)
+	    	TRAF_HOME=*)
 			croot=$cd
 			;;
 	    	PATH=*)

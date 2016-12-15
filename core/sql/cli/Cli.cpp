@@ -8570,7 +8570,7 @@ Lng32 SQLCLI_GetSystemVolume_Internal(
   // Very first time the SMD Location is uninitialized in CliGlobals. In this
   // case the location is acquired from
   // the environment variable SQLMX_SMD_LOCATION defined in the
-  // $MY_SQROOT/etc/ms.env configuration file
+  // $TRAF_HOME/etc/ms.env configuration file
   // (The SQLMX_SMD_LOCATION value should contain a valid volume name only;
   //  for example: SQLMX_SMD_LOCATION='$DATA2' - The default volume name
   //  $SYSTEM is used when SQLMX_SMD_LOCATION is not defined or when the

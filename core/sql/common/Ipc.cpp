@@ -641,7 +641,7 @@ void IpcServer::logEspRelease(const char * filename, int lineNum,
     // LCOV_EXCL_START
     /*
     Coverage notes: to test this code in a dev regression requires
-    changing $MY_SQROOT/etc/ms.env.  However, it was tested in
+    changing $TRAF_HOME/etc/ms.env.  However, it was tested in
     stress test on May 10, 2012.
     */
     char logMsg[500];
@@ -1665,7 +1665,7 @@ WaitReturnStatus IpcSetOfConnections::waitOnSet(IpcTimeout timeout,
                             /*
                             Coverage notes: to test this code in a dev 
                             regression requires changing 
-                            $MY_SQROOT/etc/ms.env.  However, it was 
+                            $TRAF_HOME/etc/ms.env.  However, it was 
                             tested in stress test on 
                             May 10, 2012.
                             */
