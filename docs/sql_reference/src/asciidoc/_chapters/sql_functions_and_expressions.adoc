@@ -3622,8 +3622,8 @@ The following example returns concatenated strings for column test_score for eac
          GROUP BY student_name;
 STUDENT_NAME     (EXPR)
 --------------  --------------
-scott            80 90 91 56
-tom              77 43 91
+scott            91 90 80 56
+tom              91 77 43
 ```
 
 <<<
