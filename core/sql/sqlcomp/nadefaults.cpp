@@ -459,6 +459,7 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
  // see comments in DefaultConstants.h
   DDkwd__(BIGNUM_IO,		                "SYSTEM"),
 
+  DDint__(BLOCK_ENCRYPTION_MODE,             "0"),
  XDDkwd__(BLOCK_TO_PREVENT_HALLOWEEN,           "ON"),
 
   DDflte_(BMO_CITIZENSHIP_FACTOR,             "1."),

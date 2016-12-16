@@ -45,6 +45,7 @@
 #include "OptimizerSimulator.h"
 #include "exp_datetime.h"
 
+#include "ComSSL.h"
 // For TRIGGERS_STATUS_VECTOR_SIZE and SIZEOF_UNIQUE_EXECUTE_ID
 #include "Triggers.h"
 #include "TriggerEnable.h"
@@ -1361,6 +1362,58 @@ const NAType *BuiltinFunction::synthesizeType()
           {
               retType->setNullable(TRUE);
           }
+      }
+      break;
+
+    case ITM_AES_ENCRYPT:
+    case ITM_AES_DECRYPT:
+      {
+        const NAType &typ1 = child(0)->getValueId().getType();
+        const NAType &typ2 = child(1)->getValueId().getType();
+
+        if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE ||
+                typ2.getTypeQualifier() != NA_CHARACTER_TYPE)
+        {
+          *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
+          return NULL;
+        }
+
+        if (getArity() == 3)
+        {
+          // check the optional init_vector argument
+          const NAType &typ3 = child(0)->getValueId().getType();
+          if (typ3.getTypeQualifier() != NA_CHARACTER_TYPE)
+          {
+            *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
+          }
+        }
+
+        Int32 source_len = typ1.getNominalSize();
+
+        Int32 maxLength = source_len;
+
+        // the origin string is short than encrypted string, so for descrypt process,
+        // the length of source string is enough.
+        // When encrypting a string, we need a formula to calculate the length
+        if (getOperatorType() == ITM_AES_ENCRYPT)
+        {
+          // the length of crypt_str can be calculated by
+          // block_size * (trunc(string_length / block_size) + 1)
+          //
+          // the block_size should be get using EVP_CIPHER_block_size(), but in some Algorithm
+          // type, it return 1 in OpenSSL 1.0.1e . So using EVP_MAX_BLOCK_LENGTH instead of it,
+          // which can make sure longer then block size.
+          //Int32 aes_mode = CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE);
+          //size_t block_size = EVP_CIPHER_block_size(aes_algorithm_type[aes_mode]);
+
+          Int32 block_size = EVP_MAX_IV_LENGTH;
+          if (block_size > 1) {
+            maxLength = block_size * (source_len / block_size) + block_size;
+          }
+        }
+
+        retType = new HEAP
+            SQLVarChar(maxLength, TRUE);
       }
       break;
 

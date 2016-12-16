@@ -3162,6 +3162,7 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
   ItemExpr * ie = NULL;
   switch (getOperatorType())
     {
+
     case ITM_ISIPV4:
     case ITM_ISIPV6:
     case ITM_MD5:
@@ -3346,7 +3347,11 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
          // when running on a system that is using the Unicode Config),
          // we need the following code.
       }
+    break;
 
+    case ITM_AES_ENCRYPT:
+    case ITM_AES_DECRYPT:
+      break;
     default:
       {
       }

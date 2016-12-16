@@ -1848,6 +1848,10 @@ drop the default context
 8951 ZZZZZ 99999 BEGINNER MAJOR DBADMIN SeaMonster function $0~String0 returned $1~Int0 (pid $2~Int1, process $3~String1), retry code $4~NSKCode.
 8952 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~String0: One or more SeaMonster connections were closed due to errors on an ESP control connection. The first connection to close was communicating with SeaMonster target ($1~String1) and was notified of error $2~Int0 on a control connection.
 8953 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~String0: Query timed out after $1~Int0 seconds waiting for SeaMonster fixup replies. The number of replies expected was $2~Int1. The number of replies received was $3~Int2.
+8954 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The initialization vector supplied to $0~Int0 is too short, Must be at least $1~Int1 bytes long
+8955 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incorrect parameter count in the call to function $0~String0
+8956 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~String0 option ignored
+8957 ZZZZZ 99999 BEGINNER MAJOR DBADMIN OpenSSL return error int the call to function $0~String0
 8960 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD is unable to create file $0~String0.
 8961 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD is unable to write to file $0~String0.
 8962 ZZZZZ 99999 BEGINNER MAJOR DBADMIN UNLOAD is unable to allocate buffers for data.

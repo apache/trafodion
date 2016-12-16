@@ -63,6 +63,8 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("ADD",                TOK_ADD,         ANS_|RESWORD_),
   ParKeyWord("ADD_MONTHS",         TOK_ADD_MONTHS,  NONRESTOKEN_),
   ParKeyWord("ADMIN",              TOK_ADMIN,       COMPAQ_|RESWORD_),
+  ParKeyWord("AES_ENCRYPT",        TOK_AES_ENCRYPT, NONRESTOKEN_),
+  ParKeyWord("AES_DECRYPT",        TOK_AES_DECRYPT, NONRESTOKEN_),
   ParKeyWord("AFTER",              TOK_AFTER,       ANS_|RESWORD_|NONRESTOKEN_),
   ParKeyWord("AGGREGATE",          TOK_AGGREGATE,   COMPAQ_|RESWORD_),
   ParKeyWord("ALIAS",              TOK_ALIAS,       POTANS_|RESWORD_),
