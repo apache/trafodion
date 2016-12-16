@@ -427,9 +427,15 @@ SQLRETURN CDiagRec::GetDiagRec(SQLSMALLINT	RecNumber,
 			{
 				if((rc = icuConv->OutArgTranslationHelper((SQLCHAR *)MsgStruct.lpsMsgText.c_str(), tmpStrLen,
 							(char*)MessageText, translateLengthMax,  (int *)&translateLength, NULL, (char *)errorMsg)) != SQL_SUCCESS)
-					rc = SQL_SUCCESS; // Supress SQL_ERROR or SQL_SUCCESS_WITH_INFO to prevent trace from looping;
-					strLen = translateLength;
+					rc = SQL_SUCCESS_WITH_INFO;
+				strLen = tmpStrLen;
 			}
+			else
+			{
+				rc = SQL_SUCCESS_WITH_INFO;
+				strLen = tmpStrLen;
+			}
+			
 			if (TextLengthPtr != NULL)
 				*TextLengthPtr = strLen;
 		}
