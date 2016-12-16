@@ -37,7 +37,7 @@ def run():
     # this script is running by trafodion user, so get sqroot from env
     TRAF_HOME = os.environ['TRAF_HOME']
     if TRAF_HOME == '': err('TRAF_HOME var is empty')
-    sqconfig_file = TRAF_HOME + '/sql/scripts/sqconfig'
+    SQCONFIG_FILE = TRAF_HOME + '/sql/scripts/sqconfig'
 
     core, processor = run_cmd("lscpu|grep -E '(^CPU\(s\)|^Socket\(s\))'|awk '{print $2}'").split('\n')[:2]
     core = int(core)-1 if int(core) <= 256 else 255
@@ -57,7 +57,7 @@ def run():
 
     lines.append('end overflow\n')
 
-    with open(sqconfig_file, 'w') as f:
+    with open(SQCONFIG_FILE, 'w') as f:
         f.writelines(lines)
 
     print 'sqconfig generated successfully!'

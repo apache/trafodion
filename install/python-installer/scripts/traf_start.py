@@ -24,6 +24,8 @@
 ### this script should be run on first node with trafodion user ###
 
 import sys
+import time
+import os
 import json
 from common import cmd_output, run_cmd, err
 
@@ -32,24 +34,29 @@ def run():
     dbcfgs = json.loads(dbcfgs_json)
 
     print 'Starting trafodion'
-    run_cmd('sqstart')
-
-    tmp_file = '/tmp/initialize.out'
-    if dbcfgs.has_key('upgrade') and dbcfgs['upgrade'].upper() == 'Y':
-        print 'Initialize trafodion upgrade'
-        run_cmd('echo "initialize trafodion, upgrade;" | sqlci > %s' % tmp_file)
-        init_output = cmd_output('cat %s' % tmp_file)
-        if 'ERROR' in init_output:
-            err('Failed to upgrade initialize trafodion:\n %s' % init_output)
+    TRAF_HOME = os.environ['TRAF_HOME']
+    if os.path.exists('%s/sql/scripts/trafstart' % TRAF_HOME):
+        run_cmd('trafstart')
     else:
-        print 'Initialize trafodion'
-        run_cmd('echo "initialize trafodion;" | sqlci > %s' % tmp_file)
-        init_output = cmd_output('cat %s' % tmp_file)
-        # skip error 1392
-        # ERROR[1392] Trafodion is already initialized on this system. No action is needed.
-        if 'ERROR' in init_output and not '1392' in init_output:
-            err('Failed to initialize trafodion:\n %s' % init_output)
+        run_cmd('sqstart')
 
+    # set a uniq file name
+    tmp_file = '/tmp/initialize.out.' + str(int(time.time()))
+    print 'Initialize trafodion'
+    run_cmd('echo "initialize trafodion;" | sqlci > %s' % tmp_file)
+    init_output = cmd_output('cat %s' % tmp_file)
+    # error 1392, 1395
+    if '1392' in init_output or '1395' in init_output:
+        run_cmd('echo "get version of metadata;" | sqlci > %s' % tmp_file)
+        meta_current = cmd_output('grep \'Metadata is current\' %s | wc -l' % tmp_file)
+        if meta_current != "1":
+            print 'Initialize trafodion, upgrade'
+            run_cmd('echo "initialize trafodion, upgrade;" | sqlci > %s' % tmp_file)
+    # other errors
+    elif 'ERROR' in init_output:
+        err('Failed to initialize trafodion:\n %s' % init_output)
+
+    run_cmd('rm -rf %s' % tmp_file)
     if dbcfgs['ldap_security'] == 'Y':
         run_cmd('echo "initialize authorization; alter user DB__ROOT set external name \"%s\";" | sqlci > %s' % (dbcfgs['db_root_user'], tmp_file))
         if dbcfgs.has_key('db_admin_user'):
@@ -59,7 +66,10 @@ def run():
         if 'ERROR' in secure_output:
             err('Failed to setup security for trafodion:\n %s' % secure_output)
 
-    run_cmd('rm %s' % tmp_file)
+    run_cmd('rm -rf %s' % tmp_file)
+    if os.path.exists('%s/sql/scripts/connstart' % TRAF_HOME):
+        run_cmd('connstart')
+
     print 'Start trafodion successfully.'
 
 # main

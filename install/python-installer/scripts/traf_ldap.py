@@ -36,7 +36,7 @@ def run():
     TRAF_HOME = os.environ['TRAF_HOME']
     SQENV_FILE = TRAF_HOME + '/sqenvcom.sh'
     TRAF_AUTH_CONFIG = '%s/sql/scripts/.traf_authentication_config' % TRAF_HOME
-    TRAF_AUTH_TEMPLATE = '%s/traf_authentication_conf.template' % TMP_DIR
+    TRAF_AUTH_TEMPLATE = '%s/templates/traf_authentication_conf.template' % TMP_DIR
 
     # set traf_authentication_config file
     change_items = {

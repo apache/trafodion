@@ -26,7 +26,8 @@
 import os
 import sys
 import json
-from common import run_cmd, append_file, mod_file, cmd_output, run_cmd_as_user, err, TMP_DIR
+from common import ParseXML, run_cmd, append_file, mod_file, \
+                   cmd_output, run_cmd_as_user, err, TMP_DIR
 
 def run():
     """ create trafodion user, bashrc, setup passwordless SSH """
@@ -44,13 +45,19 @@ def run():
     TRAF_PWD = dbcfgs['traf_pwd']
     TRAF_GROUP = TRAF_USER
     HOME_DIR = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2').strip()
-    TRAF_USER_DIR = '%s/%s' % (HOME_DIR, TRAF_USER)
-    TRAF_HOME = '%s/%s-%s' % (TRAF_USER_DIR, dbcfgs['traf_basename'], dbcfgs['traf_version'])
+    # customize trafodion home dir
+    if dbcfgs.has_key('home_dir') and dbcfgs['home_dir']:
+        HOME_DIR = dbcfgs['home_dir']
 
+    TRAF_USER_DIR = '%s/%s' % (HOME_DIR, TRAF_USER)
+    TRAF_DIRNAME = dbcfgs['traf_dirname']
+    TRAF_HOME = '%s/%s' % (TRAF_USER_DIR, TRAF_DIRNAME)
+
+    HBASE_XML_FILE = dbcfgs['hbase_xml_file']
     KEY_FILE = '/tmp/id_rsa'
     AUTH_KEY_FILE = '%s/.ssh/authorized_keys' % TRAF_USER_DIR
     SSH_CFG_FILE = '%s/.ssh/config' % TRAF_USER_DIR
-    BASHRC_TEMPLATE = '%s/bashrc.template' % TMP_DIR
+    BASHRC_TEMPLATE = '%s/templates/bashrc.template' % TMP_DIR
     BASHRC_FILE = '%s/.bashrc' % TRAF_USER_DIR
     ULIMITS_FILE = '/etc/security/limits.d/%s.conf' % TRAF_USER
     HSPERFDATA_FILE = '/tmp/hsperfdata_trafodion'
@@ -60,7 +67,7 @@ def run():
         run_cmd('groupadd %s > /dev/null 2>&1' % TRAF_GROUP)
 
     if not cmd_output('getent passwd %s' % TRAF_USER):
-        run_cmd('useradd --shell /bin/bash -m %s -g %s --password "$(openssl passwd %s)"' % (TRAF_USER, TRAF_GROUP, TRAF_PWD))
+        run_cmd('useradd --shell /bin/bash -m %s -g %s --home %s --password "$(openssl passwd %s)"' % (TRAF_USER, TRAF_GROUP, TRAF_USER_DIR, TRAF_PWD))
     elif not os.path.exists(TRAF_USER_DIR):
         run_cmd('mkdir -p %s' % TRAF_USER_DIR)
         run_cmd('chmod 700 %s' % TRAF_USER_DIR)
@@ -80,6 +87,9 @@ def run():
 
     run_cmd('chown -R %s:%s %s/.ssh/' % (TRAF_USER, TRAF_GROUP, TRAF_USER_DIR))
 
+    hb = ParseXML(HBASE_XML_FILE)
+    zk_hosts = hb.get_property('hbase.zookeeper.quorum')
+    zk_port = hb.get_property('hbase.zookeeper.property.clientPort')
     # set bashrc
     nodes = dbcfgs['node_list'].split(',')
     change_items = {
@@ -89,6 +99,8 @@ def run():
         '{{ node_list }}': ' '.join(nodes),
         '{{ node_count }}': str(len(nodes)),
         '{{ enable_ha }}': dbcfgs['enable_ha'],
+        '{{ zookeeper_nodes }}': zk_hosts,
+        '{{ zookeeper_port }}': zk_port,
         '{{ my_nodes }}': ' -w ' + ' -w '.join(nodes)
     }
 

@@ -39,12 +39,17 @@ except ImportError:
 from ConfigParser import ConfigParser
 from collections import defaultdict
 
-INSTALLER_LOC = sys.path[0]
+INSTALLER_LOC = re.search('(.*)/\w+',os.path.dirname(os.path.abspath(__file__))).groups()[0]
 
-USER_PROMPT_FILE = INSTALLER_LOC + '/prompt.json'
-SCRCFG_FILE = INSTALLER_LOC + '/script.json'
-VERSION_FILE = INSTALLER_LOC + '/version.json'
-MODCFG_FILE = INSTALLER_LOC + '/mod_cfgs.json'
+CONFIG_DIR = INSTALLER_LOC + '/configs'
+SCRIPTS_DIR = INSTALLER_LOC + '/scripts'
+TEMPLATES_DIR = INSTALLER_LOC + '/templates'
+
+USER_PROMPT_FILE = CONFIG_DIR + '/prompt.json'
+SCRCFG_FILE = CONFIG_DIR + '/script.json'
+VERSION_FILE = CONFIG_DIR + '/version.json'
+MODCFG_FILE = CONFIG_DIR + '/mod_cfgs.json'
+DEF_PORT_FILE = CONFIG_DIR + '/default_ports.ini'
 
 DBCFG_FILE = INSTALLER_LOC + '/db_config'
 DBCFG_TMP_FILE = INSTALLER_LOC + '/.db_config_temp'
@@ -135,8 +140,9 @@ def append_file(template_file, string, position=''):
                     pos = index + 1
 
         if pos == 0: pos = len(lines)
-        newlines = lines[:pos] + [string + '\n'] + lines[pos:]
-        if not string in lines:
+        string_lf = string + '\n'
+        newlines = lines[:pos] + [string_lf] + lines[pos:]
+        if not string_lf in lines:
             with open(template_file, 'w') as f:
                 f.writelines(newlines)
     except IOError:
@@ -173,6 +179,7 @@ class Remote(object):
         self.rc = 0
         self.pwd = pwd
         self.sshpass = self._sshpass_available()
+        self._connection_test()
 
     @staticmethod
     def _sshpass_available():
@@ -213,15 +220,36 @@ class Remote(object):
         except Exception as e:
             err_m('Failed to run commands on remote host: %s' % e)
 
-    def execute(self, user_cmd):
+    def _connection_test(self):
+        self.execute('echo -n', chkerr=False)
+        if self.rc != 0:
+            msg = 'Host [%s]: Failed to connect using ssh. Be sure:\n' % self.host
+            msg += '1. Remote host\'s name and IP is configured correctly in /etc/hosts.\n'
+            msg += '2. Remote host\'s sshd service is running.\n'
+            msg += '3. Passwordless SSH is set if not using \'enable-pwd\' option.\n'
+            msg += '4. \'sshpass\' tool is installed and ssh password is correct if using \'enable-pwd\' option.\n'
+            err_m(msg)
+
+    def execute(self, user_cmd, verbose=False, shell=False, chkerr=True):
+        """ @params: user_cmd should be a string """
         cmd = self._commands('ssh')
+        cmd += ['-tt'] # force tty allocation
         if self.user:
             cmd += ['%s@%s' % (self.user, self.host)]
         else:
             cmd += [self.host]
 
-        cmd += user_cmd.split()
-        self._execute(cmd)
+        # if shell=True, cmd should be a string not list
+        if shell:
+            cmd = ' '.join(cmd) + ' '
+            cmd += user_cmd
+        else:
+            cmd += user_cmd.split()
+
+        self._execute(cmd, verbose=verbose, shell=shell)
+
+        if chkerr and self.rc != 0:
+            err_m('Failed to execute command on remote host [%s]: "%s"' % (self.host, user_cmd))
 
     def copy(self, files, remote_folder='.'):
         """ copy file to user's home folder """
@@ -238,7 +266,7 @@ class Remote(object):
             cmd += ['%s:%s/' % (self.host, remote_folder)]
 
         self._execute(cmd)
-        if self.rc != 0: err('Failed to copy files to remote nodes')
+        if self.rc != 0: err_m('Failed to copy files to remote nodes')
 
     def fetch(self, files, local_folder='.'):
         """ fetch file from user's home folder """
@@ -275,9 +303,9 @@ class ParseHttp(object):
     def _request(self, url, method, body=None):
         try:
             resp, content = self.h.request(url, method, headers=self.headers, body=body)
-            # return code is not 2xx
-            if not 200 <= resp.status < 300:
-                err_m('Error return code {0} when {1}ting configs'.format(resp.status, method.lower()))
+            # return code is not 2xx and 409(for ambari blueprint)
+            if not (resp.status == 409 or 200 <= resp.status < 300):
+                err_m('Error return code {0} when {1}ting configs: {2}'.format(resp.status, method.lower(), content))
             return content
         except Exception as exc:
             err_m('Error with {0}ting configs using URL {1}. Reason: {2}'.format(method.lower(), url, exc))
@@ -293,11 +321,19 @@ class ParseHttp(object):
         result = self._request(url, 'PUT', body=json.dumps(config))
         if result: return defaultdict(str, json.loads(result))
 
-    def post(self, url):
+    def post(self, url, config=None):
         try:
-            return defaultdict(str, json.loads(self._request(url, 'POST')))
-        except ValueError:
-            err_m('Failed to send command to URL')
+            if config:
+                if not isinstance(config, dict): err_m('Wrong HTTP POST parameter, should be a dict')
+                body = json.dumps(config)
+            else:
+                body = None
+
+            result = self._request(url, 'POST', body=body)
+            if result: return defaultdict(str, json.loads(result))
+
+        except ValueError as ve:
+            err_m('Failed to send command to URL: %s' % ve)
 
 
 class ParseXML(object):
@@ -388,9 +424,9 @@ class ParseJson(object):
 
 
 class ParseInI(object):
-    def __init__(self, ini_file):
+    def __init__(self, ini_file, section):
         self.__ini_file = ini_file
-        self.section = 'def'
+        self.section = section
 
     def load(self):
         """ load content from ini file and return a dict """
@@ -402,7 +438,7 @@ class ParseInI(object):
         cf.read(self.__ini_file)
 
         if not cf.has_section(self.section):
-            err_m('Cannot find the default section [%s]' % self.section)
+            return {}
 
         for cfg in cf.items(self.section):
             cfgs[cfg[0]] = cfg[1]
@@ -473,6 +509,24 @@ def time_elapse(func):
         print '\nTime Cost: %d hour(s) %d minute(s) %d second(s)' % (hours, minutes, seconds)
         return output
     return wrapper
+
+def retry(func, maxcnt, interval, msg):
+    """ retry timeout function """
+    retry_cnt = 0
+    rc = False
+    try:
+        while not rc:
+            retry_cnt += 1
+            rc = func()
+            flush_str = '.' * retry_cnt
+            print '\rCheck %s status (timeout: %d secs) %s' % (msg, maxcnt * interval, flush_str),
+            sys.stdout.flush()
+            time.sleep(interval)
+            if retry_cnt == maxcnt:
+                err_m('Timeout exit')
+    except KeyboardInterrupt:
+        err_m('user quit')
+    ok('%s successfully!' % msg)
 
 if __name__ == '__main__':
     exit(0)

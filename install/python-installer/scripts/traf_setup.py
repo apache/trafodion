@@ -33,8 +33,12 @@ def run():
     dbcfgs = json.loads(dbcfgs_json)
 
     HOME_DIR = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2').strip()
+    if dbcfgs.has_key('home_dir'):
+        HOME_DIR = dbcfgs['home_dir']
+
     TRAF_USER = dbcfgs['traf_user']
-    TRAF_HOME = '%s/%s/%s-%s' % (HOME_DIR, TRAF_USER, dbcfgs['traf_basename'], dbcfgs['traf_version'])
+    TRAF_DIRNAME = dbcfgs['traf_dirname']
+    TRAF_HOME = '%s/%s/%s' % (HOME_DIR, TRAF_USER, TRAF_DIRNAME)
 
     TRAF_VER = dbcfgs['traf_version']
     DISTRO = dbcfgs['distro']
@@ -50,9 +54,13 @@ def run():
     ### kernel settings ###
     run_cmd('sysctl -w kernel.pid_max=65535 2>&1 > /dev/null')
     run_cmd('echo "kernel.pid_max=65535" >> /etc/sysctl.conf')
-    run_cmd('cp %s/sysinstall/etc/init.d/trafodion /etc/init.d' % TRAF_HOME)
-    run_cmd('chkconfig --add trafodion')
-    run_cmd('chkconfig --level 06 trafodion on')
+
+    ### copy init script ###
+    init_script = '%s/sysinstall/etc/init.d/trafodion' % TRAF_HOME
+    if os.path.exists(init_script):
+        run_cmd('cp -rf %s /etc/init.d/' % init_script)
+        run_cmd('chkconfig --add trafodion')
+        run_cmd('chkconfig --level 06 trafodion on')
 
     ### create and set permission for scratch file dir ###
     for loc in SCRATCH_LOCS:
@@ -63,13 +71,8 @@ def run():
             run_cmd('chmod 777 %s' % loc)
 
     ### copy jar files ###
-    hbase_lib_path = '/usr/lib/hbase/lib'
-    if 'CDH' in DISTRO:
-        parcel_lib = '/opt/cloudera/parcels/CDH/lib/hbase/lib'
-        if os.path.exists(parcel_lib): hbase_lib_path = parcel_lib
-    elif 'HDP' in DISTRO:
-        hbase_lib_path = '/usr/hdp/current/hbase-regionserver/lib'
-    elif 'APACHE' in DISTRO:
+    hbase_lib_path = dbcfgs['hbase_lib_path']
+    if 'APACHE' in DISTRO:
         hbase_home = dbcfgs['hbase_home']
         hbase_lib_path = hbase_home + '/lib'
         # for apache distro, get hbase version from cmdline
