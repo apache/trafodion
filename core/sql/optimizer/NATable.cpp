@@ -4590,7 +4590,12 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
        // Lookup by name (not position: key->position is pos *within the PK*)
        NAColumn *nacol = columnArray.getColumn(key->colname);
        if(nacol != NULL)
-         nacol->setPrimaryKey();
+         {
+           nacol->setPrimaryKey();
+           if (((TrafConstrntsDesc*)constrnt)->notSerialized())
+             nacol->setPrimaryKeyNotSerialized();
+         }
+
        keycols_desc = keycols_desc->next;
      }
  } // static markPKCols
@@ -4953,23 +4958,23 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 
    isTrigTempTable_ = (qualifiedName_.getSpecialType() == ExtendedQualName::TRIGTEMP_TABLE);
 
+   if (table_desc->tableDesc()->isVolatileTable())
+   {
+     setVolatileTable( TRUE );
+   }
+
    switch(table_desc->tableDesc()->rowFormat())
      {
-     case COM_PACKED_FORMAT_TYPE:
-       setSQLMXTable(TRUE);
-       break;
      case COM_ALIGNED_FORMAT_TYPE:
        setSQLMXAlignedTable(TRUE);
        break;
      case COM_HBASE_FORMAT_TYPE:
      case COM_UNKNOWN_FORMAT_TYPE:
        break;
+     case COM_HBASE_STR_FORMAT_TYPE:
+       setHbaseDataFormatString(TRUE);
+       break;
      }
-
-   if (table_desc->tableDesc()->isVolatileTable())
-   {
-     setVolatileTable( TRUE );
-   }
 
    if (table_desc->tableDesc()->isInMemoryObject())
    {
@@ -8043,6 +8048,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       NABoolean isUserUpdatableSeabaseMD = FALSE;
       NABoolean isHbaseCell = corrName.isHbaseCell();
       NABoolean isHbaseRow = corrName.isHbaseRow();
+      NABoolean isHbaseMap = corrName.isHbaseMap();
       if (isHbaseCell || isHbaseRow)// explicit cell or row format specification
 	{
 	  const char* extHBaseName = corrName.getQualifiedNameObj().getObjectName();
@@ -8163,6 +8169,11 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       table->setIsSeabaseTable(isSeabase);
       table->setIsSeabaseMDTable(isSeabaseMD);
       table->setIsUserUpdatableSeabaseMDTable(isUserUpdatableSeabaseMD);
+      if (isHbaseMap)
+        {
+          table->setIsHbaseMapTable(TRUE);
+          table->setIsExternalTable(TRUE);
+        }
     }
     else if (isHiveTable(corrName) &&
 	(!isSQUmdTable(corrName)) &&

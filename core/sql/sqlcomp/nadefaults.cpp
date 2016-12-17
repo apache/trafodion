@@ -3322,6 +3322,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
   DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
 
+  DDkwd__(TRAF_HBASE_MAPPED_TABLES,             "ON"),   
+  DDkwd__(TRAF_HBASE_MAPPED_TABLES_IUD,         "OFF"),   
+
   DDkwd__(TRAF_INDEX_ALIGNED_ROW_FORMAT,        "ON"),   
   DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
 

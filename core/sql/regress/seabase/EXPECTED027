@@ -1239,7 +1239,7 @@ SCH027.T027V1
 --- SQL operation failed with errors.
 >>alter table t027v1 alter column a smallint;
 
-*** ERROR[1146] Object TRAFODION.SCH027.T027V1 could not be altered because it either does not exist or is not a table.
+*** ERROR[1127] The specified table TRAFODION.SCH027.T027V1 does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 
 --- SQL operation failed with errors.
 >>get all views on table t027t7;

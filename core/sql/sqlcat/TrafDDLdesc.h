@@ -363,12 +363,17 @@ public:
 
   enum ConstrntsDescFlags
     { 
-      ENFORCED           = 0x0001
+      ENFORCED           = 0x0001,
+      NOT_SERIALIZED     = 0x0002
     };
 
   void setEnforced(NABoolean v) 
   {(v ? constrntsDescFlags |= ENFORCED : constrntsDescFlags &= ~ENFORCED); };
   NABoolean isEnforced() { return (constrntsDescFlags & ENFORCED) != 0; };
+
+  void setNotSerialized(NABoolean v) 
+  {(v ? constrntsDescFlags |= NOT_SERIALIZED : constrntsDescFlags &= ~NOT_SERIALIZED); };
+  NABoolean notSerialized() { return (constrntsDescFlags & NOT_SERIALIZED) != 0; };
 
   char* constrntname;
   char* tablename;

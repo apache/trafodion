@@ -757,7 +757,7 @@ ExWorkProcRetcode ExHbaseGetTaskTcb::work(short &rc)
 	    tcb_->table_.val = tcb_->hbaseAccessTdb().getTableName();
 	    tcb_->table_.len = strlen(tcb_->hbaseAccessTdb().getTableName());
 
-	    if (tcb_->evalRowIdExpr() == -1)
+	    if (tcb_->evalRowIdExpr(TRUE) == -1)
 	      {
 		step_ = HANDLE_ERROR;
 		break;
@@ -941,7 +941,7 @@ ExWorkProcRetcode ExHbaseGetRowwiseTaskTcb::work(short &rc)
 	    tcb_->table_.val = tcb_->hbaseAccessTdb().getTableName();
 	    tcb_->table_.len = strlen(tcb_->hbaseAccessTdb().getTableName());
 
-	    if (tcb_->evalRowIdExpr() == -1)
+	    if (tcb_->evalRowIdExpr(TRUE) == -1)
 	      {
 		step_ = HANDLE_ERROR;
 		break;

@@ -4895,6 +4895,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
                           << DgString0("Reason: Cannot return values from an hbase insert, update or delete.");
       GenExit();
     }
+
    NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
   if  (producesOutputs()) 
@@ -4991,12 +4992,17 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	isUnique = TRUE;
     }
  
+  NABoolean hbaseRowsetVSBBopt = 
+    (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON);
+  if (getTableDesc()->getNATable()->isHbaseMapTable())
+    hbaseRowsetVSBBopt = FALSE;
+
   if (getInliningInfo().isIMGU()) {
      // There is no need to do checkAndDelete for IM
      canDoCheckAndUpdel() = FALSE;
      uniqueHbaseOper() = FALSE;
      if ((generator->oltOptInfo()->multipleRowsReturned()) &&
-	  (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
+	  (hbaseRowsetVSBBopt) &&
          (NOT generator->isRIinliningForTrafIUD()) &&
          (NOT getTableDesc()->getNATable()->hasLobColumn()))
        uniqueRowsetHbaseOper() = TRUE;
@@ -5015,7 +5021,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
           (executorPred().isEmpty()))
 	{
 	  if ((generator->oltOptInfo()->multipleRowsReturned()) &&
-	      (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
+	      (hbaseRowsetVSBBopt) &&
 	      (NOT generator->isRIinliningForTrafIUD()) &&
               (NOT getTableDesc()->getNATable()->hasLobColumn()))
 	    uniqueRowsetHbaseOper() = TRUE;
@@ -5099,6 +5105,15 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 {
   if (nodeIsPreCodeGenned())
     return this;
+
+  if (getTableDesc()->getNATable()->isHbaseMapTable())
+    {
+      *CmpCommon::diags() << DgSqlCode(-1425)
+			  << DgTableName(getTableDesc()->getNATable()->getTableName().
+					 getQualifiedNameAsAnsiString())
+                          << DgString0("Reason: update not yet supported.");
+      GenExit();
+    }
 
   if (!processConstHBaseKeys(
            generator,

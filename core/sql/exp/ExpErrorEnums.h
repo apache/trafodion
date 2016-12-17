@@ -172,6 +172,7 @@ enum ExeErrorCode
   EXE_FS2_FETCH_VERSION_ERROR		= 8552,
   EXE_ERROR_STREAM_OVERFLOW             = 8553,
   EXE_EID_INTERNAL_ERROR                = 8555,
+  EXE_HBASE_ACCESS_ERROR                = 8556,
   EXE_LAST_ERROR_FROM_FS_DP2		= 8569,
 
   // ---------------------------------------------------------------------

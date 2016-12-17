@@ -132,6 +132,8 @@ void HSTableDef::setNATable()
     ULng32 flagToSet = 0;  // don't turn on flag unless next 'if' is true
     if (CmpCommon::context()->sqlSession()->volatileSchemaInUse())
       flagToSet = ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME;
+    
+    flagToSet |= ALLOW_SPECIALTABLETYPE;
 
     // set ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME bit in Sql_ParserFlags
     // if needed, and return it to its entry value on exit

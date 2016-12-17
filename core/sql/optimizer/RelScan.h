@@ -1386,6 +1386,12 @@ public:
 				       ItemExpr *&castValue,
                                        NABoolean alignedFormat = FALSE);
 
+  // used for hbase map table where data is stored in string format
+  static int createAsciiColAndCastExpr3(Generator * generator,
+				       const NAType &givenType,
+				       ItemExpr *&asciiValue,
+                                        ItemExpr *&castValue);
+
   static short genRowIdExpr(Generator * generator,
 			    const NAColumnArray & keyColumns,				
 			    NAList<HbaseSearchKey*>& searchKeys,
@@ -1396,7 +1402,8 @@ public:
 			    ULng32 &rowIdAsciiRowLen,
 			    ExpTupleDesc* &rowIdAsciiTupleDesc,
 			    UInt32 &rowIdLength,
-			    ex_expr* &rowIdExpr);
+			    ex_expr* &rowIdExpr,
+                            NABoolean encodeKeys);
   
  static short genRowIdExprForNonSQ(Generator * generator,
 			    const NAColumnArray & keyColumns,				

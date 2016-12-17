@@ -124,6 +124,14 @@ NABoolean ComIsTrafodionExternalSchemaName (
   return FALSE;
 }
 
+// schema name "_HB_MAP_" is used to store external hbase table mapped
+// to trafodion relational table
+NABoolean ComIsHbaseMappedSchemaName (
+     const NAString &schName)
+{
+  return (schName == HBASE_EXT_MAP_SCHEMA);
+}
+
 // ----------------------------------------------------------------------------
 // function: ComConvertNativeNameToTrafName
 //

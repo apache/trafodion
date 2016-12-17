@@ -1350,6 +1350,11 @@ public:
 		      NABoolean catmanCollectTableUsages = TRUE,
 		      TrafDesc *inTableDesc = NULL);
 
+  NATable *getNATableInternal(CorrName &corrName,
+                              NABoolean catmanCollectTableUsages = TRUE,
+                              TrafDesc *inTableDesc = NULL,
+                              NABoolean extTableDrop = FALSE);
+
   TableDesc *createTableDesc(const NATable *naTable,
                              CorrName &corrName,
                              NABoolean catmanCollectUsages = FALSE,

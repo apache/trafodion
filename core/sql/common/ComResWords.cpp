@@ -229,7 +229,6 @@ const ComResWord ComResWords::resWords_[] = {
   ComResWord("LOCATOR",          COMPAQ_|RESWORD_),
   ComResWord("LOOP",             POTANS_|RESWORD_),
   ComResWord("LOWER",            ANS_|RESWORD_),
-  ComResWord("MAP",              COMPAQ_|RESWORD_),
   ComResWord("MATCH",            ANS_|RESWORD_),
   ComResWord("MAX",              ANS_|RESWORD_|MPWORD_),
   ComResWord("MIN",              ANS_|RESWORD_),

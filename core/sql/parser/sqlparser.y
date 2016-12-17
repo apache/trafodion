@@ -1381,6 +1381,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_STORE               /* Tandem extension */
 %token <tokval> TOK_STORAGE
 %token <tokval> TOK_STATISTICS          /* Tandem extension non-reserved word */
+%token <tokval> TOK_HBMAP_TABLE
 %token <tokval> TOK_STATS
 %token <tokval> TOK_UNBOUNDED           /* Tandem extension */
 %token <tokval> TOK_VIEW
@@ -2707,6 +2708,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                    range_n_args
 %type <item>                    range_n_arg
 %type <boolean>                 optional_in_memory_clause
+%type <stringval>               optional_map_to_hbase_clause
+%type <boolean>                 optional_hbase_data_format
 %type <dropBehaviorEnum>  	extension_drop_behavior
 %type <dropBehaviorEnum>  	optional_drop_behavior
 %type <dropBehaviorEnum>  	optional_drop_index_behavior
@@ -5290,6 +5293,13 @@ special_table_name : special_regular_table_name
                 else
                   { yyerror(""); YYERROR; /*internal syntax only!*/}
               }
+
+	   /* Hbase Mapped tables */
+	   | TOK_TABLE '(' TOK_HBMAP_TABLE actual_table_name ')'
+	      {
+                $4->setSpecialType(ExtendedQualName::HBMAP_TABLE);
+                $$ = $4;  // actual_table_name
+              }
 		
 exception_table_name :  TOK_EXCEPTION TOK_TABLE actual_table_name 
 		{
@@ -5429,6 +5439,7 @@ actual_table_name : qualified_name
 		     //
 		     $$ = corrNameFromStrings($1);
 		     if ($$ == NULL) YYABORT;
+
                      //ct-bug-10-030102-3803 -Begin
                      NAString *tmpName = new (PARSERHEAP()) NAString((""),PARSERHEAP()); 
                      NAString *tmp =new (PARSERHEAP()) NAString(( $$->getQualifiedNameObj().getCatalogName()),PARSERHEAP());
@@ -24917,6 +24928,8 @@ table_definition : create_table_start_tokens ddl_qualified_name
                         table_definition_body
                         optional_create_table_attribute_list
                         optional_in_memory_clause
+                        optional_map_to_hbase_clause
+                        optional_hbase_data_format
 	  	   {
                      $1->setOptions(TableTokens::OPT_NONE);
 		     QualifiedName * qn;
@@ -24926,6 +24939,29 @@ table_definition : create_table_start_tokens ddl_qualified_name
                        qn = processVolatileDDLName($2, FALSE, FALSE);
 		     if (! qn)
                        YYABORT;
+
+                     if ($6) // map to hbase table
+                       {
+                         if ($1->getType() != TableTokens::TYPE_EXTERNAL_TABLE)
+                           YYERROR;
+
+                         // cannot be create like
+                         if ($3->castToElemDDLLikeCreateTable())
+                           {
+                             *SqlParser_Diags << DgSqlCode(-3242)
+                                              << DgString0("Cannot specify LIKE clause with mapped hbase tables.");
+                             YYERROR;
+                           }
+                         
+                         // cannot specify cat/schema names
+                         if ((NOT qn->getCatalogName().isNull()) ||
+                             (NOT qn->getSchemaName().isNull()))
+                           {
+                             *SqlParser_Diags << DgSqlCode(-3242)
+                                              << DgString0("Cannot specify catalog or schema names with mapped hbase tables.");
+                             YYERROR;
+                           }
+                       }
 
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
@@ -24937,6 +24973,16 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			    NULL,
 			    NULL,
 			    PARSERHEAP());
+
+                     if ($6)
+                       {
+                         CorrName cn(*$6);
+                         pNode->setLikeSourceTableName(cn);
+
+                         pNode->setMapToHbaseTable(TRUE);
+
+                         pNode->setHbaseDataFormat($7);
+                       }
 
                      $1->setTableTokens(pNode);
 		     pNode->synthesize();
@@ -25758,7 +25804,18 @@ unique_constraint_specification : TOK_UNIQUE
 unique_specification : unique_constraint_specification
                       | TOK_PRIMARY TOK_KEY
                                 {
-                                  $$ = new (PARSERHEAP()) ElemDDLConstraintPK();
+                                  $$ = new (PARSERHEAP()) 
+                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_SER_NOT_SPECIFIED);
+                                }
+                      | TOK_PRIMARY TOK_KEY TOK_SERIALIZED
+                                {
+                                  $$ = new (PARSERHEAP()) 
+                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_SERIALIZED);
+                                }
+                      | TOK_PRIMARY TOK_KEY TOK_NOT TOK_SERIALIZED
+                                {
+                                  $$ = new (PARSERHEAP()) 
+                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_NOT_SERIALIZED);
                                 }
 
 /* type pElemDDLConstraint */
@@ -26345,6 +26402,11 @@ like_option : TOK_WITHOUT TOK_CONSTRAINTS
                                 {
                                   $$ = new (PARSERHEAP())
                                     ElemDDLLikeLimitColumnLength($5);
+                                }
+                      | TOK_WITHOUT TOK_ROW TOK_FORMAT
+                                {
+                                  $$ = new (PARSERHEAP())
+				    ElemDDLLikeOptWithoutRowFormat();
                                 }
 
 /* type pElemDDL */
@@ -27103,6 +27165,33 @@ optional_in_memory_clause : empty
 			       $$ = TRUE; 
 			     }
 
+/* type stringval */
+optional_map_to_hbase_clause : empty
+                             {   
+                               $$ = NULL;
+			     }
+                            | TOK_MAP TOK_TO TOK_HBASE TOK_TABLE identifier
+                             { 
+			       $$ = $5; 
+			     }
+/* type int */
+optional_hbase_data_format : empty
+                             {   
+                               $$ = TRUE; // varchar format
+			     }
+                            | TOK_DATA TOK_FORMAT TOK_VARCHAR
+                             { 
+			       // data is stored in var length string format 
+			       // For ex, 123 is stored as a 3 byte string "123"
+			       $$ = TRUE; 
+			     }
+                            | TOK_DATA TOK_FORMAT TOK_NATIVE
+                             { 
+			       // data is stored in native format.
+			       // For ex, smallint is stored as 2 byte binary
+			       $$ = FALSE;
+			     }
+
 hbase_table_options : TOK_HBASE_OPTIONS '('  hbase_options_list ')'
                               {
 				$$ = new (PARSERHEAP()) 
@@ -27431,14 +27520,32 @@ store_by_clause : TOK_STORE TOK_BY store_option_clause
                                     ElemDDLStoreOptKeyColumnList(
                                        $3 /*column_reference_list*/);
                                 }
+                  | TOK_PRIMARY TOK_KEY TOK_NOT TOK_SERIALIZED '(' column_reference_list ')' 
+                                {
+                                  $$ = new (PARSERHEAP())
+                                    ElemDDLStoreOptKeyColumnList(
+                                       $6 /*column_reference_list*/,
+				       TRUE, FALSE, TRUE);
+                                  ((ElemDDLStoreOptKeyColumnList*)$$)->
+                                    setSerializedOption(ComPkeySerialization::COM_NOT_SERIALIZED);
+                                }
+
+                  | TOK_PRIMARY TOK_KEY TOK_SERIALIZED '(' column_reference_list ')' 
+                                {
+                                  $$ = new (PARSERHEAP())
+                                    ElemDDLStoreOptKeyColumnList(
+                                       $5 /*column_reference_list*/,
+				       TRUE, FALSE, TRUE);
+                                  ((ElemDDLStoreOptKeyColumnList*)$$)->
+                                    setSerializedOption(ComPkeySerialization::COM_SERIALIZED);
+                                }
+
                   | TOK_PRIMARY TOK_KEY  '(' column_reference_list ')'
                                 {
                                   $$ = new (PARSERHEAP())
                                     ElemDDLStoreOptKeyColumnList(
                                        $4 /*column_reference_list*/,
 				       TRUE, FALSE, TRUE);
-				       //                                       TRUE, FALSE,
-				       //				       TRUE);
                                 }
 
 /* type pElemDDL */
@@ -32292,7 +32399,13 @@ drop_table_statement : TOK_DROP special_table_name optional_drop_behavior
                      $$->castToStmtDDLDropTable()->setTableType(ExtendedQualName::GHOST_TABLE);
                    }
 
-                   if ($1 == 2 || $1 == 4)
+                  if ($1 == 3 || $1 == 4)
+                     $$->castToStmtDDLDropTable()->setIsExternal(TRUE);
+
+                  if ($1 == 5 || $1 == 6)
+                     $$->castToStmtDDLDropTable()->setIsExternal(TRUE);
+
+                   if ($1 == 2 || $1 == 4 || $1 == 6)
                      {
                        $$->castToStmtDDLDropTable()->setDropIfExists(TRUE);
                      }
@@ -33480,6 +33593,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_LOW_VALUE
      //                 | TOK_LSDECIMAL  //->nonreserved_datatype         
                       | TOK_M
+                      | TOK_MAP
                       | TOK_MASTER
                       | TOK_MATERIALIZED  
 		      | TOK_MAXEXTENTS // Extent Changes : Swati Ambulkar
@@ -33682,6 +33796,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_STYLE
                       | TOK_SUBCLASS_ORIGIN
                       | TOK_SUBSYSTEM_ID
+                      | TOK_HBMAP_TABLE
                       | TOK_SUSPEND
                       | TOK_SYNONYMS
                       | TOK_T                 /* ODBC extension  */

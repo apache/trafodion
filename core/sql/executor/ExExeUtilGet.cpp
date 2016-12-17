@@ -5478,10 +5478,13 @@ short ExExeUtilRegionStatsTcb::collectStats(char * tableName)
   // collect stats from ehi.
   HbaseStr tblName;
   
-  NAString extNameForHbase = 
-    NAString(catName_) + "." + NAString(schName_) + "." + NAString(objName_);
-  tblName.val = (char*)extNameForHbase.data();
-  tblName.len = extNameForHbase.length();
+  if (NAString(catName_) == HBASE_SYSTEM_CATALOG)
+    extNameForHbase_ = NAString(objName_);
+  else
+    extNameForHbase_ =
+      NAString(catName_) + "." + NAString(schName_) + "." + NAString(objName_);
+  tblName.val = (char*)extNameForHbase_.data();
+  tblName.len = extNameForHbase_.length();
   
   regionInfoList_ = ehi_->getRegionStats(tblName);
   if (! regionInfoList_)
@@ -5495,22 +5498,16 @@ short ExExeUtilRegionStatsTcb::collectStats(char * tableName)
 }
 
 short ExExeUtilRegionStatsTcb::populateStats
-(Int32 currIndex, NABoolean nullTerminate)
+(Int32 currIndex)
 {
   str_pad(stats_->catalogName, sizeof(stats_->catalogName), ' ');
   str_cpy_all(stats_->catalogName, catName_, strlen(catName_));
-  if (nullTerminate)
-    stats_->catalogName[strlen(catName_)] = 0;
 
   str_pad(stats_->schemaName, sizeof(stats_->schemaName), ' ');
   str_cpy_all(stats_->schemaName, schName_, strlen(schName_));
-  if (nullTerminate)
-    stats_->schemaName[strlen(schName_)] = 0;
 
   str_pad(stats_->objectName, sizeof(stats_->objectName), ' ');
   str_cpy_all(stats_->objectName, objName_, strlen(objName_));
-  if (nullTerminate)
-    stats_->objectName[strlen(objName_)] = 0;
   
   str_pad(stats_->regionServer, sizeof(stats_->regionServer), ' ');
 
@@ -5538,9 +5535,6 @@ short ExExeUtilRegionStatsTcb::populateStats
     {
       str_cpy_all(stats_->regionServer, regionInfo, 
                   (Lng32)(sep1 - regionInfo)); 
-
-      if (nullTerminate)
-        stats_->regionServer[sep1 - regionInfo] = 0;
     }
 
   char * sepStart = sep1+1;
@@ -5549,9 +5543,6 @@ short ExExeUtilRegionStatsTcb::populateStats
     {
       str_cpy_all(stats_->regionName, sepStart, 
                   (Lng32)(sep1 - sepStart)); 
-
-      if (nullTerminate)
-        stats_->regionName[sep1 - sepStart] = 0;
     }
   
   sepStart = sep1;
@@ -5955,15 +5946,7 @@ short ExExeUtilRegionStatsFormatTcb::work()
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-            NAString objName = 
-              removeTrailingBlanks(statsTotals_->catalogName, STATS_NAME_MAX_LEN);
-            objName += ".";
-            objName +=
-              removeTrailingBlanks(statsTotals_->schemaName, STATS_NAME_MAX_LEN);
-            objName += ".";
-            objName += 
-              removeTrailingBlanks(statsTotals_->objectName, STATS_NAME_MAX_LEN);
-
+            NAString objName = extNameForHbase_;
             str_sprintf(buf, "  ObjectName:              %s", objName.data());
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;

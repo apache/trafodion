@@ -102,7 +102,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
 				     Float32 samplingRate,
 				     HbaseSnapshotScanAttributes * hbaseSnapshotScanAttributes,
 
-                                     HbaseAccessOptions * hbaseAccessOptions
+                                     HbaseAccessOptions * hbaseAccessOptions,
+
+                                     char * pkeyColName
 
 				     )
 : ComTdb( ComTdb::ex_HBASE_ACCESS,
@@ -194,7 +196,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0),
   trafLoadFlushSize_(0),
-  hbaseAccessOptions_(hbaseAccessOptions)
+  hbaseAccessOptions_(hbaseAccessOptions),
+
+  pkeyColName_(pkeyColName)
 {};
 
 ComTdbHbaseAccess::ComTdbHbaseAccess(
@@ -304,7 +308,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0),
   trafLoadFlushSize_(0),
-  hbaseAccessOptions_(NULL)
+  hbaseAccessOptions_(NULL),
+
+  pkeyColName_(NULL)
 {
 }
 
@@ -451,6 +457,8 @@ Long ComTdbHbaseAccess::pack(void * space)
   hbaseSnapshotScanAttributes_.pack(space);
   hbaseAccessOptions_.pack(space);
 
+  pkeyColName_.pack(space);
+
   // pack elements in listOfScanRows_
   if (listOfScanRows() && listOfScanRows()->numEntries() > 0)
     {
@@ -521,6 +529,7 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(LoadPrepLocation_.unpack(base)) return -1;
   if (hbaseSnapshotScanAttributes_.unpack(base,reallocator)) return -1;
   if (hbaseAccessOptions_.unpack(base, reallocator)) return -1;
+  if(pkeyColName_.unpack(base)) return -1;
 
   // unpack elements in listOfScanRows_
   if(listOfScanRows_.unpack(base, reallocator)) return -1;
@@ -970,7 +979,7 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 		      listOfFetchedColNames()->numEntries());
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-	  if (sqHbaseTable())
+	  if ((sqHbaseTable()) && (NOT hbaseMapTable()))
 	    showColNames(listOfFetchedColNames(), space);
 	  else
 	    showStrColNames(listOfFetchedColNames(), space);

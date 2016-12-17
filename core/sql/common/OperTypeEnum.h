@@ -1084,6 +1084,7 @@ enum OperatorTypeEnum {
                         ELM_LIKE_OPT_SALT_CLAUSE_ELEM,
                         ELM_LIKE_OPT_WITHOUT_DIVISION_ELEM,
                         ELM_LIKE_OPT_LIMIT_COLUMN_LENGTH,
+                        ELM_LIKE_OPT_WITHOUT_ROW_FORMAT_ELEM,
                         ELM_LOCATION_ELEM,
                         ELM_OPTION_LIST,
                         ELM_PARALLEL_EXEC_ELEM,

@@ -140,7 +140,6 @@ defXLateFuncs(CmGetComAccPathTypeAsAccessPathType, CmGetComAccPathTypeAsLit, Com
 const literalAndEnumStruct RowFormatXlateArray [] =
 {
   {COM_ALIGNED_FORMAT_TYPE, COM_ALIGNED_FORMAT_LIT},
-  {COM_PACKED_FORMAT_TYPE, COM_PACKED_FORMAT_LIT},
   {COM_UNKNOWN_FORMAT_TYPE, COM_UNKNOWN_FORMAT_LIT}
 };
 

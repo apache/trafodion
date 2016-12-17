@@ -6756,10 +6756,11 @@ ex_expr::exp_return_type ExFunctionRowNum::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 }
 
-short ExFunctionHbaseColumnLookup::extractColFamilyAndName(const char * input, 
-                                                           short len,
-							   NABoolean isVarchar,
-							   std::string &colFam, std::string &colName)
+short ExFunctionHbaseColumnLookup::extractColFamilyAndName(
+     const char * input, 
+     short len,
+     NABoolean isVarchar,
+     std::string &colFam, std::string &colName)
 {
   if (! input)
     return -1;

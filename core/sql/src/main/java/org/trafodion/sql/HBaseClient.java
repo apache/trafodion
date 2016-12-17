@@ -832,7 +832,6 @@ public class HBaseClient {
                     oneRegion += String.valueOf(writeRequestsCount) + "|";
                     
                     regionInfo[regionStatsEntries++] = oneRegion.getBytes();
-
                 }
             }
             finally {

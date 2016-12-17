@@ -498,8 +498,8 @@ public:
 			     NABoolean desc_flag,
 			     ExpTupleDesc::TupleDataFormat tf,
 			     Lng32 &possibleErrorCount,
-			     NABoolean &canDoKeyEncodeOpt,
-			     NABoolean allChosenPredsAreEqualPreds);
+			     NABoolean allChosenPredsAreEqualPreds,
+                             NABoolean castVarcharToAnsiChar);
 
   // get the key value. Currently used during hbase checkAndDelete/Update
   // calls. Used to validate that this value exists in the database.
@@ -538,19 +538,6 @@ public:
 			ExpTupleDesc::TupleDataFormat tf,
 			ULng32 &keyLen,
 			ex_expr ** key_expr,
-
-			// if TRUE, check to see that the optimization of
-			// doing a source buffer to target key buffer move
-			// without encoding could be done.
-			// The firstKeyColOffset contains the offset of the
-			// first key in the source buffer.
-			// keyLen bytes need to be copied starting at
-			// firstKeyColOffset.
-			// If firstKeyColumnOffset is passed in then the
-			// return value of -1 indicates that this opt could
-			// not be done.
-			NABoolean doKeyEncodeOpt,
-			Lng32 * firstKeyColumnOffset,
 			NABoolean allChosenPredsAreEqualPreds
 			);
 
@@ -1086,45 +1073,7 @@ public:
 		     const SearchKey * searchKey,
 		     const MdamKey * mdamKey,
 		     const NABoolean reverseScan,
-		     unsigned short keytag,
-		     const ExpTupleDesc::TupleDataFormat tf,
-
-		     // the next few parameters are here
-		     // as part of a horrible kludge for
-		     // the PartitionAccess::codeGen()
-		     // method, which lacks a SearchKey
-		     // object and therefore exposes
-		     // things like the exclusion
-		     // expressions; with luck, later work
-		     // in the Optimizer will result in a
-		     // much cleaner interface
-		     const NABoolean useTheHorribleKludge = FALSE,
-		     ItemExpr * beginKeyExclusionExpr = NULL,
-		     ItemExpr * endKeyExclusionExpr = NULL,
-
-		     // this param, if passed in, indicates that this
-		     // is a unique key pred and 'lean' expr is being
-		     // generated.
-		     // Only generate "ex_expr_lean" and return it.
-		     ex_expr_lean ** unique_key_expr = NULL,
-		     ULng32 * uniqueKeyLen = NULL,
-
-		     // if TRUE, check to see that the optimization of
-		     // doing a source buffer to target key buffer move
-		     // without encoding could be done.
-		     // The firstKeyColOffset contains the offset of the
-		     // first key in the source buffer.
-		     // uniqueKeyLen bytes need to be copied starting at
-		     // firstKeyColOffset.
-		     // If firstKeyColumnOffset is passed in then the
-		     // return value of -1 indicates that this opt could
-		     // not be done.
-		     NABoolean doKeyEncodeOpt = FALSE,
-		     Lng32 * firstKeyColumnOffset = NULL,
-
-		     Int32 in_key_atp_index = -1
-		     );		     
-   
+		     const ExpTupleDesc::TupleDataFormat tf);
 };
 
 // The next class is a helper used in the mdamCodeGen methods on
