@@ -426,6 +426,7 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 		strcpy((char*)m_DescLiteralPrefix,"'");
 		strcpy((char*)m_DescLiteralSuffix,"'");
 		m_DescLength = SQLItemDesc->maxLen;
+		m_DescPrecision = m_DescLength;
 		switch (m_SQLCharset)
 		{
 		case SQLCHARSETCODE_ISO88591:
@@ -453,6 +454,7 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 		strcpy((char*)m_DescLiteralPrefix,"N'");
 		strcpy((char*)m_DescLiteralSuffix,"'");
 		m_DescLength = SQLItemDesc->maxLen/2;
+		m_DescPrecision = m_DescLength;
 		sprintf((char *)m_DescLocalTypeName,"%s CHARACTER SET %s", gSQLDatatypeMap[i].typeName, SQLCHARSETSTRING_UNICODE);
 		break;
 	case SQL_INTERVAL_SECOND:
@@ -556,9 +558,27 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 		break;
 	case SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		if (m_SQLCharset == SQLCHARSETCODE_UCS2)
-			m_SQLOctetLength = SQLItemDesc->maxLen+4;  //2 bytes for len and 2 bytes of null
+		{
+			if (SQLItemDesc->maxLen > SHRT_MAX)
+			{
+				m_SQLOctetLength = SQLItemDesc->maxLen + 6;  //4 bytes for len and 2 bytes of null
+			}
+			else
+			{
+				m_SQLOctetLength = SQLItemDesc->maxLen + 4;  //2 bytes for len and 2 bytes of null
+			}
+		}
 		else
-			m_SQLOctetLength = SQLItemDesc->maxLen+3;  //2 bytes for len and 1 byte of null
+		{ 
+			if (SQLItemDesc->maxLen > SHRT_MAX)
+			{
+				m_SQLOctetLength = SQLItemDesc->maxLen + 5;  //4 bytes for len and 1 byte of null
+			}
+			else
+			{
+				m_SQLOctetLength = SQLItemDesc->maxLen + 3;  //2 bytes for len and 1 byte of null
+			}
+		}
 		m_DescCaseSensitive = SQL_TRUE;
 		m_DescSearchable = SQL_PRED_SEARCHABLE;
 		break;
@@ -625,7 +645,6 @@ unsigned long CDescRec::setDescRec(short DescMode, SQLItemDesc_def *SQLItemDesc)
 	case SQL_LONGVARCHAR:
 	case SQL_WCHAR:
 	case SQL_WVARCHAR:
-		m_DescPrecision = m_DescLength;
 		m_DescDatetimeIntervalPrecision = m_DescLength;
 		break;
 	case SQL_INTERVAL_SECOND:
