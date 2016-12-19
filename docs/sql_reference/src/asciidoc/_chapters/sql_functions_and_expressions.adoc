@@ -53,6 +53,8 @@ of the expression argument of the function.
 *) or the number of rows that contain a distinct value in the one-column
 table derived from the expression argument of the function (optionally
 distinct values).
+| <<group_concat_function,GROUP_CONCAT Function>> | This function returns a string result with the concatenated non-NULL 
+values from a group.
 | <<max_function,MAX/MAXIMUM Function>> | Determines a maximum value from the group of values derived from the
 evaluation of the expression argument.
 | <<min_function,MIN Function>>                 | Determines a minimum value from the group of values derived from the
@@ -3584,6 +3586,47 @@ WHERE projcode = 1000;
 Start/Date Time/Shipped               (EXPR)
 ---------- -------------------------- ------
 2007-04-10 2007-04-21 08:15:00.000000      8
+```
+
+<<<
+[[group_concat_function]]
+== GROUP_CONCAT Function
+
+This function returns a string result with the concatenated non-NULL values from a group. 
+It returns NULL if there are no non-NULL values. 
+The syntax is as follows:
+
+```
+GROUP_CONCAT([DISTINCT] expr [,expr ...]
+             [ORDER BY {unsigned_integer | col_name | expr}
+                 [ASC | DESC] [,col_name ...]]
+             [SEPARATOR str_val])
+```
+
+Get the concatenated values of expression combinations. To eliminate duplicate values, 
+use the DISTINCT clause. 
+To sort values in the result, use the ORDER BY clause. To sort in reverse order, add 
+the DESC (descending) keyword to the name of the column you are sorting by in the 
+ORDER BY clause. The default is ascending order; this may be specified explicitly using
+the ASC keyword. The default separator between values in a group is comma (,). To specify 
+a separator explicitly, use SEPARATOR followed by the string literal value that should be 
+inserted between group values. To eliminate the separator altogether, specify SEPARATOR ''.
+
+[[examples_of_group_concat]]
+=== Examples of GROUP_CONCAT
+
+The following example returns concatenated strings for column test_score for each student.
+
+```
+>> SELECT student_name,
+         GROUP_CONCAT(DISTINCT test_score
+                   ORDER BY test_score DESC SEPARATOR ' ')
+         FROM student
+         GROUP BY student_name;
+STUDENT_NAME     (EXPR)
+--------------  --------------
+scott            91 90 80 56
+tom              91 77 43
 ```
 
 <<<
