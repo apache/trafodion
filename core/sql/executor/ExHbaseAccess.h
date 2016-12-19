@@ -185,7 +185,8 @@ public:
                                char *logId,
                                const char *tableName,
                                char * currCmdLoggingLocation);
-  static void buildLoggingFileName(const char * currCmdLoggingLocation,
+  static void buildLoggingFileName(NAHeap *heap,
+                               const char * currCmdLoggingLocation,
                                const char *tableName,
                                const char * loggingFileNamePrefix,
                                Lng32 instId,
@@ -943,7 +944,7 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     Text   importLocation_;
     Text   hFileName_;
 
-    char loggingFileName_[1000];
+    char *loggingFileName_;
     NABoolean LoggingFileCreated_ ;
     ComCondition * lastErrorCnd_;
     std::vector<UInt32> posVec_;

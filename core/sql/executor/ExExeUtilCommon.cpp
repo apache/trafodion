@@ -648,7 +648,6 @@ short ExExeUtilTcb::executeQuery(char * task,
 
 	    if (displayEndTime)
 	      {
-		char timeBuf[200];
 		getTimestampAsString(endTime_, timeBuf);
 		getStatusString(task, "Ended", object, buf, FALSE, timeBuf);
 		if (moveRowToUpQueue(buf, 0, &rc))

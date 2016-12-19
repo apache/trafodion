@@ -3033,13 +3033,17 @@ void ExHbaseAccessTcb::setRowID(char *rowId, Lng32 rowIdLen)
    memcpy(rowID_.val, rowId, rowIdLen);
 }
 
-void ExHbaseAccessTcb::buildLoggingFileName(
+void ExHbaseAccessTcb::buildLoggingFileName(NAHeap *heap,
                              const char * currCmdLoggingLocation,
                              const char *tableName,
                              const char * loggingFileNamePrefix,
                              Lng32 instId,
                              char * loggingFileName)
 {
+  if (loggingFileName != NULL)
+     NADELETEBASIC(loggingFileName, heap);
+  short logLen = strlen(currCmdLoggingLocation)+strlen(loggingFileNamePrefix)+strlen(tableName)+100;
+  loggingFileName = new (heap) char[logLen];
   sprintf(loggingFileName, "%s/%s_%s_%d",
                   currCmdLoggingLocation, loggingFileNamePrefix, tableName, instId);
 }
