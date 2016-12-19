@@ -119,6 +119,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , loggingErrorDiags_(NULL)
   , runTimeRanges_(NULL)
   , numRunTimeRanges_(0)
+  , loggingFileName_(NULL)
 {
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
@@ -187,8 +188,8 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   registerResizeSubtasks();
 
   Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
-  ExHbaseAccessTcb::buildLoggingPath(((ExHdfsScanTdb &)hdfsScanTdb).getLoggingLocation(),
-                     (char *)((ExHdfsScanTdb &)hdfsScanTdb).getErrCountRowId(),
+  ExHbaseAccessTcb::buildLoggingFileName((NAHeap *)getHeap(), ((ExHdfsScanTdb &)hdfsScanTdb).getLoggingLocation(),
+                     // (char *)((ExHdfsScanTdb &)hdfsScanTdb).getErrCountRowId(),
                      ((ExHdfsScanTdb &)hdfsScanTdb).tableName(),
                      "hive_scan_err",
                      fileNum,
@@ -214,6 +215,10 @@ ExHdfsScanTcb::~ExHdfsScanTcb()
 
 void ExHdfsScanTcb::freeResources()
 {
+  if (loggingFileName_ != NULL) {
+     NADELETEBASIC(loggingFileName_, getHeap());
+     loggingFileName_ = NULL;
+  }
   if (workAtp_)
   {
     workAtp_->release();

@@ -3184,13 +3184,26 @@ void ExHbaseAccessTcb::setRowID(char *rowId, Lng32 rowIdLen)
    memcpy(rowID_.val, rowId, rowIdLen);
 }
 
-void ExHbaseAccessTcb::buildLoggingPath(
-                             const char * loggingLocation,
-                             char * logId,
-                             const char * tableName,
+void ExHbaseAccessTcb::buildLoggingFileName(NAHeap *heap,
+                             const char * currCmdLoggingLocation,
+                             const char *tableName,
                              const char * loggingFileNamePrefix,
                              Lng32 instId,
                              char * loggingFileName)
+{
+  if (loggingFileName != NULL)
+     NADELETEBASIC(loggingFileName, heap);
+  short logLen = strlen(currCmdLoggingLocation)+strlen(loggingFileNamePrefix)+strlen(tableName)+100;
+  loggingFileName = new (heap) char[logLen];
+  sprintf(loggingFileName, "%s/%s_%s_%d",
+                  currCmdLoggingLocation, loggingFileNamePrefix, tableName, instId);
+}
+
+void ExHbaseAccessTcb::buildLoggingPath(
+                             const char *loggingLocation,
+                             char * logId,
+                             const char * tableName,
+                             char * currCmdLoggingLocation)
 {
   time_t t;
   char logId_tmp[30];
@@ -3201,9 +3214,9 @@ void ExHbaseAccessTcb::buildLoggingPath(
      struct tm * curgmtime = gmtime(&t);
      strftime(logId_tmp, sizeof(logId_tmp)-1, "%Y%m%d_%H%M%S", curgmtime);
      logId = logId_tmp;
-  }
-  sprintf(loggingFileName, "%s/ERR_%s/%s_%s_%d",
-                  loggingLocation, logId, tableName, loggingFileNamePrefix, instId);
+  } 
+  sprintf(currCmdLoggingLocation, "%s/ERR_%s_%s",
+                  loggingLocation, tableName, logId);
 }
 
 void ExHbaseAccessTcb::handleException(NAHeap *heap,

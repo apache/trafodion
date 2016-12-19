@@ -252,6 +252,7 @@ class ExExeUtilTcb : public ex_tcb
                          const char * status,
                          const char * object,
                          char * outBuf,
+                         NABoolean isET = FALSE,
                          char * timeBuf = NULL,
                          char * queryBuf = NULL,
                          char * sqlcodeBuf = NULL);
@@ -3450,7 +3451,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   // Constructor
   ExExeUtilHBaseBulkLoadTcb(const ComTdbExeUtil & exe_util_tdb,
                             ex_globals * glob = 0);
-
+  ~ExExeUtilHBaseBulkLoadTcb();
   virtual short work();
 
   ExExeUtilHBaseBulkLoadTdb & hblTdb() const
@@ -3461,6 +3462,8 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   virtual short moveRowToUpQueue(const char * row, Lng32 len = -1,
                                  short * rc = NULL, NABoolean isVarchar = TRUE);
 
+  short printLoggingLocation(int bufPos);
+ 
   void setEndStatusMsg(const char * operation,
                                        int bufPos = 0,
                                        NABoolean   withtime= FALSE);
@@ -3472,7 +3475,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
-
+  void setLoggingLocation();
  private:
   enum Step
     {
@@ -3484,6 +3487,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
       LOAD_END_,
       LOAD_END_ERROR_,
       PREPARATION_,
+      LOADING_DATA_,
       COMPLETE_BULK_LOAD_, //load incremental
       POST_LOAD_CLEANUP_,
       TRUNCATE_TABLE_,
@@ -3505,7 +3509,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   Int64 rowsAffected_;
   char statusMsgBuf_[BUFFER_SIZE];
   ExpHbaseInterface * ehi_;
-
+  char *loggingLocation_;
   short setCQDs();
   short restoreCQDs();
 };

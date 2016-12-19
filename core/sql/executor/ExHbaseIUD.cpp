@@ -1069,6 +1069,7 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
     prevRowId_ (NULL),
     hdfs_(NULL),
     hdfsSampleFile_(NULL),
+    loggingFileName_(NULL),
     lastErrorCnd_(NULL)
 {
    hFileParamsInitialized_ = false;
@@ -1078,8 +1079,8 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
    Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
 
 
-    ExHbaseAccessTcb::buildLoggingPath(((ExHbaseAccessTdb &)hbaseAccessTdb).getLoggingLocation(),
-                      (char *)((ExHbaseAccessTdb &)hbaseAccessTdb).getErrCountRowId(),
+    ExHbaseAccessTcb::buildLoggingFileName((NAHeap *)getHeap(), ((ExHbaseAccessTdb &)hbaseAccessTdb).getLoggingLocation(),
+                      // (char *)((ExHbaseAccessTdb &)hbaseAccessTdb).getErrCountRowId(),
                       ((ExHbaseAccessTdb &)hbaseAccessTdb).getTableName(),
                       "traf_upsert_err",
                       fileNum,
@@ -1090,6 +1091,10 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
 
 ExHbaseAccessBulkLoadPrepSQTcb::~ExHbaseAccessBulkLoadPrepSQTcb()
 {
+  if (loggingFileName_ != NULL) {
+     NADELETEBASIC(loggingFileName_, getHeap());
+     loggingFileName_ = NULL;
+  }
   // Flush and close sample file if used
   if (hdfs_)
     {

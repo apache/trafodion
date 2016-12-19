@@ -1087,10 +1087,19 @@ ExExeUtilHBaseBulkLoadTcb::ExExeUtilHBaseBulkLoadTcb(
 : ExExeUtilTcb( exe_util_tdb, NULL, glob),
   step_(INITIAL_),
   nextStep_(INITIAL_),
-  rowsAffected_(0)
+  rowsAffected_(0),
+  loggingLocation_(NULL)
 {
   ehi_ = NULL;
   qparent_.down->allocatePstate(this);
+}
+
+ExExeUtilHBaseBulkLoadTcb::~ExExeUtilHBaseBulkLoadTcb()
+{
+   if (loggingLocation_ != NULL) {
+      NADELETEBASIC(loggingLocation_, getHeap());
+      loggingLocation_ = NULL;
+   }
 }
 
 //////////////////////////////////////////////////////
@@ -1141,7 +1150,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           break;
       }
 
-      if (setStartStatusMsgAndMoveToUpQueue("LOAD", &rc))
+      if (setStartStatusMsgAndMoveToUpQueue(" LOAD", &rc))
         return rc;
 
       if (hblTdb().getUpsertUsingLoad())
@@ -1177,7 +1186,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
     case TRUNCATE_TABLE_:
     {
-      if (setStartStatusMsgAndMoveToUpQueue(" PURGE DATA",&rc))
+      if (setStartStatusMsgAndMoveToUpQueue(" PURGE DATA",&rc, 0, TRUE))
         return rc;
 
         // Set the parserflag to prevent privilege checks in purgedata
@@ -1216,7 +1225,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       }
       step_ = LOAD_START_;
 
-      setEndStatusMsg(" PURGE DATA");
+      setEndStatusMsg(" PURGE DATA", 0, TRUE);
     }
     break;
 
@@ -1267,8 +1276,8 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
     case PRE_LOAD_CLEANUP_:
     {
-      if (setStartStatusMsgAndMoveToUpQueue(" CLEANUP", &rc))
-        return rc;
+      if (setStartStatusMsgAndMoveToUpQueue(" CLEANUP", &rc, 0, TRUE))
+           return rc;
 
         //Cleanup files
         char * clnpQuery =
@@ -1300,12 +1309,12 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       if (hblTdb().getRebuildIndexes() || hblTdb().getHasUniqueIndexes())
         step_ = DISABLE_INDEXES_;
 
-      setEndStatusMsg(" CLEANUP");
+      setEndStatusMsg(" CLEANUP", 0, TRUE);
     }
     break;
     case DISABLE_INDEXES_:
     {
-      if (setStartStatusMsgAndMoveToUpQueue(" DISABLE INDEXES", &rc))
+      if (setStartStatusMsgAndMoveToUpQueue(" DISABLE INDEXES", &rc, 0, TRUE))
         return rc;
 
       // disable indexes before starting the load preparation. load preparation phase will
@@ -1335,17 +1344,33 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       }
       step_ = PREPARATION_;
 
-      setEndStatusMsg(" DISABLE INDEXES");
+      setEndStatusMsg(" DISABLE INDEXES", 0, TRUE);
     }
     break;
 
     case PREPARATION_:
     {
+      short bufPos = 0;
       if (!hblTdb().getUpsertUsingLoad())
       {
-        if (setStartStatusMsgAndMoveToUpQueue(" PREPARATION", &rc, 0, TRUE))
-          return rc;
+        setLoggingLocation();
+        bufPos = printLoggingLocation(0);
+        if (setStartStatusMsgAndMoveToUpQueue(" LOADING DATA", &rc, bufPos, TRUE))
+           return rc;
+        else {
+           step_ = LOADING_DATA_;
+           return WORK_CALL_AGAIN;
+        }  
+      }
+      else
+          step_ = LOADING_DATA_;
+    }
+    break;
 
+    case LOADING_DATA_:
+    {
+      if (!hblTdb().getUpsertUsingLoad())
+      {
         if (hblTdb().getNoDuplicates())
           cliRC = holdAndSetCQD("TRAF_LOAD_PREP_SKIP_DUPLICATES", "OFF");
         else
@@ -1356,8 +1381,16 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           break;
         }
 
+        if (loggingLocation_ != NULL)
+           cliRC = holdAndSetCQD("TRAF_LOAD_ERROR_LOGGING_LOCATION", loggingLocation_);
+        if (cliRC < 0)
+        {
+          step_ = LOAD_END_ERROR_;
+          break;
+        }
+
         rowsAffected_ = 0;
-        char * transQuery =hblTdb().ldQuery_;
+        char *loadQuery = hblTdb().ldQuery_;
           if (ustatNonEmptyTable)
             {
               // If the ustat option was specified, but the table to be loaded
@@ -1365,11 +1398,11 @@ short ExExeUtilHBaseBulkLoadTcb::work()
               // was added to the LOAD TRANSFORM statement when the original
               // bulk load statement was parsed.
               const char* sampleOpt = " WITH SAMPLE ";
-              char* sampleOptPtr = strstr(transQuery, sampleOpt);
+              char* sampleOptPtr = strstr(loadQuery, sampleOpt);
               if (sampleOptPtr)
                 memset(sampleOptPtr, ' ', strlen(sampleOpt));
             }
-          //printf("*** Load stmt is %s\n", transQuery);
+          //printf("*** Load stmt is %s\n",loadQuery);
 
           // If the WITH SAMPLE clause is included, set the internal exe util
           // parser flag to allow it.
@@ -1385,7 +1418,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
             }
           }
 
-        cliRC = cliInterface()->executeImmediate(transQuery,
+        cliRC = cliInterface()->executeImmediate(loadQuery,
             NULL,
             NULL,
             TRUE,
@@ -1393,7 +1426,6 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           if (parserFlagSet)
             masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
 
-        transQuery = NULL;
         if (cliRC < 0)
         {
           rowsAffected_ = 0;
@@ -1408,7 +1440,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
         int len = strlen(statusMsgBuf_);
-        setEndStatusMsg(" PREPARATION", len, TRUE);
+        setEndStatusMsg(" LOADING DATA", len, TRUE);
       }
       else
       {
@@ -1513,7 +1545,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
     case POPULATE_INDEXES_:
     {
-      if (setStartStatusMsgAndMoveToUpQueue(" POPULATE INDEXES", &rc))
+      if (setStartStatusMsgAndMoveToUpQueue(" POPULATE INDEXES", &rc, 0, TRUE))
         return rc;
 
       char * piQuery =
@@ -1550,7 +1582,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
       case UPDATE_STATS_:
       {
-        if (setStartStatusMsgAndMoveToUpQueue(" UPDATE STATISTICS", &rc))
+        if (setStartStatusMsgAndMoveToUpQueue(" UPDATE STATISTICS", &rc, 0, TRUE))
           return rc;
 
         if (ustatNonEmptyTable)
@@ -1764,6 +1796,7 @@ short ExExeUtilHBaseBulkLoadTcb::restoreCQDs()
   if (restoreCQD("TRAF_LOAD_MAX_ERROR_ROWS") < 0)  { return -1;}
   if (restoreCQD("TRAF_LOAD_ERROR_COUNT_TABLE") < 0)  { return -1;}
   if (restoreCQD("TRAF_LOAD_ERROR_COUNT_ID") < 0) { return -1; }
+  if (restoreCQD("TRAF_LOAD_ERROR_LOGGING_LOCATION") < 0) { return -1; }
 
   return 0;
 }
@@ -1778,6 +1811,19 @@ short ExExeUtilHBaseBulkLoadTcb::moveRowToUpQueue(const char * row, Lng32 len,
 }
 
 
+short ExExeUtilHBaseBulkLoadTcb::printLoggingLocation(int bufPos)
+{
+  short retBufPos = bufPos;
+  if (hblTdb().getNoOutput())
+    return 0;
+  if (loggingLocation_ != NULL) {
+     str_sprintf(&statusMsgBuf_[bufPos], "       Logging Location: %s", loggingLocation_);
+     retBufPos = strlen(statusMsgBuf_);
+     statusMsgBuf_[retBufPos] = '\n';
+     retBufPos++;
+  }
+  return retBufPos;
+}
 
 
 short ExExeUtilHBaseBulkLoadTcb::setStartStatusMsgAndMoveToUpQueue(const char * operation,
@@ -1789,10 +1835,14 @@ short ExExeUtilHBaseBulkLoadTcb::setStartStatusMsgAndMoveToUpQueue(const char * 
   if (hblTdb().getNoOutput())
     return 0;
 
-  if (withtime)
-    startTime_ = NA_JulianTimestamp();
+  char timeBuf[200];
 
-  getStatusString(operation, "Started",hblTdb().getTableName(), &statusMsgBuf_[bufPos]);
+  if (withtime)
+  {
+    startTime_ = NA_JulianTimestamp();
+    getTimestampAsString(startTime_, timeBuf);
+  }
+  getStatusString(operation, "Started",hblTdb().getTableName(), &statusMsgBuf_[bufPos], FALSE, (withtime ? timeBuf : NULL));
   return moveRowToUpQueue(statusMsgBuf_,0,rc);
 }
 
@@ -1810,16 +1860,35 @@ void ExExeUtilHBaseBulkLoadTcb::setEndStatusMsg(const char * operation,
   nextStep_ = step_;
   step_ = RETURN_STATUS_MSG_;
 
+  Int64 elapsedTime;
   if (withtime)
   {
     endTime_ = NA_JulianTimestamp();
-    Int64 elapsedTime = endTime_ - startTime_;
-
+    elapsedTime = endTime_ - startTime_;
+    getTimestampAsString(endTime_, timeBuf);
+    getStatusString(operation, "Ended", hblTdb().getTableName(),&statusMsgBuf_[bufPos], FALSE, withtime ? timeBuf : NULL);
+    bufPos = strlen(statusMsgBuf_); 
+    statusMsgBuf_[bufPos] = '\n';
+    bufPos++; 
     getTimeAsString(elapsedTime, timeBuf);
   }
+  getStatusString(operation, "Ended", hblTdb().getTableName(),&statusMsgBuf_[bufPos], TRUE, withtime ? timeBuf : NULL);
+}
 
-  getStatusString(operation, "Ended", hblTdb().getTableName(),&statusMsgBuf_[bufPos], withtime ? timeBuf : NULL);
-
+void ExExeUtilHBaseBulkLoadTcb::setLoggingLocation()
+{
+   char * loggingLocation = hblTdb().getLoggingLocation();
+   if (loggingLocation_ != NULL) {
+      NADELETEBASIC(loggingLocation_, getHeap());
+      loggingLocation_ = NULL;
+   }
+   if (loggingLocation != NULL) { 
+      short logLen = strlen(loggingLocation);
+      char *tableName = hblTdb().getTableName();
+      short tableNameLen = strlen(tableName);
+      loggingLocation_ = new (getHeap()) char[logLen+tableNameLen+100];
+      ExHbaseAccessTcb::buildLoggingPath(loggingLocation, NULL, tableName, loggingLocation_);
+   }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -2068,6 +2137,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
   Lng32 retcode = 0;
   short rc;
   SFW_RetCode sfwRetCode = SFW_OK;
+  Lng32 hbcRetCode = HBC_OK;
   // if no parent request, return
   if (qparent_.down->isEmpty())
     return WORK_OK;
@@ -2251,12 +2321,12 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
       for ( int i = 0 ; i < snapshotsList_->entries(); i++)
       {
         if (createSnp)
-          retcode = ehi_->createSnapshot( *snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName);
+          hbcRetCode = ehi_->createSnapshot( *snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName);
         else
         {
           NABoolean exist = FALSE;
-          retcode = ehi_->verifySnapshot(*snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName, exist);
-          if ( retcode == HBASE_ACCESS_SUCCESS && !exist)
+          hbcRetCode = ehi_->verifySnapshot(*snapshotsList_->at(i)->fullTableName, *snapshotsList_->at(i)->snapshotName, exist);
+          if ( hbcRetCode == HBC_OK && !exist)
           {
             ComDiagsArea * da = getDiagsArea();
             *da << DgSqlCode(-8112)
@@ -2266,10 +2336,11 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
             break;
           }
         }
-        if (retcode != HBASE_ACCESS_SUCCESS)
+        if (hbcRetCode != HBC_OK)
         {
-          ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, retcode, 
-                "HBaseClient_JNI::createSnapshot/verifySnapshot");
+          ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, hbcRetCode, 
+                "HBaseClient_JNI::createSnapshot/verifySnapshot", 
+                snapshotsList_->at(i)->snapshotName->data() );
           handleError();
           step_ = UNLOAD_END_ERROR_;
           break;
@@ -2326,11 +2397,12 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
         return rc;
       for ( int i = 0 ; i < snapshotsList_->entries(); i++)
       {
-        retcode = ehi_->deleteSnapshot( *snapshotsList_->at(i)->snapshotName);
-        if (retcode != HBASE_ACCESS_SUCCESS)
+        hbcRetCode = ehi_->deleteSnapshot( *snapshotsList_->at(i)->snapshotName);
+        if (hbcRetCode != HBC_OK)
         {
-          ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, retcode, 
-                "HBaseClient_JNI::createSnapshot/verifySnapshot");
+          ExHbaseAccessTcb::setupError((NAHeap *)getMyHeap(),qparent_, hbcRetCode, 
+                "HBaseClient_JNI::createSnapshot/verifySnapshot", 
+                snapshotsList_->at(i)->snapshotName->data() );
           handleError();
           step_ = UNLOAD_END_ERROR_;
           break;
@@ -2522,11 +2594,12 @@ short ExExeUtilHBaseBulkUnLoadTcb::setStartStatusMsgAndMoveToUpQueue(const char 
 
   if (hblTdb().getNoOutput())
      return 0;
-
-  if (withtime)
+  char timeBuf[200];
+  if (withtime) {
     startTime_ = NA_JulianTimestamp();
-
-  getStatusString(operation, "Started",NULL, &statusMsgBuf_[bufPos]);
+    getTimestampAsString(endTime_, timeBuf);
+  }
+  getStatusString(operation, "Started",NULL, &statusMsgBuf_[bufPos], FALSE, (withtime ? timeBuf : NULL));
   return moveRowToUpQueue(statusMsgBuf_,0,rc);
 }
 
@@ -2548,12 +2621,15 @@ void ExExeUtilHBaseBulkUnLoadTcb::setEndStatusMsg(const char * operation,
   {
     endTime_ = NA_JulianTimestamp();
     Int64 elapsedTime = endTime_ - startTime_;
-
+    getTimestampAsString(endTime_, timeBuf);
+    getStatusString(operation, "Ended", hblTdb().getTableName(),&statusMsgBuf_[bufPos], FALSE, withtime ? timeBuf : NULL);
+    bufPos = strlen(statusMsgBuf_); 
+    statusMsgBuf_[bufPos] = '\n';
+    bufPos++; 
     getTimeAsString(elapsedTime, timeBuf);
   }
 
-  getStatusString(operation, "Ended", NULL,&statusMsgBuf_[bufPos], withtime ? timeBuf : NULL);
-
+  getStatusString(operation, "Ended", NULL,&statusMsgBuf_[bufPos], TRUE, withtime ? timeBuf : NULL);
 }
 
 ////////////////////////////////////////////////////////////////////////
