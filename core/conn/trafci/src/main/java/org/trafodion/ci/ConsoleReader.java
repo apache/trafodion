@@ -28,6 +28,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import jline.console.UserInterruptException;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -111,6 +112,7 @@ public class ConsoleReader
       this.in=System.in;
         cr = new jline.console.ConsoleReader();
         cr.setPrompt(this.prompt);
+        cr.setHandleUserInterrupt(true);
    }
 
    public String getLine() throws IOException, UserInterruption
@@ -177,7 +179,13 @@ public class ConsoleReader
          }
       }
 */
-        return cr.readLine();
+        String readLine = null;
+        try {
+            readLine = cr.readLine();
+        } catch (UserInterruptException e) {
+            // TODO Auto-generated catch block
+        }
+        return readLine;
    }
 
    public boolean next() throws IOException, UserInterruption
