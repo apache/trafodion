@@ -121,7 +121,7 @@ DBT_LIBS =
 
 EARLY_LIBS = -ljsig
 
-COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -llog4cxx
+COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -lpthread -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -llog4cxx
 
 ifeq ($(SQ_MTYPE),64)
 LOC_JSIG=$(JAVA_HOME)/jre/lib/amd64/server
