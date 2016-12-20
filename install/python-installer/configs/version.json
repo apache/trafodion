@@ -1,7 +1,7 @@
 {
     "linux":  ["centos", "redhat"],
     "hadoop": ["cloudera", "hortonworks", "apache"],
-    "java":   ["1.7"],
+    "java":   ["1.7", "1.8"],
     "centos": ["6"],
     "redhat": ["6"],
     "cdh":    ["5.4", "5.5", "5.6"],

@@ -15,7 +15,7 @@
 ## How to use:
 - Two ways:
  - Simply invoke `./db_install.py` to start the installation in guided mode
- - Copy the `db_config_default` file to `your_db_config` and modify it, then invoke `./db_config.py --config-file your_db_config` to start installation in config mode
+ - Copy `configs/db_config_default.ini` file to `your_db_config` and modify it, then invoke `./db_config.py --config-file your_db_config` to start installation in config mode
 - For a quick install with default settings, you only need to put Trafodion package file in installer's directory, provide CDH/HDP web URL in `your_db_config` file and then it's ready to go!
 - Use `./db_install.py --help` for more options
 - Invoke `./discovery.py` to get the system basic info on all nodes

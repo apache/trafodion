@@ -144,14 +144,23 @@ class Discover(object):
         else:
             return OK
 
-    @deco
-    def get_secure_hadoop(self):
+    def _get_core_site_xml(self):
         if self.dbcfgs.has_key('hadoop_home'): # apache distro
             CORE_SITE_XML = '%s/etc/hadoop/core-site.xml' % self.dbcfgs['hadoop_home']
         else:
             CORE_SITE_XML = '/etc/hadoop/conf/core-site.xml'
         p = ParseXML(CORE_SITE_XML)
+        return p
+
+    @deco
+    def get_hadoop_authentication(self):
+        p = self._get_core_site_xml()
         return p.get_property('hadoop.security.authentication')
+
+    @deco
+    def get_hadoop_authorization(self):
+        p = self._get_core_site_xml()
+        return p.get_property('hadoop.security.authorization')
 
     @deco
     def get_hbase(self):
@@ -210,7 +219,7 @@ class Discover(object):
     @deco
     def get_ext_interface(self):
         """ get external network interface """
-        return cmd_output('netstat -rn | grep "^0.0.0.0" | awk \'{print $8}\'').strip()
+        return cmd_output('ip route |grep default|awk \'{print $5}\'')
 
     @deco
     def get_rootdisk_free(self):
@@ -222,6 +231,14 @@ class Discover(object):
     def get_python_ver(self):
         """ get python version """
         return platform.python_version()
+
+    @deco
+    def get_home_dir(self):
+        if self.dbcfgs.has_key('traf_user'): # apache distro
+            traf_user = self.dbcfgs['traf_user']
+            return cmd_output("getent passwd %s | awk -F: '{print $6}' | sed 's/\/%s//g'" % (traf_user, traf_user))
+        else:
+            return ''
 
     @deco
     def get_traf_status(self):

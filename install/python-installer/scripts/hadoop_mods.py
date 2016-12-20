@@ -26,14 +26,8 @@
 import time
 import sys
 import json
-from common import ParseHttp, ParseJson, MODCFG_FILE, err
+from common import ParseHttp, ParseJson, MODCFG_FILE, err, info, retry
 
-try:
-    dbcfgs_json = sys.argv[1]
-except IndexError:
-    err('No db config found')
-
-dbcfgs = json.loads(dbcfgs_json)
 modcfgs = ParseJson(MODCFG_FILE).load()
 
 MOD_CFGS = modcfgs['MOD_CFGS']
@@ -57,20 +51,6 @@ class CDHMod(object):
         self.cluster_name = cluster_name
         self.p = ParseHttp(user, passwd)
 
-    def __retry_check(self, cid, maxcnt, interval, msg):
-        stat_url = CMD_STAT_URL_PTR % (self.url, cid)
-        stat = self.p.get(stat_url)
-        retry_cnt = 0
-        while not (stat['success'] is True and stat['active'] is False):
-            retry_cnt += 1
-            flush_str = '.' * retry_cnt
-            print '\rCheck CDH services %s status (timeout: %dmin) %s' % (msg, maxcnt*interval/60, flush_str),
-            sys.stdout.flush()
-            time.sleep(interval)
-            stat = self.p.get(stat_url)
-            if retry_cnt == maxcnt: return False
-        return True
-
     def mod(self):
         hdfs_service = dbcfgs['hdfs_service_name']
         hbase_service = dbcfgs['hbase_service_name']
@@ -93,18 +73,17 @@ class CDHMod(object):
         restart_url = RESTART_URL_PTR % (self.url, self.cluster_name)
         deploy_cfg_url = DEPLOY_CFG_URL_PTR % (self.url, self.cluster_name)
 
-        print 'Restarting CDH services ...'
-        rc1 = self.p.post(restart_url)
-        if self.__retry_check(rc1['id'], 40, 15, 'restart'):
-            print 'Restart CDH successfully!'
-        else:
-            err('Failed to restart CDH, max retry count reached')
+        def __retry(url, maxcnt, interval, msg):
+            rc = self.p.post(url)
+            stat_url = CMD_STAT_URL_PTR % (self.url, rc['id'])
+            get_stat = lambda: self.p.get(stat_url)['success'] is True and self.p.get(stat_url)['active'] is False
+            retry(get_stat, maxcnt, interval, msg)
 
-        rc2 = self.p.post(deploy_cfg_url)
-        if self.__retry_check(rc2['id'], 30, 10, 'deploy'):
-            print 'Deploy client config successfully!'
-        else:
-            err('Failed to deploy CDH client config, max retry count reached')
+        info('Restarting CDH services ...')
+        __retry(restart_url, 40, 15, 'CDH services restart')
+
+        info('Deploying CDH client configs ...')
+        __retry(deploy_cfg_url, 30, 10, 'CDH services deploy')
 
 
 class HDPMod(object):
@@ -119,6 +98,28 @@ class HDPMod(object):
         desired_cfg_url = cluster_url + '?fields=Clusters/desired_configs'
         cfg_url = cluster_url + '/configurations?type={0}&tag={1}'
         desired_cfg = self.p.get(desired_cfg_url)
+
+        hdp = self.p.get('%s/services/HBASE/components/HBASE_REGIONSERVER' % cluster_url)
+        rsnodes = [c['HostRoles']['host_name'] for c in hdp['host_components']]
+
+        hbase_hregion_property = 'hbase.hregion.impl'
+        hbase_config_group = {
+            'ConfigGroup': {
+                'cluster_name': self.cluster_name,
+                'group_name': 'hbase-regionserver',
+                'tag': 'HBASE',
+                'description': 'HBase Regionserver configs for Trafodion',
+                'hosts': [{'host_name': host} for host in rsnodes],
+                'desired_configs': [
+                    {
+                        'type': 'hbase-site',
+                        'tag': 'traf_cg',
+                        'properties': {hbase_hregion_property: MOD_CFGS['hbase-site'].pop(hbase_hregion_property)}
+                    }
+                ]
+            }
+        }
+        self.p.post('%s/config_groups' % cluster_url, hbase_config_group)
 
         for config_type in MOD_CFGS.keys():
             desired_tag = desired_cfg['Clusters']['desired_configs'][config_type]['tag']
@@ -137,13 +138,12 @@ class HDPMod(object):
             }
             self.p.put(cluster_url, config)
 
-
     def restart(self):
         srv_baseurl = CLUSTER_URL_PTR % (self.url, self.cluster_name) + '/services/'
         srvs = ['HBASE', 'ZOOKEEPER', 'HDFS']
 
         # Stop
-        print 'Restarting HDP services ...'
+        info('Restarting HDP services ...')
         for srv in srvs:
             srv_url = srv_baseurl + srv
             config = {'RequestInfo': {'context' :'Stop %s services' % srv}, 'ServiceInfo': {'state' : 'INSTALLED'}}
@@ -151,21 +151,10 @@ class HDPMod(object):
 
             # check stop status
             if rc:
-                stat = self.p.get(srv_url)
-
-                retry_cnt, maxcnt, interval = 0, 30, 5
-                while stat['ServiceInfo']['state'] != 'INSTALLED':
-                    retry_cnt += 1
-                    flush_str = '.' * retry_cnt
-                    print '\rCheck HDP service %s stop status (timeout: %dmin) %s' % (srv, maxcnt*interval/60, flush_str),
-                    sys.stdout.flush()
-                    time.sleep(interval)
-                    stat = self.p.get(srv_url)
-                    if retry_cnt == maxcnt: err('Failed to stop HDP service %s, timeout' % srv)
-                # wrap line
-                print
+                get_stat = lambda: self.p.get(srv_url)['ServiceInfo']['state'] == 'INSTALLED'
+                retry(get_stat, 30, 5, 'HDP service %s stop' % srv)
             else:
-                print 'HDP service %s had already been stopped' % srv
+                info('HDP service %s had already been stopped' % srv)
 
         time.sleep(5)
         # Start
@@ -175,29 +164,24 @@ class HDPMod(object):
         # check start status
         if rc:
             result_url = rc['href']
-            stat = self.p.get(result_url)
-            retry_cnt, maxcnt, interval = 0, 120, 5
-            while stat['Requests']['request_status'] != 'COMPLETED':
-                retry_cnt += 1
-                flush_str = '.' * retry_cnt
-                print '\rCheck HDP services start status (timeout: %dmin) %s' % (maxcnt*interval/60, flush_str),
-                sys.stdout.flush()
-                time.sleep(interval)
-                stat = self.p.get(result_url)
-                if retry_cnt == maxcnt: err('Failed to start all HDP services')
-            print 'HDP services started successfully!'
+            get_stat = lambda: self.p.get(result_url)['Requests']['request_status'] == 'COMPLETED'
+            retry(get_stat, 120, 5, 'HDP services start')
         else:
-            print 'HDP services had already been started'
+            info('HDP services had already been started')
 
 def run():
     if 'CDH' in dbcfgs['distro']:
-        cdh = CDHMod(dbcfgs['mgr_user'], dbcfgs['mgr_pwd'], dbcfgs['mgr_url'], dbcfgs['cluster_name'])
-        cdh.mod()
-        cdh.restart()
+        hadoop_mod = CDHMod(dbcfgs['mgr_user'], dbcfgs['mgr_pwd'], dbcfgs['mgr_url'], dbcfgs['cluster_name'])
     elif 'HDP' in dbcfgs['distro']:
-        hdp = HDPMod(dbcfgs['mgr_user'], dbcfgs['mgr_pwd'], dbcfgs['mgr_url'], dbcfgs['cluster_name'])
-        hdp.mod()
-        hdp.restart()
+        hadoop_mod = HDPMod(dbcfgs['mgr_user'], dbcfgs['mgr_pwd'], dbcfgs['mgr_url'], dbcfgs['cluster_name'])
+
+    hadoop_mod.mod()
+    hadoop_mod.restart()
 
 # main
+try:
+    dbcfgs_json = sys.argv[1]
+except IndexError:
+    err('No db config found')
+dbcfgs = json.loads(dbcfgs_json)
 run()

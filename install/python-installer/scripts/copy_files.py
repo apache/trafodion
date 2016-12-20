@@ -26,7 +26,7 @@
 import sys
 import json
 from threading import Thread
-from common import Remote, run_cmd, err
+from common import ParseJson, Remote, run_cmd, err
 
 def run(pwd):
     """ gen ssh key on local and copy to all nodes
@@ -36,11 +36,23 @@ def run(pwd):
     hosts = dbcfgs['node_list'].split(',')
     traf_package = dbcfgs['traf_package']
 
+    # save db configs to a tmp file and copy to all trafodion nodes
+    dbcfgs_file = '/tmp/dbcfgs'
+    p = ParseJson(dbcfgs_file)
+    # remove password from config file
+    try:
+        dbcfgs.pop('mgr_pwd')
+        dbcfgs.pop('traf_pwd')
+        dbcfgs.pop('kdcadmin_pwd')
+    except KeyError:
+        pass
+    p.save(dbcfgs)
+
     key_file = '/tmp/id_rsa'
     run_cmd('sudo -n rm -rf %s*' % key_file)
     run_cmd('sudo -n echo -e "y" | ssh-keygen -t rsa -N "" -f %s' % key_file)
 
-    files = [key_file, key_file+'.pub', traf_package]
+    files = [key_file, key_file+'.pub', traf_package, dbcfgs_file]
 
     remote_insts = [Remote(h, pwd=pwd) for h in hosts]
     threads = [Thread(target=r.copy, args=(files, '/tmp')) for r in remote_insts]

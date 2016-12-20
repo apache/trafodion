@@ -1,7 +1,7 @@
 {
 "MOD_CFGS": {
     "hbase-site": {
-        "hbase.master.distributed.log.splitting": "false",
+        "hbase.master.distributed.log.splitting": "true",
         "hbase.snapshot.master.timeoutMillis": "600000",
         "hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation",
         "hbase.hregion.impl": "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion",
@@ -21,7 +21,7 @@
         "roleType" : "MASTER",
         "items" : [ {
                 "name" : "hbase_master_config_safety_valve",
-        "value" : "<property>\r\n   <name>hbase.master.distributed.log.splitting</name>\r\n   <value>false</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.master.timeoutMillis</name>\r\n   <value>600000</value>\r\n</property>\r\n"
+        "value" : "<property>\r\n   <name>hbase.master.distributed.log.splitting</name>\r\n   <value>true</value>\r\n</property>\r\n <property>\r\n   <name>hbase.snapshot.master.timeoutMillis</name>\r\n   <value>600000</value>\r\n</property>\r\n"
                 } ]
     } ]
 },
@@ -40,19 +40,6 @@
 },
 
 "HDFS_CONFIG": {
-"roleTypeConfigs" :  [ {
-        "roleType" : "NAMENODE",
-        "items": [ {
-                "name" : "namenode_java_heapsize",
-        "value" : "1073741824"
-                } ]
-   }, {
-        "roleType" : "SECONDARYNAMENODE",
-        "items":[ {
-                "name" : "secondary_namenode_java_heapsize",
-        "value" : "1073741824"
-                } ]
-     } ],
     "items": [ {
              "name":"dfs_namenode_acls_enabled",
              "value":"true"

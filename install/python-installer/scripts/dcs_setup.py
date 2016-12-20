@@ -26,7 +26,8 @@
 import os
 import sys
 import json
-from common import ParseXML, append_file, write_file, mod_file, cmd_output, run_cmd, err
+from common import append_file, write_file, mod_file, cmd_output, run_cmd, \
+                   ParseInI, ParseXML, DEF_PORT_FILE, err
 
 def run():
     dbcfgs = json.loads(dbcfgs_json)
@@ -70,11 +71,13 @@ def run():
     # modify dcs-env.sh
     mod_file(DCS_ENV_FILE, {'.*DCS_MANAGES_ZK=.*':'export DCS_MANAGES_ZK=false'})
 
+    ports = ParseInI(DEF_PORT_FILE, 'ports').load()
+    dcs_master_port = ports['dcs_master_port']
     # modify trafci
-    mod_file(TRAFCI_FILE, {'HNAME=.*':'HNAME=%s:23400' % dcs_master})
+    mod_file(TRAFCI_FILE, {'HNAME=.*':'HNAME=%s:%s' % (dcs_master, dcs_master_port)})
 
     # modify dcs-site.xml
-    net_interface = cmd_output('netstat -rn | grep "^0.0.0.0" | awk \'{print $8}\'').strip()
+    net_interface = run_cmd('ip route |grep default|awk \'{print $5}\'')
     hb = ParseXML(HBASE_XML_FILE)
     zk_hosts = hb.get_property('hbase.zookeeper.quorum')
     zk_port = hb.get_property('hbase.zookeeper.property.clientPort')
