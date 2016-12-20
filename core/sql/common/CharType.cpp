@@ -167,7 +167,7 @@ NAString CharType::getCharSetName() const
 
 NAString CharType::getCharSetAsPrefix(CharInfo::CharSet cs)
 {
-  return NAString("_") + CharInfo::getCharSetName(cs);
+  return NAString(SQLCHARSET_INTRODUCER_IN_LITERAL) + CharInfo::getCharSetName(cs);
 }
 
 NAString CharType::getCharSetAsPrefix() const
