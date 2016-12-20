@@ -362,7 +362,7 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
 // specified type t to be converted to/from C strings. The only 
 // SQL types that do not need to be converted to C strings are:
 // 
-//  INT, SMALLINT, LARGEINT, FLOAT, REAL, DOUBLE PRECISION
+//  INT, SMALLINT, LARGEINT, FLOAT, REAL, DOUBLE PRECISION, BOOLEAN
 //
 // because these types map to Java primitive types:
 //
@@ -372,6 +372,7 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
 //  FLOAT -> float or double
 //  REAL -> float
 //  DOUBLE PREC -> double
+//  BOOLEAN -> byte
 //
 // For the object-oriented Java and C++ parameter styles, we represent
 // intervals as a signed numeric of 2, 4, or 8 bytes, in the other
@@ -444,6 +445,8 @@ NABoolean LmTypeIsString(const NAType &t,
     // interval representation as a number
     result = FALSE;
   }
+  else if (t.getTypeQualifier() == NA_BOOLEAN_TYPE)
+    result = FALSE;
 
   return result;
 }

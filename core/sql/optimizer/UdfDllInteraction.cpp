@@ -37,6 +37,7 @@
 #include "NumericType.h"
 #include "CharType.h"
 #include "DatetimeType.h"
+#include "MiscType.h"
 #include "ItemLog.h"
 #include "ItemOther.h"
 #include "NARoutine.h"
@@ -1213,27 +1214,17 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
         else if (isExact)
           switch (length)
             {
-              // SMALLINT, INT, LARGEINT, NUMERIC, signed and unsigned
+              // TINYINT, SMALLINT, INT, LARGEINT, NUMERIC, signed and unsigned
             case 1:
-              if (CmpCommon::getDefault(TRAF_TINYINT_SPJ_SUPPORT) == DF_ON)
-                {
-                  *diags << DgSqlCode(-11151)
-                         << DgString0("type")
-                         << DgString1(src->getTypeSQLname())
-                         << DgString2("Tinyint datatype not yet supported");
-                  result = FALSE;
-                  break;
-                }
-
               if (isUnsigned)
                 {
                   if (!isDecimalPrecision)
-                    sqlType = tmudr::TypeInfo::SMALLINT_UNSIGNED;
+                    sqlType = tmudr::TypeInfo::TINYINT_UNSIGNED;
                 }
               else
                 {
                   if (!isDecimalPrecision)
-                    sqlType = tmudr::TypeInfo::SMALLINT;
+                    sqlType = tmudr::TypeInfo::TINYINT;
                 }
               break;
 
@@ -1414,6 +1405,20 @@ NABoolean TMUDFInternalSetup::setTypeInfoFromNAType(
                    << DgString0("type")
                    << DgString1("interval")
                    << DgString2("unsupported interval subtype");
+            result = FALSE;
+          }
+      }
+      break;
+
+    case NA_BOOLEAN_TYPE:
+      {
+        sqlType = tmudr::TypeInfo::BOOLEAN;
+        if (length != 1)
+          {
+            *diags << DgSqlCode(-11151)
+                   << DgString0("type")
+                   << DgString1(src->getTypeSQLname())
+                   << DgString2("unsupported 4 byte boolean");
             result = FALSE;
           }
       }
@@ -1843,6 +1848,14 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
 
   switch (typeCode)
     {
+    case tmudr::TypeInfo::TINYINT:
+    case tmudr::TypeInfo::TINYINT_UNSIGNED:
+      result = new(heap)
+        SQLTiny((typeCode == tmudr::TypeInfo::TINYINT),
+                src.getIsNullable(),
+                heap);
+      break;
+
     case tmudr::TypeInfo::SMALLINT:
     case tmudr::TypeInfo::SMALLINT_UNSIGNED:
       result = new(heap)
@@ -2072,6 +2085,11 @@ NAType *TMUDFInternalSetup::createNATypeFromTypeInfo(
               }
           }
       }
+      break;
+
+    case tmudr::TypeInfo::BOOLEAN:
+      result = new(heap) SQLBooleanNative(src.getIsNullable(),
+                                          heap);
       break;
 
     default:

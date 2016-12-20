@@ -17627,8 +17627,17 @@ Context* PhysicalTableMappingUDF::createContextForAChild(Context* myContext,
   // that the TMUDF sees all values of a particular partition
   // together. We do that by requesting an arrangement by th
   // PARTITION BY columns, if any are specified. This applies
-  // to parallel and serial plans.
-  rg.addArrangement(childInfo->getPartitionBy(),ESP_SOT);
+  // to parallel and serial plans. Suppress this if the function
+  // type is REDUCER_NC. In this case, the UDF has specifically
+  // asked not to sort. This typically means that the UDF maintains
+  // a hash table (or similar) of keys that allow it to receive its
+  // input data in any order, with values for different PARTITION BY
+  // keys being intermingled. This can be much more efficient when
+  // there are many input rows and a much smaller number of unique
+  // PARTITION BY keys. So, a REDUCER_NC is similar to a user-defined
+  // hash groupby.
+  if (invocationInfo_->getFuncType() != tmudr::UDRInvocationInfo::REDUCER_NC)
+    rg.addArrangement(childInfo->getPartitionBy(),ESP_SOT);
 
   // add ORDER BY as a required order
   if (NOT childInfo->getOrderBy().isEmpty())
