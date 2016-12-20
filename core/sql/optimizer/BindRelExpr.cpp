@@ -17045,7 +17045,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
       OperatorTypeEnum opType =
         PredefinedTableMappingFunction::nameIsAPredefinedTMF(tmfuncName);
 
-      if (opType != REL_TABLE_MAPPING_UDF)
+      if (opType != REL_ANY_TABLE_MAPPING_UDF)
         {
           // yes, this is a predefined TMUDF
           PredefinedTableMappingFunction *result;
@@ -17058,6 +17058,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
           // create a new RelExpr
           result = new(bindWA->wHeap())
             PredefinedTableMappingFunction(
+                 getArity(),
                  tmfuncName,
                  const_cast<ItemExpr *>(getProcAllParamsTree()),
                  opType);
