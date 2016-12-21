@@ -275,7 +275,7 @@ short CmpSeabaseDDL::buildViewTblColUsage(const StmtDDLCreateView * createViewPa
      const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
      CorrName cn(objectNamePart,STMTHEAP,schemaNamePart,catalogNamePart);
 
-     NATable *naTable = bindWA.getNATable(cn);
+     NATable *naTable = bindWA.getNATableInternal(cn);
      if (naTable == NULL)
      {
         SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in createSeabaseView");
@@ -647,7 +647,8 @@ void CmpSeabaseDDL::createSeabaseView(
      return;
     }
 
-  if ((isSeabaseReservedSchema(viewName)) &&
+  if (((isSeabaseReservedSchema(viewName)) ||
+       (ComIsTrafodionExternalSchemaName(schemaNamePart))) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
      {
       *CmpCommon::diags() << DgSqlCode(-1118)
@@ -1057,58 +1058,28 @@ void CmpSeabaseDDL::dropSeabaseView(
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
 
-  const NAString &tabName = dropViewNode->getViewName();
-
-  ComObjectName viewName(tabName);
-  ComAnsiNamePart currCatAnsiName(currCatName);
-  ComAnsiNamePart currSchAnsiName(currSchName);
-  viewName.applyDefaults(currCatAnsiName, currSchAnsiName);
-
-  const NAString catalogNamePart = viewName.getCatalogNamePartAsAnsiString();
-  const NAString schemaNamePart = viewName.getSchemaNamePartAsAnsiString(TRUE);
-  const NAString objectNamePart = viewName.getObjectNamePartAsAnsiString(TRUE);
-  const NAString extViewName = viewName.getExternalName(TRUE);
-
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
-  CmpCommon::context()->sqlSession()->getParentQid());
+                               CmpCommon::context()->sqlSession()->getParentQid());
 
-  ExpHbaseInterface * ehi = allocEHI();
-  if (ehi == NULL)
-    return;
-
-  if ((isSeabaseReservedSchema(viewName)) &&
-      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
-    {
-      *CmpCommon::diags() << DgSqlCode(-1119)
-			  << DgTableName(extViewName);
-      deallocEHI(ehi); 
-
-      processReturn();
-
-      return;
-    }
-
-  retcode = existsInSeabaseMDTable(&cliInterface, 
-				   catalogNamePart, schemaNamePart, objectNamePart,
-				   COM_VIEW_OBJECT, TRUE, FALSE);
+  NAString tabName = dropViewNode->getViewName();
+  NAString catalogNamePart, schemaNamePart, objectNamePart;
+  NAString extTableName, extNameForHbase;
+  NATable * naTable = NULL;
+  CorrName cn;
+  QualifiedName qn;
+  retcode = 
+    setupAndErrorChecks(tabName, 
+                        qn,
+                        currCatName, currSchName,
+                        catalogNamePart, schemaNamePart, objectNamePart,
+                        extTableName, extNameForHbase, cn,
+                        NULL,
+                        FALSE, FALSE,
+                        &cliInterface,
+                        COM_VIEW_OBJECT);
   if (retcode < 0)
     {
-      deallocEHI(ehi); 
-
       processReturn();
-
-      return;
-    }
-
-  if (retcode == 0) // does not exist
-    {
-      *CmpCommon::diags() << DgSqlCode(-1389)
-			  << DgString0(extViewName);
-
-      deallocEHI(ehi); 
-
-      processReturn();
-      
       return;
     }
 
@@ -1126,8 +1097,6 @@ void CmpSeabaseDDL::dropSeabaseView(
       if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
         SEABASEDDL_INTERNAL_ERROR("getting object UID and owner for drop view");
 
-      deallocEHI(ehi); 
-
       processReturn();
 
       return;
@@ -1137,7 +1106,6 @@ void CmpSeabaseDDL::dropSeabaseView(
   if (!isDDLOperationAuthorized(SQLOperation::DROP_VIEW,objectOwnerID,schemaOwnerID))
   {
      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
-     deallocEHI(ehi);
      processReturn ();
      return;
   }
@@ -1149,8 +1117,6 @@ void CmpSeabaseDDL::dropSeabaseView(
       cliRC = getUsingObject(&cliInterface, objUID, usingObjName);
       if (cliRC < 0)
 	{
-	  deallocEHI(ehi); 
-
 	  processReturn();
 	  
 	  return;
@@ -1160,8 +1126,6 @@ void CmpSeabaseDDL::dropSeabaseView(
 	{
 	  *CmpCommon::diags() << DgSqlCode(-1047)
 			      << DgTableName(usingObjName);
-
-	  deallocEHI(ehi); 
 
 	  processReturn();
 
@@ -1173,8 +1137,6 @@ void CmpSeabaseDDL::dropSeabaseView(
       cliRC = getUsingViews(&cliInterface, objUID, usingViewsQueue);
       if (cliRC < 0)
 	{
-	  deallocEHI(ehi); 
-
 	  processReturn();
 	  
 	  return;
@@ -1185,6 +1147,14 @@ void CmpSeabaseDDL::dropSeabaseView(
   // referenced tables can be removed from cache later
   NAList<objectRefdByMe> tablesRefdList(STMTHEAP);
   short status = getListOfReferencedTables(&cliInterface, objUID, tablesRefdList);
+
+  ExpHbaseInterface * ehi = allocEHI();
+  if (ehi == NULL)
+    {
+      processReturn();
+      
+      return;
+    }
 
   if (usingViewsQueue)
     {
@@ -1199,8 +1169,7 @@ void CmpSeabaseDDL::dropSeabaseView(
                                 currCatName, currSchName, COM_VIEW_OBJECT,
                                 dropViewNode->ddlXns()))
 	    {
-	      deallocEHI(ehi); 
-
+              deallocEHI(ehi);
 	      processReturn();
 	      
 	      return;
@@ -1212,15 +1181,13 @@ void CmpSeabaseDDL::dropSeabaseView(
                         currCatName, currSchName, COM_VIEW_OBJECT,
                         dropViewNode->ddlXns()))
     {
-      deallocEHI(ehi); 
-
+      deallocEHI(ehi);
       processReturn();
 
       return;
     }
 
   // clear view definition from my cache only. 
-  CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
   ActiveSchemaDB()->getNATableDB()->removeNATable
     (cn,
      ComQiScope::REMOVE_MINE_ONLY, COM_VIEW_OBJECT,
@@ -1256,8 +1223,7 @@ void CmpSeabaseDDL::dropSeabaseView(
          dropViewNode->ddlXns(), FALSE);
     }
 
-  deallocEHI(ehi); 
-      
+  deallocEHI(ehi);
   processReturn();
 
   return;
@@ -1600,7 +1566,7 @@ static bool checkAccessPrivileges(
       if (isSeq)
         cn.setSpecialType(ExtendedQualName::SG_TABLE);
 
-      NATable *naTable = bindWA.getNATable(cn);
+      NATable *naTable = bindWA.getNATableInternal(cn);
       if (naTable == NULL)
       {
          SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in checkAccessPrivileges");

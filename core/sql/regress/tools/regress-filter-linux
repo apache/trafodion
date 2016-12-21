@@ -280,8 +280,8 @@ s/\(EXTERNAL PATH\) '[^']*'/\1 '@path@'/
 # For SHOWLABEL COMPRESSION
 s/\\(ATTRIBUTES \\([^,][^,]*, \\)\\{0,1\\}\\)[ NO]*COMPRESSION/\1@compress@/g
 
-s/ SERIALIZED//
-s/ NOT SERIALIZED//
+#s/ SERIALIZED//
+#s/ NOT SERIALIZED//
 
 # For error 11205 (Java class not found)
 /ERROR\[11205\]/s/\(external path\) '[^']*'/\1 '@path@'/

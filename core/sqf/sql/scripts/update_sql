@@ -22,7 +22,7 @@
 # @@@ END COPYRIGHT @@@
 #
 # update_sql - SQ Script to update sql/sqlmx (or a supplied directory) to all nodes. 
-# $MY_SQROOT should be sourced from sqenv.sh prior to running this script.
+# $TRAF_HOME should be sourced from sqenv.sh prior to running this script.
 #
 
 function Usage {
@@ -79,13 +79,13 @@ GetOpts $@
 
 # Default is to copy SQL files from current nodes sql/sqlmx if a -i dir isn't supplied
 if [ -z $SQ_COPY_FROM ]; then
-    SQ_COPY_FROM=$MY_SQROOT/sql/sqlmx
+    SQ_COPY_FROM=$TRAF_HOME/sql/sqlmx
     
-    if [ -e $MY_SQROOT ]; then
-        SQ_COPY_TO=$MY_SQROOT/sql/sqlmx
+    if [ -e $TRAF_HOME ]; then
+        SQ_COPY_TO=$TRAF_HOME/sql/sqlmx
     else 
         echo
-        echo "Error - MY_SQROOT env variable does not exist."
+        echo "Error - TRAF_HOME env variable does not exist."
         echo "        Source sqenv.sh and retry $0. Exiting..."
         echo
         exit 2

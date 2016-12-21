@@ -43,8 +43,7 @@ select to_date('2016-03-01 10:11:12', 'YYYY-MM-DD HH24:MI:SS') from (values(1)) 
 select to_date('03/01/2016 10:11:12', 'MM/DD/YYYY HH24:MI:SS') from (values(1)) x(a);
 select to_date('01-MAR-2016 10:11:12', 'DD-MON-YYYY HH:MI:SS') from (values(1)) x(a);
 select to_date('March 01, 2016, 10:11', 'MONTH DD, YYYY, HH:MI') from (values(1)) x(a);
-select to_date ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
-select to_date ('10:23:34', 'HH:MI:SS') from (values(1)) x(a);
+
 select to_time ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
 select to_time ('10:23:34', 'HH:MI:SS') from (values(1)) x(a);
 
@@ -114,6 +113,13 @@ select to_date('0103.2016', 'DD.MM.YYYY') from (values(1)) x(a);
 select to_char('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
 select to_date(20160301, 'YYYYMMDD') from (values(1)) x(a);
 select to_char(date '2016-03-01', 'HH:MI:SS') from (values(1)) x(a);
+select to_date ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
+select to_date ('10:23:34', 'HH:MI:SS') from (values(1)) x(a);
+select to_date('04-DEC-2016','DDMONYYYY') from (values(1)) x(a);
+select to_time('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
+select to_time('03/01/2016 10:11:12', 'MM/DD/YYYY HH24:MI:SS') from (values(1)) x(a);
+select to_time('01:61:01', 'HH24:MI:SS') from (values(1)) x(a);
+select to_date('2016-04-33 01:01:01','YYYY-MM-DD HH24:MI:SS') from (values(1)) x(a);
 select * from t030t1 where to_date(c, 'YYYY-MM-DD') = '2016-03-01';
 select to_date('01.03.2016:10:11:12', 'DD.MM.YYYY:HH24:MI:SS') from (values(1)) x(a);
 select to_date('01.03.2016:10:11:12', 'DD.MM.YYYY HH24:MI:SS') from (values(1)) x(a);

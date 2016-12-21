@@ -137,6 +137,12 @@ public:
     return isLikeOptColumnLengthLimit_;
   }
 
+  const NABoolean
+  getIsWithoutRowFormat() const
+  {
+    return isLikeOptWithoutRowFormat_;
+  }
+
   // mutators
 
   void setLikeOption(ElemDDLLikeOpt * pLikeOptParseNode);
@@ -189,7 +195,11 @@ public:
     isLikeOptColumnLengthLimit_ = setting;
   }
 
-
+  void
+  setIsWithoutRowFormat(const NABoolean setting)
+  {
+    isLikeOptWithoutRowFormat_ = setting;
+  }
 
 private:
 
@@ -216,6 +226,7 @@ private:
   NABoolean isLikeOptSaltClauseSpec_;
   NABoolean isLikeOptWithoutDivisionSpec_;
   NABoolean isLikeOptLimitColumnLengthSpec_;
+  NABoolean isLikeOptWithoutRowFormatSpec_;
 
   // legal Like options in DDL Create Table statements
 
@@ -228,6 +239,7 @@ private:
   NAString * isLikeOptSaltClause_;
   NABoolean isLikeOptWithoutDivision_;
   UInt32 isLikeOptColumnLengthLimit_;  // in bytes; max UInt32 if no limit specified
+  NABoolean isLikeOptWithoutRowFormat_;
 
 }; // class ParDDLLikeOptsCreateTable
 

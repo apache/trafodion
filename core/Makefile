@@ -79,7 +79,7 @@ ndcs: jdbc_jar foundation
 
 ci: trafci
 trafci: jdbc_jar
-	cd conn/trafci && $(ANT) dist 2>&1 | sed -e "s/$$/	##(TRAFCI)/" ; exit $${PIPESTATUS[0]}
+	cd conn/trafci && $(MAKE) 2>&1 | sed -e "s/$$/	##(TRAFCI)/" ; exit $${PIPESTATUS[0]}
 
 jdbc_type2_jar: verhdr foundation
 	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
@@ -105,7 +105,7 @@ clean: sqroot
 	cd dbsecurity &&		$(MAKE) clean
 	cd sqf &&			$(MAKE) clean
 	cd conn/odbc/src/odbc &&	$(MAKE) clean
-	cd conn/trafci        &&	$(ANT) clean
+	cd conn/trafci        &&	$(MAKE) clean
 	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
@@ -121,7 +121,7 @@ cleanall: sqroot eclipseclean cleantests
 	cd dbsecurity &&		$(MAKE) cleanall
 	cd sqf &&			$(MAKE) cleanall
 	cd conn/odbc/src/odbc &&	$(MAKE) cleanall
-	cd conn/trafci        &&	$(ANT) clean
+	cd conn/trafci        &&	$(MAKE) clean
 	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
 	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
@@ -260,7 +260,7 @@ eclipseclean:
 	$(RM) .cproject .project
 
 trafinstall:
-	cd $(MY_SQROOT)/sql/scripts && install_traf_components
+	cd $(TRAF_HOME)/sql/scripts && install_traf_components
 
 lib_mgmt:
 	cd sql/lib_mgmt && $(MAKE) all

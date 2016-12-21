@@ -575,7 +575,7 @@ void EspGuaControlConnection::actOnSystemMessage(
           // LCOV_EXCL_START
           /*
           Coverage notes: to test this code in a dev regression requires
-          changing $MY_SQROOT/etc/ms.env, so I made a manual test on
+          changing $TRAF_HOME/etc/ms.env, so I made a manual test on
           May 11, 2012 to verify this code.
           */
           char myName[20];

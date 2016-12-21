@@ -57,7 +57,7 @@ if [ `uname` != "Linux" ]; then
 else
    export SQLMX_TERMINAL_CHARSET=UTF8
    MXCI=sqlci
-   autoloc=$MY_SQROOT/export/lib/mx_ustat
+   autoloc=$TRAF_HOME/export/lib/mx_ustat
    alias print=echo
    sys=NSK
 fi

@@ -354,8 +354,8 @@ def generate_pom_xml(targettype, jdbc_groupid, jdbc_artid, jdbc_path, hadoop_dis
             template_text = re.sub('<!-- START_DISTRO_DEP -->', dep_string, template_text)
 
             # look for Trafodion Hbase TRX file and Trafodion Hbase Access file
-            # assume in $MY_SQROOT/export/lib
-            traf_lib_file_list = os.listdir(os.environ['MY_SQROOT'] + '/export/lib')
+            # assume in $TRAF_HOME/export/lib
+            traf_lib_file_list = os.listdir(os.environ['TRAF_HOME'] + '/export/lib')
 
             # assume regular expression used for traf_hbase_trx_file and traf_hbase_access_file
             # is precise enough to ever return only 1 value
@@ -565,7 +565,7 @@ def prog_parse_args():
     elif options.jdbctype == 'T2':
         # check for Trafodion ENV variables to be set
         req_envs_error_string = ""
-        for req_env in ['SQ_MBTYPE', 'MY_SQROOT', 'MPI_TMPDIR', 'LD_PRELOAD', 'LD_LIBRARY_PATH',
+        for req_env in ['SQ_MBTYPE', 'TRAF_HOME', 'MPI_TMPDIR', 'LD_PRELOAD', 'LD_LIBRARY_PATH',
                         'PATH', 'LANG', 'HADOOP_CNF_DIR', 'HBASE_CNF_DIR', 'HIVE_CNF_DIR',
                         'HBASE_TRXDIR']:
             if req_env not in os.environ:

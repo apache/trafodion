@@ -41,22 +41,22 @@ else
 fi
 
 # Run monitor development tests
-cd $MY_SQROOT/sql/scripts
-echo $MY_SQROOT/sql/scripts/bats/runmonitorbats.$enviroment
-$MY_SQROOT/sql/scripts/bats/runmonitorbats.$enviroment
+cd $TRAF_HOME/sql/scripts
+echo $TRAF_HOME/sql/scripts/bats/runmonitorbats.$enviroment
+$TRAF_HOME/sql/scripts/bats/runmonitorbats.$enviroment
 
 # Run monitor development tests
-cd $MY_SQROOT/sql/scripts
-echo $MY_SQROOT/sql/scripts/bats/runseabedbats.$enviroment
-$MY_SQROOT/sql/scripts/bats/runseabedbats.$enviroment
+cd $TRAF_HOME/sql/scripts
+echo $TRAF_HOME/sql/scripts/bats/runseabedbats.$enviroment
+$TRAF_HOME/sql/scripts/bats/runseabedbats.$enviroment
 
 # Run monitor development tests (not working yet)
-cd $MY_SQROOT/sql/scripts
-echo $MY_SQROOT/sql/scripts/bats/runtmbats.$enviroment
-$MY_SQROOT/sql/scripts/bats/runtmbats.$enviroment
+cd $TRAF_HOME/sql/scripts
+echo $TRAF_HOME/sql/scripts/bats/runtmbats.$enviroment
+$TRAF_HOME/sql/scripts/bats/runtmbats.$enviroment
 
 # Run FULL SQL regressions
-cd $MY_SQROOT/sql/scripts
-echo $MY_SQROOT/sql/scripts/bats/runsqlreg.$enviroment
-$MY_SQROOT/sql/scripts/bats/runsqlreg.$enviroment
+cd $TRAF_HOME/sql/scripts
+echo $TRAF_HOME/sql/scripts/bats/runsqlreg.$enviroment
+$TRAF_HOME/sql/scripts/bats/runsqlreg.$enviroment
 

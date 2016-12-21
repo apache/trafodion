@@ -83,7 +83,7 @@ do
     sql_javadoc)
 
          echo "Building Javadocs for SQL project"
-         cd $MY_SQROOT/../sql
+         cd $TRAF_HOME/../sql
          mvn javadoc:javadoc
          APIDOC_DIR=target/site/apidocs
          TGT_SUBDIR="/tmudr_javadoc"
@@ -92,7 +92,7 @@ do
     udr_doxygen)
 
          echo "Building Doxygen for TMUDF C++ interface"
-         cd $MY_SQROOT/../sql/sqludr
+         cd $TRAF_HOME/../sql/sqludr
          APIDOC_DIR=tmudr_2.0.1/html
          rm -rf $APIDOC_DIR
          doxygen doxygen_tmudr*.config

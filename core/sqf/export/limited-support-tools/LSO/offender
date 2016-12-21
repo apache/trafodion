@@ -80,7 +80,7 @@ PREAMBLE=
 QUERY_TEXT=
 QUERY_FILE=
 OFFENDER_NODE=-1
-LSO_DIR="$MY_SQROOT/export/limited-support-tools/LSO"
+LSO_DIR="$TRAF_HOME/export/limited-support-tools/LSO"
 ERROR_MESSAGE=
 
 # parse command line arguments

@@ -32,7 +32,7 @@
 
 # -- tdm_arkqmm location
 typeset qmmloc
-qmmloc="$MY_SQROOT/export/bin32"
+qmmloc="$TRAF_HOME/export/bin32"
 
 #--QMM process name
 qmmName="ZQM0000"

@@ -43,13 +43,13 @@ LIBSTMB         =  -L$(LIBEXPDIR) -lutil -lsbms
 
 LIBSTMX         =  $(LIBSTMB) $(LIBS) $(DEBUG)
 LIBSTM          =  $(LIBSTMB) -lsxatmlib -lshbasetmlib $(LIBS) $(DEBUG) 
-HBASETMLIB   =  $(MY_SQROOT)/src/seatrans/tm/hbasetmlib2
+HBASETMLIB   =  $(TRAF_HOME)/src/seatrans/tm/hbasetmlib2
 
 #xarm
 LIBXARM		= -lxarm
 
 #log4cxx
-LIBCLOGGER = $(SQ_HOME)/commonLogger
+LIBCLOGGER = $(TRAF_HOME)/commonLogger
 
 # seabed
 SBROOT		= ..
@@ -93,7 +93,7 @@ ifeq ($(SQ_USE_INTC),0)
 HPCWARN		= -Wno-unused-parameter
 HPCXXWARN	= -Wno-unused-parameter -Wno-non-virtual-dtor
 endif
-INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS)/include -I$(HBASETMLIB) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/log4cxx -I$(LIBCLOGGER)
+INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS)/include -I$(HBASETMLIB) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/log4cxx -I$(LIBCLOGGER) -I$(TRAF_HOME)/src/tm
 #LIBSX		= -lpthread
 LIBSX		= -pthread
 ifeq ($(USE_THREADED_IO),1)

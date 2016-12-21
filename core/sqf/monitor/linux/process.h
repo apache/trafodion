@@ -458,7 +458,7 @@ private:
     strId_t      pathStrId_;
     strId_t      ldpathStrId_;
     bool         cmpOrEsp_;
-    string       sqRoot_;     // MY_SQROOT passed to object file
+    string       sqRoot_;     // TRAF_HOME passed to object file
 
     string       infile_;    // process's stdin
     string       outfile_;   // process's stdout

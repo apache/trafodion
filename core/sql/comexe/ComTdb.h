@@ -1042,6 +1042,8 @@ class ComTdbVirtTableConstraintInfo : public ComTdbVirtTableBase
   // if constrType == 2
   Lng32 checkConstrLen;
   char * checkConstrText;
+
+  Lng32 notSerialized;
 };
 
 class ComTdbVirtTableViewInfo : ComTdbVirtTableBase

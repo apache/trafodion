@@ -170,6 +170,9 @@ NA_EIDPROC
                             NABoolean &LastDayPrevMonth);
 
 NA_EIDPROC
+  static short validateTime(const char *datetimeOpData);
+
+NA_EIDPROC
   short compDatetimes(char *datetimeOpData1,
                       char *datetimeOpData2);
 

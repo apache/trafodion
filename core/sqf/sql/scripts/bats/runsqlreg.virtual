@@ -24,7 +24,7 @@
 
 # This script rebuilds SQ environment
 
-cd $MY_SQROOT/sql/scripts
+cd $TRAF_HOME/sql/scripts
 echo $PWD
 echo "***"
 echo "*** Stopping SQ Environment"
@@ -53,7 +53,7 @@ sqps
 echo "***"
 echo "*** SQL regressions - setup"
 echo "***"
-cd $MY_SQROOT/../sql/regress/tools
+cd $TRAF_HOME/../sql/regress/tools
 echo $PWD
 . ./setuplnxenv
 cd ..
@@ -61,14 +61,14 @@ cd ..
 echo "***"
 echo "*** Running SQL regressions"
 echo "***"
-cd $MY_SQROOT/../sql/regress
+cd $TRAF_HOME/../sql/regress
 echo $PWD
 ./tools/runlnxlocal
 
 echo "***"
 echo "*** Stopping SQ Environment"
 echo "***"
-cd $MY_SQROOT/sql/scripts
+cd $TRAF_HOME/sql/scripts
 echo $PWD
 sqps
 sqstop

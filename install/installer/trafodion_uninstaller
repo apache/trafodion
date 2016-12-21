@@ -110,9 +110,9 @@ if [[ "$SECURE_HADOOP" == "Y" ]]; then
 
    echo "***INFO: Stopping Kerberos ticket monitoring process"
    if [ $all_node_count -eq 1 ]; then
-      sudo su $TRAF_USER --login --command "$SQ_ROOT/sql/scripts/krb5service stop 2>/dev/null"
+      sudo su $TRAF_USER --login --command "$TRAF_HOME/sql/scripts/krb5service stop 2>/dev/null"
    else
-      $TRAF_PDSH "sudo su $TRAF_USER --login --command \"$SQ_ROOT/sql/scripts/krb5service stop 2>/dev/null\""
+      $TRAF_PDSH "sudo su $TRAF_USER --login --command \"$TRAF_HOME/sql/scripts/krb5service stop 2>/dev/null\""
    fi 
 fi
    
@@ -139,8 +139,8 @@ $TRAF_PDSH sudo rm -rf $LOCAL_WORKDIR/$TRAF_USER
 $TRAF_PDSH sudo /usr/sbin/userdel --force --remove $TRAF_USER
 $TRAF_PDSH sudo /usr/sbin/groupdel $TRAF_GROUP 2>/dev/null
 
-echo "***INFO: removing all files from $SQ_ROOT"
-$TRAF_PDSH sudo rm -rf $SQ_ROOT
+echo "***INFO: removing all files from $TRAF_HOME"
+$TRAF_PDSH sudo rm -rf $TRAF_HOME
  
 echo "***INFO: removing all files from /usr/lib/trafodion and /var/log/trafodion"
 $TRAF_PDSH sudo rm -rf /usr/lib/trafodion*

@@ -67,16 +67,16 @@ cleanall: cleanallndcs cleanlnx_drvr
 	
 # Linux ODBC Driver targets
 .PHONY: bldlnx_drvr
-include $(MY_SQROOT)/macros.gmk
+include $(TRAF_HOME)/macros.gmk
 bldlnx_drvr:
-	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli;$(MAKE) -f makefile.lnx linux64_$(SQ_BUILD_TYPE)
-	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli/package;rm -rf *.gz $(LIBEXPDIR)/libicu* $(LIBEXPDIR)/libtrafodbc*; ./mklnxpkg.sh -f; cp -p trafodbc_Linux64_pkg.tar.gz $(MY_SQROOT)/../conn/clients/TRAF_ODBC_Linux_Driver_64.tar.gz; cp -Pf relfiles/linux64/lib* $(LIBEXPDIR);cp -p relfiles/linux64/{connect_test.cpp,TRAFDSN,runconnect_test.sh} $(MY_SQROOT)/samples
+	cd $(TRAF_HOME)/../conn/unixodbc/odbc/odbcclient/unixcli;$(MAKE) -f makefile.lnx linux64_$(SQ_BUILD_TYPE)
+	cd $(TRAF_HOME)/../conn/unixodbc/odbc/odbcclient/unixcli/package;rm -rf *.gz $(LIBEXPDIR)/libicu* $(LIBEXPDIR)/libtrafodbc*; ./mklnxpkg.sh -f; cp -p trafodbc_Linux64_pkg.tar.gz $(TRAF_HOME)/../conn/clients/TRAF_ODBC_Linux_Driver_64.tar.gz; cp -Pf relfiles/linux64/lib* $(LIBEXPDIR);cp -p relfiles/linux64/{connect_test.cpp,TRAFDSN,runconnect_test.sh} $(TRAF_HOME)/samples
 	cd $(LIBEXPDIR);ln -sf libicudata.so.44 libicudata.so;ln -sf libicuuc.so.44 libicuuc.so;ln -sf libtrafodbc_l64.so libtrafodbc64.so;ln -sf libtrafodbc_l64_drvr.so libtrafodbc_drvr64.so
 
 # Linux ODBC driver clean targets	
 .PHONY: cleanlnx_drvr
 cleanlnx_drvr:
-	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli;$(MAKE) -f makefile.lnx clean; 
+	cd $(TRAF_HOME)/../conn/unixodbc/odbc/odbcclient/unixcli;$(MAKE) -f makefile.lnx clean; 
 	/bin/rm -f $(LIBEXPDIR)/libtrafodbc* $(LIBEXPDIR)/libicu*
-	cd $(MY_SQROOT)/../conn/unixodbc/odbc/odbcclient/unixcli/package;rm -rf *.gz relfiles
-	cd $(MY_SQROOT)/samples;rm -rf connect_test* runconnect_test.sh TRAFDSN
+	cd $(TRAF_HOME)/../conn/unixodbc/odbc/odbcclient/unixcli/package;rm -rf *.gz relfiles
+	cd $(TRAF_HOME)/samples;rm -rf connect_test* runconnect_test.sh TRAFDSN

@@ -56,7 +56,7 @@ fi
 #	get traces from all core files
 # 
 CORENAME_LIST=`find -L $SEARCH_DIR -name "core.*" 2>/dev/null`
-#DIAG_TMP_DIR=$MY_SQROOT/sqdiag_tmp
+#DIAG_TMP_DIR=$TRAF_HOME/sqdiag_tmp
 DIAG_TMP_DIR=$SEARCH_DIR/sqdiag_tmp
 mkdir $DIAG_TMP_DIR 2>/dev/null
 echo "set output-radix 0x10" > $DIAG_TMP_DIR/gdb_bt_command

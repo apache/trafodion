@@ -27,7 +27,7 @@
 echo "***"
 echo "*** Stopping SQ Environment"
 echo "***"
-cd $MY_SQROOT/sql/scripts
+cd $TRAF_HOME/sql/scripts
 echo $PWD
 sqstop
 ckillall
@@ -40,10 +40,10 @@ sqgen bats/sqconfig.monitor
 echo "***"
 echo "*** Running monitor tests"
 echo "***"
-cd $MY_SQROOT/monitor/test
+cd $TRAF_HOME/monitor/test
 echo $PWD
 make clean;make
-$MY_SQROOT/monitor/test/runtest -virtual -nogen
+$TRAF_HOME/monitor/test/runtest -virtual -nogen
 
 echo "***"
 echo "*** Last monitor test stops SQ Environment"

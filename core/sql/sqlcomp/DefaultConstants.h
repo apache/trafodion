@@ -3774,6 +3774,10 @@ enum DefaultConstants
   // Currently syskey, _salt_, _division_.
   TRAF_ALLOW_RESERVED_COLNAMES,
 
+  // enable support for hbase tables mapped to relational traf tables
+  TRAF_HBASE_MAPPED_TABLES,
+  TRAF_HBASE_MAPPED_TABLES_IUD,
+
   //if 0, regular scanner is used. From 0.x to 1.0, percentage of regions that need to be scanned that will be done in parallel.
   //if >= 2, set a fixed number of thread, real DOP. 2.0 2 thread, 3.0 3 thread etc.
   HBASE_DOP_PARALLEL_SCANNER,
@@ -3870,6 +3874,9 @@ enum DefaultConstants
   CSE_CLEANUP_HIVE_TABLES,
   CSE_CACHE_TEMP_QUERIES,
 
+
+  // mode for AES_ENCRYPT/AED_DECRYPT
+  BLOCK_ENCRYPTION_MODE,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

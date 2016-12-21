@@ -19,10 +19,10 @@
 #
 # @@@ END COPYRIGHT @@@
 
-include $(MY_SQROOT)/macros.gmk
+include $(TRAF_HOME)/macros.gmk
 include ./macros.gmk
 
-SQINSTALL=$(MY_SQROOT)/export
+SQINSTALL=$(TRAF_HOME)/export
 
 #SM library files
 LIBSRC=libsm.c verssm.c

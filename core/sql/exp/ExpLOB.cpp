@@ -174,7 +174,8 @@ Lng32 ExpLOBoper::createLOB(void * exLobGlob, void *currContext, void * lobHeap,
     exLobGlobL = exLobGlob;
 
   rc = ExpLOBinterfaceCreate(exLobGlobL, lobName, lobLoc, Lob_HDFS_File,hdfsServer,lobMaxSize, hdfsPort);
-
+  if (exLobGlob == NULL)
+     ExpLOBinterfaceCleanup(exLobGlobL, lobHeap);
   return rc;
 }
 void ExpLOBoper::calculateNewOffsets(ExLobInMemoryDescChunksEntry *dcArray, Lng32 numEntries)
@@ -231,6 +232,8 @@ Lng32 ExpLOBoper::compactLobDataFile(void *exLobGlob,ExLobInMemoryDescChunksEntr
    
   rc = ExpLOBinterfacePerformGC(exLobGlobL,tgtLobName, (void *)dcArray, numEntries,hdfsServer,hdfsPort,lobLoc,lobMaxChunkMemSize);
   
+  if (exLobGlob == NULL)
+     ExpLOBinterfaceCleanup(exLobGlobL, lobHeap);
   return rc;
 }
 
@@ -246,11 +249,10 @@ Int32 ExpLOBoper::restoreLobDataFile(void *exLobGlob, char *lobName, void *lobHe
     }
   else
     exLobGlobL = exLobGlob;
- 
- 
-    
   rc = ExpLOBinterfaceRestoreLobDataFile(exLobGlobL,hdfsServer,hdfsPort,lobLoc,lobName);
-   return rc;
+  if (exLobGlob == NULL)
+     ExpLOBinterfaceCleanup(exLobGlobL, lobHeap);
+  return rc;
 
 }
 
@@ -266,11 +268,9 @@ Int32 ExpLOBoper::purgeBackupLobDataFile(void *exLobGlob,char *lobName, void *cu
     }
   else
     exLobGlobL = exLobGlob;
-  
- 
-  
-
   rc = ExpLOBinterfacePurgeBackupLobDataFile(exLobGlobL,(char *)hdfsServer,hdfsPort,lobLoc,lobName);
+  if (exLobGlob == NULL)
+     ExpLOBinterfaceCleanup(exLobGlobL, lobHeap);
   return rc;
 }
 
@@ -296,10 +296,10 @@ Lng32 ExpLOBoper::dropLOB(void * exLobGlob, void * lobHeap, void *currContext,
     }
   else
     exLobGlobL = exLobGlob;
-
   // Call ExeLOBinterface to drop the LOB
   rc = ExpLOBinterfaceDrop(exLobGlobL,hdfsServer, hdfsPort, lobName, lobLoc);
-
+  if (exLobGlob == NULL)
+     ExpLOBinterfaceCleanup(exLobGlobL, lobHeap);
   return rc;
 }
 

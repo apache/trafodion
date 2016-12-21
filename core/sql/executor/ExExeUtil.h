@@ -252,6 +252,7 @@ class ExExeUtilTcb : public ex_tcb
                          const char * status,
                          const char * object,
                          char * outBuf,
+                         NABoolean isET = FALSE,
                          char * timeBuf = NULL,
                          char * queryBuf = NULL,
                          char * sqlcodeBuf = NULL);
@@ -3329,6 +3330,7 @@ protected:
   enum Step
   {
     INITIAL_,
+    READ_HIVE_MD_,
     POSITION_,
     FETCH_TABLE_,
     FETCH_COLUMN_,
@@ -3346,14 +3348,16 @@ protected:
   HiveMetaData* hiveMD_;
 
   hive_column_desc * currColDesc_;
+  hive_pkey_desc * currPartnDesc_;
   hive_bkey_desc * currKeyDesc_;
-  
+  Int32 currColNum_;
+
   char * mdRow_;
   LIST (NAText *) tblNames_;
-  short pos_;
 
   char hiveCat_[1024];
   char hiveSch_[1024];
+  char schForHive_[1024];
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -3531,7 +3535,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   // Constructor
   ExExeUtilHBaseBulkLoadTcb(const ComTdbExeUtil & exe_util_tdb,
                             ex_globals * glob = 0);
-
+  ~ExExeUtilHBaseBulkLoadTcb();
   virtual short work();
 
   ExExeUtilHBaseBulkLoadTdb & hblTdb() const
@@ -3542,6 +3546,8 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   virtual short moveRowToUpQueue(const char * row, Lng32 len = -1,
                                  short * rc = NULL, NABoolean isVarchar = TRUE);
 
+  short printLoggingLocation(int bufPos);
+ 
   void setEndStatusMsg(const char * operation,
                                        int bufPos = 0,
                                        NABoolean   withtime= FALSE);
@@ -3553,7 +3559,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
-
+  void setLoggingLocation();
  private:
   enum Step
     {
@@ -3565,6 +3571,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
       LOAD_END_,
       LOAD_END_ERROR_,
       PREPARATION_,
+      LOADING_DATA_,
       COMPLETE_BULK_LOAD_, //load incremental
       POST_LOAD_CLEANUP_,
       TRUNCATE_TABLE_,
@@ -3586,7 +3593,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   Int64 rowsAffected_;
   char statusMsgBuf_[BUFFER_SIZE];
   ExpHbaseInterface * ehi_;
-
+  char *loggingLocation_;
   short setCQDs();
   short restoreCQDs();
 };
@@ -3762,6 +3769,7 @@ class ExExeUtilHBaseBulkUnLoadTcb : public ExExeUtilTcb
   NAList<struct snapshotStruct *> * snapshotsList_;
   NABoolean emptyTarget_;
   NABoolean oneFile_;
+  ExpHbaseInterface * ehi_;
 };
 
 class ExExeUtilHbaseUnLoadPrivateState : public ex_tcb_private_state
@@ -3868,7 +3876,7 @@ protected:
                             NABoolean adjustLen = TRUE);
 
   short collectStats(char * tableName);
-  short populateStats(Int32 currIndex, NABoolean nullTerminate = FALSE);
+  short populateStats(Int32 currIndex);
 
   char * hbaseRootdir_;
 
@@ -3891,6 +3899,8 @@ protected:
   char * schName_;
   char * objName_;
   char * regionName_;
+
+  NAString extNameForHbase_;
 };
 
 //////////////////////////////////////////////////////////////////////////

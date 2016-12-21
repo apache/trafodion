@@ -31,8 +31,8 @@
 # export JAVA_HOME=/usr/java/jdk1.7.0/
 
 # Add Trafodion to the classpath
-if [ "$MY_SQROOT" != "" ]; then
-  if [ -d $MY_SQROOT ]; then
+if [ "$TRAF_HOME" != "" ]; then
+  if [ -d $TRAF_HOME ]; then
     export WMS_CLASSPATH=${CLASSPATH}:
   fi
 fi
@@ -113,5 +113,5 @@ export WMS_OPTS="-XX:+UseConcMarkSweepGC"
 # export WMS_MANAGES_ZK=true
 
 # Tell WMS where the user program environment lives.
- export WMS_USER_PROGRAM_HOME=$MY_SQROOT
+ export WMS_USER_PROGRAM_HOME=$TRAF_HOME
 

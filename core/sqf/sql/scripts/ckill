@@ -26,8 +26,8 @@ if [ -n "$MY_NODES" ];then
 fi
 
 if [ -e $SQ_PDSH ]; then
-	$PDSH $MY_NODES_PRM $PDSH_SSH_CMD $MY_SQROOT/sql/scripts/traf_pkill $*
+	$PDSH $MY_NODES_PRM $PDSH_SSH_CMD $TRAF_HOME/sql/scripts/traf_pkill $*
 else
-	$MY_SQROOT/sql/scripts/traf_pkill $*
+	$TRAF_HOME/sql/scripts/traf_pkill $*
 fi
 

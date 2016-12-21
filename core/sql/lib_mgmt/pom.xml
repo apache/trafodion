@@ -54,7 +54,7 @@
 	value="${basedir}/src/main/java/org/trafodion/libmgmt" />
 <property name="manifest.file" value="${basedir}/src/main/resources/MANIFEST.MF" />
 <property name="vproc.str" value="Traf_libmgmt_Build_" />
-<property file="${env.MY_SQROOT}/export/include/SCMBuildMan.mf"/>
+<property file="${env.TRAF_HOME}/export/include/SCMBuildMan.mf"/>
 <exec executable="git" outputproperty="rev_head">
 	<arg value="rev-parse" />
 	<arg value="--short" />

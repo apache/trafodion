@@ -1094,8 +1094,8 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
   NAString libraryPath;
 
   // the libraries for predefined UDRs are in the regular
-  // library directory $MY_SQROOT/export/lib${SQ_MBTYPE}
-  libraryPath += getenv("MY_SQROOT");
+  // library directory $TRAF_HOME/export/lib${SQ_MBTYPE}
+  libraryPath += getenv("TRAF_HOME");
   libraryPath += "/export/lib";
 
   switch (getOperatorType())
@@ -1357,7 +1357,8 @@ const NAString ExplainFunc::getText() const
 // -----------------------------------------------------------------------
 
 HiveMDaccessFunc::HiveMDaccessFunc(NAString *mdt,
-                                   SchemaName* schName,
+                                   NAString* schName,
+                                   NAString* objName,
                                    CollHeap *oHeap)
   : BuiltinTableValuedFunction(NULL,REL_HIVEMD_ACCESS,oHeap)
 {
@@ -1365,6 +1366,8 @@ HiveMDaccessFunc::HiveMDaccessFunc(NAString *mdt,
     mdType_ = *mdt;
   if (schName)
     schemaName_ = *schName;
+  if (objName)
+    objectName_ = *objName;
 }
 
 //! HiveMDaccessFunc::~HiveMDaccessFunc Destructor 
@@ -1378,13 +1381,13 @@ RelExpr * HiveMDaccessFunc::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   HiveMDaccessFunc *result;
 
   if (derivedNode == NULL)
-    result = new (outHeap) HiveMDaccessFunc(NULL,NULL,outHeap);
+    result = new (outHeap) HiveMDaccessFunc(NULL,NULL,NULL,outHeap);
   else
     result = (HiveMDaccessFunc *) derivedNode;
 
   result->mdType_ = mdType_;
   result->schemaName_ = schemaName_;
-  
+  result->objectName_ = objectName_;
 
   return BuiltinTableValuedFunction::copyTopNode(result, outHeap);
 }

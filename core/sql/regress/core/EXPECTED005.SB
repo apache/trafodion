@@ -1568,7 +1568,7 @@ NONE              171             140           16        20971520
 NUM_LOOKUPS  NUM_CACHE_HITS  NUM_ENTRIES  MAX_CACHE_SIZE
 -----------  --------------  -----------  --------------
 
-        171             140            0        20971520
+        176             141            0        20971520
 
 --- 1 row(s) selected.
 >>

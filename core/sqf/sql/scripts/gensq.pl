@@ -122,7 +122,7 @@ my $gFloatingNodeId = -1;
 my $gFloatingFailoverNodeId = -1;
 
 
-my $SQ_ROOT = $ENV{'MY_SQROOT'};
+my $TRAF_HOME = $ENV{'TRAF_HOME'};
 my $HOME = $ENV{'HOME'};
 my $MPI_TMPDIR = $ENV{'MPI_TMPDIR'};
 my $SQ_SEAMONSTER = $ENV{'SQ_SEAMONSTER'};
@@ -355,7 +355,7 @@ sub printInitialLines {
     close (ETC);
 
     if ($gbLunmgrOn == 1) {
-        printScript(1, "\n\$SQ_PDSH \$MY_NODES \"rm -rf \$MY_SQROOT/logs/lunmgr.log.LOCKDIR\"\n");
+        printScript(1, "\n\$SQ_PDSH \$MY_NODES \"rm -rf \$TRAF_HOME/logs/lunmgr.log.LOCKDIR\"\n");
     }
 
     printScript(1, "\nshell <<eof \n");
@@ -377,7 +377,7 @@ sub printInitialLines {
     printScript(1, "   echo\n");
     printScript(1, "else\n");
     printScript(1, "   echo \"Aborting startup.\"\n");
-    printScript(1, "   more $MY_SQROOT/logs/sqcheckmon.log\n");
+    printScript(1, "   more $TRAF_HOME/logs/sqcheckmon.log\n");
     printScript(1, "   exit 1\n");
     printScript(1, "fi\n");
 
@@ -391,7 +391,7 @@ sub printInitialLines {
     printScript(0, "\nset MY_NODES=\$MY_NODES\n");
 
     addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
-    addDbClusterData( "MY_SQROOT", "$SQ_ROOT"); # comes out null
+    addDbClusterData( "TRAF_HOME", "$TRAF_HOME"); # comes out null
 
     $gbInitialLinesPrinted = 1;
 }

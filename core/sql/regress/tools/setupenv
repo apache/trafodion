@@ -52,8 +52,8 @@ if [ $SQLMX_REGRESS -ne 0 ]; then
   export SQL_MXCI_CASE_INSENSITIVE_LOG='U'		# force Uppercase LOG ..
   export SQL_MXCI_CASE_INSENSITIVE_OBEY='U'		# ..and OBEY file names
 
-  test "$scriptsdir" = "" && export scriptsdir=$MY_SQROOT/../sql/regress
-  test "$rundir"     = "" && export rundir=$MY_SQROOT/../sql/regress/rundir
+  test "$scriptsdir" = "" && export scriptsdir=$TRAF_HOME/../sql/regress
+  test "$rundir"     = "" && export rundir=$TRAF_HOME/../sql/regress/rundir
 
   dbgvars=`env | grep -i -e _DEBUG -e SQLMX_REGRESS_JAVA`
   if [ "$dbgvars" != "" ]; then

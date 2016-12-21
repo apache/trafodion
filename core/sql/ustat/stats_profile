@@ -112,10 +112,10 @@ elif [ $LINUX -ne 1 ]; then
   MXCI=sqlci
 else
   # SQ
-  LOG=$MY_SQROOT/tmp/USTATS_PROFILE_LOG
-  LOADFILE=$MY_SQROOT/tmp/USTATS_PROFILE_LOAD
+  LOG=$TRAF_HOME/tmp/USTATS_PROFILE_LOG
+  LOADFILE=$TRAF_HOME/tmp/USTATS_PROFILE_LOAD
   export SQLMX_TERMINAL_CHARSET=UTF8
-  MXCI=$MY_SQROOT/export/bin32/sqlci
+  MXCI=$TRAF_HOME/export/bin32/sqlci
 fi
 
 # start logging
@@ -238,7 +238,7 @@ if [[ $RUN = TRUE ]]; then
     STARTTIME=`date`
 
     if [ $LINUX -eq 1 ]; then
-      sh $MY_SQROOT/export/lib/mx_ustat/USAS.sh;
+      sh $TRAF_HOME/export/lib/mx_ustat/USAS.sh;
     elif [[ $mxcidir != "" ]]; then
       $mxcidir/USAS.sh;
     else                          

@@ -63,7 +63,7 @@ Running Tests
     * Make sure the Trafodion sqenv.sh file has been sourced into the environment
     * Set environment variable LD_PRELOAD ::
 
-        export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib${SQ_MBTYPE}/libseabasesig.so
+        export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$TRAF_HOME/export/lib${SQ_MBTYPE}/libseabasesig.so
 
     * Run ``phoenix_test.py`` with the following options
         * For Cloudera ::
@@ -85,7 +85,7 @@ Running Tests
     * Make sure the Trafodion sqenv.sh file has been sourced into the environment
     * Set environment variable LD_PRELOAD ::
 
-        export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib${SQ_MBTYPE}/libseabasesig.so
+        export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$TRAF_HOME/export/lib${SQ_MBTYPE}/libseabasesig.so
 
     * Run ``phoenix_test.py`` with the following options
         * For Cloudera ::

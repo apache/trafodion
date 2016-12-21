@@ -51,14 +51,14 @@
       <artifactId>${hbase-trx.id}</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.MY_SQROOT}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
+      <systemPath>${env.TRAF_HOME}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop.hbase.coprocessor.transactional.generated</groupId>
       <artifactId>${hbase-trx.id}</artifactId>
       <version>${env.TRAFODION_VER}</version>
       <scope>system</scope>
-      <systemPath>${env.MY_SQROOT}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
+      <systemPath>${env.TRAF_HOME}/export/lib/${hbase-trx.id}-${env.TRAFODION_VER}.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

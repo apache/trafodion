@@ -37,7 +37,7 @@
 # Working dir in the Trafodion source tree to extract and build libhdfs files
 # (can be specified as an environment variable)
 if [[ -z ${LIBHDFS_TEMP_DIR} ]]; then
-  LIBHDFS_TEMP_DIR=${MY_SQROOT}/sql/libhdfs_files
+  LIBHDFS_TEMP_DIR=${TRAF_HOME}/sql/libhdfs_files
 fi
 LOGFILE=${LIBHDFS_TEMP_DIR}/build.log
 
@@ -61,8 +61,8 @@ PROTOBUF_TAR=${PROTOBUF_ID}.tar.gz
 PROTOBUF_TGT_ID=protobuf-tgt
 
 # Directories to copy the built libhdfs library and corresponding include file
-TGT_INC_DIR=$MY_SQROOT/export/include
-TGT_LIB_DIR=$MY_SQROOT/export/lib${SQ_MBTYPE}
+TGT_INC_DIR=$TRAF_HOME/export/include
+TGT_LIB_DIR=$TRAF_HOME/export/lib${SQ_MBTYPE}
 
 FORCE_BUILD=false
 SOURCE_BUILD=false

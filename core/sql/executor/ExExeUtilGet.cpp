@@ -66,6 +66,9 @@
 #include "ExpHbaseInterface.h"
 #include "sql_buffer_size.h"
 #include "hdfs.h"
+
+#include "NAType.h"
+
 //******************************************************************************
 //                                                                             *
 //  These definitions were stolen from CatWellKnownTables.h
@@ -361,8 +364,8 @@ static const QueryString getTrafViewsInSchemaQuery[] =
 
 static const QueryString getTrafObjectsInViewQuery[] =
 {
-  {" select trim(T.schema_name) || '.' || trim(T.object_name) from "},
-  {"   %s.\"%s\".%s VU,  %s.\"%s\".%s T "},
+  {" select trim(T.schema_name) || '.' || trim(T.object_name), trim(T.object_type) "},
+  {"   from %s.\"%s\".%s VU,  %s.\"%s\".%s T "},
   {"  where VU.using_view_uid = "},
   {"     (select T2.object_uid from  %s.\"%s\".%s T2 "},
   {"         where T2.catalog_name = '%s' and "},
@@ -1754,6 +1757,8 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[9] = getMItdb().cat_;
 		  param_[10] = getMItdb().sch_;
 		  param_[11] = getMItdb().obj_;
+
+                  numOutputEntries_ = 2;
 		}
 	      break;
 
@@ -3605,7 +3610,8 @@ short ExExeUtilGetHiveMetadataInfoTcb::fetchAllHiveRows(Queue * &infoList,
   rc = 0;
 
   char buf[2000];
-  str_sprintf(buf, "select rtrim(table_name) from table(hivemd(tables, %s.%s))", getMItdb().getCat(), getMItdb().getSch());
+  str_sprintf(buf, "select rtrim(table_name) from table(hivemd(tables, \"%s\"))", 
+              getMItdb().getSch());
   cliRC = fetchAllRows(infoList, buf, 1, TRUE, rc, FALSE);
 
   return cliRC;
@@ -4850,10 +4856,8 @@ ExExeUtilHiveMDaccessTcb::ExExeUtilHiveMDaccessTcb(
     hiveMD_(NULL),
     currColDesc_(NULL),
     currKeyDesc_(NULL),
-    tblNames_(getHeap()),
-    pos_(0)
+    tblNames_(getHeap())
 {
-  //  queryBuf_ = new(glob->getDefaultHeap()) char[4096];
   step_ = INITIAL_;
 
   mdRow_ = new(getHeap()) char[exe_util_tdb.outputRowlen_];
@@ -4867,119 +4871,20 @@ ExExeUtilHiveMDaccessTcb::~ExExeUtilHiveMDaccessTcb()
 // should move this method to common dir.
 Lng32 ExExeUtilHiveMDaccessTcb::getFSTypeFromHiveColType(const char* hiveType)
 {
-  if ( !strcmp(hiveType, "tinyint")) 
-    return REC_BIN16_SIGNED;
-
-  if ( !strcmp(hiveType, "smallint")) 
-    return REC_BIN16_SIGNED;
- 
-  if ( !strcmp(hiveType, "int")) 
-    return REC_BIN32_SIGNED;
-
-  if ( !strcmp(hiveType, "bigint"))
-    return REC_BIN64_SIGNED;
-
-  if ( !strcmp(hiveType, "string"))
-    return REC_BYTE_V_ASCII;
-
-  if ( !strcmp(hiveType, "float"))
-    return REC_FLOAT32;
-
-  if ( !strcmp(hiveType, "double"))
-    return REC_FLOAT64;
-
-  if ( !strcmp(hiveType, "timestamp"))
-    return REC_DATETIME;
-
-  if ( !strcmp(hiveType, "date"))
-    return REC_DATETIME;
-
-  if ( !strncmp(hiveType, "varchar",7) )
-    return REC_BYTE_V_ASCII;
-
-  return -1;
+  Lng32 fstype = -1;
+  NAType * nat = NAType::getNATypeForHive(hiveType, getHeap());
+  fstype = nat->getFSDatatype();
+  delete nat;
+  return fstype;
 }
 
 Lng32 ExExeUtilHiveMDaccessTcb::getLengthFromHiveColType(const char* hiveType)
 {
-  if ( !strcmp(hiveType, "tinyint")) 
-    return 2;
-
-  if ( !strcmp(hiveType, "smallint")) 
-    return 2;
- 
-  if ( !strcmp(hiveType, "int")) 
-    return 4;
-
-  if ( !strcmp(hiveType, "bigint"))
-    return 8;
-
-  if ( !strcmp(hiveType, "string")) {
-    char maxStrLen[100];
-    char maxStrLenInBytes[100];
-    cliInterface()->getCQDval("HIVE_MAX_STRING_LENGTH", maxStrLen);
-    cliInterface()->getCQDval("HIVE_MAX_STRING_LENGTH_IN_BYTES", maxStrLenInBytes);
-    //Hive varchar(n) contains n character instead of n bytes
-    //so trafodion map hive varchar(n) into Trafodion varchar(n)
-    //but hive string will map to Trafodion varchar(n BYTES)
-    //So this CQD will be confusing
-    //We change the CQD name to explicitly indicate it is lenght in bytes
-    //For backward compatibility, HIVE_MAX_STRING_LENGTH still remains now, but is deprecated, user can still use it
-    //But HIVE_MAX_STRING_LENGTH_IN_BYTES will overwrite HIVE_MAX_STRING_LENGTH if changed
-    Int32 hiveMaxLenInBytes = atoi(maxStrLenInBytes);
-    Int32 hiveMaxLen = atoi(maxStrLen);
-    if( hiveMaxLenInBytes != 32000 ) //HIVE_MAX_STRING_LENGTH_IN_BYTES changed
-      return hiveMaxLenInBytes;
-    else
-      return hiveMaxLen;  
-  }
-
-  if ( !strcmp(hiveType, "float"))
-    return 4;
-
-  if ( !strcmp(hiveType, "double"))
-    return 8;
-
-  if ( !strcmp(hiveType, "timestamp"))
-    return 26; //Is this internal or display length? REC_DATETIME;
-
-  if ( !strcmp(hiveType, "date"))
-    return 10; //Is this internal or display length? REC_DATETIME;
-  
-  if ( !strncmp(hiveType, "varchar",7) )
-  {
-    //try to get the length
-    char maxLen[32];
-    memset(maxLen, 0, 32);
-    Int32 i=0,j=0;
-    Int16 copyit = 0;
-    Int32 hiveTypeLen = strlen(hiveType);
-
-    if( hiveTypeLen  > 39)  return -1;  
- 
-    for(i = 0; i < hiveTypeLen ; i++)
-    {
-      if(hiveType[i] == '(')  
-      {
-        copyit=1;
-        continue;
-      }
-      else if(hiveType[i] == ')')  
-        break;
-      if(copyit == 1 )
-      {
-        maxLen[j] = hiveType[i];
-        j++;
-      }
-    }
-
-    Int32 len = atoi(maxLen);
-
-    if (len == 0) return -1;
-    else
-      return len;
-  }
-  return -1;
+  Lng32 len = -1;
+  NAType * nat = NAType::getNATypeForHive(hiveType, getHeap());
+  len = nat->getNominalSize();
+  delete nat;
+  return len;
 }
 
 short ExExeUtilHiveMDaccessTcb::work()
@@ -5017,34 +4922,26 @@ short ExExeUtilHiveMDaccessTcb::work()
 	  {
 	    if (hiveMD_)
 	      NADELETEBASIC(hiveMD_, getHeap());
-	    
-            char val[5];
-            cliInterface()->getCQDval("HIVE_CATALOG", hiveCat_);
-            cliInterface()->getCQDval("HIVE_DEFAULT_SCHEMA", hiveSch_);
-
-            char userTblSch[256];
-     
-            cliInterface()->getCQDval("HIVE_DEFAULT_SCHEMA", userTblSch);
-            NAString hiveDefaultSch(userTblSch);
-            hiveDefaultSch.toLower();
-            // the current schema name has been lower cased in the tdb
 
             hiveMD_ = new (getHeap()) HiveMetaData();
 
-            char* currSch = hiveMDtdb().getSchema();
-// change schema name to "default", since the default schema name Hive uses, 
-//if necessary. In our stack the default hive schema name is usually "HIVE"
-            if (!strcmp(hiveDefaultSch.data(), currSch))
-              currSch = (char *) hiveMD_->getDefaultSchemaName(); 
+            if (hiveMDtdb().getCatalog())
+              strcpy(hiveCat_, hiveMDtdb().getCatalog());
+ 
+            if ((! hiveMDtdb().getSchema()) ||
+                (! strcmp(hiveMDtdb().getSchema(), HIVE_SYSTEM_SCHEMA_LC)) ||
+                (! strcmp(hiveMDtdb().getSchema(), HIVE_SYSTEM_SCHEMA)))
+              {
+                strcpy(hiveSch_, HIVE_SYSTEM_SCHEMA_LC);
+                strcpy(schForHive_, HIVE_DEFAULT_SCHEMA_EXE);
+              }
+            else
+              {
+                strcpy(hiveSch_, hiveMDtdb().getSchema());
+                strcpy(schForHive_, hiveSch_);
+              }
 
-            NABoolean readEntireSchema = FALSE;
-            if (hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_) {
-              readEntireSchema = TRUE;
-            }
-
-            retStatus = hiveMD_->init(readEntireSchema,
-                                      currSch,
-                                      hiveMDtdb().hivePredStr());
+            retStatus = hiveMD_->init();
             if (!retStatus)
               {
                 *diags << DgSqlCode(-1190)
@@ -5055,36 +4952,56 @@ short ExExeUtilHiveMDaccessTcb::work()
                 step_ = HANDLE_ERROR_;
                 break;
               }
-            if (!readEntireSchema) 
-            {
-              HVC_RetCode retCode = hiveMD_->getClient()->
-                getAllTables(currSch, tblNames_);
-              if ((retCode != HVC_OK) && (retCode != HVC_DONE)) 
-                {
-                  *diags << DgSqlCode(-1190)
-                         << DgString0((char*)
-                                      "HiveClient_JNI::getAllTables()")
-                         << DgString1(hiveMD_->getClient()->
-                                      getErrorText(retCode))
-                         << DgInt0(retCode)
-                         << DgString2(GetCliGlobals()->getJniErrorStr());
-                  step_ = HANDLE_ERROR_;
-                  break;
-                }
-            }
-	    step_ = POSITION_;
+
+	    step_ = READ_HIVE_MD_;
 	  }
 	  break;
+
+        case READ_HIVE_MD_:
+          {
+            char* currSch = schForHive_;
+            char* currObj = hiveMDtdb().getObject();
+
+            if (! currObj)
+              {
+                HVC_RetCode retCode = hiveMD_->getClient()->
+                  getAllTables(currSch, tblNames_);
+                if ((retCode != HVC_OK) && (retCode != HVC_DONE)) 
+                  {
+                    *diags << DgSqlCode(-1190)
+                           << DgString0((char*)
+                                        "HiveClient_JNI::getAllTables()")
+                           << DgString1(hiveMD_->getClient()->
+                                        getErrorText(retCode))
+                           << DgInt0(retCode)
+                           << DgString2(GetCliGlobals()->getJniErrorStr());
+                    step_ = HANDLE_ERROR_;
+                    break;
+                  }
+              }
+            else
+              {
+                NAText * nat = new(getHeap()) NAText(currObj);
+                tblNames_.insert(nat);
+              }
+
+            // read info for entries specified in tblNames_
+            int i = 0;
+            while (i < tblNames_.entries())
+              {
+                hiveMD_->getTableDesc(schForHive_, tblNames_[i]->c_str());
+                i++;
+              }
+
+            step_ = POSITION_;
+          }
+          break;
 
 	case POSITION_:
 	  {
             hive_tbl_desc * htd = NULL;
-            if (hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_) {
-              hiveMD_->position();
-              htd = hiveMD_->getNext();
-            }
-            else
-              pos_ = 0; // we are not reading the entire schema.
+            hiveMD_->position();
+            htd = hiveMD_->getNext();
 
 	    if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::TABLES_)
 	      {
@@ -5092,10 +5009,18 @@ short ExExeUtilHiveMDaccessTcb::work()
 	      }
 	    else if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::COLUMNS_)
 	      {
+                currColNum_ = 0;
+
 		if (htd)
-		  currColDesc_ = htd->getColumns();
+                  {
+                    currColDesc_ = htd->getColumns();
+                    currPartnDesc_ = htd->getPartKey();
+                  }
 		else
-		  currColDesc_ = NULL;
+                  {
+                    currColDesc_ = NULL;
+                    currPartnDesc_ = NULL;
+                  }
 
 		step_ = FETCH_COLUMN_;
 	      }
@@ -5121,46 +5046,63 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
 
-            if (hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_) {
-              if (hiveMD_->atEnd())
+            if (hiveMD_->atEnd())
               {
                 step_ = DONE_;
                 break;
               }
-            }
-            else {
-              if (pos_ >= tblNames_.entries())
-	      {
-		step_ = DONE_;
-		break;
-	      }
-            }
 
             HiveMDTablesColInfoStruct *s =(HiveMDTablesColInfoStruct*)mdRow_;
 
 	    str_cpy(s->catName, hiveCat_, 256, ' ');
 	    str_cpy(s->schName, hiveSch_, 256, ' ');
 
-            if (hiveMDtdb().mdType_ != ComTdbExeUtilHiveMDaccess::TABLES_) {
-              struct hive_tbl_desc * htd = hiveMD_->getNext();
-              str_cpy(s->tblName, htd->tblName_, 256, ' ');
-            }
-            else {
-              str_cpy(s->tblName, tblNames_[pos_]->c_str(), 256, ' ');
-	      //              delete tblNames_[pos_]; 
-              //delete the allocation by StringArrayList::get(i)
-            }
+            struct hive_tbl_desc * htd = hiveMD_->getNext();
+            str_cpy(s->tblName, htd->tblName_, 256, ' ');
             
+            memset(s->fileFormat, ' ', 24);
+            if (htd->getSDs())
+              {
+                if (htd->getSDs()->isOrcFile())
+                  str_cpy(s->fileFormat, "ORC", 24, ' ');
+                else if (htd->getSDs()->isTextFile())
+                  str_cpy(s->fileFormat, "TEXTFILE", 24, ' ');
+                else if (htd->getSDs()->isSequenceFile())
+                  str_cpy(s->fileFormat, "SEQUENCE", 24, ' ');
+              }
+
+            // htd->creationTS_ is the number of seconds from epoch.
+            // convert it to juliantimestamp
+            s->createTime = htd->creationTS_*1000000 + COM_EPOCH_TIMESTAMP;
+
+            s->numCols = htd->getNumOfCols();
+            s->numPartCols = htd->getNumOfPartCols();
+            s->numSortCols = htd->getNumOfSortCols();
+            s->numBucketCols = htd->getNumOfBucketCols();
+
+            s->fieldDelimiter = htd->getSDs()->fieldTerminator_;
+            s->recordTerminator = htd->getSDs()->recordTerminator_;
+            memset(s->nullFormat, ' ', 8);
+            if (htd->getSDs()->nullFormat_)
+              str_cpy(s->nullFormat, htd->getSDs()->nullFormat_, 8, ' ');
+
+            str_cpy(s->location, htd->getSDs()->location_, 1024, ' ');
+
+            str_cpy(s->hiveTableType, htd->tableType_, 128, ' ');
+
+            str_cpy(s->hiveOwner, htd->owner_, 256, ' ');
+
 	    step_ = APPLY_PRED_;
 	  }
 	  break;
 	  
-	case FETCH_COLUMN_: //does not work with JNI
+	case FETCH_COLUMN_:
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
 
-	    if (! currColDesc_) 
+	    if ((! currColDesc_) &&
+                (! currPartnDesc_))
 	      {
 		step_ = DONE_;
 		break;
@@ -5168,6 +5110,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    
 	    struct hive_tbl_desc * htd = hiveMD_->getNext();
 	    struct hive_column_desc * hcd = currColDesc_;
+	    struct hive_pkey_desc * hpd = currPartnDesc_;
 	    
 	    HiveMDColumnsColInfoStruct *infoCol =
 	      (HiveMDColumnsColInfoStruct*)mdRow_;
@@ -5175,13 +5118,17 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    str_cpy(infoCol->catName, hiveCat_, 256, ' ');
 	    str_cpy(infoCol->schName, hiveSch_, 256, ' ');
 	    str_cpy(infoCol->tblName, htd->tblName_, 256, ' ');
-	    str_cpy(infoCol->colName, hcd->name_, 256, ' ');
+            str_cpy(infoCol->colName, 
+                    (hcd ? hcd->name_ : hpd->name_), 256, ' ');
 
-	    infoCol->fsDatatype = getFSTypeFromHiveColType(hcd->type_);
+            infoCol->fsDatatype = 
+              getFSTypeFromHiveColType(hcd ? hcd->type_ : hpd->type_);
+
 	    if (infoCol->fsDatatype < 0)
 	      {
 		char strP[300];
-		sprintf(strP, "Datatype %s is not supported.", hcd->type_);
+		sprintf(strP, "Datatype %s is not supported.", 
+                        (hcd ? hcd->type_ : hpd->type_));
 		*diags << DgSqlCode(-CLI_GET_METADATA_INFO_ERROR)
 		       << DgString0(strP);
 		
@@ -5189,9 +5136,15 @@ short ExExeUtilHiveMDaccessTcb::work()
 		break;
 	      }
 	    
-	    const char * sdtStr = Descriptor::ansiTypeStrFromFSType(infoCol->fsDatatype);
-	    str_cpy(infoCol->sqlDatatype, sdtStr, 24, ' ');
-	    infoCol->colSize = getLengthFromHiveColType(hcd->type_);
+	    const char * sdtStr = 
+              Descriptor::ansiTypeStrFromFSType(infoCol->fsDatatype);
+	    str_cpy(infoCol->sqlDatatype, sdtStr, 32, ' ');
+
+            str_cpy(infoCol->hiveDatatype, (hcd ? hcd->type_ : hpd->type_), 
+                    32, ' ');
+
+	    infoCol->colSize = 
+              getLengthFromHiveColType(hcd ? hcd->type_ : hpd->type_);
 	    infoCol->colScale = 0;
 
 	    // only iso charset
@@ -5203,7 +5156,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 
 	    infoCol->colPrecision = 0;
 	    infoCol->nullable = 1;
-	    infoCol->colNum = hcd->intIndex_;
+
 	    infoCol->dtCode = 0;
 	    infoCol->dtStartField = 0;
 	    infoCol->dtEndField = 0;
@@ -5230,6 +5183,13 @@ short ExExeUtilHiveMDaccessTcb::work()
 
 	    // no default value
 	    str_cpy(infoCol->defVal, " ", 240, ' ');
+
+	    infoCol->colNum = currColNum_++;
+            infoCol->partColNum = hcd ? -1 : hpd->idx_;
+            infoCol->bucketColNum = 
+              htd->getBucketColNum(hcd ? hcd->name_ : hpd->name_);
+            infoCol->sortColNum = 
+              htd->getSortColNum(hcd ? hcd->name_ : hpd->name_);
 
 	    step_ = APPLY_PRED_;
 	  }
@@ -5310,22 +5270,33 @@ short ExExeUtilHiveMDaccessTcb::work()
 	  {
 	    if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::TABLES_)
 	      {
-                pos_++;
+                // move to the next table
+                hiveMD_->advance();
+
 		step_ = FETCH_TABLE_;
 	      }
+
             // next two else blocks do not work with JNI
 	    else if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::COLUMNS_)
 	      {
 		if (currColDesc_)
 		  currColDesc_ = currColDesc_->next_;
-		
-		if (! currColDesc_)
+                else if (currPartnDesc_)
+                  currPartnDesc_ = currPartnDesc_->next_;
+
+		if ((! currColDesc_) &&
+                    (! currPartnDesc_))
 		  {
+                    currColNum_ = 0;
+
 		    // move to the next table
 		    hiveMD_->advance();
 		    
 		    if (! hiveMD_->atEnd())
-		      currColDesc_ = hiveMD_->getNext()->getColumns();
+                      {
+                        currColDesc_ = hiveMD_->getNext()->getColumns();
+                        currPartnDesc_ = hiveMD_->getNext()->getPartKey();
+                      }
 		  }
 
 		step_ = FETCH_COLUMN_;
@@ -5507,10 +5478,13 @@ short ExExeUtilRegionStatsTcb::collectStats(char * tableName)
   // collect stats from ehi.
   HbaseStr tblName;
   
-  NAString extNameForHbase = 
-    NAString(catName_) + "." + NAString(schName_) + "." + NAString(objName_);
-  tblName.val = (char*)extNameForHbase.data();
-  tblName.len = extNameForHbase.length();
+  if (NAString(catName_) == HBASE_SYSTEM_CATALOG)
+    extNameForHbase_ = NAString(objName_);
+  else
+    extNameForHbase_ =
+      NAString(catName_) + "." + NAString(schName_) + "." + NAString(objName_);
+  tblName.val = (char*)extNameForHbase_.data();
+  tblName.len = extNameForHbase_.length();
   
   regionInfoList_ = ehi_->getRegionStats(tblName);
   if (! regionInfoList_)
@@ -5524,22 +5498,16 @@ short ExExeUtilRegionStatsTcb::collectStats(char * tableName)
 }
 
 short ExExeUtilRegionStatsTcb::populateStats
-(Int32 currIndex, NABoolean nullTerminate)
+(Int32 currIndex)
 {
   str_pad(stats_->catalogName, sizeof(stats_->catalogName), ' ');
   str_cpy_all(stats_->catalogName, catName_, strlen(catName_));
-  if (nullTerminate)
-    stats_->catalogName[strlen(catName_)] = 0;
 
   str_pad(stats_->schemaName, sizeof(stats_->schemaName), ' ');
   str_cpy_all(stats_->schemaName, schName_, strlen(schName_));
-  if (nullTerminate)
-    stats_->schemaName[strlen(schName_)] = 0;
 
   str_pad(stats_->objectName, sizeof(stats_->objectName), ' ');
   str_cpy_all(stats_->objectName, objName_, strlen(objName_));
-  if (nullTerminate)
-    stats_->objectName[strlen(objName_)] = 0;
   
   str_pad(stats_->regionServer, sizeof(stats_->regionServer), ' ');
 
@@ -5567,9 +5535,6 @@ short ExExeUtilRegionStatsTcb::populateStats
     {
       str_cpy_all(stats_->regionServer, regionInfo, 
                   (Lng32)(sep1 - regionInfo)); 
-
-      if (nullTerminate)
-        stats_->regionServer[sep1 - regionInfo] = 0;
     }
 
   char * sepStart = sep1+1;
@@ -5578,9 +5543,6 @@ short ExExeUtilRegionStatsTcb::populateStats
     {
       str_cpy_all(stats_->regionName, sepStart, 
                   (Lng32)(sep1 - sepStart)); 
-
-      if (nullTerminate)
-        stats_->regionName[sep1 - sepStart] = 0;
     }
   
   sepStart = sep1;
@@ -5984,15 +5946,7 @@ short ExExeUtilRegionStatsFormatTcb::work()
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;
 
-            NAString objName = 
-              removeTrailingBlanks(statsTotals_->catalogName, STATS_NAME_MAX_LEN);
-            objName += ".";
-            objName +=
-              removeTrailingBlanks(statsTotals_->schemaName, STATS_NAME_MAX_LEN);
-            objName += ".";
-            objName += 
-              removeTrailingBlanks(statsTotals_->objectName, STATS_NAME_MAX_LEN);
-
+            NAString objName = extNameForHbase_;
             str_sprintf(buf, "  ObjectName:              %s", objName.data());
 	    if (moveRowToUpQueue(buf, strlen(buf), &rc))
 	      return rc;

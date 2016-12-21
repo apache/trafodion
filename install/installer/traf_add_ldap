@@ -48,14 +48,14 @@ echo "***INFO: Copy $LDAP_AUTH_FILE to all nodes"
 if [[ "$all_node_count" -eq "1" ]]; then
   sudo cp -r $LOCAL_WORKDIR/$LDAP_AUTH_FILE $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
   sudo chown $TRAF_USER.$TRAF_GROUP $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
-  sudo su $TRAF_USER --command "cp $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE $SQ_ROOT/sql/scripts/.traf_authentication_config" 2>&1 
-  sudo su $TRAF_USER --command "chmod 750 $SQ_ROOT/sql/scripts/.traf_authentication_config"
+  sudo su $TRAF_USER --command "cp $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE $TRAF_HOME/sql/scripts/.traf_authentication_config" 2>&1 
+  sudo su $TRAF_USER --command "chmod 750 $TRAF_HOME/sql/scripts/.traf_authentication_config"
 else
   $TRAF_PDCP $LOCAL_WORKDIR/$LDAP_AUTH_FILE $HOME
   $TRAF_PDSH sudo cp $HOME/$LDAP_AUTH_FILE $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
   $TRAF_PDSH sudo chown $TRAF_USER:$TRAF_GROUP $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE
-  sudo su $TRAF_USER --command "$TRAF_PDSH cp $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE $SQ_ROOT/sql/scripts/.traf_authentication_config" 
-  sudo su $TRAF_USER --command "$TRAF_PDSH chmod 750 $SQ_ROOT/sql/scripts/.traf_authentication_config"
+  sudo su $TRAF_USER --command "$TRAF_PDSH cp $HOME_DIR/$TRAF_USER/$LDAP_AUTH_FILE $TRAF_HOME/sql/scripts/.traf_authentication_config" 
+  sudo su $TRAF_USER --command "$TRAF_PDSH chmod 750 $TRAF_HOME/sql/scripts/.traf_authentication_config"
 fi
   
 # Check traf_authentication_config for errors
@@ -81,7 +81,7 @@ fi
 
 # change and copy sqenvcom.sh
 echo "***INFO: Modifying sqenvcom.sh to turn on authentication"
-sudo cp -r $SQ_ROOT/sqenvcom.sh $LOCAL_WORKDIR/sqenvcom.sh
+sudo cp -r $TRAF_HOME/sqenvcom.sh $LOCAL_WORKDIR/sqenvcom.sh
 sudo chown $(whoami).$(whoami) $LOCAL_WORKDIR/sqenvcom.sh
 sed -i -e "s@TRAFODION_ENABLE_AUTHENTICATION=NO@TRAFODION_ENABLE_AUTHENTICATION=YES@g" $LOCAL_WORKDIR/sqenvcom.sh 
 sudo cp $LOCAL_WORKDIR/sqenvcom.sh $HOME_DIR/$TRAF_USER/sqenvcom.sh
@@ -89,9 +89,9 @@ sudo chown $TRAF_USER.$TRAF_GROUP $HOME_DIR/$TRAF_USER/sqenvcom.sh
 sudo chmod 664 $HOME_DIR/$TRAF_USER/sqenvcom.sh
 echo "***INFO: copying sqenvcom.sh to all nodes"
 if [[ "$all_node_count" -ne "1" ]]; then
-  sudo su $TRAF_USER --command "$TRAF_PDCP $HOME_DIR/$TRAF_USER/sqenvcom.sh $SQ_ROOT/sqenvcom.sh" 
+  sudo su $TRAF_USER --command "$TRAF_PDCP $HOME_DIR/$TRAF_USER/sqenvcom.sh $TRAF_HOME/sqenvcom.sh" 
 else
-  sudo cp $HOME_DIR/$TRAF_USER/sqenvcom.sh $SQ_ROOT/sqenvcom.sh 
+  sudo cp $HOME_DIR/$TRAF_USER/sqenvcom.sh $TRAF_HOME/sqenvcom.sh 
 fi
 rm $LOCAL_WORKDIR/sqenvcom.sh
 

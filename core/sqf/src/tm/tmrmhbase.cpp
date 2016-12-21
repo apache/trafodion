@@ -412,6 +412,9 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
 
    TMTrace (2, ("RM_Info_HBASE::hb_ddl_operation ENTRY\n"));
 
+   pp_msg->response()->u.iv_ddl_response.iv_err_str_len = 
+  	 sizeof(pp_msg->response()->u.iv_ddl_response.iv_err_str);
+   
    switch(pp_msg->request()->u.iv_ddl_request.ddlreq_type)
    {
       case TM_DDL_CREATE:
@@ -433,7 +436,9 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
                          pv_tbldesclen,
                          NULL,
                          0,
-                         0);
+                         0,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str_len);
          }
          else {
             buffer_keys = new char *[pv_numsplits];
@@ -450,7 +455,9 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
                          pv_tbldesclen,
                          buffer_keys,
                          pv_numsplits,
-                         pv_keylen);
+                         pv_keylen,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str_len);
          }
 
          if(ddlbuffer!=NULL) {
@@ -462,12 +469,16 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
       case TM_DDL_DROP:
          lv_err = gv_HbaseTM.dropTable(lv_transid,
                          pp_msg->request()->u.iv_ddl_request.ddlreq,
-                         pp_msg->request()->u.iv_ddl_request.ddlreq_len);
+                         pp_msg->request()->u.iv_ddl_request.ddlreq_len,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str_len);
          break;
       case TM_DDL_TRUNCATE:
          lv_err = gv_HbaseTM.regTruncateOnAbort(lv_transid,
                          pp_msg->request()->u.iv_ddl_request.ddlreq,
-                         pp_msg->request()->u.iv_ddl_request.ddlreq_len);
+                         pp_msg->request()->u.iv_ddl_request.ddlreq_len,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str_len);
       case TM_DDL_ALTER:
         
          len = sizeof(Tm_Req_Msg_Type);
@@ -493,7 +504,9 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
                          pp_msg->request()->u.iv_ddl_request.ddlreq_len,
                          buffer_opts,
                          pv_numtblopts,
-                         pv_tbloptslen);
+                         pv_tbloptslen,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str_len);
 
          if(ddlbuffer!=NULL) {
             for(int i=0; i<pp_msg->request()->u.iv_ddl_request.alt_numopts; i++)

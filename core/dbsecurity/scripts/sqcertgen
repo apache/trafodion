@@ -22,7 +22,7 @@
 # @@@ END COPYRIGHT @@@
 #
 
-CERTDIR=$MY_SQROOT/sqcert
+CERTDIR=$TRAF_HOME/sqcert
 CLUSTNAME=`echo $CLUSTERNAME`
 
 if (test -n "${CLUSTNAME}"); then

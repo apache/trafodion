@@ -42,5 +42,6 @@ s/^\(\.*PREPARATION[ ]Status:[ ]*\) .*/removed/g
 s/^\([ ]*Task:[ ]COMPLETION[ ]Status:[ ]*\) .*/removed/g
 s/.*PREPARATION.*/removed/
 s/.*COMPLETION.*/removed/
+s/Time:.*/Time:@time@/
 s/VOLATILE_SCHEMA_MXID[0-9]*/VOLATILE_SCHEMA_00/
 " $fil

@@ -1430,7 +1430,7 @@ bool CProcess::Create (CProcess *parent, int & result)
     if (env && isdigit(*env))
        numProcessThreads = atoi(env);
 
-    env = getenv( "MY_SQROOT" );
+    env = getenv( "TRAF_HOME" );
     if (env)
     {
         sqRoot_ = env ;
@@ -1501,7 +1501,7 @@ bool CProcess::Create (CProcess *parent, int & result)
         setEnvStrVal ( childEnv, nextEnv, "MPI_INSTR", filename );
     }
 
-    setEnvStrVal ( childEnv, nextEnv, "MY_SQROOT", sqRoot_.c_str() );
+    setEnvStrVal ( childEnv, nextEnv, "TRAF_HOME", sqRoot_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "USER", user );
     setEnvStrVal ( childEnv, nextEnv, "HOME", home );
     setEnvStrVal ( childEnv, nextEnv, "TERM", term );

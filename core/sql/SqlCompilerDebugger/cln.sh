@@ -18,9 +18,9 @@
 # under the License.
 #
 # @@@ END COPYRIGHT @@@
-#rm -f $MY_SQROOT/export/lib64d/libSqlCompilerDebugger.so
-#rm -f $MY_SQROOT/export/lib64d/libQtCore.so
-#rm -f $MY_SQROOT/export/lib64d/libQtGui.so
+#rm -f $TRAF_HOME/export/lib64d/libSqlCompilerDebugger.so
+#rm -f $TRAF_HOME/export/lib64d/libQtCore.so
+#rm -f $TRAF_HOME/export/lib64d/libQtGui.so
 make clean
 rm -f Makefile
 rm -f libSqlCompilerDebugger.so*

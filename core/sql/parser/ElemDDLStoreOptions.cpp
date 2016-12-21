@@ -162,7 +162,8 @@ ElemDDLStoreOptKeyColumnList::ElemDDLStoreOptKeyColumnList(
   keyColumnArray_(heap),
   uniqueStoreBy_(uniqueStoreBy),
   uniqueStoreByKeylist_(uniqueStoreByKeylist),
-  pkeyStoreByKeylist_(pkeyStoreByKeylist)
+  pkeyStoreByKeylist_(pkeyStoreByKeylist),
+  ser_(ComPkeySerialization::COM_SER_NOT_SPECIFIED)
 {
   setChild(INDEX_KEY_COLUMN_LIST, pKeyColumnList);
 

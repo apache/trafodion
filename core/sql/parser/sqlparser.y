@@ -446,6 +446,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_ACCUMULATED
 %token <tokval> TOK_ADD_MONTHS
 %token <tokval> TOK_ADMIN               /* ANSI reserved word */
+%token <tokval> TOK_AES_ENCRYPT
+%token <tokval> TOK_AES_DECRYPT
 %token <tokval> TOK_AFTER
 %token <tokval> TOK_ALL
 %token <tokval> TOK_ALL_DDL
@@ -775,6 +777,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_IUDLOG	// MV REFRESH
 %token <tokval> TOK_JAVA                /* Tandem extension non-reserved word */
 %token <tokval> TOK_JOIN
+%token <tokval> TOK_JSONOBJECTFIELDTEXT
 %token <tokval> TOK_JULIANTIMESTAMP     /* Tandem extension */
 %token <tokval> TOK_LAG                 /* LAG OLAP Function */
 %token <tokval> TOK_LANGUAGE
@@ -1077,6 +1080,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_SPACE
 %token <tokval> TOK_SMALLINT
 %token <tokval> TOK_SOME
+%token <tokval> TOK_SOUNDEX
 %token <tokval> TOK_SORT                /* Tandem extension non-reserved word */
 %token <tokval> TOK_SORT_KEY
 %token <tokval> TOK_SP_RESULT_SET
@@ -1363,6 +1367,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_RANGELOG			/* MV */
 %token <tokval> TOK_REBUILD
 %token <tokval> TOK_REFERENCES
+%token <tokval> TOK_REGEXP
 %token <tokval> TOK_REGION
 %token <tokval> TOK_REGISTER            /* Tandem extension */
 %token <tokval> TOK_UNREGISTER          /* Tandem extension */
@@ -1379,6 +1384,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_STORE               /* Tandem extension */
 %token <tokval> TOK_STORAGE
 %token <tokval> TOK_STATISTICS          /* Tandem extension non-reserved word */
+%token <tokval> TOK_HBMAP_TABLE
 %token <tokval> TOK_STATS
 %token <tokval> TOK_UNBOUNDED           /* Tandem extension */
 %token <tokval> TOK_VIEW
@@ -2251,6 +2257,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <comObjectName>           user_defined_function_name
 %type <objectTypeEnum>          givable_object_type
 %type <tokval>                  nonreserved_word
+%type <tokval>                  nonreserved_word_for_explain
 %type <tokval>                  nonreserved_func_word
 %type <tokval>                  MP_nonreserved_word
 %type <tokval>                  MP_nonreserved_func_word
@@ -2705,6 +2712,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                    range_n_args
 %type <item>                    range_n_arg
 %type <boolean>                 optional_in_memory_clause
+%type <stringval>               optional_map_to_hbase_clause
+%type <boolean>                 optional_hbase_data_format
 %type <dropBehaviorEnum>  	extension_drop_behavior
 %type <dropBehaviorEnum>  	optional_drop_behavior
 %type <dropBehaviorEnum>  	optional_drop_index_behavior
@@ -5289,6 +5298,13 @@ special_table_name : special_regular_table_name
                 else
                   { yyerror(""); YYERROR; /*internal syntax only!*/}
               }
+
+	   /* Hbase Mapped tables */
+	   | TOK_TABLE '(' TOK_HBMAP_TABLE actual_table_name ')'
+	      {
+                $4->setSpecialType(ExtendedQualName::HBMAP_TABLE);
+                $$ = $4;  // actual_table_name
+              }
 		
 exception_table_name :  TOK_EXCEPTION TOK_TABLE actual_table_name 
 		{
@@ -5428,6 +5444,7 @@ actual_table_name : qualified_name
 		     //
 		     $$ = corrNameFromStrings($1);
 		     if ($$ == NULL) YYABORT;
+
                      //ct-bug-10-030102-3803 -Begin
                      NAString *tmpName = new (PARSERHEAP()) NAString((""),PARSERHEAP()); 
                      NAString *tmp =new (PARSERHEAP()) NAString(( $$->getQualifiedNameObj().getCatalogName()),PARSERHEAP());
@@ -5901,12 +5918,17 @@ TOK_TABLE '(' TOK_INTERNALSP '(' character_string_literal ')' ')'
 				}
 | TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ')' ')'
 				{
-				    $$ = new (PARSERHEAP()) HiveMDaccessFunc($5);
+                                  $$ = new (PARSERHEAP()) HiveMDaccessFunc($5);
 				}
-| TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ',' schema_name ')' ')'
+| TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ',' identifier ')' ')'
 				{
                                   $$ = new (PARSERHEAP()) HiveMDaccessFunc($5, $7);
 				}
+| TOK_TABLE '(' TOK_HIVEMD '(' hivemd_identifier ',' identifier ',' identifier ')' ')'
+				{
+                                  $$ = new (PARSERHEAP()) HiveMDaccessFunc($5, $7, $9);
+				}
+
 | TOK_TABLE '(' TOK_QUERY_CACHE '(' value_expression_list ')' ')'
   {
     $$ = new (PARSERHEAP()) RelInternalSP("QUERYCACHE"
@@ -6383,7 +6405,7 @@ index_hint : qualified_name
       }
     | qualified_guardian_name '.' subvolume_name '.' identifier
       {
-		NAString *nam = new (PARSERHEAP()) NAString(($1->data()),PARSERHEAP());
+        NAString *nam = new (PARSERHEAP()) NAString(($1->data()),PARSERHEAP());
         nam->append(".", 1);
         nam->append(($3->data()), $3->length());
         nam->append(".", 1);
@@ -8873,7 +8895,7 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
     | TOK_TO_TIME '(' value_expression ',' character_string_literal ')'
                                {
                                  $$ = new (PARSERHEAP()) 
-                                   DateFormat($3, *$5, DateFormat::FORMAT_TO_DATE);
+                                   DateFormat($3, *$5, DateFormat::FORMAT_TO_TIME);
 			       }
     | TOK_TO_TIMESTAMP '(' value_expression ')'
                                {
@@ -9598,6 +9620,16 @@ math_function :
 	   $$ = new (PARSERHEAP()) BitOperFunc(ITM_BITEXTRACT, $3, $5, $7);
 	 }
 
+       | TOK_LOG '(' value_expression ')'
+         {
+	   $$ = new (PARSERHEAP()) MathFunc(ITM_LOG, $3);
+	 }
+
+       | TOK_LOG '(' value_expression ',' value_expression ')'
+         {
+	   $$ = new (PARSERHEAP()) MathFunc(ITM_LOG, $3, $5);
+	 }
+
        | math_func_0_operand '(' ')'
          {
 	   $$ = new (PARSERHEAP()) MathFunc($1);
@@ -9629,7 +9661,6 @@ math_func_1_operand :
            |  TOK_DEGREES {$$ = ITM_DEGREES;}
            |  TOK_EXP {$$ = ITM_EXP;}
            |  TOK_FLOOR {$$ = ITM_FLOOR;}
-           |  TOK_LOG {$$ = ITM_LOG;}
            |  TOK_LOG10 {$$ = ITM_LOG10;}
            |  TOK_LOG2 {$$ = ITM_LOG2;}
            |  TOK_RADIANS {$$ = ITM_RADIANS;}
@@ -9643,7 +9674,7 @@ math_func_1_operand :
 /* type operator_type */
 math_func_2_operands :
               TOK_ATAN2 {$$ = ITM_ATAN2;}
-	   |  TOK_POWER {$$ = ITM_POWER;}
+           |  TOK_POWER {$$ = ITM_POWER;}
 //           |  TOK_TRUNCATE {$$ = ITM_SCALE_TRUNC;}
 
 
@@ -9693,12 +9724,45 @@ misc_function :
                             1, $3);
                 }
 
-     | TOK_SHA2 '(' value_expression ')'
+     | TOK_SHA2 '(' value_expression ',' NUMERIC_LITERAL_EXACT_NO_SCALE ')'
                 {
-                    $$ = new (PARSERHEAP())
-                    BuiltinFunction(ITM_SHA2,
-                            CmpCommon::statementHeap(),
-                            1, $3);
+                    int mode = atoInt64($5->data());
+                    switch (mode) {
+                    case 0:
+                    case 256:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_256,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    case 224:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_224,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    case 384:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_384,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    case 512:
+                        $$ = new (PARSERHEAP())
+                        BuiltinFunction(ITM_SHA2_512,
+                                        CmpCommon::statementHeap(),
+                                        1, $3);
+                        break;
+
+                    default:
+                        yyerror("The second operand expects 0, 224, 256, 384 or 512");
+                        YYERROR;
+                        break;
+                    }
+
                 }
 
      | TOK_MD5 '(' value_expression ')'
@@ -9781,6 +9845,11 @@ misc_function :
 						    2, $3, $5);
 				}
 
+    | TOK_JSONOBJECTFIELDTEXT '(' value_expression ',' value_expression ')'
+    {
+        $$ = new (PARSERHEAP()) 
+        BuiltinFunction(ITM_JSONOBJECTFIELDTEXT, CmpCommon::statementHeap(), 2, $3, $5);
+    }
      | TOK_NULLIF '(' value_expression ',' value_expression ')'
               {
                 $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_NULLIF, $3, $5);
@@ -9806,6 +9875,13 @@ misc_function :
                                   $$ = new (PARSERHEAP())
                                     CompEncode ( $3, NOT $4 );
                                 }
+     | TOK_SOUNDEX '(' value_expression ')'
+                {
+                    $$ = new (PARSERHEAP())
+                    BuiltinFunction(ITM_SOUNDEX,
+                            CmpCommon::statementHeap(),
+                            1, $3);
+                }
      | TOK_SORT_KEY '(' value_expression optional_Collation_type optional_sort_direction ')'
                                 {
                                   if ($5 != CollationInfo::DefaultDir  && $4 != CollationInfo::Sort)
@@ -10182,6 +10258,26 @@ misc_function :
        | TOK_GROUPING_ID '(' value_expression_list ')'
              {
                $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_GROUPING_ID, $3);
+             }
+       | TOK_AES_ENCRYPT '(' value_expression ',' value_expression ',' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_AES_ENCRYPT, CmpCommon::statementHeap(),
+                                                       3, $3, $5, $7);
+             }
+       | TOK_AES_ENCRYPT '(' value_expression ',' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_AES_ENCRYPT, CmpCommon::statementHeap(),
+                                                       2, $3, $5);
+             }
+       | TOK_AES_DECRYPT '(' value_expression ',' value_expression ',' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_AES_DECRYPT, CmpCommon::statementHeap(),
+                                                       3, $3, $5, $7);
+             }
+       | TOK_AES_DECRYPT '(' value_expression ',' value_expression ')'
+             {
+               $$ = new (PARSERHEAP()) BuiltinFunction(ITM_AES_DECRYPT, CmpCommon::statementHeap(),
+                                                       2, $3, $5);
              }
 
 hbase_column_create_list : '(' hbase_column_create_value ')'
@@ -16772,6 +16868,19 @@ explain_identifier : IDENTIFIER
 			   YYERROR;
 			 $$ = $1;
 		       }
+                     | nonreserved_word_for_explain
+                       {
+                         NAString temp = *(unicodeToChar
+                                          (ToTokvalPlusYYText(&$1)->yytext,
+                                           ToTokvalPlusYYText(&$1)->yyleng,
+                                           (CharInfo::CharSet) (
+                                                                ComGetNameInterfaceCharSet()
+                                                                ),
+                                           PARSERHEAP()) );
+                         temp.toUpper();
+                         $$ = new (PARSERHEAP())NAString(temp);
+                       }
+
 
 exe_util_display_explain: explain_starting_tokens TOK_PROCEDURE '(' QUOTED_STRING ',' QUOTED_STRING ')'
                {
@@ -19155,6 +19264,13 @@ like_predicate : value_expression not_like value_expression
 				  if ($2 == TOK_NOT)
 				    $$ = new (PARSERHEAP()) UnLogic(ITM_NOT,$$);
 				}
+              | value_expression TOK_REGEXP value_expression
+                                {
+                                  //TODO
+                                  $$ = new (PARSERHEAP()) Regexp($1,$3);
+				  if ($2 == TOK_NOT)
+				    $$ = new (PARSERHEAP()) UnLogic(ITM_NOT,$$);
+                                } 
 
 /* type item */
 exists_predicate : TOK_EXISTS rel_subquery
@@ -24908,6 +25024,8 @@ table_definition : create_table_start_tokens ddl_qualified_name
                         table_definition_body
                         optional_create_table_attribute_list
                         optional_in_memory_clause
+                        optional_map_to_hbase_clause
+                        optional_hbase_data_format
 	  	   {
                      $1->setOptions(TableTokens::OPT_NONE);
 		     QualifiedName * qn;
@@ -24917,6 +25035,29 @@ table_definition : create_table_start_tokens ddl_qualified_name
                        qn = processVolatileDDLName($2, FALSE, FALSE);
 		     if (! qn)
                        YYABORT;
+
+                     if ($6) // map to hbase table
+                       {
+                         if ($1->getType() != TableTokens::TYPE_EXTERNAL_TABLE)
+                           YYERROR;
+
+                         // cannot be create like
+                         if ($3->castToElemDDLLikeCreateTable())
+                           {
+                             *SqlParser_Diags << DgSqlCode(-3242)
+                                              << DgString0("Cannot specify LIKE clause with mapped hbase tables.");
+                             YYERROR;
+                           }
+                         
+                         // cannot specify cat/schema names
+                         if ((NOT qn->getCatalogName().isNull()) ||
+                             (NOT qn->getSchemaName().isNull()))
+                           {
+                             *SqlParser_Diags << DgSqlCode(-3242)
+                                              << DgString0("Cannot specify catalog or schema names with mapped hbase tables.");
+                             YYERROR;
+                           }
+                       }
 
 		     StmtDDLCreateTable *pNode =
 		       new (PARSERHEAP())
@@ -24928,6 +25069,16 @@ table_definition : create_table_start_tokens ddl_qualified_name
 			    NULL,
 			    NULL,
 			    PARSERHEAP());
+
+                     if ($6)
+                       {
+                         CorrName cn(*$6);
+                         pNode->setLikeSourceTableName(cn);
+
+                         pNode->setMapToHbaseTable(TRUE);
+
+                         pNode->setHbaseDataFormat($7);
+                       }
 
                      $1->setTableTokens(pNode);
 		     pNode->synthesize();
@@ -25749,7 +25900,18 @@ unique_constraint_specification : TOK_UNIQUE
 unique_specification : unique_constraint_specification
                       | TOK_PRIMARY TOK_KEY
                                 {
-                                  $$ = new (PARSERHEAP()) ElemDDLConstraintPK();
+                                  $$ = new (PARSERHEAP()) 
+                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_SER_NOT_SPECIFIED);
+                                }
+                      | TOK_PRIMARY TOK_KEY TOK_SERIALIZED
+                                {
+                                  $$ = new (PARSERHEAP()) 
+                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_SERIALIZED);
+                                }
+                      | TOK_PRIMARY TOK_KEY TOK_NOT TOK_SERIALIZED
+                                {
+                                  $$ = new (PARSERHEAP()) 
+                                    ElemDDLConstraintPK(NULL, ComPkeySerialization::COM_NOT_SERIALIZED);
                                 }
 
 /* type pElemDDLConstraint */
@@ -26336,6 +26498,11 @@ like_option : TOK_WITHOUT TOK_CONSTRAINTS
                                 {
                                   $$ = new (PARSERHEAP())
                                     ElemDDLLikeLimitColumnLength($5);
+                                }
+                      | TOK_WITHOUT TOK_ROW TOK_FORMAT
+                                {
+                                  $$ = new (PARSERHEAP())
+				    ElemDDLLikeOptWithoutRowFormat();
                                 }
 
 /* type pElemDDL */
@@ -27094,6 +27261,33 @@ optional_in_memory_clause : empty
 			       $$ = TRUE; 
 			     }
 
+/* type stringval */
+optional_map_to_hbase_clause : empty
+                             {   
+                               $$ = NULL;
+			     }
+                            | TOK_MAP TOK_TO TOK_HBASE TOK_TABLE identifier
+                             { 
+			       $$ = $5; 
+			     }
+/* type int */
+optional_hbase_data_format : empty
+                             {   
+                               $$ = TRUE; // varchar format
+			     }
+                            | TOK_DATA TOK_FORMAT TOK_VARCHAR
+                             { 
+			       // data is stored in var length string format 
+			       // For ex, 123 is stored as a 3 byte string "123"
+			       $$ = TRUE; 
+			     }
+                            | TOK_DATA TOK_FORMAT TOK_NATIVE
+                             { 
+			       // data is stored in native format.
+			       // For ex, smallint is stored as 2 byte binary
+			       $$ = FALSE;
+			     }
+
 hbase_table_options : TOK_HBASE_OPTIONS '('  hbase_options_list ')'
                               {
 				$$ = new (PARSERHEAP()) 
@@ -27422,14 +27616,32 @@ store_by_clause : TOK_STORE TOK_BY store_option_clause
                                     ElemDDLStoreOptKeyColumnList(
                                        $3 /*column_reference_list*/);
                                 }
+                  | TOK_PRIMARY TOK_KEY TOK_NOT TOK_SERIALIZED '(' column_reference_list ')' 
+                                {
+                                  $$ = new (PARSERHEAP())
+                                    ElemDDLStoreOptKeyColumnList(
+                                       $6 /*column_reference_list*/,
+				       TRUE, FALSE, TRUE);
+                                  ((ElemDDLStoreOptKeyColumnList*)$$)->
+                                    setSerializedOption(ComPkeySerialization::COM_NOT_SERIALIZED);
+                                }
+
+                  | TOK_PRIMARY TOK_KEY TOK_SERIALIZED '(' column_reference_list ')' 
+                                {
+                                  $$ = new (PARSERHEAP())
+                                    ElemDDLStoreOptKeyColumnList(
+                                       $5 /*column_reference_list*/,
+				       TRUE, FALSE, TRUE);
+                                  ((ElemDDLStoreOptKeyColumnList*)$$)->
+                                    setSerializedOption(ComPkeySerialization::COM_SERIALIZED);
+                                }
+
                   | TOK_PRIMARY TOK_KEY  '(' column_reference_list ')'
                                 {
                                   $$ = new (PARSERHEAP())
                                     ElemDDLStoreOptKeyColumnList(
                                        $4 /*column_reference_list*/,
 				       TRUE, FALSE, TRUE);
-				       //                                       TRUE, FALSE,
-				       //				       TRUE);
                                 }
 
 /* type pElemDDL */
@@ -32283,7 +32495,13 @@ drop_table_statement : TOK_DROP special_table_name optional_drop_behavior
                      $$->castToStmtDDLDropTable()->setTableType(ExtendedQualName::GHOST_TABLE);
                    }
 
-                   if ($1 == 2 || $1 == 4)
+                  if ($1 == 3 || $1 == 4)
+                     $$->castToStmtDDLDropTable()->setIsExternal(TRUE);
+
+                  if ($1 == 5 || $1 == 6)
+                     $$->castToStmtDDLDropTable()->setIsExternal(TRUE);
+
+                   if ($1 == 2 || $1 == 4 || $1 == 6)
                      {
                        $$->castToStmtDDLDropTable()->setDropIfExists(TRUE);
                      }
@@ -33471,6 +33689,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_LOW_VALUE
      //                 | TOK_LSDECIMAL  //->nonreserved_datatype         
                       | TOK_M
+                      | TOK_MAP
                       | TOK_MASTER
                       | TOK_MATERIALIZED  
 		      | TOK_MAXEXTENTS // Extent Changes : Swati Ambulkar
@@ -33502,6 +33721,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_MV_TABLE  
 		      | TOK_MVSTATUS	// MV
 		      | TOK_MVS_UMD //
+		      | TOK_REGEXP  
 		      | TOK_REMOVE //
 		      | TOK_OPENBLOWNAWAY //
 		      | TOK_REDEFTIME	// Y_TEST
@@ -33672,6 +33892,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_STYLE
                       | TOK_SUBCLASS_ORIGIN
                       | TOK_SUBSYSTEM_ID
+                      | TOK_HBMAP_TABLE
                       | TOK_SUSPEND
                       | TOK_SYNONYMS
                       | TOK_T                 /* ODBC extension  */
@@ -33769,6 +33990,45 @@ nonreserved_word :      TOK_ABORT
 // QSTUFF
                       | TOK_VALIDATE
                       | TOK_RMS
+                      | TOK_AES_ENCRYPT
+                      | TOK_AES_DECRYPT
+
+// This was added for JIRA Trafodion 2367. There are oddities in
+// how PREPARE is parsed vs. how EXPLAIN is parsed, along with
+// pecularities in the specific syntax of EXPLAIN that prevent
+// us from recognizing the same identifiers for both. In sqlci,
+// for example, sqlci's own parser picks off the PREPARE <identifier>
+// part, and this parser only sees the query text afterwards. So,
+// sqlci has its own rules for what <identifier>s are allowed.
+// EXPLAIN on the other hand is fully parsed here in this parser.
+// Trafci seems to have different processing yet. EXPLAIN itself
+// has some confounding syntax: One can say "EXPLAIN <query text>"
+// as well as "EXPLAIN <statement identifier>", so the identifier
+// can conflict with any token that can start a statement. This
+// anomaly is unique to EXPLAIN. That means that we can't simply
+// plug in nonreserved_word as an alternative production for
+// explain_identifier; we'll get a boatload of additional
+// shift/reduce and reduce/reduce conflicts. It is possible in
+// principle to create a subset of nonreserved_word for EXPLAIN,
+// but in light of the fact that the PREPARE rules are in different
+// parsers (and differ between sqlci and trafci), this seems a
+// fool's errand.
+// 
+// So, up until this JIRA, only regular identifiers (that is,
+// non-keywords) and delimited identifiers were allowed for EXPLAIN.
+// Unfortunately, C is a keyword, since it is a language name on
+// CREATE FUNCTION. So, EXPLAIN C; gives a syntax error. Since
+// humans are sometimes prone to using one-letter identifiers,
+// this can be highly irritating. So, to remove this irritation,
+// we've supplied a separate nonreserved_word production just for
+// EXPLAIN that contains all the one-letter tokens.
+
+nonreserved_word_for_explain: TOK_C
+                      | TOK_D
+                      | TOK_G
+                      | TOK_K
+                      | TOK_M
+                      | TOK_T
 
 // Formerly declared as FUNC_ in ulexer.cpp keywordTable.  Now defined
 // as nonreserved_func_word.  This works better and does not increase the
@@ -33841,6 +34101,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_ISIPV4
                       | TOK_ISIPV6
                       | TOK_KEY_RANGE_COMPARE
+                      | TOK_JSONOBJECTFIELDTEXT
                       | TOK_JULIANTIMESTAMP
                       | TOK_LASTNOTNULL
                       | TOK_LAST_DAY
@@ -33902,6 +34163,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_SIGN
                       | TOK_SIN
                       | TOK_SINH
+                      | TOK_SOUNDEX
                       | TOK_SORT_KEY
                       | TOK_SPACE
                       | TOK_SQRT

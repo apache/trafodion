@@ -108,12 +108,12 @@ if [[ ${lv_clean_hb_data} -gt 0 ]]; then
 fi
 
 #delete the logs
-echo "Deleting HBase logs in: ${MY_SQROOT}/sql/local_hadoop/hbase/logs"
-if [ ! -z ${MY_SQROOT} ]; then
-    rm -rf ${MY_SQROOT}/sql/local_hadoop/hbase/logs/*.log
-    rm -rf ${MY_SQROOT}/sql/local_hadoop/hbase/logs/*log.[0-9]*
-    rm -rf ${MY_SQROOT}/sql/local_hadoop/hbase/logs/*.out
-    rm -rf ${MY_SQROOT}/sql/local_hadoop/hbase/logs/*.out.[0-9]*
+echo "Deleting HBase logs in: ${TRAF_HOME}/sql/local_hadoop/hbase/logs"
+if [ ! -z ${TRAF_HOME} ]; then
+    rm -rf ${TRAF_HOME}/sql/local_hadoop/hbase/logs/*.log
+    rm -rf ${TRAF_HOME}/sql/local_hadoop/hbase/logs/*log.[0-9]*
+    rm -rf ${TRAF_HOME}/sql/local_hadoop/hbase/logs/*.out
+    rm -rf ${TRAF_HOME}/sql/local_hadoop/hbase/logs/*.out.[0-9]*
 fi
 
 if [[ ${lv_clean_hb_data} -gt 1 ]]; then

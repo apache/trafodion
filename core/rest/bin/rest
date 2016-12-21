@@ -187,9 +187,9 @@ function append_path() {
 JAVA_PLATFORM=""
 
 #If avail, add Trafodion to the JAVA_LIBRARY_PATH
-if [ "$MY_SQROOT" != "" ]; then
-  if [ -d $MY_SQROOT ]; then
-     export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib$SQ_MBTYPE/libseabasesig.so;
+if [ "$TRAF_HOME" != "" ]; then
+  if [ -d $TRAF_HOME ]; then
+     export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$TRAF_HOME/export/lib$SQ_MBTYPE/libseabasesig.so;
   fi
 fi
 
@@ -257,7 +257,7 @@ if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
 fi
 REST_OPTS="$REST_OPTS -Drest.user.program.home=$REST_USER_PROGRAM_HOME"
 REST_OPTS="$REST_OPTS -Drest.conf.dir=$REST_CONF_DIR"
-REST_OPTS="$REST_OPTS -Drest.trafodion.home=$MY_SQROOT"
+REST_OPTS="$REST_OPTS -Drest.trafodion.home=$TRAF_HOME"
 
 # Exec unless REST_NOEXEC is set.
 if [ "${REST_NOEXEC}" != "" ]; then

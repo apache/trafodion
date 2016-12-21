@@ -38,7 +38,7 @@ CPPSRC := \
 CPPSRC += mpisetup.cpp vers_libcli.cpp 
 SRCPATH := cli bin common
 CPPSRC += CliExtern.cpp
-C_INC_OVERRIDE := -I$(MY_SQROOT)/export/include -I$(MY_SQROOT)/export/include/seabed
+C_INC_OVERRIDE := -I$(TRAF_HOME)/export/include -I$(TRAF_HOME)/export/include/seabed
 
 USER_INCLUDES += $(WMS_INC) \
                  $(THRIFT_INC)

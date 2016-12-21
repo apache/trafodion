@@ -317,7 +317,7 @@ in the <<prepare,Prepare>> chapter, you record the following information.
 | RENEW_LIFETIME          | Kerberos ticket renewal lifetime for {project-name} principal                              | 7days
 | REST_BUILD              | Tar file containing the REST component.                                                    | 
 | SECURE_HADOOP           | Indicates whether Hadoop has Kerberos enabled                                               | Based on whether Kerberos is enabled for your Hadoop installation
-| SQ_ROOT                 | Target directory for the {project-name} software.                                               | /home/trafodion/apache-trafodion-1.3.0-incubating-bin
+| TRAF_HOME                 | Target directory for the {project-name} software.                                               | /home/trafodion/apache-trafodion-1.3.0-incubating-bin
 | START                   | Whether to start {project-name} after install/upgrade.                                          | Y
 | SUSE_LINUX              | Whether your installing {project-name} on SUSE Linux.                                           | false
 | TRAF_PACKAGE            | The location of the {project-name} installation package tar file or core installation tar file. | /home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz
@@ -456,7 +456,7 @@ export HBASE="hbase"
 # First time install : /home/trafodion/traf
 # On Upgrade: /home/trafodion/traf_<date>
 # By doing this the previous version will remain and allow for an easier rollback.
-export SQ_ROOT="/home/trafodion/apache-trafodion-1.3.0-incubating-bin"
+export TRAF_HOME="/home/trafodion/apache-trafodion-1.3.0-incubating-bin"
 
 # Start Trafodion after install completes
 export START="Y"

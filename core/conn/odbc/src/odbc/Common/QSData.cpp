@@ -1532,6 +1532,13 @@ string getExeErrorCodeString(ExeErrorCode value)
 //-------------------------------------------------------------
 	case EXE_INTERNALLY_GENERATED_COMMAND: 			return FMT_EXE_INTERNALLY_GENERATED_COMMAND;
 
+//-------------------------------------------------------------
+// Error codes for AES encrpt/decrypt functions
+//-------------------------------------------------------------
+    case EXE_AES_INVALID_IV:                        return FMT_EXE_AES_INVALID_IV;
+    case EXE_ERR_PARAMCOUNT_FOR_FUNC:               return FMT_EXE_ERR_PARAMCOUNT_FOR_FUNC;
+    case EXE_OPTION_IGNORED:                        return FMT_EXE_OPTION_IGNORED;
+    case EXE_OPENSSL_ERROR:                         return FMT_EXE_OPENSSL_ERROR;
 
 //fast transport
 
@@ -1606,6 +1613,23 @@ string getExeErrorCodeString(ExeErrorCode value)
 	case CLI_RWRS_DECOMPRESS_ERROR: 				return FMT_CLI_RWRS_DECOMPRESS_ERROR;
 	case CLI_RWRS_DECOMPRESS_LENGTH_ERROR: 			return FMT_CLI_RWRS_DECOMPRESS_LENGTH_ERROR;
 	case CLI_NAR_ERROR_DETAILS: 					return FMT_CLI_NAR_ERROR_DETAILS;
+// ---------------------------------------------------------------------
+// Execution errors related to json
+// ---------------------------------------------------------------------
+    case EXE_JSON_INVALID_TOKEN:                    return FMT_EXE_JSON_INVALID_TOKEN;
+    case EXE_JSON_INVALID_VALUE:                    return FMT_EXE_JSON_INVALID_VALUE;
+    case EXE_JSON_INVALID_STRING:                   return FMT_EXE_JSON_INVALID_STRING;
+    case EXE_JSON_INVALID_ARRAY_START:              return FMT_EXE_JSON_INVALID_ARRAY_START;
+    case EXE_JSON_INVALID_ARRAY_NEXT:               return FMT_EXE_JSON_INVALID_ARRAY_NEXT;
+    case EXE_JSON_INVALID_OBJECT_START:             return FMT_EXE_JSON_INVALID_OBJECT_START;
+    case EXE_JSON_INVALID_OBJECT_LABEL:             return FMT_EXE_JSON_INVALID_OBJECT_LABEL;
+    case EXE_JSON_INVALID_OBJECT_NEXT:              return FMT_EXE_JSON_INVALID_OBJECT_NEXT;
+    case EXE_JSON_INVALID_OBJECT_COMMA:             return FMT_EXE_JSON_INVALID_OBJECT_COMMA;
+    case EXE_JSON_INVALID_END:                      return FMT_EXE_JSON_INVALID_END;
+    case EXE_JSON_END_PREMATURELY:                  return FMT_EXE_JSON_END_PREMATURELY;
+    case EXE_JSON_UNEXPECTED_ERROR:                 return FMT_EXE_JSON_UNEXPECTED_ERROR;
+
+    
 // ---------------------------------------------------------------------
 //
 // ---------------------------------------------------------------------

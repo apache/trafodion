@@ -380,7 +380,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T2
 
 >>alter table user1_t4 rename to user1_t1;
 
-*** ERROR[1389] Object TRAFODION.T138SCH.USER1_T4 does not exist in Trafodion.
+*** ERROR[1127] The specified table TRAFODION.T138SCH.USER1_T4 does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 
 --- SQL operation failed with errors.
 >>
@@ -794,7 +794,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T2
 
 >>alter table user1_t4 rename to user1_t1;
 
-*** ERROR[1389] Object TRAFODION.T138SCH.USER1_T4 does not exist in Trafodion.
+*** ERROR[1127] The specified table TRAFODION.T138SCH.USER1_T4 does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 
 --- SQL operation failed with errors.
 >>
@@ -1206,7 +1206,7 @@ CREATE TABLE TRAFODION.T138SCH.USER1_T2
 
 >>alter table user1_t4 rename to user1_t1;
 
-*** ERROR[1389] Object TRAFODION.T138SCH.USER1_T4 does not exist in Trafodion.
+*** ERROR[1127] The specified table TRAFODION.T138SCH.USER1_T4 does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 
 --- SQL operation failed with errors.
 >>

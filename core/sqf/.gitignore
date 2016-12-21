@@ -8,6 +8,7 @@
 
 # genverhdr
 /export/include/SCMBuild*
+/export/include/buildId
 # dbsecurity
 /export/include/auth.h
 /export/include/dbUserAuth.h

@@ -234,11 +234,11 @@ sub mirroring_not_on()
 {
     my $cmd;
 
-    $cmd = "grep DEVICE-M $ENV{'MY_SQROOT'}/sql/scripts/gomon.cold | egrep \"DATA|SYSTEM\"";
+    $cmd = "grep DEVICE-M $ENV{'TRAF_HOME'}/sql/scripts/gomon.cold | egrep \"DATA|SYSTEM\"";
     `$cmd`;
     $g_dotse = 0 if ($? != 0);
 
-    $cmd = "grep DEVICE-M $ENV{'MY_SQROOT'}/sql/scripts/gomon.cold | egrep \"AUDIT|TLOG\"";
+    $cmd = "grep DEVICE-M $ENV{'TRAF_HOME'}/sql/scripts/gomon.cold | egrep \"AUDIT|TLOG\"";
     `$cmd`;
     $g_doase = 0 if ($? != 0);
 
@@ -284,17 +284,17 @@ sub main()
 
     if ($volcheck)
     {
-        $cmd = "cat $ENV{'MY_SQROOT'}/sql/scripts/sq_tse.create | grep mkdir | egrep \'$volcheck\\b\'";
+        $cmd = "cat $ENV{'TRAF_HOME'}/sql/scripts/sq_tse.create | grep mkdir | egrep \'$volcheck\\b\'";
         $tsevols = `$cmd`;
         chomp($tsevols);
-        $cmd = "cat $ENV{'MY_SQROOT'}/sql/scripts/sq_ase.create | grep mkdir | egrep \'$volcheck\\b\'";
+        $cmd = "cat $ENV{'TRAF_HOME'}/sql/scripts/sq_ase.create | grep mkdir | egrep \'$volcheck\\b\'";
         $asevols = `$cmd`;
         chomp($asevols);
     }
     else
     {
-        $tsevols = `cat $ENV{'MY_SQROOT'}/sql/scripts/sq_tse.create | grep mkdir`;
-        $asevols = `cat $ENV{'MY_SQROOT'}/sql/scripts/sq_ase.create | grep mkdir`;
+        $tsevols = `cat $ENV{'TRAF_HOME'}/sql/scripts/sq_tse.create | grep mkdir`;
+        $asevols = `cat $ENV{'TRAF_HOME'}/sql/scripts/sq_ase.create | grep mkdir`;
     }
 
     # Handle cluster case - we will use $SQ_PDSH to run dbcheck on each node,

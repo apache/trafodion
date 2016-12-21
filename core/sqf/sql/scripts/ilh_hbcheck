@@ -24,12 +24,12 @@
 
 if [ -z $JAVA_HOME ]; then
     echo "The environment variable \$JAVA_HOME has not been set"
-    echo "Please ensure \$MY_SQROOT/sqenv.sh has been sourced."
+    echo "Please ensure \$TRAF_HOME/sqenv.sh has been sourced."
     echo
     exit 1;
 fi
 
-cd $MY_SQROOT/tools/check_hbase_available
+cd $TRAF_HOME/tools/check_hbase_available
 echo "Building some utility Java programs."
 . ./build 2>/dev/null
 $JAVA_HOME/bin/java CheckHBase | grep -v "Checking" | grep "HBase is available"

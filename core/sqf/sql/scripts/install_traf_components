@@ -21,23 +21,23 @@
 #### Script to install and configure DCS, REST and Phoenix tests...
 
 # Location of hadoop install
-MY_SW_ROOT=$MY_SQROOT/sql/local_hadoop
+MY_SW_ROOT=$TRAF_HOME/sql/local_hadoop
 MY_LOG_FILE=$MY_SW_ROOT/log/install_traf_components_$(date +%F_%T).log
 
 # Source in script to get the list of ports
-if [ -f $MY_SQROOT/sql/scripts/sw_env.sh ]; then
-   . $MY_SQROOT/sql/scripts/sw_env.sh
+if [ -f $TRAF_HOME/sql/scripts/sw_env.sh ]; then
+   . $TRAF_HOME/sql/scripts/sw_env.sh
 else
-   echo "Unable to find $MY_SQROOT/sql/scripts/sw_env.sh to get the list of ports"
+   echo "Unable to find $TRAF_HOME/sql/scripts/sw_env.sh to get the list of ports"
    exit 1;
 fi
 
 # Default location of Trafodion, DCS, REST and Phoenix src folders
-TRAF_SRC=$MY_SQROOT/../../
-DCS_SRC=$MY_SQROOT/../../dcs
-REST_SRC=$MY_SQROOT/../rest
-PHX_SRC=$MY_SQROOT/../../tests/phx
-TRAF_TARS=$MY_SQROOT/../../distribution
+TRAF_SRC=$TRAF_HOME/../../
+DCS_SRC=$TRAF_HOME/../../dcs
+REST_SRC=$TRAF_HOME/../rest
+PHX_SRC=$TRAF_HOME/../../tests/phx
+TRAF_TARS=$TRAF_HOME/../../distribution
 
 if [ -z "$DCS_BLD" ]; then
   DCS_BLD=$(ls -d $DCS_SRC/target/dcs-*/dcs-* 2>/dev/null)
@@ -110,13 +110,13 @@ else
   elif [[ -d $DCS_SRC ]]; then
       echo "DCS built target was not found in $DCS_SRC" | tee -a ${MY_LOG_FILE}
       echo "Building DCS" | tee -a ${MY_LOG_FILE}
-      if [[ -f $MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar ]]; then
+      if [[ -f $TRAF_HOME/export/lib/jdbcT4-${TRAFODION_VER}.jar ]]; then
          echo "JDBCT4 jar file exist. Proceeding to build DCS from $DCS_SRC" | tee -a ${MY_LOG_FILE}
          cd $DCS_SRC
          ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
          cd $MY_SW_ROOT
       else
-         echo "JDBCT4 jar file does not exist $MY_SQROOT/export/lib folder. " | tee -a ${MY_LOG_FILE}
+         echo "JDBCT4 jar file does not exist $TRAF_HOME/export/lib folder. " | tee -a ${MY_LOG_FILE}
          echo "Please build the core Trafodion component"  | tee -a ${MY_LOG_FILE}
          exit 2
       fi
@@ -140,12 +140,12 @@ else
     grep -v 'DCS_INSTALL_DIR=' ~/.trafodion.orig > ~/.trafodion
   fi
   DCSDIR=${DCS_HOME##*/}
-  echo "export DCS_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$DCSDIR" >> ~/.trafodion | tee -a ${MY_LOG_FILE}
+  echo "export DCS_INSTALL_DIR=\${TRAF_HOME}/sql/local_hadoop/$DCSDIR" >> ~/.trafodion | tee -a ${MY_LOG_FILE}
 
   echo "Setting DCS env and site.xml file" | tee -a ${MY_LOG_FILE}
   cd $DCS_HOME/conf/
   mv dcs-env.sh dcs-env.sh.orig
-  echo "MY_SQROOT=$MY_SQROOT" > dcs-env.sh
+  echo "TRAF_HOME=$TRAF_HOME" > dcs-env.sh
   sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" dcs-env.sh.orig >> dcs-env.sh
   mv -f dcs-site.xml dcs-site.xml.orig
   sed -e "s@</configuration>@@" dcs-site.xml.orig > dcs-site.xml
@@ -193,13 +193,13 @@ else
   elif [[ -d $REST_SRC ]]; then
       echo "REST built target was not found in $REST_SRC" | tee -a ${MY_LOG_FILE}
       echo "Building REST" | tee -a ${MY_LOG_FILE}
-      if [[ -f $MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar ]]; then
+      if [[ -f $TRAF_HOME/export/lib/jdbcT4-${TRAFODION_VER}.jar ]]; then
          echo "JDBCT4 jar file exist. Proceeding to build REST from $REST_SRC" | tee -a ${MY_LOG_FILE}
          cd $REST_SRC
          ${MAVEN:-mvn} clean site package >>${MY_LOG_FILE} 2>&1
          cd $MY_SW_ROOT
        else
-         echo "JDBCT4 jar file does not exist $MY_SQROOT/export/lib folder. Please build the core Trafodion components" | tee -a ${MY_LOG_FILE}
+         echo "JDBCT4 jar file does not exist $TRAF_HOME/export/lib folder. Please build the core Trafodion components" | tee -a ${MY_LOG_FILE}
        exit 2
       fi
       REST_BLD=$(ls -d $REST_SRC/target/rest-*/rest-* 2>/dev/null)
@@ -223,12 +223,12 @@ else
     grep -v 'REST_INSTALL_DIR=' ~/.trafodion.orig >> ~/.trafodion
   fi
   RESTDIR=${REST_HOME##*/}
-  echo "export REST_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$RESTDIR" >> ~/.trafodion  | tee -a ${MY_LOG_FILE}
+  echo "export REST_INSTALL_DIR=\${TRAF_HOME}/sql/local_hadoop/$RESTDIR" >> ~/.trafodion  | tee -a ${MY_LOG_FILE}
   echo "Setting REST env and site.xml "  | tee -a ${MY_LOG_FILE}
   cd $REST_HOME/conf/
   mv rest-env.sh rest-env.sh.orig
 
-  echo "MY_SQROOT=$MY_SQROOT" > rest-env.sh
+  echo "TRAF_HOME=$TRAF_HOME" > rest-env.sh
   sed -e "s@#[ ]*export REST_MANAGES_ZK=true@export REST_MANAGES_ZK=false@" rest-env.sh.orig >> rest-env.sh
   mv -f rest-site.xml rest-site.xml.orig
   sed -e "s@</configuration>@@" rest-site.xml.orig > rest-site.xml
@@ -253,7 +253,7 @@ EOF
 
   echo "Configured $REST_HOME/conf/rest-site.xml" | tee -a ${MY_LOG_FILE}
   echo "Adding swrest script..." | tee -a ${MY_LOG_FILE}
-  cat <<EOF >$MY_SQROOT/sql/scripts/swrest
+  cat <<EOF >$TRAF_HOME/sql/scripts/swrest
 #!/bin/sh
 # command to run rest tests
 #Displays the status of configured servers
@@ -272,7 +272,7 @@ curl -X GET -H "Accept: application/json" http://localhost:$MY_REST_SERVER_PORT/
 curl -X GET -H "Accept: application/json" http://localhost:$MY_REST_SERVER_PORT/v1/servers/dcs/connections | python -m json.tool
 EOF
 
-     chmod +x $MY_SQROOT/sql/scripts/swrest
+     chmod +x $TRAF_HOME/sql/scripts/swrest
 fi
 
 # End of setup for REST
@@ -283,19 +283,19 @@ echo | tee -a ${MY_LOG_FILE}
 # Begin setup of TRAFCI
 
 echo "Configuring TRAFCI " | tee -a ${MY_LOG_FILE}
-TRAFCI_BIN_DIR=$MY_SQROOT/trafci/bin
+TRAFCI_BIN_DIR=$TRAF_HOME/trafci/bin
 if [[ -f $TRAFCI_BIN_DIR/trafci ]]
 then
   mv $TRAFCI_BIN_DIR/trafci  $TRAFCI_BIN_DIR/trafci.orig | tee -a ${MY_LOG_FILE}
   sed -e "s@localhost:23400@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
   chmod +x $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
   echo "Adding swtrafci script..." | tee -a ${MY_LOG_FILE}
-  cat <<EOF >$MY_SQROOT/sql/scripts/swtrafci
+  cat <<EOF >$TRAF_HOME/sql/scripts/swtrafci
 #!/bin/sh
 # command to run trafci
-$MY_SQROOT/trafci/bin/trafci.sh -h localhost:$MY_DCS_MASTER_PORT -u zz -p zz
+$TRAF_HOME/trafci/bin/trafci.sh -h localhost:$MY_DCS_MASTER_PORT -u zz -p zz
 EOF
-  chmod +x $MY_SQROOT/sql/scripts/swtrafci
+  chmod +x $TRAF_HOME/sql/scripts/swtrafci
 else
   echo "$TRAFCI_BIN_DIR not found" | tee -a ${MY_LOG_FILE}
 fi
@@ -321,7 +321,7 @@ else
 
   if [[ -d $PHXDIR ]]; then
      echo "Adding swphoenix script..." | tee -a ${MY_LOG_FILE}
-     cat <<EOF >$MY_SQROOT/sql/scripts/swphoenix
+     cat <<EOF >$TRAF_HOME/sql/scripts/swphoenix
 #!/bin/sh
 # command to run phoenix tests
 
@@ -329,12 +329,12 @@ cd $PHXDIR
 if [[ \$1 == "t4" ]]
 then
   ./phoenix_test.py --target=localhost:$MY_DCS_MASTER_PORT --user=dontcare --pw=dontcare \\
-     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar
+     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$TRAF_HOME/export/lib/jdbcT4-${TRAFODION_VER}.jar
 elif [[ \$1 == "t2" ]]
 then
-  export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
+  export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$TRAF_HOME/export/lib\$SQ_MBTYPE/libseabasesig.so
   ./phoenix_test.py --targettype=TR --javahome=\$JAVA_HOME \\
-     --jdbccp=\$MY_SQROOT/export/lib/jdbcT2.jar --jdbctype=T2 \\
+     --jdbccp=\$TRAF_HOME/export/lib/jdbcT2.jar --jdbctype=T2 \\
      --nomvntest --tests="AlterTableTest,ArithmeticQueryTest,BinaryRowKeyTest,CoalesceFunctionTest,CompareDecimalToLongTest,CustomEntityDataTest,DeleteRangeTest,DescColumnSortOrderTest,DistinctCountTest,ExtendedQueryExecTest,FunkyNamesTest,IsNullTest,OrderByTest,QueryExecTest,SaltedTableTest,SaltedTableUpsertSelectTest,SaltedTableVarLengthRowKeyTest,SkipScanQueryTest,UpsertSelectAutoCommitTest,UpsertSelectTest,UpsertValuesTest],AutoCommitTest,CreateTableTest,ExecuteStatementsTest,GroupByCaseTest,IndexTest,KeyOnlyTest,MultiCfQueryExecTest,ProductMetricsTest,QueryExecWithoutSCNTest,QueryPlanTest,ReadIsolationLevelTest,ServerExceptionTest,StatementHintsTest,StddevTest,ToCharFunctionTest,ToNumberFunctionTest,TopNTest,UpsertBigValuesTest,VariableLengthPKTest,SaltedTableUpsertSelectTest"
 else
   echo "Usage: swphoenix (t2|t4)"
@@ -342,7 +342,7 @@ else
 fi
 EOF
 
-     chmod +x $MY_SQROOT/sql/scripts/swphoenix
+     chmod +x $TRAF_HOME/sql/scripts/swphoenix
   fi 
 fi
 
@@ -373,7 +373,7 @@ EOF
     cd .. 
     mv TRAFDSN TRAFDSN.orig 
     sed -e "s@TCP:localhost:23400@TCP:localhost:$MY_DCS_MASTER_PORT@" TRAFDSN.orig >> TRAFDSN 
-    cp -p TRAFDSN $MY_SQROOT/samples
+    cp -p TRAFDSN $TRAF_HOME/samples
     echo "Successfully installed linux driver in $LNXDRVR"| tee -a ${MY_LOG_FILE}
     echo "Creating odbcinst.ini file..." |tee -a ${MY_LOG_FILE}
     cat <<EOF >$LNXDRVR/odbcinst.ini
@@ -414,14 +414,14 @@ SQL_QUERY_TIMEOUT           = NO_TIMEOUT
 
 EOF
     echo "Adding swlnx script..." | tee -a ${MY_LOG_FILE}
-  cat <<EOF >$MY_SQROOT/sql/scripts/swlnx
+  cat <<EOF >$TRAF_HOME/sql/scripts/swlnx
 #!/bin/sh
 # command to run lnx sample
   cd $LNXDRVR
   g++ -g connect_test.cpp -L$LNXDRVR -I/usr/include/odbc -ltrafodbc64 -o connect_test
   ./connect_test -d Default_DataSource -u ss -p ss
 EOF
-  chmod +x $MY_SQROOT/sql/scripts/swlnx
+  chmod +x $TRAF_HOME/sql/scripts/swlnx
   fi
 fi
 
@@ -444,7 +444,7 @@ else
     tar -xzf $ODB_TAR | tee -a ${MY_LOG_FILE}
     echo "Successfully installed ODB tool in $ODBLOC"| tee -a ${MY_LOG_FILE}
     echo "Adding swodb script..." | tee -a ${MY_LOG_FILE}
-  cat <<EOF >$MY_SQROOT/sql/scripts/swodb
+  cat <<EOF >$TRAF_HOME/sql/scripts/swodb
 #!/bin/sh
 # command to run odb sample
 cd $ODBLOC/bin
@@ -457,7 +457,7 @@ export LD_LIBRARY_PATH=\$ODBCHOME:$LD_LIBRARY_PATH
 
 ./odb64luo -d traf -u ss -p ss -i
 EOF
-  chmod +x $MY_SQROOT/sql/scripts/swodb
+  chmod +x $TRAF_HOME/sql/scripts/swodb
   fi
 fi
 
@@ -490,19 +490,19 @@ else
 
   if [[ -d $DCSTEST_DIR ]]; then
      echo "Adding swjdbc script...." | tee -a ${MY_LOG_FILE}
-     cat <<EOF >$MY_SQROOT/sql/scripts/swjdbc
+     cat <<EOF >$TRAF_HOME/sql/scripts/swjdbc
 #!/bin/sh
 # command to run JDBC tests
 cd $JDBCTEST_DIR
 ./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
   --target=localhost:$MY_DCS_MASTER_PORT --dbmaj=\$TRAFODION_VER_MAJOR --dbmin=\$TRAFODION_VER_MINOR \\
-  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4-${TRAFODION_VER}.jar "\$@"
+  --jdbctype=T4 --jdbccp=\$TRAF_HOME/export/lib/jdbcT4-${TRAFODION_VER}.jar "\$@"
 EOF
-    chmod +x $MY_SQROOT/sql/scripts/swjdbc
+    chmod +x $TRAF_HOME/sql/scripts/swjdbc
 
     if [[ -f $LNXDRVR_TAR ]]; then
        echo "Linux driver exists. Adding swpyodbc script...." | tee -a ${MY_LOG_FILE}
-       cat <<EOF >$MY_SQROOT/sql/scripts/swpyodbc
+       cat <<EOF >$TRAF_HOME/sql/scripts/swpyodbc
 #!/bin/sh
 # command to run Python ODBC tests
 cd $PYODBCTEST_DIR
@@ -510,7 +510,7 @@ cd $PYODBCTEST_DIR
 tox -e py27
 
 EOF
-       chmod +x $MY_SQROOT/sql/scripts/swpyodbc
+       chmod +x $TRAF_HOME/sql/scripts/swpyodbc
     fi 
   fi
 fi

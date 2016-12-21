@@ -494,6 +494,7 @@ char * ExExeUtilTcb::getStatusString(const char * operation,
 				     const char * status,
 				     const char * object,
 				     char * outBuf,
+				     NABoolean isET, 
 				     char * timeBuf,
 				     char * queryBuf,
 				     char * errorBuf)
@@ -512,9 +513,9 @@ char * ExExeUtilTcb::getStatusString(const char * operation,
       str_sprintf(outBuf, "Task: %s  Status: %s  Command: %s",
 		  o, s, queryBuf);
     }
-  else if (timeBuf)
+  else if (timeBuf && isET)
     {
-      str_sprintf(outBuf, "Task: %s  Status: %s  ET: %s",
+      str_sprintf(outBuf, "Task: %s  Status: %s  Elapsed Time:    %s",
 		  o, s, timeBuf);
     }
   else if (errorBuf)
@@ -522,13 +523,18 @@ char * ExExeUtilTcb::getStatusString(const char * operation,
       str_sprintf(outBuf, "Task: %s  Status: %s  Details: %s",
 		  o, s, errorBuf);
     }
+  else if (timeBuf)
+    {
+       str_sprintf(outBuf, "Task: %s  Status: %s  Time: %s",
+		    o, s, timeBuf);
+    }
   else
     {
       if (object)
-	str_sprintf(outBuf, "Task: %s  Status: %s  Object: %s",
+         str_sprintf(outBuf, "Task: %s  Status: %s  Object: %s",
 		    o, s, object);
       else
-	str_sprintf(outBuf, "Task: %s  Status: %s",
+         str_sprintf(outBuf, "Task: %s  Status: %s",
 		    o, s);
     }
 
@@ -549,6 +555,7 @@ short ExExeUtilTcb::executeQuery(char * task,
 {
   short retcode = 0;
   char buf[BUFFER_SIZE];
+  char timeBuf[200];
 
   while (1)
     {
@@ -561,7 +568,8 @@ short ExExeUtilTcb::executeQuery(char * task,
 	    elapsedTime_ = 0;
 	    if (displayStartTime)
 	      {
-		getStatusString(task, "Started", object, buf);
+		getTimestampAsString(startTime_, timeBuf);
+		getStatusString(task, "Started", object, buf, FALSE, timeBuf);
 		if (moveRowToUpQueue(buf, 0, &rc))
 		  return 1;
 	      }
@@ -640,9 +648,12 @@ short ExExeUtilTcb::executeQuery(char * task,
 
 	    if (displayEndTime)
 	      {
-		char timeBuf[200];
+		getTimestampAsString(endTime_, timeBuf);
+		getStatusString(task, "Ended", object, buf, FALSE, timeBuf);
+		if (moveRowToUpQueue(buf, 0, &rc))
+		  return 1;
 		getTimeAsString(elapsedTime_, timeBuf);
-		getStatusString(task, "Ended", object, buf, timeBuf);
+		getStatusString(task, "Ended", object, buf, TRUE, timeBuf);
 		if (moveRowToUpQueue(buf, 0, &rc))
 		  return 1;
 	      }

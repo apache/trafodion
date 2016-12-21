@@ -30,7 +30,7 @@ function storage_core_bt {
 
 	lv_cmd_file=sq_$1_core_bt.cmds
 	echo "echo 'Checking the $2 directories for any cores'" > $lv_cmd_file
-	grep mkdir $MY_SQROOT/sql/scripts/sq_$1.create | sed -e "s/mkdir \-p /sqdiag_core_mask /" -e "s@' &\$@ $3' &@" | sed -r 's/\/\\\$/\/\\\\\\\$/g' >> $lv_cmd_file
+	grep mkdir $TRAF_HOME/sql/scripts/sq_$1.create | sed -e "s/mkdir \-p /sqdiag_core_mask /" -e "s@' &\$@ $3' &@" | sed -r 's/\/\\\$/\/\\\\\\\$/g' >> $lv_cmd_file
 	echo "wait" >> $lv_cmd_file
 
 	chmod +x $lv_cmd_file

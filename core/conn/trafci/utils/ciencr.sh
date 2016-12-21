@@ -30,11 +30,11 @@
 CUR=.
 CURR_DIR=`pwd`
 
-if [ ${MY_SQROOT} ]; then
-   #echo "INFO: TRAFCIHOME is set to ${MY_SQROOT}/trafci"
-   export TRAFCIHOME=${MY_SQROOT}/trafci
+if [ ${TRAF_HOME} ]; then
+   #echo "INFO: TRAFCIHOME is set to ${TRAF_HOME}/trafci"
+   export TRAFCIHOME=${TRAF_HOME}/trafci
 else
-   echo "ERROR: \$MY_SQROOT is not set. Please run sqenv.sh first."
+   echo "ERROR: \$TRAF_HOME is not set. Please run sqenv.sh first."
    exit 3
 fi
 

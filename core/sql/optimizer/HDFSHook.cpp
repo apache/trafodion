@@ -854,11 +854,13 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
                           hdfsPort,
                           tableDir,
                           diags_,
-                          hdfsPortOverride_))
+                          hdfsPortOverride_)) {
         return FALSE;
+      }
 
-      if (! connectHDFS(hdfsHost, hdfsPort))
+      if (! connectHDFS(hdfsHost, hdfsPort)) {
         return FALSE; // diags_ is set
+      }
 
       // put back fully qualified URI
       tableDir = hsd->location_;
@@ -1083,6 +1085,7 @@ void HHDFSTableStats::print(FILE *ofd)
   fprintf(ofd,"====================================================================\n");
 }
 
+
 NABoolean HHDFSTableStats::connectHDFS(const NAString &host, Int32 port)
 {
   NABoolean result = TRUE;
@@ -1114,3 +1117,4 @@ void HHDFSTableStats::disconnectHDFS()
   // No op. The disconnect happens at the context level wehn the session 
   // is dropped or the thread exits.
 }
+
