@@ -141,7 +141,9 @@ public:
     return isInitialized_;
   }
   bool getExceptionDetails(JNIEnv *jenv);
+  bool getExceptionDetails(JOI_RetCode &retCode, JNIEnv *jenv);
   void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, std::string &error_msg);
+  short getExceptionErrorCode(JNIEnv *jenv, jthrowable a_exception);
   
 protected:
   static JavaVM*   jvm_;

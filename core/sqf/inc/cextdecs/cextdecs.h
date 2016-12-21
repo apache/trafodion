@@ -289,6 +289,10 @@ _declspec(dllimport) short   DNUMOUT
 
 _declspec(dllimport) short   ENDTRANSACTION();
 
+//errStr is allocated if errlen is not zero. Caller must deallocate errStr.
+//Rest of functionality same as ENDTRANSACTION();
+_declspec(dllimport) short   ENDTRANSACTION_ERR(char *&errStr, int &errlen);
+
 _declspec(dllimport) short   FILENAME_COMPARE_
 #ifdef TDM_ROSETTA_COMPATIBILITY_
   (unsigned char  *name1,    //IN
@@ -1577,6 +1581,11 @@ _declspec(dllimport) short   DNUMOUT
 ;
 
 _declspec(dllimport) short   ENDTRANSACTION();
+
+//errStr is allocated if errlen is not zero. Caller must deallocate errStr.
+//Rest of functionality same as ENDTRANSACTION();
+_declspec(dllimport) short   ENDTRANSACTION_ERR(char *&errStr, int &errlen);
+
 
 _declspec(dllimport) short   FILENAME_COMPARE_
 #ifdef TDM_ROSETTA_COMPATIBILITY_

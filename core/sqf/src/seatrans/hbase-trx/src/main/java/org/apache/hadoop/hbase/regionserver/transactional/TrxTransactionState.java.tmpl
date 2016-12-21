@@ -426,33 +426,17 @@ public class TrxTransactionState extends TransactionState {
         transactionsToCheck.add(transaction);
     }
 
-    public synchronized boolean hasConflict() {
+    public synchronized void checkConflict() throws IOException {
 
         for (TrxTransactionState transactionState : transactionsToCheck) {
-            try {
-                if (hasConflict(transactionState)) {
-                    if (LOG.isTraceEnabled())
-                        LOG.trace("TrxTransactionState hasConflict: Returning true for " + transactionState.toString()
-                                + ", regionInfo is [" + regionInfo.getRegionNameAsString() + "]");
-                    return true;
-                }
-            } catch (Exception e) {
-                // We are unable to ascertain if we have had a conflict with
-                // the rows we are trying to modify. We will return true,
-                // indicating that we can not allow the pending changes
-                // for this transaction to commit.
-                LOG.error("TrxTransactionState hasConflict: Returning true. Caught exception for transaction "
-                        + transactionState.toString() + ", regionInfo is [" + regionInfo.getRegionNameAsString()
-                        + "], exception ", e);
-                return true;
-            }
+              checkConflict(transactionState);
         }
-        return false;
     }
 
-    private boolean hasConflict(final TrxTransactionState checkAgainst) throws Exception {
+    private void checkConflict(final TrxTransactionState checkAgainst) 
+                                                           throws IOException {
         if (checkAgainst.getStatus().equals(TransactionState.Status.ABORTED)) {
-            return false; // Cannot conflict with aborted transactions
+            return; // Cannot conflict with aborted transactions
         }
 
         ListIterator<WriteAction> writeOrderIter = null;
@@ -465,6 +449,7 @@ public class TrxTransactionState extends TransactionState {
                 if (row == null) {
                     LOG.warn("TrxTransactionState hasConflict: row is null - this Transaction [" + this.toString()
                             + "] checkAgainst Transaction [" + checkAgainst.toString() + "] ");
+                    //continue; ??
                 }
                 if (this.getTransactionId() == checkAgainst.getTransactionId()) {
                     if (LOG.isTraceEnabled())
@@ -482,35 +467,35 @@ public class TrxTransactionState extends TransactionState {
                             if (LOG.isTraceEnabled())
                                 LOG.trace("Transaction [" + this.toString() + "] scansRange is null");
                         if (scanRange != null && scanRange.contains(row)) {
-                            LOG.warn("Transaction [" + this.toString() + "] has scan which conflicts with ["
-                                    + checkAgainst.toString() + "]: region [" + regionInfo.getRegionNameAsString()
-                                    + "], scanRange[" + scanRange.toString() + "] ,row[" + Bytes.toStringBinary(row) + "]");
-                            return true;
+                            String tmp = (otherUpdate.isDelete())? ", deleted":", inserted";
+                            String msg = "Transaction [" + this.toString() + "] has scan which conflicts with ["
+                                    + checkAgainst.toString() + "]: region [" + regionInfo.getRegionNameAsString() 
+                                    + "], scanRange[" + scanRange.toString() + "]"
+                                    +  tmp
+                                    + " row[" + Bytes.toStringBinary(row) + "]";
+                                    
+                            throw new IOException(msg);
                         }
-                        // else {
-                        // LOG.trace("Transaction [" + this.toString() + "] has scanRange checked against ["
-                        // + checkAgainst.toString() + "]: region [" + regionInfo.getRegionNameAsString()
-                        // + "], scanRange[" + scanRange.toString() + "] ,row[" + Bytes.toStringBinary(row) + "]");
-                        // }
                     }
                 } else {
-                    if (this.scans == null)
-                        LOG.trace("Transaction [" + this.toString() + "] scans was equal to null");
-                    else
-                        LOG.trace("Transaction [" + this.toString() + "] scans was empty ");
+                    if (LOG.isTraceEnabled()) {
+                        if (this.scans == null)
+                            LOG.trace("Transaction [" + this.toString() + "] scans was equal to null");
+                        else
+                            LOG.trace("Transaction [" + this.toString() + "] scans was empty ");
+                    }
                 }
-            } catch (Exception e) {
+            } catch (IOException e) {
                if (checkAgainst.getStatus().equals(TransactionState.Status.ABORTED)){
-                  return false;
+                  return;
                }
                else {
-                  LOG.warn("TrxTransactionState hasConflict: Unable to get row - this Transaction [" + this.toString()
-                       + "] checkAgainst Transaction [" + checkAgainst.toString() + "] " + " Exception: ", e);
+                  LOG.warn("TrxTransactionState hasConflict: Exception: ", e);
                   throw e;
                }
             }
         }
-        return false;
+        return;
     }
 
     public WALEdit getEdit() {
@@ -920,6 +905,15 @@ public class TrxTransactionState extends TransactionState {
             return delete;
         }
 
+        public boolean isDelete() {
+          if (put != null) {
+            return false;
+        } else if (delete != null) {
+            return true;
+          }
+          throw new IllegalStateException("WriteAction is invalid");
+        }
+        
         public synchronized byte[] getRow() {
             if (put != null) {
                 return put.getRow();

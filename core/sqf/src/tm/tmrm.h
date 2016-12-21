@@ -54,7 +54,7 @@ class RM_Info
       virtual int32 end_branches (CTmTxBase *pp_txn, int64 pv_flags) = 0;  
       virtual int32 forget_branches (CTmTxBase *pp_txn, int64 pv_flags) = 0;    
       virtual int32 forget_heur_branches (CTmTxBase *pp_txn, int64 pv_flags) = 0; 
-      virtual int32 prepare_branches (CTmTxBase *pp_txn, int64 pv_flags) = 0;
+      virtual int32 prepare_branches (CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg) = 0;
       virtual int32 rollback_branches (CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg,
                               bool lv_error_condition = false) = 0;       
       virtual int32 start_branches (CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg) = 0;

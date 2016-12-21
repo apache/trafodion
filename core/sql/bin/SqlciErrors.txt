@@ -1635,7 +1635,7 @@ $1~String1 --------------------------------
 8613 25000 99999 BEGINNER MAJOR DBADMIN SQL cannot commit or rollback a transaction that was started by application.
 8614 25000 99999 ADVANCED CRTCL DIALOUT SQL cannot begin a transaction when multiple contexts exist.
 8615 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A user-defined transaction has been started. Long Running Update operation cannot be performed.
-8616 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A conflict was detected during commit processing. Transaction has been aborted.
+8616 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A conflict was detected during commit processing. Transaction has been aborted. Detail :$0~string0
 8640 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8641 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----
 8642 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ---- unused ----

@@ -689,8 +689,9 @@ short ExTransaction::commitTransaction(NABoolean waited)
     }
  
   Int32 rc = 0;
-
-  rc = ENDTRANSACTION();
+  char *errStr = NULL;
+  Int32 errlen = 0;
+  rc = ENDTRANSACTION_ERR(errStr,errlen);
   if (rc != 0)
     {
       if (rc == FETRANSNOWAITOUT)
@@ -704,10 +705,16 @@ short ExTransaction::commitTransaction(NABoolean waited)
 	}
 
       if (rc == FEHASCONFLICT)
-        createDiagsArea (EXE_COMMIT_CONFLICT_FROM_TRANS_SUBSYS, rc, "DTM");
+        createDiagsArea (EXE_COMMIT_CONFLICT_FROM_TRANS_SUBSYS, rc,
+                         (errStr && errlen)? errStr: "DTM");
       else
         createDiagsArea (EXE_COMMIT_ERROR_FROM_TRANS_SUBSYS, rc,
-                         "DTM");
+                          (errStr && errlen)? errStr: "DTM");
+      
+      if(errStr && errlen)
+      {
+        delete errStr;
+      }
     }
   
   if (waited)

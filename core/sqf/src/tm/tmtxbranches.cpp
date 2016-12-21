@@ -302,15 +302,16 @@ int32 CTmTxBranches::forget_branches (CTmTxBase *pp_txn,
 // return        Error2  | Error2  Error2      Error2
 // ------------------------------------------------------------
 int32 CTmTxBranches::prepare_branches (CTmTxBase *pp_txn,
-                                       int64 pv_flags)
+                                       int64 pv_flags,
+                                       CTmTxMessage *pp_msg)
 {
    int32 lv_err = XA_OK, lv_err1 = RET_OK, lv_err2 = XA_OK;
 
    TMTrace (2, ("CTmTxBranches::prepare_branches, Txn ID (%d,%d), ENTRY, flags " PFLL "\n",
                 pp_txn->node(), pp_txn->seqnum(), pv_flags));
 
-   lv_err1 = iv_HBASEBranches.prepare_branches(pp_txn, pv_flags);
-   lv_err2 = iv_TSEBranches.prepare_branches(pp_txn, pv_flags);
+   lv_err1 = iv_HBASEBranches.prepare_branches(pp_txn, pv_flags, pp_msg);
+   lv_err2 = iv_TSEBranches.prepare_branches(pp_txn, pv_flags, pp_msg);
 
    // The transaction is only read-only if both branch types return read-only.
    if (lv_err1 == RET_READONLY && 

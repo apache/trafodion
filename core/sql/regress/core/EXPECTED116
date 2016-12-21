@@ -341,7 +341,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Thu Sep 22 05:38:39 2016
+-- Definition current  Wed Dec 21 21:00:30 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -359,7 +359,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Thu Sep 22 05:38:39 2016
+-- Definition current  Wed Dec 21 21:00:30 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -374,7 +374,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Thu Sep 22 05:38:40 2016
+-- Definition current  Wed Dec 21 21:00:31 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -391,7 +391,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Thu Sep 22 05:38:42 2016
+-- Definition current  Wed Dec 21 21:00:43 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -406,7 +406,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Thu Sep 22 05:38:42 2016
+-- Definition current  Wed Dec 21 21:00:44 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -423,7 +423,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Thu Sep 22 05:38:45 2016
+-- Definition current  Wed Dec 21 21:00:47 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -438,7 +438,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Thu Sep 22 05:38:46 2016
+-- Definition current  Wed Dec 21 21:00:48 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -456,7 +456,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Thu Sep 22 05:38:46 2016
+-- Definition current  Wed Dec 21 21:00:48 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -471,7 +471,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Thu Sep 22 05:38:46 2016
+-- Definition current  Wed Dec 21 21:00:48 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -488,7 +488,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Thu Sep 22 05:38:51 2016
+-- Definition current  Wed Dec 21 21:01:00 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -503,7 +503,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Thu Sep 22 05:38:51 2016
+-- Definition current  Wed Dec 21 21:01:01 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -521,7 +521,7 @@ A1           C1           B1
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Thu Sep 22 05:38:55 2016
+-- Definition current  Wed Dec 21 21:01:07 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -536,7 +536,7 @@ A1           C1           B1
 >>invoke t116v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T116V1
--- Definition current  Thu Sep 22 05:38:56 2016
+-- Definition current  Wed Dec 21 21:01:08 2016
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -595,7 +595,7 @@ End of MXCI Session
 >>invoke t116t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T1
--- Definition current  Thu Sep 22 05:39:13 2016
+-- Definition current  Wed Dec 21 21:01:31 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -717,7 +717,7 @@ T116T1
 >>invoke t116t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T2
--- Definition current  Thu Sep 22 05:40:00 2016
+-- Definition current  Wed Dec 21 21:02:32 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -742,7 +742,7 @@ T116T1
 >>invoke t116t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T116T2
--- Definition current  Thu Sep 22 05:40:11 2016
+-- Definition current  Wed Dec 21 21:02:51 2016
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -953,7 +953,8 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
-*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted.
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: Transaction [[transactionId: 16975 regionTX: false status: PENDING scan Size: 2 write Size: 1 startSQ: 2]] has scan which conflicts with [[transactionId: 1554361158723058 regionTX: true status: COMMITED scan Size: 2 write Size: 1 startSQ: 2 commitedSQ:2]]: region [TRAFODION.SCH.T116T6,,1482354300713.03a05b08f387a4eb4ef6323976d73e36.], scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01], inserted row[\x80\x00\x00\x01]
+org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:513)
 
 --- SQL operation failed with errors.
 >>select * from t116t6;
@@ -1061,7 +1062,8 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
-*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted.
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: Transaction [[transactionId: 16979 regionTX: false status: PENDING scan Size: 1 write Size: 1 startSQ: 6]] has scan which conflicts with [[transactionId: 1554361174452391 regionTX: true status: COMMITED scan Size: 1 write Size: 1 startSQ: 6 commitedSQ:6]]: region [TRAFODION.SCH.T116T6,,1482354300713.03a05b08f387a4eb4ef6323976d73e36.], scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01], inserted row[\x80\x00\x00\x01]
+org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:513)iona
 
 --- SQL operation failed with errors.
 >>select * from t116t6;
@@ -1170,7 +1172,8 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
-*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted.
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: Transaction [[transactionId: 16985 regionTX: false status: PENDING scan Size: 1 write Size: 1 startSQ: 11]] has scan which conflicts with [[transactionId: 1554361190181566 regionTX: true status: COMMITED scan Size: 0 write Size: 1 startSQ: 11 commitedSQ:11]]: region [TRAFODION.SCH.T116T6,,1482354300713.03a05b08f387a4eb4ef6323976d73e36.], scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01], deleted row[\x80\x00\x00\x01]
+org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:513)
 
 --- SQL operation failed with errors.
 >>select * from t116t6;
@@ -1274,7 +1277,8 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
-*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted.
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: Transaction [[transactionId: 16991 regionTX: false status: PENDING scan Size: 1 write Size: 1 startSQ: 15]] has scan which conflicts with [[transactionId: 1554361202764668 regionTX: true status: COMMITED scan Size: 0 write Size: 1 startSQ: 15 commitedSQ:15]]: region [TRAFODION.SCH.T116T6,,1482354300713.03a05b08f387a4eb4ef6323976d73e36.], scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01], deleted row[\x80\x00\x00\x01]
+org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:513)Za
 
 --- SQL operation failed with errors.
 >>select * from t116t6;
@@ -1383,7 +1387,8 @@ End of MXCI Session
 >>-- should show conflict
 >>commit work;
 
-*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted.
+*** ERROR[8616] A conflict was detected during commit processing. Transaction has been aborted. Detail :org.trafodion.dtm.TransactionManagerException: org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException: java.io.IOException: Transaction [[transactionId: 16997 regionTX: false status: PENDING scan Size: 2 write Size: 1 startSQ: 20]] has scan which conflicts with [[transactionId: 1554361218493621 regionTX: true status: COMMITED scan Size: 1 write Size: 1 startSQ: 20 commitedSQ:20]]: region [TRAFODION.SCH.T116T6,,1482354300713.03a05b08f387a4eb4ef6323976d73e36.], scanRange[startRow: \x80\x00\x00\x01, endRow: \x80\x00\x00\x01], inserted row[\x80\x00\x00\x01]
+org.trafodion.dtm.HBaseTxClient.prepareCommit(HBaseTxClient.java:513)1
 
 --- SQL operation failed with errors.
 >>select * from t116t6;

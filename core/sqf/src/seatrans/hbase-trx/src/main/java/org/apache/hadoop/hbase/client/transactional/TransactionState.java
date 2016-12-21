@@ -72,6 +72,7 @@ public class TransactionState {
     private static boolean useConcurrentHM = false;
     private boolean hasRetried = false;
     private boolean uteLogged = false;
+    private String recordException;
 
     public Set<String> tableNames = Collections.synchronizedSet(new HashSet<String>());
     public Set<TransactionRegionLocation> participatingRegions;
@@ -114,6 +115,7 @@ public class TransactionState {
         commitSendDone = false;
         hasError = null;
         ddlTrans = false;
+        recordException = null;
 
         if(useConcurrentHM) {
           participatingRegions = Collections.newSetFromMap((new ConcurrentHashMap<TransactionRegionLocation, Boolean>()));
@@ -253,6 +255,28 @@ public class TransactionState {
             commitSendDone = true;
             commitSendLock.notify();
         }
+    }
+    
+    /**
+    *
+    * Method  : recordException
+    * Params  : 
+    * Return  : void
+    * Purpose : Record an exception encountered by executor threads. 
+    */
+    public synchronized void recordException(String exception)
+    {
+      if (exception != null && recordException == null)
+        recordException = exception;
+    }
+    
+    public String getRecordedException()
+    {
+      return recordException;
+    }
+    public void resetRecordedException()
+    {
+      recordException = null;
     }
 
       public void registerLocation(final TransactionRegionLocation location) throws IOException {

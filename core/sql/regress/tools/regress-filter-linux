@@ -371,6 +371,10 @@ s/WARNING.8024.*/WARNING 8024 filtered/g
 
 s/WARNING.1389.*/WARNING 1389 Object does not exist in TRAFODION./g
 
+#Added for core/TEST116
+s/Detail :.*$/Detail @conflict details@/
+/org.TRAFODION.dtm.HBaseTxClient.prepareCommit*/d
+
 # ... NonStop(TM) SQL/MX Compiler 2.0
 #                                 ^^^
 s:\( NonStop.TM. SQL/MX Compiler \)[0-9][0-9]*\.[0-9][0-9]*:\1@version_id@:

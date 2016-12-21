@@ -47,7 +47,7 @@ public:
     ~TM_Transaction();
 
         // transaction actions
-    short end();
+    short end(char* &pv_err_str, int &pv_err_len);
     short abort(bool pv_doom = false);
     short suspend(TM_Transid *transid, bool coordinator_role=true);
     short resume();

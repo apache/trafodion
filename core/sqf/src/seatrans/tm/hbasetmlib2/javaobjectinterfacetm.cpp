@@ -428,6 +428,42 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
    return true;
 }
 
+bool  JavaObjectInterfaceTM::getExceptionDetails(JOI_RetCode &retCode, JNIEnv *jenv)
+{
+   std::string error_msg;
+
+   if (jenv == NULL)
+       jenv = _tlp_jenv;
+   if (jenv == NULL)
+   {
+      error_msg = "Internal Error - Unable to obtain jenv";
+      set_error_msg(error_msg);
+      return false;
+   }
+   if (gThrowableClass == NULL)
+   {
+      jenv->ExceptionDescribe();
+      error_msg = "Internal Error - Unable to find Throwable class";
+      set_error_msg(error_msg);
+      return false;
+   }
+   jthrowable a_exception = jenv->ExceptionOccurred();
+   if (a_exception == NULL)
+   {
+       error_msg = "No java exception was thrown";
+       set_error_msg(error_msg);
+       return false;
+   }
+   
+   retCode = (JOI_RetCode)getExceptionErrorCode(jenv, a_exception);
+   
+   error_msg = "";
+   appendExceptionMessages(jenv, a_exception, error_msg);
+   set_error_msg(error_msg);
+   jenv->ExceptionClear();
+   return true;
+}
+
 void JavaObjectInterfaceTM::appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, std::string &error_msg)
 {
     jstring msg_obj =
@@ -478,3 +514,23 @@ void JavaObjectInterfaceTM::appendExceptionMessages(JNIEnv *jenv, jthrowable a_e
     jenv->DeleteLocalRef(a_exception);
 }
 
+short JavaObjectInterfaceTM::getExceptionErrorCode(JNIEnv *jenv, jthrowable a_exception)
+{
+  jshort errCode = JOI_OK;
+  if(a_exception != NULL)
+  {
+    //Check to see if this exception has getErrorCode method.
+    //Only custom subclasses have errorcode defined.
+    jmethodID getErrorCodeMethodID = NULL;
+    jclass exceptionClass = jenv->GetObjectClass(a_exception);
+    getErrorCodeMethodID = jenv->GetMethodID(exceptionClass,
+                                              "getErrorCode",
+                                               "()S");
+    if(getErrorCodeMethodID != NULL)
+    {
+      errCode =(jshort) jenv->CallShortMethod(a_exception,
+                                              getErrorCodeMethodID);
+    }
+  }
+  return errCode;
+}

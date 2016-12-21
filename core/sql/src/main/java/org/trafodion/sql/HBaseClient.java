@@ -96,6 +96,8 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.DtmConst;
 import org.apache.commons.codec.binary.Hex;
 
+import org.trafodion.sql.TransactionManagerException;
+
 import com.google.protobuf.ServiceException;
 
 public class HBaseClient {
@@ -437,9 +439,14 @@ public class HBaseClient {
    public boolean createk(String tblName, Object[] tableOptions,
        Object[]  beginEndKeys, long transID, int numSplits, int keyLength,
        boolean isMVCC)
-       throws IOException, MasterNotRunningException {
+       throws IOException, MasterNotRunningException,
+                           TransactionManagerException{
             if (logger.isDebugEnabled()) logger.debug("HBaseClient.createk(" + tblName + ") called.");
             String trueStr = "TRUE";
+            //int p = 2;
+            //if(p < 5)
+              //throw new TransactionManagerException("dummy",(short) 123);
+            
             HTableDescriptor desc = new HTableDescriptor(tblName);
             addCoprocessor(desc);
             int defaultVersionsValue = 0;

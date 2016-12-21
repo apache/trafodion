@@ -296,6 +296,11 @@ extern "C" short ABORTTRANSACTION();
 extern "C" short BEGINTRANSACTION(int *tag);
 extern "C" short BEGINTX(int *tag, int timeout=0, int64 type_flags=0);
 extern "C" short ENDTRANSACTION();
+
+//errStr is allocated if errlen is not zero. Caller must deallocate errStr.
+//Rest of functionality same as ENDTRANSACTION.
+extern "C" short ENDTRANSACTION_ERR(char *&errStr, int &errlen);
+
 extern "C" short STATUSTRANSACTION(short *status, int64 transid = 0);
 extern "C" short GETTRANSID(short *transid);
 extern "C" short GETTRANSINFO(short *transid, int64 *type_flags);
