@@ -3170,6 +3170,13 @@ Int32 yyULexer::yylex(YYSTYPE *lvalp)
                          keyWordEntry1->getTokenCode(),
                          end1, holdChar1, lvalp);
                       break;
+                    case TOK_UPDATE:
+                      return eitherCompoundOrSimpleKeyword(
+							   keyWordEntry2->getTokenCode() == TOK_LOB,
+							   TOK_UPDATE_LOB,
+							   keyWordEntry1->getTokenCode(),
+							   end1, holdChar1, lvalp);
+                      break;
                     default:
                       Int32 BadCompoundKeywordPrefix=0;
                       assert(BadCompoundKeywordPrefix);

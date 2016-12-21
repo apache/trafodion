@@ -353,7 +353,6 @@ public:
     Int64 objUID_;
     Int64 descSyskey_;
     Int64 descPartnkey_;
-    char  filler_[30];  
     short schNameLen_;
     char  schName_;
    
@@ -447,11 +446,19 @@ class ExpLOBiud : public ExpLOBoper {
   {
     return ((liudFlags_ & FROM_BUFFER) != 0);
   };
-
   NA_EIDPROC inline void setFromBuffer(NABoolean v)
   {
     (v) ? liudFlags_ |= FROM_BUFFER: liudFlags_ &= ~FROM_BUFFER;
   };
+  NA_EIDPROC inline void setFromEmpty(NABoolean v)
+  {
+    (v) ? liudFlags_ |= FROM_EMPTY: liudFlags_ &= ~FROM_EMPTY;
+  };
+  NA_EIDPROC NABoolean fromEmpty()
+  {
+    return ((liudFlags_ & FROM_EMPTY) != 0);
+  };
+ 
   NA_EIDPROC NABoolean fromFile()
   {
     return ((liudFlags_ & FROM_FILE) != 0);
@@ -504,7 +511,8 @@ class ExpLOBiud : public ExpLOBoper {
     FROM_LOAD          = 0x0008,
     FROM_LOB           = 0x0010,
     FROM_EXTERNAL      = 0x0020,
-    FROM_BUFFER        = 0x0040
+    FROM_BUFFER        = 0x0040,
+    FROM_EMPTY         = 0x0080
   };
 
   Lng32 liudFlags_;

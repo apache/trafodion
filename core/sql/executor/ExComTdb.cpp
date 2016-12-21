@@ -639,7 +639,14 @@ case ex_LOB_INFO:
 
       break;
     }
+  case ex_LOB_UPDATE_UTIL:
+    {
+#pragma nowarn(1506)   // warning elimination
+      GetVTblPtr(vtblptr,ExExeUtilLobUpdateTdb);
+#pragma warn(1506)  // warning elimination
 
+      break;
+    }
    case ex_LOB_SHOWDDL:
     {
 #pragma nowarn(1506)   // warning elimination

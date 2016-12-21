@@ -93,6 +93,7 @@ typedef enum {
   LOB_MAX_LIMIT_ERROR = 560,
   LOB_TARGET_FILE_EXISTS_ERROR,
   LOB_DATA_MOD_CHECK_ERROR,
+  LOB_DATA_EMPTY_ERROR,
   LOB_MAX_ERROR_NUM     // keep this as the last element in enum list.
 } Ex_Lob_Error;
 
@@ -161,6 +162,7 @@ static const char * const lobErrorEnumStr[] =
   "LOB_MAX_LIMIT_ERROR", //560
   "LOB_TGT_FILE_EXISTS_ERROR",
   "LOB_DATA_MOD_CHECK_ERROR",
+  "LOB_DATA_EMPTY_ERROR",
   "LOB_MAX_ERROR_NUM"     // keep this as the last element in enum list.
 };
 

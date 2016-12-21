@@ -5689,6 +5689,98 @@ void ExeUtilLobExtract::pushdownCoveredExpr(const ValueIdSet & outputExpr,
 
 }
 
+
+// -----------------------------------------------------------------------
+// Member functions for class ExeUtilLobUpdate
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilLobUpdate::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilLobUpdate *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) ExeUtilLobUpdate(NULL, NOOP_,
+                                             0, 0,ERROR_IF_EXISTS_,NULL,
+					     outHeap);
+  else
+    result = (ExeUtilLobUpdate *) derivedNode;
+
+  result->handle_ = handle_;
+  result->fromType_ = fromType_;
+  result->bufAddr_ = bufAddr_;
+  result->updateSize_ = updateSize_;
+ 
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilLobUpdate::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  // BindScope *currScope = bindWA->getCurrentScope();
+ 
+  //
+  // Bind the child nodes.
+  //
+  bindChildren(bindWA);
+  if (bindWA->errStatus())
+    return this;
+
+  //  currScope = bindWA->getCurrentScope();
+  // bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+  
+  if (handle_)
+    {
+      handle_->bindNode(bindWA);
+      if (bindWA->errStatus())
+	return NULL;
+    }
+
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  return boundExpr;
+}
+
+void ExeUtilLobUpdate::transformNode(NormWA & normWARef,
+				      ExprGroupId & locationOfPointerToMe)
+{
+  RelExpr::transformNode(normWARef, locationOfPointerToMe);
+
+}
+
+RelExpr * ExeUtilLobUpdate::normalizeNode(NormWA & normWARef)
+{
+  
+  return RelExpr::normalizeNode(normWARef);
+}
+
+void ExeUtilLobUpdate::pushdownCoveredExpr(const ValueIdSet & outputExpr,
+					    const ValueIdSet & newExternalInputs,
+					    ValueIdSet & predicatesOnParent,
+					    const ValueIdSet * setOfValuesReqdByParent,
+					    Lng32 childIndex
+					    )
+{
+  ValueIdSet exprOnParent;
+
+  if (handle_) // && handle_->child(0))
+    {
+      exprOnParent += handle_->getValueId(); //child(0)->getValueId();
+    }
+
+  // ---------------------------------------------------------------------
+  RelExpr::pushdownCoveredExpr(outputExpr,
+                               newExternalInputs,
+                               predicatesOnParent,
+			       &exprOnParent,
+                               childIndex
+                               );
+
+}
 // -----------------------------------------------------------------------
 // Member functions for class ExeUtilLobShowddl
 // -----------------------------------------------------------------------

@@ -122,7 +122,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
 {
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
-
+  lobGlob_ = NULL;
   const int readBufSize =  (Int32)hdfsScanTdb.hdfsBufSize_;
   hdfsScanBuffer_ = new(space) char[ readBufSize + 1 ]; 
   hdfsScanBuffer_[readBufSize] = '\0';

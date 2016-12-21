@@ -90,7 +90,8 @@ public:
     HBASE_UNLOAD_            = 33,
     HBASE_UNLOAD_TASK_       = 34,
     GET_QID_                 = 35,
-    HIVE_TRUNCATE_           = 36
+    HIVE_TRUNCATE_           = 36,
+    LOB_UPDATE_UTIL_         = 37
   };
 
   ComTdbExeUtil()
@@ -2861,6 +2862,118 @@ private:
   char fillersComTdbExeUtilLobExtract_[40];            
 };
 
+
+class ComTdbExeUtilLobUpdate : public ComTdbExeUtil
+{
+   friend class ExExeUtilLobUpdateTcb;
+   friend class ExExeUtilPrivateState;
+
+public:
+  enum UpdateFromType
+  {
+    FROM_BUFFER_, FROM_STRING_, FROM_EXTERNAL_,NOOP_
+  };
+ 
+
+  ComTdbExeUtilLobUpdate()
+  : ComTdbExeUtil()
+  {}
+  ComTdbExeUtilLobUpdate
+    (
+     char * handle,
+     Lng32 handleLen,
+     UpdateFromType fromType,
+     Int64 bufAddr,
+     Int64 updateSize,
+     Int32 lobStorageType,
+     char * lobHdfsServer,
+     Lng32 lobHdfsPort,
+     ex_expr * input_expr,
+     ULng32 input_rowlen,
+     ex_cri_desc * work_cri_desc,
+     const unsigned short work_atp_index,
+     ex_cri_desc * given_cri_desc,
+     ex_cri_desc * returned_cri_desc,
+     queue_index down,
+     queue_index up,
+     Lng32 num_buffers,
+     ULng32 buffer_size
+     );
+  Long pack(void * space);
+  Lng32 unpack(void * base, void * reallocator);
+
+  char * getHandle() { return handle_; }
+  Lng32 getHandleLen() { return handleLen_; }
+  char * getLobHdfsServer() { return lobHdfsServer_; }
+  Lng32 getLobHdfsPort() { return lobHdfsPort_; }
+
+  UpdateFromType getFromType() { return (UpdateFromType)fromType_; }
+ 
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilLobUpdate);}
+
+  virtual const char *getNodeName() const
+  {
+    return "LOB_UPDATE_UTIL";
+  };
+
+  // ---------------------------------------------------------------------
+  // Used by the internal SHOWPLAN command to get attributes of a TDB.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+
+  void setAppend(NABoolean v)
+  {(v ? flags_ |= APPEND_ : flags_ &= ~APPEND_); };
+  NABoolean isAppend() { return (flags_ & APPEND_) != 0; };
+
+  void setErrorIfExists(NABoolean v)
+  {(v ? flags_ |= ERROR_IF_EXISTS_ : flags_ &= ~ERROR_IF_EXISTS_); };
+  NABoolean isErrorIfExists() { return (flags_ & ERROR_IF_EXISTS_) != 0; };
+
+  void setTruncate(NABoolean v)
+  {(v ? flags_ |= TRUNCATE_ : flags_ &= ~TRUNCATE_); };
+  NABoolean isTruncate() { return (flags_ & TRUNCATE_) != 0; };
+
+  void setReplace(NABoolean v)
+  {(v ? flags_ |= REPLACE_ : flags_ &= ~REPLACE_); };
+  NABoolean isReplace() { return (flags_ & REPLACE_) != 0; };
+  void setUpdateSize(Int64 upd_size){ updateSize_ = upd_size;};
+  Int64 updateSize() { return updateSize_;}
+  void setTotalBufSize(Int64 bufSize) { totalBufSize_ = bufSize;};
+  Int64 getTotalBufSize() { return totalBufSize_;};
+  void setBufAddr(Int64 bufAddr) {bufAddr_ = bufAddr;};
+  Int64 getBufAddr() { return bufAddr_;};
+ void setLobMaxSize(Int64 lms) {lobMaxSize_ = lms;};
+  Int64 getLobMaxSize() { return lobMaxSize_;};
+ void setLobMaxChunkSize(Int64 lmcs) {lobMaxChunkSize_ = lmcs;};
+  Int64 getLobMaxChunkSize() { return lobMaxChunkSize_;};
+ void setLobGCLimit(Int64 gcl ) {lobGCLimit_ = gcl;};
+  Int64 getLobGCLimit() { return lobGCLimit_;};
+private:
+  enum
+    {
+      ERROR_IF_EXISTS_ = 0x0001,
+      TRUNCATE_ = 0x0002,
+      APPEND_ = 0x0004,
+      REPLACE_=0x0008
+    };
+  NABasicPtr handle_;
+  Int32 handleLen_;
+  short fromType_;
+  Int32 flags_;
+  Int64 updateSize_;
+  Int64 totalBufSize_;
+  Int64 bufAddr_;
+  Lng32 lobStorageType_;
+  Lng32 lobHdfsPort_;
+  NABasicPtr lobHdfsServer_;
+  Int64 lobMaxSize_;
+  Int64 lobMaxChunkSize_;
+  Int64 lobGCLimit_;
+};
+ 
 class ComTdbExeUtilLobShowddl : public ComTdbExeUtil
 {
   friend class ExExeUtilLobShowddlTcb;

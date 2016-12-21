@@ -887,7 +887,7 @@ select * from t015t16 order by a;
 
 prepare xx2 from upsert into t015t16 values (3,4,1,1,1),(6,7,80,90,100),(6,7,81,91,101);
 execute xx2;
-select * from t015t16 order by a;
+select a,b from t015t16 order by a;
 
 cqd traf_upsert_to_eff_tree 'OFF';
 log;

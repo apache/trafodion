@@ -82,7 +82,9 @@ int main(int argc, const char * argv[])
       cout << "Blob test to insert to lob column   3     "<< endl;
       cout << "Blob test to update lob column      4     "<< endl;
       cout << "Blob test to append to lob column   5      "<< endl;
-
+      cout << "Blob test to update to lob lobhandle   6   "<< endl;
+      cout << "Blob test to append to lobhandle   7      "<< endl;
+      cout << "Blob test to truncate to lobhandle   8      "<< endl;
       return 0;
     }
   Int32 retcode = 0;
@@ -258,7 +260,98 @@ int main(int argc, const char * argv[])
 	return retcode;
       }
       break;
-    }
+    case 6:
+      {
+	
+	cout <<"*************************************"  <<endl;
+	cout << "Blob test update  lobhandle from a buffer " << endl;
+	cout << "Input lob table name :" << endl;
+	cin.getline(tablename,40);
+	cout << "Table name : " << tablename << endl;
+	cout << "Input lob column name to get handle from :" << endl;
+	cin.getline(columnname,40); 
+	cout << "Column Name : " << columnname << endl;
+
+        //extract lob handle
+      
+        char *lobHandle = new char[1024];
+        str_cpy_all(lobHandle," ",1024);
+        cout << "Extracting  lob handle for column " << columnname << "..." << endl;
+        retcode = extractLobHandle(cliGlob, lobHandle, (char *)columnname,tablename);
+        if (retcode)
+          {
+            cout << "extractLobHandle returned " << retcode <<endl;
+	
+            delete lobHandle;
+	  return retcode;
+          }
+        cout << "LOB handle for "<< columnname << ": " << lobHandle << endl;
+	retcode = updateBufferToLobHandle(cliGlob,lobHandle);
+	return retcode;
+      }
+      break;
+case 7:
+      {
+	
+	cout <<"*************************************"  <<endl;
+	cout << "Blob test append  lobhandle from a buffer " << endl;
+	cout << "Input lob table name :" << endl;
+	cin.getline(tablename,40);
+	cout << "Table name : " << tablename << endl;
+	cout << "Input lob column name to get handle from :" << endl;
+	cin.getline(columnname,40); 
+	cout << "Column Name : " << columnname << endl;
+
+        //extract lob handle
+      
+        char *lobHandle = new char[1024];
+        str_cpy_all(lobHandle," ",1024);
+        cout << "Extracting  lob handle for column " << columnname << "..." << endl;
+        retcode = extractLobHandle(cliGlob, lobHandle, (char *)columnname,tablename);
+        if (retcode)
+          {
+            cout << "extractLobHandle returned " << retcode <<endl;
+	
+            delete lobHandle;
+	  return retcode;
+          }
+        cout << "LOB handle for "<< columnname << ": " << lobHandle << endl;
+	retcode = updateAppendBufferToLobHandle(cliGlob,lobHandle);
+	return retcode;
+      }
+      break;
+case 8:
+      {
+	
+	cout <<"*************************************"  <<endl;
+	cout << "Blob test empty  lobhandle from a buffer " << endl;
+	cout << "Input lob table name :" << endl;
+	cin.getline(tablename,40);
+	cout << "Table name : " << tablename << endl;
+	cout << "Input lob column name to get handle from :" << endl;
+	cin.getline(columnname,40); 
+	cout << "Column Name : " << columnname << endl;
+
+        //extract lob handle
+      
+        char *lobHandle = new char[1024];
+        str_cpy_all(lobHandle," ",1024);
+        cout << "Extracting  lob handle for column " << columnname << "..." << endl;
+        retcode = extractLobHandle(cliGlob, lobHandle, (char *)columnname,tablename);
+        if (retcode)
+          {
+            cout << "extractLobHandle returned " << retcode <<endl;
+	
+            delete lobHandle;
+	  return retcode;
+          }
+        cout << "LOB handle for "<< columnname << ": " << lobHandle << endl;
+	retcode = updateTruncateLobHandle(cliGlob,lobHandle);
+	return retcode;
+      }
+      break;
+
+    }//end switch
   
   return 0;
   

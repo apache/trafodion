@@ -575,7 +575,8 @@ public:
     HBASE_UNLOAD_TASK_        = 36,
     ORC_FAST_AGGR_            = 37,
     GET_QID_                  = 38,
-    HIVE_TRUNCATE_            = 39
+    HIVE_TRUNCATE_            = 39,
+    LOB_UPDATE_UTIL_          = 40
   };
 
   ExeUtilExpr(ExeUtilType type,
@@ -2160,6 +2161,84 @@ public:
   NABoolean withCreate_;
 };
 
+
+class ExeUtilLobUpdate : public ExeUtilExpr
+{
+public:
+  enum UpdateFromType
+  {
+     FROM_BUFFER_, FROM_FILE_, FROM_STRING_,FROM_EXTERNAL_, NOOP_
+  };
+  enum UpdateActionType
+  {
+    ERROR_IF_EXISTS_=1, TRUNCATE_EXISTING_,APPEND_, REPLACE_ 
+  };
+  
+  
+ ExeUtilLobUpdate(ItemExpr * handle, 
+		   UpdateFromType fromType,
+		   Int64 bufaddr=0,
+		   Int64 updateSize=0,
+                  UpdateActionType updateAction=UpdateActionType::ERROR_IF_EXISTS_,
+		   RelExpr * childNode = NULL,
+		   CollHeap *oHeap = CmpCommon::statementHeap())
+   : ExeUtilExpr(LOB_UPDATE_UTIL_, CorrName("dummyUpdateLobName"),
+		 NULL, childNode, 
+		 NULL, CharInfo::UnknownCharSet, oHeap),
+    handle_(handle),
+    fromType_(fromType),
+    bufAddr_(bufaddr),
+     updateSize_(updateSize),
+     updateAction_(updateAction)
+   
+    {
+     
+    };
+
+  virtual Int32 getArity() const { return (child(0) ? 1 : 0); }
+  
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+
+  //virtual NABoolean producesOutput() { return (toType_ == TO_STRING_ ? TRUE : FALSE); }
+  virtual NABoolean producesOutput() { return  TRUE ; }
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+  
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  virtual void transformNode(NormWA & normWARef,
+			     ExprGroupId & locationOfPointerToMe);
+
+  virtual RelExpr * normalizeNode(NormWA & normWARef);
+
+  virtual void pushdownCoveredExpr(const ValueIdSet & outputExpr,
+				   const ValueIdSet & newExternalInputs,
+				   ValueIdSet & predicatesOnParent,
+				   const ValueIdSet * setOfValuesReqdByParent,
+				   Lng32 childIndex
+				   );
+  
+  virtual RelExpr * preCodeGen(Generator * generator,
+			       const ValueIdSet & externalInputs,
+			       ValueIdSet &pulledNewInputs);
+  
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  
+
+  
+
+ private:
+  //  NAString handle_;
+  ItemExpr * handle_;
+  UpdateFromType fromType_;
+  Int32 updateAction_;
+  Int64 bufAddr_;
+  Int64 updateSize_;
+  
+  
+};
 class ExeUtilLobShowddl : public ExeUtilExpr
 {
 public:

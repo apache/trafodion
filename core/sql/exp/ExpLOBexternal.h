@@ -162,6 +162,7 @@ Lng32 SQL_EXEC_LOBddlInterface
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
  /*IN*/     char* *lobLocList,
+ /*IN*/     char* *lobColNameList,
  /*IN*/     char*  hdfsServer,
  /*IN*/     Lng32  hdfsPort,
  /*IN*/     Int64 lobMaxSize,

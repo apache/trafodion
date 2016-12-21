@@ -754,6 +754,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_LOBTOFILE
 %token <tokval> TOK_LOBTOSTRING
 %token <tokval> TOK_EXTERNALTOSTRING
+%token <tokval> TOK_EMPTY_BLOB
+%token <tokval> TOK_EMPTY_CLOB
 %token <tokval> TOK_INSERT
 %token <tokval> TOK_INSERT_ONLY
 %token <tokval> TOK_INS
@@ -1146,7 +1148,8 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_UNLOCK              /* Tandem extension */
 %token <tokval> TOK_UNSIGNED            /* Tandem extension non-reserved word */
 %token <tokval> TOK_UPDATE		
-%token <tokval> TOK_UPDATE_STATS		
+%token <tokval> TOK_UPDATE_STATS
+%token <tokval> TOK_UPDATE_LOB		
 %token <tokval> TOK_UPD
 %token <tokval> TOK_UPGRADE
 %token <tokval> TOK_UPPER
@@ -2019,6 +2022,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>                    insert_obj_to_lob_function
 %type <item>                    update_obj_to_lob_function
 %type <item>                    select_lob_to_obj_function
+%type <item>                    insert_empty_blob_clob
 %type <stringval>    		date_format
 %type <tokval>    		trim_spec
 %type <na_type>   		proc_arg_data_type
@@ -2813,6 +2817,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    exe_util_get_lob_info
 %type <relx>                    exe_util_populate_in_memory_statistics
 %type <relx>                    exe_util_lob_extract
+%type <relx>                    exe_util_lob_update
 %type <relx>                    unload_statement
 %type <relx>                    load_statement
 %type <boolean>                 load_sample_option
@@ -12914,6 +12919,7 @@ insert_value_expression_list_paren : '(' insert_value_expression_list_comma ')'
 				  		
 insert_value_expression : value_expression 
                           | insert_obj_to_lob_function
+                          | insert_empty_blob_clob
 
 insert_obj_to_lob_function : 
 			    TOK_STRINGTOLOB '(' value_expression ')'
@@ -12949,7 +12955,14 @@ insert_obj_to_lob_function :
                                   
                                   $$ = new (PARSERHEAP()) LOBinsert( $3, $5, LOBoper::EXTERNAL_);
 				}
-
+insert_empty_blob_clob : TOK_EMPTY_BLOB '(' ')' 
+                    {
+                      $$ = new (PARSERHEAP()) LOBinsert(NULL,NULL,LOBoper::EMPTY_LOB_);
+                    }
+                 | TOK_EMPTY_CLOB '(' ')'
+                    {
+                      $$ = new (PARSERHEAP()) LOBinsert(NULL,NULL,LOBoper::EMPTY_LOB_);
+                    }
 update_obj_to_lob_function : 
 			    TOK_STRINGTOLOB '(' value_expression ')'
 			        {
@@ -13008,7 +13021,18 @@ update_obj_to_lob_function :
 				  YYERROR;
 				  $$ = new (PARSERHEAP()) LOBupdate( $3, NULL, NULL,LOBoper::LOAD_, TRUE);
 				}
-
+                          | TOK_EMPTY_BLOB '(' ')' 
+                               {
+                                 ItemExpr *dummy = new (PARSERHEAP())ConstValue(0);                              
+                                  $$ = new (PARSERHEAP()) LOBupdate(dummy,NULL,NULL,LOBoper::EMPTY_LOB_,FALSE);
+                               }
+                          | TOK_EMPTY_CLOB '(' ')'
+                              {
+                                ItemExpr *dummy = new (PARSERHEAP())ConstValue(0);                                
+                                 $$ = new (PARSERHEAP()) LOBupdate(dummy,NULL,NULL,LOBoper::EMPTY_LOB_,FALSE);
+                               }
+ 
+                                
 select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
 			        {
 				  
@@ -13044,6 +13068,7 @@ select_lob_to_obj_function : TOK_LOBTOFILE '(' value_expression ',' literal ')'
 				  
 				}
                            
+
 
 table_value_constructor : TOK_VALUES '(' insert_value_expression_list ')' 
 				{
@@ -14804,9 +14829,14 @@ interactive_query_expression:
                                 {
 				  $$ = finalize($1);
 				}
-				| unload_statement {
+              | unload_statement 
+                                {
 				  $$ = finalize($1);
 				}
+              | exe_util_lob_update
+                                {
+                                  $$ = finalize($1);
+                                }
               | exe_util_init_hbase
                                 {
 				  $$ = finalize($1);
@@ -16253,6 +16283,71 @@ TOK_SIZE points to the address of an Int64 container This size is the input spec
                  */
 	       }
 
+exe_util_lob_update :   TOK_UPDATE_LOB '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE  ')' 
+               {
+                 /* TOK_LOCATION points to a caller allocated data buffer with 
+                 LOB data . TOK_SIZE is the  size is the input specified by 
+                 user for length to update. On return, it will give the caller 
+                 the size that was updated */
+                 Int64 bufAddr = atoInt64($7->data());
+		 Int64 size = atoInt64($10->data());
+		 
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$4);
+                 ExeUtilLobUpdate *llu =  
+                   new (PARSERHEAP ()) ExeUtilLobUpdate
+		   (handle, 
+		    ExeUtilLobUpdate::FROM_BUFFER_,
+		    bufAddr, size, ExeUtilLobUpdate::REPLACE_,0);
+
+		 $$ = llu;
+               } 
+              |  TOK_UPDATE_LOB '(' TOK_LOB QUOTED_STRING ',' TOK_LOCATION NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_SIZE NUMERIC_LITERAL_EXACT_NO_SCALE ',' TOK_APPEND')'    
+               {
+                 /* TOK_LOCATION points to a caller allocated data buffer with 
+                 LOB data . TOK_SIZE is the  size is the input specified by 
+                 user for length to update. On return, it will give the caller 
+                 the size that was updated */
+                 Int64 bufAddr = atoInt64($7->data());
+		 Int64 size = atoInt64($10->data());
+		 
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$4);
+                 ExeUtilLobUpdate *llu =  
+                   new (PARSERHEAP ()) ExeUtilLobUpdate
+		   (handle, 
+		    ExeUtilLobUpdate::FROM_BUFFER_,
+		    bufAddr, size, ExeUtilLobUpdate::APPEND_,0);
+
+		 $$ = llu;
+               }
+              | TOK_UPDATE_LOB '(' TOK_LOB QUOTED_STRING ',' TOK_EMPTY_BLOB '(' ')'')' 
+               {
+                 /* Truncate and insert empty_blob */
+                 
+		 
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$4);
+                 ExeUtilLobUpdate *llu =  
+                   new (PARSERHEAP ()) ExeUtilLobUpdate
+		   (handle, 
+		    ExeUtilLobUpdate::FROM_BUFFER_,
+		    0, 0, ExeUtilLobUpdate::TRUNCATE_EXISTING_,0);
+
+		 $$ = llu;
+               }
+          | TOK_UPDATE_LOB '(' TOK_LOB QUOTED_STRING ',' TOK_EMPTY_CLOB '(' ')' ')' 
+               {
+                 /* Truncate and insert empty_blob */
+                 
+		 
+		 ConstValue * handle = new(PARSERHEAP()) ConstValue(*$4);
+                 ExeUtilLobUpdate *llu =  
+                   new (PARSERHEAP ()) ExeUtilLobUpdate
+		   (handle, 
+		    ExeUtilLobUpdate::FROM_BUFFER_,
+		    0, 0, ExeUtilLobUpdate::TRUNCATE_EXISTING_,0);
+
+		 $$ = llu;
+               }
+             
 
 /* type pSchema */
 optional_from_schema : /* empty */
@@ -20141,6 +20236,7 @@ set_clause : identifier '=' value_expression
 					   rc);
 				  delete $1;
 				}
+                         
 
 /* type relx */
 delete_start_tokens : TOK_DELETE no_check_log TOK_FROM table_name 
@@ -33612,6 +33708,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_UPD
                       | TOK_UPGRADE
 		      | TOK_UPDATE_STATS
+                      | TOK_UPDATE_LOB
                       | TOK_UPPERCASE
                       | TOK_USA				
 		      | TOK_USE				// MV REFRESH
@@ -33876,6 +33973,9 @@ nonreserved_func_word:  TOK_ABS
 		      | TOK_LOBTOFILE
 		      | TOK_LOBTOSTRING
                       | TOK_EXTERNALTOSTRING
+                      | TOK_EMPTY_CLOB
+                      | TOK_EMPTY_BLOB
+                      
 
 nonreserved_datatype  : TOK_ANSIVARCHAR
                       | TOK_BIGINT
