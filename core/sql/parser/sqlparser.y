@@ -33893,8 +33893,6 @@ nonreserved_word :      TOK_ABORT
 // QSTUFF
                       | TOK_VALIDATE
                       | TOK_RMS
-                      | TOK_AES_ENCRYPT
-                      | TOK_AES_DECRYPT
 
 // This was added for JIRA Trafodion 2367. There are oddities in
 // how PREPARE is parsed vs. how EXPLAIN is parsed, along with
