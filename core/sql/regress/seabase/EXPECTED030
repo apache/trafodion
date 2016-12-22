@@ -278,7 +278,7 @@
 (EXPR)        
 --------------
 
-2016030100:00:
+20160301000000
 
 --- 1 row(s) selected.
 >>select to_char(DATE '2016-03-01', 'DD.MM.YYYY HH24.MI.SS') from (values(1)) x(a);
@@ -620,6 +620,18 @@ A           B                               C
 
 *** ERROR[8822] The statement was not prepared.
 
+>>select to_char(time '10:23:34', 'YYYY-MM-DD') from (values(1)) x(a);
+
+*** ERROR[4072] The operand of function TO_CHAR must be a datetime containing a date.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select to_char(time '10:23:34', 'DD.MM.YYYY HH24.MI.SS') from (values(1)) x(a);
+
+*** ERROR[4072] The operand of function TO_CHAR must be a datetime containing a date.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>select to_date ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
 
 *** ERROR[4065] The format, "HH24:MI:SS", specified in the TO_DATE function is not supported.
@@ -676,6 +688,18 @@ A           B                               C
 >>select to_date('01.03.2016:10:11:12', 'DD.MM.YYYY HH24:MI:SS') from (values(1)) x(a);
 
 *** ERROR[4065] The format, "DD.MM.YYYY HH24:MI:SS", specified in the TO_DATE function is not supported.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select to_char(3, 'HH:MI:SS') from (values(1)) x(a);
+
+*** ERROR[4071] The first operand of function TO_CHAR must be a datetime.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select dateformat(3, usa) from (values(1)) x(a);
+
+*** ERROR[4071] The first operand of function DATEFORMAT must be a datetime.
 
 *** ERROR[8822] The statement was not prepared.
 
