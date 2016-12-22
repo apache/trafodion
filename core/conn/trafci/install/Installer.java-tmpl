@@ -93,7 +93,10 @@ public class Installer
    final static String cardInstallationComplete = "INSTALLATION COMPLETE";
    
    final static String ERROR_INVALID_NCI_DIR = "Invalid " + productTitle + " Installation Directory"; 
-   
+
+   final static String INSTALL_DIR = "TRAF_HOME";
+   final static String INSTALL_DIR_STR = "${TRAF_HOME}" + File.separator + productName;
+
    final String NEW_JDBC = "JDBC Type 4 Driver JAR File";
    final String NEW_JDBC_PKG = "org/trafodion/jdbc/t4/";
    
@@ -115,7 +118,8 @@ public class Installer
    private static String nixDefaultInstallDir="/usr/local/";
    private static String wDefaultInstallDir="\\Trafodion\\" + productTitle;
    private static String defaultInstallDir=wDefaultInstallDir;
-   
+   private static boolean isTrafHome = false;
+
    //private static String wDefaultInstallJDBC="";
    //private static String nixDefaultInstallJDBC="/usr/local/trafci/jdbcT4.jar";
    //private static String defaultInstallJDBC=wDefaultInstallJDBC;
@@ -3142,6 +3146,11 @@ void processCmdMode(String zipfile)
               {
                   if(i+1<args.length){
                       defaultInstallDir = args[i+1].trim();
+                      if (defaultInstallDir.equals(System.getenv(INSTALL_DIR))) {
+                          isTrafHome = true;
+                      } else {
+                          isTrafHome = false;
+                      }
                       i++;
                   }
                   continue;
@@ -3278,7 +3287,12 @@ void processCmdMode(String zipfile)
 
       StringBuffer path = new StringBuffer();
       for (String jarFile : jarFiles) {
-          path.append(outputDir.getAbsolutePath()).append(File.separator).append(jarFile).append(File.pathSeparator);
+         if (isTrafHome) {
+            path.append(INSTALL_DIR_STR);
+         } else {
+            path.append(outputDir.getAbsolutePath());
+         }
+         path.append(File.separator).append(jarFile).append(File.pathSeparator);
       }
       String replaceStr = path.substring(0, path.length() - File.pathSeparator.length());
 
