@@ -1,114 +1,140 @@
-<!-- @@@ START COPYRIGHT @@@ Licensed to the Apache Software Foundation (ASF) 
-	under one or more contributor license agreements. See the NOTICE file distributed 
-	with this work for additional information regarding copyright ownership. 
-	The ASF licenses this file to you under the Apache License, Version 2.0 (the 
-	"License"); you may not use this file except in compliance with the License. 
-	You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
-	Unless required by applicable law or agreed to in writing, software distributed 
-	under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES 
-	OR CONDITIONS OF ANY KIND, either express or implied. See the License for 
-	the specific language governing permissions and limitations under the License. 
-	@@@ END COPYRIGHT @@@ -->
+<!-- 
+      @@@ START COPYRIGHT @@@                                                       
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+   http://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ @@@ END COPYRIGHT @@@
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.trafodion</groupId>
-	<artifactId>trafci</artifactId>
-	<packaging>jar</packaging>
-	<version>${TRAFODION_VER}</version>
-	<name>Trafodion Trafci</name>
-	<properties>
-		<jettyVersion>9.2.6.v20141205</jettyVersion>
-		<traf-jdbc-version>${TRAFODION_VER}</traf-jdbc-version>
-		<trafci-version>${TRAFODION_VER}</trafci-version>
-	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.trafodion.jdbc.t4</groupId>
-			<artifactId>jdbcT4</artifactId>
-			<version>${TRAFODION_VER}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.11</version>
-			<scope>test</scope>
-		</dependency>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <repositories>
+      <repository>
+        <id>Apache</id>
+        <url>http://mvnrepository.com/artifact/</url>
+        <layout>default</layout>
+      </repository>
+    </repositories>
 
-	</dependencies>
-	<build>
-		<finalName>trafci</finalName>
-		<resources>
-			<resource>
-				<directory>${basedir}/src/main/java</directory>
-				<includes>
-					<include>**/*.idx</include>
-					<include>**/*.help</include>
-					<include>**/*.properties</include>
-				</includes>
-			</resource>
-			<resource>
-				<directory>${basedir}/src/main/resources</directory>
-				<excludes>
-					<exclude>install_jar.xml</exclude>
-					<exclude>install_tar.xml</exclude>
-				</excludes>
-			</resource>
-			<!-- <resource><directory>${basedir}/src/main/java/org/trafodion/ci/help</directory></resource> -->
-		</resources>
-		<plugins>
-			<plugin>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.8</version>
-				<executions>
-					<execution>
-						<phase>generate-sources</phase>
-						<configuration>
-							<target>
-								<property name="vproc.version" value="TrafCI_Build_${bldId}" />
-								<property name="vproc.dir"
-									value="${basedir}/src/main/java/org/trafodion/ci" />
-								<property name="Install.dir" value="${basedir}/install" />
-								<copy file="${vproc.dir}/Vproc.java-tmpl" tofile="${vproc.dir}/Vproc.java"
-									overwrite="true"></copy>
-								<copy file="${Install.dir}/Installer.java-tmpl" tofile="${Install.dir}/Installer.java"
-									overwrite="true"></copy>
-								<echo message="BUILD Vproc version ${vproc.version}" />
-								<replace file="${vproc.dir}/Vproc.java" token="@@@"
-									value="${vproc.version}" />
-								<replace file="${Install.dir}/Installer.java" token="@@@VPROC@@@"
-									value="${vproc.version}" />
-							</target>
-						</configuration>
-						<goals>
-							<goal>run</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.5.1</version>
-				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.3.1</version>
-				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>org/trafodion/ci/Vproc</mainClass>
-						</manifest>
-					</archive>
-					<outputDirectory>${basedir}/lib</outputDirectory>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.trafodion</groupId>
+    <artifactId>trafci</artifactId>
+    <packaging>jar</packaging>
+    <version>${TRAFODION_VER}</version>
+    <name>Trafodion Trafci</name>
+    <properties>
+        <jettyVersion>9.2.6.v20141205</jettyVersion>
+        <traf-jdbc-version>${TRAFODION_VER}</traf-jdbc-version>
+        <trafci-version>${TRAFODION_VER}</trafci-version>
+        <jline-version>2.12</jline-version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.trafodion.jdbc.t4</groupId>
+            <artifactId>jdbcT4</artifactId>
+            <version>${TRAFODION_VER}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>${jline-version}</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <finalName>trafci</finalName>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/java</directory>
+                <includes>
+                    <include>**/*.idx</include>
+                    <include>**/*.help</include>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <excludes>
+                    <exclude>install_jar.xml</exclude>
+                    <exclude>install_tar.xml</exclude>
+                </excludes>
+            </resource>
+            <!-- <resource><directory>${basedir}/src/main/java/org/trafodion/ci/help</directory></resource> -->
+        </resources>
+        <plugins>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <target>
+                                <property name="vproc.version"
+                                    value="TrafCI_Build_${bldId}" />
+                                <property name="vproc.dir"
+                                    value="${basedir}/src/main/java/org/trafodion/ci" />
+                                <property name="Install.dir"
+                                    value="${basedir}/install" />
+                                <copy file="${vproc.dir}/Vproc.java-tmpl"
+                                    tofile="${vproc.dir}/Vproc.java"
+                                    overwrite="true"></copy>
+                                <copy
+                                    file="${Install.dir}/Installer.java-tmpl"
+                                    tofile="${Install.dir}/Installer.java"
+                                    overwrite="true"></copy>
+                                <echo
+                                    message="BUILD Vproc version ${vproc.version}" />
+                                <replace file="${vproc.dir}/Vproc.java"
+                                    token="@@@" value="${vproc.version}" />
+                                <replace file="${Install.dir}/Installer.java"
+                                    token="@@@VPROC@@@" value="${vproc.version}" />
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.3.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org/trafodion/ci/Vproc</mainClass>
+                        </manifest>
+                    </archive>
+                    <outputDirectory>${basedir}/lib</outputDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
