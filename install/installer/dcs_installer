@@ -130,33 +130,11 @@ fi
 mkdir -p $DCS_INSTALL_PATH
 cd $DCS_INSTALL_PATH
 
-if [[ "$ONE_TAR_INSTALL" == "Y" ]]; then
-   DCS_DIR=$(ls $TRAF_HOME | grep dcs)
-   DCS_DIR=$TRAF_HOME/$DCS_DIR
-   echo "***INFO: DCS Install Directory: $DCS_DIR"
-else
-   # untar DCS build into install directory
-   echo "***INFO: untarring build file $DCS_BUILD_FILE"
-   tar -xzf $DCS_BUILD_FILE
-
-   # get the dcs install directory name which is imbedded in the tar file
-   DCS_DIR=$(tar -tf $DCS_BUILD_FILE | grep --max-count=1 bin | sed -e "s@\(^.*\)/bin/@\1@")
-
-   DCS_DIR=$DCS_INSTALL_PATH/$DCS_DIR
-fi
-
-# set env var in sqenvcom.sh for DCS install directory
-grep --invert-match "DCS_INSTALL_DIR=" $TRAF_HOME/sqenvcom.sh > $TRAF_HOME/sqenvcom.temp
-echo "export DCS_INSTALL_DIR=$DCS_DIR" >> $TRAF_HOME/sqenvcom.temp
-mv $TRAF_HOME/sqenvcom.temp $TRAF_HOME/sqenvcom.sh
+DCS_DIR=$(ls $TRAF_HOME | grep dcs)
+DCS_DIR=$TRAF_HOME/$DCS_DIR
+echo "***INFO: DCS Install Directory: $DCS_DIR"
 
 cd $DCS_DIR/conf
-
-echo "***INFO: modifying $DCS_DIR/conf/dcs-env.sh"
-rm dcs-env.temp 2>/dev/null
-cat dcs-env.sh | sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" > dcs-env.temp
-cp dcs-env.temp dcs-env.sh
-rm dcs-env.temp 2>/dev/null
 
 
 echo "***INFO: modifying $DCS_DIR/conf/dcs-site.xml"
@@ -213,15 +191,8 @@ if [[ "$ENABLE_HA" == "true" ]]; then
        echo $node >> $DCS_DIR/conf/backup-masters
    done
   
-   ######Configure trafci wrapper script to use Floating IP address
-   newHName="HNAME=$FLOATING_IP:23400"
-   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $TRAF_HOME/trafci/bin/trafci
- 
-else
-
-   ######Configure trafci wrapper script
-   newHName="HNAME=$DCS_PRIMARY_MASTER_NODE:23400"
-   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $TRAF_HOME/trafci/bin/trafci
+   ######Configure dcs-env.sh
+   sed -i -e "s@DCS_MASTER_FLOATING_IP=.*\$@DCS_MASTER_FLOATING_IP=$FLOATING_IP@" dcs-env.sh
 
 fi
 

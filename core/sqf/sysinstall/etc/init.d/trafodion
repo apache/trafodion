@@ -42,7 +42,7 @@ if [ ! -f /etc/trafodion/trafodion_config ]; then
    exit 1
 fi
 . /etc/trafodion/trafodion_config
-if [ -z $SQ_ROOT ]; then
+if [ -z $TRAF_HOME ]; then
    exit 1
 fi
 TRAF_USER=${TRAF_USER:-"trafodion"}
@@ -57,7 +57,7 @@ echo "trafodion start not implemented"
 }
 
 node_stop() {
-nid=`${TRAF_SUDO_CMD} -c "${SQ_ROOT}/sql/scripts/${TRAF_SHELL_CMD} -c node info | grep -B1 ${TRAF_NODE_NAME} | grep Up | head -1 | cut -d ' ' -f 2"`
+nid=`${TRAF_SUDO_CMD} -c "${TRAF_HOME}/sql/scripts/${TRAF_SHELL_CMD} -c node info | grep -B1 ${TRAF_NODE_NAME} | grep Up | head -1 | cut -d ' ' -f 2"`
 if [ $? != 0 ]; then 
    echo -n `date` >> ${TRAF_OUT} 2>&1 </dev/null 
    echo " trafodion on ${TRAF_NODE_NAME} is already stopped" >> ${TRAF_OUT} 2>&1 </dev/null 
@@ -72,13 +72,13 @@ else
    echo "Stopping trafodion node $nid on ${TRAF_NODE_NAME}"
    echo -n `date` >> ${TRAF_OUT} 2>&1 </dev/null 
    echo " Stopping trafodion node $nid on ${TRAF_NODE_NAME}" >> ${TRAF_OUT} 2>&1 </dev/null 
-   ${TRAF_SUDO_CMD} /bin/bash -c "${SQ_ROOT}/sql/scripts/${TRAF_SHELL_CMD} -c down $nid" >> ${TRAF_OUT}  2>&1 </dev/null &
+   ${TRAF_SUDO_CMD} /bin/bash -c "${TRAF_HOME}/sql/scripts/${TRAF_SHELL_CMD} -c down $nid" >> ${TRAF_OUT}  2>&1 </dev/null &
 fi
 return 0
 }
 
 node_status() {
-nid=`${TRAF_SUDO_CMD} -c "${SQ_ROOT}/sql/scripts/${TRAF_SHELL_CMD} -c node info | grep -B1 ${TRAF_NODE_NAME} | grep Up | head -1 | cut -d ' ' -f 2"`
+nid=`${TRAF_SUDO_CMD} -c "${TRAF_HOME}/sql/scripts/${TRAF_SHELL_CMD} -c node info | grep -B1 ${TRAF_NODE_NAME} | grep Up | head -1 | cut -d ' ' -f 2"`
 if [ $? != 0 ]; then 
    echo "trafodion on node $nid is not yet started"
    return 0

@@ -36,18 +36,12 @@ def run():
     TRAF_VER = dbcfgs['traf_version']
     HBASE_XML_FILE = dbcfgs['hbase_xml_file']
 
-    DCS_INSTALL_ENV = 'export DCS_INSTALL_DIR=%s/dcs-%s' % (TRAF_HOME, TRAF_VER)
-    REST_INSTALL_ENV = 'export REST_INSTALL_DIR=%s/rest-%s' % (TRAF_HOME, TRAF_VER)
-
     DCS_CONF_DIR = '%s/dcs-%s/conf' % (TRAF_HOME, TRAF_VER)
     DCS_SRV_FILE = DCS_CONF_DIR + '/servers'
     DCS_MASTER_FILE = DCS_CONF_DIR + '/master'
     DCS_BKMASTER_FILE = DCS_CONF_DIR + '/backup-masters'
-    DCS_ENV_FILE = DCS_CONF_DIR + '/dcs-env.sh'
     DCS_SITE_FILE = DCS_CONF_DIR + '/dcs-site.xml'
     REST_SITE_FILE = '%s/rest-%s/conf/rest-site.xml' % (TRAF_HOME, TRAF_VER)
-    TRAFCI_FILE = TRAF_HOME + '/trafci/bin/trafci'
-    SQENV_FILE = TRAF_HOME + '/sqenvcom.sh'
 
     ### dcs setting ###
     # servers
@@ -63,18 +57,6 @@ def run():
     # modify master
     dcs_master = nodes[0]
     append_file(DCS_MASTER_FILE, dcs_master)
-
-    # modify sqenvcom.sh
-    append_file(SQENV_FILE, DCS_INSTALL_ENV)
-    append_file(SQENV_FILE, REST_INSTALL_ENV)
-
-    # modify dcs-env.sh
-    mod_file(DCS_ENV_FILE, {'.*DCS_MANAGES_ZK=.*':'export DCS_MANAGES_ZK=false'})
-
-    ports = ParseInI(DEF_PORT_FILE, 'ports').load()
-    dcs_master_port = ports['dcs_master_port']
-    # modify trafci
-    mod_file(TRAFCI_FILE, {'HNAME=.*':'HNAME=%s:%s' % (dcs_master, dcs_master_port)})
 
     # modify dcs-site.xml
     net_interface = run_cmd('ip route |grep default|awk \'{print $5}\'')

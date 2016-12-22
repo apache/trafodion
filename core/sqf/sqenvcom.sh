@@ -45,7 +45,7 @@ export PRODUCT_COPYRIGHT_HEADER="2015-2016 Apache Software Foundation"
 # LDAP configuration must also be setup--see
 # $TRAF_HOME/sql/scripts/traf_authentication_config for details.
 ##############################################################
-export TRAFODION_ENABLE_AUTHENTICATION=NO
+export TRAFODION_ENABLE_AUTHENTICATION=${TRAFODION_ENABLE_AUTHENTICATION:-NO}
 
 
 # default SQ_IC to TCP if it is not set in sqenv.sh. Values are
@@ -138,6 +138,10 @@ else
    export RH_MAJ_VERS=6
 fi
 export TRAF_HOME=$PWD
+
+# normal installed location, can be overridden in .trafodion
+export DCS_INSTALL_DIR=$TRAF_HOME/dcs-$TRAFODION_VER
+export REST_INSTALL_DIR=$TRAF_HOME/rest-$TRAFODION_VER
 
 # set common version to be consistent between shared lib and maven dependencies
 export HBASE_DEP_VER_CDH=1.2.0-cdh5.7.1
