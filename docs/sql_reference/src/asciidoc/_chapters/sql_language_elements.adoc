@@ -2511,8 +2511,7 @@ subquery is empty, the predicate is false.
 | <<in_predicate,IN Predicate>> | Determines if a sequence of values is equal to any of the sequences of
 values in a list of sequences.
 | <<like_predicate,LIKE Predicate>> | Searches for character strings that match a pattern.
-| <<regexp_predicate,REGEXP Predicate>> | Searches for character strings that match a pattern, The pattern 
-can be an extended regular expression.
+| <<regexp_predicate,REGEXP Predicate>> | Searches for character strings that match an extended regular expression.
 | <<null_predicate,NULL Predicate>> | Determines whether all the values in a sequence of values are null.
 | <<quantified_comparison_predicates,Quantified Comparison Predicates>> +  
 (ALL, ANY, SOME ) | Compares the values of sequences of expressions to the values in each
@@ -3365,7 +3364,7 @@ If either expression or pattern is NULL, the result is NULL.
 [[regexp_syntax]]
 ==== Syntax
 ```
-match-value [NOT] REGEXP pattern
+match-value [NOT] REGEXP regular-expression
 ```
 
 * `_match-value_`
@@ -3375,9 +3374,8 @@ search for that match the _pattern_.
 
 * `_pattern_`
 +
-is a character value expression that specifies the pattern string for
-the search in form of Regular Expression.
-The Trafodion Regular Expression is following the POSIX regular expression rules.
+is a character value expression that specifies a regular expression. 
+Trafodion regular expressions follow POSIX regular expression rules.
 
 
 [[using_not]]
