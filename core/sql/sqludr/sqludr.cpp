@@ -840,8 +840,9 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
                38900,
                "TypeInfo::TypeInfo(): Scale (fraction precision) should not be specified for a type when end field is not SECOND");
 
-        // convert decimal to binary precision
-        d_.length_ = convertToBinaryPrecision(totalPrecision);
+        // convert decimal to binary precision, but intervals don't
+        // use single byte representation (yet?)
+        d_.length_ = MAXOF(2,convertToBinaryPrecision(totalPrecision));
       }
       break;
 
@@ -1235,7 +1236,7 @@ long TypeInfo::getLong(const char *row, bool &wasNull) const
           tempSQLType = TINYINT_UNSIGNED;
         else
           tempSQLType = TINYINT;
-      if (d_.length_ == 2)
+      else if (d_.length_ == 2)
         if (d_.sqlType_ == NUMERIC_UNSIGNED)
           tempSQLType = SMALLINT_UNSIGNED;
         else
@@ -1724,7 +1725,7 @@ void TypeInfo::setLong(long val, char *row) const
           tempSQLType = TINYINT_UNSIGNED;
         else
           tempSQLType = TINYINT;
-      if (d_.length_ == 2)
+      else if (d_.length_ == 2)
         if (d_.sqlType_ == NUMERIC_UNSIGNED)
           tempSQLType = SMALLINT_UNSIGNED;
         else
@@ -1742,14 +1743,29 @@ void TypeInfo::setLong(long val, char *row) const
   switch (tempSQLType)
     {
     case TINYINT:
+      if (val < SCHAR_MIN || val > SCHAR_MAX)
+        throw UDRException(
+             38900,
+             "Overflow/underflow when assigning %ld to TINYINT type",
+             val);
       *((char *) data) = val;
       break;
 
     case SMALLINT:
+      if (val < SHRT_MIN || val > SHRT_MAX)
+        throw UDRException(
+             38900,
+             "Overflow/underflow when assigning %ld to SMALLINT type",
+             val);
       *((short *) data) = val;
       break;
 
     case INT:
+      if (val < INT_MIN || val > INT_MAX)
+        throw UDRException(
+             38900,
+             "Overflow/underflow when assigning %ld to INTEGER type",
+             val);
       *((int *) data) = val;
       break;
 
@@ -1758,27 +1774,30 @@ void TypeInfo::setLong(long val, char *row) const
       break;
 
     case TINYINT_UNSIGNED:
-      if (val < 0)
+      if (val < 0 || val > UCHAR_MAX)
         throw UDRException(
              38900,
-             "Trying to assign a negative value to a TINYINT UNSIGNED type");
+             "Overflow/underflow when assigning %ld to TINYINT UNSIGNED type",
+             val);
       *((unsigned char *) data) = val;
       break;
 
     case SMALLINT_UNSIGNED:
-      if (val < 0)
+      if (val < 0 || val > USHRT_MAX)
         throw UDRException(
              38900,
-             "Trying to assign a negative value to a SMALLINT UNSIGNED type");
+             "Overflow/underflow when assigning %ld to SMALLINT UNSIGNED type",
+             val);
       *((unsigned short *) data) = val;
       break;
 
     case INT_UNSIGNED:
-      if (val < 0)
+      if (val < 0 || val > UINT_MAX)
         throw UDRException(
              38900,
-             "Trying to assign a negative value to an INT UNSIGNED type");
-      *((int *) data) = val;
+             "Overflow/underflow when assigning %ld to INTEGER UNSIGNED type",
+             val);
+      *((unsigned int *) data) = val;
       break;
 
     case DECIMAL_LSE:
@@ -1859,7 +1878,7 @@ void TypeInfo::setLong(long val, char *row) const
         if (val > maxvals[d_.precision_-1])
           throw UDRException(
                38900,
-               "Overflow occurred while converting value %ld to a DECIMAL(%d, %d)",
+               "Overflow/underflow occurred while converting value %ld to a DECIMAL(%d, %d)",
                val, d_.precision_, d_.scale_);
 
         if (d_.scale_ == 0)

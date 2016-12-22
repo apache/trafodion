@@ -362,11 +362,12 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
 // specified type t to be converted to/from C strings. The only 
 // SQL types that do not need to be converted to C strings are:
 // 
-//  INT, SMALLINT, LARGEINT, FLOAT, REAL, DOUBLE PRECISION, BOOLEAN
+//  INT, TINYINT, SMALLINT, LARGEINT, FLOAT, REAL, DOUBLE PRECISION, BOOLEAN
 //
 // because these types map to Java primitive types:
 //
 //  INT -> int
+//  TINYINT -> byte
 //  SMALLINT -> short
 //  LARGEINT -> long
 //  FLOAT -> float or double

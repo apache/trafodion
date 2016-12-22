@@ -488,6 +488,9 @@ public class TypeInfo extends TMUDRSerializableObject {
         
         // convert decimal to binary precision
         length_ = convertToBinaryPrecision(totalPrecision);
+        if (length_ == 1)
+            // intervals don't use single byte representation (yet?)
+            length_ = 2;
         }
         break;
 

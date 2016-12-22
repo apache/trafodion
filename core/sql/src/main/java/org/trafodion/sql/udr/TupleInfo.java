@@ -681,7 +681,7 @@ public class TupleInfo extends TMUDRSerializableObject {
      *
      *  @param colNum Column number.
      *  @return Boolean value.
-     *          If the value was a NULL value, an empty string
+     *          If the value was a NULL value, false
      *          is returned. The wasNull() method can be used to
      *          determine whether a NULL value was returned.
      *  @throws UDRException
@@ -1198,14 +1198,14 @@ public class TupleInfo extends TMUDRSerializableObject {
                 throw new UDRException(
                                        38900,
                                        "Overflow/Underflow when assigning %d to BOOLEAN type",
-                                       (int) val);
+                                       val);
             // fall through to next case
         case TINYINT:
             if (val > Byte.MAX_VALUE || val < Byte.MIN_VALUE)
                 throw new UDRException(
                                        38900,
                                        "Overflow/Underflow when assigning %d to TINYINT type",
-                                       (int) val);
+                                       val);
             row_.put(t.getDataOffset(), (byte) val);
             break;
             
@@ -1214,7 +1214,7 @@ public class TupleInfo extends TMUDRSerializableObject {
                 throw new UDRException(
                                        38900,
                                        "Overflow/Underflow when assigning %d to SMALLINT type",
-                                       (int) val);
+                                       val);
             row_.putShort(t.getDataOffset(), (short) val);
             break;
             
@@ -1222,7 +1222,8 @@ public class TupleInfo extends TMUDRSerializableObject {
             if (val > Integer.MAX_VALUE || val < Integer.MIN_VALUE)
                 throw new UDRException(
                                        38900,
-                                       "Overflow/Underflow when assigining to INT type");
+                                       "Overflow/Underflow when assigining %d to INT type",
+                                       val);
             row_.putInt(t.getDataOffset(), (int) val);
             break;
 
@@ -1232,14 +1233,18 @@ public class TupleInfo extends TMUDRSerializableObject {
 
         case TINYINT_UNSIGNED:
             if (val < 0 || val > Byte.MAX_VALUE)
-                if (val > (2 * Byte.MAX_VALUE + 1))
+                if (val < 0 || val > (2 * Byte.MAX_VALUE + 1))
                     throw new UDRException(
                         38900,
-                        "Overflow/underflow when assigning to TINYINT UNSIGNED type");
+                        "Overflow/underflow when assigning %d to TINYINT UNSIGNED type",
+                        val);
                 else
-                    // use the signed value that has the same bit
+                    // Use the signed value that has the same bit
                     // pattern as the desired unsigned value, since
-                    // Java doesn't support "unsigned" basic types
+                    // Java doesn't support "unsigned" basic types.
+                    // Example: 255
+                    //   val = 255 + (-128) + (-128) = -1
+                    // that makes the bit pattern 0xFF
                     val = val + Byte.MIN_VALUE + Byte.MIN_VALUE;
 
             row_.put(t.getDataOffset(), (byte) val);
@@ -1247,14 +1252,16 @@ public class TupleInfo extends TMUDRSerializableObject {
 
         case SMALLINT_UNSIGNED:
             if (val < 0 || val > Short.MAX_VALUE)
-                if (val > (2 * Short.MAX_VALUE + 1))
+                if (val < 0 || val > (2 * Short.MAX_VALUE + 1))
                     throw new UDRException(
                         38900,
-                        "Overflow/underflow when assigning to SMALLINT UNSIGNED type");
+                        "Overflow/underflow when assigning %d to SMALLINT UNSIGNED type",
+                        val);
                 else
                     // use the signed value that has the same bit
                     // pattern as the desired unsigned value, since
                     // Java doesn't support "unsigned" basic types
+                    // see tinyint_unsigned above for an example
                     val = val  + Short.MIN_VALUE + Short.MIN_VALUE;
 
             row_.putShort(t.getDataOffset(), (short) val);
@@ -1262,14 +1269,16 @@ public class TupleInfo extends TMUDRSerializableObject {
 
         case INT_UNSIGNED:
             if (val < 0 || val > Integer.MAX_VALUE)
-                if (val > (2 * Integer.MAX_VALUE + 1))
+                if (val < 0 || val > (2 * Integer.MAX_VALUE + 1))
                     throw new UDRException(
                         38900,
-                        "Overflow/underflow when assigning to an INT UNSIGNED type");
+                        "Overflow/underflow when assigning %d to an INT UNSIGNED type",
+                        val);
                 else
                     // use the signed value that has the same bit
                     // pattern as the desired unsigned value, since
                     // Java doesn't support "unsigned" basic types
+                    // see tinyint_unsigned above for an example
                     val = val + Integer.MIN_VALUE + Integer.MIN_VALUE;
  
             row_.putInt(t.getDataOffset(), (int) val);

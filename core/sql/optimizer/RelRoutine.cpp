@@ -1044,7 +1044,7 @@ PredefinedTableMappingFunction::~PredefinedTableMappingFunction()
 
 // static method to find out whether a given name is a
 // built-in table-mapping function - returns operator type
-// of predefined function if so, REL_TABLE_MAPPING_UDF otherwise
+// of predefined function if so, REL_ANY_TABLE_MAPPING_UDF otherwise
 OperatorTypeEnum PredefinedTableMappingFunction::nameIsAPredefinedTMF(const CorrName &name)
 {
   // Predefined functions don't reside in a schema, they are referenced with an unqualified name
