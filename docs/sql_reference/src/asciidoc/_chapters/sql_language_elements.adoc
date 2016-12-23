@@ -3370,9 +3370,9 @@ match-value [NOT] REGEXP regular-expression
 * `_match-value_`
 +
 is a character value expression that specifies a set of strings to
-search for that match the _pattern_.
+search for that match the _regular-expression_.
 
-* `_pattern_`
+* `_regular-expression_`
 +
 is a character value expression that specifies a regular expression. 
 Trafodion regular expressions follow POSIX regular expression rules.
@@ -3381,7 +3381,7 @@ Trafodion regular expressions follow POSIX regular expression rules.
 [[using_not]]
 ===== Using NOT
 
-If you specify NOT, the predicate is true if the _pattern_ does not
+If you specify NOT, the predicate is true if the _regular-expression_ does not
 match any string in the _match-value_.
 
 [[regexp_examples]]
