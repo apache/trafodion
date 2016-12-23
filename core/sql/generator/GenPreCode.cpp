@@ -10806,9 +10806,28 @@ RelExpr * PhysicalTableMappingUDF::preCodeGen(Generator * generator,
 
   for(Int32 i = 0; i < getArity(); i++)
   {
-    getChildInfo(i)->getOutputIds().replaceVEGExpressions(
+    ValueIdList &childOutputs(getChildInfo(i)->getOutputIds());
+    ValueIdList origChildOutputs(childOutputs);
+
+    childOutputs.replaceVEGExpressions(
          availableValues,
          getGroupAttr()->getCharacteristicInputs());
+
+    for (CollIndex j=0; j<childOutputs.entries(); j++)
+      if (NOT(childOutputs[j].getType() == origChildOutputs[j].getType()))
+        {
+          // VEG rewrite changed the type.
+          // Since we recorded the original type of the input
+          // column and exposed this type to the UDF writer, don't
+          // change the type now. Instead, add a cast back to the
+          // original type.
+          ItemExpr *castToOrigType = new(CmpCommon::statementHeap())
+            Cast(childOutputs[j].getItemExpr(),
+                 origChildOutputs[j].getType().newCopy());
+
+          castToOrigType->synthTypeAndValueId();
+          childOutputs[j] = castToOrigType->getValueId();
+        }
   }
 
   planInfo_ = getPhysicalProperty()->getUDRPlanInfo();

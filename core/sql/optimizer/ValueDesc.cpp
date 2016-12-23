@@ -6691,7 +6691,11 @@ ValueIdList::computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey,
              // and no inputs, all VEGies should have constants in
              // them and should be replaced with those
              ie = ie->replaceVEGExpressions(availableValues, availableValues);
-             value = ie->evaluate(STMTHEAP);
+             if (ie->getOperatorType() == ITM_CONSTANT)
+               value = static_cast<ConstValue *>(ie);
+             else
+               value = ie->evaluate(STMTHEAP);
+
              if ( !value )
                 return NULL;
           } else

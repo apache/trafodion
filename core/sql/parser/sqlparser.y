@@ -8443,10 +8443,9 @@ table_mapping_function_invocation :
 		YYABORT;
 
      TableMappingUDF *tmudf =
-       new (PARSERHEAP()) TableMappingUDF(*functionName, $4 );
+       new (PARSERHEAP()) TableMappingUDF(1, *functionName, $4 );
 
      tmudf->child(0) = $3;
-     tmudf->setArity(1);
      $$ = tmudf;
    }
    |  qualified_name '(' optional_tmudf_param_list ')' 
@@ -8456,7 +8455,7 @@ table_mapping_function_invocation :
      if (functionName == NULL)
 		YYABORT;
 
-     $$ = new (PARSERHEAP()) TableMappingUDF(*functionName, $3 );
+     $$ = new (PARSERHEAP()) TableMappingUDF(0, *functionName, $3 );
    } 
 
 
