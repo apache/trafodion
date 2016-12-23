@@ -2597,7 +2597,7 @@ short ExExeUtilHBaseBulkUnLoadTcb::setStartStatusMsgAndMoveToUpQueue(const char 
   char timeBuf[200];
   if (withtime) {
     startTime_ = NA_JulianTimestamp();
-    getTimestampAsString(endTime_, timeBuf);
+    getTimestampAsString(startTime_, timeBuf);
   }
   getStatusString(operation, "Started",NULL, &statusMsgBuf_[bufPos], FALSE, (withtime ? timeBuf : NULL));
   return moveRowToUpQueue(statusMsgBuf_,0,rc);
