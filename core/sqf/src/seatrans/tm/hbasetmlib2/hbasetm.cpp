@@ -333,7 +333,7 @@ short CHbaseTM::prepareCommit(int64 pv_transid , char *errstr, int &errstrlen) {
   }
 
   jshort jresult = _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_PRECOMMIT].methodID, jlv_transid);
-  if (getExceptionDetails(lv_joi_retcode, NULL)) {
+  if (getExceptionDetails(NULL, (short*)&lv_joi_retcode)) {
       int errMsgLen = (int)_tlp_error_msg->length();
       errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen  : errstrlen -1;
       strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);

@@ -957,6 +957,18 @@ short BEGINTX(int *pp_tag, int pv_timeout, int64 pv_type_flags)
 } //BEGINTX
 
 //--------------------------------------------------------------------
+//DEALLOCATE_ERR
+//
+//Purpose   : Called subsequent to ENDTRANSACTION_ERR
+//Params    : none
+//--------------------------------------------------------------------
+void DEALLOCATE_ERR(char *&errStr)
+{
+  if(errStr)
+    delete errStr;
+}
+
+//--------------------------------------------------------------------
 //ENDTRANSACTION
 //
 //Purpose   : end the current transaction
@@ -967,8 +979,7 @@ short ENDTRANSACTION()
   char *errStr = NULL;
   int   errlen = 0;
   short lv_error = ENDTRANSACTION_ERR(errStr,errlen);
-  if(errStr && errlen)
-    delete errStr;
+  DEALLOCATE_ERR(errStr);
   return lv_error;
 }
 // --------------------------------------------------------------------

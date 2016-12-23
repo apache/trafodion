@@ -140,8 +140,7 @@ public:
   {
     return isInitialized_;
   }
-  bool getExceptionDetails(JNIEnv *jenv);
-  bool getExceptionDetails(JOI_RetCode &retCode, JNIEnv *jenv);
+  bool getExceptionDetails(JNIEnv *jenv, short *errCode = NULL);
   void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, std::string &error_msg);
   short getExceptionErrorCode(JNIEnv *jenv, jthrowable a_exception);
   
@@ -155,10 +154,12 @@ protected:
   int       debugTimeout_;
   static jclass gThrowableClass;
   static jclass gStackTraceClass;
+  static jclass gTransactionManagerExceptionClass;
   static jmethodID gGetStackTraceMethodID;
   static jmethodID gThrowableToStringMethodID;
   static jmethodID gStackFrameToStringMethodID;
   static jmethodID gGetCauseMethodID;
+  static jmethodID gGetErrorCodeMethodID;
 };
 
 void set_error_msg(std::string &error_msg); 

@@ -55,10 +55,12 @@ __thread std::string *_tlp_error_msg = NULL;
 
 jclass JavaObjectInterfaceTM::gThrowableClass = NULL;
 jclass JavaObjectInterfaceTM::gStackTraceClass = NULL;
+jclass JavaObjectInterfaceTM::gTransactionManagerExceptionClass = NULL;
 jmethodID JavaObjectInterfaceTM::gGetStackTraceMethodID = NULL;
 jmethodID JavaObjectInterfaceTM::gThrowableToStringMethodID = NULL;
 jmethodID JavaObjectInterfaceTM::gStackFrameToStringMethodID = NULL;
 jmethodID JavaObjectInterfaceTM::gGetCauseMethodID = NULL;
+jmethodID JavaObjectInterfaceTM::gGetErrorCodeMethodID = NULL;
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -293,7 +295,20 @@ JOI_RetCode JavaObjectInterfaceTM::initJVM()
                       "toString",
                       "()Ljava/lang/String;");
      }
-  }  
+  }
+  
+  if (gTransactionManagerExceptionClass == NULL)
+  {
+     lJavaClass =  (jclass)_tlp_jenv->FindClass("org/trafodion/dtm/TransactionManagerException");
+     if (lJavaClass != NULL)
+     {
+        gTransactionManagerExceptionClass = (jclass)_tlp_jenv->NewGlobalRef(lJavaClass);
+        _tlp_jenv->DeleteLocalRef(lJavaClass);
+        gGetErrorCodeMethodID  = _tlp_jenv->GetMethodID(gTransactionManagerExceptionClass,
+                        "getErrorCode",
+                         "()S");
+     }
+  } 
   return JOI_OK;
 }
  
@@ -395,40 +410,7 @@ void set_error_msg(char *error_msg)
 
 
 
-bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
-{
-   std::string error_msg;
-
-   if (jenv == NULL)
-       jenv = _tlp_jenv;
-   if (jenv == NULL)
-   {
-      error_msg = "Internal Error - Unable to obtain jenv";
-      set_error_msg(error_msg);
-      return false;
-   }
-   if (gThrowableClass == NULL)
-   {
-      jenv->ExceptionDescribe();
-      error_msg = "Internal Error - Unable to find Throwable class";
-      set_error_msg(error_msg);
-      return false;
-   }
-   jthrowable a_exception = jenv->ExceptionOccurred();
-   if (a_exception == NULL)
-   {
-       error_msg = "No java exception was thrown";
-       set_error_msg(error_msg);
-       return false;
-   }
-   error_msg = "";
-   appendExceptionMessages(jenv, a_exception, error_msg);
-   set_error_msg(error_msg);
-   jenv->ExceptionClear();
-   return true;
-}
-
-bool  JavaObjectInterfaceTM::getExceptionDetails(JOI_RetCode &retCode, JNIEnv *jenv)
+bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv, short *errCode)
 {
    std::string error_msg;
 
@@ -455,7 +437,10 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JOI_RetCode &retCode, JNIEnv *j
        return false;
    }
    
-   retCode = (JOI_RetCode)getExceptionErrorCode(jenv, a_exception);
+   if(errCode)
+   {
+     *errCode = getExceptionErrorCode(jenv, a_exception);
+   }
    
    error_msg = "";
    appendExceptionMessages(jenv, a_exception, error_msg);
@@ -519,17 +504,11 @@ short JavaObjectInterfaceTM::getExceptionErrorCode(JNIEnv *jenv, jthrowable a_ex
   jshort errCode = JOI_OK;
   if(a_exception != NULL)
   {
-    //Check to see if this exception has getErrorCode method.
-    //Only custom subclasses have errorcode defined.
-    jmethodID getErrorCodeMethodID = NULL;
-    jclass exceptionClass = jenv->GetObjectClass(a_exception);
-    getErrorCodeMethodID = jenv->GetMethodID(exceptionClass,
-                                              "getErrorCode",
-                                               "()S");
-    if(getErrorCodeMethodID != NULL)
+    //Only TransactionManagerException class has errorcode defined.
+    if(jenv->IsInstanceOf(a_exception, gTransactionManagerExceptionClass))
     {
       errCode =(jshort) jenv->CallShortMethod(a_exception,
-                                              getErrorCodeMethodID);
+                                              gGetErrorCodeMethodID);
     }
   }
   return errCode;

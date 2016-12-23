@@ -289,9 +289,12 @@ _declspec(dllimport) short   DNUMOUT
 
 _declspec(dllimport) short   ENDTRANSACTION();
 
-//errStr is allocated if errlen is not zero. Caller must deallocate errStr.
-//Rest of functionality same as ENDTRANSACTION();
+//ENDTRANSACTION_ERR() is same as ENDTRANSACTION(). However,
+//errStr is allocated if errlen is not zero. Caller must deallocate errStr
+//by calling DELLAOCATE_ERR.
+//Rest of functionality same as ENDTRANSACTION.
 _declspec(dllimport) short   ENDTRANSACTION_ERR(char *&errStr, int &errlen);
+_declspec(dllimport) void    DEALLOCATE_ERR(char *&errStr);
 
 _declspec(dllimport) short   FILENAME_COMPARE_
 #ifdef TDM_ROSETTA_COMPATIBILITY_

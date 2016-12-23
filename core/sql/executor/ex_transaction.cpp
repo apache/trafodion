@@ -710,12 +710,12 @@ short ExTransaction::commitTransaction(NABoolean waited)
       else
         createDiagsArea (EXE_COMMIT_ERROR_FROM_TRANS_SUBSYS, rc,
                           (errStr && errlen)? errStr: "DTM");
-      
-      if(errStr && errlen)
-      {
-        delete errStr;
-      }
     }
+  
+  //Call to ENDTRANSACTION_ERR must always be followed by
+  //calling DEALLOCATE_ERR so memory of allocated error str
+  //is deallocated appropriately.
+  DEALLOCATE_ERR(errStr);
   
   if (waited)
     waitForCommitCompletion(transid_);

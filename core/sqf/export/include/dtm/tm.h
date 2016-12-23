@@ -297,9 +297,12 @@ extern "C" short BEGINTRANSACTION(int *tag);
 extern "C" short BEGINTX(int *tag, int timeout=0, int64 type_flags=0);
 extern "C" short ENDTRANSACTION();
 
-//errStr is allocated if errlen is not zero. Caller must deallocate errStr.
+//ENDTRANSACTION_ERR() is same as ENDTRANSACTION(). However,
+//errStr is allocated if errlen is not zero. Caller must deallocate errStr
+//by calling DELLAOCATE_ERR.
 //Rest of functionality same as ENDTRANSACTION.
 extern "C" short ENDTRANSACTION_ERR(char *&errStr, int &errlen);
+extern "C" void  DEALLOCATE_ERR(char *&errStr);
 
 extern "C" short STATUSTRANSACTION(short *status, int64 transid = 0);
 extern "C" short GETTRANSID(short *transid);
