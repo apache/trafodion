@@ -5178,8 +5178,9 @@ RelExpr * GroupByOnJoinRule::nextSubstitute(RelExpr * before,
   if (reverseT1T2)
     {
       // don't fire the rule with reversed roles if we can apply the
-      // join commutativity rule on the join
-      if (oldJoin->getGroupAttr()->getNumJoinedTables() <= 2)
+      // join commutativity rule on the join and the CQD is OFF
+      if (oldJoin->getGroupAttr()->getNumJoinedTables() <= 2 &&
+          CmpCommon::getDefault(GROUP_BY_PUSH_TO_BOTH_SIDES_OF_JOIN) != DF_ON)
         return NULL;
 
       // don't reverse the roles if the join isn't symmetric (such as a

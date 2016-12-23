@@ -3878,6 +3878,8 @@ enum DefaultConstants
   // mode for AES_ENCRYPT/AED_DECRYPT
   BLOCK_ENCRYPTION_MODE,
 
+  GROUP_BY_PUSH_TO_BOTH_SIDES_OF_JOIN,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES
