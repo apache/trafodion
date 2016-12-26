@@ -93,10 +93,10 @@ def run():
     if not os.path.exists(traf_hbase_trx_path):
         err('Cannot find HBase trx jar \'%s\' for your Hadoop distribution' % hbase_trx_jar)
 
-    # upgrade mode, check if existing trx jar doesn't match the new trx jar file
-    if dbcfgs.has_key('upgrade') and dbcfgs['upgrade'].upper() == 'Y':
+    # reinstall mode, check if existing trx jar doesn't match the new trx jar file
+    if dbcfgs.has_key('reinstall') and dbcfgs['reinstall'].upper() == 'Y':
         if not os.path.exists(hbase_trx_path):
-            err('The trx jar \'%s\' doesn\'t exist in hbase lib path, cannot do upgrade, please do regular install' % hbase_trx_jar)
+            err('The trx jar \'%s\' doesn\'t exist in hbase lib path, cannot do reinstall, please do regular install' % hbase_trx_jar)
     else:
         # remove old trx and trafodion-utility jar files
         run_cmd('rm -rf %s/{hbase-trx-*,trafodion-utility-*}' % hbase_lib_path)
