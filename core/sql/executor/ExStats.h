@@ -396,10 +396,10 @@ NA_EIDPROC
 
 NA_EIDPROC
   void unpack(const char* &buffer);
-
 NA_EIDPROC
   void setVersion(Lng32 ver) { version_ = ver; }
-
+  
+  Lng32 filterForSEstats(struct timespec currTimespec);
 private:
   Lng32 version_;
   // aggregated times (microseconds) over multiple start/stop operations
@@ -2622,6 +2622,7 @@ NA_EIDPROC
 NA_EIDPROC
   Int64 rowsUsed() const {return usedRows_;}
 
+  NABoolean filterForSEstats(struct timespec currTimespec, Lng32 filter);
   Int64 maxHdfsIOTime() const {return maxHdfsIOTime_;}
 
 NA_EIDPROC
@@ -2641,6 +2642,11 @@ NA_EIDPROC
   Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
   
   ExLobStats * lobStats() { return &lobStats_;}
+  void setQueryId(char *queryId, Lng32 queryIdLen)
+    {queryId_ = queryId;
+     queryIdLen_ = queryIdLen;} 
+  char *getQueryId() { return queryId_; }
+  Lng32 getQueryIdLen() { return queryIdLen_; }
 
 private:
 
@@ -2653,6 +2659,9 @@ private:
   Int64  accessedRows_;
   Int64  usedRows_;
   Int64  maxHdfsIOTime_;
+  char *queryId_;
+  Lng32 queryIdLen_;
+  Lng32 blockTime_;
 };
 
 /////////////////////////////////////////////////////////////////
@@ -2728,7 +2737,9 @@ class ExHbaseAccessStats : public ExOperStats {
     Int64 hbaseCalls() const {return numHbaseCalls_;}
 
     Int64 maxHbaseIOTime() const {return maxHbaseIOTime_;}
-  
+   
+    NABoolean filterForSEstats(struct timespec currTimespec, Lng32 filter);
+
   NA_EIDPROC
     ExHbaseAccessStats * castToExHbaseAccessStats();
   
@@ -2737,7 +2748,7 @@ class ExHbaseAccessStats : public ExOperStats {
   
   NA_EIDPROC
     virtual Int64 getNumVal(Int32 i) const;
-  
+    
   NA_EIDPROC
     virtual void getVariableStatsInfo(char * dataBuffer,
 				      char * datalen,
@@ -2747,6 +2758,11 @@ class ExHbaseAccessStats : public ExOperStats {
   ExLobStats * lobStats() { return &lobStats_;}
 
   //  ExHbaseStats * hbaseStats() { return &hbaseStats_;}
+  void setQueryId(char *queryId, Lng32 queryIdLen)
+    {queryId_ = queryId;
+     queryIdLen_ = queryIdLen;} 
+  char *getQueryId() { return queryId_; }
+  Lng32 getQueryIdLen() { return queryIdLen_; }
   
  private:
   
@@ -2760,6 +2776,9 @@ class ExHbaseAccessStats : public ExOperStats {
   Int64  usedRows_;
   Int64  numHbaseCalls_;
   Int64  maxHbaseIOTime_;
+  char *queryId_;
+  Lng32 queryIdLen_;
+  Lng32 blockTime_;
 };
 
    
@@ -3753,7 +3772,15 @@ NA_EIDPROC
            NABoolean appendAlways,
            short subReqType,
            Lng32 etTimeFilter,
-           Int64 currTimestamp);  // Return TRUE is the stats is appended
+           Int64 currTimestamp);  // Return TRUE if the stats is appended
+  NABoolean appendCpuStats(ExOperStats *stat,
+           NABoolean appendAlways,
+           Lng32 filter,
+           struct timespec currTimespec);  // Return TRUE if the stats is appended
+  NABoolean appendCpuStats( ExStatisticsArea *stats,
+           NABoolean appendAlways,
+           Lng32 filter,
+           struct timespec currTimespec);  // Return TRUE if the stats is appended
   void incReqMsg(Int64 msgBytes);
   void incReplyMsg(Int64 msgBytes);
   void setDetailLevel(short level) { detailLevel_ = level; }

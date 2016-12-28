@@ -3390,19 +3390,19 @@ ExOperStats * ExExeUtilFileExtractTcb::doAllocateStatsEntry(
 							    CollHeap *heap,
 							    ComTdb *tdb)
 {
-  ExOperStats * stat = NULL;
-  ComTdb::CollectStatsType statsType = 
-    getGlobals()->getStatsArea()->getCollectStatsType();
-  if (statsType == ComTdb::OPERATOR_STATS)
-    {
-      return ex_tcb::doAllocateStatsEntry(heap, tdb);
-    }
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
   else
-    {
-      return new(heap) ExHdfsScanStats(heap,
-					       this,
-					       tdb);
-    }
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
+				   this,
+				   tdb);
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
 
 short ExExeUtilFileExtractTcb::work()

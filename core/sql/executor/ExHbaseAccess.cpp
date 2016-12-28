@@ -522,9 +522,18 @@ ExOperStats * ExHbaseAccessTcb::doAllocateStatsEntry(
                                                         CollHeap *heap,
                                                         ComTdb *tdb)
 {
-  return new(heap) ExHbaseAccessStats(heap,
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  ExHbaseAccessStats *hbaseAccessStats =  new(heap) ExHbaseAccessStats(heap,
 				   this,
 				   tdb);
+  if (ss != NULL)
+     hbaseAccessStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hbaseAccessStats;
 }
 
 void ExHbaseAccessTcb::registerSubtasks()

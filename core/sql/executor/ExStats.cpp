@@ -532,6 +532,15 @@ void ExTimeStats::unpack(const char* &buffer)
   }
 }
 
+Lng32 ExTimeStats::filterForSEstats(struct timespec currTimespec)
+{
+  Lng32 diffTime = 0;
+  
+  if (isStarted_) 
+     diffTime = currTimespec.tv_sec - startTime_.tv_sec;
+  return diffTime;
+}
+
 //////////////////////////////////////////////////////////////////
 // class ExeDp2Stats
 //////////////////////////////////////////////////////////////////
@@ -1632,8 +1641,7 @@ ExFragRootOperStats::~ExFragRootOperStats()
 #ifndef __EID
   ExProcessStats *processStats;
 
-  if (((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS ||
-      (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS) && queryId_ != NULL)
+  if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS && queryId_ != NULL)
   {
     NADELETEBASIC(queryId_, getHeap());
     queryId_ = NULL;
@@ -1724,8 +1732,7 @@ UInt32 ExFragRootOperStats::packedLength()
     alignSizeForNextObj(size);
     size += sizeof(ExFragRootOperStats)-sizeof(ExOperStats);
 #ifndef __EID
-    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS ||
-        (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
       size += queryIdLen_;
 #endif
   }
@@ -1755,8 +1762,7 @@ UInt32 ExFragRootOperStats::pack(char * buffer)
     memcpy(buffer, srcPtr, srcLen);
     packedLen += srcLen;
 #ifndef __EID
-    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS || 
-        (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
     {
       buffer += srcLen;
       if (queryIdLen_ != 0 && queryId_ != NULL)
@@ -1808,8 +1814,7 @@ void ExFragRootOperStats::unpack(const char* &buffer)
     char * srcPtr = (char *)this+sizeof(ExOperStats);
     memcpy((void *)srcPtr, buffer, srcLen);
     buffer += srcLen;
-    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS || 
-        (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
     {
       if (queryIdLen_ != 0)
       {
@@ -1973,8 +1978,7 @@ void ExFragRootOperStats::copyContents(ExFragRootOperStats *stat)
   UInt32 srcLen = sizeof(ExFragRootOperStats)-sizeof(ExOperStats);
   memcpy((void *)destPtr, (void *)srcPtr, srcLen);
 #ifndef __EID
-  if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS ||
-      (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
   {
     if (queryIdLen_ != 0)
     {
@@ -2049,8 +2053,7 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 #ifndef __EID
   char *buf = dataBuffer;
   const char *txtVal;
-  if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS ||
-     (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
   {
     str_sprintf(buf, "statsRowType: %d ProcessId: %s Qid: %s CpuTime: %Ld SpaceUsed: %u "
       "SpaceTotal: %u HeapUsed: %u HeapTotal: %u PMemUsed: %Ld diffCpuTime: %Ld ",
@@ -2646,6 +2649,8 @@ ExHdfsScanStats::ExHdfsScanStats(NAMemory * heap,
   tableName_ = (char *)heap_->allocateMemory(len + 1);
   str_sprintf(tableName_, "%s", name);
 
+  queryId_ = NULL;
+  queryIdLen_ = 0;
   init();
 }
 
@@ -2655,6 +2660,8 @@ ExHdfsScanStats::ExHdfsScanStats(NAMemory * heap)
   , tableName_(NULL)
   , timer_(CLOCK_MONOTONIC)
 {
+  queryId_ = NULL;
+  queryIdLen_ = 0;
   init();
 }
 
@@ -2668,6 +2675,7 @@ void ExHdfsScanStats::init()
   accessedRows_ = 0;
   usedRows_     = 0;
   maxHdfsIOTime_ = 0;
+  blockTime_ = 0;
 }
 
 ExHdfsScanStats::~ExHdfsScanStats()
@@ -2676,6 +2684,11 @@ ExHdfsScanStats::~ExHdfsScanStats()
   {
      NADELETEBASIC(tableName_,getHeap());
      tableName_ = NULL;
+  }
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS && queryId_ != NULL)
+  {
+    NADELETEBASIC(queryId_, getHeap());
+    queryId_ = NULL;
   }
 }
 
@@ -2691,6 +2704,12 @@ UInt32 ExHdfsScanStats::packedLength()
   size += sizeof(accessedRows_);
   size += sizeof(usedRows_);
   size += sizeof(maxHdfsIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    size += sizeof(blockTime_);
+    size += sizeof(queryIdLen_);
+    size += queryIdLen_;
+  }
   return size;
 }
 
@@ -2707,6 +2726,13 @@ UInt32 ExHdfsScanStats::pack(char *buffer)
   size += packIntoBuffer(buffer, accessedRows_);
   size += packIntoBuffer(buffer, usedRows_);
   size += packIntoBuffer(buffer, maxHdfsIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    size += packIntoBuffer(buffer, blockTime_);
+    size += packIntoBuffer(buffer, queryIdLen_);
+    if (queryIdLen_ != 0 && queryId_ != NULL)
+      size += packStrIntoBuffer(buffer, queryId_, queryIdLen_);
+  }
 
   return size;
 }
@@ -2724,6 +2750,17 @@ void ExHdfsScanStats::unpack(const char* &buffer)
   unpackBuffer(buffer, accessedRows_);
   unpackBuffer(buffer, usedRows_);
   unpackBuffer(buffer, maxHdfsIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    unpackBuffer(buffer, blockTime_);
+    unpackBuffer(buffer, queryIdLen_);
+    if (queryIdLen_ != 0)
+    {
+      queryId_ = new ((NAHeap *)(getHeap())) char[queryIdLen_+1];
+      unpackStrFromBuffer(buffer, queryId_, queryIdLen_);
+      queryId_[queryIdLen_] = '\0';
+    }
+  }
 }
 
 void ExHdfsScanStats::merge(ExHdfsScanStats *other)
@@ -2757,6 +2794,24 @@ void ExHdfsScanStats::copyContents(ExHdfsScanStats *other)
   accessedRows_ = other->accessedRows_;
   usedRows_     = other->usedRows_;
   maxHdfsIOTime_ = other->maxHdfsIOTime_;
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    blockTime_ = other->blockTime_;
+    queryIdLen_ = other->queryIdLen_;
+    if (queryIdLen_ != 0)
+    {
+      queryId_ = new ((NAHeap *)(getHeap())) char[queryIdLen_+1];
+      str_cpy_all(queryId_, other->queryId_, queryIdLen_);
+      queryId_[queryIdLen_] = '\0';
+    }
+    else
+      queryId_ = NULL;
+  }
+  else
+  {
+    queryId_ = other->queryId_;
+    queryIdLen_ = other->queryIdLen_;
+  }
 }
 
 ExOperStats * ExHdfsScanStats::copyOper(NAMemory * heap)
@@ -2816,18 +2871,35 @@ Int64 ExHdfsScanStats::getNumVal(Int32 i) const
   return 0;
 }
 
+NABoolean ExHdfsScanStats::filterForSEstats(struct timespec currTimespec, Lng32 filter)
+{
+   blockTime_ = timer_.filterForSEstats(currTimespec);
+   if (blockTime_ >= filter)
+      return TRUE;
+   else
+      return FALSE;
+}
+
 void ExHdfsScanStats::getVariableStatsInfo(char * dataBuffer,
 						   char * dataLen,
 						   Lng32 maxLen)
 {
   char *buf = dataBuffer;
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+     str_sprintf(buf, "statsRowType: %d Qid: %s blockedFor: %d ",
+        statType(),
+        ((queryId_ != NULL) ? queryId_ : "NULL"), blockTime_);
+     buf += str_len(buf);
+  }
+  else 
+  {
+     ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
+     buf += *((short *) dataLen);
 
-  ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
-  buf += *((short *) dataLen);
-
-  lobStats()->getVariableStatsInfo(buf, dataLen, maxLen);
-  buf += *((short *) dataLen);
-
+     lobStats()->getVariableStatsInfo(buf, dataLen, maxLen);
+     buf += *((short *) dataLen);
+  }
   str_sprintf (buf, 
 	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HiveIOCalls: %Ld HiveSumIOTime: %Ld HdfsMaxIOTime: %Ld",
 	       (char*)tableName_,
@@ -2955,7 +3027,8 @@ ExHbaseAccessStats::ExHbaseAccessStats(NAMemory * heap,
     {
       tableName_ = NULL;
     }
-
+  queryId_ = NULL;
+  queryIdLen_ = 0;
   init();
 }
 
@@ -2965,6 +3038,8 @@ ExHbaseAccessStats::ExHbaseAccessStats(NAMemory * heap)
   , tableName_(NULL)
   , timer_(CLOCK_MONOTONIC)
 {
+  queryId_ = NULL;
+  queryIdLen_ = 0;
   init();
 }
 
@@ -2979,6 +3054,7 @@ void ExHbaseAccessStats::init()
   usedRows_     = 0;
   numHbaseCalls_ = 0;
   maxHbaseIOTime_ = 0;
+  blockTime_ = 0;
 }
 
 ExHbaseAccessStats::~ExHbaseAccessStats()
@@ -2987,6 +3063,11 @@ ExHbaseAccessStats::~ExHbaseAccessStats()
   {
      NADELETEBASIC(tableName_,getHeap());
      tableName_ = NULL;
+  }
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS && queryId_ != NULL)
+  {
+    NADELETEBASIC(queryId_, getHeap());
+    queryId_ = NULL;
   }
 }
 
@@ -3003,6 +3084,12 @@ UInt32 ExHbaseAccessStats::packedLength()
   size += sizeof(usedRows_);
   size += sizeof(numHbaseCalls_);
   size += sizeof(maxHbaseIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    size += sizeof(blockTime_);
+    size += sizeof(queryIdLen_);
+    size += queryIdLen_;
+  }
   return size;
 }
 
@@ -3020,6 +3107,13 @@ UInt32 ExHbaseAccessStats::pack(char *buffer)
   size += packIntoBuffer(buffer, usedRows_);
   size += packIntoBuffer(buffer, numHbaseCalls_);
   size += packIntoBuffer(buffer, maxHbaseIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    size += packIntoBuffer(buffer, blockTime_);
+    size += packIntoBuffer(buffer, queryIdLen_);
+    if (queryIdLen_ != 0 && queryId_ != NULL)
+      size += packStrIntoBuffer(buffer, queryId_, queryIdLen_);
+  }
 
   return size;
 }
@@ -3038,6 +3132,17 @@ void ExHbaseAccessStats::unpack(const char* &buffer)
   unpackBuffer(buffer, usedRows_);
   unpackBuffer(buffer, numHbaseCalls_);
   unpackBuffer(buffer, maxHbaseIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    unpackBuffer(buffer, blockTime_);
+    unpackBuffer(buffer, queryIdLen_);
+    if (queryIdLen_ != 0)
+    {
+      queryId_ = new ((NAHeap *)(getHeap())) char[queryIdLen_+1];
+      unpackStrFromBuffer(buffer, queryId_, queryIdLen_);
+      queryId_[queryIdLen_] = '\0';
+    }
+  }
 }
 
 void ExHbaseAccessStats::merge(ExHbaseAccessStats *other)
@@ -3073,6 +3178,24 @@ void ExHbaseAccessStats::copyContents(ExHbaseAccessStats *other)
   usedRows_ = other->usedRows_;
   numHbaseCalls_ = other->numHbaseCalls_;
   maxHbaseIOTime_ = other->maxHbaseIOTime_;
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    blockTime_ = other->blockTime_;
+    queryIdLen_ = other->queryIdLen_;
+    if (queryIdLen_ != 0)
+    {
+      queryId_ = new ((NAHeap *)(getHeap())) char[queryIdLen_+1];
+      str_cpy_all(queryId_, other->queryId_, queryIdLen_);
+      queryId_[queryIdLen_] = '\0';
+    }
+    else
+      queryId_ = NULL;
+  }
+  else
+  {
+    queryId_ = other->queryId_;
+    queryIdLen_ = other->queryIdLen_;
+  }
 }
 
 ExOperStats * ExHbaseAccessStats::copyOper(NAMemory * heap)
@@ -3132,18 +3255,35 @@ Int64 ExHbaseAccessStats::getNumVal(Int32 i) const
   return 0;
 }
 
+NABoolean ExHbaseAccessStats::filterForSEstats(struct timespec currTimespec, Lng32 filter)
+{
+   blockTime_ = timer_.filterForSEstats(currTimespec);
+   if (blockTime_ >= filter)
+      return TRUE;
+   else
+      return FALSE;
+}
+
 void ExHbaseAccessStats::getVariableStatsInfo(char * dataBuffer,
 						   char * dataLen,
 						   Lng32 maxLen)
 {
   char *buf = dataBuffer;
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+     str_sprintf(buf, "statsRowType: %d Qid: %s blockedFor: %d ",
+        statType(),
+        ((queryId_ != NULL) ? queryId_ : "NULL"), blockTime_);
+     buf += str_len(buf);
+  }
+  else 
+  {
+     ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
+     buf += *((short *) dataLen);
 
-  ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
-  buf += *((short *) dataLen);
-
-  lobStats()->getVariableStatsInfo(buf, dataLen, maxLen);
-  buf += *((short *) dataLen);
-
+     lobStats()->getVariableStatsInfo(buf, dataLen, maxLen);
+     buf += *((short *) dataLen);
+  }
   str_sprintf (buf, 
 	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HbaseSumIOCalls: %Ld HbaseSumIOTime: %Ld HbaseMaxIOTime: %Ld",
 	       (char*)tableName_,
@@ -8237,6 +8377,26 @@ void ExStatisticsArea::setCpuStatsHistory()
   }
 }
 
+NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *stats, 
+       NABoolean appendAlways, Lng32 filter, struct timespec currTimespec)
+{
+  ExMasterStats *masterStats; 
+  ExOperStats *stat;
+  ExOperStats::StatType statType;
+  NABoolean retcode = FALSE;
+  NABoolean retcode1;
+
+  stats->position();
+  while ((stat = stats->getNext()) != NULL) {
+     statType = stat->statType();
+     if (statType == ExOperStats::HBASE_ACCESS_STATS || statType == ExOperStats::HDFSSCAN_STATS) 
+        retcode1 = appendCpuStats(stat, appendAlways, filter, currTimespec);
+     if (retcode1 == TRUE)
+        retcode = TRUE;
+  }
+  return retcode;
+}
+
 NABoolean ExStatisticsArea::appendCpuStats(ExMasterStats *masterStats, 
        NABoolean appendAlways, short subReqType,
        Lng32 etFilter, Int64 currTimestamp)
@@ -8254,6 +8414,45 @@ NABoolean ExStatisticsArea::appendCpuStats(ExMasterStats *masterStats,
      append_masterStats->setCollectStatsType(getCollectStatsType());
      append_masterStats->copyContents(masterStats);
      insert(append_masterStats);
+     retcode = TRUE;
+  }
+  return retcode;
+}
+
+NABoolean ExStatisticsArea::appendCpuStats(ExOperStats *stat, 
+       NABoolean appendAlways, 
+       Lng32 filter, struct timespec currTimespec)
+{
+  NABoolean append = appendAlways;
+  NABoolean retcode = FALSE;
+  ExHbaseAccessStats *append_hbaseStats;
+  ExHdfsScanStats *append_hdfsStats;
+  ExOperStats::StatType statType;
+  
+  statType = stat->statType();
+  if (!append)
+  {
+     if (statType == ExOperStats::HBASE_ACCESS_STATS)
+        append = ((ExHbaseAccessStats *)stat)->filterForSEstats(currTimespec, filter);
+     else
+     if (statType == ExOperStats::HDFSSCAN_STATS)
+        append = ((ExHdfsScanStats *)stat)->filterForSEstats(currTimespec, filter);
+  }
+  if (append)
+  {
+     if (statType == ExOperStats::HBASE_ACCESS_STATS) {
+        append_hbaseStats = new (getHeap()) ExHbaseAccessStats((NAHeap *)getHeap());
+        append_hbaseStats->setCollectStatsType(getCollectStatsType());
+        append_hbaseStats->copyContents((ExHbaseAccessStats *)stat);
+        insert(append_hbaseStats);
+     }
+     else
+     if (statType == ExOperStats::HDFSSCAN_STATS) {
+        append_hdfsStats = new (getHeap()) ExHdfsScanStats((NAHeap *)getHeap());
+        append_hdfsStats->setCollectStatsType(getCollectStatsType());
+        append_hdfsStats->copyContents((ExHdfsScanStats *)stat);
+        insert(append_hdfsStats);
+     }
      retcode = TRUE;
   }
   return retcode;
@@ -8492,21 +8691,21 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
             insert(pertableStats);
             retcode = TRUE;
          }
-      }
-      else
-      { 
-         tdbType = stat->getTdbType();
-         if (subReqType == SQLCLI_STATS_REQ_SE_OPERATOR  && 
-                 statType == ExOperStats::PERTABLE_STATS)
+         else if (stat->castToExHdfsScanStats())
          {
-            if (((ExPertableStats *)stat)->filterForCpuStats())
-            {
-               pertableStats = new (getHeap()) ExPertableStats(getHeap());
-               pertableStats->setCollectStatsType(getCollectStatsType());
-               pertableStats->copyContents((ExPertableStats *)stat);
-               insert(pertableStats);
-               retcode = TRUE;
-            }
+            hdfsScanStats = new (getHeap()) ExHdfsScanStats(getHeap());
+            hdfsScanStats->setCollectStatsType(getCollectStatsType());
+            hdfsScanStats->copyContents((ExHdfsScanStats *)stat);
+            insert(hdfsScanStats);
+            retcode = TRUE;
+         }
+         else if (stat->castToExHbaseAccessStats())
+         {
+            hbaseAccessStats = new (getHeap()) ExHbaseAccessStats(getHeap());
+            hbaseAccessStats->setCollectStatsType(getCollectStatsType());
+            hbaseAccessStats->copyContents((ExHbaseAccessStats *)stat);
+            insert(hbaseAccessStats);
+            retcode = TRUE;
          }
       }
       break;
@@ -10928,7 +11127,7 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
       cpuTemp = ptr;
     }
     else
-    if (strncasecmp(ptr, "DISK_OFFENDER", 13) == 0 || strncasecmp(ptr, "SE_OFFENDER", 11) == 0)
+    if (strncasecmp(ptr, "SE_BLOCKED", 10) == 0)
     {
       ptr = str_tok(NULL, ',', &internal);
       seTemp = ptr;
@@ -11116,15 +11315,8 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
   if (seTemp != NULL)
   {
     tempNum =  atoi(seTemp);
-    if (tempNum < -2 && tempNum > 0)
-        tempNum = -1; 
-    if (diskOffender)
-      retcode = SQLCLI_STATS_REQ_SE_OFFENDER;
-    if (tempNum == -2)
-        *subReqType = SQLCLI_STATS_REQ_SE_ROOT;
-     else
-        *subReqType = SQLCLI_STATS_REQ_SE_OPERATOR;
-     *cpu = -1;
+    *filter = (Lng32)tempNum;
+    retcode = SQLCLI_STATS_REQ_SE_OFFENDER;
   }
   if (pidTemp != NULL)
   {
