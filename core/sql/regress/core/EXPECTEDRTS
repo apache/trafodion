@@ -291,18 +291,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   696,264
 SQL Process Busy Time    5,516,762
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            26                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        2
@@ -361,18 +355,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   696,264
 SQL Process Busy Time    5,516,762
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            26                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        2
@@ -432,18 +420,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   696,264
 SQL Process Busy Time    5,516,762
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            26                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        2
@@ -502,18 +484,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   696,264
 SQL Process Busy Time    5,516,762
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            26                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        2
@@ -1083,10 +1059,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
@@ -1148,10 +1120,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
@@ -1219,18 +1187,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   19,326
 SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        0
@@ -1289,18 +1251,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   19,326
 SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        0
@@ -1358,10 +1314,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
@@ -1423,10 +1375,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    27
@@ -1490,18 +1438,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   19,326
 SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        0
@@ -1560,18 +1502,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   19,326
 SQL Process Busy Time    20,759
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        0
@@ -1997,18 +1933,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   12,303
 SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        0
@@ -2067,18 +1997,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   12,303
 SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        0
@@ -2139,10 +2063,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
@@ -2204,10 +2124,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
@@ -2272,10 +2188,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
@@ -2332,10 +2244,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
@@ -2547,18 +2455,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   12,303
 SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        0
@@ -2615,10 +2517,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
@@ -2679,10 +2577,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
@@ -2846,18 +2740,12 @@ Stats Bytes              0
 Disk IOs                 4
 Lock Waits               0
 Lock Escalations         0
-Message Redrive Attempts 0
-Disk Process Busy Time   12,303
 SQL Process Busy Time    20,623
 UDR Process Busy Time    0
 SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Opens                    0
 Open Time                0
 Processes Created        0
@@ -2917,10 +2805,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
@@ -2984,10 +2868,6 @@ SQL Space Allocated      896                       KB
 SQL Space Used           766                       KB
 SQL Heap Allocated       143                       KB
 SQL Heap Used            22                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    28
@@ -3254,10 +3134,6 @@ SQL Space Allocated      32                        KB
 SQL Space Used           5                         KB
 SQL Heap Allocated       15                        KB
 SQL Heap Used            10                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    0
@@ -3319,10 +3195,6 @@ SQL Space Allocated      32                        KB
 SQL Space Used           5                         KB
 SQL Heap Allocated       15                        KB
 SQL Heap Used            10                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    0
@@ -3398,10 +3270,6 @@ SQL Space Allocated      32                        KB
 SQL Space Used           5                         KB
 SQL Heap Allocated       15                        KB
 SQL Heap Used            10                        KB
-EID Space Allocated      0                         KB
-EID Space Used           0                         KB
-EID Heap Allocated       0                         KB
-EID Heap Used            0                         KB
 Processes Created        0
 Process Create Time      0
 Request Message Count    0

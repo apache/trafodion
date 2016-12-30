@@ -1265,7 +1265,7 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 #define MAX_PERTABLE_STATS_DESC		30
 
 #define MAX_MASTERSTATS_ENTRY		31
-#define MAX_MEASSTATS_ENTRY			34
+#define MAX_MEASSTATS_ENTRY			30
 #define MAX_PERTABLE_ENTRY			14
 
 	int i;
@@ -1493,27 +1493,23 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 				measStatsItems_[11].statsItem_id = SQLSTATS_SQL_SPACE_USED;
 				measStatsItems_[12].statsItem_id = SQLSTATS_SQL_HEAP_ALLOC;
 				measStatsItems_[13].statsItem_id = SQLSTATS_SQL_HEAP_USED;
-				measStatsItems_[14].statsItem_id = SQLSTATS_EID_SPACE_ALLOC;
-				measStatsItems_[15].statsItem_id = SQLSTATS_EID_SPACE_USED;
-				measStatsItems_[16].statsItem_id = SQLSTATS_EID_HEAP_ALLOC;
-				measStatsItems_[17].statsItem_id = SQLSTATS_EID_HEAP_USED;
-				measStatsItems_[18].statsItem_id = SQLSTATS_OPENS;
-				measStatsItems_[19].statsItem_id = SQLSTATS_OPEN_TIME;
-				measStatsItems_[20].statsItem_id = SQLSTATS_PROCESS_CREATED;
-				measStatsItems_[21].statsItem_id = SQLSTATS_PROCESS_CREATE_TIME;
-				measStatsItems_[22].statsItem_id = SQLSTATS_REQ_MSG_CNT;
-				measStatsItems_[23].statsItem_id = SQLSTATS_REQ_MSG_BYTES;
-				measStatsItems_[24].statsItem_id = SQLSTATS_REPLY_MSG_CNT;
-				measStatsItems_[25].statsItem_id = SQLSTATS_REPLY_MSG_BYTES;
-				measStatsItems_[26].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
-				measStatsItems_[27].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
-				measStatsItems_[28].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
-				measStatsItems_[29].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
-				measStatsItems_[30].statsItem_id = SQLSTATS_SCRATCH_OVERFLOW_MODE;
-				measStatsItems_[31].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
-				measStatsItems_[32].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
-				measStatsItems_[33].statsItem_id = SQLSTATS_UDR_CPU_BUSY_TIME;
-				// MAX_MEASSTATS_ENTRY is set to 34
+				measStatsItems_[14].statsItem_id = SQLSTATS_OPENS;
+				measStatsItems_[15].statsItem_id = SQLSTATS_OPEN_TIME;
+				measStatsItems_[16].statsItem_id = SQLSTATS_PROCESS_CREATED;
+				measStatsItems_[17].statsItem_id = SQLSTATS_PROCESS_CREATE_TIME;
+				measStatsItems_[18].statsItem_id = SQLSTATS_REQ_MSG_CNT;
+				measStatsItems_[19].statsItem_id = SQLSTATS_REQ_MSG_BYTES;
+				measStatsItems_[20].statsItem_id = SQLSTATS_REPLY_MSG_CNT;
+				measStatsItems_[21].statsItem_id = SQLSTATS_REPLY_MSG_BYTES;
+				measStatsItems_[22].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
+				measStatsItems_[23].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
+				measStatsItems_[24].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
+				measStatsItems_[25].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
+				measStatsItems_[26].statsItem_id = SQLSTATS_SCRATCH_OVERFLOW_MODE;
+				measStatsItems_[27].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
+				measStatsItems_[28].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
+				measStatsItems_[29].statsItem_id = SQLSTATS_UDR_CPU_BUSY_TIME;
+				// MAX_MEASSTATS_ENTRY is set to 30
 
 				cliRC = SQL_EXEC_GetStatisticsItems(
 					reqType,
@@ -1802,18 +1798,6 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 					break;
 				case SQLSTATS_SQL_HEAP_USED:			//int64
 					HeapUsed = measStatsItems_[i].int64_value;
-					break;
-				case SQLSTATS_EID_SPACE_ALLOC:			//int64
-					Dp2SpaceTotal = measStatsItems_[i].int64_value;
-					break;
-				case SQLSTATS_EID_SPACE_USED:			//int64
-					Dp2SpaceUsed = measStatsItems_[i].int64_value;
-					break;
-				case SQLSTATS_EID_HEAP_ALLOC:			//int64
-					Dp2HeapTotal = measStatsItems_[i].int64_value;
-					break;
-				case SQLSTATS_EID_HEAP_USED:			//int64
-					Dp2HeapUsed = measStatsItems_[i].int64_value;
 					break;
 				case SQLSTATS_OPENS:					//int64
 					Opens = measStatsItems_[i].int64_value;

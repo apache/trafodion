@@ -76,8 +76,6 @@ class ExStatsCounter;
 class ExClusterStats;
 class ExTimeStats;
 class ExFragRootOperStats;
-class ExDP2LeafOperStats;
-class ExDP2InsertStats;
 class ExPartitionAccessStats;
 class ExHashGroupByStats;
 class ExHashJoinStats;
@@ -89,7 +87,6 @@ class ExSortStats;
 class ExUDRStats;
 class ExProbeCacheStats;
 class ExMasterStats;
-class ExPertableStats;
 class ExRMSStats;
 class ExBMOStats;
 class ExUDRBaseStats;
@@ -777,8 +774,6 @@ public:
   enum StatType {
     EX_OPER_STATS           = SQLSTATS_DESC_OPER_STATS,
     ROOT_OPER_STATS         = SQLSTATS_DESC_ROOT_OPER_STATS,
-    DP2_LEAF_STATS          = SQLSTATS_DESC_DP2_LEAF_STATS,
-    DP2_INSERT_STATS        = SQLSTATS_DESC_DP2_INSERT_STATS,
     PARTITION_ACCESS_STATS  = SQLSTATS_DESC_PARTITION_ACCESS_STATS,
     GROUP_BY_STATS          = SQLSTATS_DESC_GROUP_BY_STATS,
     HASH_JOIN_STATS         = SQLSTATS_DESC_HASH_JOIN_STATS, 
@@ -786,7 +781,6 @@ public:
     ESP_STATS               = SQLSTATS_DESC_ESP_STATS,
     SPLIT_TOP_STATS         = SQLSTATS_DESC_SPLIT_TOP_STATS,
     MEAS_STATS              = SQLSTATS_DESC_MEAS_STATS,
-    PERTABLE_STATS          = SQLSTATS_DESC_PERTABLE_STATS,
     SORT_STATS              = SQLSTATS_DESC_SORT_STATS,
     UDR_STATS               = SQLSTATS_DESC_UDR_STATS,
     NO_OP                   = SQLSTATS_DESC_NO_OP,
@@ -1055,12 +1049,6 @@ NA_EIDPROC
   virtual ExFragRootOperStats * castToExFragRootOperStats();
 
 NA_EIDPROC
-  virtual ExDP2LeafOperStats * castToExDP2LeafOperStats();
-
-NA_EIDPROC
-  virtual ExDP2InsertStats * castToExDP2InsertStats();
-
-NA_EIDPROC
   virtual ExPartitionAccessStats * castToExPartitionAccessStats();
 
 NA_EIDPROC
@@ -1106,9 +1094,6 @@ NA_EIDPROC
 
 NA_EIDPROC
   virtual ExMasterStats * castToExMasterStats();
-
-NA_EIDPROC
-  virtual ExPertableStats *castToExPertableStats();
 
 NA_EIDPROC
   virtual ExBMOStats * castToExBMOStats();
@@ -1612,10 +1597,6 @@ private:
   Int32 histMaxHeapUsage_;
   Int32 histMaxHeapAlloc_;
 #else
-  Int32 dp2MaxSpaceUsage_;
-  Int32 dp2MaxSpaceAlloc_;
-  Int32 dp2MaxHeapUsage_;
-  Int32 dp2MaxHeapAlloc_;
   Int32 newprocess_;
   Int64 newprocessTime_; 
   Int32 espMaxSpaceUsage_;
@@ -1658,228 +1639,11 @@ private:
 #ifndef __EID
   Int64 maxWaitTime_;
   Int64 waitTime_;
-  Int64 dp2CpuTime_;
-  Int64 histDp2CpuTime_;
   Int64 diffCpuTime_;
 #endif
 
   Int32 flags_;
 };
-
-
-/////////////////////////////////////////////////////////////////
-// class ExDP2LeafOperStats
-/////////////////////////////////////////////////////////////////
-class ExDP2LeafOperStats : public ExOperStats {
-public:
-NA_EIDPROC
-ExDP2LeafOperStats(NAMemory * heap,
-		   ex_tcb *tcb,
-		   const ComTdb * tdb);
-
-NA_EIDPROC
-  ExDP2LeafOperStats(NAMemory * heap);
-
-NA_EIDPROC
-  ~ExDP2LeafOperStats(){};
-
-NA_EIDPROC
-  void init();
-  
-NA_EIDPROC
-  UInt32 packedLength();
-
-//////////////////////////////////////////////////////////////////
-// packs 'this' into a message. Converts pointers to offsets.
-//////////////////////////////////////////////////////////////////
-NA_EIDPROC
-  UInt32 pack(char * buffer);
-
-NA_EIDPROC
-  void unpack(const char* &buffer);
-
-NA_EIDPROC
-  void copyContents(ExDP2LeafOperStats* other);
-
-NA_EIDPROC
-  void merge(ExDP2LeafOperStats* other);
-
-NA_EIDPROC
-  ExOperStats * copyOper(NAMemory * heap);
-
-/////////////////////////////////////////////////////////////////
-// accessors, mutators
-/////////////////////////////////////////////////////////////////
-NA_EIDPROC
-  inline ULng32 getnumPositions() const { return numPositions_; }
-
-NA_EIDPROC
-  inline void incNumPositions(ULng32 i = 1) { numPositions_ += i; }
-
-NA_EIDPROC
-  ExDP2LeafOperStats * castToExDP2LeafOperStats();
-
-NA_EIDPROC
-  virtual const char * getNumValTxt(Int32 i) const;
-
-NA_EIDPROC
-  virtual Int64 getNumVal(Int32 i) const;
-
-NA_EIDPROC
-  virtual ExeDp2Stats * castToExeDp2Stats()
-  {
-    return exeDp2Stats();
-  }
-
-NA_EIDPROC
-  ExeDp2Stats * exeDp2Stats()
-  {
-    return &exeDp2Stats_;
-  }
-
-NA_EIDPROC
-  virtual void getVariableStatsInfo(char * dataBuffer,
-				    char * datalen,
-				    Lng32 maxLen);
-
-#ifndef __EID
-  Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
-#endif
-
-private:
-
-  ExeDp2Stats exeDp2Stats_;
-
-  // number of positions/probes for this request
-  ULng32 numPositions_;
-};
-
-
-/////////////////////////////////////////////////////////////////
-// class ExDP2InsertStats
-/////////////////////////////////////////////////////////////////
-class ExDP2InsertStats : public ExOperStats {
-public:
-NA_EIDPROC
-  ExDP2InsertStats(NAMemory * heap,
-		   ex_tcb *tcb,
-		   const ComTdb * tdb,
-		   NABoolean bufferedInsert);
-
-NA_EIDPROC
-  ExDP2InsertStats(NAMemory * heap);
-
-NA_EIDPROC
-  ~ExDP2InsertStats(){};
-
-NA_EIDPROC
-  void init();
-  
-NA_EIDPROC
-  UInt32 packedLength();
-
-//////////////////////////////////////////////////////////////////
-// packs 'this' into a message. Converts pointers to offsets.
-//////////////////////////////////////////////////////////////////
-NA_EIDPROC
-  UInt32 pack(char * buffer);
-
-NA_EIDPROC
-  void unpack(const char* &buffer);
-
-NA_EIDPROC
-  void copyContents(ExDP2InsertStats* other);
-
-NA_EIDPROC
-  void merge(ExDP2InsertStats* other);
-
-NA_EIDPROC
-  ExOperStats * copyOper(NAMemory * heap);
-
-/////////////////////////////////////////////////////////////////
-// accessors, mutators
-/////////////////////////////////////////////////////////////////
-NA_EIDPROC
-  inline Int64 getInsertedRows() const { return insertedRows_; }
-
-NA_EIDPROC
-  inline void setInsertedRows(Int64 cnt) { insertedRows_ = cnt; }
-
-NA_EIDPROC
-  inline void incInsertedRows(Int64 i = 1) 
-         { insertedRows_ = insertedRows_ + i; }
-
-NA_EIDPROC
-  inline Int64 getSingleRowInserts() const { return singleRowInserts_; }
-
-NA_EIDPROC
-  inline void incSingleRowInserts(Int64 i = 1) 
-         { singleRowInserts_ = singleRowInserts_ + i; }
-
-NA_EIDPROC
-  inline Int64 getInsertedBuffers() const { return insertedBuffers_; }
-
-NA_EIDPROC
-  inline void incInsertedBuffers(Int64 i = 1) 
-         { insertedBuffers_ = insertedBuffers_ + i; }
-
-NA_EIDPROC
-  inline Int64 getNakdBuffers() const { return nakdBuffers_; }
-
-NA_EIDPROC
-  inline void incNakdBuffers(Int64 i = 1) 
-         { nakdBuffers_ = nakdBuffers_ + i; }
-
-NA_EIDPROC
-  ExDP2InsertStats * castToExDP2InsertStats();
-
-NA_EIDPROC
-  virtual const char * getNumValTxt(Int32 i) const;
-
-NA_EIDPROC
-  virtual Int64 getNumVal(Int32 i) const;
-  virtual ExeDp2Stats * castToExeDp2Stats()
-  {
-    return exeDp2Stats();
-  }
-
-NA_EIDPROC
-  ExeDp2Stats * exeDp2Stats()
-  {
-    return &exeDp2Stats_;
-  }
-
-NA_EIDPROC
-  virtual void getVariableStatsInfo(char * dataBuffer,
-				    char * datalen,
-				    Lng32 maxLen);
-
-#ifndef __EID
-  Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
-#endif
-
-private:
-  ExeDp2Stats exeDp2Stats_;
-
-  // total number of inserted rows.
-  Int64 insertedRows_;
-
-  // All the following fields are valid for buffered inserts.
-  NABoolean bufferedInsert_;
-
-  // number of rows inserted using single row insert
-  // interface (DP2_EXECUTOR_INSERT).
-  Int64 singleRowInserts_;
-
-  // valid if bufferedInsert_ flag is TRUE
-  Int64 insertedBuffers_;
-
-  // number of times DP2 returned error code to NAK.
-  // This is done when DP2 cannot to a VSBB insert due
-  // to some reason. See ExDp2VSBBInsertTcb::work() for details.
-  Int64 nakdBuffers_;
-};
-
 
 
 /////////////////////////////////////////////////////////////////
@@ -3093,7 +2857,6 @@ NA_EIDPROC
   void merge(ExOperStats * other);
   void merge(ExMeasStats* other);
   void merge(ExFragRootOperStats* other);
-  void merge(ExPertableStats* other);
   void merge(ExUDRBaseStats * other);
   void merge(ExBMOStats * other);
   void merge(ExHdfsScanStats * other);
@@ -3222,10 +2985,6 @@ private:
   Int32 maxHeapAlloc_;
   Int64 cpuTime_;
 #ifndef __EID
-  Int32 dp2MaxSpaceUsage_;
-  Int32 dp2MaxSpaceAlloc_;
-  Int32 dp2MaxHeapUsage_;
-  Int32 dp2MaxHeapAlloc_;
   Int32 espMaxSpaceUsage_;
   Int32 espMaxSpaceAlloc_;
   Int32 espMaxHeapUsage_;
@@ -3269,88 +3028,6 @@ private:
   Int64 scratchReadCount_;
   Int64 scratchWriteCount_;
   Int64 udrCpuTime_;
-#endif
-};
-
-
-/////////////////////////////////////////////////////////////////
-// class ExPertableStats 
-/////////////////////////////////////////////////////////////////
-class ExPertableStats : public ExMeasBaseStats {
-public:
-NA_EIDPROC
-  ExPertableStats(NAMemory * heap,
-	       ex_tcb * tcb,
-	       const ComTdb * tdb);
-
-NA_EIDPROC
-  ExPertableStats(NAMemory * heap);
-
-NA_EIDPROC
-  ~ExPertableStats();
-
-NA_EIDPROC
-  UInt32 packedLength();
-
-//////////////////////////////////////////////////////////////////
-// packs 'this' into a message. Converts pointers to offsets.
-//////////////////////////////////////////////////////////////////
-NA_EIDPROC
-  UInt32 pack(char * buffer);
-
-NA_EIDPROC
-  void unpack(const char* &buffer);
-
-NA_EIDPROC
-  void merge(ExPertableStats* other);
-
-NA_EIDPROC
-  ExOperStats * copyOper(NAMemory * heap);
-
-NA_EIDPROC
-  virtual void getVariableStatsInfo(char * dataBuffer, char * datalen, 
-				    Lng32 maxLen);
-
-NA_EIDPROC
-  inline char * ansiName() const {return ansiName_;}
-
-NA_EIDPROC
-  inline char * fileName() const {return fileName_;}
-
-// return 3 characteristics counters for this operator and a short text
-// identification what the counter means
-NA_EIDPROC
-  virtual const char * getNumValTxt(Int32 i) const;
-
-NA_EIDPROC
-  virtual Int64 getNumVal(Int32 i) const;
- 
-NA_EIDPROC
-  void copyContents(ExPertableStats * other);
-
-NA_EIDPROC
- ExPertableStats *castToExPertableStats();
-
-#ifndef __EID
-  Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
-  void setCpuStatsHistory() { histDp2CpuTime_ = exeDp2Stats()->getProcessBusyTime(); }
-  NABoolean filterForCpuStats();
-  void setQueryId(char *queryId, Lng32 queryIdLen)
-  {
-    queryId_ = queryId;
-    queryIdLen_ = queryIdLen;
-  } 
-  char *getQueryId() { return queryId_; }
-  Lng32 getQueryIdLen() { return queryIdLen_; }
-#endif
-private:
-
-  char * ansiName_;
-  char * fileName_;
-#ifndef __EID
-  char *queryId_;
-  Lng32 queryIdLen_;
-  Int64 histDp2CpuTime_;
 #endif
 };
 

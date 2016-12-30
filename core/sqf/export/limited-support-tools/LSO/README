@@ -266,7 +266,7 @@ SE_BLOCKED_QUERIES
 ==================
 
 This statement lists queries which are blocked in the storage engine APIs 
-for more than given number of seconds. The BLOCKED_TIME_IN_SECS denotes how 
+for more than given number of seconds. The BLOCKED_FOR_SECS denotes how 
 long the storage engine API is blocked.
 
 The SQL commands to list SE_BLOCKED queries are available at:
