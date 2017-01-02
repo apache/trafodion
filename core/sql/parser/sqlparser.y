@@ -8868,7 +8868,7 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
     | TOK_TO_CHAR '(' value_expression ')'
                                {
                                  $$ = new (PARSERHEAP()) DateFormat
-                                   ($3, "YYYY-MM-DD", DateFormat::FORMAT_TO_CHAR);
+                                   ($3, "UNSPECIFIED", DateFormat::FORMAT_TO_CHAR);
 
 			       }
     | TOK_TO_DATE '(' value_expression ',' character_string_literal ')'

@@ -113,6 +113,8 @@ select to_date('0103.2016', 'DD.MM.YYYY') from (values(1)) x(a);
 select to_char('2016-03-01', 'YYYY-MM-DD') from (values(1)) x(a);
 select to_date(20160301, 'YYYYMMDD') from (values(1)) x(a);
 select to_char(date '2016-03-01', 'HH:MI:SS') from (values(1)) x(a);
+select to_char(time '10:23:34', 'YYYY-MM-DD') from (values(1)) x(a);
+select to_char(time '10:23:34', 'DD.MM.YYYY HH24.MI.SS') from (values(1)) x(a);
 select to_date ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
 select to_date ('10:23:34', 'HH:MI:SS') from (values(1)) x(a);
 select to_date('04-DEC-2016','DDMONYYYY') from (values(1)) x(a);
@@ -123,6 +125,8 @@ select to_date('2016-04-33 01:01:01','YYYY-MM-DD HH24:MI:SS') from (values(1)) x
 select * from t030t1 where to_date(c, 'YYYY-MM-DD') = '2016-03-01';
 select to_date('01.03.2016:10:11:12', 'DD.MM.YYYY:HH24:MI:SS') from (values(1)) x(a);
 select to_date('01.03.2016:10:11:12', 'DD.MM.YYYY HH24:MI:SS') from (values(1)) x(a);
+select to_char(3, 'HH:MI:SS') from (values(1)) x(a);
+select dateformat(3, usa) from (values(1)) x(a);
 
 -- some formats only enabled in special mode. Not externalized.
 cqd mode_special_4 'ON';
