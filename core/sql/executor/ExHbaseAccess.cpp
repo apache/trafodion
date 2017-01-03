@@ -3189,10 +3189,13 @@ void ExHbaseAccessTcb::buildLoggingFileName(NAHeap *heap,
                              const char *tableName,
                              const char * loggingFileNamePrefix,
                              Lng32 instId,
-                             char * loggingFileName)
+                             char *&loggingFileName)
 {
   if (loggingFileName != NULL)
      NADELETEBASIC(loggingFileName, heap);
+  loggingFileName = NULL;
+  if (currCmdLoggingLocation == NULL)
+     return;
   short logLen = strlen(currCmdLoggingLocation)+strlen(loggingFileNamePrefix)+strlen(tableName)+100;
   loggingFileName = new (heap) char[logLen];
   sprintf(loggingFileName, "%s/%s_%s_%d",
@@ -3203,7 +3206,7 @@ void ExHbaseAccessTcb::buildLoggingPath(
                              const char *loggingLocation,
                              char * logId,
                              const char * tableName,
-                             char * currCmdLoggingLocation)
+                             char *currCmdLoggingLocation)
 {
   time_t t;
   char logId_tmp[30];

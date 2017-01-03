@@ -189,7 +189,6 @@ ExHdfsScanTcb::ExHdfsScanTcb(
 
   Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
   ExHbaseAccessTcb::buildLoggingFileName((NAHeap *)getHeap(), ((ExHdfsScanTdb &)hdfsScanTdb).getLoggingLocation(),
-                     // (char *)((ExHdfsScanTdb &)hdfsScanTdb).getErrCountRowId(),
                      ((ExHdfsScanTdb &)hdfsScanTdb).tableName(),
                      "hive_scan_err",
                      fileNum,
