@@ -542,125 +542,53 @@ Lng32 ExTimeStats::filterForSEstats(struct timespec currTimespec)
 }
 
 //////////////////////////////////////////////////////////////////
-// class ExeDp2Stats
+// class ExeSEtats
 //////////////////////////////////////////////////////////////////
-UInt32 ExeDp2Stats::packedLength() 
+UInt32 ExeSEStats::packedLength() 
 {
-  UInt32 size  = sizeof(accessedDP2Rows_);
-  size += sizeof(usedDP2Rows_);
-  size += sizeof(escalations_);
-  size += sizeof(diskReads_);
-  size += sizeof(lockWaits_);
-
-  if (getVersion() >= _STATS_RTS_VERSION)
-    size += sizeof(processBusyTime_);
+  UInt32 size  = sizeof(accessedRows_);
+  size += sizeof(usedRows_);
+  size += sizeof(numIOCalls_);
+  size += sizeof(numIOBytes_);
+  size += sizeof(maxIOTime_);
   return size;
 }
 
-UInt32 ExeDp2Stats::pack(char * buffer) 
+UInt32 ExeSEStats::pack(char * buffer) 
 {
-  UInt32 size  = packIntoBuffer(buffer, accessedDP2Rows_);
-  size += packIntoBuffer(buffer, usedDP2Rows_);
-  size += packIntoBuffer(buffer, escalations_);
-  size += packIntoBuffer(buffer, diskReads_);
-  size += packIntoBuffer(buffer, lockWaits_);
-  if (getVersion() >= _STATS_RTS_VERSION)
-    size += packIntoBuffer(buffer, processBusyTime_);
+  UInt32 size  = packIntoBuffer(buffer, accessedRows_);
+  size += packIntoBuffer(buffer, usedRows_);
+  size += packIntoBuffer(buffer, numIOCalls_);
+  size += packIntoBuffer(buffer, numIOBytes_);
+  size += packIntoBuffer(buffer, maxIOTime_);
   return size;
 }
 
-void ExeDp2Stats::merge(ExeDp2Stats * other) 
+void ExeSEStats::merge(ExeSEStats * other) 
 {
-  accessedDP2Rows_ = accessedDP2Rows_ + other->accessedDP2Rows_;
-  usedDP2Rows_ = usedDP2Rows_ + other->usedDP2Rows_;
-  escalations_ = escalations_ + other->escalations_;
-
-  // Avoid overflow of this 32 bit counter.  Typically, 32 bits is
-  // enough, but in some cases such as when the table is not audited,
-  // the disk reads (really disk IO, incl. writes) can be large.
-  // Merging many stats from many partitions can overflow this counter
-  // causing an exception.
-  //
-  // To avoid this, once we reach UINT_MAX, we stop advancing the
-  // counter.
-  //
-  Int64 diskReads = diskReads_ + other->diskReads_;
-  diskReads_ = ((diskReads > UINT_MAX) ? UINT_MAX : (UInt32)diskReads);
-  lockWaits_ = lockWaits_ + other->lockWaits_;
-  if (other->getVersion() >= _STATS_RTS_VERSION)
-    processBusyTime_ = processBusyTime_ + other->processBusyTime_;
+  accessedRows_ = accessedRows_ + other->accessedRows_;
+  usedRows_ = usedRows_ + other->usedRows_;
+  numIOCalls_ = numIOCalls_ + other->numIOCalls_;
+  numIOBytes_ = numIOBytes_ + other->numIOBytes_;
+  maxIOTime_ = maxIOTime_ + other->maxIOTime_;
 }
 
-void ExeDp2Stats::copyContents(ExeDp2Stats * other)
+void ExeSEStats::copyContents(ExeSEStats *other)
 {
-  accessedDP2Rows_ = other->accessedDP2Rows_;
-  usedDP2Rows_ = other->usedDP2Rows_;
-  escalations_ = other->escalations_;
-  diskReads_ = other->diskReads_;
-  lockWaits_ = other->lockWaits_;
-  if (other->getVersion() >= _STATS_RTS_VERSION)
-    processBusyTime_ = other->processBusyTime_;
-  else
-    processBusyTime_  = 0;
+  accessedRows_ = other->accessedRows_;
+  usedRows_ = other->usedRows_;
+  numIOCalls_ = other->numIOCalls_;
+  numIOBytes_ = other->numIOBytes_;
+  maxIOTime_ = other->maxIOTime_;
 }
 
-void ExeDp2Stats::unpack(const char* &buffer) 
+void ExeSEStats::unpack(const char* &buffer) 
 {
-  unpackBuffer(buffer, accessedDP2Rows_);
-  unpackBuffer(buffer, usedDP2Rows_);
-  unpackBuffer(buffer, escalations_);
-  unpackBuffer(buffer, diskReads_);
-  unpackBuffer(buffer, lockWaits_);
-  if (getVersion() >= _STATS_RTS_VERSION)
-    unpackBuffer(buffer, processBusyTime_);
-  else
-    processBusyTime_ = 0;
-}
-
-//////////////////////////////////////////////////////////////////
-// class FsDp2MsgsStats
-//////////////////////////////////////////////////////////////////
-UInt32 FsDp2MsgsStats::packedLength()
-{
-  UInt32 size  = sizeof(numMessages_);
-  size += sizeof(messageBytes_);
-  size += sizeof(statsBytes_);
-  size += sizeof(numRedriveAttempted_); 
-  return size;
-}
-
-UInt32 FsDp2MsgsStats::pack(char * buffer) 
-{
-  UInt32 size  = packIntoBuffer(buffer, numMessages_);
-  size += packIntoBuffer(buffer, messageBytes_);
-  size += packIntoBuffer(buffer, statsBytes_);
-  size += packIntoBuffer(buffer, numRedriveAttempted_);
- 
-  return size;
-}
-
-void FsDp2MsgsStats::merge(FsDp2MsgsStats * other) 
-{
-  numMessages_ = numMessages_ + other->numMessages_;
-  messageBytes_ = messageBytes_ + other->messageBytes_;
-  statsBytes_ = statsBytes_ + other->statsBytes_;
-  numRedriveAttempted_ += other->numRedriveAttempted_;
-}
-
-void FsDp2MsgsStats::copyContents(FsDp2MsgsStats * other)
-{
-  numMessages_  = other->numMessages_;
-  messageBytes_ = other->messageBytes_;
-  statsBytes_ = other->statsBytes_;
-  numRedriveAttempted_ = other->numRedriveAttempted_;
-}
-
-void FsDp2MsgsStats::unpack(const char* &buffer) 
-{
-  unpackBuffer(buffer, numMessages_);
-  unpackBuffer(buffer, messageBytes_);
-  unpackBuffer(buffer, statsBytes_);
-  unpackBuffer(buffer, numRedriveAttempted_);
+  unpackBuffer(buffer, accessedRows_);
+  unpackBuffer(buffer, usedRows_);
+  unpackBuffer(buffer, numIOCalls_);
+  unpackBuffer(buffer, numIOBytes_);
+  unpackBuffer(buffer, maxIOTime_);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -3193,7 +3121,7 @@ void ExPartitionAccessStats::init()
 {
   ExOperStats::init();
 
-  fsDp2MsgsStats()->init();
+  exeSEStats()->init();
 
   bufferStats()->init();
 }
@@ -3201,7 +3129,7 @@ void ExPartitionAccessStats::init()
 void ExPartitionAccessStats::copyContents(ExPartitionAccessStats* other)
 {
   ExOperStats::copyContents(other);
-  fsDp2MsgsStats()->copyContents(other->fsDp2MsgsStats());
+  exeSEStats()->copyContents(other->exeSEStats());
   bufferStats()->copyContents(other->bufferStats());
   
   // copy names only if we don't have one
@@ -3227,7 +3155,7 @@ void ExPartitionAccessStats::copyContents(ExPartitionAccessStats* other)
 void ExPartitionAccessStats::merge(ExPartitionAccessStats* other)
 {
   ExOperStats::merge(other);
-  fsDp2MsgsStats()->merge(other -> fsDp2MsgsStats());
+  exeSEStats()->merge(other ->exeSEStats());
 
   bufferStats()->merge(other -> bufferStats());
 
@@ -3244,7 +3172,7 @@ ULng32 ExPartitionAccessStats::packedLength()
 {
   UInt32 size = ExOperStats::packedLength();
   alignSizeForNextObj(size);
-  size += fsDp2MsgsStats()->packedLength();
+  size += exeSEStats()->packedLength();
   
   alignSizeForNextObj(size);
   size += bufferStats()->packedLength();
@@ -3266,7 +3194,7 @@ ExPartitionAccessStats::pack(char* buffer)
   UInt32  size = ExOperStats::pack(buffer);
   buffer += size;
 
-  UInt32 temp = fsDp2MsgsStats()->alignedPack(buffer);
+  UInt32 temp = exeSEStats()->alignedPack(buffer);
   buffer += temp;
   size += temp;
 
@@ -3287,7 +3215,7 @@ void ExPartitionAccessStats::unpack(const char* &buffer)
 {
   ExOperStats::unpack(buffer);
 
-  fsDp2MsgsStats()->alignedUnpack(buffer);
+  exeSEStats()->alignedUnpack(buffer);
 
   bufferStats()->alignedUnpack(buffer);
 
@@ -3364,9 +3292,8 @@ void ExPartitionAccessStats::getVariableStatsInfo(char * dataBuffer,
 	      "AnsiName: %s PhysName: %s BuffersSize: %u BuffersSent: %u BuffersRcvd: %u NumMessages: %Ld MsgBytes: %Ld StatsBytes: %Ld MsgBytesSent: %Ld MsgBytesRcvd: %Ld ",
 	      ansiName_, fileName_,
 	      bufferStats()->sendBufferSize(), bufferStats()->sentBuffers().entryCnt(), bufferStats()->recdBuffers().entryCnt(), 
-	      fsDp2MsgsStats()->getNumMessages(),
-	      fsDp2MsgsStats()->getMessageBytes(),
-	      fsDp2MsgsStats()->getStatsBytes(),
+	      exeSEStats()->getNumIOCalls(),
+	      exeSEStats()->getNumIOBytes(),
 	      bufferStats()->totalSentBytes(),
 	      bufferStats()->totalRecdBytes());
   buf += str_len(buf);
@@ -3407,20 +3334,14 @@ Lng32 ExPartitionAccessStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
         sqlStats_item->str_ret_len = len;
       }
       break;
-    case SQLSTATS_MSG_COUNT:
-      sqlStats_item->int64_value = fsDp2MsgsStats()->getNumMessages();
+    case SQLSTATS_SE_IOS:
+      sqlStats_item->int64_value = exeSEStats()->getNumIOCalls();
       break;
-    case SQLSTATS_MSG_BYTES:
-      sqlStats_item->int64_value = fsDp2MsgsStats()->getMessageBytes();
+    case SQLSTATS_SE_IO_BYTES:
+      sqlStats_item->int64_value = exeSEStats()->getNumIOBytes();
       break;
-    case SQLSTATS_OPENS:
-      sqlStats_item->int64_value = opens_;
-      break;
-    case SQLSTATS_OPEN_TIME:
-      sqlStats_item->int64_value = openTime_;
-      break;
-    case SQLSTATS_STATS_BYTES:
-      sqlStats_item->int64_value = fsDp2MsgsStats()->getStatsBytes();
+    case SQLSTATS_SE_IO_MAX_TIME:
+      sqlStats_item->int64_value = exeSEStats()->getMaxIOTime();
       break;
     default:
       sqlStats_item->error_code = -EXE_STAT_NOT_FOUND;
@@ -4470,20 +4391,14 @@ ExMeasBaseStats::ExMeasBaseStats(NAMemory * heap,
 				 const ComTdb * tdb)
      : ExOperStats(heap,
                    statType,
-		   tcb, tdb),
-       filler1_(0),
-       opens_(0),
-       openTime_(0)
+		   tcb, tdb)
 {
 }
 
 ExMeasBaseStats::ExMeasBaseStats(NAMemory * heap, StatType statType)
      : ExOperStats(heap,
 	           statType,
-		   NULL, NULL),
-       filler1_(0),
-       opens_(0),
-       openTime_(0)
+		   NULL, NULL)
 {  
 }
 
@@ -4494,144 +4409,64 @@ ExMeasBaseStats * ExMeasBaseStats::castToExMeasBaseStats()
 
 UInt32 ExMeasBaseStats::packedLength() {
   UInt32 size = 0;
-  if (statsInDp2())
-  {
-    if (getVersion() >= _STATS_RTS_VERSION_R25 && 
-      (getCollectStatsType() == ComTdb::OPERATOR_STATS || getCollectStatsType() == ComTdb::ALL_STATS))
-    {
-      size = ExOperStats::packedLength();
-      alignSizeForNextObj(size);
-    }
-    size += sizeof(getEstRowsAccessed());
-    size += sizeof(getEstRowsUsed());
-    size += sizeof(MeasureInDp2);
-    return size;
-  }
-  else
-  {
-    UInt32 size;
-    size = ExOperStats::packedLength();
-    alignSizeForNextObj(size);
-    size += sizeof(ExMeasBaseStats)-sizeof(ExOperStats);
-    return size;
-  }
+  size = ExOperStats::packedLength();
+  alignSizeForNextObj(size);
+  size += sizeof(getEstRowsAccessed());
+  size += sizeof(getEstRowsUsed());
+  size += sizeof(exeSEStats()->getAccessedRows());
+  size += sizeof(exeSEStats()->getUsedRows());
+  size += sizeof(exeSEStats()->getNumIOCalls());
+  size += sizeof(exeSEStats()->getNumIOBytes());
+  size += sizeof(exeSEStats()->getMaxIOTime());
+  return size;
 }
 
 UInt32
 ExMeasBaseStats::pack(char * buffer) {
   UInt32 size = 0;
-  if (statsInDp2())
-  {
-    if (getVersion() >= _STATS_RTS_VERSION_R25 && 
-      (getCollectStatsType() == ComTdb::OPERATOR_STATS || getCollectStatsType() == ComTdb::ALL_STATS))
-    {
-      size = ExOperStats::pack(buffer);
-      alignSizeForNextObj(size);
-      buffer += size;
-    }
-    size += packIntoBuffer(buffer, getEstRowsAccessed());
-    size += packIntoBuffer(buffer, getEstRowsUsed());
-    MeasureInDp2 m;
-    m.setAccessedDp2Rows(exeDp2Stats()->getAccessedDP2Rows());
-    m.setUsedDp2Rows(exeDp2Stats()->getUsedDP2Rows());
-    m.setDiskReads(exeDp2Stats()->getDiskReads());
-    m.setEscalations(exeDp2Stats()->getEscalations());
-    if (exeDp2Stats()->getVersion() >= _STATS_RTS_VERSION)
-    {
-      m.setLockWaits(exeDp2Stats()->getLockWaits());
-      m.setProcessBusyTime(exeDp2Stats()->getProcessBusyTime());
-    }
-    else
-    {
-      m.setLockWaits(0);
-      m.setProcessBusyTime(0);
-    }
-    size += packIntoBuffer(buffer, m);
-   return size;
-  }
-  else
-  {
-    UInt32 packedLen;
-    packedLen = ExOperStats::pack(buffer);
-    alignSizeForNextObj(packedLen);
-    buffer += packedLen;
-    UInt32 srcLen = sizeof(ExMeasBaseStats)-sizeof(ExOperStats);
-    char * srcPtr = (char *)this+sizeof(ExOperStats);
-    memcpy(buffer, (void *)srcPtr, srcLen);
-    return packedLen+srcLen;
-  }
+  size = ExOperStats::pack(buffer);
+  alignSizeForNextObj(size);
+  buffer += size;
+  size += packIntoBuffer(buffer, getEstRowsAccessed());
+  size += packIntoBuffer(buffer, getEstRowsUsed());
+  size += packIntoBuffer(buffer, exeSEStats()->getAccessedRows());
+  size += packIntoBuffer(buffer, exeSEStats()->getUsedRows());
+  size += packIntoBuffer(buffer, exeSEStats()->getNumIOCalls());
+  size += packIntoBuffer(buffer, exeSEStats()->getNumIOBytes());
+  size += packIntoBuffer(buffer, exeSEStats()->getMaxIOTime());
+  return size;
 }
 
 void ExMeasBaseStats::unpack(const char* &buffer) {
-  if (statsInDp2())
-  {
-    if (getVersion() >= _STATS_RTS_VERSION_R25 &&
-      (getCollectStatsType() == ComTdb::OPERATOR_STATS || getCollectStatsType() == ComTdb::ALL_STATS))
-    {
-      ExOperStats::unpack(buffer);
-      alignBufferForNextObj(buffer);
-    }
-    MeasureInDp2 m;
-    Float32 temp;
-    unpackBuffer(buffer, temp);
-    setEstRowsAccessed(temp);
-    unpackBuffer(buffer, temp);
-    setEstRowsUsed(temp);
-    m.unpackBuffer(buffer, getVersion());
-    exeDp2Stats()->setAccessedDP2Rows(m.getAccessedDp2Rows());
-    exeDp2Stats()->setUsedDP2Rows(m.getUsedDp2Rows());
-    exeDp2Stats()->setDiskReads(m.getDiskReads());
-    exeDp2Stats()->setEscalations(m.getEscalations());
-    exeDp2Stats()->setLockWaits(0);
-    if (exeDp2Stats()->getVersion() >= _STATS_RTS_VERSION)
-    {
-      exeDp2Stats()->setLockWaits((Lng32)m.getLockWaits());
-      exeDp2Stats()->setProcessBusyTime(m.getProcessBusyTime());
-    }
-    else
-    {
-      exeDp2Stats()->setLockWaits(0);
-      exeDp2Stats()->setProcessBusyTime(0);
-    }
-  }
-  else
-  {
-    if (getVersion() >= _STATS_RTS_VERSION_R25)
-    {
-      UInt32 srcLen;
-      ExOperStats::unpack(buffer);
-      alignBufferForNextObj(buffer); 
-      srcLen = sizeof(ExMeasBaseStats)-sizeof(ExOperStats);
-      char * srcPtr = (char *)this+sizeof(ExOperStats);
-      memcpy((void *)srcPtr, buffer, srcLen);
-      buffer += srcLen;
-    }
-    else
-    {
-      ExOperStats::unpack(buffer);
-      exeDp2Stats_.alignedUnpack(buffer);
-      fsDp2MsgsStats_.alignedUnpack(buffer);
-      unpackBuffer(buffer, opens_);
-      unpackBuffer(buffer, openTime_);
-    }
-  }
+   ExOperStats::unpack(buffer);
+   alignBufferForNextObj(buffer);
+   float temp;
+   unpackBuffer(buffer, temp);
+   setEstRowsAccessed(temp);
+   unpackBuffer(buffer, temp);
+   setEstRowsUsed(temp);
+   Int64 temp1;
+   unpackBuffer(buffer, temp1);
+   exeSEStats()->setAccessedRows(temp1);
+   unpackBuffer(buffer, temp1);
+   exeSEStats()->setUsedRows(temp1);
+   unpackBuffer(buffer, temp1);
+   exeSEStats()->setNumIOCalls(temp1);
+   unpackBuffer(buffer, temp1);
+   exeSEStats()->setNumIOBytes(temp1);
+   unpackBuffer(buffer, temp1);
+   exeSEStats()->setMaxIOTime(temp1);
 }
 
 void ExMeasBaseStats::init() {
   ExOperStats::init();
-  exeDp2Stats()->init();
-  fsDp2MsgsStats()->init();
-  opens_ = 0;
-  openTime_ = 0;
+  exeSEStats()->init();
 }
 
 void ExMeasBaseStats::merge(ExMeasBaseStats* other)
 {
   ExOperStats::merge(other);
-  exeDp2Stats()    -> merge(other -> exeDp2Stats());
-  fsDp2MsgsStats() -> merge(other -> fsDp2MsgsStats());
-  opens_    += other -> opens_;
-  openTime_ += other -> openTime_;
+  exeSEStats()    -> merge(other -> exeSEStats());
 }
 
 void ExMeasBaseStats::copyContents(ExMeasBaseStats * other) 
@@ -4666,11 +4501,11 @@ Int64 ExMeasBaseStats::getNumVal(Int32 i) const
     case 1:
       return ExOperStats::getNumVal(i);
     case 2:
-      return fsDp2MsgsStats_.getMessageBytes();
+      return seStats_.getNumIOBytes();
     case 3:
-      return exeDp2Stats_.getAccessedDP2Rows();
+      return seStats_.getAccessedRows();
     case 4:
-      return exeDp2Stats_.getDiskReads();
+      return seStats_.getNumIOCalls();
     }
   return 0;
 }
@@ -4681,19 +4516,14 @@ void ExMeasBaseStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
   char * buf = dataBuffer;
 
   sprintf (buf, 
-	   "NumMessages: %u MessagesBytes: " PF64 " StatsBytes: " PF64 " AccessedRows: " PF64 " UsedRows: " PF64 " DiskIOs: %u Escalations: %u LockWaits: %u ProcessBusyTime: " PF64 " Opens: %u OpenTime: " PF64 " NumRedrives: " PF64 " ",
-	      (ULng32)fsDp2MsgsStats()->getNumMessages(),
-	      fsDp2MsgsStats()->getMessageBytes(),
-	      fsDp2MsgsStats()->getStatsBytes(),
-	      exeDp2Stats()->getAccessedDP2Rows(),
-	      exeDp2Stats()->getUsedDP2Rows(),
-	      exeDp2Stats()->getDiskReads(),
-	      exeDp2Stats()->getEscalations(),
-	      exeDp2Stats()->getLockWaits(),
-              exeDp2Stats()->getProcessBusyTime(),
-              opens_,
-              openTime_,
-              fsDp2MsgsStats()->getNumRedriveAttempted()
+	   "NumMessages: " PF64 " MessagesBytes: " PF64 " StatsBytes: %d  AccessedRows: " PF64 " UsedRows: " PF64 " DiskIOs: " PF64 "  MaxIOTime: " PF64 " ",
+	      exeSEStats()->getNumIOCalls(),
+	      exeSEStats()->getNumIOBytes(),
+              0,
+	      exeSEStats()->getAccessedRows(),
+	      exeSEStats()->getUsedRows(),
+	      exeSEStats()->getNumIOCalls(),
+              exeSEStats()->getMaxIOTime()
               );
   buf += str_len(buf);
 
@@ -4703,8 +4533,6 @@ void ExMeasBaseStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
 
 void ExMeasBaseStats::setVersion(Lng32 version)
 {
-  ExOperStats::setVersion(version);
-  exeDp2Stats_.setVersion(version);
 }
 //////////////////////////////////////////////////////////////////
 // class ExMeasStats
@@ -5052,21 +4880,20 @@ void ExMeasStats::merge(ExBMOStats *other)
 
 void ExMeasStats::merge(ExHdfsScanStats* other)
 {
-  exeDp2Stats()->incAccessedDP2Rows(other->rowsAccessed());
-  exeDp2Stats()->incUsedDP2Rows(other->rowsUsed());
-  exeDp2Stats()->incDiskReads(other->lobStats()->numReadReqs);
-  exeDp2Stats()->incProcessBusyTime(other->lobStats()->hdfsAccessLayerTime/1000);
-
-  fsDp2MsgsStats() ->incMessageBytes(other->numBytesRead());
+  exeSEStats()->incAccessedRows(other->rowsAccessed());
+  exeSEStats()->incUsedRows(other->rowsUsed());
+  exeSEStats()->incNumIOCalls(0);
+  exeSEStats()->incNumIOBytes(other->numBytesRead());
+  exeSEStats()->incMaxIOTime(other->maxHdfsIOTime());
 }
 
 void ExMeasStats::merge(ExHbaseAccessStats* other)
 {
-  exeDp2Stats()->incAccessedDP2Rows(other->rowsAccessed());
-  exeDp2Stats()->incUsedDP2Rows(other->rowsUsed());
-  exeDp2Stats()->incDiskReads(other->hbaseCalls());
-  exeDp2Stats()->incProcessBusyTime(other->getHbaseTimer().getTime());
-  fsDp2MsgsStats() ->incMessageBytes(0);
+  exeSEStats()->incAccessedRows(other->rowsAccessed());
+  exeSEStats()->incUsedRows(other->rowsUsed());
+  exeSEStats()->incNumIOCalls(other->hbaseCalls());
+  exeSEStats()->incNumIOBytes(other->numBytesRead());
+  exeSEStats()->incMaxIOTime(other->maxHbaseIOTime());
 }
 
 void ExMeasStats::merge(ExMeasStats* other)
@@ -5356,31 +5183,42 @@ Lng32 ExMeasStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   switch (sqlStats_item->statsItem_id)
   {
   case SQLSTATS_ACT_ROWS_ACCESSED:
-    sqlStats_item->int64_value = exeDp2Stats()->getAccessedDP2Rows();
+    sqlStats_item->int64_value = exeSEStats()->getAccessedRows();
     break;
   case SQLSTATS_ACT_ROWS_USED:
-    sqlStats_item->int64_value = exeDp2Stats()->getUsedDP2Rows();
+    sqlStats_item->int64_value = exeSEStats()->getUsedRows();
     break;
+/*
   case SQLSTATS_MSG_COUNT:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getNumMessages();
+    sqlStats_item->int64_value = exeSEStats()->getMaxIOTime();
     break;
   case SQLSTATS_MSG_BYTES:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getMessageBytes();
+    sqlStats_item->int64_value = exeSEStats()->getNumIOBytes();
     break;
   case SQLSTATS_STATS_BYTES:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getStatsBytes();
+    sqlStats_item->int64_value = exeSEStats()->getStatsBytes();
     break;
   case SQLSTATS_DISK_IOS:
-    sqlStats_item->int64_value = exeDp2Stats()->getDiskReads();
+    sqlStats_item->int64_value = exeSEStats()->getNumIOCalls();
     break;
   case SQLSTATS_LOCK_WAITS:
-    sqlStats_item->int64_value = exeDp2Stats()->getLockWaits();
+    sqlStats_item->int64_value = exeSEStats()->getLockWaits();
     break;
   case SQLSTATS_LOCK_ESCALATIONS:
-    sqlStats_item->int64_value = exeDp2Stats()->getEscalations();
+    sqlStats_item->int64_value = exeSEStats()->getEscalations();
     break;
   case SQLSTATS_DP2_CPU_BUSY_TIME:
-    sqlStats_item->int64_value = exeDp2Stats()->getProcessBusyTime();
+    sqlStats_item->int64_value = exeSEStats()->getMaxIOTime();
+    break;
+*/
+  case SQLSTATS_SE_IOS:
+    sqlStats_item->int64_value = exeSEStats()->getNumIOCalls();
+    break;
+  case SQLSTATS_SE_IO_BYTES:
+    sqlStats_item->int64_value = exeSEStats()->getNumIOBytes();
+    break;
+  case SQLSTATS_SE_IO_MAX_TIME:
+    sqlStats_item->int64_value = exeSEStats()->getMaxIOTime();
     break;
   case SQLSTATS_SQL_CPU_BUSY_TIME:
     sqlStats_item->int64_value = cpuTime_ + espCpuTime_;
@@ -5397,12 +5235,14 @@ Lng32 ExMeasStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_SQL_HEAP_USED:
     sqlStats_item->int64_value = maxHeapUsage_ + espMaxHeapUsage_;
     break;
+/*
   case SQLSTATS_OPENS:
     sqlStats_item->int64_value = getOpens();
     break;
   case SQLSTATS_OPEN_TIME:
     sqlStats_item->int64_value = getOpenTime();
     break;
+*/
   case SQLSTATS_PROCESS_CREATED:
     sqlStats_item->int64_value = newprocess_;
     break;
@@ -5444,9 +5284,6 @@ Lng32 ExMeasStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     break;
   case SQLSTATS_UDR_CPU_BUSY_TIME:
     sqlStats_item->int64_value = udrCpuTime_;
-    break;
-  case SQLSTATS_DP2_REDRIVE_ATTEMPTS:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getNumRedriveAttempted(); 
     break;
   default:
     sqlStats_item->error_code = -EXE_STAT_NOT_FOUND;
@@ -6482,7 +6319,7 @@ ExOperStats * ExStatisticsArea::get(Lng32 tdbId)
 {
   return get(ExOperStats::NO_OP, tdbId); 
 }
-
+/*
 //////////////////////////////////////////////////////////////////
 // scan all ExOperStats entries and update stmtCntrs.
 //////////////////////////////////////////////////////////////////
@@ -6501,14 +6338,14 @@ Int32  ExStatisticsArea::updateStmtCntrs(ExMeasStmtCntrs * stmtCntrs,
   ExMeasStats * stat = getNext()->castToExMeasStats();
   if (stat)
     {
-      stmtCntrs->incRowsAccessed (stat->exeDp2Stats()->getAccessedDP2Rows());
-      stmtCntrs->incRowsUsed (stat->exeDp2Stats()->getUsedDP2Rows());
-      stmtCntrs->incEscalations ((short)stat->exeDp2Stats()->getEscalations());
-      stmtCntrs->incDiscReads (stat->exeDp2Stats()->getDiskReads());
-      stmtCntrs->incLockWaits ((short)stat->exeDp2Stats()->getLockWaits());
-      stmtCntrs->incTimeouts ((short)stat->getTimeouts());
-      stmtCntrs->incMessages (stat->fsDp2MsgsStats()->getNumMessages());
-      stmtCntrs->incMessageBytes (stat->fsDp2MsgsStats()->getMessageBytes());
+      stmtCntrs->incRowsAccessed (stat->exeSEStats()->getAccessedDP2Rows());
+      stmtCntrs->incRowsUsed (stat->exeSE()->getUsedDP2Rows());
+      stmtCntrs->incEscalations ((short)stat->exeSEStats()->getEscalations());
+      stmtCntrs->incDiscReads (stat->exeSEStats()->getDiskReads());
+      stmtCntrs->incLockWaits ((short)stat->exeSEStats()->getLockWaits());
+      stmtCntrs->incTimeouts ((short)stat->exeSEStats());
+      stmtCntrs->incMessages (stat->exeSEStats()->getNumMessages());
+      stmtCntrs->incMessageBytes (stat->exeSEStats()->getMessageBytes());
 
       // now that the ExOperStats have been read, re-initialize
       // them for the next execution of this statement.
@@ -6548,7 +6385,6 @@ void ExStatisticsArea::allocDynamicStmtCntrs(const char * stmtName)
   deallocStmtCntrs_ = TRUE;
 #endif
 }  
-
 
 Int32 ExStatisticsArea::getMeasOpensCntr()
 {
@@ -6597,7 +6433,7 @@ Int64 ExStatisticsArea::getMeasNewprocessTimeCntr()
   else
     return 0;
 };
-
+*/
 void ExStatisticsArea::setMasterStats(ExMasterStats *masterStats)
 { 
   masterStats_ = masterStats; 

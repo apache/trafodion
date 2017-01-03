@@ -359,8 +359,6 @@ private:
   Lng32 recompControlInfoLen_;
   char * recompControlInfo_;
 
-  // if not NULL, this is the statement ID to be used for measure.
-  // Used in allocDynamicStmtCntrs().
   char * uniqueStmtId_;
   Lng32 uniqueStmtIdLen_;
 
@@ -585,9 +583,6 @@ public:
   // reads trigger status from rfork and updates trigger status vector in TCB.
   RETCODE getTriggersStatus(SqlTableOpenInfoPtr* stoiList, 
 							ComDiagsArea &diagsArea);
-  void allocDynamicStmtCntrs();
-  Int32 updateMeasStmtCntrs(Int64 startTime);  
-
   inline void * getStmtHandle();
 
   inline Module * getModule() { return module_; }

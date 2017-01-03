@@ -409,36 +409,6 @@ IpcPriority CliGlobals::myCurrentPriority()
   return myPriority;
 }
 
-// ss_cc_change this is notrelevant to Seaquest
-//LCOV_EXCL_START
-Int32 CliGlobals::ExUpdateProcCntrs()
-{
-  // update opens and newprocess counters
-  ExStatisticsArea *statsArea = currContext()->getStats();
-  if (statsArea != NULL && measProcCntrs_ != NULL)
-  {
-    statsArea->position();  // get first (and only) entry from statsArea
-    ExMeasStats * stats = statsArea->getNext()->castToExMeasStats();
-    if (!stats)
-      return 0;
-
-    if (stats->getOpens() > 32767)
-      measProcCntrs_->setOpens (32767);
-    else
-      measProcCntrs_->incOpens( (short) stats->getOpens() );
-    measProcCntrs_->incOpenTime( stats->getOpenTime() );
-    measProcCntrs_->incNewprocess( (short) stats->getNewprocess() );
-    measProcCntrs_->incNewprocessTime( stats->getNewprocessTime() );
-    stats->setOpens(0);
-    stats->setOpenTime(0);
-    stats->setNewprocess(0);
-    stats->setNewprocessTime(0);
-
-    // update Measure process counters.
-    return measProcCntrs_->ExMeasProcCntrsBump();
-  }
-  return 0;
-}
 //LCOV_EXCL_STOP
 
 // NOTE: Unlike REFPARAM_BOUNDSCHECK, this method does not verify that
@@ -469,13 +439,6 @@ Lng32 CliGlobals::boundsCheck(void          *startAddress,
 {
   // no bounds checking on NT because we're not PRIV
   return 0;
-}
-
-NABoolean CliGlobals::checkMeasStatus()
-{
-  return ExMeasGetStatus( measStmtEnabled_,
-                          measProcEnabled_,
-                          measSubsysRunning_);
 }
 
 NAHeap *CliGlobals::getIpcHeap()
@@ -573,42 +536,6 @@ LmLanguageManagerJava * CliGlobals::getLanguageManagerJava()
 ExeTraceInfo *CliGlobals::getExeTraceInfo()
 {
   return currContext()->getExeTraceInfo();
-}
-
-void CliGlobals::updateMeasure( Statement* stmt, Int64 startTime )
-{
-  // measure stmt/proc entities are not updated/used on all platforms.
-  // This method is not needed.
-  // Just return without doing anything.
-  return;
-
-  if (!(stmt->getRootTdb()) || ((ComTdb*)stmt->getRootTdb())->getCollectStatsType() != ComTdb::MEASURE_STATS)
-    return;
-
-  ComDiagsArea &diags = currContext()->diags();
-
-  if ( getMeasProcEnabled() || getMeasStmtEnabled() )
-    {
-      checkMeasStatus();
-      if ( getMeasProcEnabled() )
-	{
-	  Int32 measError = ExUpdateProcCntrs();
-	  if (measError)
-	    {
-	      diags << DgSqlCode(EXE_MEASURE)<< DgInt0(measError);
-	    }
-	}
-
-      if ( getMeasStmtEnabled() )
-	{
-	  Int32 measError = stmt->updateMeasStmtCntrs (startTime);
-	  if (measError)
-	    {
-	      diags << DgSqlCode(EXE_MEASURE) << DgInt0(measError);
-	    }
-	}
-	      
-    };
 }
 
 ExSqlComp * CliGlobals::getArkcmp(short index)
