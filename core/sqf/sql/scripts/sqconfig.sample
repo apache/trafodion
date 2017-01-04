@@ -85,8 +85,8 @@ end role_node_map
 #
 ################################################################
 
-storage_loc $MY_SQROOT/sql/database
-storage_mir_loc $MY_SQROOT/sql/databasem
+storage_loc $TRAF_HOME/sql/database
+storage_mir_loc $TRAF_HOME/sql/databasem
 
 # Extents are for data audit volumes only, not $TLOG
 # Minimum is 1550
@@ -153,7 +153,7 @@ end ase
 #
 ################################################################
 
-storage_loc $MY_SQROOT/sql/database
+storage_loc $TRAF_HOME/sql/database
 
 ################################################################
 #

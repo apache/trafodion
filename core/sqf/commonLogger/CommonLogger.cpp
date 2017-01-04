@@ -58,8 +58,8 @@ bool CommonLogger::initLog4cxx(const char* configFileName, const char* fileSuffi
 
   logFolder_ = "";
 
-  // Form the config path $MY_SQROOT/conf
-  char *installPath = getenv("MY_SQROOT");
+  // Form the config path $TRAF_HOME/conf
+  char *installPath = getenv("TRAF_HOME");
   if (installPath)
   {
 	configPath = installPath;
@@ -71,7 +71,7 @@ bool CommonLogger::initLog4cxx(const char* configFileName, const char* fileSuffi
   }
   else
   {
-    // Environment variable $MY_SQROOT not found.
+    // Environment variable $TRAF_HOME not found.
     // use the current directory.
     configPath = "";
   }

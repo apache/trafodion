@@ -4840,6 +4840,8 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           isAudited = tableInfo->isAudited;
           if (tableInfo->rowFormat == COM_ALIGNED_FORMAT_TYPE)
             strcpy(rowFormat, COM_ALIGNED_FORMAT_LIT);
+          else if (tableInfo->rowFormat == COM_HBASE_STR_FORMAT_TYPE)
+            strcpy(rowFormat, COM_HBASE_STR_FORMAT_LIT);
           numSaltPartns = tableInfo->numSaltPartns;
           hbaseCreateOptions = tableInfo->hbaseCreateOptions;
         }
@@ -7087,7 +7089,7 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
   // Note that this is not an existing jar file, the class
   // loader will attempt to load the class from the CLASSPATH if
   // it can't find this jar
-  NAString installJar(getenv("MY_SQROOT"));
+  NAString installJar(getenv("TRAF_HOME"));
   installJar += "/export/lib/trafodion-sql-currversion.jar";
 
   breadCrumb = 1;

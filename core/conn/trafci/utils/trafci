@@ -32,4 +32,4 @@ HNAME=localhost:23400
 UNAME=zz
 PWORD=zz
 
-$MY_SQROOT/trafci/bin/trafci.sh -h $HNAME -u $UNAME -p $PWORD
+$TRAF_HOME/trafci/bin/trafci.sh -h $HNAME -u $UNAME -p $PWORD

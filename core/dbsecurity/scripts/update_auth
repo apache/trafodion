@@ -57,9 +57,9 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if [  -z $MY_SQROOT ]; then
+if [  -z $TRAF_HOME ]; then
   echo
-  echo "The MY_SQROOT environment variable does not exist."
+  echo "The TRAF_HOME environment variable does not exist."
   echo "Please ensure sqenv.sh has been sourced, and re-run $script_name."
   echo
   exit 1;
@@ -78,7 +78,7 @@ else
 fi
 
 #Create local folder for storing CA certicates
-SQCACERTS_DIR=$MY_SQROOT/cacerts
+SQCACERTS_DIR=$TRAF_HOME/cacerts
 if [ ! -d "$SQCACERTS_DIR" ]; then
   mkdir -p -m 700 $SQCACERTS_DIR;
 else
@@ -86,20 +86,20 @@ else
 fi
 
 #Create local folder for storing SQ certicates
-SQCERT_DIR=$MY_SQROOT/sqcert
+SQCERT_DIR=$TRAF_HOME/sqcert
 if [ ! -d "$SQCERT_DIR" ]; then
   mkdir -p -m 700 $SQCERT_DIR;
 else
   chmod 700 $SQCERT_DIR
 fi
 
-#cp -p -r $CACERTS_DIR $MY_SQROOT 2> /dev/null
+#cp -p -r $CACERTS_DIR $TRAF_HOME 2> /dev/null
 
 #if [ -n "$CLUSTERNAME" ]; then  
-#  $SQ_PDCP -p -r $MY_NODES -x `uname -n` $CACERTS_DIR $MY_SQROOT 2> /dev/null
+#  $SQ_PDCP -p -r $MY_NODES -x `uname -n` $CACERTS_DIR $TRAF_HOME 2> /dev/null
 #
-#  cp -p -r $HOME/sqcert $MY_SQROOT 2> /dev/null
-#  $SQ_PDCP -p -r $MY_NODES -x `uname -n` $HOME/sqcert $MY_SQROOT 2> /dev/null
+#  cp -p -r $HOME/sqcert $TRAF_HOME 2> /dev/null
+#  $SQ_PDCP -p -r $MY_NODES -x `uname -n` $HOME/sqcert $TRAF_HOME 2> /dev/null
 #
 #fi
 exit 0;

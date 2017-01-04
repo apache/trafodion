@@ -664,10 +664,12 @@ void ItemExpr::bindChildren(BindWA *bindWA)
 {
   Int32 savedCurrChildNo = currChildNo();
   for (Int32 i = 0; i < getArity(); i++, currChildNo()++) {
-
+   
     ItemExpr *boundExpr = child(i)->bindNode(bindWA);
     if (bindWA->errStatus()) return;
     child(i) = boundExpr;
+      
+      
   }
   currChildNo() = savedCurrChildNo;
 }
@@ -696,7 +698,7 @@ void ItemExpr::bindSelf(BindWA *bindWA)
   NABoolean defaultSpecBoundAsSQLnull = FALSE;
 
   for (Int32 i = 0; i < getArity(); i++, currChildNo()++) {
-
+   
     ItemExpr *boundExpr = child(i)->bindNode(bindWA);
     if (bindWA->errStatus()) 
       return;
@@ -707,10 +709,11 @@ void ItemExpr::bindSelf(BindWA *bindWA)
       }
 
     if (boundExpr->getOperatorType() == ITM_CONSTANT &&
-	((ConstValue *)boundExpr)->isNullWasDefaultSpec())
+        ((ConstValue *)boundExpr)->isNullWasDefaultSpec())
       defaultSpecBoundAsSQLnull = TRUE;
 
     child(i) = boundExpr;
+      
   }
 
   //##? Should   getOperatorType() != ITM_CAST		?##
@@ -1252,6 +1255,7 @@ Int32 ItemExpr::shouldPushTranslateDown(CharInfo::CharSet chrset) const
      case ITM_LEFT:                  // b) counts characters
      case ITM_RIGHT:                 // b) counts characters
      case ITM_LIKE:                  // b) counts characters
+     case ITM_REGEXP:                  // b) counts characters
      case ITM_SUBSTR:                // b) counts characters
      case ITM_REPLACE:               // b) counts characters
      case ITM_INSERT_STR:            // b) counts characters
@@ -1529,52 +1533,53 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
   // Step 1: Determine if we have children with different character set attributes
   //
   for (Int32 i = 0; i < arity; i++) {
-
+    
     const NAType& type = child(i)->getValueId().getType();
     if ( type.getTypeQualifier() == NA_CHARACTER_TYPE )
-    {
-       curr_chld_cs = ((const CharType&)type).getCharSet();
-       if ( i==0 ) chld0_cs = curr_chld_cs;  // Remember this one
+      {
+        curr_chld_cs = ((const CharType&)type).getCharSet();
+        if ( i==0 ) chld0_cs = curr_chld_cs;  // Remember this one
 
-       Int16 cur_chld_cs_ndx = iUNK;
+        Int16 cur_chld_cs_ndx = iUNK;
 
-       switch ( curr_chld_cs )
-       {
-        case CharInfo::UNICODE :
-          cur_chld_cs_ndx = iUCS2;
-          break;
+        switch ( curr_chld_cs )
+          {
+          case CharInfo::UNICODE :
+            cur_chld_cs_ndx = iUCS2;
+            break;
 
-        case CharInfo::ISO88591:
-          cur_chld_cs_ndx = iISO;
-          break;
+          case CharInfo::ISO88591:
+            cur_chld_cs_ndx = iISO;
+            break;
 
-        case CharInfo::UTF8:
-          cur_chld_cs_ndx = iUTF8;
-          break;
+          case CharInfo::UTF8:
+            cur_chld_cs_ndx = iUTF8;
+            break;
 
-        case CharInfo::SJIS:
-          cur_chld_cs_ndx = iSJIS;
-          break;
+          case CharInfo::SJIS:
+            cur_chld_cs_ndx = iSJIS;
+            break;
 
-        case CharInfo::GBK:
-          cur_chld_cs_ndx = iGBK;
-          break;
+          case CharInfo::GBK:
+            cur_chld_cs_ndx = iGBK;
+            break;
 
-        //case CharInfo::KANJI_MP:
-        //case CharInfo::KSC5601_MP:
-        default:
-          break; // Can not translate these currently.
-       }
-       charsets_involved[cur_chld_cs_ndx]++;
+            //case CharInfo::KANJI_MP:
+            //case CharInfo::KSC5601_MP:
+          default:
+            break; // Can not translate these currently.
+          }
+        charsets_involved[cur_chld_cs_ndx]++;
 
-       OperatorTypeEnum curr_chld_opType = child(i)->getOperatorType();
-       if (i == 0 ) chld0_opType = curr_chld_opType;  // Remember this one
+        OperatorTypeEnum curr_chld_opType = child(i)->getOperatorType();
+        if (i == 0 ) chld0_opType = curr_chld_opType;  // Remember this one
 
-       if ( curr_chld_opType == ITM_CONSTANT )
+        if ( curr_chld_opType == ITM_CONSTANT )
           Literals_involved[cur_chld_cs_ndx] += 1 ;
-       else
+        else
           nonLiterals_involved[cur_chld_cs_ndx] += 1 ;
-    }
+      }
+      
   }
 
   for (Int32 j = 0; j < iUNK; j++)
@@ -3124,24 +3129,26 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
       Int32 origArity = getArity();
       
       for (Int32 chld=0; chld < origArity; chld++)
-      {
-        switch (child(chld)->getOperatorType())
         {
-          case ITM_ROW_SUBQUERY:
-            subq = (Subquery *) child(chld)->castToItemExpr();
-            childDegree += subq->getSubquery()->getDegree();
-            break;
+       
+          switch (child(chld)->getOperatorType())
+            {
+            case ITM_ROW_SUBQUERY:
+              subq = (Subquery *) child(chld)->castToItemExpr();
+              childDegree += subq->getSubquery()->getDegree();
+              break;
             
-          case ITM_USER_DEF_FUNCTION:
-            udf = (UDFunction *) child(chld)->castToItemExpr();
-            childDegree += udf->getRoutineDesc()->getOutputColumnList().entries();
-            break;
+            case ITM_USER_DEF_FUNCTION:
+              udf = (UDFunction *) child(chld)->castToItemExpr();
+              childDegree += udf->getRoutineDesc()->getOutputColumnList().entries();
+              break;
             
-          default:
-            childDegree += 1;
-            break;
+            default:
+              childDegree += 1;
+              break;
+            }
+          
         }
-      }
       
       if (childDegree > origArity) 
       {
@@ -3161,12 +3168,17 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
   ItemExpr * ie = NULL;
   switch (getOperatorType())
     {
+
     case ITM_ISIPV4:
     case ITM_ISIPV6:
     case ITM_MD5:
     case ITM_CRC32:
     case ITM_SHA1:
-    case ITM_SHA2:
+    case ITM_SOUNDEX:
+    case ITM_SHA2_224:
+    case ITM_SHA2_256:
+    case ITM_SHA2_384:
+    case ITM_SHA2_512:
       {
          break;
       }
@@ -3283,7 +3295,10 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
 
 	break;
       }
-
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+        break;
+    }
     case ITM_QUERYID_EXTRACT:
       {
         // type cast any params
@@ -3338,7 +3353,11 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
          // when running on a system that is using the Unicode Config),
          // we need the following code.
       }
+    break;
 
+    case ITM_AES_ENCRYPT:
+    case ITM_AES_DECRYPT:
+      break;
     default:
       {
       }
@@ -3977,8 +3996,9 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
 {
   Lng32 error = 0;
 
-  NABoolean tc  = (formatType_ == FORMAT_TO_CHAR);
-  NABoolean td  = (formatType_ == FORMAT_TO_DATE);
+  NABoolean toChar  = (formatType_ == FORMAT_TO_CHAR);
+  NABoolean toDate  = (formatType_ == FORMAT_TO_DATE);
+  NABoolean toTime  = (formatType_ == FORMAT_TO_TIME);
   NABoolean df  = ExpDatetime::isDateFormat(frmt);
   NABoolean tf  = ExpDatetime::isTimeFormat(frmt);
   NABoolean tsf = ExpDatetime::isTimestampFormat(frmt);
@@ -3996,7 +4016,22 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
       error = 1; // error 4065
     }
 
-  if (!error && tc)
+  if (toDate && NOT (df || tsf))
+    {
+      // TO_DATE requires date format or timestamp format
+      // unless we are in mode_special_4 in which case
+      // numeric format is accepted
+      if (NOT (ms4 && nf))
+        error = 1; // error 4065
+    }
+
+  if (toTime && NOT tf)
+    {
+      // TO_TIME requires time format
+      error = 1; // error 4065
+    }
+
+  if (!error && toChar)
     {
       // source must be datetime with to_char function
       if (opType->getTypeQualifier() != NA_DATETIME_TYPE)
@@ -4007,7 +4042,7 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
         error = 3; // error 4072
     }
 
-  if (!error && td)
+  if (!error && toDate)
     {
       // source must be char or numeric with to_date
       if ((opType->getTypeQualifier() != NA_CHARACTER_TYPE) &&
@@ -4041,8 +4076,8 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
         case 1: 
           {
             *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
-                                << DgString1((formatType_ == FORMAT_TO_CHAR
-                                              ? "TO_CHAR" : "TO_DATE"));
+                                << DgString1((toChar ? "TO_CHAR" : 
+                                                       (toDate ? "TO_DATE" : "TO_TIME")));
             bindWA->setErrStatus();
           }
           break;
@@ -6355,7 +6390,7 @@ ItemExpr *Cast::bindNode(BindWA *bindWA)
 // member functions for class Like
 // -----------------------------------------------------------------------
 
-ItemExpr *Like::bindNode(BindWA *bindWA)
+ItemExpr *PatternMatchingFunction::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
     return getValueId().getItemExpr();
@@ -6438,9 +6473,9 @@ ItemExpr *Like::bindNode(BindWA *bindWA)
 
   return applyBeginEndKeys(bindWA, boundExpr, bindWA->wHeap());
 
-} // Like::bindNode()
+} // PatternMatchingFunction::bindNode()
 
-NABoolean Like::beginEndKeysApplied(CollHeap *heap)
+NABoolean PatternMatchingFunction::beginEndKeysApplied(CollHeap *heap)
 {
   // Called by optimizer, long after binding (thus bindNode has already
   // called the common method applyBeginEndKeys and done the appropriate
@@ -6451,7 +6486,13 @@ NABoolean Like::beginEndKeysApplied(CollHeap *heap)
 
   return beginEndKeysApplied_;
 
-} // Like::beginEndKeysApplied()
+} // PatternMatchingFunction::beginEndKeysApplied()
+
+ItemExpr *Regexp::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
+				  CollHeap *heap)
+{
+  return boundExpr;
+}
 
 ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 				  CollHeap *heap)
@@ -9288,8 +9329,7 @@ ItemExpr *UDFunction::bindNode(BindWA *bindWA)
       {
 	*CmpCommon::diags()
 	  << DgSqlCode(-1002)
-	  << DgCatalogName(functionName1AsQualName.getCatalogName())
-	  << DgString0("");
+	  << DgCatalogName(functionName1AsQualName.getCatalogName());
 	
 	bindWA->setErrStatus();
 	return NULL;

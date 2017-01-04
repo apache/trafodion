@@ -62,6 +62,8 @@ lic-.*-src
 lic-.*-bin
 note-.*-bin
 # win generated
+odbc.vcxproj*
+odbc.vcxproj.*
 SetCertificateDirReg_os.vcxproj*
 SetCertificateDirReg_os.vcxproj.*
 SetCertificateDirReg_os.sln*
@@ -113,7 +115,6 @@ resource.hm*
 odb.sln
 odb.vcxproj.*
 odb.rc
-# BSD licensed files
 swscanf.cpp
 swsprintf.cpp
 ulexer.h

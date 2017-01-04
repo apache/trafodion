@@ -457,6 +457,7 @@ Lng32 UpdateStats(char *input, NABoolean requestedByCompiler)
     if (hs_globals_obj.StatsNeeded())
       {
         retcode = hs_globals_obj.CollectStatistics();
+        hs_globals_obj.resetCQDs();
         HSExitIfError(retcode);
       }
     else if (hs_globals_obj.optFlags & IUS_PERSIST)

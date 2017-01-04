@@ -31,8 +31,8 @@
 # export JAVA_HOME=/usr/java/jdk1.7.0/
 
 # Add Trafodion to the classpath
-if [ "$MY_SQROOT" != "" ]; then
-  if [ -d $MY_SQROOT ]; then
+if [ "$TRAF_HOME" != "" ]; then
+  if [ -d $TRAF_HOME ]; then
     export DCS_CLASSPATH=${CLASSPATH}:
   fi
 fi
@@ -110,4 +110,4 @@ export DCS_OPTS="-XX:+UseConcMarkSweepGC"
 # export DCS_MANAGES_ZK=true
 
 # Tell DCS where the user program environment lives.
- export DCS_USER_PROGRAM_HOME=$MY_SQROOT
+ export DCS_USER_PROGRAM_HOME=$TRAF_HOME

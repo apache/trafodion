@@ -4810,6 +4810,28 @@ void TupleInfo::addLongColumn(const char *colName, bool isNullable)
 }
 
 /**
+ *  Add a double output column.
+ *
+ *  The new column is added at the end.
+ *
+ *  Only use this method from within the
+ *  UDR::describeParamsAndColumns() method.
+ *
+ *  @param colName    Name of the column to add. Use UPPER CASE letters,
+ *                    digits and underscore, otherwise you will need to
+ *                    use delimited column names with matching case in
+ *                    Trafodion.
+ *  @param isNullable true if the added column should be nullable,
+ *                    false if the added column should have the NOT NULL
+ *                    constraint.
+ *  @throws UDRException
+ */
+void TupleInfo::addDoubleColumn(const char *colName, bool isNullable)
+{
+  addColumn(ColumnInfo(colName, TypeInfo(TypeInfo::DOUBLE_PRECISION,0,isNullable)));
+}
+
+/**
  *  Add a fixed character output column.
  *
  *  The new column is added at the end.

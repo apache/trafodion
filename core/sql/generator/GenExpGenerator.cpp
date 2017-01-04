@@ -2520,8 +2520,7 @@ short ExpGenerator::generateContiguousMoveExpr(
     for( Int32 i = 0; i < (Int32)colArray->entries(); i++ )
     {
       col = (*colArray)[i];
-      if ( col->isAddedColumn() )
-        attrs[i]->setAddedCol();
+      addDefaultValue(col, attrs[i], CmpCommon::diags()); 
     }
   }
 
@@ -3063,7 +3062,8 @@ short ExpGenerator::generateKeyEncodeExpr(const IndexDesc * indexDesc,
 	desc_flag = FALSE;
       
       if ((tf == ExpTupleDesc::SQLMX_KEY_FORMAT) &&
-	  (col_node->getValueId().getType().getVarLenHdrSize() > 0))
+	  (col_node->getValueId().getType().getVarLenHdrSize() > 0) &&
+          (NOT ((indexDesc->getNAFileSet()->getIndexKeyColumns()[i])->isPrimaryKeyNotSerialized())))
 	{
 	  // Explode varchars by moving them to a fixed field
 	  // whose length is equal to the max length of varchar.
@@ -3111,9 +3111,15 @@ short ExpGenerator::generateKeyEncodeExpr(const IndexDesc * indexDesc,
 	    } // encoding/decoding needed
 	} // handleSerialization
 
-       if (enode == NULL)
-	 enode = new(wHeap()) CompEncode(col_node, desc_flag);
-
+      if (enode == NULL)
+        {
+          if (NOT ((indexDesc->getNAFileSet()->getIndexKeyColumns()[i])->isPrimaryKeyNotSerialized()))
+            enode = new(wHeap()) CompEncode(col_node, desc_flag);
+          else 
+            enode = 
+              new(generator->wHeap()) Cast(col_node, &col_node->getValueId().getType());
+        }            
+      
       enode->bindNode(generator->getBindWA());
 
       encode_val_id_list.insert(enode->getValueId());
@@ -3256,8 +3262,8 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
 					 NABoolean desc_flag,
 					 ExpTupleDesc::TupleDataFormat tf,
 					 Lng32 &possibleErrorCount,
-					 NABoolean &canDoKeyEncodeOpt,
-					 NABoolean allChosenPredsAreEqualPreds)
+					 NABoolean allChosenPredsAreEqualPreds,
+                                         NABoolean castVarcharToAnsiChar)
 {
 
   ItemExpr * eq_node = (vid.getValueDesc())->getItemExpr();
@@ -3270,15 +3276,6 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
 
   const NAType * sourceType = &(keyval->getValueId().getType());
   const NAType * targetType = &(keycol->getValueId().getType());
-
-  if ((targetType->isEncodingNeeded()) ||
-      ((targetType->getTypeQualifier() == NA_CHARACTER_TYPE) &&
-       (((CharType*)targetType)->isCaseinsensitive()) || 
-       CollationInfo::isSystemCollation(((CharType*)targetType)->getCollation())) ||
-      (targetType->supportsSQLnull()) ||
-      (keyval->getOperatorType() == ITM_CONSTANT) ||
-      (desc_flag))
-    canDoKeyEncodeOpt = FALSE;
 
   NABoolean caseinsensitiveEncode = FALSE;
 
@@ -3306,18 +3303,33 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
 	      {
 		if (!CollationInfo::isSystemCollation(char_t.getCollation()))
 		{
-		  targetType = new(wHeap())
-		  SQLChar(CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
-			  keycol->getValueId().getType().supportsSQLnull(),
-			  FALSE,
-			  ((CharType*)targetType)->isCaseinsensitive(),
-			  FALSE,
-			  char_t.getCharSet(),
-			  char_t.getCollation(),
-			  char_t.getCoercibility()
-			  );
+                  if ((castVarcharToAnsiChar) &&
+                      (keycol->getValueId().getType().getVarLenHdrSize() > 0))
+                    {
+                      targetType = new(wHeap())
+                        ANSIChar(char_t.getDataStorageSize(),
+                                 keycol->getValueId().getType().supportsSQLnull(),
+                                 FALSE,
+                                 FALSE,
+                                 char_t.getCharSet(),
+                                 char_t.getCollation(),
+                                 char_t.getCoercibility()
+                                 );
+                    }
+                  else
+                    {
+                      targetType = new(wHeap())
+                        SQLChar(CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
+                                keycol->getValueId().getType().supportsSQLnull(),
+                                FALSE,
+                                ((CharType*)targetType)->isCaseinsensitive(),
+                                FALSE,
+                                char_t.getCharSet(),
+                                char_t.getCollation(),
+                                char_t.getCoercibility()
+                                );
+                    }
 		}
-		canDoKeyEncodeOpt = FALSE;
 	      }
 	  }
 
@@ -3326,7 +3338,6 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
 	  {
 	    cnode = new(wHeap()) Narrow (keyval,dataConversionErrorFlag,targetType,
                                          ITM_NARROW, desc_flag);
-	    canDoKeyEncodeOpt = FALSE;
 	  }
 	else
 	  {
@@ -3335,24 +3346,17 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
 		// if source & target are exactly the same and normal scaling
 		// is being done, then generate the encode node. This avoids
 		// an extra conversion node.
-#pragma nowarn(1506)   // warning elimination
 		cnode = new(wHeap()) CompEncode(keyval, desc_flag);
-#pragma warn(1506)  // warning elimination
 		compEncodeGenerated = TRUE;
 	      }
 	    else
 	      {
 		cnode = new(wHeap()) Cast (keyval,targetType);
-		canDoKeyEncodeOpt = FALSE;
 	      }
 	  }
 
         cnode = cnode->bindNode(generator->getBindWA());
         cnode = cnode->preCodeGen(generator);
-
-	if ((canDoKeyEncodeOpt) &&
-	    (cnode->child(0)->castToItemExpr() != keyval))
-	  canDoKeyEncodeOpt = FALSE;
 
 	// if both source and target are caseinsensitive, then
 	// do caseinsensitive encode.
@@ -3365,16 +3369,15 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
 	  }
 
 	// encode the key for byte comparison.
+        knode = cnode;
 	if (compEncodeGenerated)
 	  {
 	    knode = cnode;
 	    ((CompEncode*)knode)->setCaseinsensitiveEncode(caseinsensitiveEncode);
 	  }
-	else
+	else if (NOT castVarcharToAnsiChar)
 	  {
-#pragma nowarn(1506)   // warning elimination
 	    knode = new(wHeap()) CompEncode(cnode, desc_flag);
-#pragma warn(1506)  // warning elimination
             knode = knode->bindNode(generator->getBindWA());
 	    ((CompEncode*)knode)->setCaseinsensitiveEncode(caseinsensitiveEncode);
 	    knode = knode->preCodeGen(generator);
@@ -3450,12 +3453,8 @@ short ExpGenerator::generateKeyExpr(const NAColumnArray & indexKeyColumns,
 				    ExpTupleDesc::TupleDataFormat tf,
 				    ULng32 &keyLen,
 				    ex_expr ** key_expr,
-				    NABoolean doKeyEncodeOpt,
-				    Lng32 * firstKeyColumnOffset,
 				    NABoolean allChosenPredsAreEqualPreds)
 {
-  NABoolean canDoKeyEncodeOpt = (doKeyEncodeOpt ? TRUE : FALSE);
-
   // generate key expression.
   // Key value id list has entries of the form:
   //    col1 = value1, col2 = value2, ... colN = valueN
@@ -3480,7 +3479,10 @@ short ExpGenerator::generateKeyExpr(const NAColumnArray & indexKeyColumns,
 	  ItemExpr * knode = NULL;
 
 	  if ((indexKeyColumns[i]->getNATable()->isHbaseCellTable()) ||
-	      (indexKeyColumns[i]->getNATable()->isHbaseRowTable()))
+	      (indexKeyColumns[i]->getNATable()->isHbaseRowTable()) ||
+              (indexKeyColumns[i]->isPrimaryKeyNotSerialized()) ||
+              ((indexKeyColumns[i]->getNATable()->isHbaseMapTable()) &&
+               (indexKeyColumns[i]->getNATable()->getClusteringIndex()->hasSingleColVarcharKey())))
 	    {
 	      ItemExpr * eq_node = (val_id_list[i].getValueDesc())->getItemExpr();
 	      
@@ -3505,75 +3507,18 @@ short ExpGenerator::generateKeyExpr(const NAColumnArray & indexKeyColumns,
 				!indexKeyColumns.isAscending(i),
 				tf,
 				possibleErrorCount /* in/out */,
-				canDoKeyEncodeOpt  /* in/out */,
-				allChosenPredsAreEqualPreds);
+				allChosenPredsAreEqualPreds,
+                                FALSE);
 	    }
 
 	  key_val_id_list.insert(knode->getValueId());
 
-	  if (canDoKeyEncodeOpt)
-	    {
-	      MapInfo * map_info =
-		generator->getMapInfoAsIs(knode->child(0)->castToItemExpr()->getValueId());
-	      if (! map_info)
-		canDoKeyEncodeOpt = FALSE;
-	      else
-		{
-		  Attributes * attr = map_info->getAttr();
-		  if (i == 0)
-		    {
-		      firstOffset = attr->getOffset();
-		      prevAtp = attr->getAtp();
-		      prevAtpIndex = attr->getAtpIndex();
-		      prevOffset = attr->getOffset();
-		      prevStorageLength = (UInt32)attr->getStorageLength();
-		    }
-		  else
-		    {
-		      if ((prevAtp == attr->getAtp()) &&
-			  (prevAtpIndex == attr->getAtpIndex()) &&
-			  (attr->getOffset() >= prevOffset) &&
-			  ((attr->getOffset() - prevOffset) ==
-			   prevStorageLength))
-			//(uLong)attr->getStorageLength()))
-			{
-			  prevAtp = attr->getAtp();
-			  prevAtpIndex = attr->getAtpIndex();
-			  prevOffset = attr->getOffset();
-			  prevStorageLength = (UInt32)attr->getStorageLength();
-			}
-		      else
-			{
-			  canDoKeyEncodeOpt = FALSE;
-			}
-		    }
-		}
-	    }
 	}
 
-      if ((doKeyEncodeOpt) &&
-	  (canDoKeyEncodeOpt) &&
-	  (firstKeyColumnOffset))
-	{
-	  // call this method to get the keyLen but do not generate any
-	  // key_expr.
-	  generateContiguousMoveExpr(key_val_id_list,
-				     0, // don't add convert nodes,
-				     atp, atp_index, tf, keyLen,
-				     NULL);
-	  *firstKeyColumnOffset = (Lng32)firstOffset;
-	  *key_expr = NULL;
-	}
-      else
-	{
-	  if (firstKeyColumnOffset)
-	    *firstKeyColumnOffset = -1;
-
-	  generateContiguousMoveExpr(key_val_id_list,
-				     0, // don't add convert nodes,
-				     atp, atp_index, tf, keyLen,
-				     key_expr);
-	}
+      generateContiguousMoveExpr(key_val_id_list,
+                                 0, // don't add convert nodes,
+                                 atp, atp_index, tf, keyLen,
+                                 key_expr);
     }
 
   return 0;

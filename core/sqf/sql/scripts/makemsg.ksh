@@ -23,7 +23,7 @@
 #
 function GetSQcnfg {
 # Get SQ Node configuration
- TempList=`grep -o 'node-name=.[^A-Za-z].[0-9]*' $MY_SQROOT/sql/scripts/sqconfig | cut -d "=" -f 2 | cut -d ";" -f 1 | sort -u`
+ TempList=`grep -o 'node-name=.[^A-Za-z].[0-9]*' $TRAF_HOME/sql/scripts/sqconfig | cut -d "=" -f 2 | cut -d ";" -f 1 | sort -u`
 
  i=0
  for NODE in $TempList
@@ -43,7 +43,7 @@ function GetSQcnfg {
  
  else
      echo
-     echo "Could not parse $MY_SQROOT/sql/scripts/sqconfig file."
+     echo "Could not parse $TRAF_HOME/sql/scripts/sqconfig file."
      echo "Please ensure sqenv.sh has been sourced and the sqconfig file is valid.  Then, re-run sqgen."
      echo
      exit 1;
@@ -57,8 +57,8 @@ if [ -n "$MY_NODES" -a -e $SQ_PDCP ]; then
 
 fi
 
-error_txt=$MY_SQROOT/export/include/sql/SqlciErrors.txt
-error_cat=$MY_SQROOT/export/bin$SQ_MBTYPE/mxcierrors.cat
+error_txt=$TRAF_HOME/export/include/sql/SqlciErrors.txt
+error_cat=$TRAF_HOME/export/bin$SQ_MBTYPE/mxcierrors.cat
 
 # generate catalog only if it doesn't exist or $error_txt is older
 if [ $error_txt -nt $error_cat ]; then

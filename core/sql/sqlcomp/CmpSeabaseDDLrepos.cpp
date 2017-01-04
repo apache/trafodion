@@ -283,6 +283,14 @@ short CmpSeabaseDDL::alterRenameRepos(ExeCliInterface * cliInterface,
 
   NABoolean xnWasStartedHere = FALSE;
 
+  // alter table rename cannot run inside of a transaction.
+  // return an error if a xn is in progress
+  if (xnInProgress(cliInterface))
+    {
+      *CmpCommon::diags() << DgSqlCode(-20123);
+      return -1;
+    }
+
   for (Int32 i = 0; i < sizeof(allReposUpgradeInfo)/sizeof(MDUpgradeInfo); i++)
     {
       const MDUpgradeInfo &rti = allReposUpgradeInfo[i];
@@ -297,9 +305,6 @@ short CmpSeabaseDDL::alterRenameRepos(ExeCliInterface * cliInterface,
         str_sprintf(queryBuf, "alter table %s.\"%s\".%s rename to %s skip view check; ",
                     getSystemCatalog(), SEABASE_REPOS_SCHEMA, rti.oldName, rti.newName);
         
-      if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
-        return -1;
-
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC == -1389 || cliRC == -1390)
         {
@@ -310,10 +315,6 @@ short CmpSeabaseDDL::alterRenameRepos(ExeCliInterface * cliInterface,
 	{
 	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
 	}
-
-      if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
-        return -1;
-
     }
 
   return 0;
@@ -324,8 +325,6 @@ short CmpSeabaseDDL::copyOldReposToNew(ExeCliInterface * cliInterface)
   Lng32 cliRC = 0;
 
   char queryBuf[10000];
-
-  NABoolean xnWasStartedHere = FALSE;
 
   for (Int32 i = 0; i < sizeof(allReposUpgradeInfo)/sizeof(MDUpgradeInfo); i++)
     {
@@ -759,6 +758,6 @@ void CmpSeabaseDDL::processRepository(
     createRepos(&cliInterface);
   else if (dropR)
     dropRepos(&cliInterface);
-  
+
   return;
 }

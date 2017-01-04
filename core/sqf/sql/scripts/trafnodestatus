@@ -59,13 +59,13 @@ if [[ ! -z $1 ]]; then
     fi
 fi
 
-if [[ -z $MY_SQROOT ]]; then
+if [[ -z $TRAF_HOME ]]; then
     traf_echo "Looks like the Trafodion environment has not been configured. Exitting..."
     traf_exit 5;
 fi
 
 if [[ -z $SQSCRIPTS_DIR ]]; then
-    SQSCRIPTS_DIR=$MY_SQROOT/sql/scripts
+    SQSCRIPTS_DIR=$TRAF_HOME/sql/scripts
 fi
 SQCONFIGDB_FILE="$SQSCRIPTS_DIR/sqconfig.db"
 if [[ ! -e ${SQCONFIGDB_FILE} ]]; then
@@ -76,7 +76,7 @@ fi
 
 grep_out=`pstat | grep "monitor COLD" | grep -v mpirun`
 if [[ $? == '0' ]]; then
-   sqshell -c node info | awk -v jason_output=${lv_jason_output} -f $MY_SQROOT/sql/scripts/trafnodestatus.awk
+   sqshell -c node info | awk -v jason_output=${lv_jason_output} -f $TRAF_HOME/sql/scripts/trafnodestatus.awk
    traf_exit $?
 else
    traf_echo "Trafodion is not running on the current node: `hostname`"
@@ -89,12 +89,12 @@ if [[ ! -z ${SQ_VIRTUAL_NODES} ]]; then
     traf_exit 1
 fi
 
-grep_out_mon=`$SQ_ROOT/sql/scripts/cstat | grep "monitor COLD" `
+grep_out_mon=`$TRAF_HOME/sql/scripts/cstat | grep "monitor COLD" `
 lv_ret=$?
 if [[ $lv_ret == 0 ]]; then
     grep_out=`cstat | grep "monitor COLD" | grep -v mpirun | sort | cut -d: -f1`
     for lv_node in $grep_out; do
-	ssh $lv_node sqshell -c node info | awk -v jason_output=${lv_jason_output} -f $MY_SQROOT/sql/scripts/trafnodestatus.awk
+	ssh $lv_node sqshell -c node info | awk -v jason_output=${lv_jason_output} -f $TRAF_HOME/sql/scripts/trafnodestatus.awk
         lv_sqcheck_retcode=$?
         traf_exit ${lv_exit_code}
     done

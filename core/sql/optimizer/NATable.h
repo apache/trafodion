@@ -732,6 +732,18 @@ public:
   NABoolean hasExternalTable() const
   {  return (flags_ & HAS_EXTERNAL_TABLE) != 0; }
 
+  void setIsHbaseMapTable( NABoolean value )
+  {  value ? flags_ |= HBASE_MAP_TABLE : flags_ &= ~HBASE_MAP_TABLE; }
+
+  NABoolean isHbaseMapTable() const
+  {  return (flags_ & HBASE_MAP_TABLE) != 0; }
+
+  void setHbaseDataFormatString( NABoolean value )
+  {  value ? flags_ |= HBASE_DATA_FORMAT_STRING : flags_ &= ~HBASE_DATA_FORMAT_STRING; }
+
+  NABoolean isHbaseDataFormatString() const
+  {  return (flags_ & HBASE_DATA_FORMAT_STRING) != 0; }
+
   void setIsHistogramTable( NABoolean value )
   {  value ? flags_ |= IS_HISTOGRAM_TABLE : flags_ &= ~IS_HISTOGRAM_TABLE; }
 
@@ -971,9 +983,11 @@ private:
     IS_EXTERNAL_TABLE         = 0x00080000,
     HAS_EXTERNAL_TABLE        = 0x00100000,
     IS_HISTOGRAM_TABLE        = 0x00200000,
-    HAS_HIVE_EXT_TABLE        = 0x00400000,
-    HIVE_EXT_COL_ATTRS        = 0x00800000,
-    HIVE_EXT_KEY_ATTRS        = 0x01000000,
+    HBASE_MAP_TABLE           = 0x00400000,
+    HBASE_DATA_FORMAT_STRING  = 0x00800000,
+    HAS_HIVE_EXT_TABLE        = 0x01000000,
+    HIVE_EXT_COL_ATTRS        = 0x02000000,
+    HIVE_EXT_KEY_ATTRS        = 0x04000000
   };
     
   UInt32 flags_;

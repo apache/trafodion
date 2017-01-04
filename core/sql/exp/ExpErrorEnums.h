@@ -172,6 +172,7 @@ enum ExeErrorCode
   EXE_FS2_FETCH_VERSION_ERROR		= 8552,
   EXE_ERROR_STREAM_OVERFLOW             = 8553,
   EXE_EID_INTERNAL_ERROR                = 8555,
+  EXE_HBASE_ACCESS_ERROR                = 8556,
   EXE_LAST_ERROR_FROM_FS_DP2		= 8569,
 
   // ---------------------------------------------------------------------
@@ -485,6 +486,29 @@ enum ExeErrorCode
   EXE_SM_FUNCTION_ERROR                 = 8951,
   EXE_SM_CONTROL_CONN_ERROR             = 8952,
   EXE_SM_FIXUP_REPLY_TIMEOUT            = 8953,
+
+  // ---------------------------------------------------------------------
+  // Built-in Function ( encrpt/decrypt )
+  // ---------------------------------------------------------------------
+  EXE_AES_INVALID_IV                    = 8954,
+  EXE_ERR_PARAMCOUNT_FOR_FUNC           = 8955,
+  EXE_OPTION_IGNORED                    = 8956,
+  EXE_OPENSSL_ERROR                     = 8957,
+
+  // Execution errors related to JSon parser
+  // ---------------------------------------------------------------------
+  EXE_JSON_INVALID_TOKEN                  = 8971,
+  EXE_JSON_INVALID_VALUE                  = 8972,
+  EXE_JSON_INVALID_STRING                 = 8973,
+  EXE_JSON_INVALID_ARRAY_START            = 8974,
+  EXE_JSON_INVALID_ARRAY_NEXT             = 8975,
+  EXE_JSON_INVALID_OBJECT_START           = 8976,
+  EXE_JSON_INVALID_OBJECT_LABEL           = 8977,
+  EXE_JSON_INVALID_OBJECT_NEXT            = 8978,
+  EXE_JSON_INVALID_OBJECT_COMMA           = 8979,
+  EXE_JSON_INVALID_END                    = 8980,
+  EXE_JSON_END_PREMATURELY                = 8981,
+  EXE_JSON_UNEXPECTED_ERROR               = 8982,
 
   // ---------------------------------------------------------------------
   // Scratch file I/O errors (10100 - 10199)

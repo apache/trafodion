@@ -32,8 +32,8 @@ try:
 except ImportError:
     print 'Python module prettytable is not found. Install python-prettytable first.'
     exit(1)
-from common import err_m, err, ParseInI, expNumRe, format_output, DBCFG_FILE
-import wrapper
+from scripts.common import err_m, err, ParseInI, expNumRe, format_output, DBCFG_FILE
+from scripts import wrapper
 
 
 def get_options():
@@ -46,9 +46,9 @@ def get_options():
     parser.add_option("-u", "--remote-user", dest="user", metavar="USER",
                       help="Specify ssh login user for remote server, \
                             if not provided, use current login user as default.")
-    parser.add_option("--enable-pass", action="store_true", dest="pwd", default=True,
-                      help="Not Prompt SSH login password for remote hosts.")
-
+    parser.add_option("--enable-pwd", action="store_true", dest="pwd", default=False,
+                      help="Prompt SSH login password for remote hosts. \
+                            If set, \'sshpass\' tool is required.")
     (options, args) = parser.parse_args()
     return options
 
@@ -112,7 +112,7 @@ def main():
         pwd = ''
 
     if os.path.exists(config_file):
-        cfgs = ParseInI(config_file).load()
+        cfgs = ParseInI(config_file, 'dbconfigs').load()
     else:
         node_lists = expNumRe(raw_input('Enter list of Nodes separated by comma, support numeric RE, i.e. n[01-12]: '))
 

@@ -55,6 +55,8 @@ NABoolean ComIsTrafodionReservedSchema(
 NABoolean ComIsTrafodionExternalSchemaName (
                                             const NAString &schName);
 
+NABoolean ComIsHbaseMappedSchemaName (const NAString &schName);
+
 NAString ComConvertNativeNameToTrafName ( 
                                          const NAString &catalogName,
                                          const NAString &schemaName,

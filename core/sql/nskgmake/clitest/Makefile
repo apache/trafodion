@@ -27,7 +27,7 @@ CPPSRC := \
        
 CPPSRC += mpisetup.cpp 
 SRCPATH := clitest bin 
-C_INC_OVERRIDE := -I$(MY_SQROOT)/export/include -I$(MY_SQROOT)/export/include/seabed
+C_INC_OVERRIDE := -I$(TRAF_HOME)/export/include -I$(TRAF_HOME)/export/include/seabed
 
 
 ifeq ($(FLAVOR), debug)

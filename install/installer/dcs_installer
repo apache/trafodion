@@ -38,7 +38,7 @@ Usage: $(basename $0) [options]
 Options:
     --help                    Print this message and exit.
     --dcs_build <file>        Path to the DCS build tar file.
-    --dcs_install_path <dir>  Path to the install directory. (defaults to $MY_SQROOT)
+    --dcs_install_path <dir>  Path to the install directory. (defaults to $TRAF_HOME)
     --dcs_servers <count>     Total number of DCS servers to start.  These
                               will be allocated in a round-robin fashion on
                               all nodes. (default, 1 per node)
@@ -65,7 +65,7 @@ function checkOpts {
 
 # Default parameters
 typeset DCS_BUILD_FILE=""
-typeset DCS_INSTALL_PATH="$MY_SQROOT"
+typeset DCS_INSTALL_PATH="$TRAF_HOME"
 typeset DCS_SERVER_COUNT=""
 
 # Parse input parameters
@@ -113,8 +113,8 @@ source $TRAF_CONFIG
 echo "***INFO: Start of DCS install"
 
 # Make sure required env vars have been set first
-if [[ -z "$MY_SQROOT" ]]; then
-    echo "***ERROR: environment variable MY_SQROOT has no value."
+if [[ -z "$TRAF_HOME" ]]; then
+    echo "***ERROR: environment variable TRAF_HOME has no value."
     exit -1
 fi
 if [[ -z "$NODE_LIST" ]]; then
@@ -131,8 +131,8 @@ mkdir -p $DCS_INSTALL_PATH
 cd $DCS_INSTALL_PATH
 
 if [[ "$ONE_TAR_INSTALL" == "Y" ]]; then
-   DCS_DIR=$(ls $SQ_ROOT | grep dcs)
-   DCS_DIR=$SQ_ROOT/$DCS_DIR
+   DCS_DIR=$(ls $TRAF_HOME | grep dcs)
+   DCS_DIR=$TRAF_HOME/$DCS_DIR
    echo "***INFO: DCS Install Directory: $DCS_DIR"
 else
    # untar DCS build into install directory
@@ -146,9 +146,9 @@ else
 fi
 
 # set env var in sqenvcom.sh for DCS install directory
-grep --invert-match "DCS_INSTALL_DIR=" $MY_SQROOT/sqenvcom.sh > $MY_SQROOT/sqenvcom.temp
-echo "export DCS_INSTALL_DIR=$DCS_DIR" >> $MY_SQROOT/sqenvcom.temp
-mv $MY_SQROOT/sqenvcom.temp $MY_SQROOT/sqenvcom.sh
+grep --invert-match "DCS_INSTALL_DIR=" $TRAF_HOME/sqenvcom.sh > $TRAF_HOME/sqenvcom.temp
+echo "export DCS_INSTALL_DIR=$DCS_DIR" >> $TRAF_HOME/sqenvcom.temp
+mv $TRAF_HOME/sqenvcom.temp $TRAF_HOME/sqenvcom.sh
 
 cd $DCS_DIR/conf
 
@@ -215,13 +215,13 @@ if [[ "$ENABLE_HA" == "true" ]]; then
   
    ######Configure trafci wrapper script to use Floating IP address
    newHName="HNAME=$FLOATING_IP:23400"
-   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $SQ_ROOT/trafci/bin/trafci
+   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $TRAF_HOME/trafci/bin/trafci
  
 else
 
    ######Configure trafci wrapper script
    newHName="HNAME=$DCS_PRIMARY_MASTER_NODE:23400"
-   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $SQ_ROOT/trafci/bin/trafci
+   sed -i -e "s/HNAME=localhost:23400/$newHName/g" $TRAF_HOME/trafci/bin/trafci
 
 fi
 

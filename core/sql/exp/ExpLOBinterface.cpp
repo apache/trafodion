@@ -35,7 +35,7 @@ using std::ofstream;
 #include "ex_globals.h"
 
 Lng32 ExpLOBinterfaceInit(void *& exLobGlob, void * lobHeap,
-                          void *currContext,NABoolean isHive,
+                          void *currContext,NABoolean isHiveRead,
                           char *hdfsServer, 
                           Int32 port)
 {
@@ -64,9 +64,8 @@ Lng32 ExpLOBinterfaceInit(void *& exLobGlob, void * lobHeap,
 		   0);
   if (exLobGlob)
     {
-      ((ExLobGlobals *)exLobGlob)->setIsHive(isHive);
       NAHeap *heap = new ((NAHeap *)lobHeap) NAHeap("LOB Heap", (NAHeap *)lobHeap);
-      if (isHive)
+      if (isHiveRead)
         ((ExLobGlobals *)exLobGlob)->startWorkerThreads();
       heap->setThreadSafe();
       ((ExLobGlobals *)exLobGlob)->setHeap(heap);

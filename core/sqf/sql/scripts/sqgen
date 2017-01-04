@@ -26,11 +26,11 @@
 function Usage {
     script_name=`/bin/basename $0`
     echo
-    echo $script_name generates various Trafodion files in the $MY_SQROOT/sql/scripts directory.
+    echo $script_name generates various Trafodion files in the $TRAF_HOME/sql/scripts directory.
     echo
     echo "Usage: $script_name {-ft | -perf | [sqconfig_filename] | -h}"
     echo "  -h    Help"
-    echo "  [sqconfig_filename] Name of the SQ config file (in $MY_SQROOT/sql/scripts directory)(defaults to 'sqconfig')"
+    echo "  [sqconfig_filename] Name of the SQ config file (in $TRAF_HOME/sql/scripts directory)(defaults to 'sqconfig')"
     echo
     exit 1;
 }
@@ -39,7 +39,7 @@ function Usage {
 
 function GetSQcnfg {
 # Get SQ Node configuration
- TempList=`grep -o 'node-name=.[A-Za-z0-9\.\-]*' $MY_SQROOT/sql/scripts/sqconfig | cut -d "=" -f 2 | cut -d ";" -f 1 | sort -u`
+ TempList=`grep -o 'node-name=.[A-Za-z0-9\.\-]*' $TRAF_HOME/sql/scripts/sqconfig | cut -d "=" -f 2 | cut -d ";" -f 1 | sort -u`
 
  i=0
  for NODE in $TempList
@@ -59,7 +59,7 @@ function GetSQcnfg {
  
  else
      echo
-     echo "Could not parse $MY_SQROOT/sql/scripts/sqconfig file."
+     echo "Could not parse $TRAF_HOME/sql/scripts/sqconfig file."
      echo "Please ensure sqenv.sh has been sourced and the sqconfig file is valid.  Then, re-run sqgen."
      echo
      exit 1;
@@ -75,9 +75,9 @@ FT_FLAG=1
 PERF_FLAG=0
 SQCONFIG_FILE=sqconfig
 
-if [ -z $MY_SQROOT ]; then
+if [ -z $TRAF_HOME ]; then
     echo
-    echo "The MY_SQROOT environment variable does not exist."
+    echo "The TRAF_HOME environment variable does not exist."
     echo "Please ensure sqenv.sh has been sourced."
     echo
     exit 1;
@@ -99,7 +99,7 @@ elif [[ $sq_stat == 2 ]]; then
 fi
 
 # Make sure sqgen uses the latest environment
-cd $MY_SQROOT
+cd $TRAF_HOME
 if [ "$SQ_BUILD_TYPE" == "release" -a -f sqenvr.sh ]; then
   . ./sqenvr.sh
 else
@@ -115,7 +115,7 @@ if [ -n "$CHANGED_SQ_ENV_RESTART_SHELL" ]; then
   exit 1
 fi
 
-cd $MY_SQROOT/sql/scripts
+cd $TRAF_HOME/sql/scripts
 
 # Check to make sure this is a real cluster
 if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then 
@@ -139,8 +139,8 @@ while [ $# != 0 ]
     shift
   done
 
-export SQETC_DIR=$MY_SQROOT/etc
-export SQLOG_DIR=$MY_SQROOT/logs
+export SQETC_DIR=$TRAF_HOME/etc
+export SQLOG_DIR=$TRAF_HOME/logs
 mkdir -p $SQETC_DIR
 mkdir -p $SQLOG_DIR
 mkdir -p $MPI_TMPDIR
@@ -167,7 +167,7 @@ fi
 
 SQSCRIPT_FILE=./gomon
 SQCLUSTERCONF_FILE=$MPI_TMPDIR/cluster.conf
-SQESPENV_FILE=$MY_SQROOT/sql/scripts/tdm_arkesp.env
+SQESPENV_FILE=$TRAF_HOME/sql/scripts/tdm_arkesp.env
 
 echo
 if [ -f $SQETC_DIR/ms.env ]; then
@@ -218,24 +218,24 @@ sq_seamonster=$SQ_SEAMONSTER
 if [ -f $SQESPENV_FILE ]; then
     if [[ $sq_seamonster == 1 ]]; then 
         echo
-        echo "Enabling tdm_arkesp.env file in $MY_SQROOT/etc/ms.env"
-        echo "cat $MY_SQROOT/etc/ms.env | sed -e "s@^# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $MY_SQROOT/etc/ms.env.TEMP"
-        if [ -f $MY_SQROOT/etc/ms.env.TEMP ]; then
-            rm $MY_SQROOT/etc/ms.env.TEMP
+        echo "Enabling tdm_arkesp.env file in $TRAF_HOME/etc/ms.env"
+        echo "cat $TRAF_HOME/etc/ms.env | sed -e "s@^# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $TRAF_HOME/etc/ms.env.TEMP"
+        if [ -f $TRAF_HOME/etc/ms.env.TEMP ]; then
+            rm $TRAF_HOME/etc/ms.env.TEMP
         fi
-        cat $MY_SQROOT/etc/ms.env | sed -e "s@^# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $MY_SQROOT/etc/ms.env.TEMP
-        cp $MY_SQROOT/etc/ms.env.TEMP $MY_SQROOT/etc/ms.env
-        rm $MY_SQROOT/etc/ms.env.TEMP
+        cat $TRAF_HOME/etc/ms.env | sed -e "s@^# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $TRAF_HOME/etc/ms.env.TEMP
+        cp $TRAF_HOME/etc/ms.env.TEMP $TRAF_HOME/etc/ms.env
+        rm $TRAF_HOME/etc/ms.env.TEMP
     else
         echo
-        echo "Disabling tdm_arkesp.env file in $MY_SQROOT/etc/ms.env"
-        echo "cat $MY_SQROOT/etc/ms.env | sed -e "s@^SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $MY_SQROOT/etc/ms.env.TEMP"
-        if [ -f $MY_SQROOT/etc/ms.env.TEMP ]; then
-            rm $MY_SQROOT/etc/ms.env.TEMP
+        echo "Disabling tdm_arkesp.env file in $TRAF_HOME/etc/ms.env"
+        echo "cat $TRAF_HOME/etc/ms.env | sed -e "s@^SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $TRAF_HOME/etc/ms.env.TEMP"
+        if [ -f $TRAF_HOME/etc/ms.env.TEMP ]; then
+            rm $TRAF_HOME/etc/ms.env.TEMP
         fi
-        cat $MY_SQROOT/etc/ms.env | sed -e "s@^SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $MY_SQROOT/etc/ms.env.TEMP
-        cp $MY_SQROOT/etc/ms.env.TEMP $MY_SQROOT/etc/ms.env
-        rm $MY_SQROOT/etc/ms.env.TEMP
+        cat $TRAF_HOME/etc/ms.env | sed -e "s@^SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@# SQ_PROPS_TDM_ARKESP=tdm_arkesp.env@" > $TRAF_HOME/etc/ms.env.TEMP
+        cp $TRAF_HOME/etc/ms.env.TEMP $TRAF_HOME/etc/ms.env
+        rm $TRAF_HOME/etc/ms.env.TEMP
     fi
 fi
 
@@ -267,9 +267,9 @@ if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then
     if [[ $sq_seamonster == 1 ]]; then 
         if [ -f $SQESPENV_FILE ]; then
             echo
-            echo "Copying $SQESPENV_FILE to $MY_SQROOT/sql/scripts of all the nodes"
-            echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $MY_SQROOT/sql/scripts "
-            $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $MY_SQROOT/sql/scripts
+            echo "Copying $SQESPENV_FILE to $TRAF_HOME/sql/scripts of all the nodes"
+            echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $TRAF_HOME/sql/scripts "
+            $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQESPENV_FILE   $TRAF_HOME/sql/scripts
         fi
     fi
 
@@ -293,12 +293,12 @@ echo
 echo "******* Generate public/private certificates *******"
 echo
 # Generate certificates for ODBC, ...
-if (test -f $MY_SQROOT/sql/scripts/sqcertgen); then
-   $MY_SQROOT/sql/scripts/sqcertgen 2>/dev/null
+if (test -f $TRAF_HOME/sql/scripts/sqcertgen); then
+   $TRAF_HOME/sql/scripts/sqcertgen 2>/dev/null
    echo
 else
    echo
-   echo "ERROR: Certificate generation script (sqcertgen) does not exist in $MY_SQROOT/sql/scripts folder"
+   echo "ERROR: Certificate generation script (sqcertgen) does not exist in $TRAF_HOME/sql/scripts folder"
    echo
    exit 1
 fi

@@ -589,11 +589,64 @@ NABoolean HSGlobalsClass::setHBaseCacheSize(double sampleRatio)
       NAString maxCQD = "CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX ";
       maxCQD += temp1;
       HSFuncExecQuery(maxCQD);
+      hbaseCacheSizeCQDsSet_ = TRUE;
       return TRUE;
     }
   else
     return FALSE;
 }
+
+
+// If a Hive table has very long character columns, we might get
+// a SQL error 8446 when scanning it. The way around that is to
+// set CQD HIVE_MAX_STRING_LENGTH_IN_BYTES to the longest string
+// length in the table. This is typically done by the user in
+// the sqlci or trafci session. However we need to propagate
+// it to our child tdm_arkcmp. This method does that.
+NABoolean HSGlobalsClass::setHiveMaxStringLengthInBytes(void)
+{
+  NABoolean rc = FALSE;
+  if (isHiveTable)
+    {
+      NADefaults &defs = ActiveSchemaDB()->getDefaults();
+      if (defs.getProvenance(HIVE_MAX_STRING_LENGTH_IN_BYTES) >= 
+          NADefaults::SET_BY_CQD)
+        {
+          char temp1[40];  // way more space than needed, but it's safe
+          UInt32 hiveMaxStringLengthInBytes = 
+            ActiveSchemaDB()->getDefaults().getAsULong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+
+          sprintf(temp1,"'%u'",hiveMaxStringLengthInBytes);
+          NAString theCQD = "CONTROL QUERY DEFAULT HIVE_MAX_STRING_LENGTH_IN_BYTES ";
+          theCQD += temp1;
+          HSFuncExecQuery(theCQD);
+
+          hiveMaxStringLengthCQDSet_ = TRUE;
+          rc = TRUE;
+        }
+    }
+
+  return rc;
+}
+
+
+// If we set any CQDs in CollectStatistics that need to be
+// reset when we are done, do that here.
+void HSGlobalsClass::resetCQDs(void)
+{
+  if (hbaseCacheSizeCQDsSet_)
+    {
+      HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
+      HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
+      hbaseCacheSizeCQDsSet_ = FALSE;
+    }
+  if (hiveMaxStringLengthCQDSet_)
+    {
+      HSFuncExecQuery("CONTROL QUERY DEFAULT HIVE_MAX_STRING_LENGTH_IN_BYTES RESET");
+      hiveMaxStringLengthCQDSet_ = FALSE;
+    }
+}
+
 
 // rearrange the MCs so that the larger groups are listed first
 // and the ones that will not be processed (not enough memory) are
@@ -2896,7 +2949,9 @@ HSGlobalsClass::HSGlobalsClass(ComDiagsArea &diags)
     jitLogOn(FALSE),
     isUpdatestatsStmt(FALSE),
     maxCharColumnLengthInBytes(ActiveSchemaDB()->getDefaults().
-               getAsLong(USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES))
+               getAsLong(USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES)),
+    hbaseCacheSizeCQDsSet_(FALSE),
+    hiveMaxStringLengthCQDSet_(FALSE)
   {
     // Must add the context first in the constructor.
     contID_ = AddHSContext(this);
@@ -3539,7 +3594,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
 // the fully-qualified table names.
 void HSGlobalsClass::initJITLogData()
 {
-  char* sqroot = getenv("MY_SQROOT");
+  char* sqroot = getenv("TRAF_HOME");
   if (!sqroot)
     return;
   
@@ -3610,7 +3665,7 @@ void HSGlobalsClass::startJitLogging(const char* checkPointName, Int64 elapsedSe
   XPROCESSHANDLE_DECOMPOSE_(&procHandle, &nodeNum, &pin);
 
   NAString filePath;
-  char* sqroot = getenv("MY_SQROOT");
+  char* sqroot = getenv("TRAF_HOME");
   if (sqroot)
     {
 	  filePath = sqroot;
@@ -3980,7 +4035,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
         // in a batch) to avoid scanner timeout. Reset these after the sample query
         // has executed.
         if (hs_globals->isHbaseTable)
-          HBaseCQDsUsed = HSGlobalsClass::setHBaseCacheSize(samplePercent);
+          HBaseCQDsUsed = hs_globals->setHBaseCacheSize(samplePercent);
 
         if (CmpCommon::getDefault(TRAF_LOAD_USE_FOR_STATS) == DF_ON)
           {
@@ -4137,8 +4192,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
 
     if (HBaseCQDsUsed)
       {
-        HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
-        HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
+        hs_globals->resetCQDs();
       }
     if (EspCQDUsed)
       {
@@ -5187,6 +5241,9 @@ Lng32 HSGlobalsClass::CollectStatistics()
     HSSample sampleTable(objDef, optFlags & SAMPLE_REQUESTED, sampleTblPercent);
       // Initialize variables for sample table.  May not be used.
 
+    // set CQD for Hive if needed
+    setHiveMaxStringLengthInBytes();
+
     /*======================================================================*/
     /* Perform internal sort if enabled.                                    */
     /*======================================================================*/
@@ -5446,11 +5503,6 @@ Lng32 HSGlobalsClass::CollectStatistics()
    
             retcode = readColumnsIntoMem(&cursor, maxRowsToRead);
             HSHandleError(retcode);
-            if (hbaseCQDsUsed)
-              {
-                HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MIN RESET");
-                HSFuncExecQuery("CONTROL QUERY DEFAULT HBASE_NUM_CACHE_ROWS_MAX RESET");
-              }
             checkTime("after reading pending columns into memory for internal sort");
             columnSeconds = getTimeDiff() / numColsToProcess;  // saved for automation
 
@@ -6396,56 +6448,25 @@ Lng32 HSGlobalsClass::prepareForIUSAlgorithm1(Int64& rows)
 
   // Update the sample table in two separate transactions.
   Int64 xRows;
-  
-  Int64 transId=-1;
-
-  // set inTranx to TRUE to avoid emit WITH NO ROLLBACK clause for -D and +I.
-  // It was found that the 2nd compiler and the executor contained in 
-  // 1st compiler do not agree on transaction attributes, refer to . 
-  // compareTransModes() in cli/Statement.cpp.
-  // 
-// >>update statistics for table tbl on existing column incremental where a>900;
-
-// *** ERROR[9200] UPDATE STATISTICS for table NEO.USR.TBL encountered an error (8814) from statement IUS S(i-1)-D+I operation.
-
-// *** WARNING[8814] The transaction mode at run time (300121) differs from that specified at compile time (100140).
-
-// *** ERROR[8814] The transaction mode at run time (300121) differs from that specified at compile time (100140).
-
-// *** ERROR[8839] Transaction was aborted.
-
-  //
-  // The method GenericUpdate::bindNode() in BinreRelExpr.cpp assumes
-  // that the compiler knows about transaction and NO ROLLBACK has to be
-  // bound when there is NO transaction. But the begin/commit work used by
-  // update stats are static SQL and their effort is not recognized by the
-  // 2nd compiler!
-  // 
  
-  { // first delete the old rows 
+  // first delete the old rows 
     
-    HSTranController TC("IUS: Update S with D", &retcode);
-    HSHandleError(retcode);
+  HSHandleError(retcode);
   
-    // temp. for now to generate the delQuery, set #rows to 1
-    iusSampleDeletedInMem = new(STMTHEAP) 
+  // temp. for now to generate the delQuery, set #rows to 1
+  iusSampleDeletedInMem = new(STMTHEAP) 
                               HSInMemoryTable(*hssample_table,
                                                getWherePredicateForIUS(),
                                                1 // rows
                                               );
   
-    // Populate the deleted rows into a in-memory table.
-    NAString delQuery;
-    generateIUSDeleteQuery(*hssample_table, delQuery);
+  NAString delQuery;
+  generateIUSDeleteQuery(*hssample_table, delQuery);
   
-  
-  
-    retcode = HSFuncExecQuery(delQuery, -UERR_INTERNAL_ERROR, &xRows, 
-                              "IUS S(i-1)-D operation",
-                               NULL, NULL, TRUE/*doRetry*/ );
-    HSHandleError(retcode);
-  
-  }
+  retcode = HSFuncExecTransactionalQueryWithRetry(delQuery, -UERR_INTERNAL_ERROR, 
+                              &xRows,"IUS S(i-1)-D operation",
+                              NULL, NULL);
+  HSHandleError(retcode);
 
   if (LM->LogNeeded())
      LM->StopTimer();
@@ -6478,13 +6499,12 @@ Lng32 HSGlobalsClass::prepareForIUSAlgorithm1(Int64& rows)
                                                sampleRateAsPercetageForIUS);
   
     NAString insQuery;
-    iusSampleInsertedInMem->generateInsertQuery(*hssample_table, *user_table, insQuery, FALSE);
+    iusSampleInsertedInMem->generateInsertQuery(*hssample_table, *user_table, insQuery, FALSE);  
   
-  
-    //retcode = iusSampleInsertedInMem->populate(insQuery);
-    retcode = HSFuncExecQuery(insQuery, -UERR_INTERNAL_ERROR, &xRows, 
-                              "IUS S(i-1)-D+I operation",
-                               NULL, NULL, TRUE/*doRetry*/ );
+    // Note that we don't retry the insert
+    retcode = HSFuncExecQuery(insQuery, -UERR_INTERNAL_ERROR, 
+                               &xRows, "IUS S(i-1)-D+I operation",
+                               NULL, NULL);
     HSHandleError(retcode);
   }
   
@@ -6516,9 +6536,9 @@ static Lng32 create_I(NAString& sampTblName)
   createI += "_I LIKE ";
   createI += sampTblName;
   createI += " WITH PARTITIONS";
-  Lng32 retcode = HSFuncExecQuery(createI, -UERR_INTERNAL_ERROR,
+  Lng32 retcode = HSFuncExecTransactionalQueryWithRetry(createI, -UERR_INTERNAL_ERROR,
                                   NULL, "IUS create I",
-                                  NULL, NULL, TRUE/*doRetry*/);
+                                  NULL, NULL);
   if (LM->LogNeeded())
      LM->StopTimer();
 
@@ -6533,8 +6553,6 @@ Lng32 HSGlobalsClass::generateSampleI(Int64 currentSampleSize,
 {
   Lng32 retcode = 0;
   Int64 xRows;
-
-  Int64 transId=-1;
 
   HSLogMan *LM = HSLogMan::Instance();
   if (LM->LogNeeded())
@@ -6559,9 +6577,11 @@ Lng32 HSGlobalsClass::generateSampleI(Int64 currentSampleSize,
                         deleteSetSize, actualRowCount);
 
     NABoolean needEspParReset = setEspParallelism(objDef);
-    retcode = HSFuncExecQuery(insertSelectIQuery, -UERR_INTERNAL_ERROR, &xRows,
+    // note that we can't do a retry on non-transactional upsert using load + sample
+    retcode = HSFuncExecQuery(insertSelectIQuery, 
+                              -UERR_INTERNAL_ERROR, &xRows,
                               "IUS data set I creation",
-                              NULL, NULL, TRUE/*doRetry*/,
+                              NULL, NULL,
                               0, TRUE);  // check for MDAM usage
 
     if (needEspParReset)
@@ -6591,9 +6611,9 @@ static Lng32 drop_I(NAString& sampTblName)
 
   NAString cleanupI("drop table if exists ");
   cleanupI.append(sampTblName).append("_I");
-  Lng32 retcode = HSFuncExecQuery(cleanupI, -UERR_INTERNAL_ERROR,
+  Lng32 retcode = HSFuncExecTransactionalQueryWithRetry(cleanupI, -UERR_INTERNAL_ERROR,
                                   NULL, "IUS cleanup I",
-                                  NULL, NULL, TRUE/*doRetry*/);
+                                  NULL, NULL);
   if (LM->LogNeeded())
     LM->StopTimer();
   HSHandleError(retcode);
@@ -6777,7 +6797,6 @@ Lng32 HSGlobalsClass::UpdateIUSPersistentSampleTable(Int64 oldSampleSize,
 
   HSFuncExecQuery("CONTROL QUERY DEFAULT ALLOW_DML_ON_NONAUDITED_TABLE 'ON'");
 
-  HSTranController TC("IUS: update PS table", &retcode);
   HSHandleError(retcode);
 
   // step 1  - delete the affected rows from PS
@@ -6791,10 +6810,10 @@ Lng32 HSGlobalsClass::UpdateIUSPersistentSampleTable(Int64 oldSampleSize,
   }
 
   rowsAffected = 0;
-  retcode = HSFuncExecQuery(deleteQuery, -UERR_INTERNAL_ERROR,
+  retcode = HSFuncExecTransactionalQueryWithRetry(deleteQuery, -UERR_INTERNAL_ERROR,
                             &rowsAffected,
                             "IUS delete from PS where",
-                            NULL, NULL, TRUE/*doRetry*/ );
+                            NULL, NULL);
   if (LM->LogNeeded()) {
     LM->StopTimer();
     sprintf(LM->msg, PF64 " rows deleted from persistent sample table.", rowsAffected);
@@ -6817,10 +6836,14 @@ Lng32 HSGlobalsClass::UpdateIUSPersistentSampleTable(Int64 oldSampleSize,
   rowsAffected = 0;
   const char* insSourceTblName = extractTblName(*hssample_table + "_I", objDef);
   NABoolean needEspParReset = setEspParallelism(objDef, insSourceTblName);
+ 
+  // can't retry this one, as it uses non-transactional upsert using load + random
+  // select; a retry might add *another* random sample to a partial sample from
+  // the previous attempt
   retcode = HSFuncExecQuery(selectInsertQuery, -UERR_INTERNAL_ERROR,
                             &rowsAffected,
                             "IUS insert into PS (select from _I)",
-                            NULL, NULL, TRUE/*doRetry*/, 0,
+                            NULL, NULL, 0,
                             // check mdam usage if reading incremental sample directly from source table
                             CmpCommon::getDefault(USTAT_INCREMENTAL_UPDATE_STATISTICS) == DF_SAMPLE);  //checkMdam
   if (LM->LogNeeded()) {
@@ -7676,18 +7699,6 @@ Lng32 HSGlobalsClass::FlushStatistics(NABoolean &statsWritten)
           HSTranController TC("FLUSH STATISTICS", &retcode);
           HSHandleError(retcode);
 
-          if (CmpCommon::getDefault(USTAT_LOCK_HIST_TABLES) == DF_ON)
-          {
-            // Lock hist tables to assure no deadlock if a concurrent transaction
-            // is updating stats on the same table.
-            retcode = HSTranController::lockTable(*(GetHSContext()->hstogram_table));
-            HSHandleError(retcode);
-            retcode = HSTranController::lockTable(*(GetHSContext()->hsintval_table));
-            HSHandleError(retcode);
-            retcode = HSTranController::lockTable(*hssample_table);
-            HSHandleError(retcode);
-          }
-
           // IUS work: Keep warnings unless there are errors.
           if ( CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) > 0 )
               CmpCommon::diags()->clear();
@@ -8097,8 +8108,10 @@ Lng32 HSGlobalsClass::removeHists(NAString &hists, char *uid, const char *operat
       stmt += " AND HISTOGRAM_ID IN (";
       stmt += hists;
       stmt += ")";
-      retcode = HSFuncExecQuery(stmt, -UERR_INTERNAL_ERROR, &xRows, operation,
-                                NULL, NULL, TRUE/*doRetry*/ );
+      // Note that this can't be done with retry since we are
+      // part of a larger transaction started by FlushStatistics
+      retcode = HSFuncExecQuery(stmt, -UERR_INTERNAL_ERROR,
+                                 &xRows, operation, NULL, NULL);
       LM->StopTimer();
       HSHandleError(retcode);
       if (LM->LogNeeded())
@@ -8116,8 +8129,10 @@ Lng32 HSGlobalsClass::removeHists(NAString &hists, char *uid, const char *operat
       stmt += " AND HISTOGRAM_ID IN (";
       stmt += hists;
       stmt += ")";
-      retcode = HSFuncExecQuery(stmt, -UERR_INTERNAL_ERROR, &xRows, operation,
-                                NULL, NULL, TRUE/*doRetry*/ );
+      // Note that this can't be done with retry since we are
+      // part of a larger transaction started by FlushStatistics
+      retcode = HSFuncExecQuery(stmt, -UERR_INTERNAL_ERROR, 
+                                &xRows, operation, NULL, NULL);
       LM->StopTimer();
       HSHandleError(retcode);
       if (LM->LogNeeded())
@@ -9293,6 +9308,20 @@ Lng32 HSGlobalsClass::FixSamplingCounts(HSColGroupStruct *group)
                   start = i;
                 continue;
               }
+
+            // If the interval after this one is the last non-null interval,
+            // and that interval has UEC > (UEC_FRACTION_UPPER * 
+            // # rows in sample interval), then combine this one with that one
+            // (and we'll ignore the MAX_INTERVAL_JOIN limit for that one).
+            if ( ( ((i == lastInterval - 2) && groupHist->hasNullInterval()) ||
+                   ((i == lastInterval - 1) && !groupHist->hasNullInterval())  ) &&
+                 (groupHist->getIntUec(i+1) > UEC_FRACTION_UPPER * groupHist->getIntRowCount(i+1))  )
+              {
+                if (start < 1)
+                  start = i;
+                continue;            
+              }
+
             intJoinCount = 0;
 
             // Cannot combine any more intervals, adjust current interval with calculated ratio.
@@ -9838,9 +9867,9 @@ Lng32 HSGlobalsClass::DeleteOrphanHistograms()
         query += " WHERE TABLE_UID NOT IN (SELECT CREATETIME FROM ";
         query += objDef->getCatalogLoc(HSTableDef::EXTERNAL_FORMAT);
         query += ".TABLES)";
-        retcode = HSFuncExecQuery
+        retcode = HSFuncExecTransactionalQueryWithRetry
           (query, -UERR_INTERNAL_ERROR, &rows, "CLEAR_ORPHANS",
-           NULL, NULL, TRUE/*doRetry*/ );
+           NULL, NULL);
         if (LM->LogNeeded())
           {
             convertInt64ToAscii(rows, rowCountStr);
@@ -9853,9 +9882,9 @@ Lng32 HSGlobalsClass::DeleteOrphanHistograms()
         query += " WHERE TABLE_UID NOT IN (SELECT CREATETIME FROM ";
         query += objDef->getCatalogLoc(HSTableDef::EXTERNAL_FORMAT);
         query += ".TABLES)";
-        retcode = HSFuncExecQuery
+        retcode = HSFuncExecTransactionalQueryWithRetry
           (query, -UERR_INTERNAL_ERROR, &rows, "CLEAR_ORPHANS",
-           NULL, NULL, TRUE/*doRetry*/ );
+           NULL, NULL);
         if (LM->LogNeeded())
           {
             convertInt64ToAscii(rows, rowCountStr);
@@ -12602,12 +12631,11 @@ Int32 HSGlobalsClass::processIUSColumn(T* ptr,
                logCBF("after the above key, cbf is:", cbf);
             }
 #endif
-
-            diagsArea << DgSqlCode(UERR_IUS_INSERT_NONMFV_OVERFLOW)
-                      << DgString0(smplGroup->colSet[0].colname->data());
-
-             
+  
             if (LM->LogNeeded()) {
+              // only issue the warning if logging is turned on
+              diagsArea << DgSqlCode(UERR_IUS_INSERT_NONMFV_OVERFLOW)
+                << DgString0(smplGroup->colSet[0].colname->data());
               LM->Log("NONMFV overflow");
               LM->StopTimer();  // Need both of these; there are
               LM->StopTimer();  //   2 outstanding timer events
@@ -12739,8 +12767,12 @@ if ( x[0] == (unsigned char)255 && x[1] == (unsigned char)127 ) {
 
       // non-mfv value overflows to mfv. bail out.
       if (insert_status == CountingBloomFilter::NEW_MFV) {
-         diagsArea << DgSqlCode(UERR_IUS_INSERT_NONMFV_OVERFLOW)
-                   << DgString0(smplGroup->colSet[0].colname->data());
+         if (LM->LogNeeded())
+           {
+             // only issue warning if logging is turned on
+             diagsArea << DgSqlCode(UERR_IUS_INSERT_NONMFV_OVERFLOW)
+                       << DgString0(smplGroup->colSet[0].colname->data());
+           }
          LM->StopTimer();
          return UERR_IUS_INSERT_NONMFV_OVERFLOW;
       }

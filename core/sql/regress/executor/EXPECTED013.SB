@@ -349,7 +349,7 @@ CREATE VIEW TRAFODION.T013_SCH.TEMPV AS
 >>-- this will return an error, no permanent table exists
 >>alter table t013t2 add column z int default 0 not null;
 
-*** ERROR[1146] Object TRAFODION.T013_SCH.T013T2 could not be altered because it either does not exist or is not a table.
+*** ERROR[1127] The specified table TRAFODION.T013_SCH.T013T2 does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 
 --- SQL operation failed with errors.
 >>

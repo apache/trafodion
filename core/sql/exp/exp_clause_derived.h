@@ -2424,7 +2424,176 @@ private:
 };
 
 
+class SQLEXP_LIB_FUNC  ExRegexpClauseBase : public ex_clause {
 
+public:
+  // Construction
+  //
+  NA_EIDPROC ExRegexpClauseBase() 
+  {
+    setCollation(CharInfo::DefaultCollation);
+  }
+  NA_EIDPROC ExRegexpClauseBase(OperatorTypeEnum oper_type,
+			    short num_operands,
+			    Attributes ** attr,
+			    Space * space) :
+		ex_clause(ex_clause::LIKE_TYPE, oper_type,
+                          num_operands, attr, space
+                         ) 
+  {
+    setCollation(CharInfo::DefaultCollation);
+  }
+
+
+  // Null Semantics
+  //
+  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
+  NA_EIDPROC Int32 isNullRelevant() const { return 1; };
+  NA_EIDPROC ex_expr::exp_return_type processNulls(char *op_data[],
+  						   CollHeap * = 0,
+						   ComDiagsArea ** = 0);
+
+  // Execution
+  //
+  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+					   CollHeap * = 0,
+					   ComDiagsArea ** = 0) = 0;
+
+  // Fixup
+  //
+  NA_EIDPROC Long pack (void *) = 0;
+  
+  // Display
+  //
+  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+					  Int32 clauseNum, char * constsArea)
+    {};
+
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(1,getClassVersionID());
+    ex_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  NA_EIDPROC inline char* getPatternStr()
+  {
+    return patternStr_;
+  }
+
+  NA_EIDPROC inline void setPatternStr(char* pat)
+  {
+    patternStr_ = pat;
+  }
+
+  // Flags used in pcode implementation of like clauses
+  enum
+  {
+    LIKE_HEAD = 0x01,  // Check for pattern at beginning of string only
+    LIKE_TAIL = 0x02,  // Check for pattern at end of string only
+    END       = 0xFF   // Last possible flag for use in pcode implementation
+  };
+
+  // ---------------------------------------------------------------------
+protected:
+  
+  NA_EIDPROC inline CharInfo::Collation getCollation()
+  {
+    return (CharInfo::Collation) collation_;
+  }
+
+  NA_EIDPROC inline void setCollation(CharInfo::Collation v)
+  {
+    collation_ = (Int16) v;
+  }
+
+private:
+union {
+  LikePattern     *pattern_;          // 00-07
+  char            *patternStr_;
+};
+#ifndef NA_64BIT
+  char             fillerPattern_[4]; // 04-07
+#endif
+
+  Int16 collation_; //08-09
+
+  // ---------------------------------------------------------------------
+  // Fillers for potential future extensions without changing class size.
+  // When a new member is added, size of this filler should be reduced so
+  // that the size of the object remains the same (and is modulo 8).
+  // ---------------------------------------------------------------------
+  char                       fillers_[14];           // 10-23
+
+};
+
+
+// Added for unicode like function
+class SQLEXP_LIB_FUNC  ExRegexpClauseChar : public ExRegexpClauseBase {
+
+public:
+  // Construction
+  //
+  NA_EIDPROC ExRegexpClauseChar() {};
+  NA_EIDPROC ExRegexpClauseChar(OperatorTypeEnum oper_type, 
+			    short num_operands,
+			    Attributes ** attr,
+			    Space * space);
+
+
+  // Execution
+  //
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+					   CollHeap * = 0,
+					   ComDiagsArea ** = 0);
+
+  // Fixup
+  //
+  NA_EIDPROC Long pack (void *);
+
+  // Display
+  //
+  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+					  Int32 clauseNum, char * constsArea);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ExRegexpClauseBase::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+
+private:
+
+  // ---------------------------------------------------------------------
+  // Fillers for potential future extensions without changing class size.
+  // When a new member is added, size of this filler should be reduced so
+  // that the size of the object remains the same (and is modulo 8).
+  // ---------------------------------------------------------------------
+  char                       fillers_[8];           // 00-07
+
+};
 //////////////////////////////////
 // Class like_clause            //
 //////////////////////////////////

@@ -1588,3 +1588,48 @@ NAArray<HbaseStr> * ExpHbaseInterface_JNI::getClusterStats(Int32 &numEntries)
   return regionStats;
 }
 
+Lng32 ExpHbaseInterface_JNI::createSnapshot( const NAString&  tableName, const NAString&  snapshotName)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+    
+  retCode_ =  client_->createSnapshot(tableName, snapshotName);
+  if (retCode_ == HBC_OK)
+     return HBASE_ACCESS_SUCCESS;
+  else
+     return HBASE_CREATE_SNAPSHOT_ERROR;
+}
+
+Lng32 ExpHbaseInterface_JNI::deleteSnapshot( const NAString&  snapshotName)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+    
+  retCode_ =  client_->deleteSnapshot(snapshotName);
+  if (retCode_ == HBC_OK)
+     return HBASE_ACCESS_SUCCESS;
+  else
+     return HBASE_DELETE_SNAPSHOT_ERROR;
+}
+
+Lng32 ExpHbaseInterface_JNI::verifySnapshot( const NAString&  tableName, const NAString&  snapshotName,
+                                                NABoolean & exist)
+{
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+    
+  retCode_ =  client_->verifySnapshot(tableName, snapshotName, exist);
+  if (retCode_ == HBC_OK)
+     return HBASE_ACCESS_SUCCESS;
+  else
+     return HBASE_VERIFY_SNAPSHOT_ERROR;
+}

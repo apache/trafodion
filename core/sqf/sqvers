@@ -58,9 +58,9 @@ if (!$res) {
 	}
 }
 
-# get MY_SQROOT/who/host
+# get TRAF_HOME/who/host
 my $sq_pdsh = defined $ENV{'SQ_PDSH'} ? $ENV{'SQ_PDSH'} : '';
-my $my_sqroot = defined $ENV{'MY_SQROOT'} ? $ENV{'MY_SQROOT'} : '';
+my $traf_home = defined $ENV{'TRAF_HOME'} ? $ENV{'TRAF_HOME'} : '';
 my $java_home = defined $ENV{'JAVA_HOME'} ? $ENV{'JAVA_HOME'} : '';
 my $sq_mbtype = defined $ENV{'SQ_MBTYPE'} ? $ENV{'SQ_MBTYPE'} : '';
 my $host;
@@ -105,12 +105,12 @@ if (-r "/etc/redhat-release") {
     $dr=$susevers . "." . $susepatch
 }
 
-print "MY_SQROOT=$my_sqroot\n";
+print "TRAF_HOME=$traf_home\n";
 print "who\@host=$w\@$host\n";
 print "JAVA_HOME=$java_home\n";
 # can't do much if these two env variables are not setup
-if (!defined $ENV{'MY_SQROOT'}) {
-	die "MY_SQROOT is not set!";
+if (!defined $ENV{'TRAF_HOME'}) {
+	die "TRAF_HOME is not set!";
 }
 if (!defined $ENV{'JAVA_HOME'}) {
 	die "JAVA_HOME is not set!";
@@ -138,7 +138,7 @@ if ($utt) {
 
 sub find_elfs ($$) {
 	my ($dir, $so) = @_;
-	my $chdir = "$my_sqroot/$dir";
+	my $chdir = "$traf_home/$dir";
 	chdir($chdir) or die "can't chdir to $chdir $!";
 	my $ls;
 	if ($so) {
@@ -188,7 +188,7 @@ sub find_elfs ($$) {
 
 sub find_jars ($) {
 	my ($dir) = @_;
-	my $chdir = "$my_sqroot/$dir";
+	my $chdir = "$traf_home/$dir";
 	chdir($chdir) or die "can't chdir to $chdir $!";
 	my $ls = `ls *.jar`;
 	my @files = split(/\n/, $ls);
@@ -310,14 +310,14 @@ sub version_elf ($$) {
 		}
 	}
 	if (!$has_version) {
-		print "\$MY_SQROOT/$dir/$elf missing version string\n";
+		print "\$TRAF_HOME/$dir/$elf missing version string\n";
 	}
 }
 
 sub version_jar ($$) {
 	my ($dir, $jar) = @_;
 
-	my $cmd_vers = "$java_home/bin/java -jar $my_sqroot/export/lib/sqmanvers.jar $jar";
+	my $cmd_vers = "$java_home/bin/java -jar $traf_home/export/lib/sqmanvers.jar $jar";
 	if ($verbose) {
 		printf "v: cmd:$cmd_vers\n";
 	}
@@ -348,7 +348,7 @@ sub version_jar ($$) {
 	}
 	
 	if (!$utt && !$has_version) {
-		print "\$MY_SQROOT/$dir/$jar missing version string\n";
+		print "\$TRAF_HOME/$dir/$jar missing version string\n";
 	}
 }
 

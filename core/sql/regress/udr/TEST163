@@ -99,8 +99,8 @@ sh cp ../../sqludr/*.java .;
 sh cp ../../sqludr/Install*Metadata .;
 #ifNT
 #ifLINUX
-sh cp -f $MY_SQROOT/sql/sqludr/*.java $REGRTSTDIR;
-sh cp -f $MY_SQROOT/sql/sqludr/Install*Metadata $REGRTSTDIR;
+sh cp -f $TRAF_HOME/sql/sqludr/*.java $REGRTSTDIR;
+sh cp -f $TRAF_HOME/sql/sqludr/Install*Metadata $REGRTSTDIR;
 #ifLINUX
 
 ?section compile_libs

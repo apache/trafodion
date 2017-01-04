@@ -573,6 +573,11 @@ ElemDDLLikeLimitColumnLength * ElemDDLNode::castToElemDDLLikeLimitColumnLength()
   return NULL;
 }
 
+ElemDDLLikeOptWithoutRowFormat * ElemDDLNode::castToElemDDLLikeOptWithoutRowFormat()
+{
+  return NULL;
+}
+
 ElemDDLList *
 ElemDDLNode::castToElemDDLList()
 {

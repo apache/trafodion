@@ -341,5 +341,12 @@ odbc_SQLSrvr_EndTransaction_ts_res_(
   , /* In    */ ERROR_DESC_LIST_def *sqlWarning
   );
 
-
+CEE_status
+odbc_SQLSrvr_ExtractLob_ts_res_(
+    /* In    */ CEE_tag_def objtag_
+  , /* In    */ const CEE_handle_def *call_id_
+  , /* In    */ const struct odbc_SQLsrvr_ExtractLob_exc_ *exception_
+  , /* In    */ IDL_long_long lobDataLen
+  , /* In    */ IDL_char * lobDataValue
+);
 #endif

@@ -56,6 +56,7 @@ static const char* const joiErrorEnumStr[] =
  ,"JNI FindClass() failed"
  ,"JNI GetMethodID() failed"
  ,"JNI NewObject() failed"
+ ,"initJNIEnv() failed"
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -192,7 +193,7 @@ int JavaObjectInterface::createJVM()
   jvm_options[numJVMOptions].optionString = (char *)oomOption;
   numJVMOptions++;
 
-  char *mySqRoot = getenv("MY_SQROOT");
+  char *mySqRoot = getenv("TRAF_HOME");
   int len;
   char *oomDumpDir = NULL;
   if (mySqRoot != NULL)
@@ -533,3 +534,16 @@ NAString JavaObjectInterface::getLastJavaError(jmethodID methodID)
 }
 
 
+JOI_RetCode JavaObjectInterface::initJNIEnv()
+{
+  JOI_RetCode retcode;
+  if (jenv_ == NULL) {
+     if ((retcode = initJVM()) != JOI_OK)
+         return retcode;
+  }
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+    getExceptionDetails();
+    return JOI_ERROR_INIT_JNI;
+  }
+  return JOI_OK;
+}

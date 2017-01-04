@@ -60,7 +60,7 @@
 #include "ExpLOBexternal.h"
 #include "NAVersionedObject.h"
 #include "ComQueue.h"
-
+#include "QRLogger.h"
 #include "NAMemory.h"
 #include <seabed/ms.h>
 #include <seabed/fserr.h>
@@ -818,7 +818,7 @@ Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOpe
 	if (err != LOB_OPER_OK)
 	  return err;
       }
-    if (sourceLen <= 0 || sourceLen > lobMaxSize)
+    if (sourceLen < 0 || sourceLen > lobMaxSize)
       {
 	return LOB_MAX_LIMIT_ERROR; //exceeded the size of the max lob size
         //TBD trigger compaction
@@ -1217,7 +1217,7 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
       }
     if(so != Lob_External)
       {
-        if (sourceLen <= 0 || sourceLen > lobMaxSize)
+        if (sourceLen < 0 || sourceLen > lobMaxSize)
           {
             return LOB_MAX_LIMIT_ERROR; //exceeded the size of the max lob size
           }
@@ -1241,6 +1241,11 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
       
        return LOB_DESC_UPDATE_ERROR;
     }
+    if (sourceLen ==0 )
+      {
+        //No need to write any data
+        return err;
+      }
     char *inputAddr = data;
     if (so == Lob_Buffer)
       {
@@ -1502,7 +1507,51 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
     char logBuf[4096];
     lobDebugInfo("In ExLob::allocateDesc",0,__LINE__,lobTrace_);
     Int32 openFlags = O_RDONLY ;   
-    
+    if (size == 0) //we are trying to empty this lob.
+      {
+        //rename lob datafile
+        char * saveLobDataFile = new(getLobGlobalHeap()) char[MAX_LOB_FILE_NAME_LEN+6];
+        str_sprintf(saveLobDataFile, "%s_save",lobDataFile_);
+        Int32 rc2 = hdfsRename(fs_,lobDataFile_,saveLobDataFile);
+        if (rc2 == -1)
+          {
+            lobDebugInfo("Problem renaming datafile to save data file",0,__LINE__,lobTrace_);
+            NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
+            return LOB_DATA_FILE_WRITE_ERROR;
+          }
+        //create a new file of the same name.
+        hdfsFile fdNew = hdfsOpenFile(fs_, lobDataFile_,O_WRONLY|O_CREAT,0,0,0);
+        if (!fdNew) 
+          {
+            str_sprintf(logBuf,"Could not create/open file:%s",lobDataFile_);
+            lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
+            
+            //restore previous version
+            Int32 rc2 = hdfsRename(fs_,saveLobDataFile,lobDataFile_);
+              if (rc2 == -1)
+                {
+                  lobDebugInfo("Problem restoring datafile . Will need to retry the update",0,__LINE__,lobTrace_);
+                  NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
+                  return LOB_DATA_FILE_WRITE_ERROR;
+                }
+               NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
+               return LOB_DATA_FILE_OPEN_ERROR;
+            
+          }
+        else
+          {
+            //A new empty data file has been created.
+            // delete the saved data file
+            Int32 rc2 = hdfsDelete(fs_,saveLobDataFile,FALSE);//ok to ignore error.nt32            
+            if (rc2 == -1)
+              {
+                lobDebugInfo("Problem deleting saved datafile . Will need to manually cleanup saved datafile",0,__LINE__,lobTrace_);
+              }
+            NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
+            hdfsCloseFile(fs_,fdNew);
+            fdNew = NULL;    
+          }
+      }
     hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_);
     if (fInfo)
       dataOffset = fInfo->mSize;
@@ -1777,9 +1826,11 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
             cursor.descSize_ = outSize;
             cursor.descOffset_ = outOffset;
             cursor.bytesRead_ = 0;
+            if (outSize == 0) // this is an empty lob entry
+              continue;
          }
       }
-
+      
       bytesAvailable = cursor.descSize_ - cursor.bytesRead_;
       bytesToCopy = min(bytesAvailable, tgtSize - operLen);
       offset = cursor.descOffset_ + cursor.bytesRead_;
@@ -2280,11 +2331,11 @@ Ex_Lob_Error ExLobsOper (
 	  return LOB_GLOB_PTR_ERROR;
 	}
     }
-
-  if ((globPtr != NULL) && (operation != Lob_Init))
+  if (globPtr != NULL)
+  {
+    lobGlobals = (ExLobGlobals *)globPtr;
+    if ((operation != Lob_Init) && (operation != Lob_Cleanup))
     {
-      lobGlobals = (ExLobGlobals *)globPtr;
-
       lobMap = lobGlobals->getLobMap();
 
       it = lobMap->find(string(fileName));
@@ -2314,6 +2365,7 @@ Ex_Lob_Error ExLobsOper (
 	}
       lobPtr->lobTrace_ = lobGlobals->lobTrace_;
     }
+  }
   /* 
 // **Note** This is code that needs to get called before sneding a request to the 
 //mxlobsrvr process. It's inactive code currently   
@@ -3014,9 +3066,9 @@ ExLobGlobals::ExLobGlobals() :
     lobMap_(NULL), 
     fs_(NULL),
     isCliInitialized_(FALSE),
-    isHive_(FALSE),
     threadTraceFile_(NULL),
     lobTrace_(FALSE),
+    numWorkerThreads_(0),
     heap_(NULL)
 {
   //initialize the log file
@@ -3043,12 +3095,21 @@ ExLobGlobals::~ExLobGlobals()
     if (lobMap_) 
       delete lobMap_;
 
-    for (int i=0; i<NUM_WORKER_THREADS; i++) {
-      enqueueShutdownRequest();
-    }
-
-    for (int i=0; i<NUM_WORKER_THREADS; i++) {
-      pthread_join(threadId_[i], NULL);
+    if (numWorkerThreads_ > 0) { 
+       for (int i=0; numWorkerThreads_-i > 0 && i < NUM_WORKER_THREADS; i++) {
+           QRLogger::log(CAT_SQL_EXE, LL_DEBUG, 0, NULL,  
+           "Worker Thread Shutdown Requested %ld ", 
+           threadId_[i]);
+           enqueueShutdownRequest();
+       }
+     
+       for (int i=0; numWorkerThreads_ > 0 && i < NUM_WORKER_THREADS; i++) {
+           pthread_join(threadId_[i], NULL);
+           QRLogger::log(CAT_SQL_EXE, LL_DEBUG, 0, NULL,  
+           "Worker Thread Completed %ld ", 
+           threadId_[i]);
+           numWorkerThreads_--;
+       }
     }
     // Free the post fetch bugf list AFTER the worker threads have left to 
     // avoid slow worker thread being stuck and master deallocating these 
@@ -3109,6 +3170,10 @@ Ex_Lob_Error ExLobGlobals::startWorkerThreads()
      rc = pthread_create(&threadId_[i], NULL, workerThreadMain, this);
      if (rc != 0)
       return LOB_HDFS_THREAD_CREATE_ERROR;
+      QRLogger::log(CAT_SQL_EXE, LL_DEBUG, 0, NULL,  
+           "Worker Thread Created %ld ",
+           threadId_[i]);
+     numWorkerThreads_++;
    }
    
    return LOB_OPER_OK;
@@ -3360,7 +3425,7 @@ void ExLobGlobals::traceMessage(const char *logMessage, ExLobCursor *cursor,
 
 //Enable envvar TRACE_LOB_ACTIONS to enable tracing. 
 //The output file will be in the masterexec.<pid> logs in the 
-//$MY_SQROOT/logs directory on each node
+//$TRAF_HOME/logs directory on each node
 
 void lobDebugInfo(const char *logMessage,Int32 errorcode,
                          Int32 line, NABoolean lobTrace)

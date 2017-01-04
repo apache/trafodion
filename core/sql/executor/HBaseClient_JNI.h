@@ -398,6 +398,12 @@ typedef enum {
  ,HBC_ERROR_GETKEYS
  ,HBC_ERROR_LISTALL
  ,HBC_ERROR_REGION_STATS
+ ,HBC_ERROR_CREATE_SNAPSHOT_PARAM
+ ,HBC_ERROR_CREATE_SNAPSHOT_EXCEPTION
+ ,HBC_ERROR_DELETE_SNAPSHOT_PARAM
+ ,HBC_ERROR_DELETE_SNAPSHOT_EXCEPTION
+ ,HBC_ERROR_VERIFY_SNAPSHOT_PARAM
+ ,HBC_ERROR_VERIFY_SNAPSHOT_EXCEPTION
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -508,6 +514,9 @@ public:
                                 HTableClient_JNI **outHtc);
   NAArray<HbaseStr>* getStartKeys(NAHeap *heap, const char *tableName, bool useTRex);
   NAArray<HbaseStr>* getEndKeys(NAHeap *heap, const char * tableName, bool useTRex);
+  HBC_RetCode    createSnapshot( const NAString&  tableName, const NAString&  snapshotName);
+  HBC_RetCode    deleteSnapshot( const NAString&  snapshotName);
+  HBC_RetCode    verifySnapshot( const NAString&  tableName, const NAString&  snapshotName, NABoolean & exist);
 
 private:   
   // private default constructor
@@ -558,6 +567,9 @@ private:
    ,JM_HBC_CHECKANDDELETE_ROW
    ,JM_HBC_GETSTARTKEYS
    ,JM_HBC_GETENDKEYS
+   ,JM_HBC_CREATE_SNAPSHOT
+   ,JM_HBC_DELETE_SNAPSHOT
+   ,JM_HBC_VERIFY_SNAPSHOT
    ,JM_LAST
   };
   static jclass          javaClass_; 

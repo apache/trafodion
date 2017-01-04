@@ -407,6 +407,10 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
   NAString extTableName = tableName.getExternalName(TRUE);
   NAString extTableNameForHbase = 
     btCatalogNamePart + "." + btSchemaNamePart + "." + btObjectNamePart;
+  NAString tabName = (NAString&)createIndexNode->getTableName();
+
+  NABoolean schNameSpecified = 
+    (NOT createIndexNode->getOrigTableNameAsQualifiedName().getSchemaName().isNull());
 
   ComObjectName indexName(createIndexNode->getIndexName());
   indexName.applyDefaults(btCatalogNamePart, btSchemaNamePart); 
@@ -421,7 +425,8 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
   if (ehi == NULL)
     return;
 
-  if ((isSeabaseReservedSchema(indexName)) &&
+  if (((isSeabaseReservedSchema(indexName)) ||
+       (ComIsTrafodionExternalSchemaName(schemaNamePart))) &&
       (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
     {
       *CmpCommon::diags() << DgSqlCode(-1118)
@@ -503,12 +508,10 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
 
      }
 
-  retcode = existsInSeabaseMDTable(&cliInterface, 
-                                   btCatalogNamePart, btSchemaNamePart, btObjectNamePart,
-                                   COM_BASE_TABLE_OBJECT,
-                                   (Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) 
-                                    ? FALSE : TRUE),
-                                   TRUE, TRUE);
+  retcode = lookForTableInMD(&cliInterface, 
+                             btCatalogNamePart, btSchemaNamePart, btObjectNamePart,
+                             schNameSpecified, FALSE,
+                             tableName, tabName, extTableName);
   if (retcode < 0)
     {
       processReturn();
@@ -518,20 +521,13 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
 
   ActiveSchemaDB()->getNATableDB()->useCache();
 
-  // save the current parserflags setting
-  ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
-  Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
-
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   CorrName cn(tableName.getObjectNamePart().getInternalName(),
 	      STMTHEAP,
 	      btSchemaNamePart,
 	      btCatalogNamePart);
 
-  NATable *naTable = bindWA.getNATable(cn); 
-
-  // Save parser flags settings so they can be restored later
-  Set_SqlParser_Flags (savedParserFlags);
+  NATable *naTable = bindWA.getNATableInternal(cn); 
 
   if (naTable == NULL || bindWA.errStatus())
     {
@@ -556,6 +552,18 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
     }
 
   Int64 btObjUID = naTable->objectUid().castToInt64();
+
+  if (naTable->isHbaseMapTable())
+    {
+      // not supported
+      *CmpCommon::diags() << DgSqlCode(-3242)
+                          << DgString0("Cannot create index on an HBase mapped table.");
+
+      deallocEHI(ehi); 
+      processReturn();
+      
+      return;
+    }
 
   NAString &indexColFam = naTable->defaultColFam();
   NAString trafColFam;

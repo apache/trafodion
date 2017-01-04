@@ -41,7 +41,7 @@ if [ "$5" = "-attach" ]; then
 fi
 
 if [ $attach = 1 ]; then
-	sqshell=$MY_SQROOT/sql/scripts/sqshell
+	sqshell=$TRAF_HOME/sql/scripts/sqshell
 	if [ -r $sqshell ]; then
 		nodes=`grep -w SQ_VIRTUAL_NODES $sqshell`
 		if [ $? != 0 ]; then

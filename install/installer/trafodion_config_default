@@ -110,7 +110,7 @@ export HBASE="hbase"
 # First time install : /home/trafodion/traf
 # On Upgrade: /home/trafodion/traf_<date>
 # By doing this the previous version will remain and allow for an easier rollback.
-export SQ_ROOT="/opt/trafodion/trafodion"
+export TRAF_HOME="/opt/trafodion/trafodion"
 
 # Start Trafodion after install completes
 export START="Y"

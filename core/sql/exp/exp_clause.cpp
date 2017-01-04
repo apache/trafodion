@@ -194,6 +194,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_LIKE_DOUBLEBYTE: 
 	  setClassID(LIKE_CLAUSE_DOUBLEBYTE_ID);
 	  break;
+        case ITM_REGEXP:
+          setClassID(REGEXP_CLAUSE_CHAR_ID);
+          break;
 	case ITM_ASCII: 
 	case ITM_CODE_VALUE: 
 	case ITM_UNICODE_CODE_VALUE: 
@@ -341,7 +344,10 @@ ex_clause::ex_clause(clause_type type,
         case ITM_SHA1:
           setClassID(FUNC_SHA1_ID);
           break;
-        case ITM_SHA2:
+        case ITM_SHA2_224:
+        case ITM_SHA2_256:
+        case ITM_SHA2_384:
+        case ITM_SHA2_512:
           setClassID(FUNC_SHA2_ID);
           break;
         case ITM_MD5:
@@ -493,6 +499,10 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_NVL:
 	  setClassID(FUNC_NVL);
 	  break;
+    case ITM_JSONOBJECTFIELDTEXT:
+	  setClassID(FUNC_JSON_ID);
+	  break;
+      
 	case ITM_EXTRACT_COLUMNS:
 	  setClassID(FUNC_EXTRACT_COLUMNS);
 	  break;
@@ -535,6 +545,15 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_HBASE_VERSION:
 	  setClassID(FUNC_HBASE_VERSION);
 	  break;
+	case ITM_SOUNDEX:
+	  setClassID(FUNC_SOUNDEX_ID);
+	  break;
+        case ITM_AES_ENCRYPT:
+          setClassID(FUNC_AES_ENCRYPT);
+          break;
+        case ITM_AES_DECRYPT:
+          setClassID(FUNC_AES_DECRYPT);
+          break;
 	default:
 	  GenAssert(0, "ex_clause: Unknown Class ID.");
 	  break;
@@ -682,6 +701,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::LIKE_CLAUSE_DOUBLEBYTE_ID:
       GetVTblPtr(vtblPtr, ex_like_clause_doublebyte);
+      break;
+    case ex_clause::REGEXP_CLAUSE_CHAR_ID:
+            GetVTblPtr(vtblPtr, ExRegexpClauseChar);
       break;
     case ex_clause::FUNC_ASCII_ID:
       GetVTblPtr(vtblPtr, ExFunctionAscii);
@@ -933,6 +955,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_NVL:
       GetVTblPtr(vtblPtr, ex_function_nvl);
       break;
+    case ex_clause::FUNC_JSON_ID:
+      GetVTblPtr(vtblPtr, ex_function_json_object_field_text);
+      break;
     case ex_clause::FUNC_EXTRACT_COLUMNS:
       GetVTblPtr(vtblPtr, ExFunctionExtractColumns);
       break;
@@ -1022,6 +1047,15 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_INETNTOA_ID:
       GetVTblPtr(vtblPtr, ExFunctionInetNtoa);
+      break;
+    case ex_clause::FUNC_SOUNDEX_ID:
+      GetVTblPtr(vtblPtr, ExFunctionSoundex);
+      break;
+    case ex_clause::FUNC_AES_ENCRYPT:
+      GetVTblPtr(vtblPtr, ExFunctionAESEncrypt);
+      break;
+    case ex_clause::FUNC_AES_DECRYPT:
+      GetVTblPtr(vtblPtr, ExFunctionAESDecrypt);
       break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);
@@ -1191,6 +1225,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_BETWEEN: return "ITM_BETWEEN";
     // LCOV_EXCL_STOP
     case ITM_LIKE: return "ITM_LIKE";
+    case ITM_REGEXP: return "ITM_REGEXP";
     // LCOV_EXCL_START
     case ITM_CURRENT_TIMESTAMP: return "ITM_CURRENT_TIMESTAMP";
     case ITM_CURRENT_USER: return "ITM_CURRENT_USER";
@@ -1426,6 +1461,8 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_NULLIFZERO: return "ITM_NULLIFZERO";
     case ITM_NVL: return "ITM_NVL";
 
+    case ITM_JSONOBJECTFIELDTEXT: return "ITM_JSONOBJECTFIELDTEXT";
+
     // subqueries
     case ITM_ROW_SUBQUERY: return "ITM_ROW_SUBQUERY";
     case ITM_IN_SUBQUERY: return "ITM_IN_SUBQUERY";
@@ -1648,7 +1685,16 @@ ex_arith_clause::ex_arith_clause(OperatorTypeEnum oper_type,
   if (attr)
     setInstruction();
 }
- 
+
+
+ExRegexpClauseChar::ExRegexpClauseChar(OperatorTypeEnum oper_type, 
+			    short num_operands,
+			    Attributes ** attr,
+			    Space * space)
+: ExRegexpClauseBase(oper_type, num_operands,attr,space)
+{
+}
+
 ex_arith_clause::ex_arith_clause(clause_type type,
                                  OperatorTypeEnum oper_type,
                                  Attributes ** attr,
@@ -2052,6 +2098,12 @@ void ex_like_clause_char::displayContents(Space * space, const char * /*displayS
 {
   ex_clause::displayContents(space, "ex_like_clause_char", clauseNum, constsArea);
 }
+
+void ExRegexpClauseChar::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
+{
+  ex_clause::displayContents(space, "ExRegexpClauseChar", clauseNum, constsArea);
+}
+
 // LCOV_EXCL_START
 void ex_like_clause_doublebyte::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {

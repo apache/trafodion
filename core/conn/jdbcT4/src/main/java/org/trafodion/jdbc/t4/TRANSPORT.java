@@ -167,6 +167,9 @@ class TRANSPORT {
 	static final short SRVR_API_SQLFETCH2 = SRVR_API_SQLEXECUTE2 + 1; // OK
 	// PCDRIVER
 
+	// extent API used to extract lob data
+	static final short SRVR_API_EXTRACTLOB = 3030;
+
 	static final short SQL_ATTR_ROWSET_RECOVERY = 2000;
 
 	static final int MAX_REQUEST = 300;

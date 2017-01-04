@@ -28,8 +28,8 @@
 ##
 ## - Creates a pseudo-distributed single node installation
 ## - Sandboxes the installation into a single directory,
-##   $MY_SQROOT/sqf/sql/local_hadoop
-## - creates some convenience shell scripts in $MY_SQROOT/sqf/sql/scripts
+##   $TRAF_HOME/sqf/sql/local_hadoop
+## - creates some convenience shell scripts in $TRAF_HOME/sqf/sql/scripts
 ##   to start and stop Hadoop and for some interactive shells
 ## - Does not require sudo privileges for installing or running Hadoop
 ## - Can run on non-standard ports, if needed, to be able to run multiple
@@ -259,7 +259,7 @@ function listports {
 # global config
 
 # directory on local disk that belongs to me
-MY_SW_PARENT=$MY_SQROOT/sql
+MY_SW_PARENT=$TRAF_HOME/sql
 
 # name of subdirectory to install Hadoop/Hive/MySQL in
 MY_SW_ROOT=$MY_SW_PARENT/local_hadoop
@@ -997,8 +997,8 @@ EOF
 EOF
 
 
-  mkdir -p $MY_SQROOT/etc
-  SYSTEM_DEFAULTS_TEXT_FILE=$MY_SQROOT/etc/SQSystemDefaults.conf
+  mkdir -p $TRAF_HOME/etc
+  SYSTEM_DEFAULTS_TEXT_FILE=$TRAF_HOME/etc/SQSystemDefaults.conf
 
   # alternative method for open source build, system defaults in a text file
   cat <<EOF >${SYSTEM_DEFAULTS_TEXT_FILE}.temp
@@ -1361,8 +1361,8 @@ echo "$MY_LOCAL_SW_DIST/${MYSQL_JDBC_TAR}"
   tar -xf ${MYSQL_JDBC_TAR}
   ln -s `dirname mysql-connector-java-*/mysql-connector-java-*.jar` mysql-connector-java
   # copy the MySQL JDBC driver to the udr directory, so UDRs can use it
-  mkdir -p ${MY_SQROOT}/udr/external_libs
-  cp ${MY_SW_ROOT}/mysql-connector-java/mysql-connector-java*.jar ${MY_SQROOT}/udr/external_libs
+  mkdir -p ${TRAF_HOME}/udr/external_libs
+  cp ${MY_SW_ROOT}/mysql-connector-java/mysql-connector-java*.jar ${TRAF_HOME}/udr/external_libs
 
 fi
 # end of MySQL JDBC setup
@@ -1523,11 +1523,11 @@ echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
   # For HBase_Trx
 
   # Do not build if the TRX jar already exists
-  if [ ! -e ${MY_SQROOT}/export/lib/${HBASE_TRX_JAR} ]; then
+  if [ ! -e ${TRAF_HOME}/export/lib/${HBASE_TRX_JAR} ]; then
      # Build HBase TRX
      echo "Building HBase TRX"
-     cd $MY_SQROOT ; make genverhdr 2>&1 | tee -a ${MY_LOG_FILE}
-     cd $MY_SQROOT/src/seatrans/hbase-trx
+     cd $TRAF_HOME ; make genverhdr 2>&1 | tee -a ${MY_LOG_FILE}
+     cd $TRAF_HOME/src/seatrans/hbase-trx
      make clean 2>&1 | tee -a ${MY_LOG_FILE}
      make 2>&1 | tee -a ${MY_LOG_FILE}
   fi
@@ -1535,7 +1535,7 @@ echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
   cd $MY_SW_ROOT
 
   # Setup HBase TRX JAR and utility JAR in HBase' CLASSPATH
-  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/\${HBASE_TRX_JAR}:${MY_SQROOT}/export/lib/\${UTIL_JAR}" >> ${HBASE_ENV_FILE}
+  echo "export HBASE_CLASSPATH=${TRAF_HOME}/export/lib/\${HBASE_TRX_JAR}:${TRAF_HOME}/export/lib/\${UTIL_JAR}" >> ${HBASE_ENV_FILE}
 
   echo "Updating file $HBASE_CONFIG_FILE ..."
 

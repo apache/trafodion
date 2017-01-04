@@ -380,6 +380,16 @@ odbc_SQLSrvr_FetchPerf_sme_(
   , /* Out   */ IDL_long *sqlWarningOrErrorLength
   , /* Out   */ BYTE     *&sqlWarningOrError);
 
+extern "C" void
+odbc_SQLSrvr_ExtractLob_sme_(
+    /* In    */ CEE_tag_def objtag_
+  , /* In    */ const CEE_handle_def *call_id_
+  , /* In    */ odbc_SQLsrvr_ExtractLob_exc_ *exception_
+  , /* In    */ IDL_long extractLobAPI
+  , /* In    */ IDL_string lobHandle
+  , /* In    */ IDL_long_long &lobDataLen
+  , /* In    */ IDL_char* &lobDataValue);
+
 extern "C" void 
 GETMXCSWARNINGORERROR(
     /* In    */ Int32 sqlcode

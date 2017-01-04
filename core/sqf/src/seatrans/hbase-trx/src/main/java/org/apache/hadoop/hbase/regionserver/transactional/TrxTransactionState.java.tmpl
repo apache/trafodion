@@ -443,7 +443,7 @@ public class TrxTransactionState extends TransactionState {
                 // for this transaction to commit.
                 LOG.error("TrxTransactionState hasConflict: Returning true. Caught exception for transaction "
                         + transactionState.toString() + ", regionInfo is [" + regionInfo.getRegionNameAsString()
-                        + "], exception is " + e.toString());
+                        + "], exception ", e);
                 return true;
             }
         }
@@ -500,9 +500,14 @@ public class TrxTransactionState extends TransactionState {
                         LOG.trace("Transaction [" + this.toString() + "] scans was empty ");
                 }
             } catch (Exception e) {
-                LOG.warn("TrxTransactionState hasConflict: Unable to get row - this Transaction [" + this.toString()
-                        + "] checkAgainst Transaction [" + checkAgainst.toString() + "] " + " Exception: " + e);
-                throw e;
+               if (checkAgainst.getStatus().equals(TransactionState.Status.ABORTED)){
+                  return false;
+               }
+               else {
+                  LOG.warn("TrxTransactionState hasConflict: Unable to get row - this Transaction [" + this.toString()
+                       + "] checkAgainst Transaction [" + checkAgainst.toString() + "] " + " Exception: ", e);
+                  throw e;
+               }
             }
         }
         return false;

@@ -98,12 +98,12 @@ class JDBCUDR extends UDR
         {
           try {
             Path driverJarPath = Paths.get(driverJar_);
-            Path sandBoxPath = Paths.get(System.getenv("MY_SQROOT"), "udr", "external_libs");
+            Path sandBoxPath = Paths.get(System.getenv("TRAF_HOME"), "udr", "external_libs");
             URLClassLoader jdbcJarLoader = null;
             URL jarClassPath[] = new URL[1];
 
             // for security reasons, we sandbox the allowed driver jars
-            // into $MY_SQROOT/export/lib/udr/external_libs
+            // into $TRAF_HOME/export/lib/udr/external_libs
             driverJarPath = driverJarPath.normalize();
             if (driverJarPath.isAbsolute())
               {
@@ -111,7 +111,7 @@ class JDBCUDR extends UDR
                   throw new UDRException(
                     38010,
                     "The jar name of the JDBC driver must be a name relative to %s, got %s",
-                    System.getenv("MY_SQROOT")+"/udr/external_libs",
+                    System.getenv("TRAF_HOME")+"/udr/external_libs",
                     driverJar_);
               }
             else

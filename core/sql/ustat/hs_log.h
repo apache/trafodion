@@ -78,13 +78,15 @@ public:
                        , short sqlcode
                        , const char *msg
                        , Int32 needCLIDiags
+                       , NABoolean inactivate=FALSE
                        )
     : retcode_(retcode),
       sqlcode_(sqlcode),
       string0_(msg),
       needCLIDiags_(needCLIDiags),
       string1_(NULL),
-      isFinalized_(FALSE)
+      isFinalized_(FALSE),
+      inactivated_(inactivate)
     {
       retcode_ = 0;
     }
@@ -108,6 +110,7 @@ public:
     {
       // Add error to diagnostic area if not EOF or float primary key (-1120).
       if ( !isFinalized_ &&
+           !inactivated_ &&
            retcode_ &&
            retcode_ != HS_EOF &&
            retcode_ != -HS_PKEY_FLOAT_ERROR &&
@@ -126,6 +129,16 @@ private:
   const char *string1_;    // optional string1.
   NABoolean isFinalized_;  // becomes true if error caught before object destroyed
                            //   (prevents action by dtor)
+  NABoolean inactivated_;  // Set to TRUE if we want to suppress the action
+                           // of finalize() in the destructor. We might do
+                           // this because this HSErrorCatcher was created
+                           // within the scope of another; if we don't suppress
+                           // we will report the same error twice. Another
+                           // reason for doing this is we might be in a retry
+                           // loop and don't want to report diagnostics for
+                           // failures we will retry. (In this latter case, 
+                           // there typically will be another HSErrorCatcher
+                           // above the retry loop.
 };
 
 // -----------------------------------------------------------------------

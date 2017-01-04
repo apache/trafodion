@@ -2031,8 +2031,10 @@ Lng32 updateHistogram(const char *histogramTableName, Int32 stmtNum, short readC
   qry.append(count_str);
   qry.append(" WHERE CURRENT OF CURSOR106_MX_2300");
 
+  // Note that the UPDATE cannot be retried since the transaction will
+  // likely abort on any failure, invalidating the cursor.
   Lng32 retcode = HSFuncExecQuery(qry.data(), -UERR_INTERNAL_ERROR, NULL,
-                                  HS_QUERY_ERROR, NULL, NULL, TRUE);
+                                  HS_QUERY_ERROR, NULL, NULL);
   HSFilterWarning(retcode);
   if (LM->LogNeeded())
   {

@@ -2507,6 +2507,11 @@ short RelRoot::codeGen(Generator * generator)
 	 {
 	   root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_LOB_EXTRACT);
 	 }
+       else if(exeUtil->getExeUtilType() == ExeUtilExpr::LOB_UPDATE_UTIL_)
+         {
+           root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_LOB_UPDATE_UTIL
+); 
+         }
 
       else if (exeUtil->isExeUtilQueryType())
 	{
@@ -3195,7 +3200,7 @@ short Sort::generateTdb(Generator * generator,
 
   sort_tdb->setSortFromTop(sortFromTop());
   sort_tdb->setOverflowMode(generator->getOverflowMode());
-  sort_tdb->setTopNSort(CmpCommon::getDefault(GEN_SORT_TOPN) == DF_ON);
+  sort_tdb->setTopNSortEnabled(CmpCommon::getDefault(GEN_SORT_TOPN) == DF_ON);
   
   if (generator->getUserSidetreeInsert())
     sort_tdb->setUserSidetreeInsert(TRUE);

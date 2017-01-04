@@ -1382,11 +1382,11 @@ public:
 
   //! HiveMDaccessFunc Constructor
   HiveMDaccessFunc(NAString *mdt = NULL,
-                   SchemaName* schName = NULL,
+                   NAString* schName = NULL,
+                   NAString* objName = NULL,
                    CollHeap *oHeap = CmpCommon::statementHeap());
 
   // destructors
-
 
   //! ~HiveMDaccessFunc Destructor
   virtual ~HiveMDaccessFunc();
@@ -1400,6 +1400,8 @@ public:
   //  returns a const char pointer to the name of the virtual Table
   // should return a CorrName?##
   virtual const char *getVirtualTableName();  
+  static NABoolean isHiveMD(const NAString &name);
+  static NAString getMDType(const NAString &name);
 
   //! getArity method
   // get the degree of this node (it is a leaf op).
@@ -1456,9 +1458,13 @@ private:
 			       Generator * generator);
 
   NAString mdType_;
+
   // Hive schema to be accessed
   // If this is passed in as NULL, then the current default is used.
-  SchemaName schemaName_;
+  NAString schemaName_;
+
+  // hive object name to be accessed. If null, all objects are returned.
+  NAString objectName_;
 
 }; // class HiveMDaccessFunc
 
@@ -1479,7 +1485,7 @@ public:
 
   //! PhysicalHiveMD Constructor
   PhysicalHiveMD(CollHeap *oHeap = CmpCommon::statementHeap())
-       : HiveMDaccessFunc(NULL, NULL, oHeap)
+       : HiveMDaccessFunc(NULL, NULL, NULL, oHeap)
   {}
 
 

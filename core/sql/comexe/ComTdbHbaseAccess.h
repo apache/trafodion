@@ -488,7 +488,9 @@ public:
 		    Float32 samplingRate = -1,
 		    HbaseSnapshotScanAttributes * hbaseSnapshotScanAttributes = NULL,
 
-                    HbaseAccessOptions * hbaseAccessOptions = NULL
+                    HbaseAccessOptions * hbaseAccessOptions = NULL,
+
+                    char * pkeyColName = NULL
 	       );
   
   ComTdbHbaseAccess(
@@ -658,6 +660,8 @@ public:
   HbaseAccessOptions * getHbaseAccessOptions() 
   { return (HbaseAccessOptions*)hbaseAccessOptions_.getPointer(); }
 
+  char * getPkeyColName() { return pkeyColName_; }
+
   NABoolean multiVersions() 
   {
     return 
@@ -722,7 +726,7 @@ public:
 
  void setUpdelColnameIsStr(NABoolean v)
   {(v ? flags_ |= UPDEL_COLNAME_IS_STR : flags_ &= ~UPDEL_COLNAME_IS_STR); };
-  NABoolean updelColnameIsStr() { return (flags_ & UPDEL_COLNAME_IS_STR) != 0; };
+  NABoolean updelColnameIsStr() { return (flags_ & UPDEL_COLNAME_IS_STR) != 0;};
 
   void setUseHbaseXn(NABoolean v)
   {(v ? flags_ |= USE_HBASE_XN : flags_ &= ~USE_HBASE_XN); };
@@ -735,6 +739,14 @@ public:
   void setAlignedFormat(NABoolean v)
   {(v ? flags_ |= ALIGNED_FORMAT : flags_ &= ~ALIGNED_FORMAT); };
   NABoolean alignedFormat() { return (flags_ & ALIGNED_FORMAT) != 0; };
+
+  void setHbaseMapTable(NABoolean v)
+  {(v ? flags_ |= HBASE_MAP_TABLE : flags_ &= ~HBASE_MAP_TABLE); };
+  NABoolean hbaseMapTable() { return (flags_ & HBASE_MAP_TABLE) != 0; };
+
+  void setKeyInVCformat(NABoolean v)
+  {(v ? flags_ |= KEY_IN_VC_FRMT : flags_ &= ~KEY_IN_VC_FRMT); };
+  NABoolean keyInVCformat() { return (flags_ & KEY_IN_VC_FRMT) != 0; };
 
   void setAsyncOperations(NABoolean v)
   {(v ? flags_ |= ASYNC_OPERATIONS : flags_ &= ~ASYNC_OPERATIONS); };
@@ -909,7 +921,9 @@ public:
     ALIGNED_FORMAT                   = 0x4000,
     ASYNC_OPERATIONS                 = 0x8000,
     USE_CIF                          = 0x10000,
-    USE_REGION_XN                    = 0x20000
+    HBASE_MAP_TABLE                  = 0x20000,
+    KEY_IN_VC_FRMT                   = 0x40000,
+    USE_REGION_XN                    = 0x80000
   };
 
   enum
@@ -1030,6 +1044,11 @@ public:
   UInt16 hbaseRowsetVsbbSize_; 
   UInt16 trafLoadFlushSize_; 
   HbaseAccessOptionsPtr hbaseAccessOptions_;
+
+  // col name of primary key. Format colFam:colName.
+  // Currently used for HbaseMapped tables with a single primary key.
+  NABasicPtr pkeyColName_;
+
   char fillers[2];
 };
 

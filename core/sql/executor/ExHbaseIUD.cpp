@@ -514,7 +514,8 @@ ExWorkProcRetcode ExHbaseAccessInsertSQTcb::work()
 
 	case EVAL_ROWID_EXPR:
 	  {
-	    if (evalRowIdExpr(TRUE) == -1)
+            NABoolean isVC = hbaseAccessTdb().keyInVCformat();
+	    if (evalRowIdExpr(isVC) == -1)
 	      {
 		step_ = HANDLE_ERROR;
 		break;
@@ -901,7 +902,8 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 
 	case EVAL_ROWID_EXPR:
 	  {
-	    if (evalRowIdExpr(TRUE) == -1)
+            NABoolean isVC = hbaseAccessTdb().keyInVCformat();
+	    if (evalRowIdExpr(isVC) == -1)
 	      {
 		step_ = HANDLE_ERROR;
 		break;
@@ -1067,6 +1069,7 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
     prevRowId_ (NULL),
     hdfs_(NULL),
     hdfsSampleFile_(NULL),
+    loggingFileName_(NULL),
     lastErrorCnd_(NULL)
 {
    hFileParamsInitialized_ = false;
@@ -1076,8 +1079,8 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
    Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
 
 
-    ExHbaseAccessTcb::buildLoggingPath(((ExHbaseAccessTdb &)hbaseAccessTdb).getLoggingLocation(),
-                      (char *)((ExHbaseAccessTdb &)hbaseAccessTdb).getErrCountRowId(),
+    ExHbaseAccessTcb::buildLoggingFileName((NAHeap *)getHeap(), ((ExHbaseAccessTdb &)hbaseAccessTdb).getLoggingLocation(),
+                      // (char *)((ExHbaseAccessTdb &)hbaseAccessTdb).getErrCountRowId(),
                       ((ExHbaseAccessTdb &)hbaseAccessTdb).getTableName(),
                       "traf_upsert_err",
                       fileNum,
@@ -1088,6 +1091,10 @@ ExHbaseAccessBulkLoadPrepSQTcb::ExHbaseAccessBulkLoadPrepSQTcb(
 
 ExHbaseAccessBulkLoadPrepSQTcb::~ExHbaseAccessBulkLoadPrepSQTcb()
 {
+  if (loggingFileName_ != NULL) {
+     NADELETEBASIC(loggingFileName_, getHeap());
+     loggingFileName_ = NULL;
+  }
   // Flush and close sample file if used
   if (hdfs_)
     {
@@ -1422,7 +1429,8 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
       case EVAL_ROWID_EXPR:
       {
-        if (evalRowIdExpr(TRUE) == -1)
+        NABoolean isVC = hbaseAccessTdb().keyInVCformat();
+        if (evalRowIdExpr(isVC) == -1)
         {
           step_ = HANDLE_ERROR;
           break;
@@ -3858,15 +3866,18 @@ Lng32 ExHbaseAccessSQRowsetTcb::setupUniqueKey()
   char * beginKeyRow = keyData.getDataPointer();
   HbaseStr rowIdRowText;
 
-  if (hbaseAccessTdb().sqHbaseTable()) {
-      rowIdRowText.val = beginKeyRow;
-      rowIdRowText.len = hbaseAccessTdb().keyLen_;
-  } else {
-      // hbase table. Key is in varchar format.
+  if ((NOT hbaseAccessTdb().sqHbaseTable()) ||
+      (hbaseAccessTdb().keyInVCformat())) {
+      // Key is in varchar format.
       short keyLen = *(short*)beginKeyRow;
       rowIdRowText.val = beginKeyRow + sizeof(short);
       rowIdRowText.len = keyLen;
+   }
+  else {
+    rowIdRowText.val = beginKeyRow;
+    rowIdRowText.len = hbaseAccessTdb().keyLen_;
   }
+
   if (keyRangeStatus == keyRangeEx::NO_MORE_RANGES)		
   {		
       // To ensure no row is found, add extra byte with "0" value 		

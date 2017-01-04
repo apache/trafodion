@@ -1339,7 +1339,13 @@ public:
 
     // Set CQDs controlling min/max HBase cache size to minimize risk of
     // scanner timeout.
-    static NABoolean setHBaseCacheSize(double sampleRatio);
+    NABoolean setHBaseCacheSize(double sampleRatio);
+
+    // Set CQD HIVE_MAX_STRING_LENGTH_IN_BYTES if necessary
+    NABoolean setHiveMaxStringLengthInBytes(void);
+
+    // Reset any CQDs set above
+    void resetCQDs(void);
 
     // Static fns for determining minimum table sizes for sampling, and for
     // using lowest sampling rate, under default sampling protocol.
@@ -1656,9 +1662,17 @@ public:
                                                           for one instance of persistent 
                                                           sample table */
 
-     NABoolean            sample_I_generated;
+    NABoolean            sample_I_generated;
 
     Lng32          maxCharColumnLengthInBytes;   /* the value of USTAT_MAX_CHAR_COL_LENGTH_IN_BYTES */
+
+    // Error recovery flags so we can reset CQDs that we set
+    // during CollectStatistics() (We do this because the
+    // HSHandleError macro commonly used makes it hard to
+    // do the resets reliably in CollectStatistics itself. Sigh.)
+
+    NABoolean hbaseCacheSizeCQDsSet_;
+    NABoolean hiveMaxStringLengthCQDSet_;
 
 private:
     //++ MV

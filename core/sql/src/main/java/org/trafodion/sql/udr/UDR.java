@@ -361,7 +361,7 @@ public abstract class UDR
 
     // native methods used by these calls
     // use this command to regenerate the C headers:
-    // javah -d $MY_SQROOT/../sql/langman org.trafodion.sql.udr.UDR 
+    // javah -d $TRAF_HOME/../sql/langman org.trafodion.sql.udr.UDR 
     private native void SpInfoGetNextRowJava(byte[] rowData,
                                              int tableIndex,
                                              QueueStateInfo queueState);

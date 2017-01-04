@@ -28,8 +28,8 @@
 ##
 ## - Creates a pseudo-distributed single node installation
 ## - Sandboxes the installation into a single directory,
-##   $MY_SQROOT/sqf/sql/local_hadoop
-## - creates some convenience shell scripts in $MY_SQROOT/sqf/sql/scripts
+##   $TRAF_HOME/sqf/sql/local_hadoop
+## - creates some convenience shell scripts in $TRAF_HOME/sqf/sql/scripts
 ##   to start and stop Hadoop and for some interactive shells
 ## - Does not require sudo privileges for installing or running Hadoop
 ## - Can run on non-standard ports, if needed, to be able to run multiple
@@ -272,7 +272,7 @@ function listports {
 # global config
 
 # directory on local disk that belongs to me
-MY_SW_PARENT=$MY_SQROOT/sql
+MY_SW_PARENT=$TRAF_HOME/sql
 
 # name of subdirectory to install Hadoop/Hive/MySQL in
 MY_SW_ROOT=$MY_SW_PARENT/local_hadoop
@@ -881,8 +881,8 @@ EOF
 EOF
 
 
-  mkdir -p $MY_SQROOT/etc
-  SYSTEM_DEFAULTS_TEXT_FILE=$MY_SQROOT/etc/SQSystemDefaults.conf
+  mkdir -p $TRAF_HOME/etc
+  SYSTEM_DEFAULTS_TEXT_FILE=$TRAF_HOME/etc/SQSystemDefaults.conf
 
   # alternative method for open source build, system defaults in a text file
   cat <<EOF >${SYSTEM_DEFAULTS_TEXT_FILE}.temp
@@ -955,7 +955,7 @@ else
   echo "Updating files $H_CORE_FILE, $H_HDFS_FILE and $H_MAPRED_FILE ..."
 cat <<EOF >$H_ENV_FILE
 export HADOOP_COMMON_LIB_NATIVE_DIR=${MY_SW_ROOT}/hadoop/lib/native
-export HADOOP_OPTS="-Djava.library.path=$MY_SQ_ROOT/hadoop/lib"
+export HADOOP_OPTS="-Djava.library.path=$TRAF_HOME/hadoop/lib"
 EOF
 
   mv -f $H_CORE_FILE $H_CORE_FILE.orig
@@ -1398,11 +1398,11 @@ else
   # For HBase_Trx
 
   # Do not build if the TRX jar already exists
-  if [ ! -e ${MY_SQROOT}/export/lib/${HBASE_TRX_JAR} ]; then
+  if [ ! -e ${TRAF_HOME}/export/lib/${HBASE_TRX_JAR} ]; then
      # Build HBase TRX
      echo "Building HBase TRX"
-     cd $MY_SQROOT ; make genverhdr 2>&1 | tee -a ${MY_LOG_FILE}
-     cd $MY_SQROOT/src/seatrans/hbase-trx
+     cd $TRAF_HOME ; make genverhdr 2>&1 | tee -a ${MY_LOG_FILE}
+     cd $TRAF_HOME/src/seatrans/hbase-trx
      make clean 2>&1 | tee -a ${MY_LOG_FILE}
      make 2>&1 | tee -a ${MY_LOG_FILE}
   fi
@@ -1410,7 +1410,7 @@ else
   cd $MY_SW_ROOT
 
   # Setup HBase TRX JAR in HBase' CLASSPATH
-  echo "export HBASE_CLASSPATH=${MY_SQROOT}/export/lib/\${HBASE_TRX_JAR}:${MY_SQROOT}/export/lib/\${UTIL_JAR}" >> ${HBASE_ENV_FILE}
+  echo "export HBASE_CLASSPATH=${TRAF_HOME}/export/lib/\${HBASE_TRX_JAR}:${TRAF_HOME}/export/lib/\${UTIL_JAR}" >> ${HBASE_ENV_FILE}
 
   echo "Updating file $HBASE_CONFIG_FILE ..."
 
@@ -1533,16 +1533,16 @@ echo "Setting up DCS, REST and Phoenix tests..."
 
 #Default GIT location
 GIT_DIR="git@github.com:apache/incubator-trafodion"
-DCS_SRC=$MY_SQROOT/../../dcs
+DCS_SRC=$TRAF_HOME/../../dcs
 
 if [ -d $DCS_SRC ]; then
-   TRAF_SRC=$MY_SQROOT/../../
+   TRAF_SRC=$TRAF_HOME/../../
    # Default location of DCS code
-   DCS_SRC=$MY_SQROOT/../../dcs
+   DCS_SRC=$TRAF_HOME/../../dcs
    # Default location of REST code
-   REST_SRC=$MY_SQROOT/../rest
+   REST_SRC=$TRAF_HOME/../rest
    # Default location for phoenix_test
-   PHX_SRC=$MY_SQROOT/../../tests/phx
+   PHX_SRC=$TRAF_HOME/../../tests/phx
 else
    TRAF_SRC=$MY_SW_ROOT/src/incubator-trafodion
    if [ ! -d $TRAF_SRC ]; then
@@ -1614,12 +1614,12 @@ else
     grep -v 'DCS_INSTALL_DIR=' ~/.trafodion.orig > ~/.trafodion
   fi
   DCSDIR=${DCS_HOME##*/}
-  echo "export DCS_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$DCSDIR" >> ~/.trafodion
+  echo "export DCS_INSTALL_DIR=\${TRAF_HOME}/sql/local_hadoop/$DCSDIR" >> ~/.trafodion
 
   cd $DCS_HOME/conf/
   mv dcs-env.sh dcs-env.sh.orig
    # SQROOT env var does not propagate thru ssh command
-  echo "MY_SQROOT=$MY_SQROOT" > dcs-env.sh
+  echo "TRAF_HOME=$TRAF_HOME" > dcs-env.sh
   sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" dcs-env.sh.orig >> dcs-env.sh
   mv -f dcs-site.xml dcs-site.xml.orig
   sed -e "s@</configuration>@@" dcs-site.xml.orig > dcs-site.xml
@@ -1656,7 +1656,7 @@ EOF
 cd $DCS_SRC/src/test/jdbc_test
 ./jdbc_test.py --appid=jdbc_test --user=SOMEUSER --pw=SOMEPASSWORD --javahome=\$JAVA_HOME \\
   --target=localhost:$MY_DCS_MASTER_PORT \\
-  --jdbctype=T4 --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar "\$@"
+  --jdbctype=T4 --jdbccp=\$TRAF_HOME/export/lib/jdbcT4.jar "\$@"
 EOF
     chmod +x $MY_SW_SCRIPTS_DIR/swjdbc
   fi
@@ -1666,7 +1666,7 @@ fi
 # begin of trafci setup
 
 echo "Updating trafci port number" | tee -a ${MY_LOG_FILE}
-TRAFCI_BIN_DIR=$MY_SQROOT/trafci/bin
+TRAFCI_BIN_DIR=$TRAF_HOME/trafci/bin
 if [[ -f $TRAFCI_BIN_DIR/trafci ]]
 then
   mv $TRAFCI_BIN_DIR/trafci  $TRAFCI_BIN_DIR/trafci.orig | tee -a ${MY_LOG_FILE}
@@ -1696,12 +1696,12 @@ cd $PHX_SRC
 if [[ \$1 == "t4" ]]
 then
   ./phoenix_test.py --target=localhost:$MY_DCS_MASTER_PORT --user=dontcare --pw=dontcare \\
-     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$MY_SQROOT/export/lib/jdbcT4.jar
+     --targettype=TR --javahome=\$JAVA_HOME --jdbccp=\$TRAF_HOME/export/lib/jdbcT4.jar
 elif [[ \$1 == "t2" ]]
 then
-  export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$MY_SQROOT/export/lib\$SQ_MBTYPE/libseabasesig.so
+  export LD_PRELOAD=\$JAVA_HOME/jre/lib/amd64/libjsig.so:\$TRAF_HOME/export/lib\$SQ_MBTYPE/libseabasesig.so
   ./phoenix_test.py --targettype=TR --javahome=\$JAVA_HOME \\
-     --jdbccp=\$MY_SQROOT/export/lib/jdbcT2.jar --jdbctype=T2
+     --jdbccp=\$TRAF_HOME/export/lib/jdbcT2.jar --jdbctype=T2
 else
   echo "Usage: swphoenix (t2|t4)"
   exit 1
@@ -1764,11 +1764,11 @@ else
     grep -v 'REST_INSTALL_DIR=' ~/.trafodion.orig >> ~/.trafodion
   fi
   RESTDIR=${REST_HOME##*/}
-  echo "export REST_INSTALL_DIR=\${MY_SQROOT}/sql/local_hadoop/$RESTDIR" >> ~/.trafodion
+  echo "export REST_INSTALL_DIR=\${TRAF_HOME}/sql/local_hadoop/$RESTDIR" >> ~/.trafodion
   cd $REST_HOME/conf/
   mv rest-env.sh rest-env.sh.orig
    # SQROOT env var does not propagate thru ssh command
-  echo "MY_SQROOT=$MY_SQROOT" > rest-env.sh
+  echo "TRAF_HOME=$TRAF_HOME" > rest-env.sh
   sed -e "s@#[ ]*export REST_MANAGES_ZK=true@export REST_MANAGES_ZK=false@" rest-env.sh.orig >> rest-env.sh
   mv -f rest-site.xml rest-site.xml.orig
   sed -e "s@</configuration>@@" rest-site.xml.orig > rest-site.xml

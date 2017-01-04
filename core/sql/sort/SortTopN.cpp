@@ -93,8 +93,11 @@ SortTopN::~SortTopN(void)
 {
   if (topNKeys_ != NULL) 
   {
-    for (int i = 0; i < runSize_; i++)
-    topNKeys_[i].rec_->releaseTupp();
+    //No need to release the tupps here
+    //since these tupps are consumed by
+    //parent operators and released.
+    //for (int i = 0; i < runSize_; i++)
+    //topNKeys_[i].rec_->releaseTupp();
     
     NADELETEBASIC(topNKeys_, heap_);
     topNKeys_ = NULL;

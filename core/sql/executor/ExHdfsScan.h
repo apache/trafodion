@@ -285,7 +285,7 @@ protected:
   bool  seqScanAgain_;
   char cursorId_[8];
 
-  char loggingFileName_[1000];
+  char *loggingFileName_;
   NABoolean LoggingFileCreated_ ;
   char * hdfsLoggingRow_;
   char * hdfsLoggingRowEnd_;
@@ -329,6 +329,7 @@ protected:
   , DONE
   } step_;
 
+ virtual Int32 fixup();
   /////////////////////////////////////////////////////
   // Private methods.
   /////////////////////////////////////////////////////

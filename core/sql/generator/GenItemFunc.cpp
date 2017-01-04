@@ -89,7 +89,13 @@ short BuiltinFunction::codeGen(Generator * generator)
 						       attr, space);
       }
     break;
-    
+    case ITM_REGEXP:
+      {
+        function_clause = 
+          new(generator->getSpace()) ExRegexpClauseChar(getOperatorType(), (1+getArity()),
+                                                       attr, space);
+      }
+    break; 
     case ITM_LIKE:
       {
 
@@ -227,11 +233,32 @@ short BuiltinFunction::codeGen(Generator * generator)
      
       break;
 
-   case ITM_SHA2:
+   case ITM_SHA2_256:
+   case ITM_SHA2_224:
+   case ITM_SHA2_384:
+   case ITM_SHA2_512:
       {
+          Lng32 mode = 0;
+          switch (getOperatorType()) {
+          case ITM_SHA2_256:
+              mode = 256;
+              break;
+
+          case ITM_SHA2_224:
+              mode = 224;
+              break;
+
+          case ITM_SHA2_384:
+              mode = 384;
+              break;
+
+          case ITM_SHA2_512:
+              mode = 512;
+              break;
+          }
          function_clause =
            new(generator->getSpace()) ExFunctionSha2(getOperatorType(),
-                                                         attr, space);
+                                                         attr, space, mode);
       }
      
       break;
@@ -592,6 +619,13 @@ short BuiltinFunction::codeGen(Generator * generator)
 						     attr, space);
       }
       break;
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+	  function_clause =
+	    new(generator->getSpace()) ex_function_json_object_field_text(getOperatorType(),
+						     attr, space);
+    }
+    break;
       
     case ITM_QUERYID_EXTRACT:
       {
@@ -627,7 +661,37 @@ short BuiltinFunction::codeGen(Generator * generator)
 							space);
       }
     break;
-      
+
+    case ITM_SOUNDEX:
+    {
+        function_clause =
+            new(generator->getSpace()) ExFunctionSoundex(getOperatorType(),
+                    attr,
+                    space);
+    }
+    break;
+
+    case ITM_AES_ENCRYPT:
+    {
+      function_clause =
+        new(generator->getSpace()) ExFunctionAESEncrypt(getOperatorType(),
+                                                        attr,
+                                                        space,
+                                                        getArity(),
+                                                        CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE));
+      break;
+    }
+
+    case ITM_AES_DECRYPT:
+    {
+      function_clause =
+        new(generator->getSpace()) ExFunctionAESDecrypt(getOperatorType(),
+                                                        attr,
+                                                        space,
+                                                        getArity(),
+                                                        CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE));
+      break;
+    }
     default:
       break;
     }
@@ -2803,6 +2867,8 @@ short LOBinsert::codeGen(Generator * generator)
     li->setFromExternal(TRUE);
   else if (obj_ ==LOBoper::BUFFER_)
     li->setFromBuffer(TRUE);
+  else if(obj_ == LOBoper::EMPTY_LOB_)
+    li->setFromEmpty(TRUE);
 
   li->lobNum() = lobNum();
   li->setLobStorageType(lobStorageType());
@@ -2877,6 +2943,8 @@ short LOBupdate::codeGen(Generator * generator)
     lu->setFromExternal(TRUE);
   else if (obj_ == LOBoper::BUFFER_)
     lu->setFromBuffer(TRUE);
+  else if(obj_ == LOBoper::EMPTY_LOB_)
+    lu->setFromEmpty(TRUE);
 
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());

@@ -227,7 +227,7 @@ static void SetupCertFilename()
    char *pub_filename = getenv("SQCERT_PUBKEY");
    char *clustername  = getenv("CLUSTERNAME");
    char *homedir  = getenv("HOME");
-   char *sqroot  = getenv("MY_SQROOT");
+   char *sqroot  = getenv("TRAF_HOME");
    char *certdir = getenv("SQCERT_DIR");
 
    // Get the Certificate directory and the filename

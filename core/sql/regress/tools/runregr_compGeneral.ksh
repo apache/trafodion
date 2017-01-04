@@ -371,7 +371,7 @@ fi
 cd $REGRRUNDIR 2>$NULL
 
 if [ `uname` = "Linux" ]; then 
-  wDir=$MY_SQROOT/../sql
+  wDir=$TRAF_HOME/../sql
 else
   wDir=../..
 fi

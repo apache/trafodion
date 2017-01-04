@@ -67,14 +67,56 @@ template <class T> class HSPtrArray;
 // -----------------------------------------------------------------------
 // Functions.
 // -----------------------------------------------------------------------
-// Execute a standalone dml/ddl operation.
+// Execute a standalone dml/ddl operation, without retry.
 Lng32 HSFuncExecQuery( const char *dml
                     , short sqlcode = - UERR_INTERNAL_ERROR
                     , Int64 *rowsAffected = NULL
                     , const char *errorToken = HS_QUERY_ERROR
                     , Int64 *srcTabRowCount = NULL
                     , const HSTableDef *tabDef = NULL
-                    , NABoolean doRetry = FALSE
+                    , short errorToIgnore = 0
+                    , NABoolean checkMdam = FALSE
+                    , NABoolean inactivateErrorCatcher = FALSE
+                    );
+
+// Body shared between HSFuncExecQuery and 
+// HSFuncExecTransactionalQueryWithRetry
+Lng32 HSFuncExecQueryBody( const char *dml
+                    , short sqlcode
+                    , Int64 *rowsAffected
+                    , const char *errorToken
+                    , Int64 *srcTabRowCount
+                    , const HSTableDef *tabDef
+                    , short errorToIgnore
+                    , NABoolean checkMdam
+                    );
+
+// Execute a standalone dml/ddl operation, with retry. Note
+// that this method handles starting and committing or rolling
+// back the transaction (as that needs to be part of the retry
+// loop since Trafodion often aborts transactions when
+// statements fail). Therefore, this function cannot be called
+// within a transaction. In fact it guards against this and will
+// return an error if it is called within a transaction. One
+// consequence is that calls to this function cannot be
+// done within the scope of an HSTranController object.
+//
+// Some thought should go into the choice of whether to use
+// this function vs. HSFuncExecQuery. It is appropriate to use
+// this function if the effect on the database is idempotent.
+// Examples of this are most DDL operations, DELETE, UPDATE
+// and INSERT statements that don't depend on prior state and
+// don't include non-deterministic semantics such as SAMPLE.
+// Operations that have non-transactional effects and non-
+// deterministic semantics (such as UPSERT USING LOAD with a
+// SAMPLE clause) should not be retried at this level.
+//
+Lng32 HSFuncExecTransactionalQueryWithRetry( const char *dml
+                    , short sqlcode = - UERR_INTERNAL_ERROR
+                    , Int64 *rowsAffected = NULL
+                    , const char *errorToken = HS_QUERY_ERROR
+                    , Int64 *srcTabRowCount = NULL
+                    , const HSTableDef *tabDef = NULL
                     , short errorToIgnore = 0
                     , NABoolean checkMdam = FALSE
                     );
@@ -310,9 +352,13 @@ class HSTranMan
   {
     public:
          static HSTranMan* Instance();
-         Lng32 Begin(const char *title = ""); /* Begin Transaction            */
-         Lng32 Commit();                   /* Commit Transaction              */
-         Lng32 Rollback();                 /* Rollback Transaction            */
+         /* Begin Transaction               */
+         Lng32 Begin(const char *title = "",
+                     NABoolean inactivateErrorCatcher=FALSE);
+         /* Commit Transaction              */
+         Lng32 Commit(NABoolean inactivateErrorCatcher=FALSE);
+         /* Rollback Transaction            */
+         Lng32 Rollback(NABoolean inactivateErrorCatcher=FALSE);
 
          // This method will tell you if there is currently a transaction
          // running. The transaction could have been started by USER or this
@@ -382,6 +428,14 @@ class HSPrologEpilog
 /* The decision as to whether the transaction should be committed or rolled  */
 /* back in the dtor is determined by the value of a return code, the address */
 /* of which is passed to HSTranController's ctor.                            */
+/*                                                                           */
+/* Limitations: Unfortunately, Trafodion often aborts transactions when DDL  */
+/* or DML statements fail. This precludes using HSTranController in retry    */
+/* scenarios as the retry would either fail due to lack of a transaction or  */
+/* (worse) succeed in a separate transaction. The latter is worse because    */
+/* any other work done in the original transaction would silently be undone. */
+/* To guard against this, HSFuncExecTransactionalQueryWithRetry raises an    */
+/* error if done within the scope of an HSTranController object.             */
 /*****************************************************************************/
 class HSTranController
   {
@@ -391,9 +445,6 @@ class HSTranController
 
       // Function to stop current transaction and start a new one.
       void stopStart(const char* title);
-
-      // Static function to acquire a lock on a table.
-      static Lng32 lockTable(const char* tableName, NABoolean exclusive = TRUE);
 
     private:
       HSTranMan* tranMan_;

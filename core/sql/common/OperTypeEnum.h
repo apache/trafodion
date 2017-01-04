@@ -470,6 +470,9 @@ enum OperatorTypeEnum {
                         ITM_OLAP_LEAD = 2176,
                         ITM_OLAP_LAG = 2177,
 
+                        // Regular Expression
+                        ITM_REGEXP = 2178,
+
                         // numeric functions
                         ITM_ABS = 2200,
                         ITM_CEIL = 2201,
@@ -508,6 +511,8 @@ enum OperatorTypeEnum {
                         ITM_BITEXTRACT = 2235,
                         ITM_CONVERTTOBITS = 2236,
                         ITM_LOG2= 2237,
+                        // JSON fuctions
+                        ITM_JSONOBJECTFIELDTEXT = 2241,
 
                         // string functions
                         ITM_TRUNC = 2250,
@@ -791,7 +796,13 @@ enum OperatorTypeEnum {
                         ITM_CRC32     = 2634,
                         ITM_MD5       = 2635,
                         ITM_SHA1      = 2636,
-                        ITM_SHA2      = 2637,
+                        ITM_SHA2_256  = 2637,
+                        ITM_SHA2_224  = 2638,
+                        ITM_SHA2_384  = 2639,
+                        ITM_SHA2_512  = 2640,
+
+                        ITM_AES_ENCRYPT = 2641,
+                        ITM_AES_DECRYPT = 2642,
 
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,
@@ -1073,6 +1084,7 @@ enum OperatorTypeEnum {
                         ELM_LIKE_OPT_SALT_CLAUSE_ELEM,
                         ELM_LIKE_OPT_WITHOUT_DIVISION_ELEM,
                         ELM_LIKE_OPT_LIMIT_COLUMN_LENGTH,
+                        ELM_LIKE_OPT_WITHOUT_ROW_FORMAT_ELEM,
                         ELM_LOCATION_ELEM,
                         ELM_OPTION_LIST,
                         ELM_PARALLEL_EXEC_ELEM,

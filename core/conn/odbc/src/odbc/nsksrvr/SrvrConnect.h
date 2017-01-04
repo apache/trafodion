@@ -332,6 +332,14 @@ odbc_SQLSrvr_EndTransaction_ame_(
   , /* In    */ IDL_unsigned_short transactionOpt
   );
 
+extern "C" void
+odbc_SQLSrvr_ExtractLob_ame_(
+    /* In   */ CEE_tag_def objtag_
+  , /* In   */ const CEE_handle_def *call_id_
+  , /* In   */ IDL_long    extractLobAPI
+  , /* In   */ IDL_string  lobHandle
+  );
+
 bool SetHigherPriorityForMetaDataAccess();
 
 

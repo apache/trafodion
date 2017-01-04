@@ -58,7 +58,7 @@ HBASE_USER="hbase"
 HBASE_GROUP="hbase"
 ZOO_USER="zookeeper"
 
-SQ_ROOT=""
+TRAF_HOME=""
 INIT_TRAFODION="N"
 START="N"
 SQCONFIG=""
@@ -101,7 +101,7 @@ Inputs Requested:
 *HDFS username (default is [$HDFS_USER])
 *HBase username (default is [$HBASE_USER])
 *HBase group (default is [$HBASE_GROUP])
-*Full pathname to the install directory location (default [$SQ_ROOT])
+*Full pathname to the install directory location (default [$TRAF_HOME])
 *Full pathname to the DNS build tar file (default [$DCS_BUILD])
 *Start Trafodion after install (default is [No])
 *Total number of DCS servers to start
@@ -677,15 +677,15 @@ fi
 #Install location
 
 traf_filename=$(basename "$TRAF_PACKAGE")
-SQ_ROOT="$HOME_DIR/$TRAF_USER/${traf_filename%.tar.gz}"
+TRAF_HOME="$HOME_DIR/$TRAF_USER/${traf_filename%.tar.gz}"
 
-echo -n "Enter directory to install trafodion to, default is [$SQ_ROOT]: "
+echo -n "Enter directory to install trafodion to, default is [$TRAF_HOME]: "
 read answer
 
 if [ -z $answer ]; then
-   echo "export SQ_ROOT=\"$SQ_ROOT\"" >> $LOCAL_TRAF_CONFIG
+   echo "export TRAF_HOME=\"$TRAF_HOME\"" >> $LOCAL_TRAF_CONFIG
 else
-   echo "export SQ_ROOT=\"$answer\"" >> $LOCAL_TRAF_CONFIG
+   echo "export TRAF_HOME=\"$answer\"" >> $LOCAL_TRAF_CONFIG
 fi
 
 #==============================================

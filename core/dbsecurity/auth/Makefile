@@ -23,7 +23,7 @@
 # Description:  Makefile for building authentication library 
 #
 
-include $(MY_SQROOT)/macros.gmk #top level
+include $(TRAF_HOME)/macros.gmk #top level
 include ../macros.gmk
 
 #OUTDIR	= .
@@ -61,13 +61,14 @@ OBJS3	= \
 
 
 INCLUDES	= -I. -I./inc -I ../shared/inc \
-	        -I $(MY_SQROOT)/../sql/cli \
-	        -I $(MY_SQROOT)/../sql/common \
-	        -I $(MY_SQROOT)/../sql/executor \
-	        -I $(MY_SQROOT)/../sql/export \
-	        -I $(MY_SQROOT)/../sql/porting_layer \
-	        -I $(MY_SQROOT)/export/include \
-	        -I $(MY_SQROOT)/commonLogger \
+	        -I $(TRAF_HOME)/../sql/cli \
+	        -I $(TRAF_HOME)/../sql/common \
+	        -I $(TRAF_HOME)/../sql/executor \
+	        -I $(TRAF_HOME)/../sql/export \
+	        -I $(TRAF_HOME)/../sql/porting_layer \
+	        -I $(TRAF_HOME)/export/include \
+	        -I $(TRAF_HOME)/commonLogger \
+	        -I $(LOG4CXX_INC_DIR) \
 	        -I ../../sql/common
 
 

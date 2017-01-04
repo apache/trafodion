@@ -7434,6 +7434,11 @@ NABoolean BuiltinFunction::isCacheableExpr(CacheWA& cwa)
 	return FALSE;
       }
     break;
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+	    return FALSE;
+    }
+    break;
 
     default:
       {
@@ -7532,6 +7537,8 @@ const NAString BuiltinFunction::getText() const
     case ITM_LIKE:
     case ITM_LIKE_DOUBLEBYTE:
       return "like";
+    case ITM_REGEXP:
+      return "regexp";
     case ITM_LOWER:
     case ITM_LOWER_UNICODE:
       return "lower";
@@ -7541,6 +7548,8 @@ const NAString BuiltinFunction::getText() const
       return "nullifzero";
     case ITM_NVL:
       return "nvl";
+    case ITM_JSONOBJECTFIELDTEXT:
+      return "json_object_field_text";
     case ITM_QUERYID_EXTRACT:
       return "queryid_extract";
     case ITM_UPPER:
@@ -7785,6 +7794,11 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
       switch (getOperatorType())
 	{
 	case ITM_NULLIFZERO:
+        case ITM_ISIPV4:
+        case ITM_ISIPV6:
+        case ITM_MD5:
+        case ITM_CRC32:
+	case ITM_SOUNDEX:
 	  {
 	    result = new (outHeap) BuiltinFunction(getOperatorType(),
 						   outHeap, 1, child(0));
@@ -7799,7 +7813,12 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
 						   outHeap, 2, child(0), child(1));
 	  }
 	break;
-
+    case ITM_JSONOBJECTFIELDTEXT:
+	{
+	    result = new (outHeap) BuiltinFunction(getOperatorType(),
+						   outHeap, 2, child(0), child(1));
+	}
+	break;
 	default:
 	  {
 	    ABORT("copyTopNode() can only be called for a derived class of BuiltinFunction");
@@ -7922,9 +7941,37 @@ ItemExpr * InverseOrder::removeInverseOrder()
 }
 
 // -----------------------------------------------------------------------
+// member functions for PatternMatchingFunction.
+// -----------------------------------------------------------------------
+PatternMatchingFunction::~PatternMatchingFunction() {}
+
+// -----------------------------------------------------------------------
 // member functions for Like
 // -----------------------------------------------------------------------
 Like::~Like() {}
+
+Regexp::~Regexp() {}
+
+
+ItemExpr * Regexp::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result = NULL;
+
+  if (derivedNode == NULL)
+    {
+      result = new (outHeap) Regexp(NULL, NULL,
+	    numberOfNonWildcardChars_,
+	    bytesInNonWildcardChars_,
+	    patternAStringLiteral_,
+	    oldDefaultSelForLikeWildCardUsed_,
+	    beginEndKeysApplied_);
+    }
+  else
+    result = derivedNode;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+
+} // Regexp::copyTopNode()
 
 ItemExpr * Like::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
@@ -7962,7 +8009,7 @@ ItemExpr * Like::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
 } // Like::copyTopNode()
 
-double Like::defaultSel()
+double PatternMatchingFunction::defaultSel()
 {
   // if begin and end keys have been applied to this expression, then this means
   // that the original LIKE predicate was something like a%b. This was transformed
@@ -7984,7 +8031,7 @@ double Like::defaultSel()
   return computeSelForNonWildcardChars(); ;
 }
 
-void Like::setNumberOfNonWildcardChars(const LikePatternString &pattern)
+void PatternMatchingFunction::setNumberOfNonWildcardChars(const LikePatternString &pattern)
 {
   Int32 count = 0;
   Int32 byteCnt = 0;
@@ -8010,7 +8057,7 @@ void Like::setNumberOfNonWildcardChars(const LikePatternString &pattern)
   bytesInNonWildcardChars_  = byteCnt ;
 }
 
-double Like::computeSelForNonWildcardChars()
+double PatternMatchingFunction::computeSelForNonWildcardChars()
 {
 
   // get the default selectivity for like predicate
@@ -8056,7 +8103,7 @@ double Like::computeSelForNonWildcardChars()
   return defaultSelectivity;
 }
 
-NABoolean Like::hasEquivalentProperties(ItemExpr * other)
+NABoolean PatternMatchingFunction::hasEquivalentProperties(ItemExpr * other)
 {
   if (other == NULL)
     return FALSE;
@@ -8075,7 +8122,7 @@ NABoolean Like::hasEquivalentProperties(ItemExpr * other)
 
 }
 
-void Like::unparse(NAString &result,
+void PatternMatchingFunction::unparse(NAString &result,
 		   PhaseEnum phase,
 		   UnparseFormatEnum form,
 		   TableDesc* tabId) const
@@ -12757,7 +12804,15 @@ ItemExpr * LOBupdate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
   return LOBoper::copyTopNode(result, outHeap);
 }
-
+/*
+Int32 LOBupdate::getArity() const
+{
+  if (obj_ == EMPTY_LOB_)
+    return 0;
+  else
+    return getNumChildren();
+}
+*/
 ItemExpr * LOBconvert::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
   ItemExpr *result;

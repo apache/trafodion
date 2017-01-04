@@ -614,7 +614,7 @@ X
 
 >>select * from v3bd;
 
-*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+*** ERROR[1002] Catalog CAT does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -626,7 +626,7 @@ X
 
 >>select * from v3b;
 
-*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+*** ERROR[1002] Catalog CAT does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -638,7 +638,7 @@ X
 
 >>select * from v3d;
 
-*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+*** ERROR[1002] Catalog CAT does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -650,7 +650,7 @@ X
 
 >>select * from v3bbbbbb;
 
-*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+*** ERROR[1002] Catalog CAT does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -712,7 +712,7 @@ X
 
 >>select * from v34bf;
 
-*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+*** ERROR[1002] Catalog CAT does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -724,7 +724,7 @@ X
 
 >>select * from v34bdfg;
 
-*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+*** ERROR[1002] Catalog CAT does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -736,7 +736,7 @@ X
 
 >>select * from v34bdfg2;
 
-*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+*** ERROR[1002] Catalog CAT does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -748,7 +748,7 @@ X
 
 >>select * from v34gb;
 
-*** ERROR[1002] Catalog CAT does not exist or has not been registered on node .
+*** ERROR[1002] Catalog CAT does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 

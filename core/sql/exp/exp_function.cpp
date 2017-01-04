@@ -43,7 +43,7 @@
 #include <zlib.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>  
-
+#include "ComSSL.h"
 #define MathSqrt(op, err) sqrt(op)
 
 #include <ctype.h>
@@ -71,6 +71,7 @@
 #include "NAUserId.h"
 #include "ComUser.h"
 #include "ExpSeqGen.h"
+#include "ComJSON.h"
 
 #undef DllImport
 #define DllImport __declspec ( dllimport )
@@ -123,6 +124,10 @@ extern char * exClauseGetText(OperatorTypeEnum ote);
 
 NA_EIDPROC
 void setVCLength(char * VCLen, Lng32 VCLenSize, ULng32 value);
+
+NA_EIDPROC
+static void ExRaiseJSONError(CollHeap* heap, ComDiagsArea** diagsArea, JsonReturnType type);
+
 
 //#define TOUPPER(c) (((c >= 'a') && (c <= 'z')) ? (c - 32) : c);
 //#define TOLOWER(c) (((c >= 'A') && (c <= 'Z')) ? (c + 32) : c);
@@ -181,6 +186,8 @@ ex_function_ansi_user::ex_function_ansi_user(){};
 ex_function_user::ex_function_user(){};
 ex_function_nullifzero::ex_function_nullifzero(){};
 ex_function_nvl::ex_function_nvl(){};
+ex_function_json_object_field_text::ex_function_json_object_field_text(){};
+
 ex_function_queryid_extract::ex_function_queryid_extract(){};
 ExFunctionUniqueId::ExFunctionUniqueId(){};
 ExFunctionRowNum::ExFunctionRowNum(){};
@@ -213,6 +220,10 @@ ExFunctionSha2::ExFunctionSha2(){};
 ExFunctionIsIP::ExFunctionIsIP(){};
 ExFunctionInetAton::ExFunctionInetAton(){};
 ExFunctionInetNtoa::ExFunctionInetNtoa(){};
+ExFunctionSoundex::ExFunctionSoundex(){};
+ExFunctionAESEncrypt::ExFunctionAESEncrypt(){};
+ExFunctionAESDecrypt::ExFunctionAESDecrypt(){};
+
 ExFunctionAscii::ExFunctionAscii(OperatorTypeEnum oper_type,
 				 Attributes ** attr, Space * space)
      : ex_function_clause(oper_type, 2, attr, space)
@@ -249,8 +260,8 @@ ExFunctionSha::ExFunctionSha(OperatorTypeEnum oper_type,
 };
 
 ExFunctionSha2::ExFunctionSha2(OperatorTypeEnum oper_type,
-			       Attributes ** attr, Space * space)
-     : ex_function_clause(oper_type, 2, attr, space)
+			       Attributes ** attr, Space * space, Lng32 mode)
+     : ex_function_clause(oper_type, 2, attr, space), mode(mode)
 {
   
 };
@@ -274,6 +285,18 @@ ExFunctionInetNtoa::ExFunctionInetNtoa(OperatorTypeEnum oper_type,
      : ex_function_clause(oper_type, 2, attr, space)
 {
   
+};
+
+ExFunctionAESEncrypt::ExFunctionAESEncrypt(OperatorTypeEnum oper_type,
+                       Attributes ** attr, Space * space, int args_num, Int32 aes_mode )
+     : ex_function_clause(oper_type, args_num + 1, attr, space), args_num(args_num), aes_mode(aes_mode)
+{
+};
+
+ExFunctionAESDecrypt::ExFunctionAESDecrypt(OperatorTypeEnum oper_type,
+                       Attributes ** attr, Space * space, int args_num, Int32 aes_mode)
+     : ex_function_clause(oper_type, args_num + 1, attr, space), args_num(args_num), aes_mode(aes_mode)
+{
 };
 
 ExFunctionConvertHex::ExFunctionConvertHex(OperatorTypeEnum oper_type,
@@ -613,6 +636,13 @@ ex_function_nvl::ex_function_nvl(OperatorTypeEnum oper_type,
 {
 };
 
+ex_function_json_object_field_text::ex_function_json_object_field_text (OperatorTypeEnum oper_type,
+				 Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 3, attr, space)
+{
+};
+
+
 ex_function_queryid_extract::ex_function_queryid_extract(OperatorTypeEnum oper_type,
 							 Attributes ** attr, Space * space)
      : ex_function_clause(oper_type, 3, attr, space)
@@ -758,6 +788,13 @@ ExFunctionInternalTimestamp::ExFunctionInternalTimestamp(OperatorTypeEnum oper_t
 														 Space *space)
   : ex_function_clause(oper_type, 1, attr, space)
 {}
+
+ExFunctionSoundex::ExFunctionSoundex(OperatorTypeEnum oper_type,
+			       Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
+{
+
+};
 
 
 // Triggers
@@ -2645,9 +2682,13 @@ ex_expr::exp_return_type ex_function_dateformat::eval(char *op_data[],
                                              diagsArea,
                                              0) < 0) {
             
-            if (diagsArea && (*diagsArea) && 
-                (*diagsArea)->getNumber(DgSqlCode::ERROR_) == 0)
+            if (diagsArea && 
+                (!(*diagsArea) ||
+                  ((*diagsArea) && 
+                  (*diagsArea)->getNumber(DgSqlCode::ERROR_) == 0)))
               {
+                // we expect convAsciiToDate to raise a diagnostic; if it
+                // didn't, raise an internal error here
                 ExRaiseFunctionSqlError(heap, diagsArea, EXE_INTERNAL_ERROR,
                                         derivedFunction(),
                                         origFunctionOperType());
@@ -6480,6 +6521,54 @@ ex_expr::exp_return_type ex_function_nvl::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 }
 
+ex_expr::exp_return_type ex_function_json_object_field_text::eval(char *op_data[],
+					       CollHeap *heap,
+					       ComDiagsArea** diagsArea)
+{
+    CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
+    // search for operand 1
+#pragma nowarn(1506)   // warning elimination 
+    Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+#pragma warn(1506)  // warning elimination 
+    if ( cs == CharInfo::UTF8 )
+    {
+        Int32 prec1 = ((SimpleType *)getOperand(1))->getPrecision();
+        len1 = Attributes::trimFillerSpaces( op_data[1], prec1, len1, cs );
+    }
+
+    // in operand 2
+#pragma nowarn(1506)   // warning elimination 
+    Lng32 len2 = getOperand(2)->getLength(op_data[-MAX_OPERANDS+2]);
+#pragma warn(1506)  // warning elimination 
+    if ( cs == CharInfo::UTF8 )
+    {
+        Int32 prec2 = ((SimpleType *)getOperand(2))->getPrecision();
+        len2 = Attributes::trimFillerSpaces( op_data[2], prec2, len2, cs );
+    }
+    char *rltStr = NULL;
+    JsonReturnType ret = json_extract_path_text(&rltStr, op_data[1], 1, op_data[2]);
+    if (ret != JSON_OK)
+    {
+        ExRaiseJSONError(heap, diagsArea, ret);
+        return ex_expr::EXPR_ERROR;
+    }
+    if (rltStr != NULL)
+    {
+        Lng32 rltLen = str_len(rltStr)+1;
+        str_cpy_all(op_data[0], rltStr, rltLen);
+        free(rltStr);
+
+        // If result is a varchar, store the length of substring 
+        // in the varlen indicator.
+        if (getOperand(0)->getVCIndicatorLength() > 0)
+            getOperand(0)->setVarLength(rltLen, op_data[-MAX_OPERANDS]);
+    }
+    else
+        getOperand(0)->setVarLength(0, op_data[-MAX_OPERANDS]);
+
+    return ex_expr::EXPR_OK;
+}
+
 //
 // Clause used to clear header bytes for both disk formats
 // SQLMX_FORMAT and SQLMX_ALIGNED_FORMAT.  The number of bytes to clear
@@ -6667,10 +6756,11 @@ ex_expr::exp_return_type ExFunctionRowNum::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 }
 
-short ExFunctionHbaseColumnLookup::extractColFamilyAndName(const char * input, 
-                                                           short len,
-							   NABoolean isVarchar,
-							   std::string &colFam, std::string &colName)
+short ExFunctionHbaseColumnLookup::extractColFamilyAndName(
+     const char * input, 
+     short len,
+     NABoolean isVarchar,
+     std::string &colFam, std::string &colName)
 {
   if (! input)
     return -1;
@@ -7953,37 +8043,93 @@ ex_expr::exp_return_type ExFunctionCrc32::eval(char * op_data[],
   return ex_expr::EXPR_OK;
 }
 
-//only support SHA 256 for this version
-//TBD: add 224 and 384, 512 in next version
 ex_expr::exp_return_type ExFunctionSha2::eval(char * op_data[],
                                                         CollHeap *heap,
                                                         ComDiagsArea **diags)
 {
 
-  unsigned char sha[SHA256_DIGEST_LENGTH+ 1]={0};  
+  unsigned char sha[SHA512_DIGEST_LENGTH + 1] = {0};
 
   Attributes *resultAttr   = getOperand(0);
   Attributes *srcAttr   = getOperand(1);
 
   Lng32 slen = srcAttr->getLength(op_data[-MAX_OPERANDS+1]);
-  Lng32 rlen = resultAttr->getLength();
 
+  // the length of result
+  Lng32 rlen = SHA512_DIGEST_LENGTH;
+
+  switch (mode) {
+    case 0:
+    case 256:
+      SHA256_CTX sha_ctx_256;
+      if (!SHA256_Init(&sha_ctx_256))
+        goto sha2_error;
+      if (!SHA256_Update(&sha_ctx_256, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA256_Final((unsigned char *)sha, &sha_ctx_256))
+        goto sha2_error;
+
+      rlen = SHA256_DIGEST_LENGTH;
+      break;
+
+    case 224:
+      SHA256_CTX sha_ctx_224;
+
+      if (!SHA224_Init(&sha_ctx_224))
+        goto sha2_error;
+      if (!SHA224_Update(&sha_ctx_224, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA224_Final((unsigned char *)sha, &sha_ctx_224))
+        goto sha2_error;
+
+      rlen = SHA224_DIGEST_LENGTH;
+      break;
+
+    case 384:
+      SHA512_CTX sha_ctx_384;
+      if (!SHA384_Init(&sha_ctx_384))
+        goto sha2_error;
+      if (!SHA384_Update(&sha_ctx_384, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA384_Final((unsigned char *)sha, &sha_ctx_384))
+        goto sha2_error;
+
+      rlen = SHA384_DIGEST_LENGTH;
+      break;
+
+    case 512:
+      SHA512_CTX sha_ctx_512;
+      if (!SHA512_Init(&sha_ctx_512))
+        goto sha2_error;
+      if (!SHA512_Update(&sha_ctx_512, op_data[1], slen))
+        goto sha2_error;
+      if (!SHA512_Final((unsigned char *)sha, &sha_ctx_512))
+        goto sha2_error;
+
+      rlen = SHA512_DIGEST_LENGTH;
+      break;
+
+    default:
+      ExRaiseSqlError(heap, diags, EXE_BAD_ARG_TO_MATH_FUNC);
+      *(*diags) << DgString0("SHA2");
+      return ex_expr::EXPR_ERROR;
+  }
   str_pad(op_data[0], rlen, ' ');
 
-  SHA256_CTX  sha_ctx;
-
-  SHA256_Init(&sha_ctx);  
-  SHA256_Update(&sha_ctx, op_data[1], slen);
-  SHA256_Final((unsigned char*) sha,&sha_ctx); 
   char tmp[3];
-  for(int i=0; i < SHA256_DIGEST_LENGTH; i++ )
+  for(int i=0; i < rlen; i++ )
   {
     tmp[0]=tmp[1]=tmp[2]='0';
     sprintf(tmp, "%.2x", (int)sha[i]);
     str_cpy_all(op_data[0]+i*2, tmp, 2);
   }
-   
+
   return ex_expr::EXPR_OK;
+sha2_error:
+  ExRaiseFunctionSqlError(heap, diags, EXE_INTERNAL_ERROR,
+                          derivedFunction(),
+                          origFunctionOperType());
+  return ex_expr::EXPR_ERROR;
 }
 
 ex_expr::exp_return_type ExFunctionSha::eval(char * op_data[],
@@ -8235,5 +8381,320 @@ ex_expr::exp_return_type ExFunctionIsIP::eval(char * op_data[],
   }
 }
 
+// Parse json errors
+static void ExRaiseJSONError(CollHeap* heap, ComDiagsArea** diagsArea, JsonReturnType type)
+{
+    switch(type)
+    {
+    case JSON_INVALID_TOKEN:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_TOKEN);
+        break;
+    case JSON_INVALID_VALUE:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_VALUE);
+        break;
+    case JSON_INVALID_STRING:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_STRING);
+        break;
+    case JSON_INVALID_ARRAY_START:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_ARRAY_START);
+        break;
+    case JSON_INVALID_ARRAY_NEXT:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_ARRAY_NEXT);
+        break;
+    case JSON_INVALID_OBJECT_START:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_OBJECT_START);
+        break;
+    case JSON_INVALID_OBJECT_LABEL:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_OBJECT_LABEL);
+        break;
+    case JSON_INVALID_OBJECT_NEXT:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_OBJECT_NEXT);
+        break;
+    case JSON_INVALID_OBJECT_COMMA:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_OBJECT_COMMA);
+        break;
+    case JSON_INVALID_END:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_INVALID_END);
+        break;
+    case JSON_END_PREMATURELY:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_END_PREMATURELY);
+        break;
+    default:
+        ExRaiseSqlError(heap, diagsArea, EXE_JSON_UNEXPECTED_ERROR);
+        break;
+    }
+}
+/*
+ * SOUNDEX(str) returns a character string containing the phonetic
+ * representation of the input string. It lets you compare words that
+ * are spelled differently, but sound alike in English.
+ * The phonetic representation is defined in "The Art of Computer Programming",
+ * Volume 3: Sorting and Searching, by Donald E. Knuth, as follows:
+ *
+ *  1. Retain the first letter of the string and remove all other occurrences
+ *  of the following letters: a, e, h, i, o, u, w, y.
+ *
+ *  2. Assign numbers to the remaining letters (after the first) as follows:
+ *        b, f, p, v = 1
+ *        c, g, j, k, q, s, x, z = 2
+ *        d, t = 3
+ *        l = 4
+ *        m, n = 5
+ *        r = 6
+ *
+ *  3. If two or more letters with the same number were adjacent in the original
+ *  name (before step 1), or adjacent except for any intervening h and w, then
+ *  omit all but the first.
+ *
+ *  4. Return the first four bytes padded with 0.
+ * */
+ex_expr::exp_return_type ExFunctionSoundex::eval(char *op_data[],
+						     CollHeap *heap,
+						     ComDiagsArea** diagsArea)
+{
+    ULng32 previous = 0;
+    ULng32 current = 0;
+
+    char *srcStr = op_data[1];
+    char *tgtStr = op_data[0];
+    Lng32 srcLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+    Lng32 tgtLen = getOperand(0)->getLength();
+    
+    CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
+
+    str_pad(tgtStr, tgtLen, '\0');
+
+    tgtStr[0] = toupper(srcStr[0]);    // Retain the first letter, convert to capital anyway
+    Int16 setLen = 1;                  // The first character is set already
+
+    for(int i=1; i < srcLen; ++i)
+    {
+        char chr = toupper(srcStr[i]);
+        switch(chr)
+        {
+            case 'A':
+            case 'E':
+            case 'H':
+            case 'I':
+            case 'O':
+            case 'U':
+            case 'W':
+            case 'Y':
+                current = 0;
+                break;
+            case 'B':
+            case 'F':
+            case 'P':
+            case 'V':
+                current = 1;
+                break;
+            case 'C':
+            case 'G':
+            case 'J':
+            case 'K':
+            case 'Q':
+            case 'S':
+            case 'X':
+            case 'Z':
+                current = 2;
+                break;
+            case 'D':
+            case 'T':
+                current = 3;
+                break;
+            case 'L':
+                current = 4;
+                break;
+            case 'M':
+            case 'N':
+                current = 5;
+                break;
+            case 'R':
+                current = 6;
+                break;
+            default:
+                break;
+        }
+
+        if(current)    // Only non-zero valued letter shall ve retained, 0 will be discarded
+        {
+            if(previous != current)
+            {
+                str_itoa(current, &tgtStr[setLen]);
+                setLen++;    // A new character is set in target
+            }
+        }
+
+        previous = current;
+
+        if(setLen == tgtLen)    // Don't overhit the target string
+            break;
+    } // end of for loop
+
+    if(setLen < tgtLen)
+        str_pad(tgtStr+setLen, (tgtLen - setLen), '0');
+    
+    return ex_expr::EXPR_OK;
+}
+
+ex_expr::exp_return_type ExFunctionAESEncrypt::eval(char * op_data[],
+                                                              CollHeap *heap,
+                                                              ComDiagsArea **diagsArea)
+{
+  CharInfo::CharSet cs = ((SimpleType *)getOperand(0))->getCharSet();
+  Attributes *tgt = getOperand(0);
+
+  Lng32 source_len = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]);
+  char * source = op_data[1];
+
+  Lng32 key_len = getOperand(2)->getLength(op_data[-MAX_OPERANDS + 2]);
+  unsigned char * key = (unsigned char *)op_data[2];
+
+  unsigned char * result = (unsigned char *)op_data[0];
+
+  unsigned char rkey[EVP_MAX_KEY_LENGTH];
+  int u_len, f_len;
+  EVP_CIPHER_CTX ctx;
+  const EVP_CIPHER * cipher = aes_algorithm_type[aes_mode];
+
+  int iv_len_need = EVP_CIPHER_iv_length(cipher);
+
+  unsigned char * iv = NULL;
+  if (iv_len_need) {
+    if (args_num == 3) {
+      Lng32 iv_len_input = getOperand(3)->getLength(op_data[-MAX_OPERANDS + 3]);
+      if (iv_len_input == 0 || iv_len_input < iv_len_need) {
+        // the length of iv is too short
+        ExRaiseSqlError(heap, diagsArea, EXE_AES_INVALID_IV);
+        *(*diagsArea) << DgInt0(iv_len_input) << DgInt1(iv_len_need);
+        return ex_expr::EXPR_ERROR;
+      }
+      iv = (unsigned char *)op_data[3];
+    }
+    else {
+      // it does not have iv argument, but the algorithm need iv
+      ExRaiseSqlError(heap, diagsArea,EXE_ERR_PARAMCOUNT_FOR_FUNC);
+      *(*diagsArea) << DgString0("AES_ENCRYPT");
+      return ex_expr::EXPR_ERROR;
+    }
+  }
+  else {
+    if (args_num == 3) {
+      // the algorithm doesn't need iv, give a warning
+      ExRaiseSqlWarning(heap, diagsArea, EXE_OPTION_IGNORED);
+      *(*diagsArea) << DgString0("IV");
+    }
+  }
+
+  aes_create_key(key, key_len, rkey, aes_mode);
+
+  if (!EVP_EncryptInit(&ctx, cipher, (const unsigned char*)rkey, iv))
+      goto aes_encrypt_error;
+
+  if (!EVP_CIPHER_CTX_set_padding(&ctx, true))
+      goto aes_encrypt_error;
+
+  if (!EVP_EncryptUpdate(&ctx, result, &u_len, (const unsigned char *)source, source_len))
+      goto aes_encrypt_error;
+
+  if (!EVP_EncryptFinal(&ctx, result + u_len, &f_len))
+      goto aes_encrypt_error;
+
+  EVP_CIPHER_CTX_cleanup(&ctx);
+
+  tgt->setVarLength(u_len + f_len, op_data[-MAX_OPERANDS]);
+
+  return ex_expr::EXPR_OK;
+
+aes_encrypt_error:
+  ERR_clear_error();
+  EVP_CIPHER_CTX_cleanup(&ctx);
+
+  ExRaiseSqlError(heap, diagsArea, EXE_OPENSSL_ERROR);
+  *(*diagsArea) << DgString0("AES_ENCRYPT FUNCTION");
+
+  return ex_expr::EXPR_ERROR;
+}
+
+ex_expr::exp_return_type ExFunctionAESDecrypt::eval(char * op_data[],
+                                                              CollHeap *heap,
+                                                              ComDiagsArea **diagsArea)
+{
+  Attributes * tgt = getOperand(0);
+
+  Lng32 source_len = getOperand(1)->getLength(op_data[-MAX_OPERANDS + 1]);
+  const unsigned char * source = (unsigned char *)op_data[1];
+
+  Lng32 key_len = getOperand(2)->getLength(op_data[-MAX_OPERANDS + 2]);
+  const unsigned char * key = (unsigned char *)op_data[2];
+
+  Lng32 maxLength = getOperand(0)->getLength();
+  unsigned char * result = (unsigned char *) op_data[0];
+
+  unsigned char rkey[EVP_MAX_KEY_LENGTH] = {0};
+  int u_len, f_len;
+
+  EVP_CIPHER_CTX ctx;
+
+  const EVP_CIPHER * cipher = aes_algorithm_type[aes_mode];
+
+  int iv_len_need = EVP_CIPHER_iv_length(cipher);
+
+  unsigned char * iv = NULL;
+  if (iv_len_need) {
+    if (args_num == 3) {
+      Lng32 iv_len_input = getOperand(3)->getLength(op_data[-MAX_OPERANDS + 3]);
+      if (iv_len_input == 0 || iv_len_input < iv_len_need) {
+        // the length of iv is too short
+        ExRaiseSqlError(heap, diagsArea, EXE_AES_INVALID_IV);
+        *(*diagsArea) << DgInt0(iv_len_input) << DgInt1(iv_len_need);
+        return ex_expr::EXPR_ERROR;
+      }
+      iv = (unsigned char *)op_data[3];
+    }
+    else {
+      // it does not have iv argument, but the algorithm need iv
+      ExRaiseSqlError(heap, diagsArea, EXE_ERR_PARAMCOUNT_FOR_FUNC);
+      *(*diagsArea) << DgString0("AES_DECRYPT");
+      return ex_expr::EXPR_ERROR;
+    }
+  }
+  else {
+    if (args_num == 3) {
+      // the algorithm doesn't need iv, give a warning
+      ExRaiseSqlWarning(heap, diagsArea, EXE_OPTION_IGNORED);
+      *(*diagsArea) << DgString0("IV");
+    }
+  }
+
+  aes_create_key(key, key_len, rkey, aes_mode);
+
+  if (!EVP_DecryptInit(&ctx, cipher, rkey, iv))
+      goto aes_decrypt_error;
+
+  if (!EVP_CIPHER_CTX_set_padding(&ctx, true))
+      goto aes_decrypt_error;
+
+  if (!EVP_DecryptUpdate(&ctx, result, &u_len, source, source_len))
+      goto aes_decrypt_error;
+
+  if (!EVP_DecryptFinal_ex(&ctx, result + u_len, &f_len))
+      goto aes_decrypt_error;
+
+  EVP_CIPHER_CTX_cleanup(&ctx);
+
+  tgt->setVarLength(u_len + f_len, op_data[-MAX_OPERANDS]);
+
+  return ex_expr::EXPR_OK;
+
+aes_decrypt_error:
+  ERR_clear_error();
+  EVP_CIPHER_CTX_cleanup(&ctx);
+
+  ExRaiseSqlError(heap, diagsArea, EXE_OPENSSL_ERROR);
+  *(*diagsArea) << DgString0("AES_DECRYPT FUNCTION");
+
+  return ex_expr::EXPR_ERROR;
+}
 // LCOV_EXCL_STOP
 #pragma warn(1506)  // warning elimination 

@@ -23,5 +23,5 @@
 #
 
 setup_sqpdsh
-eval '$SQPDSHA "$MY_SQROOT/sql/scripts/pstat $1" 2>/dev/null'
+eval '$SQPDSHA "$TRAF_HOME/sql/scripts/pstat $1" 2>/dev/null'
 

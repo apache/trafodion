@@ -27,7 +27,7 @@
 # Currently, it works for local_hadoop installations only.
 #
 
-if [ -d $MY_SQROOT/sql/local_hadoop/hbase ]; then
+if [ -d $TRAF_HOME/sql/local_hadoop/hbase ]; then
     echo "An existing Hadoop installation exists. Will:"
     echo "    - Stop HBase"
     echo "    - Copy TRX jar"
@@ -44,7 +44,7 @@ else
     exit 1
 fi
 
-cd $MY_SQROOT/sql/local_hadoop/
+cd $TRAF_HOME/sql/local_hadoop/
 echo "Stopping HBase"
 swstophbase
 # Let the HBase env settle down
@@ -54,8 +54,8 @@ HBASE_CONFIG_FILE=hbase/conf/hbase-site.xml
 HBASE_ENV_FILE=hbase/conf/hbase-env.sh
 
 # For HBase_Trx (for now)
-echo "Copied ${MY_SQROOT}/export/lib/${HBASE_TRX_JAR} to $PWD/hbase/lib"
-cp -p ${MY_SQROOT}/export/lib/${HBASE_TRX_JAR} hbase/lib
+echo "Copied ${TRAF_HOME}/export/lib/${HBASE_TRX_JAR} to $PWD/hbase/lib"
+cp -p ${TRAF_HOME}/export/lib/${HBASE_TRX_JAR} hbase/lib
 
 echo "Updating file $HBASE_CONFIG_FILE ..."
 

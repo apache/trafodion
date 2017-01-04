@@ -8570,7 +8570,7 @@ Lng32 SQLCLI_GetSystemVolume_Internal(
   // Very first time the SMD Location is uninitialized in CliGlobals. In this
   // case the location is acquired from
   // the environment variable SQLMX_SMD_LOCATION defined in the
-  // $MY_SQROOT/etc/ms.env configuration file
+  // $TRAF_HOME/etc/ms.env configuration file
   // (The SQLMX_SMD_LOCATION value should contain a valid volume name only;
   //  for example: SQLMX_SMD_LOCATION='$DATA2' - The default volume name
   //  $SYSTEM is used when SQLMX_SMD_LOCATION is not defined or when the
@@ -9709,40 +9709,41 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 
-	// insert into lob descriptor chunks table
-	if (blackBox && (blackBoxLen && (*blackBoxLen > 0)))
-	  {
+        
+        // insert into lob descriptor chunks table
+        if (blackBox && (blackBoxLen && (*blackBoxLen > 0)))
+          {
             //blackBox points to external file name
-	    str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, '%s')",
-			lobDescChunksName, descPartnKey, descSyskey,
-			(dataLen ? *dataLen : 0),
-			(dataOffset ? *dataOffset : 0),
-			blackBox);
+            str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, '%s')",
+                        lobDescChunksName, descPartnKey, descSyskey,
+                        (dataLen ? *dataLen : 0),
+                        (dataOffset ? *dataOffset : 0),
+                        blackBox);
             lobDebugInfo(query,0,__LINE__,lobTrace);
-	  }
-	else
-	  {
-	    str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, NULL)",
-			lobDescChunksName, descPartnKey, descSyskey,
-			(dataLen ? *dataLen : 0),
-			(dataOffset ? *dataOffset : 0));
+          }
+        else
+          {
+            str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, NULL)",
+                        lobDescChunksName, descPartnKey, descSyskey,
+                        (dataLen ? *dataLen : 0),
+                        (dataOffset ? *dataOffset : 0));
             lobDebugInfo(query,0,__LINE__,lobTrace);
-	  }
+          }
 
-	// set parserflags to allow ghost table
-	currContext.setSqlParserFlags(0x1);
+        // set parserflags to allow ghost table
+        currContext.setSqlParserFlags(0x1);
 	
-	cliRC = cliInterface->executeImmediate(query);
+        cliRC = cliInterface->executeImmediate(query);
 
-	currContext.resetSqlParserFlags(0x1);
+        currContext.resetSqlParserFlags(0x1);
 
-	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
+        if (cliRC < 0)
+          {
+            cliInterface->retrieveSQLDiagnostics(myDiags);
 	    
-	    goto error_return;
-	  }
-
+            goto error_return;
+          }
+        
 	if (inoutDescPartnKey)
 	  *inoutDescPartnKey = descPartnKey;
 
@@ -10121,8 +10122,23 @@ Lng32 SQLCLI_LOBcliInterface
 	    if (inoutDescSyskey)
 	      *inoutDescSyskey = inDescSyskey;
 	  }
-	//	else
-	//cliRC = -100;
+        else
+          {
+            if (cliRC == 100)
+              {
+                if (dataLen)
+                  *dataLen = 0;
+                if (dataOffset)
+                  *dataOffset = 0;
+                if (blackBoxLen)
+                  *blackBoxLen = 0;
+                if (inoutDescPartnKey)
+                  *inoutDescPartnKey = descPartnKey;
+
+                if (inoutDescSyskey)
+                  *inoutDescSyskey = inDescSyskey;
+              }
+          }
 
 	Lng32 saveCliErr = cliRC;
 
@@ -10642,6 +10658,7 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
  /*IN*/     char* *lobLocList,
+/*IN*/      char* *lobColNameList,
  /*IN*/     char *hdfsServer,
  /*IN*/     Int32 hdfsPort,
 /*IN*/    Int64 lobMaxSize,
@@ -10678,7 +10695,7 @@ Lng32 SQLCLI_LOBddlInterface
     case LOB_CLI_CREATE:
       {
 	// create lob metadata table
-	str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, primary key (lobnum)) ",lobMDName);
+	str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, column_name varchar(256 bytes) character set utf8, primary key (lobnum)) ",lobMDName);
 	 lobDebugInfo(query,0,__LINE__,lobTrace);
 
 	// set parserflags to allow ghost table
@@ -10697,9 +10714,9 @@ Lng32 SQLCLI_LOBddlInterface
 	// populate the lob metadata table
 	for (Lng32 i = 0; i < numLOBs; i++)
 	  {
-	    str_sprintf(query, "insert into table (ghost table %s) values (%d, %d, '%s')",
+	    str_sprintf(query, "insert into table (ghost table %s) values (%d, %d, '%s','%s')",
 			lobMDName, 
-			lobNumList[i], lobTypList[i], lobLocList[i]);
+			lobNumList[i], lobTypList[i], lobLocList[i],lobColNameList[i]);
             lobDebugInfo(query,0,__LINE__,lobTrace);
 
 	    // set parserflags to allow ghost table
@@ -10925,11 +10942,11 @@ Lng32 SQLCLI_LOBddlInterface
     case LOB_CLI_SELECT_UNIQUE:
        {
 	 if (qType == LOB_CLI_SELECT_CURSOR)
-	   str_sprintf(query, "select lobnum, storagetype, location from table(ghost table %s) order by lobnum for read uncommitted access",
+	   str_sprintf(query, "select lobnum, storagetype, location,column_name from table(ghost table %s) order by lobnum for read uncommitted access",
 		       lobMDName);
          
 	 else
-	   str_sprintf(query, "select lobnum, storagetype, location from table(ghost table %s) where lobnum = %d for read uncommitted access",
+	   str_sprintf(query, "select lobnum, storagetype, location ,column_name from table(ghost table %s) where lobnum = %d for read uncommitted access",
 		       lobMDName, numLOBs);
          lobDebugInfo(query,0,__LINE__,lobTrace);
 
@@ -10979,7 +10996,9 @@ Lng32 SQLCLI_LOBddlInterface
 
 		cliInterface->getPtrAndLen(3, ptr, len);
 		str_cpy_and_null(lobLocList[j], ptr, len, '\0', ' ', TRUE);
-
+	
+                cliInterface->getPtrAndLen(4, ptr, len);
+		str_cpy_and_null(lobColNameList[j], ptr, len, '\0', ' ', TRUE);
 		j++;
 
 		if ((qType == LOB_CLI_SELECT_UNIQUE) &&

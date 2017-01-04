@@ -20,6 +20,7 @@
 -- @@@ END COPYRIGHT @@@
 
 -- Tests to retrieve region/cluster space and access stats
+-- Tests to retrieve metadata info about hive tables
 
 obey TEST002(clean_up);
 
@@ -27,6 +28,7 @@ log LOG002 clear;
 obey TEST002(setup);
 obey TEST002(region_stats);
 obey TEST002(cluster_stats);
+obey TEST002(hive_md);
 log;
 exit;
 
@@ -165,6 +167,32 @@ select cast('RegionName: ' || trim(region_name) as char(30) character set iso885
  from table(cluster stats())
  where schema_name = 'T002SCH'
  group by 1 order by 2 desc;
+
+?section hive_md
+cqd hive_max_string_length '20';
+invoke table(hivemd(tables));
+invoke table(hivemd(columns));
+select cast(table_name as char(30) character set iso88591), 
+       file_format, num_cols, num_part_cols, num_bucket_cols, num_sort_cols,
+       field_delimiter, record_terminator, hive_table_type
+  from table(hivemd(tables, "hive", "warehouse"));
+select cast(table_name as char(30) character set iso88591), 
+       file_format, num_cols, num_part_cols, num_bucket_cols, num_sort_cols,
+       field_delimiter, record_terminator, hive_table_type
+  from table(hivemd(tables)) where table_name = 'warehouse';
+select cast(column_name as char(30) character set iso88591), 
+       sql_data_type, fs_data_type, hive_data_type,
+       column_size, column_scale, 
+       column_number, part_col_number, bucket_col_number, sort_col_number
+  from table(hivemd(columns, "hive", "warehouse"))
+  order by column_number;
+select cast(column_name as char(30) character set iso88591), 
+       sql_data_type, fs_data_type, hive_data_type,
+       column_size, column_scale, 
+       column_number, part_col_number, bucket_col_number, sort_col_number
+  from table(hivemd(columns))
+  where table_name = 'warehouse'
+  order by column_number;
 
 ?section clean_up
 set schema t002sch;

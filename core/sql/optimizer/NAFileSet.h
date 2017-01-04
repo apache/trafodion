@@ -207,6 +207,7 @@ public:
   Int32 getSysKeyPosition()  const;
   NABoolean hasSyskey() const;
   NABoolean hasOnlySyskey() const;
+  NABoolean hasSingleColVarcharKey() const;
 
   NABoolean isDecoupledRangePartitioned() const
                     { return isDecoupledRangePartitioned_; }
@@ -279,7 +280,6 @@ public:
   //For NATable caching, prepare for use by a statement.
   void setupForStatement();
 
-  NABoolean isSqlmxRowFormat() { return rowFormat_ == COM_PACKED_FORMAT_TYPE; }
   NABoolean isSqlmxAlignedRowFormat() const { return rowFormat_ == COM_ALIGNED_FORMAT_TYPE; }
 
   void setRowFormat(ComRowFormat rowFormat) { rowFormat_ = rowFormat; }

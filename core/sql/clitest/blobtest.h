@@ -74,3 +74,6 @@ Int32 extractLobToFileInChunks(CliGlobals *cliglob, char * lobHandle, char *file
 Int32 insertBufferToLob(CliGlobals *cliglob,char *tbaleName);
 Int32 updateBufferToLob(CliGlobals *cliglob, char *tableName, char *columnName);
 Int32 updateAppendBufferToLob(CliGlobals *cliGlob, char *tableName, char *columnName);
+Int32 updateBufferToLobHandle(CliGlobals *cliglob,  char *handle);
+Int32 updateTruncateLobHandle(CliGlobals *cliglob,  char *handle);
+Int32 updateAppendBufferToLobHandle(CliGlobals *cliglob,  char *handle);

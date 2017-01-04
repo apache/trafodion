@@ -39,6 +39,7 @@
 #include "ComASSERT.h"
 #include "NumericType.h"
 #include "CharType.h"
+#include "MiscType.h"
 #include "CmpCommon.h"     /* want to put NAType obj's on statement heap ... */
 #include "str.h"
 
@@ -945,3 +946,203 @@ NABoolean NAType::isSkewBusterSupportedType() const
         
 CharInfo::CharSet NAType::getCharSet() const	
 { return CharInfo::UnknownCharSet; };
+
+#define MAX_PRECISION_ALLOWED  18
+#define MAX_NUM_LEN     16
+
+NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
+{
+  if ( !strcmp(hiveType, "tinyint"))
+    {
+      if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
+        return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+      else
+        return new (heap) SQLTiny(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+    }
+
+  if ( !strcmp(hiveType, "smallint"))
+    return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+ 
+  if ( !strcmp(hiveType, "int")) 
+    return new (heap) SQLInt(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+
+  if ( !strcmp(hiveType, "bigint"))
+    return new (heap) SQLLargeInt(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+
+  if ( !strcmp(hiveType, "boolean"))
+    return new (heap) SQLBooleanNative(TRUE, heap);
+ 
+  if ( !strcmp(hiveType, "string"))
+    {
+      Int32 len = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
+      Int32 lenInBytes = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+      if( lenInBytes != 32000 ) 
+        len = lenInBytes;
+      NAString hiveCharset = CmpCommon::getDefaultString(HIVE_DEFAULT_CHARSET);
+      //        ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
+      hiveCharset.toUpper();
+      CharInfo::CharSet hiveCharsetEnum = CharInfo::getCharSetEnum(hiveCharset);
+      Int32 maxNumChars = 0;
+      Int32 storageLen = len;
+      SQLVarChar * nat = 
+        new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
+                              TRUE, // allow NULL
+                              FALSE, // not upshifted
+                              FALSE, // not case-insensitive
+                              CharInfo::getCharSetEnum(hiveCharset),
+                              CharInfo::DefaultCollation,
+                              CharInfo::IMPLICIT);
+      nat->setWasHiveString(TRUE);
+      return nat;
+    }
+  
+  if ( !strcmp(hiveType, "float"))
+    return new (heap) SQLReal(TRUE /* allow NULL*/, heap);
+
+  if ( !strcmp(hiveType, "double"))
+    return new (heap) SQLDoublePrecision(TRUE /* allow NULL*/, heap);
+
+  if ( !strcmp(hiveType, "timestamp"))
+    return new (heap) SQLTimestamp(TRUE /* allow NULL */ , 6, heap);
+
+  if ( !strcmp(hiveType, "date"))
+    return new (heap) SQLDate(TRUE /* allow NULL */ , heap);
+
+  if ( (!strncmp(hiveType, "varchar", 7)) ||
+       (!strncmp(hiveType, "char", 4)))
+  {
+    char maxLen[32];
+    memset(maxLen, 0, 32);
+    int i=0,j=0;
+    int copyit = 0;
+    int lenStr = strlen(hiveType);
+    //get length
+    for(i = 0; i < lenStr ; i++)
+    {
+      if(hiveType[i] == '(') //start
+      {
+        copyit=1;
+        continue;
+      }
+      else if(hiveType[i] == ')') //stop
+        break; 
+      if(copyit > 0)
+      {
+        maxLen[j] = hiveType[i];
+        j++;
+      }
+    }
+    Int32 len = atoi(maxLen);
+
+    if(len == 0) return NULL;  //cannot parse correctly
+
+    NAString hiveCharset = CmpCommon::getDefaultString(HIVE_DEFAULT_CHARSET);
+    hiveCharset.toUpper();
+    CharInfo::CharSet hiveCharsetEnum = CharInfo::getCharSetEnum(hiveCharset);
+    Int32 maxNumChars = 0;
+    Int32 storageLen = len;
+    if (CharInfo::isVariableWidthMultiByteCharSet(hiveCharsetEnum))
+    {
+      // For Hive VARCHARs, the number specified is the max. number of characters,
+      // while we count in bytes when using HIVE_MAX_STRING_LENGTH for Hive STRING
+      // columns. Set the max character constraint and also adjust the required storage length.
+       maxNumChars = len;
+       storageLen = len * CharInfo::maxBytesPerChar(hiveCharsetEnum);
+    }
+
+    if (!strncmp(hiveType, "char", 4))
+      return new (heap) SQLChar(CharLenInfo(maxNumChars, storageLen),
+                                TRUE, // allow NULL
+                                FALSE, // not upshifted
+                                FALSE, // not case-insensitive
+                                FALSE, // not varchar
+                                CharInfo::getCharSetEnum(hiveCharset),
+                                CharInfo::DefaultCollation,
+                                CharInfo::IMPLICIT);
+    else
+      return new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
+                                   TRUE, // allow NULL
+                                   FALSE, // not upshifted
+                                   FALSE, // not case-insensitive
+                                   CharInfo::getCharSetEnum(hiveCharset),
+                                   CharInfo::DefaultCollation,
+                                   CharInfo::IMPLICIT);
+  } 
+
+  if ( !strncmp(hiveType, "decimal", 7) )
+  {
+    Int32 i=0, pstart=-1, pend=-1, sstart=-1, send=-1, p=-1, s = -1;
+    Int32 hiveTypeLen = strlen(hiveType);
+    char pstr[MAX_NUM_LEN], sstr[MAX_NUM_LEN];
+    memset(pstr,0,sizeof(pstr));
+    memset(sstr,0,sizeof(sstr));
+
+    for( i = 0; i < hiveTypeLen; i++ )
+    {
+      if(hiveType[i] == '(' )
+      {
+        pstart = i+1;
+      }
+      else if(hiveType[i] == ',')
+      {
+        pend = i;
+        sstart = i+1;
+      }
+      else if(hiveType[i] == ')')
+      {
+        send = i;
+      }
+      else
+       continue;
+    }
+    if(pend == -1) // no comma found, so no sstart and send
+    {
+       pend = send;
+       send = -1;
+       s = 0;
+    }  
+    if(pend - pstart > 0)
+    {
+      if( (pend - pstart) >= MAX_NUM_LEN ) // too long
+        return NULL;
+      strncpy(pstr,hiveType+pstart, pend-pstart);
+      p=atoi(pstr);
+    }
+
+    if(send - sstart > 0)
+    {
+      if( (send - sstart) >= MAX_NUM_LEN ) // too long
+        return NULL;
+      strncpy(sstr,hiveType+sstart,send-sstart);
+      s=atoi(sstr);
+    }
+
+    if( (p>0) && (p <= MAX_PRECISION_ALLOWED) ) //have precision between 1 - 18
+    {
+      if( ( s >=0 )  &&  ( s<= p) ) //have valid scale
+        return new (heap) SQLDecimal( p, s, TRUE, TRUE);
+      else
+        return NULL;
+    }
+    else if( p > MAX_PRECISION_ALLOWED)  
+    {
+      if ( (s>=0) && ( s<= p ) ) //have valid scale
+        return new (heap) SQLBigNum( p, s, TRUE, TRUE, TRUE, NULL);
+      else
+        return NULL;
+    }
+    //no p and s given, p and s are all initial value
+    else if( ( p == -1 ) && ( s == -1 ) )
+    {
+      // hive define decimal as decimal ( 10, 0 )
+      return new (heap) SQLDecimal( 10, 0, TRUE, TRUE);
+    }
+    else
+    {
+      return NULL; 
+    }
+
+  }
+
+  return NULL;
+}

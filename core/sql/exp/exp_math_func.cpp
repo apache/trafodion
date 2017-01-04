@@ -51,6 +51,7 @@
 #define MathLog(op, err) log(op)
 #define MathLog10(op, err) log10(op)
 #define MathLog2(op, err) log2(op)
+#define MathLogX(op1, op2, err) (log(op2)/log(op1))
 #define MathModf(op, err) modf(op)
 #define MathPow(op1, op2, err) pow(op1, op2)
 //extern double MathPow(double Base, double Power, short &err);
@@ -337,8 +338,22 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
 	  **diagsArea << DgString0("LOG");
 	  return ex_expr::EXPR_ERROR;
 	}
-      
-      *(double *)op_data[0] = MathLog(*(double *)op_data[1], err);
+
+      if(3 == getNumOperands())
+	{
+          double power = *(double *)op_data[2];
+          double radix = *(double *)op_data[1];
+          if(power <= 0 || radix <= 0 || 1 == radix)
+          {
+            ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+            **diagsArea << DgString0("LOG");
+            return ex_expr::EXPR_ERROR;
+          }
+
+          *(double *)op_data[0] = MathLogX(radix, power, err);
+        }
+      else
+        *(double *)op_data[0] = MathLog(*(double *)op_data[1], err);
       break;
 
     case ITM_LOG10:

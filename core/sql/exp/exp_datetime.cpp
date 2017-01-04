@@ -764,6 +764,25 @@ short ExpDatetime::validateDate(rec_datetime_field startField,
   return 0;
 }
 
+// returns 0 if valid time, -1 if not
+// validates hour, minute, second
+short ExpDatetime::validateTime(const char *datetimeOpData)
+{
+  int hour = datetimeOpData[0];
+  if ((hour < 0) || (hour > 23))
+    return -1;
+
+  int minute = datetimeOpData[1];
+  if ((minute < 0) || (minute > 59))
+    return -1;
+
+  int second = datetimeOpData[2];
+  if ((second < 0) || (second > 59))
+    return -1;
+
+  return 0;
+}
+
 // compDatetimes() ===================================================
 // This method compares two datetime values of the same subtype and
 // returns a value indicating if the first value is less than (-1),
@@ -2431,6 +2450,7 @@ static NABoolean convertStrToMonth(char* &srcData, char *result,
     } // for
   
   // error
+  raiseDateConvErrorWithSrcData(copyLen,diagsArea, originalSrcData, heap);
   return FALSE;
 }
 
@@ -2548,6 +2568,8 @@ ExpDatetime::convAsciiToDate(char *srcData,
 			     ULng32 flags)
 {
   NABoolean noDatetimeValidation = (flags & CONV_NO_DATETIME_VALIDATION) != 0;
+  char * timeData = NULL;  // assume no time data
+  char * origSrcData = srcData;
 
   short year;
   Lng32  srcFormat, i;
@@ -2649,6 +2671,8 @@ ExpDatetime::convAsciiToDate(char *srcData,
       dstData[8]  = 0;
       dstData[9]  = 0;
       dstData[10] = 0;
+
+      timeData = &dstData[4];
     };  
     break;
 
@@ -2708,6 +2732,8 @@ ExpDatetime::convAsciiToDate(char *srcData,
       dstData[8]  = 0;
       dstData[9]  = 0;
       dstData[10] = 0;
+
+      timeData = &dstData[4];
      };
     break;
 
@@ -2785,6 +2811,8 @@ ExpDatetime::convAsciiToDate(char *srcData,
       dstData[8]  = 0;
       dstData[9]  = 0;
       dstData[10] = 0;
+
+      timeData = &dstData[4];
      };  
     break;
 
@@ -2823,6 +2851,7 @@ ExpDatetime::convAsciiToDate(char *srcData,
       dstData[9]  = 0;
       dstData[10] = 0;
 
+      timeData = &dstData[4];
     }
     break;
 
@@ -2904,6 +2933,8 @@ ExpDatetime::convAsciiToDate(char *srcData,
       dstData[8]  = 0;
       dstData[9]  = 0;
       dstData[10] = 0;
+
+      timeData = &dstData[4];
     };  
     break;
 
@@ -2937,6 +2968,8 @@ ExpDatetime::convAsciiToDate(char *srcData,
       dstData[8]  = 0;
       dstData[9]  = 0;
       dstData[10] = 0;
+
+      timeData = &dstData[4];
      };  
     break;
 
@@ -2953,6 +2986,8 @@ ExpDatetime::convAsciiToDate(char *srcData,
       // the second
       if (convSrcDataToDst(2, srcData, 1, &dstData[2], NULL, heap, diagsArea))
         return -1;
+
+      timeData = &dstData[0];
     };
   break;
 
@@ -2985,9 +3020,21 @@ ExpDatetime::convAsciiToDate(char *srcData,
 	if (validateDate(REC_DATE_YEAR, REC_DATE_DAY, 
 			 dstData, NULL, FALSE, 
 			 LastDayPrevMonth)) {
-          raiseDateConvErrorWithSrcData(inSrcLen,diagsArea,srcData,heap);
+          raiseDateConvErrorWithSrcData(inSrcLen,diagsArea,origSrcData,heap);
 	  return -1;
 	};
+    }
+
+  // Validate the time fields of the result
+  //
+  if (timeData)
+    {
+      if (NOT noDatetimeValidation)
+        if (validateTime(timeData))
+          {
+            raiseDateConvErrorWithSrcData(inSrcLen,diagsArea,origSrcData,heap);
+	    return -1;
+          }
     }
 
   // Success

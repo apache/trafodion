@@ -119,10 +119,11 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , loggingErrorDiags_(NULL)
   , runTimeRanges_(NULL)
   , numRunTimeRanges_(0)
+  , loggingFileName_(NULL)
 {
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
-
+  lobGlob_ = NULL;
   const int readBufSize =  (Int32)hdfsScanTdb.hdfsBufSize_;
   hdfsScanBuffer_ = new(space) char[ readBufSize + 1 ]; 
   hdfsScanBuffer_[readBufSize] = '\0';
@@ -187,8 +188,8 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   registerResizeSubtasks();
 
   Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
-  ExHbaseAccessTcb::buildLoggingPath(((ExHdfsScanTdb &)hdfsScanTdb).getLoggingLocation(),
-                     (char *)((ExHdfsScanTdb &)hdfsScanTdb).getErrCountRowId(),
+  ExHbaseAccessTcb::buildLoggingFileName((NAHeap *)getHeap(), ((ExHdfsScanTdb &)hdfsScanTdb).getLoggingLocation(),
+                     // (char *)((ExHdfsScanTdb &)hdfsScanTdb).getErrCountRowId(),
                      ((ExHdfsScanTdb &)hdfsScanTdb).tableName(),
                      "hive_scan_err",
                      fileNum,
@@ -214,6 +215,10 @@ ExHdfsScanTcb::~ExHdfsScanTcb()
 
 void ExHdfsScanTcb::freeResources()
 {
+  if (loggingFileName_ != NULL) {
+     NADELETEBASIC(loggingFileName_, getHeap());
+     loggingFileName_ = NULL;
+  }
   if (workAtp_)
   {
     workAtp_->release();
@@ -264,12 +269,12 @@ void ExHdfsScanTcb::freeResources()
   }
   if (runTimeRanges_)
     deallocateRuntimeRanges();
-
-   ExpLOBinterfaceCleanup
-   (lobGlob_, getGlobals()->getDefaultHeap());
-
-  
+  if (lobGlob_) { 
+     ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
+     lobGlob_ = NULL;
+  }
 }
+
 NABoolean ExHdfsScanTcb::needStatsEntry()
 {
   // stats are collected for ALL and OPERATOR options.
@@ -1966,6 +1971,15 @@ ExOrcScanTcb::ExOrcScanTcb(
 ExOrcScanTcb::~ExOrcScanTcb()
 {
 }
+
+Int32 ExOrcScanTcb::fixup()
+{
+  lobGlob_ = NULL;
+
+  return 0;
+}
+
+
 
 short ExOrcScanTcb::extractAndTransformOrcSourceToSqlRow(
                                                          char * orcRow,

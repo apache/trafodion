@@ -105,6 +105,10 @@ StmtDDLCleanupObjects::bindNode(BindWA * pBindWA)
                       tableName.getObjectNamePart().getInternalName(),
                       tableName.getSchemaNamePart().getInternalName(),
                       tableName.getCatalogNamePart().getInternalName());
+
+      // remember the original table name specified by user
+      origTableQualName_ = *tableQualName_;
+
       if (applyDefaultsAndValidateObject(pBindWA, tableQualName_))
         {
           pBindWA->setErrStatus();

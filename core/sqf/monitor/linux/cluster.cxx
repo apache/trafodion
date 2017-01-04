@@ -4317,11 +4317,17 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
         bool p_sending;
         bool p_receiving;
         int p_timeout_count;
+        bool p_initial_check;
         char *p_buff;
+        struct timespec znodeFailedTime;
     } peer_t;
     peer_t p[cfgPNodes_];
     memset( p, 0, sizeof(p) );
     tag = 0; // make compiler happy
+    struct timespec currentTime;
+    // Set to twice the ZClient session timeout
+    static int sessionTimeout = ZClientEnabled 
+                                ? (ZClient->GetSessionTimeout() * 2) : 120;
 
     int nsent = 0, nrecv = 0;
     for ( int iPeer = 0; iPeer < cfgPNodes_; iPeer++ )
@@ -4340,6 +4346,7 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
             peer->p_sending = peer->p_receiving = true;
             peer->p_sent = peer->p_received = 0;
             peer->p_timeout_count = 0;
+            peer->p_initial_check = true;
             peer->p_n2recv = -1;
             peer->p_buff = ((char *) rbuf) + (iPeer * CommBufSize);
             struct epoll_event event;
@@ -4396,6 +4403,7 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
         int maxEvents = 2*cfgPNodes_ - nsent - nrecv;
         if ( maxEvents == 0 ) break;
         int nw;
+        int zerr = ZOK;
         while ( 1 )
         {
             nw = epoll_wait( epollFD_, events, maxEvents, sv_epoll_wait_timeout );
@@ -4412,7 +4420,6 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                     if ( (peer->p_receiving) ||
                         (peer->p_sending) )
                     {
-
                         if ( ! ZClientEnabled )
                         {
                             peer->p_timeout_count++;
@@ -4424,10 +4431,47 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                         }
                         else
                         {
-                            // Check for node down, otherwise stay in the loop
-                            if ( ! ZClient->IsZNodeExpired( Node[iPeer]->GetName() ))
+                            if (peer->p_initial_check)
                             {
-                                continue;
+                                peer->p_initial_check = false;
+                                clock_gettime(CLOCK_REALTIME, &peer->znodeFailedTime);
+                                peer->znodeFailedTime.tv_sec += sessionTimeout;
+                                if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                {
+                                    trace_printf( "%s@%d" " - Znode Fail Time %ld(secs)\n"
+                                                , method_name, __LINE__
+                                                , peer->znodeFailedTime.tv_sec);
+                                }
+                                
+                            }
+                            // If not expired, stay in the loop
+                            if ( ! ZClient->IsZNodeExpired( Node[iPeer]->GetName(), zerr ))
+                            {
+                                if ( zerr == ZCONNECTIONLOSS || zerr == ZOPERATIONTIMEOUT )
+                                {
+                                    // Ignore transient errors with the quorum.
+                                    // However, if longer than the session
+                                    // timeout, handle it as a hard error.
+                                    clock_gettime(CLOCK_REALTIME, &currentTime);
+                                    if (currentTime.tv_sec < peer->znodeFailedTime.tv_sec)
+                                    {
+                                        continue;
+                                    }
+                                    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+                                    {
+                                        trace_printf( "%s@%d - Znode Failed triggered\n"
+                                                      "        Current Time    %ld(secs)\n"
+                                                      "        Znode Fail Time %ld(secs)\n"
+                                                    , method_name, __LINE__
+                                                    , currentTime.tv_sec
+                                                    , peer->znodeFailedTime.tv_sec);
+                                    }
+                                    
+                                }
+                                else
+                                {
+                                    continue;
+                                }
                             }
                         }
 

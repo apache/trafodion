@@ -941,6 +941,7 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
  /*IN*/     char* *lobLocList,
+ /*IN*/     char* *lobColNameList,
  /*IN*/    char *hdfsServer,
  /*IN*/    Int32 hdfsPort,
  /*IN*/     Int64 lobMaxSize,

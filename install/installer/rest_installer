@@ -37,13 +37,13 @@ Usage: $(basename $0) [options]
 Options:
     --help                    Print this message and exit.
     --rest_build <file>       Path to the REST build tar file.
-    --rest_install_path <dir> Path to the install directory. (defaults to $MY_SQROOT)
+    --rest_install_path <dir> Path to the install directory. (defaults to $TRAF_HOME)
 EOF
 }
 
 # Default parameters
 typeset REST_BUILD_FILE=""
-typeset REST_INSTALL_PATH="$MY_SQROOT"
+typeset REST_INSTALL_PATH="$TRAF_HOME"
 typeset TRAF_CONFIG="/etc/trafodion/trafodion_config"
 # Parse input parameters
 while [[ $# -gt 0 ]]; do
@@ -80,8 +80,8 @@ echo "***INFO: Start of REST Server install"
 source $TRAF_CONFIG
 
 # Make sure required env vars have been set first
-if [[ -z "$MY_SQROOT" ]]; then
-    echo "***ERROR: environment variable MY_SQROOT has no value."
+if [[ -z "$TRAF_HOME" ]]; then
+    echo "***ERROR: environment variable TRAF_HOME has no value."
     exit -1
 fi
 if [[ -z "$NODE_LIST" ]]; then
@@ -94,8 +94,8 @@ mkdir -p $REST_INSTALL_PATH
 cd $REST_INSTALL_PATH
 
 if [[ "$ONE_TAR_INSTALL" == "Y" ]]; then
-   REST_DIR=$(ls $SQ_ROOT | grep rest)
-   REST_DIR=$SQ_ROOT/$REST_DIR
+   REST_DIR=$(ls $TRAF_HOME | grep rest)
+   REST_DIR=$TRAF_HOME/$REST_DIR
    echo "***INFO: Rest Install Directory: $REST_DIR"
 
 else
@@ -109,9 +109,9 @@ else
 fi
 
 # set env var in sqenvcom.sh for DCS install directory
-grep --invert-match "REST_INSTALL_DIR=" $MY_SQROOT/sqenvcom.sh > $MY_SQROOT/sqenvcom.temp
-echo "export REST_INSTALL_DIR=$REST_DIR" >> $MY_SQROOT/sqenvcom.temp
-mv $MY_SQROOT/sqenvcom.temp $MY_SQROOT/sqenvcom.sh
+grep --invert-match "REST_INSTALL_DIR=" $TRAF_HOME/sqenvcom.sh > $TRAF_HOME/sqenvcom.temp
+echo "export REST_INSTALL_DIR=$REST_DIR" >> $TRAF_HOME/sqenvcom.temp
+mv $TRAF_HOME/sqenvcom.temp $TRAF_HOME/sqenvcom.sh
 
 cd $REST_DIR/conf
 

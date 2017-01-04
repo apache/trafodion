@@ -34,13 +34,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
-import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.TableSnapshotScanner;
-import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
-import org.apache.hadoop.hbase.snapshot.SnapshotCreationException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.FSUtils;
 import org.apache.hadoop.hbase.util.HFileArchiveUtil;
@@ -76,8 +70,7 @@ import org.apache.hadoop.fs.permission.FsPermission;
 public class SequenceFileWriter {
 
     static Logger logger = Logger.getLogger(SequenceFileWriter.class.getName());
-    Configuration conf = null;           // File system configuration
-    private Connection connection;
+    static Configuration conf = null;           // File system configuration
     
     SequenceFile.Writer writer = null;
 
@@ -89,13 +82,12 @@ public class SequenceFileWriter {
     /**
      * Class Constructor
      */
-    SequenceFileWriter() throws MasterNotRunningException, ZooKeeperConnectionException, ServiceException, IOException
-    {
-      init("", "");
-      conf = connection.getConfiguration();
-      conf.set("fs.hdfs.impl","org.apache.hadoop.hdfs.DistributedFileSystem");
+    static {
+       conf = new Configuration(true);
     }
-    
+    SequenceFileWriter() throws IOException
+    {
+    }
 	
     public String open(String path) throws IOException {
         Path filename = new Path(path);
@@ -304,56 +296,4 @@ public class SequenceFileWriter {
       fs.delete(delPath, true);
     return true;
   }
-
-  private boolean init(String zkServers, String zkPort) throws IOException 
-      , ServiceException
-  {
-    logger.debug("SequenceFileWriter.init(" + zkServers + ", " + zkPort + ") called.");
-    connection = HBaseClient.getConnection();
-    return true;
-  }
-  
-  public boolean createSnapshot( String tableName, String snapshotName)
-      throws IOException
-  {
-      Admin admin = connection.getAdmin();
-      admin.snapshot(snapshotName, TableName.valueOf(tableName));
-      admin.close();
-      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.createSnapshot() - Snapshot created: " + snapshotName);
-    return true;
-  }
-
-  public boolean verifySnapshot( String tableName, String snapshotName)
-      throws IOException
-  {
-      Admin admin = connection.getAdmin();
-      List<SnapshotDescription>  lstSnaps = admin.listSnapshots();
-      try 
-      {
-      for (SnapshotDescription snpd : lstSnaps) 
-      {
-        if (snpd.getName().compareTo(snapshotName) == 0 && 
-            snpd.getTable().compareTo(tableName) == 0)
-        {
-          if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.verifySnapshot() - Snapshot verified: " + snapshotName);
-          return true;
-        }
-      }
-      } finally {
-        admin.close();
-      }
-    return false;
-  }
- 
-  public boolean deleteSnapshot( String snapshotName)
-      throws MasterNotRunningException, IOException, SnapshotCreationException, 
-             InterruptedException, ZooKeeperConnectionException, ServiceException
-  {
-      Admin admin = connection.getAdmin();
-      admin.deleteSnapshot(snapshotName);
-      admin.close();
-      if (logger.isDebugEnabled()) logger.debug("SequenceFileWriter.deleteSnapshot() - Snapshot deleted: " + snapshotName);
-      return true;
-  }
-
 }

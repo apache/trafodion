@@ -39,8 +39,8 @@ CXX		= $(GCC_TOOL_ROOT)/bin/g++
 MPICC		= $(MPI_ROOT)/bin/mpicc
 
 # export
-EXPROOT		= $(MY_SQROOT)/export
-INCMONDIR	= $(MY_SQROOT)/monitor/linux
+EXPROOT		= $(TRAF_HOME)/export
+INCMONDIR	= $(TRAF_HOME)/monitor/linux
 BINEXPDIR	= $(EXPROOT)/bin$(SQ_MBTYPE)
 INCEXPDIR	= $(EXPROOT)/include
 LIBEXPDIR	= $(EXPROOT)/lib$(SQ_MBTYPE)

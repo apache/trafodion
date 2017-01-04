@@ -2735,7 +2735,7 @@ DisjunctArray * BiRelat::mdamTreeWalk()
 // The following method determines whether a predicate is capable of
 // discarding null augmented rows produced by a left join.
 // -----------------------------------------------------------------------
-NABoolean Like::predicateEliminatesNullAugmentedRows(NormWA & normWARef,
+NABoolean PatternMatchingFunction::predicateEliminatesNullAugmentedRows(NormWA & normWARef,
                                             ValueIdSet & outerReferences)
 {
   NABoolean returnValue = FALSE;

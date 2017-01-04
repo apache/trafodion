@@ -278,36 +278,6 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   return result;
 }
 
-NABoolean HbaseAccess::columnEnabledForSerialization(ItemExpr * colNode)
-{
-  NAColumn *nac = NULL;
-  if (colNode->getOperatorType() == ITM_BASECOLUMN)
-    {
-      nac = ((BaseColumn*)colNode)->getNAColumn();
-    }
-  else if (colNode->getOperatorType() == ITM_INDEXCOLUMN)
-    {
-      nac = ((IndexColumn*)colNode)->getNAColumn();
-    }
-
-  return CmpSeabaseDDL::enabledForSerialization(nac);
-}
-
-NABoolean HbaseAccess::isEncodingNeededForSerialization(ItemExpr * colNode)
-{
-  NAColumn *nac = NULL;
-  if (colNode->getOperatorType() == ITM_BASECOLUMN)
-    {
-      nac = ((BaseColumn*)colNode)->getNAColumn();
-    }
-  else if (colNode->getOperatorType() == ITM_INDEXCOLUMN)
-    {
-      nac = ((IndexColumn*)colNode)->getNAColumn();
-    }
-
-  return CmpSeabaseDDL::isEncodingNeededForSerialization(nac);
-}
-
 int HbaseAccess::createAsciiColAndCastExpr2(Generator * generator,
 					    ItemExpr * colNode,
 					    const NAType &givenType,
@@ -342,6 +312,86 @@ int HbaseAccess::createAsciiColAndCastExpr2(Generator * generator,
     }
   
   return 1;
+}
+
+int HbaseAccess::createAsciiColAndCastExpr3(Generator * generator,
+					    const NAType &givenType,
+					    ItemExpr *&asciiValue,
+					    ItemExpr *&castValue)
+{
+  asciiValue = NULL;
+  castValue = NULL;
+  CollHeap * h = generator->wHeap();
+
+  // if this is an upshifted datatype, remove the upshift attr.
+  // We dont want to upshift data during retrievals or while building keys.
+  // Data is only upshifted during insert or updates.
+  const NAType * newGivenType = &givenType;
+  if (newGivenType->getTypeQualifier() == NA_CHARACTER_TYPE &&
+      ((CharType *)newGivenType)->isUpshifted())
+    {
+      newGivenType = newGivenType->newCopy(h);
+      ((CharType*)newGivenType)->setUpshifted(FALSE);
+    }
+
+  NAType *asciiType = NULL;
+
+  // source data is in string format.
+  // Use cqd to determine max len of source if source type is not string.
+  // If cqd is not set, use displayable length for the given datatype.
+  Lng32 cvl = 0;
+  if (NOT (DFS2REC::isAnyCharacter(newGivenType->getFSDatatype())))
+    {
+      cvl = 
+        (Lng32) CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_VAL_LENGTH);
+      if (cvl <= 0)
+        {
+          // compute col val length
+          cvl = newGivenType->getDisplayLength();
+        }
+    }
+  else
+    {
+      cvl = newGivenType->getNominalSize();
+    }
+
+  asciiType = new (h) SQLVarChar(cvl, newGivenType->supportsSQLnull());
+
+  //  asciiValue = new (h) NATypeToItem(newGivenType->newCopy(h));
+  asciiValue = new (h) NATypeToItem(asciiType);
+  castValue = new(h) Cast(asciiValue, newGivenType); 
+
+  return 1;
+}
+
+NABoolean HbaseAccess::columnEnabledForSerialization(ItemExpr * colNode)
+{
+  NAColumn *nac = NULL;
+  if (colNode->getOperatorType() == ITM_BASECOLUMN)
+    {
+      nac = ((BaseColumn*)colNode)->getNAColumn();
+    }
+  else if (colNode->getOperatorType() == ITM_INDEXCOLUMN)
+    {
+      nac = ((IndexColumn*)colNode)->getNAColumn();
+    }
+
+  return CmpSeabaseDDL::enabledForSerialization(nac);
+}
+
+NABoolean HbaseAccess::isEncodingNeededForSerialization(ItemExpr * colNode)
+{
+  NAColumn *nac = NULL;
+  if (colNode->getOperatorType() == ITM_BASECOLUMN)
+    {
+      nac = ((BaseColumn*)colNode)->getNAColumn();
+    }
+  else if (colNode->getOperatorType() == ITM_INDEXCOLUMN)
+    {
+      nac = ((IndexColumn*)colNode)->getNAColumn();
+    }
+
+  return CmpSeabaseDDL::isEncodingNeededForSerialization(nac);
 }
 
 short FileScan::genForTextAndSeq(Generator * generator,
@@ -1636,7 +1686,8 @@ short HbaseAccess::genRowIdExpr(Generator * generator,
 				ULng32 &rowIdAsciiRowLen,
 				ExpTupleDesc* &rowIdAsciiTupleDesc,
 				UInt32 &rowIdLength,
-				ex_expr* &rowIdExpr)
+				ex_expr* &rowIdExpr,
+                                NABoolean encodeKeys)
 {
   Space * space          = generator->getSpace();
   ExpGenerator * expGen = generator->getExpGenerator();
@@ -1671,7 +1722,8 @@ short HbaseAccess::genRowIdExpr(Generator * generator,
 	  rowIdAsciiVids.insert(asciiVal->getValueId());
 	  
 	  ItemExpr * ie = castVal;
-	  if (givenType.getVarLenHdrSize() > 0)
+	  if ((givenType.getVarLenHdrSize() > 0) &&
+              (encodeKeys))
 	    {
 	      // Explode varchars by moving them to a fixed field
 	      // whose length is equal to the max length of varchar.
@@ -1692,21 +1744,24 @@ short HbaseAccess::genRowIdExpr(Generator * generator,
 	  NABoolean descFlag = TRUE;
 	  if (keyColumns.isAscending(i))
 	    descFlag = FALSE;
-	  ie = new(generator->wHeap())
-	    CompEncode(ie, descFlag);
-	  
+          if (encodeKeys)
+            {
+              ie = new(generator->wHeap())
+                CompEncode(ie, descFlag);
+            }
+
 	  ie->bindNode(generator->getBindWA());
 	  keyConvVIDList.insert(ie->getValueId());
 	} // for
       
       expGen->processValIdList(
-			       rowIdAsciiVids,                             // [IN] ValueIdList
-			       ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			       rowIdAsciiRowLen,                        // [OUT] tuple length 
-			       work_atp,                                      // [IN] atp number
-			       rowIdAsciiTuppIndex,                    // [IN] index into atp
-			       &rowIdAsciiTupleDesc,                  // [optional OUT] tuple desc
-			       ExpTupleDesc::LONG_FORMAT);    // [optional IN] desc format
+           rowIdAsciiVids,                             // [IN] ValueIdList
+           ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+           rowIdAsciiRowLen,                        // [OUT] tuple length 
+           work_atp,                                      // [IN] atp number
+           rowIdAsciiTuppIndex,                    // [IN] index into atp
+           &rowIdAsciiTupleDesc,                  // [optional OUT] tuple desc
+           ExpTupleDesc::LONG_FORMAT);    // [optional IN] desc format
       
       work_cri_desc->setTupleDescriptor(rowIdAsciiTuppIndex, rowIdAsciiTupleDesc);
       
@@ -1784,13 +1839,13 @@ short HbaseAccess::genRowIdExprForNonSQ(Generator * generator,
 	} // for
       
       expGen->processValIdList(
-			       rowIdAsciiVids,                             // [IN] ValueIdList
-			       ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
-			       rowIdAsciiRowLen,                        // [OUT] tuple length 
-			       work_atp,                                      // [IN] atp number
-			       rowIdAsciiTuppIndex,                    // [IN] index into atp
-			       &rowIdAsciiTupleDesc,                  // [optional OUT] tuple desc
-			       ExpTupleDesc::LONG_FORMAT);    // [optional IN] desc format
+           rowIdAsciiVids,                             // [IN] ValueIdList
+           ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+           rowIdAsciiRowLen,                        // [OUT] tuple length 
+           work_atp,                                      // [IN] atp number
+           rowIdAsciiTuppIndex,                    // [IN] index into atp
+           &rowIdAsciiTupleDesc,                  // [optional OUT] tuple desc
+           ExpTupleDesc::LONG_FORMAT);    // [optional IN] desc format
       
       work_cri_desc->setTupleDescriptor(rowIdAsciiTuppIndex, rowIdAsciiTupleDesc);
       
@@ -2015,7 +2070,14 @@ short HbaseAccess::createHbaseColId(const NAColumn * nac,
     cid = SEABASE_DEFAULT_COL_FAMILY;
   cid += ":";
 
-  if (nac)
+  if (nac && nac->getNATable() && nac->getNATable()->isHbaseMapTable())
+    {
+      char * colQualPtr = (char*)nac->getColName().data();
+      Lng32 colQualLen = nac->getHbaseColQual().length();
+
+      cid.append(colQualPtr, colQualLen);
+    }
+  else if (nac)
     {
       char * colQualPtr = (char*)nac->getHbaseColQual().data();
       Lng32 colQualLen = nac->getHbaseColQual().length();
@@ -2365,6 +2427,7 @@ short HbaseAccess::codeGen(Generator * generator)
     hasAddedColumns = TRUE;
 
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+  NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
 
   // If CIF is not OFF use aligned format, except when table is
   // not aligned and it has added columns. Support for added columns
@@ -2387,7 +2450,6 @@ short HbaseAccess::codeGen(Generator * generator)
 		       searchKey(),
 		       getMdamKeyPtr(),
 		       reverseScan,
-		       0,
 		       ExpTupleDesc::SQLMX_KEY_FORMAT);
 
   const ValueIdList &retColumnList = retColRefSet_; 
@@ -2397,7 +2459,8 @@ short HbaseAccess::codeGen(Generator * generator)
   char * snapshotName = NULL;
   LatestSnpSupportEnum  latestSnpSupport=  latest_snp_supported;
   if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
-      (getTableDesc()->getNATable()->isHbaseCellTable()))
+      (getTableDesc()->getNATable()->isHbaseCellTable()) ||
+      (getTableName().getQualifiedNameObj().isHbaseMappedName()))
     {
       tablename =
         space->AllocateAndCopyToAlignedSpace(
@@ -2428,7 +2491,8 @@ short HbaseAccess::codeGen(Generator * generator)
 
   ValueIdList columnList;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
-      (NOT isAlignedFormat))
+      (NOT isAlignedFormat) &&
+      (NOT isHbaseMapFormat))
     sortValues(retColumnList, columnList,
 	       (getIndexDesc()->getNAFileSet()->getKeytag() != 0));
   else
@@ -2486,15 +2550,31 @@ short HbaseAccess::codeGen(Generator * generator)
      ItemExpr *asciiValue = NULL;
      ItemExpr *castValue = NULL;
      
-     res = createAsciiColAndCastExpr2(
-				     generator,        // for heap
-				     col_node,
-				     givenType,         // [IN] Actual type of HDFS column
-				     asciiValue,         // [OUT] Returned expression for ascii rep.
-				     castValue,        // [OUT] Returned expression for binary rep.
-                                     isAlignedFormat
-				     );
-     
+     if ((isHbaseMapFormat) && 
+         (getTableDesc()->getNATable()->isHbaseDataFormatString()))
+       {
+         res = createAsciiColAndCastExpr3
+           (
+                generator,       // for heap
+                givenType,       // [IN] Actual type of column
+                asciiValue,      // [OUT] Returned expression for ascii rep.
+                castValue        // [OUT] Returned expression for binary rep.
+            );
+
+       }
+     else
+       {
+         res = createAsciiColAndCastExpr2
+           (
+                generator,       // for heap
+                col_node,
+                givenType,       // [IN] Actual type of HDFS column
+                asciiValue,      // [OUT] Returned expression for ascii rep.
+                castValue,       // [OUT] Returned expression for binary rep.
+                isAlignedFormat
+            );
+       }
+
      GenAssert(res == 1 && castValue != NULL,
 	       "Error building expression tree for cast output value");
      if (asciiValue)
@@ -2690,6 +2770,7 @@ short HbaseAccess::codeGen(Generator * generator)
     }
 
   Queue * listOfFetchedColNames = NULL;
+  char * pkeyColName = NULL;
   if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
       (isAlignedFormat))
     {
@@ -2707,7 +2788,8 @@ short HbaseAccess::codeGen(Generator * generator)
       
       listOfFetchedColNames->insert(colNameInList);
     }
-  else if (getTableDesc()->getNATable()->isSeabaseTable())
+  else if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
+           (NOT isHbaseMapFormat))
     {
       listOfFetchedColNames = new(space) Queue(space);
 
@@ -2750,6 +2832,47 @@ short HbaseAccess::codeGen(Generator * generator)
 	      cnInList += cn;
 	      colNameInList = 
 		space->AllocateAndCopyToAlignedSpace(cnInList, 0);
+	    }
+	  
+	  listOfFetchedColNames->insert(colNameInList);
+	}
+    }
+  else if ((getTableDesc()->getNATable()->isSeabaseTable()) &&
+           (isHbaseMapFormat))
+    {
+      listOfFetchedColNames = new(space) Queue(space);
+
+      for (CollIndex c = 0; c < numColumns; c++)
+	{
+	  ItemExpr * col_node = ((columnList[c]).getValueDesc())->getItemExpr();
+
+	  NAString cnInList;
+	  char * colNameInList = NULL;
+	  if ((col_node->getOperatorType() == ITM_BASECOLUMN) ||
+              (col_node->getOperatorType() == ITM_INDEXCOLUMN))
+	    {
+	      const NAColumn *nac = NULL;
+              if (col_node->getOperatorType() == ITM_BASECOLUMN)
+		nac = ((BaseColumn*)col_node)->getNAColumn();
+              else
+                nac = ((IndexColumn*)col_node)->getNAColumn();
+
+              cnInList = nac->getHbaseColFam();
+              cnInList += ":";
+              cnInList += nac->getColName();
+
+              short len = cnInList.length();
+              cnInList.prepend((char*)&len, sizeof(short));
+	      colNameInList = 
+		space->AllocateAndCopyToAlignedSpace(cnInList, 0);
+
+              if ((nac->isPrimaryKey()) &&
+                  (getTableDesc()->getNATable()->isHbaseDataFormatString()))
+                pkeyColName = colNameInList;
+	    }
+	  else if (col_node->getOperatorType() == ITM_REFERENCE)
+	    {
+              GenAssert(0, "HbaseAccess::codeGen. Should not reach here.");
 	    }
 	  
 	  listOfFetchedColNames->insert(colNameInList);
@@ -2843,6 +2966,12 @@ short HbaseAccess::codeGen(Generator * generator)
 
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
+      // dont encode keys for hbase mapped tables since these tables
+      // could be populated from outside of traf.
+      NABoolean encodeKeys = TRUE;
+      if (getTableDesc()->getNATable()->isHbaseMapTable())
+        encodeKeys = FALSE;
+
       genRowIdExpr(generator,
 		   getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
 		   getHbaseSearchKeys(), 
@@ -2850,7 +2979,8 @@ short HbaseAccess::codeGen(Generator * generator)
 		   rowIdAsciiTuppIndex, rowIdTuppIndex,
 		   rowIdAsciiRowLen, rowIdAsciiTupleDesc,
 		   rowIdLength, 
-		   rowIdExpr);
+		   rowIdExpr,
+                   encodeKeys);
     }
   else
     {
@@ -3083,7 +3213,9 @@ short HbaseAccess::codeGen(Generator * generator)
 		      samplePercent(),
 		      snapAttrs,
 
-                      hbo
+                      hbo,
+
+                      pkeyColName
 		      );
 
   generator->initTdbFields(hbasescan_tdb);
@@ -3100,6 +3232,14 @@ short HbaseAccess::codeGen(Generator * generator)
 
       if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
+
+      if (isHbaseMapFormat)
+        {
+          hbasescan_tdb->setHbaseMapTable(TRUE);
+
+          if (getTableDesc()->getNATable()->getClusteringIndex()->hasSingleColVarcharKey())
+            hbasescan_tdb->setKeyInVCformat(TRUE);
+        }
 
       if (getTableDesc()->getNATable()->isEnabledForDDLQI())
         generator->objectUids().insert(
@@ -3203,7 +3343,6 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
 		       searchKey(),
 		       getMdamKeyPtr(),
 		       reverseScan,
-		       0,
 		       ExpTupleDesc::SQLMX_KEY_FORMAT);
 
   //  const ValueIdList &retColumnList = getIndexDesc()->getIndexColumns();

@@ -267,3 +267,107 @@ Int32 updateAppendBufferToLob(CliGlobals *cliglob, char *tableName, char *column
   return retcode;
 
 }
+
+
+Int32 updateBufferToLobHandle(CliGlobals *cliglob,char *handle)
+{
+  Int32 retcode = 0;
+  ExeCliInterface cliInterface((cliglob->currContext())->exHeap(), (Int32)SQLCHARSETCODE_UTF8, cliglob->currContext(),NULL);
+  // update lob data into via a buffer.
+  char * query = new char [500];
+  
+ 
+  char statusBuf[200] = {'\0'};
+  Int32 statusBufLen = 0;
+  Int64 lobUpdateLen = 50;
+  char *lobDataBuf = new char[lobUpdateLen];
+  memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
+  str_sprintf(query,"update lob (LOB '%s' , LOCATION %Ld, SIZE %Ld)", handle, (Int64)lobDataBuf, lobUpdateLen);
+ 
+ 
+  retcode = cliInterface.executeImmediate(query);
+  if (retcode <0)
+    {
+      cliInterface.executeImmediate("rollback work");
+      delete query;
+      delete lobDataBuf;
+      return retcode;
+    }
+
+  retcode = cliInterface.executeImmediate("commit work");
+  delete query;
+  delete lobDataBuf;
+    
+
+  return retcode;
+
+}
+
+Int32 updateAppendBufferToLobHandle(CliGlobals *cliglob,char *handle)
+{
+  Int32 retcode = 0;
+  ExeCliInterface cliInterface((cliglob->currContext())->exHeap(), (Int32)SQLCHARSETCODE_UTF8, cliglob->currContext(),NULL);
+  // update lob data into via a buffer.
+  char * query = new char [500];
+  
+ 
+  char statusBuf[200] = {'\0'};
+  Int32 statusBufLen = 0;
+  Int64 lobUpdateLen = 50;
+  char *lobDataBuf = new char[lobUpdateLen];
+  memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
+  str_sprintf(query,"update lob (LOB '%s' , LOCATION %Ld, SIZE %Ld,append )", handle, (Int64)lobDataBuf, lobUpdateLen);
+ 
+ 
+  retcode = cliInterface.executeImmediate(query);
+  if (retcode <0)
+    {
+      cliInterface.executeImmediate("rollback work");
+      delete query;
+      delete lobDataBuf;
+      return retcode;
+    }
+
+  retcode = cliInterface.executeImmediate("commit work");
+  delete query;
+  delete lobDataBuf;
+    
+
+  return retcode;
+
+}
+
+
+Int32 updateTruncateLobHandle(CliGlobals *cliglob,char *handle)
+{
+  Int32 retcode = 0;
+  ExeCliInterface cliInterface((cliglob->currContext())->exHeap(), (Int32)SQLCHARSETCODE_UTF8, cliglob->currContext(),NULL);
+  // update lob data into via a buffer.
+  char * query = new char [500];
+  
+ 
+  char statusBuf[200] = {'\0'};
+  Int32 statusBufLen = 0;
+  Int64 lobUpdateLen = 50;
+  char *lobDataBuf = new char[lobUpdateLen];
+  memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
+  str_sprintf(query,"update lob (LOB '%s' , empty_blob())", handle, (Int64)lobDataBuf, lobUpdateLen);
+ 
+ 
+  retcode = cliInterface.executeImmediate(query);
+  if (retcode <0)
+    {
+      cliInterface.executeImmediate("rollback work");
+      delete query;
+      delete lobDataBuf;
+      return retcode;
+    }
+
+  retcode = cliInterface.executeImmediate("commit work");
+  delete query;
+  delete lobDataBuf;
+    
+
+  return retcode;
+
+}

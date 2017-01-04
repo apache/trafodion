@@ -292,4 +292,32 @@ private:
 
 }; // class ElemDDLLikeLimitColumnLength
 
+// -----------------------------------------------------------------------
+// definition of class ElemDDLLikeOptWithoutRowFormat
+// -----------------------------------------------------------------------
+class ElemDDLLikeOptWithoutRowFormat : public ElemDDLLikeOpt
+{
+
+public:
+
+  // constructor
+  ElemDDLLikeOptWithoutRowFormat()
+    : ElemDDLLikeOpt(ELM_LIKE_OPT_WITHOUT_ROW_FORMAT_ELEM)
+  { }
+
+  // virtual destructor
+  virtual ~ElemDDLLikeOptWithoutRowFormat();
+
+  // cast
+  virtual ElemDDLLikeOptWithoutRowFormat *
+    castToElemDDLLikeOptWithoutRowFormat();
+
+  // method for tracing
+  virtual const NAString getText() const;
+
+
+private:
+
+}; // class ElemDDLLikeOptWithoutRowFormat
+
 #endif // ELEMDDLLIKEOPTIONS_H

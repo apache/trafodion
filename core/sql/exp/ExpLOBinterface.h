@@ -77,7 +77,7 @@ enum ExpLOBinterfaceInputFlags
     ERROR_IF_TGT_FILE_EXISTS_ =  0x0004
   };
 
-Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, void *currContext,NABoolean isHive=FALSE, char *hdfsServer="default", Int32 port=0);
+Lng32 ExpLOBinterfaceInit(void *& lobGlob, void * lobHeap, void *currContext,NABoolean isHiveRead, char *hdfsServer="default", Int32 port=0);
 
 Lng32 ExpLOBinterfaceCleanup(void *& lobGlob, void * lobHeap);
 

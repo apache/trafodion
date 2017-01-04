@@ -20,7 +20,7 @@
 // @@@ END COPYRIGHT @@@
 
 /*
-  gcc -g -m32 -I$MY_SQROOT/../sql/sqludr -I$MY_SQROOT/../sql/cli \
+  gcc -g -m32 -I$TRAF_HOME/../sql/sqludr -I$TRAF_HOME/../sql/cli \
    -shared -o tvudf.so tvudf.c
  */
 #include <stdio.h>

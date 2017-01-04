@@ -690,6 +690,7 @@ short HbaseDelete::codeGen(Generator * generator)
   NABoolean returnRow = getReturnRow(this, getIndexDesc());
 
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+  NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
 
   ExpTupleDesc::TupleDataFormat asciiRowFormat = 
     (isAlignedFormat ?
@@ -735,7 +736,6 @@ short HbaseDelete::codeGen(Generator * generator)
 		       getSearchKey(),
 		       NULL, //getMdamKeyPtr(),
 		       FALSE,
-		       0,
 		       ExpTupleDesc::SQLMX_KEY_FORMAT);
 
   UInt32 keyColValLen = 0;
@@ -964,6 +964,12 @@ short HbaseDelete::codeGen(Generator * generator)
   ULng32 rowIdLength = 0;
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
+      // dont encode keys for hbase mapped tables since these tables
+      // could be populated from outside of traf.
+      NABoolean encodeKeys = TRUE;
+      if (getTableDesc()->getNATable()->isHbaseMapTable())
+        encodeKeys = FALSE;
+
       HbaseAccess::genRowIdExpr(generator,
 				getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
 				getHbaseSearchKeys(), 
@@ -971,7 +977,8 @@ short HbaseDelete::codeGen(Generator * generator)
 				rowIdAsciiTuppIndex, rowIdTuppIndex,
 				rowIdAsciiRowLen, rowIdAsciiTupleDesc,
 				rowIdLength, 
-				rowIdExpr);
+				rowIdExpr,
+                                encodeKeys);
     }
   else
     {
@@ -1076,7 +1083,8 @@ short HbaseDelete::codeGen(Generator * generator)
 
   char * tablename = NULL;
   if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
-      (getTableDesc()->getNATable()->isHbaseCellTable()))
+      (getTableDesc()->getNATable()->isHbaseCellTable()) ||
+      (getTableName().getQualifiedNameObj().isHbaseMappedName()))
     {
       if (getIndexDesc() && getIndexDesc()->getNAFileSet())
 	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName().getObjectName()), 0);
@@ -1196,6 +1204,14 @@ short HbaseDelete::codeGen(Generator * generator)
 
       if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
+
+      if (isHbaseMapFormat)
+        {
+          hbasescan_tdb->setHbaseMapTable(TRUE);
+
+          if (getTableDesc()->getNATable()->getClusteringIndex()->hasSingleColVarcharKey())
+            hbasescan_tdb->setKeyInVCformat(TRUE);
+        }
 
       if ((CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON) &&
 	  (NOT noCheck()))
@@ -1361,7 +1377,6 @@ short HbaseUpdate::codeGen(Generator * generator)
 		       getSearchKey(),
 		       NULL, //getMdamKeyPtr(),
 		       FALSE,
-		       0,
 		       ExpTupleDesc::SQLMX_KEY_FORMAT);
 
   UInt32 keyColValLen = 0;
@@ -1606,6 +1621,12 @@ short HbaseUpdate::codeGen(Generator * generator)
   ULng32 rowIdLength = 0;
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
+      // dont encode keys for hbase mapped tables since these tables
+      // could be populated from outside of traf.
+      NABoolean encodeKeys = TRUE;
+      if (getTableDesc()->getNATable()->isHbaseMapTable())
+        encodeKeys = FALSE;
+
       HbaseAccess::genRowIdExpr(generator,
 				getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
 				getHbaseSearchKeys(), 
@@ -1613,7 +1634,8 @@ short HbaseUpdate::codeGen(Generator * generator)
 				rowIdAsciiTuppIndex, rowIdTuppIndex,
 				rowIdAsciiRowLen, rowIdAsciiTupleDesc,
 				rowIdLength, 
-				rowIdExpr);
+				rowIdExpr,
+                                encodeKeys);
    }
   else
     {
@@ -2187,6 +2209,7 @@ short HbaseInsert::codeGen(Generator *generator)
   Queue *listOfOmittedColNames = NULL;
 
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+  NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
 
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
   {
@@ -2215,13 +2238,24 @@ short HbaseInsert::codeGen(Generator *generator)
       colArray.insert( col );
 
       if (returnRow)
-           returnRowVIDList.insert(tgtValueId);
+        returnRowVIDList.insert(tgtValueId);
 
       ItemExpr * child1Expr = assignExpr->child(1);
       const NAType &givenType = tgtValueId.getType();
       
       ItemExpr * ie = new(generator->wHeap())
 	Cast(child1Expr, &givenType);
+
+      if ((isHbaseMapFormat) &&
+          (getTableDesc()->getNATable()->isHbaseDataFormatString()) &&
+          (NOT (DFS2REC::isAnyCharacter(givenType.getFSDatatype()))))
+        {
+          Lng32 cvl = givenType.getDisplayLength();
+
+          NAType * asciiType = 
+            new (generator->wHeap()) SQLVarChar(cvl, givenType.supportsSQLnull());
+          ie = new(generator->wHeap()) Cast(ie, asciiType);
+        }
 
       if ((NOT isAlignedFormat) && HbaseAccess::isEncodingNeededForSerialization
 	  (assignExpr->child(0)->castToItemExpr()))
@@ -2459,10 +2493,22 @@ short HbaseInsert::codeGen(Generator *generator)
           const NAColumn * nac = colArray[c];
           
           NAString cnInList;
-          HbaseAccess::createHbaseColId(nac, cnInList,
-                                        (getIndexDesc()->getNAFileSet()->getKeytag() != 0));
-          
-          if (this->getIsTrafLoadPrep())
+          if (isHbaseMapFormat)
+            {
+              cnInList = nac->getHbaseColFam();
+              cnInList += ":";
+              cnInList += nac->getColName();
+
+              short len = cnInList.length();
+              cnInList.prepend((char*)&len, sizeof(short));
+            }
+          else
+            {
+              HbaseAccess::createHbaseColId(nac, cnInList,
+                                            (getIndexDesc()->getNAFileSet()->getKeytag() != 0));
+            }
+
+          if (getIsTrafLoadPrep())
             {
               UInt32 pos = (UInt32)c +1;
               cnInList.prepend((char*)&pos, sizeof(UInt32));
@@ -2611,7 +2657,8 @@ short HbaseInsert::codeGen(Generator *generator)
   }
   char * tablename = NULL;
   if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
-      (getTableDesc()->getNATable()->isHbaseCellTable()))
+      (getTableDesc()->getNATable()->isHbaseCellTable()) ||
+      (getTableName().getQualifiedNameObj().isHbaseMappedName()))
     {
       tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getIndexName().getObjectName()), 0);
     }
@@ -2736,6 +2783,14 @@ short HbaseInsert::codeGen(Generator *generator)
 
       if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
+
+      if (isHbaseMapFormat)
+        {
+          hbasescan_tdb->setHbaseMapTable(TRUE);
+          
+          if (getTableDesc()->getNATable()->getClusteringIndex()->hasSingleColVarcharKey())
+            hbasescan_tdb->setKeyInVCformat(TRUE);
+        }
 
       if (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON)
 	hbasescan_tdb->setHbaseSqlIUD(TRUE);

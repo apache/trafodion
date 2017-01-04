@@ -2079,6 +2079,7 @@ TrafDesc * Generator::createVirtualTableDesc
 	  
 	  curr_constr_desc->constrntsDesc()->check_constrnts_desc = NULL;
 	  curr_constr_desc->constrntsDesc()->setEnforced(constrInfo[i].isEnforced);
+	  curr_constr_desc->constrntsDesc()->setNotSerialized(constrInfo[i].notSerialized);
 
 	  switch (constrInfo[i].constrType)
 	    {

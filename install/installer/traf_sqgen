@@ -28,14 +28,14 @@ STARTING_NODE=$(hostname)
 
 #==========================================
 echo "***INFO: starting sqgen" | tee -a $INSTALL_LOG
-cd $SQ_ROOT/sql/scripts
+cd $TRAF_HOME/sql/scripts
 
 #If sqconfig.db exists remove it and then sqgen can be run
-if [[ -e $SQ_ROOT/sql/scripts/sqconfig.db ]]; then
-   $TRAF_PDSH rm -rf $SQ_ROOT/sql/scripts/sqconfig.db
+if [[ -e $TRAF_HOME/sql/scripts/sqconfig.db ]]; then
+   $TRAF_PDSH rm -rf $TRAF_HOME/sql/scripts/sqconfig.db
 fi
 
-$SQ_ROOT/sql/scripts/sqgen
+$TRAF_HOME/sql/scripts/sqgen
 SQGEN_RC=$?
 if [ "$SQGEN_RC" != "0" ]; then
     echo "***ERROR: sqgen failed with RC=$SQGEN_RC. Check install log file for details." | tee -a $INSTALL_LOG
@@ -54,7 +54,7 @@ fi
 if [ "$all_node_count" -ne "1" ]; then
    
    echo "***INFO: copying install to all nodes" | tee -a $INSTALL_LOG
-   $PDCP $ALL_NODES -x $HOSTNAME -r $SQ_ROOT $SQ_ROOT/..
+   $PDCP $ALL_NODES -x $HOSTNAME -r $TRAF_HOME $TRAF_HOME/..
 
    if [ "$?" != "0" ]; then
       echo "***ERROR: Unable to copy Trafodion install to all machines in this cluster.  Check install log files for details." | tee -a $INSTALL_LOG

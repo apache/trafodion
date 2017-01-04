@@ -851,7 +851,8 @@ enum SQLATTR_SUBQUERY_TYPE
   SQL_STMT_HBASE_LOAD = 6,
   SQL_STMT_HBASE_UNLOAD = 7,
   /* Used to denote lob access */
-  SQL_LOB_EXTRACT = 8
+  SQL_LOB_EXTRACT = 8,
+  SQL_LOB_UPDATE_UTIL = 9
 };
 
 
