@@ -965,7 +965,10 @@ short BEGINTX(int *pp_tag, int pv_timeout, int64 pv_type_flags)
 void DEALLOCATE_ERR(char *&errStr)
 {
   if(errStr)
+  {
     delete errStr;
+    errStr = NULL;
+  }
 }
 
 //--------------------------------------------------------------------

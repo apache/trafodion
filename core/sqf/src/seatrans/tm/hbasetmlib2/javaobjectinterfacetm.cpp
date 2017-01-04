@@ -422,6 +422,15 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv, short *errCode)
       set_error_msg(error_msg);
       return false;
    }
+   
+   if(!jenv->ExceptionCheck())
+   {
+     //jenv_->ExceptionCheck() is a light weight call
+     //to determine exception exists. Return here if 
+     //no exception object to probe.
+     return false;
+   }
+   
    if (gThrowableClass == NULL)
    {
       jenv->ExceptionDescribe();
@@ -429,6 +438,7 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv, short *errCode)
       set_error_msg(error_msg);
       return false;
    }
+   
    jthrowable a_exception = jenv->ExceptionOccurred();
    if (a_exception == NULL)
    {
@@ -509,6 +519,10 @@ short JavaObjectInterfaceTM::getExceptionErrorCode(JNIEnv *jenv, jthrowable a_ex
     {
       errCode =(jshort) jenv->CallShortMethod(a_exception,
                                               gGetErrorCodeMethodID);
+      if(jenv->ExceptionCheck())
+      {
+        jenv->ExceptionClear();
+      }
     }
   }
   return errCode;

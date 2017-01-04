@@ -644,7 +644,7 @@ public class TransactionManager {
                 retry = true;
              }
              else if(result.size() == 1){
-               LOG.info("doPrepareX(MVCC), received result size: " + result.size() + " for transaction "
+               if(LOG.isInfoEnabled()) LOG.info("doPrepareX(MVCC), received result size: " + result.size() + " for transaction "
                    + transactionId + " participantNum " + participantNum + " Location " + location.getRegionInfo().getRegionNameAsString());
                 // size is 1
                 for (CommitRequestResponse cresponse : result.values()){
