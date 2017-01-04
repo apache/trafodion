@@ -468,7 +468,8 @@ struct hive_skey_desc* populateSortCols(HiveMetaData *md, Int32 sdID,
                   "populateSortCols::sortCols:],###"))
     return NULL;
   
-  
+  if ((foundE - pos)<=10) //this is important to avoid major performance impact when looking for non existent Order(col over and over, parsing to the end of string. hot spot flagged using gprof
+    return NULL;
   Int32 colIdx = 0;
   while (pos < foundE)
     {
