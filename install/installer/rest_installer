@@ -93,25 +93,10 @@ fi
 mkdir -p $REST_INSTALL_PATH
 cd $REST_INSTALL_PATH
 
-if [[ "$ONE_TAR_INSTALL" == "Y" ]]; then
-   REST_DIR=$(ls $TRAF_HOME | grep rest)
-   REST_DIR=$TRAF_HOME/$REST_DIR
-   echo "***INFO: Rest Install Directory: $REST_DIR"
+REST_DIR=$(ls $TRAF_HOME | grep rest)
+REST_DIR=$TRAF_HOME/$REST_DIR
+echo "***INFO: Rest Install Directory: $REST_DIR"
 
-else
-   # untar REST build into install directory
-   echo "***INFO: untarring build file $REST_BUILD_FILE"
-   tar -xzf $REST_BUILD_FILE
-
-   # get the REST install directory name which is imbedded in the tar file
-   REST_DIR=$(tar -tf $REST_BUILD_FILE | grep --max-count=1 bin | sed -e "s@\(^.*\)/bin/@\1@")
-   REST_DIR=$REST_INSTALL_PATH/$REST_DIR
-fi
-
-# set env var in sqenvcom.sh for DCS install directory
-grep --invert-match "REST_INSTALL_DIR=" $TRAF_HOME/sqenvcom.sh > $TRAF_HOME/sqenvcom.temp
-echo "export REST_INSTALL_DIR=$REST_DIR" >> $TRAF_HOME/sqenvcom.temp
-mv $TRAF_HOME/sqenvcom.temp $TRAF_HOME/sqenvcom.sh
 
 cd $REST_DIR/conf
 

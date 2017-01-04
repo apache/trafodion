@@ -1,4 +1,5 @@
-#!/bin/sh
+# Trafodion permissions
+
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,28 +21,12 @@
 #
 # @@@ END COPYRIGHT @@@
 
-if [[ $# -gt 0 ]]; then
-  echo
-  echo "This wrapper script(trafci) does not accept any arguments."
-  echo "Please use trafci.sh for command line arguments"
-  echo
-  exit 1
-fi
+## Allow trafodion id to run commands needed for backup and restore
+trafodion ALL =(hbase) NOPASSWD: /usr/bin/hbase
 
-if [[ -r $DCS_INSTALL_DIR/bin/dcs-config.sh ]]
-then
-  source $DCS_INSTALL_DIR/bin/dcs-config.sh
-fi
-if [[ -n $DCS_MASTER_FLOATING_IP ]]
-then
-  MASTER_NODE=$DCS_MASTER_FLOATING_IP
-elif [[ -r $DCS_PRIMARY_MASTER ]]
-then
-  MASTER_NODE=$(cat $DCS_PRIMARY_MASTER)
-fi
+## Trafodion Floating IP commands
+Cmnd_Alias IP = /sbin/ip
+Cmnd_Alias ARP = /sbin/arping
 
-HNAME="${MASTER_NODE:-localhost}:${DCS_MASTER_PORT:-23400}"
-UNAME=zz
-PWORD=zz
-
-$TRAF_HOME/trafci/bin/trafci.sh -h $HNAME -u $UNAME -p $PWORD
+## Allow Trafodion id to run commands needed to configure floating IP
+trafodion ALL = NOPASSWD: IP, ARP
