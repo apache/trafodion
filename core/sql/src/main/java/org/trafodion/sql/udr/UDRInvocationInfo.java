@@ -62,7 +62,14 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
          * This allows the compiler to parallelize execution and
          * to push predicates on the partitioning column(s) down
          * to table-valued inputs. */
-        REDUCER;
+            REDUCER,
+        /**  Same as REDUCER, except that in this case the
+         * UDF does not require the rows belonging to a key
+         * to be grouped together, they can be non-contiguous
+         * (NC). This can avoid a costly sort of the input
+         * table in cases where a highly reducing UDF can keep
+         * a table of all the keys in memory. */
+        REDUCER_NC;
 
         private static FuncType[] allValues = values();
         public static FuncType fromOrdinal(int n) {return allValues[n];}
@@ -1036,6 +1043,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
                 case EXACT_NUMERIC_TYPE:
                 case YEAR_MONTH_INTERVAL_TYPE:
                 case DAY_SECOND_INTERVAL_TYPE:
+                case BOOLEAN_SUB_CLASS:
                 {
                     long l = in(it).getLong(ic);
                     
@@ -1151,7 +1159,8 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         System.out.print(String.format("Function type              : %s\n", (funcType_ == FuncType.GENERIC ? "GENERIC" :
                                                                       (funcType_ == FuncType.MAPPER ? "MAPPER" :
                                                                        (funcType_ == FuncType.REDUCER ? "REDUCER" :
-                                                                        "Invalid function type")))));
+                                                                        (funcType_ == FuncType.REDUCER_NC ? "REDUCER_NC" :
+                                                                         "Invalid function type"))))));
         System.out.print(String.format("User id                    : %s\n", getCurrentUser()));
         System.out.print(String.format("Session user id            : %s\n", getSessionUser()));
         System.out.print(String.format("User role                  : %s\n", getCurrentRole()));

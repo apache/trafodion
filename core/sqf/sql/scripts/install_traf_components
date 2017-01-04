@@ -147,6 +147,7 @@ else
   mv dcs-env.sh dcs-env.sh.orig
   echo "TRAF_HOME=$TRAF_HOME" > dcs-env.sh
   sed -e "s@#[ ]*export DCS_MANAGES_ZK=true@export DCS_MANAGES_ZK=false@" dcs-env.sh.orig >> dcs-env.sh
+  echo "export DCS_MASTER_PORT=$MY_DCS_MASTER_PORT" >> dcs-env.sh
   mv -f dcs-site.xml dcs-site.xml.orig
   sed -e "s@</configuration>@@" dcs-site.xml.orig > dcs-site.xml
   cat >>dcs-site.xml <<EOF
@@ -286,14 +287,10 @@ echo "Configuring TRAFCI " | tee -a ${MY_LOG_FILE}
 TRAFCI_BIN_DIR=$TRAF_HOME/trafci/bin
 if [[ -f $TRAFCI_BIN_DIR/trafci ]]
 then
-  mv $TRAFCI_BIN_DIR/trafci  $TRAFCI_BIN_DIR/trafci.orig | tee -a ${MY_LOG_FILE}
-  sed -e "s@localhost:23400@localhost:$MY_DCS_MASTER_PORT@" $TRAFCI_BIN_DIR/trafci.orig >> $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
-  chmod +x $TRAFCI_BIN_DIR/trafci | tee -a ${MY_LOG_FILE}
   echo "Adding swtrafci script..." | tee -a ${MY_LOG_FILE}
   cat <<EOF >$TRAF_HOME/sql/scripts/swtrafci
 #!/bin/sh
-# command to run trafci
-$TRAF_HOME/trafci/bin/trafci.sh -h localhost:$MY_DCS_MASTER_PORT -u zz -p zz
+$TRAF_HOME/trafci/bin/trafci
 EOF
   chmod +x $TRAF_HOME/sql/scripts/swtrafci
 else

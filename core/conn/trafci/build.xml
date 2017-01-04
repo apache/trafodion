@@ -48,16 +48,16 @@
     <property name="lib.dir" value="${base.dir}/lib"/>
     <property name="install.dir" value="${base.dir}/install"/>
     <property name="samples.dir" value="${base.dir}/samples"/>
-    <property name="vproc.class" value="org/trafodion/ci/Vproc.java"/>
+    <property name="vproc.class" value="main/java/org/trafodion/ci/Vproc.java"/>
     <property name="ciutils64dll.dll" value="WCIUtils64.dll"/>
     <property name="ciutilsdll.src.dir" value="${base.dir}/dllsrc/WCIUtils"/>
     <property name="ciutilsdll.dest.dir" value="${classes.dir}/org/trafodion/ci"/>
     <property name="Install.class" value="Installer.java"/>
     <property name="filter.class" value="filter.java"/>
-    <property name="Properties.src" value="${tempsrc.dir}/org/trafodion/ci/Properties"/>
-    <property name="Properties.dest" value="${classes.dir}/org/trafodion/ci/Properties"/>
-    <property name="help.src" value="${tempsrc.dir}/org/trafodion/ci/help"/>
-    <property name="help.dest" value="${classes.dir}/org/trafodion/ci/help"/>
+    <property name="Properties.src" value="${tempsrc.dir}/main/java/org/trafodion/ci/Properties"/>
+    <property name="Properties.dest" value="${classes.dir}/main/java/org/trafodion/ci/Properties"/>
+    <property name="help.src" value="${tempsrc.dir}/main/java/org/trafodion/ci/help"/>
+    <property name="help.dest" value="${classes.dir}/main/java/org/trafodion/ci/help"/>
     <property name="bin.dir" value="${temp.dir}/bin" />
     <property name="deploy.dir" value="${temp.dir}/deploy" />
     <property name="executable.jar" value="trafci.jar" />

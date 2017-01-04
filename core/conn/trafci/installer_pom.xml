@@ -1,6 +1,5 @@
 <!-- 
- @@@ START COPYRIGHT @@@                                                       
-
+      @@@ START COPYRIGHT @@@                                                       
  Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
  distributed with this work for additional information
@@ -8,99 +7,113 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
-
    http://www.apache.org/licenses/LICENSE-2.0
-
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  KIND, either express or implied.  See the License for the
  specific language governing permissions and limitations
  under the License.
-
  @@@ END COPYRIGHT @@@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.trafodion</groupId>
-	<artifactId>trafciInstaller</artifactId>
-	<packaging>jar</packaging>
-	<version>${TRAFODION_VER}</version>
-	<name>Trafodion Trafci</name>
-	<properties>
-		<basedir>.</basedir>
-		<traf-jdbc-version>${TRAFODION_VER}</traf-jdbc-version>
-		<trafci-version>${TRAFODION_VER}</trafci-version>
-	</properties>
-	<build>
-		<finalName>trafciInstaller</finalName>
-		<sourceDirectory>install</sourceDirectory>
-		<resources>
-			<resource>
-				<directory>${basedir}/src/main/resources</directory>
-				<excludes>
-					<exclude>install_jar.xml</exclude>
-					<exclude>install_tar.xml</exclude>
-				</excludes>
-			</resource>
-		</resources>
-		<outputDirectory>target/installer-classes</outputDirectory>
-		<plugins>
-			<plugin>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.8</version>
-				<executions>
-					<execution>
-						<phase>generate-sources</phase>
-						<configuration>
-							<target>
-								<copy file="${basedir}/utils/trafci.cmd-tmpl" tofile="${basedir}/utils/trafci.cmd"
-									overwrite="true"></copy>
-								<copy file="${basedir}/utils/trafci.sh-tmpl" tofile="${basedir}/utils/trafci.sh"
-									overwrite="true">
-								</copy>
-								<echo message="BUILD trafodion prod version ${env.TRAFODION_VER_PROD}" />
-								<replace file="${basedir}/utils/trafci.cmd" token="@prodver@"
-									value="${env.TRAFODION_VER_PROD}" />
-								<replace file="${basedir}/utils/trafci.cmd" token="@copyrighthdr@"
-									value="${env.PRODUCT_COPYRIGHT_HEADER}" />
-								<replace file="${basedir}/utils/trafci.sh" token="##prodver##"
-									value="${env.TRAFODION_VER_PROD}" />
-								<replace file="${basedir}/utils/trafci.sh" token="##copyrighthdr##"
-									value="${env.PRODUCT_COPYRIGHT_HEADER}" />
-							</target>
-						</configuration>
-						<goals>
-							<goal>run</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<appendAssemblyId>false</appendAssemblyId>
-					<descriptors>
-						<descriptor>src/main/resources/install_jar.xml</descriptor>
-						<descriptor>src/main/resources/install_tar.xml</descriptor>
-					</descriptors>
-					<archive>
-						<manifest>
-							<mainClass>Installer</mainClass>
-						</manifest>
-					</archive>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.trafodion</groupId>
+    <artifactId>trafciInstaller</artifactId>
+    <packaging>jar</packaging>
+    <version>${TRAFODION_VER}</version>
+    <name>Trafodion Trafci</name>
+    <properties>
+        <basedir>.</basedir>
+        <traf-jdbc-version>${TRAFODION_VER}</traf-jdbc-version>
+        <trafci-version>${TRAFODION_VER}</trafci-version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>2.12</version>
+        </dependency>
+        <dependency>
+            <groupId>org.trafodion.jdbc.t4</groupId>
+            <artifactId>jdbcT4</artifactId>
+            <version>${TRAFODION_VER}</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <finalName>trafciInstaller</finalName>
+        <sourceDirectory>install</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <excludes>
+                    <exclude>install_jar.xml</exclude>
+                    <exclude>install_tar.xml</exclude>
+                </excludes>
+            </resource>
+        </resources>
+        <outputDirectory>target/installer-classes</outputDirectory>
+        <plugins>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <target>
+                                <copy file="${basedir}/utils/trafci.cmd-tmpl"
+                                    tofile="${basedir}/utils/trafci.cmd"
+                                    overwrite="true"></copy>
+                                <copy file="${basedir}/utils/trafci.sh-tmpl"
+                                    tofile="${basedir}/utils/trafci.sh"
+                                    overwrite="true">
+                                </copy>
+                                <echo
+                                    message="BUILD trafodion prod version ${env.TRAFODION_VER_PROD}" />
+                                <replace file="${basedir}/utils/trafci.cmd"
+                                    token="@prodver@" value="${env.TRAFODION_VER_PROD}" />
+                                <replace file="${basedir}/utils/trafci.cmd"
+                                    token="@copyrighthdr@"
+                                    value="${env.PRODUCT_COPYRIGHT_HEADER}" />
+                                <replace file="${basedir}/utils/trafci.sh"
+                                    token="##prodver##" value="${env.TRAFODION_VER_PROD}" />
+                                <replace file="${basedir}/utils/trafci.sh"
+                                    token="##copyrighthdr##"
+                                    value="${env.PRODUCT_COPYRIGHT_HEADER}" />
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <descriptors>
+                        <descriptor>src/main/resources/install_jar.xml</descriptor>
+                        <descriptor>src/main/resources/install_tar.xml</descriptor>
+                    </descriptors>
+                    <archive>
+                        <manifest>
+                            <mainClass>Installer</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

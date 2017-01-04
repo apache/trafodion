@@ -1711,6 +1711,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // When less or equal to this CQD (5000 rows by default), a partial root 
   // will be running in the Master. Set to 0 to disable the feature.
   DDint__(GROUP_BY_PARTIAL_ROOT_THRESHOLD,	"5000"),
+  DDkwd__(GROUP_BY_PUSH_TO_BOTH_SIDES_OF_JOIN,    "ON"),
 
   DDkwd__(GROUP_OR_ORDER_BY_EXPR,		"ON"),
 

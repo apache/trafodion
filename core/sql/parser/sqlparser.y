@@ -8448,10 +8448,9 @@ table_mapping_function_invocation :
 		YYABORT;
 
      TableMappingUDF *tmudf =
-       new (PARSERHEAP()) TableMappingUDF(*functionName, $4 );
+       new (PARSERHEAP()) TableMappingUDF(1, *functionName, $4 );
 
      tmudf->child(0) = $3;
-     tmudf->setArity(1);
      $$ = tmudf;
    }
    |  qualified_name '(' optional_tmudf_param_list ')' 
@@ -8461,7 +8460,7 @@ table_mapping_function_invocation :
      if (functionName == NULL)
 		YYABORT;
 
-     $$ = new (PARSERHEAP()) TableMappingUDF(*functionName, $3 );
+     $$ = new (PARSERHEAP()) TableMappingUDF(0, *functionName, $3 );
    } 
 
 
@@ -8874,7 +8873,7 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
     | TOK_TO_CHAR '(' value_expression ')'
                                {
                                  $$ = new (PARSERHEAP()) DateFormat
-                                   ($3, "YYYY-MM-DD", DateFormat::FORMAT_TO_CHAR);
+                                   ($3, "UNSPECIFIED", DateFormat::FORMAT_TO_CHAR);
 
 			       }
     | TOK_TO_DATE '(' value_expression ',' character_string_literal ')'
@@ -33990,8 +33989,6 @@ nonreserved_word :      TOK_ABORT
 // QSTUFF
                       | TOK_VALIDATE
                       | TOK_RMS
-                      | TOK_AES_ENCRYPT
-                      | TOK_AES_DECRYPT
 
 // This was added for JIRA Trafodion 2367. There are oddities in
 // how PREPARE is parsed vs. how EXPLAIN is parsed, along with

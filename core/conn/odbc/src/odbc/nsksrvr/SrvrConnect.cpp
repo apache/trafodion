@@ -4145,9 +4145,8 @@ bool __cdecl SRVR::CompilerCacheReset(char *errorMsg)
 
 	// Clear compiler cache by executing the following DELETE statements
 	//
-	// DELETE ALL FROM TABLE(QUERYCACHE())
+	// DELETE ALL FROM TABLE(QUERYCACHE('ALL','LOCAL'))
 	// DELETE ALL FROM TABLE(NATABLECACHE())
-	// DELETE ALL FROM TABLE(NAROUTINECACHE())
 
 
 	SRVR_STMT_HDL	*CmpStmt = NULL;
@@ -4164,7 +4163,7 @@ bool __cdecl SRVR::CompilerCacheReset(char *errorMsg)
 //LCOV_EXCL_STOP
 	}
 
-	strcpy(CmpQuery,"DELETE ALL FROM TABLE(QUERYCACHE())");
+	strcpy(CmpQuery,"DELETE ALL FROM TABLE(QUERYCACHE('ALL','LOCAL'))");
 	retcode = CmpStmt->ExecDirect(NULL, CmpQuery, INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
 	if (retcode != SQL_ERROR)
 	{

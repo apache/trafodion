@@ -36,7 +36,7 @@ public class TypeInfo extends TMUDRSerializableObject {
     public enum SQLTypeCode
     {
         UNDEFINED_SQL_TYPE,
-        /**  16 bit integer */   
+            /**  16 bit integer */   
         SMALLINT,   
             /** 32 bit integer */
         INT,         
@@ -73,49 +73,59 @@ public class TypeInfo extends TMUDRSerializableObject {
             /** Binary Large Object */
         BLOB,  
             /** Character Large Object */
-        CLOB  
+        CLOB,
+            /**  8 bit integer */   
+        TINYINT,   
+            /** unsigned 8 bit integer */
+        TINYINT_UNSIGNED,
+            /** boolean */
+        BOOLEAN
       };
   
     /** Classes of types defined in the SQL standard */
     public enum SQLTypeClassCode
     {
         /** char and varchar types */
-        CHARACTER_TYPE, 
+        CHARACTER_TYPE,
             /**  exact and approximate numerics */
-        NUMERIC_TYPE,  
+        NUMERIC_TYPE,
             /** date/time/timestamp */
-        DATETIME_TYPE, 
+        DATETIME_TYPE,
             /** day/month or hour/second intervals */
         INTERVAL_TYPE,
             /**  BLOBs and CLOBs */
-        LOB_TYPE,     
+        LOB_TYPE,
+            /**  Boolean */
+        BOOLEAN_TYPE,
             /**  undefined value */
-        UNDEFINED_TYPE_CLASS 
+        UNDEFINED_TYPE_CLASS
     };
   
     /** More detailed type information, but not as detailed as the actual type */
     public enum SQLTypeSubClassCode
     {
         /** CHAR type */
-        FIXED_CHAR_TYPE,   
+        FIXED_CHAR_TYPE,
             /** VARCHAR type */
-        VAR_CHAR_TYPE,       
+        VAR_CHAR_TYPE,
             /** Exact numeric */
-        EXACT_NUMERIC_TYPE,      
+        EXACT_NUMERIC_TYPE,
             /**  Approximate numeric (floating point) */
-        APPROXIMATE_NUMERIC_TYPE,  
+        APPROXIMATE_NUMERIC_TYPE,
             /** Date */
-        DATE_TYPE,              
+        DATE_TYPE,
             /** Time */
-        TIME_TYPE,    
+        TIME_TYPE,
             /** Timestamp (date + time + optional fractional seconds) */
-        TIMESTAMP_TYPE,           
+        TIMESTAMP_TYPE,
             /** Intervals involving year and month */
-        YEAR_MONTH_INTERVAL_TYPE,  
+        YEAR_MONTH_INTERVAL_TYPE,
             /** Intervals involving days/hours/minutes/seconds */
         DAY_SECOND_INTERVAL_TYPE,
             /** LOBs */
-        LOB_SUB_CLASS,     
+        LOB_SUB_CLASS,
+            /** Boolean */
+        BOOLEAN_SUB_CLASS,
             /** undefined value */
         UNDEFINED_TYPE_SUB_CLASS 
     };
@@ -248,6 +258,12 @@ public class TypeInfo extends TMUDRSerializableObject {
         
         switch (sqlType)
         {
+        case TINYINT:
+            length_ = 1;
+            precision_ = 0;
+            scale_ = 0;
+            break;
+
         case SMALLINT:
             length_ = 2;
             precision_ = 0;
@@ -285,6 +301,12 @@ public class TypeInfo extends TMUDRSerializableObject {
             length_ = precision_ + 1; // add one for the sign
             if (scale_ > 0)
                 length_ += 1; // for the decimal point
+            break;
+            
+        case TINYINT_UNSIGNED:
+            length_ = 1;
+            precision_ = 0;
+            scale_ = 0;
             break;
             
         case SMALLINT_UNSIGNED:
@@ -466,8 +488,17 @@ public class TypeInfo extends TMUDRSerializableObject {
         
         // convert decimal to binary precision
         length_ = convertToBinaryPrecision(totalPrecision);
+        if (length_ == 1)
+            // intervals don't use single byte representation (yet?)
+            length_ = 2;
         }
         break;
+
+        case BOOLEAN:
+            length_ = 1;
+            precision_ = 0;
+            scale_ = 0;
+            break;
 
         case UNDEFINED_SQL_TYPE:
             // this case is reached when we call the default constructor,
@@ -751,6 +782,12 @@ public class TypeInfo extends TMUDRSerializableObject {
             return SQLTypeCode.BLOB;  
         case 19:
             return SQLTypeCode.CLOB;
+        case 20: 
+            return SQLTypeCode.TINYINT;   
+        case 21:
+            return SQLTypeCode.TINYINT_UNSIGNED; 
+        case 22:
+            return SQLTypeCode.BOOLEAN; 
         default:
             return SQLTypeCode.UNDEFINED_SQL_TYPE;  
         }
@@ -775,6 +812,8 @@ public class TypeInfo extends TMUDRSerializableObject {
         case 9:
         case 10:
         case 11:
+        case 20:
+        case 21:
             return SQLTypeClassCode.NUMERIC_TYPE;
       
         case 12:
@@ -793,6 +832,9 @@ public class TypeInfo extends TMUDRSerializableObject {
         case 19:
             return SQLTypeClassCode.LOB_TYPE;
             
+        case 22:
+            return SQLTypeClassCode.BOOLEAN_TYPE;
+
         case 0:
         default:
             break;
@@ -819,6 +861,8 @@ public class TypeInfo extends TMUDRSerializableObject {
         case 7:
         case 8:
         case 9:
+        case 20:
+        case 21:
             return SQLTypeSubClassCode.EXACT_NUMERIC_TYPE;
         case 10:
         case 11:
@@ -865,6 +909,9 @@ public class TypeInfo extends TMUDRSerializableObject {
         case 18:
         case 19:
             return SQLTypeSubClassCode.LOB_SUB_CLASS;
+
+        case 22:
+            return SQLTypeSubClassCode.BOOLEAN_SUB_CLASS;
             
         case 0:
         default:
@@ -1095,7 +1142,9 @@ public class TypeInfo extends TMUDRSerializableObject {
                                    "Decimal precision %d is out of the allowed range of 1-18",
                                    decimalPrecision);
         
-        if (decimalPrecision < 5)
+        if (decimalPrecision < 3)
+            return 1;
+        else if (decimalPrecision < 5)
             return 2;
         else if (decimalPrecision < 10)
             return 4;
@@ -1109,6 +1158,9 @@ public class TypeInfo extends TMUDRSerializableObject {
         {
         case UNDEFINED_SQL_TYPE:
             sb.append("undefined_sql_type");
+            break;
+        case TINYINT:
+            sb.append("TINYINT");
             break;
         case SMALLINT:
             sb.append("SMALLINT");
@@ -1124,6 +1176,9 @@ public class TypeInfo extends TMUDRSerializableObject {
             break;
         case DECIMAL_LSE:
             sb.append(String.format("DECIMAL(%d,%d)",getPrecision(), getScale()));
+            break;
+        case TINYINT_UNSIGNED:
+            sb.append("TINYINT UNSIGNED");
             break;
         case SMALLINT_UNSIGNED:
             sb.append("SMALLINT UNSIGNED");
@@ -1254,6 +1309,9 @@ public class TypeInfo extends TMUDRSerializableObject {
             break;
         case CLOB:
             sb.append("CLOB");
+            break;
+        case BOOLEAN:
+            sb.append("BOOLEAN");
             break;
         default:
             sb.append("invalid SQL type!");

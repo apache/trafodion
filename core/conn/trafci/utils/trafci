@@ -28,7 +28,19 @@ if [[ $# -gt 0 ]]; then
   exit 1
 fi
 
-HNAME=localhost:23400
+if [[ -r $DCS_INSTALL_DIR/bin/dcs-config.sh ]]
+then
+  source $DCS_INSTALL_DIR/bin/dcs-config.sh
+fi
+if [[ -n $DCS_MASTER_FLOATING_IP ]]
+then
+  MASTER_NODE=$DCS_MASTER_FLOATING_IP
+elif [[ -r $DCS_PRIMARY_MASTER ]]
+then
+  MASTER_NODE=$(cat $DCS_PRIMARY_MASTER)
+fi
+
+HNAME="${MASTER_NODE:-localhost}:${DCS_MASTER_PORT:-23400}"
 UNAME=zz
 PWORD=zz
 

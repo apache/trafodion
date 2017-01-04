@@ -39,7 +39,7 @@ EXPORTLIBDIR=$TRAF_HOME/export/lib
 CP=/bin/cp
 TEMPSRC=../temp
 
-sed 's/\#\#TRAFCI_CLASSPATH\#\#/\${TRAF_HOME}\/export\/lib\/jdbcT4-${TRAFODION_VER}.jar:\${TRAF_HOME}\/trafci\/lib\/trafci.jar/g' trafci.sh > lnxplatform.sh
+sed 's/\#\#TRAFCI_CLASSPATH\#\#/\${TRAF_HOME}\/export\/lib\/jdbcT4-${TRAFODION_VER}.jar:\${TRAF_HOME}\/trafci\/lib\/trafci.jar:\${TRAF_HOME}\/trafci\/lib\/jline.jar/g' trafci.sh > lnxplatform.sh
 mv -f lnxplatform.sh $TEMPSRC/trafci.sh
 	
 echo "Creating trafci install folder in $TRAF_HOME "
