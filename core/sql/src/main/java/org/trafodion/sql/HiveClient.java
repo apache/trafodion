@@ -254,7 +254,8 @@ public class HiveClient {
   boolean hdfsClose() throws IOException
   {
     if (logger.isDebugEnabled()) logger.debug("HiveClient.hdfsClose() - started" );
-    fsOut.close();
+    if (fsOut != null)
+       fsOut.close();
     return true;
   }
   
