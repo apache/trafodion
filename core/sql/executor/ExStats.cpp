@@ -3294,6 +3294,7 @@ void ExPartitionAccessStats::getVariableStatsInfo(char * dataBuffer,
 	      bufferStats()->sendBufferSize(), bufferStats()->sentBuffers().entryCnt(), bufferStats()->recdBuffers().entryCnt(), 
 	      exeSEStats()->getNumIOCalls(),
 	      exeSEStats()->getNumIOBytes(),
+              0,
 	      bufferStats()->totalSentBytes(),
 	      bufferStats()->totalRecdBytes());
   buf += str_len(buf);
@@ -5188,29 +5189,6 @@ Lng32 ExMeasStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_ACT_ROWS_USED:
     sqlStats_item->int64_value = exeSEStats()->getUsedRows();
     break;
-/*
-  case SQLSTATS_MSG_COUNT:
-    sqlStats_item->int64_value = exeSEStats()->getMaxIOTime();
-    break;
-  case SQLSTATS_MSG_BYTES:
-    sqlStats_item->int64_value = exeSEStats()->getNumIOBytes();
-    break;
-  case SQLSTATS_STATS_BYTES:
-    sqlStats_item->int64_value = exeSEStats()->getStatsBytes();
-    break;
-  case SQLSTATS_DISK_IOS:
-    sqlStats_item->int64_value = exeSEStats()->getNumIOCalls();
-    break;
-  case SQLSTATS_LOCK_WAITS:
-    sqlStats_item->int64_value = exeSEStats()->getLockWaits();
-    break;
-  case SQLSTATS_LOCK_ESCALATIONS:
-    sqlStats_item->int64_value = exeSEStats()->getEscalations();
-    break;
-  case SQLSTATS_DP2_CPU_BUSY_TIME:
-    sqlStats_item->int64_value = exeSEStats()->getMaxIOTime();
-    break;
-*/
   case SQLSTATS_SE_IOS:
     sqlStats_item->int64_value = exeSEStats()->getNumIOCalls();
     break;
@@ -5235,14 +5213,6 @@ Lng32 ExMeasStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_SQL_HEAP_USED:
     sqlStats_item->int64_value = maxHeapUsage_ + espMaxHeapUsage_;
     break;
-/*
-  case SQLSTATS_OPENS:
-    sqlStats_item->int64_value = getOpens();
-    break;
-  case SQLSTATS_OPEN_TIME:
-    sqlStats_item->int64_value = getOpenTime();
-    break;
-*/
   case SQLSTATS_PROCESS_CREATED:
     sqlStats_item->int64_value = newprocess_;
     break;
