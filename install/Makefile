@@ -18,7 +18,11 @@ RELEASE_VER ?= ${TRAFODION_VER}-incubating
 RELEASE_TYPE ?= $(shell echo $(TRAFODION_VER_PROD)| sed -e 's/ /-/g')
 INSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_installer-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
 
-all: pkg-installer 
+all: pkg-installer pkg-ambari
+
+pkg-ambari:
+	cd ambari-installer && $(MAKE) all
+
 
 pkg-installer: installer/LICENSE installer/NOTICE installer/DISCLAIMER
 	tar czf ${INSTALLER_TARNAME} installer --exclude=tools
@@ -42,3 +46,5 @@ version:
 
 clean:
 	rm -f ${INSTALLER_TARNAME} 
+	cd ambari-installer && $(MAKE) clean
+

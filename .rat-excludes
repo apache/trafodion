@@ -171,3 +171,7 @@ mod_cfgs.json
 prompt.json
 script.json
 version.json
+# ambari configuration JSON files
+mpack.json
+role_command_order.json
+theme.json
