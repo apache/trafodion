@@ -610,6 +610,12 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
 
   switch (sqlType)
     {
+    case TINYINT:
+      d_.length_ = 1;
+      d_.precision_ = 0;
+      d_.scale_ = 0;
+      break;
+
     case SMALLINT:
       d_.length_ = 2;
       d_.precision_ = 0;
@@ -647,6 +653,12 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
       d_.length_ = d_.precision_ + 1; // add one for the sign
       if (d_.scale_ > 0)
         d_.length_ += 1; // for the decimal point
+      break;
+
+    case TINYINT_UNSIGNED:
+      d_.length_ = 1;
+      d_.precision_ = 0;
+      d_.scale_ = 0;
       break;
 
     case SMALLINT_UNSIGNED:
@@ -828,9 +840,16 @@ TypeInfo::TypeInfo(SQLTypeCode sqlType,
                38900,
                "TypeInfo::TypeInfo(): Scale (fraction precision) should not be specified for a type when end field is not SECOND");
 
-        // convert decimal to binary precision
-        d_.length_ = convertToBinaryPrecision(totalPrecision);
+        // convert decimal to binary precision, but intervals don't
+        // use single byte representation (yet?)
+        d_.length_ = MAXOF(2,convertToBinaryPrecision(totalPrecision));
       }
+      break;
+
+    case BOOLEAN:
+      d_.length_ = 1;
+      d_.precision_ = 0;
+      d_.scale_ = 0;
       break;
 
     case UNDEFINED_SQL_TYPE:
@@ -893,11 +912,13 @@ TypeInfo::SQLTypeClassCode TypeInfo::getSQLTypeClass() const
 {
   switch (d_.sqlType_)
     {
+    case TINYINT:
     case SMALLINT:
     case INT:
     case LARGEINT:
     case NUMERIC:
     case DECIMAL_LSE:
+    case TINYINT_UNSIGNED:
     case SMALLINT_UNSIGNED:
     case INT_UNSIGNED:
     case NUMERIC_UNSIGNED:
@@ -922,6 +943,9 @@ TypeInfo::SQLTypeClassCode TypeInfo::getSQLTypeClass() const
     case CLOB:
       return LOB_TYPE;
 
+    case BOOLEAN:
+      return BOOLEAN_TYPE;
+
     default:
       break;
     }
@@ -940,11 +964,13 @@ TypeInfo::SQLTypeSubClassCode TypeInfo::getSQLTypeSubClass() const
 {
   switch (d_.sqlType_)
     {
+    case TINYINT:
     case SMALLINT:
     case INT:
     case LARGEINT:
     case NUMERIC:
     case DECIMAL_LSE:
+    case TINYINT_UNSIGNED:
     case SMALLINT_UNSIGNED:
     case INT_UNSIGNED:
     case NUMERIC_UNSIGNED:
@@ -993,6 +1019,9 @@ TypeInfo::SQLTypeSubClassCode TypeInfo::getSQLTypeSubClass() const
     case BLOB:
     case CLOB:
       return LOB_SUB_CLASS;
+
+    case BOOLEAN:
+      return BOOLEAN_SUB_CLASS;
 
     default:
       break;
@@ -1133,6 +1162,8 @@ int TypeInfo::getMaxCharLength() const
       return d_.length_;
     case INTERVAL_TYPE:
       return 0;
+    case BOOLEAN_TYPE:
+      return 0;
     default:
       throw UDRException(
            38900,
@@ -1197,9 +1228,15 @@ long TypeInfo::getLong(const char *row, bool &wasNull) const
   // see also code in LmTypeIsString() in file ../generator/LmExpr.cpp
   if (d_.sqlType_ == NUMERIC ||
       d_.sqlType_ == NUMERIC_UNSIGNED ||
-      d_.sqlType_ == INTERVAL)
+      d_.sqlType_ == INTERVAL ||
+      d_.sqlType_ == BOOLEAN)
     {
-      if (d_.length_ == 2)
+      if (d_.length_ == 1)
+        if (d_.sqlType_ == NUMERIC_UNSIGNED)
+          tempSQLType = TINYINT_UNSIGNED;
+        else
+          tempSQLType = TINYINT;
+      else if (d_.length_ == 2)
         if (d_.sqlType_ == NUMERIC_UNSIGNED)
           tempSQLType = SMALLINT_UNSIGNED;
         else
@@ -1216,6 +1253,10 @@ long TypeInfo::getLong(const char *row, bool &wasNull) const
 
   switch (tempSQLType)
     {
+    case TINYINT:
+      result = *((char *) data);
+      break;
+
     case SMALLINT:
       result = *((short *) data);
       break;
@@ -1226,6 +1267,10 @@ long TypeInfo::getLong(const char *row, bool &wasNull) const
 
     case LARGEINT:
       result = *((long *) data);
+      break;
+
+    case TINYINT_UNSIGNED:
+      result = *((unsigned char *) data);
       break;
 
     case SMALLINT_UNSIGNED:
@@ -1353,16 +1398,19 @@ double TypeInfo::getDouble(const char *row, bool &wasNull) const
       result = *((double *) data);
       break;
 
+    case TINYINT:
     case SMALLINT:
     case INT:
     case LARGEINT:
     case NUMERIC:
     case DECIMAL_LSE:
+    case TINYINT_UNSIGNED:
     case SMALLINT_UNSIGNED:
     case INT_UNSIGNED:
     case NUMERIC_UNSIGNED:
     case DECIMAL_UNSIGNED:
     case INTERVAL:
+    case BOOLEAN:
       {
         result = static_cast<double>(getLong(row, wasNull));
         // for numbers with a scale, ensure that the decimal
@@ -1505,6 +1553,62 @@ time_t TypeInfo::getTime(const char *row, bool &wasNull) const
   return result;
 }
 
+bool TypeInfo::getBoolean(const char *row, bool &wasNull) const
+{
+  switch (getSQLTypeClass())
+    {
+    case CHARACTER_TYPE:
+      {
+        int byteLen = 0;
+        const char *cval = getRaw(row, wasNull, byteLen);
+
+        while (byteLen > 0 && cval[byteLen-1] == ' ')
+          byteLen--;
+
+        // strings must have a value of "0" or "1"
+        if (byteLen == 1 &&
+            (cval[0] == '0' ||
+             cval[0] == '1'))
+          return (cval[0] == '1');
+        else
+          {
+            std::string errval(cval, (byteLen > 10 ? 10 : byteLen));
+
+            throw UDRException(
+                 38900,
+                 "getBoolean() encountered string value %s, booleans must be 0 or 1",
+                 errval.c_str());
+          }
+      }
+      break;
+
+    case NUMERIC_TYPE:
+    case BOOLEAN_TYPE:
+      {
+        // numerics or booleans must have a value of 0 or 1
+        long lval = getLong(row, wasNull);
+        if (lval <0 || lval > 1)
+          throw UDRException(
+             38900,
+             "getBoolean() encountered value %ld, booleans must be 0 or 1",
+             lval);
+        return (lval != 0);
+      }
+      break;
+
+    default:
+      {
+        std::string typeName;
+
+        toString(typeName, false);
+        throw UDRException(
+             38900,
+             "getBoolean() not supported for type %s",
+             typeName.c_str());
+      }
+    }
+}
+
 const char * TypeInfo::getRaw(const char *row,
                               bool &wasNull,
                               int &byteLen) const
@@ -1616,7 +1720,12 @@ void TypeInfo::setLong(long val, char *row) const
       d_.sqlType_ == NUMERIC_UNSIGNED ||
       d_.sqlType_ == INTERVAL)
     {
-      if (d_.length_ == 2)
+      if (d_.length_ == 1)
+        if (d_.sqlType_ == NUMERIC_UNSIGNED)
+          tempSQLType = TINYINT_UNSIGNED;
+        else
+          tempSQLType = TINYINT;
+      else if (d_.length_ == 2)
         if (d_.sqlType_ == NUMERIC_UNSIGNED)
           tempSQLType = SMALLINT_UNSIGNED;
         else
@@ -1633,11 +1742,30 @@ void TypeInfo::setLong(long val, char *row) const
 
   switch (tempSQLType)
     {
+    case TINYINT:
+      if (val < SCHAR_MIN || val > SCHAR_MAX)
+        throw UDRException(
+             38900,
+             "Overflow/underflow when assigning %ld to TINYINT type",
+             val);
+      *((char *) data) = val;
+      break;
+
     case SMALLINT:
+      if (val < SHRT_MIN || val > SHRT_MAX)
+        throw UDRException(
+             38900,
+             "Overflow/underflow when assigning %ld to SMALLINT type",
+             val);
       *((short *) data) = val;
       break;
 
     case INT:
+      if (val < INT_MIN || val > INT_MAX)
+        throw UDRException(
+             38900,
+             "Overflow/underflow when assigning %ld to INTEGER type",
+             val);
       *((int *) data) = val;
       break;
 
@@ -1645,20 +1773,31 @@ void TypeInfo::setLong(long val, char *row) const
       *((long *) data) = val;
       break;
 
-    case SMALLINT_UNSIGNED:
-      if (val < 0)
+    case TINYINT_UNSIGNED:
+      if (val < 0 || val > UCHAR_MAX)
         throw UDRException(
              38900,
-             "Trying to assign a negative value to a SMALLINT UNSIGNED type");
+             "Overflow/underflow when assigning %ld to TINYINT UNSIGNED type",
+             val);
+      *((unsigned char *) data) = val;
+      break;
+
+    case SMALLINT_UNSIGNED:
+      if (val < 0 || val > USHRT_MAX)
+        throw UDRException(
+             38900,
+             "Overflow/underflow when assigning %ld to SMALLINT UNSIGNED type",
+             val);
       *((unsigned short *) data) = val;
       break;
 
     case INT_UNSIGNED:
-      if (val < 0)
+      if (val < 0 || val > UINT_MAX)
         throw UDRException(
              38900,
-             "Trying to assign a negative value to an INT UNSIGNED type");
-      *((int *) data) = val;
+             "Overflow/underflow when assigning %ld to INTEGER UNSIGNED type",
+             val);
+      *((unsigned int *) data) = val;
       break;
 
     case DECIMAL_LSE:
@@ -1739,7 +1878,7 @@ void TypeInfo::setLong(long val, char *row) const
         if (val > maxvals[d_.precision_-1])
           throw UDRException(
                38900,
-               "Overflow occurred while converting value %ld to a DECIMAL(%d, %d)",
+               "Overflow/underflow occurred while converting value %ld to a DECIMAL(%d, %d)",
                val, d_.precision_, d_.scale_);
 
         if (d_.scale_ == 0)
@@ -1774,6 +1913,15 @@ void TypeInfo::setLong(long val, char *row) const
     case REAL:
     case DOUBLE_PRECISION:
       setDouble(val, row);
+      break;
+
+    case BOOLEAN:
+      *((char *) data) = val;
+      if (val != 0 && val != 1)
+        throw UDRException(
+             38900,
+             "Got value %ld which cannot be converted to a BOOLEAN, only 0 or 1 are allowed",
+             val);
       break;
 
     default:
@@ -2009,11 +2157,13 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
       isApproxNumeric = true;
       // fall through to next case
 
+    case TINYINT:
     case SMALLINT:
     case INT:
     case LARGEINT:
     case NUMERIC:
     case DECIMAL_LSE:
+    case TINYINT_UNSIGNED:
     case SMALLINT_UNSIGNED:
     case INT_UNSIGNED:
     case NUMERIC_UNSIGNED:
@@ -2308,11 +2458,71 @@ void TypeInfo::setString(const char *val, int stringLen, char *row) const
       }
       break;
 
+    case BOOLEAN:
+      {
+        long bval = -1;
+        // accept 0, 1, TRUE, true, FALSE, false as values
+        while (stringLen > 0 && val[stringLen-1] == ' ')
+          stringLen--;
+        if (stringLen == 1)
+          {
+            if (strcmp(val, "0") == 0)
+              bval = 0;
+            else if (strcmp(val, "1") == 0)
+              bval = 1;
+          }
+        if (stringLen == 4)
+          {
+            if (strcmp(val, "TRUE") == 0 ||
+                strcmp(val, "true") == 0)
+              bval = 1;
+          }
+        else if (stringLen == 5)
+          if (strcmp(val, "FALSE") == 0 ||
+              strcmp(val, "false") == 0)
+            bval = 0;
+
+        if (bval >= 0)
+          setLong(bval, row);
+        else
+          throw UDRException(38900,
+                             "Invalid value %.10s encountered in setString() for a boolean data type",
+                             val);
+      }
+      break;
+
     case UNDEFINED_SQL_TYPE:
     default:
       throw UDRException(38900,
                          "setString() is not yet supported for data type %d",
                          d_.sqlType_);
+    }
+}
+
+void TypeInfo::setBoolean(bool val, char *row) const
+{
+  switch (getSQLTypeClass())
+    {
+    case CHARACTER_TYPE:
+      setString((val ? "1" : "0"), 1, row);
+      break;
+
+    case NUMERIC_TYPE:
+    case BOOLEAN_TYPE:
+      setLong((val ? 1 : 0), row);
+      break;
+
+    default:
+      {
+        std::string typeName;
+
+        toString(typeName, false);
+        throw UDRException(
+             38900,
+             "setBoolean() not supported for type %s",
+             typeName.c_str());
+      }
+
     }
 }
 
@@ -2354,7 +2564,9 @@ int TypeInfo::convertToBinaryPrecision(int decimalPrecision) const
          "Decimal precision %d is out of the allowed range of 1-18",
          decimalPrecision);
 
-  if (decimalPrecision < 5)
+  if (decimalPrecision < 3)
+    return 1;
+  else if (decimalPrecision < 5)
     return 2;
   else if (decimalPrecision < 10)
     return 4;
@@ -2370,6 +2582,9 @@ void TypeInfo::toString(std::string &s, bool longForm) const
     {
     case UNDEFINED_SQL_TYPE:
       s += "undefined_sql_type";
+      break;
+    case TINYINT:
+      s += "TINYINT";
       break;
     case SMALLINT:
       s += "SMALLINT";
@@ -2389,6 +2604,9 @@ void TypeInfo::toString(std::string &s, bool longForm) const
       snprintf(buf, sizeof(buf), "DECIMAL(%d,%d)",
                getPrecision(), getScale());
       s += buf;
+      break;
+    case TINYINT_UNSIGNED:
+      s += "TINYINT UNSIGNED";
       break;
     case SMALLINT_UNSIGNED:
       s += "SMALLINT UNSIGNED";
@@ -2529,6 +2747,9 @@ void TypeInfo::toString(std::string &s, bool longForm) const
       break;
     case CLOB:
       s += "CLOB";
+      break;
+    case BOOLEAN:
+      s += "BOOLEAN";
       break;
     default:
       s += "invalid SQL type!";
@@ -4285,10 +4506,12 @@ std::string TupleInfo::getString(int colNum) const
       }
 
 
+    case TypeInfo::TINYINT:
     case TypeInfo::SMALLINT:
     case TypeInfo::INT:
     case TypeInfo::LARGEINT:
     case TypeInfo::NUMERIC:
+    case TypeInfo::TINYINT_UNSIGNED:
     case TypeInfo::SMALLINT_UNSIGNED:
     case TypeInfo::INT_UNSIGNED:
     case TypeInfo::NUMERIC_UNSIGNED:
@@ -4419,6 +4642,13 @@ std::string TupleInfo::getString(int colNum) const
 
         return buf;
       }
+    case TypeInfo::BOOLEAN:
+      {
+        if (getBoolean(colNum))
+          return "1";
+        else
+          return "0";
+      }
 
     default:
       throw UDRException(
@@ -4448,6 +4678,54 @@ std::string TupleInfo::getString(int colNum) const
 std::string TupleInfo::getString(const std::string &colName) const
 {
   return getString(getColNum(colName));
+}
+
+/**
+ *  Get a boolean value of a column or parameter
+ *
+ *  This method is modeled after the JDBC interface.
+ *  It can be used on boolean, numeric and character columns.
+ *  Numeric columns need to have a value of 0 (false) or 1 (true),
+ *  character columns need to have a value of "0" (false) or "1" (true).
+ *
+ *  Use this method at runtime. It can also be used for
+ *  actual parameters that are available at compile time.
+ *
+ *  @param colNum Column number.
+ *  @return Boolean value.
+ *          If the value was a NULL value, false
+ *          is returned. The wasNull() method can be used to
+ *          determine whether a NULL value was returned.
+ *  @throws UDRException
+ */
+bool TupleInfo::getBoolean(int colNum) const
+{
+  bool &nonConstWasNull = const_cast<TupleInfo *>(this)->wasNull_;
+
+  nonConstWasNull = false;
+
+  return getType(colNum).getBoolean(rowPtr_, nonConstWasNull);
+}
+
+/**
+ *  Get a boolean value of a column or parameter identified by name.
+ *
+ *  This method is modeled after the JDBC interface.
+ *
+ *  Use this method at runtime. It cannot be used for
+ *  actual parameters that are available at compile time, use
+ *  getString(int colNum) instead, since actual parameters are not named.
+ *
+ *  @param colName Name of an existing column.
+ *  @return bool value.
+ *          If the value was a NULL value, false
+ *          is returned. The wasNull() method can be used to
+ *          determine whether a NULL value was returned.
+ *  @throws UDRException
+ */
+bool TupleInfo::getBoolean(const std::string &colName) const
+{
+  return getBoolean(getColNum(colName));
 }
 
 /**
@@ -4567,6 +4845,24 @@ void TupleInfo::setString(int colNum, const std::string &val) const
 void TupleInfo::setTime(int colNum, time_t val) const
 {
   getType(colNum).setTime(val, rowPtr_);
+}
+
+/**
+ *  Set a column to a value specified as bool
+ *
+ *  This will set boolean, numeric and character columns.
+ *  Numeric values will be 0 for false, 1 for true.
+ *  String values will be "0" for false, "1" for true.
+ *
+ *  Use this method at runtime.
+ *
+ *  @param colNum    Index/ordinal of the column to set.
+ *  @param val       The new boolean value for the column to set.
+ *  @throws UDRException
+ */
+void TupleInfo::setBoolean(int colNum, bool val) const
+{
+  getType(colNum).setBoolean(val, rowPtr_);
 }
 
 /**
@@ -6550,6 +6846,7 @@ void UDRInvocationInfo::copyPassThruData(int inputTableNum,
             case TypeInfo::EXACT_NUMERIC_TYPE:
             case TypeInfo::YEAR_MONTH_INTERVAL_TYPE:
             case TypeInfo::DAY_SECOND_INTERVAL_TYPE:
+            case TypeInfo::BOOLEAN_SUB_CLASS:
               {
                 long l = in(it).getLong(ic);
 
@@ -6638,7 +6935,8 @@ void UDRInvocationInfo::print()
   printf("Function type              : %s\n", (funcType_ == GENERIC ? "GENERIC" :
                                                (funcType_ == MAPPER ? "MAPPER" :
                                                 (funcType_ == REDUCER ? "REDUCER" :
-                                                 "Invalid function type"))));
+                                                 (funcType_ == REDUCER_NC ? "REDUCER_NC" :
+                                                  "Invalid function type")))));
   printf("User id                    : %s\n", getCurrentUser().c_str());
   printf("Session user id            : %s\n", getSessionUser().c_str());
   printf("User role                  : %s\n", getCurrentRole().c_str());
@@ -7595,6 +7893,8 @@ void UDR::describeParamsAndColumns(UDRInvocationInfo &info)
  *               pushed to table-valued inputs. These predicates may
  *               eliminate entire groups of rows (partitions), and since
  *               no state is carried between such groups that is valid.
+ *  @li UDRInvocationInfo::REDUCER_NC:
+ *               Same as REDUCER.
  *
  *  NOTE: When eliminating columns from the table-valued inputs or
  *        the table-valued result, column numbers may change in the
@@ -7628,6 +7928,7 @@ void UDR::describeDataflowAndPredicates(UDRInvocationInfo &info)
       break;
 
     case UDRInvocationInfo::REDUCER:
+    case UDRInvocationInfo::REDUCER_NC:
       {
         int partitionedChild = -1;
 
@@ -7673,7 +7974,7 @@ void UDR::describeDataflowAndPredicates(UDRInvocationInfo &info)
                     } // column is from the partitioned input table
                 } // is a comparison predicate
           } // found a partitioned child table
-      } // REDUCER
+      } // REDUCER(_NC)
       break;
 
     default:
@@ -7724,8 +8025,9 @@ void UDR::describeConstraints(UDRInvocationInfo &info)
  *  <ul>
  *  <li>UDRs of type UDRInvocationInfo::MAPPER return one output row for
  *      each row in their largest input table.
- *  <li>UDRs of type UDRInvocationInfo::REDUCER return one output row for
- *      every partition in their largest partitioned input table.
+ *  <li>UDRs of type UDRInvocationInfo::REDUCER and REDUCER_NC return one
+ *      output row for every partition in their largest partitioned input
+ *      table.
  *  <li>For output columns that are passthru columns, the estimated
  *      unique entries are the same as for the underlying column in the
  *      table-valued input.
@@ -7758,20 +8060,21 @@ void UDR::describeStatistics(UDRInvocationInfo &info)
  *
  *  The default behavior is to allow any degree of parallelism for
  *  TMUDFs of function type UDRInvocationInfo::MAPPER or
- *  UDRInvocationInfo::REDUCER that have exactly one table-valued
- *  input. The default behavior forces serial execution
- *  in all other cases. The reason is that for a single table-valued
- *  input, there is a natural way to parallelize the function by
- *  parallelizing its input a la MapReduce. In all other cases,
- *  parallel execution requires active participation by the UDF,
- *  which is why the UDF needs to signal explicitly that it can
- *  handle such flavors of parallelism.
+ *  UDRInvocationInfo::REDUCER (or REDUCER_NC) that have exactly
+ *  one table-valued input. The default behavior forces serial
+ *  execution in all other cases. The reason is that for a single
+ *  table-valued input, there is a natural way to parallelize the
+ *  function by parallelizing its input a la MapReduce. In all
+ *  other cases, parallel execution requires active participation
+ *  by the UDF, which is why the UDF needs to signal explicitly
+ *  that it can handle such flavors of parallelism.
  *
  *  Default implementation:
  *  @code
  *  if (info.getNumTableInputs() == 1 &&
  *      (info.getFuncType() == UDRInvocationInfo::MAPPER ||
- *       info.getFuncType() == UDRInvocationInfo::REDUCER))
+ *       info.getFuncType() == UDRInvocationInfo::REDUCER ||
+ *       info.getFuncType() == UDRInvocationInfo::REDUCER_NC))
  *    plan.setDesiredDegreeOfParallelism(UDRPlanInfo::ANY_DEGREE_OF_PARALLELISM);
  *  else
  *    plan.setDesiredDegreeOfParallelism(1); // serial execution
@@ -7789,7 +8092,8 @@ void UDR::describeDesiredDegreeOfParallelism(UDRInvocationInfo &info,
 {
   if (info.getNumTableInputs() == 1 &&
       (info.getFuncType() == UDRInvocationInfo::MAPPER ||
-       info.getFuncType() == UDRInvocationInfo::REDUCER))
+       info.getFuncType() == UDRInvocationInfo::REDUCER ||
+       info.getFuncType() == UDRInvocationInfo::REDUCER_NC))
     plan.setDesiredDegreeOfParallelism(UDRPlanInfo::ANY_DEGREE_OF_PARALLELISM);
   else
     plan.setDesiredDegreeOfParallelism(1); // serial execution

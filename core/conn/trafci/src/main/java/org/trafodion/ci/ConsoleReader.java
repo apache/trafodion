@@ -28,6 +28,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import jline.console.UserInterruptException;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -50,6 +51,8 @@ public class ConsoleReader
    private boolean ampmFmt = false;
    private MaskingThread mt=null;
    WCIUtils wcs=null;
+
+    jline.console.ConsoleReader cr = null;
 
    ConsoleReader()
    {
@@ -107,6 +110,9 @@ public class ConsoleReader
    public void initialize() throws IOException
    {
       this.in=System.in;
+        cr = new jline.console.ConsoleReader();
+        cr.setPrompt(this.prompt);
+        cr.setHandleUserInterrupt(true);
    }
 
    public String getLine() throws IOException, UserInterruption
@@ -117,7 +123,7 @@ public class ConsoleReader
 
    public String readLine() throws UnsupportedEncodingException, UserInterruption, IOException
    {
-      StringBuffer lineBuffer=null;
+/*      StringBuffer lineBuffer=null;
       lineBuffer=new StringBuffer();
 	  int i=-1;
             
@@ -172,7 +178,14 @@ public class ConsoleReader
 
          }
       }
-
+*/
+        String readLine = null;
+        try {
+            readLine = cr.readLine();
+        } catch (UserInterruptException e) {
+            // TODO Auto-generated catch block
+        }
+        return readLine;
    }
 
    public boolean next() throws IOException, UserInterruption

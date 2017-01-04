@@ -6275,6 +6275,8 @@ query-expr-and-order is:
 query-expr is:
     query-primary
   | query-expr UNION [ALL] query-primary
+  | query-expr INTERSECT query-primary
+  | query-expr EXCEPT query-primary
 
 query-primary is:
     simple-table | (query-expr)
@@ -6776,6 +6778,29 @@ The number of columns in the result table of the union operation is the same as 
 The column names in the result table of the union are the same as the corresponding names in the select list of the left
 SELECT statement. A column resulting from the union of expressions or constants has the name (EXPR).
 See <<considerations_for_union,Considerations for UNION>>.
+
+* `_select-stmt_ INTERSECT _select-stmt_`
++
+specifies a set intersect operation between the result table of a SELECT statement and the result table of another SELECT statement.
+The result of the intersect operation is a table that consists of rows appear in both result sets.
++
+The result of INTERSECT does not contain any duplicate rows.
++
+The select lists in the two SELECT statements of an intersect operation must have the same number of columns, and columns in
+corresponding positions within the lists must have compatible data types. The select lists must not be preceded by
+[ANY _N_] or [FIRST N].
+
+* `_select-stmt_ EXCEPT _select-stmt_`
++
+specifies a set except operation between the result table of a SELECT statement and the result table of another SELECT statement.
+The result of the except operation is a table that consists of rows that are in the result of the left SELECT statement but not in 
+the result of the right one.
++
+The result of EXCEPT does not contain any duplicate rows.
++
+The select lists in the two SELECT statements of an except operation must have the same number of columns, and columns in
+corresponding positions within the lists must have compatible data types. The select lists must not be preceded by
+[ANY _N_] or [FIRST N].
 
 * `ORDER BY {_colname_ | _colnum_} [ASC[ENDING] | DESC[ENDING]] [,{_colname_ | _colnum_} [ASC[ENDING] | DESC[ENDING]]]&#8230;`
 +

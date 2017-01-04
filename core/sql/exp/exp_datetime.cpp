@@ -155,10 +155,12 @@ const ExpDatetime::DatetimeFormatInfo ExpDatetime::datetimeFormat[] =
     {ExpDatetime::DATETIME_FORMAT_TS8,       "DD-MON-YYYY HH:MI:SS",  20, 20},
     {ExpDatetime::DATETIME_FORMAT_TS9,       "MONTH DD, YYYY, HH:MI", 19, 25},
     {ExpDatetime::DATETIME_FORMAT_TS10,      "DD.MM.YYYY HH24.MI.SS", 19, 19},
-
+ 
     {ExpDatetime::DATETIME_FORMAT_NUM1,      "99:99:99:99",           11, 11},
-    {ExpDatetime::DATETIME_FORMAT_NUM2,      "-99:99:99:99",          12, 12}
+    {ExpDatetime::DATETIME_FORMAT_NUM2,      "-99:99:99:99",          12, 12},
 
+    // formats that are replaced by one of the other formats at bind time
+    {ExpDatetime::DATETIME_FORMAT_UNSPECIFIED,   "UNSPECIFIED",       11, 11}
   };
 
 ExpDatetime::ExpDatetime()
@@ -3567,8 +3569,21 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
           dstDataPtr++;
         }
       
-      str_cpy_all(dstDataPtr, "00:00:00", 8);
-      dstDataPtr += 8;
+      if (format == DATETIME_FORMAT_TS1)
+        {
+          str_cpy_all(dstDataPtr, "000000", 6);
+          dstDataPtr += 6;
+        }
+      else if (format == DATETIME_FORMAT_EUROPEAN)
+        {
+          str_cpy_all(dstDataPtr, "00.00.00", 8);
+          dstDataPtr += 8;
+        }
+      else
+        {
+          str_cpy_all(dstDataPtr, "00:00:00", 8);
+          dstDataPtr += 8;
+        }
     }
       
   // Return the actual number of bytes formatted.

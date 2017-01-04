@@ -1,3 +1,5 @@
+# Trafodion permissions
+
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,23 +21,12 @@
 #
 # @@@ END COPYRIGHT @@@
 
-# This Makefile is just a thin shell to Maven, which is used to do the real build
+## Allow trafodion id to run commands needed for backup and restore
+trafodion ALL =(hbase) NOPASSWD: /usr/bin/hbase
 
-include ../../macros.gmk #top level
+## Trafodion Floating IP commands
+Cmnd_Alias IP = /sbin/ip
+Cmnd_Alias ARP = /sbin/arping
 
-all:Trafci_deploy
-Trafci_deploy:Trafci_installer
-Trafci_installer:Trafci_jar
-Trafci_jar:
-	mvn clean install -DskipTests$
-Trafci_installer:
-	./getBuildInfo$
-	export buildId=`head -n 1 buildId`$
-	mvn -f installer_pom.xml -DbldId=${buildId} clean package -DskipTests$ 
-Trafci_deploy:
-	zip -r ../clients/trafci.zip -j target/trafciInstaller.jar utils/README
-	java -jar target/trafciInstaller.jar -silent -installDir ${TRAF_HOME}
-
-clean:
-	mvn -f installer_pom.xml clean
-	mvn -f pom.xml clean
+## Allow Trafodion id to run commands needed to configure floating IP
+trafodion ALL = NOPASSWD: IP, ARP

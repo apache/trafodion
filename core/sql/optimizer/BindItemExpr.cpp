@@ -4040,6 +4040,11 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
       // cannot convert date source to time format
       else if (tf && (opType->getPrecision() == SQLDTCODE_DATE))
         error = 3; // error 4072
+      
+      // cannot convert time source to date format or timestamp format
+      // for TO_CHAR only (for DATEFORMAT it is OK)
+      else if ((df || tsf) && (!wasDateformat_) && (opType->getPrecision() == SQLDTCODE_TIME))
+        error = 8; // error 4072
     }
 
   if (!error && toDate)
@@ -4084,14 +4089,14 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
 
         case 2:
           {
-            *CmpCommon::diags() << DgSqlCode(-4071) << DgString0("TO_CHAR");
+            *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(wasDateformat_ ? "DATEFORMAT" : "TO_CHAR");
             bindWA->setErrStatus();
           }
           break;
 
         case 3:
           {
-            *CmpCommon::diags() << DgSqlCode(-4072) << DgString0("TO_CHAR") << DgString1("time");;
+            *CmpCommon::diags() << DgSqlCode(-4072) << DgString0("TO_CHAR") << DgString1("time");
             bindWA->setErrStatus();
           }
           break;
@@ -4120,6 +4125,13 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
         case 7:
           {
             *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("TO_DATE");
+            bindWA->setErrStatus();
+          }
+          break;
+
+        case 8:
+          {
+            *CmpCommon::diags() << DgSqlCode(-4072) << DgString0("TO_CHAR") << DgString1("date");
             bindWA->setErrStatus();
           }
           break;
@@ -4163,7 +4175,20 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
     return this;
 
   const NAType *naType0 = &child(0)->getValueId().getType();
+  const DatetimeType* operand = (DatetimeType *)naType0;
   const NumericType * nType0 = NULL;
+
+  // if the date time format was not specified in TO_CHAR, supply a
+  // default now based on the datatype of the first operand
+  if (frmt_ == ExpDatetime::DATETIME_FORMAT_UNSPECIFIED)
+    {
+      if ((naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
+          (operand->getPrecision() == SQLDTCODE_TIME))
+        frmt_ = ExpDatetime::DATETIME_FORMAT_TS4;
+      else
+        frmt_ = ExpDatetime::DATETIME_FORMAT_DEFAULT;
+      formatStr_ = ExpDatetime::getDatetimeFormatStr(frmt_);
+    }
 
   // a quick optimization for the date format.
   ItemExpr *newNode = quickDateFormatOpt(bindWA);
@@ -4185,7 +4210,6 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
       if ((wasDateformat_) &&
           (naType0->getTypeQualifier() == NA_DATETIME_TYPE))
         {
-          const DatetimeType* operand = (DatetimeType *)naType0;
           if (operand->getPrecision() == SQLDTCODE_TIMESTAMP)
             {
               if (frmt_ == ExpDatetime::DATETIME_FORMAT_DEFAULT)

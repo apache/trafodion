@@ -79,6 +79,7 @@ Requires: xerces-c
 Requires: zlib
 
 Prefix: /home/trafodion
+Prefix: /etc
 
 %description
 Apache Trafodion for Operational Big Data combining the power of transactional SQL and Apache HBase with the elastic scalability of Hadoop.
@@ -89,8 +90,15 @@ Apache Trafodion for Operational Big Data combining the power of transactional S
 
 
 %pre -n %{name}
-getent group trafodion > /dev/null || /usr/sbin/groupadd trafodion > /dev/null 2>&1
-getent passwd trafodion > /dev/null || /usr/sbin/useradd --shell /bin/bash -m trafodion -g trafodion --home /home/trafodion > /dev/null 2>&1
+if ! getent group trafodion > /dev/null
+then
+  /usr/sbin/groupadd trafodion > /dev/null 2>&1
+fi
+if ! getent passwd trafodion > /dev/null
+then
+  /usr/sbin/useradd --shell /bin/bash -m trafodion -g trafodion --home /home/trafodion > /dev/null 2>&1
+fi
+chmod go+rx /home/trafodion
 
 
 %build
@@ -98,15 +106,28 @@ getent passwd trafodion > /dev/null || /usr/sbin/useradd --shell /bin/bash -m tr
 %define debug_package:
 
 %install
-mkdir -p %{buildroot}/home/trafodion/%{name}-%{version}
 cd %{_builddir}
-cp -rf %{name}-%{version}/* %{buildroot}/home/trafodion/%{name}-%{version}
+mv -f %{name}-%{version}/sysinstall/* %{buildroot}/
+rmdir %{name}-%{version}/sysinstall
+mkdir -p %{buildroot}/home/trafodion/%{name}-%{version}
+mv -f %{name}-%{version}/* %{buildroot}/home/trafodion/%{name}-%{version}/
+
+%post
+mkdir -p /etc/trafodion/
+echo "TRAF_HOME=/home/trafodion/%{name}-%{version}" > /etc/trafodion/trafodion_config
+echo "source /etc/trafodion/conf/trafodion-env.sh" >> /etc/trafodion/trafodion_config
+echo "source /etc/trafodion/conf/traf-cluster-env.sh" >> /etc/trafodion/trafodion_config
+
 
 %clean
 /bin/rm -rf %{buildroot}
 
 %files
+/etc/init.d/trafodion
+/etc/security/limits.d/trafodion.conf
+/etc/sudoers.d/trafodion
 %defattr(-,trafodion,trafodion)
+/home/trafodion/.bashrc
 /home/trafodion/%{name}-%{version}
 
 %changelog

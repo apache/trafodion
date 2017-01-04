@@ -2511,6 +2511,7 @@ subquery is empty, the predicate is false.
 | <<in_predicate,IN Predicate>> | Determines if a sequence of values is equal to any of the sequences of
 values in a list of sequences.
 | <<like_predicate,LIKE Predicate>> | Searches for character strings that match a pattern.
+| <<regexp_predicate,REGEXP Predicate>> | Searches for character strings that match an extended regular expression.
 | <<null_predicate,NULL Predicate>> | Determines whether all the values in a sequence of values are null.
 | <<quantified_comparison_predicates,Quantified Comparison Predicates>> +  
 (ALL, ANY, SOME ) | Compares the values of sequences of expressions to the values in each
@@ -3334,7 +3335,7 @@ trailing blank) will not be located by LIKE '%MB' but will be located by
 LIKE '%MB%'.
 
 [[like_examples]]
-=== Examples
+==== Examples
 
 * Find all employee last names beginning with ZE:
 +
@@ -3350,6 +3351,59 @@ partdesc NOT LIKE 'FLOPPY\_DISK' ESCAPE '\'
 +
 The escape character indicates that the underscore in 'FLOPPY_DISK' is
 part of the string to search for, not a wild-card character.
+
+<<<
+[[regexp_predicate]]
+=== REGEXP Predicate
+
+Performs a pattern match of a string expression against a pattern . 
+The pattern can be an extended regular expression. 
+Returns 1 if expression matches pattern; otherwise it returns 0. 
+If either expression or pattern is NULL, the result is NULL.
+
+[[regexp_syntax]]
+==== Syntax
+```
+match-value [NOT] REGEXP regular-expression
+```
+
+* `_match-value_`
++
+is a character value expression that specifies a set of strings to
+search for that match the _regular-expression_.
+
+* `_regular-expression_`
++
+is a character value expression that specifies a regular expression. 
+Trafodion regular expressions follow POSIX regular expression rules.
+
+
+[[using_not]]
+===== Using NOT
+
+If you specify NOT, the predicate is true if the _regular-expression_ does not
+match any string in the _match-value_.
+
+[[regexp_examples]]
+==== Examples
+
+* Find valid numbers
++
+```
+col REGEXP '^[0-9]*\s*$'
+```
+
+* Find valid words, no numbers 
++
+```
+col REGEXP '^.[A-Za-z]+\s*$'
+```
+
+* Find valid email address
++
+```
+col REGEXP '\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*\s*'
+```
 
 <<<
 [[null_predicate]]

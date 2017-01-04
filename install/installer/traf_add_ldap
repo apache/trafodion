@@ -83,7 +83,7 @@ fi
 echo "***INFO: Modifying sqenvcom.sh to turn on authentication"
 sudo cp -r $TRAF_HOME/sqenvcom.sh $LOCAL_WORKDIR/sqenvcom.sh
 sudo chown $(whoami).$(whoami) $LOCAL_WORKDIR/sqenvcom.sh
-sed -i -e "s@TRAFODION_ENABLE_AUTHENTICATION=NO@TRAFODION_ENABLE_AUTHENTICATION=YES@g" $LOCAL_WORKDIR/sqenvcom.sh 
+sed -i -e 's@TRAFODION_ENABLE_AUTHENTICATION=.*$@TRAFODION_ENABLE_AUTHENTICATION=YES@g' $LOCAL_WORKDIR/sqenvcom.sh
 sudo cp $LOCAL_WORKDIR/sqenvcom.sh $HOME_DIR/$TRAF_USER/sqenvcom.sh
 sudo chown $TRAF_USER.$TRAF_GROUP $HOME_DIR/$TRAF_USER/sqenvcom.sh
 sudo chmod 664 $HOME_DIR/$TRAF_USER/sqenvcom.sh

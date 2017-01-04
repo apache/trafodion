@@ -261,13 +261,26 @@ public abstract class UDR
      *  parallelism, either in absolute or relative terms.
      *  <p>
      *  The default behavior is to allow any degree of parallelism for
-     *  TMUDFs with one table-valued input, and to force serial execution
-     *  in all other cases. The reason is that for a single table-valued
-     *  input, there is a natural way to parallelize the function by
-     *  parallelizing its input a la MapReduce. In all other cases,
-     *  parallel execution requires active participation by the UDF,
-     *  which is why the UDF needs to signal explicitly that it can
-     *  handle such flavors of parallelism.
+     *  TMUDFs of function type UDRInvocationInfo.MAPPER or
+     *  UDRInvocationInfo.REDUCER (or REDUCER_NC) that have exactly
+     *  one table-valued input. The default behavior forces serial
+     *  execution in all other cases. The reason is that for a single
+     *  table-valued input, there is a natural way to parallelize the
+     *  function by parallelizing its input a la MapReduce. In all
+     *  other cases, parallel execution requires active participation
+     *  by the UDF, which is why the UDF needs to signal explicitly
+     *  that it can handle such flavors of parallelism.
+     *
+     *  Default implementation:
+     *  {@code
+     *  if (info.getNumTableInputs() == 1 &&
+     *      (info.getFuncType() == UDRInvocationInfo.FuncType.MAPPER ||
+     *       info.getFuncType() == UDRInvocationInfo.FuncType.REDUCER ||
+     *       info.getFuncType() == UDRInvocationInfo.FuncType.REDUCER_NC))
+     *    plan.setDesiredDegreeOfParallelism(UDRPlanInfo.ANY_DEGREE_OF_PARALLELISM);
+     *  else
+     *    plan.setDesiredDegreeOfParallelism(1); // serial execution
+     *  }
      * <p>
      *  Note that this is NOT foolproof, and that the TMUDF might still
      *  need to validate the PARTITION BY and ORDER BY syntax used in its
@@ -276,6 +289,7 @@ public abstract class UDR
      *  @see UDRPlanInfo#getDesiredDegreeOfParallelism
      *  @see UDRPlanInfo#setDesiredDegreeOfParallelism
      *  @see UDRInvocationInfo#getNumParallelInstances
+     *  @see UDRInvocationInfo#setFuncType
      *
      *  @param info A description of the UDR invocation.
      *  @param plan Plan-related description of the UDR invocation.
@@ -285,8 +299,12 @@ public abstract class UDR
                                                    UDRPlanInfo plan)
          throws UDRException
     {
-        if (info.getNumTableInputs() == 1)
-            plan.setDesiredDegreeOfParallelism(UDRPlanInfo.SpecialDegreeOfParallelism.ANY_DEGREE_OF_PARALLELISM.getSpecialDegreeOfParallelism());
+        if (info.getNumTableInputs() == 1 &&
+            (info.getFuncType() == UDRInvocationInfo.FuncType.MAPPER ||
+             info.getFuncType() == UDRInvocationInfo.FuncType.REDUCER ||
+             info.getFuncType() == UDRInvocationInfo.FuncType.REDUCER_NC))
+            plan.setDesiredDegreeOfParallelism(UDRPlanInfo.SpecialDegreeOfParallelism.
+                                               ANY_DEGREE_OF_PARALLELISM.getSpecialDegreeOfParallelism());
         else
             plan.setDesiredDegreeOfParallelism(1); // serial execution
     };
