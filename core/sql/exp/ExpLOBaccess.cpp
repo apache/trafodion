@@ -1534,7 +1534,8 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
                   NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
                   return LOB_DATA_FILE_WRITE_ERROR;
                 }
-            return LOB_DATA_FILE_OPEN_ERROR;
+               NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
+               return LOB_DATA_FILE_OPEN_ERROR;
             
           }
         else

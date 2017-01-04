@@ -279,7 +279,7 @@ Int32 updateBufferToLobHandle(CliGlobals *cliglob,char *handle)
  
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobUpdateLen = 10;
+  Int64 lobUpdateLen = 50;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
   str_sprintf(query,"update lob (LOB '%s' , LOCATION %Ld, SIZE %Ld)", handle, (Int64)lobDataBuf, lobUpdateLen);
@@ -313,7 +313,7 @@ Int32 updateAppendBufferToLobHandle(CliGlobals *cliglob,char *handle)
  
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobUpdateLen = 10;
+  Int64 lobUpdateLen = 50;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
   str_sprintf(query,"update lob (LOB '%s' , LOCATION %Ld, SIZE %Ld,append )", handle, (Int64)lobDataBuf, lobUpdateLen);
@@ -348,7 +348,7 @@ Int32 updateTruncateLobHandle(CliGlobals *cliglob,char *handle)
  
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobUpdateLen = 10;
+  Int64 lobUpdateLen = 50;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
   str_sprintf(query,"update lob (LOB '%s' , empty_blob())", handle, (Int64)lobDataBuf, lobUpdateLen);

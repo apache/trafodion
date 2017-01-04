@@ -1356,54 +1356,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
       lobLen = 0;
       so = Lob_Memory;
     }
-  /*  if (fromEmpty())
-    {
-      // delete the lob and initialize with  a new lob handle
-     
-      rc = ExpLOBInterfaceDelete(getExeGlobals()->getExLobGlobal(), 
-                                 getLobHdfsServer(),
-                                 getLobHdfsPort(),
-                                 tgtLobName, 
-                                 lobStorageLocation(),
-                                 handleLen, 
-                                 lobHandle,
-                                 requestTag_,
-                                 getExeGlobals()->lobGlobals()->xnId(),
-                                 fromDescKey,
-                                 (lobOperStatus == CHECK_STATUS_ ? 1 : 0),
-                                 waitedOp
-                                 );
-      if (rc < 0)
-        {
-          Lng32 intParam1 = -rc;
-          ExRaiseSqlError(h, diagsArea, 
-                          (ExeErrorCode)(8442), NULL, &intParam1, 
-                          &cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
-                          (char*)"ExpLOBInterfaceUpdate",getLobErrStr(intParam1));
-          return ex_expr::EXPR_ERROR;
-        }
-      //Initialize a fresh lob handle
-      char * lobHandle = NULL;
-      Lng32 handleLen = 0;
-      char lobHandleBuf[LOB_HANDLE_LEN];
-      Int64 descTS = NA_JulianTimestamp();
-
-      lobHandle = lobHandleBuf;
-      ExpLOBoper::genLOBhandle(objectUID_, lobNum(), (short)lobStorageType(),
-			       -1, descTS, -1,
-			       descSchNameLen_, descSchName(),
-			       handleLen, lobHandle);
-      // update lob handle with the returned values
-      str_cpy_all(result, lobHandle, handleLen);
-      //     str_cpy_all(result, op_data[2], handleLen);
-      //     ExpLOBoper::updLOBhandle(sDescSyskey, 0, result); 
-      getOperand(0)->setVarLength(handleLen, op_data[-MAX_OPERANDS]);
-
-      return ex_expr::EXPR_OK;                     
-                                 
-    }
-
-    else*/ if (isAppend() && !fromEmpty())
+   if (isAppend() && !fromEmpty())
     {
       rc = ExpLOBInterfaceUpdateAppend
 	(getExeGlobals()->getExLobGlobal(), 

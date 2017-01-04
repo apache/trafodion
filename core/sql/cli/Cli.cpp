@@ -10139,8 +10139,6 @@ Lng32 SQLCLI_LOBcliInterface
                   *inoutDescSyskey = inDescSyskey;
               }
           }
-	//	else
-	//cliRC = -100;
 
 	Lng32 saveCliErr = cliRC;
 

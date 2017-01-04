@@ -6712,7 +6712,7 @@ const NAType *LOBinsert::synthesizeType()
       (obj_ == EXTERNAL_) ||
       (obj_ == LOAD_))
     {
-      if (typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
+      if (typ1 && typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
 	{
 	  // 4221 The operand of a $0~String0 function must be character.
 	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
@@ -6722,7 +6722,7 @@ const NAType *LOBinsert::synthesizeType()
     }
   else if (obj_ == LOB_)
     {
-      if (typ1->getTypeQualifier() != NA_LOB_TYPE)
+      if (typ1 && typ1->getTypeQualifier() != NA_LOB_TYPE)
 	{
 	  // 4043 The operand of a $0~String0 function must be blob
 	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
@@ -6732,7 +6732,7 @@ const NAType *LOBinsert::synthesizeType()
     }
   else if (obj_ == BUFFER_)
     {
-     if (typ1->getTypeQualifier() != NA_NUMERIC_TYPE)
+     if (typ1 && typ1->getTypeQualifier() != NA_NUMERIC_TYPE)
 	{
 	  // 4043 The operand of a $0~String0 function must be blob
 	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
