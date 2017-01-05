@@ -389,7 +389,7 @@ short TM_Transaction::begin(int abort_timeout, int64 transactiontype_bits)
 // -- end transaction
 // Trafodion: added support for local transactions.
 // --------------------------------------------------------------------------
-short TM_Transaction::end()
+short TM_Transaction::end(char* &pv_err_str, int &pv_err_len)
 {
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
@@ -456,6 +456,13 @@ short TM_Transaction::end()
        }
     
        iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
+       if(iv_last_error)
+       {
+           int maxErrStrBufLen = sizeof(lv_rsp.u.iv_end_trans.iv_err_str);
+           pv_err_len = lv_rsp.u.iv_end_trans.iv_err_str_len < maxErrStrBufLen ? lv_rsp.u.iv_end_trans.iv_err_str_len : maxErrStrBufLen;
+           pv_err_str = new char[pv_err_len];
+           memcpy(pv_err_str, lv_rsp.u.iv_end_trans.iv_err_str, pv_err_len); 
+       }
     }
     TMlibTrace(("TMLIB_TRACE : TM_Transaction::end  (seq num %d) EXIT\n", iv_transid.get_seq_num()), 2);
 

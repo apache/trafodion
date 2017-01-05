@@ -323,7 +323,7 @@ short CHbaseTM::abortTransaction(int64 pv_transid) {
 }
 
 
-short CHbaseTM::prepareCommit(int64 pv_transid) {
+short CHbaseTM::prepareCommit(int64 pv_transid , char *errstr, int &errstrlen) {
   jlong   jlv_transid = pv_transid;
   JOI_RetCode lv_joi_retcode = JOI_OK;
   lv_joi_retcode = initJNIEnv();
@@ -333,10 +333,24 @@ short CHbaseTM::prepareCommit(int64 pv_transid) {
   }
 
   jshort jresult = _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_PRECOMMIT].methodID, jlv_transid);
-  if (getExceptionDetails(NULL)) {
-     tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::prepareCommit()", (char *)_tlp_error_msg->c_str(), pv_transid);
-     _tlp_jenv->PopLocalFrame(NULL);
-     return RET_EXCEPTION;
+  if (getExceptionDetails(NULL, (short*)&lv_joi_retcode)) {
+      int errMsgLen = (int)_tlp_error_msg->length();
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen  : errstrlen -1;
+      strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+      errstr[errstrlen] = '\0';
+      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR,(char*)"CHbaseTM::prepareCommit()", (char *)_tlp_error_msg->c_str(), pv_transid);
+     
+     //If an exception is received, it is only due to some issue.
+     //Exception can come back with error code set or not set.
+     //If there is an error code passed as part of exception, pass this
+     //back to my caller. Else return RET_EXCEPTION; 
+     if(lv_joi_retcode != JOI_OK)
+       jresult = lv_joi_retcode;
+     else
+     {
+       _tlp_jenv->PopLocalFrame(NULL);
+       return RET_EXCEPTION;
+     }
   }
 
   _tlp_jenv->PopLocalFrame(NULL);

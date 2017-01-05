@@ -55,10 +55,12 @@ __thread std::string *_tlp_error_msg = NULL;
 
 jclass JavaObjectInterfaceTM::gThrowableClass = NULL;
 jclass JavaObjectInterfaceTM::gStackTraceClass = NULL;
+jclass JavaObjectInterfaceTM::gTransactionManagerExceptionClass = NULL;
 jmethodID JavaObjectInterfaceTM::gGetStackTraceMethodID = NULL;
 jmethodID JavaObjectInterfaceTM::gThrowableToStringMethodID = NULL;
 jmethodID JavaObjectInterfaceTM::gStackFrameToStringMethodID = NULL;
 jmethodID JavaObjectInterfaceTM::gGetCauseMethodID = NULL;
+jmethodID JavaObjectInterfaceTM::gGetErrorCodeMethodID = NULL;
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -293,7 +295,20 @@ JOI_RetCode JavaObjectInterfaceTM::initJVM()
                       "toString",
                       "()Ljava/lang/String;");
      }
-  }  
+  }
+  
+  if (gTransactionManagerExceptionClass == NULL)
+  {
+     lJavaClass =  (jclass)_tlp_jenv->FindClass("org/trafodion/dtm/TransactionManagerException");
+     if (lJavaClass != NULL)
+     {
+        gTransactionManagerExceptionClass = (jclass)_tlp_jenv->NewGlobalRef(lJavaClass);
+        _tlp_jenv->DeleteLocalRef(lJavaClass);
+        gGetErrorCodeMethodID  = _tlp_jenv->GetMethodID(gTransactionManagerExceptionClass,
+                        "getErrorCode",
+                         "()S");
+     }
+  } 
   return JOI_OK;
 }
  
@@ -395,7 +410,7 @@ void set_error_msg(char *error_msg)
 
 
 
-bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
+bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv, short *errCode)
 {
    std::string error_msg;
 
@@ -407,6 +422,15 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
       set_error_msg(error_msg);
       return false;
    }
+   
+   if(!jenv->ExceptionCheck())
+   {
+     //jenv_->ExceptionCheck() is a light weight call
+     //to determine exception exists. Return here if 
+     //no exception object to probe.
+     return false;
+   }
+   
    if (gThrowableClass == NULL)
    {
       jenv->ExceptionDescribe();
@@ -414,6 +438,7 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
       set_error_msg(error_msg);
       return false;
    }
+   
    jthrowable a_exception = jenv->ExceptionOccurred();
    if (a_exception == NULL)
    {
@@ -421,6 +446,12 @@ bool  JavaObjectInterfaceTM::getExceptionDetails(JNIEnv *jenv)
        set_error_msg(error_msg);
        return false;
    }
+   
+   if(errCode)
+   {
+     *errCode = getExceptionErrorCode(jenv, a_exception);
+   }
+   
    error_msg = "";
    appendExceptionMessages(jenv, a_exception, error_msg);
    set_error_msg(error_msg);
@@ -478,3 +509,21 @@ void JavaObjectInterfaceTM::appendExceptionMessages(JNIEnv *jenv, jthrowable a_e
     jenv->DeleteLocalRef(a_exception);
 }
 
+short JavaObjectInterfaceTM::getExceptionErrorCode(JNIEnv *jenv, jthrowable a_exception)
+{
+  jshort errCode = JOI_OK;
+  if(a_exception != NULL)
+  {
+    //Only TransactionManagerException class has errorcode defined.
+    if(jenv->IsInstanceOf(a_exception, gTransactionManagerExceptionClass))
+    {
+      errCode =(jshort) jenv->CallShortMethod(a_exception,
+                                              gGetErrorCodeMethodID);
+      if(jenv->ExceptionCheck())
+      {
+        jenv->ExceptionClear();
+      }
+    }
+  }
+  return errCode;
+}

@@ -361,7 +361,7 @@ bool TM_TX_Info::state_change_commit_helper (CTmTxMessage * pp_msg, bool pv_read
 bool TM_TX_Info::state_change_prepare_helper(CTmTxMessage * pp_msg)
 {
    bool lv_continue = true;
-   int32 lv_error = branches()->prepare_branches (this, TT_flags());
+   int32 lv_error = branches()->prepare_branches (this, TT_flags(), pp_msg);
    if (iv_mark_for_rollback == true)
    {
       short lv_replyErr = FEOK;

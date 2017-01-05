@@ -349,7 +349,7 @@ TM_TX_STATE CTmXaTxn::state_change_commit_helper (CTmTxMessage * pp_msg, bool pv
 TM_TX_STATE CTmXaTxn::state_change_prepare_helper(CTmTxMessage * pp_msg)
 {
    TM_TX_STATE lv_nextState = tx_state();
-   int32 lv_error = mapErr(branches()->prepare_branches(this, TT_flags()));
+   int32 lv_error = mapErr(branches()->prepare_branches(this, TT_flags(), pp_msg));
    if (iv_mark_for_rollback == true)
    {
       pp_msg->responseError(FEABORTEDTRANSID);
