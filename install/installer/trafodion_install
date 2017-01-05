@@ -570,13 +570,33 @@ if [[ "$UPGRADE_TRAF" == "true" ]]; then
          fi
       fi
    done
+
+  echo "***INFO: Copying default bashrc file"
+  if [[ $HOME_DIR == "/home" ]]; then
+      default_home=$(sudo cat /etc/default/useradd | grep -E "^HOME=" | sed -e "s@HOME=@@" )
+  else
+      default_home="$HOME_DIR"
+  fi
+
+  if [ "$default_home" == "" ]; then
+      default_home="$HOME_DIR"
+  fi
+  typeset TRAF_USER_DIR="$default_home/$TRAF_USER"
+  if [ -f $TRAF_USER_DIR/bashrc_backup ]; then
+      echo "***INFO: preserving bashrc_backup"
+  else
+      sudo cp $TRAF_USER_DIR/.bashrc $TRAF_USER_DIR/bashrc_backup
+      sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/bashrc_backup
+  fi
+  sudo cp $LOCAL_WORKDIR/bashrc_default $TRAF_USER_DIR/.bashrc
+  sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/.bashrc
+
   echo "***INFO: Installing required RPM packages" | tee -a $INSTALL_LOG
   $LOCAL_WORKDIR/traf_package_setup | tee -a $INSTALL_LOG
   if [ $? != 0 ]; then
      echo "***ERROR: Unable to create Trafodion userid: $TRAF_USER"
      exit -1
   fi
-   
 else
    $LOCAL_WORKDIR/traf_setup | tee -a $INSTALL_LOG
 
