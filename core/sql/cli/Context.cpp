@@ -2542,7 +2542,6 @@ void ContextCli::checkIfNeedToClose(Statement *stmt, enum CloseCursorType type, 
   
   if (stmt->isAnsiHoldable())
   {
-    getCliGlobals()->updateMeasure(stmt,NA_JulianTimestamp());
     if (type == CLOSE_ALL_INCLUDING_ANSI_HOLDABLE
             || type == CLOSE_ALL_INCLUDING_ANSI_PUBSUB_HOLDABLE
             || type == CLOSE_ALL_INCLUDING_ANSI_PUBSUB_HOLDABLE_WHEN_CQD)
@@ -2553,7 +2552,6 @@ void ContextCli::checkIfNeedToClose(Statement *stmt, enum CloseCursorType type, 
   else
   if (stmt->isPubsubHoldable())
   {
-    getCliGlobals()->updateMeasure(stmt,NA_JulianTimestamp());
     if (type == CLOSE_ALL_INCLUDING_PUBSUB_HOLDABLE
             || type == CLOSE_ALL_INCLUDING_ANSI_PUBSUB_HOLDABLE)
       closeStmt = TRUE;

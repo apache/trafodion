@@ -2997,62 +2997,6 @@ Lng32 SQLCLI_PerformTasks(
 	   stmt->setOltOpt(TRUE);
        }
     }
-  if (stmt->getRootTdb() && 
-      (((ComTdb*)stmt->getRootTdb())->getCollectStatsType() == ComTdb::MEASURE_STATS))
-    {
-      // save Measure status
-      NABoolean oldMeasStmtEnabled = 0; //SQ TBD
-      NABoolean oldMeasProcEnabled = 0;
-
-      // get current Measure status.
-      // set sqlstmt enabled in statement globals when either
-      // sqlproc or sqlstmt is set.  sqlproc counters need stats info
-      // from stmt counters.
-      cliGlobals->checkMeasStatus();
-      stmt->getGlobals()->
-	setMeasStmtEnabled(cliGlobals->getMeasStmtEnabled() ||
-			   cliGlobals->getMeasProcEnabled());
-      
-      // if Measure status changed from Disabled to Enabled, 
-      // call Measure to initialize process and statement counters.
-      //LCOV_EXCL_START
-      if (cliGlobals->getMeasProcEnabled() && !oldMeasProcEnabled)
-	cliGlobals->getMeasProcCntrs()->ExMeasProcCntrsBump();
-      //LCOV_EXCL_STOP
-      ExStatisticsArea *stats = stmt->getGlobals()->getStatsArea();
-      //LCOV_EXCL_START
-      if (stmt->getGlobals()->measStmtEnabled()) 
-        {
-	  if ((stmt->getModule() != NULL) &&  // static sql
-	      stmt->getModule()->getStmtCntrsSpace(0))
-	  {
-	    // setup stmt counter, if Measure not previously enabled.
-	    // space already allocated(in Comtdb::build).
-	 
-	    if (!oldMeasStmtEnabled && cliGlobals->getMeasStmtEnabled())
-	      {
-		ExMeasStmtCntrs *stmtCntrs = (ExMeasStmtCntrs *)stmt->
-		             getModule()->getStmtCntrsSpace(0);
-		stmtCntrs->ExMeasStmtCntrsBump
-		         (stmt->getModule()->getStatementCount(),
-			  stmt->getModule()->getModuleName(),
-			  stmt->getModule()->getModuleNameLen());
-	      }
-	    // setup stmt counter in master stmt globals.
-	    stmt->getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
-		setStmtCntrs((ExMeasStmtCntrs *) stmt->getModule()->
-				getStmtCntrsSpace(stmt->getStatementIndex()) );
-
-	  }
-	  else  // dynamic sql, allocate stmt counter. 
-	  {
-	    if (!oldMeasStmtEnabled && cliGlobals->getMeasStmtEnabled())
-	      stmt->allocDynamicStmtCntrs();
-	  }
-	}
-      //LCOV_EXCL_STOP
-    }
-
   stmt->getGlobals()->setNoNewRequest(FALSE);
 
   Descriptor * input_desc = NULL;
@@ -3209,23 +3153,7 @@ Lng32 SQLCLI_PerformTasks(
       if ((stmt->getRootTdb()) &&
 	  (((ComTdb*)stmt->getRootTdb())->getCollectStats()))
 	{
-	  // enable stats collection for measure, if measure is enabled.
-	  if (((ComTdb*)stmt->getRootTdb())->getCollectStatsType() == ComTdb::MEASURE_STATS)
-	    {
-
-	      cliGlobals->checkMeasStatus();
-	      if ((cliGlobals->getMeasStmtEnabled()) ||
-		  (cliGlobals->getMeasProcEnabled()))
-		{
-		  stmt->getGlobals()->setMeasStmtEnabled(TRUE);
-		}
-	      stmt->getGlobals()->setStatsEnabled(
-		       cliGlobals->getMeasSubsysRunning());
-
-	    }
-	  else
-	    // for all other case, enable stats collection.
-	    stmt->getGlobals()->setStatsEnabled(TRUE);
+	  stmt->getGlobals()->setStatsEnabled(TRUE);
 #ifdef _DEBUG
 	  if (getenv("DISABLE_STATS"))
 	    stmt->getGlobals()->setStatsEnabled(FALSE);
@@ -3258,12 +3186,6 @@ Lng32 SQLCLI_PerformTasks(
 	  // by fastpath OLT execution.
 	  if (NOT doNormalExecute)
 	    {
-	      // update Measure if enabled.
-	      if (stmt->getGlobals()->getMeasStmtCntrs())
-		{
-		  stmt->getGlobals()->getMeasStmtCntrs()->incCalls(1);
-		}
-	      cliGlobals->updateMeasure(stmt, startTime);
               if (stmt->getState() != Statement::CLOSE_)
                 stmt->close(diags);
  	      return CliEpilogue(cliGlobals,statement_id,retcode);
@@ -3400,7 +3322,6 @@ Lng32 SQLCLI_PerformTasks(
 
       if (isERROR(retcode))
 	{
-	  cliGlobals->updateMeasure(stmt, startTime);
 	  return CliEpilogue(cliGlobals,statement_id,retcode);
 	}
       else if (retcode == WARNING)
@@ -3431,7 +3352,6 @@ Lng32 SQLCLI_PerformTasks(
 	      retcode = stmt->fetch(cliGlobals, 0 /*no output desc*/,diags, TRUE);
 	      if (retcode == SUCCESS)
 		{
-		  cliGlobals->updateMeasure(stmt, startTime);
 		  diags << DgSqlCode(-CLI_SELECT_INTO_ERROR);
 		  stmt->close(diags);
 		  return CliEpilogue(cliGlobals,statement_id,-CLI_SELECT_INTO_ERROR);
@@ -3459,9 +3379,6 @@ Lng32 SQLCLI_PerformTasks(
   // Close the statement.
   if (tasks & CLI_PT_CLOSE)
     {
-      // Update Measure sqlstmt and sqlproc counters.
-      cliGlobals->updateMeasure(stmt, startTime);
-
       Lng32 tretcode = stmt->close(diags);
 
       if (isERROR(tretcode))
