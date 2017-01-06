@@ -211,7 +211,7 @@ class UserInput(object):
         isuser = self.in_data[name].has_key('isuser')
 
         # check answer value basicly
-        answer = answer.rstrip()
+        answer = answer.strip()
         if answer:
             if isYN:
                 answer = answer.upper()

@@ -101,7 +101,8 @@ def run_cmd(cmd):
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     stdout, stderr = p.communicate()
     if p.returncode != 0:
-        err('Failed to run command %s: %s' % (cmd, stderr))
+        msg = stderr if stderr else stdout
+        err('Failed to run command %s: %s' % (cmd, msg))
     return stdout.strip()
 
 def run_cmd_as_user(user, cmd):
