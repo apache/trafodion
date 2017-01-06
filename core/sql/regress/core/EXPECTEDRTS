@@ -303,6 +303,7 @@ Reply Message Bytes      38,664
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -361,6 +362,7 @@ Reply Message Bytes      38,664
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -420,6 +422,7 @@ Reply Message Bytes      38,664
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -478,6 +481,7 @@ Reply Message Bytes      38,664
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -1175,6 +1179,7 @@ Reply Message Bytes      39,048
 Scr. Overflow Mode       UNKNOWN
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -1233,6 +1238,7 @@ Reply Message Bytes      39,048
 Scr. Overflow Mode       UNKNOWN
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -1414,6 +1420,7 @@ Reply Message Bytes      39,048
 Scr. Overflow Mode       UNKNOWN
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -1472,6 +1479,7 @@ Reply Message Bytes      39,048
 Scr. Overflow Mode       UNKNOWN
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -1897,6 +1905,7 @@ Reply Message Bytes      42,200
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -1955,6 +1964,7 @@ Reply Message Bytes      42,200
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -2407,6 +2417,7 @@ Reply Message Bytes      42,200
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
@@ -2686,6 +2697,7 @@ Reply Message Bytes      42,200
 Scr. Overflow Mode       DISK
 Scr. File Count          0
 Scr. Buffer Blk Size     0
+Scr. Buffer Blks Read    0
 Scr. Buffer Blks Written 0
 Scr. Read Count          0
 Scr. Write Count         0
