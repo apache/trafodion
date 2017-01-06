@@ -17,15 +17,22 @@
 RELEASE_VER ?= ${TRAFODION_VER}-incubating
 RELEASE_TYPE ?= $(shell echo $(TRAFODION_VER_PROD)| sed -e 's/ /-/g')
 INSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_installer-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
+PYINSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_pyinstaller-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
 
-all: pkg-installer 
+all: pkg-installer
 
-pkg-installer: installer/LICENSE installer/NOTICE installer/DISCLAIMER
+pkg-installer: installer/LICENSE installer/NOTICE installer/DISCLAIMER \
+               python-installer/LICENSE python-installer/NOTICE python-installer/DISCLAIMER
 	tar czf ${INSTALLER_TARNAME} installer --exclude=tools
+	tar czf ${PYINSTALLER_TARNAME} python-installer
 	mkdir -p ../distribution
 	mv ${INSTALLER_TARNAME} ../distribution
+	mv ${PYINSTALLER_TARNAME} ../distribution
 
 installer/LICENSE: ../licenses/LICENSE-install
+	cp -f $? $@
+
+python-installer/LICENSE: ../licenses/LICENSE-install
 	cp -f $? $@
 
 ../licenses/LICENSE-install:
@@ -34,11 +41,18 @@ installer/LICENSE: ../licenses/LICENSE-install
 installer/NOTICE: ../NOTICE
 	cp -f $? $@
 
+python-installer/NOTICE: ../NOTICE
+	cp -f $? $@
+
 installer/DISCLAIMER: ../DISCLAIMER
+	cp -f $? $@
+
+python-installer/DISCLAIMER: ../DISCLAIMER
 	cp -f $? $@
 
 version:
 	@echo "$(RELEASE_VER)"
 
 clean:
-	rm -f ${INSTALLER_TARNAME} 
+	rm -f ${INSTALLER_TARNAME}
+	rm -f ${PYINSTALLER_TARNAME}
