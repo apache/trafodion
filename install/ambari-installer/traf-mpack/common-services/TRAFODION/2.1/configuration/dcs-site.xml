@@ -65,7 +65,7 @@
     <name>dcs.master.floating.ip</name>
     <display-name>DCS High Availability Enabled</display-name>
     <value>false</value>
-    <description>Provides failover to DCS Backup servers (requires floating IP address)</description>
+    <description>Enable DCS Backup Servers, which provide failover for DCS Master (requires a floating IP address).</description>
     <value-attributes>
        <type>value-list</type>
        <entries>

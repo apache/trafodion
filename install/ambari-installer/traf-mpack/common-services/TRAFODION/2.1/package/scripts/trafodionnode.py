@@ -27,6 +27,21 @@ class Node(Script):
     # Install packages listed in metainfo.xml
     self.install_packages(env)
   
+    import params
+    Directory(params.traf_conf_dir, 
+              mode=0755, 
+              owner = params.traf_user, 
+              group = params.traf_group, 
+              create_parents = True)
+    # cluster file will be over-written by trafodionmaster install
+    # until then, make file that shell can source without error
+    traf_conf_path = os.path.join(params.traf_conf_dir, "traf-cluster-env.sh")
+    File(traf_conf_path,
+         owner = params.traf_user, 
+         group = params.traf_group, 
+         content="# place-holder\n",
+         mode=0644)
+
     self.configure(env)
 
   def configure(self, env):
@@ -64,29 +79,16 @@ class Node(Script):
     # might be better to check this earlier (in service_advisor.py)
     if params.java_version < 8:
       print "Error: Java 1.8 required for Trafodion and HBase"
-      print "       Use 'ambari setup' to change JDK and restart HBase before continuing"
+      print "       Use 'ambari-server setup' to change JDK and restart HBase before continuing"
       exit(1)
     ##################
     # create env files
     env.set_params(params)
-    Directory(params.traf_conf_dir, 
-              mode=0755, 
-              owner = params.traf_user, 
-              group = params.traf_group, 
-              create_parents = True)
     traf_conf_path = os.path.join(params.traf_conf_dir, "trafodion-env.sh")
     File(traf_conf_path,
          owner = params.traf_user, 
          group = params.traf_group, 
          content=InlineTemplate(params.traf_env_template,trim_blocks=False),
-         mode=0644)
-    # cluster file will be over-written by trafodionmaster install
-    # until then, make file that shell can source without error
-    traf_conf_path = os.path.join(params.traf_conf_dir, "traf-cluster-env.sh")
-    File(traf_conf_path,
-         owner = params.traf_user, 
-         group = params.traf_group, 
-         content="# place-holder",
          mode=0644)
     # initialize & verify env (e.g., creates $TRAF_HOME/tmp as trafodion user)
     cmd = "source ~/.bashrc"
