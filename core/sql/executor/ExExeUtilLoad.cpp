@@ -3455,13 +3455,8 @@ short ExExeUtilLobUpdateTcb::work()
     so= Lob_Buffer;
   
   Int64 lobLen = lobTdb().updateSize();
-  char * data = (char *)lobTdb().getBufAddr();
-  
-  if (so == Lob_Buffer)
-    {
-      Int64 inputAddr = lobTdb().getBufAddr();
-      data = (char *)&inputAddr;
-    }
+  char * data = (char *)(lobTdb().getBufAddr());
+ 
   void * lobGlobs = getLobGlobals()->lobAccessGlobals();
 
   while (1)
