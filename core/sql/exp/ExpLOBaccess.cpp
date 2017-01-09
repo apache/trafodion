@@ -1132,10 +1132,7 @@ Ex_Lob_Error ExLob::append(char *data, Int64 size, LobsSubOper so, Int64 headDes
     }
 
     char *inputAddr = data;
-    if (so == Lob_Buffer)
-      {
-	inputAddr = (char *)(*(long *)data);
-      }
+   
      str_sprintf(logBuf,"Calling writeLobData: inputAddr: %Ld, InputSize%Ld, tgtOffset:%Ld",(long)inputAddr,sourceLen,dataOffset);
     err = writeLobData(inputAddr, sourceLen,so,dataOffset,operLen,lobMaxChunkMemSize);
     if (err != LOB_OPER_OK)
@@ -1170,10 +1167,7 @@ Ex_Lob_Error ExLob::insertData(char *data, Int64 size, LobsSubOper so,Int64 head
     }
 
     char *inputAddr = data;
-    if (so == Lob_Buffer)
-      {
-	inputAddr = (char *)(*(long *)data);
-      }
+   
     Int64 inputSize = desc.getSize();
     Int64 tgtOffset = desc.getOffset();
     str_sprintf(logBuf,"Calling writeLobData: inputAddr: %Ld, InputSize%Ld, tgtOffset:%Ld",(long)inputAddr,inputSize,tgtOffset);
@@ -1247,10 +1241,7 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
         return err;
       }
     char *inputAddr = data;
-    if (so == Lob_Buffer)
-      {
-	inputAddr = (char *)(*(long *)data);
-      }
+   
     str_sprintf(logBuf,"Calling writeLobData.sourceLen:%Ld, dataOffset:%Ld",sourceLen,dataOffset);
     lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
            

@@ -208,7 +208,7 @@ Int32 updateBufferToLob(CliGlobals *cliglob, char *tableName, char *columnName)
  
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobUpdateLen = 10;
+  Int64 lobUpdateLen = 20;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
   str_sprintf(query,"update %s set %s= buffertolob(LOCATION %Ld, SIZE %Ld)", tableName,columnName, (Int64)lobDataBuf, lobUpdateLen);
@@ -244,7 +244,7 @@ Int32 updateAppendBufferToLob(CliGlobals *cliglob, char *tableName, char *column
  
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobUpdateLen = 10;
+  Int64 lobUpdateLen = 15;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "aaaaabbbbbccccc",15);
   str_sprintf(query,"update %s set %s=buffertolob (LOCATION %Ld, SIZE %Ld,append)", tableName, columnName,(Int64)lobDataBuf, lobUpdateLen);
@@ -279,7 +279,7 @@ Int32 updateBufferToLobHandle(CliGlobals *cliglob,char *handle)
  
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobUpdateLen = 50;
+  Int64 lobUpdateLen = 20;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
   str_sprintf(query,"update lob (LOB '%s' , LOCATION %Ld, SIZE %Ld)", handle, (Int64)lobDataBuf, lobUpdateLen);
@@ -313,7 +313,7 @@ Int32 updateAppendBufferToLobHandle(CliGlobals *cliglob,char *handle)
  
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobUpdateLen = 50;
+  Int64 lobUpdateLen = 20;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
   str_sprintf(query,"update lob (LOB '%s' , LOCATION %Ld, SIZE %Ld,append )", handle, (Int64)lobDataBuf, lobUpdateLen);
@@ -348,10 +348,10 @@ Int32 updateTruncateLobHandle(CliGlobals *cliglob,char *handle)
  
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobUpdateLen = 50;
+  Int64 lobUpdateLen = 20;
   char *lobDataBuf = new char[lobUpdateLen];
   memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
-  str_sprintf(query,"update lob (LOB '%s' , empty_blob())", handle, (Int64)lobDataBuf, lobUpdateLen);
+  str_sprintf(query,"update lob (LOB '%s' , empty_blob())", handle);
  
  
   retcode = cliInterface.executeImmediate(query);

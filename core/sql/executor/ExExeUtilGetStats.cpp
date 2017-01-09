@@ -2321,7 +2321,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (measStatsItems_ == NULL)
         {
-          maxMeasStatsItems_ = 26;
+          maxMeasStatsItems_ = 27;
           measStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxMeasStatsItems_];
           initSqlStatsItems(measStatsItems_, maxMeasStatsItems_, FALSE);
@@ -2348,11 +2348,11 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           measStatsItems_[20].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
           measStatsItems_[21].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
           measStatsItems_[22].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
-          measStatsItems_[22].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
-          measStatsItems_[23].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
-          measStatsItems_[24].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
-          measStatsItems_[25].statsItem_id = SQLSTATS_TOPN;
-          // maxMeasStatsItems_ is set to  26
+          measStatsItems_[23].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
+          measStatsItems_[24].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
+          measStatsItems_[25].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
+          measStatsItems_[26].statsItem_id = SQLSTATS_TOPN;
+          // maxMeasStatsItems_ is set to  27
         }
         else
           initSqlStatsItems(measStatsItems_, maxMeasStatsItems_, TRUE);
