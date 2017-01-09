@@ -1211,7 +1211,7 @@ public:
   {
     scratchOverflowMode_ = overflowMode;
   }
-  inline void setTopN(Int32 size) 
+  inline void setTopN(Int64 size) 
   { 
     topN_ = size;
   }
@@ -1232,8 +1232,7 @@ private:
   Int64 scratchReadCount_;
   Int64 scratchWriteCount_;
   Int16 scratchOverflowMode_;   // 0 - disk 1 - SSD
-  Int16 topN_;                 // TOPN value
-  char bmoFiller_[4];          // For versioning with old dp2
+  Int64 topN_;                 // TOPN value
 };
 
 

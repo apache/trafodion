@@ -1951,7 +1951,7 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		"SpaceUsed: %u SpaceTotal: %u HeapUsed: %u HeapTotal: %u "
 		"Newprocess: %u NewprocessTime: %Ld reqMsgCnt: %Ld "
 		"regMsgBytes: %Ld replyMsgCnt: %Ld replyMsgBytes: %Ld "
-		"PMemUsed: %Ld scrOverFlowMode: %d sortMode: %d"
+		"PMemUsed: %Ld scrOverFlowMode: %d sortTopN: %Ld"
 		"scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %Ld scrBufferWritten: %Ld "
 		"scrWriteCount:%Ld scrReadCount: %Ld udrCpuTime: %Ld "
 		"maxWaitTime: %Ld avgWaitTime: %Ld "
@@ -1972,6 +1972,7 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		replyMsgBytes_,
 		pagesInUse_ * 16,
 		scratchOverflowMode_,
+		topN_,
 		scratchFileCount_,
 		scratchBufferBlockSize_,
 		scratchBufferBlockRead_,
@@ -1979,7 +1980,6 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		scratchWriteCount_,
 		scratchReadCount_,
 		udrCpuTime_,
-		topN_,
 		maxWaitTime_,
 		getAvgWaitTime(),
 		(hdfsAccess() ? 1 : 0)
@@ -5123,9 +5123,9 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
     "statsRowType: %d Newprocess: %u NewprocessTime: %Ld Timeouts: %u NumSorts: %u SortElapsedTime: %Ld "
     "SpaceTotal: %d  SpaceUsed: %d HeapTotal: %d HeapUsed: %d CpuTime: %Ld "
     "reqMsgCnt: %Ld reqMsgBytes: %Ld replyMsgCnt: %Ld "
-    "replyMsgBytes: %Ld scrOverflowMode: %d "
+    "replyMsgBytes: %Ld scrOverflowMode: %d sortTopN: %Ld"
     "scrFileCount: %d scrBufferBlockSize: %d scrBufferRead: %Ld scrBufferWritten: %Ld "
-    "scrWriteCount: %Ld scrReadCount: %Ld udrCpuTime: %Ld topN: %Ld",
+    "scrWriteCount: %Ld scrReadCount: %Ld udrCpuTime: %Ld",
 	      statType(),
               getNewprocess(),
 	      getNewprocessTime(),
@@ -5142,14 +5142,14 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
               replyMsgCnt_,
               replyMsgBytes_,
               scratchOverflowMode_,
+              topN_,
               scratchFileCount_,
               scratchBufferBlockSize_,
               scratchBufferBlockRead_,
               scratchBufferBlockWritten_,
               scratchWriteCount_,
               scratchReadCount_,
-              udrCpuTime_,
-              topN_
+              udrCpuTime_
               );
   }
   buf += str_len(buf);
@@ -10712,10 +10712,7 @@ void ExBMOStats::unpack(const char* &buffer)
   if (getVersion() >= _STATS_RTS_VERSION_R25)
   {
     alignBufferForNextObj(buffer); 
-    if (getVersion() == _STATS_RTS_VERSION_R25)
-      srcLen = sizeof(ExBMOStats)-sizeof(scratchOverflowMode_)-sizeof(bmoFiller_)-sizeof(ExOperStats);
-    else
-      srcLen = sizeof(ExBMOStats)-sizeof(ExOperStats);
+    srcLen = sizeof(ExBMOStats)-sizeof(ExOperStats);
     char * srcPtr = (char *)this+sizeof(ExOperStats);
     memcpy((void *)srcPtr, buffer, srcLen);
     buffer += srcLen;
