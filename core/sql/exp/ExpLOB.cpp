@@ -926,7 +926,9 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
   if (fromBuffer())
     {
       memcpy(&lobLen, op_data[2],sizeof(Int64)); // user specified buffer length
-      memcpy(lobData,op_data[1],sizeof(Int64)); // user buffer address
+      Int64 userBufAddr = 0;
+      memcpy(&userBufAddr,op_data[1],sizeof(Int64));
+      lobData = (char *)userBufAddr;
     }
   LobsOper lo ;
  
@@ -1348,7 +1350,9 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
   if (fromBuffer())
     {
       memcpy(&lobLen, op_data[3],sizeof(Int64)); // user specified buffer length
-      memcpy(data,op_data[1],sizeof(Int64)); // user buffer address
+      Int64 userBufAddr = 0;
+      memcpy(&userBufAddr,op_data[1],sizeof(Int64));
+      data = (char *)userBufAddr;
     }
 
   if(fromEmpty())

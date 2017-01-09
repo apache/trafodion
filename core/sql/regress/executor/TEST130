@@ -528,11 +528,11 @@ insert into t130lob5 values (1,empty_blob());
 sh clitestdriver 6 < TEST130_argfile3 2>&1 | tee -a LOG130;
 select lobtostring(c2,20) from t130lob5;
 sh clitestdriver 7 < TEST130_argfile3 2>&1 | tee -a LOG130;
-select lobtostring(c2,20) from t130lob5;
+select lobtostring(c2,40) from t130lob5;
 sh clitestdriver 8 < TEST130_argfile3 2>&1 | tee -a LOG130;
 select lobtostring(c2,20) from t130lob5;
 sh clitestdriver 6 < TEST130_argfile3 2>&1 | tee -a LOG130;
-select lobtostring(c2,20) from t130lob5;
+select lobtostring(c2,40) from t130lob5;
 delete from t130lob5;
 
 
