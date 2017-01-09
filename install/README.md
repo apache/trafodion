@@ -44,12 +44,18 @@ management pack.
 
 Part of Ambari's job is to set up yum repo files on each node in order to install packages.
 The default URLs are for Hortonworks' public repos. But since your custom-built Trafodion is
-not hosted there, you need to specify a URL for your local yum repo server. To build that into
-the `traf_ambari` package, use make to specify value of `REPO_URL`.
+not hosted there, you need to specify a URL for your local yum repo server.
 
-   `make package REPO_URL=http://my.repo.server/repo/...`
+The default value
+is built into the `traf_ambari` RPM. This default value can be changed at install time in the
+Ambari GUI.  The default URL value can also be set when building
+the `traf_ambari` package. Use make to specify value of `REPO_URL`.
 
-This can be done either in the install directory or from a top-level "make package-all".
+   `make package-all REPO_URL=http://my.repo.server/repo/...`
+
+Setting default value can be done either at the top-level (package-all) or from install
+directory ("make pkg-ambari REPO_URL=...").
+
 This is not necessarily the URL where `traf_ambari` is hosted, but rather where the
 `apache-trafodion_server` is hosted.
 
