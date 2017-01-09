@@ -2351,8 +2351,8 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           measStatsItems_[22].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
           measStatsItems_[23].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
           measStatsItems_[24].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
-
-          // maxMeasStatsItems_ is set to  25
+          measStatsItems_[25].statsItem_id = SQLSTATS_TOPN;
+          // maxMeasStatsItems_ is set to  26
         }
         else
           initSqlStatsItems(measStatsItems_, maxMeasStatsItems_, TRUE);
@@ -2496,6 +2496,12 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             str_sprintf(statsBuf_, "%25s%s", "Scr. Overflow Mode", 
               ExBMOStats::getScratchOverflowMode((Int16)measStatsItems_[i].int64_value));
             break;
+          case SQLSTATS_TOPN:
+            str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(statsBuf_, "%25s%s", "Sort TopN", Int64Val);
+            break;
           case SQLSTATS_SCRATCH_FILE_COUNT:
             str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
@@ -2546,7 +2552,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (rootOperStatsItems_ == NULL)
         {
-          maxRootOperStatsItems_ = 23;
+          maxRootOperStatsItems_ = 24;
           rootOperStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxRootOperStatsItems_];
           initSqlStatsItems(rootOperStatsItems_, maxRootOperStatsItems_, FALSE);
@@ -2573,7 +2579,8 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           rootOperStatsItems_[20].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
           rootOperStatsItems_[21].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
           rootOperStatsItems_[22].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
-          // maxRootOperStatsItems_ is set to 23
+          rootOperStatsItems_[23].statsItem_id = SQLSTATS_TOPN;
+          // maxRootOperStatsItems_ is set to 24
         }
         else
           initSqlStatsItems(rootOperStatsItems_, maxRootOperStatsItems_, TRUE);
@@ -2686,6 +2693,15 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             {
               str_sprintf(statsBuf_, "%25s%s", "Scr. Overflow Mode", 
                 ExBMOStats::getScratchOverflowMode((Int16)rootOperStatsItems_[i].int64_value));
+            }
+            else
+              continue;
+            break;
+          case SQLSTATS_TOPN:
+            if (statsMergeType != SQLCLI_PROGRESS_STATS)
+            {
+              formatWInt64( rootOperStatsItems_[i], Int64Val);
+              str_sprintf(statsBuf_, "%25s%s", "Sort TopN", Int64Val);
             }
             else
               continue;
@@ -3198,28 +3214,30 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (bmoStatsItems_ == NULL)
         {
-          maxBMOStatsItems_ = 15;
+          maxBMOStatsItems_ = 16;
           bmoStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxBMOStatsItems_];
           initSqlStatsItems(bmoStatsItems_, maxBMOStatsItems_, FALSE);
           bmoStatsItems_[0].statsItem_id = SQLSTATS_TDB_ID;
           bmoStatsItems_[1].statsItem_id = SQLSTATS_TDB_NAME;
           bmoStatsItems_[2].statsItem_id = SQLSTATS_SCRATCH_OVERFLOW_MODE;
+          bmoStatsItems_[3].statsItem_id = SQLSTATS_TOPN;
           //bmoStatsItems_[3].statsItem_id = SQLSTATS_OVERFLOW_PHASE;
           //bmoStatsItems_[4].statsItem_id = SQLSTATS_OVEFLOW_PHASE_STARTTIME;
-          bmoStatsItems_[3].statsItem_id = SQLSTATS_OPER_CPU_TIME;
-          bmoStatsItems_[4].statsItem_id = SQLSTATS_BMO_HEAP_USED;
-          bmoStatsItems_[5].statsItem_id = SQLSTATS_BMO_HEAP_ALLOC;
-          bmoStatsItems_[6].statsItem_id = SQLSTATS_BMO_HEAP_WM;
-          bmoStatsItems_[7].statsItem_id = SQLSTATS_BMO_SPACE_BUFFER_SIZE;
-          bmoStatsItems_[8].statsItem_id = SQLSTATS_BMO_SPACE_BUFFER_COUNT;
-          bmoStatsItems_[9].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
-          bmoStatsItems_[10].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
-          bmoStatsItems_[11].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
-          bmoStatsItems_[12].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
-          bmoStatsItems_[13].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
-          bmoStatsItems_[14].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
-          // maxBMOStatsItems_ is set to 15
+          bmoStatsItems_[4].statsItem_id = SQLSTATS_OPER_CPU_TIME;
+          bmoStatsItems_[5].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
+          bmoStatsItems_[6].statsItem_id = SQLSTATS_BMO_HEAP_USED;
+          bmoStatsItems_[7].statsItem_id = SQLSTATS_BMO_HEAP_ALLOC;
+          bmoStatsItems_[8].statsItem_id = SQLSTATS_BMO_HEAP_WM;
+          bmoStatsItems_[9].statsItem_id = SQLSTATS_BMO_SPACE_BUFFER_SIZE;
+          bmoStatsItems_[10].statsItem_id = SQLSTATS_BMO_SPACE_BUFFER_COUNT;
+          bmoStatsItems_[11].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
+          bmoStatsItems_[12].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
+          bmoStatsItems_[13].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
+          bmoStatsItems_[14].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
+          bmoStatsItems_[15].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
+          
+          // maxBMOStatsItems_ is set to 16
           // TDB_NAME
           bmoStatsItems_[1].str_value = new (getGlobals()->getDefaultHeap())
                       char[MAX_TDB_NAME_LEN+1];
@@ -3255,11 +3273,20 @@ short ExExeUtilGetRTSStatisticsTcb::work()
         if ((qparent_.up->getSize() - qparent_.up->getLength()) < 4)
 	      return WORK_CALL_AGAIN;
         moveRowToUpQueue(" ");
-       str_sprintf(statsBuf_, "%5s %35s%5s%-19s%-15s%-15s%-15s%-17s%-17s%-12s%-45s %s",
-                "   Id", "TDB Name", "Mode", "CPU Time", 
-                "BMO Heap Used", "BMO Heap Total", "BMO Heap WM", "BMO Space BufSz","BMO Space BufCnt",
-                "File Count", "Scratch Buffer Block Size/Read/Written",
-                "Scratch IO Count Read/Written");
+              
+        str_sprintf(statsBuf_, "%-5s%-17s%-20s%-20s%-20s%-20s%",
+            "Id", "TDB Name", "Mode", "TopN", "CPU Time","File Count");
+        moveRowToUpQueue(statsBuf_);
+        
+       str_sprintf(statsBuf_, "%-22s%-20s%-20s%-20s%-20s%",
+                "BMO Heap Used", "BMO Heap Total", "BMO Heap WM",
+                "BMO Space BufSz","BMO Space BufCnt");
+       moveRowToUpQueue(statsBuf_);
+       
+       str_sprintf(statsBuf_, "%-22s%-20s%-20s%-20s%-20s%",
+                "ScrBlk Size",
+                "ScrBlk Read", "ScrBlk Written", "ScrIO Read", "ScrIO Written");
+  
         moveRowToUpQueue(statsBuf_);
         isBMOHeadingDisplayed_ = TRUE;
         step_ = FORMAT_AND_RETURN_BMO_STATS_;
@@ -3275,16 +3302,37 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           switch (bmoStatsItems_[i].statsItem_id)
           {
           case SQLSTATS_TDB_ID:
-            str_sprintf(statsBuf_, "%5Ld", bmoStatsItems_[i].int64_value);
+            str_sprintf(statsBuf_, "%-5Ld", bmoStatsItems_[i].int64_value);
             break;
           case SQLSTATS_TDB_NAME:
             bmoStatsItems_[i].str_value[bmoStatsItems_[i].str_ret_len] = '\0';
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], " %35s", bmoStatsItems_[i].str_value);
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-17s", bmoStatsItems_[i].str_value);
             break;
           case SQLSTATS_SCRATCH_OVERFLOW_MODE:
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%5s", 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", 
                  ExBMOStats::getScratchOverflowMode((Int16) bmoStatsItems_[i].int64_value));
             break;
+          case SQLSTATS_TOPN:
+            str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
+            break;
+          case SQLSTATS_OPER_CPU_TIME:
+            str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
+            break;
+          case SQLSTATS_SCRATCH_FILE_COUNT:
+            str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
+            if (moveRowToUpQueue(statsBuf_, strlen(statsBuf_), &rc) == -1)
+              return rc;
+            break;
+/*
           case SQLSTATS_OVERFLOW_PHASE:
             bmoStatsItems_[i].str_value[bmoStatsItems_[i].str_ret_len] = '\0';
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%12s", bmoStatsItems_[i].str_value);
@@ -3303,72 +3351,63 @@ short ExExeUtilGetRTSStatisticsTcb::work()
 			  timestamp[3], timestamp[4], timestamp[5]);
             }
             break;
+*/
           case SQLSTATS_BMO_HEAP_USED:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", Int64Val);
+            str_sprintf(statsBuf_, "%-22s", Int64Val);
             break;
           case SQLSTATS_BMO_HEAP_ALLOC:
           case SQLSTATS_BMO_HEAP_WM:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-15s", Int64Val);
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
             break;
           case SQLSTATS_BMO_SPACE_BUFFER_SIZE:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-17s", Int64Val);
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
             break;
           case SQLSTATS_BMO_SPACE_BUFFER_COUNT:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-17s", Int64Val);
-            break;
-          case SQLSTATS_SCRATCH_FILE_COUNT:
-            str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
-            intSize = str_len(Int64Val);
-            AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-12s", Int64Val);
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
+            if (moveRowToUpQueue(statsBuf_, strlen(statsBuf_), &rc) == -1)
+              return rc;
             break;
           case SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-10s", Int64Val);
+            str_sprintf(statsBuf_, "%-22s", Int64Val);
             break;
           case SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
             break;
           case SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
-            break;
-          case SQLSTATS_OPER_CPU_TIME:
-            str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
-            intSize = str_len(Int64Val);
-            AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
             break;
           case SQLSTATS_SCRATCH_READ_COUNT:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
             break;
           case SQLSTATS_SCRATCH_WRITE_COUNT:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
             if (moveRowToUpQueue(statsBuf_, strlen(statsBuf_), &rc) == -1)
               return rc;
             break;

@@ -174,6 +174,12 @@ void ExSortTcb::setupPoolBuffers(ex_queue_entry *pentry_down)
     defragTd_ = sortPool_->addDefragTuppDescriptor(sortTdb().sortRecLen_);
   }
   
+  if(bmoStats_)
+  {
+    if(topNSortPool_)
+      bmoStats_->setTopN(pentry_down->downState.requestValue);
+  }
+  
 }
 
 //

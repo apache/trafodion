@@ -113,6 +113,11 @@ enum ScratchOverflowMode
   SCRATCH_MMAP
 };
 
+enum SortMode
+{
+  SORTMODE_HEAP = 0,
+  SORTMODE_TOPN = 1
+};
 
 #endif
 
