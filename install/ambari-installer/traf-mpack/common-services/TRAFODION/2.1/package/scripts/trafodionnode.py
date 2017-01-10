@@ -120,7 +120,7 @@ class Node(Script):
       Execute(cmd,user=params.traf_user)
       cmd = "source ~/.bashrc ; ldapconfigcheck -file $TRAF_HOME/sql/scripts/.traf_authentication_config"
       Execute(cmd,user=params.traf_user)
-      cmd = 'ldapcheck --verbose --username=%s' % traf_db_admin
+      cmd = 'source ~/.bashrc ; ldapcheck --verbose --username=%s' % params.traf_db_admin
       Execute(cmd,user=params.traf_user)
 
     ##################

@@ -30,3 +30,6 @@ Cmnd_Alias ARP = /sbin/arping
 
 ## Allow Trafodion id to run commands needed to configure floating IP
 trafodion ALL = NOPASSWD: IP, ARP
+
+## Do not require tty for trafodion user. No password prompts needed
+Defaults:trafodion !requiretty
