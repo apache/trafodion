@@ -848,6 +848,8 @@ typedef struct _tmlibmsg_h_as_35 {
 } Begin_Trans_Rsp_Type;
 
 typedef struct _tmlibmsg_h_as_36 {
+  char      iv_err_str[TM_MAX_ERROR_STRING];
+  int       iv_err_str_len;
 } End_Trans_Rsp_Type;
 
 typedef struct _tmlibmsg_h_as_37 {

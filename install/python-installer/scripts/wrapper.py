@@ -126,7 +126,7 @@ def run(dbcfgs, options, mode='install', pwd=''):
     logger = get_logger(LOG_FILE)
 
     verbose = True if hasattr(options, 'verbose') and options.verbose else False
-    upgrade = True if hasattr(options, 'upgrade') and options.upgrade else False
+    reinstall = True if hasattr(options, 'reinstall') and options.reinstall else False
     user = options.user if hasattr(options, 'user') and options.user else ''
     threshold = options.fork if hasattr(options, 'fork') and options.fork else 10
 
@@ -139,7 +139,7 @@ def run(dbcfgs, options, mode='install', pwd=''):
 
     # handle skipped scripts, skip them if no need to run
     skipped_scripts = []
-    if upgrade:
+    if reinstall:
         skipped_scripts += ['hadoop_mods', 'apache_mods', 'apache_restart', 'traf_dep', 'traf_kerberos']
 
     if dbcfgs['secure_hadoop'] == 'N':

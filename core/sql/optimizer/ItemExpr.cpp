@@ -12811,7 +12811,15 @@ ItemExpr * LOBupdate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
   return LOBoper::copyTopNode(result, outHeap);
 }
-
+/*
+Int32 LOBupdate::getArity() const
+{
+  if (obj_ == EMPTY_LOB_)
+    return 0;
+  else
+    return getNumChildren();
+}
+*/
 ItemExpr * LOBconvert::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
   ItemExpr *result;

@@ -2867,6 +2867,8 @@ short LOBinsert::codeGen(Generator * generator)
     li->setFromExternal(TRUE);
   else if (obj_ ==LOBoper::BUFFER_)
     li->setFromBuffer(TRUE);
+  else if(obj_ == LOBoper::EMPTY_LOB_)
+    li->setFromEmpty(TRUE);
 
   li->lobNum() = lobNum();
   li->setLobStorageType(lobStorageType());
@@ -2941,6 +2943,8 @@ short LOBupdate::codeGen(Generator * generator)
     lu->setFromExternal(TRUE);
   else if (obj_ == LOBoper::BUFFER_)
     lu->setFromBuffer(TRUE);
+  else if(obj_ == LOBoper::EMPTY_LOB_)
+    lu->setFromEmpty(TRUE);
 
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());

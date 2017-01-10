@@ -3058,8 +3058,10 @@ short ExExeUtilLobExtractTcb::work()
 	    short *lobNumList = new (getHeap()) short[1];
 	    short *lobTypList = new (getHeap()) short[1];
 	    char  **lobLocList = new (getHeap()) char*[1];
+             char  **lobColNameList = new (getHeap()) char*[1];
 	    lobLocList[0] = new (getHeap()) char[1024];
-	    
+	    lobColNameList[0] = new (getHeap()) char[256];
+
 	    Lng32 numLobs = lobNum;
 	    Lng32 cliRC = SQL_EXEC_LOBddlInterface
 	      (
@@ -3070,7 +3072,7 @@ short ExExeUtilLobExtractTcb::work()
 	       LOB_CLI_SELECT_UNIQUE,
 	       lobNumList,
 	       lobTypList,
-	       lobLocList,lobTdb().getLobHdfsServer(),
+	       lobLocList,lobColNameList,lobTdb().getLobHdfsServer(),
                lobTdb().getLobHdfsPort(),0,FALSE);
 	    if (cliRC < 0)
 	      {
@@ -3150,7 +3152,6 @@ short ExExeUtilLobExtractTcb::work()
 	       lobType_,
 	       lobTdb().getLobHdfsServer(),
 	       lobTdb().getLobHdfsPort(),
-
 	       lobHandleLen_, lobHandle_,
                0, // cursor bytes 
                NULL, //cursor id
@@ -3374,6 +3375,490 @@ ExExeUtilFileExtractTcb::ExExeUtilFileExtractTcb
 {
 }
 
+
+
+///////////////////////////////////////////////////////////////////
+// class ExExeUtilLobUpdateTdb
+///////////////////////////////////////////////////////////////
+ex_tcb * ExExeUtilLobUpdateTdb::build(ex_globals * glob)
+{
+  ExExeUtilLobUpdateTcb * exe_util_lobupdate_tcb;
+
+  ex_tcb * childTcb = NULL;
+  if (child_)
+    {
+      // build the child first
+      childTcb = child_->build(glob);
+    }
+  
+  
+  if (getFromType() == ComTdbExeUtilLobUpdate::FROM_BUFFER_)
+    exe_util_lobupdate_tcb = new(glob->getSpace()) 
+      ExExeUtilLobUpdateTcb(*this, childTcb, glob);
+  else
+    {
+      ex_assert(TRUE,"Only buffer input supported");
+    }
+
+  exe_util_lobupdate_tcb->registerSubtasks();
+
+  return (exe_util_lobupdate_tcb);
+}
+
+ExExeUtilLobUpdateTcb::ExExeUtilLobUpdateTcb
+(
+ const ComTdbExeUtilLobUpdate & exe_util_lobupdate_tdb,
+ const ex_tcb * child_tcb, 
+ ex_globals * glob)
+  : ExExeUtilTcb(exe_util_lobupdate_tdb, child_tcb, glob),
+    step_(EMPTY_)    
+{
+  ContextCli *currContext =
+    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
+    getStatement()->getContext();
+  lobHandleLen_ = 2050;
+  lobHandle_ = {0};
+  lobGlobals_ = 
+    new(currContext->exHeap()) LOBglobals(currContext->exHeap());
+  ExpLOBoper::initLOBglobal
+    (lobGlobals_->lobAccessGlobals(), 
+     currContext->exHeap(),currContext,lobTdb().getLobHdfsServer(),
+               lobTdb().getLobHdfsPort());
+}
+
+short ExExeUtilLobUpdateTcb::work()
+{
+  Lng32 cliRC = 0;
+  Lng32 retcode = 0;
+
+  // if no parent request, return
+  if (qparent_.down->isEmpty())
+    return WORK_OK;
+
+  ex_queue_entry * pentry_down = qparent_.down->getHeadEntry();
+  ExExeUtilPrivateState & pstate =
+    *((ExExeUtilPrivateState*) pentry_down->pstate);
+
+  ContextCli *currContext =
+    getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
+    getStatement()->getContext();
+
+  ComDiagsArea & diags       = currContext->diags();
+
+  LobsSubOper so = Lob_None;
+  
+  if (lobTdb().getFromType() == ComTdbExeUtilLobUpdate::FROM_STRING_)
+    so = Lob_Memory;
+  else if (lobTdb().getFromType() == ComTdbExeUtilLobUpdate::FROM_EXTERNAL_)
+    so = Lob_External;
+  else if (lobTdb().getFromType() == ComTdbExeUtilLobUpdate::FROM_BUFFER_)  //Only this is supported
+    so= Lob_Buffer;
+  
+  Int64 lobLen = lobTdb().updateSize();
+  char * data = (char *)(lobTdb().getBufAddr());
+ 
+  void * lobGlobs = getLobGlobals()->lobAccessGlobals();
+
+  while (1)
+    {
+      switch (step_)
+	{
+	case EMPTY_:
+	  {    
+            workAtp_->getTupp(lobTdb().workAtpIndex())
+	      .setDataPointer(lobInputHandleBuf_);  
+            step_ = GET_HANDLE_;   
+            break;
+          }
+          break;
+        case GET_HANDLE_:
+          {
+            ex_expr::exp_return_type exprRetCode =
+	      lobTdb().inputExpr_->eval(NULL, 
+					workAtp_);
+	    if (exprRetCode == ex_expr::EXPR_ERROR)
+              {	      
+                step_ = CANCEL_;
+                break;
+              }
+            if (ExpLOBoper::genLOBhandleFromHandleString
+		    (lobTdb().getHandle(),
+		     lobTdb().getHandleLen(),
+		     lobHandle_,
+		     lobHandleLen_))
+		  {
+		    ComDiagsArea * da = getDiagsArea();
+		    ExRaiseSqlError(getMyHeap(),
+				    &da,
+				    (ExeErrorCode)(EXE_INVALID_LOB_HANDLE));
+		    step_ = HANDLE_ERROR_;
+		    break;
+		  }
+            if (lobTdb().getFromType() == ComTdbExeUtilLobUpdate::FROM_BUFFER_)
+              {
+                if (lobTdb().isTruncate())
+                  step_ = EMPTY_LOB_DATA_;
+                else if (lobTdb().isReplace())
+                  step_ = UPDATE_LOB_DATA_;
+                else if(lobTdb().isAppend())
+                  step_ = APPEND_LOB_DATA_;
+                
+              }
+            else
+		{
+		  // invalid "fromType"
+		  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+		  ComDiagsArea * da = up_entry->getDiagsArea();
+		  ExRaiseSqlError(getMyHeap(),
+				  &da,
+				  (ExeErrorCode)(EXE_INTERNAL_ERROR));
+		  step_ = CANCEL_;
+		
+		break;
+
+		}
+            
+          }
+          break;
+        case UPDATE_LOB_DATA_:
+          {
+            Int32 retcode = 0;
+            Int16 flags;
+	    Lng32  lobNum;
+	    Int64 uid, inDescSyskey, descPartnKey;
+	    short schNameLen;
+	    char schName[1024];
+            Int64 dummy = 0;
+	    
+	    ExpLOBoper::extractFromLOBhandle(&flags, &lobType_, &lobNum, &uid,  
+					     &inDescSyskey, &descPartnKey, 
+					     &schNameLen, (char *)schName,
+					     (char *)lobHandle_, (Lng32)lobHandleLen_);
+	    lobName_ = ExpLOBoper::ExpGetLOBname(uid, lobNum, lobNameBuf_, 1000);
+
+	    lobDataLen_ = lobTdb().totalBufSize_; 
+            short *lobNumList = new (getHeap()) short[1];
+	    short *lobTypList = new (getHeap()) short[1];
+	    char  **lobLocList = new (getHeap()) char*[1];
+            char  **lobColNameList = new (getHeap()) char*[1];
+	    lobLocList[0] = new (getHeap()) char[1024];
+	    lobColNameList[0] = new (getHeap()) char[256];
+
+	    Lng32 numLobs = lobNum;
+	    Lng32 cliRC = SQL_EXEC_LOBddlInterface
+	      (
+	       schName,
+	       schNameLen,
+	       uid,
+	       numLobs,
+	       LOB_CLI_SELECT_UNIQUE,
+	       lobNumList,
+	       lobTypList,
+	       lobLocList,lobColNameList,lobTdb().getLobHdfsServer(),
+               lobTdb().getLobHdfsPort(),0,FALSE);
+	    if (cliRC < 0)
+	      {
+		getDiagsArea()->mergeAfter(diags);
+
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    strcpy(lobLoc_, lobLocList[0]);
+            char outLobHandle[LOB_HANDLE_LEN];
+            Int32 outHandleLen;
+            Int64 requestTag = 0;
+            retcode = ExpLOBInterfaceUpdate(lobGlobs,
+                                            lobTdb().getLobHdfsServer(),
+                                            lobTdb().getLobHdfsPort(),
+                                            lobName_,
+                                            lobLoc_,
+                                            lobHandleLen_,
+                                            lobHandle_,
+                                            &outHandleLen, outLobHandle,
+                                            requestTag,
+                                            getLobGlobals()->xnId(),
+                                            0,
+                                            1,
+                                            so,
+                                            inDescSyskey,
+                                            lobLen,
+                                            data,
+                                            lobName_, schNameLen, schName,
+                                            dummy, dummy,
+                                            lobTdb().getLobMaxSize(),
+                                            lobTdb().getLobMaxChunkSize(),
+                                            lobTdb().getLobGCLimit());
+            
+            if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }  
+            if (so == Lob_Buffer)
+	      {
+		str_sprintf(statusString_," Updated/Replaced %d bytes of LOB data ", lobLen);
+		step_ = RETURN_STATUS_;
+	      }
+            
+            break;
+          }
+          break;
+        case APPEND_LOB_DATA_:
+          {
+            Int32 retcode = 0;
+            Int16 flags;
+	    Lng32  lobNum;
+	    Int64 uid, inDescSyskey, descPartnKey;
+	    short schNameLen;
+	    char schName[1024];
+            Int64 dummy = 0;
+	    
+	    ExpLOBoper::extractFromLOBhandle(&flags, &lobType_, &lobNum, &uid,  
+					     &inDescSyskey, &descPartnKey, 
+					     &schNameLen, (char *)schName,
+					     (char *)lobHandle_, (Lng32)lobHandleLen_);
+	    lobName_ = ExpLOBoper::ExpGetLOBname(uid, lobNum, lobNameBuf_, 1000);
+
+	    lobDataLen_ = lobTdb().totalBufSize_; 
+            short *lobNumList = new (getHeap()) short[1];
+	    short *lobTypList = new (getHeap()) short[1];
+	    char  **lobLocList = new (getHeap()) char*[1];
+            char  **lobColNameList = new (getHeap()) char*[1];
+	    lobLocList[0] = new (getHeap()) char[1024];
+            lobColNameList[0] = new (getHeap()) char[256];
+	    
+	    Lng32 numLobs = lobNum;
+	    Lng32 cliRC = SQL_EXEC_LOBddlInterface
+	      (
+	       schName,
+	       schNameLen,
+	       uid,
+	       numLobs,
+	       LOB_CLI_SELECT_UNIQUE,
+	       lobNumList,
+	       lobTypList,
+	       lobLocList,lobColNameList,lobTdb().getLobHdfsServer(),
+               lobTdb().getLobHdfsPort(),0,FALSE);
+	    if (cliRC < 0)
+	      {
+		getDiagsArea()->mergeAfter(diags);
+
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    strcpy(lobLoc_, lobLocList[0]);
+            char outLobHandle[LOB_HANDLE_LEN];
+            Int32 outHandleLen;
+            Int64 requestTag = 0;
+            retcode = ExpLOBInterfaceUpdateAppend(lobGlobs,
+                                            lobTdb().getLobHdfsServer(),
+                                            lobTdb().getLobHdfsPort(),
+                                            lobName_,
+                                            lobLoc_,
+                                            lobHandleLen_,
+                                            lobHandle_,
+                                            &outHandleLen, outLobHandle,
+                                            requestTag,
+                                            getLobGlobals()->xnId(),
+                                            0,
+                                            1,
+                                            so,
+                                            inDescSyskey,
+                                            lobLen,
+                                            data,
+                                            lobName_, schNameLen, schName,
+                                            dummy, dummy,
+                                            lobTdb().getLobMaxSize(),
+                                            lobTdb().getLobMaxChunkSize(),
+                                            lobTdb().getLobGCLimit());
+            
+            if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }  
+            if (so == Lob_Buffer)
+	      {
+		str_sprintf(statusString_," Updated/Appended %d bytes of LOB data ", lobLen);
+		step_ = RETURN_STATUS_;
+	      }
+            
+            break;
+          }
+          break;
+
+        case EMPTY_LOB_DATA_:
+          {
+            Int32 retcode = 0;
+            Int16 flags;
+	    Lng32  lobNum;
+	    Int64 uid, inDescSyskey, descPartnKey;
+	    short schNameLen;
+	    char schName[1024];
+            Int64 dummy = 0;
+	    
+	    ExpLOBoper::extractFromLOBhandle(&flags, &lobType_, &lobNum, &uid,  
+					     &inDescSyskey, &descPartnKey, 
+					     &schNameLen, (char *)schName,
+					     (char *)lobHandle_, (Lng32)lobHandleLen_);
+	    lobName_ = ExpLOBoper::ExpGetLOBname(uid, lobNum, lobNameBuf_, 1000);
+
+	    lobDataLen_ = lobTdb().totalBufSize_; 
+            short *lobNumList = new (getHeap()) short[1];
+	    short *lobTypList = new (getHeap()) short[1];
+	    char  **lobLocList = new (getHeap()) char*[1];
+            char  **lobColNameList = new (getHeap()) char*[1];
+	    lobLocList[0] = new (getHeap()) char[1024];
+	    lobColNameList[0] = new (getHeap()) char[256];
+	    Lng32 numLobs = lobNum;
+	    Lng32 cliRC = SQL_EXEC_LOBddlInterface
+	      (
+	       schName,
+	       schNameLen,
+	       uid,
+	       numLobs,
+	       LOB_CLI_SELECT_UNIQUE,
+	       lobNumList,
+	       lobTypList,
+	       lobLocList,lobColNameList,lobTdb().getLobHdfsServer(),
+               lobTdb().getLobHdfsPort(),0,FALSE);
+	    if (cliRC < 0)
+	      {
+		getDiagsArea()->mergeAfter(diags);
+
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
+	    strcpy(lobLoc_, lobLocList[0]);
+            char outLobHandle[LOB_HANDLE_LEN];
+            Int32 outHandleLen;
+            Int64 requestTag = 0;
+            /*    retcode = ExpLOBInterfaceDelete(lobGlobs,
+                                             lobTdb().getLobHdfsServer(),
+                                            lobTdb().getLobHdfsPort(),
+                                            lobName_,
+                                            lobLoc_,
+                                            lobHandleLen_,
+                                            lobHandle_,
+                                            requestTag_,
+                                            getLobGlobals()->xnId(),
+                                            inDescSyskey,
+                                            0,1);
+            if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+                
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+                }  */
+            retcode = ExpLOBInterfaceUpdate(lobGlobs,
+                                            lobTdb().getLobHdfsServer(),
+                                            lobTdb().getLobHdfsPort(),
+                                            lobName_,
+                                            lobLoc_,
+                                            lobHandleLen_,
+                                            lobHandle_,
+                                            &outHandleLen, outLobHandle,
+                                            requestTag,
+                                            getLobGlobals()->xnId(),
+                                            0,
+                                            1,
+                                            so,
+                                            inDescSyskey,
+                                            0,
+                                            NULL,
+                                            lobName_, schNameLen, schName,
+                                            dummy, dummy,
+                                            lobTdb().getLobMaxSize(),
+                                            lobTdb().getLobMaxChunkSize(),
+                                            lobTdb().getLobGCLimit());
+            
+            if (retcode < 0)
+	      {
+		Lng32 cliError = 0;
+
+		Lng32 intParam1 = -retcode;
+		ComDiagsArea * diagsArea = getDiagsArea();
+		ExRaiseSqlError(getHeap(), &diagsArea, 
+				(ExeErrorCode)(8442), NULL, &intParam1, 
+				&cliError, NULL, (char*)"ExpLOBInterfaceUpdate",
+				getLobErrStr(intParam1));
+		step_ = HANDLE_ERROR_;
+		break;
+	      }  
+            if (so == Lob_Buffer)
+	      {
+		str_sprintf(statusString_," Updated with empty_blob/clob  ");
+		step_ = RETURN_STATUS_;
+	      }
+            
+            break;
+          }
+          break;
+        case CANCEL_:
+          {
+            break;
+          }
+          break;
+        case RETURN_STATUS_:
+	  {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+	    //Return to upqueue whatever is in the lobStatusMsg_ data member
+      	    short rc; 
+	    moveRowToUpQueue(statusString_, 200, &rc);	   
+            step_ = DONE_ ;
+	  }
+	  break;
+        case HANDLE_ERROR_:
+          {
+            retcode = handleError();
+	    if (retcode == 1)
+	      return WORK_OK;
+	    step_ = DONE_;
+            
+          }
+          break;
+        case DONE_:
+          {
+            retcode = handleDone();
+	    if (retcode == 1)
+	      return WORK_OK;
+
+	    step_ = EMPTY_;
+	    return WORK_OK;
+          }
+          break;
+        }
+    }
+  return 0;
+}
+
 NABoolean ExExeUtilFileExtractTcb::needStatsEntry()
 {
   // stats are collected for ALL and OPERATOR options.
@@ -3390,20 +3875,22 @@ ExOperStats * ExExeUtilFileExtractTcb::doAllocateStatsEntry(
 							    CollHeap *heap,
 							    ComTdb *tdb)
 {
-  ExOperStats * stat = NULL;
-  ComTdb::CollectStatsType statsType = 
-    getGlobals()->getStatsArea()->getCollectStatsType();
-  if (statsType == ComTdb::OPERATOR_STATS)
-    {
-      return ex_tcb::doAllocateStatsEntry(heap, tdb);
-    }
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
   else
-    {
-      return new(heap) ExHdfsScanStats(heap,
-					       this,
-					       tdb);
-    }
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
+				   this,
+				   tdb);
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
+
+
 
 short ExExeUtilFileExtractTcb::work()
 {

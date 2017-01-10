@@ -1930,9 +1930,11 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           {
             switch (sqlStatsDesc_[currStatsDescEntry_].stats_type)
             {
+/*
             case SQLSTATS_DESC_PERTABLE_STATS:
               step_ = GET_PERTABLE_STATS_ENTRY_;
               break;
+*/
             case SQLSTATS_DESC_MASTER_STATS:
               step_ = GET_MASTER_STATS_ENTRY_;
               break;
@@ -2319,47 +2321,38 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (measStatsItems_ == NULL)
         {
-          maxMeasStatsItems_ = 35;
+          maxMeasStatsItems_ = 26;
           measStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxMeasStatsItems_];
           initSqlStatsItems(measStatsItems_, maxMeasStatsItems_, FALSE);
           measStatsItems_[0].statsItem_id = SQLSTATS_ACT_ROWS_ACCESSED;
           measStatsItems_[1].statsItem_id = SQLSTATS_ACT_ROWS_USED;
-          measStatsItems_[2].statsItem_id = SQLSTATS_MSG_COUNT;
-          measStatsItems_[3].statsItem_id = SQLSTATS_MSG_BYTES;
-          measStatsItems_[4].statsItem_id = SQLSTATS_STATS_BYTES;
-          measStatsItems_[5].statsItem_id = SQLSTATS_DISK_IOS;
-          measStatsItems_[6].statsItem_id = SQLSTATS_LOCK_WAITS;
-          measStatsItems_[7].statsItem_id = SQLSTATS_LOCK_ESCALATIONS;
-          measStatsItems_[8].statsItem_id = SQLSTATS_DP2_REDRIVE_ATTEMPTS;
-          measStatsItems_[9].statsItem_id = SQLSTATS_DP2_CPU_BUSY_TIME;
-          measStatsItems_[10].statsItem_id = SQLSTATS_SQL_CPU_BUSY_TIME;
-          measStatsItems_[11].statsItem_id = SQLSTATS_UDR_CPU_BUSY_TIME;
-          measStatsItems_[12].statsItem_id = SQLSTATS_SQL_SPACE_ALLOC;
-          measStatsItems_[13].statsItem_id = SQLSTATS_SQL_SPACE_USED;
-          measStatsItems_[14].statsItem_id = SQLSTATS_SQL_HEAP_ALLOC;
-          measStatsItems_[15].statsItem_id = SQLSTATS_SQL_HEAP_USED;
-          measStatsItems_[16].statsItem_id = SQLSTATS_EID_SPACE_ALLOC;
-          measStatsItems_[17].statsItem_id = SQLSTATS_EID_SPACE_USED;
-          measStatsItems_[18].statsItem_id = SQLSTATS_EID_HEAP_ALLOC;
-          measStatsItems_[19].statsItem_id = SQLSTATS_EID_HEAP_USED;
-          measStatsItems_[20].statsItem_id = SQLSTATS_OPENS;
-          measStatsItems_[21].statsItem_id = SQLSTATS_OPEN_TIME;
-          measStatsItems_[22].statsItem_id = SQLSTATS_PROCESS_CREATED;
-          measStatsItems_[23].statsItem_id = SQLSTATS_PROCESS_CREATE_TIME;
-          measStatsItems_[24].statsItem_id = SQLSTATS_REQ_MSG_CNT;
-          measStatsItems_[25].statsItem_id = SQLSTATS_REQ_MSG_BYTES;
-          measStatsItems_[26].statsItem_id = SQLSTATS_REPLY_MSG_CNT;
-          measStatsItems_[27].statsItem_id = SQLSTATS_REPLY_MSG_BYTES;
-          measStatsItems_[28].statsItem_id = SQLSTATS_SCRATCH_OVERFLOW_MODE;
-          measStatsItems_[29].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
-          measStatsItems_[30].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
-          measStatsItems_[31].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
-          measStatsItems_[32].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
-          measStatsItems_[33].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
-          measStatsItems_[34].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
+          measStatsItems_[2].statsItem_id = SQLSTATS_SE_IOS;
+          measStatsItems_[3].statsItem_id = SQLSTATS_SE_IO_BYTES;
+          measStatsItems_[4].statsItem_id = SQLSTATS_SE_IO_MAX_TIME;
+          measStatsItems_[5].statsItem_id = SQLSTATS_SQL_CPU_BUSY_TIME;
+          measStatsItems_[6].statsItem_id = SQLSTATS_UDR_CPU_BUSY_TIME;
+          measStatsItems_[7].statsItem_id = SQLSTATS_SQL_SPACE_ALLOC;
+          measStatsItems_[8].statsItem_id = SQLSTATS_SQL_SPACE_USED;
+          measStatsItems_[9].statsItem_id = SQLSTATS_SQL_HEAP_ALLOC;
+          measStatsItems_[10].statsItem_id = SQLSTATS_SQL_HEAP_USED;
+          measStatsItems_[11].statsItem_id = SQLSTATS_OPENS;
+          measStatsItems_[12].statsItem_id = SQLSTATS_OPEN_TIME;
+          measStatsItems_[13].statsItem_id = SQLSTATS_PROCESS_CREATED;
+          measStatsItems_[14].statsItem_id = SQLSTATS_PROCESS_CREATE_TIME;
+          measStatsItems_[15].statsItem_id = SQLSTATS_REQ_MSG_CNT;
+          measStatsItems_[16].statsItem_id = SQLSTATS_REQ_MSG_BYTES;
+          measStatsItems_[17].statsItem_id = SQLSTATS_REPLY_MSG_CNT;
+          measStatsItems_[18].statsItem_id = SQLSTATS_REPLY_MSG_BYTES;
+          measStatsItems_[19].statsItem_id = SQLSTATS_SCRATCH_OVERFLOW_MODE;
+          measStatsItems_[20].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
+          measStatsItems_[21].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
+          measStatsItems_[22].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
+          measStatsItems_[23].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
+          measStatsItems_[24].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
+          measStatsItems_[25].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
 
-          // maxMeasStatsItems_ is set to 34
+          // maxMeasStatsItems_ is set to  26
         }
         else
           initSqlStatsItems(measStatsItems_, maxMeasStatsItems_, TRUE);
@@ -2397,47 +2390,23 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             AddCommas(Int64Val,intSize); 
             str_sprintf(statsBuf_, "%25s%s", "Used Rows", Int64Val);
             break;
-          case SQLSTATS_MSG_COUNT:
+          case SQLSTATS_SE_IOS:
             str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(statsBuf_, "%25s%s", "Message Count", Int64Val);
+            str_sprintf(statsBuf_, "%25s%s", "SE IOs", Int64Val);
             break;
-          case SQLSTATS_MSG_BYTES:
+          case SQLSTATS_SE_IO_BYTES:
             str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(statsBuf_, "%25s%s", "Message Bytes", Int64Val);
+            str_sprintf(statsBuf_, "%25s%s", "SE IO Bytes", Int64Val);
             break;
-          case SQLSTATS_STATS_BYTES:
+          case SQLSTATS_SE_IO_MAX_TIME:
             str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(statsBuf_, "%25s%s", "Stats Bytes", Int64Val);
-            break;
-          case SQLSTATS_DISK_IOS:
-            str_sprintf(statsBuf_, "%25s%-d", "Disk IOs", 
-                      (Lng32)measStatsItems_[i].int64_value);
-            break;
-          case SQLSTATS_LOCK_WAITS:
-            str_sprintf(statsBuf_, "%25s%-d", "Lock Waits", 
-                      (Lng32)measStatsItems_[i].int64_value);
-            break;
-          case SQLSTATS_LOCK_ESCALATIONS:
-            str_sprintf(statsBuf_, "%25s%-d", "Lock Escalations", 
-                      (Lng32)measStatsItems_[i].int64_value);
-            break;
-          case SQLSTATS_DP2_REDRIVE_ATTEMPTS:
-            str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
-            intSize = str_len(Int64Val);
-            AddCommas(Int64Val,intSize); 
-            str_sprintf(statsBuf_, "%25s%s", "Message Redrive Attempts", Int64Val);
-            break;
-          case SQLSTATS_DP2_CPU_BUSY_TIME:
-            str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
-            intSize = str_len(Int64Val);
-            AddCommas(Int64Val,intSize); 
-            str_sprintf(statsBuf_, "%25s%s", "Disk Process Busy Time", Int64Val);
+            str_sprintf(statsBuf_, "%25s%s", "SE IO MAX Time", Int64Val);
             break;
           case SQLSTATS_SQL_CPU_BUSY_TIME:
             str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
@@ -2474,30 +2443,6 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
             str_sprintf(statsBuf_, "%25s%s KB", "SQL Heap Used", Int64Val);
-            break;
-          case SQLSTATS_EID_SPACE_ALLOC:
-            str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
-            intSize = str_len(Int64Val);
-            AddCommas(Int64Val,intSize); 
-            str_sprintf(statsBuf_, "%25s%s KB", "EID Space Allocated", Int64Val);
-            break;
-          case SQLSTATS_EID_SPACE_USED:
-            str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
-            intSize = str_len(Int64Val);
-            AddCommas(Int64Val,intSize); 
-            str_sprintf(statsBuf_, "%25s%s KB", "EID Space Used", Int64Val);
-            break;
-          case SQLSTATS_EID_HEAP_ALLOC:
-            str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
-            intSize = str_len(Int64Val);
-            AddCommas(Int64Val,intSize); 
-            str_sprintf(statsBuf_, "%25s%s KB", "EID Heap Allocated", Int64Val);
-            break;
-          case SQLSTATS_EID_HEAP_USED:
-            str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
-            intSize = str_len(Int64Val);
-            AddCommas(Int64Val,intSize); 
-            str_sprintf(statsBuf_, "%25s%s KB", "EID Heap Used", Int64Val);
             break;
           case SQLSTATS_OPENS:
             str_sprintf(Int64Val, "%Ld", measStatsItems_[i].int64_value);
@@ -2601,7 +2546,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (rootOperStatsItems_ == NULL)
         {
-          maxRootOperStatsItems_ = 27;
+          maxRootOperStatsItems_ = 23;
           rootOperStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxRootOperStatsItems_];
           initSqlStatsItems(rootOperStatsItems_, maxRootOperStatsItems_, FALSE);
@@ -2613,26 +2558,22 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           rootOperStatsItems_[5].statsItem_id = SQLSTATS_SQL_SPACE_USED;
           rootOperStatsItems_[6].statsItem_id = SQLSTATS_SQL_HEAP_ALLOC;
           rootOperStatsItems_[7].statsItem_id = SQLSTATS_SQL_HEAP_USED;
-          rootOperStatsItems_[8].statsItem_id = SQLSTATS_EID_SPACE_ALLOC;
-          rootOperStatsItems_[9].statsItem_id = SQLSTATS_EID_SPACE_USED;
-          rootOperStatsItems_[10].statsItem_id = SQLSTATS_EID_HEAP_ALLOC;
-          rootOperStatsItems_[11].statsItem_id = SQLSTATS_EID_HEAP_USED;
-          rootOperStatsItems_[12].statsItem_id = SQLSTATS_OPENS;
-          rootOperStatsItems_[13].statsItem_id = SQLSTATS_OPEN_TIME;
-          rootOperStatsItems_[14].statsItem_id = SQLSTATS_PROCESS_CREATED;
-          rootOperStatsItems_[15].statsItem_id = SQLSTATS_PROCESS_CREATE_TIME;
-          rootOperStatsItems_[16].statsItem_id = SQLSTATS_REQ_MSG_CNT;
-          rootOperStatsItems_[17].statsItem_id = SQLSTATS_REQ_MSG_BYTES;
-          rootOperStatsItems_[18].statsItem_id = SQLSTATS_REPLY_MSG_CNT;
-          rootOperStatsItems_[19].statsItem_id = SQLSTATS_REPLY_MSG_BYTES;
-          rootOperStatsItems_[20].statsItem_id = SQLSTATS_SCRATCH_OVERFLOW_MODE;
-          rootOperStatsItems_[21].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
-          rootOperStatsItems_[22].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
-          rootOperStatsItems_[23].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
-          rootOperStatsItems_[24].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
-          rootOperStatsItems_[25].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
-          rootOperStatsItems_[26].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
-          // maxRootOperStatsItems_ is set to 27
+          rootOperStatsItems_[8].statsItem_id = SQLSTATS_OPENS;
+          rootOperStatsItems_[9].statsItem_id = SQLSTATS_OPEN_TIME;
+          rootOperStatsItems_[10].statsItem_id = SQLSTATS_PROCESS_CREATED;
+          rootOperStatsItems_[11].statsItem_id = SQLSTATS_PROCESS_CREATE_TIME;
+          rootOperStatsItems_[12].statsItem_id = SQLSTATS_REQ_MSG_CNT;
+          rootOperStatsItems_[13].statsItem_id = SQLSTATS_REQ_MSG_BYTES;
+          rootOperStatsItems_[14].statsItem_id = SQLSTATS_REPLY_MSG_CNT;
+          rootOperStatsItems_[15].statsItem_id = SQLSTATS_REPLY_MSG_BYTES;
+          rootOperStatsItems_[16].statsItem_id = SQLSTATS_SCRATCH_OVERFLOW_MODE;
+          rootOperStatsItems_[17].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
+          rootOperStatsItems_[18].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
+          rootOperStatsItems_[19].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
+          rootOperStatsItems_[20].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
+          rootOperStatsItems_[21].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
+          rootOperStatsItems_[22].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
+          // maxRootOperStatsItems_ is set to 23
         }
         else
           initSqlStatsItems(rootOperStatsItems_, maxRootOperStatsItems_, TRUE);
@@ -2707,22 +2648,6 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           case SQLSTATS_SQL_HEAP_USED:
             formatWInt64( rootOperStatsItems_[i], Int64Val);
             str_sprintf(statsBuf_, "%25s%s KB", "SQL Heap Used", Int64Val);
-            break;
-          case SQLSTATS_EID_SPACE_ALLOC:
-            formatWInt64( rootOperStatsItems_[i], Int64Val);
-            str_sprintf(statsBuf_, "%25s%s KB", "EID Space Allocated", Int64Val);
-            break;
-          case SQLSTATS_EID_SPACE_USED:
-            formatWInt64( rootOperStatsItems_[i], Int64Val);
-            str_sprintf(statsBuf_, "%25s%s KB", "EID Space Used", Int64Val);
-            break;
-          case SQLSTATS_EID_HEAP_ALLOC:
-            formatWInt64( rootOperStatsItems_[i], Int64Val);
-            str_sprintf(statsBuf_, "%25s%s KB", "EID Heap Allocated", Int64Val);
-            break;
-          case SQLSTATS_EID_HEAP_USED:
-            formatWInt64( rootOperStatsItems_[i], Int64Val);
-            str_sprintf(statsBuf_, "%25s%s KB", "EID Heap Used", Int64Val);
             break;
           case SQLSTATS_OPENS:
             formatWInt64( rootOperStatsItems_[i], Int64Val);
@@ -2829,6 +2754,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
         step_ = GET_NEXT_STATS_DESC_ENTRY_;
       }
       break;
+/*
     case GET_PERTABLE_STATS_ENTRY_:
       {
         if (pertableStatsItems_ == NULL)
@@ -2999,6 +2925,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
         step_ = GET_NEXT_STATS_DESC_ENTRY_;
       }
       break;
+*/
     case GET_HBASE_STATS_ENTRY_:
       {
         if (hbaseStatsItems_ == NULL)

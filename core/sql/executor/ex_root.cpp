@@ -298,43 +298,6 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
   if (getUncProcess())
     cliGlobals->setUncProcess();
 
-
-  // allocate stmt counters space.
-  if (getCollectStatsType() == MEASURE_STATS)
-    {
-      ExMeasStmtCntrs *stmtCntrsSpace = NULL;  
-      NABoolean measEnabled = FALSE;
-      NABoolean dealloStmtCntr = FALSE;
-
-      measEnabled = (//!master_glob->getCliGlobals()->checkMeasStatus() &&
-		     (master_glob->getCliGlobals()->getMeasStmtEnabled() ||
-		      master_glob->getCliGlobals()->getMeasProcEnabled())
-		      );
-      Module * module = master_glob->getStatement()->getModule();
-
-      // for static sql, allocate stmt counters for all statements in module.
-      // regardless to Measure being enabled.
-      if (module != NULL)
-	{
-	  // if Measure statement counters not allocated, do it now
-	  if (module->getStmtCntrsSpace(0) == NULL)
-	    module->allocStmtCntrsSpace(measEnabled);
-
-// LCOV_EXCL_START 
-// This test cannot be true on SQ.
-	  if (measEnabled)  // Measure running, setup stmtcntr.*/
-	    {
-	      master_glob->setStmtCntrs((ExMeasStmtCntrs *)module->
-		  getStmtCntrsSpace(master_glob->getStatement()->getStatementIndex()));
-	      if (statsArea)
-		statsArea->setStmtCntrs(master_glob->getMeasStmtCntrs());
-	    }
-// LCOV_EXCL_STOP
-	}
-      else  // must be dynamic sql.
-	master_glob->getStatement()->allocDynamicStmtCntrs();
-    };
-
   // nobody can claim me as a dependent, so I'm setting my parent TDB id
   // to NULL.
   if (root_tcb->getStatsEntry())

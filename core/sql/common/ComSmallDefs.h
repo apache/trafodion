@@ -1770,7 +1770,8 @@ enum ComLobsStorage {
     Lob_InMemory_File = 7,
     Lob_External_HDFS_File = 8,
     Lob_External_HBASE_Table = 9,
-    Lob_External_Local_File = 10
+    Lob_External_Local_File = 10,
+    Lob_Empty = 11
 };
 
 // for the TRANSFORM utility - equivalent definitions in catapirequest.h

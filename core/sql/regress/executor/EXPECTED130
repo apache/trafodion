@@ -20,7 +20,6 @@
 
 --- SQL operation complete.
 >>
->>
 >>?section dml_insert
 >>insert into t130lob1 values(NULL);
 
@@ -53,9 +52,9 @@ C1
 C1           C2
 -----------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-          1  LOBH0000000200010510211485556250721619510211485561307979718212331560194616405020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-          2  LOBH0000000200010510211485556250721619510211485561895761318212331560200623397020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
-          3  LOBH0000000200010510211485556250721619510211485562426392018212331560205799760020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+          1  LOBH0000000200010693284694666931821619693284694675520439318212350402808136646020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+          2  LOBH0000000200010693284694666931821619693284694676238320918212350402817603197020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+          3  LOBH0000000200010693284694666931821619693284694676863363518212350402823890682020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 
 --- 3 row(s) selected.
 >>
@@ -101,6 +100,90 @@ C1
 
 --- 1 row(s) selected.
 >>
+>>--test empty_blob(), empty_clob()
+>>delete from t130lob2;
+
+--- 3 row(s) deleted.
+>>insert into t130lob2 values (1, empty_blob());
+
+--- 1 row(s) inserted.
+>>select lobtostring(c2,10) from t130lob2;
+
+(EXPR)    
+----------
+
+          
+
+--- 1 row(s) selected.
+>>delete from t130lob2;
+
+--- 1 row(s) deleted.
+>>insert into t130lob2 values (1, empty_clob());
+
+--- 1 row(s) inserted.
+>>select lobtostring(c2,10) from t130lob2;
+
+(EXPR)    
+----------
+
+          
+
+--- 1 row(s) selected.
+>>update t130lob2 set c2=stringtolob('inserted row11');
+
+--- 1 row(s) updated.
+>>select lobtostring(c2,30) from t130lob2;
+
+(EXPR)                        
+------------------------------
+
+inserted row11                
+
+--- 1 row(s) selected.
+>>update t130lob2 set c2=empty_blob();
+
+--- 1 row(s) updated.
+>>select lobtostring(c2,10) from t130lob2;
+
+(EXPR)    
+----------
+
+          
+
+--- 1 row(s) selected.
+>>update t130lob2 set c2=stringtolob('inserted row11',append);
+
+--- 1 row(s) updated.
+>>select lobtostring(c2,30) from t130lob2;
+
+(EXPR)                        
+------------------------------
+
+inserted row11                
+
+--- 1 row(s) selected.
+>>update t130lob2 set c2=stringtolob('more inserted row11',append);
+
+--- 1 row(s) updated.
+>>select lobtostring(c2,50) from t130lob2;
+
+(EXPR)                                            
+--------------------------------------------------
+
+inserted row11more inserted row11                 
+
+--- 1 row(s) selected.
+>>update t130lob2 set c2=empty_blob();
+
+--- 1 row(s) updated.
+>>select lobtostring(c2,10) from t130lob2;
+
+(EXPR)    
+----------
+
+          
+
+--- 1 row(s) selected.
 >>
 >>?section dml_join
 >>insert into t130lob3 values (1,stringtolob('inserted row21a'),stringtolob('inserted row21b'));
@@ -128,11 +211,9 @@ C1
 (EXPR)                        
 ------------------------------
 
-inserted row11                
-inserted row12                
-inserted row13                
+                              
 
---- 3 row(s) selected.
+--- 1 row(s) selected.
 >>
 >>values (filetolob('./myfile.txt'));
 
@@ -149,17 +230,15 @@ inserted row13
 >>
 >>update t130lob2 set c2=stringtolob('updated c2 in all rows');
 
---- 3 row(s) updated.
+--- 1 row(s) updated.
 >>select c1, lobtostring(c2,30) from t130lob2;
 
 C1           (EXPR)                        
 -----------  ------------------------------
 
           1  updated c2 in all rows        
-          2  updated c2 in all rows        
-          3  updated c2 in all rows        
 
---- 3 row(s) selected.
+--- 1 row(s) selected.
 >>
 >>update t130lob2 set c2=stringtolob('updated row21a') where c1=1;
 
@@ -170,10 +249,8 @@ C1           (EXPR)
 -----------  ------------------------------
 
           1  updated row21a                
-          2  updated c2 in all rows        
-          3  updated c2 in all rows        
 
---- 3 row(s) selected.
+--- 1 row(s) selected.
 >>select c1, lobtostring(c2,30) from t130lob2 where c1=1;
 
 C1           (EXPR)                        
@@ -195,10 +272,8 @@ C1           (EXPR)
 -----------  ----------------------------------------------------------------------------------------------------
 
           1  updated row21aappended row21a                                                                       
-          2  updated c2 in all rows                                                                              
-          3  updated c2 in all rows                                                                              
 
---- 3 row(s) selected.
+--- 1 row(s) selected.
 >>select c1, lobtostring(c2,100) from t130lob2 where c1=1;
 
 C1           (EXPR)
@@ -208,21 +283,17 @@ C1           (EXPR)
 
 --- 1 row(s) selected.
 >>
->>
 >>update t130lob2 set c2=stringtolob(' appended c2 to all rows',append);
 
---- 3 row(s) updated.
+--- 1 row(s) updated.
 >>select c1, lobtostring(c2,60) from t130lob2;
 
 C1           (EXPR)
 -----------  ------------------------------------------------------------
 
           1  updated row21aappended row21a appended c2 to all rows       
-          2  updated c2 in all rows appended c2 to all rows              
-          3  updated c2 in all rows appended c2 to all rows              
 
---- 3 row(s) selected.
->>
+--- 1 row(s) selected.
 >>
 >>?section dml_delete
 >>
@@ -242,7 +313,7 @@ C1           (EXPR)                          (EXPR)
 >>
 >>delete from t130lob2 ;
 
---- 3 row(s) deleted.
+--- 1 row(s) deleted.
 >>select * from t130lob2;
 
 --- 0 row(s) selected.
@@ -406,7 +477,7 @@ And the dish ran away with the fork !
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_txt1.txt');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH0000000200010510211485556254547519510211485599146674118212331560572956493020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'tlob130_txt1.txt');
+>>extract lobtofile(LOB 'LOBH0000000200010693284694666936172119693284694718802636218212350403243416736020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'tlob130_txt1.txt');
 Success. Targetfile :tlob130_txt1.txt  Length : 19
 
 --- SQL operation complete.
@@ -422,7 +493,7 @@ Success. Targetfile :tlob130_txt1.txt  Length : 19
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH0000000200010510211485556254604019510211485605789788818212331560639552568020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'tlob130_deep.jpg');
+>>extract lobtofile(LOB 'LOBH0000000200010693284694666936277719693284694725950422618212350403314769123020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'tlob130_deep.jpg');
 Success. Targetfile :tlob130_deep.jpg  Length : 159018
 
 --- SQL operation complete.
@@ -438,7 +509,7 @@ Success. Targetfile :tlob130_deep.jpg  Length : 159018
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush.jpg');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH0000000200010510211485556254604019510211485605789788818212331560639552568020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'tlob130_anoush.jpg');
+>>extract lobtofile(LOB 'LOBH0000000200010693284694666936277719693284694725950422618212350403314769123020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'tlob130_anoush.jpg');
 Success. Targetfile :tlob130_anoush.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -558,7 +629,7 @@ And the dish ran away with the fork !
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_txt2.txt');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH0000000200010510211485556255773319510211485612388595418212331560705500275020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'hdfs:///lobs/tlob130_txt2.txt');
+>>extract lobtofile(LOB 'LOBH0000000200010693284694666937699219693284694733387350918212350403389004357020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'hdfs:///lobs/tlob130_txt2.txt');
 Success. Targetfile :hdfs:///lobs/tlob130_txt2.txt  Length : 19
 
 --- SQL operation complete.
@@ -574,7 +645,7 @@ Success. Targetfile :hdfs:///lobs/tlob130_txt2.txt  Length : 19
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_deep.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH0000000200010510211485556255836419510211485618210140818212331560763707066020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'hdfs:///lobs/tlob130_deep.jpg');
+>>extract lobtofile(LOB 'LOBH0000000200010693284694666937807719693284694740112181518212350403456401952020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'hdfs:///lobs/tlob130_deep.jpg');
 Success. Targetfile :hdfs:///lobs/tlob130_deep.jpg  Length : 159018
 
 --- SQL operation complete.
@@ -590,7 +661,7 @@ Success. Targetfile :hdfs:///lobs/tlob130_deep.jpg  Length : 159018
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_anoush.jpg');/g" >> t130_extract_command;
 >>
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH0000000200010510211485556254604019510211485605789788818212331560639552568020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'hdfs:///lobs/tlob130_anoush.jpg');
+>>extract lobtofile(LOB 'LOBH0000000200010693284694666936277719693284694725950422618212350403314769123020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'hdfs:///lobs/tlob130_anoush.jpg');
 Success. Targetfile :hdfs:///lobs/tlob130_anoush.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -609,7 +680,7 @@ Column Name : c2
 Input a filename to extract to : 
 Output File Name : lobc2out.jpg
 Extracting  lob handle for column c2...
-LOB handle for c2: LOBH0000000200010510211485556254604019510211485605789788818212331560639552568020"TRAFODION"."LOB130"
+LOB handle for c2: LOBH0000000200010693284694666936277719693284694725950422618212350403314769123020"TRAFODION"."LOB130"
 Extracting LOB data length for the above handle...
 LOB data length :230150
 Extracting lob data into file in chunks of 1000 ...
@@ -845,6 +916,8 @@ Wrote 1000 bytes to file : lobc2out.jpg
 Wrote 1000 bytes to file : lobc2out.jpg
 Wrote 150 bytes to file : lobc2out.jpg
 >>
+>>
+>>
 >>------------------------------------------------------------------------------
 >>
 >>?section lob_misc_cleanup
@@ -888,7 +961,7 @@ And the dish ran away with the spoon.
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_deep2.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH0000000200020510211485556257624419510211485628651293418212331560868225556020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'tlob130_deep2.jpg');
+>>extract lobtofile(LOB 'LOBH0000000200020693284694666939887019693284694753101879518212350403586346705020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'tlob130_deep2.jpg');
 Success. Targetfile :tlob130_deep2.jpg  Length : 159018
 
 --- SQL operation complete.
@@ -897,7 +970,7 @@ Success. Targetfile :tlob130_deep2.jpg  Length : 159018
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH0000000200030510211485556257624419510211485629156933018212331560873284155020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'hdfs:///lobs/tlob130_anoush2.jpg');
+>>extract lobtofile(LOB 'LOBH0000000200030693284694666939887019693284694753661757718212350403591996291020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'hdfs:///lobs/tlob130_anoush2.jpg');
 Success. Targetfile :hdfs:///lobs/tlob130_anoush2.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -924,7 +997,7 @@ Hey diddle diddle,
 >>sh rm t130_extract_command;
 >>sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'tlob130_anoush3.jpg',create,truncate);/g" >> t130_extract_command;
 >>obey t130_extract_command;
->>extract lobtofile(LOB 'LOBH0000000200030510211485556257992519510211485632863361718212331560910255798020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'tlob130_anoush3.jpg',create,truncate);
+>>extract lobtofile(LOB 'LOBH0000000200030693284694666940355019693284694758323311318212350403638460438020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ' , 'tlob130_anoush3.jpg',create,truncate);
 Success. Targetfile :tlob130_anoush3.jpg  Length : 230150
 
 --- SQL operation complete.
@@ -1025,12 +1098,12 @@ Lob Information for table: "TRAFODION".LOB130.TLOB130GT2
 
   ColumnName :  C2
   Lob Location :  /lobs
-  LOB Data File:  LOBP_05102114855562605361_0001
+  LOB Data File:  LOBP_06932846946669434383_0001
   LOB EOD :  0
   LOB Used Len :  0
   ColumnName :  C3
   Lob Location :  /lobs
-  LOB Data File:  LOBP_05102114855562605361_0002
+  LOB Data File:  LOBP_06932846946669434383_0002
   LOB EOD :  0
   LOB Used Len :  0
   ColumnName :  C4
@@ -1045,8 +1118,8 @@ Lob Information for table: "TRAFODION".LOB130.TLOB130GT2
 CATALOG_NAME                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                       OBJECT_NAME                                                                                                                                                                                                                                                       COLUMN_NAME                                                                                                                                                                                                                                                       LOB_LOCATION                                                                                                                                                                                                                                                      LOB_DATA_FILE                                                                                                                                                                                                                                                     LOB_DATA_FILE_SIZE_EOD  LOB_DATA_FILE_SIZE_USED
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------  -----------------------
 
-TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT2                                                                                                                                                                                                                                                        C2                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_05102114855562605361_0001                                                                                                                                                                                                                                                         0                        0
-TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT2                                                                                                                                                                                                                                                        C3                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_05102114855562605361_0002                                                                                                                                                                                                                                                         0                        0
+TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT2                                                                                                                                                                                                                                                        C2                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_06932846946669434383_0001                                                                                                                                                                                                                                                         0                        0
+TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT2                                                                                                                                                                                                                                                        C3                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_06932846946669434383_0002                                                                                                                                                                                                                                                         0                        0
 TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT2                                                                                                                                                                                                                                                        C4                                                                                                                                                                                                                                                                External HDFS Location                                                                                                                                                                                                                                            External HDFS File                                                                                                                                                                                                                                                                     0                        0
 
 --- 3 row(s) selected.
@@ -1067,17 +1140,17 @@ Lob Information for table: "TRAFODION".LOB130.TLOB130GT
 
   ColumnName :  C2
   Lob Location :  /lobs
-  LOB Data File:  LOBP_05102114855562604117_0001
+  LOB Data File:  LOBP_06932846946669431934_0001
   LOB EOD :  15
   LOB Used Len :  15
   ColumnName :  C3
   Lob Location :  /lobs
-  LOB Data File:  LOBP_05102114855562604117_0002
+  LOB Data File:  LOBP_06932846946669431934_0002
   LOB EOD :  15
   LOB Used Len :  15
   ColumnName :  C4
   Lob Location :  /lobs
-  LOB Data File:  LOBP_05102114855562604117_0003
+  LOB Data File:  LOBP_06932846946669431934_0003
   LOB EOD :  45
   LOB Used Len :  45
 
@@ -1087,9 +1160,9 @@ Lob Information for table: "TRAFODION".LOB130.TLOB130GT
 CATALOG_NAME                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                       OBJECT_NAME                                                                                                                                                                                                                                                       COLUMN_NAME                                                                                                                                                                                                                                                       LOB_LOCATION                                                                                                                                                                                                                                                      LOB_DATA_FILE                                                                                                                                                                                                                                                     LOB_DATA_FILE_SIZE_EOD  LOB_DATA_FILE_SIZE_USED
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------  -----------------------
 
-TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C2                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_05102114855562604117_0001                                                                                                                                                                                                                                                        15                       15
-TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C3                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_05102114855562604117_0002                                                                                                                                                                                                                                                        15                       15
-TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C4                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_05102114855562604117_0003                                                                                                                                                                                                                                                        45                       45
+TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C2                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_06932846946669431934_0001                                                                                                                                                                                                                                                        15                       15
+TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C3                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_06932846946669431934_0002                                                                                                                                                                                                                                                        15                       15
+TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C4                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_06932846946669431934_0003                                                                                                                                                                                                                                                        45                       45
 
 --- 3 row(s) selected.
 >>delete from tlob130gt where c1=2;
@@ -1106,17 +1179,17 @@ Lob Information for table: "TRAFODION".LOB130.TLOB130GT
 
   ColumnName :  C2
   Lob Location :  /lobs
-  LOB Data File:  LOBP_05102114855562604117_0001
+  LOB Data File:  LOBP_06932846946669431934_0001
   LOB EOD :  30
   LOB Used Len :  25
   ColumnName :  C3
   Lob Location :  /lobs
-  LOB Data File:  LOBP_05102114855562604117_0002
+  LOB Data File:  LOBP_06932846946669431934_0002
   LOB EOD :  31
   LOB Used Len :  26
   ColumnName :  C4
   Lob Location :  /lobs
-  LOB Data File:  LOBP_05102114855562604117_0003
+  LOB Data File:  LOBP_06932846946669431934_0003
   LOB EOD :  71
   LOB Used Len :  56
 
@@ -1126,9 +1199,9 @@ Lob Information for table: "TRAFODION".LOB130.TLOB130GT
 CATALOG_NAME                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                       OBJECT_NAME                                                                                                                                                                                                                                                       COLUMN_NAME                                                                                                                                                                                                                                                       LOB_LOCATION                                                                                                                                                                                                                                                      LOB_DATA_FILE                                                                                                                                                                                                                                                     LOB_DATA_FILE_SIZE_EOD  LOB_DATA_FILE_SIZE_USED
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------  -----------------------
 
-TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C2                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_05102114855562604117_0001                                                                                                                                                                                                                                                        30                       25
-TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C3                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_05102114855562604117_0002                                                                                                                                                                                                                                                        31                       26
-TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C4                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_05102114855562604117_0003                                                                                                                                                                                                                                                        71                       56
+TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C2                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_06932846946669431934_0001                                                                                                                                                                                                                                                        30                       25
+TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C3                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_06932846946669431934_0002                                                                                                                                                                                                                                                        31                       26
+TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130GT                                                                                                                                                                                                                                                         C4                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_06932846946669431934_0003                                                                                                                                                                                                                                                        71                       56
 
 --- 3 row(s) selected.
 >>
@@ -1283,12 +1356,12 @@ Lob Information for table: "TRAFODION".LOB130.TLOB130EXT
 
   ColumnName :  C2
   Lob Location :  /lobs
-  LOB Data File:  LOBP_05102114855562614822_0001
+  LOB Data File:  LOBP_06932846946669445784_0001
   LOB EOD :  61
   LOB Used Len :  42
   ColumnName :  C3
   Lob Location :  /lobs
-  LOB Data File:  LOBP_05102114855562614822_0002
+  LOB Data File:  LOBP_06932846946669445784_0002
   LOB EOD :  106
   LOB Used Len :  68
   ColumnName :  C4
@@ -1303,8 +1376,8 @@ Lob Information for table: "TRAFODION".LOB130.TLOB130EXT
 CATALOG_NAME                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                       OBJECT_NAME                                                                                                                                                                                                                                                       COLUMN_NAME                                                                                                                                                                                                                                                       LOB_LOCATION                                                                                                                                                                                                                                                      LOB_DATA_FILE                                                                                                                                                                                                                                                     LOB_DATA_FILE_SIZE_EOD  LOB_DATA_FILE_SIZE_USED
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  ----------------------  -----------------------
 
-TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130EXT                                                                                                                                                                                                                                                        C2                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_05102114855562614822_0001                                                                                                                                                                                                                                                        61                       42
-TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130EXT                                                                                                                                                                                                                                                        C3                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_05102114855562614822_0002                                                                                                                                                                                                                                                       106                       68
+TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130EXT                                                                                                                                                                                                                                                        C2                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_06932846946669445784_0001                                                                                                                                                                                                                                                        61                       42
+TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130EXT                                                                                                                                                                                                                                                        C3                                                                                                                                                                                                                                                                /lobs                                                                                                                                                                                                                                                             LOBP_06932846946669445784_0002                                                                                                                                                                                                                                                       106                       68
 TRAFODION                                                                                                                                                                                                                                                         LOB130                                                                                                                                                                                                                                                            TLOB130EXT                                                                                                                                                                                                                                                        C4                                                                                                                                                                                                                                                                External HDFS Location                                                                                                                                                                                                                                            External HDFS File                                                                                                                                                                                                                                                                     0                        0
 
 --- 3 row(s) selected.
@@ -1321,7 +1394,7 @@ Column Name : c4
 Input a filename to extract to : 
 Output File Name : lobc4ext.txt
 Extracting  lob handle for column c4...
-LOB handle for c4: LOBH0000000800030510211485556261482219510211485673041946518212331561312155199020"TRAFODION"."LOB130"
+LOB handle for c4: LOBH0000000800030693284694666944578419693284694806495512618212350404120317726020"TRAFODION"."LOB130"
 Extracting LOB data length for the above handle...
 LOB data length :19
 Extracting lob data into file in chunks of 1000 ...
@@ -1329,6 +1402,118 @@ Wrote 19 bytes to file : lobc4ext.txt
 >>sh cat lobc4ext.txt |tee -a LOG130;
 Hey diddle diddle,
 >>
+>>?section update_lob_handle
+>>-- test lob update via "update lob" command
+>>log;
+>>delete from t130lob5;
+
+--- 0 row(s) deleted.
+>>insert into t130lob5 values (1,empty_blob());
+
+--- 1 row(s) inserted.
+>>sh clitestdriver 6 < TEST130_argfile3 2>&1 | tee -a LOG130;
+*************************************
+Blob test update  lobhandle from a buffer 
+Input lob table name :
+Table name : TRAFODION.LOB130.t130lob5
+Input lob column name to get handle from :
+Column Name : c2
+Extracting  lob handle for column c2...
+LOB handle for c2: LOBH0000000200010693284694666947044019693284694824175608718212350404297138941020"TRAFODION"."LOB130"
+>>select lobtostring(c2,20) from t130lob5;
+
+(EXPR)              
+--------------------
+
+zzzzzzzzzzzzzzzzzzzz
+
+--- 1 row(s) selected.
+>>sh clitestdriver 7 < TEST130_argfile3 2>&1 | tee -a LOG130;
+*************************************
+Blob test append  lobhandle from a buffer 
+Input lob table name :
+Table name : TRAFODION.LOB130.t130lob5
+Input lob column name to get handle from :
+Column Name : c2
+Extracting  lob handle for column c2...
+LOB handle for c2: LOBH0000000200010693284694666947044019693284694824175608718212350404297138941020"TRAFODION"."LOB130"
+>>select lobtostring(c2,40) from t130lob5;
+
+(EXPR)                                  
+----------------------------------------
+
+zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+
+--- 1 row(s) selected.
+>>sh clitestdriver 8 < TEST130_argfile3 2>&1 | tee -a LOG130;
+*************************************
+Blob test empty  lobhandle from a buffer 
+Input lob table name :
+Table name : TRAFODION.LOB130.t130lob5
+Input lob column name to get handle from :
+Column Name : c2
+Extracting  lob handle for column c2...
+LOB handle for c2: LOBH0000000200010693284694666947044019693284694824175608718212350404297138941020"TRAFODION"."LOB130"
+>>select lobtostring(c2,20) from t130lob5;
+
+(EXPR)              
+--------------------
+
+                    
+
+--- 1 row(s) selected.
+>>sh clitestdriver 6 < TEST130_argfile3 2>&1 | tee -a LOG130;
+*************************************
+Blob test update  lobhandle from a buffer 
+Input lob table name :
+Table name : TRAFODION.LOB130.t130lob5
+Input lob column name to get handle from :
+Column Name : c2
+Extracting  lob handle for column c2...
+LOB handle for c2: LOBH0000000200010693284694666947044019693284694824175608718212350404297138941020"TRAFODION"."LOB130"
+>>select lobtostring(c2,40) from t130lob5;
+
+(EXPR)                                  
+----------------------------------------
+
+zzzzzzzzzzzzzzzzzzzz                    
+
+--- 1 row(s) selected.
+>>delete from t130lob5;
+
+--- 1 row(s) deleted.
+>>
+>>
+>>-- test_empty_blob() with external tables
+>>delete from tlob130ext;
+
+--- 3 row(s) deleted.
+>>-- following empty_blob will be of type 'external'
+>>insert into tlob130ext values(1,empty_blob(),empty_clob(),empty_blob());
+
+--- 1 row(s) inserted.
+>>select c2 from tlob130ext;
+
+C2
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+LOBH0000000200010693284694666944578419693284694836695682418212350404422379045020"TRAFODION"."LOB130"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+--- 1 row(s) selected.
+>>-- following should return error since only external lobs will be allowed
+>>update tlob130ext set c4=stringtolob('gggg');
+
+*** ERROR[1432] Input LOB type 2 does not match column's storage type: 8 Column name: C4 .
+
+*** ERROR[8822] The statement was not prepared.
+
+>>-- following should work. 
+>>update tlob130ext set c4=externaltolob('hdfs:///lobs/lob_input_b1.txt');
+
+--- 1 row(s) updated.
+>>delete from tlob130ext;
+
+--- 1 row(s) deleted.
 >>
 >>-- test to ensure all lob dependent tables and schemas containing lob tables
 >>-- get dropped cleanly.
@@ -1355,9 +1540,9 @@ Hey diddle diddle,
 Tables in Schema TRAFODION.LOBSCH
 =================================
 
-LOBDescChunks__05102114855562636318_0001
-LOBDescHandle__05102114855562636318_0001
-LOBMD__05102114855562636318
+LOBDescChunks__06932846946669487886_0001
+LOBDescHandle__06932846946669487886_0001
+LOBMD__06932846946669487886
 SB_HISTOGRAMS
 SB_HISTOGRAM_INTERVALS
 SB_PERSISTENT_SAMPLES

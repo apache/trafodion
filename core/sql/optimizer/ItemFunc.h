@@ -2858,11 +2858,11 @@ public:
  enum ObjectType
  {
    STRING_, FILE_, BUFFER_, CHUNK_, STREAM_, LOB_, LOAD_, EXTERNAL_, 
-   EXTRACT_, NOOP_
+   EXTRACT_, EMPTY_LOB_,NOOP_
  };
 
  LOBoper(OperatorTypeEnum otype,
-	 ItemExpr *val1Ptr, ItemExpr *val2Ptr = NULL,ItemExpr *val3Ptr = NULL, 
+	 ItemExpr *val1Ptr=NULL, ItemExpr *val2Ptr = NULL,ItemExpr *val3Ptr = NULL, 
 	 ObjectType obj = NOOP_)
    : BuiltinFunction(otype,  CmpCommon::statementHeap(),
                      3, val1Ptr, val2Ptr,val3Ptr),
@@ -2875,10 +2875,14 @@ public:
      hdfsPort_((Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT)),
      hdfsServer_( CmpCommon::getDefaultString(LOB_HDFS_SERVER))
    {
-     if ((obj == STRING_) || (obj == BUFFER_) || (obj == FILE_))
+     if ((obj == STRING_) || (obj == BUFFER_) || (obj == FILE_) )
        lobStorageType_ = Lob_HDFS_File;
      else if (obj == EXTERNAL_)
        lobStorageType_ = Lob_External_HDFS_File;
+     else if (obj == EMPTY_LOB_)
+       lobStorageType_ = Lob_Empty;
+     else
+       lobStorageType_ = Lob_Invalid_Storage;
     
    }
 
@@ -3054,7 +3058,7 @@ class LOBupdate : public LOBoper
   virtual short codeGen(Generator*);
   // method to do precode generation
   virtual ItemExpr * preCodeGen(Generator*);
-
+  // virtual Int32 getArity() const;
   NABoolean isAppend() { return append_; };
 
   Int64 & updatedTableObjectUID() { return objectUID_; }

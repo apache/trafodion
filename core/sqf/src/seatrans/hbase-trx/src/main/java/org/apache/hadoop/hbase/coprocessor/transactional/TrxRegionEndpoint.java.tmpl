@@ -836,6 +836,7 @@ CoprocessorService, Coprocessor {
     int status = 0;
     IOException ioe = null;
     UnknownTransactionException ute = null;
+    CommitConflictException cce = null;
     Throwable t = null;
     WrongRegionException wre = null;
     long transactionId = request.getTransactionId();
@@ -854,6 +855,10 @@ CoprocessorService, Coprocessor {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught UnknownTransactionException after internal commitRequest call - " + u.toString());
        ute = u;
        status = COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR;
+    } catch (CommitConflictException c) {
+       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught CommitConflictException after internal commitRequest call - "+ c.toString());
+       cce = c;
+       status = COMMIT_CONFLICT;
     } catch (IOException e) {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught IOException after internal commitRequest call - "+ e.toString());
        ioe = e;
@@ -868,6 +873,12 @@ CoprocessorService, Coprocessor {
     {
       commitRequestResponseBuilder.setHasException(true);
       commitRequestResponseBuilder.setException(t.toString());
+    }
+    
+    if (cce != null)
+    {
+      commitRequestResponseBuilder.setHasException(true);
+      commitRequestResponseBuilder.setException(cce.toString());
     }
 
     if (wre != null)
@@ -5730,18 +5741,25 @@ CoprocessorService, Coprocessor {
    * @return TransactionRegionInterface commit code
    * @throws IOException
    */
-  public int commitRequest(final long transactionId, final long startEpoch, final int participantNum) throws IOException, UnknownTransactionException {
+  public int commitRequest(final long transactionId, final long startEpoch, final int participantNum) 
+                                                 throws IOException,
+                                                 CommitConflictException,
+                                                 UnknownTransactionException {
      return commitRequest(transactionId, startEpoch, participantNum, true, false);
   }
 
   public int commitRequest(final long transactionId, final long startEpoch, final int participantNum, final boolean dropTableRecorded)
-                                                    throws IOException, UnknownTransactionException {
+                                                 throws IOException,
+                                                 CommitConflictException,
+                                                 UnknownTransactionException {
       return commitRequest(transactionId, startEpoch, participantNum, true, dropTableRecorded);
   }
   
   public int commitRequest(final long transactionId, final long startEpoch, final int participantNum, boolean flushHLOG,
-                                                               boolean dropTableRecorded) throws IOException,
-                                                                                UnknownTransactionException {
+                                                               boolean dropTableRecorded) 
+                                                 throws IOException,
+                                                 CommitConflictException,
+                                                 UnknownTransactionException {
     long txid = 0;
     String lv_regionName = new String(m_Region.getRegionInfo().getRegionNameAsString());
     if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest -- ENTRY txId: "
@@ -5797,7 +5815,9 @@ CoprocessorService, Coprocessor {
       hasConflictStartTime = System.nanoTime();
 
     synchronized (commitCheckLock) {
-      if (hasConflict(state)) {
+      try{
+          checkConflict(state);
+      } catch (IOException e) {
         if (LOG.isInfoEnabled()) {
           hasConflictEndTime = System.nanoTime();
           hasConflictTimes[lv_timeIndex] = hasConflictEndTime - hasConflictStartTime;
@@ -5806,8 +5826,8 @@ CoprocessorService, Coprocessor {
         state.setStatus(Status.ABORTED);
         retireTransaction(state, true);
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest encountered conflict txId: "
-                 + transactionId + "returning COMMIT_CONFLICT");
-        return COMMIT_CONFLICT;
+                 + transactionId + "returning COMMIT_CONFLICT", e);
+        throw new CommitConflictException(e);
       }
 
       if (LOG.isInfoEnabled()) 
@@ -6020,7 +6040,8 @@ CoprocessorService, Coprocessor {
    * @param TrxTransactionState state
    * @return boolean
    */
-  private boolean hasConflict(final TrxTransactionState state) {
+  private void checkConflict(final TrxTransactionState state)
+                                        throws IOException {
     // Check transactions that were committed while we were running
       
     synchronized (commitedTransactionsBySequenceNumber) {
@@ -6036,8 +6057,8 @@ CoprocessorService, Coprocessor {
         state.addTransactionToCheck(other);
       }
     }
-
-    return state.hasConflict();
+    state.checkConflict();
+    return;
   }
 
   public void abortTransaction(final long transactionId) throws IOException, UnknownTransactionException {

@@ -829,6 +829,7 @@ short CmpSeabaseMDcleanup::dropLOBs(ExeCliInterface *cliInterface)
                                    lobNumList_,
                                    lobTypList_,
                                    lobLocList_,
+                                   NULL,
                                    (char *)lobHdfsServer,
                                    lobHdfsPort,0,lobTrace);
 

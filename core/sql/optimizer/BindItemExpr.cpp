@@ -664,10 +664,12 @@ void ItemExpr::bindChildren(BindWA *bindWA)
 {
   Int32 savedCurrChildNo = currChildNo();
   for (Int32 i = 0; i < getArity(); i++, currChildNo()++) {
-
+   
     ItemExpr *boundExpr = child(i)->bindNode(bindWA);
     if (bindWA->errStatus()) return;
     child(i) = boundExpr;
+      
+      
   }
   currChildNo() = savedCurrChildNo;
 }
@@ -696,7 +698,7 @@ void ItemExpr::bindSelf(BindWA *bindWA)
   NABoolean defaultSpecBoundAsSQLnull = FALSE;
 
   for (Int32 i = 0; i < getArity(); i++, currChildNo()++) {
-
+   
     ItemExpr *boundExpr = child(i)->bindNode(bindWA);
     if (bindWA->errStatus()) 
       return;
@@ -707,10 +709,11 @@ void ItemExpr::bindSelf(BindWA *bindWA)
       }
 
     if (boundExpr->getOperatorType() == ITM_CONSTANT &&
-	((ConstValue *)boundExpr)->isNullWasDefaultSpec())
+        ((ConstValue *)boundExpr)->isNullWasDefaultSpec())
       defaultSpecBoundAsSQLnull = TRUE;
 
     child(i) = boundExpr;
+      
   }
 
   //##? Should   getOperatorType() != ITM_CAST		?##
@@ -1530,52 +1533,53 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
   // Step 1: Determine if we have children with different character set attributes
   //
   for (Int32 i = 0; i < arity; i++) {
-
+    
     const NAType& type = child(i)->getValueId().getType();
     if ( type.getTypeQualifier() == NA_CHARACTER_TYPE )
-    {
-       curr_chld_cs = ((const CharType&)type).getCharSet();
-       if ( i==0 ) chld0_cs = curr_chld_cs;  // Remember this one
+      {
+        curr_chld_cs = ((const CharType&)type).getCharSet();
+        if ( i==0 ) chld0_cs = curr_chld_cs;  // Remember this one
 
-       Int16 cur_chld_cs_ndx = iUNK;
+        Int16 cur_chld_cs_ndx = iUNK;
 
-       switch ( curr_chld_cs )
-       {
-        case CharInfo::UNICODE :
-          cur_chld_cs_ndx = iUCS2;
-          break;
+        switch ( curr_chld_cs )
+          {
+          case CharInfo::UNICODE :
+            cur_chld_cs_ndx = iUCS2;
+            break;
 
-        case CharInfo::ISO88591:
-          cur_chld_cs_ndx = iISO;
-          break;
+          case CharInfo::ISO88591:
+            cur_chld_cs_ndx = iISO;
+            break;
 
-        case CharInfo::UTF8:
-          cur_chld_cs_ndx = iUTF8;
-          break;
+          case CharInfo::UTF8:
+            cur_chld_cs_ndx = iUTF8;
+            break;
 
-        case CharInfo::SJIS:
-          cur_chld_cs_ndx = iSJIS;
-          break;
+          case CharInfo::SJIS:
+            cur_chld_cs_ndx = iSJIS;
+            break;
 
-        case CharInfo::GBK:
-          cur_chld_cs_ndx = iGBK;
-          break;
+          case CharInfo::GBK:
+            cur_chld_cs_ndx = iGBK;
+            break;
 
-        //case CharInfo::KANJI_MP:
-        //case CharInfo::KSC5601_MP:
-        default:
-          break; // Can not translate these currently.
-       }
-       charsets_involved[cur_chld_cs_ndx]++;
+            //case CharInfo::KANJI_MP:
+            //case CharInfo::KSC5601_MP:
+          default:
+            break; // Can not translate these currently.
+          }
+        charsets_involved[cur_chld_cs_ndx]++;
 
-       OperatorTypeEnum curr_chld_opType = child(i)->getOperatorType();
-       if (i == 0 ) chld0_opType = curr_chld_opType;  // Remember this one
+        OperatorTypeEnum curr_chld_opType = child(i)->getOperatorType();
+        if (i == 0 ) chld0_opType = curr_chld_opType;  // Remember this one
 
-       if ( curr_chld_opType == ITM_CONSTANT )
+        if ( curr_chld_opType == ITM_CONSTANT )
           Literals_involved[cur_chld_cs_ndx] += 1 ;
-       else
+        else
           nonLiterals_involved[cur_chld_cs_ndx] += 1 ;
-    }
+      }
+      
   }
 
   for (Int32 j = 0; j < iUNK; j++)
@@ -3125,24 +3129,26 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
       Int32 origArity = getArity();
       
       for (Int32 chld=0; chld < origArity; chld++)
-      {
-        switch (child(chld)->getOperatorType())
         {
-          case ITM_ROW_SUBQUERY:
-            subq = (Subquery *) child(chld)->castToItemExpr();
-            childDegree += subq->getSubquery()->getDegree();
-            break;
+       
+          switch (child(chld)->getOperatorType())
+            {
+            case ITM_ROW_SUBQUERY:
+              subq = (Subquery *) child(chld)->castToItemExpr();
+              childDegree += subq->getSubquery()->getDegree();
+              break;
             
-          case ITM_USER_DEF_FUNCTION:
-            udf = (UDFunction *) child(chld)->castToItemExpr();
-            childDegree += udf->getRoutineDesc()->getOutputColumnList().entries();
-            break;
+            case ITM_USER_DEF_FUNCTION:
+              udf = (UDFunction *) child(chld)->castToItemExpr();
+              childDegree += udf->getRoutineDesc()->getOutputColumnList().entries();
+              break;
             
-          default:
-            childDegree += 1;
-            break;
+            default:
+              childDegree += 1;
+              break;
+            }
+          
         }
-      }
       
       if (childDegree > origArity) 
       {

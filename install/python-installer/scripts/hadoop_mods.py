@@ -140,7 +140,7 @@ class HDPMod(object):
 
     def restart(self):
         srv_baseurl = CLUSTER_URL_PTR % (self.url, self.cluster_name) + '/services/'
-        srvs = ['HBASE', 'ZOOKEEPER', 'HDFS']
+        srvs = ['HBASE', 'HDFS', 'ZOOKEEPER']
 
         # Stop
         info('Restarting HDP services ...')
@@ -156,7 +156,7 @@ class HDPMod(object):
             else:
                 info('HDP service %s had already been stopped' % srv)
 
-        time.sleep(5)
+        time.sleep(10)
         # Start
         config = {'RequestInfo': {'context' :'Start All services'}, 'ServiceInfo': {'state' : 'STARTED'}}
         rc = self.p.put(srv_baseurl, config)

@@ -123,7 +123,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
 {
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
-
+  lobGlob_ = NULL;
   const int readBufSize =  (Int32)hdfsScanTdb.hdfsBufSize_;
   hdfsScanBuffer_ = new(space) char[ readBufSize + 1 ]; 
   hdfsScanBuffer_[readBufSize] = '\0';
@@ -288,41 +288,22 @@ NABoolean ExHdfsScanTcb::needStatsEntry()
     return FALSE;
 }
 
-ExOperStats * ExHdfsScanTcb::doAllocateStatsEntry(
-                                                        CollHeap *heap,
+ExOperStats * ExHdfsScanTcb::doAllocateStatsEntry(CollHeap *heap,
                                                         ComTdb *tdb)
 {
-  ExOperStats * stats = NULL;
-
-  ExHdfsScanTdb * myTdb = (ExHdfsScanTdb*) tdb;
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
   
-  return new(heap) ExHdfsScanStats(heap,
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
 				   this,
 				   tdb);
-  
-  ComTdb::CollectStatsType statsType = 
-                     getGlobals()->getStatsArea()->getCollectStatsType();
-  if (statsType == ComTdb::OPERATOR_STATS)
-    {
-      return ex_tcb::doAllocateStatsEntry(heap, tdb);
-    }
-  else if (statsType == ComTdb::PERTABLE_STATS)
-    {
-      // sqlmp style per-table stats, one entry per table
-      stats = new(heap) ExPertableStats(heap, 
-					this,
-					tdb);
-      ((ExOperStatsId*)(stats->getId()))->tdbId_ = tdb->getPertableStatsTdbId();
-      return stats;
-    }
-  else
-    {
-      ExHdfsScanTdb * myTdb = (ExHdfsScanTdb*) tdb;
-      
-      return new(heap) ExHdfsScanStats(heap,
-				       this,
-				       tdb);
-    }
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
 
 void ExHdfsScanTcb::registerSubtasks()

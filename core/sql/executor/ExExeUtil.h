@@ -2912,7 +2912,7 @@ public:
 			 ex_globals * glob = 0);
   
   virtual short work();
-
+  
   ExExeUtilLobExtractTdb & lobTdb() const
   {
     return (ExExeUtilLobExtractTdb &) tdb;
@@ -2970,8 +2970,92 @@ public:
   LOBglobals *lobGlobals_;
 };
 
+
+
+//////////////////////////////////////////////////////////////////////////
 // -----------------------------------------------------------------------
-// ExExeUtilFileExtractTcb
+// ExExeUtilLobUpdateTdb
+// -----------------------------------------------------------------------
+class ExExeUtilLobUpdateTdb : public ComTdbExeUtilLobUpdate
+{
+ public:
+
+  // ---------------------------------------------------------------------
+  // Constructor is only called to instantiate an object used for
+  // retrieval of the virtual table function pointer of the class while
+  // unpacking. An empty constructor is enough.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC ExExeUtilLobUpdateTdb()
+    {}
+
+  NA_EIDPROC virtual ~ExExeUtilLobUpdateTdb()
+    {}
+
+
+  // ---------------------------------------------------------------------
+  // Build a TCB for this TDB. Redefined in the Executor project.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+private:
+};
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilLobUpdateTcb
+// -----------------------------------------------------------------------
+
+
+class ExExeUtilLobUpdateTcb : public ExExeUtilTcb
+{
+  friend class ExExeUtilLobUpdateTdb;
+  friend class ExExeUtilPrivateState;
+
+public:
+  // Constructor
+  ExExeUtilLobUpdateTcb(const ComTdbExeUtilLobUpdate & exe_util_tdb,
+			 const ex_tcb * child_tcb, 
+			 ex_globals * glob = 0);
+  
+  virtual short work();
+  
+  ExExeUtilLobUpdateTdb & lobTdb() const
+  {
+    return (ExExeUtilLobUpdateTdb &) tdb;
+  };
+  LOBglobals *getLobGlobals() { return lobGlobals_;}
+ protected:
+  enum Step
+    {
+      EMPTY_,
+      GET_HANDLE_,
+      UPDATE_LOB_DATA_,
+      EMPTY_LOB_DATA_,
+      APPEND_LOB_DATA_,
+      RETURN_STATUS_,
+      DONE_,
+      CANCEL_,
+      HANDLE_ERROR_,
+      CANCELLED_
+    };
+  Step step_;
+  Lng32 lobHandleLen_;
+  char  lobHandle_[2050];
+  char lobInputHandleBuf_[4096];
+  char lobNameBuf_[1024];
+  Lng32 lobNameLen_;
+  char * lobName_;
+  Lng32 lobType_;
+  char * lobData_;
+  Int64 lobDataLen_;
+  Int64 requestTag_;
+  char lobLoc_[1024];
+  ExLobStats lobStats_;
+  char statusString_[200];
+  fstream indata_;
+  LOBglobals *lobGlobals_;
+};
+// -----------------------------------------------------------------------
+// ExExeUtilFileUpdateTcb
 // -----------------------------------------------------------------------
 class ExExeUtilFileExtractTcb : public ExExeUtilLobExtractTcb
 {

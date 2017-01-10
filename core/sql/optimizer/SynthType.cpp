@@ -6699,16 +6699,20 @@ const NAType *LOBoper::synthesizeType()
 const NAType *LOBinsert::synthesizeType()
 {
   // Return blob type
-
-  ValueId vid1 = child(0)->getValueId();
-  const NAType &typ1 = (NAType&)vid1.getType();
+  ValueId vid1;
+  const NAType *typ1 = NULL;
+  if (child(0))
+    {
+      vid1 = child(0)->getValueId();
+      typ1 = &vid1.getType();
+    }
 
   if ((obj_ == STRING_) ||
       (obj_ == FILE_) ||
       (obj_ == EXTERNAL_) ||
       (obj_ == LOAD_))
     {
-      if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+      if (typ1 && typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
 	{
 	  // 4221 The operand of a $0~String0 function must be character.
 	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
@@ -6718,7 +6722,7 @@ const NAType *LOBinsert::synthesizeType()
     }
   else if (obj_ == LOB_)
     {
-      if (typ1.getTypeQualifier() != NA_LOB_TYPE)
+      if (typ1 && typ1->getTypeQualifier() != NA_LOB_TYPE)
 	{
 	  // 4043 The operand of a $0~String0 function must be blob
 	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
@@ -6728,13 +6732,16 @@ const NAType *LOBinsert::synthesizeType()
     }
   else if (obj_ == BUFFER_)
     {
-     if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+     if (typ1 && typ1->getTypeQualifier() != NA_NUMERIC_TYPE)
 	{
 	  // 4043 The operand of a $0~String0 function must be blob
 	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
 			      << DgString1("LARGEINT");
 	  return NULL;
 	} 
+    }
+  else if(obj_ == EMPTY_LOB_)
+    {
     }
   else 
     {
@@ -6743,17 +6750,19 @@ const NAType *LOBinsert::synthesizeType()
 			  << DgString1("BLOB");
       return NULL;
     }
+  
+    
 
   NAType * result = NULL;
   if (lobFsType() == REC_BLOB)
     {
       result = new HEAP SQLBlob(lobSize(), Lob_Invalid_Storage,
-				typ1.supportsSQLnull());
+				(obj_ ==EMPTY_LOB_) ? FALSE:typ1->supportsSQLnull());
     }
   else if (lobFsType() == REC_CLOB)
     {
       result = new HEAP SQLClob(lobSize(), Lob_Invalid_Storage,
-				typ1.supportsSQLnull());
+				(obj_ == EMPTY_LOB_)? FALSE:typ1->supportsSQLnull());
     }
     
   return result;
@@ -6763,11 +6772,20 @@ const NAType *LOBupdate::synthesizeType()
 {
   // Return blob type
 
-  ValueId vid1 = child(0)->getValueId();
-  const NAType &typ1 = (NAType&)vid1.getType();
+  ValueId vid1,vid2 ;
+  const NAType *typ1,*typ2 = NULL;
 
-  ValueId vid2 = child(1)->getValueId();
-  const NAType &typ2 = (NAType&)vid2.getType();
+  if(child(0))
+    {
+      vid1= child(0)->getValueId();
+      typ1 = &vid1.getType();
+    }
+
+  if(child(1))
+    {
+      vid2 = child(1)->getValueId();
+      typ2 = &vid2.getType();
+    }
 
  
 
@@ -6775,7 +6793,7 @@ const NAType *LOBupdate::synthesizeType()
       (obj_ == FILE_) ||
       (obj_ == EXTERNAL_))
     {
-      if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+      if (typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
 	{
 	  // 4221 The operand of a $0~String0 function must be character.
 	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
@@ -6785,7 +6803,7 @@ const NAType *LOBupdate::synthesizeType()
     }
   else if (obj_ == LOB_)
     {
-      if (typ1.getTypeQualifier() != NA_LOB_TYPE)
+      if (typ1->getTypeQualifier() != NA_LOB_TYPE)
 	{
 	  // 4043 The operand of a $0~String0 function must be blob
 	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
@@ -6795,7 +6813,7 @@ const NAType *LOBupdate::synthesizeType()
     }
   else if (obj_ == BUFFER_)
     {
-     if (typ1.getTypeQualifier() != NA_NUMERIC_TYPE)
+     if (typ1->getTypeQualifier() != NA_NUMERIC_TYPE)
 	{
 	  // 4043 The operand of a $0~String0 function must be blob
 	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
@@ -6812,6 +6830,9 @@ const NAType *LOBupdate::synthesizeType()
 	  return NULL;
 	} 
     }
+  else if (obj_ == EMPTY_LOB_)
+    {
+    }
   else 
     {
       // 4221 The operand of a $0~String0 function must be character.
@@ -6821,18 +6842,18 @@ const NAType *LOBupdate::synthesizeType()
     }
 
   NAType * result = NULL;
-  if (typ2.getFSDatatype() == REC_BLOB)
+  if (typ2->getFSDatatype() == REC_BLOB)
     {
-      SQLBlob &blob = (SQLBlob&)typ2;
+      SQLBlob &blob = (SQLBlob&)*typ2;
       result = new HEAP SQLBlob(blob.getLobLength(), Lob_Invalid_Storage,
-				typ2.supportsSQLnull());
+				(obj_ ==EMPTY_LOB_) ? FALSE:typ2->supportsSQLnull());
     }
-  else if (typ2.getFSDatatype() == REC_CLOB)
+  else if (typ2->getFSDatatype() == REC_CLOB)
     {
-      SQLClob &clob = (SQLClob&)typ2;
+      SQLClob &clob = (SQLClob&)*typ2;
 
       result = new HEAP SQLClob(clob.getLobLength(), Lob_Invalid_Storage,
-				typ2.supportsSQLnull());
+				(obj_ ==EMPTY_LOB_) ? FALSE:typ2->supportsSQLnull());
     }
     
   return result;

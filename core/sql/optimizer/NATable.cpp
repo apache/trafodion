@@ -5460,7 +5460,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 	    short *lobNumList = new (heap_) short[getColumnCount()];
 	    short *lobTypList = new (heap_) short[getColumnCount()];
 	    char  **lobLocList = new (heap_) char*[getColumnCount()];
-
+            char  **lobColNameList = new (heap_) char*[getColumnCount()];
 	    const NAColumnArray &colArray = getNAColumnArray();
 	    NAColumn *nac = NULL;
 
@@ -5472,6 +5472,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 		    if (nac->getType()->getTypeQualifier() == NA_LOB_TYPE)
 		    {
 			    lobLocList[j] = new (heap_) char[1024];
+                            lobColNameList[j] = new (heap_)char[256];
 			    j++;
 		    }
 	    }      
@@ -5493,7 +5494,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 		     LOB_CLI_SELECT_CURSOR,
 		     lobNumList,
 		     lobTypList,
-		     lobLocList,(char *)lobHdfsServer,lobHdfsPort,0,FALSE);
+		     lobLocList,lobColNameList,(char *)lobHdfsServer,lobHdfsPort,0,FALSE);
 
 	    if (cliRC == 0)
 	    {

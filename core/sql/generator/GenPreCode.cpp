@@ -5412,7 +5412,11 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 	      lu->updatedTableSchemaName() += "\"";
               lu->lobSize() = col->getType()->getPrecision();
 	      lu->lobNum() = col->lobNum();
-	      // lu->lobStorageType() = col->lobStorageType();
+	     
+              if (lu->lobStorageType() == Lob_Empty)
+                    {
+                      lu->lobStorageType() = col->lobStorageType();
+                    }
               if (lu->lobStorageType() != col->lobStorageType())
                     {
                       *CmpCommon::diags() << DgSqlCode(-1432)
@@ -5572,6 +5576,12 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 		  li->insertedTableSchemaName() += "\"";
 		  
 		  li->lobNum() = col->lobNum();
+                  //If we are initializing an empty_lob, assume the storage 
+                  //type of the underlying column
+                  if (li->lobStorageType() == Lob_Empty)
+                    {
+                      li->lobStorageType() = col->lobStorageType();
+                    }
                   if (li->lobStorageType() != col->lobStorageType())
                     {
                       *CmpCommon::diags() << DgSqlCode(-1432)
@@ -5717,6 +5727,38 @@ RelExpr * ExeUtilLobExtract::preCodeGen(Generator * generator,
     handle_->replaceVEGExpressions
       (availableValues, getGroupAttr()->getCharacteristicInputs());
   
+  markAsPreCodeGenned();
+
+   // Done.
+   return this;
+ }
+
+RelExpr * ExeUtilLobUpdate::preCodeGen(Generator * generator,
+                                       const ValueIdSet & externalInputs,
+                                       ValueIdSet &pulledNewInputs)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  if (! ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
+    return NULL;
+
+  ValueIdSet availableValues;
+  for (ValueId exprId = getGroupAttr()->getCharacteristicInputs().init();
+       getGroupAttr()->getCharacteristicInputs().next(exprId);
+       getGroupAttr()->getCharacteristicInputs().advance(exprId) )
+    {
+      if (exprId.getItemExpr()->getOperatorType() != ITM_VEG_REFERENCE)
+       availableValues += exprId;
+    }
+  
+  getGroupAttr()->setCharacteristicInputs(availableValues);
+  getInputValuesFromParentAndChildren(availableValues);
+
+  if (handle_)
+    handle_->replaceVEGExpressions
+      (availableValues, getGroupAttr()->getCharacteristicInputs());
+  xnNeeded() = TRUE;
   markAsPreCodeGenned();
 
    // Done.

@@ -2507,6 +2507,11 @@ short RelRoot::codeGen(Generator * generator)
 	 {
 	   root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_LOB_EXTRACT);
 	 }
+       else if(exeUtil->getExeUtilType() == ExeUtilExpr::LOB_UPDATE_UTIL_)
+         {
+           root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_LOB_UPDATE_UTIL
+); 
+         }
 
       else if (exeUtil->isExeUtilQueryType())
 	{

@@ -2734,6 +2734,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
   short *lobNumList = new (STMTHEAP) short[numCols];
   short *lobTypList = new (STMTHEAP) short[numCols];
   char  **lobLocList = new (STMTHEAP) char*[numCols];
+  char **lobColNameList = new (STMTHEAP) char*[numCols];
   Lng32 j = 0;
   Int64 lobMaxSize =  CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024;
   for (Int32 i = 0; i < colArray.entries(); i++)
@@ -2760,6 +2761,10 @@ short CmpSeabaseDDL::createSeabaseTable2(
           strcpy(loc, f);
 	  
           lobLocList[j] = loc;
+
+          char *colname = new (STMTHEAP) char[256];
+          strcpy(colname,column->getColumnName());
+          lobColNameList[j] = colname;
           j++;
         }
     }
@@ -2803,6 +2808,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
                                           lobNumList,
                                           lobTypList,
                                           lobLocList,
+                                          lobColNameList,
                                           (char *)lobHdfsServer,
                                           lobHdfsPort,
                                           lobMaxSize,
@@ -4288,7 +4294,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
 					  LOB_CLI_DROP,
 					  lobNumList,
 					  lobTypList,
-                                    lobLocList,(char *)lobHdfsServer, lobHdfsPort,0,lobTrace);
+                                    lobLocList,NULL,(char *)lobHdfsServer, lobHdfsPort,0,lobTrace);
       if (rc < 0)
 	{
 	  *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_OBJECT)
