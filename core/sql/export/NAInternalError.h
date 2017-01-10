@@ -50,7 +50,8 @@ public:
 				  UInt32 lineNum);
   static void throwAssertException(const char *cond,
 				   const char *fileName,
-				   UInt32 lineNum);
+				   UInt32 lineNum,
+				   const char* stackTrace=NULL);
 };
 
 #endif

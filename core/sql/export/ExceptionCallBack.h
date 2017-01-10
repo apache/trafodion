@@ -38,7 +38,8 @@ class ExceptionCallBack {
 public:
   virtual void throwAssertException(const char * condition,
 				    const char * fileName, 
-				    UInt32 lineNum) = 0;
+				    UInt32 lineNum,
+				    const char *stackTrace=NULL) = 0;
   virtual void throwFatalException(const char * msg,
 				   const char * fileName,
 				   UInt32 lineNum) = 0;

@@ -130,7 +130,8 @@ class SQLMXLoggingArea
 					    Int32 lineno, 
 					    const char* msg,
 					    const char* condition = NULL,
-					    const Lng32* tid = NULL);
+					    const Lng32* tid = NULL,
+					    const char* stackTrace = NULL);
  
   //TBD
 

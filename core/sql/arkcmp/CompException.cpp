@@ -153,7 +153,8 @@ void CmpInternalException::throwException()
 
 AssertException::AssertException(const char *condition,
 				 const char *fileName,
-				 UInt32 lineNum)
+				 UInt32 lineNum,
+				 const char *stackTrace)
   : BaseException(fileName, lineNum)
 {
   if(condition) {
@@ -163,11 +164,20 @@ AssertException::AssertException(const char *condition,
   else {
     condition_[0] = 0;
   }
+  
+  if(stackTrace) {
+    strncpy(stackTrace_, stackTrace, sizeof(stackTrace_));
+    stackTrace_[sizeof(stackTrace_)-1] = 0;
+  }
+  else {
+    stackTrace_[0] = 0;
+  }
 }
 
 AssertException::AssertException(AssertException & e) :
   BaseException(e.getFileName(), e.getLineNum())
 {
+  stackTrace_[0] = 0;
   const char *condition = e.getCondition();
   if(condition) {
     strncpy(condition_, condition, sizeof(condition_));
@@ -176,10 +186,22 @@ AssertException::AssertException(AssertException & e) :
   else {
     condition_[0] = 0;
   }
+  
+  const char *stackTrace = e.getStackTrace();
+  if(stackTrace) {
+    strncpy(stackTrace_, stackTrace, sizeof(stackTrace_));
+    stackTrace_[sizeof(stackTrace_)-1] = 0;
+  }
+  else {
+    stackTrace_[0] = 0;
+  }
 }
 
 const char * AssertException::getCondition()
 { return condition_; }
+
+const char * AssertException::getStackTrace()
+{ return stackTrace_; }
 
 void AssertException::throwException()
 {
@@ -275,8 +297,9 @@ void CmpExceptionCallBack::throwFatalException(const char *msg,
 
 void CmpExceptionCallBack::throwAssertException(const char *cond,
 						const char *file,
-						UInt32 line)
-{ AssertException(cond, file, line).throwException(); }
+						UInt32 line,
+						const char *stackTrace)
+{ AssertException(cond, file, line, stackTrace).throwException(); }
 
 CmpExceptionCallBack CmpExceptionEnv::eCallBack_;
 

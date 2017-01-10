@@ -155,10 +155,11 @@ void NAInternalError::throwFatalException(const char *msg,
 
 void NAInternalError::throwAssertException(const char *cond,
 					   const char *file,
-					   UInt32 line)
+					   UInt32 line,
+					   const char *stackTrace)
 {
   if(pExceptionCallBack_ != NULL)
-    pExceptionCallBack_->throwAssertException(cond, file, line);
+    pExceptionCallBack_->throwAssertException(cond, file, line, stackTrace);
 }
 
 

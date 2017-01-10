@@ -257,7 +257,9 @@ CFLAGS += -fshort-wchar
   #                          same time.
   #   -g3                  : Highest level of debugging
   #   -ggdb                : Use native debugging format with gdb extensions.
-  SYS_CXXFLAGS += -fno-strict-aliasing -msse2 -mfpmath=sse -g3 -ggdb
+  #   -rdynamic            : Adds dynamic linker symbols to get the stack trace
+  #                      of a running program. Note these are not debug symbols.
+  SYS_CXXFLAGS += -fno-strict-aliasing -msse2 -mfpmath=sse -g3 -ggdb -rdynamic
   CFLAGS += -fno-strict-aliasing -msse2 -mfpmath=sse -g3 -ggdb
 
 # Some more definitions are added when building for a 64-bit target.

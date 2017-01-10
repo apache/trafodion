@@ -5162,6 +5162,10 @@ void NADefaults::undoReadsAndResetToDefaultDefaults()
 
 NABoolean NADefaults::isReadonlyAttribute(const char* attrName) const
 {
+   if(stricmp(attrName, "OVERFLOW_MODE") == 0)
+   {
+     CMPASSERT(FALSE);
+   }
    if ((( stricmp(attrName, "ISO_MAPPING") == 0 ) ||
         ( stricmp(attrName, "OVERFLOW_MODE") == 0 ) ||
 	( stricmp(attrName, "SORT_ALGO") == 0 )) 

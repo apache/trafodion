@@ -101,13 +101,16 @@ class AssertException : public BaseException{
 public:
   AssertException(const char *condition,
 		  const char *fileName,
-		  UInt32 lineNum);
+		  UInt32 lineNum,
+		  const char *stackTrace = NULL);
   // copy contructor
   AssertException(AssertException & e);
   const char * getCondition();
+  const char * getStackTrace();
   virtual void throwException();
 private:
   char condition_[128];
+  char stackTrace_[8192];
 };
 
 class OsimLogException : public BaseException{
@@ -161,7 +164,8 @@ public:
 			   UInt32 line);
   void throwAssertException(const char *cond,
 			    const char *file,
-			    UInt32 line);
+			    UInt32 line,
+			    const char *stackTrace = NULL);
 };
 
 class CmpExceptionEnv{

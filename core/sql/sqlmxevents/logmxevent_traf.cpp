@@ -42,6 +42,8 @@
 #include <limits.h>
 #include <stdarg.h>
 #include <execinfo.h>
+#include <cxxabi.h>
+
 #ifdef _MSC_VER
 #undef _MSC_VER
 #endif
@@ -185,9 +187,9 @@ void SQLMXLoggingArea::logPrivMgrInfo(const char *filename,
 }
 
 
-static void writeStackTrace(char *s, int bufLen)
+Int32 writeStackTrace(char *s, int bufLen)
 {
-  const int safetyMargin = 256;
+  const int safetyMargin = 10;
   int len = sprintf(s, "Process Stack Trace:\n");
 
   // This is a quick and dirty implementation for Linux. It is easy to
@@ -197,59 +199,71 @@ static void writeStackTrace(char *s, int bufLen)
   // look up the information. This could be changed in the future if an
   // easy to use API becomes available.
   void *bt[20];
+  char **strings;
+  size_t funcsize = 256;
   size_t size = backtrace(bt, 20);
+  strings = backtrace_symbols (bt, size);
 
-  pid_t myPID = getpid();
+ 
+  // allocate string which will be filled with the demangled function name
+  // malloc needed since demangle function uses realloc.
+  
+  char* funcname = (char*)malloc(funcsize);
 
-  // Write each level of the stack except for the top frame and the
-  // bottom two frames, which aren't important here.
-  Int32 i = 1;
-  while (i < size - 2)
+  // iterate over the returned symbol lines. skip the first, it is the
+  // address of this function.
+  for (int i = 1; i < size; i++)
   {
-    char buffer[128];  // Used for command-line + addr2line output.
-    char addrBuf[sizeof(void *)*2 + 4];
+    char *begin_name = 0, *begin_offset = 0, *end_offset = 0;
 
-    sprintf(buffer, "/usr/bin/addr2line -e /proc/%d/exe -f -C ", myPID);
-
-    Int32 j;
-
-    // Run addr2line on 5 addresses at a time.
-    for (j = i; j < i+5 && j < size-2; j++)
+    // find parentheses and +address offset surrounding the mangled name:
+    // ./module(function+0x15c) [0x8048a6d]
+    for (char *p = strings[i]; *p; ++p)
     {
-      sprintf(addrBuf, " %p", bt[j]);
-      strcat(buffer, addrBuf);
+      if (*p == '(')
+          begin_name = p;
+      else if (*p == '+')
+          begin_offset = p;
+      else if (*p == ')' && begin_offset)
+      {
+          end_offset = p;
+          break;
+      }
     }
 
-    FILE *cmdFP = popen(buffer, "r");
-    if (cmdFP == NULL)
+    if (begin_name && begin_offset && end_offset
+        && begin_name < begin_offset)
     {
-      if (len+safetyMargin < bufLen)
-        len += sprintf(s, "Error %d while popen() of %s\n", errno, buffer);
-      break;
+      *begin_name++ = '\0';
+      *begin_offset++ = '\0';
+      *end_offset = '\0';
+
+      int status;
+      char* ret = abi::__cxa_demangle(begin_name,
+                                      funcname, &funcsize, &status);
+      if (status == 0) {
+          funcname = ret;
+          len += sprintf(s + len, "%s  : %s+%s\n",
+                        strings[i], funcname, begin_offset);
+            
+      }
+      else {
+          // demangling failed. just store begin name and offset as is.
+            len += sprintf(s + len, "  %s : %s+%s\n",
+                  strings[i], begin_name, begin_offset);;
+      }
     }
     else
     {
-      for (j = i; j < i+5 && j < size-2; j++)
-      {
-        // Read from the addr2line output
-        fgets(buffer, sizeof(buffer), cmdFP);
-
-        // Replace newline with null character
-        size_t len = strlen(buffer);
-        if (buffer[len-1] == '\n')
-          buffer[len-1] = '\0';
-
-        if (len+safetyMargin < bufLen)
-          len += sprintf(s, "%p: %s()\n", bt[j], buffer); 
-        fgets(buffer, sizeof(buffer), cmdFP);
-        if (len+safetyMargin < bufLen)
-          len += sprintf(s, "            %s", buffer); 
-      }
-      fclose(cmdFP);
+      // couldn't parse the line. Do nothing. Move to next line.
+      len += sprintf(s + len, "  %s\n", strings[i]);
     }
-    i = j;
   }
-  sprintf(s, "\n");
+
+  free(funcname);
+  free(strings);
+  len += sprintf(s + len, "\n");
+  return len;
 }
 
 void SQLMXLoggingArea::logErr97Event(int rc)
@@ -306,7 +320,8 @@ SQLMXLoggingArea::logSQLMXAbortEvent(const char* file, Int32 line, const char* m
 
 // log an ASSERTION FAILURE event
 void
-SQLMXLoggingArea::logSQLMXAssertionFailureEvent(const char* file, Int32 line, const char* msgTxt, const char* condition, const Lng32* tid)
+SQLMXLoggingArea::logSQLMXAssertionFailureEvent(const char* file, Int32 line, const char* msgTxt, const char* condition, const Lng32* tid
+                                                , const char* stackTrace)
 {
   bool lockedMutex = lockMutex();
   
@@ -342,8 +357,19 @@ SQLMXLoggingArea::logSQLMXAssertionFailureEvent(const char* file, Int32 line, co
     str_sprintf(condStr, " CONDITION: %s ", condition);
     sLen = str_len(condStr);
     str_cpy_all (msg+sTotalLen, condStr, sLen);
+    sTotalLen += sLen;
   }
-
+  
+  if(stackTrace)
+  {
+    str_ncpy(msg+sTotalLen, stackTrace, LEN - sTotalLen);
+  }
+  else
+  {
+    if((LEN - sTotalLen) > 512 )
+      writeStackTrace(msg, LEN - sTotalLen);
+  }
+  
   QRLogger::log(QRLogger::instance().getMyDefaultCat(), LL_FATAL, "%s", msg);
 
   if (lockedMutex)

@@ -59,6 +59,8 @@
 
 #include "NAInternalError.h"
 
+extern Int32 writeStackTrace(char *s, int bufLen);
+
 THREAD_P CmpContext* cmpCurrentContext=0;
 THREAD_P jmp_buf CmpInternalErrorJmpBuf;
 
@@ -130,7 +132,10 @@ const NAString * CmpCommon::getControlSessionValue(const NAString &token)
 // **********************************************************************
 void CmpAssertInternal(const char* condition, const char* file, Int32 num)
 {
-  NAInternalError::throwAssertException(condition, file, num);
+  char stackTrace[8192];
+  writeStackTrace(stackTrace, 8192);
+  
+  NAInternalError::throwAssertException(condition, file, num, stackTrace);
 
   CmpInternalException(condition, file, num).throwException();
 }
