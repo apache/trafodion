@@ -19,7 +19,10 @@ RELEASE_TYPE ?= $(shell echo $(TRAFODION_VER_PROD)| sed -e 's/ /-/g')
 INSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_installer-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
 PYINSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_pyinstaller-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
 
-all: pkg-installer pkg-pyinstaller
+all: pkg-installer pkg-pyinstaller pkg-ambari
+
+pkg-ambari:
+	cd ambari-installer && $(MAKE) all
 
 create-dir:
 	mkdir -p ../distribution
@@ -59,3 +62,5 @@ version:
 clean:
 	rm -f ${INSTALLER_TARNAME}
 	rm -f ${PYINSTALLER_TARNAME}
+	cd ambari-installer && $(MAKE) clean
+

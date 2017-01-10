@@ -1,5 +1,4 @@
-# Trafodion permissions
-
+#!/usr/bin/env python
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -21,15 +20,4 @@
 #
 # @@@ END COPYRIGHT @@@
 
-## Allow trafodion id to run commands needed for backup and restore
-trafodion ALL =(hbase) NOPASSWD: /usr/bin/hbase
-
-## Trafodion Floating IP commands
-Cmnd_Alias IP = /sbin/ip
-Cmnd_Alias ARP = /sbin/arping
-
-## Allow Trafodion id to run commands needed to configure floating IP
-trafodion ALL = NOPASSWD: IP, ARP
-
-## Do not require tty for trafodion user. No password prompts needed
-Defaults:trafodion !requiretty
+traf_user = 'trafodion'

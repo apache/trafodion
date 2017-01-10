@@ -1,5 +1,4 @@
-# Trafodion permissions
-
+#!/bin/bash
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -21,15 +20,28 @@
 #
 # @@@ END COPYRIGHT @@@
 
-## Allow trafodion id to run commands needed for backup and restore
-trafodion ALL =(hbase) NOPASSWD: /usr/bin/hbase
+# generate new unique key local to ambari server
+tf=/tmp/trafssh.$$
+rm -f ${tf}*
+/usr/bin/ssh-keygen -q -t rsa -N '' -f $tf
 
-## Trafodion Floating IP commands
-Cmnd_Alias IP = /sbin/ip
-Cmnd_Alias ARP = /sbin/arping
+instloc="$1"
 
-## Allow Trafodion id to run commands needed to configure floating IP
-trafodion ALL = NOPASSWD: IP, ARP
+config="${instloc}/traf-mpack/common-services/TRAFODION/2.1/configuration/trafodion-env.xml"
 
-## Do not require tty for trafodion user. No password prompts needed
-Defaults:trafodion !requiretty
+chmod 0600 $config  # protect key
+sed -i -e "/TRAFODION-GENERATED-SSH-KEY/r $tf" $config # add key to config properties
+
+rm -f ${tf}*
+
+# tar up the mpack, included generated key
+tball="${instloc}/traf-mpack.tar.gz"
+
+cd "${instloc}"
+tar czf "$tball" traf-mpack
+
+# install ambari mpack
+ambari-server install-mpack --verbose --mpack="$tball"
+ret=$?
+
+exit $ret
