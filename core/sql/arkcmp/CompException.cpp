@@ -103,20 +103,35 @@ void DDLException::throwException()
 
 FatalException::FatalException(const char *msg,
 			       const char *fileName,
-			       UInt32 lineNum)
+			       UInt32 lineNum,
+			       const char *stackTrace)
   : BaseException(fileName, lineNum)
 {
-  if(msg) {
-    strncpy(msg_, msg, sizeof(msg_));
-    msg_[sizeof(msg_)-1] = 0;
+  int len = 0;
+  if(msg && (len = strlen(msg))) {
+    len = MINOF(len,EXCEPTION_MSG_SIZE);
+    strncpy(msg_, msg, len);
+    msg_[len] = 0;
   }
   else {
     msg_[0] = 0;
+  }
+  
+  if(stackTrace && (len = strlen(stackTrace))) {
+    len = MINOF(len, STACK_TRACE_SIZE);
+    strncpy(stackTrace_, stackTrace, len);
+    stackTrace_[len] = 0;
+  }
+  else {
+    stackTrace_[0] = 0;
   }
 }
 
 const char * FatalException::getMsg()
 { return msg_; }
+
+const char * FatalException::getStackTrace()
+{ return stackTrace_; }
 
 void FatalException::throwException()
 {
@@ -132,8 +147,8 @@ CmpInternalException::CmpInternalException(const char *msg,
   : BaseException(fileName, lineNum)
 {
   if(msg) {
-    strncpy(msg_, msg, sizeof(msg_));
-    msg_[sizeof(msg_)-1] = 0;
+    strncpy(msg_, msg, EXCEPTION_MSG_SIZE);
+    msg_[EXCEPTION_MSG_SIZE-1] = 0;
   }
   else {
     msg_[0] = 0;
@@ -153,33 +168,60 @@ void CmpInternalException::throwException()
 
 AssertException::AssertException(const char *condition,
 				 const char *fileName,
-				 UInt32 lineNum)
+				 UInt32 lineNum,
+				 const char *stackTrace)
   : BaseException(fileName, lineNum)
 {
-  if(condition) {
-    strncpy(condition_, condition, sizeof(condition_));
-    condition_[sizeof(condition_)-1] = 0;
+  int len = 0;
+  if(condition && (len = strlen(condition))) {
+    len = MINOF(len ,EXCEPTION_CONDITION_SIZE);
+    strncpy(condition_, condition, len);
+    condition_[len] = 0;
   }
   else {
     condition_[0] = 0;
+  }
+  
+  if(stackTrace && (len = strlen(stackTrace))) {
+    len = MINOF(len, STACK_TRACE_SIZE);
+    strncpy(stackTrace_, stackTrace, len );
+    stackTrace_[len] = 0;
+  }
+  else {
+    stackTrace_[0] = 0;
   }
 }
 
 AssertException::AssertException(AssertException & e) :
   BaseException(e.getFileName(), e.getLineNum())
 {
+  int len = 0;
   const char *condition = e.getCondition();
-  if(condition) {
-    strncpy(condition_, condition, sizeof(condition_));
-    condition_[sizeof(condition_)-1] = 0;
+  if(condition && (len = strlen(condition))) {
+    len = MINOF(len , EXCEPTION_CONDITION_SIZE);
+    strncpy(condition_, condition, len);
+    condition_[len] = 0;
   }
   else {
     condition_[0] = 0;
+  }
+  
+  const char *stackTrace = e.getStackTrace();
+  if(stackTrace && (len = strlen(stackTrace))) {
+    len = MINOF(len, STACK_TRACE_SIZE);
+    strncpy(stackTrace_, stackTrace, len);
+    stackTrace_[len] = 0;
+  }
+  else {
+    stackTrace_[0] = 0;
   }
 }
 
 const char * AssertException::getCondition()
 { return condition_; }
+
+const char * AssertException::getStackTrace()
+{ return stackTrace_; }
 
 void AssertException::throwException()
 {
@@ -213,8 +255,8 @@ PassOneAssertFatalException::PassOneAssertFatalException(const char *condition,
 		   lineNum)
 {
   if(condition) {
-    strncpy(condition_, condition, sizeof(condition_));
-    condition_[sizeof(condition_)-1] = 0;
+    strncpy(condition_, condition, EXCEPTION_CONDITION_SIZE);
+    condition_[EXCEPTION_CONDITION_SIZE-1] = 0;
   }
   else {
     condition_[0] = 0;
@@ -270,13 +312,15 @@ void OptAssertException::throwException()
 
 void CmpExceptionCallBack::throwFatalException(const char *msg,
 					       const char *file,
-					       UInt32 line)
-{ FatalException(msg, file, line).throwException(); }
+					       UInt32 line,
+					       const char *stackTrace)
+{ FatalException(msg, file, line, stackTrace).throwException(); }
 
 void CmpExceptionCallBack::throwAssertException(const char *cond,
 						const char *file,
-						UInt32 line)
-{ AssertException(cond, file, line).throwException(); }
+						UInt32 line,
+						const char *stackTrace)
+{ AssertException(cond, file, line, stackTrace).throwException(); }
 
 CmpExceptionCallBack CmpExceptionEnv::eCallBack_;
 

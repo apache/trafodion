@@ -49,6 +49,10 @@
 
 #define EVENTSAPI
 #define SQLEVENT_BUF_SIZE 4024
+#define STACK_TRACE_SIZE  8192
+#define EXCEPTION_MSG_SIZE 256
+#define EXCEPTION_CONDITION_SIZE 128
+
 
 #ifdef _MSC_VER
 #undef _MSC_VER
@@ -130,7 +134,8 @@ class SQLMXLoggingArea
 					    Int32 lineno, 
 					    const char* msg,
 					    const char* condition = NULL,
-					    const Lng32* tid = NULL);
+					    const Lng32* tid = NULL,
+					    const char* stackTrace = NULL);
  
   //TBD
 
