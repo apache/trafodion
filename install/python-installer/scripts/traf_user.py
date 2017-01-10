@@ -26,7 +26,7 @@
 import os
 import sys
 import json
-from common import ParseXML, run_cmd, append_file, mod_file, \
+from common import ParseXML, run_cmd, append_file, mod_file, write_file, \
                    cmd_output, run_cmd_as_user, err, TMP_DIR
 
 def run():
@@ -53,11 +53,13 @@ def run():
     TRAF_DIRNAME = dbcfgs['traf_dirname']
     TRAF_HOME = '%s/%s' % (TRAF_USER_DIR, TRAF_DIRNAME)
 
+    TRAFODION_CFG_DIR = '/etc/trafodion/'
+    TRAFODION_CFG_FILE = '/etc/trafodion/trafodion_config'
     HBASE_XML_FILE = dbcfgs['hbase_xml_file']
     KEY_FILE = '/tmp/id_rsa'
     AUTH_KEY_FILE = '%s/.ssh/authorized_keys' % TRAF_USER_DIR
     SSH_CFG_FILE = '%s/.ssh/config' % TRAF_USER_DIR
-    BASHRC_TEMPLATE = '%s/templates/bashrc.template' % TMP_DIR
+    BASHRC_TEMPLATE = '%s/sqf/sysinstall/home/trafodion/.bashrc' % TRAF_HOME
     BASHRC_FILE = '%s/.bashrc' % TRAF_USER_DIR
     ULIMITS_FILE = '/etc/security/limits.d/%s.conf' % TRAF_USER
     HSPERFDATA_FILE = '/tmp/hsperfdata_trafodion'
@@ -68,6 +70,9 @@ def run():
 
     if not cmd_output('getent passwd %s' % TRAF_USER):
         run_cmd('useradd --shell /bin/bash -m %s -g %s --home %s --password "$(openssl passwd %s)"' % (TRAF_USER, TRAF_GROUP, TRAF_USER_DIR, TRAF_PWD))
+        # copy bashrc to trafodion's home only if user doesn't exist
+        run_cmd('cp %s %s' % (BASHRC_TEMPLATE, BASHRC_FILE))
+        run_cmd('chown -R %s:%s %s*' % (TRAF_USER, TRAF_GROUP, BASHRC_FILE))
     elif not os.path.exists(TRAF_USER_DIR):
         run_cmd('mkdir -p %s' % TRAF_USER_DIR)
         run_cmd('chmod 700 %s' % TRAF_USER_DIR)
@@ -88,39 +93,38 @@ def run():
     run_cmd('chown -R %s:%s %s/.ssh/' % (TRAF_USER, TRAF_GROUP, TRAF_USER_DIR))
 
     hb = ParseXML(HBASE_XML_FILE)
-    zk_hosts = hb.get_property('hbase.zookeeper.quorum')
+    zk_nodes = hb.get_property('hbase.zookeeper.quorum')
     zk_port = hb.get_property('hbase.zookeeper.property.clientPort')
-    # set bashrc
+    # set trafodion_config
     nodes = dbcfgs['node_list'].split(',')
-    change_items = {
-        '{{ java_home }}': dbcfgs['java_home'],
-        '{{ traf_home }}': TRAF_HOME,
-        '{{ hadoop_type }}': hadoop_type,
-        '{{ node_list }}': ' '.join(nodes),
-        '{{ node_count }}': str(len(nodes)),
-        '{{ enable_ha }}': dbcfgs['enable_ha'],
-        '{{ zookeeper_nodes }}': zk_hosts,
-        '{{ zookeeper_port }}': zk_port,
-        '{{ my_nodes }}': ' -w ' + ' -w '.join(nodes)
-    }
+    trafodion_config = """
+export TRAF_HOME="%s"
+export MY_SQROOT=$TRAF_HOME # for compatibility
+export JAVA_HOME="%s"
+export NODE_LIST="%s"
+export MY_NODES="%s"
+export node_count="%s"
+export HADOOP_TYPE="%s"
+export ENABLE_HA="%s"
+export ZOOKEEPER_NODES="%s"
+export ZOOKEEPER_PORT="%s"
+""" % (TRAF_HOME, dbcfgs['java_home'], ' '.join(nodes), ' -w ' + ' -w '.join(nodes),
+       str(len(nodes)), hadoop_type, dbcfgs['enable_ha'], zk_nodes, zk_port)
 
-    mod_file(BASHRC_TEMPLATE, change_items)
+    run_cmd('mkdir -p %s' % TRAFODION_CFG_DIR)
+    write_file(TRAFODION_CFG_FILE, trafodion_config)
 
     if 'APACHE' in DISTRO:
-        bashrc_content = """
+        extra_config = """
 export HADOOP_PREFIX=%s
 export HBASE_HOME=%s
 export PATH=$PATH:$HADOOP_PREFIX/bin:$HADOOP_PREFIX/sbin:$HBASE_HOME/bin
         """ % (dbcfgs['hadoop_home'], dbcfgs['hbase_home'])
-        append_file(BASHRC_TEMPLATE, bashrc_content, position='HADOOP_TYPE')
+        append_file(TRAFODION_CFG_FILE, extra_config)
 
-    # backup bashrc if exsits
-    if os.path.exists(BASHRC_FILE):
-        run_cmd('cp %s %s.bak' % ((BASHRC_FILE,) *2))
+    # set permission
+    run_cmd('chown -R %s:%s %s*' % (TRAF_USER, TRAF_GROUP, TRAFODION_CFG_DIR))
 
-    # copy bashrc to trafodion's home
-    run_cmd('cp %s %s' % (BASHRC_TEMPLATE, BASHRC_FILE))
-    run_cmd('chown -R %s:%s %s*' % (TRAF_USER, TRAF_GROUP, BASHRC_FILE))
 
     # set ulimits for trafodion user
     ulimits_config = '''
@@ -135,11 +139,9 @@ export PATH=$PATH:$HADOOP_PREFIX/bin:$HADOOP_PREFIX/sbin:$HBASE_HOME/bin
 %s   hard   nproc 100000
 %s   soft nofile 8192
 %s   hard nofile 65535
-hbase soft nofile 8192
 ''' % ((TRAF_USER,) * 10)
 
-    with open(ULIMITS_FILE, 'w') as f:
-        f.write(ulimits_config)
+    write_file(ULIMITS_FILE, ulimits_config)
 
     # change permission for hsperfdata
     if os.path.exists(HSPERFDATA_FILE):
