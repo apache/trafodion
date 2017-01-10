@@ -79,9 +79,6 @@ cat <<EOF >>$HBASE_CONFIG_FILE
   <property>
     <name>hbase.hlog.splitter.impl</name>
     <value>org.apache.hadoop.hbase.regionserver.transactional.THLogSplitter</value></property>
-  <property>
-    <name>hbase.master.distributed.log.splitting</name>
-    <value>false</value> </property>
 </configuration>
 EOF
 
