@@ -5,8 +5,8 @@ MIT-like licenses:
 +++++++++++++++++++++++++++++
 
 BSD-3 clause for files in:
-    incubator-trafodion/installer/python-installer/prettytable.py
-    incubator-trafodion/installer/python-installer/scripts/httplib2/socks.py
+    installer/python-installer/prettytable.py
+    installer/python-installer/scripts/httplib2/socks.py
 
 
 Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,8 @@ POSSIBILITY OF SUCH DAMAGE.
 +++++++++++++++++++++++++++++
 
 MIT-Expat for files in:
-    incubator-trafodion/installer/python-installer/scripts/httplib2/iri2uri.py
-    incubator-trafodion/installer/python-installer/scripts/httplib2/__init__.py
+    installer/python-installer/scripts/httplib2/iri2uri.py
+    installer/python-installer/scripts/httplib2/__init__.py
 
 Httplib2 Software License
 
