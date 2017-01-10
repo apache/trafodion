@@ -47,7 +47,10 @@ installer/NOTICE: ../NOTICE
 installer/DISCLAIMER: ../DISCLAIMER
 	cp -f $? $@
 
-python-installer/LICENSE: ../licenses/LICENSE-install
+../licenses/LICENSE-pyinstall:
+	cd $(@D) && $(MAKE) $(@F)
+
+python-installer/LICENSE: ../licenses/LICENSE-pyinstall
 	cp -f $? $@
 
 python-installer/NOTICE: ../NOTICE
