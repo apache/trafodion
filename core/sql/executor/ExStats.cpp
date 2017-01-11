@@ -1585,6 +1585,7 @@ void ExFragRootOperStats::init()
   scratchWriteCount_ = 0;
   scratchReadCount_ = 0;
   udrCpuTime_ = 0;
+  topN_ = -1;
   waitTime_ = 0;
   maxWaitTime_ = 0;
   diffCpuTime_ = 0;
@@ -1773,6 +1774,8 @@ void ExFragRootOperStats::merge(ExFragRootOperStats* other)
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
   udrCpuTime_ += other->udrCpuTime_;
+  if(topN_ == -1 && other->topN_ > 0)
+    topN_ = other->topN_;
   // Remember, don't merge or copy  executionCount_ !
   waitTime_ += other->waitTime_;
   if (other->maxWaitTime_ > maxWaitTime_)
@@ -1810,6 +1813,9 @@ void ExFragRootOperStats::merge(ExBMOStats *other)
 
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
+  if(topN_ == -1 && other->topN_ > 0)
+    topN_ = other->topN_;
+  
 #endif
 }
 
@@ -1945,7 +1951,7 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		"SpaceUsed: %u SpaceTotal: %u HeapUsed: %u HeapTotal: %u "
 		"Newprocess: %u NewprocessTime: %Ld reqMsgCnt: %Ld "
 		"regMsgBytes: %Ld replyMsgCnt: %Ld replyMsgBytes: %Ld "
-		"PMemUsed: %Ld scrOverFlowMode: %d "
+		"PMemUsed: %Ld scrOverFlowMode: %d sortTopN: %Ld"
 		"scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %Ld scrBufferWritten: %Ld "
 		"scrWriteCount:%Ld scrReadCount: %Ld udrCpuTime: %Ld "
 		"maxWaitTime: %Ld avgWaitTime: %Ld "
@@ -1966,6 +1972,7 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		replyMsgBytes_,
 		pagesInUse_ * 16,
 		scratchOverflowMode_,
+		topN_,
 		scratchFileCount_,
 		scratchBufferBlockSize_,
 		scratchBufferBlockRead_,
@@ -2052,6 +2059,9 @@ Lng32 ExFragRootOperStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
       break;
     case SQLSTATS_SCRATCH_OVERFLOW_MODE:
       sqlStats_item->int64_value = scratchOverflowMode_;
+      break;
+    case SQLSTATS_TOPN:
+      sqlStats_item->int64_value = topN_;
       break;
     case SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE:
       sqlStats_item->int64_value = scratchBufferBlockSize_;
@@ -4820,6 +4830,7 @@ void ExMeasStats::init()
   scratchWriteCount_ = 0;
   scratchReadCount_ = 0;
   udrCpuTime_ = 0;
+  topN_ = -1;
 #endif
 }
 
@@ -4831,7 +4842,7 @@ void ExMeasStats::merge(ExFragRootOperStats* other)
   maxHeapUsage_  += other -> maxHeapUsage_; 
   maxHeapAlloc_  += other -> maxHeapAlloc_;
   if (scratchOverflowMode_ == -1)
-    scratchOverflowMode_ = other->scratchOverflowMode_; 
+    scratchOverflowMode_ = other->scratchOverflowMode_;
 #ifndef __EID
   cpuTime_          += other -> cpuTime_;
   newprocess_       += other -> newprocess_; 
@@ -4864,7 +4875,6 @@ void ExMeasStats::merge(ExBMOStats *other)
 #ifndef __EID
   scratchFileCount_ += other->scratchFileCount_;
   scratchOverflowMode_ = other->scratchOverflowMode_;
-  
   if (scratchBufferBlockSize_ == 0 &&
      other->scratchBufferBlockSize_ > 0)
      scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
@@ -4876,6 +4886,9 @@ void ExMeasStats::merge(ExBMOStats *other)
 
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
+  if (topN_ == -1 && other->topN_ > 0)
+      topN_ = other->topN_;
+
 #endif
 }
 
@@ -4936,6 +4949,9 @@ void ExMeasStats::merge(ExMeasStats* other)
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
   udrCpuTime_ += other->udrCpuTime_;
+  if (topN_ == -1 && other->topN_ > 0)
+      topN_ = other->topN_;
+
 #endif
 }
 
@@ -5044,6 +5060,7 @@ void ExMeasStats::copyContents(ExMeasStats *other)
   scratchReadCount_ = other->scratchReadCount_;
   scratchWriteCount_ = other->scratchWriteCount_;
   udrCpuTime_ = other->udrCpuTime_;
+  topN_ = other->topN_;
 #endif
   }
 }
@@ -5106,9 +5123,9 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
     "statsRowType: %d Newprocess: %u NewprocessTime: %Ld Timeouts: %u NumSorts: %u SortElapsedTime: %Ld "
     "SpaceTotal: %d  SpaceUsed: %d HeapTotal: %d HeapUsed: %d CpuTime: %Ld "
     "reqMsgCnt: %Ld reqMsgBytes: %Ld replyMsgCnt: %Ld "
-    "replyMsgBytes: %Ld scrOverflowMode: %d "
+    "replyMsgBytes: %Ld scrOverflowMode: %d sortTopN: %Ld"
     "scrFileCount: %d scrBufferBlockSize: %d scrBufferRead: %Ld scrBufferWritten: %Ld "
-    "scrWriteCount: %Ld scrReadCount: %Ld udrCpuTime: %Ld ",
+    "scrWriteCount: %Ld scrReadCount: %Ld udrCpuTime: %Ld",
 	      statType(),
               getNewprocess(),
 	      getNewprocessTime(),
@@ -5125,6 +5142,7 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
               replyMsgCnt_,
               replyMsgBytes_,
               scratchOverflowMode_,
+              topN_,
               scratchFileCount_,
               scratchBufferBlockSize_,
               scratchBufferBlockRead_,
@@ -10663,6 +10681,7 @@ void ExBMOStats::init()
   scratchBufferBlockWritten_ = 0;
   scratchReadCount_ = 0;
   scratchWriteCount_ = 0;
+  topN_ = -1;
 }
 
 UInt32 ExBMOStats::packedLength()
@@ -10693,10 +10712,7 @@ void ExBMOStats::unpack(const char* &buffer)
   if (getVersion() >= _STATS_RTS_VERSION_R25)
   {
     alignBufferForNextObj(buffer); 
-    if (getVersion() == _STATS_RTS_VERSION_R25)
-      srcLen = sizeof(ExBMOStats)-sizeof(scratchOverflowMode_)-sizeof(bmoFiller_)-sizeof(ExOperStats);
-    else
-      srcLen = sizeof(ExBMOStats)-sizeof(ExOperStats);
+    srcLen = sizeof(ExBMOStats)-sizeof(ExOperStats);
     char * srcPtr = (char *)this+sizeof(ExOperStats);
     memcpy((void *)srcPtr, buffer, srcLen);
     buffer += srcLen;
@@ -10760,7 +10776,7 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
        "statsRowType: %d explainTdbId: %d bmoHeapUsed: %d bmoHeapTotal: %d bmoHeapWM: %d "
        "bmoSpaceBufferSize: %d bmoSpaceBufferCount: %d OFPhase: %s OFPhaseStartTime: %Ld "
        "scrOverFlowMode: %d scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %d scrBufferWritten: %d "
-       "scrWriteCount: %Ld scrReadCount: %Ld ",
+       "scrWriteCount: %Ld scrReadCount: %Ld topN: %Ld",
         statType(),
         getExplainNodeId(),
         bmoHeapUsage_,
@@ -10776,7 +10792,8 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
         scratchBufferBlockRead_,
         scratchBufferBlockWritten_,
         scratchWriteCount_,
-        scratchReadCount_
+        scratchReadCount_,
+        topN_
        );
   buf += str_len(buf);
   *(short*)dataLen = (short) (buf - dataBuffer);
@@ -10801,6 +10818,8 @@ void ExBMOStats::merge(ExBMOStats* other)
   str_cpy_all(overflowPhase_, other->overflowPhase_, str_len(other->overflowPhase_)+1);
   if (other->scratchBufferBlockSize_ != -1)
     scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
+  if (other->topN_ != -1)
+    topN_ = other->topN_;
   scratchOverflowMode_ = other->scratchOverflowMode_;
   scratchFileCount_ += other->scratchFileCount_;
   scratchBufferBlockRead_ += other->scratchBufferBlockRead_;
@@ -10850,6 +10869,9 @@ Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     break;
   case SQLSTATS_SCRATCH_OVERFLOW_MODE:
     sqlStats_item->int64_value = scratchOverflowMode_;
+    break;
+  case SQLSTATS_TOPN:
+    sqlStats_item->int64_value = topN_;
     break;
   case SQLSTATS_SCRATCH_FILE_COUNT:
     sqlStats_item->int64_value = scratchFileCount_;

@@ -86,6 +86,9 @@ s/8 EX_HASH_GRBY[A-Z ]*\n[0-9, -]*/8 #ex_hash_grby bmoStats/
 /bmoStats[ ]*/{N
 s/bmoStats[ ]*\n[0-9, -]*/@bmoStats@/
 }
+/6     EX_HASH_GRBY[A-Z ]*/{N
+s/6     EX_HASH_GRBY[A-Z ]*[0-9, -]*\n[0-9, -]*/6 #ex_hash_grby bmoStats/
+}
 s/EX_ROOT[ ]*[0-9, |]*/EX_ROOT @exRootCounters@/
 s/EX_SPLIT_TOP[ ]*[0-9, |]*/EX_SPLIT_TOP @exSplitTopCounters@/
 s/EX_SPLIT_BOTTOM[ ]*[0-9, |]*/EX_SPLIT_BOTTOM @exSplitBottomCounters@/

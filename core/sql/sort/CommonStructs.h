@@ -113,7 +113,6 @@ enum ScratchOverflowMode
   SCRATCH_MMAP
 };
 
-
 #endif
 
 

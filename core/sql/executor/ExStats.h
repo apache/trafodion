@@ -1211,6 +1211,10 @@ public:
   {
     scratchOverflowMode_ = overflowMode;
   }
+  inline void setTopN(Int64 size) 
+  { 
+    topN_ = size;
+  }
   inline Int64 getScratchReadCount(void) { return scratchReadCount_; }
   static const char *getScratchOverflowMode(Int16 overflowMode);
 private:
@@ -1228,7 +1232,7 @@ private:
   Int64 scratchReadCount_;
   Int64 scratchWriteCount_;
   Int16 scratchOverflowMode_;   // 0 - disk 1 - SSD
-  char bmoFiller_[6];          // For versioning with old dp2
+  Int64 topN_;                 // TOPN value
 };
 
 
@@ -1487,6 +1491,7 @@ private:
   Int64 scratchReadCount_;
   Int64 scratchWriteCount_;
   Int64 udrCpuTime_;
+  Int64 topN_;
   // process id of this fragment instance (to correlate it with MEASURE data)
   // Also used by logic on runtimestats/CancelBroker.cpp
   SB_Phandle_Type phandle_;
@@ -2882,6 +2887,7 @@ private:
   Int64 scratchReadCount_;
   Int64 scratchWriteCount_;
   Int64 udrCpuTime_;
+  Int64 topN_;
 #endif
 };
 
