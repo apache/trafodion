@@ -40,6 +40,9 @@ import org.apache.commons.logging.LogFactory;
 
 import org.trafodion.rest.model.VersionModel;
 
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.core.HttpHeaders;
+
 /**
  * Implements REST software version reporting
  * <p>
@@ -49,47 +52,73 @@ import org.trafodion.rest.model.VersionModel;
  */
 public class VersionResource extends ResourceBase {
 
-  private static final Log LOG = LogFactory.getLog(VersionResource.class);
+    private static final Log LOG = LogFactory.getLog(VersionResource.class);
 
-  static CacheControl cacheControl;
-  static {
-    cacheControl = new CacheControl();
-    cacheControl.setNoCache(true);
-    cacheControl.setNoTransform(false);
-  }
-
-  /**
-   * Constructor
-   * @throws IOException
-   */
-  public VersionResource() throws IOException {
-    super();
-  }
-
-  /**
-   * Build a response for a version request.
-   * @param context servlet context
-   * @param uriInfo (JAX-RS context variable) request URL
-   * @return a response for a version request 
-   */
- 
-  @GET
-  @Produces({MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON})
-  public Response get(final @Context ServletContext context, 
-      final @Context UriInfo uriInfo) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("GET " + uriInfo.getAbsolutePath());
+    static CacheControl cacheControl;
+    static {
+        cacheControl = new CacheControl();
+        cacheControl.setNoCache(true);
+        cacheControl.setNoTransform(false);
     }
-    ResponseBuilder response = Response.ok(new VersionModel(context));
-    response.cacheControl(cacheControl);
-    return response.build();
-  }
- 
-  /**
-   * Dispatch <tt>/version/rest</tt> to self.
-   */
-  @Path("rest")
-  public VersionResource getVersionResource() {
-    return this;
-  }
+
+    /**
+     * Constructor
+     *
+     * @throws IOException
+     */
+    public VersionResource() throws IOException {
+        super();
+    }
+
+    /**
+     * Build a response for a version request.
+     *
+     * @param context
+     *            servlet context
+     * @param uriInfo
+     *            (JAX-RS context variable) request URL
+     * @return a response for a version request
+     */
+
+    @GET
+    @Produces({ MIMETYPE_TEXT, MIMETYPE_XML, MIMETYPE_JSON })
+    public Response get(final @Context ServletContext context, final @Context UriInfo uriInfo,
+            @HeaderParam(HttpHeaders.AUTHORIZATION) final String auth) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("GET " + uriInfo.getAbsolutePath());
+        }
+
+        Response rs = TokenTool.getResponse(auth);
+        if (rs != null)
+            return rs;
+
+        /*
+         * Token tk=new Token(); String access_token=""; String token_type="";
+         * String[] to=auth.split(" "); if(to.length==2){
+         * access_token=to[1].trim(); token_type=to[0].trim(); }
+         *
+         * tk.setToken(access_token);
+         * if(!token_type.equals("trafodion")||tk.isTimeOut()){ JSONObject
+         * jsonObject = new JSONObject(); try { jsonObject.put(Token.error,
+         * Token.error_invalid_token); jsonObject.put(Token.error_description,
+         * "The access token expired");
+         *
+         * } catch (Exception e) { e.printStackTrace();
+         *
+         * } return Response.status(Response.Status.UNAUTHORIZED)
+         * .type(MIMETYPE_JSON) .entity(jsonObject) .build(); }
+         */
+
+        ResponseBuilder response = Response.ok(new VersionModel(context));
+        response.cacheControl(cacheControl);
+        return response.build();
+    }
+
+    /**
+     * Dispatch <tt>/version/rest</tt> to self.
+     */
+    @Path("rest")
+    public VersionResource getVersionResource() {
+        return this;
+    }
 }
