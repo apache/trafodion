@@ -46,27 +46,27 @@ import org.trafodion.rest.RestConstants;
 
 @Path("/")
 public class RootResource extends ResourceBase {
-	private static final Log LOG = LogFactory.getLog(RootResource.class);
+    private static final Log LOG = LogFactory.getLog(RootResource.class);
 
-	static CacheControl cacheControl;
-	static {
-		cacheControl = new CacheControl();
-		cacheControl.setNoCache(true);
-		cacheControl.setNoTransform(false);
-	}
+    static CacheControl cacheControl;
+    static {
+        cacheControl = new CacheControl();
+        cacheControl.setNoCache(true);
+        cacheControl.setNoTransform(false);
+    }
 
-	public RootResource() throws IOException {
-		super();
-	}
+    public RootResource() throws IOException {
+        super();
+    }
 
-	@Path("/v1/servers")
-	public ServerResource getServerResource() throws IOException {
-		//To test:
-		//curl -v -L -k -X GET -H "Accept: application/json" http://<Rest server IP address>:8080/v1/servers
-		//
-		return new ServerResource();
-	}
-	
+    @Path("/v1/servers")
+    public ServerResource getServerResource() throws IOException {
+        //To test:
+        //curl -v -L -k -X GET -H "Accept: application/json" http://<Rest server IP address>:8080/v1/servers
+        //
+        return new ServerResource();
+    }
+
   @Path("/v1/transactions")
    public TransactionsResource getTransactionsTm() throws IOException {
        //To test:
@@ -74,13 +74,21 @@ public class RootResource extends ResourceBase {
        //
        return new TransactionsResource();
    }  
-	
+
    @Path("/v1/version")
    public VersionResource getVersionResource() throws IOException {
        //To test:
        //curl -v -L -k -X GET -H "Accept: application/json" http://<Rest server IP address>:8080/v1/version
        //
        return new VersionResource();
+   }
+
+   @Path("/token")
+   public TokenResource getTokenResource() throws IOException {
+       //To test:
+       //curl -v -L -k -X GET -H "Accept: application/json" http://<Rest server IP address>:8080/token
+       //
+       return new TokenResource();
    }
 
 }

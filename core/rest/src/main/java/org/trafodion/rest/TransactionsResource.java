@@ -57,176 +57,197 @@ import org.trafodion.rest.util.Bytes;
 import org.trafodion.rest.zookeeper.ZkClient;
 import org.trafodion.rest.RestConstants;
 
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.core.HttpHeaders;
+
 public class TransactionsResource extends ResourceBase {
-	private static final Log LOG =
-		LogFactory.getLog(TransactionsResource.class);
+    private static final Log LOG = LogFactory.getLog(TransactionsResource.class);
 
-	static CacheControl cacheControl;
-	static {
-		cacheControl = new CacheControl();
-		cacheControl.setNoCache(true);
-		cacheControl.setNoTransform(false);
-	}
+    static CacheControl cacheControl;
+    static {
+        cacheControl = new CacheControl();
+        cacheControl.setNoCache(true);
+        cacheControl.setNoTransform(false);
+    }
 
+    public TransactionsResource() throws IOException {
+        super();
+    }
 
-	public TransactionsResource() throws IOException {
-		super();
-	}
-	
-	private String stats() throws IOException {
-	    ScriptContext scriptContext = new ScriptContext();
-	    scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
-	    scriptContext.setCommand("dtmci stats -j");
+    private String stats() throws IOException {
+        ScriptContext scriptContext = new ScriptContext();
+        scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+        scriptContext.setCommand("dtmci stats -j");
 
-	    try {
-	        ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        throw new IOException(e);
-	    }
+        try {
+            ScriptManager.getInstance().runScript(scriptContext);// This will
+                                                                    // block
+                                                                    // while
+                                                                    // script is
+                                                                    // running
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new IOException(e);
+        }
 
-        if(LOG.isDebugEnabled()) {
+        if (LOG.isDebugEnabled()) {
             StringBuilder sb = new StringBuilder();
             sb.append("exit code [" + scriptContext.getExitCode() + "]");
-            if(! scriptContext.getStdOut().toString().isEmpty()) 
+            if (!scriptContext.getStdOut().toString().isEmpty())
                 sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
-            if(! scriptContext.getStdErr().toString().isEmpty())
+            if (!scriptContext.getStdErr().toString().isEmpty())
                 sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
             LOG.debug(sb.toString());
         }
 
         return scriptContext.getStdOut().toString();
-	}
+    }
 
-	private String tm() throws IOException {
-	    ScriptContext scriptContext = new ScriptContext();
-	    scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
-	    scriptContext.setCommand("dtmci status tm -j");
+    private String tm() throws IOException {
+        ScriptContext scriptContext = new ScriptContext();
+        scriptContext.setScriptName(Constants.SYS_SHELL_SCRIPT_NAME);
+        scriptContext.setCommand("dtmci status tm -j");
 
-	    try {
-	        ScriptManager.getInstance().runScript(scriptContext);//This will block while script is running
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        throw new IOException(e);
-	    }
+        try {
+            ScriptManager.getInstance().runScript(scriptContext);// This will
+                                                                    // block
+                                                                    // while
+                                                                    // script is
+                                                                    // running
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new IOException(e);
+        }
 
-	    if(LOG.isDebugEnabled()) {
-	        StringBuilder sb = new StringBuilder();
-	        sb.append("exit code [" + scriptContext.getExitCode() + "]");
-	        if(! scriptContext.getStdOut().toString().isEmpty()) 
-	            sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
-	        if(! scriptContext.getStdErr().toString().isEmpty())
-	            sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
-	        LOG.debug(sb.toString());
-	    }
+        if (LOG.isDebugEnabled()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("exit code [" + scriptContext.getExitCode() + "]");
+            if (!scriptContext.getStdOut().toString().isEmpty())
+                sb.append(", stdout [" + scriptContext.getStdOut().toString() + "]");
+            if (!scriptContext.getStdErr().toString().isEmpty())
+                sb.append(", stderr [" + scriptContext.getStdErr().toString() + "]");
+            LOG.debug(sb.toString());
+        }
 
-	    return scriptContext.getStdOut().toString();
-	}
-	
-   @GET
-   @Produces({MIMETYPE_JSON})
-   public Response getAll(final @Context UriInfo uriInfo,@Context Request request) {
-       try {
-           if (LOG.isDebugEnabled()) {
-               LOG.debug("GET " + uriInfo.getAbsolutePath());
+        return scriptContext.getStdOut().toString();
+    }
 
-               MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-               String output = " Query Parameters :\n";
-               for (String key : queryParams.keySet()) {
-                   output += key + " : " + queryParams.getFirst(key) +"\n";
-               }
-               LOG.debug(output);
+    @GET
+    @Produces({ MIMETYPE_JSON })
+    public Response getAll(final @Context UriInfo uriInfo, @Context Request request,
+            @HeaderParam(HttpHeaders.AUTHORIZATION) final String auth) {
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("GET " + uriInfo.getAbsolutePath());
 
-               MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
-               output = " Path Parameters :\n";
-               for (String key : pathParams.keySet()) {
-                   output += key + " : " + pathParams.getFirst(key) +"\n";
-               }
-               LOG.debug(output);
-           }
+                MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+                String output = " Query Parameters :\n";
+                for (String key : queryParams.keySet()) {
+                    output += key + " : " + queryParams.getFirst(key) + "\n";
+                }
+                LOG.debug(output);
 
-           String result = tm();
+                MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
+                output = " Path Parameters :\n";
+                for (String key : pathParams.keySet()) {
+                    output += key + " : " + pathParams.getFirst(key) + "\n";
+                }
+                LOG.debug(output);
+            }
 
-           ResponseBuilder response = Response.ok(result);
-           response.cacheControl(cacheControl);
-           return response.build();
-       } catch (IOException e) {
-           e.printStackTrace();
-           return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                   .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
-                   .build();
-       }
-   }
+            Response rs = TokenTool.getResponse(auth);
+            if (rs != null)
+                return rs;
 
-	@GET
+            String result = tm();
+
+            ResponseBuilder response = Response.ok(result);
+            response.cacheControl(cacheControl);
+            return response.build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
+                    .build();
+        }
+    }
+
+    @GET
     @Path("/tm")
-	@Produces({MIMETYPE_JSON})
-	public Response getTm(final @Context UriInfo uriInfo,@Context Request request) {
-	    try {
-	        if (LOG.isDebugEnabled()) {
-	            LOG.debug("GET " + uriInfo.getAbsolutePath());
+    @Produces({ MIMETYPE_JSON })
+    public Response getTm(final @Context UriInfo uriInfo, @Context Request request,
+            @HeaderParam(HttpHeaders.AUTHORIZATION) final String auth) {
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("GET " + uriInfo.getAbsolutePath());
 
-	            MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-	            String output = " Query Parameters :\n";
-	            for (String key : queryParams.keySet()) {
-	                output += key + " : " + queryParams.getFirst(key) +"\n";
-	            }
-	            LOG.debug(output);
+                MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+                String output = " Query Parameters :\n";
+                for (String key : queryParams.keySet()) {
+                    output += key + " : " + queryParams.getFirst(key) + "\n";
+                }
+                LOG.debug(output);
 
-	            MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
-	            output = " Path Parameters :\n";
-	            for (String key : pathParams.keySet()) {
-	                output += key + " : " + pathParams.getFirst(key) +"\n";
-	            }
-	            LOG.debug(output);
-	        }
+                MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
+                output = " Path Parameters :\n";
+                for (String key : pathParams.keySet()) {
+                    output += key + " : " + pathParams.getFirst(key) + "\n";
+                }
+                LOG.debug(output);
+            }
 
-	        String result = tm();
+            Response rs = TokenTool.getResponse(auth);
+            if (rs != null)
+                return rs;
 
-	        ResponseBuilder response = Response.ok(result);
-	        response.cacheControl(cacheControl);
-	        return response.build();
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	        return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-	                .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
-	                .build();
-	    }
-	}
-	
-   @GET
-   @Path("/stats")
-   @Produces({MIMETYPE_JSON})
-   public Response getStats(final @Context UriInfo uriInfo,@Context Request request) {
-       try {
-           if (LOG.isDebugEnabled()) {
-               LOG.debug("GET " + uriInfo.getAbsolutePath());
+            String result = tm();
 
-               MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-               String output = " Query Parameters :\n";
-               for (String key : queryParams.keySet()) {
-                   output += key + " : " + queryParams.getFirst(key) +"\n";
-               }
-               LOG.debug(output);
+            ResponseBuilder response = Response.ok(result);
+            response.cacheControl(cacheControl);
+            return response.build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
+                    .build();
+        }
+    }
 
-               MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
-               output = " Path Parameters :\n";
-               for (String key : pathParams.keySet()) {
-                   output += key + " : " + pathParams.getFirst(key) +"\n";
-               }
-               LOG.debug(output);
-           }
+    @GET
+    @Path("/stats")
+    @Produces({ MIMETYPE_JSON })
+    public Response getStats(final @Context UriInfo uriInfo, @Context Request request,
+            @HeaderParam(HttpHeaders.AUTHORIZATION) final String auth) {
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("GET " + uriInfo.getAbsolutePath());
 
-           String result = stats();
+                MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+                String output = " Query Parameters :\n";
+                for (String key : queryParams.keySet()) {
+                    output += key + " : " + queryParams.getFirst(key) + "\n";
+                }
+                LOG.debug(output);
 
-           ResponseBuilder response = Response.ok(result);
-           response.cacheControl(cacheControl);
-           return response.build();
-       } catch (IOException e) {
-           e.printStackTrace();
-           return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                   .type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
-                   .build();
-       }
-   }
+                MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
+                output = " Path Parameters :\n";
+                for (String key : pathParams.keySet()) {
+                    output += key + " : " + pathParams.getFirst(key) + "\n";
+                }
+                LOG.debug(output);
+            }
+
+            Response rs = TokenTool.getResponse(auth);
+            if (rs != null)
+                return rs;
+
+            String result = stats();
+
+            ResponseBuilder response = Response.ok(result);
+            response.cacheControl(cacheControl);
+            return response.build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).type(MIMETYPE_TEXT).entity("Unavailable" + CRLF)
+                    .build();
+        }
+    }
 }
