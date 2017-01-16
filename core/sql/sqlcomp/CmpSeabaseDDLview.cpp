@@ -339,7 +339,10 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
 {
   const ParViewUsages &vu = createViewParseNode->getViewUsages();
   const ParTableUsageList &vtul = vu.getViewTableUsageList();
-  
+
+  char query[1000];
+  char hiveObjsNoUsage[1010];
+  hiveObjsNoUsage[0] = 0;
   for (CollIndex i = 0; i < vtul.entries(); i++)
     {
       ComObjectName usedObjName(vtul[i].getQualifiedNameObj()
@@ -350,28 +353,88 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
       const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
       const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
       const NAString extUsedObjName = usedObjName.getExternalName(TRUE);
-      
+
       char objType[10];
-      Int64 usedObjUID = getObjectUID(cliInterface,
-				      catalogNamePart.data(), schemaNamePart.data(), 
-				      objectNamePart.data(),
-				      NULL,
-                                      NULL,
-				      objType);
+      Int64 usedObjUID = -1;      
+      if ((CmpCommon::getDefault(HIVE_VIEWS) == DF_ON) &&
+          (catalogNamePart == HIVE_SYSTEM_CATALOG))
+        {
+          CorrName cn(objectNamePart,STMTHEAP, schemaNamePart,catalogNamePart);
+
+          BindWA bindWA(ActiveSchemaDB(),CmpCommon::context(),FALSE/*inDDL*/);
+
+          NATable *naTable = bindWA.getNATableInternal(cn);
+          if (naTable == NULL)
+            {
+              SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in updateViewUsage");
+              return -1; 
+            }
+
+          if ((naTable->isHiveTable()) &&
+              (NOT naTable->hasExternalTable()) &&
+              (CmpCommon::getDefault(HIVE_VIEWS_CREATE_EXTERNAL_TABLE) == DF_ON))
+            {
+              // create an external table for this hive table.
+              str_sprintf(query, "create external table \"%s\" for %s.\"%s\".\"%s\"",
+                          objectNamePart.data(), 
+                          catalogNamePart.data(),
+                          schemaNamePart.data(),
+                          objectNamePart.data());
+              Lng32 cliRC = cliInterface->executeImmediate(query);
+              if (cliRC < 0)
+                {
+                  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+                  return -1;
+                }
+
+              // remove NATable and reload it to include external table defn.
+              ActiveSchemaDB()->getNATableDB()->removeNATable
+                (cn,
+                 ComQiScope::REMOVE_MINE_ONLY, COM_BASE_TABLE_OBJECT,
+                 FALSE, FALSE);
+              
+              naTable = bindWA.getNATableInternal(cn);
+              if (naTable == NULL)
+                {
+                  SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in updateViewUsage");
+                  return -1; 
+                }
+            }
+
+          if ((naTable->isHiveTable()) &&
+              (naTable->hasExternalTable()) &&
+              (naTable->objectUid().get_value() > 0))
+            {
+              usedObjUID = naTable->objectUid().get_value();
+              strcpy(objType, COM_BASE_TABLE_OBJECT_LIT);
+            }
+
+          // do not put in view usage list if it doesn't have an external table
+          if (usedObjUID == -1)
+            {
+              appendErrorObjName(hiveObjsNoUsage, extUsedObjName);
+              continue;
+            }
+        } // hive table
+
+      if (usedObjUID == -1)
+        usedObjUID = getObjectUID(cliInterface,
+                                  catalogNamePart.data(), schemaNamePart.data(), 
+                                  objectNamePart.data(),
+                                  NULL,
+                                  NULL,
+                                  objType);
       if (usedObjUID < 0)
-	{
+        {
 	  return -1;
 	}
-
-      char query[1000];
+      
       str_sprintf(query, "upsert into %s.\"%s\".%s values (%Ld, %Ld, '%s', 0 )",
 		  getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_VIEWS_USAGE,
 		  viewUID,
 		  usedObjUID,
 		  objType);
       Lng32 cliRC = cliInterface->executeImmediate(query);
-      
-
       if (cliRC < 0)
 	{
 	  cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
@@ -404,6 +467,14 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
         }
       
     } // for
+
+  if (strlen(hiveObjsNoUsage) > 0)
+    {
+      NAString reason;
+      reason = hiveObjsNoUsage;
+      *CmpCommon::diags() << DgSqlCode(CAT_HIVE_VIEW_USAGE_UNAVAILABLE)
+                          << DgString0(reason);
+    }
 
   return 0;
 } 
@@ -1576,49 +1647,59 @@ static bool checkAccessPrivileges(
       PrivMgrUserPrivs privs;
       PrivMgrUserPrivs *pPrivInfo = NULL;
 
-      // If gathering privileges for the view creator, the NATable structure
-      // contains the privileges we want to use to create bitmaps
-      if (viewCreator)
+      // If hive or ORC table and table does not have an external table,
+      // skip priv checks.
+      if ((naTable->isHiveTable()) && !naTable->hasExternalTable()) 
       {
-        // If the viewCreator is not the current user (DB__ROOT running request)
-        // on behalf of the schema owner), get actual owner privs.
-        if (ComUser::isRootUserID() &&
-            ComUser::getRootUserID() != naTable->getSchemaOwner())
-        {
-          retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
-                                                 naTable->getObjectType(),
-                                                 userID,
-                                                 privs);
-
-          if (retcode == STATUS_ERROR)
-          {         
-             *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
-             return false;
-          }
-          pPrivInfo = &privs;
-        }
-        else
-        {
-          pPrivInfo = naTable->getPrivInfo();
-          CMPASSERT(pPrivInfo != NULL);
-        }
+        privs.setOwnerDefaultPrivs();
+        pPrivInfo = &privs;
       }
-      
-      // If the view owner is not the view creator, then we need to get schema
-      // owner privileges from PrivMgr.
-      else 
+      else
       {
-        PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
+        // If gathering privileges for the view creator, the NATable structure
+        // contains the privileges we want to use to create bitmaps
+        if (viewCreator)
+        {
+          // If the viewCreator is not the current user (DB__ROOT running request)
+          // on behalf of the schema owner), get actual owner privs.
+          if (ComUser::isRootUserID() &&
+              ComUser::getRootUserID() != naTable->getSchemaOwner())
+          {
+            retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
+                                                  naTable->getObjectType(),
+                                                  userID,
+                                                  privs);
+            
+            if (retcode == STATUS_ERROR)
+            {         
+              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+              return false;
+            }
+            pPrivInfo = &privs;
+          }
+          else
+          {
+            pPrivInfo = naTable->getPrivInfo();
+            CMPASSERT(pPrivInfo != NULL);
+          }
+        }
+      
+        // If the view owner is not the view creator, then we need to get schema
+        // owner privileges from PrivMgr.
+        else 
+        {
+          PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
                                                            naTable->getObjectType(),
                                                            naTable->getSchemaOwner(),
                                                            privs);
 
-        if (retcode == STATUS_ERROR)
-        {         
-           *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
-           return false;
+          if (retcode == STATUS_ERROR)
+          {         
+            *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+            return false;
+          }
+          pPrivInfo = &privs;
         }
-        pPrivInfo = &privs;
       }
 
       // Requester must have at least select privilege

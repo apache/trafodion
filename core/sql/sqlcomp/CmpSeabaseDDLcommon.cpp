@@ -8018,6 +8018,22 @@ void CmpSeabaseDDL::dropLOBHdfsFiles()
   cleanupLOBDataDescFiles(lobHdfsServer,lobHdfsPort,lobHdfsLoc);
 }
 
+NABoolean CmpSeabaseDDL::appendErrorObjName(char * errorObjs, 
+                                            const char * objName)
+{
+  if ((strlen(errorObjs) + strlen(objName)) < 1000)
+    {
+      strcat(errorObjs, objName);
+      strcat(errorObjs, " ");
+    }
+  else if (strlen(errorObjs) < 1005) // errorObjs maxlen = 1010
+    {
+      strcat(errorObjs, "...");
+    }
+  
+  return TRUE;
+}
+
 // ----------------------------------------------------------------------------
 // method:  initSeabaseAuthorization
 //
