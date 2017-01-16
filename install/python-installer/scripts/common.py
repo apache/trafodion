@@ -45,7 +45,6 @@ INSTALLER_LOC = re.search('(.*)/\w+',os.path.dirname(os.path.abspath(__file__)))
 
 CONFIG_DIR = INSTALLER_LOC + '/configs'
 SCRIPTS_DIR = INSTALLER_LOC + '/scripts'
-TEMPLATES_DIR = INSTALLER_LOC + '/templates'
 
 USER_PROMPT_FILE = CONFIG_DIR + '/prompt.json'
 SCRCFG_FILE = CONFIG_DIR + '/script.json'

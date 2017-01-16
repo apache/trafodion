@@ -55,6 +55,12 @@ def run():
     run_cmd('sysctl -w kernel.pid_max=65535 2>&1 > /dev/null')
     run_cmd('echo "kernel.pid_max=65535" >> /etc/sysctl.conf')
 
+    ### copy trafodion bashrc ###
+    BASHRC_TEMPLATE = '%s/sysinstall/home/trafodion/.bashrc' % TRAF_HOME
+    BASHRC_FILE = '%s/%s/.bashrc' % (HOME_DIR, TRAF_USER)
+    run_cmd('cp -f %s %s' % (BASHRC_TEMPLATE, BASHRC_FILE))
+    run_cmd('chown -R %s:%s %s*' % (TRAF_USER, TRAF_USER, BASHRC_FILE))
+
     ### copy init script ###
     init_script = '%s/sysinstall/etc/init.d/trafodion' % TRAF_HOME
     if os.path.exists(init_script):
