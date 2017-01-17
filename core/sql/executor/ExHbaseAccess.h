@@ -173,6 +173,9 @@ public:
   static void incrErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
                                const char * tabName, const char * rowId);
 
+  static void getErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
+                               const char * tabName, const char * rowId);
+
   static void handleException(NAHeap *heap,
                           char *loggingDdata,
                           Lng32 loggingDataLen,
