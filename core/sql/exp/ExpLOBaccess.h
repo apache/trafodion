@@ -147,7 +147,7 @@ class ExLobRequest
     Int64 transId_;
     SB_Transid_Type transIdBig_;
     SB_Transseq_Type transStartId_;
-    char descFileName_[MAX_LOB_FILE_NAME_LEN];
+    char descFileName_[MAX_LOB_FILE_NAME_LEN]; // TODO: If we ever use this again, change to use string or NAString
     char blackBox_[MAX_BLACK_BOX_LEN];
     Int64 blackBoxLen_;
 };
@@ -368,7 +368,7 @@ public:
    Int64 bufMaxSize_;           // max size of buffer
    Int64 maxBytes_;             // bytesLeft to prefetch
    Int64 prefetch_;             // prefetch or not to prefetch
-   char name_[MAX_LOB_FILE_NAME_LEN]; 
+   string name_;                // TODO: change to NAString when ExLobCursor is allocated off of an NAHeap
                                
    Lng32 currentRange_;		// current index of file for multi cursor
    Lng32 endRange_;		    // end index of file for multi cursor
@@ -406,13 +406,13 @@ class ExLob
     ExLob();  // default constructor
     ~ExLob(); // default desctructor
 
-    Ex_Lob_Error initialize(char *lobFile, Ex_Lob_Mode mode, char *dir, 
+    Ex_Lob_Error initialize(const char *lobFile, Ex_Lob_Mode mode, char *dir, 
                             LobsStorage storage, char *hdfsServer, Int64 hdfsPort,
                             char *lobLocation,
                             int bufferSize = 0, short replication =0, 
                             int blocksize=0, Int64 lobMaxSize = 0, 
                             ExLobGlobals *lobGlobals = NULL);
-    Ex_Lob_Error initialize(char *lobFile);
+
   Ex_Lob_Error writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOperation, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,Int64 lobGCLimit, char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
     Ex_Lob_Error writeLobData(char *source, Int64 sourceLen, 
 			      LobsSubOper subOperation, 
@@ -425,12 +425,12 @@ class ExLob
   Ex_Lob_Error readCursor(char *tgt, Int64 tgtSize, char *handleIn, Int32 handleInLen, Int64 &operLen,Int64 transId);
   Ex_Lob_Error readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &operLen,char *handleIn, Int32 handeLenIn,Int64 transId);
     Ex_Lob_Error readCursorDataSimple(char *tgt, Int64 tgtSize, cursor_t &cursor, Int64 &operLen);
-    Ex_Lob_Error readDataCursorSimple(char *fileName, char *tgt, Int64 tgtSize, Int64 &operLen, ExLobGlobals *lobGlobals);
+    Ex_Lob_Error readDataCursorSimple(const char *fileName, char *tgt, Int64 tgtSize, Int64 &operLen, ExLobGlobals *lobGlobals);
     bool hasNoOpenCursors() { return lobCursors_.empty(); }
   Ex_Lob_Error openCursor(char *handleIn, Int32 handleInLen,Int64 transId);
-    Ex_Lob_Error openDataCursor(char *fileName, LobsCursorType type, Int64 range, 
+    Ex_Lob_Error openDataCursor(const char *fileName, LobsCursorType type, Int64 range, 
                                 Int64 bytesLeft, Int64 bufMaxSize, Int64 prefetch, ExLobGlobals *lobGlobals, Int32 *hdfsDetailError = NULL);
-    Ex_Lob_Error deleteCursor(char *cursorName, ExLobGlobals *lobGlobals);
+    Ex_Lob_Error deleteCursor(const char *cursorName, ExLobGlobals *lobGlobals);
   Ex_Lob_Error fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOffset, Int64 &outSize,NABoolean &isEOD,Int64 transId);
   Ex_Lob_Error insertData(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,char *handleIn,Int32 handleInLen, char *blackBox, Int32 blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
   Ex_Lob_Error append(char *data, Int64 size, LobsSubOper so, Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemLen,Int64 lobGCLimit, char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
@@ -445,7 +445,7 @@ class ExLob
   Ex_Lob_Error closeFile();
   LobInputOutputFileType fileType(char *ioFileName);
   Ex_Lob_Error closeCursor(char *handleIn, Int32 handleInLen);
-  Ex_Lob_Error closeDataCursorSimple(char *fileName, ExLobGlobals *lobGlobals);
+  Ex_Lob_Error closeDataCursorSimple(const char *fileName, ExLobGlobals *lobGlobals);
   
   Ex_Lob_Error doSanityChecks(char *dir, LobsStorage storage,
                               Int32 handleInLen, Int32 handleOutLen, 
@@ -458,7 +458,7 @@ class ExLob
   
   Ex_Lob_Error lockDesc();
   Ex_Lob_Error unlockDesc();
-  char *getDataFileName() { return lobDataFile_; }
+  const char *getDataFileName() { return lobDataFile_.c_str(); }
   
   int getErrNo();
   
@@ -515,7 +515,7 @@ class ExLob
 
   public:
 
-    char lobDataFile_[MAX_LOB_FILE_NAME_LEN];
+    string lobDataFile_; // TODO: change to NAString when ExLobCursor is allocated off of an NAHeap
     lobCursors_t lobCursors_;
     ExLobLock lobCursorLock_;
     LobsStorage storage_;
@@ -562,21 +562,24 @@ class ExLobPreOpen
 {
   public :
 
-    ExLobPreOpen(ExLob *lobPtr, char *cursorName, Int64 range, Int64 bufMaxSize, Int64 maxBytes, Int64 waited) 
+    ExLobPreOpen(ExLob *lobPtr, const char *cursorName, Int64 range, 
+                 Int64 bufMaxSize, Int64 maxBytes, Int64 waited,
+                 NAHeap * heap) 
       : lobPtr_(lobPtr),
+        cursorName_(cursorName,heap),
         range_(range),
         bufMaxSize_(bufMaxSize),
         maxBytes_(maxBytes),
         waited_(waited)
     {
-      strcpy(cursorName_, cursorName);
+      // nothing else to do
     }
 
     ~ExLobPreOpen();
 
   public :
     ExLob *lobPtr_; 
-    char cursorName_[MAX_LOB_FILE_NAME_LEN + 16];
+    NAString cursorName_;
     Int64 range_;
     Int64 bufMaxSize_;
     Int64 maxBytes_;
