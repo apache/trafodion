@@ -2424,6 +2424,25 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
       tgtOpIndex = 1;
       conversion = 4;
     }
+    else
+    if ((type1.getTypeQualifier() == NA_DATETIME_TYPE) &&
+	(type2.getTypeQualifier() == NA_DATETIME_TYPE) &&
+        (type1.getPrecision() != type2.getPrecision()))
+    {
+      conversion = 8;
+      if (type1.getPrecision() == SQLDTCODE_TIMESTAMP)
+        {
+          // convert op2 to timestamp
+          srcOpIndex = 1;
+          tgtOpIndex = 0;
+        }
+      else
+        {
+          // convert op1 to timestamp
+          srcOpIndex = 0;
+          tgtOpIndex = 1;
+        }
+    }
 
     ItemExpr * newOp = NULL;
 
@@ -2524,7 +2543,7 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
 	     (tgtOpIndex == 0 ? op1 : op2)->castToItemExpr()->getValueId().getType().newCopy(bindWA->wHeap()));
       newOp = newOp->bindNode(bindWA);
       break;
-      
+     
       default:
         break;
     }
