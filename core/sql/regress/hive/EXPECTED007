@@ -76,7 +76,7 @@ CREATE EXTERNAL TABLE THIVE1
 >>invoke trafodion.sch.vhivehbase;
 
 -- Definition of Trafodion view TRAFODION.SCH.VHIVEHBASE
--- Definition current  Mon Jan 16 18:43:12 2017
+-- Definition current  Wed Jan 18 20:20:24 2017
 
   (
     AA                               INT DEFAULT NULL
@@ -302,7 +302,7 @@ CREATE TABLE THIVE2
 >>-- traf view must be in traf cat/sch
 >>create view vhive5 as select * from thive1;
 
-*** ERROR[3242] This statement is not supported. Reason: DDL operations can only be done on trafodion or external tables.
+*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
 
 *** ERROR[8822] The statement was not prepared.
 

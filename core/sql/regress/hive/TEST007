@@ -43,6 +43,8 @@ drop view trafodion.sch.vhive3 cascade;
 drop view trafodion.sch.vhive4 cascade;
 drop view trafodion.sch.vhive5 cascade;
 drop view trafodion.sch.vhive6 cascade;
+drop external table thive1 for hive.hive.thive1 cascade;
+cleanup table trafodion."_HV_HIVE_".thive1;
 drop external table thive2 for hive.hive.thive2 cascade;
 sh echo "drop table thive1;" > TEST007_junk;
 sh regrhive.ksh -f TEST007_junk;
