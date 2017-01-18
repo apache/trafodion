@@ -4808,14 +4808,32 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
         }
 
       rowDataLength += colInfo->length + (colInfo->nullable ? 1 : 0);
-      rowTotalLength +=  colInfo->length + (colInfo->nullable ? 1 : 0) +
-        keyLength +
-        sizeof(Int64)/*timestamp*/ +
-        (colInfo->hbaseColFam ? strlen(colInfo->hbaseColFam) : strlen(SEABASE_DEFAULT_COL_FAMILY)) +
-         (colInfo->hbaseColQual ? strlen(colInfo->hbaseColQual) : 2);
+
+      // compute HBase cell overhead.
+      // For each stored cell/column, overhead is:
+      //  timestamp, colFam, colQual, rowKey
+      // For aligned format tables, only one cell is stored.
+      // The overhead will be computed after exiting the 'for' loop.
+      if ((!tableInfo) || 
+          (tableInfo->rowFormat != COM_ALIGNED_FORMAT_TYPE))
+        {
+          rowTotalLength +=  colInfo->length + (colInfo->nullable ? 1 : 0) +
+            keyLength +
+            sizeof(Int64)/*timestamp*/ +
+            (colInfo->hbaseColFam ? strlen(colInfo->hbaseColFam) : strlen(SEABASE_DEFAULT_COL_FAMILY)) +
+            (colInfo->hbaseColQual ? strlen(colInfo->hbaseColQual) : 2);
+        }
 
       colInfo += 1;
     } // for
+
+  if (tableInfo && tableInfo->rowFormat == COM_ALIGNED_FORMAT_TYPE)
+    {
+      // one cell contains the aligned row
+      rowTotalLength = rowDataLength + keyLength +
+        sizeof(Int64)/*timestamp*/ +
+        strlen(SEABASE_DEFAULT_COL_FAMILY) + 2/* 2 bytes for col qual #1*/;
+    }
 
   if (useRWRS)
     {

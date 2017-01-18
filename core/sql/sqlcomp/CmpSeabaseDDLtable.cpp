@@ -649,6 +649,17 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
       if (retcode)
         return -1;
 
+      if (length > 1048576)
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-4247)
+            << DgInt0(length)
+            << DgInt1(1048576) 
+            << DgString0(naCol->getColName().data());
+          
+          return -1;
+        }
+
       colInfoArray[index].colName = naCol->getColName().data(); 
       colInfoArray[index].colNumber = index;
       colInfoArray[index].columnClass = COM_USER_COLUMN;

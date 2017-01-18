@@ -97,14 +97,20 @@ select extract (year from INTERVAL '97-02' YEAR TO MONTH) from (values (1)) as t
 select interval '8' year / 4 from dual;
 
 drop table if exists t030t1;
-create table t030t1 (a date, b char(30), c varchar(30));
-insert into t030t1 values (date '2016-03-01', '2016-03-01', '2016-03-01');
+create table t030t1 (a date, b char(30), c varchar(30), d timestamp);
+insert into t030t1 values (date '2016-03-01', '2016-03-01', '2016-03-01', 
+           timestamp '2017-01-13 13:13:13');
 
 select to_char(a, 'YYYYMMDD') from t030t1;
 select a (date, format 'YYYYMMDD') from t030t1;
 select to_date(b, 'YYYY-MM-DD') from t030t1;
 select to_date(c, 'YYYY-MM-DD') from t030t1;
 select * from t030t1 where to_date(c, 'YYYY-MM-DD') = DATE '2016-03-01';
+
+select case when timestamp '2017-01-13 13:13:13' > date '2017-01-13' then 'pass' else 'fail' end from dual;
+select case when timestamp '2017-01-13 13:13:13' > date '2017-01-14' then 'pass' else 'fail' end from dual;
+select * from t030t1 where d > date '2017-01-13';
+select * from t030t1 where d > date '2017-01-14';
 
 -- negative tests
 select to_date('2016-03-01', 'YYYYMM-DD') from (values(1)) x(a);
@@ -139,5 +145,9 @@ select to_date(123456789, '99:99:99:99') from (values(1)) x(a);
 select to_date(-12345678, '99:99:99:99') from (values(1)) x(a);
 select to_date(1e0, '99:99:99:99') from (values(1)) x(a);
 select to_date(1.2, '99:99:99:99') from (values(1)) x(a);
+
+-- cannot compare timestamp to time, or date to time
+select case when timestamp '2017-01-17 10:10:10' > time '10:10:10' then 'pass' else 'fail' end from dual;
+select case when date '2017-01-17' > time '10:10:10' then 'pass' else 'fail' end from dual;
 
 log;
