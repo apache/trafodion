@@ -1197,7 +1197,7 @@ NA_EIDPROC
   ComCondition* getErrorEntry   (Lng32);
 
 NA_EIDPROC
-  ComCondition* findCondition   (Lng32 sqlCode); // return NULL if not found
+  ComCondition* findCondition   (Lng32 sqlCode, Lng32 *entryNumber=NULL); // return NULL if not found
 
 
  

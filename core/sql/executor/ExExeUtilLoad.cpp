@@ -67,6 +67,7 @@ using std::ofstream;
 #include  "str.h"
 #include "ExpHbaseInterface.h"
 #include "ExHbaseAccess.h"
+#include "ExpErrorEnums.h"
 
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilCreateTableAsTdb::build(ex_globals * glob)
@@ -1110,6 +1111,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   Lng32 cliRC = 0;
   short retcode = 0;
   short rc;
+  Lng32 errorRowCount = 0;
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -1236,32 +1238,29 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         step_ = LOAD_END_ERROR_;
         break;
       }
-      if (hblTdb().getMaxErrorRows() > 0) {
-        int jniDebugPort = 0;
-        int jniDebugTimeout = 0;
-        ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
+      int jniDebugPort = 0;
+      int jniDebugTimeout = 0;
+      ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
                                               (char*)"", //Later may need to change to hblTdb.server_,
                                               (char*)"", //Later may need to change to hblTdb.zkPort_,
                                               jniDebugPort,
                                               jniDebugTimeout);
-        retcode = ehi_->initHBLC();
-        if (retcode == 0) 
-           retcode = ehi_->createCounterTable(hblTdb().getErrCountTable(), (char *)"ERRORS");
-        if (retcode != 0 ) 
-        {
-          Lng32 cliError = 0;
-
-          Lng32 intParam1 = -retcode;
-          ComDiagsArea * diagsArea = NULL;
-          ExRaiseSqlError(getHeap(), &diagsArea,
+      retcode = ehi_->initHBLC();
+      if (retcode == 0) 
+        retcode = ehi_->createCounterTable(hblTdb().getErrCountTable(), (char *)"ERRORS");
+      if (retcode != 0 ) 
+      {
+         Lng32 cliError = 0;
+        Lng32 intParam1 = -retcode;
+        ComDiagsArea * diagsArea = NULL;
+        ExRaiseSqlError(getHeap(), &diagsArea,
                           (ExeErrorCode)(8448), NULL, &intParam1,
                           &cliError, NULL,
                           " ",
                           getHbaseErrStr(retcode),
                           (char *)currContext->getJniErrorStr().data());
-          step_ = LOAD_END_ERROR_;
-          break;
-        }
+        step_ = LOAD_END_ERROR_;
+        break;
       }
       if (hblTdb().getPreloadCleanup())
         step_ = PRE_LOAD_CLEANUP_;
@@ -1417,15 +1416,18 @@ short ExExeUtilHBaseBulkLoadTcb::work()
               masterGlob->getStatement()->getContext()->setSqlParserFlags(0x20000);
             }
           }
+        ComDiagsArea *diagsArea = getDiagsArea();
 
         cliRC = cliInterface()->executeImmediate(loadQuery,
             NULL,
             NULL,
             TRUE,
-            &rowsAffected_);
-          if (parserFlagSet)
-            masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
+            &rowsAffected_,
+            FALSE,
+            diagsArea);
 
+        if (parserFlagSet)
+            masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
         if (cliRC < 0)
         {
           rowsAffected_ = 0;
@@ -1433,13 +1435,26 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = LOAD_END_ERROR_;
           break;
         }
-        
-        step_ = COMPLETE_BULK_LOAD_;
+        else {
+           step_ = COMPLETE_BULK_LOAD_;
+           ComCondition *cond;
+           Lng32 entryNumber;
+           while ((cond = diagsArea->findCondition(EXE_ERROR_ROWS_FOUND, &entryNumber)) != NULL) {
+              errorRowCount = cond->getOptionalInteger(0);
+              diagsArea->deleteWarning(entryNumber);
+           }
+           // Need to clear the diags Area to get the correct rowsAffected for the LOAD COMPLETE command
+           // Hence, we might lose any other warnings created at the time of loading like error during
+           // logging error rows
+           diagsArea->clear();
+        }
         if (rowsAffected_ == 0)
           step_ = LOAD_END_;
 
-        sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
+        sprintf(statusMsgBuf_,      "       Rows Processed: %ld %c",rowsAffected_+errorRowCount, '\n' );
         int len = strlen(statusMsgBuf_);
+        sprintf(&statusMsgBuf_[len],"       Error Rows:     %d %c",errorRowCount, '\n' );
+        len = strlen(statusMsgBuf_);
         setEndStatusMsg(" LOADING DATA", len, TRUE);
       }
       else
@@ -1547,7 +1562,14 @@ short ExExeUtilHBaseBulkLoadTcb::work()
     {
       if (setStartStatusMsgAndMoveToUpQueue(" POPULATE INDEXES", &rc, 0, TRUE))
         return rc;
-
+      else {
+           step_ = POPULATE_INDEXES_EXECUTE_;
+           return WORK_CALL_AGAIN;
+      }
+    }
+    break;
+    case POPULATE_INDEXES_EXECUTE_:
+    {
       char * piQuery =
           new(getMyHeap()) char[strlen("POPULATE ALL INDEXES ON  ; ") +
                                 strlen(hblTdb().getTableName()) +
@@ -1578,13 +1600,20 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         setEndStatusMsg(" POPULATE INDEXES", 0, TRUE);
       }
-        break;
+      break;
 
       case UPDATE_STATS_:
       {
         if (setStartStatusMsgAndMoveToUpQueue(" UPDATE STATISTICS", &rc, 0, TRUE))
           return rc;
-
+        else {
+           step_ = UPDATE_STATS_EXECUTE_;
+           return WORK_CALL_AGAIN;
+        }
+      }
+      break;
+      case UPDATE_STATS_EXECUTE_:
+      {
         if (ustatNonEmptyTable)
         {
           // Table was not empty prior to the load.
@@ -1631,7 +1660,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         setEndStatusMsg(" UPDATE STATS", 0, TRUE);
     }
-        break;
+    break;
 
     case RETURN_STATUS_MSG_:
     {

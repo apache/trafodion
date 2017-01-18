@@ -8434,10 +8434,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
   retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, FALSE);
   if (retcode)
     {
-      deallocEHI(ehi); 
-      
       processReturn();
-      
       return -1;
     }
 
@@ -8467,10 +8464,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
                               keyLength,
                               FALSE))
     {
-      deallocEHI(ehi); 
-
       processReturn();
-      
       return -1;
     }
   
@@ -8490,10 +8484,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
                              FALSE);
   if (retcode == -1)
     {
-      deallocEHI(ehi); 
-
       processReturn();
-
       return -1;
     }
 

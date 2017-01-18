@@ -129,6 +129,7 @@ Task:  CLEANUP         Status: Ended      Time: 2016-12-11 21:58:01.272
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.030
 Task:  LOADING DATA    Status: Started    Time: 2016-12-11 21:58:01.272
        Rows Processed: 2750311 
+       Error Rows:     0
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 21:58:29.607
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:28.335
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 21:58:29.608

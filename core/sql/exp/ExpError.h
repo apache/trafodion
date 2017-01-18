@@ -95,8 +95,8 @@ NA_EIDPROC
 SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseSqlWarning(NAMemory * heap, ComDiagsArea** diagsArea,
                               ExeErrorCode err, ComCondition** cond,
-                              Lng32 * intParam1,
-                              Lng32 * intParam2,
+                              Lng32 * intParam1 = NULL,
+                              Lng32 * intParam2 = NULL,
                               Lng32 * intParam3 = NULL,
                               const char * stringParam1 = NULL,
                               const char * stringParam2 = NULL,

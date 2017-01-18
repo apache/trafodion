@@ -1524,6 +1524,7 @@ $1~String1 --------------------------------
 8111 23000 99999 BEGINNER MAJOR DBADMIN Transactions are not allowd with Bulk load.
 8112 23000 99999 BEGINNER MAJOR DBADMIN Snapshot $0~String0 either does not exist or is associated with a table other than $1~String1.
 8113 23000 99999 BEGINNER MAJOR DBADMIN The maximum number of error rows is exceeded.
+8114 23000 99999 BEGINNER MAJOR DBADMIN The number of error rows is $0~int0
 8140 ZZZZZ 99999 ADVANCED INFRM LOGONLY The statement was canceled, to test cancel processing.  File $0~string0 at line number $1~int0.
 8141 ZZZZZ 99999 ADVANCED INFRM LOGONLY An error was artificially injected, to test error handling.  File $0~string0 at line $1~int0.
 8142 ZZZZZ 99999 ADVANCED INFRM LOGONLY An error was artificially injected, to test error handling. Testpoint $0~string0, Value $1~string1.

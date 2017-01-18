@@ -99,7 +99,8 @@ private:
                             char * outputBuf = NULL,
                             Lng32 * outputBufLen = NULL,
                             NABoolean nullTerminate = TRUE,
-                            Int64 * rowsAffected = NULL);
+                            Int64 * rowsAffected = NULL,
+                            ComDiagsArea *diagsArea = NULL);
  
   Lng32 prepare(const char * stmtStr,
 		SQLMODULE_ID * module,

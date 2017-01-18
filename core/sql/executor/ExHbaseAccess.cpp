@@ -3290,6 +3290,12 @@ void ExHbaseAccessTcb::incrErrorCount( ExpHbaseInterface * ehi,Int64 & totalExce
   retcode = ehi->incrCounter(tabName, rowId, (const char*)"ERRORS",(const char*)"ERROR_COUNT",1, totalExceptionCount);
 }
 
+void ExHbaseAccessTcb::getErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
+                                    const char * tabName, const char * rowId )
+{
+  Lng32 retcode;
+  retcode = ehi->incrCounter(tabName, rowId, (const char*)"ERRORS",(const char*)"ERROR_COUNT",0, totalExceptionCount);
+}
 
 static const char * const BatchSizeEnvvar = 
   getenv("SQL_CANCEL_BATCH_SIZE");

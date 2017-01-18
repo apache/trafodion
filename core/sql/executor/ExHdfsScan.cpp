@@ -1316,12 +1316,11 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	{
 	  step_ = nextStep_;
 	  exception_ = FALSE;
-
+	  Int64 exceptionCount = 0;
+          ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, 
+                 hdfsScanTdb().getErrCountTable(),hdfsScanTdb().getErrCountRowId()); 
 	  if (hdfsScanTdb().getMaxErrorRows() > 0)
 	  {
-	    Int64 exceptionCount = 0;
-            ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, 
-                 hdfsScanTdb().getErrCountTable(),hdfsScanTdb().getErrCountRowId()); 
 	    if (exceptionCount >  hdfsScanTdb().getMaxErrorRows())
 	    {
 	      if (pentry_down->getDiagsArea())
