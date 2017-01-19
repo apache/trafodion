@@ -282,7 +282,6 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
                                                 NULL);
       if (masterStats)
         {
-          masterStats->numOfTotalEspsUsed() = numOfTotalEspsUsed;
           masterStats->numOfNewEspsStarted() = numOfNewEspsStarted;
           masterStats->setNumCpus(rtFragTable->
                                   countSQLNodes(cliGlobals->myCpu()));

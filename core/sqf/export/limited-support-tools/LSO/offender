@@ -44,6 +44,7 @@ function usage()
                           wm_mem_offender
                           active
                           se_blocked
+                          se_offender
                           inactive
                           in_sql
                           in_client
@@ -193,6 +194,10 @@ case $SCRIPT in
    se_blocked)
      PREAMBLE="set param ?filter 'SE_BLOCKED=$TIME$NODE'; "
      QUERY_FILE="$LSO_DIR/se_blocked.sql"
+     ;;
+   se_offender)
+     PREAMBLE="set param ?filter 'SE_OFFENDER=$TIME$NODE'; "
+     QUERY_FILE="$LSO_DIR/se_offender.sql"
      ;;
    cpu_offender)
      PREAMBLE="set param ?filter 'CPU_OFFENDER=$OFFENDER_NODE'; "
