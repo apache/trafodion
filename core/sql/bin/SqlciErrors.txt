@@ -1591,7 +1591,8 @@ $1~String1 --------------------------------
 8553 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Stream overflow; subscription rate has fallen too far behind publishing rate.
 8554 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU -- unused, although the error number reservation doc says it is used ---
 8555 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An internal error occurred in the SQL executor in the disk process.
-8556 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred while accessing HBase table $0~string0. $1~string1 
+8556 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An error occurred while accessing HBase table $0~string0. $1~string1
+8557 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The file name passed to externaltolob exceeds 256 bytes.
 8570 ZZZZZ 99999 ADVANCED MAJOR DBADMIN SQL could not allocate sufficient memory to build query.
 8571 ZZZZZ 99999 ADVANCED MAJOR DBADMIN SQL could not allocate sufficient memory to execute query.
 8572 ZZZZZ 99999 ADVANCED CRTCL DIALOUT The statement has incurred a fatal error and must be deallocated.

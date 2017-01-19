@@ -399,12 +399,12 @@ void cleanupLOBDataDescFiles(const char *hdfsServer, int hdfsPort, const char *h
 // ExLob 
 ///////////////////////////////////////////////////////////////////////////////
 
-class ExLob
+class ExLob : public NABasicObject
 {
   public:
     
-    ExLob();  // default constructor
-    ~ExLob(); // default desctructor
+    ExLob(NAHeap * heap);  // default constructor
+    virtual ~ExLob(); // default desctructor
 
     Ex_Lob_Error initialize(const char *lobFile, Ex_Lob_Mode mode, char *dir, 
                             LobsStorage storage, char *hdfsServer, Int64 hdfsPort,
@@ -458,7 +458,7 @@ class ExLob
   
   Ex_Lob_Error lockDesc();
   Ex_Lob_Error unlockDesc();
-  const char *getDataFileName() { return lobDataFile_.c_str(); }
+  const char *getDataFileName() { return lobDataFile_.data(); }
   
   int getErrNo();
   
@@ -515,7 +515,7 @@ class ExLob
 
   public:
 
-    string lobDataFile_; // TODO: change to NAString when ExLobCursor is allocated off of an NAHeap
+    NAString lobDataFile_;
     lobCursors_t lobCursors_;
     ExLobLock lobCursorLock_;
     LobsStorage storage_;
@@ -558,7 +558,7 @@ class ExLobHdfsRequest
 };
 
 
-class ExLobPreOpen
+class ExLobPreOpen : public NABasicObject
 {
   public :
 
@@ -575,7 +575,10 @@ class ExLobPreOpen
       // nothing else to do
     }
 
-    ~ExLobPreOpen();
+    virtual ~ExLobPreOpen()
+    { 
+      // nothing else to do
+    };
 
   public :
     ExLob *lobPtr_; 
