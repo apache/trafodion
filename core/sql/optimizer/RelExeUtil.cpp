@@ -5878,7 +5878,10 @@ RelExpr * ExeUtilHbaseCoProcAggr::bindNode(BindWA *bindWA)
   // BindWA keeps list of coprocessors used, so privileges can be checked.
   bindWA->insertCoProcAggr(this);
 
-  CostScalar rowsAccessed(naTable->estimateHBaseRowCount());
+  Int32 retryLimitMilliSeconds = 5000; // use at most 5 seconds on retries
+  Int32 errorCode = 0;
+  Int32 breadCrumb = 0;
+  CostScalar rowsAccessed(naTable->estimateHBaseRowCount(retryLimitMilliSeconds,errorCode /* out */,breadCrumb /* out */));
   setEstRowsAccessed(rowsAccessed);
 
   return boundExpr;

@@ -24,6 +24,7 @@ package org.trafodion.sql;
 import com.google.protobuf.ServiceException;
 
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -1091,16 +1092,63 @@ public class HBaseClient {
        return rc;
     }
 
+
+    // Estimates row count for tblName. Has a retry loop for the 
+    // case of java.io.FileNotFoundException, which can happen if
+    // compactions are in flight when we call estimateRowCountBody.
+    // We try again with geometrically higher timeouts in hopes that
+    // the compaction will go away. But after 4 minutes plus of retries
+    // we'll give up and invite the user to try later.
+    public boolean estimateRowCount(String tblName, int partialRowSize,
+                                    int numCols, int retryLimitMilliSeconds, long[] rc)
+                   throws MasterNotRunningException, IOException, ClassNotFoundException, URISyntaxException {
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.estimateRowCount(" + tblName + ") called."); 
+      boolean retcode = false;  // assume failure
+      int retryWait = 2000;     // initial sleep before retry interval is 2 seconds
+      int cumulativeSleepTime = 0;
+      while (retryWait > 0) {
+        try {
+          retcode = estimateRowCountBody(tblName,partialRowSize,numCols,rc);
+          retryWait = 0;  // for normal loop exit
+        }
+        catch (FileNotFoundException fne) {
+
+          if (cumulativeSleepTime < retryLimitMilliSeconds) {   // stop retrying if we've exceeded limit
+            if (logger.isDebugEnabled()) logger.debug("FileNotFoundException encountered (" + fne.getMessage()
+                                                      + ") retrying in " + Integer.toString(retryWait/1000) + " seconds." );
+            try {
+              Thread.sleep(retryWait);  // sleep for a while or until interrupted
+              cumulativeSleepTime += retryWait;
+            }
+            catch (InterruptedException e) {
+              // ignore the interruption and keep going
+            }  
+            retryWait = 2 * retryWait;
+          }
+          else {
+            // we've retried enough; just re-throw
+            if (logger.isDebugEnabled()) logger.debug("FileNotFoundException encountered (" + fne.getMessage()
+                                                      + "); not retrying." );
+            throw fne;
+          }      
+        }
+      }
+ 
+      return retcode;
+    }
+        
+    
+
     // Estimates row count for tblName by iterating over the HFiles for
     // the table, extracting the KeyValue entry count from the file's
     // trailer block, summing the counts, and dividing by the number of
     // columns in the table. An adjustment is made for the estimated
     // number of missing values by sampling the first several
     // hundred KeyValues to see how many are missing.
-    public boolean estimateRowCount(String tblName, int partialRowSize,
+    private boolean estimateRowCountBody(String tblName, int partialRowSize,
                                     int numCols, long[] rc)
                    throws MasterNotRunningException, IOException, ClassNotFoundException, URISyntaxException {
-      if (logger.isDebugEnabled()) logger.debug("HBaseClient.estimateRowCount(" + tblName + ") called.");
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.estimateRowCountBody(" + tblName + ") called.");
 
       final String REGION_NAME_PATTERN = "[0-9a-f]*";
       final String HFILE_NAME_PATTERN  = "[0-9a-f]*";

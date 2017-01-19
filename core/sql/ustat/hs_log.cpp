@@ -284,7 +284,11 @@ void HSLogMan::Log(const char *data)
     if (logNeeded_)
       {
         ofstream fileout(logFile_->data(), ios::app);
-        fileout << data << endl;
+        time_t currentTime = time(0);
+        struct tm * currentTimeExploded = localtime(&currentTime);
+        char localTime[100];  // way more space than needed
+        strftime(localTime,sizeof(localTime),"%c",currentTimeExploded);
+        fileout << "[" << localTime << "] " << data << endl;
       }
   }
 

@@ -895,7 +895,7 @@ public:
   // without accessing HBase. The result is passed to estimateHBaseRowCount(),
   // which completes the row size calculation with HBase info.
   Int32 computeHBaseRowSizeFromMetaData() const ;
-  Int64 estimateHBaseRowCount() const;
+  Int64 estimateHBaseRowCount(Int32 retryLimitMilliSeconds, Int32& errorCode, Int32& breadCrumb) const;
   NABoolean getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const;
   NABoolean getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames) const;
 

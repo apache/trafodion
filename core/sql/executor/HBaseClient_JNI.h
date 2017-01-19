@@ -449,7 +449,7 @@ public:
   HBC_RetCode grant(const Text& user, const Text& tableName, const TextVec& actionCodes); 
   HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes);
   HBC_RetCode estimateRowCount(const char* tblName, Int32 partialRowSize,
-                               Int32 numCols, Int64& rowCount);
+                               Int32 numCols, Int32 retryLimitMilliSeconds, Int64& rowCount, Int32 & breadCrumb);
   HBC_RetCode getLatestSnapshot(const char * tabname, char *& snapshotName, NAHeap * heap);
   HBC_RetCode cleanSnpTmpLocation(const char * path);
   HBC_RetCode setArchivePermissions(const char * path);

@@ -1926,6 +1926,7 @@ drop the default context
 9249 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Incremental UPDATE STATISTICS is disabled.
 9250 ZZZZZ 99999 BEGINNER MINOR LOGONLY Incremental UPDATE STATISTICS: non-NULL values added to previously all-NULL histogram for column $0~string0. A regular UPDATE STATISTICS is performed instead.
 9251 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A persistent sample table already exists. Use UPDATE STATISTICS ... REMOVE SAMPLE to drop it first if desired.
+9252 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Unable to get row count estimate: Error code $0~int0, detail $1~int1. Exception info (if any): $0~string0
 9259 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Last UPDATE STATISTICS error.
 10000 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Sort Error: First Sort error
 10001 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Sort Error : No error text defined. Unexpected error. $0~String0

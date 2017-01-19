@@ -246,7 +246,7 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_GET_HBLC   ].jm_name      = "getHBulkLoadClient";
     JavaMethods_[JM_GET_HBLC   ].jm_signature = "()Lorg/trafodion/sql/HBulkLoadClient;";
     JavaMethods_[JM_EST_RC     ].jm_name      = "estimateRowCount";
-    JavaMethods_[JM_EST_RC     ].jm_signature = "(Ljava/lang/String;II[J)Z";
+    JavaMethods_[JM_EST_RC     ].jm_signature = "(Ljava/lang/String;III[J)Z";
     JavaMethods_[JM_REL_HBLC   ].jm_name      = "releaseHBulkLoadClient";
     JavaMethods_[JM_REL_HBLC   ].jm_signature = "(Lorg/trafodion/sql/HBulkLoadClient;)V";
     JavaMethods_[JM_GET_CAC_FRC].jm_name      = "getBlockCacheFraction";
@@ -1303,12 +1303,22 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
 HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
                                               Int32 partialRowSize,
                                               Int32 numCols,
-                                              Int64& rowCount)
+                                              Int32 retryLimitMilliSeconds,
+                                              Int64& rowCount,
+                                              Int32& breadCrumb)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::estimateRowCount(%s) called.", tblName);
-  if (initJNIEnv() != JOI_OK)
-     return HBC_ERROR_INIT_PARAM;
+  breadCrumb = 1;
+  if (jenv_ == NULL)
+     if (initJVM() != JOI_OK)
+         return HBC_ERROR_INIT_PARAM;
 
+  breadCrumb = 2;
+  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
+     getExceptionDetails();
+     return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
+  }
+  breadCrumb = 3;
   jstring js_tblName = jenv_->NewStringUTF(tblName);
   if (js_tblName == NULL)
   {
@@ -1319,17 +1329,21 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
 
   jint jPartialRowSize = partialRowSize;
   jint jNumCols = numCols;
+  jint jRetryLimitMilliSeconds = retryLimitMilliSeconds;
   jlongArray jRowCount = jenv_->NewLongArray(1);
   tsRecentJMFromJNI = JavaMethods_[JM_EST_RC].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_EST_RC].methodID,
                                               js_tblName, jPartialRowSize,
-                                              jNumCols, jRowCount);
+                                              jNumCols, jRetryLimitMilliSeconds, jRowCount);
   jboolean isCopy;
   jlong* arrayElems = jenv_->GetLongArrayElements(jRowCount, &isCopy);
   rowCount = *arrayElems;
   if (isCopy == JNI_TRUE)
     jenv_->ReleaseLongArrayElements(jRowCount, arrayElems, JNI_ABORT);
 
+  jenv_->DeleteLocalRef(js_tblName);
+
+  breadCrumb = 4;
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -1339,12 +1353,15 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
     return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
   }
 
+  breadCrumb = 5;
   if (jresult == false)
   {
     logError(CAT_SQL_HBASE, "HBaseClient_JNI::estimateRowCount()", getLastError());
     jenv_->PopLocalFrame(NULL);
     return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
   }
+
+  breadCrumb = 6;
   jenv_->PopLocalFrame(NULL);
   return HBC_OK;  // Table exists.
 }

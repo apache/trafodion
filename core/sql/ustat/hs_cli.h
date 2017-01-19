@@ -129,6 +129,12 @@ Lng32 HSFuncExecDDL( const char *dml
                   );
 Lng32 HSClearCLIDiagnostics();
 
+// Clear any JNI diagnostic text stored in the CLI
+void HSFuncClearJniErrorStr();
+
+// Obtain any JNI diagnostic text stored in the CLI
+const char * HSFuncGetJniErrorStr();
+
 // Create histogram tables if they don't exist.
 Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal);
 Lng32 CreateHistView   (const HSGlobalsClass* hsGlobal);
