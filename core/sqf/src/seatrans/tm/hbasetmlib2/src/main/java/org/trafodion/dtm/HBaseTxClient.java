@@ -1123,8 +1123,8 @@ public class HBaseTxClient {
                                   }
                                   if (LOG.isInfoEnabled()) 
                                   LOG.info("TRAF RCOV THREAD: TID " + txID
-                                            + " still has ts object in TM memory with state "
-                                            + hbtx.mapTransactionStates.get(txID).getStatus().toString() 
+                                            + " still has TS object in TM memory. TS details: "
+                                            + hbtx.mapTransactionStates.get(txID).toString() 
                                             + " transactionAlive: " + isTransactionStillAlive);
                                   if(isTransactionStillAlive == 1)
                                     continue; //for loop
