@@ -37,6 +37,7 @@ def run():
     admin_principal = dbcfgs['admin_principal']
     admin_passwd = dbcfgs['kdcadmin_pwd']
     kdc_server = dbcfgs['kdc_server']
+    cluster_name = dbcfgs['cluster_name']
     # maxlife = dbcfgs['max_lifetime']
     # max_renewlife = dbcfgs['max_renew_lifetime']
     maxlife = '24hours'
@@ -51,7 +52,6 @@ def run():
     traf_keytab_dir = '/etc/%s/keytab' % traf_user
     traf_keytab = '%s/%s.keytab' % (traf_keytab_dir, traf_user)
     traf_principal = '%s/%s@%s' % (traf_user, host_name, realm)
-    hdfs_principal = '%s/%s@%s' % (hdfs_user, host_name, realm)
     hbase_principal = '%s/%s@%s' % (hbase_user, host_name, realm)
 
     ### setting start ###
@@ -78,9 +78,11 @@ def run():
     if 'CDH' in distro:
         hdfs_keytab = cmd_output('find /var/run/cloudera-scm-agent/process/ -name hdfs.keytab | head -n 1')
         hbase_keytab = cmd_output('find /var/run/cloudera-scm-agent/process/ -name hbase.keytab | head -n 1')
+        hdfs_principal = '%s/%s@%s' % (hdfs_user, host_name, realm)
     elif 'HDP' in distro:
         hdfs_keytab = '/etc/security/keytabs/hdfs.headless.keytab'
         hbase_keytab = '/etc/security/keytabs/hbase.service.keytab'
+        hdfs_principal = '%s/%s@%s' % (hdfs_user, cluster_name, realm)
 
     run_cmd('sudo -u %s kinit -kt %s %s' % (hdfs_user, hdfs_keytab, hdfs_principal))
     run_cmd('sudo -u %s kinit -kt %s %s' % (hbase_user, hbase_keytab, hbase_principal))
