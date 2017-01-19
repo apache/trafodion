@@ -1907,8 +1907,9 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
   CmpCommon::getDefault(HIVE_DEFAULT_SCHEMA, hiveDefSchName, FALSE);
   hiveDefSchName.toUpper();
   
-  if ((catName == hiveDefCatName) ||
-      (catName == HIVE_SYSTEM_CATALOG))
+  if (((catName == hiveDefCatName) ||
+       (catName == HIVE_SYSTEM_CATALOG)) &&
+      (queryType == ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_))
     {
       setHiveObjects(TRUE);
     }
@@ -1989,7 +1990,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 	    if (objectType_ == "LIBRARY")
         cn.setSpecialType(ExtendedQualName::LIBRARY_TABLE);
 	    
-      NATable *naTable = 	generator->getBindWA()->getNATable(cn);
+      NATable *naTable = generator->getBindWA()->getNATableInternal(cn);
       if ((! naTable) || (generator->getBindWA()->errStatus()))
       {
 	  CollIndex retIndex = NULL_COLL_INDEX;
@@ -2025,6 +2026,24 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 	    }
 	}
       
+      // if a hive table has an associated external table, get the name
+      // of the external table. Use that to look for views created on
+      // the hive table.
+      if (((catName == hiveDefCatName) ||
+           (catName == HIVE_SYSTEM_CATALOG)) &&
+          ((queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_) &&
+           (naTable && naTable->hasExternalTable())))
+        {
+          // Convert the native name to its Trafodion form
+          NAString tabName = ComConvertNativeNameToTrafName
+            (catName, schName, objName);
+          
+          ComObjectName externalName(tabName, COM_TABLE_NAME);
+          catName = externalName.getCatalogNamePartAsAnsiString();
+          schName = externalName.getSchemaNamePartAsAnsiString(TRUE);
+          objName = externalName.getObjectNamePartAsAnsiString(TRUE);
+        }
+
       if (objectType_ == "TABLE")
 	{
 	  if ((naTable->getViewFileName()) ||

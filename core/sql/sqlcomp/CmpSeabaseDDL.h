@@ -979,6 +979,9 @@ protected:
                                const ComObjectType objectType,
                                NABoolean ddlXns);
 
+  NABoolean appendErrorObjName(char * errorObjs, 
+                               const char * objName);
+
   short setupAndErrorChecks(NAString &tabName, QualifiedName &origTableName, 
                             NAString &currCatName, NAString &currSchName,
                             NAString &catalogNamePart, 

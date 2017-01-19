@@ -60,7 +60,7 @@ sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t1/*;
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t2/*;
 
 -- Remove external hive tables used by this test
-drop external table if exists customer for hive.hive.customer;
+drop external table if exists customer for hive.hive.customer cascade;
 drop external table if exists item for hive.hive.item;
 drop external table if exists promotion for hive.hive.promotion;
 

@@ -70,7 +70,7 @@
 1068 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Initialize authorization completed with warnings.
 1069 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName could not be dropped. $0~String0
 1070 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object $0~TableName could not be created. File error: $1~Int0.
-1071 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1071 ZZZZZ 99999 BEGINNER MAJOR DBADMIN View usage information for the following hive tables could not be set. Make sure that an external table either already exists or implicit creation has not been disabled. Hive tables: $0~String0
 1072 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1073 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Schema $0~SchemaName was partially dropped. Use CLEANUP SCHEMA to remove remaining entries.
 1074 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---

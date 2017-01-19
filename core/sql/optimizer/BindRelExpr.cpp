@@ -12742,16 +12742,6 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
       return this;
      }
 
-  if (naTable->isHiveTable() &&
-      (getOperatorType() != REL_UNARY_INSERT) && 
-      (getOperatorType() != REL_LEAF_INSERT))
-    {
-      *CmpCommon::diags() << DgSqlCode(-4223)
-			  << DgString0("Update/Delete on Hive table is");
-      bindWA->setErrStatus();
-      return this;
-    }
-
   NABoolean insertFromValuesList =
    (getOperatorType() == REL_UNARY_INSERT &&
     (child(0)->getOperatorType() == REL_TUPLE ||  // VALUES(1,'b')
@@ -13444,6 +13434,14 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
   //
   if (getOperatorType() == REL_UNARY_UPDATE ||
       getOperatorType() == REL_UNARY_DELETE) {
+
+    if (getTableDesc()->getNATable()->isHiveTable())
+      {
+        *CmpCommon::diags() << DgSqlCode(-4223)
+                            << DgString0("Update/Delete on Hive table is");
+        bindWA->setErrStatus();
+        return this;
+      }
 
     // SQL syntax requires (and the parser ensures) that a direct descendant
     // (passing thru views) of an update/delete node is a scan node on the

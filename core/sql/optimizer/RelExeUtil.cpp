@@ -4473,7 +4473,10 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   if (isHbase_ || externalTable || isVolatile)
     return boundExpr;
 
-  *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL operations can only be done on trafodion or external tables.");
+  if (isView_ && (isCreate_ || isDrop_))
+    *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL views can only be created or dropped in trafodion schema.");
+  else
+    *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL operations can only be done on trafodion or external tables.");
   bindWA->setErrStatus();
   return NULL;
 }
