@@ -139,35 +139,28 @@ class HDPMod(object):
             self.p.put(cluster_url, config)
 
     def restart(self):
-        srv_baseurl = CLUSTER_URL_PTR % (self.url, self.cluster_name) + '/services/'
-        srvs = ['HBASE', 'HDFS', 'ZOOKEEPER']
-
-        # Stop
         info('Restarting HDP services ...')
-        for srv in srvs:
-            srv_url = srv_baseurl + srv
-            config = {'RequestInfo': {'context' :'Stop %s services' % srv}, 'ServiceInfo': {'state' : 'INSTALLED'}}
-            rc = self.p.put(srv_url, config)
+        def startstop(srvs, action, count, interval):
+            srv_baseurl = CLUSTER_URL_PTR % (self.url, self.cluster_name) + '/services/'
+            state = 'INSTALLED' if action == 'stop' else 'STARTED'
+            for srv in srvs:
+                srv_url = srv_baseurl + srv
+                config = {'RequestInfo': {'context' :'%s %s services' % (action, srv)}, 'ServiceInfo': {'state' : state}}
+                rc = self.p.put(srv_url, config)
 
-            # check stop status
-            if rc:
-                get_stat = lambda: self.p.get(srv_url)['ServiceInfo']['state'] == 'INSTALLED'
-                retry(get_stat, 30, 5, 'HDP service %s stop' % srv)
-            else:
-                info('HDP service %s had already been stopped' % srv)
+                # check startstop status
+                if rc:
+                    get_stat = lambda: self.p.get(srv_url)['ServiceInfo']['state'] == state
+                    retry(get_stat, count, interval, 'HDP service %s %s' % (srv, action))
+                else:
+                    if action == 'stop': action += 'p'
+                    info('HDP service %s had already been %sed' % (srv, action))
 
+        srvs = ['HBASE', 'HDFS', 'ZOOKEEPER']
+        startstop(srvs, 'stop', 30, 10)
         time.sleep(10)
-        # Start
-        config = {'RequestInfo': {'context' :'Start All services'}, 'ServiceInfo': {'state' : 'STARTED'}}
-        rc = self.p.put(srv_baseurl, config)
-
-        # check start status
-        if rc:
-            result_url = rc['href']
-            get_stat = lambda: self.p.get(result_url)['Requests']['request_status'] == 'COMPLETED'
-            retry(get_stat, 120, 5, 'HDP services start')
-        else:
-            info('HDP services had already been started')
+        srvs.reverse()
+        startstop(srvs, 'start', 60, 10)
 
 def run():
     if 'CDH' in dbcfgs['distro']:
