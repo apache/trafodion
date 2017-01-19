@@ -230,7 +230,6 @@ class TRAFODION21ServiceAdvisor(service_advisor.DefaultStackAdvisor):
   ##### Desired values in other service configs
   def getHbaseSiteDesiredValues(self):
     desired = {
-        "hbase.master.distributed.log.splitting": "false",
         "hbase.snapshot.master.timeoutMillis": "600000",
         "hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation",
         "hbase.hregion.impl": "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion",

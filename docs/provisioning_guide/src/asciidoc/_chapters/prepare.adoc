@@ -319,7 +319,6 @@ Do the following:
 [cols="40%l,60%l",options="header"]
 |===
 | Attribute                                    | Setting
-| hbase.master.distributed.log.splitting       | false 
 | hbase.coprocessor.region.classes^b^          | org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
 org.apache.hadoop.hbase.coprocessor.AggregateImplementation 
 | hbase.hregion.impl                           | org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion
