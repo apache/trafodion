@@ -1371,6 +1371,7 @@ short CmpSeabaseDDL::updateIndexInfo(
                                      NATable * naTable,
                                      NABoolean isUnique, // TRUE: uniq constr. FALSE: ref constr.
                                      NABoolean noPopulate,
+                                     NABoolean isEnforced,
                                      NABoolean sameSequenceOfCols,
                                      ExeCliInterface *cliInterface)
 {
@@ -1388,6 +1389,10 @@ short CmpSeabaseDDL::updateIndexInfo(
                                      sameSequenceOfCols,
                                      &existingIndexName))
     createIndex = FALSE;
+
+  // if constraint is not to be enforced, then do not create an index.
+  if (createIndex && (NOT isEnforced))
+    return 0;
 
   ComObjectName indexName(createIndex ? uniqueStr : existingIndexName);
   const NAString catalogNamePart = indexName.getCatalogNamePartAsAnsiString();
@@ -8023,6 +8028,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddUniqueConstraint(
                       naTable,
                       TRUE,
                       (CmpCommon::getDefault(TRAF_NO_CONSTR_VALIDATION) == DF_ON),
+                      TRUE,
                       FALSE,
                       &cliInterface))
     {
@@ -8634,6 +8640,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddRIConstraint(
                       ringNaTable,
                       FALSE,
                       (CmpCommon::getDefault(TRAF_NO_CONSTR_VALIDATION) == DF_ON),
+                      constraintNode->isEnforced(),
                       TRUE, // because of the way the data is recorded in the
                             // metadata, the indexes of referencing and referenced
                             // tables need to have their columns in the same

@@ -5,6 +5,9 @@
 >>cqd HIVE_MAX_STRING_LENGTH '20' ;
 
 --- SQL operation complete.
+>>create schema if not exists trafodion.sch007;
+
+--- SQL operation complete.
 >>
 >>obey TEST007(tests);
 >>-- tests for views on hive tables
@@ -26,7 +29,7 @@
 
 --- SQL operation complete.
 >>
->>create view trafodion.sch.vhive1 as select * from thive1;
+>>create view trafodion.sch007.vhive1 as select * from thive1;
 
 --- SQL operation complete.
 >>showddl hive.hive.thive1;
@@ -48,35 +51,35 @@ CREATE EXTERNAL TABLE THIVE1
 
 --- SQL operation complete.
 >>
->>create view trafodion.sch.vhive11 as select * from thive2;
+>>create view trafodion.sch007.vhive11 as select * from thive2;
 
 --- SQL operation complete.
->>create view trafodion.sch.vhive2 as select x.a, y.b from thive1 x, thive2 y
+>>create view trafodion.sch007.vhive2 as select x.a, y.b from thive1 x, thive2 y
 +>  where x.a < 2 and x.b = y.b;
 
 --- SQL operation complete.
->>create view trafodion.sch.vhive3 as select * from trafodion.sch.vhive2;
+>>create view trafodion.sch007.vhive3 as select * from trafodion.sch007.vhive2;
 
 --- SQL operation complete.
 >>
 >>-- view on hive and traf tables
->>drop table if exists trafodion.sch.thbase1;
+>>drop table if exists trafodion.sch007.thbase1;
 
 --- SQL operation complete.
->>create table trafodion.sch.thbase1 (aa int, bb int);
+>>create table trafodion.sch007.thbase1 (aa int, bb int);
 
 --- SQL operation complete.
->>create view trafodion.sch.vhivehbase as select * from 
-+>        trafodion.sch.thbase1, thive2 where a = aa;
+>>create view trafodion.sch007.vhivehbase as select * from 
++>        trafodion.sch007.thbase1, thive2 where a = aa;
 
 --- SQL operation complete.
->>insert into trafodion.sch.thbase1 values (1,2);
+>>insert into trafodion.sch007.thbase1 values (1,2);
 
 --- 1 row(s) inserted.
->>invoke trafodion.sch.vhivehbase;
+>>invoke trafodion.sch007.vhivehbase;
 
--- Definition of Trafodion view TRAFODION.SCH.VHIVEHBASE
--- Definition current  Wed Jan 18 20:20:24 2017
+-- Definition of Trafodion view TRAFODION.SCH007.VHIVEHBASE
+-- Definition current  Fri Jan 20 16:31:37 2017
 
   (
     AA                               INT DEFAULT NULL
@@ -86,7 +89,7 @@ CREATE EXTERNAL TABLE THIVE1
   )
 
 --- SQL operation complete.
->>select * from trafodion.sch.vhivehbase;
+>>select * from trafodion.sch007.vhivehbase;
 
 AA           BB           A            B          
 -----------  -----------  -----------  -----------
@@ -103,7 +106,7 @@ A            B
           1            2
 
 --- 1 row(s) selected.
->>insert into trafodion.sch.vhive1 values (3,4);
+>>insert into trafodion.sch007.vhive1 values (3,4);
 
 --- 1 row(s) inserted.
 >>select * from thive1;
@@ -116,7 +119,7 @@ A            B
 
 --- 2 row(s) selected.
 >>
->>prepare s from select * from trafodion.sch.vhive1;
+>>prepare s from select * from trafodion.sch007.vhive1;
 
 --- SQL command prepared.
 >>explain options 'f' s;
@@ -138,7 +141,7 @@ A            B
 
 --- 2 row(s) selected.
 >>
->>prepare s from select * from trafodion.sch.vhive2;
+>>prepare s from select * from trafodion.sch007.vhive2;
 
 --- SQL command prepared.
 >>explain options 'f' s;
@@ -161,7 +164,7 @@ A            B
 
 --- 1 row(s) selected.
 >>
->>prepare s from select * from trafodion.sch.vhive3;
+>>prepare s from select * from trafodion.sch007.vhive3;
 
 --- SQL command prepared.
 >>explain options 'f' s;
@@ -184,38 +187,38 @@ A            B
 
 --- 1 row(s) selected.
 >>
->>get tables in view trafodion.sch.vhive1;
+>>get tables in view trafodion.sch007.vhive1;
 
-Tables in View SCH.VHIVE1
-=========================
+Tables in View SCH007.VHIVE1
+============================
 
 HIVE.HIVE.THIVE1
 
 --- SQL operation complete.
->>get tables in view trafodion.sch.vhive11;
+>>get tables in view trafodion.sch007.vhive11;
 
-Tables in View SCH.VHIVE11
-==========================
+Tables in View SCH007.VHIVE11
+=============================
 
 HIVE.HIVE.THIVE2
 
 --- SQL operation complete.
 >>
->>get all tables in view trafodion.sch.vhive3;
+>>get all tables in view trafodion.sch007.vhive3;
 
-Tables in View SCH.VHIVE3
-=========================
+Tables in View SCH007.VHIVE3
+============================
 
 HIVE.HIVE.THIVE1
 HIVE.HIVE.THIVE2
 
 --- SQL operation complete.
->>get views in view trafodion.sch.vhive3;
+>>get views in view trafodion.sch007.vhive3;
 
-Views in View SCH.VHIVE3
-========================
+Views in View SCH007.VHIVE3
+===========================
 
-TRAFODION.SCH.VHIVE2
+TRAFODION.SCH007.VHIVE2
 
 --- SQL operation complete.
 >>get views on table hive.hive.thive1;
@@ -223,8 +226,8 @@ TRAFODION.SCH.VHIVE2
 Views on Table _HV_HIVE_.THIVE1
 ===============================
 
-SCH.VHIVE1
-SCH.VHIVE2
+SCH007.VHIVE1
+SCH007.VHIVE2
 
 --- SQL operation complete.
 >>get all views on table hive.hive.thive2;
@@ -232,10 +235,10 @@ SCH.VHIVE2
 Views on Table _HV_HIVE_.THIVE2
 ===============================
 
-SCH.VHIVE11
-SCH.VHIVE2
-SCH.VHIVE3
-SCH.VHIVEHBASE
+SCH007.VHIVE11
+SCH007.VHIVE2
+SCH007.VHIVE3
+SCH007.VHIVEHBASE
 
 --- SQL operation complete.
 >>
@@ -254,9 +257,9 @@ CREATE TABLE THIVE2
 ;
 
 --- SQL operation complete.
->>showddl trafodion.sch.vhive3;
+>>showddl trafodion.sch007.vhive3;
 
-*** ERROR[4082] Object TRAFODION.SCH.VHIVE3 does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SCH007.VHIVE3 does not exist or is inaccessible.
 
 --- SQL operation failed with errors.
 >>get all views on table hive.hive.thive2;
@@ -265,26 +268,26 @@ CREATE TABLE THIVE2
 >>
 >>obey TEST007(error_tests);
 >>
->>create view trafodion.sch.vhive4 as select x.a, y.b from thive1 x, thive1 y;
+>>create view trafodion.sch007.vhive4 as select x.a, y.b from thive1 x, thive1 y;
 
 --- SQL operation complete.
 >>
 >>-- insert not allowed
->>insert into trafodion.sch.vhive4 values (3,4);
+>>insert into trafodion.sch007.vhive4 values (3,4);
 
-*** ERROR[4027] Table or view TRAFODION.SCH.VHIVE4 does not permit insertions.
+*** ERROR[4027] Table or view TRAFODION.SCH007.VHIVE4 does not permit insertions.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>
 >>-- del/upd not allowed
->>delete from trafodion.sch.vhive1;
+>>delete from trafodion.sch007.vhive1;
 
 *** ERROR[4223] Update/Delete on Hive table is not supported in this software version.
 
 *** ERROR[8822] The statement was not prepared.
 
->>update trafodion.sch.vhive1 set b = 1;
+>>update trafodion.sch007.vhive1 set b = 1;
 
 *** ERROR[4223] Update/Delete on Hive table is not supported in this software version.
 
@@ -292,9 +295,9 @@ CREATE TABLE THIVE2
 
 >>
 >>--  traf view is not updatable
->>delete from trafodion.sch.vhive4;
+>>delete from trafodion.sch007.vhive4;
 
-*** ERROR[4028] Table or view TRAFODION.SCH.VHIVE4 is not updatable.
+*** ERROR[4028] Table or view TRAFODION.SCH007.VHIVE4 is not updatable.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -308,7 +311,7 @@ CREATE TABLE THIVE2
 
 >>
 >>-- if underlying hive table is dropped, an error is returned
->>prepare s from select * from trafodion.sch.vhive1;
+>>prepare s from select * from trafodion.sch007.vhive1;
 
 --- SQL command prepared.
 >>execute s;
@@ -327,7 +330,7 @@ A            B
 *** ERROR[8442] Unable to access HDFS interface. Call to ExpLOBInterfaceDataModCheck returned error LOB_DATA_FILE_NOT_FOUND_ERROR(554). Error detail 0.
 
 --- 0 row(s) selected.
->>select * from trafodion.sch.vhive1;
+>>select * from trafodion.sch007.vhive1;
 
 *** ERROR[1388] Object HIVE.HIVE.THIVE1 does not exist in hive metadata.
 
@@ -343,7 +346,7 @@ A            B
 >>sh regrhive.ksh -f TEST007_junk;
 >>sh echo "create table thive3(a int, b int);" > TEST007_junk;
 >>sh regrhive.ksh -f TEST007_junk;
->>create view trafodion.sch.vhive6 as select * from hive.hive.thive3;
+>>create view trafodion.sch007.vhive6 as select * from hive.hive.thive3;
 
 *** WARNING[1071] View usage information for the following hive tables could not be set. Make sure that an external table either already exists or implicit creation has not been disabled. Hive tables: HIVE.HIVE.THIVE3
 
@@ -363,7 +366,7 @@ CREATE TABLE THIVE3
 >>get all views on table hive.hive.thive3;
 
 --- SQL operation complete.
->>get all tables in view trafodion.sch.vhive6;
+>>get all tables in view trafodion.sch007.vhive6;
 
 --- SQL operation complete.
 >>
