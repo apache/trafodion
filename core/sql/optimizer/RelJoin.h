@@ -287,6 +287,8 @@ public:
   { return nullInstantiatedForRightJoinOutput_; }
   const ValueIdList & nullInstantiatedForRightJoinOutput() const
   { return nullInstantiatedForRightJoinOutput_; }
+  ValueId addNullInstIndicatorVar(BindWA *bindWA,
+                                  ItemExpr *indicatorVal = NULL);
 
 //++MV
   // Used for translating the required sort key to the right

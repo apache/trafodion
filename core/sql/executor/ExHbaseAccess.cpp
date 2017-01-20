@@ -269,6 +269,9 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
 	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.mergeInsertTuppIndex_), 0);
       if (hbaseAccessTdb.mergeInsertRowIdTuppIndex_ > 0)
 	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.mergeInsertRowIdTuppIndex_), 0);
+      if (hbaseAccessTdb.mergeIUDIndicatorTuppIndex_ > 0)
+	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.mergeIUDIndicatorTuppIndex_), 0);
+
       if (hbaseAccessTdb.rowIdTuppIndex_ > 0)      
 	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.rowIdTuppIndex_), 0);
       if (hbaseAccessTdb.rowIdAsciiTuppIndex_ > 0)      

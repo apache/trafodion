@@ -452,6 +452,7 @@ public:
 		    const UInt16 updateTuppIndex,
 		    const UInt16 mergeInsertTuppIndex,
 		    const UInt16 mergeInsertRowIdTuppIndex,
+		    const UInt16 mergeIUDIndicatorTuppIndex,
 		    const UInt16 returnedFetchedTuppIndex,
 		    const UInt16 returnedUpdatedTuppIndex,
 		    
@@ -950,6 +951,7 @@ public:
   UInt16 updateTuppIndex_;
   UInt16 mergeInsertTuppIndex_;
   UInt16 mergeInsertRowIdTuppIndex_;
+  UInt16 mergeIUDIndicatorTuppIndex_;
   UInt16 returnedFetchedTuppIndex_;
   UInt16 returnedUpdatedTuppIndex_;
 

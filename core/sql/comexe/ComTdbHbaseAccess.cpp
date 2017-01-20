@@ -66,6 +66,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
 				     const UInt16 updateTuppIndex,
 				     const UInt16 mergeInsertTuppIndex,
 				     const UInt16 mergeInsertRowIdTuppIndex,
+				     const UInt16 mergeIUDIndicatorTuppIndex,
 				     const UInt16 returnedFetchedTuppIndex,
 				     const UInt16 returnedUpdatedTuppIndex,
 
@@ -156,6 +157,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   updateTuppIndex_(updateTuppIndex),
   mergeInsertTuppIndex_(mergeInsertTuppIndex),
   mergeInsertRowIdTuppIndex_(mergeInsertRowIdTuppIndex),
+  mergeIUDIndicatorTuppIndex_(mergeIUDIndicatorTuppIndex),
   returnedFetchedTuppIndex_(returnedFetchedTuppIndex),
   returnedUpdatedTuppIndex_(returnedUpdatedTuppIndex),
 
@@ -268,6 +270,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   updateTuppIndex_(0),
   mergeInsertTuppIndex_(0),
   mergeInsertRowIdTuppIndex_(0),
+  mergeIUDIndicatorTuppIndex_(0),
   returnedFetchedTuppIndex_(0),
   returnedUpdatedTuppIndex_(0),
 
@@ -1182,7 +1185,7 @@ ComTdbHbaseCoProcAccess::ComTdbHbaseCoProcAccess(
 		      projExpr,
 		      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 		      0, projRowLen, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		      0, projTuppIndex, 0, 0, 0, 0, 0, 0, returnedTuppIndex, 0, 0, 0, 0, 0, 0,
+		      0, projTuppIndex, 0, 0, 0, 0, 0, 0, 0, returnedTuppIndex, 0, 0, 0, 0, 0, 0,
 		      NULL, NULL, listOfColNames, NULL, NULL, 
 		      NULL, NULL,
 		      workCriDesc,
