@@ -1112,6 +1112,8 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   short retcode = 0;
   short rc;
   Lng32 errorRowCount = 0;
+  int len;
+  ComDiagsArea *diagsArea;
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -1252,7 +1254,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       {
          Lng32 cliError = 0;
         Lng32 intParam1 = -retcode;
-        ComDiagsArea * diagsArea = NULL;
+        diagsArea = NULL;
         ExRaiseSqlError(getHeap(), &diagsArea,
                           (ExeErrorCode)(8448), NULL, &intParam1,
                           &cliError, NULL,
@@ -1416,7 +1418,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
               masterGlob->getStatement()->getContext()->setSqlParserFlags(0x20000);
             }
           }
-        ComDiagsArea *diagsArea = getDiagsArea();
+        diagsArea = getDiagsArea();
 
         cliRC = cliInterface()->executeImmediate(loadQuery,
             NULL,
@@ -1443,10 +1445,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
               errorRowCount = cond->getOptionalInteger(0);
               diagsArea->deleteWarning(entryNumber);
            }
-           // Need to clear the diags Area to get the correct rowsAffected for the LOAD COMPLETE command
-           // Hence, we might lose any other warnings created at the time of loading like error during
-           // logging error rows
-           diagsArea->clear();
+           diagsArea->setRowCount(0);
         }
         if (rowsAffected_ == 0)
           step_ = LOAD_END_;
@@ -1528,25 +1527,23 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           strcat(clQuery, ")");
         strcat(clQuery, ";");
 
-      cliRC = cliInterface()->executeImmediate(clQuery, NULL,NULL,TRUE,NULL,TRUE);
+      cliRC = cliInterface()->executeImmediate(clQuery, NULL,NULL,TRUE,NULL,TRUE, getDiagsArea());
 
       NADELETEBASIC(clQuery, getMyHeap());
       clQuery = NULL;
-
+      if (cliRC < 0)
+         rowsAffected_ = 0;
+      sprintf(statusMsgBuf_,      "       Rows Loaded:    %ld %c",rowsAffected_, '\n' );
+      len = strlen(statusMsgBuf_);
       if (cliRC < 0)
       {
         rowsAffected_ = 0;
         cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        setEndStatusMsg(" COMPLETION", len, TRUE);
         step_ = LOAD_END_ERROR_;
         break;
       }
       cliRC = restoreCQD("TRAF_LOAD_TAKE_SNAPSHOT");
-      if (cliRC < 0)
-      {
-        step_ = LOAD_END_ERROR_;
-        break;
-      }
-
       if (hblTdb().getRebuildIndexes() || hblTdb().getHasUniqueIndexes())
         step_ = POPULATE_INDEXES_;
       else if (hblTdb().getUpdateStats())
@@ -1554,7 +1551,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       else
         step_ = LOAD_END_;
 
-      setEndStatusMsg(" COMPLETION", 0, TRUE);
+      setEndStatusMsg(" COMPLETION", len, TRUE);
     }
     break;
 
@@ -1593,9 +1590,9 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         break;
       }
 
-         if (hblTdb().getUpdateStats())
-           step_ = UPDATE_STATS_;
-         else
+      if (hblTdb().getUpdateStats())
+         step_ = UPDATE_STATS_;
+      else
         step_ = LOAD_END_;
 
         setEndStatusMsg(" POPULATE INDEXES", 0, TRUE);
@@ -1704,7 +1701,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       up_entry->upState.setMatchNo(0);
       up_entry->upState.status = ex_queue::Q_NO_DATA;
 
-      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+      diagsArea = up_entry->getDiagsArea();
 
       if (diagsArea == NULL)
         diagsArea = ComDiagsArea::allocate(getMyHeap());

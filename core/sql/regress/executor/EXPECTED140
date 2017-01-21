@@ -133,6 +133,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 21:58:01.272
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 21:58:29.607
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:28.335
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 21:58:29.608
+       Rows Loaded:    2750311 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 21:58:30.463
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.855
 

@@ -215,6 +215,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:53:25.734
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:53:25.800
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.065
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:53:25.800
+       Rows Loaded:    5 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:53:26.692
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.892
 
@@ -243,6 +244,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:53:27.614
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:53:27.678
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.064
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:53:27.678
+       Rows Loaded:    5 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:53:27.902
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.224
 
@@ -273,6 +275,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:53:28.894
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:53:29.781
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.113
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:53:29.782
+       Rows Loaded:    5 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:53:29.592
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.585
 
@@ -308,6 +311,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:53:36.873
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:53:36.947
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.073
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:53:36.947
+       Rows Loaded:    5 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:53:37.322
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.376
 
@@ -485,6 +489,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:54:22.434
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:54:28.141
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:05.707
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:54:28.141
+       Rows Loaded:    5000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:54:28.602
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.461
 
@@ -571,6 +576,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:54:30.634
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:54:31.365
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.731
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:54:31.365
+       Rows Loaded:    5000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:54:31.702
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.337
 
@@ -676,6 +682,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:54:35.245
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:54:36.722
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:01.477
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:54:36.722
+       Rows Loaded:    5000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:54:37.692
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.970
 
@@ -784,6 +791,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:54:42.235
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:54:45.254
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:02.790
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:54:45.255
+       Rows Loaded:    5000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:54:46.273
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.248
 
@@ -1300,6 +1308,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:56:43.375
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:56:48.504
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:04.675
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:56:48.504
+       Rows Loaded:    5000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:56:49.912
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.862
 
@@ -1348,6 +1357,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:57:07.143
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:57:09.535
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:02.391
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:57:09.535
+       Rows Loaded:    1000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:57:11.123
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.588
 Task:  POPULATE INDEX  Status: Started    Time: 2016-12-11 01:57:11.123
@@ -1403,6 +1413,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:57:55.304
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:57:59.470
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:04.166
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:57:59.470
+       Rows Loaded:    5000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:58:00.723
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.253
 Task:  POPULATE INDEX  Status: Started    Time: 2016-12-11 01:58:00.723
@@ -1586,6 +1597,7 @@ Task:  LOADING DATA    Status: Started    Time: 2016-12-11 01:58:54.934
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-11 01:58:57.258
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:02.324
 Task:  COMPLETION      Status: Started    Time: 2016-12-11 01:58:57.258
+       Rows Loaded:    5000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-11 01:58:58.433
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.175
 
