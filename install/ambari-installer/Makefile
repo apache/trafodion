@@ -36,7 +36,7 @@ all: rpmbuild
 # correct trafodion version for a given HDP stack
 REPO_VER= 2.1
 
-$(SOURCEDIR)/ambari_rpm.tar.gz: mpack-install/LICENSE repofiles
+$(SOURCEDIR)/ambari_rpm.tar.gz: mpack-install/LICENSE repofiles traf-mpack/mpack.json
 	rm -rf $(RPMROOT)
 	mkdir -p $(SOURCEDIR)
 	tar czf $@ traf-mpack mpack-install
@@ -49,6 +49,9 @@ repofiles:
 	   sed -e "s#REPLACE_WITH_RH6_REPO_URL#$(REPO_URL)/RH6/$${v}#" repo.template > $${rdir}/repoinfo.xml ; \
 	   echo $${rdir}/repoinfo.xml ; \
 	done
+
+traf-mpack/mpack.json: mpack.json
+	sed -e "s#MPACK_VERSION#$(TRAFODION_VER)#" $? > $@
 
 mpack-install/LICENSE: ../../licenses/LICENSE-install
 	cp -f $? $@
@@ -77,3 +80,4 @@ clean:
 	rm -rf $(RPMROOT)
 	rm -rf mpack-install/LICENSE
 	rm -rf traf-mpack/custom-services/TRAFODION/*/repos
+	rm -rf traf-mpack/mpack.json

@@ -26,8 +26,11 @@ rm -f ${tf}*
 /usr/bin/ssh-keygen -q -t rsa -N '' -f $tf
 
 instloc="$1"
+mpack="$2"
+vers="$3"
+pkgcnt="$4" #RPM package count
 
-config="${instloc}/traf-mpack/common-services/TRAFODION/2.1/configuration/trafodion-env.xml"
+config="${instloc}/${mpack}/common-services/TRAFODION/2.1/configuration/trafodion-env.xml"
 
 chmod 0600 $config  # protect key
 sed -i -e "/TRAFODION-GENERATED-SSH-KEY/r $tf" $config # add key to config properties
@@ -35,13 +38,19 @@ sed -i -e "/TRAFODION-GENERATED-SSH-KEY/r $tf" $config # add key to config prope
 rm -f ${tf}*
 
 # tar up the mpack, included generated key
-tball="${instloc}/traf-mpack.tar.gz"
+tball="${instloc}/${mpack}-${vers}.tar.gz"
 
 cd "${instloc}"
-tar czf "$tball" traf-mpack
+tar czf "$tball" ${mpack}
 
 # install ambari mpack
-ambari-server install-mpack --verbose --mpack="$tball"
+if (( pkgcnt > 1 ))
+then
+  cmd="upgrade-mpack"
+else
+  cmd="install-mpack"
+fi
+ambari-server $cmd --verbose --mpack="$tball"
 ret=$?
 
 exit $ret
