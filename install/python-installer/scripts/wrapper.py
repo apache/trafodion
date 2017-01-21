@@ -29,7 +29,7 @@ from glob import glob
 from threading import Thread
 from common import err_m, run_cmd, time_elapse, get_logger, Remote, \
                    ParseJson, INSTALLER_LOC, TMP_DIR, SCRCFG_FILE, \
-                   CONFIG_DIR, SCRIPTS_DIR, TEMPLATES_DIR
+                   CONFIG_DIR, SCRIPTS_DIR
 
 class RemoteRun(Remote):
     """ run commands or scripts remotely using ssh """
@@ -44,7 +44,7 @@ class RemoteRun(Remote):
         self.execute('mkdir -p %s' % TMP_DIR)
 
         # copy all needed files to remote host
-        all_files = [CONFIG_DIR, SCRIPTS_DIR, TEMPLATES_DIR]
+        all_files = [CONFIG_DIR, SCRIPTS_DIR]
 
         self.copy(all_files, remote_folder=TMP_DIR)
 

@@ -59,8 +59,6 @@ def run():
     KEY_FILE = '/tmp/id_rsa'
     AUTH_KEY_FILE = '%s/.ssh/authorized_keys' % TRAF_USER_DIR
     SSH_CFG_FILE = '%s/.ssh/config' % TRAF_USER_DIR
-    BASHRC_TEMPLATE = '%s/sqf/sysinstall/home/trafodion/.bashrc' % TRAF_HOME
-    BASHRC_FILE = '%s/.bashrc' % TRAF_USER_DIR
     ULIMITS_FILE = '/etc/security/limits.d/%s.conf' % TRAF_USER
     HSPERFDATA_FILE = '/tmp/hsperfdata_trafodion'
 
@@ -70,9 +68,6 @@ def run():
 
     if not cmd_output('getent passwd %s' % TRAF_USER):
         run_cmd('useradd --shell /bin/bash -m %s -g %s --home %s --password "$(openssl passwd %s)"' % (TRAF_USER, TRAF_GROUP, TRAF_USER_DIR, TRAF_PWD))
-        # copy bashrc to trafodion's home only if user doesn't exist
-        run_cmd('cp %s %s' % (BASHRC_TEMPLATE, BASHRC_FILE))
-        run_cmd('chown -R %s:%s %s*' % (TRAF_USER, TRAF_GROUP, BASHRC_FILE))
     elif not os.path.exists(TRAF_USER_DIR):
         run_cmd('mkdir -p %s' % TRAF_USER_DIR)
         run_cmd('chmod 700 %s' % TRAF_USER_DIR)
