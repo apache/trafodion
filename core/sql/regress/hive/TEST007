@@ -34,15 +34,16 @@ exit;
 ?section setup
 set schema hive.hive;
 cqd HIVE_MAX_STRING_LENGTH '20' ;
+create schema if not exists trafodion.sch007;
 
 ?section clean_up
-drop view trafodion.sch.vhive1 cascade;
-drop view trafodion.sch.vhive11 cascade;
-drop view trafodion.sch.vhive2 cascade;
-drop view trafodion.sch.vhive3 cascade;
-drop view trafodion.sch.vhive4 cascade;
-drop view trafodion.sch.vhive5 cascade;
-drop view trafodion.sch.vhive6 cascade;
+drop view trafodion.sch007.vhive1 cascade;
+drop view trafodion.sch007.vhive11 cascade;
+drop view trafodion.sch007.vhive2 cascade;
+drop view trafodion.sch007.vhive3 cascade;
+drop view trafodion.sch007.vhive4 cascade;
+drop view trafodion.sch007.vhive5 cascade;
+drop view trafodion.sch007.vhive6 cascade;
 drop external table thive1 for hive.hive.thive1 cascade;
 cleanup table trafodion."_HV_HIVE_".thive1;
 drop external table thive2 for hive.hive.thive2 cascade;
@@ -53,7 +54,8 @@ sh regrhive.ksh -f TEST007_junk;
 drop external table thive3 for hive.hive.thive3;
 sh echo "drop table thive3;" > TEST007_junk;
 sh regrhive.ksh -f TEST007_junk;
-drop table if exists trafodion.sch.thbase1 cascade;
+drop table if exists trafodion.sch007.thbase1 cascade;
+drop schema trafodion.sch007 cascade;
 
 ?section tests
 -- tests for views on hive tables
@@ -73,76 +75,76 @@ sh regrhive.ksh -f TEST007_junk;
 
 create external table thive2 for hive.hive.thive2;
 
-create view trafodion.sch.vhive1 as select * from thive1;
+create view trafodion.sch007.vhive1 as select * from thive1;
 showddl hive.hive.thive1;
 
-create view trafodion.sch.vhive11 as select * from thive2;
-create view trafodion.sch.vhive2 as select x.a, y.b from thive1 x, thive2 y
+create view trafodion.sch007.vhive11 as select * from thive2;
+create view trafodion.sch007.vhive2 as select x.a, y.b from thive1 x, thive2 y
   where x.a < 2 and x.b = y.b;
-create view trafodion.sch.vhive3 as select * from trafodion.sch.vhive2;
+create view trafodion.sch007.vhive3 as select * from trafodion.sch007.vhive2;
 
 -- view on hive and traf tables
-drop table if exists trafodion.sch.thbase1;
-create table trafodion.sch.thbase1 (aa int, bb int);
-create view trafodion.sch.vhivehbase as select * from 
-        trafodion.sch.thbase1, thive2 where a = aa;
-insert into trafodion.sch.thbase1 values (1,2);
-invoke trafodion.sch.vhivehbase;
-select * from trafodion.sch.vhivehbase;
+drop table if exists trafodion.sch007.thbase1;
+create table trafodion.sch007.thbase1 (aa int, bb int);
+create view trafodion.sch007.vhivehbase as select * from 
+        trafodion.sch007.thbase1, thive2 where a = aa;
+insert into trafodion.sch007.thbase1 values (1,2);
+invoke trafodion.sch007.vhivehbase;
+select * from trafodion.sch007.vhivehbase;
 
 select * from thive1;
-insert into trafodion.sch.vhive1 values (3,4);
+insert into trafodion.sch007.vhive1 values (3,4);
 select * from thive1;
 
-prepare s from select * from trafodion.sch.vhive1;
+prepare s from select * from trafodion.sch007.vhive1;
 explain options 'f' s;
 execute s;
 
-prepare s from select * from trafodion.sch.vhive2;
+prepare s from select * from trafodion.sch007.vhive2;
 explain options 'f' s;
 execute s;
 
-prepare s from select * from trafodion.sch.vhive3;
+prepare s from select * from trafodion.sch007.vhive3;
 explain options 'f' s;
 execute s;
 
-get tables in view trafodion.sch.vhive1;
-get tables in view trafodion.sch.vhive11;
+get tables in view trafodion.sch007.vhive1;
+get tables in view trafodion.sch007.vhive11;
 
-get all tables in view trafodion.sch.vhive3;
-get views in view trafodion.sch.vhive3;
+get all tables in view trafodion.sch007.vhive3;
+get views in view trafodion.sch007.vhive3;
 get views on table hive.hive.thive1;
 get all views on table hive.hive.thive2;
 
 drop external table thive2 for hive.hive.thive2 cascade;
 showddl hive.hive.thive2;
-showddl trafodion.sch.vhive3;
+showddl trafodion.sch007.vhive3;
 get all views on table hive.hive.thive2;
 
 ?section error_tests
 
-create view trafodion.sch.vhive4 as select x.a, y.b from thive1 x, thive1 y;
+create view trafodion.sch007.vhive4 as select x.a, y.b from thive1 x, thive1 y;
 
 -- insert not allowed
-insert into trafodion.sch.vhive4 values (3,4);
+insert into trafodion.sch007.vhive4 values (3,4);
 
 -- del/upd not allowed
-delete from trafodion.sch.vhive1;
-update trafodion.sch.vhive1 set b = 1;
+delete from trafodion.sch007.vhive1;
+update trafodion.sch007.vhive1 set b = 1;
 
 --  traf view is not updatable
-delete from trafodion.sch.vhive4;
+delete from trafodion.sch007.vhive4;
 
 -- traf view must be in traf cat/sch
 create view vhive5 as select * from thive1;
 
 -- if underlying hive table is dropped, an error is returned
-prepare s from select * from trafodion.sch.vhive1;
+prepare s from select * from trafodion.sch007.vhive1;
 execute s;
 sh echo "drop table thive1;" > TEST007_junk;
 sh regrhive.ksh -f TEST007_junk;
 execute s;
-select * from trafodion.sch.vhive1;
+select * from trafodion.sch007.vhive1;
 
 -- if external table creation has been disabled, then view usage will
 -- not available
@@ -151,8 +153,8 @@ sh echo "drop table thive3;" > TEST007_junk;
 sh regrhive.ksh -f TEST007_junk;
 sh echo "create table thive3(a int, b int);" > TEST007_junk;
 sh regrhive.ksh -f TEST007_junk;
-create view trafodion.sch.vhive6 as select * from hive.hive.thive3;
+create view trafodion.sch007.vhive6 as select * from hive.hive.thive3;
 showddl hive.hive.thive3;
 get all views on table hive.hive.thive3;
-get all tables in view trafodion.sch.vhive6;
+get all tables in view trafodion.sch007.vhive6;
 

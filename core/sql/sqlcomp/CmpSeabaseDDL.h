@@ -950,6 +950,7 @@ protected:
 			NATable * naTable,
 			NABoolean isUnique, // TRUE: uniq constr. FALSE: ref constr.
 			NABoolean noPopulate, // TRUE, dont populate index
+                        NABoolean isEnforced, // TRUE: contraint is enforced
                         NABoolean sameSequenceOfCols, // FALSE, allow "similar" indexes
 			ExeCliInterface *cliInterface);
 

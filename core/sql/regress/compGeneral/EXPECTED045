@@ -519,7 +519,7 @@ SCAN TEMP                                          2
                10436
                10436
 
---- SQL operation complete.
+--- 2 row(s) selected.
 >>-- execute a second time
 >>execute s using 2;
 
@@ -529,7 +529,7 @@ SCAN TEMP                                          2
                10436
                10436
 
---- SQL operation complete.
+--- 2 row(s) selected.
 >>
 >>-- prepare a second time, so far not using query cache
 >>prepare s from
@@ -557,7 +557,7 @@ SCAN TEMP                                          2
                10435
                10435
 
---- SQL operation complete.
+--- 2 row(s) selected.
 >>-- execute a second time
 >>execute s using 4;
 
@@ -567,7 +567,7 @@ SCAN TEMP                                          2
                10437
                10437
 
---- SQL operation complete.
+--- 2 row(s) selected.
 >>
 >>-- test subquery unnesting
 >>cqd subquery_unnesting 'debug';
@@ -648,7 +648,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>
 >>--QID: 2
@@ -728,7 +728,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>
 >>--QID: 4
@@ -861,7 +861,7 @@ SCAN TEMP                                          6
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>
 >>--QID: 11
@@ -959,7 +959,7 @@ SCAN TEMP                                          4
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>--QID: 14a
 >>
@@ -1166,7 +1166,7 @@ CHANNEL  I_BRAND_ID   I_CLASS_ID   I_CATEGORY_ID  SUM_SALES             NUMBER_S
 
 ?                  ?            ?              ?                     ?                     ?
 
---- SQL operation complete.
+--- 1 row(s) selected.
 >>
 >>--QID: 23a
 >>
@@ -1251,7 +1251,7 @@ SCAN TEMP                                          2
 
                    ?
 
---- SQL operation complete.
+--- 1 row(s) selected.
 >>
 >>--QID: 23b
 >>
@@ -1337,7 +1337,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>--QID: 24a
 >>
@@ -1408,7 +1408,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>--QID: 24b
 >>
@@ -1479,7 +1479,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>--QID: 30
 >>
@@ -1528,7 +1528,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>--QID: 31
 >>
@@ -1594,7 +1594,7 @@ SCAN TEMP                                          2
 --- 0 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>obey TEST045(clnup);
 >>
 >>drop schema T045_CSES cascade;

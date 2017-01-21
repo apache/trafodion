@@ -1057,50 +1057,50 @@ DNO                   DNAME                 ENO          DNO
 +>w2 as (select * from w1)
 +>select * from w2;
 
-C1 C2
-----------
+C1           C2         
+-----------  -----------
 
- 1 1
- 2 2
- 3 3
- 4 4
- 5 5
+          1            1
+          2            2
+          3            3
+          4            4
+          5            5
 
---- SQL operation complete.
+--- 5 row(s) selected.
 >>
 >>with w1 as (select c1, c2 from witht1),
 +>w2 as (select c1,c2 from witht2)
 +>select * from w1 , w2 where w1.c1 = w2.c1;
 
-C1 C2 C1 C2
-----------
+C1           C2           C1           C2         
+-----------  -----------  -----------  -----------
 
- 3 3 3 3
- 4 4 4 4
- 5 5 5 5
+          3            3            3            3
+          4            4            4            4
+          5            5            5            5
 
---- SQL operation complete.
+--- 3 row(s) selected.
 >>
 >>with w1 as (select * from witht1)
 +>select * from w1
 +>union all
 +>select * from w1;
 
-C1 C2
-----------
+C1           C2         
+-----------  -----------
 
- 1 1
- 1 1
- 2 2
- 2 2
- 3 3
- 3 3
- 4 4
- 4 4
- 5 5
- 5 5
+          1            1
+          1            1
+          2            2
+          2            2
+          3            3
+          3            3
+          4            4
+          4            4
+          5            5
+          5            5
 
---- SQL operation complete.
+--- 10 row(s) selected.
 >>
 >>with recursive w1 as (select c1, c2 from witht1 union all select origin.c1 , origin.c2 from w1 join t1 origin on origin.c1 = w1.c1 );
 
