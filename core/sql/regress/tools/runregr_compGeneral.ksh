@@ -296,7 +296,7 @@ prettyfiles=
 # TEST043 - failure w/ VS2003 SOL 10-070227-2886
 # TEST062 fails because of non-deterministic card estimation, will be 
 #   enabled when we fix it
-skipTheseTests="TEST030 TEST044 TEST050 TEST065 TESTNIST"
+skipTheseTests="TEST030 TEST042 TEST044 TEST050 TEST065 TESTNIST"
 
 # skip these tests for SQLMX and SQLMP tables on NSK platform
 
