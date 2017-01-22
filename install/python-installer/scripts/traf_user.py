@@ -42,7 +42,6 @@ def run():
         hadoop_type = 'apache'
 
     TRAF_USER = dbcfgs['traf_user']
-    TRAF_PWD = dbcfgs['traf_pwd']
     TRAF_GROUP = TRAF_USER
     HOME_DIR = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2').strip()
     # customize trafodion home dir
@@ -67,6 +66,7 @@ def run():
         run_cmd('groupadd %s > /dev/null 2>&1' % TRAF_GROUP)
 
     if not cmd_output('getent passwd %s' % TRAF_USER):
+        TRAF_PWD = dbcfgs['traf_pwd']
         run_cmd('useradd --shell /bin/bash -m %s -g %s --home %s --password "$(openssl passwd %s)"' % (TRAF_USER, TRAF_GROUP, TRAF_USER_DIR, TRAF_PWD))
     elif not os.path.exists(TRAF_USER_DIR):
         run_cmd('mkdir -p %s' % TRAF_USER_DIR)
@@ -103,8 +103,9 @@ export HADOOP_TYPE="%s"
 export ENABLE_HA="%s"
 export ZOOKEEPER_NODES="%s"
 export ZOOKEEPER_PORT="%s"
+export SECURE_HADOOP="%s"
 """ % (TRAF_HOME, dbcfgs['java_home'], ' '.join(nodes), ' -w ' + ' -w '.join(nodes),
-       str(len(nodes)), hadoop_type, dbcfgs['enable_ha'], zk_nodes, zk_port)
+       str(len(nodes)), hadoop_type, dbcfgs['enable_ha'], zk_nodes, zk_port, dbcfgs['secure_hadoop'])
 
     run_cmd('mkdir -p %s' % TRAFODION_CFG_DIR)
     write_file(TRAFODION_CFG_FILE, trafodion_config)
