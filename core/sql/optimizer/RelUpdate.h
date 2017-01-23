@@ -53,16 +53,22 @@
 // The following are logical operators
 class GenericUpdate;
 class Insert;
-class Update;
-class Delete;
 class LeafInsert;
+class Update;
+class MergeUpdate;
+class Delete;
+class MergeDelete;
 class LeafDelete;
+class HbaseDelete;
+class HiveInsert;
+class HbaseInsert;
+class HBaseBulkLoadPrep;
+
 
 // The following are physical operators
 class InsertCursor;
-
 class UpdateCursor;
-
+class HbaseUpdate;
 class DeleteCursor;
 
 // -----------------------------------------------------------------------
@@ -326,13 +332,26 @@ GenericUpdate(const CorrName &name,
   RelExpr *bindNode(BindWA *bindWA);
 
   // Index Maintenance in the Binder
-  RelExpr *createIMTree(BindWA *bindWA, UpdateColumns *updatedColumns, NABoolean useInternalSyskey);
-  RelExpr *createIMNodes(BindWA *bindWA, NABoolean useInternalSyskey, IndexDesc *index);
-  RelExpr *createUndoTree(BindWA *bindWA, UpdateColumns *updatedColumns, NABoolean useInternalSyskey, NABoolean isImOrRiPresent, NABoolean isOrMvPresent, TriggersTempTable *tempTableObj);
-  RelExpr *createUndoNodes(BindWA *bindWA, NABoolean useInternalSyskey, IndexDesc *index);
+  RelExpr *createIMTree(BindWA *bindWA,
+                        UpdateColumns *updatedColumns,
+                        NABoolean useInternalSyskey);
+  RelExpr *createIMNodes(BindWA *bindWA,
+                         NABoolean useInternalSyskey,
+                         IndexDesc *index,
+                         const ValueId &mergeIUDIndicator);
+  RelExpr *createUndoTree(BindWA *bindWA,
+                          UpdateColumns *updatedColumns,
+                          NABoolean useInternalSyskey,
+                          NABoolean isImOrRiPresent,
+                          NABoolean isOrMvPresent,
+                          TriggersTempTable *tempTableObj);
+  RelExpr *createUndoNodes(BindWA *bindWA,
+                           NABoolean useInternalSyskey,
+                           IndexDesc *index);
   
   RelExpr *createUndoIUDLog(BindWA *bindWA) ;
-  RelExpr *createUndoTempTable(TriggersTempTable *tempTableObj,BindWA *bindWA);
+  RelExpr *createUndoTempTable(TriggersTempTable *tempTableObj,
+                               BindWA *bindWA);
   void nonvirtual_placeholder_func1();
   void nonvirtual_placeholder_func2();
 
@@ -541,6 +560,14 @@ GenericUpdate(const CorrName &name,
   inline void setPreconditionTree(ItemExpr *pc) { preconditionTree_ = pc; }
   inline void setPrecondition(const ValueIdSet pc)
            { precondition_ = pc; exprsInDerivedClasses_ += precondition_; }
+  inline const ValueId & getProducedMergeIUDIndicator() const
+                                     { return producedMergeIUDIndicator_; }
+  inline void setProducedMergeIUDIndicator(const ValueId &v)
+                                        { producedMergeIUDIndicator_ = v; }
+  inline const ValueId & getReferencedMergeIUDIndicator() const
+                                   { return referencedMergeIUDIndicator_; }
+  inline void setReferencedMergeIUDIndicator(const ValueId &v)
+                                      { referencedMergeIUDIndicator_ = v; }
 
   virtual ItemExpr * insertValues() { return NULL;}
 
@@ -934,7 +961,28 @@ private:
   // LeafDelete (IM). Only insert/delete if TRUE
   ItemExpr *preconditionTree_;
   ValueIdSet precondition_;
- 
+
+  // For upsert or merge we need an indicator whether the
+  // action for a particular row is an insert, update or
+  // delete. This ValueId is either NULL_VALUE_ID (meaning
+  // no merge or upsert) or it is an expression evaluating
+  // to a CHAR(1) CHARACTER SET ISO88591 with these values:
+  //   I  this row is being inserted
+  //   U  this row is being updated
+  //   D  this row is being deleted
+  // When we inline index maintenance operations, we generate
+  // a tree for an update. This indicator can be used at
+  // runtime to suppress index deletion for inserts and to
+  // suppress index inserts for deletion. Similar actions
+  // can be taken for other inlined code like RI constraints,
+  // triggers or MVs (once supported).
+  ValueId producedMergeIUDIndicator_;
+
+  // the above variable is used at the producer side, the
+  // actual MERGE or Upsert statement. However, we also need
+  // to remember it on the consumer side, like an IM insert
+  // or delete, this is done here:
+  ValueId referencedMergeIUDIndicator_;
 
 };
 
@@ -1407,6 +1455,10 @@ public:
 
   MergeUpdate(const CorrName &name,
 	      TableDesc *tabId,
+              // This is a problem, we shouldn't have two classes
+              // that share the same OperatorTypeEnum value, but
+              // REL_UNARY_UPDATE is also used by the Update class
+              // above.
 	      OperatorTypeEnum otype = REL_UNARY_UPDATE,
 	      RelExpr *child = NULL,
 	      ItemExpr *setExpr = NULL,
@@ -1566,6 +1618,10 @@ public:
 
   MergeDelete(const CorrName &name,
 	      TableDesc *tabId,
+              // This is a problem, we shouldn't have two classes
+              // that share the same OperatorTypeEnum value, but
+              // REL_UNARY_DELETE is also used by the Delete class
+              // above.
 	      OperatorTypeEnum otype = REL_UNARY_DELETE,
 	      RelExpr *child = NULL,
 	      ItemExpr *insertCols = NULL,

@@ -2402,6 +2402,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	    char * fetchedDataPtr = NULL;
 	    char * updatedDataPtr = NULL;
+	    char * mergeIUDIndicatorDataPtr = NULL;
 	    if (tcb_->returnFetchExpr())
 	      {
 		exprRetCode =
@@ -2414,11 +2415,18 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		fetchedDataPtr = up_entry->getAtp()->getTupp(tcb_->hbaseAccessTdb().returnedFetchedTuppIndex_).getDataPointer();
 		
 	      }
-
+	    if (tcb_->hbaseAccessTdb().mergeIUDIndicatorTuppIndex_ > 0)
+	      mergeIUDIndicatorDataPtr = 
+		tcb_->workAtp_->
+		getTupp(tcb_->hbaseAccessTdb().mergeIUDIndicatorTuppIndex_).
+		getDataPointer();
+	    
 	    if (rowUpdated_)
 	      {
 		if (tcb_->returnUpdateExpr())
 		  {
+		    if (mergeIUDIndicatorDataPtr)
+		      *mergeIUDIndicatorDataPtr = 'U';
 		    exprRetCode =
 		      tcb_->returnUpdateExpr()->eval(up_entry->getAtp(), tcb_->workAtp_);
 		    if (exprRetCode == ex_expr::EXPR_ERROR)
@@ -2432,6 +2440,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	      }
 	    else
 	      {
+		if (mergeIUDIndicatorDataPtr)
+		  *mergeIUDIndicatorDataPtr = 'I';
 		if (tcb_->returnMergeInsertExpr())
 		  {
 		    exprRetCode =
@@ -4035,12 +4045,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  break;
 	case SETUP_UMD:
 	  {
-	    rowIds_.clear();
-	    retcode = setupUniqueKeyAndCols(FALSE);
-	    if (retcode == -1) {
-		step_ = HANDLE_ERROR;
-		break;
-	    }
             rc = evalInsDelPreCondExpr();
             if (rc == -1) {
                 step_ = HANDLE_ERROR;
@@ -4050,6 +4054,12 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                step_ = NEXT_ROW;
                break;
             }
+	    rowIds_.clear();
+	    retcode = setupUniqueKeyAndCols(FALSE);
+	    if (retcode == -1) {
+		step_ = HANDLE_ERROR;
+		break;
+	    }
 
 	    copyRowIDToDirectBuffer(rowIds_[0]);
 

@@ -1841,7 +1841,8 @@ RelExpr *GenericUpdate::createIMTree(BindWA *bindWA,
       if (imNeeded)
         if (!imTree)
         {
-          imTree = createIMNodes(bindWA, useInternalSyskey, index);
+          imTree = createIMNodes(bindWA, useInternalSyskey,
+                                 index, producedMergeIUDIndicator_);
           if (getOperatorType() == REL_UNARY_UPDATE ||
               getOperatorType() == REL_UNARY_DELETE)
             setScanLockForIM(child(0));
@@ -1853,14 +1854,16 @@ RelExpr *GenericUpdate::createIMTree(BindWA *bindWA,
           if (!bindWA->isTrafLoadPrep())
           {
             imTree = new (bindWA->wHeap()) 
-              Union(imTree, createIMNodes(bindWA, useInternalSyskey, index),
+              Union(imTree, createIMNodes(bindWA, useInternalSyskey,
+                                          index, producedMergeIUDIndicator_),
                     NULL, NULL, REL_UNION, CmpCommon::statementHeap(), TRUE, TRUE);
             imTree->setBlockStmt(isinBlockStmt());
             imTree->getInliningInfo().setFlags(II_isIMUnion);
           } // not bulk load
           else {
             RelExpr * oldIMTree = imTree;
-            imTree = createIMNodes(bindWA, useInternalSyskey, index);
+            imTree = createIMNodes(bindWA, useInternalSyskey, index,
+                                   producedMergeIUDIndicator_);
             imTree->setChild(0,oldIMTree);
           } // is bulk load
         }
@@ -1888,6 +1891,7 @@ static RelExpr *createIMNode(BindWA *bindWA,
 			     CorrName &tableCorrName,
 			     const CorrName &indexCorrName,
 			     IndexDesc *index,
+                             const ValueId &mergeIUDIndicator,
 			     NABoolean isIMInsert,
 			     NABoolean useInternalSyskey,
                              NABoolean isForUpdate,
@@ -1992,6 +1996,29 @@ static RelExpr *createIMNode(BindWA *bindWA,
       preCond = new (bindWA->wHeap()) UnLogic(ITM_NOT, preCond);
     }
 
+  // If we got an IUD indicator passed in, that means that we have
+  // an IM tree for update, but the actual operation may be an
+  // insert or a delete, and therefore we may need to suppress the
+  // index delete or insert, respectively, with a precondition.
+  if (mergeIUDIndicator != NULL_VALUE_ID)
+    {
+      ItemExpr *iudCond = 
+        new(bindWA->wHeap()) BiRelat(
+             ITM_NOT_EQUAL,
+             mergeIUDIndicator.getItemExpr(),
+             new(bindWA->wHeap()) SystemLiteral(
+                  (isIMInsert ? "D" : "I"),
+                  CharInfo::ISO88591));
+
+      if (preCond == NULL)
+        preCond = iudCond;
+      else
+        preCond = new (bindWA->wHeap()) BiLogic(
+             ITM_AND,
+             iudCond,
+             preCond);
+    }
+
   // NULL tableDesc here, like all Insert/Update/Delete ctors in SqlParser,
   // because the LeafXxx::bindNode will call GenericUpdate::bindNode
   // which will do the appropriate createTableDesc.
@@ -2035,6 +2062,7 @@ static RelExpr *createIMNode(BindWA *bindWA,
                                                 REL_LEAF_DELETE,
                                                 preCond,
                                                 bindWA->wHeap());
+      imNode->setReferencedMergeIUDIndicator(mergeIUDIndicator);
     }
 
    // The base table's rowsAffected() will get set in ImplRule.cpp,
@@ -2059,7 +2087,8 @@ static RelExpr *createIMNode(BindWA *bindWA,
 
 RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
 				      NABoolean useInternalSyskey,
-				      IndexDesc *index)
+				      IndexDesc *index,
+                                      const ValueId &mergeIUDIndicator)
 {
   // We call getExtFileSetObj (returns QualifiedName),
   // NOT getExtFileSetName (returns NAString),
@@ -2088,11 +2117,12 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
   //
   if (getOperatorType() == REL_UNARY_INSERT ||
       getOperatorType() == REL_UNARY_UPDATE || isEffUpsert)
-    indexInsert = indexOp = createIMNode(bindWA, 
-					 tableCorrName, 
+    indexInsert = indexOp = createIMNode(bindWA,
+					 tableCorrName,
 					 indexCorrName,
-					 index, 
-					 TRUE, 
+					 index,
+                                         mergeIUDIndicator,
+					 TRUE,
 					 useInternalSyskey,
                                          isForUpdate,
                                          isMerge(),
@@ -2105,9 +2135,11 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
       getOperatorType() == REL_UNARY_UPDATE ||
       isEffUpsert)
     
-    indexDelete = indexOp = createIMNode(bindWA, 
-					 tableCorrName, indexCorrName,
-					 index, 
+    indexDelete = indexOp = createIMNode(bindWA,
+					 tableCorrName,
+                                         indexCorrName,
+					 index,
+                                         mergeIUDIndicator,
 					 FALSE,
     			       		 useInternalSyskey,
                                          isForUpdate,

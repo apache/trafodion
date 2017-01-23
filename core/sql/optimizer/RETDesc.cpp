@@ -836,17 +836,39 @@ void RETDesc::print(FILE* ofd, const char* indent, const char* title) const
 #endif
 } // RETDesc::print()
 
+static void displayDownHelper(RelExpr *re, RETDesc *prevRD, int level)
+{
+  RETDesc *thisRD = re->getRETDesc();
+  char indent[20];
+
+  snprintf(indent, sizeof(indent), "Level %4d:  ", level);
+  cout << endl
+       << endl
+       << indent
+       << "====== Operator: " << re->getText().data()
+       << endl
+       << flush;
+  if (thisRD != prevRD && thisRD)
+    thisRD->print(stdout, indent);
+  else if (thisRD == NULL)
+    cout << indent << "++++++ RETDesc is NULL" << endl;
+  else
+    cout << indent << "++++++ RETDesc is the same as its parent" << endl;
+
+
+  for (int c=0; c<re->getArity(); c++)
+    {
+      RelExpr *x = re->child(c);
+      if (x)
+        {
+          cout << indent << "++++++ Child " << c << endl;
+          displayDownHelper(x, thisRD, level+1);
+        }
+    }
+} // RETDesc::displayDown
+
 /*static*/ void RETDesc::displayDown(RelExpr *re)
 {
-  RETDesc *prevRD = NULL;
-  while (re) {
-    cout << (Int32)re->getOperatorType() << " " << flush;
-    RETDesc *thisRD = re->getRETDesc();
-    if (thisRD != prevRD)
-      thisRD->display();
-    else
-      cout << "RETDesc-is-same" << endl;
-    prevRD = thisRD;
-    re = re->child(0);
-  }
+  displayDownHelper(re, NULL, 1);
 } // RETDesc::displayDown
+

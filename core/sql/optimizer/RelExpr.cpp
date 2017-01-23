@@ -12542,6 +12542,8 @@ Int32 GenericUpdate::getArity() const
 void GenericUpdate::getPotentialOutputValues(ValueIdSet & outputValues) const
 {
   outputValues = potentialOutputs_;
+  if (producedMergeIUDIndicator_ != NULL_VALUE_ID)
+    outputValues += producedMergeIUDIndicator_;
 }
 
 const NAString GenericUpdate::getUpdTableNameText() const
@@ -12717,7 +12719,9 @@ RelExpr * GenericUpdate::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
     result->preconditionTree_ = preconditionTree_->copyTree(outHeap)->castToItemExpr();
   result->setPrecondition(precondition_);
   result->exprsInDerivedClasses_ = exprsInDerivedClasses_;
-  
+  result->producedMergeIUDIndicator_ = producedMergeIUDIndicator_;
+  result->referencedMergeIUDIndicator_ = referencedMergeIUDIndicator_;
+
   return RelExpr::copyTopNode(result, outHeap);
 }
 

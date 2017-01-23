@@ -1655,6 +1655,45 @@ K@           I
          13           11
 
 --- 2 row(s) selected.
+>>delete from t015t8 where i > 10;
+
+--- 1 row(s) deleted.
+>>cqd TRAF_UPSERT_TO_EFF_TREE 'on';
+
+--- SQL operation complete.
+>>upsert into t015t8 values (1,2,3),(11,12,13) ;
+
+--- 2 row(s) inserted.
+>>cqd TRAF_UPSERT_TO_EFF_TREE reset;
+
+--- SQL operation complete.
+>>select * from t015t8;
+
+I            J            K          
+-----------  -----------  -----------
+
+          1            2            3
+         11           12           13
+
+--- 2 row(s) selected.
+>>select * from table (index_table t015t8i1);
+
+J@           I          
+-----------  -----------
+
+          2            1
+         12           11
+
+--- 2 row(s) selected.
+>>select * from table (index_table t015t8i2);
+
+K@           I          
+-----------  -----------
+
+          3            1
+         13           11
+
+--- 2 row(s) selected.
 >>MERGE INTO t015t8 ON i = 1
 +>      WHEN MATCHED THEN UPDATE SET j = 12
 +>      WHEN NOT MATCHED THEN INSERT VALUES (1,3,4);

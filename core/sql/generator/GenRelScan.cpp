@@ -3176,6 +3176,7 @@ short HbaseAccess::codeGen(Generator * generator)
 		      0, // updateTuppIndex
 		      0, // mergeInsertTuppIndex
 		      0, // mergeInsertRowIdTuppIndex
+		      0, // mergeIUDIndicatorTuppIndex
 		      0, // returnedFetchedTuppIndex
 		      0, // returnedUpdatedTuppIndex
 
@@ -3436,6 +3437,7 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
 		      0, // updateTuppIndex
 		      0, // mergeInsertTuppIndex
 		      0, // mergeInsertRowIdTuppIndex
+		      0, // mergeIUDIndicatorTuppIndex
 		      0, // returnedFetchedTuppIndex
 		      0, // returnedUpdatedTuppIndex
 

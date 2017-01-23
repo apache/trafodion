@@ -2623,7 +2623,7 @@ RelExpr *Join::bindNode(BindWA *bindWA)
     RelExpr *leftJoin = this;
     leftJoin->setOperatorType(REL_LEFT_JOIN);
     
-    RelExpr *antiJoin = leftJoin->copyTree(bindWA->wHeap());
+    Join *antiJoin = static_cast<Join *>(leftJoin->copyTree(bindWA->wHeap()));
     antiJoin->setOperatorType(REL_RIGHT_JOIN);
 
     NAString leftName("ALJ", bindWA->wHeap());
@@ -2640,31 +2640,7 @@ RelExpr *Join::bindNode(BindWA *bindWA)
     unionAll->bindNode(bindWA);
     if (bindWA->errStatus()) return this;
 
-    // Make sure there is at least one null instantiated 
-    // value that is suitable for use as a filter.
-    // To be suitable, it must be null instantiated and 
-    // it's child must not be nullable.  We want to filter
-    // the NULL that are a result of null instantiation, not
-    // original null values.
-    //
-    ItemExpr *cval = new (bindWA->wHeap()) SystemLiteral(1);
-    cval->bindNode(bindWA);
-    if (bindWA->errStatus()) return this;
-
-    // Null instantiate the value.
-    //
-    ValueId niCval = cval->getValueId().nullInstantiate(bindWA, TRUE);
-
-    // Add it to the RETDesc of the Join.
-    //
-    ColRefName cvalName("", bindWA->wHeap());
-    antiJoin->getRETDesc()->addColumn(bindWA, cvalName , niCval, USER_COLUMN);
-
-    // Add it to the list of null instantiated outputs.
-    //
-    ((Join *)antiJoin)->nullInstantiatedOutput().insert(niCval);
-
-    ItemExpr *nullCheck = niCval.getItemExpr();
+    ItemExpr *nullCheck = antiJoin->addNullInstIndicatorVar(bindWA).getItemExpr();
 
     CMPASSERT(nullCheck);
     
@@ -3003,6 +2979,35 @@ RelExpr *Join::bindNode(BindWA *bindWA)
   //
   return bindSelf(bindWA);
 } // Join::bindNode()
+
+ValueId Join::addNullInstIndicatorVar(BindWA *bindWA,
+                                      ItemExpr *indicatorVal)
+{
+  // Add an indicator variable that can tell us whether
+  // a left join found a match in the right child table
+  // or not. The returned ValueId will have the value 1
+  // if a match was found, and NULL if no match was found.
+
+  ItemExpr *cval = indicatorVal;
+
+  if (!cval)
+    cval = new (bindWA->wHeap()) SystemLiteral(1);
+  cval = cval->bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL_VALUE_ID;
+
+  // Null instantiate the value.
+  ValueId niCval = cval->getValueId().nullInstantiate(bindWA, TRUE);
+
+  // Add it to the RETDesc of the Join.
+  ColRefName cvalName("", bindWA->wHeap());
+  getRETDesc()->addColumn(bindWA, cvalName , niCval, USER_COLUMN);
+
+  // Add it to the list of null instantiated outputs.
+  nullInstantiatedOutput().insert(niCval);
+
+  return niCval;
+}
 
 //++MV
 // This function builds the BalueIdMap that is used for translating the required
@@ -10812,8 +10817,9 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
 	continue;
 
       targetColRef = new(bindWA->wHeap()) ColReference(
-						       new(bindWA->wHeap()) ColRefName(
-										       baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
+           new(bindWA->wHeap()) ColRefName(
+                baseCol->getNAColumn()->getFullColRefName(),
+                bindWA->wHeap()));
     
 
       if (baseCol->getNAColumn()->isClusteringKey())
@@ -10855,10 +10861,8 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   pkeyVals->convertToValueIdList(tablePKeyVals,bindWA,ITM_ITEM_LIST);
   updateToSelectMap().mapValueIdListDown(tablePKeyVals,sourcePKeyVals);
   
-
-
   Join *lj = new(bindWA->wHeap()) Join(child(0),targetTableScan,REL_LEFT_JOIN,keyPred);
-  
+
   bindWA->getCurrentScope()->xtnmStack()->createXTNM();
 
   
@@ -10867,10 +10871,13 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
     return NULL;
   bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
  
- 
+  ValueId nullInstIndicator(
+       lj->addNullInstIndicatorVar(
+            bindWA,
+            new(bindWA->wHeap()) SystemLiteral(
+                 "U",
+                 CharInfo::ISO88591)));
   ValueIdSet sequenceFunction ;		
- 
-  ItemExpr *constOne = new (bindWA->wHeap()) ConstValue(1);
  
   //Retrieve all the system and user columns of the left join output
   ValueIdList  ljOutCols = NULL;
@@ -10905,7 +10912,6 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   seqNode->selectionPred() += selPredOnLead->getValueId();
   seqNode->setChild(0,boundLJ);
 
- 
   RelExpr *boundSeqNode = seqNode->bindNode(bindWA);  
    
   setChild(0,boundSeqNode);
@@ -10928,6 +10934,21 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
       newNewRecArray.insertAt(i,newRecArrList.at(i));
     }
   newRecExprArray() = newNewRecArray;
+
+  ValueId notCoveredNullInstIndicator;
+
+  notCoveredMap.rewriteValueIdUp(notCoveredNullInstIndicator,
+                                 nullInstIndicator);
+  ItemExpr *nvl = new(bindWA->wHeap()) BuiltinFunction(
+         ITM_NVL,
+         bindWA->wHeap(),
+         2,
+         notCoveredNullInstIndicator.getItemExpr(),
+         new(bindWA->wHeap()) SystemLiteral("I",
+                                            CharInfo::ISO88591));
+  nvl = nvl->bindNode(bindWA);
+  setProducedMergeIUDIndicator(nvl->getValueId());
+
   return topNode; 
 }
 
@@ -11110,7 +11131,7 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
   if (bindWA->errStatus())
     return NULL;
   // Copy the userSecified and canBeSkipped attribute to mergeUpdateInsertExprArray
-  ValueIdList mergeInsertExprArray = ((MergeUpdate *)mu)->mergeInsertRecExprArray();
+  ValueIdList mergeInsertExprArray = mu->mergeInsertRecExprArray();
   for (CollIndex i = 0 ; i < newRecExprArray().entries(); i++) 
   {
       const Assign *assignExpr = (Assign *)newRecExprArray()[i].getItemExpr();
@@ -11565,6 +11586,26 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
     }
 
   bindWA->setMergeStatement(TRUE);  
+
+  // Create a merge IUD indicator, a CHAR(1) CHARACTER SET ISO88591
+  // NOT NULL variable, that can be used by index maintenance and
+  // other operations to find out what action the WHEN clause
+  // indicated, insert (I), update (U) or delete (D). This will be
+  // removed in GenericUpdate::normalizeNode() if nobody asked for
+  // it. The actual value will be produced by the executor work
+  // method, there is no expression for it.
+  if (getProducedMergeIUDIndicator() == NULL_VALUE_ID)
+    {
+      ItemExpr *mergeIUDIndicator = new(bindWA->wHeap()) NATypeToItem(
+           new(bindWA->wHeap()) SQLChar(
+                1, FALSE, FALSE, FALSE, FALSE, CharInfo::ISO88591));
+
+      mergeIUDIndicator = mergeIUDIndicator->bindNode(bindWA);
+      if (bindWA->errStatus())
+        return NULL;
+      setProducedMergeIUDIndicator(mergeIUDIndicator->getValueId());
+    }
+
   RelExpr * boundExpr = Update::bindNode(bindWA);
   if (bindWA->errStatus()) 
     return NULL;
@@ -13670,11 +13711,13 @@ RelExpr *LeafInsert::bindNode(BindWA *bindWA)
     updateToSelectMap().addMapEntry(assign->getTarget(), assign->getSource());
   }
 
+  if (getReferencedMergeIUDIndicator() != NULL_VALUE_ID)
+    bindWA->getCurrentScope()->addOuterRef(getReferencedMergeIUDIndicator());
   // RelExpr::bindSelf (in GenericUpdate::bindNode) has done this line, but now
   // any outer refs discovered in bindNode's in the above loop must be added.
   // For Index Maintenance, these must be exactly the set of baseColRefs vids
   // (all the target index cols are from the locally-scoped RETDesc left by
-  // the GenericUpdate::bindNode).
+  // the GenericUpdate::bindNode), plus the merge IUD indicator, if used.
   getGroupAttr()->addCharacteristicInputs(bindWA->getCurrentScope()->getOuterRefs());
 
   // The NATable of getTableName() had been set to INDEX_TABLE so that
@@ -13812,6 +13855,8 @@ RelExpr *LeafDelete::bindNode(BindWA *bindWA)
 
   // See LeafInsert::bindNode for comments on remainder of this method.
 
+  if (getReferencedMergeIUDIndicator() != NULL_VALUE_ID)
+    bindWA->getCurrentScope()->addOuterRef(getReferencedMergeIUDIndicator());
   getGroupAttr()->addCharacteristicInputs(bindWA->getCurrentScope()->getOuterRefs());
 
   getTableName().setSpecialType(ExtendedQualName::NORMAL_TABLE);

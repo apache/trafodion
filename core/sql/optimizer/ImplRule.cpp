@@ -700,7 +700,8 @@ void copyCommonGenericUpdateFields(GenericUpdate *result,
   result->setTolerateNonFatalError(bef->getTolerateNonFatalError());
   result->setNoCheck(bef->noCheck());
   result->setPrecondition(bef->getPrecondition());
-
+  result->setProducedMergeIUDIndicator(bef->getProducedMergeIUDIndicator());
+  result->setReferencedMergeIUDIndicator(bef->getReferencedMergeIUDIndicator());
 }
 
 void copyCommonUpdateFields(Update *result,
@@ -711,6 +712,7 @@ void copyCommonUpdateFields(Update *result,
   result->mergeInsertRecExpr()          = bef->mergeInsertRecExpr();
   result->mergeInsertRecExprArray()     = bef->mergeInsertRecExprArray();
   result->mergeUpdatePred()             = bef->mergeUpdatePred();
+  
 }
 
 void copyCommonDeleteFields(Delete *result,
