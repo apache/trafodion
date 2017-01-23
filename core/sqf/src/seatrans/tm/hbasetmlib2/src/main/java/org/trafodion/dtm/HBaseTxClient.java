@@ -1108,9 +1108,28 @@ public class HBaseTxClient {
                             }
                             if (LOG.isDebugEnabled()) LOG.debug("TRAF RCOV THREAD: in-doubt transaction size " + transactionStates.size());
                             for (Map.Entry<Long, TransactionState> tsEntry : transactionStates.entrySet()) {
+                                int isTransactionStillAlive = 0;
                                 TransactionState ts = tsEntry.getValue();
                                 Long txID = ts.getTransactionId();
                                 // TransactionState ts = new TransactionState(txID);
+                                
+                                //It is possible for long prepare situations that involve multiple DDL
+                                //operations, multiple prompts from RS is received. Hence check to see if there
+                                //is a TS object in main TS list and transaction is still active.
+                                //Note that tsEntry is local TS object. 
+                                if (hbtx.mapTransactionStates.get(txID) != null) {
+                                  if (hbtx.mapTransactionStates.get(txID).getStatus().toString().contains("ACTIVE")) {
+                                    isTransactionStillAlive = 1;
+                                  }
+                                  if (LOG.isInfoEnabled()) 
+                                  LOG.info("TRAF RCOV THREAD: TID " + txID
+                                            + " still has TS object in TM memory. TS details: "
+                                            + hbtx.mapTransactionStates.get(txID).toString() 
+                                            + " transactionAlive: " + isTransactionStillAlive);
+                                  if(isTransactionStillAlive == 1)
+                                    continue; //for loop
+                                }
+                               
                                 try {
                                     audit.getTransactionState(ts);
                                     if (ts.getStatus().equals(TransState.STATE_COMMITTED.toString())) {
