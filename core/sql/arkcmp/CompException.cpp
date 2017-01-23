@@ -103,7 +103,8 @@ void DDLException::throwException()
 
 FatalException::FatalException(const char *msg,
 			       const char *fileName,
-			       UInt32 lineNum)
+			       UInt32 lineNum,
+			       const char *stackTrace)
   : BaseException(fileName, lineNum)
 {
   if(msg) {
@@ -113,10 +114,20 @@ FatalException::FatalException(const char *msg,
   else {
     msg_[0] = 0;
   }
+  if(stackTrace) {
+    strncpy(stackTrace_, stackTrace, sizeof(stackTrace_));
+    stackTrace_[sizeof(stackTrace_)-1] = 0;
+  }
+  else {
+    stackTrace_[0] = 0;
+  }
 }
 
 const char * FatalException::getMsg()
 { return msg_; }
+
+const char * FatalException::getStackTrace()
+{ return stackTrace_; }
 
 void FatalException::throwException()
 {
@@ -292,8 +303,9 @@ void OptAssertException::throwException()
 
 void CmpExceptionCallBack::throwFatalException(const char *msg,
 					       const char *file,
-					       UInt32 line)
-{ FatalException(msg, file, line).throwException(); }
+					       UInt32 line,
+					       const char *stackTrace)
+{ FatalException(msg, file, line, stackTrace).throwException(); }
 
 void CmpExceptionCallBack::throwAssertException(const char *cond,
 						const char *file,

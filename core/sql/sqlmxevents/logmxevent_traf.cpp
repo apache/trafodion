@@ -189,20 +189,19 @@ void SQLMXLoggingArea::logPrivMgrInfo(const char *filename,
 
 Int32 writeStackTrace(char *s, int bufLen)
 {
-  const int safetyMargin = 10;
-  int len = sprintf(s, "Process Stack Trace:\n");
-
-  // This is a quick and dirty implementation for Linux. It is easy to
-  // get the program counters for the stack trace, but is difficult to
-  // look up the function name, line, and file number based off of the
-  // program counter. For simplicity, this code just calls addr2line to
-  // look up the information. This could be changed in the future if an
-  // easy to use API becomes available.
   void *bt[20];
   char **strings;
   size_t funcsize = 256;
+  size_t newfuncsize = funcsize;
+  const int safetyMargin = 128;
   size_t size = backtrace(bt, 20);
   strings = backtrace_symbols (bt, size);
+
+  if(bufLen <= safetyMargin)
+    return 0;
+
+  //Note this string should fit within safetyMargin size.
+  int len = sprintf(s, "Process Stack Trace:\n");
 
  
   // allocate string which will be filled with the demangled function name
@@ -240,29 +239,54 @@ Int32 writeStackTrace(char *s, int bufLen)
 
       int status;
       char* ret = abi::__cxa_demangle(begin_name,
-                                      funcname, &funcsize, &status);
-      if (status == 0) {
-          funcname = ret;
+                                      funcname, &newfuncsize, &status);
+      if (status == 0) 
+      {
+        funcname = ret;
+        if((len + strlen(strings[i]) + newfuncsize + safetyMargin) < bufLen)
+        {
           len += sprintf(s + len, "%s  : %s+%s\n",
-                        strings[i], funcname, begin_offset);
+                      strings[i], funcname, begin_offset);
+        }
+        else
+        {
+          break; //bufLen is short. Break out.
+        }
             
       }
-      else {
-          // demangling failed. just store begin name and offset as is.
-            len += sprintf(s + len, "  %s : %s+%s\n",
-                  strings[i], begin_name, begin_offset);;
+      else
+      {
+        //demangling failed. just store begin name and offset as is.
+        if((len + strlen(strings[i]) + strlen(begin_name) + safetyMargin)
+            < bufLen)
+        {
+          len += sprintf(s + len, "  %s : %s+%s\n",
+                strings[i], begin_name, begin_offset);
+        }
+        else
+        {
+          break; //bufLen is short. Break out.
+        }
+                
       }
     }
     else
     {
       // couldn't parse the line. Do nothing. Move to next line.
-      len += sprintf(s + len, "  %s\n", strings[i]);
+      if((len + strlen(strings[i]) + safetyMargin) < bufLen)
+      {
+        len += sprintf(s + len, "  %s\n", strings[i]);
+      }
+      else
+      {
+        break; //bufLen is short. Break out.
+      }
     }
   }
 
   free(funcname);
   free(strings);
-  len += sprintf(s + len, "\n");
+  len += sprintf(s + len, "\n"); //safetyMargin assumed.
   return len;
 }
 
@@ -325,8 +349,8 @@ SQLMXLoggingArea::logSQLMXAssertionFailureEvent(const char* file, Int32 line, co
 {
   bool lockedMutex = lockMutex();
   
-  Int32 LEN = 8192;
-  char msg[8192];
+  Int32 LEN = SQLEVENT_BUF_SIZE + STACK_TRACE_SIZE;
+  char msg[LEN];
   memset(msg, 0, LEN);
 
   Int32 sLen = str_len(msgTxt);

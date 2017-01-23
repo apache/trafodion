@@ -49,6 +49,7 @@
 
 #define EVENTSAPI
 #define SQLEVENT_BUF_SIZE 4024
+#define STACK_TRACE_SIZE  8192
 
 #ifdef _MSC_VER
 #undef _MSC_VER

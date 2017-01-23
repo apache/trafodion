@@ -45,6 +45,8 @@
 #include "CompException.h"
 #include "StmtCompilationMode.h"
 
+extern Int32 writeStackTrace(char *s, int bufLen);
+
 // Mutex to serialize termination via NAExit or an assertion failure
 // via abort_botch_abend in the main executor thread with an assertion
 // failure in the SeaMonster reader thread
@@ -150,16 +152,23 @@ void NAInternalError::throwFatalException(const char *msg,
 					  UInt32 line)
 {
   if(pExceptionCallBack_ != NULL)
-    pExceptionCallBack_->throwFatalException(msg, file, line);
+  {
+    char stackTrace[STACK_TRACE_SIZE];
+    writeStackTrace(stackTrace, sizeof(stackTrace));
+    pExceptionCallBack_->throwFatalException(msg, file, line, stackTrace);
+  }
 }
 
 void NAInternalError::throwAssertException(const char *cond,
 					   const char *file,
-					   UInt32 line,
-					   const char *stackTrace)
+					   UInt32 line)
 {
   if(pExceptionCallBack_ != NULL)
+  {
+    char stackTrace[STACK_TRACE_SIZE];
+    writeStackTrace(stackTrace, sizeof(stackTrace));
     pExceptionCallBack_->throwAssertException(cond, file, line, stackTrace);
+  }
 }
 
 

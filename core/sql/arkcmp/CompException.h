@@ -38,6 +38,7 @@
 #include "NABoolean.h"
 #include "NABasicObject.h"
 #include "ExceptionCallBack.h"
+#include "logmxevent.h"
 
 // BaseException should not be instantiated directly
 class BaseException : public NABasicObject
@@ -78,11 +79,14 @@ public:
 // FatalException is unrecoverable, give up the compilation if one is thrown
 class FatalException : public BaseException{
 public:
-  FatalException(const char *msg, const char *fileName, UInt32 lineNum);
+  FatalException(const char *msg, const char *fileName, UInt32 lineNum,
+                 const char *stackTrace = NULL);
   const char * getMsg();
+  const char * getStackTrace();
   virtual void throwException();
 private:
   char msg_[256];
+  char stackTrace_[STACK_TRACE_SIZE];
 };
 
 // CmpInternalException is a replacement for EH_INTRNAL_EXCEPTION
@@ -110,7 +114,7 @@ public:
   virtual void throwException();
 private:
   char condition_[128];
-  char stackTrace_[8192];
+  char stackTrace_[STACK_TRACE_SIZE];
 };
 
 class OsimLogException : public BaseException{
@@ -161,7 +165,8 @@ class CmpExceptionCallBack : public ExceptionCallBack
 public:
   void throwFatalException(const char *msg,
 			   const char *file,
-			   UInt32 line);
+			   UInt32 line,
+			   const char *stackTrace = NULL);
   void throwAssertException(const char *cond,
 			    const char *file,
 			    UInt32 line,
