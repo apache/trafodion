@@ -199,7 +199,7 @@ Ex_Lob_Error ExLob::fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOff
   lobCursors_it it = lobCursors_.find(string(handleIn, handleLenIn));
   char logBuf[4096];
   lobDebugInfo("In ExLob::fetchCursor",0,__LINE__,lobTrace_);
-  char *blackBox = new(getLobGlobalHeap()) char[MAX_LOB_FILE_NAME_LEN+6]; // TODO: do we ever go this way for Hive?
+  char *blackBox = new(getLobGlobalHeap()) char[MAX_LOB_FILE_NAME_LEN+6];
   Int32 blackBoxLen = 0;
 
    if (it == lobCursors_.end())
@@ -2338,7 +2338,6 @@ Ex_Lob_Error ExLobsOper (
 { 
   Ex_Lob_Error err = LOB_OPER_OK;
   ExLob *lobPtr = NULL;
-  string fn;
   struct timespec startTime;
   struct timespec endTime;
   Int64 secs, nsecs, totalnsecs;
@@ -2491,26 +2490,31 @@ Ex_Lob_Error ExLobsOper (
       err = lobPtr->openCursor(handleIn, handleInLen,transId);
       break;
 
-    case Lob_OpenDataCursorSimple:  
-      if (openType == 1) { // preopen
-        char temp1[30];  // big enough for :%Lx:
-        sprintf(temp1, ":%Lx:",(long long unsigned int)lobName);
-        fn = lobPtr->getDataFileName();
-        fn += temp1;
-        fn += cursorId;
-	preOpenObj = new (lobGlobals->getHeap()) ExLobPreOpen(lobPtr, fn.c_str(), descNumIn, sourceLen, 
-                                                              cursorBytes, waited, lobGlobals->getHeap());
-	lobGlobals->addToPreOpenList(preOpenObj);
-      } else if (openType == 2) { // must open
-        char temp2[30];  // big enough for :%Lx:
-        sprintf(temp2, ":%Lx:",(long long unsigned int)lobName);
-        fn = lobPtr->getDataFileName();
-        fn += temp2;
-        fn += cursorId;
-	fileName = fn.c_str();
-	err = lobPtr->openDataCursor(fileName, Lob_Cursor_Simple, descNumIn, sourceLen, cursorBytes, waited, lobGlobals, (Int32 *)blackBox);
-      } else
-	err = LOB_SUBOPER_ERROR;
+    case Lob_OpenDataCursorSimple:
+      {
+        size_t dataFileNameLen = strlen(lobPtr->getDataFileName());
+        size_t cursorIdLen = strlen(cursorId); 
+        if (openType == 1) { // preopen
+          char temp1[30];  // big enough for :%Lx:
+          sprintf(temp1, ":%Lx:",(long long unsigned int)lobName);
+          char fn[dataFileNameLen + sizeof(temp1) + cursorIdLen + 1];
+          strcpy(fn,lobPtr->getDataFileName());
+          strcpy(fn + dataFileNameLen, temp1);
+          strcpy(fn + dataFileNameLen + strlen(temp1), cursorId);
+          preOpenObj = new (lobGlobals->getHeap()) ExLobPreOpen(lobPtr, fn, descNumIn, sourceLen, 
+                                                                cursorBytes, waited, lobGlobals->getHeap());
+          lobGlobals->addToPreOpenList(preOpenObj);
+        } else if (openType == 2) { // must open
+          char temp2[30];  // big enough for :%Lx:
+          sprintf(temp2, ":%Lx:",(long long unsigned int)lobName);
+          char fn[dataFileNameLen + sizeof(temp2) + cursorIdLen + 1];
+          strcpy(fn,lobPtr->getDataFileName());
+          strcpy(fn + dataFileNameLen, temp2);
+          strcpy(fn + dataFileNameLen + strlen(temp2), cursorId);
+          err = lobPtr->openDataCursor(fn, Lob_Cursor_Simple, descNumIn, sourceLen, cursorBytes, waited, lobGlobals, (Int32 *)blackBox);
+        } else
+          err = LOB_SUBOPER_ERROR;
+      }
       break;
 
     case Lob_ReadCursor:
@@ -2526,11 +2530,13 @@ Ex_Lob_Error ExLobsOper (
       {
         char temp3[30];  // big enough for :%Lx:
         sprintf(temp3, ":%Lx:",(long long unsigned int)lobName);
-        fn = lobPtr->getDataFileName();
-        fn += temp3;
-        fn += cursorId;
-	fileName = fn.c_str();       
-        err = lobPtr->readDataCursorSimple(fileName, source, sourceLen, retOperLen, lobGlobals);
+        size_t dataFileNameLen = strlen(lobPtr->getDataFileName());
+        size_t cursorIdLen = strlen(cursorId);
+        char fn[dataFileNameLen + sizeof(temp3) + cursorIdLen + 1];
+        strcpy(fn,lobPtr->getDataFileName());
+        strcpy(fn + dataFileNameLen, temp3);
+        strcpy(fn + dataFileNameLen + strlen(temp3), cursorId);       
+        err = lobPtr->readDataCursorSimple(fn, source, sourceLen, retOperLen, lobGlobals);
       }
       break;
 
@@ -2553,11 +2559,13 @@ Ex_Lob_Error ExLobsOper (
       {
         char temp4[30];  // big enough for :%Lx:
         sprintf(temp4, ":%Lx:",(long long unsigned int)lobName);
-        fn = lobPtr->getDataFileName();
-        fn += temp4;
-        fn += cursorId;
-	fileName = fn.c_str(); 
-        err = lobPtr->closeDataCursorSimple(fileName, lobGlobals);
+        size_t dataFileNameLen = strlen(lobPtr->getDataFileName());
+        size_t cursorIdLen = strlen(cursorId);
+        char fn[dataFileNameLen + sizeof(temp4) + cursorIdLen + 1];
+        strcpy(fn,lobPtr->getDataFileName());
+        strcpy(fn + dataFileNameLen, temp4);
+        strcpy(fn + dataFileNameLen + strlen(temp4), cursorId); 
+        err = lobPtr->closeDataCursorSimple(fn, lobGlobals);
       }
       break;
 
