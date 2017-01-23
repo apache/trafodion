@@ -3154,7 +3154,7 @@ short ExpGenerator::generateDeserializedMoveExpr(
       NAColumn * nac = vid.getNAColumn( TRUE );
 
       ItemExpr * ie = NULL;
-      if (CmpSeabaseDDL::isEncodingNeededForSerialization(nac) &&
+      if (nac && CmpSeabaseDDL::isEncodingNeededForSerialization(nac) &&
 	  !alreadyDeserialized.contains(vid))
 	{
 	  ie = new(generator->wHeap()) CompDecode(vid.getItemExpr(), &vid.getType(),
