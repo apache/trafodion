@@ -296,6 +296,8 @@ sh regrhadoop.ksh fs -copyFromLocal lob_input_d1.txt /lobs/lob_input_d1.txt;
 sh regrhadoop.ksh fs -copyFromLocal lob_input_e1.txt /lobs/lob_input_e1.txt;
 sh regrhadoop.ksh fs -copyFromLocal deep.jpg /lobs/deep.jpg;
 sh regrhadoop.ksh fs -copyFromLocal anoush.jpg /lobs/anoush.jpg;
+-- the next one is a really long file name intended to test error message 8557
+sh regrhadoop.ksh fs -copyFromLocal lob_input_a1.txt /lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt;
 sh sleep(20);
 
 
@@ -499,6 +501,9 @@ update tlob130ext set c4=stringtolob('cannot allow this') where c1=1;
 delete from tlob130ext where c1=1;
 insert into tlob130ext values(1, stringtolob('first lob'),externaltolob('hdfs:///lobs/lob_input_a1.txt'),externaltolob('hdfs:///lobs/lob_input_a1.txt'));
 insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///lobs/lob_input_a1.txt'),externaltolob('hdfs:///lobs/lob_input_a1.txt'));
+-- the next one should see error 8557
+insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///lobs/lob_input_a1.txt'),
+externaltolob('hdfs:///lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt'));
 
 select lobtostring(c2,50),lobtostring(c3,50),lobtostring(c4,50) from tlob130ext;
 update tlob130ext set c3=stringtolob('can allow this') where c1=1;
@@ -576,6 +581,7 @@ sh regrhadoop.ksh fs -rm /lobs/lobinput_b1.txt
 sh regrhadoop.ksh fs -rm /lobs/lobinput_c1.txt
 sh regrhadoop.ksh fs -rm /lobs/lobinput_d1.txt
 sh regrhadoop.ksh fs -rm /lobs/lobinput_e1.txt
+sh regrhadoop.ksh fs -rm /lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt;
 sh rm lobinput_*;
 sh rm deep.jpg;
 sh rm anoush.jpg;

@@ -775,6 +775,16 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   Int64 lobLen = 0;
   if(!fromEmpty())
     lobLen = getOperand(1)->getLength();
+
+  // until SQL_EXEC_LOBcliInterface is changed to allow for unlimited
+  // black box sizes, we have to prevent over-sized file names from
+  // being stored
+  if ((so == Lob_External) && (lobLen > MAX_LOB_FILE_NAME_LEN))
+    {
+      ExRaiseSqlError(h, diagsArea, 
+		      (ExeErrorCode)(8557));
+      return ex_expr::EXPR_ERROR;
+    }
   
   blackBoxLen_ = 0;
   if (fromExternal())
