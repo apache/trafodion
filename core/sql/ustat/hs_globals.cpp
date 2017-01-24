@@ -3123,7 +3123,7 @@ Lng32 HSGlobalsClass::Initialize()
     LM->StartTimer("getRowCount()");
     Int32 errorCode = 0;
     Int32 breadCrumb = 0;
-    HSFuncClearJniErrorStr();  // clear out any stale error info 
+    HSFuncClearJniErrorStr();   // clear out any stale error info 
     actualRowCount = objDef->getRowCount(currentRowCountIsEstimate_,
                                          inserts, deletes, updates,
                                          numPartitions,
