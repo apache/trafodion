@@ -4487,13 +4487,6 @@ ExStatisticsArea *ContextCli::getMergedStats(
           setDeleteStats(TRUE);
         }
       }
-
-      if (stats->getMasterStats() != NULL)
-      {
-        stats->getMasterStats()->setNumSqlProcs((short)(stats->getMasterStats()->numOfTotalEspsUsed()+1));
-// see ExRtFragTable::countSQLNodes in ex_frag_rt.cpp.  The compiler's dop
-// counts cores.  We want nodes here.
-      }
       return stats;
     }
     else

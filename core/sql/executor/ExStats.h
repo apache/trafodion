@@ -3791,9 +3791,9 @@ NA_EIDPROC
   short  &cmpPriority() {return cmpPriority_;}
   short  &dp2Priority() {return dp2Priority_;}
   short  &fixupPriority() {return fixupPriority_;}
-  inline void setNumSqlProcs(short i) {numSqlProcs_ = i; }
+  void  incNumEspsInUse() { numOfTotalEspsUsed_++; }
   inline void setNumCpus(short i) {numCpus_ = i; }
-  inline short getNumSqlProcs() { return numSqlProcs_; }
+  inline short getNumSqlProcs() { return numOfTotalEspsUsed_+1; }
   inline short getNumCpus() { return numCpus_; }
 
   inline void setAqrLastErrorCode(Lng32 ec) {aqrLastErrorCode_ = ec;}
@@ -3960,7 +3960,6 @@ private:
   short stmtState_;
   UInt16 masterFlags_;
 
-  short numSqlProcs_;
   short numCpus_;
 
   QueryCostInfo queryCostInfo_;

@@ -2851,6 +2851,11 @@ ExEspDbEntry *ExEspManager::shareEsp(
   char *ptrToClusterName = (char *)clusterName;
   NAList<ExEspDbEntry *> *espList = NULL;
   ExProcessStats *processStats = GetCliGlobals()->getExProcessStats(); 
+  ExMasterStats *masterStats = NULL;
+  StmtStats *ss = statement->getStmtStats();
+  if (ss != NULL)
+     masterStats = ss->getMasterStats();
+  if (espList == NULL)
   if (*creatingEsp == NULL) // Nowaited Creation of an ESP is not in progress
   {
     nowaitDepth = env_->getCCMaxWaitDepthLow();
@@ -3009,6 +3014,8 @@ ExEspDbEntry *ExEspManager::shareEsp(
      processStats->incStartupCompletedEsps();
      processStats->incNumESPsInUse(FALSE);
   }
+  if (masterStats != NULL)
+      masterStats->incNumEspsInUse();
   if (espTraceArea_ != NULL)  // ESP state tracing
     { // any esp picked up here must be created new
       addToTrace(result, CREATED_USE);
@@ -3042,6 +3049,10 @@ ExEspDbEntry *ExEspManager::getEspFromCache(LIST(ExEspDbEntry *) &alreadyAssigne
   ExEspCacheKey tempKey(clusterName, cpuNum, user_id);
   NAList<ExEspDbEntry *> *espList = espCache_->getFirstValue(&tempKey);
   ExProcessStats *processStats = GetCliGlobals()->getExProcessStats();
+  ExMasterStats *masterStats = NULL;
+  StmtStats *ss  = statement->getStmtStats();
+  if (ss != NULL)
+     masterStats = ss->getMasterStats();
   if (espList == NULL)
     {
       // no esp pool found in esp cache for the given segment-cpu-user.
@@ -3198,8 +3209,11 @@ ExEspDbEntry *ExEspManager::getEspFromCache(LIST(ExEspDbEntry *) &alreadyAssigne
         e->totalMemoryQuota_ += 100 + memoryQuota;
         // If the ESP is already assigned to query
         // don't increment InUse counter again
-        if (processStats &&  ! e->inUse_)
+        if (processStats &&  ! e->inUse_) {
            processStats->incNumESPsInUse(TRUE);
+           if (masterStats != NULL)
+               masterStats->incNumEspsInUse();
+        }
         e->inUse_ = true;
         e->soloFragment_ = soloFragment;
         result = e;

@@ -2357,11 +2357,19 @@ Int64 ExHdfsScanStats::getNumVal(Int32 i) const
 
 NABoolean ExHdfsScanStats::filterForSEstats(struct timespec currTimespec, Lng32 filter)
 {
-   blockTime_ = timer_.filterForSEstats(currTimespec);
-   if (blockTime_ >= filter)
-      return TRUE;
+   Int64 sumIOTime;
+
+   if (filter > 0) {
+      blockTime_ = timer_.filterForSEstats(currTimespec);
+      if (blockTime_ >= filter)
+         return TRUE;
+   }
    else
-      return FALSE;
+   if (queryId_ != NULL && (sumIOTime = timer_.getTime()) > 0 && (sumIOTime = sumIOTime /(1000000LL)) >= -filter) {
+      blockTime_ = sumIOTime;
+      return TRUE;
+   }
+   return FALSE;
 }
 
 void ExHdfsScanStats::getVariableStatsInfo(char * dataBuffer,
@@ -2741,12 +2749,20 @@ Int64 ExHbaseAccessStats::getNumVal(Int32 i) const
 
 NABoolean ExHbaseAccessStats::filterForSEstats(struct timespec currTimespec, Lng32 filter)
 {
-   blockTime_ = timer_.filterForSEstats(currTimespec);
-   if (blockTime_ >= filter)
-      return TRUE;
+   Int64 sumIOTime;
+   if (filter > 0) {
+      blockTime_ = timer_.filterForSEstats(currTimespec);
+      if (blockTime_ >= filter)
+         return TRUE;
+   }
    else
-      return FALSE;
+   if (queryId_ != NULL && (sumIOTime = timer_.getTime()) > 0 && (sumIOTime = sumIOTime /(1000000LL)) >= -filter) {
+      blockTime_ = sumIOTime;
+      return TRUE;
+   }
+   return FALSE;
 }
+
 
 void ExHbaseAccessStats::getVariableStatsInfo(char * dataBuffer,
 						   char * dataLen,
@@ -7898,7 +7914,6 @@ short ExStatsTcb::work()
                           }
                           if (stats_->getMasterStats() != NULL)
                           {
-                            stats_->getMasterStats()->setNumSqlProcs((short)(stats_->getMasterStats()->numOfTotalEspsUsed()+1));
                             stats_->getMasterStats()->setNumCpus((short)stats_->getMasterStats()->compilerStatsInfo().dop());
                           }
                           pstate->step_ = GET_MASTER_STATS_ENTRY_;
@@ -8684,7 +8699,7 @@ void ExMasterStats::init()
   rowsAffected_ = -1;
   rowsReturned_ = 0;
   sqlErrorCode_ = 0;
-  numOfTotalEspsUsed_ = -1;
+  numOfTotalEspsUsed_ = 0;
   numOfNewEspsStarted_ = -1;
   numOfRootEsps_ = -1;
   exePriority_ = -1;
@@ -8701,7 +8716,6 @@ void ExMasterStats::init()
   stmtState_ = 0;
 #endif
   numCpus_ = 0;
-  numSqlProcs_ = 0;
   masterFlags_ = 0;
   parentQid_ = NULL;
   parentQidLen_ = 0;
@@ -8750,11 +8764,10 @@ void ExMasterStats::initBeforeExecute(Int64 currentTimeStamp)
   rowsAffected_ = -1;
   rowsReturned_ = 0;
   sqlErrorCode_ = 0;
-  numOfTotalEspsUsed_ = -1;
+  numOfTotalEspsUsed_ = 0;
   numOfNewEspsStarted_ = -1;
   numOfRootEsps_ = -1;
   numCpus_ = 0;
-  numSqlProcs_ = 0;
   transId_ = -1;
   childQid_ = NULL;
   childQidLen_ = 0;
@@ -9060,7 +9073,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               ((childQid_ != NULL) ? childQid_ : "NONE"),
               rowsReturned_,
               firstRowReturnTime_,
-              numSqlProcs_,
+              getNumSqlProcs(),
               numCpus_,
               exePriority_,
               transId_,
@@ -9114,7 +9127,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               ((childQid_ != NULL) ? childQid_ : "NONE"),
               rowsReturned_,
               firstRowReturnTime_,
-              numSqlProcs_,
+              getNumSqlProcs(),
               numCpus_,
               exePriority_,
               transId_,
@@ -9449,7 +9462,7 @@ Lng32 ExMasterStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     sqlStats_item->int64_value = originalSqlTextLen_;
     break;    
   case SQLSTATS_NUM_SQLPROCS:
-    sqlStats_item->int64_value = numSqlProcs_;
+    sqlStats_item->int64_value = getNumSqlProcs();
     break;
   case SQLSTATS_NUM_CPUS:
     sqlStats_item->int64_value = numCpus_;
@@ -9816,6 +9829,7 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
   char *detailTemp = NULL;
   char *tdbIdDetailTemp = NULL;
   char *seTemp = NULL;
+  char *seOffendTemp = NULL;
   char *memThreshold = NULL;
   short retcode = SQLCLI_STATS_REQ_NONE;
   Int64 tempNum;
@@ -9923,6 +9937,13 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
     {
       ptr = str_tok(NULL, ',', &internal);
       seTemp = ptr;
+      diskOffender = TRUE;
+    }
+    else
+    if (strncasecmp(ptr, "SE_OFFENDER", 10) == 0)
+    {
+      ptr = str_tok(NULL, ',', &internal);
+      seOffendTemp = ptr;
       diskOffender = TRUE;
     }
     else
@@ -10108,6 +10129,12 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
   {
     tempNum =  atoi(seTemp);
     *filter = (Lng32)tempNum;
+    retcode = SQLCLI_STATS_REQ_SE_OFFENDER;
+  }
+  if (seOffendTemp != NULL)
+  {
+    tempNum =  atoi(seOffendTemp);
+    *filter = (Lng32)-tempNum;
     retcode = SQLCLI_STATS_REQ_SE_OFFENDER;
   }
   if (pidTemp != NULL)
