@@ -32,9 +32,9 @@ BUILDROOTDIR=$(RPMROOT)/BUILDROOT
 all: rpmbuild
 
 # need repoinfo file per release
-# traf_ambari needs to support multiple releases so ambari can select 
-# correct trafodion version for a given HDP stack
-REPO_VER= 2.1
+# traf_ambari needs to support multiple releases so ambari can
+# select trafodion version for given HDP stack
+REPO_LIST= $(TRAFODION_VER) # for now, list is current release only
 
 $(SOURCEDIR)/ambari_rpm.tar.gz: mpack-install/LICENSE repofiles traf-mpack/mpack.json
 	rm -rf $(RPMROOT)
@@ -43,11 +43,14 @@ $(SOURCEDIR)/ambari_rpm.tar.gz: mpack-install/LICENSE repofiles traf-mpack/mpack
 
 # To do: needs enhancement when supporting RH6 & RH7 os
 repofiles:
-	for v in $(REPO_VER); do \
-	   rdir=traf-mpack/custom-services/TRAFODION/$${v}/repos; \
-	   mkdir -p $${rdir} ; \
-	   sed -e "s#REPLACE_WITH_RH6_REPO_URL#$(REPO_URL)/RH6/$${v}#" repo.template > $${rdir}/repoinfo.xml ; \
-	   echo $${rdir}/repoinfo.xml ; \
+	for v in $(REPO_LIST); do \
+	   rdir=traf-mpack/custom-services/TRAFODION/$${v}; \
+	   mkdir -p $${rdir}/repos ; \
+	   sed -e "s#REPLACE_WITH_RH6_REPO_URL#$(REPO_URL)/RH6/$${v}#" \
+	       -e "s#REPO_VER#$${v}#" \
+	       repo.template > $${rdir}/repos/repoinfo.xml ; \
+	   sed -e "s#REPO_VER#$${v}#" \
+	       meta.template > $${rdir}/metainfo.xml ; \
 	done
 
 traf-mpack/mpack.json: mpack.json
@@ -80,4 +83,5 @@ clean:
 	rm -rf $(RPMROOT)
 	rm -rf mpack-install/LICENSE
 	rm -rf traf-mpack/custom-services/TRAFODION/*/repos
+	rm -f traf-mpack/custom-services/TRAFODION/*/metainfo.xml
 	rm -rf traf-mpack/mpack.json

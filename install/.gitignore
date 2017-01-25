@@ -5,5 +5,5 @@ DISCLAIMER
 ambari-installer/RPMROOT
 ambari-installer/traf-mpack.tar.gz
 ambari-installer/mpack-install/repo
-ambari-installer/traf-mpack/custom-services/TRAFODION/*/repos
+ambari-installer/traf-mpack/custom-services
 ambari-installer/traf-mpack/mpack.json
