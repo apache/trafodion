@@ -121,6 +121,10 @@ class HDPMod(object):
         }
         self.p.post('%s/config_groups' % cluster_url, hbase_config_group)
 
+        if dbcfgs['secure_hadoop'].upper() == 'Y':
+            secure_cfgs = ',org.apache.hadoop.hbase.security.access.AccessController,org.apache.hadoop.hbase.security.token.TokenProvider'
+            MOD_CFGS['hbase-site']['hbase.coprocessor.region.classes'] += secure_cfgs
+
         for config_type in MOD_CFGS.keys():
             desired_tag = desired_cfg['Clusters']['desired_configs'][config_type]['tag']
             current_cfg = self.p.get(cfg_url.format(config_type, desired_tag))
