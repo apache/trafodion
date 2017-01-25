@@ -499,12 +499,6 @@ Lng32 HSClearCLIDiagnostics()
   return retcode;
 }
 
-// Clear any JNI diagnostic text stored in the CLI
-void HSFuncClearJniErrorStr()
-{
-  GetCliGlobals()->currContext()->setJniErrorStr("");
-}
-
 // Obtain any JNI diagnostic text stored in the CLI
 const char * HSFuncGetJniErrorStr()
 {

@@ -285,9 +285,10 @@ void HSLogMan::Log(const char *data)
       {
         ofstream fileout(logFile_->data(), ios::app);
         time_t currentTime = time(0);
-        struct tm * currentTimeExploded = localtime(&currentTime);
+        struct tm currentTimeExploded;
+        localtime_r(&currentTime,&currentTimeExploded);
         char localTime[100];  // way more space than needed
-        strftime(localTime,sizeof(localTime),"%c",currentTimeExploded);
+        strftime(localTime,sizeof(localTime),"%c",&currentTimeExploded);
         fileout << "[" << localTime << "] " << data << endl;
       }
   }

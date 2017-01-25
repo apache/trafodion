@@ -72,6 +72,7 @@
 #include "PrivMgrComponentPrivileges.h"
 #include "PrivMgrCommands.h"
 #include "CmpDDLCatErrorCodes.h"
+#include "HBaseClient_JNI.h"  // to get HBC_ERROR_ROWCOUNT_EST_EXCEPTION
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -3123,7 +3124,6 @@ Lng32 HSGlobalsClass::Initialize()
     LM->StartTimer("getRowCount()");
     Int32 errorCode = 0;
     Int32 breadCrumb = 0;
-    HSFuncClearJniErrorStr();   // clear out any stale error info 
     actualRowCount = objDef->getRowCount(currentRowCountIsEstimate_,
                                          inserts, deletes, updates,
                                          numPartitions,
@@ -3138,18 +3138,27 @@ Lng32 HSGlobalsClass::Initialize()
         LM->Log(LM->msg);
         sprintf(LM->msg, "\terrorCode=%d, breadCrumb=%d", errorCode, breadCrumb);
         LM->Log(LM->msg);
-        const char * jniErrorStr = HSFuncGetJniErrorStr();
-        if (strlen(jniErrorStr) > 0)
+        if (errorCode == HBC_ERROR_ROWCOUNT_EST_EXCEPTION)
           {
-            LM->Log("\tJNI exception info:");
-            LM->Log(jniErrorStr);
+            const char * jniErrorStr = HSFuncGetJniErrorStr();
+            if (strlen(jniErrorStr) > 0)
+              {
+                LM->Log("\tJNI exception info:");
+                LM->Log(jniErrorStr);
+              }
           }
       }
 
-    if (errorCode)
+    if (errorCode == HBC_ERROR_ROWCOUNT_EST_EXCEPTION)
       {
         *CmpCommon::diags() << DgSqlCode(-UERR_BAD_EST_ROWCOUNT) << DgInt0(errorCode) 
                             << DgInt1(breadCrumb) << DgString0(HSFuncGetJniErrorStr());
+        return -1;
+      }
+    else if (errorCode)
+      {
+        *CmpCommon::diags() << DgSqlCode(-UERR_BAD_EST_ROWCOUNT) << DgInt0(errorCode) 
+                            << DgInt1(breadCrumb) << DgString0("");
         return -1;
       }
 

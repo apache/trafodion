@@ -63,6 +63,7 @@ static const char* const hbcErrorEnumStr[] =
  ,"Java exception in getHBulkLoadClient()."
  ,"Preparing parameters for estimateRowCount()."
  ,"Java exception in estimateRowCount()."
+ ,"estimateRowCount() returned false."
  ,"Java exception in releaseHBulkLoadClient()."
  ,"Java exception in getBlockCacheFraction()."
  ,"Preparing parameters for getLatestSnapshot()."
@@ -1307,6 +1308,10 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
                                               Int64& rowCount,
                                               Int32& breadCrumb)
 {
+  // Note: Please use HBC_ERROR_ROWCOUNT_EST_EXCEPTION only for
+  // those error returns that call getExceptionDetails(). This
+  // tells the caller that Java exception information is available.
+
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::estimateRowCount(%s) called.", tblName);
   breadCrumb = 1;
   if (jenv_ == NULL)
@@ -1356,9 +1361,9 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
   breadCrumb = 5;
   if (jresult == false)
   {
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::estimateRowCount()", getLastError());
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::estimateRowCount() returned false", getLastError());
     jenv_->PopLocalFrame(NULL);
-    return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
+    return HBC_ERROR_ROWCOUNT_EST_FALSE;
   }
 
   breadCrumb = 6;

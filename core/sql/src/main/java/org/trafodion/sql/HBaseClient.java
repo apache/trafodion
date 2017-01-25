@@ -1124,6 +1124,8 @@ public class HBaseClient {
               // ignore the interruption and keep going
             }  
             retryWait = 2 * retryWait;
+            if (retryWait > 30000)
+              retryWait = 30000;  // max out the retry wait at 30 seconds
           }
           else {
             // we've retried enough; just re-throw
