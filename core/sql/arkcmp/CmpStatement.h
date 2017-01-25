@@ -227,8 +227,11 @@ public:
   short getDDLExprAndNode(char * sqlStr, Lng32 inputCS,
                           DDLExpr* &ddlExpr, ExprNode* &ddlNode);
 
-  CSEInfo *getCSEInfo(const char *cseName);
-  const LIST(CSEInfo *) *getCSEInfoList() { return cses_; }
+  CSEInfo *getCSEInfo(const char *cseName) const;
+  CSEInfo *getCSEInfoForMainQuery() const;
+  static Int32 getCSEIdForMainQuery() { return 0; }
+  CSEInfo *getCSEInfoById(Int32 cseId) const;
+  const LIST(CSEInfo *) *getCSEInfoList() const { return cses_; }
   void addCSEInfo(CSEInfo *info);
 
 protected:

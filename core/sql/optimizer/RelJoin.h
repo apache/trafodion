@@ -792,8 +792,9 @@ public:
        const ValueIdSet &predicatesToRemove,
        const ValueIdSet &commonPredicatesToAdd,
        const ValueIdSet &inputsToRemove,
-       CSEInfo *info,
-       NABoolean testRun);
+       ValueIdSet &valuesForVEGRewrite,
+       ValueIdSet &keyColumns,
+       CSEInfo *info);
 
   // Detect whether rows coming from the ith child contain multi-column skew for
   // a set of join predicates. The output argument vidOfEquiJoinWithSkew is the

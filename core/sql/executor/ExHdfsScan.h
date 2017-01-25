@@ -212,7 +212,7 @@ protected:
 
   void computeRangesAtRuntime();
   void deallocateRuntimeRanges();
-  HdfsFileInfo *getRange(Int32 r);
+  HdfsFileInfo *getRange(Int32 r) { return getHdfsFileInfoListAsArray().at(r); }
 
   short moveRowToUpQueue(const char * row, Lng32 len, 
                          short * rc, NABoolean isVarchar);
@@ -222,6 +222,10 @@ protected:
 
   short setupError(Lng32 exeError, Lng32 retcode, 
                    const char * str, const char * str2, const char * str3);
+
+  // Get the array representation of the HdfsFileInfoList to aid in
+  // o(1) access of an entry given an index.
+  HdfsFileInfoArray& getHdfsFileInfoListAsArray() {return hdfsFileInfoListAsArray_;}
 
   /////////////////////////////////////////////////////
   // Private data.
@@ -275,8 +279,6 @@ protected:
   Lng32 myInstNum_;
   Lng32 beginRangeNum_;
   Lng32 numRanges_;
-  HdfsFileInfo *runTimeRanges_;
-  Int32 numRunTimeRanges_;
   Lng32 currRangeNum_;
   char *endOfRequestedRange_ ; // helps rows span ranges.
   char * hdfsFileName_;
@@ -299,6 +301,9 @@ protected:
 
   NABoolean dataModCheckDone_;
   ComDiagsArea * loggingErrorDiags_;
+
+  // this array is populated from the info list stored as Queue.
+  HdfsFileInfoArray hdfsFileInfoListAsArray_;
 };
 
 class ExOrcScanTcb  : public ExHdfsScanTcb
