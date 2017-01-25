@@ -91,7 +91,7 @@ class Node(Script):
          content=InlineTemplate(params.traf_env_template,trim_blocks=False),
          mode=0644)
     # initialize & verify env (e.g., bashrc creates $TRAF_HOME/tmp as trafodion user)
-    cmd = "source ~" + params.traf_user + "/.bashrc ; ls -l $TRAF_HOME/tmp"
+    cmd = "source ~/.bashrc"
     Execute(cmd,user=params.traf_user)
 
     ##################
