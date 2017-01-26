@@ -912,8 +912,22 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	    copyRowIDToDirectBuffer(rowId_);
 
 	    currRowNum_++;
-	    matches_++;
-
+            // temp code below.WIll remove the envvar after this
+            //has got enough exposure in  testing.
+            if (getenv("TURN_OFF_RETURNROW")) 
+              matches_++;
+            else
+              {
+                if (!hbaseAccessTdb().returnRow())
+                  matches_++;
+                // if we are returning a row moveRowToUpQueue will increment matches_
+                else
+                  {
+                    step_ = RETURN_ROW;
+                    break;
+                  } 
+              }
+            
 	    if (currRowNum_ < hbaseAccessTdb().getHbaseRowsetVsbbSize())
 	      {
 		step_ = DONE;
@@ -924,6 +938,58 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	  }
 	  break;
 
+        case RETURN_ROW:
+          {
+            if (qparent_.up->isFull())
+	      return WORK_OK;
+	   
+	    if (returnUpdateExpr())
+	      {
+		ex_queue_entry * up_entry = qparent_.up->getTailEntry();
+
+	 	// allocate tupps where returned rows will be created
+                if (allocateUpEntryTupps(
+                         -1,
+                         0,
+                         hbaseAccessTdb().returnedTuppIndex_,
+                         hbaseAccessTdb().returnUpdatedRowLen_,
+                         FALSE,
+                         &rc))
+              return rc;
+
+                ex_expr::exp_return_type exprRetCode =
+		  returnUpdateExpr()->eval(up_entry->getAtp(), workAtp_);
+		if (exprRetCode == ex_expr::EXPR_ERROR)
+		  {
+		    step_ = HANDLE_ERROR;
+		    break;
+		  }
+		
+		rc = 0;
+		// moveRowToUpQueue also increments matches_
+		if (moveRowToUpQueue(&rc))
+		  return 1;
+              }
+            else
+	      {
+		rc = 0;
+		// moveRowToUpQueue also increments matches_
+		if (moveRowToUpQueue(convertRow_, hbaseAccessTdb().convertRowLen(), 
+				     &rc, FALSE))
+		  return 1;
+	      }
+
+            if (currRowNum_ < hbaseAccessTdb().getHbaseRowsetVsbbSize())
+              step_ = DONE;
+            else
+              step_ = PROCESS_INSERT_AND_CLOSE;
+
+            break;
+
+
+
+          }
+          break;
 	case PROCESS_INSERT_AND_CLOSE:
 	  {
             numRowsInVsbbBuffer_ = patchDirectRowBuffers();
@@ -1022,9 +1088,10 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 	    if (NOT hbaseAccessTdb().computeRowsAffected())
 	      matches_ = 0;
 
-	    if ((step_ == DONE) &&
+             if ((step_ == DONE) &&
 		(qparent_.down->getLength() == 1))
 	      {
+                
 		// only one row in the down queue.
 
 		// Before we send input buffer to hbase, give parent
@@ -1042,7 +1109,10 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
 
 		numRetries_++;
 		return WORK_CALL_AGAIN;
-	      }
+                
+                step_ = PROCESS_INSERT_AND_CLOSE;
+                break;
+                }
 
 	    if (handleDone(rc, (step_ == ALL_DONE  ? matches_ : 0)))
 	      return rc;
@@ -1616,21 +1686,20 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
       {
 	if (qparent_.up->isFull())
 	      return WORK_OK;
-	    
+
 	if (returnUpdateExpr())
 	{
-	  ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-	  
-	  // allocate tupps where returned rows will be created
-	  if (allocateUpEntryTupps(
-				   -1,
-				   0,
-				   hbaseAccessTdb().returnedTuppIndex_,
-				   hbaseAccessTdb().returnUpdatedRowLen_,
-				   FALSE,
-				   &rc))
+	  ex_queue_entry * up_entry = qparent_.up->getTailEntry();	 
 	    return rc;
-	  
+            // allocate tupps where returned rows will be created
+            if (allocateUpEntryTupps(
+                 -1,
+                 0,
+                 hbaseAccessTdb().returnedTuppIndex_,
+                 hbaseAccessTdb().returnUpdatedRowLen_,
+                 FALSE,
+                 &rc))  
+              return 1;
 	  ex_expr::exp_return_type exprRetCode =
 	    returnUpdateExpr()->eval(up_entry->getAtp(), workAtp_);
 	  if (exprRetCode == ex_expr::EXPR_ERROR)

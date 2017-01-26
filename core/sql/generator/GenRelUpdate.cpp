@@ -2173,9 +2173,13 @@ short HbaseInsert::codeGen(Generator *generator)
 
   // allocate a map table for the retrieved columns
   MapTable * last_map_table = generator->getLastMapTable();
+  NABoolean inlinedActions = FALSE;
+  if ((getInliningInfo().hasInlinedActions()) ||
+      (getInliningInfo().isEffectiveGU()))
+    inlinedActions = TRUE;
 
   NABoolean returnRow = getReturnRow(this, getIndexDesc());
-  if (getIsTrafLoadPrep())
+  if (getIsTrafLoadPrep() || (isUpsert() && inlinedActions))
     returnRow = isReturnRow();
 
   ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
@@ -2799,8 +2803,8 @@ short HbaseInsert::codeGen(Generator *generator)
 	  (noCheck()))
 	hbasescan_tdb->setHbaseSqlIUD(FALSE);
 
-      if (((getInsertType() == Insert::VSBB_INSERT_USER) && 
-                   generator->oltOptInfo()->multipleRowsReturned()) ||
+      if (((((getInsertType() == Insert::VSBB_INSERT_USER) || isUpsert() )&& 
+           generator->oltOptInfo()->multipleRowsReturned())) ||
 	  (getInsertType() == Insert::UPSERT_LOAD))
       {
 	hbasescan_tdb->setVsbbInsert(TRUE);
@@ -2810,8 +2814,8 @@ short HbaseInsert::codeGen(Generator *generator)
            setVsbbInsert(TRUE);
       }
 
-      if ((isUpsert()) &&
-	  (getInsertType() == Insert::UPSERT_LOAD))
+      
+        if (getInsertType() == Insert::UPSERT_LOAD)
 	{
 	  // this will cause tupleflow operator to send in an EOD to this upsert
 	  // operator. On seeing that, executor will flush the buffers.
