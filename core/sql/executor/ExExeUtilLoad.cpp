@@ -1442,7 +1442,8 @@ short ExExeUtilHBaseBulkLoadTcb::work()
            ComCondition *cond;
            Lng32 entryNumber;
            while ((cond = diagsArea->findCondition(EXE_ERROR_ROWS_FOUND, &entryNumber)) != NULL) {
-              errorRowCount = cond->getOptionalInteger(0);
+              if (errorRowCount < cond->getOptionalInteger(0))
+                 errorRowCount = cond->getOptionalInteger(0);
               diagsArea->deleteWarning(entryNumber);
            }
            diagsArea->setRowCount(0);
