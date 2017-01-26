@@ -99,14 +99,14 @@
 1097 ZZZZZ 99999 BEGINNER MINOR DBADMIN The specified partition $0~String0 does not exist.
 1098 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Partition key ($0~String0) already specified for object $1~TableName.
 1099 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Column $0~Int0 is unnamed.  You must specify an AS clause for that column expression, or name all the columns by specifying a view column list.
-1100 ZZZZZ 99999 ADVANCED MAJOR DBADMIN LOB Column  $0~ColumnName cannot be specified in alter operation
-1101 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Table $0~TableName could not be updated. $1~String0$2~String1
-1102 ZZZZZ 99999 ADVANCED CRTCL DIALOUT Rows could not be inserted into table $0~TableName. $1~String0$2~String1
-1103 ZZZZZ 99999 ADVANCED CRTCL DIALOUT Rows could not be deleted from table $0~TableName. $1~String0$2~String1
-1104 ZZZZZ 99999 BEGINNER MINOR DBADMIN Default value string is too long for column $0~ColumnName.
-1105 ZZZZZ 99999 BEGINNER MINOR DBADMIN CREATE TABLE LIKE statement cannot contain both HORIZONTAL PARTITIONS and STORE BY clauses.
-1106 ZZZZZ 99999 BEGINNER MINOR DBADMIN The specified partition $0~String0 of object $1~TableName does not exist.
-1107 ZZZZZ 99999 BEGINNER MINOR DBADMIN SQL was not able to prepare the statement.
+1100 ZZZZZ 99999 ADVANCED MAJOR DBADMIN LOB column $0~ColumnName cannot be specified in an alter operation.
+1101 ZZZZZ 99999 ADVANCED MAJOR DBADMIN --- unused ---
+1102 ZZZZZ 99999 ADVANCED CRTCL DIALOUT --- unused ---
+1103 ZZZZZ 99999 ADVANCED CRTCL DIALOUT --- unused ---
+1104 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1105 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1106 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1107 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1108 ZZZZZ 99999 BEGINNER MINOR DBADMIN The number of columns specified in the view column list, $0~Int0, does not match the degree of the query expression, $1~Int1.
 1109 44000 99999 BEGINNER MINOR DBADMIN The WITH CHECK OPTION clause appears in the definition of view $0~TableName, but the view is not updatable.
 1110 ZZZZZ 99999 ADVANCED MAJOR DIALOUT $0~String0
