@@ -1314,15 +1314,9 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
 
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::estimateRowCount(%s) called.", tblName);
   breadCrumb = 1;
-  if (jenv_ == NULL)
-     if (initJVM() != JOI_OK)
-         return HBC_ERROR_INIT_PARAM;
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
 
-  breadCrumb = 2;
-  if (jenv_->PushLocalFrame(jniHandleCapacity_) != 0) {
-     getExceptionDetails();
-     return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
-  }
   breadCrumb = 3;
   jstring js_tblName = jenv_->NewStringUTF(tblName);
   if (js_tblName == NULL)
@@ -1345,8 +1339,6 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
   rowCount = *arrayElems;
   if (isCopy == JNI_TRUE)
     jenv_->ReleaseLongArrayElements(jRowCount, arrayElems, JNI_ABORT);
-
-  jenv_->DeleteLocalRef(js_tblName);
 
   breadCrumb = 4;
   if (jenv_->ExceptionCheck())
