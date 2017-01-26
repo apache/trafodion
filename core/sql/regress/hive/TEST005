@@ -260,6 +260,19 @@ c7 float(54),
 c8 smallint
 );
 load with no output into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+select count(*) from trafodion.seabase.traf_tbl_bad;
+load with continue on error into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+select count(*) from trafodion.seabase.traf_tbl_bad;
+delete from trafodion.seabase.traf_tbl_bad ;
+load with log error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+select count(*) from trafodion.seabase.traf_tbl_bad;
+load with log error rows to '/bulkload/logs/TEST005' into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+select count(*) from trafodion.seabase.traf_tbl_bad;
+delete from trafodion.seabase.traf_tbl_bad ;
+load with stop after 3 error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+select count(*) from trafodion.seabase.traf_tbl_bad;
+load with log error rows, stop after 3 error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+select count(*) from trafodion.seabase.traf_tbl_bad;
 insert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 upsert into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 cqd HIVE_SCAN_SPECIAL_MODE '2';

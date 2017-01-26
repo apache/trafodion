@@ -1463,7 +1463,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                     getLobErrStr(intParam1));
                     pentry_down->setDiagsArea(diagsArea);
                   }
-                  retcode = ehi_->hdfsClose();
             } 
 	    if (step_ == CLOSE_FILE)
 	      {
@@ -1489,6 +1488,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
+            if (ehi_ != NULL)
+               retcode = ehi_->hdfsClose();
 	    ex_queue_entry *up_entry = qparent_.up->getTailEntry();
 	    up_entry->copyAtp(pentry_down);
 	    up_entry->upState.parentIndex =
