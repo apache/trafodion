@@ -1153,6 +1153,7 @@ short HbaseDelete::codeGen(Generator * generator)
 		      0, // updateTuppIndex
 		      0, // mergeInsertTuppIndex
 		      0, // mergeInsertRowIdTuppIndex
+		      0, // mergeIUDIndicatorTuppIndex
 		      0, // returnedFetchedTuppIndex
 		      0, // returnedUpdatedTuppIndex
 
@@ -1319,12 +1320,41 @@ short HbaseUpdate::codeGen(Generator * generator)
   const Int32 mergeInsertTuppIndex = 7;
   const Int32 mergeInsertRowIdTuppIndex = 8;
   const Int32 keyColValTuppIndex = 9;
+  Int32 mergeIUDIndicatorTuppIndex = 0;
+  // Do not use 10 as the next available tupp index. Please use 11 next
+  // The 10th tuple index is used by merge statement below.
+
+  Attributes * iudIndicatorAttr = NULL;
 
   ULng32 asciiRowLen = 0; 
   ExpTupleDesc * asciiTupleDesc = 0;
 
   ex_cri_desc * work_cri_desc = NULL;
-  work_cri_desc = new(space) ex_cri_desc(10, space);
+  work_cri_desc = new(space) ex_cri_desc(11, space);
+
+  if (getProducedMergeIUDIndicator() != NULL_VALUE_ID) 
+  {
+    mergeIUDIndicatorTuppIndex = 10;
+    iudIndicatorAttr = 
+      (generator->addMapInfo(getProducedMergeIUDIndicator(), 0))->getAttr();
+    iudIndicatorAttr->setAtpIndex(mergeIUDIndicatorTuppIndex);
+    iudIndicatorAttr->setAtp(work_atp);
+    ULng32 iudIndicatorLen;
+    ExpTupleDesc::computeOffsets(iudIndicatorAttr,
+				 ExpTupleDesc::SQLARK_EXPLODED_FORMAT, 
+				 iudIndicatorLen);
+    ExpTupleDesc  *iudIndicatorTupleDesc = NULL;
+    iudIndicatorTupleDesc = new(generator->getSpace()) 
+      ExpTupleDesc(1, // numAttrs
+		   &iudIndicatorAttr, // **attrs
+		   iudIndicatorLen, // data length
+		   ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+		   ExpTupleDesc::LONG_FORMAT,
+		   generator->getSpace());
+    work_cri_desc->setTupleDescriptor(mergeIUDIndicatorTuppIndex,
+				      iudIndicatorTupleDesc);
+
+  }
 
   NABoolean returnRow = getReturnRow(this, getIndexDesc());
 
@@ -1812,6 +1842,8 @@ short HbaseUpdate::codeGen(Generator * generator)
  
 	      updatedOutputs.insert(tgtValueId);
 	    }
+	  if (getProducedMergeIUDIndicator() != NULL_VALUE_ID) 
+	    updatedOutputs.insert(getProducedMergeIUDIndicator());
 	}
       else
 	{
@@ -1865,12 +1897,19 @@ short HbaseUpdate::codeGen(Generator * generator)
 	    &tgtConvValueIdList);
        }
 
+     Attributes * tgtIUDMergeColConvAttr = NULL;
       const ValueIdList &indexColList = getIndexDesc()->getIndexColumns();
       for (CollIndex ii = 0; ii < tgtConvValueIdList.entries(); ii++)
 	{
 	  const ValueId &tgtColValueId = updatedOutputs[ii];
 	  const ValueId &tgtColConvValueId = tgtConvValueIdList[ii];
-
+	  if (updatedOutputs[ii] == getProducedMergeIUDIndicator())
+	  {
+	    tgtIUDMergeColConvAttr = 
+	      (generator->getMapInfo(tgtColConvValueId, 0))->getAttr();
+	    continue;
+	  }
+	
 	  BaseColumn * bc = (BaseColumn*)tgtColValueId.getItemExpr();
 	  const ValueId &indexColValueId = indexColList[bc->getColNumber()];
 	  
@@ -1922,6 +1961,8 @@ short HbaseUpdate::codeGen(Generator * generator)
               }
 	      mergeInsertOutputs.insert(tgtValueId);
 	  }
+	   if (getProducedMergeIUDIndicator() != NULL_VALUE_ID) 
+	    mergeInsertOutputs.insert(getProducedMergeIUDIndicator());
 	  
 	  MapTable * returnedMergeInsertedMapTable = 0;
 	  ExpTupleDesc * returnedMergeInsertedTupleDesc = NULL;
@@ -1958,6 +1999,8 @@ short HbaseUpdate::codeGen(Generator * generator)
 		 &returnedMergeInsertedMapTable,
 		 &tgtConvValueIdList);
 	    }
+	  if (getProducedMergeIUDIndicator() != NULL_VALUE_ID)
+	    iudIndicatorAttr->copyLocationAttrs(tgtIUDMergeColConvAttr);
 	}
     }
 
@@ -2041,6 +2084,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 		      updateTuppIndex,
 		      mergeInsertTuppIndex,
 		      mergeInsertRowIdTuppIndex,
+		      mergeIUDIndicatorTuppIndex,
 		      returnedFetchedTuppIndex,
 		      returnedUpdatedTuppIndex,
 
@@ -2731,6 +2775,7 @@ short HbaseInsert::codeGen(Generator *generator)
 		      loggingTuppIndex, //loggingTuppIndex
 		      0, // mergeInsertTuppIndex
 		      0, // mergeInsertRowIdTuppIndex
+		      0, // mergeIUDIndicatorTuppIndex
 		      0, // returnedFetchedTuppIndex
 		      projRowTuppIndex, // returnedUpdatedTuppIndex
 		      

@@ -364,7 +364,8 @@ static const QueryString getTrafViewsInSchemaQuery[] =
 
 static const QueryString getTrafObjectsInViewQuery[] =
 {
-  {" select trim(T.schema_name) || '.' || trim(T.object_name), trim(T.object_type) "},
+  {" select trim(T.catalog_name) || '.' || trim(T.schema_name) || '.' || trim(T.object_name), "},
+  {" trim(T.object_type) "},
   {"   from %s.\"%s\".%s VU,  %s.\"%s\".%s T "},
   {"  where VU.using_view_uid = "},
   {"     (select T2.object_uid from  %s.\"%s\".%s T2 "},
@@ -2181,6 +2182,40 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		step_ = DISPLAY_HEADING_;
 		break;
 	      }
+
+            // if returned table name is an external name, convert it to the native name.
+            // Do it for tables_in_view and objects_in_view operations only.
+            NAString nativeName;
+	    if (((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_) ||
+		 (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_)) &&
+		(vi->get(1) && (strcmp(vi->get(1), "BT") == 0)))
+              {
+                char tempBuf[2*len];
+                Lng32 numParts = 0;
+                char *parts[4];
+                LateNameInfo::extractParts(ptr, tempBuf, numParts, parts, TRUE);
+                if (numParts == 3)
+                  {
+                    NAString catName(parts[0]);
+                    NAString schName(parts[1]);
+                    NAString objName(parts[2]);
+                    if (ComIsTrafodionExternalSchemaName(schName))
+                      {
+                        ComObjectName tableName(catName,
+                                                schName,
+                                                objName,
+                                                COM_TABLE_NAME);
+                        
+                        nativeName =
+                          ComConvertTrafNameToNativeName
+                          (tableName.getCatalogNamePartAsAnsiString(),
+                           tableName.getSchemaNamePartAsAnsiString(),
+                           tableName.getObjectNamePartAsAnsiString());
+                        ptr = (char*)nativeName.data();
+						len = nativeName.length();
+                      }
+                  }
+              }
 
 	    short rc = 0;
 	    if (moveRowToUpQueue(ptr, len, &rc))

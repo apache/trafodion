@@ -2542,7 +2542,6 @@ void ContextCli::checkIfNeedToClose(Statement *stmt, enum CloseCursorType type, 
   
   if (stmt->isAnsiHoldable())
   {
-    getCliGlobals()->updateMeasure(stmt,NA_JulianTimestamp());
     if (type == CLOSE_ALL_INCLUDING_ANSI_HOLDABLE
             || type == CLOSE_ALL_INCLUDING_ANSI_PUBSUB_HOLDABLE
             || type == CLOSE_ALL_INCLUDING_ANSI_PUBSUB_HOLDABLE_WHEN_CQD)
@@ -2553,7 +2552,6 @@ void ContextCli::checkIfNeedToClose(Statement *stmt, enum CloseCursorType type, 
   else
   if (stmt->isPubsubHoldable())
   {
-    getCliGlobals()->updateMeasure(stmt,NA_JulianTimestamp());
     if (type == CLOSE_ALL_INCLUDING_PUBSUB_HOLDABLE
             || type == CLOSE_ALL_INCLUDING_ANSI_PUBSUB_HOLDABLE)
       closeStmt = TRUE;
@@ -4488,13 +4486,6 @@ ExStatisticsArea *ContextCli::getMergedStats(
           stats->merge(statsTmp, tmpStatsMergeType);
           setDeleteStats(TRUE);
         }
-      }
-
-      if (stats->getMasterStats() != NULL)
-      {
-        stats->getMasterStats()->setNumSqlProcs((short)(stats->getMasterStats()->numOfTotalEspsUsed()+1));
-// see ExRtFragTable::countSQLNodes in ex_frag_rt.cpp.  The compiler's dop
-// counts cores.  We want nodes here.
       }
       return stats;
     }

@@ -15,7 +15,7 @@ consumed memory resources exceeding over a certain threshold. These are:
 a)	MEM_OFFENDER
 b)	WM_MEM_OFFENDER
 
-In addition, we have 6 types of filtering mechanism based on query execution 
+In addition, we have several types of filtering mechanism based on query execution 
 time and/or state that can help the DBA and/or support personnel in analyzing 
 the live state of the Trafodion instance for problems. These are:
 
@@ -25,7 +25,8 @@ c)	ACTIVE_QUERIES
 d)	INACTIVE_QUERIES
 e)	DEAD_QUERIES
 f)	UNMONITORED_QUERIES
-
+g)      SE_BLOCKED_QUERIES
+h)      SE_OFFENDER_QUERIES
 
 All dynamic SQL queries including child queries can be monitored using this 
 mechanism, because it uses direct access to the RMS infrastructure. RMS 
@@ -55,6 +56,7 @@ Here is the help from the offender script:
                           mem_offender
                           wm_mem_offender
                           active
+                          se_blocked
                           inactive
                           in_sql
                           in_client
@@ -63,6 +65,7 @@ Here is the help from the offender script:
 
    -t|--time   Optional Default 30
                values: 0 < <time> < 32768 
+
                Time span (in seconds) to search for matching offenders.  
                Applies to scripts: active, dead,inactive,in_sql,in_client,unmonitored
 
@@ -258,6 +261,41 @@ CURRENT_TIMESTAMP           LAST_ACTIVITY_SECS    QUERY_TYPE            QUERY_SU
 013-02-22 16:28:27.094424                  1385  SQL_SELECT_NON_UNIQUE SQL_STMT_NA      NO_STATS           MXID11000031218212228308814844995000000000206U6553500_50_STMT_INTERNAL_STATISTICS      "select variable_info from table(statistics(null,_ISO88591'MERGE=2,QID=CURRENT'))   
 013-02-22 16:28:27.094424                  1385  SQL_SET_TRANSACTION   SQL_STMT_NA      NO_STATS           MXID11000031218212228308814844995000000000206U6553500_48_STMT_TRANS_ON_1               "SET TRANSACTION AUTOCOMMIT ON
 013-02-22 16:28:27.094424                  1385  SQL_OTHER             SQL_STMT_NA      NO_STATS           MXID11000031218212228308814844995000000000206U6553500_47_STMT_COMMIT_1                 "COMMIT WORK
+
+SE_BLOCKED_QUERIES
+==================
+
+This statement lists queries which are blocked in the storage engine APIs 
+for more than given number of seconds. The BLOCKED_FOR_SECS denotes how 
+long the storage engine API is blocked.
+
+The SQL commands to list SE_BLOCKED queries are available at:
+$TRAF_HOME/export/limited-support-tools/LSO/se_blocked.sql  
+
+Example output is below:
+CURRENT_TIMESTAMP           NO_OF_PROCESSES  BLOCKED_FOR_SECS   QUERY_ID                                                      TABLE_NAME
+--------------------------  ---------------  ----------------  ------------------------------------------------------------  ------------------------------
+
+2016-12-28 10:29:43.941455                1                83  MXID11000030514212349680799580002000000000206U3333300_18_S1   TRAFODION.SCH.T022   
+
+SE_OFFENDING_QUERIES
+====================
+
+This statement lists queries which has a total IO time of any operator 
+accessing the storage engine longer than the given number of seconds
+
+The SQL commands to list SE_BLOCKED queries are available at:
+$TRAF_HOME/export/limited-support-tools/LSO/se_offender.sql  
+
+CURRENT_TIMESTAMP           TOTAL_IO_TIME_IN_SECS  PROCESS_ID   QUERY_ID                                                                             TABLE_NAME
+--------------------------  ---------------------  ------------  -----------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------------------
+
+2017-01-18 14:20:03.604532                 1         000, 06390  MXID11000026007212351477539057002000000000206U3333300_107___SQLCI_DML_LAST__         TRAFODION.SELVA.CUSTOMER 
+2017-01-18 14:20:03.604532                 1         001, 06391  MXID11000026007212351477539057002000000000206U3333300_107___SQLCI_DML_LAST__         TRAFODION.SELVA.CUSTOMER
+
+
+LIMITING THE OUTPUT TO A NODE
+=============================
 
 To limit any of the filter queries to a particular node, append ',CPU=<node_no>'
 to the second parameter for the statistics table function. For example:

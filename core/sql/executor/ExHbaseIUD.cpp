@@ -1332,6 +1332,8 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 {
   Lng32 retcode = 0;
   short rc = 0;
+  Int64 exceptionCount;
+  Lng32 errorRowCount;
 
   ExMasterStmtGlobals *g = getGlobals()->
       castToExExeStmtGlobals()->castToExMasterStmtGlobals();
@@ -1628,20 +1630,22 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
 
       case HANDLE_EXCEPTION:
       {
+      exceptionCount = 0;
+      ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, hbaseAccessTdb().getErrCountTab(), 
+                      hbaseAccessTdb().getErrCountRowId());
       if (hbaseAccessTdb().getMaxErrorRows() > 0)
       {
-        Int64 exceptionCount = 0;
-        ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, hbaseAccessTdb().getErrCountTab(), 
-                      hbaseAccessTdb().getErrCountRowId());
         if (exceptionCount >  hbaseAccessTdb().getMaxErrorRows())
         {
           if (pentry_down->getDiagsArea())
             pentry_down->getDiagsArea()->clear();
           if (workAtp_->getDiagsArea())
             workAtp_->getDiagsArea()->clear();
-
-          //8112 max number of error rows exceeded.
+          errorRowCount = (Lng32) exceptionCount;
           ComDiagsArea * diagsArea = NULL;
+          ExRaiseSqlWarning(getHeap(), &diagsArea,
+              (ExeErrorCode)(EXE_ERROR_ROWS_FOUND), NULL, &errorRowCount);
+          //8113 max number of error rows exceeded.
           ExRaiseSqlError(getHeap(), &diagsArea,
               (ExeErrorCode)(EXE_MAX_ERROR_ROWS_EXCEEDED));
           pentry_down->setDiagsArea(diagsArea);
@@ -1731,17 +1735,26 @@ ExWorkProcRetcode ExHbaseAccessBulkLoadPrepSQTcb::work()
       case DONE:
       case ALL_DONE:
       {
-        if (step_ == ALL_DONE && eodSeen && (loggingErrorDiags_ != NULL)) {
-	   ex_queue_entry * up_entry = qparent_.up->getTailEntry();
-           ComDiagsArea * diagsArea = up_entry->getDiagsArea();
-           if (!diagsArea)
-            {
-              diagsArea =
-                ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-              up_entry->setDiagsArea(diagsArea);
-            }
-            diagsArea->mergeAfter(*loggingErrorDiags_);
-            loggingErrorDiags_->clear();
+        if (step_ == ALL_DONE && eodSeen) {
+           exceptionCount = 0;
+           ExHbaseAccessTcb::getErrorCount( ehi_,exceptionCount, hbaseAccessTdb().getErrCountTab(), 
+                      hbaseAccessTdb().getErrCountRowId());
+           errorRowCount = (Lng32) exceptionCount;
+           if (errorRowCount != 0 || loggingErrorDiags_ != NULL) {
+	      ex_queue_entry * down_entry = qparent_.down->getHeadEntry();
+              ComDiagsArea * diagsArea = down_entry->getDiagsArea();
+              if (!diagsArea) {
+                 diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+                down_entry->setDiagsArea(diagsArea);
+              }
+              if (loggingErrorDiags_ != NULL) {
+                 diagsArea->mergeAfter(*loggingErrorDiags_);
+                 loggingErrorDiags_->clear();
+              }
+              if (errorRowCount > 0) 
+                 ExRaiseSqlWarning((NAMemory *)getHeap(), &diagsArea,
+                   (ExeErrorCode)(EXE_ERROR_ROWS_FOUND), (ComCondition **)NULL, &errorRowCount);
+           }
         }
  
         if (handleDone(rc, (step_ == ALL_DONE ? matches_ : 0)))
@@ -2458,6 +2471,7 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 
 	    char * fetchedDataPtr = NULL;
 	    char * updatedDataPtr = NULL;
+	    char * mergeIUDIndicatorDataPtr = NULL;
 	    if (tcb_->returnFetchExpr())
 	      {
 		exprRetCode =
@@ -2470,11 +2484,18 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 		fetchedDataPtr = up_entry->getAtp()->getTupp(tcb_->hbaseAccessTdb().returnedFetchedTuppIndex_).getDataPointer();
 		
 	      }
-
+	    if (tcb_->hbaseAccessTdb().mergeIUDIndicatorTuppIndex_ > 0)
+	      mergeIUDIndicatorDataPtr = 
+		tcb_->workAtp_->
+		getTupp(tcb_->hbaseAccessTdb().mergeIUDIndicatorTuppIndex_).
+		getDataPointer();
+	    
 	    if (rowUpdated_)
 	      {
 		if (tcb_->returnUpdateExpr())
 		  {
+		    if (mergeIUDIndicatorDataPtr)
+		      *mergeIUDIndicatorDataPtr = 'U';
 		    exprRetCode =
 		      tcb_->returnUpdateExpr()->eval(up_entry->getAtp(), tcb_->workAtp_);
 		    if (exprRetCode == ex_expr::EXPR_ERROR)
@@ -2488,6 +2509,8 @@ ExWorkProcRetcode ExHbaseUMDtrafUniqueTaskTcb::work(short &rc)
 	      }
 	    else
 	      {
+		if (mergeIUDIndicatorDataPtr)
+		  *mergeIUDIndicatorDataPtr = 'I';
 		if (tcb_->returnMergeInsertExpr())
 		  {
 		    exprRetCode =
@@ -4091,12 +4114,6 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
 	  break;
 	case SETUP_UMD:
 	  {
-	    rowIds_.clear();
-	    retcode = setupUniqueKeyAndCols(FALSE);
-	    if (retcode == -1) {
-		step_ = HANDLE_ERROR;
-		break;
-	    }
             rc = evalInsDelPreCondExpr();
             if (rc == -1) {
                 step_ = HANDLE_ERROR;
@@ -4106,6 +4123,12 @@ ExWorkProcRetcode ExHbaseAccessSQRowsetTcb::work()
                step_ = NEXT_ROW;
                break;
             }
+	    rowIds_.clear();
+	    retcode = setupUniqueKeyAndCols(FALSE);
+	    if (retcode == -1) {
+		step_ = HANDLE_ERROR;
+		break;
+	    }
 
 	    copyRowIDToDirectBuffer(rowIds_[0]);
 

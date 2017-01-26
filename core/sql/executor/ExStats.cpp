@@ -532,126 +532,63 @@ void ExTimeStats::unpack(const char* &buffer)
   }
 }
 
-//////////////////////////////////////////////////////////////////
-// class ExeDp2Stats
-//////////////////////////////////////////////////////////////////
-UInt32 ExeDp2Stats::packedLength() 
+Lng32 ExTimeStats::filterForSEstats(struct timespec currTimespec)
 {
-  UInt32 size  = sizeof(accessedDP2Rows_);
-  size += sizeof(usedDP2Rows_);
-  size += sizeof(escalations_);
-  size += sizeof(diskReads_);
-  size += sizeof(lockWaits_);
-
-  if (getVersion() >= _STATS_RTS_VERSION)
-    size += sizeof(processBusyTime_);
-  return size;
-}
-
-UInt32 ExeDp2Stats::pack(char * buffer) 
-{
-  UInt32 size  = packIntoBuffer(buffer, accessedDP2Rows_);
-  size += packIntoBuffer(buffer, usedDP2Rows_);
-  size += packIntoBuffer(buffer, escalations_);
-  size += packIntoBuffer(buffer, diskReads_);
-  size += packIntoBuffer(buffer, lockWaits_);
-  if (getVersion() >= _STATS_RTS_VERSION)
-    size += packIntoBuffer(buffer, processBusyTime_);
-  return size;
-}
-
-void ExeDp2Stats::merge(ExeDp2Stats * other) 
-{
-  accessedDP2Rows_ = accessedDP2Rows_ + other->accessedDP2Rows_;
-  usedDP2Rows_ = usedDP2Rows_ + other->usedDP2Rows_;
-  escalations_ = escalations_ + other->escalations_;
-
-  // Avoid overflow of this 32 bit counter.  Typically, 32 bits is
-  // enough, but in some cases such as when the table is not audited,
-  // the disk reads (really disk IO, incl. writes) can be large.
-  // Merging many stats from many partitions can overflow this counter
-  // causing an exception.
-  //
-  // To avoid this, once we reach UINT_MAX, we stop advancing the
-  // counter.
-  //
-  Int64 diskReads = diskReads_ + other->diskReads_;
-  diskReads_ = ((diskReads > UINT_MAX) ? UINT_MAX : (UInt32)diskReads);
-  lockWaits_ = lockWaits_ + other->lockWaits_;
-  if (other->getVersion() >= _STATS_RTS_VERSION)
-    processBusyTime_ = processBusyTime_ + other->processBusyTime_;
-}
-
-void ExeDp2Stats::copyContents(ExeDp2Stats * other)
-{
-  accessedDP2Rows_ = other->accessedDP2Rows_;
-  usedDP2Rows_ = other->usedDP2Rows_;
-  escalations_ = other->escalations_;
-  diskReads_ = other->diskReads_;
-  lockWaits_ = other->lockWaits_;
-  if (other->getVersion() >= _STATS_RTS_VERSION)
-    processBusyTime_ = other->processBusyTime_;
-  else
-    processBusyTime_  = 0;
-}
-
-void ExeDp2Stats::unpack(const char* &buffer) 
-{
-  unpackBuffer(buffer, accessedDP2Rows_);
-  unpackBuffer(buffer, usedDP2Rows_);
-  unpackBuffer(buffer, escalations_);
-  unpackBuffer(buffer, diskReads_);
-  unpackBuffer(buffer, lockWaits_);
-  if (getVersion() >= _STATS_RTS_VERSION)
-    unpackBuffer(buffer, processBusyTime_);
-  else
-    processBusyTime_ = 0;
+  Lng32 diffTime = 0;
+  
+  if (isStarted_) 
+     diffTime = currTimespec.tv_sec - startTime_.tv_sec;
+  return diffTime;
 }
 
 //////////////////////////////////////////////////////////////////
-// class FsDp2MsgsStats
+// class ExeSEtats
 //////////////////////////////////////////////////////////////////
-UInt32 FsDp2MsgsStats::packedLength()
+UInt32 ExeSEStats::packedLength() 
 {
-  UInt32 size  = sizeof(numMessages_);
-  size += sizeof(messageBytes_);
-  size += sizeof(statsBytes_);
-  size += sizeof(numRedriveAttempted_); 
+  UInt32 size  = sizeof(accessedRows_);
+  size += sizeof(usedRows_);
+  size += sizeof(numIOCalls_);
+  size += sizeof(numIOBytes_);
+  size += sizeof(maxIOTime_);
   return size;
 }
 
-UInt32 FsDp2MsgsStats::pack(char * buffer) 
+UInt32 ExeSEStats::pack(char * buffer) 
 {
-  UInt32 size  = packIntoBuffer(buffer, numMessages_);
-  size += packIntoBuffer(buffer, messageBytes_);
-  size += packIntoBuffer(buffer, statsBytes_);
-  size += packIntoBuffer(buffer, numRedriveAttempted_);
- 
+  UInt32 size  = packIntoBuffer(buffer, accessedRows_);
+  size += packIntoBuffer(buffer, usedRows_);
+  size += packIntoBuffer(buffer, numIOCalls_);
+  size += packIntoBuffer(buffer, numIOBytes_);
+  size += packIntoBuffer(buffer, maxIOTime_);
   return size;
 }
 
-void FsDp2MsgsStats::merge(FsDp2MsgsStats * other) 
+void ExeSEStats::merge(ExeSEStats * other) 
 {
-  numMessages_ = numMessages_ + other->numMessages_;
-  messageBytes_ = messageBytes_ + other->messageBytes_;
-  statsBytes_ = statsBytes_ + other->statsBytes_;
-  numRedriveAttempted_ += other->numRedriveAttempted_;
+  accessedRows_ = accessedRows_ + other->accessedRows_;
+  usedRows_ = usedRows_ + other->usedRows_;
+  numIOCalls_ = numIOCalls_ + other->numIOCalls_;
+  numIOBytes_ = numIOBytes_ + other->numIOBytes_;
+  maxIOTime_ = maxIOTime_ + other->maxIOTime_;
 }
 
-void FsDp2MsgsStats::copyContents(FsDp2MsgsStats * other)
+void ExeSEStats::copyContents(ExeSEStats *other)
 {
-  numMessages_  = other->numMessages_;
-  messageBytes_ = other->messageBytes_;
-  statsBytes_ = other->statsBytes_;
-  numRedriveAttempted_ = other->numRedriveAttempted_;
+  accessedRows_ = other->accessedRows_;
+  usedRows_ = other->usedRows_;
+  numIOCalls_ = other->numIOCalls_;
+  numIOBytes_ = other->numIOBytes_;
+  maxIOTime_ = other->maxIOTime_;
 }
 
-void FsDp2MsgsStats::unpack(const char* &buffer) 
+void ExeSEStats::unpack(const char* &buffer) 
 {
-  unpackBuffer(buffer, numMessages_);
-  unpackBuffer(buffer, messageBytes_);
-  unpackBuffer(buffer, statsBytes_);
-  unpackBuffer(buffer, numRedriveAttempted_);
+  unpackBuffer(buffer, accessedRows_);
+  unpackBuffer(buffer, usedRows_);
+  unpackBuffer(buffer, numIOCalls_);
+  unpackBuffer(buffer, numIOBytes_);
+  unpackBuffer(buffer, maxIOTime_);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -1160,16 +1097,6 @@ ExOperStats::castToExHbaseAccessStats()
   return NULL;
 }
 
-ExDP2LeafOperStats * ExOperStats::castToExDP2LeafOperStats()
-{
-  return NULL;
-}
-
-ExDP2InsertStats * ExOperStats::castToExDP2InsertStats()
-{
-  return NULL;
-}
-
 ExPartitionAccessStats * ExOperStats::castToExPartitionAccessStats()
 {
   return NULL;
@@ -1216,11 +1143,6 @@ ExSortStats * ExOperStats::castToExSortStats()
 }
 
 ExMasterStats * ExOperStats::castToExMasterStats()
-{
-  return NULL;
-}
-
-ExPertableStats *ExOperStats::castToExPertableStats()
 {
   return NULL;
 }
@@ -1464,8 +1386,7 @@ NABoolean ExOperStats::operator==(ExOperStats * other)
   if (statType() == ExOperStats::MEAS_STATS)
     return TRUE;
   else 
-  if (statType() == ExOperStats::PERTABLE_STATS ||
-       statType() == ExOperStats::BMO_STATS ||
+  if (statType() == ExOperStats::BMO_STATS ||
        statType() == ExOperStats::UDR_BASE_STATS ||
        statType() == ExOperStats::REPLICATOR_STATS ||
        statType() == ExOperStats::REORG_STATS || 
@@ -1500,9 +1421,7 @@ Int64 ExOperStats::getHashData(UInt16 statsMergeType)
   case ComTdb::ACCUMULATED_STATS:
     return 1;
   case ComTdb::PERTABLE_STATS:
-    if (statType() == ExOperStats::PERTABLE_STATS)
-      return pertableStatsId_;
-    else if (statType() == ExOperStats::ROOT_OPER_STATS)
+    if (statType() == ExOperStats::ROOT_OPER_STATS)
       return 1;
     else if (statType() == ExOperStats::BMO_STATS)
       return 1;
@@ -1511,9 +1430,7 @@ Int64 ExOperStats::getHashData(UInt16 statsMergeType)
     else
       return getId()->tdbId_;
   case ComTdb::PROGRESS_STATS:
-    if (statType() == ExOperStats::PERTABLE_STATS)
-      return pertableStatsId_;
-    else if (statType() == ExOperStats::ROOT_OPER_STATS)
+    if (statType() == ExOperStats::ROOT_OPER_STATS)
       return 1;
     else
       return getId()->tdbId_;
@@ -1550,13 +1467,8 @@ ExFragRootOperStats::ExFragRootOperStats(NAMemory * heap,
   init();
   initHistory();
 #ifndef __EID
-  dp2MaxSpaceUsage_ = 0;
-  dp2MaxSpaceAlloc_ = 0;
-  dp2MaxHeapUsage_ = 0;
-  dp2MaxHeapAlloc_ = 0;
   queryId_ = NULL;
   queryIdLen_ = 0;
-  dp2CpuTime_ = 0;
 #endif
   restoreDop();
 
@@ -1583,15 +1495,10 @@ ExFragRootOperStats::ExFragRootOperStats(NAMemory * heap)
   init();
   initHistory();
 #ifndef __EID
-  dp2MaxSpaceUsage_ = 0;
-  dp2MaxSpaceAlloc_ = 0;
-  dp2MaxHeapUsage_ = 0;
-  dp2MaxHeapAlloc_ = 0;
   queryId_ = NULL;
   queryIdLen_ = 0;
   stmtIndex_ = -1;
   timestamp_ = 0;
-  dp2CpuTime_ = 0;
 #endif
   restoreDop();
 }
@@ -1614,15 +1521,10 @@ ExFragRootOperStats::ExFragRootOperStats(NAMemory *heap,
   init();
   initHistory();
 #ifndef __EID
-  dp2MaxSpaceUsage_ = 0;
-  dp2MaxSpaceAlloc_ = 0;
-  dp2MaxHeapUsage_ = 0;
-  dp2MaxHeapAlloc_ = 0;
   queryId_ = NULL;
   queryIdLen_ = 0;
   stmtIndex_ = -1;
   timestamp_ = 0;
-  dp2CpuTime_ = 0;
 #endif
   restoreDop();
 }
@@ -1632,8 +1534,7 @@ ExFragRootOperStats::~ExFragRootOperStats()
 #ifndef __EID
   ExProcessStats *processStats;
 
-  if (((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS ||
-      (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS) && queryId_ != NULL)
+  if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS && queryId_ != NULL)
   {
     NADELETEBASIC(queryId_, getHeap());
     queryId_ = NULL;
@@ -1665,16 +1566,11 @@ void ExFragRootOperStats::init()
   espMaxHeapAlloc_ = 0;
   espCpuTime_ = 0;
   histCpuTime_ = 0;
-  histDp2CpuTime_ = 0;
   reqMsgCnt_ = 0;
   reqMsgBytes_ = 0;
   replyMsgCnt_ = 0;
   replyMsgBytes_ = 0;
   pagesInUse_ = 0;
-  dp2MaxSpaceUsage_ = 0;
-  dp2MaxSpaceAlloc_ = 0;
-  dp2MaxHeapUsage_ = 0;
-  dp2MaxHeapAlloc_ = 0;
   executionCount_++;
   XPROCESSHANDLE_GETMINE_(&phandle_);
 #endif
@@ -1689,6 +1585,7 @@ void ExFragRootOperStats::init()
   scratchWriteCount_ = 0;
   scratchReadCount_ = 0;
   udrCpuTime_ = 0;
+  topN_ = -1;
   waitTime_ = 0;
   maxWaitTime_ = 0;
   diffCpuTime_ = 0;
@@ -1724,8 +1621,7 @@ UInt32 ExFragRootOperStats::packedLength()
     alignSizeForNextObj(size);
     size += sizeof(ExFragRootOperStats)-sizeof(ExOperStats);
 #ifndef __EID
-    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS ||
-        (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
       size += queryIdLen_;
 #endif
   }
@@ -1755,8 +1651,7 @@ UInt32 ExFragRootOperStats::pack(char * buffer)
     memcpy(buffer, srcPtr, srcLen);
     packedLen += srcLen;
 #ifndef __EID
-    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS || 
-        (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
     {
       buffer += srcLen;
       if (queryIdLen_ != 0 && queryId_ != NULL)
@@ -1785,13 +1680,6 @@ void ExFragRootOperStats::unpack(const char* &buffer)
       unpackBuffer(buffer, temp);
       unpackBuffer(buffer, temp);
     }
-    if (getVersion() >= _STATS_RTS_VERSION_R23)
-    {
-      unpackBuffer(buffer, dp2MaxSpaceUsage_);
-      unpackBuffer(buffer, dp2MaxSpaceAlloc_);
-      unpackBuffer(buffer, dp2MaxHeapUsage_);
-      unpackBuffer(buffer, dp2MaxHeapAlloc_);
-    }
     if (getVersion() >= _STATS_RTS_VERSION_R25)
       unpackBuffer(buffer, cpuTime_);
     else
@@ -1808,8 +1696,7 @@ void ExFragRootOperStats::unpack(const char* &buffer)
     char * srcPtr = (char *)this+sizeof(ExOperStats);
     memcpy((void *)srcPtr, buffer, srcLen);
     buffer += srcLen;
-    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS || 
-        (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+    if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
     {
       if (queryIdLen_ != 0)
       {
@@ -1852,14 +1739,6 @@ void ExFragRootOperStats::merge(ExFragRootOperStats* other)
     espMaxHeapUsage_ += other -> maxHeapUsage_;
     espMaxHeapAlloc_ += other -> maxHeapAlloc_;
   }
-  else if (other->statsInDp2())
-  {
-    dp2MaxSpaceUsage_ += other -> maxSpaceUsage_;
-    dp2MaxSpaceAlloc_ += other -> maxSpaceAlloc_;
-    dp2MaxHeapUsage_ += other -> maxHeapUsage_;
-    dp2MaxHeapAlloc_ += other -> maxHeapAlloc_;
-    dp2CpuTime_ += other->cpuTime_;
-  }
   else
   {
     cpuTime_ += other->cpuTime_;
@@ -1868,10 +1747,6 @@ void ExFragRootOperStats::merge(ExFragRootOperStats* other)
     maxHeapUsage_ += other -> maxHeapUsage_;
     maxHeapAlloc_ += other -> maxHeapAlloc_;
   }
-  dp2MaxSpaceUsage_ += other -> dp2MaxSpaceUsage_;
-  dp2MaxSpaceAlloc_ += other -> dp2MaxSpaceAlloc_;
-  dp2MaxHeapUsage_ += other -> dp2MaxHeapUsage_;
-  dp2MaxHeapAlloc_ += other -> dp2MaxHeapAlloc_;
   newprocess_ += other -> newprocess_;
   newprocessTime_ += other -> newprocessTime_;
   espMaxSpaceUsage_ += other -> espMaxSpaceUsage_;
@@ -1879,7 +1754,6 @@ void ExFragRootOperStats::merge(ExFragRootOperStats* other)
   espMaxHeapUsage_ += other -> espMaxHeapUsage_;
   espMaxHeapAlloc_ += other -> espMaxHeapAlloc_;
   espCpuTime_ += other -> espCpuTime_;
-  dp2CpuTime_ += other->dp2CpuTime_;
   reqMsgCnt_ += other -> reqMsgCnt_;
   reqMsgBytes_ += other -> reqMsgBytes_;
   replyMsgCnt_ += other -> replyMsgCnt_;
@@ -1900,6 +1774,8 @@ void ExFragRootOperStats::merge(ExFragRootOperStats* other)
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
   udrCpuTime_ += other->udrCpuTime_;
+  if(topN_ == -1 && other->topN_ > 0)
+    topN_ = other->topN_;
   // Remember, don't merge or copy  executionCount_ !
   waitTime_ += other->waitTime_;
   if (other->maxWaitTime_ > maxWaitTime_)
@@ -1937,6 +1813,9 @@ void ExFragRootOperStats::merge(ExBMOStats *other)
 
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
+  if(topN_ == -1 && other->topN_ > 0)
+    topN_ = other->topN_;
+  
 #endif
 }
 
@@ -1973,8 +1852,7 @@ void ExFragRootOperStats::copyContents(ExFragRootOperStats *stat)
   UInt32 srcLen = sizeof(ExFragRootOperStats)-sizeof(ExOperStats);
   memcpy((void *)destPtr, (void *)srcPtr, srcLen);
 #ifndef __EID
-  if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS ||
-      (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
   {
     if (queryIdLen_ != 0)
     {
@@ -2049,8 +1927,7 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 #ifndef __EID
   char *buf = dataBuffer;
   const char *txtVal;
-  if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS ||
-     (Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  if ((Int32)getCollectStatsType() == SQLCLI_CPU_OFFENDER_STATS)
   {
     str_sprintf(buf, "statsRowType: %d ProcessId: %s Qid: %s CpuTime: %Ld SpaceUsed: %u "
       "SpaceTotal: %u HeapUsed: %u HeapTotal: %u PMemUsed: %Ld diffCpuTime: %Ld ",
@@ -2072,13 +1949,12 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
     str_sprintf(buf,
 		"CpuTime: %Ld ProcessId: %s StmtIndex: %d Timestamp: %Ld "
 		"SpaceUsed: %u SpaceTotal: %u HeapUsed: %u HeapTotal: %u "
-		"Dp2SpaceTotal: %d Dp2SpaceUsed: %d Dp2HeapTotal: %d Dp2HeapUsed: %d "
 		"Newprocess: %u NewprocessTime: %Ld reqMsgCnt: %Ld "
 		"regMsgBytes: %Ld replyMsgCnt: %Ld replyMsgBytes: %Ld "
-		"PMemUsed: %Ld scrOverFlowMode: %d "
+		"PMemUsed: %Ld scrOverFlowMode: %d sortTopN: %Ld"
 		"scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %Ld scrBufferWritten: %Ld "
 		"scrWriteCount:%Ld scrReadCount: %Ld udrCpuTime: %Ld "
-		"dp2CpuTime: %Ld maxWaitTime: %Ld avgWaitTime: %Ld "
+		"maxWaitTime: %Ld avgWaitTime: %Ld "
 		"hdfsAccess: %Ld ",
 		cpuTime_,
 		(((txtVal = getTextVal()) != NULL) ? txtVal : "NULL"),
@@ -2088,10 +1964,6 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		(UInt32)maxSpaceAlloc_,
 		(UInt32)maxHeapUsage_,
 		(UInt32)maxHeapAlloc_,
-		dp2MaxSpaceAlloc_,
-		dp2MaxSpaceUsage_,
-		dp2MaxHeapAlloc_,
-		dp2MaxHeapUsage_,
 		newprocess_,
 		newprocessTime_,
 		reqMsgCnt_,
@@ -2100,6 +1972,7 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		replyMsgBytes_,
 		pagesInUse_ * 16,
 		scratchOverflowMode_,
+		topN_,
 		scratchFileCount_,
 		scratchBufferBlockSize_,
 		scratchBufferBlockRead_,
@@ -2107,7 +1980,6 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		scratchWriteCount_,
 		scratchReadCount_,
 		udrCpuTime_,
-		dp2CpuTime_,
 		maxWaitTime_,
 		getAvgWaitTime(),
 		(hdfsAccess() ? 1 : 0)
@@ -2161,18 +2033,6 @@ Lng32 ExFragRootOperStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     case SQLSTATS_SQL_HEAP_USED:
         sqlStats_item->int64_value = maxHeapUsage_ + espMaxHeapUsage_;
       break;
-    case SQLSTATS_EID_SPACE_ALLOC:
-      sqlStats_item->int64_value = dp2MaxSpaceAlloc_;
-      break;
-    case SQLSTATS_EID_SPACE_USED:
-      sqlStats_item->int64_value = dp2MaxSpaceUsage_;
-      break;
-    case SQLSTATS_EID_HEAP_ALLOC:
-      sqlStats_item->int64_value = dp2MaxHeapAlloc_;
-      break;
-    case SQLSTATS_EID_HEAP_USED:
-      sqlStats_item->int64_value = dp2MaxHeapUsage_;
-      break;
     case SQLSTATS_PROCESS_CREATED:
       sqlStats_item->int64_value = newprocess_;
       break;
@@ -2199,6 +2059,9 @@ Lng32 ExFragRootOperStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
       break;
     case SQLSTATS_SCRATCH_OVERFLOW_MODE:
       sqlStats_item->int64_value = scratchOverflowMode_;
+      break;
+    case SQLSTATS_TOPN:
+      sqlStats_item->int64_value = topN_;
       break;
     case SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE:
       sqlStats_item->int64_value = scratchBufferBlockSize_;
@@ -2250,382 +2113,6 @@ NABoolean ExFragRootOperStats::filterForCpuStats()
 
 #endif
 //////////////////////////////////////////////////////////////////
-// class ExDP2LeafOperStats
-//////////////////////////////////////////////////////////////////
-ExDP2LeafOperStats::ExDP2LeafOperStats(NAMemory * heap,
-				       ex_tcb *tcb,
-				       const ComTdb * tdb)
-  : ExOperStats(heap,
-		DP2_LEAF_STATS,
-		tcb,
-		tdb),
-    numPositions_(0) 
-{
-}
-
-ExDP2LeafOperStats::ExDP2LeafOperStats(NAMemory * heap)
-     : ExOperStats(heap,
-		   DP2_LEAF_STATS),
-       numPositions_(0) 
-{
-}
-
-UInt32 ExDP2LeafOperStats::packedLength()
-{
-  UInt32 size = ExOperStats::packedLength();
-  alignSizeForNextObj(size);
-  size += exeDp2Stats()->packedLength();
-  size += sizeof(numPositions_);
-
-  return size;
-}
-
-UInt32
-ExDP2LeafOperStats::pack(char * buffer)
-{
-  UInt32 size = ExOperStats::pack(buffer);
-  buffer += size;
-  UInt32 temp = exeDp2Stats()->alignedPack(buffer);
-  buffer += temp;
-  size += temp;
-  size += packIntoBuffer(buffer, numPositions_);
-
-  return size;
-}
-
-void ExDP2LeafOperStats::unpack(const char* &buffer)
-{
-  ExOperStats::unpack(buffer);
-  exeDp2Stats()->alignedUnpack(buffer);
-  unpackBuffer(buffer, numPositions_);
-}
-
-void ExDP2LeafOperStats::init()
-{
-  ExOperStats::init();
-  exeDp2Stats()->init();
-
-  numPositions_    = 0;
-}
-
-void ExDP2LeafOperStats::copyContents(ExDP2LeafOperStats* other)
-{
-  ExOperStats::copyContents(other);
-  exeDp2Stats()->copyContents(other->exeDp2Stats());
-  numPositions_ = other->numPositions_;
-}
-
-void ExDP2LeafOperStats::merge(ExDP2LeafOperStats* other)
-{
-  ExOperStats::merge(other);
-  exeDp2Stats()->merge(other->exeDp2Stats()); 
-  numPositions_ += other->numPositions_;
-}
-
-ExOperStats * ExDP2LeafOperStats::copyOper(NAMemory * heap)
-{
-  ExDP2LeafOperStats* stat =  new(heap) ExDP2LeafOperStats(heap);
-  stat->copyContents(this);
-  return stat;
-}
-
-ExDP2LeafOperStats * ExDP2LeafOperStats::castToExDP2LeafOperStats()
-{
-  return this;
-}
-
-const char * ExDP2LeafOperStats::getNumValTxt(Int32 i) const
-{
-  switch (i)
-    {
-    case 1:
-      return "OperCpuTime";
-    case 2:
-      return "NumProbes";
-    case 3:
-      return "NumFetches";
-    case 4:
-      return "NumDiskIOs";
-    case 5:
-      return "NumEscalations";
-    }
-  return NULL;
-}
-
-Int64 ExDP2LeafOperStats::getNumVal(Int32 i) const
-{
-  switch (i)
-    {
-    case 1:
-      return ExOperStats::getNumVal(i);
-    case 2:
-       return numPositions_;
-    case 3:
-      return exeDp2Stats_.getAccessedDP2Rows();
-    case 4:
-      return exeDp2Stats_.getDiskReads();
-    case 5:
-      return ((ExeDp2Stats&)exeDp2Stats_).getEscalations();
-    }
-  return 0;
-	  
-}
-
-void ExDP2LeafOperStats::getVariableStatsInfo(char * dataBuffer,
-					      char * dataLen,
-					      Lng32 maxLen)
-{
-  char * buf = dataBuffer;
-
-  ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
-  buf += *((short *) dataLen);
-
-  str_sprintf(buf, "NumProbes: %u NumFetches: %Ld NumDiskIOs: %d Escalations: %d",
-	      numPositions_,
-	      exeDp2Stats()->getAccessedDP2Rows(),
-	      exeDp2Stats()->getDiskReads(),
-	      exeDp2Stats()->getEscalations());
-
-  buf += str_len(buf);
-  *(short *)dataLen = (short) (buf - dataBuffer);
-}
-
-#ifndef __EID
-Lng32 ExDP2LeafOperStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
-{
-  ExOperStats::getStatsItem(sqlStats_item);
-  if(sqlStats_item -> error_code == -EXE_STAT_NOT_FOUND ||
-     // override operstats value for actual rows used
-     sqlStats_item->statsItem_id == SQLSTATS_ACT_ROWS_USED)
-  {
-    sqlStats_item->error_code = 0;
-    switch (sqlStats_item->statsItem_id)
-    {
-    case SQLSTATS_ACT_ROWS_ACCESSED:
-      sqlStats_item->int64_value = exeDp2Stats()->getAccessedDP2Rows();
-      break;
-    case SQLSTATS_ACT_ROWS_USED:
-      sqlStats_item->int64_value = exeDp2Stats()->getUsedDP2Rows();
-      break;
-    case SQLSTATS_DISK_IOS:
-      sqlStats_item->int64_value = exeDp2Stats()->getDiskReads();
-      break;
-    case SQLSTATS_LOCK_WAITS:
-      sqlStats_item->int64_value = exeDp2Stats()->getLockWaits();
-      break;
-    case SQLSTATS_LOCK_ESCALATIONS:
-      sqlStats_item->int64_value = exeDp2Stats()->getEscalations();
-      break;
-    case SQLSTATS_DP2_CPU_BUSY_TIME:
-      sqlStats_item->int64_value = exeDp2Stats()->getProcessBusyTime();
-      break;
-    default:
-      sqlStats_item->error_code = -EXE_ERROR_IN_STAT_ITEM;
-      break;
-    }
-  }
-  return 0;
-}
-#endif
-
-//////////////////////////////////////////////////////////////////
-// class ExDP2InsertStats
-//////////////////////////////////////////////////////////////////
-ExDP2InsertStats::ExDP2InsertStats(NAMemory * heap,
-				   ex_tcb *tcb,
-				   const ComTdb * tdb,
-				   NABoolean bufferedInsert)
-  : ExOperStats(heap,
-		DP2_INSERT_STATS,
-		tcb,
-		tdb),
-    insertedRows_(0),
-    bufferedInsert_(bufferedInsert),
-    singleRowInserts_(0),
-    insertedBuffers_(0),
-    nakdBuffers_(0)
-{
-}
-
-ExDP2InsertStats::ExDP2InsertStats(NAMemory * heap)
-  : ExOperStats(heap,
-		DP2_INSERT_STATS),
-    insertedRows_(0),
-    bufferedInsert_(FALSE),
-    singleRowInserts_(0),
-    nakdBuffers_(0)
-{
-}
-
-UInt32 ExDP2InsertStats::packedLength()
-{
-  UInt32 size = ExOperStats::packedLength();
-  size += sizeof(insertedRows_);
-  size += sizeof(bufferedInsert_);
-  size += sizeof(singleRowInserts_);
-  size += sizeof(insertedBuffers_);
-  size += sizeof(nakdBuffers_);
-
-  return size;
-}
-
-UInt32
-ExDP2InsertStats::pack(char * buffer)
-{
-  UInt32 size = ExOperStats::pack(buffer);
-  buffer += size;
-  size += packIntoBuffer(buffer, insertedRows_);
-  size += packIntoBuffer(buffer, bufferedInsert_);
-  size += packIntoBuffer(buffer, singleRowInserts_);
-  size += packIntoBuffer(buffer, insertedBuffers_);
-  size += packIntoBuffer(buffer, nakdBuffers_);
-
-  return size;
-}
-
-void ExDP2InsertStats::unpack(const char* &buffer)
-{
-  ExOperStats::unpack(buffer);
-  //  buffer += ExOperStats::packedLength();
-  unpackBuffer(buffer, insertedRows_);
-  unpackBuffer(buffer, bufferedInsert_);
-  unpackBuffer(buffer, singleRowInserts_);
-  unpackBuffer(buffer, insertedBuffers_);
-  unpackBuffer(buffer, nakdBuffers_);
-}
-
-void ExDP2InsertStats::init()
-{
-  ExOperStats::init();
-
-  insertedRows_     = 0;
-  bufferedInsert_   = FALSE;
-  singleRowInserts_ = 0;
-  insertedBuffers_  = 0;
-  nakdBuffers_      = 0;
-}
-
-void ExDP2InsertStats::copyContents(ExDP2InsertStats* other)
-{
-  ExOperStats::copyContents(other);
-  insertedRows_     = other->insertedRows_;
-  singleRowInserts_ = other->singleRowInserts_;
-  insertedBuffers_  = other->insertedBuffers_;
-  nakdBuffers_      = other->nakdBuffers_;
-}
-
-void ExDP2InsertStats::merge(ExDP2InsertStats* other)
-{
-  ExOperStats::merge(other);
-  insertedRows_     += other->insertedRows_;
-  singleRowInserts_ += other->singleRowInserts_;
-  insertedBuffers_  += other->insertedBuffers_;
-  nakdBuffers_      += other->nakdBuffers_;
-}
-
-ExOperStats * ExDP2InsertStats::copyOper(NAMemory * heap)
-{
-  ExDP2InsertStats* stat = new(heap) ExDP2InsertStats(heap);
-  stat->copyContents(this);
-  return stat;
-}
-
-ExDP2InsertStats * ExDP2InsertStats::castToExDP2InsertStats()
-{
-  return this;
-}
-
-const char * ExDP2InsertStats::getNumValTxt(Int32 i) const
-{
-  switch (i)
-    {
-    case 1:
-      return "OperCpuTime";
-    case 2:
-      return "RowsIns";
-    case 3:
-      return "SingleRowsIns";
-    case 4:
-      return "VSBBBuffersIns";
-    }
-  return NULL;
-}
-
-Int64 ExDP2InsertStats::getNumVal(Int32 i) const
-{
-  switch (i)
-    {
-    case 1:
-      return ExOperStats::getNumVal(i);
-    case 2:
-      return exeDp2Stats_.getAccessedDP2Rows();
-    case 3:
-      return singleRowInserts_;
-    case 4:
-      return insertedBuffers_;
-    }
-  return 0;
-}
-
-void ExDP2InsertStats::getVariableStatsInfo(char * dataBuffer,
-					    char * dataLen,
-					    Lng32 maxLen)
-{
-  char *buf = dataBuffer;
-
-  ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
-  buf += *((short *) dataLen);
-
-  str_sprintf(buf, "RowsIns: %Ld SingleRowsIns: %Ld ",
-	      exeDp2Stats()->getAccessedDP2Rows(), singleRowInserts_);
-  buf += str_len(buf);
-
-  str_sprintf(buf, "VSBBBuffersIns: %Ld VSBBBuffersNAK: %Ld ",
-	      insertedBuffers_, nakdBuffers_);
-  buf += str_len(buf);
-
-  *(short*)dataLen = (short) (buf - dataBuffer);
-}
-
-#ifndef __EID
-Lng32 ExDP2InsertStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
-{
-  ExOperStats::getStatsItem(sqlStats_item);
-  if(sqlStats_item -> error_code == -EXE_STAT_NOT_FOUND ||
-     // override operstats value for actual rows used
-     sqlStats_item->statsItem_id == SQLSTATS_ACT_ROWS_USED)
-  {   
-    sqlStats_item->error_code = 0;
-    switch (sqlStats_item->statsItem_id)
-    {
-    case SQLSTATS_ACT_ROWS_ACCESSED:
-      sqlStats_item->int64_value = exeDp2Stats()->getAccessedDP2Rows();
-      break;
-    case SQLSTATS_ACT_ROWS_USED:
-      sqlStats_item->int64_value = exeDp2Stats()->getUsedDP2Rows();
-      break;
-    case SQLSTATS_LOCK_ESCALATIONS:
-      sqlStats_item->int64_value = exeDp2Stats()->getEscalations();
-      break;
-    case SQLSTATS_DISK_IOS:
-      sqlStats_item->int64_value = exeDp2Stats()->getDiskReads();
-      break;
-    case SQLSTATS_LOCK_WAITS:
-      sqlStats_item->int64_value = exeDp2Stats()->getLockWaits();
-      break;
-    case SQLSTATS_DP2_CPU_BUSY_TIME:
-      sqlStats_item->int64_value = exeDp2Stats()->getProcessBusyTime();
-      break;
-    default:
-      sqlStats_item->error_code = -EXE_STAT_NOT_FOUND;
-      break;
-    }
-  }
-  return 0;
-}
-#endif
-
-//////////////////////////////////////////////////////////////////
 // class ExHdfsScanStats
 //////////////////////////////////////////////////////////////////
 
@@ -2646,6 +2133,8 @@ ExHdfsScanStats::ExHdfsScanStats(NAMemory * heap,
   tableName_ = (char *)heap_->allocateMemory(len + 1);
   str_sprintf(tableName_, "%s", name);
 
+  queryId_ = NULL;
+  queryIdLen_ = 0;
   init();
 }
 
@@ -2655,6 +2144,8 @@ ExHdfsScanStats::ExHdfsScanStats(NAMemory * heap)
   , tableName_(NULL)
   , timer_(CLOCK_MONOTONIC)
 {
+  queryId_ = NULL;
+  queryIdLen_ = 0;
   init();
 }
 
@@ -2668,6 +2159,7 @@ void ExHdfsScanStats::init()
   accessedRows_ = 0;
   usedRows_     = 0;
   maxHdfsIOTime_ = 0;
+  blockTime_ = 0;
 }
 
 ExHdfsScanStats::~ExHdfsScanStats()
@@ -2676,6 +2168,11 @@ ExHdfsScanStats::~ExHdfsScanStats()
   {
      NADELETEBASIC(tableName_,getHeap());
      tableName_ = NULL;
+  }
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS && queryId_ != NULL)
+  {
+    NADELETEBASIC(queryId_, getHeap());
+    queryId_ = NULL;
   }
 }
 
@@ -2691,6 +2188,12 @@ UInt32 ExHdfsScanStats::packedLength()
   size += sizeof(accessedRows_);
   size += sizeof(usedRows_);
   size += sizeof(maxHdfsIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    size += sizeof(blockTime_);
+    size += sizeof(queryIdLen_);
+    size += queryIdLen_;
+  }
   return size;
 }
 
@@ -2707,6 +2210,13 @@ UInt32 ExHdfsScanStats::pack(char *buffer)
   size += packIntoBuffer(buffer, accessedRows_);
   size += packIntoBuffer(buffer, usedRows_);
   size += packIntoBuffer(buffer, maxHdfsIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    size += packIntoBuffer(buffer, blockTime_);
+    size += packIntoBuffer(buffer, queryIdLen_);
+    if (queryIdLen_ != 0 && queryId_ != NULL)
+      size += packStrIntoBuffer(buffer, queryId_, queryIdLen_);
+  }
 
   return size;
 }
@@ -2724,6 +2234,17 @@ void ExHdfsScanStats::unpack(const char* &buffer)
   unpackBuffer(buffer, accessedRows_);
   unpackBuffer(buffer, usedRows_);
   unpackBuffer(buffer, maxHdfsIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    unpackBuffer(buffer, blockTime_);
+    unpackBuffer(buffer, queryIdLen_);
+    if (queryIdLen_ != 0)
+    {
+      queryId_ = new ((NAHeap *)(getHeap())) char[queryIdLen_+1];
+      unpackStrFromBuffer(buffer, queryId_, queryIdLen_);
+      queryId_[queryIdLen_] = '\0';
+    }
+  }
 }
 
 void ExHdfsScanStats::merge(ExHdfsScanStats *other)
@@ -2757,6 +2278,24 @@ void ExHdfsScanStats::copyContents(ExHdfsScanStats *other)
   accessedRows_ = other->accessedRows_;
   usedRows_     = other->usedRows_;
   maxHdfsIOTime_ = other->maxHdfsIOTime_;
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    blockTime_ = other->blockTime_;
+    queryIdLen_ = other->queryIdLen_;
+    if (queryIdLen_ != 0)
+    {
+      queryId_ = new ((NAHeap *)(getHeap())) char[queryIdLen_+1];
+      str_cpy_all(queryId_, other->queryId_, queryIdLen_);
+      queryId_[queryIdLen_] = '\0';
+    }
+    else
+      queryId_ = NULL;
+  }
+  else
+  {
+    queryId_ = other->queryId_;
+    queryIdLen_ = other->queryIdLen_;
+  }
 }
 
 ExOperStats * ExHdfsScanStats::copyOper(NAMemory * heap)
@@ -2816,18 +2355,43 @@ Int64 ExHdfsScanStats::getNumVal(Int32 i) const
   return 0;
 }
 
+NABoolean ExHdfsScanStats::filterForSEstats(struct timespec currTimespec, Lng32 filter)
+{
+   Int64 sumIOTime;
+
+   if (filter > 0) {
+      blockTime_ = timer_.filterForSEstats(currTimespec);
+      if (blockTime_ >= filter)
+         return TRUE;
+   }
+   else
+   if (queryId_ != NULL && (sumIOTime = timer_.getTime()) > 0 && (sumIOTime = sumIOTime /(1000000LL)) >= -filter) {
+      blockTime_ = sumIOTime;
+      return TRUE;
+   }
+   return FALSE;
+}
+
 void ExHdfsScanStats::getVariableStatsInfo(char * dataBuffer,
 						   char * dataLen,
 						   Lng32 maxLen)
 {
   char *buf = dataBuffer;
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+     str_sprintf(buf, "statsRowType: %d Qid: %s blockedFor: %d ",
+        statType(),
+        ((queryId_ != NULL) ? queryId_ : "NULL"), blockTime_);
+     buf += str_len(buf);
+  }
+  else 
+  {
+     ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
+     buf += *((short *) dataLen);
 
-  ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
-  buf += *((short *) dataLen);
-
-  lobStats()->getVariableStatsInfo(buf, dataLen, maxLen);
-  buf += *((short *) dataLen);
-
+     lobStats()->getVariableStatsInfo(buf, dataLen, maxLen);
+     buf += *((short *) dataLen);
+  }
   str_sprintf (buf, 
 	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HiveIOCalls: %Ld HiveSumIOTime: %Ld HdfsMaxIOTime: %Ld",
 	       (char*)tableName_,
@@ -2955,7 +2519,8 @@ ExHbaseAccessStats::ExHbaseAccessStats(NAMemory * heap,
     {
       tableName_ = NULL;
     }
-
+  queryId_ = NULL;
+  queryIdLen_ = 0;
   init();
 }
 
@@ -2965,6 +2530,8 @@ ExHbaseAccessStats::ExHbaseAccessStats(NAMemory * heap)
   , tableName_(NULL)
   , timer_(CLOCK_MONOTONIC)
 {
+  queryId_ = NULL;
+  queryIdLen_ = 0;
   init();
 }
 
@@ -2979,6 +2546,7 @@ void ExHbaseAccessStats::init()
   usedRows_     = 0;
   numHbaseCalls_ = 0;
   maxHbaseIOTime_ = 0;
+  blockTime_ = 0;
 }
 
 ExHbaseAccessStats::~ExHbaseAccessStats()
@@ -2987,6 +2555,11 @@ ExHbaseAccessStats::~ExHbaseAccessStats()
   {
      NADELETEBASIC(tableName_,getHeap());
      tableName_ = NULL;
+  }
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS && queryId_ != NULL)
+  {
+    NADELETEBASIC(queryId_, getHeap());
+    queryId_ = NULL;
   }
 }
 
@@ -3003,6 +2576,12 @@ UInt32 ExHbaseAccessStats::packedLength()
   size += sizeof(usedRows_);
   size += sizeof(numHbaseCalls_);
   size += sizeof(maxHbaseIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    size += sizeof(blockTime_);
+    size += sizeof(queryIdLen_);
+    size += queryIdLen_;
+  }
   return size;
 }
 
@@ -3020,6 +2599,13 @@ UInt32 ExHbaseAccessStats::pack(char *buffer)
   size += packIntoBuffer(buffer, usedRows_);
   size += packIntoBuffer(buffer, numHbaseCalls_);
   size += packIntoBuffer(buffer, maxHbaseIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    size += packIntoBuffer(buffer, blockTime_);
+    size += packIntoBuffer(buffer, queryIdLen_);
+    if (queryIdLen_ != 0 && queryId_ != NULL)
+      size += packStrIntoBuffer(buffer, queryId_, queryIdLen_);
+  }
 
   return size;
 }
@@ -3038,6 +2624,17 @@ void ExHbaseAccessStats::unpack(const char* &buffer)
   unpackBuffer(buffer, usedRows_);
   unpackBuffer(buffer, numHbaseCalls_);
   unpackBuffer(buffer, maxHbaseIOTime_);
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    unpackBuffer(buffer, blockTime_);
+    unpackBuffer(buffer, queryIdLen_);
+    if (queryIdLen_ != 0)
+    {
+      queryId_ = new ((NAHeap *)(getHeap())) char[queryIdLen_+1];
+      unpackStrFromBuffer(buffer, queryId_, queryIdLen_);
+      queryId_[queryIdLen_] = '\0';
+    }
+  }
 }
 
 void ExHbaseAccessStats::merge(ExHbaseAccessStats *other)
@@ -3073,6 +2670,24 @@ void ExHbaseAccessStats::copyContents(ExHbaseAccessStats *other)
   usedRows_ = other->usedRows_;
   numHbaseCalls_ = other->numHbaseCalls_;
   maxHbaseIOTime_ = other->maxHbaseIOTime_;
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+    blockTime_ = other->blockTime_;
+    queryIdLen_ = other->queryIdLen_;
+    if (queryIdLen_ != 0)
+    {
+      queryId_ = new ((NAHeap *)(getHeap())) char[queryIdLen_+1];
+      str_cpy_all(queryId_, other->queryId_, queryIdLen_);
+      queryId_[queryIdLen_] = '\0';
+    }
+    else
+      queryId_ = NULL;
+  }
+  else
+  {
+    queryId_ = other->queryId_;
+    queryIdLen_ = other->queryIdLen_;
+  }
 }
 
 ExOperStats * ExHbaseAccessStats::copyOper(NAMemory * heap)
@@ -3132,18 +2747,43 @@ Int64 ExHbaseAccessStats::getNumVal(Int32 i) const
   return 0;
 }
 
+NABoolean ExHbaseAccessStats::filterForSEstats(struct timespec currTimespec, Lng32 filter)
+{
+   Int64 sumIOTime;
+   if (filter > 0) {
+      blockTime_ = timer_.filterForSEstats(currTimespec);
+      if (blockTime_ >= filter)
+         return TRUE;
+   }
+   else
+   if (queryId_ != NULL && (sumIOTime = timer_.getTime()) > 0 && (sumIOTime = sumIOTime /(1000000LL)) >= -filter) {
+      blockTime_ = sumIOTime;
+      return TRUE;
+   }
+   return FALSE;
+}
+
+
 void ExHbaseAccessStats::getVariableStatsInfo(char * dataBuffer,
 						   char * dataLen,
 						   Lng32 maxLen)
 {
   char *buf = dataBuffer;
+  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
+  {
+     str_sprintf(buf, "statsRowType: %d Qid: %s blockedFor: %d ",
+        statType(),
+        ((queryId_ != NULL) ? queryId_ : "NULL"), blockTime_);
+     buf += str_len(buf);
+  }
+  else 
+  {
+     ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
+     buf += *((short *) dataLen);
 
-  ExOperStats::getVariableStatsInfo(dataBuffer, dataLen, maxLen);
-  buf += *((short *) dataLen);
-
-  lobStats()->getVariableStatsInfo(buf, dataLen, maxLen);
-  buf += *((short *) dataLen);
-
+     lobStats()->getVariableStatsInfo(buf, dataLen, maxLen);
+     buf += *((short *) dataLen);
+  }
   str_sprintf (buf, 
 	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HbaseSumIOCalls: %Ld HbaseSumIOTime: %Ld HbaseMaxIOTime: %Ld",
 	       (char*)tableName_,
@@ -3507,7 +3147,7 @@ void ExPartitionAccessStats::init()
 {
   ExOperStats::init();
 
-  fsDp2MsgsStats()->init();
+  exeSEStats()->init();
 
   bufferStats()->init();
 }
@@ -3515,7 +3155,7 @@ void ExPartitionAccessStats::init()
 void ExPartitionAccessStats::copyContents(ExPartitionAccessStats* other)
 {
   ExOperStats::copyContents(other);
-  fsDp2MsgsStats()->copyContents(other->fsDp2MsgsStats());
+  exeSEStats()->copyContents(other->exeSEStats());
   bufferStats()->copyContents(other->bufferStats());
   
   // copy names only if we don't have one
@@ -3541,7 +3181,7 @@ void ExPartitionAccessStats::copyContents(ExPartitionAccessStats* other)
 void ExPartitionAccessStats::merge(ExPartitionAccessStats* other)
 {
   ExOperStats::merge(other);
-  fsDp2MsgsStats()->merge(other -> fsDp2MsgsStats());
+  exeSEStats()->merge(other ->exeSEStats());
 
   bufferStats()->merge(other -> bufferStats());
 
@@ -3558,7 +3198,7 @@ ULng32 ExPartitionAccessStats::packedLength()
 {
   UInt32 size = ExOperStats::packedLength();
   alignSizeForNextObj(size);
-  size += fsDp2MsgsStats()->packedLength();
+  size += exeSEStats()->packedLength();
   
   alignSizeForNextObj(size);
   size += bufferStats()->packedLength();
@@ -3580,7 +3220,7 @@ ExPartitionAccessStats::pack(char* buffer)
   UInt32  size = ExOperStats::pack(buffer);
   buffer += size;
 
-  UInt32 temp = fsDp2MsgsStats()->alignedPack(buffer);
+  UInt32 temp = exeSEStats()->alignedPack(buffer);
   buffer += temp;
   size += temp;
 
@@ -3601,7 +3241,7 @@ void ExPartitionAccessStats::unpack(const char* &buffer)
 {
   ExOperStats::unpack(buffer);
 
-  fsDp2MsgsStats()->alignedUnpack(buffer);
+  exeSEStats()->alignedUnpack(buffer);
 
   bufferStats()->alignedUnpack(buffer);
 
@@ -3678,9 +3318,9 @@ void ExPartitionAccessStats::getVariableStatsInfo(char * dataBuffer,
 	      "AnsiName: %s PhysName: %s BuffersSize: %u BuffersSent: %u BuffersRcvd: %u NumMessages: %Ld MsgBytes: %Ld StatsBytes: %Ld MsgBytesSent: %Ld MsgBytesRcvd: %Ld ",
 	      ansiName_, fileName_,
 	      bufferStats()->sendBufferSize(), bufferStats()->sentBuffers().entryCnt(), bufferStats()->recdBuffers().entryCnt(), 
-	      fsDp2MsgsStats()->getNumMessages(),
-	      fsDp2MsgsStats()->getMessageBytes(),
-	      fsDp2MsgsStats()->getStatsBytes(),
+	      exeSEStats()->getNumIOCalls(),
+	      exeSEStats()->getNumIOBytes(),
+              0,
 	      bufferStats()->totalSentBytes(),
 	      bufferStats()->totalRecdBytes());
   buf += str_len(buf);
@@ -3721,20 +3361,14 @@ Lng32 ExPartitionAccessStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
         sqlStats_item->str_ret_len = len;
       }
       break;
-    case SQLSTATS_MSG_COUNT:
-      sqlStats_item->int64_value = fsDp2MsgsStats()->getNumMessages();
+    case SQLSTATS_SE_IOS:
+      sqlStats_item->int64_value = exeSEStats()->getNumIOCalls();
       break;
-    case SQLSTATS_MSG_BYTES:
-      sqlStats_item->int64_value = fsDp2MsgsStats()->getMessageBytes();
+    case SQLSTATS_SE_IO_BYTES:
+      sqlStats_item->int64_value = exeSEStats()->getNumIOBytes();
       break;
-    case SQLSTATS_OPENS:
-      sqlStats_item->int64_value = opens_;
-      break;
-    case SQLSTATS_OPEN_TIME:
-      sqlStats_item->int64_value = openTime_;
-      break;
-    case SQLSTATS_STATS_BYTES:
-      sqlStats_item->int64_value = fsDp2MsgsStats()->getStatsBytes();
+    case SQLSTATS_SE_IO_MAX_TIME:
+      sqlStats_item->int64_value = exeSEStats()->getMaxIOTime();
       break;
     default:
       sqlStats_item->error_code = -EXE_STAT_NOT_FOUND;
@@ -4784,20 +4418,14 @@ ExMeasBaseStats::ExMeasBaseStats(NAMemory * heap,
 				 const ComTdb * tdb)
      : ExOperStats(heap,
                    statType,
-		   tcb, tdb),
-       filler1_(0),
-       opens_(0),
-       openTime_(0)
+		   tcb, tdb)
 {
 }
 
 ExMeasBaseStats::ExMeasBaseStats(NAMemory * heap, StatType statType)
      : ExOperStats(heap,
 	           statType,
-		   NULL, NULL),
-       filler1_(0),
-       opens_(0),
-       openTime_(0)
+		   NULL, NULL)
 {  
 }
 
@@ -4808,144 +4436,64 @@ ExMeasBaseStats * ExMeasBaseStats::castToExMeasBaseStats()
 
 UInt32 ExMeasBaseStats::packedLength() {
   UInt32 size = 0;
-  if (statsInDp2())
-  {
-    if (getVersion() >= _STATS_RTS_VERSION_R25 && 
-      (getCollectStatsType() == ComTdb::OPERATOR_STATS || getCollectStatsType() == ComTdb::ALL_STATS))
-    {
-      size = ExOperStats::packedLength();
-      alignSizeForNextObj(size);
-    }
-    size += sizeof(getEstRowsAccessed());
-    size += sizeof(getEstRowsUsed());
-    size += sizeof(MeasureInDp2);
-    return size;
-  }
-  else
-  {
-    UInt32 size;
-    size = ExOperStats::packedLength();
-    alignSizeForNextObj(size);
-    size += sizeof(ExMeasBaseStats)-sizeof(ExOperStats);
-    return size;
-  }
+  size = ExOperStats::packedLength();
+  alignSizeForNextObj(size);
+  size += sizeof(getEstRowsAccessed());
+  size += sizeof(getEstRowsUsed());
+  size += sizeof(exeSEStats()->getAccessedRows());
+  size += sizeof(exeSEStats()->getUsedRows());
+  size += sizeof(exeSEStats()->getNumIOCalls());
+  size += sizeof(exeSEStats()->getNumIOBytes());
+  size += sizeof(exeSEStats()->getMaxIOTime());
+  return size;
 }
 
 UInt32
 ExMeasBaseStats::pack(char * buffer) {
   UInt32 size = 0;
-  if (statsInDp2())
-  {
-    if (getVersion() >= _STATS_RTS_VERSION_R25 && 
-      (getCollectStatsType() == ComTdb::OPERATOR_STATS || getCollectStatsType() == ComTdb::ALL_STATS))
-    {
-      size = ExOperStats::pack(buffer);
-      alignSizeForNextObj(size);
-      buffer += size;
-    }
-    size += packIntoBuffer(buffer, getEstRowsAccessed());
-    size += packIntoBuffer(buffer, getEstRowsUsed());
-    MeasureInDp2 m;
-    m.setAccessedDp2Rows(exeDp2Stats()->getAccessedDP2Rows());
-    m.setUsedDp2Rows(exeDp2Stats()->getUsedDP2Rows());
-    m.setDiskReads(exeDp2Stats()->getDiskReads());
-    m.setEscalations(exeDp2Stats()->getEscalations());
-    if (exeDp2Stats()->getVersion() >= _STATS_RTS_VERSION)
-    {
-      m.setLockWaits(exeDp2Stats()->getLockWaits());
-      m.setProcessBusyTime(exeDp2Stats()->getProcessBusyTime());
-    }
-    else
-    {
-      m.setLockWaits(0);
-      m.setProcessBusyTime(0);
-    }
-    size += packIntoBuffer(buffer, m);
-   return size;
-  }
-  else
-  {
-    UInt32 packedLen;
-    packedLen = ExOperStats::pack(buffer);
-    alignSizeForNextObj(packedLen);
-    buffer += packedLen;
-    UInt32 srcLen = sizeof(ExMeasBaseStats)-sizeof(ExOperStats);
-    char * srcPtr = (char *)this+sizeof(ExOperStats);
-    memcpy(buffer, (void *)srcPtr, srcLen);
-    return packedLen+srcLen;
-  }
+  size = ExOperStats::pack(buffer);
+  alignSizeForNextObj(size);
+  buffer += size;
+  size += packIntoBuffer(buffer, getEstRowsAccessed());
+  size += packIntoBuffer(buffer, getEstRowsUsed());
+  size += packIntoBuffer(buffer, exeSEStats()->getAccessedRows());
+  size += packIntoBuffer(buffer, exeSEStats()->getUsedRows());
+  size += packIntoBuffer(buffer, exeSEStats()->getNumIOCalls());
+  size += packIntoBuffer(buffer, exeSEStats()->getNumIOBytes());
+  size += packIntoBuffer(buffer, exeSEStats()->getMaxIOTime());
+  return size;
 }
 
 void ExMeasBaseStats::unpack(const char* &buffer) {
-  if (statsInDp2())
-  {
-    if (getVersion() >= _STATS_RTS_VERSION_R25 &&
-      (getCollectStatsType() == ComTdb::OPERATOR_STATS || getCollectStatsType() == ComTdb::ALL_STATS))
-    {
-      ExOperStats::unpack(buffer);
-      alignBufferForNextObj(buffer);
-    }
-    MeasureInDp2 m;
-    Float32 temp;
-    unpackBuffer(buffer, temp);
-    setEstRowsAccessed(temp);
-    unpackBuffer(buffer, temp);
-    setEstRowsUsed(temp);
-    m.unpackBuffer(buffer, getVersion());
-    exeDp2Stats()->setAccessedDP2Rows(m.getAccessedDp2Rows());
-    exeDp2Stats()->setUsedDP2Rows(m.getUsedDp2Rows());
-    exeDp2Stats()->setDiskReads(m.getDiskReads());
-    exeDp2Stats()->setEscalations(m.getEscalations());
-    exeDp2Stats()->setLockWaits(0);
-    if (exeDp2Stats()->getVersion() >= _STATS_RTS_VERSION)
-    {
-      exeDp2Stats()->setLockWaits((Lng32)m.getLockWaits());
-      exeDp2Stats()->setProcessBusyTime(m.getProcessBusyTime());
-    }
-    else
-    {
-      exeDp2Stats()->setLockWaits(0);
-      exeDp2Stats()->setProcessBusyTime(0);
-    }
-  }
-  else
-  {
-    if (getVersion() >= _STATS_RTS_VERSION_R25)
-    {
-      UInt32 srcLen;
-      ExOperStats::unpack(buffer);
-      alignBufferForNextObj(buffer); 
-      srcLen = sizeof(ExMeasBaseStats)-sizeof(ExOperStats);
-      char * srcPtr = (char *)this+sizeof(ExOperStats);
-      memcpy((void *)srcPtr, buffer, srcLen);
-      buffer += srcLen;
-    }
-    else
-    {
-      ExOperStats::unpack(buffer);
-      exeDp2Stats_.alignedUnpack(buffer);
-      fsDp2MsgsStats_.alignedUnpack(buffer);
-      unpackBuffer(buffer, opens_);
-      unpackBuffer(buffer, openTime_);
-    }
-  }
+   ExOperStats::unpack(buffer);
+   alignBufferForNextObj(buffer);
+   float temp;
+   unpackBuffer(buffer, temp);
+   setEstRowsAccessed(temp);
+   unpackBuffer(buffer, temp);
+   setEstRowsUsed(temp);
+   Int64 temp1;
+   unpackBuffer(buffer, temp1);
+   exeSEStats()->setAccessedRows(temp1);
+   unpackBuffer(buffer, temp1);
+   exeSEStats()->setUsedRows(temp1);
+   unpackBuffer(buffer, temp1);
+   exeSEStats()->setNumIOCalls(temp1);
+   unpackBuffer(buffer, temp1);
+   exeSEStats()->setNumIOBytes(temp1);
+   unpackBuffer(buffer, temp1);
+   exeSEStats()->setMaxIOTime(temp1);
 }
 
 void ExMeasBaseStats::init() {
   ExOperStats::init();
-  exeDp2Stats()->init();
-  fsDp2MsgsStats()->init();
-  opens_ = 0;
-  openTime_ = 0;
+  exeSEStats()->init();
 }
 
 void ExMeasBaseStats::merge(ExMeasBaseStats* other)
 {
   ExOperStats::merge(other);
-  exeDp2Stats()    -> merge(other -> exeDp2Stats());
-  fsDp2MsgsStats() -> merge(other -> fsDp2MsgsStats());
-  opens_    += other -> opens_;
-  openTime_ += other -> openTime_;
+  exeSEStats()    -> merge(other -> exeSEStats());
 }
 
 void ExMeasBaseStats::copyContents(ExMeasBaseStats * other) 
@@ -4980,11 +4528,11 @@ Int64 ExMeasBaseStats::getNumVal(Int32 i) const
     case 1:
       return ExOperStats::getNumVal(i);
     case 2:
-      return fsDp2MsgsStats_.getMessageBytes();
+      return seStats_.getNumIOBytes();
     case 3:
-      return exeDp2Stats_.getAccessedDP2Rows();
+      return seStats_.getAccessedRows();
     case 4:
-      return exeDp2Stats_.getDiskReads();
+      return seStats_.getNumIOCalls();
     }
   return 0;
 }
@@ -4995,19 +4543,14 @@ void ExMeasBaseStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
   char * buf = dataBuffer;
 
   sprintf (buf, 
-	   "NumMessages: %u MessagesBytes: " PF64 " StatsBytes: " PF64 " AccessedRows: " PF64 " UsedRows: " PF64 " DiskIOs: %u Escalations: %u LockWaits: %u ProcessBusyTime: " PF64 " Opens: %u OpenTime: " PF64 " NumRedrives: " PF64 " ",
-	      (ULng32)fsDp2MsgsStats()->getNumMessages(),
-	      fsDp2MsgsStats()->getMessageBytes(),
-	      fsDp2MsgsStats()->getStatsBytes(),
-	      exeDp2Stats()->getAccessedDP2Rows(),
-	      exeDp2Stats()->getUsedDP2Rows(),
-	      exeDp2Stats()->getDiskReads(),
-	      exeDp2Stats()->getEscalations(),
-	      exeDp2Stats()->getLockWaits(),
-              exeDp2Stats()->getProcessBusyTime(),
-              opens_,
-              openTime_,
-              fsDp2MsgsStats()->getNumRedriveAttempted()
+	   "NumMessages: " PF64 " MessagesBytes: " PF64 " StatsBytes: %d  AccessedRows: " PF64 " UsedRows: " PF64 " DiskIOs: " PF64 "  MaxIOTime: " PF64 " ",
+	      exeSEStats()->getNumIOCalls(),
+	      exeSEStats()->getNumIOBytes(),
+              0,
+	      exeSEStats()->getAccessedRows(),
+	      exeSEStats()->getUsedRows(),
+	      exeSEStats()->getNumIOCalls(),
+              exeSEStats()->getMaxIOTime()
               );
   buf += str_len(buf);
 
@@ -5017,8 +4560,6 @@ void ExMeasBaseStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
 
 void ExMeasBaseStats::setVersion(Lng32 version)
 {
-  ExOperStats::setVersion(version);
-  exeDp2Stats_.setVersion(version);
 }
 //////////////////////////////////////////////////////////////////
 // class ExMeasStats
@@ -5036,10 +4577,6 @@ ExMeasStats::ExMeasStats(NAMemory * heap,
   if (tdb != NULL)
     scratchOverflowMode_ = ((ComTdb *)tdb)->getOverFlowMode();
 #ifndef __EID
-  dp2MaxSpaceUsage_ = 0;
-  dp2MaxSpaceAlloc_ = 0;
-  dp2MaxHeapUsage_ = 0;
-  dp2MaxHeapAlloc_ = 0;
   queryId_ = NULL;
   queryIdLen_ = 0;
 #endif
@@ -5055,10 +4592,6 @@ ExMeasStats::ExMeasStats(NAMemory * heap)
   init();
   initHistory();
 #ifndef __EID
-  dp2MaxSpaceUsage_ = 0;
-  dp2MaxSpaceAlloc_ = 0;
-  dp2MaxHeapUsage_ = 0;
-  dp2MaxHeapAlloc_ = 0;
   queryId_ = NULL;
   queryIdLen_ = 0;
 #endif
@@ -5272,18 +4805,6 @@ void ExMeasStats::unpack(const char* &buffer)
       }
 #endif
     }
-    else
-    {
-#ifndef __EID
-      if (getVersion() >= _STATS_RTS_VERSION_R22)
-      {
-        unpackBuffer(buffer, dp2MaxSpaceUsage_);
-        unpackBuffer(buffer, dp2MaxSpaceAlloc_);
-        unpackBuffer(buffer, dp2MaxHeapUsage_);
-        unpackBuffer(buffer, dp2MaxHeapAlloc_);
-      }
-#endif
-    }
   }
 }
 
@@ -5301,10 +4822,6 @@ void ExMeasStats::init()
   maxHeapAlloc_ = 0;
 #ifndef __EID
   cpuTime_ = 0;
-  dp2MaxSpaceUsage_ = 0; 
-  dp2MaxSpaceAlloc_ = 0;
-  dp2MaxHeapUsage_ = 0;
-  dp2MaxHeapAlloc_ = 0;
   espMaxSpaceUsage_ = 0;
   espMaxSpaceAlloc_ = 0;
   espMaxHeapUsage_ = 0;
@@ -5329,12 +4846,8 @@ void ExMeasStats::init()
   scratchWriteCount_ = 0;
   scratchReadCount_ = 0;
   udrCpuTime_ = 0;
+  topN_ = -1;
 #endif
-}
-
-void ExMeasStats::merge(ExPertableStats* other)
-{
-  ExMeasBaseStats::merge(other);
 }
 
 void ExMeasStats::merge(ExFragRootOperStats* other)
@@ -5345,13 +4858,9 @@ void ExMeasStats::merge(ExFragRootOperStats* other)
   maxHeapUsage_  += other -> maxHeapUsage_; 
   maxHeapAlloc_  += other -> maxHeapAlloc_;
   if (scratchOverflowMode_ == -1)
-    scratchOverflowMode_ = other->scratchOverflowMode_; 
+    scratchOverflowMode_ = other->scratchOverflowMode_;
 #ifndef __EID
   cpuTime_          += other -> cpuTime_;
-  dp2MaxSpaceUsage_ += other -> dp2MaxSpaceUsage_; 
-  dp2MaxSpaceAlloc_ += other -> dp2MaxSpaceAlloc_; 
-  dp2MaxHeapUsage_  += other -> dp2MaxHeapUsage_; 
-  dp2MaxHeapAlloc_  += other -> dp2MaxHeapAlloc_;
   newprocess_       += other -> newprocess_; 
   newprocessTime_   += other -> newprocessTime_; 
   espMaxSpaceUsage_ += other -> espMaxSpaceUsage_;
@@ -5382,7 +4891,6 @@ void ExMeasStats::merge(ExBMOStats *other)
 #ifndef __EID
   scratchFileCount_ += other->scratchFileCount_;
   scratchOverflowMode_ = other->scratchOverflowMode_;
-  
   if (scratchBufferBlockSize_ == 0 &&
      other->scratchBufferBlockSize_ > 0)
      scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
@@ -5394,26 +4902,28 @@ void ExMeasStats::merge(ExBMOStats *other)
 
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
+  if (topN_ == -1 && other->topN_ > 0)
+      topN_ = other->topN_;
+
 #endif
 }
 
 void ExMeasStats::merge(ExHdfsScanStats* other)
 {
-  exeDp2Stats()->incAccessedDP2Rows(other->rowsAccessed());
-  exeDp2Stats()->incUsedDP2Rows(other->rowsUsed());
-  exeDp2Stats()->incDiskReads(other->lobStats()->numReadReqs);
-  exeDp2Stats()->incProcessBusyTime(other->lobStats()->hdfsAccessLayerTime/1000);
-
-  fsDp2MsgsStats() ->incMessageBytes(other->numBytesRead());
+  exeSEStats()->incAccessedRows(other->rowsAccessed());
+  exeSEStats()->incUsedRows(other->rowsUsed());
+  exeSEStats()->incNumIOCalls(0);
+  exeSEStats()->incNumIOBytes(other->numBytesRead());
+  exeSEStats()->incMaxIOTime(other->maxHdfsIOTime());
 }
 
 void ExMeasStats::merge(ExHbaseAccessStats* other)
 {
-  exeDp2Stats()->incAccessedDP2Rows(other->rowsAccessed());
-  exeDp2Stats()->incUsedDP2Rows(other->rowsUsed());
-  exeDp2Stats()->incDiskReads(other->hbaseCalls());
-  exeDp2Stats()->incProcessBusyTime(other->getHbaseTimer().getTime());
-  fsDp2MsgsStats() ->incMessageBytes(0);
+  exeSEStats()->incAccessedRows(other->rowsAccessed());
+  exeSEStats()->incUsedRows(other->rowsUsed());
+  exeSEStats()->incNumIOCalls(other->hbaseCalls());
+  exeSEStats()->incNumIOBytes(other->numBytesRead());
+  exeSEStats()->incMaxIOTime(other->maxHbaseIOTime());
 }
 
 void ExMeasStats::merge(ExMeasStats* other)
@@ -5432,10 +4942,6 @@ void ExMeasStats::merge(ExMeasStats* other)
     scratchOverflowMode_ = other->scratchOverflowMode_;
 #ifndef __EID
   cpuTime_          += other -> cpuTime_;
-  dp2MaxSpaceUsage_ += other -> dp2MaxSpaceUsage_; 
-  dp2MaxSpaceAlloc_ += other -> dp2MaxSpaceAlloc_; 
-  dp2MaxHeapUsage_  += other -> dp2MaxHeapUsage_; 
-  dp2MaxHeapAlloc_  += other -> dp2MaxHeapAlloc_; 
   espMaxSpaceUsage_ += other -> espMaxSpaceUsage_;
   espMaxSpaceAlloc_ += other -> espMaxSpaceAlloc_;
   espMaxHeapUsage_  += other -> espMaxHeapUsage_;
@@ -5459,6 +4965,9 @@ void ExMeasStats::merge(ExMeasStats* other)
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
   udrCpuTime_ += other->udrCpuTime_;
+  if (topN_ == -1 && other->topN_ > 0)
+      topN_ = other->topN_;
+
 #endif
 }
 
@@ -5467,9 +4976,6 @@ void ExMeasStats::merge(ExOperStats * other)
 {
   switch (other->statType())
   {
-    case PERTABLE_STATS:
-      merge((ExPertableStats*) other);
-      break;
     case ROOT_OPER_STATS:
       merge((ExFragRootOperStats*) other);
       break;
@@ -5551,10 +5057,6 @@ void ExMeasStats::copyContents(ExMeasStats *other)
     scratchOverflowMode_ = other->scratchOverflowMode_;
 #ifndef __EID
   cpuTime_ = other->cpuTime_;
-  dp2MaxSpaceUsage_ = other->dp2MaxSpaceUsage_; 
-  dp2MaxSpaceAlloc_ = other->dp2MaxSpaceAlloc_; 
-  dp2MaxHeapUsage_ = other->dp2MaxHeapUsage_; 
-  dp2MaxHeapAlloc_ = other->dp2MaxHeapAlloc_; 
   espMaxSpaceUsage_ = other->espMaxSpaceUsage_; 
   espMaxSpaceAlloc_ = other->espMaxSpaceAlloc_; 
   espMaxHeapUsage_ = other->espMaxHeapUsage_; 
@@ -5574,6 +5076,7 @@ void ExMeasStats::copyContents(ExMeasStats *other)
   scratchReadCount_ = other->scratchReadCount_;
   scratchWriteCount_ = other->scratchWriteCount_;
   udrCpuTime_ = other->udrCpuTime_;
+  topN_ = other->topN_;
 #endif
   }
 }
@@ -5634,11 +5137,11 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
 
   str_sprintf(buf, 
     "statsRowType: %d Newprocess: %u NewprocessTime: %Ld Timeouts: %u NumSorts: %u SortElapsedTime: %Ld "
-    "SpaceTotal: %d  SpaceUsed: %d HeapTotal: %d HeapUsed: %d CpuTime: %Ld Dp2SpaceTotal: %d "
-    "Dp2SpaceUsed: %d Dp2HeapTotal: %d Dp2HeapUsed: %d reqMsgCnt: %Ld reqMsgBytes: %Ld replyMsgCnt: %Ld "
-    "replyMsgBytes: %Ld scrOverflowMode: %d "
+    "SpaceTotal: %d  SpaceUsed: %d HeapTotal: %d HeapUsed: %d CpuTime: %Ld "
+    "reqMsgCnt: %Ld reqMsgBytes: %Ld replyMsgCnt: %Ld "
+    "replyMsgBytes: %Ld scrOverflowMode: %d sortTopN: %Ld"
     "scrFileCount: %d scrBufferBlockSize: %d scrBufferRead: %Ld scrBufferWritten: %Ld "
-    "scrWriteCount: %Ld scrReadCount: %Ld udrCpuTime: %Ld ",
+    "scrWriteCount: %Ld scrReadCount: %Ld udrCpuTime: %Ld",
 	      statType(),
               getNewprocess(),
 	      getNewprocessTime(),
@@ -5650,15 +5153,12 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
               maxHeapAlloc_ + espMaxHeapAlloc_,
               maxHeapUsage_ + espMaxHeapUsage_,
               cpuTime_ + espCpuTime_,
-              dp2MaxSpaceAlloc_,
-              dp2MaxSpaceUsage_,
-              dp2MaxHeapAlloc_,
-              dp2MaxHeapUsage_,
               reqMsgCnt_,
               reqMsgBytes_,
               replyMsgCnt_,
               replyMsgBytes_,
               scratchOverflowMode_,
+              topN_,
               scratchFileCount_,
               scratchBufferBlockSize_,
               scratchBufferBlockRead_,
@@ -5718,31 +5218,19 @@ Lng32 ExMeasStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   switch (sqlStats_item->statsItem_id)
   {
   case SQLSTATS_ACT_ROWS_ACCESSED:
-    sqlStats_item->int64_value = exeDp2Stats()->getAccessedDP2Rows();
+    sqlStats_item->int64_value = exeSEStats()->getAccessedRows();
     break;
   case SQLSTATS_ACT_ROWS_USED:
-    sqlStats_item->int64_value = exeDp2Stats()->getUsedDP2Rows();
+    sqlStats_item->int64_value = exeSEStats()->getUsedRows();
     break;
-  case SQLSTATS_MSG_COUNT:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getNumMessages();
+  case SQLSTATS_SE_IOS:
+    sqlStats_item->int64_value = exeSEStats()->getNumIOCalls();
     break;
-  case SQLSTATS_MSG_BYTES:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getMessageBytes();
+  case SQLSTATS_SE_IO_BYTES:
+    sqlStats_item->int64_value = exeSEStats()->getNumIOBytes();
     break;
-  case SQLSTATS_STATS_BYTES:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getStatsBytes();
-    break;
-  case SQLSTATS_DISK_IOS:
-    sqlStats_item->int64_value = exeDp2Stats()->getDiskReads();
-    break;
-  case SQLSTATS_LOCK_WAITS:
-    sqlStats_item->int64_value = exeDp2Stats()->getLockWaits();
-    break;
-  case SQLSTATS_LOCK_ESCALATIONS:
-    sqlStats_item->int64_value = exeDp2Stats()->getEscalations();
-    break;
-  case SQLSTATS_DP2_CPU_BUSY_TIME:
-    sqlStats_item->int64_value = exeDp2Stats()->getProcessBusyTime();
+  case SQLSTATS_SE_IO_MAX_TIME:
+    sqlStats_item->int64_value = exeSEStats()->getMaxIOTime();
     break;
   case SQLSTATS_SQL_CPU_BUSY_TIME:
     sqlStats_item->int64_value = cpuTime_ + espCpuTime_;
@@ -5758,24 +5246,6 @@ Lng32 ExMeasStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     break;
   case SQLSTATS_SQL_HEAP_USED:
     sqlStats_item->int64_value = maxHeapUsage_ + espMaxHeapUsage_;
-    break;
-  case SQLSTATS_EID_SPACE_ALLOC:
-    sqlStats_item->int64_value = dp2MaxSpaceAlloc_;
-    break;
-  case SQLSTATS_EID_SPACE_USED:
-    sqlStats_item->int64_value = dp2MaxSpaceUsage_;
-    break;
-  case SQLSTATS_EID_HEAP_ALLOC:
-    sqlStats_item->int64_value = dp2MaxHeapAlloc_;
-    break;
-  case SQLSTATS_EID_HEAP_USED:
-    sqlStats_item->int64_value = dp2MaxHeapUsage_;
-    break;
-  case SQLSTATS_OPENS:
-    sqlStats_item->int64_value = getOpens();
-    break;
-  case SQLSTATS_OPEN_TIME:
-    sqlStats_item->int64_value = getOpenTime();
     break;
   case SQLSTATS_PROCESS_CREATED:
     sqlStats_item->int64_value = newprocess_;
@@ -5819,9 +5289,6 @@ Lng32 ExMeasStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_UDR_CPU_BUSY_TIME:
     sqlStats_item->int64_value = udrCpuTime_;
     break;
-  case SQLSTATS_DP2_REDRIVE_ATTEMPTS:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getNumRedriveAttempted(); 
-    break;
   default:
     sqlStats_item->error_code = -EXE_STAT_NOT_FOUND;
     break;
@@ -5836,390 +5303,6 @@ NABoolean ExMeasStats::filterForCpuStats()
     retcode = FALSE;
   else
   if (cpuTime_ > histCpuTime_)
-    retcode = TRUE;
-  else
-    retcode = FALSE;
-  setCpuStatsHistory();
-  return retcode;
-}
-#endif
-//////////////////////////////////////////////////////////////////
-// class ExPertableStats
-//////////////////////////////////////////////////////////////////
-ExPertableStats::ExPertableStats(NAMemory * heap,
-			   ex_tcb * tcb,
-			   const ComTdb * tdb)
-     : ExMeasBaseStats(heap, PERTABLE_STATS, tcb, tdb),
-       ansiName_(NULL),
-       fileName_(NULL)
-{
-#ifndef __EID
-  queryId_ = NULL;
-  queryIdLen_ = 0;
-  histDp2CpuTime_ = 0;
-#endif
- }
-
-ExPertableStats::ExPertableStats(NAMemory * heap)
-     : ExMeasBaseStats(heap, PERTABLE_STATS),
-       ansiName_(NULL),
-       fileName_(NULL)
-{
-#ifndef __EID
-  queryId_ = NULL;
-  queryIdLen_ = 0;
-  histDp2CpuTime_ = 0;
-#endif
-}
-
-ExPertableStats::~ExPertableStats()
-{
-  if (ansiName_)
-    heap_->deallocateMemory((void*)ansiName_);
-  if (fileName_)
-    heap_->deallocateMemory((void*)fileName_);
-#ifndef __EID
-  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS && queryId_ != NULL)
-  {
-    NADELETEBASIC(queryId_, getHeap());
-    queryId_ = NULL;
-  }
-#endif
-}
-
-ExPertableStats *ExPertableStats::castToExPertableStats()
-{
-  return this;
-}
-
-UInt32 ExPertableStats::packedLength() {
-  UInt32 size;
-
-  size = ExMeasBaseStats::packedLength();
-  size += sizeof(getId()->tdbId_);
-
-  if (NOT statsInDp2())
-    {
-      advanceSize2(size, ansiName_);
-      advanceSize2(size, fileName_);
-    }
-#ifndef __EID
-  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
-  {
-    size += sizeof(queryIdLen_);
-    size += queryIdLen_;
-  }
-#endif
-  return size;
-}
-
-UInt32 ExPertableStats::pack(char * buffer) {
-  UInt32 size;
-  size = ExMeasBaseStats::pack(buffer);
-  buffer += size;
-  size += packIntoBuffer(buffer, getId()->tdbId_);
-
-  if (NOT statsInDp2())
-    {
-      size += packCharStarIntoBuffer(buffer, ansiName_);
-      size += packCharStarIntoBuffer(buffer, fileName_);
-    }
-#ifndef __EID
-  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
-  {
-    size += packIntoBuffer(buffer, queryIdLen_);
-    if (queryIdLen_ != 0 && queryId_ != NULL)
-      size += packStrIntoBuffer(buffer, queryId_, queryIdLen_);
-  }
-#endif
-  return size;
-}
-
-void ExPertableStats::unpack(const char* &buffer) {
-  ExMeasBaseStats::unpack(buffer);
-  unpackBuffer(buffer, ((ExOperStatsId*)getId())->tdbId_);
-  // In case DETAILED_STATISTICS is set to PERTABLE
-  // pertableStatsId is not shipped out from DP2 even with the _STATS_RTS_VERSION_25
-  // and in that case set it same as tdbId
-  if (getPertableStatsId() == -1)
-    setPertableStatsId(((ExOperStatsId*)getId())->tdbId_);
-  if (NOT statsInDp2())
-    {
-      unpackBuffer(buffer, ansiName_, heap_);
-      unpackBuffer(buffer, fileName_, heap_);
-    }
-#ifndef __EID
-  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
-  {
-    unpackBuffer(buffer, queryIdLen_);
-    if (queryIdLen_ != 0)
-    {
-      queryId_ = new ((NAHeap *)(getHeap())) char[queryIdLen_+1];
-      unpackStrFromBuffer(buffer, queryId_, queryIdLen_);
-      queryId_[queryIdLen_] = '\0';
-    }
-  }
-#endif
-}
-
-ExOperStats * ExPertableStats::copyOper(NAMemory * heap) {
-  ExPertableStats * stat =  new(heap) ExPertableStats(heap);
-  stat->copyContents(this);
-  return stat;
-}
-
-void ExPertableStats::copyContents(ExPertableStats * other)
-{
-  ExMeasBaseStats::copyContents(other);
-  // copy names only if we don't have one
-  if (ansiName_ == NULL && other->ansiName_) 
-  {
-    Lng32 len = (Lng32)str_len(other->ansiName_);
-    ansiName_ = (char *)heap_->allocateMemory(len + 1);
-    str_cpy_all(ansiName_, other->ansiName_, len);
-    ansiName_[len] = 0;
-  }
-  if (fileName_ == NULL && other->fileName_) 
-  {
-    Lng32 len = (Lng32)str_len(other->fileName_);
-    fileName_ = (char *)heap_->allocateMemory(len + 1);
-    str_cpy_all(fileName_, other->fileName_, len);
-    fileName_[len] = 0;
-  }
-#ifndef __EID
-  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
-  {
-    queryIdLen_ = other->queryIdLen_;
-    if (queryIdLen_ != 0)
-    {
-      queryId_ = new ((NAHeap *)(getHeap())) char[queryIdLen_+1];
-      str_cpy_all(queryId_, other->queryId_, queryIdLen_);
-      queryId_[queryIdLen_] = '\0';
-    }
-    else
-      queryId_ = NULL;
-  }
-  else
-  {
-    queryId_ = other->queryId_;
-    queryIdLen_ = other->queryIdLen_;
-  }
-  histDp2CpuTime_ = other->histDp2CpuTime_;
-#endif
-}
-
-void ExPertableStats::merge(ExPertableStats* other)
-{
-  ExMeasBaseStats::merge(other);
-  // copy names only if we don't have one
-  if (ansiName_ == NULL && other->ansiName_) 
-  {
-    Lng32 len = (Lng32)str_len(other->ansiName_);
-    ansiName_ = (char *)heap_->allocateMemory(len + 1);
-    str_cpy_all(ansiName_, other->ansiName_, len);
-    ansiName_[len] = 0;
-  }
-  if (fileName_ == NULL && other->fileName_) 
-  {
-    Lng32 len = (Lng32)str_len(other->fileName_);
-    fileName_ = (char *)heap_->allocateMemory(len + 1);
-    str_cpy_all(fileName_, other->fileName_, len);
-    fileName_[len] = 0;
-  }
-}
-
-
-const char *ExPertableStats::getNumValTxt(Int32 i) const
-{
-  switch (i)
-    {
-    case 1:
-      return "OperCpuTime";
-    case 2:
-      return "AccessedDP2Rows";
-    case 3:
-      return "MessageBytes";
-    case 4:
-      return "DiskReads";
-    }
-  return NULL;
-}
-
-Int64 ExPertableStats::getNumVal(Int32 i) const
-{
-  switch (i)
-    {
-    case 1:
-      return ExOperStats::getNumVal(i);
-    case 2:
-      return exeDp2Stats_.getAccessedDP2Rows();
-    case 3:
-      return fsDp2MsgsStats_.getMessageBytes();
-    case 4:
-      return exeDp2Stats_.getDiskReads();
-    }
-  return 0;
-}
-
-void ExPertableStats::getVariableStatsInfo(char * dataBuffer,
-					   char * dataLen,
-					   Lng32 maxLen)
-{
-  char *buf = dataBuffer;
-#ifndef __EID
-  if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
-  {
-    str_sprintf(buf, "statsRowType: %d Qid: %s AnsiName: %s EstRowsAccessed: %f EstRowsUsed: %f ",
-        statType(),
-        ((queryId_ != NULL) ? queryId_ : "NULL"),
-        ((ansiName_ != NULL) ? ansiName_ : "NO_NAME_YET"),
-        getEstRowsAccessed(), getEstRowsUsed());
-    buf += str_len(buf);
-  }
-  else
-#endif
-  {
-    str_sprintf(buf,
-		"statsRowType: %d AnsiName: %s EstRowsAccessed: %f EstRowsUsed: %f ",
-		statType(), 
-                ((ansiName_ != NULL) ? ansiName_ : "NO_NAME_YET"),
-                getEstRowsAccessed(), getEstRowsUsed());
-    buf += str_len(buf);
-    if (hasSentMsgIUD())
-    {
-      str_sprintf(buf, "HasSentIudMsg: 1 ");
-      buf += str_len(buf);
-    }    
-  }
-
-  ExMeasBaseStats::getVariableStatsInfo(buf, dataLen, maxLen);
-  buf += *((short *) dataLen);
-  *(short*)dataLen = (short) (buf - dataBuffer);
-}
-
-#ifndef __EID
-Lng32 ExPertableStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
-{
-  sqlStats_item->error_code = 0;
-  Int32 len;
-  Int32 len1;
-  const char *ansiName;
-  char tmpBuf[100];
-
-  switch (sqlStats_item->statsItem_id)
-  {
-  case SQLSTATS_TABLE_ANSI_NAME:
-    if (sqlStats_item->str_value != NULL)
-    {
-      if (ansiName_ != NULL)
-        ansiName = ansiName_;
-      else
-        ansiName = "NO_NAME_YET";
-      len = str_len(ansiName);
-      if (len > sqlStats_item->str_max_len)
-      {
-        len = sqlStats_item->str_max_len;
-        sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
-      }
-      str_cpy(sqlStats_item->str_value, ansiName, len);
-      sqlStats_item->str_ret_len = len;
-    }
-    break;
-  case SQLSTATS_EST_ROWS_ACCESSED:
-    sqlStats_item->double_value = getEstRowsAccessed();
-    break;
-  case SQLSTATS_EST_ROWS_USED:
-    sqlStats_item->double_value = getEstRowsUsed();
-    break;
-  case SQLSTATS_ACT_ROWS_ACCESSED:
-    sqlStats_item->int64_value = exeDp2Stats()->getAccessedDP2Rows();
-    break;
-  case SQLSTATS_ACT_ROWS_USED:
-    if (getCollectStatsType() == ComTdb::OPERATOR_STATS &&
-        getTdbType() == ComTdb::ex_PARTN_ACCESS)
-      sqlStats_item->int64_value = getActualRowsReturned();
-    else
-      sqlStats_item->int64_value = exeDp2Stats()->getUsedDP2Rows();
-    break;
-  case SQLSTATS_MSG_COUNT:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getNumMessages();
-    break;
-  case SQLSTATS_MSG_BYTES:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getMessageBytes();
-    break;
-  case SQLSTATS_OPENS:
-    sqlStats_item->int64_value = getOpens();
-    break;
-  case SQLSTATS_OPEN_TIME:
-    sqlStats_item->int64_value = getOpenTime();
-    break;
-  case SQLSTATS_STATS_BYTES:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getStatsBytes();
-    break;
-  case SQLSTATS_DISK_IOS:
-    sqlStats_item->int64_value = exeDp2Stats()->getDiskReads();
-    break;
-  case SQLSTATS_LOCK_WAITS:
-    sqlStats_item->int64_value = exeDp2Stats()->getLockWaits();
-    break;
-  case SQLSTATS_LOCK_ESCALATIONS:
-    sqlStats_item->int64_value = exeDp2Stats()->getEscalations();
-    break;
-  case SQLSTATS_DP2_CPU_BUSY_TIME:
-    sqlStats_item->int64_value = exeDp2Stats()->getProcessBusyTime();
-    break;
-  case SQLSTATS_DP2_REDRIVE_ATTEMPTS:
-    sqlStats_item->int64_value = fsDp2MsgsStats()->getNumRedriveAttempted();
-    break;
-  case SQLSTATS_DETAIL:
-    if (sqlStats_item->str_value != NULL)
-    {
-      if (ansiName_ != NULL)
-      {
-        len = str_len(ansiName_);
-        if (len > sqlStats_item->str_max_len)
-        {
-           sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
-           str_cpy_all(sqlStats_item->str_value, ansiName_, sqlStats_item->str_max_len);
-        }
-        else
-           str_cpy_all(sqlStats_item->str_value, ansiName_, len);
-      }
-      else 
-        len = 0; 
-      str_sprintf(tmpBuf, "|%Ld|%Ld", exeDp2Stats()->getAccessedDP2Rows(),
-               fsDp2MsgsStats()->getMessageBytes());
-      len1 = str_len(tmpBuf);
-      if ((len+len1) > sqlStats_item->str_max_len)
-        sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
-      else
-        str_cpy(sqlStats_item->str_value+len, tmpBuf, len1);
-      sqlStats_item->str_ret_len = len+len1;
-    }
-    break;
-  default:
-#ifndef __EID
-    ExOperStats::getStatsItem(sqlStats_item);
-#else
-    sqlStats_item->error_code = -EXE_ERROR_IN_STAT_ITEM;
-#endif
-    break;
-  }
-  return 0;
-}
-
-NABoolean ExPertableStats::filterForCpuStats()
-{
-  NABoolean retcode;
-  // queryId_ can be NULL in the master, when the completed
-  // stats is shipped to master from ESPs
-  if (queryId_ == NULL)
-     retcode = FALSE;
-  else
-  if (histDp2CpuTime_ == 0)
-    retcode = FALSE;
-  else
-  if (exeDp2Stats()->getProcessBusyTime() != histDp2CpuTime_)
     retcode = TRUE;
   else
     retcode = FALSE;
@@ -6483,17 +5566,8 @@ void ExStatisticsArea::removeEntries()
       case ExOperStats::MEAS_STATS:
         NADELETE((ExMeasStats *)stat, ExMeasStats, heap_);
         break;
-      case ExOperStats::PERTABLE_STATS:
-        NADELETE((ExPertableStats *)stat, ExPertableStats, heap_);
-        break;
       case ExOperStats::ROOT_OPER_STATS:
         NADELETE((ExFragRootOperStats *)stat, ExFragRootOperStats, heap_);
-        break;
-      case ExOperStats::DP2_LEAF_STATS:
-        NADELETE((ExDP2LeafOperStats *)stat, ExDP2LeafOperStats, heap_);
-        break;
-      case ExOperStats::DP2_INSERT_STATS:
-        NADELETE((ExDP2InsertStats *)stat, ExDP2InsertStats, heap_);
         break;
       case ExOperStats::PARTITION_ACCESS_STATS:
         NADELETE((ExPartitionAccessStats *)stat, ExPartitionAccessStats, heap_);
@@ -6632,14 +5706,6 @@ NABoolean ExStatisticsArea::merge(ExOperStats * other, UInt16 statsMergeType)
             return TRUE;
           }
           break;
-        case ExOperStats::PERTABLE_STATS:
-          if (stat->statType() == ExOperStats::PERTABLE_STATS
-            && stat->getPertableStatsId() == other->getPertableStatsId())
-          {
-            ((ExPertableStats *)stat)->merge((ExPertableStats *)other);
-            return TRUE;
-          }
-          break;
         case ExOperStats::BMO_STATS:
           if (statsMergeType == SQLCLI_PROGRESS_STATS &&
             stat->statType() == ExOperStats::BMO_STATS &&
@@ -6698,7 +5764,6 @@ NABoolean ExStatisticsArea::merge(ExOperStats * other, UInt16 statsMergeType)
         other->statType() != ExOperStats::EX_OPER_STATS &&
         other->statType() != ExOperStats::ROOT_OPER_STATS &&
         other->statType() != ExOperStats::BMO_STATS &&
-        other->statType() != ExOperStats::PERTABLE_STATS &&
         other->statType() != ExOperStats::UDR_BASE_STATS &&
         other->statType() != ExOperStats::HBASE_ACCESS_STATS &&
         other->statType() != ExOperStats::HDFSSCAN_STATS &&
@@ -6724,9 +5789,6 @@ NABoolean ExStatisticsArea::merge(ExOperStats * other, UInt16 statsMergeType)
             break;
           case ExOperStats::UDR_BASE_STATS:
             ((ExUDRBaseStats *)stat)->merge((ExUDRBaseStats *)other);
-            break;
-          case ExOperStats::PERTABLE_STATS:
-            ((ExPertableStats*)stat)->merge((ExPertableStats*)other);
             break;
          case ExOperStats::HDFSSCAN_STATS:
             ((ExHdfsScanStats*)stat)->merge((ExHdfsScanStats*)other);
@@ -6806,14 +5868,6 @@ NABoolean ExStatisticsArea::merge(ExStatisticsArea * otherStatsArea, UInt16 stat
 	    case SQLCLI_PROGRESS_STATS:
 	      switch (statType)
 		{
-		case ExOperStats::PERTABLE_STATS:
-		  newStat = new(heap_) ExPertableStats(heap_);
-		  newStat->setCollectStatsType(tempStatsMergeType);
-		  ((ExPertableStats *)newStat)->copyContents((ExPertableStats *)stat);
-		  newStat->setCollectStatsType(tempStatsMergeType);
-		  insert(newStat);
-		  break; 
-
 		case ExOperStats::ROOT_OPER_STATS:
 		  newStat = new(heap_)ExFragRootOperStats(heap_);
 		  newStat->setCollectStatsType(tempStatsMergeType);
@@ -6892,14 +5946,6 @@ NABoolean ExStatisticsArea::merge(ExStatisticsArea * otherStatsArea, UInt16 stat
 		    newStat->setCollectStatsType(tempStatsMergeType);
 		    insert(newStat);
 		    break;
-		  case ExOperStats::PERTABLE_STATS:
-		    newStat = new(heap_) ExPertableStats(heap_);
-		    newStat->setCollectStatsType(tempStatsMergeType);
-		    ((ExPertableStats *)newStat)->copyContents((ExPertableStats *)stat);
-		    newStat->setCollectStatsType(tempStatsMergeType);
-		    insert(newStat);
-		    break; 
-
 		  case ExOperStats::ROOT_OPER_STATS:
 		    newStat = new(heap_)ExFragRootOperStats(heap_);
 		    ((ExFragRootOperStats *)newStat)->copyContents((ExFragRootOperStats *)stat);
@@ -6946,20 +5992,6 @@ NABoolean ExStatisticsArea::merge(ExStatisticsArea * otherStatsArea, UInt16 stat
 		      break;
 		    switch (statType)
 		      {
-		      case ExOperStats::DP2_LEAF_STATS:
-			newStat = new(heap_) ExDP2LeafOperStats(heap_);
-			((ExDP2LeafOperStats *)newStat)->copyContents((ExDP2LeafOperStats *)stat);
-			newStat->setCollectStatsType(tempStatsMergeType);
-			insert(newStat);
-			break;
-
-		      case ExOperStats::DP2_INSERT_STATS:
-			newStat = new(heap_) ExDP2InsertStats(heap_);
-			((ExDP2InsertStats *)newStat)->copyContents((ExDP2InsertStats *)stat);
-			newStat->setCollectStatsType(tempStatsMergeType);
-			insert(newStat);
-			break;
-
 		      case ExOperStats::PARTITION_ACCESS_STATS:
 			newStat = new(heap_) ExPartitionAccessStats(heap_);
 			((ExPartitionAccessStats *)newStat)->copyContents((ExPartitionAccessStats *)stat);
@@ -7002,20 +6034,6 @@ NABoolean ExStatisticsArea::merge(ExStatisticsArea * otherStatsArea, UInt16 stat
 
 			switch (statType) 
 			  {
-			  case ExOperStats::DP2_LEAF_STATS:
-			    newStat = new(heap_) ExDP2LeafOperStats(heap_);
-			    ((ExDP2LeafOperStats *)newStat)->copyContents((ExDP2LeafOperStats *)stat);
-			    newStat->setCollectStatsType(tempStatsMergeType);
-			    insert(newStat);
-			    break;
-
-			  case ExOperStats::DP2_INSERT_STATS:
-			    newStat = new(heap_) ExDP2InsertStats(heap_);
-			    ((ExDP2InsertStats *)newStat)->copyContents((ExDP2InsertStats *)stat);
-			    newStat->setCollectStatsType(tempStatsMergeType);
-			    insert(newStat);
-			    break;
-
 			  case ExOperStats::PARTITION_ACCESS_STATS:
 			    newStat = new(heap_) ExPartitionAccessStats(heap_);
 			    ((ExPartitionAccessStats *)newStat)->copyContents((ExPartitionAccessStats *)stat);
@@ -7197,9 +6215,7 @@ Int64 ExStatisticsArea::getHashData(ExOperStats::StatType type,
     return 1;
   case ComTdb::PERTABLE_STATS:
   case ComTdb::PROGRESS_STATS:
-    if (type == ExOperStats::PERTABLE_STATS)
-      return tdbId;
-    else if (type == ExOperStats::ROOT_OPER_STATS)
+    if (type == ExOperStats::ROOT_OPER_STATS)
       return 1;
     else if (type == ExOperStats::NO_OP)
       return -1;
@@ -7288,7 +6304,6 @@ ExOperStats * ExStatisticsArea::get(ExOperStats::StatType type,
   {
     if ((collectStatsType_ == ComTdb::PERTABLE_STATS 
       || collectStatsType_ == ComTdb::PROGRESS_STATS) &&
-      (stat->statType() == ExOperStats::PERTABLE_STATS) &&
       stat->statType() == type &&
       stat->getPertableStatsId() == tdbId)
       return stat;
@@ -7308,7 +6323,7 @@ ExOperStats * ExStatisticsArea::get(Lng32 tdbId)
 {
   return get(ExOperStats::NO_OP, tdbId); 
 }
-
+/*
 //////////////////////////////////////////////////////////////////
 // scan all ExOperStats entries and update stmtCntrs.
 //////////////////////////////////////////////////////////////////
@@ -7327,14 +6342,14 @@ Int32  ExStatisticsArea::updateStmtCntrs(ExMeasStmtCntrs * stmtCntrs,
   ExMeasStats * stat = getNext()->castToExMeasStats();
   if (stat)
     {
-      stmtCntrs->incRowsAccessed (stat->exeDp2Stats()->getAccessedDP2Rows());
-      stmtCntrs->incRowsUsed (stat->exeDp2Stats()->getUsedDP2Rows());
-      stmtCntrs->incEscalations ((short)stat->exeDp2Stats()->getEscalations());
-      stmtCntrs->incDiscReads (stat->exeDp2Stats()->getDiskReads());
-      stmtCntrs->incLockWaits ((short)stat->exeDp2Stats()->getLockWaits());
-      stmtCntrs->incTimeouts ((short)stat->getTimeouts());
-      stmtCntrs->incMessages (stat->fsDp2MsgsStats()->getNumMessages());
-      stmtCntrs->incMessageBytes (stat->fsDp2MsgsStats()->getMessageBytes());
+      stmtCntrs->incRowsAccessed (stat->exeSEStats()->getAccessedDP2Rows());
+      stmtCntrs->incRowsUsed (stat->exeSE()->getUsedDP2Rows());
+      stmtCntrs->incEscalations ((short)stat->exeSEStats()->getEscalations());
+      stmtCntrs->incDiscReads (stat->exeSEStats()->getDiskReads());
+      stmtCntrs->incLockWaits ((short)stat->exeSEStats()->getLockWaits());
+      stmtCntrs->incTimeouts ((short)stat->exeSEStats());
+      stmtCntrs->incMessages (stat->exeSEStats()->getNumMessages());
+      stmtCntrs->incMessageBytes (stat->exeSEStats()->getMessageBytes());
 
       // now that the ExOperStats have been read, re-initialize
       // them for the next execution of this statement.
@@ -7374,7 +6389,6 @@ void ExStatisticsArea::allocDynamicStmtCntrs(const char * stmtName)
   deallocStmtCntrs_ = TRUE;
 #endif
 }  
-
 
 Int32 ExStatisticsArea::getMeasOpensCntr()
 {
@@ -7423,7 +6437,7 @@ Int64 ExStatisticsArea::getMeasNewprocessTimeCntr()
   else
     return 0;
 };
-
+*/
 void ExStatisticsArea::setMasterStats(ExMasterStats *masterStats)
 { 
   masterStats_ = masterStats; 
@@ -7607,17 +6621,8 @@ void ExStatisticsArea::unpackThisClass(const char* &buffer, ExOperStats *parentS
     case ExOperStats::MEAS_STATS:
       stat = new(heap_) ExMeasStats(heap_);
       break;
-    case ExOperStats::PERTABLE_STATS:
-      stat = new(heap_) ExPertableStats(heap_);
-      break;
     case ExOperStats::ROOT_OPER_STATS:
       stat = new(heap_) ExFragRootOperStats(heap_);
-      break;
-    case ExOperStats::DP2_LEAF_STATS:
-      stat = new(heap_) ExDP2LeafOperStats(heap_);
-      break;
-    case ExOperStats::DP2_INSERT_STATS:
-      stat = new(heap_) ExDP2InsertStats(heap_);
       break;
     case ExOperStats::PARTITION_ACCESS_STATS:
       stat = new(heap_) ExPartitionAccessStats(heap_);
@@ -7793,8 +6798,6 @@ Lng32 ExStatisticsArea::getStatsItems(Lng32 no_of_stats_items,
 {
   Lng32 retcode = 0;
   Lng32 tempRetcode = 0;
-  ExDP2InsertStats* dp2InsertStats = NULL;
-  ExDP2LeafOperStats* dp2LeafStats = NULL;
   ExESPStats* espStats = NULL;
   ExFragRootOperStats* rootStats = NULL;
   ExHashGroupByStats* groupByStats = NULL;
@@ -7803,7 +6806,6 @@ Lng32 ExStatisticsArea::getStatsItems(Lng32 no_of_stats_items,
   ExMeasStats* measStats = NULL;
   ExOperStats* operStats = NULL;
   ExPartitionAccessStats* partitionAccessStats = NULL;
-  ExPertableStats* pertableStats = NULL;
   ExProbeCacheStats* probeCacheStats = NULL;
   ExFastExtractStats* fastExtractStats = NULL;
   ExHdfsScanStats* hdfsScanStats = NULL;
@@ -7851,14 +6853,6 @@ Lng32 ExStatisticsArea::getStatsItems(Lng32 no_of_stats_items,
       else
         tempRetcode = -EXE_STAT_NOT_FOUND;
       break;
-    case ExOperStats::PERTABLE_STATS:
-      if (pertableStats == NULL)
-         pertableStats = (ExPertableStats *)get(ExOperStats::PERTABLE_STATS, sqlStats_items[i].tdb_id);
-      if (pertableStats != NULL)
-        tempRetcode = pertableStats->getStatsItem(&sqlStats_items[i]);
-      else
-        tempRetcode = -EXE_STAT_NOT_FOUND;
-      break;
     case ExOperStats::BMO_STATS:
       if (bmoStats == NULL)
          bmoStats = (ExBMOStats*)get(ExOperStats::BMO_STATS, sqlStats_items[i].tdb_id);
@@ -7872,22 +6866,6 @@ Lng32 ExStatisticsArea::getStatsItems(Lng32 no_of_stats_items,
          udrBaseStats = (ExUDRBaseStats*)get(ExOperStats::UDR_BASE_STATS, sqlStats_items[i].tdb_id);
       if (udrBaseStats != NULL)
         tempRetcode = udrBaseStats->getStatsItem(&sqlStats_items[i]);
-      else
-        tempRetcode = -EXE_STAT_NOT_FOUND;
-      break;
-    case ExOperStats::DP2_INSERT_STATS:
-      if (dp2InsertStats == NULL)
-         dp2InsertStats = (ExDP2InsertStats*)get(ExOperStats::DP2_INSERT_STATS, sqlStats_items[i].tdb_id);
-      if (dp2InsertStats != NULL)
-        tempRetcode = dp2InsertStats->getStatsItem(&sqlStats_items[i]);
-      else
-        tempRetcode = -EXE_STAT_NOT_FOUND;
-      break;
-    case ExOperStats::DP2_LEAF_STATS:
-      if (dp2LeafStats == NULL)
-         dp2LeafStats = (ExDP2LeafOperStats*)get(ExOperStats::DP2_LEAF_STATS, sqlStats_items[i].tdb_id);
-      if (dp2LeafStats != NULL)
-        tempRetcode = dp2LeafStats->getStatsItem(&sqlStats_items[i]);
       else
         tempRetcode = -EXE_STAT_NOT_FOUND;
       break;
@@ -8103,14 +7081,6 @@ Lng32 ExStatisticsArea::getStatsDesc(short *statsCollectType,
     position();
     for (; (stat = getNext()) != NULL; )
     {
-      if (stat->statType() == ExOperStats::PERTABLE_STATS )
-      {
-        sqlstats_desc[i].tdb_id = (short)stat->getPertableStatsId();
-        sqlstats_desc[i].stats_type = stat->statType();
-        sqlstats_desc[i].tdb_name[0] = '\0';
-        i++;
-      }
-      else
       if (stat->statType() == ExOperStats::HBASE_ACCESS_STATS ||
          stat->statType() == ExOperStats::HDFSSCAN_STATS)
       {
@@ -8237,6 +7207,26 @@ void ExStatisticsArea::setCpuStatsHistory()
   }
 }
 
+NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *stats, 
+       NABoolean appendAlways, Lng32 filter, struct timespec currTimespec)
+{
+  ExMasterStats *masterStats; 
+  ExOperStats *stat;
+  ExOperStats::StatType statType;
+  NABoolean retcode = FALSE;
+  NABoolean retcode1;
+
+  stats->position();
+  while ((stat = stats->getNext()) != NULL) {
+     statType = stat->statType();
+     if (statType == ExOperStats::HBASE_ACCESS_STATS || statType == ExOperStats::HDFSSCAN_STATS) 
+        retcode1 = appendCpuStats(stat, appendAlways, filter, currTimespec);
+     if (retcode1 == TRUE)
+        retcode = TRUE;
+  }
+  return retcode;
+}
+
 NABoolean ExStatisticsArea::appendCpuStats(ExMasterStats *masterStats, 
        NABoolean appendAlways, short subReqType,
        Lng32 etFilter, Int64 currTimestamp)
@@ -8259,6 +7249,45 @@ NABoolean ExStatisticsArea::appendCpuStats(ExMasterStats *masterStats,
   return retcode;
 }
 
+NABoolean ExStatisticsArea::appendCpuStats(ExOperStats *stat, 
+       NABoolean appendAlways, 
+       Lng32 filter, struct timespec currTimespec)
+{
+  NABoolean append = appendAlways;
+  NABoolean retcode = FALSE;
+  ExHbaseAccessStats *append_hbaseStats;
+  ExHdfsScanStats *append_hdfsStats;
+  ExOperStats::StatType statType;
+  
+  statType = stat->statType();
+  if (!append)
+  {
+     if (statType == ExOperStats::HBASE_ACCESS_STATS)
+        append = ((ExHbaseAccessStats *)stat)->filterForSEstats(currTimespec, filter);
+     else
+     if (statType == ExOperStats::HDFSSCAN_STATS)
+        append = ((ExHdfsScanStats *)stat)->filterForSEstats(currTimespec, filter);
+  }
+  if (append)
+  {
+     if (statType == ExOperStats::HBASE_ACCESS_STATS) {
+        append_hbaseStats = new (getHeap()) ExHbaseAccessStats((NAHeap *)getHeap());
+        append_hbaseStats->setCollectStatsType(getCollectStatsType());
+        append_hbaseStats->copyContents((ExHbaseAccessStats *)stat);
+        insert(append_hbaseStats);
+     }
+     else
+     if (statType == ExOperStats::HDFSSCAN_STATS) {
+        append_hdfsStats = new (getHeap()) ExHdfsScanStats((NAHeap *)getHeap());
+        append_hdfsStats->setCollectStatsType(getCollectStatsType());
+        append_hdfsStats->copyContents((ExHdfsScanStats *)stat);
+        insert(append_hdfsStats);
+     }
+     retcode = TRUE;
+  }
+  return retcode;
+}
+
 NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other, 
        NABoolean appendAlways)
 {
@@ -8266,7 +7295,6 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
   ExOperStats *stat;
   ExMeasStats *measStats;
   ExFragRootOperStats *rootOperStats;
-  ExPertableStats *pertableStats;
   ExRMSStats *rmsStats;
   ExBMOStats *bmoStats;
   ExUDRBaseStats *udrBaseStats;
@@ -8398,16 +7426,6 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
             retcode = TRUE;
           }
           break;
-        case ExOperStats::PERTABLE_STATS:
-          if (detailLevel_ == stat->getTdbId())
-          {
-            pertableStats = new (getHeap()) ExPertableStats(getHeap());
-            pertableStats->setCollectStatsType(getCollectStatsType());
-            pertableStats->copyContents((ExPertableStats *)stat);
-            insert(pertableStats);
-            retcode = TRUE;
-          }
-          break;
         case ExOperStats::BMO_STATS:
           if (detailLevel_ == stat->getTdbId())
           {
@@ -8484,29 +7502,21 @@ NABoolean ExStatisticsArea::appendCpuStats(ExStatisticsArea *other,
             insert(rootOperStats);
             retcode = TRUE;
          }
-         else if (stat->castToExPertableStats())
+         else if (stat->castToExHdfsScanStats())
          {
-            pertableStats = new (getHeap()) ExPertableStats(getHeap());
-            pertableStats->setCollectStatsType(getCollectStatsType());
-            pertableStats->copyContents((ExPertableStats *)stat);
-            insert(pertableStats);
+            hdfsScanStats = new (getHeap()) ExHdfsScanStats(getHeap());
+            hdfsScanStats->setCollectStatsType(getCollectStatsType());
+            hdfsScanStats->copyContents((ExHdfsScanStats *)stat);
+            insert(hdfsScanStats);
             retcode = TRUE;
          }
-      }
-      else
-      { 
-         tdbType = stat->getTdbType();
-         if (subReqType == SQLCLI_STATS_REQ_SE_OPERATOR  && 
-                 statType == ExOperStats::PERTABLE_STATS)
+         else if (stat->castToExHbaseAccessStats())
          {
-            if (((ExPertableStats *)stat)->filterForCpuStats())
-            {
-               pertableStats = new (getHeap()) ExPertableStats(getHeap());
-               pertableStats->setCollectStatsType(getCollectStatsType());
-               pertableStats->copyContents((ExPertableStats *)stat);
-               insert(pertableStats);
-               retcode = TRUE;
-            }
+            hbaseAccessStats = new (getHeap()) ExHbaseAccessStats(getHeap());
+            hbaseAccessStats->setCollectStatsType(getCollectStatsType());
+            hbaseAccessStats->copyContents((ExHbaseAccessStats *)stat);
+            insert(hbaseAccessStats);
+            retcode = TRUE;
          }
       }
       break;
@@ -8557,9 +7567,6 @@ void ExStatisticsArea::setQueryId(char *queryId, Lng32 queryIdLen)
   {
     if (stat->castToExFragRootOperStats())
        stat->castToExFragRootOperStats()->setQueryId(queryId, queryIdLen);
-    else
-    if (stat->castToExPertableStats())
-       stat->castToExPertableStats()->setQueryId(queryId, queryIdLen);
   }
 }
 #endif
@@ -8907,7 +7914,6 @@ short ExStatsTcb::work()
                           }
                           if (stats_->getMasterStats() != NULL)
                           {
-                            stats_->getMasterStats()->setNumSqlProcs((short)(stats_->getMasterStats()->numOfTotalEspsUsed()+1));
                             stats_->getMasterStats()->setNumCpus((short)stats_->getMasterStats()->compilerStatsInfo().dop());
                           }
                           pstate->step_ = GET_MASTER_STATS_ENTRY_;
@@ -9693,7 +8699,7 @@ void ExMasterStats::init()
   rowsAffected_ = -1;
   rowsReturned_ = 0;
   sqlErrorCode_ = 0;
-  numOfTotalEspsUsed_ = -1;
+  numOfTotalEspsUsed_ = 0;
   numOfNewEspsStarted_ = -1;
   numOfRootEsps_ = -1;
   exePriority_ = -1;
@@ -9710,7 +8716,6 @@ void ExMasterStats::init()
   stmtState_ = 0;
 #endif
   numCpus_ = 0;
-  numSqlProcs_ = 0;
   masterFlags_ = 0;
   parentQid_ = NULL;
   parentQidLen_ = 0;
@@ -9759,11 +8764,10 @@ void ExMasterStats::initBeforeExecute(Int64 currentTimeStamp)
   rowsAffected_ = -1;
   rowsReturned_ = 0;
   sqlErrorCode_ = 0;
-  numOfTotalEspsUsed_ = -1;
+  numOfTotalEspsUsed_ = 0;
   numOfNewEspsStarted_ = -1;
   numOfRootEsps_ = -1;
   numCpus_ = 0;
-  numSqlProcs_ = 0;
   transId_ = -1;
   childQid_ = NULL;
   childQidLen_ = 0;
@@ -10069,7 +9073,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               ((childQid_ != NULL) ? childQid_ : "NONE"),
               rowsReturned_,
               firstRowReturnTime_,
-              numSqlProcs_,
+              getNumSqlProcs(),
               numCpus_,
               exePriority_,
               transId_,
@@ -10123,7 +9127,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               ((childQid_ != NULL) ? childQid_ : "NONE"),
               rowsReturned_,
               firstRowReturnTime_,
-              numSqlProcs_,
+              getNumSqlProcs(),
               numCpus_,
               exePriority_,
               transId_,
@@ -10458,7 +9462,7 @@ Lng32 ExMasterStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     sqlStats_item->int64_value = originalSqlTextLen_;
     break;    
   case SQLSTATS_NUM_SQLPROCS:
-    sqlStats_item->int64_value = numSqlProcs_;
+    sqlStats_item->int64_value = getNumSqlProcs();
     break;
   case SQLSTATS_NUM_CPUS:
     sqlStats_item->int64_value = numCpus_;
@@ -10825,6 +9829,7 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
   char *detailTemp = NULL;
   char *tdbIdDetailTemp = NULL;
   char *seTemp = NULL;
+  char *seOffendTemp = NULL;
   char *memThreshold = NULL;
   short retcode = SQLCLI_STATS_REQ_NONE;
   Int64 tempNum;
@@ -10928,10 +9933,17 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
       cpuTemp = ptr;
     }
     else
-    if (strncasecmp(ptr, "DISK_OFFENDER", 13) == 0 || strncasecmp(ptr, "SE_OFFENDER", 11) == 0)
+    if (strncasecmp(ptr, "SE_BLOCKED", 10) == 0)
     {
       ptr = str_tok(NULL, ',', &internal);
       seTemp = ptr;
+      diskOffender = TRUE;
+    }
+    else
+    if (strncasecmp(ptr, "SE_OFFENDER", 10) == 0)
+    {
+      ptr = str_tok(NULL, ',', &internal);
+      seOffendTemp = ptr;
       diskOffender = TRUE;
     }
     else
@@ -11116,15 +10128,14 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
   if (seTemp != NULL)
   {
     tempNum =  atoi(seTemp);
-    if (tempNum < -2 && tempNum > 0)
-        tempNum = -1; 
-    if (diskOffender)
-      retcode = SQLCLI_STATS_REQ_SE_OFFENDER;
-    if (tempNum == -2)
-        *subReqType = SQLCLI_STATS_REQ_SE_ROOT;
-     else
-        *subReqType = SQLCLI_STATS_REQ_SE_OPERATOR;
-     *cpu = -1;
+    *filter = (Lng32)tempNum;
+    retcode = SQLCLI_STATS_REQ_SE_OFFENDER;
+  }
+  if (seOffendTemp != NULL)
+  {
+    tempNum =  atoi(seOffendTemp);
+    *filter = (Lng32)-tempNum;
+    retcode = SQLCLI_STATS_REQ_SE_OFFENDER;
   }
   if (pidTemp != NULL)
   {
@@ -11697,6 +10708,7 @@ void ExBMOStats::init()
   scratchBufferBlockWritten_ = 0;
   scratchReadCount_ = 0;
   scratchWriteCount_ = 0;
+  topN_ = -1;
 }
 
 UInt32 ExBMOStats::packedLength()
@@ -11727,10 +10739,7 @@ void ExBMOStats::unpack(const char* &buffer)
   if (getVersion() >= _STATS_RTS_VERSION_R25)
   {
     alignBufferForNextObj(buffer); 
-    if (getVersion() == _STATS_RTS_VERSION_R25)
-      srcLen = sizeof(ExBMOStats)-sizeof(scratchOverflowMode_)-sizeof(bmoFiller_)-sizeof(ExOperStats);
-    else
-      srcLen = sizeof(ExBMOStats)-sizeof(ExOperStats);
+    srcLen = sizeof(ExBMOStats)-sizeof(ExOperStats);
     char * srcPtr = (char *)this+sizeof(ExOperStats);
     memcpy((void *)srcPtr, buffer, srcLen);
     buffer += srcLen;
@@ -11794,7 +10803,7 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
        "statsRowType: %d explainTdbId: %d bmoHeapUsed: %d bmoHeapTotal: %d bmoHeapWM: %d "
        "bmoSpaceBufferSize: %d bmoSpaceBufferCount: %d OFPhase: %s OFPhaseStartTime: %Ld "
        "scrOverFlowMode: %d scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %d scrBufferWritten: %d "
-       "scrWriteCount: %Ld scrReadCount: %Ld ",
+       "scrWriteCount: %Ld scrReadCount: %Ld topN: %Ld",
         statType(),
         getExplainNodeId(),
         bmoHeapUsage_,
@@ -11810,7 +10819,8 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
         scratchBufferBlockRead_,
         scratchBufferBlockWritten_,
         scratchWriteCount_,
-        scratchReadCount_
+        scratchReadCount_,
+        topN_
        );
   buf += str_len(buf);
   *(short*)dataLen = (short) (buf - dataBuffer);
@@ -11835,6 +10845,8 @@ void ExBMOStats::merge(ExBMOStats* other)
   str_cpy_all(overflowPhase_, other->overflowPhase_, str_len(other->overflowPhase_)+1);
   if (other->scratchBufferBlockSize_ != -1)
     scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
+  if (other->topN_ != -1)
+    topN_ = other->topN_;
   scratchOverflowMode_ = other->scratchOverflowMode_;
   scratchFileCount_ += other->scratchFileCount_;
   scratchBufferBlockRead_ += other->scratchBufferBlockRead_;
@@ -11884,6 +10896,9 @@ Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     break;
   case SQLSTATS_SCRATCH_OVERFLOW_MODE:
     sqlStats_item->int64_value = scratchOverflowMode_;
+    break;
+  case SQLSTATS_TOPN:
+    sqlStats_item->int64_value = topN_;
     break;
   case SQLSTATS_SCRATCH_FILE_COUNT:
     sqlStats_item->int64_value = scratchFileCount_;

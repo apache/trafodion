@@ -36,23 +36,22 @@ def run():
     TRAF_HOME = os.environ['TRAF_HOME']
     SQENV_FILE = TRAF_HOME + '/sqenvcom.sh'
     TRAF_AUTH_CONFIG = '%s/sql/scripts/.traf_authentication_config' % TRAF_HOME
-    TRAF_AUTH_TEMPLATE = '%s/templates/traf_authentication_conf.template' % TMP_DIR
+    TRAF_AUTH_TEMPLATE = '%s/sql/scripts/traf_authentication_config' % TRAF_HOME
 
     # set traf_authentication_config file
     change_items = {
-        '{{ ldap_hosts }}': dbcfgs['ldap_hosts'],
-        '{{ ldap_port }}': dbcfgs['ldap_port'],
-        '{{ ldap_identifiers }}': dbcfgs['ldap_identifiers'],
-        '{{ ldap_encrypt }}': dbcfgs['ldap_encrypt'],
-        '{{ ldap_certpath }}': dbcfgs['ldap_certpath'],
-        '{{ ldap_user }}': dbcfgs['ldap_user'],
-        '{{ ldap_pwd }}': dbcfgs['ldap_pwd']
+        'LDAPHostName:.*': 'LDAPHostName:%s' % dbcfgs['ldap_hosts'],
+        'LDAPPort:.*': 'LDAPPort:%s' % dbcfgs['ldap_port'],
+        'UniqueIdentifier:.*': 'UniqueIdentifier:%s' % dbcfgs['ldap_identifiers'],
+        'LDAPSSL:.*': 'LDAPSSL:%s' % dbcfgs['ldap_encrypt'],
+        'TLS_CACERTFilename:.*': 'TLS_CACERTFilename:%s' % dbcfgs['ldap_certpath'],
+        'LDAPSearchDN:.*': 'LDAPSearchDN:%s' % dbcfgs['ldap_user'],
+        'LDAPSearchPwd:.*': 'LDAPSearchPwd:%s' % dbcfgs['ldap_pwd']
     }
 
     print 'Modify authentication config file'
     run_cmd('cp %s %s' % (TRAF_AUTH_TEMPLATE, TRAF_AUTH_CONFIG))
     mod_file(TRAF_AUTH_CONFIG, change_items)
-
 
     print 'Check LDAP Configuration file for errors'
     run_cmd('ldapconfigcheck -file %s' % TRAF_AUTH_CONFIG)

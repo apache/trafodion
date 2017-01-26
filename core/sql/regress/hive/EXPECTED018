@@ -151,9 +151,11 @@ Task:  CLEANUP         Status: Ended      Time: 2016-12-23 16:56:04.708
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.046
 Task:  LOADING DATA    Status: Started    Time: 2016-12-23 16:56:04.708
        Rows Processed: 50000 
+       Error Rows:     0
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-23 16:56:11.794
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:07.086
 Task:  COMPLETION      Status: Started    Time: 2016-12-23 16:56:11.794
+       Rows Loaded:    50000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-23 16:56:12.925
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.298
 
@@ -185,9 +187,11 @@ Task:  CLEANUP         Status: Ended      Time: 2016-12-23 16:56:14.466
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.024
 Task:  LOADING DATA    Status: Started    Time: 2016-12-23 16:56:14.466
        Rows Processed: 20000 
+       Error Rows:     0
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-23 16:56:26.696
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:12.230
 Task:  COMPLETION      Status: Started    Time: 2016-12-23 16:56:26.696
+       Rows Loaded:    20000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-23 16:56:27.527
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.357
 
@@ -220,9 +224,11 @@ Task:  CLEANUP         Status: Ended      Time: 2016-12-23 16:56:30.235
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.023
 Task:  LOADING DATA    Status: Started    Time: 2016-12-23 16:56:30.235
        Rows Processed: 20000 
+       Error Rows:     0
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-23 16:56:34.537
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:04.302
 Task:  COMPLETION      Status: Started    Time: 2016-12-23 16:56:34.538
+       Rows Loaded:    20000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-23 16:56:34.832
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.295
 
@@ -245,9 +251,11 @@ Task:  CLEANUP         Status: Ended      Time: 2016-12-23 16:56:36.464
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.021
 Task:  LOADING DATA    Status: Started    Time: 2016-12-23 16:56:36.464
        Rows Processed: 100000 
+       Error Rows:     0
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-23 16:56:42.200
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:05.736
 Task:  COMPLETION      Status: Started    Time: 2016-12-23 16:56:42.200
+       Rows Loaded:    100000 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-23 16:56:42.512
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.312
 
@@ -279,9 +287,11 @@ Task:  CLEANUP         Status: Ended      Time: 2016-12-23 16:56:45.514
 Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.022
 Task:  LOADING DATA    Status: Started    Time: 2016-12-23 16:56:45.514
        Rows Processed: 160756 
+       Error Rows:     0
 Task:  LOADING DATA    Status: Ended      Time: 2016-12-23 16:56:55.363
 Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:09.849
 Task:  COMPLETION      Status: Started    Time: 2016-12-23 16:56:55.363
+       Rows Loaded:    160756 
 Task:  COMPLETION      Status: Ended      Time: 2016-12-23 16:56:55.713
 Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.350
 

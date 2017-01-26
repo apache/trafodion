@@ -107,18 +107,28 @@ NABoolean ComIsTrafodionExternalSchemaName (
 {
   Int32 len (schName.length());
 
+  // skip double quotes around schName
+  NABoolean quoted = FALSE;
+  if ((len > 2) &&
+      (schName(0) == '"') &&
+      (schName(len-1) == '"'))
+    {
+      quoted = TRUE;
+      len = len - 2;
+    }
+
   // check for HIVE
   Int32 prefixLen = sizeof(HIVE_EXT_SCHEMA_PREFIX);
   if (len > prefixLen && 
-     (schName(0,prefixLen-1) == HIVE_EXT_SCHEMA_PREFIX && 
-      schName(len-1) == '_' ))
+      (schName((quoted ? 1 : 0), prefixLen-1) == HIVE_EXT_SCHEMA_PREFIX && 
+       schName((quoted ? 1 : 0) + len-1) == '_' ))
     return TRUE;
-
+  
   // check for HBASE
   prefixLen = sizeof(HBASE_EXT_SCHEMA_PREFIX);
   if (len > prefixLen && 
-     (schName(0,prefixLen-1) == HBASE_EXT_SCHEMA_PREFIX && 
-      schName(len-1) == '_' ))
+      (schName((quoted ? 1 : 0), prefixLen-1) == HBASE_EXT_SCHEMA_PREFIX && 
+       schName((quoted ? 1 : 0) + len-1) == '_' ))
     return TRUE;
 
   return FALSE;

@@ -26,6 +26,8 @@
 import os
 import pty
 import sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
 import json
 import re
 import time
@@ -43,7 +45,6 @@ INSTALLER_LOC = re.search('(.*)/\w+',os.path.dirname(os.path.abspath(__file__)))
 
 CONFIG_DIR = INSTALLER_LOC + '/configs'
 SCRIPTS_DIR = INSTALLER_LOC + '/scripts'
-TEMPLATES_DIR = INSTALLER_LOC + '/templates'
 
 USER_PROMPT_FILE = CONFIG_DIR + '/prompt.json'
 SCRCFG_FILE = CONFIG_DIR + '/script.json'
@@ -99,7 +100,8 @@ def run_cmd(cmd):
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     stdout, stderr = p.communicate()
     if p.returncode != 0:
-        err('Failed to run command %s: %s' % (cmd, stderr))
+        msg = stderr if stderr else stdout
+        err('Failed to run command %s: %s' % (cmd, msg))
     return stdout.strip()
 
 def run_cmd_as_user(user, cmd):

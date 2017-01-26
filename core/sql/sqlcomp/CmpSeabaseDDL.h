@@ -950,6 +950,7 @@ protected:
 			NATable * naTable,
 			NABoolean isUnique, // TRUE: uniq constr. FALSE: ref constr.
 			NABoolean noPopulate, // TRUE, dont populate index
+                        NABoolean isEnforced, // TRUE: contraint is enforced
                         NABoolean sameSequenceOfCols, // FALSE, allow "similar" indexes
 			ExeCliInterface *cliInterface);
 
@@ -978,6 +979,9 @@ protected:
                                const NAString &objName,
                                const ComObjectType objectType,
                                NABoolean ddlXns);
+
+  NABoolean appendErrorObjName(char * errorObjs, 
+                               const char * objName);
 
   short setupAndErrorChecks(NAString &tabName, QualifiedName &origTableName, 
                             NAString &currCatName, NAString &currSchName,

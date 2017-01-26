@@ -1086,55 +1086,21 @@ which <column-number> was unnamed.
 unnamed column and resubmit.
 
 <<<
-[[SQL-1104]]
-== SQL 1104
+[[SQL-1100]]
+== SQL 1100
 
 ```
-Default value string is too long for column <column-name>.
+LOB column <column-name> cannot be specified in an alter operation.
 ```
 
-Where <column-name> is the name of a character-type column for which a
-default value is specified.
+Where <column-name> is the specified column.
 
-*Cause:* The specified default value for <column-name> is longer than
-the maximum of 239 characters.
+*Cause:* You attempted to perform an ALTER TABLE ALTER COLUMN statement
+on a LOB column. This is not permitted.
 
 *Effect:* The operation fails.
 
-*Recovery:* Correct the error and resubmit.
-
-[[SQL-1105]]
-== SQL 1105
-
-```
-CREATE TABLE LIKE statement cannot contain both HORIZONTAL PARTITIONS and STORE BY clauses.
-```
-
-*Cause:* A CREATE TABLE . . . LIKE statement specifies both the WITH
-PARTITIONS and STORE BY clause, which is not allowed.
-
-*Effect:* The operation fails.
-
-*Recovery:* Correct the error and resubmit.
-
-<<<
-[[SQL-1106]]
-== SQL 1106
-
-```
-The specified partition <partition-location> of object <table-name> does not exist.
-```
-
-Where <partition-location> is the location of the specified partition.
-
-Where <table-name> is the name of the table.
-
-*Cause:* The location name <partition-location> specified in the
-partition operation does not exist.
-
-*Effect:* The partition operation fails.
-
-*Recovery:* Specify a valid partition location name and resubmit.
+*Recovery:* If the column name is in error, correct and resubmit.
 
 [[SQL-1108]]
 == SQL 1108

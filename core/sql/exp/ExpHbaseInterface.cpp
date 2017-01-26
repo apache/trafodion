@@ -271,7 +271,12 @@ Lng32 ExpHbaseInterface::coProcAggr(
 
 char * getHbaseErrStr(Lng32 errEnum)
 {
-  return (char*)hbaseErrorEnumStr[errEnum - (Lng32)HBASE_MIN_ERROR_NUM];
+  Lng32 lv_errEnum;
+  if (errEnum < HBASE_MIN_ERROR_NUM || errEnum >= HBASE_MAX_ERROR_NUM)
+     lv_errEnum = HBASE_GENERIC_ERROR; 
+  else
+     lv_errEnum = errEnum;
+  return (char*)hbaseErrorEnumStr[lv_errEnum - (Lng32)HBASE_MIN_ERROR_NUM];
 }
 
 

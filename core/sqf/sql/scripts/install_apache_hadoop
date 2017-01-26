@@ -1480,10 +1480,6 @@ else
     <name>hbase.snapshot.enabled</name>
     <value>true</value>
   </property>
-  <property>
-    <name>hbase.master.distributed.log.splitting</name>
-    <value>false</value>
-   </property>
    <property>
      <name>hbase.hregion.impl</name>
      <value>org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion</value>

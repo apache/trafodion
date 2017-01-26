@@ -2097,6 +2097,10 @@ short SqlCmd::do_execute(SqlciEnv * sqlci_env,
 	   (prep_stmt->queryType() == SQL_INSERT_NON_UNIQUE))
     stmt_type = DML_INSERT_TYPE;
   else if ((stmt_type == DML_DDL_TYPE) &&
+	   ((prep_stmt->queryType() == SQL_SELECT_NON_UNIQUE) ||
+            (prep_stmt->queryType() == SQL_SELECT_UNIQUE)))
+    stmt_type = DML_SELECT_TYPE;
+  else if ((stmt_type == DML_DDL_TYPE) &&
       (queryType == SQL_EXE_UTIL && subqueryType == SQL_STMT_CTAS))
     stmt_type = DML_INSERT_TYPE;
 

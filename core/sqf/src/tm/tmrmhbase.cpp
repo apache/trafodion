@@ -306,12 +306,17 @@ int32 RM_Info_HBASE::forget_branches (CTmTxBase *pp_txn, int64 pv_flags)
 // prepare_branches
 // Purpose : Send prepare to HBase TM Library
 // ------------------------------------------------------------
-int32 RM_Info_HBASE::prepare_branches (CTmTxBase *pp_txn, int64 pv_flags)
+int32 RM_Info_HBASE::prepare_branches (CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg)
 {
    TMTrace (2, ("RM_Info_HBASE::prepare_branches, Txn ID (%d,%d), ENTRY, flags " PFLL "\n",
                 pp_txn->node(), pp_txn->seqnum(), pv_flags));
 
-   short lv_err = gv_HbaseTM.prepareCommit(pp_txn->legacyTransid());
+   pp_msg->response()->u.iv_end_trans.iv_err_str_len = 
+     sizeof(pp_msg->response()->u.iv_end_trans.iv_err_str);
+   
+   short lv_err = gv_HbaseTM.prepareCommit(pp_txn->legacyTransid(),
+                             pp_msg->response()->u.iv_end_trans.iv_err_str,
+                             pp_msg->response()->u.iv_end_trans.iv_err_str_len);
 
    TMTrace (2, ("RM_Info_HBASE::prepare_branches, Txn ID (%d,%d), EXIT, Error %d, UnResolved branches %d.\n",
                 pp_txn->node(), pp_txn->seqnum(), lv_err, num_rms_unresolved(pp_txn)));

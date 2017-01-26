@@ -24,6 +24,7 @@
 ### this script should be run on all nodes with sudo user ###
 
 import re
+import os
 import json
 import sys
 import platform
@@ -144,23 +145,21 @@ class Discover(object):
         else:
             return OK
 
-    def _get_core_site_xml(self):
+    def _get_core_site_info(self, name):
         if self.dbcfgs.has_key('hadoop_home'): # apache distro
             CORE_SITE_XML = '%s/etc/hadoop/core-site.xml' % self.dbcfgs['hadoop_home']
         else:
             CORE_SITE_XML = '/etc/hadoop/conf/core-site.xml'
-        p = ParseXML(CORE_SITE_XML)
-        return p
+
+        if os.path.exists(CORE_SITE_XML):
+            p = ParseXML(CORE_SITE_XML)
+            return p.get_property(name)
+        else:
+            return NA
 
     @deco
     def get_hadoop_authentication(self):
-        p = self._get_core_site_xml()
-        return p.get_property('hadoop.security.authentication')
-
-    @deco
-    def get_hadoop_authorization(self):
-        p = self._get_core_site_xml()
-        return p.get_property('hadoop.security.authorization')
+        return self._get_core_site_info('hadoop.security.authentication')
 
     @deco
     def get_hbase(self):
@@ -234,7 +233,7 @@ class Discover(object):
 
     @deco
     def get_home_dir(self):
-        if self.dbcfgs.has_key('traf_user'): # apache distro
+        if self.dbcfgs.has_key('traf_user'):
             traf_user = self.dbcfgs['traf_user']
             return cmd_output("getent passwd %s | awk -F: '{print $6}' | sed 's/\/%s//g'" % (traf_user, traf_user))
         else:

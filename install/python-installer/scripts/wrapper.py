@@ -29,7 +29,7 @@ from glob import glob
 from threading import Thread
 from common import err_m, run_cmd, time_elapse, get_logger, Remote, \
                    ParseJson, INSTALLER_LOC, TMP_DIR, SCRCFG_FILE, \
-                   CONFIG_DIR, SCRIPTS_DIR, TEMPLATES_DIR
+                   CONFIG_DIR, SCRIPTS_DIR
 
 class RemoteRun(Remote):
     """ run commands or scripts remotely using ssh """
@@ -44,7 +44,7 @@ class RemoteRun(Remote):
         self.execute('mkdir -p %s' % TMP_DIR)
 
         # copy all needed files to remote host
-        all_files = [CONFIG_DIR, SCRIPTS_DIR, TEMPLATES_DIR]
+        all_files = [CONFIG_DIR, SCRIPTS_DIR]
 
         self.copy(all_files, remote_folder=TMP_DIR)
 
@@ -126,7 +126,7 @@ def run(dbcfgs, options, mode='install', pwd=''):
     logger = get_logger(LOG_FILE)
 
     verbose = True if hasattr(options, 'verbose') and options.verbose else False
-    upgrade = True if hasattr(options, 'upgrade') and options.upgrade else False
+    reinstall = True if hasattr(options, 'reinstall') and options.reinstall else False
     user = options.user if hasattr(options, 'user') and options.user else ''
     threshold = options.fork if hasattr(options, 'fork') and options.fork else 10
 
@@ -139,7 +139,7 @@ def run(dbcfgs, options, mode='install', pwd=''):
 
     # handle skipped scripts, skip them if no need to run
     skipped_scripts = []
-    if upgrade:
+    if reinstall:
         skipped_scripts += ['hadoop_mods', 'apache_mods', 'apache_restart', 'traf_dep', 'traf_kerberos']
 
     if dbcfgs['secure_hadoop'] == 'N':

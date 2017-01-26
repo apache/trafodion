@@ -359,7 +359,8 @@ char * ExExeUtilTcb::getTimestampAsString(Int64 juliantimestamp,
 					  char * timeBuf)
 {
   short timestamp[8];
-  INTERPRETTIMESTAMP(juliantimestamp, timestamp);
+  Int64 localTimestamp = CONVERTTIMESTAMP(juliantimestamp,0,-1,0);
+  INTERPRETTIMESTAMP(localTimestamp, timestamp);
   short year = timestamp[0];
   char month = (char) timestamp[1];
   char day = (char) timestamp[2];

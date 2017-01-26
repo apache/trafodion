@@ -4994,7 +4994,9 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
  
   NABoolean hbaseRowsetVSBBopt = 
     (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON);
-  if (getTableDesc()->getNATable()->isHbaseMapTable())
+  if ((getTableDesc()->getNATable()->isHbaseMapTable()) ||
+      (getTableDesc()->getNATable()->isHbaseRowTable()) ||
+      (getTableDesc()->getNATable()->isHbaseCellTable()))
     hbaseRowsetVSBBopt = FALSE;
 
   if (getInliningInfo().isIMGU()) {

@@ -269,6 +269,9 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
 	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.mergeInsertTuppIndex_), 0);
       if (hbaseAccessTdb.mergeInsertRowIdTuppIndex_ > 0)
 	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.mergeInsertRowIdTuppIndex_), 0);
+      if (hbaseAccessTdb.mergeIUDIndicatorTuppIndex_ > 0)
+	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.mergeIUDIndicatorTuppIndex_), 0);
+
       if (hbaseAccessTdb.rowIdTuppIndex_ > 0)      
 	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.rowIdTuppIndex_), 0);
       if (hbaseAccessTdb.rowIdAsciiTuppIndex_ > 0)      
@@ -522,9 +525,18 @@ ExOperStats * ExHbaseAccessTcb::doAllocateStatsEntry(
                                                         CollHeap *heap,
                                                         ComTdb *tdb)
 {
-  return new(heap) ExHbaseAccessStats(heap,
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  ExHbaseAccessStats *hbaseAccessStats =  new(heap) ExHbaseAccessStats(heap,
 				   this,
 				   tdb);
+  if (ss != NULL)
+     hbaseAccessStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hbaseAccessStats;
 }
 
 void ExHbaseAccessTcb::registerSubtasks()
@@ -3281,6 +3293,12 @@ void ExHbaseAccessTcb::incrErrorCount( ExpHbaseInterface * ehi,Int64 & totalExce
   retcode = ehi->incrCounter(tabName, rowId, (const char*)"ERRORS",(const char*)"ERROR_COUNT",1, totalExceptionCount);
 }
 
+void ExHbaseAccessTcb::getErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
+                                    const char * tabName, const char * rowId )
+{
+  Lng32 retcode;
+  retcode = ehi->incrCounter(tabName, rowId, (const char*)"ERRORS",(const char*)"ERROR_COUNT",0, totalExceptionCount);
+}
 
 static const char * const BatchSizeEnvvar = 
   getenv("SQL_CANCEL_BATCH_SIZE");

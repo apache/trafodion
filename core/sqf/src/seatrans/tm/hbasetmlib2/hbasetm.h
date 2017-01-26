@@ -174,7 +174,7 @@ public:
    // TM interface methods
    short initConnection(short pv_nid);
    short beginTransaction(int64 *pp_transid);
-   short prepareCommit(int64 pv_transid);
+   short prepareCommit(int64 pv_transid, char *errstr, int &errstrlen);
    short doCommit(int64 pv_transid);
    short tryCommit(int64 pv_transid);
    short completeRequest(int64 pv_transid);

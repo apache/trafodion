@@ -536,10 +536,11 @@ March 01, 2016, 10:11:12
 >>drop table if exists t030t1;
 
 --- SQL operation complete.
->>create table t030t1 (a date, b char(30), c varchar(30));
+>>create table t030t1 (a date, b char(30), c varchar(30), d timestamp);
 
 --- SQL operation complete.
->>insert into t030t1 values (date '2016-03-01', '2016-03-01', '2016-03-01');
+>>insert into t030t1 values (date '2016-03-01', '2016-03-01', '2016-03-01', 
++>           timestamp '2017-01-13 13:13:13');
 
 --- 1 row(s) inserted.
 >>
@@ -577,12 +578,40 @@ March 01, 2016, 10:11:12
 --- 1 row(s) selected.
 >>select * from t030t1 where to_date(c, 'YYYY-MM-DD') = DATE '2016-03-01';
 
-A           B                               C
-----------  ------------------------------  ------------------------------
+A           B                               C                               D
+----------  ------------------------------  ------------------------------  --------------------------
 
-2016-03-01  2016-03-01                      2016-03-01                    
+2016-03-01  2016-03-01                      2016-03-01                      2017-01-13 13:13:13.000000
 
 --- 1 row(s) selected.
+>>
+>>select case when timestamp '2017-01-13 13:13:13' > date '2017-01-13' then 'pass' else 'fail' end from dual;
+
+(EXPR)
+------
+
+pass  
+
+--- 1 row(s) selected.
+>>select case when timestamp '2017-01-13 13:13:13' > date '2017-01-14' then 'pass' else 'fail' end from dual;
+
+(EXPR)
+------
+
+fail  
+
+--- 1 row(s) selected.
+>>select * from t030t1 where d > date '2017-01-13';
+
+A           B                               C                               D
+----------  ------------------------------  ------------------------------  --------------------------
+
+2016-03-01  2016-03-01                      2016-03-01                      2017-01-13 13:13:13.000000
+
+--- 1 row(s) selected.
+>>select * from t030t1 where d > date '2017-01-14';
+
+--- 0 row(s) selected.
 >>
 >>-- negative tests
 >>select to_date('2016-03-01', 'YYYYMM-DD') from (values(1)) x(a);
@@ -673,10 +702,10 @@ A           B                               C
 --- 0 row(s) selected.
 >>select * from t030t1 where to_date(c, 'YYYY-MM-DD') = '2016-03-01';
 
-A           B                               C
-----------  ------------------------------  ------------------------------
+A           B                               C                               D
+----------  ------------------------------  ------------------------------  --------------------------
 
-2016-03-01  2016-03-01                      2016-03-01                    
+2016-03-01  2016-03-01                      2016-03-01                      2017-01-13 13:13:13.000000
 
 --- 1 row(s) selected.
 >>select to_date('01.03.2016:10:11:12', 'DD.MM.YYYY:HH24:MI:SS') from (values(1)) x(a);
@@ -757,6 +786,20 @@ A           B                               C
 >>select to_date(1.2, '99:99:99:99') from (values(1)) x(a);
 
 *** ERROR[4047] The operands of function TO_DATE must have a scale of 0.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- cannot compare timestamp to time, or date to time
+>>select case when timestamp '2017-01-17 10:10:10' > time '10:10:10' then 'pass' else 'fail' end from dual;
+
+*** ERROR[4041] Type TIMESTAMP(0) cannot be compared with type TIME(0).
+
+*** ERROR[8822] The statement was not prepared.
+
+>>select case when date '2017-01-17' > time '10:10:10' then 'pass' else 'fail' end from dual;
+
+*** ERROR[4041] Type DATE cannot be compared with type TIME(0).
 
 *** ERROR[8822] The statement was not prepared.
 

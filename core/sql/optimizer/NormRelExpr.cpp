@@ -6864,6 +6864,17 @@ RelExpr * GenericUpdate::normalizeNode(NormWA & normWARef)
      }
   }
 
+  if (producedMergeIUDIndicator_ != NULL_VALUE_ID)
+    {
+      ValueId dummy;
+      if (NOT getGroupAttr()->getCharacteristicOutputs().referencesTheGivenValue(
+               producedMergeIUDIndicator_,
+               dummy))
+        // nobody asked for the merge IUD indicator, therefore remove
+        // it, (e.g. simple table without index maintenance)
+        producedMergeIUDIndicator_ = NULL_VALUE_ID;
+    }
+
   return normalizedThis;
 }
 

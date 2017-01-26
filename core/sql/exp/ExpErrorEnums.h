@@ -95,6 +95,7 @@ enum ExeErrorCode
   EXE_INVALID_SESSION_DEFAULT           = 8109,
   EXE_DUPLICATE_ENTIRE_RECORD           = 8110,
   EXE_MAX_ERROR_ROWS_EXCEEDED           = 8113,
+  EXE_ERROR_ROWS_FOUND                  = 8114,
   EXE_LAST_INTEGRITY_ERROR              = 8139,
 
   // ---------------------------------------------------------------------

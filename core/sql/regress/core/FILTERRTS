@@ -28,20 +28,14 @@ s/Number of AQR retries[ ]*[0-9,]*/Number of AQR retries @Number of AQR retries@
 s/Delay before AQR[ ]*[0-9,]*/Delay before AQR @Delay before AQR@/
 s/Message Count[ ]*[0-9,]*/Message Count @MessageCount@/
 s/Message Bytes[ ]*[0-9,]*/Message Bytes @MessageBytes@/
-s/Stats Bytes[ ]*[0-9,]*/Stats Bytes @StatsBytes@/
-s/Disk IOs[ ]*[0-9,]*/Disk IOs @Disk IOs@/
-s/Lock Waits[ ]*[0-9,]*/Lock Waits @LockWaits@/
-s/Lock Escalations[ ]*[0-9,]*/Lock Escalations @LockEscalations@/
+s/SE IOs[ ]*[0-9,]*/SE IOs @SE IOs@/
+s/SE IO Bytes[ ]*[0-9,]*/SE IO Bytes @MessageBytes@/
+s/SE IO MAX Time[ ]*[0-9,]*/SE IO MAX Time @SE IO MAX Time@/
 s/SQL Process Busy Time[ ]*[0-9,]*/SQL Process Busy Time @SQLProcessBusyTime@/
-s/Disk Process Busy Time[ ]*[0-9,]*/Disk Process Busy Time @DiskProcessBusyTime@/
 s/SQL Space Allocated[ ]*[0-9,]*[ ]*/SQL Space Allocated @SQLSpaceAllocated@/
 s/SQL Space Used[ ]*[0-9,]*[ ]*/SQL Space Used @SQLSpaceUsed@/
 s/SQL Heap Allocated[ ]*[0-9,]*[ ]*/SQL Heap Allocated @SQLHeapAllocated@/
 s/SQL Heap Used[ ]*[0-9,]*[ ]*/SQL Heap Used @SQLHeapUsed@/
-s/EID Space Allocated[ ]*[0-9,]*[ ]*/EID Space Allocated @EIDSpaceAllocated@/
-s/EID Space Used[ ]*[0-9,]*[ ]*/EID Space Used @EIDSpaceUsed@/
-s/EID Heap Allocated[ ]*[0-9,\-]*[ ]*/EID Heap Allocated @EIDHeapAllocated@/
-s/EID Heap Used[ ]*[0-9,]*[ ]*/EID Heap Used @EIDHeapUsed@/
 s/Process Create Time[ ]*[0-9,]*/Process Create Time @ProcessCreateTime@/
 s/Processes Created[ ]*[0-9,]*/Processes Created @ProcessesCreated@/
 s/Opens[ ]*[0-9,]*/Opens @Opens@/
@@ -91,6 +85,9 @@ s/8 EX_HASH_GRBY[A-Z ]*\n[0-9, -]*/8 #ex_hash_grby bmoStats/
 }
 /bmoStats[ ]*/{N
 s/bmoStats[ ]*\n[0-9, -]*/@bmoStats@/
+}
+/6     EX_HASH_GRBY[A-Z ]*/{N
+s/6     EX_HASH_GRBY[A-Z ]*[0-9, -]*\n[0-9, -]*/6 #ex_hash_grby bmoStats/
 }
 s/EX_ROOT[ ]*[0-9, |]*/EX_ROOT @exRootCounters@/
 s/EX_SPLIT_TOP[ ]*[0-9, |]*/EX_SPLIT_TOP @exSplitTopCounters@/

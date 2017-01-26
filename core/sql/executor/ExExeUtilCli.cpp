@@ -986,7 +986,8 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
 					   char * outputBuf,
 					   Lng32 * outputBufLen,
 					   NABoolean nullTerminate,
-					   Int64 * rowsAffected 
+					   Int64 * rowsAffected,
+                                           ComDiagsArea *diagsArea
 					   )
 {
   Lng32 retcode = 0;
@@ -1041,7 +1042,9 @@ Lng32 ExeCliInterface::executeImmediateExec(const char * stmtStr,
         *rowsAffected = tmpRowsAffected;
     }
   }
- 
+  if (diagsArea != NULL) 
+     retcode = SQL_EXEC_MergeDiagnostics_Internal(*diagsArea);
+
   clearGlobalDiags();
 
   retcode = close();
@@ -1087,7 +1090,8 @@ Lng32 ExeCliInterface::executeImmediate(const char * stmtStr,
   retcode = executeImmediateExec(stmtStr, 
 				 outputBuf, outputBufLen,
 				 nullTerminate,
-				 rowsAffected);
+				 rowsAffected,
+                                 globalDiags);
 
 ExecuteImmediateReturn:
   if ((globalDiags) && (tempDiags))

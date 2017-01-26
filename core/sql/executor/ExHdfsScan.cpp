@@ -288,41 +288,22 @@ NABoolean ExHdfsScanTcb::needStatsEntry()
     return FALSE;
 }
 
-ExOperStats * ExHdfsScanTcb::doAllocateStatsEntry(
-                                                        CollHeap *heap,
+ExOperStats * ExHdfsScanTcb::doAllocateStatsEntry(CollHeap *heap,
                                                         ComTdb *tdb)
 {
-  ExOperStats * stats = NULL;
-
-  ExHdfsScanTdb * myTdb = (ExHdfsScanTdb*) tdb;
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
   
-  return new(heap) ExHdfsScanStats(heap,
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
 				   this,
 				   tdb);
-  
-  ComTdb::CollectStatsType statsType = 
-                     getGlobals()->getStatsArea()->getCollectStatsType();
-  if (statsType == ComTdb::OPERATOR_STATS)
-    {
-      return ex_tcb::doAllocateStatsEntry(heap, tdb);
-    }
-  else if (statsType == ComTdb::PERTABLE_STATS)
-    {
-      // sqlmp style per-table stats, one entry per table
-      stats = new(heap) ExPertableStats(heap, 
-					this,
-					tdb);
-      ((ExOperStatsId*)(stats->getId()))->tdbId_ = tdb->getPertableStatsTdbId();
-      return stats;
-    }
-  else
-    {
-      ExHdfsScanTdb * myTdb = (ExHdfsScanTdb*) tdb;
-      
-      return new(heap) ExHdfsScanStats(heap,
-				       this,
-				       tdb);
-    }
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
 
 void ExHdfsScanTcb::registerSubtasks()
@@ -1335,12 +1316,11 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	{
 	  step_ = nextStep_;
 	  exception_ = FALSE;
-
+	  Int64 exceptionCount = 0;
+          ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, 
+                 hdfsScanTdb().getErrCountTable(),hdfsScanTdb().getErrCountRowId()); 
 	  if (hdfsScanTdb().getMaxErrorRows() > 0)
 	  {
-	    Int64 exceptionCount = 0;
-            ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, 
-                 hdfsScanTdb().getErrCountTable(),hdfsScanTdb().getErrCountRowId()); 
 	    if (exceptionCount >  hdfsScanTdb().getMaxErrorRows())
 	    {
 	      if (pentry_down->getDiagsArea())
@@ -1483,7 +1463,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                     getLobErrStr(intParam1));
                     pentry_down->setDiagsArea(diagsArea);
                   }
-                  retcode = ehi_->hdfsClose();
             } 
 	    if (step_ == CLOSE_FILE)
 	      {
@@ -1509,6 +1488,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
+            if (ehi_ != NULL)
+               retcode = ehi_->hdfsClose();
 	    ex_queue_entry *up_entry = qparent_.up->getTailEntry();
 	    up_entry->copyAtp(pentry_down);
 	    up_entry->upState.parentIndex =

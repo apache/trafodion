@@ -190,3 +190,12 @@ tests/phx/src/test/java/org/trafodion/phoenix/end2end/UpsertSelectTest.java
 tests/phx/src/test/java/org/trafodion/phoenix/end2end/UpsertValuesTest.java
 tests/phx/src/test/java/org/trafodion/phoenix/end2end/VariableLengthPKTest.java
 
+-------------------------------------------------------------------------------
+
+JSON config/data file does not have comment convention.
+Ambari integration files are in installer/ambari-installer/...
+Ambari mandates json format for:
+
+mpack.json
+role_command_order.json
+theme.json

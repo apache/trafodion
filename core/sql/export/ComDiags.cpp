@@ -2933,7 +2933,7 @@ ComCondition* ComDiagsArea::getErrorEntry(Lng32 index) {
   return errors_[--index];
 }
 
-ComCondition* ComDiagsArea::findCondition(Lng32 sqlCode)
+ComCondition* ComDiagsArea::findCondition(Lng32 sqlCode, Lng32 *entryNumber)
 {
   if (sqlCode == 0)
     return NULL;
@@ -2947,6 +2947,8 @@ ComCondition* ComDiagsArea::findCondition(Lng32 sqlCode)
         if (warnings_[i]->getSQLCODE() == sqlCode)
           {
             c = warnings_[i];
+            if (entryNumber != NULL)
+                *entryNumber = i;
             break;
           }
       return c;
@@ -2958,6 +2960,8 @@ ComCondition* ComDiagsArea::findCondition(Lng32 sqlCode)
     if (errors_[i]->getSQLCODE() == sqlCode)
       {
         c = errors_[i];
+        if (entryNumber != NULL)
+           *entryNumber = i;
         break;
       }
  return c;

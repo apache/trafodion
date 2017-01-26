@@ -1,0 +1,192 @@
+{
+  "name": "default",
+  "description": "Default theme for Trafodion service",
+  "configuration": {
+    "layouts": [
+      {
+        "name": "default",
+        "tabs": [
+        {
+          "name": "settings",
+          "display-name": "Settings",
+          "layout": {
+            "tab-columns": "1",
+            "tab-rows": "3",
+            "sections": [ 
+              {
+                "name": "DCS",
+                "display-name": "DCS Connectivity",
+                "row-index": "0",
+                "column-index": "0",
+                "row-span": "1",
+                "column-span": "1",
+                "section-columns": "1",
+                "section-rows": "1",
+                "subsections": [ 
+                  {
+                    "name": "DCS-1",
+                    "row-index": "0",
+                    "column-index": "0",
+                    "row-span": "1",
+                    "column-span": "1"
+                  }
+                ]
+              },
+              {
+                "name": "database",
+                "display-name": "Database",
+                "row-index": "1",
+                "column-index": "0",
+                "row-span": "1",
+                "column-span": "1",
+                "section-columns": "1",
+                "section-rows": "1",
+                "subsections": [ 
+                  {
+                    "name": "database-1",
+                    "row-index": "0",
+                    "column-index": "0",
+                    "row-span": "1",
+                    "column-span": "1"
+                  }
+                ]
+              },
+              {
+                "name": "LDAP",
+                "display-name": "LDAP Authentication (optional)",
+                "row-index": "2",
+                "column-index": "0",
+                "row-span": "1",
+                "column-span": "1",
+                "section-columns": "1",
+                "section-rows": "1",
+                "subsections": [ 
+                  {
+                    "name": "ldap-1",
+                    "row-index": "0",
+                    "column-index": "0",
+                    "row-span": "1",
+                    "column-span": "1"
+                  }
+                ]
+              }
+            ]
+          }
+        } ]
+      }
+    ],
+    "placement": {
+      "configuration-layout": "default",
+      "configs": [
+        {
+         "config": "dcs-env/dcs.servers",
+         "subsection-name": "DCS-1"
+        },
+        {
+         "config": "dcs-site/dcs.master.floating.ip",
+         "subsection-name": "DCS-1"
+        },
+        {
+         "config": "dcs-site/dcs.master.floating.ip.external.ip.address",
+         "subsection-name": "DCS-1"
+        },
+        {
+         "config": "trafodion-env/traf.db.admin",
+         "subsection-name": "database-1"
+        },
+        {
+         "config": "trafodion-env/traf.node.dir",
+         "subsection-name": "database-1"
+        },
+        {
+         "config": "trafodion-env/traf.ldap.enabled",
+         "subsection-name": "ldap-1"
+        },
+        {
+         "config": "trafodion-env/traf.ldap.hosts",
+         "subsection-name": "ldap-1"
+        },
+        {
+         "config": "trafodion-env/traf.ldap.port",
+         "subsection-name": "ldap-1"
+        },
+        {
+         "config": "trafodion-env/traf.ldap.identifiers",
+         "subsection-name": "ldap-1"
+        },
+        {
+         "config": "trafodion-env/traf.ldap.user",
+         "subsection-name": "ldap-1"
+        },
+        {
+         "config": "trafodion-env/traf.ldap.pwd",
+         "subsection-name": "ldap-1"
+        },
+        {
+         "config": "trafodion-env/traf.ldap.encrypt",
+         "subsection-name": "ldap-1"
+        },
+        {
+         "config": "trafodion-env/traf.ldap.certpath",
+         "subsection-name": "ldap-1"
+        }
+      ]
+    },
+    "widgets": [
+        {
+         "config": "dcs-env/dcs.servers",
+         "widget": { "type": "slider",
+                     "units": [ { "unit-name": "Servers"} ]
+         }
+        },
+        {
+         "config": "dcs-site/dcs.master.floating.ip",
+         "widget": { "type": "toggle"}
+        },
+        {
+         "config": "dcs-site/dcs.master.floating.ip.external.ip.address",
+         "widget": { "type": "text-field"}
+        },
+        {
+         "config": "trafodion-env/traf.db.admin",
+         "widget": { "type": "text-field"}
+        },
+        {
+         "config": "trafodion-env/traf.node.dir",
+         "widget": { "type": "directories"}
+        },
+        {
+         "config": "trafodion-env/traf.ldap.enabled",
+         "widget": { "type": "toggle"}
+        },
+        {
+         "config": "trafodion-env/traf.ldap.hosts",
+         "widget": { "type": "text-field"}
+        },
+        {
+         "config": "trafodion-env/traf.ldap.port",
+         "widget": { "type": "text-field"}
+        },
+        {
+         "config": "trafodion-env/traf.ldap.identifiers",
+         "widget": { "type": "text-field"}
+        },
+        {
+         "config": "trafodion-env/traf.ldap.user",
+         "widget": { "type": "text-field"}
+        },
+        {
+         "config": "trafodion-env/traf.ldap.pwd",
+         "widget": { "type": "password"}
+        },
+        {
+         "config": "trafodion-env/traf.ldap.encrypt",
+         "widget": { "type": "combo"}
+        },
+        {
+         "config": "trafodion-env/traf.ldap.certpath",
+         "widget": { "type": "text-field"}
+        }
+    ]
+  }
+}

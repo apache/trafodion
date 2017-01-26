@@ -3737,6 +3737,14 @@ enum DefaultConstants
   HBASE_UPDATE_COSTING,
   TRAF_LOAD_FLUSH_SIZE_IN_KB,
 
+  // if ON, then trafodion views on hive objects are supported.
+  HIVE_VIEWS,
+
+  // if ON, then external table is automatically created for all hive tables 
+  // referenced in the view definition.
+  // External table is needed to keep track of view usage and privileges.
+  HIVE_VIEWS_CREATE_EXTERNAL_TABLE,
+
   // Specify whic additional restriction check to apply
   //  0: no check
   //  1: apply majority of keys with predicates check

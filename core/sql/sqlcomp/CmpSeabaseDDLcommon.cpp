@@ -4808,14 +4808,32 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
         }
 
       rowDataLength += colInfo->length + (colInfo->nullable ? 1 : 0);
-      rowTotalLength +=  colInfo->length + (colInfo->nullable ? 1 : 0) +
-        keyLength +
-        sizeof(Int64)/*timestamp*/ +
-        (colInfo->hbaseColFam ? strlen(colInfo->hbaseColFam) : strlen(SEABASE_DEFAULT_COL_FAMILY)) +
-         (colInfo->hbaseColQual ? strlen(colInfo->hbaseColQual) : 2);
+
+      // compute HBase cell overhead.
+      // For each stored cell/column, overhead is:
+      //  timestamp, colFam, colQual, rowKey
+      // For aligned format tables, only one cell is stored.
+      // The overhead will be computed after exiting the 'for' loop.
+      if ((!tableInfo) || 
+          (tableInfo->rowFormat != COM_ALIGNED_FORMAT_TYPE))
+        {
+          rowTotalLength +=  colInfo->length + (colInfo->nullable ? 1 : 0) +
+            keyLength +
+            sizeof(Int64)/*timestamp*/ +
+            (colInfo->hbaseColFam ? strlen(colInfo->hbaseColFam) : strlen(SEABASE_DEFAULT_COL_FAMILY)) +
+            (colInfo->hbaseColQual ? strlen(colInfo->hbaseColQual) : 2);
+        }
 
       colInfo += 1;
     } // for
+
+  if (tableInfo && tableInfo->rowFormat == COM_ALIGNED_FORMAT_TYPE)
+    {
+      // one cell contains the aligned row
+      rowTotalLength = rowDataLength + keyLength +
+        sizeof(Int64)/*timestamp*/ +
+        strlen(SEABASE_DEFAULT_COL_FAMILY) + 2/* 2 bytes for col qual #1*/;
+    }
 
   if (useRWRS)
     {
@@ -8018,6 +8036,22 @@ void CmpSeabaseDDL::dropLOBHdfsFiles()
   cleanupLOBDataDescFiles(lobHdfsServer,lobHdfsPort,lobHdfsLoc);
 }
 
+NABoolean CmpSeabaseDDL::appendErrorObjName(char * errorObjs, 
+                                            const char * objName)
+{
+  if ((strlen(errorObjs) + strlen(objName)) < 1000)
+    {
+      strcat(errorObjs, objName);
+      strcat(errorObjs, " ");
+    }
+  else if (strlen(errorObjs) < 1005) // errorObjs maxlen = 1010
+    {
+      strcat(errorObjs, "...");
+    }
+  
+  return TRUE;
+}
+
 // ----------------------------------------------------------------------------
 // method:  initSeabaseAuthorization
 //
@@ -8434,10 +8468,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
   retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, FALSE);
   if (retcode)
     {
-      deallocEHI(ehi); 
-      
       processReturn();
-      
       return -1;
     }
 
@@ -8467,10 +8498,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
                               keyLength,
                               FALSE))
     {
-      deallocEHI(ehi); 
-
       processReturn();
-      
       return -1;
     }
   
@@ -8490,10 +8518,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
                              FALSE);
   if (retcode == -1)
     {
-      deallocEHI(ehi); 
-
       processReturn();
-
       return -1;
     }
 
@@ -8708,7 +8733,8 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
               return;
             }
           
-          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY);
+          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY,
+                                     naf->hbaseCreateOptions());
           if (retcode == -1)
             {
               deallocEHI(ehi); 

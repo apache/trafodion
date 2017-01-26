@@ -107,6 +107,7 @@ import org.apache.hadoop.hbase.client.transactional.TmDDL;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmId;
+import org.apache.hadoop.hbase.coprocessor.transactional.CommitConflictException;
 
 // Sscc imports
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.SsccRegionProtos.SsccRegionService;
@@ -643,13 +644,18 @@ public class TransactionManager {
                 retry = true;
              }
              else if(result.size() == 1){
+               if(LOG.isInfoEnabled()) LOG.info("doPrepareX(MVCC), received result size: " + result.size() + " for transaction "
+                   + transactionId + " participantNum " + participantNum + " Location " + location.getRegionInfo().getRegionNameAsString());
                 // size is 1
                 for (CommitRequestResponse cresponse : result.values()){
                    // Should only be one result
                    int value = cresponse.getResult();
                    commitStatus = value;
                    if(cresponse.getHasException()) {
-                      if(transactionState.hasRetried() &&
+                      if(commitStatus == TransactionalReturn.COMMIT_CONFLICT){
+                        transactionState.recordException(cresponse.getException());                        
+                      }
+                      else if(transactionState.hasRetried() &&
                           cresponse.getException().contains("encountered unknown transactionID")) {
                         retry = false;
                         commitStatus = TransactionalReturn.COMMIT_OK_READ_ONLY;
@@ -693,7 +699,10 @@ public class TransactionManager {
                      commitStatus = cresponse.getResult();
 
                      if(cresponse.getHasException()) {
-                       if(cresponse.getException().contains("encountered unknown transactionID")) {
+                       if(commitStatus == TransactionalReturn.COMMIT_CONFLICT){
+                         transactionState.recordException(cresponse.getException());
+                       }
+                       else if(cresponse.getException().contains("encountered unknown transactionID")) {
                          retry = false;
                          commitStatus = TransactionalReturn.COMMIT_OK_READ_ONLY;
                        }
@@ -711,6 +720,7 @@ public class TransactionManager {
                     commitStatus == TransactionalReturn.COMMIT_RESEND) {
                    commitStatus = TransactionalReturn.COMMIT_OK;
                  }
+                 
                retry = false;
              }
           }

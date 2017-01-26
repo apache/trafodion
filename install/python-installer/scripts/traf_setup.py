@@ -55,6 +55,12 @@ def run():
     run_cmd('sysctl -w kernel.pid_max=65535 2>&1 > /dev/null')
     run_cmd('echo "kernel.pid_max=65535" >> /etc/sysctl.conf')
 
+    ### copy trafodion bashrc ###
+    BASHRC_TEMPLATE = '%s/sysinstall/home/trafodion/.bashrc' % TRAF_HOME
+    BASHRC_FILE = '%s/%s/.bashrc' % (HOME_DIR, TRAF_USER)
+    run_cmd('cp -f %s %s' % (BASHRC_TEMPLATE, BASHRC_FILE))
+    run_cmd('chown -R %s:%s %s*' % (TRAF_USER, TRAF_USER, BASHRC_FILE))
+
     ### copy init script ###
     init_script = '%s/sysinstall/etc/init.d/trafodion' % TRAF_HOME
     if os.path.exists(init_script):
@@ -93,10 +99,10 @@ def run():
     if not os.path.exists(traf_hbase_trx_path):
         err('Cannot find HBase trx jar \'%s\' for your Hadoop distribution' % hbase_trx_jar)
 
-    # upgrade mode, check if existing trx jar doesn't match the new trx jar file
-    if dbcfgs.has_key('upgrade') and dbcfgs['upgrade'].upper() == 'Y':
+    # reinstall mode, check if existing trx jar doesn't match the new trx jar file
+    if dbcfgs.has_key('reinstall') and dbcfgs['reinstall'].upper() == 'Y':
         if not os.path.exists(hbase_trx_path):
-            err('The trx jar \'%s\' doesn\'t exist in hbase lib path, cannot do upgrade, please do regular install' % hbase_trx_jar)
+            err('The trx jar \'%s\' doesn\'t exist in hbase lib path, cannot do reinstall, please do regular install' % hbase_trx_jar)
     else:
         # remove old trx and trafodion-utility jar files
         run_cmd('rm -rf %s/{hbase-trx-*,trafodion-utility-*}' % hbase_lib_path)

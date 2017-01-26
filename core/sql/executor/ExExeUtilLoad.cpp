@@ -67,6 +67,7 @@ using std::ofstream;
 #include  "str.h"
 #include "ExpHbaseInterface.h"
 #include "ExHbaseAccess.h"
+#include "ExpErrorEnums.h"
 
 ///////////////////////////////////////////////////////////////////
 ex_tcb * ExExeUtilCreateTableAsTdb::build(ex_globals * glob)
@@ -1110,6 +1111,9 @@ short ExExeUtilHBaseBulkLoadTcb::work()
   Lng32 cliRC = 0;
   short retcode = 0;
   short rc;
+  Lng32 errorRowCount = 0;
+  int len;
+  ComDiagsArea *diagsArea;
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -1236,32 +1240,29 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         step_ = LOAD_END_ERROR_;
         break;
       }
-      if (hblTdb().getMaxErrorRows() > 0) {
-        int jniDebugPort = 0;
-        int jniDebugTimeout = 0;
-        ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
+      int jniDebugPort = 0;
+      int jniDebugTimeout = 0;
+      ehi_ = ExpHbaseInterface::newInstance(getGlobals()->getDefaultHeap(),
                                               (char*)"", //Later may need to change to hblTdb.server_,
                                               (char*)"", //Later may need to change to hblTdb.zkPort_,
                                               jniDebugPort,
                                               jniDebugTimeout);
-        retcode = ehi_->initHBLC();
-        if (retcode == 0) 
-           retcode = ehi_->createCounterTable(hblTdb().getErrCountTable(), (char *)"ERRORS");
-        if (retcode != 0 ) 
-        {
-          Lng32 cliError = 0;
-
-          Lng32 intParam1 = -retcode;
-          ComDiagsArea * diagsArea = NULL;
-          ExRaiseSqlError(getHeap(), &diagsArea,
+      retcode = ehi_->initHBLC();
+      if (retcode == 0) 
+        retcode = ehi_->createCounterTable(hblTdb().getErrCountTable(), (char *)"ERRORS");
+      if (retcode != 0 ) 
+      {
+         Lng32 cliError = 0;
+        Lng32 intParam1 = -retcode;
+        diagsArea = NULL;
+        ExRaiseSqlError(getHeap(), &diagsArea,
                           (ExeErrorCode)(8448), NULL, &intParam1,
                           &cliError, NULL,
                           " ",
                           getHbaseErrStr(retcode),
                           (char *)currContext->getJniErrorStr().data());
-          step_ = LOAD_END_ERROR_;
-          break;
-        }
+        step_ = LOAD_END_ERROR_;
+        break;
       }
       if (hblTdb().getPreloadCleanup())
         step_ = PRE_LOAD_CLEANUP_;
@@ -1417,15 +1418,18 @@ short ExExeUtilHBaseBulkLoadTcb::work()
               masterGlob->getStatement()->getContext()->setSqlParserFlags(0x20000);
             }
           }
+        diagsArea = getDiagsArea();
 
         cliRC = cliInterface()->executeImmediate(loadQuery,
             NULL,
             NULL,
             TRUE,
-            &rowsAffected_);
-          if (parserFlagSet)
-            masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
+            &rowsAffected_,
+            FALSE,
+            diagsArea);
 
+        if (parserFlagSet)
+            masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x20000);
         if (cliRC < 0)
         {
           rowsAffected_ = 0;
@@ -1433,13 +1437,24 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           step_ = LOAD_END_ERROR_;
           break;
         }
-        
-        step_ = COMPLETE_BULK_LOAD_;
+        else {
+           step_ = COMPLETE_BULK_LOAD_;
+           ComCondition *cond;
+           Lng32 entryNumber;
+           while ((cond = diagsArea->findCondition(EXE_ERROR_ROWS_FOUND, &entryNumber)) != NULL) {
+              if (errorRowCount < cond->getOptionalInteger(0))
+                 errorRowCount = cond->getOptionalInteger(0);
+              diagsArea->deleteWarning(entryNumber);
+           }
+           diagsArea->setRowCount(0);
+        }
         if (rowsAffected_ == 0)
           step_ = LOAD_END_;
 
-        sprintf(statusMsgBuf_,"       Rows Processed: %ld %c",rowsAffected_, '\n' );
+        sprintf(statusMsgBuf_,      "       Rows Processed: %ld %c",rowsAffected_+errorRowCount, '\n' );
         int len = strlen(statusMsgBuf_);
+        sprintf(&statusMsgBuf_[len],"       Error Rows:     %d %c",errorRowCount, '\n' );
+        len = strlen(statusMsgBuf_);
         setEndStatusMsg(" LOADING DATA", len, TRUE);
       }
       else
@@ -1513,25 +1528,23 @@ short ExExeUtilHBaseBulkLoadTcb::work()
           strcat(clQuery, ")");
         strcat(clQuery, ";");
 
-      cliRC = cliInterface()->executeImmediate(clQuery, NULL,NULL,TRUE,NULL,TRUE);
+      cliRC = cliInterface()->executeImmediate(clQuery, NULL,NULL,TRUE,NULL,TRUE, getDiagsArea());
 
       NADELETEBASIC(clQuery, getMyHeap());
       clQuery = NULL;
-
+      if (cliRC < 0)
+         rowsAffected_ = 0;
+      sprintf(statusMsgBuf_,      "       Rows Loaded:    %ld %c",rowsAffected_, '\n' );
+      len = strlen(statusMsgBuf_);
       if (cliRC < 0)
       {
         rowsAffected_ = 0;
         cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
+        setEndStatusMsg(" COMPLETION", len, TRUE);
         step_ = LOAD_END_ERROR_;
         break;
       }
       cliRC = restoreCQD("TRAF_LOAD_TAKE_SNAPSHOT");
-      if (cliRC < 0)
-      {
-        step_ = LOAD_END_ERROR_;
-        break;
-      }
-
       if (hblTdb().getRebuildIndexes() || hblTdb().getHasUniqueIndexes())
         step_ = POPULATE_INDEXES_;
       else if (hblTdb().getUpdateStats())
@@ -1539,7 +1552,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       else
         step_ = LOAD_END_;
 
-      setEndStatusMsg(" COMPLETION", 0, TRUE);
+      setEndStatusMsg(" COMPLETION", len, TRUE);
     }
     break;
 
@@ -1547,7 +1560,14 @@ short ExExeUtilHBaseBulkLoadTcb::work()
     {
       if (setStartStatusMsgAndMoveToUpQueue(" POPULATE INDEXES", &rc, 0, TRUE))
         return rc;
-
+      else {
+           step_ = POPULATE_INDEXES_EXECUTE_;
+           return WORK_CALL_AGAIN;
+      }
+    }
+    break;
+    case POPULATE_INDEXES_EXECUTE_:
+    {
       char * piQuery =
           new(getMyHeap()) char[strlen("POPULATE ALL INDEXES ON  ; ") +
                                 strlen(hblTdb().getTableName()) +
@@ -1571,20 +1591,27 @@ short ExExeUtilHBaseBulkLoadTcb::work()
         break;
       }
 
-         if (hblTdb().getUpdateStats())
-           step_ = UPDATE_STATS_;
-         else
+      if (hblTdb().getUpdateStats())
+         step_ = UPDATE_STATS_;
+      else
         step_ = LOAD_END_;
 
         setEndStatusMsg(" POPULATE INDEXES", 0, TRUE);
       }
-        break;
+      break;
 
       case UPDATE_STATS_:
       {
         if (setStartStatusMsgAndMoveToUpQueue(" UPDATE STATISTICS", &rc, 0, TRUE))
           return rc;
-
+        else {
+           step_ = UPDATE_STATS_EXECUTE_;
+           return WORK_CALL_AGAIN;
+        }
+      }
+      break;
+      case UPDATE_STATS_EXECUTE_:
+      {
         if (ustatNonEmptyTable)
         {
           // Table was not empty prior to the load.
@@ -1631,7 +1658,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
 
         setEndStatusMsg(" UPDATE STATS", 0, TRUE);
     }
-        break;
+    break;
 
     case RETURN_STATUS_MSG_:
     {
@@ -1675,7 +1702,7 @@ short ExExeUtilHBaseBulkLoadTcb::work()
       up_entry->upState.setMatchNo(0);
       up_entry->upState.status = ex_queue::Q_NO_DATA;
 
-      ComDiagsArea *diagsArea = up_entry->getDiagsArea();
+      diagsArea = up_entry->getDiagsArea();
 
       if (diagsArea == NULL)
         diagsArea = ComDiagsArea::allocate(getMyHeap());
@@ -3875,19 +3902,19 @@ ExOperStats * ExExeUtilFileExtractTcb::doAllocateStatsEntry(
 							    CollHeap *heap,
 							    ComTdb *tdb)
 {
-  ExOperStats * stat = NULL;
-  ComTdb::CollectStatsType statsType = 
-    getGlobals()->getStatsArea()->getCollectStatsType();
-  if (statsType == ComTdb::OPERATOR_STATS)
-    {
-      return ex_tcb::doAllocateStatsEntry(heap, tdb);
-    }
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
   else
-    {
-      return new(heap) ExHdfsScanStats(heap,
-					       this,
-					       tdb);
-    }
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
+				   this,
+				   tdb);
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
 
 
