@@ -1152,16 +1152,23 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
  DDkwd__(CSE_CACHE_TEMP_QUERIES,               "OFF"),
  // "cleanup obsolete volatile tables" command cleans up Hive temp tables
  DDkwd__(CSE_CLEANUP_HIVE_TABLES,              "OFF"),
+ // don't temp if all consumers have preds on n key columns
+ DDui___(CSE_COMMON_KEY_PRED_CONTROL,          "1"),
  // emit warnings that help diagnose why CSEs are not shared
  DDkwd__(CSE_DEBUG_WARNINGS,                   "OFF"),
  // create a CommonSubExpr node for CTEs defined in WITH clauses (OFF/ON)
  DDkwd__(CSE_FOR_WITH,                         "OFF"),
  // use Hive tables as temp tables
  DDkwd__(CSE_HIVE_TEMP_TABLE,                  "ON"),
+ // don't temp if avg consumer has preds on more than n percent of key cols
+ DDflt0_(CSE_PCT_KEY_COL_PRED_CONTROL,         "49.9"),
  // print debugging info on stdout
  DDkwd__(CSE_PRINT_DEBUG_INFO,                 "OFF"),
+ // limit temp table size (based on max. card and regular card)
+ DDflt0_(CSE_TEMP_TABLE_MAX_MAX_SIZE,          "1E12"),
+ DDflt0_(CSE_TEMP_TABLE_MAX_SIZE,              "1E9"),
  // implement CommonSubExpr as a temp table (OFF/SYSTEM/ON)
- DDkwd__(CSE_USE_TEMP,                         "ON"),
+ DDkwd__(CSE_USE_TEMP,                         "SYSTEM"),
 
 SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
 

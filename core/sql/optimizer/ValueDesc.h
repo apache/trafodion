@@ -1080,7 +1080,7 @@ public:
   // Delete all values in other that are not referenced by the value
   // expressions that belong to this set.
   // --------------------------------------------------------------------
-  void weedOutUnreferenced(ValueIdSet & other);
+  void weedOutUnreferenced(ValueIdSet & other) const;
 
   // --------------------------------------------------------------------
   // weedOutNonEquiPreds()

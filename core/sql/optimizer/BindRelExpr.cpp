@@ -17712,20 +17712,22 @@ RelExpr * CommonSubExprRef::bindNode(BindWA *bindWA)
 
   DCMPASSERT(info);
 
+  // eliminate any CommonSubExprRef nodes that are not truly common,
+  // i.e. those that are referenced only once
+  if (info->getNumConsumers() <= 1)
+    {
+      info->eliminate();
+      return child(0).getPtr()->bindNode(bindWA);
+    }
+
   bindWA->setInCSE(this);
 
-  if (parentCSE)
-    // establish the parent/child relationship, if not done already
-    CmpCommon::statement()->getCSEInfo(parentCSE->getName())->addChildCSE(info);
+  // establish the parent/child relationship
+  addParentRef(parentCSE);
 
   bindChildren(bindWA);
   if (bindWA->errStatus())
     return this;
-
-  // eliminate any CommonSubExprRef nodes that are not truly common,
-  // i.e. those that are referenced only once
-  if (CmpCommon::statement()->getCSEInfo(internalName_)->getNumConsumers() <= 1)
-    return child(0).getPtr();
 
   // we know that our child is a RenameTable (same name as this CSE,
   // whose child is a RelRoot, defining the CTE. Copy the bound select

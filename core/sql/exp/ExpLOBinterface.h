@@ -66,6 +66,9 @@ class HdfsFileInfo
   Int64 bytesToRead_;
 };
 
+typedef HdfsFileInfo* HdfsFileInfoPtr;
+typedef NAArray<HdfsFileInfoPtr> HdfsFileInfoArray;
+
 #include "ExpLOBaccess.h"
 
 #define LOB_ACCESS_SUCCESS 0

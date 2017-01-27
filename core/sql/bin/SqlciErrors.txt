@@ -1447,7 +1447,7 @@ $1~String1 --------------------------------
 4492 ZZZZZ 99999 BEGINNER MINOR LOGONLY BULK LOAD option UPDATE STATISTICS cannot be used with UPSERT USING LOAD option.
 4493 ZZZZZ 99999 BEGINNER MINOR LOGONLY Stored Descriptor Status: $0~String0
 5000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query normalizer.
-5001 ZZZZZ 99999 ADVANDED MINOR LOGONLY Common subexpression $0~String0 cannot be shared among multiple consumers. Reason: $1~String1.
+5001 ZZZZZ 99999 ADVANDED MINOR LOGONLY Common subexpression $0~String0 will not be shared among multiple consumers. Reason: $1~String1.
 6000 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Internal error in the query optimizer.
 6001 0A000 99999 BEGINNER MAJOR DBADMIN DISTINCT aggregates can be computed for only one column per table expression.
 6002 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The metadata table HISTOGRAMS or HISTOGRAM_INTERVALS contains invalid values.  If you have manually modified the metadata table, then you should undo your changes using the CLEAR option in UPDATE STATISTICS.

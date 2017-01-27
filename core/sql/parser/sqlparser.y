@@ -6727,7 +6727,7 @@ table_name_and_hint : table_name optimizer_hint hbase_access_options
                               if ($3)
                                 cse->setHbaseAccessOptions($3);
 
-                              cse->addToCmpStatement();
+                              cse->addToCmpStatement(TRUE);
                               $$ = cse;
                             }
                           else
@@ -7061,7 +7061,7 @@ table_name_as_clause_and_hint : table_name as_clause optimizer_hint hbase_access
                                          if ($4)
                                            cse->setHbaseAccessOptions($4);
 
-                                         cse->addToCmpStatement();
+                                         cse->addToCmpStatement(TRUE);
                                          $$ = cse;
                                        }
                                      else

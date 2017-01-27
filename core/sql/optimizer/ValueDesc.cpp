@@ -3293,7 +3293,7 @@ void ValueIdSet::replaceOperandsOfInstantiateNull
 // For each ValueId in other check whether it is referenced anywhere
 // within an ItemExpr whose ValueId belongs to this set.
 // -----------------------------------------------------------------------
-void ValueIdSet::weedOutUnreferenced(ValueIdSet & other)
+void ValueIdSet::weedOutUnreferenced(ValueIdSet & other) const
 {
   ValueIdSet unrefSet;
   NABoolean notFound;

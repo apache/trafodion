@@ -137,6 +137,7 @@ public:
 
   // get the degree of this node 
   virtual Int32 getArity() const { return 0; };
+  virtual NABoolean duplicateMatch(const RelExpr & other) const;
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
 
@@ -597,6 +598,8 @@ public:
   ExeUtilExpr()
        : GenericUtilExpr(REL_EXE_UTIL) {};
 
+  virtual HashValue topHash();
+  virtual NABoolean duplicateMatch(const RelExpr & other) const;
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
   virtual const NAString getText() const;
