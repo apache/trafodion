@@ -7672,36 +7672,47 @@ Int32 NATable::computeHBaseRowSizeFromMetaData() const
 // For an HBase table, we can estimate the number of rows by dividing the number
 // of KeyValues in all HFiles of the table by the number of columns (with a few
 // other considerations).
-Int64 NATable::estimateHBaseRowCount() const
+Int64 NATable::estimateHBaseRowCount(Int32 retryLimitMilliSeconds, Int32& errorCode, Int32& breadCrumb) const
 {
-	Int64 estRowCount = 0;
-	ExpHbaseInterface* ehi = getHBaseInterface();
-	if (ehi)
-	{
-		HbaseStr fqTblName;
-		NAString tblName = getTableName().getQualifiedNameAsString();
-		fqTblName.len = tblName.length();
-		fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
-		strncpy(fqTblName.val, tblName.data(), fqTblName.len);
-		fqTblName.val[fqTblName.len] = '\0';
+  Int64 estRowCount = 0;
+  ExpHbaseInterface* ehi = getHBaseInterface();
+  errorCode = -1;
+  breadCrumb = -1;
+  if (ehi)
+    {
+      HbaseStr fqTblName;
+      NAString tblName = getTableName().getQualifiedNameAsString();
+      fqTblName.len = tblName.length();
+      fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
+      strncpy(fqTblName.val, tblName.data(), fqTblName.len);
+      fqTblName.val[fqTblName.len] = '\0';
 
-		Int32 partialRowSize = computeHBaseRowSizeFromMetaData();
-		Lng32 retcode = ehi->estimateRowCount(fqTblName,
-				partialRowSize,
-				colcount_,
-				estRowCount);
-		NADELETEBASIC(fqTblName.val, STMTHEAP);
+      Int32 partialRowSize = computeHBaseRowSizeFromMetaData();
+      errorCode = ehi->estimateRowCount(fqTblName,
+                                      partialRowSize,
+                                      colcount_,
+                                      retryLimitMilliSeconds,
+                                      estRowCount,
+                                      breadCrumb /* out */);
+      NADELETEBASIC(fqTblName.val, STMTHEAP);
 
-		// Return 0 as the row count if an error occurred while estimating it.
-		// The estimate could also be 0 if there is less than 1MB of storage
-		// dedicated to the table -- no HFiles, and < 1MB in MemStore, for which
-		// size is reported only in megabytes.
-		if (retcode < 0)
-			estRowCount = 0;
-		delete ehi;
-	}
+      // Return 100 million as the row count if an error occurred while
+      // estimating. One example where this is appropriate is that we might get
+      // FileNotFoundException from the Java layer if a large table is in 
+      // the midst of a compaction cycle. It is better to return a large
+      // number in this case than a small number, as plan quality suffers
+      // more when we vastly underestimate than when we vastly overestimate.
 
-	return estRowCount;
+      // The estimate could be 0 if there is less than 1MB of storage
+      // dedicated to the table -- no HFiles, and < 1MB in MemStore, for which
+      // size is reported only in megabytes.
+      if (errorCode < 0)
+        estRowCount = 100000000;
+
+      delete ehi;
+    }
+
+  return estRowCount;
 }
 
 // Method to get hbase regions servers node names

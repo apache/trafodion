@@ -499,6 +499,12 @@ Lng32 HSClearCLIDiagnostics()
   return retcode;
 }
 
+// Obtain any JNI diagnostic text stored in the CLI
+const char * HSFuncGetJniErrorStr()
+{
+  return GetCliGlobals()->currContext()->getJniErrorStrPtr();
+}
+
 // -----------------------------------------------------------------------
 // Create histogram tables if they don't exist.
 // -----------------------------------------------------------------------
