@@ -468,12 +468,13 @@ public class TrxTransactionState extends TransactionState {
                                 LOG.trace("Transaction [" + this.toString() + "] scansRange is null");
                         if (scanRange != null && scanRange.contains(row)) {
                             String tmp = (otherUpdate.isDelete())? ", deleted":", inserted";
-                            String msg = "Transaction [" + this.toString() + "] has scan which conflicts with ["
-                                    + checkAgainst.toString() + "]: region [" + regionInfo.getRegionNameAsString() 
-                                    + "], scanRange[" + scanRange.toString() + "]"
-                                    +  tmp
-                                    + " row[" + Bytes.toStringBinary(row) + "]";
-                                    
+                            String msg = "This Transaction [" + this.toString()
+                                    + "] has a scan, scanRange[" + scanRange.toString()
+                                    + "] that conflicts with a committed Transaction ["
+                                    + checkAgainst.toString() + "] which " + tmp 
+                                    + " a row with key[" + Bytes.toStringBinary(row)
+                                    + "], in the region [" + regionInfo.getRegionNameAsString() 
+                                    + "]";                                    
                             throw new IOException(msg);
                         }
                     }

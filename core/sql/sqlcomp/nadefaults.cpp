@@ -3114,6 +3114,7 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
  DDkwd__(SCRATCH_DISK_LOGGING,                 "OFF"),
  SDDpct__(SCRATCH_FREESPACE_THRESHOLD_PERCENT,      "1"),
   DDui___(SCRATCH_IO_BLOCKSIZE_SORT,            "524288"),
+  DDui___(SCRATCH_IO_BLOCKSIZE_SORT_MAX,        "5242880"),
   //On LINUX, writev and readv calls are used to perform
   //scratch file IO. This CQD sets the vector size to use
   //in writev and readv calls. Overall IO size is affected
