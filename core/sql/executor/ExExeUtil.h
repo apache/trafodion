@@ -2487,10 +2487,17 @@ protected:
 
 private:
 
-  Lng32 setupObjectTypeForUserQuery();
-  Lng32 setupPrivilegesTypeForUserQuery();
-  Int32 setupAuthIDInfo(const char * authName, char authID[MAX_AUTHIDTYPE_CHAR], AuthIdType roleOnly);
-  Int32 setupCurrentUserInfo(char authID[MAX_USERINFO_CHAR]);
+  NABoolean checkUserPrivs(ContextCli * currConnext, const ComTdbExeUtilGetMetadataInfo::QueryType queryType);
+  Int32 getAuthID(
+    const char *authName,
+    const char *catName,
+    const char *schName,
+    const char *objName);
+  char * getRoleList(
+    const Int32 userID,
+    const char *catName,
+    const char *schName,
+    const char *objName);
 
 };
 
