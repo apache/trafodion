@@ -31,7 +31,7 @@ import java.nio.ByteBuffer;
 public class TMUDRSerializableObject
 {
 
-  public enum Endianness
+  enum Endianness
    {
      UNKNOWN_ENDIANNESS,
      IS_LITTLE_ENDIAN,
@@ -53,7 +53,7 @@ public class TMUDRSerializableObject
   
    };
 
-  public enum TMUDRObjectType
+  enum TMUDRObjectType
     {
       UNKNOWN_OBJECT_TYPE (0),
       TYPE_INFO_OBJ (100),
@@ -99,7 +99,7 @@ public class TMUDRSerializableObject
 
     };
 
-  public TMUDRSerializableObject(
+  TMUDRSerializableObject(
        TMUDRObjectType objectType,
        short version) { 
   objectType_  = objectType.value_;
@@ -111,13 +111,13 @@ public class TMUDRSerializableObject
   filler_      = 0;
   }
 
-  public int sizeOf()
+  int sizeOf()
   {
     return  SIZEOF_INT + SIZEOF_INT + SIZEOF_SHORT +
             SIZEOF_SHORT + SIZEOF_INT + SIZEOF_INT;
   }
 
-  public TMUDRObjectType getObjectType()
+  TMUDRObjectType getObjectType()
   {
     switch (objectType_)
     {
@@ -154,7 +154,7 @@ public class TMUDRSerializableObject
   }
 
 
-  public TMUDRObjectType getObjectType(int objectType)
+  TMUDRObjectType getObjectType(int objectType)
   {
     switch (objectType)
     {
@@ -190,17 +190,17 @@ public class TMUDRSerializableObject
     }
   }
 
-  public short getVersion() 
+  short getVersion() 
   {
     return version_;
   }
 
-  public int serializedLength() throws UDRException
+  int serializedLength() throws UDRException
   {
     return sizeOf();
   }
 
-  public  int serialize(ByteBuffer outputBuffer) throws UDRException
+  int serialize(ByteBuffer outputBuffer) throws UDRException
   {
     totalLength_ = serializedLength();
 
@@ -221,7 +221,7 @@ public class TMUDRSerializableObject
     return allocatedBytes;
   }
 
-  public int deserialize(ByteBuffer inputBuffer) throws UDRException
+  int deserialize(ByteBuffer inputBuffer) throws UDRException
   {
     int bufSize = inputBuffer.limit() - inputBuffer.position();
     if (bufSize < sizeOf())
@@ -251,7 +251,7 @@ public class TMUDRSerializableObject
   }
 
 
-  public void validateObjectType(TMUDRObjectType o) throws UDRException
+  void validateObjectType(TMUDRObjectType o) throws UDRException
   {
     if (objectType_ != o.getValue())
       throw new UDRException(38900,
@@ -261,7 +261,7 @@ public class TMUDRSerializableObject
 
   }
 
-  public void validateSerializedLength(int l) throws UDRException
+  void validateSerializedLength(int l) throws UDRException
   {
       if (l != totalLength_)
          throw new UDRException(38900,
@@ -272,7 +272,7 @@ public class TMUDRSerializableObject
 
   }
 
-  public void validateDeserializedLength(int l) throws UDRException
+  void validateDeserializedLength(int l) throws UDRException
   {
     if (l != totalLength_)
       throw new UDRException(38900,
@@ -285,27 +285,27 @@ public class TMUDRSerializableObject
 
   // helper methods to serialize ints and strings, they
   // return the length of the serialized information
-  public int serializedLengthOfInt()
+  int serializedLengthOfInt()
   {
     return SIZEOF_INT;
   }
 
-  public int serializedLengthOfLong()
+  int serializedLengthOfLong()
   {
     return SIZEOF_LONG;
   }
 
-  public int serializedLengthOfString(byte[] s)
+  int serializedLengthOfString(byte[] s)
   {
     return (SIZEOF_INT + s.length);
   }
 
-  public int serializedLengthOfString(int stringLength)
+  int serializedLengthOfString(int stringLength)
   {
     return SIZEOF_INT + stringLength;
   }
 
-  public int serializedLengthOfString(String s) throws UDRException
+  int serializedLengthOfString(String s) throws UDRException
   {
     byte[] temp;
     try {
@@ -319,13 +319,13 @@ public class TMUDRSerializableObject
     return serializedLengthOfString(temp.length);
   }
 
-  public int serializedLengthOfBinary(int binaryLength)
+  int serializedLengthOfBinary(int binaryLength)
   {
     return serializedLengthOfString(binaryLength);
   }
 
-  public int serializeInt(int i,
-                          ByteBuffer outputBuffer) throws UDRException
+  int serializeInt(int i,
+                   ByteBuffer outputBuffer) throws UDRException
   {
     int bufSize = outputBuffer.limit() - outputBuffer.position();
     if (bufSize < SIZEOF_INT)
@@ -337,8 +337,8 @@ public class TMUDRSerializableObject
     return allocatedBytes;
   }
 
-  public int serializeLong(long i,
-                           ByteBuffer outputBuffer) throws UDRException
+  int serializeLong(long i,
+                    ByteBuffer outputBuffer) throws UDRException
   {
     int bufSize = outputBuffer.limit() - outputBuffer.position();
     if (bufSize < SIZEOF_LONG)
@@ -350,8 +350,8 @@ public class TMUDRSerializableObject
     return allocatedBytes;
   }
 
-  public int serializeBinary(byte[] s,
-                             ByteBuffer outputBuffer) throws UDRException
+  int serializeBinary(byte[] s,
+                      ByteBuffer outputBuffer) throws UDRException
   {
     int bufSize = outputBuffer.limit() - outputBuffer.position();
     if (bufSize < SIZEOF_INT + s.length)
@@ -367,9 +367,9 @@ public class TMUDRSerializableObject
     return allocatedBytes;
   }
 
-  public int serializeBinary(byte[] s,
-                             int len,
-                             ByteBuffer outputBuffer) throws UDRException
+  int serializeBinary(byte[] s,
+                      int len,
+                      ByteBuffer outputBuffer) throws UDRException
   {
     int bufSize = outputBuffer.limit() - outputBuffer.position();
     if (bufSize < SIZEOF_INT + len)
@@ -384,8 +384,8 @@ public class TMUDRSerializableObject
     return allocatedBytes;
   }
 
-  public int serializeString(String s,
-                             ByteBuffer outputBuffer) throws UDRException
+  int serializeString(String s,
+                      ByteBuffer outputBuffer) throws UDRException
   {
     byte[] b;
     try {
@@ -398,7 +398,7 @@ public class TMUDRSerializableObject
     return serializeBinary(b, outputBuffer);
   }
 
-  public int deserializeInt(ByteBuffer inputBuffer) throws UDRException
+  int deserializeInt(ByteBuffer inputBuffer) throws UDRException
   {
     int bufSize = inputBuffer.limit() - inputBuffer.position();
     if (bufSize < SIZEOF_INT)
@@ -407,7 +407,7 @@ public class TMUDRSerializableObject
     return inputBuffer.getInt();
   }
 
-  public long deserializeLong(ByteBuffer inputBuffer) throws UDRException
+  long deserializeLong(ByteBuffer inputBuffer) throws UDRException
   {
     int bufSize = inputBuffer.limit() - inputBuffer.position();
     if (bufSize < SIZEOF_LONG)
@@ -417,7 +417,7 @@ public class TMUDRSerializableObject
   }
 
 /*
-  public byte[] deserializeString(ByteBuffer inputBuffer) throws UDRException
+  byte[] deserializeString(ByteBuffer inputBuffer) throws UDRException
   {
     int bufSize = inputBuffer.limit() - inputBuffer.position();
     if (bufSize <  SIZEOF_INT)
@@ -442,7 +442,7 @@ public class TMUDRSerializableObject
   }
 */
 
-  public byte[] deserializeBinary(ByteBuffer inputBuffer) throws UDRException {
+  byte[] deserializeBinary(ByteBuffer inputBuffer) throws UDRException {
     int bufSize = inputBuffer.limit() - inputBuffer.position();
     if (bufSize <  SIZEOF_INT)
           throw new UDRException(38900,
@@ -460,7 +460,7 @@ public class TMUDRSerializableObject
     return b;
   }
   
-  public String deserializeString(ByteBuffer inputBuffer) throws UDRException
+  String deserializeString(ByteBuffer inputBuffer) throws UDRException
   {
     int bufSize = inputBuffer.limit() - inputBuffer.position();
     if (bufSize <  SIZEOF_INT)
@@ -486,7 +486,7 @@ public class TMUDRSerializableObject
     return result;
   }
 
-  public TMUDRObjectType getNextObjectType(ByteBuffer inputBuffer) throws UDRException
+  TMUDRObjectType getNextObjectType(ByteBuffer inputBuffer) throws UDRException
   {
     int bufSize = inputBuffer.limit() - inputBuffer.position();
     int origPos = inputBuffer.position();
