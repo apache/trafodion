@@ -3074,8 +3074,8 @@ short Sort::generateTdb(Generator * generator,
   sort_options->scratchFreeSpaceThresholdPct() = threshold;
   sort_options->sortMaxHeapSize() = (short)getDefault(SORT_MAX_HEAP_SIZE_MB);
   sort_options->mergeBufferUnit() = (short)getDefault(SORT_MERGE_BUFFER_UNIT_56KB);
-  
-  sort_options->scratchIOBlockSize() = (Int32)getDefault(SCRATCH_IO_BLOCKSIZE_SORT);
+ 
+  //512kb default size initiliazed in sort_options.
   if(sortRecLen >= sort_options->scratchIOBlockSize())
   {
     Int32 maxScratchIOBlockSize = (Int32)getDefault(SCRATCH_IO_BLOCKSIZE_SORT_MAX);
