@@ -107,16 +107,20 @@ FatalException::FatalException(const char *msg,
 			       const char *stackTrace)
   : BaseException(fileName, lineNum)
 {
-  if(msg) {
-    strncpy(msg_, msg, sizeof(msg_));
-    msg_[sizeof(msg_)-1] = 0;
+  int len = 0;
+  if(msg && (len = strlen(msg))) {
+    len = MINOF(len,sizeof(msg_));
+    strncpy(msg_, msg, len);
+    msg_[len] = 0;
   }
   else {
     msg_[0] = 0;
   }
-  if(stackTrace) {
-    strncpy(stackTrace_, stackTrace, sizeof(stackTrace_));
-    stackTrace_[sizeof(stackTrace_)-1] = 0;
+  
+  if(stackTrace && (len = strlen(stackTrace))) {
+    len = MINOF(len, sizeof(stackTrace_));
+    strncpy(stackTrace_, stackTrace, len);
+    stackTrace_[len] = 0;
   }
   else {
     stackTrace_[0] = 0;
@@ -168,17 +172,20 @@ AssertException::AssertException(const char *condition,
 				 const char *stackTrace)
   : BaseException(fileName, lineNum)
 {
-  if(condition) {
-    strncpy(condition_, condition, sizeof(condition_));
-    condition_[sizeof(condition_)-1] = 0;
+  int len = 0;
+  if(condition && (len = strlen(condition))) {
+    len = MINOF(len ,sizeof(condition_));
+    strncpy(condition_, condition, len);
+    condition_[len] = 0;
   }
   else {
     condition_[0] = 0;
   }
   
-  if(stackTrace) {
-    strncpy(stackTrace_, stackTrace, sizeof(stackTrace_));
-    stackTrace_[sizeof(stackTrace_)-1] = 0;
+  if(stackTrace && (len = strlen(stackTrace))) {
+    len = MINOF(len, sizeof(stackTrace_));
+    strncpy(stackTrace_, stackTrace, len );
+    stackTrace_[len] = 0;
   }
   else {
     stackTrace_[0] = 0;
@@ -188,20 +195,22 @@ AssertException::AssertException(const char *condition,
 AssertException::AssertException(AssertException & e) :
   BaseException(e.getFileName(), e.getLineNum())
 {
-  stackTrace_[0] = 0;
+  int len = 0;
   const char *condition = e.getCondition();
-  if(condition) {
-    strncpy(condition_, condition, sizeof(condition_));
-    condition_[sizeof(condition_)-1] = 0;
+  if(condition && (len = strlen(condition))) {
+    len = MINOF(len ,sizeof(condition_));
+    strncpy(condition_, condition, len);
+    condition_[len] = 0;
   }
   else {
     condition_[0] = 0;
   }
   
   const char *stackTrace = e.getStackTrace();
-  if(stackTrace) {
-    strncpy(stackTrace_, stackTrace, sizeof(stackTrace_));
-    stackTrace_[sizeof(stackTrace_)-1] = 0;
+  if(stackTrace && (len = strlen(stackTrace))) {
+    len = MINOF(len, sizeof(stackTrace_));
+    strncpy(stackTrace_, stackTrace, len);
+    stackTrace_[len] = 0;
   }
   else {
     stackTrace_[0] = 0;
