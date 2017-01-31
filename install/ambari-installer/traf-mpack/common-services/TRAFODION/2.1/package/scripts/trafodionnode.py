@@ -90,7 +90,7 @@ class Node(Script):
          group = params.traf_group, 
          content=InlineTemplate(params.traf_env_template,trim_blocks=False),
          mode=0644)
-    # initialize & verify env (e.g., creates $TRAF_HOME/tmp as trafodion user)
+    # initialize & verify env (e.g., bashrc creates $TRAF_HOME/tmp as trafodion user)
     cmd = "source ~/.bashrc"
     Execute(cmd,user=params.traf_user)
 
