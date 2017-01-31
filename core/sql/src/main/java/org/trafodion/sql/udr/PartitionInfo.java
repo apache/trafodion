@@ -84,7 +84,9 @@ public class PartitionInfo
         type_ = PartitionTypeCode.UNKNOWN;
     }
 
-    // copy constructor for internal use
+    /**
+     *  Copy constructor
+     */
     public  PartitionInfo(PartitionInfo p) {
         type_ = p.type_;
         partCols_ = new Vector<Integer>(p.partCols_);
@@ -176,7 +178,7 @@ public class PartitionInfo
           partCols_.clear();
     }
 
-    public Vector<Integer> getPartCols() {
+    Vector<Integer> getPartCols() {
         return partCols_;
     }
 
