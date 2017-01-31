@@ -50,7 +50,19 @@ mkdir -p %{buildroot}/opt/trafodion
 cp -rf %{name}/* %{buildroot}/opt/trafodion
 
 %post
-$RPM_INSTALL_PREFIX/mpack-install/am_install.sh "$RPM_INSTALL_PREFIX"
+$RPM_INSTALL_PREFIX/mpack-install/am_install.sh "$RPM_INSTALL_PREFIX" "traf-mpack" "%{version}-%{release}" "$1"
+
+%postun
+if [[ $1 == 0 ]]  # removing final version
+then
+  # no ambari command for this yet -- coming in Ambari 2.5.0
+  rm -r /var/lib/ambari-server/resources/mpacks/traf-mpack*
+  rm -r /var/lib/ambari-server/resources/common-services/TRAFODION
+  rm -r /var/lib/ambari-server/resources/stacks/HDP/*/services/TRAFODION
+  # clean up items created by am_install.sh script
+  rm /opt/trafodion/traf-mpack*.tar.gz
+  rm -r /opt/trafodion/traf-mpack
+fi
 
 %clean
 /bin/rm -rf %{buildroot}
