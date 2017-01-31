@@ -197,16 +197,6 @@ A            B            C
 *** ERROR[1118] Creating object TRAFODION."_HV_HIVE_".NEWTABLE3 is not allowed in a reserved system schema.
 
 --- SQL operation failed with errors.
->>get tables;
-
-Tables in Schema TRAFODION._HV_HIVE_
-====================================
-
-CUSTOMER
-ITEM
-PROMOTION
-
---- SQL operation complete.
 >>
 >>-- test creates with a different default schema
 >>create schema hive_t009;
@@ -257,17 +247,6 @@ PROMOTION
 
 --- 10 row(s) inserted.
 >>
->>get tables;
-
-Tables in Schema TRAFODION.HIVE_T009
-====================================
-
-SB_HISTOGRAMS
-SB_HISTOGRAM_INTERVALS
-SB_PERSISTENT_SAMPLES
-T009T1
-
---- SQL operation complete.
 >>drop table t009t1;
 
 --- SQL operation complete.
@@ -335,18 +314,9 @@ HIVE                                                                            
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_HIVE_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_SCH_T009_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              OBJECTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
-TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _PRIVMGR_MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ROLE_USAGE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 
---- 6 row(s) selected.
+--- 5 row(s) selected.
 >>drop external table t009t1 for hive.sch_t009.t009t1;
-
---- SQL operation complete.
->>get tables in schema "_HV_SCH_T009_";
-
-Tables in Schema TRAFODION._HV_SCH_T009_
-========================================
-
-T009T2
 
 --- SQL operation complete.
 >>select catalog_name, schema_name, object_name from table(natablecacheentries('user','local')) order by 1,2,3;
@@ -359,16 +329,24 @@ HIVE                                                                            
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_HIVE_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_SCH_T009_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              OBJECTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
-TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _PRIVMGR_MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ROLE_USAGE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 
---- 6 row(s) selected.
+--- 5 row(s) selected.
 >>create external table t009t1 for hive.sch_t009.t009t1;
+
+--- SQL operation complete.
+>>get tables in schema "_HV_SCH_T009_";
+
+Tables in Schema TRAFODION._HV_SCH_T009_
+========================================
+
+T009T1
+T009T2
 
 --- SQL operation complete.
 >>invoke hive.sch_t009.t009t1;
 
 -- Definition of hive table T009T1
--- Definition current  Wed Jan 25 21:06:12 2017
+-- Definition current  Tue Jan 31 21:32:51 2017
 
   (
     A                                INT
@@ -438,7 +416,7 @@ _HB__CELL__
 >>invoke trafodion."_HB__ROW__"."baseball";
 
 -- Definition of Trafodion external table TRAFODION."_HB__ROW__"."baseball"
--- Definition current  Wed Jan 25 21:06:21 2017
+-- Definition current  Tue Jan 31 21:33:04 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -451,7 +429,7 @@ _HB__CELL__
 >>invoke trafodion."_HB__CELL__"."baseball";
 
 -- Definition of Trafodion external table TRAFODION."_HB__CELL__"."baseball"
--- Definition current  Wed Jan 25 21:06:22 2017
+-- Definition current  Tue Jan 31 21:33:06 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -540,7 +518,7 @@ ROW_ID      COLS
 >>invoke hive.hive.store_sales;
 
 -- Definition of hive table STORE_SALES
--- Definition current  Wed Jan 25 21:06:36 2017
+-- Definition current  Tue Jan 31 21:33:17 2017
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -584,7 +562,7 @@ ROW_ID      COLS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352138396921126
+PLAN_ID .................. 212352658397193063
 ROWS_OUT ............. 1,709
 EST_TOTAL_COST ........... 0.27
 STATEMENT ................ select * from store_sales where ss_item_sk = 1;
@@ -713,7 +691,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352138398271228
+PLAN_ID .................. 212352658398567771
 ROWS_OUT ......... 2,920,643
 EST_TOTAL_COST ........... 1.07
 STATEMENT ................ select *
@@ -915,7 +893,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Wed Jan 25 21:06:43 2017
+-- Definition current  Tue Jan 31 21:33:22 2017
 
   (
     D_DATE_SK                        INT
@@ -1056,7 +1034,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352138408317415
+PLAN_ID .................. 212352658405327436
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -1147,7 +1125,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Wed Jan 25 21:06:55 2017
+-- Definition current  Tue Jan 31 21:33:32 2017
 
   (
     D_DATE_SK                        INT
@@ -1288,7 +1266,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352138418762665
+PLAN_ID .................. 212352658415800073
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
