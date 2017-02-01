@@ -54,6 +54,7 @@ exit;
 drop table t107helper;
 drop table t107100k cascade;
 drop table t107t2 cascade;
+drop table t107t3 cascade;
 
 ?section setup
 ---------------
@@ -140,6 +141,18 @@ select
 
 control query default comp_bool_140 reset;
 update statistics for table t107t2 on  every column sample 1000 rows;
+
+create table t107t3
+  (i    int ,
+   str1 char(100000),
+   str2 char(100000),
+   str3 char(100000),
+   str4 char(100000),
+   str5 char(100000),
+   str6 char(100000)
+  );
+insert into t107t3 values(1,'a','b','c','d','e','f'), (2,'a','b','c','d','e','f');
+
 #ifLINUX
 
 ?section dml
@@ -165,6 +178,20 @@ set envvar SCRATCH_IO_PENDING 280;
 control query default GEN_SORT_MAX_NUM_BUFFERS  '1';
 prepare xx from SELECT [last 1] c100k, str1 from t107100k order by 1,2;
 execute xx;
+
+-- Test #2a: sortRecLen > 512kb scratchIOBlock, overflow.
+cqd GEN_SORT_MAX_NUM_BUFFERS  '1';
+cqd GEN_SORT_NUM_BUFFERS '1';
+cqd GEN_SORT_MAX_BUFFER_SIZE '650000';
+cqd COMPRESSED_INTERNAL_FORMAT 'OFF';
+cqd COMPRESSED_INTERNAL_FORMAT_BMO 'OFF';
+SELECT [last 0] i, str1, str2, str3, str4, str5, str6  from t107t3 order by 1;
+cqd GEN_SORT_MAX_NUM_BUFFERS reset;
+cqd GEN_SORT_NUM_BUFFERS reset;
+cqd GEN_SORT_MAX_BUFFER_SIZE reset;
+cqd COMPRESSED_INTERNAL_FORMAT reset;
+cqd COMPRESSED_INTERNAL_FORMAT_BMO reset;
+
 
 -- Test #3 - causes intermediate merge
 set envvar SCRATCH_IO_PENDING 50;
