@@ -1467,7 +1467,7 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
                           // only 1 byte of a year > 255 provided, in
                           // this case leave the second byte zero,
                           // only change the second byte to 1 if the
-                          // first byte is non-zero
+                          // first byte is also zero
                           numBytesInProvidedVal = 2;
 
                         // set bytes 1, 2, 3 (year LSB, month, day) to
