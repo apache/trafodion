@@ -1453,13 +1453,15 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
                     // not filling with 0xFF
                     if (isDescending)
                       columnIsPartiallyProvided = FALSE;
-                    else if (numBytesInProvidedVal < 4)
+                    else if (numBytesInProvidedVal < 4 &&
+                             static_cast<const DatetimeType *>(pkType)->getSubtype() !=
+                             DatetimeType::SUBTYPE_SQLTime)
                       {
                         // avoid filling year, month, day with a zero,
                         // convert those to a 1
 
                         // sorry, this makes use of the knowledge that
-                        // encoded date/time/timestamp all start with
+                        // encoded date and timestamp all start with
                         // 4 bytes, 2 byte big-endian year, 1 byte
                         // month, 1 byte day
 
