@@ -1449,9 +1449,40 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
                     break;
 
                   case NA_DATETIME_TYPE:
+                    // those types should tolerate zeroing out trailing bytes, but
+                    // not filling with 0xFF
+                    if (isDescending)
+                      columnIsPartiallyProvided = FALSE;
+                    else if (numBytesInProvidedVal < 4 &&
+                             static_cast<const DatetimeType *>(pkType)->getSubtype() !=
+                             DatetimeType::SUBTYPE_SQLTime)
+                      {
+                        // avoid filling year, month, day with a zero,
+                        // convert those to a 1
+
+                        // sorry, this makes use of the knowledge that
+                        // encoded date and timestamp all start with
+                        // 4 bytes, 2 byte big-endian year, 1 byte
+                        // month, 1 byte day
+
+                        if (actEncodedKey[valOffset] != 0 && numBytesInProvidedVal == 1)
+                          // only 1 byte of a year > 255 provided, in
+                          // this case leave the second byte zero,
+                          // only change the second byte to 1 if the
+                          // first byte is also zero
+                          numBytesInProvidedVal = 2;
+
+                        // set bytes 1, 2, 3 (year LSB, month, day) to
+                        // 1 if they are not provided and zero
+                        for (int ymd=numBytesInProvidedVal; ymd<4; ymd++)
+                          if (actEncodedKey[valOffset+ymd] == 0)
+                            actEncodedKey[valOffset+ymd] = 1;
+                      }
+                    break;
+
                   case NA_INTERVAL_TYPE:
                     // those types should tolerate zeroing out trailing bytes, but
-                    // not filling with 0xFF 
+                    // not filling with 0xFF
                     if (isDescending)
                       columnIsPartiallyProvided = FALSE;
                     break;
