@@ -315,6 +315,7 @@ extern "C" short JOINTRANSACTION(int64 transid);
 extern "C" short TMF_GETTXHANDLE_(short *handle);
 extern "C" short TMF_SETTXHANDLE_(short *handle);
 extern "C" short TMWAIT();
+extern "C" short TMCLIENTEXIT();
 
 // Extended API
 extern "C" short GETTRANSID_EXT (TM_Transid_Type *transid);
@@ -343,7 +344,6 @@ extern "C" short DTM_GETTRANSINFO_EXT(TM_Transid_Type pv_transid, int32 *pp_seq_
                                       int16 *pp_checksum, int64 *pp_timestamp);
 extern "C" short DTM_GETTRANSIDSTR(int64 pv_transid, char *pp_transidstr);
 extern "C" short DTM_GETTRANSIDSTR_EXT(TM_Transid_Type pv_transid, char *pp_transidstr);
-
 
 // Internal use only!!
 extern "C" short DTM_QUIESCE(int32 pv_node); //Use for testing only

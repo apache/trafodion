@@ -2491,6 +2491,18 @@ int16 TMWAIT()
         return lv_rsp.iv_msg_hdr.miv_err.error;
 }
 
+//------------------------------------------------------------------------
+// TMCLIENTEXIT
+//
+// Purpose  : To close all the TM opens from the clients before exiting 
+// Params   : none.
+// ---------------------------------------------------------------------
+int16 TMCLIENTEXIT()
+{
+   int16 lv_error = FEOK;
+   lv_error = gv_tmlib.close_tm();
+   return lv_error;
+}
 
 
 // -------------------------------------------------------------------
@@ -3274,6 +3286,17 @@ short TMLIB::abortTransactionLocal(long transactionID)
   return jresult;
 } //abortTransactionLocal
 
+bool TMLIB::close_tm() 
+{
+   TPT_DECL       (lv_phandle);
+   if (!gv_tmlib.is_initialized())
+      return true;
+   for (int i = 0; i < iv_node_count; i++) {
+      if (phandle_get(&lv_phandle, i) == true)
+         msg_mon_close_process(&lv_phandle);
+   }
+   return true;
+}
 
 //----------------------------------------------------------------------------
 // DTM_LOCALTRANSACTION

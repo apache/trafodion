@@ -1830,6 +1830,7 @@ int main(int argc, char *argv[])
     } // while
     if(lv_shellExec)
         fclose(lp_in);
+    TMCLIENTEXIT();
     msg_mon_process_shutdown();
 
     return 0;
