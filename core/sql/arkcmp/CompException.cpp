@@ -109,7 +109,7 @@ FatalException::FatalException(const char *msg,
 {
   int len = 0;
   if(msg && (len = strlen(msg))) {
-    len = MINOF(len,sizeof(msg_));
+    len = MINOF(len,EXCEPTION_MSG_SIZE);
     strncpy(msg_, msg, len);
     msg_[len] = 0;
   }
@@ -118,7 +118,7 @@ FatalException::FatalException(const char *msg,
   }
   
   if(stackTrace && (len = strlen(stackTrace))) {
-    len = MINOF(len, sizeof(stackTrace_));
+    len = MINOF(len, STACK_TRACE_SIZE);
     strncpy(stackTrace_, stackTrace, len);
     stackTrace_[len] = 0;
   }
@@ -147,8 +147,8 @@ CmpInternalException::CmpInternalException(const char *msg,
   : BaseException(fileName, lineNum)
 {
   if(msg) {
-    strncpy(msg_, msg, sizeof(msg_));
-    msg_[sizeof(msg_)-1] = 0;
+    strncpy(msg_, msg, EXCEPTION_MSG_SIZE);
+    msg_[EXCEPTION_MSG_SIZE-1] = 0;
   }
   else {
     msg_[0] = 0;
@@ -174,7 +174,7 @@ AssertException::AssertException(const char *condition,
 {
   int len = 0;
   if(condition && (len = strlen(condition))) {
-    len = MINOF(len ,sizeof(condition_));
+    len = MINOF(len ,EXCEPTION_CONDITION_SIZE);
     strncpy(condition_, condition, len);
     condition_[len] = 0;
   }
@@ -183,7 +183,7 @@ AssertException::AssertException(const char *condition,
   }
   
   if(stackTrace && (len = strlen(stackTrace))) {
-    len = MINOF(len, sizeof(stackTrace_));
+    len = MINOF(len, STACK_TRACE_SIZE);
     strncpy(stackTrace_, stackTrace, len );
     stackTrace_[len] = 0;
   }
@@ -198,7 +198,7 @@ AssertException::AssertException(AssertException & e) :
   int len = 0;
   const char *condition = e.getCondition();
   if(condition && (len = strlen(condition))) {
-    len = MINOF(len ,sizeof(condition_));
+    len = MINOF(len , EXCEPTION_CONDITION_SIZE);
     strncpy(condition_, condition, len);
     condition_[len] = 0;
   }
@@ -208,7 +208,7 @@ AssertException::AssertException(AssertException & e) :
   
   const char *stackTrace = e.getStackTrace();
   if(stackTrace && (len = strlen(stackTrace))) {
-    len = MINOF(len, sizeof(stackTrace_));
+    len = MINOF(len, STACK_TRACE_SIZE);
     strncpy(stackTrace_, stackTrace, len);
     stackTrace_[len] = 0;
   }
@@ -255,8 +255,8 @@ PassOneAssertFatalException::PassOneAssertFatalException(const char *condition,
 		   lineNum)
 {
   if(condition) {
-    strncpy(condition_, condition, sizeof(condition_));
-    condition_[sizeof(condition_)-1] = 0;
+    strncpy(condition_, condition, EXCEPTION_CONDITION_SIZE);
+    condition_[EXCEPTION_CONDITION_SIZE-1] = 0;
   }
   else {
     condition_[0] = 0;
