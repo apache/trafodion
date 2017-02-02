@@ -863,8 +863,7 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
   } else if (strSize <= 19) {
     datatype = (createSignedDatatype ? REC_BIN64_SIGNED : REC_BIN64_UNSIGNED);
     length = sizeof(Int64);
-  } else if (strSize == 20) {
-    createSignedDatatype = FALSE;
+  } else if ((strSize == 20) && (!createSignedDatatype)) {
     datatype = REC_BIN64_UNSIGNED;
     length = sizeof(Int64);
   }    
