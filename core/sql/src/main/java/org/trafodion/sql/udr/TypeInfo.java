@@ -1121,7 +1121,7 @@ public class TypeInfo extends TMUDRSerializableObject {
         return (dataOffset_ >= 0);
     }
 
-    public int minBytesPerChar() throws UDRException {
+    int minBytesPerChar() throws UDRException {
         switch (getCharset())
         {
         case CHARSET_ISO88591:
@@ -1135,7 +1135,8 @@ public class TypeInfo extends TMUDRSerializableObject {
                                    charset_);
         }
     }
-    public int convertToBinaryPrecision(int decimalPrecision) throws UDRException {
+
+    int convertToBinaryPrecision(int decimalPrecision) throws UDRException {
         if (decimalPrecision < 1 || decimalPrecision > 18)
             throw new UDRException(
                                    38900,
@@ -1329,7 +1330,7 @@ public class TypeInfo extends TMUDRSerializableObject {
         return sb.toString();
     }
 
-    public void putEncodedStringIntoByteBuffer(ByteBuffer tgt, ByteBuffer src) throws UDRException
+    void putEncodedStringIntoByteBuffer(ByteBuffer tgt, ByteBuffer src) throws UDRException
     {
         // Copy the byte buffer with encoded characters into the target buffer.
         // For fixed-length strings, remove or add trailing blanks as necessary.
@@ -1406,15 +1407,15 @@ public class TypeInfo extends TMUDRSerializableObject {
             }
     }
 
-    public static short getCurrentVersion() { return 1; }
+    static short getCurrentVersion() { return 1; }
 
     @Override
-    public int serializedLength() throws UDRException{
+    int serializedLength() throws UDRException{
         return super.serializedLength() +  (17 * serializedLengthOfInt());
     }
         
     @Override
-    public int serialize(ByteBuffer outputBuffer) throws UDRException{
+    int serialize(ByteBuffer outputBuffer) throws UDRException{
 
       int origPos = outputBuffer.position();
 
@@ -1446,7 +1447,7 @@ public class TypeInfo extends TMUDRSerializableObject {
     }
 
     @Override
-    public int deserialize(ByteBuffer inputBuffer) throws UDRException{
+    int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();
 
@@ -1481,24 +1482,24 @@ public class TypeInfo extends TMUDRSerializableObject {
       return bytesDeserialized;
     }
 
-    public void setOffsets(int dataOffset, int indOffset, int vcOffset) {
+    void setOffsets(int dataOffset, int indOffset, int vcOffset) {
         nullIndOffset_  = indOffset;
         vcLenIndOffset_ = vcOffset;
         dataOffset_     = dataOffset;
     }
-    public int getDataOffset() {
+    int getDataOffset() {
         return dataOffset_ ;
     }
-    public int getIndOffset() {
+    int getIndOffset() {
         return nullIndOffset_ ;
     }
-    public int getVcLenIndOffset() {
+    int getVcLenIndOffset() {
         return vcLenIndOffset_ ;
     }
     
 
     // flags
-    public static final int TYPE_FLAG_4_BYTE_VC_LEN    = 0x00000001;
+    static final int TYPE_FLAG_4_BYTE_VC_LEN    = 0x00000001;
     
     private int /*SQLTypeCode */ sqlType_;      
     private int nullable_; // boolean

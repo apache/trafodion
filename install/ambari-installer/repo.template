@@ -17,7 +17,7 @@
   <os family="redhat6">
     <repo>
        <baseurl>REPLACE_WITH_RH6_REPO_URL</baseurl>
-       <repoid>Trafodion</repoid>
+       <repoid>Trafodion-REPO_VER</repoid>
        <reponame>Trafodion</reponame>
     </repo>
   </os>

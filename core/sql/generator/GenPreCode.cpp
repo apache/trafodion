@@ -6205,6 +6205,11 @@ RelExpr * MapValueIds::preCodeGen(Generator * generator,
                   {
                     availableValues -= subtractions;
                     availableValues += additions;
+                    // do the same for valuesNeededForVEGRewrite_,
+                    // which will be used for rewriting the char.
+                    // outputs
+                    valuesNeededForVEGRewrite_ -= subtractions;
+                    valuesNeededForVEGRewrite_ += additions;
                   }
               }
 

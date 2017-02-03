@@ -261,8 +261,9 @@ public:
        const ValueIdSet &predicatesToRemove,
        const ValueIdSet &commonPredicatesToAdd,
        const ValueIdSet &inputsToRemove,
-       CSEInfo *info,
-       NABoolean testRun);
+       ValueIdSet &valuesForVEGRewrite,
+       ValueIdSet &keyColumns,
+       CSEInfo *info);
 
   // ---------------------------------------------------------------------
   // Function for testing the eligibility of this

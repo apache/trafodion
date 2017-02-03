@@ -28,7 +28,7 @@
     <service>
        <name>TRAFODION</name>
        <extends>common-services/TRAFODION/2.1</extends>
-       <version>2.1</version>
+       <version>REPO_VER</version>
     </service>
   </services>
 </metainfo>

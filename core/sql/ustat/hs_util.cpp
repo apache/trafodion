@@ -1182,7 +1182,9 @@ double getRowCountForFetchFuncs(HSTableDef *tabDef, NABoolean &isEstimate)
   // On NSK and Linux, getRowCount() will return an accurate count
   // (from DP2 file label), in all testing environments (and in almost
   //  all other cases).
-  rows = tabDef->getRowCount(isEstimate);
+  Int32 errorCode = 0;
+  Int32 breadCrumb = 0;
+  rows = tabDef->getRowCount(isEstimate, errorCode /* out */, breadCrumb /* out */);
 
   if (!isHbaseTable && !isHiveTable)
     HSFuncExecQuery("CONTROL QUERY DEFAULT USTAT_FETCHCOUNT_ACTIVE 'OFF'");

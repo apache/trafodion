@@ -92,6 +92,8 @@ class HSTableDef : public NABasicObject
     virtual void getRowChangeCounts(Int64 &inserts, Int64 &deletes, Int64 &updates) = 0;
     virtual void resetRowCounts() = 0;
     virtual Int64 getRowCount(NABoolean &isEstimate,
+                              Int32 &errorCode,
+                              Int32 &breadCrumb,
                               NABoolean estimateIfNecessary = TRUE) = 0;
     virtual Int64 getRowCount(NABoolean &isEstimate,
                       Int64 &numInserts,
@@ -99,6 +101,8 @@ class HSTableDef : public NABasicObject
                       Int64 &numUpdates,
                       Int64 &numPartitions,
                       Int64 &minRowCtPerPartition,
+                      Int32 &errorCode,
+                      Int32 &breadCrumb,
                       NABoolean estimateIfNecessary
                      ) = 0;
     Int64 getRowCountUsingSelect();
@@ -186,13 +190,18 @@ class HSSqTableDef : public HSTableDef
 
     void getRowChangeCounts(Int64 &inserts, Int64 &deletes, Int64 &updates);
     void resetRowCounts();
-    Int64 getRowCount(NABoolean &isEstimate, NABoolean estimateIfNecessary = TRUE);
+    Int64 getRowCount(NABoolean &isEstimate,
+                      Int32 &errorCode,
+                      Int32 &breadCrumb,
+                      NABoolean estimateIfNecessary = TRUE);
     Int64 getRowCount(NABoolean &isEstimate,
                       Int64 &numInserts,
                       Int64 &numDeletes,
                       Int64 &numUpdates,
                       Int64 &numPartitions,
                       Int64 &minRowCtPerPartition,
+                      Int32 &errorCode,
+                      Int32 &breadCrumb,
                       NABoolean estimateIfNecessary
                      );
     Lng32 collectFileStatistics() const;
@@ -273,9 +282,14 @@ class HSHiveTableDef : public HSTableDef
       }
     void resetRowCounts()
       {}
-    Int64 getRowCount(NABoolean &isEstimate, NABoolean estimateIfNecessary = TRUE)
+    Int64 getRowCount(NABoolean &isEstimate,
+                      Int32 &errorCode,
+                      Int32 &breadCrumb, 
+                      NABoolean estimateIfNecessary = TRUE)
       {
         isEstimate = TRUE;
+        errorCode = 0;
+        breadCrumb = -3;
         return (estimateIfNecessary ? tableStats_->getEstimatedRowCount() : 0);
       }
     Int64 getRowCount(NABoolean &isEstimate,
@@ -284,6 +298,8 @@ class HSHiveTableDef : public HSTableDef
                       Int64 &numUpdates,
                       Int64 &numPartitions,
                       Int64 &minRowCtPerPartition,
+                      Int32 &errorCode,
+                      Int32 &breadCrumb,
                       NABoolean estimateIfNecessary);
     Lng32 collectFileStatistics() const
       {
@@ -377,13 +393,18 @@ class HSHbaseTableDef : public HSTableDef
       }
     void resetRowCounts()
       {}
-    Int64 getRowCount(NABoolean &isEstimate, NABoolean estimateIfNecessary = TRUE);
+    Int64 getRowCount(NABoolean &isEstimate,
+                      Int32 &errorCode,
+                      Int32 &breadCrumb,
+                      NABoolean estimateIfNecessary = TRUE);
     Int64 getRowCount(NABoolean &isEstimate,
                       Int64 &numInserts,
                       Int64 &numDeletes,
                       Int64 &numUpdates,
                       Int64 &numPartitions,
                       Int64 &minRowCtPerPartition,
+                      Int32 &errorCode,
+                      Int32 &breadCrumb,
                       NABoolean estimateIfNecessary);
     Lng32 collectFileStatistics() const
       {

@@ -301,7 +301,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
      *  @return Enum for the call phase we are in.
      */
     public CallPhase getCallPhase() { return callPhase_; }
-    public void setCallPhase(int cp) { callPhase_ = CallPhase.getEnum(cp); }
+    void setCallPhase(int cp) { callPhase_ = CallPhase.getEnum(cp); }
     /**
      *  Get current user.
      *
@@ -1259,9 +1259,10 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         callPhase_ = savedCallPhase;
     }
 
-    // UDR writers can ignore these methods
-    public static short getCurrentVersion() { return 1; }
-    public int serializedLength() throws UDRException{
+    // UDR writers can ignore these package-private methods
+    static short getCurrentVersion() { return 1; }
+
+    int serializedLength() throws UDRException{
       int result = super.serializedLength() +
               serializedLengthOfString(name_) +
               serializedLengthOfString(currentUser_) +
@@ -1287,7 +1288,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
       return result;
     }
 
-    public int serialize(ByteBuffer outputBuffer) throws UDRException {
+    int serialize(ByteBuffer outputBuffer) throws UDRException {
       int i;
 
       int origPos = outputBuffer.position();
@@ -1355,7 +1356,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
       return bytesSerialized;
     }
 
-    public int deserialize(ByteBuffer inputBuffer) throws UDRException{
+    int deserialize(ByteBuffer inputBuffer) throws UDRException{
       int tempInt = 0;
 
       int origPos = inputBuffer.position();
@@ -1459,9 +1460,10 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         inputTableInfo_ = new TableInfo[MAX_INPUT_TABLES];
         predicates_ = new Vector<PredicateInfo>();
     }
-    public void validateCallPhase(CallPhase start,
-                                  CallPhase end,
-                                  String callee) throws UDRException {
+
+    void validateCallPhase(CallPhase start,
+                           CallPhase end,
+                           String callee) throws UDRException {
         if (callPhase_.ordinal() < start.ordinal() && 
             callPhase_ != CallPhase.UNKNOWN_CALL_PHASE)
             throw new UDRException(
@@ -1502,9 +1504,9 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         }
     }
 
-    public void setRuntimeInfo(String qid,
-                               int totalNumInstances,
-                               int myInstanceNum)
+    void setRuntimeInfo(String qid,
+                        int totalNumInstances,
+                        int myInstanceNum)
     {
         // set information that is not yet known at compile time
         queryId_ = qid;

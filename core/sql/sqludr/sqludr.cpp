@@ -7458,7 +7458,8 @@ int UDRPlanInfo::getDesiredDegreeOfParallelism() const
  *  @li @c DEFAULT_DEGREE_OF_PARALLELISM:
  *        Currently the same as ANY_DEGREE_OF_PARALLELISM.
  *        The optimizer will use a heuristic based on
- *        the estimated cardinality.
+ *        the estimated cardinality (which you can set in
+ *        the UDR::describeStatistics() interface).
  *  @li @c MAX_DEGREE_OF_PARALLELISM:
  *        Choose the highest possible degree of parallelism.
  *  @li @c ONE_INSTANCE_PER_NODE:
@@ -8080,6 +8081,15 @@ void UDR::describeStatistics(UDRInvocationInfo &info)
  *    plan.setDesiredDegreeOfParallelism(1); // serial execution
  *  @endcode
  *
+ *  Note that this is NOT foolproof, and that the TMUDF might still
+ *  need to validate the PARTITION BY and ORDER BY syntax used in its
+ *  invocation.
+ *
+ *  Note also that in order to get parallel execution, you may need to
+ *  implement the UDR::describeStatistics() interface and provide a
+ *  cardinality estimate. Alternatively, you can set the
+ *  PARALLEL_NUM_ESPS CQD.
+ *
  *  @see UDRPlanInfo::setDesiredDegreeOfParallelism()
  *  @see UDRInvocationInfo::setFuncType()
  *
@@ -8109,7 +8119,7 @@ void UDR::describeDesiredDegreeOfParallelism(UDRInvocationInfo &info,
  *  or ordering of the table-valued inputs is required to produce the required
  *  result properties.
  *
- *  TBD: Default behavior.
+ *  This interface is currently not used.
  *  
  *  @param info A description of the UDR invocation.
  *  @param plan Plan-related description of the UDR invocation.

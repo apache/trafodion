@@ -354,7 +354,9 @@ class ExpHbaseInterface : public NABasicObject
   virtual Lng32 estimateRowCount(HbaseStr& tblName,
                                  Int32 partialRowSize,
                                  Int32 numCols,
-                                 Int64& estRC) = 0;
+                                 Int32 retryLimitMilliSeconds,
+                                 Int64& estRC,
+                                 Int32& breadCrumb) = 0;
   virtual Lng32 getLatestSnapshot(const char * tableName, char *& snapshotName, NAHeap * heap) = 0;
   virtual Lng32 cleanSnpTmpLocation( const char * path)=0;
   virtual Lng32 setArchivePermissions( const char * tbl)=0;
@@ -666,7 +668,9 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
   virtual Lng32 estimateRowCount(HbaseStr& tblName,
                                  Int32 partialRowSize,
                                  Int32 numCols,
-                                 Int64& estRC);
+                                 Int32 retryLimitMilliSeconds,
+                                 Int64& estRC,
+                                 Int32& breadCrumb);
 
   virtual Lng32 getLatestSnapshot(const char * tableName, char *& snapshotName, NAHeap * heap);
   virtual Lng32 cleanSnpTmpLocation( const char * path);

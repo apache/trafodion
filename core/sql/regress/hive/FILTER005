@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/sh
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,37 +20,15 @@
 #
 # @@@ END COPYRIGHT @@@
 
-# generate new unique key local to ambari server
-tf=/tmp/trafssh.$$
-rm -f ${tf}*
-/usr/bin/ssh-keygen -q -t rsa -N '' -f $tf
 
-instloc="$1"
-mpack="$2"
-vers="$3"
-pkgcnt="$4" #RPM package count
-
-config="${instloc}/${mpack}/common-services/TRAFODION/2.1/configuration/trafodion-env.xml"
-
-chmod 0600 $config  # protect key
-sed -i -e "/TRAFODION-GENERATED-SSH-KEY/r $tf" $config # add key to config properties
-
-rm -f ${tf}*
-
-# tar up the mpack, included generated key
-tball="${instloc}/${mpack}-${vers}.tar.gz"
-
-cd "${instloc}"
-tar czf "$tball" ${mpack}
-
-# install ambari mpack
-if (( pkgcnt > 1 ))
-then
-  cmd="upgrade-mpack"
-else
-  cmd="install-mpack"
+fil=$1
+if [ "$fil" = "" ]; then
+  echo "Usage: $0 filename"
+  exit 1
 fi
-ambari-server $cmd --verbose --mpack="$tball"
-ret=$?
 
-exit $ret
+sed "
+s/Logging Location: \/bulkload\/logs\/ERR.*/Logging Location:@loggingLocation@/
+s/Logging Location: \/bulkload\/logs\/TEST005\/ERR.*/Logging Location:@TEST005LoggingLocation@/
+s/Time:.*/Time:@time@/
+" $fil

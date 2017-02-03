@@ -401,8 +401,10 @@ Lng32 HSFuncExecTransactionalQueryWithRetry( const char *dml
     return retcode;
   }
 
-  // The HSErrorCatcher captures any diagnostics when it goes out-of-scope.
-  HSErrorCatcher errorCatcher(retcode, sqlcode, errorToken, TRUE);
+  // Note: We don't use the HSErrorCatcher object to capture diagnostic
+  // information here. The reason is, HSErrorCatcher works by lexical scope,
+  // but the place where diagnostics are available to us does not nicely
+  // match lexical scope. Instead, we call HSFuncMergeDiags directly.
  
   // On very busy system, some "update statistics" implementation steps like
   // "COLLECT FILE STATISTICS" step in HSTableDef::collectFileStatistics()
@@ -452,6 +454,15 @@ Lng32 HSFuncExecTransactionalQueryWithRetry( const char *dml
       }
     }
 
+    // If we are on our last retry, capture any diagnostics from
+    // the begin or statement failure. (If we don't capture them
+    // now, they will be cleared out of the CLI when we do the
+    // ROLLBACK below.)
+    if (retcode && (retry >= limit))
+    {
+      HSFuncMergeDiags(sqlcode, errorToken, NULL, TRUE /* get CLI diags */);
+    }
+
     // If we had an error (on the begin, the statement or the commit),
     // try rolling back the transaction. It might have already been
     // rolled back, in which case the Rollback method just ignores
@@ -497,6 +508,12 @@ Lng32 HSClearCLIDiagnostics()
   Lng32 retcode;
   retcode = SQL_EXEC_ClearDiagnostics(NULL);
   return retcode;
+}
+
+// Obtain any JNI diagnostic text stored in the CLI
+const char * HSFuncGetJniErrorStr()
+{
+  return GetCliGlobals()->currContext()->getJniErrorStrPtr();
 }
 
 // -----------------------------------------------------------------------
@@ -1036,7 +1053,7 @@ Lng32 HSTranMan::Begin(const char *title,NABoolean inactivateErrorCatcher)
           {
             NAString stmtText = "BEGIN WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
-                                       HS_QUERY_ERROR, NULL, NULL, inactivateErrorCatcher);
+                                       HS_QUERY_ERROR, NULL, NULL, 0, FALSE, inactivateErrorCatcher);
             if (retcode_ >= 0)
               {
                 transStarted_ = TRUE;
@@ -1091,7 +1108,7 @@ Lng32 HSTranMan::Commit(NABoolean inactivateErrorCatcher)
           {
             NAString stmtText = "COMMIT WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
-                                       HS_QUERY_ERROR, NULL, NULL, inactivateErrorCatcher);
+                                       HS_QUERY_ERROR, NULL, NULL, 0, FALSE, inactivateErrorCatcher);
 
             // transaction has ended
             transStarted_ = FALSE;
@@ -1173,7 +1190,7 @@ Lng32 HSTranMan::Rollback(NABoolean inactivateErrorCatcher)
           {
             NAString stmtText = "ROLLBACK WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
-                                       HS_QUERY_ERROR, NULL, NULL, inactivateErrorCatcher);
+                                       HS_QUERY_ERROR, NULL, NULL, 0, FALSE, inactivateErrorCatcher);
             // transaction has ended
             transStarted_ = FALSE;
             if (retcode_ < 0)

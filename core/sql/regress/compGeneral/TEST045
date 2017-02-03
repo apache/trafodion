@@ -486,6 +486,17 @@ create table item
 --  )
 ;
 
+insert into date_dim values (
+  1, '1', date '2000-01-01', 1, 1, 1, 2000, 1, 1, 1, 1, 2000, 1, 1, 'aday', 'aq', ' ', ' ', ' ', 1, 31, 0, 0, ' ', ' ', ' ', ' ', ' '
+);
+
+insert into store_sales values (
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0
+);
+
+update statistics for table date_dim on every column;
+update statistics for table date_dim on (d_qoy, d_year);
+update statistics for table store_sales on every column;
 
 --------------------------------------------------------------------
 ?section queries

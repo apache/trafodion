@@ -2396,17 +2396,17 @@ public class TupleInfo extends TMUDRSerializableObject {
     } 
     
     // UDR writers can ignore these methods
-    public TupleInfo(TMUDRObjectType objType, short version) {
+    TupleInfo(TMUDRObjectType objType, short version) {
         super(objType, version);
         recordLength_ = -1;
         wasNull_ = false;
         columns_ = new Vector<ColumnInfo>();
     }
     
-    public static short getCurrentVersion() { return 1; }
+    static short getCurrentVersion() { return 1; }
 
     @Override
-    public int serializedLength() throws UDRException {
+    int serializedLength() throws UDRException {
       int result = super.serializedLength() +
         2 * serializedLengthOfInt();
 
@@ -2417,7 +2417,7 @@ public class TupleInfo extends TMUDRSerializableObject {
     }
 
     @Override
-    public int serialize(ByteBuffer outputBuffer) throws UDRException{
+    int serialize(ByteBuffer outputBuffer) throws UDRException{
       int origPos = outputBuffer.position();
 
       super.serialize(outputBuffer);
@@ -2440,7 +2440,7 @@ public class TupleInfo extends TMUDRSerializableObject {
     }
 
     @Override
-    public int deserialize(ByteBuffer inputBuffer) throws UDRException{
+    int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();
 
@@ -2471,14 +2471,15 @@ public class TupleInfo extends TMUDRSerializableObject {
       return bytesDeserialized;
     }
     
-    public ByteBuffer getRow(){
+    ByteBuffer getRow(){
         return row_ ;
     }
-    public int getRecordLength() {
+
+    int getRecordLength() {
         return recordLength_;
     }
 
-    public void setRow(byte[] rowByteArr) throws UDRException {
+    void setRow(byte[] rowByteArr) throws UDRException {
         row_ = ByteBuffer.wrap(rowByteArr);
         row_.order(ByteOrder.LITTLE_ENDIAN);
 
@@ -2491,7 +2492,7 @@ public class TupleInfo extends TMUDRSerializableObject {
                                    rowByteArr.length);
     }
 
-    public ByteBuffer encode(TypeInfo t, String val) throws UDRException
+    ByteBuffer encode(TypeInfo t, String val) throws UDRException
     {
         CharsetEncoder encoder;
         ByteBuffer result;
@@ -2548,7 +2549,7 @@ public class TupleInfo extends TMUDRSerializableObject {
         return result;
     }
 
-    public String decode(TypeInfo t, byte[] buf) throws UDRException
+    String decode(TypeInfo t, byte[] buf) throws UDRException
     {
         CharsetDecoder decoder;
         String result;

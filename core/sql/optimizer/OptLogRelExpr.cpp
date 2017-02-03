@@ -4772,10 +4772,26 @@ MapValueIds::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 
   // Synthesize estimated logical properties from my child's
 
+  const ColStatDescList *colStats =
+    &(child(0).outputLogProp(inputEstLogProp)->getColStats());
+  CostScalar baseCardinality =
+    child(0).outputLogProp(inputEstLogProp)->getResultCardinality();
+
+  if (cseRef_) // could also do this unconditionally
+    {
+      ColStatDescList *mappedStats = new(CmpCommon::statementHeap())
+        ColStatDescList(CmpCommon::statementHeap());
+ 
+      mappedStats->makeMappedDeepCopy(*colStats,
+                                      map_,
+                                      TRUE);
+      colStats = mappedStats;
+    }
+
   EstLogPropSharedPtr myEstLogProp =
     synthEstLogPropForUnaryLeafOp (inputEstLogProp,
-	    child(0).outputLogProp(inputEstLogProp)->getColStats(),
-	    child(0).outputLogProp(inputEstLogProp)->getResultCardinality());
+                                   *colStats,
+                                   baseCardinality);
 
   getGroupAttr()->addInputOutputLogProp (inputEstLogProp, myEstLogProp);
 
@@ -4836,14 +4852,61 @@ const Lng32 Scan::MAX_NUM_INDEX_JOINS = 1;
 void
 Scan::synthEstLogProp(const EstLogPropSharedPtr& inputEstLogProp)
 {
-  if (getGroupAttr()->isPropSynthesized(inputEstLogProp)) return;
+  if (getGroupAttr()->isPropSynthesized(inputEstLogProp))
+    return;
 
   // synthesize my estimated logical properties from the initial
-  // table statistics
+  // table statistics or the stats of a common subexpression
+  const ColStatDescList *colStats =
+    &getTableDesc()->getTableColStats();
+  CostScalar baseCardinality = getBaseCardinality();
+
+  if (commonSubExpr_)
+    {
+      ValueIdList tempTableCols;
+      ValueIdList tempTableVEGCols;
+      ValueIdList cseCols;
+      CSEInfo *info =
+        CmpCommon::statement()->getCSEInfo(commonSubExpr_->getName());
+      // The original tree is the child of the CommonSubExprRef that
+      // did the analysis of whether to use CSEs
+      CommonSubExprRef *analyzingCSERef =
+        info->getConsumer(info->getIdOfAnalyzingConsumer());
+
+      // this makes the ValueIdList of only those CSE columns that are
+      // actually used in the temp table
+      commonSubExpr_->makeValueIdListFromBitVector(
+           cseCols,
+           analyzingCSERef->getColumnList(),
+           info->getNeededColumns());
+
+      getTableDesc()->getUserColumnList(tempTableCols);
+      getTableDesc()->getEquivVEGCols(tempTableCols, tempTableVEGCols);
+      // make a ValueIdMap from the original tree for the common
+      // subexpression (bottom) to the columns of our temp table (top)
+      ValueIdMap cseToTempScanMap(tempTableVEGCols,
+                                  cseCols);
+
+      // get to the ColStatDesc of the common subexpression
+      const ColStatDescList &origCSEColStats(
+           analyzingCSERef->getEstLogProps()->colStats());
+
+      ColStatDescList *mappedStats = new(CmpCommon::statementHeap())
+        ColStatDescList(CmpCommon::statementHeap());
+
+      // now translate the col stats of the original CSE to the temp table
+      mappedStats->makeMappedDeepCopy(origCSEColStats,
+                                      cseToTempScanMap,
+                                      FALSE);
+
+      colStats = mappedStats;
+      baseCardinality = analyzingCSERef->getEstLogProps()->getResultCardinality();
+    }
+
   EstLogPropSharedPtr myEstLogProp =
-    synthEstLogPropForUnaryLeafOp (inputEstLogProp,
-			       getTableDesc()->getTableColStats(),
-			       getBaseCardinality());
+    synthEstLogPropForUnaryLeafOp(inputEstLogProp,
+                                  *colStats,
+                                  baseCardinality);
 
   QueryAnalysis *qa = QueryAnalysis::Instance();
 

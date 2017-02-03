@@ -75,12 +75,6 @@ class Node(Script):
          content=sshopt,
          mode=0600)
 
-    # env files use java_home, be sure we are on 1.8 
-    # might be better to check this earlier (in service_advisor.py)
-    if params.java_version < 8:
-      print "Error: Java 1.8 required for Trafodion and HBase"
-      print "       Use 'ambari-server setup' to change JDK and restart HBase before continuing"
-      exit(1)
     ##################
     # create env files
     env.set_params(params)
@@ -90,7 +84,7 @@ class Node(Script):
          group = params.traf_group, 
          content=InlineTemplate(params.traf_env_template,trim_blocks=False),
          mode=0644)
-    # initialize & verify env (e.g., creates $TRAF_HOME/tmp as trafodion user)
+    # initialize & verify env (e.g., bashrc creates $TRAF_HOME/tmp as trafodion user)
     cmd = "source ~/.bashrc"
     Execute(cmd,user=params.traf_user)
 

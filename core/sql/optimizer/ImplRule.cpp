@@ -2381,12 +2381,9 @@ RelExpr * HbaseUpdateRule::nextSubstitute(RelExpr * before,
   // SimpleFileScanOptimizer::constructSearchKey()
   /////////////////////////////////////////////////////////////////////////
   ValueIdSet exePreds(scan->getSelectionPred());
-
-  // only get the first member from the index set
-  if ( scan->deriveIndexOnlyIndexDesc().entries() == 0 )
-    return NULL;
-
-  IndexDesc* idesc = (scan->deriveIndexOnlyIndexDesc())[0];
+  // Use indexdesc of base table, een if the optimizer has chosen an
+  // index access path for this soon to be gone scan.
+  const IndexDesc* idesc = scan->getTableDesc()->getClusteringIndex();
   ValueIdSet clusteringKeyCols(
        idesc->getClusteringKeyCols());
   ValueIdSet generatedComputedColPreds;

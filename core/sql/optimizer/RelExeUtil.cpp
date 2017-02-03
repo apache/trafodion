@@ -116,6 +116,21 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
 // Member functions for class GenericUtilExpr
 // -----------------------------------------------------------------------
 
+NABoolean GenericUtilExpr::duplicateMatch(const RelExpr & other) const
+{
+  if (NOT RelExpr::duplicateMatch(other))
+    return FALSE;
+
+  // a simplified version, should really check all fields
+  GenericUtilExpr &o = (GenericUtilExpr &) other;
+  if (NOT (stmtText_ == o.stmtText_ ||
+           stmtText_ && o.stmtText_ &&
+           (strcmp(stmtText_, o.stmtText_) == 0)))
+    return FALSE;
+
+  return TRUE;
+}
+
 RelExpr * GenericUtilExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
   GenericUtilExpr *result;
@@ -292,6 +307,33 @@ NABoolean ExeUtilExpr::pilotAnalysis(QueryAnalysis* qa)
     return FALSE;
 
   if (!qa->newTableAnalysis(this))
+    return FALSE;
+
+  return TRUE;
+}
+
+HashValue ExeUtilExpr::topHash()
+{
+  HashValue result = GenericUtilExpr::topHash();
+
+  result ^= tableId_;
+
+  return result;
+}
+
+NABoolean ExeUtilExpr::duplicateMatch(const RelExpr & other) const
+{
+  if (NOT GenericUtilExpr::duplicateMatch(other))
+    return FALSE;
+
+  // a simplified version, should really check all fields
+  ExeUtilExpr &o = (ExeUtilExpr &) other;
+  if (NOT (tableId_ == o.tableId_))
+    return FALSE;
+
+  // if tableDesc is not allocated, compare the names
+  if (tableId_ == NULL &&
+      NOT(tableName_ == o.tableName_))
     return FALSE;
 
   return TRUE;
@@ -5878,7 +5920,10 @@ RelExpr * ExeUtilHbaseCoProcAggr::bindNode(BindWA *bindWA)
   // BindWA keeps list of coprocessors used, so privileges can be checked.
   bindWA->insertCoProcAggr(this);
 
-  CostScalar rowsAccessed(naTable->estimateHBaseRowCount());
+  Int32 retryLimitMilliSeconds = 5000; // use at most 5 seconds on retries
+  Int32 errorCode = 0;
+  Int32 breadCrumb = 0;
+  CostScalar rowsAccessed(naTable->estimateHBaseRowCount(retryLimitMilliSeconds,errorCode /* out */,breadCrumb /* out */));
   setEstRowsAccessed(rowsAccessed);
 
   return boundExpr;

@@ -61,7 +61,7 @@ public:
     memoryQuotaMB_ = 0;
     bmoMaxMemThresholdMB_ =0;
     pressureThreshold_ = 10;
-    scratchIOBlockSize_ = 0;
+    scratchIOBlockSize_ = 524288; //512kb initial size.
   };
 
   // ---------------------------------------------------------------------

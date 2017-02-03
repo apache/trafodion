@@ -2470,6 +2470,7 @@ public:
 
     ROLES_FOR_ROLE_,
     USERS_FOR_ROLE_,
+    PRIVILEGES_FOR_ROLE_,
 
     USERS_,
     CURRENT_USER_,

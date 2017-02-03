@@ -499,8 +499,9 @@ public:
        const ValueIdSet &predicatesToRemove,
        const ValueIdSet &commonPredicatesToAdd,
        const ValueIdSet &inputsToRemove,
-       CSEInfo *info,
-       NABoolean testRun);
+       ValueIdSet &valuesForVEGRewrite,
+       ValueIdSet &keyColumns,
+       CSEInfo *info);
 
  // synthesizes compRefOpt constraints.
   virtual void processCompRefOptConstraints(NormWA * normWAPtr) ;
