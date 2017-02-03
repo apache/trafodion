@@ -1203,6 +1203,14 @@ public:
     baseColRefs_ = val;
   }
 
+  NABoolean xformedEffUpsert() const
+  {
+    return xformedEffUpsert_;
+  }
+  void setXformedEffUpsert(NABoolean x)
+  {
+    xformedEffUpsert_ = TRUE;
+  }
   NABoolean isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,NABoolean omittedCurrentDefaultCols) const;
   RelExpr* xformUpsertToMerge(BindWA *bindWA) ;
   RelExpr* xformUpsertToEfficientTree(BindWA *bindWA) ;
@@ -1310,7 +1318,7 @@ private:
   // If this is TRUE, a sample table will be created during the bulk load for
   // use by Update Statistics.
   NABoolean createUstatSample_;
-
+  NABoolean xformedEffUpsert_;
   // ColReference list of the base table columns used in creating the
   // newRecExprArray_ during bindNode(). Used only for index maintenance.
   ItemExprList *baseColRefs_;

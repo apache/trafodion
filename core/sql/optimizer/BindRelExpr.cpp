@@ -10800,7 +10800,7 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
     new (bindWA->wHeap())
     Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
 
- 
+   bindWA->getCurrentScope()->context()->inUpsertXform() = TRUE;
   //join predicate between source columns and target table.
   ItemExpr * keyPred = NULL;
   ItemExpr * keyPredPrev = NULL;
@@ -10949,6 +10949,8 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   nvl = nvl->bindNode(bindWA);
   setProducedMergeIUDIndicator(nvl->getValueId());
 
+  setXformedEffUpsert(TRUE);
+  bindWA->getCurrentScope()->context()->inUpsertXform() =  FALSE;
   return topNode; 
 }
 

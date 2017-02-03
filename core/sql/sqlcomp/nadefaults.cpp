@@ -3416,7 +3416,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,           "OFF"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
   DDkwd__(TRAF_UPSERT_MODE,                            "MERGE"),
-  DDkwd__(TRAF_UPSERT_TO_EFF_TREE,                     "OFF"),
+  DDkwd__(TRAF_UPSERT_TO_EFF_TREE,                     "ON"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
 

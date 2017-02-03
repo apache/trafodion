@@ -271,6 +271,13 @@ select substring(operator,1,16) operator
 from table (explain(NULL,'XX')) t
 where operator LIKE '%TRAFODION_MERGE%' ;
 
+prepare explainItEff from
+select substring(operator,1,16) operator
+from table (explain(NULL,'XX')) t
+where operator LIKE '%SEQUENCE%' ;
+
+
+
 insert into t015t1 values (1,1), (2,2);
 insert into t015t3 values (1,1,1), (2,2,2), (3,3,3);
 insert into t015t5 values (1,2,3,4,5);
@@ -827,25 +834,25 @@ prepare XX from UPSERT INTO DEC1
 (ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a[10]), DEFAULT), 
 ?b[10], ?c[10], ?d[10], ?e[10], null, ?f[10], null) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO DEC1 
 (ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 VALUES  (?a, ?b, ?c, ?d, ?e, null, ?f, null) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO DEC1 
 (ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a), DEFAULT), 
 ?b, ?c, ?d, ?e, null, ?f, null) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO DE 
 (ID, dataElementConceptID, valueDomainID)  VALUES  
 (NVL((select a.id from DE a where a.dataElementConceptID = 
 (select b.id from DEC1 b where b.codeValue = ?) and a.valueDomainID = ? ), DEFAULT),  
 NVL((select d.id from DEC1 d where d.codeValue = ?), NULL),  ? ) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO ODT 
 (ID, objectTypeID, dataElementID, objectCategoryTypeCode)  
@@ -857,26 +864,26 @@ a.objectCategoryTypeCode = ? and  a.dataElementID =
 NVL((select g.id from OT g where g.objectCode = ? and g.version = ?), NULL),   
 NVL((select h.id from DE h where h.dataElementConceptID = 
 (select i.id from DEC1 i where i.codeValue = ?) and h.valueDomainID = ? ), NULL), ? );
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO DE 
 (ID, dataElementConceptID, valueDomainID)  VALUES  
 (NVL((select a.id from DE a where a.dataElementConceptID = 
 (select b.id from DEC1 b where b.codeValue = ?) and a.valueDomainID = ? ), DEFAULT),  
 (select d.id from DEC1 d where d.codeValue = ?),  ? ) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
 VALUES  (1,  (select d.id from DEC1 d where d.codeValue = ?),  3 ) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
 VALUES  (?[10], ?[10], ?[10] ) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
 VALUES  (1,  (select d.id from DEC1 d where d.codeValue = 'aa'),  3 ) ;
-execute explainIt;
+execute explainItEff;
 
 --upsert transformation to eff tree tests
 cqd traf_upsert_to_eff_tree 'ON';
