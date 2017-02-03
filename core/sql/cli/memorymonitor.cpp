@@ -130,6 +130,14 @@ MemoryMonitor::MemoryMonitor(Lng32 windowSize,
     return;
   }
 
+  // log info to a file, if requested
+  char *lv_logfile = getenv("SQL_MEMMONITOR_LOGFILE");
+  if (lv_logfile) {
+    fd_logfile_ = fopen(lv_logfile, "a");
+  }
+  else
+    fd_logfile_ = NULL;
+
   ULng32 pageSize = 0;  
 
   fd_vmstat_ = fopen("/proc/vmstat", "r");
@@ -277,6 +285,27 @@ void MemoryMonitor::update(float &scale) {
         float normalizedPageFaultRate = pageFaultRate_ / physKBytesRatio_;
         pressure_ = MAXOF(MINOF(((1 - 4 * percentFree) * (normalizedPageFaultRate / 25) * commitPhysRatio_), 100), 0);
 	scale = 1 + (100 - pressure_) * 0.05;
+
+        if (fd_logfile_) {
+          time_t now = time(0);
+          char timebuf[32];
+          char* dt = ctime_r(&now, timebuf);
+          size_t dtLen = strlen(timebuf);
+
+          // remove trailing \n from timebuf
+          if (dtLen > 1)
+            timebuf[dtLen-1] = '\0';
+          fprintf(fd_logfile_,
+                  "%s: pctFree=%f, pageFaultRate=%f, (free*normpagefault*commitratio) = (%f * %f * %f), pressure=%d\n",
+                  timebuf,
+                  percentFree,
+                  pageFaultRate_,
+                  (1 - 4 * percentFree),
+                  (normalizedPageFaultRate / 25),
+                  commitPhysRatio_,
+                  pressure_);
+          fflush(fd_logfile_);
+        }
 	return;
 }
 

@@ -123,6 +123,7 @@ private:
   static ULng32 threadId_;
   FILE* fd_meminfo_;
   FILE* fd_vmstat_;
+  FILE* fd_logfile_;
 };
 #endif
 
