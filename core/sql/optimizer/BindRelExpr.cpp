@@ -10536,9 +10536,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           *CmpCommon::diags() << DgSqlCode(-4490);
       }
   }
-
-  if (isUpsertThatNeedsMerge(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols)) {
-    if (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) 	
+  NABoolean toMerge = FALSE;
+  if (isUpsertThatNeedsTransformation(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols,toMerge)) {
+    if ((CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) ||toMerge)	
       {
 	boundExpr = xformUpsertToMerge(bindWA);  
 	return boundExpr;
@@ -10600,34 +10600,45 @@ Upsert is also converted into merge when TRAF_UPSERT_MODE is set to MERGE and
 there are omitted cols with default values in case of aligned format table or 
 omitted current timestamp cols in case of non-aligned row format
 */
-NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,
-                                   NABoolean omittedCurrentDefaultClassCols) const
+NABoolean Insert::isUpsertThatNeedsTransformation(NABoolean isAlignedRowFormat, 
+                                                  NABoolean omittedDefaultCols,
+                                                  NABoolean omittedCurrentDefaultClassCols,
+                                                  NABoolean &toMerge) const
 {
-  // The necessary conditions to convert upsert to merge and
+  // The necessary conditions to transform upsert 
   if (isUpsert() && 
       (NOT getIsTrafLoadPrep()) && 
-      (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && getTableDesc()->hasIdentityColumnInClusteringKey())) && 
+      (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && 
+            getTableDesc()->hasIdentityColumnInClusteringKey())) && 
       (NOT (getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())) && 
-        // table has secondary indexes or
-        (getTableDesc()->hasSecondaryIndexes() ||
-          // CQD is set to MERGE  
-          ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) &&
+      // table has secondary indexes or
+      (getTableDesc()->hasSecondaryIndexes() ))
+        {
+          toMerge = FALSE;
+          return TRUE;
+        }
+  else if (isUpsert() &&   (NOT getIsTrafLoadPrep()) && 
+           (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && getTableDesc()->hasIdentityColumnInClusteringKey())) && 
+           (NOT (getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())) &&         
+           // CQD is set to MERGE  
+           ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) &&
             // omitted current default columns with non-aligned row format tables
             // or omitted default columns with aligned row format tables 
             (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
             (isAlignedRowFormat && omittedDefaultCols))) ||
-          // CQD is set to Optimal, for non-aligned row format with omitted 
-          // current columns, it is converted into merge though it is not
-          // optimal for performance - This is done to ensure that when the 
-          // CQD is set to optimal, non-aligned format would behave like 
-          // merge when any column is  omitted 
-          ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL) &&
-            ((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols))
-        ) 
-     )
-     return TRUE;
-  else
-     return FALSE;
+           // CQD is set to Optimal, for non-aligned row format with omitted 
+           // current columns, it is converted into merge though it is not
+           // optimal for performance - This is done to ensure that when the 
+           // CQD is set to optimal, non-aligned format would behave like 
+           // merge when any column is  omitted 
+           ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL) &&
+            ((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols)))
+    {
+      toMerge = TRUE;
+      return TRUE;
+    }
+  toMerge = FALSE;
+  return FALSE;
 }
 
 /** commenting the following method out for future work. This may be enabled as a further performance improvement if we can eliminate the sort node that gets geenrated as part of the Sequence Node. In case of no duplicates we won't need the Sequence node at all. 

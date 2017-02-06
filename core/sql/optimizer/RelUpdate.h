@@ -1211,7 +1211,7 @@ public:
   {
     xformedEffUpsert_ = TRUE;
   }
-  NABoolean isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,NABoolean omittedCurrentDefaultCols) const;
+  NABoolean isUpsertThatNeedsTransformation(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,NABoolean omittedCurrentDefaultCols, NABoolean &toMerge) const;
   RelExpr* xformUpsertToMerge(BindWA *bindWA) ;
   RelExpr* xformUpsertToEfficientTree(BindWA *bindWA) ;
 protected:
