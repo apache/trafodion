@@ -9270,7 +9270,9 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
       // find the index that corresponds to this constraint
       char query[1000];
       
-      str_sprintf(query, "select I.keytag, I.is_explicit from %s.\"%s\".%s T, %s.\"%s\".%s I where T.table_uid = %Ld and T.constraint_uid = %Ld and T.table_uid = I.base_table_uid and T.index_uid = I.index_uid ",
+      // the cardinality hint should force a nested join with
+      // TABLE_CONSTRAINTS as the outer and INDEXES as the inner
+      str_sprintf(query, "select I.keytag, I.is_explicit from %s.\"%s\".%s T, %s.\"%s\".%s I /*+ cardinality 1e9 */ where T.table_uid = %Ld and T.constraint_uid = %Ld and T.table_uid = I.base_table_uid and T.index_uid = I.index_uid ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
                   naTable->objectUid().castToInt64(),
