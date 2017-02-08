@@ -618,10 +618,7 @@ RETDesc *GenericUpdate::createOldAndNewCorrelationNames(BindWA *bindWA, NABoolea
     rd = new (bindWA->wHeap()) RETDesc(bindWA);
   }
 
-  /*  if ((getOperatorType() != REL_UNARY_INSERT) || 
-      getUpdateCKorUniqueIndexKey() ||
-      ((getOperatorType() == REL_UNARY_INSERT) &&((Insert *)this)->isMerge()) ||
-      ((getOperatorType() == REL_UNARY_INSERT) && ((Insert *)this)->isUpsert() && (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON )))  */
+  
   if ((getOperatorType() != REL_UNARY_INSERT) || 
       getUpdateCKorUniqueIndexKey() ||
       ((getOperatorType() == REL_UNARY_INSERT) &&((Insert *)this)->isMerge()) ||
@@ -636,15 +633,14 @@ RETDesc *GenericUpdate::createOldAndNewCorrelationNames(BindWA *bindWA, NABoolea
       scan = getScanNode();
     else 
       scan = getLeftmostScanNode();
-    /* if ((getOperatorType() == REL_UNARY_INSERT) && ((Insert *)this)->isUpsert() && (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON ))*/
+   
     if ((getOperatorType() == REL_UNARY_INSERT) &&((Insert *)this)->xformedEffUpsert())
       {
 	RelSequence *olapChild = getOlapChild();
 	CorrName corrName(getTableDesc()->getCorrNameObj().getQualifiedNameObj(), 
 			  bindWA->wHeap(),
 			  OLDCorr);
-	
-        //	ColumnDescList *colList = (olapChild->getRETDesc())->getColumnList();
+
 	for (short i = 0; i< olapChild->getRETDesc()->getDegree();i++)
 	  {
 	    // we remembered if the original columns was from the right side of
