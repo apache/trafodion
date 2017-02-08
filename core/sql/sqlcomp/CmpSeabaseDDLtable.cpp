@@ -649,12 +649,12 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
       if (retcode)
         return -1;
 
-      if (length > 1048576)
+      if (length > CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH))
         {
           *CmpCommon::diags()
             << DgSqlCode(-4247)
             << DgInt0(length)
-            << DgInt1(1048576) 
+            << DgInt1(CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH)) 
             << DgString0(naCol->getColName().data());
           
           return -1;
