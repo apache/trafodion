@@ -10605,43 +10605,62 @@ NABoolean Insert::isUpsertThatNeedsTransformation(NABoolean isAlignedRowFormat,
                                                   NABoolean omittedCurrentDefaultClassCols,
                                                   NABoolean &toMerge) const
 {
-  // The necessary conditions to transform upsert 
+  toMerge = FALSE;
+  // If the the table has an identity column in clustering key or has a syskey 
+  // we dont need to do this transformation.The incoming row will always be 
+  // unique. So first check if we any of the conditions are satisfied to 
+  //even try the transform
+  NABoolean mustTryTransform = FALSE;
   if (isUpsert() && 
-      (NOT getIsTrafLoadPrep()) && 
+      ( NOT getIsTrafLoadPrep()) &&
       (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && 
-            getTableDesc()->hasIdentityColumnInClusteringKey())) && 
-      (NOT (getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())) && 
-      // table has secondary indexes or
-      (getTableDesc()->hasSecondaryIndexes() ))
-        {
-          toMerge = FALSE;
-          return TRUE;
-        }
-  else if (isUpsert() &&   (NOT getIsTrafLoadPrep()) && 
-           (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && getTableDesc()->hasIdentityColumnInClusteringKey())) && 
-           (NOT (getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())) &&         
-           // CQD is set to MERGE  
-           ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) &&
-            // omitted current default columns with non-aligned row format tables
-            // or omitted default columns with aligned row format tables 
-            (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
-            (isAlignedRowFormat && omittedDefaultCols))) ||
-           // CQD is set to Optimal, for non-aligned row format with omitted 
-           // current columns, it is converted into merge though it is not
-           // optimal for performance - This is done to ensure that when the 
-           // CQD is set to optimal, non-aligned format would behave like 
-           // merge when any column is  omitted 
-           ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL) &&
-            ((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols)))
+            getTableDesc()->hasIdentityColumnInClusteringKey()))  && 
+      (NOT(getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())))
+    {
+      mustTryTransform = TRUE;
+    }
+
+  // Transform upsert to merge in case of special modes and
+  // omitted default columns
+  // Case 1 :  CQD is set to MERGE, omitted current(timestamp) default 
+  //           columns with  non-aligned row format table or omitted 
+  //           default columns with aligned row format tables 
+
+  // Case 2 :  CQD is set to Optimal, for non-aligned row format with omitted 
+  //           current(timestamp) columns, it is converted into merge 
+  //           though it is not optimal for performance. This is done to ensure
+  //           that when the CQD is set to optimal, non-aligned format would 
+  //           behave like merge when any column is  omitted 
+  if (isUpsert()  &&   
+      mustTryTransform &&          
+      ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) &&     
+       (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
+        (isAlignedRowFormat && omittedDefaultCols)))
+      ||
+      ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL) &&
+       ((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols)))
     {
       toMerge = TRUE;
       return TRUE;
     }
-  toMerge = FALSE;
+
+  // Transform upsert to efficient tree if none of the above conditions 
+  // are true and the table has secondary indexes 
+  if (isUpsert() &&  
+      mustTryTransform &&
+      (getTableDesc()->hasSecondaryIndexes()))
+    {
+      toMerge = FALSE;
+      return TRUE;
+    }
+  
   return FALSE;
 }
 
-/** commenting the following method out for future work. This may be enabled as a further performance improvement if we can eliminate the sort node that gets geenrated as part of the Sequence Node. In case of no duplicates we won't need the Sequence node at all. 
+/** commenting the following method out for future work. This may be enabled 
+as a further performance improvement if we can eliminate the sort node that 
+gets geenrated as part of the Sequence Node. In case of no duplicates we won't
+ need the Sequence node at all. 
 
 // take an insert(src) node and transform it into
 // a tuple_flow with old/new rows flowing to the IM tree.

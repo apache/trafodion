@@ -2860,7 +2860,7 @@ short HbaseInsert::codeGen(Generator *generator)
       }
 
       
-        if (getInsertType() == Insert::UPSERT_LOAD)
+      if (isUpsert() && (getInsertType() == Insert::UPSERT_LOAD))
 	{
 	  // this will cause tupleflow operator to send in an EOD to this upsert
 	  // operator. On seeing that, executor will flush the buffers.

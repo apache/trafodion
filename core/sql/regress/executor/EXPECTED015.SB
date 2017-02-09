@@ -1751,7 +1751,7 @@ K@           I
 
 --- 1 row(s) updated.
 >>
->>-- Upsert that gets converted to merge
+>>-- Upsert that gets transformed
 >>upsert into t015t12 values (1,1,1) ;
 
 --- 1 row(s) inserted.
@@ -1841,7 +1841,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
->>-- Upsert/merge on table with RI constraint & unique index
+>>-- Upsert(transformed) on table with RI constraint & unique index
 >>upsert into t015t14 values (1,2),(11,12);
 
 --- 2 row(s) inserted.
@@ -1882,6 +1882,58 @@ A            B                     C
 --- 1 row(s) selected.
 >>
 >>-- guarding against error 7000 and compiler asserts
+>>
+>>prepare XX from UPSERT INTO DEC1 
++>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
++>VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a[10]), DEFAULT), 
++>?b[10], ?c[10], ?d[10], ?e[10], null, ?f[10], null) ;
+
+--- SQL command prepared.
+>>-- missing default value and default upsert_mode=merge so will transform as merge
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
+>>
+>>prepare XX from UPSERT INTO DEC1 
++>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
++>VALUES  (?a, ?b, ?c, ?d, ?e, null, ?f, null) ;
+
+--- SQL command prepared.
+>>-- missing default value and default upsert_mode=merge so will transform as merge
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
+>>
+>>prepare XX from UPSERT INTO DEC1 
++>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
++>VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a), DEFAULT), 
++>?b, ?c, ?d, ?e, null, ?f, null) ;
+
+--- SQL command prepared.
+>>-- missing default value and default upsert_mode=merge so will transform as merge
+>>execute explainIt;
+
+OPERATOR        
+----------------
+
+TRAFODION_MERGE 
+
+--- 1 row(s) selected.
+>>
+>>cqd TRAF_UPSERT_MODE 'OPTIMAL';
+
+--- SQL operation complete.
+>>-- missing default value and default upsert_mode=optimal so will transform as new efficient tree for the next 3 cases 
 >>prepare XX from UPSERT INTO DEC1 
 +>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 +>VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a[10]), DEFAULT), 
@@ -1926,6 +1978,11 @@ SEQUENCE
 
 --- 1 row(s) selected.
 >>
+>>cqd TRAF_UPSERT_MODE reset;
+
+--- SQL operation complete.
+>>
+>>
 >>prepare XX from UPSERT INTO DE 
 +>(ID, dataElementConceptID, valueDomainID)  VALUES  
 +>(NVL((select a.id from DE a where a.dataElementConceptID = 
@@ -1954,12 +2011,13 @@ SEQUENCE
 +>(select i.id from DEC1 i where i.codeValue = ?) and h.valueDomainID = ? ), NULL), ? );
 
 --- SQL command prepared.
->>execute explainItEff;
+>>--missing values and traf_mode=merge default transforms into merge
+>>execute explainIt;
 
 OPERATOR        
 ----------------
 
-SEQUENCE        
+TRAFODION_MERGE 
 
 --- 1 row(s) selected.
 >>
