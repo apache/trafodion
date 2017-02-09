@@ -48,14 +48,14 @@ def run():
     run_cmd_as_user(hdfs_user, '%s dfsadmin -safemode wait' % hdfs_bin)
     run_cmd_as_user(hdfs_user, '%s dfs -mkdir -p %s/{trafodion_backups,bulkload,lobs} /bulkload /lobs /hbase/archive /hbase-staging' % (hdfs_bin, traf_loc))
     run_cmd_as_user(hdfs_user, '%s dfs -chown -R %s:%s /hbase/archive /hbase-staging' % (hdfs_bin, hbase_user, hbase_user))
-    run_cmd_as_user(hdfs_user, '%s dfs -chown -R %s:%s %s/{trafodion_backups,bulkload,lobs} /bulkload /lobs' % (hdfs_bin, traf_user, traf_user, traf_loc))
+    run_cmd_as_user(hdfs_user, '%s dfs -chown -R %s:%s %s %s/{trafodion_backups,bulkload,lobs} /bulkload /lobs' % (hdfs_bin, traf_user, traf_user, traf_loc, traf_loc))
     run_cmd_as_user(hdfs_user, '%s dfs -setfacl -R -m user:%s:rwx /hbase/archive' % (hdfs_bin, traf_user))
     run_cmd_as_user(hdfs_user, '%s dfs -setfacl -R -m default:user:%s:rwx /hbase/archive' % (hdfs_bin, traf_user))
     run_cmd_as_user(hdfs_user, '%s dfs -setfacl -R -m mask::rwx /hbase/archive' % hdfs_bin)
 
     # Grant all privileges to the Trafodion principal in HBase
     if dbcfgs['secure_hadoop'] == 'Y':
-        run_cmd('grant "%s", "RWXC" | sudo -u %s hbase shell > /tmp/hbase_shell.out' % (traf_user, hbase_user))
+        run_cmd('echo "grant \'%s\', \'RWXC\'" | sudo -u %s hbase shell > /tmp/hbase_shell.out' % (traf_user, hbase_user))
         has_err = cmd_output('grep -c ERROR /tmp/hbase_shell.out')
         if int(has_err):
             err('Failed to grant HBase privileges to %s' % traf_user)
