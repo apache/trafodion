@@ -102,12 +102,18 @@ MemoryMonitor::MemoryMonitor(Lng32 windowSize,
 {
   // if the windowSize is 0, we do not need memory monitor.
   assert(windowSize);
-  char buffer[1024];
+  char buffer[2048];
   char *currPtr;
   size_t bytesRead;
   fd_meminfo_ = fopen("/proc/meminfo", "r");
   if (fd_meminfo_) {
-    bytesRead = fread(buffer, 1, 1024, fd_meminfo_);
+    bytesRead = fread(buffer, 1, 2048, fd_meminfo_);
+    if (ferror(fd_meminfo_))
+       assert(false); 
+    if (feof(fd_meminfo_))
+       clearerr(fd_meminfo_); 
+    else
+       buffer[bytesRead] = '\0';
     currPtr = strstr(buffer, "MemTotal");
     if (currPtr) {
       sscanf(currPtr, "%*s " PF64 " kB", &memTotal_);
@@ -223,12 +229,12 @@ void MemoryMonitor::update(float &scale) {
 	char * currPtr;
         bytesRead = fread(buffer, 1, 2048, fd_meminfo_);
         // Make sure there wasn't an error (next fseek will clear eof)
-        if (!feof(fd_meminfo_))// Make sure there wasn't an error
-        {
-	        scale = 6;
-		pressure_ = 0;
-		return;
-        }
+        if (ferror(fd_meminfo_))
+           assert(false); 
+        if (feof(fd_meminfo_))
+           clearerr(fd_meminfo_); 
+        else
+           buffer[bytesRead] = '\0';
         currPtr = strstr(buffer, "MemFree");
 	if (currPtr) sscanf(currPtr, "%*s " PF64 " kB", &memFree);
         currPtr = strstr(buffer, "Committed_AS");
@@ -263,12 +269,12 @@ void MemoryMonitor::update(float &scale) {
 		return;
 	}
 	bytesRead = fread(buffer, 1, 2048, fd_vmstat_);
-        if (!feof(fd_vmstat_))
-        {
-	        scale = 6;
-		pressure_ = 0;
-		return;
-        }
+        if (ferror(fd_vmstat_))
+           assert(false); 
+        if (feof(fd_vmstat_))
+           clearerr(fd_vmstat_); 
+        else
+           buffer[bytesRead] = '\0';
         currPtr = strstr(buffer, "pgpgin");
 	if (currPtr) sscanf(currPtr, "%*s " PF64 " kB", &pgpgin);
         currPtr = strstr(buffer, "pgpgout");

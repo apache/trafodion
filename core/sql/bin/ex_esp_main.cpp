@@ -357,15 +357,18 @@ Int32 runESP(Int32 argc, char** argv, GuaReceiveFastStart *guaReceiveFastStart)
   cliGlobals->initiateDefaultContext();
   NAHeap *espIpcHeap = cliGlobals->getIpcHeap();
   IpcEnvironment *ipcEnvPtr = cliGlobals->getEnvironment();
-  //
-  // Start the  memory monitor for dynamic memory management
-  Lng32 memMonitorWindowSize = 10;
-  Lng32 memMonitorSampleInterval = 10;
-  MemoryMonitor memMonitor(memMonitorWindowSize,
+  if (statsGlobals != NULL)
+     cliGlobals->setMemoryMonitor(statsGlobals->getMemoryMonitor());
+  else 
+  {
+     // Start the  memory monitor for dynamic memory management
+     Lng32 memMonitorWindowSize = 10;
+     Lng32 memMonitorSampleInterval = 10;
+     MemoryMonitor memMonitor(memMonitorWindowSize,
                            memMonitorSampleInterval,
                            espExecutorHeap);
-  cliGlobals->setMemoryMonitor(&memMonitor);
-
+     cliGlobals->setMemoryMonitor(&memMonitor);
+  }
   // After CLI globals are initialized but before we begin ESP message
   // processing, have the CLI context set its user identity based on
   // the OS user identity.

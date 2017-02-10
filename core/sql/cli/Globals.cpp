@@ -235,19 +235,7 @@ void CliGlobals::init( NABoolean espProcess,
   if (! espProcess)
   {
     // Create the process global ARKCMP server.
-    // In R1.8, Each context has its own mxcmp.
     sharedArkcmp_ = NULL;
-
-    //sharedArkcmp_->setShared(FALSE);
-    // create the process global memory monitor. For now with
-    // defaults of 10 window entries and sampling every 1 second
-    Lng32 memMonitorWindowSize = 10;
-    Lng32 memMonitorSampleInterval = 1; // reduced from 10 (for M5 - May 2011)
-    memMonitor_ = new(&executorMemory_) MemoryMonitor(memMonitorWindowSize,
-						      memMonitorSampleInterval,
-						      &executorMemory_);
-
-    //    nextUniqueContextHandle = 2000;
     nextUniqueContextHandle = DEFAULT_CONTEXT_HANDLE;
 
     arlibHeap_ = new (&executorMemory_) NAHeap("MXARLIB Cache Heap",
@@ -322,6 +310,18 @@ void CliGlobals::init( NABoolean espProcess,
     capacities_.setHeap(defaultContext_->exCollHeap());
     freespaces_.setHeap(defaultContext_->exCollHeap());
     largestFragments_.setHeap(defaultContext_->exCollHeap());
+    if (statsGlobals_ != NULL) 
+       memMonitor_ = statsGlobals_->getMemoryMonitor();
+    else
+    {
+       // create the process global memory monitor. For now with
+       // defaults of 10 window entries and sampling every 1 second
+       Lng32 memMonitorWindowSize = 10;
+       Lng32 memMonitorSampleInterval = 1; // reduced from 10 (for M5 - May 2011)
+       memMonitor_ = new (&executorMemory_) MemoryMonitor(memMonitorWindowSize,
+						      memMonitorSampleInterval,
+    						      &executorMemory_);
+    }
   } // (!espProcess)
 
   else
