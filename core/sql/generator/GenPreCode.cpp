@@ -4177,9 +4177,11 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
 	 TRUE);
 
       if (isHiveTable())
-	// assign individual files and blocks to each ESPs
-	((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
-       generator->setProcessLOB(TRUE);
+        {
+          // assign individual files and blocks to each ESPs
+          ((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
+          generator->setProcessLOB(TRUE);
+        }
     }
 
   
