@@ -42,6 +42,7 @@ def run():
     DCS_BKMASTER_FILE = DCS_CONF_DIR + '/backup-masters'
     DCS_SITE_FILE = DCS_CONF_DIR + '/dcs-site.xml'
     REST_SITE_FILE = '%s/rest-%s/conf/rest-site.xml' % (TRAF_HOME, TRAF_VER)
+    TRAFODION_CFG_FILE = '/etc/trafodion/trafodion_config'
 
     ### dcs setting ###
     # servers
@@ -77,8 +78,13 @@ def run():
         p.add_property('dcs.master.floating.ip.external.ip.address', dcs_floating_ip)
         p.rm_property('dcs.dns.interface')
 
+        # set DCS_MASTER_FLOATING_IP ENV for trafci
+        dcs_floating_ip_cfg = 'export DCS_MASTER_FLOATING_IP=%s' % dcs_floating_ip
+        append_file(TRAFODION_CFG_FILE, dcs_floating_ip_cfg)
+
         # modify backup_master
-        write_file(DCS_BKMASTER_FILE, dcs_backup_nodes)
+        for dcs_backup_node in dcs_backup_nodes.split(','):
+            append_file(DCS_BKMASTER_FILE, dcs_backup_node)
 
     p.write_xml()
 
