@@ -50,7 +50,8 @@
 // NT performance data helper DLL.
 
 // The memory monitor itself. There is one instance of MemoryMonitor per
-// process (executor, ESP, or external sort process)
+// node. The MXSSCP process on the node creates a thread to constantly update
+// the MemoryMonitor object values
 class MemoryMonitor : public NABasicObject {
 public:
   // windowSize is the number of entries in the slinding window  we keep
@@ -59,19 +60,11 @@ public:
   MemoryMonitor(Lng32 windowSize, Lng32 sampleInterval, CollHeap *heap);
   ~MemoryMonitor();
 
-//SQ_LINUX #ifdef NA_WINNT
-
   // calculate the memory pressure indicator. This indicator has a value between 0
   // (no pressure) and 99 (system is in deep, deep trouble). It is up to the
   // caller to decide on the action to take based on this value
- Lng32 memoryPressure();
+  Lng32 memoryPressure();
 
-  // explicitly update the performance counters in the MemoryMonitor.
-  // Whenever an operator changed its memory consumption significantly, the
-  // counters should be updated to reflect the change
-  void update(float &scale);
-
-  void updatePageFaultRate(Int64 pageFaultValue);
   inline float getPageFaultRate() {  return pageFaultRate_; }
 
   inline Lng32 getSampleInterval() const { return sampleInterval_; };
@@ -83,6 +76,10 @@ public:
 
   inline void setEnable(NABoolean b) { enable_ = b; }
   Int64 availablePhyMemKb() { return memFree_; }
+  static DWORD WINAPI memMonitorUpdateThread(void * param);
+private:
+  void update(float &scale);
+  void updatePageFaultRate(Int64 pageFaultValue);
 
 private:
 
