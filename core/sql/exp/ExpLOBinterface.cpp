@@ -66,8 +66,10 @@ Lng32 ExpLOBinterfaceInit(void *& exLobGlob, void * lobHeap,
     {
       NAHeap *heap = new ((NAHeap *)lobHeap) NAHeap("LOB Heap", (NAHeap *)lobHeap);
       if (isHiveRead)
-        ((ExLobGlobals *)exLobGlob)->startWorkerThreads();
-      heap->setThreadSafe();
+        {
+          ((ExLobGlobals *)exLobGlob)->startWorkerThreads();
+          heap->setThreadSafe();
+        }
       ((ExLobGlobals *)exLobGlob)->setHeap(heap);
       
     }
