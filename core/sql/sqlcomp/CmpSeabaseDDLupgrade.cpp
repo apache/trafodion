@@ -355,6 +355,13 @@ short CmpSeabaseMDupgrade::executeSeabaseMDupgrade(CmpDDLwithStatusInfo *mdui,
 	    mdui->setSubstep(0);
 	    mdui->setEndStep(TRUE);
 	    
+            if (!ComUser::isRootUserID())
+              {
+                 mdui->setMsg("Metadata Upgrade: not authorized");
+                 mdui->setStep(UPGRADE_FAILED);
+                 mdui->setSubstep(0);
+              }
+
 	    if (sendAllControlsAndFlags())
 	      {
 		mdui->setStep(UPGRADE_FAILED);

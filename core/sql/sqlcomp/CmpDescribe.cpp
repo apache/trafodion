@@ -2256,6 +2256,12 @@ short CmpDescribeHiveTable (
   // emit an initial newline
   outputShortLine(space, " ");
 
+  if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN,
+                               naTable->getPrivInfo(),
+                               COM_BASE_TABLE_OBJECT))
+    return -1;
+
+
   if (type == 1)
     {
       sprintf(buf,  "-- Definition of hive table %s\n"
@@ -2817,8 +2823,7 @@ short CmpDescribeSeabaseTable (
 
   NABoolean displayPrivilegeGrants = TRUE;
   if (((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM) && sqlmxRegr) ||
-      (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF) ||
-      (isExternalTable))
+      (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF)) 
     displayPrivilegeGrants = FALSE;
  
   // display syscols for invoke if not running regrs

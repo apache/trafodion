@@ -9541,6 +9541,25 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
         return;
       }
 
+  // If column privs specified for non SELECT ops for Hive native tables, 
+  // return an error
+  if (cn.isHive() && (colPrivs.size() > 0))
+    {
+      if (hasValue(colPrivs, INSERT_PRIV) ||
+          hasValue(colPrivs, UPDATE_PRIV) ||
+          hasValue(colPrivs, REFERENCES_PRIV))
+      {
+         NAString text1("INSERT, UPDATE, REFERENCES");
+         NAString text2("Hive columns on");
+         *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_PRIV_FOR_OBJECT)
+                             << DgString0(text1.data())
+                             << DgString1(text2.data())
+                             << DgTableName(extTableName);
+         processReturn();
+         return;
+      }
+    }
+
  // Prepare to call privilege manager
   NAString MDLoc;
   CONCAT_CATSCH(MDLoc, getSystemCatalog(), SEABASE_MD_SCHEMA);
@@ -9576,6 +9595,61 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       processReturn();
       return;
     }
+
+  // for Hive tables, the table must have an external table defined
+  if (objectUID == 0 && naTable &&
+      (naTable->isHiveTable() &&
+      !naTable->hasExternalTable()))
+    {
+      // For native hive tables, grantor must be DB__ROOT or belong
+      // to one of the admin roles:  DB__ROOTROLE, DB__HIVEROLE
+      // In hive, you must be an admin, DB__ROOTROLE and DB__HIVEROLE
+      // is the equivalent of an admin.
+      if (!ComUser::isRootUserID() &&
+          !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
+          !ComUser::currentUserHasRole(HIVE_ROLE_ID)) 
+        {
+          *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+          processReturn();
+          return;
+        }
+
+      // create an external table for this hive table.
+      // if the trafodion schema containing hive table descriptions does
+      // not exists, the "create external" table command creates it.
+      char query[(ComMAX_ANSI_IDENTIFIER_EXTERNAL_LEN*4) + 100];
+      snprintf(query, sizeof(query),
+               "create external table \"%s\" for %s.\"%s\".\"%s\"",
+               objectNamePart.data(),
+               catalogNamePart.data(),
+               schemaNamePart.data(),
+               objectNamePart.data());
+      Lng32 retcode = cliInterface.executeImmediate(query);
+      if (retcode < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          return;
+        }
+
+      // remove NATable and reload it to include external table defn.
+      ActiveSchemaDB()->getNATableDB()->removeNATable
+        (cn,
+         ComQiScope::REMOVE_MINE_ONLY, COM_BASE_TABLE_OBJECT,
+         FALSE, FALSE);
+
+      naTable = bindWA.getNATable(cn);
+      if (naTable == NULL)
+        {
+          SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in seabaseGrantRevoke");
+          return;
+        }
+
+      objectUID = (int64_t)naTable->objectUid().get_value();
+      objectOwnerID = (int32_t)naTable->getOwner();
+      schemaOwnerID = naTable->getSchemaOwner();
+      objectType = naTable->getObjectType();
+    }
+
 
   // for metadata tables, the objectUID is not initialized in the NATable
   // structure
