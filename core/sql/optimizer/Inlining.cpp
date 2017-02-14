@@ -618,10 +618,11 @@ RETDesc *GenericUpdate::createOldAndNewCorrelationNames(BindWA *bindWA, NABoolea
     rd = new (bindWA->wHeap()) RETDesc(bindWA);
   }
 
+  
   if ((getOperatorType() != REL_UNARY_INSERT) || 
       getUpdateCKorUniqueIndexKey() ||
       ((getOperatorType() == REL_UNARY_INSERT) &&((Insert *)this)->isMerge()) ||
-      ((getOperatorType() == REL_UNARY_INSERT) && ((Insert *)this)->isUpsert() && (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON )))  
+      ((getOperatorType() == REL_UNARY_INSERT) &&((Insert *)this)->xformedEffUpsert()))
   {
     // DELETE or UPDATE --
     // Now merge the old/target/before valueid's (the Scan child RETDesc)
@@ -632,14 +633,14 @@ RETDesc *GenericUpdate::createOldAndNewCorrelationNames(BindWA *bindWA, NABoolea
       scan = getScanNode();
     else 
       scan = getLeftmostScanNode();
-    if ((getOperatorType() == REL_UNARY_INSERT) && ((Insert *)this)->isUpsert() && (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON ))
+   
+    if ((getOperatorType() == REL_UNARY_INSERT) &&((Insert *)this)->xformedEffUpsert())
       {
 	RelSequence *olapChild = getOlapChild();
 	CorrName corrName(getTableDesc()->getCorrNameObj().getQualifiedNameObj(), 
 			  bindWA->wHeap(),
 			  OLDCorr);
-	
-        //	ColumnDescList *colList = (olapChild->getRETDesc())->getColumnList();
+
 	for (short i = 0; i< olapChild->getRETDesc()->getDegree();i++)
 	  {
 	    // we remembered if the original columns was from the right side of
@@ -2105,8 +2106,9 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
   RelExpr *indexInsert = NULL, *indexDelete = NULL, *indexOp = NULL;
   NABoolean isForUpdate = (getOperatorType() == REL_UNARY_UPDATE ||
                            isMergeUpdate());
-  NABoolean isEffUpsert = ((CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON ) && (getOperatorType() == REL_UNARY_INSERT && ((Insert*)this)->isUpsert()));
-
+  /* NABoolean isEffUpsert = ((CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON ) && (getOperatorType() == REL_UNARY_INSERT && ((Insert*)this)->isUpsert()));*/
+  
+  NABoolean isEffUpsert = ((getOperatorType() == REL_UNARY_INSERT) && ((Insert *)this)->xformedEffUpsert());
   if (indexCorrName.getUgivenName().isNull())
     {
       indexCorrName.setUgivenName(tableCorrName.getUgivenName());
@@ -2461,7 +2463,8 @@ RefConstraintList *GenericUpdate::getRIs(BindWA *bindWA,
 						   *allRIConstraints);
   
   if ((getOperatorType() == REL_UNARY_DELETE) || 
-      (getOperatorType()== REL_UNARY_UPDATE))
+      (getOperatorType()== REL_UNARY_UPDATE) ||
+      ((getOperatorType() == REL_UNARY_INSERT) && ((Insert *)this)->xformedEffUpsert()))
     naTable->getUniqueConstraints().getRefConstraints(bindWA, 
 						      newRecExpr(), 
 						      *allRIConstraints);

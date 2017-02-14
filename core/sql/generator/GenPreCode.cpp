@@ -5475,6 +5475,10 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
       (getInliningInfo().isEffectiveGU()))
     inlinedActions = TRUE;
 
+  // Allow projecting rows if the upsert has IM. 
+  if (inlinedActions && isUpsert())
+    setReturnRow(TRUE);
+
   if (((getTableDesc()->getNATable()->isHbaseRowTable()) ||
        (getTableDesc()->getNATable()->isHbaseCellTable())) &&
       (producesOutputs()))
@@ -5490,9 +5494,13 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
       ((getInsertType() == Insert::VSBB_INSERT_USER) ||
        (getInsertType() == Insert::UPSERT_LOAD)))
     {
-      if ((inlinedActions || producesOutputs())&& !getIsTrafLoadPrep())
- 	setInsertType(Insert::SIMPLE_INSERT);
+      // Remove this restriction
+      /* if ((inlinedActions || producesOutputs())&& !getIsTrafLoadPrep())
+         setInsertType(Insert::SIMPLE_INSERT);*/
+      
     }
+
+  
 
   
   // if there are blob columns, use simple inserts.
