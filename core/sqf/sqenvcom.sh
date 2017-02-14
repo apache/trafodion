@@ -700,6 +700,10 @@ export SQ_MON_EPOLL_RETRY_COUNT=16
 #    non-responsive monitor zclient which results in a Trafodion node down. 
 #    Default is 60 seconds (1 minute) which is the maximum Zookeeper allows.
 #export SQ_MON_ZCLIENT_SESSION_TIMEOUT=60
+#  - My znode monitoring timeout in seconds defines frequency when local
+#    monitor's znode is checked. Uncomment to override default value.
+#    Default is 5 seconds.
+#export SQ_MON_ZCLIENT_MY_ZNODE_CHECKRATE=5
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1
