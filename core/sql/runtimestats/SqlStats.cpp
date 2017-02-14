@@ -134,6 +134,7 @@ void StatsGlobals::init()
   else
     myNodeName[0] = '\0';
   rmsStats_->setNodeName(myNodeName);
+  createMemoryMonitor();
   releaseStatsSemaphore(semId, GetCliGlobals()->myPin(), savedPriority,
             savedStopMode);
   sem_close((sem_t *)semId);
@@ -1686,6 +1687,17 @@ StatsGlobals * shareStatsSegment(Int32 &shmid, NABoolean checkForSSMP)
        statsGlobals = NULL;
   }
   return statsGlobals;
+}
+
+void StatsGlobals::createMemoryMonitor() 
+{
+
+   // defaults of 10 window entries and sampling every 1 second
+   Lng32 memMonitorWindowSize = 10;
+   Lng32 memMonitorSampleInterval = 1; // reduced from 10 (for M5 - May 2011)
+   memMonitor_ = new (&statsHeap_) MemoryMonitor(memMonitorWindowSize,
+                                                      memMonitorSampleInterval,
+                                                      &statsHeap_);
 }
 
 short getMasterCpu(char *uniqueStmtId, Lng32 uniqueStmtIdLen, char *nodeName, short maxLen, short &cpu)

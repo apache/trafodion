@@ -62,12 +62,14 @@ class RecentSikey;
 class StatsGlobals;
 class ExOperStats;
 class ExProcessStats;
+class MemoryMonitor;
 
 #ifndef __EID
 #include "rts_msg.h"
 #endif
 #include "ComTdb.h"
 #include "SQLCLIdev.h"
+#include "memorymonitor.h"
 
 #define MAX_PID_ARRAY_SIZE 65536
 
@@ -477,7 +479,6 @@ public:
       { abortedSemPid_ = semPid_; }
   Int64 getNewestRevokeTimestamp() const { return newestRevokeTimestamp_; }
   void cleanupOldSikeys(Int64 gcInterval);
-#ifndef __EID
   Lng32 getSecInvalidKeys(
                           CliGlobals * cliGlobals,
                           Int64 lastCallTimestamp,
@@ -487,7 +488,8 @@ public:
 
   void mergeNewSikeys(Int32 numSikeys, 
                     SQL_QIKEY sikeys[]);
-#endif
+  MemoryMonitor *getMemoryMonitor() { return memMonitor_; }
+  void createMemoryMonitor();
 
   void init();
   NABoolean isShmDirty() { return isBeingUpdated_; }
@@ -543,6 +545,7 @@ private:
   pid_t pidToCheck_;
   pid_t maxPid_;
   Int64 ssmpDumpedTimestamp_;
+  MemoryMonitor *memMonitor_;
 };
 StatsGlobals * shareStatsSegment(Int32 &shmid, NABoolean checkForSSMP = TRUE);
 short getMasterCpu(char *uniqueStmtId, Lng32 uniqueStmtIdLen, char *nodeName, short maxLen, short &cpu);
