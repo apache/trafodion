@@ -189,6 +189,13 @@
 --- SQL command prepared.
 >>
 >>
+>>prepare explainItVsbb from
++>select substring(operator,1,25) operator
++>from table (explain(NULL,'XX2')) t
++>where operator LIKE '%SEQUENCE%' OR operator LIKE '%VSBB_UPSERT%'  OR operator LIKE '%VSBB_DELETE%' ;
+
+--- SQL command prepared.
+>>
 >>
 >>insert into t015t1 values (1,1), (2,2);
 
@@ -2152,9 +2159,65 @@ A                     B            C            D            E
 
 --- 3 row(s) selected.
 >>
+>>
+>>--For single row param input, ensure plan has no vsbb operators
+>>prepare xx2 from upsert into t015t16 values(?,?,?,?,?);
+
+--- SQL command prepared.
+>>execute explainItVsbb;
+
+OPERATOR                 
+-------------------------
+
+SEQUENCE                 
+
+--- 1 row(s) selected.
+>>--For multiple rows, ensure plan has vsbb upsert, vsbb delete
+>>prepare xx2 from upsert into t015t16 values(?[10],?[10],?[10],?[10],?[10]);
+
+--- SQL command prepared.
+>>execute explainItVsbb;
+
+OPERATOR                 
+-------------------------
+
+SEQUENCE                 
+TRAFODION_VSBB_UPSERT    
+TRAFODION_VSBB_DELETE    
+TRAFODION_VSBB_DELETE    
+
+--- 4 row(s) selected.
+>>--For upsert-select, ensure plan has vsbb_upsert and vsbb delete
+>>prepare xx2 from UPSERT INTO t015t16  select a,b,c,d,e from t015t6 ;
+
+--- SQL command prepared.
+>>execute explainItVsbb;
+
+OPERATOR                 
+-------------------------
+
+SEQUENCE                 
+TRAFODION_VSBB_UPSERT    
+TRAFODION_VSBB_DELETE    
+TRAFODION_VSBB_DELETE    
+
+--- 4 row(s) selected.
+>>
+>>--For multiple values , ensure plan has vsbb upsert and vsbb delete
 >>prepare xx2 from upsert into t015t16 values (3,4,1,1,1),(6,7,80,90,100),(6,7,81,91,101);
 
 --- SQL command prepared.
+>>execute explainItVsbb;
+
+OPERATOR                 
+-------------------------
+
+SEQUENCE                 
+TRAFODION_VSBB_UPSERT    
+TRAFODION_VSBB_DELETE    
+TRAFODION_VSBB_DELETE    
+
+--- 4 row(s) selected.
 >>execute xx2;
 
 --- 2 row(s) inserted.
@@ -2170,7 +2233,7 @@ A                     B
 
 --- 4 row(s) selected.
 >>
->>cqd traf_upsert_to_eff_tree 'OFF';
+>>cqd traf_upsert_to_eff_tree reset;
 
 --- SQL operation complete.
 >>log;

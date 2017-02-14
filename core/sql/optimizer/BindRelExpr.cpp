@@ -10612,10 +10612,10 @@ NABoolean Insert::isUpsertThatNeedsTransformation(NABoolean isAlignedRowFormat,
   //even try the transform
   NABoolean mustTryTransform = FALSE;
   if (isUpsert() && 
-      ( NOT getIsTrafLoadPrep()) &&
-      (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && 
-            getTableDesc()->hasIdentityColumnInClusteringKey()))  && 
-      (NOT(getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())))
+      NOT ( getIsTrafLoadPrep() ||
+            ( (getTableDesc()->isIdentityColumnGeneratedAlways() && 
+               getTableDesc()->hasIdentityColumnInClusteringKey()))  || 
+            ((getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey()))))
     {
       mustTryTransform = TRUE;
     }

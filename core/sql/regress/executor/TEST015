@@ -277,6 +277,11 @@ from table (explain(NULL,'XX')) t
 where operator LIKE '%SEQUENCE%' ;
 
 
+prepare explainItVsbb from
+select substring(operator,1,25) operator
+from table (explain(NULL,'XX2')) t
+where operator LIKE '%SEQUENCE%' OR operator LIKE '%VSBB_UPSERT%'  OR operator LIKE '%VSBB_DELETE%' ;
+
 
 insert into t015t1 values (1,1), (2,2);
 insert into t015t3 values (1,1,1), (2,2,2), (3,3,3);
@@ -926,10 +931,23 @@ prepare xx2 from upsert into t015t16 values (1,2,30,40,50);
 execute xx2;
 select * from t015t16 order by a;
 
+
+--For single row param input, ensure plan has no vsbb operators
+prepare xx2 from upsert into t015t16 values(?,?,?,?,?);
+execute explainItVsbb;
+--For multiple rows, ensure plan has vsbb upsert, vsbb delete
+prepare xx2 from upsert into t015t16 values(?[10],?[10],?[10],?[10],?[10]);
+execute explainItVsbb;
+--For upsert-select, ensure plan has vsbb_upsert and vsbb delete
+prepare xx2 from UPSERT INTO t015t16  select a,b,c,d,e from t015t6 ;
+execute explainItVsbb;
+
+--For multiple values , ensure plan has vsbb upsert and vsbb delete
 prepare xx2 from upsert into t015t16 values (3,4,1,1,1),(6,7,80,90,100),(6,7,81,91,101);
+execute explainItVsbb;
 execute xx2;
 select a,b from t015t16 order by a;
 
-cqd traf_upsert_to_eff_tree 'OFF';
+cqd traf_upsert_to_eff_tree reset;
 log;
 
