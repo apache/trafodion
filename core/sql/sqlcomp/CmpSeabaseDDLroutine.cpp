@@ -1590,6 +1590,12 @@ short CmpSeabaseDDL::validateRoutine(ExeCliInterface *cliInterface,
 
 short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
 {
+  if (!ComUser::isRootUserID())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return -1;
+    }
+
   Lng32 cliRC = 0;
   
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
@@ -1707,6 +1713,12 @@ short CmpSeabaseDDL::grantLibmgrPrivs(ExeCliInterface *cliInterface)
 
 short CmpSeabaseDDL::upgradeSeabaseLibmgr(ExeCliInterface * cliInterface)
 {
+  if (!ComUser::isRootUserID())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return -1;
+    }
+
   Lng32 cliRC = 0;
 
   cliRC = existsInSeabaseMDTable(cliInterface,
@@ -1730,6 +1742,12 @@ short CmpSeabaseDDL::upgradeSeabaseLibmgr(ExeCliInterface * cliInterface)
 
 short CmpSeabaseDDL::dropSeabaseLibmgr(ExeCliInterface *cliInterface)
 {
+    if (!ComUser::isRootUserID())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return -1;
+    }
+
   Lng32 cliRC = 0;
 
   char queryBuf[strlen(getSystemCatalog()) + strlen(SEABASE_LIBMGR_SCHEMA) + 100];

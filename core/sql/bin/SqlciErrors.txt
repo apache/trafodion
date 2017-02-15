@@ -222,8 +222,8 @@
 1224 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid data type was specified for routine parameter $0~String0.
 1225 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mixing EXECUTE privilege with other privileges is not allowed.
 1226 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No valid combination of privileges was specified.
-1227 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot unregister user.  User has been granted privileges.
-1228 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot drop role.  Role has been granted privileges.
+1227 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot unregister user.  User $0~String0 has been granted privileges on $1~String1.
+1228 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot drop role.  Role $0~String0 has been granted privileges on $1~String1.
 1229 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~string0 option is not supported.
 1230 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object owner must be the schema owner in private schemas.
 1231 ZZZZZ 99999 BEGINNER MAJOR DBADMIN User-defined routine $0~String0 could not be created.

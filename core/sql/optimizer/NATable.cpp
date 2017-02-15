@@ -5718,8 +5718,7 @@ NATable::NATable(BindWA *bindWA,
 		schemaOwner_ = SUPER_USER;
 	}
 
-	if (hasExternalTable())
-		getPrivileges(NULL); 
+        getPrivileges(NULL); 
 
 	// TBD - if authorization is enabled and there is no external table to store
 	// privileges, go get privilege information from HIVE metadata ...
@@ -6685,11 +6684,20 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
 
   // If current user is root, object owner, or this is a volatile table
   // automatically have owner default privileges.
-  if ((!isSeabaseTable() && !isHiveTable()) ||
+ if ((!isSeabaseTable() && !isHiveTable()) ||
        !CmpCommon::context()->isAuthorizationEnabled() ||
        isVolatileTable() ||
-       ComUser::isRootUserID()||
-       ComUser::getCurrentUser() == owner_)
+       (ComUser::isRootUserID() && !isHiveTable()) )
+  {
+    privInfo_ = new(heap_) PrivMgrUserPrivs;
+    privInfo_->setOwnerDefaultPrivs();
+    return;
+  }
+
+  // Generally, if the current user is the object owner, then the automatically
+  // have all privs.  However, if this is a shared schema then views can be
+  // owned by the current user but not have all privs
+  if (ComUser::getCurrentUser() == owner_ && objectType_ != COM_VIEW_OBJECT)
   {
     privInfo_ = new(heap_) PrivMgrUserPrivs;
     privInfo_->setOwnerDefaultPrivs();
@@ -6772,7 +6780,7 @@ void NATable::readPrivileges ()
 	std::vector <ComSecurityKey *> secKeyVec;
 
 	if (testError || (STATUS_GOOD !=
-				privInterface.getPrivileges(objectUid().get_value(), objectType_,
+				privInterface.getPrivileges((NATable *)this,
 					ComUser::getCurrentUser(), *privInfo_, &secKeyVec)))
 	{
 		if (testError)

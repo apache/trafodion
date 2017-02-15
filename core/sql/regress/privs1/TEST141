@@ -202,7 +202,7 @@ sh sqlci -i "TEST141(user3_objects)" -u sql_user3;
 ?section test_shared_user
 -- ============================================================================
 -- verify someone with CREATE permission can create objects in someone elses
--- shared schema.  Make sure the schema owner owns the object and the creator
+-- shared schema.  Make sure the current user owns the object and the creator
 -- has appropriate privileges.
 
 values (user);
@@ -243,7 +243,7 @@ execute get_obj_privs;
 sh sqlci -i "TEST141(user1_objects)" -u sql_user1;
 
 -- grant privileges to sql_user1 and retry
-grant select on t141_user1.u1t1 to sql_user1;
+grant select, insert, delete on t141_user1.u1t1 to sql_user1;
 grant select on t141_user1.u2t1 to sql_user1; 
 sh sqlci -i "TEST141(user1_objects)" -u sql_user1;
 execute get_obj_privs;
@@ -286,7 +286,7 @@ execute get_obj_privs;
 ?section test_shared_role
 -- ============================================================================
 -- verify someone with CREATE permission can create objects in someone elses
--- shared schema.  Make sure the schema owner owns the object and the creator
+-- shared schema.  Make sure the current user owns the object and the creator
 -- has appropriate privileges.
 
 values (user);
@@ -324,7 +324,11 @@ values (user);
 
 set schema t141_user1;
 create view u1v1 as select * from u1t1;
+insert into u1v1 values (6,6,6);
+delete from u1v1 where c1 = 6;
 create view u1v2 as select * from u2t1;
+insert into u1v2 values (6,6,6);
+delete from u1v2 where c1 = 6;
 create view u1v3(c1, c2) as select u1.c1, u2.c1 from u1t1 u1, u2t1 u2;
 
 -- ============================================================================

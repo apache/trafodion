@@ -5164,6 +5164,36 @@ RelExpr * ExeUtilHiveTruncate::bindNode(BindWA *bindWA)
       return NULL;
     }
 
+  // If the current user has been granted the Trafodion Hive/DB root role or
+  // is DB__ROOT, allow the operation. 
+  // If the current user has select and delete privileges, allow the operation
+  if (bindWA->currentCmpContext()->isAuthorizationEnabled())
+  {
+    NABoolean found = FALSE;
+    if (ComUser::isRootUserID() ||
+        ComUser::currentUserHasRole(HIVE_ROLE_ID) ||
+        ComUser::currentUserHasRole(ROOT_ROLE_ID))
+      found = TRUE;
+
+    if (!found)
+    {
+      PrivMgrUserPrivs *pPrivInfo = naTable->getPrivInfo();
+      if (pPrivInfo &&
+          pPrivInfo->hasPriv(SELECT_PRIV) &&
+          pPrivInfo->hasPriv(DELETE_PRIV))
+        found = TRUE;
+
+      if (!found)
+      {
+        *CmpCommon::diags()
+           << DgSqlCode( -1051 )
+           << DgTableName(naTable->getTableName().getQualifiedNameAsAnsiString());
+        bindWA->setErrStatus();
+        return NULL;
+      }
+    }
+  }
+
   const HHDFSTableStats* hTabStats = 
     naTable->getClusteringIndex()->getHHDFSTableStats();
   

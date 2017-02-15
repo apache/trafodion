@@ -6881,9 +6881,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges( tab->objectUid().get_value(),
-                                             tab->getObjectType(), thisUserID,
-                                             privInfo);
+      retcode = privInterface.getPrivileges( tab, thisUserID, privInfo);
       cmpSBD.switchBackCompiler();
 
       if (retcode != STATUS_GOOD)
@@ -7003,9 +7001,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges( tab->objectUid().get_value(), 
-                                             tab->getObjectType(), thisUserID, 
-                                             privInfo);
+      retcode = privInterface.getPrivileges( tab, thisUserID, privInfo);
       cmpSBD.switchBackCompiler();
 
       if (retcode != STATUS_GOOD)
@@ -7062,9 +7058,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges(tab->objectUid().get_value(), 
-                                            COM_SEQUENCE_GENERATOR_OBJECT, 
-                                            thisUserID, privInfo);
+      retcode = privInterface.getPrivileges(tab, thisUserID, privInfo);
       cmpSBD.switchBackCompiler();
       if (retcode != STATUS_GOOD)
       {
