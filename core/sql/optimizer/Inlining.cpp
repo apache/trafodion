@@ -1895,8 +1895,8 @@ static RelExpr *createIMNode(BindWA *bindWA,
                              const ValueId &mergeIUDIndicator,
 			     NABoolean isIMInsert,
 			     NABoolean useInternalSyskey,
-                             NABoolean isForUpdate,
-                             NABoolean isForMerge,
+                             NABoolean isForUpdateOrMergeUpdate,
+                             NABoolean isForMerge, // mergeDelete OR mergeUpdate
 			     NABoolean isEffUpsert)
 {
    
@@ -1946,11 +1946,11 @@ static RelExpr *createIMNode(BindWA *bindWA,
   // Index Type/IM operation->  Delete  | Insert
   // Non-unique Index           Yes        No 
   // Unique Index               Yes        Yes
-  if ((!isIMInsert && isForUpdate)||robustDelete )
+  if ((!isIMInsert && isForUpdateOrMergeUpdate)||robustDelete || (!isIMInsert && isEffUpsert))
     {
-      // For delete nodes that are part of an update, generate a
-      // comparison expression between old and new index column values
-      // and suppress the delete if no columns change. This avoids the
+      // For delete nodes that are part of an update or merge update or upsert,
+      // generate a comparison expression between old and new index column 
+      // values and suppress the delete if no columns change. This avoids the
       // situation where we delete and then re-insert the same index
       // row within one millisecond and get the same HBase timestamp
       // value assigned. In that case, the delete will win out over
@@ -2011,7 +2011,7 @@ static RelExpr *createIMNode(BindWA *bindWA,
                   (isIMInsert ? "D" : "I"),
                   CharInfo::ISO88591));
 
-      if (preCond == NULL)
+      if (preCond == NULL) 
         preCond = iudCond;
       else
         preCond = new (bindWA->wHeap()) BiLogic(
@@ -2104,9 +2104,8 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
     indexCorrName.setIsVolatile(TRUE);
 
   RelExpr *indexInsert = NULL, *indexDelete = NULL, *indexOp = NULL;
-  NABoolean isForUpdate = (getOperatorType() == REL_UNARY_UPDATE ||
+  NABoolean isForUpdateOrMergeUpdate = (getOperatorType() == REL_UNARY_UPDATE ||
                            isMergeUpdate());
-  /* NABoolean isEffUpsert = ((CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_ON ) && (getOperatorType() == REL_UNARY_INSERT && ((Insert*)this)->isUpsert()));*/
   
   NABoolean isEffUpsert = ((getOperatorType() == REL_UNARY_INSERT) && ((Insert *)this)->xformedEffUpsert());
   if (indexCorrName.getUgivenName().isNull())
@@ -2126,7 +2125,7 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
                                          mergeIUDIndicator,
 					 TRUE,
 					 useInternalSyskey,
-                                         isForUpdate,
+                                         isForUpdateOrMergeUpdate,
                                          isMerge(),
 					 isEffUpsert);
 
@@ -2144,7 +2143,7 @@ RelExpr *GenericUpdate::createIMNodes(BindWA *bindWA,
                                          mergeIUDIndicator,
 					 FALSE,
     			       		 useInternalSyskey,
-                                         isForUpdate,
+                                         isForUpdateOrMergeUpdate,
                                          isMerge(),
 					 isEffUpsert);
 
