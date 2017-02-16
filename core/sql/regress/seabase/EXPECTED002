@@ -63,7 +63,7 @@ A            B
 >>invoke table(region stats ());
 
 -- Definition of Trafodion table TRAFODION.T002SCH.EXE_UTIL_REGION_STATS__
--- Definition current  Mon Nov 21 23:47:42 2016
+-- Definition current  Thu Feb 16 15:47:11 2017
 
   (
     CATALOG_NAME                     CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
@@ -90,7 +90,7 @@ A            B
 >>invoke table(region stats (t002t1));
 
 -- Definition of Trafodion table TRAFODION.T002SCH.EXE_UTIL_REGION_STATS__
--- Definition current  Mon Nov 21 23:47:42 2016
+-- Definition current  Thu Feb 16 15:47:12 2017
 
   (
     CATALOG_NAME                     CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
@@ -125,7 +125,7 @@ A            B
 (EXPR)                                                    REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES  STORE_FILE_UNCOMP_SIZE  STORE_FILE_SIZE       MEM_STORE_SIZE        (EXPR)                         (EXPR)
 --------------------------------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------  ----------------------  --------------------  --------------------  -----------------------------  ------------------------------
 
-T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1/1479772003905                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0                       0                     0                     0  ReadRequestsCount: 2           WriteRequestsCount: 1         
+T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1/1487259963893                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0                       0                     0                     0  ReadRequestsCount: 2           WriteRequestsCount: 1         
 
 --- 1 row(s) selected.
 >>
@@ -139,7 +139,7 @@ T002SCH.T002T1                                                               1  
 (EXPR)                                                    REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES  STORE_FILE_UNCOMP_SIZE  STORE_FILE_SIZE       MEM_STORE_SIZE        (EXPR)                         (EXPR)
 --------------------------------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------  ----------------------  --------------------  --------------------  -----------------------------  ------------------------------
 
-T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1I1/1479772006300                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 1         
+T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1I1/1487259968487                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 1         
 
 --- 1 row(s) selected.
 >>
@@ -153,10 +153,10 @@ T002SCH.T002T1                                                               1  
 (EXPR)                                                    REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES  STORE_FILE_UNCOMP_SIZE  STORE_FILE_SIZE       MEM_STORE_SIZE        (EXPR)                         (EXPR)
 --------------------------------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------  ----------------------  --------------------  --------------------  -----------------------------  ------------------------------
 
-T002SCH.T002T2                                                               1  TRAFODION.T002SCH.T002T2/1479772039247                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 0         
-T002SCH.T002T2                                                               2  TRAFODION.T002SCH.T002T2/1479772039247                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0                       0                     0                     0  ReadRequestsCount: 1           WriteRequestsCount: 1         
-T002SCH.T002T2                                                               3  TRAFODION.T002SCH.T002T2/1479772039247                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 0         
-T002SCH.T002T2                                                               4  TRAFODION.T002SCH.T002T2/1479772039247                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 0         
+T002SCH.T002T2                                                               1  TRAFODION.T002SCH.T002T2/1487260002888                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 0         
+T002SCH.T002T2                                                               2  TRAFODION.T002SCH.T002T2/1487260002888                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0                       0                     0                     0  ReadRequestsCount: 1           WriteRequestsCount: 1         
+T002SCH.T002T2                                                               3  TRAFODION.T002SCH.T002T2/1487260002888                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 0         
+T002SCH.T002T2                                                               4  TRAFODION.T002SCH.T002T2/1487260002888                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 0         
 
 --- 4 row(s) selected.
 >>
@@ -170,7 +170,7 @@ T002SCH.T002T2                                                               4  
 (EXPR)                                                    REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES  STORE_FILE_UNCOMP_SIZE  STORE_FILE_SIZE       MEM_STORE_SIZE        (EXPR)                         (EXPR)
 --------------------------------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------  ----------------------  --------------------  --------------------  -----------------------------  ------------------------------
 
-T002SCH.T002T2                                                               1  TRAFODION.T002SCH.T002T2I1/1479772043929                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    2                0                       0                     0                     0  ReadRequestsCount: 1           WriteRequestsCount: 1         
+T002SCH.T002T2                                                               1  TRAFODION.T002SCH.T002T2I1/1487260007756                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    2                0                       0                     0                     0  ReadRequestsCount: 1           WriteRequestsCount: 1         
 
 --- 1 row(s) selected.
 >>
@@ -230,9 +230,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.T002T1/1479772003905
+  RegionName:         TRAFODION.T002SCH.T002T1/1487259963893
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -263,9 +263,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.T002T1I1/1479772006300
+  RegionName:         TRAFODION.T002SCH.T002T1I1/1487259968487
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -296,9 +296,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.T002T2/1479772039247
+  RegionName:         TRAFODION.T002SCH.T002T2/1487260002888
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -307,9 +307,9 @@ Stats Details
   ReadRequestsCount:  0
   WriteRequestsCount: 0
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          2
-  RegionName:         TRAFODION.T002SCH.T002T2/1479772039247
+  RegionName:         TRAFODION.T002SCH.T002T2/1487260002888
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -318,9 +318,9 @@ Stats Details
   ReadRequestsCount:  1
   WriteRequestsCount: 1
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          3
-  RegionName:         TRAFODION.T002SCH.T002T2/1479772039247
+  RegionName:         TRAFODION.T002SCH.T002T2/1487260002888
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -329,9 +329,9 @@ Stats Details
   ReadRequestsCount:  0
   WriteRequestsCount: 0
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          4
-  RegionName:         TRAFODION.T002SCH.T002T2/1479772039247
+  RegionName:         TRAFODION.T002SCH.T002T2/1487260002888
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -362,9 +362,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.T002T2I1/1479772043929
+  RegionName:         TRAFODION.T002SCH.T002T2I1/1487260007756
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -396,9 +396,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.T002T1/1479772003905
+  RegionName:         TRAFODION.T002SCH.T002T1/1487259963893
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -432,9 +432,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.SB_HISTOGRAMS/1479771997150
+  RegionName:         TRAFODION.T002SCH.SB_HISTOGRAMS/1487259955785
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -461,9 +461,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.SB_HISTOGRAM_INTERVALS/1479771999149
+  RegionName:         TRAFODION.T002SCH.SB_HISTOGRAM_INTERVALS/1487259958172
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -490,9 +490,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.SB_PERSISTENT_SAMPLES/1479772001686
+  RegionName:         TRAFODION.T002SCH.SB_PERSISTENT_SAMPLES/1487259960999
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -519,9 +519,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.T002T1/1479772003905
+  RegionName:         TRAFODION.T002SCH.T002T1/1487259963893
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -548,9 +548,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.T002T2/1479772039247
+  RegionName:         TRAFODION.T002SCH.T002T2/1487260002888
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -559,9 +559,9 @@ Stats Details
   ReadRequestsCount:  0
   WriteRequestsCount: 0
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          2
-  RegionName:         TRAFODION.T002SCH.T002T2/1479772039247
+  RegionName:         TRAFODION.T002SCH.T002T2/1487260002888
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -570,9 +570,9 @@ Stats Details
   ReadRequestsCount:  1
   WriteRequestsCount: 1
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          3
-  RegionName:         TRAFODION.T002SCH.T002T2/1479772039247
+  RegionName:         TRAFODION.T002SCH.T002T2/1487260002888
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -581,9 +581,9 @@ Stats Details
   ReadRequestsCount:  0
   WriteRequestsCount: 0
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          4
-  RegionName:         TRAFODION.T002SCH.T002T2/1479772039247
+  RegionName:         TRAFODION.T002SCH.T002T2/1487260002888
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -607,8 +607,8 @@ Stats Details
 (EXPR)                                                    REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES  STORE_FILE_UNCOMP_SIZE  STORE_FILE_SIZE       MEM_STORE_SIZE        (EXPR)                         (EXPR)
 --------------------------------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------  ----------------------  --------------------  --------------------  -----------------------------  ------------------------------
 
-T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1I1/1479772006300                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 1         
-T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1I2/1479772011884                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 1         
+T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1I1/1487259968487                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 1         
+T002SCH.T002T1                                                               1  TRAFODION.T002SCH.T002T1I2/1487259972746                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    2                0                       0                     0                     0  ReadRequestsCount: 0           WriteRequestsCount: 1         
 
 --- 2 row(s) selected.
 >>get region stats for 
@@ -633,9 +633,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.T002T1I1/1479772006300
+  RegionName:         TRAFODION.T002SCH.T002T1I1/1487259968487
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -662,9 +662,9 @@ Stats Summary
 Stats Details
 =============
 
-  RegionServer:       ansharma-4:45984
+  RegionServer:       edev08:49554
   RegionNum:          1
-  RegionName:         TRAFODION.T002SCH.T002T1I2/1479772011884
+  RegionName:         TRAFODION.T002SCH.T002T1I2/1487259972746
   NumStores:          2
   NumStoreFiles:      0
   UncompressedSize:   0 (less than 1MB)
@@ -836,7 +836,7 @@ Stats Summary
 (EXPR)                          REGION_NUM            REGION_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       NUM_STORES   NUM_STORE_FILES
 ------------------------------  --------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  -----------  ---------------
 
-T002SCH.T002T1                                     1  TRAFODION.T002SCH.T002T1/1479772003905                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0
+T002SCH.T002T1                                     1  TRAFODION.T002SCH.T002T1/1487259963893                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      2                0
 
 --- 1 row(s) selected.
 >>
@@ -858,7 +858,7 @@ T002T1                                             0
 >>invoke table(cluster stats());
 
 -- Definition of Trafodion table TRAFODION.T002SCH.EXE_UTIL_CLUSTER_STATS__
--- Definition current  Mon Nov 21 23:47:47 2016
+-- Definition current  Thu Feb 16 15:47:18 2017
 
   (
     REGION_SERVER                    CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
@@ -911,14 +911,14 @@ T002SCH.T002T2I1                                   0
 (EXPR)                          (EXPR)              
 ------------------------------  --------------------
 
-RegionName: 1479771997150                          0
-RegionName: 1479771999149                          0
-RegionName: 1479772039247                          0
-RegionName: 1479772011884                          0
-RegionName: 1479772006300                          0
-RegionName: 1479772001686                          0
-RegionName: 1479772003905                          0
-RegionName: 1479772043929                          0
+RegionName: 1487259968487                          0
+RegionName: 1487259958172                          0
+RegionName: 1487259955785                          0
+RegionName: 1487259963893                          0
+RegionName: 1487260007756                          0
+RegionName: 1487259972746                          0
+RegionName: 1487259960999                          0
+RegionName: 1487260002888                          0
 
 --- 8 row(s) selected.
 >>
@@ -929,7 +929,7 @@ RegionName: 1479772043929                          0
 >>invoke table(hivemd(tables));
 
 -- Definition of Trafodion table TRAFODION.T002SCH.HIVEMD_TABLES__
--- Definition current  Mon Nov 21 23:47:48 2016
+-- Definition current  Thu Feb 16 15:47:19 2017
 
   (
     CATALOG_NAME                     CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
@@ -961,7 +961,7 @@ RegionName: 1479772043929                          0
 >>invoke table(hivemd(columns));
 
 -- Definition of Trafodion table TRAFODION.T002SCH.HIVEMD_COLUMNS__
--- Definition current  Mon Nov 21 23:47:49 2016
+-- Definition current  Thu Feb 16 15:47:19 2017
 
   (
     CATALOG_NAME                     CHAR(256 BYTES) CHARACTER SET UTF8 COLLATE
@@ -1073,5 +1073,72 @@ w_country                       VARCHAR                                     64  
 w_gmt_offset                    REAL                                       142  float                                       4             0             13               -1                 -1               -1
 
 --- 14 row(s) selected.
+>>
+>>create table createOptions (a int) HBASE_OPTIONS 
++>(max_versions = '3',
++> min_versions = '2',
++> time_to_live = '100',
++> blockcache = 'false',
++> in_memory = 'true',
++> compression = 'GZ',
++> bloomfilter = 'ROWCOL',
++> blocksize = '256',
++> data_block_encoding = 'DIFF',
++> cache_blooms_on_write = 'false',
++>cache_data_on_write = 'false',
++>cache_indexes_on_write = 'false',
++>compact_compression = 'GZ',
++>prefix_length_key = '10',
++>evict_blocks_on_close = 'true',
++>keep_deleted_cells = 'false',
++>replication_scope = '0',
++>max_filesize = '10000' ,
++>compact = 'true',
++>durability = 'async_wal',
++>memstore_flush_size = '10000',
++>split_policy = 'org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy',
++>CACHE_DATA_IN_L1 = 'false',
++>prefetch_blocks_on_open = 'false'
++>);
+
+--- SQL operation complete.
+>>
+>>showddl createOptions ;
+
+CREATE TABLE TRAFODION.T002SCH.CREATEOPTIONS
+  (
+    A                                INT DEFAULT NULL
+  )
+ ATTRIBUTES ALIGNED FORMAT
+  HBASE_OPTIONS
+  (
+    MAX_VERSIONS = '3',
+    MIN_VERSIONS = '2',
+    TIME_TO_LIVE = '100',
+    BLOCKCACHE = 'false',
+    IN_MEMORY = 'true',
+    COMPRESSION = 'GZ',
+    BLOOMFILTER = 'ROWCOL',
+    BLOCKSIZE = '256',
+    DATA_BLOCK_ENCODING = 'DIFF',
+    CACHE_BLOOMS_ON_WRITE = 'false',
+    CACHE_DATA_ON_WRITE = 'false',
+    CACHE_INDEXES_ON_WRITE = 'false',
+    COMPACT_COMPRESSION = 'GZ',
+    PREFIX_LENGTH_KEY = '10',
+    EVICT_BLOCKS_ON_CLOSE = 'true',
+    KEEP_DELETED_CELLS = 'false',
+    REPLICATION_SCOPE = '0',
+    MAX_FILESIZE = '10000',
+    COMPACT = 'true',
+    DURABILITY = 'async_wal',
+    MEMSTORE_FLUSH_SIZE = '10000',
+    SPLIT_POLICY = 'org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy',
+    CACHE_DATA_IN_L1 = 'false',
+    PREFETCH_BLOCKS_ON_OPEN = 'false'
+  )
+;
+
+--- SQL operation complete.
 >>
 >>log;

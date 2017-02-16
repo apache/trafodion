@@ -194,9 +194,39 @@ select cast(column_name as char(30) character set iso88591),
   where table_name = 'warehouse'
   order by column_number;
 
+create table createOptions (a int) HBASE_OPTIONS 
+(max_versions = '3',
+ min_versions = '2',
+ time_to_live = '100',
+ blockcache = 'false',
+ in_memory = 'true',
+ compression = 'GZ',
+ bloomfilter = 'ROWCOL',
+ blocksize = '256',
+ data_block_encoding = 'DIFF',
+ cache_blooms_on_write = 'false',
+cache_data_on_write = 'false',
+cache_indexes_on_write = 'false',
+compact_compression = 'GZ',
+prefix_length_key = '10',
+evict_blocks_on_close = 'true',
+keep_deleted_cells = 'false',
+replication_scope = '0',
+max_filesize = '10000' ,
+compact = 'true',
+durability = 'async_wal',
+memstore_flush_size = '10000',
+split_policy = 'org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy',
+CACHE_DATA_IN_L1 = 'false',
+prefetch_blocks_on_open = 'false'
+);
+
+showddl createOptions ;
+
 ?section clean_up
 set schema t002sch;
 drop table t002t1 cascade;
 drop table t002t2 cascade;
+drop table createOptions ;
 drop schema t002sch cascade;
 

@@ -109,6 +109,13 @@ static bool hasValue(
    std::vector<int32_t> container,
    int32_t value);   
 
+static NABoolean isTrueFalseStr(const NAText& str);
+static NABoolean isHBaseCompressionOption(const NAText& str);
+static NABoolean isHBaseDurabilityOption(const NAText& str);
+static NABoolean isHBaseEncodingOption(const NAText& str);
+static NABoolean isHBaseBloomFilterOption(const NAText& str);
+
+
 #include "EncodedKeyValue.h"
 #include "SCMVersHelp.h"
 
@@ -2218,6 +2225,42 @@ NABoolean CmpSeabaseDDL::isEncodingNeededForSerialization(NAColumn * nac)
   return FALSE;
 }
 
+// removing leading and trailing blank pad characters and
+// converting characters to upper case is done earlier.
+static NABoolean isTrueFalseStr(const NAText& str) 
+{
+  if (str == "TRUE" || str == "FALSE")
+    return TRUE;
+  return FALSE;
+}
+static NABoolean isHBaseCompressionOption(const NAText& str)
+{
+  if (str == "NONE" || str == "GZ" || str == "LZO" || 
+      str == "LZ4" || str == "SNAPPY")
+    return TRUE;
+  return FALSE;
+}
+static NABoolean isHBaseDurabilityOption(const NAText& str)
+{
+  if (str == "ASYNC_WAL" || str == "FSYNC_WAL" || str == "SKIP_WAL" || 
+      str == "SYNC" || str == "USE_DEFAULT")
+    return TRUE;
+  return FALSE;
+}
+static NABoolean isHBaseEncodingOption(const NAText& str)
+{
+  if (str == "NONE" || str == "PREFIX" || str == "PREFIX_TREE" || 
+      str == "DIFF" || str == "FAST_DIFF")
+    return TRUE;
+  return FALSE;
+}
+static NABoolean isHBaseBloomFilterOption(const NAText& str)
+{
+  if (str == "NONE" || str == "ROW" || str == "ROWCOL")
+    return TRUE;
+  return FALSE;
+}
+
 // note: this function expects hbaseCreateOptionsArray to have
 // HBASE_MAX_OPTIONS elements
 short CmpSeabaseDDL::generateHbaseOptionsArray(
@@ -2251,162 +2294,213 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
       NABoolean isError = FALSE;
       if (hbaseOption->key() == "NAME")
         {
+	  if (!hbaseCreateOptionsArray[HBASE_NAME].empty())
+	    isError = TRUE;
           hbaseCreateOptionsArray[HBASE_NAME] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "MAX_VERSIONS")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+                       hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_MAX_VERSIONS].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_MAX_VERSIONS] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "MIN_VERSIONS")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_MIN_VERSIONS].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_MIN_VERSIONS] = hbaseOption->val();
         }
       else if ((hbaseOption->key() == "TIME_TO_LIVE") ||
                (hbaseOption->key() == "TTL"))
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
-            isError = TRUE;
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_TTL].empty()))
+	    isError = TRUE;
           hbaseCreateOptionsArray[HBASE_TTL] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "BLOCKCACHE")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_BLOCKCACHE].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_BLOCKCACHE] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "IN_MEMORY")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_IN_MEMORY].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_IN_MEMORY] = hbaseOption->val();
         }
-      else if (hbaseOption->key() == "COMPRESSION")
+      else if (hbaseOption->key() == "COMPRESSION") 
         {
+	  if ((!isHBaseCompressionOption(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_COMPRESSION].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_COMPRESSION] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "BLOOMFILTER")
         {
+	  if ((!isHBaseBloomFilterOption(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_BLOOMFILTER].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_BLOOMFILTER] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "BLOCKSIZE")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_BLOCKSIZE].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_BLOCKSIZE] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "DATA_BLOCK_ENCODING")
         {
-          if (hbaseOption->val() != "NONE" &&
-              hbaseOption->val() != "PREFIX" &&
-              hbaseOption->val() != "DIFF" &&
-              hbaseOption->val() != "FAST_DIFF")
-            isError = TRUE;
+	  if ((!isHBaseEncodingOption(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_DATA_BLOCK_ENCODING].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_DATA_BLOCK_ENCODING] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "CACHE_BLOOMS_ON_WRITE")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_CACHE_BLOOMS_ON_WRITE].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_CACHE_BLOOMS_ON_WRITE] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "CACHE_DATA_ON_WRITE")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_CACHE_DATA_ON_WRITE].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_CACHE_DATA_ON_WRITE] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "CACHE_INDEXES_ON_WRITE")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_CACHE_INDEXES_ON_WRITE].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_CACHE_INDEXES_ON_WRITE] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "COMPACT_COMPRESSION")
         {
+	  if ((!isHBaseCompressionOption(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_COMPACT_COMPRESSION].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_COMPACT_COMPRESSION] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "PREFIX_LENGTH_KEY")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_PREFIX_LENGTH_KEY].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_PREFIX_LENGTH_KEY] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "EVICT_BLOCKS_ON_CLOSE")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_EVICT_BLOCKS_ON_CLOSE].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_EVICT_BLOCKS_ON_CLOSE] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "KEEP_DELETED_CELLS")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_KEEP_DELETED_CELLS].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_KEEP_DELETED_CELLS] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "REPLICATION_SCOPE")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_REPLICATION_SCOPE].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_REPLICATION_SCOPE] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "MAX_FILESIZE")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_MAX_FILESIZE].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_MAX_FILESIZE] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "COMPACT")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_COMPACT].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_COMPACT] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "DURABILITY")
         {
+	  if ((!isHBaseDurabilityOption(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_DURABILITY].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_DURABILITY] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "MEMSTORE_FLUSH_SIZE")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_MEMSTORE_FLUSH_SIZE].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_MEMSTORE_FLUSH_SIZE] = 
             hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "CACHE_DATA_IN_L1")
+        {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_CACHE_DATA_IN_L1].empty()))
+	    isError = TRUE ;
+          hbaseCreateOptionsArray[HBASE_CACHE_DATA_IN_L1] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "PREFETCH_BLOCKS_ON_OPEN")
+        {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_PREFETCH_BLOCKS_ON_OPEN].empty()))
+	    isError = TRUE ;
+          hbaseCreateOptionsArray[HBASE_PREFETCH_BLOCKS_ON_OPEN] = 
+	    hbaseOption->val();
         }
       else if (hbaseOption->key() == "SPLIT_POLICY")
         {
           // for now, restrict the split policies to some well-known
           // values, because specifying an invalid class gets us into
           // a hang situation in the region server
-          if (valInOrigCase == "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy" ||
-              valInOrigCase == "org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy"
+          if ((valInOrigCase == "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy" ||
+	       valInOrigCase == "org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy"
  ||
-              valInOrigCase == "org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy")
+	       valInOrigCase == "org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy") &&  (hbaseCreateOptionsArray[HBASE_SPLIT_POLICY].empty()))
             hbaseCreateOptionsArray[HBASE_SPLIT_POLICY] = valInOrigCase;
           else
-            {
-              *CmpCommon::diags() << DgSqlCode(-8449)
-                                  << DgString0(hbaseOption->key().data())
-                                  << DgString1(valInOrigCase.data());
-              return -1;
-            }
+	      isError = TRUE;
         }
       else
         isError = TRUE;
 
       if (isError)
         {
-          short retcode = -HBASE_CREATE_OPTIONS_ERROR;
-          *CmpCommon::diags() << DgSqlCode(-8448)
-                              << DgString0((char*)"CmpSeabaseDDL::generateHbaseOptionsArray()")
-                              << DgString1(getHbaseErrStr(-retcode))
-                              << DgInt0(-retcode)
-                              << DgString2((char*)hbaseOption->key().data());
-              
+          *CmpCommon::diags() << DgSqlCode(-8449)
+			      << DgString0(hbaseOption->key().data())
+			      << DgString1(valInOrigCase.data());
+	  
           return -1;
         }
     } // for
