@@ -306,17 +306,32 @@ public class DatabaseQuery extends QueryWrapper
          //Overwrite the queryStr with the 'GET STATISTICS'
          //command. dbExec executes the command stored in
          //queryStr.
-         queryStr = getStatsCmd;
+         String qryRowCnt = qryObj.getRowCount();
+         if (sessObj.getSessionStatsType().equals("ALL"))
+         {
+            queryStr = "GET STATISTICS FOR QID CURRENT PROGRESS";
+            qryObj.resetQueryText(queryStr);
+            parser.setRemainderStr(queryStr);
+            qryObj.setRowCount(null);
+            execGet(false);
+         }
+         if (sessObj.getSessionStatsType().equals("PERTABLE"))
+            queryStr = "GET STATISTICS FOR QID CURRENT PERTABLE";
+         else if (sessObj.getSessionStatsType().equals("PROGRESS"))
+            queryStr = "GET STATISTICS FOR QID CURRENT PROGRESS";
+         else if (sessObj.getSessionStatsType().equals("DEFAULT"))
+            queryStr = "GET STATISTICS FOR QID CURRENT DEFAULT";
+         else if (sessObj.getSessionStatsType().equals("ALL"))
+            queryStr = "GET STATISTICS FOR QID CURRENT DEFAULT";
+         else
+            queryStr = getStatsCmd;
          qryObj.resetQueryText(queryStr);
          parser.setRemainderStr(queryStr);
-         String qryRowCnt = qryObj.getRowCount();
          qryObj.setRowCount(null);
          execGet(false);
          //Reset the record count to row count of the
          //original query
          qryObj.setRowCount(qryRowCnt);
-                 
-         
       }
 
    }

@@ -1130,6 +1130,43 @@ sqlci_cmd :	MODE REPORT
 		    $$ = new Shape(FALSE, identifier_name_internal, $7);
                   }
 
+	|       SETtoken STATISTICS OFF
+                  {
+		    $$ = new Statistics(0,0,Statistics::SET_OFF, NULL);
+		  }
+
+        |       SETtoken STATISTICS ON
+                  {
+		    // display statistics in old format
+		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
+					(char *)"of");
+             	  }
+
+        |       SETtoken STATISTICS PERTABLEtoken
+                  {
+		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
+					(char *)"PERTABLE");
+		  }
+
+        |       SETtoken STATISTICS PROGRESStoken
+                  {
+		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
+					(char *)"PROGRESS");
+		  }
+
+        |       SETtoken STATISTICS DEFAULTtoken
+                  {
+		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
+					(char *)"DEFAULT");
+		  }
+
+        |       SETtoken STATISTICS ALLtoken
+                  {
+		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
+					(char *)"ALL");
+		  }
+
+
         |       SETtoken STATISTICS ON COMMA GETtoken STATISTICS
                   {
 		    // display stats in new format
@@ -1142,19 +1179,7 @@ sqlci_cmd :	MODE REPORT
 		    // quoted_string
 		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
 					$9);
-		  }
-
-        |       SETtoken STATISTICS ON
-                  {
-		    // display statistics in old format
-		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
-					(char *)"of");
-		  }
-
-	|       SETtoken STATISTICS OFF
-                  {
-		    $$ = new Statistics(0,0,Statistics::SET_OFF, NULL);
-		  }
+                  }
 
         |       SETtoken LISTCOUNT NUMBER
                   {
