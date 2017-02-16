@@ -444,6 +444,7 @@ def user_input(options, prompt_mode=True, pwd=''):
 
     # check discover results, return error if fails on any sinlge node
     need_java_home = 0
+    has_home_dir = 0
     for result in system_discover:
         host, content = result.items()[0]
         content_dict = json.loads(content)
@@ -462,6 +463,7 @@ def user_input(options, prompt_mode=True, pwd=''):
         if content_dict['hbase'] == 'N/S':
             log_err('HBase version is not supported')
         if content_dict['home_dir']: # trafodion user exists
+            has_home_dir += 1
             cfgs['home_dir'] = content_dict['home_dir']
         if content_dict['hadoop_authentication'] == 'kerberos':
             cfgs['secure_hadoop'] = 'Y'
@@ -498,7 +500,7 @@ def user_input(options, prompt_mode=True, pwd=''):
     if not cfgs['traf_dirname']:
         cfgs['traf_dirname'] = '%s-%s' % (cfgs['traf_basename'], cfgs['traf_version'])
     g('traf_dirname')
-    if not cfgs['home_dir']:
+    if not has_home_dir:
         g('traf_pwd')
     g('dcs_cnt_per_node')
     g('scratch_locs')
