@@ -42,7 +42,7 @@ except ImportError:
 from scripts import wrapper
 from scripts.common import DEF_PORT_FILE, DBCFG_FILE, USER_PROMPT_FILE, DBCFG_TMP_FILE, \
                            INSTALLER_LOC, Remote, Version, ParseHttp, ParseInI, ParseJson, \
-                           http_start, http_stop, format_output, err_m, expNumRe, run_cmd
+                           http_start, http_stop, format_output, err_m, expNumRe, run_cmd, info
 
 # init global cfgs for user input
 cfgs = defaultdict(str)
@@ -454,7 +454,7 @@ def user_input(options, prompt_mode=True, pwd=''):
         if content_dict['linux'] == 'N/A':
             log_err('Unsupported Linux version')
         if content_dict['firewall_status'] == 'Running':
-            log_err('Firewall should be stopped')
+            info('Firewall is running, please make sure the ports used by Trafodion are open')
         if content_dict['traf_status'] == 'Running':
             log_err('Trafodion process is found, please stop it first')
         if content_dict['hbase'] == 'N/A':
