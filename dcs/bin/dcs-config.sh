@@ -87,7 +87,7 @@ fi
 if [ -f "${TRAF_HOME}/sqenv.sh" ]; then
   savedir=`pwd`
   cd $TRAF_HOME
-  . sqenv.sh
+  . ./sqenv.sh
   cd $savedir
 fi
 
