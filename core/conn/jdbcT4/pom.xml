@@ -36,7 +36,7 @@
 
   <groupId>org.apache.trafodion.jdbc.t4</groupId>
   <artifactId>jdbcT4</artifactId>
-  <version>${env.TRAFODION_VER}-snapshot</version> 
+  <version>${env.TRAFODION_VER}</version> 
   <name>Trafodion JDBC Type4 Driver</name>
   <url>http://wiki.trafodion.org</url>
   
