@@ -181,7 +181,7 @@ distribution manager's REST API.
 | START              | Whether to start {project-name} after install/upgrade.              | N                             | 
 | SUSE_LINUX         | Whether your installing {project-name} on SUSE Linux.               | false                         | Auto-detected by the {project-name} Installer.
 | TRAF_KEYTAB^2^     | Name to use when specifying {project-name} keytab              | based on distribution         |  Required if Kerberos is enabled.
-| TRAF_KEYTAB_DIR^2^ | Location  of {project_name} keytab                             | based on distribution         |  Required if Kerberos is enabled.
+| TRAF_KEYTAB_DIR^2^ | Location  of {project-name} keytab                             | based on distribution         |  Required if Kerberos is enabled.
 | TRAF_PACKAGE       | The location of the {project-name} installation package tar file or core installation tar file. | None | The package file contains the {project-name} server,
 DCS, and REST software while the core installation file contains the {project-name} server software only. If you're using a core installation file, then you need to
 record the location of the DCS and REST installation tar files, too. Normally, you perform {project-name} provisioning using a {project-name} package installation tar file.

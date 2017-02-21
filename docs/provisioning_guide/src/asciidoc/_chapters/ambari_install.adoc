@@ -34,6 +34,8 @@ This method of installation uses RPM packages rather than tar files. There are t
 You can either set up a local yum repository (requires a web server) or install the RPMs
 manually on each node.
 
+image:{images}/amb4.PNG[width=400,height=400,alt="Ambari Service"]
+
 == Local Repository
 
 On your web server host, be sure the *createrepo* package is installed.
@@ -76,17 +78,32 @@ Unlike the command-line installer, Trafodion can be provisioned at time of creat
 === Initial Cluster Creation
 
 If you are creating a new cluster and you have the Trafodion server RPM hosted on a local yum repository, then
-create the cluster as normal, and select Trafodion on the service selection screen.
-When Ambari prompts for the repository URLs, be sure to update the Trafodion URL
-to the URL for your local repository.
+create the cluster as normal, and select a stack version that includs the Trafodion service.
 
-If you plan to install the server RPM manually, do not select the Trafodion service. First, create a cluster
-without Trafodion service and follow instructions for an existing cluster.
+image:{images}/amb1.PNG[width=600,height=400,alt="Ambari Service"]
+
+When selecting HDP stack version, Ambari prompts for the repository URLs, be *sure to update the Trafodion URL
+to the URL for your local repository*.
+
+image:{images}/amb2.PNG[width=600,height=120,alt="Ambari Service"]
+
+If you plan to install the server RPM manually, set the Trafodion URL to some other valid repository, otherwise the
+the invalid URL will cause errors later.
+Any valid repo URL will do. You may copy the HDP URL and paste it into the Trafodion URL.
+In this case, do not select the Trafodion service on the "Choose Services" step. First, create a cluster
+without the Trafodion service and follow instructions below for an existing cluster.
 
 === Existing Cluster
 
 If you are not using a local yum repository, manually copy the apache-trafodion_server RPM to each data node and
 install it using yum install.
 
-Using Ambari, select the cluster and then choose "Add a Service" and select Trafodion.
+Using Ambari, select the cluster and then from the Actions menu choose "Add Service" and select Trafodion.
 
+image:{images}/amb3.PNG[width=300,height=300,alt="Ambari Service"]
+
+You may get a configuration warning regarding a hbase-site setting. In this case, follow the warning message
+instructions to go to the HBase advanced configuration, hbase-site section and use the button to revert to
+the recommended value for "hbase.coprocessor.region.classes".
+
+Several services will need to be restarted before the Trafodion service can be started.

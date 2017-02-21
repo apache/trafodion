@@ -136,7 +136,7 @@ The Java location is: `/usr/jdk64/jdk1.7.0_67`
 <<<
 === Data Nodes
 
-{projet-name} is installed on all data nodes in your Hadoop cluster. You need to record the fully-qualified domain name node for each node.
+{project-name} is installed on all data nodes in your Hadoop cluster. You need to record the fully-qualified domain name node for each node.
 For example, refer to `/etc/hosts`.
 
 *Example*
