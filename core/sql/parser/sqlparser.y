@@ -6116,6 +6116,7 @@ hivemd_identifier :
                   | TOK_TABLES   { $$ = new (PARSERHEAP()) NAString("TABLES"); }
                   | TOK_VIEWS    { $$ = new (PARSERHEAP()) NAString("VIEWS"); }
                   | TOK_SYSTEM TOK_TABLES { $$ = new (PARSERHEAP()) NAString("SYSTEM_TABLES"); }
+                  | TOK_SCHEMAS { $$ = new (PARSERHEAP()) NAString("SCHEMAS"); }
 
 /* type boolean */
 sp_proxy_stmt_prefix : TOK_TABLE '(' TOK_SP_RESULT_SET 
@@ -25314,6 +25315,19 @@ create_table_start_tokens :
 		     ParNameCTLocListPtr = new (PARSERHEAP())
 		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
                      TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_EXTERNAL_TABLE, $4); 
+                     $$ = tableTokens;
+		   }
+
+                   | TOK_CREATE TOK_IMPLICIT TOK_EXTERNAL TOK_TABLE optional_if_not_exists_clause
+                   {
+                     if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+                       {
+                         yyerror(""); YYERROR; /*internal syntax only!*/
+                       }
+                     
+		     ParNameCTLocListPtr = new (PARSERHEAP())
+		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_IMPLICIT_EXTERNAL_TABLE, $5); 
                      $$ = tableTokens;
 		   }
 

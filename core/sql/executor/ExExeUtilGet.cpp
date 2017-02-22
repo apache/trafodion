@@ -841,9 +841,23 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
       }
     break;
 
+    case ComTdbExeUtilGetMetadataInfo::TABLES_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "Tables in Catalog %s",
+		    getMItdb().getCat());
+      }
+    break;
+
     case ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_:
       {
 	str_sprintf(headingBuf_, "Views in Catalog %s",
+		    getMItdb().getCat());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "Objects in Catalog %s",
 		    getMItdb().getCat());
       }
     break;
@@ -865,6 +879,13 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
     case ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_:
       {
 	str_sprintf(headingBuf_, "Views in Schema %s.%s",
+		    getMItdb().getCat(), getMItdb().getSch());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_:
+      {
+	str_sprintf(headingBuf_, "Objects in Schema %s.%s",
 		    getMItdb().getCat(), getMItdb().getSch());
       }
     break;
@@ -3689,8 +3710,28 @@ short ExExeUtilGetHiveMetadataInfoTcb::fetchAllHiveRows(Queue * &infoList,
   rc = 0;
 
   char buf[2000];
-  str_sprintf(buf, "select rtrim(table_name) from table(hivemd(tables, \"%s\"))", 
-              getMItdb().getSch());
+  char wherePred[400];
+  if ((getMItdb().queryType() == ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_) ||
+      (getMItdb().queryType() == ComTdbExeUtilGetMetadataInfo::TABLES_IN_CATALOG_))
+    strcpy(wherePred, " where hive_table_type = 'MANAGED_TABLE' or hive_table_type = 'EXTERNAL_TABLE' ");
+  else if ((getMItdb().queryType() == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_) ||
+           (getMItdb().queryType() == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_))
+    strcpy(wherePred, " where hive_table_type = 'VIRTUAL_VIEW' ");
+  else if ((getMItdb().queryType() == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_) ||
+           (getMItdb().queryType() == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_CATALOG_) ||
+           (getMItdb().queryType() == ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_))
+    strcpy(wherePred, " ");
+
+  if (getMItdb().queryType() == ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_)
+    str_sprintf(buf, "select trim(schema_name) from table(hivemd(schemas)) group by 1 order by 1");
+  else if (getMItdb().getSch())
+    str_sprintf(buf, "select rtrim(table_name) from table(hivemd(tables, \"%s\")) %s order by 1", 
+                getMItdb().getSch(),
+                wherePred);
+  else
+    str_sprintf(buf, "select trim(schema_name) || '.' || trim(table_name) from table(hivemd(tables)) %s order by 1", 
+                wherePred);
+    
   cliRC = fetchAllRows(infoList, buf, 1, TRUE, rc, FALSE);
 
   return cliRC;
@@ -3769,8 +3810,22 @@ short ExExeUtilGetHiveMetadataInfoTcb::work()
 	    OutputInfo * vi = (OutputInfo*)infoList_->getCurr();
 	    char * ptr = vi->get(0);
 	    short len = *(short*)ptr;
-	    ptr += SQL_VARCHAR_HDR_SIZE;
  
+	    ex_expr::exp_return_type exprRetCode = 
+              exprRetCode = evalScanExpr(ptr, len, FALSE);
+	    if (exprRetCode == ex_expr::EXPR_FALSE)
+	      {
+		// row does not pass the scan expression,
+		// move to the next row.
+                infoList_->advance();
+		break;
+	      }
+	    else if (exprRetCode == ex_expr::EXPR_ERROR)
+	      {
+		step_ = HANDLE_ERROR_;
+		break;
+	      }
+
 	    if (NOT headingReturned_)
 	      {
 		step_ = DISPLAY_HEADING_;
@@ -3778,6 +3833,7 @@ short ExExeUtilGetHiveMetadataInfoTcb::work()
 	      }
 
 	    short rc = 0;
+	    ptr += SQL_VARCHAR_HDR_SIZE;
 	    if (moveRowToUpQueue(ptr, len, &rc))
             {
 	      return rc;
@@ -4919,14 +4975,14 @@ ex_tcb * ExExeUtilHiveMDaccessTdb::build(ex_globals * glob)
 
   exe_util_tcb =
     new(glob->getSpace()) ExExeUtilHiveMDaccessTcb(*this, glob);
-  
+
   exe_util_tcb->registerSubtasks();
 
   return (exe_util_tcb);
 }
 
 ////////////////////////////////////////////////////////////////
-// Constructor for class ExExeUtilGetMetadataInfoTcb
+// Constructor for class ExExeUtilHiveMDaccessTcb
 ///////////////////////////////////////////////////////////////
 ExExeUtilHiveMDaccessTcb::ExExeUtilHiveMDaccessTcb(
      const ComTdbExeUtilHiveMDaccess & exe_util_tdb,
@@ -4935,7 +4991,10 @@ ExExeUtilHiveMDaccessTcb::ExExeUtilHiveMDaccessTcb(
     hiveMD_(NULL),
     currColDesc_(NULL),
     currKeyDesc_(NULL),
-    tblNames_(getHeap())
+    schNames_(getHeap()),
+    tblNames_(getHeap()),
+    currSchNum_(0),
+    currColNum_(0)
 {
   step_ = INITIAL_;
 
@@ -5007,19 +5066,6 @@ short ExExeUtilHiveMDaccessTcb::work()
             if (hiveMDtdb().getCatalog())
               strcpy(hiveCat_, hiveMDtdb().getCatalog());
  
-            if ((! hiveMDtdb().getSchema()) ||
-                (! strcmp(hiveMDtdb().getSchema(), HIVE_SYSTEM_SCHEMA_LC)) ||
-                (! strcmp(hiveMDtdb().getSchema(), HIVE_SYSTEM_SCHEMA)))
-              {
-                strcpy(hiveSch_, HIVE_SYSTEM_SCHEMA_LC);
-                strcpy(schForHive_, HIVE_DEFAULT_SCHEMA_EXE);
-              }
-            else
-              {
-                strcpy(hiveSch_, hiveMDtdb().getSchema());
-                strcpy(schForHive_, hiveSch_);
-              }
-
             retStatus = hiveMD_->init();
             if (!retStatus)
               {
@@ -5032,13 +5078,73 @@ short ExExeUtilHiveMDaccessTcb::work()
                 break;
               }
 
-	    step_ = READ_HIVE_MD_;
+            step_ = SETUP_SCHEMAS_;
 	  }
 	  break;
 
-        case READ_HIVE_MD_:
+        case SETUP_SCHEMAS_:
           {
-            char* currSch = schForHive_;
+	    if ((hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::SCHEMAS_) ||
+                (! hiveMDtdb().getSchema()))
+              {
+                HVC_RetCode retCode = hiveMD_->getClient()->
+                  getAllSchemas(schNames_);
+                if ((retCode != HVC_OK) && (retCode != HVC_DONE)) 
+                  {
+                    *diags << DgSqlCode(-1190)
+                           << DgString0((char*)
+                                        "HiveClient_JNI::getAllSchemas()")
+                           << DgString1(hiveMD_->getClient()->
+                                        getErrorText(retCode))
+                           << DgInt0(retCode)
+                           << DgString2(GetCliGlobals()->getJniErrorStr());
+                    step_ = HANDLE_ERROR_;
+                    break;
+                  }
+              }
+            else
+              {
+                if ((!strcmp(hiveMDtdb().getSchema(), HIVE_SYSTEM_SCHEMA_LC)) ||
+                    (!strcmp(hiveMDtdb().getSchema(), HIVE_SYSTEM_SCHEMA)))
+                  {
+                    strcpy(schForHive_, HIVE_DEFAULT_SCHEMA_EXE);
+                  }
+                else
+                  {
+                    strcpy(schForHive_, hiveMDtdb().getSchema());
+                  }
+
+                NAText * nat = new(getHeap()) NAText(schForHive_);
+                schNames_.insert(nat);
+              }
+
+            currSchNum_ = 0;
+
+            if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::SCHEMAS_)
+              step_ = POSITION_;
+            else
+              step_ = GET_ALL_TABLES_IN_SCHEMA_;
+          }
+          break;
+
+        case GET_ALL_TABLES_IN_SCHEMA_:
+          {
+            if (currSchNum_ == schNames_.entries())
+              {
+                step_ = DONE_;
+                break;
+              }
+
+            hiveMD_->clear();
+            tblNames_.clear();
+
+            char* currSch = (char*)schNames_[currSchNum_]->c_str();
+            strcpy(schForHive_, currSch);
+            if (! strcmp(schForHive_,  HIVE_DEFAULT_SCHEMA_EXE))
+              strcpy(hiveSch_, HIVE_SYSTEM_SCHEMA_LC);
+            else
+              strcpy(hiveSch_, schForHive_);
+
             char* currObj = hiveMDtdb().getObject();
 
             if (! currObj)
@@ -5082,7 +5188,12 @@ short ExExeUtilHiveMDaccessTcb::work()
             hiveMD_->position();
             htd = hiveMD_->getNext();
 
-	    if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::TABLES_)
+	    if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::SCHEMAS_)
+	      {
+                currSchNum_ = 0;
+		step_ = FETCH_SCHEMA_;
+	      }
+	    else if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::TABLES_)
 	      {
 		step_ = FETCH_TABLE_;
 	      }
@@ -5120,6 +5231,30 @@ short ExExeUtilHiveMDaccessTcb::work()
 	  }
 	  break;
 
+	case FETCH_SCHEMA_: 
+	  {
+	    if (qparent_.up->isFull())
+	      return WORK_OK;
+
+	    if (currSchNum_ == schNames_.entries())
+	      {
+		step_ = DONE_;
+		break;
+	      }
+
+	    HiveMDSchemasColInfoStruct *infoCol =
+              (HiveMDSchemasColInfoStruct*)mdRow_;
+
+	    str_cpy(infoCol->catName, hiveCat_, 256, ' ');
+            if (strcmp(schNames_[currSchNum_]->c_str(), HIVE_DEFAULT_SCHEMA_EXE) == 0)
+              str_cpy(infoCol->schName, HIVE_SYSTEM_SCHEMA_LC, 256, ' ');
+            else
+              str_cpy(infoCol->schName, schNames_[currSchNum_]->c_str(), 256, ' ');
+     	    
+	    step_ = APPLY_PRED_;
+	  }
+	  break;
+	  
 	case FETCH_TABLE_:
 	  {
 	    if (qparent_.up->isFull())
@@ -5127,7 +5262,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 
             if (hiveMD_->atEnd())
               {
-                step_ = DONE_;
+                step_ = ADVANCE_SCHEMA_;
                 break;
               }
 
@@ -5183,7 +5318,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 	    if ((! currColDesc_) &&
                 (! currPartnDesc_))
 	      {
-		step_ = DONE_;
+                step_ = ADVANCE_SCHEMA_;
 		break;
 	      }
 	    
@@ -5281,7 +5416,7 @@ short ExExeUtilHiveMDaccessTcb::work()
 
 	    if (! currKeyDesc_)
 	      {
-		step_ = DONE_;
+                step_ = ADVANCE_SCHEMA_;
 		break;
 	      }
 
@@ -5347,7 +5482,14 @@ short ExExeUtilHiveMDaccessTcb::work()
 
 	case ADVANCE_ROW_:
 	  {
-	    if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::TABLES_)
+	    if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::SCHEMAS_)
+	      {
+                // move to the next schema
+                currSchNum_++;
+
+		step_ = FETCH_SCHEMA_;
+	      }
+	    else if (hiveMDtdb().mdType_ == ComTdbExeUtilHiveMDaccess::TABLES_)
 	      {
                 // move to the next table
                 hiveMD_->advance();
@@ -5401,6 +5543,13 @@ short ExExeUtilHiveMDaccessTcb::work()
 	  }
 	  break;
 
+        case ADVANCE_SCHEMA_:
+          {
+            currSchNum_++;
+            step_ = GET_ALL_TABLES_IN_SCHEMA_;
+          }
+          break;
+          
 	case HANDLE_ERROR_:
 	  {
 	    retcode = handleError();

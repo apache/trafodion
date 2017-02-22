@@ -3322,6 +3322,11 @@ TableTokens::setTableTokens(StmtDDLCreateTable *pNode)
       pNode->setIsExternal(TRUE);
       break;
 
+    case TableTokens::TYPE_IMPLICIT_EXTERNAL_TABLE:
+      pNode->setIsExternal(TRUE);
+      pNode->setIsImplicitExternal(TRUE);
+      break;
+
     case TableTokens::TYPE_SET_TABLE:
       pNode->setInsertMode(COM_SET_TABLE_INSERT_MODE);
       break;

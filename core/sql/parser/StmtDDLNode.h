@@ -106,6 +106,9 @@ public:
   NABoolean isExternal() { return isExternal_; }
   NABoolean isExternal() const { return isExternal_; }
   void setIsExternal(NABoolean e) { isExternal_ = e; }
+  NABoolean isImplicitExternal() { return isImplicitExternal_; }
+  NABoolean isImplicitExternal() const { return isImplicitExternal_; }
+  void setIsImplicitExternal(NABoolean e) { isImplicitExternal_ = e; }
 
   // Ghost Object
   NABoolean isGhostObject() { return isGhostObject_; }
@@ -147,6 +150,13 @@ private:
   
   // if this DDL operation was specified using EXTERNAL syntax.
   NABoolean isExternal_;
+
+  // if this DDL was specified using 'IMPLICIT EXTERNAL' syntax
+  // through the use of 'create implicit external'... stmt.
+  // Used when external table on hive tables is created for internal usage
+  // (for ex: for privs, ustat, views)
+  // Valid only if isExternal_ is set.
+  NABoolean isImplicitExternal_;
 
   // if TRUE, this ddl operation will run using DTM transactions
   NABoolean ddlXns_;

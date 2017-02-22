@@ -371,11 +371,12 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
             }
 
           if ((naTable->isHiveTable()) &&
+              (NOT naTable->getViewText()) &&
               (NOT naTable->hasExternalTable()) &&
               (CmpCommon::getDefault(HIVE_VIEWS_CREATE_EXTERNAL_TABLE) == DF_ON))
             {
               // create an external table for this hive table.
-              str_sprintf(query, "create external table \"%s\" for %s.\"%s\".\"%s\"",
+              str_sprintf(query, "create implicit external table \"%s\" for %s.\"%s\".\"%s\"",
                           objectNamePart.data(), 
                           catalogNamePart.data(),
                           schemaNamePart.data(),
@@ -412,7 +413,8 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
           // do not put in view usage list if it doesn't have an external table
           if (usedObjUID == -1)
             {
-              appendErrorObjName(hiveObjsNoUsage, extUsedObjName);
+              if (! naTable->getViewText())
+                appendErrorObjName(hiveObjsNoUsage, extUsedObjName);
               continue;
             }
         } // hive table

@@ -883,6 +883,16 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
   if (!setObjectUID(createExternalTable))
     return FALSE;
 
+  // cannot upd stats if the object is a hive view
+  if (naTbl_->getViewText())
+    {
+      *CmpCommon::diags()
+          << DgSqlCode(-UERR_INVALID_OBJECT)
+          << DgString0(naTbl_->getTableName().getQualifiedNameAsString());
+
+      return FALSE;
+    }
+
   tableStats_ = naTbl_->getClusteringIndex()->getHHDFSTableStats();
 
   *ansiName_ = *catalog_;
@@ -1084,7 +1094,7 @@ Lng32 CreateExternalTable(const NAString& catName, const NAString& schName, cons
 
    // do not have to worry about the catalog and schema for the new external table 
    // here. These names will be determined by the processing logic. 
-   NAString ddl = "CREATE EXTERNAL TABLE ";
+   NAString ddl = "CREATE IMPLICIT EXTERNAL TABLE ";
    ddl.append(nativeTableName);
    ddl.append(" FOR ");
    ddl.append(catName);
@@ -1095,8 +1105,13 @@ Lng32 CreateExternalTable(const NAString& catName, const NAString& schName, cons
    ddl.append(" ATTRIBUTE NO AUDIT"); // The external table will not be audited because it 
                                       // does not store any data.
 
+   // set INTERNAL_QUERY_FROM_EXEUTIL bit in Sql_ParserFlags.
+   // This is needed to process 'implicit external' syntax
+   ULng32 flagToSet = INTERNAL_QUERY_FROM_EXEUTIL;
+   PushAndSetSqlParserFlags savedParserFlags(flagToSet);
+
    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                            "Create external table", NULL);
+                            "Create implicit external table", NULL);
 
    if (retcode < 0 && LM->LogNeeded())
       {

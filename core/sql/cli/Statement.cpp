@@ -2100,6 +2100,13 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
                 << DgString2(getLobErrStr(intParam1))
                 << DgInt0(intParam1)
                 << DgInt1(0);
+
+      if (intParam1 == LOB_DATA_FILE_NOT_FOUND_ERROR)
+        {
+          diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
+                    << DgString0(si->tableName());
+        }
+
       return ERROR;
     }
 

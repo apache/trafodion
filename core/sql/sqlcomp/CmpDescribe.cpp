@@ -2262,11 +2262,43 @@ short CmpDescribeHiveTable (
     return -1;
 
 
+  NABoolean isView = (naTable->getViewText() ? TRUE : FALSE);
+
+  if ((type == 2) && (isView))
+    {
+      outputShortLine(space,"Original native Hive view text:");
+      NAString origViewText(naTable->getHiveOriginalViewText());
+      outputLongLine(space, origViewText, 0);
+      outputShortLine(space, " ");
+
+      outputShortLine(space,"Expanded native Hive view text:");
+      NAString viewtext(naTable->getViewText());
+
+      viewtext = viewtext.strip(NAString::trailing, ';');
+      viewtext += " ;";
+
+      outputLongLine(space, viewtext, 0);
+
+      outbuflen = space.getAllocatedSpaceSize();
+      outbuf = new (heap) char[outbuflen];
+      space.makeContiguous(outbuf, outbuflen);
+      
+      NADELETEBASIC(buf, heap);
+      
+      return 0;
+    }
+
   if (type == 1)
     {
-      sprintf(buf,  "-- Definition of hive table %s\n"
-              "-- Definition current  %s",
-              tableName.data(), ctime(&tp));
+      if (isView)
+        sprintf(buf, "-- Definition of native Hive view %s\n"
+                "-- Definition current  %s",
+                tableName.data(), ctime(&tp));
+      else
+        sprintf(buf, "-- Definition of hive table %s\n"
+                "-- Definition current  %s",
+                tableName.data(), ctime(&tp));
+      
       outputShortLine(space, buf);
     }
   else if (type == 2)
@@ -2305,28 +2337,32 @@ short CmpDescribeHiveTable (
 
   outputShortLine(space, "  )");
 
-  const HHDFSTableStats* hTabStats = 
-    naTable->getClusteringIndex()->getHHDFSTableStats();
-  if (hTabStats->isOrcFile())
+  const HHDFSTableStats* hTabStats = NULL;
+  if (naTable->getClusteringIndex())
+    hTabStats = naTable->getClusteringIndex()->getHHDFSTableStats();
+  if (hTabStats)
     {
-      if (type == 1)
-        outputShortLine(space, "  /* stored as orc */");
-      else
-        outputShortLine(space, "  stored as orc ");
-    }
-  else if (hTabStats->isTextFile())
-    {
-      if (type == 1)
-        outputShortLine(space, "  /* stored as textfile */");
-      else
-        outputShortLine(space, "  stored as textfile ");
-    }
-  else if (hTabStats->isSequenceFile())
-    {
-      if (type == 1)
-        outputShortLine(space, "  /* stored as sequence */");
-      else
-        outputShortLine(space, "  stored as sequence ");
+      if (hTabStats->isOrcFile())
+        {
+          if (type == 1)
+            outputShortLine(space, "  /* stored as orc */");
+          else
+            outputShortLine(space, "  stored as orc ");
+        }
+      else if (hTabStats->isTextFile())
+        {
+          if (type == 1)
+            outputShortLine(space, "  /* stored as textfile */");
+          else
+            outputShortLine(space, "  stored as textfile ");
+        }
+      else if (hTabStats->isSequenceFile())
+        {
+          if (type == 1)
+            outputShortLine(space, "  /* stored as sequence */");
+          else
+            outputShortLine(space, "  stored as sequence ");
+        }
     }
 
   if (type == 2)
@@ -2786,6 +2822,7 @@ short CmpDescribeSeabaseTable (
 
   NABoolean isVolatile = naTable->isVolatileTable();
   NABoolean isExternalTable = naTable->isExternalTable();
+  NABoolean isImplicitExternalTable = naTable->isImplicitExternalTable();
   NABoolean isHbaseMapTable = naTable->isHbaseMapTable();
 
   NABoolean isExternalHbaseTable = FALSE;
@@ -2958,7 +2995,12 @@ short CmpDescribeSeabaseTable (
       if (isVolatile)
         tabType = " VOLATILE ";
       else if (isExternalTable)
-        tabType = " EXTERNAL ";
+        {
+          if (isImplicitExternalTable)
+            tabType = " /*IMPLICIT*/ EXTERNAL ";
+          else
+            tabType = " EXTERNAL ";
+        }
       else
         tabType = " ";
 
