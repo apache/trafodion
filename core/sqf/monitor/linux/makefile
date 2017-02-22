@@ -86,6 +86,7 @@ INCLUDES+= -I$(ZOOKEEPER_DIR)/include
 LIBS+=  -lsqlite3
 LIBS+=  -llog4cxx
 LIBS+=  -ldl
+LIBS+=  -lssl
 
 ifeq ($(USE_TESTPOINTS),1)
    FLAGS+= -DUSE_TESTPOINTS
@@ -468,8 +469,8 @@ $(OUTDIR)/montim : montim.cxx
 $(BINEXPDIR)/monitor: $(MONITOROBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
-	@echo $(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz
-	@$(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz
+	@echo $(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz -lcrypto
+	@$(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz -lcrypto
 	@echo 'Finished building target: $@'
 	@echo ' '
 
