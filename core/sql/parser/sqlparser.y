@@ -15675,8 +15675,12 @@ exe_util_get_metadata_info :
             NAString iof("ON");       
             NAString objectType("COMPONENT");
             CorrName objectName(*$6);
-            NABoolean fullDetails = ($8 == COM_CASCADE_DROP_BEHAVIOR) 
-                                       ? TRUE : FALSE; 
+
+            PtrPlaceHolder * pph = $9;
+            NAString * noHeader = (NAString *)pph->ptr1_;
+            NAString * pattern = (NAString *)pph->ptr2_;
+            NAString * fullyQualNames = (NAString *)pph->ptr3_;
+
             ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP())
               ExeUtilGetMetadataInfo
               ( aus          // NAString & 
@@ -15684,17 +15688,18 @@ exe_util_get_metadata_info :
               , iof          // NAString &
               , objectType   // NAString &
               , objectName   // CorrName &
-              , NULL         // NAString * pattern
-              , fullDetails  // NABoolean returnFullyQualNames
+              , pattern         // NAString * pattern
+              , (fullyQualNames ? TRUE : FALSE)  // NABoolean returnFullyQualNames
               , FALSE        // NABoolean getVersion
               , $7           // NAString * param1
               , PARSERHEAP() // CollHeap * oHeap
               );
 
-            PtrPlaceHolder * pph      = $9;
-            NAString * noHeader       = (NAString *)pph->ptr1_;
             if (noHeader)
               gmi->setNoHeader(TRUE);
+            
+            if ($8 == COM_CASCADE_DROP_BEHAVIOR)
+               gmi->setCascade(TRUE);
 
             $$ = gmi;
             delete $6; // component_name
@@ -15724,8 +15729,11 @@ exe_util_get_metadata_info :
             NAString iof("ON");
             NAString objectType("COMPONENT");
             CorrName objectName(*$6);
-            NABoolean fullDetails = ($8 == COM_CASCADE_DROP_BEHAVIOR) 
-                                       ? TRUE : FALSE; 
+
+            PtrPlaceHolder * pph = $9;
+            NAString * noHeader = (NAString *)pph->ptr1_;
+            NAString * pattern = (NAString *)pph->ptr2_;
+            NAString * fullyQualNames = (NAString *)pph->ptr3_;
 
             ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP())
               ExeUtilGetMetadataInfo
@@ -15734,17 +15742,18 @@ exe_util_get_metadata_info :
               , iof          // NAString &
               , objectType   // NAString &
               , objectName   // CorrName &
-              , NULL         // NAString * pattern
-              , fullDetails  // NABoolean returnFullyQualNames
+              , pattern         // NAString * pattern
+              , (fullyQualNames ? TRUE : FALSE)  // NABoolean returnFullyQualNames
               , FALSE        // NABoolean getVersion
               , $7           // NAString * param1
               , PARSERHEAP() // CollHeap * oHeap
               );
 
-            PtrPlaceHolder * pph      = $9;
-            NAString * noHeader       = (NAString *)pph->ptr1_;
             if (noHeader)
               gmi->setNoHeader(TRUE);
+
+            if ($8 == COM_CASCADE_DROP_BEHAVIOR)
+               gmi->setCascade(TRUE);
 
             $$ = gmi;
             delete $6; // component_name

@@ -2604,6 +2604,10 @@ public:
   {(v ? flags_ |= IS_HBASE : flags_ &= ~IS_HBASE); };
   NABoolean isHbase() { return (flags_ & IS_HBASE) != 0; };
 
+  void setCascade(NABoolean v)
+  {(v ? flags_ |= CASCADE : flags_ & CASCADE) != 0; };
+  NABoolean cascade() { return (flags_ & CASCADE) != 0; };
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
@@ -2624,7 +2628,8 @@ protected:
     IS_INDEX     = 0x0200,
     IS_MV        = 0x0400,
     IS_HBASE   = 0x0800,
-    EXTERNAL_OBJS = 0x1000
+    EXTERNAL_OBJS = 0x1000,
+    CASCADE      = 0x2000
   };
 
   char * getCat() { return cat_; }
