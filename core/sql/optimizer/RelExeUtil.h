@@ -1630,6 +1630,9 @@ public:
   NABoolean hbaseObjects() { return hbaseObjs_;}
   void setHbaseObjects(NABoolean v) { hbaseObjs_ = v; }
   
+  NABoolean cascade() { return cascade_;}
+  void setCascade(NABoolean v) { cascade_ = v; }
+
 private:
   NAString ausStr_; // all/user/system objects
   NAString infoType_;
@@ -1650,6 +1653,7 @@ private:
 
   NABoolean hiveObjs_;
   NABoolean hbaseObjs_;
+  NABoolean cascade_;
 };
 
 

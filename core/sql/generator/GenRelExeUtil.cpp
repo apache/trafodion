@@ -2187,6 +2187,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
            (ausStr == "EXTERNAL"))
     gm_exe_util_tdb->setExternalObjs(TRUE);
   gm_exe_util_tdb->setGetVersion(getVersion_);
+  gm_exe_util_tdb->setCascade(cascade_);
   
   if ((queryType == ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_) ||
       (queryType == ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_))

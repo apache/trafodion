@@ -3059,7 +3059,8 @@ ExeUtilGetMetadataInfo::ExeUtilGetMetadataInfo
        param1_((param1 ? *param1 : ""), oHeap),
        errorInParams_(FALSE),
        hiveObjs_(FALSE),
-       hbaseObjs_(FALSE)
+       hbaseObjs_(FALSE),
+       cascade_(FALSE)
 {
 }
 
