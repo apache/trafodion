@@ -4257,7 +4257,10 @@ short CmpSeabaseDDL::dropSeabaseTable2(
   short *lobNumList = new (STMTHEAP) short[numCols];
   short *lobTypList = new (STMTHEAP) short[numCols];
   char  **lobLocList = new (STMTHEAP) char*[numCols];
-  const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
+
+  char  lobHdfsServer[256] ; // max length determined by dfs.namenode.fs-limits.max-component-length(255)
+  memset(lobHdfsServer,0,256);
+  strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER), strlen(CmpCommon::getDefaultString(LOB_HDFS_SERVER)));
   Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
   Lng32 j = 0;
   for (Int32 i = 0; i < nacolArr.entries(); i++)
