@@ -509,8 +509,14 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->numSaltPartns = 0;
   tableInfo->rowFormat = COM_UNKNOWN_FORMAT_TYPE;
-  tableInfo->objectFlags = (isHive) ?  SEABASE_OBJECT_IS_EXTERNAL_HIVE : 
-                                       SEABASE_OBJECT_IS_EXTERNAL_HBASE;
+  if (isHive)
+    {
+      tableInfo->objectFlags = SEABASE_OBJECT_IS_EXTERNAL_HIVE;
+      if (createTableNode->isImplicitExternal())
+        tableInfo->objectFlags |= SEABASE_OBJECT_IS_IMPLICIT_EXTERNAL_HIVE;
+    }
+  else
+    tableInfo->objectFlags = SEABASE_OBJECT_IS_EXTERNAL_HBASE;
   tableInfo->tablesFlags = 0;
 
   if (isAuthorizationEnabled())
@@ -552,6 +558,17 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
       *CmpCommon::diags()
         << DgSqlCode(-4082)
         << DgTableName(cnSrc.getExposedNameAsAnsiString());
+      return -1;
+    }
+
+  if ((naTable->isHiveTable()) &&
+      (naTable->getViewText()) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-3242)
+        << DgString0("Cannot create external table on a native Hive view.");
+      
       return -1;
     }
 
@@ -3644,7 +3661,8 @@ short CmpSeabaseDDL::dropSeabaseTable2(
               schemaNamePart,
               catalogNamePart);
 
-  bindWA.setExternalTableDrop(TRUE);
+  if (dropTableNode->isExternal())
+    bindWA.setExternalTableDrop(TRUE);
   NATable *naTable = bindWA.getNATableInternal(cn, TRUE, NULL, TRUE); 
   bindWA.setExternalTableDrop(FALSE);
 
@@ -9621,7 +9639,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       // not exists, the "create external" table command creates it.
       char query[(ComMAX_ANSI_IDENTIFIER_EXTERNAL_LEN*4) + 100];
       snprintf(query, sizeof(query),
-               "create external table \"%s\" for %s.\"%s\".\"%s\"",
+               "create implicit external table \"%s\" for %s.\"%s\".\"%s\"",
                objectNamePart.data(),
                catalogNamePart.data(),
                schemaNamePart.data(),

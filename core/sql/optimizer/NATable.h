@@ -572,6 +572,8 @@ public:
   const char *getViewCheck() const              { return viewCheck_; }
   const NAList<ComViewColUsage*> *getViewColUsages() const  { return viewColUsages_; }
 
+  const char *getHiveOriginalViewText() const { return hiveOrigViewText_; }
+
   NABoolean hasSaltedColumn(Lng32 * saltColPos = NULL);
   NABoolean hasDivisioningColumn(Lng32 * divColPos = NULL);
 
@@ -725,6 +727,12 @@ public:
 
   NABoolean isExternalTable() const
   {  return (flags_ & IS_EXTERNAL_TABLE) != 0; }
+
+  void setIsImplicitExternalTable( NABoolean value )
+  {  value ? flags_ |= IS_IMPLICIT_EXTERNAL_TABLE : flags_ &= ~IS_IMPLICIT_EXTERNAL_TABLE; }
+
+  NABoolean isImplicitExternalTable() const
+  {  return (flags_ & IS_IMPLICIT_EXTERNAL_TABLE) != 0; }
 
   void setHasExternalTable( NABoolean value )
   {  value ? flags_ |= HAS_EXTERNAL_TABLE : flags_ &= ~HAS_EXTERNAL_TABLE; }
@@ -987,7 +995,8 @@ private:
     HBASE_DATA_FORMAT_STRING  = 0x00800000,
     HAS_HIVE_EXT_TABLE        = 0x01000000,
     HIVE_EXT_COL_ATTRS        = 0x02000000,
-    HIVE_EXT_KEY_ATTRS        = 0x04000000
+    HIVE_EXT_KEY_ATTRS        = 0x04000000,
+    IS_IMPLICIT_EXTERNAL_TABLE= 0x08000000
   };
     
   UInt32 flags_;
@@ -1108,6 +1117,9 @@ private:
   CharInfo::CharSet viewTextCharSet_;
   char *viewCheck_;
   NAList<ComViewColUsage *> *viewColUsages_;
+
+  // original hive select text used when view was created.
+  char *hiveOrigViewText_;
 
   // ---------------------------------------------------------------------
   // Flags

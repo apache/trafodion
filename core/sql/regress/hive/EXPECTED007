@@ -1,4 +1,4 @@
->>obey TEST007(setup);
+>>obey TEST007(setup_traf);
 >>set schema hive.hive;
 
 --- SQL operation complete.
@@ -9,7 +9,7 @@
 
 --- SQL operation complete.
 >>
->>obey TEST007(tests);
+>>obey TEST007(tests_traf);
 >>-- tests for views on hive tables
 >>sh echo "drop table thive1;" > TEST007_junk;
 >>sh regrhive.ksh -f TEST007_junk;
@@ -45,7 +45,7 @@ CREATE TABLE THIVE1
 
 /* Trafodion DDL */
 
-CREATE EXTERNAL TABLE THIVE1
+CREATE /*IMPLICIT*/ EXTERNAL TABLE THIVE1
   FOR HIVE.HIVE.THIVE1
 ;
 
@@ -79,7 +79,7 @@ CREATE EXTERNAL TABLE THIVE1
 >>invoke trafodion.sch007.vhivehbase;
 
 -- Definition of Trafodion view TRAFODION.SCH007.VHIVEHBASE
--- Definition current  Fri Jan 20 16:31:37 2017
+-- Definition current  Wed Feb 22 04:31:49 2017
 
   (
     AA                               INT DEFAULT NULL
@@ -266,7 +266,7 @@ CREATE TABLE THIVE2
 
 --- SQL operation complete.
 >>
->>obey TEST007(error_tests);
+>>obey TEST007(error_tests_traf);
 >>
 >>create view trafodion.sch007.vhive4 as select x.a, y.b from thive1 x, thive1 y;
 
@@ -327,12 +327,14 @@ A            B
 >>sh regrhive.ksh -f TEST007_junk;
 >>execute s;
 
-*** ERROR[8442] Unable to access HDFS interface. Call to ExpLOBInterfaceDataModCheck returned error LOB_DATA_FILE_NOT_FOUND_ERROR(554). Error detail 0.
+*** ERROR[4262] Object HIVE.HIVE.THIVE1 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'drop external table' command to drop the external table.
+
+*** ERROR[8822] The statement was not prepared.
 
 --- 0 row(s) selected.
 >>select * from trafodion.sch007.vhive1;
 
-*** ERROR[1388] Object HIVE.HIVE.THIVE1 does not exist in hive metadata.
+*** ERROR[4262] Object HIVE.HIVE.THIVE1 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'drop external table' command to drop the external table.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -369,5 +371,323 @@ CREATE TABLE THIVE3
 >>get all tables in view trafodion.sch007.vhive6;
 
 --- SQL operation complete.
+>>
+>>
+>>obey TEST007(setup_hive);
+>>sh echo "create database hivesch007;" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>sh echo "create table hivesch007.thive1 (a int);" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>sh echo "insert into hivesch007.thive1 values (1);" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>sh echo "create view hivesch007.vhive1 as select * from hivesch007.thive1 where thive1.a > 0;" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>sh echo "create view hivesch007.vhive11 as select * from hivesch007.vhive1 where vhive1.a > 0;" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>sh echo "create table thive007 (a int);" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>sh echo "create view vhive007 as select * from thive007 where a > 0;" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>insert into hive.hive.thive007 values (1);
+
+--- 1 row(s) inserted.
+>>
+>>obey TEST007(tests_hive);
+>>invoke hive.hivesch007.vhive1;
+
+-- Definition of native Hive view VHIVE1
+-- Definition current  Wed Feb 22 04:35:19 2017
+
+  (
+    A                                INT
+  )
+
+--- SQL operation complete.
+>>showddl hive.hivesch007.vhive1;
+
+Original native Hive view text:
+select * from hivesch007.thive1 where thive1.a > 0
+
+Expanded native Hive view text:
+CREATE VIEW vhive1 AS
+  select thive1.a from hivesch007.thive1 where thive1.a > 0 ;
+
+--- SQL operation complete.
+>>
+>>prepare s from select * from hive.hivesch007.vhive1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  3.29E+001
+.    .    1    hive_scan                       THIVE1                3.29E+001
+
+--- SQL operation complete.
+>>execute s;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>invoke hive.hivesch007.vhive11;
+
+-- Definition of native Hive view VHIVE11
+-- Definition current  Wed Feb 22 04:35:22 2017
+
+  (
+    A                                INT
+  )
+
+--- SQL operation complete.
+>>showddl hive.hivesch007.vhive11;
+
+Original native Hive view text:
+select * from hivesch007.vhive1 where vhive1.a > 0
+
+Expanded native Hive view text:
+CREATE VIEW vhive11 AS
+  select vhive1.a from hivesch007.vhive1 where vhive1.a > 0 ;
+
+--- SQL operation complete.
+>>
+>>prepare s from select * from hive.hivesch007.vhive11;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  3.29E+001
+.    .    1    hive_scan                       THIVE1                3.29E+001
+
+--- SQL operation complete.
+>>execute s;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>prepare s from select * from hive.hive.vhive007;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  3.29E+001
+.    .    1    hive_scan                       THIVE007              3.29E+001
+
+--- SQL operation complete.
+>>execute s;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>
+>>get tables in schema hive.hivesch007;
+
+Tables in Schema HIVE.HIVESCH007
+================================
+
+thive1
+
+--- SQL operation complete.
+>>get views in schema hive.hivesch007;
+
+Views in Schema HIVE.HIVESCH007
+===============================
+
+vhive1
+vhive11
+
+--- SQL operation complete.
+>>
+>>get tables in schema hive.hive, match '%007%';
+
+Tables in Schema HIVE.HIVE
+==========================
+
+thive007
+
+--- SQL operation complete.
+>>get views in schema hive.hive, match '%007%';
+
+Views in Schema HIVE.HIVE
+=========================
+
+vhive007
+
+--- SQL operation complete.
+>>
+>>get tables in catalog hive, match 'hivesch007%';
+
+Tables in Catalog HIVE
+======================
+
+hivesch007.thive1
+
+--- SQL operation complete.
+>>get views in catalog hive, match 'hivesch007%';
+
+Views in Catalog HIVE
+=====================
+
+hivesch007.vhive1
+hivesch007.vhive11
+
+--- SQL operation complete.
+>>
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>prepare s from select * from vhive007 x, hive.hivesch007.vhive1 y
++>  where x.a = y.a;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.08E+003
+2    1    3    hybrid_hash_join      u                               1.08E+003
+.    .    2    hive_scan                       THIVE007              3.29E+001
+.    .    1    hive_scan                       THIVE1                3.29E+001
+
+--- SQL operation complete.
+>>execute s;
+
+A            A          
+-----------  -----------
+
+          1            1
+
+--- 1 row(s) selected.
+>>
+>>-- create traf view on native hive view
+>>create schema if not exists trafodion.sch007;
+
+--- SQL operation complete.
+>>create view trafodion.sch007.vtrafonhive as select * from hive.hivesch007.vhive11;
+
+--- SQL operation complete.
+>>showddl trafodion.sch007.vtrafonhive;
+
+CREATE VIEW TRAFODION.SCH007.VTRAFONHIVE AS
+  SELECT HIVE.HIVESCH007.VHIVE11.A FROM HIVE.HIVESCH007.VHIVE11 ;
+
+--- SQL operation complete.
+>>prepare s from select * from trafodion.sch007.vtrafonhive;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  3.29E+001
+.    .    1    hive_scan                       THIVE1                3.29E+001
+
+--- SQL operation complete.
+>>execute s;
+
+A          
+-----------
+
+          1
+
+--- 1 row(s) selected.
+>>get tables in view trafodion.sch007.vtrafonhive;
+
+--- SQL operation complete.
+>>
+>>obey TEST007(error_tests_hive);
+>>get tables in view hive.hivesch007.vhive11;
+
+*** ERROR[4219] This command is not supported on the specified object or an incorrect object type was specified.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>get views  on table hive.hivesch007.thive1;
+
+--- SQL operation complete.
+>>
+>>insert into hive.hivesch007.vhive1 values (1);
+
+*** ERROR[4027] Table or view HIVE.HIVESCH007.VHIVE1 does not permit insertions.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>delete from hive.hivesch007.vhive1;
+
+*** ERROR[4028] Table or view HIVE.HIVESCH007.VHIVE1 is not updatable.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- drop underlying hive table
+>>cqd auto_query_retry_warnings 'ON';
+
+--- SQL operation complete.
+>>
+>>sh echo "drop table hivesch007.thive1;" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>prepare s from select * from hive.hivesch007.vhive11;
+
+*** ERROR[1388] Object HIVE.HIVESCH007.THIVE1 does not exist in hive metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>execute s;
+
+*** ERROR[15017] Statement S was not found.
+
+>>
+>>sh echo "create table hivesch007.thive1 (a int);" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>prepare s from select * from hive.hivesch007.vhive11;
+
+--- SQL command prepared.
+>>execute s;
+
+--- 0 row(s) selected.
+>>
+>>sh echo "drop table hivesch007.thive1;" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>execute s;
+
+*** ERROR[1388] Object HIVE.HIVESCH007.THIVE1 does not exist in hive metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8577] Table, index, or view HIVE.HIVESCH007.THIVE1 was not found.
+
+--- 0 row(s) selected.
 >>
 >>log;

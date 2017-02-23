@@ -69,6 +69,7 @@ StmtDDLNode::StmtDDLNode(OperatorTypeEnum otype)
        isGhostObject_(FALSE),
        inMemoryObjectDefn_(FALSE),
        isExternal_(FALSE),
+       isImplicitExternal_(FALSE),
        ddlXns_(FALSE)
 { 
   ddlXns_ = (CmpCommon::getDefault(DDL_TRANSACTIONS) == DF_ON);

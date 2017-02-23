@@ -3337,14 +3337,19 @@ protected:
   enum Step
   {
     INITIAL_,
-    READ_HIVE_MD_,
+    SETUP_SCHEMAS_,
+    GET_ALL_SCHEMAS_,
+    GET_ALL_TABLES_,
+    GET_ALL_TABLES_IN_SCHEMA_,
     POSITION_,
+    FETCH_SCHEMA_,
     FETCH_TABLE_,
     FETCH_COLUMN_,
     FETCH_PKEY_,
     APPLY_PRED_,
     RETURN_ROW_,
     ADVANCE_ROW_,
+    ADVANCE_SCHEMA_,
     DONE_,
     HANDLE_ERROR_,
     CANCELLED_
@@ -3357,9 +3362,11 @@ protected:
   hive_column_desc * currColDesc_;
   hive_pkey_desc * currPartnDesc_;
   hive_bkey_desc * currKeyDesc_;
+  Int32 currSchNum_;
   Int32 currColNum_;
 
   char * mdRow_;
+  LIST (NAText *) schNames_;
   LIST (NAText *) tblNames_;
 
   char hiveCat_[1024];
@@ -3377,7 +3384,6 @@ public:
   ~ExExeUtilHiveMDaccessPrivateState();        // destructor
 protected:
 };
-
 
 // -----------------------------------------------------------------------
 // ExExeUtilHiveTruncateTdb

@@ -2425,6 +2425,8 @@ public:
     VIEWS_IN_CATALOG_,
     INVALID_VIEWS_IN_CATALOG_,
     SEQUENCES_IN_CATALOG_,
+    TABLES_IN_CATALOG_,
+    OBJECTS_IN_CATALOG_,
 
     TABLES_IN_SCHEMA_,
     INDEXES_IN_SCHEMA_,
@@ -3257,6 +3259,18 @@ struct HiveMDSysTablesColInfoStruct
   char tblName[256];
 };
 
+static const ComTdbVirtTableColumnInfo hiveMDSchemasColInfo[] =
+{                                                                                     
+  { "CATALOG_NAME",    0,     COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "SCHEMA_NAME",    1,     COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}
+};
+
+struct HiveMDSchemasColInfoStruct
+{
+  char catName[256];
+  char schName[256];
+};
+
 class ComTdbExeUtilHiveMDaccess : public ComTdbExeUtil
 {
   friend class ExExeUtilHiveMDaccessTcb;
@@ -3272,7 +3286,8 @@ public:
     FKEYS_,
     ALIAS_,
     SYNONYMS_,
-    SYSTEM_TABLES_
+    SYSTEM_TABLES_,
+    SCHEMAS_
   };
 
   // Constructors
@@ -3373,6 +3388,8 @@ public:
       return sizeof(hiveMDSynonymColInfo)/sizeof(ComTdbVirtTableColumnInfo);
     else if (strcmp(name, "SYSTEM_TABLES") == 0)
       return sizeof(hiveMDSysTablesColInfo)/sizeof(ComTdbVirtTableColumnInfo);
+    else if (strcmp(name, "SCHEMAS") == 0)
+      return sizeof(hiveMDSchemasColInfo)/sizeof(ComTdbVirtTableColumnInfo);
     else
       return -1;
   }
@@ -3395,6 +3412,8 @@ public:
       return (ComTdbVirtTableColumnInfo*)hiveMDSynonymColInfo;
     else if (strcmp(name, "SYSTEM_TABLES") == 0)
       return (ComTdbVirtTableColumnInfo*)hiveMDSysTablesColInfo;
+    else if (strcmp(name, "SCHEMAS") == 0)
+      return (ComTdbVirtTableColumnInfo*)hiveMDSchemasColInfo;
     else
       return NULL;
   }

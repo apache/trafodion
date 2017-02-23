@@ -2000,7 +2000,20 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   CMPASSERT(viewName.getQualifiedNameObj() == naTable->getTableName());
 
   NABoolean inViewExpansion = bindWA->setInViewExpansion(TRUE);   // QSTUFF
-  
+
+  // If this is a native hive view, then temporarily change the default schema to
+  // that of viewName. This will make sure that all unqualified objects in view
+  // text are expanded in this schema. 
+  NABoolean defSchWasChanged = FALSE;
+  SchemaName savedSch(bindWA->getDefaultSchema());
+  if (viewName.isHive())
+    {
+      SchemaName s(viewName.getQualifiedNameObj().getSchemaName(),
+                   viewName.getQualifiedNameObj().getCatalogName());
+      bindWA->setDefaultSchema(s);
+      defSchWasChanged = TRUE;
+    }
+
   // set a flag for overrride_schema
   //if (overrideSchemaEnabled())
     bindWA->getCurrentScope()->setInViewExpansion(TRUE);
@@ -2077,6 +2090,10 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
 
   if (NOT viewTree) {
     bindWA->setErrStatus();
+
+    if (defSchWasChanged)
+      bindWA->setDefaultSchema(savedSch);
+
     return NULL;
   }
 
@@ -2150,13 +2167,16 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   queryTree = queryTree->bindNode(bindWA);
 
   if (bindWA->errStatus())
-    return NULL;
+    {
+      if (defSchWasChanged)
+        bindWA->setDefaultSchema(savedSch);
+      
+      return NULL;
+    }
+
   bindWA->setNameLocListPtr(saveNameLocList);
 
   bindWA->viewCount()--;
-
-  if (bindWA->errStatus())
-    return NULL;
 
   // if RelRoot has an order by, insert a Logical Sort node below it
   // and move the order by expr from view root to this sort node.
@@ -2315,8 +2335,10 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   bindWA->getUpdateToScanValueIds().clear();
   // QSTUFF
 
-  return queryTree;
+  if (defSchWasChanged)
+    bindWA->setDefaultSchema(savedSch);
 
+  return queryTree;
 } // BindWA::bindView()
 
 // -----------------------------------------------------------------------
