@@ -26,6 +26,7 @@
 import sys
 import json
 from threading import Thread
+from constants import SSHKEY_FILE
 from common import ParseJson, Remote, run_cmd, err
 
 def run(pwd):
@@ -36,23 +37,10 @@ def run(pwd):
     hosts = dbcfgs['node_list'].split(',')
     traf_package = dbcfgs['traf_package']
 
-    # save db configs to a tmp file and copy to all trafodion nodes
-    dbcfgs_file = '/tmp/dbcfgs'
-    p = ParseJson(dbcfgs_file)
-    # remove password from config file
-    try:
-        dbcfgs.pop('mgr_pwd')
-        dbcfgs.pop('traf_pwd')
-        dbcfgs.pop('kdcadmin_pwd')
-    except KeyError:
-        pass
-    p.save(dbcfgs)
+    run_cmd('sudo -n rm -rf %s*' % SSHKEY_FILE)
+    run_cmd('sudo -n echo -e "y" | ssh-keygen -t rsa -N "" -f %s' % SSHKEY_FILE)
 
-    key_file = '/tmp/id_rsa'
-    run_cmd('sudo -n rm -rf %s*' % key_file)
-    run_cmd('sudo -n echo -e "y" | ssh-keygen -t rsa -N "" -f %s' % key_file)
-
-    files = [key_file, key_file+'.pub', traf_package, dbcfgs_file]
+    files = [SSHKEY_FILE, SSHKEY_FILE+'.pub', traf_package]
 
     remote_insts = [Remote(h, pwd=pwd) for h in hosts]
     threads = [Thread(target=r.copy, args=(files, '/tmp')) for r in remote_insts]
@@ -60,7 +48,6 @@ def run(pwd):
     for thread in threads: thread.join()
     for r in remote_insts:
         if r.rc != 0: err('Failed to copy files to %s' % r.host)
-
 
 # main
 try:

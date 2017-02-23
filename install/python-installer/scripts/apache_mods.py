@@ -26,7 +26,8 @@
 import sys
 import json
 import socket
-from common import MODCFG_FILE, ParseJson, ParseXML, err, run_cmd
+from constants import MODCFG_FILE
+from common import ParseJson, ParseXML, err, run_cmd
 
 def run():
     dbcfgs = json.loads(dbcfgs_json)
