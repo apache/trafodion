@@ -43,9 +43,12 @@ def run():
     core = int(core)-1 if int(core) <= 256 else 255
 
     lines = ['begin node\n']
-    for node_id, node in enumerate(nodes):
-        line = 'node-id=%s;node-name=%s;cores=0-%d;processors=%s;roles=connection,aggregation,storage\n' % (node_id, node, core, processor)
-        lines.append(line)
+    if len(nodes) == 1:
+        lines.append('_virtualnodes 2\n')
+    else:
+        for node_id, node in enumerate(nodes):
+            line = 'node-id=%s;node-name=%s;cores=0-%d;processors=%s;roles=connection,aggregation,storage\n' % (node_id, node, core, processor)
+            lines.append(line)
 
     lines.append('end node\n')
     lines.append('\n')

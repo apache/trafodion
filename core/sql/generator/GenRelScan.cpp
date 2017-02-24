@@ -1254,7 +1254,7 @@ if (hTabStats->isOrcFile())
     }
 
   char * tablename = 
-    space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
+    space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getTableDesc()->getNATable()->getTableName()), 0);
 
   char * nullFormat = NULL;
   if (hTabStats->getNullFormat())

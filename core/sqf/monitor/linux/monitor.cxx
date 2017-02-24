@@ -750,9 +750,9 @@ void CMonitor::StartPrimitiveProcesses( void )
     TRACE_EXIT;
 }
 
-void HandleZSessionExpiration( void )
+void HandleMyNodeExpiration( void )
 {
-    const char method_name[] = "HandleZSessionExpiration";
+    const char method_name[] = "HandleMyNodeExpiration";
     TRACE_ENTRY;
     ReqQueue.enqueueDownReq(MyPNID);
     TRACE_EXIT;

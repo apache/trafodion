@@ -474,6 +474,12 @@ public:
       std::string &effectiveGrantorName);
 
    PrivStatus getPrivileges(
+      NATable *naTable,
+      const int32_t granteeUID,
+      PrivMgrUserPrivs &userPrivileges,
+      std::vector <ComSecurityKey *>* secKeySet = NULL);
+
+   PrivStatus getPrivileges(
       const int64_t objectUID,
       ComObjectType objectType,
       std::vector<PrivMgrDesc> &userPrivileges);

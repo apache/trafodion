@@ -249,17 +249,30 @@ void CmpSeabaseDDL::createSeabaseSchema(
    Int32 objectOwner = NA_UserIdDefault;
    Int32 schemaOwner = NA_UserIdDefault;
 
-   int32_t retCode = verifyDDLCreateOperationAuthorized(&cliInterface,
-                                                        SQLOperation::CREATE_SCHEMA,
-                                                        catName,
-                                                        schName,
-                                                        schemaClass,
-                                                        objectOwner,
-                                                        schemaOwner);
-   if (retCode != 0)
+
+   // If creating the hive statistics schema, make owners
+   // the HIVE_ROLE_ID and skip authorization check.
+   // Schema is being created as part of an update statistics cmd
+   if (schName == HIVE_STATS_SCHEMA_NO_QUOTES &&
+       Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
    {
-      handleDDLCreateAuthorizationError(retCode,catName,schName);
-      return;
+      objectOwner = HIVE_ROLE_ID;
+      schemaOwner = HIVE_ROLE_ID;
+   }
+   else
+   {
+      int32_t retCode = verifyDDLCreateOperationAuthorized(&cliInterface,
+                                                           SQLOperation::CREATE_SCHEMA,
+                                                           catName,
+                                                           schName,
+                                                           schemaClass,
+                                                           objectOwner,
+                                                           schemaOwner);
+      if (retCode != 0)
+      {
+         handleDDLCreateAuthorizationError(retCode,catName,schName);
+         return;
+      }
    }
    
    Int32 schemaOwnerID = NA_UserIdDefault; 

@@ -6116,6 +6116,7 @@ hivemd_identifier :
                   | TOK_TABLES   { $$ = new (PARSERHEAP()) NAString("TABLES"); }
                   | TOK_VIEWS    { $$ = new (PARSERHEAP()) NAString("VIEWS"); }
                   | TOK_SYSTEM TOK_TABLES { $$ = new (PARSERHEAP()) NAString("SYSTEM_TABLES"); }
+                  | TOK_SCHEMAS { $$ = new (PARSERHEAP()) NAString("SCHEMAS"); }
 
 /* type boolean */
 sp_proxy_stmt_prefix : TOK_TABLE '(' TOK_SP_RESULT_SET 
@@ -15675,8 +15676,12 @@ exe_util_get_metadata_info :
             NAString iof("ON");       
             NAString objectType("COMPONENT");
             CorrName objectName(*$6);
-            NABoolean fullDetails = ($8 == COM_CASCADE_DROP_BEHAVIOR) 
-                                       ? TRUE : FALSE; 
+
+            PtrPlaceHolder * pph = $9;
+            NAString * noHeader = (NAString *)pph->ptr1_;
+            NAString * pattern = (NAString *)pph->ptr2_;
+            NAString * fullyQualNames = (NAString *)pph->ptr3_;
+
             ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP())
               ExeUtilGetMetadataInfo
               ( aus          // NAString & 
@@ -15684,17 +15689,18 @@ exe_util_get_metadata_info :
               , iof          // NAString &
               , objectType   // NAString &
               , objectName   // CorrName &
-              , NULL         // NAString * pattern
-              , fullDetails  // NABoolean returnFullyQualNames
+              , pattern         // NAString * pattern
+              , (fullyQualNames ? TRUE : FALSE)  // NABoolean returnFullyQualNames
               , FALSE        // NABoolean getVersion
               , $7           // NAString * param1
               , PARSERHEAP() // CollHeap * oHeap
               );
 
-            PtrPlaceHolder * pph      = $9;
-            NAString * noHeader       = (NAString *)pph->ptr1_;
             if (noHeader)
               gmi->setNoHeader(TRUE);
+            
+            if ($8 == COM_CASCADE_DROP_BEHAVIOR)
+               gmi->setCascade(TRUE);
 
             $$ = gmi;
             delete $6; // component_name
@@ -15724,8 +15730,11 @@ exe_util_get_metadata_info :
             NAString iof("ON");
             NAString objectType("COMPONENT");
             CorrName objectName(*$6);
-            NABoolean fullDetails = ($8 == COM_CASCADE_DROP_BEHAVIOR) 
-                                       ? TRUE : FALSE; 
+
+            PtrPlaceHolder * pph = $9;
+            NAString * noHeader = (NAString *)pph->ptr1_;
+            NAString * pattern = (NAString *)pph->ptr2_;
+            NAString * fullyQualNames = (NAString *)pph->ptr3_;
 
             ExeUtilGetMetadataInfo * gmi = new (PARSERHEAP())
               ExeUtilGetMetadataInfo
@@ -15734,17 +15743,18 @@ exe_util_get_metadata_info :
               , iof          // NAString &
               , objectType   // NAString &
               , objectName   // CorrName &
-              , NULL         // NAString * pattern
-              , fullDetails  // NABoolean returnFullyQualNames
+              , pattern         // NAString * pattern
+              , (fullyQualNames ? TRUE : FALSE)  // NABoolean returnFullyQualNames
               , FALSE        // NABoolean getVersion
               , $7           // NAString * param1
               , PARSERHEAP() // CollHeap * oHeap
               );
 
-            PtrPlaceHolder * pph      = $9;
-            NAString * noHeader       = (NAString *)pph->ptr1_;
             if (noHeader)
               gmi->setNoHeader(TRUE);
+
+            if ($8 == COM_CASCADE_DROP_BEHAVIOR)
+               gmi->setCascade(TRUE);
 
             $$ = gmi;
             delete $6; // component_name
@@ -25314,6 +25324,19 @@ create_table_start_tokens :
 		     ParNameCTLocListPtr = new (PARSERHEAP())
 		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
                      TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_EXTERNAL_TABLE, $4); 
+                     $$ = tableTokens;
+		   }
+
+                   | TOK_CREATE TOK_IMPLICIT TOK_EXTERNAL TOK_TABLE optional_if_not_exists_clause
+                   {
+                     if (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
+                       {
+                         yyerror(""); YYERROR; /*internal syntax only!*/
+                       }
+                     
+		     ParNameCTLocListPtr = new (PARSERHEAP())
+		       ParNameLocList(SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), SQLTEXTW(), PARSERHEAP());
+                     TableTokens *tableTokens = new TableTokens(TableTokens::TYPE_IMPLICIT_EXTERNAL_TABLE, $5); 
                      $$ = tableTokens;
 		   }
 

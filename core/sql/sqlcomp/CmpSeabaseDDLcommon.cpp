@@ -7099,6 +7099,14 @@ short CmpSeabaseDDL::updateSeabaseAuths(
 void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
 {
   int breadCrumb = -1;  // useful for debugging
+
+  // verify user is authorized
+  if (!ComUser::isRootUserID())
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
   NABoolean xnWasStartedHere = FALSE;
@@ -7383,6 +7391,12 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
 
 void CmpSeabaseDDL::createSeabaseMDviews()
 {
+  if (!ComUser::isRootUserID())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return;
+    }
+
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
@@ -7405,6 +7419,13 @@ void CmpSeabaseDDL::createSeabaseMDviews()
 
 void CmpSeabaseDDL::dropSeabaseMDviews()
 {
+  // verify user is authorized
+  if (!ComUser::isRootUserID())
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
@@ -7427,6 +7448,12 @@ void CmpSeabaseDDL::dropSeabaseMDviews()
 
 void CmpSeabaseDDL::createSeabaseSchemaObjects()
 {
+  if (!ComUser::isRootUserID())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
@@ -8088,6 +8115,13 @@ short CmpSeabaseDDL::dropSeabaseObjectsFromHbase(const char * pattern,
 
 void CmpSeabaseDDL::dropSeabaseMD(NABoolean ddlXns)
 {
+  // verify user is authorized
+  if (!ComUser::isRootUserID())
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
   Lng32 cliRC;
   Lng32 retcode = 0;
   NABoolean xnWasStartedHere = FALSE;
@@ -8471,6 +8505,12 @@ NABoolean CmpSeabaseDDL::deletePrivMgrInfo(const NAString &objectName,
 
 short CmpSeabaseDDL::dropMDTable(ExpHbaseInterface *ehi, const char * tab)
 {
+  if (!ComUser::isRootUserID())
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+     return -1;
+  }
+
   Lng32 retcode = 0;
 
   HbaseStr hbaseObjStr;
@@ -8494,6 +8534,12 @@ short CmpSeabaseDDL::dropMDTable(ExpHbaseInterface *ehi, const char * tab)
 
 void CmpSeabaseDDL::updateVersion()
 {
+  if (!ComUser::isRootUserID())
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
@@ -9026,9 +9072,12 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            (ddlExpr->dropRepos()) ||
            (ddlExpr->upgradeRepos()))
     {
-      processRepository(ddlExpr->createRepos(), 
-                        ddlExpr->dropRepos(), 
-                        ddlExpr->upgradeRepos());
+      if (!ComUser::isRootUserID())
+          *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      else
+        processRepository(ddlExpr->createRepos(), 
+                          ddlExpr->dropRepos(), 
+                          ddlExpr->upgradeRepos());
     }
   else
     {

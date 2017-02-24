@@ -2000,7 +2000,20 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   CMPASSERT(viewName.getQualifiedNameObj() == naTable->getTableName());
 
   NABoolean inViewExpansion = bindWA->setInViewExpansion(TRUE);   // QSTUFF
-  
+
+  // If this is a native hive view, then temporarily change the default schema to
+  // that of viewName. This will make sure that all unqualified objects in view
+  // text are expanded in this schema. 
+  NABoolean defSchWasChanged = FALSE;
+  SchemaName savedSch(bindWA->getDefaultSchema());
+  if (viewName.isHive())
+    {
+      SchemaName s(viewName.getQualifiedNameObj().getSchemaName(),
+                   viewName.getQualifiedNameObj().getCatalogName());
+      bindWA->setDefaultSchema(s);
+      defSchWasChanged = TRUE;
+    }
+
   // set a flag for overrride_schema
   //if (overrideSchemaEnabled())
     bindWA->getCurrentScope()->setInViewExpansion(TRUE);
@@ -2077,6 +2090,10 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
 
   if (NOT viewTree) {
     bindWA->setErrStatus();
+
+    if (defSchWasChanged)
+      bindWA->setDefaultSchema(savedSch);
+
     return NULL;
   }
 
@@ -2150,13 +2167,16 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   queryTree = queryTree->bindNode(bindWA);
 
   if (bindWA->errStatus())
-    return NULL;
+    {
+      if (defSchWasChanged)
+        bindWA->setDefaultSchema(savedSch);
+      
+      return NULL;
+    }
+
   bindWA->setNameLocListPtr(saveNameLocList);
 
   bindWA->viewCount()--;
-
-  if (bindWA->errStatus())
-    return NULL;
 
   // if RelRoot has an order by, insert a Logical Sort node below it
   // and move the order by expr from view root to this sort node.
@@ -2315,8 +2335,10 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   bindWA->getUpdateToScanValueIds().clear();
   // QSTUFF
 
-  return queryTree;
+  if (defSchWasChanged)
+    bindWA->setDefaultSchema(savedSch);
 
+  return queryTree;
 } // BindWA::bindView()
 
 // -----------------------------------------------------------------------
@@ -6881,9 +6903,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges( tab->objectUid().get_value(),
-                                             tab->getObjectType(), thisUserID,
-                                             privInfo);
+      retcode = privInterface.getPrivileges( tab, thisUserID, privInfo);
       cmpSBD.switchBackCompiler();
 
       if (retcode != STATUS_GOOD)
@@ -7003,9 +7023,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges( tab->objectUid().get_value(), 
-                                             tab->getObjectType(), thisUserID, 
-                                             privInfo);
+      retcode = privInterface.getPrivileges( tab, thisUserID, privInfo);
       cmpSBD.switchBackCompiler();
 
       if (retcode != STATUS_GOOD)
@@ -7062,9 +7080,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges(tab->objectUid().get_value(), 
-                                            COM_SEQUENCE_GENERATOR_OBJECT, 
-                                            thisUserID, privInfo);
+      retcode = privInterface.getPrivileges(tab, thisUserID, privInfo);
       cmpSBD.switchBackCompiler();
       if (retcode != STATUS_GOOD)
       {
@@ -10536,9 +10552,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           *CmpCommon::diags() << DgSqlCode(-4490);
       }
   }
-
-  if (isUpsertThatNeedsMerge(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols)) {
-    if (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) 	
+  NABoolean toMerge = FALSE;
+  if (isUpsertThatNeedsTransformation(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols,toMerge)) {
+    if ((CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) ||toMerge)	
       {
 	boundExpr = xformUpsertToMerge(bindWA);  
 	return boundExpr;
@@ -10600,37 +10616,67 @@ Upsert is also converted into merge when TRAF_UPSERT_MODE is set to MERGE and
 there are omitted cols with default values in case of aligned format table or 
 omitted current timestamp cols in case of non-aligned row format
 */
-NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,
-                                   NABoolean omittedCurrentDefaultClassCols) const
+NABoolean Insert::isUpsertThatNeedsTransformation(NABoolean isAlignedRowFormat, 
+                                                  NABoolean omittedDefaultCols,
+                                                  NABoolean omittedCurrentDefaultClassCols,
+                                                  NABoolean &toMerge) const
 {
-  // The necessary conditions to convert upsert to merge and
+  toMerge = FALSE;
+  // If the the table has an identity column in clustering key or has a syskey 
+  // we dont need to do this transformation.The incoming row will always be 
+  // unique. So first check if we any of the conditions are satisfied to 
+  //even try the transform
+  NABoolean mustTryTransform = FALSE;
   if (isUpsert() && 
-      (NOT getIsTrafLoadPrep()) && 
-      (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && getTableDesc()->hasIdentityColumnInClusteringKey())) && 
-      (NOT (getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())) && 
-        // table has secondary indexes or
-        (getTableDesc()->hasSecondaryIndexes() ||
-          // CQD is set to MERGE  
-          ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) &&
-            // omitted current default columns with non-aligned row format tables
-            // or omitted default columns with aligned row format tables 
-            (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
-            (isAlignedRowFormat && omittedDefaultCols))) ||
-          // CQD is set to Optimal, for non-aligned row format with omitted 
-          // current columns, it is converted into merge though it is not
-          // optimal for performance - This is done to ensure that when the 
-          // CQD is set to optimal, non-aligned format would behave like 
-          // merge when any column is  omitted 
-          ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL) &&
-            ((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols))
-        ) 
-     )
-     return TRUE;
-  else
-     return FALSE;
+      NOT ( getIsTrafLoadPrep() ||
+            ( (getTableDesc()->isIdentityColumnGeneratedAlways() && 
+               getTableDesc()->hasIdentityColumnInClusteringKey()))  || 
+            ((getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey()))))
+    {
+      mustTryTransform = TRUE;
+    }
+
+  // Transform upsert to merge in case of special modes and
+  // omitted default columns
+  // Case 1 :  CQD is set to MERGE, omitted current(timestamp) default 
+  //           columns with  non-aligned row format table or omitted 
+  //           default columns with aligned row format tables 
+
+  // Case 2 :  CQD is set to Optimal, for non-aligned row format with omitted 
+  //           current(timestamp) columns, it is converted into merge 
+  //           though it is not optimal for performance. This is done to ensure
+  //           that when the CQD is set to optimal, non-aligned format would 
+  //           behave like merge when any column is  omitted 
+  if (isUpsert()  &&   
+      mustTryTransform &&          
+      ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) &&     
+       (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
+        (isAlignedRowFormat && omittedDefaultCols)))
+      ||
+      ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL) &&
+       ((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols)))
+    {
+      toMerge = TRUE;
+      return TRUE;
+    }
+
+  // Transform upsert to efficient tree if none of the above conditions 
+  // are true and the table has secondary indexes 
+  if (isUpsert() &&  
+      mustTryTransform &&
+      (getTableDesc()->hasSecondaryIndexes()))
+    {
+      toMerge = FALSE;
+      return TRUE;
+    }
+  
+  return FALSE;
 }
 
-/** commenting the following method out for future work. This may be enabled as a further performance improvement if we can eliminate the sort node that gets geenrated as part of the Sequence Node. In case of no duplicates we won't need the Sequence node at all. 
+/** commenting the following method out for future work. This may be enabled 
+as a further performance improvement if we can eliminate the sort node that 
+gets geenrated as part of the Sequence Node. In case of no duplicates we won't
+ need the Sequence node at all. 
 
 // take an insert(src) node and transform it into
 // a tuple_flow with old/new rows flowing to the IM tree.
@@ -10800,7 +10846,7 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
     new (bindWA->wHeap())
     Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
 
- 
+   bindWA->getCurrentScope()->context()->inUpsertXform() = TRUE;
   //join predicate between source columns and target table.
   ItemExpr * keyPred = NULL;
   ItemExpr * keyPredPrev = NULL;
@@ -10949,6 +10995,8 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   nvl = nvl->bindNode(bindWA);
   setProducedMergeIUDIndicator(nvl->getValueId());
 
+  setXformedEffUpsert(TRUE);
+  bindWA->getCurrentScope()->context()->inUpsertXform() =  FALSE;
   return topNode; 
 }
 

@@ -1977,7 +1977,9 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 				break;
 			}
 			setValue = setValue.toUpperCase();
-			if ((!setValue.equals("ON") && !setValue.equals("OFF"))) {
+			if (!setValue.equals("ON") && !setValue.equals("OFF")
+                              && !setValue.equals("PERTABLE") && !setValue.equals("PROGRESS") && !setValue.equals("DEFAULT")
+                              && !setValue.equals("ALL")) {
 				writeSyntaxError(this.queryStr,
 						setValue + parser.getRemainderStr());
 				break;
@@ -1986,13 +1988,13 @@ public class InterfaceQuery extends QueryWrapper implements SessionDefaults {
 				writeSyntaxError(this.queryStr, parser.getRemainderStr());
 				break;
 			}
-			if (setValue.equals("ON")) {
-				sessObj.setSessionStatsEnabled(true);
-			} else {
+			if (setValue.equals("OFF")) {
 				sessObj.setSessionStatsEnabled(false);
+			} else {
+				sessObj.setSessionStatsEnabled(true);
 			}
-			envMap.put("STATISTICS", sessObj.isSessionStatsEnabled() ? "ON"
-					: "OFF");
+                        sessObj.setSessionStatsType(setValue);
+			envMap.put("STATISTICS", setValue);
 			break;
 
 		case SET_MARKUP:

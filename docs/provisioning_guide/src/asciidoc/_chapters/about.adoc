@@ -53,7 +53,7 @@ Unless specifically qualified (bare-metal node, virtual-machine node, or cloud-n
 regardless of platform type.
 
 == New and Changed Information
-This guide has been updated to include provisioning for LDAP and Kerberos.
+This guide has been updated to include Ambari installation.
 
 <<<
 == Notation Conventions

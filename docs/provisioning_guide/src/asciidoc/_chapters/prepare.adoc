@@ -35,7 +35,6 @@ You need to prepare your Hadoop environment before installing {project-name}.
 6. <<prepare-configure-ldap-identity-store,Configure LDAP Identity Store>>
 7. <<prepare-gather-configuration-information,Gather Configuration Information>>
 8. <<prepare-install-required-software-packages,Install Required Software Packages>>
-9. <<prepare-perform-recipe-based-provisioning-tasks,Perform Recipe-Based Provisioning Tasks>>
 
 [[prepare-install-optional-workstation-software]]
 == Install Optional Workstation Software
@@ -51,6 +50,7 @@ We recommended that you pre-install the software before continuing with the {pro
 [[configure-installation-user-id]]
 == Configure Installation User ID
 
+If using the command-line Installer,
 {project-name} installation requires a user ID with these attributes:
 
 * `sudo` access per the requirements documented in <<requirements-linux-installation-user,Linux Installation User>>.
@@ -84,7 +84,8 @@ This adds the node to the `$HOME/.ssh/known_hosts` file completing the passwordl
 
 [[prepare-disable-requiretty]]
 == Disable requiretty
-You need to disable `requiretty` in `/etc/sudoers` on all nodes in the cluster
+If using the command-line Installer,
+you need to disable `requiretty` in `/etc/sudoers` on all nodes in the cluster
 to ensure that `sudo` commands can be run from inside the installation scripts.
 
 Comment out the `Defaults requiretty` setting in the `/etc/sudoers` file to
@@ -120,8 +121,7 @@ If you wish to manually set up the authentication configuration file and enable 
 [[prepare-gather-configuration-information]]
 == Gather Configuration Information
 
-You need to gather/decide information about your environment to aid installation {project-name}, both for the {project-name} Installer
-and for recipe-based provisioning. (Listed in alphabetical order to make it easier to find information when referenced in the install and upgrade instructions.)
+You need to gather/decide information about your environment to aid installation {project-name} for the {project-name} Installer. (Listed in alphabetical order to make it easier to find information when referenced in the install and upgrade instructions.)
 
 [cols="25%l,25%,15%l,35%",options="header"]
 |===
@@ -153,7 +153,7 @@ configuration changes under this user.
  +
 If the home directory of the `trafodion` user is
 `/opt/home/trafodion`, then specify the root directory as `/opt/home`. 
-| INIT_TRAFODION     | Whether to automatically initialize the {project-name} database.    | N                             | Does not apply to Recipe-Based Provisioning. Applies if $START=Y only.
+| INIT_TRAFODION     | Whether to automatically initialize the {project-name} database.    | N                             | Applies if $START=Y only.
 | INTERFACE          | Interface type used for $FLOATING_IP.                          | None                          | Not needed if $ENABLE_HA = N. 
 | JAVA_HOME          | Location of Java 1.7.0_65 or higher (JDK).                     | $JAVA_HOME setting            | Fully qualified path of the JDK. For example:
 `/usr/java/jdk1.7.0_67-cloudera`
@@ -178,7 +178,7 @@ distribution manager's REST API.
 | REST_BUILD         | Tar file containing the REST component.                        | None | Not needed if using a {project-name} package installation tar file.
 | SECURE_HADOOP^2^   | Indicates whether Hadoop has enabled Kerberos                   | Y only if Kerberos enabled | Based on whether Kerberos is enabled for your Hadoop installation
 | TRAF_HOME            | Target directory for the {project-name} software.                   | $HOME_DIR/trafodion           | {project-name} is installed in this directory on all nodes in `$NODE_LIST`.
-| START              | Whether to start {project-name} after install/upgrade.              | N                             | Does not apply to Recipe-Based Provisioning.
+| START              | Whether to start {project-name} after install/upgrade.              | N                             | 
 | SUSE_LINUX         | Whether your installing {project-name} on SUSE Linux.               | false                         | Auto-detected by the {project-name} Installer.
 | TRAF_KEYTAB^2^     | Name to use when specifying {project-name} keytab              | based on distribution         |  Required if Kerberos is enabled.
 | TRAF_KEYTAB_DIR^2^ | Location  of {project_name} keytab                             | based on distribution         |  Required if Kerberos is enabled.
@@ -206,7 +206,6 @@ for more information.
 This step is required if you're:
 
 * Installing {project-name} on SUSE.
-* Using Recipe-Based Provisioning.
 * Can't download the required software packages using the Internet.
 
 If none of these situations exist, then we highly recommend that you use the {project-name} Installer.
@@ -222,120 +221,16 @@ Install the packages listed in <<requirements-software-packages,Software Package
 You download the {project-name} binaries from the {project-name} {download-url}[Download] page. 
 Download the following packages:
 
-* {project-name} Installer (if planning to use the {project-name} Installer)
-* {project-name} Server
+Command-line Installation
+
+* {project-name} Installer
+* {project-name} Server tar file
+
+Ambari Installation
+
+* {project-name} Ambari RPM
+* {project-name} Server RPM
 
 NOTE: You can download and install the {project-name} Clients once you've installed and activated {project-name}. Refer to the
 {docs-url}/client_install/index.html[{project-name} Client Install Guide] for instructions.
 
-*Example*
-
-```
-$ mkdir $HOME/trafodion-download
-$ cd $HOME/trafodion-download
-$ # Download the Trafodion Installer binaries
-$ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-1.3.0.incubating/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
-Resolving http://apache.cs.utah.edu... 192.168.1.56
-Connecting to http://apache.cs.utah.edu|192.168.1.56|:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 68813 (67K) [application/x-gzip]
-Saving to: "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz"
-
-100%[=====================================================================================================================>] 68,813       124K/s   in 0.5s
-
-2016-02-14 04:19:42 (124 KB/s) - "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz" saved [68813/68813]
-```
-
-<<<
-
-```
-$ # Download the Trafodion Server binaries
-$ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-1.3.0.incubating/apache-trafodion-1.3.0-incubating-bin.tar.gz
-Resolving http://apache.cs.utah.edu... 192.168.1.56
-Connecting to http://apache.cs.utah.edu|192.168.1.56|:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 214508243 (205M) [application/x-gzip]
-Saving to: "apache-trafodion-1.3.0-incubating-bin.tar.gz"
-
-100%[=====================================================================================================================>] 214,508,243 3.90M/s   in 55s
-
-2016-02-14 04:22:14 (3.72 MB/s) - "apache-trafodion-1.3.0-incubating-bin.tar.gz" saved [214508243/214508243]
-
-$ ls -l
-total 209552
--rw-rw-r-- 1 centos centos 214508243 Jan 12 20:10 apache-trafodion-1.3.0-incubating-bin.tar.gz
--rw-rw-r-- 1 centos centos     68813 Jan 12 20:10 apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
-$
-```
-
-[[prepare-preparation-for-recipe-based-provisioning]]
-== Preparation for Recipe-Based Provisioning 
-
-NOTE: This step should be skipped if you plan to use the {project-name} Installer
-
-[[prepare-modify-os-settings]]
-=== Modify OS Settings
-
-Ensure that the `/etc/security/limits.d/trafodion.conf` on each node contains the limits settings required by {project-name}.
-Refer to <<requirements-operating-system-changes,Operating System Changes>> for the required settings.
-
-[[prepare-modify-zookeeper-configuration]]
-=== Modify ZooKeeper Configuration
-
-Do the following:
-
-1. Modify the ZooKeeper configuration as follows:
-+
-[cols="40%l,60%l",options="header"]
-|===
-| Attribute                  | Setting
-| maxClientCnxns             | 0
-|===
-
-2. Restart ZooKeeper to activate the new configuration setting.
-
-[[prepare-modify-hdfs-configuration]]
-=== Modify HDFS Configuration
-
-Do the following:
-
-1. Modify the HDFS configuration as follows:
-+
-[cols="40%l,60%l",options="header"]
-|===
-| Attribute                 | Setting
-| dfs.namenode.acls.enabled | true
-|===
-
-2. Restart HDFS to activate the new configuration setting.
-
-[[prepare-modify-hbase-configuration]]
-=== Modify HBase Configuration
-
-Do the following:
-
-1. Modify the HBase configuration as follows:
-+
-[cols="40%l,60%l",options="header"]
-|===
-| Attribute                                    | Setting
-| hbase.coprocessor.region.classes^b^          | org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
-org.apache.hadoop.hbase.coprocessor.AggregateImplementation 
-| hbase.hregion.impl                           | org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion
-| hbase.regionserver.region.split.policy       | org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy 
-| hbase.snapshot.enabled                       | true 
-| hbase.bulkload.staging.dir                   | hbase-staging
-| hbase.regionserver.region.transactional.tlog | true 
-| hbase.snapshot.master.timeoutMillis          | 600000
-| hbase.snapshot.region.timeout                | 600000
-| hbase.client.scanner.timeout.period          | 600000
-| hbase.regionserver.lease.period              | 600000
-| hbase.namenode.java.heapsize^a^              | 1073741824
-| hbase.secondary.namenode.java.heapsize^a^    | 1073741824
-|===
-+
-a) Applies to Cloudera distributions only.
-+
-b) Do not overwrite any coprocessors that may already exist.
-
-2. Restart HBase to activate the new configuration setting.

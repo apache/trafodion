@@ -187,6 +187,14 @@ struct hive_tbl_desc
   char* owner_;
   char* tableType_;
   Int64 creationTS_;
+
+  // next 2 fields are used if hive object is a view.
+  // Contents are populated during HiveMetaData::getTableDesc.
+  // original text is what was used at view creation time.
+  // expanded text contains fully qualified object/col names.
+  char * viewOriginalText_;
+  char * viewExpandedText_;
+
   struct hive_sd_desc* sd_;
   struct hive_pkey_desc* pkey_;
   
@@ -195,10 +203,21 @@ struct hive_tbl_desc
   hive_tbl_desc(Int32 tblID, const char* name, const char* schName, 
                 const char * owner,
                 const char * tableType,
-                Int64 creationTS, struct hive_sd_desc* sd,
+                Int64 creationTS, 
+                const char * viewOriginalText,
+                const char * viewExpandedText,
+                struct hive_sd_desc* sd,
                 struct hive_pkey_desc* pk);
 
   ~hive_tbl_desc();
+
+  NABoolean isView() 
+  { 
+    if (tableType_ && (strcmp(tableType_, "VIRTUAL_VIEW") == 0))
+      return TRUE;
+    else
+      return FALSE;
+  }
 
   struct hive_sd_desc* getSDs() { return sd_; };
   
@@ -245,7 +264,8 @@ public:
   struct hive_tbl_desc * getNext();
   void advance();
   NABoolean atEnd();
-  
+  void clear();
+
   // what the Hive default schema is called in the Hive metadata
   static const char *getDefaultSchemaName() { return "default"; }
   

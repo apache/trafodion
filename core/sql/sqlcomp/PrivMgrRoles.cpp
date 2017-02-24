@@ -283,30 +283,32 @@ bool PrivMgrRoles::dependentObjectsExist(
 
 {
 
-// First, determine if the role has been granted any object privileges.
-// Only REFERENCES, SELECT and USAGE are relevant, but for now check all DML.
-// If no granted privileges, then there are no objects created by this user
-// depending on privileges granted to this role.
+   // First, determine if the role has been granted any object privileges.
+   // Only REFERENCES, SELECT and USAGE are relevant, but for now check all DML.
+   // If no granted privileges, then there are no objects created by this user
+   // depending on privileges granted to this role.
 
-std::vector<PrivClass> privClass;
+   std::vector<PrivClass> privClass;
 
    privClass.push_back(PrivClass::OBJECT);
 
-   if (!isAuthIDGrantedPrivs(roleID,privClass))
+  
+   std::vector<int64_t> objectUIDs;
+   if (!isAuthIDGrantedPrivs(roleID,privClass, objectUIDs))
       return false;
       
-// Second, see if the user owns any objects that are dependent, i.e., views,
-// referential integrity (RI) constraints, or UDFs/SPJs.
+   // Second, see if the user owns any objects that are dependent, i.e., views,
+   // referential integrity (RI) constraints, or UDFs/SPJs.
 
-std::string whereClause(" WHERE OBJECT_TYPE IN ('RC','SP','UR','VI') AND OBJECT_OWNER = ");
+   std::string whereClause(" WHERE OBJECT_TYPE IN ('RC','SP','UR','VI') AND OBJECT_OWNER = ");
 
    whereClause += authIDToString(userID);
    
-PrivMgrObjects objects(trafMetadataLocation_,pDiags_);
+   PrivMgrObjects objects(trafMetadataLocation_,pDiags_);
 
-std::vector<UIDAndType> ownedUIDandTypes;
+   std::vector<UIDAndType> ownedUIDandTypes;
 
-PrivStatus privStatus = objects.fetchUIDandTypes(whereClause,ownedUIDandTypes);
+   PrivStatus privStatus = objects.fetchUIDandTypes(whereClause,ownedUIDandTypes);
 
    if (privStatus == STATUS_ERROR)
    {
@@ -314,30 +316,30 @@ PrivStatus privStatus = objects.fetchUIDandTypes(whereClause,ownedUIDandTypes);
       return true;
    }
    
-// If the user does not own any views, user defined functions, or referential
-// integrity constraints, they do not have any dependent objects.
+   // If the user does not own any views, user defined functions, or referential
+   // integrity constraints, they do not have any dependent objects.
 
    if (privStatus == STATUS_NOTFOUND || ownedUIDandTypes.size() == 0)
       return false;   
       
-//TODO: User owns dependent objects and role has been granted privileges.
-//      But do they correlate?  For instance, if a role is granted INSERT,
-//      losing that privilege does not affect any views the user may own.
-//      Could get list of privilege types granted the role, and then
-//      compare with types of dependent objects.  If no correlation,
-//      short-circuit this check.  See file private function 
-//      isDependentObjectPrivPair().
+   //TODO: User owns dependent objects and role has been granted privileges.
+   //      But do they correlate?  For instance, if a role is granted INSERT,
+   //      losing that privilege does not affect any views the user may own.
+   //      Could get list of privilege types granted the role, and then
+   //      compare with types of dependent objects.  If no correlation,
+   //      short-circuit this check.  See file private function 
+   //      isDependentObjectPrivPair().
    
-// OK, user owns dependent objects and role has been granted privileges.  
-// One of more of those objects could depend on privileges granted this role.
-// Get the name of the role to use in error messages.   
-int32_t length;
+   // OK, user owns dependent objects and role has been granted privileges.  
+   // One of more of those objects could depend on privileges granted this role.
+   // Get the name of the role to use in error messages.   
+   int32_t length;
 
-char roleName[MAX_DBUSERNAME_LEN + 1];
+   char roleName[MAX_DBUSERNAME_LEN + 1];
          
-Int16 retCode = ComUser::getAuthNameFromAuthID(roleID,roleName,
+   Int16 retCode = ComUser::getAuthNameFromAuthID(roleID,roleName,
                                                sizeof(roleName),length);
-// Should not fail, role ID was derived from name provided by user.
+   // Should not fail, role ID was derived from name provided by user.
    if (retCode != 0)
    {
       std::string errorText("Unable to look up role name for role ID ");
@@ -347,25 +349,25 @@ Int16 retCode = ComUser::getAuthNameFromAuthID(roleID,roleName,
       return true;
    }
 
-// For each owned object, get the objects that the owned objects reference.
-// Determine if the user has the requisite privilege on each of the 
-// referenced objects if the privileges granted to the role are not included.
-// If the user has the privilege (either directly or through another role),
-// move on to the next referenced object, and then on to the next owned object.
-// If any dependency on a privilege granted to this role is found, it is an
-// error if the behavior is restrict.  For cascade (not yet supported), the
-// dependent object is automatically dropped.
+   // For each owned object, get the objects that the owned objects reference.
+   // Determine if the user has the requisite privilege on each of the 
+   // referenced objects if the privileges granted to the role are not included.
+   // If the user has the privilege (either directly or through another role),
+   // move on to the next referenced object, and then on to the next owned object.
+   // If any dependency on a privilege granted to this role is found, it is an
+   // error if the behavior is restrict.  For cascade (not yet supported), the
+   // dependent object is automatically dropped.
 
-// For each referenced object, get privileges the user has on that object 
-// either directly or by another role granted to the user, but exclude 
-// any privileges from the role being revoked.  The first part of the query
-// can be built once, and the object UID for each referenced object added
-// within the loop.
-//
-// WHERE (GRANTEE_ID = -1 OR GRANTEE_ID = userID OR
-//        GRANTEE_ID IN (SELECT ROLE_ID FROM ROLE_USAGE WHERE GRANTEE_ID = userID)) AND 
-//        GRANTEE_ID <> roleID AND OBJECT_UID = objectUID; 
-std::string whereClauseHeader(" WHERE (GRANTEE_ID = -1 OR GRANTEE_ID = ");
+   // For each referenced object, get privileges the user has on that object 
+   // either directly or by another role granted to the user, but exclude 
+   // any privileges from the role being revoked.  The first part of the query
+   // can be built once, and the object UID for each referenced object added
+   // within the loop.
+   //
+   // WHERE (GRANTEE_ID = -1 OR GRANTEE_ID = userID OR
+   //        GRANTEE_ID IN (SELECT ROLE_ID FROM ROLE_USAGE WHERE GRANTEE_ID = userID)) AND 
+   //        GRANTEE_ID <> roleID AND OBJECT_UID = objectUID; 
+   std::string whereClauseHeader(" WHERE (GRANTEE_ID = -1 OR GRANTEE_ID = ");
    
    whereClauseHeader += authIDToString(userID);
    whereClauseHeader += " OR GRANTEE_ID IN (SELECT RU.ROLE_ID FROM ";
@@ -376,12 +378,12 @@ std::string whereClauseHeader(" WHERE (GRANTEE_ID = -1 OR GRANTEE_ID = ");
    whereClauseHeader += authIDToString(roleID);
    whereClauseHeader += " AND OBJECT_UID = ";
 
-//TODO: When support is added for schema and column privileges, will need to
-//      check those privileges as well. 
+   //TODO: When support is added for schema and column privileges, will need to
+   //      check those privileges as well. 
 
-// Assume no dependencies exist.
-bool dependencyFound = false; 
-PrivMgrMDAdmin admin(trafMetadataLocation_,metadataLocation_,pDiags_);
+   // Assume no dependencies exist.
+   bool dependencyFound = false; 
+   PrivMgrMDAdmin admin(trafMetadataLocation_,metadataLocation_,pDiags_);
 
    for (size_t u3 = 0; u3 < ownedUIDandTypes.size(); u3++)
    {

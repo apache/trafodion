@@ -181,6 +181,22 @@
 
 --- SQL command prepared.
 >>
+>>prepare explainItEff from
++>select substring(operator,1,16) operator
++>from table (explain(NULL,'XX')) t
++>where operator LIKE '%SEQUENCE%' ;
+
+--- SQL command prepared.
+>>
+>>
+>>prepare explainItVsbb from
++>select substring(operator,1,25) operator
++>from table (explain(NULL,'XX2')) t
++>where operator LIKE '%SEQUENCE%' OR operator LIKE '%VSBB_UPSERT%'  OR operator LIKE '%VSBB_DELETE%' ;
+
+--- SQL command prepared.
+>>
+>>
 >>insert into t015t1 values (1,1), (2,2);
 
 --- 2 row(s) inserted.
@@ -1742,7 +1758,7 @@ K@           I
 
 --- 1 row(s) updated.
 >>
->>-- Upsert that gets converted to merge
+>>-- Upsert that gets transformed
 >>upsert into t015t12 values (1,1,1) ;
 
 --- 1 row(s) inserted.
@@ -1832,7 +1848,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
->>-- Upsert/merge on table with RI constraint & unique index
+>>-- Upsert(transformed) on table with RI constraint & unique index
 >>upsert into t015t14 values (1,2),(11,12);
 
 --- 2 row(s) inserted.
@@ -1873,12 +1889,14 @@ A            B                     C
 --- 1 row(s) selected.
 >>
 >>-- guarding against error 7000 and compiler asserts
+>>
 >>prepare XX from UPSERT INTO DEC1 
 +>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 +>VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a[10]), DEFAULT), 
 +>?b[10], ?c[10], ?d[10], ?e[10], null, ?f[10], null) ;
 
 --- SQL command prepared.
+>>-- missing default value and default upsert_mode=merge so will transform as merge
 >>execute explainIt;
 
 OPERATOR        
@@ -1893,6 +1911,7 @@ TRAFODION_MERGE
 +>VALUES  (?a, ?b, ?c, ?d, ?e, null, ?f, null) ;
 
 --- SQL command prepared.
+>>-- missing default value and default upsert_mode=merge so will transform as merge
 >>execute explainIt;
 
 OPERATOR        
@@ -1908,6 +1927,7 @@ TRAFODION_MERGE
 +>?b, ?c, ?d, ?e, null, ?f, null) ;
 
 --- SQL command prepared.
+>>-- missing default value and default upsert_mode=merge so will transform as merge
 >>execute explainIt;
 
 OPERATOR        
@@ -1917,6 +1937,59 @@ TRAFODION_MERGE
 
 --- 1 row(s) selected.
 >>
+>>cqd TRAF_UPSERT_MODE 'OPTIMAL';
+
+--- SQL operation complete.
+>>-- missing default value and default upsert_mode=optimal so will transform as new efficient tree for the next 3 cases 
+>>prepare XX from UPSERT INTO DEC1 
++>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
++>VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a[10]), DEFAULT), 
++>?b[10], ?c[10], ?d[10], ?e[10], null, ?f[10], null) ;
+
+--- SQL command prepared.
+>>execute explainItEff;
+
+OPERATOR        
+----------------
+
+SEQUENCE        
+
+--- 1 row(s) selected.
+>>
+>>prepare XX from UPSERT INTO DEC1 
++>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
++>VALUES  (?a, ?b, ?c, ?d, ?e, null, ?f, null) ;
+
+--- SQL command prepared.
+>>execute explainItEff;
+
+OPERATOR        
+----------------
+
+SEQUENCE        
+
+--- 1 row(s) selected.
+>>
+>>prepare XX from UPSERT INTO DEC1 
++>(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
++>VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a), DEFAULT), 
++>?b, ?c, ?d, ?e, null, ?f, null) ;
+
+--- SQL command prepared.
+>>execute explainItEff;
+
+OPERATOR        
+----------------
+
+SEQUENCE        
+
+--- 1 row(s) selected.
+>>
+>>cqd TRAF_UPSERT_MODE reset;
+
+--- SQL operation complete.
+>>
+>>
 >>prepare XX from UPSERT INTO DE 
 +>(ID, dataElementConceptID, valueDomainID)  VALUES  
 +>(NVL((select a.id from DE a where a.dataElementConceptID = 
@@ -1924,12 +1997,12 @@ TRAFODION_MERGE
 +>NVL((select d.id from DEC1 d where d.codeValue = ?), NULL),  ? ) ;
 
 --- SQL command prepared.
->>execute explainIt;
+>>execute explainItEff;
 
 OPERATOR        
 ----------------
 
-TRAFODION_MERGE 
+SEQUENCE        
 
 --- 1 row(s) selected.
 >>
@@ -1945,6 +2018,7 @@ TRAFODION_MERGE
 +>(select i.id from DEC1 i where i.codeValue = ?) and h.valueDomainID = ? ), NULL), ? );
 
 --- SQL command prepared.
+>>--missing values and traf_mode=merge default transforms into merge
 >>execute explainIt;
 
 OPERATOR        
@@ -1961,12 +2035,12 @@ TRAFODION_MERGE
 +>(select d.id from DEC1 d where d.codeValue = ?),  ? ) ;
 
 --- SQL command prepared.
->>execute explainIt;
+>>execute explainItEff;
 
 OPERATOR        
 ----------------
 
-TRAFODION_MERGE 
+SEQUENCE        
 
 --- 1 row(s) selected.
 >>
@@ -1974,12 +2048,12 @@ TRAFODION_MERGE
 +>VALUES  (1,  (select d.id from DEC1 d where d.codeValue = ?),  3 ) ;
 
 --- SQL command prepared.
->>execute explainIt;
+>>execute explainItEff;
 
 OPERATOR        
 ----------------
 
-TRAFODION_MERGE 
+SEQUENCE        
 
 --- 1 row(s) selected.
 >>
@@ -1987,12 +2061,12 @@ TRAFODION_MERGE
 +>VALUES  (?[10], ?[10], ?[10] ) ;
 
 --- SQL command prepared.
->>execute explainIt;
+>>execute explainItEff;
 
 OPERATOR        
 ----------------
 
-TRAFODION_MERGE 
+SEQUENCE        
 
 --- 1 row(s) selected.
 >>
@@ -2000,12 +2074,12 @@ TRAFODION_MERGE
 +>VALUES  (1,  (select d.id from DEC1 d where d.codeValue = 'aa'),  3 ) ;
 
 --- SQL command prepared.
->>execute explainIt;
+>>execute explainItEff;
 
 OPERATOR        
 ----------------
 
-TRAFODION_MERGE 
+SEQUENCE        
 
 --- 1 row(s) selected.
 >>
@@ -2031,7 +2105,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 .    .    9    trafodion_insert                T015T16I1             1.00E+000
 .    .    8    trafodion_vsbb_delet            T015T16I1             1.00E+000
 5    6    7    nested_join                                           1.00E+000
-.    .    6    trafodion_upsert                T015T16               1.00E+000
+.    .    6    trafodion_vsbb_upser            T015T16               1.00E+000
 4    .    5    sequence                                              1.00E+000
 3    .    4    sort                                                  2.00E+000
 2    1    3    left_hybrid_hash_joi                                  2.00E+000
@@ -2085,9 +2159,65 @@ A                     B            C            D            E
 
 --- 3 row(s) selected.
 >>
+>>
+>>--For single row param input, ensure plan has no vsbb operators
+>>prepare xx2 from upsert into t015t16 values(?,?,?,?,?);
+
+--- SQL command prepared.
+>>execute explainItVsbb;
+
+OPERATOR                 
+-------------------------
+
+SEQUENCE                 
+
+--- 1 row(s) selected.
+>>--For multiple rows, ensure plan has vsbb upsert, vsbb delete
+>>prepare xx2 from upsert into t015t16 values(?[10],?[10],?[10],?[10],?[10]);
+
+--- SQL command prepared.
+>>execute explainItVsbb;
+
+OPERATOR                 
+-------------------------
+
+SEQUENCE                 
+TRAFODION_VSBB_UPSERT    
+TRAFODION_VSBB_DELETE    
+TRAFODION_VSBB_DELETE    
+
+--- 4 row(s) selected.
+>>--For upsert-select, ensure plan has vsbb_upsert and vsbb delete
+>>prepare xx2 from UPSERT INTO t015t16  select a,b,c,d,e from t015t6 ;
+
+--- SQL command prepared.
+>>execute explainItVsbb;
+
+OPERATOR                 
+-------------------------
+
+SEQUENCE                 
+TRAFODION_VSBB_UPSERT    
+TRAFODION_VSBB_DELETE    
+TRAFODION_VSBB_DELETE    
+
+--- 4 row(s) selected.
+>>
+>>--For multiple values , ensure plan has vsbb upsert and vsbb delete
 >>prepare xx2 from upsert into t015t16 values (3,4,1,1,1),(6,7,80,90,100),(6,7,81,91,101);
 
 --- SQL command prepared.
+>>execute explainItVsbb;
+
+OPERATOR                 
+-------------------------
+
+SEQUENCE                 
+TRAFODION_VSBB_UPSERT    
+TRAFODION_VSBB_DELETE    
+TRAFODION_VSBB_DELETE    
+
+--- 4 row(s) selected.
 >>execute xx2;
 
 --- 2 row(s) inserted.
@@ -2103,7 +2233,7 @@ A                     B
 
 --- 4 row(s) selected.
 >>
->>cqd traf_upsert_to_eff_tree 'OFF';
+>>cqd traf_upsert_to_eff_tree reset;
 
 --- SQL operation complete.
 >>log;
