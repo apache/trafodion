@@ -2803,7 +2803,10 @@ short CmpSeabaseDDL::createSeabaseTable2(
     }
   
 
-  const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
+  
+  char  lobHdfsServer[256] ; // max length determined by dfs.namenode.fs-limits.max-component-length(255)
+  memset(lobHdfsServer,0,256);
+  strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER),sizeof(lobHdfsServer)-1);
   Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
    
   if (j > 0)
@@ -2842,7 +2845,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
                                           lobTypList,
                                           lobLocList,
                                           lobColNameList,
-                                          (char *)lobHdfsServer,
+                                          lobHdfsServer,
                                           lobHdfsPort,
                                           lobMaxSize,
                                           lobTrace);
@@ -4278,7 +4281,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
 
   char  lobHdfsServer[256] ; // max length determined by dfs.namenode.fs-limits.max-component-length(255)
   memset(lobHdfsServer,0,256);
-  strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER),sizeof(lobHdfsServer));
+  strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER),sizeof(lobHdfsServer)-1);
   Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
   Lng32 j = 0;
   for (Int32 i = 0; i < nacolArr.entries(); i++)
@@ -4331,7 +4334,7 @@ short CmpSeabaseDDL::dropSeabaseTable2(
 					  LOB_CLI_DROP,
 					  lobNumList,
 					  lobTypList,
-                                    lobLocList,NULL,(char *)lobHdfsServer, lobHdfsPort,0,lobTrace);
+                                    lobLocList,NULL,lobHdfsServer, lobHdfsPort,0,lobTrace);
       if (rc < 0)
 	{
 	  *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_OBJECT)

@@ -10607,6 +10607,7 @@ Lng32 SQLCLI_LOBddlInterface
   lobDebugInfo(logBuf,0,__LINE__,lobTrace);
   char * query = new(currContext.exHeap()) char[4096];
   char *hdfsServer = new(currContext.exHeap()) char[256];
+  strcpy(hdfsServer,lobHdfsServer);
   switch (qType)
     {
     case LOB_CLI_CREATE:

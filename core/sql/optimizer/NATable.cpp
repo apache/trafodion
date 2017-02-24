@@ -5490,7 +5490,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
      tableConstructionHadWarnings_=TRUE;
    char  lobHdfsServer[256] ; // max length determined by dfs.namenode.fs-limits.max-component-length(255)
    memset(lobHdfsServer,0,256);
-   strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER), sizeof(lobHdfsServer));
+   strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER), sizeof(lobHdfsServer)-1);// leave a NULL terminator at the end. 
    
    Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
    if (hasLobColumn())
@@ -5535,7 +5535,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
               LOB_CLI_SELECT_CURSOR,
               lobNumList,
               lobTypList,
-              lobLocList,lobColNameList,(char *)lobHdfsServer,lobHdfsPort,0,FALSE);
+              lobLocList,lobColNameList,lobHdfsServer,lobHdfsPort,0,FALSE);
 
        if (cliRC == 0)
          {
