@@ -705,6 +705,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_GROUP_CONCAT
 %token <tokval> TOK_GZIP
 %token <tokval> TOK_HAVING
+%token <tokval> TOK_HIVE
 %token <tokval> TOK_HIVEMD
 %token <tokval> TOK_QUALIFY
 %token <tokval> TOK_HEADER
@@ -2824,6 +2825,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <relx>                    exe_util_get_uid
 %type <relx>                    exe_util_get_qid
 %type <relx>                    exe_util_get_lob_info
+%type <relx>                    exe_util_hive_query
 %type <relx>                    exe_util_populate_in_memory_statistics
 %type <relx>                    exe_util_lob_extract
 %type <relx>                    exe_util_lob_update
@@ -14737,10 +14739,10 @@ interactive_query_expression:
 				{
 				  $$ = finalize($1);
 				}
-           |  osim_statement
-              {
-                  $$ = finalize($1);
-              }
+              |  osim_statement
+                                {
+                                  $$ = finalize($1);
+                                }
               | set_statement
 				{ 
 				  $$ = finalize($1);
@@ -14942,6 +14944,10 @@ interactive_query_expression:
 				  $$ = finalize($1);
 				}
 
+              | exe_util_hive_query
+                                {
+                                  $$ = finalize($1);
+                                }
               | TOK_SELECT TOK_UUID '(' ')'
 	                        {
 				  NAString * v = new (PARSERHEAP()) NAString("1");
@@ -16827,6 +16833,20 @@ exe_util_get_lob_info : TOK_GET TOK_LOB stats_or_statistics TOK_FOR TOK_TABLE ta
                  $$ = new (PARSERHEAP()) 
                    ExeUtilLobInfo(*$6, FALSE,NULL,  PARSERHEAP());
 	       } 
+
+exe_util_hive_query : TOK_PROCESS TOK_HIVE TOK_STATEMENT QUOTED_STRING
+                      {
+                        $$ = new (PARSERHEAP()) 
+                          ExeUtilHiveQuery(*$4, ExeUtilHiveQuery::FROM_STRING,
+                                           PARSERHEAP());
+                      } 
+                    | TOK_PROCESS TOK_HIVE TOK_STATEMENT TOK_FROM TOK_FILE QUOTED_STRING
+                      {
+                        $$ = new (PARSERHEAP()) 
+                          ExeUtilHiveQuery(*$6, ExeUtilHiveQuery::FROM_FILE,
+                                           PARSERHEAP());
+                      } 
+
      
 /*
  * The purpose of dummy_token_lookahead is to force the lexer to look
@@ -34113,6 +34133,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_HASH2PARTFUNC
                       | TOK_HBASE_TIMESTAMP
                       | TOK_HBASE_VERSION
+                      | TOK_HIVE
                       | TOK_HIVEMD
                       | TOK_INET_ATON
                       | TOK_INET_NTOA

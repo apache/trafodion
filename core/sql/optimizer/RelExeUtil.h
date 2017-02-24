@@ -577,7 +577,8 @@ public:
     ORC_FAST_AGGR_            = 37,
     GET_QID_                  = 38,
     HIVE_TRUNCATE_            = 39,
-    LOB_UPDATE_UTIL_          = 40
+    LOB_UPDATE_UTIL_          = 40,
+    HIVE_QUERY_               = 41
   };
 
   ExeUtilExpr(ExeUtilType type,
@@ -1165,6 +1166,45 @@ private:
   ConstStringList * pl_;
   NABoolean suppressModCheck_;
   NABoolean dropTableOnDealloc_;
+};
+
+class ExeUtilHiveQuery : public ExeUtilExpr
+{
+public:
+  enum HiveSourceType
+    {
+      FROM_STRING,
+      FROM_FILE
+    };
+
+  ExeUtilHiveQuery(const NAString &hive_query,
+                   HiveSourceType type,
+                   CollHeap *oHeap = CmpCommon::statementHeap())
+       : ExeUtilExpr(HIVE_QUERY_, CorrName("dummyName"), 
+                     NULL, NULL, 
+                     NULL,
+                     CharInfo::UnknownCharSet, oHeap),
+         type_(type),
+         hiveQuery_(hive_query)
+  { }
+
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+  
+  NAString &hiveQuery() { return hiveQuery_; }
+  const NAString &hiveQuery() const { return hiveQuery_; }
+
+  HiveSourceType sourceType() { return type_;}
+private:
+  HiveSourceType type_;
+  NAString hiveQuery_;
 };
 
 class ExeUtilMaintainObject : public ExeUtilExpr

@@ -490,6 +490,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("HEX",                TOK_HEX,         NONRESTOKEN_),
   ParKeyWord("HEXADECIMAL",        TOK_HEXADECIMAL, NONRESTOKEN_),
   ParKeyWord("HIGH_VALUE",         TOK_HIGH_VALUE,  NONRESTOKEN_),
+  ParKeyWord("HIVE",               TOK_HIVE,  NONRESTOKEN_),
   ParKeyWord("HIVEMD",                    TOK_HIVEMD,  NONRESTOKEN_),
   ParKeyWord("HOLD",               TOK_HOLD,        THIRD_|NONRESTOKEN_),
   ParKeyWord("HORIZONTAL",         TOK_HORIZONTAL,  NONRESTOKEN_),

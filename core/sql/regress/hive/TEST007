@@ -50,13 +50,10 @@ drop view trafodion.sch007.vhive6 cascade;
 drop external table thive1 for hive.hive.thive1 cascade;
 cleanup table trafodion."_HV_HIVE_".thive1;
 drop external table thive2 for hive.hive.thive2 cascade;
-sh echo "drop table thive1;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
-sh echo "drop table thive2;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'drop table thive1';
+process hive statement 'drop table thive2';
 drop external table thive3 for hive.hive.thive3;
-sh echo "drop table thive3;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'drop table thive3';
 drop table if exists trafodion.sch007.thbase1 cascade;
 
 ?section setup_traf
@@ -66,17 +63,13 @@ create schema if not exists trafodion.sch007;
 
 ?section tests_traf
 -- tests for views on hive tables
-sh echo "drop table thive1;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
-sh echo "create table thive1(a int, b int);" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'drop table thive1';
+process hive statement 'create table thive1(a int, b int)';
 sh echo "insert into thive1 values (1, 2);" > TEST007_junk;
 sh regrhive.ksh -f TEST007_junk;
 
-sh echo "drop table thive2;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
-sh echo "create table thive2(a int, b int);" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'drop table thive2';
+process hive statement 'create table thive2(a int, b int)';
 sh echo "insert into thive2 values (1, 2);" > TEST007_junk;
 sh regrhive.ksh -f TEST007_junk;
 
@@ -148,67 +141,47 @@ create view vhive5 as select * from thive1;
 -- if underlying hive table is dropped, an error is returned
 prepare s from select * from trafodion.sch007.vhive1;
 execute s;
-sh echo "drop table thive1;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'drop table thive1';
 execute s;
 select * from trafodion.sch007.vhive1;
 
 -- if external table creation has been disabled, then view usage will
 -- not available
 cqd hive_views_create_external_table 'OFF';
-sh echo "drop table thive3;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
-sh echo "create table thive3(a int, b int);" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'drop table thive3';
+process hive statement 'create table thive3(a int, b int)';
 create view trafodion.sch007.vhive6 as select * from hive.hive.thive3;
 showddl hive.hive.thive3;
 get all views on table hive.hive.thive3;
 get all tables in view trafodion.sch007.vhive6;
 
 ?section clean_up_hive
-sh echo "drop table hivesch007.thive1;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
-
-sh echo "drop view hivesch007.vhive11;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
-
-sh echo "drop view hivesch007.vhive1;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
-
-sh echo "drop database hivesch007;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
-
-sh echo "drop table thive007;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
-
-sh echo "drop view vhive007;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'drop table hivesch007.thive1';
+process hive statement 'drop view hivesch007.vhive11';
+process hive statement 'drop view hivesch007.vhive1';
+process hive statement 'drop database hivesch007';
+process hive statement 'drop table thive007';
+process hive statement 'drop view vhive007';
 
 drop view trafodion.sch007.vtrafonhive;
 
 drop schema trafodion.sch007 cascade;
 
 ?section setup_hive
-sh echo "create database hivesch007;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'create database hivesch007';
 
-sh echo "create table hivesch007.thive1 (a int);" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'create table hivesch007.thive1 (a int)';
 
 sh echo "insert into hivesch007.thive1 values (1);" > TEST007_junk;
 sh regrhive.ksh -f TEST007_junk;
 
-sh echo "create view hivesch007.vhive1 as select * from hivesch007.thive1 where thive1.a > 0;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'create view hivesch007.vhive1 as select * from hivesch007.thive1 where thive1.a > 0';
 
-sh echo "create view hivesch007.vhive11 as select * from hivesch007.vhive1 where vhive1.a > 0;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'create view hivesch007.vhive11 as select * from hivesch007.vhive1 where vhive1.a > 0';
 
-sh echo "create table thive007 (a int);" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'create table thive007 (a int)';
 
-sh echo "create view vhive007 as select * from thive007 where a > 0;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'create view vhive007 as select * from thive007 where a > 0';
 
 insert into hive.hive.thive007 values (1);
 
@@ -265,19 +238,16 @@ delete from hive.hivesch007.vhive1;
 -- drop underlying hive table
 cqd auto_query_retry_warnings 'ON';
 
-sh echo "drop table hivesch007.thive1;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'drop table hivesch007.thive1';
 
 prepare s from select * from hive.hivesch007.vhive11;
 execute s;
 
-sh echo "create table hivesch007.thive1 (a int);" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'create table hivesch007.thive1 (a int)';
 
 prepare s from select * from hive.hivesch007.vhive11;
 execute s;
 
-sh echo "drop table hivesch007.thive1;" > TEST007_junk;
-sh regrhive.ksh -f TEST007_junk;
+process hive statement 'drop table hivesch007.thive1';
 
 execute s;

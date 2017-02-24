@@ -31,7 +31,7 @@
 >>invoke t003t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1
--- Definition current  Mon Aug 15 08:53:30 2016
+-- Definition current  Wed Feb 22 23:04:05 2017
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -50,7 +50,7 @@
 >>invoke t003t1_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1_LIKE
--- Definition current  Mon Aug 15 08:53:34 2016
+-- Definition current  Wed Feb 22 23:04:11 2017
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -69,7 +69,7 @@
 >>invoke t003t1_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1_AS
--- Definition current  Mon Aug 15 08:53:40 2016
+-- Definition current  Wed Feb 22 23:04:16 2017
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -88,7 +88,7 @@
 >>invoke t003t1_view;
 
 -- Definition of Trafodion view TRAFODION.SCH.T003T1_VIEW
--- Definition current  Mon Aug 15 08:53:42 2016
+-- Definition current  Wed Feb 22 23:04:19 2017
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -341,19 +341,19 @@ A     B     C    D
 --- SQL operation complete.
 >>
 >>obey TEST003(hive_tiny);
->>sh echo "drop table ttiny;" > TEST003_junk;
->>sh regrhive.ksh -f TEST003_junk;
->>
->>sh echo "create table ttiny(a tinyint, b tinyint);" > TEST003_junk;
->>sh regrhive.ksh -f TEST003_junk;
->>
+>>process hive statement 'drop table ttiny';
+
+--- SQL operation complete.
+>>process hive statement 'create table ttiny(a tinyint, b tinyint)';
+
+--- SQL operation complete.
 >>sh echo "insert into ttiny values (1, -1);" > TEST003_junk;
 >>sh regrhive.ksh -f TEST003_junk;
 >>
 >>invoke hive.hive.ttiny;
 
 -- Definition of hive table TTINY
--- Definition current  Mon Aug 15 08:54:30 2016
+-- Definition current  Wed Feb 22 23:04:49 2017
 
   (
     A                                TINYINT
@@ -512,7 +512,7 @@ A     B
 >>invoke t003t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1
--- Definition current  Mon Aug 15 08:54:56 2016
+-- Definition current  Wed Feb 22 23:05:19 2017
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -531,7 +531,7 @@ A     B
 >>invoke t003t1_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1_LIKE
--- Definition current  Mon Aug 15 08:54:59 2016
+-- Definition current  Wed Feb 22 23:05:25 2017
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -550,7 +550,7 @@ A     B
 >>invoke t003t1_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T1_AS
--- Definition current  Mon Aug 15 08:55:03 2016
+-- Definition current  Wed Feb 22 23:05:30 2017
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -569,7 +569,7 @@ A     B
 >>invoke t003t1_view;
 
 -- Definition of Trafodion view TRAFODION.SCH.T003T1_VIEW
--- Definition current  Mon Aug 15 08:55:05 2016
+-- Definition current  Wed Feb 22 23:05:32 2017
 
   (
     A                                TINYINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -822,19 +822,19 @@ A       B       C      D
 --- SQL operation complete.
 >>
 >>obey TEST003(hive_tiny);
->>sh echo "drop table ttiny;" > TEST003_junk;
->>sh regrhive.ksh -f TEST003_junk;
->>
->>sh echo "create table ttiny(a tinyint, b tinyint);" > TEST003_junk;
->>sh regrhive.ksh -f TEST003_junk;
->>
+>>process hive statement 'drop table ttiny';
+
+--- SQL operation complete.
+>>process hive statement 'create table ttiny(a tinyint, b tinyint)';
+
+--- SQL operation complete.
 >>sh echo "insert into ttiny values (1, -1);" > TEST003_junk;
 >>sh regrhive.ksh -f TEST003_junk;
 >>
 >>invoke hive.hive.ttiny;
 
 -- Definition of hive table TTINY
--- Definition current  Mon Aug 15 08:55:44 2016
+-- Definition current  Wed Feb 22 23:05:57 2017
 
   (
     A                                TINYINT
@@ -978,7 +978,7 @@ A       B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Mon Aug 15 08:55:51 2016
+-- Definition current  Wed Feb 22 23:06:12 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -995,7 +995,7 @@ A       B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Mon Aug 15 08:55:54 2016
+-- Definition current  Wed Feb 22 23:06:18 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1012,7 +1012,7 @@ A       B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Mon Aug 15 08:55:58 2016
+-- Definition current  Wed Feb 22 23:06:22 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1029,7 +1029,7 @@ A       B
 >>invoke t003t2_view;
 
 -- Definition of Trafodion view TRAFODION.SCH.T003T2_VIEW
--- Definition current  Mon Aug 15 08:56:00 2016
+-- Definition current  Wed Feb 22 23:06:25 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1162,8 +1162,8 @@ A                     (EXPR)
 >>
 >>select cast('-9223372036854775808' as largeint) from (values(1)) x(a);
 
-(EXPR)
-----------
+(EXPR)              
+--------------------
 
 -9223372036854775808
 
@@ -1336,7 +1336,7 @@ A                     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Mon Aug 15 08:56:27 2016
+-- Definition current  Wed Feb 22 23:06:51 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1353,7 +1353,7 @@ A                     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Mon Aug 15 08:56:30 2016
+-- Definition current  Wed Feb 22 23:06:57 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1370,7 +1370,7 @@ A                     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Mon Aug 15 08:56:34 2016
+-- Definition current  Wed Feb 22 23:07:03 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1387,7 +1387,7 @@ A                     B
 >>invoke t003t2_view;
 
 -- Definition of Trafodion view TRAFODION.SCH.T003T2_VIEW
--- Definition current  Mon Aug 15 08:56:36 2016
+-- Definition current  Wed Feb 22 23:07:06 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1520,8 +1520,8 @@ A                     (EXPR)
 >>
 >>select cast('-9223372036854775808' as largeint) from (values(1)) x(a);
 
-(EXPR)
-----------
+(EXPR)              
+--------------------
 
 -9223372036854775808
 
@@ -1697,7 +1697,7 @@ A                     B
 >>invoke t003t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2
--- Definition current  Mon Aug 15 08:57:01 2016
+-- Definition current  Wed Feb 22 23:07:37 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1714,7 +1714,7 @@ A                     B
 >>invoke t003t2_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_LIKE
--- Definition current  Mon Aug 15 08:57:04 2016
+-- Definition current  Wed Feb 22 23:07:42 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1731,7 +1731,7 @@ A                     B
 >>invoke t003t2_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T2_AS
--- Definition current  Mon Aug 15 08:57:07 2016
+-- Definition current  Wed Feb 22 23:07:47 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1748,7 +1748,7 @@ A                     B
 >>invoke t003t2_view;
 
 -- Definition of Trafodion view TRAFODION.SCH.T003T2_VIEW
--- Definition current  Mon Aug 15 08:57:09 2016
+-- Definition current  Wed Feb 22 23:07:50 2017
 
   (
     A                                LARGEINT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1881,8 +1881,8 @@ A                      (EXPR)
 >>
 >>select cast('-9223372036854775808' as largeint) from (values(1)) x(a);
 
-(EXPR)
-----------
+(EXPR)              
+--------------------
 
 -9223372036854775808
 
@@ -2058,7 +2058,7 @@ A                      B
 >>invoke t003t3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3
--- Definition current  Mon Aug 15 08:57:17 2016
+-- Definition current  Wed Feb 22 23:08:05 2017
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2074,7 +2074,7 @@ A                      B
 >>invoke t003t3_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_LIKE
--- Definition current  Mon Aug 15 08:57:20 2016
+-- Definition current  Wed Feb 22 23:08:11 2017
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2090,7 +2090,7 @@ A                      B
 >>invoke t003t3_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_AS
--- Definition current  Mon Aug 15 08:57:24 2016
+-- Definition current  Wed Feb 22 23:08:16 2017
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2107,7 +2107,7 @@ A                      B
 >>invoke t003t3_salt;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_SALT
--- Definition current  Mon Aug 15 08:57:26 2016
+-- Definition current  Wed Feb 22 23:08:19 2017
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2124,7 +2124,7 @@ A                      B
 >>invoke t003t3_view;
 
 -- Definition of Trafodion view TRAFODION.SCH.T003T3_VIEW
--- Definition current  Mon Aug 15 08:57:28 2016
+-- Definition current  Wed Feb 22 23:08:22 2017
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2451,19 +2451,19 @@ TRUE   FALSE
 --- 0 row(s) inserted.
 >>
 >>obey TEST003(hive_bool);
->>sh echo "drop table tbool;" > TEST003_junk;
->>sh regrhive.ksh -f TEST003_junk;
->>
->>sh echo "create table tbool(a boolean);" > TEST003_junk;
->>sh regrhive.ksh -f TEST003_junk;
->>
+>>process hive statement 'drop table tbool';
+
+--- SQL operation complete.
+>>process hive statement 'create table tbool(a boolean)';
+
+--- SQL operation complete.
 >>sh echo "insert into tbool values (true), (false), (NULL);" > TEST003_junk;
 >>sh regrhive.ksh -f TEST003_junk;
 >>
 >>invoke hive.hive.tbool;
 
 -- Definition of hive table TBOOL
--- Definition current  Mon Aug 15 08:58:07 2016
+-- Definition current  Wed Feb 22 23:08:45 2017
 
   (
     A                                BOOLEAN
@@ -2535,7 +2535,7 @@ TRUE
 >>invoke t003t3;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3
--- Definition current  Mon Aug 15 08:58:30 2016
+-- Definition current  Wed Feb 22 23:09:08 2017
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2551,7 +2551,7 @@ TRUE
 >>invoke t003t3_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_LIKE
--- Definition current  Mon Aug 15 08:58:34 2016
+-- Definition current  Wed Feb 22 23:09:15 2017
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2567,7 +2567,7 @@ TRUE
 >>invoke t003t3_as;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_AS
--- Definition current  Mon Aug 15 08:58:38 2016
+-- Definition current  Wed Feb 22 23:09:20 2017
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2584,7 +2584,7 @@ TRUE
 >>invoke t003t3_salt;
 
 -- Definition of Trafodion table TRAFODION.SCH.T003T3_SALT
--- Definition current  Mon Aug 15 08:58:38 2016
+-- Definition current  Wed Feb 22 23:09:21 2017
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
@@ -2601,7 +2601,7 @@ TRUE
 >>invoke t003t3_view;
 
 -- Definition of Trafodion view TRAFODION.SCH.T003T3_VIEW
--- Definition current  Mon Aug 15 08:58:40 2016
+-- Definition current  Wed Feb 22 23:09:23 2017
 
   (
     A                                BOOLEAN NO DEFAULT NOT NULL NOT DROPPABLE
