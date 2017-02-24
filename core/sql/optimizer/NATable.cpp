@@ -5483,13 +5483,13 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 	  tableConstructionHadWarnings_=TRUE;
   char  lobHdfsServer[256] ; // max length determined by dfs.namenode.fs-limits.max-component-length(255)
   memset(lobHdfsServer,0,256);
-  strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER), strlen(CmpCommon::getDefaultString(LOB_HDFS_SERVER)));
+  strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER), sizeof(lobHdfsServer));
   Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
   if (hasLobColumn())
   {
-	  // read lob related information from lob metadata
-	  //     setFromStoredDesc(TRUE);
-      //
+    // read lob related information from lob metadata
+    //     setFromStoredDesc(TRUE);
+    
 	    short *lobNumList = new (heap_) short[getColumnCount()];
 	    short *lobTypList = new (heap_) short[getColumnCount()];
 	    char  **lobLocList = new (heap_) char*[getColumnCount()];

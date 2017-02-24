@@ -10576,7 +10576,7 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/     short *lobTypList,
  /*IN*/     char* *lobLocList,
 /*IN*/      char* *lobColNameList,
- /*IN*/     char *hdfsServer,
+ /*IN*/     char *lobHdfsServer,
  /*IN*/     Int32 hdfsPort,
 /*IN*/    Int64 lobMaxSize,
 /*IN*/    NABoolean lobTrace
@@ -10606,7 +10606,7 @@ Lng32 SQLCLI_LOBddlInterface
   str_sprintf(logBuf,"lobMDName %s", lobMDName);
   lobDebugInfo(logBuf,0,__LINE__,lobTrace);
   char * query = new(currContext.exHeap()) char[4096];
-
+  char *hdfsServer = new(currContext.exHeap()) char[256];
   switch (qType)
     {
     case LOB_CLI_CREATE:
@@ -10955,7 +10955,7 @@ Lng32 SQLCLI_LOBddlInterface
 
  error_return:
   NADELETEBASIC(query, currContext.exHeap());
-
+  NADELETEBASIC(hdfsServer,currContext.exHeap());
   delete cliInterface;
  
   if (cliRC < 0)
