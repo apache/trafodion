@@ -43,7 +43,7 @@ The first step in the installation process is to unpack the {project-name} Insta
 ```
 $ mkdir $HOME/trafodion-installer
 $ cd $HOME/trafodion-downloads
-$ tar -zxf apache-trafodion-installer-1.3.0-incubating-bin.tar.gz -C $HOME/trafodion-installer
+$ tar -zxf apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz -C $HOME/trafodion-installer
 $
 ```
 
@@ -61,236 +61,145 @@ The following example shows a guided install of {project-name} on a two-node Clo
 1. Run the {project-name} Installer in guided mode.
 +
 ```
-$ cd $HOME/trafodion-installer/installer
-$ ./trafodion_install
+$ cd $HOME/trafodion-installer/python-installer
+$ ./db_install.py
+**********************************
+  Trafodion Installation ToolKit
+**********************************
+Enter HDP/CDH web manager URL:port, (full URL, if no http/https prefix, default prefix is http://): 192.168.0.31:7180
+Enter HDP/CDH web manager user name [admin]:
+Enter HDP/CDH web manager user password:
+Confirm Enter HDP/CDH web manager user password:
 
-******************************
- TRAFODION INSTALLATION START
-******************************
+TASK: Environment Discover ***************************************************************
 
-***INFO: testing sudo access
-***INFO: Log file located at /var/log/trafodion/trafodion_install_2016-02-15-04-45-30.log
-***INFO: Config directory: /etc/trafodion
-***INFO: Working directory: /usr/lib/trafodion
+Time Cost: 0 hour(s) 0 minute(s) 4 second(s)
+Enter full path to Trafodion tar file [/data/python-installer/apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz]:
+Enter directory name to install trafodion to [apache-trafodion-2.1.0]:
+Enter trafodion user password:
+Confirm Enter trafodion user password:
+Enter number of DCS client connections per node [4]:
+Enter trafodion scratch file folder location(should be a large disk),
+if more than one folder, use comma seperated [$TRAF_HOME/tmp]:
+Start instance after installation (Y/N)  [Y]:
+Enable LDAP security (Y/N)  [N]:
+Enable DCS High Avalability (Y/N)  [N]:
+*****************
+  Final Configs
+*****************
++------------------+-----------------------------------------------------------------------------------+
+| config type      | value                                                                             |
++------------------+-----------------------------------------------------------------------------------+
+| dcs_cnt_per_node | 4                                                                                 |
+| dcs_ha           | N                                                                                 |
+| first_rsnode     | node-1                                                                            |
+| hbase_user       | hbase                                                                             |
+| hdfs_user        | hdfs                                                                              |
+| home_dir         | /home                                                                             |
+| java_home        | /usr/lib/jvm/java-1.7.0-openjdk.x86_64                                            |
+| ldap_security    | N                                                                                 |
+| mgr_url          | http://192.168.0.31:7180                                                          |
+| mgr_user         | admin                                                                             |
+| node_list        | node-1,node-2                                                                     |
+| scratch_locs     | $TRAF_HOME/tmp                                                                    |
+| traf_dirname     | apache-trafodion-2.1.0                                                            |
+| traf_package     | /data/python-installer/apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz  |
+| traf_start       | Y                                                                                 |
+| traf_user        | trafodion                                                                         |
++------------------+-----------------------------------------------------------------------------------+
+Confirm result (Y/N) [N]: y
 
-*******************************
- Trafodion Configuration Setup
-*******************************
+** Generating config file to save configs ...
 
-***INFO: Please press [Enter] to select defaults.
+**********************
+  Installation Start
+**********************
 
-Enter trafodion password, default is [traf123]: traf123
-Enter list of nodes (blank separated), default []: trafodion-1 trafodion-2
-Enter Trafodion userid's home directory prefix, default is [/home]: /home
-Specify full path to EPEL RPM (including .rpm), default is None:
-***INFO: Will attempt to download RPM if EPEL is not installed on all nodes.
-Specify location of Java 1.7.0_65 or higher (JDK), default is []: /usr/java/jdk1.7.0_67-cloudera
-Enter full path (including .tar or .tar.gz) of trafodion tar file []: /home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz
-Enter Hadoop admin username, default is [admin]:
-Enter Hadoop admin password, default is [admin]:
-Enter Hadoop external network URL:port (no 'http://' needed), default is []: trafodion-1.apache.org:7180
-Enter HDFS username, default is [hdfs]:
-Enter HBase username, default is [hbase]:
-Enter HBase group, default is [hbase]:
-Enter directory to install trafodion to, default is [/home/trafodion/apache-trafodion-1.3.0-incubating-bin]:
-Total number of client connections per node, default [16]: 8
-Enable simple LDAP security (Y/N), default is N: N
-***INFO: Configuration file: /etc/trafodion/trafodion_config
-***INFO: Trafodion configuration setup complete
+  TASK: Environment Check ******************************************************************
 
-************************************
- Trafodion Configuration File Check
-************************************
-
-
-The authenticity of host 'trafodion-1 (10.1.30.71)' can't be established.
-RSA key fingerprint is 83:96:d4:5e:c1:b8:b1:62:8d:c6:78:a7:7f:1f:6a:d7.
-Are you sure you want to continue connecting (yes/no)? yes
-***INFO: Testing sudo access on node trafodion-1
-***INFO: Testing sudo access on node trafodion-2
-***INFO: Testing ssh on trafodion-1
-***INFO: Testing ssh on trafodion-2
-***INFO: Getting list of all cloudera nodes
-***INFO: Getting list of all cloudera nodes
-***INFO: cloudera list of nodes:  trafodion-1 trafodion-2
-***INFO: Testing ssh on trafodion-1
-***INFO: Testing ssh on trafodion-2
-***INFO: Testing sudo access on trafodion-1
-***INFO: Testing sudo access on trafodion-2
-***DEBUG: trafodionFullName=trafodion_server-1.3.0.tgz
-***INFO: Trafodion version = 1.3.0
-***DEBUG: HBase's java_exec=/usr/java/jdk1.7.0_67-cloudera/bin/java
-
-******************************
- TRAFODION SETUP
-******************************
-
-***INFO: Starting Trafodion environment setup (2016-02-15-07-09-58)
-=== 2016-02-15-07-09-58 ===
-# @@@ START COPYRIGHT @@@
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-.
-.
-.
-and hold each Contributor harmless for any liability incurred by,
-or claims asserted against, such Contributor by reason of your
-accepting any such warranty or additional liability.
-
-END OF TERMS AND CONDITIONS
-
-BY TYPING "ACCEPT" YOU AGREE TO THE TERMS OF THIS AGREEMENT:ACCEPT
-***INFO: testing sudo access
-***INFO: Checking all nodes in specified node list
-trafodion-1
-trafodion-2
-***INFO: Total number of nodes = 2
-***INFO: Starting Trafodion Package Setup (2016-02-15-07-11-09)
-***INFO: Installing required packages
-***INFO: Log file located in /var/log/trafodion
-***INFO: ... pdsh on node trafodion-1
-***INFO: ... pdsh on node trafodion-2
-***INFO: Checking if log4cxx is installed ...
-***INFO: Checking if sqlite is installed ...
-***INFO: Checking if expect is installed ...
-***INFO: Installing expect on all nodes
-.
-.
-.
-***INFO: modifying limits in /usr/lib/trafodion/trafodion.conf on all nodes
-***INFO: create Trafodion userid "trafodion"
-***INFO: Trafodion userid's (trafodion) home directory: /home/trafodion
-***INFO: testing sudo access
-Generating public/private rsa key pair.
-Created directory '/home/trafodion/.ssh'.
-Your identification has been saved in /home/trafodion/.ssh/id_rsa.
-Your public key has been saved in /home/trafodion/.ssh/id_rsa.pub.
-The key fingerprint is:
-4b:b3:60:38:c9:9d:19:f8:cd:b1:c8:cd:2a:6e:4e:d0 trafodion@trafodion-1
-The key's randomart image is:
-+--[ RSA 2048]----+
-|                 |
-|     .           |
-|    . . .        |
-|   o * X o       |
-|  . E X S        |
-|   . o + +       |
-|    o . o        |
-|   o..           |
-|   oo            |
-+-----------------+
-***INFO: creating .bashrc file
-***INFO: Setting up userid trafodion on all other nodes in cluster
-***INFO: Creating known_hosts file for all nodes
-trafodion-1
-trafodion-2
-***INFO: trafodion user added successfully
-***INFO: Trafodion environment setup completed
-***INFO: creating sqconfig file
-***INFO: Reserving DCS ports
-
-******************************
- TRAFODION MODS
-******************************
-
-***INFO: Cloudera installed will run traf_cloudera_mods98
-***INFO: Detected JAVA version 1.7
-***INFO: copying hbase-trx-cdh5_3-1.3.0.jar to all nodes
-***INFO: Cloudera Manager is on trafodion-1
-***INFO: Detected JAVA version 1.7
-***INFO: copying hbase-trx-cdh5_3-1.3.0.jar to all nodes
-***INFO: Cloudera Manager is on trafodion-1
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-.
-.
-.
-***INFO: Hadoop restart completed successfully
-***INFO: waiting for HDFS to exit safemode
-Safe mode is OFF
-***INFO: Setting HDFS ACLs for snapshot scan support
-***INFO: Trafodion Mods ran successfully.
-
-******************************
- TRAFODION START
-******************************
-
-/usr/lib/trafodion/installer/..
-***INFO: Log file location /var/log/trafodion/trafodion_install_2016-02-15-07-08-07.log
-***INFO: traf_start
-******************************************
-******************************************
-******************************************
-******************************************
-/home/trafodion/apache-trafodion-1.3.0-incubating-bin
-***INFO: untarring build file /usr/lib/trafodion/apache-trafodion-1.3.0-incubating-bin/trafodion_server-1.3.0.tgz to /home/trafodion/apache-trafodion-1.3.0-incubating-bin
-.
-.
-.
-******* Generate public/private certificates *******
-
- Cluster Name : Cluster%201
-Generating Self Signed Certificate....
-***********************************************************
- Certificate file :server.crt
- Private key file :server.key
- Certificate/Private key created in directory :/home/trafodion/sqcert
-***********************************************************
-
-***********************************************************
- Updating Authentication Configuration
-***********************************************************
-Creating folders for storing certificates
-
-***INFO: copying /home/trafodion/sqcert directory to all nodes
-***INFO: copying install to all nodes
-***INFO: starting Trafodion instance
-Checking orphan processes.
-Removing old mpijob* files from /home/trafodion/apache-trafodion-1.3.0-incubating-bin/tmp
-
-Removing old monitor.port* files from /home/trafodion/apache-trafodion-1.3.0-incubating-bin/tmp
-
-Executing sqipcrm (output to sqipcrm.out)
-Starting the SQ Environment (Executing /home/trafodion/apache-trafodion-1.3.0-incubating-bin/sql/scripts/gomon.cold)
-Background SQ Startup job (pid: 7276)
-.
-.
-.
-Zookeeper is listening on port 2181
-DcsMaster is listening on port 23400
-
-Process         Configured      Actual          Down
----------       ----------      ------          ----
-DcsMaster       1               1
-DcsServer       2               2
-mxosrvr         8               8
+  Host [node-2]: Script [traf_check.py] .......................................... [  OK  ]
 
 
-You can monitor the SQ shell log file : /home/trafodion/apache-trafodion-1.3.0-incubating-bin/logs/sqmon.log
+  Host [node-1]: Script [traf_check.py] .......................................... [  OK  ]
 
 
-Startup time  0 hour(s) 1 minute(s) 9 second(s)
-Apache Trafodion Conversational Interface 1.3.0
-Copyright (c) 2015 Apache Software Foundation
->> initialize trafodion;
---- SQL operation complete.
->>
+  TASK: Copy Trafodion package file ********************************************************
 
-End of MXCI Session
+  Script [copy_files.py] ......................................................... [  OK  ]
 
-***INFO: Installation completed successfully.
 
-*********************************
- TRAFODION INSTALLATION COMPLETE
-*********************************
+  TASK: Trafodion user Setup ***************************************************************
 
-$
+  Host [node-2]: Script [traf_user.py] ........................................... [  OK  ]
+
+
+  Host [node-1]: Script [traf_user.py] ........................................... [  OK  ]
+
+
+  TASK: Install Trafodion dependencies *****************************************************
+
+  Host [node-2]: Script [traf_dep.py] ............................................ [  OK  ]
+
+
+  Host [node-1]: Script [traf_dep.py] ............................................ [  OK  ]
+
+
+  TASK: Install Trafodion package **********************************************************
+
+  Host [node-2]: Script [traf_package.py] ........................................ [  OK  ]
+
+
+  Host [node-1]: Script [traf_package.py] ........................................ [  OK  ]
+
+
+  TASK: Environment Setup ******************************************************************
+
+  Host [node-1]: Script [traf_setup.py] .......................................... [  OK  ]
+
+
+  Host [node-2]: Script [traf_setup.py] .......................................... [  OK  ]
+
+
+  TASK: DCS/REST Setup *********************************************************************
+
+  Host [node-2]: Script [dcs_setup.py] ........................................... [  OK  ]
+
+
+  Host [node-1]: Script [dcs_setup.py] ........................................... [  OK  ]
+
+
+  TASK: Hadoop modification and restart ****************************************************
+
+  ***[INFO]: Restarting CDH services ...
+  Check CDH services restart status (timeout: 600 secs) .................
+  ***[OK]: CDH services restart successfully!
+
+  ***[INFO]: Deploying CDH client configs ...
+  Check CDH services deploy status (timeout: 300 secs) ..
+  ***[OK]: CDH services deploy successfully!
+
+  Script [hadoop_mods.py] ......................................................... [  OK  ]
+
+
+  TASK: Set permission of HDFS folder for Trafodion user ***********************************
+
+  Host [node-1]: Script [hdfs_cmds.py] ............................................ [  OK  ]
+
+
+  TASK: Sqconfig Setup *********************************************************************
+
+  Host [node-1]: Script [traf_sqconfig.py] ........................................ [  OK  ]
+
+
+  TASK: Start Trafodion ********************************************************************
+
+  Host [node-1]: Script [traf_start.py] ........................................... [  OK  ]
+
+
+  Time Cost: 0 hour(s) 7 minute(s) 45 second(s)
+  *************************
+    Installation Complete
+  *************************
 ```
 
 2. Switch to the {project-name} Runtime User and check the status of {project-name}.
@@ -298,18 +207,21 @@ $
 ```
 $ sudo su - trafodion
 $ sqcheck
+*** Checking Trafodion Environment ***
+
 Checking if processes are up.
 Checking attempt: 1; user specified max: 2. Execution time in seconds: 0.
 
 The SQ environment is up!
 
-
 Process         Configured      Actual      Down
 -------         ----------      ------      ----
 DTM             2               2
 RMS             4               4
-MXOSRVR         8               8
-
+DcsMaster       1               1
+DcsServer       2               2
+mxosrvr         8               8
+RestServer      1               1
 $
 ```
 
@@ -321,11 +233,11 @@ operations.
 [[install-automated-install]]
 == Automated Install
 
-The `--config_file` option runs the {project-name} in Automated Setup mode. Refer to <<introduction-trafodion-installer,{project-name} Installer>>
+The `--config-file` option runs the {project-name} in Automated Setup mode. Refer to <<introduction-trafodion-installer,{project-name} Installer>>
 in the <<introduction,Introduction>> chapter for instructions of how you edit your configuration file.
 
 Edit your config file using the information you collected in the <<prepare-gather-configuration-information,Gather Configuration Information>>
-step in the <<prepare,Prepare>> chapter. 
+step in the <<prepare,Prepare>> chapter.
 
 
 The following example shows an automated install of {project-name} on a two-node Hortonworks Hadoop cluster that does not have Kerberos nor LDAP enabled.
@@ -334,164 +246,135 @@ The following example shows an automated install of {project-name} on a two-node
 
 1. Run the {project-name} Installer in Automated Setup mode.
 +
+
 ```
-$ cd $HOME/trafodion-installer/installer
-$ ./trafodion_install --config_file my
-******************************
- TRAFODION INSTALLATION START
-******************************
+$ cd $HOME/trafodion-installer/python-installer
+$ ./db_install.py --config-file my_config --silent
+**********************************
+  Trafodion Installation ToolKit
+**********************************
 
-***INFO: testing sudo access
-***INFO: Log file located at /var/log/trafodion/trafodion_install_2016-02-16-21-12-03.log
-***INFO: Config directory: /etc/trafodion
-***INFO: Working directory: /usr/lib/trafodion
+** Loading configs from config file ...
 
-************************************
- Trafodion Configuration File Check
-************************************
+TASK: Environment Discover ***************************************************************
+
+Time Cost: 0 hour(s) 0 minute(s) 4 second(s)
 
 
-***INFO: Testing sudo access on node trafodion-1
-***INFO: Testing sudo access on node trafodion-2
-***INFO: Testing ssh on trafodion-1
-***INFO: Testing ssh on trafodion-2
-***INFO: Getting list of all hortonworks nodes
-***INFO: Getting list of all hortonworks nodes
-***INFO: hortonworks list of nodes:  trafodion-1 trafodion-2
-***INFO: Testing ssh on trafodion-1
-***INFO: Testing ssh on trafodion-2
-***INFO: Testing sudo access on trafodion-1
-***INFO: Testing sudo access on trafodion-2
-***DEBUG: trafodionFullName=trafodion_server-1.3.0.tgz
-***INFO: Trafodion version = 1.3.0
-***DEBUG: HBase's java_exec=/usr/jdk64/jdk1.7.0_67/bin/java
+**********************
+  Installation Start
+**********************
 
-******************************
- TRAFODION SETUP
-******************************
+  TASK: Environment Check ******************************************************************
 
-***INFO: Starting Trafodion environment setup (2016-02-16-21-12-31)
-=== 2016-02-16-21-12-31 ===
-# @@@ START COPYRIGHT @@@
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-.
-.
-.
-9. Accepting Warranty or Additional Liability. While redistributing
-the Work or Derivative Works thereof, You may choose to offer, and
-charge a fee for, acceptance of support, warranty, indemnity, or
-other liability obligations and/or rights consistent with this
-License. However, in accepting such obligations, You may act only
-on Your own behalf and on Your sole responsibility, not on behalf
-of any other Contributor, and only if You agree to indemnify, defend,
-and hold each Contributor harmless for any liability incurred by,
-or claims asserted against, such Contributor by reason of your
-accepting any such warranty or additional liability.
-
-END OF TERMS AND CONDITIONS
-
-BY TYPING "ACCEPT" YOU AGREE TO THE TERMS OF THIS AGREEMENT: ***INFO: testing sudo access
-***INFO: Checking all nodes in specified node list
-trafodion-1
-trafodion-2
-***INFO: Total number of nodes = 2
-***INFO: Starting Trafodion Package Setup (2016-02-16-21-12-35)
-***INFO: Installing required packages
-***INFO: Log file located in /var/log/trafodion
-***INFO: ... EPEL rpm
-***INFO: ... pdsh on node trafodion-1
-***INFO: ... pdsh on node trafodion-2
-***INFO: Checking if log4cxx is installed ...
-***INFO: Checking if sqlite is installed ...
-***INFO: Checking if expect is installed ...
-.
-.
-.
-***INFO: trafodion user added successfully
-***INFO: Trafodion environment setup completed
-***INFO: creating sqconfig file
-***INFO: Reserving DCS ports
-
-******************************
- TRAFODION MODS
-******************************
-
-***INFO: Hortonworks installed will run traf_hortonworks_mods98
-***INFO: Detected JAVA version 1.7
-***INFO: copying hbase-trx-hdp2_2-1.3.0.jar to all nodes
-PORT=:8080
-.
-.
-.
-Starting the REST environment now
-starting rest, logging to /home/trafodion/apache-trafodion-1.3.0-incubating-bin/rest-1.3.0/bin/../logs/rest-trafodion-1-rest-trafodion-1.out
-SLF4J: Class path contains multiple SLF4J bindings.
-SLF4J: Found binding in [jar:file:/home/trafodion/apache-trafodion-1.3.0-incubating-bin/rest-1.3.0/lib/slf4j-log4j12-1.7.5.jar!/org/slf4j/impl/StaticLoggerBinder.class]
-SLF4J: Found binding in [jar:file:/usr/hdp/2.2.9.0-3393/hadoop/lib/slf4j-log4j12-1.7.5.jar!/org/slf4j/impl/StaticLoggerBinder.class]
-SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
-SLF4J: Actual binding is of type [org.slf4j.impl.Log4jLoggerFactory]
+  Host [node-2]: Script [traf_check.py] .......................................... [  OK  ]
 
 
-DcsMaster is not started. Please start DCS using 'dcsstart' command...
-
-Process         Configured      Actual          Down
----------       ----------      ------          ----
-DcsMaster       1               0               1
-DcsServer       2               0               2
-mxosrvr         8               8
+  Host [node-1]: Script [traf_check.py] .......................................... [  OK  ]
 
 
-You can monitor the SQ shell log file : /home/trafodion/apache-trafodion-1.3.0-incubating-bin/logs/sqmon.log
+  TASK: Copy Trafodion package file ********************************************************
+
+  Script [copy_files.py] ......................................................... [  OK  ]
 
 
-Startup time  0 hour(s) 1 minute(s) 9 second(s)
-Apache Trafodion Conversational Interface 1.3.0
-Copyright (c) 2015 Apache Software Foundation
->> initialize trafodion;
---- SQL operation complete.
->>
+  TASK: Trafodion user Setup ***************************************************************
 
-End of MXCI Session
+  Host [node-2]: Script [traf_user.py] ........................................... [  OK  ]
 
-***INFO: Installation completed successfully.
 
-*********************************
- TRAFODION INSTALLATION COMPLETE
-*********************************
+  Host [node-1]: Script [traf_user.py] ........................................... [  OK  ]
 
-$ 
+
+  TASK: Install Trafodion dependencies *****************************************************
+
+  Host [node-2]: Script [traf_dep.py] ............................................ [  OK  ]
+
+
+  Host [node-1]: Script [traf_dep.py] ............................................ [  OK  ]
+
+
+  TASK: Install Trafodion package **********************************************************
+
+  Host [node-2]: Script [traf_package.py] ........................................ [  OK  ]
+
+
+  Host [node-1]: Script [traf_package.py] ........................................ [  OK  ]
+
+
+  TASK: Environment Setup ******************************************************************
+
+  Host [node-1]: Script [traf_setup.py] .......................................... [  OK  ]
+
+
+  Host [node-2]: Script [traf_setup.py] .......................................... [  OK  ]
+
+
+  TASK: DCS/REST Setup *********************************************************************
+
+  Host [node-2]: Script [dcs_setup.py] ........................................... [  OK  ]
+
+
+  Host [node-1]: Script [dcs_setup.py] ........................................... [  OK  ]
+
+
+  TASK: Hadoop modification and restart ****************************************************
+
+  ***[INFO]: Restarting CDH services ...
+  Check CDH services restart status (timeout: 600 secs) .................
+  ***[OK]: CDH services restart successfully!
+
+  ***[INFO]: Deploying CDH client configs ...
+  Check CDH services deploy status (timeout: 300 secs) ..
+  ***[OK]: CDH services deploy successfully!
+
+  Script [hadoop_mods.py] ......................................................... [  OK  ]
+
+
+  TASK: Set permission of HDFS folder for Trafodion user ***********************************
+
+  Host [node-1]: Script [hdfs_cmds.py] ............................................ [  OK  ]
+
+
+  TASK: Sqconfig Setup *********************************************************************
+
+  Host [node-1]: Script [traf_sqconfig.py] ........................................ [  OK  ]
+
+
+  TASK: Start Trafodion ********************************************************************
+
+  Host [node-1]: Script [traf_start.py] ........................................... [  OK  ]
+
+
+  Time Cost: 0 hour(s) 7 minute(s) 45 second(s)
+  *************************
+    Installation Complete
+  *************************
 ```
 
 2. Switch to the {project-name} Runtime User and check the status of {project-name}.
 +
-*Example*
-+
 ```
 $ sudo su - trafodion
 $ sqcheck
+*** Checking Trafodion Environment ***
+
 Checking if processes are up.
 Checking attempt: 1; user specified max: 2. Execution time in seconds: 0.
 
 The SQ environment is up!
 
-
 Process         Configured      Actual      Down
 -------         ----------      ------      ----
 DTM             2               2
 RMS             4               4
-MXOSRVR         8               8
-
+DcsMaster       1               1
+DcsServer       2               2
+mxosrvr         8               8
+RestServer      1               1
 $
 ```
 
 {project-name} is now running on your Hadoop cluster. Please refer to the <<activate,Activate>> chapter for
 basic instructions on how to verify the {project-name} management and how to perform basic management
 operations.
-
