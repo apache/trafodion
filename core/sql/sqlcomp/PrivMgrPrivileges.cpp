@@ -1681,7 +1681,8 @@ PrivStatus privStatus = objectPrivsTable.insert(row);
 // no need to grant privileges.
 // 
 // This creator grant may be controlled by a CQD in the future.
-   if (ownerID == creatorID || creatorID == ComUser::getRootUserID())
+   if (ownerID == creatorID || creatorID == ComUser::getRootUserID() ||
+       ownerID == HIVE_ROLE_ID || ownerID == HBASE_ROLE_ID)
       return STATUS_GOOD;
  
 // Add a grant from the private schema owner to the creator.     
@@ -4785,11 +4786,13 @@ PrivStatus PrivMgrPrivileges::updateDependentObjects(
 // * false: Authorization ID has not been granted any object privileges.     
 // *                                                               
 // *****************************************************************************
-bool PrivMgrPrivileges::isAuthIDGrantedPrivs(const int32_t authID)
-
+bool PrivMgrPrivileges::isAuthIDGrantedPrivs(
+  const int32_t authID, 
+  std::vector<int64_t> &objectUIDs)
 {
 
    std::string whereClause(" WHERE GRANTEE_ID = ");   
+   std::string orderByClause (" ORDER BY object_name ");
 
    char authIDString[20];
 
@@ -4800,10 +4803,23 @@ bool PrivMgrPrivileges::isAuthIDGrantedPrivs(const int32_t authID)
    // set pointer in diags area
    int32_t diagsMark = pDiags_->mark();
 
-   int64_t rowCount = 0;   
+   std::vector<PrivMgrMDRow *> rowList;
    ObjectPrivsMDTable myTable(objectTableName_,pDiags_);
 
-   PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
+   PrivStatus privStatus = myTable.selectWhere(whereClause, orderByClause ,rowList);
+   if (privStatus != STATUS_GOOD)
+   {
+      deleteRowList(rowList);
+      return privStatus;
+   }
+
+   int32_t rowCount = rowList.size();
+   for (size_t i = 0; i < rowCount; i++)
+   {
+      ObjectPrivsMDRow &row = static_cast<ObjectPrivsMDRow &> (*rowList[i]);
+      objectUIDs.push_back(row.objectUID_);
+   }
+   deleteRowList(rowList);
 
    if ((privStatus == STATUS_GOOD || privStatus == STATUS_WARNING) &&
         rowCount > 0)

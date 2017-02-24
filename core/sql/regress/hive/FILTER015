@@ -28,7 +28,8 @@ if [ "$fil" = "" ]; then
 fi
 
 sed "
-s/ET:.*/ET:xxxxxxxxxx/g
+s/Logging Location:.*/Loggin Location:@loggingLocation@/
+s/Time:.*/Time:@time@/
 s/hash2 partitioned.*ways on/hash2 partitioned N ways on/g
 s/\(esp_exchange.*\)[1-9](hash2):[1-9]/\1 N(hash2):M/g
 s/\(esp_exchange.*\)1:[1-9](hash2)/\1 1:N(hash2)/g

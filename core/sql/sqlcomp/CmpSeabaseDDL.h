@@ -443,6 +443,10 @@ class CmpSeabaseDDL
     READ_OBJECT_DESC  = 0x0008
   };
 
+  enum 
+    {
+      MD_TABLE_CONSTRAINTS_PKEY_NOT_SERIALIZED_FLG  = 0x0001
+    };
 protected:
   
   void setFlags(ULng32 &flags, ULng32 flagbits)
@@ -946,6 +950,7 @@ protected:
 			NATable * naTable,
 			NABoolean isUnique, // TRUE: uniq constr. FALSE: ref constr.
 			NABoolean noPopulate, // TRUE, dont populate index
+                        NABoolean isEnforced, // TRUE: contraint is enforced
                         NABoolean sameSequenceOfCols, // FALSE, allow "similar" indexes
 			ExeCliInterface *cliInterface);
 
@@ -973,8 +978,26 @@ protected:
                                const NAString &schName,
                                const NAString &objName,
                                const ComObjectType objectType,
-                               NABoolean dontForceCleanup);
+                               NABoolean ddlXns);
 
+  NABoolean appendErrorObjName(char * errorObjs, 
+                               const char * objName);
+
+  short setupAndErrorChecks(NAString &tabName, QualifiedName &origTableName, 
+                            NAString &currCatName, NAString &currSchName,
+                            NAString &catalogNamePart, 
+                            NAString &schemaNamePart, 
+                            NAString &objectNamePart,
+                            NAString &extTableName, NAString &extNameForHbase,
+                            CorrName &cn,
+                            NATable* *naTable,
+                            NABoolean volTabSupported, 
+                            NABoolean hbaseMapSupported,
+                            ExeCliInterface *cliInterface,
+                            const ComObjectType objectType = COM_BASE_TABLE_OBJECT,
+                            SQLOperation operation = SQLOperation::ALTER_TABLE,
+                            NABoolean isExternal = FALSE);
+  
   void purgedataObjectAfterError(
                                ExeCliInterface &cliInterface,
                                const NAString &catName, 
@@ -1005,11 +1028,13 @@ protected:
        const NAString &likeTabName,
        NABoolean withPartns = FALSE,
        NABoolean withoutSalt = FALSE,
-       NABoolean withoutDivision = FALSE);
+       NABoolean withoutDivision = FALSE,
+       NABoolean withoutRowFormat = FALSE);
 
   void createSeabaseTableLike(
-			      StmtDDLCreateTable                  * createTableNode,
-			      NAString &currCatName, NAString &currSchName);
+       ExeCliInterface *cliInterface,
+       StmtDDLCreateTable                  * createTableNode,
+       NAString &currCatName, NAString &currSchName);
 
   short createSeabaseTableExternal(
                                    ExeCliInterface &cliInterface,
@@ -1493,6 +1518,13 @@ protected:
                          NAList<HbaseCreateOption*>& hbaseCreateOptions, //out
                          NAString& hco); // out
   
+
+  short lookForTableInMD(
+       ExeCliInterface *cliInterface,
+       NAString &catNamePart, NAString &schNamePart, NAString &objNamePart,
+       NABoolean schNameSpecified, NABoolean isHbaseMapSpecified,
+       ComObjectName &tableName, NAString &tabName, NAString &extTableName,
+       const ComObjectType objectType = COM_BASE_TABLE_OBJECT);
 
 private:
   enum

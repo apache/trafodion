@@ -114,6 +114,7 @@ ParDDLLikeOptsCreateTable::operator=(
   isLikeOptSaltClauseSpec_      = likeOptions.isLikeOptSaltClauseSpec_;
   isLikeOptWithoutDivisionSpec_ = likeOptions.isLikeOptWithoutDivisionSpec_;
   isLikeOptLimitColumnLengthSpec_ = likeOptions.isLikeOptLimitColumnLengthSpec_;
+  isLikeOptWithoutRowFormatSpec_  = likeOptions.isLikeOptWithoutRowFormatSpec_;
 
   isLikeOptWithComments_        = likeOptions.isLikeOptWithComments_;
   isLikeOptWithoutConstraints_  = likeOptions.isLikeOptWithoutConstraints_;
@@ -123,6 +124,7 @@ ParDDLLikeOptsCreateTable::operator=(
   isLikeOptWithoutSalt_         = likeOptions.isLikeOptWithoutSalt_;
   isLikeOptWithoutDivision_     = likeOptions.isLikeOptWithoutDivision_;
   isLikeOptColumnLengthLimit_   = likeOptions.isLikeOptColumnLengthLimit_;
+  isLikeOptWithoutRowFormat_    = likeOptions.isLikeOptWithoutRowFormat_;
 
   if (this != &likeOptions)  // make sure not assigning to self
     {
@@ -158,6 +160,7 @@ ParDDLLikeOptsCreateTable::initializeDataMembers()
   isLikeOptSaltClauseSpec_      = FALSE;
   isLikeOptWithoutDivisionSpec_ = FALSE;
   isLikeOptLimitColumnLengthSpec_ = FALSE;
+  isLikeOptWithoutRowFormatSpec_  = FALSE;
 
   isLikeOptWithComments_        = FALSE;
   isLikeOptWithoutConstraints_  = FALSE;
@@ -168,6 +171,7 @@ ParDDLLikeOptsCreateTable::initializeDataMembers()
   isLikeOptSaltClause_          = NULL;
   isLikeOptWithoutDivision_     = FALSE;
   isLikeOptColumnLengthLimit_   = UINT_MAX;
+  isLikeOptWithoutRowFormat_    = FALSE;
 }
 
 void
@@ -279,6 +283,18 @@ ParDDLLikeOptsCreateTable::setLikeOption(ElemDDLLikeOpt * pLikeOption)
       isLikeOptColumnLengthLimit_ = limitColumnLength->getColumnLengthLimit();
       isLikeOptLimitColumnLengthSpec_ = TRUE;
     }
+    break;
+
+  case ELM_LIKE_OPT_WITHOUT_ROW_FORMAT_ELEM :
+    if (isLikeOptWithoutRowFormatSpec_)
+    {
+      // ERROR[3152] Duplicate WITHOUT ROW FORMAT phrases were specified
+      //             in LIKE clause in CREATE TABLE statement.
+      *SqlParser_Diags << DgSqlCode(-3152) << DgString0("ROW FORMAT");
+    }
+    ComASSERT(pLikeOption->castToElemDDLLikeOptWithoutRowFormat() != NULL);
+    isLikeOptWithoutRowFormat_ = TRUE;
+    isLikeOptWithoutRowFormatSpec_ = TRUE;
     break;
 
   default :

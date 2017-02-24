@@ -688,37 +688,44 @@ public :
   // constructors
 
   //! TableMappingUDF Constructor
-  TableMappingUDF(ItemExpr *params = NULL,
-                 OperatorTypeEnum otype = REL_TABLE_MAPPING_UDF,
-                 CollHeap *oHeap = CmpCommon::statementHeap())
-  : TableValuedFunction(params, otype, oHeap),
-  childInfo_(oHeap),
-  scalarInputParams_(NULL),
-  outputParams_(NULL),
-  dllInteraction_(NULL),
-  invocationInfo_(NULL),
-  numPlanInfos_(0),
-  routineHandle_(NullCliRoutineHandle)
-  { };
-
-  TableMappingUDF(RelExpr * child0,
+  // expects at least arity (operator type depends on arity)
+  TableMappingUDF(int arity,
                   ItemExpr *params = NULL,
-                 OperatorTypeEnum otype = REL_TABLE_MAPPING_UDF,
-                 CollHeap *oHeap = CmpCommon::statementHeap())
-  : TableValuedFunction(child0, params, otype, oHeap),
+                  CollHeap *oHeap = CmpCommon::statementHeap())
+       : TableValuedFunction(NULL, params, getTMUDFOpType(arity), oHeap),
     childInfo_(oHeap),
     scalarInputParams_(NULL),
     outputParams_(NULL),
     dllInteraction_(NULL),
     invocationInfo_(NULL),
     numPlanInfos_(0),
-    routineHandle_(NullCliRoutineHandle)
-  { };
+    routineHandle_(NullCliRoutineHandle),
+    isNormalized_(FALSE)
+  { setArity(arity); };
   //! TableMappingUDF Constructor
   //  expects at least a name
-  TableMappingUDF(const CorrName &name, ItemExpr *params = NULL,
-                 OperatorTypeEnum otype = REL_TABLE_MAPPING_UDF,
-                 CollHeap *oHeap = CmpCommon::statementHeap())
+  TableMappingUDF(int arity,
+                  const CorrName &name,
+                  ItemExpr *params = NULL,
+                  CollHeap *oHeap = CmpCommon::statementHeap())
+  : TableValuedFunction(name, params, getTMUDFOpType(arity), oHeap),
+    childInfo_(oHeap),
+    scalarInputParams_(NULL),
+    outputParams_(NULL),
+    dllInteraction_(NULL),
+    invocationInfo_(NULL),
+    numPlanInfos_(0),
+    routineHandle_(NullCliRoutineHandle),
+    isNormalized_(FALSE)
+  { setArity(arity); };
+
+  //! TableMappingUDF Constructor
+  //  constructor for derived classes with different operator type
+  TableMappingUDF(const CorrName &name,
+                  ItemExpr *params,
+                  int arity,
+                  OperatorTypeEnum otype,
+                  CollHeap *oHeap = CmpCommon::statementHeap())
   : TableValuedFunction(name, params, otype, oHeap),
     childInfo_(oHeap),
     scalarInputParams_(NULL),
@@ -726,8 +733,9 @@ public :
     dllInteraction_(NULL),
     invocationInfo_(NULL),
     numPlanInfos_(0),
-    routineHandle_(NullCliRoutineHandle)
-  { };
+    routineHandle_(NullCliRoutineHandle),
+    isNormalized_(FALSE)
+  { setArity(arity); };
 
   //! TableValueUDF Copy Constructor 
   // a virtual function for displaying the name of the node
@@ -743,6 +751,14 @@ public :
                                 CollHeap* outHeap = 0);
 
   virtual TableMappingUDF *castToTableMappingUDF();
+
+  static OperatorTypeEnum getTMUDFOpType(int arity)
+  {
+    CMPASSERT(arity >= 0 && arity <= 2);
+    return (arity==0 ? REL_LEAF_TABLE_MAPPING_UDF
+                     : (arity==1 ? REL_UNARY_TABLE_MAPPING_UDF
+                                 : REL_BINARY_TABLE_MAPPING_UDF));
+  }
 
   //! getText method
   // a virtual function for displaying the name of the node
@@ -977,6 +993,7 @@ protected:
   int numPlanInfos_;
   char *constParamBuffer_;
   Int32 constParamBufferLen_;
+  NABoolean isNormalized_;
 
 }; // class TableMappingUDF
 
@@ -994,6 +1011,7 @@ class PredefinedTableMappingFunction : public TableMappingUDF
   // is a PhysicalTableMappingUDF, like for regular TMUDFs.
 public:
   PredefinedTableMappingFunction(
+       int arity,
        const CorrName &name,
        ItemExpr *params,
        OperatorTypeEnum otype,
@@ -1003,7 +1021,7 @@ public:
 
   // static method to find out whether a given name is a
   // built-in table-mapping function - returns operator type
-  // of predefined function if so, REL_TABLE_MAPPING_UDF otherwise
+  // of predefined function if so, REL_xxx_TABLE_MAPPING_UDF otherwise
   static OperatorTypeEnum nameIsAPredefinedTMF(const CorrName &name);
 
   virtual const NAString getText() const;
@@ -1038,14 +1056,9 @@ public:
   // constructor
 
   //! PhysicalTableMappingUDF Constructor
-  PhysicalTableMappingUDF(CollHeap *oHeap = CmpCommon::statementHeap())
-       : TableMappingUDF(NULL, REL_TABLE_MAPPING_UDF, oHeap),
-         planInfo_(NULL)
-  {}
-
-  PhysicalTableMappingUDF(RelExpr* child0,
+  PhysicalTableMappingUDF(int arity,
                           CollHeap *oHeap = CmpCommon::statementHeap())
-       : TableMappingUDF(child0, NULL, REL_TABLE_MAPPING_UDF, oHeap),
+       : TableMappingUDF(arity, NULL, oHeap),
          planInfo_(NULL)
   {}
 

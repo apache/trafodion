@@ -4931,6 +4931,10 @@ void CostMethodSort::cacheParameters(RelExpr* op,
   }
 
   Lng32 myRowLength = myVis().getRowLength();
+
+  // allocate space for atleast 2 rows
+  memoryLimit_ = MAXOF(memoryLimit_, 2 * myRowLength);
+
   sortKeyLength_ = sortKeyVis.getRowLength();
   sortRecLength_ = sortKeyLength_ + myRowLength;
 

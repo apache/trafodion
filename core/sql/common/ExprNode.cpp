@@ -112,6 +112,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_LEAF_UPDATE:
 	    case REL_LEAF_DELETE:
 	    case REL_ISOLATED_SCALAR_UDF:
+	    case REL_LEAF_TABLE_MAPPING_UDF:
 	    case REL_HIVE_INSERT:
 	    case REL_HBASE_INSERT:
 	    case REL_SP_PROXY:
@@ -159,6 +160,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 
 	    case REL_SEQUENCE:
 	    case REL_SAMPLE:
+	    case REL_UNARY_TABLE_MAPPING_UDF:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -175,6 +177,12 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_EXPLAIN:
 	    case REL_STATISTICS:
 	    case REL_CALLSP:
+	    case REL_LEAF_TABLE_MAPPING_UDF:
+	    case REL_UNARY_TABLE_MAPPING_UDF:
+	    case REL_BINARY_TABLE_MAPPING_UDF:
+	    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
+            case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
+            case REL_TABLE_MAPPING_BUILTIN_JDBC:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -361,6 +369,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
 	    case REL_MERGE_UNION:
             case REL_INTERSECT:
             case REL_EXCEPT:
+	    case REL_BINARY_TABLE_MAPPING_UDF:
 	      return TRUE;
 	    default:
 	      return FALSE;
@@ -687,7 +696,9 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
         case REL_ANY_TABLE_MAPPING_UDF:
 	  switch (op_)
 	    {
-	    case REL_TABLE_MAPPING_UDF:
+	    case REL_LEAF_TABLE_MAPPING_UDF:
+	    case REL_UNARY_TABLE_MAPPING_UDF:
+	    case REL_BINARY_TABLE_MAPPING_UDF:
 	    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
             case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
             case REL_TABLE_MAPPING_BUILTIN_JDBC:
@@ -699,7 +710,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
         case REL_ANY_LEAF_TABLE_MAPPING_UDF:
 	  switch (op_)
 	    {
-	    case REL_TABLE_MAPPING_UDF:
+	    case REL_LEAF_TABLE_MAPPING_UDF:
 	    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
             case REL_TABLE_MAPPING_BUILTIN_JDBC:
 	      return TRUE;
@@ -710,7 +721,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
         case REL_ANY_UNARY_TABLE_MAPPING_UDF:
 	  switch (op_)
 	    {
-	    case REL_TABLE_MAPPING_UDF:
+	    case REL_UNARY_TABLE_MAPPING_UDF:
             case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
 	      return TRUE;
 	    default:
@@ -720,7 +731,7 @@ NABoolean OperatorType::match(OperatorTypeEnum wildcard) const
         case REL_ANY_BINARY_TABLE_MAPPING_UDF:
 	  switch (op_)
 	    {
-	    case REL_TABLE_MAPPING_UDF:
+	    case REL_BINARY_TABLE_MAPPING_UDF:
 	      return TRUE;
 	    default:
 	      return FALSE;

@@ -39,7 +39,7 @@ version=1.0
 
 # -- tdm_arkqmm location
 typeset qmmloc
-qmmloc="$MY_SQROOT/export/bin32"
+qmmloc="$TRAF_HOME/export/bin32"
 
 #--QMM process name
 qmmName="ZQM0003"
@@ -219,7 +219,7 @@ function crTab
 {
   echo " "
   echo "creating REWRITE_PUBLISH table. Please wait...."
-  $MY_SQROOT/export/bin32/sqlci <<aeof >>$NULL
+  $TRAF_HOME/export/bin32/sqlci <<aeof >>$NULL
   log $crTabLog clear;
 --
     create schema MANAGEABILITY.MV_REWRITE;
@@ -250,7 +250,7 @@ aeof
   # table need to be assigned  to super.services
 #  if [ $isSuperSuper = $TRUE ] ; then
 #
-#  $MY_SQROOT/export/bin32/sqlci <<aeof >>$NULL
+#  $TRAF_HOME/export/bin32/sqlci <<aeof >>$NULL
 #       log $crTabLog;
 #       begin work;
 #       GRANT ALL PRIVILEGES ON TABLE

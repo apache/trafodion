@@ -28,7 +28,7 @@ if [ `uname` = "Linux" ]; then
 fi
 
 if [ $LINUX -ne 0 ]; then
-   export CLASSPATH=$MY_SQROOT/export/lib/hpt4jdbc.jar:$CLASSPATH:.
+   export CLASSPATH=$TRAF_HOME/export/lib/hpt4jdbc.jar:$CLASSPATH:.
 fi
 
 USE_NDCS=0

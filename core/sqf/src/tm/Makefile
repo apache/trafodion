@@ -26,7 +26,7 @@ include ../../macros.gmk
 include ../macros.gmk
 include macros.gmk
 
-HBASE_TRX_LOC    = $(MY_SQROOT)/src/seatrans/hbase-trx
+HBASE_TRX_LOC    = $(TRAF_HOME)/src/seatrans/hbase-trx
 
 DEBUG		=
 DEFINES		= -DDEBUG -DxUSE_FILE_AUDIT 
@@ -173,10 +173,10 @@ $(LIBEXPDIR)/libshbasetmlib.so: $(LIBSXATMOBJS) cp_trx_jar
 $(LIBEXPDIR)/libxarm.so: $(LIBXARMOBJS) 
 	$(CXX) $(LNK_FLGS) -shared -o $@ $(LIBXARMOBJS) -L$(LIBEXPDIR) -llog4cxx -DXARM_BUILD_
 
-$(OUTDIR)/CommonLogger.o: $(MY_SQROOT)/commonLogger/CommonLogger.cpp
+$(OUTDIR)/CommonLogger.o: $(TRAF_HOME)/commonLogger/CommonLogger.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
 
-$(OUTDIR)/javaobjectinterfacetm.o: $(MY_SQROOT)/src/seatrans/tm/hbasetmlib2/javaobjectinterfacetm.cpp
+$(OUTDIR)/javaobjectinterfacetm.o: $(TRAF_HOME)/src/seatrans/tm/hbasetmlib2/javaobjectinterfacetm.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c -o $@ $<
 
 hbasetmlib:

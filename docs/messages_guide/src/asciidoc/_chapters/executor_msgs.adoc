@@ -226,6 +226,21 @@ Stream overflow; subscription rate has fallen too far behind publishing rate.
 *Recovery:* Reopen the statement or cursor and resume subscribing.
 
 <<<
+[[SQL-8557]]
+== SQL 8557
+
+```
+The file name passed to externaltolob exceeds 256 bytes.
+```
+
+*Cause:* A DML statement attempted to execute the externaltolob function with a file name exceeding 256 bytes.
+
+*Effect:* The statement fails.
+
+*Recovery:* If the file name is incorrect, correct and rerun. If the file name is correct and is too long, rename the file so that
+it is within the 256 byte limit.
+
+<<<
 [[SQL-8573]]
 == SQL 8573
 

@@ -27,7 +27,7 @@ export TRAF_CONFIG=/etc/trafodion/trafodion_config
 
 source $TRAF_CONFIG
 
-rm $SQ_ROOT/logs/securityErrors.txt 2>/dev/null
+rm $TRAF_HOME/logs/securityErrors.txt 2>/dev/null
 
 if [[ "$all_node_count" -eq "1" ]]; then
     STARTING_NODE=$NODE_LIST
@@ -37,24 +37,24 @@ fi
 
 #==========================================
 
-echo "***INFO: Starting Trafodion instance, if not already started" | tee -a $SQ_ROOT/logs/securityErrors.txt
+echo "***INFO: Starting Trafodion instance, if not already started" | tee -a $TRAF_HOME/logs/securityErrors.txt
 
-ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts; sqstart"
+ssh $STARTING_NODE "cd $TRAF_HOME/sql/scripts; sqstart"
 SQSTART_RC=$?
 if [ "$SQSTART_RC" -ne "0" -a "$SQSTART_RC" -ne "1" ]; then
-    echo "***ERROR: sqstart failed with RC=$SQSTART_RC. Check $SQ_ROOT/sqmon.log file for details." | tee -a $SQ_ROOT/logs/securityErrors.txt
+    echo "***ERROR: sqstart failed with RC=$SQSTART_RC. Check $TRAF_HOME/sqmon.log file for details." | tee -a $TRAF_HOME/logs/securityErrors.txt
     exit -1;
 fi
 
 # Do initialize authorization and alter predefined users
-echo "***INFO: Initialize authorization and set up predefined users" | tee -a $SQ_ROOT/logs/securityErrors.txt
-ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize authorization; alter user DB__ROOT set external name \"$DB_ROOT_NAME\";\" | sqlci" | tee -a $SQ_ROOT/logs/securityErrors.txt
-foundError=$(grep "ERROR" $SQ_ROOT/logs/securityErrors.txt | wc -l)
+echo "***INFO: Initialize authorization and set up predefined users" | tee -a $TRAF_HOME/logs/securityErrors.txt
+ssh $STARTING_NODE "cd $TRAF_HOME/sql/scripts;  echo \"initialize authorization; alter user DB__ROOT set external name \"$DB_ROOT_NAME\";\" | sqlci" | tee -a $TRAF_HOME/logs/securityErrors.txt
+foundError=$(grep "ERROR" $TRAF_HOME/logs/securityErrors.txt | wc -l)
 if [ "$foundError" -ge "1" ];then
-    echo "***ERROR: Security installation failed, continuing.  Check files $SQ_ROOT/logs/securityErrors.txt for details." | tee -a $SQ_ROOT/logs/securityErrors.txt
+    echo "***ERROR: Security installation failed, continuing.  Check files $TRAF_HOME/logs/securityErrors.txt for details." | tee -a $TRAF_HOME/logs/securityErrors.txt
 fi
 
-echo "***INFO: Please check the install log $SQ_ROOT/logs/securityErrors.txt for any issues" | tee -a $SQ_ROOT/logs/securityErrors.txt
+echo "***INFO: Please check the install log $TRAF_HOME/logs/securityErrors.txt for any issues" | tee -a $TRAF_HOME/logs/securityErrors.txt
 
 #==========================================
-echo "***INFO: Installation setup completed successfully." | tee -a $SQ_ROOT/logs/securityErrors.txt
+echo "***INFO: Installation setup completed successfully." | tee -a $TRAF_HOME/logs/securityErrors.txt

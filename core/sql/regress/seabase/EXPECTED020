@@ -6,7 +6,7 @@
 >>invoke test020t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T1
--- Definition current  Tue Sep 20 10:02:55 2016
+-- Definition current  Thu Jan 19 17:38:24 2017
 
   (
     C1                               INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -50,7 +50,7 @@ C1           C2
 >>invoke test020t2;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T2
--- Definition current  Tue Sep 20 10:02:59 2016
+-- Definition current  Thu Jan 19 17:38:28 2017
 
   (
     C                                CHAR(15) CHARACTER SET ISO88591 COLLATE
@@ -163,7 +163,7 @@ G0
 >>invoke test020t5;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T5
--- Definition current  Tue Sep 20 10:03:25 2016
+-- Definition current  Thu Jan 19 17:38:51 2017
 
   (
     C                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -264,7 +264,7 @@ ALTER TABLE TRAFODION.SCH.TEST020T5 ADD CONSTRAINT TRAFODION.SCH.TEST020T5C1
 >>invoke test020t6;
 
 -- Definition of Trafodion table TRAFODION.SCH.TEST020T6
--- Definition current  Tue Sep 20 10:04:46 2016
+-- Definition current  Thu Jan 19 17:40:10 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -3137,13 +3137,6 @@ CREATE TABLE TRAFODION.SCH.TEST020_T34
  ATTRIBUTES ALIGNED FORMAT
 ;
 
--- The following index is a system created index --
-CREATE INDEX T34_1 ON TRAFODION.SCH.TEST020_T34
-  (
-    B ASC
-  )
-;
-
 ALTER TABLE TRAFODION.SCH.TEST020_T34 ADD CONSTRAINT TRAFODION.SCH.T34_1
   FOREIGN KEY
   (
@@ -3182,13 +3175,6 @@ CREATE TABLE TRAFODION.SCH.TEST020_T34
   , PRIMARY KEY (A ASC)
   )
  ATTRIBUTES ALIGNED FORMAT
-;
-
--- The following index is a system created index --
-CREATE INDEX T34_1 ON TRAFODION.SCH.TEST020_T34
-  (
-    B ASC
-  )
 ;
 
 ALTER TABLE TRAFODION.SCH.TEST020_T34 ADD CONSTRAINT TRAFODION.SCH.T34_1
@@ -3937,7 +3923,7 @@ C1           C2
 --- 2 row(s) selected.
 >>
 >>obey TEST020(trafodion_2247);
->>create table test020t44(a char(15) not null primary key,b int)
+>>create table test020t44(a char(15) not null primary key,b int) 
 +>attribute aligned format;
 
 --- SQL operation complete.

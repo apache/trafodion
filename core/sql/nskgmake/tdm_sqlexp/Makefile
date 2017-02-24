@@ -82,18 +82,18 @@ DEFS := -D_IEEE_FLOAT -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H -D__STDC_CONSTANT_MA
 #
 LLVM_OBJ_DIR := $(LLVM)/$(SQ_BUILD_TYPE)/lib
 #
-$(MY_SQROOT)/export/lib64d/libudis86.so : $(UDIS86)/lib/libudis86.so
-	mkdir -p $(MY_SQROOT)/export/lib64d
-	cp -Pf $(UDIS86)/lib/libudis86.so* $(MY_SQROOT)/export/lib64d/
+$(TRAF_HOME)/export/lib64d/libudis86.so : $(UDIS86)/lib/libudis86.so
+	mkdir -p $(TRAF_HOME)/export/lib64d
+	cp -Pf $(UDIS86)/lib/libudis86.so* $(TRAF_HOME)/export/lib64d/
 
 #NOTE: The following line says the lib64 version is dependent on the lib64d version.
 #      That's a bit of a lie, but it forces the lib64d version to be created and we need it.
-$(MY_SQROOT)/export/lib64/libudis86.so : $(UDIS86)/lib/libudis86.so $(MY_SQROOT)/export/lib64d/libudis86.so
-	mkdir -p $(MY_SQROOT)/export/lib64
-	cp -Pf $(UDIS86)/lib/libudis86.so* $(MY_SQROOT)/export/lib64/
+$(TRAF_HOME)/export/lib64/libudis86.so : $(UDIS86)/lib/libudis86.so $(TRAF_HOME)/export/lib64d/libudis86.so
+	mkdir -p $(TRAF_HOME)/export/lib64
+	cp -Pf $(UDIS86)/lib/libudis86.so* $(TRAF_HOME)/export/lib64/
 
 #
-EXTERN_OBJS +=  $(MY_SQROOT)/export/lib64/libudis86.so \
+EXTERN_OBJS +=  $(TRAF_HOME)/export/lib64/libudis86.so \
 	$(LLVM_OBJ_DIR)/libLLVMX86AsmParser.a \
 	$(LLVM_OBJ_DIR)/libLLVMX86Disassembler.a \
 	$(LLVM_OBJ_DIR)/libLLVMX86CodeGen.a \

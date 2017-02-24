@@ -40,10 +40,10 @@ if [ "$START" == "N" ]; then
 else
     echo "***INFO: starting Trafodion instance" | tee -a $INSTALL_LOG
 
-    ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts; sqstart"
+    ssh $STARTING_NODE "cd $TRAF_HOME/sql/scripts; sqstart"
     SQSTART_RC=$?
     if [ "$SQSTART_RC" != "0" ]; then
-        echo "***ERROR: sqstart failed with RC=$SQSTART_RC. Check $SQ_ROOT/sqmon.log file for details." | tee -a $INSTALL_LOG
+        echo "***ERROR: sqstart failed with RC=$SQSTART_RC. Check $TRAF_HOME/sqmon.log file for details." | tee -a $INSTALL_LOG
         exit -1;
     fi
 
@@ -54,17 +54,17 @@ else
        echo "***INFO: Trafodion is initializing...this will take a few minutes."
        echo
        echo
-       ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion;\" | sqlci" | tee -a $SQ_ROOT/initializeErrors.txt
-       error1392=$(grep "1392" $SQ_ROOT/initializeErrors.txt | wc -l)
-       error1395=$(grep "1395" $SQ_ROOT/initializeErrors.txt | wc -l)
+       ssh $STARTING_NODE "cd $TRAF_HOME/sql/scripts;  echo \"initialize Trafodion;\" | sqlci" | tee -a $TRAF_HOME/initializeErrors.txt
+       error1392=$(grep "1392" $TRAF_HOME/initializeErrors.txt | wc -l)
+       error1395=$(grep "1395" $TRAF_HOME/initializeErrors.txt | wc -l)
        if [ "$error1395" -ge "1" ] || [ "$error1392" -ge "1" ]; then
-           ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"get version of metadata;\" | sqlci" | tee $SQ_ROOT/initializeErrors.txt
-           metadataCurrent=$(grep "Metadata is current" $SQ_ROOT/initializeErrors.txt | wc -l)
+           ssh $STARTING_NODE "cd $TRAF_HOME/sql/scripts;  echo \"get version of metadata;\" | sqlci" | tee $TRAF_HOME/initializeErrors.txt
+           metadataCurrent=$(grep "Metadata is current" $TRAF_HOME/initializeErrors.txt | wc -l)
            if [[ "$metadataCurrent" -ne "1" ]]; then
-              ssh $STARTING_NODE "cd $SQ_ROOT/sql/scripts;  echo \"initialize Trafodion, upgrade;\" | sqlci" | tee $SQ_ROOT/initializeErrors.txt
+              ssh $STARTING_NODE "cd $TRAF_HOME/sql/scripts;  echo \"initialize Trafodion, upgrade;\" | sqlci" | tee $TRAF_HOME/initializeErrors.txt
            fi
        fi
-       anyError=$(grep "ERROR" $SQ_ROOT/initializeErrors.txt | wc -l)
+       anyError=$(grep "ERROR" $TRAF_HOME/initializeErrors.txt | wc -l)
        if [[ "$anyError" != "0" ]]; then
            echo "***ERROR: initialize Trafodion failed.  Check install log files for details." | tee -a $INSTALL_LOG
            exit -1;

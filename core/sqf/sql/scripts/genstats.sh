@@ -28,7 +28,7 @@
 # are given, they are passed to the SQL command "get statistics for qid" without 
 # modification. A common argument is 'default', which generates the per-table stats.
 
-lso=$MY_SQROOT/export/limited-support-tools/LSO
+lso=$TRAF_HOME/export/limited-support-tools/LSO
 
 qids=`$lso/offender -s active -t 10 | grep -o 'MXID[^ ]*'`
 

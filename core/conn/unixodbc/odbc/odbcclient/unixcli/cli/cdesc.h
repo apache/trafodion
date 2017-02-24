@@ -111,7 +111,7 @@ public:
 	SQLSMALLINT	m_DescDatetimeIntervalCode;
 	SQLINTEGER	m_DescOctetLength;
 	SQLUINTEGER	m_DescLength;
-	SQLSMALLINT	m_DescPrecision;
+	SQLINTEGER	m_DescPrecision;
 	SQLSMALLINT	m_DescScale;
 	SQLINTEGER	m_DescDatetimeIntervalPrecision;
 	SQLSMALLINT	m_DescFixedPrecScale;
@@ -131,8 +131,8 @@ public:
 	SQLINTEGER	m_ODBCCharset;
 	SQLSMALLINT m_SQLDataType;
 	SQLSMALLINT m_ODBCDataType;
-	SQLSMALLINT m_SQLPrecision;
-	SQLSMALLINT	m_ODBCPrecision;
+	SQLINTEGER	m_SQLPrecision;
+	SQLINTEGER	m_ODBCPrecision;
 	SQLSMALLINT	m_ODBCScale;
 	SQLSMALLINT m_SQLDatetimeCode;
 	SQLINTEGER	m_SQLOctetLength;

@@ -62,6 +62,8 @@ lic-.*-src
 lic-.*-bin
 note-.*-bin
 # win generated
+odbc.vcxproj*
+odbc.vcxproj.*
 SetCertificateDirReg_os.vcxproj*
 SetCertificateDirReg_os.vcxproj.*
 SetCertificateDirReg_os.sln*
@@ -113,7 +115,6 @@ resource.hm*
 odb.sln
 odb.vcxproj.*
 odb.rc
-# BSD licensed files
 swscanf.cpp
 swsprintf.cpp
 ulexer.h
@@ -165,8 +166,16 @@ VariableLengthPKTest.java
 # asciidoc extention file -- MIT license
 google-analytics-postprocessor.rb
 
-# installer JSON config files
+# pyinstaller JSON config files
 mod_cfgs.json
 prompt.json
 script.json
 version.json
+# ambari configuration JSON files
+mpack.json
+role_command_order.json
+theme.json
+# pyinstaller dependencies
+# they have BSD-3 license that RAT does not recognize
+prettytable.py
+socks.py

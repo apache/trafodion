@@ -19,11 +19,11 @@
 #
 # @@@ END COPYRIGHT @@@
 
-all: LICENSE-src LICENSE-server LICENSE-install LICENSE-clients NOTICE-server DISCLAIMER-server
+all: LICENSE-src LICENSE-server LICENSE-pyinstall LICENSE-install LICENSE-clients NOTICE-server DISCLAIMER-server
 
 # All source code included in Trafodion source
 LICENSE-src:
-	cat Apache lic-components-src lic-server-src lic-test-src > $@
+	cat Apache lic-components-src lic-server-src lic-test-src lic-pyinstall-src > $@
 
 # Binary licenses for each separately packaged component
 # Must include source licenses as well as software bundled in at build time
@@ -38,6 +38,9 @@ DISCLAIMER-server:
 
 LICENSE-install:
 	cat Apache > $@
+
+LICENSE-pyinstall:
+	cat Apache lic-pyinstall-src > $@
 
 LICENSE-clients:
 	cat Apache lic-clients-bin > $@

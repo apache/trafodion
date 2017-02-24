@@ -17,19 +17,29 @@
 RELEASE_VER ?= ${TRAFODION_VER}-incubating
 RELEASE_TYPE ?= $(shell echo $(TRAFODION_VER_PROD)| sed -e 's/ /-/g')
 INSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_installer-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
+PYINSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_pyinstaller-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
 
-all: pkg-installer 
+all: pkg-installer pkg-pyinstaller pkg-ambari
 
-pkg-installer: installer/LICENSE installer/NOTICE installer/DISCLAIMER
-	tar czf ${INSTALLER_TARNAME} installer --exclude=tools
+pkg-ambari:
+	cd ambari-installer && $(MAKE) all
+
+create-dir:
 	mkdir -p ../distribution
-	mv ${INSTALLER_TARNAME} ../distribution
 
-installer/LICENSE: ../licenses/LICENSE-install
-	cp -f $? $@
+pkg-pyinstaller: create-dir python-installer/LICENSE python-installer/NOTICE python-installer/DISCLAIMER
+	tar czf ${PYINSTALLER_TARNAME} python-installer
+	mv ${PYINSTALLER_TARNAME} ../distribution
+
+pkg-installer: create-dir installer/LICENSE installer/NOTICE installer/DISCLAIMER
+	tar czf ${INSTALLER_TARNAME} installer --exclude=tools
+	mv ${INSTALLER_TARNAME} ../distribution
 
 ../licenses/LICENSE-install:
 	cd $(@D) && $(MAKE) $(@F)
+
+installer/LICENSE: ../licenses/LICENSE-install
+	cp -f $? $@
 
 installer/NOTICE: ../NOTICE
 	cp -f $? $@
@@ -37,8 +47,23 @@ installer/NOTICE: ../NOTICE
 installer/DISCLAIMER: ../DISCLAIMER
 	cp -f $? $@
 
+../licenses/LICENSE-pyinstall:
+	cd $(@D) && $(MAKE) $(@F)
+
+python-installer/LICENSE: ../licenses/LICENSE-pyinstall
+	cp -f $? $@
+
+python-installer/NOTICE: ../NOTICE
+	cp -f $? $@
+
+python-installer/DISCLAIMER: ../DISCLAIMER
+	cp -f $? $@
+
 version:
 	@echo "$(RELEASE_VER)"
 
 clean:
-	rm -f ${INSTALLER_TARNAME} 
+	rm -f ${INSTALLER_TARNAME}
+	rm -f ${PYINSTALLER_TARNAME}
+	cd ambari-installer && $(MAKE) clean
+

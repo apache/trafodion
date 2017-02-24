@@ -597,7 +597,7 @@ bool CClusterConfig::Initialize( void )
     else
     {
         snprintf( dbase, sizeof(dbase)
-                , "%s/sql/scripts/sqconfig.db", getenv("MY_SQROOT"));
+                , "%s/sql/scripts/sqconfig.db", getenv("TRAF_HOME"));
     }
     int rc = sqlite3_open_v2( dbase, &db_
                             , SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX

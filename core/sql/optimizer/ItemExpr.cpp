@@ -7434,6 +7434,11 @@ NABoolean BuiltinFunction::isCacheableExpr(CacheWA& cwa)
 	return FALSE;
       }
     break;
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+	    return FALSE;
+    }
+    break;
 
     default:
       {
@@ -7543,6 +7548,8 @@ const NAString BuiltinFunction::getText() const
       return "nullifzero";
     case ITM_NVL:
       return "nvl";
+    case ITM_JSONOBJECTFIELDTEXT:
+      return "json_object_field_text";
     case ITM_QUERYID_EXTRACT:
       return "queryid_extract";
     case ITM_UPPER:
@@ -7806,7 +7813,12 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
 						   outHeap, 2, child(0), child(1));
 	  }
 	break;
-
+    case ITM_JSONOBJECTFIELDTEXT:
+	{
+	    result = new (outHeap) BuiltinFunction(getOperatorType(),
+						   outHeap, 2, child(0), child(1));
+	}
+	break;
 	default:
 	  {
 	    ABORT("copyTopNode() can only be called for a derived class of BuiltinFunction");
@@ -10704,13 +10716,18 @@ NAString ConstValue::getConstStr(NABoolean transformNeeded) const
   else if(getType()->getTypeQualifier() == NA_CHARACTER_TYPE)
   {
     CharType* chType = (CharType*)getType();
+    NAString txt;
 
-    // 4/8/96: added the Boolean switch so that displayable
-    // and non-displayable version can be differed.
     if ( transformNeeded )
-      return chType->getCharSetAsPrefix() + getText();
+      txt = getText();
     else
-      return chType->getCharSetAsPrefix() + getTextForQuery(QUERY_FORMAT);
+      txt = getTextForQuery(QUERY_FORMAT);
+
+    // if result doesn't have a charset specifier already, add one
+    if (txt.index(SQLCHARSET_INTRODUCER_IN_LITERAL) == 0)
+      return txt;
+    else
+      return chType->getCharSetAsPrefix() + txt;
   }
   else
   {
@@ -10788,6 +10805,8 @@ const NAString ConstValue::getText4CacheKey() const
     return getText();
   }
   else {
+    NAString result = getText();
+
     // we want to return _charset'strfoo' instead of 'strfoo'.
     // This is to fix genesis case 10-040616-0347 "NF: query cache does not
     // work properly on || for certain character set". The root cause here
@@ -10796,9 +10815,9 @@ const NAString ConstValue::getText4CacheKey() const
     //   select ?p1 || _ksc5601'arg' from ...
     //   select ?p1 || _kanji'arg from ...
     // The solution is to make them different via charset prefixes.
-    NAString result("_", CmpCommon::statementHeap());
-    result += CharInfo::getCharSetName(((CharType*)getType())->getCharSet());
-    result += getText();
+    if (result.index(SQLCHARSET_INTRODUCER_IN_LITERAL) != 0)
+      result.prepend(((CharType*)getType())->getCharSetAsPrefix());
+
     return result;
   }
 }
@@ -12792,7 +12811,15 @@ ItemExpr * LOBupdate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
   return LOBoper::copyTopNode(result, outHeap);
 }
-
+/*
+Int32 LOBupdate::getArity() const
+{
+  if (obj_ == EMPTY_LOB_)
+    return 0;
+  else
+    return getNumChildren();
+}
+*/
 ItemExpr * LOBconvert::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
   ItemExpr *result;

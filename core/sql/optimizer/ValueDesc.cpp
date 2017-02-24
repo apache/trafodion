@@ -3293,7 +3293,7 @@ void ValueIdSet::replaceOperandsOfInstantiateNull
 // For each ValueId in other check whether it is referenced anywhere
 // within an ItemExpr whose ValueId belongs to this set.
 // -----------------------------------------------------------------------
-void ValueIdSet::weedOutUnreferenced(ValueIdSet & other)
+void ValueIdSet::weedOutUnreferenced(ValueIdSet & other) const
 {
   ValueIdSet unrefSet;
   NABoolean notFound;
@@ -6691,7 +6691,11 @@ ValueIdList::computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey,
              // and no inputs, all VEGies should have constants in
              // them and should be replaced with those
              ie = ie->replaceVEGExpressions(availableValues, availableValues);
-             value = ie->evaluate(STMTHEAP);
+             if (ie->getOperatorType() == ITM_CONSTANT)
+               value = static_cast<ConstValue *>(ie);
+             else
+               value = ie->evaluate(STMTHEAP);
+
              if ( !value )
                 return NULL;
           } else

@@ -53,6 +53,8 @@ of the expression argument of the function.
 *) or the number of rows that contain a distinct value in the one-column
 table derived from the expression argument of the function (optionally
 distinct values).
+| <<group_concat_function,GROUP_CONCAT Function>> | This function returns a string result with the concatenated non-NULL 
+values from a group.
 | <<max_function,MAX/MAXIMUM Function>> | Determines a maximum value from the group of values derived from the
 evaluation of the expression argument.
 | <<min_function,MIN Function>>                 | Determines a minimum value from the group of values derived from the
@@ -201,6 +203,10 @@ corresponding second of the minute.
 _num_expr_ to _datetime_expr_.
 | <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer value for the number of _interval-ind_
 units of time between _startdate_ and _enddate_.
+| <<to_char_function,TO_CHAR Function>>                                     | Converts a datetime value to a character value.
+| <<to_date_function,TO_DATE Function>>                                     | Converts a character value to a date or timestamp value.
+| <<to_time_function,TO_TIME Function>>                                     | Converts a character value to a time value.
+| <<to_timestamp_function,TO_TIMESTAMP Function>>                           | Converts a character value to a timestamp value.
 | <<week_function,WEEK Function>>                                           | Returns an integer value in the range 1 through 54 that represents the
 corresponding week of the year.
 | <<year_function,YEAR Function>>                                           | Returns an integer value that represents the year.
@@ -3581,6 +3587,47 @@ WHERE projcode = 1000;
 Start/Date Time/Shipped               (EXPR)
 ---------- -------------------------- ------
 2007-04-10 2007-04-21 08:15:00.000000      8
+```
+
+<<<
+[[group_concat_function]]
+== GROUP_CONCAT Function
+
+This function returns a string result with the concatenated non-NULL values from a group. 
+It returns NULL if there are no non-NULL values. 
+The syntax is as follows:
+
+```
+GROUP_CONCAT([DISTINCT] expr [,expr ...]
+             [ORDER BY {unsigned_integer | col_name | expr}
+                 [ASC | DESC] [,col_name ...]]
+             [SEPARATOR str_val])
+```
+
+Get the concatenated values of expression combinations. To eliminate duplicate values, 
+use the DISTINCT clause. 
+To sort values in the result, use the ORDER BY clause. To sort in reverse order, add 
+the DESC (descending) keyword to the name of the column you are sorting by in the 
+ORDER BY clause. The default is ascending order; this may be specified explicitly using
+the ASC keyword. The default separator between values in a group is comma (,). To specify 
+a separator explicitly, use SEPARATOR followed by the string literal value that should be 
+inserted between group values. To eliminate the separator altogether, specify SEPARATOR ''.
+
+[[examples_of_group_concat]]
+=== Examples of GROUP_CONCAT
+
+The following example returns concatenated strings for column test_score for each student.
+
+```
+>> SELECT student_name,
+         GROUP_CONCAT(DISTINCT test_score
+                   ORDER BY test_score DESC SEPARATOR ' ')
+         FROM student
+         GROUP BY student_name;
+STUDENT_NAME     (EXPR)
+--------------  --------------
+scott            91 90 80 56
+tom              91 77 43
 ```
 
 <<<
@@ -7524,6 +7571,241 @@ TIMESTAMPDIFF (SQL_TSI_WEEK, DATE '2006-01-01', DATE '2006-01-09')
 TIMESTAMPDIFF (SQL_TSI_DAY, DATE '2004-03-01', DATE '2004-02-01')
 ```
 
+<<<
+[[to_char_function]]
+== TO_CHAR Function
+
+The TO_CHAR function converts a datetime value to a character value. The optional
+second argument describes the format of the character value.
+
+```
+TO_CHAR(character-expression [,format-string])
+```
+
+* `_character-expression_`
++
+is an expression that gives a datetime value.
+
+* `_format-string_`
++
+is one of the following character string literals:
+
+** 'YYYY-MM-DD'
+** 'MM/DD/YYYY'
+** 'DD.MM.YYYY'
+** 'YYYY-MM'
+** 'MM/DD/YYYY'
+** 'YYYY/MM/DD'
+** 'YYYYMMDD'
+** 'YY/MM/DD'
+** 'MM/DD/YY'
+** 'MM-DD-YYYY'
+** 'YYYYMM'
+** 'DD-MM-YYYY'
+** 'DD-MON-YYYY'
+** 'DDMONYYYY'
+** 'HH:MI:SS'
+** 'HH24:MI:SS'
+** 'YYYYMMDDHH24MISS'
+** 'DD.MM.YYYY:HH24.MI.SS'
+** 'YYYY-MM-DD HH24:MI:SS'
+** 'YYYYMMDD:HH24:MI:SS'
+** 'MMDDYYYY HH24:MI:SS'
+** 'MM/DD/YYYY HH24:MI:SS'
+** 'DD-MON-YYYY HH:MI:SS'
+** 'MONTH DD, YYYY, HH:MI'
+** 'DD.MM.YYYY HH24.MI.SS'
+
+Here, YYYY refers to a 4-digit year. YY refers to a two-digit year. MM refers to a two-digit month. MON refers to
+a three-letter abbreviation for month ('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP',
+'OCT', 'NOV' or 'DEC'). MONTH refers to the month spelled out. In the output value, the month abbreviation or month
+will appear in upper case.
+
+HH and HH24 refer to a 2-digit hour field. MI refers to a two-digit minutes field. SS refers to a 2-digit seconds field.
+
+If the _format-string_ argument is omitted, 'YYYY-MM-DD' is used as the
+default for date and timestamp values, and 'HH:MI:SS' is used for time values.
+
+[[considerations_for_to_char]]
+=== Considerations for TO_CHAR
+
+If the _format-string_ contains only hour, minute or seconds fields, the input data type must be time or timestamp.
+
+If the _format-string_ contains only year, month or day fields, the input data type must be date or timestamp.
+
+If the _format-string_ contains all fields, and the input data type is date, the hour, minute and second fields in the result will be filled with zeroes.
+
+[[examples_of_to_char]]
+=== Examples of TO_CHAR
+
+* This function returns the character value '01MAR2016':
++
+```
+TO_CHAR (DATE '2016-03-01', 'DDMONYYYY')
+```
+
+* This function returns the character value '01.03.2016 00:00:00':
++
+```
+TO_CHAR (DATE '2016-03-01', 'DD.MM.YYYY HH24.MI.SS')
+```
+
+* This function returns the character value '12:05:10':
++
+```
+TO_CHAR (TIME '12:05:10')
+```
+
+* This function returns the character value '20160301120510':
++
+```
+TO_CHAR (TIMESTAMP '2016-03-01 12:05:10','YYYYMMDDHH24MISS')
+```
+
+<<<
+[[to_date_function]]
+== TO_DATE Function
+
+The TO_DATE function converts a character value to a date. The optional
+second argument describes the format of the character value.
+
+```
+TO_DATE(character-expression [,format-string])
+```
+
+* `_character-expression_`
++
+is an expression that gives a character value.
+
+* `_format-string_`
++
+is one of the following character string literals:
+
+** 'YYYY-MM-DD'
+** 'MM/DD/YYYY'
+** 'DD.MM.YYYY'
+** 'YYYY-MM'
+** 'MM/DD/YYYY'
+** 'YYYY/MM/DD'
+** 'YYYYMMDD'
+** 'YY/MM/DD'
+** 'MM/DD/YY'
+** 'MM-DD-YYYY'
+** 'YYYYMM'
+** 'DD-MM-YYYY'
+** 'DD-MON-YYYY'
+** 'DDMONYYYY'
+** 'YYYYMMDDHH24MISS'
+** 'DD.MM.YYYY:HH24.MI.SS'
+** 'YYYY-MM-DD HH24:MI:SS'
+** 'YYYYMMDD:HH24:MI:SS'
+** 'MMDDYYYY HH24:MI:SS'
+** 'MM/DD/YYYY HH24:MI:SS'
+** 'DD-MON-YYYY HH:MI:SS'
+** 'MONTH DD, YYYY, HH:MI'
+** 'DD.MM.YYYY HH24.MI.SS'
+
+Here, YYYY refers to a 4-digit year. YY refers to a two-digit year. MM refers to a two-digit month. MON refers to
+a three-letter abbreviation for month ('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP',
+'OCT', 'NOV' or 'DEC'). MONTH refers to the month spelled out. The month in either MON or MONTH form may be given in lower case, upper case or any mixture.
+
+HH and HH24 refer to a 2-digit hour field. MI refers to a two-digit minutes field. SS refers to a 2-digit seconds field.
+
+If the _format-string_ argument is omitted, 'YYYY-MM-DD' is used as the
+default.
+
+[[considerations_for_to_date]]
+=== Considerations for TO_DATE
+
+If the _format-string_ contains hour, minute or seconds fields, the output data type is timestamp. Otherwise,
+the output data type is date.
+
+[[examples_of_to_date]]
+=== Examples of TO_DATE
+
+* This function returns the date value '2016-12-07':
++
+```
+TO_DATE ('2016-12-07')
+```
+
+* This function returns the date value '2016-07-12':
++
+```
+TO_DATE ('12-07-2016', 'DD-MM-YYYY')
+```
+
+* This function returns the date value '2016-12-07':
++
+```
+TO_DATE ('07DEC2016', 'DDMONYYYY')
+```
+
+* This function returns the timestamp value '2016-12-07 17:05:01.000000':
++
+```
+TO_DATE ('07.12.2016:17.05.01', 'DD.MM.YYYY:HH24.MI.SS')
+```
+
+<<<
+[[to_time_function]]
+== TO_TIME Function
+
+The TO_TIME function converts a character value to a time. The
+second argument describes the format of the character value.
+
+```
+TO_TIME(character-expression ,format-string)
+```
+
+* `_character-expression_`
++
+is an expression that gives a character value.
+
+* `_format-string_`
++
+is one of the following character string literals:
+
+** 'HH:MI:SS'
+** 'HH24:MI:SS'
+
+
+Here, HH and HH24 refer to a 2-digit hour field. MI refers to a two-digit minutes field. SS refers to a 2-digit seconds field.
+
+[[examples_of_to_time]]
+=== Examples of TO_TIME
+
+* This function returns the time value '17:05:01':
++
+```
+TO_TIME ('17:05:01', 'HH24:MI:SS')
+```
+			
+<<<
+[[to_timestamp_function]]
+== TO_TIMESTAMP Function
+
+The TO_TIMESTAMP function converts a character value to a timestamp.
+	
+```
+TO_TIMESTAMP(character-expression)
+```
+
+* `_character-expression_`
++
+is an expression that gives a character value. The expression ia assumed to have the format YYYY-MM-DD HH:MI:SS[.FFFFFFF],
+where YYYY is a 4-digit year, MM is a 2-digit month, DD is a 2-digit day, HH is a 2-digit hours field, MI is a 2-digit
+minutes field, SS is a two-digit seconds field and FFFFFF is an optional microseconds field.
+
+[[examples_of_to_timestamp]]
+=== Example of TO_TIMESTAMP
+
+* This function returns the timestamp value '2016-12-07 10:01:00':
++
+```
+TO_TIMESTAMP ('2016-12-07 10:01:00')
+```
+	
 <<<
 [[translate_function]]
 == TRANSLATE Function

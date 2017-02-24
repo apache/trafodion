@@ -205,14 +205,14 @@ public:
   // HIST_MISSING_STATS_WARNING_LEVEL - The CQD has 5 values
   // It is used to control the number of missing stats warnings
   // that should be generated. 
-  // 0 � Display no warnings.
-  // 1 � Display only missing single column stats warnings. These include 6008 and 6011 
-  // 2 � Display all single column missing stats warnings and 
-  //     multi-column missing stats warnings for Scans only. 
-  // 3 � Display all missing single column stats warnings and missing 
-  //     multi-column stats warnings for Scans and GroupBy operators only..
-  // 4 � Display all missing single column stats and missing multi-column 
-  //     stats warnings for all operators including Scans, Joins and groupBys.
+  // 0: Display no warnings.
+  // 1: Display only missing single column stats warnings. These include 6008 and 6011 
+  // 2: Display all single column missing stats warnings and 
+  //    multi-column missing stats warnings for Scans only. 
+  // 3: Display all missing single column stats warnings and missing 
+  //    multi-column stats warnings for Scans and GroupBy operators only..
+  // 4: Display all missing single column stats and missing multi-column 
+  //    stats warnings for all operators including Scans, Joins and groupBys.
   // THE CQD also does not have an impact on the auto update stats behavior. The stats will
   // still be automatically generated even if the warnings have been suppressed.
   // Default behavior is to generate all warnings
@@ -304,6 +304,9 @@ public:
   // add the <table-column-valueidset, uec-value> pairs from OTHER into
   // THIS (the ones that aren't already there)
   void insertList (const MultiColumnUecList * other) ;
+
+  void insertMappedList(const MultiColumnUecList *other,
+                        const ValueIdMap &map); // map is used in "up" direction
 
   // this routine answers whether there's any bona fide multi-column
   // information contained in this list -- i.e., any
@@ -495,6 +498,8 @@ public:
   void setInputCard (CostScalar rows) {inputCard_ = rows; }
 
   CostScalar getInputCard()  { return inputCard_; }
+
+  void mapUpAndCopy (const ColStatDesc& other, ValueIdMap &map) ;
 
   // synchronize/map the RowCount and UEC change of one set of aggregate
   // statistics with the current set of aggregate statistics
@@ -723,6 +728,10 @@ public:
                          const ColStatDescSharedPtr & source,
                          const CostScalar & scale = 1,
                          const NABoolean shapeChangedMask = TRUE) ;
+  void makeMappedDeepCopy(
+                         const ColStatDescList & source,
+                         ValueIdMap &map, // map source "up"
+                         NABoolean includeUnmappedColumns);
 
   void removeDeepCopyAt (const CollIndex entry) ;
 

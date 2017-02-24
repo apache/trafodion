@@ -1,0 +1,165 @@
+<?xml version="1.0"?>
+<!--
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+-->
+
+<metainfo>
+    <schemaVersion>2.0</schemaVersion>
+    <services>
+        <service>
+            <!-- Internal name for service (must be unique) -->
+            <name>TRAFODION</name>
+            <!-- display name in Ambari UI -->
+            <displayName>Trafodion</displayName>
+            <!-- Description of service - will be displayed when user clicks add service -->
+            <comment>Transactional SQL-on-Hadoop Database</comment>
+            <!-- Version of component-->
+            <version>2.1</version>
+            <themes>
+              <theme>
+                <fileName>theme.json</fileName>
+                <default>true</default>
+              </theme>
+            </themes>
+            <components>
+            	<!-- In this case, there is only one master component -->
+                <component>
+                  <name>TRAF_MASTER</name>
+                  <displayName>Trafodion Master</displayName>
+                  <category>MASTER</category>
+                  <!-- how many of these components are allowed in a cluster -->
+                  <cardinality>1</cardinality>
+                  <!-- reference to (and details of) what script is to be used to install/stop/start/config the service -->
+                  <commandScript>
+                    <script>scripts/trafodionmaster.py</script>
+                    <scriptType>PYTHON</scriptType>
+                    <timeout>5000</timeout>
+                  </commandScript>
+                  <customCommands>
+                    <customCommand>
+                      <name>Initialize</name>
+                      <commandScript>
+                        <script>scripts/trafodionmaster.py</script>
+                        <scriptType>PYTHON</scriptType>
+                        <timeout>5000</timeout>
+                      </commandScript>
+                    </customCommand>
+                  </customCommands>
+                </component>
+                <component>
+                  <name>TRAF_NODE</name>
+                  <displayName>Trafodion Node</displayName>
+                  <category>SLAVE</category>
+                  <!-- how many of these components are allowed in a cluster -->
+                  <cardinality>1-1000</cardinality>
+                  <!-- reference to (and details of) what script is to be used to install/stop/start/config the service -->
+                  <commandScript>
+                    <script>scripts/trafodionnode.py</script>
+                    <scriptType>PYTHON</scriptType>
+                    <timeout>5000</timeout>
+                  </commandScript>
+                </component>
+                <component>
+                  <name>TRAF_DCS_PRIME</name>
+                  <displayName>Trafodion DCS Master</displayName>
+                  <category>MASTER</category>
+                  <!-- how many of these components are allowed in a cluster -->
+                  <cardinality>1</cardinality>
+                  <!-- reference to (and details of) what script is to be used to install/stop/start/config the service -->
+                  <commandScript>
+                    <script>scripts/trafodiondcs.py</script>
+                    <scriptType>PYTHON</scriptType>
+                    <timeout>5000</timeout>
+                  </commandScript>
+                </component>
+                <component>
+                  <name>TRAF_DCS_SECOND</name>
+                  <displayName>Trafodion DCS Backup</displayName>
+                  <category>MASTER</category>
+                  <!-- how many of these components are allowed in a cluster -->
+                  <cardinality>0-10</cardinality>
+                  <!-- reference to (and details of) what script is to be used to install/stop/start/config the service -->
+                  <commandScript>
+                    <script>scripts/trafodiondcs.py</script>
+                    <scriptType>PYTHON</scriptType>
+                    <timeout>5000</timeout>
+                  </commandScript>
+                </component>
+            </components>
+            <configFiles>
+              <configFile>
+                <type>env</type>
+                <fileName>trafodion-env.sh</fileName>
+                <dictionaryName>trafodion-env</dictionaryName>
+              </configFile>
+              <configFile>
+                <type>env</type>
+                <fileName>traf-cluster-env.sh</fileName>
+                <dictionaryName>traf-cluster-env</dictionaryName>
+              </configFile>
+              <configFile>
+                <type>env</type>
+                <fileName>dcs-env.sh</fileName>
+                <dictionaryName>dcs-env</dictionaryName>
+              </configFile>
+              <configFile>
+                <type>env</type>
+                <fileName>log4j.properties</fileName>
+                <dictionaryName>dcs-log4j</dictionaryName>
+              </configFile>
+              <configFile>
+                <type>xml</type>
+                <fileName>rest-site.xml</fileName>
+                <dictionaryName>rest-site</dictionaryName>
+              </configFile>
+              <configFile>
+                <type>xml</type>
+                <fileName>dcs-site.xml</fileName>
+                <dictionaryName>dcs-site</dictionaryName>
+              </configFile>
+            </configFiles>
+            <!-- what yum packages need to be installed -->
+            <osSpecifics>
+              <osSpecific>
+                <osFamily>redhat6</osFamily>
+                <packages>
+                   <package><name>apache-trafodion_server</name></package>
+                </packages>
+              </osSpecific>
+            </osSpecifics>
+            <requiredServices>
+                <service>HDFS</service>
+                <service>HBASE</service>
+                <service>HIVE</service>
+                <service>ZOOKEEPER</service>
+            </requiredServices>
+      	    <configuration-dependencies>
+        	<config-type>trafodion-env</config-type>
+        	<config-type>traf-cluster-env</config-type>
+        	<config-type>dcs-env</config-type>
+        	<config-type>dcs-log4j</config-type>
+        	<config-type>dcs-site</config-type>
+        	<config-type>rest-site</config-type>
+      	    </configuration-dependencies>
+        </service>
+    </services>
+</metainfo>

@@ -41,7 +41,7 @@ end node
 
 # Overflow directories for ssd and hdd. Format: [overflow-type] [directory]
 begin overflow
-hdd $MY_SQROOT/tmp
+hdd $TRAF_HOME/tmp
 #sdd /sdd/directory
 end overflow
 

@@ -65,9 +65,6 @@ class ex_hash_grby_tdb;
 // Classes referenced in this file
 // -----------------------------------------------------------------------
 class ex_tcb;
-#ifndef __EID
-class memoryMonitor;
-#endif
 
 // -----------------------------------------------------------------------
 // ex_hash_grby_tdb

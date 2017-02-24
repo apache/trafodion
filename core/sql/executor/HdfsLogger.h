@@ -44,7 +44,7 @@ public:
   /**
     * Initializes log4cxx by using the configuration file.
     * If the path given is relative (does not start with a
-    * slash), it is appended to the $MY_SQROOT environment variable.
+    * slash), it is appended to the $TRAF_HOME environment variable.
     * If the configuration file is not found, perform hard-coded
     * default configuration.
     * @param configFileName name of the log4cxx configuration file.

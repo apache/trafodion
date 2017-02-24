@@ -46,7 +46,7 @@ The following table provides an overview of the different {project-name} managem
 *Example: Start {project-name}*
 
 ```
-cd $MY_SQROOT/sql/scripts
+cd $TRAF_HOME/sql/scripts
 sqstart
 sqcheck
 ```
@@ -145,4 +145,4 @@ If processes are not running as expected, then:
  
 If problems persist please review logs:
 
-* `$MY_SQROOT/logs`: {project-name} logs.
+* `$TRAF_HOME/logs`: {project-name} logs.

@@ -268,10 +268,6 @@ SQLCLI_LIB_FUNC
   inline void setIsESPProcess(NABoolean val)
                { isESPProcess_ = val; }
 
-  NABoolean checkMeasStatus();
-  void updateMeasure( CliStatement* stmt, Int64 startTime ); 
-  Int32 ExUpdateProcCntrs();
-
   Lng32 createContext(ContextCli* &newContext);
   Lng32 dropContext(ContextCli* context);
   ContextCli * getContext(SQLCTX_HANDLE context_handle, 

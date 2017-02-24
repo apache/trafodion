@@ -173,6 +173,9 @@ public:
   static void incrErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
                                const char * tabName, const char * rowId);
 
+  static void getErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
+                               const char * tabName, const char * rowId);
+
   static void handleException(NAHeap *heap,
                           char *loggingDdata,
                           Lng32 loggingDataLen,
@@ -184,9 +187,13 @@ public:
   static void buildLoggingPath(const char * loggingLocation,
                                char *logId,
                                const char *tableName,
+                               char * currCmdLoggingLocation);
+  static void buildLoggingFileName(NAHeap *heap,
+                               const char * currCmdLoggingLocation,
+                               const char *tableName,
                                const char * loggingFileNamePrefix,
                                Lng32 instId,
-                               char * loggingFileName);
+                               char *& loggingFileName);
   static short setupError(NAHeap *heap, ex_queue_pair &qparent, Lng32 retcode, const char * str, const char * str2 = NULL);
 
 protected:
@@ -288,6 +295,11 @@ protected:
 			 short * rc, NABoolean isVarchar);
   short moveRowToUpQueue(short * rc);
   
+  short raiseError(Lng32 errcode, 
+                   Lng32 * intParam1 = NULL,
+                   const char * str1 = NULL, 
+                   const char * str2 = NULL);
+
   short setupError(Lng32 retcode, const char * str, const char * str2 = NULL);
   short handleError(short &rc);
   short handleDone(ExWorkProcRetcode &rc, Int64 rowsAffected = 0);
@@ -316,7 +328,7 @@ protected:
   short evalConstraintExpr(ex_expr *expr, UInt16 tuppIndex = 0,
                   char * tuppRow = NULL);
   short evalEncodedKeyExpr();
-  short evalRowIdExpr(NABoolean noVarchar = FALSE);
+  short evalRowIdExpr(NABoolean isVarchar);
   short evalRowIdAsciiExpr(NABoolean noVarchar = FALSE);
   short evalRowIdAsciiExpr(const char * inputRowIdVals,
 			   char * rowIdBuf, // input: buffer where rowid is created
@@ -940,7 +952,7 @@ class ExHbaseAccessBulkLoadPrepSQTcb: public ExHbaseAccessUpsertVsbbSQTcb
     Text   importLocation_;
     Text   hFileName_;
 
-    char loggingFileName_[1000];
+    char *loggingFileName_;
     NABoolean LoggingFileCreated_ ;
     ComCondition * lastErrorCnd_;
     std::vector<UInt32> posVec_;

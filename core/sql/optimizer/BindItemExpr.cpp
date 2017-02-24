@@ -664,10 +664,12 @@ void ItemExpr::bindChildren(BindWA *bindWA)
 {
   Int32 savedCurrChildNo = currChildNo();
   for (Int32 i = 0; i < getArity(); i++, currChildNo()++) {
-
+   
     ItemExpr *boundExpr = child(i)->bindNode(bindWA);
     if (bindWA->errStatus()) return;
     child(i) = boundExpr;
+      
+      
   }
   currChildNo() = savedCurrChildNo;
 }
@@ -696,7 +698,7 @@ void ItemExpr::bindSelf(BindWA *bindWA)
   NABoolean defaultSpecBoundAsSQLnull = FALSE;
 
   for (Int32 i = 0; i < getArity(); i++, currChildNo()++) {
-
+   
     ItemExpr *boundExpr = child(i)->bindNode(bindWA);
     if (bindWA->errStatus()) 
       return;
@@ -707,10 +709,11 @@ void ItemExpr::bindSelf(BindWA *bindWA)
       }
 
     if (boundExpr->getOperatorType() == ITM_CONSTANT &&
-	((ConstValue *)boundExpr)->isNullWasDefaultSpec())
+        ((ConstValue *)boundExpr)->isNullWasDefaultSpec())
       defaultSpecBoundAsSQLnull = TRUE;
 
     child(i) = boundExpr;
+      
   }
 
   //##? Should   getOperatorType() != ITM_CAST		?##
@@ -1530,52 +1533,53 @@ ItemExpr* ItemExpr::tryToDoImplicitCasting(BindWA *bindWA)
   // Step 1: Determine if we have children with different character set attributes
   //
   for (Int32 i = 0; i < arity; i++) {
-
+    
     const NAType& type = child(i)->getValueId().getType();
     if ( type.getTypeQualifier() == NA_CHARACTER_TYPE )
-    {
-       curr_chld_cs = ((const CharType&)type).getCharSet();
-       if ( i==0 ) chld0_cs = curr_chld_cs;  // Remember this one
+      {
+        curr_chld_cs = ((const CharType&)type).getCharSet();
+        if ( i==0 ) chld0_cs = curr_chld_cs;  // Remember this one
 
-       Int16 cur_chld_cs_ndx = iUNK;
+        Int16 cur_chld_cs_ndx = iUNK;
 
-       switch ( curr_chld_cs )
-       {
-        case CharInfo::UNICODE :
-          cur_chld_cs_ndx = iUCS2;
-          break;
+        switch ( curr_chld_cs )
+          {
+          case CharInfo::UNICODE :
+            cur_chld_cs_ndx = iUCS2;
+            break;
 
-        case CharInfo::ISO88591:
-          cur_chld_cs_ndx = iISO;
-          break;
+          case CharInfo::ISO88591:
+            cur_chld_cs_ndx = iISO;
+            break;
 
-        case CharInfo::UTF8:
-          cur_chld_cs_ndx = iUTF8;
-          break;
+          case CharInfo::UTF8:
+            cur_chld_cs_ndx = iUTF8;
+            break;
 
-        case CharInfo::SJIS:
-          cur_chld_cs_ndx = iSJIS;
-          break;
+          case CharInfo::SJIS:
+            cur_chld_cs_ndx = iSJIS;
+            break;
 
-        case CharInfo::GBK:
-          cur_chld_cs_ndx = iGBK;
-          break;
+          case CharInfo::GBK:
+            cur_chld_cs_ndx = iGBK;
+            break;
 
-        //case CharInfo::KANJI_MP:
-        //case CharInfo::KSC5601_MP:
-        default:
-          break; // Can not translate these currently.
-       }
-       charsets_involved[cur_chld_cs_ndx]++;
+            //case CharInfo::KANJI_MP:
+            //case CharInfo::KSC5601_MP:
+          default:
+            break; // Can not translate these currently.
+          }
+        charsets_involved[cur_chld_cs_ndx]++;
 
-       OperatorTypeEnum curr_chld_opType = child(i)->getOperatorType();
-       if (i == 0 ) chld0_opType = curr_chld_opType;  // Remember this one
+        OperatorTypeEnum curr_chld_opType = child(i)->getOperatorType();
+        if (i == 0 ) chld0_opType = curr_chld_opType;  // Remember this one
 
-       if ( curr_chld_opType == ITM_CONSTANT )
+        if ( curr_chld_opType == ITM_CONSTANT )
           Literals_involved[cur_chld_cs_ndx] += 1 ;
-       else
+        else
           nonLiterals_involved[cur_chld_cs_ndx] += 1 ;
-    }
+      }
+      
   }
 
   for (Int32 j = 0; j < iUNK; j++)
@@ -2420,6 +2424,25 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
       tgtOpIndex = 1;
       conversion = 4;
     }
+    else
+    if ((type1.getTypeQualifier() == NA_DATETIME_TYPE) &&
+	(type2.getTypeQualifier() == NA_DATETIME_TYPE) &&
+        (type1.getPrecision() != type2.getPrecision()))
+    {
+      conversion = 8;
+      if (type1.getPrecision() == SQLDTCODE_TIMESTAMP)
+        {
+          // convert op2 to timestamp
+          srcOpIndex = 1;
+          tgtOpIndex = 0;
+        }
+      else
+        {
+          // convert op1 to timestamp
+          srcOpIndex = 0;
+          tgtOpIndex = 1;
+        }
+    }
 
     ItemExpr * newOp = NULL;
 
@@ -2520,7 +2543,7 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
 	     (tgtOpIndex == 0 ? op1 : op2)->castToItemExpr()->getValueId().getType().newCopy(bindWA->wHeap()));
       newOp = newOp->bindNode(bindWA);
       break;
-      
+     
       default:
         break;
     }
@@ -3125,24 +3148,26 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
       Int32 origArity = getArity();
       
       for (Int32 chld=0; chld < origArity; chld++)
-      {
-        switch (child(chld)->getOperatorType())
         {
-          case ITM_ROW_SUBQUERY:
-            subq = (Subquery *) child(chld)->castToItemExpr();
-            childDegree += subq->getSubquery()->getDegree();
-            break;
+       
+          switch (child(chld)->getOperatorType())
+            {
+            case ITM_ROW_SUBQUERY:
+              subq = (Subquery *) child(chld)->castToItemExpr();
+              childDegree += subq->getSubquery()->getDegree();
+              break;
             
-          case ITM_USER_DEF_FUNCTION:
-            udf = (UDFunction *) child(chld)->castToItemExpr();
-            childDegree += udf->getRoutineDesc()->getOutputColumnList().entries();
-            break;
+            case ITM_USER_DEF_FUNCTION:
+              udf = (UDFunction *) child(chld)->castToItemExpr();
+              childDegree += udf->getRoutineDesc()->getOutputColumnList().entries();
+              break;
             
-          default:
-            childDegree += 1;
-            break;
+            default:
+              childDegree += 1;
+              break;
+            }
+          
         }
-      }
       
       if (childDegree > origArity) 
       {
@@ -3162,6 +3187,7 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
   ItemExpr * ie = NULL;
   switch (getOperatorType())
     {
+
     case ITM_ISIPV4:
     case ITM_ISIPV6:
     case ITM_MD5:
@@ -3288,7 +3314,10 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
 
 	break;
       }
-
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+        break;
+    }
     case ITM_QUERYID_EXTRACT:
       {
         // type cast any params
@@ -3343,7 +3372,11 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
          // when running on a system that is using the Unicode Config),
          // we need the following code.
       }
+    break;
 
+    case ITM_AES_ENCRYPT:
+    case ITM_AES_DECRYPT:
+      break;
     default:
       {
       }
@@ -3982,8 +4015,9 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
 {
   Lng32 error = 0;
 
-  NABoolean tc  = (formatType_ == FORMAT_TO_CHAR);
-  NABoolean td  = (formatType_ == FORMAT_TO_DATE);
+  NABoolean toChar  = (formatType_ == FORMAT_TO_CHAR);
+  NABoolean toDate  = (formatType_ == FORMAT_TO_DATE);
+  NABoolean toTime  = (formatType_ == FORMAT_TO_TIME);
   NABoolean df  = ExpDatetime::isDateFormat(frmt);
   NABoolean tf  = ExpDatetime::isTimeFormat(frmt);
   NABoolean tsf = ExpDatetime::isTimestampFormat(frmt);
@@ -4001,7 +4035,22 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
       error = 1; // error 4065
     }
 
-  if (!error && tc)
+  if (toDate && NOT (df || tsf))
+    {
+      // TO_DATE requires date format or timestamp format
+      // unless we are in mode_special_4 in which case
+      // numeric format is accepted
+      if (NOT (ms4 && nf))
+        error = 1; // error 4065
+    }
+
+  if (toTime && NOT tf)
+    {
+      // TO_TIME requires time format
+      error = 1; // error 4065
+    }
+
+  if (!error && toChar)
     {
       // source must be datetime with to_char function
       if (opType->getTypeQualifier() != NA_DATETIME_TYPE)
@@ -4010,9 +4059,14 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
       // cannot convert date source to time format
       else if (tf && (opType->getPrecision() == SQLDTCODE_DATE))
         error = 3; // error 4072
+      
+      // cannot convert time source to date format or timestamp format
+      // for TO_CHAR only (for DATEFORMAT it is OK)
+      else if ((df || tsf) && (!wasDateformat_) && (opType->getPrecision() == SQLDTCODE_TIME))
+        error = 8; // error 4072
     }
 
-  if (!error && td)
+  if (!error && toDate)
     {
       // source must be char or numeric with to_date
       if ((opType->getTypeQualifier() != NA_CHARACTER_TYPE) &&
@@ -4046,22 +4100,22 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
         case 1: 
           {
             *CmpCommon::diags() << DgSqlCode(-4065) << DgString0(formatStr_)
-                                << DgString1((formatType_ == FORMAT_TO_CHAR
-                                              ? "TO_CHAR" : "TO_DATE"));
+                                << DgString1((toChar ? "TO_CHAR" : 
+                                                       (toDate ? "TO_DATE" : "TO_TIME")));
             bindWA->setErrStatus();
           }
           break;
 
         case 2:
           {
-            *CmpCommon::diags() << DgSqlCode(-4071) << DgString0("TO_CHAR");
+            *CmpCommon::diags() << DgSqlCode(-4071) << DgString0(wasDateformat_ ? "DATEFORMAT" : "TO_CHAR");
             bindWA->setErrStatus();
           }
           break;
 
         case 3:
           {
-            *CmpCommon::diags() << DgSqlCode(-4072) << DgString0("TO_CHAR") << DgString1("time");;
+            *CmpCommon::diags() << DgSqlCode(-4072) << DgString0("TO_CHAR") << DgString1("time");
             bindWA->setErrStatus();
           }
           break;
@@ -4090,6 +4144,13 @@ NABoolean DateFormat::errorChecks(Lng32 frmt, BindWA *bindWA,
         case 7:
           {
             *CmpCommon::diags() << DgSqlCode(-4045) << DgString0("TO_DATE");
+            bindWA->setErrStatus();
+          }
+          break;
+
+        case 8:
+          {
+            *CmpCommon::diags() << DgSqlCode(-4072) << DgString0("TO_CHAR") << DgString1("date");
             bindWA->setErrStatus();
           }
           break;
@@ -4133,7 +4194,20 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
     return this;
 
   const NAType *naType0 = &child(0)->getValueId().getType();
+  const DatetimeType* operand = (DatetimeType *)naType0;
   const NumericType * nType0 = NULL;
+
+  // if the date time format was not specified in TO_CHAR, supply a
+  // default now based on the datatype of the first operand
+  if (frmt_ == ExpDatetime::DATETIME_FORMAT_UNSPECIFIED)
+    {
+      if ((naType0->getTypeQualifier() == NA_DATETIME_TYPE) &&
+          (operand->getPrecision() == SQLDTCODE_TIME))
+        frmt_ = ExpDatetime::DATETIME_FORMAT_TS4;
+      else
+        frmt_ = ExpDatetime::DATETIME_FORMAT_DEFAULT;
+      formatStr_ = ExpDatetime::getDatetimeFormatStr(frmt_);
+    }
 
   // a quick optimization for the date format.
   ItemExpr *newNode = quickDateFormatOpt(bindWA);
@@ -4155,7 +4229,6 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
       if ((wasDateformat_) &&
           (naType0->getTypeQualifier() == NA_DATETIME_TYPE))
         {
-          const DatetimeType* operand = (DatetimeType *)naType0;
           if (operand->getPrecision() == SQLDTCODE_TIMESTAMP)
             {
               if (frmt_ == ExpDatetime::DATETIME_FORMAT_DEFAULT)

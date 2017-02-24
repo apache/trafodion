@@ -1,0 +1,373 @@
+>>obey TEST007(setup);
+>>set schema hive.hive;
+
+--- SQL operation complete.
+>>cqd HIVE_MAX_STRING_LENGTH '20' ;
+
+--- SQL operation complete.
+>>create schema if not exists trafodion.sch007;
+
+--- SQL operation complete.
+>>
+>>obey TEST007(tests);
+>>-- tests for views on hive tables
+>>sh echo "drop table thive1;" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>sh echo "create table thive1(a int, b int);" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>sh echo "insert into thive1 values (1, 2);" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>sh echo "drop table thive2;" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>sh echo "create table thive2(a int, b int);" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>sh echo "insert into thive2 values (1, 2);" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>
+>>create external table thive2 for hive.hive.thive2;
+
+--- SQL operation complete.
+>>
+>>create view trafodion.sch007.vhive1 as select * from thive1;
+
+--- SQL operation complete.
+>>showddl hive.hive.thive1;
+
+/* Hive DDL */
+CREATE TABLE THIVE1
+  (
+    A                                int
+  , B                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+CREATE EXTERNAL TABLE THIVE1
+  FOR HIVE.HIVE.THIVE1
+;
+
+--- SQL operation complete.
+>>
+>>create view trafodion.sch007.vhive11 as select * from thive2;
+
+--- SQL operation complete.
+>>create view trafodion.sch007.vhive2 as select x.a, y.b from thive1 x, thive2 y
++>  where x.a < 2 and x.b = y.b;
+
+--- SQL operation complete.
+>>create view trafodion.sch007.vhive3 as select * from trafodion.sch007.vhive2;
+
+--- SQL operation complete.
+>>
+>>-- view on hive and traf tables
+>>drop table if exists trafodion.sch007.thbase1;
+
+--- SQL operation complete.
+>>create table trafodion.sch007.thbase1 (aa int, bb int);
+
+--- SQL operation complete.
+>>create view trafodion.sch007.vhivehbase as select * from 
++>        trafodion.sch007.thbase1, thive2 where a = aa;
+
+--- SQL operation complete.
+>>insert into trafodion.sch007.thbase1 values (1,2);
+
+--- 1 row(s) inserted.
+>>invoke trafodion.sch007.vhivehbase;
+
+-- Definition of Trafodion view TRAFODION.SCH007.VHIVEHBASE
+-- Definition current  Fri Jan 20 16:31:37 2017
+
+  (
+    AA                               INT DEFAULT NULL
+  , BB                               INT DEFAULT NULL
+  , A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>select * from trafodion.sch007.vhivehbase;
+
+AA           BB           A            B          
+-----------  -----------  -----------  -----------
+
+          1            2            1            2
+
+--- 1 row(s) selected.
+>>
+>>select * from thive1;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>insert into trafodion.sch007.vhive1 values (3,4);
+
+--- 1 row(s) inserted.
+>>select * from thive1;
+
+A            B          
+-----------  -----------
+
+          1            2
+          3            4
+
+--- 2 row(s) selected.
+>>
+>>prepare s from select * from trafodion.sch007.vhive1;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+002
+.    .    1    hive_scan                       THIVE1                1.00E+002
+
+--- SQL operation complete.
+>>execute s;
+
+A            B          
+-----------  -----------
+
+          1            2
+          3            4
+
+--- 2 row(s) selected.
+>>
+>>prepare s from select * from trafodion.sch007.vhive2;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.65E+003
+2    1    3    hybrid_hash_join                                      1.65E+003
+.    .    2    hive_scan                       THIVE2                1.00E+002
+.    .    1    hive_scan                       THIVE1                3.29E+001
+
+--- SQL operation complete.
+>>execute s;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>prepare s from select * from trafodion.sch007.vhive3;
+
+--- SQL command prepared.
+>>explain options 'f' s;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+3    .    4    root                                                  1.65E+003
+2    1    3    hybrid_hash_join                                      1.65E+003
+.    .    2    hive_scan                       THIVE2                1.00E+002
+.    .    1    hive_scan                       THIVE1                3.29E+001
+
+--- SQL operation complete.
+>>execute s;
+
+A            B          
+-----------  -----------
+
+          1            2
+
+--- 1 row(s) selected.
+>>
+>>get tables in view trafodion.sch007.vhive1;
+
+Tables in View SCH007.VHIVE1
+============================
+
+HIVE.HIVE.THIVE1
+
+--- SQL operation complete.
+>>get tables in view trafodion.sch007.vhive11;
+
+Tables in View SCH007.VHIVE11
+=============================
+
+HIVE.HIVE.THIVE2
+
+--- SQL operation complete.
+>>
+>>get all tables in view trafodion.sch007.vhive3;
+
+Tables in View SCH007.VHIVE3
+============================
+
+HIVE.HIVE.THIVE1
+HIVE.HIVE.THIVE2
+
+--- SQL operation complete.
+>>get views in view trafodion.sch007.vhive3;
+
+Views in View SCH007.VHIVE3
+===========================
+
+TRAFODION.SCH007.VHIVE2
+
+--- SQL operation complete.
+>>get views on table hive.hive.thive1;
+
+Views on Table _HV_HIVE_.THIVE1
+===============================
+
+SCH007.VHIVE1
+SCH007.VHIVE2
+
+--- SQL operation complete.
+>>get all views on table hive.hive.thive2;
+
+Views on Table _HV_HIVE_.THIVE2
+===============================
+
+SCH007.VHIVE11
+SCH007.VHIVE2
+SCH007.VHIVE3
+SCH007.VHIVEHBASE
+
+--- SQL operation complete.
+>>
+>>drop external table thive2 for hive.hive.thive2 cascade;
+
+--- SQL operation complete.
+>>showddl hive.hive.thive2;
+
+/* Hive DDL */
+CREATE TABLE THIVE2
+  (
+    A                                int
+  , B                                int
+  )
+  stored as textfile
+;
+
+--- SQL operation complete.
+>>showddl trafodion.sch007.vhive3;
+
+*** ERROR[4082] Object TRAFODION.SCH007.VHIVE3 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>get all views on table hive.hive.thive2;
+
+--- SQL operation complete.
+>>
+>>obey TEST007(error_tests);
+>>
+>>create view trafodion.sch007.vhive4 as select x.a, y.b from thive1 x, thive1 y;
+
+--- SQL operation complete.
+>>
+>>-- insert not allowed
+>>insert into trafodion.sch007.vhive4 values (3,4);
+
+*** ERROR[4027] Table or view TRAFODION.SCH007.VHIVE4 does not permit insertions.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- del/upd not allowed
+>>delete from trafodion.sch007.vhive1;
+
+*** ERROR[4223] Update/Delete on Hive table is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>update trafodion.sch007.vhive1 set b = 1;
+
+*** ERROR[4223] Update/Delete on Hive table is not supported in this software version.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>--  traf view is not updatable
+>>delete from trafodion.sch007.vhive4;
+
+*** ERROR[4028] Table or view TRAFODION.SCH007.VHIVE4 is not updatable.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- traf view must be in traf cat/sch
+>>create view vhive5 as select * from thive1;
+
+*** ERROR[3242] This statement is not supported. Reason: DDL views can only be created or dropped in trafodion schema.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- if underlying hive table is dropped, an error is returned
+>>prepare s from select * from trafodion.sch007.vhive1;
+
+--- SQL command prepared.
+>>execute s;
+
+A            B          
+-----------  -----------
+
+          1            2
+          3            4
+
+--- 2 row(s) selected.
+>>sh echo "drop table thive1;" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>execute s;
+
+*** ERROR[8442] Unable to access HDFS interface. Call to ExpLOBInterfaceDataModCheck returned error LOB_DATA_FILE_NOT_FOUND_ERROR(554). Error detail 0.
+
+--- 0 row(s) selected.
+>>select * from trafodion.sch007.vhive1;
+
+*** ERROR[1388] Object HIVE.HIVE.THIVE1 does not exist in hive metadata.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- if external table creation has been disabled, then view usage will
+>>-- not available
+>>cqd hive_views_create_external_table 'OFF';
+
+--- SQL operation complete.
+>>sh echo "drop table thive3;" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>sh echo "create table thive3(a int, b int);" > TEST007_junk;
+>>sh regrhive.ksh -f TEST007_junk;
+>>create view trafodion.sch007.vhive6 as select * from hive.hive.thive3;
+
+*** WARNING[1071] View usage information for the following hive tables could not be set. Make sure that an external table either already exists or implicit creation has not been disabled. Hive tables: HIVE.HIVE.THIVE3
+
+--- SQL operation complete.
+>>showddl hive.hive.thive3;
+
+/* Hive DDL */
+CREATE TABLE THIVE3
+  (
+    A                                int
+  , B                                int
+  )
+  stored as textfile
+;
+
+--- SQL operation complete.
+>>get all views on table hive.hive.thive3;
+
+--- SQL operation complete.
+>>get all tables in view trafodion.sch007.vhive6;
+
+--- SQL operation complete.
+>>
+>>log;

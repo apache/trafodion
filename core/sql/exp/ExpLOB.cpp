@@ -402,7 +402,6 @@ void ExpLOBoper::genLOBhandle(Int64 uid,
   lobHandle->objUID_ = uid;
   lobHandle->descSyskey_ = descKey;
   lobHandle->descPartnkey_ = descTS;
-  str_pad(lobHandle->filler_, 30, '\0');
   lobHandle->schNameLen_ = schNameLen;
   handleLen = sizeof(LOBHandle);
   if (schNameLen > 0)
@@ -478,14 +477,7 @@ void ExpLOBoper::createLOBhandleString(Int16 flags,
 	      findNumDigits(descTS), descTS,
 	      schNameLen, schName);
 
-  /*
-
-  str_sprintf(lobHandleBuf, "LOBH%04d%020Ld%04d%02d%Ld%02d%Ld%03d%s",
-  	      flags, uid, lobNum, 
-	      findNumDigits(descKey), descKey, 
-	      findNumDigits(descTS), descTS,
-	      schNameLen, schName);
-  */
+ 
 }
 
 // Extracts values from the string format of LOB handle 
@@ -501,13 +493,14 @@ Lng32 ExpLOBoper::extractFromLOBstring(Int64 &uid,
 				       Lng32 handleLen)
 {
   // opp of:
-  ////  // str_sprintf(lobHandleBuf, "LOBH%04d%020Ld%04d%02d%Ld%02d%Ld%03d%s",
+  //  str_sprintf(lobHandleBuf, "LOBH%04d%04d%04d%020Ld%02d%Ld%02d%Ld%03d%s",
+  //	      flags, lobType, lobNum, uid,
+  //	      findNumDigits(descKey), descKey, 
+  //	      findNumDigits(descTS), descTS,
+  //	      schNameLen, schName)
 
-  //  str_sprintf(lobHandleBuf, "LOBH%04d%02d%04d%020d%02d%Ld%02d%Ld%03d%s",
-  //		  header, flags, lobtype, lobNum, uid, descPartnKey, descSyskey, schNameLen/SchName
 
-
-  if (handleLen < (4 + 4 + 2 + 4 + 20 + 2))
+  if (handleLen < (4 + 4 + 4  + 20 + 2)) // Minimum sanity check.
     return -1;
 
   Lng32 curPos = 4;
@@ -515,7 +508,7 @@ Lng32 ExpLOBoper::extractFromLOBstring(Int64 &uid,
   flags = (Lng32)str_atoi(&handle[curPos], 4);
   curPos += 4;
 
-  lobType = (Lng32)str_atoi(&handle[curPos], 2);
+  lobType = (Lng32)str_atoi(&handle[curPos], 4);
   curPos += 4;
 
   lobNum = (Lng32)str_atoi(&handle[curPos], 4);
@@ -736,7 +729,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   else
     {
       Int64 descTS = NA_JulianTimestamp();
-
+      
       lobHandle = lobHandleBuf;
       ExpLOBoper::genLOBhandle(objectUID_, lobNum(), (short)lobStorageType(),
 			       -1, descTS, -1,
@@ -755,6 +748,15 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
     so = Lob_Buffer;
   else if (fromExternal())
     so = Lob_External;
+  else if (fromEmpty())
+    {
+      /* str_cpy_all(result, lobHandle, handleLen);
+
+       getOperand(0)->setVarLength(handleLen, op_data[-MAX_OPERANDS]);
+      //we can return now - nothing to insert into the descriptors
+      return ex_expr::EXPR_OK; */
+      so = Lob_Memory;
+    }
 
   
 
@@ -770,8 +772,20 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
 
   // temp. Pass lobLen. When ExLobsOper fixes it so len is not needed during
   // lob desc update, then remove this.
-  Int64 lobLen = getOperand(1)->getLength();
+  Int64 lobLen = 0;
+  if(!fromEmpty())
+    lobLen = getOperand(1)->getLength();
 
+  // until SQL_EXEC_LOBcliInterface is changed to allow for unlimited
+  // black box sizes, we have to prevent over-sized file names from
+  // being stored
+  if ((so == Lob_External) && (lobLen > MAX_LOB_FILE_NAME_LEN))
+    {
+      ExRaiseSqlError(h, diagsArea, 
+		      (ExeErrorCode)(8557));
+      return ex_expr::EXPR_ERROR;
+    }
+  
   blackBoxLen_ = 0;
   if (fromExternal())
     {
@@ -922,7 +936,9 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
   if (fromBuffer())
     {
       memcpy(&lobLen, op_data[2],sizeof(Int64)); // user specified buffer length
-      memcpy(lobData,op_data[1],sizeof(Int64)); // user buffer address
+      Int64 userBufAddr = 0;
+      memcpy(&userBufAddr,op_data[1],sizeof(Int64));
+      lobData = (char *)userBufAddr;
     }
   LobsOper lo ;
  
@@ -1033,6 +1049,8 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
   if (err == ex_expr::EXPR_ERROR)
     return err;
     
+  if(fromEmpty())
+    return err;
 
 #ifndef __EID
   char * handle = op_data[0];
@@ -1256,6 +1274,18 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 		       &sDescSyskey, &sDescTS, 
 		       &sSchNameLen, sSchName,
 		       lobHandle); //op_data[2]);
+  if (sDescSyskey == -1) //updating empty lob
+    {
+      ex_expr::exp_return_type err = insertDesc(op_data, h, diagsArea);
+      if (err == ex_expr::EXPR_ERROR)
+	return err;
+     
+      char * handle = op_data[0];
+      handleLen = getOperand(0)->getLength();
+      err = insertData(handleLen, handle, op_data, h, diagsArea);
+     
+      return err;
+    }
 
   
   // get the lob name where data need to be updated
@@ -1299,6 +1329,9 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
     so= Lob_Buffer;
   else if (fromExternal())
     so = Lob_External;
+ 
+   
+ 
   Int64 lobMaxSize = 0;
   if (getLobSize() > 0)
     {
@@ -1327,9 +1360,17 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
   if (fromBuffer())
     {
       memcpy(&lobLen, op_data[3],sizeof(Int64)); // user specified buffer length
-      memcpy(data,op_data[1],sizeof(Int64)); // user buffer address
+      Int64 userBufAddr = 0;
+      memcpy(&userBufAddr,op_data[1],sizeof(Int64));
+      data = (char *)userBufAddr;
     }
-  if (isAppend())
+
+  if(fromEmpty())
+    {
+      lobLen = 0;
+      so = Lob_Memory;
+    }
+   if (isAppend() && !fromEmpty())
     {
       rc = ExpLOBInterfaceUpdateAppend
 	(getExeGlobals()->getExLobGlobal(), 
@@ -1520,7 +1561,16 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
   char lobNameBuf[100];
   char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, 100);
       
- 
+  if (descKey == -1) //This is an empty_blob/clob
+    {
+      Int32 intParam1 = LOB_DATA_EMPTY_ERROR;
+      Int32 cliError = 0;
+       ExRaiseSqlError(h, diagsArea, 
+			  (ExeErrorCode)(8442), NULL, &intParam1, 
+			  &cliError, NULL, (char*)"ExpLOBInterfaceSelect",
+			  (char*)"ExpLOBInterfaceSelect",getLobErrStr(intParam1));
+	  return ex_expr::EXPR_ERROR;
+    }
   if(toFile())
     {
       so = Lob_File;

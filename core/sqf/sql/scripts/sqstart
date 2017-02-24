@@ -25,7 +25,7 @@
 #SQ Startup Driver Script. Use sqgen prior to this to generate various files required for startup.
 
 function LogIt {
-    echo  "`date`: $1" >> $MY_SQROOT/logs/startup.log
+    echo  "`date`: $1" >> $TRAF_HOME/logs/startup.log
 }
 
 function Usage {
@@ -102,10 +102,10 @@ function CheckMonitorLink {
 
     if [ ! -e monitor ]; then
         if [ -h monitor ]; then
-            echoLog "The monitor link $MY_SQROOT/sql/scripts/monitor points to a non-existent target:"
+            echoLog "The monitor link $TRAF_HOME/sql/scripts/monitor points to a non-existent target:"
             ls -al monitor
         else
-            echoLog "A soft link to 'monitor' is missing in $MY_SQROOT/sql/scripts"
+            echoLog "A soft link to 'monitor' is missing in $TRAF_HOME/sql/scripts"
         fi
         echoLog "Aborting startup."
         LogIt "End $script_name $sq_start, exit code: 1"
@@ -282,11 +282,11 @@ STARTtime=$(date +%s)
 
 GetOpts $BASH_ARGV
 
-if [ ! -z $MY_SQROOT ]; then
-    cd $MY_SQROOT/sql/scripts
+if [ ! -z $TRAF_HOME ]; then
+    cd $TRAF_HOME/sql/scripts
 else
     echoLog
-    echoLog "The MY_SQROOT environment variable does not exist."
+    echoLog "The TRAF_HOME environment variable does not exist."
     echoLog "Please ensure sqenv.sh has been sourced, and re-run $script_name."
     echoLog
     exit 1;
@@ -299,7 +299,7 @@ if [[ $SQ_SEAMONSTER == "1" ]]; then
     echoLog
     echoLog "SeaMonster is enabled, checking SeaMonster Kernel Module installed version..."
     echoLog
-    sminfo_out=`$MY_SQROOT/export/bin${SQ_MBTYPE}/sminfo 2>&1`
+    sminfo_out=`$TRAF_HOME/export/bin${SQ_MBTYPE}/sminfo 2>&1`
     if [ $? -gt 0 ]; then
        echoLog "$sminfo_out"
        lv_msg="Correct SeaMonster Kernel Module in not installed; please resolve this issue and re-run $script_name!"
@@ -312,7 +312,7 @@ if [[ $SQ_SEAMONSTER == "1" ]]; then
     echoLog
 fi
 
-if [[ ! -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
+if [[ ! -e $TRAF_HOME/sql/scripts/sw_env.sh ]]; then
    checkKerberos
    if [[ $? -ne 0 ]]; then
       echo
@@ -327,9 +327,9 @@ fi
 declare -i lv_len_mysqroot
 declare -i lv_max_mysqroot_len
 lv_max_mysqroot_len=78
-lv_len_mysqroot=${#MY_SQROOT}
+lv_len_mysqroot=${#TRAF_HOME}
 if [ $lv_len_mysqroot '>' $lv_max_mysqroot_len ]; then
-    lv_msg="Length of the string \$MY_SQROOT ($MY_SQROOT) should be less than $lv_max_mysqroot_len. Exiting...";
+    lv_msg="Length of the string \$TRAF_HOME ($TRAF_HOME) should be less than $lv_max_mysqroot_len. Exiting...";
     echoLog "$lv_msg"
     LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
     exit 1;
@@ -353,7 +353,7 @@ fi
 SQCheckOrphanProcesses
 
 if [[ $run_chk_dbperms == 1 ]]; then
-    chk_dbperms=$MY_SQROOT/sql/scripts/chk_dbperms
+    chk_dbperms=$TRAF_HOME/sql/scripts/chk_dbperms
     if [ -x $chk_dbperms ]; then
         echo
         echo "Checking ownership and permissions."
@@ -373,12 +373,12 @@ fi
 
 
 
-SQLOG_DIR=$MY_SQROOT/logs
+SQLOG_DIR=$TRAF_HOME/logs
 SQMON_LOG=$SQLOG_DIR/sqmon.log
 SQSTART_EXIT_STATUS=./sqstart.exit_status
 
 if [[ -z $SQSCRIPTS_DIR ]]; then
-    SQSCRIPTS_DIR=$MY_SQROOT/sql/scripts
+    SQSCRIPTS_DIR=$TRAF_HOME/sql/scripts
 fi
 
 mkdir -p $SQLOG_DIR
@@ -419,7 +419,7 @@ rm -f $MPI_TMPDIR/monitor.port.*
 setup_sqpdsh
 
 # Clear unique strings
-$SQPDSHA 'cd $MY_SQROOT/sql/scripts; utilConfigDb -u'
+$SQPDSHA 'cd $TRAF_HOME/sql/scripts; utilConfigDb -u'
 
 echoLog "Executing sqipcrm (output to sqipcrm.out)"
 sqipcrm > sqipcrm.out
@@ -461,8 +461,8 @@ let lv_num_checks=0
 #Long recoveries on a cluster could delay TX services
 let lv_max_checks=600
 # Check if resource is a work station
-if [[ -e ${MY_SQROOT}/etc/ms.env ]] ; then
-   VIRT_NODES=`awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $MY_SQROOT/etc/ms.env`
+if [[ -e ${TRAF_HOME}/etc/ms.env ]] ; then
+   VIRT_NODES=`awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $TRAF_HOME/etc/ms.env`
    if [[ -n "$VIRT_NODES" ]] ; then
       #Some utilities on workstations will timeout if we wait too long
       lv_max_checks=360

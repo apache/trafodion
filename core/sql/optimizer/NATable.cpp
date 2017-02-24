@@ -1449,9 +1449,40 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
                     break;
 
                   case NA_DATETIME_TYPE:
+                    // those types should tolerate zeroing out trailing bytes, but
+                    // not filling with 0xFF
+                    if (isDescending)
+                      columnIsPartiallyProvided = FALSE;
+                    else if (numBytesInProvidedVal < 4 &&
+                             static_cast<const DatetimeType *>(pkType)->getSubtype() !=
+                             DatetimeType::SUBTYPE_SQLTime)
+                      {
+                        // avoid filling year, month, day with a zero,
+                        // convert those to a 1
+
+                        // sorry, this makes use of the knowledge that
+                        // encoded date and timestamp all start with
+                        // 4 bytes, 2 byte big-endian year, 1 byte
+                        // month, 1 byte day
+
+                        if (actEncodedKey[valOffset] != 0 && numBytesInProvidedVal == 1)
+                          // only 1 byte of a year > 255 provided, in
+                          // this case leave the second byte zero,
+                          // only change the second byte to 1 if the
+                          // first byte is also zero
+                          numBytesInProvidedVal = 2;
+
+                        // set bytes 1, 2, 3 (year LSB, month, day) to
+                        // 1 if they are not provided and zero
+                        for (int ymd=numBytesInProvidedVal; ymd<4; ymd++)
+                          if (actEncodedKey[valOffset+ymd] == 0)
+                            actEncodedKey[valOffset+ymd] = 1;
+                      }
+                    break;
+
                   case NA_INTERVAL_TYPE:
                     // those types should tolerate zeroing out trailing bytes, but
-                    // not filling with 0xFF 
+                    // not filling with 0xFF
                     if (isDescending)
                       columnIsPartiallyProvided = FALSE;
                     break;
@@ -4590,7 +4621,12 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
        // Lookup by name (not position: key->position is pos *within the PK*)
        NAColumn *nacol = columnArray.getColumn(key->colname);
        if(nacol != NULL)
-         nacol->setPrimaryKey();
+         {
+           nacol->setPrimaryKey();
+           if (((TrafConstrntsDesc*)constrnt)->notSerialized())
+             nacol->setPrimaryKeyNotSerialized();
+         }
+
        keycols_desc = keycols_desc->next;
      }
  } // static markPKCols
@@ -4953,23 +4989,23 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 
    isTrigTempTable_ = (qualifiedName_.getSpecialType() == ExtendedQualName::TRIGTEMP_TABLE);
 
+   if (table_desc->tableDesc()->isVolatileTable())
+   {
+     setVolatileTable( TRUE );
+   }
+
    switch(table_desc->tableDesc()->rowFormat())
      {
-     case COM_PACKED_FORMAT_TYPE:
-       setSQLMXTable(TRUE);
-       break;
      case COM_ALIGNED_FORMAT_TYPE:
        setSQLMXAlignedTable(TRUE);
        break;
      case COM_HBASE_FORMAT_TYPE:
      case COM_UNKNOWN_FORMAT_TYPE:
        break;
+     case COM_HBASE_STR_FORMAT_TYPE:
+       setHbaseDataFormatString(TRUE);
+       break;
      }
-
-   if (table_desc->tableDesc()->isVolatileTable())
-   {
-     setVolatileTable( TRUE );
-   }
 
    if (table_desc->tableDesc()->isInMemoryObject())
    {
@@ -5455,7 +5491,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 	    short *lobNumList = new (heap_) short[getColumnCount()];
 	    short *lobTypList = new (heap_) short[getColumnCount()];
 	    char  **lobLocList = new (heap_) char*[getColumnCount()];
-
+            char  **lobColNameList = new (heap_) char*[getColumnCount()];
 	    const NAColumnArray &colArray = getNAColumnArray();
 	    NAColumn *nac = NULL;
 
@@ -5467,6 +5503,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 		    if (nac->getType()->getTypeQualifier() == NA_LOB_TYPE)
 		    {
 			    lobLocList[j] = new (heap_) char[1024];
+                            lobColNameList[j] = new (heap_)char[256];
 			    j++;
 		    }
 	    }      
@@ -5488,7 +5525,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 		     LOB_CLI_SELECT_CURSOR,
 		     lobNumList,
 		     lobTypList,
-		     lobLocList,(char *)lobHdfsServer,lobHdfsPort,0,FALSE);
+		     lobLocList,lobColNameList,(char *)lobHdfsServer,lobHdfsPort,0,FALSE);
 
 	    if (cliRC == 0)
 	    {
@@ -5681,8 +5718,7 @@ NATable::NATable(BindWA *bindWA,
 		schemaOwner_ = SUPER_USER;
 	}
 
-	if (hasExternalTable())
-		getPrivileges(NULL); 
+        getPrivileges(NULL); 
 
 	// TBD - if authorization is enabled and there is no external table to store
 	// privileges, go get privilege information from HIVE metadata ...
@@ -6648,11 +6684,20 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
 
   // If current user is root, object owner, or this is a volatile table
   // automatically have owner default privileges.
-  if ((!isSeabaseTable() && !isHiveTable()) ||
+ if ((!isSeabaseTable() && !isHiveTable()) ||
        !CmpCommon::context()->isAuthorizationEnabled() ||
        isVolatileTable() ||
-       ComUser::isRootUserID()||
-       ComUser::getCurrentUser() == owner_)
+       (ComUser::isRootUserID() && !isHiveTable()) )
+  {
+    privInfo_ = new(heap_) PrivMgrUserPrivs;
+    privInfo_->setOwnerDefaultPrivs();
+    return;
+  }
+
+  // Generally, if the current user is the object owner, then the automatically
+  // have all privs.  However, if this is a shared schema then views can be
+  // owned by the current user but not have all privs
+  if (ComUser::getCurrentUser() == owner_ && objectType_ != COM_VIEW_OBJECT)
   {
     privInfo_ = new(heap_) PrivMgrUserPrivs;
     privInfo_->setOwnerDefaultPrivs();
@@ -6735,7 +6780,7 @@ void NATable::readPrivileges ()
 	std::vector <ComSecurityKey *> secKeyVec;
 
 	if (testError || (STATUS_GOOD !=
-				privInterface.getPrivileges(objectUid().get_value(), objectType_,
+				privInterface.getPrivileges((NATable *)this,
 					ComUser::getCurrentUser(), *privInfo_, &secKeyVec)))
 	{
 		if (testError)
@@ -7666,36 +7711,47 @@ Int32 NATable::computeHBaseRowSizeFromMetaData() const
 // For an HBase table, we can estimate the number of rows by dividing the number
 // of KeyValues in all HFiles of the table by the number of columns (with a few
 // other considerations).
-Int64 NATable::estimateHBaseRowCount() const
+Int64 NATable::estimateHBaseRowCount(Int32 retryLimitMilliSeconds, Int32& errorCode, Int32& breadCrumb) const
 {
-	Int64 estRowCount = 0;
-	ExpHbaseInterface* ehi = getHBaseInterface();
-	if (ehi)
-	{
-		HbaseStr fqTblName;
-		NAString tblName = getTableName().getQualifiedNameAsString();
-		fqTblName.len = tblName.length();
-		fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
-		strncpy(fqTblName.val, tblName.data(), fqTblName.len);
-		fqTblName.val[fqTblName.len] = '\0';
+  Int64 estRowCount = 0;
+  ExpHbaseInterface* ehi = getHBaseInterface();
+  errorCode = -1;
+  breadCrumb = -1;
+  if (ehi)
+    {
+      HbaseStr fqTblName;
+      NAString tblName = getTableName().getQualifiedNameAsString();
+      fqTblName.len = tblName.length();
+      fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
+      strncpy(fqTblName.val, tblName.data(), fqTblName.len);
+      fqTblName.val[fqTblName.len] = '\0';
 
-		Int32 partialRowSize = computeHBaseRowSizeFromMetaData();
-		Lng32 retcode = ehi->estimateRowCount(fqTblName,
-				partialRowSize,
-				colcount_,
-				estRowCount);
-		NADELETEBASIC(fqTblName.val, STMTHEAP);
+      Int32 partialRowSize = computeHBaseRowSizeFromMetaData();
+      errorCode = ehi->estimateRowCount(fqTblName,
+                                      partialRowSize,
+                                      colcount_,
+                                      retryLimitMilliSeconds,
+                                      estRowCount,
+                                      breadCrumb /* out */);
+      NADELETEBASIC(fqTblName.val, STMTHEAP);
 
-		// Return 0 as the row count if an error occurred while estimating it.
-		// The estimate could also be 0 if there is less than 1MB of storage
-		// dedicated to the table -- no HFiles, and < 1MB in MemStore, for which
-		// size is reported only in megabytes.
-		if (retcode < 0)
-			estRowCount = 0;
-		delete ehi;
-	}
+      // Return 100 million as the row count if an error occurred while
+      // estimating. One example where this is appropriate is that we might get
+      // FileNotFoundException from the Java layer if a large table is in 
+      // the midst of a compaction cycle. It is better to return a large
+      // number in this case than a small number, as plan quality suffers
+      // more when we vastly underestimate than when we vastly overestimate.
 
-	return estRowCount;
+      // The estimate could be 0 if there is less than 1MB of storage
+      // dedicated to the table -- no HFiles, and < 1MB in MemStore, for which
+      // size is reported only in megabytes.
+      if (errorCode < 0)
+        estRowCount = 100000000;
+
+      delete ehi;
+    }
+
+  return estRowCount;
 }
 
 // Method to get hbase regions servers node names
@@ -8043,6 +8099,7 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       NABoolean isUserUpdatableSeabaseMD = FALSE;
       NABoolean isHbaseCell = corrName.isHbaseCell();
       NABoolean isHbaseRow = corrName.isHbaseRow();
+      NABoolean isHbaseMap = corrName.isHbaseMap();
       if (isHbaseCell || isHbaseRow)// explicit cell or row format specification
 	{
 	  const char* extHBaseName = corrName.getQualifiedNameObj().getObjectName();
@@ -8163,6 +8220,11 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
       table->setIsSeabaseTable(isSeabase);
       table->setIsSeabaseMDTable(isSeabaseMD);
       table->setIsUserUpdatableSeabaseMDTable(isUserUpdatableSeabaseMD);
+      if (isHbaseMap)
+        {
+          table->setIsHbaseMapTable(TRUE);
+          table->setIsExternalTable(TRUE);
+        }
     }
     else if (isHiveTable(corrName) &&
 	(!isSQUmdTable(corrName)) &&

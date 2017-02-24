@@ -248,6 +248,29 @@ const NAString ElemDDLLikeLimitColumnLength::getText() const
   return "ElemDDLLikeLimitColumnLength";
 }
 
+// -----------------------------------------------------------------------
+// methods for class ElemDDLLikeOptWithoutRowFormat
+// -----------------------------------------------------------------------
+
+// virtual destructor
+ElemDDLLikeOptWithoutRowFormat::~ElemDDLLikeOptWithoutRowFormat()
+{
+}
+
+// casting
+ElemDDLLikeOptWithoutRowFormat * ElemDDLLikeOptWithoutRowFormat::castToElemDDLLikeOptWithoutRowFormat()
+{
+  return this;
+}
+
+//
+// methods for tracing
+//
+
+const NAString ElemDDLLikeOptWithoutRowFormat::getText() const
+{
+  return "ElemDDLLikeOptWithoutRowFormat";
+}
 
 //
 // End of File

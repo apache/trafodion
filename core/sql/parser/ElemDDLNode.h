@@ -138,6 +138,7 @@ class ElemDDLLikeOptWithoutSalt;
 class ElemDDLLikeSaltClause;
 class ElemDDLLikeOptWithoutDivision;
 class ElemDDLLikeLimitColumnLength;
+class ElemDDLLikeOptWithoutRowFormat;
 class ElemDDLList;
 class ElemDDLLocation;
 class ElemDDLOptionList;
@@ -462,6 +463,7 @@ public:
   virtual ElemDDLLikeSaltClause         * castToElemDDLLikeSaltClause();
   virtual ElemDDLLikeOptWithoutDivision * castToElemDDLLikeOptWithoutDivision();
   virtual ElemDDLLikeLimitColumnLength  * castToElemDDLLikeLimitColumnLength();
+  virtual ElemDDLLikeOptWithoutRowFormat* castToElemDDLLikeOptWithoutRowFormat();
   virtual ElemDDLList                   * castToElemDDLList();
   virtual ElemDDLLocation               * castToElemDDLLocation();
   virtual ElemDDLOptionList             * castToElemDDLOptionList();

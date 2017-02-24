@@ -22,7 +22,7 @@
 # @@@ END COPYRIGHT @@@
 #
 
-# Install feature file ($MY_SQROOT/conf/install_features)
+# Install feature file ($TRAF_HOME/conf/install_features)
 #
 # This file allows specific Trafodion core builds to signal to
 # the installer the presence of a new feature that requires

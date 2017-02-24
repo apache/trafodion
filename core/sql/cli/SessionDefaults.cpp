@@ -684,7 +684,7 @@ Lng32 SessionDefaults::readFromDefaultsTable(CliGlobals * cliGlobals)
 {
   // Read system defaults from configuration file
   // keep this name in sync with file sqlcomp/nadefaults.cpp
-  NAString confFile(getenv("MY_SQROOT"));
+  NAString confFile(getenv("TRAF_HOME"));
   confFile += "/etc/SQSystemDefaults.conf";
 
   FILE *f = fopen(confFile, "r");

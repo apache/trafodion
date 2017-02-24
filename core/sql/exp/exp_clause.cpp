@@ -499,6 +499,10 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_NVL:
 	  setClassID(FUNC_NVL);
 	  break;
+    case ITM_JSONOBJECTFIELDTEXT:
+	  setClassID(FUNC_JSON_ID);
+	  break;
+      
 	case ITM_EXTRACT_COLUMNS:
 	  setClassID(FUNC_EXTRACT_COLUMNS);
 	  break;
@@ -544,6 +548,12 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_SOUNDEX:
 	  setClassID(FUNC_SOUNDEX_ID);
 	  break;
+        case ITM_AES_ENCRYPT:
+          setClassID(FUNC_AES_ENCRYPT);
+          break;
+        case ITM_AES_DECRYPT:
+          setClassID(FUNC_AES_DECRYPT);
+          break;
 	default:
 	  GenAssert(0, "ex_clause: Unknown Class ID.");
 	  break;
@@ -945,6 +955,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_NVL:
       GetVTblPtr(vtblPtr, ex_function_nvl);
       break;
+    case ex_clause::FUNC_JSON_ID:
+      GetVTblPtr(vtblPtr, ex_function_json_object_field_text);
+      break;
     case ex_clause::FUNC_EXTRACT_COLUMNS:
       GetVTblPtr(vtblPtr, ExFunctionExtractColumns);
       break;
@@ -1037,6 +1050,12 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_SOUNDEX_ID:
       GetVTblPtr(vtblPtr, ExFunctionSoundex);
+      break;
+    case ex_clause::FUNC_AES_ENCRYPT:
+      GetVTblPtr(vtblPtr, ExFunctionAESEncrypt);
+      break;
+    case ex_clause::FUNC_AES_DECRYPT:
+      GetVTblPtr(vtblPtr, ExFunctionAESDecrypt);
       break;
      default:
       GetVTblPtr(vtblPtr, ex_clause);
@@ -1441,6 +1460,8 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 
     case ITM_NULLIFZERO: return "ITM_NULLIFZERO";
     case ITM_NVL: return "ITM_NVL";
+
+    case ITM_JSONOBJECTFIELDTEXT: return "ITM_JSONOBJECTFIELDTEXT";
 
     // subqueries
     case ITM_ROW_SUBQUERY: return "ITM_ROW_SUBQUERY";

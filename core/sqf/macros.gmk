@@ -69,9 +69,9 @@ else
     LNK_FLGS     += $(COVER_FLGS)
   endif
 endif
-BINEXPDIR         = $(MY_SQROOT)/export/bin$(SQ_MBTYPE)
-INCEXPDIR         = $(MY_SQROOT)/export/include
-LIBEXPDIR         = $(MY_SQROOT)/export/lib$(SQ_MBTYPE)
+BINEXPDIR         = $(TRAF_HOME)/export/bin$(SQ_MBTYPE)
+INCEXPDIR         = $(TRAF_HOME)/export/include
+LIBEXPDIR         = $(TRAF_HOME)/export/lib$(SQ_MBTYPE)
 ifeq ($(SQ_BUILD_PROFILE),generate)
   OPTIM_FLGS     += -fprofile-generate
   LNK_FLGS       += -fprofile-generate
@@ -111,7 +111,7 @@ CXX64FLAGS = $(GCCMODE64) $(DBG_FLGS) $(OPTIM_FLGS) -Wall -Werror $(INTEL_TOOL_F
 #   $(CHKCIPRE); $(CHKCIGCC); $(CHKCIDEB); $(CHKCI32); $(CHKCIPOST)
 #
 #
-CHKCIPRE  = rm -fr $(BUILD_PLAT); cwd=$$PWD; cd $$MY_SQROOT
+CHKCIPRE  = rm -fr $(BUILD_PLAT); cwd=$$PWD; cd $$TRAF_HOME
 CHKCIPOST = cd $$cwd; $(MAKE) $(MAKEFLAGS) clean; $(MAKE) $(MAKEFLAGS)
 
 CHKCIGCC  = export SQ_OR_INTC=0

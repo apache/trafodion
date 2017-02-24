@@ -364,6 +364,7 @@ typedef enum {
  ,HBC_ERROR_GET_HBLC_EXCEPTION
  ,HBC_ERROR_ROWCOUNT_EST_PARAM
  ,HBC_ERROR_ROWCOUNT_EST_EXCEPTION
+ ,HBC_ERROR_ROWCOUNT_EST_FALSE
  ,HBC_ERROR_REL_HBLC_EXCEPTION
  ,HBC_ERROR_GET_CACHE_FRAC_EXCEPTION
  ,HBC_ERROR_GET_LATEST_SNP_PARAM
@@ -449,7 +450,7 @@ public:
   HBC_RetCode grant(const Text& user, const Text& tableName, const TextVec& actionCodes); 
   HBC_RetCode revoke(const Text& user, const Text& tableName, const TextVec& actionCodes);
   HBC_RetCode estimateRowCount(const char* tblName, Int32 partialRowSize,
-                               Int32 numCols, Int64& rowCount);
+                               Int32 numCols, Int32 retryLimitMilliSeconds, Int64& rowCount, Int32 & breadCrumb);
   HBC_RetCode getLatestSnapshot(const char * tabname, char *& snapshotName, NAHeap * heap);
   HBC_RetCode cleanSnpTmpLocation(const char * path);
   HBC_RetCode setArchivePermissions(const char * path);

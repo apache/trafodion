@@ -25,7 +25,8 @@
 [[quickstart]]
 = Quick Start
 
-This chapter provides a quick start for how to use the {project-name} Installer to install {project-name}. 
+This chapter provides a quick start for how to use the command-line {project-name} Installer to install {project-name}. 
+*If you prefer to intall on HDP distribution using Ambari, refer to the <<install-ambari,Ambari Install>> section.*
 
 You need the following before using the information herein:
 
@@ -346,11 +347,6 @@ ip-172-31-56-238 ip-172-31-61-110 ip-172-31-57-143
 USERID=admin
 PASSWORD=admin
 PORT=:8080
-########## Performing 'set' hbase.master.distributed.log.splitting:true on (Site:hbase-site, Tag:version1)
-########## PUTting json into: doSet_version1467320863286001262.json
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-101  5757  102  3588  103  2169    98k  60930 --:--:-- --:--:-- --:--:--  100k
 {
   "resources" : [
     {

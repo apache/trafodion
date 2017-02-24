@@ -31,8 +31,8 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
 }
 {
@@ -47,8 +47,8 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
 }
 {
@@ -62,56 +62,8 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:*
-   obj:*
-}
-{
-   strcmp
-   Memcheck:Addr8
-   fun:__strcmp_sse42
-   fun:_ZN7SB_Smap3getEPKc
-   fun:_ZL17msg_init_env_loadv
-   fun:_Z13ms_getenv_strPKc
-   fun:_Z13ms_getenv_intPKcPi
-   fun:_ZN8SB_Trans7Msg_Mgr4initEv
-   fun:_Z41__static_initialization_and_destruction_0ii
-   fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:*
-   obj:*
-}
-{
-   strlen
-   Memcheck:Addr8
-   fun:__strlen_sse42
-   fun:_ZN7SB_Smap4hashEPKci
-   fun:_ZN7SB_Smap3getEPKc
-   fun:_ZL17msg_init_env_loadv
-   fun:_Z13ms_getenv_strPKc
-   fun:_Z13ms_getenv_intPKcPi
-   fun:_ZN8SB_Trans7Msg_Mgr4initEv
-   fun:_Z41__static_initialization_and_destruction_0ii
-   fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:*
-}
-{
-   strcmp
-   Memcheck:Addr8
-   fun:__strcmp_sse42
-   fun:_ZN7SB_Smap3getEPKc
-   fun:_ZL17msg_init_env_loadv
-   fun:_Z13ms_getenv_strPKc
-   fun:_Z13ms_getenv_intPKcPi
-   fun:_ZN8SB_Trans7Msg_Mgr4initEv
-   fun:_Z41__static_initialization_and_destruction_0ii
-   fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
    obj:*
 }
@@ -126,8 +78,8 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
    obj:*
 }
@@ -143,8 +95,8 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
 }
 {
@@ -158,8 +110,8 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
    obj:*
 }
@@ -174,8 +126,56 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:*
+   obj:*
+}
+{
+   strlen
+   Memcheck:Addr8
+   fun:__strlen_sse42
+   fun:_ZN7SB_Smap4hashEPKci
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:*
+   obj:*
+}
+{
+   strcmp
+   Memcheck:Addr8
+   fun:__strcmp_sse42
+   fun:_ZN7SB_Smap3getEPKc
+   fun:_ZL17msg_init_env_loadv
+   fun:_Z13ms_getenv_strPKc
+   fun:_Z13ms_getenv_intPKcPi
+   fun:_ZN8SB_Trans7Msg_Mgr4initEv
+   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:_GLOBAL__sub_I_mpitmsg.cpp
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
    obj:*
 }
@@ -189,8 +189,8 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
    obj:*
    obj:*
@@ -207,8 +207,8 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
 }
 {
@@ -222,8 +222,8 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
    obj:*
 }
@@ -238,8 +238,8 @@
    fun:_ZN8SB_Trans7Msg_Mgr4initEv
    fun:_Z41__static_initialization_and_destruction_0ii
    fun:_GLOBAL__sub_I_mpitmsg.cpp
-   obj:MY_SQROOT/export/lib64/libsbms.so
-   obj:MY_SQROOT/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
+   obj:TRAF_HOME/export/lib64/libsbms.so
    obj:*
    obj:*
 }

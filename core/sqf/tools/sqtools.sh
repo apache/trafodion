@@ -51,7 +51,7 @@ function cmaph {
 	l_nl=$1
     fi
     setup_sqpdsh
-    eval '$SQPDSHA "head --quiet --lines $l_nl $MY_SQROOT/tmp/monitor.map.[0-9]*.*" 2>/dev/null | sort -k1'
+    eval '$SQPDSHA "head --quiet --lines $l_nl $TRAF_HOME/tmp/monitor.map.[0-9]*.*" 2>/dev/null | sort -k1'
 }
 
 # tail of the monitor.map.[0-9]*.* files in the cluster
@@ -61,19 +61,19 @@ function cmapt {
 	l_nl=$1
     fi
     setup_sqpdsh
-    eval '$SQPDSHA "tail --quiet --lines $l_nl $MY_SQROOT/tmp/monitor.map.[0-9]*.*" 2>/dev/null | sort -k1'
+    eval '$SQPDSHA "tail --quiet --lines $l_nl $TRAF_HOME/tmp/monitor.map.[0-9]*.*" 2>/dev/null | sort -k1'
 }
 
 #grep the monitor map file(s) on a node for the given string
 function ngrepmm {
     l_lookup=$*
-    grep -h "$l_lookup" $MY_SQROOT/tmp/monitor.map.[0-9]*.*
+    grep -h "$l_lookup" $TRAF_HOME/tmp/monitor.map.[0-9]*.*
 }
 
 #grep the monitor map file(s) on a node for the given string and then filters anything other than tdm_arkesp 
 function ngrepmms {
     l_lookup=$*
-    grep -h "$l_lookup" $MY_SQROOT/tmp/monitor.map.[0-9]*.* | grep tdm_arkesp
+    grep -h "$l_lookup" $TRAF_HOME/tmp/monitor.map.[0-9]*.* | grep tdm_arkesp
 }
 
 # lookup the monitor.map.[0-9]*.* files in the cluster
@@ -158,36 +158,36 @@ function cmappc {
 	l_nl=$1
     fi
     setup_sqpdsh
-    eval '$SQPDSHA "grep -h $l_nl $MY_SQROOT/tmp/monitor.map.[0-9]*.* | grep BEGIN | wc -l" 2>/dev/null | sort -nk2'
+    eval '$SQPDSHA "grep -h $l_nl $TRAF_HOME/tmp/monitor.map.[0-9]*.* | grep BEGIN | wc -l" 2>/dev/null | sort -nk2'
 }
 
 
 #### Begin MD5 related functions
 function sqmd5b {
     setup_sqpdsh
-    eval '$SQPDSHA "cd $MY_SQROOT/export/bin${SQ_MBTYPE}; md5sum $1 2>/dev/null" 2>/dev/null | cut -f2 -d: | sort -u'
+    eval '$SQPDSHA "cd $TRAF_HOME/export/bin${SQ_MBTYPE}; md5sum $1 2>/dev/null" 2>/dev/null | cut -f2 -d: | sort -u'
 }
 
 function sqmd5ba {
     setup_sqpdsh
-    eval '$SQPDSHA "cd $MY_SQROOT/export/bin${SQ_MBTYPE}; md5sum $1 2>/dev/null" 2>/dev/null | sort'
+    eval '$SQPDSHA "cd $TRAF_HOME/export/bin${SQ_MBTYPE}; md5sum $1 2>/dev/null" 2>/dev/null | sort'
 }
 
 function sqmd5l {
     setup_sqpdsh
-    eval '$SQPDSHA "cd $MY_SQROOT/export/lib${SQ_MBTYPE}; md5sum $1 2>/dev/null" 2>/dev/null | cut -f2 -d: | sort -u'
+    eval '$SQPDSHA "cd $TRAF_HOME/export/lib${SQ_MBTYPE}; md5sum $1 2>/dev/null" 2>/dev/null | cut -f2 -d: | sort -u'
 }
 
 function sqmd5la {
     setup_sqpdsh
-    eval '$SQPDSHA "cd $MY_SQROOT/export/lib${SQ_MBTYPE}; md5sum $1 2>/dev/null" 2>/dev/null | sort -u'
+    eval '$SQPDSHA "cd $TRAF_HOME/export/lib${SQ_MBTYPE}; md5sum $1 2>/dev/null" 2>/dev/null | sort -u'
 }
 
 #### End MD5 related functions
 
 function cmapc {
     setup_sqpdsh
-    eval '$SQPDSHA "grep $1 $MY_SQROOT/tmp/monitor.map* | grep $2 | wc -l" '
+    eval '$SQPDSHA "grep $1 $TRAF_HOME/tmp/monitor.map* | grep $2 | wc -l" '
 }
 
 function pdsh_counter {
@@ -331,7 +331,7 @@ function run_util {
 # check the startup log and sort the interesting even chronologically
 function sqchksl {
     setup_sqpdsh
-    eval '$SQPDSHA "cd $MY_SQROOT/sql/scripts; grep Executing startup.log 2>/dev/null" 2>/dev/null | sort -k4 -k5'
+    eval '$SQPDSHA "cd $TRAF_HOME/sql/scripts; grep Executing startup.log 2>/dev/null" 2>/dev/null | sort -k4 -k5'
 }
 
 function sqchkopt {
@@ -375,7 +375,7 @@ function sqsecheck {
 }
 
 function sqchkmpi {
-    pdsh $MY_NODES "cd $MY_SQROOT/logs; egrep -i '(mpi bug|ibv_create)' *.log" 2>/dev/null
+    pdsh $MY_NODES "cd $TRAF_HOME/logs; egrep -i '(mpi bug|ibv_create)' *.log" 2>/dev/null
 }
 
 #### Log Collection functions
@@ -434,27 +434,27 @@ function sqsavelogs {
     
     sqcollectmonmemlog 2>/dev/null
 
-    cp -p $MY_SQROOT/logs/master_exec*.log ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/mon.*.log ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/monmem.*.log ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/pstart*.log ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/smstats.*.log ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/sqmo*.log ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/trafodion.dtm.log* ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/tm*.log ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/logs/wdt.*.log ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/logs/master_exec*.log ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/logs/mon.*.log ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/logs/monmem.*.log ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/logs/pstart*.log ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/logs/smstats.*.log ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/logs/sqmo*.log ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/logs/trafodion.dtm.log* ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/logs/tm*.log ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/logs/wdt.*.log ${lv_copy_to_dir}
 
-    cp -p $MY_SQROOT/tmp/monitor.map.[0-9]*.* ${lv_copy_to_dir}
-    cp -p $MY_SQROOT/tmp/monitor.trace* ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/tmp/monitor.map.[0-9]*.* ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/tmp/monitor.trace* ${lv_copy_to_dir}
 
     lv_stdout_dir_name=${lv_copy_to_dir}/stdout_${lv_node}
     mkdir -p ${lv_stdout_dir_name}
-    cp -p $MY_SQROOT/sql/scripts/startup.log ${lv_copy_to_dir}/startup.${lv_node}.log
-    cp -p $MY_SQROOT/sql/scripts/stdout_* ${lv_stdout_dir_name}
-    cp -p $MY_SQROOT/sql/scripts/hs_err_pid*.log ${lv_stdout_dir_name}
+    cp -p $TRAF_HOME/sql/scripts/startup.log ${lv_copy_to_dir}/startup.${lv_node}.log
+    cp -p $TRAF_HOME/sql/scripts/stdout_* ${lv_stdout_dir_name}
+    cp -p $TRAF_HOME/sql/scripts/hs_err_pid*.log ${lv_stdout_dir_name}
 
     lv_config_dir_name=${lv_copy_to_dir}/sqconfig_db
-    cp -p $MY_SQROOT/sql/scripts/sqconfig.db ${lv_config_dir_name}/${lv_node}_sqconfig.db
+    cp -p $TRAF_HOME/sql/scripts/sqconfig.db ${lv_config_dir_name}/${lv_node}_sqconfig.db
 
     sqsave_linux_info ${lv_linux_collection_dir}/linux
 
@@ -471,10 +471,10 @@ function sqsavelogs_compress {
     
     lv_node=`uname -n`
 
-    cd $MY_SQROOT
+    cd $TRAF_HOME
 
     mkdir -p ${lv_node_collection_dir_name}/logs/sqconfig_db
-    sqsavelogs ${MY_SQROOT}/${lv_node_collection_dir_name} ${lv_move_to_dir}
+    sqsavelogs ${TRAF_HOME}/${lv_node_collection_dir_name} ${lv_move_to_dir}
 
     lv_tar_file_name=${lv_node}_${lv_node_collection_dir_name}.tgz
     cd ${lv_node_collection_dir_name}
@@ -613,14 +613,14 @@ function sqcollectlogs {
     sqvers -u > sqvers_u.out 2>/dev/null
     sqid > sqid.out 2>/dev/null
 
-    cp -p $MY_SQROOT/sqenv.sh .
-    cp -p $MY_SQROOT/sqenvcom.sh .
-    cp -p $MY_SQROOT/etc/ms.env .
-    cp -p $MY_SQROOT/sql/scripts/gomon.cold .
-    cp -p $MY_SQROOT/sql/scripts/gomon.warm .
-    cp -p $MY_SQROOT/sql/scripts/sqconfig .
-    cp -p $MY_SQROOT/sql/scripts/mon.env . 2>/dev/null
-    cp -p $MY_SQROOT/sql/scripts/shell.env . 2>/dev/null
+    cp -p $TRAF_HOME/sqenv.sh .
+    cp -p $TRAF_HOME/sqenvcom.sh .
+    cp -p $TRAF_HOME/etc/ms.env .
+    cp -p $TRAF_HOME/sql/scripts/gomon.cold .
+    cp -p $TRAF_HOME/sql/scripts/gomon.warm .
+    cp -p $TRAF_HOME/sql/scripts/sqconfig .
+    cp -p $TRAF_HOME/sql/scripts/mon.env . 2>/dev/null
+    cp -p $TRAF_HOME/sql/scripts/shell.env . 2>/dev/null
     cd ..
 #   end configuration info
 
@@ -696,7 +696,7 @@ function sqcollectmonmemlog {
     if [ $monpid_x ]; then
       monpid=`printf "%d" 0x$monpid_x`
       nodename=`uname -n`
-      monmemlog $monpid nowait > $MY_SQROOT/logs/monmem.${nodename}.${monpid}.log
+      monmemlog $monpid nowait > $TRAF_HOME/logs/monmem.${nodename}.${monpid}.log
     fi
 }
 
@@ -978,7 +978,7 @@ export -f run_util
 function sq_gdb {
 
     export MY_CURRENT_DIR=$PWD
-    bash -c "cd $MY_SQROOT; . $MY_SQROOT/sqenv.sh; cd $MY_CURRENT_DIR ; sq_gdb_main $* ; "
+    bash -c "cd $TRAF_HOME; . $TRAF_HOME/sqenv.sh; cd $MY_CURRENT_DIR ; sq_gdb_main $* ; "
     lv_retcode=$?
     unset MY_CURRENT_DIR
     return $lv_retcode
@@ -1000,19 +1000,19 @@ function tmpspace {
 
 # functions to cd to a particular directory
 function cds {
-    cd $MY_SQROOT/sql/scripts
+    cd $TRAF_HOME/sql/scripts
 }
 function cdw {
-    cd $MY_SQROOT
+    cd $TRAF_HOME
 }
 function cdl {
-    cd $MY_SQROOT/logs
+    cd $TRAF_HOME/logs
 }
 function cdb {
-    cd $MY_SQROOT/export/bin${SQ_MBTYPE}
+    cd $TRAF_HOME/export/bin${SQ_MBTYPE}
 }
 function cdi {
-    cd $MY_SQROOT/export/lib${SQ_MBTYPE}
+    cd $TRAF_HOME/export/lib${SQ_MBTYPE}
 }
 function cdt {
     cd $MPI_TMPDIR
@@ -1021,7 +1021,7 @@ function cdc {
     cd /local/cores/$UID
 }
 function cdj {
-    cd $MY_SQROOT/../sql/src/main/java/org/trafodion/sql
+    cd $TRAF_HOME/../sql/src/main/java/org/trafodion/sql
 }
 # ls variants
 function lst {
@@ -1035,12 +1035,12 @@ ls -al $*
 function run_sb_regr {
 
     pushd . 
-    mkdir -p $MY_SQROOT/rundir
-    cd $MY_SQROOT/sql
-    ln -sf $MY_SQROOT/../sql/regress regress
-    ln -sf $MY_SQROOT/../sql/sqludr sqludr
+    mkdir -p $TRAF_HOME/rundir
+    cd $TRAF_HOME/sql
+    ln -sf $TRAF_HOME/../sql/regress regress
+    ln -sf $TRAF_HOME/../sql/sqludr sqludr
 
-    cd $MY_SQROOT/sql/regress/tools
+    cd $TRAF_HOME/sql/regress/tools
     . ./setuplnxenv
     
     cd $scriptsdir
@@ -1054,17 +1054,17 @@ function run_sb_regr {
 function run_sb_test {
 
     pushd . 
-    mkdir -p $MY_SQROOT/rundir
-    cd $MY_SQROOT/sql
-    ln -sf $MY_SQROOT/../sql/regress regress
-    ln -sf $MY_SQROOT/../sql/sqludr sqludr
+    mkdir -p $TRAF_HOME/rundir
+    cd $TRAF_HOME/sql
+    ln -sf $TRAF_HOME/../sql/regress regress
+    ln -sf $TRAF_HOME/../sql/sqludr sqludr
 
-    cd $MY_SQROOT/sql/regress/tools
+    cd $TRAF_HOME/sql/regress/tools
     . ./setuplnxenv
     
     if [ -d $scriptsdir/$1 ]; then
 	cd $scriptsdir/$1
-	mkdir -p $MY_SQROOT/rundir/$1
+	mkdir -p $TRAF_HOME/rundir/$1
 	shift
 	../tools/runregr -sb $*  
     else
@@ -1076,14 +1076,14 @@ function run_sb_test {
 
 function check_sb_regr {
     pushd . > /dev/null
-    cd $MY_SQROOT/rundir
+    cd $TRAF_HOME/rundir
     find . -name runregr-sb.log | xargs grep FAIL
     popd > /dev/null
 }
 
 function status_sb_regr {
     pushd . > /dev/null
-    cd $MY_SQROOT/rundir
+    cd $TRAF_HOME/rundir
     find . -name runregr-sb.log | xargs tail -n 1 
     popd > /dev/null
 }

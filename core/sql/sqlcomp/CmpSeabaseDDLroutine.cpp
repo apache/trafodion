@@ -91,7 +91,7 @@
 // *                                                                           *
 // *  <isSystemObject>                bool                            In       *
 // *    if true, indicates the filename should be prepended with the value of  *
-// *  MY_SQROOT before validating existence.                                   *
+// *  TRAF_HOME before validating existence.                                   *
 // *                                                                            *
 // *****************************************************************************
 static int validateLibraryFileExists(
@@ -104,7 +104,7 @@ static int validateLibraryFileExists(
   
   if (isSystemObject) {
     completeLibraryFilename.insert(0,'/');
-    completeLibraryFilename.insert(0,getenv("MY_SQROOT"));
+    completeLibraryFilename.insert(0,getenv("TRAF_HOME"));
   }
   else
     if (CmpCommon::getDefault(CAT_LIBRARY_PATH_RELATIVE) == DF_ON)
@@ -1590,6 +1590,12 @@ short CmpSeabaseDDL::validateRoutine(ExeCliInterface *cliInterface,
 
 short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
 {
+  if (!ComUser::isRootUserID())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return -1;
+    }
+
   Lng32 cliRC = 0;
   
   if ((CmpCommon::context()->isUninitializedSeabase()) &&
@@ -1599,7 +1605,7 @@ short CmpSeabaseDDL::createSeabaseLibmgr(ExeCliInterface * cliInterface)
       return -1;
     }
 
-  NAString jarLocation(getenv("MY_SQROOT"));
+  NAString jarLocation(getenv("TRAF_HOME"));
   jarLocation += "/export/lib/lib_mgmt.jar";
   char queryBuf[strlen(getSystemCatalog()) + strlen(SEABASE_LIBMGR_SCHEMA) +
                 strlen(SEABASE_LIBMGR_LIBRARY) + strlen(DB__LIBMGRROLE) + 
@@ -1707,6 +1713,12 @@ short CmpSeabaseDDL::grantLibmgrPrivs(ExeCliInterface *cliInterface)
 
 short CmpSeabaseDDL::upgradeSeabaseLibmgr(ExeCliInterface * cliInterface)
 {
+  if (!ComUser::isRootUserID())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return -1;
+    }
+
   Lng32 cliRC = 0;
 
   cliRC = existsInSeabaseMDTable(cliInterface,
@@ -1730,6 +1742,12 @@ short CmpSeabaseDDL::upgradeSeabaseLibmgr(ExeCliInterface * cliInterface)
 
 short CmpSeabaseDDL::dropSeabaseLibmgr(ExeCliInterface *cliInterface)
 {
+    if (!ComUser::isRootUserID())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return -1;
+    }
+
   Lng32 cliRC = 0;
 
   char queryBuf[strlen(getSystemCatalog()) + strlen(SEABASE_LIBMGR_SCHEMA) + 100];

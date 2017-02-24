@@ -1093,6 +1093,78 @@ public:
   // ---------------------------------------------------------------------
 };
 
+class SQLEXP_LIB_FUNC ExFunctionAESEncrypt : public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionAESEncrypt(OperatorTypeEnum oper_type,
+                                  Attributes ** attr,
+                                  Space * space,
+                                  int args_num,
+                                  Int32 aes_mode);
+  NA_EIDPROC ExFunctionAESEncrypt();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_datap[], CollHeap*,
+                                           ComDiagsArea** = 0);
+  NA_EIDPROC long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // ---------------------------------------------------------------------
+private:
+  Int32 aes_mode;
+  Int32 args_num;
+};
+
+class SQLEXP_LIB_FUNC ExFunctionAESDecrypt : public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionAESDecrypt(OperatorTypeEnum oper_type,
+                                  Attributes ** attr,
+                                  Space *space,
+                                  int args_num,
+                                  Int32 aes_mode);
+
+  NA_EIDPROC ExFunctionAESDecrypt();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*,
+                                           ComDiagsArea ** = 0);
+
+  NA_EIDPROC long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // ---------------------------------------------------------------------
+private:
+  Int32 aes_mode;
+  Int32 args_num;
+};
+
 class SQLEXP_LIB_FUNC  ExFunctionTokenStr : public ex_function_clause {
 public:
   NA_EIDPROC ExFunctionTokenStr(OperatorTypeEnum oper_type,
@@ -3789,6 +3861,28 @@ private:
   char fillers_[64];
   // ---------------------------------------------------------------------
 };
+
+class SQLEXP_LIB_FUNC  ex_function_json_object_field_text : public ex_function_clause {
+public:
+  NA_EIDPROC ex_function_json_object_field_text(OperatorTypeEnum oper_type,
+			     Attributes ** attr,
+			     Space * space);
+  NA_EIDPROC ex_function_json_object_field_text();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // This clause handles all NULL processing in the eval() method.
+  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+
+private:
+  char fillers_[64];
+  // ---------------------------------------------------------------------
+};
+
 
 class SQLEXP_LIB_FUNC ExFunctionExtractColumns : public ex_function_clause
 {

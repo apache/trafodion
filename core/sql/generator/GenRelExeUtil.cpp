@@ -1758,6 +1758,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "ALL",    "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
     {  "ALL",    "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
     {  "ALL",    "PRIVILEGES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_ },
+    {  "ALL",    "PRIVILEGES","FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_ },
     {  "ALL",    "PROCEDURES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_ },
     {  "ALL",    "ROLES",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_ },
     {  "ALL",    "SCHEMAS",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
@@ -1788,6 +1789,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "USER",   "MVS",       "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVS_FOR_USER_ },
     {  "USER",   "MVGROUPS",  "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::MVGROUPS_FOR_USER_ },
     {  "USER",   "PRIVILEGES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_ },
+    {  "USER",   "PRIVILEGES","FOR",   "ROLE",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_ },
     {  "USER",   "PROCEDURES","FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_USER_ },
     {  "USER",   "ROLES",     "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_ },
     {  "USER",   "SCHEMAS",   "FOR",   "USER",     0,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_ },
@@ -1907,8 +1909,9 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
   CmpCommon::getDefault(HIVE_DEFAULT_SCHEMA, hiveDefSchName, FALSE);
   hiveDefSchName.toUpper();
   
-  if ((catName == hiveDefCatName) ||
-      (catName == HIVE_SYSTEM_CATALOG))
+  if (((catName == hiveDefCatName) ||
+       (catName == HIVE_SYSTEM_CATALOG)) &&
+      (queryType == ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_))
     {
       setHiveObjects(TRUE);
     }
@@ -1989,7 +1992,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 	    if (objectType_ == "LIBRARY")
         cn.setSpecialType(ExtendedQualName::LIBRARY_TABLE);
 	    
-      NATable *naTable = 	generator->getBindWA()->getNATable(cn);
+      NATable *naTable = generator->getBindWA()->getNATableInternal(cn);
       if ((! naTable) || (generator->getBindWA()->errStatus()))
       {
 	  CollIndex retIndex = NULL_COLL_INDEX;
@@ -2025,6 +2028,24 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 	    }
 	}
       
+      // if a hive table has an associated external table, get the name
+      // of the external table. Use that to look for views created on
+      // the hive table.
+      if (((catName == hiveDefCatName) ||
+           (catName == HIVE_SYSTEM_CATALOG)) &&
+          ((queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_) &&
+           (naTable && naTable->hasExternalTable())))
+        {
+          // Convert the native name to its Trafodion form
+          NAString tabName = ComConvertNativeNameToTrafName
+            (catName, schName, objName);
+          
+          ComObjectName externalName(tabName, COM_TABLE_NAME);
+          catName = externalName.getCatalogNamePartAsAnsiString();
+          schName = externalName.getSchemaNamePartAsAnsiString(TRUE);
+          objName = externalName.getObjectNamePartAsAnsiString(TRUE);
+        }
+
       if (objectType_ == "TABLE")
 	{
 	  if ((naTable->getViewFileName()) ||
@@ -4174,6 +4195,185 @@ if (handleInStringFormat_)
   //{
   generator->setTransactionFlag(0);
   //}
+  
+  return 0;
+}
+
+/////////////////////////////////////////////////////////
+//
+// ExeUtilLobUpdate::codeGen()
+//
+/////////////////////////////////////////////////////////
+short ExeUtilLobUpdate::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+#pragma nowarn(1506)   // warning elimination
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+#pragma warn(1506)  // warning elimination
+
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const Int32 work_atp = 1;
+  const Int32 exe_util_row_atp_index = 2;
+  const Int32 work_row_atp_index = 2;
+
+  ComTdb * child_tdb = NULL;
+  ExplainTuple *childExplainTuple = NULL;
+  if (child(0))
+    {
+      MapTable * childMapTable = generator->appendAtEnd();
+
+      // generate code for child tree
+      child(0)->codeGen(generator);
+      child_tdb = (ComTdb *)(generator->getGenObj());
+      childExplainTuple = generator->getExplainTuple();
+    }
+
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
+
+  char * handle = NULL;
+  Lng32 handleLen = 0;
+  if (handle_ && handle_->getOperatorType() == ITM_CONSTANT)
+    {
+      ConstValue * cv = (ConstValue*)handle_;
+      
+      NAString h = *(cv->getRawText());
+      handleLen = h.length();
+
+      handle = space->allocateAlignedSpace(handleLen + 1);
+      strcpy(handle, h.data());
+    }
+
+  
+
+  ex_expr * input_expr = 0;
+  ULng32 inputRowLen = 0;
+  if (handle_)
+    {
+      ValueIdList inputVIDList;
+      ItemExpr * inputExpr = new(generator->wHeap())
+        
+	Cast(handle_, 
+	     &handle_->getValueId().getType()); // Leave it in string format.
+ 
+      
+      inputExpr->bindNode(generator->getBindWA());
+      NAType &nat = (NAType&)inputExpr->getValueId().getType();
+      nat.setNullable(TRUE);
+      inputVIDList.insert(inputExpr->getValueId());
+      
+      expGen->
+	processValIdList(inputVIDList,
+			 ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+			 inputRowLen,
+			 work_atp,
+			 work_row_atp_index
+			 );
+      
+      expGen->
+	generateContiguousMoveExpr(inputVIDList,
+				   0, // don't add conv nodes
+				   work_atp,
+				   work_row_atp_index,
+				   ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+				   inputRowLen,
+				   &input_expr);
+    }
+
+  Lng32 lst = 0;
+
+
+  Lng32 hdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
+  const char* f = ActiveSchemaDB()->getDefaults().
+    getValue(LOB_HDFS_SERVER);
+  char * hdfsServer = space->allocateAlignedSpace(strlen(f) + 1);
+  strcpy(hdfsServer, f);
+  
+  ComTdbExeUtilLobUpdate * exe_util_lobupdate_tdb = new(space) 
+    ComTdbExeUtilLobUpdate
+    (
+     handle,
+     handleLen,
+     (fromType_ == FROM_BUFFER_ ? ComTdbExeUtilLobUpdate::FROM_BUFFER_ :
+       (fromType_ == FROM_STRING_ ? ComTdbExeUtilLobUpdate::FROM_STRING_ :
+	(fromType_ == FROM_EXTERNAL_ ? ComTdbExeUtilLobUpdate::FROM_EXTERNAL_ :
+	  ComTdbExeUtilLobUpdate::NOOP_))),
+     bufAddr_,
+     updateSize_,
+     lst,
+     hdfsServer,
+     hdfsPort,
+     input_expr,
+     inputRowLen,
+     workCriDesc,
+     work_row_atp_index,
+     givenDesc,
+     returnedDesc,
+     (queue_index)8,
+     (queue_index)128,
+#pragma nowarn(1506)   // warning elimination 
+     2,
+     32000);
+#pragma warn(1506)  // warning elimination 
+
+
+
+  if (updateAction_ == UpdateActionType::ERROR_IF_EXISTS_)
+    exe_util_lobupdate_tdb->setErrorIfExists(TRUE);   
+  else
+    exe_util_lobupdate_tdb->setErrorIfExists(FALSE);
+
+  if (updateAction_ == UpdateActionType::TRUNCATE_EXISTING_)
+    exe_util_lobupdate_tdb->setTruncate(TRUE);
+  else
+    exe_util_lobupdate_tdb->setTruncate(FALSE);
+  if (updateAction_ == UpdateActionType::REPLACE_)
+    exe_util_lobupdate_tdb->setReplace(TRUE);
+  else
+    exe_util_lobupdate_tdb->setReplace(FALSE);
+  if (updateAction_ == UpdateActionType::APPEND_)
+    exe_util_lobupdate_tdb->setAppend(TRUE);
+  else
+    exe_util_lobupdate_tdb->setAppend(FALSE);
+
+  generator->initTdbFields(exe_util_lobupdate_tdb);
+
+  if (child_tdb)
+    exe_util_lobupdate_tdb->setChildTdb(child_tdb);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_util_lobupdate_tdb, childExplainTuple, 0, generator));
+  }
+ 
+  exe_util_lobupdate_tdb->setTotalBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE));
+  exe_util_lobupdate_tdb->setLobMaxSize( CmpCommon::getDefaultNumeric(LOB_MAX_SIZE));
+  exe_util_lobupdate_tdb->setLobMaxChunkSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE));
+  exe_util_lobupdate_tdb->setLobGCLimit(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE));
+                                           
+                                        
+  generator->setCriDesc(givenDesc, Generator::DOWN);
+  generator->setCriDesc(returnedDesc, Generator::UP);
+  generator->setGenObj(this, exe_util_lobupdate_tdb);
+
+  // Set the transaction flag.
+  if (xnNeeded())
+    {
+       generator->setTransactionFlag(-1);
+    }
   
   return 0;
 }

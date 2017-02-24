@@ -209,9 +209,15 @@ public class TupleInfo extends TMUDRSerializableObject {
         // see also code in LmTypeIsString() in file ../generator/LmExpr.cpp
         if (origSQLType == TypeInfo.SQLTypeCode.NUMERIC ||
             origSQLType == TypeInfo.SQLTypeCode.NUMERIC_UNSIGNED ||
-            origSQLType == TypeInfo.SQLTypeCode.INTERVAL)
+            origSQLType == TypeInfo.SQLTypeCode.INTERVAL ||
+            origSQLType == TypeInfo.SQLTypeCode.BOOLEAN)
             {
-                if (t.getByteLength() == 2)
+                if (t.getByteLength() == 1)
+                    if (origSQLType == TypeInfo.SQLTypeCode.NUMERIC_UNSIGNED)
+                        tempSQLType = TypeInfo.SQLTypeCode.TINYINT_UNSIGNED;
+                    else
+                        tempSQLType = TypeInfo.SQLTypeCode.TINYINT;
+                else if (t.getByteLength() == 2)
                     if (origSQLType == TypeInfo.SQLTypeCode.NUMERIC_UNSIGNED)
                         tempSQLType = TypeInfo.SQLTypeCode.SMALLINT_UNSIGNED;
                     else
@@ -228,6 +234,10 @@ public class TupleInfo extends TMUDRSerializableObject {
         
         switch (tempSQLType)
             {
+            case TINYINT:
+                result = row_.get(t.getDataOffset()) ; 
+                break;
+                
             case SMALLINT:
                 result = row_.getShort(t.getDataOffset()) ; 
                 break;
@@ -240,12 +250,22 @@ public class TupleInfo extends TMUDRSerializableObject {
                 result = row_.getLong(t.getDataOffset()) ; 
                 break;
                 
+            case TINYINT_UNSIGNED:
+                result = row_.get(t.getDataOffset()) ;
+                if (result < 0)
+                    result = result + 256;
+                break;
+                
             case SMALLINT_UNSIGNED:
-                result = row_.getShort(t.getDataOffset()) ;  // need to fix
+                result = row_.getShort(t.getDataOffset()) ;
+                if (result < 0)
+                    result = result + 65536;
                 break;
                 
             case INT_UNSIGNED:
-                result = row_.getInt(t.getDataOffset()) ; // need to fix 
+                result = row_.getInt(t.getDataOffset()) ;
+                if (result < 0)
+                    result = result + 4294967296L;
                 break;
                 
             case DECIMAL_LSE:
@@ -484,6 +504,8 @@ public class TupleInfo extends TMUDRSerializableObject {
         case SMALLINT_UNSIGNED:
         case INT_UNSIGNED:
         case NUMERIC_UNSIGNED:
+        case TINYINT:
+        case TINYINT_UNSIGNED:
         {
             long num = getLong(colNum);
             if (wasNull_)
@@ -609,6 +631,13 @@ public class TupleInfo extends TMUDRSerializableObject {
                                    "Invalid interval code in TupleInfo::getString()");
             }
       }
+      case BOOLEAN:
+      {
+          if (getBoolean(colNum))
+              return "1";
+          else
+              return "0";
+      }
 
         default:
             throw new UDRException(
@@ -637,6 +666,106 @@ public class TupleInfo extends TMUDRSerializableObject {
     */
     public String getString(String colName) throws UDRException {
         return getString(getColNum(colName));
+    }
+
+    /**
+     *  Get a boolean value of a column or parameter
+     *
+     *  <p> This method is modeled after the JDBC interface.
+     *  It can be used on boolean, numeric and character columns.
+     *  Numeric columns need to have a value of 0 (false) or 1 (true),
+     *  character columns need to have a value of "0" (false) or "1" (true).
+     *
+     *  <p> Use this method at runtime. It can also be used for
+     *  actual parameters that are available at compile time.
+     *
+     *  @param colNum Column number.
+     *  @return Boolean value.
+     *          If the value was a NULL value, false
+     *          is returned. The wasNull() method can be used to
+     *          determine whether a NULL value was returned.
+     *  @throws UDRException
+     */
+    public boolean getBoolean(int colNum) throws UDRException {
+        if (!row_.hasArray())
+            throw new UDRException(
+                38900,
+                "Row not available for getBoolean() or related method");
+        TypeInfo t = getType(colNum);
+        if (!t.isAvailable())
+            throw new UDRException(
+                38900,
+                "Offset for column not set, getBoolean() or related method not available");
+        
+        if (t.getIsNullable() &&
+            row_.getShort(t.getIndOffset()) != 0)
+            {
+                wasNull_ = true;
+                return false;
+            }
+
+        wasNull_ = false;
+        switch (t.getSQLTypeClass())
+            {
+            case CHARACTER_TYPE:
+                {
+                    String sval = getString(colNum).trim();
+
+                    if (sval.compareTo("0") == 0)
+                        return false;
+                    else if (sval.compareTo("1") == 0)
+                        return true;
+                    else
+                        throw new UDRException(
+                            38900,
+                            "getBoolean() encountered string value %s, booleans must be 0 or 1",
+                            sval);
+                }
+
+            case NUMERIC_TYPE:
+            case BOOLEAN_TYPE:
+                {
+                    long lval = getLong(colNum);
+
+                    if (lval <0 || lval > 1)
+                        throw new UDRException(
+                            38900,
+                            "getBoolean() encountered value %ld, booleans must be 0 or 1",
+                            lval);
+                    return (lval != 0);
+                }
+
+            default:
+                {
+                    throw new UDRException(
+                        38900,
+                        "getBoolean() not supported for type %s",
+                        t.toString(false));
+                }
+            }
+    }
+
+    /**
+     *  Get a boolean value of a column or parameter identified by name.
+     *
+     *  <p> This method is modeled after the JDBC interface.
+     *  It can be used on boolean, numeric and character columns.
+     *  Numeric columns need to have a value of 0 (false) or 1 (true),
+     *  character columns need to have a value of "0" (false) or "1" (true).
+     *
+     *  <p> Use this method at runtime. It cannot be used for
+     *  actual parameters that are available at compile time, use
+     *  getString(int colNum) instead, since actual parameters are not named.
+     *
+     *  @param colName Name of an existing column.
+     *  @return Boolean value.
+     *          If the value was a NULL value, false
+     *          is returned. The wasNull() method can be used to
+     *          determine whether a NULL value was returned.
+     *  @throws UDRException
+     */
+    public boolean getBoolean(String colName) throws UDRException {
+        return getBoolean(getColNum(colName));
     }
 
     /**
@@ -1042,7 +1171,12 @@ public class TupleInfo extends TMUDRSerializableObject {
             tempSQLType == TypeInfo.SQLTypeCode.NUMERIC_UNSIGNED ||
             tempSQLType == TypeInfo.SQLTypeCode.INTERVAL)
             {
-                if (t.getByteLength() == 2)
+                if (t.getByteLength() == 1)
+                    if (tempSQLType == TypeInfo.SQLTypeCode.NUMERIC_UNSIGNED)
+                        tempSQLType = TypeInfo.SQLTypeCode.TINYINT_UNSIGNED;
+                    else
+                        tempSQLType = TypeInfo.SQLTypeCode.TINYINT;
+                else if (t.getByteLength() == 2)
                     if (tempSQLType == TypeInfo.SQLTypeCode.NUMERIC_UNSIGNED)
                         tempSQLType = TypeInfo.SQLTypeCode.SMALLINT_UNSIGNED;
                     else
@@ -1059,11 +1193,28 @@ public class TupleInfo extends TMUDRSerializableObject {
         
         switch (tempSQLType)
         {
+        case BOOLEAN:
+            if (val != 0 && val != 1)
+                throw new UDRException(
+                                       38900,
+                                       "Overflow/Underflow when assigning %d to BOOLEAN type",
+                                       val);
+            // fall through to next case
+        case TINYINT:
+            if (val > Byte.MAX_VALUE || val < Byte.MIN_VALUE)
+                throw new UDRException(
+                                       38900,
+                                       "Overflow/Underflow when assigning %d to TINYINT type",
+                                       val);
+            row_.put(t.getDataOffset(), (byte) val);
+            break;
+            
         case SMALLINT:
             if (val > Short.MAX_VALUE || val < Short.MIN_VALUE)
                 throw new UDRException(
                                        38900,
-                                       "Overflow/Underflow when assigining to SMALLINT type");
+                                       "Overflow/Underflow when assigning %d to SMALLINT type",
+                                       val);
             row_.putShort(t.getDataOffset(), (short) val);
             break;
             
@@ -1071,7 +1222,8 @@ public class TupleInfo extends TMUDRSerializableObject {
             if (val > Integer.MAX_VALUE || val < Integer.MIN_VALUE)
                 throw new UDRException(
                                        38900,
-                                       "Overflow/Underflow when assigining to INT type");
+                                       "Overflow/Underflow when assigining %d to INT type",
+                                       val);
             row_.putInt(t.getDataOffset(), (int) val);
             break;
 
@@ -1079,19 +1231,56 @@ public class TupleInfo extends TMUDRSerializableObject {
             row_.putLong(t.getDataOffset(), val);
             break;
 
+        case TINYINT_UNSIGNED:
+            if (val < 0 || val > Byte.MAX_VALUE)
+                if (val < 0 || val > (2 * Byte.MAX_VALUE + 1))
+                    throw new UDRException(
+                        38900,
+                        "Overflow/underflow when assigning %d to TINYINT UNSIGNED type",
+                        val);
+                else
+                    // Use the signed value that has the same bit
+                    // pattern as the desired unsigned value, since
+                    // Java doesn't support "unsigned" basic types.
+                    // Example: 255
+                    //   val = 255 + (-128) + (-128) = -1
+                    // that makes the bit pattern 0xFF
+                    val = val + Byte.MIN_VALUE + Byte.MIN_VALUE;
+
+            row_.put(t.getDataOffset(), (byte) val);
+            break;
+
         case SMALLINT_UNSIGNED:
             if (val < 0 || val > Short.MAX_VALUE)
-                throw new UDRException(
-                                       38900,
-                                       "Overflow/underflow when assigning to SMALLINT UNSIGNED type");
+                if (val < 0 || val > (2 * Short.MAX_VALUE + 1))
+                    throw new UDRException(
+                        38900,
+                        "Overflow/underflow when assigning %d to SMALLINT UNSIGNED type",
+                        val);
+                else
+                    // use the signed value that has the same bit
+                    // pattern as the desired unsigned value, since
+                    // Java doesn't support "unsigned" basic types
+                    // see tinyint_unsigned above for an example
+                    val = val  + Short.MIN_VALUE + Short.MIN_VALUE;
+
             row_.putShort(t.getDataOffset(), (short) val);
             break;
 
         case INT_UNSIGNED:
             if (val < 0 || val > Integer.MAX_VALUE)
-                throw new UDRException(
-                                       38900,
-                                       "Overflow/underflow when assigning to an INT UNSIGNED type");
+                if (val < 0 || val > (2 * Integer.MAX_VALUE + 1))
+                    throw new UDRException(
+                        38900,
+                        "Overflow/underflow when assigning %d to an INT UNSIGNED type",
+                        val);
+                else
+                    // use the signed value that has the same bit
+                    // pattern as the desired unsigned value, since
+                    // Java doesn't support "unsigned" basic types
+                    // see tinyint_unsigned above for an example
+                    val = val + Integer.MIN_VALUE + Integer.MIN_VALUE;
+ 
             row_.putInt(t.getDataOffset(), (int) val);
             break;
 
@@ -1316,11 +1505,13 @@ public class TupleInfo extends TMUDRSerializableObject {
             setDouble(colNum, dval);
             break ;
                         
+        case TINYINT:
         case SMALLINT:
         case INT:
         case LARGEINT:
         case NUMERIC:
         case DECIMAL_LSE:
+        case TINYINT_UNSIGNED:
         case SMALLINT_UNSIGNED:
         case INT_UNSIGNED:
         case NUMERIC_UNSIGNED:
@@ -1558,6 +1749,24 @@ public class TupleInfo extends TMUDRSerializableObject {
             setLong(colNum, result);
         }
         break;
+
+    case BOOLEAN:
+        {
+            String trimmedval = val.trim(); // remove leading and trailing blanks
+
+            if (trimmedval.compareTo("0") == 0 ||
+                trimmedval.compareTo("false") == 0 ||
+                trimmedval.compareTo("FALSE") == 0)
+                setLong(colNum, 0);
+            else if (trimmedval.compareTo("1") == 0 ||
+                     trimmedval.compareTo("true") == 0 ||
+                     trimmedval.compareTo("TRUE") == 0)
+                setLong(colNum, 1);
+            else throw new UDRException(
+                     38900,
+                     "Invalid value %s encountered in setString() for a boolean data type",
+                     trimmedval);
+        }
         
     case UNDEFINED_SQL_TYPE:
         default:
@@ -2187,17 +2396,17 @@ public class TupleInfo extends TMUDRSerializableObject {
     } 
     
     // UDR writers can ignore these methods
-    public TupleInfo(TMUDRObjectType objType, short version) {
+    TupleInfo(TMUDRObjectType objType, short version) {
         super(objType, version);
         recordLength_ = -1;
         wasNull_ = false;
         columns_ = new Vector<ColumnInfo>();
     }
     
-    public static short getCurrentVersion() { return 1; }
+    static short getCurrentVersion() { return 1; }
 
     @Override
-    public int serializedLength() throws UDRException {
+    int serializedLength() throws UDRException {
       int result = super.serializedLength() +
         2 * serializedLengthOfInt();
 
@@ -2208,7 +2417,7 @@ public class TupleInfo extends TMUDRSerializableObject {
     }
 
     @Override
-    public int serialize(ByteBuffer outputBuffer) throws UDRException{
+    int serialize(ByteBuffer outputBuffer) throws UDRException{
       int origPos = outputBuffer.position();
 
       super.serialize(outputBuffer);
@@ -2231,7 +2440,7 @@ public class TupleInfo extends TMUDRSerializableObject {
     }
 
     @Override
-    public int deserialize(ByteBuffer inputBuffer) throws UDRException{
+    int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();
 
@@ -2262,14 +2471,15 @@ public class TupleInfo extends TMUDRSerializableObject {
       return bytesDeserialized;
     }
     
-    public ByteBuffer getRow(){
+    ByteBuffer getRow(){
         return row_ ;
     }
-    public int getRecordLength() {
+
+    int getRecordLength() {
         return recordLength_;
     }
 
-    public void setRow(byte[] rowByteArr) throws UDRException {
+    void setRow(byte[] rowByteArr) throws UDRException {
         row_ = ByteBuffer.wrap(rowByteArr);
         row_.order(ByteOrder.LITTLE_ENDIAN);
 
@@ -2282,7 +2492,7 @@ public class TupleInfo extends TMUDRSerializableObject {
                                    rowByteArr.length);
     }
 
-    public ByteBuffer encode(TypeInfo t, String val) throws UDRException
+    ByteBuffer encode(TypeInfo t, String val) throws UDRException
     {
         CharsetEncoder encoder;
         ByteBuffer result;
@@ -2339,7 +2549,7 @@ public class TupleInfo extends TMUDRSerializableObject {
         return result;
     }
 
-    public String decode(TypeInfo t, byte[] buf) throws UDRException
+    String decode(TypeInfo t, byte[] buf) throws UDRException
     {
         CharsetDecoder decoder;
         String result;

@@ -242,7 +242,7 @@ public:
   void   setHiveScanMode(UInt32 v ) { hiveScanMode_ = v; }
   UInt32 getHiveScanMode() { return hiveScanMode_; }
 
-  Queue* getHdfsFileInfoList() {return hdfsFileInfoList_;}
+  Queue* getHdfsFileInfoList() const {return hdfsFileInfoList_;}
   Queue* getHdfsFileRangeBeginList() {return hdfsFileRangeBeginList_;}
   Queue* getHdfsFileRangeNumList() {return hdfsFileRangeNumList_;}
 

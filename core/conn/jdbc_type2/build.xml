@@ -29,7 +29,7 @@
     </exec>   
     <property file="buildId"/>
     <property name="vproc.str" value="Traf_JDBC_Type2_Build_${bldId}"/>
-    <property name="my_sqroot" value="../../sqf"/>
+    <property name="traf_home" value="../../sqf"/>
     <property name="src.lic" value="${base.dir}/../../../licenses"/>
     <property name="src.notice" value="${base.dir}/../../.."/>
 
@@ -52,7 +52,7 @@
 
     <target name="dist" depends="native">
        <mkdir dir="dist"/>
-       <property file="${my_sqroot}/export/include/SCMBuildMan.mf"/>
+       <property file="${traf_home}/export/include/SCMBuildMan.mf"/>
        <jar destfile="dist/jdbcT2.jar" compress="true">
            <include name="LICENSE" />
            <include name="NOTICE" />
@@ -68,7 +68,7 @@
               <attribute name="Implementation-Version-6" value="${Implementation-Version-6}"/>
            </manifest>
        </jar>
-      <copy todir="${my_sqroot}/export/lib" overwrite="yes" file="dist/jdbcT2.jar"/>
+      <copy todir="${traf_home}/export/lib" overwrite="yes" file="dist/jdbcT2.jar"/>
     </target>
 
     <target name="clean">
@@ -81,7 +81,7 @@
       <exec dir="." executable="/usr/bin/make">
             <arg line="clean"/>
       </exec>
-     <delete file="${my_sqroot}/export/lib/jdbcT2.jar"/>
+     <delete file="${traf_home}/export/lib/jdbcT2.jar"/>
      <delete file="buildId"/>
     </target>
 

@@ -19,7 +19,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-TMINC=$(MY_SQROOT)/src/tm
+TMINC=$(TRAF_HOME)/src/tm
 INC_JAVA=$(JAVA_HOME)/include
 INC_JAVALINUX=$(JAVA_HOME)/include/linux
 TMOS_TRACE=0
@@ -86,7 +86,7 @@ ifeq ($(SQ_USE_INTC),0)
 HPCWARN		= -Wno-unused-parameter
 HPCXXWARN	= -Wno-unused-parameter -Wno-non-virtual-dtor
 endif
-INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(TMINC) -I$(MY_SQROOT)/export/include -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS_INC) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(MY_SQROOT)/commonLogger  -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
+INCLUDES	= -I$(INCEXPDIR) -I$(INCMONDIR) -I$(TMINC) -I$(TRAF_HOME)/export/include -I$(MY_SPROOT)/export/include -I$(MY_SPROOT)/source/publications -I$(PROTOBUFS_INC) -I$(INC_JAVA) -I$(INC_JAVALINUX) -I$(TRAF_HOME)/commonLogger  -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
 
 LIBSSB         = -L$(JAVA_HOME)/jre/lib/i386/client -L$(JAVA_HOME)/jre/lib/amd64/server -L$(LIBEXPDIR) -ltmjni -ljvm
 
@@ -123,7 +123,7 @@ LIBSBTS		= $(LIBEXPDIR)/libsbts.$(LIBSUF)
 LIBSBTSX	= -L$(LIBEXPDIR) -lsbts
 
 # DTM TM objects
-TMOBJLOC	= $(MY_SQROOT)/src/tm/$(OUTDIR)
+TMOBJLOC	= $(TRAF_HOME)/src/tm/$(OUTDIR)
 # common rules
 .c.o:
 	$(CC) $(CDEPFLAGS) $(CFLAGS) $(INCLUDES) -c $<

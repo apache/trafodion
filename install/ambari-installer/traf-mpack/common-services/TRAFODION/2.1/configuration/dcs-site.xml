@@ -1,0 +1,271 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+#/**
+#* @@@ START COPYRIGHT @@@
+#*
+#* Licensed to the Apache Software Foundation (ASF) under one
+#* or more contributor license agreements.  See the NOTICE file
+#* distributed with this work for additional information
+#* regarding copyright ownership.  The ASF licenses this file
+#* to you under the Apache License, Version 2.0 (the
+#* "License"); you may not use this file except in compliance
+#* with the License.  You may obtain a copy of the License at
+#*
+#*   http://www.apache.org/licenses/LICENSE-2.0
+#*
+#* Unless required by applicable law or agreed to in writing,
+#* software distributed under the License is distributed on an
+#* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#* KIND, either express or implied.  See the License for the
+#* specific language governing permissions and limitations
+#* under the License.
+#*
+#* @@@ END COPYRIGHT @@@
+#*/
+-->
+ 
+<configuration>
+
+  <property>
+    <name>dcs.master.port</name>
+    <display-name>DCS Master Port</display-name>
+    <value>23400</value>
+    <description>
+        Default port for clients to connect to Trafodion.
+    </description>
+    <value-attributes>
+       <type>int</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>dcs.master.port.range</name>
+    <display-name>DCS Master Port Range</display-name>
+    <value>100</value>
+    <description>
+        Default number of connectivity ports.
+    </description>
+    <value-attributes>
+        <type>int</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>dcs.master.info.port</name>
+    <display-name>DCS Master Info Port</display-name>
+    <value>24400</value>
+    <description>The port for the DCS Master web UI.
+    Set to -1 if you do not want a User Interface instance run.
+    </description>
+    <value-attributes>
+       <type>int</type>
+    </value-attributes>
+  </property>
+
+  <property>
+    <name>dcs.master.floating.ip</name>
+    <display-name>DCS High Availability Enabled</display-name>
+    <value>false</value>
+    <description>Enable DCS Backup Servers, which provide failover for DCS Master (requires a floating IP address).</description>
+    <value-attributes>
+       <type>value-list</type>
+       <entries>
+           <entry>
+             <value>true</value>
+             <label>Enabled</label>
+           </entry>
+           <entry>
+             <value>false</value>
+             <label>Disabled</label>
+           </entry>
+       </entries>
+       <selection-cardinality>1</selection-cardinality>
+    </value-attributes>
+  </property>
+  <property>
+    <name>dcs.master.floating.ip.external.ip.address</name>
+    <display-name>DCS High Availability - Floating IP address</display-name>
+    <value></value>
+    <description>Provides failover to DCS Backup servers</description>
+    <value-attributes>
+       <type>string</type>
+       <empty-value-valid>true</empty-value-valid>
+    </value-attributes>
+    <depends-on>
+       <property>
+         <type>dcs-site</type>
+         <name>dcs.master.floating.ip</name>
+       </property>
+    </depends-on>
+  </property>
+
+  <property>
+    <name>dcs.dns.interface</name>
+    <display-name>Network interface for DNS</display-name>
+    <value>default</value>
+    <description>The server uses the local host name for reporting its IP address. If your machine
+        has multiple interfaces the server will use the interface that the primary
+        host name resolves to. If this is insufficient, you can set this property
+        to indicate the primary interface e.g., "eth1". This only works if your cluster 
+        configuration is consistent and every host has the same network interface
+        configuration.        
+    </description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>dcs.master.floating.ip.external.interface</name>
+    <display-name>Network interface for floating IP address</display-name>
+    <value>default</value>
+    <description>The server uses the local host name for reporting its IP address. If your machine
+        has multiple interfaces the server will use the interface that the primary
+        host name resolves to. If this is insufficient, you can set this property
+        to indicate the primary interface e.g., "eth1". This only works if your cluster 
+        configuration is consistent and every host has the same network interface
+        configuration.        
+    </description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+
+  <property>
+    <name>dcs.server.user.program.statistics.interval.time</name>
+    <display-name>Aggragte Statistics Interval</display-name>
+    <value>60</value>
+    <description>
+        Time in seconds on how often the aggregation data should be published.
+        Setting this value to '0' will revert to default.
+        Setting this value to '-1' will disable publishing aggregation data.
+    </description>
+    <value-attributes>
+      <type>int</type>
+      <minimum>-1</minimum>
+      <unit>Seconds</unit>
+    </value-attributes>
+  </property>
+  <property>
+    <name>dcs.server.user.program.statistics.limit.time</name>
+    <display-name>Query Statistics Threshold</display-name>
+    <value>60</value>
+    <description>
+        Time in seconds for how long the query has been executing before publishing
+        statistics to metric_query_table. To publish all queries set this value to
+        '0'. Setting this value to '-1' will disable publishing any data to
+        metric_query_table.
+        The default is 60.
+        Warning - Setting this value to 0 will cause query performance to degrade
+    </description>
+    <value-attributes>
+      <type>int</type>
+      <minimum>-1</minimum>
+      <unit>Seconds</unit>
+    </value-attributes>
+  </property>
+  <property>
+    <name>dcs.server.user.program.statistics.enabled</name>
+    <display-name>Query statistics publication</display-name>
+    <value>true</value>
+    <description>
+        If statistics publication is enabled.
+    </description>
+    <value-attributes>
+       <type>boolean</type>
+    </value-attributes>
+  </property>
+
+
+  <property>
+    <name>dcs.info.threads.max</name>
+    <display-name>Info threads maximum</display-name>
+    <value>100</value>
+    <description>
+        The maximum number of threads of the info server thread pool.
+        Threads in the pool are reused to process requests. This
+        controls the maximum number of requests processed concurrently.
+        It may help to control the memory used by the info server to
+        avoid out of memory issues. If the thread pool is full, incoming requests
+        will be queued up and wait for some free threads. 
+    </description>
+    <value-attributes>
+       <type>int</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>dcs.info.threads.min</name>
+    <display-name>Info threads minimum</display-name>
+    <value>2</value>
+    <description>
+        The minimum number of threads of the info server thread pool.
+        The thread pool always has at least these number of threads so
+        the info server is ready to serve incoming requests.
+    </description>
+    <value-attributes>
+       <type>int</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>dcs.server.handler.threads.max</name>
+    <display-name>Server threads maximum</display-name>
+    <value>10</value>
+    <description>
+        For every DcsServer specified in the conf/servers file the maximum number of server handler threads that will be created. There can never be more than this value for any given DcsServer.
+    </description>
+    <value-attributes>
+       <type>int</type>
+    </value-attributes>
+  </property>
+  
+  <property>
+    <name>zookeeper.session.timeout</name>
+    <display-name>ZooKeeper session timeout</display-name>
+    <value>180000</value>
+    <description>
+      The server passes this to the ZooKeeper quorum as suggested maximum time for a
+      session (This setting becomes ZooKeeper's 'maxSessionTimeout').  See
+      http://hadoop.apache.org/ZooKeeper/docs/current/ZooKeeperProgrammers.html#ch_zkSessions
+      "The client sends a requested timeout, the server responds with the
+      timeout that it can give the client. " In milliseconds.
+    </description>
+    <value-attributes>
+      <type>int</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>zookeeper.znode.parent</name>
+    <display-name>Root znode in ZooKeeper</display-name>
+    <value>/${user.name}</value>
+    <description>All of dcs's ZooKeeper
+      znodes that are configured with a relative path will go under this node.
+      By default, all of dcs's ZooKeeper file path are configured with a
+      relative path, so they will all go under this directory unless changed.
+    </description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>dcs.zookeeper.quorum</name>
+    <display-name>ZooKeeper quorum</display-name>
+    <value>{{zookeeper_quorum_hosts}}</value>
+    <description>Comma separated list of servers in the ZooKeeper Quorum.
+    For example, "host1.mydomain.com,host2.mydomain.com,host3.mydomain.com".
+    </description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+  
+  <property>
+    <name>dcs.zookeeper.property.clientPort</name>
+    <display-name>ZooKeeper client port</display-name>
+    <value>{{zookeeper_clientPort}}</value>
+    <description>
+    The port at which ZooKeeper is listening for clients.
+    </description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+
+</configuration>

@@ -76,7 +76,8 @@ awk '
    } else \
      print; \
 }
-'
+' |
+sed "s/====QUERY: .*/Query (see log file)/"
 fi
 
 if [[ "$SQ_BUILD_TYPE" = "debug" ]]; then
@@ -90,6 +91,7 @@ sed "/Table ID.*/d" |
 sed "/Hist ID.*/d" |
 sed "/Compile Time.*/d" |
 sed "/System load:.*/d" |
-sed "/CPU frequency:.*/d"
+sed "/CPU frequency:.*/d" |
+sed "s/====QUERY: .*/Query (see log file)/"
 fi
 

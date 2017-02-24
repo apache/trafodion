@@ -410,9 +410,9 @@ from
           mm_len
    from
      (select cast(description as varchar(3000 bytes) character set utf8) as description,
-             position(' min_max_hashj_cols: ' IN description) + 1 as mm_pos,
+             position(' min_max_cols: ' IN description) + 1 as mm_pos,
              position(' ' IN substring(description
-                                        from position(' min_max_hashj_cols: '
+                                        from position(' min_max_cols: '
                                                       IN description) + 21)) + 19 mm_len
       from table(explain(null,'S'))
      ) X

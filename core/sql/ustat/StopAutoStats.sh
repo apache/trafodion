@@ -47,7 +47,7 @@ if [ `uname` != "Linux" ]; then
    autoloc_prefix=/E/${MstrSeg}
 
 else
-   autoloc=$MY_SQROOT/export/lib/mx_ustat
+   autoloc=$TRAF_HOME/export/lib/mx_ustat
    alias print=echo
    autoloc_prefix=""
 fi

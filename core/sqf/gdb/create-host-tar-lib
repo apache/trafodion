@@ -50,9 +50,9 @@ if (!$res) {
 	exit(1);
 }
 
-# get MY_SQROOT/who/host
+# get TRAF_HOME/who/host
 my $sq_pdsh = defined $ENV{'SQ_PDSH'} ? $ENV{'SQ_PDSH'} : '';
-my $my_sqroot = defined $ENV{'MY_SQROOT'} ? $ENV{'MY_SQROOT'} : '';
+my $traf_home = defined $ENV{'TRAF_HOME'} ? $ENV{'TRAF_HOME'} : '';
 my $sq_mbtype = defined $ENV{'SQ_MBTYPE'} ? $ENV{'SQ_MBTYPE'} : '';
 my $host;
 gethost();
@@ -63,7 +63,7 @@ if ($verbose) {
 my $w = `whoami`;
 $w =~ s/\s+$//;
 
-print "MY_SQROOT=$my_sqroot\n";
+print "TRAF_HOME=$traf_home\n";
 print "who\@host=$w\@$host\n";
 
 # deal with elfs
@@ -91,7 +91,7 @@ sub add_well_known_libs {
 
 sub find_elfs ($) {
 	my ($dir) = @_;
-	my $chdir = "$my_sqroot/$dir";
+	my $chdir = "$traf_home/$dir";
 	chdir($chdir) or die "can't chdir to $chdir $!";
 	my $ls = `ls`;
 	my @files = split(/\n/, $ls);
@@ -170,7 +170,7 @@ sub libdep ($) {
 				# forget ld-linux
 			} else {
 				if ($lib =~ /^.*.so.* => (.*) \(0x[0-9a-f][0-9a-f]*\)/) {
-					if ($1 =~ /$my_sqroot(\/\w)*/) {
+					if ($1 =~ /$traf_home(\/\w)*/) {
 						# forget SQ
 					} else {
 						$ok = 1;
@@ -225,13 +225,13 @@ sub lib_tar {
 		my $node = $lib_table{$lib_key};
 		$lib_list = "$lib_list $lib_key";
 	}
-	my $cmd = "tar -chvf $my_sqroot/zlibs-$host.tar $lib_list";
+	my $cmd = "tar -chvf $traf_home/zlibs-$host.tar $lib_list";
 	if ($verbose) {
 		printf "v: cmd:$cmd\n";
 	}
 	system "$cmd";
 	print "\n";
-	print "Created $my_sqroot/zlibs-$host.tar\n";
+	print "Created $traf_home/zlibs-$host.tar\n";
 }
 
 #

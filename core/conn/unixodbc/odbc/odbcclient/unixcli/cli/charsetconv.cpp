@@ -1029,7 +1029,7 @@ SQLRETURN ICUConverter::WCharToUTF8(UChar* wst, int wstlen, char *st, int stlen,
 
 SQLRETURN  ICUConverter::UTF8ToWChar(char *st, int stlen, UChar *wst, int wstlen, int *translen, char *error, DWORD dwFlags, int* reqLen)
 {
-	short len;
+	int len;
 	SQLRETURN rc = SQL_SUCCESS;
 	DWORD lastError;
 	error[0] ='\0';
@@ -1158,7 +1158,7 @@ SQLRETURN ICUConverter::WCharToISO88591(UChar* wst, int wstlen, char *st, int st
 
 SQLRETURN  ICUConverter::ISO88591ToWChar(char *st, int stlen, UChar *wst, int wstlen, int *translen, char *error, DWORD dwFlags, int* reqLen)
 {
-	short len;
+	int len;
 	SQLRETURN rc = SQL_SUCCESS;
 	DWORD lastError;
 	error[0] ='\0';

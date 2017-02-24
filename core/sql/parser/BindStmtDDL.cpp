@@ -1377,6 +1377,7 @@ StmtDDLCreateTable::bindNode(BindWA * pBindWA)
 
   if (getIsLikeOptionSpecified())
   {
+    origLikeSourceTableQualName_ = likeSourceTableCorrName_.getQualifiedNameObj();
     likeSourceTableCorrName_.getQualifiedNameObj().applyDefaultsValidate(pBindWA->getDefaultSchema());
     if (pBindWA->violateAccessDefaultSchemaOnly(likeSourceTableCorrName_.getQualifiedNameObj()))
       return this;
@@ -2113,6 +2114,9 @@ StmtDDLAlterTable::bindNode(BindWA * pBindWA)
 {
 
   ComASSERT(pBindWA);
+
+  // remember the original table name specified by user
+  origTableQualName_ = tableQualName_;
 
   //  tableQualName_.applyDefaults(pBindWA->getDefaultSchema());
   if (applyDefaultsAndValidateObject(pBindWA, &tableQualName_))

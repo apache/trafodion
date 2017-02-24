@@ -271,7 +271,7 @@ Lng32 ComRtGetModuleFileName(
   memset(sysModuleDirNameBuf, 0, bufSize);
   memset(userModuleDirNameBuf, 0, bufSize);
 
-  mySQROOT = getenv("MY_SQROOT");
+  mySQROOT = getenv("TRAF_HOME");
   if (mySQROOT != NULL && strlen(mySQROOT) <= bufSize-100) {
     strcpy(sysModuleDirNameBuf, mySQROOT);
     strcpy(userModuleDirNameBuf, mySQROOT);

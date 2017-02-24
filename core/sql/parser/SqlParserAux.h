@@ -785,6 +785,8 @@ public:
   {}
 
   TableType getType() { return type_; }
+  void setType(TableType t) { type_ = t; }
+
   NABoolean isVolatile()
    { return (type_ == TYPE_VOLATILE_TABLE ||
              type_ == TYPE_VOLATILE_TABLE_MODE_SPECIAL1 ||

@@ -115,14 +115,14 @@ end role_node_map
 #enc-2=n015,n016,n017,n018,n019,n020,n021,n022,n023,n024,n025,n026
 #end enclosure
 
-storage_loc $MY_SQROOT/sql/database
+storage_loc $TRAF_HOME/sql/database
 
 # Please note that if you have mirroring turned ON, you must specify
 # the mirror storage locations.  You can either specify a global
 # mirror location by uncommenting and changing the line below, or
 # you can configure mirror locations on a per volume basis.
 
-#storage_mir_loc $MY_SQROOT/sql/databasem
+#storage_mir_loc $TRAF_HOME/sql/databasem
 
 # Extents are for data audit volumes only, not $TLOG
 # Minimum is 1550

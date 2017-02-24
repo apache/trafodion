@@ -225,7 +225,7 @@ void CMonLog::writeAltLog(int eventType, posix_sqlog_severity_t severity, char *
 
     if ( useAltLog_ )
     {
-        rootDir = getenv("MY_SQROOT");
+        rootDir = getenv("TRAF_HOME");
         if (rootDir == NULL)
         {
             logFileDirPtr = NULL;
@@ -277,7 +277,7 @@ void CMonLog::writeSnmpAltLog(int eventType, const char *msg)
 
     if ( useAltLog_ )
     {
-        rootDir = getenv("MY_SQROOT");
+        rootDir = getenv("TRAF_HOME");
         if (rootDir == NULL)
         {
             logFileDirPtr = NULL;

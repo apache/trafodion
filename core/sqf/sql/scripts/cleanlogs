@@ -35,18 +35,18 @@ function usage() {
    echo "    all  --- Remove files from core, dcs and rest logs folder"
    echo "    dcs  --- Remove files from $DCS_INSTALL_DIR/logs folder"
    echo "    rest --- Remove files from $REST_INSTALL_DIR/logs folder"
-   echo "    core --- Remove log files residing in $MY_SQROOT/logs folder"
+   echo "    core --- Remove log files residing in $TRAF_HOME/logs folder"
 }
 
 function core_logs() {
  if [[ ! -z $L_PDSH ]]; then
-   $L_PDSH "rm -f ${MY_SQROOT}/logs/*.err"
-   $L_PDSH "rm -f ${MY_SQROOT}/logs/*.log"
-   $L_PDSH "rm -f ${MY_SQROOT}/logs/*log.[0-9]*"
-   $L_PDSH "rm -f ${MY_SQROOT}/sql/scripts/stdout_*"
+   $L_PDSH "rm -f ${TRAF_HOME}/logs/*.err"
+   $L_PDSH "rm -f ${TRAF_HOME}/logs/*.log"
+   $L_PDSH "rm -f ${TRAF_HOME}/logs/*log.[0-9]*"
+   $L_PDSH "rm -f ${TRAF_HOME}/sql/scripts/stdout_*"
  else
-   rm -f ${MY_SQROOT}/logs/*
-   rm -f ${MY_SQROOT}/sql/scripts/stdout_*
+   rm -f ${TRAF_HOME}/logs/*
+   rm -f ${TRAF_HOME}/sql/scripts/stdout_*
  fi
 }
 
@@ -78,7 +78,7 @@ function all_logs() {
    rest_logs
 }
 
-if [ ! -z ${MY_SQROOT} ]; then
+if [ ! -z ${TRAF_HOME} ]; then
    case "$1" in 
       core)
         core_logs

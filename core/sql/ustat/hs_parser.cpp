@@ -1188,11 +1188,24 @@ Lng32 AddExistingColumns()
         if (groupList)
           groupList->prev = NULL;
         group->next = NULL;
+
         // Set oldHistid to 0 so hist id will be reread during FlushStatistics.
         // Reading it in the same transaction that writes the histograms keeps
         // 2 or more concurrent Update Stats statements from coming up with the
         // same new hist id.
         group->oldHistid = 0;
+
+        // Look through the columns in this group for any oversized columns.
+        for (UInt32 i = 0; i < group->colSet.entries(); i++)
+          {
+            bool isOverSized = DFS2REC::isAnyCharacter(group->colSet[i].datatype) &&
+              (group->colSet[i].length > hs_globals->maxCharColumnLengthInBytes);
+            if (isOverSized)
+              {
+                hs_globals->hasOversizedColumns = TRUE;
+              }
+          }
+
         hs_globals->addGroup(group);
       }
     return retcode;

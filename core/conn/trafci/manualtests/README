@@ -39,7 +39,7 @@ statcheck.sql   - TRAFODION-1765 reported that if statistics are on for a
                   To check for TRAFODION-1709 do the following while running
                   this test:
 
-                  cd $MY_SQROOT/export/limited-support-tools/LSO 
+                  cd $TRAF_HOME/export/limited-support-tools/LSO 
                   ./offender -s active -t 300
 
                   For direct execute queries the EXECUTE_STATE should be

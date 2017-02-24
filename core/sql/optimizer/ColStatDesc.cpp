@@ -144,6 +144,29 @@ ColStatDesc::copy (const ColStatDesc& other)
 }
 
 void
+ColStatDesc::mapUpAndCopy (const ColStatDesc& other, ValueIdMap &map)
+{
+  copy(other);
+  map.mapValueIdUp(column_, other.column_);
+  map.mapValueIdUp(VEGcolumn_, other.VEGcolumn_);
+
+  // if the map only maps the column or VEGcolumn but not both, then
+  // map both to the same value id
+  if (column_ == other.column_ && VEGcolumn_ != other.VEGcolumn_)
+    column_ = VEGcolumn_;
+  if (VEGcolumn_ == other.VEGcolumn_ && column_ != other.column_)
+    VEGcolumn_ = column_;
+
+  // rewrite applied predicates
+  if (!appliedPreds_.isEmpty() &&
+      (column_ != other.column_ || VEGcolumn_ != other.VEGcolumn_))
+    {
+      appliedPreds_.clear();
+      map.rewriteValueIdSetUp(appliedPreds_, other.appliedPreds_);
+    }
+}
+
+void
 ColStatDesc::deallocate()
 {
   colStats_ = NULL;
@@ -2059,6 +2082,41 @@ ColStatDescList::insertDeepCopyAt (const CollIndex entry,
   ALLOCATE_COL_STAT_DESC_AND_SET_IT_UP( *source );
   insertAt( entry, tmpColStatDescPtr );
 } // insertDeepCopyAt
+
+void
+ColStatDescList::makeMappedDeepCopy (const ColStatDescList & source,
+                                     ValueIdMap &map,
+                                     NABoolean includeUnmappedColumns)
+{
+  // similar to makeDeepCopy, but this method maps all the ValueIds in
+  // the source, using the provided map, in the "up" direction
+  for ( CollIndex i = 0; i < source.entries(); i++ )
+    {
+      ValueId topVid;
+      ValueId bottomVid(source[i]->getVEGColumn());
+
+      map.mapValueIdUp(topVid, bottomVid);
+
+      if (includeUnmappedColumns || topVid != bottomVid)
+        {
+          ColStatDescSharedPtr tmpColStatDescPtr(
+               new (HISTHEAP) ColStatDesc(), HISTHEAP);
+          tmpColStatDescPtr->mapUpAndCopy(*source[i], map);
+          ColStatsSharedPtr tmpColStatsPtr = tmpColStatDescPtr->getColStatsToModify();
+          tmpColStatsPtr->copyAndScaleHistogram(1.0);
+          tmpColStatsPtr->setShapeChanged(tmpColStatsPtr->isShapeChanged()); 
+
+          insert(tmpColStatDescPtr);
+        }
+    }
+
+  // map the multi-column UECs
+  MultiColumnUecList * mappedMultiColUECs = new (CmpCommon::statementHeap())
+      MultiColumnUecList();
+
+  mappedMultiColUECs->insertMappedList(source.getUecList(), map);
+  setUecList(mappedMultiColUECs);
+} // makeMappedDeepCopy
 
 void
 ColStatDescList::removeDeepCopyAt (const CollIndex entry)
@@ -9047,6 +9105,44 @@ MultiColumnUecList::insertList (const MultiColumnUecList * other)
 
     iter.getNext( keyEntry, uecEntry );
   }
+}
+
+// -----------------------------------------------------------------------
+// MultiColumnUecList::insertMappedList
+//
+// inserts all entries from OTHER into THIS, after mapping the ValueIds
+// in the list, using MAP. Note that we do the mapping in the "up"
+// direction.
+// -----------------------------------------------------------------------
+void
+MultiColumnUecList::insertMappedList(const MultiColumnUecList *other,
+                                     const ValueIdMap &map)
+{
+  if ( other == NULL ) return;
+  if ( other->entries() == 0 ) return;
+
+  ValueIdSet * keyEntry = NULL;
+  CostScalar * uecEntry = NULL;
+
+  MultiColumnUecListIterator iter( *other );
+
+  iter.getNext( keyEntry, uecEntry );
+
+  while ( keyEntry != NULL && uecEntry != NULL )
+    {
+      ValueIdSet *mappedSet = new(HISTHEAP) ValueIdSet;
+
+      map.mapValueIdSetUp(*mappedSet, *keyEntry);
+      // Todo: CSE: This is unlikely to work, since the stats will be
+      // expressed in BaseColumns, while the map contains VEGRefs.
+      // Uncomment the assert below and run compGeneral/TEST045
+      // to see the problem.
+      // DCMPASSERT(*mappedSet != *keyEntry);
+      if ( NOT contains( mappedSet ) )
+        insertPair( *mappedSet, *uecEntry );
+
+      iter.getNext( keyEntry, uecEntry );
+    }
 }
 
 // -----------------------------------------------------------------------

@@ -1,0 +1,1187 @@
+>>
+>>obey TEST123(set_up);
+>>get users;
+
+Users
+=====
+
+DB__ROOT
+SQL_USER1
+SQL_USER10
+SQL_USER2
+SQL_USER3
+SQL_USER4
+SQL_USER5
+SQL_USER6
+SQL_USER7
+SQL_USER8
+SQL_USER9
+
+--- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+DB__HBASEROLE
+DB__HIVEROLE
+DB__LIBMGRROLE
+DB__ROOTROLE
+PUBLIC
+
+--- SQL operation complete.
+>>
+>>get privileges on component sql_operations for "PUBLIC";
+
+Privilege information on Component SQL_OPERATIONS for PUBLIC
+============================================================
+
+CREATE_SCHEMA
+SHOW
+
+--- SQL operation complete.
+>>
+>>create role t123_adminrole;
+
+--- SQL operation complete.
+>>create role t123_plannerrole;
+
+--- SQL operation complete.
+>>create role t123_dummyrole;
+
+--- SQL operation complete.
+>>create role t123_ownerrole;
+
+--- SQL operation complete.
+>>
+>>grant role t123_adminrole to sql_user1;
+
+--- SQL operation complete.
+>>grant role t123_plannerrole to sql_user1;
+
+--- SQL operation complete.
+>>grant role t123_plannerrole to sql_user2;
+
+--- SQL operation complete.
+>>grant role t123_ownerrole to sql_user5;
+
+--- SQL operation complete.
+>>
+>>create schema t123sch authorization t123_ownerrole;
+
+--- SQL operation complete.
+>>set schema t123sch;
+
+--- SQL operation complete.
+>>
+>>create table teams
++>  (team_number int not null primary key,
++>   team_name char(20) not null,
++>   team_contact varchar(50) not null,
++>   team_contact_number char (10) not null
++>   )
++>  ;
+
+--- SQL operation complete.
+>>
+>>create table games
++>   ( home_team_number int not null,
++>     visitor_team_number int not null,
++>     game_number int not null primary key,
++>     game_time timestamp not null,
++>     game_location varchar(50) not null)
++>  ;
+
+--- SQL operation complete.
+>>
+>>create table players
++>  (player_number int not null,
++>   player_name varchar (50) not null,
++>   player_team_number int not null,
++>   player_phone_number char (10) not null,
++>   player_details varchar(50),
++>   primary key (player_number, player_team_number))
++>  no partition;
+
+--- SQL operation complete.
+>>
+>>create sequence players_sequence;
+
+--- SQL operation complete.
+>>
+>>grant select on games to sql_user4;
+
+--- SQL operation complete.
+>>grant select on teams to sql_user4;
+
+--- SQL operation complete.
+>>grant select(team_number, team_name) on teams to "PUBLIC";
+
+--- SQL operation complete.
+>>grant select(player_name, player_number, player_team_number) on players
++>   to "PUBLIC";
+
+--- SQL operation complete.
+>>grant update, delete on games to t123_adminrole;
+
+--- SQL operation complete.
+>>grant update, delete on teams to t123_adminrole;
+
+--- SQL operation complete.
+>>grant insert on games to t123_plannerrole;
+
+--- SQL operation complete.
+>>grant insert on teams to t123_plannerrole;
+
+--- SQL operation complete.
+>>grant all on players to sql_user1;
+
+--- SQL operation complete.
+>>
+>>grant usage on sequence players_sequence to t123_plannerrole;
+
+--- SQL operation complete.
+>>grant usage on sequence players_sequence to sql_user1;
+
+--- SQL operation complete.
+>>
+>>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+
+--- SQL operation complete.
+>>obey TEST123(get_statements);
+>>get users;
+
+Users
+=====
+
+DB__ROOT
+SQL_USER1
+SQL_USER10
+SQL_USER2
+SQL_USER3
+SQL_USER4
+SQL_USER5
+SQL_USER6
+SQL_USER7
+SQL_USER8
+SQL_USER9
+
+--- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+DB__HBASEROLE
+DB__HIVEROLE
+DB__LIBMGRROLE
+DB__ROOTROLE
+PUBLIC
+T123_ADMINROLE
+T123_DUMMYROLE
+T123_OWNERROLE
+T123_PLANNERROLE
+
+--- SQL operation complete.
+>>get roles for user sql_user1;
+
+Roles for User SQL_USER1
+========================
+
+PUBLIC
+T123_ADMINROLE
+T123_PLANNERROLE
+
+--- SQL operation complete.
+>>get roles for user sql_user2;
+
+Roles for User SQL_USER2
+========================
+
+PUBLIC
+T123_PLANNERROLE
+
+--- SQL operation complete.
+>>get roles for user sql_user3;
+
+Roles for User SQL_USER3
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user4;
+
+Roles for User SQL_USER4
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user5;
+
+Roles for User SQL_USER5
+========================
+
+PUBLIC
+T123_OWNERROLE
+
+--- SQL operation complete.
+>>
+>>get users for role t123_adminrole;
+
+Users granted Role T123_ADMINROLE
+=================================
+
+SQL_USER1
+
+--- SQL operation complete.
+>>get users for role t123_plannerrole;
+
+Users granted Role T123_PLANNERROLE
+===================================
+
+SQL_USER1
+SQL_USER2
+
+--- SQL operation complete.
+>>get users for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get users for role t123_ownerrole;
+
+Users granted Role T123_OWNERROLE
+=================================
+
+SQL_USER5
+
+--- SQL operation complete.
+>>
+>>get privileges for user sql_user1;
+
+Privileges for User SQL_USER1
+=============================
+
+--DU---    TRAFODION.T123SCH.GAMES
+-I-----    TRAFODION.T123SCH.GAMES
+SIDU-R-    TRAFODION.T123SCH.PLAYERS
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+--DU---    TRAFODION.T123SCH.TEAMS
+-I-----    TRAFODION.T123SCH.TEAMS
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>get privileges for user sql_user2;
+
+Privileges for User SQL_USER2
+=============================
+
+-I-----    TRAFODION.T123SCH.GAMES
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+-I-----    TRAFODION.T123SCH.TEAMS
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>get privileges for user sql_user3;
+
+Privileges for User SQL_USER3
+=============================
+
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>get privileges for user sql_user4;
+
+Privileges for User SQL_USER4
+=============================
+
+S------    TRAFODION.T123SCH.GAMES
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S------    TRAFODION.T123SCH.TEAMS
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>get privileges for user sql_user5;
+
+Privileges for User SQL_USER5
+=============================
+
+SIDU-R-    TRAFODION.T123SCH.GAMES
+SIDU-R-    TRAFODION.T123SCH.PLAYERS
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAMS
+SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAM_INTERVALS
+SIDU-R-    TRAFODION.T123SCH.SB_PERSISTENT_SAMPLES
+SIDU-R-    TRAFODION.T123SCH.TEAMS
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>
+>>get privileges for role t123_adminrole;
+
+Privileges for Role T123_ADMINROLE
+==================================
+
+--DU---    TRAFODION.T123SCH.GAMES
+--DU---    TRAFODION.T123SCH.TEAMS
+
+--- SQL operation complete.
+>>get privileges for role t123_plannerrole;
+
+Privileges for Role T123_PLANNERROLE
+====================================
+
+-I-----    TRAFODION.T123SCH.GAMES
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+-I-----    TRAFODION.T123SCH.TEAMS
+
+--- SQL operation complete.
+>>get privileges for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_ownerrole;
+
+Privileges for Role T123_OWNERROLE
+==================================
+
+SIDU-R-    TRAFODION.T123SCH.GAMES
+SIDU-R-    TRAFODION.T123SCH.PLAYERS
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAMS
+SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAM_INTERVALS
+SIDU-R-    TRAFODION.T123SCH.SB_PERSISTENT_SAMPLES
+SIDU-R-    TRAFODION.T123SCH.TEAMS
+
+--- SQL operation complete.
+>>get privileges for role "PUBLIC";
+
+Privileges for Role PUBLIC
+==========================
+
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>
+>>
+>>sh sqlci -i "TEST123(get_tests)" -u sql_user1;
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER1                                                                                                                        
+
+--- 1 row(s) selected.
+>>obey TEST123(get_statements);
+>>get users;
+
+Users
+=====
+
+SQL_USER1
+
+--- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+PUBLIC
+T123_ADMINROLE
+T123_PLANNERROLE
+
+--- SQL operation complete.
+>>get roles for user sql_user1;
+
+Roles for User SQL_USER1
+========================
+
+PUBLIC
+T123_ADMINROLE
+T123_PLANNERROLE
+
+--- SQL operation complete.
+>>get roles for user sql_user2;
+
+Roles for User SQL_USER2
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user3;
+
+Roles for User SQL_USER3
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user4;
+
+Roles for User SQL_USER4
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user5;
+
+Roles for User SQL_USER5
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>
+>>get users for role t123_adminrole;
+
+Users granted Role T123_ADMINROLE
+=================================
+
+SQL_USER1
+
+--- SQL operation complete.
+>>get users for role t123_plannerrole;
+
+Users granted Role T123_PLANNERROLE
+===================================
+
+SQL_USER1
+
+--- SQL operation complete.
+>>get users for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get users for role t123_ownerrole;
+
+--- SQL operation complete.
+>>
+>>get privileges for user sql_user1;
+
+Privileges for User SQL_USER1
+=============================
+
+--DU---    TRAFODION.T123SCH.GAMES
+-I-----    TRAFODION.T123SCH.GAMES
+SIDU-R-    TRAFODION.T123SCH.PLAYERS
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+--DU---    TRAFODION.T123SCH.TEAMS
+-I-----    TRAFODION.T123SCH.TEAMS
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>get privileges for user sql_user2;
+
+--- SQL operation complete.
+>>get privileges for user sql_user3;
+
+--- SQL operation complete.
+>>get privileges for user sql_user4;
+
+--- SQL operation complete.
+>>get privileges for user sql_user5;
+
+--- SQL operation complete.
+>>
+>>get privileges for role t123_adminrole;
+
+Privileges for Role T123_ADMINROLE
+==================================
+
+--DU---    TRAFODION.T123SCH.GAMES
+--DU---    TRAFODION.T123SCH.TEAMS
+
+--- SQL operation complete.
+>>get privileges for role t123_plannerrole;
+
+Privileges for Role T123_PLANNERROLE
+====================================
+
+-I-----    TRAFODION.T123SCH.GAMES
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+-I-----    TRAFODION.T123SCH.TEAMS
+
+--- SQL operation complete.
+>>get privileges for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_ownerrole;
+
+--- SQL operation complete.
+>>get privileges for role "PUBLIC";
+
+Privileges for Role PUBLIC
+==========================
+
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>sh sqlci -i "TEST123(get_tests)" -u sql_user2;
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER2                                                                                                                        
+
+--- 1 row(s) selected.
+>>obey TEST123(get_statements);
+>>get users;
+
+Users
+=====
+
+SQL_USER2
+
+--- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+PUBLIC
+T123_PLANNERROLE
+
+--- SQL operation complete.
+>>get roles for user sql_user1;
+
+Roles for User SQL_USER1
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user2;
+
+Roles for User SQL_USER2
+========================
+
+PUBLIC
+T123_PLANNERROLE
+
+--- SQL operation complete.
+>>get roles for user sql_user3;
+
+Roles for User SQL_USER3
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user4;
+
+Roles for User SQL_USER4
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user5;
+
+Roles for User SQL_USER5
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>
+>>get users for role t123_adminrole;
+
+--- SQL operation complete.
+>>get users for role t123_plannerrole;
+
+Users granted Role T123_PLANNERROLE
+===================================
+
+SQL_USER2
+
+--- SQL operation complete.
+>>get users for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get users for role t123_ownerrole;
+
+--- SQL operation complete.
+>>
+>>get privileges for user sql_user1;
+
+--- SQL operation complete.
+>>get privileges for user sql_user2;
+
+Privileges for User SQL_USER2
+=============================
+
+-I-----    TRAFODION.T123SCH.GAMES
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+-I-----    TRAFODION.T123SCH.TEAMS
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>get privileges for user sql_user3;
+
+--- SQL operation complete.
+>>get privileges for user sql_user4;
+
+--- SQL operation complete.
+>>get privileges for user sql_user5;
+
+--- SQL operation complete.
+>>
+>>get privileges for role t123_adminrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_plannerrole;
+
+Privileges for Role T123_PLANNERROLE
+====================================
+
+-I-----    TRAFODION.T123SCH.GAMES
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+-I-----    TRAFODION.T123SCH.TEAMS
+
+--- SQL operation complete.
+>>get privileges for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_ownerrole;
+
+--- SQL operation complete.
+>>get privileges for role "PUBLIC";
+
+Privileges for Role PUBLIC
+==========================
+
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>sh sqlci -i "TEST123(get_tests)" -u sql_user3;
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>obey TEST123(get_statements);
+>>get users;
+
+Users
+=====
+
+SQL_USER3
+
+--- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user1;
+
+Roles for User SQL_USER1
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user2;
+
+Roles for User SQL_USER2
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user3;
+
+Roles for User SQL_USER3
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user4;
+
+Roles for User SQL_USER4
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user5;
+
+Roles for User SQL_USER5
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>
+>>get users for role t123_adminrole;
+
+--- SQL operation complete.
+>>get users for role t123_plannerrole;
+
+--- SQL operation complete.
+>>get users for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get users for role t123_ownerrole;
+
+--- SQL operation complete.
+>>
+>>get privileges for user sql_user1;
+
+--- SQL operation complete.
+>>get privileges for user sql_user2;
+
+--- SQL operation complete.
+>>get privileges for user sql_user3;
+
+Privileges for User SQL_USER3
+=============================
+
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>get privileges for user sql_user4;
+
+--- SQL operation complete.
+>>get privileges for user sql_user5;
+
+--- SQL operation complete.
+>>
+>>get privileges for role t123_adminrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_plannerrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_ownerrole;
+
+--- SQL operation complete.
+>>get privileges for role "PUBLIC";
+
+Privileges for Role PUBLIC
+==========================
+
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>sh sqlci -i "TEST123(get_tests)" -u sql_user4;
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER4                                                                                                                        
+
+--- 1 row(s) selected.
+>>obey TEST123(get_statements);
+>>get users;
+
+Users
+=====
+
+SQL_USER4
+
+--- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user1;
+
+Roles for User SQL_USER1
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user2;
+
+Roles for User SQL_USER2
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user3;
+
+Roles for User SQL_USER3
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user4;
+
+Roles for User SQL_USER4
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user5;
+
+Roles for User SQL_USER5
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>
+>>get users for role t123_adminrole;
+
+--- SQL operation complete.
+>>get users for role t123_plannerrole;
+
+--- SQL operation complete.
+>>get users for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get users for role t123_ownerrole;
+
+--- SQL operation complete.
+>>
+>>get privileges for user sql_user1;
+
+--- SQL operation complete.
+>>get privileges for user sql_user2;
+
+--- SQL operation complete.
+>>get privileges for user sql_user3;
+
+--- SQL operation complete.
+>>get privileges for user sql_user4;
+
+Privileges for User SQL_USER4
+=============================
+
+S------    TRAFODION.T123SCH.GAMES
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S------    TRAFODION.T123SCH.TEAMS
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>get privileges for user sql_user5;
+
+--- SQL operation complete.
+>>
+>>get privileges for role t123_adminrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_plannerrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_ownerrole;
+
+--- SQL operation complete.
+>>get privileges for role "PUBLIC";
+
+Privileges for Role PUBLIC
+==========================
+
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>sh sqlci -i "TEST123(get_tests)" -u sql_user5;
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER5                                                                                                                        
+
+--- 1 row(s) selected.
+>>obey TEST123(get_statements);
+>>get users;
+
+Users
+=====
+
+SQL_USER5
+
+--- SQL operation complete.
+>>get roles;
+
+Roles
+=====
+
+PUBLIC
+T123_OWNERROLE
+
+--- SQL operation complete.
+>>get roles for user sql_user1;
+
+Roles for User SQL_USER1
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user2;
+
+Roles for User SQL_USER2
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user3;
+
+Roles for User SQL_USER3
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user4;
+
+Roles for User SQL_USER4
+========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get roles for user sql_user5;
+
+Roles for User SQL_USER5
+========================
+
+PUBLIC
+T123_OWNERROLE
+
+--- SQL operation complete.
+>>
+>>get users for role t123_adminrole;
+
+--- SQL operation complete.
+>>get users for role t123_plannerrole;
+
+--- SQL operation complete.
+>>get users for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get users for role t123_ownerrole;
+
+Users granted Role T123_OWNERROLE
+=================================
+
+SQL_USER5
+
+--- SQL operation complete.
+>>
+>>get privileges for user sql_user1;
+
+--- SQL operation complete.
+>>get privileges for user sql_user2;
+
+--- SQL operation complete.
+>>get privileges for user sql_user3;
+
+--- SQL operation complete.
+>>get privileges for user sql_user4;
+
+--- SQL operation complete.
+>>get privileges for user sql_user5;
+
+Privileges for User SQL_USER5
+=============================
+
+SIDU-R-    TRAFODION.T123SCH.GAMES
+SIDU-R-    TRAFODION.T123SCH.PLAYERS
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAMS
+SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAM_INTERVALS
+SIDU-R-    TRAFODION.T123SCH.SB_PERSISTENT_SAMPLES
+SIDU-R-    TRAFODION.T123SCH.TEAMS
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>
+>>get privileges for role t123_adminrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_plannerrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_dummyrole;
+
+--- SQL operation complete.
+>>get privileges for role t123_ownerrole;
+
+Privileges for Role T123_OWNERROLE
+==================================
+
+SIDU-R-    TRAFODION.T123SCH.GAMES
+SIDU-R-    TRAFODION.T123SCH.PLAYERS
+----G--    TRAFODION.T123SCH.PLAYERS_SEQUENCE
+SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAMS
+SIDU-R-    TRAFODION.T123SCH.SB_HISTOGRAM_INTERVALS
+SIDU-R-    TRAFODION.T123SCH.SB_PERSISTENT_SAMPLES
+SIDU-R-    TRAFODION.T123SCH.TEAMS
+
+--- SQL operation complete.
+>>get privileges for role "PUBLIC";
+
+Privileges for Role PUBLIC
+==========================
+
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NAME
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_NUMBER
+S------    TRAFODION.T123SCH.PLAYERS <Column> PLAYER_TEAM_NUMBER
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NAME
+S------    TRAFODION.T123SCH.TEAMS <Column> TEAM_NUMBER
+
+--- SQL operation complete.
+>>
+>>
+>>exit;
+
+End of MXCI Session
+
+>>
+>>obey TEST123(other);
+>>get privileges for user "PUBLIC";
+
+*** ERROR[1340] PUBLIC is not a user.
+
+--- SQL operation failed with errors.
+>>get privileges for user unknown_user;
+
+*** ERROR[8732] UNKNOWN_USER is not a registered database user or role.
+
+--- SQL operation failed with errors.
+>>get privileges for role unknown_role;
+
+*** ERROR[8732] UNKNOWN_ROLE is not a registered database user or role.
+
+--- SQL operation failed with errors.
+>>get roles for user unknown_user;
+
+Roles for User UNKNOWN_USER
+===========================
+
+PUBLIC
+
+--- SQL operation complete.
+>>get users for role unknown_role;
+
+--- SQL operation complete.
+>>grant component privilege "SHOW" on sql_operations to "PUBLIC";
+
+--- SQL operation complete.
+>>log;

@@ -537,7 +537,7 @@ void CPNodeConfigContainer::GetSpareNodesConfigSet( const char *name
                             , spareNodeConfig->GetName()
                             , tempSpareSet.size() );
             }
-            if ( strcmp( pNodeconfig->GetName(), name ) == 0 )
+            if ( CPNodeConfigContainer::hostnamecmp( pNodeconfig->GetName(), name ) == 0 )
             {
                 foundInSpareSet = true;
                 spareSet = tempSpareSet;
@@ -565,3 +565,58 @@ void CPNodeConfigContainer::GetSpareNodesConfigSet( const char *name
     TRACE_EXIT;
 }
 
+int CPNodeConfigContainer::hostnamecmp( const char *p_str1, const char *p_str2 )
+{
+    static bool sb_first_time = true;
+    static bool sb_strict_hostname_check = false;
+    if ( sb_first_time )
+    {
+        sb_first_time = false;
+        char *lv_envvar=getenv( "MON_STRICT_HOSTNAME_CHECK" );
+
+        if ( lv_envvar && (atoi( lv_envvar ) == 1) )
+        {
+            sb_strict_hostname_check = true;
+        }
+    }
+
+    if ( !p_str1 ) return 1;
+    if ( !p_str2 ) return 1;
+
+    int lv_ret = strcmp( p_str1, p_str2 );
+    if ( lv_ret == 0 )
+    {
+        return lv_ret;
+    }
+    if ( sb_strict_hostname_check )
+    {
+        return lv_ret;
+    }
+
+    char lv_str1_to_cmp[1024];
+    char lv_str2_to_cmp[1024];
+    memset( lv_str1_to_cmp, 0, 1024 );
+    memset( lv_str2_to_cmp, 0, 1024 );
+
+    char *lp_str1_dot = strchr( (char *) p_str1, '.' );
+    if ( lp_str1_dot )
+    {
+        memcpy( lv_str1_to_cmp, p_str1, lp_str1_dot - p_str1 );
+    }
+    else
+    {
+        strcpy( lv_str1_to_cmp, p_str1 );
+    }
+
+    char *lp_str2_dot = strchr( (char *) p_str2, '.' );
+    if ( lp_str2_dot )
+    {
+        memcpy( lv_str2_to_cmp, p_str2, lp_str2_dot - p_str2 );
+    }
+    else
+    {
+        strcpy( lv_str2_to_cmp, p_str2 );
+    }
+
+    return strcmp( lv_str1_to_cmp, lv_str2_to_cmp );
+}

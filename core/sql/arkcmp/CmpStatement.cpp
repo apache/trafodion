@@ -1705,17 +1705,7 @@ void CmpStatement::setTMUDFRefusedRequirements(const char *details)
   detailsOnRefusedRequirements_->insert(new(heap_) NAString(details, heap_));
 }
 
-void CmpStatement::addCSEInfo(CSEInfo *info)
-{
-  if (cses_ == NULL)
-    cses_ = new(CmpCommon::statementHeap())
-      LIST(CSEInfo *)(CmpCommon::statementHeap());
-
-  info->setCSEId(cses_->entries());
-  cses_->insert(info);
-}
-
-CSEInfo * CmpStatement::getCSEInfo(const char *cseName)
+CSEInfo * CmpStatement::getCSEInfo(const char *cseName) const
 {
   if (cses_)
     for (CollIndex i=0; i<cses_->entries(); i++)
@@ -1726,4 +1716,38 @@ CSEInfo * CmpStatement::getCSEInfo(const char *cseName)
 
   // no match found
   return NULL;
+}
+
+CSEInfo * CmpStatement::getCSEInfoForMainQuery() const
+{
+  // the first entry is reserved for the main query
+  return getCSEInfoById(getCSEIdForMainQuery());
+}
+
+CSEInfo *CmpStatement::getCSEInfoById(Int32 cseId) const
+{
+  DCMPASSERT(cses_);
+  CSEInfo *result = (*cses_)[cseId];
+
+  CMPASSERT(result->getCSEId() == cseId);
+
+  return result;
+}
+
+void CmpStatement::addCSEInfo(CSEInfo *info)
+{
+  if (cses_ == NULL)
+    {
+      cses_ = new(CmpCommon::statementHeap())
+        LIST(CSEInfo *)(CmpCommon::statementHeap());
+
+      // add an entry for the main query, so we can
+      // record the CSE references of the main query
+      DCMPASSERT(cses_->entries() == getCSEIdForMainQuery());
+      addCSEInfo(new(CmpCommon::statementHeap())
+                 CSEInfo("", CmpCommon::statementHeap()));
+    }
+
+  info->setCSEId(cses_->entries());
+  cses_->insert(info);
 }

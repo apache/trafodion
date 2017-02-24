@@ -700,7 +700,8 @@ void copyCommonGenericUpdateFields(GenericUpdate *result,
   result->setTolerateNonFatalError(bef->getTolerateNonFatalError());
   result->setNoCheck(bef->noCheck());
   result->setPrecondition(bef->getPrecondition());
-
+  result->setProducedMergeIUDIndicator(bef->getProducedMergeIUDIndicator());
+  result->setReferencedMergeIUDIndicator(bef->getReferencedMergeIUDIndicator());
 }
 
 void copyCommonUpdateFields(Update *result,
@@ -711,6 +712,7 @@ void copyCommonUpdateFields(Update *result,
   result->mergeInsertRecExpr()          = bef->mergeInsertRecExpr();
   result->mergeInsertRecExprArray()     = bef->mergeInsertRecExprArray();
   result->mergeUpdatePred()             = bef->mergeUpdatePred();
+  
 }
 
 void copyCommonDeleteFields(Delete *result,
@@ -2379,12 +2381,9 @@ RelExpr * HbaseUpdateRule::nextSubstitute(RelExpr * before,
   // SimpleFileScanOptimizer::constructSearchKey()
   /////////////////////////////////////////////////////////////////////////
   ValueIdSet exePreds(scan->getSelectionPred());
-
-  // only get the first member from the index set
-  if ( scan->deriveIndexOnlyIndexDesc().entries() == 0 )
-    return NULL;
-
-  IndexDesc* idesc = (scan->deriveIndexOnlyIndexDesc())[0];
+  // Use indexdesc of base table, een if the optimizer has chosen an
+  // index access path for this soon to be gone scan.
+  const IndexDesc* idesc = scan->getTableDesc()->getClusteringIndex();
   ValueIdSet clusteringKeyCols(
        idesc->getClusteringKeyCols());
   ValueIdSet generatedComputedColPreds;
@@ -5247,7 +5246,7 @@ RelExpr * PhysicalTMUDFRule::nextSubstitute(RelExpr * before,
 
   // Simply copy the contents of the TableMappingUDF from the before pattern.
   PhysicalTableMappingUDF *result = new (CmpCommon::statementHeap())
-    PhysicalTableMappingUDF(CmpCommon::statementHeap());
+    PhysicalTableMappingUDF(before->getArity(), CmpCommon::statementHeap());
   bef->TableMappingUDF::copyTopNode(result, CmpCommon::statementHeap());
 
   // now set the group attributes of the result's top node
@@ -5260,7 +5259,20 @@ RelExpr * PhysicalTMUDFRule::nextSubstitute(RelExpr * before,
 
 NABoolean PhysicalTMUDFRule::canMatchPattern (const RelExpr *pattern) const
 {
-  return OperatorType(REL_TABLE_MAPPING_UDF).match(pattern->getOperator());
+  switch (pattern->getOperatorType())
+    {
+    case REL_ANY_TABLE_MAPPING_UDF:
+    case REL_ANY_LEAF_TABLE_MAPPING_UDF:
+    case REL_ANY_UNARY_TABLE_MAPPING_UDF:
+    case REL_ANY_BINARY_TABLE_MAPPING_UDF:
+      return TRUE;
+
+    default:
+      if (pattern->getOperator().isWildcard())
+        return FALSE;
+      else
+        return pattern->getOperator().match(REL_ANY_TABLE_MAPPING_UDF);
+    }
 }
 
 PhysicalFastExtractRule::~PhysicalFastExtractRule() {} // LCOV_EXCL_LINE

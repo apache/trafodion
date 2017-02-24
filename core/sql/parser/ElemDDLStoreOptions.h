@@ -179,6 +179,12 @@ public:
 
   inline NABoolean isPkeyStoreByKeylist() { return pkeyStoreByKeylist_; }
 
+  NABoolean isPkeyNotSerialized()
+  { return (ser_ == ComPkeySerialization::COM_NOT_SERIALIZED); }
+  void setSerializedOption(ComPkeySerialization ser) 
+  { ser_ = ser; }
+  ComPkeySerialization getSerializedOption() { return ser_; }
+
   // mutator
   virtual void setChild(Lng32 index, ExprNode * pElemDDLNode);
 
@@ -207,6 +213,14 @@ private:
          MAX_ELEM_DDL_STORE_OPT_KEY_COLUMN_LIST_ARITY };
 
   ElemDDLNode * children_[MAX_ELEM_DDL_STORE_OPT_KEY_COLUMN_LIST_ARITY];
+
+  // if set to SERIALIZED, then pkey will be encoded before passint to hbase.
+  // if set to NOT_SERIALIZED, then primary key will not be encoded before 
+  // passing on to HBase.
+  // Used when accessing external HBase tables where data may not be stored
+  // in serialized mode.
+  // if not specified, then will be determined based on table type.
+  ComPkeySerialization ser_;
 
 }; // class ElemDDLStoreOptKeyColumnList
 

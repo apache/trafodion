@@ -672,7 +672,10 @@ namespace tmudr
         TIMESTAMP,            ///< timestamp
         INTERVAL,             ///< interval
         BLOB,                 ///< Binary Large Object
-        CLOB                  ///< Character Large Object
+        CLOB,                 ///< Character Large Object
+        TINYINT,              ///< 8 bit integer
+        TINYINT_UNSIGNED,     ///< unsigned 8 bit integer
+        BOOLEAN               ///< boolean, 1 byte 0 or 1
       };
   
     /** Classes of types defined in the SQL standard */
@@ -683,6 +686,7 @@ namespace tmudr
         DATETIME_TYPE,        ///< date/time/timestamp
         INTERVAL_TYPE,        ///< day/month or hour/second intervals
         LOB_TYPE,             ///< BLOBs and CLOBs
+        BOOLEAN_TYPE,         ///< Boolean
         UNDEFINED_TYPE_CLASS  ///< undefined value
       };
   
@@ -701,6 +705,7 @@ namespace tmudr
         DAY_SECOND_INTERVAL_TYPE,  ///< Intervals involving
                                    ///< days/hours/minutes/seconds
         LOB_SUB_CLASS,             ///< LOBs
+        BOOLEAN_SUB_CLASS,         ///< Boolean
         UNDEFINED_TYPE_SUB_CLASS   ///< undefined value
       };
   
@@ -782,6 +787,7 @@ namespace tmudr
     long getLong(const char *row, bool &wasNull) const;
     double getDouble(const char *row, bool &wasNull) const;
     time_t getTime(const char *row, bool &wasNull) const;
+    bool getBoolean(const char *row, bool &wasNull) const;
     const char * getRaw(const char *row,
                         bool &wasNull,
                         int &byteLen) const;
@@ -792,6 +798,7 @@ namespace tmudr
     void setDouble(double val, char *row) const;
     void setTime(time_t val, char *row) const;
     void setString(const char *val, int stringLen, char *row) const;
+    void setBoolean(bool val, char *row) const;
     void setNull(char *row) const;
 
     int minBytesPerChar() const;
@@ -1271,6 +1278,8 @@ namespace tmudr
     double getDouble(const std::string &colName) const;
     std::string getString(int colNum) const;
     std::string getString(const std::string &colName) const;
+    bool getBoolean(int colNum) const;
+    bool getBoolean(const std::string &colName) const;
     const char * getRaw(int colNum, int &byteLen) const;
     time_t getTime(int colNum) const;
     bool isAvailable(int colNum) const;
@@ -1290,6 +1299,7 @@ namespace tmudr
     void setString(int colNum, const char *val, int stringLen) const;
     void setString(int colNum, const std::string &val) const;
     void setTime(int colNum, time_t val) const;
+    void setBoolean(int colNum, bool val) const;
     const char * setFromDelimitedRow(const char *row,
                                      char delim='|',
                                      bool quote = false,
@@ -1493,13 +1503,19 @@ namespace tmudr
                  ///< rows, the Trafodion compiler can automatically
                  ///< parallelize execution and push predicates down to
                  ///< the table-valued inputs.
-        REDUCER  ///< A reducer requires the data to be partitioned on
+        REDUCER, ///< A reducer requires the data to be partitioned on
                  ///< a set of columns. The UDF does not carry any state
                  ///< between groups of rows with the same partition column
                  ///< values, but it may carry state within such groups.
                  ///< This allows the compiler to parallelize execution and
                  ///< to push predicates on the partitioning column(s) down
                  ///< to table-valued inputs.
+        REDUCER_NC ///< Same as REDUCER, except that in this case the
+                 ///< UDF does not require the rows belonging to a key
+                 ///< to be grouped together, they can be non-contiguous
+                 ///< (NC). This can avoid a costly sort of the input
+                 ///< table in cases where a highly reducing UDF can keep
+                 ///< a table of all the keys in memory.
       };
 
     /**

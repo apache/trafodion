@@ -2972,7 +2972,7 @@ void NAHeap::setThreadSafe()
   // set this heap and heaps it is derived from
   while (heap)
   {
-    if (heap->threadSafe_ == false);
+    if (heap->threadSafe_ == false)
     {
       rc = pthread_mutex_init(&(heap->mutex_), &attr);
       assert(rc == 0);
