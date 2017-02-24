@@ -72,6 +72,8 @@ enum HbaseOptionEnum
     HBASE_DURABILITY                  = 20,   //   "
     HBASE_MEMSTORE_FLUSH_SIZE         = 21,   //   "
     HBASE_SPLIT_POLICY                = 22,   //   "
+    HBASE_CACHE_DATA_IN_L1            = 23,   // column family
+    HBASE_PREFETCH_BLOCKS_ON_OPEN     = 24,   //   "
     HBASE_MAX_OPTIONS
   };
 
