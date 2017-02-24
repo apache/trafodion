@@ -3373,11 +3373,19 @@ CProcessContainer::CProcessContainer( bool nodeContainer )
     if(Mutex == SEM_FAILED)
     {
         char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], Can't create semaphore %s!\n",
-                 method_name, sem_name);
+        int err = errno;
+        snprintf(buf, sizeof(buf), "[%s], Can't create semaphore %s! (%s)\n",
+                 method_name, sem_name, strerror(err));
         mon_log_write(MON_PROCESSCONT_PROCESSCONT_3, SQ_LOG_ERR, buf);
 
-        sem_unlink(sem_name);
+        err = sem_unlink(sem_name);
+        if (err == -1)
+        {
+            int err = errno;
+            snprintf(buf, sizeof(buf), "[%s], Can't unlink semaphore %s! (%s)\n",
+                     method_name, sem_name, strerror(err));
+            mon_log_write(MON_PROCESSCONT_PROCESSCONT_4, SQ_LOG_ERR, buf);
+        }
         abort();
     }
     
@@ -4350,7 +4358,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
 
             result = MPI_ERR_NAME;
 
-            return false;
+            return NULL;
         }
         if (parent->GetNid() == nid)
         {
@@ -4361,7 +4369,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
 
             result = MPI_ERR_RANK;
 
-            return false;
+            return NULL;
         }
     }
     else
@@ -4375,7 +4383,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
             mon_log_write(MON_PROCESSCONT_CREATEPROCESS_3, SQ_LOG_ERR, la_buf);
 
             result = MPI_ERR_NAME;
-            return false;
+            return NULL;
         }
     }
 

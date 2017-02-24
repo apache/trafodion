@@ -96,6 +96,7 @@ import org.apache.hadoop.hbase.regionserver.StoreFileInfo;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.DtmConst;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.hadoop.hbase.util.CompressionTest;
 
 import com.google.protobuf.ServiceException;
 
@@ -245,7 +246,8 @@ public class HBaseClient {
    private ChangeFlags setDescriptors(Object[] tableOptions,
                                       HTableDescriptor desc,
                                       HColumnDescriptor colDesc,
-                                      int defaultVersionsValue) {
+                                      int defaultVersionsValue) 
+       throws IOException {
        ChangeFlags returnStatus = new ChangeFlags();
        String trueStr = "TRUE";
        for (int i = 0; i < tableOptions.length; i++) {
@@ -294,15 +296,27 @@ public class HBaseClient {
                break ;
            case HBASE_COMPRESSION:
                if (tableOption.equalsIgnoreCase("GZ"))
+	       {    // throws IOException
+		   CompressionTest.testCompression(Algorithm.GZ);
                    colDesc.setCompressionType(Algorithm.GZ);
+	       }
                else if (tableOption.equalsIgnoreCase("LZ4"))
+	       {   // throws IOException
+		   CompressionTest.testCompression(Algorithm.LZ4);
                    colDesc.setCompressionType(Algorithm.LZ4);
+	       }
                else if (tableOption.equalsIgnoreCase("LZO"))
+	       {   // throws IOException
+		   CompressionTest.testCompression(Algorithm.LZO);
                    colDesc.setCompressionType(Algorithm.LZO);
+	       }
                else if (tableOption.equalsIgnoreCase("NONE"))
                    colDesc.setCompressionType(Algorithm.NONE);
                else if (tableOption.equalsIgnoreCase("SNAPPY"))
+	       {   // throws IOException
+		   CompressionTest.testCompression(Algorithm.SNAPPY);
                    colDesc.setCompressionType(Algorithm.SNAPPY); 
+	       }
                returnStatus.setColumnDescriptorChanged();
                break ;
            case HBASE_BLOOMFILTER:
@@ -354,16 +368,28 @@ public class HBaseClient {
                returnStatus.setColumnDescriptorChanged();
                break ;
            case HBASE_COMPACT_COMPRESSION:
-               if (tableOption.equalsIgnoreCase("GZ"))
-                   colDesc.setCompactionCompressionType(Algorithm.GZ);
-               else if (tableOption.equalsIgnoreCase("LZ4"))
+               if (tableOption.equalsIgnoreCase("GZ")) {
+		   // throws IOException
+		   CompressionTest.testCompression(Algorithm.GZ);
+                   colDesc.setCompactionCompressionType(Algorithm.GZ); 
+	       }
+               else if (tableOption.equalsIgnoreCase("LZ4")) {
+		   // throws IOException
+		   CompressionTest.testCompression(Algorithm.LZ4);
                    colDesc.setCompactionCompressionType(Algorithm.LZ4);
-               else if (tableOption.equalsIgnoreCase("LZO"))
+	       }
+               else if (tableOption.equalsIgnoreCase("LZO")) {
+		   // throws IOException
+		   CompressionTest.testCompression(Algorithm.LZO);
                    colDesc.setCompactionCompressionType(Algorithm.LZO);
+	       }
                else if (tableOption.equalsIgnoreCase("NONE"))
                    colDesc.setCompactionCompressionType(Algorithm.NONE);
-               else if (tableOption.equalsIgnoreCase("SNAPPY"))
+               else if (tableOption.equalsIgnoreCase("SNAPPY")) {
+		   // throws IOException
+		   CompressionTest.testCompression(Algorithm.SNAPPY);
                    colDesc.setCompactionCompressionType(Algorithm.SNAPPY); 
+	       }
                returnStatus.setColumnDescriptorChanged();
                break ;
            case HBASE_PREFIX_LENGTH_KEY:

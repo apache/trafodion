@@ -2844,6 +2844,8 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
              (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_INDEX_ALTER_HBASE_OPTIONS) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME)))
      {
         // transaction will be started and commited in called methods.
@@ -4175,9 +4177,11 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
 	 TRUE);
 
       if (isHiveTable())
-	// assign individual files and blocks to each ESPs
-	((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
-       generator->setProcessLOB(TRUE);
+        {
+          // assign individual files and blocks to each ESPs
+          ((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
+          generator->setProcessLOB(TRUE);
+        }
     }
 
   
@@ -5471,6 +5475,10 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
       (getInliningInfo().isEffectiveGU()))
     inlinedActions = TRUE;
 
+  // Allow projecting rows if the upsert has IM. 
+  if (inlinedActions && isUpsert())
+    setReturnRow(TRUE);
+
   if (((getTableDesc()->getNATable()->isHbaseRowTable()) ||
        (getTableDesc()->getNATable()->isHbaseCellTable())) &&
       (producesOutputs()))
@@ -5486,9 +5494,13 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
       ((getInsertType() == Insert::VSBB_INSERT_USER) ||
        (getInsertType() == Insert::UPSERT_LOAD)))
     {
-      if ((inlinedActions || producesOutputs())&& !getIsTrafLoadPrep())
- 	setInsertType(Insert::SIMPLE_INSERT);
+      // Remove this restriction
+      /* if ((inlinedActions || producesOutputs())&& !getIsTrafLoadPrep())
+         setInsertType(Insert::SIMPLE_INSERT);*/
+      
     }
+
+  
 
   
   // if there are blob columns, use simple inserts.

@@ -509,8 +509,14 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
   tableInfo->hbaseCreateOptions = NULL;
   tableInfo->numSaltPartns = 0;
   tableInfo->rowFormat = COM_UNKNOWN_FORMAT_TYPE;
-  tableInfo->objectFlags = (isHive) ?  SEABASE_OBJECT_IS_EXTERNAL_HIVE : 
-                                       SEABASE_OBJECT_IS_EXTERNAL_HBASE;
+  if (isHive)
+    {
+      tableInfo->objectFlags = SEABASE_OBJECT_IS_EXTERNAL_HIVE;
+      if (createTableNode->isImplicitExternal())
+        tableInfo->objectFlags |= SEABASE_OBJECT_IS_IMPLICIT_EXTERNAL_HIVE;
+    }
+  else
+    tableInfo->objectFlags = SEABASE_OBJECT_IS_EXTERNAL_HBASE;
   tableInfo->tablesFlags = 0;
 
   if (isAuthorizationEnabled())
@@ -552,6 +558,17 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
       *CmpCommon::diags()
         << DgSqlCode(-4082)
         << DgTableName(cnSrc.getExposedNameAsAnsiString());
+      return -1;
+    }
+
+  if ((naTable->isHiveTable()) &&
+      (naTable->getViewText()) &&
+      (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)))
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-3242)
+        << DgString0("Cannot create external table on a native Hive view.");
+      
       return -1;
     }
 
@@ -649,12 +666,12 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
       if (retcode)
         return -1;
 
-      if (length > 1048576)
+      if (length > CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH))
         {
           *CmpCommon::diags()
             << DgSqlCode(-4247)
             << DgInt0(length)
-            << DgInt1(1048576) 
+            << DgInt1(CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH)) 
             << DgString0(naCol->getColName().data());
           
           return -1;
@@ -3644,7 +3661,8 @@ short CmpSeabaseDDL::dropSeabaseTable2(
               schemaNamePart,
               catalogNamePart);
 
-  bindWA.setExternalTableDrop(TRUE);
+  if (dropTableNode->isExternal())
+    bindWA.setExternalTableDrop(TRUE);
   NATable *naTable = bindWA.getNATableInternal(cn, TRUE, NULL, TRUE); 
   bindWA.setExternalTableDrop(FALSE);
 
@@ -9273,7 +9291,9 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
       // find the index that corresponds to this constraint
       char query[1000];
       
-      str_sprintf(query, "select I.keytag, I.is_explicit from %s.\"%s\".%s T, %s.\"%s\".%s I where T.table_uid = %Ld and T.constraint_uid = %Ld and T.table_uid = I.base_table_uid and T.index_uid = I.index_uid ",
+      // the cardinality hint should force a nested join with
+      // TABLE_CONSTRAINTS as the outer and INDEXES as the inner
+      str_sprintf(query, "select I.keytag, I.is_explicit from %s.\"%s\".%s T, %s.\"%s\".%s I /*+ cardinality 1e9 */ where T.table_uid = %Ld and T.constraint_uid = %Ld and T.table_uid = I.base_table_uid and T.index_uid = I.index_uid ",
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_TABLE_CONSTRAINTS,
                   getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_INDEXES,
                   naTable->objectUid().castToInt64(),
@@ -9544,6 +9564,25 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
         return;
       }
 
+  // If column privs specified for non SELECT ops for Hive native tables, 
+  // return an error
+  if (cn.isHive() && (colPrivs.size() > 0))
+    {
+      if (hasValue(colPrivs, INSERT_PRIV) ||
+          hasValue(colPrivs, UPDATE_PRIV) ||
+          hasValue(colPrivs, REFERENCES_PRIV))
+      {
+         NAString text1("INSERT, UPDATE, REFERENCES");
+         NAString text2("Hive columns on");
+         *CmpCommon::diags() << DgSqlCode(-CAT_INVALID_PRIV_FOR_OBJECT)
+                             << DgString0(text1.data())
+                             << DgString1(text2.data())
+                             << DgTableName(extTableName);
+         processReturn();
+         return;
+      }
+    }
+
  // Prepare to call privilege manager
   NAString MDLoc;
   CONCAT_CATSCH(MDLoc, getSystemCatalog(), SEABASE_MD_SCHEMA);
@@ -9579,6 +9618,61 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       processReturn();
       return;
     }
+
+  // for Hive tables, the table must have an external table defined
+  if (objectUID == 0 && naTable &&
+      (naTable->isHiveTable() &&
+      !naTable->hasExternalTable()))
+    {
+      // For native hive tables, grantor must be DB__ROOT or belong
+      // to one of the admin roles:  DB__ROOTROLE, DB__HIVEROLE
+      // In hive, you must be an admin, DB__ROOTROLE and DB__HIVEROLE
+      // is the equivalent of an admin.
+      if (!ComUser::isRootUserID() &&
+          !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
+          !ComUser::currentUserHasRole(HIVE_ROLE_ID)) 
+        {
+          *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+          processReturn();
+          return;
+        }
+
+      // create an external table for this hive table.
+      // if the trafodion schema containing hive table descriptions does
+      // not exists, the "create external" table command creates it.
+      char query[(ComMAX_ANSI_IDENTIFIER_EXTERNAL_LEN*4) + 100];
+      snprintf(query, sizeof(query),
+               "create implicit external table \"%s\" for %s.\"%s\".\"%s\"",
+               objectNamePart.data(),
+               catalogNamePart.data(),
+               schemaNamePart.data(),
+               objectNamePart.data());
+      Lng32 retcode = cliInterface.executeImmediate(query);
+      if (retcode < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          return;
+        }
+
+      // remove NATable and reload it to include external table defn.
+      ActiveSchemaDB()->getNATableDB()->removeNATable
+        (cn,
+         ComQiScope::REMOVE_MINE_ONLY, COM_BASE_TABLE_OBJECT,
+         FALSE, FALSE);
+
+      naTable = bindWA.getNATable(cn);
+      if (naTable == NULL)
+        {
+          SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in seabaseGrantRevoke");
+          return;
+        }
+
+      objectUID = (int64_t)naTable->objectUid().get_value();
+      objectOwnerID = (int32_t)naTable->getOwner();
+      schemaOwnerID = naTable->getSchemaOwner();
+      objectType = naTable->getObjectType();
+    }
+
 
   // for metadata tables, the objectUID is not initialized in the NATable
   // structure

@@ -13371,6 +13371,7 @@ Insert::Insert(const CorrName &name,
    isUpsert_(FALSE),
    isTrafLoadPrep_(FALSE),
    createUstatSample_(createUstatSample),
+   xformedEffUpsert_(FALSE),
    baseColRefs_(NULL)
 {
   insert_a_tuple_ = FALSE;
@@ -13463,7 +13464,7 @@ RelExpr * Insert::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->isUpsert_ = isUpsert_;
   result->isTrafLoadPrep_ = isTrafLoadPrep_;
   result->createUstatSample_ = createUstatSample_;
-  
+  result->xformedEffUpsert_ = xformedEffUpsert_;
   return GenericUpdate::copyTopNode(result, outHeap);
 }
 

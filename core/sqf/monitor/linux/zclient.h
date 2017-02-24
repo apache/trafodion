@@ -20,6 +20,78 @@
 //
 // @@@ END COPYRIGHT @@@
 ********************************************************************/
+//
+// Zookeeper Client (CZClient class)
+//
+//  Implements the Zookeeper client functionality in the monitor process
+//  as the ZClient object which manages znode monitoring events through
+//  the ZCLientThread.
+//
+//  CZClient::StartWork() and CZClient::ShutdownWork() manage ZCLientThread
+//  creation and deletion.
+//
+//      CZClient::StartMonitoring()
+//              |
+//          pthread_create(ZClientThread)
+//              |
+//          ZC_DISABLED
+//              |
+//          CZClient::MonitorZCluster()
+//      
+//  CZClient::MonitorZCluster() is the thread main, a state machine:
+//      
+//                       CZClient::StartMonitoring()
+//                               |
+//                           ZC_START
+//                               |
+//                       CZClient::StartClusterMonitoring()
+//                               |
+//                           ZC_WATCH
+//                               |
+//                       CZClient::WatchCluster()
+//                               |
+//                           ZC_MYZNODE <------------------|
+//                               |                         |
+//                       CZClient::CheckMyZNode()          |
+//                               |                         |
+//                               |-------------------------|
+//                                                         |
+//  ZOO_CHILD_EVENT                                        |
+//  ZOO_NOTWATCHING_EVENT                                  |
+//            |                                            |
+//    CZClient::TriggerCheck()---|                         |
+//                               |                         |
+//                           ZC_CLUSTER                    |
+//                               |                         |
+//                       CZClient::CheckCluster()          |
+//                               |                         |
+//                               |-------------------------|
+//  ZOO_CREATED_EVENT                                      |
+//  ZOO_DELETED_EVENT                                      |
+//  ZOO_CHANGED_EVENT                                      |
+//            |                                            |
+//    CZClient::TriggerCheck()---|                         |
+//                               |                         |
+//                           ZC_ZNODE                      |
+//                               |                         |
+//                       CZClient::HandleExpiredZNode()    |
+//                               |                         |
+//                               |-------------------------|
+//                 
+//                       CZClient::StopMonitoring()
+//                               |
+//                           ZC_STOP
+//                               |
+//                       CZClient::StopClusterMonitoring()
+//                               |
+//                           ZC_DISABLED
+//
+//      CZClient::ShutdownWork()
+//              |
+//          ZC_SHUTDOWN
+//              |
+//          pthread_join()
+//
 #ifndef ZCLIENT_H_
 #define ZCLIENT_H_
 
@@ -36,10 +108,11 @@ using namespace std;
 typedef list<string>    ZNodeList_t;
 
 // The following two functions must be implemented in the calling program.
-// - HandleZSessionExpiration() is invoked when the program's session expires.
+// - HandleMyNodeExpiration() is invoked when the monitor's session expires, or
+//   the monitor's znode expires or quorum communication fails
 // - HandleNodeExpiration(nodeName) is invoked when the znode associated with
 //   the nodeName passed in expires.
-extern void HandleZSessionExpiration( void );
+extern void HandleMyNodeExpiration( void );
 extern void HandleNodeExpiration( const char *nodeName );
 
 class CZClient : public CLock
@@ -54,6 +127,7 @@ public:
         ZC_WATCH,         // set cluster watchers
         ZC_CLUSTER,       // check cluster
         ZC_ZNODE,         // check znode
+        ZC_MYZNODE,       // check this monitor's znode
         ZC_STOP,          // stop monitoring
         ZC_SHUTDOWN       // thread exit 
     } ZClientState_t;
@@ -79,6 +153,7 @@ public:
 
 private:
     void    CheckCluster( void );
+    void    CheckMyZNode( void );
     int     GetClusterZNodes( String_vector *children );
     int     GetZNodeData( string &monZnode, string &nodeName, int &pnid );
     ZClientState_t GetState( void ) { CAutoLock lock(getLocker()); return( state_ ); }
@@ -103,13 +178,15 @@ private:
     ZClientState_t  state_;        // Physical node's current operating state
     bool            enabled_;      // true when cluster monitoring enabled
     bool            checkCluster_; // true when cluster monitoring enabled
-    long            zcMonitoringRate_; // in nano seconds
+    bool            resetMyZNodeFailedTime_; // set to trigger fail time reset
+    long            zcMonitoringRate_; // in seconds
 
     string          zkQuorumHosts_;
     string          zkRootNode_;
     string          zkRootNodeInstance_;
     stringstream    zkQuorumPort_;
     int             zkSessionTimeout_;
+    struct timespec myZNodeFailedTime_;
     
     ZNodeList_t     znodeQueue_;
 };

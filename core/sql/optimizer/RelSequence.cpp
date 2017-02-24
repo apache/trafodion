@@ -1210,9 +1210,12 @@ RelExpr *RelSequence::bindNode(BindWA *bindWA)
   bindWA->getCurrentScope()->setRETDesc(resultTable);
 
   //bindWA->getCurrentScope()->getSequenceNode() = this;
-  
-  if(partitionChange) {
-    partitionChange->convertToValueIdList(partitionChange_, bindWA, ITM_ITEM_LIST);
+  if (!bindWA->getCurrentScope()->context()->inUpsertXform())
+    {
+      if(partitionChange) {
+        partitionChange->convertToValueIdList(partitionChange_, bindWA, ITM_ITEM_LIST);
+      }
+    
     if(bindWA->errStatus())
       return this;
   

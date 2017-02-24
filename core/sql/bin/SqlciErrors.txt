@@ -222,8 +222,8 @@
 1224 ZZZZZ 99999 BEGINNER MAJOR DBADMIN An invalid data type was specified for routine parameter $0~String0.
 1225 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mixing EXECUTE privilege with other privileges is not allowed.
 1226 ZZZZZ 99999 BEGINNER MAJOR DBADMIN No valid combination of privileges was specified.
-1227 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot unregister user.  User has been granted privileges.
-1228 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot drop role.  Role has been granted privileges.
+1227 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot unregister user.  User $0~String0 has been granted privileges on $1~String1.
+1228 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Cannot drop role.  Role $0~String0 has been granted privileges on $1~String1.
 1229 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The $0~string0 option is not supported.
 1230 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Object owner must be the schema owner in private schemas.
 1231 ZZZZZ 99999 BEGINNER MAJOR DBADMIN User-defined routine $0~String0 could not be created.
@@ -1310,6 +1310,7 @@ $1~String1 --------------------------------
 4259 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Primary Key clause must be specified for an HBase mapped table.
 4260 ZZZZZ 99999 BEGINNER MAJOR DBADMIN HBase table($0~String0) to be mapped as an external table does not exist.
 4261 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The schema name $0~SchemaName is reserved for HBase mapped tables and cannot be explicitly specified.
+4262 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'drop external table' command to drop the external table.
 4300 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of procedure $0~TableName was not valid - a UDR was invoked within a trigger.
 4301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of routine $0~TableName was not valid - return of result sets is not allowed within a trigger.
 4302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName expects $1~Int0 parameters but was called with $1~int1 parameters.

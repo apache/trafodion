@@ -111,6 +111,7 @@ public class Session extends RepObjInterface
    String varSessionSQLPrompt=SessionDefaults.DEFAULT_SQL_PROMPT;
    boolean ampmFmt = false;
    boolean sessionStats = false;
+   String sessionStatsType;
    LFProperties lfProps = null;
    Process procObj=null;
    private HTMLObject htmlObj=null;
@@ -1260,6 +1261,16 @@ static {
    public LFProperties getLfProps()
    {
       return lfProps;
+   }
+
+   public String getSessionStatsType()
+   {
+      return sessionStatsType;
+   }
+
+   public void setSessionStatsType(String sessionStatsType)
+   {
+      this.sessionStatsType = sessionStatsType;
    }
 
    public void setLFProps(LFProperties lfProps)

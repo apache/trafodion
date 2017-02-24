@@ -154,6 +154,7 @@ public:
   , inOlapOrderBy_              (FALSE)
   , inOlapPartitionBy_          (FALSE)
   , inComputedColumnExpr_       (FALSE)
+  , inUpsertXform_              (FALSE)
   {
     CMPASSERT(FALSE != REL_UPDATE && FALSE != REL_INSERT);
   }
@@ -227,7 +228,7 @@ public:
   NABoolean        &inOlapPartitionBy() { return inOlapPartitionBy_; }
   NABoolean        &inComputedColumnExpr() { return inComputedColumnExpr_; }
   StmtDDLCreateTrigger *&triggerObj(){ return triggerObj_; }
-
+  NABoolean        &inUpsertXform() {return inUpsertXform_;}
   //++ MV
   inline MvBindContext *&getMvBindContext() { return pMvBindContext_; }
 
@@ -336,6 +337,8 @@ private:
   // --------------------------------------------------------------------
   NABoolean lookAboveToDecideSubquery_;
 
+  // True if we are in the midst of transforming upsert with indexes. 
+  NABoolean inUpsertXform_;
   // --------------------------------------------------------------------
   // Non-NULL if binding children of a Tuple, in which case dereferencing
   // it gives the current child number.
@@ -876,6 +879,7 @@ public:
       dcompressInMaster_(FALSE),
       compressInMaster_(FALSE),
       partnNumInBuffer_(FALSE)
+      
   {}
 
   HostArraysWA(const HostArraysWA &other, CollHeap * h = 0)
@@ -913,6 +917,7 @@ public:
       dcompressInMaster_(other.dcompressInMaster_),
       compressInMaster_(other.compressInMaster_),
       partnNumInBuffer_(other.partnNumInBuffer_)
+     
   {}
 
 
@@ -1047,6 +1052,7 @@ public:
   void setRowsetRowCountArraySize (const Lng32 size) {rowsetRowCountArraySize_ = size;}
 
   Lng32 getRowsetRowCountArraySize () { return rowsetRowCountArraySize_;}
+  
 private:
 
   BindWA *bindWA_;

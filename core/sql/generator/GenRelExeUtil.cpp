@@ -1639,6 +1639,8 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "ALL",   "INVALID_VIEWS",   "IN",      "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_CATALOG_ },
     {  "USER",   "SEQUENCES",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
     {  "ALL", "SEQUENCES",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
+    {  "USER",   "TABLES",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_CATALOG_ },
+    {  "USER",   "OBJECTS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_CATALOG_ },
 
     {  "USER",   "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
     {  "SYSTEM", "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
@@ -1890,17 +1892,6 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
    if (objectType_ == "COMPONENT")
      objName = objectName_.getQualifiedNameObj().getObjectName();
 
-  if (catName.isNull())
-    catName = 
-      generator->currentCmpContext()->schemaDB_->getDefaultSchema().getCatalogName();
-
-  if (schName.isNull())
-    schName = 
-      generator->currentCmpContext()->schemaDB_->getDefaultSchema().getSchemaName();
-
-  if (objName.isNull())
-    objName = "DUMMY__";
-
   NAString hiveDefCatName = "";
   CmpCommon::getDefault(HIVE_CATALOG, hiveDefCatName, FALSE);
   hiveDefCatName.toUpper();
@@ -1911,11 +1902,25 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
   
   if (((catName == hiveDefCatName) ||
        (catName == HIVE_SYSTEM_CATALOG)) &&
-      (queryType == ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_))
+      (queryType != ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_))
     {
       setHiveObjects(TRUE);
     }
-  
+
+  if (NOT hiveObjects())
+    {
+      if (catName.isNull())
+        catName = 
+          generator->currentCmpContext()->schemaDB_->getDefaultSchema().getCatalogName();
+      
+      if (schName.isNull())
+        schName = 
+          generator->currentCmpContext()->schemaDB_->getDefaultSchema().getSchemaName();
+      
+      if (objName.isNull())
+        objName = "DUMMY__";
+    }
+
   if (hiveObjects())
     {
       if (CmpCommon::getDefault(MODE_SEAHIVE) == DF_OFF)
@@ -1926,10 +1931,15 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
 	  GenExit();
 	}
 
-      // right now, only retrieval of tables in hive schema is supported.
-      // when other object types are supported, modify the following check
-      // accordingly.
-      if (queryType != ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_)
+      // retrieval of tables, views and all objects in hive schema is supported.
+      if (NOT((queryType == ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_) ||
+              (queryType == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_) ||
+              (queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_) ||
+              (queryType == ComTdbExeUtilGetMetadataInfo::TABLES_IN_CATALOG_) ||
+              (queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_) ||
+              (queryType == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_CATALOG_) ||
+              (queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_) ||
+              (queryType == ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_)))
 	{
 	  *CmpCommon::diags() << DgSqlCode(-4219);
 	  GenExit();
@@ -2187,6 +2197,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
            (ausStr == "EXTERNAL"))
     gm_exe_util_tdb->setExternalObjs(TRUE);
   gm_exe_util_tdb->setGetVersion(getVersion_);
+  gm_exe_util_tdb->setCascade(cascade_);
   
   if ((queryType == ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_TABLE_) ||
       (queryType == ComTdbExeUtilGetMetadataInfo::PARTITIONS_FOR_INDEX_))
@@ -4542,6 +4553,8 @@ const char * HiveMDaccessFunc::getVirtualTableName()
     return "HIVEMD_SYNONYMS__";
   else if (mdType_ == "SYSTEM_TABLES")
     return "HIVEMD_SYSTEM_TABLES__";
+  else if (mdType_ == "SCHEMAS")
+    return "HIVEMD_SCHEMAS__";
   else
     return "HIVEMD__"; 
 }
@@ -4797,12 +4810,12 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
 
   char * schemaName = NULL;
   NAString schemaNameInt ;
-  if (schemaName_.isNull())
-    schemaNameInt = HIVE_SYSTEM_SCHEMA_LC;
-  else
-    schemaNameInt = schemaName_;
-  schemaName = space->allocateAlignedSpace(schemaNameInt.length() + 1);
-  strcpy(schemaName, schemaNameInt.data());
+  if (NOT schemaName_.isNull())
+    {
+      schemaNameInt = schemaName_;
+      schemaName = space->allocateAlignedSpace(schemaNameInt.length() + 1);
+      strcpy(schemaName, schemaNameInt.data());
+    }
 
   char * objectName = NULL;
   if (NOT objectName_.isNull()) {
@@ -4828,10 +4841,12 @@ short HiveMDaccessFunc::codeGen(Generator * generator)
     type = ComTdbExeUtilHiveMDaccess::VIEWS_;
   else if (mdType_ == "ALIAS")
     type = ComTdbExeUtilHiveMDaccess::ALIAS_;
-  else if (mdType_ == "SYNONYMSS")
+  else if (mdType_ == "SYNONYMS")
     type = ComTdbExeUtilHiveMDaccess::SYNONYMS_;
   else if (mdType_ == "SYSTEM_TABLES")
     type = ComTdbExeUtilHiveMDaccess::SYSTEM_TABLES_;
+  else if (mdType_ == "SCHEMAS")
+    type = ComTdbExeUtilHiveMDaccess::SCHEMAS_;
    
   ComTdbExeUtilHiveMDaccess *hiveTdb
     = new(space)

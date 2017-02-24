@@ -59,6 +59,7 @@ extern "C" Lng32 __stdcall
 PdhOpenQuery (LPCSTR  szD, DWORD  dw, HQUERY  *phQ );
 #endif
 
+#define FREAD_BUFFER_SIZE 2048
 
 //SQ_LINUX #ifdef NA_WINNT
 
@@ -66,7 +67,7 @@ NABoolean MemoryMonitor::threadIsCreated_ = 0;
 HANDLE MemoryMonitor::updateThread_ = (HANDLE) 0;
 ULng32 MemoryMonitor::threadId_ = 0;
 
-DWORD WINAPI memMonitorUpdateThread(void * param) {
+DWORD WINAPI MemoryMonitor::memMonitorUpdateThread(void * param) {
   // params points to the memory monitor object
   MemoryMonitor *memMonitor = (MemoryMonitor*) param;
   Lng32 sleepTime = memMonitor->getSampleInterval();
@@ -102,12 +103,17 @@ MemoryMonitor::MemoryMonitor(Lng32 windowSize,
 {
   // if the windowSize is 0, we do not need memory monitor.
   assert(windowSize);
-  char buffer[1024];
+  char buffer[FREAD_BUFFER_SIZE+1];
   char *currPtr;
-  size_t bytesRead;
+  size_t bytesRead = 0;
   fd_meminfo_ = fopen("/proc/meminfo", "r");
   if (fd_meminfo_) {
-    bytesRead = fread(buffer, 1, 1024, fd_meminfo_);
+    bytesRead = fread(buffer, 1, FREAD_BUFFER_SIZE, fd_meminfo_);
+    if (ferror(fd_meminfo_))
+       assert(false); 
+    if (feof(fd_meminfo_))
+       clearerr(fd_meminfo_); 
+    buffer[bytesRead] = '\0';
     currPtr = strstr(buffer, "MemTotal");
     if (currPtr) {
       sscanf(currPtr, "%*s " PF64 " kB", &memTotal_);
@@ -130,6 +136,14 @@ MemoryMonitor::MemoryMonitor(Lng32 windowSize,
     return;
   }
 
+  // log info to a file, if requested
+  char *lv_logfile = getenv("SQL_MEMMONITOR_LOGFILE");
+  if (lv_logfile) {
+    fd_logfile_ = fopen(lv_logfile, "a");
+  }
+  else
+    fd_logfile_ = NULL;
+
   ULng32 pageSize = 0;  
 
   fd_vmstat_ = fopen("/proc/vmstat", "r");
@@ -138,7 +152,7 @@ MemoryMonitor::MemoryMonitor(Lng32 windowSize,
     {
       // and finally start the update thread
       updateThread_ = CreateNewThread(
-                           &memMonitorUpdateThread, // Thread func
+                           &MemoryMonitor::memMonitorUpdateThread, // Thread func
                            this );   // Argument for thread
       threadIsCreated_ = TRUE;
     }
@@ -208,19 +222,18 @@ void MemoryMonitor::update(float &scale) {
         Int32 success = fseek(fd_meminfo_, 0, SEEK_SET);
         if (success != 0)
                 return;
-	char buffer[4096];
+	char buffer[FREAD_BUFFER_SIZE+1];
 	Int64 memFree = -1, memCommitAS = 0;
 	Int64 pgpgout = -1, pgpgin = -1;
-	size_t bytesRead;
+	size_t bytesRead = 0;
 	char * currPtr;
-        bytesRead = fread(buffer, 1, 2048, fd_meminfo_);
+        bytesRead = fread(buffer, 1, FREAD_BUFFER_SIZE, fd_meminfo_);
         // Make sure there wasn't an error (next fseek will clear eof)
-        if (!feof(fd_meminfo_))// Make sure there wasn't an error
-        {
-	        scale = 6;
-		pressure_ = 0;
-		return;
-        }
+        if (ferror(fd_meminfo_))
+           assert(false); 
+        if (feof(fd_meminfo_))
+           clearerr(fd_meminfo_); 
+        buffer[bytesRead] = '\0';
         currPtr = strstr(buffer, "MemFree");
 	if (currPtr) sscanf(currPtr, "%*s " PF64 " kB", &memFree);
         currPtr = strstr(buffer, "Committed_AS");
@@ -254,13 +267,13 @@ void MemoryMonitor::update(float &scale) {
 		pressure_ = 0;
 		return;
 	}
-	bytesRead = fread(buffer, 1, 2048, fd_vmstat_);
-        if (!feof(fd_vmstat_))
-        {
-	        scale = 6;
-		pressure_ = 0;
-		return;
-        }
+        bytesRead = 0;
+	bytesRead = fread(buffer, 1, FREAD_BUFFER_SIZE, fd_vmstat_);
+        if (ferror(fd_vmstat_))
+           assert(false); 
+        if (feof(fd_vmstat_))
+           clearerr(fd_vmstat_); 
+        buffer[bytesRead] = '\0';
         currPtr = strstr(buffer, "pgpgin");
 	if (currPtr) sscanf(currPtr, "%*s " PF64 " kB", &pgpgin);
         currPtr = strstr(buffer, "pgpgout");
@@ -277,6 +290,27 @@ void MemoryMonitor::update(float &scale) {
         float normalizedPageFaultRate = pageFaultRate_ / physKBytesRatio_;
         pressure_ = MAXOF(MINOF(((1 - 4 * percentFree) * (normalizedPageFaultRate / 25) * commitPhysRatio_), 100), 0);
 	scale = 1 + (100 - pressure_) * 0.05;
+
+        if (fd_logfile_) {
+          time_t now = time(0);
+          char timebuf[32];
+          char* dt = ctime_r(&now, timebuf);
+          size_t dtLen = strlen(timebuf);
+
+          // remove trailing \n from timebuf
+          if (dtLen > 1)
+            timebuf[dtLen-1] = '\0';
+          fprintf(fd_logfile_,
+                  "%s: pctFree=%f, pageFaultRate=%f, (free*normpagefault*commitratio) = (%f * %f * %f), pressure=%d\n",
+                  timebuf,
+                  percentFree,
+                  pageFaultRate_,
+                  (1 - 4 * percentFree),
+                  (normalizedPageFaultRate / 25),
+                  commitPhysRatio_,
+                  pressure_);
+          fflush(fd_logfile_);
+        }
 	return;
 }
 

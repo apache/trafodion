@@ -168,8 +168,9 @@ class PrivMgr
     bool isAuthorizationEnabled(void); 
     void setAuthorizationEnabled(PrivMDStatus authStatus) {authorizationEnabled_ = authStatus;}
     bool isAuthIDGrantedPrivs(
-       int32_t authID,
-       std::vector<PrivClass> privClasses);
+       const int32_t authID,
+       std::vector<PrivClass> privClasses,
+       std::vector<int64_t> &objectUIDs);
     void resetFlags();
     void setFlags();
 

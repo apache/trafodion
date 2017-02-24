@@ -26,6 +26,7 @@
 import os
 import sys
 import json
+import socket
 from common import ParseXML, run_cmd, append_file, mod_file, write_file, \
                    cmd_output, run_cmd_as_user, err, TMP_DIR
 
@@ -104,8 +105,9 @@ export ENABLE_HA="%s"
 export ZOOKEEPER_NODES="%s"
 export ZOOKEEPER_PORT="%s"
 export SECURE_HADOOP="%s"
+export CLUSTERNAME="%s"
 """ % (TRAF_HOME, dbcfgs['java_home'], ' '.join(nodes), ' -w ' + ' -w '.join(nodes),
-       str(len(nodes)), hadoop_type, dbcfgs['enable_ha'], zk_nodes, zk_port, dbcfgs['secure_hadoop'])
+       str(len(nodes)), hadoop_type, dbcfgs['enable_ha'], zk_nodes, zk_port, dbcfgs['secure_hadoop'], socket.gethostname())
 
     run_cmd('mkdir -p %s' % TRAFODION_CFG_DIR)
     write_file(TRAFODION_CFG_FILE, trafodion_config)

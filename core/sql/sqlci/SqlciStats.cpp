@@ -118,26 +118,48 @@ short SqlciStats::displayStats(SqlciEnv * sqlci_env)
   // do not display, if stats display is set to off.
   if (statsDisplay_ == FALSE)
     return 0;
-
   Lng32 newStrLen = 
-    strlen("GET STATISTICS , options ") +
+    strlen("GET STATISTICS ") +
     (statsOptions_ ? strlen(statsOptions_) : 0) +
-    10;
+    50;
   char * newStr = new char[newStrLen+1];
+  NABoolean displayAll = FALSE;
   strcpy(newStr, "GET STATISTICS ");
   if (statsOptions_)
-    {
-      strcat(newStr, ", options '");
-      strcat(newStr, statsOptions_);
-      strcat(newStr, "'");
-    }
+  {
+     if (strcmp(statsOptions_, "PERTABLE") == 0)
+        strcat(newStr, "FOR QID CURRENT PERTABLE ");
+     else if (strcmp(statsOptions_, "PROGRESS") == 0)
+        strcat(newStr, "FOR QID CURRENT PROGRESS ");
+     else if (strcmp(statsOptions_, "DEFAULT") == 0)
+        strcat(newStr, "FOR QID CURRENT DEFAULT ");
+     else if (strcmp(statsOptions_, "ALL") == 0)
+        displayAll = TRUE; 
+     else if (statsOptions_)
+     {
+        strcat(newStr, ", options '");
+        strcat(newStr, statsOptions_);
+        strcat(newStr, "'");
+     }
+  }
   strcat(newStr, ";");
-
   NABoolean savedShowshape = sqlci_env->showShape();
   sqlci_env->showShape() = FALSE;
   statsDisplay_ = FALSE;
-  DML dml(newStr, DML_DESCRIBE_TYPE, "__MXCI_GET_STATS__");
-  retcode = dml.process(sqlci_env);
+  if (displayAll)
+  {
+     strcpy(newStr, "GET STATISTICS FOR QID CURRENT PROGRESS ;");
+     DML dml(newStr, DML_DESCRIBE_TYPE, "__MXCI_GET_STATS__");
+     retcode = dml.process(sqlci_env);
+     strcpy(newStr, "GET STATISTICS FOR QID CURRENT DEFAULT ;");
+     DML dml1(newStr, DML_DESCRIBE_TYPE, "__MXCI_GET_STATS__");
+     retcode = dml1.process(sqlci_env);
+  }
+  else
+  {
+     DML dml(newStr, DML_DESCRIBE_TYPE, "__MXCI_GET_STATS__");
+     retcode = dml.process(sqlci_env);
+  }
   delete [] newStr;
   sqlci_env->showShape() = savedShowshape;
 

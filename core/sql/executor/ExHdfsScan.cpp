@@ -621,8 +621,14 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                     ((hdfsErrorDetail == ENOENT) || (hdfsErrorDetail == EAGAIN)))
                   {
                     ComDiagsArea * diagsArea = NULL;
-                    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                    if (hdfsErrorDetail == ENOENT)
+                      ExRaiseSqlError(getHeap(), &diagsArea, 
+                                      (ExeErrorCode)(EXE_TABLE_NOT_FOUND), NULL,
+                                      NULL, NULL, NULL,
+                                      hdfsScanTdb().tableName());
+                    else
+                      ExRaiseSqlError(getHeap(), &diagsArea, 
+                                      (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
                     pentry_down->setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_AND_DONE;
                     break;
@@ -682,6 +688,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                 "HDFS",
                                 (char*)"ExpLOBInterfaceSelectCursor/open",
                                 getLobErrStr(intParam1));
+                
                 pentry_down->setDiagsArea(diagsArea);
                 step_ = HANDLE_ERROR;
                 break;

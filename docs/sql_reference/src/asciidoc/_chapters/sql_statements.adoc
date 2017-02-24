@@ -309,6 +309,61 @@ ALTER LIBRARY myudfs FILE $TMUDFLIB;
 ////
 
 <<<
+[[alter_sequence_statement]]
+== ALTER SEQUENCE Statement
+
+The ALTER SEQUENCE Statement changes the future behavior of exiting sequence, including INCREMENT, MAXVALUE, CACHE and CYCLE. 
+
+Multiple options can be concurrently specified and separated by a space. Any options not altered will
+retain their previous settings.
+
+ALTER SEQUENCE is a Trafodion SQL extension.
+
+For more inforamation, see <<create_sequence_statement,CREATE SEQUENCE Statement>> or <<drop_sequence_statement,DROP SEQUENCE Statement>>.
+
+```
+ALTER SEQUENCE [[catalog-name.]schema-name.]sequence
+[INCREMENT BY integer]
+[MAXVALUE integer | NO MAXVALUE]
+[CACHE integer]
+[CYCLE | NO CYCLE]
+```
+<<<
+[[alter_sequence_syntax]]
+=== Syntax Description of ALTER SEQUENCE
+
+The options above serve the same purposes as they serve when you create a sequence. For more information, see <<create_sequence_statement,CREATE SEQUENCE Statement>>.
+
+NOTE:
+
+* START WITH, MINVALUE, NO CACHE and DATA TYPE cannot be changed. Instead, drop and recreate the sequence specifying the desired options.
+
+* The unused preallocated values will be lost if a sequence is altered.
+
+* Some sequence values will be skipped if you change the INCREMENT BY before the first reference to `seqnum(SEQUENCE, next)`.
+
+<<<
+[[alter_sequence_considerations]]
+=== Considerations for ALTER SEQUENCE
+To issue an ALTER SEQUENCE statement, one of the following must be true:
+
+* You are DB ROOT.
+
+* You have the ALTER or ALTER_SEQUENCE component privilege for the SQL_OPERATIONS component.
+
+<<<
+[[alter_sequence_examples]]
+=== Examples of ALTER SEQUENCE
+
+The following statement changes the MAXVALUE and CACHE for the sequence named `employee_seq`, which is created in <<create_sequence_examples,Examples of CRAETE SEQUENCE>>.
+
+```
+ALTER SEQUENCE employee_seq 
+MAXVALUE 20000
+CACHE 30
+```
+
+<<<
 [[alter_table_statement]]
 == ALTER TABLE Statement
 
@@ -1335,17 +1390,15 @@ create function reverse (varchar(32))
 == CREATE INDEX Statement
 
 The CREATE INDEX statement creates an SQL index based on one or more columns of a table or table-like object.
-The CREATE VOLATILE INDEX statement creates an SQL index with a lifespan that is limited to the SQL session that
-the index is created. Volatile indexes are dropped automatically when the session ends. See <<Indexes,Indexes>>.
 
-CREATE INDEX is a {project-name} SQL extension.
+CREATE INDEX is a Trafodion SQL extension.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement
 inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement,
 AUTOCOMMIT must be turned ON (the default) for the session.
 
 ```
-CREATE [VOLATILE] INDEX index ON table
+CREATE [VOLATILE | UNIQUE] INDEX index ON table
    (column-name [ASC[ENDING] | DESC[ENDING]]
    [,column-name [ASC[ENDING] | DESC[ENDING]]]...)
    [HBASE_OPTIONS (hbase-options-list)]
@@ -1357,6 +1410,19 @@ hbase-options-list is:
 
 [[create_index_syntax]]
 === Syntax Description of CREATE INDEX
+* `VOLATILE`
++
+The CREATE VOLATILE INDEX statement creates an SQL index with a lifespan that is limited to the SQL session that the index is created. Volatile indexes are dropped automatically when the session ends. See <<indexes,Indexes>>.
+
+* `UNIQUE`
++
+The CREATE UNIQUE INDEX statement creates a unique index on a table and enforces uniqueness for the indexed field, that is, it imposes the restriction that any duplicate column values are disallowed and must be eliminated before creating a unique index on a column. 
+
++
+Unique index not only improves the query performance, but also provides data integrity checking. The constraint is checked when rows of the table are inserted or updated.
+
++
+NOTE: Multiple NULL values are treated as duplicate values for a column which can contain only one NULL value.
 
 * `_index_`
 +
@@ -1491,6 +1557,74 @@ No restriction exists on the number of indexes per table.
 ```
 CREATE INDEX xempname
 ON persnl.employee (last_name, first_name);
+```
+
+* This example shows that a volatile index can be created only on a volatile table.
++
+```
+SQL>create volatile table test2(c1 int);
+--- SQL operation complete.
+
+SQL>create volatile index idx_test2 on test2(c1);
+--- SQL operation complete. 
+
+SQL>create table test1(c1 int);
+--- SQL operation complete. 
+
+SQL>create volatile index idx_test1 on test1 (c1);
+
+*** ERROR[4082] Object TEST1 does not exist or is inaccessible. [2017-01-13 11:35:26] 
+```
+
+* This example shows a unique index can be created on a table which has only one NULL value.
++
+```
+SQL>select * from t25;
+
+A           B
+----------- ----------
+          1 NULL
+          2 aaa
+
+--- 2 row(s) selected. 
+
+SQL>create unique index idx_t25 on t25(b);
+--- SQL operation complete. 
+
+SQL>showddl t25;
+
+CREATE TABLE TRAFODION.SEABASE.T25
+   (
+     A                              INT DEFAULT NULL NOT SERIALIZED,
+     B                              CHAR(10) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL NOT SERIALIZED
+    )
+    ATTRIBUTES ALIGNED FORMAT;
+
+CREATE UNIQUE INDEX IDX_T25 ON TRAFODION.SEABASE.T25
+   (
+     B ASC
+   )
+   ATTRIBUTES ALIGNED FORMAT;
+
+--- SQL operation complete. 
+```
+
+* This example shows a unique index cannot be created on a table which has multiple NULL values.
++
+```
+SQL>select * from t25;
+
+A           B
+----------- ----------
+          1 NULL
+          2 aaa
+
+--- 2 row(s) selected.
+
+SQL>create unique index idx_t25 on t25(b);
+
+*** ERROR[8110] Duplicate rows detected. [2017-01-12 17:17:51]
+*** ERROR[1053] Unique index TRAFODION.SEABASE.IDX_T25 could not be created because the specified column(s) contain duplicate data. [2017-01-12 17:17:51]
 ```
 
 <<<
@@ -2220,6 +2354,210 @@ CREATE PRIVATE SCHEMA AUTHORIZATION JSmith;
 ```
 
 <<<
+[[create_sequence_statement]]
+== CREATE SEQUENCE Statement
+
+The CREATE SEQUENCE Statement produces an automatic ascending sequence of numeric values, which can be used by multiple users as primary key values. For example, to generate only odd numbers in a sequence, you can create a sequence defined with START WITH=1, INCREMENT BY=2.
+
+Multiple options can be concurrently specified and separated by a space. 
+
+There are two expressions can be used with sequence:
+
+* `seqnum(SEQUENCE, current)`: get the current value which is returned from the sequence on the current session rather than the current value of the sequence. 
+
++
+For example, a sequence object called `employee_seq` which starts with 1 and caches up to 25 with only three users.
+
++
+If User A calls `seqnum(SEQUENCE, current)`, it will return 1 and reserve from 1 to 25, and User B immediately calls `seqnum(SEQUENCE, current)` and it will return 26 and reserve from 26 to 51, then User C immediately calls `seqnum(SEQUENCE, current)` and it will return 51 and reserve from 51 to 75. 
+
++
+Now, if User A immediately calls `seqnum(SEQUENCE, next)`, it will return 2 rather than 76. 76 will be returned if User A immediately calls `seqnum(SEQUENCE, next)` after achieving 25 where the cache for User A is exhausted.
+
+* `seqnum(SEQUENCE, next)`: advance the sequence and retrieve the next value. For an ascending sequence, this value is increasing.
+
++
+NOTE: 
+
+** It always returns the initial value of the sequence by calling `seqnum(SEQUENCE, current)` or `seqnum(SEQUENCE, next)` for the first time.
+
+** It returns a new incremented value of the sequence with each subsequent reference to `seqnum(SEQUENCE, next)`.
+
+CREATE SEQUENCE is a Trafodion SQL extension.
+
+For more inforamation, see <<drop_sequence_statement,DROP SEQUENCE Statement>> or <<alter_sequence_statement,ALTER SEQUENCE Statement>>.
+
+```
+CREATE SEQUENCE [[catalog-name.]schema-name.]sequence
+[START WITH integer]
+[INCREMENT BY integer]
+[MAXVALUE integer | NOMAXVALUE]
+[MINVALUE integer]
+[CACHE integer | NO CACHE]
+[CYCLE | NO CYCLE]
+[DATA TYPE]
+```
+By default, it is an ascending sequence that starts with 1, increments by 1, has cache value of 25 and the
+maximum value of 2^63^-2, does not cycle and belongs to LARGEINT data type.
+
+[[create_sequence_syntax]]
+=== Syntax Description of CREATE SEQUENCE
+
+* `[[catalog-name.]schema-name.]sequence`
+
++
+Specifies the name of the sequence to be created, with optional catalog and schema name, where each part of the name is a valid sql identifier with a maximum of 128 characters.
+
++
+The name should be unique and does not exist for any session in the same schema. Trafodion does not support the overloading of session names. That is, you cannot register the same session name more than once.
+
++
+If you do not fully qualify the session name, Trafodion qualifies it according to the schema of the current session. For more information, see <<identifiers,Identifiers>> and <<database_object_names,Database Object Names>>.
+
+* `START WITH`
+
++
+Specifies the initial value. This value can only be positive, and must be greater than or equal to MINVALUE (if NO CACHE is specified) and less than MAXVALUE.  
+
++
+NOTE: If the initial value is beyond the range specified by MINVALUE or MAXVALUE, an error will be raised.
+
++
+If not specified, the START WITH defaults to 1. For an ascending sequence, this value is MINVALUE.
+
+* `INCREMENT BY`
++
+Specifies the increment value between consecutive sequence values. 
+
++
+NOTE: This value can only be positive, so that Trafodion only supports ascending sequence. The value must be smaller than or equal to the difference between MAXVALUE and MINVALUE. 
+
++
+If not specified, the INCREMENT BY defaults to 1.
+
+* `MAXVALUE`
++
+Specifies the maximum value where an ascending sequence stops generating values or cycles. The default is 2^^63^-2.
+
++
+The MAXVALUE of a sequence depends on the maximum value supported by the data type, and you can also specify a MAXVALUE within the range.
+
++
+NOTE:
+
+** An error is returned if MAXVALUE is beyond supported range, or if subsequent value is generated for an ascending sequence when the MAXVALUE is exceeded with NO CYCLE specified.
+
+** MAXVALUE might not be same as the actual maximum value that the sequence generated if the INCREAMENT BY is a value other than 1. For example, when a sequence is specified with START WITH 3, INCREMENT 4 and MAXVALUE 12 will return a maximum value of 11.
+
+* `NONMAXVALUE`
++
+If NOMAXVALUE is specified, for an ascending sequence, the MAXVALUE is the value you specified or the maximum value supported by the data type.
+
+* `MINVALUE`
++
+Specifies the minimum value where an ascending sequence cycles after hitting the maximum limit. The default is 1.
+
++
+The MINVALUE of a sequence depends on the minimum value supported by the data type, and you can also specify a MINVALUE within the range.
+
++
+If MINVALUE and START WITH are not specified, for an ascending sequence, the MINVALUE defaults to 1.
+
+* `CYCLE`
++
+Specifies that the sequence exhausts its range and wraps around after reaching its MAXVALUE.
+
++
+If specified, for an ascending sequence, it restarts from MINVALUE after reaching MAXVALUE. 
+
+* `NOCYCLE`
++
+Specifies that the sequence cannot cycle once the MAXVALUE is reached, and throws an exception when generating subsequent value if the limit is exceeded. 
+
++
+NOCYCLE is the default. 
+
+* `CACHE`
++
+Specifies the range of upcoming successive values preallocated and stored in memory for speeding up future request. 
+
++
+The default CACHE value is 25. 
+
++
+The minimum CACHE value is 2.
+
++
+The CACHE value must be less than or equal to the value determined by following formula: 
+
++
+`(MAXVALUE – START WITH + 1) / INCREMENT BY`
+
++
+The sequence cache will be repopulated when the cache is exhausted.
+
++
+NOTE: The unused preallocated values will be lost and leave unintended gaps if unexpected shutdown occurs or the sequence object is manually restarted, Trafodion will continue to cache new values from where it left off, so that the same value will never appear twice unless CYCLE is specified.
+
+* `NOCACHE`
++
+Specifies the values of the sequence are not preallocated, which lowers the risk of losing values even if it might cause performance degradation. In this case, every request for a new value will be synchronously updated in the system table.
+
++
+If both CACHE and NOCACHE are not specified, it will cache 25 values by default.
+
+* `DATA TYPE`
++
+A sequence can be specified as following data types:
+
++
+[cols="1,1,1,options="header"]
+|===
+| Type   | Minimum value | Maximum value 
+| UNSIGNED SMALLINT   | 1                | 2^16^-1
+| UNSIGHED INTEGER    | 1                | 2^32^-1
+| LARGEINT            | 1                | 2^63^-2
+|===
+                
++
+If not specified, the default data type is LARGEINT.
+
+<<<
+[[create_sequence_considerations]]
+=== Considerations for CREATE SEQUENCE
+
+To issue a CREATE SEQUENCE statement, one of the following must be true:
+
+* You are DB ROOT.
+
+* You are creating the sequence in a shared schema.
+
+* You are the private schema owner.
+
+* You have the CREATE or CREATE_SEQUENCE component privilege for the SQL_OPERATIONS component.
+
++
+NOTE: In this case, if you create a sequence in a private schema, it will be owned by the schema owner.
+
+<<<
+[[create_sequence_examples]]
+=== Examples of CREATE SEQUENCE
+
+The following statement creates a sequence named `employee_seq`, that starts with 1, increments by 1, has maximum value of 10000, does not cycle, caches 20 at a time and belongs to UNSIGNED SAMLLINT.
+
+```
+CREATE SEQUENCE   employee_seq
+START WITH        1
+INCREMENT BY      1
+MAXVALUE          10000   
+NOCYCLE
+CACHE             20  
+UNSIGNED SMALLINT
+```
+
+The first reference to `seqnum(empolyee_seq, next)` will return 10000, and the second reference will return 10001. Each subsequent reference will return a value 1 greater than the previous value.
+
+<<<
 [[create_table_statement]]
 == CREATE TABLE Statement
 
@@ -2616,7 +2954,7 @@ If the constraint refers to the other table in a query expression, you must also
 * Volatile temporary tables are closely linked to the session. Their name space is unique across multiple concurrent
 sessions, and therefore allow multiple sessions to use the same volatile temporary table names simultaneously without
 any conflicts.
-* Volatile tables support creation of indexes.
+* Volatile tables support creation of indexes. Volatile index can be created only on volatile table.
 * Volatile tables are partitioned by the system. The number of partitions is limited to four partitions by default.
 The partitions will be distributed across the cluster. The default value is four partitions regardless of the system
 configuration.
@@ -3815,6 +4153,54 @@ To drop a schema, one of the following must be true:
 +
 ```
 DROP SCHEMA sales;
+```
+
+<<<
+[[drop_sequence_statement]]
+== DROP SEQUENCE Statement
+
+The DROP SEQUENCE Statement removes a sequence from the Trafodion database.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run DDL statements inside a user-defined transaction (BEGIN WORK…COMMIT WORK) or when AUTOCOMMIT is OFF. To run these statements, AUTOCOMMIT must be turned ON (the default) for the session.
+
+If you want to change the initial value of a sequence, you can drop and then recreate a sequence with the same name and different START WITH value.
+
+DROP SEQUENCE is a Trafodion SQL extension.
+
+For more inforamation, see <<create_sequence_statement,CREATE SEQUENCE Statement>> or <<alter_sequence_statement,ALTER SEQUENCE Statement>>.
+
+```
+DROP SEQUENCE [[catalog-name.]schema-name.]sequence 
+```
+
+<<<
+[[drop_sequence_syntax]]
+=== Syntax Description of DROP SEQUENCE
+
+* `[[catalog-name.]schema-name.]sequence`
+
++
+Specifies the name of the sequence to be dropped, with optional catalog and schema name, where each part of the name is a valid sql identifier with a maximum of 128 characters. 
+
+<<<
+[[drop_sequence_considerations]]
+=== Considerations for DROP SEQUENCE
+To issue a DROP SEQUENCE statement, one of the following must be true:
+
+* You are DB ROOT.
+
+* You are the owner of the sequence.
+
+* You have the DROP or DROP_SEQUENCE component privilege for the SQL_OPERATIONS component.
+
+<<<
+[[drop_sequence_examples]]
+=== Examples of DROP SEQUENCE
+
+The following statement drops the sequence named `employee_seq`, which is created in <<create_sequence_examples,Examples of CRAETE SEQUENCE>>.
+
+```
+DROP SEQUENCE employee_seq
 ```
 
 <<<
