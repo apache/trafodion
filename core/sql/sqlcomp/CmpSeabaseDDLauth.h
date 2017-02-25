@@ -77,6 +77,7 @@ class CmpSeabaseDDLauth
                                     NAString &authText);
      AuthStatus   getRoleIDs     (const Int32 authID,
                                     std::vector<int32_t> &roleIDs);
+     NAString     getObjectName  (const std::vector <int64_t> objectUIDs);
 
      // accessors
      Int32          getAuthCreator() const    { return authCreator_; }

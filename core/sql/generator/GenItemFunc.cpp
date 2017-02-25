@@ -619,6 +619,13 @@ short BuiltinFunction::codeGen(Generator * generator)
 						     attr, space);
       }
       break;
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+	  function_clause =
+	    new(generator->getSpace()) ex_function_json_object_field_text(getOperatorType(),
+						     attr, space);
+    }
+    break;
       
     case ITM_QUERYID_EXTRACT:
       {
@@ -654,7 +661,7 @@ short BuiltinFunction::codeGen(Generator * generator)
 							space);
       }
     break;
-   
+
     case ITM_SOUNDEX:
     {
         function_clause =
@@ -663,7 +670,28 @@ short BuiltinFunction::codeGen(Generator * generator)
                     space);
     }
     break;
-      
+
+    case ITM_AES_ENCRYPT:
+    {
+      function_clause =
+        new(generator->getSpace()) ExFunctionAESEncrypt(getOperatorType(),
+                                                        attr,
+                                                        space,
+                                                        getArity(),
+                                                        CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE));
+      break;
+    }
+
+    case ITM_AES_DECRYPT:
+    {
+      function_clause =
+        new(generator->getSpace()) ExFunctionAESDecrypt(getOperatorType(),
+                                                        attr,
+                                                        space,
+                                                        getArity(),
+                                                        CmpCommon::getDefaultNumeric(BLOCK_ENCRYPTION_MODE));
+      break;
+    }
     default:
       break;
     }
@@ -2839,6 +2867,8 @@ short LOBinsert::codeGen(Generator * generator)
     li->setFromExternal(TRUE);
   else if (obj_ ==LOBoper::BUFFER_)
     li->setFromBuffer(TRUE);
+  else if(obj_ == LOBoper::EMPTY_LOB_)
+    li->setFromEmpty(TRUE);
 
   li->lobNum() = lobNum();
   li->setLobStorageType(lobStorageType());
@@ -2913,6 +2943,8 @@ short LOBupdate::codeGen(Generator * generator)
     lu->setFromExternal(TRUE);
   else if (obj_ == LOBoper::BUFFER_)
     lu->setFromBuffer(TRUE);
+  else if(obj_ == LOBoper::EMPTY_LOB_)
+    lu->setFromEmpty(TRUE);
 
   lu->lobNum() = lobNum();
   lu->setLobStorageType(lobStorageType());

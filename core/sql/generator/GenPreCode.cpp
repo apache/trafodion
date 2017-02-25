@@ -2844,6 +2844,8 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
              (ddlNode->getOperatorType() == DDL_CREATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_POPULATE_INDEX) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_COLUMN_DATATYPE) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_TABLE_ALTER_HBASE_OPTIONS) ||
+             (ddlNode->getOperatorType() == DDL_ALTER_INDEX_ALTER_HBASE_OPTIONS) ||
              (ddlNode->getOperatorType() == DDL_ALTER_TABLE_RENAME)))
      {
         // transaction will be started and commited in called methods.
@@ -4175,9 +4177,11 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
 	 TRUE);
 
       if (isHiveTable())
-	// assign individual files and blocks to each ESPs
-	((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
-       generator->setProcessLOB(TRUE);
+        {
+          // assign individual files and blocks to each ESPs
+          ((NodeMap *) getPartFunc()->getNodeMap())->assignScanInfos(hiveSearchKey_);
+          generator->setProcessLOB(TRUE);
+        }
     }
 
   
@@ -4895,6 +4899,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
                           << DgString0("Reason: Cannot return values from an hbase insert, update or delete.");
       GenExit();
     }
+
    NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
 
   if  (producesOutputs()) 
@@ -4991,12 +4996,19 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
 	isUnique = TRUE;
     }
  
+  NABoolean hbaseRowsetVSBBopt = 
+    (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON);
+  if ((getTableDesc()->getNATable()->isHbaseMapTable()) ||
+      (getTableDesc()->getNATable()->isHbaseRowTable()) ||
+      (getTableDesc()->getNATable()->isHbaseCellTable()))
+    hbaseRowsetVSBBopt = FALSE;
+
   if (getInliningInfo().isIMGU()) {
      // There is no need to do checkAndDelete for IM
      canDoCheckAndUpdel() = FALSE;
      uniqueHbaseOper() = FALSE;
      if ((generator->oltOptInfo()->multipleRowsReturned()) &&
-	  (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
+	  (hbaseRowsetVSBBopt) &&
          (NOT generator->isRIinliningForTrafIUD()) &&
          (NOT getTableDesc()->getNATable()->hasLobColumn()))
        uniqueRowsetHbaseOper() = TRUE;
@@ -5015,7 +5027,7 @@ RelExpr * HbaseDelete::preCodeGen(Generator * generator,
           (executorPred().isEmpty()))
 	{
 	  if ((generator->oltOptInfo()->multipleRowsReturned()) &&
-	      (CmpCommon::getDefault(HBASE_ROWSET_VSBB_OPT) == DF_ON) &&
+	      (hbaseRowsetVSBBopt) &&
 	      (NOT generator->isRIinliningForTrafIUD()) &&
               (NOT getTableDesc()->getNATable()->hasLobColumn()))
 	    uniqueRowsetHbaseOper() = TRUE;
@@ -5099,6 +5111,15 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 {
   if (nodeIsPreCodeGenned())
     return this;
+
+  if (getTableDesc()->getNATable()->isHbaseMapTable())
+    {
+      *CmpCommon::diags() << DgSqlCode(-1425)
+			  << DgTableName(getTableDesc()->getNATable()->getTableName().
+					 getQualifiedNameAsAnsiString())
+                          << DgString0("Reason: update not yet supported.");
+      GenExit();
+    }
 
   if (!processConstHBaseKeys(
            generator,
@@ -5397,7 +5418,11 @@ RelExpr * HbaseUpdate::preCodeGen(Generator * generator,
 	      lu->updatedTableSchemaName() += "\"";
               lu->lobSize() = col->getType()->getPrecision();
 	      lu->lobNum() = col->lobNum();
-	      // lu->lobStorageType() = col->lobStorageType();
+	     
+              if (lu->lobStorageType() == Lob_Empty)
+                    {
+                      lu->lobStorageType() = col->lobStorageType();
+                    }
               if (lu->lobStorageType() != col->lobStorageType())
                     {
                       *CmpCommon::diags() << DgSqlCode(-1432)
@@ -5450,6 +5475,10 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
       (getInliningInfo().isEffectiveGU()))
     inlinedActions = TRUE;
 
+  // Allow projecting rows if the upsert has IM. 
+  if (inlinedActions && isUpsert())
+    setReturnRow(TRUE);
+
   if (((getTableDesc()->getNATable()->isHbaseRowTable()) ||
        (getTableDesc()->getNATable()->isHbaseCellTable())) &&
       (producesOutputs()))
@@ -5465,9 +5494,13 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
       ((getInsertType() == Insert::VSBB_INSERT_USER) ||
        (getInsertType() == Insert::UPSERT_LOAD)))
     {
-      if ((inlinedActions || producesOutputs())&& !getIsTrafLoadPrep())
- 	setInsertType(Insert::SIMPLE_INSERT);
+      // Remove this restriction
+      /* if ((inlinedActions || producesOutputs())&& !getIsTrafLoadPrep())
+         setInsertType(Insert::SIMPLE_INSERT);*/
+      
     }
+
+  
 
   
   // if there are blob columns, use simple inserts.
@@ -5557,6 +5590,12 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 		  li->insertedTableSchemaName() += "\"";
 		  
 		  li->lobNum() = col->lobNum();
+                  //If we are initializing an empty_lob, assume the storage 
+                  //type of the underlying column
+                  if (li->lobStorageType() == Lob_Empty)
+                    {
+                      li->lobStorageType() = col->lobStorageType();
+                    }
                   if (li->lobStorageType() != col->lobStorageType())
                     {
                       *CmpCommon::diags() << DgSqlCode(-1432)
@@ -5702,6 +5741,38 @@ RelExpr * ExeUtilLobExtract::preCodeGen(Generator * generator,
     handle_->replaceVEGExpressions
       (availableValues, getGroupAttr()->getCharacteristicInputs());
   
+  markAsPreCodeGenned();
+
+   // Done.
+   return this;
+ }
+
+RelExpr * ExeUtilLobUpdate::preCodeGen(Generator * generator,
+                                       const ValueIdSet & externalInputs,
+                                       ValueIdSet &pulledNewInputs)
+{
+  if (nodeIsPreCodeGenned())
+    return this;
+
+  if (! ExeUtilExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
+    return NULL;
+
+  ValueIdSet availableValues;
+  for (ValueId exprId = getGroupAttr()->getCharacteristicInputs().init();
+       getGroupAttr()->getCharacteristicInputs().next(exprId);
+       getGroupAttr()->getCharacteristicInputs().advance(exprId) )
+    {
+      if (exprId.getItemExpr()->getOperatorType() != ITM_VEG_REFERENCE)
+       availableValues += exprId;
+    }
+  
+  getGroupAttr()->setCharacteristicInputs(availableValues);
+  getInputValuesFromParentAndChildren(availableValues);
+
+  if (handle_)
+    handle_->replaceVEGExpressions
+      (availableValues, getGroupAttr()->getCharacteristicInputs());
+  xnNeeded() = TRUE;
   markAsPreCodeGenned();
 
    // Done.
@@ -6138,6 +6209,11 @@ RelExpr * MapValueIds::preCodeGen(Generator * generator,
                   {
                     availableValues -= subtractions;
                     availableValues += additions;
+                    // do the same for valuesNeededForVEGRewrite_,
+                    // which will be used for rewriting the char.
+                    // outputs
+                    valuesNeededForVEGRewrite_ -= subtractions;
+                    valuesNeededForVEGRewrite_ += additions;
                   }
               }
 
@@ -10791,9 +10867,28 @@ RelExpr * PhysicalTableMappingUDF::preCodeGen(Generator * generator,
 
   for(Int32 i = 0; i < getArity(); i++)
   {
-    getChildInfo(i)->getOutputIds().replaceVEGExpressions(
+    ValueIdList &childOutputs(getChildInfo(i)->getOutputIds());
+    ValueIdList origChildOutputs(childOutputs);
+
+    childOutputs.replaceVEGExpressions(
          availableValues,
          getGroupAttr()->getCharacteristicInputs());
+
+    for (CollIndex j=0; j<childOutputs.entries(); j++)
+      if (NOT(childOutputs[j].getType() == origChildOutputs[j].getType()))
+        {
+          // VEG rewrite changed the type.
+          // Since we recorded the original type of the input
+          // column and exposed this type to the UDF writer, don't
+          // change the type now. Instead, add a cast back to the
+          // original type.
+          ItemExpr *castToOrigType = new(CmpCommon::statementHeap())
+            Cast(childOutputs[j].getItemExpr(),
+                 origChildOutputs[j].getType().newCopy());
+
+          castToOrigType->synthTypeAndValueId();
+          childOutputs[j] = castToOrigType->getValueId();
+        }
   }
 
   planInfo_ = getPhysicalProperty()->getUDRPlanInfo();

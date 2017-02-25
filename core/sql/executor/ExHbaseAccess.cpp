@@ -269,6 +269,9 @@ ExHbaseAccessTcb::ExHbaseAccessTcb(
 	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.mergeInsertTuppIndex_), 0);
       if (hbaseAccessTdb.mergeInsertRowIdTuppIndex_ > 0)
 	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.mergeInsertRowIdTuppIndex_), 0);
+      if (hbaseAccessTdb.mergeIUDIndicatorTuppIndex_ > 0)
+	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.mergeIUDIndicatorTuppIndex_), 0);
+
       if (hbaseAccessTdb.rowIdTuppIndex_ > 0)      
 	pool_->get_free_tuple(workAtp_->getTupp(hbaseAccessTdb.rowIdTuppIndex_), 0);
       if (hbaseAccessTdb.rowIdAsciiTuppIndex_ > 0)      
@@ -522,9 +525,18 @@ ExOperStats * ExHbaseAccessTcb::doAllocateStatsEntry(
                                                         CollHeap *heap,
                                                         ComTdb *tdb)
 {
-  return new(heap) ExHbaseAccessStats(heap,
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
+  ExHbaseAccessStats *hbaseAccessStats =  new(heap) ExHbaseAccessStats(heap,
 				   this,
 				   tdb);
+  if (ss != NULL)
+     hbaseAccessStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hbaseAccessStats;
 }
 
 void ExHbaseAccessTcb::registerSubtasks()
@@ -689,6 +701,7 @@ short ExHbaseAccessTcb::moveRowToUpQueue(const char * row, Lng32 len,
 short ExHbaseAccessTcb::setupError(NAHeap *heap, ex_queue_pair &qparent, Lng32 retcode, const char * str, const char * str2)
 {
   ContextCli *currContext = GetCliGlobals()->currContext();
+
   // Make sure retcode is positive.
   if (retcode < 0)
     retcode = -retcode;
@@ -742,6 +755,27 @@ short ExHbaseAccessTcb::setupError(Lng32 retcode, const char * str, const char *
       pentry_down->setDiagsArea(diagsArea);
       return -1;
     }
+
+  return 0;
+}
+
+short ExHbaseAccessTcb::raiseError(Lng32 errcode, 
+                                   Lng32 * intParam1,
+                                   const char * str1, 
+                                   const char * str2)
+{
+  // Make sure retcode is positive.
+  if (errcode < 0)
+    errcode = -errcode;
+    
+  ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
+  
+  ComDiagsArea * diagsArea = NULL;
+  ExRaiseSqlError(getHeap(), &diagsArea, 
+                  (ExeErrorCode)(errcode), NULL,
+                  intParam1, NULL, NULL,
+                  str1, str2, NULL);
+  pentry_down->setDiagsArea(diagsArea);
 
   return 0;
 }
@@ -1028,7 +1062,6 @@ short ExHbaseAccessTcb::getColPos(char * colName, Lng32 colNameLen, Lng32 &idx)
       short len = *(short*)currNamePtr;
       currNamePtr += sizeof(short);
       char * currName = currNamePtr;
-      //	&((char*)hbaseAccessTdb().listOfFetchedColNames()->getCurr())[sizeof(short)];
 
       if ((colNameLen == len) &&
 	  (memcmp(colName, currName, len) == 0))
@@ -1100,6 +1133,8 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
   hbaseAccessTdb().listOfFetchedColNames()->position();
   Lng32 idx = -1;
 
+  NABoolean hbmTab = hbaseAccessTdb().hbaseMapTable();
+
   BYTE *colVal; 
   Lng32 colValLen;
   long timestamp;
@@ -1116,6 +1151,35 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
      setupError(retcode, "", "getNumCellsPerRow()");
      return retcode;
   }
+
+  // For an hbase mapped table, the primary key column may not exist as
+  // a separate hbase cell/column. In that case, the rowID of the retrieved row
+  // is the primary key column value.
+  // Also, if a primary key col value exists as a separate cell/column, then
+  // the contents of rowID and pkey col value must be the same.
+  // Retrieve rowID for hbase mapped table. It will be used later to validate
+  // the abovementioned 2 cases.
+  char * pkeyColInfo = hbaseAccessTdb().getPkeyColName();
+  Lng32 pkeyColInfoLen = 0;
+  HbaseStr rowID;
+  NABoolean hbmPkeyColCheck = FALSE;
+  if ((hbaseAccessTdb().hbaseMapTable()) &&
+      (pkeyColInfo))
+    {
+      hbmPkeyColCheck = TRUE;
+
+      pkeyColInfo = hbaseAccessTdb().getPkeyColName();
+      pkeyColInfoLen = *(short*)pkeyColInfo;
+      pkeyColInfo += sizeof(short);
+
+      retcode = ehi_->getRowID(rowID);
+      if (retcode != HBASE_ACCESS_SUCCESS)
+        {
+          setupError(retcode, "", "getRowID()");
+          return retcode;
+        }
+    }      
+ 
   for (int colNo= 0; colNo < numCells; colNo++)
   {
       retcode = ehi_->getColName(colNo, &colName, colNameLen, timestamp);
@@ -1152,13 +1216,48 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
          colValLen = attr->getLength();
          BYTE nullVal;
 
+         if (hbmTab)
+           {
+             Lng32 ij = 0;
+           }
+
          retcode = ehi_->getColVal(colNo, colVal, colValLen, 
-                     attr->getNullFlag(), nullVal);
+                                   (NOT hbaseAccessTdb().hbaseMapTable() 
+                                    ? attr->getNullFlag() : FALSE), nullVal);
          if (retcode != HBASE_ACCESS_SUCCESS)
          {
             setupError(retcode, "", "getColVal()");
             return retcode;
          }
+
+         if (colValLen > attr->getLength())
+         {
+           // col val wont fit. Return error.
+           char buf[1000];
+           str_sprintf(buf, " Details: actual column value length of %d is greater than the expected max buffer size of %d.",
+                       colValLen, attr->getLength());
+           raiseError(EXE_HBASE_ACCESS_ERROR, NULL, 
+                      hbaseAccessTdb().getTableName(), buf);
+           return -1;
+         }
+
+         if ((hbmPkeyColCheck) &&
+             (pkeyColInfoLen == colNameLen) &&
+             (str_cmp(pkeyColInfo, colName, colNameLen) == 0))
+         {
+           // validate that this col value is same as the pkey value for this
+           // hbase mapped table.
+           if (NOT ((rowID.len == colValLen) &&
+                    (str_cmp(rowID.val, (char*)colVal, colValLen) == 0)))
+             {
+               char buf[1000];
+               str_sprintf(buf, " Details: HBase rowID content must match the primary key column content.");
+               raiseError(EXE_HBASE_ACCESS_ERROR, NULL, 
+                          hbaseAccessTdb().getTableName(), buf);
+               return -1;
+             }
+         }
+         
          if (attr->getNullFlag())
          {
             if (nullVal)
@@ -1174,7 +1273,8 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
                 *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = colValLen; 
          }
       }
-  }
+  } // for
+
   // fill in null or default values for missing cols.
   for (idx = 0; idx < asciiSourceTD->numAttrs(); idx++)
     {
@@ -1183,66 +1283,116 @@ Lng32 ExHbaseAccessTcb::createSQRowFromHbaseFormat(Int64 *latestRowTimestamp)
 	  attr = asciiSourceTD->getAttr(idx);
 	  if (! attr)
              ex_assert(FALSE, "Attr not found -2");
-	  
+
 	  char * defVal = attr->getDefaultValue();
-          if (! defVal)
+          char * colInfo = NULL;
+          Lng32 colInfoLen = 0;
+          if (hbmPkeyColCheck || (! defVal))
             {
-              char * colVal = (char*)
-                hbaseAccessTdb().listOfFetchedColNames()->get(idx);
-
-              Text colFam, colName;
-              extractColFamilyAndName(colVal, colFam, colName);
-
-              Int64 v = 0;
-              if (colName.length() == sizeof(char))
-                v = *(char*)colName.data();
-              else if (colName.length() == sizeof(UInt16))
-                v = *(UInt16*)colName.data();
-              else if (colName.length() == sizeof(ULng32))
-                v = *(ULng32*)colName.data();
-
-              char buf[20];
-              str_sprintf(buf, "%Ld", v);
-              ComDiagsArea * diagsArea = NULL;
-              ExRaiseSqlError(getHeap(), &diagsArea,
-                              (ExeErrorCode)(EXE_DEFAULT_VALUE_INCONSISTENT_ERROR),
-                              NULL, NULL, NULL, NULL, buf, hbaseAccessTdb().getTableName());
-              pentry_down->setDiagsArea(diagsArea);
-              return -1;
+              colInfo = 
+                (char*)hbaseAccessTdb().listOfFetchedColNames()->get(idx);
+              colInfoLen = *(short*)colInfo;
+              colInfo += sizeof(short);
             }
 
-	  char * defValPtr = defVal;
-	  short nullVal = 0;
-	  if (attr->getNullFlag())
-	    {
-	      nullVal = *(short*)defVal;
-	      *(short*)&asciiRow_[attr->getNullIndOffset()] = nullVal;
-	      
-	      defValPtr += 2;
-	    }
-	  
-          Lng32 copyLen;
-	  if (! nullVal)
-	    {
-	      if (attr->getVCIndicatorLength() > 0)
-		{
-		 copyLen = *(short*)defValPtr;
-		  if (attr->getVCIndicatorLength() == sizeof(short))
-		    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen; 
-		  else
-		    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen;
-		  defValPtr += attr->getVCIndicatorLength();
-		}
-	        else
-		{
-		  copyLen = attr->getLength();
+          // if this missing col is the pkey col, fill in values
+          // from the retrieved rowID.
+          if (hbmPkeyColCheck &&
+              (pkeyColInfoLen == colInfoLen) &&
+              (str_cmp(pkeyColInfo, colInfo, colInfoLen) == 0))
+            {
+              char * colValLoc = (char *)&asciiRow_[attr->getOffset()];
+              Lng32  colValMaxLen = attr->getLength();
+              if (rowID.len > colValMaxLen)
+                {
+                  // rowID val wont fit. Return error.
+                  char buf[1000];
+                  str_sprintf(buf, " Details: retrieved rowID of length %d is larger than the specified key size of %d.",
+                              rowID.len, colValMaxLen);
+                  raiseError(EXE_HBASE_ACCESS_ERROR, NULL, 
+                             hbaseAccessTdb().getTableName(), buf);
+                  return -1;
                 }
-		char *destPtr = &asciiRow_[attr->getOffset()];
-		str_cpy_all(destPtr, defValPtr, copyLen);
-	    } // not nullVal
-	} // missing col
-    }
 
+              str_cpy_all(colValLoc, rowID.val, rowID.len);
+
+              *(short*)&asciiRow_[attr->getNullIndOffset()] = 0;
+              if (attr->getVCIndicatorLength() > 0)
+                {
+                  if (attr->getVCIndicatorLength() == sizeof(short))
+                    *(short*)&asciiRow_[attr->getVCLenIndOffset()] = rowID.len; 
+                  else
+                    *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = rowID.len; 
+                }
+
+              // dont check for other columns once pkey col has been found.
+              hbmPkeyColCheck = FALSE;
+            } // missing pkey val
+          else 
+            {
+              if (! defVal)
+                {
+                  Text colFam, colName;
+                  extractColFamilyAndName(colInfo, colFam, colName);
+
+                  char buf[20];
+                  if (NOT hbaseAccessTdb().hbaseMapTable())
+                    {
+                      Int64 v = 0;
+                      if (colName.length() == sizeof(char))
+                        v = *(char*)colName.data();
+                      else if (colName.length() == sizeof(UInt16))
+                        v = *(UInt16*)colName.data();
+                      else if (colName.length() == sizeof(ULng32))
+                        v = *(ULng32*)colName.data();
+                      
+                      str_sprintf(buf, "%Ld", v);
+                    }
+                  
+                  ComDiagsArea * diagsArea = NULL;
+                  ExRaiseSqlError(
+                       getHeap(), &diagsArea,
+                       (ExeErrorCode) EXE_DEFAULT_VALUE_INCONSISTENT_ERROR,
+                       NULL, NULL, NULL, NULL, 
+                       (hbaseAccessTdb().hbaseMapTable() ? colName.data() : buf),
+                       hbaseAccessTdb().getTableName());
+                  pentry_down->setDiagsArea(diagsArea);
+                  return -1;
+                }
+
+              char * defValPtr = defVal;
+              short nullVal = 0;
+              if (attr->getNullFlag())
+                {
+                  nullVal = *(short*)defVal;
+                  *(short*)&asciiRow_[attr->getNullIndOffset()] = nullVal;
+                  
+                  defValPtr += 2;
+                }
+              
+              Lng32 copyLen;
+              if (! nullVal)
+                {
+                  if (attr->getVCIndicatorLength() > 0)
+                    {
+                      copyLen = *(short*)defValPtr;
+                      if (attr->getVCIndicatorLength() == sizeof(short))
+                        *(short*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen; 
+                      else
+                        *(Lng32*)&asciiRow_[attr->getVCLenIndOffset()] = copyLen;
+                      defValPtr += attr->getVCIndicatorLength();
+                    }
+                  else
+                    {
+                      copyLen = attr->getLength();
+                    }
+                  char *destPtr = &asciiRow_[attr->getOffset()];
+                  str_cpy_all(destPtr, defValPtr, copyLen);
+                } // not nullVal
+            }
+        } // missing col
+    } // for
+  
   workAtp_->getTupp(hbaseAccessTdb().convertTuppIndex_)
     .setDataPointer(convertRow_);
   workAtp_->getTupp(hbaseAccessTdb().asciiTuppIndex_) 
@@ -1900,7 +2050,7 @@ short ExHbaseAccessTcb::evalEncodedKeyExpr()
   return 0;
 }
 
-short ExHbaseAccessTcb::evalRowIdExpr(NABoolean noVarchar)
+short ExHbaseAccessTcb::evalRowIdExpr(NABoolean isVarchar)
 {
   if (! rowIdExpr())
     return 0;
@@ -1920,17 +2070,17 @@ short ExHbaseAccessTcb::evalRowIdExpr(NABoolean noVarchar)
       return -1;
     }
   
-  if (NOT noVarchar)
+  if (isVarchar)
     {
       rowId_.val = &rowIdRow_[SQL_VARCHAR_HDR_SIZE];
       rowId_.len = *(short*)rowIdRow_;
     }
   else
-   {
-     rowId_.val = rowIdRow_;
-     rowId_.len = hbaseAccessTdb().rowIdLen_;
+    {
+      rowId_.val = rowIdRow_;
+      rowId_.len = hbaseAccessTdb().rowIdLen_;
     }
-    
+
   return 0;
 }
 
@@ -2066,8 +2216,17 @@ short ExHbaseAccessTcb::evalRowIdAsciiExpr(const char * inputRowIdVals,
   // If exclude flag is set, then add a null byte and increment the length by 1.
   if (hbaseAccessTdb().sqHbaseTable())
     {
-      outputRowIdPtr = rowIdBuf; 
-      outputRowIdLen = hbaseAccessTdb().getRowIDLen();
+      if (hbaseAccessTdb().keyInVCformat())
+        {
+          // Key is in varchar format.
+          outputRowIdLen = *(short*)rowIdBuf;
+          outputRowIdPtr = rowIdBuf + sizeof(short);
+        }
+      else
+        {
+          outputRowIdPtr = rowIdBuf; 
+          outputRowIdLen = hbaseAccessTdb().getRowIDLen();
+        }
     }
   else
     {
@@ -2302,17 +2461,18 @@ Lng32 ExHbaseAccessTcb::setupUniqueKeyAndCols(NABoolean doInit)
   char * beginKeyRow = keyData.getDataPointer();
 
   HbaseStr rowIdRowText;
-  if (hbaseAccessTdb().sqHbaseTable())
+  if ((NOT hbaseAccessTdb().sqHbaseTable()) ||
+      (hbaseAccessTdb().keyInVCformat()))
     {
-      rowIdRowText.val = beginKeyRow;
-      rowIdRowText.len = hbaseAccessTdb().keyLen_;
-    }
-  else
-    {
-      // hbase table. Key is in varchar format.
+      // Key is in varchar format.
       short keyLen = *(short*)beginKeyRow;
       rowIdRowText.val = beginKeyRow + sizeof(short);
       rowIdRowText.len = keyLen;
+    }
+  else
+    {
+      rowIdRowText.val = beginKeyRow;
+      rowIdRowText.len = hbaseAccessTdb().keyLen_;
     }
 
   if (keyRangeStatus == keyRangeEx::NO_MORE_RANGES)
@@ -2359,9 +2519,10 @@ keyRangeEx::getNextKeyRangeReturnType ExHbaseAccessTcb::setupSubsetKeys
   short beginKeyLen = hbaseAccessTdb().keyLen_;
   short endKeyLen = hbaseAccessTdb().keyLen_;
 
-  if (NOT hbaseAccessTdb().sqHbaseTable())
+  if ((NOT hbaseAccessTdb().sqHbaseTable()) ||
+      (hbaseAccessTdb().keyInVCformat()))
     {
-      // key in varchar formar
+      // key in varchar format
       beginKeyLen = *(short*)beginKeyRow;
       beginKeyRow += sizeof(short);
       if (beginKeyRow[0] == '\0')
@@ -2776,8 +2937,10 @@ short ExHbaseAccessTcb::createDirectRowBuffer( UInt16 tuppIndex,
 	    {
 	      nullVal = *(short*)&tuppRow[attr->getNullIndOffset()];
 
-	      if ((attr->getDefaultClass() != Attributes::DEFAULT_NULL) &&
-		  (nullVal))
+              if (hbaseAccessTdb().hbaseMapTable())
+                prependNullVal = FALSE;
+	      else if ((attr->getDefaultClass() != Attributes::DEFAULT_NULL) &&
+                       (nullVal))
 		prependNullVal = TRUE;
 	      else if (isUpdate && nullVal)
 		prependNullVal = TRUE;
@@ -3033,13 +3196,29 @@ void ExHbaseAccessTcb::setRowID(char *rowId, Lng32 rowIdLen)
    memcpy(rowID_.val, rowId, rowIdLen);
 }
 
-void ExHbaseAccessTcb::buildLoggingPath(
-                             const char * loggingLocation,
-                             char * logId,
-                             const char * tableName,
+void ExHbaseAccessTcb::buildLoggingFileName(NAHeap *heap,
+                             const char * currCmdLoggingLocation,
+                             const char *tableName,
                              const char * loggingFileNamePrefix,
                              Lng32 instId,
-                             char * loggingFileName)
+                             char *&loggingFileName)
+{
+  if (loggingFileName != NULL)
+     NADELETEBASIC(loggingFileName, heap);
+  loggingFileName = NULL;
+  if (currCmdLoggingLocation == NULL)
+     return;
+  short logLen = strlen(currCmdLoggingLocation)+strlen(loggingFileNamePrefix)+strlen(tableName)+100;
+  loggingFileName = new (heap) char[logLen];
+  sprintf(loggingFileName, "%s/%s_%s_%d",
+                  currCmdLoggingLocation, loggingFileNamePrefix, tableName, instId);
+}
+
+void ExHbaseAccessTcb::buildLoggingPath(
+                             const char *loggingLocation,
+                             char * logId,
+                             const char * tableName,
+                             char *currCmdLoggingLocation)
 {
   time_t t;
   char logId_tmp[30];
@@ -3050,9 +3229,9 @@ void ExHbaseAccessTcb::buildLoggingPath(
      struct tm * curgmtime = gmtime(&t);
      strftime(logId_tmp, sizeof(logId_tmp)-1, "%Y%m%d_%H%M%S", curgmtime);
      logId = logId_tmp;
-  }
-  sprintf(loggingFileName, "%s/ERR_%s/%s_%s_%d",
-                  loggingLocation, logId, tableName, loggingFileNamePrefix, instId);
+  } 
+  sprintf(currCmdLoggingLocation, "%s/ERR_%s_%s",
+                  loggingLocation, tableName, logId);
 }
 
 void ExHbaseAccessTcb::handleException(NAHeap *heap,
@@ -3114,6 +3293,12 @@ void ExHbaseAccessTcb::incrErrorCount( ExpHbaseInterface * ehi,Int64 & totalExce
   retcode = ehi->incrCounter(tabName, rowId, (const char*)"ERRORS",(const char*)"ERROR_COUNT",1, totalExceptionCount);
 }
 
+void ExHbaseAccessTcb::getErrorCount( ExpHbaseInterface * ehi,Int64 & totalExceptionCount,
+                                    const char * tabName, const char * rowId )
+{
+  Lng32 retcode;
+  retcode = ehi->incrCounter(tabName, rowId, (const char*)"ERRORS",(const char*)"ERROR_COUNT",0, totalExceptionCount);
+}
 
 static const char * const BatchSizeEnvvar = 
   getenv("SQL_CANCEL_BATCH_SIZE");

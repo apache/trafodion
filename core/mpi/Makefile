@@ -19,7 +19,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-include $(MY_SQROOT)/macros.gmk
+include $(TRAF_HOME)/macros.gmk
 include ./macros.gmk
 
 MPI_LIBEXPDIR=$(MPI_ROOT)/lib/linux_amd64
@@ -68,7 +68,7 @@ $(BINEXPDIR)/hydra_pmi_proxy: $(MPICH_ROOT)/bin/hydra_pmi_proxy
 	rm -f $(BINEXPDIR)/hydra_pmi_proxy
 	cp $(MPICH_ROOT)/bin/hydra_pmi_proxy $(BINEXPDIR)/hydra_pmi_proxy
 
-$(MPI_LIBEXPDIR)/libmtmpi.so: libmtmpi.c $(MPI_INCEXPDIR)/mpi.h $(MY_SQROOT)/export/include/SCMBuildStr.h
+$(MPI_LIBEXPDIR)/libmtmpi.so: libmtmpi.c $(MPI_INCEXPDIR)/mpi.h $(TRAF_HOME)/export/include/SCMBuildStr.h
 	-mkdir -p $(MPI_LIBEXPDIR) $(LIBEXPDIR)
 	$(CC) $(CCFLAGS) $(INCLUDES) $(LIBSRC) $(LDFLAGS) -c
 	$(CC) $(LDFLAGS) $(CCFLAGS) -Wall -Werror -shared \

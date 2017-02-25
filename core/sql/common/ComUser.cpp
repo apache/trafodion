@@ -348,6 +348,33 @@ Int16 ComUser::getAuthNameFromAuthID(Int32   authID,
   return FEOK;
 }
 
+
+// ----------------------------------------------------------------------------
+// method: currentUserHasRole
+//
+// Searches the list of roles stored for the user to see if passed in role ID
+// is found
+//
+//  Returns:  true - role found
+//            false - role not found
+// ----------------------------------------------------------------------------
+bool ComUser::currentUserHasRole(Int32 roleID)
+{
+  Int32 numRoles = 0;
+  Int32 *roleIDs = 0;
+  if (SQL_EXEC_GetRoleList(numRoles, roleIDs) < 0)
+    return false;
+
+  for (Int32 i = 0; i < numRoles; i++)
+  {
+    Int32 userRole = roleIDs[i];
+    if (userRole == roleID)
+      return true;
+  }
+  return false;
+}
+
+
 // ----------------------------------------------------------------------------
 // method: getRoleList
 //

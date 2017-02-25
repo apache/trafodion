@@ -116,6 +116,21 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
 // Member functions for class GenericUtilExpr
 // -----------------------------------------------------------------------
 
+NABoolean GenericUtilExpr::duplicateMatch(const RelExpr & other) const
+{
+  if (NOT RelExpr::duplicateMatch(other))
+    return FALSE;
+
+  // a simplified version, should really check all fields
+  GenericUtilExpr &o = (GenericUtilExpr &) other;
+  if (NOT (stmtText_ == o.stmtText_ ||
+           stmtText_ && o.stmtText_ &&
+           (strcmp(stmtText_, o.stmtText_) == 0)))
+    return FALSE;
+
+  return TRUE;
+}
+
 RelExpr * GenericUtilExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 {
   GenericUtilExpr *result;
@@ -292,6 +307,33 @@ NABoolean ExeUtilExpr::pilotAnalysis(QueryAnalysis* qa)
     return FALSE;
 
   if (!qa->newTableAnalysis(this))
+    return FALSE;
+
+  return TRUE;
+}
+
+HashValue ExeUtilExpr::topHash()
+{
+  HashValue result = GenericUtilExpr::topHash();
+
+  result ^= tableId_;
+
+  return result;
+}
+
+NABoolean ExeUtilExpr::duplicateMatch(const RelExpr & other) const
+{
+  if (NOT GenericUtilExpr::duplicateMatch(other))
+    return FALSE;
+
+  // a simplified version, should really check all fields
+  ExeUtilExpr &o = (ExeUtilExpr &) other;
+  if (NOT (tableId_ == o.tableId_))
+    return FALSE;
+
+  // if tableDesc is not allocated, compare the names
+  if (tableId_ == NULL &&
+      NOT(tableName_ == o.tableName_))
     return FALSE;
 
   return TRUE;
@@ -4473,7 +4515,10 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   if (isHbase_ || externalTable || isVolatile)
     return boundExpr;
 
-  *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL operations can only be done on trafodion or external tables.");
+  if (isView_ && (isCreate_ || isDrop_))
+    *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL views can only be created or dropped in trafodion schema.");
+  else
+    *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL operations can only be done on trafodion or external tables.");
   bindWA->setErrStatus();
   return NULL;
 }
@@ -5119,6 +5164,36 @@ RelExpr * ExeUtilHiveTruncate::bindNode(BindWA *bindWA)
       return NULL;
     }
 
+  // If the current user has been granted the Trafodion Hive/DB root role or
+  // is DB__ROOT, allow the operation. 
+  // If the current user has select and delete privileges, allow the operation
+  if (bindWA->currentCmpContext()->isAuthorizationEnabled())
+  {
+    NABoolean found = FALSE;
+    if (ComUser::isRootUserID() ||
+        ComUser::currentUserHasRole(HIVE_ROLE_ID) ||
+        ComUser::currentUserHasRole(ROOT_ROLE_ID))
+      found = TRUE;
+
+    if (!found)
+    {
+      PrivMgrUserPrivs *pPrivInfo = naTable->getPrivInfo();
+      if (pPrivInfo &&
+          pPrivInfo->hasPriv(SELECT_PRIV) &&
+          pPrivInfo->hasPriv(DELETE_PRIV))
+        found = TRUE;
+
+      if (!found)
+      {
+        *CmpCommon::diags()
+           << DgSqlCode( -1051 )
+           << DgTableName(naTable->getTableName().getQualifiedNameAsAnsiString());
+        bindWA->setErrStatus();
+        return NULL;
+      }
+    }
+  }
+
   const HHDFSTableStats* hTabStats = 
     naTable->getClusteringIndex()->getHHDFSTableStats();
   
@@ -5689,6 +5764,98 @@ void ExeUtilLobExtract::pushdownCoveredExpr(const ValueIdSet & outputExpr,
 
 }
 
+
+// -----------------------------------------------------------------------
+// Member functions for class ExeUtilLobUpdate
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilLobUpdate::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
+{
+  ExeUtilLobUpdate *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) ExeUtilLobUpdate(NULL, NOOP_,
+                                             0, 0,ERROR_IF_EXISTS_,NULL,
+					     outHeap);
+  else
+    result = (ExeUtilLobUpdate *) derivedNode;
+
+  result->handle_ = handle_;
+  result->fromType_ = fromType_;
+  result->bufAddr_ = bufAddr_;
+  result->updateSize_ = updateSize_;
+ 
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilLobUpdate::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  // BindScope *currScope = bindWA->getCurrentScope();
+ 
+  //
+  // Bind the child nodes.
+  //
+  bindChildren(bindWA);
+  if (bindWA->errStatus())
+    return this;
+
+  //  currScope = bindWA->getCurrentScope();
+  // bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+  
+  if (handle_)
+    {
+      handle_->bindNode(bindWA);
+      if (bindWA->errStatus())
+	return NULL;
+    }
+
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL;
+
+  return boundExpr;
+}
+
+void ExeUtilLobUpdate::transformNode(NormWA & normWARef,
+				      ExprGroupId & locationOfPointerToMe)
+{
+  RelExpr::transformNode(normWARef, locationOfPointerToMe);
+
+}
+
+RelExpr * ExeUtilLobUpdate::normalizeNode(NormWA & normWARef)
+{
+  
+  return RelExpr::normalizeNode(normWARef);
+}
+
+void ExeUtilLobUpdate::pushdownCoveredExpr(const ValueIdSet & outputExpr,
+					    const ValueIdSet & newExternalInputs,
+					    ValueIdSet & predicatesOnParent,
+					    const ValueIdSet * setOfValuesReqdByParent,
+					    Lng32 childIndex
+					    )
+{
+  ValueIdSet exprOnParent;
+
+  if (handle_) // && handle_->child(0))
+    {
+      exprOnParent += handle_->getValueId(); //child(0)->getValueId();
+    }
+
+  // ---------------------------------------------------------------------
+  RelExpr::pushdownCoveredExpr(outputExpr,
+                               newExternalInputs,
+                               predicatesOnParent,
+			       &exprOnParent,
+                               childIndex
+                               );
+
+}
 // -----------------------------------------------------------------------
 // Member functions for class ExeUtilLobShowddl
 // -----------------------------------------------------------------------
@@ -5783,7 +5950,10 @@ RelExpr * ExeUtilHbaseCoProcAggr::bindNode(BindWA *bindWA)
   // BindWA keeps list of coprocessors used, so privileges can be checked.
   bindWA->insertCoProcAggr(this);
 
-  CostScalar rowsAccessed(naTable->estimateHBaseRowCount());
+  Int32 retryLimitMilliSeconds = 5000; // use at most 5 seconds on retries
+  Int32 errorCode = 0;
+  Int32 breadCrumb = 0;
+  CostScalar rowsAccessed(naTable->estimateHBaseRowCount(retryLimitMilliSeconds,errorCode /* out */,breadCrumb /* out */));
   setEstRowsAccessed(rowsAccessed);
 
   return boundExpr;

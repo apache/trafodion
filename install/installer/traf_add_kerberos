@@ -141,7 +141,7 @@ echo "***INFO: Done creating principals and keytabs"
 
 # The RENEW_TOOL is a script that get run that automatically
 # renews the ticket when it get ready to expire.
-RENEW_TOOL='$MY_SQROOT/sql/scripts/krb5service start'
+RENEW_TOOL='$TRAF_HOME/sql/scripts/krb5service start'
 
 # modify .bashrc to add kinit command
 # Steps:

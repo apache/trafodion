@@ -27,6 +27,7 @@
 #include <string.h>
 #include <ifaddrs.h>
 #include <netdb.h>
+#include <unistd.h>
 #include <new>
 #include <stdio.h>
 #include <list>
@@ -53,9 +54,9 @@ int MyPid = -1;
 CZClient    *ZClient = NULL;
 CMonLog     *MonLog =  NULL;
 
-void HandleZSessionExpiration( void )
+void HandleMyNodeExpiration( void )
 {
-    const char method_name[] = "HandleZSessionExpiration";
+    const char method_name[] = "HandleMyNodeExpiration";
     TRACE_ENTRY;
     printf( "%s@%d ZSession expired!\n", method_name, __LINE__ );
     ZClient->StopMonitoring();

@@ -42,8 +42,9 @@ function usage()
                           cpu_offender
                           mem_offender
                           wm_mem_offender
-                          dead
                           active
+                          se_blocked
+                          se_offender
                           inactive
                           in_sql
                           in_client
@@ -80,7 +81,7 @@ PREAMBLE=
 QUERY_TEXT=
 QUERY_FILE=
 OFFENDER_NODE=-1
-LSO_DIR="$MY_SQROOT/export/limited-support-tools/LSO"
+LSO_DIR="$TRAF_HOME/export/limited-support-tools/LSO"
 ERROR_MESSAGE=
 
 # parse command line arguments
@@ -189,6 +190,14 @@ case $SCRIPT in
    in_client)
      PREAMBLE="set param ?filter 'QUERIES_IN_CLIENT=$TIME$NODE'; "
      QUERY_FILE="$LSO_DIR/queries_in_client.sql"
+     ;;
+   se_blocked)
+     PREAMBLE="set param ?filter 'SE_BLOCKED=$TIME$NODE'; "
+     QUERY_FILE="$LSO_DIR/se_blocked.sql"
+     ;;
+   se_offender)
+     PREAMBLE="set param ?filter 'SE_OFFENDER=$TIME$NODE'; "
+     QUERY_FILE="$LSO_DIR/se_offender.sql"
      ;;
    cpu_offender)
      PREAMBLE="set param ?filter 'CPU_OFFENDER=$OFFENDER_NODE'; "

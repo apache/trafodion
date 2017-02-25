@@ -795,9 +795,9 @@ echo "schema=$TEST_SCHEMA" >schema.prop
 echo "$(date '+%m/%d/%Y %R')" >> $rgrlog
 
 export JDBC_T4_URL="jdbc:t4jdbc://localhost:23400/:"
-if [ -r $MY_SQROOT/sql/scripts/sw_env.sh ]; then
+if [ -r $TRAF_HOME/sql/scripts/sw_env.sh ]; then
   # use a custom port for the JDBC Type 4 driver
-  . $MY_SQROOT/sql/scripts/sw_env.sh
+  . $TRAF_HOME/sql/scripts/sw_env.sh
   export JDBC_T4_URL="jdbc:t4jdbc://localhost:${MY_DCS_MASTER_PORT}/:"
 fi
 

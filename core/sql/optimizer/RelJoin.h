@@ -287,6 +287,8 @@ public:
   { return nullInstantiatedForRightJoinOutput_; }
   const ValueIdList & nullInstantiatedForRightJoinOutput() const
   { return nullInstantiatedForRightJoinOutput_; }
+  ValueId addNullInstIndicatorVar(BindWA *bindWA,
+                                  ItemExpr *indicatorVal = NULL);
 
 //++MV
   // Used for translating the required sort key to the right
@@ -792,8 +794,9 @@ public:
        const ValueIdSet &predicatesToRemove,
        const ValueIdSet &commonPredicatesToAdd,
        const ValueIdSet &inputsToRemove,
-       CSEInfo *info,
-       NABoolean testRun);
+       ValueIdSet &valuesForVEGRewrite,
+       ValueIdSet &keyColumns,
+       CSEInfo *info);
 
   // Detect whether rows coming from the ith child contain multi-column skew for
   // a set of join predicates. The output argument vidOfEquiJoinWithSkew is the

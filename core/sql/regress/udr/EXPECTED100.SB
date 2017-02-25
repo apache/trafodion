@@ -1616,7 +1616,7 @@ call call();
 +>WhatIsTheLongestNameThatYouCanEverThinkOfInThisWholeWideWorldAndToHWTGAName
 +>();
 
-*** ERROR[1002] Catalog WHATISTHELONGESTCATALOGNAMETHATYOUCANTHINKOFANDTOHECKWITHTHEGRAMMARCATALOG does not exist or has not been registered on node .
+*** ERROR[1002] Catalog WHATISTHELONGESTCATALOGNAMETHATYOUCANTHINKOFANDTOHECKWITHTHEGRAMMARCATALOG does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 

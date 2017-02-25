@@ -38,6 +38,7 @@
 #include "NABoolean.h"
 #include "NABasicObject.h"
 #include "ExceptionCallBack.h"
+#include "logmxevent.h"
 
 // BaseException should not be instantiated directly
 class BaseException : public NABasicObject
@@ -78,11 +79,14 @@ public:
 // FatalException is unrecoverable, give up the compilation if one is thrown
 class FatalException : public BaseException{
 public:
-  FatalException(const char *msg, const char *fileName, UInt32 lineNum);
+  FatalException(const char *msg, const char *fileName, UInt32 lineNum,
+                 const char *stackTrace = NULL);
   const char * getMsg();
+  const char * getStackTrace();
   virtual void throwException();
 private:
-  char msg_[256];
+  char msg_[EXCEPTION_MSG_SIZE];
+  char stackTrace_[STACK_TRACE_SIZE];
 };
 
 // CmpInternalException is a replacement for EH_INTRNAL_EXCEPTION
@@ -92,7 +96,7 @@ public:
   const char * getMsg();
   virtual void throwException();
 private:
-  char msg_[256];
+  char msg_[EXCEPTION_MSG_SIZE];
 };
 
 // AssertException is thrown from an Assertion in the compiler.
@@ -101,13 +105,16 @@ class AssertException : public BaseException{
 public:
   AssertException(const char *condition,
 		  const char *fileName,
-		  UInt32 lineNum);
+		  UInt32 lineNum,
+		  const char *stackTrace = NULL);
   // copy contructor
   AssertException(AssertException & e);
   const char * getCondition();
+  const char * getStackTrace();
   virtual void throwException();
 private:
-  char condition_[128];
+  char condition_[EXCEPTION_CONDITION_SIZE];
+  char stackTrace_[STACK_TRACE_SIZE];
 };
 
 class OsimLogException : public BaseException{
@@ -128,7 +135,7 @@ public:
 			      UInt32 lineNum);
   virtual void throwException();
 private:
-  char condition_[128];
+  char condition_[EXCEPTION_CONDITION_SIZE];
 };
 
 class PassOneNoPlanFatalException : public FatalException{
@@ -158,10 +165,12 @@ class CmpExceptionCallBack : public ExceptionCallBack
 public:
   void throwFatalException(const char *msg,
 			   const char *file,
-			   UInt32 line);
+			   UInt32 line,
+			   const char *stackTrace = NULL);
   void throwAssertException(const char *cond,
 			    const char *file,
-			    UInt32 line);
+			    UInt32 line,
+			    const char *stackTrace = NULL);
 };
 
 class CmpExceptionEnv{

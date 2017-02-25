@@ -94,8 +94,8 @@ insert into t032t1 values ('3', 3, 3, date '2016-08-15',  time '10:11:12',
                            timestamp '2016-08-15 10:11:12', 4e0);
 select * from t032t1;
 
-select * from (values(1)) x(a) where current_date = current_timestamp;
-select * from (values(1)) x(a) where current_timestamp(0) = current_timestamp(6);
+select * from (values(1)) x(a) where current_date = cast(current_timestamp as date);
+select * from (values(1)) x(a) where current_timestamp(0) = cast(current_timestamp(6) as timestamp(0));
 
 select cast(1e0 as interval year) from dual;
 

@@ -63,6 +63,7 @@ static const char* const hbcErrorEnumStr[] =
  ,"Java exception in getHBulkLoadClient()."
  ,"Preparing parameters for estimateRowCount()."
  ,"Java exception in estimateRowCount()."
+ ,"estimateRowCount() returned false."
  ,"Java exception in releaseHBulkLoadClient()."
  ,"Java exception in getBlockCacheFraction()."
  ,"Preparing parameters for getLatestSnapshot()."
@@ -246,7 +247,7 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_GET_HBLC   ].jm_name      = "getHBulkLoadClient";
     JavaMethods_[JM_GET_HBLC   ].jm_signature = "()Lorg/trafodion/sql/HBulkLoadClient;";
     JavaMethods_[JM_EST_RC     ].jm_name      = "estimateRowCount";
-    JavaMethods_[JM_EST_RC     ].jm_signature = "(Ljava/lang/String;II[J)Z";
+    JavaMethods_[JM_EST_RC     ].jm_signature = "(Ljava/lang/String;III[J)Z";
     JavaMethods_[JM_REL_HBLC   ].jm_name      = "releaseHBulkLoadClient";
     JavaMethods_[JM_REL_HBLC   ].jm_signature = "(Lorg/trafodion/sql/HBulkLoadClient;)V";
     JavaMethods_[JM_GET_CAC_FRC].jm_name      = "getBlockCacheFraction";
@@ -1303,12 +1304,20 @@ HBC_RetCode HBaseClient_JNI::grant(const Text& user, const Text& tblName, const 
 HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
                                               Int32 partialRowSize,
                                               Int32 numCols,
-                                              Int64& rowCount)
+                                              Int32 retryLimitMilliSeconds,
+                                              Int64& rowCount,
+                                              Int32& breadCrumb)
 {
+  // Note: Please use HBC_ERROR_ROWCOUNT_EST_EXCEPTION only for
+  // those error returns that call getExceptionDetails(). This
+  // tells the caller that Java exception information is available.
+
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::estimateRowCount(%s) called.", tblName);
+  breadCrumb = 1;
   if (initJNIEnv() != JOI_OK)
      return HBC_ERROR_INIT_PARAM;
 
+  breadCrumb = 3;
   jstring js_tblName = jenv_->NewStringUTF(tblName);
   if (js_tblName == NULL)
   {
@@ -1319,17 +1328,19 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
 
   jint jPartialRowSize = partialRowSize;
   jint jNumCols = numCols;
+  jint jRetryLimitMilliSeconds = retryLimitMilliSeconds;
   jlongArray jRowCount = jenv_->NewLongArray(1);
   tsRecentJMFromJNI = JavaMethods_[JM_EST_RC].jm_full_name;
   jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_EST_RC].methodID,
                                               js_tblName, jPartialRowSize,
-                                              jNumCols, jRowCount);
+                                              jNumCols, jRetryLimitMilliSeconds, jRowCount);
   jboolean isCopy;
   jlong* arrayElems = jenv_->GetLongArrayElements(jRowCount, &isCopy);
   rowCount = *arrayElems;
   if (isCopy == JNI_TRUE)
     jenv_->ReleaseLongArrayElements(jRowCount, arrayElems, JNI_ABORT);
 
+  breadCrumb = 4;
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
@@ -1339,12 +1350,15 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
     return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
   }
 
+  breadCrumb = 5;
   if (jresult == false)
   {
-    logError(CAT_SQL_HBASE, "HBaseClient_JNI::estimateRowCount()", getLastError());
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::estimateRowCount() returned false", getLastError());
     jenv_->PopLocalFrame(NULL);
-    return HBC_ERROR_ROWCOUNT_EST_EXCEPTION;
+    return HBC_ERROR_ROWCOUNT_EST_FALSE;
   }
+
+  breadCrumb = 6;
   jenv_->PopLocalFrame(NULL);
   return HBC_OK;  // Table exists.
 }
@@ -4621,27 +4635,33 @@ HTC_RetCode HTableClient_JNI::getColVal(int colNo, BYTE *colVal,
     jint kvValLen = p_kvValLen_[idx];
     jint kvValOffset = p_kvValOffset_[idx];
     Lng32 copyLen;
+    Lng32 dataLen;
     jbyte nullByte;
     // If the column is nullable, get the first byte
     // The first byte determines if the column is null(0xff) or not (0)
     if (nullable)
     {
-       copyLen = MINOF(kvValLen-1, colValLen);
-       jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset, 1, &nullByte); 
-       jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset+1, copyLen, 
-               (jbyte *)colVal); 
+      dataLen = kvValLen - 1; 
+      copyLen = MINOF(dataLen, colValLen);
+      jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset, 1, &nullByte); 
+      jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset+1, copyLen, 
+                                (jbyte *)colVal); 
     }
     else 
     {
-        copyLen = MINOF(kvValLen, colValLen);
-        nullByte = 0;
-    	jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset, copyLen,
-             (jbyte *)colVal); 
+      dataLen = kvValLen;
+      copyLen = MINOF(dataLen, colValLen);
+      nullByte = 0;
+      jenv_->GetByteArrayRegion(jba_kvBuffer_, kvValOffset, copyLen,
+                                (jbyte *)colVal); 
     }
     nullVal = nullByte;
-    colValLen = copyLen;
+    if (dataLen > colValLen)
+      colValLen = dataLen;
+    else
+      colValLen = copyLen;
     if (hbs_)
-      hbs_->incBytesRead(colValLen);
+      hbs_->incBytesRead(copyLen);
     return HTC_OK;
 }
 

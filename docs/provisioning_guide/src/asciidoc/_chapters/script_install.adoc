@@ -427,8 +427,6 @@ trafodion-2
 ***INFO: Detected JAVA version 1.7
 ***INFO: copying hbase-trx-hdp2_2-1.3.0.jar to all nodes
 PORT=:8080
-########## Performing 'set' hbase.master.distributed.log.splitting:false on (Site:hbase-site, Tag:version1)
-########## PUTting json into: doSet_version1455657199513777160.json
 .
 .
 .

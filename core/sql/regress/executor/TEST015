@@ -271,6 +271,18 @@ select substring(operator,1,16) operator
 from table (explain(NULL,'XX')) t
 where operator LIKE '%TRAFODION_MERGE%' ;
 
+prepare explainItEff from
+select substring(operator,1,16) operator
+from table (explain(NULL,'XX')) t
+where operator LIKE '%SEQUENCE%' ;
+
+
+prepare explainItVsbb from
+select substring(operator,1,25) operator
+from table (explain(NULL,'XX2')) t
+where operator LIKE '%SEQUENCE%' OR operator LIKE '%VSBB_UPSERT%'  OR operator LIKE '%VSBB_DELETE%' ;
+
+
 insert into t015t1 values (1,1), (2,2);
 insert into t015t3 values (1,1,1), (2,2,2), (3,3,3);
 insert into t015t5 values (1,2,3,4,5);
@@ -771,6 +783,13 @@ upsert into t015t8 values (1,2,3),(11,12,13) ;
 select * from t015t8;
 select * from table (index_table t015t8i1);
 select * from table (index_table t015t8i2);
+delete from t015t8 where i > 10;
+cqd TRAF_UPSERT_TO_EFF_TREE 'on';
+upsert into t015t8 values (1,2,3),(11,12,13) ;
+cqd TRAF_UPSERT_TO_EFF_TREE reset;
+select * from t015t8;
+select * from table (index_table t015t8i1);
+select * from table (index_table t015t8i2);
 MERGE INTO t015t8 ON i = 1
       WHEN MATCHED THEN UPDATE SET j = 12
       WHEN NOT MATCHED THEN INSERT VALUES (1,3,4);
@@ -787,7 +806,7 @@ merge into t015t11 on i = 'c'
   when matched then update set j = 4
   when not matched then insert values ('c', 2);  
 
--- Upsert that gets converted to merge
+-- Upsert that gets transformed
 upsert into t015t12 values (1,1,1) ;
 select * from t015t12;
 upsert into t015t12 values (1,-1,1) ;  
@@ -803,7 +822,7 @@ upsert into t015t13(b,c) values (2,2),(3,3),(4,4);
 select * from t015t13; 
 explain options 'f' upsert into t015t13 (b,c) values (1,1) ;
 
--- Upsert/merge on table with RI constraint & unique index
+-- Upsert(transformed) on table with RI constraint & unique index
 upsert into t015t14 values (1,2),(11,12);
 upsert into t015t15 values (2);
 upsert into t015t14 values (1,3);
@@ -816,29 +835,55 @@ upsert into t015t7 values (1, NVL((select b+1 from t015t7 where a = 1),DEFAULT),
 select * from t015t7;
 
 -- guarding against error 7000 and compiler asserts
+
 prepare XX from UPSERT INTO DEC1 
 (ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a[10]), DEFAULT), 
 ?b[10], ?c[10], ?d[10], ?e[10], null, ?f[10], null) ;
+-- missing default value and default upsert_mode=merge so will transform as merge
 execute explainIt;
 
 prepare XX from UPSERT INTO DEC1 
 (ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 VALUES  (?a, ?b, ?c, ?d, ?e, null, ?f, null) ;
+-- missing default value and default upsert_mode=merge so will transform as merge
 execute explainIt;
 
 prepare XX from UPSERT INTO DEC1 
 (ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
 VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a), DEFAULT), 
 ?b, ?c, ?d, ?e, null, ?f, null) ;
+-- missing default value and default upsert_mode=merge so will transform as merge
 execute explainIt;
+
+cqd TRAF_UPSERT_MODE 'OPTIMAL';
+-- missing default value and default upsert_mode=optimal so will transform as new efficient tree for the next 3 cases 
+prepare XX from UPSERT INTO DEC1 
+(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
+VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a[10]), DEFAULT), 
+?b[10], ?c[10], ?d[10], ?e[10], null, ?f[10], null) ;
+execute explainItEff;
+
+prepare XX from UPSERT INTO DEC1 
+(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
+VALUES  (?a, ?b, ?c, ?d, ?e, null, ?f, null) ;
+execute explainItEff;
+
+prepare XX from UPSERT INTO DEC1 
+(ID, codeValue, title , description, path, synonyms, objectClassCode, propertyCode)  
+VALUES  (NVL((select a.id from DEC1 a where a.codeValue = ?a), DEFAULT), 
+?b, ?c, ?d, ?e, null, ?f, null) ;
+execute explainItEff;
+
+cqd TRAF_UPSERT_MODE reset;
+
 
 prepare XX from UPSERT INTO DE 
 (ID, dataElementConceptID, valueDomainID)  VALUES  
 (NVL((select a.id from DE a where a.dataElementConceptID = 
 (select b.id from DEC1 b where b.codeValue = ?) and a.valueDomainID = ? ), DEFAULT),  
 NVL((select d.id from DEC1 d where d.codeValue = ?), NULL),  ? ) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO ODT 
 (ID, objectTypeID, dataElementID, objectCategoryTypeCode)  
@@ -850,6 +895,7 @@ a.objectCategoryTypeCode = ? and  a.dataElementID =
 NVL((select g.id from OT g where g.objectCode = ? and g.version = ?), NULL),   
 NVL((select h.id from DE h where h.dataElementConceptID = 
 (select i.id from DEC1 i where i.codeValue = ?) and h.valueDomainID = ? ), NULL), ? );
+--missing values and traf_mode=merge default transforms into merge
 execute explainIt;
 
 prepare XX from UPSERT INTO DE 
@@ -857,19 +903,19 @@ prepare XX from UPSERT INTO DE
 (NVL((select a.id from DE a where a.dataElementConceptID = 
 (select b.id from DEC1 b where b.codeValue = ?) and a.valueDomainID = ? ), DEFAULT),  
 (select d.id from DEC1 d where d.codeValue = ?),  ? ) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
 VALUES  (1,  (select d.id from DEC1 d where d.codeValue = ?),  3 ) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
 VALUES  (?[10], ?[10], ?[10] ) ;
-execute explainIt;
+execute explainItEff;
 
 prepare XX from UPSERT INTO DE (ID, dataElementConceptID, valueDomainID)  
 VALUES  (1,  (select d.id from DEC1 d where d.codeValue = 'aa'),  3 ) ;
-execute explainIt;
+execute explainItEff;
 
 --upsert transformation to eff tree tests
 cqd traf_upsert_to_eff_tree 'ON';
@@ -885,10 +931,23 @@ prepare xx2 from upsert into t015t16 values (1,2,30,40,50);
 execute xx2;
 select * from t015t16 order by a;
 
-prepare xx2 from upsert into t015t16 values (3,4,1,1,1),(6,7,80,90,100),(6,7,81,91,101);
-execute xx2;
-select * from t015t16 order by a;
 
-cqd traf_upsert_to_eff_tree 'OFF';
+--For single row param input, ensure plan has no vsbb operators
+prepare xx2 from upsert into t015t16 values(?,?,?,?,?);
+execute explainItVsbb;
+--For multiple rows, ensure plan has vsbb upsert, vsbb delete
+prepare xx2 from upsert into t015t16 values(?[10],?[10],?[10],?[10],?[10]);
+execute explainItVsbb;
+--For upsert-select, ensure plan has vsbb_upsert and vsbb delete
+prepare xx2 from UPSERT INTO t015t16  select a,b,c,d,e from t015t6 ;
+execute explainItVsbb;
+
+--For multiple values , ensure plan has vsbb upsert and vsbb delete
+prepare xx2 from upsert into t015t16 values (3,4,1,1,1),(6,7,80,90,100),(6,7,81,91,101);
+execute explainItVsbb;
+execute xx2;
+select a,b from t015t16 order by a;
+
+cqd traf_upsert_to_eff_tree reset;
 log;
 

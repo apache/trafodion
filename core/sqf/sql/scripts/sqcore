@@ -22,7 +22,7 @@
 # @@@ END COPYRIGHT @@@
 #
 #
-# sqcore - script to collect any user core files generated in /database or $MY_SQROOT 
+# sqcore - script to collect any user core files generated in /database or $TRAF_HOME 
 # across the cluster, and move them to a central location on the head node. Currently, 
 # the script assumes it is run on the head node. The script assumes that the user
 # will take space limitations into consideration.
@@ -34,7 +34,7 @@ function Usage {
     echo "Usage: $0 [ -d <directory> | -q | -r | -h  ]"
     echo 
     echo "-d        Head node directory where the users cluster core files are to be moved"
-    echo "          The default location is \$MY_SQROOT/logs"
+    echo "          The default location is \$TRAF_HOME/logs"
     echo "-q        Quiet mode (no prompts)"
     echo "-r        Remove all of a users cluster core files (excluding head node)"
     echo "-h        Help"
@@ -93,7 +93,7 @@ declare -i SQ_REMOVE=0
 declare -i ERR_FLAG=0
 head=`headnode`
 current=`uname -n`
-to_path=$MY_SQROOT/logs
+to_path=$TRAF_HOME/logs
 
 GetOpts $@
 
@@ -128,20 +128,20 @@ if [ $SQ_QUIET '==' 0 ]; then
     echo
 fi
 
-# Create a list of directory to check for core files (/database and $MY_SQROOT/sql searches.
+# Create a list of directory to check for core files (/database and $TRAF_HOME/sql searches.
 # Note that '$' is used as the field separator to parse out node, volume, and path
 
 # The following can be used to pull the database locations from the sqconfig file,
 # which assumes that the file is correctly configured. Note, that if used the zero-based
 # node calculation should be un-commented from the below "if" statement.
-#dirlist=`grep database $MY_SQROOT/sql/scripts/sqconfig | /bin/gawk '{print $2"$"$3"/"$1}'; $SQ_PDSH -a "find -L $MY_SQROOT/sql -name core\.\* | /bin/gawk -F\/core '{print \\\$1}' | uniq" | /bin/gawk '{sub(":",""); print substr($1,2)"$"$2}'`
+#dirlist=`grep database $TRAF_HOME/sql/scripts/sqconfig | /bin/gawk '{print $2"$"$3"/"$1}'; $SQ_PDSH -a "find -L $TRAF_HOME/sql -name core\.\* | /bin/gawk -F\/core '{print \\\$1}' | uniq" | /bin/gawk '{sub(":",""); print substr($1,2)"$"$2}'`
 
 MY_NODES_PRM=" -a "
 if [ -n "$MY_NODES" ];then
     MY_NODES_PRM=$MY_NODES
 fi
 
-dirlist=`$PDSH $MY_NODES_PRM $PDSH_SSH_CMD "find -L $MY_SQROOT/sql -name core\.\* 2> /dev/null | /bin/gawk -F\/core '{print \\\$1}' | uniq; find -L $MY_SQROOT/export -name core\.\* 2> /dev/null | /bin/gawk -F\/core '{print \\\$1}' | uniq; find -L /database/u*/$USER -name core\.\* 2> /dev/null | /bin/gawk -F \/core '{print \\\$1}'" | /bin/gawk '{sub(":",""); print substr($1,2)"$"$2}' 2> /dev/null`
+dirlist=`$PDSH $MY_NODES_PRM $PDSH_SSH_CMD "find -L $TRAF_HOME/sql -name core\.\* 2> /dev/null | /bin/gawk -F\/core '{print \\\$1}' | uniq; find -L $TRAF_HOME/export -name core\.\* 2> /dev/null | /bin/gawk -F\/core '{print \\\$1}' | uniq; find -L /database/u*/$USER -name core\.\* 2> /dev/null | /bin/gawk -F \/core '{print \\\$1}'" | /bin/gawk '{sub(":",""); print substr($1,2)"$"$2}' 2> /dev/null`
 
 if [[ $dirlist == "" ]]; then
     echo "No core files were found. Exiting..."
@@ -189,7 +189,7 @@ do
                         if [[ $volume != "" ]]; then
                             scp n$node:$path/$j $head:$to_path/$file.n$node.$volume &> /dev/null
                         else
-                            scp n$node:$path/$j $head:$to_path/$file.n$node.MY_SQROOT &> /dev/null
+                            scp n$node:$path/$j $head:$to_path/$file.n$node.TRAF_HOME &> /dev/null
                         fi
 		        if [[ $? != 0 ]]; then
                             echo "  Error while moving n$node:$path/$j..."

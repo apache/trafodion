@@ -67,6 +67,7 @@ import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.trafodion.dtm.HBaseTmZK;
 import org.trafodion.dtm.TmAuditTlog;
+import org.trafodion.dtm.TransactionManagerException;
 
 import org.apache.hadoop.hbase.regionserver.transactional.IdTm;
 import org.apache.hadoop.hbase.regionserver.transactional.IdTmException;
@@ -112,8 +113,8 @@ public class HBaseTxClient {
 
    void setupLog4j() {
         //System.out.println("In setupLog4J");
-        System.setProperty("trafodion.root", System.getenv("MY_SQROOT"));
-        String confFile = System.getenv("MY_SQROOT")
+        System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
+        String confFile = System.getenv("TRAF_HOME")
             + "/conf/log4j.dtm.config";
         PropertyConfigurator.configure(confFile);
     }
@@ -476,7 +477,9 @@ public class HBaseTxClient {
       return TransReturnCode.RET_OK.getShort();
    }
 
-   public short prepareCommit(long transactionId) throws IOException {
+   public short prepareCommit(long transactionId) throws 
+                                                 TransactionManagerException,
+                                                 IOException{
      if (LOG.isDebugEnabled()) LOG.debug("Enter prepareCommit, txid: " + transactionId);
      if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
         TransactionState ts = mapTransactionStates.get(transactionId);
@@ -499,22 +502,41 @@ public class HBaseTxClient {
              if (LOG.isTraceEnabled()) LOG.trace("Exit OK_READ_ONLY prepareCommit, txid: " + transactionId);
              return TransReturnCode.RET_READONLY.getShort();
           case TransactionalReturn.COMMIT_UNSUCCESSFUL:
-             LOG.info("Exit RET_EXCEPTION prepareCommit, txid: " + transactionId);
-             return TransReturnCode.RET_EXCEPTION.getShort();
+             if(!ts.getRecordedException().isEmpty())
+               throw new TransactionManagerException(ts.getRecordedException(),
+                                     TransReturnCode.RET_EXCEPTION.getShort());
+             else
+               throw new TransactionManagerException("Encountered COMMIT_UNSUCCESSFUL Exception, txid:" + transactionId,
+                                     TransReturnCode.RET_EXCEPTION.getShort());
           case TransactionalReturn.COMMIT_CONFLICT:
-             LOG.info("Exit RET_HASCONFLICT prepareCommit, txid: " + transactionId);
-             return TransReturnCode.RET_HASCONFLICT.getShort();
+             if(! ts.getRecordedException().isEmpty())
+               throw new TransactionManagerException(ts.getRecordedException(),
+                                   TransReturnCode.RET_HASCONFLICT.getShort());
+             else
+               throw new TransactionManagerException("Encountered COMMIT_CONFLICT Exception, txid:" + transactionId,
+                                   TransReturnCode.RET_HASCONFLICT.getShort());
           default:
-             LOG.info("Exit default RET_EXCEPTION prepareCommit, txid: " + transactionId);
-             return TransReturnCode.RET_EXCEPTION.getShort();
+             if(! ts.getRecordedException().isEmpty())
+               throw new TransactionManagerException(ts.getRecordedException(),
+                                   TransReturnCode.RET_EXCEPTION.getShort());
+             else
+               throw new TransactionManagerException("Encountered COMMIT_UNSUCCESSFUL Exception, txid:" + transactionId,
+                                   TransReturnCode.RET_EXCEPTION.getShort());
+             
         }
-     } catch (CommitUnsuccessfulException e) {
+     }catch (TransactionManagerException t) {
+       LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + t.getErrorCode(), t);
+       throw t;
+     } 
+     catch (CommitUnsuccessfulException e) {
        LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + TransReturnCode.RET_NOCOMMITEX.toString() + " CommitUnsuccessfulException", e);
-       return TransReturnCode.RET_NOCOMMITEX.getShort();
+       throw new TransactionManagerException(e,
+                                   TransReturnCode.RET_NOCOMMITEX.getShort());
      }
      catch (IOException e) {
        LOG.error("Returning from HBaseTxClient:prepareCommit, txid: " + transactionId + " retval: " + TransReturnCode.RET_IOEXCEPTION.toString() + " IOException", e);
-       return TransReturnCode.RET_IOEXCEPTION.getShort();
+       throw new TransactionManagerException(e,
+                                   TransReturnCode.RET_IOEXCEPTION.getShort());
      }
    }
 
@@ -1086,9 +1108,28 @@ public class HBaseTxClient {
                             }
                             if (LOG.isDebugEnabled()) LOG.debug("TRAF RCOV THREAD: in-doubt transaction size " + transactionStates.size());
                             for (Map.Entry<Long, TransactionState> tsEntry : transactionStates.entrySet()) {
+                                int isTransactionStillAlive = 0;
                                 TransactionState ts = tsEntry.getValue();
                                 Long txID = ts.getTransactionId();
                                 // TransactionState ts = new TransactionState(txID);
+                                
+                                //It is possible for long prepare situations that involve multiple DDL
+                                //operations, multiple prompts from RS is received. Hence check to see if there
+                                //is a TS object in main TS list and transaction is still active.
+                                //Note that tsEntry is local TS object. 
+                                if (hbtx.mapTransactionStates.get(txID) != null) {
+                                  if (hbtx.mapTransactionStates.get(txID).getStatus().toString().contains("ACTIVE")) {
+                                    isTransactionStillAlive = 1;
+                                  }
+                                  if (LOG.isInfoEnabled()) 
+                                  LOG.info("TRAF RCOV THREAD: TID " + txID
+                                            + " still has TS object in TM memory. TS details: "
+                                            + hbtx.mapTransactionStates.get(txID).toString() 
+                                            + " transactionAlive: " + isTransactionStillAlive);
+                                  if(isTransactionStillAlive == 1)
+                                    continue; //for loop
+                                }
+                               
                                 try {
                                     audit.getTransactionState(ts);
                                     if (ts.getStatus().equals(TransState.STATE_COMMITTED.toString())) {

@@ -375,6 +375,7 @@ void SscpNewIncomingConnectionStream::processStatsReq(IpcConnection *connection)
 void SscpNewIncomingConnectionStream::processCpuStatsReq(IpcConnection *connection)
 {
   Int64 currTimestamp;
+  struct timespec currTimespec;
   size_t memThreshold;
 
   IpcMessageObjVersion msgVer;
@@ -448,10 +449,21 @@ void SscpNewIncomingConnectionStream::processCpuStatsReq(IpcConnection *connecti
        currTimestamp = NA_JulianTimestamp();
        while ((stmtStats = (StmtStats *)stmtStatsList->getNext()) != NULL)
        {
+          stats = stmtStats->getStatsArea();
           masterStats = stmtStats->getMasterStats();
           if (masterStats != NULL)
              mergedStats->appendCpuStats(masterStats, FALSE,
                 subReqType, filter, currTimestamp);
+       }
+    }
+    else if (reqType == SQLCLI_STATS_REQ_SE_OFFENDER)
+    {
+       clock_gettime(CLOCK_MONOTONIC, &currTimespec);
+       while ((stmtStats = (StmtStats *)stmtStatsList->getNext()) != NULL)
+       {
+          stats = stmtStats->getStatsArea();
+          if (stats != NULL)
+             mergedStats->appendCpuStats(stats, FALSE, filter, currTimespec); 
        }
     }
     else

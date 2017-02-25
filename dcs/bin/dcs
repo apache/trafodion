@@ -112,8 +112,8 @@ IFS=
 
 # CLASSPATH initially contains $DCS_CONF_DIR
 CLASSPATH="${DCS_CONF_DIR}"
-if [ "$MY_SQROOT" != "" ]; then
-    CLASSPATH=${CLASSPATH}:${MY_SQROOT}/export/lib/jdbcT2.jar
+if [ "$TRAF_HOME" != "" ]; then
+    CLASSPATH=${CLASSPATH}:${TRAF_HOME}/export/lib/jdbcT2.jar
 fi
 CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
 
@@ -192,9 +192,9 @@ function append_path() {
 JAVA_PLATFORM=""
 
 #If avail, add Trafodion to the JAVA_LIBRARY_PATH
-if [ "$MY_SQROOT" != "" ]; then
-  if [ -d $MY_SQROOT ]; then
-     export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$MY_SQROOT/export/lib$SQ_MBTYPE/libseabasesig.so;
+if [ "$TRAF_HOME" != "" ]; then
+  if [ -d $TRAF_HOME ]; then
+     export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/libjsig.so:$TRAF_HOME/export/lib$SQ_MBTYPE/libseabasesig.so;
   fi
 fi
 
@@ -277,7 +277,7 @@ if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
 fi
 DCS_OPTS="$DCS_OPTS -Ddcs.user.program.home=$DCS_USER_PROGRAM_HOME"
 DCS_OPTS="$DCS_OPTS -Ddcs.conf.dir=$DCS_CONF_DIR"
-DCS_OPTS="$DCS_OPTS -Ddcs.trafodion.home=$MY_SQROOT"
+DCS_OPTS="$DCS_OPTS -Ddcs.trafodion.home=$TRAF_HOME"
 
 # Exec unless DCS_NOEXEC is set.
 if [ "${DCS_NOEXEC}" != "" ]; then

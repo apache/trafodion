@@ -2557,6 +2557,9 @@ private:
   NAString comment_;
 };
 
+// forward reference
+class CountedCSEInfo;
+
 // Container for the common info about a common subexpression. This is
 // a helper class for class CommonSubExprRef below.
 
@@ -2576,10 +2579,20 @@ public:
   enum CSEAnalysisOutcome
     {
       UNKNOWN_ANALYSIS,    // analysis not yet done
+      ELIMINATED_IN_BINDER,// single-consumer CSE, eliminated in binder
       EXPAND,              // expand the common subexpression
       CREATE_TEMP,         // materialize CSE as temp, then read the temp
       TEMP,                // read the temp created by someone else
       ERROR                // error occurred, diags are set
+      // possible future analysis outcomes:
+      // - decide outcome in the optimizer
+      // - pipeline results from a single producer to multiple consumers
+      //
+      // Note: Right now, all consumers of a CSE have the same
+      //       outcome; that may change in the future,
+      //       e.g. we may have 5 consumers that can use sharing
+      //       very well and one that isn't suitable for sharing
+      //       (maybe because it reads different data).
     };
 
   enum CSETempTableType
@@ -2595,7 +2608,10 @@ public:
        cseId_(-1),
        childCSEs_(mem),
        consumers_(mem),
+       alternativeConsumers_(mem),
+       numLexicalRefs_(0),
        neededColumns_(mem),
+       cseTreeKeyColumns_(mem),
        idOfAnalyzingConsumer_(-1),
        analysisOutcome_(UNKNOWN_ANALYSIS),
        tempTableType_(UNKNOWN_TEMP_TABLE),
@@ -2607,12 +2623,16 @@ public:
 
   const NAString &getName() const                            { return name_; }
   Int32 getCSEId() const                                    { return cseId_; }
-  const LIST(CSEInfo *) &getChildCSEs() const           { return childCSEs_; }
+  const LIST(CountedCSEInfo) &getChildCSEs() const      { return childCSEs_; }
   const CollIndex getNumConsumers() const     { return consumers_.entries(); }
   CommonSubExprRef *getConsumer(CollIndex i) const   { return consumers_[i]; }
+  Int32 getNumLexicalRefs() const                  { return numLexicalRefs_; }
+  Int32 getTotalNumRefs(Int32 restrictToSingleConsumer = -1) const;
 
   Int32 getIdOfAnalyzingConsumer() const    { return idOfAnalyzingConsumer_; }
   CSEAnalysisOutcome getAnalysisOutcome(Int32 id) const;
+  NABoolean isShared(Int32 id) const
+                                   { return analysisOutcome_ == CREATE_TEMP; }
   NABoolean usesATempTable() const         { return insertIntoTemp_ != NULL; }
   CSETempTableType getTempTableType() const         { return tempTableType_; }
   const NABitVector &getNeededColumns() const       { return neededColumns_; }
@@ -2621,14 +2641,20 @@ public:
                                     { return vegRefsWithDifferingConstants_; }
   const ValueIdSet &getVEGRefsWithDifferingInputs() const
                                        { return vegRefsWithDifferingInputs_; }
+  const NABitVector &getCSETreeKeyColumns() const
+                                                { return cseTreeKeyColumns_; }
   const QualifiedName &getTempTableName() const     { return tempTableName_; }
   const NAString &getTempTableDDL() const            { return tempTableDDL_; }
   const NATable *getTempNATable() const               { return tempNATable_; }
   RelExpr *getInsertIntoTemp() const               { return insertIntoTemp_; }
 
   void setCSEId(Int32 id)                                     { cseId_ = id; }
-  void addChildCSE(CSEInfo *child);
+  Int32 addChildCSE(CSEInfo *childInfo, NABoolean addLexicalRef);
   void addCSERef(CommonSubExprRef *cse);
+  void eliminate()               { analysisOutcome_ == ELIMINATED_IN_BINDER; }
+  void registerAnAlternativeConsumer(CommonSubExprRef *c)
+                                          { alternativeConsumers_.insert(c); }
+  void replaceConsumerWithAnAlternative(CommonSubExprRef *c);
   void setIdOfAnalyzingConsumer(Int32 id)     { idOfAnalyzingConsumer_ = id; }
   void setAnalysisOutcome(CSEAnalysisOutcome outcome)
                                                { analysisOutcome_ = outcome; }
@@ -2641,6 +2667,7 @@ public:
                                       { vegRefsWithDifferingConstants_ += s; }
   void addVEGRefsWithDifferingInputs(const ValueIdSet &s)
                                          { vegRefsWithDifferingInputs_ += s; }
+  void addCSEKeyColumn(CollIndex c)               { cseTreeKeyColumns_ += c; }
   void setTempTableName(const QualifiedName &n)        { tempTableName_ = n; }
   void setTempTableDDL(const char *s)                   { tempTableDDL_ = s; }
   void setTempNATable(const NATable *nat)              { tempNATable_ = nat; }
@@ -2654,12 +2681,26 @@ private:
   Int32 cseId_;
 
   // list of other CSEs that are referenced by this one
-  LIST(CSEInfo *) childCSEs_;
+  LIST(CountedCSEInfo) childCSEs_;
 
   // list of nodes referring to the common
   // subexpression, their index numbers match
   // the index in this list
   LIST(CommonSubExprRef *) consumers_;
+
+  // We sometimes make copies of a tree, creating alternative
+  // consumers. Some notes on these alternative copies: The analyzing
+  // consumer (see CommonSubExprRef::analyzeAndPrepareForSharing())
+  // and its ancestors are always in the consumers_ list and do not
+  // change. As we replace a tree with its copy, we may replace other
+  // consumers with their respective copies. The code must be able to
+  // deal with this situation, so be careful when making decisions
+  // based on a particular consumer obtained from this list.
+  LIST(CommonSubExprRef *) alternativeConsumers_;
+
+  // number of lexical refs in the query for this expression
+  // (how many time does it appear in the query text)
+  Int32 numLexicalRefs_;
 
   // a common list of columns and predicate to use used for a
   // materialized CSE
@@ -2673,6 +2714,13 @@ private:
   ValueIdSet vegRefsWithDifferingConstants_;
   ValueIdSet vegRefsWithDifferingInputs_;
 
+  // information for heuristics
+
+  // "key" columns in the child tree, this could include Hive
+  // partition columns, "tag" constant columns in a union, and also
+  // trailing key columns that may not be significant
+  NABitVector cseTreeKeyColumns_;
+
   // information for the materialization of the CSE
   Int32 idOfAnalyzingConsumer_;
   CSEAnalysisOutcome analysisOutcome_;
@@ -2681,6 +2729,29 @@ private:
   NAString tempTableDDL_;
   const NATable *tempNATable_;
   RelExpr *insertIntoTemp_;
+};
+
+// A CSEInfo and a count (of how many references we have to it)
+class CountedCSEInfo
+{
+public:
+
+  CountedCSEInfo() : info_(NULL), lexicalCount_(-1)                         {}
+  CountedCSEInfo(CSEInfo *info, Int32 cnt = 0) :
+                                            info_(info), lexicalCount_(cnt) {}
+  CountedCSEInfo(const CountedCSEInfo &other) :
+                     info_(other.info_), lexicalCount_(other.lexicalCount_) {}
+  ~CountedCSEInfo()                                                         {}
+
+  CSEInfo *getInfo() const                                   { return info_; }
+  Int32 getLexicalCount() const                      { return lexicalCount_; }
+
+  void incrementLexicalCount()                            { lexicalCount_++; }
+
+private:
+
+  CSEInfo *info_;
+  Int32 lexicalCount_;
 };
 
 // -----------------------------------------------------------------------
@@ -2705,6 +2776,11 @@ public:
        : RelExpr(REL_COMMON_SUBEXPR_REF,cse,NULL,oHeap),
          internalName_(internalName, oHeap),
          id_(-1),
+         isAnExpansionOf_(NULL),
+         isAnAlternativeOf_(NULL),
+         parentCSEId_(-1),
+         parentRefId_(-1),
+         lexicalRefNumFromParent_(-1),
          hbAccessOptionsFromCTE_(NULL)
   {}
 
@@ -2713,6 +2789,10 @@ public:
   // the name used in the CTE or a generated name
   const NAString &getName() const                    { return internalName_; }
   Int32 getId() const                                          { return id_; }
+  Int32 getParentCSEId() const                        { return parentCSEId_; }
+  Int32 getParentConsumerId() const                   { return parentRefId_; }
+  Int32 getLexicalRefNumFromParent() const {return lexicalRefNumFromParent_; }
+  NABoolean isAChildOfTheMainQuery() const;
 
   virtual Int32 getArity() const;
 
@@ -2721,6 +2801,7 @@ public:
   const ValueIdSet & getNonVEGColumns() const       { return nonVEGColumns_; }
 
   const ValueIdSet &getPushedPredicates() const  { return pushedPredicates_; }
+  const EstLogPropSharedPtr &getEstLogProps() const{ return cseEstLogProps_; }
 
   void setId(Int32 id)                     { CMPASSERT(id_ == -1); id_ = id; }
 
@@ -2729,10 +2810,46 @@ public:
                                             { hbAccessOptionsFromCTE_ = hbo; }
 
   // add this node to the global list of CommonSubExprRefs kept in CmpStatement
-  void addToCmpStatement();
+  void addToCmpStatement(NABoolean lexicalRef);
+
+  // establish a parent/child relationship between two CommonSubExprRefs
+  void addParentRef(CommonSubExprRef *parentRef);
 
   // is this the first reference to the common subexpression?
-  NABoolean isFirstReference();
+  NABoolean isFirstReference() const;
+
+  // CommonSubExprRefs come in different flavors:
+  //
+  // Lexical ref:     This is a node that got created in a parser
+  //                  rule, parsing a reference to a CTE (or, in the
+  //                  future, something equivalent, like a view reference).
+  // Expanded ref:    Since the parser expands CTE references by making a
+  //                  copy on each reference, if that copied tree contains
+  //                  child references, an expanded ref is created.
+  //                  Lexical and expanded refs shouldn't be treated
+  //                  differently, it is somewhat arbitrary which one
+  //                  is the lexical one and which ones are expanded.
+  // Original ref:    This is the original copy of a lexical or expanded
+  //                  ref.
+  // Alternative ref: Sometimes we copy a tree after binding, e.g. to
+  //                  have a fall-back during the SQO phase. Such copies
+  //                  are alternative refs, and only one of them should
+  //                  be used in the output of each compilation phase.
+  //                  Only one of the alternatives is part of the
+  //                  CSEInfo consumer list, the others are stored in
+  //                  the alternative consumer list.
+  //
+  // A given CommonSubExprRef is either a lexical or an expanded ref.
+  // The "alternative" flavor is orthogonal to that, both lexical
+  // and expanded refs can either be an original or an alternative.
+  NABoolean isALexicalRef() const         { return isAnExpansionOf_ == NULL; }
+  NABoolean isAnExpandedRef() const       { return isAnExpansionOf_ != NULL; }
+  NABoolean isAnOriginalRef() const     { return isAnAlternativeOf_ == NULL; }
+  NABoolean isAnAlternativeRef() const  { return isAnAlternativeOf_ != NULL; }
+  CommonSubExprRef *getLexicalRef()
+                        { return isAnExpansionOf_ ? isAnExpansionOf_ : this; }
+  CommonSubExprRef *getOriginalRef()
+                    { return isAnAlternativeOf_ ? isAnAlternativeOf_ : this; }
 
   // a virtual function for performing name binding within the query tree
   virtual RelExpr * bindNode(BindWA *bindWAPtr);
@@ -2749,6 +2866,14 @@ public:
        Lng32 childId = (-MAX_REL_ARITY));
   virtual void rewriteNode(NormWA & normWARef);
   virtual RelExpr * semanticQueryOptimizeNode(NormWA & normWARef);
+  virtual NABoolean prepareMeForCSESharing(
+       const ValueIdSet &outputsToAdd,
+       const ValueIdSet &predicatesToRemove,
+       const ValueIdSet &commonPredicatesToAdd,
+       const ValueIdSet &inputsToRemove,
+       ValueIdSet &valuesForVEGRewrite,
+       ValueIdSet &keyColumns,
+       CSEInfo *info);
 
   // add all the expressions that are local to this
   // node to an existing list of expressions (used by GUI tool)
@@ -2772,6 +2897,10 @@ public:
 
   // for use by the root node for inlining
   static Union *makeUnion(RelExpr *lc, RelExpr *rc, NABoolean blocked);
+
+  static void makeValueIdListFromBitVector(ValueIdList &tgt,
+                                           const ValueIdList &src,
+                                           const NABitVector &vec);
 
   // for debugging
   void display();
@@ -2817,10 +2946,6 @@ private:
   RelExpr * createTempScan(CSEInfo &info, NormWA & normWARef);
   RelExpr * getTempScan() const                           { return tempScan_; }
 
-  static void makeValueIdListFromBitVector(ValueIdList &tgt,
-                                           const ValueIdList &src,
-                                           const NABitVector &vec);
-
   // data members
   // ------------
 
@@ -2833,6 +2958,40 @@ private:
   // common subexprssion. These references are numbered 0, 1, ...
   Int32 id_;
 
+  // indicate different flavors of CommonSubExprRef nodes and point
+  // back to the original node(s), if any
+  CommonSubExprRef *isAnExpansionOf_;
+  CommonSubExprRef *isAnAlternativeOf_;
+
+  // There are three ids that describe our predecessor in the
+  // RelExpr tree and in the lexical directed multigraph of the
+  // CSEs:
+  // Parent CSE id:
+  //     This is the the parent CSE or main query that directly
+  //     contains the reference. In the RelExpr tree, this is our
+  //     closest ancestor CommonSubExprRef node or the root node
+  //     of the tree. It is stored as the integer CSE id here,
+  //     we could also store the name. A special id is used for
+  //     the main query: CmpStatement::getCSEIdForMainQuery().
+  //
+  // Parent Ref id:
+  //     This is the consumer id of the parent CommonSubExprRef
+  //     (or 0 if the ref originates from the main query).
+  //
+  // Lexical ref num from parent:
+  //     This indicates which reference from the parent CSE we
+  //     are looking at. The main query or a CSE may refer to
+  //     the same child multiple times, and this is the number
+  //     indicating this (0...n-1). The id_ data member counts
+  //     the total number of references to a CSE; the lexical
+  //     ref num from parent counts only the lexical number
+  //     of references and only from a particular parent CSE
+  //     (or the main query).
+  //
+  Int32 parentCSEId_;
+  Int32 parentRefId_;
+  Int32 lexicalRefNumFromParent_;
+
   // The list of columns produced by the common subexpression.
   // We keep the full list here, even when the characteristic
   // outputs get reduced during the normalization phase. This
@@ -2841,8 +3000,9 @@ private:
   // of different consumers is by position in this list.
   ValueIdList columnList_;
 
-  // same columns without making VEGRefs. This is needed
-  // in preCodeGen.
+  // Same columns without making VEGRefs. This is needed
+  // in preCodeGen. It also includes other potential VEG
+  // members if this is the analyzing consumer.
   ValueIdSet nonVEGColumns_;
 
   // The common inputs (typically parameters). Pushing down
@@ -2873,6 +3033,12 @@ private:
   // create a temp table for the resulting CSE.
   HbaseAccessOptions *hbAccessOptionsFromCTE_;
 
+  // the estimated logical properties of this common subexpression,
+  // set in the analyzing consumer only, since they should be the same
+  // for all consumers
+  EstLogPropSharedPtr cseEstLogProps_;
+
+  // the temp scan to replace this node after the SQO phase
   RelExpr *tempScan_;
 
 }; // class CommonSubExprRef

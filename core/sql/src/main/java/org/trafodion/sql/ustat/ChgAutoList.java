@@ -279,7 +279,7 @@ public class ChgAutoList {
                // Now remove AUTO_CQDS_SET file from the cluster.
                String shellCmd;
 
-               String sqroot = System.getenv("MY_SQROOT");
+               String sqroot = System.getenv("TRAF_HOME");
 
                shellCmd = "rm " + sqroot + "/export/lib/mx_ustat/autodir/USTAT_CQDS_SET";
                Process p = Runtime.getRuntime().exec(shellCmd);

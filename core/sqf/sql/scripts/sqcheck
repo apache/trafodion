@@ -248,7 +248,7 @@ let cmp_result=0
 let sq_up=0
 
 if [[ -z $SQSCRIPTS_DIR ]]; then
-    SQSCRIPTS_DIR=$MY_SQROOT/sql/scripts
+    SQSCRIPTS_DIR=$TRAF_HOME/sql/scripts
 fi
 
 

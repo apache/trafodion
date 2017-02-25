@@ -606,9 +606,9 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
 // *                                                                           *
 // *****************************************************************************
 bool PrivMgr::isAuthIDGrantedPrivs(
-   int32_t authID,
-   std::vector<PrivClass> privClasses) 
-
+   const int32_t authID,
+   std::vector<PrivClass> privClasses,
+   std::vector<int64_t> &objectUIDs) 
 {
 
 // Check for empty vector.
@@ -626,7 +626,7 @@ bool PrivMgr::isAuthIDGrantedPrivs(
    {
       PrivMgrPrivileges objectPrivileges(metadataLocation_,pDiags_); 
       
-      if (objectPrivileges.isAuthIDGrantedPrivs(authID))
+      if (objectPrivileges.isAuthIDGrantedPrivs(authID, objectUIDs))
          return true;
       
       PrivMgrComponentPrivileges componentPrivileges(metadataLocation_,pDiags_); 
@@ -646,7 +646,7 @@ bool PrivMgr::isAuthIDGrantedPrivs(
          {
             PrivMgrPrivileges objectPrivileges(metadataLocation_,pDiags_); 
             
-            if (objectPrivileges.isAuthIDGrantedPrivs(authID))
+            if (objectPrivileges.isAuthIDGrantedPrivs(authID, objectUIDs))
                return true;
              
             break;

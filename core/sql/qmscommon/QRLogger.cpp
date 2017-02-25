@@ -470,7 +470,7 @@ void QRLogger::logQVP(ULng32 eventId,
         if ( configuredLevel > requestedLevel)
           return;
     }
-  }
+  }else return;
 
   va_list args;
   va_start(args, logMsgTemplate);
@@ -595,7 +595,7 @@ void QRLogger::log(std::string &cat,
         if ( configuredLevel > requestedLevel)
           return;
     }
-  }
+  } else return;
   
   va_list args ;
   va_start(args, logMsgTemplate);
@@ -644,7 +644,7 @@ void QRLogger::log(std::string &cat,
         if ( configuredLevel > requestedLevel)
           return;
     }
-  }
+  }else return;
 
   va_list args ;
   va_start(args, logMsgTemplate);

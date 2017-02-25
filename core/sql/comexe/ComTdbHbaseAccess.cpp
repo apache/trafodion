@@ -66,6 +66,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
 				     const UInt16 updateTuppIndex,
 				     const UInt16 mergeInsertTuppIndex,
 				     const UInt16 mergeInsertRowIdTuppIndex,
+				     const UInt16 mergeIUDIndicatorTuppIndex,
 				     const UInt16 returnedFetchedTuppIndex,
 				     const UInt16 returnedUpdatedTuppIndex,
 
@@ -102,7 +103,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
 				     Float32 samplingRate,
 				     HbaseSnapshotScanAttributes * hbaseSnapshotScanAttributes,
 
-                                     HbaseAccessOptions * hbaseAccessOptions
+                                     HbaseAccessOptions * hbaseAccessOptions,
+
+                                     char * pkeyColName
 
 				     )
 : ComTdb( ComTdb::ex_HBASE_ACCESS,
@@ -154,6 +157,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   updateTuppIndex_(updateTuppIndex),
   mergeInsertTuppIndex_(mergeInsertTuppIndex),
   mergeInsertRowIdTuppIndex_(mergeInsertRowIdTuppIndex),
+  mergeIUDIndicatorTuppIndex_(mergeIUDIndicatorTuppIndex),
   returnedFetchedTuppIndex_(returnedFetchedTuppIndex),
   returnedUpdatedTuppIndex_(returnedUpdatedTuppIndex),
 
@@ -194,7 +198,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0),
   trafLoadFlushSize_(0),
-  hbaseAccessOptions_(hbaseAccessOptions)
+  hbaseAccessOptions_(hbaseAccessOptions),
+
+  pkeyColName_(pkeyColName)
 {};
 
 ComTdbHbaseAccess::ComTdbHbaseAccess(
@@ -264,6 +270,7 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   updateTuppIndex_(0),
   mergeInsertTuppIndex_(0),
   mergeInsertRowIdTuppIndex_(0),
+  mergeIUDIndicatorTuppIndex_(0),
   returnedFetchedTuppIndex_(0),
   returnedUpdatedTuppIndex_(0),
 
@@ -304,7 +311,9 @@ ComTdbHbaseAccess::ComTdbHbaseAccess(
   sampleLocation_(NULL),
   hbaseRowsetVsbbSize_(0),
   trafLoadFlushSize_(0),
-  hbaseAccessOptions_(NULL)
+  hbaseAccessOptions_(NULL),
+
+  pkeyColName_(NULL)
 {
 }
 
@@ -451,6 +460,8 @@ Long ComTdbHbaseAccess::pack(void * space)
   hbaseSnapshotScanAttributes_.pack(space);
   hbaseAccessOptions_.pack(space);
 
+  pkeyColName_.pack(space);
+
   // pack elements in listOfScanRows_
   if (listOfScanRows() && listOfScanRows()->numEntries() > 0)
     {
@@ -521,6 +532,7 @@ Lng32 ComTdbHbaseAccess::unpack(void * base, void * reallocator)
   if(LoadPrepLocation_.unpack(base)) return -1;
   if (hbaseSnapshotScanAttributes_.unpack(base,reallocator)) return -1;
   if (hbaseAccessOptions_.unpack(base, reallocator)) return -1;
+  if(pkeyColName_.unpack(base)) return -1;
 
   // unpack elements in listOfScanRows_
   if(listOfScanRows_.unpack(base, reallocator)) return -1;
@@ -970,7 +982,7 @@ void ComTdbHbaseAccess::displayContents(Space * space,ULng32 flag)
 		      listOfFetchedColNames()->numEntries());
 	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-	  if (sqHbaseTable())
+	  if ((sqHbaseTable()) && (NOT hbaseMapTable()))
 	    showColNames(listOfFetchedColNames(), space);
 	  else
 	    showStrColNames(listOfFetchedColNames(), space);
@@ -1173,7 +1185,7 @@ ComTdbHbaseCoProcAccess::ComTdbHbaseCoProcAccess(
 		      projExpr,
 		      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 		      0, projRowLen, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		      0, projTuppIndex, 0, 0, 0, 0, 0, 0, returnedTuppIndex, 0, 0, 0, 0, 0, 0,
+		      0, projTuppIndex, 0, 0, 0, 0, 0, 0, 0, returnedTuppIndex, 0, 0, 0, 0, 0, 0,
 		      NULL, NULL, listOfColNames, NULL, NULL, 
 		      NULL, NULL,
 		      workCriDesc,

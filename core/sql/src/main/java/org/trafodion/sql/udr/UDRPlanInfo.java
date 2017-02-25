@@ -23,14 +23,22 @@ package org.trafodion.sql.udr;
 import java.nio.ByteBuffer;
 
 
-/** Special degrees of parallelism.
+/** Describes the query plan used for a UDR invocation
  *
- *  <p> Values that can be used in the setDesiredDegreeOfParallelism()
- *  method, in addition to positive numbers for the degree of
- *  parallelism (DoP).
+ *  <p>Objects of this type are used together with UDRInvocationInfo
+ *  objects and in the future they may contain additional info on
+ *  plan-related such as the chosen partitioning and ordering.
  */
 public class UDRPlanInfo extends TMUDRSerializableObject {
 
+    /** Special degrees of parallelism.
+     *
+     *  <p> Values that can be used in the setDesiredDegreeOfParallelism()
+     *  method, in addition to positive numbers for the degree of
+     *  parallelism (DoP).
+     *
+     *  @see UDR#describeStatistics
+     */
     public enum SpecialDegreeOfParallelism
     {
         /** Optimizer decides DoP */
@@ -92,21 +100,24 @@ public class UDRPlanInfo extends TMUDRSerializableObject {
      *  addition to positive numbers. These are defined in
      *  class UDRPlanInfo.
      *<ul>
-     *  <li> @c ANY_DEGREE_OF_PARALLELISM:
+     *  <li> ANY_DEGREE_OF_PARALLELISM:
      *        This will allow the optimizer to choose any degree
      *        of parallelism, including 1 (serial execution)
-     *  <li> @c DEFAULT_DEGREE_OF_PARALLELISM:
+     *  <li> DEFAULT_DEGREE_OF_PARALLELISM:
      *        Currently the same as ANY_DEGREE_OF_PARALLELISM.
      *        The optimizer will use a heuristic based on
-     *        the estimated cardinality.
-     *  <li> @c MAX_DEGREE_OF_PARALLELISM:
+     *        the estimated cardinality (which you can set in
+     *        the {@link UDR#describeStatistics} interface).
+     *  <li> MAX_DEGREE_OF_PARALLELISM:
      *        Choose the highest possible degree of parallelism.
-     *  <li> @c ONE_INSTANCE_PER_NODE:
+     *  <li> ONE_INSTANCE_PER_NODE:
      *        Start one parallel instance on every Trafodion node.
      *        This is mostly meant for internal TMUDFs, e.g. a
      *        TMUDF to read the log files on every node.
      * </ul>
      *  @see UDRPlanInfo#getDesiredDegreeOfParallelism()
+     *  @see UDR#describeStatistics
+     *  @see TableInfo#setEstimatedNumRows
      *  @param dop desired degree of parallelism (a positive number or
      *             one of the enum values in
      *             UDRPlanInfo#SpecialDegreeOfParallelism).
@@ -255,9 +266,10 @@ public class UDRPlanInfo extends TMUDRSerializableObject {
     }
     
     // UDR writers can ignore these methods
-    public static short getCurrentVersion() { return 1; }
+    static short getCurrentVersion() { return 1; }
+
     @Override
-    public int serializedLength() throws UDRException {
+    int serializedLength() throws UDRException {
       int result = super.serializedLength() +
                    serializedLengthOfLong() +
                    serializedLengthOfInt() +
@@ -267,7 +279,7 @@ public class UDRPlanInfo extends TMUDRSerializableObject {
     }
 
     @Override
-    public int serialize(ByteBuffer outputBuffer) throws UDRException {
+    int serialize(ByteBuffer outputBuffer) throws UDRException {
       
       int origPos = outputBuffer.position();
 
@@ -290,7 +302,7 @@ public class UDRPlanInfo extends TMUDRSerializableObject {
     }
 
     @Override
-    public int deserialize(ByteBuffer inputBuffer) throws UDRException {
+    int deserialize(ByteBuffer inputBuffer) throws UDRException {
       int origPos = inputBuffer.position();
 
       super.deserialize(inputBuffer);

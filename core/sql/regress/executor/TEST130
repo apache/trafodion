@@ -1,4 +1,4 @@
--- Test: TEST123 (Executor)
+-- Test: TEST130 (Executor)
 -- @@@ START COPYRIGHT @@@
 --
 -- Licensed to the Apache Software Foundation (ASF) under one
@@ -42,6 +42,7 @@ drop table t130lob1 cascade;
 drop table t130lob2 cascade;
 drop table t130lob3 cascade;
 drop table t130lob4 cascade;
+drop table t130lob5 cascade;
 drop table tlob130ext cascade;
 
 ?section setup
@@ -57,7 +58,6 @@ create table t130lob3 (c1 int not null,
 c2 blob, c3 blob, primary key (c1));
 create table t130lob4 (c1 int not null,
 c2 char(10), c3 clob, primary key (c1));
-
 
 ?section dml_insert
 insert into t130lob1 values(NULL);
@@ -77,6 +77,23 @@ select c1,lobtostring(c2,100) from t130lob2;
 --test values clause
 values((select * from t130lob1));
 
+--test empty_blob(), empty_clob()
+delete from t130lob2;
+insert into t130lob2 values (1, empty_blob());
+select lobtostring(c2,10) from t130lob2;
+delete from t130lob2;
+insert into t130lob2 values (1, empty_clob());
+select lobtostring(c2,10) from t130lob2;
+update t130lob2 set c2=stringtolob('inserted row11');
+select lobtostring(c2,30) from t130lob2;
+update t130lob2 set c2=empty_blob();
+select lobtostring(c2,10) from t130lob2;
+update t130lob2 set c2=stringtolob('inserted row11',append);
+select lobtostring(c2,30) from t130lob2;
+update t130lob2 set c2=stringtolob('more inserted row11',append);
+select lobtostring(c2,50) from t130lob2;
+update t130lob2 set c2=empty_blob();
+select lobtostring(c2,10) from t130lob2;
 
 ?section dml_join
 insert into t130lob3 values (1,stringtolob('inserted row21a'),stringtolob('inserted row21b'));
@@ -110,10 +127,8 @@ update t130lob2 set c2=stringtolob('appended row21a',append) where c1=1;
 select c1, lobtostring(c2,100) from t130lob2;
 select c1, lobtostring(c2,100) from t130lob2 where c1=1;
 
-
 update t130lob2 set c2=stringtolob(' appended c2 to all rows',append);
 select c1, lobtostring(c2,60) from t130lob2;
-
 
 ?section dml_delete
 
@@ -281,6 +296,8 @@ sh regrhadoop.ksh fs -copyFromLocal lob_input_d1.txt /lobs/lob_input_d1.txt;
 sh regrhadoop.ksh fs -copyFromLocal lob_input_e1.txt /lobs/lob_input_e1.txt;
 sh regrhadoop.ksh fs -copyFromLocal deep.jpg /lobs/deep.jpg;
 sh regrhadoop.ksh fs -copyFromLocal anoush.jpg /lobs/anoush.jpg;
+-- the next one is a really long file name intended to test error message 8557
+sh regrhadoop.ksh fs -copyFromLocal lob_input_a1.txt /lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt;
 sh sleep(20);
 
 
@@ -355,6 +372,8 @@ obey t130_extract_command;
 
 
 sh clitestdriver 2 < TEST130_argfile 2>&1 | tee -a LOG130;
+
+
 
 ------------------------------------------------------------------------------
 
@@ -482,6 +501,9 @@ update tlob130ext set c4=stringtolob('cannot allow this') where c1=1;
 delete from tlob130ext where c1=1;
 insert into tlob130ext values(1, stringtolob('first lob'),externaltolob('hdfs:///lobs/lob_input_a1.txt'),externaltolob('hdfs:///lobs/lob_input_a1.txt'));
 insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///lobs/lob_input_a1.txt'),externaltolob('hdfs:///lobs/lob_input_a1.txt'));
+-- the next one should see error 8557
+insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///lobs/lob_input_a1.txt'),
+externaltolob('hdfs:///lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt'));
 
 select lobtostring(c2,50),lobtostring(c3,50),lobtostring(c4,50) from tlob130ext;
 update tlob130ext set c3=stringtolob('can allow this') where c1=1;
@@ -500,6 +522,35 @@ select * from table(lob stats(tlob130ext));
 sh clitestdriver 2 < TEST130_argfile2 2>&1 | tee -a LOG130;
 sh cat lobc4ext.txt |tee -a LOG130;
 
+?section update_lob_handle
+-- test lob update via "update lob" command
+log;
+drop table t130lob5;
+create table t130lob5 (c1 int not null, c2 blob , primary key (c1));
+log LOG130;
+delete from t130lob5;
+insert into t130lob5 values (1,empty_blob());
+sh clitestdriver 6 < TEST130_argfile3 2>&1 | tee -a LOG130;
+select lobtostring(c2,20) from t130lob5;
+sh clitestdriver 7 < TEST130_argfile3 2>&1 | tee -a LOG130;
+select lobtostring(c2,40) from t130lob5;
+sh clitestdriver 8 < TEST130_argfile3 2>&1 | tee -a LOG130;
+select lobtostring(c2,20) from t130lob5;
+sh clitestdriver 6 < TEST130_argfile3 2>&1 | tee -a LOG130;
+select lobtostring(c2,40) from t130lob5;
+delete from t130lob5;
+
+
+-- test_empty_blob() with external tables
+delete from tlob130ext;
+-- following empty_blob will be of type 'external'
+insert into tlob130ext values(1,empty_blob(),empty_clob(),empty_blob());
+select c2 from tlob130ext;
+-- following should return error since only external lobs will be allowed
+update tlob130ext set c4=stringtolob('gggg'); 
+-- following should work. 
+update tlob130ext set c4=externaltolob('hdfs:///lobs/lob_input_b1.txt');
+delete from tlob130ext;
 
 -- test to ensure all lob dependent tables and schemas containing lob tables
 -- get dropped cleanly.
@@ -530,6 +581,7 @@ sh regrhadoop.ksh fs -rm /lobs/lobinput_b1.txt
 sh regrhadoop.ksh fs -rm /lobs/lobinput_c1.txt
 sh regrhadoop.ksh fs -rm /lobs/lobinput_d1.txt
 sh regrhadoop.ksh fs -rm /lobs/lobinput_e1.txt
+sh regrhadoop.ksh fs -rm /lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt;
 sh rm lobinput_*;
 sh rm deep.jpg;
 sh rm anoush.jpg;
@@ -553,9 +605,10 @@ sh rm TMP130;
 sh rm tlob130txt2;
 sh rm lobc2out.jpg;
 sh rm lobc4ext.txt;
-sh rm TEST130_argfile;
+sh rm TEST130_argfile*;
 drop table tlob130gc;
 drop table tlob130gt;
+drop table tlob130t5;
 drop schema trafodion.lob130 cascade;
 
 

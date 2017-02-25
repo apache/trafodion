@@ -34,13 +34,15 @@ sys.setdefaultencoding("utf-8")
 from optparse import OptionParser
 from glob import glob
 from collections import defaultdict
-import wrapper
 try:
     from prettytable import PrettyTable
 except ImportError:
     print 'Python module prettytable is not found. Install python-prettytable first.'
     exit(1)
-from common import *
+from scripts import wrapper
+from scripts.common import DEF_PORT_FILE, DBCFG_FILE, USER_PROMPT_FILE, DBCFG_TMP_FILE, \
+                           INSTALLER_LOC, Remote, Version, ParseHttp, ParseInI, ParseJson, \
+                           http_start, http_stop, format_output, err_m, expNumRe, run_cmd, info
 
 # init global cfgs for user input
 cfgs = defaultdict(str)
@@ -52,11 +54,14 @@ class HadoopDiscover(object):
         self.users = {}
         self.cluster_name = cluster_name
         self.hg = ParseHttp(user, pwd)
-        self.v1_url = '%s/api/v1/clusters' % url
-        self.v6_url = '%s/api/v6/clusters' % url
+        self.url = url
+        self.v1_url = '%s/api/v1/clusters' % self.url
+        self.v6_url = '%s/api/v6/clusters' % self.url
         self.cluster_url = '%s/%s' % (self.v1_url, cluster_name.replace(' ', '%20'))
         self._get_distro()
         self._check_version()
+        if 'CDH' in self.distro:
+            self.cm = self.hg.get('%s/api/v6/cm/deployment' % self.url)
 
     def _get_distro(self):
         content = self.hg.get(self.v1_url)
@@ -108,7 +113,7 @@ class HadoopDiscover(object):
             if ver in self.distro: has_version = 1
 
         if not has_version:
-            log_err('Sorry, currently EsgynDB doesn\'t support %s version' % self.distro)
+            log_err('Sorry, currently Trafodion doesn\'t support %s version' % self.distro)
 
     def get_hadoop_users(self):
         if 'CDH' in self.distro:
@@ -156,17 +161,15 @@ class HadoopDiscover(object):
 
     def _get_rsnodes_cdh(self):
         """ get list of HBase RegionServer nodes in CDH """
-        cm = self.hg.get('%s/api/v6/cm/deployment' % cfgs['mgr_url'])
-
         hostids = []
-        for c in cm['clusters']:
+        for c in self.cm['clusters']:
             if c['displayName'] == self.cluster_name:
                 for s in c['services']:
                     if s['type'] == 'HBASE':
                         for r in s['roles']:
                             if r['type'] == 'REGIONSERVER': hostids.append(r['hostRef']['hostId'])
         for i in hostids:
-            for h in cm['hosts']:
+            for h in self.cm['hosts']:
                 if i == h['hostId']: self.rsnodes.append(h['hostname'])
 
     def _get_rsnodes_hdp(self):
@@ -174,6 +177,24 @@ class HadoopDiscover(object):
         hdp = self.hg.get('%s/services/HBASE/components/HBASE_REGIONSERVER' % self.cluster_url)
         self.rsnodes = [c['HostRoles']['host_name'] for c in hdp['host_components']]
 
+    def get_hbase_lib_path(self):
+        if 'CDH' in self.distro:
+            for c in self.cm['clusters']:
+                if c['displayName'] == self.cluster_name:
+                    parcels = c['parcels']
+            if parcels:
+                parcel_config = self.hg.get('%s/api/v6/cm/allHosts/config' % self.url)
+                # custom parcel dir exists
+                if parcel_config['items'] and parcel_config['items'][0]['name'] == 'parcels_directory':
+                    hbase_lib_path = parcel_config['items'][0]['value'] + '/CDH/lib/hbase/lib'
+                else:
+                    hbase_lib_path = '/opt/cloudera/parcels/CDH/lib/hbase/lib'
+            else:
+                hbase_lib_path = '/usr/lib/hbase/lib'
+        elif 'HDP' in self.distro:
+            hbase_lib_path = '/usr/hdp/current/hbase-regionserver/lib'
+
+        return hbase_lib_path
 
 class UserInput(object):
     def __init__(self, options, pwd):
@@ -184,12 +205,13 @@ class UserInput(object):
         isYN = self.in_data[name].has_key('isYN')
         isdigit = self.in_data[name].has_key('isdigit')
         isexist = self.in_data[name].has_key('isexist')
+        isfile = self.in_data[name].has_key('isfile')
         isremote_exist = self.in_data[name].has_key('isremote_exist')
         isIP = self.in_data[name].has_key('isIP')
         isuser = self.in_data[name].has_key('isuser')
 
         # check answer value basicly
-        answer = answer.rstrip()
+        answer = answer.strip()
         if answer:
             if isYN:
                 answer = answer.upper()
@@ -201,6 +223,9 @@ class UserInput(object):
             elif isexist:
                 if not os.path.exists(answer):
                     log_err('%s path \'%s\' doesn\'t exist' % (name, answer))
+            elif isfile:
+                if not os.path.isfile(answer):
+                    log_err('%s file \'%s\' doesn\'t exist' % (name, answer))
             elif isremote_exist:
                 hosts = cfgs['node_list'].split(',')
                 remotes = [Remote(host, pwd=self.pwd) for host in hosts]
@@ -208,7 +233,7 @@ class UserInput(object):
                 nodes = ''
                 for remote in remotes:
                     # check if directory exists on remote host
-                    remote.execute('ls %s 2>&1 >/dev/null' % answer)
+                    remote.execute('ls %s 2>&1 >/dev/null' % answer, chkerr=False)
                     if remote.rc != 0:
                         nodes += ' ' + remote.host
                 if nodes:
@@ -293,6 +318,7 @@ class UserInput(object):
             pt.align[item] = 'l'
 
         for key, value in sorted(cfgs.items()):
+            # only notify user input value
             if self.in_data.has_key(key) and value:
                 if self.in_data[key].has_key('ispasswd'): continue
                 pt.add_row([key, value])
@@ -300,12 +326,13 @@ class UserInput(object):
         confirm = self.get_confirm()
         if confirm != 'Y':
             if os.path.exists(DBCFG_FILE): os.remove(DBCFG_FILE)
+            run_cmd('rm -rf %s/*.status' % INSTALLER_LOC)
             log_err('User quit')
 
 
 def log_err(errtext):
     # save tmp config files
-    tp = ParseInI(DBCFG_TMP_FILE)
+    tp = ParseInI(DBCFG_TMP_FILE, 'dbconfigs')
     tp.save(cfgs)
     err_m(errtext)
 
@@ -320,7 +347,7 @@ def user_input(options, prompt_mode=True, pwd=''):
 
     # load from temp config file if in prompt mode
     if os.path.exists(DBCFG_TMP_FILE) and prompt_mode == True:
-        tp = ParseInI(DBCFG_TMP_FILE)
+        tp = ParseInI(DBCFG_TMP_FILE, 'dbconfigs')
         cfgs = tp.load()
 
     u = UserInput(options, pwd)
@@ -376,16 +403,21 @@ def user_input(options, prompt_mode=True, pwd=''):
             try:
                 cluster_name = content['items'][0]['name']
             except (IndexError, KeyError):
-                cluster_name = content['items'][0]['Clusters']['cluster_name']
+                try:
+                    cluster_name = content['items'][0]['Clusters']['cluster_name']
+                except (IndexError, KeyError):
+                    log_err('Failed to get cluster info from management url')
 
-        discover = HadoopDiscover(cfgs['mgr_user'], cfgs['mgr_pwd'], cfgs['mgr_url'], cluster_name)
-        rsnodes = discover.get_rsnodes()
-        hadoop_users = discover.get_hadoop_users()
 
-        cfgs['distro'] = discover.distro
-        cfgs['hbase_service_name'] = discover.get_hbase_srvname()
-        cfgs['hdfs_service_name'] = discover.get_hdfs_srvname()
-        cfgs['zookeeper_service_name'] = discover.get_zookeeper_srvname()
+        hadoop_discover = HadoopDiscover(cfgs['mgr_user'], cfgs['mgr_pwd'], cfgs['mgr_url'], cluster_name)
+        rsnodes = hadoop_discover.get_rsnodes()
+        hadoop_users = hadoop_discover.get_hadoop_users()
+
+        cfgs['distro'] = hadoop_discover.distro
+        cfgs['hbase_lib_path'] = hadoop_discover.get_hbase_lib_path()
+        cfgs['hbase_service_name'] = hadoop_discover.get_hbase_srvname()
+        cfgs['hdfs_service_name'] = hadoop_discover.get_hdfs_srvname()
+        cfgs['zookeeper_service_name'] = hadoop_discover.get_zookeeper_srvname()
 
         cfgs['cluster_name'] = cluster_name.replace(' ', '%20')
         cfgs['hdfs_user'] = hadoop_users['hdfs_user']
@@ -398,12 +430,22 @@ def user_input(options, prompt_mode=True, pwd=''):
         rc = os.system('ping -c 1 %s >/dev/null 2>&1' % node)
         if rc: log_err('Cannot ping %s, please check network connection and /etc/hosts' % node)
 
+    # set some system default configs
+    cfgs['config_created_date'] = time.strftime('%Y/%m/%d %H:%M %Z')
+    cfgs['traf_user'] = 'trafodion'
+    if apache:
+        cfgs['hbase_xml_file'] = cfgs['hbase_home'] + '/conf/hbase-site.xml'
+        cfgs['hdfs_xml_file'] = cfgs['hadoop_home'] + '/etc/hadoop/hdfs-site.xml'
+    else:
+        cfgs['hbase_xml_file'] = '/etc/hbase/conf/hbase-site.xml'
+
     ### discover system settings, return a dict
-    discover_results = wrapper.run(cfgs, options, mode='discover', pwd=pwd)
+    system_discover = wrapper.run(cfgs, options, mode='discover', pwd=pwd)
 
     # check discover results, return error if fails on any sinlge node
     need_java_home = 0
-    for result in discover_results:
+    has_home_dir = 0
+    for result in system_discover:
         host, content = result.items()[0]
         content_dict = json.loads(content)
 
@@ -413,15 +455,17 @@ def user_input(options, prompt_mode=True, pwd=''):
         if content_dict['linux'] == 'N/A':
             log_err('Unsupported Linux version')
         if content_dict['firewall_status'] == 'Running':
-            log_err('Firewall should be stopped')
+            info('Firewall is running, please make sure the ports used by Trafodion are open')
         if content_dict['traf_status'] == 'Running':
             log_err('Trafodion process is found, please stop it first')
         if content_dict['hbase'] == 'N/A':
             log_err('HBase is not found')
         if content_dict['hbase'] == 'N/S':
             log_err('HBase version is not supported')
-
-        if content_dict['secure_hadoop'] == 'kerberos':
+        if content_dict['home_dir']: # trafodion user exists
+            has_home_dir += 1
+            cfgs['home_dir'] = content_dict['home_dir']
+        if content_dict['hadoop_authentication'] == 'kerberos':
             cfgs['secure_hadoop'] = 'Y'
         else:
             cfgs['secure_hadoop'] = 'N'
@@ -432,7 +476,8 @@ def user_input(options, prompt_mode=True, pwd=''):
             log_err('repodata directory not found, this is not a valid repository directory')
         cfgs['offline_mode'] = 'Y'
         cfgs['repo_ip'] = socket.gethostbyname(socket.gethostname())
-        cfgs['repo_port'] = '9900'
+        ports = ParseInI(DEF_PORT_FILE, 'ports').load()
+        cfgs['repo_http_port'] = ports['repo_http_port']
 
     pkg_list = ['apache-trafodion']
     # find tar in installer folder, if more than one found, use the first one
@@ -443,6 +488,7 @@ def user_input(options, prompt_mode=True, pwd=''):
             break
 
     g('traf_package')
+    cfgs['req_java8'] = 'N'
 
     # get basename and version from tar filename
     try:
@@ -451,12 +497,11 @@ def user_input(options, prompt_mode=True, pwd=''):
     except:
         log_err('Invalid package tar file')
 
-    #if float(cfgs['traf_version'][:3]) >= 2.2:
-    #    cfgs['req_java8'] = 'Y'
-    #else:
-    #    cfgs['req_java8'] = 'N'
-
-    g('traf_pwd')
+    if not cfgs['traf_dirname']:
+        cfgs['traf_dirname'] = '%s-%s' % (cfgs['traf_basename'], cfgs['traf_version'])
+    g('traf_dirname')
+    if not has_home_dir:
+        g('traf_pwd')
     g('dcs_cnt_per_node')
     g('scratch_locs')
     g('traf_start')
@@ -511,16 +556,6 @@ def user_input(options, prompt_mode=True, pwd=''):
         if not cfgs['java_home']:
             cfgs['java_home'] = java_home
 
-    # set other config to cfgs
-    if apache:
-        cfgs['hbase_xml_file'] = cfgs['hbase_home'] + '/conf/hbase-site.xml'
-        cfgs['hdfs_xml_file'] = cfgs['hadoop_home'] + '/etc/hadoop/hdfs-site.xml'
-    else:
-        cfgs['hbase_xml_file'] = '/etc/hbase/conf/hbase-site.xml'
-
-    cfgs['req_java8'] = 'N'
-    cfgs['traf_user'] = 'trafodion'
-    cfgs['config_created_date'] = time.strftime('%Y/%m/%d %H:%M %Z')
 
     if not silent:
         u.notify_user()
@@ -544,8 +579,8 @@ def get_options():
                             If set, \'sshpass\' tool is required.")
     parser.add_option("--build", action="store_true", dest="build", default=False,
                       help="Build the config file in guided mode only.")
-    parser.add_option("--upgrade", action="store_true", dest="upgrade", default=False,
-                      help="Upgrade install, it is useful when reinstalling Trafodion.")
+    parser.add_option("--reinstall", action="store_true", dest="reinstall", default=False,
+                      help="Reinstall Trafodion without restarting Hadoop.")
     parser.add_option("--apache-hadoop", action="store_true", dest="apache", default=False,
                       help="Install Trafodion on top of Apache Hadoop.")
     parser.add_option("--offline", action="store_true", dest="offline", default=False,
@@ -581,7 +616,7 @@ def main():
         pwd = ''
 
     # not specified config file and default config file doesn't exist either
-    p = ParseInI(config_file)
+    p = ParseInI(config_file, 'dbconfigs')
     if options.build or (not os.path.exists(config_file)):
         if options.build: format_output('DryRun Start')
         user_input(options, prompt_mode=True, pwd=pwd)
@@ -593,15 +628,18 @@ def main():
     else:
         print '\n** Loading configs from config file ... \n'
         cfgs = p.load()
+        # remove java home info from default config file
+        if config_file == DBCFG_FILE and cfgs.has_key('java_home'):
+            cfgs.pop('java_home')
         if options.offline and cfgs['offline_mode'] != 'Y':
             log_err('To enable offline mode, must set "offline_mode = Y" in config file')
         user_input(options, prompt_mode=False, pwd=pwd)
 
-    if options.upgrade:
-        cfgs['upgrade'] = 'Y'
+    if options.reinstall:
+        cfgs['reinstall'] = 'Y'
 
     if options.offline:
-        http_start(cfgs['local_repo_dir'], cfgs['repo_port'])
+        http_start(cfgs['local_repo_dir'], cfgs['repo_http_port'])
     else:
         cfgs['offline_mode'] = 'N'
 
@@ -635,7 +673,7 @@ if __name__ == "__main__":
     try:
         main()
     except (KeyboardInterrupt, EOFError):
-        tp = ParseInI(DBCFG_TMP_FILE)
+        tp = ParseInI(DBCFG_TMP_FILE, 'dbconfigs')
         tp.save(cfgs)
         http_stop()
         print '\nAborted...'

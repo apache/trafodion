@@ -104,6 +104,8 @@ c_integer_unsigned integer unsigned,
 c_largeint largeint,
 c_smallint smallint,
 c_smallint_unsigned smallint unsigned,
+c_tinyint tinyint,
+c_tinyint_unsigned tinyint unsigned,
 c_float float(10),
 c_real real,
 c_double_precision double precision,
@@ -117,7 +119,8 @@ c_interval interval year to month,
 c_intervals86 interval second(8,6),
 c_intervald6s interval day(6) to second(6),
 c_blob blob (100),
-c_clob clob (100)
+c_clob clob (100),
+c_boolean boolean
 );
 
 insert into t001_Datatypes values (
@@ -145,6 +148,8 @@ insert into t001_Datatypes values (
 -1,
 -1,
 1,
+-1,
+1,
 -1.11,
 -1.11,
 -1.11,
@@ -162,7 +167,8 @@ interval '666666 23:59:59.999999' day(6) to second(6),
 --stringtolob('CLOB_1')
 -- for now, use simple chars, see cqd TRAF_BLOB_AS_VARCHAR above
 'BLOB_1',
-'CLOB_1'
+'CLOB_1',
+true
 );
 
 ?section register_functions
@@ -238,6 +244,27 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                                          JULIANTIMESTAMP(ts) as TS,
                                          ipAddr
                                   FROM clicks
+                                  PARTITION BY 1 ORDER BY 2),
+                            'USERID',
+                            'TS',
+                            60000000));
+
+SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
+FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
+                                         JULIANTIMESTAMP(ts) as TS,
+                                         ipAddr
+                                  FROM clicks
+                                  WHERE userid='super-user'
+                                  PARTITION BY 1 ORDER BY 2),
+                            'USERID',
+                            'TS',
+                            60000000));
+SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
+FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
+                                         JULIANTIMESTAMP(ts) as TS,
+                                         ipAddr
+                                  FROM clicks
+                                  WHERE userid='super-user'
                                   PARTITION BY 1 ORDER BY 2),
                             'USERID',
                             'TS',

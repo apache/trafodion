@@ -21,7 +21,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-if [ -f $MY_SQROOT/sql/scripts/swzkcli ]
+if [ -f $TRAF_HOME/sql/scripts/swzkcli ]
 then swzkcli <<EOF
 rmr /hbase/Trafodion/recovery
 EOF

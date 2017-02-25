@@ -51,7 +51,7 @@ NABoolean UdrCfgParser::cfgFileIsOpen(NAString &errorText)
    }
    else
    {
-     NAString s(getenv("MY_SQROOT"));
+     NAString s(getenv("TRAF_HOME"));
      s += "/conf/trafodion.udr.config";
      cfgFileName = strdup(s.data());
      UDR_DEBUG1("UdrCfgParser(): default cfgFileName is %s", cfgFileName);

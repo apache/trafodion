@@ -2464,6 +2464,20 @@ void CIntSnapshotReq::performRequest()
             abort();
     }
 
+#if 0
+    // copy sqconfig.db
+    char cmd[256];
+    sprintf(cmd, "pdcp -p -w %s %s/sql/scripts/sqconfig.db %s/sql/scripts/.", Monitor->GetIntegratingNode()->GetName(), 
+              getenv("TRAF_HOME"), getenv("TRAF_HOME") );
+
+    error = system(cmd);
+
+    if (trace_settings & TRACE_REQUEST)
+        trace_printf("%s@%d - Copied config.db (%s) Error = %d\n", method_name, __LINE__, cmd, error);
+
+    mem_log_write(MON_REQQUEUE_SNAPSHOT_3, error);
+#endif
+    
     // estimate size of snapshot buffer
     // about 100 bytes per process, 1.5 times total
     int procSize = Nodes->ProcessCount() * 1.75 * 100;

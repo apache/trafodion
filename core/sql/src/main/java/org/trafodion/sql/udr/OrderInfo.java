@@ -71,6 +71,9 @@ public class OrderInfo
         orderTypes_ = new Vector<OrderTypeCode>();
     }
 
+/**
+ *  Copy constructor.
+ */
     public OrderInfo(OrderInfo o) {
         columnNumbers_ = new Vector<Integer>(o.columnNumbers_);
         orderTypes_ = new Vector<OrderTypeCode>(o.orderTypes_);
@@ -193,6 +196,7 @@ public class OrderInfo
     }
 
     // UDR writers can ignore these methods
+
     void clear()
     {
       columnNumbers_.clear();

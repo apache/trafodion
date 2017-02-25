@@ -62,6 +62,6 @@ public class TM_Interface {
    
    void setupLog4j() {
        //System.out.println("In setupLog4J");
-        String confFile = System.getenv("MY_SQROOT")
+        String confFile = System.getenv("TRAF_HOME")
             + "/logs/log4j.dtm.config";
         PropertyConfigurator.configure(confFile);

@@ -296,6 +296,14 @@ extern "C" short ABORTTRANSACTION();
 extern "C" short BEGINTRANSACTION(int *tag);
 extern "C" short BEGINTX(int *tag, int timeout=0, int64 type_flags=0);
 extern "C" short ENDTRANSACTION();
+
+//ENDTRANSACTION_ERR() is same as ENDTRANSACTION(). However,
+//errStr is allocated if errlen is not zero. Caller must deallocate errStr
+//by calling DELLAOCATE_ERR.
+//Rest of functionality same as ENDTRANSACTION.
+extern "C" short ENDTRANSACTION_ERR(char *&errStr, int &errlen);
+extern "C" void  DEALLOCATE_ERR(char *&errStr);
+
 extern "C" short STATUSTRANSACTION(short *status, int64 transid = 0);
 extern "C" short GETTRANSID(short *transid);
 extern "C" short GETTRANSINFO(short *transid, int64 *type_flags);
@@ -307,6 +315,7 @@ extern "C" short JOINTRANSACTION(int64 transid);
 extern "C" short TMF_GETTXHANDLE_(short *handle);
 extern "C" short TMF_SETTXHANDLE_(short *handle);
 extern "C" short TMWAIT();
+extern "C" short TMCLIENTEXIT();
 
 // Extended API
 extern "C" short GETTRANSID_EXT (TM_Transid_Type *transid);
@@ -335,7 +344,6 @@ extern "C" short DTM_GETTRANSINFO_EXT(TM_Transid_Type pv_transid, int32 *pp_seq_
                                       int16 *pp_checksum, int64 *pp_timestamp);
 extern "C" short DTM_GETTRANSIDSTR(int64 pv_transid, char *pp_transidstr);
 extern "C" short DTM_GETTRANSIDSTR_EXT(TM_Transid_Type pv_transid, char *pp_transidstr);
-
 
 // Internal use only!!
 extern "C" short DTM_QUIESCE(int32 pv_node); //Use for testing only

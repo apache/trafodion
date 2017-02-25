@@ -2584,7 +2584,7 @@ enum DefaultConstants
   SCRATCH_DISK_LOGGING,
   SCRATCH_MGMT_OPTION,
   SCRATCH_PREALLOCATE_EXTENTS,
-  SCRATCH_IO_BLOCKSIZE_SORT,
+  SCRATCH_IO_BLOCKSIZE_SORT_MAX,
   SCRATCH_IO_VECTOR_SIZE_HASH,
   SCRATCH_IO_VECTOR_SIZE_SORT,
 
@@ -3737,6 +3737,14 @@ enum DefaultConstants
   HBASE_UPDATE_COSTING,
   TRAF_LOAD_FLUSH_SIZE_IN_KB,
 
+  // if ON, then trafodion views on hive objects are supported.
+  HIVE_VIEWS,
+
+  // if ON, then external table is automatically created for all hive tables 
+  // referenced in the view definition.
+  // External table is needed to keep track of view usage and privileges.
+  HIVE_VIEWS_CREATE_EXTERNAL_TABLE,
+
   // Specify whic additional restriction check to apply
   //  0: no check
   //  1: apply majority of keys with predicates check
@@ -3773,6 +3781,10 @@ enum DefaultConstants
   // REALLY needed by users.
   // Currently syskey, _salt_, _division_.
   TRAF_ALLOW_RESERVED_COLNAMES,
+
+  // enable support for hbase tables mapped to relational traf tables
+  TRAF_HBASE_MAPPED_TABLES,
+  TRAF_HBASE_MAPPED_TABLES_IUD,
 
   //if 0, regular scanner is used. From 0.x to 1.0, percentage of regions that need to be scanned that will be done in parallel.
   //if >= 2, set a fixed number of thread, real DOP. 2.0 2 thread, 3.0 3 thread etc.
@@ -3870,6 +3882,16 @@ enum DefaultConstants
   CSE_CLEANUP_HIVE_TABLES,
   CSE_CACHE_TEMP_QUERIES,
 
+
+  // mode for AES_ENCRYPT/AED_DECRYPT
+  BLOCK_ENCRYPTION_MODE,
+
+  GROUP_BY_PUSH_TO_BOTH_SIDES_OF_JOIN,
+
+  CSE_TEMP_TABLE_MAX_SIZE,
+  CSE_TEMP_TABLE_MAX_MAX_SIZE,
+  CSE_COMMON_KEY_PRED_CONTROL,
+  CSE_PCT_KEY_COL_PRED_CONTROL,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

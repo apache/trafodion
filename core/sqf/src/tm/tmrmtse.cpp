@@ -1333,7 +1333,7 @@ int32 RM_Info_TSE::forget_branches (CTmTxBase *pp_txn, int64 pv_flags)
 // participants are prepared (have both the partic and resolved flags
 // set on the branch.
 // ------------------------------------------------------------
-int32 RM_Info_TSE::prepare_branches (CTmTxBase *pp_txn, int64 pv_flags)
+int32 RM_Info_TSE::prepare_branches (CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg)
 {
    int32 lv_err = FEOK;
    int32 lv_iterations = 1;

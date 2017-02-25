@@ -133,6 +133,7 @@ typedef enum
     HBASE_CREATE_SNAPSHOT_ERROR,
     HBASE_DELETE_SNAPSHOT_ERROR,
     HBASE_VERIFY_SNAPSHOT_ERROR,
+    HBASE_GENERIC_ERROR,
     HBASE_MAX_ERROR_NUM     // keep this as the last element in enum list.
 
   } HbaseError;
@@ -160,6 +161,7 @@ static const char * const hbaseErrorEnumStr[] =
     "HBASE_CREATE_SNAPSHOT_ERROR",
     "HBASE_DELETE_SNAPSHOT_ERROR",
     "HBASE_VERIFY_SNAPSHOT_ERROR",
+    "HBASE_GENERIC_ERROR",
     "HBASE_MAX_ERROR_NUM"     // keep this as the last element in enum list.
   };
 

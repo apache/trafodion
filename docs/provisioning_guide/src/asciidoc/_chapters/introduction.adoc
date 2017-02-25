@@ -92,28 +92,24 @@ such as LDAP search.  Refer to
 [[introduction-provisioning-options]]
 == Provisioning Options
 
-{project-name} ships with a set of scripts that takes care of many of the installation and upgrade
-tasks associated with the {project-name} software and its requirements. The main features include:
+{project-name} includes two options for installation: a plug-in integration with Apache Ambari and command-line installation scripts.
 
-* *{project-name} installer*: Performs installation and upgrade for {project-name}
-* *{project-name} uninstaller*: Uninstalls {project-name}
-* *{project-name} security installer*: Enables security features including Kerberos and LDAP for an existing {project-name} installation
+The Ambari integration provides support for Hortonworks Hadoop distributions, while the command-line {project-name} Installer
+supports Cloudera and  Hortonworks Hadoop distributions, and for select vanilla Hadoop installations.
 
-Currently, the {project-name} Installer is able to install {project-name} on select Cloudera and  Hortonworks Hadoop distributions, and for select vanilla Hadoop installations.
-The {project-name} Installer limitations are noted as they apply in the different chapters below. For example, the {project-name} Installer
-is less capable on SUSE than it is on RedHat/CentOS; you have to install the prerequisite software packages outside the {project-name} Installer.
+The {project-name} Installer supports Linux distributions SUSE and RedHat/CentOS. There are, however, some differences.
+Prerequisite software packages are not installed automatically on SUSE.
 
-The {project-name} Installer automates many of the tasks required to install/upgrade {project-name}, spanning from downloading and
-installing required software packages and making required changes to your Hadoop environment via creating
+The {project-name} Installer automates many of the tasks required to install/upgrade {project-name}, from downloading and
+installing required software packages and making required configuration changes to your Hadoop environment via creating
 the {project-name} runtime user ID to installing and starting {project-name}. It is, therefore,  highly recommend that
 you use the {project-name} Installer for initial installation and upgrades of {project-name}. These steps are referred to as
 "Script-Based Provisioning" in this guide. Refer to <<introduction-trafodion-installer, {project-name} Installer>> that provides
 usage information.
 
-If, for any reason, you choose not to use the {project-name} Installer, then separate chapters provide
-step-by-step recipes for the tasks required to install/upgrade {project-name}. These steps are referred to as
-*Recipe-Based Provisioning* in this guide. It is assumed that you are well-versed in Linux and Hadoop
-administrative tasks if using Recipe-Based Provisioning.
+The command-line installer has been replaced for the 2.1.0 release. Written in python, it replaces the legacy bash-script installer.
+The bash command-line installer is deprecated as of 2.1.0, but is still provided, just in case you experience any problems with
+the new installer. If so, please report those problems to the project team, since the legacy installer will soon be obsoleted.
 
 [[introduction-provisioning-activities]]
 == Provisioning Activities
@@ -317,7 +313,7 @@ in the <<prepare,Prepare>> chapter, you record the following information.
 | RENEW_LIFETIME          | Kerberos ticket renewal lifetime for {project-name} principal                              | 7days
 | REST_BUILD              | Tar file containing the REST component.                                                    | 
 | SECURE_HADOOP           | Indicates whether Hadoop has Kerberos enabled                                               | Based on whether Kerberos is enabled for your Hadoop installation
-| SQ_ROOT                 | Target directory for the {project-name} software.                                               | /home/trafodion/apache-trafodion-1.3.0-incubating-bin
+| TRAF_HOME                 | Target directory for the {project-name} software.                                               | /home/trafodion/apache-trafodion-1.3.0-incubating-bin
 | START                   | Whether to start {project-name} after install/upgrade.                                          | Y
 | SUSE_LINUX              | Whether your installing {project-name} on SUSE Linux.                                           | false
 | TRAF_PACKAGE            | The location of the {project-name} installation package tar file or core installation tar file. | /home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz
@@ -456,7 +452,7 @@ export HBASE="hbase"
 # First time install : /home/trafodion/traf
 # On Upgrade: /home/trafodion/traf_<date>
 # By doing this the previous version will remain and allow for an easier rollback.
-export SQ_ROOT="/home/trafodion/apache-trafodion-1.3.0-incubating-bin"
+export TRAF_HOME="/home/trafodion/apache-trafodion-1.3.0-incubating-bin"
 
 # Start Trafodion after install completes
 export START="Y"

@@ -174,6 +174,7 @@ enum USTAT_ERROR_CODES {UERR_SYNTAX_ERROR                    = 15001,
                         UERR_IUS_IS_DISABLED                 = 9249,
                         UERR_WARNING_IUS_NO_LONGER_ALL_NULL  = 9250,
                         UERR_DROP_PERSISTANT_SAMPLE_FIRST    = 9251,
+                        UERR_BAD_EST_ROWCOUNT                = 9252,
                         UERR_NO_ERROR                        = 9259,
                         UERR_LAST_ERROR                      = 9259
                        };

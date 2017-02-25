@@ -33,7 +33,7 @@
 #    --file <name> (OPTIONAL) 
 #        ==> specifies the name of the ldap configuration file that
 #            will be used to contact the identity store
-#            defaults to:  $MY_SQROOT/sql/script/.traf_authentication_config 
+#            defaults to:  $TRAF_HOME/sql/script/.traf_authentication_config 
 #
 #   When specifying --setup or --on, the script:
 #      ==> verifies that the configuration file exists
@@ -41,9 +41,9 @@
 #      ==> calls ldapcheck to test a connection to LDAP
 #      ==> if all is good then:
 #         ==> sets the environment variable TRAFODION_ENABLE_AUTHENTICATION to
-#             YES in $MY_SQROOT/sqenvcom.sh
-#         ==> copies $MY_SQROOT/sqenvcom.sh to all nodes in cluster
-#         ==> propagates $MY_SQROOT/sql/script/.traf_authentication_config to
+#             YES in $TRAF_HOME/sqenvcom.sh
+#         ==> copies $TRAF_HOME/sqenvcom.sh to all nodes in cluster
+#         ==> propagates $TRAF_HOME/sql/script/.traf_authentication_config to
 #             all nodes in the cluster
 #
 #   When specifying --on 
@@ -54,8 +54,8 @@
 #
 #   When specifying --off, the script:
 #      ==> sets the environment variable TRAFODION_ENABLE_AUTHENTICATION = YES
-#          in $MY_SQROOT/sqenvcom.sh
-#      ==> copies $MY_SQROOT/sqenvcom.sh to all nodes in cluster
+#          in $TRAF_HOME/sqenvcom.sh
+#      ==> copies $TRAF_HOME/sqenvcom.sh to all nodes in cluster
 #
 # To know whether authentication is enable or not, specify:
 #    -- status
@@ -91,19 +91,19 @@ EOF
 function change_sqenvcom 
 {
   echo "INFO: Modifying sqenvcom.sh to adjust the authentication default"
-  cp $MY_SQROOT/sqenvcom.sh sqenvcom.sh_temp
+  cp $TRAF_HOME/sqenvcom.sh sqenvcom.sh_temp
   if [ $authOn -eq 1 ]; then
-    sed -e "s@TRAFODION_ENABLE_AUTHENTICATION=NO@TRAFODION_ENABLE_AUTHENTICATION=YES@" <sqenvcom.sh_temp >$MY_SQROOT/sqenvcom.sh
+    sed -e "s@TRAFODION_ENABLE_AUTHENTICATION=NO@TRAFODION_ENABLE_AUTHENTICATION=YES@" <sqenvcom.sh_temp >$TRAF_HOME/sqenvcom.sh
     echo "INFO: Authentication has been enabled"
   else
-    sed -e "s@TRAFODION_ENABLE_AUTHENTICATION=YES@TRAFODION_ENABLE_AUTHENTICATION=NO@" <sqenvcom.sh_temp >$MY_SQROOT/sqenvcom.sh
+    sed -e "s@TRAFODION_ENABLE_AUTHENTICATION=YES@TRAFODION_ENABLE_AUTHENTICATION=NO@" <sqenvcom.sh_temp >$TRAF_HOME/sqenvcom.sh
     echo "INFO: Authentication has been disabled"
   fi
   rm sqenvcom.sh_temp > /dev/null 2>&1
 
   if [ $isCluster -eq 1 ]; then
-    #echo "pdcp -p -x $HOSTNAME $MY_NODES $MY_SQROOT/sqenvcom.sh $MY_SQROOT"
-    pdcp -p -x $HOSTNAME $MY_NODES $MY_SQROOT/sqenvcom.sh $MY_SQROOT
+    #echo "pdcp -p -x $HOSTNAME $MY_NODES $TRAF_HOME/sqenvcom.sh $TRAF_HOME"
+    pdcp -p -x $HOSTNAME $MY_NODES $TRAF_HOME/sqenvcom.sh $TRAF_HOME
   fi
 
 }
@@ -172,7 +172,7 @@ function copy_config
   fi
   rm auth_configcheck
 
-  # copy the configuration file to $MY_SQROOT/sql/scripts on
+  # copy the configuration file to $TRAF_HOME/sql/scripts on
   # all nodes in the cluster
 
   if [ $isCluster -eq 1 ]; then
@@ -189,7 +189,7 @@ function copy_config
 # =============================================================================
 function enable_authorization
 {
-  logLoc=$MY_SQROOT/logs
+  logLoc=$TRAF_HOME/logs
   rm $logLoc/authEnable.log > /dev/null 2>&1
   #gdb sqlci
   sqlci >> "$logLoc/authEnable.log" 2>&1 <<eof
@@ -216,7 +216,7 @@ eof
 # =============================================================================
 function disable_authorization
 {
-  logLoc=$MY_SQROOT/logs
+  logLoc=$TRAF_HOME/logs
   rm $logLoc/authDisable.log > /dev/null 2>&1
   sqlci >> "$logLoc/authDisable.log" 2>&1 <<eof
    values (current_timestamp);
@@ -243,7 +243,7 @@ eof
 # =============================================================================
 function status_authorization
 {
-  logLoc=$MY_SQROOT/logs
+  logLoc=$TRAF_HOME/logs
   rm $logLoc/authStatus.log > /dev/null 2>&1
   sqlci >> "$logLoc/authStatus.log" 2>&1 <<eof
    values (current_timestamp);
@@ -268,7 +268,7 @@ eof
 # main
 # =============================================================================
 
-defaultConfigFileDir="$MY_SQROOT/sql/scripts"
+defaultConfigFileDir="$TRAF_HOME/sql/scripts"
 defaultConfigFile="/.traf_authentication_config"
 configFileDir=$defaultConfigFileDir
 configFile=$defaultConfigFileDir$defaultConfigFile
@@ -282,9 +282,9 @@ doStatus=0
 statusSpecified=0
 
 # Make sure required env vars have been set first
-if [[ -z "$MY_SQROOT" ]]; then
+if [[ -z "$TRAF_HOME" ]]; then
     echo
-    echo "***ERROR: Environment variable MY_SQROOT has no value."
+    echo "***ERROR: Environment variable TRAF_HOME has no value."
     echo
     exit 1
 fi

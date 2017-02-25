@@ -265,6 +265,80 @@ CmpSeabaseDDLauth::AuthStatus CmpSeabaseDDLauth::getRoleIDs(
 }
 
 // ----------------------------------------------------------------------------
+// public method:  getObjectName
+//
+// Returns the first object name from the list of passed in objectUIDs.
+//
+// Input:
+//    objectUIDs - list of objectUIDs
+//
+//  Output:
+//    returns the fully qualified object name
+//    returns NULL string if no objects were found
+// ----------------------------------------------------------------------------
+NAString CmpSeabaseDDLauth::getObjectName (const std::vector <int64_t> objectUIDs)
+{
+  char longBuf [sizeof(int64_t)*8+1];
+  bool isFirst = true;
+  NAString objectList;
+  NAString objectName;
+
+  if (objectUIDs.size() == 0)
+    return objectName;
+
+  // convert objectUIDs into an "in" clause list
+  for (int i = 0; i < objectUIDs.size(); i++)
+  {
+    if (isFirst)
+      objectList = "(";
+    else
+      objectList += ", ";
+    isFirst = false;
+    sprintf (longBuf, "%ld", objectUIDs[i]);
+    objectList += longBuf;
+  }
+  objectList += ")";
+
+  NAString sysCat = CmpSeabaseDDL::getSystemCatalogStatic();
+  char buf[1000 + objectList.length()];
+  str_sprintf(buf, "select [first 1] trim(catalog_name) || '.' || "
+                   "trim(schema_name) || '.' || trim(object_name) "
+                   " from %s.\"%s\".%s where object_uid in %s",
+                   sysCat.data(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS, objectList.data());
+
+  ExeCliInterface cliInterface(STMTHEAP);
+  Int32 cliRC = cliInterface.fetchRowsPrologue(buf, true/*no exec*/);
+  if (cliRC != 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    UserException excp (NULL, 0);
+    throw excp;
+  }
+
+  cliRC = cliInterface.clearExecFetchClose(NULL, 0);
+  if (cliRC < 0)
+  {
+    cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+    UserException excp (NULL, 0);
+    throw excp;
+  }
+
+  // return an empty string
+  if (cliRC == 100)
+    return objectName;
+
+  // get the objectname
+  char * ptr = NULL;
+  Lng32 len = 0;
+
+  // object name returned
+  cliInterface.getPtrAndLen(1,ptr,len);
+  NAString returnedName(ptr,len);
+  return returnedName;
+}
+
+
+// ----------------------------------------------------------------------------
 // method:  getUniqueID
 //
 // This method is not valid for the base class
@@ -985,10 +1059,18 @@ void CmpSeabaseDDLuser::unregisterUser(StmtDDLRegisterUser * pNode)
     
     privClasses.push_back(PrivClass::ALL);
     
-    if (privMgr.isAuthIDGrantedPrivs(getAuthID(),privClasses))
+    std::vector<int64_t> objectUIDs;
+    if (privMgr.isAuthIDGrantedPrivs(getAuthID(),privClasses, objectUIDs))
     {
-       *CmpCommon::diags() << DgSqlCode(-CAT_NO_UNREG_USER_HAS_PRIVS);
-       return;
+       NAString objectName = getObjectName(objectUIDs);
+       if (objectName.length() > 0)
+       {
+          *CmpCommon::diags() << DgSqlCode(-CAT_NO_UNREG_USER_HAS_PRIVS)
+                              << DgString0(dbUserName.data())
+                              << DgString1(objectName.data());
+
+          return;
+       }
     }
     
     // delete the row
@@ -1727,11 +1809,18 @@ void CmpSeabaseDDLrole::dropRole(StmtDDLCreateRole * pNode)
          std::vector<PrivClass> privClasses;
          
          privClasses.push_back(PrivClass::ALL);
-         
-         if (privMgr.isAuthIDGrantedPrivs(getAuthID(),privClasses))
+         std::vector<int64_t> objectUIDs;
+
+         if (privMgr.isAuthIDGrantedPrivs(getAuthID(),privClasses, objectUIDs))
          {
-            *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_HAS_PRIVS_NO_DROP);
-            return;
+            NAString objectName = getObjectName(objectUIDs);
+            if (objectName.length() > 0)
+            {
+              *CmpCommon::diags() << DgSqlCode(-CAT_ROLE_HAS_PRIVS_NO_DROP)
+                                  << DgString0(roleName.data())
+                                  << DgString1(objectName.data());
+              return;
+            }
          }
 
          // Role has not been granted and no privileges have been granted to

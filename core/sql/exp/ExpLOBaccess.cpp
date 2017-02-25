@@ -75,7 +75,8 @@ extern int ms_transid_reinstate(MS_Mon_Transid_Type, MS_Mon_Transseq_Type);
 // short LobServerFNum;
 SB_Phandle_Type serverPhandle;
 
-ExLob::ExLob() :
+ExLob::ExLob(NAHeap * heap) :
+    lobDataFile_(heap),
     storage_(Lob_Invalid_Storage),
     lobStorageLocation_(string()),
     lobGlobalHeap_(NULL),
@@ -84,8 +85,7 @@ ExLob::ExLob() :
     openFlags_(0),
     lobTrace_(FALSE)
 {
-  memset(lobDataFile_,'\0',sizeof(lobDataFile_));
-    
+  // nothing else to do
 }
 
 ExLob::~ExLob()
@@ -98,7 +98,7 @@ ExLob::~ExLob()
    
 }
 
-Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode, 
+Ex_Lob_Error ExLob::initialize(const char *lobFile, Ex_Lob_Mode mode, 
                                char *lobStorageLocation, 
 			       LobsStorage storage,
                                char *hdfsServer, Int64 hdfsPort,
@@ -119,15 +119,16 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
 	}
 
       if (lobFile)
-        snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s/%s", 
-                 lobStorageLocation_.c_str(), 
-                 lobFile);
-      
+        {
+          lobDataFile_ = lobStorageLocation; 
+          lobDataFile_ += "/";
+          lobDataFile_ += lobFile;
+        }      
     } 
   else 
     { 
       if (lobFile)
-        snprintf(lobDataFile_, MAX_LOB_FILE_NAME_LEN, "%s", lobFile);
+        lobDataFile_ = lobFile;
       
     }
 
@@ -167,14 +168,14 @@ Ex_Lob_Error ExLob::initialize(char *lobFile, Ex_Lob_Mode mode,
   if (mode == EX_LOB_CREATE) 
     { 
       // check if file is already created
-      hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_);
+      hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
       if (fInfo != NULL) 
 	{
 	  hdfsFreeFileInfo(fInfo, 1);
 	  return LOB_DATA_FILE_CREATE_ERROR;
 	} 
       openFlags = O_WRONLY | O_CREAT;   
-      fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags, bufferSize, replication, blockSize);
+      fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags, bufferSize, replication, blockSize);
       if (!fdData_) 
 	{
           return LOB_DATA_FILE_CREATE_ERROR;
@@ -250,9 +251,10 @@ Ex_Lob_Error ExLob::fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOff
         if (blackBox && blackBoxLen >0 )
           {
             // we have received the external data file name from the descriptor table
-            // replace the contents of the lobDataFile with this name 
-            str_cpy_and_null(lobDataFile_, blackBox, blackBoxLen,'\0','0',TRUE);
-       
+            // replace the contents of the lobDataFile with this name
+            char temp[blackBoxLen+1];
+            str_cpy_and_null(temp, blackBox, blackBoxLen, '\0', '0', TRUE);
+            lobDataFile_ = temp;
           }
         outOffset = offset;
         outSize = size;
@@ -304,7 +306,7 @@ Ex_Lob_Error ExLob::writeData(Int64 offset, char *data, Int32 size, Int64 &operL
     if (!fdData_ || (openFlags_ != (O_WRONLY | O_APPEND))) // file is not open for write
     {
       // get file info
-      hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_);
+      hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
       if (fInfo == NULL) {
          return LOB_DATA_FILE_NOT_FOUND_ERROR;
       }
@@ -312,7 +314,7 @@ Ex_Lob_Error ExLob::writeData(Int64 offset, char *data, Int32 size, Int64 &operL
      hdfsCloseFile(fs_, fdData_);
      fdData_=NULL;
      openFlags_ = O_WRONLY | O_APPEND; 
-     fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
+     fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags_, 0, 0, 0);
      if (!fdData_) {
        openFlags_ = -1;
        return LOB_DATA_FILE_OPEN_ERROR;
@@ -338,7 +340,7 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
     if (!fdData_ || (openFlags_ != (O_WRONLY | O_APPEND))) // file is not open for write
     {
       // get file info
-      hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_);
+      hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
       if (fInfo == NULL) {
          return LOB_DATA_FILE_NOT_FOUND_ERROR;
       } else { 
@@ -351,7 +353,7 @@ Ex_Lob_Error ExLob::writeDataSimple(char *data, Int64 size, LobsSubOper subOpera
       hdfsCloseFile(fs_, fdData_);
       fdData_=NULL;
       openFlags_ = O_WRONLY | O_APPEND ; 
-      fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, bufferSize, replication, blockSize);
+      fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags_, bufferSize, replication, blockSize);
       if (!fdData_) {
          openFlags_ = -1;
          return LOB_DATA_FILE_OPEN_ERROR;
@@ -818,7 +820,7 @@ Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOpe
 	if (err != LOB_OPER_OK)
 	  return err;
       }
-    if (sourceLen <= 0 || sourceLen > lobMaxSize)
+    if (sourceLen < 0 || sourceLen > lobMaxSize)
       {
 	return LOB_MAX_LIMIT_ERROR; //exceeded the size of the max lob size
         //TBD trigger compaction
@@ -976,8 +978,9 @@ Ex_Lob_Error ExLob::readToMem(char *memAddr, Int64 size,  Int64 &operLen,char * 
        
        // we have received the external data file name from the descriptor table
        // replace the contents of the lobDataFile with this name 
-       str_cpy_and_null(lobDataFile_, blackBox, blackBoxLen,'\0','0',TRUE);
-       
+       char temp[blackBoxLen+1];
+       str_cpy_and_null(temp, blackBox, blackBoxLen, '\0', '0', TRUE);
+       lobDataFile_ = temp;
      }
    if (blackBoxLen == -1)
      {
@@ -1048,12 +1051,13 @@ Ex_Lob_Error ExLob::readToFile(char *tgtFileName, Int64 tgtLength, Int64 &operLe
       
     }
   if (blackBox)
-     {
-       // we have received the external data file name from the descriptor table
-       // replace the contents of the lobDataFile with this name 
-        str_cpy_and_null(lobDataFile_, blackBox, blackBoxLen,'\0','0',TRUE);
-       
-     }
+    {
+      // we have received the external data file name from the descriptor table
+      // replace the contents of the lobDataFile with this name 
+      char temp[blackBoxLen+1];
+      str_cpy_and_null(temp, blackBox, blackBoxLen, '\0', '0', TRUE);
+      lobDataFile_ = temp;
+    }
   if (tgtType == HDFS_FILE)
     {
       err = readDataToHdfsFile(tgtFileName,  srcOffset , tgtLength,operLen, lobMaxChunkMemLen, fileflags,handleIn,handleInLen,multipleChunks,transId);
@@ -1132,10 +1136,7 @@ Ex_Lob_Error ExLob::append(char *data, Int64 size, LobsSubOper so, Int64 headDes
     }
 
     char *inputAddr = data;
-    if (so == Lob_Buffer)
-      {
-	inputAddr = (char *)(*(long *)data);
-      }
+   
      str_sprintf(logBuf,"Calling writeLobData: inputAddr: %Ld, InputSize%Ld, tgtOffset:%Ld",(long)inputAddr,sourceLen,dataOffset);
     err = writeLobData(inputAddr, sourceLen,so,dataOffset,operLen,lobMaxChunkMemSize);
     if (err != LOB_OPER_OK)
@@ -1170,10 +1171,7 @@ Ex_Lob_Error ExLob::insertData(char *data, Int64 size, LobsSubOper so,Int64 head
     }
 
     char *inputAddr = data;
-    if (so == Lob_Buffer)
-      {
-	inputAddr = (char *)(*(long *)data);
-      }
+   
     Int64 inputSize = desc.getSize();
     Int64 tgtOffset = desc.getOffset();
     str_sprintf(logBuf,"Calling writeLobData: inputAddr: %Ld, InputSize%Ld, tgtOffset:%Ld",(long)inputAddr,inputSize,tgtOffset);
@@ -1217,7 +1215,7 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
       }
     if(so != Lob_External)
       {
-        if (sourceLen <= 0 || sourceLen > lobMaxSize)
+        if (sourceLen < 0 || sourceLen > lobMaxSize)
           {
             return LOB_MAX_LIMIT_ERROR; //exceeded the size of the max lob size
           }
@@ -1241,11 +1239,13 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
       
        return LOB_DESC_UPDATE_ERROR;
     }
-    char *inputAddr = data;
-    if (so == Lob_Buffer)
+    if (sourceLen ==0 )
       {
-	inputAddr = (char *)(*(long *)data);
+        //No need to write any data
+        return err;
       }
+    char *inputAddr = data;
+   
     str_sprintf(logBuf,"Calling writeLobData.sourceLen:%Ld, dataOffset:%Ld",sourceLen,dataOffset);
     lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
            
@@ -1285,10 +1285,16 @@ Ex_Lob_Error ExLob::delDesc(char *handleIn, Int32 handleInLen, Int64 transId)
 Ex_Lob_Error ExLob::purgeLob()
 {
     char logBuf[4096];
-     if (hdfsDelete(fs_, lobDataFile_, 0) != 0)
+     if (hdfsDelete(fs_, lobDataFile_.data(), 0) != 0)
        {
-         str_sprintf(logBuf,"hdfsDelete of %s returned error",lobDataFile_);
-         lobDebugInfo(lobDataFile_,0,__LINE__,lobTrace_);
+         // extract a substring small enough to fit into logBuf
+         size_t len = MINOF(lobDataFile_.length(),sizeof(logBuf)-40); 
+         char lobDataFileSubstr[len+1];  // +1 for trailing null
+         strncpy(lobDataFileSubstr,lobDataFile_.data(),len);
+         lobDataFileSubstr[len] = '\0';
+  
+         str_sprintf(logBuf,"hdfsDelete of %s returned error",lobDataFileSubstr);
+         lobDebugInfo("In ExLob::purgeLob",0,__LINE__,lobTrace_);
 	 return LOB_DATA_FILE_DELETE_ERROR;
        }
     
@@ -1344,7 +1350,7 @@ Ex_Lob_Error ExLob::openCursor(char *handleIn, Int32 handleInLen,Int64 transId)
     return LOB_OPER_OK;
 }
 
-Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type, 
+Ex_Lob_Error ExLob::openDataCursor(const char *file, LobsCursorType type, 
                                    Int64 range, Int64 bufMaxSize, 
                                    Int64 maxBytes, Int64 waited, 
                                    ExLobGlobals *lobGlobals,
@@ -1387,7 +1393,7 @@ Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type,
     cursor.prefetch_ = !waited;
     cursor.bufferHits_ = 0;
     cursor.bufferMisses_ = 0;
-    strcpy(cursor.name_, file);
+    cursor.name_ = file;
 
     cursor.currentRange_ = -1;
     cursor.endRange_ = -1;
@@ -1409,7 +1415,7 @@ Ex_Lob_Error ExLob::openDataCursor(char *file, LobsCursorType type,
         hdfsCloseFile(fs_, fdData_);
         fdData_ = NULL;
         openFlags_ = O_RDONLY;
-        fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
+        fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags_, 0, 0, 0);
        
         if (!fdData_)
           {
@@ -1502,8 +1508,55 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
     char logBuf[4096];
     lobDebugInfo("In ExLob::allocateDesc",0,__LINE__,lobTrace_);
     Int32 openFlags = O_RDONLY ;   
-    
-    hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_);
+    if (size == 0) //we are trying to empty this lob.
+      {
+        //rename lob datafile
+        char saveLobDataFile[lobDataFile_.length() + sizeof("_save")]; // sizeof includes room for null terminator
+        strcpy(saveLobDataFile,lobDataFile_.data());
+        strcpy(saveLobDataFile+lobDataFile_.length(),"_save");
+        Int32 rc2 = hdfsRename(fs_,lobDataFile_.data(),saveLobDataFile);
+        if (rc2 == -1)
+          {
+            lobDebugInfo("Problem renaming datafile to save data file",0,__LINE__,lobTrace_);
+            return LOB_DATA_FILE_WRITE_ERROR;
+          }
+        //create a new file of the same name.
+        hdfsFile fdNew = hdfsOpenFile(fs_, lobDataFile_.data(),O_WRONLY|O_CREAT,0,0,0);
+        if (!fdNew) 
+          {
+            // extract a substring small enough to fit into logBuf
+            size_t len = MINOF(lobDataFile_.length(),sizeof(logBuf)-40); 
+            char lobDataFileSubstr[len+1];  // +1 for trailing null
+            strncpy(lobDataFileSubstr,lobDataFile_.data(),len);
+            lobDataFileSubstr[len] = '\0';
+
+            str_sprintf(logBuf,"Could not create/open file:%s",lobDataFileSubstr);
+            lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
+            
+            //restore previous version
+            Int32 rc2 = hdfsRename(fs_,saveLobDataFile,lobDataFile_.data());
+              if (rc2 == -1)
+                {
+                  lobDebugInfo("Problem restoring datafile . Will need to retry the update",0,__LINE__,lobTrace_);
+                  return LOB_DATA_FILE_WRITE_ERROR;
+                }
+               return LOB_DATA_FILE_OPEN_ERROR;
+            
+          }
+        else
+          {
+            //A new empty data file has been created.
+            // delete the saved data file
+            Int32 rc2 = hdfsDelete(fs_,saveLobDataFile,FALSE);//ok to ignore error.nt32            
+            if (rc2 == -1)
+              {
+                lobDebugInfo("Problem deleting saved datafile . Will need to manually cleanup saved datafile",0,__LINE__,lobTrace_);
+              }
+            hdfsCloseFile(fs_,fdNew);
+            fdNew = NULL;    
+          }
+      }
+    hdfsFileInfo *fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
     if (fInfo)
       dataOffset = fInfo->mSize;
 
@@ -1531,17 +1584,24 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
       if (GCDone) // recalculate the new offset  
         {  
           hdfsFreeFileInfo(fInfo, 1);
-          fInfo = hdfsGetPathInfo(fs_, lobDataFile_);
+          fInfo = hdfsGetPathInfo(fs_, lobDataFile_.data());
         }
         
       if (fInfo)
         dataOffset = fInfo->mSize;
+
+      // extract a substring small enough to fit into logBuf
+      size_t len = MINOF(lobDataFile_.length(),sizeof(logBuf)-70); 
+      char lobDataFileSubstr[len+1];  // +1 for trailing null
+      strncpy(lobDataFileSubstr,lobDataFile_.data(),len);
+      lobDataFileSubstr[len] = '\0';
+
       if (GCDone)
         str_sprintf(logBuf,"Done GC. Allocating new Offset %Ld in %s",
-                    dataOffset,lobDataFile_);
+                    dataOffset,lobDataFileSubstr);
       else
         str_sprintf(logBuf,"Allocating new Offset %Ld in %s ",
-                    dataOffset,lobDataFile_);
+                    dataOffset,lobDataFileSubstr);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
       //Find the last offset in the file
       // dataOffset = hdfsTell(fs_,fdData_);  //commenting out.hdfsTell always returns 0 !!
@@ -1554,12 +1614,32 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
   char logBuf[4096];
   lobDebugInfo("In ExLob::compactLobDataFile",0,__LINE__,lobTrace_);
   Int64 maxMemChunk = 1024*1024*1024; //1GB limit for intermediate buffer for transfering data
-  char * saveLobDataFile = new(getLobGlobalHeap()) char[MAX_LOB_FILE_NAME_LEN+6];
-  str_sprintf(saveLobDataFile, "%s_save",lobDataFile_);
-  char * tmpLobDataFile = new(getLobGlobalHeap()) char[MAX_LOB_FILE_NAME_LEN+5];
-  str_sprintf(tmpLobDataFile, "%s_tmp",lobDataFile_);
 
-  str_sprintf(logBuf,"DataFile %s, TempDataFile : %s, SaveDataFile : %s ",lobDataFile_,tmpLobDataFile, saveLobDataFile);
+  // make some temporary file names
+  size_t len = lobDataFile_.length();
+  char saveLobDataFile[len + sizeof("_save")]; // sizeof includes room for null terminator
+  strcpy(saveLobDataFile,lobDataFile_.data());
+  strcpy(saveLobDataFile+len,"_save");
+  char tmpLobDataFile[len + sizeof("_tmp")]; // sizeof includes room for null terminator
+  strcpy(tmpLobDataFile,lobDataFile_.data());
+  strcpy(tmpLobDataFile+len,"_tmp");
+
+  // extract small enough bits of these file names to fit in logBuf
+  len = MINOF(lobDataFile_.length(),sizeof(logBuf)/3 - 20); 
+  char lobDataFileSubstr[len + 1];
+  strncpy(lobDataFileSubstr,lobDataFile_.data(),len);
+  lobDataFileSubstr[len] = '\0';
+  len = MINOF(sizeof(tmpLobDataFile),sizeof(logBuf)/3 - 20); 
+  char tmpLobDataFileSubstr[len + 1];
+  strncpy(tmpLobDataFileSubstr,tmpLobDataFile,len);
+  tmpLobDataFileSubstr[len] = '\0';
+  len = MINOF(sizeof(saveLobDataFile),sizeof(logBuf)/3 - 20);
+  char saveLobDataFileSubstr[len + 1];
+  strncpy(saveLobDataFileSubstr,saveLobDataFile,len);
+  saveLobDataFileSubstr[len] = '\0';
+
+  str_sprintf(logBuf,"DataFile %s, TempDataFile : %s, SaveDataFile : %s ",
+              lobDataFileSubstr,tmpLobDataFileSubstr, saveLobDataFileSubstr);
 
   lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
   hdfsFS fs = hdfsConnect(hdfsServer_,hdfsPort_);
@@ -1567,11 +1647,17 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
     return LOB_DATA_FILE_OPEN_ERROR;
   
  
-  hdfsFile  fdData = hdfsOpenFile(fs, lobDataFile_, O_RDONLY, 0, 0,0);
+  hdfsFile  fdData = hdfsOpenFile(fs, lobDataFile_.data(), O_RDONLY, 0, 0,0);
   
   if (!fdData)
     {
-      str_sprintf(logBuf,"Could not open file:%s",lobDataFile_);
+      // extract substring small enough to fit in logBuf
+      len = MINOF(lobDataFile_.length(),sizeof(logBuf) - 40); 
+      char lobDataFileSubstr2[len + 1];
+      strncpy(lobDataFileSubstr2,lobDataFile_.data(),len);
+      lobDataFileSubstr2[len] = '\0';
+
+      str_sprintf(logBuf,"Could not open file:%s",lobDataFileSubstr2);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
       hdfsCloseFile(fs,fdData);
       fdData = NULL;
@@ -1580,9 +1666,15 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
                           
         
   hdfsFile fdTemp = hdfsOpenFile(fs, tmpLobDataFile,O_WRONLY|O_CREAT,0,0,0);
-   if (!fdTemp) 
+  if (!fdTemp) 
     {
-      str_sprintf(logBuf,"Could not open file:%s",tmpLobDataFile);
+      // extract substring small enough to fit in logBuf
+      len = MINOF(sizeof(tmpLobDataFile),sizeof(logBuf)/3 - 20); 
+      char tmpLobDataFileSubstr2[len + 1];
+      strncpy(tmpLobDataFileSubstr2,tmpLobDataFile,len);
+      tmpLobDataFileSubstr2[len] = '\0';
+
+      str_sprintf(logBuf,"Could not open file:%s",tmpLobDataFileSubstr2);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
       hdfsCloseFile(fs,fdTemp);
       fdTemp = NULL;
@@ -1651,24 +1743,18 @@ Ex_Lob_Error ExLob::compactLobDataFile(ExLobInMemoryDescChunksEntry *dcArray,Int
   
    //Now save the data file and rename the tempfile to the original datafile
 
-   Int32 rc2 = hdfsRename(fs,lobDataFile_,saveLobDataFile);
+   Int32 rc2 = hdfsRename(fs,lobDataFile_.data(),saveLobDataFile);
    if (rc2 == -1)
      {
        lobDebugInfo("Problem renaming datafile to save data file",0,__LINE__,lobTrace_);
-       NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
-       NADELETEBASIC(tmpLobDataFile,getLobGlobalHeap());
        return LOB_DATA_FILE_WRITE_ERROR;
      }
-   rc2 = hdfsRename(fs,tmpLobDataFile, lobDataFile_);
+   rc2 = hdfsRename(fs,tmpLobDataFile, lobDataFile_.data());
    if (rc2 == -1)
      {
        lobDebugInfo("Problem renaming temp datafile to data file",0,__LINE__,lobTrace_);
-       NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
-       NADELETEBASIC(tmpLobDataFile,getLobGlobalHeap());
        return LOB_DATA_FILE_WRITE_ERROR;
      }
-   NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
-   NADELETEBASIC(tmpLobDataFile,getLobGlobalHeap());
    return LOB_OPER_OK;
 }
 
@@ -1680,18 +1766,17 @@ Ex_Lob_Error ExLob::restoreLobDataFile()
   hdfsFS fs = hdfsConnect(hdfsServer_,hdfsPort_);
   if (fs == NULL)
     return LOB_DATA_FILE_OPEN_ERROR;
-   char * saveLobDataFile = new(getLobGlobalHeap()) char[MAX_LOB_FILE_NAME_LEN+6];
-   str_sprintf(saveLobDataFile, "%s_save",lobDataFile_);
-   Int32 rc2 = hdfsDelete(fs,lobDataFile_,FALSE);//ok to ignore error.
-   rc2 = hdfsRename(fs,saveLobDataFile, lobDataFile_);
-   if (rc2)
+  char saveLobDataFile[lobDataFile_.length() + sizeof("_save")]; // sizeof includes room for null terminator
+  strcpy(saveLobDataFile,lobDataFile_.data());
+  strcpy(saveLobDataFile+lobDataFile_.length(),"_save");
+  Int32 rc2 = hdfsDelete(fs,lobDataFile_.data(),FALSE);//ok to ignore error.
+  rc2 = hdfsRename(fs,saveLobDataFile, lobDataFile_.data());
+  if (rc2)
      {
        lobDebugInfo("Problem renaming savedatafile to data file",0,__LINE__,lobTrace_);
-       NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
        return LOB_OPER_ERROR; 
      }
-   NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
-   return rc;
+  return rc;
 
 } 
 
@@ -1702,12 +1787,12 @@ Ex_Lob_Error ExLob::purgeBackupLobDataFile()
   hdfsFS fs = hdfsConnect(hdfsServer_,hdfsPort_);
   if (fs == NULL)
     return LOB_DATA_FILE_OPEN_ERROR;
-   char * saveLobDataFile = new(getLobGlobalHeap()) char[MAX_LOB_FILE_NAME_LEN+6];
-   str_sprintf(saveLobDataFile, "%s_save",lobDataFile_);
-   Int32 rc2 = hdfsDelete(fs,saveLobDataFile,FALSE);//ok to ignore error.
+  char saveLobDataFile[lobDataFile_.length() + sizeof("_save")]; // sizeof includes room for null terminator
+  strcpy(saveLobDataFile,lobDataFile_.data());
+  strcpy(saveLobDataFile+lobDataFile_.length(),"_save");
+  Int32 rc2 = hdfsDelete(fs,saveLobDataFile,FALSE);//ok to ignore error.
    
-   NADELETEBASIC(saveLobDataFile,getLobGlobalHeap());
-   return rc;
+  return rc;
 }
 ///////////////////////////////////////////////////////////////////////////////
 // ExLobDescHeader definitions
@@ -1777,9 +1862,11 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
             cursor.descSize_ = outSize;
             cursor.descOffset_ = outOffset;
             cursor.bytesRead_ = 0;
+            if (outSize == 0) // this is an empty lob entry
+              continue;
          }
       }
-
+      
       bytesAvailable = cursor.descSize_ - cursor.bytesRead_;
       bytesToCopy = min(bytesAvailable, tgtSize - operLen);
       offset = cursor.descOffset_ + cursor.bytesRead_;
@@ -1790,7 +1877,7 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
           hdfsCloseFile(fs_, fdData_);
           fdData_=NULL;
           openFlags_ = O_RDONLY;
-          fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
+          fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags_, 0, 0, 0);
         
           if (!fdData_)
             {
@@ -1865,7 +1952,7 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
       hdfsCloseFile(fs_, fdData_);
       fdData_=NULL;
       openFlags_ = O_RDONLY;
-      fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
+      fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags_, 0, 0, 0);
     
       if (!fdData_)
         {
@@ -1877,7 +1964,7 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
     }
   else
     {
-      fdData_ = hdfsOpenFile(fs_, lobDataFile_, openFlags_, 0, 0, 0);
+      fdData_ = hdfsOpenFile(fs_, lobDataFile_.data(), openFlags_, 0, 0, 0);
      
       if (!fdData_)
         {
@@ -1898,7 +1985,15 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
 	  
 	return LOB_DATA_READ_ERROR;
       } 
-      str_sprintf(logBuf,"After hdfsPread: File:%s, Offset:%Ld, Size:%Ld,Target Mem Addr:%Ld",lobDataFile_,offset,size,memAddr);
+      
+      // extract a substring small enough to fit into logBuf
+      size_t len = MINOF(lobDataFile_.length(),sizeof(logBuf)-100); 
+      char lobDataFileSubstr[len+1];  // +1 for trailing null
+      strncpy(lobDataFileSubstr,lobDataFile_.data(),len);
+      lobDataFileSubstr[len] = '\0';
+
+      str_sprintf(logBuf,"After hdfsPread: File:%s, Offset:%Ld, Size:%Ld,Target Mem Addr:%Ld",
+                  lobDataFileSubstr,offset,size,memAddr);
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
       operLen = bytesRead;
       return LOB_OPER_OK;
@@ -2243,7 +2338,6 @@ Ex_Lob_Error ExLobsOper (
 { 
   Ex_Lob_Error err = LOB_OPER_OK;
   ExLob *lobPtr = NULL;
-  char fn[MAX_LOB_FILE_NAME_LEN];
   struct timespec startTime;
   struct timespec endTime;
   Int64 secs, nsecs, totalnsecs;
@@ -2258,7 +2352,7 @@ Ex_Lob_Error ExLobsOper (
 
   clock_gettime(CLOCK_MONOTONIC, &startTime);
 
-  char *fileName = lobName;
+  const char *fileName = lobName;
 
   if (globPtr == NULL)
     {
@@ -2291,8 +2385,7 @@ Ex_Lob_Error ExLobsOper (
 
       if (it == lobMap->end())
 	{
-	  //lobPtr = new (lobGlobals->getHeap())ExLob();
-	  lobPtr = new ExLob();
+	  lobPtr = new (lobGlobals->getHeap())ExLob(lobGlobals->getHeap());
 	  if (lobPtr == NULL) 
 	    return LOB_ALLOC_ERROR;
 
@@ -2363,7 +2456,8 @@ Ex_Lob_Error ExLobsOper (
     case Lob_Read:
       if (storage == Lob_External_HDFS_File)   
         //Allocate storage to read the lob external file name from the 
-        //descriptor tables  to get the data from.        
+        //descriptor tables  to get the data from.
+        // TODO: do we ever take this code path for Hive files?       
         blackBox = new(lobGlobals->getHeap()) char[MAX_LOB_FILE_NAME_LEN+6];
           
       if (subOperation == Lob_Memory)
@@ -2396,17 +2490,31 @@ Ex_Lob_Error ExLobsOper (
       err = lobPtr->openCursor(handleIn, handleInLen,transId);
       break;
 
-    case Lob_OpenDataCursorSimple:  
-      if (openType == 1) { // preopen
-	sprintf(fn,"%s:%Lx:%s",lobPtr->getDataFileName(), (long long unsigned int)lobName, cursorId);
-	preOpenObj = new (lobGlobals->getHeap()) ExLobPreOpen(lobPtr, fn, descNumIn, sourceLen, cursorBytes, waited);
-	lobGlobals->addToPreOpenList(preOpenObj);
-      } else if (openType == 2) { // must open
-	sprintf(fn,"%s:%Lx:%s",lobPtr->getDataFileName(), (long long unsigned int)lobName, cursorId);
-	fileName = fn;
-	err = lobPtr->openDataCursor(fileName, Lob_Cursor_Simple, descNumIn, sourceLen, cursorBytes, waited, lobGlobals, (Int32 *)blackBox);
-      } else
-	err = LOB_SUBOPER_ERROR;
+    case Lob_OpenDataCursorSimple:
+      {
+        size_t dataFileNameLen = strlen(lobPtr->getDataFileName());
+        size_t cursorIdLen = strlen(cursorId); 
+        if (openType == 1) { // preopen
+          char temp1[30];  // big enough for :%Lx:
+          sprintf(temp1, ":%Lx:",(long long unsigned int)lobName);
+          char fn[dataFileNameLen + sizeof(temp1) + cursorIdLen + 1];
+          strcpy(fn,lobPtr->getDataFileName());
+          strcpy(fn + dataFileNameLen, temp1);
+          strcpy(fn + dataFileNameLen + strlen(temp1), cursorId);
+          preOpenObj = new (lobGlobals->getHeap()) ExLobPreOpen(lobPtr, fn, descNumIn, sourceLen, 
+                                                                cursorBytes, waited, lobGlobals->getHeap());
+          lobGlobals->addToPreOpenList(preOpenObj);
+        } else if (openType == 2) { // must open
+          char temp2[30];  // big enough for :%Lx:
+          sprintf(temp2, ":%Lx:",(long long unsigned int)lobName);
+          char fn[dataFileNameLen + sizeof(temp2) + cursorIdLen + 1];
+          strcpy(fn,lobPtr->getDataFileName());
+          strcpy(fn + dataFileNameLen, temp2);
+          strcpy(fn + dataFileNameLen + strlen(temp2), cursorId);
+          err = lobPtr->openDataCursor(fn, Lob_Cursor_Simple, descNumIn, sourceLen, cursorBytes, waited, lobGlobals, (Int32 *)blackBox);
+        } else
+          err = LOB_SUBOPER_ERROR;
+      }
       break;
 
     case Lob_ReadCursor:
@@ -2419,9 +2527,17 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_ReadDataCursorSimple:
-      sprintf(fn,"%s:%Lx:%s",lobPtr->getDataFileName(), (long long unsigned int)lobName, cursorId);
-      fileName = fn;       
-      err = lobPtr->readDataCursorSimple(fileName, source, sourceLen, retOperLen, lobGlobals);
+      {
+        char temp3[30];  // big enough for :%Lx:
+        sprintf(temp3, ":%Lx:",(long long unsigned int)lobName);
+        size_t dataFileNameLen = strlen(lobPtr->getDataFileName());
+        size_t cursorIdLen = strlen(cursorId);
+        char fn[dataFileNameLen + sizeof(temp3) + cursorIdLen + 1];
+        strcpy(fn,lobPtr->getDataFileName());
+        strcpy(fn + dataFileNameLen, temp3);
+        strcpy(fn + dataFileNameLen + strlen(temp3), cursorId);       
+        err = lobPtr->readDataCursorSimple(fn, source, sourceLen, retOperLen, lobGlobals);
+      }
       break;
 
     case Lob_CloseFile:
@@ -2440,9 +2556,17 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_CloseDataCursorSimple:
-      sprintf(fn,"%s:%Lx:%s",lobPtr->getDataFileName(), (long long unsigned int)lobName, cursorId);
-      fileName = fn;
-      err = lobPtr->closeDataCursorSimple(fileName, lobGlobals);
+      {
+        char temp4[30];  // big enough for :%Lx:
+        sprintf(temp4, ":%Lx:",(long long unsigned int)lobName);
+        size_t dataFileNameLen = strlen(lobPtr->getDataFileName());
+        size_t cursorIdLen = strlen(cursorId);
+        char fn[dataFileNameLen + sizeof(temp4) + cursorIdLen + 1];
+        strcpy(fn,lobPtr->getDataFileName());
+        strcpy(fn + dataFileNameLen, temp4);
+        strcpy(fn + dataFileNameLen + strlen(temp4), cursorId); 
+        err = lobPtr->closeDataCursorSimple(fn, lobGlobals);
+      }
       break;
 
     case Lob_Append:
@@ -2642,7 +2766,7 @@ prefetchBufList. It continues doing this until end of range is reached or the
 buffer limit (128MB) has been reached. 
 */
 
-Ex_Lob_Error ExLob::readDataCursorSimple(char *file, char *tgt, Int64 tgtSize, 
+Ex_Lob_Error ExLob::readDataCursorSimple(const char *file, char *tgt, Int64 tgtSize, 
                                          Int64 &operLen, ExLobGlobals *lobGlobals)
 {
     int dataOffset;
@@ -2733,7 +2857,7 @@ Ex_Lob_Error ExLob::readDataCursorSimple(char *file, char *tgt, Int64 tgtSize,
     return LOB_OPER_OK;
 }
 
-Ex_Lob_Error ExLob::closeDataCursorSimple(char *fileName, ExLobGlobals *lobGlobals)
+Ex_Lob_Error ExLob::closeDataCursorSimple(const char *fileName, ExLobGlobals *lobGlobals)
 {
     cursor_t *cursor = NULL;
     Int64 secs = 0;
@@ -2882,7 +3006,7 @@ Ex_Lob_Error ExLobGlobals::performRequest(ExLobHdfsRequest *request)
           traceMessage("locking cursor",cursor,__LINE__);
 	  cursor->lock_.unlock();
 	  if (cursor->eol_) { // never reaches here ??  
-	    lobPtr->deleteCursor(cursor->name_, this);
+	    lobPtr->deleteCursor(cursor->name_.c_str(), this);
 	  }
 	}
       processPreOpens();
@@ -2976,7 +3100,7 @@ void ExLobCursor::emptyPrefetchList(ExLobGlobals *lobGlobals)
 // Seems like this is currently unused. 
 // closeDataCusrorSimple takes care of destroying the cursor.But addign code
 // similar to closeDataCursorSimple for correctness in case it is used in future
-Ex_Lob_Error ExLob::deleteCursor(char *cursorName, ExLobGlobals *lobGlobals)
+Ex_Lob_Error ExLob::deleteCursor(const char *cursorName, ExLobGlobals *lobGlobals)
 {
     cursor_t *cursor = NULL;
 
@@ -3040,10 +3164,6 @@ ExLobGlobals::~ExLobGlobals()
     preOpenList_.clear();
     preOpenListLock_.unlock();
 
-    
-    if (lobMap_) 
-      delete lobMap_;
-
     if (numWorkerThreads_ > 0) { 
        for (int i=0; numWorkerThreads_-i > 0 && i < NUM_WORKER_THREADS; i++) {
            QRLogger::log(CAT_SQL_EXE, LL_DEBUG, 0, NULL,  
@@ -3074,6 +3194,11 @@ ExLobGlobals::~ExLobGlobals()
       c_it = postfetchBufList_.erase(c_it);
     }
     postfetchBufListLock_.unlock();
+
+    //delete the lobMap AFTER the worker threads have finished their pending 
+    //work since they may still be using an objetc that was fetched off the lobMap_
+    if (lobMap_) 
+      delete lobMap_;
     
     //msg_mon_close_process(&serverPhandle);
     if (threadTraceFile_)
@@ -3347,7 +3472,7 @@ Ex_Lob_Error ExLobGlobals::processPreOpens()
     {
         ExLob *lobPtr = preOpenObj->lobPtr_;
 
-        lobPtr->openDataCursor(preOpenObj->cursorName_, Lob_Cursor_Simple, preOpenObj->range_, 
+        lobPtr->openDataCursor(preOpenObj->cursorName_.data(), Lob_Cursor_Simple, preOpenObj->range_, 
                                preOpenObj->bufMaxSize_, preOpenObj->maxBytes_, 
                                preOpenObj->waited_, this,0);
     }
@@ -3374,7 +3499,7 @@ void ExLobGlobals::traceMessage(const char *logMessage, ExLobCursor *cursor,
 
 //Enable envvar TRACE_LOB_ACTIONS to enable tracing. 
 //The output file will be in the masterexec.<pid> logs in the 
-//$MY_SQROOT/logs directory on each node
+//$TRAF_HOME/logs directory on each node
 
 void lobDebugInfo(const char *logMessage,Int32 errorcode,
                          Int32 line, NABoolean lobTrace)

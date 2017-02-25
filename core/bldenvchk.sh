@@ -32,9 +32,9 @@ if [[ "$SQ_VERBOSE" == "1" ]]; then
    echo CUR_DIR=$CUR_DIR
 fi
 
-if [[ "$MY_SQROOT" != "$CUR_DIR/sqf" ]]; then
-   echo "*** Error: MY_SQROOT is set to: $MY_SQROOT"
-   echo "           MY_SQROOT should be: $CUR_DIR/sqf"
+if [[ "$TRAF_HOME" != "$CUR_DIR/sqf" ]]; then
+   echo "*** Error: TRAF_HOME is set to: $TRAF_HOME"
+   echo "           TRAF_HOME should be: $CUR_DIR/sqf"
    echo "           Be sure to source in sqf/sqenv.sh"
    RETVAL=1
 fi

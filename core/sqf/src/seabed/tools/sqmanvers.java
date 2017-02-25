@@ -138,7 +138,7 @@ public class sqmanvers {
         String lp_jar;
         String lp_sqroot;
 
-        lp_sqroot = System.getenv("MY_SQROOT");
+        lp_sqroot = System.getenv("TRAF_HOME");
         lp_jar = lp_sqroot + "/export/lib/sqmanvers.jar";
         jar_man_vers(lp_jar);
     }

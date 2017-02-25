@@ -1337,7 +1337,6 @@ TrafDesc *generateSpecialDesc(const CorrName& corrName)
 // -----------------------------------------------------------------------
 // member functions for class BindWA
 // -----------------------------------------------------------------------
-
 NARoutine *BindWA::getNARoutine ( const QualifiedName &name )
 {
   NARoutineDBKey key(name, wHeap());
@@ -1396,7 +1395,8 @@ NATable *BindWA::getNATable(CorrName& corrName,
   NAString userName;
   if ((CmpCommon::context()->sqlSession()->volatileSchemaInUse()) &&
       (! inTableDescStruct) &&
-      (corrName.getSpecialType() != ExtendedQualName::VIRTUAL_TABLE))
+      (corrName.getSpecialType() != ExtendedQualName::VIRTUAL_TABLE) &&
+      (corrName.getSpecialType() != ExtendedQualName::HBMAP_TABLE))
     {
       CorrName newCorrName = 
         CmpCommon::context()->sqlSession()->getVolatileCorrName
@@ -1469,7 +1469,7 @@ NATable *BindWA::getNATable(CorrName& corrName,
       NABoolean schNameSpecified =
               (NOT corrName.getQualifiedNameObj().getSchemaName().isNull());
 
-      // try PUBLIC SCHEMA only when no schema was specified
+     // try PUBLIC SCHEMA only when no schema was specified
       // and CQD PUBLIC_SCHEMA_NAME is specified
       NAString publicSchema = "";
       CmpCommon::getDefault(PUBLIC_SCHEMA_NAME, publicSchema, FALSE);
@@ -1484,6 +1484,26 @@ NATable *BindWA::getNATable(CorrName& corrName,
       if (bindWA->errStatus())
         return NULL;      // prototype value parse error
 
+      // cannot use hbase map schema as table name
+      if ((corrName.getQualifiedNameObj().getSchemaName() == HBASE_EXT_MAP_SCHEMA) &&
+          (! Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
+          (! Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE)))
+         {
+          *CmpCommon::diags() << DgSqlCode(-4261)
+                              << DgSchemaName(corrName.getQualifiedNameObj().getSchemaName());
+          
+          bindWA->setErrStatus();
+          return NULL;
+        }
+
+      // if this is an HBase mapped table and schema name is not specified, 
+      // then set schema to hbase map schema.
+      if ((corrName.getSpecialType() == ExtendedQualName::HBMAP_TABLE) &&
+          (NOT schNameSpecified))
+        {
+          corrName.getQualifiedNameObj().setSchemaName(HBASE_EXT_MAP_SCHEMA);
+        }
+ 
       // override schema
       if ( ( overrideSchemaEnabled() )
            // not volatile table
@@ -1543,6 +1563,34 @@ NATable *BindWA::getNATable(CorrName& corrName,
         }
       }
 
+      // if sch name was not specified and table is not found in default schema, then
+      // look for it in HBase mapped schema.
+      if ( !table && ! schNameSpecified)
+        {
+          CorrName pCorrName(corrName);
+          pCorrName.getQualifiedNameObj().setSchemaName(HBASE_EXT_MAP_SCHEMA);
+          
+          bindWA->resetErrStatus();
+          Lng32 diagsMark = CmpCommon::diags()->mark();
+          table = bindWA->getSchemaDB()->getNATableDB()->
+            get(pCorrName, bindWA, inTableDescStruct);
+          if ( !bindWA->errStatus() && table )
+            { // if found in mapped schema, do not show previous error
+              // and replace corrName
+              CmpCommon::diags()->clear();
+              corrName.getQualifiedNameObj().setCatalogName(
+                   pCorrName.getQualifiedNameObj().getCatalogName());
+              corrName.getQualifiedNameObj().setSchemaName(
+                   pCorrName.getQualifiedNameObj().getSchemaName());
+            }
+          else
+            {
+              // discard the errors from failed map table name lookup and only return
+              // the previous error.
+              CmpCommon::diags()->rewind(diagsMark);
+            }
+         }
+
       // move to here, after public schema try because BindUtil_CollectTableUsageInfo
       // saves table info for mv definition, etc.
       // Conditionally (usually) do stuff for Catalog Manager (static func above).
@@ -1583,11 +1631,14 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // native HIVE or HBASE objects unless the allowExternalTables flag is set.  
   // allowExternalTables is set for drop table and SHOWDDL statements.  
   // TDB - may want to merge the Trafodion version with the native version.
-  if ((table) && table->isExternalTable() && (! bindWA->allowExternalTables()))
+  if ((table) && 
+      (table->isExternalTable() && 
+       (NOT table->getTableName().isHbaseMappedName()) &&
+       (! bindWA->allowExternalTables())))    
     {
       *CmpCommon::diags() << DgSqlCode(-4258)
-                          << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-
+			  << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+      
       bindWA->setErrStatus();
       return NULL;
     }
@@ -1595,7 +1646,8 @@ NATable *BindWA::getNATable(CorrName& corrName,
   // If the table is an external table and has an associated native table, 
   // check to see if the external table structure still matches the native table.
   // If not, return an error
-  if ((table) && table->isExternalTable()) 
+  if ((table) && table->isExternalTable() &&
+      (NOT table->getTableName().isHbaseMappedName()))
     {
       NAString adjustedName =ComConvertTrafNameToNativeName 
            (table->getTableName().getCatalogName(),
@@ -1608,10 +1660,16 @@ NATable *BindWA::getNATable(CorrName& corrName,
       CorrName externalCorrName(adjustedQualName, STMTHEAP);
       NATable *nativeNATable = bindWA->getSchemaDB()->getNATableDB()->
                                   get(externalCorrName, bindWA, inTableDescStruct);
-  
+      if ((bindWA->externalTableDrop()) &&
+          (bindWA->errStatus()))
+        {
+          return NULL;
+        }
+      
       // Compare column lists
       // TBD - return what mismatches
-      if ( nativeNATable && !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
+      if ( nativeNATable && 
+           !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
            (NOT bindWA->externalTableDrop()))
         {
           *CmpCommon::diags() << DgSqlCode(-3078)
@@ -1638,6 +1696,31 @@ NATable *BindWA::getNATable(CorrName& corrName,
 
   return table;
 } // BindWA::getNATable()
+
+NATable *BindWA::getNATableInternal(
+     CorrName& corrName,
+     NABoolean catmanCollectTableUsages, // default TRUE
+     TrafDesc *inTableDescStruct,     // default NULL
+     NABoolean extTableDrop)
+{
+  ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
+  Set_SqlParser_Flags(ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME);
+  Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+  
+  setAllowExternalTables(TRUE);
+  if (extTableDrop)
+    setExternalTableDrop(TRUE);
+
+  NATable * nat = 
+    getNATable(corrName, catmanCollectTableUsages, inTableDescStruct);
+
+  // Restore parser flags settings to what they originally were
+  Assign_SqlParser_Flags (savedParserFlags);
+  setAllowExternalTables(FALSE);
+  setExternalTableDrop(FALSE);
+
+  return nat;
+}
 
 static TableDesc *createTableDesc2(BindWA *bindWA,
                                    const NATable *naTable,
@@ -2540,7 +2623,7 @@ RelExpr *Join::bindNode(BindWA *bindWA)
     RelExpr *leftJoin = this;
     leftJoin->setOperatorType(REL_LEFT_JOIN);
     
-    RelExpr *antiJoin = leftJoin->copyTree(bindWA->wHeap());
+    Join *antiJoin = static_cast<Join *>(leftJoin->copyTree(bindWA->wHeap()));
     antiJoin->setOperatorType(REL_RIGHT_JOIN);
 
     NAString leftName("ALJ", bindWA->wHeap());
@@ -2557,31 +2640,7 @@ RelExpr *Join::bindNode(BindWA *bindWA)
     unionAll->bindNode(bindWA);
     if (bindWA->errStatus()) return this;
 
-    // Make sure there is at least one null instantiated 
-    // value that is suitable for use as a filter.
-    // To be suitable, it must be null instantiated and 
-    // it's child must not be nullable.  We want to filter
-    // the NULL that are a result of null instantiation, not
-    // original null values.
-    //
-    ItemExpr *cval = new (bindWA->wHeap()) SystemLiteral(1);
-    cval->bindNode(bindWA);
-    if (bindWA->errStatus()) return this;
-
-    // Null instantiate the value.
-    //
-    ValueId niCval = cval->getValueId().nullInstantiate(bindWA, TRUE);
-
-    // Add it to the RETDesc of the Join.
-    //
-    ColRefName cvalName("", bindWA->wHeap());
-    antiJoin->getRETDesc()->addColumn(bindWA, cvalName , niCval, USER_COLUMN);
-
-    // Add it to the list of null instantiated outputs.
-    //
-    ((Join *)antiJoin)->nullInstantiatedOutput().insert(niCval);
-
-    ItemExpr *nullCheck = niCval.getItemExpr();
+    ItemExpr *nullCheck = antiJoin->addNullInstIndicatorVar(bindWA).getItemExpr();
 
     CMPASSERT(nullCheck);
     
@@ -2920,6 +2979,35 @@ RelExpr *Join::bindNode(BindWA *bindWA)
   //
   return bindSelf(bindWA);
 } // Join::bindNode()
+
+ValueId Join::addNullInstIndicatorVar(BindWA *bindWA,
+                                      ItemExpr *indicatorVal)
+{
+  // Add an indicator variable that can tell us whether
+  // a left join found a match in the right child table
+  // or not. The returned ValueId will have the value 1
+  // if a match was found, and NULL if no match was found.
+
+  ItemExpr *cval = indicatorVal;
+
+  if (!cval)
+    cval = new (bindWA->wHeap()) SystemLiteral(1);
+  cval = cval->bindNode(bindWA);
+  if (bindWA->errStatus())
+    return NULL_VALUE_ID;
+
+  // Null instantiate the value.
+  ValueId niCval = cval->getValueId().nullInstantiate(bindWA, TRUE);
+
+  // Add it to the RETDesc of the Join.
+  ColRefName cvalName("", bindWA->wHeap());
+  getRETDesc()->addColumn(bindWA, cvalName , niCval, USER_COLUMN);
+
+  // Add it to the list of null instantiated outputs.
+  nullInstantiatedOutput().insert(niCval);
+
+  return niCval;
+}
 
 //++MV
 // This function builds the BalueIdMap that is used for translating the required
@@ -6793,9 +6881,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges( tab->objectUid().get_value(),
-                                             tab->getObjectType(), thisUserID,
-                                             privInfo);
+      retcode = privInterface.getPrivileges( tab, thisUserID, privInfo);
       cmpSBD.switchBackCompiler();
 
       if (retcode != STATUS_GOOD)
@@ -6915,9 +7001,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges( tab->objectUid().get_value(), 
-                                             tab->getObjectType(), thisUserID, 
-                                             privInfo);
+      retcode = privInterface.getPrivileges( tab, thisUserID, privInfo);
       cmpSBD.switchBackCompiler();
 
       if (retcode != STATUS_GOOD)
@@ -6974,9 +7058,7 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
           *CmpCommon::diags() << DgSqlCode( -4400 );
         return FALSE;
       }
-      retcode = privInterface.getPrivileges(tab->objectUid().get_value(), 
-                                            COM_SEQUENCE_GENERATOR_OBJECT, 
-                                            thisUserID, privInfo);
+      retcode = privInterface.getPrivileges(tab, thisUserID, privInfo);
       cmpSBD.switchBackCompiler();
       if (retcode != STATUS_GOOD)
       {
@@ -9649,7 +9731,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
   //   The top value ids are target value ids, the bottom value ids
   //   are those of the source.
   //
-  NABoolean view = bindWA->getNATable(getTableName())->getViewText() != NULL;
+
+  NABoolean view = bindWA->getNATableInternal(getTableName())->getViewText() != NULL;
+
   ValueIdList tgtColList, userColList, sysColList, *userColListPtr;
   CollIndexList colnoList(STMTHEAP);
   CollIndex totalColCount, defaultColCount, i;
@@ -10446,9 +10530,9 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           *CmpCommon::diags() << DgSqlCode(-4490);
       }
   }
-
-  if (isUpsertThatNeedsMerge(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols)) {
-    if (CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) 	
+  NABoolean toMerge = FALSE;
+  if (isUpsertThatNeedsTransformation(isAlignedRowFormat, omittedDefaultCols, omittedCurrentDefaultClassCols,toMerge)) {
+    if ((CmpCommon::getDefault(TRAF_UPSERT_TO_EFF_TREE) == DF_OFF) ||toMerge)	
       {
 	boundExpr = xformUpsertToMerge(bindWA);  
 	return boundExpr;
@@ -10510,37 +10594,67 @@ Upsert is also converted into merge when TRAF_UPSERT_MODE is set to MERGE and
 there are omitted cols with default values in case of aligned format table or 
 omitted current timestamp cols in case of non-aligned row format
 */
-NABoolean Insert::isUpsertThatNeedsMerge(NABoolean isAlignedRowFormat, NABoolean omittedDefaultCols,
-                                   NABoolean omittedCurrentDefaultClassCols) const
+NABoolean Insert::isUpsertThatNeedsTransformation(NABoolean isAlignedRowFormat, 
+                                                  NABoolean omittedDefaultCols,
+                                                  NABoolean omittedCurrentDefaultClassCols,
+                                                  NABoolean &toMerge) const
 {
-  // The necessary conditions to convert upsert to merge and
+  toMerge = FALSE;
+  // If the the table has an identity column in clustering key or has a syskey 
+  // we dont need to do this transformation.The incoming row will always be 
+  // unique. So first check if we any of the conditions are satisfied to 
+  //even try the transform
+  NABoolean mustTryTransform = FALSE;
   if (isUpsert() && 
-      (NOT getIsTrafLoadPrep()) && 
-      (NOT (getTableDesc()->isIdentityColumnGeneratedAlways() && getTableDesc()->hasIdentityColumnInClusteringKey())) && 
-      (NOT (getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey())) && 
-        // table has secondary indexes or
-        (getTableDesc()->hasSecondaryIndexes() ||
-          // CQD is set to MERGE  
-          ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) &&
-            // omitted current default columns with non-aligned row format tables
-            // or omitted default columns with aligned row format tables 
-            (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
-            (isAlignedRowFormat && omittedDefaultCols))) ||
-          // CQD is set to Optimal, for non-aligned row format with omitted 
-          // current columns, it is converted into merge though it is not
-          // optimal for performance - This is done to ensure that when the 
-          // CQD is set to optimal, non-aligned format would behave like 
-          // merge when any column is  omitted 
-          ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL) &&
-            ((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols))
-        ) 
-     )
-     return TRUE;
-  else
-     return FALSE;
+      NOT ( getIsTrafLoadPrep() ||
+            ( (getTableDesc()->isIdentityColumnGeneratedAlways() && 
+               getTableDesc()->hasIdentityColumnInClusteringKey()))  || 
+            ((getTableDesc()->getClusteringIndex()->getNAFileSet()->hasSyskey()))))
+    {
+      mustTryTransform = TRUE;
+    }
+
+  // Transform upsert to merge in case of special modes and
+  // omitted default columns
+  // Case 1 :  CQD is set to MERGE, omitted current(timestamp) default 
+  //           columns with  non-aligned row format table or omitted 
+  //           default columns with aligned row format tables 
+
+  // Case 2 :  CQD is set to Optimal, for non-aligned row format with omitted 
+  //           current(timestamp) columns, it is converted into merge 
+  //           though it is not optimal for performance. This is done to ensure
+  //           that when the CQD is set to optimal, non-aligned format would 
+  //           behave like merge when any column is  omitted 
+  if (isUpsert()  &&   
+      mustTryTransform &&          
+      ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_MERGE) &&     
+       (((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols) ||
+        (isAlignedRowFormat && omittedDefaultCols)))
+      ||
+      ((CmpCommon::getDefault(TRAF_UPSERT_MODE) == DF_OPTIMAL) &&
+       ((NOT isAlignedRowFormat) && omittedCurrentDefaultClassCols)))
+    {
+      toMerge = TRUE;
+      return TRUE;
+    }
+
+  // Transform upsert to efficient tree if none of the above conditions 
+  // are true and the table has secondary indexes 
+  if (isUpsert() &&  
+      mustTryTransform &&
+      (getTableDesc()->hasSecondaryIndexes()))
+    {
+      toMerge = FALSE;
+      return TRUE;
+    }
+  
+  return FALSE;
 }
 
-/** commenting the following method out for future work. This may be enabled as a further performance improvement if we can eliminate the sort node that gets geenrated as part of the Sequence Node. In case of no duplicates we won't need the Sequence node at all. 
+/** commenting the following method out for future work. This may be enabled 
+as a further performance improvement if we can eliminate the sort node that 
+gets geenrated as part of the Sequence Node. In case of no duplicates we won't
+ need the Sequence node at all. 
 
 // take an insert(src) node and transform it into
 // a tuple_flow with old/new rows flowing to the IM tree.
@@ -10710,7 +10824,7 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
     new (bindWA->wHeap())
     Scan(CorrName(getTableDesc()->getCorrNameObj(), bindWA->wHeap()));
 
- 
+   bindWA->getCurrentScope()->context()->inUpsertXform() = TRUE;
   //join predicate between source columns and target table.
   ItemExpr * keyPred = NULL;
   ItemExpr * keyPredPrev = NULL;
@@ -10727,8 +10841,9 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
 	continue;
 
       targetColRef = new(bindWA->wHeap()) ColReference(
-						       new(bindWA->wHeap()) ColRefName(
-										       baseCol->getNAColumn()->getFullColRefName(), bindWA->wHeap()));
+           new(bindWA->wHeap()) ColRefName(
+                baseCol->getNAColumn()->getFullColRefName(),
+                bindWA->wHeap()));
     
 
       if (baseCol->getNAColumn()->isClusteringKey())
@@ -10770,10 +10885,8 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   pkeyVals->convertToValueIdList(tablePKeyVals,bindWA,ITM_ITEM_LIST);
   updateToSelectMap().mapValueIdListDown(tablePKeyVals,sourcePKeyVals);
   
-
-
   Join *lj = new(bindWA->wHeap()) Join(child(0),targetTableScan,REL_LEFT_JOIN,keyPred);
-  
+
   bindWA->getCurrentScope()->xtnmStack()->createXTNM();
 
   
@@ -10782,10 +10895,13 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
     return NULL;
   bindWA->getCurrentScope()->xtnmStack()->removeXTNM();
  
- 
+  ValueId nullInstIndicator(
+       lj->addNullInstIndicatorVar(
+            bindWA,
+            new(bindWA->wHeap()) SystemLiteral(
+                 "U",
+                 CharInfo::ISO88591)));
   ValueIdSet sequenceFunction ;		
- 
-  ItemExpr *constOne = new (bindWA->wHeap()) ConstValue(1);
  
   //Retrieve all the system and user columns of the left join output
   ValueIdList  ljOutCols = NULL;
@@ -10820,7 +10936,6 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
   seqNode->selectionPred() += selPredOnLead->getValueId();
   seqNode->setChild(0,boundLJ);
 
- 
   RelExpr *boundSeqNode = seqNode->bindNode(bindWA);  
    
   setChild(0,boundSeqNode);
@@ -10843,6 +10958,23 @@ RelExpr* Insert::xformUpsertToEfficientTree(BindWA *bindWA)
       newNewRecArray.insertAt(i,newRecArrList.at(i));
     }
   newRecExprArray() = newNewRecArray;
+
+  ValueId notCoveredNullInstIndicator;
+
+  notCoveredMap.rewriteValueIdUp(notCoveredNullInstIndicator,
+                                 nullInstIndicator);
+  ItemExpr *nvl = new(bindWA->wHeap()) BuiltinFunction(
+         ITM_NVL,
+         bindWA->wHeap(),
+         2,
+         notCoveredNullInstIndicator.getItemExpr(),
+         new(bindWA->wHeap()) SystemLiteral("I",
+                                            CharInfo::ISO88591));
+  nvl = nvl->bindNode(bindWA);
+  setProducedMergeIUDIndicator(nvl->getValueId());
+
+  setXformedEffUpsert(TRUE);
+  bindWA->getCurrentScope()->context()->inUpsertXform() =  FALSE;
   return topNode; 
 }
 
@@ -11025,7 +11157,7 @@ RelExpr* Insert::xformUpsertToMerge(BindWA *bindWA)
   if (bindWA->errStatus())
     return NULL;
   // Copy the userSecified and canBeSkipped attribute to mergeUpdateInsertExprArray
-  ValueIdList mergeInsertExprArray = ((MergeUpdate *)mu)->mergeInsertRecExprArray();
+  ValueIdList mergeInsertExprArray = mu->mergeInsertRecExprArray();
   for (CollIndex i = 0 ; i < newRecExprArray().entries(); i++) 
   {
       const Assign *assignExpr = (Assign *)newRecExprArray()[i].getItemExpr();
@@ -11299,11 +11431,20 @@ RelExpr *Update::bindNode(BindWA *bindWA)
        {
          xnsfrmHbaseUpdate = TRUE;
        }
+      else if (getTableDesc()->getNATable()->isHbaseMapTable())
+       {
+         xnsfrmHbaseUpdate = TRUE;
+       }
      }  
   
   if (xnsfrmHbaseUpdate)
     {
+      ULng32 savedParserFlags = Get_SqlParser_Flags (0xFFFFFFFF);
+      Set_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL);
+
       boundExpr = transformHbaseUpdate(bindWA);
+
+      Assign_SqlParser_Flags (savedParserFlags);
     }
   else 
   // till here and remove the function transformHbaseUpdate also
@@ -11471,6 +11612,26 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
     }
 
   bindWA->setMergeStatement(TRUE);  
+
+  // Create a merge IUD indicator, a CHAR(1) CHARACTER SET ISO88591
+  // NOT NULL variable, that can be used by index maintenance and
+  // other operations to find out what action the WHEN clause
+  // indicated, insert (I), update (U) or delete (D). This will be
+  // removed in GenericUpdate::normalizeNode() if nobody asked for
+  // it. The actual value will be produced by the executor work
+  // method, there is no expression for it.
+  if (getProducedMergeIUDIndicator() == NULL_VALUE_ID)
+    {
+      ItemExpr *mergeIUDIndicator = new(bindWA->wHeap()) NATypeToItem(
+           new(bindWA->wHeap()) SQLChar(
+                1, FALSE, FALSE, FALSE, FALSE, CharInfo::ISO88591));
+
+      mergeIUDIndicator = mergeIUDIndicator->bindNode(bindWA);
+      if (bindWA->errStatus())
+        return NULL;
+      setProducedMergeIUDIndicator(mergeIUDIndicator->getValueId());
+    }
+
   RelExpr * boundExpr = Update::bindNode(bindWA);
   if (bindWA->errStatus()) 
     return NULL;
@@ -12313,7 +12474,7 @@ NABoolean GenericUpdate::checkForHalloweenR2(Int32 numScansToFind)
 // whole stack of views) is *exactly one* wbase table -- i.e., no joins
 // allowed.
 //
-RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
+RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
 {
   if (nodeIsBound())
   {
@@ -12496,6 +12657,16 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
   if (naTable && naTable->isHbaseTable())
     hbaseOper() = TRUE;
 
+  if (naTable && naTable->isHbaseMapTable() &&
+      (CmpCommon::getDefault(TRAF_HBASE_MAPPED_TABLES_IUD) == DF_OFF))
+    {
+      *CmpCommon::diags() << DgSqlCode(-4223)
+			  << DgString0("Insert/Update/Delete on HBase mapped tables is");
+      
+      bindWA->setErrStatus();
+      return this;
+    }
+
   if ((CmpCommon::getDefault(ALLOW_DML_ON_NONAUDITED_TABLE) == DF_OFF) &&
       naTable && naTable->getClusteringIndex() && 
       (!naTable->getClusteringIndex()->isAudited())
@@ -12632,21 +12803,11 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
       (CmpCommon::getDefault(HBASE_NATIVE_IUD) == DF_OFF))
     {
       *CmpCommon::diags() << DgSqlCode(-4223)
-			  << DgString0("Insert/Update/Delete on native hbase tables or in CELL/ROW format is");
+			  << DgString0("Insert/Update/Delete on native HBase tables or in CELL/ROW format is");
       
       bindWA->setErrStatus();
       return this;
      }
-
-  if (naTable->isHiveTable() &&
-      (getOperatorType() != REL_UNARY_INSERT) && 
-      (getOperatorType() != REL_LEAF_INSERT))
-    {
-      *CmpCommon::diags() << DgSqlCode(-4223)
-			  << DgString0("Update/Delete on Hive table is");
-      bindWA->setErrStatus();
-      return this;
-    }
 
   NABoolean insertFromValuesList =
    (getOperatorType() == REL_UNARY_INSERT &&
@@ -13341,6 +13502,14 @@ RelExpr *GenericUpdate::bindNode(BindWA *bindWA)
   if (getOperatorType() == REL_UNARY_UPDATE ||
       getOperatorType() == REL_UNARY_DELETE) {
 
+    if (getTableDesc()->getNATable()->isHiveTable())
+      {
+        *CmpCommon::diags() << DgSqlCode(-4223)
+                            << DgString0("Update/Delete on Hive table is");
+        bindWA->setErrStatus();
+        return this;
+      }
+
     // SQL syntax requires (and the parser ensures) that a direct descendant
     // (passing thru views) of an update/delete node is a scan node on the
     // same table that is being updated (note that normalizer transformations
@@ -13568,11 +13737,13 @@ RelExpr *LeafInsert::bindNode(BindWA *bindWA)
     updateToSelectMap().addMapEntry(assign->getTarget(), assign->getSource());
   }
 
+  if (getReferencedMergeIUDIndicator() != NULL_VALUE_ID)
+    bindWA->getCurrentScope()->addOuterRef(getReferencedMergeIUDIndicator());
   // RelExpr::bindSelf (in GenericUpdate::bindNode) has done this line, but now
   // any outer refs discovered in bindNode's in the above loop must be added.
   // For Index Maintenance, these must be exactly the set of baseColRefs vids
   // (all the target index cols are from the locally-scoped RETDesc left by
-  // the GenericUpdate::bindNode).
+  // the GenericUpdate::bindNode), plus the merge IUD indicator, if used.
   getGroupAttr()->addCharacteristicInputs(bindWA->getCurrentScope()->getOuterRefs());
 
   // The NATable of getTableName() had been set to INDEX_TABLE so that
@@ -13710,6 +13881,8 @@ RelExpr *LeafDelete::bindNode(BindWA *bindWA)
 
   // See LeafInsert::bindNode for comments on remainder of this method.
 
+  if (getReferencedMergeIUDIndicator() != NULL_VALUE_ID)
+    bindWA->getCurrentScope()->addOuterRef(getReferencedMergeIUDIndicator());
   getGroupAttr()->addCharacteristicInputs(bindWA->getCurrentScope()->getOuterRefs());
 
   getTableName().setSpecialType(ExtendedQualName::NORMAL_TABLE);
@@ -14407,6 +14580,7 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
                   (CmpCommon::diags()->mainSQLCODE() == -4155) || // define not supported
                   (CmpCommon::diags()->mainSQLCODE() == -4086) || // catch Define Not Found error
                   (CmpCommon::diags()->mainSQLCODE() == -30044)|| // default schema access error
+                  (CmpCommon::diags()->mainSQLCODE() == -4261) || // reserved schema
                   (CmpCommon::diags()->mainSQLCODE() == -1398))   // uninit hbase
                     return this;
       
@@ -16940,7 +17114,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
       OperatorTypeEnum opType =
         PredefinedTableMappingFunction::nameIsAPredefinedTMF(tmfuncName);
 
-      if (opType != REL_TABLE_MAPPING_UDF)
+      if (opType != REL_ANY_TABLE_MAPPING_UDF)
         {
           // yes, this is a predefined TMUDF
           PredefinedTableMappingFunction *result;
@@ -16953,6 +17127,7 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
           // create a new RelExpr
           result = new(bindWA->wHeap())
             PredefinedTableMappingFunction(
+                 getArity(),
                  tmfuncName,
                  const_cast<ItemExpr *>(getProcAllParamsTree()),
                  opType);
@@ -17274,7 +17449,7 @@ RelExpr * FastExtract::bindNode(BindWA *bindWA)
     }
     else
     {
-      char * sqroot = getenv("MY_SQROOT");
+      char * sqroot = getenv("TRAF_HOME");
       if (sqroot && (! CmpCommon::context()->getSqlmxRegress()) &&
           (strncmp(sqroot, getTargetName().data(),strlen(sqroot)) == 0))
       {
@@ -17563,20 +17738,22 @@ RelExpr * CommonSubExprRef::bindNode(BindWA *bindWA)
 
   DCMPASSERT(info);
 
+  // eliminate any CommonSubExprRef nodes that are not truly common,
+  // i.e. those that are referenced only once
+  if (info->getNumConsumers() <= 1)
+    {
+      info->eliminate();
+      return child(0).getPtr()->bindNode(bindWA);
+    }
+
   bindWA->setInCSE(this);
 
-  if (parentCSE)
-    // establish the parent/child relationship, if not done already
-    CmpCommon::statement()->getCSEInfo(parentCSE->getName())->addChildCSE(info);
+  // establish the parent/child relationship
+  addParentRef(parentCSE);
 
   bindChildren(bindWA);
   if (bindWA->errStatus())
     return this;
-
-  // eliminate any CommonSubExprRef nodes that are not truly common,
-  // i.e. those that are referenced only once
-  if (CmpCommon::statement()->getCSEInfo(internalName_)->getNumConsumers() <= 1)
-    return child(0).getPtr();
 
   // we know that our child is a RenameTable (same name as this CSE,
   // whose child is a RelRoot, defining the CTE. Copy the bound select

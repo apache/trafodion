@@ -23,7 +23,7 @@
 # Description:  Makefile for building authentication library 
 #
 
-include $(MY_SQROOT)/macros.gmk #top level
+include $(TRAF_HOME)/macros.gmk #top level
 include ../macros.gmk
 
 #OUTDIR	= .
@@ -36,14 +36,14 @@ DBG_FLAGS	= $(DBG_FLGS)
 OBJS	= $(OUTDIR)/secsrvr.o \
 	  $(OUTDIR)/verssqcert.o
 
-INCLUDES	= -I. -I./inc -I../shared/inc -I$(MY_SQROOT)/export/include
+INCLUDES	= -I. -I./inc -I../shared/inc -I$(TRAF_HOME)/export/include
 #LINK_OPTIONS	= -lldap
 LINK_OPTIONS    = $(LNK_FLGS) 
 
 libsqcert.so:      $(OBJS)
 	$(CXX) -fPIC $(DBG_FLAGS) -shared $(GCCMODEXX) -o $@ $(INCLUDES) $(LINK_OPTIONS) $(OBJS)
 	$(CP) -p libsqcert.so $(LIBEXPDIR)/.
-	$(CP) -p inc/secsrvrmxo.h $(MY_SQROOT)/export/include/.
+	$(CP) -p inc/secsrvrmxo.h $(TRAF_HOME)/export/include/.
 
 
 clean:
@@ -51,8 +51,8 @@ clean:
 	$(RM) -rf $(OUTDIR)
 	$(RM) -f  libsqcert.so
 	$(RM) -f  $(LIBEXPDIR)/libsqcert.so 
-	$(RM) -f  $(MY_SQROOT)/inc/security/secsrvrmxo.h 
-	$(RM) -f  $(MY_SQROOT)/export/include/secsrvrmxo.h 
+	$(RM) -f  $(TRAF_HOME)/inc/security/secsrvrmxo.h 
+	$(RM) -f  $(TRAF_HOME)/export/include/secsrvrmxo.h 
 
 cleanall: clean
 	$(RM) -rf $(BUILD_PLAT)

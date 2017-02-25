@@ -1,0 +1,178 @@
+-- ============================================================================
+-- TEST123 - tests get statements
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Tests that get statements return only what the user can see
+--  get users
+--  get roles
+--  get users for role
+--  get roles for user
+--  get privileges for role
+--  get privileges for user
+--
+-- Users and roles used
+--   t123_adminrole:   granted update and delete on games/teams
+--   t123_plannerrole: granted insert on games/teams, players_seq
+--   t123_dummyrole:   granted no privileges
+--   t123_ownerrole:   owns the schema
+--
+--   sql_user1: granted t123_adminrole, t123_plannerrole, all privs on players, 
+--              players_seq
+--   sql_user2: granted t123_adminrole
+--   sql_user3: granted no roles or privileges
+--   sql_user4: granted select on teams/games
+--   sql_user5: granted t123_ownerrole
+--
+--  PUBLIC granted select column level privileges on players, teams
+-- ============================================================================
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+obey TEST123(clean_up);
+log LOG123;
+
+obey TEST123(set_up);
+revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+obey TEST123(get_statements);
+ 
+sh sqlci -i "TEST123(get_tests)" -u sql_user1;
+sh sqlci -i "TEST123(get_tests)" -u sql_user2;
+sh sqlci -i "TEST123(get_tests)" -u sql_user3;
+sh sqlci -i "TEST123(get_tests)" -u sql_user4;
+sh sqlci -i "TEST123(get_tests)" -u sql_user5;
+
+obey TEST123(other);
+grant component privilege "SHOW" on sql_operations to "PUBLIC";
+log;
+obey TEST123(clean_up);
+exit;
+
+?section set_up
+get users;
+get roles;
+
+get privileges on component sql_operations for "PUBLIC";
+
+create role t123_adminrole;
+create role t123_plannerrole;
+create role t123_dummyrole;
+create role t123_ownerrole;
+
+grant role t123_adminrole to sql_user1;
+grant role t123_plannerrole to sql_user1;
+grant role t123_plannerrole to sql_user2;
+grant role t123_ownerrole to sql_user5;
+
+create schema t123sch authorization t123_ownerrole;
+set schema t123sch;
+
+create table teams
+  (team_number int not null primary key,
+   team_name char(20) not null,
+   team_contact varchar(50) not null,
+   team_contact_number char (10) not null
+   )
+  ;
+
+create table games
+   ( home_team_number int not null,
+     visitor_team_number int not null,
+     game_number int not null primary key,
+     game_time timestamp not null,
+     game_location varchar(50) not null)
+  ;
+
+create table players
+  (player_number int not null,
+   player_name varchar (50) not null,
+   player_team_number int not null,
+   player_phone_number char (10) not null,
+   player_details varchar(50),
+   primary key (player_number, player_team_number))
+  no partition;
+
+create sequence players_sequence;
+
+grant select on games to sql_user4;
+grant select on teams to sql_user4;
+grant select(team_number, team_name) on teams to "PUBLIC";
+grant select(player_name, player_number, player_team_number) on players
+   to "PUBLIC";
+grant update, delete on games to t123_adminrole;
+grant update, delete on teams to t123_adminrole;
+grant insert on games to t123_plannerrole;
+grant insert on teams to t123_plannerrole;
+grant all on players to sql_user1;
+ 
+grant usage on sequence players_sequence to t123_plannerrole;
+grant usage on sequence players_sequence to sql_user1;
+
+?section clean_up
+drop schema t123sch cascade;
+
+revoke role t123_adminrole from sql_user1;
+revoke role t123_plannerrole from sql_user1;
+revoke role t123_plannerrole from sql_user2;
+revoke role t123_ownerrole from sql_user5;
+
+drop role t123_adminrole;
+drop role t123_plannerrole;
+drop role t123_dummyrole;
+drop role t123_ownerrole;
+
+?section get_tests
+log LOG123;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+values (user);
+obey TEST123(get_statements);
+
+?section get_statements
+get users;
+get roles;
+get roles for user sql_user1;
+get roles for user sql_user2;
+get roles for user sql_user3;
+get roles for user sql_user4;
+get roles for user sql_user5;
+
+get users for role t123_adminrole;
+get users for role t123_plannerrole;
+get users for role t123_dummyrole;
+get users for role t123_ownerrole;
+
+get privileges for user sql_user1;
+get privileges for user sql_user2;
+get privileges for user sql_user3;
+get privileges for user sql_user4;
+get privileges for user sql_user5;
+
+get privileges for role t123_adminrole;
+get privileges for role t123_plannerrole;
+get privileges for role t123_dummyrole;
+get privileges for role t123_ownerrole;
+get privileges for role "PUBLIC";
+
+?section other
+get privileges for user "PUBLIC";
+get privileges for user unknown_user;
+get privileges for role unknown_role;
+get roles for user unknown_user;
+get users for role unknown_role;

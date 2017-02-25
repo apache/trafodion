@@ -130,13 +130,13 @@ void CmpErrLog::openLogFile()
     return;
 
 
-  // On Linux determine the log location based off of MY_SQROOT environment
+  // On Linux determine the log location based off of TRAF_HOME environment
   // variable.
   char logFilePath[MAX_LOGFILE_NAME_LEN+1];
-  char *sqroot = getenv("MY_SQROOT");
+  char *sqroot = getenv("TRAF_HOME");
 
   // Use a generated path for the logfile if 3 conditions are met:
-  //   1. MY_SQROOT is set in the environment.
+  //   1. TRAF_HOME is set in the environment.
   //   2. The first character of the logfile starts with a character or digit.
   //   3. The complete path can fit into the size of the "logFilePath" buffer.
   if ((sqroot != NULL) && 

@@ -4808,14 +4808,32 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
         }
 
       rowDataLength += colInfo->length + (colInfo->nullable ? 1 : 0);
-      rowTotalLength +=  colInfo->length + (colInfo->nullable ? 1 : 0) +
-        keyLength +
-        sizeof(Int64)/*timestamp*/ +
-        (colInfo->hbaseColFam ? strlen(colInfo->hbaseColFam) : strlen(SEABASE_DEFAULT_COL_FAMILY)) +
-         (colInfo->hbaseColQual ? strlen(colInfo->hbaseColQual) : 2);
+
+      // compute HBase cell overhead.
+      // For each stored cell/column, overhead is:
+      //  timestamp, colFam, colQual, rowKey
+      // For aligned format tables, only one cell is stored.
+      // The overhead will be computed after exiting the 'for' loop.
+      if ((!tableInfo) || 
+          (tableInfo->rowFormat != COM_ALIGNED_FORMAT_TYPE))
+        {
+          rowTotalLength +=  colInfo->length + (colInfo->nullable ? 1 : 0) +
+            keyLength +
+            sizeof(Int64)/*timestamp*/ +
+            (colInfo->hbaseColFam ? strlen(colInfo->hbaseColFam) : strlen(SEABASE_DEFAULT_COL_FAMILY)) +
+            (colInfo->hbaseColQual ? strlen(colInfo->hbaseColQual) : 2);
+        }
 
       colInfo += 1;
     } // for
+
+  if (tableInfo && tableInfo->rowFormat == COM_ALIGNED_FORMAT_TYPE)
+    {
+      // one cell contains the aligned row
+      rowTotalLength = rowDataLength + keyLength +
+        sizeof(Int64)/*timestamp*/ +
+        strlen(SEABASE_DEFAULT_COL_FAMILY) + 2/* 2 bytes for col qual #1*/;
+    }
 
   if (useRWRS)
     {
@@ -4840,6 +4858,8 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
           isAudited = tableInfo->isAudited;
           if (tableInfo->rowFormat == COM_ALIGNED_FORMAT_TYPE)
             strcpy(rowFormat, COM_ALIGNED_FORMAT_LIT);
+          else if (tableInfo->rowFormat == COM_HBASE_STR_FORMAT_TYPE)
+            strcpy(rowFormat, COM_HBASE_STR_FORMAT_LIT);
           numSaltPartns = tableInfo->numSaltPartns;
           hbaseCreateOptions = tableInfo->hbaseCreateOptions;
         }
@@ -6985,6 +7005,14 @@ short CmpSeabaseDDL::updateSeabaseAuths(
 void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
 {
   int breadCrumb = -1;  // useful for debugging
+
+  // verify user is authorized
+  if (!ComUser::isRootUserID())
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
   NABoolean xnWasStartedHere = FALSE;
@@ -7087,7 +7115,7 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
   // Note that this is not an existing jar file, the class
   // loader will attempt to load the class from the CLASSPATH if
   // it can't find this jar
-  NAString installJar(getenv("MY_SQROOT"));
+  NAString installJar(getenv("TRAF_HOME"));
   installJar += "/export/lib/trafodion-sql-currversion.jar";
 
   breadCrumb = 1;
@@ -7269,6 +7297,12 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
 
 void CmpSeabaseDDL::createSeabaseMDviews()
 {
+  if (!ComUser::isRootUserID())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      return;
+    }
+
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
@@ -7291,6 +7325,13 @@ void CmpSeabaseDDL::createSeabaseMDviews()
 
 void CmpSeabaseDDL::dropSeabaseMDviews()
 {
+  // verify user is authorized
+  if (!ComUser::isRootUserID())
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
@@ -7313,6 +7354,12 @@ void CmpSeabaseDDL::dropSeabaseMDviews()
 
 void CmpSeabaseDDL::createSeabaseSchemaObjects()
 {
+  if (!ComUser::isRootUserID())
+    {
+      *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
@@ -7974,6 +8021,13 @@ short CmpSeabaseDDL::dropSeabaseObjectsFromHbase(const char * pattern,
 
 void CmpSeabaseDDL::dropSeabaseMD(NABoolean ddlXns)
 {
+  // verify user is authorized
+  if (!ComUser::isRootUserID())
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
   Lng32 cliRC;
   Lng32 retcode = 0;
   NABoolean xnWasStartedHere = FALSE;
@@ -8014,6 +8068,22 @@ void CmpSeabaseDDL::dropLOBHdfsFiles()
   NAString lobHdfsLoc;
   CmpCommon::getDefault(LOB_STORAGE_FILE_DIR,lobHdfsLoc,FALSE);
   cleanupLOBDataDescFiles(lobHdfsServer,lobHdfsPort,lobHdfsLoc);
+}
+
+NABoolean CmpSeabaseDDL::appendErrorObjName(char * errorObjs, 
+                                            const char * objName)
+{
+  if ((strlen(errorObjs) + strlen(objName)) < 1000)
+    {
+      strcat(errorObjs, objName);
+      strcat(errorObjs, " ");
+    }
+  else if (strlen(errorObjs) < 1005) // errorObjs maxlen = 1010
+    {
+      strcat(errorObjs, "...");
+    }
+  
+  return TRUE;
 }
 
 // ----------------------------------------------------------------------------
@@ -8341,6 +8411,12 @@ NABoolean CmpSeabaseDDL::deletePrivMgrInfo(const NAString &objectName,
 
 short CmpSeabaseDDL::dropMDTable(ExpHbaseInterface *ehi, const char * tab)
 {
+  if (!ComUser::isRootUserID())
+  {
+     *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+     return -1;
+  }
+
   Lng32 retcode = 0;
 
   HbaseStr hbaseObjStr;
@@ -8364,6 +8440,12 @@ short CmpSeabaseDDL::dropMDTable(ExpHbaseInterface *ehi, const char * tab)
 
 void CmpSeabaseDDL::updateVersion()
 {
+  if (!ComUser::isRootUserID())
+    {
+       *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+       return;
+    }
+
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
 
@@ -8432,10 +8514,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
   retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, FALSE);
   if (retcode)
     {
-      deallocEHI(ehi); 
-      
       processReturn();
-      
       return -1;
     }
 
@@ -8465,10 +8544,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
                               keyLength,
                               FALSE))
     {
-      deallocEHI(ehi); 
-
       processReturn();
-      
       return -1;
     }
   
@@ -8488,10 +8564,7 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
                              FALSE);
   if (retcode == -1)
     {
-      deallocEHI(ehi); 
-
       processReturn();
-
       return -1;
     }
 
@@ -8706,7 +8779,8 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
               return;
             }
           
-          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY);
+          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY,
+                                     naf->hbaseCreateOptions());
           if (retcode == -1)
             {
               deallocEHI(ehi); 
@@ -8904,9 +8978,12 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
            (ddlExpr->dropRepos()) ||
            (ddlExpr->upgradeRepos()))
     {
-      processRepository(ddlExpr->createRepos(), 
-                        ddlExpr->dropRepos(), 
-                        ddlExpr->upgradeRepos());
+      if (!ComUser::isRootUserID())
+          *CmpCommon::diags() << DgSqlCode(-CAT_NOT_AUTHORIZED);
+      else
+        processRepository(ddlExpr->createRepos(), 
+                          ddlExpr->dropRepos(), 
+                          ddlExpr->upgradeRepos());
     }
   else
     {

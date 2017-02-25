@@ -2436,7 +2436,6 @@ void SscpClientMsgStream::sendMergedStats()
     masterStats = mergedStats_->getMasterStats();
     if (masterStats != NULL)
     {
-      masterStats->setNumSqlProcs(getNumSqlProcs());
       masterStats->setNumCpus(getNumCpus());
     }
   }

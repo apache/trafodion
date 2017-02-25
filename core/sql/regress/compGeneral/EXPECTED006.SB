@@ -673,7 +673,7 @@
 >>-- Error 4312
 >>prepare xx from update HP_SYSTEM_CATALOG.mxcs_schema.ASSOC2DS set assoc_id = 100;
 
-*** ERROR[1002] Catalog HP_SYSTEM_CATALOG does not exist or has not been registered on node .
+*** ERROR[1002] Catalog HP_SYSTEM_CATALOG does not exist.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1687,7 +1687,7 @@ Sheldon     ship                5500.00     4000.00
 (EXPR)                            (EXPR)      (EXPR)
 --------------------------------  ----------  --------------------------------------------------------------------------------------------------------------------------------
 
-d3d9446802a44259755d38e6d163e820   852952723  b1d5781111d84f7b3fe45a0852e59758cd7a87e5
+d3d9446802a44259755d38e6d163e820   852952723  b1d5781111d84f7b3fe45a0852e59758cd7a87e5                                                                                        
 
 --- 1 row(s) selected.
 >>select md5(10) from dual;
@@ -1706,83 +1706,83 @@ d3d9446802a44259755d38e6d163e820   852952723  b1d5781111d84f7b3fe45a0852e59758cd
 >>select SOUNDEX('Jon') from dual;
 
 (EXPR)
-----------
+------
 
-J500
+J500  
 
 --- 1 row(s) selected.
 >>select SOUNDEX('Roy') from dual;
 
 (EXPR)
-----------
+------
 
-R000
+R000  
 
 --- 1 row(s) selected.
 >>select SOUNDEX('Lynn') from dual;
 
 (EXPR)
-----------
+------
 
-L500
+L500  
 
 --- 1 row(s) selected.
 >>
 >>select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Jon');
 
-NAME (EXPR)
-----------
+NAME                  (EXPR)
+--------------------  ------
 
-John J500
+John                  J500  
 
 --- 1 row(s) selected.
 >>select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Roy');
 
-NAME (EXPR)
-----------
+NAME                  (EXPR)
+--------------------  ------
 
-Ruoyu R000
+Ruoyu                 R000  
 
 --- 1 row(s) selected.
 >>select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Lynn');
 
-NAME (EXPR)
-----------
+NAME                  (EXPR)
+--------------------  ------
 
-Lane L500
-Lynn L500
+Lynn                  L500  
+Lane                  L500  
 
 --- 2 row(s) selected.
 >>
 >>select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Jon');
 
-NAME (EXPR)
-----------
+NAME                                      (EXPR)
+----------------------------------------  ------
 
-John J500
+John                                      J500  
 
 --- 1 row(s) selected.
 >>select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Roy');
 
-NAME (EXPR)
-----------
+NAME                                      (EXPR)
+----------------------------------------  ------
 
-Ruoyu R000
+Ruoyu                                     R000  
 
 --- 1 row(s) selected.
 >>select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Lynn');
 
-NAME (EXPR)
-----------
+NAME                                      (EXPR)
+----------------------------------------  ------
 
-Lane L500
-Lynn L500
+Lynn                                      L500  
+Lane                                      L500  
 
 --- 2 row(s) selected.
 >>select sha2('the original data', 0) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 38fd175fead1af0a96f46a9ed32d443857c16d0069c19e0cd7239340a1f94334
 
@@ -1795,16 +1795,16 @@ Lynn L500
 
 >>select sha2('the original data', 224) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                  
+--------------------------------------------------------
 
 82e1dae1bc1b2d862d30ddb6e16a717e5de6a143ab8c56c32a310a5b
 
 --- 1 row(s) selected.
 >>select sha2('the original data', 256) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 38fd175fead1af0a96f46a9ed32d443857c16d0069c19e0cd7239340a1f94334
 
@@ -1812,7 +1812,7 @@ Lynn L500
 >>select sha2('the original data', 384) from dual;
 
 (EXPR)
-----------
+------------------------------------------------------------------------------------------------
 
 bc0050f3ff7a540c74a42664c53a7f9fd485622374a43eb4a62cd84e48f483237bed50f6562f8c6e405454c4dbb0d4a3
 
@@ -1820,9 +1820,619 @@ bc0050f3ff7a540c74a42664c53a7f9fd485622374a43eb4a62cd84e48f483237bed50f6562f8c6e
 >>select sha2('the original data', 512) from dual;
 
 (EXPR)
-----------
+--------------------------------------------------------------------------------------------------------------------------------
 
 18091a172d94aae1ae530ced02bde7f022229f446348f5d3b36989c2e6fd59f5252c7a7f8ecb71a74cb724448243ff71651f87aed155aee7340fad1b02567b60
+
+--- 1 row(s) selected.
+>>
+>>-- Test LOG() for any radix with 2 parameters
+>>select log(2,8) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 3.00000000000000000E+000
+
+--- 1 row(s) selected.
+>>select log(5,10) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 1.43067655807339328E+000
+
+--- 1 row(s) selected.
+>>select log(10,100) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 2.00000000000000000E+000
+
+--- 1 row(s) selected.
+>>select log(2) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 6.93147180559945344E-001
+
+--- 1 row(s) selected.
+>>select log(2.71828) from dual;
+
+(EXPR)                   
+-------------------------
+
+ 9.99999327347282176E-001
+
+--- 1 row(s) selected.
+>>
+>>-- TEST aes_encrypt/aes_decrypt
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02
+
+--- 1 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+*** WARNING[8956] IV option ignored
+
+(EXPR)
+----------
+
+EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02', '1234567812345678', '1234567812345678') from dual;
+
+*** WARNING[8956] IV option ignored
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '1';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+0D9C1230E4B129757607D2E7C10805C9483C239A6A760FD1CECD8FC4D159E76F
+
+--- 1 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+*** WARNING[8956] IV option ignored
+
+(EXPR)
+----------
+
+0D9C1230E4B129757607D2E7C10805C9483C239A6A760FD1CECD8FC4D159E76F
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'0D9C1230E4B129757607D2E7C10805C9483C239A6A760FD1CECD8FC4D159E76F', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'0D9C1230E4B129757607D2E7C10805C9483C239A6A760FD1CECD8FC4D159E76F', '1234567812345678', '1234567812345678') from dual;
+
+*** WARNING[8956] IV option ignored
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '2';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985
+
+--- 1 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+*** WARNING[8956] IV option ignored
+
+(EXPR)
+----------
+
+EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985', '1234567812345678', '1234567812345678') from dual;
+
+*** WARNING[8956] IV option ignored
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '3';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+12FF81AF2AB65E82DEFAE32D2CF0E7E5C14F90BAA80DF073608CE6ED0C47737F
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'12FF81AF2AB65E82DEFAE32D2CF0E7E5C14F90BAA80DF073608CE6ED0C47737F', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'12FF81AF2AB65E82DEFAE32D2CF0E7E5C14F90BAA80DF073608CE6ED0C47737F', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '4';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+1A1332592C987A79374609C89BB53F89A8F0B0A2B71E06B824894D1B95E1D953
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'1A1332592C987A79374609C89BB53F89A8F0B0A2B71E06B824894D1B95E1D953', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'1A1332592C987A79374609C89BB53F89A8F0B0A2B71E06B824894D1B95E1D953', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '5';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+E22114AB552C8613622ADD34B3FEDCE840A18C84FDEA9D6394F57A14F6DB2497
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'E22114AB552C8613622ADD34B3FEDCE840A18C84FDEA9D6394F57A14F6DB2497', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'E22114AB552C8613622ADD34B3FEDCE840A18C84FDEA9D6394F57A14F6DB2497', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '6';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+2A23CC234BC4175E6AE90793BFBD03E4D7F2921AC6032E45D1C0
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'2A23CC234BC4175E6AE90793BFBD03E4D7F2921AC6032E45D1C0', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'2A23CC234BC4175E6AE90793BFBD03E4D7F2921AC6032E45D1C0', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '7';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+09389E6E99083B18F50D2B4D14106CFCF9F9EEAD004929940C17
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'09389E6E99083B18F50D2B4D14106CFCF9F9EEAD004929940C17', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'09389E6E99083B18F50D2B4D14106CFCF9F9EEAD004929940C17', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '8';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+209F05F9B3E25391258A434F6FA9663F14886E9FF7E6C2CF5EF9
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'209F05F9B3E25391258A434F6FA9663F14886E9FF7E6C2CF5EF9', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'209F05F9B3E25391258A434F6FA9663F14886E9FF7E6C2CF5EF9', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '9';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+0C45C8DB6AE2F87AE36420AE711AC1121576FEECB26BD9B246AB
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'0C45C8DB6AE2F87AE36420AE711AC1121576FEECB26BD9B246AB', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'0C45C8DB6AE2F87AE36420AE711AC1121576FEECB26BD9B246AB', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '10';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+2C39ACEEBF859846261D8B1B712BBC7965F64889293C26CDFE61
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'2C39ACEEBF859846261D8B1B712BBC7965F64889293C26CDFE61', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'2C39ACEEBF859846261D8B1B712BBC7965F64889293C26CDFE61', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '11';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+6A3C1001A693B34DD2619B066413995BDEC5259A73E1E6D2DEBC
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'6A3C1001A693B34DD2619B066413995BDEC5259A73E1E6D2DEBC', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'6A3C1001A693B34DD2619B066413995BDEC5259A73E1E6D2DEBC', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '12';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+0CCE7F3282239C8853A5E704FC8A47901D8036903B6603DF43E5
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A47901D8036903B6603DF43E5', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A47901D8036903B6603DF43E5', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '13';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+2C6B7A87519F9E95E0F46EDA774152245E8DD142FC6CD57D57E2
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152245E8DD142FC6CD57D57E2', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152245E8DD142FC6CD57D57E2', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '14';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+6A0D74250CB7E54F4690801A7AD9CDB07435157353DAE7BC6203
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB07435157353DAE7BC6203', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB07435157353DAE7BC6203', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '15';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+0CCE7F3282239C8853A5E704FC8A4790B5D857207B417EFB52D8
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A4790B5D857207B417EFB52D8', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A4790B5D857207B417EFB52D8', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '16';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+2C6B7A87519F9E95E0F46EDA774152244B6E78427EC604C84868
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152244B6E78427EC604C84868', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152244B6E78427EC604C84868', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>cqd block_encryption_mode '17';
+
+--- SQL operation complete.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_ENCRYPT
+
+--- 0 row(s) selected.
+>>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+
+(EXPR)
+----------
+
+6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128
+
+--- 1 row(s) selected.
+>>select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128', '1234567812345678') from dual;
+
+*** ERROR[8955] Incorrect parameter count in the call to function AES_DECRYPT
+
+--- 0 row(s) selected.
+>>select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128', '1234567812345678', '1234567812345678') from dual;
+
+(EXPR)
+----------
+
+abcdedfhijklmnopqrstuvwxyz
 
 --- 1 row(s) selected.
 >>log;

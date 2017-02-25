@@ -155,7 +155,8 @@ public class InterfaceUtilities {
 
 		// add sign
 		if ((bd.signum() < 0))
-			targetData[targetData.length - 2] |= 0x80;
+                    //server side is little-endian so here should be length-1
+                    targetData[targetData.length - 1] |= 0x80;
 
 		return targetData;
 	}

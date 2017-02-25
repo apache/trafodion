@@ -321,6 +321,7 @@ public:
   NABoolean isHbase() const;
   NABoolean isSeabaseMD() const;
   NABoolean isSeabasePrivMgrMD() const;
+  NABoolean isHbaseMappedName() const;
 
   NABoolean isHistograms() const;
   NABoolean isHistogramIntervals() const;
@@ -473,6 +474,7 @@ public:
 			  VIRTUAL_TABLE,
 			  IUD_LOG_TABLE, 
 			  RANGE_LOG_TABLE,
+                          HBMAP_TABLE,
 			  MVS_UMD,
 			  MV_TABLE,
 			  TRIGTEMP_TABLE,      // Temporary Tables for Triggers
@@ -877,6 +879,7 @@ public:
   NABoolean isSeabasePrivMgrMD() const;
   NABoolean isHbaseCell() const;
   NABoolean isHbaseRow() const;
+  NABoolean isHbaseMap() const;
 
   NABoolean isExternal() const { return (flagbits_ & IS_EXTERNAL) != 0; }
   void setIsExternal(NABoolean v) 

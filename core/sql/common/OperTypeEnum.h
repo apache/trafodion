@@ -89,7 +89,9 @@ enum OperatorTypeEnum {
                         REL_TABLE_VALUED_FUNCTION,
                         REL_BUILTIN_TABLE_VALUED_FUNCTION,
                         REL_TABLE_VALUED_UDF,
-                        REL_TABLE_MAPPING_UDF,
+                        REL_LEAF_TABLE_MAPPING_UDF,
+                        REL_UNARY_TABLE_MAPPING_UDF,
+                        REL_BINARY_TABLE_MAPPING_UDF,
                         REL_TABLE_MAPPING_BUILTIN_LOG_READER,
                         REL_TABLE_MAPPING_BUILTIN_TIMESERIES,
                         REL_TABLE_MAPPING_BUILTIN_JDBC,
@@ -511,6 +513,8 @@ enum OperatorTypeEnum {
                         ITM_BITEXTRACT = 2235,
                         ITM_CONVERTTOBITS = 2236,
                         ITM_LOG2= 2237,
+                        // JSON fuctions
+                        ITM_JSONOBJECTFIELDTEXT = 2241,
 
                         // string functions
                         ITM_TRUNC = 2250,
@@ -799,6 +803,9 @@ enum OperatorTypeEnum {
                         ITM_SHA2_384  = 2639,
                         ITM_SHA2_512  = 2640,
 
+                        ITM_AES_ENCRYPT = 2641,
+                        ITM_AES_DECRYPT = 2642,
+
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,
                         ITM_CURRNT_USER = 2991,
@@ -1079,6 +1086,7 @@ enum OperatorTypeEnum {
                         ELM_LIKE_OPT_SALT_CLAUSE_ELEM,
                         ELM_LIKE_OPT_WITHOUT_DIVISION_ELEM,
                         ELM_LIKE_OPT_LIMIT_COLUMN_LENGTH,
+                        ELM_LIKE_OPT_WITHOUT_ROW_FORMAT_ELEM,
                         ELM_LOCATION_ELEM,
                         ELM_OPTION_LIST,
                         ELM_PARALLEL_EXEC_ELEM,

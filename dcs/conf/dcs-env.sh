@@ -31,8 +31,8 @@
 # export JAVA_HOME=/usr/java/jdk1.7.0/
 
 # Add Trafodion to the classpath
-if [ "$MY_SQROOT" != "" ]; then
-  if [ -d $MY_SQROOT ]; then
+if [ "$TRAF_HOME" != "" ]; then
+  if [ -d $TRAF_HOME ]; then
     export DCS_CLASSPATH=${CLASSPATH}:
   fi
 fi
@@ -107,7 +107,13 @@ export DCS_OPTS="-XX:+UseConcMarkSweepGC"
 # export DCS_PID_DIR=/var/dcs/pids
 
 # Tell DCS whether it should manage it's own instance of Zookeeper or not.
-# export DCS_MANAGES_ZK=true
+export DCS_MANAGES_ZK=false
 
 # Tell DCS where the user program environment lives.
- export DCS_USER_PROGRAM_HOME=$MY_SQROOT
+export DCS_USER_PROGRAM_HOME=$TRAF_HOME
+
+# DCS master port (from dcs-site.xml)
+export DCS_MASTER_PORT=23400
+
+# DCS floating IP, if HA is enabled (from dcs-site.xml)
+export DCS_MASTER_FLOATING_IP=""

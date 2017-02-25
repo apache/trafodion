@@ -956,13 +956,42 @@ short BEGINTX(int *pp_tag, int pv_timeout, int64 pv_type_flags)
     return lv_error;
 } //BEGINTX
 
+//--------------------------------------------------------------------
+//DEALLOCATE_ERR
+//
+//Purpose   : Called subsequent to ENDTRANSACTION_ERR
+//Params    : none
+//--------------------------------------------------------------------
+void DEALLOCATE_ERR(char *&errStr)
+{
+  if(errStr)
+  {
+    delete errStr;
+    errStr = NULL;
+  }
+}
+
+//--------------------------------------------------------------------
+//ENDTRANSACTION
+//
+//Purpose   : end the current transaction
+//Params    : none
+//--------------------------------------------------------------------
+short ENDTRANSACTION()
+{
+  char *errStr = NULL;
+  int   errlen = 0;
+  short lv_error = ENDTRANSACTION_ERR(errStr,errlen);
+  DEALLOCATE_ERR(errStr);
+  return lv_error;
+}
 // --------------------------------------------------------------------
 // ENDTRANSACTION
 //
 // Purpose   : end the current transaction
 // Params    : none
 // --------------------------------------------------------------------
-short ENDTRANSACTION() 
+short ENDTRANSACTION_ERR(char *&errStr, int &errlen) 
 {
     short lv_error = FEOK;
     // instantiate a gp_trans_thr object for this thread if needed.
@@ -979,7 +1008,7 @@ short ENDTRANSACTION()
      }
 
     TMlibTrace(("TMLIB_TRACE : ENDTRANSACTION ENTRY: txid: %d\n", lp_trans->getTransid()->get_seq_num()), 1);
-    lv_error =  lp_trans->end();
+    lv_error =  lp_trans->end(errStr, errlen);
     TMlibTrace(("TMLIB_TRACE : ENDTRANSACTION EXIT: txid: %d\n", lp_trans->getTransid()->get_seq_num()), 1);
 
      // cleanup for legacy API
@@ -2462,6 +2491,18 @@ int16 TMWAIT()
         return lv_rsp.iv_msg_hdr.miv_err.error;
 }
 
+//------------------------------------------------------------------------
+// TMCLIENTEXIT
+//
+// Purpose  : To close all the TM opens from the clients before exiting 
+// Params   : none.
+// ---------------------------------------------------------------------
+int16 TMCLIENTEXIT()
+{
+   int16 lv_error = FEOK;
+   lv_error = gv_tmlib.close_tm();
+   return lv_error;
+}
 
 
 // -------------------------------------------------------------------
@@ -3245,6 +3286,17 @@ short TMLIB::abortTransactionLocal(long transactionID)
   return jresult;
 } //abortTransactionLocal
 
+bool TMLIB::close_tm() 
+{
+   TPT_DECL       (lv_phandle);
+   if (!gv_tmlib.is_initialized())
+      return true;
+   for (int i = 0; i < iv_node_count; i++) {
+      if (phandle_get(&lv_phandle, i) == true)
+         msg_mon_close_process(&lv_phandle);
+   }
+   return true;
+}
 
 //----------------------------------------------------------------------------
 // DTM_LOCALTRANSACTION

@@ -3685,7 +3685,7 @@ void LmLanguageManagerJava::setJavaClassPath()
   const char *ntTrafJar = "/export/lib/trafodion-UDR-0.7.0.jar";
   const char *ntJdbcT4Jar = "/export/lib/jdbcT2.jar";
 
-  char *root = getenv("MY_SQROOT");
+  char *root = getenv("TRAF_HOME");
   LM_ASSERT(root != NULL);
   resultlength = strlen(root) + 1;
   LM_ASSERT(resultlength < LMJ_NT_FILE_PATH_LEN);

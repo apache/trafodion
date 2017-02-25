@@ -287,6 +287,7 @@ RelExpr::RelExpr(OperatorTypeEnum otype,
   ,cachedTupleFormat_(ExpTupleDesc::UNINITIALIZED_FORMAT)
   ,cachedResizeCIFRecord_(FALSE)
   ,dopReduced_(FALSE)
+  ,originalExpr_(NULL)
 {
 
   child_[0] = leftChild;
@@ -854,6 +855,7 @@ RelExpr * RelExpr::copyTopNode(RelExpr *derivedNode,CollHeap* outHeap)
   result->sourceMemoExprId_ = sourceMemoExprId_;
   result->sourceGroupId_ = sourceGroupId_;
   result->costLimit_ = costLimit_;
+  result->originalExpr_ = this;
 
   return result;
 }
@@ -886,6 +888,32 @@ RelExpr * RelExpr::copyRelExprTree(CollHeap* outHeap)
 
   for (Lng32 i = 0; i < arity; i++)
     result->child(i) = child(i)->copyRelExprTree(outHeap);
+
+  return result;
+}
+
+const RelExpr * RelExpr::getOriginalExpr(NABoolean transitive) const
+{
+  if (originalExpr_ == NULL)
+    return this;
+
+  RelExpr *result = originalExpr_;
+
+  while (result->originalExpr_ && transitive)
+    result = result->originalExpr_;
+
+  return result;
+}
+
+RelExpr * RelExpr::getOriginalExpr(NABoolean transitive)
+{
+  if (originalExpr_ == NULL)
+    return this;
+
+  RelExpr *result = originalExpr_;
+
+  while (result->originalExpr_ && transitive)
+    result = result->originalExpr_;
 
   return result;
 }
@@ -11988,16 +12016,73 @@ void MapValueIds::pushdownCoveredExpr(
           {
             VEG *veg =
               static_cast<VEGPredicate *>(g.getItemExpr())->getVEG();
-            ValueIdSet vegMembers(veg->getAllValues());
+            ValueId vegRef(veg->getVEGReference()->getValueId());
 
-            vegMembers += veg->getVEGReference()->getValueId();
-            vegMembers.intersectSet(
-                 getGroupAttr()->getCharacteristicOutputs());
-            if (!vegMembers.isEmpty())
-              // a VEGPred on one of my characteristic outputs,
-              // assume that my child tree already has the
-              // associated VEGPreds
-              predicatesOnParent -= g;
+            if (newExternalInputs.contains(vegRef))
+              {
+                // We are trying to push down a VEGPred and we are at
+                // the same time offering the VEGRef as a new
+                // characteristic input.  Example: We want to push
+                // VEGPred_2(a=b) down and we offer its corresponding
+                // VEGRef_1(a,b) as an input. The map in our
+                // MapValueIds node maps VEGRef_1(a,b) on the top to
+                // VEGRef_99(x,y) on the bottom. Note that either one
+                // of the VEGies might contain a constant that the
+                // other one doesn't contain. Note also that the
+                // MapValueIds node doesn't map characteristic inputs,
+                // those are passed unchanged to the child. So, we need
+                // to generate a predicate for the child that:
+                // a) represents the semantics of VEGPred_2(a,b)
+                // b) compares the new characteristic input
+                //    VEGRef_1(a,b) with some value in the child
+                // c) doesn't change the members of the existing
+                //    VEGies.
+                // The best solution is probably an equals predicate
+                // between the characteristic input and the VEGRef
+                // (or other expression) that is the child's equivalent.
+                // Example:  VEGRef_1(a,b) = VEGRef_99(x,y)
+                ValueId bottomVal;
+                ItemExpr *eqPred = NULL;
+
+                map_.mapValueIdDown(vegRef, bottomVal);
+
+                if (vegRef != bottomVal && bottomVal != NULL_VALUE_ID)
+                  {
+                    eqPred = new(CmpCommon::statementHeap()) BiRelat(
+                         ITM_EQUAL,
+                         vegRef.getItemExpr(),
+                         bottomVal.getItemExpr(),
+                         veg->getSpecialNulls());
+                    eqPred->synthTypeAndValueId();
+                    // replace g with the new equals predicate
+                    // when we do the actual rewrite below
+                    map_.addMapEntry(g, eqPred->getValueId());
+                  }
+              }
+            else
+              {
+                // Don't push down VEGPredicates on columns that are
+                // characteristic outputs of the MapValueIds. Those
+                // predicates (or their equivalents) should have
+                // already been pushed down.
+                ValueIdSet vegMembers(veg->getAllValues());
+
+                vegMembers += vegRef;
+                vegMembers.intersectSet(
+                     getGroupAttr()->getCharacteristicOutputs());
+                if (!vegMembers.isEmpty())
+                  {
+                    // a VEGPred on one of my characteristic outputs,
+
+                    // assume that my child tree already has the
+                    // associated VEGPreds and remove this predicate
+                    // silently
+                    predicatesOnParent -= g;
+                  }
+                // else leave the predicate and let the code below deal
+                // with it, this will probably end up in a failed assert
+                // below for predsRewrittenForChild.isEmpty()
+              }
           }
     }
 
@@ -12237,6 +12322,90 @@ void ControlRunningQuery::setComment(NAString &comment)
 // member functions for class CSEInfo (helper for CommonSubExprRef)
 // -----------------------------------------------------------------------
 
+Int32 CSEInfo::getTotalNumRefs(Int32 restrictToSingleConsumer) const
+{
+  // shortcut for main query
+  if (cseId_ == CmpStatement::getCSEIdForMainQuery())
+    return 1;
+
+  // Calculate how many times we will evaluate this common subexpression
+  // at runtime:
+  //  - If the CSE is shared then we evaluate it once
+  //  - Otherwise, look at the consumers that are lexical refs
+  //    (avoid double-counting refs from multiple copies of a parent)
+  //    and add the times they are being executed.
+  Int32 result = 0;
+  NABoolean sharedConsumers = FALSE;
+  LIST(CountedCSEInfo) countsByCSE(CmpCommon::statementHeap());
+  CollIndex minc = 0;
+  CollIndex maxc = consumers_.entries();
+
+  if (restrictToSingleConsumer >= 0)
+    {
+      // count only the executions resulting from a single consumer
+      minc = restrictToSingleConsumer;
+      maxc = minc + 1;
+    }
+
+  // loop over all consumers or look at just one
+  for (CollIndex c=minc; c<maxc; c++)
+    {
+      if (isShared(c))
+        {
+          sharedConsumers = TRUE;
+        }
+      else
+        {
+          CommonSubExprRef *consumer = getConsumer(c);
+          CSEInfo *parentInfo = CmpCommon::statement()->getCSEInfoById(
+               consumer->getParentCSEId());
+          NABoolean duplicateDueToSharedConsumer = FALSE;
+
+          // Don't double-count consumers that originate from the
+          // same parent CSE, have the same lexical ref number from
+          // the parent, and are shared.
+          if (parentInfo->isShared(
+                   consumer->getParentConsumerId()))
+            {
+              for (CollIndex d=0; d<countsByCSE.entries(); d++)
+                if (countsByCSE[d].getInfo() == parentInfo &&
+                    countsByCSE[d].getLexicalCount() ==
+                    consumer->getLexicalRefNumFromParent())
+                  {
+                    duplicateDueToSharedConsumer = TRUE;
+                    break;
+                  }
+
+              // First consumer from this parent CSE with this lexical
+              // ref number, remember that we are going to count
+              // it. Note that we are use the lexical ref "count" in
+              // CountedCSEInfo as the lexical ref number in this
+              // method, so the name "count" means "ref number" in
+              // this context.
+              if (!duplicateDueToSharedConsumer)
+                countsByCSE.insert(
+                     CountedCSEInfo(
+                          parentInfo,
+                          consumer->getLexicalRefNumFromParent()));
+            } // parent consumer is shared
+
+          if (!duplicateDueToSharedConsumer)
+            {
+              // recursively determine number of times the parent of
+              // this consumer gets executed
+              result += parentInfo->getTotalNumRefs(
+                   consumer->getParentConsumerId());
+            }
+        } // consumer is not shared
+    } // loop over consumer(s)
+
+  if (sharedConsumers)
+    // all the shared consumers are handled by evaluating the CSE once
+    result++;
+
+  return result;
+}
+
 CSEInfo::CSEAnalysisOutcome CSEInfo::getAnalysisOutcome(Int32 id) const
 {
   if (idOfAnalyzingConsumer_ != id &&
@@ -12248,10 +12417,37 @@ CSEInfo::CSEAnalysisOutcome CSEInfo::getAnalysisOutcome(Int32 id) const
     return analysisOutcome_;
 }
 
-void CSEInfo::addChildCSE(CSEInfo *child)
+Int32 CSEInfo::addChildCSE(CSEInfo *childInfo, NABoolean addLexicalRef)
 {
-  if (!childCSEs_.contains(child))
-    childCSEs_.insert(child);
+  Int32 result = -1;
+  CollIndex foundIndex = NULL_COLL_INDEX;
+
+  // look for an existing entry
+  for (CollIndex i=0;
+       i<childCSEs_.entries() && foundIndex == NULL_COLL_INDEX;
+       i++)
+    if (childCSEs_[i].getInfo() == childInfo)
+      foundIndex = i;
+
+  if (foundIndex == NULL_COLL_INDEX)
+    {
+      // create a new entry
+      foundIndex = childCSEs_.entries();
+      childCSEs_.insert(CountedCSEInfo(childInfo));
+    }           
+
+  if (addLexicalRef)
+    {
+      // The return value for a lexical ref is the count of lexical
+      // refs for this particular parent/child CSE relationship so far
+      // (0 if this is the first one). Note that we can't say anything
+      // abount counts for expanded refs at this time, those will be
+      // handled later, during the transform phase of the normalizer.
+      result = childCSEs_[foundIndex].getLexicalCount();
+      childCSEs_[foundIndex].incrementLexicalCount();
+    }
+
+  return result;
 }
 
 void CSEInfo::addCSERef(CommonSubExprRef *cse)
@@ -12259,11 +12455,37 @@ void CSEInfo::addCSERef(CommonSubExprRef *cse)
   CMPASSERT(name_ == cse->getName());
   cse->setId(consumers_.entries());
   consumers_.insert(cse);
+  if (cse->isALexicalRef())
+    numLexicalRefs_++;
+}
+
+void CSEInfo::replaceConsumerWithAnAlternative(CommonSubExprRef *c)
+{
+  Int32 idToReplace = c->getId();
+
+  if (consumers_[idToReplace] != c)
+    {
+      CollIndex foundPos = alternativeConsumers_.index(c);
+
+      CMPASSERT(foundPos != NULL_COLL_INDEX);
+      CMPASSERT(consumers_[idToReplace]->getOriginalRef() ==
+                c->getOriginalRef());
+      // c moves from the list of copies to the real list and another
+      // consumer moves the opposite way
+      alternativeConsumers_.removeAt(foundPos);
+      alternativeConsumers_.insert(consumers_[idToReplace]);
+      consumers_[idToReplace] = c;
+    }
 }
 
 // -----------------------------------------------------------------------
 // member functions for class CommonSubExprRef
 // -----------------------------------------------------------------------
+
+NABoolean CommonSubExprRef::isAChildOfTheMainQuery() const
+{
+  return (parentCSEId_ == CmpStatement::getCSEIdForMainQuery());
+}
 
 CommonSubExprRef::~CommonSubExprRef()
 {
@@ -12275,12 +12497,18 @@ Int32 CommonSubExprRef::getArity() const
   return 1;
 }
 
-void CommonSubExprRef::addToCmpStatement()
+void CommonSubExprRef::addToCmpStatement(NABoolean lexicalRef)
 {
   NABoolean alreadySeen = TRUE;
 
   // look up whether a CSE with this name already exists
   CSEInfo *info = CmpCommon::statement()->getCSEInfo(internalName_);
+
+  // sanity check, make sure that the caller knows whether this is a
+  // lexical ref (generated with CommonSubExprRef constructor) or an
+  // expanded ref (generated with CommonSubExprRef::copyTopNode()
+  // before the bind phase)
+  CMPASSERT(isALexicalRef() == lexicalRef);
 
   if (!info)
     {
@@ -12298,13 +12526,47 @@ void CommonSubExprRef::addToCmpStatement()
     CmpCommon::statement()->addCSEInfo(info);
 }
 
-NABoolean CommonSubExprRef::isFirstReference()
+void CommonSubExprRef::addParentRef(CommonSubExprRef *parentRef)
 {
-  return (
-       // this is the first reference added, or
-       id_ == 0 ||
-       // this is not yet added an no other reference has been added yet
-       id_ < 0 && CmpCommon::statement()->getCSEInfo(internalName_) == NULL);
+  // Establish the parent/child relationship between two
+  // CommonSubExprRef nodes, or between the main query and a
+  // CommonSubExprRef node (parentRef == NULL). Also, record
+  // the dependency between parent and child CSEs in the lexical
+  // dependency multigraph. Bookkeeping to do:
+  //
+  // - Add the child's CSE to the list of child CSEs of the
+  //   parent CSE
+  // - Set the data members in the child ref that point to the
+  //   parent CSE and parent ref
+
+  // parent info is for a parent CSE or for the main query
+  CSEInfo *parentInfo =
+    (parentRef ? CmpCommon::statement()->getCSEInfo(parentRef->getName())
+               : CmpCommon::statement()->getCSEInfoForMainQuery());
+  CSEInfo *childInfo =
+    CmpCommon::statement()->getCSEInfo(getName());
+
+  CMPASSERT(parentInfo && childInfo);
+
+  // Update the lexical CSE multigraph, and also return the
+  // count of previously existing edges in the graph.
+  // LexicalRefNumFromParent is set to a positive value only for
+  // lexical refs, the other refs will be handled later, in the SQO
+  // phase. This is since expanded refs may be processed before their
+  // lexical ref and we may not know this value yet.
+  lexicalRefNumFromParent_ =
+    parentInfo->addChildCSE(childInfo, isALexicalRef());
+
+  parentCSEId_ = parentInfo->getCSEId();
+  if (parentRef)
+    parentRefId_ = parentRef->getId();
+  else
+    parentRefId_ = -1;  // main query does not have a CommonSubExprRef
+}
+
+NABoolean CommonSubExprRef::isFirstReference() const
+{
+  return (CmpCommon::statement()->getCSEInfo(internalName_) == NULL);
 }
 
 void CommonSubExprRef::addLocalExpr(LIST(ExprNode *) &xlist,
@@ -12360,20 +12622,46 @@ RelExpr * CommonSubExprRef::copyTopNode(RelExpr *derivedNode,
   else
     result = static_cast<CommonSubExprRef *>(derivedNode);
 
+  // copy fields that are common for bound and unbound nodes
+  result->hbAccessOptionsFromCTE_ = hbAccessOptionsFromCTE_;
+
   if (nodeIsBound())
     {
       // if the node is bound, we assume that the copy is serving the same function
-      // as the original
+      // as the original, as an alternative, create an "alternative ref"
       result->setId(id_);
+
+      result->parentCSEId_ = parentCSEId_;
+      result->parentRefId_ = parentRefId_;
+      result->lexicalRefNumFromParent_ = lexicalRefNumFromParent_;
       result->columnList_ = columnList_;
+      result->nonVEGColumns_ = nonVEGColumns_;
+      result->commonInputs_ = commonInputs_;
       result->pushedPredicates_ = pushedPredicates_;
+      result->nonSharedPredicates_ = nonSharedPredicates_;
+      result->cseEstLogProps_ = cseEstLogProps_;
+      // don't copy the tempScan_
+
+      // Mark this as an alternative ref, not that this does not
+      // change the status of lexical vs. expanded ref
+      result->isAnExpansionOf_ = isAnExpansionOf_;
+      result->isAnAlternativeOf_ =
+        ( isAnAlternativeOf_ ? isAnAlternativeOf_ : this);
+
+      CmpCommon::statement()->getCSEInfo(internalName_)->
+        registerAnAlternativeConsumer(result);
     }
   else
-    // if the node is not bound, we assume that we created a new
-    // reference to a common subexpression, for example by referencing
-    // a CTE that itself contains another reference to a CTE (Common
-    // Table Expression)
-    result->addToCmpStatement();
+    {
+      // If the node is not bound, we assume that we created an
+      // "expanded" reference to a common subexpression in a tree that
+      // itself is a reference to a CTE (Common Table Expression).
+      // See the comment in RelMisc.h for method isAnExpandedRef()
+      // to explain the term "expanded" ref.
+      result->isAnExpansionOf_ =
+        (isAnExpansionOf_ ? isAnExpansionOf_ : this);
+      result->addToCmpStatement(FALSE);
+    }
 
   return result;
 }
@@ -12414,12 +12702,25 @@ Union * CommonSubExprRef::makeUnion(RelExpr *lc,
 
 void CommonSubExprRef::display()
 {
+  if (isAChildOfTheMainQuery())
+    printf("Parent: main query, lexical ref %d\n",
+           lexicalRefNumFromParent_);
+  else
+    printf("Parent: %s(consumer %d, lexical ref %d)\n",
+           CmpCommon::statement()->getCSEInfoById(
+                parentCSEId_)->getName().data(),
+           parentRefId_,
+           lexicalRefNumFromParent_);
   printf("Original columns:\n");
   columnList_.display();
   printf("\nCommon inputs:\n");
   commonInputs_.display();
   printf("\nPushed predicates:\n");
   pushedPredicates_.display();
+  printf("\nNon shared preds to be applied to scan:\n");
+  nonSharedPredicates_.display();
+  printf("\nPotential values for VEG rewrite:\n");
+  nonVEGColumns_.display();
 }
 
 void CommonSubExprRef::displayAll(const char *optionalId)
@@ -12434,16 +12735,30 @@ void CommonSubExprRef::displayAll(const char *optionalId)
         {
           CSEInfo *info = cses->at(i);
           CollIndex nc = info->getNumConsumers();
+          NABoolean isMainQuery =
+            (info->getCSEId() == CmpStatement::getCSEIdForMainQuery());
 
-          printf("==========================\n");
-          printf("CSE: %s (%d consumers)\n",
-                 info->getName().data(),
-                 nc);
+          if (isMainQuery)
+            {
+              printf("\n\n==========================\n");
+              printf("MainQuery:\n");
+            }
+          else
+            {
+              printf("\n\n==========================\n");
+              printf("CSE: %s (%d consumers, %d lexical ref(s), %d total execution(s))\n",
+                     info->getName().data(),
+                     nc,
+                     info->getNumLexicalRefs(),
+                     info->getTotalNumRefs());
+            }
 
-          const LIST(CSEInfo *) &children(info->getChildCSEs());
+          const LIST(CountedCSEInfo) &children(info->getChildCSEs());
 
           for (CollIndex j=0; j<children.entries(); j++)
-            printf("       references CSE: %s\n", children[j]->getName().data());
+            printf("       references CSE: %s %d times\n",
+                   children[j].getInfo()->getName().data(),
+                   children[j].getLexicalCount());
 
           if (info->getIdOfAnalyzingConsumer() >= 0)
             {
@@ -12479,36 +12794,50 @@ void CommonSubExprRef::displayAll(const char *optionalId)
                      info->getIdOfAnalyzingConsumer(),
                      outcome);
 
-              makeValueIdListFromBitVector(cols,
-                                           cCols,
-                                           info->getNeededColumns());
-              printf("  \ncolumns of temp table:\n");
+              makeValueIdListFromBitVector(
+                   cols,
+                   cCols,
+                   info->getNeededColumns());
+              printf("\n  columns of temp table:\n");
               cols.display();
-              printf("  \ncommonPredicates:\n");
+              printf("\n  commonPredicates:\n");
               info->getCommonPredicates().display();
               if (info->getVEGRefsWithDifferingConstants().entries() > 0)
                 {
-                  printf("  \nvegRefsWithDifferingConstants:\n");
+                  printf("\n  vegRefsWithDifferingConstants:\n");
                   info->getVEGRefsWithDifferingConstants().display();
                 }
               if (info->getVEGRefsWithDifferingInputs().entries() > 0)
                 {
-                  printf("  \nvegRefsWithDifferingInputs:\n");
+                  printf("\n  vegRefsWithDifferingInputs:\n");
                   info->getVEGRefsWithDifferingInputs().display();
                 }
-              printf("  \ntempTableName: %s\n",
-                     info->getTempTableName().
-                     getQualifiedNameAsAnsiString().data());
-              printf("  \nDDL of temp table:\n%s\n",
+              if (info->getCSETreeKeyColumns().entries() > 0)
+                {
+                  ValueIdList keyCols;
+
+                  makeValueIdListFromBitVector(
+                       keyCols,
+                       cCols,
+                       info->getCSETreeKeyColumns());
+                  printf("\n  CSE key columns:\n");
+                  keyCols.display();
+                }
+              printf("\n  DDL of temp table:\n%s\n",
                      info->getTempTableDDL().data());
-            }
+            } // analyzed
+          else if (info->getAnalysisOutcome(0) ==
+                   CSEInfo::ELIMINATED_IN_BINDER)
+            printf("  eliminated in the binder\n");
+          else if (!isMainQuery)
+            printf("  not yet analyzed\n");
 
           for (int c=0; c<nc; c++)
             {
-              printf("\n----- Consumer %d:\n", c);
+              printf("\n\n----- Consumer %d:\n", c);
               info->getConsumer(c)->display();
             }
-        }
+        } // a CSE we want to display
 }
 
 void CommonSubExprRef::makeValueIdListFromBitVector(ValueIdList &tgt,
@@ -12542,6 +12871,8 @@ Int32 GenericUpdate::getArity() const
 void GenericUpdate::getPotentialOutputValues(ValueIdSet & outputValues) const
 {
   outputValues = potentialOutputs_;
+  if (producedMergeIUDIndicator_ != NULL_VALUE_ID)
+    outputValues += producedMergeIUDIndicator_;
 }
 
 const NAString GenericUpdate::getUpdTableNameText() const
@@ -12717,7 +13048,9 @@ RelExpr * GenericUpdate::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
     result->preconditionTree_ = preconditionTree_->copyTree(outHeap)->castToItemExpr();
   result->setPrecondition(precondition_);
   result->exprsInDerivedClasses_ = exprsInDerivedClasses_;
-  
+  result->producedMergeIUDIndicator_ = producedMergeIUDIndicator_;
+  result->referencedMergeIUDIndicator_ = referencedMergeIUDIndicator_;
+
   return RelExpr::copyTopNode(result, outHeap);
 }
 
@@ -13038,6 +13371,7 @@ Insert::Insert(const CorrName &name,
    isUpsert_(FALSE),
    isTrafLoadPrep_(FALSE),
    createUstatSample_(createUstatSample),
+   xformedEffUpsert_(FALSE),
    baseColRefs_(NULL)
 {
   insert_a_tuple_ = FALSE;
@@ -13130,7 +13464,7 @@ RelExpr * Insert::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->isUpsert_ = isUpsert_;
   result->isTrafLoadPrep_ = isTrafLoadPrep_;
   result->createUstatSample_ = createUstatSample_;
-  
+  result->xformedEffUpsert_ = xformedEffUpsert_;
   return GenericUpdate::copyTopNode(result, outHeap);
 }
 

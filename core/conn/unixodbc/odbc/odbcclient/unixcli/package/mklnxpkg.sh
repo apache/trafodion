@@ -118,7 +118,7 @@ then
     ((err += $?))
     cp ../../runconnect_test.sh   runconnect_test.sh
     ((err += $?))
-    cp $MY_SQROOT/../../licenses/Apache license.txt
+    cp $TRAF_HOME/../../licenses/Apache license.txt
     ((err += $?))
     cd ..
     # do the tar

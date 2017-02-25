@@ -23,16 +23,16 @@
 #
 
 function LogIt {
-    echo  "`date`: $1" >> $MY_SQROOT/logs/startup.log
+    echo  "`date`: $1" >> $TRAF_HOME/logs/startup.log
 }
 
 lv_prog_name="csuspendall"
 
 echo "Going to execute $lv_prog_name"
-cd $MY_SQROOT/sql/scripts
+cd $TRAF_HOME/sql/scripts
 
 setup_sqpdsh
-eval '$SQPDSHA "$MY_SQROOT/sql/scripts/psuspendall"'
+eval '$SQPDSHA "$TRAF_HOME/sql/scripts/psuspendall"'
 
 LogIt "$lv_prog_name"
 

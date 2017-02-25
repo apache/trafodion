@@ -57,7 +57,7 @@ void printUsage()
    cout << "by environment variables is checked in the following order:."  << endl << endl;
    cout << "TRAFAUTH_CONFIGFILE: fully qualified filename" << endl;
    cout << "TRAFAUTH_CONFIGDIR: Filename '/.traf_authentication_config' is appended" << endl;
-   cout << "Otherwise, '/sql/scripts/.traf_authentication_config' is appended to value of MY_SQROOT." << endl;
+   cout << "Otherwise, '/sql/scripts/.traf_authentication_config' is appended to value of TRAF_HOME." << endl;
 
 }
 //***************************** End of printUsage ******************************

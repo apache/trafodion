@@ -1,0 +1,252 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+-->
+ 
+<configuration supports_final="false">
+
+  <!-- Define configuration paramaters for service: property name, default value and description (shown as help text) -->
+  
+  <property>
+    <name>traf.db.admin</name>
+    <display-name>Trafodion DB Admin User</display-name>
+    <value>DB__ADMINUSER</value>
+    <description>Database Admin Role</description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>traf.node.dir</name>
+    <display-name>Trafodion local working directories</display-name>
+    <value>/hadoop/trafodion/work</value>
+    <description>List of directories (comma seperated) for trafodion scratch space</description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+
+  <property>
+    <name>traf.ldap.enabled</name>
+    <display-name>LDAP authentication enabled</display-name>
+    <value>NO</value>
+    <description>Enable Trafodion user authentication via LDAP</description>
+    <value-attributes>
+      <type>value-list</type>
+       <entries>
+           <entry>
+             <value>YES</value>
+             <label>Enabled</label>
+           </entry>
+           <entry>
+             <value>NO</value>
+             <label>Disabled</label>
+           </entry>
+       </entries>
+       <selection-cardinality>1</selection-cardinality>
+    </value-attributes>
+  </property>
+  <property>
+    <name>traf.ldap.hosts</name>
+    <display-name>LDAP server list</display-name>
+    <value></value>
+    <description>List of LDAP hostnames (comma separated)</description>
+    <depends-on>
+       <property>
+          <type>trafodion-env</type>
+          <name>traf.ldap.enabled</name>
+       </property>
+    </depends-on>
+    <value-attributes>
+      <type>string</type>
+      <empty-value-valid>true</empty-value-valid>
+    </value-attributes>
+  </property>
+  <property>
+    <name>traf.ldap.port</name>
+    <display-name>LDAP port number</display-name>
+    <value>389</value>
+    <description>LDAP server(s) port number (Example: 389 for no encryption or TLS, 636 for SSL)</description>
+    <value-attributes>
+      <type>int</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>traf.ldap.identifiers</name>
+    <display-name>LDAP unique identifiers</display-name>
+    <value></value>
+    <description>All LDAP unique identifiers (blank separated)</description>
+    <value-attributes>
+      <type>string</type>
+      <empty-value-valid>true</empty-value-valid>
+    </value-attributes>
+  </property>
+  <property>
+    <name>traf.ldap.encrypt</name>
+    <display-name>LDAP encryption level</display-name>
+    <value>0</value>
+    <description>LDAP encryption level must match LDAP server(s)</description>
+    <value-attributes>
+      <type>value-list</type>
+      <entries>
+          <entry>
+            <value>0</value>
+            <label>Encryption not used</label>
+          </entry>
+          <entry>
+            <value>1</value>
+            <label>SSL Encryption</label>
+          </entry>
+          <entry>
+            <value>2</value>
+            <label>TLS Encryption</label>
+          </entry>
+      </entries>
+      <selection-cardinality>1</selection-cardinality>
+    </value-attributes>
+  </property>
+  <property>
+    <name>traf.ldap.certpath</name>
+    <display-name>LDAP encryption certificate file path</display-name>
+    <value></value>
+    <description>File path of SSL/TLS certificate file (*.pem)</description>
+    <depends-on>
+       <property>
+          <type>trafodion-env</type>
+          <name>traf.ldap.encrypt</name>
+       </property>
+    </depends-on>
+    <value-attributes>
+      <type>string</type>
+      <empty-value-valid>true</empty-value-valid>
+    </value-attributes>
+  </property>
+  <property>
+    <name>traf.ldap.user</name>
+    <display-name>LDAP search user name</display-name>
+    <value></value>
+    <description>User name for LDAP search (if required by LDAP server)</description>
+    <value-attributes>
+      <type>string</type>
+      <empty-value-valid>true</empty-value-valid>
+    </value-attributes>
+  </property>
+  <property>
+    <name>traf.ldap.pwd</name>
+    <display-name>LDAP search password</display-name>
+    <value></value>
+    <description>Password for LDAP search (if required by LDAP server)</description>
+    <value-attributes>
+      <type>password</type>
+      <empty-value-valid>true</empty-value-valid>
+    </value-attributes>
+  </property>
+
+  <property>
+    <name>traf.sshkey.priv</name>
+    <display-name>Generated SSH Key</display-name>
+<!--TRAFODION-GENERATED-SSH-KEY--><value>
+    </value>
+    <description>Generated value, do not modify</description>
+    <value-attributes>
+      <type>password</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>content</name>
+    <display-name>trafodion-env template</display-name>
+    <description>Template for trafodion-env.sh file</description>
+    <value>
+# sourced from /etc/trafodion/trafodion_config
+export JAVA_HOME={{java_home}}
+
+export TRAF_USER={{traf_user}}
+
+export DB_ADMIN_USER={{traf_db_admin}}
+
+export HADOOP_TYPE="hortonworks"
+
+export TRAFODION_ENABLE_AUTHENTICATION={{traf_ldap_enabled}}
+  
+    </value>
+    <value-attributes>
+      <type>content</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>ldap_content</name>
+    <display-name>trafodion ldap template</display-name>
+    <description>Template for .traf_authentication_config file</description>
+    <value>
+# To use authentication in Trafodion, this file must be configured
+# as described below and placed in $TRAF_HOME/sql/scripts and be named
+# .traf_authentication_config.  You must also enable authentication by
+# running the script traf_authentication_setup in $TRAF_HOME/sql/scripts.
+#
+# NOTE: the format of this configuration file is expected to change in the
+# next release of Trafodion.  Backward compatilibity is not guaranteed.
+#
+SECTION: Defaults
+  DefaultSectionName: local
+  RefreshTime: 1800
+  TLS_CACERTFilename: {{ ldap_certpath }}
+SECTION: local
+# If one or more of the LDAPHostName values is a load balancing host, list
+# the name(s) here, one name: value pair for each host.
+  LoadBalanceHostName:
+
+# One or more identically configured hosts must be specified here,
+# one name: value pair for each host.
+  LdapHostname: {{ ldap_hosts }}
+
+# Default is port 389, change if using 636 or any other port
+  LdapPort: {{ ldap_port }}
+
+# Must specify one or more unique identifiers, one name: value pair for each
+  UniqueIdentifier: {{ ldap_identifiers }}
+
+# If the configured LDAP server requires a username and password to
+# to perform name lookup, provide those here.
+  LDAPSearchDN: {{ ldap_user }}
+  LDAPSearchPwd: {{ ldap_pwd }}
+
+# If configured LDAP server requires TLS(1) or SSL (2), update this value
+  LDAPSSL: {{ ldap_encrypt }}
+
+# Default timeout values in seconds
+  LDAPNetworkTimeout: 30
+  LDAPTimeout: 30
+  LDAPTimeLimit: 30
+
+# Default values for retry logic algorithm
+  RetryCount: 5
+  RetryDelay: 2
+  PreserveConnection: No
+  ExcludeBadHosts: Yes
+  MaxExcludeListSize: 3
+    </value>
+    <value-attributes>
+      <type>content</type>
+    </value-attributes>
+  </property>
+</configuration>

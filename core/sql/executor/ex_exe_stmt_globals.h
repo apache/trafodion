@@ -536,9 +536,6 @@ public:
   NABoolean timeoutSettingChanged();
 #endif
 
-  NA_EIDPROC inline ExMeasStmtCntrs *getStmtCntrs() {return stmtCntrs_;}
-  inline void setStmtCntrs (ExMeasStmtCntrs *s) {stmtCntrs_ = s;}
-
   ExRsInfo *getResultSetInfo(NABoolean createIfNecessary = FALSE);
   void deleteResultSetInfo();
   void acquireRSInfoFromParent(ULng32 &rsIndex,   // OUT

@@ -287,7 +287,7 @@ if [ $diffOnly -eq 0 ]; then
     which swstartall >$NULL 2>&1
     missing_sqstart=$?
     echo
-    if [[ ( $missing_sqstart -ne 0 ) || ( ! -d $MY_SQROOT/sql/local_hadoop ) ]]; then
+    if [[ ( $missing_sqstart -ne 0 ) || ( ! -d $TRAF_HOME/sql/local_hadoop ) ]]; then
       echo "Local hadoop instance is not installed, invoking install script : install_local_hadoop -y"
       echo
       install_local_hadoop -y

@@ -2417,8 +2417,88 @@ void ComTdbExeUtilLobExtract::displayContents(Space * space,ULng32 flag)
       displayChildren(space,flag);
     }
 }
+///////////////////////////////////////////////////////////////////////////
+//
+// Methods for class ComTdbExeUtilLobUpdate
+//
+///////////////////////////////////////////////////////////////////////////
+ComTdbExeUtilLobUpdate::ComTdbExeUtilLobUpdate
+(
+     char * handle,
+     Lng32 handleLen,
+     UpdateFromType fromType,
+     Int64 bufAddr,
+     Int64 updateSize,
+     Int32 lobStorageType,
+     char * lobHdfsServer,
+     Lng32 lobHdfsPort,
+     ex_expr * input_expr,
+     ULng32 input_rowlen,
+     ex_cri_desc * work_cri_desc,
+     const unsigned short work_atp_index,
+     ex_cri_desc * given_cri_desc,
+     ex_cri_desc * returned_cri_desc,
+     queue_index down,
+     queue_index up,
+     Lng32 num_buffers,
+     ULng32 buffer_size)
+  : ComTdbExeUtil(ComTdbExeUtil::LOB_UPDATE_UTIL_,
+                   NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
+                   NULL, 0,
+                   input_expr, input_rowlen,
+                   NULL, 0,
+                   NULL,
+                   work_cri_desc, work_atp_index,
+                   given_cri_desc, returned_cri_desc,
+                   down, up, 
+                   num_buffers, buffer_size),
+     handle_(handle),
+     handleLen_(handleLen),
+     fromType_((short)fromType),
+     bufAddr_(bufAddr),
+     updateSize_(updateSize),
+     lobStorageType_(lobStorageType),
+     lobHdfsServer_(lobHdfsServer),
+     lobHdfsPort_(lobHdfsPort),
+     totalBufSize_(0),
+     flags_(0)
+{
+  setNodeType(ComTdb::ex_LOB_UPDATE_UTIL);
+}
+Long ComTdbExeUtilLobUpdate::pack(void * space)
+{
+  if (handle_)
+    handle_.pack(space);
+  if (lobHdfsServer_)
+    lobHdfsServer_.pack(space);
+  return ComTdbExeUtil::pack(space);
+}
+Lng32 ComTdbExeUtilLobUpdate::unpack(void * base, void * reallocator)
+{
+  if (handle_.unpack(base))
+    return -1;
+  if (lobHdfsServer_.unpack(base))
+    return -1;
+ return ComTdbExeUtil::unpack(base, reallocator);
+}
 
-
+void ComTdbExeUtilLobUpdate::displayContents(Space * space,ULng32 flag)
+{
+  ComTdb::displayContents(space,flag & 0xFFFFFFFE);
+  
+  if(flag & 0x00000008)
+    {
+      char buf[100];
+      str_sprintf(buf, "\nFor ComTdbExeUtilLobUpdate :");
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+    }
+  
+  if (flag & 0x00000001)
+    {
+      displayExpression(space,flag);
+      displayChildren(space,flag);
+    }
+}
 ///////////////////////////////////////////////////////////////////////////
 //
 // Methods for class ComTdbExeUtilLobShowddl

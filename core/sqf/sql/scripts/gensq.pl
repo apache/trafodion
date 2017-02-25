@@ -59,7 +59,7 @@ my $gFloatingNodeId = -1;
 my $gFloatingFailoverNodeId = -1;
 
 
-my $SQ_ROOT = $ENV{'MY_SQROOT'};
+my $TRAF_HOME = $ENV{'TRAF_HOME'};
 my $HOME = $ENV{'HOME'};
 my $MPI_TMPDIR = $ENV{'MPI_TMPDIR'};
 my $SQ_SEAMONSTER = $ENV{'SQ_SEAMONSTER'};
@@ -232,7 +232,7 @@ sub printInitialLines {
     printScript(1, "   echo\n");
     printScript(1, "else\n");
     printScript(1, "   echo \"Aborting startup.\"\n");
-    printScript(1, "   more $MY_SQROOT/logs/sqcheckmon.log\n");
+    printScript(1, "   more $TRAF_HOME/logs/sqcheckmon.log\n");
     printScript(1, "   exit 1\n");
     printScript(1, "fi\n");
 

@@ -213,14 +213,16 @@ short ExControlTcb::work()
                                NULL, 0, da);
         if (cmpStatus != 0)
           {
-            char emsText[120];
+            char *emsText = new (getHeap()) char[dataLen + 120];
             str_sprintf(emsText,
-                        "Set control to embedded arkcmp failed, return code %d",
-                        cmpStatus);
+                        "Set control to embedded arkcmp failed, return code %d, data: %s",
+                        cmpStatus, data);
             SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, emsText, 0);
             ExHandleArkcmpErrors(qparent_, pentry_down, 0,
                                  getGlobals(), da);
+            
 	    // da->clear();
+            getHeap()->deallocateMemory(emsText);
           }
         else
           saveControl = TRUE; // need to save control to exe ControlInfoTable

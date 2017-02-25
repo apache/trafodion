@@ -62,7 +62,14 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
          * This allows the compiler to parallelize execution and
          * to push predicates on the partitioning column(s) down
          * to table-valued inputs. */
-        REDUCER;
+            REDUCER,
+        /**  Same as REDUCER, except that in this case the
+         * UDF does not require the rows belonging to a key
+         * to be grouped together, they can be non-contiguous
+         * (NC). This can avoid a costly sort of the input
+         * table in cases where a highly reducing UDF can keep
+         * a table of all the keys in memory. */
+        REDUCER_NC;
 
         private static FuncType[] allValues = values();
         public static FuncType fromOrdinal(int n) {return allValues[n];}
@@ -294,7 +301,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
      *  @return Enum for the call phase we are in.
      */
     public CallPhase getCallPhase() { return callPhase_; }
-    public void setCallPhase(int cp) { callPhase_ = CallPhase.getEnum(cp); }
+    void setCallPhase(int cp) { callPhase_ = CallPhase.getEnum(cp); }
     /**
      *  Get current user.
      *
@@ -1036,6 +1043,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
                 case EXACT_NUMERIC_TYPE:
                 case YEAR_MONTH_INTERVAL_TYPE:
                 case DAY_SECOND_INTERVAL_TYPE:
+                case BOOLEAN_SUB_CLASS:
                 {
                     long l = in(it).getLong(ic);
                     
@@ -1151,7 +1159,8 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         System.out.print(String.format("Function type              : %s\n", (funcType_ == FuncType.GENERIC ? "GENERIC" :
                                                                       (funcType_ == FuncType.MAPPER ? "MAPPER" :
                                                                        (funcType_ == FuncType.REDUCER ? "REDUCER" :
-                                                                        "Invalid function type")))));
+                                                                        (funcType_ == FuncType.REDUCER_NC ? "REDUCER_NC" :
+                                                                         "Invalid function type"))))));
         System.out.print(String.format("User id                    : %s\n", getCurrentUser()));
         System.out.print(String.format("Session user id            : %s\n", getSessionUser()));
         System.out.print(String.format("User role                  : %s\n", getCurrentRole()));
@@ -1250,9 +1259,10 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         callPhase_ = savedCallPhase;
     }
 
-    // UDR writers can ignore these methods
-    public static short getCurrentVersion() { return 1; }
-    public int serializedLength() throws UDRException{
+    // UDR writers can ignore these package-private methods
+    static short getCurrentVersion() { return 1; }
+
+    int serializedLength() throws UDRException{
       int result = super.serializedLength() +
               serializedLengthOfString(name_) +
               serializedLengthOfString(currentUser_) +
@@ -1278,7 +1288,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
       return result;
     }
 
-    public int serialize(ByteBuffer outputBuffer) throws UDRException {
+    int serialize(ByteBuffer outputBuffer) throws UDRException {
       int i;
 
       int origPos = outputBuffer.position();
@@ -1346,7 +1356,7 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
       return bytesSerialized;
     }
 
-    public int deserialize(ByteBuffer inputBuffer) throws UDRException{
+    int deserialize(ByteBuffer inputBuffer) throws UDRException{
       int tempInt = 0;
 
       int origPos = inputBuffer.position();
@@ -1450,9 +1460,10 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         inputTableInfo_ = new TableInfo[MAX_INPUT_TABLES];
         predicates_ = new Vector<PredicateInfo>();
     }
-    public void validateCallPhase(CallPhase start,
-                                  CallPhase end,
-                                  String callee) throws UDRException {
+
+    void validateCallPhase(CallPhase start,
+                           CallPhase end,
+                           String callee) throws UDRException {
         if (callPhase_.ordinal() < start.ordinal() && 
             callPhase_ != CallPhase.UNKNOWN_CALL_PHASE)
             throw new UDRException(
@@ -1493,9 +1504,9 @@ public class UDRInvocationInfo extends TMUDRSerializableObject
         }
     }
 
-    public void setRuntimeInfo(String qid,
-                               int totalNumInstances,
-                               int myInstanceNum)
+    void setRuntimeInfo(String qid,
+                        int totalNumInstances,
+                        int myInstanceNum)
     {
         // set information that is not yet known at compile time
         queryId_ = qid;

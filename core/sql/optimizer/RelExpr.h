@@ -601,8 +601,9 @@ public:
        const ValueIdSet &predicatesToRemove,
        const ValueIdSet &commonPredicatesToAdd,
        const ValueIdSet &inputsToRemove,
-       CSEInfo *info,
-       NABoolean testRun);
+       ValueIdSet &valuesForVEGRewrite,
+       ValueIdSet &keyColumns,
+       CSEInfo *info);
 
   // A virtual method called on every node from prepareTreeForCSESharing(),
   // use this to do the actual work of removing predicates other than
@@ -629,8 +630,9 @@ public:
        const ValueIdSet &predicatesToRemove,
        const ValueIdSet &commonPredicatesToAdd,
        const ValueIdSet &inputsToRemove,
-       CSEInfo *info,
-       NABoolean testRun);
+       ValueIdSet &valuesForVEGRewrite,
+       ValueIdSet &keyColumns,
+       CSEInfo *info);
 
   // --------------------------------------------------------------------
   // Create a query execution plan.
@@ -968,6 +970,8 @@ public:
                                 CollHeap* outHeap = NULL);
   RelExpr * copyTree(CollHeap* heap = NULL);
   RelExpr * copyRelExprTree(CollHeap* outHeap = NULL);
+  const RelExpr * getOriginalExpr(NABoolean transitive = TRUE) const;
+  RelExpr * getOriginalExpr(NABoolean transitive = TRUE);
 
   // --------------------------------------------------------------------
   // Methods used internally by Cascades
@@ -1593,6 +1597,10 @@ private:
   // Record the status whether my dop has been reduced. That is, whether
   // the partfunc pointed by my spp has a dop reduction.
   NABoolean dopReduced_;
+
+  // if we copy an expression with copyTopNode() then
+  // remember the original here, e.g. to find VEG regions
+  RelExpr *originalExpr_;
 
 public:
 

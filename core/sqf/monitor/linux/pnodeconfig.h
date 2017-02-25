@@ -54,6 +54,7 @@ public:
 
     CPNodeConfig *AddPNodeConfig( pnodeConfigInfo_t &pnodeConfigInfo );
     void          Clear( void );
+    static int    hostnamecmp(const char *p_str1, const char *p_str2);
     void          DeletePNodeConfig( CPNodeConfig *pnodeConfig );
     inline CPNodeConfig *GetFirstPNodeConfig( void ) { return ( head_ ); }
     inline int    GetNextPNid( void ) { return ( nextPNid_ ); }

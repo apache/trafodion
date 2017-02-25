@@ -193,7 +193,7 @@ int JavaObjectInterface::createJVM()
   jvm_options[numJVMOptions].optionString = (char *)oomOption;
   numJVMOptions++;
 
-  char *mySqRoot = getenv("MY_SQROOT");
+  char *mySqRoot = getenv("TRAF_HOME");
   int len;
   char *oomDumpDir = NULL;
   if (mySqRoot != NULL)

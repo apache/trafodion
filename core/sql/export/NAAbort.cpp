@@ -45,6 +45,8 @@
 #include "CompException.h"
 #include "StmtCompilationMode.h"
 
+extern Int32 writeStackTrace(char *s, int bufLen);
+
 // Mutex to serialize termination via NAExit or an assertion failure
 // via abort_botch_abend in the main executor thread with an assertion
 // failure in the SeaMonster reader thread
@@ -150,7 +152,11 @@ void NAInternalError::throwFatalException(const char *msg,
 					  UInt32 line)
 {
   if(pExceptionCallBack_ != NULL)
-    pExceptionCallBack_->throwFatalException(msg, file, line);
+  {
+    char stackTrace[STACK_TRACE_SIZE];
+    writeStackTrace(stackTrace, sizeof(stackTrace));
+    pExceptionCallBack_->throwFatalException(msg, file, line, stackTrace);
+  }
 }
 
 void NAInternalError::throwAssertException(const char *cond,
@@ -158,7 +164,11 @@ void NAInternalError::throwAssertException(const char *cond,
 					   UInt32 line)
 {
   if(pExceptionCallBack_ != NULL)
-    pExceptionCallBack_->throwAssertException(cond, file, line);
+  {
+    char stackTrace[STACK_TRACE_SIZE];
+    writeStackTrace(stackTrace, sizeof(stackTrace));
+    pExceptionCallBack_->throwAssertException(cond, file, line, stackTrace);
+  }
 }
 
 
@@ -237,7 +247,7 @@ void assert_botch_abend( const char *f, Int32 l, const char * m, const char *c)
   SQLMXLoggingArea::logSQLMXAssertionFailureEvent(f, l, m, c, tidPtr); // Any executor thread can log a failure
 
   // Log the message to stderr. On Linux stderr is mapped to a file
-  // under $MY_SQROOT/logs and our output will be prefixed with a
+  // under $TRAF_HOME/logs and our output will be prefixed with a
   // timestamp and process ID.
   cerr << "Executor assertion failure in file " << f
        << " on line " << l << '\n';

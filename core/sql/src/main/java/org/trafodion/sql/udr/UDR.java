@@ -68,10 +68,20 @@ import java.io.IOException;
 public abstract class UDR
 {
     
+    /** Default constructor, to be used by derived classes
+     */
     public UDR()
     {
     };
     
+    /** Currently not used.
+     *
+     *  <p>This might be used in the future as a final call, to allow
+     *  the UDR to deallocate any resources it holds, like connections
+     *  to other databases. Right now, it is advisable to deallocate
+     *  any resources that could cause a leak before exiting the
+     *  processData() method.
+     */
     public void close()
     {
     };
@@ -245,9 +255,41 @@ public abstract class UDR
     };
 
     /**
-     *  
+     *  Fourth method of the compiler interface (optional).
+     *
+     *  <p>Set up statistics for the table-valued result.
+     *
+     *  <p>When the optimizer calls this method, it will have synthesized
+     *  some statistics for the table-valued inputs, if any. The UDR
+     *  writer can now indicate the estimated row count for the table-valued
+     *  result and estimated number of unique values for the output columns.
+     *
+     *  <p>The default implementation does nothing. If no estimated cardinality
+     *  is set for the output table and no estimated number of unique values
+     *  is set for output columns, the optimizer will make default assumptions.
+     *  Here are some of these default assumptions:
+     *  <ul>
+     *  <li>UDRs of type UDRInvocationInfo.MAPPER return one output row for
+     *      each row in their largest input table.
+     *  <li>UDRs of type UDRInvocationInfo.REDUCER and REDUCER_NC return one
+     *      output row for every partition in their largest partitioned input
+     *      table.
+     *  <li>For output columns that are passthru columns, the estimated
+     *      unique entries are the same as for the underlying column in the
+     *      table-valued input.
+     *  <li>Other default cardinality and unique entry counts can be influenced
+     *      with defaults (CONTROL QUERY DEFAULT) in Trafodion SQL.
+     *  </ul>
+     *
+     *  @see UDRInvocationInfo#setFuncType
+     *  @see ColumnInfo#getEstimatedUniqueEntries
+     *  @see ColumnInfo#setEstimatedUniqueEntries
+     *  @see TableInfo#getEstimatedNumRows
+     *  @see TableInfo#setEstimatedNumRows
+     *  @see TableInfo#getEstimatedNumPartitions
+     *
      *  @param info A description of the UDR invocation.
-     *  @throws UDRException If an exception occured in the UDR
+     *  @throws UDRException
      */
     public void describeStatistics(UDRInvocationInfo info)
         throws UDRException
@@ -261,21 +303,41 @@ public abstract class UDR
      *  parallelism, either in absolute or relative terms.
      *  <p>
      *  The default behavior is to allow any degree of parallelism for
-     *  TMUDFs with one table-valued input, and to force serial execution
-     *  in all other cases. The reason is that for a single table-valued
-     *  input, there is a natural way to parallelize the function by
-     *  parallelizing its input a la MapReduce. In all other cases,
-     *  parallel execution requires active participation by the UDF,
-     *  which is why the UDF needs to signal explicitly that it can
-     *  handle such flavors of parallelism.
+     *  TMUDFs of function type UDRInvocationInfo.MAPPER or
+     *  UDRInvocationInfo.REDUCER (or REDUCER_NC) that have exactly
+     *  one table-valued input. The default behavior forces serial
+     *  execution in all other cases. The reason is that for a single
+     *  table-valued input, there is a natural way to parallelize the
+     *  function by parallelizing its input a la MapReduce. In all
+     *  other cases, parallel execution requires active participation
+     *  by the UDF, which is why the UDF needs to signal explicitly
+     *  that it can handle such flavors of parallelism.
+     *
+     *  Default implementation:
+     *  <pre>
+        if (info.getNumTableInputs() == 1 &&
+            (info.getFuncType() == UDRInvocationInfo.FuncType.MAPPER ||
+             info.getFuncType() == UDRInvocationInfo.FuncType.REDUCER ||
+             info.getFuncType() == UDRInvocationInfo.FuncType.REDUCER_NC))
+          plan.setDesiredDegreeOfParallelism(UDRPlanInfo.ANY_DEGREE_OF_PARALLELISM);
+        else
+          plan.setDesiredDegreeOfParallelism(1); // serial execution
+        </pre>
      * <p>
      *  Note that this is NOT foolproof, and that the TMUDF might still
      *  need to validate the PARTITION BY and ORDER BY syntax used in its
      *  invocation.
+     *  <p> Note also that in order to get parallel execution, you may need to
+     *  implement the {@link UDR#describeStatistics} interface and provide a
+     *  cardinality estimate. Alternatively, you can set the
+     *  PARALLEL_NUM_ESPS CQD.
      * <p>
      *  @see UDRPlanInfo#getDesiredDegreeOfParallelism
      *  @see UDRPlanInfo#setDesiredDegreeOfParallelism
      *  @see UDRInvocationInfo#getNumParallelInstances
+     *  @see UDRInvocationInfo#setFuncType
+     *  @see UDR#describeStatistics
+     *  @see TableInfo#setEstimatedNumRows
      *
      *  @param info A description of the UDR invocation.
      *  @param plan Plan-related description of the UDR invocation.
@@ -285,16 +347,31 @@ public abstract class UDR
                                                    UDRPlanInfo plan)
          throws UDRException
     {
-        if (info.getNumTableInputs() == 1)
-            plan.setDesiredDegreeOfParallelism(UDRPlanInfo.SpecialDegreeOfParallelism.ANY_DEGREE_OF_PARALLELISM.getSpecialDegreeOfParallelism());
+        if (info.getNumTableInputs() == 1 &&
+            (info.getFuncType() == UDRInvocationInfo.FuncType.MAPPER ||
+             info.getFuncType() == UDRInvocationInfo.FuncType.REDUCER ||
+             info.getFuncType() == UDRInvocationInfo.FuncType.REDUCER_NC))
+            plan.setDesiredDegreeOfParallelism(UDRPlanInfo.SpecialDegreeOfParallelism.
+                                               ANY_DEGREE_OF_PARALLELISM.getSpecialDegreeOfParallelism());
         else
             plan.setDesiredDegreeOfParallelism(1); // serial execution
     };
 
     /**
+     *  Sixth method of the compiler interface (optional).
+     *
+     *  The query optimizer calls this method once for every plan alternative
+     *  considered for a UDR invocation. It provides the required partitioning
+     *  and ordering of the result. The UDR writer can decide whether these
+     *  requirements are acceptable to the UDR and whether any partitioning
+     *  or ordering of the table-valued inputs is required to produce the required
+     *  result properties.
+     *
+     *  <p>This interface is currently not used.
+     *  
      *  @param info A description of the UDR invocation.
      *  @param plan Plan-related description of the UDR invocation.
-     *  @throws UDRException If an exception occured in the UDR
+     *  @throws UDRException
      */
     public void describePlanProperties(UDRInvocationInfo info,
                                        UDRPlanInfo plan)
@@ -361,7 +438,7 @@ public abstract class UDR
 
     // native methods used by these calls
     // use this command to regenerate the C headers:
-    // javah -d $MY_SQROOT/../sql/langman org.trafodion.sql.udr.UDR 
+    // javah -d $TRAF_HOME/../sql/langman org.trafodion.sql.udr.UDR 
     private native void SpInfoGetNextRowJava(byte[] rowData,
                                              int tableIndex,
                                              QueueStateInfo queueState);

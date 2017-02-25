@@ -114,6 +114,22 @@
 >>update statistics for table t107t2 on  every column sample 1000 rows;
 
 --- SQL operation complete.
+>>
+>>create table t107t3
++>  (i    int ,
++>   str1 char(100000),
++>   str2 char(100000),
++>   str3 char(100000),
++>   str4 char(100000),
++>   str5 char(100000),
++>   str6 char(100000)
++>  );
+
+--- SQL operation complete.
+>>insert into t107t3 values(1,'a','b','c','d','e','f'), (2,'a','b','c','d','e','f');
+
+--- 2 row(s) inserted.
+>>
 >>#ifLINUX
 >>
 >>
@@ -188,6 +204,42 @@ C100K        STR1
       99994  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
 
 --- 1 row(s) selected.
+>>
+>>-- Test #2a: sortRecLen > 512kb scratchIOBlock, overflow.
+>>cqd GEN_SORT_MAX_NUM_BUFFERS  '1';
+
+--- SQL operation complete.
+>>cqd GEN_SORT_NUM_BUFFERS '1';
+
+--- SQL operation complete.
+>>cqd GEN_SORT_MAX_BUFFER_SIZE '650000';
+
+--- SQL operation complete.
+>>cqd COMPRESSED_INTERNAL_FORMAT 'OFF';
+
+--- SQL operation complete.
+>>cqd COMPRESSED_INTERNAL_FORMAT_BMO 'OFF';
+
+--- SQL operation complete.
+>>SELECT [last 0] i, str1, str2, str3, str4, str5, str6  from t107t3 order by 1;
+
+--- 0 row(s) selected.
+>>cqd GEN_SORT_MAX_NUM_BUFFERS reset;
+
+--- SQL operation complete.
+>>cqd GEN_SORT_NUM_BUFFERS reset;
+
+--- SQL operation complete.
+>>cqd GEN_SORT_MAX_BUFFER_SIZE reset;
+
+--- SQL operation complete.
+>>cqd COMPRESSED_INTERNAL_FORMAT reset;
+
+--- SQL operation complete.
+>>cqd COMPRESSED_INTERNAL_FORMAT_BMO reset;
+
+--- SQL operation complete.
+>>
 >>
 >>-- Test #3 - causes intermediate merge
 >>set envvar SCRATCH_IO_PENDING 50;

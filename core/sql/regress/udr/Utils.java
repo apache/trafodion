@@ -53,7 +53,7 @@ public class Utils
        log = Boolean.getBoolean("debugOn");
      
      if (log) { 
-       sqRoot = System.getenv("MY_SQROOT");
+       sqRoot = System.getenv("TRAF_HOME");
        logLocation = sqRoot + "/logs/";
      }
    }
@@ -258,7 +258,7 @@ public class Utils
        PrintStream origOut_ = System.out;
        PrintStream origErr_ = System.err;
         
-       String sqRoot      = System.getenv("MY_SQROOT");
+       String sqRoot      = System.getenv("TRAF_HOME");
        String stdoutFile  = sqRoot + "/sql/scripts/" + filename;
        PrintStream stdout = null;
 

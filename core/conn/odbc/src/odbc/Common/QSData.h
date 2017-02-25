@@ -3571,11 +3571,31 @@ enum ExeErrorCode
 	EXE_INTERNALLY_GENERATED_COMMAND      = 8950,
 
 
+    EXE_AES_INVALID_IV                    = 8954,
+    EXE_ERR_PARAMCOUNT_FOR_FUNC           = 8955,
+    EXE_OPTION_IGNORED                    = 8956,
+    EXE_OPENSSL_ERROR                     = 8957,
 //fast transport
 
 	EXE_EXTRACT_ERROR_CREATING_FILE       = 8960,
 	EXE_EXTRACT_ERROR_WRITING_TO_FILE     = 8961,
 	EXE_EXTRACT_CANNOT_ALLOCATE_BUFFER    = 8962,
+
+// ---------------------------------------------------------------------
+// Execution errors related to JSon parser
+// ---------------------------------------------------------------------
+    EXE_JSON_INVALID_TOKEN                  = 8971,
+    EXE_JSON_INVALID_VALUE                  = 8972,
+    EXE_JSON_INVALID_STRING                 = 8973,
+    EXE_JSON_INVALID_ARRAY_START            = 8974,
+    EXE_JSON_INVALID_ARRAY_NEXT             = 8975,
+    EXE_JSON_INVALID_OBJECT_START           = 8976,
+    EXE_JSON_INVALID_OBJECT_LABEL           = 8977,
+    EXE_JSON_INVALID_OBJECT_NEXT            = 8978,
+    EXE_JSON_INVALID_OBJECT_COMMA           = 8979,
+    EXE_JSON_INVALID_END                    = 8980,
+    EXE_JSON_END_PREMATURELY                = 8981,
+    EXE_JSON_UNEXPECTED_ERROR               = 8982,
 
 // ---------------------------------------------------------------------
 // Scratch file I/O errors (10100 - 10199)
@@ -3644,6 +3664,7 @@ enum ExeErrorCode
 	CLI_RWRS_DECOMPRESS_ERROR        		= 30045,
 	CLI_RWRS_DECOMPRESS_LENGTH_ERROR 		= 30046,
 	CLI_NAR_ERROR_DETAILS            		= 30047,
+
 // ---------------------------------------------------------------------
 // the trailer (use temporarily for new errors that aren't added yet)
 // ---------------------------------------------------------------------
@@ -4056,12 +4077,36 @@ const string FMT_EXE_ROWLENGTH_EXCEEDS_BUFFER			= "[8943],EXE_ROWLENGTH_EXCEEDS_
 //-------------------------------------------------------------
 const string FMT_EXE_INTERNALLY_GENERATED_COMMAND		= "[8950],EXE_INTERNALLY_GENERATED_COMMAND";
 
+//-------------------------------------------------------------
+// Error codes for AES encrypt/decrypt functions
+// ------------------------------------------------------------
+const string FMT_EXE_AES_INVALID_IV                     = "[8954],EXE_AES_INVALID_IV";
+const string FMT_EXE_ERR_PARAMCOUNT_FOR_FUNC            = "[8955],EXE_ERR_PARAMCOUNT_FOR_FUNC";
+const string FMT_EXE_OPTION_IGNORED                     = "[8956],EXE_OPTION_IGNORED";
+const string FMT_EXE_OPENSSL_ERROR                      = "[8957],EXE_OPENSSL_ERROR";
+
 
 //fast transport
 
 const string FMT_EXE_EXTRACT_ERROR_CREATING_FILE		= "[8960],EXE_EXTRACT_ERROR_CREATING_FILE";
 const string FMT_EXE_EXTRACT_ERROR_WRITING_TO_FILE		= "[8961],EXE_EXTRACT_ERROR_WRITING_TO_FILE";
 const string FMT_EXE_EXTRACT_CANNOT_ALLOCATE_BUFFER		= "[8962],EXE_EXTRACT_CANNOT_ALLOCATE_BUFFER";
+
+// ---------------------------------------------------------------------
+// Execution errors related to JSon parser
+// ---------------------------------------------------------------------
+const string FMT_EXE_JSON_INVALID_TOKEN                 = "[8971],EXE_JSON_INVALID_TOKEN";
+const string FMT_EXE_JSON_INVALID_VALUE                 = "[8972],EXE_JSON_INVALID_VALUE";
+const string FMT_EXE_JSON_INVALID_STRING                = "[8973],EXE_JSON_INVALID_STRING";
+const string FMT_EXE_JSON_INVALID_ARRAY_START           = "[8974],EXE_JSON_INVALID_ARRAY_START";
+const string FMT_EXE_JSON_INVALID_ARRAY_NEXT            = "[8975],EXE_JSON_INVALID_ARRAY_NEXT";
+const string FMT_EXE_JSON_INVALID_OBJECT_START          = "[8976],EXE_JSON_INVALID_OBJECT_START";
+const string FMT_EXE_JSON_INVALID_OBJECT_LABEL          = "[8977],EXE_JSON_INVALID_OBJECT_LABEL";
+const string FMT_EXE_JSON_INVALID_OBJECT_NEXT           = "[8978],EXE_JSON_INVALID_OBJECT_NEXT";
+const string FMT_EXE_JSON_INVALID_OBJECT_COMMA          = "[8979],EXE_JSON_INVALID_OBJECT_COMMA";
+const string FMT_EXE_JSON_INVALID_END                   = "[8980],EXE_JSON_INVALID_END";
+const string FMT_EXE_JSON_END_PREMATURELY               = "[8981],EXE_JSON_END_PREMATURELY";
+const string FMT_EXE_JSON_UNEXPECTED_ERROR              = "[8982],EXE_JSON_UNEXPECTED_ERROR";
 
 // ---------------------------------------------------------------------
 // Scratch file I/O errors (10100 - 10199)

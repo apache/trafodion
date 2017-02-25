@@ -72,6 +72,7 @@
 #include "PrivMgrComponentPrivileges.h"
 #include "PrivMgrCommands.h"
 #include "CmpDDLCatErrorCodes.h"
+#include "HBaseClient_JNI.h"  // to get HBC_ERROR_ROWCOUNT_EST_EXCEPTION
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -3121,25 +3122,51 @@ Lng32 HSGlobalsClass::Initialize()
     sample_I_generated = FALSE;
 
     LM->StartTimer("getRowCount()");
+    Int32 errorCode = 0;
+    Int32 breadCrumb = 0;
     actualRowCount = objDef->getRowCount(currentRowCountIsEstimate_,
                                          inserts, deletes, updates,
                                          numPartitions,
                                          minRowCtPerPartition_,
+                                         errorCode /* out */,
+                                         breadCrumb /* out */,
                                          optFlags & (SAMPLE_REQUESTED | IUS_OPT));
     LM->StopTimer();
     if (LM->LogNeeded())
       {
         sprintf(LM->msg, "\tcurrentRowCountIsEstimate_=%d from getRowCount()", currentRowCountIsEstimate_);
         LM->Log(LM->msg);
+        sprintf(LM->msg, "\terrorCode=%d, breadCrumb=%d", errorCode, breadCrumb);
+        LM->Log(LM->msg);
+        if (errorCode == HBC_ERROR_ROWCOUNT_EST_EXCEPTION)
+          {
+            const char * jniErrorStr = HSFuncGetJniErrorStr();
+            if (strlen(jniErrorStr) > 0)
+              {
+                LM->Log("\tJNI exception info:");
+                LM->Log(jniErrorStr);
+              }
+          }
+      }
+
+    if (errorCode == HBC_ERROR_ROWCOUNT_EST_EXCEPTION)
+      {
+        *CmpCommon::diags() << DgSqlCode(-UERR_BAD_EST_ROWCOUNT) << DgInt0(errorCode) 
+                            << DgInt1(breadCrumb) << DgString0(HSFuncGetJniErrorStr());
+        return -1;
+      }
+    else if (errorCode)
+      {
+        *CmpCommon::diags() << DgSqlCode(-UERR_BAD_EST_ROWCOUNT) << DgInt0(errorCode) 
+                            << DgInt1(breadCrumb) << DgString0("");
+        return -1;
       }
 
     // We only allow an estimate when sampling, and then only if the
     // estimated row count is at least ustat_min_estimate_for_rowcount (CQD),
     // because estimation error is high for small or fragmented tables.
     // Otherwise a SELECT COUNT(*) is used to get the actual row count in
-    // place of the estimate, unless the user supplied his own row count.
-    // Note that if getRowCount() fails, it will return -1 and set
-    // currentRowCountIsEstimate_ to TRUE forcing the SELECT COUNT(*).
+    // place of the estimate, unless the user supplied his own row count..
     if (currentRowCountIsEstimate_ && !(optFlags & CLEAR_OPT))
       {
         if (optFlags & ROWCOUNT_OPT)                /* rowcount provided */
@@ -3494,7 +3521,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
 
    // no privilege support available for hbase and hive tables
    HS_ASSERT (objDef->getNATable());
-   if (CmpSeabaseDDL::isHbase(objDef->getCatName()) || isHiveCat(objDef->getCatName()))
+   if (CmpSeabaseDDL::isHbase(objDef->getCatName()))
      return TRUE;
 
   // Let keep track of how long authorization takes
@@ -3594,7 +3621,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
 // the fully-qualified table names.
 void HSGlobalsClass::initJITLogData()
 {
-  char* sqroot = getenv("MY_SQROOT");
+  char* sqroot = getenv("TRAF_HOME");
   if (!sqroot)
     return;
   
@@ -3665,7 +3692,7 @@ void HSGlobalsClass::startJitLogging(const char* checkPointName, Int64 elapsedSe
   XPROCESSHANDLE_DECOMPOSE_(&procHandle, &nodeNum, &pin);
 
   NAString filePath;
-  char* sqroot = getenv("MY_SQROOT");
+  char* sqroot = getenv("TRAF_HOME");
   if (sqroot)
     {
 	  filePath = sqroot;
@@ -15595,7 +15622,16 @@ Lng32 managePersistentSamples()
     Int64 sampleRows, tableRows;
     NABoolean isEstimate = FALSE;
 
-    tableRows = hs_globals->objDef->getRowCount(isEstimate);
+    Int32 errorCode = 0;
+    Int32 breadCrumb = 0;
+    tableRows = hs_globals->objDef->getRowCount(isEstimate, 
+                                                errorCode /* out */,
+                                                breadCrumb /* out */);
+    if (errorCode)
+      {
+        *CmpCommon::diags() << DgSqlCode(-UERR_BAD_EST_ROWCOUNT) << DgInt0(errorCode) << DgInt1(breadCrumb);
+        return -1;
+      }
 
     // tableRows could be zero for a Trafodion or HBase table if the table is new
     // and all the data is still in memstore. So, in the logic below we dance around
