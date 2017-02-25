@@ -43,6 +43,7 @@ using namespace std;
 #include "monlogging.h"
 #include "config.h"
 #include "pnode.h"
+#include "trafconfig.h"
 #include "clusterconf.h"
 
 extern CNodeContainer *Nodes;
@@ -55,54 +56,15 @@ extern CConfigContainer *Config;
 CClusterConfig::CClusterConfig( void )
               : CPNodeConfigContainer(MAX_NODES)
               , CLNodeConfigContainer(MAX_LNODES)
-              , configReady_(false)
-              , excludedCores_(false)
+              , nodeReady_(false)
+              , persistReady_(false)
               , newPNodeConfig_(true)
-              , newLNodeConfig_(false)
-              , currNid_(0)
-              , currPNid_(0)
-              , currSPNid_(0)
-              , currFirstCore_(0)
-              , currLastCore_(0)
-              , currProcessor_(0)
-              , currZoneType_(ZoneType_Undefined)
-              , currPNodeConfig_(NULL)
-              , prevNid_(-1)
-              , prevPNid_(-1)
-              , prevSPNid_(-1)
-              , prevFirstCore_(0)
-              , prevLastCore_(0)
-              , prevProcessor_(0)
-              , prevZoneType_(ZoneType_Undefined)
+              , trafConfigInitialized_(false)
               , prevPNodeConfig_(NULL)
-              , spareIndex_(0)
-              , lnodeConfig_(NULL)
-              , processType_(ProcessType_Undefined)
-              , requiresDTM_(false)
-              , persistRetries_(0)
-              , persistWindow_(0)
-              , persistConfig_(NULL)
-              , db_(NULL)
+              , prevLNodeConfig_(NULL)
 {
     const char method_name[] = "CClusterConfig::CClusterConfig";
     TRACE_ENTRY;
-
-    currNodename_[0] = '\0';
-    prevNodename_[0] = '\0';
-    persistPrefix_[0] = '\0';
-    processNamePrefix_[0] = '\0';
-    processNameFormat_[0] = '\0';
-    stdoutPrefix_[0] = '\0';
-    stdoutFormat_[0] = '\0';
-    programName_[0] = '\0';
-    zoneFormat_[0] = '\0';
-
-    memset( sparePNid_, 0, sizeof(sparePNid_) );
-
-    CPU_ZERO( &currExcludedCoreMask_ );
-    CPU_ZERO( &currCoreMask_ );
-    CPU_ZERO( &prevExcludedCoreMask_ );
-    CPU_ZERO( &prevCoreMask_ );
 
     TRACE_EXIT;
 }
@@ -125,130 +87,80 @@ void CClusterConfig::Clear( void )
     CLNodeConfigContainer::Clear();
     CPersistConfigContainer::Clear();
 
-    configReady_ = false;
-    excludedCores_ = false;
+    nodeReady_ = false;
+    persistReady_ = false;
     newPNodeConfig_ = true;
-    newLNodeConfig_ = false;
-    currNid_ = 0;
-    currPNid_ = 0;
-    currSPNid_ = 0;
-    currFirstCore_ = 0;
-    currLastCore_ = 0;
-    currProcessor_ = 0;
-    currZoneType_ = ZoneType_Undefined;
-    currPNodeConfig_ = NULL;
-    prevNid_ = -1;
-    prevPNid_ = -1;
-    prevSPNid_ = -1;
-    prevFirstCore_ = 0;
-    prevLastCore_ = 0;
-    prevProcessor_ = 0;
-    prevZoneType_ = ZoneType_Undefined;
     prevPNodeConfig_ = NULL;
-    spareIndex_ = 0;
-    lnodeConfig_ = NULL;
-    processType_ = ProcessType_Undefined;
-    requiresDTM_ = false;
-    persistRetries_ = 0;
-    persistWindow_ = 0;
-    persistConfig_ = NULL;
 
-    currNodename_[0] = '\0';
-    prevNodename_[0] = '\0';
-    persistPrefix_[0] = '\0';
-    processNamePrefix_[0] = '\0';
-    processNameFormat_[0] = '\0';
-    stdoutPrefix_[0] = '\0';
-    stdoutFormat_[0] = '\0';
-    programName_[0] = '\0';
-    zoneFormat_[0] = '\0';
-
-    memset( sparePNid_, 0, sizeof(sparePNid_) );
-
-    CPU_ZERO( &currExcludedCoreMask_ );
-    CPU_ZERO( &currCoreMask_ );
-    CPU_ZERO( &prevExcludedCoreMask_ );
-    CPU_ZERO( &prevCoreMask_ );
-
-    //int rc = sqlite3_close_v2( db_ );
-    int rc = sqlite3_close( db_ );
-    if ( rc == SQLITE_OK)
+    if ( trafConfigInitialized_ )
     {
-        db_ = NULL;
-    }
-    else
-    {
-        char la_buf[MON_STRING_BUF_SIZE];
-        snprintf( la_buf, sizeof(la_buf)
-                , "[%s], Can't close configuration database, %s\n"
-                , method_name, sqlite3_errmsg(db_) );
-        mon_log_write( MON_CLUSTERCONF_CLEAR_1, SQ_LOG_CRIT, la_buf );
+        int rc = tc_close();
+        if ( rc )
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s], Can't close configuration!\n"
+                    , method_name );
+            mon_log_write( MON_CLUSTERCONF_CLEAR_1, SQ_LOG_CRIT, la_buf );
+        }
+    
+        trafConfigInitialized_ = false;
     }
 
     TRACE_EXIT;
 }
 
-void CClusterConfig::AddNodeConfiguration( bool spareNode )
+void CClusterConfig::AddNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo
+                                         , lnodeConfigInfo_t &lnodeConfigInfo )
 {
     const char method_name[] = "CClusterConfig::AddNodeConfiguration";
     TRACE_ENTRY;
 
     if ( trace_settings & TRACE_INIT )
     {
-        trace_printf( "%s@%d currNid=%d, currPNid=%d, currNodename=%s, "
-                       "prevNid=%d, prevPNid=%d, prevNodename=%s\n"
+        trace_printf( "%s@%d nid=%d, pnid=%d, nodename=%s\n"
                     , method_name, __LINE__
-                    , currNid_
-                    , currPNid_
-                    , currNodename_
-                    , prevNid_
-                    , prevPNid_
-                    , prevNodename_ );
+                    , lnodeConfigInfo.nid
+                    , pnodeConfigInfo.pnid
+                    , pnodeConfigInfo.nodename );
     }
 
     if ( newPNodeConfig_ )
     {
-        strncpy( prevNodename_, currNodename_, sizeof(prevNodename_) );
-        prevPNid_ = currPNid_;
-        prevExcludedCoreMask_ = currExcludedCoreMask_;
-        prevExcludedFirstCore_ = currExcludedFirstCore_;
-        prevExcludedLastCore_  = currExcludedLastCore_ ;
-
-        prevPNodeConfig_ = AddPNodeConfig( prevPNid_
-                                         , prevNodename_
-                                         , prevExcludedFirstCore_
-                                         , prevExcludedLastCore_
-                                         , spareNode );
-        prevPNodeConfig_->SetExcludedCoreMask( prevExcludedCoreMask_ );
-        if ( spareNode )
-        {
-            prevPNodeConfig_->SetSpareList( sparePNid_, spareIndex_ );
-        }
+        prevPNodeConfig_ = CPNodeConfigContainer::AddPNodeConfig( pnodeConfigInfo );
         newPNodeConfig_ = false;
     }
-    if ( newLNodeConfig_ )
-    {
-        prevNid_ = currNid_;
-        prevCoreMask_  = currCoreMask_;
-        prevFirstCore_ = currFirstCore_;
-        prevLastCore_  = currLastCore_ ;
-        prevProcessor_ = currProcessor_;
-        prevZoneType_  = currZoneType_;
+    prevLNodeConfig_ = CLNodeConfigContainer::AddLNodeConfig( prevPNodeConfig_
+                                                            , lnodeConfigInfo );
 
-        lnodeConfig_ = AddLNodeConfig( prevPNodeConfig_
-                                     , prevNid_
-                                     , prevCoreMask_
-                                     , prevFirstCore_
-                                     , prevLastCore_
-                                     , prevProcessor_
-                                     , prevZoneType_ );
-        newLNodeConfig_ = false;
+    TRACE_EXIT;
+}
+
+void CClusterConfig::AddSNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo )
+{
+    const char method_name[] = "CClusterConfig::AddSNodeConfiguration";
+    TRACE_ENTRY;
+
+    if ( trace_settings & TRACE_INIT )
+    {
+        trace_printf( "%s@%d pnid=%d, nodename=%s\n"
+                    , method_name, __LINE__
+                    , pnodeConfigInfo.pnid
+                    , pnodeConfigInfo.nodename );
+    }
+
+    if ( newPNodeConfig_ )
+    {
+        prevPNodeConfig_ = CPNodeConfigContainer::AddPNodeConfig( pnodeConfigInfo );
+        prevPNodeConfig_->SetSpareList( pnodeConfigInfo.sparePNid
+                                      , pnodeConfigInfo.spareCount );
+        newPNodeConfig_ = false;
     }
 
     TRACE_EXIT;
 }
 
-void CClusterConfig::AddPersistConfiguration( void )
+void CClusterConfig::AddPersistConfiguration( persistConfigInfo_t &persistConfigInfo )
 {
     const char method_name[] = "CClusterConfig::AddPersistConfiguration";
     TRACE_ENTRY;
@@ -257,20 +169,10 @@ void CClusterConfig::AddPersistConfiguration( void )
     {
         trace_printf( "%s@%d persistkey=%s\n"
                     , method_name, __LINE__
-                    , persistPrefix_ );
+                    , persistConfigInfo.persistPrefix );
     }
 
-    persistConfig_ = AddPersistConfig( persistPrefix_
-                                     , processNamePrefix_
-                                     , processNameFormat_
-                                     , stdoutPrefix_
-                                     , stdoutFormat_
-                                     , programName_
-                                     , zoneFormat_
-                                     , processType_
-                                     , requiresDTM_
-                                     , persistRetries_
-                                     , persistWindow_ );
+    prevPersistConfig_ = CPersistConfigContainer::AddPersistConfig( persistConfigInfo );
 
     TRACE_EXIT;
 }
@@ -281,6 +183,7 @@ bool CClusterConfig::DeleteNodeConfig( int  pnid )
     TRACE_ENTRY;
 
     bool rs = true;
+    int rc;
 
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
@@ -292,7 +195,9 @@ bool CClusterConfig::DeleteNodeConfig( int  pnid )
     }
 
     // Delete logical and physical nodes from the configuration database
-    if (DeleteDbNodeData( pnid ))
+    
+    rc = tc_delete_node( pnid, NULL );
+    if ( rc == 0 )
     {
         // Delete logical and physical nodes from configuration objects
         CPNodeConfig *pnodeConfig = GetPNodeConfig( pnid );
@@ -303,7 +208,8 @@ bool CClusterConfig::DeleteNodeConfig( int  pnid )
             while ( lnodeConfig )
             {
                 // Delete logical nodes unique strings from the configuration database
-                if (!DeleteDbUniqueString( lnodeConfig->GetNid() ))
+                rc = tc_delete_unique_strings( lnodeConfig->GetNid() );
+                if ( rc )
                 {
                     rs = false;
                     break;
@@ -335,192 +241,6 @@ bool CClusterConfig::DeleteNodeConfig( int  pnid )
         mon_log_write( MON_CLUSTERCONF_DELETENODE_1, SQ_LOG_ERR, buf );
         rs = false;
     }
-
-    TRACE_EXIT;
-    return( rs );
-}
-
-bool CClusterConfig::DeleteDbNodeData( int pnid )
-{
-    const char method_name[] = "CClusterConfig::DeleteDbNodeData";
-    TRACE_ENTRY;
-
-    bool rs = true;
-
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return( false );
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-    {
-        trace_printf( "%s@%d delete from lnode, pnode values (pNid=%d)\n"
-                     , method_name, __LINE__
-                     , pnid );
-    }
-
-    int rc;
-
-    const char *sqlStmt1;
-    sqlStmt1 = "delete from lnode where lnode.pNid = ?";
-
-    sqlite3_stmt *prepStmt1 = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt1, strlen(sqlStmt1)+1, &prepStmt1, NULL);
-    if ( rc != SQLITE_OK )
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
-        rs = false;
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_CLUSTERCONF_DELETEDBNODE_1, SQ_LOG_ERR, buf );
-    }
-    else
-    {
-        sqlite3_bind_int( prepStmt1, 1, pnid );
-
-        rc = sqlite3_step( prepStmt1 );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            rs = false;
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] delete from lnode "
-                      "value (pNid=%d) failed, error=%s (%d)\n"
-                    , method_name
-                    , pnid
-                    , sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_CLUSTERCONF_DELETEDBNODE_2, SQ_LOG_ERR, buf );
-        }
-    }
-
-    const char *sqlStmt2;
-    sqlStmt2 = "delete from pnode where pnode.pNid = ?";
-
-    sqlite3_stmt *prepStmt2 = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt2, strlen(sqlStmt2)+1, &prepStmt2, NULL);
-    if ( rc != SQLITE_OK )
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
-        rs = false;
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_CLUSTERCONF_DELETEDBNODE_3, SQ_LOG_ERR, buf );
-    }
-    else
-    {
-        sqlite3_bind_int( prepStmt2, 1, pnid );
-
-        rc = sqlite3_step( prepStmt2 );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            rs = false;
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] delete from pnode "
-                      "value (pNid=%d) failed, error=%s (%d)\n"
-                    , method_name
-                    , pnid
-                    , sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_CLUSTERCONF_DELETEDBNODE_4, SQ_LOG_ERR, buf );
-        }
-    }
-
-    if ( prepStmt1 != NULL )
-        sqlite3_finalize( prepStmt1 );
-    if ( prepStmt2 != NULL )
-        sqlite3_finalize( prepStmt2 );
-
-    TRACE_EXIT;
-    return( rs );
-}
-
-bool CClusterConfig::DeleteDbUniqueString( int nid )
-{
-    const char method_name[] = "CClusterConfig::DeleteDbUniqueString";
-    TRACE_ENTRY;
-
-    bool rs = true;
-
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return( false );
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-    {
-        trace_printf( "%s@%d delete from monRegUniqueStrings values (nid=%d)\n"
-                     , method_name, __LINE__
-                     , nid );
-    }
-
-    int rc;
-
-    const char *sqlStmtA;
-    sqlStmtA = "delete from monRegUniqueStrings where monRegUniqueStrings.nid = ?";
-
-    sqlite3_stmt *prepStmtA = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmtA, strlen(sqlStmtA)+1, &prepStmtA, NULL);
-    if ( rc != SQLITE_OK )
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
-        rs = false;
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_CLUSTERCONF_DELETEDBUSTRING_1, SQ_LOG_ERR, buf );
-    }
-    else
-    {
-        sqlite3_bind_int( prepStmtA, 1, nid );
-
-        rc = sqlite3_step( prepStmtA );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            rs = false;
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] delete from monRegUniqueStrings "
-                      "value (nid=%d) failed, error=%s (%d)\n"
-                    , method_name
-                    , nid
-                    , sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_CLUSTERCONF_DELETEDBUSTRING_2, SQ_LOG_ERR, buf );
-        }
-    }
-
-    if ( prepStmtA != NULL )
-        sqlite3_finalize( prepStmtA );
 
     TRACE_EXIT;
     return( rs );
@@ -580,72 +300,33 @@ bool CClusterConfig::Initialize( void )
     const char method_name[] = "CClusterConfig::Initialize";
     TRACE_ENTRY;
 
-    if ( db_ != NULL )
+    if ( trafConfigInitialized_ )
     {
         // Already initialized
         return( true );
     }
 
-    char dbase[MAX_PROCESS_PATH];
-
-    // Open the configuration database file
-    char *configenv = getenv("SQ_CONFIGDB");
-    if (configenv != NULL)
-    {
-        snprintf( dbase, sizeof(dbase), "%s", configenv);
-    }
-    else
-    {
-        snprintf( dbase, sizeof(dbase)
-                , "%s/sql/scripts/sqconfig.db", getenv("MY_SQROOT"));
-    }
-    int rc = sqlite3_open_v2( dbase, &db_
-                            , SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
-                            , NULL);
+    bool trafConfigTrace = (trace_settings & TRACE_TRAFCONFIG);
+    int rc = tc_initialize( trafConfigTrace );
     if ( rc )
     {
-        db_ = NULL;
-
-        // See if database is in current directory
-        int rc2 = sqlite3_open_v2( "sqconfig.db", &db_
-                                 , SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
-                                 , NULL);
-        if ( rc2 )
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            snprintf( la_buf, sizeof(la_buf)
-                    , "[%s], Can't open configuration database %s, %s\n"
-                    , method_name, dbase, sqlite3_errmsg(db_) );
-            mon_log_write( MON_CLUSTERCONF_INIT_1, SQ_LOG_CRIT, la_buf );
-        }
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s], Can't initialize configuration!\n"
+                , method_name );
+        mon_log_write( MON_CLUSTERCONF_INIT_1, SQ_LOG_CRIT, la_buf );
+        return( false );
     }
 
-    if ( db_ != NULL )
-    {
-        rc = sqlite3_busy_timeout(db_, 1000);
-        if ( rc )
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            snprintf( la_buf, sizeof(la_buf)
-                    , "[%s] Can't set busy timeout for database %s, %s\n"
-                    , method_name,  dbase, sqlite3_errmsg(db_) );
-            mon_log_write( MON_CLUSTERCONF_INIT_2, SQ_LOG_ERR, la_buf );
-        }
-
-        char *sErrMsg = NULL;
-        sqlite3_exec(db_, "PRAGMA synchronous = OFF", NULL, NULL, &sErrMsg);
-        if (sErrMsg != NULL)
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            snprintf( la_buf, sizeof(la_buf)
-                    , "[%s] Can't set PRAGMA synchronous for database %s, %s\n"
-                    , method_name,  dbase, sErrMsg );
-            mon_log_write( MON_CLUSTERCONF_INIT_3, SQ_LOG_ERR, la_buf );
-        }
-    }
+    trafConfigInitialized_ = true;
 
     TRACE_EXIT;
     return( true );
+}
+
+void CClusterConfig::InitCoreMask( cpu_set_t &coreMask )
+{
+    CPU_ZERO( &coreMask );
 }
 
 bool CClusterConfig::LoadConfig( void )
@@ -653,733 +334,358 @@ bool CClusterConfig::LoadConfig( void )
     const char method_name[] = "CClusterConfig::LoadConfig";
     TRACE_ENTRY;
 
-    int  firstcore;
-    int  lastcore;
-    int  excfirstcore;
-    int  exclastcore;
-    int  nid;
-    int  pnid;
-    int  spnid;
-    int  processors;
-    int  rc;
-    const char   *nodename;
-    const char   *persistKeysValue;
-    const char   *selLnodeStmt;
-    sqlite3_stmt *prepLnodeStmt = NULL;
-    const char   *selSnodeStmt;
-    sqlite3_stmt *prepSnodeStmt = NULL;
-    const char   *selPersistKeysStmt;
-    sqlite3_stmt *prepPersistKeysStmt = NULL;
-    ZoneType roles;
-
-    // Prepare select logical nodes
-    selLnodeStmt = "select p.pNid, l.lNid, p.nodeName, l.firstCore, l.lastCore,"
-                   " p.excFirstCore, p.excLastCore, l.processors, l.roles"
-                   "  from pnode p, lnode l where p.pNid = l.pNid";
-
-    rc = sqlite3_prepare_v2( db_
-                           , selLnodeStmt
-                           , strlen(selLnodeStmt)+1
-                           , &prepLnodeStmt
-                           , NULL);
-    if ( rc != SQLITE_OK )
+    if ( LoadNodeConfig() )
     {
-        char la_buf[MON_STRING_BUF_SIZE];
-        snprintf( la_buf, sizeof(la_buf)
-                , "[%s] prepare logical nodes failed, %s\n"
-                , method_name,  sqlite3_errmsg(db_) );
-        mon_log_write(MON_CLUSTERCONF_LOAD_1, SQ_LOG_CRIT, la_buf);
-        return( false );
+        LoadPersistConfig();
     }
 
-    // Prepare select spare nodes
-    selSnodeStmt = "select p.pNid, p.nodeName, p.excFirstCore, p.excLastCore,"
-                   " s.spNid "
-                   "  from pnode p, snode s where p.pNid = s.pNid";
+    TRACE_EXIT;
+    return( nodeReady_ && persistReady_ );
+}
 
-    rc = sqlite3_prepare_v2( db_
-                           , selSnodeStmt
-                           , strlen(selSnodeStmt)+1
-                           , &prepSnodeStmt
-                           , NULL);
-    if ( rc != SQLITE_OK )
+bool CClusterConfig::LoadNodeConfig( void )
+{
+    const char method_name[] = "CClusterConfig::LoadNodeConfig";
+    TRACE_ENTRY;
+
+    int rc;
+    int nodeCount = 0;
+    int snodeCount = 0;
+    node_configuration_t            nodeConfigData[TC_NODES_MAX];
+    physical_node_configuration_t   spareNodeConfigData[TC_SPARE_NODES_MAX];
+    pnodeConfigInfo_t               pnodeConfigInfo;
+    lnodeConfigInfo_t               lnodeConfigInfo;
+
+    rc = tc_get_nodes( &nodeCount
+                     , TC_NODES_MAX
+                     , nodeConfigData );
+    if ( rc )
     {
         char la_buf[MON_STRING_BUF_SIZE];
         snprintf( la_buf, sizeof(la_buf)
-                , "[%s] prepare spare nodes failed, %s\n"
-                , method_name,  sqlite3_errmsg(db_) );
-        mon_log_write(MON_CLUSTERCONF_LOAD_2, SQ_LOG_CRIT, la_buf);
-        return( false );
-    }
-
-    // Prepare select persistent process keys
-    selPersistKeysStmt = "select p.valueName"
-                         " from monRegPersistData p"
-                         "  where p.keyName = 'PERSIST_PROCESS_KEYS'";
-
-    rc = sqlite3_prepare_v2( db_
-                           , selPersistKeysStmt
-                           , strlen(selPersistKeysStmt)+1
-                           , &prepPersistKeysStmt
-                           , NULL);
-    if ( rc != SQLITE_OK )
-    {
-        char la_buf[MON_STRING_BUF_SIZE];
-        snprintf( la_buf, sizeof(la_buf)
-                , "[%s] prepare persistent keys failed, %s\n"
-                , method_name,  sqlite3_errmsg(db_) );
-        mon_log_write(MON_CLUSTERCONF_LOAD_3, SQ_LOG_CRIT, la_buf);
+                , "[%s] Node configuration access failed!\n"
+                , method_name );
+        mon_log_write(MON_CLUSTERCONF_LOADNODE_1, SQ_LOG_CRIT, la_buf);
         return( false );
     }
 
     // Process logical nodes
-    while ( 1 )
+    for (int i =0; i < nodeCount; i++ )
     {
-        rc = sqlite3_step( prepLnodeStmt );
-        if ( rc == SQLITE_ROW )
-        {  // Process row
-            int colCount = sqlite3_column_count(prepLnodeStmt);
-            if ( trace_settings & TRACE_INIT )
-            {
-                trace_printf("%s@%d sqlite3_column_count=%d\n",
-                             method_name, __LINE__, colCount);
-                for (int i=0; i<colCount; ++i)
-                {
-                    trace_printf("%s@%d column %d is %s\n",
-                                 method_name, __LINE__, i,
-                                 sqlite3_column_name(prepLnodeStmt, i));
-                }
-            }
-
-            pnid = sqlite3_column_int(prepLnodeStmt, 0);
-            nid = sqlite3_column_int(prepLnodeStmt, 1);
-            nodename = (const char *) sqlite3_column_text(prepLnodeStmt, 2);
-            firstcore = sqlite3_column_int(prepLnodeStmt, 3);
-            lastcore = sqlite3_column_int(prepLnodeStmt, 4);
-            excfirstcore = sqlite3_column_int(prepLnodeStmt, 5);
-            exclastcore = sqlite3_column_int(prepLnodeStmt, 6);
-            processors = sqlite3_column_int(prepLnodeStmt, 7);
-            roles = (ZoneType) sqlite3_column_int(prepLnodeStmt, 8);
-            ProcessLNode( nid
-                        , pnid
-                        , nodename
-                        , excfirstcore
-                        , exclastcore
-                        , firstcore
-                        , lastcore
-                        , processors
-                        , roles );
-        }
-        else if ( rc == SQLITE_DONE )
-        {
-            // Destroy prepared statement object
-            if ( prepLnodeStmt != NULL )
-            {
-                sqlite3_finalize(prepLnodeStmt);
-            }
-
-            if ( trace_settings & TRACE_INIT )
-            {
-                trace_printf("%s@%d Finished processing logical nodes.\n",
-                             method_name, __LINE__);
-            }
-
-            break;
-        }
-        else
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            snprintf( la_buf, sizeof(la_buf)
-                    , "[%s] Configuration database select node failed, %s\n"
-                    , method_name, sqlite3_errmsg(db_));
-            mon_log_write(MON_CLUSTERCONF_LOAD_5, SQ_LOG_CRIT, la_buf);
-            return( false );
-        }
-
-        AddNodeConfiguration( false );
+        ProcessLNode( nodeConfigData[i], pnodeConfigInfo, lnodeConfigInfo );
+        AddNodeConfiguration( pnodeConfigInfo, lnodeConfigInfo );
     }
 
-    nid = -1;
-    firstcore = -1;
-    lastcore = -1;
-
-    // Process spare nodes
-    while ( 1 )
-    {
-        rc = sqlite3_step( prepSnodeStmt );
-        if ( rc == SQLITE_ROW )
-        {  // Process row
-            int colCount = sqlite3_column_count(prepSnodeStmt);
-            if ( trace_settings & TRACE_INIT )
-            {
-                trace_printf("%s@%d sqlite3_column_count=%d\n",
-                             method_name, __LINE__, colCount);
-                for (int i=0; i<colCount; ++i)
-                {
-                    trace_printf("%s@%d column %d is %s\n",
-                                 method_name, __LINE__, i,
-                                 sqlite3_column_name(prepSnodeStmt, i));
-                }
-            }
-
-            pnid = sqlite3_column_int(prepSnodeStmt, 0);
-            nodename = (const char *) sqlite3_column_text(prepSnodeStmt, 1);
-            excfirstcore = sqlite3_column_int(prepSnodeStmt, 2);
-            exclastcore = sqlite3_column_int(prepSnodeStmt, 3);
-            spnid = sqlite3_column_int(prepSnodeStmt, 4);
-            if ( ! ProcessSNode( pnid
-                               , nodename
-                               , excfirstcore
-                               , exclastcore
-                               , spnid ) )
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                snprintf( la_buf, sizeof(la_buf)
-                        , "[%s], Error: Invalid node configuration\n"
-                        , method_name);
-                mon_log_write(MON_CLUSTERCONF_LOAD_6, SQ_LOG_CRIT, la_buf);
-                return( false );
-            }
-        }
-        else if ( rc == SQLITE_DONE )
-        {
-            // Destroy prepared statement object
-            if ( prepSnodeStmt != NULL )
-            {
-                sqlite3_finalize(prepSnodeStmt);
-            }
-
-            if ( trace_settings & TRACE_INIT )
-            {
-                trace_printf("%s@%d Finished processing spare nodes.\n",
-                             method_name, __LINE__);
-            }
-
-            break;
-        }
-        else
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            snprintf( la_buf, sizeof(la_buf)
-                    , "[%s] Configuration database select node failed, %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            mon_log_write(MON_CLUSTERCONF_LOAD_7, SQ_LOG_CRIT, la_buf);
-            return( false );
-        }
-
-        AddNodeConfiguration( true );
-    }
-
-    // Process persistent process keys
-    rc = sqlite3_step( prepPersistKeysStmt );
-    if ( rc == SQLITE_ROW )
-    {  // Process row
-        int colCount = sqlite3_column_count(prepPersistKeysStmt);
-        if ( trace_settings & TRACE_INIT )
-        {
-            trace_printf("%s@%d sqlite3_column_count=%d\n",
-                         method_name, __LINE__, colCount);
-            for (int i=0; i<colCount; ++i)
-            {
-                trace_printf("%s@%d column %d is %s\n",
-                             method_name, __LINE__, i,
-                             sqlite3_column_name(prepPersistKeysStmt, i));
-            }
-        }
-
-        persistKeysValue = (const char *) sqlite3_column_text(prepPersistKeysStmt, 0);
-        // Initialize vector of persistent keys
-        InitializePersistKeys( (char *)persistKeysValue );
-        if ( GetPersistKeysCount() == 0 )
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            snprintf( la_buf, sizeof(la_buf)
-                    , "[%s] Invalid PERSIST_PROCESS_KEYS value, %s\n"
-                    , method_name, persistKeysValue );
-            mon_log_write(MON_CLUSTERCONF_LOAD_8, SQ_LOG_CRIT, la_buf);
-            return( false );
-        }
-    
-        vector<string>::iterator pkit;
-        
-        // Process each key in the vector
-        for (pkit = pkeysVector_.begin(); pkit < pkeysVector_.end(); pkit++ )
-        {
-            strncpy(persistPrefix_, pkit->c_str(), sizeof(persistPrefix_));
-            processNamePrefix_[0] = '\0';
-            processNameFormat_[0] = '\0';
-            stdoutPrefix_[0] = '\0';
-            stdoutFormat_[0] = '\0';
-            programName_[0] = '\0';
-            zoneFormat_[0] = '\0';
-            processType_ = ProcessType_Undefined;
-            requiresDTM_ = false;
-            persistRetries_ = 0;
-            persistWindow_ = 0;
-            if ( ! ProcessPersist() )
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                snprintf( la_buf, sizeof(la_buf)
-                        , "[%s], Invalid persistent process configuration!\n"
-                        , method_name);
-                mon_log_write(MON_CLUSTERCONF_LOAD_9, SQ_LOG_CRIT, la_buf);
-            }
-
-            AddPersistConfiguration();
-        }
-        // Destroy prepared statement object
-        if ( prepPersistKeysStmt != NULL )
-        {
-            sqlite3_finalize(prepPersistKeysStmt);
-        }
-    }
-    else if ( rc != SQLITE_DONE )
+    rc = tc_get_snodes( &snodeCount
+                     , TC_NODES_MAX
+                     , spareNodeConfigData );
+    if ( rc )
     {
         char la_buf[MON_STRING_BUF_SIZE];
         snprintf( la_buf, sizeof(la_buf)
-                , "[%s] Configuration database select persist keys failed, %s (rc=%d)\n"
-                , method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write(MON_CLUSTERCONF_LOAD_9, SQ_LOG_CRIT, la_buf);
+                , "[%s] Node configuration access failed!\n"
+                , method_name );
+        mon_log_write(MON_CLUSTERCONF_LOADNODE_2, SQ_LOG_CRIT, la_buf);
+        return( false );
     }
 
-    configReady_ = true;
+    // Process spare nodes
+    for (int i =0; i < snodeCount; i++ )
+    {
+        ProcessSNode( spareNodeConfigData[i], pnodeConfigInfo );
+        AddSNodeConfiguration( pnodeConfigInfo );
+    }
+
+    nodeReady_ = true;
 
     if ( trace_settings & TRACE_INIT )
     {
-        if ( configReady_ )
-            trace_printf("%s@%d - Successfully loaded 'sqconfig.db'" "\n", method_name, __LINE__);
+        if ( nodeReady_ )
+            trace_printf("%s@%d - Successfully loaded node configuration\n", method_name, __LINE__);
         else
-            trace_printf("%s@%d - Failed to load 'sqconfig.db'" "\n", method_name, __LINE__);
+            trace_printf("%s@%d - Failed to load node configuration\n", method_name, __LINE__);
     }
 
     TRACE_EXIT;
-    return( configReady_ );
+    return( nodeReady_ );
 }
 
-void CClusterConfig::ProcessLNode( int nid
-                                 , int pnid
-                                 , const char *nodename
-                                 , int excfirstcore
-                                 , int exclastcore
-                                 , int firstcore
-                                 , int lastcore
-                                 , int processors
-                                 , int roles )
+bool CClusterConfig::LoadPersistConfig( void )
+{
+    const char method_name[] = "CClusterConfig::LoadPersistConfig";
+    TRACE_ENTRY;
+
+    int  rc;
+
+    // Get persistent process keys
+    char persistProcessKeys[TC_PERSIST_KEYS_VALUE_MAX];
+    rc = tc_get_persist_keys( persistProcessKeys );
+    if ( rc )
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] Persist keys configuration access failed!\n"
+                , method_name );
+        mon_log_write(MON_CLUSTERCONF_LOADPERSIST_1, SQ_LOG_CRIT, la_buf);
+        return( false );
+    }
+
+    persist_configuration_t persistConfig;
+    persistConfigInfo_t     persistConfigInfo;
+    pkeysVector_t     pkeysVector;   // vector of persist prefix strings
+
+    // Initialize vector of persistent keys
+    CPersistConfigContainer::InitializePersistKeys( persistProcessKeys
+                                                  , pkeysVector );
+    if ( CPersistConfigContainer::GetPersistKeysCount() == 0 )
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] Invalid PERSIST_PROCESS_KEYS value, %s\n"
+                , method_name, persistProcessKeys );
+        mon_log_write(MON_CLUSTERCONF_LOADPERSIST_2, SQ_LOG_CRIT, la_buf);
+        return( false );
+    }
+
+    pkeysVector_t::iterator pkit;
+    
+    // Process each prefix in the vector
+    for (pkit = pkeysVector.begin(); pkit < pkeysVector.end(); pkit++ )
+    {
+        memset( &persistConfig, 0, sizeof(persist_configuration_t) );
+        strncpy( persistConfig.persist_prefix
+               , pkit->c_str()
+               , sizeof(persistConfig.persist_prefix));
+        rc = tc_get_persist_process( pkit->c_str(), &persistConfig );
+        if ( rc )
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] Persist process info for prefix key %s does not exist!\n"
+                    , method_name, pkit->c_str() );
+            mon_log_write(MON_CLUSTERCONF_LOADPERSIST_3, SQ_LOG_CRIT, la_buf);
+            return( false );
+        }
+    
+        ProcessPersistInfo( persistConfig, persistConfigInfo );
+        AddPersistConfiguration( persistConfigInfo );
+    }
+
+    persistReady_ = true;
+
+    if ( trace_settings & TRACE_INIT )
+    {
+        if ( persistReady_ )
+            trace_printf("%s@%d - Successfully loaded persist configuration\n", method_name, __LINE__);
+        else
+            trace_printf("%s@%d - Failed to load persist configuration\n", method_name, __LINE__);
+    }
+
+    TRACE_EXIT;
+    return( persistReady_ );
+}
+
+void CClusterConfig::ProcessLNode( node_configuration_t &nodeConfigData
+                                 , pnodeConfigInfo_t  &pnodeConfigInfo
+                                 , lnodeConfigInfo_t  &lnodeConfigInfo )
 {
     const char method_name[] = "CClusterConfig::ProcessLNode";
     TRACE_ENTRY;
+
+    bool excludedCores = false;
 
     if ( trace_settings & TRACE_INIT )
     {
         trace_printf( "%s@%d nid=%d, pnid=%d, name=%s, excluded cores=(%d:%d),"
                       " cores=(%d:%d), processors=%d, roles=%d\n"
                     , method_name, __LINE__
-                    , nid
-                    , pnid
-                    , nodename
-                    , excfirstcore
-                    , exclastcore
-                    , firstcore
-                    , lastcore
-                    , processors
-                    , roles );
+                    , nodeConfigData.nid
+                    , nodeConfigData.pnid
+                    , nodeConfigData.node_name
+                    , nodeConfigData.excluded_first_core
+                    , nodeConfigData.excluded_last_core
+                    , nodeConfigData.first_core
+                    , nodeConfigData.last_core
+                    , nodeConfigData.processors
+                    , nodeConfigData.roles );
     }
 
-    currPNid_ = pnid;
-    newPNodeConfig_ = (currPNid_ != prevPNid_) ? true : false;
+    newPNodeConfig_ = ((prevPNodeConfig_ == NULL) ||
+                       (nodeConfigData.pnid != prevPNodeConfig_->GetPNid()))
+                        ? true : false;
     if ( newPNodeConfig_ )
     {
-        strncpy( currNodename_, nodename, sizeof(currNodename_) );
-        excludedCores_ = (excfirstcore != -1 || exclastcore != -1)?true:false;
-        if ( excludedCores_ )
+        memset( &pnodeConfigInfo, 0, sizeof(pnodeConfigInfo) );
+        pnodeConfigInfo.pnid = nodeConfigData.pnid;
+        strncpy( pnodeConfigInfo.nodename
+               , nodeConfigData.node_name
+               , sizeof(pnodeConfigInfo.nodename) );
+        pnodeConfigInfo.excludedFirstCore = nodeConfigData.excluded_first_core;
+        pnodeConfigInfo.excludedLastCore  = nodeConfigData.excluded_last_core;
+        excludedCores = (nodeConfigData.excluded_first_core != -1 || 
+                         nodeConfigData.excluded_last_core != -1)
+                       ? true : false;
+        if ( excludedCores )
         {
-            SetCoreMask( excfirstcore, exclastcore, currExcludedCoreMask_ );
+            SetCoreMask( nodeConfigData.excluded_first_core
+                       , nodeConfigData.excluded_last_core
+                       , pnodeConfigInfo.excludedCoreMask );
+        }
+        else
+        {
+            InitCoreMask( pnodeConfigInfo.excludedCoreMask );
         }
     }
 
-    currNid_ = nid;
-    newLNodeConfig_ = (currNid_ != prevNid_) ? true : false;
-    if ( newLNodeConfig_ )
-    {
-        SetCoreMask( firstcore, lastcore, currCoreMask_ );
-        currFirstCore_ = firstcore;
-        currLastCore_  = lastcore;
-        currProcessor_ = processors;
-        currZoneType_  = (ZoneType)roles;
-    }
+    lnodeConfigInfo.nid = nodeConfigData.nid;
+    lnodeConfigInfo.pnid = nodeConfigData.pnid;
+    strncpy( lnodeConfigInfo.nodename
+           , nodeConfigData.node_name
+           , sizeof(lnodeConfigInfo.nodename) );
+    lnodeConfigInfo.firstCore = nodeConfigData.first_core;
+    lnodeConfigInfo.lastCore  = nodeConfigData.last_core;
+    SetCoreMask( nodeConfigData.first_core
+               , nodeConfigData.last_core
+               , lnodeConfigInfo.coreMask );
+    lnodeConfigInfo.processor = nodeConfigData.processors;
+    lnodeConfigInfo.zoneType  = (ZoneType)nodeConfigData.roles;
 
     TRACE_EXIT;
 }
 
-bool CClusterConfig::ProcessSNode( int pnid
-                                 , const char *nodename
-                                 , int excfirstcore
-                                 , int exclastcore
-                                 , int spnid )
+void CClusterConfig::ProcessSNode( physical_node_configuration_t &pnodeConfig
+                                 , pnodeConfigInfo_t             &pnodeConfigInfo )
 {
     const char method_name[] = "CClusterConfig::ProcessSNode";
     TRACE_ENTRY;
 
-    int  rc;
-    const char   *selSnodeStmt;
-    sqlite3_stmt *prepSnodeStmt = NULL;
-
     if ( trace_settings & TRACE_INIT )
     {
-        trace_printf( "%s@%d pnid=%d, name=%s, excluded cores=(%d:%d),"
-                      " spared pnid=%d\n"
+        trace_printf( "%s@%d pnid=%d, name=%s, excluded cores=(%d:%d), "
+                      "spareCount=%d\n"
                     , method_name, __LINE__
-                    , pnid
-                    , nodename
-                    , excfirstcore
-                    , exclastcore
-                    , spnid );
+                    , pnodeConfig.pnid
+                    , pnodeConfig.node_name
+                    , pnodeConfig.excluded_first_core
+                    , pnodeConfig.excluded_last_core
+                    , pnodeConfig.spare_count
+                    );
     }
 
-    currPNid_ = pnid;
-    newPNodeConfig_ = (currPNid_ != prevPNid_) ? true : false;
+    newPNodeConfig_ = (pnodeConfig.pnid != prevPNodeConfig_->GetPNid()) 
+                        ? true : false;
     if ( newPNodeConfig_ )
     {
-        strncpy( currNodename_, nodename, sizeof(currNodename_) );
-        excludedCores_ = (excfirstcore != -1 || exclastcore != -1)?true:false;
-        if ( excludedCores_ )
-        {
-            SetCoreMask( excfirstcore, exclastcore, currExcludedCoreMask_ );
-        }
-        spareIndex_ = 0;
-        memset( sparePNid_, 0, sizeof(sparePNid_) );
+        strncpy( pnodeConfigInfo.nodename
+               , pnodeConfig.node_name
+               , sizeof(pnodeConfigInfo.nodename) );
 
-        // Select all spared nodes configured for this spare node
-        selSnodeStmt = "select p.pNid, s.spNid"
-                       "  from pnode p, snode s"
-                       "    where p.pNid = s.pNid and p.pNid = ?";
-
-        rc = sqlite3_prepare_v2( db_
-                               , selSnodeStmt
-                               , strlen(selSnodeStmt)+1
-                               , &prepSnodeStmt
-                               , NULL);
-        if ( rc != SQLITE_OK )
+        bool excludedCores = (pnodeConfig.excluded_first_core != -1 || 
+                              pnodeConfig.excluded_last_core != -1)
+                                ? true : false;
+        if ( excludedCores )
         {
-            char la_buf[MON_STRING_BUF_SIZE];
-            snprintf( la_buf, sizeof(la_buf)
-                    , "[%s] prepare failed, %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            mon_log_write(MON_CLUSTERCONF_PROCESS_SNODE_1, SQ_LOG_CRIT, la_buf);
-            abort();
-        }
-        else
-        {   // Set pnid in prepared statement
-            rc = sqlite3_bind_int(prepSnodeStmt, 1, currPNid_ );
-            if ( rc != SQLITE_OK )
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                snprintf( la_buf, sizeof(la_buf),
-                          "[%s] sqlite3_bind_int failed: %s\n",
-                          method_name,  sqlite3_errmsg(db_) );
-                mon_log_write( MON_CLUSTERCONF_PROCESS_SNODE_2, SQ_LOG_CRIT, la_buf );
-                abort();
-            }
+            SetCoreMask( pnodeConfig.excluded_first_core
+                       , pnodeConfig.excluded_last_core
+                       , pnodeConfigInfo.excludedCoreMask );
         }
 
-        int  pnid;
-        int  sparedpnid;
+        memset( pnodeConfigInfo.sparePNid, 255, sizeof(pnodeConfigInfo.sparePNid) );
 
-        // Process spare nodes
-        while ( 1 )
+        pnodeConfigInfo.spareCount = pnodeConfig.spare_count;
+        for (int i = 0; i < pnodeConfigInfo.spareCount ; i++ )
         {
-            rc = sqlite3_step( prepSnodeStmt );
-            if ( rc == SQLITE_ROW )
-            {  // Process row
-                int colCount = sqlite3_column_count(prepSnodeStmt);
-                if ( trace_settings & TRACE_INIT )
-                {
-                    trace_printf("%s@%d sqlite3_column_count=%d\n",
-                                 method_name, __LINE__, colCount);
-                    for (int i=0; i<colCount; ++i)
-                    {
-                        trace_printf("%s@%d column %d is %s\n",
-                                     method_name, __LINE__, i,
-                                     sqlite3_column_name(prepSnodeStmt, i));
-                    }
-                }
-
-                pnid = sqlite3_column_int(prepSnodeStmt, 0);
-                sparedpnid = sqlite3_column_int(prepSnodeStmt, 1);
-                sparePNid_[spareIndex_] = sparedpnid;
-                spareIndex_++;
-            }
-            else if ( rc == SQLITE_DONE )
-            {
-                // Destroy prepared statement object
-                if ( prepSnodeStmt != NULL )
-                {
-                    sqlite3_finalize(prepSnodeStmt);
-                }
-
-                if ( trace_settings & TRACE_INIT )
-                {
-                    trace_printf("%s@%d Finished processing spared node set.\n",
-                                 method_name, __LINE__);
-                }
-
-                break;
-            }
-            else
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                snprintf( la_buf, sizeof(la_buf)
-                        , "[%s] Configuration database select node failed, %s\n"
-                        , method_name,  sqlite3_errmsg(db_) );
-                mon_log_write(MON_CLUSTERCONF_PROCESS_SNODE_3, SQ_LOG_CRIT, la_buf);
-                abort();
-            }
+            pnodeConfigInfo.sparePNid[i] = pnodeConfig.spare_pnid[i];
         }
     }
 
     TRACE_EXIT;
-    return( true );
 }
 
-bool CClusterConfig::ProcessPersist( void )
+void CClusterConfig::ProcessPersistInfo( persist_configuration_t &persistConfig
+                                       , persistConfigInfo_t     &persistConfigInfo )
 {
-    const char method_name[] = "CClusterConfig::ProcessPersist";
+    const char method_name[] = "CClusterConfig::ProcessPersistInfo";
     TRACE_ENTRY;
 
-    int  rc;
-    char param[MAX_PERSIST_KEY_STR];
-    const char   *persistKey;
-    const char   *persistValue;
-    const char   *selPersistStmt;
-    sqlite3_stmt *prepPersistStmt = NULL;
-
-    if ( trace_settings & TRACE_INIT )
-    {
-        trace_printf( "%s@%d processkey=%s\n"
-                    , method_name, __LINE__
-                    , persistPrefix_ );
-    }
-    
-    snprintf( param, sizeof(param), "%s_%%", persistPrefix_ );
-
-    // Prepare select persistent process for the key
-    selPersistStmt = "select p.keyName, p.valueName"
-                     " from monRegPersistData p"
-                     "  where p.keyName like ?";
-
-    rc = sqlite3_prepare_v2( db_
-                           , selPersistStmt
-                           , strlen(selPersistStmt)+1
-                           , &prepPersistStmt
-                           , NULL);
-    if ( rc != SQLITE_OK )
-    {
-        char la_buf[MON_STRING_BUF_SIZE];
-        snprintf( la_buf, sizeof(la_buf)
-                , "[%s] prepare persistent process failed, %s\n"
-                , method_name,  sqlite3_errmsg(db_) );
-        mon_log_write( MON_CLUSTERCONF_PROCESSPERSIST_1, SQ_LOG_CRIT, la_buf );
-        abort();
-    }
-    else
-    {   // Set key in prepared statement
-        rc = sqlite3_bind_text( prepPersistStmt, 1, param, -1, SQLITE_STATIC );
-        if ( rc != SQLITE_OK )
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            snprintf( la_buf, sizeof(la_buf)
-                    , "[%s] sqlite3_bind_text persistent processkey (%s) failed: %s\n"
-                    , method_name, param,  sqlite3_errmsg(db_) );
-            mon_log_write( MON_CLUSTERCONF_PROCESSPERSIST_2, SQ_LOG_CRIT, la_buf );
-            abort();
-        }
-    }
-
-    // Process each persist key value pair
-    while ( 1 )
-    {
-        rc = sqlite3_step( prepPersistStmt );
-        if ( rc == SQLITE_ROW )
-        {  // Process row
-            int colCount = sqlite3_column_count(prepPersistStmt);
-            if ( trace_settings & TRACE_INIT )
-            {
-                trace_printf("%s@%d sqlite3_column_count=%d\n",
-                             method_name, __LINE__, colCount);
-                for (int i=0; i<colCount; ++i)
-                {
-                    trace_printf("%s@%d column %d is %s\n",
-                                 method_name, __LINE__, i,
-                                 sqlite3_column_name(prepPersistStmt, i));
-                }
-            }
-
-            persistKey = (const char *) sqlite3_column_text(prepPersistStmt, 0);
-            persistValue = (const char *) sqlite3_column_text(prepPersistStmt, 1);
-
-            // Parse the value based on the key
-            if ( ! ProcessPersistData( persistKey, persistValue ) )
-            {
-                char la_buf[MON_STRING_BUF_SIZE];
-                snprintf( la_buf, sizeof(la_buf)
-                        , "[%s], Error: Invalid persist key value in "
-                          "configuration, key=%s, value=%s\n"
-                        , method_name, persistKey, persistValue );
-                mon_log_write(MON_CLUSTERCONF_PROCESSPERSIST_3, SQ_LOG_CRIT, la_buf);
-                abort();
-            }
-        }
-        else if ( rc == SQLITE_DONE )
-        {
-            // Destroy prepared statement object
-            if ( prepPersistStmt != NULL )
-            {
-                sqlite3_finalize(prepPersistStmt);
-            }
-
-            if ( trace_settings & TRACE_INIT )
-            {
-                trace_printf( "%s@%d Finished processing persistent process configuration.\n"
-                            , method_name, __LINE__);
-            }
-
-            break;
-        }
-        else
-        {
-            char la_buf[MON_STRING_BUF_SIZE];
-            snprintf( la_buf, sizeof(la_buf)
-                    , "[%s] Configuration database select persistent process failed, %s\n"
-                    , method_name,  sqlite3_errmsg(db_) );
-            mon_log_write(MON_CLUSTERCONF_PROCESSPERSIST_4, SQ_LOG_CRIT, la_buf);
-            abort();
-        }
-    }
-
-    TRACE_EXIT;
-    return( true );
-}
-
-bool CClusterConfig::ProcessPersistData( const char *persistkey
-                                       , const char *persistvalue )
-{
-    const char method_name[] = "CClusterConfig::ProcessPersistData";
-    TRACE_ENTRY;
-
-    char workValue[MAX_PERSIST_KEY_STR];
-    char *pch;
+    char workValue[TC_PERSIST_VALUE_MAX];
     char *token1;
     char *token2;
-    static const char *delimNone = "\0";
-    static const char *delimComma = ",";
     static const char *delimPercent = "%";
     static int chPercent = '%';
 
     if ( trace_settings & TRACE_INIT )
     {
-        trace_printf( "%s@%d persistKey=%s, persistValue=%s\n"
+        trace_printf( "%s@%d Processing persist info for persistKey=%s\n"
                     , method_name, __LINE__
-                    , persistkey, persistvalue );
+                    , persistConfig.persist_prefix );
     }
     
-    strncpy( workValue, persistvalue, sizeof(workValue) );
-    
-    pch = (char *) strstr( persistkey, PERSIST_PROCESS_NAME_KEY );
-    if (pch != NULL)
+    strncpy( persistConfigInfo.persistPrefix
+           , persistConfig.persist_prefix
+           , sizeof(persistConfigInfo.persistPrefix) );
+
+    strncpy( workValue, persistConfig.process_name, sizeof(workValue) );
+    if (strlen(workValue))
     {
         // Extract name prefix
         token1 = strtok( workValue, delimPercent );
         if (token1)
         {
-            strncpy( processNamePrefix_, token1, sizeof(processNamePrefix_) );
+            strncpy( persistConfigInfo.processNamePrefix
+                   , token1
+                   , sizeof(persistConfigInfo.processNamePrefix) );
         }
         // Extract nid format
-        strncpy( workValue, persistvalue, sizeof(workValue) );
+        strncpy( workValue, persistConfig.process_name, sizeof(workValue) );
         token2 = strchr( workValue, chPercent );
         if (token2)
         {
-            strncpy( processNameFormat_, token2, sizeof(processNameFormat_) );
+            strncpy( persistConfigInfo.processNameFormat
+                   , token2
+                   , sizeof(persistConfigInfo.processNameFormat) );
         }
-        goto done;
     }
-    pch = (char *) strstr( persistkey, PERSIST_PROCESS_TYPE_KEY );
-    if (pch != NULL)
-    {
-        // Set process type
-        processType_ = GetProcessType( workValue );
-        goto done;
-    }
-    pch = (char *) strstr( persistkey, PERSIST_PROGRAM_NAME_KEY );
-    if (pch != NULL)
-    {
-        // Save program name
-        strncpy( programName_, workValue, sizeof(programName_) );
-        goto done;
-    }
-    pch = (char *) strstr( persistkey, PERSIST_REQUIRES_DTM );
-    if (pch != NULL)
-    {
-        // Set flag
-        requiresDTM_ = (strcasecmp(workValue,"Y") == 0) ? true : false;
-        goto done;
-    }
-    pch = (char *) strstr( persistkey, PERSIST_STDOUT_KEY );
-    if (pch != NULL)
+
+    persistConfigInfo.processType = GetProcessType( persistConfig.process_type );
+
+    strncpy( persistConfigInfo.programName
+           , persistConfig.program_name
+           , sizeof(persistConfigInfo.programName) );
+
+    persistConfigInfo.requiresDTM = persistConfig.requires_DTM;
+
+    strncpy( workValue, persistConfig.std_out, sizeof(workValue) );
+    if (strlen(workValue))
     {
         // Extract name prefix
         token1 = strtok( workValue, delimPercent );
         if (token1)
         {
-            strncpy( stdoutPrefix_, token1, sizeof(stdoutPrefix_) );
+            strncpy( persistConfigInfo.stdoutPrefix
+                   , token1
+                   , sizeof(persistConfigInfo.stdoutPrefix) );
         }
         // Extract nid format
-        strncpy( workValue, persistvalue, sizeof(workValue) );
+        strncpy( workValue, persistConfig.std_out, sizeof(workValue) );
         token2 = strchr( workValue, chPercent );
         if (token2)
         {
-            strncpy( stdoutFormat_, token2, sizeof(stdoutFormat_) );
+            strncpy( persistConfigInfo.stdoutFormat
+                   , token2
+                   , sizeof(persistConfigInfo.stdoutFormat) );
         }
-        goto done;
     }
-    pch = (char *) strstr( persistkey, PERSIST_RETRIES_KEY );
-    if (pch != NULL)
-    {
-        // Set retries
-        token1 = strtok( workValue, delimComma );
-        if (token1)
-        {
-            persistRetries_ = atoi(token1);
-        }
-        // Set time window
-        token2 = strtok( NULL, delimNone );
-        if (token2)
-        {
-            persistWindow_ = atoi(token2);
-        }
-        goto done;
-    }
-    pch = (char *) strstr( persistkey, PERSIST_ZONES_KEY );
-    if (pch != NULL)
-    {
-        // Extract zid format
-        strncpy( zoneFormat_, workValue, sizeof(zoneFormat_) );
-        goto done;
-    }
-    else
-    {
-        TRACE_EXIT;
-        return( false );
-    }
+    
+    persistConfigInfo.persistRetries = persistConfig.persist_retries;
 
-done:
+    persistConfigInfo.persistWindow = persistConfig.persist_window;
 
-    if ( trace_settings & TRACE_INIT )
-    {
-        trace_printf( "%s@%d pch=%s\n", method_name, __LINE__, pch);
-    }
+    strncpy( persistConfigInfo.zoneFormat
+           , persistConfig.persist_zones
+           , sizeof(persistConfigInfo.zoneFormat) );
 
     TRACE_EXIT;
-    return( true );
 }
 
 bool CClusterConfig::SaveNodeConfig( const char *name
@@ -1396,6 +702,10 @@ bool CClusterConfig::SaveNodeConfig( const char *name
     TRACE_ENTRY;
 
     bool rs = true;
+    int  rc;
+    node_configuration_t        nodeConfig;
+    pnodeConfigInfo_t           pnodeConfigInfo;
+    lnodeConfigInfo_t           lnodeConfigInfo;
 
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
@@ -1411,232 +721,33 @@ bool CClusterConfig::SaveNodeConfig( const char *name
                      , excludedFirstCore
                      , excludedLastCore );
     }
-
-    prevNid_ = -1;
-    prevPNid_ = -1;
-
+    
+    nodeConfig.nid  = nid;
+    nodeConfig.pnid = pnid;
+    strncpy( nodeConfig.node_name, name, sizeof(nodeConfig.node_name) );
+    nodeConfig.excluded_first_core = excludedFirstCore;
+    nodeConfig.excluded_last_core  = excludedLastCore;
+    nodeConfig.first_core = firstCore;
+    nodeConfig.last_core  = lastCore;
+    nodeConfig.processors = processors;
+    nodeConfig.roles      = roles;
+    
     // Insert data into pnode and lnode tables
-    if (SaveDbPNodeData( name
-                       , pnid
-                       , excludedFirstCore
-                       , excludedLastCore ))
+    rc = tc_put_node( &nodeConfig );
+    if ( rc == 0 )
     {
-        if (SaveDbLNodeData( nid
-                           , pnid
-                           , firstCore
-                           , lastCore
-                           , processors
-                           , roles ))
-        
-        {
-            // Pre-process the Node configuration attributes
-            ProcessLNode( nid
-                        , pnid
-                        , name
-                        , excludedFirstCore
-                        , excludedLastCore
-                        , firstCore
-                        , lastCore
-                        , processors
-                        , roles );
-
-            // Add new logical and physical nodes to configuration objects
-            AddNodeConfiguration( false );
-        }
-        else
-        {
-            rs = false;
-        }
+        ProcessLNode( nodeConfig, pnodeConfigInfo, lnodeConfigInfo );
+        // Add new logical and physical nodes to configuration objects
+        AddNodeConfiguration( pnodeConfigInfo, lnodeConfigInfo );
     }
     else
     {
         rs = false;
         char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] Node delete failed, pnid=%d\n",
+        snprintf( buf, sizeof(buf), "[%s] Node add failed, pnid=%d\n",
                   method_name,  pnid );
         mon_log_write( MON_CLUSTERCONF_SAVENODE_1, SQ_LOG_ERR, buf );
     }
-
-    TRACE_EXIT;
-    return( rs );
-}
-
-bool CClusterConfig::SaveDbLNodeData( int         nid
-                                    , int         pnid
-                                    , int         firstCore
-                                    , int         lastCore
-                                    , int         processors
-                                    , int         roles )
-{
-    const char method_name[] = "CClusterConfig::SaveDbLNodeData";
-    TRACE_ENTRY;
-
-    bool rs = true;
-
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return( false );
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-    {
-        trace_printf( "%s@%d inserting into lnode values (lNid=%d, pNid=%d, "
-                      "processors=%d, roles=%d, firstCore=%d, lastCore=%d)\n"
-                     , method_name, __LINE__
-                     , nid
-                     , pnid
-                     , processors
-                     , roles
-                     , firstCore
-                     , lastCore );
-    }
-
-    int rc;
-    const char *sqlStmt;
-    sqlStmt = "insert into lnode values (?, ?, ?, ?, ?, ?)";
-
-    sqlite3_stmt *prepStmt = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
-    if ( rc != SQLITE_OK )
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
-        rs = false;
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_CLUSTERCONF_SAVELNODE_1, SQ_LOG_ERR, buf );
-    }
-    else
-    {
-        sqlite3_bind_int( prepStmt, 1, nid );
-        sqlite3_bind_int( prepStmt, 2, pnid );
-        sqlite3_bind_int( prepStmt, 3, processors );
-        sqlite3_bind_int( prepStmt, 4, roles );
-        sqlite3_bind_int( prepStmt, 5, firstCore );
-        sqlite3_bind_int( prepStmt, 6, lastCore );
-
-        rc = sqlite3_step( prepStmt );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            rs = false;
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] inserting into lnode values "
-                      "(lNid=%d, pNid=%d, processors=%d, roles=%d, "
-                      "firstCore=%d, lastCore=%d) "
-                      "failed, error=%s (%d)\n"
-                    , method_name
-                    , nid
-                    , pnid
-                    , processors
-                    , roles
-                    , firstCore
-                    , lastCore
-                    , sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_CLUSTERCONF_SAVELNODE_2, SQ_LOG_ERR, buf );
-        }
-    }
-
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
-
-    TRACE_EXIT;
-    return( rs );
-}
-
-bool CClusterConfig::SaveDbPNodeData( const char *name
-                                    , int         pnid
-                                    , int         excludedFirstCore
-                                    , int         excludedLastCore )
-{
-    const char method_name[] = "CClusterConfig::SaveDbPNodeData";
-    TRACE_ENTRY;
-
-    bool rs = true;
-
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return( false );
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-    {
-        trace_printf( "%s@%d inserting into pnode values (pNid=%d, "
-                      "nodeName=%s, excFirstCore=%d, excLastCore=%d)\n"
-                     , method_name, __LINE__
-                     , pnid
-                     , name
-                     , excludedFirstCore
-                     , excludedLastCore );
-    }
-
-    int rc;
-    const char *sqlStmt;
-    sqlStmt = "insert into pnode values (?, ?, ?, ?)";
-
-    sqlite3_stmt *prepStmt = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
-    if ( rc != SQLITE_OK )
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
-        rs = false;
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_CLUSTERCONF_SAVEPNODE_1, SQ_LOG_ERR, buf );
-    }
-    else
-    {
-        sqlite3_bind_int( prepStmt, 1, pnid );
-        sqlite3_bind_text( prepStmt, 2, name, -1, SQLITE_STATIC );
-        sqlite3_bind_int( prepStmt, 3, excludedFirstCore );
-        sqlite3_bind_int( prepStmt, 4, excludedLastCore );
-
-        rc = sqlite3_step( prepStmt );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            rs = false;
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] inserting into "
-                      "pnode (pNid=%d, nodeName=%s, excFirstCore=%d, excLastCore=%d) "
-                      "failed, error=%s (%d)\n"
-                    , method_name
-                    , pnid
-                    , name
-                    , excludedFirstCore
-                    , excludedLastCore
-                    , sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_CLUSTERCONF_SAVEPNODE_2, SQ_LOG_ERR, buf );
-        }
-    }
-
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
 
     TRACE_EXIT;
     return( rs );
@@ -1662,6 +773,8 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
     TRACE_ENTRY;
 
     bool rs = true;
+    int  rc;
+    physical_node_configuration_t pnodeConfig;
 
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
@@ -1675,11 +788,15 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
                      , excludedLastCore );
     }
 
+    memset( &pnodeConfig, 0, sizeof(physical_node_configuration_t) );
+    pnodeConfig.pnid = pnid;
+    strncpy( pnodeConfig.node_name, name, sizeof(pnodeConfig.node_name) );
+    pnodeConfig.excluded_first_core = excludedFirstCore;
+    pnodeConfig.excluded_last_core  = excludedLastCore;
+    
     // Update pnode table
-    if (UpdateDbPNodeData( pnid
-                         , name
-                         , excludedFirstCore
-                         , excludedLastCore ))
+    rc = tc_put_pnode( &pnodeConfig );
+    if ( rc == 0 )
     {
         // Update physical node to configuration object
         UpdatePNodeConfiguration( pnid
@@ -1696,104 +813,6 @@ bool CClusterConfig::UpdatePNodeConfig( int         pnid
                 , method_name,  pnid, name );
         mon_log_write( MON_CLUSTERCONF_UPDATEPNODECFG_1, SQ_LOG_ERR, buf );
     }
-
-    TRACE_EXIT;
-    return( rs );
-}
-
-bool CClusterConfig::UpdateDbPNodeData( int         pnid
-                                      , const char *name
-                                      , int         excludedFirstCore
-                                      , int         excludedLastCore )
-{
-    const char method_name[] = "CClusterConfig::UpdateDbPNodeData";
-    TRACE_ENTRY;
-
-    bool rs = true;
-
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return( false );
-    }
-
-    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-    {
-        trace_printf( "%s@%d update pnode "
-                      "nodeName=%s, excFirstCore=%d, excLastCore=%d\n"
-                      "where pnid=%d)\n"
-                     , method_name, __LINE__
-                     , name
-                     , excludedFirstCore
-                     , excludedLastCore
-                     , pnid );
-    }
-
-    int rc;
-    const char *sqlStmt;
-    sqlStmt = "update or replace pnode "
-              " set nodeName = ?, excFirstCore = ?, excLastCore = ?"
-              "   where pnode.pNid = :pNid";
-
-    sqlite3_stmt *prepStmt = NULL;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt, NULL);
-    if ( rc != SQLITE_OK )
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
-        rs = false;
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_CLUSTERCONF_UPDATEDBPNODE_1, SQ_LOG_ERR, buf );
-    }
-    else
-    {
-        sqlite3_bind_text( prepStmt, 
-                           1, 
-                           name, -1, SQLITE_STATIC );
-        sqlite3_bind_int( prepStmt, 
-                          2,
-                          excludedFirstCore );
-        sqlite3_bind_int( prepStmt,
-                          3, 
-                          excludedLastCore );
-        sqlite3_bind_int( prepStmt,
-                          sqlite3_bind_parameter_index( prepStmt, ":pNid" ),
-                          pnid );
-
-        rc = sqlite3_step( prepStmt );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW )
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            rs = false;
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] update pnode"
-                      " (nodeName=%s, excFirstCore=%d, excLastCore=%d) "
-                      " where pNid=%d " 
-                      "failed, error=%s (%d)\n"
-                    , method_name
-                    , name
-                    , excludedFirstCore
-                    , excludedLastCore
-                    , pnid
-                    , sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_CLUSTERCONF_UPDATEDBPNODE_2, SQ_LOG_ERR, buf );
-        }
-    }
-
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
 
     TRACE_EXIT;
     return( rs );

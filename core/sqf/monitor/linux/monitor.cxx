@@ -121,7 +121,6 @@ CDeviceContainer *Devices = NULL;
 int MyPNID = -1;
 CNode *MyNode;
 CMonLog *MonLog =  NULL;
-CMonLog *SnmpLog =  NULL;
 CMonStats * MonStats = NULL;
 extern CMonTrace *MonTrace;
 CRedirector Redirector;
@@ -962,7 +961,6 @@ int main (int argc, char *argv[])
 
     const char method_name[] = "main";
 
-    SnmpLog = new CMonLog( "log4cxx.monitor.mon.snmp.config", "MON-SNMP", "alt.mon.snmp", -1, -1, getpid(), "$MONITOR" );
     MonLog = new CMonLog( "log4cxx.monitor.mon.config", "MON", "alt.mon", -1, -1, getpid(), "$MONITOR" );
 
     MonLog->setupInMemoryLog();
@@ -1082,7 +1080,6 @@ int main (int argc, char *argv[])
     MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyPNID);
     MonLog->setPNid( MyPNID );
-    SnmpLog->setPNid( MyPNID );
 
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
     char *tmpptr = Node_name;

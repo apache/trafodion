@@ -46,15 +46,12 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////////
 
 CPNodeConfig::CPNodeConfig( CPNodeConfigContainer *pnodesConfig
-                          , int                    pnid
-                          , int                    excludedLastCore
-                          , int                    excludedFirstCore
-                          , const char            *hostname
+                          , pnodeConfigInfo_t &pnodeConfigInfo
                           )
             : pnodesConfig_(pnodesConfig)
-            , pnid_(pnid)
-            , excludedFirstCore_(excludedFirstCore)
-            , excludedLastCore_(excludedLastCore)
+            , pnid_(pnodeConfigInfo.pnid)
+            , excludedFirstCore_(pnodeConfigInfo.excludedFirstCore)
+            , excludedLastCore_(pnodeConfigInfo.excludedLastCore)
             , spareNode_(false)
             , sparePNids_(NULL)
             , sparePNidsCount_(0)
@@ -64,11 +61,7 @@ CPNodeConfig::CPNodeConfig( CPNodeConfigContainer *pnodesConfig
     const char method_name[] = "CPNodeConfig::CPNodeConfig";
     TRACE_ENTRY;
 
-    int len = strlen( hostname );
-    assert( len <= MPI_MAX_PROCESSOR_NAME );
-
-    strcpy( name_, hostname );
-
+    strcpy( name_, pnodeConfigInfo.nodename );
     CPU_ZERO( &excludedCoreMask_ );
 
     TRACE_EXIT;
@@ -263,35 +256,27 @@ void CPNodeConfigContainer::Clear( void )
     TRACE_EXIT;
 }
 
-CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
-                                                   , char *name
-                                                   , int   excludedFirstCore
-                                                   , int   excludedLastCore
-                                                   , bool  spare
-                                                   )
+CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( pnodeConfigInfo_t &pnodeConfigInfo )
 {
     const char method_name[] = "CPNodeConfigContainer::AddPNodeConfig";
     TRACE_ENTRY;
 
     // pnid list is NOT sequential from zero
-    if ( ! (pnid >= 0 && pnid < pnodesConfigMax_) )
+    if ( ! (pnodeConfigInfo.pnid >= 0 && pnodeConfigInfo.pnid < pnodesConfigMax_) )
     {
         char la_buf[MON_STRING_BUF_SIZE];
-        sprintf(la_buf, "[%s], Error: Invalid pnid=%d - should be >= 0 and < %d)\n", method_name, pnid, pnodesConfigMax_);
+        sprintf( la_buf, "[%s], Error: Invalid pnid=%d - should be >= 0 and < %d)\n"
+               , method_name, pnodeConfigInfo.pnid, pnodesConfigMax_);
         mon_log_write(MON_PNODECONF_ADD_PNODE_1, SQ_LOG_CRIT, la_buf);
         return( NULL );
     }
 
-    assert( pnodesConfig_[pnid] == NULL );
+    assert( pnodesConfig_[pnodeConfigInfo.pnid] == NULL );
 
-    CPNodeConfig *pnodeConfig = new CPNodeConfig( this
-                                                , pnid
-                                                , excludedFirstCore
-                                                , excludedLastCore
-                                                , name );
+    CPNodeConfig *pnodeConfig = new CPNodeConfig( this, pnodeConfigInfo );
     if (pnodeConfig)
     {
-        if ( spare )
+        if ( pnodeConfigInfo.spareCount )
         {
             snodesCount_++;
             spareNodesConfigList_.push_back( pnodeConfig );
@@ -300,7 +285,7 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
         // Bump the physical node count
         pnodesCount_++;
         // Add it to the array
-        pnodesConfig_[pnid] = pnodeConfig;
+        pnodesConfig_[pnodeConfigInfo.pnid] = pnodeConfig;
         // Add it to the container list
         if ( head_ == NULL )
         {
@@ -314,7 +299,7 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
         }
 
         // Set the next available pnid
-        nextPNid_ = (pnid == nextPNid_) ? (pnid+1) : nextPNid_ ;
+        nextPNid_ = (pnodeConfigInfo.pnid == nextPNid_) ? (pnodeConfigInfo.pnid+1) : nextPNid_ ;
         if ( nextPNid_ == pnodesConfigMax_ )
         {   // We are at the limit, search for unused pnid from begining
             nextPNid_ = -1;
@@ -347,7 +332,7 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
                           "        (pnid=%d, nextPNid_=%d)\n"
                           "        (pnodesCount_=%d,pnodesConfigMax=%d)\n"
                         , method_name, __LINE__
-                        , pnid, nextPNid_
+                        , pnodeConfigInfo.pnid, nextPNid_
                         , pnodesCount_, pnodesConfigMax_);
         }
     }
@@ -355,7 +340,8 @@ CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
     {
         int err = errno;
         char la_buf[MON_STRING_BUF_SIZE];
-        sprintf(la_buf, "[%s], Error: Can't allocate physical node configuration object - errno=%d (%s)\n", method_name, err, strerror(errno));
+        sprintf( la_buf, "[%s], Error: Can't allocate physical node configuration object - errno=%d (%s)\n"
+               , method_name, err, strerror(errno));
         mon_log_write(MON_PNODECONF_ADD_PNODE_2, SQ_LOG_ERR, la_buf);
     }
 

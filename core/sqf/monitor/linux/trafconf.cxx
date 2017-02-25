@@ -137,8 +137,10 @@ void DisplayUsage( void )
 "          -wname       Displays all node names in configuration prefixed with '-w'\n"
 "                        - Name is as stored in configuration, which could be in short host name or FQDN form.\n"
 "          -wshort      Displays all node names in configuration short host name form prefixed with '-w'.\n"
-"          -node        Displays node configuration (bracketed with begin/end).\n"
-"          -persist     Displays persist configuration (bracketed with begin/end).\n\n"
+"          -node        Displays node configuration (without begin/end brackets).\n"
+"          -persist     Displays persist configuration (without begin/end brackets).\n\n"
+"          --node       Displays node configuration (with begin/end brackets).\n"
+"          --persist    Displays persist configuration (with begin/end brackets).\n\n"
            );
 }
 
@@ -270,7 +272,7 @@ int DisplayNodeConfig( char *nodeName )
 
     if ( DisplayBeginEnd && TrafConfType == TrafConfType_NodeConfig )
     {
-        printf( "begin node\n\n" );
+        printf( "BEGIN NODE\n\n" );
     }
     else if ( TrafConfType == TrafConfType_NodeConfig )
     {
@@ -310,7 +312,7 @@ int DisplayNodeConfig( char *nodeName )
 
     if ( DisplayBeginEnd && TrafConfType == TrafConfType_NodeConfig )
     {
-        printf( "\nend node\n" );
+        printf( "\nEND NODE\n" );
     }
     else if ( TrafConfType == TrafConfType_NodeConfig )
     {
@@ -343,6 +345,7 @@ int DisplayPersistKeys( void )
             {
                 strcat( persist_config_str, "," );
             }
+            rc   = 0;
         }
         printf ("%s\n\n", persist_config_str);
     }
@@ -375,7 +378,7 @@ int DisplayPersistConfig( char *key )
 
     if ( DisplayBeginEnd )
     {
-        printf( "begin persist\n\n" );
+        printf( "BEGIN PERSIST\n\n" );
     }
     else
     {
@@ -464,6 +467,7 @@ int DisplayPersistConfig( char *key )
                 {
                     printf ("%s", persist_config_buf);
                 }
+                rc   = 0;
             }
         }
     }
@@ -474,7 +478,7 @@ int DisplayPersistConfig( char *key )
 
     if ( DisplayBeginEnd )
     {
-        printf( "\nend persist\n" );
+        printf( "\nEND PERSIST\n" );
     }
     else
     {
@@ -567,6 +571,16 @@ int main( int argc, char *argv[] )
         }
         else if ( strcasecmp( argv [argx], "-persist" ) == 0 )
         {
+            TrafConfType = TrafConfType_PersistConfig;
+        }
+        else if ( strcasecmp( argv [argx], "--node" ) == 0 )
+        {
+            DisplayBeginEnd = true;
+            TrafConfType = TrafConfType_NodeConfig;
+        }
+        else if ( strcasecmp( argv [argx], "--persist" ) == 0 )
+        {
+            DisplayBeginEnd = true;
             TrafConfType = TrafConfType_PersistConfig;
         }
         else

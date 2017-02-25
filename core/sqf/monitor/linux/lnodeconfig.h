@@ -26,6 +26,19 @@
 #ifndef LNODECONFIG_H_
 #define LNODECONFIG_H_
 
+typedef struct lnodeConfigInfo_s
+{
+    int        nid;
+    int        pnid;
+    char       nodename[MPI_MAX_PROCESSOR_NAME];
+    int        firstCore;
+    int        lastCore;
+    cpu_set_t  coreMask;
+    int        processor;
+    ZoneType   zoneType;
+} lnodeConfigInfo_t;
+
+
 class CLNodeConfig;
 class CPNodeConfig;
 
@@ -35,15 +48,8 @@ public:
     CLNodeConfigContainer( void );
     CLNodeConfigContainer( int lnodesConfigMax );
     ~CLNodeConfigContainer( void );
-
     CLNodeConfig *AddLNodeConfig( CPNodeConfig *pnodeConfig
-                                , int           nid
-                                , cpu_set_t    &coreMask 
-                                , int           firstCore
-                                , int           lastCore
-                                , int           processors
-                                , ZoneType      zoneType
-                                );
+                                , lnodeConfigInfo_t &lnodeConfigInfo );
     CLNodeConfig *AddLNodeConfigP( CLNodeConfig *lnodeConfig );
     void          Clear( void );
     void          DeleteLNodeConfig( CLNodeConfig *lnodeConfig );
@@ -69,24 +75,13 @@ private:
 class CLNodeConfig
 {
     friend CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
-                                                              , int           nid
-                                                              , cpu_set_t    &coreMask 
-                                                              , int           firstCore
-                                                              , int           lastCore
-                                                              , int           processors
-                                                              , ZoneType      zoneType
-                                                              );
+                                                              , lnodeConfigInfo_t &lnodeConfigInfo );
     friend CLNodeConfig *CLNodeConfigContainer::AddLNodeConfigP( CLNodeConfig *lnodeConfig );
     friend void CLNodeConfigContainer::DeleteLNodeConfig( CLNodeConfig *lnodeConfig );
     friend void CLNodeConfigContainer::RemoveLNodeConfigP( CLNodeConfig *lnodeConfig );
 public:
     CLNodeConfig( CPNodeConfig *pnodeConfig
-                , int           nid
-                , cpu_set_t    &coreMask 
-                , int           firstCore
-                , int           lastCore
-                , int           processors
-                , ZoneType      zoneType
+                , lnodeConfigInfo_t &lnodeConfigInfo
                 );
     ~CLNodeConfig( void );
 

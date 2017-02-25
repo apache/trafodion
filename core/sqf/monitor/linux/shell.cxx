@@ -616,7 +616,7 @@ void TraceOpen ( void )
     // Initialize tracing
     trace_init(traceFileName,
                false,  // don't append pid to file name
-               NULL,  // prefix
+               "shell",  // prefix
                false);
     if (traceFileFb > 0)
     {
@@ -634,6 +634,7 @@ void TraceUpdate ( int flags )
     if ( flags & 2 )
     {
         trace_settings |= TRACE_INIT;
+        trace_settings |= TRACE_TRAFCONFIG;
     }
     if ( flags & 4 )
     {
@@ -696,6 +697,7 @@ void TraceInit( int & argc, char **&argv )
     if (envVar && atoi (envVar) != 0 )
     {
         trace_settings |= TRACE_INIT;
+        trace_settings |= TRACE_TRAFCONFIG;
     }
 
     envVar = getenv("SHELL_TRACE_LIO");
@@ -739,7 +741,7 @@ void TraceInit( int & argc, char **&argv )
         }
     }
 
-    if ( trace_settings & TRACE_SHELL_CMD)
+    if ( trace_settings & TRACE_SHELL_CMD )
     {
         printf("traceFileName=%s, trace_settings=%lX, traceFileFb=%d\n",
                traceFileName, trace_settings, traceFileFb);

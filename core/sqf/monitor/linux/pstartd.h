@@ -35,7 +35,7 @@ using namespace std;
 
 #include "msgdef.h"
 #include "lock.h"
-#include <sqlite3.h>
+#include "trafconfig.h"
 
 class CMonUtil
 {
@@ -141,8 +141,8 @@ class CPStartD : public CLock
     void waitForEvent( void ) ;
 
     void startProcess( const char *pName
-                     , string prefix
-                     , map<string, string> *persistMap );
+                     , const char *prefix
+                     , persist_configuration_t &persistConfig );
 
     void startProcs ( int nid, bool requiresDTM );
 
@@ -158,7 +158,7 @@ class CPStartD : public CLock
 
     list<CRequest *>  workQ_;
 
-    sqlite3      *db_;
+    bool            trafConfigInitialized_;
 };
 
 #endif

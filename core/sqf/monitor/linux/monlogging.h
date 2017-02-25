@@ -50,9 +50,6 @@ void mem_log_write(int eventType, int value1 = 0, int value2 = 0);
 // Used by monitor primitive processes
 int monproc_log_write(int event_type, posix_sqlog_severity_t severity, char *evl_buf);
 
-// Used by monitor and SQWatchdog process
-int snmp_log_write(int event_type, char *evl_buf);
-
 // header of the memory log buffer
 typedef struct memLogHeader
 {
@@ -91,8 +88,6 @@ public:
     void writeMonLog(int eventType, posix_sqlog_severity_t severity, char *msg);
 
     void writeMonProcLog(int eventType, posix_sqlog_severity_t severity, char *msg);
-
-    void writeSnmpAltLog(int event_type, const char *msg);
 
     inline int getLogFileNum() { return logFileNum_; }
 

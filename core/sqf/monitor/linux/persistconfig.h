@@ -26,6 +26,8 @@
 #include <string>
 #include <vector>
 #include "msgdef.h"
+#include "trafconfig.h"
+
 using namespace std;
 
 #define TOKEN_NID       "%nid"
@@ -49,6 +51,23 @@ typedef enum
    //, Zid_SET        // %zid[n,...] future?
 } FormatZid_t; 
 
+typedef vector<string>  pkeysVector_t;
+
+typedef struct persistConfigInfo_s
+{
+    char            persistPrefix[TC_PERSIST_KEY_MAX];
+    char            processNamePrefix[TC_PERSIST_VALUE_MAX];
+    char            processNameFormat[TC_PERSIST_VALUE_MAX];
+    char            stdoutPrefix[TC_PERSIST_VALUE_MAX];
+    char            stdoutFormat[TC_PERSIST_VALUE_MAX];
+    char            programName[TC_PERSIST_VALUE_MAX];
+    char            zoneFormat[TC_PERSIST_VALUE_MAX];
+    PROCESSTYPE     processType;
+    bool            requiresDTM;
+    int             persistRetries;
+    int             persistWindow;
+} persistConfigInfo_t;
+
 class CPersistConfig;
 
 class CPersistConfigContainer
@@ -57,18 +76,7 @@ public:
     CPersistConfigContainer( void );
     ~CPersistConfigContainer( void );
 
-    CPersistConfig *AddPersistConfig( const char  *persistPrefix
-                                    , const char  *processNamePrefix
-                                    , const char  *processNameFormat
-                                    , const char  *stdoutPrefix
-                                    , const char  *stdoutFormat
-                                    , const char  *programName
-                                    , const char  *zidFormat
-                                    , PROCESSTYPE  processType
-                                    , bool         requiresDTM
-                                    , int          persistRetries
-                                    , int          persistWindow
-                                    );
+    CPersistConfig *AddPersistConfig( persistConfigInfo_t &persistConfigInfo );
     void          Clear( void );
     void          DeletePersistConfig( CPersistConfig *persistConfig );
     inline CPersistConfig *GetFirstPersistConfig( void ) { return ( head_ ); }
@@ -79,11 +87,12 @@ public:
     inline int    GetPersistConfigCount( void ) { return ( persistsCount_ ); }
 
 protected:
-    void  InitializePersistKeys( char *persistkeys );
+    void  InitializePersistKeys( char *persistkeys 
+                               , pkeysVector_t &pkeysVector );
     int   GetPersistKeysCount( void ) { return ( pkeysVector_.size() ); }
 
     int             persistsCount_; // # of persistent configuration object
-    vector<string>  pkeysVector_;   // vector of persist keys
+    pkeysVector_t   pkeysVector_;   // vector of persist keys
 
 private:
     CPersistConfig  *head_;  // head of persist configuration linked list
@@ -92,32 +101,10 @@ private:
 
 class CPersistConfig
 {
-    friend CPersistConfig *CPersistConfigContainer::AddPersistConfig( const char  *persistPrefix
-                                                                    , const char  *processNamePrefix
-                                                                    , const char  *processNameFormat
-                                                                    , const char  *stdoutPrefix
-                                                                    , const char  *stdoutFormat
-                                                                    , const char  *programName
-                                                                    , const char  *zidFormat
-                                                                    , PROCESSTYPE  processType
-                                                                    , bool         requiresDTM
-                                                                    , int          persistRetries
-                                                                    , int          persistWindow
-                                                                    );
+    friend CPersistConfig *CPersistConfigContainer::AddPersistConfig( persistConfigInfo_t &persistConfigInfo );
     friend void CPersistConfigContainer::DeletePersistConfig( CPersistConfig *persistConfig );
 public:
-    CPersistConfig( const char  *persistPrefix
-                  , const char  *processNamePrefix
-                  , const char  *processNameFormat
-                  , const char  *stdoutPrefix
-                  , const char  *stdoutFormat
-                  , const char  *programName
-                  , const char  *zidFormat
-                  , PROCESSTYPE  processType
-                  , bool         requiresDTM
-                  , int          persistRetries
-                  , int          persistWindow
-                  );
+    CPersistConfig( persistConfigInfo_t &persistConfigInfo );
     ~CPersistConfig( void );
 
     inline CPersistConfig *GetNext( void ){ return( next_); }

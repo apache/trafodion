@@ -40,7 +40,7 @@ void genSnmpTrap ( const char *event )
        trace_printf( "%s@%d - snmptrap(%d): %s\n"
                    , method_name, __LINE__, genSnmpTrapEnabled, event);
 
-    snmp_log_write( MON_GEN_SNMP_TRAP, (char *)event );
+    mon_log_write( MON_GEN_SNMP_TRAP, SQ_LOG_CRIT, (char *)event );
 
     if ( genSnmpTrapEnabled )
     {

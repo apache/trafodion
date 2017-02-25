@@ -74,6 +74,8 @@ void CExtNodeAddReq::performRequest()
     TRACE_ENTRY;
 
     int             rc = MPI_SUCCESS;
+    pnodeConfigInfo_t pnodeConfigInfo;
+    lnodeConfigInfo_t lnodeConfigInfo;
     CClusterConfig *clusterConfig = NULL;
     CLNodeConfig   *lnodeConfig = NULL;
     CPNodeConfig   *pnodeConfig = NULL; 
@@ -107,25 +109,37 @@ void CExtNodeAddReq::performRequest()
                 pnodeConfig = clusterConfig->GetPNodeConfig( msg_->u.request.u.node_add.node_name );
                 if (!pnodeConfig)
                 {
+                    pnodeConfigInfo.pnid = -1;
+                    strncpy( pnodeConfigInfo.nodename
+                           , msg_->u.request.u.node_add.node_name
+                           , sizeof(pnodeConfigInfo.nodename) );
+                    pnodeConfigInfo.excludedFirstCore = -1;
+                    pnodeConfigInfo.excludedLastCore = -1;
+                    clusterConfig->SetCoreMask( pnodeConfigInfo.excludedFirstCore
+                                              , pnodeConfigInfo.excludedLastCore
+                                              , pnodeConfigInfo.excludedCoreMask );
+                    pnodeConfigInfo.spareCount = 0;
+                    memset( pnodeConfigInfo.sparePNid
+                          , -1
+                          , sizeof(pnodeConfigInfo.sparePNid) );
                     pnodeConfig = new CPNodeConfig( NULL  // pnodesConfig
-                                                  , -1    // pnid
-                                                  , -1    // excludedFirstCore
-                                                  , -1    // excludedLastCore
-                                                  , msg_->u.request.u.node_add.node_name
-                                                  );
+                                                  , pnodeConfigInfo );
                     if (pnodeConfig)
                     {
-                        clusterConfig->SetCoreMask( msg_->u.request.u.node_add.first_core
-                                                  , msg_->u.request.u.node_add.last_core
-                                                  , coreMask );
+                        lnodeConfigInfo.nid = -1;
+                        lnodeConfigInfo.pnid = -1;
+                        strncpy( lnodeConfigInfo.nodename
+                               , msg_->u.request.u.node_add.node_name
+                               , sizeof(lnodeConfigInfo.nodename) );
+                        lnodeConfigInfo.lastCore  = msg_->u.request.u.node_add.first_core;
+                        lnodeConfigInfo.firstCore = msg_->u.request.u.node_add.last_core;
+                        lnodeConfigInfo.processor = msg_->u.request.u.node_add.processors;
+                        clusterConfig->SetCoreMask( lnodeConfigInfo.lastCore
+                                                  , lnodeConfigInfo.firstCore
+                                                  , lnodeConfigInfo.coreMask );
+                        lnodeConfigInfo.zoneType  = (ZoneType)msg_->u.request.u.node_add.roles;
                         lnodeConfig = new CLNodeConfig( pnodeConfig
-                                                      , -1    // nid
-                                                      , coreMask
-                                                      , msg_->u.request.u.node_add.first_core
-                                                      , msg_->u.request.u.node_add.last_core
-                                                      , msg_->u.request.u.node_add.processors
-                                                      , (ZoneType)msg_->u.request.u.node_add.roles
-                                                      );
+                                                      , lnodeConfigInfo );
                         if (lnodeConfig)
                         {
                             // Tell all monitors to add this node to the configuration database

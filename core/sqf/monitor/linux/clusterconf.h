@@ -27,21 +27,10 @@
 #define CLUSTERCONF_H_
 
 #include <stdlib.h>
-#include <sqlite3.h>
 
 #include "lnodeconfig.h"
 #include "pnodeconfig.h"
 #include "persistconfig.h"
-
-#define MAX_TOKEN   132
-#define PERSIST_PROCESS_KEYS       "PERSIST_PROCESS_KEYS"
-#define PERSIST_PROCESS_NAME_KEY   "PROCESS_NAME"
-#define PERSIST_PROCESS_TYPE_KEY   "PROCESS_TYPE"
-#define PERSIST_PROGRAM_NAME_KEY   "PROGRAM_NAME"
-#define PERSIST_REQUIRES_DTM       "REQUIRES_DTM"
-#define PERSIST_STDOUT_KEY         "STDOUT"
-#define PERSIST_RETRIES_KEY        "PERSIST_RETRIES"
-#define PERSIST_ZONES_KEY          "PERSIST_ZONES"
 
 class CClusterConfig  : public CPNodeConfigContainer
                       , public CLNodeConfigContainer
@@ -54,10 +43,14 @@ public:
 
     void            Clear( void );
     bool            DeleteNodeConfig( int  pnid );
-    inline sqlite3 *GetConfigDb( void ){ return ( db_ ); }
     bool            Initialize( void );
-    inline bool     IsConfigReady( void ) { return ( configReady_ ); }
+    void            InitCoreMask( cpu_set_t &coreMask );
+    inline bool     IsConfigReady( void ) { return( nodeReady_ && persistReady_ ); }
+    inline bool     IsNodeReady( void ) { return( nodeReady_ ); }
+    inline bool     IsPersistReady( void ) { return( persistReady_ ); }
     bool            LoadConfig( void );
+    bool            LoadNodeConfig( void );
+    bool            LoadPersistConfig( void );
     bool            SaveNodeConfig( const char *name
                                   , int         nid
                                   , int         pnid
@@ -78,7 +71,14 @@ public:
 protected:
 private:
 
-    bool       configReady_; // true when configuration loaded
+    bool            nodeReady_;    // true when node configuration loaded
+    bool            persistReady_; // true when persist configuration loaded
+    bool            newPNodeConfig_;
+    bool            trafConfigInitialized_;
+    CPNodeConfig   *prevPNodeConfig_;
+    CLNodeConfig   *prevLNodeConfig_;
+    CPersistConfig *prevPersistConfig_;
+#if 0
     bool       excludedCores_;
     bool       newPNodeConfig_;
     bool       newLNodeConfig_;
@@ -107,65 +107,55 @@ private:
     int        prevLastCore_;
     int        prevProcessor_;
     ZoneType   prevZoneType_;
-    CPNodeConfig *prevPNodeConfig_;
     int        sparePNid_[MAX_NODES];
     int        spareIndex_;
+    CPNodeConfig *prevPNodeConfig_;
     CLNodeConfig *lnodeConfig_;
-    char            persistPrefix_[MAX_PERSIST_KEY_STR];
-    char            processNamePrefix_[MAX_PERSIST_VALUE_STR];
-    char            processNameFormat_[MAX_PERSIST_VALUE_STR];
-    char            stdoutPrefix_[MAX_PERSIST_VALUE_STR];
-    char            stdoutFormat_[MAX_PERSIST_VALUE_STR];
-    char            programName_[MAX_PERSIST_VALUE_STR];
-    char            zoneFormat_[MAX_PERSIST_VALUE_STR];
+    char            persistPrefix_[PERSIST_KEY_MAX];
+    char            processNamePrefix_[PERSIST_VALUE_MAX];
+    char            processNameFormat_[PERSIST_VALUE_MAX];
+    char            stdoutPrefix_[PERSIST_VALUE_MAX];
+    char            stdoutFormat_[PERSIST_VALUE_MAX];
+    char            programName_[PERSIST_VALUE_MAX];
+    char            zoneFormat_[PERSIST_VALUE_MAX];
     PROCESSTYPE     processType_;
     bool            requiresDTM_;
     int             persistRetries_;
     int             persistWindow_;
     CPersistConfig *persistConfig_;
+#endif
 
-    sqlite3   *db_;
-
-    void  AddNodeConfiguration( bool spareNode );
-    void  AddPersistConfiguration( void );
+    void  AddNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo
+                              , lnodeConfigInfo_t &lnodeConfigInfo );
+    void  AddSNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo );
+    void  AddPersistConfiguration( persistConfigInfo_t &persistConfigInfo );
     bool  DeleteDbNodeData( int  pnid );
-    bool  DeleteDbUniqueString( int nid );
     PROCESSTYPE GetProcessType( const char *processtype );
-    void  ProcessLNode( int nid
-                      , int pnid
-                      , const char *nodename
-                      , int excfirstcore
-                      , int exclastcore
-                      , int firstcore
-                      , int lastcore
-                      , int processors
-                      , int roles );
-    bool  ProcessSNode( int pnid
-                      , const char *nodename
-                      , int excfirstcore
-                      , int exclastcore
-                      , int spnid );
-    bool  ProcessPersist( void );
-    bool  ProcessPersistData( const char *persistkey
-                            , const char *persistvalue );
-    bool SaveDbLNodeData( int         nid
-                        , int         pnid
-                        , int         firstCore
-                        , int         lastCore
-                        , int         processors
-                        , int         roles );
-    bool SaveDbPNodeData( const char *name
-                        , int         pnid
-                        , int         excludedFirstCore
-                        , int         excludedLastCore );
-    bool UpdateDbPNodeData( int         pnid
-                          , const char *name
-                          , int         excludedFirstCore
-                          , int         excludedLastCore );
-    void UpdatePNodeConfiguration( int         pnid
-                                 , const char *name
-                                 , int         excludedFirstCore
-                                 , int         excludedLastCore );
+    void  ProcessLNode( node_configuration_t &nodeConfig
+                      , pnodeConfigInfo_t    &pnodeConfigInfo
+                      , lnodeConfigInfo_t    &lnodeConfigInfo );
+    void  ProcessSNode( physical_node_configuration_t &pnodeConfig
+                      , pnodeConfigInfo_t             &pnodeConfigInfo );
+    void  ProcessPersistInfo( persist_configuration_t &persistConfigData
+                            , persistConfigInfo_t     &persistConfigInfo );
+    bool  SaveDbLNodeData( int         nid
+                         , int         pnid
+                         , int         firstCore
+                         , int         lastCore
+                         , int         processors
+                         , int         roles );
+    bool  SaveDbPNodeData( const char *name
+                         , int         pnid
+                         , int         excludedFirstCore
+                         , int         excludedLastCore );
+    bool  UpdateDbPNodeData( int         pnid
+                           , const char *name
+                           , int         excludedFirstCore
+                           , int         excludedLastCore );
+    void  UpdatePNodeConfiguration( int         pnid
+                                  , const char *name
+                                  , int         excludedFirstCore
+                                  , int         excludedLastCore );
 };
 
 #endif /* CLUSTERCONF_H_ */

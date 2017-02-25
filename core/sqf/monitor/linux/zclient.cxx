@@ -68,7 +68,6 @@ extern CNodeContainer *Nodes;
 extern CReqQueue ReqQueue;
 extern CZClient    *ZClient;
 extern CMonLog     *MonLog;
-extern CMonLog     *SnmpLog;
 
 extern bool debugFlag;
 

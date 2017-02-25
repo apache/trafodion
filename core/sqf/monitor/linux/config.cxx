@@ -386,7 +386,7 @@ void CConfigGroup::SendChangeNotification (CConfigKey *key)
         snprintf(buf, sizeof(buf), "[CConfigGroup::SendChangeNotification],"
                  " Invalid group ConfigType for %s (%p).\n", name_.c_str(),
                  this);
-        mon_log_write(MON_CONFIGGROUP_SENDCHANGENOTICE, SQ_LOG_ERR, buf);
+        mon_log_write(MON_CONFIGGROUP_SENDCHANGENOTICE_1, SQ_LOG_ERR, buf);
         delete msg;
     }
     TRACE_EXIT;
@@ -485,7 +485,6 @@ void CConfigGroup::Set(char *key, char *value, bool replicated, bool addToDb)
 CConfigContainer::CConfigContainer(void)
                 : Head (NULL)
                 , Tail (NULL)
-                , db_ (NULL)
 {
     const char method_name[] = "CConfigContainer::CConfigContainer";
     TRACE_ENTRY;
@@ -493,10 +492,7 @@ CConfigContainer::CConfigContainer(void)
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "CCTR", 4);
 
-    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
-    db_ = clusterConfig->GetConfigDb();
-    
-    cluster_ = AddGroup((char *) "CLUSTER",ConfigType_Cluster);
+    cluster_ = AddGroup( (char *)"CLUSTER", ConfigType_Cluster );
     if ( ! getenv("SQ_VIRTUAL_NODES") )
     {
         int pnid = Nodes->GetClusterConfig()->GetPNid(Node_name);
@@ -506,7 +502,7 @@ CConfigContainer::CConfigContainer(void)
     {
         snprintf(localNodeName_, sizeof(localNodeName_), "NODE%d",MyPNID);
     }
-    node_ = AddGroup(localNodeName_,ConfigType_Node);
+    node_ = AddGroup( localNodeName_, ConfigType_Node );
 
     TRACE_EXIT;
 }
@@ -533,176 +529,119 @@ CConfigContainer::~CConfigContainer(void)
 
 void CConfigContainer::Init(void)
 {
-    int rc;
-
     const char method_name[] = "CConfigContainer::Init";
     TRACE_ENTRY;
 
-    if ( db_ == NULL)
-    {
-        if (trace_settings & TRACE_INIT)
-        {
-            trace_printf("%s@%d cannot initialize registry from database "
-                         "since database open failed.\n", method_name,
-                         __LINE__);
-        }
-
-        TRACE_EXIT;
-        return;
-    }
-
-    // Read cluster configuration registry entries and populate in-memory
-    // structures.
-    const char *selStmt;
-    selStmt = "select k.keyName, d.dataValue "
-              " from monRegKeyName k, monRegClusterData d "
-              " where k.keyId = d.keyId";
-    sqlite3_stmt *prepStmt;
-
-    rc = sqlite3_prepare_v2( db_, selStmt, strlen(selStmt)+1, &prepStmt, NULL);
-    if( rc!=SQLITE_OK )
-    {
-        if (trace_settings & TRACE_INIT)
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n", method_name,
-                         __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
-        TRACE_EXIT;
-        return;
-    }
-
-
+    int rc;
+    int regClusterCount = 0;
+    int regProcessCount = 0;
+    int regClusterMax = 0;
+    int regProcessMax = 0;
     ConfigType type;
-    const unsigned char * group;
-    const unsigned char * key;
-    const unsigned char * value;
-    int rowNum = 1;
-
-    while ( 1 )
+    registry_configuration_t *regClusterConfig;
+    registry_configuration_t *regProcessConfig;
+    
+    // Get cluster scope configuration registry entries count
+    rc = tc_get_registry_cluster_set( &regClusterCount
+                                    , regClusterMax
+                                    , NULL );
+    if ( rc )
     {
-        rc = sqlite3_step(prepStmt);
-        if ( rc == SQLITE_ROW )
-        {  // Process row
-            type = ConfigType_Cluster;
-            group = (const unsigned char *) "CLUSTER";
-            key = sqlite3_column_text(prepStmt, 0);
-            value = sqlite3_column_text(prepStmt, 1);
-            if (trace_settings & TRACE_INIT)
-            {
-                trace_printf("%s@%d row %d: type=%d, group=%s, key=%s, "
-                             "value=%s\n", method_name, __LINE__, rowNum,
-                             type, group, key, value);
-            }
-            Set( (char *) group, type, (char *) key, (char *) value, false );
-            ++rowNum;
-        }
-        else if ( rc == SQLITE_DONE )
-        {
-            break;
-        }
-        else
-        { 
-            if (trace_settings & TRACE_INIT)
-            {
-                trace_printf("%s@%d step failed, retrieving cluster registry "
-                             "data, error=%s (%d)\n",
-                             method_name, __LINE__, sqlite3_errmsg(db_), rc);
-            }
-
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] step failed, retrieving "
-                      "cluster registry data, error=%s (%d)\n",
-                      method_name,  sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
-            break;
-        }
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] Node configuration access failed!\n"
+                , method_name );
+        mon_log_write(MON_CONFIGCONT_INIT_1, SQ_LOG_ERR, la_buf);
     }
 
-    // Destroy prepared statement object
-    if ( prepStmt != NULL )
-        sqlite3_finalize(prepStmt);
-
-    // Read process configuration registry entries and populate in-memory
-    // structures.
-    selStmt = "select p.procName, k.keyName, d.dataValue"
-              " from monRegProcName p, monRegKeyName k, monRegProcData d"
-              " where p.procId = d.procId"
-              "   and k.keyId = d.keyId";
-
-    rc = sqlite3_prepare_v2( db_, selStmt, strlen(selStmt)+1, &prepStmt, NULL);
-    if( rc!=SQLITE_OK )
+    regClusterMax = regClusterCount;
+    regClusterConfig = new registry_configuration_t[regClusterMax];
+    if (regClusterConfig)
     {
-        if (trace_settings & TRACE_INIT)
+        rc = tc_get_registry_cluster_set( &regClusterCount
+                                        , regClusterMax
+                                        , regClusterConfig );
+        if ( rc )
         {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n", method_name,
-                         __LINE__, sqlite3_errmsg(db_), rc);
+            char la_buf[MON_STRING_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] Cluster scope configuration registry access failed!\n"
+                    , method_name );
+            mon_log_write(MON_CONFIGCONT_INIT_2, SQ_LOG_CRIT, la_buf);
         }
+        
+        type = ConfigType_Cluster;
 
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
-        TRACE_EXIT;
-        return;
-    }
-
-    rowNum = 1;
-
-    while ( 1 )
-    {
-        rc = sqlite3_step(prepStmt);
-        if ( rc == SQLITE_ROW )
-        {  // Process row
-            type = ConfigType_Process;
-            group = sqlite3_column_text(prepStmt, 0);
-            key = sqlite3_column_text(prepStmt, 1);
-            value = sqlite3_column_text(prepStmt, 2);
-            if (trace_settings & TRACE_INIT)
-            {
-                trace_printf("%s@%d row %d: type=%d, group=%s, key=%s, "
-                             "value=%s\n", method_name, __LINE__, rowNum,
-                             type, group, key, value);
-            }
-            Set( (char *) group, type, (char *) key, (char *) value, false );
-            ++rowNum;
-        }
-        else if ( rc == SQLITE_DONE )
+        // Process cluster scope configuration registry entries
+        for (int i = 0; i < regClusterCount; i++ )
         {
-            break;
-        }
-        else
-        { 
-            if (trace_settings & TRACE_INIT)
-            {
-                trace_printf("%s@%d step failed, retrieving process registry"
-                             " data, error=%s (%d)\n",
-                             method_name, __LINE__, sqlite3_errmsg(db_), rc);
-            }
-
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] step failed, retrieving process"
-                      " registry data, error=%s (%d)\n",
-                      method_name,  sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-
-            break;
+            Set( regClusterConfig[i].scope
+               , type
+               , regClusterConfig[i].key
+               , regClusterConfig[i].value
+               , false );
         }
     }
+    else
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] Node configuration access failed!\n"
+                , method_name );
+        mon_log_write(MON_CONFIGCONT_INIT_3, SQ_LOG_CRIT, la_buf);
+    }
 
-    // Destroy prepared statement object
-    if ( prepStmt != NULL )
-        sqlite3_finalize(prepStmt);
- 
+    // Get process scope configuration registry entries count
+    rc = tc_get_registry_cluster_set( &regProcessCount
+                                    , regProcessMax
+                                    , NULL );
+    if ( rc )
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] Node configuration access failed!\n"
+                , method_name );
+        mon_log_write(MON_CONFIGCONT_INIT_4, SQ_LOG_ERR, la_buf);
+    }
+
+    regProcessMax = regProcessCount;
+    regProcessConfig = new registry_configuration_t[regProcessMax];
+    if (regClusterConfig)
+    {
+        rc = tc_get_registry_cluster_set( &regProcessCount
+                                        , regProcessMax
+                                        , regProcessConfig );
+        if ( rc )
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            snprintf( la_buf, sizeof(la_buf)
+                    , "[%s] Process scope configuration registry access failed!\n"
+                    , method_name );
+            mon_log_write(MON_CONFIGCONT_INIT_5, SQ_LOG_CRIT, la_buf);
+        }
+        
+        type = ConfigType_Process;
+
+        // Process cluster scope configuration registry entries
+        for (int i = 0; i < regClusterCount; i++ )
+        {
+            Set( regProcessConfig[i].scope
+               , type
+               , regProcessConfig[i].key
+               , regProcessConfig[i].value
+               , false );
+        }
+    }
+    else
+    {
+        char la_buf[MON_STRING_BUF_SIZE];
+        snprintf( la_buf, sizeof(la_buf)
+                , "[%s] Node configuration access failed!\n"
+                , method_name );
+        mon_log_write(MON_CONFIGCONT_INIT_6, SQ_LOG_CRIT, la_buf);
+    }
+
     TRACE_EXIT;
-
 }
 
 CConfigGroup *CConfigContainer::AddGroup(char *groupkey, ConfigType type,
@@ -797,64 +736,24 @@ void CConfigContainer::addDbKeyName ( const char * key )
     const char method_name[] = "CConfigContainer::addDbKeyName";
     TRACE_ENTRY;
 
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return;
-    }
-
+    int rc;
+    
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
-        trace_printf("%s@%d inserting key=%s into monRegKeyName\n",
-                     method_name, __LINE__, key);
+        trace_printf( "%s@%d saving registry key=%s\n"
+                    , method_name, __LINE__
+                    , key );
     }
 
-    int rc;
-    const char * sqlStmt;
-    sqlStmt = "insert into monRegKeyName (keyName) values ( :key );";
-    sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
-                             NULL);
-    if ( rc != SQLITE_OK )
+    rc = tc_put_registry_key( key );
+    if ( rc )
     {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
         char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
+        snprintf( buf, sizeof(buf)
+                , "[%s] tc_put_registry_key() failed, error=%d (%s)\n"
+                , method_name, rc, tc_errmsg( rc ) );
+        mon_log_write( MON_CONFIGCONT_ADDKEYNAME_1, SQ_LOG_ERR, buf );
     }
-    else
-    {
-        sqlite3_bind_text( prepStmt, 
-                           sqlite3_bind_parameter_index( prepStmt, ":key" ),
-                           key, -1, SQLITE_STATIC );
-
-        rc = sqlite3_step( prepStmt );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW ) 
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), 
-                      "[%s] inserting key=%s into "
-                      "monRegKeyName failed, error=%s (%d)\n",
-                      method_name, key, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-    }
-        
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
 
     TRACE_EXIT;
 }
@@ -865,64 +764,24 @@ void CConfigContainer::addDbProcName ( const char * name )
     const char method_name[] = "CConfigContainer::addDbProcName";
     TRACE_ENTRY;
 
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return;
-    }
-
+    int rc;
+    
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
-        trace_printf("%s@%d inserting name=%s into monRegProcName\n",
-                     method_name, __LINE__, name);
+        trace_printf( "%s@%d saving registry process, name=%s\n"
+                    , method_name, __LINE__
+                    , name );
     }
 
-    int rc;
-    const char * sqlStmt;
-    sqlStmt = "insert into monRegProcName (procName) values ( :name );";
-    sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
-                             NULL);
-    if ( rc != SQLITE_OK )
+    rc = tc_put_registry_process( name );
+    if ( rc )
     {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
         char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
+        snprintf( buf, sizeof(buf)
+                , "[%s] tc_put_registry_process() failed, error=%d (%s)\n"
+                , method_name, rc, tc_errmsg( rc ) );
+        mon_log_write( MON_CONFIGCONT_ADDPROCNAME_1, SQ_LOG_ERR, buf );
     }
-    else
-    {
-        sqlite3_bind_text( prepStmt,
-                           sqlite3_bind_parameter_index( prepStmt, ":name" ),
-                           name, -1, SQLITE_STATIC );
-
-        rc = sqlite3_step( prepStmt );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW ) 
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), 
-                      "[%s] inserting name=%s into "
-                      "monRegProcName failed, error=%s (%d)\n",
-                      method_name,  name, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-    }
-        
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
 
     TRACE_EXIT;
 }
@@ -933,70 +792,24 @@ void CConfigContainer::addDbClusterData ( const char * key,
     const char method_name[] = "CConfigContainer::addDbClusterData";
     TRACE_ENTRY;
 
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return;
-    }
-
+    int rc;
+    
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
-        trace_printf("%s@%d inserting key=%s into monRegClusterData\n",
-                     method_name, __LINE__, key);
+        trace_printf( "%s@%d saving registry cluster data key=%s\n"
+                    , method_name, __LINE__
+                    , key);
     }
 
-    int rc;
-    const char * sqlStmt;
-    sqlStmt = "insert or replace into monRegClusterData (dataValue, keyId)"
-              " select :dataValue,"
-              "         k.keyId FROM monRegKeyName k"
-              " where k.keyName = :key";
-    sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
-                             NULL);
-    if ( rc != SQLITE_OK )
+    rc = tc_put_registry_cluster_data( key, dataValue );
+    if ( rc )
     {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
         char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
+        snprintf( buf, sizeof(buf)
+                , "[%s] tc_put_registry_cluster_data() failed, error=%d (%s)\n"
+                , method_name, rc, tc_errmsg( rc ) );
+        mon_log_write( MON_CONFIGCONT_ADDCLUSTERDATA_1, SQ_LOG_ERR, buf );
     }
-    else
-    {
-        sqlite3_bind_text( prepStmt,
-                           sqlite3_bind_parameter_index( prepStmt,
-                                                         ":dataValue" ),
-                           dataValue, -1, SQLITE_STATIC );
-        sqlite3_bind_text( prepStmt,
-                           sqlite3_bind_parameter_index( prepStmt, ":key" ),
-                           key, -1, SQLITE_STATIC );
-
-        rc = sqlite3_step( prepStmt );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW ) 
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] inserting key=%s into "
-                      "monRegClusterData failed, error=%s (%d)\n",
-                      method_name, key, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-    }
-        
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
 
     TRACE_EXIT;
 }
@@ -1008,79 +821,25 @@ void CConfigContainer::addDbProcData ( const char * procName,
     const char method_name[] = "CConfigContainer::addDbProcData";
     TRACE_ENTRY;
 
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return;
-    }
-
+    int rc;
+    
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
-        trace_printf("%s@%d inserting key=%s into monRegProcData for "
-                     "proc=%s\n", method_name, __LINE__, key, procName);
+        trace_printf( "%s@%d saving registry process data procName=%s, "
+                      "key=%s\n"
+                    , method_name, __LINE__
+                    , procName, key );
     }
 
-    int rc;
-    const char * sqlStmt;
-    sqlStmt = "insert or replace into monRegProcData (dataValue, procId, keyId )"
-              "   select :dataValue,"
-              "      p.procId,"
-              "       (SELECT k.keyId "
-              "          FROM monRegKeyName k"
-              "         WHERE k.keyName = :key)"
-              "   FROM monRegProcName p"
-              "   WHERE UPPER(p.procName) = UPPER(:procName)";
-
-    sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
-                             NULL);
-    if ( rc != SQLITE_OK )
+    rc = tc_put_registry_process_data( procName, key, dataValue );
+    if ( rc )
     {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
         char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
+        snprintf( buf, sizeof(buf)
+                , "[%s] tc_put_registry_process_data() failed, error=%d (%s)\n"
+                , method_name, rc, tc_errmsg( rc ) );
+        mon_log_write( MON_CONFIGCONT_ADDPROCDATA_1, SQ_LOG_ERR, buf );
     }
-    else
-    {
-        sqlite3_bind_text( prepStmt,
-                           sqlite3_bind_parameter_index( prepStmt,
-                                                         ":procName" ),
-                           procName, -1, SQLITE_STATIC );
-        sqlite3_bind_text( prepStmt,
-                           sqlite3_bind_parameter_index( prepStmt,
-                                                         ":dataValue" ),
-                           dataValue, -1, SQLITE_STATIC );
-        sqlite3_bind_text( prepStmt,
-                           sqlite3_bind_parameter_index( prepStmt, ":key" ),
-                           key, -1, SQLITE_STATIC );
-
-        rc = sqlite3_step( prepStmt );
-        if (( rc != SQLITE_DONE ) && ( rc != SQLITE_ROW ) 
-         && ( rc != SQLITE_CONSTRAINT ) )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] inserting key=%s into "
-                      "monRegProcData for proc=%s failed, error=%s (%d)\n",
-                      method_name,  key, procName, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-    }
-
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
 
     TRACE_EXIT;
 }
@@ -1090,145 +849,66 @@ void CConfigContainer::addUniqueString(int nid, int id, const char * uniqStr )
     const char method_name[] = "CConfigContainer::addUniqueString";
     TRACE_ENTRY;
 
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return;
-    }
-
-
+    int rc;
+    
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
-        trace_printf("%s@%d inserting unique string nid=%d id=%d into "
-                     "monRegUniqueStrings\n", method_name, __LINE__,
-                     nid, id);
+        trace_printf( "%s@%d saving unique string nid=%d id=%d\n"
+                    , method_name, __LINE__
+                    , nid, id );
     }
 
-    int rc;
-    const char * sqlStmt;
-    sqlStmt = "insert or replace into monRegUniqueStrings values (?, ?, ?)";
-
-    sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
-                             NULL);
-    if ( rc != SQLITE_OK )
+    rc = tc_put_unique_string( nid, id, uniqStr );
+    if ( rc )
     {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
-
         char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
+        snprintf( buf, sizeof(buf)
+                , "[%s] tc_put_unique_string() failed, error=%d (%s)\n"
+                , method_name, rc, tc_errmsg( rc ) );
+        mon_log_write( MON_CONFIGCONT_ADDUNIQUESTRING_1, SQ_LOG_ERR, buf );
     }
-    else
-    {
-        sqlite3_bind_int( prepStmt, 1, nid );
-        sqlite3_bind_int( prepStmt, 2, id );
-        sqlite3_bind_text( prepStmt, 3, uniqStr, -1, SQLITE_STATIC );
-
-        rc = sqlite3_step( prepStmt );
-        if ( rc != SQLITE_DONE )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), 
-                      "[%s] inserting into monRegUniqueStrings "
-                      "for nid=%d id=%d failed, error=%s (%d)\n",
-                      method_name, nid, id, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-    }
-
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
 
     TRACE_EXIT;
 }
 
-bool CConfigContainer::findUniqueString(int nid, const char * uniqStr,
-                                        strId_t & id )
+bool CConfigContainer::findUniqueString( int         nid
+                                       , const char *uniqStr
+                                       , strId_t    &strId )
 {
     const char method_name[] = "CConfigContainer::findUniqueString";
     TRACE_ENTRY;
 
-    if ( db_ == NULL)
-    {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return false;
-    }
-
+    bool result = false;
+    int rc;
+    int id;
 
     if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
-        trace_printf("%s@%d finding unique string nid=%d string=%s in "
-                     "monRegUniqueStrings\n", method_name, __LINE__,
-                     nid, uniqStr);
+        trace_printf( "%s@%d finding unique string nid=%d string=%s\n"
+                    , method_name, __LINE__
+                    , nid, uniqStr );
     }
 
-
-    bool result = false;
-    int rc;
-    const char * sqlStmt;
-    sqlStmt = "select id from monRegUniqueStrings where nid = ? and dataValue = ?";
-
-    sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
-                             NULL);
-
-    if ( rc != SQLITE_OK )
+    rc = tc_get_unique_string_id( nid, uniqStr, &id );
+    if ( rc )
     {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        if ( rc != TCDBNOEXIST )
         {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] tc_get_unique_string_id() failed, ""error=%d (%s)\n"
+                    , method_name, rc, tc_errmsg( rc ) );
+            mon_log_write( MON_CONFIGCONT_FINDUNIQUESTRING_1, SQ_LOG_ERR, buf );
         }
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
     }
     else
     {
-        sqlite3_bind_int( prepStmt, 1, nid );
-        sqlite3_bind_text( prepStmt, 2, uniqStr, -1, SQLITE_STATIC );
-
-        rc = sqlite3_step( prepStmt );
-
-        if ( rc == SQLITE_ROW )
-        {   // Found string in database, return id
-            id.nid = nid;
-            id.id = sqlite3_column_int (prepStmt, 0);
-            result = true;
-
-            if (trace_settings & TRACE_REQUEST)
-            {
-                trace_printf("%s@%d found unique string nid=%d, id=%d\n",
-                             method_name, __LINE__, nid, id.id);
-            }
-        }
+        strId.nid = nid;
+        strId.id = id;
+        result = true;
     }
 
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
-
     TRACE_EXIT;
-
     return result;
 }
 
@@ -1237,81 +917,39 @@ int CConfigContainer::getMaxUniqueId( int nid )
     const char method_name[] = "CConfigContainer::getMaxUniqueId";
     TRACE_ENTRY;
 
+    int id = 0;
+    int rc;
 
-    if ( db_ == NULL)
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-        {
-            trace_printf("%s@%d cannot use database since database open"
-                         " failed.\n", method_name, __LINE__);
-        }
-
-        TRACE_EXIT;
-        return false;
+        trace_printf( "%s@%d finding max unique string id for nid=%d\n"
+                    , method_name, __LINE__
+                    , nid );
     }
 
-
-    int result = 0;
-    int rc;
-    const char * sqlStmt;
-    sqlStmt = "select max(id) from monRegUniqueStrings where nid=?";
-
-    sqlite3_stmt * prepStmt;
-    rc = sqlite3_prepare_v2( db_, sqlStmt, strlen(sqlStmt)+1, &prepStmt,
-                             NULL);
-    if ( rc != SQLITE_OK )
+    rc = tc_get_unique_string_id_max( nid, &id );
+    if ( rc )
     {
-        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
+        if ( rc != TCDBNOEXIST )
         {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] tc_get_unique_string_id_max() failed, error=%d (%s)\n"
+                    , method_name, rc, tc_errmsg( rc ) );
+            mon_log_write( MON_CONFIGCONT_GETUNIQUESTRIDMAX_1, SQ_LOG_ERR, buf );
         }
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
     }
     else
     {
-        sqlite3_bind_int( prepStmt, 1, nid );
-
-        rc = sqlite3_step( prepStmt );
-
-        if ( rc == SQLITE_ROW )
+        if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
         {
-            result = sqlite3_column_int(prepStmt, 0);
-
-            if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-            {
-                trace_printf("%s@%d found max(id)=%d for nid=%d in "
-                             "monRegUniqueStrings\n", method_name, __LINE__,
-                             result, nid);
-            }
-        }
-        else
-        {
-            if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
-            {
-                trace_printf("%s@%d finding max(id) in monRegUniqueStrings "
-                             "for nid=%d, error=%s (%d)\n", method_name, __LINE__,
-                             nid, sqlite3_errmsg(db_), rc);
-            }
-
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] finding max(id) in monRegUnique"
-                      "Strings for nid=%d, error=%s (%d)\n",
-                      method_name, nid, sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
+            trace_printf( "%s@%d found max(id)=%d for nid=%d\n"
+                        , method_name, __LINE__, id, nid);
         }
     }
-        
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
 
     TRACE_EXIT;
-
-    return result;
+    return id;
 }
 
 void CConfigContainer::strIdToString( strId_t stringId,  string & value )
@@ -1320,61 +958,32 @@ void CConfigContainer::strIdToString( strId_t stringId,  string & value )
     TRACE_ENTRY;
 
     int rc;
-    const char * selStmt;
-    sqlite3_stmt * prepStmt;
+    char uniqueString[TC_UNIQUE_STRING_VALUE_MAX] = { 0 };
 
-    // Read process configuration registry entries and populate in-memory
-    // structures.
-    selStmt = "select dataValue from monRegUniqueStrings where nid = ? and id = ?";
-    rc = sqlite3_prepare_v2( db_, selStmt, strlen(selStmt)+1, &prepStmt, NULL);
-
-    if ( rc != SQLITE_OK )
+    if (trace_settings & (TRACE_INIT | TRACE_REQUEST))
     {
-        if (trace_settings & TRACE_REQUEST)
-        {
-            trace_printf("%s@%d prepare failed, error=%s (%d)\n",
-                         method_name, __LINE__, sqlite3_errmsg(db_), rc);
-        }
+        trace_printf( "%s@%d Get unique string, stringId(nid=%d, id=%d)\n"
+                    , method_name, __LINE__
+                    , stringId.nid, stringId.id );
+    }
 
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "[%s] prepare failed, error=%s (%d)\n",
-                  method_name,  sqlite3_errmsg(db_), rc );
-        mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
+    rc = tc_get_unique_string( stringId.nid, stringId.id, uniqueString );
+    if ( rc )
+    {
+        value.assign( "" );
+        if ( rc != TCDBNOEXIST )
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s] tc_get_unique_string() failed, ""error=%d (%s)\n"
+                    , method_name, rc, tc_errmsg( rc ) );
+            mon_log_write( MON_CONFIGCONT_STRINGIDTPSTRING_1, SQ_LOG_ERR, buf );
+        }
     }
     else
     {
-        sqlite3_bind_int ( prepStmt, 1, stringId.nid );
-        sqlite3_bind_int ( prepStmt, 2, stringId.id );
-
-        rc = sqlite3_step( prepStmt );
-
-        if ( rc == SQLITE_ROW )
-        {
-            value.assign( (const char *) sqlite3_column_text(prepStmt, 0) );
-
-            if (trace_settings & TRACE_REQUEST)
-            {
-                trace_printf("%s@%d retrieved unique string (%d, %d), "
-                             "value=%s\n", method_name, __LINE__,
-                             stringId.nid, stringId.id, value.c_str());
-            }
-        }
-        else
-        {
-            value.assign( "" );
-
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf), "[%s] unable to retrieve unique string"
-                      " (%d, %d), error=%s (%d)\n",
-                      method_name,  stringId.nid, stringId.id,
-                      sqlite3_errmsg(db_), rc );
-            mon_log_write( MON_DATABASE_ERROR, SQ_LOG_ERR, buf );
-        }
-        
+        value.assign( uniqueString  );
     }
-    
-    if ( prepStmt != NULL )
-        sqlite3_finalize( prepStmt );
 
     TRACE_EXIT;
 }

@@ -33,7 +33,7 @@ endif
 #DEBUG = -O0 -g3
 DEBUG = $(CFLAGS)
 
-FLAGS = $(DEBUG) -Wno-deprecated -fmessage-length=0
+FLAGS = $(DEBUG) -Wno-deprecated -fmessage-length=0 -fPIC
 ifeq ($(USE_DMALLOC),1)
  FLAGS+= -DDMALLOC
 endif
@@ -48,14 +48,14 @@ FLAGS+= -UNDEBUG
 FLAGS+= -Wall -Wextra
 
 # Flags for use in compiling Seabed trace modules
-SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries
+SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries -fPIC
 SBDIR = ../../src/seabed/src
 
 COMMONLOGGERDIR = ../../commonLogger
 
 INCLUDE = monitor.h msgdef.h internal.h monlogging.h clio.h mlio.h localio.h lock.h
 
-LIBS = -L$(LIBEXPDIR) -L$(ZOOKEEPER_DIR)/lib -lrt -lsblogalt -lzookeeper_mt
+LIBS = -L$(LIBEXPDIR) -L$(ZOOKEEPER_DIR)/lib -lrt -lsblogalt -lzookeeper_mt -ltrafconfig
 
 LIBS+= -lmpich
 
@@ -151,6 +151,7 @@ MONITORSRC += reqzoneinfo.cxx
 MONITORSRC += replicate.cxx
 MONITORSRC += gentrap.cxx
 MONITORSRC += monrobsem.cxx
+
 MONITOROBJS = $(OUTDIR)/versmon.o
 MONITOROBJS += $(OUTDIR)/monitor.o
 MONITOROBJS += $(OUTDIR)/cluster.o
@@ -285,6 +286,30 @@ TRACE_LOG_OBJS += $(OUTDIR)/threadtls.o
 RTSIGBLOCK_SRC = rtsigblock.cxx
 RTSIGBLOCK_OBJS = $(OUTDIR)/rtsigblock.o
 
+CONFOBJS = $(OUTDIR)/testconf.o
+CONFOBJS += $(OUTDIR)/clusterconf.o
+CONFOBJS += $(OUTDIR)/lnodeconfig.o
+CONFOBJS += $(OUTDIR)/pnodeconfig.o
+CONFOBJS += $(OUTDIR)/persistconfig.o
+
+TRAFCONFOBJS = $(OUTDIR)/trafconf.o
+TRAFCONFOBJS += $(OUTDIR)/clusterconf.o
+TRAFCONFOBJS += $(OUTDIR)/lnodeconfig.o
+TRAFCONFOBJS += $(OUTDIR)/pnodeconfig.o
+TRAFCONFOBJS += $(OUTDIR)/persistconfig.o
+
+SQLITECONFIG_SRC = sqliteconfig.cxx
+SQLITECONFIG_OBJS = $(OUTDIR)/sqliteconfig.o
+
+TRAFCONFIGLOG_SRC = trafconfiglog.cxx
+TRAFCONFIGLOG_OBJS = $(OUTDIR)/trafconfiglog.o
+
+TRAFCONFIGTRACE_SRC = trafconfigtrace.cxx
+TRAFCONFIGTRACE_OBJS = $(OUTDIR)/trafconfigtrace.o
+
+TRAFCONFIG_SRC = trafconfig.cxx
+TRAFCONFIG_OBJS = $(OUTDIR)/trafconfig.o
+
 ALLOBJS = $(MONITOROBJS)
 ALLOBJS += $(SHELLOBJS)
 ALLOBJS += $(CLIENTOBJS)
@@ -296,16 +321,22 @@ ALLOBJS += $(TRACE_LOG_OBJS)
 ALLOBJS += $(CONFOBJS)
 ALLOBJS += $(MEMLOGOBJS)
 ALLOBJS += $(RTSIGBLOCK_OBJS)
-ALLOBJS += $(TCONFOBJS)
 ALLOBJS += $(ZOOMONOBJS)
+ALLOBJS += $(TRAFCONFOBJS)
+ALLOBJS += $(SQLITECONFIG_OBJS)
+ALLOBJS += $(TRAFCONFIG_OBJS)
+ALLOBJS += $(TRAFCONFIGLOG_OBJS)
+ALLOBJS += $(TRAFCONFIGTRACE_OBJS)
 
-PGMS = $(BINEXPDIR)/monitor
+SHAREDLIBS =   $(LIBEXPDIR)/libtrafconfig.so
+SHAREDLIBS +=  $(LIBEXPDIR)/libseabasesig.so
+
+PGMS =   $(BINEXPDIR)/monitor
 PGMS +=  $(BINEXPDIR)/shell
 PGMS +=  $(BINEXPDIR)/sqwatchdog
 PGMS +=  $(BINEXPDIR)/monmemlog
 PGMS +=  $(BINEXPDIR)/pstartd
 PGMS +=  $(BINEXPDIR)/trafconf
-PGMS +=  $(LIBEXPDIR)/libseabasesig.so
 
 TEST_PGMS = $(OUTDIR)/client
 TEST_PGMS += $(OUTDIR)/client2
@@ -388,14 +419,18 @@ $(OUTDIR)/%.o:$(COMMONLOGGERDIR)/%.cpp $(INCLUDE)
 
 # Targets
 # Uncomment the following target to disable parallel make
-#.NOTPARALLEL: $(PGMS)
+.NOTPARALLEL:
 
-all: $(PGMS) example
+all: programs examples
+
+programs: sharedlibs $(PGMS)
+
+examples: $(TEST_PGMS)
+
+sharedlibs: $(SHAREDLIBS)
 
 montim:
 	@$(MAKE) $(OUTDIR)/montim
-
-example : $(TEST_PGMS)
 
 $(OUTDIR)/client : client.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
@@ -419,18 +454,6 @@ $(OUTDIR)/testtm : testtm.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
 $(OUTDIR)/pingpong2 : pingpong2.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
-CONFOBJS = $(OUTDIR)/testconf.o \
-	$(OUTDIR)/clusterconf.o \
-	$(OUTDIR)/lnodeconfig.o \
-	$(OUTDIR)/pnodeconfig.o \
-	$(OUTDIR)/persistconfig.o
-
-TCONFOBJS = $(OUTDIR)/trafconf.o \
-	$(OUTDIR)/clusterconf.o \
-	$(OUTDIR)/lnodeconfig.o \
-	$(OUTDIR)/pnodeconfig.o \
-	$(OUTDIR)/persistconfig.o
-
 $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
@@ -439,7 +462,7 @@ $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-$(BINEXPDIR)/trafconf : $(TCONFOBJS) $(TRACE_LOG_OBJS)
+$(BINEXPDIR)/trafconf : $(TRAFCONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
@@ -506,6 +529,15 @@ $(LIBEXPDIR)/libseabasesig.so: $(RTSIGBLOCK_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
+$(LIBEXPDIR)/libtrafconfig.so: $(TRAFCONFIG_OBJS) $(SQLITECONFIG_OBJS) $(TRACE_LOG_OBJS) $(TRAFCONFIGLOG_OBJS) $(TRAFCONFIGTRACE_OBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: Linker'
+	@echo $(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(SQLITECONFIG_OBJS) $(TRACE_LOG_OBJS) $(TRAFCONFIGLOG_OBJS) $(TRAFCONFIGTRACE_OBJS)
+	@$(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(SQLITECONFIG_OBJS) $(TRACE_LOG_OBJS) $(TRAFCONFIGLOG_OBJS) $(TRAFCONFIGTRACE_OBJS)
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+
 setup:
 	@# do nothing
 
@@ -514,6 +546,7 @@ clean:
 	-rm -f $(ALLOBJS)
 	-rm -f $(CDEP_DIR)/*.dep
 	-rm -f $(LIBEXPDIR)/libseabasesig.so
+	-rm -f $(LIBEXPDIR)/libtrafconfig.so
 	@echo ' '
 
 cleanall: clean
@@ -522,29 +555,20 @@ cleanall: clean
 cleaner: clean
 	-rm -f *~
 
-install:
-	@echo 'Installing programs in $(INSTALL_DIR)'
-	-cp $(PGMS) $(INSTALL_DIR)
-	@echo 'Finished installing programs'
-	@echo ' '
+#install:
+#	@echo 'Installing programs in $(INSTALL_DIR)'
+#	-cp $(PGMS) $(INSTALL_DIR)
+#	@echo 'Finished installing programs'
+#	@echo ' '
 
-uninstall:
-	@echo 'Uninstalling programs from $(INSTALL_DIR)'
-	-cd $(INSTALL_DIR);rm -f $(PGMS) $(TEST_PGMS)
-	@echo 'Finished uninstalling programs'
-	@echo ' '
+#uninstall:
+#	@echo 'Uninstalling programs from $(INSTALL_DIR)'
+#	-cd $(INSTALL_DIR);rm -f $(PGMS) $(TEST_PGMS)
+#	@echo 'Finished uninstalling programs'
+#	@echo ' '
 
 rebuild: clean all
 	-@echo ' '
-
-$(RTSIGBLOCK_OBJS):$(RTSIGBLOCK_SRC)
-	@echo 'Building target: $@'
-	@echo 'Invoking: C++ Compiler'
-	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) -fPIC $(OPTIONS) $(INCLUDES) -c -o $@ $<
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) -fPIC $(OPTIONS) $(INCLUDES) -c -o $@ $<
-	@echo 'Finished building target: $@'
-	@echo ' '
-
 
 -include $(CDEP_DIR)/*.dep
 _dummy := $(shell if [ ! -d $(CDEP_DIR) ]; then mkdir -p $(CDEP_DIR); fi)

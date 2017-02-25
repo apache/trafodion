@@ -30,7 +30,21 @@
 
 #include "lnodeconfig.h"
 
+class CLNodeConfig;
+class CPNodeConfig;
+
 typedef list<CPNodeConfig *>   PNodesConfigList_t;
+
+typedef struct pnodeConfigInfo_s
+{
+    int        pnid;
+    char       nodename[MPI_MAX_PROCESSOR_NAME];
+    int        excludedFirstCore;
+    int        excludedLastCore;
+    cpu_set_t  excludedCoreMask;
+    int        spareCount;
+    int        sparePNid[MAX_NODES];
+} pnodeConfigInfo_t;
 
 class CPNodeConfigContainer
 {
@@ -38,11 +52,7 @@ public:
     CPNodeConfigContainer( int pnodesConfigMax );
     ~CPNodeConfigContainer( void );
 
-    CPNodeConfig *AddPNodeConfig( int   pnid
-                                , char *name
-                                , int   excludedFirstCore
-                                , int   excludedLastCore
-                                , bool  spare );
+    CPNodeConfig *AddPNodeConfig( pnodeConfigInfo_t &pnodeConfigInfo );
     void          Clear( void );
     void          DeletePNodeConfig( CPNodeConfig *pnodeConfig );
     inline CPNodeConfig *GetFirstPNodeConfig( void ) { return ( head_ ); }
@@ -72,19 +82,12 @@ private:
 
 class CPNodeConfig : public CLNodeConfigContainer
 {
-    friend CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int   pnid
-                                                              , char *name
-                                                              , int   excludedFirstCore
-                                                              , int   excludedLastCore
-                                                              , bool  spare );
-    friend void CPNodeConfigContainer::DeletePNodeConfig( CPNodeConfig *entry );
+    friend CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( pnodeConfigInfo_t &pnodeConfigInfo );
+    friend void CPNodeConfigContainer::DeletePNodeConfig( CPNodeConfig *pnodeConfig );
 public:
 
     CPNodeConfig( CPNodeConfigContainer *pnodesConfig
-                , int                    pnid
-                , int                    excludedFirstCore
-                , int                    excludedLastCore
-                , const char            *hostname
+                , pnodeConfigInfo_t &pnodeConfigInfo
                 );
     ~CPNodeConfig( void );
 
@@ -102,8 +105,8 @@ public:
 
     inline bool          IsSpareNode( void ) { return ( spareNode_ ); }
     inline void          SetExcludedCoreMask( cpu_set_t &coreMask ) { excludedCoreMask_ = coreMask; }
-    void        SetSpareList( int sparePNid[], int spareCount );
-    void        ResetSpare( void );
+    void                 SetSpareList( int sparePNid[], int spareCount );
+    void                 ResetSpare( void );
 
 protected:
 private:

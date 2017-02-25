@@ -52,7 +52,6 @@ int MyPid = -1;
 
 CZClient    *ZClient = NULL;
 CMonLog     *MonLog =  NULL;
-CMonLog     *SnmpLog =  NULL;
 
 void HandleZSessionExpiration( void )
 {

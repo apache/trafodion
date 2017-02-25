@@ -47,19 +47,14 @@ using namespace std;
 ///////////////////////////////////////////////////////////////////////////////
 
 CLNodeConfig::CLNodeConfig( CPNodeConfig *pnodeConfig
-                          , int           nid
-                          , cpu_set_t    &coreMask
-                          , int           firstCore
-                          , int           lastCore
-                          , int           processors
-                          , ZoneType      zoneType
+                          , lnodeConfigInfo_t &lnodeConfigInfo
                           )
-            : nid_(nid)
-            , coreMask_(coreMask)
-            , firstCore_(firstCore)
-            , lastCore_(lastCore)
-            , processors_(processors)
-            , zoneType_(zoneType)
+            : nid_(lnodeConfigInfo.nid)
+            , coreMask_(lnodeConfigInfo.coreMask)
+            , firstCore_(lnodeConfigInfo.firstCore)
+            , lastCore_(lnodeConfigInfo.lastCore)
+            , processors_(lnodeConfigInfo.processor)
+            , zoneType_(lnodeConfigInfo.zoneType)
             , pnodeConfig_(pnodeConfig)
             , next_(NULL)
             , prev_(NULL)
@@ -230,41 +225,32 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfigP( CLNodeConfig *lnodeConfig 
 }
 
 CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
-                                                   , int           nid
-                                                   , cpu_set_t    &coreMask 
-                                                   , int           firstCore
-                                                   , int           lastCore
-                                                   , int           processors
-                                                   , ZoneType      zoneType
+                                                   , lnodeConfigInfo_t &lnodeConfigInfo
                                                    )
 {
     const char method_name[] = "CLNodeConfigContainer::AddLNodeConfig";
     TRACE_ENTRY;
 
     // nid list is NOT sequential from zero
-    if ( ! (nid >= 0 && nid < lnodesConfigMax_) )
+    if ( ! (lnodeConfigInfo.nid >= 0 && lnodeConfigInfo.nid < lnodesConfigMax_) )
     {
         char la_buf[MON_STRING_BUF_SIZE];
-        sprintf(la_buf, "[%s], Error: Invalid nid=%d - should be >= 0 and < %d)\n", method_name, nid, lnodesConfigMax_);
+        sprintf( la_buf, "[%s], Error: Invalid nid=%d - should be >= 0 and < %d)\n"
+               , method_name, lnodeConfigInfo.nid, lnodesConfigMax_);
         mon_log_write(MON_LNODECONF_ADD_LNODE_1, SQ_LOG_CRIT, la_buf);
         return( NULL );
     }
 
-    assert( lnodesConfig_[nid] == NULL );
+    assert( lnodesConfig_[lnodeConfigInfo.nid] == NULL );
 
     CLNodeConfig *lnodeConfig = new CLNodeConfig( pnodeConfig
-                                                , nid
-                                                , coreMask 
-                                                , firstCore
-                                                , lastCore
-                                                , processors
-                                                , zoneType );
+                                                , lnodeConfigInfo );
     if (lnodeConfig)
     {
         // Bump the logical node count
         lnodesCount_++;
         // Add it to the array
-        lnodesConfig_[nid] = lnodeConfig;
+        lnodesConfig_[lnodeConfigInfo.nid] = lnodeConfig;
         // Add it to the container list
         if ( head_ == NULL )
         {
@@ -278,7 +264,7 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
         }
 
         // Set the next available nid
-        nextNid_ = (nid == nextNid_) ? (nid+1) : nextNid_ ;
+        nextNid_ = (lnodeConfigInfo.nid == nextNid_) ? (lnodeConfigInfo.nid+1) : nextNid_ ;
         if ( nextNid_ == lnodesConfigMax_ )
         {   // We are at the limit, search for unused nid from begining
             nextNid_ = -1;
@@ -311,7 +297,7 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
                           "        (nid=%d, pnid=%d, nextNid_=%d)\n"
                           "        (lnodesCount_=%d,lnodesConfigMax=%d)\n"
                         , method_name, __LINE__
-                        , nid, pnodeConfig->GetPNid(), nextNid_
+                        , lnodeConfigInfo.nid, pnodeConfig->GetPNid(), nextNid_
                         , lnodesCount_, lnodesConfigMax_);
         }
     }
@@ -319,7 +305,8 @@ CLNodeConfig *CLNodeConfigContainer::AddLNodeConfig( CPNodeConfig *pnodeConfig
     {
         int err = errno;
         char la_buf[MON_STRING_BUF_SIZE];
-        sprintf(la_buf, "[%s], Error: Can't allocate logical node configuration object - errno=%d (%s)\n", method_name, err, strerror(errno));
+        sprintf( la_buf, "[%s], Error: Can't allocate logical node configuration object - errno=%d (%s)\n"
+               , method_name, err, strerror(errno));
         mon_log_write(MON_LNODECONF_ADD_LNODE_2, SQ_LOG_ERR, la_buf);
     }
 

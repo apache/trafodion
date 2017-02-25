@@ -189,32 +189,21 @@ const char *FormatZidString( FormatZid_t type )
 //  Persistent Process Configuration
 ///////////////////////////////////////////////////////////////////////////////
 
-CPersistConfig::CPersistConfig( const char  *persistPrefix
-                              , const char  *processNamePrefix
-                              , const char  *processNameFormat
-                              , const char  *stdoutPrefix
-                              , const char  *stdoutFormat
-                              , const char  *programName
-                              , const char  *zidFormat
-                              , PROCESSTYPE  processType
-                              , bool         requiresDTM
-                              , int          persistRetries
-                              , int          persistWindow
-                              )
-              : persistPrefix_(persistPrefix)
-              , processNamePrefix_(processNamePrefix)
-              , processNameFormat_(processNameFormat)
-              , stdoutPrefix_(stdoutPrefix)
-              , stdoutFormat_(stdoutFormat)
-              , programName_(programName)
-              , zoneFormat_(zidFormat)
-              , processType_(processType)
+CPersistConfig::CPersistConfig( persistConfigInfo_t &persistConfigInfo )
+              : persistPrefix_(persistConfigInfo.persistPrefix)
+              , processNamePrefix_(persistConfigInfo.processNamePrefix)
+              , processNameFormat_(persistConfigInfo.processNameFormat)
+              , stdoutPrefix_(persistConfigInfo.stdoutPrefix)
+              , stdoutFormat_(persistConfigInfo.stdoutFormat)
+              , programName_(persistConfigInfo.programName)
+              , zoneFormat_(persistConfigInfo.zoneFormat)
+              , processType_(persistConfigInfo.processType)
               , processNameNidFormat_(Nid_Undefined)
               , stdoutNidFormat_(Nid_Undefined)
               , zoneZidFormat_(Zid_Undefined)
-              , requiresDTM_(requiresDTM)
-              , persistRetries_(persistRetries)
-              , persistWindow_(persistWindow)
+              , requiresDTM_(persistConfigInfo.requiresDTM)
+              , persistRetries_(persistConfigInfo.persistRetries)
+              , persistWindow_(persistConfigInfo.persistWindow)
               , next_(NULL)
               , prev_(NULL)
 {
@@ -373,34 +362,12 @@ void CPersistConfigContainer::Clear( void )
     TRACE_EXIT;
 }
 
-CPersistConfig *CPersistConfigContainer::AddPersistConfig( const char  *persistPrefix
-                                                         , const char  *processNamePrefix
-                                                         , const char  *processNameFormat
-                                                         , const char  *stdoutPrefix
-                                                         , const char  *stdoutFormat
-                                                         , const char  *programName
-                                                         , const char  *zidFormat
-                                                         , PROCESSTYPE  processType
-                                                         , bool         requiresDTM
-                                                         , int          persistRetries
-                                                         , int          persistWindow
-                                                         )
+CPersistConfig *CPersistConfigContainer::AddPersistConfig( persistConfigInfo_t &persistConfigInfo )
 {
     const char method_name[] = "CPersistConfigContainer::AddPersistConfig";
     TRACE_ENTRY;
 
-    CPersistConfig *persistConfig = new CPersistConfig( persistPrefix
-                                                      , processNamePrefix
-                                                      , processNameFormat
-                                                      , stdoutPrefix
-                                                      , stdoutFormat
-                                                      , programName
-                                                      , zidFormat
-                                                      , processType
-                                                      , requiresDTM
-                                                      , persistRetries
-                                                      , persistWindow
-                                                      );
+    CPersistConfig *persistConfig = new CPersistConfig( persistConfigInfo );
     if (persistConfig)
     {
         persistsCount_++;
@@ -496,7 +463,8 @@ CPersistConfig *CPersistConfigContainer::GetPersistConfig( PROCESSTYPE processTy
     return config;
 }
 
-void CPersistConfigContainer::InitializePersistKeys( char *persistkeys )
+void CPersistConfigContainer::InitializePersistKeys( char *persistkeys
+                                                   , pkeysVector_t &pkeysVector )
 {
     const char method_name[] = "CPersistConfigContainer::InitializePersistKeys";
     TRACE_ENTRY;
@@ -512,6 +480,7 @@ void CPersistConfigContainer::InitializePersistKeys( char *persistkeys )
             trace_printf("%s@%d Setting pkeysVector=%s\n",
                          method_name, __LINE__, token);
         }
+        pkeysVector.push_back( token );
         pkeysVector_.push_back( token );
         token = strtok( NULL, " ," );
     }
