@@ -150,11 +150,8 @@ select x.z, y.z, substring(x.a, 1, 5), substring(y.a,1,5)
   from t031t1 x, t031t2 y where x.a = y.a and x.b = y.b
   order by x.z, y.z;
 
-sh echo "drop table t031hive;" > TEST031_junk;
-sh regrhive.ksh -f TEST031_junk;
-
-sh echo "create table t031hive(z int, a string, b string);" > TEST031_junk;
-sh regrhive.ksh -f TEST031_junk;
+process hive statement 'drop table t031hive';
+process hive statement 'create table t031hive(z int, a string, b string)';
 
 cqd hive_max_string_length '1000000';
 insert into hive.hive.t031hive select * from t031t1;
@@ -187,6 +184,9 @@ prepare s2 from select count(*) from hive.hive.t031hive;
 control query shape cut ;
 cqd hdfs_io_buffersize reset ;
 cqd hive_min_bytes_per_esp_partition reset;
+
+-- should return error.
+process hive statement 'insert into t values (1)';
 
 -- default USER
 drop table if exists t031t1;

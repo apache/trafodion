@@ -2840,9 +2840,15 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 
 	    if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
 	      {
-		step_ = HANDLE_ERROR_;
+                // if error is 4222 (command not supported), ignore it.
+                if (getDiagsArea()->mainSQLCODE() != -4222)
+                  {
+                    step_ = HANDLE_ERROR_;
+                    
+                    break;
+                  }
 
-		break;
+                getDiagsArea()->clear();
 	      }
 
 	    // insert a NULL entry, this will cause a blank row to be returned
@@ -2859,9 +2865,15 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 
 	    if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
 	      {
-		step_ = HANDLE_ERROR_;
+                // if error is 4222 (command not supported), ignore it.
+                if (getDiagsArea()->mainSQLCODE() != -4222)
+                  {
+                    step_ = HANDLE_ERROR_;
+                    
+                    break;
+                  }
 
-		break;
+                getDiagsArea()->clear();
 	      }
 
 	    // insert a NULL entry, this will cause a blank row to be returned
@@ -2978,9 +2990,15 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 	      {
 		if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
 		  {
-		    step_ = HANDLE_ERROR_;
+                    // if error is 4222 (command not supported), ignore it.
+                    if (getDiagsArea()->mainSQLCODE() != -4222)
+                      {
+                        step_ = HANDLE_ERROR_;
+                        
+                        break;
+                      }
 
-		    break;
+                    getDiagsArea()->clear();
 		  }
 	      }
 
@@ -3001,9 +3019,15 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 	      {
 		if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
 		  {
-		    step_ = HANDLE_ERROR_;
+                    // if error is 4222 (command not supported), ignore it.
+                    if (getDiagsArea()->mainSQLCODE() != -4222)
+                      {
+                        step_ = HANDLE_ERROR_;
+                        
+                        break;
+                      }
 
-		    break;
+                    getDiagsArea()->clear();
 		  }
 	      }
 

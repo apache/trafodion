@@ -416,11 +416,12 @@ Z            Z            (EXPR)  (EXPR)
 
 --- 7 row(s) selected.
 >>
->>sh echo "drop table t031hive;" > TEST031_junk;
->>sh regrhive.ksh -f TEST031_junk;
->>
->>sh echo "create table t031hive(z int, a string, b string);" > TEST031_junk;
->>sh regrhive.ksh -f TEST031_junk;
+>>process hive statement 'drop table t031hive';
+
+--- SQL operation complete.
+>>process hive statement 'create table t031hive(z int, a string, b string)';
+
+--- SQL operation complete.
 >>
 >>cqd hive_max_string_length '1000000';
 
@@ -557,6 +558,14 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should return error.
+>>process hive statement 'insert into t values (1)';
+
+*** ERROR[3242] This statement is not supported. Reason: Only CREATE, DROP, ALTER or TRUNCATE hive DDL statements can be specified.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
 >>-- default USER
 >>drop table if exists t031t1;
 
@@ -567,7 +576,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:15 2016
+-- Definition current  Thu Feb 23 00:12:00 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -598,7 +607,7 @@ A            B
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:18 2016
+-- Definition current  Thu Feb 23 00:12:06 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -649,7 +658,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:28 2016
+-- Definition current  Thu Feb 23 00:12:14 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -678,7 +687,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:36 2016
+-- Definition current  Thu Feb 23 00:12:23 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -703,7 +712,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:44 2016
+-- Definition current  Thu Feb 23 00:12:28 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -723,7 +732,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:54 2016
+-- Definition current  Thu Feb 23 00:12:35 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -738,7 +747,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Sep 20 11:39:56 2016
+-- Definition current  Thu Feb 23 00:12:38 2017
 
   (
     A                                INT DEFAULT NULL
@@ -761,7 +770,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Sep 20 11:40:04 2016
+-- Definition current  Thu Feb 23 00:12:42 2017
 
   (
     A                                INT DEFAULT NULL
@@ -779,7 +788,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Sep 20 11:40:09 2016
+-- Definition current  Thu Feb 23 00:12:52 2017
 
   (
     A                                INT DEFAULT NULL
@@ -866,7 +875,7 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 >>invoke table(index_table t031t1i1);
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1I1
--- Definition current  Tue Sep 20 11:40:37 2016
+-- Definition current  Thu Feb 23 00:13:14 2017
 
   (
     "A@"                             INT NO DEFAULT

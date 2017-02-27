@@ -11,17 +11,21 @@
 >>
 >>obey TEST007(tests_traf);
 >>-- tests for views on hive tables
->>sh echo "drop table thive1;" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
->>sh echo "create table thive1(a int, b int);" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'drop table thive1';
+
+--- SQL operation complete.
+>>process hive statement 'create table thive1(a int, b int)';
+
+--- SQL operation complete.
 >>sh echo "insert into thive1 values (1, 2);" > TEST007_junk;
 >>sh regrhive.ksh -f TEST007_junk;
 >>
->>sh echo "drop table thive2;" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
->>sh echo "create table thive2(a int, b int);" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'drop table thive2';
+
+--- SQL operation complete.
+>>process hive statement 'create table thive2(a int, b int)';
+
+--- SQL operation complete.
 >>sh echo "insert into thive2 values (1, 2);" > TEST007_junk;
 >>sh regrhive.ksh -f TEST007_junk;
 >>
@@ -79,7 +83,7 @@ CREATE /*IMPLICIT*/ EXTERNAL TABLE THIVE1
 >>invoke trafodion.sch007.vhivehbase;
 
 -- Definition of Trafodion view TRAFODION.SCH007.VHIVEHBASE
--- Definition current  Wed Feb 22 04:31:49 2017
+-- Definition current  Thu Feb 23 20:03:32 2017
 
   (
     AA                               INT DEFAULT NULL
@@ -323,8 +327,9 @@ A            B
           3            4
 
 --- 2 row(s) selected.
->>sh echo "drop table thive1;" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'drop table thive1';
+
+--- SQL operation complete.
 >>execute s;
 
 *** ERROR[4262] Object HIVE.HIVE.THIVE1 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'drop external table' command to drop the external table.
@@ -344,10 +349,12 @@ A            B
 >>cqd hive_views_create_external_table 'OFF';
 
 --- SQL operation complete.
->>sh echo "drop table thive3;" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
->>sh echo "create table thive3(a int, b int);" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'drop table thive3';
+
+--- SQL operation complete.
+>>process hive statement 'create table thive3(a int, b int)';
+
+--- SQL operation complete.
 >>create view trafodion.sch007.vhive6 as select * from hive.hive.thive3;
 
 *** WARNING[1071] View usage information for the following hive tables could not be set. Make sure that an external table either already exists or implicit creation has not been disabled. Hive tables: HIVE.HIVE.THIVE3
@@ -374,26 +381,32 @@ CREATE TABLE THIVE3
 >>
 >>
 >>obey TEST007(setup_hive);
->>sh echo "create database hivesch007;" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'create database hivesch007';
+
+--- SQL operation complete.
 >>
->>sh echo "create table hivesch007.thive1 (a int);" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'create table hivesch007.thive1 (a int)';
+
+--- SQL operation complete.
 >>
 >>sh echo "insert into hivesch007.thive1 values (1);" > TEST007_junk;
 >>sh regrhive.ksh -f TEST007_junk;
 >>
->>sh echo "create view hivesch007.vhive1 as select * from hivesch007.thive1 where thive1.a > 0;" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'create view hivesch007.vhive1 as select * from hivesch007.thive1 where thive1.a > 0';
+
+--- SQL operation complete.
 >>
->>sh echo "create view hivesch007.vhive11 as select * from hivesch007.vhive1 where vhive1.a > 0;" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'create view hivesch007.vhive11 as select * from hivesch007.vhive1 where vhive1.a > 0';
+
+--- SQL operation complete.
 >>
->>sh echo "create table thive007 (a int);" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'create table thive007 (a int)';
+
+--- SQL operation complete.
 >>
->>sh echo "create view vhive007 as select * from thive007 where a > 0;" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'create view vhive007 as select * from thive007 where a > 0';
+
+--- SQL operation complete.
 >>
 >>insert into hive.hive.thive007 values (1);
 
@@ -403,7 +416,7 @@ CREATE TABLE THIVE3
 >>invoke hive.hivesch007.vhive1;
 
 -- Definition of native Hive view VHIVE1
--- Definition current  Wed Feb 22 04:35:19 2017
+-- Definition current  Thu Feb 23 20:05:17 2017
 
   (
     A                                INT
@@ -445,7 +458,7 @@ A
 >>invoke hive.hivesch007.vhive11;
 
 -- Definition of native Hive view VHIVE11
--- Definition current  Wed Feb 22 04:35:22 2017
+-- Definition current  Thu Feb 23 20:05:21 2017
 
   (
     A                                INT
@@ -651,8 +664,9 @@ A
 
 --- SQL operation complete.
 >>
->>sh echo "drop table hivesch007.thive1;" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'drop table hivesch007.thive1';
+
+--- SQL operation complete.
 >>
 >>prepare s from select * from hive.hivesch007.vhive11;
 
@@ -665,8 +679,9 @@ A
 *** ERROR[15017] Statement S was not found.
 
 >>
->>sh echo "create table hivesch007.thive1 (a int);" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'create table hivesch007.thive1 (a int)';
+
+--- SQL operation complete.
 >>
 >>prepare s from select * from hive.hivesch007.vhive11;
 
@@ -675,8 +690,9 @@ A
 
 --- 0 row(s) selected.
 >>
->>sh echo "drop table hivesch007.thive1;" > TEST007_junk;
->>sh regrhive.ksh -f TEST007_junk;
+>>process hive statement 'drop table hivesch007.thive1';
+
+--- SQL operation complete.
 >>
 >>execute s;
 

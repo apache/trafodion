@@ -182,14 +182,11 @@ prepare s from select a, sum(b) from t033t3 group by (a);
 explain options 'f' s;
 
 -- group by rollup and grouping on hive tables
-sh echo "drop table t033hive1;" > TEST033_junk;
-sh regrhive.ksh -f TEST033_junk;
-sh echo "create table t033hive1(a int, b int);" > TEST033_junk;
-sh regrhive.ksh -f TEST033_junk;
-sh echo "drop table t033hive2;" > TEST033_junk;
-sh regrhive.ksh -f TEST033_junk;
-sh echo "create table t033hive2(a int, b int);" > TEST033_junk;
-sh regrhive.ksh -f TEST033_junk;
+process hive statement 'drop table t033hive1';
+process hive statement 'create table t033hive1(a int, b int)';
+process hive statement 'drop table t033hive2';
+process hive statement 'create table t033hive2(a int, b int)';
+
 insert into hive.hive.t033hive1 values (1,2), (null, null);
 insert into hive.hive.t033hive2 values (1,2), (null, null);
 prepare s from select t1.a, t2.b , grouping(t1.a), grouping(t2.b),
