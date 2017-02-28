@@ -3910,6 +3910,20 @@ InputPhysicalProperty* NestedJoin::generateIpp(
   InputPhysicalProperty* ipp = NULL;
 
   // ----------------------------------------------------------------
+  // If there is a cardinality constraint on the outer child, we'll
+  // pass that information along to the inner child.
+  // ----------------------------------------------------------------
+  Cardinality minRows;
+  Cardinality maxRows;
+  CardConstraint * outerCardinalityConstraint = NULL;
+
+  if (child(0).getGroupAttr()->hasCardConstraint(minRows, maxRows))
+    {
+      outerCardinalityConstraint = new(CmpCommon::statementHeap())
+                   CardConstraint(minRows,maxRows);
+    }
+
+  // ----------------------------------------------------------------
   // Get the sort order of my left child and pass this information to
   // the context for optimizing my right child.  (Costing the inner
   // table access has a dependency on the order from the outer table).
@@ -4102,17 +4116,33 @@ InputPhysicalProperty* NestedJoin::generateIpp(
               mappedChildPartFunc,
               mappedDp2SortOrderPartFunc,
               FALSE,
-              sppForChild->getexplodedOcbJoinProperty());
+              sppForChild->getexplodedOcbJoinProperty(),
+              outerCardinalityConstraint);
   }
-  else
+  else if (isPlan0)
   {
-    if (NOT isPlan0)
-       return NULL;
-
     ipp = new(CmpCommon::statementHeap())
-            InputPhysicalProperty(TRUE,mappedChildPartFunc,sppForChild->getexplodedOcbJoinProperty());
-
+            InputPhysicalProperty(
+              TRUE,
+              mappedChildPartFunc,
+              sppForChild->getexplodedOcbJoinProperty(),
+              outerCardinalityConstraint);
   }
+  else if (outerCardinalityConstraint)
+  {
+    // only one thing to pass in this case
+    ValueIdSet emptySet;
+    ipp = new(CmpCommon::statementHeap())
+            InputPhysicalProperty(
+              emptySet,
+              NULL,
+              NULL,
+              NULL,
+              FALSE,
+              NULL,
+              outerCardinalityConstraint); 
+  }
+  // else ipp remains NULL
 
   return ipp;
 

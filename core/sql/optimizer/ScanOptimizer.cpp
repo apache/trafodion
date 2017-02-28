@@ -3448,7 +3448,25 @@ ScanOptimizer::isMdamEnabled() const
 
     // If # of probes for NJ is <= cqd(MDAM_UNDER_NJ_PROBES_THRESHOLD),
     // we will use MDAM regardless of the setting of CQD MDAM_SCAN_METHOD.
-    // When the CQD is 0, MDAM under NJ is not considered.
+    // When the CQD is 0, MDAM under NJ is not considered unless we
+    // have a cardinality constraint on the number of probes that 
+    // guarantees at most one probe.
+
+    const InputPhysicalProperty* ippForMe =
+      getContext().getInputPhysicalProperty();
+    if (ippForMe)
+      {
+        const CardConstraint * outerCardConstraint =
+          ippForMe->getOuterCardConstraint();
+        if (outerCardConstraint)
+          {
+            Cardinality upperBound = outerCardConstraint->getUpperBound();
+            if (upperBound <= (Cardinality)1)
+              return TRUE;  // guaranteed that there is at most one probe
+            else if (upperBound < repeatCount.value())
+              repeatCount = upperBound;  // can improve the probe estimate
+          }
+      }
 
     Lng32 mdam_under_nj_probes =
          (ActiveSchemaDB()->getDefaults()).getAsLong(

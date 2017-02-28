@@ -1392,8 +1392,9 @@ private:
 // concerning the parent, ancestors, or siblings that could be helpful
 // in costing the current operator. It is currently only used by       
 // nested join to pass physical information about the left child to the
-// right child. If assumeSortedForCosting_ is set then all other fields will be NULL
-// and if any of the nj... fields are set assumeSortedForCosting_ is FALSE.
+// right child. With a few exceptions, if assumeSortedForCosting_ is set
+// then all other fields will be NULL and if any of the nj... fields are
+// set assumeSortedForCosting_ is FALSE.
 // -----------------------------------------------------------------------
 
 class InputPhysicalProperty : public NABasicObject
@@ -1407,13 +1408,15 @@ class InputPhysicalProperty : public NABasicObject
        const PartitioningFunction* const outerOrderPartFunc = NULL,
        const PartitioningFunction* const dp2SortOrderPartFunc =NULL,
        const NABoolean assumeSortedForCosting = FALSE,
-	   NABoolean explodedOcbJoinForCosting = FALSE)
+	   NABoolean explodedOcbJoinForCosting = FALSE,
+       const CardConstraint * outerCardConstraint = NULL)
       : njOuterCharOutputs_(outerCharOutputs),
         njOuterOrder_(outerOrder),
         njOuterOrderPartFunc_(outerOrderPartFunc),
         njDp2OuterOrderPartFunc_(dp2SortOrderPartFunc),
 	assumeSortedForCosting_(assumeSortedForCosting),
-        njOuterPartFuncForNonUpdates_(outerOrderPartFunc),
+        outerCardConstraint_(outerCardConstraint),
+         njOuterPartFuncForNonUpdates_(outerOrderPartFunc),
 		explodedOcbJoinForCosting_(explodedOcbJoinForCosting)
     {}
 	// Constructor especially for Exploded Nested Join
@@ -1426,19 +1429,22 @@ class InputPhysicalProperty : public NABasicObject
            njOuterOrder_(NULL),
            njOuterOrderPartFunc_(NULL),
            njOuterPartFuncForNonUpdates_(NULL),
-           njDp2OuterOrderPartFunc_(NULL)
+           njDp2OuterOrderPartFunc_(NULL),
+           outerCardConstraint_(NULL)
     {}
     InputPhysicalProperty(
         const NABoolean assumeSortedProbesForCosting,
         const PartitioningFunction* const njOuterPartFunc,
-		NABoolean explodedOcbJoinForCosting = FALSE)
+		NABoolean explodedOcbJoinForCosting,
+        const CardConstraint * outerCardConstraint = NULL)
         :  assumeSortedForCosting_(assumeSortedProbesForCosting),
            njOuterPartFuncForNonUpdates_(njOuterPartFunc),
 		   explodedOcbJoinForCosting_(explodedOcbJoinForCosting),
            njOuterCharOutputs_(NULL),
            njOuterOrder_(NULL),
            njOuterOrderPartFunc_(NULL),
-           njDp2OuterOrderPartFunc_(NULL)
+           njDp2OuterOrderPartFunc_(NULL),
+           outerCardConstraint_(outerCardConstraint)
     {}
 
 
@@ -1448,6 +1454,7 @@ class InputPhysicalProperty : public NABasicObject
         njOuterOrder_(other.njOuterOrder_),
         njOuterOrderPartFunc_(other.njOuterOrderPartFunc_),
         njDp2OuterOrderPartFunc_(other.njDp2OuterOrderPartFunc_),
+        outerCardConstraint_(other.outerCardConstraint_),
 	assumeSortedForCosting_(other.assumeSortedForCosting_),
         njOuterPartFuncForNonUpdates_(other.njOuterPartFuncForNonUpdates_),
 		explodedOcbJoinForCosting_(other.explodedOcbJoinForCosting_)
@@ -1468,6 +1475,9 @@ class InputPhysicalProperty : public NABasicObject
 
     const PartitioningFunction* getNjDp2OuterOrderPartFunc() const
       { return njDp2OuterOrderPartFunc_; }
+
+    const CardConstraint * getOuterCardConstraint() const
+      { return outerCardConstraint_; }
 
     NABoolean getAssumeSortedForCosting() const
       { return assumeSortedForCosting_; }
@@ -1508,6 +1518,12 @@ class InputPhysicalProperty : public NABasicObject
     // we want to find partition function even when order is not 
     // important. See case2 comment for assumeSortedForCosting_ below.
     const PartitioningFunction* njOuterPartFuncForNonUpdates_;
+
+    // If we have a cardinality constraint from the outer child, we
+    // can use this to sharpen bounds on estimated number of probes
+    // in the inner child tree. In particular, if there is a small
+    // upper bound, MDAM becomes a safe choice for inner child scans.
+    const CardConstraint * outerCardConstraint_;
 
     // assumeSortedForCosting_ flag is set for two cases:
     // case 1: when input is rowset.
