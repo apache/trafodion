@@ -3430,6 +3430,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_USE_REGION_XN,                          "OFF"),
 
   DDkwd__(TRAF_USE_RWRS_FOR_MD_INSERT,                   "ON"),
+  DDkwd__(TRANSLATE_ERROR,                             "ON"),
+  DDkwd__(TRANSLATE_ERROR_UNICODE_TO_UNICODE,          "ON"),
 
   DDkwd__(TRY_DP2_REPARTITION_ALWAYS,		"OFF"),
 
