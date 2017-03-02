@@ -40,7 +40,7 @@ drop table t001_Datatypes;
 drop table_mapping function sessionize_dynamic;
 drop table_mapping function sessionize_dynamic_shared;
 drop table_mapping function sessionize_err;
-drop table_mapping function fibonacci;
+drop table_mapping function "Fibonacci";
 drop library TEST001;
 drop table_mapping function sessionize_java;
 drop table_mapping function fibonacci_java;
@@ -214,7 +214,7 @@ library TEST001;
 -- DDL time. We will get an error at runtime, though.
 
 -- Testing a TMUDF with no table-valued inputs
-create table_mapping function fibonacci(start_row int, num_rows int)
+create table_mapping function "Fibonacci"(start_row int, num_rows int)
 returns (ordinal int, fibonacci_number largeint)
 external name 'Fibonacci'
 language cpp
@@ -363,16 +363,16 @@ execute s;
 -- will fail until tinyint support is added for spj/procedures
 cqd traf_tinyint_spj_support 'ON';
 select *
-from UDF(fibonacci(1,10)) XO
+from UDF("Fibonacci"(1,10)) XO
 order by 1;
 cqd traf_tinyint_spj_support reset;
 
 select *
-from UDF(fibonacci(1,10)) XO
+from UDF("Fibonacci"(1,10)) XO
 order by 1;
 
 select sum(fibonacci_number)
-from UDF(fibonacci(50,10)) XO;
+from UDF("Fibonacci"(50,10)) XO;
 
 select *
 from UDF(fibonacci_java(1,10)) XO
@@ -383,11 +383,11 @@ from UDF(fibonacci_java(50,10)) XO;
 
 control query shape join(tmudf, tmudf);
 select *
-from UDF(fibonacci(1,10)) natural join UDF(fibonacci_java(1,10));
+from UDF("Fibonacci"(1,10)) natural join UDF(fibonacci_java(1,10));
 control query shape off;
 
 select *
-from UDF(fibonacci(1,10)) cpp1 natural join
+from UDF("Fibonacci"(1,10)) cpp1 natural join
      UDF(fibonacci_java(1,10)) java1 natural join
      UDF(fibonacci_java(1,10)) java2;
 

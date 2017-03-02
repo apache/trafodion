@@ -81,7 +81,7 @@ drop table t10;
 
 drop function GETMXV;
 drop function ADD2;
-drop function ADDDAYS2DATE;
+drop function "AddDays2Date@";
 drop function GETCOLLATION;
 drop function SESSION_USER_NAME;
 drop function VALIDATE_SESSION_USER_NAME;
@@ -161,8 +161,8 @@ language c parameter style sql external name 'add2'
 library TEST107
 deterministic no sql final call allow any parallelism state area size 1024 ;
 
--- ADDDAYS2DATE: Adds days to a date
-create function ADDDAYS2DATE(date,int) returns (NEWDATE date)
+-- "AddDays2Date@": Adds days to a date
+create function "AddDays2Date@"(date,int) returns (NEWDATE date)
 language c parameter style sql external name 'addDaysToDate'
 library TEST107
 deterministic no sql final call allow any parallelism state area size 1024 ;
@@ -355,8 +355,8 @@ execute S;
 select add2(a,b) from t10;
 select add2(a,c) from t10;
 
-values(adddays2date(date'2000-01-01',2));
-select adddays2date(date'2000-01-01', a) from t10;
+values("AddDays2Date@"(date'2000-01-01',2));
+select "AddDays2Date@"(date'2000-01-01', a) from t10;
 
 values(getMXV());
 
