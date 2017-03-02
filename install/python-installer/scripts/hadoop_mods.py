@@ -26,7 +26,8 @@
 import time
 import sys
 import json
-from common import ParseHttp, ParseJson, MODCFG_FILE, err, info, retry
+from constants import MODCFG_FILE
+from common import ParseHttp, ParseJson, err, info, retry
 
 modcfgs = ParseJson(MODCFG_FILE).load()
 

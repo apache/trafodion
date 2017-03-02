@@ -40,27 +40,9 @@ except ImportError:
     import xml.etree.ElementTree as ET
 from ConfigParser import ConfigParser
 from collections import defaultdict
+from constants import VERSION_FILE
 
-INSTALLER_LOC = re.search('(.*)/\w+',os.path.dirname(os.path.abspath(__file__))).groups()[0]
-
-CONFIG_DIR = INSTALLER_LOC + '/configs'
-SCRIPTS_DIR = INSTALLER_LOC + '/scripts'
-
-USER_PROMPT_FILE = CONFIG_DIR + '/prompt.json'
-SCRCFG_FILE = CONFIG_DIR + '/script.json'
-VERSION_FILE = CONFIG_DIR + '/version.json'
-MODCFG_FILE = CONFIG_DIR + '/mod_cfgs.json'
-DEF_PORT_FILE = CONFIG_DIR + '/default_ports.ini'
-
-DBCFG_FILE = INSTALLER_LOC + '/db_config'
-DBCFG_TMP_FILE = INSTALLER_LOC + '/.db_config_temp'
-
-TMP_DIR = '/tmp/.trafodion_install_temp'
 MARK = '[ERR]'
-
-def version():
-    print 'Installer version: %s' % __VERSION__
-    exit(0)
 
 def ok(msg):
     print '\n\33[32m***[OK]: %s \33[0m' % msg
