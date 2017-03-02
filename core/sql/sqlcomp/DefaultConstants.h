@@ -3893,6 +3893,9 @@ enum DefaultConstants
   CSE_COMMON_KEY_PRED_CONTROL,
   CSE_PCT_KEY_COL_PRED_CONTROL,
 
+  TRANSLATE_ERROR,
+  TRANSLATE_ERROR_UNICODE_TO_UNICODE,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

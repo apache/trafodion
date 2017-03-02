@@ -393,10 +393,12 @@ ex_function_substring::ex_function_substring(OperatorTypeEnum oper_type,
 ex_function_translate::ex_function_translate(OperatorTypeEnum oper_type,
                                    Attributes ** attr,
                                    Space * space,
-                                   Int32 conv_type)
+                                   Int32 conv_type,
+                                   Int16 flags)
 : ex_function_clause(oper_type, 2 , attr, space)
 {
   conv_type_= conv_type;
+  flags_ = flags;
 };
 
 ex_function_trim::ex_function_trim(OperatorTypeEnum oper_type,
@@ -5812,6 +5814,8 @@ ex_expr::exp_return_type ex_function_translate::eval(char *op_data[],
 
   Attributes * op0 = getOperand(0);
   Attributes * op1 = getOperand(1);
+  ULng32 convFlags = (flags_ & TRANSLATE_FLAG_ALLOW_INVALID_CODEPOINT ?
+                      CONV_ALLOW_INVALID_CODE_VALUE : 0);
 
 #pragma nowarn(1506)   // warning elimination 
       return convDoIt(op_data[1],
@@ -5828,7 +5832,9 @@ ex_expr::exp_return_type ex_function_translate::eval(char *op_data[],
         op0->getVCIndicatorLength(),
         heap,
         diagsArea,
-        (ConvInstruction)convType);
+        (ConvInstruction)convType,
+        NULL,
+        convFlags);
 #pragma warn(1506)  // warning elimination 
 }
   

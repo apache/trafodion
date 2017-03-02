@@ -465,6 +465,74 @@ C5BF
 5349                                
 
 --- 1 row(s) selected.
+>>-- Invalid UTF-16 surrogate pairs
+>>select converttohex(TRANSLATE(_ucs2 X'D8340041' using UCS2toUTF8)) from (values(0))x;
+
+*** ERROR[8690] An invalid character value encountered in TRANSLATE function. Source charset UNICODE , Target charset UTF8. Error data in HEX: 34ffffffd84100 .
+
+--- 0 row(s) selected.
+>>select converttohex(TRANSLATE(_ucs2 X'DD1E0041' using UCS2toUTF8)) from (values(0))x;
+
+*** ERROR[8690] An invalid character value encountered in TRANSLATE function. Source charset UNICODE , Target charset UTF8. Error data in HEX: 1effffffdd4100 .
+
+--- 0 row(s) selected.
+>>cqd TRANSLATE_ERROR_UNICODE_TO_UNICODE 'off';
+
+--- SQL operation complete.
+>>select converttohex(TRANSLATE(_ucs2 X'D8340041' using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)      
+------------
+
+3F41        
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(_ucs2 X'DD1E0041' using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)      
+------------
+
+3F41        
+
+--- 1 row(s) selected.
+>>select converttohex(cast(cast(_ucs2 X'DD1E0041' as char(2) character set ucs2) as char(2) character set UTF8)) from (values(0))x;
+
+(EXPR)          
+----------------
+
+3F41            
+
+--- 1 row(s) selected.
+>>cqd TRANSLATE_ERROR_UNICODE_TO_UNICODE reset;
+
+--- SQL operation complete.
+>>cqd TRANSLATE_ERROR 'off';
+
+--- SQL operation complete.
+>>select converttohex(TRANSLATE(_ucs2 X'D8340041' using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)      
+------------
+
+3F41        
+
+--- 1 row(s) selected.
+>>select converttohex(TRANSLATE(_ucs2 X'DD1E0041' using UCS2toUTF8)) from (values(0))x;
+
+(EXPR)      
+------------
+
+3F41        
+
+--- 1 row(s) selected.
+>>select converttohex(cast(cast(_ucs2 X'DD1E0041' as char(2) character set ucs2) as char(2) character set UTF8)) from (values(0))x;
+
+(EXPR)          
+----------------
+
+3F41            
+
+--- 1 row(s) selected.
 >>--
 >>select converttohex(LEFT(      x'C2 80 C2 81 C2 82 DF BE DF BF',4)) from (values(0))x;
 
