@@ -86,28 +86,25 @@ TBD - A future update will include details on how tickets can be managed at the 
 
 === Kerberos installation
 The {project-name} installation scripts automatically determine if Kerberos is enabled on the node.  If it is enabled,
-then the environment variable SECURE_HADOOP is set to "Y".  
+then the environment variable SECURE_HADOOP is set to "Y".
 
 The following are questions that will be asked related to Kerberos:
 
 * Enter KDC server address, default is []: – no default
 * Enter admin principal (include realm), default is []:  - no default
-* Enter fully qualified name for HBase keytab, default is []: - Installer searches for a valid keytab based on the distribution
-* Enter fully qualified name for HDFS keytab, default is []: - Installer searches for a valid keytab based on the distribution
-* Enter max lifetime for Trafodion principal (valid format required), default is [24hours]:
-* Enter renew lifetime for Trafodion principal (valid format required), default is [7days]:
-* Enter Trafodion keytab name, default is []:  - Installer determines default name based on the distribution
-* Enter keytab location, default is []:  - Installer determins default name based on the distribution
+* Enter password for admin principal:
 
-NOTE: The {project-name} installer always asked for the KDC admin password when enabling Kerberos independent on whether running in Automated
-of Guided mode. It does not save this password.
+NOTE: KDC admin password will be saved only in configuration file `db_config.bakYYMMDD_HHMM` in installer folder when installation completed.
+You can delete this file for secure perspective.
+NOTE: Keytab files are auto detected by installer in CDH/HDP cluster.
+NOTE: Installer doesn't support kerberos enabled Apache Hadoop for this release.
 
 [[enable-security-ldap]]
 == Configuring LDAP
 {project-name} does not manage user names and passwords internally but supports authentication via directory servers using
 the OpenLDAP protocol, also known as LDAP servers. You can configure the LDAP servers during installation by answering the {project-name}
 Installer's prompts. To configure LDAP after installation run the {project-name} security installer directly.  Installing LDAP also enables database
-authorization (privilege support). 
+authorization (privilege support).
 
 Once authentication and authorization are enabled, {project-name} allows users to be registered in the database and allows privileges
 on objects to be granted to users and roles (which are granted to users). {project-name} also supports component-level (or system-level)
@@ -510,7 +507,7 @@ SQL USER CONNECTED user not connected
 SQL USER DB NAME   SQLUSER1
 SQL USER ID        33367
 TERMINAL CHARSET   ISO88591
-TRANSACTION ID     
+TRANSACTION ID
 TRANSACTION STATE  not in progress
 WARNINGS           on
 ```
