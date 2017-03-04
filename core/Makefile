@@ -1,5 +1,4 @@
 ## Top-level Makefile with rules for main components
-
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
