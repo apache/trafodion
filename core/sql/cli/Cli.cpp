@@ -9717,7 +9717,7 @@ Lng32 SQLCLI_LOBcliInterface
 	// set parserflags to allow ghost table
 	currContext.setSqlParserFlags(0x1);
 	
-	Lng32 numChunks = 0;
+	Int64 numChunks = 0;
 	Lng32 len;
 	cliRC = cliInterface->executeImmediate(query, (char*)&numChunks, &len, FALSE);
 
@@ -10366,7 +10366,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   // set parserflags to allow ghost table
   currContext.setSqlParserFlags(0x1);
 	
-  Lng32 numEntries = 0;
+  Int64 numEntries = 0;
   Lng32 len;
   cliRC = cliInterface->executeImmediate(query, (char*)&numEntries, &len, FALSE);
   str_sprintf(logBuf,"Number of entries in descchunktable %s is %d",lobDescChunksName, numEntries);

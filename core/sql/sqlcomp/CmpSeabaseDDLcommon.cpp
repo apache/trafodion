@@ -9690,7 +9690,7 @@ Lng32 cliRC = 0;
                fromOwnerID);
                
 int32_t length = 0;
-int32_t rowCount = 0;
+Int64 rowCount = 0;
 
    cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,NULL);
   

@@ -457,7 +457,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 
    bool isVolatile = (memcmp(schName.data(),"VOLATILE_SCHEMA",strlen("VOLATILE_SCHEMA")) == 0);
    int32_t length = 0;
-   int32_t rowCount = 0;
+   Int64 rowCount = 0;
    bool someObjectsCouldNotBeDropped = false;
    char errorObjs[1010];
    Queue * objectsQueue = NULL;
@@ -1006,7 +1006,7 @@ void CmpSeabaseDDL::alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode)
 
    bool isVolatile = (memcmp(schName.data(),"VOLATILE_SCHEMA",strlen("VOLATILE_SCHEMA")) == 0);
    int32_t length = 0;
-   int32_t rowCount = 0;
+   Int64 rowCount = 0;
    bool someObjectsCouldNotBeAltered = false;
    char errorObjs[1010];
    Queue * objectsQueue = NULL;
@@ -1397,7 +1397,7 @@ char buf[4000];
                catalogName.data(),schemaName.data(),newOwnerID);
                
 int32_t length = 0;
-int32_t rowCount = 0;
+Int64 rowCount = 0;
 
    cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,NULL);
   
