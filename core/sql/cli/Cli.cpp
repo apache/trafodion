@@ -9717,7 +9717,7 @@ Lng32 SQLCLI_LOBcliInterface
 	// set parserflags to allow ghost table
 	currContext.setSqlParserFlags(0x1);
 	
-	Int64 numChunks = 0;
+	Lng32 numChunks = 0;
 	Lng32 len;
 	cliRC = cliInterface->executeImmediate(query, (char*)&numChunks, &len, FALSE);
 

@@ -7791,7 +7791,7 @@ void CmpSeabaseDDL::alterSeabaseTableAddPKeyConstraint(
   // this new primary key.
   // Do this optimization in mode_special_4 only.
   Lng32 len = 0;
-  Int64 rowCount = 0;
+  Lng32 rowCount = 0;
   NABoolean ms4 = FALSE;
   if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON)
     {
