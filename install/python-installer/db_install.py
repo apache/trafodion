@@ -519,8 +519,6 @@ def user_input(options, prompt_mode=True, pwd=''):
     g('ldap_security')
     if cfgs['ldap_security'].upper() == 'Y':
         g('db_root_user')
-        g('db_admin_user')
-        g('db_admin_pwd')
         g('ldap_hosts')
         g('ldap_port')
         g('ldap_identifiers')

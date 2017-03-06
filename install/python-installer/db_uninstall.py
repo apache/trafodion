@@ -96,7 +96,7 @@ def main():
 
     remotes = [Remote(node, pwd=pwd) for node in nodes]
     # stop trafodion on the first node
-    remotes[0].execute('sudo su %s -l -c ckillall' % TRAF_USER, chkerr=False)
+    #remotes[0].execute('sudo su %s -l -c ckillall' % TRAF_USER, chkerr=False)
 
     # remove trafodion userid and group on all trafodion nodes, together with folders
     for remote in remotes:
