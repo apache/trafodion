@@ -96,13 +96,13 @@ def main():
 
     remotes = [Remote(node, pwd=pwd) for node in nodes]
     # stop trafodion on the first node
-    remotes[0].execute('sudo su %s -l -c ckillall' % TRAF_USER, chkerr=False)
+    #remotes[0].execute('sudo su %s -l -c ckillall' % TRAF_USER, chkerr=False)
 
     # remove trafodion userid and group on all trafodion nodes, together with folders
     for remote in remotes:
         info('Remove Trafodion on node [%s] ...' % remote.host)
         remote.execute('ps -ef|grep ^%s|awk \'{print $2}\'|xargs sudo kill -9' % TRAF_USER, chkerr=False)
-        remote.execute('ps -ef|grep krb5check|awk \'{print $2}\'|xargs sudo kill -9', chkerr=False) # traf kerberos service
+        remote.execute('trafid=`getent passwd %s|awk -F: \'{print $3}\'`; if [[ -n $trafid ]]; then ps -ef|grep ^$trafid|awk \'{print $2}\'|xargs sudo kill -9; fi' % TRAF_USER, chkerr=False)
         remote.execute('sudo -n /usr/sbin/userdel -rf %s' % TRAF_USER, chkerr=False)
         remote.execute('sudo -n /usr/sbin/groupdel %s' % TRAF_USER, chkerr=False)
         remote.execute('sudo -n rm -rf /etc/security/limits.d/%s.conf %s /tmp/hsperfdata_%s 2>/dev/null' % (TRAF_USER, TRAF_CFG_DIR, TRAF_USER), chkerr=False)
