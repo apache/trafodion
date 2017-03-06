@@ -8332,13 +8332,19 @@ user_defined_function_name :
        regular_identifier_not_builtin 
          {
            // Function name only.
-           $1->toUpper(); // UDF names can't be delimited.
+           $1->toUpper();
            ComObjectName *name = new (PARSERHEAP()) 
              ComObjectName(*$1, COM_UDF_NAME, 1, PARSERHEAP());
            if (name == NULL) YYABORT;
            $$ = name;
          }
-
+     | DELIMITED_IDENTIFIER
+         {
+           ComObjectName *name = new (PARSERHEAP()) 
+             ComObjectName(*$1, COM_UDF_NAME, 1, PARSERHEAP());
+           if (name == NULL) YYABORT;
+           $$ = name;
+         }
      | qualified_name '.' regular_identifier_not_builtin
          {
            // qualified name can't be more than 2 parts.

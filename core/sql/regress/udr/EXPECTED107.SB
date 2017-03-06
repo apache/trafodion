@@ -35,8 +35,8 @@
 
 --- SQL operation complete.
 >>
->>-- ADDDAYS2DATE: Adds days to a date
->>create function ADDDAYS2DATE(date,int) returns (NEWDATE date)
+>>-- "AddDays2Date@": Adds days to a date
+>>create function "AddDays2Date@"(date,int) returns (NEWDATE date)
 +>language c parameter style sql external name 'addDaysToDate'
 +>library TEST107
 +>deterministic no sql final call allow any parallelism state area size 1024 ;
@@ -445,7 +445,7 @@ Functions for Library SCH.TEST107
 =================================
 
 SCH.ADD2
-SCH.ADDDAYS2DATE
+SCH.AddDays2Date@
 SCH.CURRENT_ROLE_NAME
 SCH.CURRENT_USER_NAME
 SCH.ECHOBNUM0
@@ -568,7 +568,7 @@ ADD2
 
 --- 10 row(s) selected.
 >>
->>values(adddays2date(date'2000-01-01',2));
+>>values("AddDays2Date@"(date'2000-01-01',2));
 
 NEWDATE   
 ----------
@@ -576,7 +576,7 @@ NEWDATE
 2000-01-03
 
 --- 1 row(s) selected.
->>select adddays2date(date'2000-01-01', a) from t10;
+>>select "AddDays2Date@"(date'2000-01-01', a) from t10;
 
 NEWDATE   
 ----------

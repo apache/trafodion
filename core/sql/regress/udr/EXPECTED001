@@ -201,7 +201,7 @@
 >>-- DDL time. We will get an error at runtime, though.
 >>
 >>-- Testing a TMUDF with no table-valued inputs
->>create table_mapping function fibonacci(start_row int, num_rows int)
+>>create table_mapping function "Fibonacci"(start_row int, num_rows int)
 +>returns (ordinal int, fibonacci_number largeint)
 +>external name 'Fibonacci'
 +>language cpp
@@ -227,7 +227,7 @@
 Table_mapping Functions for Library SCH.TEST001
 ===============================================
 
-SCH.FIBONACCI
+SCH.Fibonacci
 SCH.SESSIONIZE_DYNAMIC
 SCH.SESSIONIZE_DYNAMIC_SHARED
 
@@ -517,7 +517,7 @@ SESSION_ID            SEQUENCE_NO           USERID                            TS
 
 --- SQL operation complete.
 >>select *
-+>from UDF(fibonacci(1,10)) XO
++>from UDF("Fibonacci"(1,10)) XO
 +>order by 1;
 
 ORDINAL      FIBONACCI_NUMBER    
@@ -540,7 +540,7 @@ ORDINAL      FIBONACCI_NUMBER
 --- SQL operation complete.
 >>
 >>select *
-+>from UDF(fibonacci(1,10)) XO
++>from UDF("Fibonacci"(1,10)) XO
 +>order by 1;
 
 ORDINAL      FIBONACCI_NUMBER    
@@ -560,7 +560,7 @@ ORDINAL      FIBONACCI_NUMBER
 --- 10 row(s) selected.
 >>
 >>select sum(fibonacci_number)
-+>from UDF(fibonacci(50,10)) XO;
++>from UDF("Fibonacci"(50,10)) XO;
 
 (EXPR)              
 --------------------
@@ -603,7 +603,7 @@ ORDINAL      FIBONACCI_NUMBER
 
 --- SQL operation complete.
 >>select *
-+>from UDF(fibonacci(1,10)) natural join UDF(fibonacci_java(1,10));
++>from UDF("Fibonacci"(1,10)) natural join UDF(fibonacci_java(1,10));
 
 ORDINAL      FIBONACCI_NUMBER    
 -----------  --------------------
@@ -625,7 +625,7 @@ ORDINAL      FIBONACCI_NUMBER
 --- SQL operation complete.
 >>
 >>select *
-+>from UDF(fibonacci(1,10)) cpp1 natural join
++>from UDF("Fibonacci"(1,10)) cpp1 natural join
 +>     UDF(fibonacci_java(1,10)) java1 natural join
 +>     UDF(fibonacci_java(1,10)) java2;
 
