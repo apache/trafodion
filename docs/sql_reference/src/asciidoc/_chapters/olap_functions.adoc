@@ -26,8 +26,20 @@
 [[olap_functions]]
 = OLAP Functions
 
-This section describes the syntax and semantics of the On Line
-Analytical Process (OLAP) window functions. The OLAP window functions
+On-line Analytical Process (OLAP) functions provide the capability to partition source data into groups of rows, order the rows in each group, compute aggregates within a window frame for a row. Typically, an OLAP function in SQL is expressed in two components <FUNCTION> and <OVER>: <FUNCTION> specifies the function and the arguments, and <OVER> specifies the partitioning, the ordering and the window frames. <OVER> is sometimes called the window. OLAP functions are used to perform analytic tasks against data sets stored in or computed from a set of tables, such as moving average and ranks.
+
+Trafodion also supports a set of sequence functions which are SQL extensions and have to be used together with a SEQUENCE BY clause. These sequence functions can be used to compute a running quantity of a column up to and include the current row as follows.
+
+* `RUNNINGAVG (column-expression)`: returns the average of non-null values. For more information, see <<runningavg_function,RUNNINGAVG Function>>.
+* `RUNNINGCOUNT{(*) | (column-expression)}`: returns the number of rows up to and including the current row. For more information, see <<runningcount_function,RUNNINGCOUNT Function>>.
+* `RUNNINGMAX(column-expression)`: returns the maximum of values of a column expression up to and including the current row. For more information, see <<runningmax_function,RUNNINGMAX Function>>.
+* `RUNNINGMIN(column-expression)`: returns the minimum of values of a column expression up to and including the current row. For more information, see <<runningmin_function,RUNNINGMIN Function>>.
+* `RUNNINGRANK(expression)`: Returns the rank of the given value of an intermediate result table ordered by a SEQUENCE BY clause in a SELECT statement. For more information, see <<runningrank_function,RUNNINGRANK Function>>.
+* `RUNNINGSTDDEV(column-expression)`: returns the standard deviation of non-null values of a column expression up to and including the current row. For more information, see <<runningstddev_function,RUNNINGSTDDEV Function>>.
+* `RUNNINGSUM(column-expression)`: returns the sum of non-null values of a column expression up to and including the current row. For more information, see <<runningsum_function,RUNNINGSUM Function>>.
+* `RUNNINGVARIANCE(column-expression)`: returns the variance of non-null values of a column expression up to and including the current row. For more information, see <<runningvariance_function,RUNNINGVARIANCE Function>>.
+
+This section describes the syntax and semantics of the OLAP window functions. The OLAP window functions
 are ANSI compliant.
 
 [[considerations_for_window_functions]]
@@ -133,11 +145,20 @@ GROUP BY num, workgroupnum, annualsalary;
 [[limitations_for_window_functions]]
 == Limitations for Window Functions
 
-These limitations apply to all window functions.
+Trafodion supports many ANSI compliant OLAP window functions. These functions include AVG, COUNT, DENSE_RANK, MAX, MIN, RANK, ROW_NUMBER, STDDEV, SUM, and VARIANCE. However, Trafodion imposes certain limitations on all window functions.
 
 * The ANSI _window-clause_ is not supported by {project-name}. Only the
 _inline-window-specification_ is supported. An attempt to use an ANSI
 _window-clause_ will result in a syntax error.
+
+TIP: A window clause provides a mechanism to define and to refer to a window in a SQL query, as illustrated in the following example.
+```
+SELECT EmployeeID, Surname, Salary, State,
+  AVG( Salary ) OVER Salary_Window
+FROM Employees
+WINDOW Salary_Window AS ( PARTITION BY State )
+ORDER BY State, Surname;
+```
 
 * The _window-frame-clause_ cannot contain a FOLLOWING term, either
 explicitly or implicitly. Because the default window frame clause
@@ -149,10 +170,15 @@ message.
 
 * The window frame units can only be ROWS. RANGE is not supported by
 {project-name}. An attempt to use RANGE will result in a syntax error.
++
+The difference between the two is that the frame with ROWS unit includes all rows regardless of the values in the ORDER BY clause. The frame with RANGE unit will include rows that are identical in value in the ORDER BY clause.
 
 * The ANSI _window-frame-exclusion-specification_ is not supported by
 {project-name}. An attempt to use a _window-frame-exclusion-specification_
 will result in a syntax error.
++
+The _window-frame-exclusion-specification_ can exclude rows, such as the current one, the current group, or current ties, from the window is not supported. This specification is not widely implementation by other vendors.
+
 
 * Multiple _inline-window-specifications_ in a single SELECT clause are
 not supported. For each window function within a SELECT clause, the
@@ -461,8 +487,110 @@ FROM persnl.employee;
 ```
 
 <<<
+[[lead_window_function]]
+== LEAD Window Function
+
+The LEAD window function can be used to access the subsequent rows (or columns from the subsequence rows) from the current rows, without using self-joins. The return type of LEAD is that of `_expression_`.
+
+`LEAD (expression, offset, default-value)`
+
+* `_expression_`
++
+Specifies a scalar expression or a column whose value from the subsequent row is to be returned. If the subsequent row does not exist in the current group, `_expression_` returns NULL.
+
+* `_offset_`
++
+Specifies an expression that can be evaluated to a positive integer indicating the offset after the current row. For example, a value of 1 accesses the next row and a value of 3 accesses the third row from the current row.
+
+* `_default-value_`
++
+Specifies the value if the value returned by _expression_ is NULL.
+
+<<<
+[[examples_of_lead_window_function]]
+=== Examples of LEAD Window Function
+
+The LEAD function in the following query returns the start date of next plan and DATEADD function subtracts one day from that date as the end date of the current plan.
+
+```
+SELECT *,
+DATEADD(DAY, -1, LEAD(StartDate, 1,'01-Jan-2100')
+     OVER (PARTITION BY CustomerCode ORDER BY StartDate ASC)) AS EndDate
+FROM CustomerPlan
+```
+
+<<<
+[[lag_window_function]]
+== LAG Window Function
+
+The LAG window function can be used to access the previous rows from the same result set without using self-joins. The LAG function takes the same three parameters as the LEAD function with the exception that `_offset_` specifies the offset to access a row that comes before the current row. The return type of LAG is that of `_expression_`.
+
+`LAG (expression, offset, default-value)`
+
+* _expression_
++
+Specifies a scalar expression or a column whose value from the previous row is to be returned. If the previous row does not exist in the current group, `_expression_` returns NULL.
+
+* _offset_
++
+Specifies an expression that can be evaluated to a positive integer indicating the offset before the current row. For example, a value of 1 accesses the previous row and a value of 3 accesses the third row before the current row.
+
+* _default-value_
++
+Specifies the value if the value returned by `_expression_` is NULL.
+
+<<<
+[[examples_of_lag_window_function]]
+=== Examples of LAG Window Function
+
+The LAG function in the following query returns the plan code of a previous plan and ’N/A’ for the first plan.
+
+```
+SELECT  CustomerCode, PlanCode AS CurrentPlanCode,
+              LAG(PlanCode, 1, 'NA')
+              OVER (PARTITION BY   CustomerCode ORDER BY StartDate ASC)   AS LastPlan
+FROM   CustomerPlan;
+```
+
+<<<
+[[first_value_window_function]]
+== FIRST_VALUE Window Function
+
+The FIRST_VLAUE window function returns the first value from a sorted partition.
+
+`FIRST_VALUE (expression [ RESPECT NULLS | IGNORE NULLS ] )`
+
+* _expression_
++
+Specifies a scalar expression or a column whose value from the first row in the partition is to be returned.
+
+* IGNORE NULLS
++
+Specifies the function to return first non-null value.
+
+<<<
+[[examples_of_first_value_window_function]]
+=== Examples of FIRST_VALUE Window Function
+
+Each row returned by the following query contains the employee name, the department number, the salary and the pay difference over the lowest salary in the department.
+
+```
+SELECT ename, deptno, sal,
+       sal - FIRST_VALUE( sal ) OVER ( PARTITION BY  deptno
+  ORDER BY sal ) diff
+  FROM emp
+ORDER BY deptno, sal;
+```
+
+<<<
+[[last_value_window_function]]
+== LAST_VALUE Window Function
+
+The LAST_VALUE window function is similar to the FIRST_VALUE function with the exception that the value from the last row in a sorted partition is returned.
+
+<<<
 [[max_window_function]]
-=== MAX Window Function
+== MAX Window Function
 
 MAX is a window function that returns the maximum value of all non null
 values of the given expression for the current window specified by the
@@ -1074,5 +1202,3 @@ SELECT
 , VARIANCE (salary) OVER (PARTITION BY deptnum ORDER BY empnum ROWS UNBOUNDED PRECEDING)
 FROM persnl.employee;
 ```
-
-
