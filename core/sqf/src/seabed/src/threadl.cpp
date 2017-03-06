@@ -149,12 +149,8 @@ private:
 static void sb_thread_ctx_key_dtor(void *pp_ctx);
 static void sb_thread_name_key_dtor(void *pp_name);
 
-SB_Thread_Table_Entry_Mgr           gv_sb_thread_table_entry_mgr;
-SB_Ts_Table_Mgr<SB_Thread_Ctx_Type> gv_sb_thread_table("tablemgr-THREAD-MGR",
-                                                       SB_Table_Mgr_Alloc::ALLOC_FAST,
-                                                       SB_Table_Mgr_Alloc::ALLOC_ENTRY_DYN,
-                                                       &gv_sb_thread_table_entry_mgr,
-                                                       10, 10); // cap-init, cap-inc
+SB_Ts_Table_Mgr<SB_Thread_Ctx_Type> *gv_sb_thread_table = NULL;
+SB_Thread_Table_Entry_Mgr           *gv_sb_thread_table_entry_mgr = NULL;
 static int                          gv_sb_thread_ctx_tls_inx =
                                       SB_create_tls_key(sb_thread_ctx_key_dtor,
                                                         "thread-ctx");
@@ -165,6 +161,24 @@ static int                          gv_sb_thread_name_tls_inx =
 #ifdef SB_THREAD_LOCK_STATS
 SB_Thread_Lock_Stats                gv_sb_lock_stats;
 #endif
+
+SB_Ts_Table_Mgr<SB_Thread_Ctx_Type> *getGlobalTsTableMgr() {
+  if (gv_sb_thread_table != NULL)
+     return gv_sb_thread_table;
+  SB_util_short_lock();
+  if (gv_sb_thread_table != NULL) {
+     SB_util_short_unlock();
+     return gv_sb_thread_table;
+  }
+  gv_sb_thread_table_entry_mgr = new SB_Thread_Table_Entry_Mgr();
+  gv_sb_thread_table = new SB_Ts_Table_Mgr<SB_Thread_Ctx_Type> ("tablemgr-THREAD-MGR",
+                                           SB_Table_Mgr_Alloc::ALLOC_FAST,
+                                           SB_Table_Mgr_Alloc::ALLOC_ENTRY_DYN,
+                                           gv_sb_thread_table_entry_mgr,
+                                           10, 10); // cap-init, cap-inc
+  SB_util_short_unlock();
+  return gv_sb_thread_table;
+}
 
 
 typedef struct Sthr_Disp {
@@ -189,7 +203,7 @@ static void sb_thread_ctx_key_dtor(void *pp_ctx) {
         trace_where_printf(WHERE,
                            "thread exiting ctx-id=%d, name=%s\n",
                            lp_ctx->iv_ctx_id, lp_ctx->ia_thread_name);
-    gv_sb_thread_table.free_entry(lp_ctx->iv_ctx_id);
+    getGlobalTsTableMgr()->free_entry(lp_ctx->iv_ctx_id);
 }
 
 static void sb_thread_name_key_dtor(void *pp_name) {
@@ -232,7 +246,7 @@ static void *sb_thread_sthr_disp(void *pp_arg) {
     lp_arg = lp_disp->ip_arg;
     lp_name = lp_disp->ip_name;
     lv_ctx_id = lp_disp->iv_ctx_id;
-    lp_ctx = gv_sb_thread_table.get_entry(lv_ctx_id);
+    lp_ctx = getGlobalTsTableMgr()->get_entry(lv_ctx_id);
     lp_ctx->ip_fun = lp_fun;
     lp_ctx->iv_self = pthread_self();
     lp_ctx->iv_tid = gettid();
@@ -261,8 +275,8 @@ void SB_thread_main() {
     SB_Thread_Ctx_Type *lp_ctx;
     int                 lv_ctx_id;
 
-    lv_ctx_id = static_cast<int>(gv_sb_thread_table.alloc_entry());
-    lp_ctx = gv_sb_thread_table.get_entry(lv_ctx_id);
+    lv_ctx_id = static_cast<int>(getGlobalTsTableMgr()->alloc_entry());
+    lp_ctx = getGlobalTsTableMgr()->get_entry(lv_ctx_id);
     lp_ctx->iv_ctx_id = lv_ctx_id;
     strcpy(lp_ctx->ia_thread_name, "main");
     lp_ctx->iv_self = pthread_self();
@@ -282,9 +296,9 @@ SB_Thread::Sthr::Id_Ptr SB_Thread::Sthr::create(char           *pp_name,
     lp_disp->ip_arg = pp_arg;
     lp_disp->ip_name = pp_name;
 
-    lp_disp->iv_ctx_id = static_cast<int>(gv_sb_thread_table.alloc_entry());
+    lp_disp->iv_ctx_id = static_cast<int>(getGlobalTsTableMgr()->alloc_entry());
     SB_Thread_Ctx_Type *lp_ctx =
-      gv_sb_thread_table.get_entry(lp_disp->iv_ctx_id);
+      getGlobalTsTableMgr()->get_entry(lp_disp->iv_ctx_id);
     lp_ctx->iv_ctx_id = lp_disp->iv_ctx_id;
     lp_ctx->ia_thread_name[sizeof(lp_ctx->ia_thread_name)-1] = '\0';
     strncpy(lp_ctx->ia_thread_name,
