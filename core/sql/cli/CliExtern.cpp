@@ -853,6 +853,7 @@ short my_mpi_setup (Int32* argc, char** argv[] );
 #endif
 };
 
+#define MY_ARG_MAX 2097152
 
 short sqInit()
 {
@@ -860,17 +861,28 @@ short sqInit()
 
   if (!sbInitialized) {
     sbInitialized = true;
-    
     Int32     largc = 0;
     char    **largv = 0;
     char    procFileName[128];
     FILE    *proc_file = 0;
-    char    buf[8193];
-    short   p_i = 0;
+    char    *buf = 0;
+    int     p_i = 0;
     Int32     c = 0;
 
+    long lv_arg_max = sysconf(_SC_ARG_MAX);
+    if ((errno == EINVAL) ||  // In the remote chance that sysconf returns an error
+	(lv_arg_max < 0) ||   // just some sanity check
+	(lv_arg_max > MY_ARG_MAX)) {
+      lv_arg_max = MY_ARG_MAX;
+    }
+
+    buf = (char *) malloc ((lv_arg_max+1) * sizeof(char));
+    if (buf == NULL) {
+      cerr << "sqInit: Error while allocatting memory for " << getpid() <<". Exiting..." << endl;
+      exit(1);
+    }
     // This memory is never freed.
-    largv = (char **) malloc(100 * sizeof(char *));
+    largv = (char **) malloc(512 * sizeof(char *));
 
     sprintf(procFileName, "/proc/%d/cmdline",getpid());
     proc_file = fopen(procFileName, "r");
@@ -878,7 +890,7 @@ short sqInit()
     buf[0] = 0;  p_i = 0;
     while ((c = fgetc(proc_file)) != EOF) {
       buf[p_i++] = c; 
-      if (p_i >= sizeof(buf))
+      if (p_i >= lv_arg_max)
          abort();
       if (c == 0) {
         // This memory is never freed.
@@ -889,6 +901,7 @@ short sqInit()
       }
     }
 
+    free(buf);
     fclose(proc_file);
 
     try
