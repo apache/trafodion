@@ -33,14 +33,14 @@ This section describes CQDs that are used to influence query execution.
 
 [cols="25%h,75%"]
 |===
-| *Description*               | Allows index maintenance to be performed concurrently with base table operation. 
+| *Description*               | Allows index maintenance to be performed concurrently with base table operation.
 | *Values*                    | *'ON'* Index maintenance is allowed. +
 *'OFF'* Index maintenance is not allowed. +
  +
 The default value is *'ON'*.
-| *Usage*                     | HBase `put` operations are blocking. When the table has one or more indexes, 
-then the insert/update/delete (IUD) operation response time is improved by executing the index maintenance 
-operations concurrently with the base table operation: the put operations to these HBase tables are executed 
+| *Usage*                     | HBase `put` operations are blocking. When the table has one or more indexes,
+then the insert/update/delete (IUD) operation response time is improved by executing the index maintenance
+operations concurrently with the base table operation: the put operations to these HBase tables are executed
 in different threads.
 | *Production Usage*          | Yes.  It is 'ON' by default. This feature can be disabled by setting this CQD to 'OFF'.
 | *Impact*                    | IUD operations on tables with one or more indexes can become slower.
@@ -57,7 +57,7 @@ in different threads.
 
 [cols="25%h,75%"]
 |===
-| *Description*               | Influences HBase to retain the data blocks in memory after they are read. 
+| *Description*               | Influences HBase to retain the data blocks in memory after they are read.
 | *Values*                    |
 *'ON'/'OFF'/'SYSTEM'*  +
  +
@@ -71,7 +71,7 @@ data blocks cached earlier thereby impacting the performance of the random reads
 in such a case. +
  +
 Set the CQD <<hbase-region-server-max-heap-size,HBASE_REGION_SERVER_MAX_HEAP_SIZE>> value to reflect the amount of java heap size reserved for the region servers.
-This CQD is used by the {project-name} Optimizer to evaluate if the block cache should be turned off. 
+This CQD is used by the {project-name} Optimizer to evaluate if the block cache should be turned off.
 | *Production Usage*          | Leave the setting to be 'SYSTEM' when HBase is configured to use LRU block cache. If needed,
 you can override this settings with 'ON' or 'OFF'.  +
  +
@@ -150,7 +150,7 @@ The default value is *'10000'*.
 a sequential scan of a table. +
  +
 You need to consider how soon the maximum number of rows are materialized on the Region Servers.  When filtering is pushed down to Region Servers,
-then it can take a longer time depending upon the query and the predicates involved. This can result in HBase scanner timeouts. 
+then it can take a longer time depending upon the query and the predicates involved. This can result in HBase scanner timeouts.
 | *Production Usage*          | Use the default setting and reduce the value to avoid HBase scanner timeouts. Please contact {project-support}.
 if you think that you need to use this CQD.
 | *Impact*                    | Not applicable.
@@ -167,7 +167,7 @@ if you think that you need to use this CQD.
 
 [cols="25%h,75%"]
 |===
-| *Description*               |	Allows INSERT, UPDATE, and DELETE (IUD) operations to be performed as an HBase batch `put` operation. 
+| *Description*               |	Allows INSERT, UPDATE, and DELETE (IUD) operations to be performed as an HBase batch `put` operation.
 | *Values*                    |
 *'ON'*: Perform IUD operations as an HBase batch `put` operation. +
 *'OFF'*: Do not perform IUD operations as an HBase batch `put` operation. +
@@ -192,7 +192,7 @@ If possible, then the query plan involves VSBB operators. The Virtual Sequential
 
 [cols="25%h,75%"]
 |===
-| *Description*               |	Determines the maximum number of rows in a batch `put` operation to HBase. 
+| *Description*               |	Determines the maximum number of rows in a batch `put` operation to HBase.
 | *Values*                    |
 Numeric value.
  +
@@ -216,7 +216,7 @@ You can adjust the maximum size to suit your application needs and thus tune it 
 
 [cols="25%h,75%"]
 |===
-| *Description*               |	Enables {project-name} to leverage the HBase small scanner optimization. This optimization reduces I/O usage up to 66% 
+| *Description*               |	Enables {project-name} to leverage the HBase small scanner optimization. This optimization reduces I/O usage up to 66%
 and enables non-blocking reads for higher concurrency support. When a scan is known to require less than a HBASE BLOCK SIZE (default is 64K),
 then enabling the HBase small scanner optimization increases performance.
 | *Values*                    |
@@ -237,3 +237,27 @@ If you enable small scanner on large size scan incorrectly, then you are likely 
 | *Deprecated In Release*     | Not applicable.
 |===
 
+<<<
+[[scratch-disks]]
+== SCRATCH_DISKS
+
+[cols="25%h,75%"]
+|===
+| *Description*               |	Allows a CQD specification to override the env settings for STFS locations.
+| *Values*                    | Scratch disk locations for overflow (linux path names).
+| *Usage*                     | Currently the scratch directory locations are set at installation time. The STFS layer that manages the scratch file creation reads the envvar in ms.env to determine where to create the scratch files.
+
+The CQD is allowed to be specified that will override the envvar setting. This will give the user some flexibility to change scratch directory locations.
+
+If the CQD is not set (empty), the envvar setting will work.
+
+The requirement is that the directories MUST exists on every node and Trafodion user will need permissions to write to those directories. If not, an error will be returned when a query involving sort/hash overflow is executed.
+
+| *Production Usage*          | Please contact {project-support}.
+| *Impact*                    | More volume of data can be processed, for example, large data set.
+| *Level*                     | System.
+| *Conflicts/Synergies*       | Not applicable.
+| *Real Problem Addressed*    | Not applicable.
+| *Introduced In Release*     | Trafodion 2.1.
+| *Deprecated In Release*     | Not applicable.
+|===
