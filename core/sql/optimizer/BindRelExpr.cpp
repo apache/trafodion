@@ -13058,7 +13058,12 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
     setTableDesc(naTableToptableDesc);
 
     // Now naTable has the Scan's table, and naTableTop has the GU's table.
-    isScanOnDifferentTable = (naTable != naTableTop);
+    // Rather than compare naTable pointers we now compare the extended
+    // qualified name contained in them. This name is the key to an natable
+    // object in NATableDB and will enable us to tell if scan's table and 
+    // GU's table are the same.
+    isScanOnDifferentTable = (naTable->getExtendedQualName() != 
+			      naTableTop->getExtendedQualName());
   }
 
   if (bindWA->errStatus())
