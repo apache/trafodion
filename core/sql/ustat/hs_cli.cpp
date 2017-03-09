@@ -539,6 +539,8 @@ Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal)
 
     // Call createHistogramTables to create any table that does not yet exist.
     NAString histogramsLocation = getHistogramsTableLocation(hsGlobal->catSch->data(), FALSE);
+
+    HSTranController TC("Create histogram tables.",&retcode);
     retcode = (CmpSeabaseDDL::createHistogramTables(NULL, histogramsLocation, TRUE, tableNotCreated)); 
     if (retcode < 0 && LM->LogNeeded())
       {
