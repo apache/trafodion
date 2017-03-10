@@ -407,7 +407,7 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
                           /usr/hdp/current/hadoop-client/lib
                           /usr/hdp/current/hadoop-yarn-client"
-  export HADOOP_JAR_FILES="/usr/hdp/current/hadoop-client/client/hadoop-hdfs-*.jar"
+  export HADOOP_JAR_FILES="/usr/hdp/current/hadoop-hdfs-client/hadoop-hdfs-*.jar"
   export HIVE_JAR_DIRS="/usr/hdp/current/hive-client/lib"
   export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
