@@ -238,23 +238,50 @@ If you enable small scanner on large size scan incorrectly, then you are likely 
 |===
 
 <<<
-[[scratch-disks]]
-== SCRATCH_DISKS
+[[scratch-dirs]]
+== SCRATCH_DIRS
 
 [cols="25%h,75%"]
 |===
-| *Description*               |	Allows a CQD specification to override the env settings for STFS locations.
-| *Values*                    | Scratch disk locations for overflow (linux path names).
-| *Usage*                     | Currently the scratch directory locations are set at installation time. The STFS layer that manages the scratch file creation reads the envvar in ms.env to determine where to create the scratch files.
+| *Description*               |	Allows a CQD specification to override the envvar settings for scatch and temporary file locations, which gives user more flexibility to change scratch directory locations.
+| *Values*                    |
+Scratch disk locations for overflow (linux path names).
 
-The CQD is allowed to be specified that will override the envvar setting. This will give the user some flexibility to change scratch directory locations.
+Multiple locations can be specified, separated by a colon. For example, /tmp/scratch1:/tmp/scratch2.
 
+| *Usage*                     a|
+
+*Two ways to change scratch directory location permanently*:
+
+* Specify this location at installation time.
+
++
+Currently the scratch directory locations are set at installation time. The layer of scratch and temporary file system that manages the scratch file creation and reads the envvar in $TRAF_HOME/etc/ms.env to determine where to create the scratch files.
+
++
+The CQD will override envvar settings, there are two envvar settings: one is STFS_HDD_LOACTION (default), the other is STFS_SSD_LOCATION (SSD disk).
+
++
 If the CQD is not set (empty), the envvar setting will work.
 
-The requirement is that the directories MUST exists on every node and Trafodion user will need permissions to write to those directories. If not, an error will be returned when a query involving sort/hash overflow is executed.
++
+The requirement is that the directories MUST exist on every node and Trafodion user will need permission to write to those directories. If not, an error will be returned when a query involving sort/hash overflow is executed.
+
+* Set it in sqconfig.
+
+*One way to change scratch directory location temporarily*:
+
+* If the scratch directory location is not set at installation time, this CQD is valid only for the duration of the session.
+
++
+These settings will not be stored in $TRAF_HOME/etc/ms.env and will override the envvar settings as long as the CQD is in effect.
 
 | *Production Usage*          | Please contact {project-support}.
-| *Impact*                    | More volume of data can be processed, for example, large data set.
+| *Impact*                    |
+More volume of data can be processed. For example, large data set.
+
+Larger disk space can process larger data set.
+
 | *Level*                     | System.
 | *Conflicts/Synergies*       | Not applicable.
 | *Real Problem Addressed*    | Not applicable.
