@@ -390,8 +390,8 @@ public class HBulkLoadClient
         if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot restored: " + snapshotName);
         deleteSnapshot(snapshotName, tableName);
         if (logger.isDebugEnabled()) logger.debug("HbulkLoadClient.doSnapshotNBulkLoad() - snapshot deleted: " + snapshotName);
-        throw e;
       }
+      throw e;
     }
     finally
     {
