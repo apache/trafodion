@@ -323,6 +323,10 @@ public:
   NABoolean isSeabasePrivMgrMD() const;
   NABoolean isHbaseMappedName() const;
 
+  NABoolean isHbaseCell() const;
+  NABoolean isHbaseRow() const;
+  NABoolean isHbaseCellOrRow() const;
+
   NABoolean isHistograms() const;
   NABoolean isHistogramIntervals() const;
 
