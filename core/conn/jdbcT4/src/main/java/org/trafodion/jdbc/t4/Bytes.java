@@ -21,6 +21,8 @@
 
 package org.trafodion.jdbc.t4;
 
+import java.nio.ByteBuffer;
+
 /**
  * <code>Bytes</code> contains a set of static methods used for byte
  * manipulation. There are three basic types of methods:
@@ -106,19 +108,16 @@ class Bytes {
 		long value = 0;
 		int i=offset;
 		
-		if(swap) {
-			for (int shift = 0; shift < 64; shift += 8) {
-				value |= ( (long)( array[i] & 0xff ) ) << shift;
-				i++;
-			}
-			
-		}else {
-			for (int shift = 56; shift >= 0; shift -= 8) {
-				value |= ( (long)( array[i] & 0xff ) ) << shift;
-				i++;
-			}
-		}
-		
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        
+        buffer.put(array, offset, 8);
+        buffer.flip();
+
+        value = buffer.getLong();
+
+        if (swap)
+            value = Long.reverseBytes(value);
+            
 		return value;
 	}
 
