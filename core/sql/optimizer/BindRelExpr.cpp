@@ -7131,7 +7131,18 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 //   COM_QI_USER_GRANT_ROLE: privileges granted to the user via a role 
 //   COM_QI_USER_GRANT_SPECIAL_ROLE: privileges granted to PUBLIC
 //
-// COM_QI_OBJECT_<priv> types are preferred over COM_QI_USER_GRANT_ROLE.
+// Keys are added as follows:
+//   if a privilege has been granted via a role, add a RoleUserKey
+//      if this role is revoked from the user, then invalidation is forced
+//   if a privilege has been granted to public, add a UserObjectPublicKey
+//      if a privilege is revoked from public, then invalidation is forced
+//   if a privilege has been granted directly to an object, add UserObjectKey
+//      if the privilege is revoked from the user, then invalidation is forced
+//   If a privilege has not been granted to an object, but is has been granted
+//      to a role, add a RoleObjectKey
+//
+//   So if the same privilege has been granted directly to the user and via
+//   a role granted to the user, we only add a UserObjectKey
 // ****************************************************************************
 void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
                                           , const uint32_t userHashValue
@@ -7145,6 +7156,7 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
    ComSecurityKey * UserObjectKey = NULL;
    ComSecurityKey * RoleObjectKey = NULL;
    ComSecurityKey * UserObjectPublicKey = NULL;
+   ComSecurityKey * RoleUserKey = NULL;
    
    // These may be implemented at a later time
    ComSecurityKey * UserSchemaKey = NULL; //privs granted at schema level to user
@@ -7175,6 +7187,12 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
             if ( ! UserObjectKey ) 
                UserObjectKey = thisKey;
          }
+         // Found a security key for a role associated with the user
+         else
+         {
+            if ( ! RoleObjectKey )
+               RoleObjectKey = thisKey;
+         }
       }
      
       // See if the security key is role related
@@ -7182,8 +7200,8 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
       {
          if ( thisKey->getSubjectHashValue() == userHashValue )
          {
-            if (! RoleObjectKey ) 
-               RoleObjectKey = thisKey;
+            if (! RoleUserKey ) 
+               RoleUserKey = thisKey;
          }
       }
 
@@ -7205,7 +7223,12 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
    if ( BestKey != NULL)
       securityKeySet_.insert(*BestKey);
 
-   // Add public if it exists
+   // Add RoleUserKey if priv comes from role - handles revoke role from user
+   if (BestKey == RoleObjectKey)
+      if ( RoleUserKey )
+         securityKeySet_.insert(*RoleUserKey );
+
+   // Add public if it exists - handles revoke public from user
    if ( UserObjectPublicKey != NULL )
      securityKeySet_.insert(*UserObjectPublicKey); 
 }
