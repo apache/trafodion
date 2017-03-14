@@ -7784,6 +7784,120 @@ SELECT (SELECT a FROM t1) FROM t GROUP BY (SELECT a FROM t1);
 SELECT a+1 FROM t GROUP BY 1+a;
 ```
 
+=======
+[[with_clause_syntax]]
+=== Syntax Description of WITH clause
+
+WITH clause, known as Common Table Expressions (CTEs) or subquery factoring clause, was introduced in the SQL-99 standard and has been implemented into Trafodion R2.1.
+
+For a complex expression which is referenced multiple times within the body of a SELECT statement, the WITH clause assigns it an alias. The alias is treated like a temporary table or an inline view that lasts only for the duration of the query and can be referenced various times in the same query.
+
+By abstracting the complicated parts of the query into simpler, separate and logical blocks, and materializing the results of these parts to avoid recomputing it multiple times, the WITH clause has following advantages:
+
+* Simplifies complicated queries, increasing readability and reducing repeated references.
+* Builds reusable unit and decreases maintenance cost.
+* Shortens response time and enhances performance of the query.
+* Improves compatibility with other systems which support WITH clause as well.
+
+
+`with cte-table-name as (sql-query)`
+
+* `_cte-table-name_`
+
++
+Specifies the unique name of the CTE to be created, which is a valid SQL identifier with a maximum of 128 characters. Duplicate names are not allowed in a single WITH clause.
+
+* `_sql-query_`
+
++
+Specifies the query expression that will be denoted by the CTE. For more information, see <<select_statement,SELECT Statement>> .
+
+[[with_clause_considerations]]
+=== Considerations for WITH clause
+
+* Materialization of CTEs in temporary tables is not yet enabled by default.
+
+* Trafodion only supports non-recursive common table expressions, which means WITH clause cannot be self-referencing, but it can reference a previously defined CTE within the same WITH clause.
+
+* WITH clause in Trafodion can be specified only in SELECT statement. INSERT, UPDATE, DELETE and CREATE VIEW statements are not supported yet.
+
+[[with_clause_examples]]
+=== Examples of WITH clause
+
+* The following example defines two CTEs, w1 and w2.
+w2 references w1 which is defined before w2.
+```
+>>select * from t1
+
+ C1 C2
+ ----------
+
+  1 1
+  2 2
+  3 3
+  4 4
+  5 5
+
+ --- SQL operation complete.
+
+>>with w1 as (select * from t1),
+>>w2 as (select * from w1)
+>>select * from w2;
+
+ C1 C2
+ ----------
+
+  1 1
+  2 2
+  3 3
+  4 4
+  5 5
+
+ --- SQL operation complete.
+```
+
+* The following example defines two CTEs, w1 and w2, and then perform a JOIN between them.
+```
+>>select * from t1
+
+ C1 C2
+ ----------
+
+  1 1
+  2 2
+  3 3
+  4 4
+  5 5
+
+ --- SQL operation complete.
+
+>>select * from t2
+
+ C1 C2
+ ----------
+
+  3 3
+  4 4
+  5 5
+  6 6
+  7 7
+
+ --- SQL operation complete.
+
+>>with w1 as (select c1, c2 from t3),
+>>w2 as (select c1, c2 from t2)
+>>select * from w1, w2 where w1.c1 = w2.c1;
+
+ C1 C2 C1 C2
+ ----------
+
+  3 3 3 3
+  4 4 4 4
+  5 5 5 5
+
+ --- SQL operation complete.
+```
+
 <<<
 [[set_schema_statement]]
 == SET SCHEMA Statement
