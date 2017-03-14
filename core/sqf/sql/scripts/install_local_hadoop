@@ -1634,6 +1634,10 @@ echo "$MY_LOCAL_SW_DIST/${HBASE_TAR}"
    </property>
    ${HREGION_IMPL}
    ${MASTER_VISBILITY_COPROC}
+    <property>
+      <name>hbase.client.keyvalue.maxsize</name>
+      <value>0</value>
+    </property>
 </configuration>
 EOF
 

@@ -1198,7 +1198,7 @@ $1~String1 --------------------------------
 4126 42000 99999 BEGINNER MAJOR DBADMIN The row value constructors in a VALUES clause must be of equal degree.
 4127 42000 99999 BEGINNER MAJOR DBADMIN Type $0~String0 cannot be assigned to type $1~String1.
 4128 42000 99999 BEGINNER MAJOR DBADMIN Default volume and subvolume information could not be retrieved from =_DEFAULTS define - DEFINEINFO error $0~int0.
-4129 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character-typed result of the function $0~String0 is longer than 32768 octets.
+4129 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character-typed result of the function $0~String0 is longer than max supported size.
 4130 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~string0 is a read-only DEFAULTS attribute and cannot be updated.
 4131 42000 99999 BEGINNER MAJOR DBADMIN Current_time, current_date, or current_timestamp is not allowed in a check constraint.
 4132 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Current_user, session_user, or system_user is not allowed in a check constraint.

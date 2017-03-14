@@ -7,7 +7,7 @@
 >>invoke T011T1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T011T1
--- Definition current  Tue Oct 18 19:38:05 2016
+-- Definition current  Fri Feb 17 17:11:37 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -143,7 +143,7 @@ A            B
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212343579486936982
+PLAN_ID .................. 212354111499137048
 ROWS_OUT ................. 7
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select * from t011t1 where a >= 3 and a < 5;
@@ -182,7 +182,7 @@ DESCRIPTION
   QUERY_CACHE ............ 0
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 971200116663334701
+  ObjectUIDs ............. 1451969908907031756
   select_list ............ TRAFODION.SCH.T011T1.A, TRAFODION.SCH.T011T1.B
 
 
@@ -1204,6 +1204,9 @@ A            B
 >>
 >>
 >>-- tests for large columns
+>>cqd traf_max_character_col_length '200000';
+
+--- SQL operation complete.
 >>create table t011t4 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(200000 bytes) character set utf8);
 
 --- SQL operation complete.
@@ -1252,6 +1255,9 @@ a                     bbbbbbbbbb  c                                         dddd
 *** ERROR[4247] Specified size in bytes (1000001) exceeds the maximum size allowed (200000) for column D.
 
 --- SQL operation failed with errors.
+>>cqd traf_max_character_col_length reset;
+
+--- SQL operation complete.
 >>
 >>-- tests for repository explain
 >>-- check for repository tables
@@ -1269,7 +1275,7 @@ METRIC_TEXT_TABLE
 >>invoke trafodion."_REPOS_".metric_query_table;
 
 -- Definition of Trafodion table TRAFODION."_REPOS_".METRIC_QUERY_TABLE
--- Definition current  Tue Oct 18 19:40:14 2016
+-- Definition current  Fri Feb 17 17:13:41 2017
 
   (
     INSTANCE_ID                      INT UNSIGNED NO DEFAULT NOT NULL NOT
@@ -1457,7 +1463,7 @@ METRIC_TEXT_TABLE
 >>-- get qid for the prepared stmt
 >>get qid for statement explstmt;
 
-MXID11000018109212343579451270139000000000206U3333300_2285_EXPLSTMT
+MXID11000018963212354111473302000000000000206U3333300_2378_EXPLSTMT
 
 --- SQL operation complete.
 >>
@@ -1509,7 +1515,7 @@ SEQ_NUM      OPERATOR
 --- SQL command prepared.
 >>get qid for statement explstmt2;
 
-MXID11000018109212343579451270139000000000206U3333300_2296_EXPLSTMT2
+MXID11000018963212354111473302000000000000206U3333300_2389_EXPLSTMT2
 
 --- SQL operation complete.
 >>set qid MXID123456 for explstmt2;

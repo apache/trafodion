@@ -1937,6 +1937,10 @@ enum ComQiScope
 #define COM_TEXT__TEXT__MD_COL_MAX_SIZE 3000
 #endif // ! defined(COM_TEXT__TEXT__MD_COL_MAX_SIZE)
 
+// max size 16Mb
+#define MAX_CHAR_COL_LENGTH_IN_BYTES 16777216
+#define MAX_CHAR_COL_LENGTH_IN_BYTES_STR "16777216"
+
 //
 // Definition of class ComUID
 //

@@ -1,7 +1,8 @@
 >>obey TEST009(set_up);
 >>prepare get_hv_schemas from
 +>select schema_name from "_MD_".objects
-+>where schema_name like '\_HV\_%' escape '\' and object_type = 'PS';
++>where (schema_name = '_HV_HIVE_' or schema_name = '_HV_SCH_T009_')
++>       and object_type = 'PS';
 
 --- SQL command prepared.
 >>
@@ -346,7 +347,7 @@ T009T2
 >>invoke hive.sch_t009.t009t1;
 
 -- Definition of hive table T009T1
--- Definition current  Tue Jan 31 21:32:51 2017
+-- Definition current  Fri Feb 17 17:26:07 2017
 
   (
     A                                INT
@@ -416,7 +417,7 @@ _HB__CELL__
 >>invoke trafodion."_HB__ROW__"."baseball";
 
 -- Definition of Trafodion external table TRAFODION."_HB__ROW__"."baseball"
--- Definition current  Tue Jan 31 21:33:04 2017
+-- Definition current  Fri Feb 17 17:26:17 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -429,7 +430,7 @@ _HB__CELL__
 >>invoke trafodion."_HB__CELL__"."baseball";
 
 -- Definition of Trafodion external table TRAFODION."_HB__CELL__"."baseball"
--- Definition current  Tue Jan 31 21:33:06 2017
+-- Definition current  Fri Feb 17 17:26:18 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -518,7 +519,7 @@ ROW_ID      COLS
 >>invoke hive.hive.store_sales;
 
 -- Definition of hive table STORE_SALES
--- Definition current  Tue Jan 31 21:33:17 2017
+-- Definition current  Fri Feb 17 17:26:28 2017
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -562,7 +563,7 @@ ROW_ID      COLS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352658397193063
+PLAN_ID .................. 212354112388392066
 ROWS_OUT ............. 1,709
 EST_TOTAL_COST ........... 0.27
 STATEMENT ................ select * from store_sales where ss_item_sk = 1;
@@ -691,7 +692,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352658398567771
+PLAN_ID .................. 212354112389908739
 ROWS_OUT ......... 2,920,643
 EST_TOTAL_COST ........... 1.07
 STATEMENT ................ select *
@@ -893,7 +894,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Tue Jan 31 21:33:22 2017
+-- Definition current  Fri Feb 17 17:26:34 2017
 
   (
     D_DATE_SK                        INT
@@ -1034,7 +1035,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352658405327436
+PLAN_ID .................. 212354112397694640
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -1125,7 +1126,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Tue Jan 31 21:33:32 2017
+-- Definition current  Fri Feb 17 17:26:45 2017
 
   (
     D_DATE_SK                        INT
@@ -1266,7 +1267,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352658415800073
+PLAN_ID .................. 212354112408875042
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *

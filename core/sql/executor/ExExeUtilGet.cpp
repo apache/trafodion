@@ -266,6 +266,12 @@ static const QueryString getComponentPrivileges[] =
   {" ; "}
 };
 
+static const QueryString getCatalogsQuery[] =
+{
+  {" select * from (values ('TRAFODION'), ('HIVE')) "},
+  {" order by 1 desc "},
+  {" ; "}
+};
 
 static const QueryString getTrafTablesInSchemaQuery[] =
 {
@@ -1628,6 +1634,14 @@ short ExExeUtilGetMetadataInfoTcb::work()
 
 	    switch (getMItdb().queryType_)
 	      {
+              case ComTdbExeUtilGetMetadataInfo::CATALOGS_:
+                {
+		  qs = getCatalogsQuery;
+		  sizeOfqs = sizeof(getCatalogsQuery);
+
+                }
+              break;
+
 	      case ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_:
 		{
 		  qs = getTrafTablesInSchemaQuery;

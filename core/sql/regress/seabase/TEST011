@@ -297,6 +297,7 @@ select * from t011t1;
 
 
 -- tests for large columns
+cqd traf_max_character_col_length '200000';
 create table t011t4 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(200000 bytes) character set utf8);
 insert into t011t4 values ('a', repeat('b', 200), 'c', repeat('d', 400));
 select left (a, 20), left(b, 10), left(c, 10), left (d, 11) from t011t4;
@@ -310,6 +311,7 @@ select left (a, 20), left(b, 10), left(c, 10), left (d, 11) from t011t4;
 
 -- negative test
 create table t011t5 (a char(200000), b varchar(200000), c char(200000 bytes) character set utf8, d varchar(1000001 bytes) character set utf8);
+cqd traf_max_character_col_length reset;
 
 -- tests for repository explain
 -- check for repository tables

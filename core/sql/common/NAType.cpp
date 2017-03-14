@@ -225,6 +225,17 @@ NABoolean NAType::operator==(const NAType& other) const
     return FALSE;
 } // operator==()
 
+NABoolean NAType::equalIgnoreLength(const NAType& other) const
+{
+  if (typeName_ == other.typeName_ &&
+      qualifier_ == other.qualifier_ &&
+      SQLnullFlag_ == other.SQLnullFlag_ &&
+      varLenFlag_ == other.varLenFlag_)
+    return TRUE;
+  else
+    return FALSE;
+}
+
 NABoolean NAType::equalIgnoreNull(const NAType& other) const
 {
   if (typeName_ == other.typeName_ &&
