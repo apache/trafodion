@@ -42,6 +42,9 @@
 #include "SqlInterface.h"
 #include "CommonDiags.h"
 #include "Debug.h"
+#include "SQLWrapper.h"
+
+using namespace SRVR;
 
 // +++ T2_REPO - ToDo needs to be initialized
 #include "ResStatisticsSession.h"
@@ -180,7 +183,7 @@ odbc_SQLSvc_Prepare_sme_(   void *               objtag_,           /* In   */
         }
         else
         {
-            rc = pSrvrStmt->PrepareforMFC(sqlString, stmtType, holdability, queryTimeout,isISUD);
+            //rc = pSrvrStmt->PrepareforMFC(sqlString, stmtType, holdability, queryTimeout,isISUD);
         }
     //End Soln no:10-091103-5969
     }
@@ -726,7 +729,7 @@ odbc_SQLSvc_ExecDirect_sme_(
             out_error_desc_def = exception_->u.SQLError.errorList._buffer;
             for(int i=0; i<listLen; i++, out_error_desc_def++, stmt_error_desc_def++) {
                 int errTxtLen = strlen(stmt_error_desc_def->errorText) + 1;
-                out_error_desc_def->errorText = new char[errTxtLen];
+                MEMORY_ALLOC_ARRAY(out_error_desc_def->errorText, char, errTxtLen);
                 out_error_desc_def->sqlcode = stmt_error_desc_def->sqlcode;
                 out_error_desc_def->rowId = stmt_error_desc_def->rowId;
                 out_error_desc_def->errorDiagnosticId= stmt_error_desc_def->errorDiagnosticId;
@@ -1529,3 +1532,1078 @@ odbc_SQLSvc_CloseUsingLabel_sme_(
     }
     FUNCTION_RETURN_VOID((NULL));
 }
+
+/*
+ * Synchronous method function for
+ * operation 'odbc_SQLSvc_Prepare2withRowsets'
+ */
+extern "C" void
+odbc_SQLSvc_Prepare2withRowsets_sme_(
+        /* In    */ Long dialogueId
+        , /* In    */ Int32 sqlAsyncEnable
+        , /* In    */ Int32 queryTimeout
+        , /* In    */ Int32 inputRowCnt
+        , /* In    */ Int32 sqlStmtType
+        , /* In    */ Int32 stmtLength
+        , /* In    */ const IDL_char *stmtLabel
+        , /* In    */ Int32 stmtLabelCharset
+        , /* In    */ Int32 cursorLength
+        , /* In    */ IDL_string cursorName
+        , /* In    */ Int32 cursorCharset
+        , /* In    */ Int32 moduleNameLength
+        , /* In    */ const IDL_char *moduleName
+        , /* In    */ Int32 moduleCharset
+        , /* In    */ Int64 moduleTimestamp
+        , /* In    */ Int32 sqlStringLength
+        , /* In    */ IDL_string sqlString
+        , /* In    */ Int32 sqlStringCharset
+        , /* In    */ Int32 setStmtOptionsLength
+        , /* In    */ IDL_string setStmtOptions
+        , /* In    */ Int32 holdableCursor
+        , /* Out   */ Int32 *returnCode
+        , /* Out   */ Int32 *sqlWarningOrErrorLength
+        , /* Out   */ BYTE *&sqlWarningOrError
+        , /* Out   */ Int32 *sqlQueryType
+        , /* Out   */ Long *stmtHandle
+        , /* Out   */ Int32 *estimatedCost
+        , /* Out   */ Int32 *inputDescLength
+        , /* Out   */ BYTE *&inputDesc
+        , /* Out   */ Int32 *outputDescLength
+        , /* Out   */ BYTE *&outputDesc
+        )
+{
+    SRVR_STMT_HDL *pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
+    /* This is not used for now 
+     * needed by ODBC rowsets logic
+     * if DCS port to use this lib*/
+    return;	
+}
+
+/*
+ * Synchronous method function for
+ * operation 'odbc_SQLSvc_Prepare2'
+ */
+extern "C" void
+odbc_SQLSvc_Prepare2_sme_(
+        /* In    */ Long dialogueId
+        , /* In    */ Int32 inputRowCnt
+        , /* In    */ Int32 sqlStmtType
+        , /* In    */ const IDL_char *stmtLabel
+        , /* In    */ IDL_string sqlString
+        , /* In    */ Int32 holdableCursor
+        , /* Out   */ Int32 *returnCode
+        , /* Out   */ Int32 *sqlWarningOrErrorLength
+        , /* Out   */ BYTE *&sqlWarningOrError
+        , /* Out   */ Int32 *sqlQueryType
+        , /* Out   */ Long *stmtHandle
+        , /* Out   */ Int32 *estimatedCost
+        , /* Out   */ Int32 *inputDescLength
+        , /* Out   */ BYTE *&inputDesc
+        , /* Out   */ Int32 *outputDescLength
+        , /* Out   */ BYTE *&outputDesc
+        , /* In    */ bool isFromExecDirect)
+{
+    SRVR_STMT_HDL *pSrvrStmt = NULL;
+    SQL_QUERY_COST_INFO cost_info;
+    SQLRETURN rc = SQL_SUCCESS;
+    long sqlcode;
+    char b[317];
+
+    bool bSkipWouldLikeToExecute = false; // some queries have to skip Would Like To Execute
+    bool flag_21036 = false;
+
+    if (sqlString == NULL)
+    {
+        *returnCode = SQL_ERROR;
+        GETMXCSWARNINGORERROR(-1, "HY090", "Invalid SQL String.", sqlWarningOrErrorLength, sqlWarningOrError);
+    }
+
+    // Need to validate the stmtLabel
+    // Given a label find out the SRVR_STMT_HDL
+    pSrvrStmt = createSrvrStmt(dialogueId, stmtLabel, &sqlcode,	NULL, 0, 0, sqlStmtType, false);
+    if(pSrvrStmt == NULL)
+    {
+        *returnCode = SQL_ERROR;
+        GETMXCSWARNINGORERROR(sqlcode, "HY000", "Statement Label could not be allocated.", sqlWarningOrErrorLength, sqlWarningOrError);
+    }
+
+    if(*returnCode == 0)
+    {
+        *stmtHandle = (long)pSrvrStmt;
+        // cleanup all memory allocated in the previous operations
+        pSrvrStmt->cleanupAll();
+        pSrvrStmt->sqlStringLen = strlen(sqlString) + 1;
+        MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlStringText, char, pSrvrStmt->sqlStringLen);
+
+        strncpy(pSrvrStmt->sqlStringText, sqlString, pSrvrStmt->sqlStringLen);
+        pSrvrStmt->sqlStmtType = (short)sqlStmtType;
+        pSrvrStmt->batchMaxRowsetSize = inputRowCnt;
+        if (pSrvrStmt->batchMaxRowsetSize == ROWSET_NOT_DEFINED) pSrvrStmt->batchMaxRowsetSize = DEFAULT_ROWSET_SIZE;
+
+        pSrvrStmt->currentMethod = odbc_SQLSvc_PrepareRowset_ldx_;
+        pSrvrStmt->holdableCursor = holdableCursor;
+        rc = PREPARE_R(pSrvrStmt, isFromExecDirect);
+        switch (rc)
+        {
+            case ODBC_RG_WARNING:
+            case SQL_SHAPE_WARNING:
+            case SQL_SUCCESS_WITH_INFO:
+                *returnCode = SQL_SUCCESS_WITH_INFO;
+                *inputDescLength = pSrvrStmt->inputDescBufferLength;
+                inputDesc = pSrvrStmt->inputDescBuffer;
+                *outputDescLength = pSrvrStmt->outputDescBufferLength;
+                outputDesc = pSrvrStmt->outputDescBuffer;
+                if (rc == SQL_SUCCESS_WITH_INFO)
+                {
+                    GETSQLWARNINGORERROR2(pSrvrStmt);
+                    *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                    memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                }
+                else if (rc == SQL_SHAPE_WARNING)
+                {
+                    *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                    memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                }
+                else
+                {
+                    char *RGWarningOrError = NULL;
+                    MEMORY_ALLOC_ARRAY(RGWarningOrError, char, 256);
+                    sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
+                    sprintf(RGWarningOrError, "The query's estimated cost: %.50s exceeded resource management attribute limit set.", b);
+                    GETMXCSWARNINGORERROR(1, "01000", RGWarningOrError, sqlWarningOrErrorLength, sqlWarningOrError);
+                    MEMORY_DELETE_ARRAY(RGWarningOrError);
+                }
+                break;
+            case SQL_SUCCESS:
+                *returnCode = SQL_SUCCESS;
+                *estimatedCost = (Int32)pSrvrStmt->cost_info.totalTime; // SQL returns cost in a strcuture - cost.totalTime == estimatedCost
+                *sqlQueryType = pSrvrStmt->sqlQueryType;
+                *inputDescLength = pSrvrStmt->inputDescBufferLength;
+                inputDesc = pSrvrStmt->inputDescBuffer;
+                *outputDescLength = pSrvrStmt->outputDescBufferLength;
+                outputDesc = pSrvrStmt->outputDescBuffer;
+                break;
+            case SQL_ERROR:
+            case ODBC_RG_ERROR:
+                *returnCode = SQL_ERROR;
+                if (rc == SQL_ERROR)
+                {
+                    GETSQLWARNINGORERROR2(pSrvrStmt);
+                    *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                    memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                }
+                else
+                {
+                    char *RGWarningOrError = NULL;
+                    MEMORY_ALLOC_ARRAY(RGWarningOrError, char, 256);
+                    sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
+                    sprintf(RGWarningOrError, "The query's estimated cost: %.50s exceeded resource management attribute limit set.", b);
+                    GETMXCSWARNINGORERROR(-1, "HY000", RGWarningOrError, sqlWarningOrErrorLength, sqlWarningOrError);
+                    MEMORY_DELETE_ARRAY(RGWarningOrError);
+                }
+                break;
+            case PROGRAM_ERROR:
+                *returnCode = SQL_ERROR;
+                GETMXCSWARNINGORERROR(-1, "HY000", SQLSVC_EXCEPTION_PREPARE_FAILED, sqlWarningOrErrorLength, sqlWarningOrError);
+                break;
+            default:
+                //			case INFOSTATS_SYNTAX_ERROR:
+                //			case INFOSTATS_STMT_NOT_FOUND:
+                *returnCode = SQL_ERROR;
+                *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                break;
+        }
+    }
+
+    if(pSrvrStmt != NULL)
+        pSrvrStmt->m_need_21036_end_msg = flag_21036;
+
+    return;
+}
+
+//--------------------------------------------------------------------------------
+/*
+ * Synchronous method function for
+ * operation 'odbc_SQLSvc_Execute2withRowsets'
+ */
+extern "C" void
+odbc_SQLSvc_Execute2withRowsets_sme_(
+        /* In    */ Long dialogueId
+        , /* In    */ Int32 sqlAsyncEnable
+        , /* In    */ Int32 queryTimeout
+        , /* In    */ Int32 inputRowCnt
+        , /* In    */ Int32 sqlStmtType
+        , /* In    */ Long stmtHandle
+        , /* In    */ Int32 cursorLength
+        , /* In    */ IDL_string cursorName
+        , /* In    */ Int32 cursorCharset
+        , /* In    */ Int32 holdableCursor
+        , /* In    */ Int32 inValuesLength
+        , /* In    */ BYTE *inValues
+        , /* Out   */ Int32 *returnCode
+        , /* Out   */ Int32 *sqlWarningOrErrorLength
+        , /* Out   */ BYTE *&sqlWarningOrError
+        , /* Out   */ Int32 *rowsAffected
+        , /* Out   */ Int32 *outValuesLength
+        , /* Out   */ BYTE *&outValues)
+{
+    bool bRePrepare2 = false;
+
+    /*
+     * The performance team wanted to be able to stub out the actual inserts
+     * to measure the contributions of individual components to the overall
+     * load times. If the env variable mxosrvr-stubout-EXECUTE2withRowsets
+     * is set in ms.env, we will skip over the call to EXECUTE2withRowsets
+     * and return sql_success, and rowsAffected = input row count
+     */
+    /*static*/ bool bCheckStubExecute2WithRowsets = true;
+    /*static*/ bool bStubExecute2WithRowsets = false;
+
+    if(bCheckStubExecute2WithRowsets)
+    {
+        char *env = getenv("mxosrvr-stubout-EXECUTE2withRowsets");
+        if (env != NULL && strcmp(env,"true") == 0)
+            bStubExecute2WithRowsets = true;
+        bCheckStubExecute2WithRowsets = false;
+    }
+
+
+
+    SRVR_STMT_HDL *pSrvrStmt = NULL;
+    SQLRETURN rc = SQL_SUCCESS;
+    long sqlcode;
+
+    if ((pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle) == NULL)
+    {
+        *returnCode = SQL_ERROR;
+        GETMXCSWARNINGORERROR(-1, "HY000", "Statement Label not found.", sqlWarningOrErrorLength, sqlWarningOrError);
+    }
+    else
+    {
+        *returnCode = SQL_SUCCESS;
+        if (inputRowCnt < 0)
+        {
+        }
+        else if (sqlStmtType == TYPE_SELECT && inputRowCnt > 1)
+        {
+        }
+        else if ((pSrvrStmt->maxRowsetSize < inputRowCnt)  || (pSrvrStmt->current_holdableCursor != holdableCursor))
+        {
+            rePrepare2( pSrvrStmt
+                    , sqlStmtType
+                    , inputRowCnt
+                    , holdableCursor
+                    , &rc
+                    , returnCode
+                    , sqlWarningOrErrorLength
+                    , sqlWarningOrError
+                    );
+            bRePrepare2 = true;
+        }
+
+        if (*returnCode == 0 || *returnCode == 1)
+        {
+            if (inputRowCnt < 0)
+            {
+                *returnCode = SQL_ERROR;
+                GETMXCSWARNINGORERROR(-1, "HY000", "Invalid Row Count.", sqlWarningOrErrorLength, sqlWarningOrError);
+            }
+            else
+            {
+                if (sqlStmtType == TYPE_SELECT && inputRowCnt > 1)
+                {
+                    *returnCode = SQL_ERROR;
+                    GETMXCSWARNINGORERROR(-1, "HY000", "Invalid Row Count.", sqlWarningOrErrorLength, sqlWarningOrError);
+                }
+            }
+
+            if (*returnCode == 0 || *returnCode == 1)
+            {
+                // Added additional checks to make sure the warnings, if any, are not lost from the
+                // rePrepare2() call in SrvrConnect.cpp (returnCode could be 0).
+                if ((*returnCode == 0) && (pSrvrStmt->sqlWarningOrErrorLength > 0) && pSrvrStmt->reprepareWarn == FALSE) // To preserve warning returned at prepare time
+                {
+                    MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
+                    pSrvrStmt->sqlWarningOrErrorLength = 0;
+                    pSrvrStmt->sqlWarningOrError = NULL;
+                }
+
+                if (pSrvrStmt->bSQLMessageSet)
+                    pSrvrStmt->cleanupSQLMessage();
+                if(pSrvrStmt->bSQLValueListSet)
+                    pSrvrStmt->cleanupSQLValueList();
+
+
+                if ( (*returnCode == 0 && rc == 0) || (*returnCode == 1 && rc == 1) )
+                {
+                    pSrvrStmt->inputRowCnt = inputRowCnt;
+                    pSrvrStmt->sqlStmtType = (short)sqlStmtType;
+
+                    if (cursorLength > 0)
+                    {
+                        pSrvrStmt->cursorNameLen = cursorLength;
+                        memcpy(pSrvrStmt->cursorName, cursorName, cursorLength);
+                        pSrvrStmt->cursorName[cursorLength] = '\0';
+                    }
+                    else
+                        pSrvrStmt->cursorName[0] = '\0';
+
+
+                    if (pSrvrStmt->sqlQueryType == SQL_RWRS_SPECIAL_INSERT)
+                    {
+                        *((Int32 *)pSrvrStmt->inputDescVarBuffer) = pSrvrStmt->inputRowCnt;
+                        *((Int32 *)(pSrvrStmt->inputDescVarBuffer+4)) = pSrvrStmt->maxRowLen;
+                        *((BYTE **)(pSrvrStmt->inputDescVarBuffer+8)) = inValues  ;
+
+                    }
+
+                    if (pSrvrStmt->preparedWithRowsets == TRUE)
+                    {
+                        pSrvrStmt->transportBuffer = inValues;
+                        pSrvrStmt->transportBufferLen = inValuesLength;
+                    }
+                    else if (pSrvrStmt->inputDescVarBufferLen == inValuesLength)
+                        memcpy(pSrvrStmt->inputDescVarBuffer, inValues, inValuesLength);
+                    else
+                    {
+                        *returnCode = SQL_ERROR;
+                        GETMXCSWARNINGORERROR( -1
+                                , "HY090"
+                                , "Invalid param Values."
+                                , sqlWarningOrErrorLength
+                                , sqlWarningOrError
+                                );
+                        goto out;
+                    }
+
+                    if (bRePrepare2)
+                    {
+                        // Note: The below method ends in a dummy call in CommonNSKFunctions.cpp. CR 5763 takes care of this.
+                        //rc = rePrepare2WouldLikeToExecute((Long)pSrvrStmt, (Int32*)returnCode, (Int32*)sqlWarningOrErrorLength, (char*&)sqlWarningOrError);
+                        rc = true;
+                        if (rc == false)
+                        {
+                            *rowsAffected = -1;
+                            goto out;
+                        }
+                    }
+
+                    pSrvrStmt->currentMethod = odbc_SQLSvc_ExecuteN_ldx_;
+                    if(!bStubExecute2WithRowsets) {
+                        rc = EXECUTE2withRowsets(pSrvrStmt);
+                    }
+                    else {
+                        rc = SQL_SUCCESS;
+                        pSrvrStmt->rowsAffected = inputRowCnt;
+                    }
+
+                    switch (rc)
+                    {
+                        case ROWSET_SQL_ERROR:
+                            // Copy the output values
+                            *rowsAffected = -1;
+
+                            if (pSrvrStmt->sqlWarningOrErrorLength > 0) // Overwriting warning returned at prepare time
+                            {
+                                MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
+                                pSrvrStmt->sqlWarningOrErrorLength = 0;
+                                pSrvrStmt->sqlWarningOrError = NULL;
+                            }
+
+                            GETSQLWARNINGORERROR2forRowsets(pSrvrStmt);
+                            *returnCode = SQL_ERROR;
+                            *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                            memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                            break;
+                        case SQL_SUCCESS_WITH_INFO:
+                            *returnCode = SQL_SUCCESS_WITH_INFO;
+                            *rowsAffected = pSrvrStmt->rowsAffected;
+                            if (   pSrvrStmt->sqlQueryType == SQL_SELECT_UNIQUE
+                                    || pSrvrStmt->sqlStmtType  == TYPE_CALL)
+                            {
+                                *outValuesLength = pSrvrStmt->outputDescVarBufferLen;
+                                outValues = pSrvrStmt->outputDescVarBuffer;
+                            }
+                            else
+                            {
+                                *outValuesLength = 0;
+                                outValues = 0;
+                            }
+                            if (pSrvrStmt->sqlWarningOrErrorLength > 0) // Overwriting warning returned at prepare time
+                            {
+                                MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
+                                pSrvrStmt->sqlWarningOrErrorLength = 0;
+                                pSrvrStmt->sqlWarningOrError = NULL;
+                            }
+
+                            if (pSrvrStmt->sqlWarning._length > 0)
+                                GETSQLWARNINGORERROR2forRowsets(pSrvrStmt);
+                            else
+                                GETSQLWARNINGORERROR2(pSrvrStmt);
+                            *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                            memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                            break;
+                        case SQL_SUCCESS:
+                            *returnCode = SQL_SUCCESS;
+                            *rowsAffected = pSrvrStmt->rowsAffected;
+                            if (pSrvrStmt->sqlWarning._length > 0)
+                            {
+                                if (pSrvrStmt->sqlWarningOrErrorLength > 0) // Overwriting warning returned at prepare time
+                                {
+                                    MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
+                                    pSrvrStmt->sqlWarningOrErrorLength = 0;
+                                    pSrvrStmt->sqlWarningOrError = NULL;
+                                }
+
+                                GETSQLWARNINGORERROR2forRowsets(pSrvrStmt);
+                                *returnCode = SQL_SUCCESS_WITH_INFO;  // We have warnings so return success witn info.
+                                *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                                memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                            }
+
+                            if (pSrvrStmt->sqlQueryType == SQL_SELECT_UNIQUE
+                                    || pSrvrStmt->sqlStmtType  == TYPE_CALL)
+                            {
+                                *outValuesLength = pSrvrStmt->outputDescVarBufferLen;
+                                outValues = pSrvrStmt->outputDescVarBuffer;
+                            }
+                            else
+                            {
+                                *outValuesLength = 0;
+                                outValues = 0;
+                            }
+                            break;
+                        case SQL_NO_DATA_FOUND:
+                            *returnCode = SQL_NO_DATA_FOUND;
+                            break;
+                        case SQL_INVALID_HANDLE:
+                            *returnCode = SQL_ERROR;
+                            GETMXCSWARNINGORERROR(-1, "HY000", "Invalid Statement Handle.", sqlWarningOrErrorLength, sqlWarningOrError);
+                            break;
+                        case SQL_ERROR:
+                            if (pSrvrStmt->sqlWarningOrErrorLength > 0) // Overwriting warning returned at prepare time
+                            {
+                                MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
+                                pSrvrStmt->sqlWarningOrErrorLength = 0;
+                                pSrvrStmt->sqlWarningOrError = NULL;
+                            }
+
+                            GETSQLWARNINGORERROR2(pSrvrStmt);
+                            *returnCode = SQL_ERROR;
+                            *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                            memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+out:
+                return;
+            }
+        }  // end if (*returnCode == 0 && rc == 0)
+    }  // end else
+
+outout:
+    pSrvrStmt->returnCodeForDelayedError = *returnCode;
+    return;
+}  // end odbc_SQLSvc_Execute2withRowsets_sme_
+
+//------------------------------------------------------------------------------
+extern "C" void
+rePrepare2( SRVR_STMT_HDL *pSrvrStmt
+        , Int32			sqlStmtType
+        , Int32			inputRowCnt
+        , Int32		holdableCursor
+        , SQLRETURN     *rc
+        , Int32          *returnCode
+        , Int32      *sqlWarningOrErrorLength
+        , BYTE          *&sqlWarningOrError
+        )
+{
+    UInt32	tmpSqlStringLen  = pSrvrStmt->sqlStringLen;
+    char	*tmpSqlString;
+    short	tmpStmtType      = pSrvrStmt->stmtType;
+    short	tmpSqlStmtType   = sqlStmtType; // need to do this since PREPARE does not pass this from driver
+    Int32	tmpMaxRowsetSize = pSrvrStmt->maxRowsetSize;
+    Int32	sqlQueryType;
+    Int32	estimatedCost;
+    char b[317];
+
+    if (pSrvrStmt->sqlWarningOrErrorLength > 0) // To preserve warning returned at prepare time
+    {
+        MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
+        pSrvrStmt->sqlWarningOrErrorLength = 0;
+        pSrvrStmt->sqlWarningOrError = NULL;
+    }
+
+    if (pSrvrStmt->bSQLMessageSet)
+        pSrvrStmt->cleanupSQLMessage();
+    if(pSrvrStmt->bSQLValueListSet)
+        pSrvrStmt->cleanupSQLValueList();
+
+    MEMORY_ALLOC_ARRAY(tmpSqlString, char, tmpSqlStringLen+1);
+    strcpy(tmpSqlString, pSrvrStmt->sqlStringText);
+
+    // cleanup all memory allocated in the previous operations
+    pSrvrStmt->cleanupAll();
+    pSrvrStmt->sqlStringLen = tmpSqlStringLen;
+
+    MEMORY_ALLOC_ARRAY(pSrvrStmt->sqlStringText, char, pSrvrStmt->sqlStringLen+1);
+    strcpy(pSrvrStmt->sqlStringText, tmpSqlString);
+    MEMORY_DELETE_ARRAY(tmpSqlString);
+
+    pSrvrStmt->stmtType      = tmpStmtType;
+    pSrvrStmt->sqlStmtType   = tmpSqlStmtType;
+    pSrvrStmt->maxRowsetSize = inputRowCnt;
+    pSrvrStmt->holdableCursor= holdableCursor;
+
+    if (pSrvrStmt->maxRowsetSize == ROWSET_NOT_DEFINED)
+        pSrvrStmt->maxRowsetSize = DEFAULT_ROWSET_SIZE;
+
+    *rc = REALLOCSQLMXHDLS(pSrvrStmt); // This is a workaround for executor when we switch between OLTP vs NON-OLTP
+    if (*rc < 0)
+    {
+        GETSQLWARNINGORERROR2(pSrvrStmt);
+        *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+        memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+        goto out;
+    }
+
+    if (pSrvrStmt->sqlStmtType == TYPE_INSERT_PARAM)
+    {
+        *rc = WSQL_EXEC_SetStmtAttr(&pSrvrStmt->stmt, SQL_ATTR_ROWSET_ATOMICITY, SQL_ATOMIC, 0);
+        if (*rc < 0)
+        {
+            GETSQLWARNINGORERROR2(pSrvrStmt);
+            goto out;
+        }
+        WSQL_EXEC_ClearDiagnostics(&pSrvrStmt->stmt);
+    }
+
+    pSrvrStmt->currentMethod = odbc_SQLSvc_PrepareRowset_ldx_;
+    if(pSrvrStmt->maxRowsetSize > 1)
+        *rc = PREPARE2withRowsets(pSrvrStmt);
+    else
+        *rc = PREPARE_R(pSrvrStmt);
+
+
+    switch (*rc)
+    {
+        case ODBC_RG_WARNING:
+        case SQL_SUCCESS_WITH_INFO:
+            *returnCode = SQL_SUCCESS_WITH_INFO;
+            estimatedCost = (Int32)pSrvrStmt->cost_info.totalTime; // change to double in future
+            sqlQueryType = pSrvrStmt->sqlQueryType;
+
+            if (*rc == SQL_SUCCESS_WITH_INFO)
+            {
+                GETSQLWARNINGORERROR2(pSrvrStmt);
+                *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+            }
+            else
+            {
+                char RGWarningOrError[256];
+
+                sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
+                sprintf( RGWarningOrError
+                        , "The query's estimated cost: %.50s exceeded resource management attribute limit set."
+                        , b
+                       );
+                GETMXCSWARNINGORERROR(1, "01000", RGWarningOrError, sqlWarningOrErrorLength, sqlWarningOrError);
+            }
+            break;
+        case SQL_SUCCESS:
+            WSQL_EXEC_ClearDiagnostics(&pSrvrStmt->stmt);
+            estimatedCost = (Int32)pSrvrStmt->cost_info.totalTime; // change to double in future
+            sqlQueryType = pSrvrStmt->sqlQueryType;
+            break;
+        case SQL_ERROR:
+        case ODBC_RG_ERROR:
+            *returnCode = SQL_ERROR;
+            if (*rc == SQL_ERROR)
+            {
+                GETSQLWARNINGORERROR2(pSrvrStmt);
+                *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+            }
+            else
+            {
+                char *RGWarningOrError = NULL;
+
+                MEMORY_ALLOC_ARRAY(RGWarningOrError, char, 256);
+                sprintf(b,"lf",pSrvrStmt->cost_info.totalTime);
+                sprintf( RGWarningOrError
+                        , "The query's estimated cost: %.50s exceeded resource management attribute limit set."
+                        , b
+                       );
+                GETMXCSWARNINGORERROR( -1
+                        , "HY000"
+                        , RGWarningOrError
+                        , sqlWarningOrErrorLength
+                        , sqlWarningOrError
+                        );
+                MEMORY_DELETE_ARRAY(RGWarningOrError);
+            }
+            break;
+        case PROGRAM_ERROR:
+            GETMXCSWARNINGORERROR( -1
+                    , "HY000"
+                    , SQLSVC_EXCEPTION_PREPARE_FAILED
+                    , sqlWarningOrErrorLength
+                    , sqlWarningOrError
+                    );
+            break;
+        default:
+            break;
+    }  // end switch
+out:
+    return;
+}  // end rePrepare2
+
+/*
+ * Synchronous method function for
+ * operation 'odbc_SQLSvc_Execute2'
+ */
+extern "C" void
+odbc_SQLSvc_Execute2_sme_(
+        /* In    */ Long dialogueId
+        , /* In    */ Int32 sqlAsyncEnable
+        , /* In    */ Int32 queryTimeout
+        , /* In    */ Int32 inputRowCnt
+        , /* In    */ Int32 sqlStmtType
+        , /* In    */ Long stmtHandle
+        , /* In    */ Int32 cursorLength
+        , /* In    */ IDL_string cursorName
+        , /* In    */ Int32 cursorCharset
+        , /* In    */ Int32 holdableCursor
+        , /* In    */ Int32 inValuesLength
+        , /* In    */ BYTE *inValues
+        , /* Out   */ Int32 *returnCode
+        , /* Out   */ Int32 *sqlWarningOrErrorLength
+        , /* Out   */ BYTE *&sqlWarningOrError
+        , /* Out   */ Int32 *rowsAffected
+        , /* Out   */ Int32 *outValuesLength
+        , /* Out   */ BYTE *&outValues)
+{
+    SRVRTRACE_ENTER(FILE_SME+19);
+
+    bool bRePrepare2 = false;
+    SRVR_STMT_HDL *pSrvrStmt = NULL;
+    SQLRETURN rc = SQL_SUCCESS;
+
+    if ((pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle) == NULL)
+    {
+        *returnCode = SQL_ERROR;
+        GETMXCSWARNINGORERROR(-1, "HY000", "Statement Label not found.", sqlWarningOrErrorLength, sqlWarningOrError);
+    }
+    else
+    {
+        if (pSrvrStmt->current_holdableCursor != holdableCursor)
+        {
+            rePrepare2( pSrvrStmt
+                    , sqlStmtType
+                    , inputRowCnt
+                    , holdableCursor
+                    , &rc
+                    , returnCode
+                    , sqlWarningOrErrorLength
+                    , sqlWarningOrError
+                    );
+            bRePrepare2 = true;
+        }
+
+        if (*returnCode == 0 || *returnCode == 1)
+        {
+            if (inputRowCnt < 0)
+            {
+                *returnCode = SQL_ERROR;
+                GETMXCSWARNINGORERROR(-1, "HY000", "Invalid Row Count.", sqlWarningOrErrorLength, sqlWarningOrError);
+            }
+            else
+            {
+                if (sqlStmtType == TYPE_SELECT && inputRowCnt > 1)
+                {
+                    *returnCode = SQL_ERROR;
+                    GETMXCSWARNINGORERROR(-1, "HY000", "Invalid Row Count.", sqlWarningOrErrorLength, sqlWarningOrError);
+                }
+            }
+
+            if (*returnCode == 0 || *returnCode == 1)
+            {
+                if ((*returnCode == 0) && (pSrvrStmt->sqlWarningOrErrorLength > 0)) // To preserve warning returned at prepare time
+                {
+                    MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
+                    pSrvrStmt->sqlWarningOrErrorLength = 0;
+                    pSrvrStmt->sqlWarningOrError = NULL;
+                }
+                pSrvrStmt->inputRowCnt = inputRowCnt;
+                pSrvrStmt->sqlStmtType = (short)sqlStmtType;
+
+                if (cursorLength > 0)
+                {
+                    pSrvrStmt->cursorNameLen = cursorLength;
+                    memcpy(pSrvrStmt->cursorName, cursorName, cursorLength);
+                    pSrvrStmt->cursorName[cursorLength] = '\0';
+                }
+                else
+                    pSrvrStmt->cursorName[0] = '\0';
+
+                if (pSrvrStmt->sqlQueryType == SQL_RWRS_SPECIAL_INSERT)
+                {
+                    *((Int32 *)pSrvrStmt->inputDescVarBuffer) = pSrvrStmt->inputRowCnt;
+                    *((Int32 *)(pSrvrStmt->inputDescVarBuffer+4)) = pSrvrStmt->maxRowLen;
+                    *((BYTE **)(pSrvrStmt->inputDescVarBuffer+8)) = inValues  ;
+
+                }
+                else
+                {
+
+                    if (pSrvrStmt->inputDescVarBufferLen == inValuesLength)
+                        memcpy(pSrvrStmt->inputDescVarBuffer, inValues, inValuesLength);
+                    else
+                    {
+                        *returnCode = SQL_ERROR;
+                        GETMXCSWARNINGORERROR(-1, "HY090", "Invalid param Values.", sqlWarningOrErrorLength, sqlWarningOrError);
+                    }
+                }
+
+                if (bRePrepare2)
+                {
+                    rc = true;
+                    if (rc == false)
+                    {
+                        *rowsAffected = -1;
+                        return;
+                    }
+                }
+
+                pSrvrStmt->currentMethod = odbc_SQLSvc_ExecuteN_ldx_;
+                rc = EXECUTE2(pSrvrStmt);
+
+                switch (rc)
+                {
+                    case SQL_SUCCESS_WITH_INFO:
+                        *returnCode = SQL_SUCCESS_WITH_INFO;
+                        *rowsAffected = pSrvrStmt->rowsAffected;
+                        if (   pSrvrStmt->sqlQueryType == SQL_SELECT_UNIQUE
+                                || pSrvrStmt->sqlStmtType  == TYPE_CALL)
+                        {
+                            *outValuesLength = pSrvrStmt->outputDescVarBufferLen;
+                            outValues = pSrvrStmt->outputDescVarBuffer;
+                        }
+                        else
+                        {
+                            if (pSrvrStmt->sqlQueryType == SQL_RWRS_SPECIAL_INSERT)
+                            {
+                                if (inValues != NULL)
+                                    *pSrvrStmt->inputDescVarBuffer = NULL;
+                            }
+                            *outValuesLength = 0;
+                            outValues = 0;
+                        }
+
+                        if (pSrvrStmt->sqlWarningOrErrorLength > 0) // overwriting warning returned at prepare time
+                        {
+                            MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
+                            pSrvrStmt->sqlWarningOrErrorLength = 0;
+                            pSrvrStmt->sqlWarningOrError = NULL;
+                        }
+
+                        GETSQLWARNINGORERROR2(pSrvrStmt);
+                        *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                        memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                        break;
+                    case SQL_SUCCESS:
+                        *returnCode = SQL_SUCCESS;
+                        *rowsAffected = pSrvrStmt->rowsAffected;
+                        if (   pSrvrStmt->sqlQueryType == SQL_SELECT_UNIQUE
+                                || pSrvrStmt->sqlStmtType  == TYPE_CALL)
+                        {
+                            *outValuesLength = pSrvrStmt->outputDescVarBufferLen;
+                            outValues = pSrvrStmt->outputDescVarBuffer;
+                        }
+                        else
+                        {
+                            if (pSrvrStmt->sqlQueryType == SQL_RWRS_SPECIAL_INSERT)
+                            {
+                                if (inValues != NULL)
+                                    *pSrvrStmt->inputDescVarBuffer = NULL;
+                            }
+                            *outValuesLength = 0;
+                            outValues = 0;
+                        }
+                        break;
+                    case SQL_NO_DATA_FOUND:
+                        *returnCode = SQL_NO_DATA_FOUND;
+                        break;
+                    case SQL_INVALID_HANDLE:
+                        *returnCode = SQL_ERROR;
+                        GETMXCSWARNINGORERROR(-1, "HY000", "Invalid Statement Handle.", sqlWarningOrErrorLength, sqlWarningOrError);
+                        break;
+                    case SQL_ERROR:
+                        if (pSrvrStmt->sqlWarningOrErrorLength > 0) // Overwriting warning returned at prepare time
+                        {
+                            MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
+                            pSrvrStmt->sqlWarningOrErrorLength = 0;
+                            pSrvrStmt->sqlWarningOrError = NULL;
+                        }
+
+                        GETSQLWARNINGORERROR2(pSrvrStmt);
+                        *returnCode = SQL_ERROR;
+                        *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                        memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+    return;
+}
+
+extern "C" void
+odbc_SQLSrvr_FetchPerf_sme_(
+        /* In    */ Long dialogueId
+        , /* Out   */ IDL_long *returnCode
+        , /* In    */ Long  stmtHandle
+        , /* In    */ Int32 maxRowCnt
+        , /* In    */ Int32 maxRowLen
+        , /* In    */ IDL_short sqlAsyncEnable
+        , /* In    */ Int32 queryTimeout
+        , /* Out   */ Int32 *rowsAffected
+        , /* Out   */ Int32 *outValuesFormat
+        , /* Out   */ SQL_DataValue_def *outputDataValue
+        , /* Out   */ Int32 *sqlWarningOrErrorLength
+        , /* Out   */ BYTE     *&sqlWarningOrError
+        )
+{
+    SRVRTRACE_ENTER(FILE_SME+8);
+
+    SRVR_STMT_HDL *pSrvrStmt = NULL;
+    SQLRETURN rc = SQL_SUCCESS;
+    int outputDataOffset = 0;
+
+    *returnCode = SQL_SUCCESS;
+
+    if (maxRowCnt < 0)
+    {
+        *returnCode = SQL_ERROR;
+        GETMXCSWARNINGORERROR(-1, "HY000", "Invalid Row Count", sqlWarningOrErrorLength, sqlWarningOrError);
+    }
+    else
+    {
+        pSrvrStmt = (SRVR_STMT_HDL *)stmtHandle;
+
+        if (pSrvrStmt == NULL)
+        {
+            *returnCode = SQL_ERROR;
+            GETMXCSWARNINGORERROR(-1, "HY000", "Statement Label not found", sqlWarningOrErrorLength, sqlWarningOrError);
+        }
+        else
+        {
+            if (pSrvrStmt->sqlWarningOrErrorLength > 0 &&
+                    pSrvrStmt->sqlWarningOrError != NULL)
+            {
+                MEMORY_DELETE_ARRAY(pSrvrStmt->sqlWarningOrError);
+            }
+            pSrvrStmt->sqlWarningOrErrorLength = 0;
+            pSrvrStmt->sqlWarningOrError = NULL;
+        }
+
+    }
+
+    if (*returnCode == SQL_SUCCESS)
+    {
+        pSrvrStmt->maxRowCnt = maxRowCnt;
+        pSrvrStmt->maxRowLen = maxRowLen;
+
+        if (pSrvrStmt->sqlStmtType != TYPE_SELECT_CATALOG)
+        {
+            if (pSrvrStmt->bSQLMessageSet)
+                pSrvrStmt->cleanupSQLMessage();
+
+            if(pSrvrStmt->outputDataValue._length > 0 &&
+                    pSrvrStmt->outputDataValue._buffer != NULL)
+                MEMORY_DELETE_ARRAY(pSrvrStmt->outputDataValue._buffer);
+
+            pSrvrStmt->outputDataValue._length = 0;
+            pSrvrStmt->outputDataValue._buffer = NULL;
+
+            if (pSrvrStmt->isClosed)
+            {
+                pSrvrStmt->m_curRowsFetched = 0;
+                pSrvrStmt->bFirstSqlBulkFetch = false;
+                *returnCode = SQL_NO_DATA_FOUND;
+                goto ret;
+            }
+
+            pSrvrStmt->currentMethod = odbc_SQLSvc_FetchPerf_ldx_;
+            // This will be supported in the near future
+            if (srvrGlobal->drvrVersion.buildId & ROWWISE_ROWSET)
+            {
+                *outValuesFormat = ROWWISE_ROWSETS;
+
+                rc = FETCH2bulk(pSrvrStmt);
+                if (pSrvrStmt->rowsAffected > 0)
+                {
+                    if(pSrvrStmt->outputDataValue._length == 0 && pSrvrStmt->outputDataValue._buffer == NULL)
+                    {
+                        outputDataValue->_buffer = pSrvrStmt->outputDescVarBuffer;
+                        outputDataValue->_length = pSrvrStmt->outputDescVarBufferLen*pSrvrStmt->rowsAffected;
+                    }
+                    else
+                    {
+                        outputDataValue->_buffer = pSrvrStmt->outputDataValue._buffer;
+                        outputDataValue->_length = pSrvrStmt->outputDataValue._length;
+                    }
+                }
+                else
+                {
+                    outputDataValue->_buffer = NULL;
+                    outputDataValue->_length = 0;
+                }
+            }
+            else
+            {
+                *outValuesFormat = COLUMNWISE_ROWSETS;
+
+                rc = FETCHPERF(pSrvrStmt, outputDataValue);
+            }
+
+            switch (rc)
+            {
+                case ODBC_RG_WARNING:
+                case SQL_SUCCESS_WITH_INFO:
+                    *returnCode = SQL_SUCCESS_WITH_INFO;
+                    GETSQLWARNINGORERROR2(pSrvrStmt);
+                    *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                    memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                    *rowsAffected = pSrvrStmt->rowsAffected;
+                    if (*rowsAffected > 0)
+                        pSrvrStmt->m_curRowsFetched += *rowsAffected;
+                    break;
+
+                case SQL_SUCCESS:
+                    *returnCode = SQL_SUCCESS;
+                    *rowsAffected = pSrvrStmt->rowsAffected;
+
+                    if (*rowsAffected > 0)
+                        pSrvrStmt->m_curRowsFetched += *rowsAffected;
+                    break;
+
+                case SQL_STILL_EXECUTING:
+                    *returnCode = SQL_STILL_EXECUTING;
+                    break;
+
+                case SQL_INVALID_HANDLE:
+                    *returnCode = SQL_INVALID_HANDLE;
+                    break;
+
+                case SQL_NO_DATA_FOUND:
+                    pSrvrStmt->bFirstSqlBulkFetch = false;
+                    *returnCode = SQL_NO_DATA_FOUND;
+                    break;
+
+                case SQL_ERROR:
+                    pSrvrStmt->bFirstSqlBulkFetch = false;
+                    *returnCode = SQL_ERROR;
+                    GETSQLWARNINGORERROR2(pSrvrStmt);
+                    *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                    memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                    break;
+
+                case PROGRAM_ERROR:
+                    pSrvrStmt->bFirstSqlBulkFetch = false;
+                    *returnCode = SQL_ERROR;
+                    GETMXCSWARNINGORERROR(-1, "HY000", "Fetch Failed", sqlWarningOrErrorLength, sqlWarningOrError);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        else
+        { // Catalog APIs
+            outputDataOffset  = *(int*)pSrvrStmt->outputDataValue.pad_to_offset_8_;
+
+            *outValuesFormat = COLUMNWISE_ROWSETS;
+            rc = FETCHPERF(pSrvrStmt, &pSrvrStmt->outputDataValue);
+            if (pSrvrStmt->sqlError.errorList._buffer != NULL)
+            {
+                *returnCode = SQL_ERROR;
+                GETSQLWARNINGORERROR2(pSrvrStmt);
+                *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                MEMORY_DELETE_ARRAY(pSrvrStmt->outputDataValue._buffer);
+                pSrvrStmt->outputDataValue._buffer = NULL;
+                pSrvrStmt->outputDataValue._length = 0;
+
+            }
+            else if (pSrvrStmt->rowsAffected == 0 || pSrvrStmt->rowsAffected == -1)
+            {
+                if (pSrvrStmt->bSQLMessageSet)
+                    pSrvrStmt->cleanupSQLMessage();
+                pSrvrStmt->outputDataValue._buffer = NULL;
+                pSrvrStmt->outputDataValue._length = 0;
+                *(int*)pSrvrStmt->outputDataValue.pad_to_offset_8_=0;
+                outputDataOffset = 0;
+                pSrvrStmt->InternalStmtClose(SQL_CLOSE);
+                *returnCode = SQL_NO_DATA_FOUND;
+            }
+            else
+            {
+                *rowsAffected = pSrvrStmt->rowsAffected;
+
+                if (pSrvrStmt->sqlWarning._length != 0)
+                {
+                    *returnCode = SQL_SUCCESS_WITH_INFO;
+                    GETSQLWARNINGORERROR2(pSrvrStmt);
+                    *sqlWarningOrErrorLength = pSrvrStmt->sqlWarningOrErrorLength;
+                    memcpy(sqlWarningOrError, pSrvrStmt->sqlWarningOrError, *sqlWarningOrErrorLength);
+                }
+                else
+                {
+                    char *tmpByte = (char*)&pSrvrStmt->outputDataValue._length;
+                    for(int i=0; i<sizeof(pSrvrStmt->outputDataValue.pad_to_offset_8_); i++) {
+                        pSrvrStmt->outputDataValue.pad_to_offset_8_[i] = *tmpByte;
+                        tmpByte++;
+                    }
+
+                    *returnCode = SQL_SUCCESS;
+                }
+
+                pSrvrStmt->rowsAffected = 0;
+            }
+
+            outputDataValue->_length = pSrvrStmt->outputDataValue._length - outputDataOffset;
+            outputDataValue->_buffer = pSrvrStmt->outputDataValue._buffer + outputDataOffset;
+        }
+
+ret:
+
+        if (*returnCode != SQL_SUCCESS &&
+                *returnCode != SQL_SUCCESS_WITH_INFO)
+        {
+            MEMORY_DELETE_ARRAY(pSrvrStmt->outputDataValue._buffer);
+            pSrvrStmt->outputDataValue._length = 0;
+            pSrvrStmt->outputDataValue._buffer = NULL;
+        }
+
+        if (pSrvrStmt->sqlNewQueryType == SQL_SP_RESULT_SET)
+        {
+            if (pSrvrStmt->callStmtHandle->isClosed == true && *returnCode == SQL_NO_DATA_FOUND || *returnCode == SQL_ERROR)
+            {
+                pSrvrStmt->callStmtHandle->inState = STMTSTAT_CLOSE;
+                // Do nothing for now
+            }
+        }
+    }
+
+    SRVRTRACE_EXIT(FILE_SME+8);
+
+    return;
+
+} // odbc_SQLSrvr_FetchPerf_sme_()

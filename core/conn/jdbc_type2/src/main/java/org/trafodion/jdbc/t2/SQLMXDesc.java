@@ -1,3 +1,4 @@
+/*******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -18,10 +19,11 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
+ *******************************************************************************/
 
 /* -*-java-*-
- * Filename    : SQLMXDesc.java
- * Description :
+Filename    : SQLMXDesc.java
+Description :
  */
 
 package org.trafodion.jdbc.t2;
@@ -245,6 +247,101 @@ class SQLMXDesc
             odbcPrecision_ = odbcPrecision;     
             maxLen_ = maxLen;                   
 
+			//
+			// Convert ODBC type to equivalent JDBC type when necessary.
+			//
+			// From SqlUcode.h
+			//
+			// #define SQL_WCHAR (-8)
+			// #define SQL_WVARCHAR (-9)
+			// #define SQL_WLONGVARCHAR (-10)
+			//
+			if (odbcDataType == -8) {
+
+				// ODBC's SQL_WCHAR becomes a Types.CHAR
+				dataType_ = Types.CHAR;
+			} else if (odbcDataType == -9) {
+
+				// ODBC's SQL_WVARCHAR becomes a Types.VARCHAR
+				dataType_ = Types.VARCHAR;
+			} else if (odbcDataType == -10) {
+
+				// ODBC's SQL_WLONGVARCHAR becomes a Types.LONGVARCHAR
+				dataType_ = Types.LONGVARCHAR;
+
+			}
+			if (sqlDataType_ == InterfaceResultSet.SQLTYPECODE_DATETIME) // 9
+			{
+				switch (dataType_) { // ODBC conversion to ODBC2.0
+					case 9: // ODBC2 Date
+
+						// check the datetime code and set appropriately
+						switch (sqlDatetimeCode_) {
+							case SQLDTCODE_YEAR:
+							case SQLDTCODE_YEAR_TO_MONTH:
+							case SQLDTCODE_MONTH:
+							case SQLDTCODE_MONTH_TO_DAY:
+							case SQLDTCODE_DAY:
+								dataType_ = Types.OTHER;
+								precision_ = odbcPrecision;
+								displaySize_ = maxLen;
+								sqlOctetLength_ = maxLen;
+								break;
+							default:
+								dataType_ = Types.DATE;
+								break;
+						}
+						break;
+					case 10: // ODBC2 TIME
+						switch (sqlDatetimeCode_) {
+							case SQLDTCODE_HOUR:
+							case SQLDTCODE_HOUR_TO_MINUTE:
+							case SQLDTCODE_MINUTE:
+							case SQLDTCODE_MINUTE_TO_SECOND:
+							case SQLDTCODE_SECOND:
+								dataType_ = Types.OTHER;
+								precision_ = odbcPrecision;
+								displaySize_ = maxLen;
+								sqlOctetLength_ = maxLen;
+								break;
+							default:
+								dataType_ = Types.TIME;
+								break;
+						}
+						break;
+					case 11: // ODBC2 TIMESTAMP
+						switch (sqlDatetimeCode_) {
+							case SQLDTCODE_YEAR_TO_HOUR:
+							case SQLDTCODE_YEAR_TO_MINUTE:
+							case SQLDTCODE_MONTH_TO_HOUR:
+							case SQLDTCODE_MONTH_TO_MINUTE:
+							case SQLDTCODE_MONTH_TO_SECOND:
+								// case SQLDTCODE_MONTH_TO_FRACTION:
+							case SQLDTCODE_DAY_TO_HOUR:
+							case SQLDTCODE_DAY_TO_MINUTE:
+							case SQLDTCODE_DAY_TO_SECOND:
+								// case SQLDTCODE_DAY_TO_FRACTION:
+							case SQLDTCODE_HOUR_TO_FRACTION: // note: Database 
+								// maps to TIME(6)
+								// NCS maps to TIMESTAMP
+							case SQLDTCODE_MINUTE_TO_FRACTION:
+							case SQLDTCODE_SECOND_TO_FRACTION:
+								dataType_ = Types.OTHER;
+								precision_ = odbcPrecision;
+								displaySize_ = maxLen;
+								sqlOctetLength_ = maxLen;
+								break;
+							default:
+								dataType_ = Types.TIMESTAMP;
+								break;
+						}
+						break;
+					default:
+						dataType_ = Types.TIMESTAMP;
+						break;
+				}
+			}
+
 			switch (dataType_)
 			{
 				case Types.NUMERIC:
@@ -318,16 +415,17 @@ class SQLMXDesc
 						dataType_ = Types.OTHER;	
 					break;
 				case Types.CHAR:
-					sqlOctetLength_ = maxLen+1;
+					sqlOctetLength_ = maxLen+1;     // Why plus 1 more byte here???
 					displaySize_ = maxLen;
 					precision_ = maxLen;			// ODBC2.0
 					break;
 				case Types.VARCHAR:
 				case Types.LONGVARCHAR:
+                    int dataOffset = (maxLen < 0x7FFF) ? 2 : 4;
 					if (sqlDataType_ == SQLTYPECODE_VARCHAR)
 						sqlOctetLength_ = maxLen+1;
 					else
-						sqlOctetLength_ = maxLen+3;
+						sqlOctetLength_ = maxLen + dataOffset + 1;
 					displaySize_ = maxLen;
 					precision_ = maxLen;			// ODBC2.0
 					break;
@@ -358,6 +456,32 @@ class SQLMXDesc
 		}
 	}
 	
+	SQLMXDesc(int noNullValue, int nullValue, int version, int dataType, short datetimeCode,
+			int maxLen, short precision, short scale, boolean nullInfo,	boolean signType // same as signe
+			, int odbcDataType, int odbcPrecision, int sqlCharset, int odbcCharset, String colName //colHeading
+			, String tableName, String catalogName, String schemaName, String headingName // Descriptor2
+			, int intLeadPrec, int paramMode, int fsDataType, int rowLength) {
+
+		//
+		// Call the old constructor to set the items that are
+		// in both the old descriptor and the new descriptor.
+		//
+		this(dataType, datetimeCode, maxLen, precision, scale, nullInfo, colName, signType, odbcDataType,
+				(short) odbcPrecision, sqlCharset, odbcCharset, catalogName, schemaName, tableName, fsDataType,
+				intLeadPrec, paramMode, null);
+		//
+		// Set the items specific to the new descriptor.
+		//
+		noNullValue_ = noNullValue;
+		nullValue_ = nullValue;
+		version_ = version;
+		headingName_ = headingName;
+		rowLength_ = rowLength;
+
+		maxLen_ = maxLen;
+
+	} // end SQLMXDesc constructors
+
 	// The enum SQLTYPE_CODE from sqlcli.h. HP extenstion are negative values.
 
 	public static final int SQLTYPECODE_CHAR                   = 1;
@@ -400,6 +524,42 @@ class SQLMXDesc
 	public static final int SQLDT_NUM_BIG_U                 = 155;
 	// Big Num Changes
 
+	// datetime codes taken from NCS - File ....\....\...\Common\DrvrSrvr.h
+	public static final int SQLDTCODE_YEAR = 4;
+	public static final int SQLDTCODE_YEAR_TO_MONTH = 5;
+	// public static final int SQLDTCODE_YEAR_TO_DAY 1  //Database 
+	// DATE
+	public static final int SQLDTCODE_YEAR_TO_HOUR = 7; // ODBC TIMESTAMP(0)
+	public static final int SQLDTCODE_YEAR_TO_MINUTE = 8;
+	// public static final int SQLDTCODE_YEAR_TO_SECOND 3 //
+	// DatabaseTIMESTAMP(0)
+	// public static final int SQLDTCODE_YEAR_TO_FRACTION 3 // 
+	// Database TIMESTAMP(1 - 5)
+	public static final int SQLDTCODE_MONTH = 10;
+	public static final int SQLDTCODE_MONTH_TO_DAY = 11;
+	public static final int SQLDTCODE_MONTH_TO_HOUR = 12;
+	public static final int SQLDTCODE_MONTH_TO_MINUTE = 13;
+	public static final int SQLDTCODE_MONTH_TO_SECOND = 14;
+	public static final int SQLDTCODE_MONTH_TO_FRACTION = 14;
+	public static final int SQLDTCODE_DAY = 15;
+	public static final int SQLDTCODE_DAY_TO_HOUR = 16;
+	public static final int SQLDTCODE_DAY_TO_MINUTE = 17;
+	public static final int SQLDTCODE_DAY_TO_SECOND = 18;
+	public static final int SQLDTCODE_DAY_TO_FRACTION = 18;
+	public static final int SQLDTCODE_HOUR = 19;
+	public static final int SQLDTCODE_HOUR_TO_MINUTE = 20;
+	// define SQLDTCODE_HOUR_TO_SECOND 2 //Database TIME(0) --> NCS 
+	// Maps this to TIME
+	public static final int SQLDTCODE_HOUR_TO_FRACTION = 2; // Database TIME(1 -
+	// 6) // MXCI Maps
+	// this to TIMESTAMP
+	public static final int SQLDTCODE_MINUTE = 22;
+	public static final int SQLDTCODE_MINUTE_TO_SECOND = 23;
+	public static final int SQLDTCODE_MINUTE_TO_FRACTION = 23;
+	public static final int SQLDTCODE_SECOND = 24;
+	public static final int SQLDTCODE_SECOND_TO_FRACTION = 24;
+	public static final int SQLDTCODE_FRACTION_TO_FRACTION = 29;
+	
 	// enum SQLCHARSET_CODE from sqlcli.h
 
 	public static final int SQLCHARSETCODE_UNKNOWN          = 0;
@@ -451,6 +611,13 @@ class SQLMXDesc
 	boolean	isAutoIncrement_;
 	boolean isSearchable_;
 	
+	int noNullValue_; // Descriptor2 only
+	int nullValue_; // Descriptor2 only
+	int version_; // Descriptor2 only
+	String headingName_; // Descriptor2 only
+	
+	int rowLength_;
+
 	boolean isValueSet_; // To denote if setXXX method is called for this parameter
 	Object	paramValue_; // Contains the value of output parameter value
 

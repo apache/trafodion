@@ -48,4 +48,13 @@ public:
 	long    vc_ind_length;
 };
 
+typedef struct tagDESC_HDL_LISTSTMT
+{
+    long DataType;
+    long Length;
+    long Nullable;
+    long VarBuf;
+    long IndBuf;
+} DESC_HDL_LISTSTMT;
+
 #endif

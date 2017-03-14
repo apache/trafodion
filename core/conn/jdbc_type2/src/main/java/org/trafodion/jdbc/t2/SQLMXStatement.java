@@ -1,3 +1,4 @@
+/*******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -18,10 +19,11 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
+ *******************************************************************************/
 
 /*
- * Filename		: SQLMXStatement.java
- * Description	:
+Filename		: SQLMXStatement.java
+Description	:
  */
 
 package org.trafodion.jdbc.t2;
@@ -36,6 +38,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.nio.ByteBuffer;
+import java.math.BigDecimal;
 
 public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 	// java.sql.Statement interface Methods
@@ -113,11 +117,18 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			} finally {
 				isClosed_ = true;
 				this.stmtId_ = 0;
+				initResultSets();
 			}
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_close].methodExit();
 		}
+	}
+
+	void initResultSets() {
+		num_result_sets_ = 1;
+		result_set_offset = 0;
+		rsResultSet_[result_set_offset] = null;
 	}
 
 	public boolean execute(String sql) throws SQLException {
@@ -872,9 +883,16 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			if (JdbcDebugCfg.traceActive)
 				debug[methodId_getUpdateCount].methodParameters("rowCount_ = "
 						+ rowCount_);
-			if (rowCount_ < 0)
+
+			long count = getRowCount64();
+
+			if (count > Integer.MAX_VALUE)
+				this.setSQLWarning(null, "numeric_out_of_range", null);
+
+			if (count < 0)
 				return (-1);
-			return rowCount_;
+		
+			return (int) count;
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_getUpdateCount].methodExit();
@@ -1235,6 +1253,57 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 		}
 	}
 
+	void setMultipleResultSets(int num_result_sets, SQLMXDesc[][] output_descriptors, String[] stmt_labels,
+			String[] proxySyntax) throws SQLException {
+		if (num_result_sets < 1)
+			return;
+
+		rsResultSet_ = new SQLMXResultSet[num_result_sets];
+		num_result_sets_ = num_result_sets;
+		for (int i = 0; i < num_result_sets; i++) {
+			SQLMXDesc[] desc = output_descriptors[i];
+			if (desc == null) {
+				rsResultSet_[i] = null;
+			} else {
+				rsResultSet_[i] = new SQLMXResultSet(this, desc, stmt_labels[i], true);
+				rsResultSet_[i].proxySyntax_ = proxySyntax[i];
+			}
+		}
+	}
+
+	// ----------------------------------------------------------------------------------
+	protected void setExecute2Outputs(byte[] values, short rowsAffected, boolean endOfData, String[] proxySyntax, SQLMXDesc[] desc)
+			throws SQLException {
+		num_result_sets_ = 1;
+		result_set_offset = 0;
+
+		// if NO DATA FOUND is returned from the server, desc = null but
+		// we still want to save our descriptors from PREPARE
+		if (desc != null)
+			outputDesc_ = desc;
+
+		rsResultSet_ = new SQLMXResultSet[num_result_sets_];
+
+		if (outputDesc_ != null) {
+			rsResultSet_[result_set_offset] = new SQLMXResultSet(this, outputDesc_);
+			rsResultSet_[result_set_offset].proxySyntax_ = proxySyntax[result_set_offset];
+
+			if (rowsAffected == 0) {
+				if (endOfData == true) {
+					rsResultSet_[result_set_offset].setFetchOutputs(new ObjectArray[0], 0, true);
+				}
+			} else {
+				 if(rsResultSet_[result_set_offset].keepRawBuffer_ == true)
+			          rsResultSet_[result_set_offset].rawBuffer_ = values;
+				 
+				rsResultSet_[result_set_offset].irs_.setExecute2FetchOutputs(rsResultSet_[result_set_offset], 1, true,
+						values);
+			}
+		} else {
+			rsResultSet_[result_set_offset] = null;
+		}
+	}
+
 	// Method used by JNI Layer to update the SPJ resultSets (via executeRS)
 	void setExecRSOutputs(SQLMXDesc[] outputDesc, int txid, long RSstmtId,
 			int RSIndex) throws SQLException {
@@ -1398,6 +1467,9 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			debug[methodId_SQLMXStatement_V].methodEntry();
 			debug[methodId_SQLMXStatement_V].methodExit();
 		}
+		
+		rsResultSet_ = new SQLMXResultSet[1];
+		initResultSets();
 	}
 
 	SQLMXStatement(SQLMXConnection connection) throws SQLException {
@@ -1463,9 +1535,14 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 			maxRows_ = 0;
 			fetchDirection_ = ResultSet.FETCH_FORWARD;
 			pRef_ = new WeakReference<SQLMXStatement>(this, connection_.refQ_);
+			ist_ = new InterfaceStatement(this);
 			rowCount_ = -1;
 			resultSetIndex_ = 0;
 			spjResultSets_ = new HashMap<Integer, SQLMXResultSet>();
+			
+			roundingMode_ = connection_.t2props.getRoundingMode();
+			rsResultSet_ = new SQLMXResultSet[1];
+			initResultSets();
 		} finally {
 			if (JdbcDebugCfg.entryActive)
 				debug[methodId_SQLMXStatement_LIII].methodExit();
@@ -1547,6 +1624,18 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
       this.setStmtLabel_(stmtLabel);
 	}
 
+	public String getSQL() {
+		return sql_;
+	}
+
+	public void setRowCount64(long rowCount) {
+		this.rowCount64_ = rowCount;
+	}
+
+	public long getRowCount64() {
+		return rowCount64_;
+	}
+
 	// static fields from Statement. Passed to JNI.
 	public static final int JNI_SUCCESS_NO_INFO = SUCCESS_NO_INFO;
 	public static final int JNI_EXECUTE_FAILED = EXECUTE_FAILED;
@@ -1566,8 +1655,11 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 	boolean escapeProcess_;
 	String cursorName_;
 	int rowCount_;
+	long rowCount64_;
 	SQLMXResultSet resultSet_;
+	SQLMXResultSet[] rsResultSet_; // Add for Rowsets and SPJ
 	private String stmtLabel_;
+	short sqlStmtType_;
 	String stmtLabelBase_;
 	String SPJRSstmtLabel_;
 	String SPJRSbaseStmtLabel_;
@@ -1575,7 +1667,31 @@ public class SQLMXStatement extends SQLMXHandle implements java.sql.Statement {
 	boolean isClosed_;
 	ArrayList<String> batchCommands_;
 	int[] batchRowCount_;
+	int inputParamsLength_;
+	int outputParamsLength_;
+	int inputDescLength_;
+	int outputDescLength_;
+
+	int num_result_sets_;
+	int result_set_offset;
+	int inputParamCount_;
+	int outputParamCount_;
+
+	int roundingMode_ = BigDecimal.ROUND_HALF_EVEN;
 	SQLMXDesc[] outputDesc_;
+	SQLMXDesc[] inputDesc_;
+
+	short operationID_;
+	byte[] operationBuffer_;
+	byte[] operationReply_;
+
+	boolean usingRawRowset_;
+	ByteBuffer rowwiseRowsetBuffer_;
+
+	byte[] transactionToJoin;
+
+    int _lastCount = -1;
+	InterfaceStatement ist_;
 	WeakReference<SQLMXStatement> pRef_;
 	long stmtId_; // Pointer to SRVR_STMT_HDL structure in native mode
 	int resultSetHoldability_;

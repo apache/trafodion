@@ -1,4 +1,4 @@
-/*************************************************************************
+/**************************************************************************
 // @@@ START COPYRIGHT @@@
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -41,6 +41,10 @@ char *_i64toa( long long value, char *string, int radix );
 #include "tip.h"
 #include "sqlcli.h"
 #include "idltype.h"
+
+#include "idltype.h"
+#include "odbcCommon.h"
+#include "odbcsrvrcommon.h"
 
 // +++ T2_REPO
 #include <PubQueryStats.h>
@@ -239,6 +243,75 @@ typedef enum _QUERY_STATE
 #define INFINITE_SRVR_IDLE_TIMEOUT      -1
 #define INFINITE_CONN_IDLE_TIMEOUT      -1
 
+/* **Rowsets **/
+#define MAX_SQLDESC_NAME_LEN    512
+#define MAX_ERROR_MSG_LEN       1024
+#define MAX_INTERNAL_STMT_LEN   512
+#define MAX_PARAMETER_NAME_LEN      512
+#define MAX_ANSI_NAME_LEN           512
+
+// Set values ranges from 0x00000001 thru 0x000.......
+#define MXO_ODBC_35					1
+#define MXO_MSACCESS_1997			2
+#define MXO_MSACCESS_2000			4
+#define MXO_BIGINT_NUMERIC			8
+#define MXO_ROWSET_ERROR_RECOVERY	16
+#define MXO_METADATA_ID				32
+#define MXO_FRACTION_IN_MICROSECS	64
+#define MXO_FRACTION_IN_NANOSECS	128
+#define MXO_SPECIAL_1_MODE			512
+#define MXO_SQLTABLES_MV_TABLE		1024
+#define MXO_SQLTABLES_MV_VIEW		2048
+
+#define SRVR_API_START              3000
+
+#ifndef _BYTE_DEFINED
+#define _BYTE_DEFINED
+typedef unsigned char BYTE;
+#endif // !_BYTE_DEFINED
+
+enum SRVR_API
+{
+    SRVR_API_INIT = SRVR_API_START,
+    SRVR_API_SQLCONNECT,
+    SRVR_API_SQLDISCONNECT,
+    SRVR_API_SQLSETCONNECTATTR,
+    SRVR_API_SQLENDTRAN,
+    SRVR_API_SQLPREPARE,
+    SRVR_API_SQLPREPARE_ROWSET,
+    SRVR_API_SQLEXECUTE_ROWSET,
+    SRVR_API_SQLEXECDIRECT_ROWSET,
+    SRVR_API_SQLFETCH,
+    SRVR_API_SQLFETCH_ROWSET,
+    SRVR_API_SQLEXECUTE,
+    SRVR_API_SQLEXECDIRECT,
+    SRVR_API_SQLEXECUTECALL,
+    SRVR_API_SQLFETCH_PERF,
+    SRVR_API_SQLFREESTMT,
+    SRVR_API_GETCATALOGS,
+    SRVR_API_STOPSRVR,
+    SRVR_API_ENABLETRACE,
+    SRVR_API_DISABLETRACE,
+    SRVR_API_ENABLE_SERVER_STATISTICS,
+    SRVR_API_DISABLE_SERVER_STATISTICS,
+    SRVR_API_UPDATE_SERVER_CONTEXT,
+    SRVR_API_MONITORCALL,
+    SRVR_API_SQLPREPARE2,
+    SRVR_API_SQLEXECUTE2,
+    SRVR_API_SQLFETCH2,
+    SRVR_API_SQLFASTEXECDIRECT,
+    SRVR_API_SQLFASTFETCH_PERF,
+    SRVR_API_GETSEGMENTS,
+    SRVR_API_LASTAPI
+};
+
+enum DATA_FORMAT {
+    UNKNOWN_DATA_FORMAT  = 0,
+    ROWWISE_ROWSETS      = 1,
+    COLUMNWISE_ROWSETS   = 2
+};
+/* ** Rowsets **/
+
 typedef enum _STOP_TYPE
 {
     STOP_UNKNOWN = -1,
@@ -302,6 +375,9 @@ typedef enum _STOP_TYPE
 #define CANCEL_NOT_POSSIBLE         -106
 #define NOWAIT_ERROR                -107
 #define SQL_RS_DOES_NOT_EXIST       -108
+// For Rowsets
+#define ROWSET_SQL_ERROR            -109
+#define SQL_SHAPE_WARNING           -110
 
 #define TYPE_UNKNOWN                0x0000
 #define TYPE_SELECT                 0x0001
@@ -312,8 +388,10 @@ typedef enum _STOP_TYPE
 #define TYPE_CREATE                 0x0020
 #define TYPE_GRANT                  0x0040
 #define TYPE_DROP                   0x0080
-#define TYPE_CALL                   0x0100
-#define TYPE_INSERT_PARAM           0x0120 //Added for CQDs filter
+#define TYPE_CALL                   0x0800 // Change for new Rowsets implementation
+#define TYPE_INSERT_PARAM           0x0100 // Change for new Rowsets implementation
+#define TYPE_SELECT_CATALOG         0x0200 // Rowsets
+#define SQL_RWRS_SPECIAL_INSERT     16     // Add for Rowwise rowsets
 
 typedef enum _SRVR_TYPE
 {
@@ -344,15 +422,6 @@ typedef enum SRVR_STATE
     SRVR_STOP_WHEN_DISCONNECTED
 } SRVR_STATE;
 
-struct VERSION_t {
-    IDL_short componentId;
-    IDL_short majorVersion;
-    IDL_short minorVersion;
-    char pad_to_offset_8_[2];
-    IDL_unsigned_long buildId;
-};
-typedef VERSION_t VERSION_def;
-
 typedef struct _SRVR_GLOBAL_Def
 {
     // +++ T2_REPO TODO - Temporarily assignment...needs to come from properties
@@ -376,13 +445,13 @@ typedef struct _SRVR_GLOBAL_Def
     long                clientACP;
     long                clientErrorLCID;
     long                clientLCID;
+    long                m_FetchBufferSize;
     bool                useCtrlInferNCHAR;
     char                DefaultCatalog[129];
     char                DefaultSchema[129];
     char                CurrentCatalog[129]; // Added for MFC
     char                CurrentSchema[129];  // Added for MFC
-    //moved setOfCQD to CsrvrConnect.h sol. Sol. 10-100618-1194
-//  std::set<std::string> setOfCQD; // Added for MFC
+    
     int                 moduleCaching;          // Added for MFC
     char                compiledModuleLocation[100]; // Added for MFC
     bool                jdbcProcess;        // This flag is used to determine the query for SQLTables
@@ -410,9 +479,8 @@ typedef struct _SRVR_GLOBAL_Def
     char    QSRoleName[MAX_ROLE_LEN + 1];
     char    ClientComputerName[MAX_COMPUTER_NAME_LEN + 1];
     char    ApplicationName[MAX_APPLICATION_NAME_LEN + 1];
-    
-    // Used by rowsets logic - need to be initialized
-    long                m_FetchBufferSize;
+   
+    // Used by rowsets logic
     bool                fetchAhead;
     VERSION_def         srvrVersion;
     VERSION_def         sqlVersion;
@@ -420,6 +488,7 @@ typedef struct _SRVR_GLOBAL_Def
     VERSION_def         appVersion;
     Int64               maxRowsFetched; // Not sure will this be useful in the future, just keep it.
     bool                enableLongVarchar;
+    bool                bSpjEnableProxy;
 //
 } SRVR_GLOBAL_Def ;
 
@@ -487,83 +556,6 @@ typedef struct tagTIME_TYPE
 #define BLOB_HEADING            "JDBC_BLOB_COLUMN -"
 #define INVALID_SQL_QUERY_STMT_TYPE 255
 
-typedef struct {
-    //unsigned long _length; 64 change
-    unsigned int _length;
-    unsigned char *_buffer;
-} SQL_DataValue_def;
-
-typedef struct {
-    long dataType;
-    short dataInd;
-    SQL_DataValue_def dataValue;
-    long dataCharset;
-} SQLValue_def;
-
-typedef struct {
-    //unsigned long _length; 64 bit change
-    unsigned int _length;
-    SQLValue_def *_buffer;
-} SQLValueList_def;
-
-typedef struct tag {
-    long version;
-    long dataType;
-    long datetimeCode;
-    long maxLen;
-    short precision;
-    short scale;
-    long vc_ind_length;
-    unsigned char nullInfo;
-    char colNm[129];
-    char colLabel[129];
-    unsigned char signType;
-    long ODBCDataType;
-    short ODBCPrecision;
-    long SQLCharset;
-    long ODBCCharset;
-    char catalogNm[129];
-    char schemaNm[129];
-    char tableNm[129];
-    long fsDataType;
-    long intLeadPrec;
-    long paramMode;
-} SQLItemDesc_def;
-
-typedef struct SQLItemDescList_def_seq_ {
-    unsigned long _length;
-    SQLItemDesc_def *_buffer;
-} SQLItemDescList_def;
-
-typedef struct {
-    long rowId;
-    long errorDiagnosticId;
-    long sqlcode;
-    char sqlstate[6];
-    char *errorText;
-    long operationAbortId;
-    long errorCodeType;
-    char *Param1;
-    char *Param2;
-    char *Param3;
-    char *Param4;
-    char *Param5;
-    char *Param6;
-    char *Param7;
-} ERROR_DESC_def;
-
-typedef struct {
-    unsigned long _length;
-    ERROR_DESC_def *_buffer;
-} ERROR_DESC_LIST_def;
-
-typedef struct {
-    char AttrNm[129];
-    long long Limit;
-    char Action[129];
-    long long ActualValue;
-} RES_HIT_DESC_def;
-
 struct odbc_SQLSvc_SQLError { /* Exception */
     ERROR_DESC_LIST_def errorList;
 };
@@ -572,10 +564,6 @@ typedef struct {
     unsigned int _length;
     int *_buffer;
 } ROWS_COUNT_LIST_def;
-
-typedef struct {
-    long contents[4];
-} CEE_handle_def;
 
 struct odbc_SQLSvc_ParamError { /* Exception */
     char *ParamDesc;
@@ -634,7 +622,9 @@ inline char* strToUpper(char* str)
 }
 
 
+#ifndef CEE_SUCCESS
 #define CEE_SUCCESS ((long) 0)
+#endif
 
 /*
 // Linux port - ToDo

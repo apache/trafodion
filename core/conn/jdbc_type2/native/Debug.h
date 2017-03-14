@@ -136,6 +136,74 @@
 #include "org_trafodion_jdbc_t2_JdbcDebug.h"
 #endif
 extern std::map<long,SRVR_STMT_HDL*> tempStmtIdMap;
+
+#ifdef TRACING_MEM_LEAK
+#define MAX_FILE_NAME_LEN   0x100 
+#define TRACE_LOG_FILE_NAME "mem_leak.log"
+
+class CMemInfo {
+    public:
+        long _ptr;
+        char _file[MAX_FILE_NAME_LEN];
+        int  _line;
+
+    public:
+        CMemInfo(long ptr, const char* file, int line)
+            : _ptr(ptr), _line(line)
+        {
+            memset(_file, 0, MAX_FILE_NAME_LEN);
+            strncpy(_file, file, strlen(file));
+        }
+
+        ~CMemInfo()
+        {
+        }
+};
+
+class ScopeMutex
+{
+    private:
+        pthread_mutex_t& mutex_;
+
+    public:
+        ScopeMutex(pthread_mutex_t& mutex)
+            : mutex_(mutex)
+        {
+            pthread_mutex_lock(&mutex_);
+        }
+
+        ~ScopeMutex()
+        {
+            pthread_mutex_unlock(&mutex_);
+        }
+};
+
+typedef std::map<long, CMemInfo*> MemInfoMap_t;
+
+class CMemInfoMap
+{
+    protected:
+        MemInfoMap_t m_mimap;
+        pthread_mutex_t _mutex;
+
+    public:
+        inline CMemInfoMap()
+        {
+            _mutex = PTHREAD_MUTEX_INITIALIZER;
+        }
+
+        void insert(const long, const char*, int);
+        void remove(const long);
+        void write_trace();
+};
+
+extern CMemInfoMap gMemInfoMap;
+
+void AddMemTrace(const long ptr, const char* file, int line);
+void RemoveMemTrace(const long ptr, const char* file, int line);
+void LogMemLeak();
+#endif
+
 #ifdef _DEBUG
 
 // External prototypes
@@ -312,14 +380,41 @@ const char *WrapperDataTypeStr(jbyte dataType);
 #define DEBUG_CLEAR(level)
 #define DEBUG_ASSERT(expr,message)
 #define DEBUG_PRINT_BUFFER()
+
+#ifdef TRACING_MEM_LEAK
+#define MEMORY_ALLOC(alloc_var,allocation) \
+{\
+    alloc_var = new allocation; if (alloc_var==NULL) exit(0); \
+    AddMemTrace((long)alloc_var, __FILE__, __LINE__); \
+}
+#define MEMORY_ALLOC_ARRAY(alloc_var,allocation,count) \
+{\
+    alloc_var = new allocation[count]; if (alloc_var==NULL) exit(0); \
+    AddMemTrace((long)alloc_var, __FILE__, __LINE__); \
+}
+#define MEMORY_DELETE(alloc_var) if (alloc_var) \
+{\
+    delete alloc_var; \
+    RemoveMemTrace((long)alloc_var, __FILE__, __LINE__); \
+    alloc_var = NULL; \
+}
+#define MEMORY_DELETE_ARRAY(alloc_var) if (alloc_var) \
+{\
+    delete [] alloc_var; \
+    RemoveMemTrace((long)alloc_var, __FILE__, __LINE__); \
+    alloc_var = NULL; \
+}
+#else
 #define MEMORY_ALLOC(alloc_var,allocation) { alloc_var = new allocation; if (alloc_var==NULL) exit(0); }
 #define MEMORY_ALLOC_ARRAY(alloc_var,allocation,count) { alloc_var = new allocation[count]; if (alloc_var==NULL) exit(0); }
+#define MEMORY_DELETE(alloc_var) if (alloc_var) { delete alloc_var; alloc_var = NULL; }
+#define MEMORY_DELETE_ARRAY(alloc_var) if (alloc_var) { delete [] alloc_var; alloc_var = NULL; }
+#endif
+
 #define MEMORY_ALLOC_OBJ(alloc_var,allocation) MEMORY_ALLOC(alloc_var,allocation)
 #define MEMORY_ALLOC_PERM(alloc_var,allocation) MEMORY_ALLOC(alloc_var,allocation)
 #define MEMORY_ALLOC_PERM_ARRAY(alloc_var,allocation,count) MEMORY_ALLOC_ARRAY(alloc_var,allocation,count)
 #define MEMORY_ALLOC_PERM_OBJ(alloc_var,allocation) MEMORY_ALLOC(alloc_var,allocation)
-#define MEMORY_DELETE(alloc_var) if (alloc_var) { delete alloc_var; alloc_var = NULL; }
-#define MEMORY_DELETE_ARRAY(alloc_var) if (alloc_var) { delete [] alloc_var; alloc_var = NULL; }
 #define MEMORY_DELETE_OBJ(alloc_var) MEMORY_DELETE(alloc_var)
 #define MEMORY_PRINT_ALLOC()
 #define MEMORY_DUMP(level,addr,len)

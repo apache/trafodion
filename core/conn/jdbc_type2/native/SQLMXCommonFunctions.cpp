@@ -829,7 +829,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 			desc,
 			offset));
 		unsigned long		index;
-		SQLItemDesc_def		*SQLDesc;
+		SQLItemDesc_def     *SQLDesc;
 		jstring				colName;
 		jstring				colLabel;
 		jstring				catalogName;
@@ -849,19 +849,19 @@ static Charset_def CHARSET_INFORMATION[] = {
 			SQLDesc = (SQLItemDesc_def *)desc->_buffer + index;
 			DEBUG_OUT(DEBUG_LEVEL_DATA,("Adding descriptor.  Column Name='%s' Column Heading='%s'",
 				DebugString(SQLDesc->colNm), DebugString(SQLDesc->colLabel)));
-			colName = jenv->NewStringUTF(SQLDesc->colNm);
-			catalogName = jenv->NewStringUTF(SQLDesc->catalogNm);
-			schemaName = jenv->NewStringUTF(SQLDesc->schemaNm);
-			tableName = jenv->NewStringUTF(SQLDesc->tableNm);
-			colLabel = jenv->NewStringUTF(SQLDesc->colLabel);
-			SQLMXDesc = jenv->NewObject(gJNICache.SQLMXDescClass, gJNICache.SQLMXDescConstructorId,
-				SQLDesc->dataType, SQLDesc->datetimeCode, SQLDesc->maxLen,
-				SQLDesc->precision, SQLDesc->scale, SQLDesc->nullInfo, colName, SQLDesc->signType,
-				SQLDesc->ODBCDataType, SQLDesc->ODBCPrecision, SQLDesc->SQLCharset,
-				SQLDesc->ODBCCharset, catalogName, schemaName, tableName, SQLDesc->fsDataType,
-				SQLDesc->intLeadPrec,
-				SQLDesc->paramMode,
-				colLabel);
+            colName = jenv->NewStringUTF(SQLDesc->ColumnName);
+            catalogName = jenv->NewStringUTF(SQLDesc->CatalogName);
+            schemaName = jenv->NewStringUTF(SQLDesc->SchemaName);
+            tableName = jenv->NewStringUTF(SQLDesc->TableName);
+            colLabel = jenv->NewStringUTF(SQLDesc->ColumnLabel);
+            SQLMXDesc = jenv->NewObject(gJNICache.SQLMXDescClass, gJNICache.SQLMXDescConstructorId,
+                    SQLDesc->dataType, SQLDesc->datetimeCode, SQLDesc->maxLen,
+                    SQLDesc->precision, SQLDesc->scale, SQLDesc->nullInfo, colName, SQLDesc->signType,
+                    SQLDesc->ODBCDataType, SQLDesc->ODBCPrecision, SQLDesc->SQLCharset,
+                    SQLDesc->ODBCCharset, catalogName, schemaName, tableName, SQLDesc->fsDataType,
+                    SQLDesc->intLeadPrec,
+                    SQLDesc->paramMode,
+                    colLabel);
 			JNI_SetObjectArrayElement(jenv,SQLMXDescArray, index-offset, SQLMXDesc);
 		}
 		FUNCTION_RETURN_PTR(SQLMXDescArray,("desc->_length = %ld",desc->_length));
@@ -1753,6 +1753,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 			switch(charSet)
 			{
 			case SQLCHARSETCODE_ISO88591:
+			case SQLCHARSETCODE_UTF8:
 				if (encoding)
 					stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
 					gJNICache.getBytesEncodedMethodId, encoding);
@@ -1957,7 +1958,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 				FUNCTION_RETURN_NUMERIC(FALSE,("convertBigDecimalToSQLBigNum() failed"));
 				goto func_exit;
 			}
-			pB = new BYTE[bytesLength];
+			MEMORY_ALLOC_ARRAY(pB, BYTE, bytesLength);
 			wrapperInfo->jenv->GetByteArrayRegion(bigNumAsBytes, 0, bytesLength, (jbyte *)pB);
 			if(_SQLDT_NUM_BIG_S == FSDataType)
 			{
@@ -1968,8 +1969,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 				DEBUG_OUT(DEBUG_LEVEL_DATA,("_SQLDT_NUM_BIG_U: precision(%ld)>targetLength(%ld)",precision,targetLength));
 			}
 			memcpy(targetDataPtr, pB, bytesLength);
-			delete [] pB;
-			pB = NULL;
+			MEMORY_DELETE_ARRAY(pB);
 			if(_SQLDT_NUM_BIG_U == FSDataType)
 			{
 				DEBUG_OUT(DEBUG_LEVEL_DATA,("SQLTYPECODE_NUMERIC: _SQLDT_NUM_BIG_U: targetData = '%Ld', scale = '%ld'",*(char *)targetDataPtr, scale));
@@ -2206,7 +2206,6 @@ func_exit:
 			DebugBoolStr(autoCommit),
 			txnMode,
 			catalogAPI));
-
 
 		ExceptionStruct					exception_;
 		SQLItemDescList_def				outputDesc;
@@ -3196,8 +3195,8 @@ func_exit:
 			gJNICache.charsetInfo[idx].useDefaultEncoding = FALSE;
 			jenv->DeleteLocalRef(encoding);
 		}
-                if (setenv("MASTER_FAST_COMPLETION","0",1) != 0)
-		   abort();
+        if (setenv("MASTER_FAST_COMPLETION","0",1) != 0)
+            abort();
 		gJEnv = jenv;
 		FUNCTION_RETURN_NUMERIC(TRUE,(NULL));
 	}
@@ -3657,7 +3656,8 @@ func_exit:
 
 	jboolean getSqlStmtType(unsigned char* sql)
 	{
-		char *p = new char[strlen((const char *)sql)+1];
+		char *p = NULL;
+		MEMORY_ALLOC_ARRAY(p, char, strlen((const char *)sql)+1);
 		memset(p, '\0', strlen((const char *)sql)+1);
 		strncpy(p, (const char *)sql, strlen((const char *)sql)+1);
 		/*
@@ -3676,7 +3676,7 @@ func_exit:
 		{
 			result = JNI_FALSE;
 		}
-		delete [] p;
+		MEMORY_DELETE_ARRAY(p);
 		p = NULL;
 		return result;
 

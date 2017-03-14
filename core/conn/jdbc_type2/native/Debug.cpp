@@ -39,6 +39,62 @@
 #include "Debug.h"
 #include "org_trafodion_jdbc_t2_DataWrapper.h"
 
+#ifdef TRACING_MEM_LEAK
+void CMemInfoMap::insert(const long ptr, const char* file, int line)
+{
+    ScopeMutex lock(_mutex);
+    
+    CMemInfo *newMemInfo = new CMemInfo(ptr, file, line);
+    m_mimap[ptr] = newMemInfo;
+}
+
+void CMemInfoMap::remove(const long ptr)
+{
+    CMemInfo *tmpPtr = NULL;
+    ScopeMutex lock(_mutex);
+    
+    MemInfoMap_t::iterator it = m_mimap.find(ptr);
+    if(it != m_mimap.end()) {
+        tmpPtr = it->second;
+        m_mimap.erase(it);
+        delete tmpPtr;
+    }
+}
+
+void CMemInfoMap::write_trace()
+{
+    ScopeMutex lock(_mutex);
+    FILE *tFile = fopen(TRACE_LOG_FILE_NAME, "a+");
+
+    for(MemInfoMap_t::iterator it = m_mimap.begin(); it != m_mimap.end(); ++it)
+    {
+        fprintf(tFile,
+                "Leaking Memory: 0x%08x.\t@%s: %d\n",
+                it->first,
+                it->second->_file,
+                it->second->_line);
+        fflush(tFile);
+    }
+
+    fclose(tFile);
+}
+
+void AddMemTrace(const long ptr, const char* file, int line)
+{
+    gMemInfoMap.insert(ptr, file, line);
+}
+
+void RemoveMemTrace(const long ptr, const char* file, int line)
+{
+    gMemInfoMap.remove(ptr);
+}
+
+void LogMemLeak()
+{
+    gMemInfoMap.write_trace();
+}
+#endif
+
 #ifdef _DEBUG
 
 #include <stdio.h>

@@ -609,6 +609,7 @@ void removeSrvrStmt(long dialogueId, long stmtId)
     pConnect->removeSrvrStmt((SRVR_STMT_HDL *)stmtId);
     FUNCTION_RETURN_VOID((NULL));
 }
+
 // Assuming outName is of sufficient size for efficiency
 void convertWildcard(unsigned long metadataId, BOOL isPV, const char *inName, char *outName)
 {
@@ -2362,7 +2363,7 @@ extern "C" void GETMXCSWARNINGORERROR(
     *(Int32 *)(WarningOrError+msg_total_len) = time_and_msg_buf_len;
     msg_total_len += sizeof(time_and_msg_buf_len);
     //Get the timetsamp
-        time_and_msg_buf = new char[time_and_msg_buf_len];
+    MEMORY_ALLOC_ARRAY(time_and_msg_buf, char, time_and_msg_buf_len);
     strncpy(time_and_msg_buf, msg_buf, msg_buf_len);
     time_t  now = time(NULL);
     bzero(strNow, sizeof(strNow));
@@ -2370,7 +2371,7 @@ extern "C" void GETMXCSWARNINGORERROR(
     strcat(time_and_msg_buf, strNow);
     memcpy(WarningOrError+msg_total_len, time_and_msg_buf, time_and_msg_buf_len);
     msg_total_len += time_and_msg_buf_len;
-    delete time_and_msg_buf;
+    MEMORY_DELETE_ARRAY(time_and_msg_buf);
     memcpy(WarningOrError+msg_total_len, tsqlState, sizeof(tsqlState));
     msg_total_len += sizeof(tsqlState);
 
