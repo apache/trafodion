@@ -66,9 +66,10 @@
     <Link>
       <OutputFile>..\..\..\lib\x64\Release\traf_translation01.dll</OutputFile>
       <ModuleDefinitionFile>.\TranslationDll.def</ModuleDefinitionFile>
-      <ProgramDatabaseFile>.\x64\Release/traf_translation.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>..\..\..\lib\x64\Release/traf_translation01.pdb</ProgramDatabaseFile>
       <ImportLibrary>.\x64\Release/traf_translation.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Bscmake>
       <OutputFile>.\x64\Release/TranslationDll.bsc</OutputFile>

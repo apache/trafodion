@@ -101,10 +101,11 @@
     <Link>
       <OutputFile>..\..\..\lib\x64\Release\traf_ores0100.dll</OutputFile>
       <ModuleDefinitionFile>.\Drvr35Res.def</ModuleDefinitionFile>
-      <ProgramDatabaseFile>.\x64\Release/traf_ores0100.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>..\..\..\lib\x64\Release/traf_ores0100.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>.\x64\Release/traf_ores0100.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Bscmake>
       <OutputFile>.\x64\Release/Drvr35Res.bsc</OutputFile>
