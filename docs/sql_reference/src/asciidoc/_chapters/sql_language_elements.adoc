@@ -1874,7 +1874,7 @@ delimited identifier.
 
 <<<
 [[identity_column]]
-== Indentity Column
+== Identity Column
 
 A identity column is an auto-increment column, which is defined to a column of a table with identity attribute and used to automatically generate increasing or decreasing sequential numeric value for a column with each row insertion into the table.
 
@@ -1892,7 +1892,7 @@ GENERATED [ALWAYS | BY DEFAULT] AS IDENTITY
 ```
 
 [[syntax_description_of_identity_column]]
-=== Syntax Description of Indentity Column
+=== Syntax Description of Identity Column
 
 * `ALWAYS`
 +
@@ -1905,7 +1905,7 @@ Indicates that when a row is inserted to a table, if the value of the column is 
 The options above serve the same purposes as they serve when you create a sequence. For more information, see <<create_sequence_statement,CREATE SEQUENCE Statement>>.
 
 [[examples_of_identity_column]]
-=== Examples of Indentity Column
+=== Examples of Identity Column
 
 * Example of `ALWAYS`
 +
