@@ -738,7 +738,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
     inputValue.dataInd = 0;
     inputValue.dataType = SQLTYPECODE_VARCHAR;
     inputValue.dataValue._length = 0;
-    MEMORY_ALLOC_ARRAY(inputValue.dataValue._buffer, unsigned char, MAX_INTERNAL_STMT_LEN);
+    MEMORY_ALLOC_ARRAY(inputValue.dataValue._buffer, IDL_octet, MAX_INTERNAL_STMT_LEN);
 
     if((RbwSrvrStmt = createSrvrStmt(
                     dialogueId,
@@ -807,6 +807,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
 
     srvrGlobal->m_FetchBufferSize = MAX_FETCH_BUFFER_SIZE; //Defaulting set the fetch buffer size to 512K
     srvrGlobal->fetchAhead = false;
+
     srvrGlobal->enableLongVarchar = false;
     srvrGlobal->boolFlgforInitialization = 1;
     srvrGlobal->maxRowsFetched = 0;

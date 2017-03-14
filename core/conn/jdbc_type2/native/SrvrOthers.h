@@ -28,7 +28,10 @@
 
 #include <map>
 #include <string>
+#include <sql.h>
+#include "CoreCommon.h"
 
+class SRVR_STMT_HDL;
 /*
 * Exception number constants for
 * operation 'odbc_SQLSvc_FetchN'
@@ -57,6 +60,40 @@ odbc_SQLSvc_FetchN_sme_(
 						, /* Out   */ SQLValueList_def *outputValueList
 						, /* Out   */ ERROR_DESC_LIST_def *sqlWarning
 						);
+
+/*
+ * Exception number constants for
+ * operation 'odbc_SQLSvc_FetchPerf'
+ */
+#define odbc_SQLSvc_FetchPerf_ParamError_exn_ 1
+#define odbc_SQLSvc_FetchPerf_InvalidConnection_exn_ 2
+#define odbc_SQLSvc_FetchPerf_SQLError_exn_ 3
+#define odbc_SQLSvc_FetchPerf_SQLInvalidHandle_exn_ 4
+#define odbc_SQLSvc_FetchPerf_SQLNoDataFound_exn_ 5
+#define odbc_SQLSvc_FetchPerf_SQLStillExecuting_exn_ 6
+#define odbc_SQLSvc_FetchPerf_SQLQueryCancelled_exn_ 7
+#define odbc_SQLSvc_FetchPerf_TransactionError_exn_ 8
+
+/*
+ * Local index for operation 'odbc_SQLSvc_FetchPerf'
+ */
+#define odbc_SQLSvc_FetchPerf_ldx_ ((IDL_unsigned_long) 18)
+
+extern "C" void
+odbc_SQLSrvr_FetchPerf_sme_(
+    /* In    */ Long dialogueId
+  , /* Out   */ IDL_long *returnCode
+  , /* In    */ Long     stmtHandle
+  , /* In    */ IDL_long maxRowCnt
+  , /* In    */ IDL_long maxRowLen
+  , /* In    */ IDL_short sqlAsyncEnable
+  , /* In    */ IDL_long queryTimeout
+  , /* Out   */ IDL_long *rowsAffected
+  , /* Out   */ IDL_long *outValuesFormat
+  , /* Out   */ SQL_DataValue_def *outputDataValue
+  , /* Out   */ IDL_long *sqlWarningOrErrorLength
+  , /* Out   */ BYTE     *&sqlWarningOrError);
+
 
 /*
 * Exception number constants for
@@ -103,28 +140,167 @@ odbc_SQLSvc_Close_sme_(
 
 extern "C" void
 odbc_SQLSvc_Prepare_sme_( 	void *               objtag_,			/* In	*/
-						 const CEE_handle_def     *call_id_,			/* In	*/
-						 ExceptionStruct			 *exception_,		/* Out  */
-						 long                      dialogueId,		/* In	*/
-						 const char           *stmtLabel,		/* In	*/
-						 const char           *stmtExplainLabel,	/* In	*/
-						 short                 stmtType,			/* In	*/
-						 const SQLValue_def       *sqlString,		/* In the SQL statement */
-						 short                 holdability,		/* In cursor holdability true/false */
-						 short                 sqlStmtType,		/* In SQL statment is a SELECT, INVOKE, or */
-						 long                  batchSize,		/* In	*/
-						 long                  fetchSize,		/* In	*/
-						 long                  queryTimeout,		/* In	*/
-						 long                 *estimatedCost,	/* Out Not used */
-						 SQLItemDescList_def      *inputDesc,		/* Out  */
-						 SQLItemDescList_def      *outputDesc,		/* Out  */
-						 ERROR_DESC_LIST_def      *sqlWarning,		/* Out  */
-						 long                     *stmtId,			/* Out  */
-						 long                 *inputParamOffset,	/* Out   */
-						 char                *moduleName,
-						 bool isISUD
-						 );
+        const CEE_handle_def     *call_id_,			/* In	*/
+        ExceptionStruct			 *exception_,		/* Out  */
+        long                      dialogueId,		/* In	*/
+        const char           *stmtLabel,		/* In	*/
+        const char           *stmtExplainLabel,	/* In	*/
+        short                 stmtType,			/* In	*/
+        const SQLValue_def       *sqlString,		/* In the SQL statement */
+        short                 holdability,		/* In cursor holdability true/false */
+        short                 sqlStmtType,		/* In SQL statment is a SELECT, INVOKE, or */
+        long                  batchSize,		/* In	*/
+        long                  fetchSize,		/* In	*/
+        long                  queryTimeout,		/* In	*/
+        long                 *estimatedCost,	/* Out Not used */
+        SQLItemDescList_def      *inputDesc,		/* Out  */
+        SQLItemDescList_def      *outputDesc,		/* Out  */
+        ERROR_DESC_LIST_def      *sqlWarning,		/* Out  */
+        long                     *stmtId,			/* Out  */
+        long                 *inputParamOffset,	/* Out   */
+        char                *moduleName,
+        bool isISUD
+);
 
+/*
+ * Exception number constants for
+ * operation 'odbc_SQLSvc_PrepareRowset'
+ */
+#define odbc_SQLSvc_PrepareRowset_ParamError_exn_ 1
+#define odbc_SQLSvc_PrepareRowset_InvalidConnection_exn_ 2
+#define odbc_SQLSvc_PrepareRowset_SQLError_exn_ 3
+#define odbc_SQLSvc_PrepareRowset_SQLStillExecuting_exn_ 4
+#define odbc_SQLSvc_PrepareRowset_SQLQueryCancelled_exn_ 5
+#define odbc_SQLSvc_PrepareRowset_TransactionError_exn_ 6
+/*
+ * Exception union for
+ * operation 'odbc_SQLSvc_PrepareRowset'
+ */
+struct odbc_SQLSvc_PrepareRowset_exc_ {
+    IDL_long exception_nr;
+    IDL_long exception_detail;
+    union {
+        odbc_SQLSvc_ParamError ParamError;
+        odbc_SQLSvc_SQLError SQLError;
+        odbc_SQLSvc_SQLQueryCancelled SQLQueryCancelled;
+    } u;
+};
+/*
+ * Local index for operation 'odbc_SQLSvc_PrepareRowset'
+ */
+#define odbc_SQLSvc_PrepareRowset_ldx_ ((IDL_unsigned_long) 20)
+/*
+ * Operation synopsis for operation 'odbc_SQLSvc_PrepareRowset'
+ */
+#define odbc_SQLSvc_PrepareRowset_osy_ ((IDL_long) 2039310938)
+
+extern "C" void
+odbc_SQLSvc_Prepare2withRowsets_sme_(
+          /* In    */ Long dialogueId
+        , /* In    */ Int32 sqlAsyncEnable
+        , /* In    */ Int32 queryTimeout
+        , /* In    */ Int32 inputRowCnt
+        , /* In    */ Int32 sqlStmtType
+        , /* In    */ Int32 stmtLength
+        , /* In    */ const IDL_char *stmtLabel
+        , /* In    */ Int32 stmtLabelCharset
+        , /* In    */ Int32 cursorLength
+        , /* In    */ IDL_string cursorName
+        , /* In    */ Int32 cursorCharset
+        , /* In    */ Int32 moduleNameLength
+        , /* In    */ const IDL_char *moduleName
+        , /* In    */ Int32 moduleCharset
+        , /* In    */ Int64 moduleTimestamp
+        , /* In    */ Int32 sqlStringLength
+        , /* In    */ IDL_string sqlString
+        , /* In    */ Int32 sqlStringCharset
+        , /* In    */ Int32 setStmtOptionsLength
+        , /* In    */ IDL_string setStmtOptions
+        , /* In    */ Int32 holdableCursor
+        , /* Out   */ Int32 *returnCode
+        , /* Out   */ Int32 *sqlWarningOrErrorLength
+        , /* Out   */ BYTE *&sqlWarningOrError
+        , /* Out   */ Int32 *sqlQueryType
+        , /* Out   */ Long *stmtHandle
+        , /* Out   */ Int32 *estimatedCost
+        , /* Out   */ Int32 *inputDescLength
+        , /* Out   */ BYTE *&inputDesc
+        , /* Out   */ Int32 *outputDescLength
+        , /* Out   */ BYTE *&outputDesc
+        );
+
+extern "C" void
+odbc_SQLSvc_Prepare2_sme_(
+        /* In    */ Long dialogueId
+        , /* In    */ Int32 inputRowCnt
+        , /* In    */ Int32 sqlStmtType
+        , /* In    */ const IDL_char *stmtLabel
+        , /* In    */ IDL_string sqlString
+        , /* In    */ Int32 holdableCursor
+        , /* Out   */ Int32 *returnCode
+        , /* Out   */ Int32 *sqlWarningOrErrorLength
+        , /* Out   */ BYTE *&sqlWarningOrError
+        , /* Out   */ Int32 *sqlQueryType
+        , /* Out   */ Long *stmtHandle
+        , /* Out   */ Int32 *estimatedCost
+        , /* Out   */ Int32 *inputDescLength
+        , /* Out   */ BYTE *&inputDesc
+        , /* Out   */ Int32 *outputDescLength
+        , /* Out   */ BYTE *&outputDesc
+        , /* In    */ bool isFromExecDirect = false
+        );
+
+extern "C" void 
+rePrepare2( SRVR_STMT_HDL *pSrvrStmt
+        , Int32           sqlStmtType
+        , Int32           inputRowCnt
+        , Int32			holdableCursor
+        , SQLRETURN     	*rc 
+        , Int32          	*returnCode
+        , Int32      		*sqlWarningOrErrorLength
+        , BYTE          	*&sqlWarningOrError );
+
+extern "C" void
+odbc_SQLSvc_Execute2withRowsets_sme_(
+        /* In    */ Long dialogueId
+        , /* In    */ Int32 sqlAsyncEnable
+        , /* In    */ Int32 queryTimeout
+        , /* In    */ Int32 inputRowCnt
+        , /* In    */ Int32 sqlStmtType
+        , /* In    */ Long stmtHandle
+        , /* In    */ Int32 cursorLength
+        , /* In    */ IDL_string cursorName
+        , /* In    */ Int32 cursorCharset
+        , /* In    */ Int32 holdableCursor
+        , /* In    */ Int32 inValuesLength
+        , /* In    */ BYTE *inValues
+        , /* Out   */ Int32 *returnCode
+        , /* Out   */ Int32 *sqlWarningOrErrorLength
+        , /* Out   */ BYTE *&sqlWarningOrError
+        , /* Out   */ Int32 *rowsAffected
+        , /* Out   */ Int32 *outValuesLength
+        , /* Out   */ BYTE *&outValues);
+
+extern "C" void
+odbc_SQLSvc_Execute2_sme_(
+        /* In    */ Long dialogueId
+        , /* In    */ Int32 sqlAsyncEnable
+        , /* In    */ Int32 queryTimeout
+        , /* In    */ Int32 inputRowCnt
+        , /* In    */ Int32 sqlStmtType
+        , /* In    */ Long stmtHandle
+        , /* In    */ Int32 cursorLength
+        , /* In    */ IDL_string cursorName
+        , /* In    */ Int32 cursorCharset
+        , /* In    */ Int32 holdableCursor
+        , /* In    */ Int32 inValuesLength
+        , /* In    */ BYTE *inValues
+        , /* Out   */ Int32 *returnCode
+        , /* Out   */ Int32 *sqlWarningOrErrorLength
+        , /* Out   */ BYTE *&sqlWarningOrError
+        , /* Out   */ Int32 *rowsAffected
+        , /* Out   */ Int32 *outValuesLength
+        , /* Out   */ BYTE *&outValues);
 
 /*
 * Exception number constants for
@@ -159,6 +335,12 @@ odbc_SQLSvc_ExecuteN_sme_(
 						  );
 
 /*
+ *  * Local index for operation 'odbc_SQLSvc_ExecuteN'
+ *   */
+#define odbc_SQLSvc_ExecuteN_ldx_ ((IDL_unsigned_long) 8)
+
+
+/*
 * Exception number constants for
 * operation 'odbc_SQLSvc_ExecDirect'
 */
@@ -169,6 +351,28 @@ odbc_SQLSvc_ExecuteN_sme_(
 #define odbc_SQLSvc_ExecDirect_SQLQueryCancelled_exn_ 5
 #define odbc_SQLSvc_ExecDirect_TransactionError_exn_ 6
 #define odbc_SQLSvc_ExecDirect_SQLInvalidHandle_exn_ 7
+
+/*
+ * Exception union for
+ * operation 'odbc_SQLSvc_ExecDirect'
+ */
+struct odbc_SQLSvc_ExecDirect_exc_ {
+    IDL_long exception_nr;
+    IDL_long exception_detail;
+    union {
+        odbc_SQLSvc_ParamError ParamError;
+        odbc_SQLSvc_SQLError SQLError;
+        odbc_SQLSvc_SQLQueryCancelled SQLQueryCancelled;
+    } u;
+};
+/*
+ * Local index for operation 'odbc_SQLSvc_ExecDirect'
+ */
+#define odbc_SQLSvc_ExecDirect_ldx_ ((IDL_unsigned_long) 7)
+/*
+ * Operation synopsis for operation 'odbc_SQLSvc_ExecDirect'
+ */
+#define odbc_SQLSvc_ExecDirect_osy_ ((IDL_long) -1127826003)
 
 extern "C" void
 odbc_SQLSvc_ExecDirect_sme_(
@@ -311,23 +515,46 @@ odbc_SQLSvc_PrepareFromModule_sme_(
 #define odbc_SQLSvc_ExecuteCall_SQLQueryCancelled_exn_ 8
 #define odbc_SQLSvc_ExecuteCall_TransactionError_exn_ 9
 
+/*
+ *  * Exception union for
+ *   * operation 'odbc_SQLSvc_ExecuteCall'
+ *    */
+struct odbc_SQLSvc_ExecuteCall_exc_ {
+    IDL_long exception_nr;
+    IDL_long exception_detail;
+    union {
+        odbc_SQLSvc_ParamError ParamError;
+        odbc_SQLSvc_SQLError SQLError;
+        odbc_SQLSvc_SQLRetryCompile SQLRetryCompile;
+        odbc_SQLSvc_SQLQueryCancelled SQLQueryCancelled;
+    } u;
+};
+/*
+ *  * Local index for operation 'odbc_SQLSvc_ExecuteCall'
+ *   */
+#define odbc_SQLSvc_ExecuteCall_ldx_ ((IDL_unsigned_long) 28)
+/*
+ *  * Operation synopsis for operation 'odbc_SQLSvc_ExecuteCall'
+ *   */
+#define odbc_SQLSvc_ExecuteCall_osy_ ((IDL_long) -1549026474)
+
 extern "C" void
 odbc_SQLSvc_ExecuteCall_sme_(
-							 /* In	*/ void * objtag_
-							 , /* In	*/ const CEE_handle_def *call_id_
-							 , /* Out   */ ExceptionStruct *exception_
-							 , /* In	*/ long dialogueId
-							 , /* In	*/ long stmtId
-							 , /* In	*/ const SQLValueList_def *inputValueList
-							 , /* In	*/ short sqlAsyncEnable
-							 , /* In	*/ long queryTimeout
-							 , /* Out   */ SQLValueList_def *outputValueList
-							 , /* Out   */ short *returnResult
-							 , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
-							 );
+        /* In	*/ void * objtag_
+        , /* In	*/ const CEE_handle_def *call_id_
+        , /* Out   */ ExceptionStruct *exception_
+        , /* In	*/ long dialogueId
+        , /* In	*/ long stmtId
+        , /* In	*/ const SQLValueList_def *inputValueList
+        , /* In	*/ short sqlAsyncEnable
+        , /* In	*/ long queryTimeout
+        , /* Out   */ SQLValueList_def *outputValueList
+        , /* Out   */ short *returnResult
+        , /* Out   */ ERROR_DESC_LIST_def *sqlWarning
+        );
 
 /*
-* Exception number constants for
+ * Exception number constants for
 * operation 'odbc_SQLSvc_CloseUsingLabel'
 */
 #define odbc_SQLSvc_CloseUsingLabel_ParamError_exn_ 1

@@ -55,6 +55,20 @@ SRVR_STMT_HDL::SRVR_STMT_HDL(long inDialogueId)
     outputDescVarBuffer = NULL;
     inputDescVarBufferLen = 0;
     outputDescVarBufferLen = 0;
+    sqlQueryType = SQL_UNKNOWN;
+    inputDescBuffer = NULL;
+    outputDescBuffer = NULL;
+    inputDescBufferLength = 0;
+    outputDescBufferLength  = 0;
+    outputDescBufferLength = 0;
+    outputDescBuffer = NULL;
+    sqlWarningOrErrorLength = 0;
+    sqlWarningOrError = NULL;
+    delayedSqlWarningOrErrorLength = 0;
+    delayedSqlWarningOrError = NULL;
+    SpjProxySyntaxString = NULL;
+    SpjProxySyntaxStringLen = 0;
+    SqlDescInfo = NULL;
     endOfData = FALSE;
 
     // The following were added for SPJRS support
@@ -73,13 +87,40 @@ SRVR_STMT_HDL::SRVR_STMT_HDL(long inDialogueId)
     queryTimeout = 0;
     sqlString.dataValue._buffer = NULL;
     sqlString.dataValue._length = 0;
+    sqlStringLen = 0;
+    sqlStringText = NULL;
     inputRowCnt = 0;
+    maxRowsetSize = ROWSET_NOT_DEFINED;
     maxRowCnt = 0;
     sqlStmtType = TYPE_UNKNOWN;
     freeResourceOpt = SQL_CLOSE;
     inputValueList._length = 0;
     inputValueList._buffer = NULL;
 
+    numResultSets  = 0;
+    previousSpjRs  = NULL;
+    nextSpjRs      = NULL;
+    callStmtId     = NULL;
+    resultSetIndex = 0;
+    callStmtHandle = NULL;
+    errRowsArray   = NULL;
+
+    NA_supported = false;
+    bSQLMessageSet = false;
+    bSQLValueListSet = false;
+    bFetchStarted = false;
+    preparedWithRowsets = false;
+
+    inputQuadList         =    NULL;
+    inputQuadList_recover =    NULL;
+    transportBuffer       =    NULL;
+    transportBufferLen    =    0;
+
+    outputQuadList        =    NULL;
+    outputBuffer          =    NULL;
+    outputBufferLength    =    0;
+    returnCodeForDelayedError = SQL_SUCCESS;
+    
     estimatedCost = 0;
     rowsAffected = 0;
     inputDescList._length = 0;
@@ -132,6 +173,26 @@ SRVR_STMT_HDL::SRVR_STMT_HDL(long inDialogueId)
     // Rowsets
     callStmtId     = NULL;
     resultSetIndex = 0;
+    
+    // Rowsets - phase 2
+    outputDataValue._length = 0;
+    outputDataValue._buffer = NULL;
+    outputDataValue.pad_to_offset_8_ = {'\0', '\0', '\0', '\0'};
+    inputDataValue._length = 0;
+    inputDataValue._buffer = NULL;
+    delayedOutputDataValue._length = 0;
+    delayedOutputDataValue._buffer = NULL;
+    current_holdableCursor = SQL_NONHOLDABLE;
+    holdableCursor = SQL_NONHOLDABLE;
+    myKey = 0; // Will be evaluated by createSrvrStmt()
+               // in SRVR_CONNECT_HDL with value count
+
+    sqlPlanLen = 0;
+
+    m_wbuffer = NULL;
+    m_rbuffer = NULL;
+    m_wbuffer_length = 0;
+    m_rbuffer_length = 0;
 
     FUNCTION_RETURN_VOID((NULL));
 }
@@ -180,10 +241,86 @@ SQLRETURN SRVR_STMT_HDL::Prepare(const SQLValue_def *inSqlString, short inStmtTy
 
     strncpy((char *)sqlString.dataValue._buffer, (const char *)inSqlString->dataValue._buffer, inSqlString->dataValue._length);
     sqlString.dataValue._buffer[inSqlString->dataValue._length] = '\0';
+
+    sqlStringLen = inSqlString->dataValue._length;
+    MEMORY_ALLOC_ARRAY(sqlStringText, char, sqlStringLen+1);
+    strncpy((char *)sqlStringText, (const char *)inSqlString->dataValue._buffer, sqlStringLen);
+    sqlStringText[inSqlString->dataValue._length] = '\0';
+
     stmtType = inStmtType;
     holdability = inHoldability;
 
     CLI_DEBUG_RETURN_SQL(PREPARE(this));
+}
+
+SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, IDL_long inInputRowCnt, IDL_short inSqlStmtType, 
+        const SQLValueList_def *inValueList, 
+        short inSqlAsyncEnable, Int32 inQueryTimeout)
+{
+    FUNCTION_ENTRY("SRVR_STMT_HDL::Execute",("Rowsets entry"));
+    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  inCursorName=%s, inInputRowCnt=%ld, inSqlStmtType=%s",
+                DebugString(inCursorName),
+                inInputRowCnt,
+                CliDebugSqlStatementType(inSqlStmtType)));
+    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  inValueList=0x%08x",
+                inValueList));
+    DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  inSqlAsyncEnable=%d, inQueryTimeout=%ld",
+                inSqlAsyncEnable,
+                inQueryTimeout));
+    SQLRETURN rc;
+
+    if(bSQLMessageSet)
+        cleanupSQLMessage();
+    if(bSQLValueListSet)
+        cleanupSQLValueList();
+    inputRowCnt = inInputRowCnt;
+    sqlStmtType = inSqlStmtType;
+
+    if (inCursorName != NULL && inCursorName[0] != '\0')
+    {
+        cursorNameLen = strlen(inCursorName);
+        cursorNameLen = cursorNameLen < sizeof(cursorName)? cursorNameLen : sizeof(cursorName);
+        strcpyUTF8(cursorName, inCursorName, sizeof(cursorName));
+    }
+    else
+        cursorName[0] = '\0';
+
+
+    inputValueList._buffer = inValueList->_buffer;
+    inputValueList._length = inValueList->_length;
+
+    currentMethod = odbc_SQLSvc_ExecuteN_ldx_;
+
+    rc = EXECUTE_R(this);
+
+    switch (rc)
+    {
+        case SQL_SUCCESS:
+            break;
+        case ODBC_RG_WARNING:
+            rc = SQL_SUCCESS_WITH_INFO;
+        case SQL_SUCCESS_WITH_INFO:
+            GETSQLERROR2(bSQLMessageSet, &sqlError);
+            break;
+        case SQL_ERROR:
+            GETSQLERROR2(bSQLMessageSet, &sqlError);
+            break;
+        case ODBC_SERVER_ERROR:
+            // Allocate Error Desc
+            kdsCreateSQLErrorException(&sqlError, 1, bSQLMessageSet);
+            // Add SQL Error
+            kdsCopySQLErrorException(&sqlError, NULL_VALUE_ERROR, NULL_VALUE_ERROR_SQLCODE,
+                    NULL_VALUE_ERROR_SQLSTATE);
+            break;
+        case -8814:
+        case 8814:
+            rc = SQL_RETRY_COMPILE_AGAIN;
+            break;
+        default:
+            break;
+    }
+
+    CLI_DEBUG_RETURN_SQL(rc);
 }
 
 SQLRETURN SRVR_STMT_HDL::Execute(const char *inCursorName, long totalRowCount, short inSqlStmtType,
@@ -484,10 +621,18 @@ void  SRVR_STMT_HDL::cleanupSQLValueList(void)
 {
     FUNCTION_ENTRY("SRVR_STMT_HDL::cleanupSQLValueList",(NULL));
 
+    bSQLValueListSet = false;
     MEMORY_DELETE_ARRAY(outputValueList._buffer);
     MEMORY_DELETE_ARRAY(outputValueVarBuffer);
     outputValueList._length = 0;
     maxRowCnt = 0;
+    if (rowCount._buffer != NULL)
+    {
+        MEMORY_DELETE(rowCount._buffer);
+    }
+    rowCount._buffer = NULL;
+    rowCount._length = 0;
+    
     FUNCTION_RETURN_VOID((NULL));
 }
 
@@ -504,6 +649,15 @@ void  SRVR_STMT_HDL::cleanupSQLDescList(void)
     MEMORY_DELETE_ARRAY(outputDescVarBuffer);
     outputDescList._length = 0;
     outputDescVarBufferLen = 0;
+
+    MEMORY_DELETE_ARRAY(inputDescBuffer);
+    inputDescBufferLength = 0;
+
+    MEMORY_DELETE_ARRAY(outputDescBuffer);
+    outputDescBufferLength = 0;
+
+    MEMORY_DELETE_ARRAY(SqlDescInfo);
+
     FUNCTION_RETURN_VOID((NULL));
 }
 
@@ -513,6 +667,9 @@ void  SRVR_STMT_HDL::cleanupAll(void)
 
     MEMORY_DELETE_ARRAY(sqlString.dataValue._buffer);
     sqlString.dataValue._length = 0;
+    
+    MEMORY_DELETE_ARRAY(sqlStringText);
+
     cleanupSQLMessage();
     cleanupSQLDescList();
     cleanupSQLValueList();
@@ -520,18 +677,32 @@ void  SRVR_STMT_HDL::cleanupAll(void)
     inputValueList._length = 0;
     inputValueVarBuffer = NULL;
     MEMORY_DELETE_ARRAY(rowCount._buffer);
-        rowCount._buffer = NULL;
     rowCount._length = 0;
+    w_release();
+    r_release();
     MEMORY_DELETE_ARRAY(IPD);
     MEMORY_DELETE_ARRAY(IRD);
     MEMORY_DELETE_ARRAY(fetchQuadField);
     MEMORY_DELETE_ARRAY(batchQuadField);
-    if (sqlPlan != NULL)
-    {
-        delete sqlPlan;
-        sqlPlan = NULL;
-        sqlPlanLen = 0;
-    }
+    
+    MEMORY_DELETE_ARRAY(sqlPlan);
+    sqlPlanLen = 0;
+
+    MEMORY_DELETE_ARRAY(inputQuadList);
+    MEMORY_DELETE_ARRAY(inputQuadList_recover);
+    MEMORY_DELETE_ARRAY(outputQuadList);
+   
+    MEMORY_DELETE_ARRAY(errRowsArray);
+    
+    MEMORY_DELETE_ARRAY(sqlWarningOrError);
+    sqlWarningOrErrorLength = 0;
+
+    exPlan = UNAVAILABLE;
+
+    current_holdableCursor = SQL_NONHOLDABLE;
+    holdableCursor = SQL_NONHOLDABLE;
+    sqlQueryType = SQL_UNKNOWN;
+
     FUNCTION_RETURN_VOID((NULL));
 }
 
@@ -574,12 +745,16 @@ SQLRETURN SRVR_STMT_HDL::freeBuffers(short descType)
     switch (descType)
     {
     case SQLWHAT_INPUT_DESC:
-        MEMORY_DELETE_ARRAY(inputDescVarBuffer);
+        if(inputDescVarBuffer != NULL)
+            MEMORY_DELETE_ARRAY(inputDescVarBuffer);
+        inputDescVarBuffer = NULL;
         inputDescVarBufferLen = 0;
         paramCount = 0;
         break;
     case SQLWHAT_OUTPUT_DESC:
-        MEMORY_DELETE_ARRAY(outputDescVarBuffer);
+        if(outputDescVarBuffer != NULL)
+            MEMORY_DELETE_ARRAY(outputDescVarBuffer);
+        outputDescVarBuffer = NULL;
         outputDescVarBufferLen = 0;
         columnCount = 0;
         break;
@@ -637,8 +812,9 @@ void SRVR_STMT_HDL::processThreadReturnCode(void)
 }
 
 SQLRETURN SRVR_STMT_HDL::allocSqlmxHdls(const char *inStmtName, const char *inModuleName,
-                                        long long inModuleTimestamp, long inModuleVersion, short inSqlStmtType,
-                                        BOOL inUseDefaultDesc)
+        long long inModuleTimestamp, long inModuleVersion, short inSqlStmtType,
+        BOOL inUseDefaultDesc, const char *inInputDescName,
+        const char *inOutputDescName)
 {
     FUNCTION_ENTRY("SRVR_STMT_HDL::allocSqlmxHdls",(""));
 
@@ -655,8 +831,10 @@ SQLRETURN SRVR_STMT_HDL::allocSqlmxHdls(const char *inStmtName, const char *inMo
 
     SQLRETURN rc = SQL_SUCCESS;
 
-    strcpy(stmtName, inStmtName);
     stmtNameLen = strlen(inStmtName);
+    stmtNameLen = stmtNameLen < sizeof(stmtName)? stmtNameLen : sizeof(stmtName);
+    strcpyUTF8(stmtName, inStmtName, sizeof(stmtName));
+
     if (inModuleName != NULL)
     {
         moduleId.version = inModuleVersion;
@@ -674,8 +852,15 @@ SQLRETURN SRVR_STMT_HDL::allocSqlmxHdls(const char *inStmtName, const char *inMo
         moduleId.charset = "ISO88591";
         moduleId.creation_timestamp = 0;
     }
+
+    if (inInputDescName != NULL)
+        strcpyUTF8(inputDescName, inInputDescName, sizeof(inputDescName));
+    if (inOutputDescName != NULL)
+        strcpyUTF8(outputDescName, inOutputDescName, sizeof(outputDescName));
+
     sqlStmtType = inSqlStmtType;
     useDefaultDesc = inUseDefaultDesc;
+    currentMethod = 0;
     rc = ALLOCSQLMXHDLS(this);
 
 #ifndef DISABLE_NOWAIT
@@ -995,12 +1180,12 @@ long *SRVR_STMT_HDL::getDescBufferLenPtr(DESC_TYPE descType)
         CliDebugDescTypeStr(descType)));
     switch (descType)
     {
-    case Input:
-        FUNCTION_RETURN_PTR(&inputDescVarBufferLen,
-            ("inputDescVarBufferLen=%ld", inputDescVarBufferLen));
-    case Output:
-        FUNCTION_RETURN_PTR(&outputDescVarBufferLen,
-            ("outputDescVarBufferLen=%ld", outputDescVarBufferLen));
+        case Input:
+            FUNCTION_RETURN_PTR((long *)&inputDescVarBufferLen,
+                    ("inputDescVarBufferLen=%ld", inputDescVarBufferLen));
+        case Output:
+            FUNCTION_RETURN_PTR((long *)&outputDescVarBufferLen,
+                    ("outputDescVarBufferLen=%ld", outputDescVarBufferLen));
     }
     FUNCTION_RETURN_PTR(NULL,("Unknown"));
 }
@@ -1105,6 +1290,7 @@ struct SQLCLI_QUAD_FIELDS *SRVR_STMT_HDL::getQuadField(DESC_TYPE descType)
 }
 //MFC
 // MFC
+/*
 SQLRETURN SRVR_STMT_HDL::PrepareforMFC(const SQLValue_def *inSqlString, short inStmtType, short inHoldability,
                                        long inQueryTimeout,bool isISUD)
 {
@@ -1152,3 +1338,91 @@ SQLRETURN SRVR_STMT_HDL::PrepareforMFC(const SQLValue_def *inSqlString, short in
 
     CLI_DEBUG_RETURN_SQL(PREPAREFORMFC(this));
 }
+*/
+
+char* SRVR_STMT_HDL::w_allocate(size_t size)
+{
+    if (m_wbuffer != NULL && size <= m_wbuffer_length)
+    {
+        return m_wbuffer;
+    }
+
+    MEMORY_DELETE_ARRAY(m_wbuffer);
+    
+    MEMORY_ALLOC_ARRAY(m_wbuffer, char, size);
+    if (m_wbuffer != NULL)
+        m_wbuffer_length = size;
+    else
+        m_wbuffer_length = 0;
+
+    return m_wbuffer;
+}
+
+char* SRVR_STMT_HDL::r_allocate(size_t size)
+{
+    if (m_rbuffer != NULL && size <= m_rbuffer_length)
+    {
+        return m_rbuffer;
+    }
+
+    MEMORY_DELETE_ARRAY(m_rbuffer);
+    
+    MEMORY_ALLOC_ARRAY(m_rbuffer, char, size);
+    if (m_rbuffer != NULL)
+        m_rbuffer_length = size;
+    else
+        m_rbuffer_length = 0;
+
+    return m_rbuffer;
+}
+
+char* SRVR_STMT_HDL::w_assign(char* buffer, int length)
+{
+    MEMORY_DELETE_ARRAY(m_wbuffer);
+    
+    m_wbuffer = buffer;
+    m_wbuffer_length = length;
+}
+
+char* SRVR_STMT_HDL::r_assign(char* buffer, int length)
+{
+    MEMORY_DELETE_ARRAY(m_rbuffer);
+    
+    m_rbuffer = buffer;
+    m_rbuffer_length = length;
+}
+
+void SRVR_STMT_HDL::w_release()
+{
+    MEMORY_DELETE_ARRAY(m_wbuffer);
+    
+    m_wbuffer_length = 0;
+}
+
+void SRVR_STMT_HDL::r_release()
+{
+    MEMORY_DELETE_ARRAY(m_rbuffer);
+    
+    m_rbuffer_length = 0;
+}
+
+char* SRVR_STMT_HDL::w_buffer()
+{
+    return m_wbuffer;
+}
+
+char* SRVR_STMT_HDL::r_buffer()
+{
+    return m_rbuffer;
+}
+
+int SRVR_STMT_HDL::w_buffer_length()
+{
+    return m_wbuffer_length;
+}
+
+int SRVR_STMT_HDL::r_buffer_length()
+{
+    return m_rbuffer_length;
+}
+
