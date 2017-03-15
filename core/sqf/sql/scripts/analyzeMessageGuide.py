@@ -318,6 +318,8 @@ class MessagesTable:
                             if int(token) > 0:  # ignore enums for 0
                                 self.mergeEntry(token,values)
                             state = 6
+                        elif token == '-':
+                            state = 5  # skip unary minus sign before digits
                         else:
                             state = 3
                     elif state == 6:
@@ -618,6 +620,7 @@ print
 print datetime.datetime.ctime(datetime.datetime.now()) + ": reading enum files"
 enumFileList = ( [ ['ustat/hs_const.h','USTAT_ERROR_CODES'],
     ['sqlcomp/CmpDDLCatErrorCodes.h','CatErrorCode'],
+    ['optimizer/opt_error.h','OptimizerSQLErrorCode'],
     ['exp/ExpErrorEnums.h','ExeErrorCode'] ] )
 for entry in enumFileList:
     fileName = mySQroot + '/../sql/' + entry[0]
