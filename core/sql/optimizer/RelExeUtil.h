@@ -402,7 +402,7 @@ public:
 
   short ddlXnsInfo(NABoolean &ddlXns, NABoolean &xnCanBeStarted);
 
-  NAString getQualObjName() { return qualObjName_.getQualifiedNameAsString(); }
+  NAString getQualObjName() { return qualObjName_.getQualifiedNameAsAnsiString(); }
 
   void setCreateMDViews(NABoolean v)
   {(v ? flags_ |= CREATE_MD_VIEWS : flags_ &= ~CREATE_MD_VIEWS); }

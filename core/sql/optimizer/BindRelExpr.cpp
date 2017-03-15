@@ -1666,18 +1666,36 @@ NATable *BindWA::getNATable(CorrName& corrName,
           return NULL;
         }
       
-      // Compare column lists
+      // Compare native and external table definitions.
+      // -- If this call is to drop external table, skip comparison.
+      // -- Otherwise compare that number of columns is the same.
+      // -- Compare type for corresponding columns. But if external table 
+      //    was created with explicit col attrs, then skip type check for cols.
+      // 
       // TBD - return what mismatches
-      if ( nativeNATable && 
-           !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
-           (NOT bindWA->externalTableDrop()))
-        {
-          *CmpCommon::diags() << DgSqlCode(-3078)
-                              << DgString0(adjustedName)
-                              << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-          bindWA->setErrStatus();
-          nativeNATable->setRemoveFromCacheBNC(TRUE);
-          return NULL;
+      NABoolean compError = FALSE;
+      if (nativeNATable &&
+          (NOT bindWA->externalTableDrop()))
+        { 
+          if (table->getNAColumnArray().entries() != 
+              nativeNATable->getNAColumnArray().entries())
+            compError = TRUE;
+          if ((NOT compError) &&
+              (NOT table->hiveExtColAttrs()) &&
+              (NOT table->hiveExtKeyAttrs()))
+            {
+              if (NOT (table->getNAColumnArray() == nativeNATable->getNAColumnArray()))
+                compError = TRUE;
+            }
+          if (compError)
+            {
+              *CmpCommon::diags() << DgSqlCode(-3078)
+                                  << DgString0(adjustedName)
+                                  << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+              bindWA->setErrStatus();
+              nativeNATable->setRemoveFromCacheBNC(TRUE);
+              return NULL;
+            }
         }
     }
   

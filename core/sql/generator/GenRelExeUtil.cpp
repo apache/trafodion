@@ -1980,8 +1980,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
       (infoType_ == "MVGROUPS") ||
       (infoType_ == "SYNONYMS") ||
       (infoType_ == "PARTITIONS") ||
-      (infoType_ == "TRIGGERS") ||
-      (infoType_ == "CATALOGS"))
+      (infoType_ == "TRIGGERS"))
     {
       NAString nas("GET ");
       nas += infoType_;

@@ -58,34 +58,37 @@ function usage {
 #-----------------------------------------------------------------
 diffsonly=0
 dircleanup=0
-tests=
 
 echo ""
-echo "RUNNING SEABASE  PRIVS2 TESTS"
+echo "RUNNING PRIVS2 TESTS"
 echo ""
 #--------------------------------------------------------------
 #  Determine which command line arguments the user specified --
 # and set the corresponding boolean variable to TRUE.        --
 #--------------------------------------------------------------
-while [ $# -gt 0 ]; do
-  case $1 in
-    -dircleanup) 
-        dircleanup=1
-        ;;
+OK=-1
+while [ $OK -ne 0 ]; do		# loop to allow options to appear in any order
 
-    -diff) 
-       diffsonly=1
-       ;;
+  if [ $OK -gt 0 ]; then
+    shift $OK
+  fi
+  OK=0
 
-     -h|-help)
-       usage
-       exit 0
-       ;;
-     *)  
-      tests="$1 "
-       ;;
-  esac
-  shift
+  if [ "$1" = "-dircleanup" ]; then
+    dircleanup=1
+    OK=1
+  fi
+
+  if [ "$1" = "-diff" ]; then
+    diffsonly=1
+    OK=1
+  fi
+
+  if [ "$1" = "-help" -o "$1" =  "-h" ]; then
+    usage
+    exit 0
+    OK=1 
+  fi
 done
 
 #########################################################################
@@ -163,11 +166,11 @@ done
 # the tests beginnning with "TEST".              --
 # If only the number is specified, prepend TEST. --
 #--------------------------------------------------
-if [ "$tests" = "" ]; then
+if [ "$1" = "" ]; then
   testfiles=`ls -1 TEST???* | tr a-z A-Z | sed -e /~$/d -e /.bak$/d | sort -fu`
   prettyfiles=$testfiles
 else
-  testfiles=`echo $tests | tr a-z A-Z`
+  testfiles=`echo $* | tr a-z A-Z`
   prettyfiles=
   for i in $testfiles; do
     if [ `expr substr $i 1 4` = "TEST" ]; then

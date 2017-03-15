@@ -3628,8 +3628,13 @@ enum DefaultConstants
 
   TRAF_TRANS_TYPE, 
 
- // max size in bytes of a char or varchar column in a trafodion table.
+  // max size in bytes of a char or varchar column in a trafodion table.
+  // Valid values are 0 through 10M (10485760).
   TRAF_MAX_CHARACTER_COL_LENGTH,
+
+  // In special cases, previous default value could be overridden. 
+  // Internal use only or use only under trafodion supervision.
+  TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,
 
   // set when metadata definition is to be read from hardcoded structs
   // and not from metadata. 

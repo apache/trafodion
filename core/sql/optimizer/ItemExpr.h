@@ -73,7 +73,6 @@ class VEGRewritePairs;
 class ColStatDescList;
 
 #define CONST_32K 32768
-#define CONST_100K 100000
 
 // -----------------------------------------------------------------------
 // An ExprValueId object is a pointer to an ItemExpr object. The pointer
