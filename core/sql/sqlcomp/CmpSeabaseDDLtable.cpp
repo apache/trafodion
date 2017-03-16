@@ -9700,6 +9700,9 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
 
   // Determine effective grantor ID and grantor name based on GRANTED BY clause
   // current user, and object owner
+  //
+  // NOTE: If the user can grant privilege based on a role, we may want the 
+  // effective grantor to be the role instead of the current user.
   Int32 effectiveGrantorID;
   std::string effectiveGrantorName;
   PrivStatus result = command.getGrantorDetailsForObject( 

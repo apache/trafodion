@@ -162,17 +162,13 @@ bool PrivMgrUserPrivs::initUserPrivs(
     }
 
     // set up security invalidation keys
-    Int32 grantee = privs.getGrantee();
-    Int32 role = (ComUser::isPublicUserID(grantee) || PrivMgr::isRoleID(grantee)) 
-        ? grantee : NA_UserIdDefault;
-
-    if (!buildSecurityKeys(userID, role, objectUID, privs.getTablePrivs(), secKeySet))
+    if (!buildSecurityKeys(userID, privs.getGrantee(), objectUID, privs.getTablePrivs(), secKeySet))
       return false;
 
     for (int k = 0; k < colPrivsList_.size(); k++)
     {
       PrivMgrCoreDesc colDesc(colPrivsList_[k], colGrantableList_[k]);
-      if (!buildSecurityKeys(userID, role, objectUID, colDesc, secKeySet))
+      if (!buildSecurityKeys(userID, privs.getGrantee(), objectUID, colDesc, secKeySet))
         return false;
     }
   }

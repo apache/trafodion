@@ -168,7 +168,7 @@ obey TEST120(queries);
 --
 --    games     - multiple roles giving same privileges
 --    teams     - multiple privileges through different roles
---    players   - control, not roles involved in privileges
+--    players   - control, no roles involved in privileges
 --    standings - used to test sequence privileges and revoke role
 --    stats     - tests revoke PUBLIC authorization ID
 -- =================================================================
@@ -242,6 +242,19 @@ sh sqlci -i "TEST120(select_queries)" -u sql_user9;
 sh sqlci -i "TEST120(revoke_t120role4)" -u sql_user3;
 execute select_games;
 execute select_teams;
+
+-- revoke insert, delete privilege from t120role2
+sh sqlci -i "TEST120(revoke_t120role2p)" -u sql_user3;
+-- still have privilege
+execute select_teams;
+-- no longer has privilege (4481) and query attempted recompilation
+execute insert_teams;
+
+-- grant privilege back
+sh sqlci -i "TEST120(grant_t120role2p)" -u sql_user3;
+execute select_teams;
+-- now works and query recompiled (8597)
+execute insert_teams;
 
 -- revoke t120role2 from sql_user6
 sh sqlci -i "TEST120(revoke_t120role2)" -u sql_user3;
@@ -319,6 +332,24 @@ showddl role t120role1;
 showddl role t120role2;
 showddl role t120role3;
 showddl role t120role4;
+
+?section revoke_t120role2p
+log LOG120;
+values (current_user);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+set schema t120sch;
+
+revoke insert, delete on teams from t120role2;
+
+?section grant_t120role2p
+log LOG120;
+values (current_user);
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+set schema t120sch;
+
+grant insert, delete on teams to t120role2;
 
 ?section revoke_t120role2
 log LOG120;
