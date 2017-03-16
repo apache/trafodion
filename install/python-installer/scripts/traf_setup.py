@@ -28,12 +28,12 @@ import sys
 import re
 import json
 from constants import DEF_HBASE_HOME, TRAF_SUDOER_FILE
-from common import err, cmd_output, run_cmd
+from common import err, cmd_output, run_cmd, get_default_home
 
 def run():
     dbcfgs = json.loads(dbcfgs_json)
 
-    home_dir = cmd_output('sudo cat /etc/default/useradd |grep HOME |cut -d "=" -f 2')
+    home_dir = get_default_home()
     if dbcfgs.has_key('home_dir'):
         home_dir = dbcfgs['home_dir']
 
