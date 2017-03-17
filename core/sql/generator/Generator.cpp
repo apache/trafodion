@@ -2206,6 +2206,14 @@ TrafDesc * Generator::createVirtualTableDesc
           curr_index_desc->indexesDesc()->hbaseCreateOptions  = NULL;
           curr_index_desc->indexesDesc()->numSaltPartns = 
             indexInfo[i].numSaltPartns;
+          if (curr_index_desc->indexesDesc()->numSaltPartns > 0)
+          {
+            // the presence of the files descriptor tells createNAFileSets
+            // that the index is salted like the base table
+            TrafDesc * ci_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, space);
+            ci_files_desc->filesDesc()->setAudited(TRUE); // audited table
+            curr_index_desc->indexesDesc()->files_desc = ci_files_desc;
+          }
           curr_index_desc->indexesDesc()->setRowFormat(indexInfo[i].rowFormat);
           if (indexInfo[i].hbaseCreateOptions)
           {
