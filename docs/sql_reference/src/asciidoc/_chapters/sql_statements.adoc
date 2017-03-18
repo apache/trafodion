@@ -6642,6 +6642,7 @@ sql-query is:
   | query-expr-and-order
 
 query-specification is:
+with-clause
 SELECT [ "[" ANY N "]" | "[" FIRST N "]" ] [ALL | DISTINCT] select-list
    FROM table-ref [,table-ref]...
    [WHERE search-condition]
@@ -6654,6 +6655,15 @@ SELECT [ "[" ANY N "]" | "[" FIRST N "]" ] [ALL | DISTINCT] select-list
    [HAVING search-condition]
    [access-clause ]
    [mode-clause]
+
+With-clause is:
+with_clause_elements
+
+with_clause_elements is: 
+with_clause_element [,with_clause_element] …
+
+with_clause_element is: 
+cte-table-name AS (sql-query)
 
 query-expr-and-order is:
     query-expr [order-by-clause] [access-clause] [mode-clause]
@@ -6757,6 +6767,26 @@ transpose-item-list is:
 
 [[select_syntax]]
 === Syntax Description of SELECT
+
+* with-clause
+
++
+With-clause, known as Common Table Expressions (CTEs) or subquery factoring clause, was introduced in the SQL-99 standard and has been implemented into Trafodion R2.1.
+
++
+The with-clause assigns an alias to a complex expression. The alias is treated like a temporary table or an inline view that lasts only for the duration of the query and can be referenced multiple times in the same query.
+
++
+By abstracting the complicated parts of the query into simpler, separate and logical blocks, and possibly materializing the results of these parts to avoid recomputing it multiple times, the with-clause has following advantages:
+
+** Simplifies complicated queries, increasing readability and reducing repeated references.
+** Builds reusable units and decreases maintenance cost.
+** Shortens response time and enhances performance of the query.
+** Improves  compatibility with other systems which support with-clause as well.
+
+* cte-table-name
++
+specifies the unique name of the CTE to be created, which is a valid SQL identifier with a maximum of 128 characters. Duplicate names are not allowed in a single with-clause.
 
 * `"[" ANY _N_ "]" | "[" FIRST _N_ "]"`
 +
@@ -7303,6 +7333,15 @@ SELECT sum(distinct a), count(distinct a), avg(distinct a) from T group by d;
 SELECT sum(distinct a), avg(distinct b), sum(c) from T group by d;
 ```
 
+[[select_considerations_for_with-clause]]
+==== Considerations for with-clause
+
+* Materialization of CTEs in temporary tables is not yet enabled by default. 
+
+* Trafodion only supports non-recursive common table expressions, which means with-clause cannot be self-referencing, but it can reference a previously defined CTE within the same with-clause.
+
+* The with-clause in Trafodion can be specified only once, at the beginning of a SELECT statement. INSERT, UPDATE, DELETE and CREATE VIEW statements are not supported yet.
+
 [[select_considerations_for_select_list]]
 ==== Considerations for Select List
 
@@ -7435,6 +7474,79 @@ A parenthesized union of SELECT statements is evaluated first, from left to righ
 <<<
 [[select_examples]]
 === Examples of SELECT
+
+* The following example defines two CTEs, w1 and w2. w2 references w1 which is defined before w2.
+```
+>>select * from t1
+
+ C1 C2
+ ----------
+
+  1 1
+  2 2
+  3 3
+  4 4
+  5 5
+
+ --- SQL operation complete.
+
+>>with w1 as (select * from t1),
+>>w2 as (select * from w1)
+>>select * from w2;
+
+ C1 C2
+ ----------
+
+  1 1
+  2 2
+  3 3
+  4 4
+  5 5
+
+ --- SQL operation complete.
+```
+
+* The following example defines two CTEs, w1 and w2, and then perform a JOIN between them.
+```
+>>select * from t1
+
+ C1 C2
+ ----------
+
+  1 1
+  2 2
+  3 3
+  4 4
+  5 5
+
+ --- SQL operation complete.
+
+>>select * from t2
+
+ C1 C2
+ ----------
+
+  3 3
+  4 4
+  5 5
+  6 6
+  7 7
+
+ --- SQL operation complete.
+
+>>with w1 as (select c1, c2 from t1),
+>>w2 as (select c1, c2 from t2)
+>>select * from w1, w2 where w1.c1 = w2.c1;
+
+ C1 C2 C1 C2
+ ----------
+
+  3 3 3 3
+  4 4 4 4
+  5 5 5 5
+
+ --- SQL operation complete.
+```
 
 * Retrieve information from the EMPLOYEE table for employees with a job code greater than 500 and who are in departments
 with numbers less than or equal to 3000, displaying the results in ascending order by job code:
@@ -7782,120 +7894,6 @@ SELECT sum(a) FROM t GROUP BY sum(a);
 SELECT (SELECT a FROM t1) FROM t GROUP BY (SELECT a FROM t1);
 
 SELECT a+1 FROM t GROUP BY 1+a;
-```
-
-=======
-[[with_clause_syntax]]
-=== Syntax Description of WITH clause
-
-WITH clause, known as Common Table Expressions (CTEs) or subquery factoring clause, was introduced in the SQL-99 standard and has been implemented into Trafodion R2.1.
-
-For a complex expression which is referenced multiple times within the body of a SELECT statement, the WITH clause assigns it an alias. The alias is treated like a temporary table or an inline view that lasts only for the duration of the query and can be referenced various times in the same query.
-
-By abstracting the complicated parts of the query into simpler, separate and logical blocks, and materializing the results of these parts to avoid recomputing it multiple times, the WITH clause has following advantages:
-
-* Simplifies complicated queries, increasing readability and reducing repeated references.
-* Builds reusable unit and decreases maintenance cost.
-* Shortens response time and enhances performance of the query.
-* Improves compatibility with other systems which support WITH clause as well.
-
-
-`with cte-table-name as (sql-query)`
-
-* `_cte-table-name_`
-
-+
-Specifies the unique name of the CTE to be created, which is a valid SQL identifier with a maximum of 128 characters. Duplicate names are not allowed in a single WITH clause.
-
-* `_sql-query_`
-
-+
-Specifies the query expression that will be denoted by the CTE. For more information, see <<select_statement,SELECT Statement>> .
-
-[[with_clause_considerations]]
-=== Considerations for WITH clause
-
-* Materialization of CTEs in temporary tables is not yet enabled by default.
-
-* Trafodion only supports non-recursive common table expressions, which means WITH clause cannot be self-referencing, but it can reference a previously defined CTE within the same WITH clause.
-
-* WITH clause in Trafodion can be specified only in SELECT statement. INSERT, UPDATE, DELETE and CREATE VIEW statements are not supported yet.
-
-[[with_clause_examples]]
-=== Examples of WITH clause
-
-* The following example defines two CTEs, w1 and w2.
-w2 references w1 which is defined before w2.
-```
->>select * from t1
-
- C1 C2
- ----------
-
-  1 1
-  2 2
-  3 3
-  4 4
-  5 5
-
- --- SQL operation complete.
-
->>with w1 as (select * from t1),
->>w2 as (select * from w1)
->>select * from w2;
-
- C1 C2
- ----------
-
-  1 1
-  2 2
-  3 3
-  4 4
-  5 5
-
- --- SQL operation complete.
-```
-
-* The following example defines two CTEs, w1 and w2, and then perform a JOIN between them.
-```
->>select * from t1
-
- C1 C2
- ----------
-
-  1 1
-  2 2
-  3 3
-  4 4
-  5 5
-
- --- SQL operation complete.
-
->>select * from t2
-
- C1 C2
- ----------
-
-  3 3
-  4 4
-  5 5
-  6 6
-  7 7
-
- --- SQL operation complete.
-
->>with w1 as (select c1, c2 from t3),
->>w2 as (select c1, c2 from t2)
->>select * from w1, w2 where w1.c1 = w2.c1;
-
- C1 C2 C1 C2
- ----------
-
-  3 3 3 3
-  4 4 4 4
-  5 5 5 5
-
- --- SQL operation complete.
 ```
 
 <<<
