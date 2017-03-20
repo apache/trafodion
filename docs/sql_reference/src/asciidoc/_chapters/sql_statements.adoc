@@ -6657,7 +6657,7 @@ SELECT [ "[" ANY N "]" | "[" FIRST N "]" ] [ALL | DISTINCT] select-list
    [mode-clause]
 
 With-clause is:
-with_clause_elements
+WITH with_clause_elements
 
 with_clause_elements is: 
 with_clause_element [,with_clause_element] …
