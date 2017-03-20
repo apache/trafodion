@@ -6642,7 +6642,7 @@ sql-query is:
   | query-expr-and-order
 
 query-specification is:
-with-clause
+[with-clause]
 SELECT [ "[" ANY N "]" | "[" FIRST N "]" ] [ALL | DISTINCT] select-list
    FROM table-ref [,table-ref]...
    [WHERE search-condition]
@@ -6653,7 +6653,7 @@ SELECT [ "[" ANY N "]" | "[" FIRST N "]" ] [ALL | DISTINCT] select-list
       [,colname [ASC[ENDING] | DESC[ENDING]]]...]
    [GROUP BY {colname | colnum} [,{colname | colnum}]...]
    [HAVING search-condition]
-   [access-clause ]
+   [access-clause]
    [mode-clause]
 
 With-clause is:
