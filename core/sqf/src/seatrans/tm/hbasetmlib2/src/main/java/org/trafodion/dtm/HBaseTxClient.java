@@ -1114,10 +1114,10 @@ public class HBaseTxClient {
                         boolean loopBack = false;
                         if(ddlOnlyRecoveryCheck)
                         {
+                          ddlOnlyRecoveryCheck = false;
                           transactionStates = getTransactionsFromTmDDL();
                           if(transactionStates != null)
                             recoverTransactions(transactionStates);
-                          ddlOnlyRecoveryCheck = false;
                         }
                         
                         do {
@@ -1396,17 +1396,19 @@ public class HBaseTxClient {
             } catch (UnsuccessfulDDLException ddle) {
                 LOG.error("UnsuccessfulDDLException encountered by Recovery Thread. Registering for retry. txID: " + txID + "Exception " , ddle);
   
-                //Note that there may not be anymore redrive triggers from region server point of view for DDL operation.
-                //Register this DDL transaction for subsequent redrive from Audit Control Event.
-                //TODO: Launch a new Redrive Thread out of auditControlPoint().
-                TmDDL tmDDL = hbtx.getTmDDL();
-                tmDDL.setState(txID,"REDRIVE");
-                LOG.error("TRAF RCOV THREAD:Error calling TmDDL putRow Redrive");
+                //Do not change the state of txId in tmDDL. Let the recovery thread
+                //detect this txID again and redrive. Reset flag to loop back and
+                //check for tmDDL again.
+                ddlOnlyRecoveryCheck = true;
+                
             } catch (CommitUnsuccessfulException cue) {
                 LOG.error("CommitUnsuccessfulException encountered by Recovery Thread. Registering for retry. txID: " + txID + "Exception " , cue);
-                TmDDL tmDDL = hbtx.getTmDDL();
-                tmDDL.setState(txID,"REDRIVE");
-                LOG.error("TRAF RCOV THREAD:Error calling TmDDL putRow Redrive");
+                
+                //Do not change the state of txId in tmDDL. Let the recovery thread
+                //detect this txID again and redrive. Reset flag to loop back and
+                //check for tmDDL again.
+                ddlOnlyRecoveryCheck = true;
+
             }
         }
       }//recoverTransactions()
