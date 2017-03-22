@@ -2869,7 +2869,7 @@ public:
    obj_(obj),
    lobNum_(-1),
    lobStorageType_(Lob_Invalid_Storage),
-   lobMaxSize_(CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)),
+   lobMaxSize_(CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024),
      lobMaxChunkMemSize_(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)),
      lobGCLimit_(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)),
      hdfsPort_((Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT)),
