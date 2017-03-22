@@ -110,41 +110,41 @@
 1108 ZZZZZ 99999 BEGINNER MINOR DBADMIN The number of columns specified in the view column list, $0~Int0, does not match the degree of the query expression, $1~Int1.
 1109 44000 99999 BEGINNER MINOR DBADMIN The WITH CHECK OPTION clause appears in the definition of view $0~TableName, but the view is not updatable.
 1110 ZZZZZ 99999 ADVANCED MAJOR DIALOUT $0~String0
-1111 25000 99999 BEGINNER CRTCL DIALOUT An error occurred while starting a transaction on object $0~TableName$1~String0$2~String1
-1112 ZZZZZ 99999 BEGINNER MINOR DBADMIN An index column list cannot contain only the system-generated column SYSKEY.
-1113 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU Alter View Compile Cascade failed for following View(s): $0~String0 
+1111 25000 99999 BEGINNER CRTCL DIALOUT --- unused ---
+1112 ZZZZZ 99999 BEGINNER MINOR DBADMIN An index column list cannot consist only of the system-generated column SYSKEY.
+1113 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU --- unused ---
 1114 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Metadata tables for catalog $0~CatalogName could not be created on $1~String0.
 1115 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Label $0~String0 could not be created for $1~TableName (file error $2~NSKCode). 
 1116 ZZZZZ 99999 BEGINNER MINOR DBADMIN The current partitioning scheme requires a user-specified clustering key on object $0~TableName.
 1117 ZZZZZ 99999 BEGINNER MINOR DBADMIN Dropping the only partition of an object is not allowed. At least two partitions must exist to perform the drop.
 1118 ZZZZZ 99999 BEGINNER MINOR DBADMIN Creating object $0~TableName is not allowed in a reserved system schema.
 1119 ZZZZZ 99999 BEGINNER MINOR DBADMIN Dropping metadata object $0~TableName is not allowed.
-1120 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of approximate numeric datatype (float, real, double precision) in a partitioning key or salt clause is not allowed.
+1120 ZZZZZ 99999 BEGINNER MINOR DBADMIN Use of an approximate numeric datatype (float, real, double precision) in a partitioning key or salt clause is not allowed.
 1121 0A000 99999 BEGINNER MINOR DBADMIN Partitions cannot be added or dropped on table $0~TableName.  These partition operations are not allowed on tables whose clustering key consists only of the SYSKEY.
 1122 ZZZZZ 99999 BEGINNER MINOR DBADMIN The number of specified partition key values ($0~String0) for object $1~TableName exceeds the number of user defined key columns, $2~Int0.
 1123 42000 99999 BEGINNER MINOR DBADMIN Not all of the partition key values ($0~String0) for object $1~TableName could be processed.  Please verify that the correct key value data types were specified.
-1124 ZZZZZ 99999 BEGINNER MINOR DBADMIN Metadata version is at $0~Int0. Upgrade/Downgrade to current version cannot be performed.
-1125 ZZZZZ 99999 ADVANCED CRTCL DIALOUT API request version number mismatch.
-1126 ZZZZZ 99999 BEGINNER MINOR DBADMIN $0~String0 failed.
+1124 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1125 ZZZZZ 99999 ADVANCED CRTCL DIALOUT --- unused ---
+1126 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1127 ZZZZZ 99999 BEGINNER MINOR DBADMIN The specified table $0~TableName does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
-1128 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An invalid API request was encountered.  Details: $0~String0.
-1129 ZZZZZ 99999 BEGINNER MINOR DBADMIN This operation is not allowed on a vertically partitioned table.
+1128 ZZZZZ 99999 ADVANCED CRTCL DIALOUT --- unused ---
+1129 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1130 ZZZZZ 99999 BEGINNER MINOR DBADMIN The column requires a default value.
-1131 ZZZZZ 99999 BEGINNER MINOR DBADMIN There is an existing Trafodion external table, please drop it before dropping native table 0~TableName.
-1132 ZZZZZ 99999 BEGINNER MINOR DBADMIN An added column cannot have DEFAULT NULL and NOT NULL values at the same time.
-1133 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only super ID can perform this operation.
-1134 ZZZZZ 99999 BEGINNER MINOR DBADMIN A concurrent utility or DDL operation is being performed on object $0~TableName, its parent, or one of its dependencies. That operation must complete before the requested operation can run.
+1131 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1132 ZZZZZ 99999 BEGINNER MINOR DBADMIN An added column cannot be declared with both DEFAULT NULL and NOT NULL.
+1133 ZZZZZ 99999 BEGINNER MINOR DBADMIN Only the super ID can perform this operation.
+1134 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1135 ZZZZZ 99999 BEGINNER MINOR DBADMIN Clustering key column $0~ColumnName must be assigned a NOT NULL NOT DROPPABLE constraint.
 1136 42000 99999 BEGINNER MINOR DBADMIN For an added column, the PRIMARY KEY clause cannot specify NOT DROPPABLE.
-1137 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An internal error occurred: invalid index status.  Details: $0~String0.
-1138 ZZZZZ 99999 ADVANCED CRTCL DIALOUT An internal error occurred: invalid input parameter(s).  Object name and status are required.
+1137 ZZZZZ 99999 ADVANCED CRTCL DIALOUT --- unused ---
+1138 ZZZZZ 99999 ADVANCED CRTCL DIALOUT --- unused ---
 1139 ZZZZZ 99999 BEGINNER MAJOR DBADMIN System-generated column $0~ColumnName of base table $1~TableName cannot appear in the search condition of a check constraint definition.
 1140 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Row-length $0~int0 exceeds the maximum allowed row-length of $1~int1 for table $2~TableName.
-1141 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Label $0~String0 for $1~TableName could not be accessed. File system error: $2~NSKCode.
-1142 0A000 99999 BEGINNER MAJOR DBADMIN Because it is not audited, this table cannot have a column added that is declared NOT NULL or has a CHECK, UNIQUE, PRIMARY KEY, or FOREIGN KEY constraint.
-1143 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Validation of constraint $0~ConstraintName failed; incompatible data exists in referencing base table $1~TableName and referenced base table $2~String0.  To display the data that violates the constraint, please use the following DML statement: $3~String1
+1141 ZZZZZ 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1142 0A000 99999 BEGINNER MAJOR DBADMIN --- unused ---
+1143 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Validation for constraint $0~ConstraintName failed; incompatible data exists in referencing base table $1~TableName and referenced base table $2~String0.  To display the data that violates the constraint, please use the following DML statement: $3~String1
 1144 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A quoted string was expected in first key clause for column $0~ColumnName on table $1~TableName, but the value detected is ($2~String0).
-1145 3D000 99999 BEGINNER MAJOR DBADMIN The catalog name $0~CatalogName is reserved for SQL metadata.
+1145 3D000 99999 BEGINNER MAJOR DBADMIN --- unused ---
 1146 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 could not be altered because it either does not exist or is not a table.
 1147 ZZZZZ 99999 BEGINNER MINOR DBADMIN System-generated column $0~ColumnName of base table $1~TableName cannot appear in a unique or primary key constraint definition.
 1148 23000 99999 BEGINNER MINOR DBADMIN System-generated column $0~ColumnName of base table $1~TableName cannot appear in a referential integrity constraint definition.
