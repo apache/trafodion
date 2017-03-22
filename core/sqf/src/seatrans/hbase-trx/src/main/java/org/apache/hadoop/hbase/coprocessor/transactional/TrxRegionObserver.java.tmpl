@@ -333,7 +333,7 @@ public void start(CoprocessorEnvironment e) throws IOException {
      transactionsRefMap.put(lv_regionName+trxkeyScanners, this.scanners);
    }
 
-   sbHelper = new SplitBalanceHelper(my_Region, zkw1);
+   sbHelper = new SplitBalanceHelper(my_Region, zkw1, conf);
 
    if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery Region Observer CP: trxRegionObserver load start complete");
 
