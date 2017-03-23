@@ -250,7 +250,10 @@ virtual NAString* getKey(CollHeap* h=0) const; // compute hash key from SQL name
 
 virtual NABoolean operator==(const NAType& other) const;
 
- virtual NABoolean isCompatible(const NAType& other, UInt32 * flags = NULL) const;
+// compares sttributes specific to char datatypes
+virtual NABoolean compareCharAttrs(const NAType& other) const;
+
+virtual NABoolean isCompatible(const NAType& other, UInt32 * flags = NULL) const;
 
 #ifndef CLI_SRL
 virtual NABoolean isComparable(const NAType &other,
@@ -542,6 +545,8 @@ virtual short getFSDatatype() const;
 virtual double encode (void*) const;
 
 virtual NABoolean isEncodingNeeded() const	{ return TRUE; }
+
+virtual NABoolean operator==(const NAType& other) const;
 
 // ---------------------------------------------------------------------
 // A virtual function to return a copy of the type.

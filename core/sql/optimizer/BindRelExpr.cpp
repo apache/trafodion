@@ -1666,18 +1666,36 @@ NATable *BindWA::getNATable(CorrName& corrName,
           return NULL;
         }
       
-      // Compare column lists
+      // Compare native and external table definitions.
+      // -- If this call is to drop external table, skip comparison.
+      // -- Otherwise compare that number of columns is the same.
+      // -- Compare type for corresponding columns. But if external table 
+      //    was created with explicit col attrs, then skip type check for cols.
+      // 
       // TBD - return what mismatches
-      if ( nativeNATable && 
-           !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
-           (NOT bindWA->externalTableDrop()))
-        {
-          *CmpCommon::diags() << DgSqlCode(-3078)
-                              << DgString0(adjustedName)
-                              << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-          bindWA->setErrStatus();
-          nativeNATable->setRemoveFromCacheBNC(TRUE);
-          return NULL;
+      NABoolean compError = FALSE;
+      if (nativeNATable &&
+          (NOT bindWA->externalTableDrop()))
+        { 
+          if (table->getNAColumnArray().entries() != 
+              nativeNATable->getNAColumnArray().entries())
+            compError = TRUE;
+          if ((NOT compError) &&
+              (NOT table->hiveExtColAttrs()) &&
+              (NOT table->hiveExtKeyAttrs()))
+            {
+              if (NOT (table->getNAColumnArray() == nativeNATable->getNAColumnArray()))
+                compError = TRUE;
+            }
+          if (compError)
+            {
+              *CmpCommon::diags() << DgSqlCode(-3078)
+                                  << DgString0(adjustedName)
+                                  << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+              bindWA->setErrStatus();
+              nativeNATable->setRemoveFromCacheBNC(TRUE);
+              return NULL;
+            }
         }
     }
   
@@ -7131,7 +7149,18 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 //   COM_QI_USER_GRANT_ROLE: privileges granted to the user via a role 
 //   COM_QI_USER_GRANT_SPECIAL_ROLE: privileges granted to PUBLIC
 //
-// COM_QI_OBJECT_<priv> types are preferred over COM_QI_USER_GRANT_ROLE.
+// Keys are added as follows:
+//   if a privilege has been granted via a role, add a RoleUserKey
+//      if this role is revoked from the user, then invalidation is forced
+//   if a privilege has been granted to public, add a UserObjectPublicKey
+//      if a privilege is revoked from public, then invalidation is forced
+//   if a privilege has been granted directly to an object, add UserObjectKey
+//      if the privilege is revoked from the user, then invalidation is forced
+//   If a privilege has not been granted to an object, but is has been granted
+//      to a role, add a RoleObjectKey
+//
+//   So if the same privilege has been granted directly to the user and via
+//   a role granted to the user, we only add a UserObjectKey
 // ****************************************************************************
 void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
                                           , const uint32_t userHashValue
@@ -7145,6 +7174,7 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
    ComSecurityKey * UserObjectKey = NULL;
    ComSecurityKey * RoleObjectKey = NULL;
    ComSecurityKey * UserObjectPublicKey = NULL;
+   ComSecurityKey * RoleUserKey = NULL;
    
    // These may be implemented at a later time
    ComSecurityKey * UserSchemaKey = NULL; //privs granted at schema level to user
@@ -7175,6 +7205,12 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
             if ( ! UserObjectKey ) 
                UserObjectKey = thisKey;
          }
+         // Found a security key for a role associated with the user
+         else
+         {
+            if ( ! RoleObjectKey )
+               RoleObjectKey = thisKey;
+         }
       }
      
       // See if the security key is role related
@@ -7182,8 +7218,8 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
       {
          if ( thisKey->getSubjectHashValue() == userHashValue )
          {
-            if (! RoleObjectKey ) 
-               RoleObjectKey = thisKey;
+            if (! RoleUserKey ) 
+               RoleUserKey = thisKey;
          }
       }
 
@@ -7205,7 +7241,12 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
    if ( BestKey != NULL)
       securityKeySet_.insert(*BestKey);
 
-   // Add public if it exists
+   // Add RoleUserKey if priv comes from role - handles revoke role from user
+   if (BestKey == RoleObjectKey)
+      if ( RoleUserKey )
+         securityKeySet_.insert(*RoleUserKey );
+
+   // Add public if it exists - handles revoke public from user
    if ( UserObjectPublicKey != NULL )
      securityKeySet_.insert(*UserObjectPublicKey); 
 }
@@ -13058,7 +13099,12 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
     setTableDesc(naTableToptableDesc);
 
     // Now naTable has the Scan's table, and naTableTop has the GU's table.
-    isScanOnDifferentTable = (naTable != naTableTop);
+    // Rather than compare naTable pointers we now compare the extended
+    // qualified name contained in them. This name is the key to an natable
+    // object in NATableDB and will enable us to tell if scan's table and 
+    // GU's table are the same.
+    isScanOnDifferentTable = (naTable->getExtendedQualName() != 
+			      naTableTop->getExtendedQualName());
   }
 
   if (bindWA->errStatus())

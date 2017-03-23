@@ -299,7 +299,7 @@ CREATE TABLE TRAFODION.SCH.TEST020T6
 >>-- An index column list cannot consist only of the system-generated SYSKEY.
 >>create index test020t6_ix1 on test020t6 (syskey);
 
-*** ERROR[1112] An index column list cannot contain only the system-generated column SYSKEY.
+*** ERROR[1112] An index column list cannot consist only of the system-generated column SYSKEY.
 
 --- SQL operation failed with errors.
 >>
@@ -467,7 +467,7 @@ A
 >>--this alter should fail
 >>alter table TEST020T31 add constraint C44B FOREIGN KEY (ssnum) references TEST020T30(ssnum);
 
-*** ERROR[1143] Validation of constraint TRAFODION.SCH.C44B failed; incompatible data exists in referencing base table TEST020T31 and referenced base table TEST020T30.  To display the data that violates the constraint, please use the following DML statement: select count(*) from "TRAFODION"."SCH"."TEST020T31" where not (("SSNUM") in (select "SSNUM" from "TRAFODION"."SCH"."TEST020T30")) and "SSNUM" is not null ;
+*** ERROR[1143] Validation for constraint TRAFODION.SCH.C44B failed; incompatible data exists in referencing base table TEST020T31 and referenced base table TEST020T30.  To display the data that violates the constraint, please use the following DML statement: select count(*) from "TRAFODION"."SCH"."TEST020T31" where not (("SSNUM") in (select "SSNUM" from "TRAFODION"."SCH"."TEST020T30")) and "SSNUM" is not null ;
 
 --- SQL operation failed with errors.
 >>

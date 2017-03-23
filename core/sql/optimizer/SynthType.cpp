@@ -3870,14 +3870,15 @@ const NAType *Repeat::synthesizeType()
   Int64 size_in_bytes;
   Int64 size_in_chars;
 
+  Int32 maxCharColLen = CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH);
+
   // figure out the max length of result.
   NABoolean negate;
   if (maxLengthWasExplicitlySet_)
     {
       // cap max len at traf_max_character_col_length
       size_in_bytes = 
-        MINOF(CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH), 
-              getMaxLength());
+        MINOF(maxCharColLen, getMaxLength());
       size_in_chars = 
         size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
     }
@@ -3908,21 +3909,21 @@ const NAType *Repeat::synthesizeType()
       size_in_chars = ctyp1.getStrCharLimit() * repeatCount;
       // check size limit only for fixed character type
       if ( ! typ1.isVaryingLen() ) {
-         if ( size_in_bytes > CONST_100K ) {
+         if ( size_in_bytes > maxCharColLen ) {
 	    *CmpCommon::diags() << DgSqlCode(-4129)
                                 << DgString0(getTextUpper());
             return NULL;
          }
        } else // varchar. The nominal size of the result is
-              // the min of (size, CONST_100K).
+              // the min of (size, maxCharColLen).
          {
-            size_in_bytes = MINOF(CONST_100K, size_in_bytes);
+            size_in_bytes = MINOF(maxCharColLen, size_in_bytes);
             size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
          }
     }
   else if (getMaxLength() > -1)
     {
-      size_in_bytes = MINOF(CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH), 
+      size_in_bytes = MINOF(maxCharColLen, 
                             getMaxLength() * typ1.getNominalSize());
       size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
     }
@@ -3930,8 +3931,7 @@ const NAType *Repeat::synthesizeType()
     {
       // Assign some arbitrary max result size since we can't
       // figure out the actual max size.
-      size_in_bytes = 
-        CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH);
+      size_in_bytes = maxCharColLen;
       size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
     }
 

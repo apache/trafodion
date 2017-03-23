@@ -322,6 +322,7 @@ public:
     ex_GET_QID = 152,
     ex_HIVE_TRUNCATE = 153,
     ex_LOB_UPDATE_UTIL = 154,
+    ex_HIVE_QUERY = 155,
     ex_LAST = 9999              // not used
   };
 

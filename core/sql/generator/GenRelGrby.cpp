@@ -105,9 +105,13 @@ short GroupByAgg::genAggrGrbyExpr(Generator * generator,
   ValueId valId;
 
   // find the number of aggregate and groupby entries
-  ULng32 numAttrs
-    = ((NOT aggregateExpr.isEmpty() ) ? aggregateExpr.entries() : 0)
-    + ((NOT groupExpr.isEmpty() ) ? groupExpr.entries() : 0);
+  ULng32 numAttrs = 0;
+  if (NOT aggregateExpr.isEmpty())
+    numAttrs += aggregateExpr.entries();
+  if (isRollup() && (NOT rollupGroupExprList.isEmpty()))
+    numAttrs += rollupGroupExprList.entries();
+  else if (NOT groupExpr.isEmpty())
+    numAttrs += groupExpr.entries();
 
   NABoolean isAggrOneRow_ = FALSE;
 

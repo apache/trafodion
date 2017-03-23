@@ -97,7 +97,8 @@ execute get_hb_schemas;
 ?section set_up
 prepare get_hv_schemas from
 select schema_name from "_MD_".objects
-where schema_name like '\_HV\_%' escape '\' and object_type = 'PS';
+where (schema_name = '_HV_HIVE_' or schema_name = '_HV_SCH_T009_')
+       and object_type = 'PS';
 
 prepare get_hb_schemas from
 select schema_name from "_MD_".objects

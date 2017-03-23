@@ -3364,10 +3364,11 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_INDEXES,   "ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_STATS,     "OFF"),
 
- // max size in bytes of a char or varchar column.
-  DDui2__(TRAF_MAX_CHARACTER_COL_LENGTH,	"200000"),
+  // max size in bytes of a char or varchar column. Set to 16M
+  DDui___(TRAF_MAX_CHARACTER_COL_LENGTH,     MAX_CHAR_COL_LENGTH_IN_BYTES_STR),
+  DDkwd__(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,    "OFF"),
 
- DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
+  DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
 
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
@@ -3430,6 +3431,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_USE_REGION_XN,                          "OFF"),
 
   DDkwd__(TRAF_USE_RWRS_FOR_MD_INSERT,                   "ON"),
+  DDkwd__(TRANSLATE_ERROR,                             "ON"),
+  DDkwd__(TRANSLATE_ERROR_UNICODE_TO_UNICODE,          "ON"),
 
   DDkwd__(TRY_DP2_REPARTITION_ALWAYS,		"OFF"),
 
@@ -5934,8 +5937,39 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
      }
      break;
 
-      default:  break;
-      }
+     // max char col length is 10M (10485760).
+     // max char col length is defined in common/ComSmallDefs.h
+     // Currently set to 16M
+     // In special cases, it could be overridden. Internal use only or
+     // use only under trafodion supervision.
+     case TRAF_MAX_CHARACTER_COL_LENGTH:
+     {
+       NABoolean override = (getToken(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE) == DF_ON);
+       double d = atof(value.data());
+       if ((NOT override) &&
+           (NOT (d >= 0 && d <= MAX_CHAR_COL_LENGTH_IN_BYTES)))
+         {
+           *CmpCommon::diags() << DgSqlCode(-2055)
+                               << DgString0(value)
+                               << DgString1(lookupAttrName(attrEnum));
+         }
+     }
+     break;
+
+     case TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE:
+     {
+       // if override is being turned off, reset max_char_len to default value.
+       if (value == "OFF")
+         {
+           NAString val;
+           validateAndInsert("TRAF_MAX_CHARACTER_COL_LENGTH", val, TRUE);
+         }
+     }
+     break;
+
+    default:  
+    break;
+    }
     }	  // code to valid overwrite (insert)
 
     if (reset && overwrite) {

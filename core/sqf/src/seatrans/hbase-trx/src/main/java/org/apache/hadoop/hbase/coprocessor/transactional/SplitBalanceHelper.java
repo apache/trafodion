@@ -33,7 +33,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.regionserver.HRegion;
 import org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegionScannerHolder;
@@ -49,7 +51,7 @@ public class SplitBalanceHelper {
 
     private Path flushPath;
 
-    private static String zkTable = "/hbase/table";
+    private static String zkTable;
     private static String zSplitBalPath = TrxRegionObserver.zTrafPath + "splitbalance/";
     private static String zSplitBalPathNoSlash = TrxRegionObserver.zTrafPath + "splitbalance";
     private static String SPLIT = "SPLIT";
@@ -65,7 +67,12 @@ public class SplitBalanceHelper {
     private HRegion region;
     private String tablename;
 
-    public SplitBalanceHelper(HRegion my_Region, ZooKeeperWatcher zkw) {
+    public SplitBalanceHelper(HRegion my_Region, ZooKeeperWatcher zkw, Configuration conf) {
+
+        String parentZNode = conf.get(HConstants.ZOOKEEPER_ZNODE_PARENT,
+                                      HConstants.DEFAULT_ZOOKEEPER_ZNODE_PARENT);
+        SplitBalanceHelper.zkTable = parentZNode + "/table";
+        if(LOG.isDebugEnabled()) LOG.debug("zkTable value: " + SplitBalanceHelper.zkTable);
 
         String fileName = FLUSH_PATH + getTimeStamp();
         this.region = my_Region;

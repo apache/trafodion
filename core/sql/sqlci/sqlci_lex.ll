@@ -285,6 +285,7 @@ B			[ \t\n]+
 [Oo][Pp][Ee][Nn]                       return_IDENT_or_TOKEN(OPENtoken, 0);
 [Oo][Pp][Tt][Ii][Oo][Nn][Ss]           return_IDENT_or_TOKEN(OPTIONStoken, 0);
 [Pp][Rr][Ee][Pp][Aa][Rr][Ee][Dd]       return_IDENT_or_TOKEN(PREPARED, 0);
+[Pp][Rr][Oo][Cc][Ee][Ss][Ss]           return_IDENT_or_TOKEN(PROCESStoken, 0);
 [Ee][Rr][Rr][Oo][Rr]                   return_IDENT_or_TOKEN(ERRORtoken, 0);
 [Ee][Xx][Ii][Tt] 		       return_IDENT_or_TOKEN(EXIT, 0);
 [Ff][Cc]   		               return_IDENT_or_TOKEN(FC, -1);

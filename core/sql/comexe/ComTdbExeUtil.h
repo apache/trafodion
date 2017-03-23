@@ -91,7 +91,8 @@ public:
     HBASE_UNLOAD_TASK_       = 34,
     GET_QID_                 = 35,
     HIVE_TRUNCATE_           = 36,
-    LOB_UPDATE_UTIL_         = 37
+    LOB_UPDATE_UTIL_         = 37,
+    HIVE_QUERY_              = 38
   };
 
   ComTdbExeUtil()
@@ -1712,6 +1713,52 @@ private:
   Int64 modTS_;                                  // 32-39
   Int32 hdfsPort_;                               // 40-43
   UInt32 flags_;                                 // 44-47
+};
+
+class ComTdbExeUtilHiveQuery : public ComTdbExeUtil
+{
+public:
+  ComTdbExeUtilHiveQuery()
+  : ComTdbExeUtil()
+  {}
+
+  ComTdbExeUtilHiveQuery(char * hiveQuery,
+                         ULng32 hiveQueryLen,
+                         ex_cri_desc * given_cri_desc,
+                         ex_cri_desc * returned_cri_desc,
+                         queue_index down,
+                         queue_index up,
+                         Lng32 num_buffers,
+                         ULng32 buffer_size
+                         );
+  
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilHiveQuery);}
+
+  virtual const char *getNodeName() const
+  {
+    return "HIVE_QUERY";
+  };
+
+  char * getHiveQuery() const
+  {
+    return hiveQuery_;
+  }
+
+  // ---------------------------------------------------------------------
+  // Used by the internal SHOWPLAN command to get attributes of a TDB.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+
+private:
+  NABasicPtr hiveQuery_;                     // 00-07
+  UInt32 hiveQueryLen_;                      // 08-11
+  UInt32 flags_;                             // 12-15
 };
 
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil

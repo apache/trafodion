@@ -1980,8 +1980,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
       (infoType_ == "MVGROUPS") ||
       (infoType_ == "SYNONYMS") ||
       (infoType_ == "PARTITIONS") ||
-      (infoType_ == "TRIGGERS") ||
-      (infoType_ == "CATALOGS"))
+      (infoType_ == "TRIGGERS"))
     {
       NAString nas("GET ");
       nas += infoType_;
@@ -3428,6 +3427,67 @@ short ExeUtilHiveTruncate::codeGen(Generator * generator)
   return 0;
 }
 
+/////////////////////////////////////////////////////////
+//
+// ExeUtilHiveQuery::codeGen()
+//
+/////////////////////////////////////////////////////////
+short ExeUtilHiveQuery::codeGen(Generator * generator)
+{
+  ExpGenerator * expGen = generator->getExpGenerator();
+  Space * space = generator->getSpace();
+
+  // allocate a map table for the retrieved columns
+  generator->appendAtEnd();
+
+  ex_cri_desc * givenDesc
+    = generator->getCriDesc(Generator::DOWN);
+
+  ex_cri_desc * returnedDesc
+    = new(space) ex_cri_desc(givenDesc->noTuples() + 1, space);
+
+  ex_cri_desc * workCriDesc = new(space) ex_cri_desc(4, space);
+  const Int32 work_atp = 1;
+  const Int32 exe_util_row_atp_index = 2;
+
+  short rc = processOutputRow(generator, work_atp, exe_util_row_atp_index,
+                              returnedDesc);
+  if (rc)
+    {
+      return -1;
+    }
+
+  char * hive_query = 
+    space->AllocateAndCopyToAlignedSpace (hiveQuery(), 0);
+  Lng32 hive_query_len = hiveQuery().length();
+
+  ComTdbExeUtilHiveQuery * exe_util_tdb = 
+    new(space) 
+    ComTdbExeUtilHiveQuery(hive_query, hive_query_len,
+                           (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                           (ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+                           (queue_index)getDefault(GEN_DDL_SIZE_DOWN),
+                           (queue_index)getDefault(GEN_DDL_SIZE_UP),
+                           getDefault(GEN_DDL_NUM_BUFFERS),
+                           getDefault(GEN_DDL_BUFFER_SIZE));
+
+  generator->initTdbFields(exe_util_tdb);
+
+  if(!generator->explainDisabled()) {
+    generator->setExplainTuple(
+       addExplainInfo(exe_util_tdb, 0, 0, generator));
+  }
+
+  // no tupps are returned 
+  generator->setCriDesc((ex_cri_desc *)(generator->getCriDesc(Generator::DOWN)),
+			Generator::UP);
+  generator->setGenObj(this, exe_util_tdb);
+
+  generator->setTransactionFlag(0); // transaction is not needed.
+  
+  return 0;
+}
+
 ////////////////////////////////////////////////////////////////////
 // class ExeUtilRegionStats
 ////////////////////////////////////////////////////////////////////
@@ -3617,7 +3677,7 @@ short ExeUtilLobInfo::codeGen(Generator * generator)
       return -1;
     }
 
- NAString tn = "\"";
+  NAString tn = "\"";
   tn += getTableName().getQualifiedNameObj().getCatalogName();
   tn += "\".";
   tn += getTableName().getQualifiedNameObj().getSchemaName();
@@ -4371,7 +4431,7 @@ short ExeUtilLobUpdate::codeGen(Generator * generator)
   }
  
   exe_util_lobupdate_tdb->setTotalBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE));
-  exe_util_lobupdate_tdb->setLobMaxSize( CmpCommon::getDefaultNumeric(LOB_MAX_SIZE));
+  exe_util_lobupdate_tdb->setLobMaxSize( CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024);
   exe_util_lobupdate_tdb->setLobMaxChunkSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE));
   exe_util_lobupdate_tdb->setLobGCLimit(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE));
                                            

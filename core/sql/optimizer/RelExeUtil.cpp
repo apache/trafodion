@@ -900,6 +900,62 @@ RelExpr * ExeUtilHiveTruncate::copyTopNode(RelExpr *derivedNode, CollHeap* outHe
   return ExeUtilExpr::copyTopNode(result, outHeap);
 }
 
+
+// -----------------------------------------------------------------------
+// Member functions for class ExeUtilHiveQuery
+// -----------------------------------------------------------------------
+RelExpr * ExeUtilHiveQuery::copyTopNode(RelExpr *derivedNode,
+                                        CollHeap* outHeap)
+{
+  ExeUtilHiveQuery *result;
+
+  if (derivedNode == NULL)
+    result = new (outHeap) 
+      ExeUtilHiveQuery(hiveQuery(),
+                       sourceType(),
+                       outHeap);
+  else
+    result = (ExeUtilHiveQuery *) derivedNode;
+
+  return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+RelExpr * ExeUtilHiveQuery::bindNode(BindWA *bindWA)
+{
+  if (type_ != FROM_STRING)
+    {
+      // error case
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("DDL can only be specified as a string.");
+      
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
+  // currently supported hive queries must start with:
+  //   create, drop, alter, truncate
+  // Check for it.
+
+  // first strip leading spaces.
+  hiveQuery_ = hiveQuery_.strip(NAString::leading, ' ');
+  if (NOT ((hiveQuery_.index("CREATE", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery_.index("DROP", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery_.index("ALTER", 0, NAString::ignoreCase) == 0) ||
+           (hiveQuery_.index("TRUNCATE", 0, NAString::ignoreCase) == 0)))
+    {
+      // error case
+      *CmpCommon::diags() << DgSqlCode(-3242) << DgString0("Only CREATE, DROP, ALTER or TRUNCATE hive DDL statements can be specified.");
+      
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
+  RelExpr * boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+  
+  return boundExpr;
+}
+
 // -----------------------------------------------------------------------
 // Member functions for class ExeUtilGetStatistics
 // -----------------------------------------------------------------------

@@ -37,22 +37,24 @@ class ComSecurityKey;
 
 typedef NASet<ComSecurityKey>  ComSecurityKeySet;
 
+bool buildSecurityKeys( const int32_t userID,
+                        const int32_t granteeID,
+                        const int64_t objectUID,
+                        const PrivMgrCoreDesc &privs,
+                        ComSecurityKeySet &secKeySet);
+
 NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys, 
                                    const SQL_QIKEY* invalidationKeys, 
                                    const Int64 objectUID,
                                    const ComSecurityKeySet & objectKeys);
-
-bool buildSecurityKeys( const int32_t granteeID,
-                        const int32_t roleID,
-                        const int64_t objectUID,
-                        const PrivMgrCoreDesc &privs,
-                        ComSecurityKeySet &secKeySet);
 
 void qiInvalidationType (const Int32 numInvalidationKeys,
                          const SQL_QIKEY* invalidationKeys,
                          const Int32 userID,
                          bool &resetRoleList,
                          bool &updateCaches);
+
+NABoolean qiSubjectMatchesRole(uint32_t subjectKey);
 
 // ****************************************************************************
 // Class:  ComSecurityKey 
@@ -129,9 +131,9 @@ public:
   ComQIActionType convertBitmapToQIActionType(const PrivType which, const QIType inputType) const;
 
   // Basic method to generate hash values
-  uint32_t generateHash(int64_t hashInput) const;
+  static uint32_t generateHash(int64_t hashInput);
   // Generate hash value based on authorization ID
-  uint32_t generateHash(int32_t hashID) const;
+  static uint32_t generateHash(int32_t hashID);
 
   // For debugging purposes
   void print() const ;

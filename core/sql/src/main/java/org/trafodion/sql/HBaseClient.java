@@ -139,6 +139,9 @@ public class HBaseClient {
     public static final int HBASE_DURABILITY = 20;
     public static final int HBASE_MEMSTORE_FLUSH_SIZE = 21;
     public static final int HBASE_SPLIT_POLICY = 22;
+    public static final int HBASE_CACHE_DATA_IN_L1 = 23;
+    public static final int HBASE_PREFETCH_BLOCKS_ON_OPEN = 24;
+
 
     private static Connection connection; 
     public HBaseClient() {
@@ -446,6 +449,20 @@ public class HBaseClient {
                    (Long.parseLong(tableOption));
                returnStatus.setTableDescriptorChanged();
                break ;
+	   case HBASE_CACHE_DATA_IN_L1:
+	       if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setCacheDataInL1(true);
+               else
+                   colDesc.setCacheDataInL1(false); 
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+	   case HBASE_PREFETCH_BLOCKS_ON_OPEN:
+              if (tableOption.equalsIgnoreCase(trueStr))
+		  colDesc.setPrefetchBlocksOnOpen(true);
+	      else
+		  colDesc.setPrefetchBlocksOnOpen(false); 
+	      returnStatus.setColumnDescriptorChanged();
+	      break ;
            case HBASE_SPLIT_POLICY:
                // This method not yet available in earlier versions
                // desc.setRegionSplitPolicyClassName(tableOption));

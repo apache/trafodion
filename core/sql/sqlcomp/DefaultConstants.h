@@ -3628,8 +3628,13 @@ enum DefaultConstants
 
   TRAF_TRANS_TYPE, 
 
- // max size in bytes of a char or varchar column in a trafodion table.
+  // max size in bytes of a char or varchar column in a trafodion table.
+  // Valid values are 0 through 10M (10485760).
   TRAF_MAX_CHARACTER_COL_LENGTH,
+
+  // In special cases, previous default value could be overridden. 
+  // Internal use only or use only under trafodion supervision.
+  TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,
 
   // set when metadata definition is to be read from hardcoded structs
   // and not from metadata. 
@@ -3892,6 +3897,9 @@ enum DefaultConstants
   CSE_TEMP_TABLE_MAX_MAX_SIZE,
   CSE_COMMON_KEY_PRED_CONTROL,
   CSE_PCT_KEY_COL_PRED_CONTROL,
+
+  TRANSLATE_ERROR,
+  TRANSLATE_ERROR_UNICODE_TO_UNICODE,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

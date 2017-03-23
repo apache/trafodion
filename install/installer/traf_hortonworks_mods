@@ -262,6 +262,12 @@ if [ $? != 0 ]; then
     exit -1
 fi
 sleep 2
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.client.keyvalue.maxsize 0'
+if [ $? != 0 ]; then
+    echo "***ERROR: unable to modify hbase.client.keyvalue.maxsize through Ambari's configs.sh script."
+    exit -1
+fi
+sleep 2
 echo
 
 #Change Zookeeeper settings

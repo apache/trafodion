@@ -954,60 +954,60 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
     description += "small_scanner: " ;
     description += "ON " ;
   }
-
-  char buf[20];
+  size_t BUFFER_SIZE=512;
+  char buf[BUFFER_SIZE];
 
   if ((((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->dopParallelScanner())>0.0) {
      description += "parallel_scanner: " ;
-     sprintf(buf, "%g ", ((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->dopParallelScanner());
+     snprintf(buf, BUFFER_SIZE, "%g ", ((ComTdbHbaseAccess *)tdb)->getHbasePerfAttributes()->dopParallelScanner());
      description += buf;
   }
 
   if ( getProbes().getValue() > 0.0 ) {
     description += "probes: "; // total number of probes
-    sprintf(buf, "%g ", getProbes().getValue());
+    snprintf(buf, BUFFER_SIZE, "%g ", getProbes().getValue());
     description += buf;
   }
 
   if ( getSuccessfulProbes().getValue() > 0.0 ) {
     description += "successful_probes: "; // # of probes returning data
-    sprintf(buf, "%g ", getSuccessfulProbes().getValue());
+    snprintf(buf, BUFFER_SIZE, "%g ", getSuccessfulProbes().getValue());
     description += buf;
   }
 
   if ( getUniqueProbes().getValue() > 0.0 ) {
      description += "unique_probes: "; // # of probes returning 1 row
-     sprintf(buf, "%g ", getUniqueProbes().getValue());
+     snprintf(buf, BUFFER_SIZE, "%g ", getUniqueProbes().getValue());
      description += buf;
   }
 
   if ( getDuplicatedSuccProbes().getValue() > 0.0 ) {
      description += "duplicated_succ_probes: "; // # of succ probes returning
-     sprintf(buf, "%g ", getDuplicatedSuccProbes().getValue());  // more than 1 row
+     snprintf(buf, BUFFER_SIZE, "%g ", getDuplicatedSuccProbes().getValue());  // more than 1 row
      description += buf;
   }
 
   if ( getEstRowsAccessed().getValue() ) {
      description += "rows_accessed: "; // #  rows accessed
-     sprintf(buf, "%g ", getEstRowsAccessed().getValue());
+     snprintf(buf, BUFFER_SIZE, "%g ", getEstRowsAccessed().getValue());
      description += buf;
   }
   if (((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getUseSnapshotScan())
   {
     description += "use_snapshot_scan: ";
-    sprintf(buf, "%s ", "TRUE" );
+    snprintf(buf, BUFFER_SIZE, "%s ", "TRUE" );
     description += buf;
 
     description += "full_table_name: ";
-    sprintf(buf, "%s ", ((ComTdbHbaseAccess *)tdb)->getTableName());
+    snprintf(buf, BUFFER_SIZE, "%s ", ((ComTdbHbaseAccess *)tdb)->getTableName());
     description += buf;
 
     description += "snapshot_name: ";
-    sprintf(buf, "%s ", ((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getSnapshotName());
+    snprintf(buf, BUFFER_SIZE, "%s ", ((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getSnapshotName());
     description += buf;
 
     description += "snapshot_temp_location: ";
-    sprintf(buf, "%s ", ((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getSnapScanTmpLocation());
+    snprintf(buf, BUFFER_SIZE, "%s ", ((ComTdbHbaseAccess *)tdb)->getHbaseSnapshotScanAttributes()->getSnapScanTmpLocation());
     description += buf;
 
   }
@@ -1031,9 +1031,8 @@ HbaseAccess::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   /*
   // now get columns_retrieved
   description += "columns_retrieved: ";
-  char buf[27];
   //sprintf(buf, "%d ", retrievedCols().entries());
-  sprintf(buf, "%d ", getIndexDesc()->getIndexColumns().entries());
+  snprintf(buf, BUFFER_SIZE, "%d ", getIndexDesc()->getIndexColumns().entries());
   description += buf;
   */
 

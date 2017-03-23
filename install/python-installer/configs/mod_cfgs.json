@@ -10,6 +10,7 @@
         "hbase.regionserver.region.transactional.tlog": "true",
         "hbase.snapshot.region.timeout": "600000",
         "hbase.client.scanner.timeout.period": "600000"
+        "hbase.client.keyvalue.maxsize": "0"
     },
     "hdfs-site": { "dfs.namenode.acls.enabled": "true" },
     "zoo.cfg": { "maxClientCnxns": "0" }

@@ -3045,8 +3045,11 @@ short Sort::generateTdb(Generator * generator,
   
   CostScalar bufferSize = getDefault(GEN_SORT_MAX_BUFFER_SIZE);
 
-  ULng32 bufferSize_as_ulong = 
-    (ULng32)(MINOF(CostScalar(UINT_MAX), bufferSize)).getValue(); 
+  UInt32 bufferSize_as_ulong = 
+    (UInt32)(MINOF(CostScalar(UINT_MAX), bufferSize)).getValue(); 
+
+  // allocate buffer to hold atlease one row
+  bufferSize_as_ulong = MAXOF(bufferSize_as_ulong, sortRecLen);
 
   GenAssert(sortRecLen <= bufferSize_as_ulong, 
       "Record Len greater than GEN_SORT_MAX_BUFFER_SIZE");
@@ -3079,6 +3082,9 @@ short Sort::generateTdb(Generator * generator,
   if(sortRecLen >= sort_options->scratchIOBlockSize())
   {
     Int32 maxScratchIOBlockSize = (Int32)getDefault(SCRATCH_IO_BLOCKSIZE_SORT_MAX);
+    // allocate space for atleast one row.
+    maxScratchIOBlockSize = MAXOF(maxScratchIOBlockSize, sortRecLen);
+
     GenAssert(sortRecLen <= maxScratchIOBlockSize, 
          "sortRecLen is greater than SCRATCH_IO_BLOCKSIZE_SORT_MAX");
     sort_options->scratchIOBlockSize() = MINOF(sortRecLen * 128, maxScratchIOBlockSize);
