@@ -41,6 +41,8 @@ DEF_PORT_FILE = CONFIG_DIR + '/default_ports.ini'
 DBCFG_FILE = INSTALLER_LOC + '/db_config'
 DBCFG_TMP_FILE = INSTALLER_LOC + '/.db_config_temp'
 
+SSH_CONFIG_FILE = '/etc/ssh/sshd_config'
+
 SSHKEY_FILE = '/tmp/id_rsa'
 TMP_DIR = '/tmp/.trafodion_install_temp'
 
