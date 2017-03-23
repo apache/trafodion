@@ -774,7 +774,12 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   // lob desc update, then remove this.
   Int64 lobLen = 0;
   if(!fromEmpty())
-    lobLen = getOperand(1)->getLength();
+    {
+      lobLen = getOperand(1)->getLength();
+      //If source is a varchar, find the actual length
+      if (fromString() && ((getOperand(1)->getVCIndicatorLength() >0)))       
+        lobLen = getOperand(1)->getLength(op_data[1]- getOperand(1)->getVCIndicatorLength());
+    }
 
   // until SQL_EXEC_LOBcliInterface is changed to allow for unlimited
   // black box sizes, we have to prevent over-sized file names from
@@ -919,7 +924,12 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
     return ex_expr::EXPR_ERROR;
 
   lobLen = getOperand(1)->getLength();
-  
+  if(fromString())
+    {
+      //If source is a varchar, find the actual length
+      if (getOperand(1)->getVCIndicatorLength() >0)   
+        lobLen = getOperand(1)->getLength(op_data[1]- getOperand(1)->getVCIndicatorLength());  
+    }
   char * lobData = NULL;
   if (fromExternal())
     {

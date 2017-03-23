@@ -6071,7 +6071,7 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
   if (bindWA->errStatus())
       return this;
   child(0) = boundExpr;
-
+ 
 
   if (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON)
   {
@@ -6173,7 +6173,35 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
     } // QSTUFF
 
   } // isUserSpecified
+  NABuiltInTypeEnum sourceType =  child(1)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
+  NABuiltInTypeEnum targetType =  child(0)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
+  if ((sourceType == NA_CHARACTER_TYPE) && (targetType == NA_LOB_TYPE))
+    {
+      ValueId vid1 = child(1)->castToItemExpr()->getValueId();  
+      // Add a stringToLob node
+      ItemExpr *newChild =  new (bindWA->wHeap()) LOBinsert( vid1.getItemExpr(), NULL, LOBoper::STRING_, FALSE);    
+      newChild->bindNode(bindWA);
+      if (bindWA->errStatus())
+	return boundExpr; 
+      setChild(1, newChild);
+    }
+  /* if ((sourceType == NA_UNKNOWN_TYPE) && (targetType = NA_LOB_TYPE))
+    {
+      ValueId vid1 = child(1)->castToItemExpr()->getValueId();
+    
+      SQLVarChar c1(CmpCommon::getDefaultNumeric(MAX_LONG_VARCHAR_DEFAULT_SIZE));
+      vid1.coerceType(c1, NA_CHARACTER_TYPE);
 
+                                                        
+					       
+      // Add a stringToLob node
+      ItemExpr *newChild =  new (bindWA->wHeap()) LOBinsert( vid1.getItemExpr(), NULL, LOBoper::STRING_, FALSE);
+      newChild->bindNode(bindWA);
+      if (bindWA->errStatus())
+	return boundExpr;
+      setChild(1, newChild);
+
+    }*/
   if ((NOT child(0)->getValueId().getType().
        isCompatible(child(1)->getValueId().getType())) &&
       (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
@@ -6191,13 +6219,13 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 	return boundExpr;
       setChild(1, newChild);
     }
-
+    
+ 
   // If we assign a numeric type and the source has a larger scale then
   // the target we cast the source to reduce the scale (truncate).
   // We also cast (truncate) if we deal with char and the source is larger
   // than the target.
-  NABuiltInTypeEnum targetType =
-    child(0)->getValueId().getType().getTypeQualifier();
+  targetType =  child(0)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
   if (targetType == NA_CHARACTER_TYPE) {
     Lng32 sourceLength = ((CharType&)(child(1)->getValueId().getType())).getStrCharLimit();
     Lng32 targetLength = ((CharType&)(child(0)->getValueId().getType())).getStrCharLimit();
