@@ -137,12 +137,18 @@ public class TrafT4PooledConnectionManager implements javax.sql.ConnectionEventL
 				}
 			} else {
 				pc = (PooledConnection) free_.get(0);
-				if (removeFreeConnection(pc, true)) {
-					TrafT4Connection c = (TrafT4Connection) pc.getConnection();
-					try {
-						c.ic_.enforceT4ConnectionTimeout(c);
+				TrafT4Connection c = (TrafT4Connection) pc.getConnection();
+				try {
+					c.ic_.enforceT4ConnectionTimeout(c);
+					if (removeFreeConnection(pc, true)) {
 						validConnection = true;
-					} catch (SQLException sqlEx) {
+					}
+				} catch (Exception e) {
+					//ignore errors
+				} finally {
+					if (!validConnection) {
+						if (free_.remove(0) != null)
+							--count_;
 						try {
 							pc.close();
 						} catch (Exception e) {
