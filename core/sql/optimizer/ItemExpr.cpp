@@ -1062,7 +1062,7 @@ NABoolean ItemExpr::useStatsForPred()
         {
           NABoolean negate = FALSE;
           ConstValue * c = startPosition->castToConstValue(negate);
-          if (c->canGetApproximateNumericValue() &&
+          if (c->canGetExactNumericValue() &&
                (c->getExactNumericValue() == 1))
             return TRUE;
         }
