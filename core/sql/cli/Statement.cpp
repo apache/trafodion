@@ -293,8 +293,8 @@ Statement::Statement(SQLSTMT_ID * statement_id_,
              context_, (Lng32) context_->getContextHandle());
 
   clonedStatements = new(&heap_) Queue(&heap_);
-  // for now a statement space is allocated from the executor memory
-  space_.setParent(context_->exHeap());
+  // for now a statement space is allocated from the statement heap 
+  space_.setParent(&heap_);
 
   // Set up a space object which might be used during unpacking to allocate
   // additional space for potential upgrading of objects in the plan. This

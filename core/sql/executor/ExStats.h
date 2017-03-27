@@ -44,14 +44,12 @@
 #include "ComTdb.h"
 #include "ExScheduler.h"
 #include "ComTdbStats.h"
-#ifndef __EID
 #include "ComTdbUdr.h"
 #include "ComRtUtils.h"
 #include "Globals.h"
 #include "SqlStats.h"
 #include "ssmpipc.h"
 #include "ComCextdecs.h"
-#endif
 #include "ex_tcb.h"
 #include "ExMeas.h"
 #include "SQLCLIdev.h"
@@ -1003,9 +1001,7 @@ NA_EIDPROC
   virtual void getVariableStatsInfo(char * dataBuffer,
 				    char * datalen,
 				    Lng32 maxLen);
-#ifndef __EID
   virtual Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
-#endif
 
 
 NA_EIDPROC
@@ -1181,12 +1177,6 @@ public:
   ExBMOStats *castToExBMOStats();
   void merge(ExBMOStats* other);
   Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
-  inline void setOverflowPhaseStartTime(Int64 startTime) { overflowPhaseStartTime_ = startTime; }
-  inline void setOverflowPhase(char *phase) 
-  { 
-    short len = (short)str_len(phase);
-    str_cpy_all(overflowPhase_, phase, len+1);
-  }
   inline void setScratchBufferBlockSize(Int32 size) 
   { 
     scratchBufferBlockSize_ = size >> 10;
@@ -1217,14 +1207,14 @@ public:
   }
   inline Int64 getScratchReadCount(void) { return scratchReadCount_; }
   static const char *getScratchOverflowMode(Int16 overflowMode);
+  ExTimeStats &getScratchIOTimer() { return timer_; }
 private:
+  ExTimeStats timer_;
   Int32 bmoHeapAlloc_;
   Int32 bmoHeapUsage_;
   Int32 bmoHeapWM_;
   Int32 spaceBufferSize_;
   Int32 spaceBufferCount_;
-  char overflowPhase_[12];
-  Int64 overflowPhaseStartTime_;
   Int32 scratchFileCount_;
   Int32 scratchBufferBlockSize_;
   Int32 scratchBufferBlockRead_;
@@ -1291,7 +1281,6 @@ NA_EIDPROC
 
 NA_EIDPROC
   ExOperStats * copyOper(NAMemory * heap);
-#ifndef __EID
 /////////////////////////////////////////////////////////////////
 // accessors, mutators
 /////////////////////////////////////////////////////////////////
@@ -1301,8 +1290,6 @@ NA_EIDPROC
 
 NA_EIDPROC
   inline SB_Phandle_Type * getPhandlePtr()              { return &phandle_; }
-
-#endif
 
  NA_EIDPROC
    bool isFragSuspended() const { return isFragSuspended_; }
@@ -1327,11 +1314,10 @@ NA_EIDPROC
   inline void setCpuTime(Int64 cpuTime) { cpuTime_ = cpuTime; }
 
 NA_EIDPROC
-  inline Int64 getMaxSpaceUsage() const         { return maxSpaceUsage_; }
+  inline Int64 getMaxSpaceUsage() const         { return spaceUsage_; }
  
 NA_EIDPROC
-  inline Int64 getMaxHeapUsage() const          { return maxHeapUsage_; }
-#ifndef __EID
+  inline Int64 getMaxHeapUsage() const          { return heapUsage_; }
 NA_EIDPROC
   inline Lng32 getStmtIndex() const                  { return stmtIndex_; }
  
@@ -1343,29 +1329,15 @@ NA_EIDPROC
  
 NA_EIDPROC
   inline void setTimestamp(Int64 t)                    { timestamp_ = t; }
-#endif 
+
 NA_EIDPROC
    inline void updateSpaceUsage(Space *space, CollHeap *heap)
    {
-#ifdef __EID
-    Int32 currentSpaceUsage = (Int32)(space->getAllocSize() >> 10);
-    Int32 currentSpaceAlloc = (Int32)(space->getTotalSize() >> 10);
-    maxSpaceUsage_ = currentSpaceUsage - histMaxSpaceUsage_;
-    maxSpaceAlloc_ = currentSpaceAlloc - histMaxSpaceAlloc_;
-    histMaxSpaceUsage_ = currentSpaceUsage;
-    histMaxSpaceAlloc_ = currentSpaceAlloc;
-    Int32 currentHeapUsage = (Int32)(heap->getAllocSize() >> 10);
-    Int32 currentHeapAlloc = (Int32)(heap->getTotalSize() >> 10);
-    maxHeapUsage_ = currentHeapUsage - histMaxHeapUsage_;
-    maxHeapAlloc_ = currentHeapAlloc - histMaxHeapAlloc_;
-    histMaxHeapUsage_ = currentHeapUsage;
-    histMaxHeapAlloc_ = currentHeapAlloc;
-#else
-    maxSpaceUsage_ = (Int32)(space->getAllocSize() >> 10);
-    maxSpaceAlloc_ = (Int32)(space->getTotalSize() >> 10);
-    maxHeapUsage_ = (Int32)(heap->getAllocSize() >> 10);
-    maxHeapAlloc_ = (Int32)(heap->getTotalSize() >> 10);
-#endif
+    spaceUsage_ = (Int32)(space->getAllocSize() >> 10);
+    spaceAlloc_ = (Int32)(space->getTotalSize() >> 10);
+    heapUsage_ = (Int32)(heap->getAllocSize() >> 10);
+    heapAlloc_ = (Int32)(heap->getTotalSize() >> 10);
+    heapWM_ = (Int32)(heap->getHighWaterMark() >> 10);
    }
 
 NA_EIDPROC
@@ -1387,7 +1359,6 @@ NA_EIDPROC
 NA_EIDPROC
   void initHistory();
 
-#ifndef __EID
   Int32 getExecutionCount() const { return executionCount_; }
 
   inline Int32 getNewprocess()          { return newprocess_; }
@@ -1438,7 +1409,6 @@ NA_EIDPROC
        return waitTime_/ dop();
   }
   inline Int64 getMaxWaitTime() { return maxWaitTime_; }
-#endif
 
   NABoolean hdfsAccess()
     { return (flags_ & HDFS_ACCESS) != 0; }
@@ -1452,24 +1422,20 @@ private:
   };
 
   // some heap statistics for the entire fragment instance
-  Int32 maxSpaceUsage_;
-  Int32 maxSpaceAlloc_;
-  Int32 maxHeapUsage_;
-  Int32 maxHeapAlloc_;
+  Int32 spaceUsage_;
+  Int32 spaceAlloc_;
+  Int32 heapUsage_;
+  Int32 heapAlloc_;
+  Int32 heapWM_;
   Int64 cpuTime_;
   Int16 scratchOverflowMode_;
-#ifdef __EID
-  Int32 histMaxSpaceUsage_;
-  Int32 histMaxSpaceAlloc_;
-  Int32 histMaxHeapUsage_;
-  Int32 histMaxHeapAlloc_;
-#else
   Int32 newprocess_;
   Int64 newprocessTime_; 
-  Int32 espMaxSpaceUsage_;
-  Int32 espMaxSpaceAlloc_;
-  Int32 espMaxHeapUsage_;
-  Int32 espMaxHeapAlloc_;
+  Int32 espSpaceUsage_;
+  Int32 espSpaceAlloc_;
+  Int32 espHeapUsage_;
+  Int32 espHeapAlloc_;
+  Int32 espHeapWM_;
   Int64 espCpuTime_;
   Int64 histCpuTime_;
   Int64 reqMsgCnt_;
@@ -1495,7 +1461,6 @@ private:
   // process id of this fragment instance (to correlate it with MEASURE data)
   // Also used by logic on runtimestats/CancelBroker.cpp
   SB_Phandle_Type phandle_;
-#endif
   // This is aggregated only for the process.  It is never merged into or
   // from.
   Int64 localCpuTime_;
@@ -1504,11 +1469,9 @@ private:
   // stats global semaphore.  Read by master and ESP EXE without the
   // semaphore.
   bool isFragSuspended_;
-#ifndef __EID
   Int64 maxWaitTime_;
   Int64 waitTime_;
   Int64 diffCpuTime_;
-#endif
 
   Int32 flags_;
 };
@@ -1606,9 +1569,7 @@ inline void setOpenTime(Int64 t)    { openTime_ = t; }
 NA_EIDPROC
 inline void incOpenTime(Int64 t)    { openTime_ += t; }
 
-#ifndef __EID
   Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
-#endif
 
 NA_EIDPROC
   virtual void getVariableStatsInfo(char * dataBuffer,
@@ -1927,10 +1888,8 @@ NA_EIDPROC
   inline void updIoSize(Int64 newSize)
   { ioSize_ = newSize ; }
 
-#ifndef __EID
   inline void incrClusterSplits() { clusterSplits_++; }
   inline void incrHashLoops() { hashLoops_++; }
-#endif
 
 private:
   ExTimeStats phaseTimes_[3];
@@ -2796,8 +2755,6 @@ NA_EIDPROC
 NA_EIDPROC
   inline void setCpuTime(Int64 cpuTime) { cpuTime_ = cpuTime; }
 
-
-#ifndef __EID
   Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
   void setCpuStatsHistory() { histCpuTime_ = cpuTime_; }
   NABoolean filterForCpuStats();
@@ -2827,27 +2784,25 @@ NA_EIDPROC
   inline const short * getPhandle() const     { return phandle_; }
 #endif
 
-#endif
-  
 private:
 
   Int32 newprocess_;
   Int64 newprocessTime_; 
   Int32 timeouts_;
-
   Int32 numSorts_;
   Int64 sortElapsedTime_;
   // some heap statistics for the entire fragment instance
-  Int32 maxSpaceUsage_;
-  Int32 maxSpaceAlloc_;
-  Int32 maxHeapUsage_;
-  Int32 maxHeapAlloc_;
+  Int32 spaceUsage_;
+  Int32 spaceAlloc_;
+  Int32 heapUsage_;
+  Int32 heapAlloc_;
+  Int32 heapWM_;
   Int64 cpuTime_;
-#ifndef __EID
-  Int32 espMaxSpaceUsage_;
-  Int32 espMaxSpaceAlloc_;
-  Int32 espMaxHeapUsage_;
-  Int32 espMaxHeapAlloc_;
+  Int32 espSpaceUsage_;
+  Int32 espSpaceAlloc_;
+  Int32 espHeapUsage_;
+  Int32 espHeapAlloc_;
+  Int32 espHeapWM_;
   Int64 espCpuTime_;
   Int64 histCpuTime_;
   char *queryId_;
@@ -2866,12 +2821,6 @@ private:
   // on NSK systems, this is called a PHANDLE
   short phandle_[10];
 #endif // NA_LINUX
-#else
-  Int32 histMaxSpaceUsage_;
-  Int32 histMaxSpaceAlloc_;
-  Int32 histMaxHeapUsage_;
-  Int32 histMaxHeapAlloc_;
-#endif
   // Set to true and reset to false by the MXSSCP process under the
   // stats global semaphore.  Read by master and ESP EXE without the
   // semaphore.
@@ -2879,7 +2828,6 @@ private:
 
   Int64 localCpuTime_;
   Int16 scratchOverflowMode_;
-#ifndef __EID
   Int32 scratchFileCount_;
   Int32 scratchBufferBlockSize_;
   Int64 scratchBufferBlockRead_;
@@ -2888,7 +2836,6 @@ private:
   Int64 scratchWriteCount_;
   Int64 udrCpuTime_;
   Int64 topN_;
-#endif
 };
 
 
@@ -2924,18 +2871,14 @@ public:
   {
     replyMsgCnt_++;
     replyMsgBytes_ += msgBytes;
-#ifndef __EID
     recentReplyTS_ = NA_JulianTimestamp();
-#endif
   }
 
   void incReqMsg(Int64 msgBytes)
   {
     reqMsgCnt_++;
     reqMsgBytes_ += msgBytes;
-#ifndef __EID
     recentReqTS_ = NA_JulianTimestamp();
-#endif
   }
 
 private:
@@ -3183,15 +3126,12 @@ NA_EIDPROC
 NA_EIDPROC
   void unpackSmallObjFromEid(IpcConstMessageBufferPtr buffer,
 			     Lng32 version = _STATS_PRE_RTS_VERSION);
-#ifndef __EID
 
 NA_EIDPROC
   Int64 getExplainPlanId() const { return explainPlanId_; }
 
 NA_EIDPROC
   void setExplainPlanId(Int64 pid) { explainPlanId_ = pid; }
-
-#endif
 
 NA_EIDPROC
   ComTdb::CollectStatsType getCollectStatsType() { return (ComTdb::CollectStatsType)collectStatsType_; };
@@ -3294,7 +3234,6 @@ NA_EIDPROC
   {
     rootStats_ = root;
   }
-#ifndef __EID
   Lng32 getStatsItems(Lng32 no_of_stats_items,
 	    SQLSTATS_ITEM sqlStats_items[]);
   Lng32 getStatsDesc(short *statsCollectType,
@@ -3324,7 +3263,6 @@ NA_EIDPROC
   void setSubReqType(short subReqType) { subReqType_ = subReqType; }
   short getSubReqType() { return subReqType_; }
   void setQueryId(char *queryId, Lng32 queryIdLen);
-#endif
 NA_EIDPROC
   Int64 getHashData(ExOperStats::StatType type,
                                      Lng32 tdbId);
@@ -3358,13 +3296,11 @@ NA_EIDPROC
     RTS_STATS_COLLECT_ENABLED = 0x0002
   };
 
-#ifndef __EID
 NA_EIDPROC
   IDInfo * IDLookup(HashQueue * hq, Int64 id);
 
 NA_EIDPROC
   void preProcessStats();
-#endif
 
   NAMemory * heap_;
   HashQueue * entries_;
@@ -3429,7 +3365,6 @@ public:
 };
 
 
-#ifndef __EID
 // -----------------------------------------------------------------------
 // ExStatsTdb
 // -----------------------------------------------------------------------
@@ -3510,12 +3445,10 @@ public:
   Lng32 parse_stmt_name(char *string, Lng32 len);
   ComDiagsArea * getDiagsArea() { return diagsArea_; }
   
-#ifndef __EID
   Lng32 str_parse_stmt_name(char *string, Lng32 len, char *nodeName, short *cpu,       pid_t *pid,Int64 *timeStamp, Lng32 *queryNumber,
        short *qidOffset, short *qidLen, short *activeQueryNum, 
        UInt16 *statsMergeType, short *detailLevel, short *subReqType, 
        Lng32 *filterTimeInSecs);
-#endif
   enum StatsStep
   {
     INITIAL_, GET_NEXT_STATS_ENTRY_, APPLY_SCAN_EXPR_, PROJECT_, ERROR_, DONE_, SEND_TO_SSMP_,
@@ -3594,8 +3527,6 @@ private:
   Int64 matchCount_; // number of rows returned for this parent row
 };
 
-
-#endif
 
 //////////////////////////////////////////////////////////////////
 // class ExMasterStats
@@ -3865,7 +3796,6 @@ NA_EIDPROC
   void initBeforeExecute(Int64 currentTimestamp);
   void resetAqrInfo();
 
-#ifndef __EID
   Lng32 getStatsItem(SQLSTATS_ITEM* sqlStats_item);
   void setParentQid(char *queryId, Lng32 queryIdLen);
   char *getParentQid() { return parentQid_; }
@@ -3881,25 +3811,21 @@ NA_EIDPROC
   void incReclaimSpaceCount() { reclaimSpaceCount_++; }
   NABoolean filterForCpuStats(short subReqType, Int64 currTimestamp, 
                 Lng32  etTimeInSecs);
-#endif
-
   Int64 getRowsReturned() const { return rowsReturned_; }
   void setRowsReturned(Int64 cnt) { rowsReturned_ = cnt; }
   void incRowsReturned(Int64 i = 1)
-  { rowsReturned_ += i;
-#ifndef __EID
+  { 
+    rowsReturned_ += i;
     if (firstRowReturnTime_ == -1)
       firstRowReturnTime_ = NA_JulianTimestamp();
-#endif
   }
 
   bool isQuerySuspended() const { return isQuerySuspended_; }
   void setQuerySuspended(bool s) 
-    { isQuerySuspended_ = s;
-#ifndef __EID 
+    { 
+      isQuerySuspended_ = s;
       if (isQuerySuspended_) 
         querySuspendedTime_ = NA_JulianTimestamp();
-#endif
     }
   Int64 getQuerySuspendedTime() const { return querySuspendedTime_; }
   char *getCancelComment() const { return cancelComment_; }
@@ -4030,8 +3956,6 @@ private:
 
 
 
-#ifndef __EID
- 
 class ExRMSStats : public ExOperStats
 {
 public:
@@ -4141,9 +4065,6 @@ private:
   Int32 numQueryInvKeys_;
   short nodesInCluster_;
 };
-#endif
-
-
 
 
 //////////////////////////////////////////////////////////////////
@@ -4261,11 +4182,8 @@ private:
 class ExProcessStats : public ExOperStats {
 public:
   ExProcessStats(NAMemory * heap);
-#ifndef __EID
   ExProcessStats(NAMemory * heap, 
                    short nid, pid_t pid);
-#endif
-
   ~ExProcessStats()
   {
      if (delQid_)

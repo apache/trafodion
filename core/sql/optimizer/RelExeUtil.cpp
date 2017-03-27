@@ -591,6 +591,7 @@ ExeUtilGetStatistics::ExeUtilGetStatistics(NAString statementName,
        errorInParams_(FALSE),
        statsReqType_(statsReqType),
        statsMergeType_(statsMergeType),
+       singleLineFormat_(FALSE),
        activeQueryNum_(activeQueryNum)
 {
   NABoolean explicitStatsOption = FALSE;
@@ -645,10 +646,10 @@ ExeUtilGetStatistics::ExeUtilGetStatistics(NAString statementName,
 	  else if (option == "TF")
 	    tokenizedFormat_ = TRUE;
 	  else if (option == "NC")
-	  {
             shortFormat_ = TRUE;
-	  }
-	  else
+	  else if (option == "SL")
+            singleLineFormat_ = TRUE;
+          else 
 	    {
 	      errorInParams_ = TRUE;
 	      return;

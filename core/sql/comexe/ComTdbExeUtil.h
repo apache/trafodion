@@ -1829,6 +1829,10 @@ public:
   {(v ? flags_ |= TOKENIZED_FORMAT : flags_ &= ~TOKENIZED_FORMAT); };
   NABoolean tokenizedFormat() { return (flags_ & TOKENIZED_FORMAT) != 0; };
 
+  void setSingleLineFormat(NABoolean v)
+  {(v ? flags_ |= SINGLELINE_FORMAT : flags_ &= ~SINGLELINE_FORMAT); };
+  NABoolean singleLineFormat() { return (flags_ & SINGLELINE_FORMAT) != 0; };
+  
   short getStatsReqType() { return statsReqType_; }
 
   // ---------------------------------------------------------------------
@@ -1846,7 +1850,8 @@ protected:
     DETAILED_STATS   = 0x0008,
     OLD_FORMAT       = 0x0010,
     SHORT_FORMAT     = 0x0020,
-    TOKENIZED_FORMAT = 0x0040
+    TOKENIZED_FORMAT = 0x0040,
+    SINGLELINE_FORMAT = 0x0100
   };
 
   NABasicPtr stmtName_;                                        // 00-07
