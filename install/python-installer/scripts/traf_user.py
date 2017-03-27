@@ -43,13 +43,12 @@ def run():
     elif 'APACHE' in distro:
         hadoop_type = 'apache'
 
-    traf_user = dbcfgs['traf_user']
-    traf_group = traf_user
-    home_dir = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2').strip()
+    home_dir = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2')
     # customize trafodion home dir
     if dbcfgs.has_key('home_dir') and dbcfgs['home_dir']:
         home_dir = dbcfgs['home_dir']
 
+    traf_user = dbcfgs['traf_user']
     traf_user_dir = '%s/%s' % (home_dir, traf_user)
     traf_dirname = dbcfgs['traf_dirname']
     traf_home = '%s/%s' % (traf_user_dir, traf_dirname)
@@ -60,13 +59,18 @@ def run():
     ulimits_file = '/etc/security/limits.d/%s.conf' % traf_user
 
     # create trafodion user and group
-    if not cmd_output('getent group %s' % traf_group):
-        run_cmd('groupadd %s > /dev/null 2>&1' % traf_group)
-
-    if not cmd_output('getent passwd %s' % traf_user):
+    if cmd_output('getent passwd %s' % traf_user):
+        # trafodion user exists, set actual trafodion group
+        traf_group = cmd_output('id -ng %s' % traf_user)
+    else:
+        # default trafodion group
+        traf_group = traf_user
+        if not cmd_output('getent group %s' % traf_group):
+            run_cmd('groupadd %s > /dev/null 2>&1' % traf_group)
         traf_pwd = dbcfgs['traf_pwd']
         run_cmd('useradd --shell /bin/bash -m %s -g %s --home %s --password "$(openssl passwd %s)"' % (traf_user, traf_group, traf_user_dir, traf_pwd))
-    elif not os.path.exists(traf_user_dir):
+
+    if not os.path.exists(traf_user_dir):
         run_cmd('mkdir -p %s' % traf_user_dir)
         run_cmd('chmod 700 %s' % traf_user_dir)
 
