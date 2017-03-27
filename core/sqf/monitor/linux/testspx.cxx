@@ -782,9 +782,6 @@ const char *RequestTypeString( REQTYPE type )
         case ReqType_TmLeader:
             str = "ReqType_TmLeader";
             break;
-        case ReqType_TmSeqNum:
-            str = "ReqType_TmSeqNum";
-            break;
         case ReqType_TmSync:
             str = "ReqType_TmSync";
             break;

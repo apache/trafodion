@@ -2746,11 +2746,6 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
-        case ReqType_TmSeqNum:
-            request = new CExtTmSeqNumReq(msgType, pid, msg);
-            request->setConcurrent(reqConcurrent[msg->u.request.type]);
-            break;
-
         case ReqType_TmSync:
             request = new CExtTmSyncReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -3617,7 +3612,6 @@ const bool CReqQueue::reqConcurrent[] = {
    true,     // ReqType_Startup
    false,    // ReqType_Stfsd
    false,    // ReqType_TmLeader
-   false,    // ReqType_TmSeqNum
    false,    // ReqType_TmSync
    false,    // ReqType_TransInfo
    true,     // ReqType_MonStats
@@ -3654,7 +3648,6 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_Stfsd
    false,    // ReqType_TmLeader
    false,    // ReqType_TmReady,
-   false,    // ReqType_TmSeqNum
    false,    // ReqType_TmSync
    false,    // ReqType_TransInfo
    false,    // ReqType_MonStats
@@ -3710,7 +3703,6 @@ const char * CReqQueue::svcReqType[] = {
     "Stfsd",
     "TmLeader",
     "TmReady",
-    "TmSeqNum",
     "TmSync",
     "TransInfo",
     "MonStats",

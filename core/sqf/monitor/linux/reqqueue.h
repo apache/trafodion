@@ -534,19 +534,6 @@ private:
     int nid_;
 };
 
-class CExtTmSeqNumReq: public CExternalReq
-{
-public:
-    CExtTmSeqNumReq (reqQueueMsg_t msgType, int pid,
-                     struct message_def *msg );
-    virtual ~CExtTmSeqNumReq();
-
-    void performRequest();
-
-private:
-    void populateRequestString( void );
-};
-
 class CExtTmSyncReq: public CExternalReq
 {
 public:
@@ -1182,7 +1169,6 @@ private:
       RQER   CExtShutdownReq
       RQES   CExtStartupReq
       RQET   CExtTmLeaderReq
-      RQEU   CExtTmSeqNumReq
       RQEV   CExtTmSyncReq
       RQEW   CExtZoneInfoReq
       RQEX   (unused)

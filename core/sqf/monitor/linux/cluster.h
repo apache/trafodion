@@ -108,7 +108,6 @@ public:
     void ArmWakeUpSignal (void);
 #endif
     void AssignTmLeader( int pnid );
-    long AssignTmSeqNumber( void );
     void stats();
     void CompleteSyncCycle()
         { syncCycle_.lock(); syncCycle_.wait(); syncCycle_.unlock(); }
@@ -209,10 +208,8 @@ private:
     int     CurProcs;       // Current # if processes alive in MPI_COMM_WORLD
     int     cfgPNodes_;     // # of physical nodes configured
     int    *NodeMap;        // Mapping of Node ranks to COMM_WORLD ranks
-    int     LastTmSeqNum;   // Last used TM cluster seq. number
     int     TmLeaderNid;    // Nid of currently assigned TM Leader node
     int     tmReadyCount_;  // # of DTM processes ready for transactions
-    int    *TmSeqAssigned;  // TM seq. # collision assignment array
     size_t  minRecvCount_;  // minimum size of receive buffer for allgather
 
     // Pointer to array of "sync_buffer_def" structures.  Used by
@@ -344,7 +341,6 @@ private:
     void setNewSock(int nid);
  
 
-    void CoordinateTmSeqNumber( int nid );
     unsigned long long EnsureAndGetSeqNum(cluster_state_def_t nodestate[]);
 
     void SetupCommWorld( void );

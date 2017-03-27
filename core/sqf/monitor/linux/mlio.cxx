@@ -109,7 +109,6 @@ const int SQ_LocalIOToClient::serviceRequestSize[] = {
    sizeof(REQTYPE) + sizeof( Stfsd_def ),           // ReqType_Stfsd
    sizeof(REQTYPE) + sizeof( TmLeader_def ),        // ReqType_TmLeader
    sizeof(REQTYPE) + sizeof( TmReady_def ),         // ReqType_TmReady
-   sizeof(REQTYPE) + sizeof( int ),                 // ReqType_TmSeqNum
    sizeof(REQTYPE) + sizeof( TmSync_def ),          // ReqType_TmSync
    sizeof(REQTYPE) + sizeof( TransInfo_def ),       // ReqType_TransInfo
    sizeof(REQTYPE) + sizeof( MonStats_def ),        // ReqType_MonStats
@@ -130,7 +129,6 @@ const int SQ_LocalIOToClient::serviceReplySize[] = {
    sizeof(REPLYTYPE) + sizeof( ProcessInfo_reply_def ), // ReplyType_ProcessInfo
    sizeof(REPLYTYPE) + sizeof( Open_reply_def ),        // ReplyType_Open
    sizeof(REPLYTYPE) + sizeof( OpenInfo_reply_def ),    // ReplyType_OpenInfo
-   sizeof(REPLYTYPE) + sizeof( int ),                   // ReplyType_TmSeqNum
    sizeof(REPLYTYPE) + sizeof( TmSync_reply_def ),      // ReplyType_TmSync 
    sizeof(REPLYTYPE) + sizeof( TransInfo_reply_def ),   // ReplyType_TransInfo 
    sizeof(REPLYTYPE) + sizeof( Stfsd_reply_def ),       // ReplyType_Stfsd
