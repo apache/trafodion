@@ -1042,6 +1042,10 @@ enum SortState
   {
     UNPROCESSED,    // Hasn't been selected yet
     PENDING,        // Selected for batch currently being processed
+    OVERRAN,        // Selected for batch currently being processed but
+                    // there isn't enough memory (happens only with
+                    // varchar compaction where we underestimated average
+                    // varchar size)
     PROCESSED,      // Already processed
     DONT_TRY,       // Memory allocation failed, don't try this one again
     SKIP,           // SKIP for the time being
@@ -1110,7 +1114,10 @@ struct HSColGroupStruct : public NABasicObject
     HSColGroupStruct *prev;                        /* reverse list for SHOWSTATS */
     HSColGroupStruct *mcis_next;                   /* For MC IS to point to next neighbor*/
     char              readTime[TIMESTAMP_CHAR_LEN+1]; /* read time; carry over to new hist */
-    double            coeffOfVar;                  /* coefficient of variation (skew of this hist) */    
+    double            coeffOfVar;                  /* coefficient of variation (skew of this hist) */
+    double            oldAvgVarCharSize;           /* average varchar size from previous histograms */
+    Int64             rowsRead;                    /* number of rows read for IS so far */ 
+    Int64             sumSize;                     /* sum of varchar size for IS so far */
     double            avgVarCharSize;              /* average varchar size, -1 for other types */    
     char              reason;                      /* automation reason        */
     char              newReason;                   /* automation reason for updated hist */
@@ -1121,15 +1128,21 @@ struct HSColGroupStruct : public NABasicObject
     SortState        state;                        /* Internal sort status    */
     NABoolean        delayedRead;   
     size_t           memNeeded;                    /* memory required, in bytes */
+    size_t           strMemAllocated;              /* memory allocated, in bytes, for char data;
+                                                      if compacted, this is just the area used
+                                                      for compacted data                         */
     void             *data;                        /* Storage for column values */
     void             *nextData;                    /* Ptr to next place to store a value */
     void             *strData;                     /* Storage for char cols; data/nextdata */
     void             *strNextData;                 /*   will be ptrs to this */
     NABoolean        strDataConsecutive;           /* True if strData is as originally read */
+    void             *varcharFetchBuffer;          /* Direct fetch addr for varchar values that will be compacted */
     short            *nullIndics;                  /* Storage for null indicators */
     Int64            nullCount;                    /* Number of null values   */
+    NABoolean        eligibleForVarCharCompaction; /* true if OK to use compaction on internal sort */
     Lng32            ISdatatype;                   /* converted type for sorting */
     Lng32            ISlength;                     /* len of converted type */
+    Lng32            ISvcLenUsed;                  /* varchar only; if compacted, is avg length which is usually < ISlength */
     Lng32            ISprecision;                  /* prec of converted type */
     Lng32            ISscale;                      /* scale of converted type */
     NAString         ISSelectExpn;                 /* select list expn to retrieve col */
@@ -1171,7 +1184,37 @@ struct HSColGroupStruct : public NABasicObject
     NABoolean allocFilter(Lng32 count);
     #endif
     
-    inline NABoolean computeAvgVarCharSize() const
+    // @ZX Should we allow this to be called for non-varchar?
+    NABoolean isCompacted()
+    {
+      if (!DFS2REC::isAnyVarChar(ISdatatype))
+        return FALSE;
+      // TODO: next line causes a compilation error... why?
+      //HS_ASSERT(ISvcLenUsed > 0 && ISvcLenUsed <= ISlength);
+      return ISlength != ISvcLenUsed;
+    }
+
+    void setISlength(Lng32 len, Lng32 maxVarCharLengthInBytes);
+
+    // Size in bytes allocated for per varchar value in strData.
+    size_t varcharContentSize()
+    {
+      return varcharContentSize(ISvcLenUsed);
+    }
+
+    // For a compacted varchar, size in bytes of a single value in fetch buffer
+    // (prior to compaction).
+    size_t inflatedVarcharContentSize()
+    {
+      return varcharContentSize(ISlength);
+    }
+
+    // Calculate size to allocate for strData.
+    size_t strDataMemNeeded(Int64 rows);
+
+    // Calculate tha average actual varchar size for the stats
+    // collected on the current run.
+    NABoolean computeAvgVarCharSize() const
     {
       if ( (colCount == 1)  AND
            (DFS2REC::isAnyVarChar(colSet[0].datatype)) )
@@ -1188,6 +1231,19 @@ struct HSColGroupStruct : public NABasicObject
                                NABoolean recalcMemNeeded = FALSE);
     void freeISMemory(NABoolean freeStrData = TRUE, NABoolean freeMCData=TRUE);
     NAString generateTextForColumnCast();
+
+    // Returned value is the number of bytes needed to represent a single varchar
+    // value of the given length. The len parameter could be the declared length
+    // of a varchar column, or if varchars are being compacted, the estimated
+    // average actual length, or the actual length of a specific compacted varchar.
+    // To this we add the size of the length field, and a byte if necessary for the
+    // proper alignment of the Int16 length field.
+    static inline size_t varcharContentSize(Lng32 len)
+    {
+      return len                          // declared or avg estimated varchar len
+           + (len % 2)                    // possible alignment byte
+           + VARCHAR_LEN_FIELD_IN_BYTES;  // size of len field
+    }
   };
 
 
