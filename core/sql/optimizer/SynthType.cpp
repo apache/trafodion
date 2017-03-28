@@ -1853,6 +1853,7 @@ const NAType *Assign::doSynthesizeType(ValueId & targetId, ValueId & sourceId)
 {
   NABoolean ODBC = (CmpCommon::getDefault(ODBC_PROCESS) == DF_ON);
   NABoolean JDBC = (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON);
+  NABoolean isSourceNullConst = FALSE;
   NABoolean forceSourceParamToBeNullable = 
     (CmpCommon::getDefault(COMP_BOOL_173) == DF_ON);
 
@@ -1866,7 +1867,16 @@ const NAType *Assign::doSynthesizeType(ValueId & targetId, ValueId & sourceId)
 
   NABoolean sourceIsUntypedParam = 
     (sourceId.getType().getTypeQualifier() == NA_UNKNOWN_TYPE);
-
+  if ((sourceId.getItemExpr()->getOperatorType() == ITM_CONSTANT)
+      && (((ConstValue*)sourceId.getItemExpr())->isNull()))
+    isSourceNullConst = TRUE;
+  if (sourceIsUntypedParam && (targetType.getTypeQualifier()  == NA_LOB_TYPE) 
+      && !isSourceNullConst)
+    {     
+      ValueId vid1 = child(1)->castToItemExpr()->getValueId();  
+      SQLVarChar c1(CmpCommon::getDefaultNumeric(MAX_LONG_VARCHAR_DEFAULT_SIZE));
+      vid1.coerceType(c1, NA_CHARACTER_TYPE);
+    }
   // Charset inference.
   const NAType& sourceType = sourceId.getType();
   targetId.coerceType(sourceType);
@@ -6704,7 +6714,7 @@ const NAType *LOBinsert::synthesizeType()
   if (child(0))
     {
       vid1 = child(0)->getValueId();
-      typ1 = &vid1.getType();
+      typ1 = &vid1.getType();     
     }
 
   if ((obj_ == STRING_) ||

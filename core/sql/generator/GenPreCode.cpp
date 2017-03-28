@@ -5534,7 +5534,7 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 		{
 		  li = new(generator->wHeap())
 		    LOBinsert(child1Expr, NULL, LOBoper::LOB_);
-
+                  
 		  li->insertedTableObjectUID() = 
 		    getIndexDesc()->getPrimaryTableDesc()->
 		    getNATable()->objectUid().castToInt64();
