@@ -1190,7 +1190,7 @@ short ExeUtilGetStatistics::codeGen(Generator * generator)
   exe_util_tdb->setOldFormat(oldFormat_);
   exe_util_tdb->setShortFormat(shortFormat_);
   exe_util_tdb->setTokenizedFormat(tokenizedFormat_);
-
+  exe_util_tdb->setSingleLineFormat(singleLineFormat_);
   if(!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(exe_util_tdb, 0, 0, generator));

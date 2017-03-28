@@ -163,6 +163,7 @@ get statistics for qid current ;
 get statistics for qid current accumulated ;
 get statistics for qid current pertable ;
 get statistics for qid current progress ;
+get statistics for qid current progress, options 'sl' ;
 get statistics for qid current default ;
 set session default statistics_view_type 'default' ;
 get statistics for qid current ;
