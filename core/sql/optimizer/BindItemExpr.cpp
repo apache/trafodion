@@ -6185,23 +6185,7 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 	return boundExpr; 
       setChild(1, newChild);
     }
-  /* if ((sourceType == NA_UNKNOWN_TYPE) && (targetType = NA_LOB_TYPE))
-    {
-      ValueId vid1 = child(1)->castToItemExpr()->getValueId();
-    
-      SQLVarChar c1(CmpCommon::getDefaultNumeric(MAX_LONG_VARCHAR_DEFAULT_SIZE));
-      vid1.coerceType(c1, NA_CHARACTER_TYPE);
-
-                                                        
-					       
-      // Add a stringToLob node
-      ItemExpr *newChild =  new (bindWA->wHeap()) LOBinsert( vid1.getItemExpr(), NULL, LOBoper::STRING_, FALSE);
-      newChild->bindNode(bindWA);
-      if (bindWA->errStatus())
-	return boundExpr;
-      setChild(1, newChild);
-
-    }*/
+ 
   if ((NOT child(0)->getValueId().getType().
        isCompatible(child(1)->getValueId().getType())) &&
       (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
