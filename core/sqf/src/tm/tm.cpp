@@ -460,7 +460,7 @@ void tm_process_req_requestregioninfo(CTmTxMessage * pp_msg)
        TM_Txid_legacy lv_transid;
    } u;
 
-   char tname[300], ername[50], rname[100], offline[20], regid[200], hostname[200], port[100];
+   char tname[10000], ername[50], rname[100], offline[20], regid[200], hostname[200], port[100];
    tname[299] = '\0', ername[49] = '\0', rname[99] = '\0', offline[19] = '\0';
    regid[199]= '\0', hostname[199]='\0', port[99]='\0';
 
@@ -473,16 +473,19 @@ void tm_process_req_requestregioninfo(CTmTxMessage * pp_msg)
    {
         TM_TX_Info *lp_current_tx = (TM_TX_Info *)lp_tx_list[lv_inx];
         if (!lp_current_tx)
-            break;
+            continue;
         pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_status = lp_current_tx->tx_state();
         u.lv_transid.iv_seq_num = lp_current_tx->seqnum();
         pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_transid = u.lv_transid_int64;
         pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_nid = lp_current_tx->node();
         pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_seqnum = lp_current_tx->seqnum();
 
-        char* res2 = map->getTableName(lv_inx);
+        char* res2 = map->getRegionInfo(lp_current_tx->legacyTransid());
+        if(strlen(res2) == 0)
+            continue;
         strncpy(tname, res2, sizeof(tname) -1);
         strncpy(pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_tablename, tname, sizeof(tname)-1);
+/*
 
         char* res3 = map->getEncodedRegionName(lv_inx);
         strncpy(ername, res3, sizeof(ername) -1);
@@ -507,6 +510,7 @@ void tm_process_req_requestregioninfo(CTmTxMessage * pp_msg)
         char* res8 = map->getPort(lv_inx);
         strncpy(port, res8, sizeof(port) -1);
         strncpy(pp_msg->response()->u.iv_hbaseregion_info.iv_trans[lv_inx].iv_port, port, sizeof(port)-1);
+*/
 
         pp_msg->response()->u.iv_hbaseregion_info.iv_count++;
    }

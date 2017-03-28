@@ -30,12 +30,16 @@ import java.util.ArrayList;
 
 public class HashMapArray {
 
+    private static String regionKey = "RegionInfo";
+    private static String delimiter = "|";
     private HashMap<String, String> inMap;
     private ArrayList<HashMap<String, String>> outList;
+    private HashMap<Long, String> regionInfoMap;
 
     public HashMapArray(){
        inMap = new HashMap<String, String>();
        outList = new ArrayList<HashMap<String, String>>();
+       regionInfoMap = new HashMap<Long, String>();
     }
 
     //-------------------------------------------------------
@@ -66,6 +70,18 @@ public class HashMapArray {
        outList.add(inMap);
    }
 
+   public void appendRegionInfo(long tnum, String value) {
+       //if(outList.size() <= tnum) {
+       if(regionInfoMap.containsKey(tnum)) {
+          String regionInfo = regionInfoMap.get(tnum);
+          regionInfo = regionInfo + HashMapArray.delimiter + value;
+          regionInfoMap.put(tnum, regionInfo);
+       }
+       else {
+          regionInfoMap.put(tnum, value);
+       }
+   }
+
    //---------------------------------------------------------
    // getElement
    // Purpose: gets element from the HashMap
@@ -82,6 +98,17 @@ public class HashMapArray {
           String value = entry.getValue();
        }
       return inMap.get("Transid").toString();
+    }
+    //
+    //-------------------------------------------------------
+    // getRegInfo
+    // Purpose: gets tableName from the HashMap
+    //-------------------------------------------------------
+    public String getRegionInfo(long tnum){
+
+       if(!regionInfoMap.containsKey(tnum))
+          return new String("");
+       return regionInfoMap.get(tnum);
     }
 
     //-------------------------------------------------------

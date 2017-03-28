@@ -62,6 +62,7 @@ public:
    char* getRegionId(int index);
    char* getHostName(int index);
    char* getPort(int index);
+   char* getRegionInfo(int64 index);
 
 private:
    enum JAVA_METHODS {
@@ -74,6 +75,7 @@ private:
        JM_GET_REGID,
        JM_GET_HOSTNAME,
        JM_GET_PORT,
+       JM_GET_REGINFO,
        JM_LAST
    };
    static JavaMethodInit* JavaMethods_;
