@@ -7,8 +7,12 @@ if [ "$fil" = "" ]; then
 fi
 sed  "
 /SE IOs  SE IO Bytes/{N
-s/[A-Z0-9 ,]*\.[A-Z0-9]*\.TSTAT/#CAT.#SCH.TSTAT pertableStats/
+s/[A-Z0-9 ,-]*\.[A-Z0-9]*\.TSTAT/#CAT.#SCH.TSTAT pertableStats/
 }
+/6       EX_HASH_GRBY/{N
+s/6       EX_HASH_GRBY[ ]*[A-Z0-9 ,-]*\n/hash_grby_stats/
+}
+s/hash_grby_stats[0-9 ,]*/@hash_grby_stats@/
 s/QID[ ]*MXID[A-Z0-9_]*/QID @QID@/
 s/QID[ ]*'MXID[A-Z0-9_]*'/QID '@QID@'/
 s/Qid[ ]*MXID[A-Z0-9_]*/Qid @QID@/
