@@ -80,6 +80,13 @@
          <include> **/*.properties</include>
        </includes>
      </resource>
+     <resource>
+       <directory>src/main/resources</directory>
+       <includes>
+         <include> **/NOTICE</include>
+         <include> **/LICENSE</include>
+       </includes>
+     </resource>
     </resources>
 
    <plugins>
@@ -93,6 +100,8 @@
         <configuration>
           <tasks>
             <copy file="src/main/java/org/trafodion/jdbc/t4/Vproc.java-tmpl" tofile="src/main/java/org/trafodion/jdbc/t4/Vproc.java"/>
+            <copy file="NOTICE" todir="src/main/resources/META-INF"/>
+            <copy file="LICENSE" todir="src/main/resources/META-INF"/>
             <replace token= "@@@@" 
                 value="Traf_JDBC_Type4_Build_${bldId}"
                 file="src/main/java/org/trafodion/jdbc/t4/Vproc.java">

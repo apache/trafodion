@@ -3,3 +3,5 @@
 /LICENSE
 /NOTICE
 src/main/java/org/trafodion/jdbc/t4/Vproc.java
+src/main/resources/META-INF/NOTICE
+src/main/resources/META-INF/LICENSE
