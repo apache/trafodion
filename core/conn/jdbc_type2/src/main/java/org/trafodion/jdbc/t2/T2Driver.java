@@ -25,16 +25,17 @@
  */
 package org.trafodion.jdbc.t2;
 
-import java.util.*;
-import java.sql.*;
-import java.util.HashMap;
-import java.io.PrintWriter;
-import java.io.FileOutputStream;
-import java.util.Date;
-import java.util.logging.Logger;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.logging.Logger;
 
 public class T2Driver extends T2Properties implements java.sql.Driver {
 	// The vproc needs to be exposed public so JdbcT2.java can access it
