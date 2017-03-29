@@ -24,10 +24,12 @@ package org.trafodion.jdbc.t2;
 class DriverInfo {
 
 	static final String driverVproc = "@@@@";
-	static final String driverProductVersion = "###";
 	static final int JdbcMajorVersion = 1;
 	static final int JdbcMinorVersion = 0;
 
 	DriverInfo() {
 	}
+    public static void main(String[] args) {
+        System.out.println(driverVproc);
+    }
 }

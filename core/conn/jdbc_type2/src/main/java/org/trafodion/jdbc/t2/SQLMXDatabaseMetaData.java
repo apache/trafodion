@@ -27,7 +27,11 @@
 
 package org.trafodion.jdbc.t2;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.RowIdLifetime;
+import java.sql.SQLException;
+import java.sql.Types;
 
 /**
  * Comprehensive information about the database as a whole.
