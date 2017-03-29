@@ -11295,7 +11295,12 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
         }
 
         if ( getOperatorType() == ITM_RIGHT )
-	  strcpy(buf, "SUBSTRING(@A1 FROM (CHAR_LENGTH(@A1) - CAST(@A2 AS INT UNSIGNED) + 1));");
+	  // The case expression is needed for cases where the length supplied
+          // exceeds the length of the string; in this case we want to return 
+          // the whole string. SUBSTR of a 0 or negative value doesn't do that.
+          strcpy(buf, "SUBSTRING(@A1 FROM "
+                      "CASE WHEN(CHAR_LENGTH(@A1) - CAST(@A2 AS INT UNSIGNED) + 1) > 1 "
+                      "THEN (CHAR_LENGTH(@A1) - CAST(@A2 AS INT UNSIGNED) + 1) ELSE 1 END);");
         else
 	  strcpy(buf, "SUBSTRING(@A1 FROM 1 FOR @A2);"); // LEFT()
 

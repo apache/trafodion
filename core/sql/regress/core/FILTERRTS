@@ -43,6 +43,7 @@ s/SQL Space Allocated[ ]*[0-9,]*[ ]*/SQL Space Allocated @SQLSpaceAllocated@/
 s/SQL Space Used[ ]*[0-9,]*[ ]*/SQL Space Used @SQLSpaceUsed@/
 s/SQL Heap Allocated[ ]*[0-9,]*[ ]*/SQL Heap Allocated @SQLHeapAllocated@/
 s/SQL Heap Used[ ]*[0-9,]*[ ]*/SQL Heap Used @SQLHeapUsed@/
+s/SQL Heap WM[ ]*[0-9,]*[ ]*/SQL Heap WM @SQLHeapWM@/
 s/Process Create Time[ ]*[0-9,]*/Process Create Time @ProcessCreateTime@/
 s/Processes Created[ ]*[0-9,]*/Processes Created @ProcessesCreated@/
 s/Opens[ ]*[0-9,]*/Opens @Opens@/
