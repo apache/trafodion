@@ -1270,7 +1270,7 @@ public class HBaseTxClient {
           while(it.hasNext()) {
               TransactionRegionLocation trl = it.next();
               tablename = trl.getRegionInfo().getTable().getNameAsString();
-              if(tablename.contains("_MD_"))
+              if(tablename.contains("TRAFODION._MD_."))
                  continue;
               encoded_region_name = trl.getRegionInfo().getEncodedName();
               region_name = trl.getRegionInfo().getRegionNameAsString();

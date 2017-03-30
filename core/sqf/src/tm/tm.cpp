@@ -460,7 +460,7 @@ void tm_process_req_requestregioninfo(CTmTxMessage * pp_msg)
        TM_Txid_legacy lv_transid;
    } u;
 
-   char tname[10000], ername[50], rname[100], offline[20], regid[200], hostname[200], port[100];
+   char tname[2000], ername[50], rname[100], offline[20], regid[200], hostname[200], port[100];
    tname[299] = '\0', ername[49] = '\0', rname[99] = '\0', offline[19] = '\0';
    regid[199]= '\0', hostname[199]='\0', port[99]='\0';
 
@@ -519,6 +519,7 @@ void tm_process_req_requestregioninfo(CTmTxMessage * pp_msg)
       delete []lp_tx_list;
    pp_msg->reply(FEOK);
    delete pp_msg;
+   delete map;
 
    TMTrace(2, ("tm_process_req_requestregioninfo EXIT\n"));
 }

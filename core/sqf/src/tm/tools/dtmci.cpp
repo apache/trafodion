@@ -1191,9 +1191,12 @@ void process_request_regions_info()
                 pname = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
                 regioninfo_tmp = regioninfo_tmp.substr(regioninfo_tmp.find(";") + 1);
 
+                if(regioninfo_tmp.find(";") == string::npos)
+                    continue;
+
                 startkey = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
                 regioninfo_tmp = regioninfo_tmp.substr(regioninfo_tmp.find(";") + 1);
-
+                
                 endkey = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
 
                 if(!first_entry) 
