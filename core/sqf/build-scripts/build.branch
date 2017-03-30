@@ -52,8 +52,8 @@ if [[ "$USE_GIT" == "1" ]];then
     branch=$ZUUL_BRANCH;
   fi
 else
-  rev=$PV_BUILDID
-  branch="git_unavailable"
+  rev=`date +"%Y%m%d"`
+  branch="no_branch"
 fi
 if [ $f = 1 ]; then
   branch=`echo $branch | sed 's|\/|_sl_|g' | sed 's|-|_dh_|g'`
