@@ -329,15 +329,11 @@ private:
 
   LmResult startService(ComDiagsArea *da);
 
-  void setJavaClassPath();
-
   ComSInt32 threadId();
 
   void processJavaOptions(const LmJavaOptions &userOptions,
                           LmJavaOptions &jvmOptions);
 
-  static char *sysClassPath_;       // JVM's class path.
-  static char *classPath_;          // class path used by ClassLoader.
   LmContainerManager *contManager_; // LMJ's CM.
   LmHandle jniEnv_;                 // JNI handle. 
   static ComUInt32 maxLMJava_;      // Max LMJs per process.
@@ -378,14 +374,10 @@ private:
 
   LmHandle loaderClass_;         // LmClassLoader
   LmHandle loadClassId_;         // loadClass
-  LmHandle loaderSizeId_;        // size
-  LmHandle addCpURLsId_;	 // addCpURLs
-  LmHandle removeCpURLsId_;	 // removeCpURLs
 
   LmHandle utilityClass_;        // LmUtility
   LmHandle verifyMethodId_;      // verifyMethodSignature
   LmHandle createCLId_;          // createClassLoader
-  LmHandle setCPId_;		 // setClassPath
   LmHandle utilityInitId_;       // init method
   LmHandle classCacheSizeId_;    // static int classCacheSizeKB_
   LmHandle classCacheEnforceId_; // static int classCacheEnforceLimit_

@@ -26,7 +26,8 @@ under the License.
  * Invocation (all arguments are strings):
  *
  * select ... from udf(JDBC(
- *    <name of JDBC driver jar>,
+ *    <name of JDBC driver jar>, // Not really needed if the jar is stored in
+ *                               // $TRAF_HOME/udr/public/external_libs
  *    <name of JDBC driver class in the jar>,
  *    <connection string>,
  *    <user name>,
@@ -58,13 +59,10 @@ package org.trafodion.sql.udr.predef;
 
 import org.trafodion.sql.udr.*;
 import java.sql.*;
-import java.util.Vector;
-import java.lang.Math;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.io.PrintStream;
+import java.util.Vector;
+import java.lang.Math;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -98,16 +96,14 @@ class JDBCUDR extends UDR
         {
           try {
             Path driverJarPath = Paths.get(driverJar_);
-            Path sandBoxPath = Paths.get(System.getenv("TRAF_HOME"), "udr", "external_libs");
-            URLClassLoader jdbcJarLoader = null;
-            URL jarClassPath[] = new URL[1];
 
             // for security reasons, we sandbox the allowed driver jars
             // into $TRAF_HOME/export/lib/udr/external_libs
             driverJarPath = driverJarPath.normalize();
             if (driverJarPath.isAbsolute())
               {
-                if (! driverJarPath.startsWith(sandBoxPath))
+                if (! driverJarPath.startsWith(
+                                  LmUtility.getSandboxRootForUser(null)))
                   throw new UDRException(
                     38010,
                     "The jar name of the JDBC driver must be a name relative to %s, got %s",
@@ -115,26 +111,46 @@ class JDBCUDR extends UDR
                     driverJar_);
               }
             else
-              driverJarPath = sandBoxPath.resolve(driverJarPath);
+              driverJarPath = LmUtility.getExternalLibsDirForUser(null).resolve(
+                    driverJarPath);
 
-            // Create a class loader that can access the
-            // jar file specified by the caller.
-            jarClassPath[0] = driverJarPath.toUri().toURL();
-            jdbcJarLoader = new URLClassLoader(
-                jarClassPath,
-                this.getClass().getClassLoader());
+            // Create a class loader that can access the jar file
+            // specified by the caller. Note that this is only needed
+            // because the JDBC UDR is a predefined UDR and is loaded
+            // by the standard class loader. If it were a regular UDR,
+            // it would have been loaded by LmClassLoader and we would
+            // not need to create an LmClassLoader here.
+            LmClassLoader jdbcJarLoader = LmUtility.createClassLoader(
+                                               driverJarPath.toString(),0);
+
+            Driver d = (Driver) Class.forName(driverClassName_,
+                                              true,
+                                              jdbcJarLoader).newInstance();
 
             // go through an intermediary driver, since the DriverManager
             // will not accept classes that are not loaded by the default
             // class loader
-            Driver d = (Driver) Class.forName(driverClassName_, true, jdbcJarLoader).newInstance();
             DriverManager.registerDriver(new URLDriver(d));
             conn_ = DriverManager.getConnection(connectionString_,
                                                 username_,
                                                 password_);
             return conn_;
           }
-          catch(Exception e) {
+          catch (ClassNotFoundException cnf) {
+              throw new UDRException(
+                38020,
+                "JDBC driver class %s not found. Please make sure the JDBC driver jar is stored in %s. Message: %s",
+                driverClassName_,
+                System.getenv("TRAF_HOME") + "/udr/public/external_libs",
+                cnf.getMessage());
+          }
+          catch (SQLException se) {
+              throw new UDRException(
+                38020,
+                "SQL exception during connect. Message: %s",
+                se.getMessage());
+          }
+          catch (Exception e) {
               if (debug_)
                   {
                       System.out.println("Debug: Exception during connect:");
