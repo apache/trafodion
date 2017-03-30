@@ -227,4 +227,21 @@
 
 --- SQL operation complete.
 >>---------------------------------------------------------------------
+>>  CQD allow_nullable_unique_key_constraint 'on' ;
+
+--- SQL operation complete.
+>>  DROP TABLE IF EXISTS t1s ;
+
+--- SQL operation complete.
+>>  CREATE TABLE t1s (
++>         c1 char(12) character set utf8  ,
++>         c2 char(8) character set utf8
++>        )
++>        STORE BY (c1)
++>        SALT USING 4 PARTITIONS ON (c1)
++>     ;
+
+--- SQL operation complete.
+>>---------------------------------------------------------------------
+>>
 >>LOG;

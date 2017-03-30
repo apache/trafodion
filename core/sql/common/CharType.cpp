@@ -1180,7 +1180,9 @@ void CharType::minMaxRepresentableValue(void* bufPtr,
 {
   Int32 i;
   Int32 vcLenHdrSize = getVarLenHdrSize();
-  char *valPtr       = reinterpret_cast<char *>(bufPtr) + vcLenHdrSize;
+  //valPtr point to the starting position of the data buffer
+  //header may include vcHeader and Null indicator byte
+  char *valPtr       = reinterpret_cast<char *>(bufPtr) + vcLenHdrSize + getSQLnullHdrSize();
   Int32 valBufLen    = getNominalSize();
   Int32 valLen       = valBufLen; // output length of min/max value
   char minmax_char;
