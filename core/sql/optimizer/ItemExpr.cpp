@@ -1019,7 +1019,22 @@ NABoolean ItemExpr::referencesAHostVar() const
 // should use stats to compute selectivity or use default selectivity
 // Return TRUE if the expression is a VEG reference, base column,
 // index column, column with CAST / UPPER / LOWER / UCASE / 
-// LCASE / UPSHIFT / TRIM
+// LCASE / UPSHIFT / TRIM / SUBSTR (sometimes)
+//
+// Note that in the case of functions such as CAST and UPPER,
+// the stats returned are those of the argument. For a right TRIM
+// where we are trimming blanks, this is correct but for the 
+// others the resulting stats will be incorrect in some way.
+// For example, UPPER maps characters to upper case, so the UECs
+// of the result should often be lower than the original, and
+// certain intervals (namely those encompassing values that begin
+// with a lower case letter) should be empty. For another
+// example, CAST often is a 1-to-1 transformation so the UECs
+// are right, but the order might change (e.g. when casting 
+// numerics to characters; 99 < 100, but '99' > '100'). Even
+// so, the statistics of the argument are still a better reflection
+// of the result of the function than the default distribution,
+// particularly from the standpoint of skew. So, we use them.
 NABoolean ItemExpr::useStatsForPred()
 {
   OperatorTypeEnum myType = getOperatorType();
@@ -1038,6 +1053,21 @@ NABoolean ItemExpr::useStatsForPred()
 	  myType == ITM_CONVERT)
 
 	return TRUE;
+  else if (myType == ITM_SUBSTR)
+    {
+      // if the substring is known to be a prefix of the string,
+      // then use the stats
+      ItemExpr * startPosition = child(1);
+      if (startPosition->getOperatorType() == ITM_CONSTANT)
+        {
+          NABoolean negate = FALSE;
+          ConstValue * c = startPosition->castToConstValue(negate);
+          if (c->canGetExactNumericValue() &&
+               (c->getExactNumericValue() == 1))
+            return TRUE;
+        }
+      return FALSE;  
+    }
   else
 	return FALSE;
 }

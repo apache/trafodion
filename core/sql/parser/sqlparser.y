@@ -15304,14 +15304,14 @@ exe_util_get_statistics : TOK_GET TOK_STATISTICS stats_merge_clause get_statisti
 
 		 $$ = stats;
 	       }
-              | TOK_GET TOK_STATISTICS TOK_FOR TOK_QID qid_identifier stats_merge_clause
+              | TOK_GET TOK_STATISTICS TOK_FOR TOK_QID qid_identifier stats_merge_clause get_statistics_optional_options
                 {
                   ExeUtilGetStatistics *stats = NULL;
                   if (*$5 == "CURRENT")
                   {
                      stats =
                       new (PARSERHEAP ()) ExeUtilGetStatistics
-                    (*$5, NULL,
+                    (*$5, ($7 ? (char*)$7->data() : NULL),
                       PARSERHEAP (), SQLCLI_STATS_REQ_QID_CURRENT, (short)$6, -1); /*RtsQueryId::ANY_QUERY_*/
                   }
                   else

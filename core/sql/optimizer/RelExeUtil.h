@@ -1553,6 +1553,7 @@ protected:
   // ds: Detailed Stats
   // of: old format (mxci display statistics output)
   // tf: tokenized format, each stats value preceded by a predefined token.
+  // sl: A single line report of BMO and PERTABLE stats
   NAString optionsStr_;
 
   NABoolean compilerStats_;
@@ -1569,6 +1570,7 @@ protected:
   short statsReqType_;
   short statsMergeType_;
   short activeQueryNum_;
+  NABoolean singleLineFormat_;
 };
 
 class ExeUtilGetProcessStatistics : public ExeUtilGetStatistics

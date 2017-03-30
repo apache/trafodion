@@ -1549,6 +1549,7 @@ class ExExeUtilGetStatisticsTcb : public ExExeUtilTcb
 {
   friend class ExExeUtilGetStatisticsTdb;
   friend class ExExeUtilPrivateState;
+  friend class ExExeUtilGetRTSStatisticsTcb;
 
 public:
   // Constructor
@@ -1567,7 +1568,6 @@ public:
   {
     return (ExExeUtilGetStatisticsTdb &) tdb;
   };
-
  protected:
   void moveCompilationStatsToUpQueue(CompilationStatsData *cmpStats);
 
@@ -2219,6 +2219,7 @@ public:
   void initSqlStatsItems(SQLSTATS_ITEM *sqlStatsItem,
                                   ULng32  noOfStatsItem,
                                   NABoolean initTdbIdOnly);
+  NABoolean singleLineFormat() { return singleLineFormat_; } 
 
 private:
   enum Step
@@ -2320,6 +2321,7 @@ private:
   void formatWInt64(SQLSTATS_ITEM stat, char* targetString);
   char *formatTimestamp(char *buf, Int64 inTime);
   char *formatElapsedTime(char *buf, Int64 inTime);
+  NABoolean singleLineFormat_;
 };
 
 class ExExeUtilGetRTSStatisticsPrivateState : public ex_tcb_private_state
