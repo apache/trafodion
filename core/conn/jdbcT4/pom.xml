@@ -33,7 +33,7 @@
     <version>1.3.0</version>
 	<relativePath>../../../</relativePath>
   </parent>-->
-  <groupId>org.trafodion.jdbc.t4</groupId>
+  <groupId>org.apache.trafodion.jdbc.t4</groupId>
   <artifactId>jdbcT4</artifactId>
   <version>${env.TRAFODION_VER}</version> 
   <name>Trafodion JDBC Type4 Driver</name>
