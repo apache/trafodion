@@ -3368,6 +3368,7 @@ CProcessContainer::CProcessContainer( bool nodeContainer )
    
     //create & initialize existing semaphore
     char sem_name[MAX_PROCESS_PATH];
+    memset(sem_name, 0 , MAX_PROCESS_PATH);  //clear the buffer
     snprintf(sem_name,sizeof(sem_name), "/monitor.sem.%s", getenv("USER"));
     Mutex = sem_open(sem_name,O_CREAT,0644,0);
     if(Mutex == SEM_FAILED)
