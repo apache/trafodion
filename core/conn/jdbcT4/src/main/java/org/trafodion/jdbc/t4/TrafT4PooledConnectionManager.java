@@ -147,6 +147,9 @@ public class TrafT4PooledConnectionManager implements javax.sql.ConnectionEventL
 							pc.close();
 						} catch (Exception e) {
 						} // cleanup, ignore any errors
+						if (removeInUseConnection(pc, false)) {
+							--count_;
+						}
 					}
 				}
 			}
