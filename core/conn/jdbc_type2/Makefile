@@ -57,15 +57,15 @@ T2_OBJS  = $(OUTDIR)/CommonDiags.o \
        $(OUTDIR)/ResStatisticsStatement.o \
        $(OUTDIR)/Vproc.o \
        $(OUTDIR)/type2version.o
-CSES := org.trafodion.jdbc.t2.JdbcDebug \
-		org.trafodion.jdbc.t2.DataWrapper \
-		org.trafodion.jdbc.t2.SQLMXCallableStatement \
-		org.trafodion.jdbc.t2.SQLMXConnection \
-		org.trafodion.jdbc.t2.SQLMXDatabaseMetaData \
-		org.trafodion.jdbc.t2.T2Driver \
-		org.trafodion.jdbc.t2.SQLMXPreparedStatement \
-		org.trafodion.jdbc.t2.SQLMXResultSet \
-		org.trafodion.jdbc.t2.SQLMXStatement
+CSES := org.apache.trafodion.jdbc.t2.JdbcDebug \
+		org.apache.trafodion.jdbc.t2.DataWrapper \
+		org.apache.trafodion.jdbc.t2.SQLMXCallableStatement \
+		org.apache.trafodion.jdbc.t2.SQLMXConnection \
+		org.apache.trafodion.jdbc.t2.SQLMXDatabaseMetaData \
+		org.apache.trafodion.jdbc.t2.T2Driver \
+		org.apache.trafodion.jdbc.t2.SQLMXPreparedStatement \
+		org.apache.trafodion.jdbc.t2.SQLMXResultSet \
+		org.apache.trafodion.jdbc.t2.SQLMXStatement
 OBJS = $(COMMON_OBJS) $(T2_OBJS)
 MXODIR = $(TRAF_HOME)/../conn/odbc/src/odbc
 
@@ -104,6 +104,7 @@ clean:
 	$(RM) -f $(EXPROOT)/lib/jdbcT2*.jar
 	$(RM) -rf $(OUTDIR)
 	$(RM) -rf $(BUILD_PLAT)
+	echo '$(CSES)'|sed -e 's/\./_/g' -e 's/[[:space:]]/\n/g' |xargs -i rm -f 'native/{}.h'
 
 cleanall: clean
 	$(RM) -rf $(BUILD_PLAT)

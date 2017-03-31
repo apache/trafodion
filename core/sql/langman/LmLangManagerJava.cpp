@@ -1457,8 +1457,8 @@ LmResult LmLanguageManagerJava::initJavaClasses()
   TIMER_OFF(set2ClsTimer, "Load Set 2 of classes");
     enableType2Conn_ = TRUE;
     mapDefaultConnToType2Conn_ = TRUE;
-    jdbcMxT2Driver_ = loadSysClass("org/trafodion/jdbc/t2/T2Driver",
-	                         "org.trafodion.jdbc.t2.T2Driver", diagsArea_);
+    jdbcMxT2Driver_ = loadSysClass("org/apache/trafodion/jdbc/t2/T2Driver",
+	                         "org.apache.trafodion.jdbc.t2.T2Driver", diagsArea_);
     if (jdbcMxT2Driver_ == NULL)
       return LM_ERR;
 

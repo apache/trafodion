@@ -66,8 +66,8 @@
         <phase>generate-sources</phase>
         <configuration>
         <tasks>
-        <copy file="${basedir}/src/main/java/org/trafodion/jdbc/t2/DriverInfo.java-tmpl" tofile="${basedir}/src/main/java/org/trafodion/jdbc/t2/DriverInfo.java" overwrite="true"/>
-        <replace token= "@@@@"  value="Traf_JDBC_Type2_Build_${bldId}"  file="${basedir}/src/main/java/org/trafodion/jdbc/t2/DriverInfo.java">
+        <copy file="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java-tmpl" tofile="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java" overwrite="true"/>
+        <replace token= "@@@@"  value="Traf_JDBC_Type2_Build_${bldId}"  file="${basedir}/src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java">
         </replace>
         <copy file="${basedir}/LICENSE" todir="${basedir}/src/main/resources/META-INF" overwrite="true"/>
         <copy file="${basedir}/NOTICE" todir="${basedir}/src/main/resources/META-INF" overwrite="true"/>
@@ -87,7 +87,7 @@
             <archive>
             <addMavenDescriptor>false</addMavenDescriptor>
             <manifest>
-                <mainClass>org.trafodion.jdbc.t2.DriverInfo</mainClass>
+                <mainClass>org.apache.trafodion.jdbc.t2.DriverInfo</mainClass>
                 <classpathPrefix>dependency-jars/</classpathPrefix>
             </manifest>
             <manifestEntries>

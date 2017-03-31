@@ -429,7 +429,7 @@ public final class Constants {
             + "." + TRAFODION_REPOS_SCHEMA + "." + "METRIC_QUERY_AGGR_TABLE";
 
     /** T2 Driver name */
-    public static final String T2_DRIVER_CLASS_NAME = "org.trafodion.jdbc.t2.T2Driver";
+    public static final String T2_DRIVER_CLASS_NAME = "org.apache.trafodion.jdbc.t2.T2Driver";
     /** T2 Driver URL */
     public static final String T2_DRIVER_URL = "jdbc:t2jdbc:";
     /** T2 Driver trace file */

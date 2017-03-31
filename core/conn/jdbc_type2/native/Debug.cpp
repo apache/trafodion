@@ -37,7 +37,7 @@
 //     memory is allocated during initialization.
 
 #include "Debug.h"
-#include "org_trafodion_jdbc_t2_DataWrapper.h"
+#include "org_apache_trafodion_jdbc_t2_DataWrapper.h"
 
 #ifdef _DEBUG
 
@@ -1942,7 +1942,7 @@ SQLCLI_LIB_FUNC long CliDebug_SetStmtAttr(SQLSTMT_ID *statement_id, long attrNam
 										  long numeric_value, char *string_value,
 										  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SetStmtAttr",("statement_id=0x%08x,attrName=%s,numeric_value=%ld,string_value=%s",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SetStmtAttr",("statement_id=0x%08x,attrName=%s,numeric_value=%ld,string_value=%s",
 			statement_id,
 			DebugSqlAttrTypeStr(attrName),
 			numeric_value,
@@ -1957,7 +1957,7 @@ SQLCLI_LIB_FUNC long CliDebug_SetDescItem(SQLDESC_ID *sql_descriptor, long entry
 										  long what_to_set, long numeric_value, char * string_value,
 										  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SetDescItem",("sql_descriptor=0x%08x, entry=%d, what_to_set=%s, numeric_value=%ld, string_value=%s",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SetDescItem",("sql_descriptor=0x%08x, entry=%d, what_to_set=%s, numeric_value=%ld, string_value=%s",
 		   sql_descriptor,
 		   entry,
 		   CliDebugDescItemStr(what_to_set),
@@ -1974,7 +1974,7 @@ SQLCLI_LIB_FUNC long CliDebug_SETROWSETDESCPOINTERS(SQLDESC_ID * desc_id, long r
 													struct SQLCLI_QUAD_FIELDS quad_fields[],
 													const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SETROWSETDESCPOINTERS",("desc_id=0x%08x, rowset_size=%ld, rowset_status_ptr=0x%08x, starting_entry=%ld, num_quadruple_fields=%ld, quad_fields=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SETROWSETDESCPOINTERS",("desc_id=0x%08x, rowset_size=%ld, rowset_status_ptr=0x%08x, starting_entry=%ld, num_quadruple_fields=%ld, quad_fields=0x%08x",
 			desc_id,
 			rowset_size,
 			rowset_status_ptr,
@@ -1991,7 +1991,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDescItems2(SQLDESC_ID * sql_descriptor,
 											long no_of_desc_items, SQLDESC_ITEM desc_items[],
 											const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDescItems2",("sql_descriptor=0x%08x, no_of_desc_items=%d, desc_items=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDescItems2",("sql_descriptor=0x%08x, no_of_desc_items=%d, desc_items=0x%08x",
 			sql_descriptor,
 			no_of_desc_items,
 			desc_items),
@@ -2004,7 +2004,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDescItems2(SQLDESC_ID * sql_descriptor,
 SQLCLI_LIB_FUNC long CliDebug_SetCursorName(SQLSTMT_ID * statement_id, SQLSTMT_ID * cursor_name,
 											const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SetCursorName",("statement_id=0x%08x, cursor_name=0x%08x)",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SetCursorName",("statement_id=0x%08x, cursor_name=0x%08x)",
 			statement_id,
 			cursor_name),
 		filename, line);
@@ -2017,7 +2017,7 @@ SQLCLI_LIB_FUNC long CliDebug_ExecFetch(SQLSTMT_ID * statement_id,
 										SQLDESC_ID * input_descriptor, long num_ptr_pairs,
 										const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ExecFetch",("statement_id=0x%08x, input_descriptor=0x%08x, num_ptr_pairs=%d",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ExecFetch",("statement_id=0x%08x, input_descriptor=0x%08x, num_ptr_pairs=%d",
 			statement_id,
 			input_descriptor,
 			num_ptr_pairs),
@@ -2030,7 +2030,7 @@ SQLCLI_LIB_FUNC long CliDebug_ExecFetch(SQLSTMT_ID * statement_id,
 SQLCLI_LIB_FUNC long CliDebug_CloseStmt(SQLSTMT_ID *statement_id,
 										const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CloseStmt",("statement_id=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CloseStmt",("statement_id=0x%08x",
 			statement_id),
 		filename, line);
 
@@ -2043,7 +2043,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsCondInfo2(long what_to_get, long con
 													  long max_string_len, int *len_of_item,
 													  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDiagnosticsCondInfo2",("what_to_get=%s, conditionNum=%ld, numeric_value=0x%08x, string_value=0x%08x, max_string_len=%ld, len_of_item=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDiagnosticsCondInfo2",("what_to_get=%s, conditionNum=%ld, numeric_value=0x%08x, string_value=0x%08x, max_string_len=%ld, len_of_item=0x%08x",
 			DebugSqlDiagCondStr(what_to_get),
 			conditionNum,
 			numeric_value,
@@ -2056,9 +2056,9 @@ SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsCondInfo2(long what_to_get, long con
 	if (max_string_len) *string_value = 0;
 	long rc = SQL_EXEC_GetDiagnosticsCondInfo2(what_to_get, conditionNum, numeric_value, string_value, max_string_len, len_of_item);
 	if (numeric_value)
-		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("numeric_value=%ld",*numeric_value),filename,line);
+		DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("numeric_value=%ld",*numeric_value),filename,line);
 	if (max_string_len)
-		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("string_value=%s",string_value),filename,line);
+		DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("string_value=%s",string_value),filename,line);
 
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
@@ -2066,7 +2066,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsCondInfo2(long what_to_get, long con
 SQLCLI_LIB_FUNC long CliDebug_SwitchContext(SQLCTX_HANDLE context_handle, SQLCTX_HANDLE * prev_context_handle,
 										    const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SwitchContext",("context_handle=%ld, prev_context_handle=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_SwitchContext",("context_handle=%ld, prev_context_handle=0x%08x",
 			context_handle,
 			prev_context_handle),
 		filename, line);
@@ -2074,7 +2074,7 @@ SQLCLI_LIB_FUNC long CliDebug_SwitchContext(SQLCTX_HANDLE context_handle, SQLCTX
 
 	long rc = SQL_EXEC_SwitchContext(context_handle, &prev_handle);
 	if (prev_context_handle) *prev_context_handle = prev_handle;
-	DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("prev_handle=%ld",prev_handle),
+	DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("prev_handle=%ld",prev_handle),
 		filename,line);
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
@@ -2082,7 +2082,7 @@ SQLCLI_LIB_FUNC long CliDebug_SwitchContext(SQLCTX_HANDLE context_handle, SQLCTX
 SQLCLI_LIB_FUNC long CliDebug_DeleteContext(SQLCTX_HANDLE contextHandle,
 										    const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DeleteContext",("contextHandle=%ld",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DeleteContext",("contextHandle=%ld",
 			contextHandle),
 		filename, line);
 
@@ -2094,14 +2094,14 @@ SQLCLI_LIB_FUNC long CliDebug_CreateContext(SQLCTX_HANDLE *context_handle,
 											char* sqlAuthId, long suppressAutoXactStart,
 										    const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CreateContext",("context_handle=0x%08x, sqlAuthId=0x%08x, suppressAutoXactStart=%ld",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CreateContext",("context_handle=0x%08x, sqlAuthId=0x%08x, suppressAutoXactStart=%ld",
 			context_handle,
 			sqlAuthId,
 			suppressAutoXactStart),
 		filename, line);
 
 	long rc = SQL_EXEC_CreateContext(context_handle, sqlAuthId, suppressAutoXactStart);
-	DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("context_handle=%ld",*context_handle),
+	DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("context_handle=%ld",*context_handle),
 		filename,line);
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
@@ -2109,7 +2109,7 @@ SQLCLI_LIB_FUNC long CliDebug_CreateContext(SQLCTX_HANDLE *context_handle,
 SQLCLI_LIB_FUNC long CliDebug_CurrentContext(SQLCTX_HANDLE *contextHandle,
 						const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CurrentContext",("contextHandle=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CurrentContext",("contextHandle=0x%08x",
 			contextHandle),
 		filename, line);
 
@@ -2120,7 +2120,7 @@ SQLCLI_LIB_FUNC long CliDebug_CurrentContext(SQLCTX_HANDLE *contextHandle,
 SQLCLI_LIB_FUNC long CliDebug_ClearDiagnostics (SQLSTMT_ID *statement_id,
 											    const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ClearDiagnostics",("statement_id=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ClearDiagnostics",("statement_id=0x%08x",
 			statement_id),
 		filename, line);
 
@@ -2132,7 +2132,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, 
 													  long max_string_len, int *len_of_item,
 													  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDiagnosticsStmtInfo2",("statement_id=0x%08x, what_to_get=%s, numeric_value=0x%08x, string_value=0x%08x, max_string_len=%ld, len_of_item=%ld",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDiagnosticsStmtInfo2",("statement_id=0x%08x, what_to_get=%s, numeric_value=0x%08x, string_value=0x%08x, max_string_len=%ld, len_of_item=%ld",
 			statement_id,
 			DebugSqlDiagCondStr(what_to_get),
 			numeric_value,
@@ -2143,16 +2143,16 @@ SQLCLI_LIB_FUNC long CliDebug_GetDiagnosticsStmtInfo2(SQLSTMT_ID *statement_id, 
 
 	long rc = SQL_EXEC_GetDiagnosticsStmtInfo2(statement_id, what_to_get, numeric_value, string_value, max_string_len, len_of_item);
 	if (numeric_value)
-		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("numeric_value=%ld",(Int64 *)numeric_value),filename,line);
+		DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("numeric_value=%ld",(Int64 *)numeric_value),filename,line);
 	if (max_string_len)
-		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("string_value=%s",string_value),filename,line);
+		DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("string_value=%s",string_value),filename,line);
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
 SQLCLI_LIB_FUNC long CliDebug_DeallocDesc(SQLDESC_ID *desc_id,
 										  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DeallocDesc",("desc_id=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DeallocDesc",("desc_id=0x%08x",
 			desc_id),
 		filename, line);
 
@@ -2163,7 +2163,7 @@ SQLCLI_LIB_FUNC long CliDebug_DeallocDesc(SQLDESC_ID *desc_id,
 SQLCLI_LIB_FUNC long CliDebug_DeallocStmt(SQLSTMT_ID *statement_id,
 										  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DeallocStmt",("statement_id=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DeallocStmt",("statement_id=0x%08x",
 			statement_id),
 		filename, line);
 
@@ -2174,7 +2174,7 @@ SQLCLI_LIB_FUNC long CliDebug_ExecDirect(SQLSTMT_ID *statement_id, SQLDESC_ID *s
 										 SQLDESC_ID *input_descriptor, long num_ptr_pairs,
 										 const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ExecDirect",("statement_id=0x%08x, sql_source=0x%08x, input_descriptor=0x%08x, num_ptr_pairs=%ld",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ExecDirect",("statement_id=0x%08x, sql_source=0x%08x, input_descriptor=0x%08x, num_ptr_pairs=%ld",
 			statement_id,
 			sql_source,
 			input_descriptor,
@@ -2188,7 +2188,7 @@ SQLCLI_LIB_FUNC long CliDebug_ExecDirect(SQLSTMT_ID *statement_id, SQLDESC_ID *s
 SQLCLI_LIB_FUNC long CliDebug_Exec(SQLSTMT_ID *statement_id, SQLDESC_ID *input_descriptor,long num_ptr_pairs,
 								   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Exec",("statement_id=0x%08x, input_descriptor=0x%08x, num_ptr_pairs=%ld",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Exec",("statement_id=0x%08x, input_descriptor=0x%08x, num_ptr_pairs=%ld",
 			statement_id,
 			input_descriptor,
 			num_ptr_pairs),
@@ -2202,7 +2202,7 @@ SQLCLI_LIB_FUNC long CliDebug_Exec(SQLSTMT_ID *statement_id, SQLDESC_ID *input_d
 SQLCLI_LIB_FUNC long CliDebug_Prepare(SQLSTMT_ID *statement_id, SQLDESC_ID *sql_source,
 									  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Prepare",("statement_id=0x%08x,sql_source=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Prepare",("statement_id=0x%08x,sql_source=0x%08x",
 			statement_id,
 			sql_source),
 		filename, line);
@@ -2215,7 +2215,7 @@ SQLCLI_LIB_FUNC long CliDebug_DescribeStmt(SQLSTMT_ID *statement_id,
 										   SQLDESC_ID *input_descriptor, SQLDESC_ID *output_descriptor,
 										   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DescribeStmt",("statement_id=0x%08x,input_descriptor=0x%08x,output_descriptor=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_DescribeStmt",("statement_id=0x%08x,input_descriptor=0x%08x,output_descriptor=0x%08x",
 			statement_id,
 			input_descriptor,
 			output_descriptor),
@@ -2228,21 +2228,21 @@ SQLCLI_LIB_FUNC long CliDebug_DescribeStmt(SQLSTMT_ID *statement_id,
 SQLCLI_LIB_FUNC long CliDebug_GetDescEntryCount(SQLDESC_ID *sql_descriptor, int *num_entries,
 												const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDescEntryCount",("sql_descriptor=0x%08x, num_entries=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDescEntryCount",("sql_descriptor=0x%08x, num_entries=0x%08x",
 			sql_descriptor,
 			num_entries),
 		filename, line);
 
 	long rc = SQL_EXEC_GetDescEntryCount(sql_descriptor, num_entries);
 	if (num_entries)
-		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("num_entries=%ld",*num_entries),filename,line);
+		DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("num_entries=%ld",*num_entries),filename,line);
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
 SQLCLI_LIB_FUNC long CliDebug_Fetch(SQLSTMT_ID *statement_id, SQLDESC_ID *output_descriptor, long num_ptr_pairs,
 									const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Fetch",("statement_id=0x%08x, output_descriptor=0x%08x, num_ptr_pairs=%ld",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Fetch",("statement_id=0x%08x, output_descriptor=0x%08x, num_ptr_pairs=%ld",
 			statement_id,
 			output_descriptor,
 			num_ptr_pairs),
@@ -2250,7 +2250,7 @@ SQLCLI_LIB_FUNC long CliDebug_Fetch(SQLSTMT_ID *statement_id, SQLDESC_ID *output
 
 	long rc = SQL_EXEC_Fetch(statement_id, output_descriptor, num_ptr_pairs);
 
-	DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("statement_id=0x%08x, output_descriptor=0x%08x, num_ptr_pairs=%ld",
+	DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("statement_id=0x%08x, output_descriptor=0x%08x, num_ptr_pairs=%ld",
 		statement_id,output_descriptor,num_ptr_pairs),
 		filename,line);
 
@@ -2262,7 +2262,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetDescItem(SQLDESC_ID *sql_descriptor, long entry
 										  int *len_of_item, long start_from_offset,
 										  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDescItem",("sql_descriptor=0x%08x, entry=%ld, what_to_get=%s, numeric_value=0x%08x, string_value=0x%08x, max_string_len=%ld, len_of_item=0x%08x, start_from_offset=%ld",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetDescItem",("sql_descriptor=0x%08x, entry=%ld, what_to_get=%s, numeric_value=0x%08x, string_value=0x%08x, max_string_len=%ld, len_of_item=0x%08x, start_from_offset=%ld",
 			sql_descriptor,
 			entry,
 			CliDebugDescItemStr(what_to_get),
@@ -2277,16 +2277,16 @@ SQLCLI_LIB_FUNC long CliDebug_GetDescItem(SQLDESC_ID *sql_descriptor, long entry
 	if (max_string_len) *string_value = 0;
 	long rc = SQL_EXEC_GetDescItem(sql_descriptor, entry, what_to_get, numeric_value, string_value, max_string_len, len_of_item, start_from_offset);
 	if (numeric_value)
-		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("numeric_value=%ld",*numeric_value),filename,line);
+		DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("numeric_value=%ld",*numeric_value),filename,line);
 	if (max_string_len)
-		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("string_value=%s",string_value),filename,line);
+		DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("string_value=%s",string_value),filename,line);
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
 SQLCLI_LIB_FUNC long CliDebug_Cancel(SQLSTMT_ID *statement_id,
 									 const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Cancel",("statement_id=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_Cancel",("statement_id=0x%08x",
 			statement_id),
 		filename, line);
 
@@ -2296,7 +2296,7 @@ SQLCLI_LIB_FUNC long CliDebug_Cancel(SQLSTMT_ID *statement_id,
 SQLCLI_LIB_FUNC long CliDebug_AllocStmt(SQLSTMT_ID * new_statement_id, SQLSTMT_ID *cloned_statement,
 										const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_AllocStmt",("new_statement_id=0x%08x, cloned_statement=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_AllocStmt",("new_statement_id=0x%08x, cloned_statement=0x%08x",
 			new_statement_id,
 			cloned_statement),
 		filename, line);
@@ -2308,7 +2308,7 @@ SQLCLI_LIB_FUNC long CliDebug_AllocStmt(SQLSTMT_ID * new_statement_id, SQLSTMT_I
 SQLCLI_LIB_FUNC long CliDebug_ResDescName(SQLDESC_ID *statement_id, SQLSTMT_ID *from_statement, long what_desc,
 										  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ResDescName",("statement_id=0x%08x, from_statement=0x%08x, what_desc=%s",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ResDescName",("statement_id=0x%08x, from_statement=0x%08x, what_desc=%s",
 			statement_id,
 			from_statement,
 			DebugSqlWhatDescStr(what_desc)),
@@ -2321,7 +2321,7 @@ SQLCLI_LIB_FUNC long CliDebug_ResDescName(SQLDESC_ID *statement_id, SQLSTMT_ID *
 SQLCLI_LIB_FUNC long CliDebug_AllocDesc(SQLDESC_ID *desc_id, SQLDESC_ID *input_descriptor,
 										const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_AllocDesc",("desc_id=0x%08x, input_descriptor=0x%08x",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_AllocDesc",("desc_id=0x%08x, input_descriptor=0x%08x",
 			desc_id,
 			input_descriptor),
 		filename, line);
@@ -2333,7 +2333,7 @@ SQLCLI_LIB_FUNC long CliDebug_AllocDesc(SQLDESC_ID *desc_id, SQLDESC_ID *input_d
 SQLCLI_LIB_FUNC long CliDebug_AllocStmtForRS (SQLSTMT_ID *callStmtId, long resultSetIndex, 
 											  SQLSTMT_ID *resultSetStmtId, const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelStmt,"SQL_EXEC_AllocStmtForRS",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelStmt,"SQL_EXEC_AllocStmtForRS",
 		("callStmtId=0x%08x, resultSetIndex=%ld, resultSetStmtId=0x%08x",
 			callStmtId,
 			resultSetIndex,
@@ -2351,7 +2351,7 @@ SQLCLI_LIB_FUNC long CliDebug_AllocStmtForRS (SQLSTMT_ID *callStmtId, long resul
 SQLCLI_LIB_FUNC long CliDebug_AssocFileNumber(SQLSTMT_ID *statement_id, short file_number,
 											  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_AssocFileNumber",("statement_id=0x%08x, file_number=%d",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_AssocFileNumber",("statement_id=0x%08x, file_number=%d",
 			statement_id,
 			file_number),
 		filename, line);
@@ -2362,7 +2362,7 @@ SQLCLI_LIB_FUNC long CliDebug_AssocFileNumber(SQLSTMT_ID *statement_id, short fi
 
 SQLCLI_LIB_FUNC long CliDebug_CLI_VERSION(const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CLI_VERSION",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_CLI_VERSION",(NULL),
 		filename, line);
 
 	long rc = SQL_EXEC_CLI_VERSION();
@@ -2374,7 +2374,7 @@ SQLCLI_LIB_FUNC long CliDebug_ClearExecFetchClose(SQLSTMT_ID *statement_id, SQLD
 												  long num_output_ptr_pairs, long num_total_ptr_pairs,
 												  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ClearExecFetchClose",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_ClearExecFetchClose",
 		("statement_id=0x%08x, input_descriptor=0x%08x, output_descriptor=0x%08x, num_input_ptr_pairs=%ld, num_output_ptr_pairs=%ld, num_total_ptr_pairs=%ld",
 			statement_id,
 			input_descriptor,
@@ -2398,7 +2398,7 @@ SQLCLI_LIB_FUNC long CliDebug_GetStmtAttr(SQLSTMT_ID *statement_id, long attrNam
 										  long max_string_len, int *len_of_item,
 										  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetStmtAttr",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,"SQL_EXEC_GetStmtAttr",
 		("statement_id=0x%08x, attrName=%s, numeric_value=0x%08x, string_value=0x%08x, max_string_len=%ld, len_of_item=0x%08x",
 			statement_id,
 			CliDebugSqlAttrType(attrName),
@@ -2417,16 +2417,16 @@ SQLCLI_LIB_FUNC long CliDebug_GetStmtAttr(SQLSTMT_ID *statement_id, long attrNam
                                    max_string_len,
 								   len_of_item);
 	if (numeric_value)
-		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("numeric_value=%ld",*numeric_value),filename,line);
+		DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("numeric_value=%ld",*numeric_value),filename,line);
 	if (max_string_len)
-		DEBUG_OUT_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("string_value=%s",string_value),filename,line);
+		DEBUG_OUT_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI,("string_value=%s",string_value),filename,line);
 	CLI_DEBUG_RETURN_SQL_LOC(rc,filename,line);
 }
 
 jsize JNIDebug_GetArrayLength(JNIEnv *jenv, jarray array,
 							  const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetArrayLength",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetArrayLength",(NULL),
 		filename, line);
 	jsize dataLen = jenv->GetArrayLength(array);
 	FUNCTION_RETURN_NUMERIC_LOC(dataLen,(NULL),filename,line);
@@ -2436,7 +2436,7 @@ jsize JNIDebug_GetArrayLength(JNIEnv *jenv, jarray array,
 jobject JNIDebug_GetObjectArrayElement(JNIEnv *jenv, jobjectArray array, jsize index,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetObjectArrayElement",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetObjectArrayElement",
 		("index=%ld",index),
 		filename, line);
 	jobject jobj = jenv->GetObjectArrayElement(array, index);
@@ -2446,7 +2446,7 @@ jobject JNIDebug_GetObjectArrayElement(JNIEnv *jenv, jobjectArray array, jsize i
 jobject JNIDebug_GetObjectField(JNIEnv *jenv, jobject jobj, jfieldID fieldID,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetObjectField",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetObjectField",(NULL),
 		filename, line);
 	jobject rc = jenv->GetObjectField(jobj,fieldID);
 	FUNCTION_RETURN_PTR_LOC(rc,(NULL),filename,line);
@@ -2455,7 +2455,7 @@ jobject JNIDebug_GetObjectField(JNIEnv *jenv, jobject jobj, jfieldID fieldID,
 jbyte *JNIDebug_GetByteArrayElements(JNIEnv *jenv, jbyteArray array, jboolean *isCopy,
 									const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetByteArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetByteArrayElements",(NULL),
 		filename, line);
 	jbyte *count = jenv->GetByteArrayElements(array, isCopy);
 	FUNCTION_RETURN_PTR_LOC(count,(NULL),filename,line);
@@ -2464,7 +2464,7 @@ jbyte *JNIDebug_GetByteArrayElements(JNIEnv *jenv, jbyteArray array, jboolean *i
 void JNIDebug_ReleaseByteArrayElements(JNIEnv *jenv, jbyteArray array, jbyte *elems, jint mode,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseByteArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseByteArrayElements",(NULL),
 		filename, line);
 	jenv->ReleaseByteArrayElements(array, elems, mode);
 	FUNCTION_RETURN_VOID_LOC((NULL),filename,line);
@@ -2473,7 +2473,7 @@ void JNIDebug_ReleaseByteArrayElements(JNIEnv *jenv, jbyteArray array, jbyte *el
 jshort *JNIDebug_GetShortArrayElements(JNIEnv *jenv, jshortArray array, jboolean *isCopy,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetShortArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetShortArrayElements",(NULL),
 		filename, line);
 	jshort *rc = jenv->GetShortArrayElements(array,isCopy);
 	FUNCTION_RETURN_PTR_LOC(rc,(NULL),filename,line);
@@ -2482,7 +2482,7 @@ jshort *JNIDebug_GetShortArrayElements(JNIEnv *jenv, jshortArray array, jboolean
 void JNIDebug_ReleaseShortArrayElements(JNIEnv *jenv, jshortArray array, jshort *elems, jint mode,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseShortArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseShortArrayElements",(NULL),
 		filename, line);
 	jenv->ReleaseShortArrayElements(array, elems, mode);
 	FUNCTION_RETURN_VOID_LOC((NULL),filename,line);
@@ -2491,7 +2491,7 @@ void JNIDebug_ReleaseShortArrayElements(JNIEnv *jenv, jshortArray array, jshort 
 jint *JNIDebug_GetIntArrayElements(JNIEnv *jenv, jintArray array, jboolean *isCopy,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetIntArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetIntArrayElements",(NULL),
 		filename, line);
 	jint *rc = jenv->GetIntArrayElements(array,isCopy);
 	FUNCTION_RETURN_PTR_LOC(rc,(NULL),filename,line);
@@ -2500,7 +2500,7 @@ jint *JNIDebug_GetIntArrayElements(JNIEnv *jenv, jintArray array, jboolean *isCo
 void JNIDebug_ReleaseIntArrayElements(JNIEnv *jenv, jintArray array, jint *elems, jint mode,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseIntArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseIntArrayElements",(NULL),
 		filename, line);
 	jenv->ReleaseIntArrayElements(array, elems, mode);
 	FUNCTION_RETURN_VOID_LOC((NULL),filename,line);
@@ -2509,7 +2509,7 @@ void JNIDebug_ReleaseIntArrayElements(JNIEnv *jenv, jintArray array, jint *elems
 jlong *JNIDebug_GetLongArrayElements(JNIEnv *jenv, jlongArray array, jboolean *isCopy,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetLongArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetLongArrayElements",(NULL),
 		filename, line);
 	jlong *rc = jenv->GetLongArrayElements(array,isCopy);
 	FUNCTION_RETURN_PTR_LOC(rc,(NULL),filename,line);
@@ -2518,7 +2518,7 @@ jlong *JNIDebug_GetLongArrayElements(JNIEnv *jenv, jlongArray array, jboolean *i
 void JNIDebug_ReleaseLongArrayElements(JNIEnv *jenv, jlongArray array, jlong *elems, jint mode,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseLongArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseLongArrayElements",(NULL),
 		filename, line);
 	jenv->ReleaseLongArrayElements(array, elems, mode);
 	FUNCTION_RETURN_VOID_LOC((NULL),filename,line);
@@ -2527,7 +2527,7 @@ void JNIDebug_ReleaseLongArrayElements(JNIEnv *jenv, jlongArray array, jlong *el
 jfloat *JNIDebug_GetFloatArrayElements(JNIEnv *jenv, jfloatArray array, jboolean *isCopy,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetFloatArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetFloatArrayElements",(NULL),
 		filename, line);
 	jfloat *rc = jenv->GetFloatArrayElements(array,isCopy);
 	FUNCTION_RETURN_PTR_LOC(rc,(NULL),filename,line);
@@ -2536,7 +2536,7 @@ jfloat *JNIDebug_GetFloatArrayElements(JNIEnv *jenv, jfloatArray array, jboolean
 void JNIDebug_ReleaseFloatArrayElements(JNIEnv *jenv, jfloatArray array, jfloat *elems, jint mode,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseFloatArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseFloatArrayElements",(NULL),
 		filename, line);
 	jenv->ReleaseFloatArrayElements(array, elems, mode);
 	FUNCTION_RETURN_VOID_LOC((NULL),filename,line);
@@ -2545,7 +2545,7 @@ void JNIDebug_ReleaseFloatArrayElements(JNIEnv *jenv, jfloatArray array, jfloat 
 jdouble *JNIDebug_GetDoubleArrayElements(JNIEnv *jenv, jdoubleArray array, jboolean *isCopy,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetDoubleArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetDoubleArrayElements",(NULL),
 		filename, line);
 	jdouble *rc = jenv->GetDoubleArrayElements(array,isCopy);
 	FUNCTION_RETURN_PTR_LOC(rc,(NULL),filename,line);
@@ -2554,7 +2554,7 @@ jdouble *JNIDebug_GetDoubleArrayElements(JNIEnv *jenv, jdoubleArray array, jbool
 void JNIDebug_ReleaseDoubleArrayElements(JNIEnv *jenv, jdoubleArray array, jdouble *elems, jint mode,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseDoubleArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseDoubleArrayElements",(NULL),
 		filename, line);
 	jenv->ReleaseDoubleArrayElements(array, elems, mode);
 	FUNCTION_RETURN_VOID_LOC((NULL),filename,line);
@@ -2563,7 +2563,7 @@ void JNIDebug_ReleaseDoubleArrayElements(JNIEnv *jenv, jdoubleArray array, jdoub
 jboolean *JNIDebug_GetBooleanArrayElements(JNIEnv *jenv, jbooleanArray array, jboolean *isCopy,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetBooleanArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetBooleanArrayElements",(NULL),
 		filename, line);
 	jboolean *rc = jenv->GetBooleanArrayElements(array,isCopy);
 	FUNCTION_RETURN_PTR_LOC(rc,(NULL),filename,line);
@@ -2572,7 +2572,7 @@ jboolean *JNIDebug_GetBooleanArrayElements(JNIEnv *jenv, jbooleanArray array, jb
 void JNIDebug_ReleaseBooleanArrayElements(JNIEnv *jenv, jbooleanArray array, jboolean *elems, jint mode,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseBooleanArrayElements",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseBooleanArrayElements",(NULL),
 		filename, line);
 	jenv->ReleaseBooleanArrayElements(array, elems, mode);
 	FUNCTION_RETURN_VOID_LOC((NULL),filename,line);
@@ -2581,7 +2581,7 @@ void JNIDebug_ReleaseBooleanArrayElements(JNIEnv *jenv, jbooleanArray array, jbo
 const char *JNIDebug_GetStringUTFChars(JNIEnv *jenv, jstring jstr, jboolean *isCopy,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetStringUTFChars",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetStringUTFChars",(NULL),
 		filename, line);
 	const char *rc = jenv->GetStringUTFChars(jstr,isCopy);
 	FUNCTION_RETURN_PTR_LOC(rc,(NULL),filename,line);
@@ -2590,7 +2590,7 @@ const char *JNIDebug_GetStringUTFChars(JNIEnv *jenv, jstring jstr, jboolean *isC
 void JNIDebug_ReleaseStringUTFChars(JNIEnv *jenv, jstring jstr, const char* chars,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseStringUTFChars",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ReleaseStringUTFChars",(NULL),
 		filename, line);
 	jenv->ReleaseStringUTFChars(jstr, chars);
 	FUNCTION_RETURN_VOID_LOC((NULL),filename,line);
@@ -2599,7 +2599,7 @@ void JNIDebug_ReleaseStringUTFChars(JNIEnv *jenv, jstring jstr, const char* char
 jmethodID JNIDebug_GetMethodID(JNIEnv *jenv, jclass jcls, const char *name, const char *sig,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetMethodID",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetMethodID",
 		("name='%s' sig='%s'",name,sig),
 		filename, line);
 	jmethodID rc = jenv->GetMethodID(jcls, name, sig);
@@ -2609,7 +2609,7 @@ jmethodID JNIDebug_GetMethodID(JNIEnv *jenv, jclass jcls, const char *name, cons
 jfieldID JNIDebug_GetFieldID(JNIEnv *jenv, jclass jcls, const char *name, const char *sig,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetFieldID",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetFieldID",
 		("name='%s' sig='%s'",name,sig),
 		filename, line);
 	jfieldID rc = jenv->GetFieldID(jcls, name, sig);
@@ -2619,7 +2619,7 @@ jfieldID JNIDebug_GetFieldID(JNIEnv *jenv, jclass jcls, const char *name, const 
 jclass JNIDebug_GetObjectClass(JNIEnv *jenv, jobject jobj,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetObjectClass",(NULL),
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->GetObjectClass",(NULL),
 		filename, line);
 	jclass rc = jenv->GetObjectClass(jobj);
 	FUNCTION_RETURN_PTR_LOC(rc,(NULL),filename,line);
@@ -2628,7 +2628,7 @@ jclass JNIDebug_GetObjectClass(JNIEnv *jenv, jobject jobj,
 jboolean JNIDebug_IsInstanceOf(JNIEnv *jenv, jobject jobj, jclass clazz,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->IsInstanceOf",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->IsInstanceOf",
 		("jobj=0x%08x, clazz=0x%08x",jobj,clazz),
 		filename, line);
 	jboolean rc = jenv->IsInstanceOf(jobj,clazz);
@@ -2638,7 +2638,7 @@ jboolean JNIDebug_IsInstanceOf(JNIEnv *jenv, jobject jobj, jclass clazz,
 void JNIDebug_SetObjectField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jobject val,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetObjectField",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetObjectField",
 		(NULL),
 		filename, line);
 	jenv->SetObjectField(jobj,fieldID,val);
@@ -2648,7 +2648,7 @@ void JNIDebug_SetObjectField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jobje
 void JNIDebug_SetBooleanField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jboolean val,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetBooleanField",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetBooleanField",
 		("val=%d",val),
 		filename, line);
 	jenv->SetBooleanField(jobj, fieldID, val);
@@ -2658,7 +2658,7 @@ void JNIDebug_SetBooleanField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jboo
 void JNIDebug_SetByteField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jbyte val,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetByteField",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetByteField",
 		("val=%d",val),
 		filename, line);
 	jenv->SetByteField(jobj, fieldID, val);
@@ -2668,7 +2668,7 @@ void JNIDebug_SetByteField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jbyte v
 void JNIDebug_SetShortField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jshort val,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetShortField",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetShortField",
 		("val=%d",val),
 		filename, line);
 	jenv->SetShortField(jobj, fieldID, val);
@@ -2677,7 +2677,7 @@ void JNIDebug_SetShortField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jshort
 void JNIDebug_SetIntField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jint val,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetIntField",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetIntField",
 		("val=%ld",val),
 		filename, line);
 	jenv->SetIntField(jobj, fieldID, val);
@@ -2687,7 +2687,7 @@ void JNIDebug_SetIntField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jint val
 void JNIDebug_SetLongField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jlong val,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetLongField",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetLongField",
 		("val=%Ld",val),
 		filename, line);
 	jenv->SetLongField(jobj, fieldID, val);
@@ -2697,7 +2697,7 @@ void JNIDebug_SetLongField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jlong v
 void JNIDebug_SetFloatField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jfloat val,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetFloatField",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetFloatField",
 		("val=%f",val),
 		filename, line);
 	jenv->SetFloatField(jobj, fieldID, val);
@@ -2707,7 +2707,7 @@ void JNIDebug_SetFloatField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jfloat
 void JNIDebug_SetDoubleField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jdouble val,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetDoubleField",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetDoubleField",
 		("val=%g",val),
 		filename, line);
 	jenv->SetDoubleField(jobj, fieldID, val);
@@ -2717,7 +2717,7 @@ void JNIDebug_SetDoubleField(JNIEnv *jenv, jobject jobj, jfieldID fieldID, jdoub
 void JNIDebug_SetObjectArrayElement(JNIEnv *jenv, jobjectArray array, jsize index, jobject val,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetObjectArrayElement",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetObjectArrayElement",
 		("index=%ld",index),
 		filename, line);
 	jenv->SetObjectArrayElement(array, index, val);
@@ -2728,7 +2728,7 @@ void JNIDebug_SetObjectArrayElement(JNIEnv *jenv, jobjectArray array, jsize inde
 void JNIDebug_SetBooleanArrayRegion(JNIEnv *jenv, jbooleanArray array, jsize start, jsize len, jboolean *buf,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetBooleanArrayRegion",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetBooleanArrayRegion",
 		((NULL)),
 		filename, line);
 	jenv->SetBooleanArrayRegion(array, start, len, buf);
@@ -2738,7 +2738,7 @@ void JNIDebug_SetBooleanArrayRegion(JNIEnv *jenv, jbooleanArray array, jsize sta
 void JNIDebug_SetByteArrayRegion(JNIEnv *jenv, jbyteArray array, jsize start, jsize len, jbyte *buf,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetByteArrayRegion",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetByteArrayRegion",
 		((NULL)),
 		filename, line);
 	jenv->SetByteArrayRegion(array, start, len, buf);
@@ -2748,7 +2748,7 @@ void JNIDebug_SetByteArrayRegion(JNIEnv *jenv, jbyteArray array, jsize start, js
 void JNIDebug_SetCharArrayRegion(JNIEnv *jenv, jcharArray array, jsize start, jsize len, jchar *buf,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetCharArrayRegion",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetCharArrayRegion",
 		((NULL)),
 		filename, line);
 	jenv->SetCharArrayRegion(array, start, len, buf);
@@ -2758,7 +2758,7 @@ void JNIDebug_SetCharArrayRegion(JNIEnv *jenv, jcharArray array, jsize start, js
 void JNIDebug_SetShortArrayRegion(JNIEnv *jenv, jshortArray array, jsize start, jsize len, jshort *buf,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetShortArrayRegion",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetShortArrayRegion",
 		((NULL)),
 		filename, line);
 	jenv->SetShortArrayRegion(array, start, len, buf);
@@ -2768,7 +2768,7 @@ void JNIDebug_SetShortArrayRegion(JNIEnv *jenv, jshortArray array, jsize start, 
 void JNIDebug_SetIntArrayRegion(JNIEnv *jenv, jintArray array, jsize start, jsize len, jint *buf,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetIntArrayRegion",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetIntArrayRegion",
 		((NULL)),
 		filename, line);
 	jenv->SetIntArrayRegion(array, start, len, buf);
@@ -2778,7 +2778,7 @@ void JNIDebug_SetIntArrayRegion(JNIEnv *jenv, jintArray array, jsize start, jsiz
 void JNIDebug_SetLongArrayRegion(JNIEnv *jenv, jlongArray array, jsize start, jsize len, jlong *buf,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetLongArrayRegion",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetLongArrayRegion",
 		((NULL)),
 		filename, line);
 	jenv->SetLongArrayRegion(array, start, len, buf);
@@ -2788,7 +2788,7 @@ void JNIDebug_SetLongArrayRegion(JNIEnv *jenv, jlongArray array, jsize start, js
 void JNIDebug_SetFloatArrayRegion(JNIEnv *jenv, jfloatArray array, jsize start, jsize len, jfloat *buf,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetFloatArrayRegion",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetFloatArrayRegion",
 		((NULL)),
 		filename, line);
 	jenv->SetFloatArrayRegion(array, start, len, buf);
@@ -2798,7 +2798,7 @@ void JNIDebug_SetFloatArrayRegion(JNIEnv *jenv, jfloatArray array, jsize start, 
 void JNIDebug_SetDoubleArrayRegion(JNIEnv *jenv, jdoubleArray array, jsize start, jsize len, jdouble *buf,
 									   const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetDoubleArrayRegion",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->SetDoubleArrayRegion",
 		((NULL)),
 		filename, line);
 	jenv->SetDoubleArrayRegion(array, start, len, buf);
@@ -2808,7 +2808,7 @@ void JNIDebug_SetDoubleArrayRegion(JNIEnv *jenv, jdoubleArray array, jsize start
 jbyteArray JNIDebug_NewByteArray(JNIEnv *jenv, jsize len,
 								 const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->NewByteArray",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->NewByteArray",
 		("len=%ld",len),
 		filename, line);
 	jbyteArray rc = jenv->NewByteArray(len);
@@ -2818,7 +2818,7 @@ jbyteArray JNIDebug_NewByteArray(JNIEnv *jenv, jsize len,
 jintArray JNIDebug_NewIntArray(JNIEnv *jenv, jsize len,
 								 const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->NewIntArray",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->NewIntArray",
 		("len=%ld",len),
 		filename, line);
 	jintArray rc = jenv->NewIntArray(len);
@@ -2828,7 +2828,7 @@ jintArray JNIDebug_NewIntArray(JNIEnv *jenv, jsize len,
 jobjectArray JNIDebug_NewObjectArray(JNIEnv *jenv, jsize len, jclass clazz, jobject init,
 								 const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->NewObjectArray",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->NewObjectArray",
 		("len=%ld",len),
 		filename, line);
 	jobjectArray rc = jenv->NewObjectArray(len, clazz, init);
@@ -2838,7 +2838,7 @@ jobjectArray JNIDebug_NewObjectArray(JNIEnv *jenv, jsize len, jclass clazz, jobj
 void JNIDebug_ExceptionClear(JNIEnv *jenv,
 							 const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ExceptionClear",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->ExceptionClear",
 		((NULL)),
 		filename, line);
 	jenv->ExceptionClear();
@@ -2848,7 +2848,7 @@ void JNIDebug_ExceptionClear(JNIEnv *jenv,
 jint JNIDebug_Throw(JNIEnv *jenv, jthrowable obj,
 					const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->Throw",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->Throw",
 		((NULL)),
 		filename, line);
 	jint rc = jenv->Throw(obj);
@@ -2858,7 +2858,7 @@ jint JNIDebug_Throw(JNIEnv *jenv, jthrowable obj,
 jclass JNIDebug_FindClass(JNIEnv *jenv, const char *name,
 					const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->FindClass",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->FindClass",
 		(("name=%s",name)),
 		filename, line);
 	jclass rc = jenv->FindClass(name);
@@ -2867,7 +2867,7 @@ jclass JNIDebug_FindClass(JNIEnv *jenv, const char *name,
 jobject JNIDebug_NewGlobalRef(JNIEnv *jenv, jobject lobj,
 					const char *filename, unsigned long line)
 {
-	FUNCTION_ENTRY_LEVEL_LOC(org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->NewGlobalRef",
+	FUNCTION_ENTRY_LEVEL_LOC(org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry,"jenv->NewGlobalRef",
 		((NULL)),
 		filename, line);
 	jobject rc = jenv->NewGlobalRef(lobj);
@@ -2879,33 +2879,33 @@ const char *WrapperDataTypeStr(jbyte dataType)
 	static char rc[80];
 	switch (dataType)
 	{
-	case org_trafodion_jdbc_t2_DataWrapper_UNKNOWN:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_UNKNOWN:
 		return("DataWrapper.UNKNOWN");
-	case org_trafodion_jdbc_t2_DataWrapper_BYTE:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_BYTE:
 		return("DataWrapper.BYTE");
-	case org_trafodion_jdbc_t2_DataWrapper_SHORT:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_SHORT:
 		return("DataWrapper.SHORT");
-	case org_trafodion_jdbc_t2_DataWrapper_INTEGER:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_INTEGER:
 		return("DataWrapper.INTEGER");
-	case org_trafodion_jdbc_t2_DataWrapper_LONG:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_LONG:
 		return("DataWrapper.LONG");
-	case org_trafodion_jdbc_t2_DataWrapper_FLOAT:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_FLOAT:
 		return("DataWrapper.FLOAT");
-	case org_trafodion_jdbc_t2_DataWrapper_DOUBLE:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_DOUBLE:
 		return("DataWrapper.DOUBLE");
-	case org_trafodion_jdbc_t2_DataWrapper_BOOLEAN:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_BOOLEAN:
 		return("DataWrapper.BOOLEAN");
-	case org_trafodion_jdbc_t2_DataWrapper_STRING:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_STRING:
 		return("DataWrapper.STRING");
-	case org_trafodion_jdbc_t2_DataWrapper_BYTES:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_BYTES:
 		return("DataWrapper.BYTES");
-	case org_trafodion_jdbc_t2_DataWrapper_BLOB:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_BLOB:
 		return("DataWrapper.BLOB");
-	case org_trafodion_jdbc_t2_DataWrapper_CLOB:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_CLOB:
 		return("DataWrapper.CLOB");
-	case org_trafodion_jdbc_t2_DataWrapper_BIG_DECIMAL:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_BIG_DECIMAL:
 		return("DataWrapper.BIG_DECIMAL");
-	case org_trafodion_jdbc_t2_DataWrapper_OBJECT:
+	case org_apache_trafodion_jdbc_t2_DataWrapper_OBJECT:
 		return("DataWrapper.OBJECT");
 	}
 	sprintf(rc,"Unknown DataWrapper data type (%ld)",dataType);

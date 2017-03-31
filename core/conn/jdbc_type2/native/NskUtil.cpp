@@ -176,7 +176,7 @@ BOOL envGetCatalogsTable(char *catalogsTableNm)
 	// BTW: 'MP not installed' is signified by string '\0' in
 	// the first character position in array catalogsTableNm[].
 	// catalogsTableNm[] is stored srvrGlobal->NskSystemCatalogName[]
-	// See Java_org_trafodion_jdbc_t2_SQLMXDriver_SQLMXInitialize().
+	// See Java_org_apache_trafodion_jdbc_t2_SQLMXDriver_SQLMXInitialize().
 	if(errorCode == FEEOF)
 	{
 		catalogsTableNm[0] = '\0';

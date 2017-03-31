@@ -27,7 +27,7 @@
 #include <sql.h>
 #include <sqlext.h>
 #include "JdbcDriverGlobal.h"
-#include "org_trafodion_jdbc_t2_SQLMXConnection.h"
+#include "org_apache_trafodion_jdbc_t2_SQLMXConnection.h"
 #include "SQLMXCommonFunctions.h"
 #include "CoreCommon.h"
 #include "SrvrCommon.h"
@@ -64,10 +64,10 @@ void setConnectAttr(JNIEnv *jenv, jobject jobj, jstring server, long dialogueId,
     FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setCatalog
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setCatalog
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jstring catalog)
 {
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_setCatalog",("jenv=0x%08x, server=%s, dialogueId=0x%08x, catalog=%s",
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setCatalog",("jenv=0x%08x, server=%s, dialogueId=0x%08x, catalog=%s",
                     jenv,
                     DebugJString(jenv,server),
                     dialogueId,
@@ -87,10 +87,10 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setCatalog
     FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setAutoCommit
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setAutoCommit
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jboolean autoCommit)
 {
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_setAutoCommit",("jenv=0x%08x, server=%s, dialogueId=0x%08x, autoCommit=%d",
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setAutoCommit",("jenv=0x%08x, server=%s, dialogueId=0x%08x, autoCommit=%d",
                     jenv,
                     DebugJString(jenv,server),
                     dialogueId,
@@ -102,7 +102,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setAutoCommit
 }
 
 //spjrs
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setIsSpjRSFlag
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setIsSpjRSFlag
 (JNIEnv *jenv, jobject jobj, jlong dialogueId, jboolean isSpjrsOn)
 {
     SRVR_CONNECT_HDL *pConnect;
@@ -112,10 +112,10 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setIsSpjRSFlag
     }
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setTransactionIsolation
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setTransactionIsolation
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint transactionIsolation)
 {
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_setTransactionIsolation",("jenv=0x%08x, server=%s, dialogueId=0x%08x, transactionIsolation=%ld",
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setTransactionIsolation",("jenv=0x%08x, server=%s, dialogueId=0x%08x, transactionIsolation=%ld",
                     jenv,
                     DebugJString(jenv,server),
                     dialogueId,
@@ -181,9 +181,9 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setTransaction
     FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT jlong JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connect(
+JNIEXPORT jlong JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connect(
         JNIEnv *jenv, jobject jobj, jstring server, jstring uid, jstring pwd) {
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_connect",
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connect",
             ("jenv=0x%08x, server=%s, uid=%ld, pwd=%s", jenv, DebugJString(jenv,
                     server), uid, DebugJString(jenv, pwd)));
 
@@ -230,10 +230,10 @@ JNIEXPORT jlong JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connect(
             ("jdbcConnect=0x%08x", jdbcConnect));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_close
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_close
 (JNIEnv *jenv, jclass jcls, jstring server, jlong dialogueId)
 {
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_close",("jenv=0x%08x, server=%s, dialogueId=0x%08x",
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_close",("jenv=0x%08x, server=%s, dialogueId=0x%08x",
                     jenv,
                     DebugJString(jenv,server),
                     dialogueId));
@@ -276,10 +276,10 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_close
     FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_commit
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_commit
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid)
 {
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_commit",
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_commit",
             ("jenv=0x%08x, server=%s, dialogueId=0x%08x, txid=0x%08x",
                     jenv,
                     DebugJString(jenv,server),
@@ -310,10 +310,10 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_commit
     FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_rollback
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_rollback
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid)
 {
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_rollback",("jenv=0x%08x, server=%s, dialogueId=0x%08x, txid=0x%08x",
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_rollback",("jenv=0x%08x, server=%s, dialogueId=0x%08x, txid=0x%08x",
                     jenv,
                     DebugJString(jenv,server),
                     dialogueId,
@@ -343,10 +343,10 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_rollback
     FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_beginTransaction(
+JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_beginTransaction(
         JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId) {
     FUNCTION_ENTRY(
-            "Java_org_trafodion_jdbc_t2_SQLMXConnection_beginTransaction",
+            "Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_beginTransaction",
             ("jenv=0x%08x, server=%s, dialogueId=0x%08x", jenv, DebugJString(
                     jenv, server), dialogueId));
 
@@ -378,14 +378,14 @@ JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_beginTransacti
     FUNCTION_RETURN_NUMERIC(currentTxid, ("currentTxid=0x%08x", currentTxid));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connectInit
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jstring catalog,
         jstring schema, jstring mploc, jboolean isReadOnly, jboolean autoCommit, jint transactionIsolation,
         jint loginTimeout, jint queryTimeout, jstring modulecaching, jstring compiledmodulelocation, jboolean blnDoomUsrTxn,
         jint statisticsIntervalTime, jint statisticsLimitTime, jstring statisticsType, jstring programStatisticsEnabled, jstring statisticsSqlPlanEnabled)
 {
 
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit",("..."));
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connectInit",("..."));
     DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  jenv=0x%08x, server=%s, dialogueId=0x%08x",
                     jenv,
                     DebugJString(jenv,server),
@@ -439,16 +439,16 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
     // defined in SQLMXConnection.java.  This is added as a safety means to detect
     // if they get out of sync with each other and exit. Furthermore, this will
     // get detected only during new development efforts and will not occur in the field.
-    DEBUG_ASSERT(org_trafodion_jdbc_t2_SQLMXConnection_SQL_CONTROL == SQL_CONTROL, ("Mismatch on SQL_CONTROL enum sql stmt type"));
-    DEBUG_ASSERT(org_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_TRANSACTION == SQL_SET_TRANSACTION, ("Mismatch on SQL_SET_TRANSACTION enum sql stmt type"));
-    DEBUG_ASSERT(org_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_CATALOG == SQL_SET_CATALOG, ("Mismatch on SQL_SET_CATALOG enum sql stmt type"));
-    DEBUG_ASSERT(org_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_SCHEMA == SQL_SET_SCHEMA, ("Mismatch on SQL_SET_SCHEMA enum sql stmt type"));
+    DEBUG_ASSERT(org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_CONTROL == SQL_CONTROL, ("Mismatch on SQL_CONTROL enum sql stmt type"));
+    DEBUG_ASSERT(org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_TRANSACTION == SQL_SET_TRANSACTION, ("Mismatch on SQL_SET_TRANSACTION enum sql stmt type"));
+    DEBUG_ASSERT(org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_CATALOG == SQL_SET_CATALOG, ("Mismatch on SQL_SET_CATALOG enum sql stmt type"));
+    DEBUG_ASSERT(org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_SCHEMA == SQL_SET_SCHEMA, ("Mismatch on SQL_SET_SCHEMA enum sql stmt type"));
 
 #ifdef _DEBUG
-    if((org_trafodion_jdbc_t2_SQLMXConnection_SQL_CONTROL != SQL_CONTROL) ||
-            (org_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_TRANSACTION != SQL_SET_TRANSACTION ) ||
-            (org_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_CATALOG != SQL_SET_CATALOG) ||
-            (org_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_SCHEMA != SQL_SET_SCHEMA))
+    if((org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_CONTROL != SQL_CONTROL) ||
+            (org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_TRANSACTION != SQL_SET_TRANSACTION ) ||
+            (org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_CATALOG != SQL_SET_CATALOG) ||
+            (org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_SCHEMA != SQL_SET_SCHEMA))
     {
         printf("The SQLATTR_QUERY_TYPE enum's do not match to values defined in SQLMXConnection.\n");
         exit(1);
@@ -818,11 +818,11 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectInit
     FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectReuse
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connectReuse
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint conReuseBitMap, jstring catalog,
         jstring schema, jstring mploc, jint transactionIsolation)
 {
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_connectReuse",("..."));
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_connectReuse",("..."));
     DEBUG_OUT(DEBUG_LEVEL_ENTRY,("  jenv=0x%08x, server=%s, dialogueId=0x%08x",
                     jenv,
                     DebugJString(jenv,server),
@@ -856,7 +856,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectReuse
     nMploc = JNI_GetStringUTFChars(jenv,mploc, NULL);
 
     // Need to reset all if any CONTROL cmds were issued
-    if (conReuseBitMap & org_trafodion_jdbc_t2_SQLMXConnection_SQL_CONTROL_FLAG)
+    if (conReuseBitMap & org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_CONTROL_FLAG)
     {
         odbc_SQLSvc_SetConnectionOption_sme_(NULL, NULL,
                 &setConnectException,
@@ -996,7 +996,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectReuse
     else // Check what other connection unique attributes have changed
     {
         // Upate catalog if "set catalog" bit is set
-        if (conReuseBitMap & org_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_CATALOG_FLAG)
+        if (conReuseBitMap & org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_CATALOG_FLAG)
         {
             // Set catalog or clear catalog (if null)
             if (catalog)
@@ -1037,7 +1037,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectReuse
             }
         }
         // Upate schema if "set schema" bit is set
-        if (conReuseBitMap & org_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_SCHEMA_FLAG)
+        if (conReuseBitMap & org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_SCHEMA_FLAG)
         {
             // Set schema or clear schema (if null)
             if (schema)
@@ -1078,7 +1078,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectReuse
             }
         }
         // Upate transaction isolation
-        if (conReuseBitMap & org_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_TRANSACTION_FLAG)
+        if (conReuseBitMap & org_apache_trafodion_jdbc_t2_SQLMXConnection_SQL_SET_TRANSACTION_FLAG)
         {
             odbc_SQLSvc_SetConnectionOption_sme_(NULL, NULL,
                     &setConnectException,
@@ -1100,13 +1100,13 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_connectReuse
     FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT jstring JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_getCharsetEncoding(
+JNIEXPORT jstring JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_getCharsetEncoding(
         JNIEnv *jenv, jclass jcls, jstring server, jlong dialogueId,
         jint charset, jstring charsetOverride) {
     jstring rc;
 
     FUNCTION_ENTRY(
-            "Java_org_trafodion_jdbc_t2_SQLMXConnection_getCharsetEncoding",
+            "Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_getCharsetEncoding",
             ("jenv=0x%08x, server=%s, dialogueId=0x%08x, charset=%ld, charsetOverride=%s", jenv, DebugJString(
                     jenv, server), dialogueId, charset, DebugJString(jenv,
                     charsetOverride)));
@@ -1123,10 +1123,10 @@ JNIEXPORT jstring JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_getCharsetE
     FUNCTION_RETURN_PTR(rc, ("%s", DebugJString(jenv, rc)));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setCharsetEncodingOverride
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setCharsetEncodingOverride
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint charset, jstring encodingOverride)
 {
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_setCharsetEncodingOverride",
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_setCharsetEncodingOverride",
             ("jenv=0x%08x, server=%s, dialogueId=0x%08x, charset=%ld, encodingOverride=%s",
                     jenv,
                     DebugJString(jenv,server),
@@ -1153,14 +1153,14 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_setCharsetEnco
 
 //Sol. 10-100618-1186
 /*
- * Class:     org_trafodion_jdbc_t2_SQLMXConnection
+ * Class:     org_apache_trafodion_jdbc_t2_SQLMXConnection
  * Method:    clearSetOfCQDs
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXConnection_clearSetOfCQDs
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_clearSetOfCQDs
 (JNIEnv *jenv, jobject obj, jlong dialogueId)
 {
-    FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXConnection_clearSetOfCQDs",("..."));
+    FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXConnection_clearSetOfCQDs",("..."));
 //cleare CQD's upon a logical connection close.
     ((SRVR_CONNECT_HDL*)dialogueId)->listOfCQDs.clear();
     FUNCTION_RETURN_VOID((NULL));

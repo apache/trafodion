@@ -36,7 +36,7 @@ public class HoldCursorSample
 
         try
         {
-            Class.forName("org.trafodion.jdbc.t2.T2Driver");
+            Class.forName("org.apache.trafodion.jdbc.t2.T2Driver");
         }
         catch (Exception e)
         {

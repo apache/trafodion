@@ -39,17 +39,17 @@
 #include "JdbcDriverGlobal.h"
 #include "CoreCommon.h"
 #include "SQLMXCommonFunctions.h"
-#include "org_trafodion_jdbc_t2_SQLMXDatabaseMetaData.h"
+#include "org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData.h"
 #include "Debug.h"
 #define SQL_API_JDBC                    9999
 #define SQL_API_SQLTABLES_JDBC          SQL_API_SQLTABLES + SQL_API_JDBC
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCatalogs
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCatalogs
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalogPattern)
 
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCatalogs",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCatalogs",("..."));
 
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId, txid, autoCommit, txnMode,
 		SQL_API_SQLTABLES_JDBC, catalogPattern,
@@ -59,11 +59,11 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCa
 }
 
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getSchemas
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getSchemas
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, 
   jboolean autoCommit, jint txnMode, jstring schemaPattern)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getSchemas",("server=%s, dialogueId=0x%08x, txid=0x%08x, autoCommit=%s, txnMode=%ld, schemaPattern=%s",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getSchemas",("server=%s, dialogueId=0x%08x, txid=0x%08x, autoCommit=%s, txnMode=%ld, schemaPattern=%s",
 		DebugJString(jenv,server),
 		dialogueId,
 		txid,
@@ -78,12 +78,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getSc
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTables
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTables
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, 
 		jstring schemaPattern, jstring tableNamePattern, jstring tableType)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTables",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTables",("..."));
 
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId, txid, autoCommit, txnMode, 
 		SQL_API_SQLTABLES, catalog, schemaPattern, 
@@ -92,11 +92,11 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTa
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTableTypes
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTableTypes
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTableTypes",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTableTypes",("..."));
 
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId,  txid, autoCommit, txnMode, 
 		SQL_API_SQLTABLES, NULL, NULL, 
@@ -104,12 +104,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTa
 
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getColumns
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getColumns
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, jstring schemaPattern, 
   jstring tableNamePattern, jstring columnNamePattern)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getColumns",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getColumns",("..."));
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId,  txid, autoCommit, txnMode, 
 		SQL_API_SQLCOLUMNS, catalog, schemaPattern, 
 		tableNamePattern, NULL, columnNamePattern, 0, 0, 0, 0, 0, 0, 1, NULL, NULL, NULL);
@@ -117,12 +117,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCo
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getPrimaryKeys
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getPrimaryKeys
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, jstring schema, 
 		jstring table)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getPrimaryKeys",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getPrimaryKeys",("..."));
 
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId,  txid, autoCommit, txnMode, 
 		SQL_API_SQLPRIMARYKEYS, catalog, schema, 
@@ -131,12 +131,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getPr
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getIndexInfo
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getIndexInfo
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, jstring schema, 
 		jstring table, jboolean unique, jboolean approximate)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getIndexInfo",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getIndexInfo",("..."));
 	long	uniqueness = SQL_INDEX_ALL;
 	
 	if (unique)
@@ -149,11 +149,11 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getIn
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTypeInfo
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTypeInfo
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTypeInfo",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTypeInfo",("..."));
 	
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId,  txid, autoCommit, txnMode, 
 		SQL_API_SQLGETTYPEINFO, NULL, NULL, 
@@ -163,12 +163,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTy
 }
 
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getBestRowIdentifier
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getBestRowIdentifier
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, jstring schema, 
 		jstring table, jint scope, jboolean nullable)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getBestRowIdentifier",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getBestRowIdentifier",("..."));
 
 	long nullableODBC;
 
@@ -185,12 +185,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getBe
 }
 
 // getTablePrivileges added for V31 release 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTablePrivileges
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTablePrivileges
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, jstring schema, 
 		jstring table)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTablePrivileges",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTablePrivileges",("..."));
 	
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId,  txid, autoCommit, txnMode, 
 		SQL_API_SQLTABLEPRIVILEGES, catalog, schema, 
@@ -200,12 +200,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getTa
 }
 
 // getColumnPrivileges added for V31 release 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getColumnPrivileges
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getColumnPrivileges
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, 
 		jstring schemaPattern, jstring table, jstring columnNamePattern)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getColumnPrivileges",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getColumnPrivileges",("..."));
 	
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId, txid, autoCommit, txnMode, 
 		SQL_API_SQLCOLUMNPRIVILEGES, catalog, schemaPattern, 
@@ -214,12 +214,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCo
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
  
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getExportedKeys
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getExportedKeys
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, jstring schema, 
 		jstring table)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getExportedKeys",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getExportedKeys",("..."));
 	
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId,  txid, autoCommit, txnMode, 
 		SQL_API_SQLFOREIGNKEYS, catalog, schema, 
@@ -228,12 +228,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getEx
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getImportedKeys
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getImportedKeys
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode, jstring fkcatalog, jstring fkschema, 
 		jstring fktable)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getImportedKeys",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getImportedKeys",("..."));
 	
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId,  txid, autoCommit, txnMode, 
 		SQL_API_SQLFOREIGNKEYS, NULL, NULL, 
@@ -242,12 +242,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getIm
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCrossReference
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCrossReference
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, jstring schema, jstring table, jstring fkcatalog, jstring fkschema, 
 		jstring fktable)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCrossReference",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCrossReference",("..."));
 	
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId,  txid, autoCommit, txnMode, 
 		SQL_API_SQLFOREIGNKEYS, catalog, schema, 
@@ -256,12 +256,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getCr
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getVersionColumns
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getVersionColumns
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,  jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, jstring schema, 
 		jstring table)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getVersionColumns",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getVersionColumns",("..."));
 	
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId,  txid, autoCommit, txnMode, 
 		SQL_API_SQLSPECIALCOLUMNS, catalog, schema, 
@@ -270,12 +270,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getVe
 	FUNCTION_RETURN_PTR(rc, (NULL));
 }
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getProcedures
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getProcedures
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, 
 		jstring schemaPattern, jstring procNamePattern)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getProcedures",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getProcedures",("..."));
 	
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId, txid, autoCommit, txnMode,
 		SQL_API_SQLPROCEDURES, catalog, schemaPattern, 
@@ -285,12 +285,12 @@ JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getPr
 }
 
 
-JNIEXPORT jobject JNICALL Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getProcedureColumns
+JNIEXPORT jobject JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getProcedureColumns
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, 
   jboolean autoCommit, jint txnMode, jstring catalog, 
 		jstring schemaPattern, jstring procNamePattern, jstring columnNamePattern)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getProcedureColumns",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXDatabaseMetaData_getProcedureColumns",("..."));
 	
 	jobject rc = getSQLCatalogsInfo(jenv, jobj, server, dialogueId, txid, autoCommit, txnMode, 
 		SQL_API_SQLPROCEDURECOLUMNS, catalog, schemaPattern, 

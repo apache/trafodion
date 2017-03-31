@@ -133,7 +133,7 @@
 		}
 
 #if defined(_DEBUG) || defined(_BENCHMARK)
-#include "org_trafodion_jdbc_t2_JdbcDebug.h"
+#include "org_apache_trafodion_jdbc_t2_JdbcDebug.h"
 #endif
 extern std::map<long,SRVR_STMT_HDL*> tempStmtIdMap;
 #ifdef _DEBUG
@@ -148,25 +148,25 @@ const char *getCharsetEncoding(long charset);
 
 // All valid debug levels and flags.
 // High byte is reserved for flags.
-#define DEBUG_FLAG_THREADS		org_trafodion_jdbc_t2_JdbcDebug_debugFlagThreads
-#define DEBUG_FLAG_DIRTY_MEM	org_trafodion_jdbc_t2_JdbcDebug_debugFlagDirtyMem
-#define DEBUG_FLAG_TIMER		org_trafodion_jdbc_t2_JdbcDebug_debugFlagTimer
-#define DEBUG_FLAG_NOTIME		org_trafodion_jdbc_t2_JdbcDebug_debugFlagNoTime
-#define DEBUG_FLAG_TESTWARE		org_trafodion_jdbc_t2_JdbcDebug_debugFlagTestware
-#define DEBUG_LEVEL_ENTRY		org_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry
-#define DEBUG_LEVEL_JAVA		org_trafodion_jdbc_t2_JdbcDebug_debugLevelJava
-#define DEBUG_LEVEL_MEM			org_trafodion_jdbc_t2_JdbcDebug_debugLevelMem
-#define DEBUG_LEVEL_MEMLEAK		org_trafodion_jdbc_t2_JdbcDebug_debugLevelMemLeak
-#define DEBUG_LEVEL_CLI			org_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI
-#define DEBUG_LEVEL_DATA		org_trafodion_jdbc_t2_JdbcDebug_debugLevelData
-#define DEBUG_LEVEL_TXN			org_trafodion_jdbc_t2_JdbcDebug_debugLevelTxn
-#define DEBUG_LEVEL_ROWSET		org_trafodion_jdbc_t2_JdbcDebug_debugLevelRowset
-#define DEBUG_LEVEL_ERROR		org_trafodion_jdbc_t2_JdbcDebug_debugLevelError
-#define DEBUG_LEVEL_METADATA	org_trafodion_jdbc_t2_JdbcDebug_debugLevelMetadata
-#define DEBUG_LEVEL_UNICODE		org_trafodion_jdbc_t2_JdbcDebug_debugLevelUnicode
-#define DEBUG_LEVEL_POOLING		org_trafodion_jdbc_t2_JdbcDebug_debugLevelPooling
-#define DEBUG_LEVEL_STMT		org_trafodion_jdbc_t2_JdbcDebug_debugLevelStmt
-#define DEBUG_LEVEL_ALL			org_trafodion_jdbc_t2_JdbcDebug_debugLevelAll
+#define DEBUG_FLAG_THREADS		org_apache_trafodion_jdbc_t2_JdbcDebug_debugFlagThreads
+#define DEBUG_FLAG_DIRTY_MEM	org_apache_trafodion_jdbc_t2_JdbcDebug_debugFlagDirtyMem
+#define DEBUG_FLAG_TIMER		org_apache_trafodion_jdbc_t2_JdbcDebug_debugFlagTimer
+#define DEBUG_FLAG_NOTIME		org_apache_trafodion_jdbc_t2_JdbcDebug_debugFlagNoTime
+#define DEBUG_FLAG_TESTWARE		org_apache_trafodion_jdbc_t2_JdbcDebug_debugFlagTestware
+#define DEBUG_LEVEL_ENTRY		org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelEntry
+#define DEBUG_LEVEL_JAVA		org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelJava
+#define DEBUG_LEVEL_MEM			org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelMem
+#define DEBUG_LEVEL_MEMLEAK		org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelMemLeak
+#define DEBUG_LEVEL_CLI			org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelCLI
+#define DEBUG_LEVEL_DATA		org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelData
+#define DEBUG_LEVEL_TXN			org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelTxn
+#define DEBUG_LEVEL_ROWSET		org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelRowset
+#define DEBUG_LEVEL_ERROR		org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelError
+#define DEBUG_LEVEL_METADATA	org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelMetadata
+#define DEBUG_LEVEL_UNICODE		org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelUnicode
+#define DEBUG_LEVEL_POOLING		org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelPooling
+#define DEBUG_LEVEL_STMT		org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelStmt
+#define DEBUG_LEVEL_ALL			org_apache_trafodion_jdbc_t2_JdbcDebug_debugLevelAll
 
 #define MEMORY_ALLOC_MEMORY		0
 #define MEMORY_ALLOC_OBJECT		1

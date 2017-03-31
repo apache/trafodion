@@ -35,7 +35,7 @@
 #include <sqlext.h>
 #include "CoreCommon.h"
 #include "JdbcDriverGlobal.h"
-#include "org_trafodion_jdbc_t2_SQLMXPreparedStatement.h"
+#include "org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement.h"
 #include "SQLMXCommonFunctions.h"
 #ifdef _FASTPATH
 #include "CSrvrStmt.h"
@@ -46,14 +46,14 @@
 #include<sys/stat.h>// MFC
 
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_prepare
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_prepare
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,
  jint txid, jboolean autoCommit, jstring stmtLabel, jstring sql, jboolean isSelect,
  jint queryTimeout, jint holdability, jint jbatchSize, jint jfetchSize)
 {
 		int batchSize = jbatchSize;
 		int fetchSize = jfetchSize;
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_prepare",("..., isSelect=%d, batchSize=%ld, fetchSize=%ld, ...",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_prepare",("..., isSelect=%d, batchSize=%ld, fetchSize=%ld, ...",
 		isSelect,
 		batchSize,
 		fetchSize));
@@ -187,14 +187,14 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_prepare
 * execute() now contains an additional argument: contBatchOnError
 * venu changed dialogueId and stmtId from int to long
 */
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_execute
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_execute
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,
  jint txid, jboolean autoCommit,  jint txnMode, jlong stmtId,
  jstring cursorName, jboolean isSelect, jint paramRowCount, jint paramCount,
  jobject paramValues, jint queryTimeout, jboolean isAnyLob, jstring iso88591Encoding,
  jobject resultSet, jboolean contBatchOnError)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_execute",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_execute",
 		("...txid=%ld, autoCommit=%s, txnMode=%ld, isSelect=%s, isAnyLob=%s, iso88591Encoding=%s resultSet=0x%08x, contBatchOnError=%s",
 		txid,
 		DebugBoolStr(autoCommit),
@@ -518,10 +518,10 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_execute
 	FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_resetFetchSize
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_resetFetchSize
   (JNIEnv *, jobject, jlong dialogueId, jlong stmtId, jint fetchSize)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_resetFetchSize",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_resetFetchSize",
 		("... dialogueId=0x%08x, , stmtId=%ld, fetchSize=%ld",
 		dialogueId,
 		stmtId,
@@ -531,13 +531,13 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_resetFe
 	FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_cpqPrepareJNI
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_cpqPrepareJNI
 (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId,
  jint txid, jboolean autoCommit, jint txnMode,
  jstring moduleName, jint moduleVersion, jlong moduleTimestamp, jstring stmtName,
  jboolean isSelect, jint queryTimeout, jint holdability, jint batchSize, jint fetchSize, jstring  sql,jboolean isISUD)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXPreparedStatement_cpqPrepare",("...txid=%ld, autoCommit=%s, ...\
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXPreparedStatement_cpqPrepare",("...txid=%ld, autoCommit=%s, ...\
 																			  txnMode=%ld, isSelect=%s, \
 																			  holdability=%ld, isISUD=%d...",
 																			  txid,

@@ -38,15 +38,15 @@
 #include <float.h>
 #include "sqlcli.h"
 #include "JdbcDriverGlobal.h"
-#include "org_trafodion_jdbc_t2_SQLMXConnection.h"
-#include "org_trafodion_jdbc_t2_DataWrapper.h"
+#include "org_apache_trafodion_jdbc_t2_SQLMXConnection.h"
+#include "org_apache_trafodion_jdbc_t2_DataWrapper.h"
 #include "SQLMXCommonFunctions.h"
 #include "CoreCommon.h"
 #include "SrvrCommon.h"
 #include "SrvrOthers.h"
 #include "Debug.h"
 #include "GlobalInformation.h"
-#include "org_trafodion_jdbc_t2_T2Driver.h"  //spjrs
+#include "org_apache_trafodion_jdbc_t2_T2Driver.h"  //spjrs
 
 static const int INVALID_TRANSACTION_STATE = -1;
 
@@ -213,7 +213,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 			}
 		}
 		JNI_SetObjectArrayElement(wrapperInfo->jenv,wrapperInfo->bytesValueObject,paramNumber,value);
-		setWrapperDataType(wrapperInfo,paramNumber,org_trafodion_jdbc_t2_DataWrapper_BYTES);
+		setWrapperDataType(wrapperInfo,paramNumber,org_apache_trafodion_jdbc_t2_DataWrapper_BYTES);
 		FUNCTION_RETURN_VOID((NULL));
 	}
 
@@ -247,7 +247,7 @@ static Charset_def CHARSET_INFORMATION[] = {
             }
         }
         JNI_SetObjectArrayElement(wrapperInfo->jenv,wrapperInfo->SQLbytesValueObject,paramNumber,value);
-        setWrapperDataType(wrapperInfo,paramNumber,org_trafodion_jdbc_t2_DataWrapper_BYTES);
+        setWrapperDataType(wrapperInfo,paramNumber,org_apache_trafodion_jdbc_t2_DataWrapper_BYTES);
         FUNCTION_RETURN_VOID((NULL));
     }
 //============================
@@ -299,7 +299,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 			paramNumber,
 			WrapperDataTypeStr(data_type)));
 
-		if (data_type==org_trafodion_jdbc_t2_DataWrapper_STRING)
+		if (data_type==org_apache_trafodion_jdbc_t2_DataWrapper_STRING)
 			DEBUG_OUT(DEBUG_LEVEL_ENTRY,("String Value=%s",DebugJString(wrapperInfo->jenv,value)));
 
 		if (wrapperInfo->objectValueObject==NULL)
@@ -403,7 +403,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 			DEBUG_ASSERT(wrapperInfo->longValue!=NULL,("GetLongArrayElements() failed"));
 		}
 		wrapperInfo->longValue[paramNumber] = value;
-		setWrapperDataType(wrapperInfo,paramNumber,org_trafodion_jdbc_t2_DataWrapper_LONG);
+		setWrapperDataType(wrapperInfo,paramNumber,org_apache_trafodion_jdbc_t2_DataWrapper_LONG);
 		FUNCTION_RETURN_VOID((NULL));
 	}
 
@@ -440,7 +440,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 			DEBUG_ASSERT(wrapperInfo->floatValue!=NULL,("GetFloatArrayElements() failed"));
 		}
 		wrapperInfo->floatValue[paramNumber] = value;
-		setWrapperDataType(wrapperInfo,paramNumber,org_trafodion_jdbc_t2_DataWrapper_FLOAT);
+		setWrapperDataType(wrapperInfo,paramNumber,org_apache_trafodion_jdbc_t2_DataWrapper_FLOAT);
 		FUNCTION_RETURN_VOID((NULL));
 	}
 
@@ -477,7 +477,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 			DEBUG_ASSERT(wrapperInfo->doubleValue!=NULL,("GetDoubleArrayElements() failed"));
 		}
 		wrapperInfo->doubleValue[paramNumber] = value;
-		setWrapperDataType(wrapperInfo,paramNumber,org_trafodion_jdbc_t2_DataWrapper_DOUBLE);
+		setWrapperDataType(wrapperInfo,paramNumber,org_apache_trafodion_jdbc_t2_DataWrapper_DOUBLE);
 		FUNCTION_RETURN_VOID((NULL));
 	}
 
@@ -1519,7 +1519,7 @@ static Charset_def CHARSET_INFORMATION[] = {
 					DEBUG_OUT(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE,("  dataType=%s",CliDebugSqlTypeCode(dataType)));
 					DEBUG_OUT(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE,("  octetLength=%ld", octetLength));
 
-					if (getWrapperDataType(&wrapperInfo,paramNumber)!=org_trafodion_jdbc_t2_DataWrapper_BYTES)
+					if (getWrapperDataType(&wrapperInfo,paramNumber)!=org_apache_trafodion_jdbc_t2_DataWrapper_BYTES)
 					{
 						// Non byte array value
 						DEBUG_OUT(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE,
@@ -2474,7 +2474,7 @@ func_exit:
 				FUNCTION_RETURN_NUMERIC(status,("currentTxid != 0"));
 			}
 			// suspend external txn when in "internal" txn mode
-			if (txnMode == org_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_INTERNAL)
+			if (txnMode == org_apache_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_INTERNAL)
 			{
 				if ((status = suspendExtTxn(externalTxid)) != 0)
 					FUNCTION_RETURN_NUMERIC(status,
@@ -2574,7 +2574,7 @@ func_exit:
 				FUNCTION_RETURN_NUMERIC(status,("Invalid transaction state -- currentTxid != 0 "));
 			}
 			// suspend external txn when in "internal" txn mode
-			if (txnMode == org_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_INTERNAL)
+			if (txnMode == org_apache_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_INTERNAL)
 			{
 				if ((status = suspendExtTxn(externalTxid)) != 0)
 				{
@@ -2767,8 +2767,8 @@ func_exit:
 
 		switch (txnMode)
 		{
-		case org_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_INTERNAL:
-		case org_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_MIXED:
+		case org_apache_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_INTERNAL:
+		case org_apache_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_MIXED:
 			if (holdability == CLOSE_CURSORS_AT_COMMIT)
 			{
 				status = resumeTxn(jenv, currentTxid, externalTxid, txnMode);
@@ -2784,7 +2784,7 @@ func_exit:
 					status, currentTxid));
 			}
 			break;
-		case org_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_EXTERNAL:
+		case org_apache_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_EXTERNAL:
 			break;
 		default:
 			// This is a programming error if it ever gets to hers
@@ -2842,7 +2842,7 @@ func_exit:
 		short status = 0;
 		switch (txnMode)
 		{
-		case org_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_INTERNAL:
+		case org_apache_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_INTERNAL:
 			status = suspendOrEndTxn(jenv, currentTxid, txid, autoCommit, exception_nr, isSelect);
 			DEBUG_OUT(DEBUG_LEVEL_TXN,("suspendOrEndTxn returned %d for currentTxid 0x%08x , txid = 0x%08x",
 				status, currentTxid, txid));
@@ -2874,7 +2874,7 @@ func_exit:
 				}
 			}
 			break;
-		case org_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_MIXED:
+		case org_apache_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_MIXED:
 			if (externalTxid == 0)
 			{
 				DEBUG_OUT(DEBUG_LEVEL_TXN,("Not an external txn: currentTxid = 0x%08x, txid = 0x%08x", currentTxid, txid));
@@ -2882,7 +2882,7 @@ func_exit:
 				DEBUG_OUT(DEBUG_LEVEL_TXN,("suspendOrEndTxn returned %d for currentTxid (0x%08x)", status, currentTxid));
 			}
 			break;
-		case org_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_EXTERNAL:
+		case org_apache_trafodion_jdbc_t2_SQLMXConnection_TXN_MODE_EXTERNAL:
 			break;
 		default:
 			// This is a programming error if it ever gets to hers
@@ -2933,14 +2933,14 @@ func_exit:
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.setNextWarningMethodId == NULL"));
 
 		//SQLMXHandle
-		jclass  handleClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/SQLMXHandle");
+		jclass  handleClass = JNI_FindClass(jenv,"org/apache/trafodion/jdbc/t2/SQLMXHandle");
 		gJNICache.sqlWarningMethodId = JNI_GetMethodID(jenv,handleClass, "setSqlWarning",
 			"(Ljava/sql/SQLWarning;)V");
 		if (gJNICache.sqlWarningMethodId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.sqlWarningMethodId == NULL"));
 
 		//SQLMXDesc
-		jclass SQLMXDescClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/SQLMXDesc");
+		jclass SQLMXDescClass = JNI_FindClass(jenv,"org/apache/trafodion/jdbc/t2/SQLMXDesc");
 		if (SQLMXDescClass == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - SQLMXDescClass == NULL"));
 		gJNICache.SQLMXDescClass = (jclass)JNI_NewGlobalRef(jenv,SQLMXDescClass);
@@ -2950,29 +2950,29 @@ func_exit:
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.SQLMXDescConstructorId == NULL"));
 
 		// SQLMXPreparedStatement
-		jclass  SQLMXPreparedStatementClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/SQLMXPreparedStatement");
+		jclass  SQLMXPreparedStatementClass = JNI_FindClass(jenv,"org/apache/trafodion/jdbc/t2/SQLMXPreparedStatement");
 		if (SQLMXPreparedStatementClass == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - SQLMXPreparedStatementClass == NULL"));
 		gJNICache.prepareOutputsMethodId = JNI_GetMethodID(jenv,SQLMXPreparedStatementClass, "setPrepareOutputs",
-			"([Lorg/trafodion/jdbc/t2/SQLMXDesc;[Lorg/trafodion/jdbc/t2/SQLMXDesc;IIIJ)V");
+			"([Lorg/apache/trafodion/jdbc/t2/SQLMXDesc;[Lorg/apache/trafodion/jdbc/t2/SQLMXDesc;IIIJ)V");
 		if (gJNICache.prepareOutputsMethodId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.prepareOutputsMethodId == NULL"));
 		gJNICache.executeOutputsMethodId = JNI_GetMethodID(jenv,SQLMXPreparedStatementClass, "setExecuteOutputs",
-			"([II[Lorg/trafodion/jdbc/t2/DataWrapper;II)V");
+			"([II[Lorg/apache/trafodion/jdbc/t2/DataWrapper;II)V");
 		if (gJNICache.executeOutputsMethodId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.executeOutputsMethodId == NULL"));
 
 		// SQLMXStatement
-		jclass  SQLMXStatementClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/SQLMXStatement");
+		jclass  SQLMXStatementClass = JNI_FindClass(jenv,"org/apache/trafodion/jdbc/t2/SQLMXStatement");
 		if (SQLMXStatementClass == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - SQLMXStatementClass == NULL"));
 		gJNICache.execDirectOutputsMethodId = JNI_GetMethodID(jenv,SQLMXStatementClass, "setExecDirectOutputs",
-			"([Lorg/trafodion/jdbc/t2/SQLMXDesc;I[Lorg/trafodion/jdbc/t2/DataWrapper;IIJI)V");
+			"([Lorg/apache/trafodion/jdbc/t2/SQLMXDesc;I[Lorg/apache/trafodion/jdbc/t2/DataWrapper;IIJI)V");
 		if (gJNICache.execDirectOutputsMethodId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.execDirectOutputsMethodId == NULL"));
 
 		gJNICache.execRSOutputsMethodId = JNI_GetMethodID(jenv,SQLMXStatementClass, "setExecRSOutputs",
-			"([Lorg/trafodion/jdbc/t2/SQLMXDesc;IJI)V");
+			"([Lorg/apache/trafodion/jdbc/t2/SQLMXDesc;IJI)V");
 		if (gJNICache.execRSOutputsMethodId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.execRSOutputsMethodId == NULL"));
 
@@ -2990,16 +2990,16 @@ func_exit:
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.setCurrentStmtIdMethodId == NULL"));
 
 		// SQLMXResultSet
-		jclass  SQLMXResultSetClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/SQLMXResultSet");
+		jclass  SQLMXResultSetClass = JNI_FindClass(jenv,"org/apache/trafodion/jdbc/t2/SQLMXResultSet");
 		if (SQLMXResultSetClass == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - SQLMXResultSetClass == NULL"));
 		gJNICache.SQLMXResultSetClass = (jclass) JNI_NewGlobalRef(jenv,SQLMXResultSetClass);
 		gJNICache.fetchOutputsMethodId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "setFetchOutputs",
-			"([Lorg/trafodion/jdbc/t2/DataWrapper;IZI)V");
+			"([Lorg/apache/trafodion/jdbc/t2/DataWrapper;IZI)V");
 		if (gJNICache.fetchOutputsMethodId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.fetchOutputsMethodId == NULL"));
 		gJNICache.SQLMXResultSetConstructorId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "<init>",
-			"(Lorg/trafodion/jdbc/t2/SQLMXDatabaseMetaData;[Lorg/trafodion/jdbc/t2/SQLMXDesc;IJ)V");
+			"(Lorg/apache/trafodion/jdbc/t2/SQLMXDatabaseMetaData;[Lorg/apache/trafodion/jdbc/t2/SQLMXDesc;IJ)V");
 		if (gJNICache.SQLMXResultSetConstructorId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.SQLMXResultSetConstructorId == NULL"));
 		gJNICache.setCurrentTxidRSMethodId = JNI_GetMethodID(jenv,SQLMXResultSetClass, "setCurrentTxid",
@@ -3008,7 +3008,7 @@ func_exit:
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.setCurrentTxidRSMethodId == NULL"));
 
 		//SQLMXDatabaseMetaData
-		jclass  SQLMXDatabaseMetaDataClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/SQLMXDatabaseMetaData");
+		jclass  SQLMXDatabaseMetaDataClass = JNI_FindClass(jenv,"org/apache/trafodion/jdbc/t2/SQLMXDatabaseMetaData");
 		if (SQLMXDatabaseMetaDataClass == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - SQLMXDatabaseMetaDataClass == NULL"));
 		gJNICache.setCurrentTxidDBMMethodId = JNI_GetMethodID(jenv,SQLMXDatabaseMetaDataClass, "setCurrentTxid",
@@ -3017,17 +3017,17 @@ func_exit:
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.setCurrentTxidDBMMethodId == NULL"));
 
 		//SQLMXCallableStatement
-		jclass  SQLMXCallableStatementClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/SQLMXCallableStatement");
+		jclass  SQLMXCallableStatementClass = JNI_FindClass(jenv,"org/apache/trafodion/jdbc/t2/SQLMXCallableStatement");
 		if (SQLMXCallableStatementClass == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - SQLMXCallableStatementClass == NULL"));
 		gJNICache.executeCallOutputsMethodId = JNI_GetMethodID(jenv,SQLMXCallableStatementClass, "setExecuteCallOutputs",
-			"(Lorg/trafodion/jdbc/t2/DataWrapper;SIIIZ)V");
+			"(Lorg/apache/trafodion/jdbc/t2/DataWrapper;SIIIZ)V");
 
 
 		if (gJNICache.executeCallOutputsMethodId == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.executeCallOutputsMethodId == NULL"));
 
-		gJNICache.SQLMXConnectionClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/SQLMXConnection");
+		gJNICache.SQLMXConnectionClass = JNI_FindClass(jenv,"org/apache/trafodion/jdbc/t2/SQLMXConnection");
 		if (gJNICache.SQLMXConnectionClass == NULL)
 		{
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.SQLMXConnectionClass == NULL"));
@@ -3057,7 +3057,7 @@ func_exit:
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - gJNICache.getBytesEncodedMethodId == NULL"));
 
 		// Create reference to the DataWrapper class
-		jclass wrapperClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/DataWrapper");
+		jclass wrapperClass = JNI_FindClass(jenv,"org/apache/trafodion/jdbc/t2/DataWrapper");
 		if (wrapperClass == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - wrapperClass == NULL"));
 		gJNICache.wrapperClass = (jclass)JNI_NewGlobalRef(jenv,wrapperClass);
@@ -3080,7 +3080,7 @@ func_exit:
 //------------
 		// SPJRS
 		// Create reference to the ResultSetInfo class
-		jclass ResultSetInfoClass = JNI_FindClass(jenv,"org/trafodion/jdbc/t2/ResultSetInfo");
+		jclass ResultSetInfoClass = JNI_FindClass(jenv,"org/apache/trafodion/jdbc/t2/ResultSetInfo");
 		if (ResultSetInfoClass == NULL)
 			FUNCTION_RETURN_NUMERIC(FALSE,("FALSE - ResultSetInfoClass == NULL"));
 		gJNICache.ResultSetInfoClass = (jclass)JNI_NewGlobalRef(jenv,ResultSetInfoClass);
@@ -3541,7 +3541,7 @@ func_exit:
 			else
 			{
 				jstring jstr = wrapperInfo->jenv->NewStringUTF(strDataPtr);
-				if (!setWrapperObject(wrapperInfo,columnIndex,jstr,org_trafodion_jdbc_t2_DataWrapper_STRING))
+				if (!setWrapperObject(wrapperInfo,columnIndex,jstr,org_apache_trafodion_jdbc_t2_DataWrapper_STRING))
 				{
 					throwSQLException(wrapperInfo->jenv, JVM_MEM_ALLOC_ERROR, NULL, "HY000");
 					FUNCTION_RETURN_NUMERIC(FALSE,("setWrapper - JVM_MEM_ALLOC_ERROR"));
