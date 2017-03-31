@@ -129,7 +129,7 @@ public class TrafT4PooledConnectionManager implements javax.sql.ConnectionEventL
 					} catch (SQLException sqlEx) {
 						try {
 							pc.close();
-						} catch (Exception e) {
+						} catch (SQLException e) {
 						} // cleanup, ignore any errors
 					}
 				} else {
@@ -145,7 +145,7 @@ public class TrafT4PooledConnectionManager implements javax.sql.ConnectionEventL
 					} catch (SQLException sqlEx) {
 						try {
 							pc.close();
-						} catch (Exception e) {
+						} catch (SQLException e) {
 						} // cleanup, ignore any errors
 						if (removeInUseConnection(pc, false)) {
 							--count_;
