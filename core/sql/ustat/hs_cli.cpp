@@ -2968,7 +2968,12 @@ Lng32 HSCursor::setRowsetPointers(HSColGroupStruct *group, Lng32 maxRows)
       // Character data is written into a different buffer, and the data buffer
       // will consist of pointers to the char values.
       if (DFS2REC::isAnyCharacter(group->ISdatatype))
-        rowset_fields_[j].var_ptr = (void *)group->strNextData;
+        {
+          if (DFS2REC::isSQLVarChar(group->ISdatatype) && group->isCompacted())
+            rowset_fields_[j].var_ptr = (void *)group->varcharFetchBuffer;
+          else
+            rowset_fields_[j].var_ptr = (void *)group->strNextData;
+        }
       else
         rowset_fields_[j].var_ptr = (void *)group->nextData;
       j++;

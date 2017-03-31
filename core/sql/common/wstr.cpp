@@ -64,6 +64,47 @@ int iswspace (NAWchar wc)
 }
 */
 
+// Compares two Wchar strings using SQL blank-padding semantics.
+// Returns +ve if the first string is greater, 0 if equal, -ve if
+// the second string is greater.
+Int32 compareWcharWithBlankPadding(const NAWchar *wstr1, UInt32 len1,
+                                   const NAWchar *wstr2, UInt32 len2)
+{
+  UInt32 shorterLen = (len1 < len2 ? len1 : len2);
+  Int32 rc = memcmp(wstr1,wstr2,shorterLen*sizeof(NAWchar));
+  if (rc == 0)
+    {
+      if (len1 < len2)
+        {
+          // compare the rest of wstr2 with blanks
+          while ((shorterLen < len2) && (wstr2[shorterLen] == L' '))
+            shorterLen++;
+
+          if (shorterLen < len2)
+            {
+              if (wstr2[shorterLen] > L' ')
+                rc = -1;
+              else
+                rc = 1;
+            }
+        }
+      else if (len1 > len2)
+        {
+          // compare the rest of wstr1 with blanks
+          while ((shorterLen < len1) && (wstr1[shorterLen] == L' '))
+            shorterLen++;
+
+          if (shorterLen < len1)
+            {
+              if (wstr1[shorterLen] > L' ')
+                rc = 1;
+              else
+                rc = -1;
+            }
+        }            
+    }
+  return rc;
+}
 
 // Do a char-by-char comparison (including nulls) up to the length of the
 // shorter string or the first difference. If the strings are equal up to the

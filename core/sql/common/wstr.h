@@ -45,6 +45,17 @@
 #include "unicode_char_set.h"
 
 // -----------------------------------------------------------------------
+// Compare w-strings <left> and <right> (using unsigned comparison and
+// SQL blank-padding semantics)
+// for <length> characters.
+// Return a negative value if left < right,
+// return 0 if left == right,
+// return a positive value if left > right.
+// -----------------------------------------------------------------------
+Int32 compareWcharWithBlankPadding(const NAWchar *wstr1, UInt32 len1,
+                                   const NAWchar *wstr2, UInt32 len2);
+
+// -----------------------------------------------------------------------
 // Compare strings <left> and <right> (using unsigned comparison).
 // for <length> characters.
 // Return a negative value if left < right,

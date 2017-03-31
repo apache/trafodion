@@ -2748,9 +2748,11 @@ void getPreviousUECRatios(HSColGroupStruct *groupList)
         {
           totalRows = 0;
           totalUec  = 0;
+          oldAvgVarcharSize = -1;
         }
       Int64 totalRows;
       Int64 totalUec;
+      Int64 oldAvgVarcharSize;
     };
 
   // Allocate an array big enough to hold info on every column in the table.
@@ -2767,6 +2769,11 @@ void getPreviousUECRatios(HSColGroupStruct *groupList)
         {
           uecInfo[cursor.tableColNum_].totalRows = (Int64)cursor.totalRowCount_;
           uecInfo[cursor.tableColNum_].totalUec = (Int64)cursor.totalUec_;
+          // the avgVarCharCount_ (V2 column in SB_HISTOGRAMS) is 100 times the
+          // average varchar length
+          if (cursor.avgVarCharCount_ > 0)  // if the column is set
+            uecInfo[cursor.tableColNum_].oldAvgVarcharSize = 
+              (Int64)(cursor.avgVarCharCount_+99)/100;
         }
     }
 
@@ -2778,10 +2785,11 @@ void getPreviousUECRatios(HSColGroupStruct *groupList)
       colNum = group->colSet[0].colnum;
       group->prevRowCount = uecInfo[colNum].totalRows;
       group->prevUEC = uecInfo[colNum].totalUec;
+      group->oldAvgVarCharSize = uecInfo[colNum].oldAvgVarcharSize;
       if (LM->LogNeeded())
         {
-          sprintf(LM->msg, "Existing histogram for column %s: rows = " PF64 ", UEC = " PF64,
-                  group->colSet[0].colname->data(), group->prevRowCount, group->prevUEC);
+          sprintf(LM->msg, "Existing histogram for column %s: rows = " PF64 ", UEC = " PF64 ", avgVarCharSize = %f",
+                  group->colSet[0].colname->data(), group->prevRowCount, group->prevUEC, group->oldAvgVarCharSize);
           LM->Log(LM->msg);
         }
       group = group->next;

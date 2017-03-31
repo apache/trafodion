@@ -3528,6 +3528,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(USTAT_COLLECT_MC_SKEW_VALUES,         "OFF"),
 
+  DDkwd__(USTAT_COMPACT_VARCHARS,               "OFF"),  // If on, internal sort does not pad out varchars
   DD_____(USTAT_CQDS_ALLOWED_FOR_SPAWNED_COMPILERS, ""), // list of CQDs that can be pushed to seconday compilers
                                                          // CQDs are delimited by ","
 

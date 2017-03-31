@@ -677,6 +677,7 @@ enum DefaultConstants
                                          //   salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   USTAT_ATTEMPT_ESP_PARALLELISM,  // use parallel plans for reading columns to form histograms
   USTAT_CHECK_HIST_ACCURACY,   // After stats collection, examine full table and calculate accuray of hists
+  USTAT_COMPACT_VARCHARS,      // For internal sort, store only the actual # chars used in each value
   USTAT_CLUSTER_SAMPLE_BLOCKS, // number of blocks for cluster sampling
   USTAT_ESTIMATE_HBASE_ROW_COUNT,  // If ON, estimate row count of HBase table instead of count(*), subject
                                    //     to USTAT_MIN_ESTIMATE_FOR_ROWCOUNT setting)

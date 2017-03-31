@@ -53,6 +53,7 @@
 #include "hs_faststats.h"
 #include "ComCextdecs.h"
 #include "NAString.h"
+#include "wstr.h"
 #include "Collections.h"
 #include "NumericType.h"
 #include "exp_datetime.h"
@@ -1344,6 +1345,13 @@ void ISVarChar::fail(const char* opName, Lng32 line)
 // and positive value if greater.
 Int32 ISVarChar::compare(const ISVarChar &rhs)
 {
+  Int32 result;
+  Int16 lhsLen = *(short*)content;
+  Int16 rhsLen = *(short*)rhs.content;
+  Int16 minLen = MINOF(lhsLen, rhsLen);
+  Int16 diffLen;
+  char* diffPtr;
+
   // Note that case insensitive is not supported with non-binary collation.
   if (CollationInfo::isSystemCollation(colCollation))
       return Collated_cmp(content+VARCHAR_LEN_FIELD_IN_BYTES,
@@ -1354,11 +1362,34 @@ Int32 ISVarChar::compare(const ISVarChar &rhs)
   // UCS2 cols not supported in MODE_SPECIAL_1 and do not support case insensitivity.
   if (!caseInsensitive) {
     if (charset != CharInfo::UNICODE)
-      return memcmp(content+VARCHAR_LEN_FIELD_IN_BYTES,
+    {
+      result = memcmp(content+VARCHAR_LEN_FIELD_IN_BYTES,
                     rhs.content+VARCHAR_LEN_FIELD_IN_BYTES,
-                    MAXOF(*((short*)content), *((short*)rhs.content)));
+                    minLen);
+      if (result != 0 || lhsLen == rhsLen)
+        return result;
+      else
+      {
+        if (minLen == lhsLen)
+        {
+          diffPtr = rhs.content + VARCHAR_LEN_FIELD_IN_BYTES + minLen;
+          diffLen = rhsLen - minLen;
+        }
+        else
+        {
+          diffPtr = content + VARCHAR_LEN_FIELD_IN_BYTES + minLen;
+          diffLen = lhsLen - minLen;
+        }
+        for (int i = 0; i < diffLen; i++)
+        {
+          if (*diffPtr++ != ' ')
+            return (minLen == lhsLen ? -1 : 1);
+        }
+        return 0;
+      }
+    }
     else  
-      return na_wcsnncmp((const wchar_t*)(content+VARCHAR_LEN_FIELD_IN_BYTES),
+      return compareWcharWithBlankPadding((const wchar_t*)(content+VARCHAR_LEN_FIELD_IN_BYTES),
                           *((short*)content) / sizeof(NAWchar), 
                           (const wchar_t*)(rhs.content+VARCHAR_LEN_FIELD_IN_BYTES),
                           *((short*)rhs.content) / sizeof(NAWchar));
@@ -1371,22 +1402,7 @@ Int32 ISVarChar::compare(const ISVarChar &rhs)
 
 Int32 ISVarChar::operator==(const ISVarChar &rhs)
 {
-  // Note that case insensitive is not supported with non-binary collation.
-  if (CollationInfo::isSystemCollation(colCollation))
-      return (Collated_cmp(content+VARCHAR_LEN_FIELD_IN_BYTES,
-                        rhs.content+VARCHAR_LEN_FIELD_IN_BYTES,
-                        MAXOF(*((short*)content), *((short*)rhs.content)),
-                        colCollation, sortBuffer1, sortBuffer2 ) == 0);
-
-  // UCS2 cols not supported in MODE_SPECIAL_1 and do not support case insensitivity.
-  if (!caseInsensitive)
-    return !memcmp(content+VARCHAR_LEN_FIELD_IN_BYTES,
-                  rhs.content+VARCHAR_LEN_FIELD_IN_BYTES,
-                  MAXOF(*((short*)content), *((short*)rhs.content)));
-  else                  
-    return !hs_strncasecmp(content+VARCHAR_LEN_FIELD_IN_BYTES,
-                  rhs.content+VARCHAR_LEN_FIELD_IN_BYTES,
-                  MAXOF(*((short*)content), *((short*)rhs.content)));
+  return !compare(rhs);  // returns 1 if equal, 0 if not
 }
 
 void IUSFixedChar::operator=(const HSDataBuffer& buff)
@@ -1457,14 +1473,18 @@ HSColGroupStruct::HSColGroupStruct()
       : colSet(STMTHEAP), colCount(0), clistr(new(STMTHEAP) NAString(STMTHEAP)),
         oldHistid(0), newHistid(0), colNames(new(STMTHEAP) NAString(STMTHEAP)),
         groupHist(NULL), next(NULL), prev(NULL), state(UNPROCESSED), 
-        memNeeded(0), data(NULL), nextData(NULL), strData(NULL), strNextData(NULL),
+        memNeeded(0), strMemAllocated(0),
+        data(NULL), nextData(NULL), strData(NULL), strNextData(NULL),
         strDataConsecutive(TRUE),  // only becomes false if data sets merged for IUS
+        varcharFetchBuffer(NULL),
         mcis_data(NULL), mcis_nextData(NULL), mcs_usingme(0), //for MC
         nullIndics(NULL), nullCount(0), mcis_rowsRead(0),
-        ISdatatype(-1), ISlength(-1), ISprecision(-1), ISscale(-1),
+        eligibleForVarCharCompaction(FALSE),
+        ISdatatype(-1), ISlength(-1), ISvcLenUsed(-1), ISprecision(-1), ISscale(-1),
         ISSelectExpn(STMTHEAP), prevRowCount(0), prevUEC(0),
         reason(HS_REASON_UNKNOWN), newReason(HS_REASON_MANUAL),
-        colSecs(0), coeffOfVar(0), avgVarCharSize(-1), skewedValuesCollected(FALSE),
+        colSecs(0), coeffOfVar(0), oldAvgVarCharSize(-1), rowsRead(0), sumSize(0),
+        avgVarCharSize(-1), skewedValuesCollected(FALSE),
         mcis_nullIndBitMap(NULL), mcis_colsUsedMap(NULL),
         mcis_colsMissingMap(NULL), mcis_memFreed(FALSE),
         mcis_totalMCmemNeeded(0), mcis_groupHead(TRUE), mcis_next(NULL), mcis_readAsIs (FALSE),
@@ -1486,6 +1506,88 @@ HSColGroupStruct::~HSColGroupStruct()
     delete next;
     freeISMemory();
   }
+
+/**
+ * Sets the length of the IS type of the column, and the estimated average
+ * length if the mapped type is varchar and compacted varchars are in use.
+ *
+ * @param len Natural length of the column type as represented for IS.
+ * @param maxCharColumnLengthInBytes Maximum length character string limit
+ *    imposed by UPDATE STATS
+ */
+void HSColGroupStruct::setISlength(Lng32 len, Lng32 maxCharColumnLengthInBytes)
+{
+  ISlength = MINOF(len, maxCharColumnLengthInBytes);
+  if (!DFS2REC::isAnyVarChar(ISdatatype))
+    return;
+
+  if (eligibleForVarCharCompaction)
+  {
+    // If average varchar size is known from older histograms
+    // use that; otherwise use a rule of thumb estimate.
+
+    if (oldAvgVarCharSize >= 1)
+      ISvcLenUsed = oldAvgVarCharSize + 4;  // + 4 to allow a little growth
+    else
+    {
+      // In the absence of older histograms, assume the average
+      // length is about one half the maximum length. (After all,
+      // the user presumably chose varchar to save some space.)
+      // Note: This code path can only be taken on the first call
+      // to this method. Later calls happen only when we overran
+      // buffer space, but in that case oldAvgVarCharSize will 
+      // have been calculated.
+      double ruleOfThumbEstimate = len/2;
+      if (ruleOfThumbEstimate < 4)
+        ruleOfThumbEstimate = 4;
+      ISvcLenUsed = ruleOfThumbEstimate;
+    }
+
+    if (ISvcLenUsed > ISlength)
+      ISvcLenUsed = ISlength;  // don't allow it to exceed the actual size!
+
+    HSLogMan *LM = HSLogMan::Instance();
+    if (LM->LogNeeded())
+    {
+      sprintf(LM->msg, "Considering compaction on varchar column %s:", colNames->data());
+      LM->Log(LM->msg);
+      sprintf(LM->msg, "    Declared len: %d, estimated avg len: %d", ISlength, ISvcLenUsed);
+      LM->Log(LM->msg);
+      sprintf(LM->msg, "    Compaction%schosen", ISvcLenUsed == len ? " not " : " ");
+      LM->Log(LM->msg);
+    }
+  }
+  else
+    ISvcLenUsed = ISlength;
+}
+
+/**
+ * Determines the number of bytes to allocate for strData, the buffer holding
+ * all the data for a char/varchar column with internal sort. The overall memory
+ * requirement for the column has already been calculated. Here, we just need to
+ * determine how much of it is for the data buffer. The other parts are the array
+ * of objects (ISFixedChar or ISVarChar) that reference the content, and for
+ * a compacted varchar, the buffer that the uncompacted varchar data is read into.
+ *
+ * @param rows Number of rows being retrieved to calculate stats on.
+ * @return Number of bytes to allocate to hold the char or varchar content.
+ */
+size_t HSColGroupStruct::strDataMemNeeded(Int64 rows)
+{
+  size_t result = memNeeded;
+  HS_ASSERT(DFS2REC::isAnyCharacter(ISdatatype));
+  if (DFS2REC::isAnyVarChar(ISdatatype))
+  {
+    result -= (rows * sizeof(ISVarChar));  // deduct space for ptrs to content
+    if (isCompacted())
+      result -= (inflatedVarcharContentSize() * MAX_ROWSET);  // deduct pre-compaction fetch buffer
+  }
+  else
+    result -= (rows * sizeof(ISFixedChar));
+
+  return result;
+}
+
 
 // Allocates memory necessary for internal sort for the group. If an allocation
 // failure occurs, free any memory already allocated for the current column and
@@ -1509,8 +1611,6 @@ NABoolean HSColGroupStruct::allocateISMemory(Int64 rows,
                                              NABoolean recalcMemNeeded)
 {
   HSLogMan *LM = HSLogMan::Instance();
-  Int64 uvCharCount;
-  size_t strMemNeeded;
   NAWchar* wptr;
   NABoolean allAllocated = TRUE;
 
@@ -1559,7 +1659,11 @@ NABoolean HSColGroupStruct::allocateISMemory(Int64 rows,
          //
          // memNeeded includes length for ptrs; subtract it from amount of space
          // to allocate for the strings themselves.
-         strMemNeeded = memNeeded - (size_t)(sizeof(void*) * rows);
+         size_t strMemNeeded = strDataMemNeeded(rows);
+         // round up to next multiple of sizeof(short)
+         strMemNeeded = sizeof(short) * ( (strMemNeeded + sizeof(short) - 1) / sizeof(short) );
+         strMemAllocated = strMemNeeded;  // remember for overrun checking
+
 
          if (DFS2REC::isAnyVarChar(ISdatatype))
            {
@@ -1570,15 +1674,31 @@ NABoolean HSColGroupStruct::allocateISMemory(Int64 rows,
                  if (!strData)
                    throw ISMemAllocException();
 
-                 if (ISdatatype == REC_BYTE_V_DOUBLE)
-                   {
-                     uvCharCount = strMemNeeded / sizeof(NAWchar);
-                     wptr = (NAWchar*)strData + uvCharCount - 1;
-                     while (uvCharCount--)
-                       *wptr-- = L' ';
-                   }
+                 // Unless varchar values are compacted after being read, blank out the
+                 // entire varchar allocation to allow simple blank-padded comparison
+                 // of different-length strings.
+                 if (isCompacted())
+                 {
+                   size_t fetchMemNeeded = (inflatedVarcharContentSize() * MAX_ROWSET);
+                   fetchMemNeeded = sizeof(short) * 
+                                    ( (fetchMemNeeded + sizeof(short) - 1) / sizeof(short) );
+                   varcharFetchBuffer =
+                         (char*)(newBuiltinArr(short, fetchMemNeeded / sizeof(short)));
+                   if (!varcharFetchBuffer)
+                     throw ISMemAllocException();
+                 }
                  else
-                   memset(strData, ' ', strMemNeeded);
+                 {
+                   if (ISdatatype == REC_BYTE_V_DOUBLE)
+                     {
+                       Int64 uvCharCount = strMemNeeded / sizeof(NAWchar);
+                       wptr = (NAWchar*)strData + uvCharCount - 1;
+                       while (uvCharCount--)
+                         *wptr-- = L' ';
+                     }
+                   else
+                     memset(strData, ' ', strMemNeeded);
+                 }
                }
 #ifdef _TEST_ALLOC_FAILURE
              data = newObjArrX(ISVarChar, rows, allocCount++);
@@ -1663,6 +1783,11 @@ void HSColGroupStruct::freeISMemory(NABoolean freeStrData, NABoolean freeMCData)
             {
               NADELETEBASIC((short*)strData, STMTHEAP);
               strData = NULL;
+              if (isCompacted())
+                {
+                  NADELETEBASIC((short*)varcharFetchBuffer, STMTHEAP);
+                  varcharFetchBuffer = NULL;
+                }
             }
         }
       else
@@ -4979,9 +5104,8 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
         {
           HSGlobalsClass *hs_globals = GetHSContext();
           group->ISdatatype = col.datatype;
-          group->ISlength = col.length;
-          if (group->ISlength > hs_globals->maxCharColumnLengthInBytes)
-            group->ISlength = hs_globals->maxCharColumnLengthInBytes;
+          //group->ISlength = col.length;
+          group->setISlength(col.length,hs_globals->maxCharColumnLengthInBytes);
           group->ISprecision = col.precision;
           group->ISscale = col.scale;
           // the method below handles adding SUBSTRING for over-size char/varchars
@@ -5113,14 +5237,7 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
 
           case REC_BYTE_V_ASCII:
           case REC_BYTE_V_DOUBLE:
-            // Length is max bytes. Add size of length field, and alignment byte
-            // if max length is odd. Also add for object that references the string,
-            // which is stored in a separate array.
-            elementSize = group->ISlength 
-                            + VARCHAR_LEN_FIELD_IN_BYTES
-                            + (group->ISlength%2)
-                            + sizeof(ISVarChar);
-            //cumuVarCharSize += elementSize;
+            elementSize = group->varcharContentSize() + sizeof(ISVarChar);
             break;
 
           default:
@@ -5145,7 +5262,11 @@ void HSGlobalsClass::getMemoryRequirementsForOneGroup(HSColGroupStruct* group, I
         }
 
       Int64 i64MemNeeded = rows * elementSize;
-      group->memNeeded = (i64MemNeeded <= UINT_MAX ? (size_t)(rows * elementSize) : 0);
+      if (group->isCompacted())  // varchar only
+        {
+          i64MemNeeded += (MAX_ROWSET * group->inflatedVarcharContentSize());
+        }
+      group->memNeeded = (i64MemNeeded <= UINT_MAX ? (size_t)i64MemNeeded : 0);
       if (LM->LogNeeded())
         {
           if (group->memNeeded == 0)
@@ -5386,6 +5507,39 @@ Lng32 HSGlobalsClass::CollectStatistics()
       }
     else  // internal sort is enabled 
       {
+        // Figure out which groups are eligible for varchar compaction:
+        // A varchar column is eligible if CQD USTAT_COMPACT_VARCHARS is 'ON'
+        // and that column is not referenced by any multi-column group.
+        // The reason for the latter condition is we want to avoid the
+        // possibility of doing a second full table sample scan in the event
+        // that we attempt to do multi-column histograms in-memory, and
+        // we underestimate the memory needed for internal sort.
+
+        NABoolean varcharCompactionFeasible = FALSE;
+        if (CmpCommon::getDefault(USTAT_COMPACT_VARCHARS) == DF_ON)
+          {
+            NABitVector * refdColumns = new (STMTHEAP) NABitVector (STMTHEAP);
+            for (HSColGroupStruct * mcgrp = multiGroup; mcgrp; mcgrp = mcgrp->next)
+              {
+                for (Int32 i = 0; i < mcgrp->colCount; i++)
+                  {
+                    HSColumnStruct *c = &mcgrp->colSet[i];
+                    refdColumns->setBit(c->colnum);
+                  }
+              }
+
+            for (HSColGroupStruct * sgrp = singleGroup; sgrp; sgrp = sgrp->next)
+              {
+                if (!refdColumns->contains(sgrp->colSet[0].colnum))
+                  {
+                    sgrp->eligibleForVarCharCompaction = TRUE;
+                    varcharCompactionFeasible = TRUE;
+                  }
+              }
+
+            delete refdColumns;
+          }
+
         // Get percentage of available memory to recommend. If an allocation
         // for memory for a column fails, this percentage will be reduced
         // for subsequent selection of column batches.
@@ -5393,6 +5547,11 @@ Lng32 HSGlobalsClass::CollectStatistics()
         ISMemPercentage_ = (float)CmpCommon::getDefaultNumeric(USTAT_IS_MEMORY_FRACTION);
 
         NABoolean trySampleTableBypassForIS = useSampling && externalSampleTable == FALSE;
+
+        // If we are considering varchar compaction and IS, get previous histogram
+        // information here.
+        if (varcharCompactionFeasible)
+          getPreviousUECRatios(singleGroup);
 
         mapInternalSortTypes(singleGroup);
         Int64 maxRowsToRead = getInternalSortMemoryRequirements(TRUE); 
@@ -5470,9 +5629,9 @@ Lng32 HSGlobalsClass::CollectStatistics()
            sgroup = NULL;
         }
 
-        if (internalSortWhenBetter)
+        // If we need UEC ratios info and we haven't already read it, do so now
+        if (internalSortWhenBetter && !varcharCompactionFeasible)
           getPreviousUECRatios(singleGroup);  // used to decide when to use IS
-
 
         
         if ( performISForMC() ) 
@@ -10463,7 +10622,8 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
   NABoolean computeVarCharSize = FALSE;
   NABoolean maxLongLimit = FALSE;
   short *nullInd = NULL;
-  Int32 vcLen;
+  Int32 vcInflatedLen, vcCompactLen;
+  char* inflatedDataPtr;
   char *dataPtr, errtxt[100]={0};
   Int32 i;
   Lng32 retcode=0;
@@ -10471,7 +10631,7 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
 
   while (group)
     {
-      if (group->state != PENDING)
+      if (group->state != PENDING && group->state != OVERRAN)
         {
           group = group->next;
           continue;
@@ -10541,48 +10701,84 @@ Lng32 HSGlobalsClass::processInternalSortNulls(Lng32 rowsRead, HSColGroupStruct 
 
           case REC_BYTE_V_ASCII:
           case REC_BYTE_V_DOUBLE:
-            // Set up elements of data array, which are pointers to varchar
-            // values (2-byte length field followed by string). The length
-            // we advance the ptr by includes an extra byte for alignment if
-            // the varchar length is odd.
-            // We also compute average varchar data size here which is not
-            // something processInternalSortNulls() method should be doing.
-            // This new code (computing avg size) will be moved to a separate
-            // new method in the future.
-            vcLen = (group->ISlength + VARCHAR_LEN_FIELD_IN_BYTES + (group->ISlength % 2));
-            vchPtr = (ISVarChar*)group->nextData;
-            dataPtr = (char*)group->strNextData;
-            nullInd = group->nullIndics;
-            sumSize = 0;
-            for (i=0; i<rowsRead; i++)
-              {
-                vchPtr->setContent(dataPtr);
-                // varchar type AND max long limit not reached.
-                if (group->computeAvgVarCharSize() AND (!maxLongLimit))
+            {
+              // Set up elements of data array, which are pointers to varchar
+              // values (2-byte length field followed by string). The length
+              // we advance the ptr by includes an extra byte for alignment if
+              // the varchar length is odd.
+              // We also compute average varchar data size here which is not
+              // something processInternalSortNulls() method should be doing.
+              // This new code (computing avg size) will be moved to a separate
+              // new method in the future.
+              vcInflatedLen = group->inflatedVarcharContentSize();
+              vchPtr = (ISVarChar*)group->nextData;
+              dataPtr = (char*)group->strNextData;
+              inflatedDataPtr = (char*)group->varcharFetchBuffer;
+              nullInd = group->nullIndics;
+              NABoolean compacted = group->isCompacted();
+              Int64 nulls = 0;  // Number of nulls in this batch of values
+              for (i=0; i<rowsRead; i++)
                 {
-                  // Not a NULL value.
-                  if (!nullInd OR *nullInd != -1)
-                  {
-                    sumSize += vchPtr->getLength();
-                    // if sumSize >= max limit for long, then stop and
-                    // calculate avg for the data we have so far.
-                    if (sumSize >= INT_MAX)
+                  if (nullInd && *nullInd == -1)
                     {
-                      maxLongLimit = TRUE;
-                      group->avgVarCharSize = (double)sumSize / (double)(i+1);
+                      nulls++;
+                      if (compacted)
+                        inflatedDataPtr += vcInflatedLen;
+                      else
+                        dataPtr += vcInflatedLen;
                     }
-                  }
-                } // varchar type
-                
-                if (nullInd) nullInd++;
+                  else
+                  {
+                    if (compacted)
+                      {
+                        vcCompactLen = HSColGroupStruct::varcharContentSize(*(Int16*)inflatedDataPtr);
+                        group->sumSize += vcCompactLen;
+                        if (group->state == PENDING)  // that is, not OVERRAN
+                          {
 
-                dataPtr += vcLen;
-                vchPtr++;
-              }
-            if ( group->computeAvgVarCharSize() AND (group->avgVarCharSize == -1) )
-              group->avgVarCharSize = (double)sumSize / (double)rowsRead;
-            group->strNextData = dataPtr;  // not affected by null processing
-            processNullsForColumn(group, rowsRead, (ISVarChar*)NULL);
+                            if (dataPtr + vcCompactLen > (char *)group->strData + group->strMemAllocated)
+                              {
+                                // We underestimated the space needed for compacted varchars,
+                                // so don't save anymore. We'll continue to compute the actual
+                                // average varchar length though.
+                                group->state = OVERRAN; 
+                                if (LM->LogNeeded())
+                                  {
+                                    sprintf(LM->msg, "Exhausted varchar compaction memory for column %s", group->colNames->data());
+                                    LM->Log(LM->msg);
+                                  }
+                              }
+                            else
+                              { 
+                                memcpy(dataPtr, inflatedDataPtr, (ULng32)vcCompactLen);
+                                inflatedDataPtr += vcInflatedLen;
+                                vchPtr->setContent(dataPtr);
+                                dataPtr += vcCompactLen;
+                              }
+                          }
+                      }
+                    else
+                      {
+                        vchPtr->setContent(dataPtr);
+                        dataPtr += vcInflatedLen;
+                        group->sumSize += vchPtr->getLength();
+                      }
+                    
+                    vchPtr++;
+                  }
+
+                  if (nullInd)
+                    nullInd++;
+                }
+
+              group->nullCount += nulls;
+              group->rowsRead += rowsRead;
+              // compute average varchar size from running rows count and running sum of varchar sizes
+              if (group->rowsRead > 0)
+                group->avgVarCharSize = (double)group->sumSize / (double)group->rowsRead;
+              group->nextData = vchPtr;
+              group->strNextData = dataPtr;
+            }
             break;
 
           // LCOV_EXCL_START :rfi
@@ -10956,6 +11152,28 @@ Int32 HSGlobalsClass::selectSortBatch(Int64 rows,
   // into account the second time.
   while (group != NULL)
     {
+      if (group->state == OVERRAN)
+        {
+          group->state = UNPROCESSED;
+
+          group->freeISMemory(TRUE,TRUE);  // free old memory
+
+          // recalculate group->memNeeded based on what we now know about
+          // average varchar size
+ 
+          group->oldAvgVarCharSize = group->avgVarCharSize;
+          group->avgVarCharSize = -1;  // to force a new computation
+          group->setISlength(group->ISlength,maxCharColumnLengthInBytes);
+
+          Int64 rows;
+          if (sampleRowCount > 0)
+            rows = sampleRowCount;
+          else
+            rows = actualRowCount;
+       
+          getMemoryRequirementsForOneGroup(group,rows);
+        }
+
       if (group->state == UNPROCESSED &&
           group->memNeeded > 0 &&        // was set to 0 if exceeds address space
           group->memNeeded < memLeft &&
@@ -11328,6 +11546,9 @@ Lng32 HSGlobalsClass::prepareToReadColumnsIntoMem(HSCursor *cursor, Int64 rows)
     {
       if (group->state == PENDING)  
         {
+          group->rowsRead = 0;
+          group->sumSize = 0;
+
           if (firstExpn)
             firstExpn = false;
           else
@@ -11428,12 +11649,25 @@ Lng32 HSGlobalsClass::readColumnsIntoMem(HSCursor *cursor, Int64 rows)
             retcode = cursor->setRowsetPointers(singleGroup,rowsetSize);
         }
     }
+
+  // Deallocate buffer uncompacted varchars were read into prior to being compacted.
+  HSColGroupStruct* group = singleGroup;
+  while (group != NULL)
+  {
+    if (group->state == PENDING && group->isCompacted())
+    {
+      NADELETEBASIC((short*)(group->varcharFetchBuffer), STMTHEAP);
+      group->varcharFetchBuffer = NULL;
+    }
+    group = group->next;
+  }
+
   if (retcode < 0) HSHandleError(retcode) else retcode=0; // Set to 0 for warnings.
 
   // some post-reading to memory processing to support MC in-memory computation
   if ( performISForMC() )
   {
-      HSColGroupStruct* group = singleGroup;
+     group = singleGroup;
      do
      {
         if (group->state == PENDING) 
