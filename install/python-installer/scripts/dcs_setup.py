@@ -26,23 +26,23 @@
 import os
 import sys
 import json
-from common import append_file, write_file, mod_file, cmd_output, run_cmd, \
-                   ParseInI, ParseXML, DEF_PORT_FILE, err
+from constants import TRAF_CFG_FILE
+from common import append_file, write_file, mod_file, cmd_output, \
+                   ParseInI, ParseXML, err, run_cmd
 
 def run():
     dbcfgs = json.loads(dbcfgs_json)
 
-    TRAF_HOME = os.environ['TRAF_HOME']
-    TRAF_VER = dbcfgs['traf_version']
-    HBASE_XML_FILE = dbcfgs['hbase_xml_file']
+    traf_home = os.environ['TRAF_HOME']
+    traf_ver = dbcfgs['traf_version']
+    hbase_xml_file = dbcfgs['hbase_xml_file']
 
-    DCS_CONF_DIR = '%s/dcs-%s/conf' % (TRAF_HOME, TRAF_VER)
-    DCS_SRV_FILE = DCS_CONF_DIR + '/servers'
-    DCS_MASTER_FILE = DCS_CONF_DIR + '/master'
-    DCS_BKMASTER_FILE = DCS_CONF_DIR + '/backup-masters'
-    DCS_SITE_FILE = DCS_CONF_DIR + '/dcs-site.xml'
-    REST_SITE_FILE = '%s/rest-%s/conf/rest-site.xml' % (TRAF_HOME, TRAF_VER)
-    TRAFODION_CFG_FILE = '/etc/trafodion/trafodion_config'
+    dcs_conf_dir = '%s/dcs-%s/conf' % (traf_home, traf_ver)
+    dcs_srv_file = dcs_conf_dir + '/servers'
+    dcs_master_file = dcs_conf_dir + '/master'
+    dcs_bkmaster_file = dcs_conf_dir + '/backup-masters'
+    dcs_site_file = dcs_conf_dir + '/dcs-site.xml'
+    rest_site_file = '%s/rest-%s/conf/rest-site.xml' % (traf_home, traf_ver)
 
     ### dcs setting ###
     # servers
@@ -52,20 +52,20 @@ def run():
     for node in nodes:
         dcs_servers += '%s %s\n' % (node, dcs_cnt)
 
-    write_file(DCS_SRV_FILE, dcs_servers)
+    write_file(dcs_srv_file, dcs_servers)
 
     ### modify dcs config files ###
     # modify master
     dcs_master = nodes[0]
-    append_file(DCS_MASTER_FILE, dcs_master)
+    append_file(dcs_master_file, dcs_master)
 
     # modify dcs-site.xml
     net_interface = run_cmd('ip route |grep default|awk \'{print $5}\'')
-    hb = ParseXML(HBASE_XML_FILE)
+    hb = ParseXML(hbase_xml_file)
     zk_hosts = hb.get_property('hbase.zookeeper.quorum')
     zk_port = hb.get_property('hbase.zookeeper.property.clientPort')
 
-    p = ParseXML(DCS_SITE_FILE)
+    p = ParseXML(dcs_site_file)
     p.add_property('dcs.zookeeper.property.clientPort', zk_port)
     p.add_property('dcs.zookeeper.quorum', zk_hosts)
     p.add_property('dcs.dns.interface', net_interface)
@@ -80,16 +80,16 @@ def run():
 
         # set DCS_MASTER_FLOATING_IP ENV for trafci
         dcs_floating_ip_cfg = 'export DCS_MASTER_FLOATING_IP=%s' % dcs_floating_ip
-        append_file(TRAFODION_CFG_FILE, dcs_floating_ip_cfg)
+        append_file(TRAF_CFG_FILE, dcs_floating_ip_cfg)
 
         # modify backup_master
         for dcs_backup_node in dcs_backup_nodes.split(','):
-            append_file(DCS_BKMASTER_FILE, dcs_backup_node)
+            append_file(dcs_bkmaster_file, dcs_backup_node)
 
     p.write_xml()
 
     ### rest setting ###
-    p = ParseXML(REST_SITE_FILE)
+    p = ParseXML(rest_site_file)
     p.add_property('rest.zookeeper.property.clientPort', zk_port)
     p.add_property('rest.zookeeper.quorum', zk_hosts)
     p.write_xml()

@@ -27,9 +27,8 @@ import json
 import subprocess
 from glob import glob
 from threading import Thread
-from common import err_m, run_cmd, time_elapse, get_logger, Remote, \
-                   ParseJson, INSTALLER_LOC, TMP_DIR, SCRCFG_FILE, \
-                   CONFIG_DIR, SCRIPTS_DIR
+from constants import INSTALLER_LOC, TMP_DIR, SCRCFG_FILE, CONFIG_DIR, SCRIPTS_DIR
+from common import err_m, run_cmd, time_elapse, get_logger, Remote, ParseJson
 
 class RemoteRun(Remote):
     """ run commands or scripts remotely using ssh """
@@ -121,9 +120,9 @@ def run(dbcfgs, options, mode='install', pwd=''):
     """ main entry
         mode: install/discover
     """
-    STAT_FILE = '%s/%s.status' % (INSTALLER_LOC, mode)
-    LOG_FILE = '%s/logs/%s_%s.log' % (INSTALLER_LOC, mode, time.strftime('%Y%m%d_%H%M'))
-    logger = get_logger(LOG_FILE)
+    stat_file = '%s/%s.status' % (INSTALLER_LOC, mode)
+    log_file = '%s/logs/%s_%s.log' % (INSTALLER_LOC, mode, time.strftime('%Y%m%d_%H%M'))
+    logger = get_logger(log_file)
 
     verbose = True if hasattr(options, 'verbose') and options.verbose else False
     reinstall = True if hasattr(options, 'reinstall') and options.reinstall else False
@@ -157,11 +156,11 @@ def run(dbcfgs, options, mode='install', pwd=''):
         skipped_scripts += ['apache_mods', 'apache_restart']
 
     # set ssh config file to avoid known hosts verify on current installer node
-    SSH_CFG_FILE = os.environ['HOME'] + '/.ssh/config'
+    ssh_cfg_file = os.environ['HOME'] + '/.ssh/config'
     ssh_cfg = 'StrictHostKeyChecking=no\nNoHostAuthenticationForLocalhost=yes\n'
-    with open(SSH_CFG_FILE, 'w') as f:
+    with open(ssh_cfg_file, 'w') as f:
         f.write(ssh_cfg)
-    run_cmd('chmod 600 %s' % SSH_CFG_FILE)
+    run_cmd('chmod 600 %s' % ssh_cfg_file)
 
     def run_local_script(script, json_string, req_pwd):
         cmd = '%s/%s \'%s\'' % (SCRIPTS_DIR, script, json_string)
@@ -219,7 +218,7 @@ def run(dbcfgs, options, mode='install', pwd=''):
             elif cfg['req_pwd'] == 'yes':
                 req_pwd = True
 
-            status = Status(STAT_FILE, script)
+            status = Status(stat_file, script)
             if status.get_status():
                 msg = 'Script [%s] had already been executed' % script
                 state_skip(msg)
@@ -253,7 +252,7 @@ def run(dbcfgs, options, mode='install', pwd=''):
                     for t in threads: t.join()
 
                     if sum([r.rc for r in parted_remote_inst]) != 0:
-                        err_m('Script failed to run on one or more nodes, exiting ...\nCheck log file %s for details.' % LOG_FILE)
+                        err_m('Script failed to run on one or more nodes, exiting ...\nCheck log file %s for details.' % log_file)
 
                     script_output += [{r.host:r.stdout.strip()} for r in parted_remote_inst]
 
@@ -266,7 +265,7 @@ def run(dbcfgs, options, mode='install', pwd=''):
         err_m('User quit')
 
     # remove status file if all scripts run successfully
-    os.remove(STAT_FILE)
+    os.remove(stat_file)
 
     return script_output
 

@@ -29,6 +29,7 @@ import json
 import sys
 import platform
 from glob import glob
+from constants import DEF_CORE_SITE_XML, DEF_HBASE_HOME
 from common import cmd_output, err, Version, ParseXML
 
 PREFIX = 'get_'
@@ -127,14 +128,13 @@ class Discover(object):
             except AttributeError:
                 continue
 
-        if not jdk_list:
-            return NA
+        # auto detect JDK1.8/1.7
+        if jdk_list.has_key('1.8.0'):
+            return jdk_list['1.8.0']
+        elif jdk_list.has_key('1.7.0'):
+            return jdk_list['1.7.0']
         else:
-            # use JDK1.8 first
-            if jdk_list.has_key('1.8.0'):
-                return jdk_list['1.8.0']
-            elif jdk_list.has_key('1.7.0'):
-                return jdk_list['1.7.0']
+            return NA
 
     @deco
     def get_hive(self):
@@ -147,12 +147,12 @@ class Discover(object):
 
     def _get_core_site_info(self, name):
         if self.dbcfgs.has_key('hadoop_home'): # apache distro
-            CORE_SITE_XML = '%s/etc/hadoop/core-site.xml' % self.dbcfgs['hadoop_home']
+            core_site_xml = '%s/etc/hadoop/core-site.xml' % self.dbcfgs['hadoop_home']
         else:
-            CORE_SITE_XML = '/etc/hadoop/conf/core-site.xml'
+            core_site_xml = DEF_CORE_SITE_XML
 
-        if os.path.exists(CORE_SITE_XML):
-            p = ParseXML(CORE_SITE_XML)
+        if os.path.exists(core_site_xml):
+            p = ParseXML(core_site_xml)
             return p.get_property(name)
         else:
             return NA
@@ -166,9 +166,9 @@ class Discover(object):
         """ get HBase version """
         if self.dbcfgs.has_key('hbase_home'): # apache distro
             hbase_home = self.dbcfgs['hbase_home']
-            hbase_ver = cmd_output('%s/bin/hbase version | head -n1' % hbase_home)
         else:
-            hbase_ver = cmd_output('hbase version | head -n1')
+            hbase_home = DEF_HBASE_HOME
+        hbase_ver = cmd_output('%s/bin/hbase version | head -n1' % hbase_home)
 
         support_hbase_ver = self.version.get_version('hbase')
         try:

@@ -206,17 +206,6 @@
       "default":"trafodion",
       "isuser":true
   },
-  "db_admin_user":
-  {
-      "prompt":"Enter LDAP user name to be assigned DB Admin privileges",
-      "default":"admin",
-      "isuser":true
-  },
-  "db_admin_pwd":
-  {
-      "prompt":"Enter LDAP user password to be assigned DB Admin privileges",
-      "default":"traf123"
-  },
   "node_list":
   {
       "prompt":"Enter list of Nodes separated by comma, support simple numeric RE,\n i.e. \"n[01-12],n[21-25]\",\"n0[1-5].com\""

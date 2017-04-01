@@ -26,17 +26,17 @@
 import os
 import sys
 import json
-from common import run_cmd, mod_file, err, TMP_DIR
+from common import run_cmd, mod_file, err
 
 def run():
     """ setup LDAP security """
     dbcfgs = json.loads(dbcfgs_json)
 
-    DB_ROOT_USER = dbcfgs['db_root_user']
-    TRAF_HOME = os.environ['TRAF_HOME']
-    SQENV_FILE = TRAF_HOME + '/sqenvcom.sh'
-    TRAF_AUTH_CONFIG = '%s/sql/scripts/.traf_authentication_config' % TRAF_HOME
-    TRAF_AUTH_TEMPLATE = '%s/sql/scripts/traf_authentication_config' % TRAF_HOME
+    db_root_user = dbcfgs['db_root_user']
+    traf_home = os.environ['TRAF_HOME']
+    sqenv_file = traf_home + '/sqenvcom.sh'
+    traf_auth_config = '%s/sql/scripts/.traf_authentication_config' % traf_home
+    traf_auth_template = '%s/sql/scripts/traf_authentication_config' % traf_home
 
     # set traf_authentication_config file
     change_items = {
@@ -50,19 +50,19 @@ def run():
     }
 
     print 'Modify authentication config file'
-    run_cmd('cp %s %s' % (TRAF_AUTH_TEMPLATE, TRAF_AUTH_CONFIG))
-    mod_file(TRAF_AUTH_CONFIG, change_items)
+    run_cmd('cp %s %s' % (traf_auth_template, traf_auth_config))
+    mod_file(traf_auth_config, change_items)
 
     print 'Check LDAP Configuration file for errors'
-    run_cmd('ldapconfigcheck -file %s' % TRAF_AUTH_CONFIG)
+    run_cmd('ldapconfigcheck -file %s' % traf_auth_config)
 
-    print 'Verify that LDAP user %s exists' % DB_ROOT_USER
-    run_cmd('ldapcheck --verbose --username=%s' % DB_ROOT_USER)
+    print 'Verify that LDAP user %s exists' % db_root_user
+    run_cmd('ldapcheck --verbose --username=%s' % db_root_user)
     #if not 'Authentication successful' in ldapcheck_result:
-    #    err('Failed to access LDAP server with user %s' % DB_ROOT_USER)
+    #    err('Failed to access LDAP server with user %s' % db_root_user)
 
     print 'Modfiy sqenvcom.sh to turn on authentication'
-    mod_file(SQENV_FILE, {'TRAFODION_ENABLE_AUTHENTICATION=.*\n':'TRAFODION_ENABLE_AUTHENTICATION=YES\n'})
+    mod_file(sqenv_file, {'TRAFODION_ENABLE_AUTHENTICATION=NO':'TRAFODION_ENABLE_AUTHENTICATION=YES'})
 
 # main
 try:

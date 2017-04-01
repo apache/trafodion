@@ -26,18 +26,19 @@
 import os
 import sys
 import json
+from constants import DEF_HDFS_BIN, PARCEL_HBASE_LIB, PARCEL_HDFS_BIN
 from common import err, run_cmd, cmd_output, run_cmd_as_user
 
 def run():
-    hdfs_bin = '/usr/bin/hdfs'
+    hdfs_bin = DEF_HDFS_BIN
 
     dbcfgs = json.loads(dbcfgs_json)
-    DISTRO = dbcfgs['distro']
+    distro = dbcfgs['distro']
 
-    if 'CDH' in DISTRO:
-        parcel_lib = '/opt/cloudera/parcels/CDH/lib/hbase/lib'
-        if os.path.exists(parcel_lib): hdfs_bin = '/opt/cloudera/parcels/CDH/bin/hdfs'
-    elif 'APACHE' in DISTRO:
+    if 'CDH' in distro:
+        parcel_lib = PARCEL_HBASE_LIB
+        if os.path.exists(parcel_lib): hdfs_bin = PARCEL_HDFS_BIN
+    elif 'APACHE' in distro:
         hdfs_bin = dbcfgs['hadoop_home'] + '/bin/hdfs'
 
     traf_loc = '/user/trafodion'

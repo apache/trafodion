@@ -30,15 +30,12 @@ from common import run_cmd, err
 def run():
     dbcfgs = json.loads(dbcfgs_json)
 
-    TRAF_DIRNAME = dbcfgs['traf_dirname']
+    traf_dirname = dbcfgs['traf_dirname']
 
     # untar traf package, package comes from copy_files.py
-    TRAF_PACKAGE_FILE = '/tmp/' + dbcfgs['traf_package'].split('/')[-1]
-    run_cmd('mkdir -p ~/%s' % TRAF_DIRNAME)
-    run_cmd('tar xf %s -C ~/%s' % (TRAF_PACKAGE_FILE, TRAF_DIRNAME))
-
-    # copy dbcfgs file
-    run_cmd('cp -rf /tmp/dbcfgs ~/.dbcfgs')
+    traf_package_file = '/tmp/' + dbcfgs['traf_package'].split('/')[-1]
+    run_cmd('mkdir -p ~/%s' % traf_dirname)
+    run_cmd('tar xf %s -C ~/%s' % (traf_package_file, traf_dirname))
 
     print 'Trafodion package extracted successfully!'
 

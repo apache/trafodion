@@ -86,8 +86,8 @@ Please verify these requirements on each node you will install {project-name} on
 [cols="20%a,40%a,40%a",options="header"]
 |===
 | Function | Requirement                                                                                  | Verification Guidance
-| Linux    | 64-bit version of Red Hat 6.5 or later, or SUSE SLES 11.3 or later.                          |
-| sshd     | The `ssh` daemon is running on each node in the cluster.                                     | 
+| Linux    | 64-bit version of Red Hat(RHEL) or CentOS 6.5 -6.8                                           | `cat /etc/redhat-release`
+| sshd     | The `ssh` daemon is running on each node in the cluster.                                     |
 &#8226; `ps aux  \| grep sshd` +
 &#8226; `sudo netstat -plant \| grep :22`
 | ntpd     | The `ntp` daemon is running and synchronizing time on each node in the cluster.              |
@@ -107,16 +107,12 @@ the port is *not* open.
 | passwordless ssh | The user name used to provision {project-name} must have passwordless ssh access to all nodes. | ssh to the nodes, ensure that no password prompt appears.
 | sudo privileges  | The user name used to provision {project-name} must sudo access to a number of root functions . | `sudo echo "test"` on each node.
 | bash     | Available for shell-script execution.                                                        | `bash --version`
-| java     | Available to run the {project-name} software. Same version as HBase is using.                     | `java --version`
+| java     | Available to run the {project-name} software. Same version as HBase is using.                | `java --version`
 | perl     | Available for script execution.                                                              | `perl --version`
 | python   | Available for script execution.                                                              | `python --version`
 | yum      | Available for installs, updates, and removal of software packages.                           | `yum --version`
 | rpm      | Available for installs, updates, and removal of software packages.                           | `rpm --version`
 | scp      | Available to copy files among nodes in the cluster.                                          | `scp --help`
-| curl     | Available to transfer data with URL syntax.                                                  | `curl --version`
-| wget     | Available to download files from the Web.                                                    | `wget --version`
-| pdsh     | Available to run shell commands in parallel.                                                 | `pdsh -V`
-| pdcp     | Available to copy files among nodes in parallel. part of the `pdsh` package.                 | `pdcp -V`                                         
 |===
 
 
@@ -214,19 +210,17 @@ http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch[Fedo
 | protobuf             | Data serialization.                                                               | yum install protobuf
 | xerces-c             | C++ XML parsing.                                                                  | yum install xerces-c
 | gzip                 | Data compress/decompress.                                                         | yum install gzip
-| rpm-build^2^         | Build binary and source software packages.                                        | yum install rpm-build 
-| apr-devel^2^         | Support files used to build applications using the APR library.                   | yum install apr-devel
-| apr-util-devel^2^    | Support files used to build applications using the APR utility library.           | yum install apr-util-devel
-| doxygen^2^           | Generate documentation from annotated C++ sources.                                | yum install doxygen
-| gcc^2^               | GNU Compiler Collection                                                           | yum install gcc
-| gcc_c++^2^           | GNU C++ compiler.                                                                 | yum install gcc_c++
+| apr-devel            | Support files used to build applications using the APR library.                   | yum install apr-devel
+| apr-util-devel       | Support files used to build applications using the APR utility library.           | yum install apr-util-devel
 |===
 
-1. `log4c&#43;&#43;` was recently withdrawn from public repositories. Therefore, you will need to build the `log4c&#43;&#43;` RPM
-on your system and then install the RPM using the procedure described in <<log4cplusplus_installation,log4c++ Installation>>.
-2. Software package required to build `log4c&#43;&#43;`. Not required otherwise. These packages are *not* installed by the {project-name} Installer in this release.
-
-The {project-name} Installer requires Internet access to install the required software packages.
+The {project-name} Installer requires both Internet access/Offline mode to install the required software packages.
+Specify `db_install.py --offline` to use the offline install feature. Before that, you need to prepare a local repository
+folder for all the above dependencies.
+To create a local repository, be sure the `createrepo` package is installed, then run createrepo command in your rpm folder.
+```
+$ createrepo -d .
+```
 
 [[requirements-trafodion-user-ids-and-their-privileges]]
 == {project-name} User IDs and Their Privileges
@@ -265,17 +259,14 @@ The user ID that performs the {project-name} installation steps. Typically, this
 ** Run Java version command on each node in the cluster.
 ** Run Hadoop version command on each node in the cluster.
 ** Run HBase version command on each node in the cluster.
-** Create directories and files in:
-*** `/etc`
-*** `/usr/lib`
-*** `/var/log`
+** Create directories and files in `/etc/trafodion`:
 ** Invoke `su` to execute commands as other users; for example, `trafodion`.
 ** Edit `sysctl.conf` and activate changes using `sysctl -p`:
 *** Modify kernel limits.
 *** Reserve IP ports.
 
 ^1^ `sudo` is *required* in the current release of {project-name}. This restriction may be relaxed in later releases.
-Alternative mechanisms for privileged access (such as running as `root` or `sudo` alternative commands) are not supported.
+Alternative mechanisms for privileged access (such as `sudo` alternative commands) are not supported.
 
 [[requirements-distribution-manager-user]]
 ==== Distribution Manager User

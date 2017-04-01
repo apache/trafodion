@@ -82,7 +82,7 @@ def run():
     elif 'HDP' in distro:
         hdfs_keytab = '/etc/security/keytabs/hdfs.headless.keytab'
         hbase_keytab = '/etc/security/keytabs/hbase.service.keytab'
-        hdfs_principal = '%s/%s@%s' % (hdfs_user, cluster_name, realm)
+        hdfs_principal = '%s-%s@%s' % (hdfs_user, cluster_name, realm)
 
     run_cmd('sudo -u %s kinit -kt %s %s' % (hdfs_user, hdfs_keytab, hdfs_principal))
     run_cmd('sudo -u %s kinit -kt %s %s' % (hbase_user, hbase_keytab, hbase_principal))
