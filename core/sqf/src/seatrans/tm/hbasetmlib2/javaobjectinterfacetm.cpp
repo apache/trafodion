@@ -34,6 +34,9 @@ jint jniHandleCapacity_ = 0;
 #define DEFAULT_MAX_TM_HEAP_SIZE "2048" 
 #define USE_JVM_DEFAULT_MAX_HEAP_SIZE 0
 #define TRAF_DEFAULT_JNIHANDLE_CAPACITY 32
+#define DEFAULT_COMPRESSED_CLASSSPACE_SIZE 128
+#define DEFAULT_MAX_METASPACE_SIZE 128
+
   
 static const char* const joiErrorEnumStr[] = 
 {
@@ -153,6 +156,28 @@ int JavaObjectInterfaceTM::createJVM()
                                                                        debugPort_,         debugTimeout_);
       jvm_options[numJVMOptions++].optionString = debugOptions;
     }
+
+  char compressedClassSpaceSizeOptions[64];
+  int compressedClassSpaceSize = 0;
+  const char *compressedClassSpaceSizeStr = getenv("JVM_COMPRESSED_CLASS_SPACE_SIZE");
+  if (compressedClassSpaceSizeStr)
+    compressedClassSpaceSize = atoi(compressedClassSpaceSizeStr);
+  if (compressedClassSpaceSize <= 0)
+     compressedClassSpaceSize = DEFAULT_COMPRESSED_CLASSSPACE_SIZE;
+  sprintf(compressedClassSpaceSizeOptions, "-XX:CompressedClassSpaceSize=%dm", compressedClassSpaceSize);
+  jvm_options[numJVMOptions].optionString = compressedClassSpaceSizeOptions;
+  numJVMOptions++;
+
+  char maxMetaspaceSizeOptions[64];
+  int maxMetaspaceSize = 0;
+  const char *maxMetaspaceSizeStr = getenv("JVM_MAX_METASPACE_SIZE");
+  if (maxMetaspaceSizeStr)
+    maxMetaspaceSize = atoi(maxMetaspaceSizeStr);
+  if (maxMetaspaceSize <= 0)
+     maxMetaspaceSize = DEFAULT_MAX_METASPACE_SIZE;
+  sprintf(maxMetaspaceSizeOptions, "-XX:MaxMetaspaceSize=%dm", maxMetaspaceSize);
+  jvm_options[numJVMOptions].optionString = maxMetaspaceSizeOptions;
+  numJVMOptions++;
   
   jvm_args.version            = JNI_VERSION_1_6;
   jvm_args.options            = jvm_options;
