@@ -491,12 +491,6 @@ else
   function vanilla_apache_usage {
 
   cat <<EOF
-    If you haven't set HBASE_DISTRO, please set it before source current file
-      export HBASE_DISTRO=APACHE1.0 (APACHE HBASE1.0)
-      export HBASE_DISTRO=APACHE1.1 (APACHE HBASE1.1)
-      export HBASE_DISTRO=CDH5.4    (cloudera 1.0.0-cdh5.4.4) 
-      export HBASE_DISTRO=CDH5.5    (cloudera 1.0.0-cdh5.5.1) 
-      export HBASE_DISTRO=HDP       (hortonworks 2.3)
 
     If you are ready to build Trafodion, perform one of the following options:
 
@@ -504,19 +498,15 @@ else
       make package     (Build Trafodion, DCS, REST, and Client drivers)  OR
       make package-all (Build Trafodion, DCS, REST, Client drivers, and Tests)
 
-    If Trafodion has been built and you want test: 
-
-       Execute the install_local_hadoop script which performs a single node
-       install using a popular Hadoop distribution 
-
-          cd $TRAF_HOME/sql/scripts
-          install_local_hadoop [-p <port option>]
-          install_traf_components 
-          configure Trafodion and start the processes
-          HAVE FUN!
-
-   You can also choose to install_local_hadoop before building Trafodion.
-
+   If Trafodion has been built and you want test: 
+   Ensure Hadoop is installed :
+    Follow instructions for user environment : 
+    http://trafodion.apache.org/docs/provisioning_guide/index.html
+    Follow instructions for dev environment at :  
+    https://cwiki.apache.org/confluence/display/TRAFODION/Create+Test+Environment
+                              
+   You can also choose to install hadoop before building Trafodion.
+                        HAVE FUN!
 EOF
   }
 
