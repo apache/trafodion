@@ -62,6 +62,9 @@
 #include "ExExeUtil.h"
 #include "Globals.h"
 #include "Context.h"
+#include <sys/stat.h>
+#include <stdlib.h>
+
 Int32 extractLobHandle(CliGlobals *cliglob, char *& lobHandle, 
 		       char *lobColumnName, char *tableName);
 
@@ -76,4 +79,4 @@ Int32 updateBufferToLob(CliGlobals *cliglob, char *tableName, char *columnName);
 Int32 updateAppendBufferToLob(CliGlobals *cliGlob, char *tableName, char *columnName);
 Int32 updateBufferToLobHandle(CliGlobals *cliglob,  char *handle);
 Int32 updateTruncateLobHandle(CliGlobals *cliglob,  char *handle);
-Int32 updateAppendBufferToLobHandle(CliGlobals *cliglob,  char *handle);
+Int32 updateAppendBufferToLobHandle(CliGlobals *cliglob,  char *handle,Int64 updateLen, Int64 sourceAddress);

@@ -3003,7 +3003,7 @@ public:
  void setLobMaxSize(Int64 lms) {lobMaxSize_ = lms;};
   Int64 getLobMaxSize() { return lobMaxSize_;};
  void setLobMaxChunkSize(Int64 lmcs) {lobMaxChunkSize_ = lmcs;};
-  Int64 getLobMaxChunkSize() { return lobMaxChunkSize_;};
+  Int64 getLobMaxChunkSize() { return lobMaxChunkSize_*1024*1024;};
  void setLobGCLimit(Int64 gcl ) {lobGCLimit_ = gcl;};
   Int64 getLobGCLimit() { return lobGCLimit_;};
 private:

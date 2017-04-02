@@ -303,7 +303,7 @@ Int32 updateBufferToLobHandle(CliGlobals *cliglob,char *handle)
 
 }
 
-Int32 updateAppendBufferToLobHandle(CliGlobals *cliglob,char *handle)
+Int32 updateAppendBufferToLobHandle(CliGlobals *cliglob,char *handle, Int64 lobUpdateLen, Int64 sourceAddress)
 {
   Int32 retcode = 0;
   ExeCliInterface cliInterface((cliglob->currContext())->exHeap(), (Int32)SQLCHARSETCODE_UTF8, cliglob->currContext(),NULL);
@@ -313,9 +313,8 @@ Int32 updateAppendBufferToLobHandle(CliGlobals *cliglob,char *handle)
  
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobUpdateLen = 20;
   char *lobDataBuf = new char[lobUpdateLen];
-  memcpy(lobDataBuf, "zzzzzzzzzzzzzzzzzzzz",20);
+  memcpy(lobDataBuf, (char *)sourceAddress,lobUpdateLen);
   str_sprintf(query,"update lob (LOB '%s' , LOCATION %Ld, SIZE %Ld,append )", handle, (Int64)lobDataBuf, lobUpdateLen);
  
  

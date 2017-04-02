@@ -88,6 +88,11 @@ prepare s from insert into t130lob2 values (1, ?);
 execute s using 'fgfgfhfhfhfhhfhfhfhjfkkfkffllflflfll';
 select lobtostring(c2,50) from t130lob2;
 
+--test update with param 
+prepare s from update t130lob2 set c2=? where c1 =1;
+execute s using 'xyxyxyxyxyxyx';
+select lobtostring(c2,50) from t130lob2;
+
 --test insert select from a source char column to lob
 delete from t130lob2;
 insert into t130char values (1,'fixed char 1'),(2,'fixed char 2'),(3,'fixed char 3');
