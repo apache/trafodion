@@ -3868,7 +3868,7 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
   // -----------------------------------------
   countOfStreams = countOfStreams_;
 
-  HbaseDelete* delOp = (HbaseDelete *)op;   // downcast
+  HbaseUpdate* updOp = (HbaseUpdate *)op;   // downcast
 
   CMPASSERT(partFunc_ != NULL);
 
@@ -3881,7 +3881,7 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
   //  But for now, we do the following:
   CostScalar activePartitions = (CostScalar)(partFunc_->getCountOfPartitions());
 
-  const IndexDesc* CIDesc = delOp->getIndexDesc();
+  const IndexDesc* CIDesc = updOp->getIndexDesc();
   const CostScalar & recordSizeInKb = CIDesc->getRecordSizeInKb();
 
   CostScalar tuplesProcessed(csZero);
@@ -3905,7 +3905,7 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
     NABoolean probesForceSynchronousAccess = FALSE;
     ValueIdList targetSortKey = CIDesc->getOrderOfKeyValues();
     ValueIdSet sourceCharInputs =
-      delOp->getGroupAttr()->getCharacteristicInputs();
+      updOp->getGroupAttr()->getCharacteristicInputs();
 
     ValueIdSet targetCharInputs;
     // The char inputs are still in terms of the source. Map them to the target.
@@ -3920,11 +3920,11 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
     // Hence we use lists here instead of sets.
     // Check to see if there are any duplicates in the source Characteristics inputs
     // if no, we shall perform set operations, as these are faster
-    ValueIdList bottomValues = delOp->updateToSelectMap().getBottomValues();
+    ValueIdList bottomValues = updOp->updateToSelectMap().getBottomValues();
     ValueIdSet bottomValuesSet(bottomValues);
     NABoolean useListInsteadOfSet = FALSE;
 
-    CascadesGroup* group1 = (*CURRSTMT_OPTGLOBALS->memo)[delOp->getGroupId()];
+    CascadesGroup* group1 = (*CURRSTMT_OPTGLOBALS->memo)[updOp->getGroupId()];
 
     GenericUpdate* upOperator = (GenericUpdate *) group1->getFirstLogExpr();
 
@@ -3942,7 +3942,7 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
       if (bottomValuesSet == sourceCharInputs)
       {
         useListInsteadOfSet = TRUE;
-	delOp->updateToSelectMap().rewriteValueIdListUpWithIndex(
+	updOp->updateToSelectMap().rewriteValueIdListUpWithIndex(
 	  targetInputList,
 	  bottomValues);
 	targetCharInputs = targetInputList;
@@ -3951,7 +3951,7 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
 
     if (!useListInsteadOfSet)
     {
-      delOp->updateToSelectMap().rewriteValueIdSetUp(
+      updOp->updateToSelectMap().rewriteValueIdSetUp(
 	targetCharInputs,
 	sourceCharInputs);
     }
@@ -3959,7 +3959,7 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
     // If a target key column is covered by a constant on the source side,
     // then we need to remove that column from the target sort key
     removeConstantsFromTargetSortKey(&targetSortKey,
-                                   &(delOp->updateToSelectMap()));
+                                   &(updOp->updateToSelectMap()));
     NABoolean orderedNJ = TRUE;
     // Don't call ordersMatch if njOuterOrder_ is null.
     if (ippForMe->getAssumeSortedForCosting())
@@ -4023,7 +4023,7 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
 
   // Determine # of rows to scan and to delete
 
-  if (delOp->getSearchKey() && delOp->getSearchKey()->isUnique() && 
+  if (updOp->getSearchKey() && updOp->getSearchKey()->isUnique() && 
     (noOfProbes_ == 1))
   {
     // unique access
@@ -4056,7 +4056,7 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
 
     // retrieve all of the key preds in key column order
     ColumnOrderList keyPredsByCol(CIDesc->getIndexKey());
-    delOp->getSearchKey()->getKeyPredicatesByColumn(keyPredsByCol);
+    updOp->getSearchKey()->getKeyPredicatesByColumn(keyPredsByCol);
 
     if ( NOT allKeyColumnsHaveHistogramStatistics( histograms, CIDesc ) )
     {
@@ -4139,9 +4139,9 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
   tuplesProcessed = numRowsToScan; 
   tuplesSent = numRowsToDelete;
 
-  CostScalar rowSize = delOp->getIndexDesc()->getRecordLength();
+  CostScalar rowSize = updOp->getIndexDesc()->getRecordLength();
   CostScalar rowSizeFactor = scmRowSizeFactor(rowSize); 
-  CostScalar outputRowSize = delOp->getGroupAttr()->getRecordLength();
+  CostScalar outputRowSize = updOp->getGroupAttr()->getRecordLength();
   CostScalar outputRowSizeFactor = scmRowSizeFactor(outputRowSize);
 
   tuplesProcessed *= rowSizeFactor;
@@ -4153,7 +4153,7 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
   // Synthesize and return cost object.
   // ---------------------------------------------------------------------
 
-  CostScalar probeRowSize = delOp->getIndexDesc()->getKeyLength();
+  CostScalar probeRowSize = updOp->getIndexDesc()->getKeyLength();
   Cost * updateCost = 
     scmCost(tuplesProcessed, tuplesProduced, tuplesSent, randomIOs, sequentialIOs, noOfProbes_,
 	    rowSize, csZero, outputRowSize, probeRowSize);
