@@ -114,8 +114,6 @@ if (result == LM_PARAM_OVERFLOW)			\
 // Class LmLanguageManagerJava
 //
 //////////////////////////////////////////////////////////////////////
-char* LmLanguageManagerJava::classPath_ = NULL;
-char* LmLanguageManagerJava::sysClassPath_ = NULL;
 ComUInt32 LmLanguageManagerJava::maxLMJava_ = 0;
 ComUInt32 LmLanguageManagerJava::numLMJava_ = 0;
 
@@ -205,8 +203,8 @@ void LmLanguageManagerJava::initialize(LmResult &result,
   // contain garbage values. Some of the error handling routines
   // called by this constructor will use a method ID if it has a
   // non-NULL value.
-  loadClassId_ = loaderSizeId_ = addCpURLsId_ = 
-  removeCpURLsId_ = verifyMethodId_ = createCLId_ = setCPId_ =
+  loadClassId_ =
+  verifyMethodId_ = createCLId_ =
   utilityInitId_ = classCacheSizeId_ = classCacheEnforceId_ =
   systemGetPropId_ = systemSetPropId_ = systemClearPropId_ = 
   bigdecCtorId_ = bigdecStrId_ = bigdecUnscaleId_ = 
@@ -240,9 +238,6 @@ void LmLanguageManagerJava::initialize(LmResult &result,
 
   ++numLMJava_;
  
-  if (numLMJava_ == 1)
-    setJavaClassPath();
-
   if (numLMJava_ > maxLMJava_)
   {
     *diagsArea_ << DgSqlCode(-LME_INTERNAL_ERROR)
@@ -281,8 +276,6 @@ void LmLanguageManagerJava::initialize(LmResult &result,
 #ifdef LM_DEBUG
     actualJvmOptions->display();
     LM_DEBUG0("");
-    LM_DEBUG1("classPath_ is %s", classPath_ ? classPath_ : "NULL");
-    LM_DEBUG1("sysClassPath_ is %s", sysClassPath_ ? sysClassPath_ : "NULL");
     const char *jrehome = getenv("JREHOME");
     LM_DEBUG1("JREHOME is %s", jrehome ? jrehome : "NULL");
     LM_DEBUG1("commandLineMode_ is %s",
@@ -418,8 +411,6 @@ void LmLanguageManagerJava::initialize(LmResult &result,
   // Asserts, just to check we don't have NULL pointers
   LM_ASSERT(LmSqlJVM != NULL);
   LM_ASSERT(jniEnv_ != NULL);
-  LM_ASSERT(sysClassPath_ != NULL);
-
 
   // record the constructing thread's ID.
   threadId_ = threadId();
@@ -541,15 +532,8 @@ void LmLanguageManagerJava::initialize(LmResult &result,
     loaderClass_ = jc;
     loadClassId_ = jni->GetMethodID(jc, "loadClass",
                                     "(Ljava/lang/String;)Ljava/lang/Class;");
-    setCPId_ = jni->GetStaticMethodID(jc, "setClassPath",
-                                      "(Ljava/lang/String;)V");
-    addCpURLsId_ = jni->GetMethodID(jc, "addCpURLs", "()V");
-    removeCpURLsId_ = jni->GetMethodID(jc, "removeCpURLs", "()V");
-    loaderSizeId_ = jni->GetMethodID(jc, "size", "()I");
 
-    if (jni->ExceptionOccurred() || loadClassId_  == NULL || 
-        removeCpURLsId_ == NULL  || setCPId_      == NULL ||
-        loaderSizeId_   == NULL  || addCpURLsId_  == NULL)
+    if (jni->ExceptionOccurred() || loadClassId_  == NULL)
     {
       result = exceptionReporter_->insertDiags(diagsArea_,
                                                -LME_JVM_SYS_CLASS_ERROR,
@@ -561,27 +545,6 @@ void LmLanguageManagerJava::initialize(LmResult &result,
   {
     result = LM_ERR;
     return;
-  }
-
-  // Set classPath for LmClassLoader(seen by all instances of ClassLoader)
-  if (classPath_ != NULL)
-  {
-    jstring jCP = jni->NewStringUTF(classPath_);
-    result = exceptionReporter_->checkNewObjectExceptions(jCP, diagsArea_);
-    if(result == LM_ERR)
-      return;
-
-    jni->CallStaticVoidMethod((jclass)loaderClass_, (jmethodID)setCPId_, jCP);
-    jni->DeleteLocalRef(jCP);
-
-    if (jni->ExceptionOccurred())
-    {
-      result = exceptionReporter_->insertDiags(diagsArea_,
-                                               -LME_INTERNAL_ERROR,
-                                               ": Could not set search path "
-                                               "in ClassLoader.");
-      return;
-    }
   }
 
   jc = (jclass) jni->FindClass("org/trafodion/sql/udr/LmCharsetCoder");
@@ -1472,12 +1435,6 @@ LmLanguageManagerJava::~LmLanguageManagerJava()
   // Adjust the LMJ counter.
   --numLMJava_;
 
-  if (numLMJava_ == 0)
-  {
-    NADELETEBASIC(sysClassPath_, collHeap());
-    NADELETEBASIC(classPath_, collHeap());
-  }
-
   if (userName_)
     NADELETEBASIC(userName_, collHeap());
 
@@ -2230,13 +2187,7 @@ LmHandle LmLanguageManagerJava::loadContainer(
   if(midChk == LM_ERR)
     return NULL;
 
-  //
   // Call the ClassLoader's loadClass() method to get the container.
-  // Before that we need to remove ClassPath from ClassLoader's search
-  // list so that the class will be loaded only from external path.
-  // After calling loadClass(), we add ClassPath again.
-  //
-  jni->CallVoidMethod((jobject)extLoader, (jmethodID)removeCpURLsId_);
   jobj = jni->CallObjectMethod((jobject)extLoader,
                                (jmethodID)loadClassId_,
                                jstr);
@@ -2250,8 +2201,8 @@ LmHandle LmLanguageManagerJava::loadContainer(
     jni->DeleteLocalRef(jobj);
 
     // Call the LmClassLoader's size method to get its current capacity.
-    *containerSize =
-      jni->CallIntMethod((jobject)extLoader, (jmethodID)loaderSizeId_);
+    *containerSize = 100; // currently not implemented,
+                          // could add an interface to verifyClassIsInFile
   }
   else
   {
@@ -2262,9 +2213,6 @@ LmHandle LmLanguageManagerJava::loadContainer(
                                     containerName,
                                     externalPath);
   }
-
-  // Add the CLASSPATH to the search list of the ClassLoader
-  jni->CallVoidMethod((jobject)extLoader, (jmethodID)addCpURLsId_);
 
   return container;
 }
@@ -3672,54 +3620,6 @@ LmResult LmLanguageManagerJava::startService(ComDiagsArea *da)
         << DgString0(": Language Manager is not started yet.");  
     return LM_ERR;
   }
-}
-
-void LmLanguageManagerJava::setJavaClassPath()
-{
-  ComUInt32 totLen = 0;
-
-  char *ntJars = NULL;
-  char installdir[LMJ_NT_FILE_PATH_LEN];
-  Lng32 resultlength = 0;
-  const char *ntLmJar = "/export/lib/mxlangman.jar";
-  const char *ntTrafJar = "/export/lib/trafodion-UDR-0.7.0.jar";
-  const char *ntJdbcT4Jar = "/export/lib/jdbcT2.jar";
-
-  char *root = getenv("TRAF_HOME");
-  LM_ASSERT(root != NULL);
-  resultlength = strlen(root) + 1;
-  LM_ASSERT(resultlength < LMJ_NT_FILE_PATH_LEN);
-  strcpy(installdir, root);
-  ntJars = new (collHeap())
-    char[3*resultlength + str_len(ntTrafJar) + str_len(ntLmJar) + str_len(ntJdbcT4Jar) + 3];
-  sprintf(ntJars, "%s%s:%s%s:%s%s", installdir, ntLmJar, installdir, ntJdbcT4Jar, installdir, ntTrafJar);
-
-
-  char *jExt = NULL;
-
-  if (jExt && jExt[0])
-  {
-    totLen = str_len(jExt) + str_len(ntJars);
-    sysClassPath_ = new (collHeap()) char[totLen + 2];
-
-    sprintf(sysClassPath_, "%s:%s", jExt, ntJars);
-    NADELETEBASIC(ntJars, collHeap());
-    ntJars = NULL;
-  }
-  else
-  {
-    sysClassPath_ = ntJars;
-  }
-
-  // Now get CLASSPATH if it's set.
-  char *envClassPath = getenv("CLASSPATH");
-  if (envClassPath && envClassPath[0])
-  {
-    classPath_ = new (collHeap()) char[str_len(envClassPath) + 1];
-    sprintf(classPath_, "%s", envClassPath);
-  }
-
-  return;
 }
 
 /* threadId(): Returns the current thread's ID. OS-dependent.
