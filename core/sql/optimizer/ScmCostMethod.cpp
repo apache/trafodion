@@ -4162,9 +4162,9 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
 if ( CmpCommon::getDefault( OPTIMIZER_PRINT_COST ) == DF_ON )
     {
       pfp = stdout;
-      fprintf(pfp, "HbaseDelete::scmComputeOperatorCostInternal()\n");
+      fprintf(pfp, "HbaseUpdate::scmComputeOperatorCostInternal()\n");
       updateCost->getScmCplr().print(pfp);
-      fprintf(pfp, "HBase Delete elapsed time: ");
+      fprintf(pfp, "HBase Update elapsed time: ");
       fprintf(pfp,"%f", updateCost->
               convertToElapsedTime(
                    myContext->getReqdPhysicalProperty()).
