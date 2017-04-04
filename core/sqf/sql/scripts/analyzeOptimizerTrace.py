@@ -20,7 +20,7 @@
 # @@@ END COPYRIGHT @@@
 #
 #  This script extracts data from an Optimizer trace, created
-#  using the following CQDs: 
+#  using the following CQDs:
 #
 #  cqd nsk_dbg_log_file 'optimizerTrace.txt';
 #

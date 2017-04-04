@@ -3852,7 +3852,7 @@ CostMethodHbaseUpdate::scmComputeOperatorCostInternal(RelExpr* op,
 
   // The theory of operation of Update is somewhat different (since it
   // might, for example, do a Delete + an Insert, or might do an Hbase
-  // Update -- is that decided before we get here?), so this code will 
+  // Update -- is that decided before we get here?), so this code will
   // underestimate the cost in general.
 
   const Context * myContext = pws->getContext();
