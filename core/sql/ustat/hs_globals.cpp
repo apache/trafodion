@@ -5780,6 +5780,13 @@ Lng32 HSGlobalsClass::CollectStatistics()
         //We must use TRANSLATE to convert non-unicode character strings
         //to unicode
         NABoolean isVarChar = group->computeAvgVarCharSize();
+        // For long character strings, we'll truncate (trading off some
+        // UEC accuracy for performance and also avoiding engine bugs
+        // pertaining to very long varchars).
+        HSColumnStruct &col = group->colSet[0];
+        bool isOverSized = DFS2REC::isAnyCharacter(col.datatype) &&
+              (col.length > maxCharColumnLengthInBytes);
+
         if (isVarChar)
          *group->clistr = "SELECT FMTVAL, SUMVAL, AVGVAL FROM (SELECT ";
         else
@@ -5794,8 +5801,7 @@ Lng32 HSGlobalsClass::CollectStatistics()
         }
         else
          group->clistr->append(", COUNT(*) FROM ");
-        group->clistr->append(hssample_table->data());
-       
+   
         Int64 hintRowCount =  0;
 
         if (sampleTableUsed)
@@ -5809,7 +5815,31 @@ Lng32 HSGlobalsClass::CollectStatistics()
 
         char cardHint[50];
         sprintf(cardHint, " <<+ cardinality %e >> ", (double)hintRowCount);
-        group->clistr->append(cardHint);
+
+        if (isOverSized)
+        {
+          // Stick in a nested select that truncates the string.
+          // We have to do it here so the truncated string is
+          // the grouping column below.
+          char temp[20];  // long enough for 32-bit integer
+          sprintf(temp,"%d",maxCharColumnLengthInBytes);
+
+          group->clistr->append("(SELECT SUBSTR(");
+          group->clistr->append(columnName.data());
+          group->clistr->append(" FOR ");
+          group->clistr->append(temp);
+          group->clistr->append(") AS ");
+          group->clistr->append(columnName.data());
+          group->clistr->append(" FROM ");
+          group->clistr->append(hssample_table->data());
+          group->clistr->append(cardHint);
+          group->clistr->append(") AS T1");
+        }
+        else
+        {
+          group->clistr->append(hssample_table->data());
+          group->clistr->append(cardHint);
+        }
 
         group->clistr->append(" GROUP BY ");
         group->clistr->append(columnName.data());
