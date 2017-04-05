@@ -22,4 +22,4 @@
 # @@@ END COPYRIGHT @@@
 
 rm -f sqconfig.db
-sqlite3 sqconfig.db < $MY_SQROOT/sql/scripts/createConfigDb
+sqlite3 sqconfig.db < $TRAF_HOME/sql/scripts/createConfigDb

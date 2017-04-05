@@ -27,14 +27,14 @@ SQCONFIG_FILE=sqconfig
 function Usage {
     script_name=`/bin/basename $0`
     echo
-    echo $script_name regenerates the Trafodion configuration file in the $MY_SQROOT/sql/scripts directory.
+    echo $script_name regenerates the Trafodion configuration file in the $TRAF_HOME/sql/scripts directory.
     echo
     echo "Usage: $script_name [-? | -h ] | { -config } [ <sqconfig_filename> ]"
     echo "  -?       Help"
     echo "  -h       Help"
     echo "  -config  Regenerate the Trafodion configuration file ($SQCONFIG_FILE)"
     echo "  <sqconfig_filename> Name of the Trafodion configuration file"
-    echo "                      in $MY_SQROOT/sql/scripts directory (defaults to 'sqconfig')"
+    echo "                      in $TRAF_HOME/sql/scripts directory (defaults to 'sqconfig')"
     echo
     exit 1;
 }

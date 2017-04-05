@@ -20,6 +20,6 @@
 #
 # @@@ END COPYRIGHT @@@
 
-export PERL5LIB=$PERL5LIB:$MY_SQROOT/sql/scripts
+export PERL5LIB=$PERL5LIB:$TRAF_HOME/sql/scripts
 ./gocleandb
 ./godb.pl $*

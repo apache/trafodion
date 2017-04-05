@@ -246,7 +246,7 @@ sub printInitialLines {
     printScript(1, "set MY_NODES=\$MY_NODES\n");
 
     sqconfigdb::addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
-    sqconfigdb::addDbClusterData( "MY_SQROOT", "$SQ_ROOT"); # comes out null
+    sqconfigdb::addDbClusterData( "TRAF_HOME", "$TRAF_HOME"); # comes out null
 
     genSQShellExit();
 
