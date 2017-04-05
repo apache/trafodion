@@ -1294,3 +1294,31 @@ Lng32 HSHbaseTableDef::DescribeColumnNames()
   return 0;
 }
 
+//
+// METHOD:  addTruncatedSelectList()
+//
+// PURPOSE: Generates a SELECT list consisting of 
+//          column references or a SUBSTRING
+//          on column references which truncates the
+//          column to the maximum length allowed in
+//          UPDATE STATISTICS.
+//
+// INPUT:   'qry' - the SQL query string to append the 
+//          select list to.
+//
+void HSTableDef::addTruncatedSelectList(NAString & qry)
+  {
+    bool first = true;
+    for (Lng32 i = 0; i < getNumCols(); i++)
+      {
+        if (!ComTrafReservedColName(*getColInfo(i).colname))
+          {
+            if (!first)
+              qry += ", ";
+
+            getColInfo(i).addTruncatedColumnReference(qry);
+            first = false;
+          }
+      }
+  }
+

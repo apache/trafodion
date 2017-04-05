@@ -1882,6 +1882,55 @@ NABoolean HSColumnStruct::operator==(const HSColumnStruct& other) const
     return ( colnum == other.colnum );
   }
 
+//
+// METHOD:  addTruncatedColumnReference()
+//
+// PURPOSE: Generates a column reference or a SUBSTRING
+//          on a column reference which truncates the
+//          column to the maximum length allowed in
+//          UPDATE STATISTICS.
+//
+// INPUT:   'qry' - the SQL query string to append the 
+//          reference to.
+//          'colInfo' - struct containing datatype info
+//          about the column.
+//
+void HSColumnStruct::addTruncatedColumnReference(NAString & qry)
+  {
+    HSGlobalsClass *hs_globals = GetHSContext();
+    Lng32 maxLengthInBytes = hs_globals->maxCharColumnLengthInBytes;
+    bool isOverSized = DFS2REC::isAnyCharacter(datatype) &&
+                           (length > maxLengthInBytes);
+    if (isOverSized)
+      {
+        // Note: The result data type of SUBSTRING is VARCHAR, always.
+        // But if the column is CHAR, many places in the ustat code are not
+        // expecting a VARCHAR. So, we stick a CAST around it to convert
+        // it back to a CHAR in these cases.
+
+        NABoolean isFixedChar = DFS2REC::isSQLFixedChar(datatype);
+        if (isFixedChar)
+          qry += "CAST(";
+        qry += "SUBSTRING(";
+        qry += externalColumnName->data();
+        qry += " FOR ";
+        
+        char temp[20];  // big enough for "nnnnnn)"
+        sprintf(temp,"%d)", maxLengthInBytes / CharInfo::maxBytesPerChar(charset));
+        qry += temp;
+        if (isFixedChar)
+          {
+            qry += " AS CHAR(";
+            qry += temp;
+            qry += ")";
+          }
+        qry += " AS ";
+        qry += externalColumnName->data();
+      }
+    else
+      qry += externalColumnName->data();
+  }
+
 
 HSInterval::HSInterval()
       : rowCount_(0), uecCount_(0), gapMagnitude_(0), highFreq_(FALSE),
@@ -4224,7 +4273,7 @@ Lng32 HSSample::make(NABoolean rowCountIsEstimate, // input
         // The source table has an oversized column. We have to generate
         // SUBSTRING calls on such columns to fit them into the sample
         // table.
-        addTruncatedSelectList(dml);
+        objDef->addTruncatedSelectList(dml);
       }      
     else
       dml += "*";
@@ -5109,7 +5158,7 @@ static void mapInternalSortTypes(HSColGroupStruct *groupList, NABoolean forHive 
           group->ISprecision = col.precision;
           group->ISscale = col.scale;
           // the method below handles adding SUBSTRING for over-size char/varchars
-          HSSample::addTruncatedColumnReference(group->ISSelectExpn,col);
+          col.addTruncatedColumnReference(group->ISSelectExpn);
         }
         break;
      } // switch
@@ -6758,7 +6807,8 @@ Lng32 HSGlobalsClass::generateSampleI(Int64 currentSampleSize,
 
     NAString insertSelectIQuery;
     iusSampleInsertedInMem->generateInsertSelectIQuery(sampleTable_I, 
-                        *user_table, insertSelectIQuery, 
+                        *user_table, insertSelectIQuery,
+                        hasOversizedColumns, objDef, 
                         currentSampleSize, futureSampleSize,
                         deleteSetSize, actualRowCount);
 
@@ -12482,7 +12532,17 @@ void HSGlobalsClass::generateIUSSelectInsertQuery(const NAString& smplTable,
 {
   queryText.append("UPSERT USING LOAD INTO "); // for algorithm 1
   queryText.append(smplTable.data());
-  queryText.append(" (SELECT * FROM ");
+  queryText.append(" (SELECT ");
+  if (hasOversizedColumns)
+    {
+      // The source table has an oversized column. We have to generate
+      // SUBSTRING calls on such columns to fit them into the sample
+      // table.
+      objDef->addTruncatedSelectList(queryText);
+    }      
+  else
+    queryText.append("*");
+  queryText.append(" FROM ");
 
   if (CmpCommon::getDefault(USTAT_INCREMENTAL_UPDATE_STATISTICS) == DF_ON)
     {
@@ -16181,6 +16241,8 @@ void
 HSInMemoryTable::generateInsertSelectIQuery(NAString& targetTable, 
                                             NAString& sourceTable,
                                             NAString& queryText,
+                                            NABoolean hasOversizedColumns,
+                                            HSTableDef * objDef,
                                             Int64 futureSampleSize,
                                             Int64 currentSampleSize,
                                             Int64 deleteSetSize,
@@ -16200,7 +16262,17 @@ HSInMemoryTable::generateInsertSelectIQuery(NAString& targetTable,
 
   queryText.append(targetTable.data());
 
-  queryText.append(" (SELECT * FROM ");
+  queryText.append(" (SELECT ");
+  if (hasOversizedColumns)
+    {
+      // The source table has an oversized column. We have to generate
+      // SUBSTRING calls on such columns to fit them into the sample
+      // table.
+      objDef->addTruncatedSelectList(queryText);
+    }      
+  else
+    queryText.append("*");
+  queryText.append(" FROM ");
 
   queryText.append(sourceTable.data());
   queryText.append(" WHERE ");
