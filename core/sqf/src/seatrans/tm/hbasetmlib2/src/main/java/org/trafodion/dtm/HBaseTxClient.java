@@ -57,6 +57,7 @@ import org.apache.hadoop.hbase.client.transactional.TransactionMap;
 import org.apache.hadoop.hbase.client.transactional.TransactionalReturn;
 import org.apache.hadoop.hbase.client.transactional.TmDDL;
 import org.apache.hadoop.hbase.exceptions.DeserializationException;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
@@ -1427,7 +1428,7 @@ public class HBaseTxClient {
      //--------------------------------------------------------------------------------
       public HashMapArray callRequestRegionInfo() throws IOException {
 
-      String tablename, encoded_region_name, region_name, is_offline, region_id, hostname, port, thn;
+      String tablename, encoded_region_name, region_name, is_offline, region_id, hostname, port, thn, startkey, endkey;
 
       HashMap<String, String> inMap;
       long lv_ret = -1;
@@ -1447,64 +1448,40 @@ public class HBaseTxClient {
           TransactionState ts = mapTransactionStates.get(id);
           final Set<TransactionRegionLocation> regions = ts.getParticipatingRegions();
 
-          // TableName
           Iterator<TransactionRegionLocation> it = regions.iterator();
-          tablename = it.next().getRegionInfo().getTable().getNameAsString();
-          while(it.hasNext()){
-              tablename = tablename + ";" + it.next().getRegionInfo().getTable().getNameAsString();
-          }
-          hm.addElement(tnum, "TableName", tablename);
+          
+          while(it.hasNext()) {
+              TransactionRegionLocation trl = it.next();
+              tablename = trl.getRegionInfo().getTable().getNameAsString();
+              if(tablename.contains("TRAFODION._MD_."))
+                 continue;
+              encoded_region_name = trl.getRegionInfo().getEncodedName();
+              region_name = trl.getRegionInfo().getRegionNameAsString();
+              boolean is_offline_bool = trl.getRegionInfo().isOffline();
+              is_offline = String.valueOf(is_offline_bool);
+              region_id = String.valueOf(trl.getRegionInfo().getRegionId());
+              thn = String.valueOf(trl.getHostname());
+              hostname = thn.substring(0, thn.length()-1);
+              port = String.valueOf(trl.getPort());              
+              startkey = Bytes.equals(trl.getRegionInfo().getStartKey(), HConstants.EMPTY_START_ROW) ?
+                            "INFINITE" : Hex.encodeHexString(trl.getRegionInfo().getStartKey()); 
+              endkey   = Bytes.equals(trl.getRegionInfo().getEndKey(), HConstants.EMPTY_END_ROW) ?
+                            "INFINITE" : Hex.encodeHexString(trl.getRegionInfo().getEndKey()); 
 
-          // Encoded Region Name
-          Iterator<TransactionRegionLocation> it2 = regions.iterator();
-          encoded_region_name = it2.next().getRegionInfo().getEncodedName();
-          while(it2.hasNext()){
-              encoded_region_name = encoded_region_name + ";" + it2.next().getRegionInfo().getTable().getNameAsString();
-          }
-          hm.addElement(tnum, "EncodedRegionName", encoded_region_name);
+              StringBuilder inputStr = new StringBuilder();
+              inputStr.append(tablename).append(";");
+              inputStr.append(encoded_region_name).append(";");
+              inputStr.append(region_name).append(";");
+              inputStr.append(region_id).append(";");
+              inputStr.append(hostname).append(";");
+              inputStr.append(port).append(";");
+              inputStr.append(startkey).append(";");
+              inputStr.append(endkey);
+              hm.appendRegionInfo(id,  inputStr.toString());
 
-          // Region Name
-          Iterator<TransactionRegionLocation> it3 = regions.iterator();
-          region_name = it3.next().getRegionInfo().getRegionNameAsString();
-          while(it3.hasNext()){
-              region_name = region_name + ";" + it3.next().getRegionInfo().getTable().getNameAsString();
-          }
-          hm.addElement(tnum, "RegionName", region_name);
-
-          // Region Offline
-          Iterator<TransactionRegionLocation> it4 = regions.iterator();
-          boolean is_offline_bool = it4.next().getRegionInfo().isOffline();
-          is_offline = String.valueOf(is_offline_bool);
-          hm.addElement(tnum, "RegionOffline", is_offline);
-
-          // Region ID
-          Iterator<TransactionRegionLocation> it5 = regions.iterator();
-          region_id = String.valueOf(it5.next().getRegionInfo().getRegionId());
-          while(it5.hasNext()){
-              region_id = region_id + ";" + it5.next().getRegionInfo().getRegionId();
-          }
-          hm.addElement(tnum, "RegionID", region_id);
-
-          // Hostname
-          Iterator<TransactionRegionLocation> it6 = regions.iterator();
-          thn = String.valueOf(it6.next().getHostname());
-          hostname = thn.substring(0, thn.length()-1);
-          while(it6.hasNext()){
-              thn = String.valueOf(it6.next().getHostname());
-              hostname = hostname + ";" + thn.substring(0, thn.length()-1);
-          }
-          hm.addElement(tnum, "Hostname", hostname);
-
-          // Port
-          Iterator<TransactionRegionLocation> it7 = regions.iterator();
-          port = String.valueOf(it7.next().getPort());
-          while(it7.hasNext()){
-              port = port + ";" + String.valueOf(it7.next().getPort());
-          }
-          hm.addElement(tnum, "Port", port);
-
-          tnum = tnum + 1;
-        }
+         }
+         tnum = tnum + 1;
+      }
       if (LOG.isTraceEnabled()) LOG.trace("HBaseTxClient::callRequestRegionInfo:: end size: " + hm.getSize());
       return hm;
    }
