@@ -6105,6 +6105,15 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
               ValueId vid1 = child(1)->castToItemExpr()->getValueId();  
               // Add a stringToLob node
               ItemExpr *newChild;
+              const NAType &desiredType = child(0)->getValueId().getType();
+              SQLBlob &lobType = (SQLBlob&)desiredType;
+
+              NAType * newType = new SQLBlob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), 
+                                             lobType.getLobStorage(), 
+                                             TRUE, FALSE, TRUE, 
+                                             CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024); 
+              //              vid1.coerceType(desiredType, NA_LOB_TYPE); 
+              vid1.coerceType(*newType, NA_LOB_TYPE); 
               if (bindWA->getCurrentScope()->context()->inUpdate())
                 {
                   newChild =  new (bindWA->wHeap()) LOBupdate( vid1.getItemExpr(), child(0), NULL,LOBoper::STRING_, FALSE,TRUE);

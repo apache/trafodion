@@ -366,7 +366,7 @@ case 9:
 	cin.getline(columnname,40); 
 	cout << "Column Name : " << columnname << endl;
         cout << "Input source file name :" << endl;
-	cin.getline(filename,256);
+	cin.getline(filename,512);
 	cout << "Source name : " << filename << endl;
         //extract lob handle
       
@@ -392,11 +392,11 @@ case 9:
        }
 
         Int64 sourceEOF = statbuf.st_size;
-        char *fileInputData= new char[32*1024]; //32 KB chunks
+        char *fileInputData= new char[32*1024*1024]; //32 KB chunks
         //char *fileInputData = new char[10000];
         Int64 lengthRead=0;
         Int64 offset=0;
-        Int64 chunkLen = 32*1024;
+        Int64 chunkLen = 32*1024*1024;
         //Int64 chunkLen = 10000;
 
         while ((offset < sourceEOF) )

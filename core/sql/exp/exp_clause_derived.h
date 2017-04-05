@@ -1696,7 +1696,7 @@ enum ConvInstruction {
 
   CONV_BIN8S_BIN8U                     =285,
   CONV_BIN8U_BIN8S                     =286,
-
+  CONV_ASCII_F_BLOB                    =287
 };
 
 class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {

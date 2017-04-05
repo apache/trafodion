@@ -6692,8 +6692,7 @@ const NAType *LOBoper::synthesizeType()
 	  result = new HEAP SQLClob(1000, Lob_Invalid_Storage,
 				    typ1.supportsSQLnull());
 	}
-    }
-  
+    } 
   return result;
 }
 
@@ -6713,25 +6712,16 @@ const NAType *LOBinsert::synthesizeType()
       (obj_ == EXTERNAL_) ||
       (obj_ == LOAD_))
     {
-      if ((obj_ == STRING_)&& (typ1 && typ1->getTypeQualifier() == NA_UNKNOWN_TYPE))
-        {
-          //Check if it's a special case of untyped param. 
-          //If so ,assume it's a varchar format.
+
+        if (typ1 && typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
+	{          
           if (!lobAsVarchar())
             {
               // 4221 The operand of a $0~String0 function must be character.
               *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
-			      << DgString1("CHARACTER");
+                                  << DgString1("CHARACTER");
               return NULL;
             }
-            
-        }
-      else if (typ1 && typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
-	{          
-	  // 4221 The operand of a $0~String0 function must be character.
-	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
-			      << DgString1("CHARACTER");
-	  return NULL;
 	}
     }
   else if (obj_ == LOB_)
@@ -6807,35 +6797,28 @@ const NAType *LOBupdate::synthesizeType()
       (obj_ == FILE_) ||
       (obj_ == EXTERNAL_))
     {
-      if ((obj_ == STRING_)&& (typ1 && typ1->getTypeQualifier() == NA_UNKNOWN_TYPE))
-        {
-          //Check if it's a special case of untyped param. 
-          //If so ,assume it's a varchar format.
-          if (!lobAsVarchar())
+     
+       if (typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
+	{
+          if(!lobAsVarchar())
             {
               // 4221 The operand of a $0~String0 function must be character.
               *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
-			      << DgString1("CHARACTER");
+                                  << DgString1("CHARACTER");
               return NULL;
             }
-            
-        }
-      else if (typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
-	{
-	  // 4221 The operand of a $0~String0 function must be character.
-	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
-			      << DgString1("CHARACTER");
-	  return NULL;
 	}
     }
   else if (obj_ == LOB_)
     {
       if (typ1->getTypeQualifier() != NA_LOB_TYPE)
 	{
-	  // 4043 The operand of a $0~String0 function must be blob
-	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
+            
+          // 4043 The operand of a $0~String0 function must be blob
+          *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
 			      << DgString1("LOB");
-	  return NULL;
+          return NULL;
+            
 	}
     }
   else if (obj_ == BUFFER_)
