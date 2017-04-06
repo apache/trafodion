@@ -187,6 +187,10 @@ export DB_ADMIN_USER={{traf_db_admin}}
 export HADOOP_TYPE="hortonworks"
 
 export TRAFODION_ENABLE_AUTHENTICATION={{traf_ldap_enabled}}
+export SECURE_HADOOP={{security_enabled}}
+
+export ZOOKEEPER_NODES={{zookeeper_quorum_hosts}}
+export ZOOKEEPER_PORT={{zookeeper_clientPort}}
   
     </value>
     <value-attributes>
