@@ -350,6 +350,9 @@ def user_input(options, prompt_mode=True, pwd=''):
     if os.path.exists(DBCFG_TMP_FILE) and prompt_mode == True:
         tp = ParseInI(DBCFG_TMP_FILE, 'dbconfigs')
         cfgs = tp.load()
+        if not cfgs:
+            # set cfgs to defaultdict again
+            cfgs = defaultdict(str)
 
     u = UserInput(options, pwd)
     g = lambda n: u.get_input(n, cfgs[n], prompt_mode=prompt_mode)

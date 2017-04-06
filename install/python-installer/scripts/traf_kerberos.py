@@ -27,7 +27,7 @@ import sys
 import re
 import json
 import socket
-from common import run_cmd, cmd_output, err
+from common import run_cmd, cmd_output, err, get_sudo_prefix
 
 def run():
     """ setup Kerberos security """
@@ -84,8 +84,10 @@ def run():
         hbase_keytab = '/etc/security/keytabs/hbase.service.keytab'
         hdfs_principal = '%s-%s@%s' % (hdfs_user, cluster_name, realm)
 
-    run_cmd('sudo -u %s kinit -kt %s %s' % (hdfs_user, hdfs_keytab, hdfs_principal))
-    run_cmd('sudo -u %s kinit -kt %s %s' % (hbase_user, hbase_keytab, hbase_principal))
+    sudo_prefix = get_sudo_prefix()
+    kinit_cmd_ptr = '%s su - %s -s /bin/bash -c "kinit -kt %s %s"'
+    run_cmd(kinit_cmd_ptr % (sudo_prefix, hdfs_user, hdfs_keytab, hdfs_principal))
+    run_cmd(kinit_cmd_ptr % (sudo_prefix, hbase_user, hbase_keytab, hbase_principal))
 
     print 'Done creating principals and keytabs'
 

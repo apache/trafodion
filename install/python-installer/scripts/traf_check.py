@@ -27,7 +27,7 @@ import re
 import json
 import sys
 import os
-from common import run_cmd, cmd_output, err, Version
+from common import run_cmd, cmd_output, err, Version, get_sudo_prefix
 from constants import SSH_CONFIG_FILE
 
 class Check(object):
@@ -39,7 +39,7 @@ class Check(object):
 
     def check_sudo(self):
         """ check sudo access """
-        run_cmd('sudo -n echo -n "check sudo access" > /dev/null 2>&1')
+        run_cmd('%s echo -n "check sudo access" > /dev/null 2>&1' % get_sudo_prefix())
 
     def check_ssh_pam(self):
         """ check if UsePAM is set to yes in sshd_config """

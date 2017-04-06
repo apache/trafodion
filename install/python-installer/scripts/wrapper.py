@@ -28,12 +28,18 @@ import subprocess
 from glob import glob
 from threading import Thread
 from constants import INSTALLER_LOC, TMP_DIR, SCRCFG_FILE, CONFIG_DIR, SCRIPTS_DIR
-from common import err_m, run_cmd, time_elapse, get_logger, Remote, ParseJson
+from common import err_m, run_cmd, time_elapse, get_logger, get_sudo_prefix, Remote, ParseJson
 
 class RemoteRun(Remote):
     """ run commands or scripts remotely using ssh """
 
     def __init__(self, host, logger, user='', pwd='', quiet=False):
+        self.sudo_prefix = ''
+        if not user:
+            self.sudo_prefix = get_sudo_prefix()
+        elif user != 'root':
+            self.sudo_prefix = 'sudo -n'
+
         super(RemoteRun, self).__init__(host, user, pwd)
 
         self.quiet = quiet # no output
@@ -52,19 +58,19 @@ class RemoteRun(Remote):
 
     def __del__(self):
         # clean up
-        self.execute('sudo -n rm -rf %s' % TMP_DIR, chkerr=False)
+        self.execute('%s rm -rf %s' % (self.sudo_prefix, TMP_DIR), chkerr=False)
 
     def run_script(self, script, run_user, json_string, verbose=False):
         """ @param run_user: run the script with this user """
 
         if run_user:
-            # format string in order to run with 'sudo -n su $user -c $cmd'
+            # format string in order to run with 'su $user -c $cmd'
             json_string = json_string.replace('"', '\\\\\\"').replace(' ', '').replace('{', '\\{').replace('$', '\\\\\\$')
             # this command only works with shell=True
-            script_cmd = '"sudo -n su - %s -c \'%s/scripts/%s %s\'"' % (run_user, TMP_DIR, script, json_string)
+            script_cmd = '"%s su - %s -c \'%s/scripts/%s %s\'"' % (self.sudo_prefix, run_user, TMP_DIR, script, json_string)
             self.execute(script_cmd, verbose=verbose, shell=True, chkerr=False)
         else:
-            script_cmd = 'sudo -n %s/scripts/%s \'%s\'' % (TMP_DIR, script, json_string)
+            script_cmd = '%s %s/scripts/%s \'%s\'' % (self.sudo_prefix, TMP_DIR, script, json_string)
             self.execute(script_cmd, verbose=verbose, chkerr=False)
 
         format1 = 'Host [%s]: Script [%s]: %s' % (self.host, script, self.stdout)
@@ -108,7 +114,10 @@ class Status(object):
         with open(self.stat_file, 'r') as f:
             st = f.readlines()
         for s in st:
-            if s.split()[0] == self.name: return True
+            try:
+                if s.split()[0] == self.name: return True
+            except IndexError:
+                return False
         return False
 
     def set_status(self):
@@ -166,7 +175,7 @@ def run(dbcfgs, options, mode='install', pwd=''):
         cmd = '%s/%s \'%s\'' % (SCRIPTS_DIR, script, json_string)
 
         # pass the ssh password to sub scripts which need SSH password
-        if req_pwd: cmd += ' ' + pwd
+        if req_pwd: cmd += ' ' + pwd + ' ' + user
 
         if verbose: print cmd
 
@@ -266,6 +275,13 @@ def run(dbcfgs, options, mode='install', pwd=''):
 
     # remove status file if all scripts run successfully
     os.remove(stat_file)
+
+    # remove ^M dos format in log file
+    with open(log_file, 'r') as f:
+        lines = f.readlines()
+    with open(log_file, 'w') as f:
+        for line in lines:
+            f.write(line.rstrip('\r\n') + '\n')
 
     return script_output
 
