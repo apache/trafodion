@@ -11465,14 +11465,7 @@ convDoIt(char * source,
         setVCLength(varCharLen, varCharLenSize, sourceLen);
     }
     break;
-  case CONV_ASCII_F_BLOB:
-    {   
-      //convert fixed length input to a varchar format LOB buffer input
-      //targetType must have enough room to hold source and a 2 byte length
-      str_cpy_all(target,source,sourceLen);
-      // setVCLength(varCharLen,sizeof(Int16),sourceLen);
-    }
-    break;
+ 
   case CONV_BLOB_ASCII_F:
     {
       // conversion from internal format blob handle to external format 

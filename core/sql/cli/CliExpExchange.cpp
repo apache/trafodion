@@ -2784,7 +2784,7 @@ InputOutputExpr::inputSingleRowValue(atp_struct *atp,
 	      continue;
 	    }
 	  
-	  if (DFS2REC::isSQLVarChar(sourceType)) 
+	  if (DFS2REC::isSQLVarChar(sourceType))
 	    {
 	      // the first 2 bytes of data are actually the variable 
 	      // length indicator
@@ -3569,6 +3569,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
       inputDesc->getDescItem(entry, SQLDESC_TYPE_FS, &tempSourceType, 0, 0, 0, 0);
       sourceType = (short) tempSourceType;
       
+
       if ((sourceType >= REC_MIN_INTERVAL) &&
           (sourceType <= REC_MAX_INTERVAL)) {
         inputDesc->getDescItem(entry, SQLDESC_INT_LEAD_PREC,
@@ -4186,7 +4187,15 @@ InputOutputExpr::inputValues(atp_struct *atp,
 
 	    if (noDatetimeValidation())
 	      convFlags |= CONV_NO_DATETIME_VALIDATION;
-	    
+            if (sourceType==REC_BLOB)
+	    {
+	      // the first 4 bytes of data are actually the variable 
+	      // length indicator
+	      short VCLen;
+	      str_cpy_all((char *) &VCLen, source, sizeof(Int32));
+	      sourceLen = (Lng32) VCLen;
+	      source = &source[sizeof(Int32)];
+	    }
             retcode = ::convDoIt(source,
 				 sourceLen,
 				 sourceType,

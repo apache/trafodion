@@ -350,8 +350,14 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
   {
     char *VCLen = NULL;
     short VCLenSize = 0;
-    if (targetType == REC_BLOB)       
-        targetLen = sourceLen;
+    short origTargetType = 0;
+    if ((targetType == REC_BLOB) || (targetType == REC_CLOB))
+      {       
+        // convert the format to a varchar format with 4 bytes of length
+        origTargetType = REC_BLOB;
+        targetType = REC_BYTE_V_ASCII;
+        vcIndLen = sizeof(Int32);
+      }
         
     // 5/27/98: added VARCHAR cases
     if ((targetType == REC_BYTE_V_ASCII) || 
@@ -376,7 +382,7 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
               DFS2REC::isAnyCharacter(sourceType) && DFS2REC::isAnyCharacter(targetType) &&
               !(getUTF16StrLit() != NULL && sourceType == REC_NCHAR_F_UNICODE && targetScale == CharInfo::UCS2) &&
               /*source*/cs != targetScale/*i.e., targetCharSet*/
-          ) 
+          ) && (origTargetType != REC_BLOB)
          )
          
     {
