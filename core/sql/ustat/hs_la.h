@@ -120,6 +120,8 @@ class HSTableDef : public NABasicObject
     // SQ, Hive, or Hbase table?
     virtual tblOrigin getTblOrigin() const = 0;
 
+    void addTruncatedSelectList(NAString & qry);
+
   protected:
     NABoolean setObjectUID(NABoolean createExternalObject);
 

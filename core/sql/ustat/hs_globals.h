@@ -1029,6 +1029,8 @@ struct HSColumnStruct : public NABasicObject
 
     NABoolean operator==(const HSColumnStruct&) const;
 
+    void addTruncatedColumnReference(NAString & qry);
+
     ~HSColumnStruct();
   };
 
@@ -2594,6 +2596,7 @@ class HSInMemoryTable : public NABasicObject
 
     void generateInsertSelectIQuery(NAString& targetTbl, NAString& sourceTable,
                                     NAString& queryText,
+                                    NABoolean hasOversizedColumns, HSTableDef * objDef,
                                     Int64 currentSampleSize, Int64 futureSampleSize,
                                     Int64 deleteSetSize, Int64 sourceSetSize);
 
