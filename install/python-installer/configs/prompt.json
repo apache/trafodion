@@ -77,7 +77,7 @@
   },
   "ldap_hosts":
   {
-      "prompt":"Enter list of LDAP Hostnames (comma separated)"
+      "prompt":"Enter list of LDAP Hostnames (comma separated if more than one host)"
   },
   "ldap_port":
   {
@@ -87,7 +87,7 @@
   },
   "ldap_identifiers":
   {
-      "prompt":"Enter all LDAP unique identifiers (blank separated)"
+      "prompt":"Enter all LDAP unique identifiers (semi-colon separated if more than one identifier)"
   },
   "ldap_encrypt":
   {
