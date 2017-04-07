@@ -361,9 +361,9 @@ void LmLanguageManagerJava::initialize(LmResult &result,
 
     JavaVMInitArgs args;
     args.nOptions = (Lng32) (numUserOpts + numHookOpts);
-    args.version = JNI_VERSION_1_4;
+    args.version = JNI_VERSION_1_6;
     args.options = vmOptions;
-    args.ignoreUnrecognized = JNI_FALSE;
+    args.ignoreUnrecognized = JNI_TRUE;
 
     // Create JVM
     TIMER_ON(jvmTimer)
