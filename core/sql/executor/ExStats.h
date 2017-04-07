@@ -1186,6 +1186,7 @@ public:
   inline void incScratchBufferBlockWritten(Int32 count = 1) { scratchBufferBlockWritten_ += count; }
   inline void incScratchReadCount(Int32 count = 1) { scratchReadCount_ += count; }
   inline void incScratchWriteCount(Int32 count = 1) { scratchWriteCount_ += count; }
+  inline void incScratchIOMaxTime(Int64 v) {scratchIOMaxTime_ += v;}
   inline void setSpaceBufferSize(Int32 size)
   {
     spaceBufferSize_ = size >> 10; 
@@ -1208,6 +1209,8 @@ public:
   inline Int64 getScratchReadCount(void) { return scratchReadCount_; }
   static const char *getScratchOverflowMode(Int16 overflowMode);
   ExTimeStats &getScratchIOTimer() { return timer_; }
+  inline void setScratchIOSize(Int64 size) { scratchIOSize_ = size; }
+
 private:
   ExTimeStats timer_;
   Int32 bmoHeapAlloc_;
@@ -1219,10 +1222,12 @@ private:
   Int32 scratchBufferBlockSize_;
   Int32 scratchBufferBlockRead_;
   Int32 scratchBufferBlockWritten_;
+  Int32 scratchIOSize_;
   Int64 scratchReadCount_;
   Int64 scratchWriteCount_;
+  Int64 scratchIOMaxTime_;
   Int16 scratchOverflowMode_;   // 0 - disk 1 - SSD
-  Int64 topN_;                 // TOPN value
+  Int32 topN_;                 // TOPN value
 };
 
 

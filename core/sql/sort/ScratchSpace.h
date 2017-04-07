@@ -120,8 +120,9 @@ class ScratchSpace : public NABasicObject {
   public : 
 
    ScratchSpace(CollHeap* heap, SortError* error, Lng32 blocksize,
+               Int32 scratchIOVectorSize,
                Int32 explainNodeId,
-		NABoolean logInfoEvent=FALSE,
+               NABoolean logInfoEvent = FALSE,
                Int32 scratchMgmtOption = 0);
    ~ScratchSpace(void);
 
@@ -292,6 +293,7 @@ protected:
 class SortScratchSpace : public ScratchSpace{
   public :
     SortScratchSpace(CollHeap* heap, SortError* error,
+                Int32 scratchIOVectorSize,
                 Int32 explainNodeId,
                 Int32 scratchIOBlockSize,
 		NABoolean logInfoEvent=FALSE,
@@ -415,6 +417,7 @@ public:
 class HashScratchSpace : public ScratchSpace{
   public :
     HashScratchSpace(CollHeap* heap, SortError* error,
+                 Int32 scratchIOVectorSize,
                  Int32 explainNodeId,
                  Int32 blockSize,
                  NABoolean logInfoEvent=FALSE,

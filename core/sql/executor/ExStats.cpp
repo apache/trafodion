@@ -10425,6 +10425,7 @@ ExBMOStats::ExBMOStats(NAMemory *heap)
 {
   init();
   spaceBufferSize_ = -1;
+  scratchIOSize_ = -1;
   scratchOverflowMode_ = -1;
 }
 
@@ -10433,6 +10434,7 @@ ExBMOStats::ExBMOStats(NAMemory *heap, StatType statType)
 {
   init();
   spaceBufferSize_ = -1;
+  scratchIOSize_ = -1;
   scratchOverflowMode_ = -1;
 }
 
@@ -10443,6 +10445,7 @@ ExBMOStats::ExBMOStats(NAMemory *heap, StatType statType,
 {
   init();
   spaceBufferSize_ = -1;
+  scratchIOSize_ = -1;
   if (tdb != NULL)
     scratchOverflowMode_ = ((ComTdb *)tdb)->getOverFlowMode();
   else
@@ -10478,6 +10481,7 @@ void ExBMOStats::init()
   scratchWriteCount_ = 0;
   topN_ = -1;
   timer_.reset();
+  scratchIOMaxTime_ = 0;
 }
 
 UInt32 ExBMOStats::packedLength()
@@ -10537,9 +10541,9 @@ const char * ExBMOStats::getNumValTxt(Int32 i) const
     case 1:
       return "OperCpuTime";
     case 2:
-      return "scrBuffferRead";
+      return "scrIORead";
     case 3:
-      return "scrBufferWritten";
+      return "scrIOWritten";
     case 4:
       return "scrFileCount";
   }
@@ -10553,9 +10557,9 @@ Int64 ExBMOStats::getNumVal(Int32 i) const
      case 1:
         return ExOperStats::getNumVal(i);
      case 2:
-        return scratchBufferBlockRead_;
+        return scratchReadCount_;
      case 3:
-        return scratchBufferBlockWritten_;
+        return scratchWriteCount_;
      case 4:
         return scratchFileCount_;
   }
@@ -10572,7 +10576,7 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
        "statsRowType: %d explainTdbId: %d bmoHeapUsed: %d bmoHeapTotal: %d bmoHeapWM: %d "
        "bmoSpaceBufferSize: %d bmoSpaceBufferCount: %d "
        "scrOverFlowMode: %d scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %d scrBufferWritten: %d "
-       "scrWriteCount: %Ld scrReadCount: %Ld topN: %Ld scrIOTime: %Ld ",
+       "scrWriteCount: %Ld scrReadCount: %Ld topN: %Ld scrIOSize: %d scrIOTime: %Ld scrIOMaxTime: %Ld ",
         statType(),
         getExplainNodeId(),
         bmoHeapUsage_,
@@ -10588,7 +10592,9 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
         scratchWriteCount_,
         scratchReadCount_,
         topN_,
-        timer_.getTime()
+        scratchIOSize_,
+        timer_.getTime(),
+        scratchIOMaxTime_
        );
   buf += str_len(buf);
   *(short*)dataLen = (short) (buf - dataBuffer);
@@ -10611,6 +10617,8 @@ void ExBMOStats::merge(ExBMOStats* other)
   spaceBufferCount_ += other->spaceBufferCount_;
   if (other->scratchBufferBlockSize_ != -1)
     scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
+  if (other->scratchIOSize_ != -1)
+    scratchIOSize_ = other->scratchIOSize_;
   if (other->topN_ != -1)
     topN_ = other->topN_;
   scratchOverflowMode_ = other->scratchOverflowMode_;
@@ -10619,6 +10627,8 @@ void ExBMOStats::merge(ExBMOStats* other)
   scratchBufferBlockWritten_ += other->scratchBufferBlockWritten_;
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
+  if (other->scratchIOMaxTime_ > scratchIOMaxTime_)
+     scratchIOMaxTime_ = other->scratchIOMaxTime_;
 }
 
 Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
@@ -10670,6 +10680,12 @@ Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     break;
   case SQLSTATS_SCRATCH_IO_TIME:
     sqlStats_item->int64_value = timer_.getTime();
+    break;
+  case SQLSTATS_SCRATCH_IO_SIZE:
+    sqlStats_item->int64_value = scratchIOSize_;
+    break;
+  case SQLSTATS_SCRATCH_IO_MAX_TIME:
+    sqlStats_item->int64_value = scratchIOMaxTime_;
     break;
   case SQLSTATS_DETAIL:
    if (sqlStats_item->str_value != NULL)

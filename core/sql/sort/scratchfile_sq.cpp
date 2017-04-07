@@ -770,7 +770,7 @@ Int32 SQScratchFile::redriveVectorIO(Int32 index)
 		  bytesCompleted = readv(fileHandle_[index].fileNum, (struct iovec*)remainingAddr_, remainingVectorSize_);
 		  if (bmoStats) {
                      bmoStats->incScratchReadCount();
-                     bmoStats->getScratchIOTimer().stop();
+                     bmoStats->incScratchIOMaxTime(bmoStats->getScratchIOTimer().stop());
                   }
 		}
 		else
@@ -780,7 +780,7 @@ Int32 SQScratchFile::redriveVectorIO(Int32 index)
 		  bytesCompleted = writev(fileHandle_[index].fileNum, (struct iovec*)remainingAddr_, remainingVectorSize_);
 		  if (bmoStats) {
                      bmoStats->incScratchWriteCount();
-                     bmoStats->getScratchIOTimer().stop();
+                     bmoStats->incScratchIOMaxTime(bmoStats->getScratchIOTimer().stop());
                   }
 		}
 
