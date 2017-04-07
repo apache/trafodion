@@ -1027,6 +1027,9 @@ public:
   //
   NABoolean isEqualTo(const HbaseSearchKey* other) const;
 
+  NABoolean isFalsePred() {return isFalsePred_ ;}
+  void setIsFalsePred(NABoolean val) {isFalsePred_ = val ;}
+
   // -----------------------------------------------------------------------
 
 protected:
@@ -1042,6 +1045,10 @@ protected:
    ValueIdSet requiredOutputColumns_;
 
    ValueIdSet nonKeyPreds_;
+
+   // is a constant folded pred that returns FALSE always. SK has 
+   // min/max for begin/end reversed.
+   NABoolean isFalsePred_;
 };
 
 #endif /* SEARCHKEY_H */

@@ -4480,6 +4480,33 @@ NABoolean ValueIdSet::containsAnyTrue(ValueId &refAnyTrue ) const
    return FALSE;
 } // ValueIdSet::containsAnyTrue
 
+NABoolean ValueIdSet::containsFalseConstant(ValueId &falseConstant ) const
+{
+
+   for ( ValueId vid = init(); next(vid); advance(vid))
+   {
+     OperatorTypeEnum OpType = vid.getItemExpr()->getOperatorType();
+     
+     if( OpType == ITM_RETURN_FALSE )
+     {
+       falseConstant = vid;
+       return TRUE;
+     }
+     else if ( OpType == ITM_CONSTANT )
+     {
+       NABoolean negate;
+       ConstValue *cv = vid.getItemExpr()->castToConstValue(negate);
+       if( cv && cv->isAFalseConstant())
+       {
+         falseConstant = vid;
+         return TRUE;
+       }
+     }
+   }
+   return FALSE;
+
+} // ValueIdSet::containsFalseConstant
+
 // -----------------------------------------------------------------------
 // Methods used for debugging and display.
 // -----------------------------------------------------------------------

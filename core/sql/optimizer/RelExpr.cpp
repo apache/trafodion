@@ -8433,13 +8433,6 @@ void Scan::addIndexInfo()
     preds.clear();
     resultOld->convertToValueIdSet(preds, NULL, ITM_AND);
     doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,resultOld);
-
-//	 ValueIdSet resultSet;
-//	 revertBackToOldTreeUsingValueIdSet(preds, resultSet);
-//	 ItemExpr* resultOld =  resultSet.rebuildExprTree(ITM_AND,FALSE,FALSE);
-//	 preds.clear();
-//	 preds += resultSet;
-//	 doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,resultOld);
   }
 
 
@@ -9062,42 +9055,19 @@ void Scan::setTableAttributes(CANodeId nodeId)
   setBaseCardinality(MIN_ONE (tableDesc->getNATable()->getEstRowCount())) ;
 }
 
-NABoolean Scan::equalityPredOnCol(ItemExpr *col)
-{
-  //
-  // Returns TRUE if the column (col) has an equality predicate
-  // associated with it the scan's predicate list.
-  //
-  ValueIdSet pred = getSelectionPredicates();
-
-  for (ValueId vid=pred.init(); pred.next(vid); pred.advance(vid))
-  {
-    if ( vid.getItemExpr()->getOperatorType() != ITM_VEG_PREDICATE )
-      continue;
-
-    ItemExpr *expr = vid.getItemExpr();
-    ValueId id;
-    VEG *veg = ((VEGPredicate*)expr)->getVEG();
-
-    if (veg->getAllValues().referencesTheGivenValue(col->getValueId(), id))
-      return TRUE;
-  }
-
-  return FALSE;
-
-} // Scan::equalityPredOnCol
-
 NABoolean Scan::updateableIndex(IndexDesc *idx)
 {
   //
-  // Returns TRUE if the index (idx) can be used for a scan during an UPDATE.
-  // Otherwise, returns FALSE to prevent the "Halloween Update Problem".
+  // Returns TRUE if the index (idx) can be used for a scan during 
+  // an UPDATE. Halloween problem is protected with a sort using
+  // Scan::requiresHalloweenForUpdateUsingIndexScan(). 
+  // Returns FALSE only for certain embedded updates now.
   //
-  ValueIdSet
-    pred = getSelectionPredicates(),
-    dummySet;
 
+  if (!getGroupAttr()->isEmbeddedUpdate())
+    return TRUE ;
 
+  ValueIdSet pred = getSelectionPredicates(), dummySet;
   SearchKey searchKey(idx->getIndexKey(),
 	              idx->getOrderOfKeyValues(),
 	              getGroupAttr()->getCharacteristicInputs(),
@@ -9106,7 +9076,6 @@ NABoolean Scan::updateableIndex(IndexDesc *idx)
                       dummySet, // needed by the interface but not used here
                       idx
                       );
-
   // Unique index is OK to use.
   if (searchKey.isUnique())
     return TRUE;
@@ -9121,38 +9090,85 @@ NABoolean Scan::updateableIndex(IndexDesc *idx)
   {
     ItemExpr *updateCol = colUpdated[i].getItemExpr();
     CMPASSERT(updateCol->getOperatorType() == ITM_BASECOLUMN);
-
     for (CollIndex j = 0; j < indexKey.entries(); j++)
     {
       ItemExpr *keyCol = indexKey[j].getItemExpr();
-
-      ItemExpr *baseCol = ((IndexColumn*)keyCol)->getDefinition().getItemExpr();
+      ItemExpr *baseCol = 
+        ((IndexColumn*)keyCol)->getDefinition().getItemExpr();
       CMPASSERT(baseCol->getOperatorType() == ITM_BASECOLUMN);
-
-      // QSTUFF
-      if (getGroupAttr()->isEmbeddedUpdate()){
-        if (((BaseColumn*)updateCol)->getColNumber() ==
-          ((BaseColumn*)baseCol)->getColNumber())
-          return FALSE;
-      }
-      // QSTUFF
-
-      if ((NOT(idx->isUniqueIndex() || idx->isClusteringIndex()))
-	     ||
-	  (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) == DF_OFF))
-
-      {
       if (((BaseColumn*)updateCol)->getColNumber() ==
-          ((BaseColumn*)baseCol)->getColNumber() AND
-	  NOT equalityPredOnCol(baseCol))
-	return FALSE;
+          ((BaseColumn*)baseCol)->getColNumber())
+        return FALSE;
     }
   }
-  }
-
   return TRUE;
-
 } // Scan::updateableIndex
+
+NABoolean Scan::requiresHalloweenForUpdateUsingIndexScan()
+{
+
+  // Returns TRUE if any non clustering index can be used for a scan 
+  // during an UPDATE and a key column of that index is in the SET
+  // clause of the update. If this method returns TRUE we will use a 
+  // sort node to prevent the "Halloween Update Problem".
+  //
+
+  // preds are in RangeSpec form
+  ValueIdSet preds = getSelectionPredicates();
+  const ValueIdList colUpdated = getTableDesc()->getColUpdated();
+  const LIST(IndexDesc *) & ixlist = getTableDesc()->getIndexes();
+
+  if ((colUpdated.entries() == 0) || (preds.entries() == 0) ||
+      (ixlist.entries() == 1) || // this is the clustering index
+      (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) 
+       == DF_AGGRESSIVE)) // this setting means no Halloween protection
+    return FALSE;
+
+   if (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON)
+   {
+     ValueIdList selectionPredList(preds);
+     ItemExpr *inputItemExprTree = 
+       selectionPredList.rebuildExprTree(ITM_AND,FALSE,FALSE);
+     ItemExpr * resultOld = revertBackToOldTree(STMTHEAP, 
+                                                inputItemExprTree);
+     preds.clear();
+     resultOld->convertToValueIdSet(preds, NULL, ITM_AND);
+     doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,
+                                                   resultOld);
+   }
+
+  for (CollIndex indexNo = 0; indexNo < ixlist.entries(); indexNo++)
+  {
+    IndexDesc *idx = ixlist[indexNo];
+    if (idx->isClusteringIndex() || 
+        (idx->isUniqueIndex() && 
+        (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) 
+         == DF_ON)))
+      continue ; // skip this idesc
+
+    const ValueIdList indexKey = idx->getIndexKey();
+    // Determine if the columns being updated are key columns. Each key
+    // column being updated must have an associated equality clause in
+    // the WHERE clause of the UPDATE for it to be used.
+    for (CollIndex i = 0; i < colUpdated.entries(); i++)
+    {
+      ItemExpr *updateCol = colUpdated[i].getItemExpr();
+      CMPASSERT(updateCol->getOperatorType() == ITM_BASECOLUMN);
+      for (CollIndex j = 0; j < indexKey.entries(); j++)
+      {
+        ItemExpr *keyCol = indexKey[j].getItemExpr();
+        ItemExpr *baseCol = 
+          ((IndexColumn*)keyCol)->getDefinition().getItemExpr();
+        CMPASSERT(baseCol->getOperatorType() == ITM_BASECOLUMN);
+        if (((BaseColumn*)updateCol)->getColNumber() ==
+            ((BaseColumn*)baseCol)->getColNumber() AND
+            NOT preds.containsAsEquiLocalPred(baseCol->getValueId()))
+          return TRUE;
+      }
+    }
+  }
+  return FALSE;
+}
 
 // how many index descriptors can be used with this scan node?
 CollIndex Scan::numUsableIndexes()

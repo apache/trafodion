@@ -6886,6 +6886,14 @@ RelExpr * GenericUpdate::normalizeNode(NormWA & normWARef)
      }
   }
 
+  /// YYY
+   if (getOperator().match(REL_ANY_UNARY_GEN_UPDATE))
+   {
+      Scan * scan = getLeftmostScanNode();
+      if (scan && scan->requiresHalloweenForUpdateUsingIndexScan())
+        setAvoidHalloween(TRUE);
+   }
+
   if (producedMergeIUDIndicator_ != NULL_VALUE_ID)
     {
       ValueId dummy;

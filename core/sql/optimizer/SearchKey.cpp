@@ -2656,6 +2656,7 @@ HbaseSearchKey::HbaseSearchKey(const ValueIdList & keyColumns,
 
    requiredOutputColumns_ = keyColumns_;
    requiredOutputColumns_.insert(nonKeyColumns_);
+   isFalsePred_ = FALSE;
 }
 
 
