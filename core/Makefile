@@ -82,11 +82,7 @@ trafci: jdbc_jar
 	cd conn/trafci && $(MAKE) 2>&1 | sed -e "s/$$/	##(TRAFCI)/" ; exit $${PIPESTATUS[0]}
 
 jdbc_type2_jar: verhdr foundation
-	cd conn/jdbc_type2 && $(ANT)  2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
 	cd conn/jdbc_type2 && $(MAKE) 2>&1 | sed -e "s/$$/	##(JDBC_TYPE2)/" ; exit $${PIPESTATUS[0]}
-	$(MAVEN) install:install-file -Dfile=conn/jdbc_type2/dist/jdbcT2.jar \
-	    -DgroupId=org.trafodion.jdbc.t2.T2Driver -DartifactId=t2driver -Dversion="$$TRAFODION_VER" \
-	    -Dpackaging=jar -DgeneratePom=true | sed -e "s/$$/        ##(JDBC_TYPE2)/";exit $${PIPESTATUS[0]}
 
 rest: verhdr jdbc_jar
 	cd rest && $(MAKE) 2>&1 | sed -e "s/$$/  ##(REST)/" ; exit $${PIPESTATUS[0]}
@@ -108,7 +104,7 @@ clean: sqroot
 	cd conn/trafci        &&	$(MAKE) clean
 	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
-	cd conn/jdbc_type2 &&		$(ANT) clean && $(MAKE) clean
+	cd conn/jdbc_type2 &&		$(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
 	cd ../dcs &&			$(MAKE) clean 
