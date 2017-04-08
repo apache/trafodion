@@ -27,9 +27,9 @@ import sys
 import json
 from threading import Thread
 from constants import SSHKEY_FILE
-from common import ParseJson, Remote, run_cmd, err
+from common import ParseJson, Remote, run_cmd, err, get_sudo_prefix
 
-def run(pwd):
+def run(user, pwd):
     """ gen ssh key on local and copy to all nodes
         copy traf package file from local to all nodes
     """
@@ -37,12 +37,13 @@ def run(pwd):
     hosts = dbcfgs['node_list'].split(',')
     traf_package = dbcfgs['traf_package']
 
-    run_cmd('sudo -n rm -rf %s*' % SSHKEY_FILE)
-    run_cmd('sudo -n echo -e "y" | ssh-keygen -t rsa -N "" -f %s' % SSHKEY_FILE)
+    sudo_prefix = get_sudo_prefix()
+    run_cmd('%s rm -rf %s*' % (sudo_prefix, SSHKEY_FILE))
+    run_cmd('%s echo -e "y" | ssh-keygen -t rsa -N "" -f %s' % (sudo_prefix, SSHKEY_FILE))
 
     files = [SSHKEY_FILE, SSHKEY_FILE+'.pub', traf_package]
 
-    remote_insts = [Remote(h, pwd=pwd) for h in hosts]
+    remote_insts = [Remote(h, user=user, pwd=pwd) for h in hosts]
     threads = [Thread(target=r.copy, args=(files, '/tmp')) for r in remote_insts]
     for thread in threads: thread.start()
     for thread in threads: thread.join()
@@ -58,6 +59,11 @@ except IndexError:
 try:
     pwd = sys.argv[2]
 except IndexError:
-    pwd = ''
+    user = pwd = ''
 
-run(pwd)
+try:
+    user = sys.argv[3]
+except IndexError:
+    user = ''
+
+run(user, pwd)

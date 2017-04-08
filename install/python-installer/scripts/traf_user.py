@@ -29,7 +29,7 @@ import json
 import socket
 from constants import TRAF_CFG_DIR, TRAF_CFG_FILE, TRAF_HSPERFDATA_FILE, SSHKEY_FILE
 from common import ParseXML, run_cmd, append_file, mod_file, write_file, \
-                   cmd_output, run_cmd_as_user, err
+                   cmd_output, run_cmd_as_user, err, get_default_home
 
 def run():
     """ create trafodion user, bashrc, setup passwordless SSH """
@@ -43,7 +43,7 @@ def run():
     elif 'APACHE' in distro:
         hadoop_type = 'apache'
 
-    home_dir = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2')
+    home_dir = get_default_home()
     # customize trafodion home dir
     if dbcfgs.has_key('home_dir') and dbcfgs['home_dir']:
         home_dir = dbcfgs['home_dir']
@@ -117,8 +117,9 @@ export CLUSTERNAME="%s"
         extra_config = """
 export HADOOP_PREFIX=%s
 export HBASE_HOME=%s
+export HIVE_HOME=%s
 export PATH=$PATH:$HADOOP_PREFIX/bin:$HADOOP_PREFIX/sbin:$HBASE_HOME/bin
-        """ % (dbcfgs['hadoop_home'], dbcfgs['hbase_home'])
+        """ % (dbcfgs['hadoop_home'], dbcfgs['hbase_home'], dbcfgs['hive_home'])
         append_file(TRAFODION_CFG_FILE, extra_config)
 
     # set permission

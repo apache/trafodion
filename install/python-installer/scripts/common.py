@@ -87,7 +87,7 @@ def run_cmd(cmd):
     return stdout.strip()
 
 def run_cmd_as_user(user, cmd):
-    return run_cmd('sudo -n su - %s -c \'%s\'' % (user, cmd))
+    return run_cmd('%s su - %s -c \'%s\'' % (get_sudo_prefix(), user, cmd))
 
 def cmd_output(cmd):
     """ return command output but not check return value """
@@ -95,6 +95,17 @@ def cmd_output(cmd):
     stdout, stderr = p.communicate()
 
     return stdout.strip() if stdout else stderr
+
+def get_default_home():
+    return cmd_output('%s cat /etc/default/useradd |grep HOME |cut -d "=" -f 2' % get_sudo_prefix())
+
+def get_sudo_prefix():
+    """ donnot use sudo prefix if user is root """
+    uid = os.getuid()
+    if uid == 0:
+        return ''
+    else:
+        return 'sudo -n'
 
 def mod_file(template_file, change_items):
     """

@@ -28,7 +28,7 @@ import getpass
 from optparse import OptionParser
 from scripts.constants import INSTALLER_LOC, TRAF_CFG_FILE, TRAF_CFG_DIR, TRAF_USER, DBCFG_FILE
 from scripts.common import run_cmd, format_output, err_m, \
-                           expNumRe, ParseInI, Remote, info
+                           expNumRe, ParseInI, Remote, info, get_sudo_prefix
 
 def get_options():
     usage = 'usage: %prog [options]\n'
@@ -95,17 +95,16 @@ def main():
     first_node = nodes[0]
 
     remotes = [Remote(node, pwd=pwd) for node in nodes]
-    # stop trafodion on the first node
-    #remotes[0].execute('sudo su %s -l -c ckillall' % TRAF_USER, chkerr=False)
+    sudo_prefix = get_sudo_prefix()
 
     # remove trafodion userid and group on all trafodion nodes, together with folders
     for remote in remotes:
         info('Remove Trafodion on node [%s] ...' % remote.host)
-        remote.execute('ps -f -u %s|awk \'{print $2}\'|xargs sudo kill -9' % TRAF_USER, chkerr=False)
-        remote.execute('trafid=`getent passwd %s|awk -F: \'{print $3}\'`; if [[ -n $trafid ]]; then ps -f -u $trafid|awk \'{print $2}\'|xargs sudo kill -9; fi' % TRAF_USER, chkerr=False)
-        remote.execute('sudo -n /usr/sbin/userdel -rf %s' % TRAF_USER, chkerr=False)
-        remote.execute('sudo -n /usr/sbin/groupdel %s' % TRAF_USER, chkerr=False)
-        remote.execute('sudo -n rm -rf /etc/security/limits.d/%s.conf %s /tmp/hsperfdata_%s 2>/dev/null' % (TRAF_USER, TRAF_CFG_DIR, TRAF_USER), chkerr=False)
+        remote.execute('ps -f -u %s|awk \'{print $2}\'|xargs %s kill -9' % (TRAF_USER, sudo_prefix), chkerr=False)
+        remote.execute('trafid=`getent passwd %s|awk -F: \'{print $3}\'`; if [[ -n $trafid ]]; then ps -f -u $trafid|awk \'{print $2}\'|xargs %s kill -9; fi' % (TRAF_USER, sudo_prefix), chkerr=False)
+        remote.execute('%s /usr/sbin/userdel -rf %s' % (sudo_prefix, TRAF_USER), chkerr=False)
+        remote.execute('%s /usr/sbin/groupdel %s' % (sudo_prefix, TRAF_USER), chkerr=False)
+        remote.execute('%s rm -rf /etc/security/limits.d/%s.conf %s /tmp/hsperfdata_%s 2>/dev/null' % (sudo_prefix, TRAF_USER, TRAF_CFG_DIR, TRAF_USER), chkerr=False)
 
     run_cmd('rm -f %s/*.status %s' % (INSTALLER_LOC, DBCFG_FILE))
     format_output('Trafodion Uninstall Completed')
