@@ -38,11 +38,18 @@ def run():
     traf_auth_config = '%s/sql/scripts/.traf_authentication_config' % traf_home
     traf_auth_template = '%s/sql/scripts/traf_authentication_config' % traf_home
 
+    ldap_hostname = ''
+    for host in dbcfgs['ldap_hosts'].split(','):
+        ldap_hostname += 'LDAPHostName:%s\n' % host
+    unique_identifier = ''
+    for identifier in dbcfgs['ldap_identifiers'].split(';'):
+        unique_identifier += 'UniqueIdentifier:%s\n' % identifier
+
     # set traf_authentication_config file
     change_items = {
-        'LDAPHostName:.*': 'LDAPHostName:%s' % dbcfgs['ldap_hosts'],
+        'LDAPHostName:.*': ldap_hostname.strip(),
         'LDAPPort:.*': 'LDAPPort:%s' % dbcfgs['ldap_port'],
-        'UniqueIdentifier:.*': 'UniqueIdentifier:%s' % dbcfgs['ldap_identifiers'],
+        'UniqueIdentifier:.*': unique_identifier.strip(),
         'LDAPSSL:.*': 'LDAPSSL:%s' % dbcfgs['ldap_encrypt'],
         'TLS_CACERTFilename:.*': 'TLS_CACERTFilename:%s' % dbcfgs['ldap_certpath'],
         'LDAPSearchDN:.*': 'LDAPSearchDN:%s' % dbcfgs['ldap_user'],
