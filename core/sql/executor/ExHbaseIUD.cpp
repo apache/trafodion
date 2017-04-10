@@ -3924,9 +3924,6 @@ ExHbaseAccessSQRowsetTcb::ExHbaseAccessSQRowsetTcb(
   ExHbaseAccessTcb( hbaseAccessTdb, glob)
   , step_(NOT_STARTED)
 {
-  if (getHbaseAccessStats())
-    getHbaseAccessStats()->init();
-
   prevTailIndex_ = 0;
 
   nextRequest_ = qparent_.down->getHeadIndex();
