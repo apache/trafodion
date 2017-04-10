@@ -15,7 +15,7 @@
 >>invoke t032t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T032T1
--- Definition current  Wed Sep 21 02:57:14 2016
+-- Definition current  Tue Jan 17 18:16:14 2017
 
   (
     A                                INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -140,7 +140,7 @@ B
 (EXPR)                        
 ------------------------------
 
-RANDOMVAL=323996797           
+RANDOMVAL=1210881081          
 
 --- 1 row(s) selected.
 >>select random() from (values(1)) x(a);
@@ -352,7 +352,7 @@ A            B     C            D           E         F                         
 
 --- 3 row(s) selected.
 >>
->>select * from (values(1)) x(a) where current_date = current_timestamp;
+>>select * from (values(1)) x(a) where current_date = cast(current_timestamp as date);
 
 A   
 ----
@@ -360,9 +360,14 @@ A
    1
 
 --- 1 row(s) selected.
->>select * from (values(1)) x(a) where current_timestamp(0) = current_timestamp(6);
+>>select * from (values(1)) x(a) where current_timestamp(0) = cast(current_timestamp(6) as timestamp(0));
 
---- 0 row(s) selected.
+A   
+----
+
+   1
+
+--- 1 row(s) selected.
 >>
 >>select cast(1e0 as interval year) from dual;
 
@@ -396,7 +401,7 @@ A
 >>invoke t032t2;
 
 -- Definition of Trafodion table TRAFODION.T032SCH.T032T2
--- Definition current  Wed Sep 21 02:57:30 2016
+-- Definition current  Tue Jan 17 18:16:25 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE

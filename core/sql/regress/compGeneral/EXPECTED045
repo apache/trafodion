@@ -466,6 +466,29 @@
 
 --- SQL operation complete.
 >>
+>>insert into date_dim values (
++>  1, '1', date '2000-01-01', 1, 1, 1, 2000, 1, 1, 1, 1, 2000, 1, 1, 'aday', 'aq', ' ', ' ', ' ', 1, 31, 0, 0, ' ', ' ', ' ', ' ', ' '
++>);
+
+--- 1 row(s) inserted.
+>>
+>>insert into store_sales values (
++>  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0
++>);
+
+--- 1 row(s) inserted.
+>>
+>>update statistics for table date_dim on every column;
+
+--- SQL operation complete.
+>>update statistics for table date_dim on (d_qoy, d_year);
+
+*** WARNING[9202] UPDATE STATISTICS has located previously generated histograms that are not being regenerated. This may affect the plans that will be generated. Missing columns lists are (D_CURRENT_YEAR),(D_CURRENT_QUARTER),(D_CURRENT_MONTH),(D_CURRENT_WEEK),(D_CURRENT_DAY),(D_SAME_DAY_LQ),(D_SAME_DAY_LY),(D_LAST_DOM),(D_FIRST_DOM),(D_FOLLOWING_HOLIDAY),(D_WEEKEND),(D_HOLIDAY),(D_QUARTER_NAME),(D_DAY_NAME),(D_FY_WEEK_SEQ),(D_FY_QUARTER_SEQ),(D_FY_YEAR),(D_DOM),(D_MOY),(D_DOW),(D_QUARTER_SEQ),(D_WEEK_SEQ),(D_MONTH_SEQ),(D_DATE),(D_DATE_ID),(D_DATE_SK).
+
+--- SQL operation completed with warnings.
+>>update statistics for table store_sales on every column;
+
+--- SQL operation complete.
 >>
 >>--------------------------------------------------------------------
 >>obey TEST045(queries);
@@ -519,7 +542,7 @@ SCAN TEMP                                          2
                10436
                10436
 
---- SQL operation complete.
+--- 2 row(s) selected.
 >>-- execute a second time
 >>execute s using 2;
 
@@ -529,7 +552,7 @@ SCAN TEMP                                          2
                10436
                10436
 
---- SQL operation complete.
+--- 2 row(s) selected.
 >>
 >>-- prepare a second time, so far not using query cache
 >>prepare s from
@@ -557,7 +580,7 @@ SCAN TEMP                                          2
                10435
                10435
 
---- SQL operation complete.
+--- 2 row(s) selected.
 >>-- execute a second time
 >>execute s using 4;
 
@@ -567,7 +590,7 @@ SCAN TEMP                                          2
                10437
                10437
 
---- SQL operation complete.
+--- 2 row(s) selected.
 >>
 >>-- test subquery unnesting
 >>cqd subquery_unnesting 'debug';
@@ -648,7 +671,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>
 >>--QID: 2
@@ -712,7 +735,7 @@ SCAN TEMP                                          2
 +> where d_week_seq1=d_week_seq2-53
 +> order by d_week_seq1;
 
-*** WARNING[5001] Common subexpression WSWSCS cannot be shared among multiple consumers. Reason: Operator map_value_ids not supported.
+*** WARNING[5001] Common subexpression WSCS will not be shared among multiple consumers. Reason: expression is only evaluated once because parent is materialized.
 
 --- SQL command prepared.
 >>-- use temp for wscs only, not wswscs, due to MapValueIds
@@ -728,7 +751,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>
 >>--QID: 4
@@ -861,7 +884,7 @@ SCAN TEMP                                          6
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>
 >>--QID: 11
@@ -959,7 +982,7 @@ SCAN TEMP                                          4
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>--QID: 14a
 >>
@@ -1146,7 +1169,7 @@ SCAN TEMP                                          4
 
 *** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
 
-*** WARNING[2997] RESULTS (Operator map_value_ids not supported)
+*** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
 
 --- SQL command prepared.
 >>execute show_cses;
@@ -1154,9 +1177,9 @@ SCAN TEMP                                          4
 OPERATOR                        HOW_MANY            
 ------------------------------  --------------------
 
-BLOCKED_UNION                                      2
-HIVE_INSERT                                        1
-SCAN TEMP                                         15
+BLOCKED_UNION                                      5
+HIVE_INSERT                                        3
+SCAN TEMP                                         11
 
 --- 3 row(s) selected.
 >>execute s;
@@ -1166,7 +1189,7 @@ CHANNEL  I_BRAND_ID   I_CLASS_ID   I_CATEGORY_ID  SUM_SALES             NUMBER_S
 
 ?                  ?            ?              ?                     ?                     ?
 
---- SQL operation complete.
+--- 1 row(s) selected.
 >>
 >>--QID: 23a
 >>
@@ -1229,9 +1252,7 @@ CHANNEL  I_BRAND_ID   I_CLASS_ID   I_CATEGORY_ID  SUM_SALES             NUMBER_S
 
 *** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
 
-*** WARNING[5001] Common subexpression FREQUENT_SS_ITEMS cannot be shared among multiple consumers. Reason: Differing inputs in CTE references, try CQD QUERY_CACHE '0'.
-
-*** WARNING[5001] Common subexpression BEST_SS_CUSTOMER cannot be shared among multiple consumers. Reason: Differing inputs in CTE references, try CQD QUERY_CACHE '0'.
+*** WARNING[5001] Common subexpression MAX_STORE_SALES will not be shared among multiple consumers. Reason: expression is only evaluated once because parent is materialized.
 
 --- SQL command prepared.
 >>execute show_cses;
@@ -1239,9 +1260,9 @@ CHANNEL  I_BRAND_ID   I_CLASS_ID   I_CATEGORY_ID  SUM_SALES             NUMBER_S
 OPERATOR                        HOW_MANY            
 ------------------------------  --------------------
 
-BLOCKED_UNION                                      2
-HIVE_INSERT                                        1
-SCAN TEMP                                          2
+BLOCKED_UNION                                      3
+HIVE_INSERT                                        2
+SCAN TEMP                                          4
 
 --- 3 row(s) selected.
 >>execute s;
@@ -1251,7 +1272,7 @@ SCAN TEMP                                          2
 
                    ?
 
---- SQL operation complete.
+--- 1 row(s) selected.
 >>
 >>--QID: 23b
 >>
@@ -1320,9 +1341,7 @@ SCAN TEMP                                          2
 
 *** WARNING[2997]  (Subquery was not unnested. Reason: No Correlation found)
 
-*** WARNING[5001] Common subexpression FREQUENT_SS_ITEMS cannot be shared among multiple consumers. Reason: Differing inputs in CTE references, try CQD QUERY_CACHE '0'.
-
-*** WARNING[5001] Common subexpression BEST_SS_CUSTOMER cannot be shared among multiple consumers. Reason: Differing inputs in CTE references, try CQD QUERY_CACHE '0'.
+*** WARNING[5001] Common subexpression MAX_STORE_SALES will not be shared among multiple consumers. Reason: expression is only evaluated once because parent is materialized.
 
 --- SQL command prepared.
 >>execute show_cses;
@@ -1330,14 +1349,14 @@ SCAN TEMP                                          2
 OPERATOR                        HOW_MANY            
 ------------------------------  --------------------
 
-BLOCKED_UNION                                      2
-HIVE_INSERT                                        1
-SCAN TEMP                                          2
+BLOCKED_UNION                                      3
+HIVE_INSERT                                        2
+SCAN TEMP                                          4
 
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>--QID: 24a
 >>
@@ -1408,7 +1427,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>--QID: 24b
 >>
@@ -1479,7 +1498,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>--QID: 30
 >>
@@ -1528,7 +1547,7 @@ SCAN TEMP                                          2
 --- 3 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>
 >>--QID: 31
 >>
@@ -1583,9 +1602,13 @@ SCAN TEMP                                          2
 +>       > case when ss2.store_sales > 0 then ss3.store_sales/ss2.store_sales else null end
 +> order by store_q1_q2_increase;
 
-*** WARNING[5001] Common subexpression SS cannot be shared among multiple consumers. Reason: Encountered VEGs with different constants in different consumers.
+*** WARNING[5001] Common subexpression SS will not be shared among multiple consumers. Reason: Encountered VEGs with different constants in different consumers.
 
-*** WARNING[5001] Common subexpression WS cannot be shared among multiple consumers. Reason: Encountered VEGs with different constants in different consumers.
+*** WARNING[5001] Common subexpression SS will not be shared among multiple consumers. Reason: Differing inputs in CTE references, try CQD QUERY_CACHE '0'.
+
+*** WARNING[5001] Common subexpression WS will not be shared among multiple consumers. Reason: Encountered VEGs with different constants in different consumers.
+
+*** WARNING[5001] Common subexpression WS will not be shared among multiple consumers. Reason: Differing inputs in CTE references, try CQD QUERY_CACHE '0'.
 
 --- SQL command prepared.
 >>-- Different constants used in different references of WITH clause - not yet supported
@@ -1594,7 +1617,7 @@ SCAN TEMP                                          2
 --- 0 row(s) selected.
 >>execute s;
 
---- SQL operation complete.
+--- 0 row(s) selected.
 >>obey TEST045(clnup);
 >>
 >>drop schema T045_CSES cascade;

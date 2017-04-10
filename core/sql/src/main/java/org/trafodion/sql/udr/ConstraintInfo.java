@@ -70,15 +70,18 @@ public abstract class ConstraintInfo extends TMUDRSerializableObject
     }   
 
     // UDR writers can ignore these methods
-    public abstract String toString(TableInfo ti) throws UDRException;
-    public static short getCurrentVersion() { return 1; }
+
+    abstract String toString(TableInfo ti) throws UDRException;
+
+    static short getCurrentVersion() { return 1; }
+
     @Override
-    public int serializedLength() throws UDRException{
+    int serializedLength() throws UDRException{
       return super.serializedLength() + serializedLengthOfInt();
     }
  
     @Override
-    public int serialize(ByteBuffer outputBuffer) throws UDRException{
+    int serialize(ByteBuffer outputBuffer) throws UDRException{
       int origPos = outputBuffer.position();
 
       super.serialize(outputBuffer);
@@ -92,7 +95,7 @@ public abstract class ConstraintInfo extends TMUDRSerializableObject
     }
 
     @Override
-    public int deserialize(ByteBuffer inputBuffer) throws UDRException{
+    int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();
 

@@ -133,7 +133,6 @@ static const char *ga_sb_api_ctr_names[] = {
         "msg_mon_get_process_info_type",
         "msg_mon_get_process_name",
         "msg_mon_get_process_name2",
-        "msg_mon_get_tm_seq",
         "msg_mon_get_trans_info_process",
         "msg_mon_get_trans_info_transid",
         "msg_mon_get_zone_info",

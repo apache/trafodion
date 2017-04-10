@@ -149,27 +149,6 @@ fi
 
 export TEST_SCHEMA="$TEST_CATALOG.$TEST_SCHEMA_NAME"
 
-if [ $scriptsdir != $rundir ]; then
-  cp $scriptsdir/compGeneral/hpit_ddl $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/hpit_setup_hist $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/simple_setup_hist $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/char_setup_hist $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/hpit*dat $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/test062*dat $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/test042*dat $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/test042qi*txt $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/gencharddl.pl $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/gencharddlnsk.pl $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/TEST003.dat $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/insertRowsForLike.dat $rundir/compGeneral 2>$NULL
-  cp $scriptsdir/compGeneral/mcsb $rundir/compGeneral 2>$NULL
-  if [ ! -d $rundir/tools ]; then
-    mkdir $rundir/tools 2>$NULL
-    cp $scriptsdir/tools/fakehist.pl $rundir/tools 2>$NULL
-    cp $scriptsdir/tools/fakestats_setup $rundir/tools 2>$NULL
-  fi
-fi
-
 
 if [ `uname` = "Linux" ]; then
   # upcase all test*, expected*, filters and known diff files
@@ -306,7 +285,7 @@ skipTheseTests="$skipTheseTests TEST012 TEST075 TEST078 TEST088"
 
 # skip these tests for RELEASE ONLY tests on NSK
 if [ "$BUILD_FLAVOR" = "RELEASE" ]; then
-  skipTheseTests="$skipTheseTests TEST077 TEST064 TEST042QI"
+  skipTheseTests="$skipTheseTests TEST077 TEST064"
 fi
 
 if [ `uname` = "Linux" ]; then 
@@ -371,7 +350,7 @@ fi
 cd $REGRRUNDIR 2>$NULL
 
 if [ `uname` = "Linux" ]; then 
-  wDir=$MY_SQROOT/../sql
+  wDir=$TRAF_HOME/../sql
 else
   wDir=../..
 fi
@@ -395,8 +374,6 @@ loopStartTime="`date +'%D %T'`"
 
 cp $MAKESCRIPT $REGRRUNDIR 2>$NULL 
 echo "copying $MAKESCRIPT to $REGRRUNDIR"
-cp $scriptsdir/tools/runmxcmp.ksh $REGRRUNDIR 2>$NULL
-cp $scriptsdir/tools/runmxsqlc.ksh $REGRRUNDIR 2>$NULL
 cp $scriptsdir/tools/runmxci.ksh $REGRRUNDIR 2>$NULL
 
 echo "copying FILTER042 to $REGRRUNDIR"
@@ -556,23 +533,11 @@ for i in $prettyfiles; do
     fi
   fi
 
-  # Special case for query caching tests
-  if test "$tnum" = "042Q" ; then
-    if [ "$REGRTSTDIR" != "$REGRRUNDIR" ]; then
-      cp $REGRTSTDIR/SetupTPCC $REGRRUNDIR/SetupTPCC 
-    fi
-  fi
-
   # run the test
 
   if [ $diffOnly -eq 0 ]; then
     if [ "$REGRTSTDIR" != "$REGRRUNDIR" ]; then
        cp -f $REGRTSTDIR/$test $REGRRUNDIR/$test 2>$NULL
-       if [ $test = "TEST042QI" ]; then
-        cp -f $REGRTSTDIR/TEST042QI.TXT $REGRRUNDIR 2>$NULL
-        cp -f $REGRTSTDIR/TEST042QI_RUN.SH $REGRRUNDIR 2>$NULL
-        chmod a+x $REGRRUNDIR/TEST042QI_RUN.SH 2>$NULL
-       fi
     fi
 
     if [ $tnum = "TOK" ]; then

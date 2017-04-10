@@ -918,7 +918,8 @@ class SQLEXP_LIB_FUNC ExFunctionSha2: public ex_function_clause {
 public:
   NA_EIDPROC ExFunctionSha2(OperatorTypeEnum oper_type,
 				Attributes ** attr,
-				Space * space);
+				Space * space,
+                Lng32 mode);
   NA_EIDPROC ExFunctionSha2();
 
   NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
@@ -941,6 +942,9 @@ public:
 
   NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
+
+private:
+  Lng32 mode;
 };
 
 class SQLEXP_LIB_FUNC ExFunctionSoundex: public ex_function_clause {
@@ -1087,6 +1091,78 @@ public:
 
   NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
+};
+
+class SQLEXP_LIB_FUNC ExFunctionAESEncrypt : public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionAESEncrypt(OperatorTypeEnum oper_type,
+                                  Attributes ** attr,
+                                  Space * space,
+                                  int args_num,
+                                  Int32 aes_mode);
+  NA_EIDPROC ExFunctionAESEncrypt();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_datap[], CollHeap*,
+                                           ComDiagsArea** = 0);
+  NA_EIDPROC long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // ---------------------------------------------------------------------
+private:
+  Int32 aes_mode;
+  Int32 args_num;
+};
+
+class SQLEXP_LIB_FUNC ExFunctionAESDecrypt : public ex_function_clause {
+public:
+  NA_EIDPROC ExFunctionAESDecrypt(OperatorTypeEnum oper_type,
+                                  Attributes ** attr,
+                                  Space *space,
+                                  int args_num,
+                                  Int32 aes_mode);
+
+  NA_EIDPROC ExFunctionAESDecrypt();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*,
+                                           ComDiagsArea ** = 0);
+
+  NA_EIDPROC long pack(void *);
+
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  NA_EIDPROC virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // ---------------------------------------------------------------------
+private:
+  Int32 aes_mode;
+  Int32 args_num;
 };
 
 class SQLEXP_LIB_FUNC  ExFunctionTokenStr : public ex_function_clause {
@@ -1269,8 +1345,10 @@ class SQLEXP_LIB_FUNC  ex_function_translate : public ex_function_clause {
 
 public:
   NA_EIDPROC ex_function_translate (OperatorTypeEnum oper_type,
-                               Attributes ** attr,
-                               Space * space, Int32 conv_type);
+                                    Attributes ** attr,
+                                    Space * space,
+                                    Int32 conv_type,
+                                    Int16 flags);
   NA_EIDPROC ex_function_translate () {};
 
 
@@ -1295,16 +1373,28 @@ public:
   }
 
   NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // flags:
+  // 0x0001 set the CONV_ALLOW_INVALID_CODE_VALUE flag when converting
+  //        the data to allow invalid code points and replace them
+  //        with a replacement character
+  enum TranslateFlags
+  {
+    TRANSLATE_FLAG_ALLOW_INVALID_CODEPOINT = 0x001
+  };
+
   // ---------------------------------------------------------------------
 
 private:
   Int32            conv_type_;           // 00-03
+  // flags, see TranslateFlags enum above
+  Int16            flags_;               // 04-05
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char             fillers_[4];          // 04-07
+  char             fillers_[2];          // 06-07
 
 };
 
@@ -3785,6 +3875,28 @@ private:
   char fillers_[64];
   // ---------------------------------------------------------------------
 };
+
+class SQLEXP_LIB_FUNC  ex_function_json_object_field_text : public ex_function_clause {
+public:
+  NA_EIDPROC ex_function_json_object_field_text(OperatorTypeEnum oper_type,
+			     Attributes ** attr,
+			     Space * space);
+  NA_EIDPROC ex_function_json_object_field_text();
+
+  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+					   ComDiagsArea** = 0);  
+  NA_EIDPROC Long pack(void *);
+
+  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // This clause handles all NULL processing in the eval() method.
+  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+
+private:
+  char fillers_[64];
+  // ---------------------------------------------------------------------
+};
+
 
 class SQLEXP_LIB_FUNC ExFunctionExtractColumns : public ex_function_clause
 {

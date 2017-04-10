@@ -42,16 +42,12 @@
 #include "pnode.h"
 #include "zclient.h"
 
-// The following specify the default values for the timers if the
-// zclient cluster monitoring timer related variables are not defined.
 //
-// NOTE: It is recommended to set the checkrate to -1 which essentially
-//       make the zclient event driven. Meaning the watcher is called
-//       only when watched a znode is changed or is deleted (expires)
-//       Also, the session timeout must be kept at or below 60 seconds
-//       as this is enforced by Zookeeper. Any, value above 60 seconds
-//       is renegotiated by Zookeeper to 60 seconds.
-#define ZCLIENT_MONITORING_CHECKRATE         -1 // seconds (disabled)
+// The following specify the default values for the timers if the
+// zclient cluster timer related environment variables are not defined.
+//
+// - ZCLIENT_MY_ZNODE_CHECKRATE is the rate the local monitor's znode is checked
+#define ZCLIENT_MY_ZNODE_CHECKRATE            5 // seconds
 #define ZCLIENT_SESSION_TIMEOUT              60 // seconds (1 minute)
 
 // The monitors register their znodes under the cluster znode
@@ -241,7 +237,7 @@ void ZSessionWatcher( zhandle_t *zzh
                     ,  method_name );
             mon_log_write(MON_ZCLIENT_ZSESSIONWATCHER_1, SQ_LOG_CRIT, buf);
 
-            HandleZSessionExpiration();
+            HandleMyNodeExpiration();
 
             zookeeper_close( zzh );
             ZHandle=0;
@@ -254,7 +250,7 @@ void ZSessionWatcher( zhandle_t *zzh
                     ,  method_name );
             mon_log_write(MON_ZCLIENT_ZSESSIONWATCHER_2, SQ_LOG_CRIT, buf);
 
-            HandleZSessionExpiration();
+            HandleMyNodeExpiration();
 
             zookeeper_close( zzh );
             ZHandle=0;
@@ -291,7 +287,8 @@ CZClient::CZClient( const char *quorumHosts
          ,state_(ZC_DISABLED)
          ,enabled_(false)
          ,checkCluster_(false)
-         ,zcMonitoringRate_(ZCLIENT_MONITORING_CHECKRATE) // seconds
+         ,resetMyZNodeFailedTime_(true)
+         ,zcMonitoringRate_(ZCLIENT_MY_ZNODE_CHECKRATE) // seconds
          ,zkQuorumHosts_(quorumHosts)
          ,zkRootNode_(rootNode)
          ,zkRootNodeInstance_(instanceNode)
@@ -305,7 +302,7 @@ CZClient::CZClient( const char *quorumHosts
     
     char *zcMonitoringRateValueC;
     int zcMonitoringRateValue;
-    if ( (zcMonitoringRateValueC = getenv( "SQ_MON_ZCLIENT_MONITORING_CHECKRATE" )) )
+    if ( (zcMonitoringRateValueC = getenv( "SQ_MON_ZCLIENT_MY_ZNODE_CHECKRATE" )) )
     {
         // in seconds
         zcMonitoringRateValue = atoi( zcMonitoringRateValueC );
@@ -466,6 +463,65 @@ void CZClient::CheckCluster( void )
         {
             trace_printf( "%s@%d CheckCluster is NOT set!\n"
                         , method_name, __LINE__ );
+        }
+    }
+    
+    TRACE_EXIT;
+}
+
+void CZClient::CheckMyZNode( void )
+{
+    const char method_name[] = "CZClient::CheckMyZNode";
+    TRACE_ENTRY;
+
+    int zerr;
+    struct timespec currentTime;
+
+    if ( IsCheckCluster() )
+    {
+        if (resetMyZNodeFailedTime_)
+        {
+            resetMyZNodeFailedTime_ = false;
+            clock_gettime(CLOCK_REALTIME, &myZNodeFailedTime_);
+            myZNodeFailedTime_.tv_sec += (GetSessionTimeout() * 2);
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf( "%s@%d" " - Resetting MyZnode Fail Time %ld(secs)\n"
+                            , method_name, __LINE__
+                            , myZNodeFailedTime_.tv_sec );
+            }
+        }
+        if ( ! IsZNodeExpired( Node_name, zerr ) )
+        {
+            if ( zerr == ZCONNECTIONLOSS || zerr == ZOPERATIONTIMEOUT )
+            {
+                // Ignore transient errors with the quorum.
+                // However, if longer than the session
+                // timeout, handle it as a hard error.
+                clock_gettime(CLOCK_REALTIME, &currentTime);
+                if (currentTime.tv_sec > myZNodeFailedTime_.tv_sec)
+                {
+                    char buf[MON_STRING_BUF_SIZE];
+                    snprintf( buf, sizeof(buf)
+                            , "[%s], Zookeeper quorum comm error: %s - Handling my znode (%s) as expired! Node is going down.\n"
+                            , method_name, ZooErrorStr(zerr), Node_name );
+                    mon_log_write(MON_ZCLIENT_CHECKMYZNODE_1, SQ_LOG_ERR, buf);
+                    HandleMyNodeExpiration();
+                }
+            }
+            else
+            {
+                resetMyZNodeFailedTime_ = true;
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s], My znode (%s) expired! Node is going down.\n"
+                    , method_name, Node_name );
+            mon_log_write(MON_ZCLIENT_CHECKMYZNODE_2, SQ_LOG_ERR, buf);
+            HandleMyNodeExpiration();
         }
     }
     
@@ -777,7 +833,7 @@ bool CZClient::IsZNodeExpired( const char *nodeName, int &zerr )
         case ZCLOSING:
             // Treat these error like a session expiration, since
             // we can't communicate with quorum servers
-            HandleZSessionExpiration();
+            HandleMyNodeExpiration();
             break;
         default:
             break;
@@ -926,12 +982,12 @@ void CZClient::MonitorZCluster()
         lock();
         if ( !IsEnabled() )
         {
-            // Wait until timer started
+            // Wait until enabled
             CLock::wait();
         }
         else
         {
-            if (zcMonitoringRate_ < 0)
+            if (zcMonitoringRate_ < 0 || GetState() == ZC_DISABLED)
             {
                 // Wait until signaled
                 CLock::wait();
@@ -974,18 +1030,33 @@ void CZClient::MonitorZCluster()
                 if ( IsCheckCluster() )
                 {
                     CheckCluster();
+                    if (GetState() != ZC_STOP)
+                    {
+                        SetState( ZC_MYZNODE );
+                    }
                 }
                 break;
             case ZC_WATCH:
                 if ( !IsCheckCluster() )
                 {
                     WatchCluster();
+                    if (GetState() != ZC_STOP)
+                    {
+                        SetState( ZC_MYZNODE );
+                    }
+                }
+                break;
+            case ZC_MYZNODE:
+                if ( IsCheckCluster() )
+                {
+                    CheckMyZNode();
                 }
                 break;
             case ZC_ZNODE:
                 if ( IsCheckCluster() )
                 {
                     HandleExpiredZNode();
+                    SetState( ZC_MYZNODE );
                 }
                 break;
             case ZC_STOP:
@@ -994,7 +1065,7 @@ void CZClient::MonitorZCluster()
             default:
                 break;
         }
-        if (zcMonitoringRate_ >= 0 )
+        if (zcMonitoringRate_ >= 0)
         {
             SetTimeToWakeUp( timeout );
         }
@@ -1197,7 +1268,7 @@ int CZClient::SetZNodeWatch( string &monZnode )
         case ZCLOSING:
             // Treat these error like a session expiration, since
             // we can't communicate with quorum servers
-            HandleZSessionExpiration();
+            HandleMyNodeExpiration();
             break;
         default:
             break;
@@ -1307,7 +1378,7 @@ static void *ZClientThread(void *arg)
 
 
 // Create the ZClientThread
-int CZClient::StartWork()
+int CZClient::StartWork( void )
 {
     const char method_name[] = "CZClient::StartWork";
     TRACE_ENTRY;
@@ -1442,7 +1513,6 @@ void CZClient::WatchCluster( void )
                 }
             }
             SetCheckCluster( true );
-            SetState( ZC_CLUSTER );
             FreeStringVector( &nodes );
         }
     }
@@ -1560,7 +1630,7 @@ int CZClient::WatchNodeDelete( const char *nodeName )
         case ZCLOSING:
             // Treat these error like a session expiration, since
             // we can't communicate with quorum servers
-            HandleZSessionExpiration();
+            HandleMyNodeExpiration();
             break;
         default:
             break;

@@ -33,21 +33,23 @@ import java.nio.ByteBuffer;
 
 public class ParameterListInfo extends TupleInfo
 {
-    public ParameterListInfo() {
+    // UDR writers can ignore these methods
+
+    ParameterListInfo() {
         super(TMUDRObjectType.PARAMETER_LIST_INFO_OBJ, getCurrentVersion());
     }
     
-    // UDR writers can ignore these methods    
-    public static short getCurrentVersion() { return 1; }
+    static short getCurrentVersion() { return 1; }
+
     @Override
-    public int serializedLength() throws UDRException {
+    int serializedLength() throws UDRException {
       int result = super.serializedLength();
 
       return result;
     }
 
     @Override
-    public int serialize(ByteBuffer outputBuffer) throws UDRException {
+    int serialize(ByteBuffer outputBuffer) throws UDRException {
       int origPos = outputBuffer.position();
       super.serialize(outputBuffer);
 
@@ -59,7 +61,7 @@ public class ParameterListInfo extends TupleInfo
     }
 
     @Override
-    public int deserialize(ByteBuffer inputBuffer) throws UDRException {
+    int deserialize(ByteBuffer inputBuffer) throws UDRException {
 
       int origPos = inputBuffer.position();
 

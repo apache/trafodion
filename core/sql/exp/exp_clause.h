@@ -208,7 +208,11 @@ public:
     FUNC_MD5_ID              = 123,
     FUNC_SHA1_ID             = 124,
     FUNC_SHA2_ID             = 125,
-    FUNC_SOUNDEX_ID          = 126
+    FUNC_SOUNDEX_ID          = 126,
+    REGEXP_CLAUSE_CHAR_ID    = 127,
+    FUNC_JSON_ID             = 128,
+    FUNC_AES_ENCRYPT         = 129,
+    FUNC_AES_DECRYPT         = 130
   };
 
   // max number of operands (including result) in a clause.

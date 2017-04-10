@@ -80,7 +80,7 @@ For additional details, please refer to the [Trafodion Distributed Transaction M
 
 The Trafodion Compiler translates SQL statements into query plans that can then be executed by the Trafodion execution engine, commonly called the Executor.
 
-The Compiler is a multi-pass compiler. Each pass transforms a representation of the SQL statement into a new or augmented representation which is input to the next pass. The sections below give more detail on each pass. The logic that calls each pass is in the CmpMain class, method CmpMain::compile. You can find that logic in file $MY_SQROOT/sql/sqlcomp/CmpMain.cpp.
+The Compiler is a multi-pass compiler. Each pass transforms a representation of the SQL statement into a new or augmented representation which is input to the next pass. The sections below give more detail on each pass. The logic that calls each pass is in the CmpMain class, method CmpMain::compile. You can find that logic in file $TRAF_HOME/sql/sqlcomp/CmpMain.cpp.
 
 A copy of the compiler code runs in the Master process, which avoids inter-process message passing between the Compiler and Executor. At the moment the compiler code is not re-entrant, but it is a serially reusable resource within the Master. Some processing is recursive. For example, the execution logic for DDL statements is packaged with the compiler code. When we execute a DDL statement, the Executor spawns a separate Compiler process to execute that logic. For another example, the UPDATE STATISTICS utility dynamically generates SQL SELECT statements to obtain statistical data. Since we are not re-entrant, we spawn a separate Compiler process for this recursive processing.
 

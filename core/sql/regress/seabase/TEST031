@@ -150,6 +150,33 @@ select x.z, y.z, substring(x.a, 1, 5), substring(y.a,1,5)
   from t031t1 x, t031t2 y where x.a = y.a and x.b = y.b
   order by x.z, y.z;
 
+process hive statement 'drop table t031hive';
+process hive statement 'create table t031hive(z int, a string, b string)';
+
+-- really large columns
+drop table if exists t031t10;
+
+-- should fail, exceeds max
+create table t031t10 (a varchar(20485760));
+cqd traf_max_character_col_length_override 'ON';
+cqd traf_max_character_col_length '25000000';
+create table t031t10 (a varchar(20485760));
+invoke t031t10;
+cqd traf_max_character_col_length_override 'OFF';
+
+-- should fail, exceeds max
+drop table if exists t031t11;
+create table t031t11 (a varchar(20485760));
+create table t031t11 (a varchar(10485760));
+prepare s from select repeat('1234567890', 1048576 ) from dual;
+
+-- should fail, exceeds max
+prepare s from select repeat('11234567890', 1648576 ) from dual;
+
+-- should fail, exceeds max. TBD.
+prepare s from select ' ' || repeat('1234567890', 1048576) from dual;
+
+-- hive tables
 sh echo "drop table t031hive;" > TEST031_junk;
 sh regrhive.ksh -f TEST031_junk;
 
@@ -187,6 +214,9 @@ prepare s2 from select count(*) from hive.hive.t031hive;
 control query shape cut ;
 cqd hdfs_io_buffersize reset ;
 cqd hive_min_bytes_per_esp_partition reset;
+
+-- should return error.
+process hive statement 'insert into t values (1)';
 
 -- default USER
 drop table if exists t031t1;
@@ -248,6 +278,49 @@ set parserflags 1;
 invoke table(index_table t031t1i1);
 reset parserflags;
 
+-- purgedata of table with delimited name
+drop table if exists "tT";
+create table "tT" (a int);
+purgedata "tT";
+
+-- group by rollup would sometimes crash compiler.
+drop table if exists mytable;
+create table mytable(a char(10), b char(10), c int, d int);
+insert into mytable values
+('A1', 'B1', 1, 1),
+('A1', 'B1', 1, 2),
+('A1', 'B1', 2, 3),
+('A1', 'B1', 2, 4),
+('A1', 'B2', 3, 5),
+('A1', 'B2', 3, 6),
+('A1', 'B2', 4, 7),
+('A1', 'B2', 4, 8),
+('A2', 'B3', 5, 9),
+('A2', 'B3', 5, 10),
+('A2', 'B3', 6, 11),
+('A2', 'B3', 6, 12),
+('A2', 'B4', 7, 13),
+('A2', 'B4', 7, 14),
+('A2', 'B4', 8, 15),
+('A2', 'B4', 8, 16);
+select a, b, c, sum(d) as newcol from mytable where a in ('A1') 
+  group by(a, b, c);
+select a, b, c, sum(d) as newcol from mytable where d > 5 
+  group by rollup(a, b, c);
+select a, b, c, sum(d) as newcol from mytable where a in ('A1') 
+  group by rollup(a, b, c);
+
+-- GET CATALOGS support
+get catalogs;
+
+-- external and hive table mismatch on hive 'string' datatype
+process hive statement 'drop table t031hivet1';
+process hive statement 'create table t031hivet1 (a string)';
+drop external table if exists t031hivet1 for hive.hive.t031hivet1;
+create external table t031hivet1 for hive.hive.t031hivet1;
+cqd hive_max_string_length '10';
+showddl hive.hive.t031hivet1;
+
 -- volatile and external table operation in default hive schema
 drop external table t031hive for hive.hive.t031hive;
 set schema hive.hive;
@@ -258,5 +331,6 @@ drop volatile table vtt;
 
 create external table t031hive for t031hive;
 drop external table t031hive for t031hive;
+
 
 log;

@@ -249,17 +249,30 @@ void CmpSeabaseDDL::createSeabaseSchema(
    Int32 objectOwner = NA_UserIdDefault;
    Int32 schemaOwner = NA_UserIdDefault;
 
-   int32_t retCode = verifyDDLCreateOperationAuthorized(&cliInterface,
-                                                        SQLOperation::CREATE_SCHEMA,
-                                                        catName,
-                                                        schName,
-                                                        schemaClass,
-                                                        objectOwner,
-                                                        schemaOwner);
-   if (retCode != 0)
+
+   // If creating the hive statistics schema, make owners
+   // the HIVE_ROLE_ID and skip authorization check.
+   // Schema is being created as part of an update statistics cmd
+   if (schName == HIVE_STATS_SCHEMA_NO_QUOTES &&
+       Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL))
    {
-      handleDDLCreateAuthorizationError(retCode,catName,schName);
-      return;
+      objectOwner = HIVE_ROLE_ID;
+      schemaOwner = HIVE_ROLE_ID;
+   }
+   else
+   {
+      int32_t retCode = verifyDDLCreateOperationAuthorized(&cliInterface,
+                                                           SQLOperation::CREATE_SCHEMA,
+                                                           catName,
+                                                           schName,
+                                                           schemaClass,
+                                                           objectOwner,
+                                                           schemaOwner);
+      if (retCode != 0)
+      {
+         handleDDLCreateAuthorizationError(retCode,catName,schName);
+         return;
+      }
    }
    
    Int32 schemaOwnerID = NA_UserIdDefault; 
@@ -410,20 +423,6 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
 //******************* End of CmpSeabaseDDL::describeSchema *********************
 
 
-static NABoolean appendErrorObjName(char * errorObjs, const char * objName)
-{
-  if ((strlen(errorObjs) + strlen(objName)) < 1000)
-    {
-      strcat(errorObjs, objName);
-      strcat(errorObjs, " ");
-    }
-  else if (strlen(errorObjs) < 1005) // errorObjs maxlen = 1010
-    {
-      strcat(errorObjs, "...");
-    }
-  
-  return TRUE;
-}
 
 // *****************************************************************************
 // *                                                                           *
@@ -458,7 +457,7 @@ void CmpSeabaseDDL::dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode)
 
    bool isVolatile = (memcmp(schName.data(),"VOLATILE_SCHEMA",strlen("VOLATILE_SCHEMA")) == 0);
    int32_t length = 0;
-   int32_t rowCount = 0;
+   Int64 rowCount = 0;
    bool someObjectsCouldNotBeDropped = false;
    char errorObjs[1010];
    Queue * objectsQueue = NULL;
@@ -1007,7 +1006,7 @@ void CmpSeabaseDDL::alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode)
 
    bool isVolatile = (memcmp(schName.data(),"VOLATILE_SCHEMA",strlen("VOLATILE_SCHEMA")) == 0);
    int32_t length = 0;
-   int32_t rowCount = 0;
+   Int64 rowCount = 0;
    bool someObjectsCouldNotBeAltered = false;
    char errorObjs[1010];
    Queue * objectsQueue = NULL;
@@ -1398,7 +1397,7 @@ char buf[4000];
                catalogName.data(),schemaName.data(),newOwnerID);
                
 int32_t length = 0;
-int32_t rowCount = 0;
+Int64 rowCount = 0;
 
    cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,NULL);
   
@@ -1699,11 +1698,15 @@ ULng32 savedParserFlags = Get_SqlParser_Flags(0xFFFFFFFF);
    }
    
 // Restore parser flags settings to what they originally were
-   Assign_SqlParser_Flags(savedParserFlags); 
+   Assign_SqlParser_Flags(savedParserFlags);
 
    if (cliRC < 0 && cliRC != -CAT_OBJECT_DOES_NOT_EXIST_IN_TRAFODION)
-      someObjectsCouldNotBeDropped = true;
-   
+     {
+       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+
+       someObjectsCouldNotBeDropped = true;
+     }
+
 // remove NATable entry for this table
    CorrName cn(objectName,STMTHEAP,schemaName,catalogName);
 

@@ -1693,16 +1693,29 @@ VEGRegion * VEGTable::getVEGRegion(const ExprNode * const ownerExpr,
 				   Lng32 subtreeId) const
 {
   VEGRegion* candidateRegion = NULL;
+  const ExprNode * ownerOrOrig = ownerExpr;
   
-  // Loop through the regions to find the one for this ExprNode
-  for (RegionId i = FIRST_VEG_REGION;
-       i < (RegionId)arrayEntry_.entries();
-       i++)
+  // Loop over the node and its original expressions
+  while (ownerOrOrig)
     {
-      candidateRegion = arrayEntry_[i];
-      if ( (candidateRegion->getOwnerExpr() == ownerExpr) AND 
-	   (candidateRegion->getSubtreeId() == subtreeId))
-	return candidateRegion;
+      // Loop through the regions to find the one for this ExprNode
+      for (RegionId i = FIRST_VEG_REGION;
+           i < (RegionId)arrayEntry_.entries();
+           i++)
+        {
+          candidateRegion = arrayEntry_[i];
+          if ( (candidateRegion->getOwnerExpr() == ownerOrOrig) AND 
+               (candidateRegion->getSubtreeId() == subtreeId))
+            return candidateRegion;
+        }
+
+      // VEGRegion not found, try with one of the original expressions
+      const RelExpr *re = ownerOrOrig->castToRelExpr();
+
+      if (re && re->getOriginalExpr(FALSE) != re)
+        ownerOrOrig = re->getOriginalExpr(FALSE);
+      else
+        ownerOrOrig = NULL;
     }
 
     // Didn't find any

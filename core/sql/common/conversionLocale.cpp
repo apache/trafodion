@@ -88,8 +88,8 @@ charBuf* unicodeToUtf8(const NAWcharBuf& unicodeString, CollHeap *heap,
                       , addNullAtEnd
                       , allowInvalidCodePoint 
                       );
-   if ( res == NULL ) // translation failed
-     return res;
+   if ( res == NULL || errorcode != 0) // translation failed
+     return NULL;
 
    charBuf* output = checkSpace(heap, res->getStrLen(), utf8String, addNullAtEnd);
 

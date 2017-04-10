@@ -701,7 +701,8 @@ short REGISTERREGION(long transid, long startid, int pv_port, char *pa_hostname,
 // Purpose: send CREATETABLE message to the TM
 // Params: pa_tabledesc, pv_tabledesc_length, pv_tblname, transid
 // -------------------------------------------------------------------
-short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, char** pv_keys, int pv_numsplits, int pv_keylen, long transid)
+short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, char** pv_keys, int pv_numsplits, int pv_keylen, long transid ,
+		char* &pv_err_str, int &pv_err_len)
 {
     TM_Transid lv_transid((TM_Native_Type) transid);
     short lv_error = FEOK;
@@ -712,7 +713,9 @@ short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, cha
     if (gp_trans_thr == NULL)
        gp_trans_thr = new TMLIB_ThreadTxn_Object();
     TM_Transaction *lp_trans = gp_trans_thr->get_current();
-    lv_error =  lp_trans->create_table(pa_tbldesc, pv_tbldesc_length, pv_tblname, pv_keys, pv_numsplits, pv_keylen);
+    lv_error =  lp_trans->create_table(pa_tbldesc, pv_tbldesc_length, 
+                pv_tblname, pv_keys, pv_numsplits, pv_keylen,
+                pv_err_str, pv_err_len);
 
     TMlibTrace(("TMLIB_TRACE : CREATETABLE EXIT: txid: (%d,%d), returning %d\n",
        lv_transid.get_node(), lv_transid.get_seq_num(), lv_error), 2);
@@ -726,7 +729,8 @@ short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, cha
 // Purpose: send REGTRUNCATEONABORT message to the TM
 // Params: pa_tabledesc, pv_tabledesc_length, pv_tblname, transid
 // -------------------------------------------------------------------
-short REGTRUNCATEONABORT(char *pv_tblname, int pv_tblname_len, long pv_transid)
+short REGTRUNCATEONABORT(char *pv_tblname, int pv_tblname_len, long pv_transid,
+                        char* &pv_err_str, int &pv_err_len)
 {
     short lv_error = FEOK;
     TM_Transid lv_transid((TM_Native_Type) pv_transid);
@@ -736,7 +740,8 @@ short REGTRUNCATEONABORT(char *pv_tblname, int pv_tblname_len, long pv_transid)
     if (gp_trans_thr == NULL)
        gp_trans_thr = new TMLIB_ThreadTxn_Object();
     TM_Transaction *lp_trans = gp_trans_thr->get_current();
-    lv_error = lp_trans->reg_truncateonabort(pv_tblname, pv_tblname_len);
+    lv_error = lp_trans->reg_truncateonabort(pv_tblname, pv_tblname_len,
+               pv_err_str, pv_err_len);
 
     TMlibTrace(("TMLIB_TRACE : REGTRUNCATEONABORT EXIT: txid: (%d,%d), tablename: %s, returning %d\n",
        lv_transid.get_node(), lv_transid.get_seq_num(), pv_tblname, lv_error), 2);
@@ -745,7 +750,9 @@ short REGTRUNCATEONABORT(char *pv_tblname, int pv_tblname_len, long pv_transid)
 }
 
 
-short ALTERTABLE(char *pv_tblname, int pv_tblname_len, char ** pv_tbloptions, int pv_tbloptslen, int pv_tbloptscnt, long pv_transid)
+short ALTERTABLE(char *pv_tblname, int pv_tblname_len, char ** pv_tbloptions,
+                 int pv_tbloptslen, int pv_tbloptscnt, long pv_transid,
+                 char* &pv_err_str, int &pv_err_len)
 {
     short lv_error = FEOK;
     TM_Transid lv_transid((TM_Native_Type) pv_transid);
@@ -755,7 +762,8 @@ short ALTERTABLE(char *pv_tblname, int pv_tblname_len, char ** pv_tbloptions, in
     if (gp_trans_thr == NULL)
        gp_trans_thr = new TMLIB_ThreadTxn_Object();
     TM_Transaction *lp_trans = gp_trans_thr->get_current();
-    lv_error = lp_trans->alter_table(pv_tblname, pv_tblname_len, pv_tbloptions, pv_tbloptslen, pv_tbloptscnt);
+    lv_error = lp_trans->alter_table(pv_tblname, pv_tblname_len, pv_tbloptions,
+                pv_tbloptslen, pv_tbloptscnt, pv_err_str, pv_err_len);
 
     TMlibTrace(("TMLIB_TRACE : ALTERTABLE EXIT: txid: (%d,%d), tablename: %s, returning %d\n",
        lv_transid.get_node(), lv_transid.get_seq_num(), pv_tblname, lv_error), 2);
@@ -770,7 +778,8 @@ short ALTERTABLE(char *pv_tblname, int pv_tblname_len, char ** pv_tbloptions, in
 // Purpose: send DROPTABLE message to TM
 // Params: pv_tablename, transid
 // -------------------------------------------------------------------
-short DROPTABLE(char *pv_tblname, int pv_tblname_len, long transid)
+short DROPTABLE(char *pv_tblname, int pv_tblname_len, long transid,
+                char* &pv_err_str, int &pv_err_len)
 {
     short lv_error = FEOK;
     TM_Transid lv_transid((TM_Native_Type) transid);
@@ -780,7 +789,8 @@ short DROPTABLE(char *pv_tblname, int pv_tblname_len, long transid)
     if (gp_trans_thr == NULL)
        gp_trans_thr = new TMLIB_ThreadTxn_Object();
     TM_Transaction *lp_trans = gp_trans_thr->get_current();
-    lv_error = lp_trans->drop_table(pv_tblname, pv_tblname_len);
+    lv_error = lp_trans->drop_table(pv_tblname, pv_tblname_len, pv_err_str,
+                                    pv_err_len);
 
     TMlibTrace(("TMLIB_TRACE : DROPTABLE EXIT: txid: (%d,%d), tablename: %s, returning %d\n",
        lv_transid.get_node(), lv_transid.get_seq_num(), pv_tblname, lv_error), 2);
@@ -946,13 +956,42 @@ short BEGINTX(int *pp_tag, int pv_timeout, int64 pv_type_flags)
     return lv_error;
 } //BEGINTX
 
+//--------------------------------------------------------------------
+//DEALLOCATE_ERR
+//
+//Purpose   : Called subsequent to ENDTRANSACTION_ERR
+//Params    : none
+//--------------------------------------------------------------------
+void DEALLOCATE_ERR(char *&errStr)
+{
+  if(errStr)
+  {
+    delete errStr;
+    errStr = NULL;
+  }
+}
+
+//--------------------------------------------------------------------
+//ENDTRANSACTION
+//
+//Purpose   : end the current transaction
+//Params    : none
+//--------------------------------------------------------------------
+short ENDTRANSACTION()
+{
+  char *errStr = NULL;
+  int   errlen = 0;
+  short lv_error = ENDTRANSACTION_ERR(errStr,errlen);
+  DEALLOCATE_ERR(errStr);
+  return lv_error;
+}
 // --------------------------------------------------------------------
 // ENDTRANSACTION
 //
 // Purpose   : end the current transaction
 // Params    : none
 // --------------------------------------------------------------------
-short ENDTRANSACTION() 
+short ENDTRANSACTION_ERR(char *&errStr, int &errlen) 
 {
     short lv_error = FEOK;
     // instantiate a gp_trans_thr object for this thread if needed.
@@ -969,7 +1008,7 @@ short ENDTRANSACTION()
      }
 
     TMlibTrace(("TMLIB_TRACE : ENDTRANSACTION ENTRY: txid: %d\n", lp_trans->getTransid()->get_seq_num()), 1);
-    lv_error =  lp_trans->end();
+    lv_error =  lp_trans->end(errStr, errlen);
     TMlibTrace(("TMLIB_TRACE : ENDTRANSACTION EXIT: txid: %d\n", lp_trans->getTransid()->get_seq_num()), 1);
 
      // cleanup for legacy API
@@ -2452,6 +2491,18 @@ int16 TMWAIT()
         return lv_rsp.iv_msg_hdr.miv_err.error;
 }
 
+//------------------------------------------------------------------------
+// TMCLIENTEXIT
+//
+// Purpose  : To close all the TM opens from the clients before exiting 
+// Params   : none.
+// ---------------------------------------------------------------------
+int16 TMCLIENTEXIT()
+{
+   int16 lv_error = FEOK;
+   lv_error = gv_tmlib.close_tm();
+   return lv_error;
+}
 
 
 // -------------------------------------------------------------------
@@ -3235,6 +3286,17 @@ short TMLIB::abortTransactionLocal(long transactionID)
   return jresult;
 } //abortTransactionLocal
 
+bool TMLIB::close_tm() 
+{
+   TPT_DECL       (lv_phandle);
+   if (!gv_tmlib.is_initialized())
+      return true;
+   for (int i = 0; i < iv_node_count; i++) {
+      if (phandle_get(&lv_phandle, i) == true)
+         msg_mon_close_process(&lv_phandle);
+   }
+   return true;
+}
 
 //----------------------------------------------------------------------------
 // DTM_LOCALTRANSACTION

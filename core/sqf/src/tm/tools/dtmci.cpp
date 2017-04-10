@@ -33,6 +33,9 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <sys/time.h>
+#include <vector>
+#include <sstream>
+#include <iomanip>
 
 #include "dtm/tm.h"
 #include "../tmlibmsg.h"
@@ -1136,9 +1139,7 @@ void process_request_regions_info()
    short lv_count = 0;
    TM_HBASEREGIONINFO lv_trans_reg[TM_MAX_LIST_TRANS];
 
-   size_t tn_end, rid_end, h_end, p_end;
-   string tname, tname_tmp, regid, hname, pname;
-   size_t init = 0;
+   string regioninfo, regioninfo_full, regioninfo_tmp, tname, tname_tmp, tablename, regid, hname, pname, startkey, endkey, tstamp;
 
    lv_error = HBASETM_REQUESTREGIONINFO((TM_HBASEREGIONINFO *) &lv_trans_reg, &lv_count);
 
@@ -1147,56 +1148,65 @@ void process_request_regions_info()
    else
    {
       if(lv_count == 0)
-          printf("Error returned for HBASE_REQUESTREGIONINFO %d\n", lv_error);
+          printf("No Regions Returned from HBASETM_REQUESTREGIONINFO\n");
       else
       {
-          printf("Transid\t\tStatus\tRegionId\tHostname\t\tPort\tTableName\n");
+          printf("\nTransid\t\tStatus\n");
           for(int i=0; i<lv_count; i++)
           {
-             printf("----------------------------------------------------------------------------------------------\n");
+             bool first_entry = true;
+             printf("-----------------------------------------------------------------------------------------------------\n");
 
              print_transid_str(lv_trans_reg[i].iv_nid, lv_trans_reg[i].iv_seqnum);
              print_txnstatus(lv_trans_reg[i].iv_status);
+             cout << "\n-----------";
 
              tname   = lv_trans_reg[i].iv_tablename;
-             tn_end  = tname.find(';');
-             regid   = lv_trans_reg[i].iv_region_id;
-             rid_end = regid.find(';');
-             hname   = lv_trans_reg[i].iv_hostname;
-             h_end   = hname.find(';');
-             pname   = lv_trans_reg[i].iv_port;
-             p_end   = pname.find(';');
 
-             while(tn_end != std::string::npos){
-
-                // tablename
-                tname_tmp = tname.substr(init, tn_end);
-
-                if((tname_tmp.compare("TRAFODION._MD_.VIEWS") && tname_tmp.compare("TRAFODION._MD_.UNIQUE_REF_CONSTR_USAGE")
-                   && tname_tmp.compare("TRAFODION._MD_.OBJECTS_UNIQ_IDX") && tname_tmp.compare("TRAFODION._MD_.TABLE_CONSTRAINTS")
-                   && tname_tmp.compare("TRAFODION._MD_.INDEXES") && tname_tmp.compare("TRAFODION._MD_.KEYS")
-                   && tname_tmp.compare("TRAFODION._MD_.COLUMNS") && tname_tmp.compare("TRAFODION._MD_.TABLES")) != 0) {
-
-                   // region id
-                   cout << "\n\t\t\t" << regid.substr(init, rid_end) << '\t';
-                   regid = regid.substr(rid_end+1);
-                   rid_end = regid.find(';');
-
-                   // hostname
-                   cout << hname.substr(init, h_end) << '\t';
-                   hname = hname.substr(h_end+1);
-                   h_end = hname.find(';');
-
-                   // port
-                   cout << pname.substr(init, p_end) << '\t';
-                   pname = pname.substr(p_end+1);
-                   p_end = pname.find(';');
-
-                   // tablename
-                   cout << tname_tmp << '\t';
+             while(tname.length() > 0) {
+                std::size_t position = tname.find("|");
+                if(! (position == string::npos )) {
+                   regioninfo_tmp = tname.substr(0, position);
+                   tname = tname.substr(position + 1);
                 }
-                tname = tname.substr(tn_end+1);
-                tn_end = tname.find(';');
+                else {
+                   regioninfo_tmp = tname;
+                   tname = "";
+                }
+                tablename = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
+                regioninfo_tmp = regioninfo_tmp.substr(regioninfo_tmp.find(";") + 1);
+
+                regid = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
+                regioninfo_tmp = regioninfo_tmp.substr(regioninfo_tmp.find(";") + 1);
+
+                regioninfo_full = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
+                regioninfo_tmp = regioninfo_tmp.substr(regioninfo_tmp.find(";") + 1);
+
+                tstamp = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
+                regioninfo_tmp = regioninfo_tmp.substr(regioninfo_tmp.find(";") + 1);
+
+                hname = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
+                regioninfo_tmp = regioninfo_tmp.substr(regioninfo_tmp.find(";") + 1);
+
+                pname = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
+                regioninfo_tmp = regioninfo_tmp.substr(regioninfo_tmp.find(";") + 1);
+
+                if(regioninfo_tmp.find(";") == string::npos)
+                    continue;
+
+                startkey = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
+                regioninfo_tmp = regioninfo_tmp.substr(regioninfo_tmp.find(";") + 1);
+                
+                endkey = regioninfo_tmp.substr(0, regioninfo_tmp.find(";"));
+
+                if(!first_entry) 
+                    cout << "-----------";
+                first_entry = false;
+
+                cout << endl;
+                cout << "RegionInfo: \t" << regioninfo_full << endl;
+                cout << "Hostname: \t" << hname << ":" <<pname << endl;
+                cout << "Start/End Key: \t" << setw(40) << left << startkey <<  setw(40) << left << endkey << endl;
              }
              printf("\n");
           }
@@ -1305,8 +1315,8 @@ void print_helptext()
    cout << endl << " status trans[action] [transid]";
    cout << endl << "        : Status of the specified transaction.";
    cout << endl << "        : transid may be in numeric or <node>,<sequence> format.";
-  // cout << endl << " status regions";
-  // cout << endl << "        : Status of the transactions on the hbase regions - client side";
+   cout << endl << " status regions";
+   cout << endl << "        : Status of the transactions on the hbase regions - client side";
    cout << endl << " transid [string] <transid>";
    cout << endl << "        : Prints transaction ID information";
    cout << endl << "        : Entering string option outputs (node, sequence, incarn #)";
@@ -1783,10 +1793,10 @@ int main(int argc, char *argv[])
             {
                 process_statussystem();
             }
-            /*else if(!strcmp(lp_nextcmd, "regions"))
+            else if(!strcmp(lp_nextcmd, "regions"))
             {
                 process_request_regions_info();
-            }*/
+            }
             else
             {
                 cout << endl << "** Invalid qualifier '" <<lp_nextcmd 
@@ -1830,6 +1840,7 @@ int main(int argc, char *argv[])
     } // while
     if(lv_shellExec)
         fclose(lp_in);
+    TMCLIENTEXIT();
     msg_mon_process_shutdown();
 
     return 0;

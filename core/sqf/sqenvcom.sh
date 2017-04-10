@@ -32,7 +32,7 @@
 #Product version (Trafodion or derivative product)
 export TRAFODION_VER_PROD="Apache Trafodion"
 export TRAFODION_VER_MAJOR=2
-export TRAFODION_VER_MINOR=1
+export TRAFODION_VER_MINOR=2
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
@@ -43,9 +43,9 @@ export PRODUCT_COPYRIGHT_HEADER="2015-2016 Apache Software Foundation"
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
 # authentication in the Trafodion environment.
 # LDAP configuration must also be setup--see
-# $MY_SQROOT/sql/scripts/traf_authentication_config for details.
+# $TRAF_HOME/sql/scripts/traf_authentication_config for details.
 ##############################################################
-export TRAFODION_ENABLE_AUTHENTICATION=NO
+export TRAFODION_ENABLE_AUTHENTICATION=${TRAFODION_ENABLE_AUTHENTICATION:-NO}
 
 
 # default SQ_IC to TCP if it is not set in sqenv.sh. Values are
@@ -137,8 +137,11 @@ if [[ "$SUSE_LINUX" == "false" ]]; then
 else
    export RH_MAJ_VERS=6
 fi
-export MY_SQROOT=$PWD
-export SQ_HOME=$PWD
+export TRAF_HOME=$PWD
+
+# normal installed location, can be overridden in .trafodion
+export DCS_INSTALL_DIR=$TRAF_HOME/dcs-$TRAFODION_VER
+export REST_INSTALL_DIR=$TRAF_HOME/rest-$TRAFODION_VER
 
 # set common version to be consistent between shared lib and maven dependencies
 export HBASE_DEP_VER_CDH=1.2.0-cdh5.7.1
@@ -181,7 +184,7 @@ export HADOOP_BLD_LIB=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/lib/native
 export HADOOP_BLD_INC=${TOOLSDIR}/hadoop-${HADOOP_DEP_VER}/include
 
 # general Hadoop & TRX dependencies - not distro specific, choose one to build against
-export HBASE_TRXDIR=$MY_SQROOT/export/lib
+export HBASE_TRXDIR=$TRAF_HOME/export/lib
 export HBASE_TRX_JAR=${HBASE_TRX_ID_CDH}-${TRAFODION_VER}.jar
 export DTM_COMMON_JAR=trafodion-dtm-cdh-${TRAFODION_VER}.jar
 export SQL_JAR=trafodion-sql-cdh-${TRAFODION_VER}.jar
@@ -204,8 +207,8 @@ fi
 # check for workstation env
 # want to make sure SQ_VIRTUAL_NODES is set in the shell running sqstart
 # so we can determine if we are on a workstation or not
-if [[ -e ${MY_SQROOT}/etc/ms.env ]] ; then
-  VIRT_NODES=$(awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $MY_SQROOT/etc/ms.env)
+if [[ -e ${TRAF_HOME}/etc/ms.env ]] ; then
+  VIRT_NODES=$(awk '/SQ_VIRTUAL_NODES=/ { fields=split($0,virt,"=");  if ( fields == 2 ) { virtnodes=virt[2];}} END {print  virtnodes}' < $TRAF_HOME/etc/ms.env)
   if [[ -n "$VIRT_NODES" ]] ; then
      export SQ_VIRTUAL_NODES="$VIRT_NODES"
   fi
@@ -216,14 +219,14 @@ export SQ_IDTMSRV=1
 # Turn on/off generation of Service Monitor
 export SQ_SRVMON=1
 
-export MY_MPI_ROOT="$MY_SQROOT"
-export MPI_ROOT="$MY_SQROOT/opt/hpmpi"
+export MY_MPI_ROOT="$TRAF_HOME"
+export MPI_ROOT="$TRAF_HOME/opt/hpmpi"
 
 unset MPI_CC
 export MPI_CXX=/usr/bin/g++
 export MPICH_CXX=$MPI_CXX
 
-export PATH=$MPI_ROOT/bin:$MY_SQROOT/export/bin"$SQ_MBTYPE":$MY_SQROOT/sql/scripts:$MY_SQROOT/tools:$MY_SQROOT/trafci/bin:$PATH
+export PATH=$MPI_ROOT/bin:$TRAF_HOME/export/bin"$SQ_MBTYPE":$TRAF_HOME/sql/scripts:$TRAF_HOME/tools:$TRAF_HOME/trafci/bin:$PATH
 # The guiding principle is that the user's own software is preferred over anything else;
 # system customizations are likewise preferred over default software.
 
@@ -282,12 +285,12 @@ else
   export LOC_JVMLIBS=$JAVA_HOME/jre/lib/i386/server
 fi
 
-if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
+if [[ -e $TRAF_HOME/sql/scripts/sw_env.sh ]]; then
   # we are on a development system where install_local_hadoop has been
   # executed
   # ----------------------------------------------------------------
-  [[ $SQ_VERBOSE == 1 ]] && echo "Sourcing in $MY_SQROOT/sql/scripts/sw_env.sh"
-  . $MY_SQROOT/sql/scripts/sw_env.sh
+  [[ $SQ_VERBOSE == 1 ]] && echo "Sourcing in $TRAF_HOME/sql/scripts/sw_env.sh"
+  . $TRAF_HOME/sql/scripts/sw_env.sh
   #echo "YARN_HOME = $YARN_HOME"
 
   # native library directories and include directories
@@ -317,9 +320,9 @@ if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
 
   # Configuration directories
 
-  export HADOOP_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hadoop/etc/hadoop
-  export HBASE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hbase/conf
-  export HIVE_CNF_DIR=$MY_SQROOT/sql/local_hadoop/hive/conf
+  export HADOOP_CNF_DIR=$TRAF_HOME/sql/local_hadoop/hadoop/etc/hadoop
+  export HBASE_CNF_DIR=$TRAF_HOME/sql/local_hadoop/hbase/conf
+  export HIVE_CNF_DIR=$TRAF_HOME/sql/local_hadoop/hive/conf
 
 elif [[ -d /opt/cloudera/parcels/CDH ]]; then
   # we are on a cluster with Cloudera parcels installed
@@ -506,7 +509,7 @@ else
        Execute the install_local_hadoop script which performs a single node
        install using a popular Hadoop distribution 
 
-          cd $MY_SQROOT/sql/scripts
+          cd $TRAF_HOME/sql/scripts
           install_local_hadoop [-p <port option>]
           install_traf_components 
           configure Trafodion and start the processes
@@ -660,7 +663,7 @@ else
 fi
 
 # Add man pages
-export MANPATH=$MANPATH:$MY_SQROOT/export/share/man
+export MANPATH=$MANPATH:$TRAF_HOME/export/share/man
 
 # Control lunmgr verbosity
 export SQ_LUNMGR_VERBOSITY=1
@@ -697,6 +700,10 @@ export SQ_MON_EPOLL_RETRY_COUNT=16
 #    non-responsive monitor zclient which results in a Trafodion node down. 
 #    Default is 60 seconds (1 minute) which is the maximum Zookeeper allows.
 #export SQ_MON_ZCLIENT_SESSION_TIMEOUT=60
+#  - My znode monitoring timeout in seconds defines frequency when local
+#    monitor's znode is checked. Uncomment to override default value.
+#    Default is 5 seconds.
+#export SQ_MON_ZCLIENT_MY_ZNODE_CHECKRATE=5
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1
@@ -712,7 +719,7 @@ export SQ_WDT_CHECK_CLUSTER_STATE=0
 # This can be useful in troubleshooting problems.  There is an overhead cost
 # incurred each time a process is started so do not enable this if performance
 # is critical.
-# Log process start/end messages in $MY_SQROOT/tmp/monitor.map
+# Log process start/end messages in $TRAF_HOME/tmp/monitor.map
 export SQ_PIDMAP=1
 
 #Enable RMS (SQL Run time statistics)
@@ -770,7 +777,7 @@ export SQ_EVLOG_NONE=1
 function ckillall {
   # echo "In the ckillall function"
   export SQ_PS1=$PS1
-  $MY_SQROOT/sql/scripts/ckillall
+  $TRAF_HOME/sql/scripts/ckillall
   unset SQ_PS1
 }
 export -f ckillall
@@ -820,7 +827,7 @@ export PROTOBUFS_INC=$PROTOBUFS/include
 # Library Path may include local over-rides
 # Put Hadoop native dir before Trafodion, so that an available libhdfs will
 # be picked up there, otherwise use the libhdfs distributed with Trafodion.
-export LD_LIBRARY_PATH=$CC_LIB_RUNTIME:$MPI_ROOT/lib/$MPILIB:$HADOOP_LIB_DIR:$MY_SQROOT/export/lib"$SQ_MBTYPE":$LOC_JVMLIBS:$LOG4CXX_LIB_DIR:.
+export LD_LIBRARY_PATH=$CC_LIB_RUNTIME:$MPI_ROOT/lib/$MPILIB:$HADOOP_LIB_DIR:$TRAF_HOME/export/lib"$SQ_MBTYPE":$LOC_JVMLIBS:$LOG4CXX_LIB_DIR:.
 
 ######################
 # classpath calculation may include local over-rides
@@ -881,17 +888,17 @@ if [[ -n "$SQ_CLASSPATH"   ]]; then SQ_CLASSPATH="$SQ_CLASSPATH:";   fi
 # installer and hbase classpath already contains the correct trx jar.
 # In future, installer can put additional hints in bashrc to cleanup
 # and fine tune these adjustments for many other jars.
-if [[ -e $MY_SQROOT/sql/scripts/sw_env.sh ]]; then
+if [[ -e $TRAF_HOME/sql/scripts/sw_env.sh ]]; then
         SQ_CLASSPATH=${SQ_CLASSPATH}:${HBASE_TRXDIR}/${HBASE_TRX_JAR}
 fi
 
 
 SQ_CLASSPATH=${SQ_CLASSPATH}:\
-$MY_SQROOT/export/lib/${DTM_COMMON_JAR}:\
-$MY_SQROOT/export/lib/${SQL_JAR}:\
-$MY_SQROOT/export/lib/${UTIL_JAR}:\
-$MY_SQROOT/export/lib/${JDBCT4_JAR}:\
-$MY_SQROOT/export/lib/jdbcT2.jar
+$TRAF_HOME/export/lib/${DTM_COMMON_JAR}:\
+$TRAF_HOME/export/lib/${SQL_JAR}:\
+$TRAF_HOME/export/lib/${UTIL_JAR}:\
+$TRAF_HOME/export/lib/${JDBCT4_JAR}:\
+$TRAF_HOME/export/lib/jdbcT2.jar
 
 
 # Check whether the current shell environment changed from a previous execution of this
@@ -905,7 +912,7 @@ This is not supported. To change environments, do the following:
   sqstop
   <make any changes, e.g. update Hadoop, HBase, MySQL>
   start a new shell and source in sqenv.sh
-  rm \$MY_SQROOT/etc/ms.env
+  rm \$TRAF_HOME/etc/ms.env
   sqgen
   start a new shell and source in sqenv.sh
   sqstart
@@ -944,7 +951,7 @@ MANPATH=$(remove_duplicates_in_path "$MANPATH")
 ###################
 
 # Check variables that should refer to real directories
-VARLIST="MY_SQROOT $VARLIST JAVA_HOME MPI_TMPDIR"
+VARLIST="TRAF_HOME $VARLIST JAVA_HOME MPI_TMPDIR"
 
 if [[ "$SQ_VERBOSE" == "1" ]]; then
   echo "Checking variables reference existing directories ..."

@@ -142,12 +142,8 @@ select * from t003t1;
 rollback work;
 
 ?section hive_tiny
-sh echo "drop table ttiny;" > TEST003_junk;
-sh regrhive.ksh -f TEST003_junk;
-
-sh echo "create table ttiny(a tinyint, b tinyint);" > TEST003_junk;
-sh regrhive.ksh -f TEST003_junk;
-
+process hive statement 'drop table ttiny';
+process hive statement 'create table ttiny(a tinyint, b tinyint)';
 sh echo "insert into ttiny values (1, -1);" > TEST003_junk;
 sh regrhive.ksh -f TEST003_junk;
 
@@ -342,12 +338,8 @@ rollback work;
 select * from t003t3;
 
 ?section hive_bool
-sh echo "drop table tbool;" > TEST003_junk;
-sh regrhive.ksh -f TEST003_junk;
-
-sh echo "create table tbool(a boolean);" > TEST003_junk;
-sh regrhive.ksh -f TEST003_junk;
-
+process hive statement 'drop table tbool';
+process hive statement 'create table tbool(a boolean)';
 sh echo "insert into tbool values (true), (false), (NULL);" > TEST003_junk;
 sh regrhive.ksh -f TEST003_junk;
 

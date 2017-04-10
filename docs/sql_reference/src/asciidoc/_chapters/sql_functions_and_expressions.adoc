@@ -53,6 +53,8 @@ of the expression argument of the function.
 *) or the number of rows that contain a distinct value in the one-column
 table derived from the expression argument of the function (optionally
 distinct values).
+| <<group_concat_function,GROUP_CONCAT Function>> | This function returns a string result with the concatenated non-NULL
+values from a group.
 | <<max_function,MAX/MAXIMUM Function>> | Determines a maximum value from the group of values derived from the
 evaluation of the expression argument.
 | <<min_function,MIN Function>>                 | Determines a minimum value from the group of values derived from the
@@ -62,7 +64,7 @@ derived from the evaluation of the expression argument of the function.
 The numbers can be weighted.
 | <<sum_function,SUM Function>>                 | Computes the sum of a group of numbers derived from the evaluation of
 the expression argument of the function.
-"VARIANCE Function" 
+"VARIANCE Function"
 Computes the statistical variance of a group of numbers derived from the
 evaluation of the expression argument of the function. The numbers can
 be weighted.
@@ -150,11 +152,11 @@ return a result of datetime data type:
 
 [cols="25%,75%"]
 |===
-| <<add_months_function,ADD_MONTHS Function>>                               | Adds the integer number of months specified by _intr_expr_ 
+| <<add_months_function,ADD_MONTHS Function>>                               | Adds the integer number of months specified by _intr_expr_
 to _datetime_expr_ and normalizes the result.
 | <<converttimestamp_function,CONVERTTIMESTAMP Function>>                   | Converts a Julian timestamp to a TIMESTAMP value.
 | <<current_function,CURRENT Function>> | Returns the current timestamp. You can also use the
-<<current_timestamp_function,CURRENT_TIMESTAMP Function>>. 
+<<current_timestamp_function,CURRENT_TIMESTAMP Function>>.
 | <<current_date_function,CURRENT_DATE Function>>                           | Returns the current date.
 | <<current_time_function,CURRENT_TIME Function>>                           | Returns the current time.
 | <<current_timestamp_function,CURRENT_TIMESTAMP Function>> | Returns the current timestamp. You can also use the <<current_function,CURRENT Function>>.
@@ -201,6 +203,10 @@ corresponding second of the minute.
 _num_expr_ to _datetime_expr_.
 | <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer value for the number of _interval-ind_
 units of time between _startdate_ and _enddate_.
+| <<to_char_function,TO_CHAR Function>>                                     | Converts a datetime value to a character value.
+| <<to_date_function,TO_DATE Function>>                                     | Converts a character value to a date or timestamp value.
+| <<to_time_function,TO_TIME Function>>                                     | Converts a character value to a time value.
+| <<to_timestamp_function,TO_TIMESTAMP Function>>                           | Converts a character value to a timestamp value.
 | <<week_function,WEEK Function>>                                           | Returns an integer value in the range 1 through 54 that represents the
 corresponding week of the year.
 | <<year_function,YEAR Function>>                                           | Returns an integer value that represents the year.
@@ -215,13 +221,14 @@ Use these mathematical functions within an SQL numeric value expression:
 
 [cols="25%,75%"]
 |===
-| <<abs_function,ABS Function>>         | Returns the absolute value of a numeric value expression. 
+| <<abs_function,ABS Function>>         | Returns the absolute value of a numeric value expression.
 | <<acos_function,ACOS Function>>       | Returns the arccosine of a numeric value expression as an angle expressed in radians.
 | <<asin_function,ASIN Function>>       | Returns the arcsine of a numeric value expression as an angle expressed in radians.
 | <<atan_function,ATAN Function>>       | Returns the arctangent of a numeric value expression as an angle expressed in radians.
 | <<atan2_function,ATAN2 Function>>     | Returns the arctangent of the x and y coordinates, specified by two numeric value expressions, as an angle expressed in radians.
 | <<ceiling_function,CEILING Function>> | Returns the smallest integer greater than or equal to a numeric value expression.
 | <<cos_function,COS Function>>         | Returns the cosine of a numeric value expression, where the expression is an angle expressed in radians.
+| <<crc32_function,CRC32 Function>>     | Returns CRC32 checksum
 | <<cosh_function,COSH Function>>       | Returns the hyperbolic cosine of a numeric value expression, where the expression is an angle expressed in radians.
 | <<degrees_function,DEGREES Function>> | Converts a numeric value expression expressed in radians to the number of degrees.
 | <<exp_function,EXP Function>>         | Returns the exponential value (to the base e) of a numeric value expression.
@@ -245,6 +252,17 @@ returns 0. If value is greater than zero, returns 1.
 |===
 
 See the individual entry for the function.
+
+[[encryption_functions]]
+ == Encryption Functions
+ Use these functions within an SQL value expression to do data encryption or hashing:
+
+ [cols="25%,75%"]
+ |===
+ | <<md5_function,MD5 Function>>         | Returns MD5 checksum
+ | <<sha_function,SHA Function>>         | Returns SHA-1 160-bit checksum
+ | <<sha2_function,SHA2 Function>>       | Returns SHA-2 checksum
+ |===
 
 [[sequence_functions]]
 == Sequence Functions
@@ -334,16 +352,20 @@ Use these other functions and expressions in an SQL value expression:
 | <<bitand_function,BITAND Function>>                             | Performs 'and' operation on corresponding bits of the two operands.
 | <<case_expression,CASE (Conditional) Expression>>               | A conditional expression. The two forms of the CASE expression are simple and searched.
 | <<cast_expression,CAST Expression>>                             | Converts a value from one data type to another data type that you specify.
-| <<coalesce_function,COALESCE Function>>                         | Returns the value of the first expression in the list that does not have a NULL value or if all 
+| <<coalesce_function,COALESCE Function>>                         | Returns the value of the first expression in the list that does not have a NULL value or if all
 the expressions have NULL values, the function returns a NULL value.
 | <<converttohex_function,CONVERTTOHEX Function>>                 | Converts the specified value expression to hexadecimal for display purposes.
 | <<current_user_function,CURRENT_USER Function>>                 | Returns the database user name of the current user who invoked the function.
 | <<decode_function,DECODE Function>>                             | Compares _expr_ to each _test_expr_ value one by one in the order provided.
 | <<explain_function,EXPLAIN Function>>                           | Generates a result table describing an access plan for a SELECT, INSERT, DELETE, or UPDATE statement.
 | <<isnull_function,ISNULL Function>>                             | Returns the first argument if it is not null, otherwise it returns the second argument.
+| <<is_ipv4_function, IS_IPV4 Function>>                          | Returns 1 if the argument is a valid IPv4 address specified as a string, 0 otherwise.
+| <<is_ipv6_function, IS_IPV6 Function>>                          | Returns 1 if the argument is a valid IPv6 address specified as a string, 0 otherwise.
+| <<inet_aton_function, INET_ATON Function>>                      | Given the dotted-quad representation of an IPv4 network address as a string, returns an integer that represents the numeric value of the address in network byte order (big endian). INET_ATON() returns NULL if it does not understand its argument.
+| <<inet_ntoa_function, INET_NTOA Function>>                      | Given a numeric IPv4 network address in network byte order, returns the dotted-quad string representation of the address as a nonbinary string in the connection character set. INET_NTOA() returns NULL if it does not understand its argument.
 | <<nullif_function,NULLIF Function>>                             | Returns the value of the first operand if the two operands are not equal, otherwise it returns NULL.
 | <<nvl_function,NVL Function>>                                   | Returns the value of the first operand unless it is NULL, in which case it returns the value of the second operand.
-| <<user_function,USER Function>>                                 | Returns either the database user name of the current user who invoked the function or the database user name 
+| <<user_function,USER Function>>                                 | Returns either the database user name of the current user who invoked the function or the database user name
 associated with the specified user ID number.
 |===
 
@@ -384,7 +406,7 @@ ABS (-20 + 12)
 The ACOS function returns the arccosine of a numeric value expression as
 an angle expressed in radians.
 
-ACOS is a {project-name} SQL extension. 
+ACOS is a {project-name} SQL extension.
 
 ```
 ACOS (numeric-expression)
@@ -393,7 +415,7 @@ ACOS (numeric-expression)
 * `_numeric-expression_`
 +
 is an SQL numeric value expression that specifies the value for the
-argument of the ACOS  function. The range for the value of the argument is 
+argument of the ACOS  function. The range for the value of the argument is
 from -1 to +1. See <<numeric_value_expressions,Numeric Value_Expressions>>.
 
 [[examples_of_acos]]
@@ -487,7 +509,7 @@ the ISO8891 character set or the UTF8 character set.
 ASCII is a {project-name} SQL extension.
 
 ```
-ASCII (character-expression) 
+ASCII (character-expression)
 ```
 
 * `_character-expression`
@@ -1114,7 +1136,7 @@ RAYMOND          JANE            3000         136000.0000
 The CAST expression converts data to the data type you specify.
 
 ```
-CAST ({expression | NULL} AS data-type) 
+CAST ({expression | NULL} AS data-type)
 ```
 
 * `_expression_ | NULL`
@@ -1845,6 +1867,42 @@ SELECT COUNT (DISTINCT deptnum) FROM persnl.employee;
 --- 1 row(s) selected.
 ```
 
+<<<
+[[crc32_function]]
+ == CRC32 Function
+
+Computes a cyclic redundancy check value and returns a 32-bit unsigned value.
+The result is NULL if the argument is NULL. The argument is expected to be a
+string and (if possible) is treated as one if it is not.
+
+```
+CRC32{ expression)}
+```
+
+* `_expression_`
++
+specifies a value expression that determines the values to count. The
+_expression_ cannot contain an aggregate function or a subquery.
+See <<expressions,Expressions>>.
+
+[[examples_of_crc32]]
+=== examples of CR32
+```
+>>SELECT CRC32('Trafodion') from dual;
+
+ (EXPR)
+ ----------
+
+ 1960931967
+
+>>SELECT CRC32(2016) from dual;
+
+ (EXPR)
+ ----------
+
+ 2177070256
+
+```
 <<<
 [[current_function]]
 == CURRENT Function
@@ -2985,7 +3043,7 @@ DEGREES(RADIANS(45))
 The DIFF1 function is a sequence function that calculates the amount of
 change in an expression from row to row in an intermediate result table
 ordered by a sequence by clause in a select statement.
-See <<sequence_by_clause,SEQUENCE BY Clause>>. 
+See <<sequence_by_clause,SEQUENCE BY Clause>>.
 
 DIFF1 is a {project-name} SQL extension.
 
@@ -3532,6 +3590,47 @@ Start/Date Time/Shipped               (EXPR)
 ```
 
 <<<
+[[group_concat_function]]
+== GROUP_CONCAT Function
+
+This function returns a string result with the concatenated non-NULL values from a group.
+It returns NULL if there are no non-NULL values.
+The syntax is as follows:
+
+```
+GROUP_CONCAT([DISTINCT] expr [,expr ...]
+             [ORDER BY {unsigned_integer | col_name | expr}
+                 [ASC | DESC] [,col_name ...]]
+             [SEPARATOR str_val])
+```
+
+Get the concatenated values of expression combinations. To eliminate duplicate values,
+use the DISTINCT clause.
+To sort values in the result, use the ORDER BY clause. To sort in reverse order, add
+the DESC (descending) keyword to the name of the column you are sorting by in the
+ORDER BY clause. The default is ascending order; this may be specified explicitly using
+the ASC keyword. The default separator between values in a group is comma (,). To specify
+a separator explicitly, use SEPARATOR followed by the string literal value that should be
+inserted between group values. To eliminate the separator altogether, specify SEPARATOR ''.
+
+[[examples_of_group_concat]]
+=== Examples of GROUP_CONCAT
+
+The following example returns concatenated strings for column test_score for each student.
+
+```
+>> SELECT student_name,
+         GROUP_CONCAT(DISTINCT test_score
+                   ORDER BY test_score DESC SEPARATOR ' ')
+         FROM student
+         GROUP BY student_name;
+STUDENT_NAME     (EXPR)
+--------------  --------------
+scott            91 90 80 56
+tom              91 77 43
+```
+
+<<<
 [[insert_function]]
 == INSERT Function
 
@@ -3570,7 +3669,6 @@ number _length_ must be a value greater than or equal to zero of exact
 numeric data type and with a scale of zero. _length_ must be less than
 or equal to the length of _char-expr-1_.
 
-<<<
 [[examples_of_insert]]
 === Examples of INSERT
 
@@ -3596,6 +3694,129 @@ SALES REP
 ```
 
 <<<
+[[is_ipv4_function]]
+== IS_IPV4 Function
+
+For a given argument, if it is a valid IPV4 string, IS_IPV4() returns 1 else returns 0.
+```
+IS_IPV4( expression )
+```
+
+* `_expression_`
++
+specifies an expression that determines the values to include in the
+validation of the IP address. The _expression_ cannot contain an aggregate
+function or a subquery. If the input value is NULL, IS_IPV4 returns NULL.
+See <<expressions,Expressions>>.
+
+[[examples_of_is_ipv4]]
+=== Examples of IS_IPV4
+
+This function returns 1 for the first input argument, since it is a valid IPV4 string;
+0 for the second input argument, since it is an invalid IPV4 string.
+
+```
+>>SELECT IS_IPV4('10.0.5.9'), IS_IPV4('10.0.5.256') from dual;
+
+(EXPR)   (EXPR)
+-------  -------
+1        0
+```
+<<<
+[[is_ipv6_function]]
+== IS_IPV6 Function
+
+Returns 1 if the argument is a valid IPv6 address specified as a string, 0 otherwise.
+This function does not consider IPv4 addresses to be valid IPv6 addresses.
+
+```
+IS_IPV6( expression )
+```
+
+* `_expression_`
++
+specifies an expression that determines the values to include in the
+validation of the IP address. The _expression_ cannot contain an aggregate
+function or a subquery. If the input value is NULL, IS_IPV6 returns NULL.
+See <<expressions,Expressions>>.
+
+[[examples_of_is_ipv6]]
+=== Examples of IS_IPV6
+
+This function returns 0 for the second input argument, since it is a valid IPV6 string;
+1 for the second input argument, since it is an invalid IPVr6 string.
+
+```
+>>SELECT IS_IPV6('10.0.5.9'), IS_IPV6('::1') from dual;
+(EXPR)   (EXPR)
+-------- -------
+1         0
+```
+<<<
+ +[[inet_aton_function]]
+ +== INET_ATON Function
+ +
+ +Given the dotted-quad representation of an IPv4 network address as a string,
+ +returns an integer that represents the numeric value of the address in network
+ +byte order (big endian). INET_ATON() returns NULL if it does not understand its argument.
+ +
+ +```
+ +INET_ATON( expression )
+ +```
+ +
+ +* `_expression_`
+ ++
+ +specifies an expression that determines the values to include in the
+ +conversion of the IP address. The _expression_ cannot contain an aggregate
+ +function or a subquery. If the input value is NULL, INET_ATON returns NULL.
+ +See <<expressions,Expressions>>.
+ +
+ +[[examples_of_inet_aton]]
+ +=== Examples of INET_ATON
+ +
+ +
+ +```
+ +>>SELECT INET_ATON('10.0.5.9') from dual;
+ +
+ +(EXPR)
+ +-----------
+ +167773449
+ +```
+ +<<<
+ +[[inet_ntoa_function]]
+ +== INET_NTOA Function
+ +
+ +Given a numeric IPv4 network address in network byte order, returns the
+ +dotted-quad string representation of the address as a nonbinary string in
+ +the connection character set. INET_NTOA() returns NULL if it does
+ +not understand its argument.
+ +
+ +```
+ +INET_NTOA( expression )
+ +```
+ +
+ +* `_expression_`
+ ++
+ +specifies an expression that determines the values to include in the
+ +conversion of the number to IP address. The _expression_ cannot contain
+ +an aggregate function or a subquery. If the input value is NULL, INET_NTOA
+ +returns NULL.
+ +See <<expressions,Expressions>>.
+ +
+ +[[examples_of_inet_ntoa]]
+ +=== Examples of INET_NTOA
+ +
+ +this function will convert an integer into  the dotted-quad string
+ +representation of the IP address.
+ +
+ +```
+ +>>SELECT INET_NTOA(167773449) from dual
+ +
+ +(EXPR)
+ +-------------
+ +'10.0.5.9'
+ +```
+ +<<<
 [[isnull_function]]
 == ISNULL Function
 
@@ -4147,7 +4368,7 @@ See <<trim_function,TRIM Function>> and <<rtrim_function,RTRIM Function>>.
 
 <<<
 [[max_function]]
-=== MAX/MAXIMUM Function
+== MAX/MAXIMUM Function
 
 MAX is an aggregate function that returns the maximum value within a set
 of values. MAXIMUM is the equivalent of MAX wherever the function name
@@ -4192,7 +4413,6 @@ MAX (SALARY * 1.1)
 MAX (PARTCOST * QTY_ORDERED)
 ```
 
-<<<
 [[examples_of_max]]
 === Examples of MAX/MAXIMUM
 
@@ -4206,6 +4426,34 @@ SELECT MAX (salary) FROM persnl.employee;
   175500.00
 
 --- 1 row(s) selected.
+```
+
+<<<
+[[md5_function]]
+== MD5 Function
+
+Calculates an MD5 128-bit checksum for the string. The value is returned
+as a string of 32 hexadecimal digits, or NULL if the argument was NULL.
+
+```
+MD5( _expression_)
+```
+* `_expression_`
++
+specifies an expression that determines the values to include in the
+computation of the MD5. The _expression_ cannot contain an aggregate
+function or a subquery. If the input value is NULL, MD5 returns NULL.
+See <<expressions,Expressions>>.
+
+[[examples_of_md5]]
+=== Examples of MD5
+The return value is a nonbinary string in the connection character set.
+```
+>>SELECT MD5('testing') from dual;
+
+(EXPR)
+---------------------------------
+'ae2b1fca515949e5d54fb22b8ed95575'
 ```
 
 <<<
@@ -6485,7 +6733,7 @@ TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
 
 * Return a numeric value that represents the second of the hour from the
 _ship_timestamp_ column:
-+
+
 ```
 SELECT start_date, ship_timestamp, SECOND(ship_timestamp)
 FROM persnl.project
@@ -6496,6 +6744,46 @@ Start/Date Time/Shipped               (EXPR)
 2008-04-10 2008-04-21 08:15:00.000000     .000000
 ```
 
+<<<
+[[sha_function]]
+== SHA Function
+
+Calculates an SHA-1 160-bit checksum for the string, as described in
+RFC 3174 (Secure Hash Algorithm). The value is returned as a string of
+40 hexadecimal digits, or NULL if the argument was NULL.
+
+[[examples_of_sha]]
+=== examples of SHA
+```
+>>SELECT SHA1('abc') from dual;
+
+(EXPR)
+-----------------------------------------
+'a9993e364706816aba3e25717850c26c9cd0d89d'
+```
+
+<<<
+[[sha2_function]]
+== SHA2 Function
+
+Calculates the SHA-2 family of hash functions (SHA-224, SHA-256, SHA-384,
+and SHA-512). The first argument is the cleartext string to be hashed.
+The second argument indicates the desired bit length of the result, which
+must have a value of 224, 256, 384, 512.
+If either argument is NULL or the hash length is not one of the permitted values,
+the return value is NULL. Otherwise, the function result is a hash value containing
+the desired number of bits. See the notes at the beginning of this section
+about storing hash values efficiently.
+
+[[examples_of_sha2]]
+=== examples of SHA2
+```
+>>SELECT SHA2('abc', 224) from dual;
+
+(EXPR)
+--------------------------------------------------------
+'23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7'
+```
 <<<
 [[sign_function]]
 == SIGN Function
@@ -7284,6 +7572,241 @@ TIMESTAMPDIFF (SQL_TSI_DAY, DATE '2004-03-01', DATE '2004-02-01')
 ```
 
 <<<
+[[to_char_function]]
+== TO_CHAR Function
+
+The TO_CHAR function converts a datetime value to a character value. The optional
+second argument describes the format of the character value.
+
+```
+TO_CHAR(character-expression [,format-string])
+```
+
+* `_character-expression_`
++
+is an expression that gives a datetime value.
+
+* `_format-string_`
++
+is one of the following character string literals:
+
+** 'YYYY-MM-DD'
+** 'MM/DD/YYYY'
+** 'DD.MM.YYYY'
+** 'YYYY-MM'
+** 'MM/DD/YYYY'
+** 'YYYY/MM/DD'
+** 'YYYYMMDD'
+** 'YY/MM/DD'
+** 'MM/DD/YY'
+** 'MM-DD-YYYY'
+** 'YYYYMM'
+** 'DD-MM-YYYY'
+** 'DD-MON-YYYY'
+** 'DDMONYYYY'
+** 'HH:MI:SS'
+** 'HH24:MI:SS'
+** 'YYYYMMDDHH24MISS'
+** 'DD.MM.YYYY:HH24.MI.SS'
+** 'YYYY-MM-DD HH24:MI:SS'
+** 'YYYYMMDD:HH24:MI:SS'
+** 'MMDDYYYY HH24:MI:SS'
+** 'MM/DD/YYYY HH24:MI:SS'
+** 'DD-MON-YYYY HH:MI:SS'
+** 'MONTH DD, YYYY, HH:MI'
+** 'DD.MM.YYYY HH24.MI.SS'
+
+Here, YYYY refers to a 4-digit year. YY refers to a two-digit year. MM refers to a two-digit month. MON refers to
+a three-letter abbreviation for month ('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP',
+'OCT', 'NOV' or 'DEC'). MONTH refers to the month spelled out. In the output value, the month abbreviation or month
+will appear in upper case.
+
+HH and HH24 refer to a 2-digit hour field. MI refers to a two-digit minutes field. SS refers to a 2-digit seconds field.
+
+If the _format-string_ argument is omitted, 'YYYY-MM-DD' is used as the
+default for date and timestamp values, and 'HH:MI:SS' is used for time values.
+
+[[considerations_for_to_char]]
+=== Considerations for TO_CHAR
+
+If the _format-string_ contains only hour, minute or seconds fields, the input data type must be time or timestamp.
+
+If the _format-string_ contains only year, month or day fields, the input data type must be date or timestamp.
+
+If the _format-string_ contains all fields, and the input data type is date, the hour, minute and second fields in the result will be filled with zeroes.
+
+[[examples_of_to_char]]
+=== Examples of TO_CHAR
+
+* This function returns the character value '01MAR2016':
++
+```
+TO_CHAR (DATE '2016-03-01', 'DDMONYYYY')
+```
+
+* This function returns the character value '01.03.2016 00:00:00':
++
+```
+TO_CHAR (DATE '2016-03-01', 'DD.MM.YYYY HH24.MI.SS')
+```
+
+* This function returns the character value '12:05:10':
++
+```
+TO_CHAR (TIME '12:05:10')
+```
+
+* This function returns the character value '20160301120510':
++
+```
+TO_CHAR (TIMESTAMP '2016-03-01 12:05:10','YYYYMMDDHH24MISS')
+```
+
+<<<
+[[to_date_function]]
+== TO_DATE Function
+
+The TO_DATE function converts a character value to a date. The optional
+second argument describes the format of the character value.
+
+```
+TO_DATE(character-expression [,format-string])
+```
+
+* `_character-expression_`
++
+is an expression that gives a character value.
+
+* `_format-string_`
++
+is one of the following character string literals:
+
+** 'YYYY-MM-DD'
+** 'MM/DD/YYYY'
+** 'DD.MM.YYYY'
+** 'YYYY-MM'
+** 'MM/DD/YYYY'
+** 'YYYY/MM/DD'
+** 'YYYYMMDD'
+** 'YY/MM/DD'
+** 'MM/DD/YY'
+** 'MM-DD-YYYY'
+** 'YYYYMM'
+** 'DD-MM-YYYY'
+** 'DD-MON-YYYY'
+** 'DDMONYYYY'
+** 'YYYYMMDDHH24MISS'
+** 'DD.MM.YYYY:HH24.MI.SS'
+** 'YYYY-MM-DD HH24:MI:SS'
+** 'YYYYMMDD:HH24:MI:SS'
+** 'MMDDYYYY HH24:MI:SS'
+** 'MM/DD/YYYY HH24:MI:SS'
+** 'DD-MON-YYYY HH:MI:SS'
+** 'MONTH DD, YYYY, HH:MI'
+** 'DD.MM.YYYY HH24.MI.SS'
+
+Here, YYYY refers to a 4-digit year. YY refers to a two-digit year. MM refers to a two-digit month. MON refers to
+a three-letter abbreviation for month ('JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP',
+'OCT', 'NOV' or 'DEC'). MONTH refers to the month spelled out. The month in either MON or MONTH form may be given in lower case, upper case or any mixture.
+
+HH and HH24 refer to a 2-digit hour field. MI refers to a two-digit minutes field. SS refers to a 2-digit seconds field.
+
+If the _format-string_ argument is omitted, 'YYYY-MM-DD' is used as the
+default.
+
+[[considerations_for_to_date]]
+=== Considerations for TO_DATE
+
+If the _format-string_ contains hour, minute or seconds fields, the output data type is timestamp. Otherwise,
+the output data type is date.
+
+[[examples_of_to_date]]
+=== Examples of TO_DATE
+
+* This function returns the date value '2016-12-07':
++
+```
+TO_DATE ('2016-12-07')
+```
+
+* This function returns the date value '2016-07-12':
++
+```
+TO_DATE ('12-07-2016', 'DD-MM-YYYY')
+```
+
+* This function returns the date value '2016-12-07':
++
+```
+TO_DATE ('07DEC2016', 'DDMONYYYY')
+```
+
+* This function returns the timestamp value '2016-12-07 17:05:01.000000':
++
+```
+TO_DATE ('07.12.2016:17.05.01', 'DD.MM.YYYY:HH24.MI.SS')
+```
+
+<<<
+[[to_time_function]]
+== TO_TIME Function
+
+The TO_TIME function converts a character value to a time. The
+second argument describes the format of the character value.
+
+```
+TO_TIME(character-expression ,format-string)
+```
+
+* `_character-expression_`
++
+is an expression that gives a character value.
+
+* `_format-string_`
++
+is one of the following character string literals:
+
+** 'HH:MI:SS'
+** 'HH24:MI:SS'
+
+
+Here, HH and HH24 refer to a 2-digit hour field. MI refers to a two-digit minutes field. SS refers to a 2-digit seconds field.
+
+[[examples_of_to_time]]
+=== Examples of TO_TIME
+
+* This function returns the time value '17:05:01':
++
+```
+TO_TIME ('17:05:01', 'HH24:MI:SS')
+```
+
+<<<
+[[to_timestamp_function]]
+== TO_TIMESTAMP Function
+
+The TO_TIMESTAMP function converts a character value to a timestamp.
+
+```
+TO_TIMESTAMP(character-expression)
+```
+
+* `_character-expression_`
++
+is an expression that gives a character value. The expression ia assumed to have the format YYYY-MM-DD HH:MI:SS[.FFFFFF],
+where YYYY is a 4-digit year, MM is a 2-digit month, DD is a 2-digit day, HH is a 2-digit hours field, MI is a 2-digit
+minutes field, SS is a two-digit seconds field and FFFFFF is an optional microseconds field.
+
+[[examples_of_to_timestamp]]
+=== Example of TO_TIMESTAMP
+
+* This function returns the timestamp value '2016-12-07 10:01:00':
++
+```
+TO_TIMESTAMP ('2016-12-07 10:01:00')
+```
+
+<<<
 [[translate_function]]
 == TRANSLATE Function
 
@@ -7535,7 +8058,7 @@ characters to upshift. See
 <<character_value_expressions,Character Value Expressions>>.
 
 [[examples_of_upshift]]
-=== Examples of UPSHIFT   
+=== Examples of UPSHIFT
 
 * Suppose that your CUSTOMER table includes an entry for Hotel Oregon.
 Select the column CUSTNAME and return a result in uppercase and
@@ -7882,4 +8405,3 @@ NULL.
 ```
 ZEROIFNULL (salary)
 ```
-

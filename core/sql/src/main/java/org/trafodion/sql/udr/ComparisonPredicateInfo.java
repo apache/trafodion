@@ -74,21 +74,21 @@ public class ComparisonPredicateInfo extends PredicateInfo
     }
 
     // UDR writers can ignore these methods
-    public ComparisonPredicateInfo() {
+    ComparisonPredicateInfo() {
         super(TMUDRObjectType.COMP_PREDICATE_INFO_OBJ);
         columnNumber_ = -1;
         value_ = "";
     }
 
-    public void setColumnNumber(int columnNumber) {
+    void setColumnNumber(int columnNumber) {
         columnNumber_ = columnNumber;
     }
 
-    public void setValue(String value) {
+    void setValue(String value) {
         value_ = value;
     }
        
-    public String toString(TableInfo ti) throws UDRException {
+    String toString(TableInfo ti) throws UDRException {
         
         String s = ti.getColumn(columnNumber_).getColName();
 
@@ -130,15 +130,16 @@ public class ComparisonPredicateInfo extends PredicateInfo
         return s;
     }
     
-    public static short getCurrentVersion() { return 1; }
+    static short getCurrentVersion() { return 1; }
     @Override
     public int serializedLength() throws UDRException{
       return super.serializedLength() +
         serializedLengthOfInt() +
         serializedLengthOfString(value_);
     }
+
     @Override
-    public int serialize(ByteBuffer outputBuffer) throws UDRException{
+    int serialize(ByteBuffer outputBuffer) throws UDRException{
 
       int origPos = outputBuffer.position();
 
@@ -158,7 +159,7 @@ public class ComparisonPredicateInfo extends PredicateInfo
     }
 
     @Override
-    public int deserialize(ByteBuffer inputBuffer) throws UDRException{
+    int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();
 

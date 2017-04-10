@@ -163,6 +163,7 @@ get statistics for qid current ;
 get statistics for qid current accumulated ;
 get statistics for qid current pertable ;
 get statistics for qid current progress ;
+get statistics for qid current progress, options 'sl' ;
 get statistics for qid current default ;
 set session default statistics_view_type 'default' ;
 get statistics for qid current ;
@@ -173,6 +174,17 @@ get statistics for qid current ;
 set session default statistics_view_type 'progress' ;
 get statistics for qid current ;
 set session default statistics_view_type 'pertable' ;
+
+-- TEST for set session settings
+set statistics pertable ;
+execute s1 ;
+set statistics progress ;
+execute s1 ;
+set statistics default ;
+execute s1 ;
+set statistics all ;
+execute s1 ;
+set statistics off ;
 
 -- TEST for RMS Stats
 get statistics for RMS 0 ;

@@ -281,16 +281,18 @@ public class TableInfo extends TupleInfo {
     
 
     // UDR writers can ignore these methods
-    public void setQueryPartitioning(PartitionInfo partInfo) {
+    void setQueryPartitioning(PartitionInfo partInfo) {
         queryPartitioning_ = partInfo;
     }
-    public void setQueryOrdering(OrderInfo orderInfo) {
+
+    void setQueryOrdering(OrderInfo orderInfo) {
         queryOrdering_ = orderInfo;
     }
     
-    public static short getCurrentVersion() { return 1; }
+    static short getCurrentVersion() { return 1; }
+
     @Override
-    public int serializedLength() throws UDRException{
+    int serializedLength() throws UDRException{
       int result = super.serializedLength() +
                    2 * serializedLengthOfLong() +
                    4 * serializedLengthOfInt() +
@@ -304,7 +306,7 @@ public class TableInfo extends TupleInfo {
     }
 
     @Override
-    public int serialize(ByteBuffer outputBuffer) throws UDRException {
+    int serialize(ByteBuffer outputBuffer) throws UDRException {
 
       int origPos = outputBuffer.position();
 
@@ -355,7 +357,7 @@ public class TableInfo extends TupleInfo {
     }
 
     @Override
-    public int deserialize(ByteBuffer inputBuffer) throws UDRException{
+    int deserialize(ByteBuffer inputBuffer) throws UDRException{
 
       int origPos = inputBuffer.position();
 

@@ -62,6 +62,7 @@ public:
    char* getRegionId(int index);
    char* getHostName(int index);
    char* getPort(int index);
+   char* getRegionInfo(int64 tid);
 
 private:
    enum JAVA_METHODS {
@@ -74,6 +75,7 @@ private:
        JM_GET_REGID,
        JM_GET_HOSTNAME,
        JM_GET_PORT,
+       JM_GET_REGINFO,
        JM_LAST
    };
    static JavaMethodInit* JavaMethods_;
@@ -174,27 +176,33 @@ public:
    // TM interface methods
    short initConnection(short pv_nid);
    short beginTransaction(int64 *pp_transid);
-   short prepareCommit(int64 pv_transid);
+   short prepareCommit(int64 pv_transid, char *errstr, int &errstrlen);
    short doCommit(int64 pv_transid);
    short tryCommit(int64 pv_transid);
    short completeRequest(int64 pv_transid);
    short abortTransaction(int64 pv_transid);
-   int dropTable(int64 pv_transid, const char* pa_tblname, int pv_tblname_len);
+   int dropTable(int64 pv_transid, const char* pa_tblname, int pv_tblname_len, char *errstr, int &errstrlen);
    int regTruncateOnAbort(int64 pv_transid,
                            const char* pa_tblname,
-                           int pv_tblname_len);
+                           int pv_tblname_len,
+                           char *errstr,
+                           int &errstrlen);
    int createTable(int64 pv_transid,
                            const char* pa_tbldesc,
                            int pv_tbldesc_len,
                            char** pv_keys,
                            int pv_numsplits,
-                           int pv_keylen);
+                           int pv_keylen,
+                           char *errstr,
+                           int &errstrlen);
    int alterTable(int64 pv_transid,
                         const char* pa_tblname,
                         int pv_tblname_len,
                         char ** buffer_tblopts,
                         int pv_numtblopts,
-                        int pv_tbloptslen);
+                        int pv_tbloptslen,
+                        char *errstr,
+                        int &errstrlen);
    jobjectArray convertToByteArrayObjectArray(char **array, int numElements, int elementLen);
    jobjectArray convertToStringObjectArray(const char **textArray, int arrayLen);
    int registerRegion(int64 pv_transid, const char pa_region[], const char pa_regionInfo[], int pv_regionInfo_Length);

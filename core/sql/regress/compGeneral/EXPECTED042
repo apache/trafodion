@@ -1,9 +1,9 @@
 >>showstats for table t042_orderline on ol_o_id detail;
 
 Detailed Histogram data for Table TRAFODION.ORDERENTRY.T042_ORDERLINE
-Table ID: 3259029604783386160
+Table ID: 1700229370398217975
 
-Hist ID:    335115597
+Hist ID:    767276153
 Column(s):  OL_O_ID
 Total Rows: 10
 Total UEC:  4
@@ -132,7 +132,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- 0 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_orderline where ol_o_id = 1 ;
@@ -161,7 +161,6 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 HQC backpatch OK:
 SQL query=select * from t042_orderline where ol_o_id = 162 ;
 HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
->>sh rm hqc.log;
 >>
 >>---===== TEST BUILT-IN FUNCTION HQC Cacheability =====-------
 >>-- CURRENT_TIMESTAMP - HQC cacheable and NOT parameterized
@@ -190,7 +189,7 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 
 --- 0 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP (2);
@@ -211,7 +210,6 @@ HQC key=SELECT CURRENT_TIMESTAMP ( #NP# ) FROM T042_ORDERLINE WHERE OL_D_ID = #N
 HQC backpatch OK:
 SQL query=select CURRENT_TIMESTAMP (2) from t042_ORDERLINE where OL_D_ID = 4;
 HQC key=SELECT CURRENT_TIMESTAMP ( #NP# ) FROM T042_ORDERLINE WHERE OL_D_ID = #NP# ; 
->>sh rm hqc.log;
 >>
 >>-- CURRENT_TIMESTAMP_RUNNING - HQC cacheable - no params
 >>prepare xx from select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING and OL_D_ID = 3;
@@ -227,7 +225,7 @@ HQC key=SELECT CURRENT_TIMESTAMP ( #NP# ) FROM T042_ORDERLINE WHERE OL_D_ID = #N
 
 --- 0 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING and OL_D_ID = 3;
@@ -240,7 +238,6 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUN
 HQC backpatch OK:
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING and OL_D_ID = 5;
 HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING AND OL_D_ID = #NP# ; 
->>sh rm hqc.log;
 >>
 >>-- dayofweek - HQC cacheable and parameterized
 >>prepare xx from select dayofweek(timestamp '1973-12-24 12:12:02.00') from t042_ORDERLINE;
@@ -284,7 +281,7 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CURRENT_TIMESTAMP_RUN
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select dayofweek(timestamp '1973-12-24 12:12:02.00') from t042_ORDERLINE;
@@ -297,7 +294,6 @@ HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ;
 HQC backpatch OK:
 SQL query=select dayofweek(timestamp '1975-12-24 12:12:02.00') from t042_ORDERLINE;
 HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- EXTRACT - HQC cacheable and parameterized
 >>prepare xx from select EXTRACT (YEAR FROM DATE '2017-09-28') from t042_ORDERLINE;
@@ -341,7 +337,7 @@ HQC key=SELECT DAYOFWEEK ( TIMESTAMP #NP# ) FROM T042_ORDERLINE ;
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select EXTRACT (YEAR FROM DATE '2017-09-28') from t042_ORDERLINE;
@@ -354,7 +350,6 @@ HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ;
 HQC backpatch OK:
 SQL query=select EXTRACT (YEAR FROM DATE '1980-09-28') from t042_ORDERLINE;
 HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- JULIANTIMESTAMP HQC cacheable and parameterized
 >>prepare xx from select JULIANTIMESTAMP(DATE'2017-09-28') from t042_ORDERLINE;
@@ -398,7 +393,7 @@ HQC key=SELECT EXTRACT ( YEAR FROM DATE #NP# ) FROM T042_ORDERLINE ;
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select JULIANTIMESTAMP(DATE'2017-09-28') from t042_ORDERLINE;
@@ -411,7 +406,6 @@ HQC key=SELECT JULIANTIMESTAMP ( DATE #NP# ) FROM T042_ORDERLINE ;
 HQC backpatch OK:
 SQL query=select JULIANTIMESTAMP(DATE'1990-09-28') from t042_ORDERLINE;
 HQC key=SELECT JULIANTIMESTAMP ( DATE #NP# ) FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- LOWER - HQC cacheable and NOT parameterized
 >>prepare xx from select LOWER('TEXTA') from t042_ORDERLINE;
@@ -455,7 +449,7 @@ textb
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select LOWER('TEXTA') from t042_ORDERLINE;
@@ -464,7 +458,6 @@ HQC key=SELECT LOWER ( #NP# ) FROM T042_ORDERLINE ;
 HQC::AddEntry(): passed
 SQL query=select LOWER('TEXTB') from t042_ORDERLINE;
 HQC key=SELECT LOWER ( #NP# ) FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- UPPER - HQC cacheable and NOT parameterized
 >>prepare xx from select UPPER('ol_o_id_1') from t042_ORDERLINE;
@@ -508,7 +501,7 @@ OL_O_ID_2
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select UPPER('ol_o_id_1') from t042_ORDERLINE;
@@ -517,7 +510,6 @@ HQC key=SELECT UPPER ( #NP# ) FROM T042_ORDERLINE ;
 HQC::AddEntry(): passed
 SQL query=select UPPER('ol_o_id_2') from t042_ORDERLINE;
 HQC key=SELECT UPPER ( #NP# ) FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- TRIM - HQC cacheable and NOT parameterized
 >>prepare xx from select TRIM('L' FROM 'LO TE XTA') from t042_ORDERLINE;
@@ -601,7 +593,7 @@ Robert2
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select TRIM('L' FROM 'LO TE XTA') from t042_ORDERLINE;
@@ -618,7 +610,6 @@ HQC key=SELECT TRIM ( #NP# ) FROM T042_ORDERLINE ;
 HQC::AddEntry(): passed
 SQL query=select TRIM('  Robert2  ') from t042_ORDERLINE;
 HQC key=SELECT TRIM ( #NP# ) FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- TRANSLATE - HQC cacheable and NOT parameterized
 >>Prepare xx from select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from t042_ORDERLINE;
@@ -662,7 +653,7 @@ abc
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from t042_ORDERLINE;
@@ -675,7 +666,6 @@ HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ;
 HQC backpatch OK:
 SQL query=select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from t042_ORDERLINE;
 HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- CODE_VALUE - HQC cacheable and parameterized
 >>prepare xx from select code_value ('aa'), * from t042_ORDERLINE;
@@ -719,7 +709,7 @@ HQC key=SELECT TRANSLATE ( #NP# USING UCS2TOISO88591 ) FROM T042_ORDERLINE ;
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select code_value ('aa'), * from t042_ORDERLINE;
@@ -732,7 +722,6 @@ HQC key=SELECT CODE_VALUE ( #NP# ) , * FROM T042_ORDERLINE ;
 HQC backpatch OK:
 SQL query=select code_value ('bb'), * from t042_ORDERLINE;
 HQC key=SELECT CODE_VALUE ( #NP# ) , * FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- BETWEEN - HQC cacheable but NOT parameterized
 >>prepare xx from select * from t042_ORDERLINE where OL_NUMBER between 2 and 6;
@@ -769,7 +758,7 @@ OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID 
 
 --- 5 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_NUMBER between 2 and 6;
@@ -778,7 +767,6 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_NUMBER BETWEEN #NP# AND #NP# ;
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_NUMBER between 3 and 5;
 HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_NUMBER BETWEEN #NP# AND #NP# ; 
->>sh rm hqc.log;
 >>
 >>-- LIKE - HQC cacheable and only parameterize first arg
 >>prepare xx from select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQoq%';
@@ -804,7 +792,7 @@ OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID 
 
 --- 1 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQoq%';
@@ -813,7 +801,6 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DIST_INFO LIKE #NP# ;
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQ%';
 HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DIST_INFO LIKE #NP# ; 
->>sh rm hqc.log;
 >>
 >>-- IN - HQC cacheable and NOT parameterized
 >>prepare xx from select * from t042_ORDERLINE  where OL_I_ID in (18000, 19000, 20000);
@@ -829,7 +816,7 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DIST_INFO LIKE #NP# ;
 
 --- 0 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE  where OL_I_ID in (18000, 19000, 20000);
@@ -838,7 +825,6 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_I_ID IN ( #NP# , #NP# , #NP# ) ;
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE  where OL_I_ID in (19500, 21000);
 HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_I_ID IN ( #NP# , #NP# ) ; 
->>sh rm hqc.log;
 >>
 >>-- CONCAT - HQC cacheable and NOT parameterized
 >>prepare xx from select * from t042_ORDERLINE where 'DoIQoq' = concat(OL_DIST_INFO, 'abc');
@@ -894,7 +880,7 @@ cd
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where 'DoIQoq' = concat(OL_DIST_INFO, 'abc');
@@ -911,7 +897,6 @@ HQC key=SELECT CONCAT ( #NP# , #NP# ) FROM T042_ORDERLINE ;
 HQC::AddEntry(): passed
 SQL query=select concat('c', 'd') from t042_ORDERLINE;
 HQC key=SELECT CONCAT ( #NP# , #NP# ) FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- CONVERTTOHEX - HQC cacheable and NOT parameterized
 >>prepare xx from select converttohex ('a'), * from t042_ORDERLINE;
@@ -956,7 +941,7 @@ HQC key=SELECT CONCAT ( #NP# , #NP# ) FROM T042_ORDERLINE ;
 --- 10 row(s) selected.
 >>
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select converttohex ('a'), * from t042_ORDERLINE;
@@ -965,7 +950,6 @@ HQC key=SELECT CONVERTTOHEX ( #NP# ) , * FROM T042_ORDERLINE ;
 HQC::AddEntry(): passed
 SQL query=select converttohex ('b'), * from t042_ORDERLINE;
 HQC key=SELECT CONVERTTOHEX ( #NP# ) , * FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- CHAR_LENGTH - HQC cacheable and parameterized
 >>prepare xx from select char_length ('a'), * from t042_ORDERLINE;
@@ -1009,7 +993,7 @@ HQC key=SELECT CONVERTTOHEX ( #NP# ) , * FROM T042_ORDERLINE ;
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select char_length ('a'), * from t042_ORDERLINE;
@@ -1022,7 +1006,6 @@ HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
 HQC backpatch OK:
 SQL query=select char_length ('b'), * from t042_ORDERLINE;
 HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- OCTET_LENGTH - HQC cacheable and parameterized
 >>prepare xx from select octet_length ('a'), * from t042_ORDERLINE;
@@ -1066,7 +1049,7 @@ HQC key=SELECT CHAR_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select octet_length ('a'), * from t042_ORDERLINE;
@@ -1079,7 +1062,6 @@ HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ;
 HQC backpatch OK:
 SQL query=select octet_length ('b'), * from t042_ORDERLINE;
 HQC key=SELECT OCTET_LENGTH ( #NP# ) , * FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- POSITION - HQC cacheable and parameterized
 >>prepare xx from select position('oIQo' in OL_DIST_INFO ) from t042_ORDERLINE;
@@ -1140,7 +1122,7 @@ OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID 
 
 --- 0 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select position('oIQo' in OL_DIST_INFO ) from t042_ORDERLINE;
@@ -1157,7 +1139,7 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = POSITION ( #NP# IN OL_DIST_INF
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where 9 = position('xyzoIQo' in OL_DIST_INFO );
 HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = POSITION ( #NP# IN OL_DIST_INFO ) ; 
->>sh rm hqc.log;
+>>
 >>
 >>-- SUBSTRING - HQC cacheable ONLY first arg is parameterized
 >>prepare xx from select substring('aaaa'from 1 for 2) from t042_ORDERLINE;
@@ -1224,7 +1206,7 @@ OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID 
 
 --- 0 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select substring('aaaa'from 1 for 2) from t042_ORDERLINE;
@@ -1249,7 +1231,6 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( OL_DIST_INFO FROM 
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where 'DoIQoq' = substring('DoIQoqabc' from 1 for 5);
 HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( #NP# FROM #NP# FOR #NP# ) ; 
->>sh rm hqc.log;
 >>
 >>-- CASE/IfThenElse - HQC cacheable and parameterized
 >>prepare xx from select case when OL_O_ID <> 5 THEN 1 else 0 end from t042_ORDERLINE;
@@ -1293,7 +1274,7 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE #NP# = SUBSTRING ( #NP# FROM #NP# FOR
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select case when OL_O_ID <> 5 THEN 1 else 0 end from t042_ORDERLINE;
@@ -1302,7 +1283,6 @@ HQC key=SELECT CASE WHEN OL_O_ID <> #NP# THEN #NP# ELSE #NP# END FROM T042_ORDER
 HQC::AddEntry(): passed
 SQL query=select case when OL_O_ID <> 6 THEN 2 else 1 end from t042_ORDERLINE;
 HQC key=SELECT CASE WHEN OL_O_ID <> #NP# THEN #NP# ELSE #NP# END FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- CAST - HQC cacheable and parameterize
 >>prepare xx from select cast('aaa' as char(20)) from t042_ORDERLINE;
@@ -1346,7 +1326,7 @@ bbb
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select cast('aaa' as char(20)) from t042_ORDERLINE;
@@ -1355,7 +1335,6 @@ HQC key=SELECT CAST ( #NP# AS CHAR ( #NP# ) ) FROM T042_ORDERLINE ;
 HQC::AddEntry(): passed
 SQL query=select cast('bbb' as char(30)) from t042_ORDERLINE;
 HQC key=SELECT CAST ( #NP# AS CHAR ( #NP# ) ) FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- bitOperator HQC cacheable and parameterized
 >>prepare xx from select (1 | 0 )& (1 ^ 0) from t042_ORDERLINE;
@@ -1399,7 +1378,7 @@ HQC key=SELECT CAST ( #NP# AS CHAR ( #NP# ) ) FROM T042_ORDERLINE ;
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select (1 | 0 )& (1 ^ 0) from t042_ORDERLINE;
@@ -1412,7 +1391,6 @@ HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ;
 HQC backpatch OK:
 SQL query=select (2 | 1 )& (3 ^ 1) from t042_ORDERLINE;
 HQC key=SELECT ( #NP# | #NP# ) & ( #NP# ^ #NP# ) FROM T042_ORDERLINE ; 
->>sh rm hqc.log;
 >>
 >>-- MOD - HQC cacheable and parameterized
 >>prepare xx from select mod(4,3) from t042_ORDERLINE;
@@ -1482,7 +1460,7 @@ OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID 
 
 --- 2 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select mod(4,3) from t042_ORDERLINE;
@@ -1503,7 +1481,6 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = MOD ( #NP# , #NP# ) ;
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_O_ID = mod(8,5);
 HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = MOD ( #NP# , #NP# ) ; 
->>sh rm hqc.log;
 >>
 >>-- MATH FUNC - HQC cacheable and parameterized
 >>prepare xx from select bitand(1,2), bitor(0,1), bitxor(0,0),bitnot(0), abs(-1) from t042_ORDERLINE;
@@ -1547,7 +1524,7 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = MOD ( #NP# , #NP# ) ;
 
 --- 10 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 Not HQC Cacheable but added to SQC:
 SQL query=select bitand(1,2), bitor(0,1), bitxor(0,0),bitnot(0), abs(-1) from t042_ORDERLINE;
@@ -1555,7 +1532,6 @@ HQC key=SELECT BITAND ( #NP# , #NP# ) , BITOR ( #NP# , #NP# ) , BITXOR ( #NP# , 
 
 Not in HQC but in SQC:
 SQL query=select bitand(4,1), bitor(1,0), bitxor(1,1),bitnot(1), abs(-2) from t042_ORDERLINE;
->>sh rm hqc.log;
 >>
 >>-- CONVERTTIMESTAMP - HQC cacheable and parameterized
 >>prepare xx from select CONVERTTIMESTAMP(212664316335000000) from t042_ORDERLINE;
@@ -1621,7 +1597,7 @@ OL_O_ID      OL_D_ID      OL_W_ID      OL_NUMBER    OL_I_ID      OL_SUPPLY_W_ID 
 
 --- 1 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select CONVERTTIMESTAMP(212664316335000000) from t042_ORDERLINE;
@@ -1642,7 +1618,6 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CONVERTTIMESTAMP ( #N
 HQC::AddEntry(): passed
 SQL query=select * from t042_ORDERLINE where OL_DELIVERY_D = CONVERTTIMESTAMP(212842400938000000);
 HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_DELIVERY_D = CONVERTTIMESTAMP ( #NP# ) ; 
->>sh rm hqc.log;
 >>
 >>-- LaunchPad bug: 1408148
 >>select '0123456789' from t042_t1;
@@ -1743,7 +1718,7 @@ CCAAFAAC         AA         AAAAAAAA   CJAAAAAC         AA
 
 --- 2 row(s) selected.
 >>
->>sh cat hqc.log >> LOG042;
+>>log;
 
 HQC::AddEntry(): passed
 SQL query=select '0123456789' from t042_t1;
@@ -1784,23 +1759,22 @@ HQC key=SELECT * FROM T042_T1 WHERE A = #NP# OR B = #NP# ;
 Not HQC Cacheable but added to SQC:
 SQL query=select t.varchar0_uniq as t_varchar0_uniq , t.char2_2 as t_char2_2 , t.char3_4 as t_char3_4 , u.varchar0_uniq as u_varchar0_uniq , u.char2_2 as u_char2_2 from t042_BTA1P006 t, t042_BTA1P006 u where (t.char2_2, 'AA', t.char3_4 ,'CJAAAAAC') =('AA' ,u.char2_2 , 'AAAAAAAA' , u.varchar0_uniq) order by 1, 2 ;
 HQC key=SELECT T . VARCHAR0_UNIQ AS T_VARCHAR0_UNIQ , T . CHAR2_2 AS T_CHAR2_2 , T . CHAR3_4 AS T_CHAR3_4 , U . VARCHAR0_UNIQ AS U_VARCHAR0_UNIQ , U . CHAR2_2 AS U_CHAR2_2 FROM T042_BTA1P006 T , T042_BTA1P006 U WHERE ( T . CHAR2_2 , #NP# , T . CHAR3_4 , #NP# ) = ( #NP# , U . CHAR2_2 , #NP# , U . VARCHAR0_UNIQ ) ORDER BY #NP# , #NP# ; 
->>sh rm hqc.log;
 >>
 >>-- test compile time
 >>
 >>sh more /proc/loadavg  | cut -d' ' -f 1-3 | sed -e 's/^/System load: /' >> LOG042;
-System load: 1.49 2.62 3.49
+System load: 0.37 0.36 0.74
 >>sh grep "model name" /proc/cpuinfo | head -1 | cut -d '@' -f 2 | sed -e 's/^/CPU frequency: /' >> LOG042;
-CPU frequency: model name	: Intel Core Processor (Haswell)
+CPU frequency:  2.40GHz
 >>set statistics on;
 >>prepare xx from select * from t042_orderline where ol_o_id = 1 ;
 
 --- SQL command prepared.
 
-Start Time             2016/10/28 23:22:16.629785
-End Time               2016/10/28 23:22:16.633290
-Elapsed Time                      00:00:00.003505
-Compile Time                      00:00:00.003505
+Start Time             2017/01/31 17:26:48.806392
+End Time               2017/01/31 17:26:48.808005
+Elapsed Time                      00:00:00.001613
+Compile Time                      00:00:00.001613
 Execution Time                    00:00:00.000000
 
 
@@ -1814,7 +1788,8 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 .    .    1    trafodion_scan                  T042_ORDERLINE        4.00E+000
 
 --- SQL operation complete.
->>sh cat hqc.log >> LOG042;
+>>
+>>log;
 
 Found in HQC:
 SQL query=select * from t042_orderline where ol_o_id = 1 ;
@@ -1823,7 +1798,6 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 HQC backpatch OK:
 SQL query=select * from t042_orderline where ol_o_id = 1 ;
 HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
->>sh rm hqc.log;
 >>
 >>
 >>
@@ -1831,10 +1805,10 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 
 --- SQL command prepared.
 
-Start Time             2016/10/28 23:22:16.818294
-End Time               2016/10/28 23:22:16.820789
-Elapsed Time                      00:00:00.002495
-Compile Time                      00:00:00.002495
+Start Time             2017/01/31 17:26:48.970491
+End Time               2017/01/31 17:26:48.972007
+Elapsed Time                      00:00:00.001516
+Compile Time                      00:00:00.001516
 Execution Time                    00:00:00.000000
 
 
@@ -1848,7 +1822,8 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 .    .    1    trafodion_scan                  T042_ORDERLINE        4.00E+000
 
 --- SQL operation complete.
->>sh cat hqc.log >> LOG042;
+>>
+>>log;
 
 Found in HQC:
 SQL query=select * from t042_orderline where ol_o_id = 2 ;
@@ -1857,7 +1832,6 @@ HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ;
 HQC backpatch OK:
 SQL query=select * from t042_orderline where ol_o_id = 2 ;
 HQC key=SELECT * FROM T042_ORDERLINE WHERE OL_O_ID = #NP# ; 
->>sh rm hqc.log;
 >>
 >>set statistics off;
 >>
@@ -1875,7 +1849,7 @@ NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS
 NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS 
 -----------  ------------  ----------
 
-         23             0          23
+         31             0          31
           2             0           2
 
 --- 2 row(s) selected.
@@ -1888,235 +1862,150 @@ NUM_ENTRIES  TEXT_ENTRIES  NUM_PLANS
 -----------  ------------  ----------
 
          65            10          65
-         23             0          23
+         31             0          31
           2             0           2
 
 --- 3 row(s) selected.
 >>
->>select num_hits, num_params from table(querycacheentries('user', 'local')) order by 1,2;
+>>-- if you find a failure in this test, compare the actual log file and the expected
+>>-- file which list the queries involved
+>>select num_hits, num_params, '====QUERY:', cast(substring(text, 1, 200) as char(200 bytes) character set utf8)
++>  from table(querycacheentries('user', 'local')) order by 1,2,4;
 
-NUM_HITS    NUM_PARAMS
-----------  ----------
+NUM_HITS    NUM_PARAMS  (EXPR)      (EXPR)
+----------  ----------  ----------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           1
-         0           1
-         0           1
-         0           1
-         0           1
-         0           3
-         1           0
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           2
-         1           4
-         1           9
-         5           1
+         0           0  ====QUERY:  select '' from t042_t1;                                                                                                                                                                                 
+         0           0  ====QUERY:  select '' from t042_t1;                                                                                                                                                                                 
+         0           0  ====QUERY:  select '0123456789' from t042_t1;                                                                                                                                                                       
+         0           0  ====QUERY:  select * from t042_BTA1P006;                                                                                                                                                                            
+         0           0  ====QUERY:  select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQ%';                                                                                                                                          
+         0           0  ====QUERY:  select * from t042_ORDERLINE  where OL_DIST_INFO like 'DoIQoq%';                                                                                                                                        
+         0           0  ====QUERY:  select * from t042_ORDERLINE  where OL_I_ID in (18000, 19000, 20000);                                                                                                                                   
+         0           0  ====QUERY:  select * from t042_ORDERLINE  where OL_I_ID in (19500, 21000);                                                                                                                                          
+         0           0  ====QUERY:  select * from t042_ORDERLINE where 'DoIQoq' = concat(OL_DIST_INFO, 'abc');                                                                                                                              
+         0           0  ====QUERY:  select * from t042_ORDERLINE where 'DoIQoq' = substring('DoIQoqabc' from 1 for 5);                                                                                                                      
+         0           0  ====QUERY:  select * from t042_ORDERLINE where 'DoIQoq' = substring(OL_DIST_INFO from 1 for 5);                                                                                                                     
+         0           0  ====QUERY:  select * from t042_ORDERLINE where 'DoIQoq' = substring(OL_DIST_INFO from 1 for 6);                                                                                                                     
+         0           0  ====QUERY:  select * from t042_ORDERLINE where 'xyzq' = concat(OL_DIST_INFO, 'bc');                                                                                                                                 
+         0           0  ====QUERY:  select * from t042_ORDERLINE where 2 = position('oIQo' in OL_DIST_INFO );                                                                                                                               
+         0           0  ====QUERY:  select * from t042_ORDERLINE where 9 = position('xyzoIQo' in OL_DIST_INFO );                                                                                                                            
+         0           0  ====QUERY:  select * from t042_ORDERLINE where OL_DELIVERY_D = CONVERTTIMESTAMP(212664316335000000);                                                                                                                
+         0           0  ====QUERY:  select * from t042_ORDERLINE where OL_DELIVERY_D = CONVERTTIMESTAMP(212842400938000000);                                                                                                                
+         0           0  ====QUERY:  select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP (2);                                                                                                                               
+         0           0  ====QUERY:  select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP (3);                                                                                                                               
+         0           0  ====QUERY:  select * from t042_ORDERLINE where OL_NUMBER between 2 and 6;                                                                                                                                           
+         0           0  ====QUERY:  select * from t042_ORDERLINE where OL_NUMBER between 3 and 5;                                                                                                                                           
+         0           0  ====QUERY:  select * from t042_ORDERLINE where OL_O_ID = mod(4,3);                                                                                                                                                  
+         0           0  ====QUERY:  select * from t042_ORDERLINE where OL_O_ID = mod(8,5);                                                                                                                                                  
+         0           0  ====QUERY:  select * from t042_orderline;                                                                                                                                                                           
+         0           0  ====QUERY:  select * from t042_t1 where a = 'BOOK' or b = 'ROW2';                                                                                                                                                   
+         0           0  ====QUERY:  select * from t042_t1 where a = 'BOOK' or b = 'ROW2';                                                                                                                                                   
+         0           0  ====QUERY:  select * from t042_t1 where a = 'Book' or b = 'ROW2';                                                                                                                                                   
+         0           0  ====QUERY:  select * from t042_t1 where a = 'Book' or b = 'ROW2';                                                                                                                                                   
+         0           0  ====QUERY:  select * from t042_t1 where a = 'book' or b = 'ROW1';                                                                                                                                                   
+         0           0  ====QUERY:  select * from t042_t1 where a = 'book' or b = 'ROW1';                                                                                                                                                   
+         0           0  ====QUERY:  select * from t042_t1;                                                                                                                                                                                  
+         0           0  ====QUERY:  select LOWER('TEXTA') from t042_ORDERLINE;                                                                                                                                                              
+         0           0  ====QUERY:  select LOWER('TEXTB') from t042_ORDERLINE;                                                                                                                                                              
+         0           0  ====QUERY:  select TRIM('  Robert1  ') from t042_ORDERLINE;                                                                                                                                                         
+         0           0  ====QUERY:  select TRIM('  Robert2  ') from t042_ORDERLINE;                                                                                                                                                         
+         0           0  ====QUERY:  select TRIM('A' FROM 'LO TE XTA') from t042_ORDERLINE;                                                                                                                                                  
+         0           0  ====QUERY:  select TRIM('L' FROM 'LO TE XTA') from t042_ORDERLINE;                                                                                                                                                  
+         0           0  ====QUERY:  select UPPER('ol_o_id_1') from t042_ORDERLINE;                                                                                                                                                          
+         0           0  ====QUERY:  select UPPER('ol_o_id_2') from t042_ORDERLINE;                                                                                                                                                          
+         0           0  ====QUERY:  select b from t042_t1 where a like 'BOO%';                                                                                                                                                              
+         0           0  ====QUERY:  select b from t042_t1 where a like 'BOO%';                                                                                                                                                              
+         0           0  ====QUERY:  select b from t042_t1 where a like 'BOO_%';                                                                                                                                                             
+         0           0  ====QUERY:  select b from t042_t1 where a like 'BOO_%';                                                                                                                                                             
+         0           0  ====QUERY:  select b from t042_t1 where a like 'boo%';                                                                                                                                                              
+         0           0  ====QUERY:  select b from t042_t1 where a like 'boo%';                                                                                                                                                              
+         0           0  ====QUERY:  select b from t042_t1 where a like 'boo_%';                                                                                                                                                             
+         0           0  ====QUERY:  select b from t042_t1 where a like 'boo_%';                                                                                                                                                             
+         0           0  ====QUERY:  select case when OL_O_ID <> 5 THEN 1 else 0 end from t042_ORDERLINE;                                                                                                                                    
+         0           0  ====QUERY:  select case when OL_O_ID <> 6 THEN 2 else 1 end from t042_ORDERLINE;                                                                                                                                    
+         0           0  ====QUERY:  select concat('a', 'b') from t042_ORDERLINE;                                                                                                                                                            
+         0           0  ====QUERY:  select concat('c', 'd') from t042_ORDERLINE;                                                                                                                                                            
+         0           0  ====QUERY:  select converttohex ('a'), * from t042_ORDERLINE;                                                                                                                                                       
+         0           0  ====QUERY:  select converttohex ('b'), * from t042_ORDERLINE;                                                                                                                                                       
+         0           0  ====QUERY:  select t.varchar0_uniq as t_varchar0_uniq , t.char2_2 as t_char2_2 , t.char3_4 as t_char3_4 , u.varchar0_uniq as u_varchar0_uniq , u.char2_2 as u_char2_2 from t042_BTA1P006 t, t042_BTA1P006 u where (t
+         0           1  ====QUERY:  select '0123456789' from t042_t1;                                                                                                                                                                       
+         0           1  ====QUERY:  select cast('aaa' as char(20)) from t042_ORDERLINE;                                                                                                                                                     
+         0           1  ====QUERY:  select cast('bbb' as char(30)) from t042_ORDERLINE;                                                                                                                                                     
+         0           1  ====QUERY:  select position('oIQo' in OL_DIST_INFO ) from t042_ORDERLINE;                                                                                                                                           
+         0           1  ====QUERY:  select position('xyzoIQo' in OL_DIST_INFO ) from t042_ORDERLINE;                                                                                                                                        
+         0           3  ====QUERY:  select t.varchar0_uniq as t_varchar0_uniq , t.char2_2 as t_char2_2 , t.char3_4 as t_char3_4 , u.varchar0_uniq as u_varchar0_uniq , u.char2_2 as u_char2_2 from t042_BTA1P006 t, t042_BTA1P006 u where (t
+         1           0  ====QUERY:  select TRANSLATE(_iso88591'abc' using UCS2toISO88591) from t042_ORDERLINE;                                                                                                                              
+         1           1  ====QUERY:  select * from t042_ORDERLINE where OL_DELIVERY_D = CURRENT_TIMESTAMP_RUNNING and OL_D_ID = 3;                                                                                                           
+         1           1  ====QUERY:  select CONVERTTIMESTAMP(212664316335000000) from t042_ORDERLINE;                                                                                                                                        
+         1           1  ====QUERY:  select CURRENT_TIMESTAMP (2) from t042_ORDERLINE where OL_D_ID = 3;                                                                                                                                     
+         1           1  ====QUERY:  select EXTRACT (YEAR FROM DATE '2017-09-28') from t042_ORDERLINE;                                                                                                                                       
+         1           1  ====QUERY:  select JULIANTIMESTAMP(DATE'2017-09-28') from t042_ORDERLINE;                                                                                                                                           
+         1           1  ====QUERY:  select char_length ('a'), * from t042_ORDERLINE;                                                                                                                                                        
+         1           1  ====QUERY:  select code_value ('aa'), * from t042_ORDERLINE;                                                                                                                                                        
+         1           1  ====QUERY:  select dayofweek(timestamp '1973-12-24 12:12:02.00') from t042_ORDERLINE;                                                                                                                               
+         1           1  ====QUERY:  select octet_length ('a'), * from t042_ORDERLINE;                                                                                                                                                       
+         1           1  ====QUERY:  select substring('aaaa'from 1 for 2) from t042_ORDERLINE;                                                                                                                                               
+         1           2  ====QUERY:  select mod(4,3) from t042_ORDERLINE;                                                                                                                                                                    
+         1           4  ====QUERY:  select (1 | 0 )& (1 ^ 0) from t042_ORDERLINE;                                                                                                                                                           
+         1           9  ====QUERY:  select bitand(1,2), bitor(0,1), bitxor(0,0),bitnot(0), abs(-1) from t042_ORDERLINE;                                                                                                                     
+         5           1  ====QUERY:  select * from t042_orderline where ol_o_id = 1 ;                                                                                                                                                        
 
 --- 75 row(s) selected.
->>select num_hits, num_params from table(querycacheentries('meta', 'local')) order by 1,2;
+>>select num_hits, num_params, '====QUERY:', cast(substring(text, 1, 200) as char(200 bytes) character set utf8)
++>  from table(querycacheentries('meta', 'local')) order by 1,2,4;
 
-NUM_HITS    NUM_PARAMS
-----------  ----------
+NUM_HITS    NUM_PARAMS  (EXPR)      (EXPR)
+----------  ----------  ----------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-         0           1
-         0           1
-         0           1
-         0           1
-         0           2
-         0           2
-         0           2
-         0           2
-         0           3
-         0           3
-         0           4
-         0           4
-         0           5
-         1           1
-         1           1
-         1           2
-         1           2
-         1           3
-         1           3
-         1           5
-         2           1
-         2           1
-         2           3
-         3           3
-         9           4
+         0           1  ====QUERY:  SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANTOR_ID, GRANTEE_NAME, GRANTOR_NAME, GRANT_DEPTH FROM TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES WHERE COMPONENT_UID = 1 AND OPERATION_CODE IN (
+         0           1  ====QUERY:  SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANTOR_ID, GRANTEE_NAME, GRANTOR_NAME, GRANT_DEPTH FROM TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES WHERE COMPONENT_UID = 1 AND OPERATION_CODE IN (
+         0           1  ====QUERY:  SELECT OBJECT_UID, OBJECT_NAME, OBJECT_TYPE, GRANTEE_ID, GRANTEE_NAME, GRANTEE_TYPE, GRANTOR_ID, GRANTOR_NAME, GRANTOR_TYPE, PRIVILEGES_BITMAP, GRANTABLE_BITMAP FROM TRAFODION."_PRIVMGR_MD_".OBJECT_PR
+         0           1  ====QUERY:  SELECT object_uid,object_name,grantee_id,grantee_name,grantor_id,grantor_name,column_number,privileges_bitmap,grantable_bitmap FROM TRAFODION."_PRIVMGR_MD_".COLUMN_PRIVILEGES where object_uid = 170022
+         0           1  ====QUERY:  select check_option, is_updatable, is_insertable from TRAFODION."_MD_".VIEWS where view_uid = 1700229370398217975 for read committed access                                                             
+         0           1  ====QUERY:  select is_audited, num_salt_partns, row_format, flags from TRAFODION."_MD_".TABLES where table_uid = 1700229370398217975 for read committed access                                                      
+         0           1  ====QUERY:  select trim(O.catalog_name || '.' || '"' || O.schema_name || '"' || '.' || '"' || O.object_name || '"' ) constr_name, trim(O2.catalog_name || '.' || '"' || O2.schema_name || '"' || '.' || '"' || O2.ob
+         0           1  ====QUERY:  select trim(O.catalog_name || '.' || '"' || O.schema_name || '"' || '.' || '"' || O.object_name || '"' ) constr_name, trim(O2.catalog_name || '.' || '"' || O2.schema_name || '"' || '.' || '"' || O2.ob
+         0           2  ====QUERY:  select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount, T.num_salt_partns, T.row_format, I.index_uid from TRAFODION."_MD_".INDEXES
+         0           2  ====QUERY:  select column_name, column_number, column_class, fs_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, trim(is_upshifted), column_flags, nullable, trim(c
+         0           2  ====QUERY:  select column_name, column_number, keyseq_number, ordering , cast(0 as int not null) from TRAFODION."_MD_".KEYS where object_uid = 1700229370398218011 for read committed access order by keyseq_number 
+         0           2  ====QUERY:  select column_name, column_number, keyseq_number, ordering , cast(0 as int not null) from TRAFODION."_MD_".KEYS where object_uid = 1700229370398222005 for read committed access order by keyseq_number 
+         0           3  ====QUERY:  select O.object_name, C.constraint_type, C.col_count, C.constraint_uid, C.enforced, C.flags from TRAFODION."_MD_".OBJECTS O, TRAFODION."_MD_".TABLE_CONSTRAINTS C where O.catalog_name = 'TRAFODION' and
+         0           3  ====QUERY:  select column_name, column_number, keyseq_number, ordering, cast(0 as int not null)  from TRAFODION."_MD_".KEYS where object_uid = 1700229370398217975 and nonkeycol = 0 for read committed access order
+         0           4  ====QUERY:  select object_uid, object_owner, schema_owner, flags from TRAFODION."_MD_".OBJECTS where catalog_name = 'TRAFODION' and schema_name = '_MD_' and object_name = 'OBJECTS'  and object_type = 'BT';       
+         0           4  ====QUERY:  select object_uid, object_type from TRAFODION."_MD_".OBJECTS where catalog_name = 'TRAFODION' and schema_name = 'ORDERENTRY' and object_name = 'DESCRIBE__'  and object_type = '  '                     
+         0           5  ====QUERY:  select object_uid, object_owner, schema_owner, flags from TRAFODION."_MD_".OBJECTS where catalog_name = 'TRAFODION' and schema_name = 'ORDERENTRY' and object_name = 'T042_ORDERLINE'  and object_type =
+         1           1  ====QUERY:  SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANTOR_ID, GRANTEE_NAME, GRANTOR_NAME, GRANT_DEPTH FROM TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES WHERE COMPONENT_UID = 1 AND OPERATION_CODE IN (
+         1           1  ====QUERY:  SELECT COMPONENT_UID, OPERATION_CODE, GRANTEE_ID, GRANTOR_ID, GRANTEE_NAME, GRANTOR_NAME, GRANT_DEPTH FROM TRAFODION."_PRIVMGR_MD_".COMPONENT_PRIVILEGES WHERE COMPONENT_UID = 1 AND OPERATION_CODE IN (
+         1           1  ====QUERY:  SELECT OBJECT_UID, OBJECT_NAME, OBJECT_TYPE, GRANTEE_ID, GRANTEE_NAME, GRANTEE_TYPE, GRANTOR_ID, GRANTOR_NAME, GRANTOR_TYPE, PRIVILEGES_BITMAP, GRANTABLE_BITMAP FROM TRAFODION."_PRIVMGR_MD_".OBJECT_PR
+         1           1  ====QUERY:  SELECT object_uid,object_name,grantee_id,grantee_name,grantor_id,grantor_name,column_number,privileges_bitmap,grantable_bitmap FROM TRAFODION."_PRIVMGR_MD_".COLUMN_PRIVILEGES where object_uid = 170022
+         1           1  ====QUERY:  select check_option, is_updatable, is_insertable from TRAFODION."_MD_".VIEWS where view_uid = 1700229370398220983 for read committed access                                                             
+         1           1  ====QUERY:  select is_audited, num_salt_partns, row_format, flags from TRAFODION."_MD_".TABLES where table_uid = 1700229370398220983 for read committed access                                                      
+         1           2  ====QUERY:  select O.catalog_name, O.schema_name, O.object_name, I.keytag, I.is_unique, I.is_explicit, I.key_colcount, I.nonkey_colcount, T.num_salt_partns, T.row_format, I.index_uid from TRAFODION."_MD_".INDEXES
+         1           2  ====QUERY:  select column_name, column_number, column_class, fs_data_type, column_size, column_precision, column_scale, datetime_start_field, datetime_end_field, trim(is_upshifted), column_flags, nullable, trim(c
+         1           3  ====QUERY:  select O.object_name, C.constraint_type, C.col_count, C.constraint_uid, C.enforced, C.flags from TRAFODION."_MD_".OBJECTS O, TRAFODION."_MD_".TABLE_CONSTRAINTS C where O.catalog_name = 'TRAFODION' and
+         1           3  ====QUERY:  select column_name, column_number, keyseq_number, ordering, cast(0 as int not null)  from TRAFODION."_MD_".KEYS where object_uid = 1700229370398220983 and nonkeycol = 0 for read committed access order
+         1           5  ====QUERY:  select object_uid, object_owner, schema_owner, flags from TRAFODION."_MD_".OBJECTS where catalog_name = 'TRAFODION' and schema_name = 'ORDERENTRY' and object_name = 'T042_T1'  and object_type = 'BT'  
+         2           1  ====QUERY:  SELECT HISTOGRAM_ID, COLUMN_NUMBER, COLCOUNT, INTERVAL_COUNT, ROWCOUNT, TOTAL_UEC, JULIANTIMESTAMP(STATS_TIME), LOW_VALUE, HIGH_VALUE, JULIANTIMESTAMP(READ_TIME), READ_COUNT, SAMPLE_SECS, COL_SECS, SA
+         2           1  ====QUERY:  SELECT HISTOGRAM_ID, INTERVAL_NUMBER, INTERVAL_ROWCOUNT, INTERVAL_UEC, INTERVAL_BOUNDARY, CAST(STD_DEV_OF_FREQ AS DOUBLE PRECISION), V1, V2, V5 FROM TRAFODION.ORDERENTRY.SB_HISTOGRAM_INTERVALS WHERE T
+         2           3  ====QUERY:  select octet_length(text), text from TRAFODION."_MD_".TEXT where text_uid = 1700229370398217975 and text_type = 2 and sub_id = 0 for read committed access order by seq_num                             
+         3           3  ====QUERY:  select octet_length(text), text from TRAFODION."_MD_".TEXT where text_uid = 1700229370398220983 and text_type = 2 and sub_id = 0 for read committed access order by seq_num                             
+        12           4  ====QUERY:  select object_uid, object_owner, schema_owner, flags from TRAFODION."_MD_".OBJECTS where catalog_name = 'TRAFODION' and schema_name = '_MD_' and object_name = 'TABLES'  and object_type = 'BT';        
 
---- 25 row(s) selected.
->>select num_hits, num_params from table(querycacheentries('ustats', 'local')) order by 1,2;
+--- 33 row(s) selected.
+>>select num_hits, num_params, '====QUERY:', cast(substring(text, 1, 200) as char(200 bytes) character set utf8)
++>  from table(querycacheentries('ustats', 'local')) order by 1,2,4;
 
 --- 0 row(s) selected.
->>select num_hits, num_params from table(querycacheentries('all', 'local')) order by 1,2;
+>>select count(*) from table(querycacheentries('all', 'local'));
 
-NUM_HITS    NUM_PARAMS
-----------  ----------
+(EXPR)              
+--------------------
 
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           0
-         0           1
-         0           1
-         0           1
-         0           1
-         0           1
-         0           1
-         0           1
-         0           1
-         0           1
-         0           2
-         0           2
-         0           2
-         0           2
-         0           3
-         0           3
-         0           3
-         0           4
-         0           4
-         0           5
-         1           0
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           1
-         1           2
-         1           2
-         1           2
-         1           3
-         1           3
-         1           4
-         1           5
-         1           9
-         2           1
-         2           1
-         2           3
-         3           3
-         5           1
-         9           4
+                 108
 
---- 100 row(s) selected.
+--- 1 row(s) selected.
+>>-- should be the sum of the user, meta and ustats caches
 >>
 >>
 >>--Stats in Hybrid Query Cache
@@ -2133,7 +2022,7 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
 NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
 ----------  ----------  ----------------------  ----------------------
 
-        23          23                       5                     211
+        29          31                       5                     211
          2           2                       5                     211
 
 --- 2 row(s) selected.
@@ -2146,214 +2035,136 @@ NUM_HKEYS   NUM_SKEYS   NUM_MAX_VALUES_PER_KEY  NUM_HASH_TABLE_BUCKETS
 ----------  ----------  ----------------------  ----------------------
 
         37          60                       5                     211
-        23          23                       5                     211
+        29          31                       5                     211
          2           2                       5                     211
 
 --- 3 row(s) selected.
 >>
->>select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('user', 'local')) order by 1, 2, 3, 4;
+>>select num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('user', 'local')) order by 1, 2, 3;
 
-(EXPR)      NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
-----------  ----------  -------------  --------------
+NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
+----------  -------------  --------------
 
-        27           0              0               1
-        27           0              1               0
-        42           0              0               1
-        42           0              0               1
-        42           0              0               1
-        42           0              0               1
-        43           0              0               1
-        43           0              0               1
-        44           0              0               1
-        44           0              0               1
-        44           0              0               1
-        44           0              0               1
-        49           1              2               0
-        51           0              0               2
-        51           0              0               2
-        51           0              0               2
-        52           0              0               2
-        52           0              0               2
-        52           5              1               0
-        53           0              0               2
-        53           0              0               2
-        53           1              1               0
-        54           1              1               0
-        55           0              0               1
-        55           0              0               1
-        55           1              1               0
-        55           1              1               0
-        58           1              1               0
-        59           1              1               0
-        60           0              0               1
-        60           0              0               1
-        60           0              1               1
-        60           0              1               1
-        61           1              1               0
-        63           0              1               0
-        63           0              1               0
-        63           1              4               0
-        64           0              0               2
-        67           0              0               2
-        67           0              0               2
-        67           1              1               2
-        69           0              0               2
-        69           0              0               2
-        69           1              0               1
-        71           0              0               3
-        75           0              0               2
-        75           0              0               2
-        77           1              1               1
-        78           0              0               2
-        78           0              0               2
-        79           0              0               1
-        79           0              0               1
-        79           0              0               3
-        79           0              0               3
-        80           0              0               1
-        80           0              0               1
-        82           0              0               4
-        90           0              0               3
-        90           0              0               3
-        98           1              1               0
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               1
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               2
+         0              0               3
+         0              0               3
+         0              0               3
+         0              0               3
+         0              0               3
+         0              0               4
+         0              1               0
+         0              1               0
+         0              1               0
+         0              1               1
+         0              1               1
+         1              0               1
+         1              1               0
+         1              1               0
+         1              1               0
+         1              1               0
+         1              1               0
+         1              1               0
+         1              1               0
+         1              1               0
+         1              1               1
+         1              1               2
+         1              2               0
+         1              4               0
+         5              1               0
 
 --- 60 row(s) selected.
->>select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('meta', 'local')) order by 1, 2, 3, 4;
+>>select num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('meta', 'local')) order by 1, 2, 3;
 
-(EXPR)      NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
-----------  ----------  -------------  --------------
+NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
+----------  -------------  --------------
 
-       134           0              1               0
-       134           1              1               0
-       142           0              1               0
-       142           1              1               0
-       163           0              4               0
-       174           2              3               0
-       174           3              3               0
-       187           0              4               0
-       187           0              4               0
-       201           0              2               1
-       201           0              2               1
-       208           0              5               0
-       208           0              5               0
-       222           0              3               1
-       222           1              3               1
-       314           0              3               1
-       314           0              3               1
-       314           2              1               0
-       422           2              1               1
-       487           0              2               3
-       487           1              2               3
-       492           0              2               1
-       492           1              2               1
-       619           0              1              14
-       619           0              1              14
+         0              1               0
+         0              1               0
+         0              1               0
+         0              1               0
+         0              1              10
+         0              1              10
+         0              1              14
+         0              1              14
+         0              2               1
+         0              2               1
+         0              2               1
+         0              2               3
+         0              3               1
+         0              3               1
+         0              3               1
+         0              4               0
+         0              4               0
+         0              4               0
+         0              5               0
+         0              5               0
+         1              1               0
+         1              1               0
+         1              1               0
+         1              1               0
+         1              1              10
+         1              1              10
+         1              2               1
+         1              2               3
+         1              3               1
+         2              1               0
+         2              1               1
+         2              3               0
+         3              3               0
 
---- 25 row(s) selected.
->>select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1, 2, 3, 4;
+--- 33 row(s) selected.
+>>select num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('ustats', 'local')) order by 1, 2, 3;
 
 --- 0 row(s) selected.
->>select char_length(hkey), num_hits, num_PLiterals,  num_NPLiterals from table(hybridquerycacheentries('all', 'local')) order by 1, 2, 3, 4;
+>>select count(*) from table(hybridquerycacheentries('all', 'local'));
 
-(EXPR)      NUM_HITS    NUM_PLITERALS  NUM_NPLITERALS
-----------  ----------  -------------  --------------
+(EXPR)              
+--------------------
 
-        27           0              0               1
-        27           0              1               0
-        42           0              0               1
-        42           0              0               1
-        42           0              0               1
-        42           0              0               1
-        43           0              0               1
-        43           0              0               1
-        44           0              0               1
-        44           0              0               1
-        44           0              0               1
-        44           0              0               1
-        49           1              2               0
-        51           0              0               2
-        51           0              0               2
-        51           0              0               2
-        52           0              0               2
-        52           0              0               2
-        52           5              1               0
-        53           0              0               2
-        53           0              0               2
-        53           1              1               0
-        54           1              1               0
-        55           0              0               1
-        55           0              0               1
-        55           1              1               0
-        55           1              1               0
-        58           1              1               0
-        59           1              1               0
-        60           0              0               1
-        60           0              0               1
-        60           0              1               1
-        60           0              1               1
-        61           1              1               0
-        63           0              1               0
-        63           0              1               0
-        63           1              4               0
-        64           0              0               2
-        67           0              0               2
-        67           0              0               2
-        67           1              1               2
-        69           0              0               2
-        69           0              0               2
-        69           1              0               1
-        71           0              0               3
-        75           0              0               2
-        75           0              0               2
-        77           1              1               1
-        78           0              0               2
-        78           0              0               2
-        79           0              0               1
-        79           0              0               1
-        79           0              0               3
-        79           0              0               3
-        80           0              0               1
-        80           0              0               1
-        82           0              0               4
-        90           0              0               3
-        90           0              0               3
-        98           1              1               0
-       134           0              1               0
-       134           1              1               0
-       142           0              1               0
-       142           1              1               0
-       163           0              4               0
-       174           2              3               0
-       174           3              3               0
-       187           0              4               0
-       187           0              4               0
-       201           0              2               1
-       201           0              2               1
-       208           0              5               0
-       208           0              5               0
-       222           0              3               1
-       222           1              3               1
-       314           0              3               1
-       314           0              3               1
-       314           2              1               0
-       422           2              1               1
-       487           0              2               3
-       487           1              2               3
-       492           0              2               1
-       492           1              2               1
-       619           0              1              14
-       619           0              1              14
+                  93
 
---- 85 row(s) selected.
->>
+--- 1 row(s) selected.
+>>-- should be the sum of the user, meta and ustats caches
 >>
 >>-- virtual table ISP queries are not cacheable.
 >>-- hqc.log should be empty.
 >>sh cat hqc.log >> LOG042;
->>cqd HQC_LOG 'off';
-
---- SQL operation complete.
->>sh rm hqc.log;
+>>
+>>log;
 >>
 >>-- clear all (hybrid)query cache entries
 >>delete all from table(querycache('all', 'local'));

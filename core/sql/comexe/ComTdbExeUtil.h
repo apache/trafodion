@@ -90,7 +90,9 @@ public:
     HBASE_UNLOAD_            = 33,
     HBASE_UNLOAD_TASK_       = 34,
     GET_QID_                 = 35,
-    HIVE_TRUNCATE_           = 36
+    HIVE_TRUNCATE_           = 36,
+    LOB_UPDATE_UTIL_         = 37,
+    HIVE_QUERY_              = 38
   };
 
   ComTdbExeUtil()
@@ -1713,6 +1715,52 @@ private:
   UInt32 flags_;                                 // 44-47
 };
 
+class ComTdbExeUtilHiveQuery : public ComTdbExeUtil
+{
+public:
+  ComTdbExeUtilHiveQuery()
+  : ComTdbExeUtil()
+  {}
+
+  ComTdbExeUtilHiveQuery(char * hiveQuery,
+                         ULng32 hiveQueryLen,
+                         ex_cri_desc * given_cri_desc,
+                         ex_cri_desc * returned_cri_desc,
+                         queue_index down,
+                         queue_index up,
+                         Lng32 num_buffers,
+                         ULng32 buffer_size
+                         );
+  
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilHiveQuery);}
+
+  virtual const char *getNodeName() const
+  {
+    return "HIVE_QUERY";
+  };
+
+  char * getHiveQuery() const
+  {
+    return hiveQuery_;
+  }
+
+  // ---------------------------------------------------------------------
+  // Used by the internal SHOWPLAN command to get attributes of a TDB.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+
+private:
+  NABasicPtr hiveQuery_;                     // 00-07
+  UInt32 hiveQueryLen_;                      // 08-11
+  UInt32 flags_;                             // 12-15
+};
+
 class ComTdbExeUtilGetStatistics : public ComTdbExeUtil
 {
   friend class ExExeUtilGetStatisticsTcb;
@@ -1781,6 +1829,10 @@ public:
   {(v ? flags_ |= TOKENIZED_FORMAT : flags_ &= ~TOKENIZED_FORMAT); };
   NABoolean tokenizedFormat() { return (flags_ & TOKENIZED_FORMAT) != 0; };
 
+  void setSingleLineFormat(NABoolean v)
+  {(v ? flags_ |= SINGLELINE_FORMAT : flags_ &= ~SINGLELINE_FORMAT); };
+  NABoolean singleLineFormat() { return (flags_ & SINGLELINE_FORMAT) != 0; };
+  
   short getStatsReqType() { return statsReqType_; }
 
   // ---------------------------------------------------------------------
@@ -1798,7 +1850,8 @@ protected:
     DETAILED_STATS   = 0x0008,
     OLD_FORMAT       = 0x0010,
     SHORT_FORMAT     = 0x0020,
-    TOKENIZED_FORMAT = 0x0040
+    TOKENIZED_FORMAT = 0x0040,
+    SINGLELINE_FORMAT = 0x0100
   };
 
   NABasicPtr stmtName_;                                        // 00-07
@@ -2424,6 +2477,8 @@ public:
     VIEWS_IN_CATALOG_,
     INVALID_VIEWS_IN_CATALOG_,
     SEQUENCES_IN_CATALOG_,
+    TABLES_IN_CATALOG_,
+    OBJECTS_IN_CATALOG_,
 
     TABLES_IN_SCHEMA_,
     INDEXES_IN_SCHEMA_,
@@ -2469,6 +2524,7 @@ public:
 
     ROLES_FOR_ROLE_,
     USERS_FOR_ROLE_,
+    PRIVILEGES_FOR_ROLE_,
 
     USERS_,
     CURRENT_USER_,
@@ -2602,6 +2658,10 @@ public:
   {(v ? flags_ |= IS_HBASE : flags_ &= ~IS_HBASE); };
   NABoolean isHbase() { return (flags_ & IS_HBASE) != 0; };
 
+  void setCascade(NABoolean v)
+  {(v ? flags_ |= CASCADE : flags_ & CASCADE) != 0; };
+  NABoolean cascade() { return (flags_ & CASCADE) != 0; };
+
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
@@ -2622,7 +2682,8 @@ protected:
     IS_INDEX     = 0x0200,
     IS_MV        = 0x0400,
     IS_HBASE   = 0x0800,
-    EXTERNAL_OBJS = 0x1000
+    EXTERNAL_OBJS = 0x1000,
+    CASCADE      = 0x2000
   };
 
   char * getCat() { return cat_; }
@@ -2861,6 +2922,118 @@ private:
   char fillersComTdbExeUtilLobExtract_[40];            
 };
 
+
+class ComTdbExeUtilLobUpdate : public ComTdbExeUtil
+{
+   friend class ExExeUtilLobUpdateTcb;
+   friend class ExExeUtilPrivateState;
+
+public:
+  enum UpdateFromType
+  {
+    FROM_BUFFER_, FROM_STRING_, FROM_EXTERNAL_,NOOP_
+  };
+ 
+
+  ComTdbExeUtilLobUpdate()
+  : ComTdbExeUtil()
+  {}
+  ComTdbExeUtilLobUpdate
+    (
+     char * handle,
+     Lng32 handleLen,
+     UpdateFromType fromType,
+     Int64 bufAddr,
+     Int64 updateSize,
+     Int32 lobStorageType,
+     char * lobHdfsServer,
+     Lng32 lobHdfsPort,
+     ex_expr * input_expr,
+     ULng32 input_rowlen,
+     ex_cri_desc * work_cri_desc,
+     const unsigned short work_atp_index,
+     ex_cri_desc * given_cri_desc,
+     ex_cri_desc * returned_cri_desc,
+     queue_index down,
+     queue_index up,
+     Lng32 num_buffers,
+     ULng32 buffer_size
+     );
+  Long pack(void * space);
+  Lng32 unpack(void * base, void * reallocator);
+
+  char * getHandle() { return handle_; }
+  Lng32 getHandleLen() { return handleLen_; }
+  char * getLobHdfsServer() { return lobHdfsServer_; }
+  Lng32 getLobHdfsPort() { return lobHdfsPort_; }
+
+  UpdateFromType getFromType() { return (UpdateFromType)fromType_; }
+ 
+  // ---------------------------------------------------------------------
+  // Redefine virtual functions required for Versioning.
+  //----------------------------------------------------------------------
+  virtual short getClassSize() {return (short)sizeof(ComTdbExeUtilLobUpdate);}
+
+  virtual const char *getNodeName() const
+  {
+    return "LOB_UPDATE_UTIL";
+  };
+
+  // ---------------------------------------------------------------------
+  // Used by the internal SHOWPLAN command to get attributes of a TDB.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+
+  void setAppend(NABoolean v)
+  {(v ? flags_ |= APPEND_ : flags_ &= ~APPEND_); };
+  NABoolean isAppend() { return (flags_ & APPEND_) != 0; };
+
+  void setErrorIfExists(NABoolean v)
+  {(v ? flags_ |= ERROR_IF_EXISTS_ : flags_ &= ~ERROR_IF_EXISTS_); };
+  NABoolean isErrorIfExists() { return (flags_ & ERROR_IF_EXISTS_) != 0; };
+
+  void setTruncate(NABoolean v)
+  {(v ? flags_ |= TRUNCATE_ : flags_ &= ~TRUNCATE_); };
+  NABoolean isTruncate() { return (flags_ & TRUNCATE_) != 0; };
+
+  void setReplace(NABoolean v)
+  {(v ? flags_ |= REPLACE_ : flags_ &= ~REPLACE_); };
+  NABoolean isReplace() { return (flags_ & REPLACE_) != 0; };
+  void setUpdateSize(Int64 upd_size){ updateSize_ = upd_size;};
+  Int64 updateSize() { return updateSize_;}
+  void setTotalBufSize(Int64 bufSize) { totalBufSize_ = bufSize;};
+  Int64 getTotalBufSize() { return totalBufSize_;};
+  void setBufAddr(Int64 bufAddr) {bufAddr_ = bufAddr;};
+  Int64 getBufAddr() { return bufAddr_;};
+ void setLobMaxSize(Int64 lms) {lobMaxSize_ = lms;};
+  Int64 getLobMaxSize() { return lobMaxSize_;};
+ void setLobMaxChunkSize(Int64 lmcs) {lobMaxChunkSize_ = lmcs;};
+  Int64 getLobMaxChunkSize() { return lobMaxChunkSize_;};
+ void setLobGCLimit(Int64 gcl ) {lobGCLimit_ = gcl;};
+  Int64 getLobGCLimit() { return lobGCLimit_;};
+private:
+  enum
+    {
+      ERROR_IF_EXISTS_ = 0x0001,
+      TRUNCATE_ = 0x0002,
+      APPEND_ = 0x0004,
+      REPLACE_=0x0008
+    };
+  NABasicPtr handle_;
+  Int32 handleLen_;
+  short fromType_;
+  Int32 flags_;
+  Int64 updateSize_;
+  Int64 totalBufSize_;
+  Int64 bufAddr_;
+  Lng32 lobStorageType_;
+  Lng32 lobHdfsPort_;
+  NABasicPtr lobHdfsServer_;
+  Int64 lobMaxSize_;
+  Int64 lobMaxChunkSize_;
+  Int64 lobGCLimit_;
+};
+ 
 class ComTdbExeUtilLobShowddl : public ComTdbExeUtil
 {
   friend class ExExeUtilLobShowddlTcb;
@@ -3138,6 +3311,18 @@ struct HiveMDSysTablesColInfoStruct
   char tblName[256];
 };
 
+static const ComTdbVirtTableColumnInfo hiveMDSchemasColInfo[] =
+{                                                                                     
+  { "CATALOG_NAME",    0,     COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0},  
+  { "SCHEMA_NAME",    1,     COM_USER_COLUMN, REC_BYTE_F_ASCII,    256, FALSE , SQLCHARSETCODE_UNKNOWN, 0, 0, 0, 0, 0, 0, 0, COM_NO_DEFAULT, "" ,NULL,NULL,COM_UNKNOWN_DIRECTION_LIT, 0}
+};
+
+struct HiveMDSchemasColInfoStruct
+{
+  char catName[256];
+  char schName[256];
+};
+
 class ComTdbExeUtilHiveMDaccess : public ComTdbExeUtil
 {
   friend class ExExeUtilHiveMDaccessTcb;
@@ -3153,7 +3338,8 @@ public:
     FKEYS_,
     ALIAS_,
     SYNONYMS_,
-    SYSTEM_TABLES_
+    SYSTEM_TABLES_,
+    SCHEMAS_
   };
 
   // Constructors
@@ -3254,6 +3440,8 @@ public:
       return sizeof(hiveMDSynonymColInfo)/sizeof(ComTdbVirtTableColumnInfo);
     else if (strcmp(name, "SYSTEM_TABLES") == 0)
       return sizeof(hiveMDSysTablesColInfo)/sizeof(ComTdbVirtTableColumnInfo);
+    else if (strcmp(name, "SCHEMAS") == 0)
+      return sizeof(hiveMDSchemasColInfo)/sizeof(ComTdbVirtTableColumnInfo);
     else
       return -1;
   }
@@ -3276,6 +3464,8 @@ public:
       return (ComTdbVirtTableColumnInfo*)hiveMDSynonymColInfo;
     else if (strcmp(name, "SYSTEM_TABLES") == 0)
       return (ComTdbVirtTableColumnInfo*)hiveMDSysTablesColInfo;
+    else if (strcmp(name, "SCHEMAS") == 0)
+      return (ComTdbVirtTableColumnInfo*)hiveMDSchemasColInfo;
     else
       return NULL;
   }

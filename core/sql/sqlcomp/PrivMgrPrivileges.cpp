@@ -481,7 +481,6 @@ PrivMgrPrivileges::~PrivMgrPrivileges()
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::buildSecurityKeys(
   const int32_t granteeID,
-  const int32_t roleID,
   const PrivMgrCoreDesc &privs,
   std::vector <ComSecurityKey *> & secKeySet)
 {
@@ -494,12 +493,9 @@ PrivStatus PrivMgrPrivileges::buildSecurityKeys(
     if ( privs.getPriv(PrivType(i)))
     {
       ComSecurityKey *key = NULL;
-      if (roleID != NA_UserIdDefault && ComUser::isPublicUserID(roleID))
+      if (ComUser::isPublicUserID(granteeID))
         key = new ComSecurityKey(granteeID, 
                                  ComSecurityKey::OBJECT_IS_SPECIAL_ROLE);
-      else if (roleID != NA_UserIdDefault && isRoleID(roleID))
-        key = new ComSecurityKey(granteeID, roleID,
-                                 ComSecurityKey::SUBJECT_IS_USER);
       else
         key = new ComSecurityKey(granteeID, 
                                  objectUID_,
@@ -1681,7 +1677,8 @@ PrivStatus privStatus = objectPrivsTable.insert(row);
 // no need to grant privileges.
 // 
 // This creator grant may be controlled by a CQD in the future.
-   if (ownerID == creatorID || creatorID == ComUser::getRootUserID())
+   if (ownerID == creatorID || creatorID == ComUser::getRootUserID() ||
+       ownerID == HIVE_ROLE_ID || ownerID == HBASE_ROLE_ID)
       return STATUS_GOOD;
  
 // Add a grant from the private schema owner to the creator.     
@@ -3602,10 +3599,26 @@ void PrivMgrPrivileges::scanObjectBranch( const PrivType pType, // in
                               privsList );
                 else
                   {
-                    int32_t granteeAsGrantor(thisGrantee);
+                    int32_t granteeAsGrantor;
+                    if (isRoleID(thisGrantee))
+                    {
+                      std::vector<int32_t> roleIDs;
+                      std::vector<int32_t> userIDs;
+                      roleIDs.push_back(thisGrantee);
+                      if (getUserIDsForRoleIDs(roleIDs,userIDs) == STATUS_ERROR)
+                        return;
+                      for (size_t j = 0; j < userIDs.size(); j++)
+                      {
+                         granteeAsGrantor = userIDs[j];
+                         scanObjectBranch( pType, // Scan for this grantee as grantor.
+                                           granteeAsGrantor,
+                                           privsList );
+                      }
+                    }
+                    granteeAsGrantor = thisGrantee;
                     scanObjectBranch( pType, // Scan for this grantee as grantor.
-                                 granteeAsGrantor,
-                                 privsList );
+                                      granteeAsGrantor,
+                                      privsList );
                   }
               }
          }  // end this grantee has wgo
@@ -3935,10 +3948,8 @@ PrivStatus PrivMgrPrivileges::sendSecurityKeysToRMS(
 {
   // Go through the list of table privileges and generate SQL_QIKEYs
   std::vector<ComSecurityKey *> keyList;
-  int32_t roleID = (ComUser::isPublicUserID(granteeID)) ? PUBLIC_USER : NA_UserIdDefault;
   const PrivMgrCoreDesc &privs = revokedPrivs.getTablePrivs();
   PrivStatus privStatus = buildSecurityKeys(granteeID,
-                                            roleID,
                                             revokedPrivs.getTablePrivs(),
                                             keyList);
   if (privStatus != STATUS_GOOD)
@@ -3953,7 +3964,6 @@ PrivStatus PrivMgrPrivileges::sendSecurityKeysToRMS(
   {
     const NAList<PrivMgrCoreDesc> &columnPrivs = revokedPrivs.getColumnPrivs();
     privStatus = buildSecurityKeys(granteeID,
-                                   roleID,
                                    columnPrivs[i],
                                    keyList);
     if (privStatus != STATUS_GOOD)
@@ -4375,7 +4385,6 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
       if (secKeySet)
       {
         retcode = buildSecurityKeys(granteeID,
-                                    row.granteeID_,
                                     temp,
                                     *secKeySet);
         if (retcode == STATUS_ERROR)
@@ -4416,7 +4425,6 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
     if (secKeySet)
     {
       retcode = buildSecurityKeys(granteeID,
-                                  row.granteeID_,
                                   temp,
                                   *secKeySet);
       if (retcode == STATUS_ERROR)
@@ -4785,11 +4793,13 @@ PrivStatus PrivMgrPrivileges::updateDependentObjects(
 // * false: Authorization ID has not been granted any object privileges.     
 // *                                                               
 // *****************************************************************************
-bool PrivMgrPrivileges::isAuthIDGrantedPrivs(const int32_t authID)
-
+bool PrivMgrPrivileges::isAuthIDGrantedPrivs(
+  const int32_t authID, 
+  std::vector<int64_t> &objectUIDs)
 {
 
    std::string whereClause(" WHERE GRANTEE_ID = ");   
+   std::string orderByClause (" ORDER BY object_name ");
 
    char authIDString[20];
 
@@ -4800,10 +4810,23 @@ bool PrivMgrPrivileges::isAuthIDGrantedPrivs(const int32_t authID)
    // set pointer in diags area
    int32_t diagsMark = pDiags_->mark();
 
-   int64_t rowCount = 0;   
+   std::vector<PrivMgrMDRow *> rowList;
    ObjectPrivsMDTable myTable(objectTableName_,pDiags_);
 
-   PrivStatus privStatus = myTable.selectCountWhere(whereClause,rowCount);
+   PrivStatus privStatus = myTable.selectWhere(whereClause, orderByClause ,rowList);
+   if (privStatus != STATUS_GOOD)
+   {
+      deleteRowList(rowList);
+      return privStatus;
+   }
+
+   int32_t rowCount = rowList.size();
+   for (size_t i = 0; i < rowCount; i++)
+   {
+      ObjectPrivsMDRow &row = static_cast<ObjectPrivsMDRow &> (*rowList[i]);
+      objectUIDs.push_back(row.objectUID_);
+   }
+   deleteRowList(rowList);
 
    if ((privStatus == STATUS_GOOD || privStatus == STATUS_WARNING) &&
         rowCount > 0)

@@ -137,6 +137,7 @@ public:
 
   // get the degree of this node 
   virtual Int32 getArity() const { return 0; };
+  virtual NABoolean duplicateMatch(const RelExpr & other) const;
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
 
@@ -401,7 +402,7 @@ public:
 
   short ddlXnsInfo(NABoolean &ddlXns, NABoolean &xnCanBeStarted);
 
-  NAString getQualObjName() { return qualObjName_.getQualifiedNameAsString(); }
+  NAString getQualObjName() { return qualObjName_.getQualifiedNameAsAnsiString(); }
 
   void setCreateMDViews(NABoolean v)
   {(v ? flags_ |= CREATE_MD_VIEWS : flags_ &= ~CREATE_MD_VIEWS); }
@@ -575,7 +576,9 @@ public:
     HBASE_UNLOAD_TASK_        = 36,
     ORC_FAST_AGGR_            = 37,
     GET_QID_                  = 38,
-    HIVE_TRUNCATE_            = 39
+    HIVE_TRUNCATE_            = 39,
+    LOB_UPDATE_UTIL_          = 40,
+    HIVE_QUERY_               = 41
   };
 
   ExeUtilExpr(ExeUtilType type,
@@ -596,6 +599,8 @@ public:
   ExeUtilExpr()
        : GenericUtilExpr(REL_EXE_UTIL) {};
 
+  virtual HashValue topHash();
+  virtual NABoolean duplicateMatch(const RelExpr & other) const;
   virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
 				CollHeap* outHeap = 0);
   virtual const NAString getText() const;
@@ -1163,6 +1168,45 @@ private:
   NABoolean dropTableOnDealloc_;
 };
 
+class ExeUtilHiveQuery : public ExeUtilExpr
+{
+public:
+  enum HiveSourceType
+    {
+      FROM_STRING,
+      FROM_FILE
+    };
+
+  ExeUtilHiveQuery(const NAString &hive_query,
+                   HiveSourceType type,
+                   CollHeap *oHeap = CmpCommon::statementHeap())
+       : ExeUtilExpr(HIVE_QUERY_, CorrName("dummyName"), 
+                     NULL, NULL, 
+                     NULL,
+                     CharInfo::UnknownCharSet, oHeap),
+         type_(type),
+         hiveQuery_(hive_query)
+  { }
+
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+  
+  NAString &hiveQuery() { return hiveQuery_; }
+  const NAString &hiveQuery() const { return hiveQuery_; }
+
+  HiveSourceType sourceType() { return type_;}
+private:
+  HiveSourceType type_;
+  NAString hiveQuery_;
+};
+
 class ExeUtilMaintainObject : public ExeUtilExpr
 {
 public:
@@ -1509,6 +1553,7 @@ protected:
   // ds: Detailed Stats
   // of: old format (mxci display statistics output)
   // tf: tokenized format, each stats value preceded by a predefined token.
+  // sl: A single line report of BMO and PERTABLE stats
   NAString optionsStr_;
 
   NABoolean compilerStats_;
@@ -1525,6 +1570,7 @@ protected:
   short statsReqType_;
   short statsMergeType_;
   short activeQueryNum_;
+  NABoolean singleLineFormat_;
 };
 
 class ExeUtilGetProcessStatistics : public ExeUtilGetStatistics
@@ -1626,6 +1672,9 @@ public:
   NABoolean hbaseObjects() { return hbaseObjs_;}
   void setHbaseObjects(NABoolean v) { hbaseObjs_ = v; }
   
+  NABoolean cascade() { return cascade_;}
+  void setCascade(NABoolean v) { cascade_ = v; }
+
 private:
   NAString ausStr_; // all/user/system objects
   NAString infoType_;
@@ -1646,6 +1695,7 @@ private:
 
   NABoolean hiveObjs_;
   NABoolean hbaseObjs_;
+  NABoolean cascade_;
 };
 
 
@@ -2160,6 +2210,84 @@ public:
   NABoolean withCreate_;
 };
 
+
+class ExeUtilLobUpdate : public ExeUtilExpr
+{
+public:
+  enum UpdateFromType
+  {
+     FROM_BUFFER_, FROM_FILE_, FROM_STRING_,FROM_EXTERNAL_, NOOP_
+  };
+  enum UpdateActionType
+  {
+    ERROR_IF_EXISTS_=1, TRUNCATE_EXISTING_,APPEND_, REPLACE_ 
+  };
+  
+  
+ ExeUtilLobUpdate(ItemExpr * handle, 
+		   UpdateFromType fromType,
+		   Int64 bufaddr=0,
+		   Int64 updateSize=0,
+                  UpdateActionType updateAction=UpdateActionType::ERROR_IF_EXISTS_,
+		   RelExpr * childNode = NULL,
+		   CollHeap *oHeap = CmpCommon::statementHeap())
+   : ExeUtilExpr(LOB_UPDATE_UTIL_, CorrName("dummyUpdateLobName"),
+		 NULL, childNode, 
+		 NULL, CharInfo::UnknownCharSet, oHeap),
+    handle_(handle),
+    fromType_(fromType),
+    bufAddr_(bufaddr),
+     updateSize_(updateSize),
+     updateAction_(updateAction)
+   
+    {
+     
+    };
+
+  virtual Int32 getArity() const { return (child(0) ? 1 : 0); }
+  
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+
+  //virtual NABoolean producesOutput() { return (toType_ == TO_STRING_ ? TRUE : FALSE); }
+  virtual NABoolean producesOutput() { return  TRUE ; }
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+  
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  virtual void transformNode(NormWA & normWARef,
+			     ExprGroupId & locationOfPointerToMe);
+
+  virtual RelExpr * normalizeNode(NormWA & normWARef);
+
+  virtual void pushdownCoveredExpr(const ValueIdSet & outputExpr,
+				   const ValueIdSet & newExternalInputs,
+				   ValueIdSet & predicatesOnParent,
+				   const ValueIdSet * setOfValuesReqdByParent,
+				   Lng32 childIndex
+				   );
+  
+  virtual RelExpr * preCodeGen(Generator * generator,
+			       const ValueIdSet & externalInputs,
+			       ValueIdSet &pulledNewInputs);
+  
+  // method to do code generation
+  virtual short codeGen(Generator*);
+
+  
+
+  
+
+ private:
+  //  NAString handle_;
+  ItemExpr * handle_;
+  UpdateFromType fromType_;
+  Int32 updateAction_;
+  Int64 bufAddr_;
+  Int64 updateSize_;
+  
+  
+};
 class ExeUtilLobShowddl : public ExeUtilExpr
 {
 public:

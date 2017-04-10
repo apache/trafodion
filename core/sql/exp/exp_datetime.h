@@ -94,6 +94,13 @@ public:
     DATETIME_FORMAT_NUM2,     // -99:99:99:99
     DATETIME_FORMAT_MAX_NUM = DATETIME_FORMAT_NUM2,
 
+    // the following are intended for binder time resolution based 
+    // on operand type to one of the formats above
+    DATETIME_FORMAT_MIN_UNRESOLVED = DATETIME_FORMAT_MAX_NUM,
+    DATETIME_FORMAT_UNSPECIFIED,  // Default format for TO_CHAR; resolved at bind time
+                                  // based on the datatype of the operand
+    DATETIME_FORMAT_MAX_UNRESOLVED = DATETIME_FORMAT_UNSPECIFIED,
+
     DATETIME_FORMAT_DATE_STR, // format in str
     DATETIME_FORMAT_TIME_STR, // format in str
     DATETIME_FORMAT_NONE,
@@ -168,6 +175,9 @@ NA_EIDPROC
                             ExpDatetime *attr,
                             short intervalFlag,
                             NABoolean &LastDayPrevMonth);
+
+NA_EIDPROC
+  static short validateTime(const char *datetimeOpData);
 
 NA_EIDPROC
   short compDatetimes(char *datetimeOpData1,
@@ -340,6 +350,17 @@ static
       }
 
     for (Lng32 i = DATETIME_FORMAT_MIN_NUM; i <= DATETIME_FORMAT_MAX_NUM; i++)
+      {
+        if (strcmp(formatStr, datetimeFormat[i].str) == 0)
+          {
+            if (datetimeFormat[i].format != i)
+              return -1;
+
+            return i;
+          }
+      }
+
+    for (Lng32 i = DATETIME_FORMAT_MIN_UNRESOLVED; i <= DATETIME_FORMAT_MAX_UNRESOLVED; i++)
       {
         if (strcmp(formatStr, datetimeFormat[i].str) == 0)
           {

@@ -86,28 +86,25 @@ TBD - A future update will include details on how tickets can be managed at the 
 
 === Kerberos installation
 The {project-name} installation scripts automatically determine if Kerberos is enabled on the node.  If it is enabled,
-then the environment variable SECURE_HADOOP is set to "Y".  
+then the environment variable SECURE_HADOOP is set to "Y".
 
 The following are questions that will be asked related to Kerberos:
 
 * Enter KDC server address, default is []: – no default
 * Enter admin principal (include realm), default is []:  - no default
-* Enter fully qualified name for HBase keytab, default is []: - Installer searches for a valid keytab based on the distribution
-* Enter fully qualified name for HDFS keytab, default is []: - Installer searches for a valid keytab based on the distribution
-* Enter max lifetime for Trafodion principal (valid format required), default is [24hours]:
-* Enter renew lifetime for Trafodion principal (valid format required), default is [7days]:
-* Enter Trafodion keytab name, default is []:  - Installer determines default name based on the distribution
-* Enter keytab location, default is []:  - Installer determins default name based on the distribution
+* Enter password for admin principal:
 
-NOTE: The {project-name} installer always asked for the KDC admin password when enabling Kerberos independent on whether running in Automated
-of Guided mode. It does not save this password.
+NOTE: KDC admin password will be saved only in configuration file `db_config.bakYYMMDD_HHMM` in installer folder when installation completed.
+You can delete this file for secure perspective.
+NOTE: Keytab files are auto detected by installer in CDH/HDP cluster.
+NOTE: Installer doesn't support kerberos enabled Apache Hadoop for this release.
 
 [[enable-security-ldap]]
 == Configuring LDAP
 {project-name} does not manage user names and passwords internally but supports authentication via directory servers using
 the OpenLDAP protocol, also known as LDAP servers. You can configure the LDAP servers during installation by answering the {project-name}
 Installer's prompts. To configure LDAP after installation run the {project-name} security installer directly.  Installing LDAP also enables database
-authorization (privilege support). 
+authorization (privilege support).
 
 Once authentication and authorization are enabled, {project-name} allows users to be registered in the database and allows privileges
 on objects to be granted to users and roles (which are granted to users). {project-name} also supports component-level (or system-level)
@@ -121,11 +118,11 @@ object or operation, then you must enable security, which enforces authenticatio
 [[enable-security-configuring-ldap-servers]]
 === Configuring LDAP Servers
 To specify the LDAP server(s) to be used for authentication, you need to configure the text file `.traf_authentication_config`,
-located (by default) in `$MY_SQROOT/sql/scripts`. This file is a flat file, organized as a series of attribute/value pairs.
+located (by default) in `$TRAF_HOME/sql/scripts`. This file is a flat file, organized as a series of attribute/value pairs.
 Details on all the attributes and values accepted in the authentication configuration file and how to configure alternate locations
 can be found in <<enable-security-traf-authentication-config,.traf_authentication_config>> below.
 
-A sample template file is located in `$MY_SQROOT/sql/scripts/traf_authentication_config`.
+A sample template file is located in `$TRAF_HOME/sql/scripts/traf_authentication_config`.
 
 Attributes and values in the authentication configuration file are separated with a colon immediately following the attribute name.
 In general, white space is ignored  but spaces may be relevant in some values. Attribute names are always case insensitive. Multiple
@@ -164,7 +161,7 @@ identifier specifiers. | `UniqueIdentifier: uid=,ou=users,dc=com`
 &#8226; 2: TLS | `LDAPSSL: 2` +
  +
 If your LDAP server uses TLS you must specify a file containing the certificate used to encrypt the password. By default the {project-name} software
-looks for this file in `$MY_SQROOT/cacerts`, but you may specify a fully qualified filename, or set the environment variable `CACERTS_DIR` to another
+looks for this file in `$TRAF_HOME/cacerts`, but you may specify a fully qualified filename, or set the environment variable `CACERTS_DIR` to another
 directory. To specify the file containing the certificate, you set the value of the attribute `TLS_CACERTFilename`, located in the Defaults section. +
  +
 *Example* +
@@ -181,7 +178,7 @@ There are additional optional attributes that can be used to customize {project-
 <<enable-security-traf-authentication-config,.traf_authentication_config>> below.
 
 You can test the authentication configuration file for syntactic errors using the `ldapconfigcheck` tool. If you have loaded the {project-name}
-environment (`sqenv.sh`), then the tool automatically checks the file at `$MY_SQROOT/sql/scripts/.traf_authentication_config`.
+environment (`sqenv.sh`), then the tool automatically checks the file at `$TRAF_HOME/sql/scripts/.traf_authentication_config`.
 If not, you can specify the file to be checked.
 
 *Example*
@@ -225,7 +222,7 @@ Authentication successful
 {project-name} clients such as `trafci` encrypt the password before sending it to {project-name}. A self-signed certificate is used to encrypt the password.
 The certificate and key are generated when the `sqgen` script is invoked. By default, the files `server.key` and `server.crt` are located
 in `$HOME/sqcert`. If those files are not present and since {project-name} clients does not send unencrypted passwords, then you need to manually generate
-those files. To do so, run the script `sqcertgen` located in `$MY_SQROOT/sql/scripts`. The script runs `openssl` to generate the certificate and key.
+those files. To do so, run the script `sqcertgen` located in `$TRAF_HOME/sql/scripts`. The script runs `openssl` to generate the certificate and key.
 
 To run openssl manually, follow the example:
 
@@ -267,7 +264,7 @@ then {project-name} uses the default location (`$HOME/sqcert`) and the default f
 The `.traf_authentication_config` file is user to enable the Trafodion security features.
 
 ==== File Location
-By default, the {project-name} authentication configuration file is located in `$MY_SQROOT/sql/scripts/.traf_authentication_config`.
+By default, the {project-name} authentication configuration file is located in `$TRAF_HOME/sql/scripts/.traf_authentication_config`.
 If you want to store the configuration file in a different location and/or use a different filename, then Trafodion supports environment
 variables to specify the alternate location/name.
 
@@ -277,7 +274,7 @@ authentication configuration file.
 If the environment variable is not set, then Trafodion next checks the variable `TRAFAUTH_CONFIGDIR`. If set, the value is prepended to
 `.traf_authentication_config` and used as the Trafodion authentication file.
 
-If neither is set, Trafodion defaults to `$MY_SQROOT/sql/scripts/.traf_authentication_config`.
+If neither is set, Trafodion defaults to `$TRAF_HOME/sql/scripts/.traf_authentication_config`.
 
 <<<
 [[enable-security-template]]
@@ -285,7 +282,7 @@ If neither is set, Trafodion defaults to `$MY_SQROOT/sql/scripts/.traf_authentic
 
 ```
 # To use authentication in Trafodion, this file must be configured
-# as described below and placed in $MY_SQROOT/sql/scripts and be named
+# as described below and placed in $TRAF_HOME/sql/scripts and be named
 # .traf_authentication_config.  
 #
 # NOTE: the format of this configuration file is expected to change in the 
@@ -441,9 +438,9 @@ A fully qualified name is expected.
 +
 Filename `.traf_authentication_config/` is appended to the specified directory
 
-3. `MY_SQROOT`
+3. `TRAF_HOME`
 +
-`/sql/scripts/.traf_authentication_config` is appended to the value of `MY_SQROOT`.
+`/sql/scripts/.traf_authentication_config` is appended to the value of `TRAF_HOME`.
     
 <<<
 [[enable-security-ldapconfigcheck-errors]]
@@ -510,7 +507,7 @@ SQL USER CONNECTED user not connected
 SQL USER DB NAME   SQLUSER1
 SQL USER ID        33367
 TERMINAL CHARSET   ISO88591
-TRANSACTION ID     
+TRANSACTION ID
 TRANSACTION STATE  not in progress
 WARNINGS           on
 ```

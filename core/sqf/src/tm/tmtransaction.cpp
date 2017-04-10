@@ -134,11 +134,14 @@ short  TM_Transaction::register_region(long startid, int port, char *hostName, i
 
 }
 
-short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* pa_tblname, char** pa_keys, int pv_numsplits, int pv_keylen)
+short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len,
+                                   char* pa_tblname, char** pa_keys,
+                                   int pv_numsplits, int pv_keylen,
+                                   char* &pv_err_str, int &pv_err_len)
 {
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
-
+    
     int len = sizeof(Tm_Req_Msg_Type);
     int len_aligned = 8*(((len + 7)/8));
     int buffer_size = pv_numsplits*pv_keylen;
@@ -165,7 +168,7 @@ short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* p
        memcpy((buffer+index), pa_keys[i], pv_keylen);
        index = index + pv_keylen;
     }
-
+  
     iv_last_error = gv_tmlib.send_tm_link(buffer, total_buffer, &lv_rsp, iv_transid.get_node());
     delete buffer;
     if(iv_last_error)
@@ -175,11 +178,20 @@ short TM_Transaction::create_table(char* pa_tbldesc, int pv_tbldesc_len, char* p
     }
     
     iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
+    if(iv_last_error)
+    {
+        int maxErrStrBufLen = sizeof(lv_rsp.u.iv_ddl_response.iv_err_str);
+        pv_err_len = lv_rsp.u.iv_ddl_response.iv_err_str_len < maxErrStrBufLen ? lv_rsp.u.iv_ddl_response.iv_err_str_len : maxErrStrBufLen;
+    	pv_err_str = new char[pv_err_len];
+    	memcpy(pv_err_str, lv_rsp.u.iv_ddl_response.iv_err_str, pv_err_len); 
+    }
     
     return iv_last_error;
 }
 
-short TM_Transaction::alter_table(char * pa_tblname, int pv_tblname_len,  char ** pv_tbloptions,  int pv_tbloptslen, int pv_tbloptscnt)
+short TM_Transaction::alter_table(char * pa_tblname, int pv_tblname_len,
+    char ** pv_tbloptions,  int pv_tbloptslen, int pv_tbloptscnt,
+    char* &pv_err_str, int &pv_err_len)
 {    
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
@@ -215,15 +227,24 @@ short TM_Transaction::alter_table(char * pa_tblname, int pv_tblname_len,  char *
     delete buffer;
     if(lv_last_error)
     {
-        TMlibTrace(("TMLIB_TRACE : TM_Transaction::create_table returning error %d\n", iv_last_error), 1);
+        TMlibTrace(("TMLIB_TRACE : TM_Transaction::alter_table returning error %d\n", iv_last_error), 1);
         return lv_last_error;
     }
 
     iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
-    return lv_last_error;
+    if(iv_last_error)
+    {
+        int maxErrStrBufLen = sizeof(lv_rsp.u.iv_ddl_response.iv_err_str);
+        pv_err_len = lv_rsp.u.iv_ddl_response.iv_err_str_len < maxErrStrBufLen ? lv_rsp.u.iv_ddl_response.iv_err_str_len : maxErrStrBufLen;
+        pv_err_str = new char[pv_err_len];
+        memcpy(pv_err_str, lv_rsp.u.iv_ddl_response.iv_err_str, pv_err_len); 
+    }
+    
+    return iv_last_error;
 }
 
-short TM_Transaction::reg_truncateonabort(char* pa_tblname, int pv_tblname_len)
+short TM_Transaction::reg_truncateonabort(char* pa_tblname, int pv_tblname_len,
+                                          char* &pv_err_str, int &pv_err_len)
 {
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
@@ -246,10 +267,18 @@ short TM_Transaction::reg_truncateonabort(char* pa_tblname, int pv_tblname_len)
         return iv_last_error;
     }
     iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
+    if(iv_last_error)
+    {
+        int maxErrStrBufLen = sizeof(lv_rsp.u.iv_ddl_response.iv_err_str);
+        pv_err_len = lv_rsp.u.iv_ddl_response.iv_err_str_len < maxErrStrBufLen ? lv_rsp.u.iv_ddl_response.iv_err_str_len : maxErrStrBufLen;
+        pv_err_str = new char[pv_err_len];
+        memcpy(pv_err_str, lv_rsp.u.iv_ddl_response.iv_err_str, pv_err_len); 
+    }    
     return iv_last_error;
 }
 
-short TM_Transaction::drop_table(char* pa_tblname, int pv_tblname_len)
+short TM_Transaction::drop_table(char* pa_tblname, int pv_tblname_len,
+                                 char* &pv_err_str, int &pv_err_len)
 {
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
@@ -272,6 +301,13 @@ short TM_Transaction::drop_table(char* pa_tblname, int pv_tblname_len)
         return iv_last_error;
     }
     iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
+    if(iv_last_error)
+    {
+        int maxErrStrBufLen = sizeof(lv_rsp.u.iv_ddl_response.iv_err_str);
+        pv_err_len = lv_rsp.u.iv_ddl_response.iv_err_str_len < maxErrStrBufLen ? lv_rsp.u.iv_ddl_response.iv_err_str_len : maxErrStrBufLen;
+        pv_err_str = new char[pv_err_len];
+        memcpy(pv_err_str, lv_rsp.u.iv_ddl_response.iv_err_str, pv_err_len); 
+    }    
     return iv_last_error;
 }
 
@@ -353,7 +389,7 @@ short TM_Transaction::begin(int abort_timeout, int64 transactiontype_bits)
 // -- end transaction
 // Trafodion: added support for local transactions.
 // --------------------------------------------------------------------------
-short TM_Transaction::end()
+short TM_Transaction::end(char* &pv_err_str, int &pv_err_len)
 {
     Tm_Req_Msg_Type lv_req;
     Tm_Rsp_Msg_Type lv_rsp;
@@ -420,6 +456,13 @@ short TM_Transaction::end()
        }
     
        iv_last_error = lv_rsp.iv_msg_hdr.miv_err.error;
+       if(iv_last_error)
+       {
+           int maxErrStrBufLen = sizeof(lv_rsp.u.iv_end_trans.iv_err_str);
+           pv_err_len = lv_rsp.u.iv_end_trans.iv_err_str_len < maxErrStrBufLen ? lv_rsp.u.iv_end_trans.iv_err_str_len : maxErrStrBufLen;
+           pv_err_str = new char[pv_err_len];
+           memcpy(pv_err_str, lv_rsp.u.iv_end_trans.iv_err_str, pv_err_len); 
+       }
     }
     TMlibTrace(("TMLIB_TRACE : TM_Transaction::end  (seq num %d) EXIT\n", iv_transid.get_seq_num()), 2);
 

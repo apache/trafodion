@@ -129,6 +129,9 @@ Lng32 HSFuncExecDDL( const char *dml
                   );
 Lng32 HSClearCLIDiagnostics();
 
+// Obtain any JNI diagnostic text stored in the CLI
+const char * HSFuncGetJniErrorStr();
+
 // Create histogram tables if they don't exist.
 Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal);
 Lng32 CreateHistView   (const HSGlobalsClass* hsGlobal);
@@ -235,9 +238,6 @@ class HSSample
     Lng32 drop() { return dropSample(sampleTable, objDef); }
 
     NABoolean isIUS() { return isIUS_; }
-
-    void addTruncatedSelectList(NAString & qry);
-    static void addTruncatedColumnReference(NAString & qry, HSColumnStruct & colInfo);
 
   private:
     // Member function

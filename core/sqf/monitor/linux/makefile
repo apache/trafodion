@@ -86,6 +86,7 @@ INCLUDES+= -I$(ZOOKEEPER_DIR)/include
 LIBS+=  -lsqlite3
 LIBS+=  -llog4cxx
 LIBS+=  -ldl
+LIBS+=  -lssl
 
 ifeq ($(USE_TESTPOINTS),1)
    FLAGS+= -DUSE_TESTPOINTS
@@ -142,7 +143,6 @@ MONITORSRC += reqshutdown.cxx
 MONITORSRC += reqstartup.cxx
 MONITORSRC += reqtmleader.cxx
 MONITORSRC += reqtmready.cxx
-MONITORSRC += reqtmseqnum.cxx
 MONITORSRC += reqtmsync.cxx
 MONITORSRC += reqzoneinfo.cxx
 MONITORSRC += replicate.cxx
@@ -203,7 +203,6 @@ MONITOROBJS += $(OUTDIR)/reqshutdown.o
 MONITOROBJS += $(OUTDIR)/reqstartup.o
 MONITOROBJS += $(OUTDIR)/reqtmleader.o
 MONITOROBJS += $(OUTDIR)/reqtmready.o
-MONITOROBJS += $(OUTDIR)/reqtmseqnum.o
 MONITOROBJS += $(OUTDIR)/reqtmsync.o
 MONITOROBJS += $(OUTDIR)/reqzoneinfo.o
 ifeq ($(USE_FORK_SUSPEND_RESUME),1)
@@ -468,8 +467,8 @@ $(OUTDIR)/montim : montim.cxx
 $(BINEXPDIR)/monitor: $(MONITOROBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
-	@echo $(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz
-	@$(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz
+	@echo $(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz -lcrypto
+	@$(CXX) $(LNK_FLGS) -o$@ $(MONITOROBJS) $(LIBS) -lz -lcrypto
 	@echo 'Finished building target: $@'
 	@echo ' '
 

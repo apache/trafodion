@@ -502,7 +502,7 @@ Ex_Lob_Error ExLobGlobals::getLobPtr(char *lobName, ExLob *& lobPtr)
 
     if (it == lobMap->end())
     {
-        lobPtr = new ExLob();
+        lobPtr = new (lobGlobals->getHeap())ExLob(lobGlobals->getHeap());
         if (lobPtr == NULL) 
           return LOB_ALLOC_ERROR;
 

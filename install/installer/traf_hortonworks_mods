@@ -208,16 +208,6 @@ ssh -q -n $HDFS_NODE 'rm -rf $HOME/traf_temp_output'
 AMBARI_DIR=/var/lib/ambari-server/resources/scripts
 cd $LOCAL_WORKDIR
 
-ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD"  '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.master.distributed.log.splitting true'
-if [ $? != 0 ]; then
-    echo "***ERROR: unable to modify hbase.master.distributed.log.splitting through Ambari's configs.sh script."
-    echo "***ERROR: Check if Ambari URL is correct, may need to enter external IP address."
-    echo "***ERROR: Check if iptables/firewall is configured correctly and ports a
-    re enabled."
-    echo "***ERROR: Check that HBase is running without error."
-    exit -1
-fi
-sleep 2
 # Bug: install removes hbase co-processors installed as part of kerberozing Hadoop.  Add them
 # as part of adding trafodion co-processor (add JIRA #)
 if [[ "$SECURE_HADOOP" == "Y" ]]; then
@@ -269,6 +259,12 @@ sleep 2
 ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.client.scanner.timeout.period 600000'
 if [ $? != 0 ]; then
     echo "***ERROR: unable to modify hbase.client.scanner.timeout.period through Ambari's configs.sh script."
+    exit -1
+fi
+sleep 2
+ssh -q -n $AMBARI_HOST "$AMBARI_DIR"'/configs.sh -u' "$ADMIN" '-p' "$PASSWORD" '-port' "$PORT" 'set' "$AMBARI_HOST" "$CLUSTER_NAME" 'hbase-site hbase.client.keyvalue.maxsize 0'
+if [ $? != 0 ]; then
+    echo "***ERROR: unable to modify hbase.client.keyvalue.maxsize through Ambari's configs.sh script."
     exit -1
 fi
 sleep 2

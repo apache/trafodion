@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+#/**
+#* @@@ START COPYRIGHT @@@
+#*
+#* Licensed to the Apache Software Foundation (ASF) under one
+#* or more contributor license agreements.  See the NOTICE file
+#* distributed with this work for additional information
+#* regarding copyright ownership.  The ASF licenses this file
+#* to you under the Apache License, Version 2.0 (the
+#* "License"); you may not use this file except in compliance
+#* with the License.  You may obtain a copy of the License at
+#*
+#*   http://www.apache.org/licenses/LICENSE-2.0
+#*
+#* Unless required by applicable law or agreed to in writing,
+#* software distributed under the License is distributed on an
+#* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#* KIND, either express or implied.  See the License for the
+#* specific language governing permissions and limitations
+#* under the License.
+#*
+#* @@@ END COPYRIGHT @@@
+#*/
+-->
+ 
+<configuration>
+
+  <property>
+    <name>rest.dns.interface</name>
+    <display-name>Network interface for DNS</display-name>
+    <value>default</value>
+    <description>The server uses the local host name for reporting its IP address. If your machine
+        has multiple interfaces the server will use the interface that the primary
+        host name resolves to. If this is insufficient, you can set this property
+        to indicate the primary interface e.g., "eth1". This only works if your cluster 
+        configuration is consistent and every host has the same network interface
+        configuration.        
+    </description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>zookeeper.session.timeout</name>
+    <display-name>ZooKeeper session timeout</display-name>
+    <value>180000</value>
+    <description>
+      The server passes this to the ZooKeeper quorum as suggested maximum time for a
+      session (This setting becomes ZooKeeper's 'maxSessionTimeout').  See
+      http://hadoop.apache.org/ZooKeeper/docs/current/ZooKeeperProgrammers.html#ch_zkSessions
+      "The client sends a requested timeout, the server responds with the
+      timeout that it can give the client. " In milliseconds.
+    </description>
+    <value-attributes>
+      <type>int</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>zookeeper.znode.parent</name>
+    <display-name>Root znode in ZooKeeper</display-name>
+    <value>/${user.name}</value>
+    <description>The server will look for DCS znodes under this znode
+    and will create any REST server specific znodes here as well.
+    </description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+  
+  <property>
+    <name>rest.zookeeper.quorum</name>
+    <display-name>ZooKeeper quorum</display-name>
+    <value>{{zookeeper_quorum_hosts}}</value>
+    <description>Comma separated list of servers in the ZooKeeper Quorum.
+    For example, "host1.mydomain.com,host2.mydomain.com,host3.mydomain.com".
+    </description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+
+  
+  <property>
+    <name>rest.zookeeper.property.clientPort</name>
+    <display-name>ZooKeeper client port</display-name>
+    <value>{{zookeeper_clientPort}}</value>
+    <description>
+    The port at which ZooKeeper is listening for clients.
+    </description>
+    <value-attributes>
+      <type>string</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>rest.port</name>
+    <display-name>Trafodion REST port</display-name>
+    <value>4200</value>
+    <description>The http port for the REST server.</description>
+    <value-attributes>
+      <type>int</type>
+    </value-attributes>
+  </property>
+   <property>
+    <name>rest.https.port</name>
+    <display-name>Trafodion REST secure port</display-name>
+    <value>4201</value>
+    <description>The https port for the REST server.</description>
+    <value-attributes>
+      <type>int</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>rest.readonly</name>
+    <display-name>Trafodion REST read-only mode</display-name>
+    <value>false</value>
+    <description>
+    Mode the REST server will be started in.
+    false: All HTTP methods are permitted - GET/PUT/POST/DELETE.
+    true: Only the GET method is permitted.
+    </description>
+    <value-attributes>
+      <type>boolean</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>rest.threads.max</name>
+    <display-name>Trafodion REST maximum threads</display-name>
+    <value>100</value>
+    <description>
+        The maximum number of threads of the server thread pool.
+        Threads in the pool are reused to process requests. This
+        controls the maximum number of requests processed concurrently.
+        It may help to control the memory used by the server to
+        avoid out of memory issues. If the thread pool is full, incoming requests
+        will be queued up and wait for some free threads. 
+    </description>
+    <value-attributes>
+      <type>int</type>
+    </value-attributes>
+  </property>
+  <property>
+    <name>rest.threads.min</name>
+    <display-name>Trafodion REST minimum threads</display-name>
+    <value>2</value>
+    <description>
+        The minimum number of threads of the server thread pool.
+        The thread pool always has at least these number of threads so
+        the server is ready to serve incoming requests.
+    </description>
+    <value-attributes>
+      <type>int</type>
+    </value-attributes>
+  </property>
+
+</configuration>

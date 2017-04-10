@@ -84,10 +84,10 @@ if [ -f "${DCS_CONF_DIR}/dcs-env.sh" ]; then
 fi
 
 # Source in sqenv.sh.
-if [ -f "${MY_SQROOT}/sqenv.sh" ]; then
+if [ -f "${TRAF_HOME}/sqenv.sh" ]; then
   savedir=`pwd`
-  cd $MY_SQROOT
-  . sqenv.sh
+  cd $TRAF_HOME
+  . ./sqenv.sh
   cd $savedir
 fi
 

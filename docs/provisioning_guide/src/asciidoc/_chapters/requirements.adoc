@@ -30,9 +30,9 @@
 
 The current release of {project-name} has been tested with:
 
-* 64-bit Red Hat Enterprise Linux (RHEL) or CentOS 6.5, 6.6, and 6.7
-* Cloudera CDH 5.4
-* Hortonworks HDP 2.3
+* 64-bit Red Hat Enterprise Linux (RHEL) or CentOS 6.5 - 6.8
+* Cloudera CDH 5.4 - 5.7
+* Hortonworks HDP 2.3 - 2.4
 
 Other OS releases may work, too. The {project-name} project is currently working on better support for more distribution and non-distribution versions of Hadoop.
 
@@ -86,8 +86,8 @@ Please verify these requirements on each node you will install {project-name} on
 [cols="20%a,40%a,40%a",options="header"]
 |===
 | Function | Requirement                                                                                  | Verification Guidance
-| Linux    | 64-bit version of Red Hat 6.5 or later, or SUSE SLES 11.3 or later.                          |
-| sshd     | The `ssh` daemon is running on each node in the cluster.                                     | 
+| Linux    | 64-bit version of Red Hat(RHEL) or CentOS 6.5 -6.8                                           | `cat /etc/redhat-release`
+| sshd     | The `ssh` daemon is running on each node in the cluster.                                     |
 &#8226; `ps aux  \| grep sshd` +
 &#8226; `sudo netstat -plant \| grep :22`
 | ntpd     | The `ntp` daemon is running and synchronizing time on each node in the cluster.              |
@@ -107,16 +107,12 @@ the port is *not* open.
 | passwordless ssh | The user name used to provision {project-name} must have passwordless ssh access to all nodes. | ssh to the nodes, ensure that no password prompt appears.
 | sudo privileges  | The user name used to provision {project-name} must sudo access to a number of root functions . | `sudo echo "test"` on each node.
 | bash     | Available for shell-script execution.                                                        | `bash --version`
-| java     | Available to run the {project-name} software. Same version as HBase is using.                     | `java --version`
+| java     | Available to run the {project-name} software. Same version as HBase is using.                | `java --version`
 | perl     | Available for script execution.                                                              | `perl --version`
 | python   | Available for script execution.                                                              | `python --version`
 | yum      | Available for installs, updates, and removal of software packages.                           | `yum --version`
 | rpm      | Available for installs, updates, and removal of software packages.                           | `rpm --version`
 | scp      | Available to copy files among nodes in the cluster.                                          | `scp --help`
-| curl     | Available to transfer data with URL syntax.                                                  | `curl --version`
-| wget     | Available to download files from the Web.                                                    | `wget --version`
-| pdsh     | Available to run shell commands in parallel.                                                 | `pdsh -V`
-| pdcp     | Available to copy files among nodes in parallel. part of the `pdsh` package.                 | `pdcp -V`                                         
 |===
 
 
@@ -198,7 +194,7 @@ tools that are not typically packaged as part of the core Linux distribution.
 
 NOTE: For RedHat/CentOS, the {project-name} Installer automatically attempts get a subset of these packages over the Internet.
 If the cluster's access to the Internet is disabled, then you need to manually download the packages and make them available
-for installation. You need to build and install `log4c&#43;&#43;` manually.
+for installation.
 
 [cols="20%,45%,35%l",options="header"]
 |===
@@ -206,7 +202,6 @@ for installation. You need to build and install `log4c&#43;&#43;` manually.
 | EPEL                 | Add-on packages to completed the Linux distribution.                              | Download
 http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch[Fedora RPM]
 | pdsh                 | Parallelize shell commands during install and {project-name} runtime utilities.        | yum install pdsh
-| log4cxx              | Message logging.                                                                  | Manual process^1^
 | sqlite               | Internal configuration information managed by the {project-name} Foundation component. | yum install sqlite
 | expect               | Not used?                                                                         | yum install expect
 | perl-DBD-SQLite      | Allows Perl scripts to connect to SQLite.                                         | yum install perl-DBD-SQLite
@@ -215,19 +210,17 @@ http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch[Fedo
 | protobuf             | Data serialization.                                                               | yum install protobuf
 | xerces-c             | C++ XML parsing.                                                                  | yum install xerces-c
 | gzip                 | Data compress/decompress.                                                         | yum install gzip
-| rpm-build^2^         | Build binary and source software packages.                                        | yum install rpm-build 
-| apr-devel^2^         | Support files used to build applications using the APR library.                   | yum install apr-devel
-| apr-util-devel^2^    | Support files used to build applications using the APR utility library.           | yum install apr-util-devel
-| doxygen^2^           | Generate documentation from annotated C++ sources.                                | yum install doxygen
-| gcc^2^               | GNU Compiler Collection                                                           | yum install gcc
-| gcc_c++^2^           | GNU C++ compiler.                                                                 | yum install gcc_c++
+| apr-devel            | Support files used to build applications using the APR library.                   | yum install apr-devel
+| apr-util-devel       | Support files used to build applications using the APR utility library.           | yum install apr-util-devel
 |===
 
-1. `log4c&#43;&#43;` was recently withdrawn from public repositories. Therefore, you will need to build the `log4c&#43;&#43;` RPM
-on your system and then install the RPM using the procedure described in <<log4cplusplus_installation,log4c++ Installation>>.
-2. Software package required to build `log4c&#43;&#43;`. Not required otherwise. These packages are *not* installed by the {project-name} Installer in this release.
-
-The {project-name} Installer requires Internet access to install the required software packages.
+The {project-name} Installer requires both Internet access/Offline mode to install the required software packages.
+Specify `db_install.py --offline` to use the offline install feature. Before that, you need to prepare a local repository
+folder for all the above dependencies.
+To create a local repository, be sure the `createrepo` package is installed, then run createrepo command in your rpm folder.
+```
+$ createrepo -d .
+```
 
 [[requirements-trafodion-user-ids-and-their-privileges]]
 == {project-name} User IDs and Their Privileges
@@ -239,9 +232,6 @@ The `trafodion:trafodion` user ID is created as part of the installation process
 
 {project-name} requires that either HDFS ACL support or Kerberos is enabled. The {project-name} Installer will enable HDFS ACL and Kerberos support. Refer to <<enable-security-kerberos,Kerberos>> for more information about the requirements and usage of Kerberos in Trafodion.
 Refer to https://hbase.apache.org/book.html#security[Apache HBase(TM) Reference Guide] for security in HBase. 
-
-Also, {project-name} requires `sudo` access to `ip` and `arping` so that floating or elastic IP addresses can be moved from one node to
-another in case of node failures.
 
 NOTE: Do *not* create the `trafodion:trafodion` user ID in advance. The {project-name} Installer uses the presence of this user ID to determine
 whether you're doing an installation or upgrade.
@@ -269,17 +259,14 @@ The user ID that performs the {project-name} installation steps. Typically, this
 ** Run Java version command on each node in the cluster.
 ** Run Hadoop version command on each node in the cluster.
 ** Run HBase version command on each node in the cluster.
-** Create directories and files in:
-*** `/etc`
-*** `/usr/lib`
-*** `/var/log`
+** Create directories and files in `/etc/trafodion`:
 ** Invoke `su` to execute commands as other users; for example, `trafodion`.
 ** Edit `sysctl.conf` and activate changes using `sysctl -p`:
 *** Modify kernel limits.
 *** Reserve IP ports.
 
 ^1^ `sudo` is *required* in the current release of {project-name}. This restriction may be relaxed in later releases.
-Alternative mechanisms for privileged access (such as running as `root` or `sudo` alternative commands) are not supported.
+Alternative mechanisms for privileged access (such as `sudo` alternative commands) are not supported.
 
 [[requirements-distribution-manager-user]]
 ==== Distribution Manager User
@@ -321,153 +308,6 @@ The Kerberos adminstrator. Required to create Trafodion principals and keytabs o
 * Kerberos Administrator admin name including the realm.
 * Kerberos Administrator password
 
-[[requirements-required-configuration-changes]]
-== Required Configuration Changes
-
-{project-name} requires changes to a number of different areas of your system configuration: operating system, HDFS, and HBase.
-
-NOTE: These changes are performed by the {project-name} Installer, if used.
-
-[[requirements-operating-system-changes]]
-=== Operating System Changes
-
-`/etc/security/limits.d/trafodion.conf` on each node in the cluster must contain the following settings:
-
-```
-# Trafodion settings
-trafodion  soft core    unlimited
-trafodion  hard core    unlimited
-trafodion  soft memlock unlimited
-trafodion  hard memlock unlimited
-trafodion  soft nofile  32768
-trafodion  hard nofile  65536
-trafodion  soft nproc   100000
-trafodion  hard nproc   100000
-```
-
-<<<
-[[requirements-zookeeper-changes]]
-=== ZooKeeper Changes
-
-NOTE: These changes require a restart of ZooKeeper on all nodes in the cluster.
-
-{project-name} requires the following changes to `zoo.cfg`:
-
-[cols="30%l,40%l,30%a",options="header"]
-|===
-| Setting        | New Value | Purpose
-| maxClientCnxns | 0         | Tell ZooKeeper to impose no limit to the number of connections to enable better {project-name} concurrency.
-|===
-
-NOTE: If Kerberos is enabled, it is not possible to secure the {project-name} data in ZooKeeper at this time. 
-
-[[requirements-hdfs-changes]]
-=== HDFS Changes
-
-NOTE: These changes require a restart of HDFS on all nodes in the cluster.
-
-{project-name} requires the following changes to the HDFS environment:
-
-[cols="60%a,40%a",options="header"]
-|===
-| Action  | Purpose 
-| &#8226; Create `/hbase-staging` directory.  +
-  &#8226; Change owner to HBase Administrator. |
-| &#8226; Create `/bulkload` directory.  +
-  &#8226; Change owner to `trafodion`. | Used to stage data when processing the {project-name}
-{docs-url}/sql_reference/index.html#load_statement[LOAD INTO table]
-statement and as a temporary directory to create links to actual HFile for snapshot scanning.
-| &#8226; Create `/lobs` directory.  +
-  &#8226; Change owner to `trafodion`. |
-| &#8226; Create `/apps/hbase/data/archive`^1^.  +
-  &#8226; Change owner to: `hbase:hbase` (Cloudera) or `hbase:hdfs` (Hortonworks) +
-  &#8226; Give the `trafodion` user RWX access to `/apps/hbase/data/archive` +
-  &#8226; Set default user of `/apps/hbase/data/archive` to `trafodion` +
-  &#8226; Recursively change `setafcl` of `/apps/hbase/data/archive` to RWX | 
-|===
-
-1. These steps are performed *after* HDFS ACLs have been enabled.
-
-The following changes are required in `hdfs-site.xml`:
-
-[cols="30%l,40%l,30%a",options="header"]
-|===
-| Setting | New Value | Purpose
-| dfs.namenode.acls.enabled | true | Enable HDFS  POSIX Access Control Lists (ACLs).
-|===
-
-[[requirements-hbase-changes]]
-=== HBase Changes
-
-NOTE: These changes require a restart of ZooKeeper and HBase on all nodes in the cluster.
-
-{project-name} requires that the following changes to the HBase environment:
-
-[cols="25%a,40%a,35%a",options="header"]
-|===
-| Action | Affected Directories | Purpose
-| Install/replace {project-name}'s version of `hbase-trx` | &#8226; `/usr/lib/hbase/lib/` +
-&#8226; `/usr/share/cmf/lib/plugins/` (Cloudera) +
-&#8226; `/usr/hdp/current/hbase-regionserver/lib/` (Hortonworks) |
-{project-name} transaction management relies on an enhanced version of `hbase-trx`.
-| Install/Replace {project-name} utility jar file. | &#8226; `/usr/lib/hbase/lib/` +
-&#8226; `/usr/share/cmf/lib/plugins/` (Cloudera) +
-&#8226; `/usr/hdp/current/hbase-regionserver/lib` (Hortonworks) |
-TODO: Add purpose here.
-|For Kerberos enabled clusters, grant `trafodion` user privileges | not applicable | privileges: create, read, write, and execute access |
-|===
-
-The following changes are required in `hbase-site.xml`. Please refer to the 
-https://hbase.apache.org/book.html[Apache HBase(TM) Reference Guide] for additional descriptions of these settings.
-
-[cols="30%l,40%l,30%a",options="header"]
-|===
-| Setting | New Value | Purpose
-| hbase.master.
-distributed.log.splitting | false | Do not use the HBase Split Log Manager. Instead, the HMaster controls all log-splitting activities.
-| hbase.coprocessor.
-region.classes | 
-org.apache.hadoop.
-hbase.coprocessor.
-transactional.TrxRegionObserver,
-org.apache.hadoop.
-hbase.coprocessor.
-transactional.TrxRegionEndpoint,
-org.apache.hadoop.
-hbase.coprocessor.
-AggregateImplementation | Install {project-name} coprocessor classes.
-| hbase.hregion.impl | org.apache.hadoop.
-hbase.regionserver.
-transactional.TransactionalRegion | {project-name} needs to be able to read the Write Ahead Log from a coprocessor using the getScanner method. This method
-is protected in standard HBase. This change overloads the getScanner method to be public thereby allowing coprocessor code to use it.
-| hbase.regionserver.
-region.split.policy | org.apache.hadoop.
-hbase.regionserver.
-ConstantSizeRegionSplitPolicy | Tell HBase to use the ConstantSizeRegionSplitPolicy for region splitting. 
-This setting causes region splitting to occur only when the maximum file size is reached. 
-| hbase.snapshot.
-enabled | true | Enable the HBase Snapshot feature. Used for {project-name} backup and restore.
-| hbase.bulkload.
-staging.dir | hbase-staging | Use `/hbase-staging` as the bulk load staging directory.
-| hbase.regionserver.region.
-transactional.tlog | true | The HBase Regions requests that the Transaction Manager re-drives in-doubt transactions.
-| hbase.snapshot.
-master.timeoutMillis | 600000 | HMaster timeout when waiting for RegionServers involved in the snapshot operation.
-| hbase.snapshot.
-region.timeout | 600000 | RegionServer timeout when waiting for snapshot to be created.
-| hbase.client.
-scanner.timeout.period | 600000 | Time limit to perform a scan request. 
-| hbase.regionserver.
-lease.period | 600000 | Clients must report within this time limit or they are considered dead by HBase.
-| hbase.namenode.
-java.heapsize^1^ | 1073741824 (1GB) | Java Heap Size for the HDFS NameNode.
-| hbase.secondary.namenode.
-java.heapsize^1^ | 1073741824 (1GB) | Java Heap Size for the HDFS Secondary NameNode.
-|===
-
-1. Applies to Cloudera distributions only.
-
-[[requirements-recommended-configuration-changes]]
 == Recommended Configuration Changes
 The following configuration changes are recommended but not required.
 

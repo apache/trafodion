@@ -60,7 +60,7 @@ sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t1/*;
 sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t2/*;
 
 -- Remove external hive tables used by this test
-drop external table if exists customer for hive.hive.customer;
+drop external table if exists customer for hive.hive.customer cascade;
 drop external table if exists item for hive.hive.item;
 drop external table if exists promotion for hive.hive.promotion;
 
@@ -97,11 +97,12 @@ execute get_hb_schemas;
 ?section set_up
 prepare get_hv_schemas from
 select schema_name from "_MD_".objects
-where schema_name like '_HV_%' and object_type = 'PS';
+where (schema_name = '_HV_HIVE_' or schema_name = '_HV_SCH_T009_')
+       and object_type = 'PS';
 
 prepare get_hb_schemas from
 select schema_name from "_MD_".objects
-where schema_name like '_HB_%' and object_type = 'PS';
+where schema_name like '\_HB\_\_%' escape '\' and object_type = 'PS';
 
 ?section test_hive1
 -- create external tables for precreated tables
@@ -142,7 +143,6 @@ create table hive_customer like hive.hive.customer;
 create table newtable1 like hive.hive.customer;
 create table newtable2 like customer;
 create table newtable3 (a int);
-get tables;
 
 -- test creates with a different default schema
 create schema hive_t009;
@@ -160,7 +160,6 @@ create table t009t1 like "_HV_SCH_T009_".t009t1;
 drop table t009t1;
 create table t009t1 as select * from hive.sch_t009.t009t1;
 
-get tables;
 drop table t009t1;
 
 drop external table "_HV_HIVE_".customer;
@@ -181,9 +180,9 @@ sh sqlci -i "TEST009(select_stmts)";
 -- drop and recreate external table
 select catalog_name, schema_name, object_name from table(natablecacheentries('user','local')) order by 1,2,3;
 drop external table t009t1 for hive.sch_t009.t009t1;
-get tables in schema "_HV_SCH_T009_";
 select catalog_name, schema_name, object_name from table(natablecacheentries('user','local')) order by 1,2,3;
 create external table t009t1 for hive.sch_t009.t009t1;
+get tables in schema "_HV_SCH_T009_";
 invoke hive.sch_t009.t009t1;
 showddl trafodion."_HV_SCH_T009_".t009t1;
 

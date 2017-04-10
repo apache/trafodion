@@ -1019,7 +1019,22 @@ NABoolean ItemExpr::referencesAHostVar() const
 // should use stats to compute selectivity or use default selectivity
 // Return TRUE if the expression is a VEG reference, base column,
 // index column, column with CAST / UPPER / LOWER / UCASE / 
-// LCASE / UPSHIFT / TRIM
+// LCASE / UPSHIFT / TRIM / SUBSTR (sometimes)
+//
+// Note that in the case of functions such as CAST and UPPER,
+// the stats returned are those of the argument. For a right TRIM
+// where we are trimming blanks, this is correct but for the 
+// others the resulting stats will be incorrect in some way.
+// For example, UPPER maps characters to upper case, so the UECs
+// of the result should often be lower than the original, and
+// certain intervals (namely those encompassing values that begin
+// with a lower case letter) should be empty. For another
+// example, CAST often is a 1-to-1 transformation so the UECs
+// are right, but the order might change (e.g. when casting 
+// numerics to characters; 99 < 100, but '99' > '100'). Even
+// so, the statistics of the argument are still a better reflection
+// of the result of the function than the default distribution,
+// particularly from the standpoint of skew. So, we use them.
 NABoolean ItemExpr::useStatsForPred()
 {
   OperatorTypeEnum myType = getOperatorType();
@@ -1038,6 +1053,21 @@ NABoolean ItemExpr::useStatsForPred()
 	  myType == ITM_CONVERT)
 
 	return TRUE;
+  else if (myType == ITM_SUBSTR)
+    {
+      // if the substring is known to be a prefix of the string,
+      // then use the stats
+      ItemExpr * startPosition = child(1);
+      if (startPosition->getOperatorType() == ITM_CONSTANT)
+        {
+          NABoolean negate = FALSE;
+          ConstValue * c = startPosition->castToConstValue(negate);
+          if (c->canGetExactNumericValue() &&
+               (c->getExactNumericValue() == 1))
+            return TRUE;
+        }
+      return FALSE;  
+    }
   else
 	return FALSE;
 }
@@ -7434,6 +7464,11 @@ NABoolean BuiltinFunction::isCacheableExpr(CacheWA& cwa)
 	return FALSE;
       }
     break;
+    case ITM_JSONOBJECTFIELDTEXT:
+    {
+	    return FALSE;
+    }
+    break;
 
     default:
       {
@@ -7532,6 +7567,8 @@ const NAString BuiltinFunction::getText() const
     case ITM_LIKE:
     case ITM_LIKE_DOUBLEBYTE:
       return "like";
+    case ITM_REGEXP:
+      return "regexp";
     case ITM_LOWER:
     case ITM_LOWER_UNICODE:
       return "lower";
@@ -7541,6 +7578,8 @@ const NAString BuiltinFunction::getText() const
       return "nullifzero";
     case ITM_NVL:
       return "nvl";
+    case ITM_JSONOBJECTFIELDTEXT:
+      return "json_object_field_text";
     case ITM_QUERYID_EXTRACT:
       return "queryid_extract";
     case ITM_UPPER:
@@ -7785,6 +7824,10 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
       switch (getOperatorType())
 	{
 	case ITM_NULLIFZERO:
+        case ITM_ISIPV4:
+        case ITM_ISIPV6:
+        case ITM_MD5:
+        case ITM_CRC32:
 	case ITM_SOUNDEX:
 	  {
 	    result = new (outHeap) BuiltinFunction(getOperatorType(),
@@ -7800,7 +7843,12 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
 						   outHeap, 2, child(0), child(1));
 	  }
 	break;
-
+    case ITM_JSONOBJECTFIELDTEXT:
+	{
+	    result = new (outHeap) BuiltinFunction(getOperatorType(),
+						   outHeap, 2, child(0), child(1));
+	}
+	break;
 	default:
 	  {
 	    ABORT("copyTopNode() can only be called for a derived class of BuiltinFunction");
@@ -7923,9 +7971,37 @@ ItemExpr * InverseOrder::removeInverseOrder()
 }
 
 // -----------------------------------------------------------------------
+// member functions for PatternMatchingFunction.
+// -----------------------------------------------------------------------
+PatternMatchingFunction::~PatternMatchingFunction() {}
+
+// -----------------------------------------------------------------------
 // member functions for Like
 // -----------------------------------------------------------------------
 Like::~Like() {}
+
+Regexp::~Regexp() {}
+
+
+ItemExpr * Regexp::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
+{
+  ItemExpr *result = NULL;
+
+  if (derivedNode == NULL)
+    {
+      result = new (outHeap) Regexp(NULL, NULL,
+	    numberOfNonWildcardChars_,
+	    bytesInNonWildcardChars_,
+	    patternAStringLiteral_,
+	    oldDefaultSelForLikeWildCardUsed_,
+	    beginEndKeysApplied_);
+    }
+  else
+    result = derivedNode;
+
+  return BuiltinFunction::copyTopNode(result, outHeap);
+
+} // Regexp::copyTopNode()
 
 ItemExpr * Like::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
@@ -7963,7 +8039,7 @@ ItemExpr * Like::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
 } // Like::copyTopNode()
 
-double Like::defaultSel()
+double PatternMatchingFunction::defaultSel()
 {
   // if begin and end keys have been applied to this expression, then this means
   // that the original LIKE predicate was something like a%b. This was transformed
@@ -7985,7 +8061,7 @@ double Like::defaultSel()
   return computeSelForNonWildcardChars(); ;
 }
 
-void Like::setNumberOfNonWildcardChars(const LikePatternString &pattern)
+void PatternMatchingFunction::setNumberOfNonWildcardChars(const LikePatternString &pattern)
 {
   Int32 count = 0;
   Int32 byteCnt = 0;
@@ -8011,7 +8087,7 @@ void Like::setNumberOfNonWildcardChars(const LikePatternString &pattern)
   bytesInNonWildcardChars_  = byteCnt ;
 }
 
-double Like::computeSelForNonWildcardChars()
+double PatternMatchingFunction::computeSelForNonWildcardChars()
 {
 
   // get the default selectivity for like predicate
@@ -8057,7 +8133,7 @@ double Like::computeSelForNonWildcardChars()
   return defaultSelectivity;
 }
 
-NABoolean Like::hasEquivalentProperties(ItemExpr * other)
+NABoolean PatternMatchingFunction::hasEquivalentProperties(ItemExpr * other)
 {
   if (other == NULL)
     return FALSE;
@@ -8076,7 +8152,7 @@ NABoolean Like::hasEquivalentProperties(ItemExpr * other)
 
 }
 
-void Like::unparse(NAString &result,
+void PatternMatchingFunction::unparse(NAString &result,
 		   PhaseEnum phase,
 		   UnparseFormatEnum form,
 		   TableDesc* tabId) const
@@ -10670,13 +10746,18 @@ NAString ConstValue::getConstStr(NABoolean transformNeeded) const
   else if(getType()->getTypeQualifier() == NA_CHARACTER_TYPE)
   {
     CharType* chType = (CharType*)getType();
+    NAString txt;
 
-    // 4/8/96: added the Boolean switch so that displayable
-    // and non-displayable version can be differed.
     if ( transformNeeded )
-      return chType->getCharSetAsPrefix() + getText();
+      txt = getText();
     else
-      return chType->getCharSetAsPrefix() + getTextForQuery(QUERY_FORMAT);
+      txt = getTextForQuery(QUERY_FORMAT);
+
+    // if result doesn't have a charset specifier already, add one
+    if (txt.index(SQLCHARSET_INTRODUCER_IN_LITERAL) == 0)
+      return txt;
+    else
+      return chType->getCharSetAsPrefix() + txt;
   }
   else
   {
@@ -10754,6 +10835,8 @@ const NAString ConstValue::getText4CacheKey() const
     return getText();
   }
   else {
+    NAString result = getText();
+
     // we want to return _charset'strfoo' instead of 'strfoo'.
     // This is to fix genesis case 10-040616-0347 "NF: query cache does not
     // work properly on || for certain character set". The root cause here
@@ -10762,9 +10845,9 @@ const NAString ConstValue::getText4CacheKey() const
     //   select ?p1 || _ksc5601'arg' from ...
     //   select ?p1 || _kanji'arg from ...
     // The solution is to make them different via charset prefixes.
-    NAString result("_", CmpCommon::statementHeap());
-    result += CharInfo::getCharSetName(((CharType*)getType())->getCharSet());
-    result += getText();
+    if (result.index(SQLCHARSET_INTRODUCER_IN_LITERAL) != 0)
+      result.prepend(((CharType*)getType())->getCharSetAsPrefix());
+
     return result;
   }
 }
@@ -12758,7 +12841,15 @@ ItemExpr * LOBupdate::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 
   return LOBoper::copyTopNode(result, outHeap);
 }
-
+/*
+Int32 LOBupdate::getArity() const
+{
+  if (obj_ == EMPTY_LOB_)
+    return 0;
+  else
+    return getNumChildren();
+}
+*/
 ItemExpr * LOBconvert::copyTopNode(ItemExpr *derivedNode, CollHeap* outHeap)
 {
   ItemExpr *result;

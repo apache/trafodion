@@ -141,6 +141,7 @@ class TMLIB : public JavaObjectInterfaceTM
         short abortTransactionLocal(long transactionID);
         short endTransactionLocal(long transactionID);
         void cleanupTransactionLocal(long transactionID);
+        bool close_tm();
 };
 
 // helper methods, C style 

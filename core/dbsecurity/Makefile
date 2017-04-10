@@ -23,7 +23,7 @@
 # Description:  Makefile for building security library 
 #
 
-include $(MY_SQROOT)/macros.gmk #top level
+include $(TRAF_HOME)/macros.gmk #top level
 include ./macros.gmk
 
 RM	= /bin/rm
@@ -36,7 +36,7 @@ all: verhdr auth cert dist
 
 .PHONY: verhdr
 verhdr:
-	cd $(MY_SQROOT); $(MAKE) genverhdr;
+	cd $(TRAF_HOME); $(MAKE) genverhdr;
 
 .PHONY: auth
 auth: verhdr
@@ -48,14 +48,14 @@ cert: verhdr auth
 
 .PHONY: dist
 dist:
-	$(CP) -p scripts/sqcertgen $(MY_SQROOT)/sql/scripts
-	$(CP) -p scripts/update_auth $(MY_SQROOT)/sql/scripts
+	$(CP) -p scripts/sqcertgen $(TRAF_HOME)/sql/scripts
+	$(CP) -p scripts/update_auth $(TRAF_HOME)/sql/scripts
 
 
 .PHONY: clean
 clean: cleanauth cleancert
-	$(RM) -f $(MY_SQROOT)/sql/scripts/sqcertgen
-	$(RM) -f $(MY_SQROOT)/sql/scripts/update_auth
+	$(RM) -f $(TRAF_HOME)/sql/scripts/sqcertgen
+	$(RM) -f $(TRAF_HOME)/sql/scripts/update_auth
 
 .PHONY: cleanall
 cleanall: cleanallauth cleanallcert

@@ -1306,6 +1306,7 @@ bool CProcess::Create (CProcess *parent, int & result)
     char sq_ic[5];
     char term[20];
     char tz[100];
+    bool tz_exists;
     char xauthority[MAX_PROCESS_PATH];
     char *display;
     char *vnodes;
@@ -1317,7 +1318,11 @@ bool CProcess::Create (CProcess *parent, int & result)
     env = getenv ("TERM");
     STRCPY (term, (env?env:"ansi"));
     env = getenv ("TZ");
-    STRCPY (tz, (env?env:""));
+    tz_exists = (env != NULL);
+    if (tz_exists)
+    {
+      STRCPY (tz, env); // see note regarding TZ below
+    }
     env = getenv ("USER");
     STRCPY (user, (env?env:""));
     env = getenv ("HOME");
@@ -1430,7 +1435,7 @@ bool CProcess::Create (CProcess *parent, int & result)
     if (env && isdigit(*env))
        numProcessThreads = atoi(env);
 
-    env = getenv( "MY_SQROOT" );
+    env = getenv( "TRAF_HOME" );
     if (env)
     {
         sqRoot_ = env ;
@@ -1501,11 +1506,21 @@ bool CProcess::Create (CProcess *parent, int & result)
         setEnvStrVal ( childEnv, nextEnv, "MPI_INSTR", filename );
     }
 
-    setEnvStrVal ( childEnv, nextEnv, "MY_SQROOT", sqRoot_.c_str() );
+    setEnvStrVal ( childEnv, nextEnv, "TRAF_HOME", sqRoot_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "USER", user );
     setEnvStrVal ( childEnv, nextEnv, "HOME", home );
     setEnvStrVal ( childEnv, nextEnv, "TERM", term );
-    setEnvStrVal ( childEnv, nextEnv, "TZ", tz );
+    if (tz_exists)
+    {
+      // Note that if TZ does not exist, we don't want to set it.
+      // The absence of TZ causes the glib localtime function to
+      // use the local time as defined in /etc/localtime. But,
+      // an invalid TZ setting (such as the empty string) causes
+      // the localtime function to use UTC. So, the semantics of
+      // an unset TZ are not the same as the semantics of
+      // TZ=<empty string>.
+      setEnvStrVal ( childEnv, nextEnv, "TZ", tz );
+    }
     setEnvStrVal ( childEnv, nextEnv, "CLASSPATH", getenv("CLASSPATH"));
 
     if ( display )
@@ -3358,11 +3373,19 @@ CProcessContainer::CProcessContainer( bool nodeContainer )
     if(Mutex == SEM_FAILED)
     {
         char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[%s], Can't create semaphore %s!\n",
-                 method_name, sem_name);
+        int err = errno;
+        snprintf(buf, sizeof(buf), "[%s], Can't create semaphore %s! (%s)\n",
+                 method_name, sem_name, strerror(err));
         mon_log_write(MON_PROCESSCONT_PROCESSCONT_3, SQ_LOG_ERR, buf);
 
-        sem_unlink(sem_name);
+        err = sem_unlink(sem_name);
+        if (err == -1)
+        {
+            int err = errno;
+            snprintf(buf, sizeof(buf), "[%s], Can't unlink semaphore %s! (%s)\n",
+                     method_name, sem_name, strerror(err));
+            mon_log_write(MON_PROCESSCONT_PROCESSCONT_4, SQ_LOG_ERR, buf);
+        }
         abort();
     }
     
@@ -4335,7 +4358,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
 
             result = MPI_ERR_NAME;
 
-            return false;
+            return NULL;
         }
         if (parent->GetNid() == nid)
         {
@@ -4346,7 +4369,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
 
             result = MPI_ERR_RANK;
 
-            return false;
+            return NULL;
         }
     }
     else
@@ -4360,7 +4383,7 @@ CProcess *CProcessContainer::CreateProcess (CProcess * parent,
             mon_log_write(MON_PROCESSCONT_CREATEPROCESS_3, SQ_LOG_ERR, la_buf);
 
             result = MPI_ERR_NAME;
-            return false;
+            return NULL;
         }
     }
 

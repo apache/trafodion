@@ -124,8 +124,13 @@ EOF
 #!/bin/sh
 VER_PROD=`echo \$TRAFODION_VER_PROD | sed 's/ /_/'`
 echo "Implementation-Version-1: Version \$* \$VER_PROD"
-cat \$MY_SQROOT/export/include/SCMBuildMan.mf
+cat \$TRAF_HOME/export/include/SCMBuildMan.mf
 EOF
+
+	cat > $TMPFILEJ3 <<EOF
+bldId=$branch
+EOF
+
 	chmod +x $TMPFILEJ2
 
 	diff --brief --new-file $TMPFILE $hdrFile 2>&1 >/dev/null
@@ -134,15 +139,19 @@ EOF
 	dj=$?
 	diff --brief --new-file $TMPFILEJ2 $hdrFileJ2 2>&1 >/dev/null
 	dj2=$?
-	if [[ $dh -ne 0 || $dj -ne 0 || $dj2 -ne 0 ]]; then
+	diff --brief --new-file $TMPFILEJ3 $hdrFileJ3 2>&1 >/dev/null
+	dj3=$?
+	if [[ $dh -ne 0 || $dj -ne 0 || $dj2 -ne 0 || $dj3 -ne 0 ]]; then
 		echo "Creating file $hdrFile"
 		cp -f $TMPFILE $hdrFile
 		echo "Creating file $hdrFileJ"
 		cp -f $TMPFILEJ $hdrFileJ
 		echo "Creating file $hdrFileJ2"
 		cp -f $TMPFILEJ2 $hdrFileJ2
+		echo "Creating file $hdrFileJ3"
+		cp -f $TMPFILEJ3 $hdrFileJ3
 	fi
-	rm -f $TMPFILE $TMPFILEJ $TMPFILEJ2
+	rm -f $TMPFILE $TMPFILEJ $TMPFILEJ2 TMPFILEJ3
 }
 
 
@@ -154,9 +163,11 @@ EOF
 typeset TMPFILE=$(mktemp /tmp/SCMBuildStr.XXX)
 typeset TMPFILEJ=$(mktemp /tmp/SCMBuildStr.XXX)
 typeset TMPFILEJ2=$(mktemp /tmp/SCMBuildStr.XXX)
+typeset TMPFILEJ3=$(mktemp /tmp/buildId.XXX)
 typeset hdrFile="../export/include/SCMBuildStr.h"
 typeset hdrFileJ="../export/include/SCMBuildMan.mf"
 typeset hdrFileJ2="../export/include/SCMBuildJava.sh"
+typeset hdrFileJ3="../export/include/buildId"
 
 #  Input file
 typeset VERFILE="../sqenvcom.sh"

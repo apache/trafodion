@@ -760,6 +760,7 @@ public:
   enum TableType
     { TYPE_REGULAR_TABLE = 0,
       TYPE_EXTERNAL_TABLE,
+      TYPE_IMPLICIT_EXTERNAL_TABLE,
       TYPE_SET_TABLE,
       TYPE_MULTISET_TABLE,
       TYPE_VOLATILE_TABLE,
@@ -785,6 +786,8 @@ public:
   {}
 
   TableType getType() { return type_; }
+  void setType(TableType t) { type_ = t; }
+
   NABoolean isVolatile()
    { return (type_ == TYPE_VOLATILE_TABLE ||
              type_ == TYPE_VOLATILE_TABLE_MODE_SPECIAL1 ||

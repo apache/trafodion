@@ -2167,7 +2167,7 @@ void CIntSnapshotReq::performRequest()
     // copy sqconfig.db
     char cmd[256];
     sprintf(cmd, "pdcp -p -w %s %s/sql/scripts/sqconfig.db %s/sql/scripts/.", Monitor->GetIntegratingNode()->GetName(), 
-              getenv("MY_SQROOT"), getenv("MY_SQROOT") );
+              getenv("TRAF_HOME"), getenv("TRAF_HOME") );
 
     error = system(cmd);
 
@@ -2743,11 +2743,6 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
 
         case ReqType_TmReady:
             request = new CExtTmReadyReq(msgType, pid, msg);
-            request->setConcurrent(reqConcurrent[msg->u.request.type]);
-            break;
-
-        case ReqType_TmSeqNum:
-            request = new CExtTmSeqNumReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
@@ -3617,7 +3612,6 @@ const bool CReqQueue::reqConcurrent[] = {
    true,     // ReqType_Startup
    false,    // ReqType_Stfsd
    false,    // ReqType_TmLeader
-   false,    // ReqType_TmSeqNum
    false,    // ReqType_TmSync
    false,    // ReqType_TransInfo
    true,     // ReqType_MonStats
@@ -3654,7 +3648,6 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_Stfsd
    false,    // ReqType_TmLeader
    false,    // ReqType_TmReady,
-   false,    // ReqType_TmSeqNum
    false,    // ReqType_TmSync
    false,    // ReqType_TransInfo
    false,    // ReqType_MonStats
@@ -3710,7 +3703,6 @@ const char * CReqQueue::svcReqType[] = {
     "Stfsd",
     "TmLeader",
     "TmReady",
-    "TmSeqNum",
     "TmSync",
     "TransInfo",
     "MonStats",

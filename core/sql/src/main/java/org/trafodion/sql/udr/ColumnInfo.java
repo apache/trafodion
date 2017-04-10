@@ -115,7 +115,7 @@ import java.nio.ByteBuffer;
        *  setUniqueEntries() method, or in some cases it can also be
        *  provided by the Trafodion compiler.
        *
-       *  @see ColumnInfo#setUniqueEntries(long)
+       *  @see ColumnInfo#setEstimatedUniqueEntries(long)
        *
        *  @return Estimated number of unique entries.
        */
@@ -173,16 +173,16 @@ import java.nio.ByteBuffer;
        *
        *  <p> Only use this method from within the following methods:
        *  <ul>
-       *  <li> UDR#describeParamsAndColumns()
-       *  <li> UDR#describeDataflowAndPredicates()
-       *  <li> UDR#describeConstraints()
-       *  <li> UDR#describeStatistics()
+       *  <li> @link UDR#describeParamsAndColumns
+       *  <li> @link UDR#describeDataflowAndPredicates
+       *  <li> @link UDR#describeConstraints
+       *  <li> @link UDR#describeStatistics
        *  </ul>
-       *  @see ColumnInfo#getUniqueEntries()
+       *  @see ColumnInfo#getEstimatedUniqueEntries
        *
        *  @param estimatedUniqueEntries Estimate of the number of unique entries.
        */
-      public void setUniqueEntries(long estimatedUniqueEntries) {
+      public void setEstimatedUniqueEntries(long estimatedUniqueEntries) {
           estimatedUniqueEntries_ = estimatedUniqueEntries ;
       }
 
@@ -263,10 +263,10 @@ import java.nio.ByteBuffer;
       }
       
       // UDR writers can ignore these methods
-      public static short getCurrentVersion() { return 1; }
+      static short getCurrentVersion() { return 1; }
 
       @Override
-      public int serializedLength() throws UDRException{
+      int serializedLength() throws UDRException{
         return (super.serializedLength() + 
                 serializedLengthOfString(name_) + 
                 type_.serializedLength() + 
@@ -275,7 +275,7 @@ import java.nio.ByteBuffer;
       }
 
       @Override
-      public int serialize(ByteBuffer outputBuffer) throws UDRException{
+      int serialize(ByteBuffer outputBuffer) throws UDRException{
         int origPos = outputBuffer.position();
 
         super.serialize(outputBuffer);
@@ -305,7 +305,7 @@ import java.nio.ByteBuffer;
       }
 
       @Override
-      public int deserialize(ByteBuffer inputBuffer) throws UDRException {
+      int deserialize(ByteBuffer inputBuffer) throws UDRException {
 
        int origPos = inputBuffer.position();
        

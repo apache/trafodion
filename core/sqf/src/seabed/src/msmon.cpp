@@ -3274,49 +3274,6 @@ int msg_mon_get_ref_count(SB_Phandle_Type *pp_phandle) {
 }
 
 //
-// Purpose: get tm seq number
-//
-SB_Export int msg_mon_get_tm_seq(int *pp_tm_seq) {
-    const char   *WHERE = "msg_mon_get_tm_seq";
-    Mon_Msg_Type *lp_msg;
-    int           lv_mpierr;
-    SB_API_CTR   (lv_zctr, MSG_MON_GET_TM_SEQ);
-
-    SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_GET_TM_SEQ, 0);
-
-    if (gv_ms_trace_mon)
-        trace_where_printf(WHERE, "ENTER tm-seq=%p\n", pfp(pp_tm_seq));
-    if (!gv_ms_mon_calls_ok) // msg_mon_get_tm_seq
-        return ms_err_rtn_msg(WHERE, "msg_init() or startup not called or shutdown",
-                              XZFIL_ERR_INVALIDSTATE);
-
-    Mon_Msg_Auto lv_msg;
-    lp_msg = &lv_msg;
-    lp_msg->type = MsgType_Service;
-    lp_msg->noreply = false;
-    lp_msg->u.request.type = ReqType_TmSeqNum;
-    if (gv_ms_trace_mon)
-        trace_where_printf(WHERE, "send tm-seq-num req to mon\n");
-    lv_mpierr = msg_mon_sendrecv_mon(WHERE,
-                                     "tm-seq-num",
-                                     lp_msg,
-                                     lv_msg.get_error());
-    if (msg_mon_msg_ok(WHERE,
-                       "tm-seq-num req",
-                       &lv_mpierr,
-                       lp_msg,
-                       MsgType_Service,
-                       ReplyType_TmSeqNum)) {
-        int lv_tm_seq = lp_msg->u.reply.u.tm_seqnum;
-        if (gv_ms_trace_mon)
-            trace_where_printf(WHERE, "EXIT OK tm-seq-num req, tm-seq-num=%d\n",
-                               lv_tm_seq);
-        *pp_tm_seq = lv_tm_seq;
-    }
-    return ms_err_mpi_rtn_msg(WHERE, "EXIT", lv_mpierr);
-}
-
-//
 // Purpose: get trans info
 //
 static int msg_mon_get_trans_info_com(const char             *pp_where,

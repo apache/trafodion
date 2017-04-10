@@ -61,7 +61,7 @@ public class UstatUtil extends Thread
       String cmd_path;
 
       if ( os.indexOf("linux") >=0 ) {
-         cmd_path = "sh " + System.getenv("MY_SQROOT") + "/export/lib";
+         cmd_path = "sh " + System.getenv("TRAF_HOME") + "/export/lib";
       } else { // assume NSK
          cmd_path = "/usr/tandem";
       }
@@ -88,7 +88,7 @@ public class UstatUtil extends Thread
       String cmd_path;
 
       if ( os.indexOf("linux") >=0 ) {
-         cmd_path = "sh " + System.getenv("MY_SQROOT") + "/export/lib";
+         cmd_path = "sh " + System.getenv("TRAF_HOME") + "/export/lib";
       } else { // assume NSK
          cmd_path = "/usr/tandem";
       }

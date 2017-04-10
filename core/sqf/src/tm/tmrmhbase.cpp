@@ -306,12 +306,17 @@ int32 RM_Info_HBASE::forget_branches (CTmTxBase *pp_txn, int64 pv_flags)
 // prepare_branches
 // Purpose : Send prepare to HBase TM Library
 // ------------------------------------------------------------
-int32 RM_Info_HBASE::prepare_branches (CTmTxBase *pp_txn, int64 pv_flags)
+int32 RM_Info_HBASE::prepare_branches (CTmTxBase *pp_txn, int64 pv_flags, CTmTxMessage * pp_msg)
 {
    TMTrace (2, ("RM_Info_HBASE::prepare_branches, Txn ID (%d,%d), ENTRY, flags " PFLL "\n",
                 pp_txn->node(), pp_txn->seqnum(), pv_flags));
 
-   short lv_err = gv_HbaseTM.prepareCommit(pp_txn->legacyTransid());
+   pp_msg->response()->u.iv_end_trans.iv_err_str_len = 
+     sizeof(pp_msg->response()->u.iv_end_trans.iv_err_str);
+   
+   short lv_err = gv_HbaseTM.prepareCommit(pp_txn->legacyTransid(),
+                             pp_msg->response()->u.iv_end_trans.iv_err_str,
+                             pp_msg->response()->u.iv_end_trans.iv_err_str_len);
 
    TMTrace (2, ("RM_Info_HBASE::prepare_branches, Txn ID (%d,%d), EXIT, Error %d, UnResolved branches %d.\n",
                 pp_txn->node(), pp_txn->seqnum(), lv_err, num_rms_unresolved(pp_txn)));
@@ -412,6 +417,9 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
 
    TMTrace (2, ("RM_Info_HBASE::hb_ddl_operation ENTRY\n"));
 
+   pp_msg->response()->u.iv_ddl_response.iv_err_str_len = 
+  	 sizeof(pp_msg->response()->u.iv_ddl_response.iv_err_str);
+   
    switch(pp_msg->request()->u.iv_ddl_request.ddlreq_type)
    {
       case TM_DDL_CREATE:
@@ -433,7 +441,9 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
                          pv_tbldesclen,
                          NULL,
                          0,
-                         0);
+                         0,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str_len);
          }
          else {
             buffer_keys = new char *[pv_numsplits];
@@ -450,7 +460,9 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
                          pv_tbldesclen,
                          buffer_keys,
                          pv_numsplits,
-                         pv_keylen);
+                         pv_keylen,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str_len);
          }
 
          if(ddlbuffer!=NULL) {
@@ -462,12 +474,16 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
       case TM_DDL_DROP:
          lv_err = gv_HbaseTM.dropTable(lv_transid,
                          pp_msg->request()->u.iv_ddl_request.ddlreq,
-                         pp_msg->request()->u.iv_ddl_request.ddlreq_len);
+                         pp_msg->request()->u.iv_ddl_request.ddlreq_len,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str_len);
          break;
       case TM_DDL_TRUNCATE:
          lv_err = gv_HbaseTM.regTruncateOnAbort(lv_transid,
                          pp_msg->request()->u.iv_ddl_request.ddlreq,
-                         pp_msg->request()->u.iv_ddl_request.ddlreq_len);
+                         pp_msg->request()->u.iv_ddl_request.ddlreq_len,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str_len);
       case TM_DDL_ALTER:
         
          len = sizeof(Tm_Req_Msg_Type);
@@ -493,7 +509,9 @@ int32 RM_Info_HBASE::hb_ddl_operation(CTmTxBase *pp_txn, int64 pv_flags, CTmTxMe
                          pp_msg->request()->u.iv_ddl_request.ddlreq_len,
                          buffer_opts,
                          pv_numtblopts,
-                         pv_tbloptslen);
+                         pv_tbloptslen,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str,
+                         pp_msg->response()->u.iv_ddl_response.iv_err_str_len);
 
          if(ddlbuffer!=NULL) {
             for(int i=0; i<pp_msg->request()->u.iv_ddl_request.alt_numopts; i++)

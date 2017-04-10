@@ -35,7 +35,6 @@ You need to prepare your Hadoop environment before installing {project-name}.
 6. <<prepare-configure-ldap-identity-store,Configure LDAP Identity Store>>
 7. <<prepare-gather-configuration-information,Gather Configuration Information>>
 8. <<prepare-install-required-software-packages,Install Required Software Packages>>
-9. <<prepare-perform-recipe-based-provisioning-tasks,Perform Recipe-Based Provisioning Tasks>>
 
 [[prepare-install-optional-workstation-software]]
 == Install Optional Workstation Software
@@ -51,6 +50,7 @@ We recommended that you pre-install the software before continuing with the {pro
 [[configure-installation-user-id]]
 == Configure Installation User ID
 
+If using the command-line Installer,
 {project-name} installation requires a user ID with these attributes:
 
 * `sudo` access per the requirements documented in <<requirements-linux-installation-user,Linux Installation User>>.
@@ -84,7 +84,8 @@ This adds the node to the `$HOME/.ssh/known_hosts` file completing the passwordl
 
 [[prepare-disable-requiretty]]
 == Disable requiretty
-You need to disable `requiretty` in `/etc/sudoers` on all nodes in the cluster
+If using the command-line Installer,
+you need to disable `requiretty` in `/etc/sudoers` on all nodes in the cluster
 to ensure that `sudo` commands can be run from inside the installation scripts.
 
 Comment out the `Defaults requiretty` setting in the `/etc/sudoers` file to
@@ -100,7 +101,7 @@ are met for each node in the cluster where you intend to install {project-name}.
 [[prepare-configure-kerberos]]
 == Configure Kerberos
 
-If your Hadoop installation has enabled Kerberos, then {project-name} needs to have Kerberos enabled.  If not, 
+If your Hadoop installation has enabled Kerberos, then {project-name} needs to have Kerberos enabled.  If not,
 then {project-name} will not run. If you plan to enable Kerberos in {project-name}, then you need to have access to a KDC (Kerberos Key Distribution
 Center) and administration credentials so you can create the necessary {project-name} principals and keytabs.
 
@@ -120,81 +121,52 @@ If you wish to manually set up the authentication configuration file and enable 
 [[prepare-gather-configuration-information]]
 == Gather Configuration Information
 
-You need to gather/decide information about your environment to aid installation {project-name}, both for the {project-name} Installer
-and for recipe-based provisioning. (Listed in alphabetical order to make it easier to find information when referenced in the install and upgrade instructions.)
+You need to gather/decide information about your environment to aid installation {project-name} for the {project-name} Installer. (Listed in alphabetical order to make it easier to find information when referenced in the install and upgrade instructions.)
 
 [cols="25%l,25%,15%l,35%",options="header"]
 |===
-| ID^1^              | Information                                                    | Default                       | Notes
-| ADMIN              | Administrator user name for Apache Ambari or Cloudera Manager. | admin                         | A user that can change configuration and restart services via the
-distribution manager's REST API.
-| ADMIN_PRINCIPAL^2^ | Kerberos admin principal to manage principals and keytabs      | None                          | Required if Kerberos is enabled.
-| BACKUP_DCS_NODES   | List of nodes where to start the backup DCS Master components. | None                          | Blank separated FQDN list. Not needed if $ENABLE_HA = N.
-| CLOUD_CONFIG       | Whether you're installing {project-name} on a cloud environment.    | N                             | N = bare-metal or VM installation.
-| CLOUD_TYPE         | What type of cloud environment you're installing {project-name} on. | None | { AWS \| OpenStack \| Other }. Not applicable for bare-metal or VM installation.
-| CLUSTER_NAME       | The name of the Hadoop Cluster.                                | None | From Apache Ambari or Cloudera Manager.
-| DB_ROOT_NAME^2^    | LDAP name used to connect as database root user                | trafodion                     | Required when LDAP is enabled.
-| DCS_BUILD          | Tar file containing the DCS component.                         | None | Not needed if using a {project-name} package installation tar file.
-| DCS_PRIMARY_MASTER_NODE | The node where the primary DCS should run.                | None | The DCS Master handles JDBC and ODBC connection requests.
-| DCS_SERVER_PARM    | Number of concurrent client sessions per node.                 | 16 | This number specifies the concurrent sessions per node to be supported. Each session could require up to 1GB of physical memory. The number can be changed post-installation. For more information,
+| ID                 | Information                                                    | Default                       | Notes
+| admin_principal    | Kerberos admin principal to manage principals and keytabs      | None                          | Required if Kerberos is enabled.
+| cluster_no         | Cluster number if multiple clusters managed in ClouderaManager | 1                             | Not required in Hortonworks distro
+| dcs_cnt_per_node   | Number of concurrent client sessions per node.                 | 4                             | This number specifies the concurrent sessions per node to be supported. Each session could require up to 1GB of physical memory. The number can be changed post-installation. For more information,
 refer to the {docs-url}/client_install/index.html[{project-name} Client Installation Guide].
-| ENABLE_HA          | Whether to run DCS in high-availability (HA) mode.             | N                             | You need the floating IP address, the interface, and the backup nodes for DCS Master if enabling this feature.
-| EPEL_RPM           | Location of EPEL RPM.                                          | None                          | Specify if you don't have access to the Internet.
-Downloaded automatically by the {project-name} Installer.
-| FLOATING_IP        | IP address if running DCS in HA mode.                          | None                          | Not needed if $ENABLE_HA = N. An FQDN name or IP address.
-| HADOOP_TYPE        | The type of Hadoop distribution you're installing {project-name} on. | None                         | Lowercase. cloudera or hadoop.
-| HBASE_GROUP        | Linux group name for the HBASE administrative user.             | hbase                         | Required in order to provide access to select HDFS directories to this user ID. 
-| HBASE_KEYTAB^2^    | HBase credentials used to grant {project-name} CRWE privileges | based on distribution         | Required if Kerberos is enabled.
-| HBASE_USER         | Linux user name for the HBASE administrative user.              | hbase                         | Required in order to provide access to select HDFS directories to this user ID. 
-| HDFS_KEYTAB^2^     | HDFS credentials used to set privileges on HDFS directories. . | based on distribution         | Required if Kerberos is enabled.
-| HDFS_USER          | Linux user name for the HDFS administrative user.               | hdfs                          | The {project-name} Installer uses `sudo su` to make HDFS
-configuration changes under this user.
-| HOME_DIR           | Root directory under which the `trafodion` home directory should be created. | /home           | *Example* +
- +
-If the home directory of the `trafodion` user is
-`/opt/home/trafodion`, then specify the root directory as `/opt/home`. 
-| INIT_TRAFODION     | Whether to automatically initialize the {project-name} database.    | N                             | Does not apply to Recipe-Based Provisioning. Applies if $START=Y only.
-| INTERFACE          | Interface type used for $FLOATING_IP.                          | None                          | Not needed if $ENABLE_HA = N. 
-| JAVA_HOME          | Location of Java 1.7.0_65 or higher (JDK).                     | $JAVA_HOME setting            | Fully qualified path of the JDK. For example:
-`/usr/java/jdk1.7.0_67-cloudera`
-| KDC_SERVER^2^      | Location of host where Kerberos server exists                  | None                          | Required if Kerberos enabled.
-| LDAP_CERT^2^       | Full path to TLS certificate.                                  | None                          | Required if $LDAP_LEVEL = 1 or 2.
-| LDAP_HOSTS^2^      | List of nodes where LDAP Identity Store servers are running.   | None                          | Blank separated. FQDN format.
-| LDAP_ID^2^         | List of LDAP unique identifiers.                               | None                          | Blank separated.    
-| LDAP_LEVEL^2^      | LDAP Encryption Level.                                         | 0                             | 0: Encryption not used, 1: SSL, 2: TLS
-| LDAP_PASSWORD^2^   | Password for LDAP_USER.                                        | None                          | If LDAP_USER is required only.
-| LDAP_PORT^2^       | Port used to communicate with LDAP Identity Store.             | None                          | Examples: 389 for no encryption or TLS, 636 for SSL.
-| LDAP_SECURITY^2^   | Whether to enable simple LDAP authentication.                | N                             | If Y, then you need to provide LDAP_HOSTS.
-| LDAP_USER^2^       | LDAP Search user name.                                         | None                          | Required if you need additional LDAP functionally such as LDAPSearch. If so, must provide LDAP_PASSWORD, too.   
-| LOCAL_WORKDIR      | The directory where the {project-name} Installer is located.        | None                          | Full path, no environmental variables.
-| MANAGEMENT_ENABLED | Whether your installation uses separate management nodes.      | N                             | Y if using separate management nodes for Apache Ambari or Cloudera Manager.
-| MANAGEMENT_NODES   | The FQDN names of management nodes, if any.                    | None                          | Provide a blank-separated list of node names.
-| MAX_LIFETIME^2^    | Kerberos ticket lifetime for Trafodion principal               | 24hours                       | Can be specified when Kerberos is enabled.   
-| NODE_LIST          | The FQDN names of the nodes where {project-name} will be installed. | None                          | Provide a blank-separated list of node names. The {project-name}
-Provisioning ID must have passwordless and `sudo` access to these nodes.
-| PASSWORD           | Administrator password for Apache Ambari or Cloudera Manager.  | admin                         | A user that can change configuration and restart services via the
+| dcs_ha             | Whether to run DCS in high-availability (HA) mode.             | N                             | If Y, you need to provide below dcs configurations.
+| db_admin_user      | LDAP name used to connect as database admin user               | admin                         | Required when LDAP is enabled.
+| db_root_user       | LDAP name used to connect as database root user                | trafodion                     | Required when LDAP is enabled.
+| dcs_backup_nodes   | List of nodes where to start the backup DCS Master components. | None                          | Required when LDAP is enabled. Comma separated FQDN list.
+| dcs_floating_ip    | IP address if running DCS in HA mode.                          | None                          | Required when LDAP is enabled. An FQDN name or IP address.
+| dcs_interface      | Interface type used for dcs_floating_ip.                       | None                          | Required when LDAP is enabled. For example, eth0.
+| home_dir           | Root directory under which the `trafodion` home directory should be created.   | /home                         | *Example* +
+If the home directory of the `trafodion` user is `/opt/home/trafodion`, then specify the root directory as `/opt/home`.
+| java_home          | Location of Java 1.7.0_65 or higher (JDK).                     | auto detected                 | Fully qualified path of the JDK. For example: `/usr/java/jdk1.7.0_67-cloudera`
+| kdcadmin_pwd^1^    | Password for kerberos admin principal                          | None                          | Should be removed from configuration file or secured after install.
+| kdc_server^1^      | Location of host where Kerberos server exists                  | None                          | Required if Kerberos enabled.
+| ldap_security^1^   | Whether to enable simple LDAP authentication.                  | N                             | If Y, then you need to provide below ldap configurations.
+| ldap_encrypt^1^    | LDAP Encryption Level.                                         | 0                             | 0: Encryption not used, 1: SSL, 2: TLS
+| ldap_certpath ^1^  | Full path to TLS certificate.                                  | None                          | Required if ldap_encrypt = 1 or 2.
+| ldap_hosts^1^      | List of nodes where LDAP Identity Store servers are running.   | None                          | Comma separated. FQDN format.
+| ldap_identifiers^1^| List of LDAP unique identifiers.                               | None                          | Comma separated.
+| ldap_port^1^       | Port used to communicate with LDAP Identity Store.             | None                          | Examples: 389 for no encryption or TLS, 636 for SSL.
+| ldap_userinfo      | Whether to use LDAP Search user name.                          | N                             | If Y, then you need to provide ldap_user and ldap_pwd.
+| ladp_user^1^       | LDAP Search user name.                                         | None                          | Required if you need additional LDAP functionally such as LDAPSearch. If so, must provide ldap_pwd too.
+| ladp_pwd^1^        | Password for ldap_user.                                        | None                          | If ldap_userinfo is required.
+| local_repo_dir     | folder location of Trafodion local repository                  | None                          | Required if offline_mode = Y. A local folder with all trafodion rpm dependencies and repodata. For example: `/opt/trafodion_repo`
+| mgr_url            | FQDN and port for the Distribution Manager's REST API.         | None                          | Include `http://` or `https://` as applicable. If no prefix, default is `http://`.
+Specify in the form: `<IP-address>:<port>` or `<node name>:<port>` Example: `https://vm-1.yourcompany.local:8080`
+| mgr_user           | Administrator user name for Apache Ambari or Cloudera Manager. | admin                         | A user that can change configuration and restart services via the
 distribution manager's REST API.
-| RENEW_LIFETIME^2^  | Number times Kerberos ticket is for the Trafodion principal    | 7days                         | Can be specified when Kerberos is enabled.   
-| REST_BUILD         | Tar file containing the REST component.                        | None | Not needed if using a {project-name} package installation tar file.
-| SECURE_HADOOP^2^   | Indicates whether Hadoop has enabled Kerberos                   | Y only if Kerberos enabled | Based on whether Kerberos is enabled for your Hadoop installation
-| SQ_ROOT            | Target directory for the {project-name} software.                   | $HOME_DIR/trafodion           | {project-name} is installed in this directory on all nodes in `$NODE_LIST`.
-| START              | Whether to start {project-name} after install/upgrade.              | N                             | Does not apply to Recipe-Based Provisioning.
-| SUSE_LINUX         | Whether your installing {project-name} on SUSE Linux.               | false                         | Auto-detected by the {project-name} Installer.
-| TRAF_KEYTAB^2^     | Name to use when specifying {project-name} keytab              | based on distribution         |  Required if Kerberos is enabled.
-| TRAF_KEYTAB_DIR^2^ | Location  of {project_name} keytab                             | based on distribution         |  Required if Kerberos is enabled.
-| TRAF_PACKAGE       | The location of the {project-name} installation package tar file or core installation tar file. | None | The package file contains the {project-name} server,
-DCS, and REST software while the core installation file contains the {project-name} server software only. If you're using a core installation file, then you need to
-record the location of the DCS and REST installation tar files, too. Normally, you perform {project-name} provisioning using a {project-name} package installation tar file.
-| TRAF_USER          | The {project-name} runtime user ID.                                  | trafodion                     | Must be `trafodion` in this release.
-| TRAF_USER_PASSWORD | The password used for the `trafodion:trafodion` user ID.       | traf123                       | Must be 6-8 characters long.
-| URL                | FQDN and port for the Distribution Manager's REST API.         | None                          | Include `http://` or `https://` as applicable. Specify in the form:
-`<IP-address>:<port>` or `<node name>:<port>` Example: `https://susevm-1.yourcompany.local:8080`
+| mgr_pwd            | Administrator password for Apache Ambari or Cloudera Manager.  | admin                         | A user that can change configuration and restart services via the
+distribution manager's REST API.
+| offline_mode       | Whether to install Trafodion without internet connection.      | N                             | If Y, then you need to provide local directory in local_repo_dir
+| scratch_locs       | Overflow scratch files location for large queries that cannot fit in memory.    | $TRAF_HOME/tmp                |  Comma seperated if more than one folder, it should be set in a large disk
+| traf_dirname       | Target folder name for the {project-name} software.            | apache-trafodion-{version}    | {project-name} is installed in this directory under `$HOME` on all nodes in `$NODE_LIST`.
+| traf_package       | The location of the {project-name} server package tar file.    | auto detected in installer folder | The package file contains the {project-name} server, DCS, and REST software
+| traf_pwd           | The password used for the {project-name} runtime user ID.      | traf123                      | Must be 6-8 characters long.
+| traf_start         | Whether to start {project-name} after install/upgrade.         | Y
+| traf_user          | The {project-name} runtime user ID.                            | trafodion                    | Must be `trafodion` in this release.
 |===
 
-1. The ID matches the environmental variables used in the {project-name} Installation configuration file. Refer to <<install-trafodion-installer,{project-name} Installer>>
-for more information.
-2. Refer to <<enable-security,Enable Security>> for more information about these security settings.
-
+1. Refer to <<enable-security,Enable Security>> for more information about these security settings.
 
 <<<
 [[prepare-install-required-software-packages]]
@@ -206,137 +178,31 @@ for more information.
 This step is required if you're:
 
 * Installing {project-name} on SUSE.
-* Using Recipe-Based Provisioning.
 * Can't download the required software packages using the Internet.
 
 If none of these situations exist, then we highly recommend that you use the {project-name} Installer.
 
 You perform this step as a user with `root` or `sudo` access.
 
-Install the packages listed in <<requirements-software-packages,Software Packages>> above on all nodes in the cluster. 
+Install the packages listed in <<requirements-software-packages,Software Packages>> above on all nodes in the cluster.
 
 <<<
 [[prepare-download-trafodion-binaries]]
 == Download {project-name} Binaries
 
-You download the {project-name} binaries from the {project-name} {download-url}[Download] page. 
+You download the {project-name} binaries from the {project-name} {download-url}[Download] page.
 Download the following packages:
 
-* {project-name} Installer (if planning to use the {project-name} Installer)
-* {project-name} Server
+Command-line Installation
+
+* {project-name} Installer
+* {project-name} Server tar file
+
+Ambari Installation
+
+* {project-name} Ambari RPM
+* {project-name} Server RPM
 
 NOTE: You can download and install the {project-name} Clients once you've installed and activated {project-name}. Refer to the
 {docs-url}/client_install/index.html[{project-name} Client Install Guide] for instructions.
 
-*Example*
-
-```
-$ mkdir $HOME/trafodion-download
-$ cd $HOME/trafodion-download
-$ # Download the Trafodion Installer binaries
-$ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-1.3.0.incubating/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
-Resolving http://apache.cs.utah.edu... 192.168.1.56
-Connecting to http://apache.cs.utah.edu|192.168.1.56|:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 68813 (67K) [application/x-gzip]
-Saving to: "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz"
-
-100%[=====================================================================================================================>] 68,813       124K/s   in 0.5s
-
-2016-02-14 04:19:42 (124 KB/s) - "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz" saved [68813/68813]
-```
-
-<<<
-
-```
-$ # Download the Trafodion Server binaries
-$ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-1.3.0.incubating/apache-trafodion-1.3.0-incubating-bin.tar.gz
-Resolving http://apache.cs.utah.edu... 192.168.1.56
-Connecting to http://apache.cs.utah.edu|192.168.1.56|:80... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 214508243 (205M) [application/x-gzip]
-Saving to: "apache-trafodion-1.3.0-incubating-bin.tar.gz"
-
-100%[=====================================================================================================================>] 214,508,243 3.90M/s   in 55s
-
-2016-02-14 04:22:14 (3.72 MB/s) - "apache-trafodion-1.3.0-incubating-bin.tar.gz" saved [214508243/214508243]
-
-$ ls -l
-total 209552
--rw-rw-r-- 1 centos centos 214508243 Jan 12 20:10 apache-trafodion-1.3.0-incubating-bin.tar.gz
--rw-rw-r-- 1 centos centos     68813 Jan 12 20:10 apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
-$
-```
-
-[[prepare-preparation-for-recipe-based-provisioning]]
-== Preparation for Recipe-Based Provisioning 
-
-NOTE: This step should be skipped if you plan to use the {project-name} Installer
-
-[[prepare-modify-os-settings]]
-=== Modify OS Settings
-
-Ensure that the `/etc/security/limits.d/trafodion.conf` on each node contains the limits settings required by {project-name}.
-Refer to <<requirements-operating-system-changes,Operating System Changes>> for the required settings.
-
-[[prepare-modify-zookeeper-configuration]]
-=== Modify ZooKeeper Configuration
-
-Do the following:
-
-1. Modify the ZooKeeper configuration as follows:
-+
-[cols="40%l,60%l",options="header"]
-|===
-| Attribute                  | Setting
-| maxClientCnxns             | 0
-|===
-
-2. Restart ZooKeeper to activate the new configuration setting.
-
-[[prepare-modify-hdfs-configuration]]
-=== Modify HDFS Configuration
-
-Do the following:
-
-1. Modify the HDFS configuration as follows:
-+
-[cols="40%l,60%l",options="header"]
-|===
-| Attribute                 | Setting
-| dfs.namenode.acls.enabled | true
-|===
-
-2. Restart HDFS to activate the new configuration setting.
-
-[[prepare-modify-hbase-configuration]]
-=== Modify HBase Configuration
-
-Do the following:
-
-1. Modify the HBase configuration as follows:
-+
-[cols="40%l,60%l",options="header"]
-|===
-| Attribute                                    | Setting
-| hbase.master.distributed.log.splitting       | false 
-| hbase.coprocessor.region.classes^b^          | org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,
-org.apache.hadoop.hbase.coprocessor.AggregateImplementation 
-| hbase.hregion.impl                           | org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion
-| hbase.regionserver.region.split.policy       | org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy 
-| hbase.snapshot.enabled                       | true 
-| hbase.bulkload.staging.dir                   | hbase-staging
-| hbase.regionserver.region.transactional.tlog | true 
-| hbase.snapshot.master.timeoutMillis          | 600000
-| hbase.snapshot.region.timeout                | 600000
-| hbase.client.scanner.timeout.period          | 600000
-| hbase.regionserver.lease.period              | 600000
-| hbase.namenode.java.heapsize^a^              | 1073741824
-| hbase.secondary.namenode.java.heapsize^a^    | 1073741824
-|===
-+
-a) Applies to Cloudera distributions only.
-+
-b) Do not overwrite any coprocessors that may already exist.
-
-2. Restart HBase to activate the new configuration setting.

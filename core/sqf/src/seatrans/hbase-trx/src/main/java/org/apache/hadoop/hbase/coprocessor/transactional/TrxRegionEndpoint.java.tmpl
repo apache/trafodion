@@ -93,6 +93,10 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
+#ifdef HDP2.3 HDP2.4 CDH5.5 CDH5.7 APACHE1.2
+import org.apache.hadoop.hbase.ChoreService;
+import org.apache.hadoop.hbase.ScheduledChore;
+#endif
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.Get;
@@ -309,7 +313,7 @@ CoprocessorService, Coprocessor {
   static MemoryUsageChore memoryUsageThread = null;
   Stoppable stoppable = new StoppableImplementation();
   static Stoppable stoppable2 = new StoppableImplementation();
-  private int cleanTimer = 5000; // Five minutes
+  private int cleanTimer = 5000;  // 5 secs overriden by DEFAULT_SLEEP
   private int memoryUsageTimer = 60000; // One minute   
   private int regionState = 0; 
   private Path recoveryTrxPath = null;
@@ -361,6 +365,7 @@ CoprocessorService, Coprocessor {
   private boolean configuredEarlyLogging = false;
   private boolean configuredConflictReinstate = false;
   private static Object zkRecoveryCheckLock = new Object();
+  private static Object choreDetectStaleBranchLock = new Object();
   private static ZooKeeperWatcher zkw1 = null;
   String lv_hostName;
   int lv_port;
@@ -435,6 +440,13 @@ CoprocessorService, Coprocessor {
   public static final int REGION_STATE_START = 2;
 
   public static final String trxkeyEPCPinstance = "EPCPinstance";
+  
+  #ifdef HDP2.3 HDP2.4 CDH5.5 CDH5.7 APACHE1.2
+  static ChoreService s_ChoreService = null;
+  #endif
+  static int txnChoreServiceThreadPoolSize = 1;
+  public static final int DEFAULT_TXN_CHORE_SERVICE_THREAD_POOL_SIZE=5;
+  
   // TBD Maybe we should just use HashMap to improve the performance, ConcurrentHashMap could be too strict
   static ConcurrentHashMap<String, Object> transactionsEPCPMap;
   // TrxRegionService methods
@@ -836,6 +848,7 @@ CoprocessorService, Coprocessor {
     int status = 0;
     IOException ioe = null;
     UnknownTransactionException ute = null;
+    CommitConflictException cce = null;
     Throwable t = null;
     WrongRegionException wre = null;
     long transactionId = request.getTransactionId();
@@ -854,6 +867,10 @@ CoprocessorService, Coprocessor {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught UnknownTransactionException after internal commitRequest call - " + u.toString());
        ute = u;
        status = COMMIT_UNSUCCESSFUL_FROM_COPROCESSOR;
+    } catch (CommitConflictException c) {
+       if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught CommitConflictException after internal commitRequest call - "+ c.toString());
+       cce = c;
+       status = COMMIT_CONFLICT;
     } catch (IOException e) {
        if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest - txId " + transactionId + ", Caught IOException after internal commitRequest call - "+ e.toString());
        ioe = e;
@@ -868,6 +885,12 @@ CoprocessorService, Coprocessor {
     {
       commitRequestResponseBuilder.setHasException(true);
       commitRequestResponseBuilder.setException(t.toString());
+    }
+    
+    if (cce != null)
+    {
+      commitRequestResponseBuilder.setHasException(true);
+      commitRequestResponseBuilder.setException(cce.toString());
     }
 
     if (wre != null)
@@ -3865,9 +3888,19 @@ CoprocessorService, Coprocessor {
             + this.suppressOutOfOrderProtocolException);
 
         // Start the clean core thread
-          
         this.cleanOldTransactionsThread = new CleanOldTransactionsChore(this, cleanTimer, stoppable);
 
+#ifdef HDP2.3 HDP2.4 CDH5.5 CDH5.7 APACHE1.2
+        this.txnChoreServiceThreadPoolSize = 
+                tmp_env.getConfiguration().getInt("hbase.regionserver.region.transactional.chore_service_thread_pool_size",
+                DEFAULT_TXN_CHORE_SERVICE_THREAD_POOL_SIZE);        
+        if (LOG.isTraceEnabled()) LOG.trace("Transactional chore thread pool size setting is " + this.txnChoreServiceThreadPoolSize);
+        
+        if (this.cleanOldTransactionsThread != null) {
+            setupChoreService();
+            s_ChoreService.scheduleChore(this.cleanOldTransactionsThread);
+        }
+#else
         UncaughtExceptionHandler handler = new UncaughtExceptionHandler() {
 
           public void uncaughtException(final Thread t, final Throwable e)
@@ -3880,6 +3913,7 @@ CoprocessorService, Coprocessor {
 	
         ChoreThread = new Thread(this.cleanOldTransactionsThread);
         Threads.setDaemonThreadRunning(ChoreThread, n + ".oldTransactionCleaner", handler);
+#endif
 
         // Start the memory usage chore thread if the threshold
         // selected is greater than the default of 100%.   
@@ -4069,6 +4103,22 @@ CoprocessorService, Coprocessor {
 
   }
 
+#ifdef HDP2.3 HDP2.4 CDH5.5
+  private synchronized void setupChoreService() { 
+      if (s_ChoreService == null) {
+    s_ChoreService = new ChoreService("Cleanup ChoreService", this.txnChoreServiceThreadPoolSize);  
+      }
+  }
+#endif
+
+#ifdef CDH5.7 APACHE1.2
+  private synchronized void setupChoreService() {
+      if (s_ChoreService == null) {
+    s_ChoreService = new ChoreService("Cleanup ChoreService", this.txnChoreServiceThreadPoolSize, true);
+      }
+  }
+#endif
+
   // Internal support methods
    /**
    * Checks if the region is closing and needs to block all activity
@@ -4205,6 +4255,8 @@ CoprocessorService, Coprocessor {
 
   public void choreThreadDetectStaleTransactionBranch() {
 
+      synchronized(choreDetectStaleBranchLock) {
+         
       List<Integer> staleBranchforTMId = new ArrayList<Integer>();
       List<TrxTransactionState> commitPendingCopy = new ArrayList<TrxTransactionState>(commitPendingTransactions);
       Map<Long, List<WALEdit>> indoubtTransactionsMap = new TreeMap<Long, List<WALEdit>>(indoubtTransactionsById);
@@ -4241,7 +4293,6 @@ CoprocessorService, Coprocessor {
             }
          }
       }
-
       if (!staleBranchforTMId.isEmpty()) {
             for (int i = 0; i < staleBranchforTMId.size(); i++) {
                try {
@@ -4259,6 +4310,8 @@ CoprocessorService, Coprocessor {
       commitPendingCopy.clear();
       indoubtTransactionsMap.clear();
       staleBranchforTMId.clear();
+      
+      } //synchronized
   }
 
   public void createRecoveryzNode(int node, String encodedName, byte [] data) throws IOException {
@@ -5730,18 +5783,25 @@ CoprocessorService, Coprocessor {
    * @return TransactionRegionInterface commit code
    * @throws IOException
    */
-  public int commitRequest(final long transactionId, final long startEpoch, final int participantNum) throws IOException, UnknownTransactionException {
+  public int commitRequest(final long transactionId, final long startEpoch, final int participantNum) 
+                                                 throws IOException,
+                                                 CommitConflictException,
+                                                 UnknownTransactionException {
      return commitRequest(transactionId, startEpoch, participantNum, true, false);
   }
 
   public int commitRequest(final long transactionId, final long startEpoch, final int participantNum, final boolean dropTableRecorded)
-                                                    throws IOException, UnknownTransactionException {
+                                                 throws IOException,
+                                                 CommitConflictException,
+                                                 UnknownTransactionException {
       return commitRequest(transactionId, startEpoch, participantNum, true, dropTableRecorded);
   }
   
   public int commitRequest(final long transactionId, final long startEpoch, final int participantNum, boolean flushHLOG,
-                                                               boolean dropTableRecorded) throws IOException,
-                                                                                UnknownTransactionException {
+                                                               boolean dropTableRecorded) 
+                                                 throws IOException,
+                                                 CommitConflictException,
+                                                 UnknownTransactionException {
     long txid = 0;
     String lv_regionName = new String(m_Region.getRegionInfo().getRegionNameAsString());
     if (LOG.isDebugEnabled()) LOG.debug("TrxRegionEndpoint coprocessor: commitRequest -- ENTRY txId: "
@@ -5797,7 +5857,9 @@ CoprocessorService, Coprocessor {
       hasConflictStartTime = System.nanoTime();
 
     synchronized (commitCheckLock) {
-      if (hasConflict(state)) {
+      try{
+          checkConflict(state);
+      } catch (IOException e) {
         if (LOG.isInfoEnabled()) {
           hasConflictEndTime = System.nanoTime();
           hasConflictTimes[lv_timeIndex] = hasConflictEndTime - hasConflictStartTime;
@@ -5806,8 +5868,8 @@ CoprocessorService, Coprocessor {
         state.setStatus(Status.ABORTED);
         retireTransaction(state, true);
         if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor: commitRequest encountered conflict txId: "
-                 + transactionId + "returning COMMIT_CONFLICT");
-        return COMMIT_CONFLICT;
+                 + transactionId + "returning COMMIT_CONFLICT", e);
+        throw new CommitConflictException(e);
       }
 
       if (LOG.isInfoEnabled()) 
@@ -6020,7 +6082,8 @@ CoprocessorService, Coprocessor {
    * @param TrxTransactionState state
    * @return boolean
    */
-  private boolean hasConflict(final TrxTransactionState state) {
+  private void checkConflict(final TrxTransactionState state)
+                                        throws IOException {
     // Check transactions that were committed while we were running
       
     synchronized (commitedTransactionsBySequenceNumber) {
@@ -6036,8 +6099,8 @@ CoprocessorService, Coprocessor {
         state.addTransactionToCheck(other);
       }
     }
-
-    return state.hasConflict();
+    state.checkConflict();
+    return;
   }
 
   public void abortTransaction(final long transactionId) throws IOException, UnknownTransactionException {
@@ -6657,6 +6720,7 @@ CoprocessorService, Coprocessor {
 
      @Override
      public void stop(String why) {
+       LOG.info("Cleanup Chore thread has stopped: Reason:" + why);
        this.stop = true;
      }
 

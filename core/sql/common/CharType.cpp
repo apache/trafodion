@@ -167,7 +167,7 @@ NAString CharType::getCharSetName() const
 
 NAString CharType::getCharSetAsPrefix(CharInfo::CharSet cs)
 {
-  return NAString("_") + CharInfo::getCharSetName(cs);
+  return NAString(SQLCHARSET_INTRODUCER_IN_LITERAL) + CharInfo::getCharSetName(cs);
 }
 
 NAString CharType::getCharSetAsPrefix() const
@@ -752,16 +752,21 @@ NABoolean CharType::isCharSetAndCollationComboOK() const
 // -----------------------------------------------------------------------
 // Equality comparison
 // -----------------------------------------------------------------------
+NABoolean CharType::compareCharAttrs(const NAType& other) const
+{
+  return caseinsensitive_ == ((CharType&)other).caseinsensitive_ &&
+    nullTerminated_ == ((CharType&)other).nullTerminated_ &&
+    upshifted_	 == ((CharType&)other).upshifted_ &&
+    charSet_	 == ((CharType&)other).charSet_ &&
+    collation_	 == ((CharType&)other).collation_ &&
+    coercibility_	 == ((CharType&)other).coercibility_ &&
+    encodingCharSet_ == ((CharType&)other).encodingCharSet_ ;
+}
+
 NABoolean CharType::operator==(const NAType& other) const
 {
   return NAType::operator==(other) &&
-	 caseinsensitive_ == ((CharType&)other).caseinsensitive_ &&
-	 nullTerminated_ == ((CharType&)other).nullTerminated_ &&
-	 upshifted_	 == ((CharType&)other).upshifted_ &&
-	 charSet_	 == ((CharType&)other).charSet_ &&
-	 collation_	 == ((CharType&)other).collation_ &&
-	 coercibility_	 == ((CharType&)other).coercibility_ &&
-	 encodingCharSet_ == ((CharType&)other).encodingCharSet_ ;
+    compareCharAttrs(other);
 }
 
 // -----------------------------------------------------------------------
@@ -965,6 +970,28 @@ SQLVarChar::SQLVarChar(const CharLenInfo & maxLenInfo,
       clientDataType_(collHeap()),  // Get heap from NABasicObject. Can't allocate on stack.
       wasHiveString_(FALSE)
 {}
+
+// -----------------------------------------------------------------------
+// Equality comparison
+// -----------------------------------------------------------------------
+NABoolean SQLVarChar::operator==(const NAType& other) const
+{
+  NABoolean compResult = FALSE; // false, failed. true, passed.
+
+  // if this or other was originally a hive string type, then
+  // do not compare lengths.
+  if ((wasHiveString()) ||
+      ((other.getTypeName() == LiteralVARCHAR) &&
+       (((SQLVarChar&)other).wasHiveString())))
+    compResult = equalIgnoreLength(other);
+  else
+    compResult = NAType::operator==(other);
+
+  if (NOT compResult)
+    return FALSE;
+
+  return compareCharAttrs(other);
+}
 
 // -----------------------------------------------------------------------
 // The SQL/C Preprocessor rewrites a VARCHAR declaration (Ansi 19.4)

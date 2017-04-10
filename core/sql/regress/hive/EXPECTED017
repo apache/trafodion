@@ -940,11 +940,10 @@ _SALT_@     B@           A
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  1.00E+002
-4    .    5    esp_exchange                    1:2(range)            1.00E+002
-2    3    4    tuple_flow                                            1.00E+002
-.    .    3    trafodion_load_prepa            T017TTCIDXB           1.00E+000
-1    .    2    esp_exchange                    2(range):1 (m)        1.00E+002
+4    .    5    root                                                  1.00E+002
+3    .    4    esp_exchange                    1:2(range)            1.00E+002
+1    2    3    tuple_flow                                            1.00E+002
+.    .    2    trafodion_load_prepa            T017TTCIDXB           1.00E+000
 .    .    1    trafodion_index_scan            T017TTCIDXB           1.00E+002
 
 --- SQL operation complete.
@@ -954,11 +953,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  1.00E+002
-4    .    5    esp_exchange                    1:2(range)            1.00E+002
-2    3    4    tuple_flow                                            1.00E+002
-.    .    3    trafodion_load_prepa            T017TTCIDXB           1.00E+000
-1    .    2    esp_exchange                    2(range):1 (m)        1.00E+002
+4    .    5    root                                                  1.00E+002
+3    .    4    esp_exchange                    1:2(range)            1.00E+002
+1    2    3    tuple_flow                                            1.00E+002
+.    .    2    trafodion_load_prepa            T017TTCIDXB           1.00E+000
 .    .    1    trafodion_index_scan            T017TTCIDXB           1.00E+002
 
 --- SQL operation complete.

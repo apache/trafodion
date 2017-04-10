@@ -38,6 +38,7 @@ public:
     CPNodeConfigContainer( void );
     ~CPNodeConfigContainer( void );
 
+    static int hostnamecmp(const char *p_str1, const char *p_str2);
     CPNodeConfig *AddPNodeConfig( int pnid, char *name, bool spare );
     void          DeletePNodeConfig( CPNodeConfig *pnodeConfig );
     inline CPNodeConfig *GetFirstPNodeConfig( void ) { return ( head_ ); }

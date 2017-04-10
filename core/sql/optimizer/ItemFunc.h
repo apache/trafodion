@@ -1254,11 +1254,12 @@ private:
 
 }; // class CharFunc
 
-class Like : public CacheableBuiltinFunction
+
+class PatternMatchingFunction : public CacheableBuiltinFunction
 {
 public:
-  Like(ItemExpr *matchValue, ItemExpr *pattern)
-  : CacheableBuiltinFunction(ITM_LIKE, 2, matchValue, pattern),
+  PatternMatchingFunction(OperatorTypeEnum optype, ItemExpr *matchValue, ItemExpr *pattern)
+  : CacheableBuiltinFunction(optype, 2, matchValue, pattern),
    numberOfNonWildcardChars_(-1), patternAStringLiteral_(FALSE),
    bytesInNonWildcardChars_(-1),
    oldDefaultSelForLikeWildCardUsed_(FALSE), beginEndKeysApplied_(FALSE)
@@ -1267,8 +1268,8 @@ public:
     setCollation(CharInfo::DefaultCollation);
   }
 
-  Like(ItemExpr *matchValue, ItemExpr *pattern, ItemExpr *escapeChar)
-  : CacheableBuiltinFunction(ITM_LIKE, 3, matchValue, pattern, escapeChar),
+  PatternMatchingFunction(OperatorTypeEnum optype, ItemExpr *matchValue, ItemExpr *pattern, ItemExpr *escapeChar)
+  : CacheableBuiltinFunction(optype, 3, matchValue, pattern, escapeChar),
    numberOfNonWildcardChars_(-1), patternAStringLiteral_(FALSE),
    bytesInNonWildcardChars_(-1),
    oldDefaultSelForLikeWildCardUsed_(FALSE), beginEndKeysApplied_(FALSE)
@@ -1277,10 +1278,10 @@ public:
     setCollation(CharInfo::DefaultCollation);
   }
 
-  Like(ItemExpr *matchValue, ItemExpr *pattern, Int32 numNonWild, Int32 bytesInNonWild,
+  PatternMatchingFunction(OperatorTypeEnum optype,ItemExpr *matchValue, ItemExpr *pattern, Int32 numNonWild, Int32 bytesInNonWild,
     NABoolean stringPattern, NABoolean oldDefaultUsed, 
     NABoolean beginEndKeysApplied)
-  : CacheableBuiltinFunction(ITM_LIKE, 2, matchValue, pattern),
+  : CacheableBuiltinFunction(optype, 2, matchValue, pattern),
    numberOfNonWildcardChars_(numNonWild), 
    bytesInNonWildcardChars_(bytesInNonWild),
    patternAStringLiteral_(stringPattern),
@@ -1291,10 +1292,10 @@ public:
     setCollation(CharInfo::DefaultCollation);
   }
 
-  Like(ItemExpr *matchValue, ItemExpr *pattern, ItemExpr *escapeChar,  
+  PatternMatchingFunction(OperatorTypeEnum optype,ItemExpr *matchValue, ItemExpr *pattern, ItemExpr *escapeChar,  
     Int32 numNonWild, Int32 bytesInNonWild,NABoolean stringPattern, NABoolean oldDefaultUsed,
     NABoolean beginEndKeysApplied)
-  : CacheableBuiltinFunction(ITM_LIKE, 3, matchValue, pattern, escapeChar),
+  : CacheableBuiltinFunction(optype, 3, matchValue, pattern, escapeChar),
    numberOfNonWildcardChars_(numNonWild), 
    bytesInNonWildcardChars_(bytesInNonWild),
    patternAStringLiteral_(stringPattern),
@@ -1306,15 +1307,15 @@ public:
   }
 
   // virtual destructor
-  virtual ~Like();
+  virtual ~PatternMatchingFunction();
 
   // a virtual function for performing name binding within the query tree
   virtual ItemExpr * bindNode(BindWA *bindWA);
 
-  // change only constant matchValue of a LIKE into ConstantParameter
+  // change only constant matchValue of a PatternMatchingFunction into ConstantParameter
   virtual ItemExpr* normalizeForCache(CacheWA& cwa, BindWA& bindWA);
 
-  // append an ascii-version of LIKE into cachewa.qryText_
+  // append an ascii-version of PatternMatchingFunction into cachewa.qryText_
   virtual void generateCacheKey(CacheWA& cwa) const;
 
   // a virtual function for type propagating the node
@@ -1323,7 +1324,7 @@ public:
   NABoolean isRelaxCharTypeMatchRulesPossible() {return TRUE;};
 
   virtual ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
-				 CollHeap* outHeap = 0);
+				 CollHeap* outHeap = 0) { return NULL; }
 
   // predicateEliminatesNullAugmentedRows() determines whether the
   // the predicate is capable of discarding null augmented rows 
@@ -1368,8 +1369,9 @@ public:
      UnparseFormatEnum form = USER_FORMAT,
      TableDesc * tabId = NULL) const;
 
-private:
-  ItemExpr *applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr, CollHeap *h);
+
+  virtual ItemExpr *applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr, CollHeap *h) { return NULL; }
+protected:
   void setNumberOfNonWildcardChars(const LikePatternString &pattern);
 
   Int32 numberOfNonWildcardChars_;
@@ -1382,9 +1384,81 @@ private:
   NABoolean beginEndKeysApplied_;
 
   CharInfo::Collation collation_;
+  
+}; // class PatternMatchingFunction
 
+
+class Like : public PatternMatchingFunction
+{
+public:
+  Like(ItemExpr *matchValue, ItemExpr *pattern)
+  : PatternMatchingFunction(ITM_LIKE, matchValue, pattern)
+  { 
+    allowsSQLnullArg() = FALSE;
+    setCollation(CharInfo::DefaultCollation);
+  }
+
+  Like(ItemExpr *matchValue, ItemExpr *pattern, ItemExpr *escapeChar)
+  : PatternMatchingFunction(ITM_LIKE, matchValue, pattern, escapeChar)
+  { 
+    allowsSQLnullArg() = FALSE; 
+    setCollation(CharInfo::DefaultCollation);
+  }
+
+  Like(ItemExpr *matchValue, ItemExpr *pattern, Int32 numNonWild, Int32 bytesInNonWild,
+    NABoolean stringPattern, NABoolean oldDefaultUsed, 
+    NABoolean beginEndKeysApplied)
+  : PatternMatchingFunction(ITM_LIKE, matchValue, pattern,numNonWild,bytesInNonWild,
+     stringPattern,oldDefaultUsed, beginEndKeysApplied)
+  { 
+    allowsSQLnullArg() = FALSE;
+    setCollation(CharInfo::DefaultCollation);
+  }
+
+  Like(ItemExpr *matchValue, ItemExpr *pattern, ItemExpr *escapeChar,  
+    Int32 numNonWild, Int32 bytesInNonWild,NABoolean stringPattern, NABoolean oldDefaultUsed,
+    NABoolean beginEndKeysApplied)
+  : PatternMatchingFunction(ITM_LIKE, matchValue, pattern, escapeChar,numNonWild,bytesInNonWild,
+     stringPattern,oldDefaultUsed,beginEndKeysApplied) 
+  { 
+    allowsSQLnullArg() = FALSE; 
+    setCollation(CharInfo::DefaultCollation);
+  }
+
+  // virtual destructor
+  virtual ~Like();
+  ItemExpr *applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr, CollHeap *h);
+  ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
 }; // class Like
 
+class Regexp : public PatternMatchingFunction
+{
+public:
+  Regexp(ItemExpr *matchValue, ItemExpr *pattern)
+  : PatternMatchingFunction(ITM_REGEXP, matchValue, pattern)
+  { 
+    allowsSQLnullArg() = FALSE;
+    setCollation(CharInfo::DefaultCollation);
+  }
+
+  Regexp(ItemExpr *matchValue, ItemExpr *pattern, Int32 numNonWild, Int32 bytesInNonWild,
+    NABoolean stringPattern, NABoolean oldDefaultUsed, 
+    NABoolean beginEndKeysApplied)
+  : PatternMatchingFunction(ITM_REGEXP, matchValue, pattern,numNonWild,bytesInNonWild,
+     stringPattern,oldDefaultUsed, beginEndKeysApplied)
+  { 
+    allowsSQLnullArg() = FALSE;
+    setCollation(CharInfo::DefaultCollation);
+  }
+
+  // virtual destructor
+  virtual ~Regexp();
+  ItemExpr *applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr, CollHeap *h);
+  ItemExpr * copyTopNode(ItemExpr *derivedNode = NULL,
+				 CollHeap* outHeap = 0);
+}; // class Regexp
+ 
 class NoOp : public BuiltinFunction
 {
   // Does nothing. An ItemExpr place holder. Used by
@@ -1747,6 +1821,7 @@ public:
   {
     FORMAT_GENERIC = 0,
     FORMAT_TO_DATE,
+    FORMAT_TO_TIME,
     FORMAT_TO_CHAR
   };
 
@@ -2783,27 +2858,31 @@ public:
  enum ObjectType
  {
    STRING_, FILE_, BUFFER_, CHUNK_, STREAM_, LOB_, LOAD_, EXTERNAL_, 
-   EXTRACT_, NOOP_
+   EXTRACT_, EMPTY_LOB_,NOOP_
  };
 
  LOBoper(OperatorTypeEnum otype,
-	 ItemExpr *val1Ptr, ItemExpr *val2Ptr = NULL,ItemExpr *val3Ptr = NULL, 
+	 ItemExpr *val1Ptr=NULL, ItemExpr *val2Ptr = NULL,ItemExpr *val3Ptr = NULL, 
 	 ObjectType obj = NOOP_)
    : BuiltinFunction(otype,  CmpCommon::statementHeap(),
                      3, val1Ptr, val2Ptr,val3Ptr),
    obj_(obj),
    lobNum_(-1),
    lobStorageType_(Lob_Invalid_Storage),
-   lobMaxSize_(CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)),
+   lobMaxSize_((Int64)CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024),
      lobMaxChunkMemSize_(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)),
      lobGCLimit_(CmpCommon::getDefaultNumeric(LOB_GC_LIMIT_SIZE)),
      hdfsPort_((Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT)),
      hdfsServer_( CmpCommon::getDefaultString(LOB_HDFS_SERVER))
    {
-     if ((obj == STRING_) || (obj == BUFFER_) || (obj == FILE_))
+     if ((obj == STRING_) || (obj == BUFFER_) || (obj == FILE_) )
        lobStorageType_ = Lob_HDFS_File;
      else if (obj == EXTERNAL_)
        lobStorageType_ = Lob_External_HDFS_File;
+     else if (obj == EMPTY_LOB_)
+       lobStorageType_ = Lob_Empty;
+     else
+       lobStorageType_ = Lob_Invalid_Storage;
     
    }
 
@@ -2831,9 +2910,9 @@ public:
   short &lobNum() {return lobNum_; }
   LobsStorage &lobStorageType() { return lobStorageType_; }
   NAString &lobStorageLocation() { return lobStorageLocation_; }
-  Int64 getLobMaxSize() {return lobMaxSize_*1024*1024; }
+  Int64 getLobMaxSize() {return lobMaxSize_; }
   Int64 getLobMaxChunkMemSize() { return lobMaxChunkMemSize_*1024*1024;}
-  Int64 getLobGCLimit() { return lobGCLimit_*1025*1024;}
+  Int64 getLobGCLimit() { return lobGCLimit_*1024*1024;}
   Int32 getLobHdfsPort() { return hdfsPort_;}
   NAString &getLobHdfsServer(){return hdfsServer_;}
  protected:
@@ -2979,7 +3058,7 @@ class LOBupdate : public LOBoper
   virtual short codeGen(Generator*);
   // method to do precode generation
   virtual ItemExpr * preCodeGen(Generator*);
-
+  // virtual Int32 getArity() const;
   NABoolean isAppend() { return append_; };
 
   Int64 & updatedTableObjectUID() { return objectUID_; }

@@ -22,7 +22,7 @@
 # Makefile for building Type 2 driver native code on Linux
 #
 
-include $(MY_SQROOT)/macros.gmk # top level
+include $(TRAF_HOME)/macros.gmk # top level
 include ./macros.gmk
 
 #
@@ -59,9 +59,9 @@ T2_OBJS  = $(OUTDIR)/CommonDiags.o \
        $(OUTDIR)/type2version.o
 
 OBJS = $(COMMON_OBJS) $(T2_OBJS)
-MXODIR = $(SQ_HOME)/../conn/odbc/src/odbc
+MXODIR = $(TRAF_HOME)/../conn/odbc/src/odbc
 
-INCLUDES     = -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -Inative -I$(MXODIR)/Krypton/generated_incs -I$(MXODIR)/dependencies/include -I$(MXODIR)/dependencies/linux -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../sql/common -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(SQ_HOME)/commonLogger  -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
+INCLUDES     = -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -Inative -I$(MXODIR)/Krypton/generated_incs -I$(MXODIR)/dependencies/include -I$(MXODIR)/dependencies/linux -I$(TRAF_HOME)/export/include/sql -I$(TRAF_HOME)/inc/tmf_tipapi -I$(TRAF_HOME)/inc -I$(TRAF_HOME)/export/include -I$(TRAF_HOME)/inc/rosetta -I$(TRAF_HOME)/../sql/cli -I$(TRAF_HOME)/../sql/common -I$(TRAF_HOME)/../dbsecurity/cert/inc -I$(TRAF_HOME)/../dbsecurity/auth/inc -I$(TRAF_HOME)/commonLogger  -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
 COMMON_DEFINES = -DTRAFODION_JDBCT2_VER_MAJOR=$(TRAFODION_VER_MAJOR) -DTRAFODION_JDBCT2_VER_MINOR=$(TRAFODION_VER_MINOR) -D_LP64 -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DDISABLE_NOWAIT -D_FASTPATH -DTODO -D_SQ64 -w
 
 DEFINES =  $(COMMON_DEFINES)
@@ -75,7 +75,7 @@ all: $(LIBEXPDIR)/libjdbcT2.so
 $(LIBEXPDIR)/libjdbcT2.so: $(OBJS)
 	$(CXX) -shared $(GCCMODE) -o $@ $(DBG_FLGS) -L$(LIBEXPDIR) -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli  -larkcmp_dll -larkcmplib -lcommon -lsort -lexecutor -lcomexe -lcli $(OBJS)
 
-$(OUTDIR)/type2version.o: $(MY_SQROOT)/export/include/SCMBuildStr.h
+$(OUTDIR)/type2version.o: $(TRAF_HOME)/export/include/SCMBuildStr.h
 
 clean:
 	$(RM) $(LIBEXPDIR)/libjdbcT2.so

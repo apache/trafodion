@@ -690,6 +690,7 @@ short HbaseDelete::codeGen(Generator * generator)
   NABoolean returnRow = getReturnRow(this, getIndexDesc());
 
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+  NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
 
   ExpTupleDesc::TupleDataFormat asciiRowFormat = 
     (isAlignedFormat ?
@@ -735,7 +736,6 @@ short HbaseDelete::codeGen(Generator * generator)
 		       getSearchKey(),
 		       NULL, //getMdamKeyPtr(),
 		       FALSE,
-		       0,
 		       ExpTupleDesc::SQLMX_KEY_FORMAT);
 
   UInt32 keyColValLen = 0;
@@ -964,6 +964,12 @@ short HbaseDelete::codeGen(Generator * generator)
   ULng32 rowIdLength = 0;
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
+      // dont encode keys for hbase mapped tables since these tables
+      // could be populated from outside of traf.
+      NABoolean encodeKeys = TRUE;
+      if (getTableDesc()->getNATable()->isHbaseMapTable())
+        encodeKeys = FALSE;
+
       HbaseAccess::genRowIdExpr(generator,
 				getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
 				getHbaseSearchKeys(), 
@@ -971,7 +977,8 @@ short HbaseDelete::codeGen(Generator * generator)
 				rowIdAsciiTuppIndex, rowIdTuppIndex,
 				rowIdAsciiRowLen, rowIdAsciiTupleDesc,
 				rowIdLength, 
-				rowIdExpr);
+				rowIdExpr,
+                                encodeKeys);
     }
   else
     {
@@ -1076,7 +1083,8 @@ short HbaseDelete::codeGen(Generator * generator)
 
   char * tablename = NULL;
   if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
-      (getTableDesc()->getNATable()->isHbaseCellTable()))
+      (getTableDesc()->getNATable()->isHbaseCellTable()) ||
+      (getTableName().getQualifiedNameObj().isHbaseMappedName()))
     {
       if (getIndexDesc() && getIndexDesc()->getNAFileSet())
 	tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName().getObjectName()), 0);
@@ -1145,6 +1153,7 @@ short HbaseDelete::codeGen(Generator * generator)
 		      0, // updateTuppIndex
 		      0, // mergeInsertTuppIndex
 		      0, // mergeInsertRowIdTuppIndex
+		      0, // mergeIUDIndicatorTuppIndex
 		      0, // returnedFetchedTuppIndex
 		      0, // returnedUpdatedTuppIndex
 
@@ -1196,6 +1205,14 @@ short HbaseDelete::codeGen(Generator * generator)
 
       if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
+
+      if (isHbaseMapFormat)
+        {
+          hbasescan_tdb->setHbaseMapTable(TRUE);
+
+          if (getTableDesc()->getNATable()->getClusteringIndex()->hasSingleColVarcharKey())
+            hbasescan_tdb->setKeyInVCformat(TRUE);
+        }
 
       if ((CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON) &&
 	  (NOT noCheck()))
@@ -1303,12 +1320,41 @@ short HbaseUpdate::codeGen(Generator * generator)
   const Int32 mergeInsertTuppIndex = 7;
   const Int32 mergeInsertRowIdTuppIndex = 8;
   const Int32 keyColValTuppIndex = 9;
+  Int32 mergeIUDIndicatorTuppIndex = 0;
+  // Do not use 10 as the next available tupp index. Please use 11 next
+  // The 10th tuple index is used by merge statement below.
+
+  Attributes * iudIndicatorAttr = NULL;
 
   ULng32 asciiRowLen = 0; 
   ExpTupleDesc * asciiTupleDesc = 0;
 
   ex_cri_desc * work_cri_desc = NULL;
-  work_cri_desc = new(space) ex_cri_desc(10, space);
+  work_cri_desc = new(space) ex_cri_desc(11, space);
+
+  if (getProducedMergeIUDIndicator() != NULL_VALUE_ID) 
+  {
+    mergeIUDIndicatorTuppIndex = 10;
+    iudIndicatorAttr = 
+      (generator->addMapInfo(getProducedMergeIUDIndicator(), 0))->getAttr();
+    iudIndicatorAttr->setAtpIndex(mergeIUDIndicatorTuppIndex);
+    iudIndicatorAttr->setAtp(work_atp);
+    ULng32 iudIndicatorLen;
+    ExpTupleDesc::computeOffsets(iudIndicatorAttr,
+				 ExpTupleDesc::SQLARK_EXPLODED_FORMAT, 
+				 iudIndicatorLen);
+    ExpTupleDesc  *iudIndicatorTupleDesc = NULL;
+    iudIndicatorTupleDesc = new(generator->getSpace()) 
+      ExpTupleDesc(1, // numAttrs
+		   &iudIndicatorAttr, // **attrs
+		   iudIndicatorLen, // data length
+		   ExpTupleDesc::SQLARK_EXPLODED_FORMAT,
+		   ExpTupleDesc::LONG_FORMAT,
+		   generator->getSpace());
+    work_cri_desc->setTupleDescriptor(mergeIUDIndicatorTuppIndex,
+				      iudIndicatorTupleDesc);
+
+  }
 
   NABoolean returnRow = getReturnRow(this, getIndexDesc());
 
@@ -1361,7 +1407,6 @@ short HbaseUpdate::codeGen(Generator * generator)
 		       getSearchKey(),
 		       NULL, //getMdamKeyPtr(),
 		       FALSE,
-		       0,
 		       ExpTupleDesc::SQLMX_KEY_FORMAT);
 
   UInt32 keyColValLen = 0;
@@ -1606,6 +1651,12 @@ short HbaseUpdate::codeGen(Generator * generator)
   ULng32 rowIdLength = 0;
   if (getTableDesc()->getNATable()->isSeabaseTable())
     {
+      // dont encode keys for hbase mapped tables since these tables
+      // could be populated from outside of traf.
+      NABoolean encodeKeys = TRUE;
+      if (getTableDesc()->getNATable()->isHbaseMapTable())
+        encodeKeys = FALSE;
+
       HbaseAccess::genRowIdExpr(generator,
 				getIndexDesc()->getNAFileSet()->getIndexKeyColumns(),
 				getHbaseSearchKeys(), 
@@ -1613,7 +1664,8 @@ short HbaseUpdate::codeGen(Generator * generator)
 				rowIdAsciiTuppIndex, rowIdTuppIndex,
 				rowIdAsciiRowLen, rowIdAsciiTupleDesc,
 				rowIdLength, 
-				rowIdExpr);
+				rowIdExpr,
+                                encodeKeys);
    }
   else
     {
@@ -1790,6 +1842,8 @@ short HbaseUpdate::codeGen(Generator * generator)
  
 	      updatedOutputs.insert(tgtValueId);
 	    }
+	  if (getProducedMergeIUDIndicator() != NULL_VALUE_ID) 
+	    updatedOutputs.insert(getProducedMergeIUDIndicator());
 	}
       else
 	{
@@ -1843,12 +1897,19 @@ short HbaseUpdate::codeGen(Generator * generator)
 	    &tgtConvValueIdList);
        }
 
+     Attributes * tgtIUDMergeColConvAttr = NULL;
       const ValueIdList &indexColList = getIndexDesc()->getIndexColumns();
       for (CollIndex ii = 0; ii < tgtConvValueIdList.entries(); ii++)
 	{
 	  const ValueId &tgtColValueId = updatedOutputs[ii];
 	  const ValueId &tgtColConvValueId = tgtConvValueIdList[ii];
-
+	  if (updatedOutputs[ii] == getProducedMergeIUDIndicator())
+	  {
+	    tgtIUDMergeColConvAttr = 
+	      (generator->getMapInfo(tgtColConvValueId, 0))->getAttr();
+	    continue;
+	  }
+	
 	  BaseColumn * bc = (BaseColumn*)tgtColValueId.getItemExpr();
 	  const ValueId &indexColValueId = indexColList[bc->getColNumber()];
 	  
@@ -1900,6 +1961,8 @@ short HbaseUpdate::codeGen(Generator * generator)
               }
 	      mergeInsertOutputs.insert(tgtValueId);
 	  }
+	   if (getProducedMergeIUDIndicator() != NULL_VALUE_ID) 
+	    mergeInsertOutputs.insert(getProducedMergeIUDIndicator());
 	  
 	  MapTable * returnedMergeInsertedMapTable = 0;
 	  ExpTupleDesc * returnedMergeInsertedTupleDesc = NULL;
@@ -1936,6 +1999,8 @@ short HbaseUpdate::codeGen(Generator * generator)
 		 &returnedMergeInsertedMapTable,
 		 &tgtConvValueIdList);
 	    }
+	  if (getProducedMergeIUDIndicator() != NULL_VALUE_ID)
+	    iudIndicatorAttr->copyLocationAttrs(tgtIUDMergeColConvAttr);
 	}
     }
 
@@ -2019,6 +2084,7 @@ short HbaseUpdate::codeGen(Generator * generator)
 		      updateTuppIndex,
 		      mergeInsertTuppIndex,
 		      mergeInsertRowIdTuppIndex,
+		      mergeIUDIndicatorTuppIndex,
 		      returnedFetchedTuppIndex,
 		      returnedUpdatedTuppIndex,
 
@@ -2151,9 +2217,13 @@ short HbaseInsert::codeGen(Generator *generator)
 
   // allocate a map table for the retrieved columns
   MapTable * last_map_table = generator->getLastMapTable();
+  NABoolean inlinedActions = FALSE;
+  if ((getInliningInfo().hasInlinedActions()) ||
+      (getInliningInfo().isEffectiveGU()))
+    inlinedActions = TRUE;
 
   NABoolean returnRow = getReturnRow(this, getIndexDesc());
-  if (getIsTrafLoadPrep())
+  if (getIsTrafLoadPrep() || (isUpsert() && inlinedActions))
     returnRow = isReturnRow();
 
   ex_cri_desc * givenDesc = generator->getCriDesc(Generator::DOWN);
@@ -2187,6 +2257,7 @@ short HbaseInsert::codeGen(Generator *generator)
   Queue *listOfOmittedColNames = NULL;
 
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
+  NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
 
   for (CollIndex ii = 0; ii < newRecExprArray().entries(); ii++)
   {
@@ -2215,13 +2286,24 @@ short HbaseInsert::codeGen(Generator *generator)
       colArray.insert( col );
 
       if (returnRow)
-           returnRowVIDList.insert(tgtValueId);
+        returnRowVIDList.insert(tgtValueId);
 
       ItemExpr * child1Expr = assignExpr->child(1);
       const NAType &givenType = tgtValueId.getType();
       
       ItemExpr * ie = new(generator->wHeap())
 	Cast(child1Expr, &givenType);
+
+      if ((isHbaseMapFormat) &&
+          (getTableDesc()->getNATable()->isHbaseDataFormatString()) &&
+          (NOT (DFS2REC::isAnyCharacter(givenType.getFSDatatype()))))
+        {
+          Lng32 cvl = givenType.getDisplayLength();
+
+          NAType * asciiType = 
+            new (generator->wHeap()) SQLVarChar(cvl, givenType.supportsSQLnull());
+          ie = new(generator->wHeap()) Cast(ie, asciiType);
+        }
 
       if ((NOT isAlignedFormat) && HbaseAccess::isEncodingNeededForSerialization
 	  (assignExpr->child(0)->castToItemExpr()))
@@ -2459,10 +2541,22 @@ short HbaseInsert::codeGen(Generator *generator)
           const NAColumn * nac = colArray[c];
           
           NAString cnInList;
-          HbaseAccess::createHbaseColId(nac, cnInList,
-                                        (getIndexDesc()->getNAFileSet()->getKeytag() != 0));
-          
-          if (this->getIsTrafLoadPrep())
+          if (isHbaseMapFormat)
+            {
+              cnInList = nac->getHbaseColFam();
+              cnInList += ":";
+              cnInList += nac->getColName();
+
+              short len = cnInList.length();
+              cnInList.prepend((char*)&len, sizeof(short));
+            }
+          else
+            {
+              HbaseAccess::createHbaseColId(nac, cnInList,
+                                            (getIndexDesc()->getNAFileSet()->getKeytag() != 0));
+            }
+
+          if (getIsTrafLoadPrep())
             {
               UInt32 pos = (UInt32)c +1;
               cnInList.prepend((char*)&pos, sizeof(UInt32));
@@ -2611,7 +2705,8 @@ short HbaseInsert::codeGen(Generator *generator)
   }
   char * tablename = NULL;
   if ((getTableDesc()->getNATable()->isHbaseRowTable()) ||
-      (getTableDesc()->getNATable()->isHbaseCellTable()))
+      (getTableDesc()->getNATable()->isHbaseCellTable()) ||
+      (getTableName().getQualifiedNameObj().isHbaseMappedName()))
     {
       tablename = space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getIndexName().getObjectName()), 0);
     }
@@ -2680,6 +2775,7 @@ short HbaseInsert::codeGen(Generator *generator)
 		      loggingTuppIndex, //loggingTuppIndex
 		      0, // mergeInsertTuppIndex
 		      0, // mergeInsertRowIdTuppIndex
+		      0, // mergeIUDIndicatorTuppIndex
 		      0, // returnedFetchedTuppIndex
 		      projRowTuppIndex, // returnedUpdatedTuppIndex
 		      
@@ -2737,6 +2833,14 @@ short HbaseInsert::codeGen(Generator *generator)
       if (isAlignedFormat)
         hbasescan_tdb->setAlignedFormat(TRUE);
 
+      if (isHbaseMapFormat)
+        {
+          hbasescan_tdb->setHbaseMapTable(TRUE);
+          
+          if (getTableDesc()->getNATable()->getClusteringIndex()->hasSingleColVarcharKey())
+            hbasescan_tdb->setKeyInVCformat(TRUE);
+        }
+
       if (CmpCommon::getDefault(HBASE_SQL_IUD_SEMANTICS) == DF_ON)
 	hbasescan_tdb->setHbaseSqlIUD(TRUE);
 
@@ -2744,8 +2848,8 @@ short HbaseInsert::codeGen(Generator *generator)
 	  (noCheck()))
 	hbasescan_tdb->setHbaseSqlIUD(FALSE);
 
-      if (((getInsertType() == Insert::VSBB_INSERT_USER) && 
-                   generator->oltOptInfo()->multipleRowsReturned()) ||
+      if (((((getInsertType() == Insert::VSBB_INSERT_USER) || isUpsert() )&& 
+           generator->oltOptInfo()->multipleRowsReturned())) ||
 	  (getInsertType() == Insert::UPSERT_LOAD))
       {
 	hbasescan_tdb->setVsbbInsert(TRUE);
@@ -2755,8 +2859,8 @@ short HbaseInsert::codeGen(Generator *generator)
            setVsbbInsert(TRUE);
       }
 
-      if ((isUpsert()) &&
-	  (getInsertType() == Insert::UPSERT_LOAD))
+      
+      if (isUpsert() && (getInsertType() == Insert::UPSERT_LOAD))
 	{
 	  // this will cause tupleflow operator to send in an EOD to this upsert
 	  // operator. On seeing that, executor will flush the buffers.

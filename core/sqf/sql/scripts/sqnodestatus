@@ -31,7 +31,7 @@
 #   export SQ_MON_SSH_OPTIONS=' -o "ConnectTimeout 1" -o "ConnectionAttempts 3" '
 #
 
-my $node_context=readpipe("echo \$NODE_LIST");
+my $node_context=lc(readpipe("echo \$NODE_LIST"));
 my %node_hash=();
 my $sq_mon_ssh_options=readpipe("echo -n \$SQ_MON_SSH_OPTIONS");
 my $json=$ARGV[0];
@@ -84,12 +84,12 @@ sub check_node_status($)
     my $node_id, $node_status;
     my $check_node=shift;
     #print "node=${check_node}\n";
-    my $command="ssh -M $sq_mon_ssh_options $check_node hostname 2>&1";
+    my $command="ssh -M -q $sq_mon_ssh_options $check_node hostname 2>&1";
     #print "command=${command}\n";
     my $down_character="ssh:";
     #print "down_character=${down_character}\n";
 
-    my @check_results=(readpipe($command));
+    my @check_results=lc((readpipe($command)));
 
     foreach my $check_result(@check_results)
     {

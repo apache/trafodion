@@ -1490,7 +1490,7 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
       if (nstemp.index("STATISTICS", 0, NAString::ignoreCase) == 0)
 	{
 	  specialDDL = TRUE; // UPDATE STATISTICS
-    ustat = TRUE;
+          ustat = TRUE;
 
 	  // do not start Xn at runtime. 
 	  xnNeeded = FALSE;

@@ -67,8 +67,8 @@ fi
 
 #============================================
 # Create install directory
-mkdir -p $SQ_ROOT
-echo $SQ_ROOT
+mkdir -p $TRAF_HOME
+echo $TRAF_HOME
 
 if [[ "$UPGRADE_TRAF" == "true" ]]; then
    echo
@@ -83,17 +83,17 @@ fi
 
 if [[ -f $HOME/sqenvcom.sh ]]; then
    echo "****INFO: Copying over sqenvcom.sh"
-   cp -rf $HOME/sqenvcom.sh $SQ_ROOT
+   cp -rf $HOME/sqenvcom.sh $TRAF_HOME
 fi
 
-cd $SQ_ROOT
+cd $TRAF_HOME
 
 # untar Trafodion build into install directory
 if [[ "$ONE_TAR_INSTALL" == "N" ]]; then
-   echo "***INFO: untarring file $TRAF_BUILD to $SQ_ROOT" | tee -a $INSTALL_LOG
+   echo "***INFO: untarring file $TRAF_BUILD to $TRAF_HOME" | tee -a $INSTALL_LOG
    tar -xzf $TRAF_BUILD 2>&1 | tee -a $INSTALL_LOG
 else
-   echo "***INFO: untarring file $TRAF_BUILD to $SQ_ROOT" | tee -a $INSTALL_LOG
+   echo "***INFO: untarring file $TRAF_BUILD to $TRAF_HOME" | tee -a $INSTALL_LOG
    tar -xzf $UNTAR_DIR/$traf_filename 2>&1 | tee -a $INSTALL_LOG
 fi
 if [ "$?" != "0" ]; then
@@ -120,7 +120,7 @@ else
         fi
     else
         # For single node, we use the sqconfig in the build
-        SQCONFIG_MASTER=$SQ_ROOT/sql/scripts/sqconfig
+        SQCONFIG_MASTER=$TRAF_HOME/sql/scripts/sqconfig
          if [[ ! -f "$SQCONFIG_MASTER" ]]; then
            echo "***ERROR: SQ config file cannot be found ($SQCONFIG_MASTER)." | tee -a $INSTALL_LOG
            exit -1
@@ -133,8 +133,8 @@ echo "***INFO: modifying .bashrc to set Trafodion environment variables" | tee -
 cd $HOME
 cp .bashrc bashrc_temp
 # NOTE: have to use '@' as delimiter because the usual slash '/' doesn't work
-#       because $SQ_ROOT's value has slashes in it
-sed -e "s@export SQ_HOME=.*@export SQ_HOME=$SQ_ROOT@" <bashrc_temp >$HOME/.bashrc
+#       because $TRAF_HOME's value has slashes in it
+sed -e "s@export TRAF_HOME=.*@export TRAF_HOME=$TRAF_HOME@" <bashrc_temp >$HOME/.bashrc
 
 cp .bashrc bashrc_temp
 sed -e "s@export TOOLSDIR=.*@export TOOLSDIR=$TRAF_TOOLSDIR@" <bashrc_temp >$HOME/.bashrc
@@ -153,20 +153,20 @@ fi
 #==========================================
 
 if [ "$node_count" -ne "1" ]; then
-    echo "***INFO: copying sqconfig file ($SQCONFIG_MASTER) to $SQ_ROOT/sql/scripts/sqconfig" | tee -a $INSTALL_LOG
-    cp $SQCONFIG_MASTER $SQ_ROOT/sql/scripts/sqconfig
+    echo "***INFO: copying sqconfig file ($SQCONFIG_MASTER) to $TRAF_HOME/sql/scripts/sqconfig" | tee -a $INSTALL_LOG
+    cp $SQCONFIG_MASTER $TRAF_HOME/sql/scripts/sqconfig
 fi
 
-cd $SQ_ROOT
+cd $TRAF_HOME
 
 #=================================================
 
 if [ "$all_node_count" -ne "1" ]; then
-   echo "***INFO: Creating $SQ_ROOT directory on all nodes" | tee -a $INSTALL_LOG
-   $PDSH $ALL_NODES -x $HOSTNAME $PDSH_SSH_CMD mkdir -p $SQ_ROOT
+   echo "***INFO: Creating $TRAF_HOME directory on all nodes" | tee -a $INSTALL_LOG
+   $PDSH $ALL_NODES -x $HOSTNAME $PDSH_SSH_CMD mkdir -p $TRAF_HOME
    if [[ -f $HOME/sqenvcom.sh ]]; then
       echo "****INFO: Copying over sqenvcom.sh"
-      $PDCP $ALL_NODES $HOME/sqenvcom.sh $SQ_ROOT
+      $PDCP $ALL_NODES $HOME/sqenvcom.sh $TRAF_HOME
    fi
 fi
 

@@ -132,6 +132,8 @@ void HSTableDef::setNATable()
     ULng32 flagToSet = 0;  // don't turn on flag unless next 'if' is true
     if (CmpCommon::context()->sqlSession()->volatileSchemaInUse())
       flagToSet = ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME;
+    
+    flagToSet |= ALLOW_SPECIALTABLETYPE;
 
     // set ALLOW_VOLATILE_SCHEMA_IN_TABLE_NAME bit in Sql_ParserFlags
     // if needed, and return it to its entry value on exit
@@ -449,10 +451,13 @@ void HSSqTableDef::resetRowCounts()
 #endif
 
 Int64 HSSqTableDef::getRowCount(NABoolean &isEstimate,
+                                Int32 &errorCode,
+                                Int32 &breadCrumb,
                                 NABoolean estimateIfNecessary)
   {
     Int64 bogus;
-    return getRowCount(isEstimate, bogus, bogus, bogus, bogus, bogus, estimateIfNecessary);
+    return getRowCount(isEstimate, bogus, bogus, bogus, bogus, bogus, 
+                       errorCode, breadCrumb, estimateIfNecessary);
   }
 
 /***************************************************************************/
@@ -483,8 +488,12 @@ Int64 HSSqTableDef::getRowCount(NABoolean &isEstimate,
                               Int64 &numUpdates,
                               Int64 &numPartitions,
                               Int64 &minRowCtPerPartition,
+                              Int32 &errorCode,
+                              Int32 &breadCrumb,
                               NABoolean estimateIfNecessary)
   {
+    errorCode = 0;
+    breadCrumb = -5;
     isEstimate = TRUE;
     numInserts =
       numDeletes =
@@ -874,6 +883,16 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
   if (!setObjectUID(createExternalTable))
     return FALSE;
 
+  // cannot upd stats if the object is a hive view
+  if (naTbl_->getViewText())
+    {
+      *CmpCommon::diags()
+          << DgSqlCode(-UERR_INVALID_OBJECT)
+          << DgString0(naTbl_->getTableName().getQualifiedNameAsString());
+
+      return FALSE;
+    }
+
   tableStats_ = naTbl_->getClusteringIndex()->getHHDFSTableStats();
 
   *ansiName_ = *catalog_;
@@ -976,8 +995,12 @@ Int64 HSHiveTableDef::getRowCount(NABoolean &isEstimate,
                                   Int64 &numUpdates,
                                   Int64 &numPartitions,
                                   Int64 &minRowCtPerPartition,
+                                  Int32 &errorCode,
+                                  Int32 &breadCrumb,
                                   NABoolean estimateIfNecessary)
 {
+  errorCode = 0;
+  breadCrumb = -6;
   if (minPartitionRows_ == -1)
     {
       Int64 partitionEstRows;
@@ -993,7 +1016,7 @@ Int64 HSHiveTableDef::getRowCount(NABoolean &isEstimate,
   numPartitions = getNumPartitions();
   minRowCtPerPartition = minPartitionRows_;
 
-  return getRowCount(isEstimate, estimateIfNecessary);
+  return getRowCount(isEstimate, errorCode, breadCrumb, estimateIfNecessary);
 }
 
 Lng32 HSHiveTableDef::DescribeColumnNames()
@@ -1071,7 +1094,7 @@ Lng32 CreateExternalTable(const NAString& catName, const NAString& schName, cons
 
    // do not have to worry about the catalog and schema for the new external table 
    // here. These names will be determined by the processing logic. 
-   NAString ddl = "CREATE EXTERNAL TABLE ";
+   NAString ddl = "CREATE IMPLICIT EXTERNAL TABLE ";
    ddl.append(nativeTableName);
    ddl.append(" FOR ");
    ddl.append(catName);
@@ -1082,8 +1105,13 @@ Lng32 CreateExternalTable(const NAString& catName, const NAString& schName, cons
    ddl.append(" ATTRIBUTE NO AUDIT"); // The external table will not be audited because it 
                                       // does not store any data.
 
+   // set INTERNAL_QUERY_FROM_EXEUTIL bit in Sql_ParserFlags.
+   // This is needed to process 'implicit external' syntax
+   ULng32 flagToSet = INTERNAL_QUERY_FROM_EXEUTIL;
+   PushAndSetSqlParserFlags savedParserFlags(flagToSet);
+
    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                            "Create external table", NULL);
+                            "Create implicit external table", NULL);
 
    if (retcode < 0 && LM->LogNeeded())
       {
@@ -1187,13 +1215,19 @@ Lng32 HSHbaseTableDef::getNumPartitions() const
   return getNATable()->getClusteringIndex()->getCountOfPartitions();
 }
 
-Int64 HSHbaseTableDef::getRowCount(NABoolean &isEstimate, NABoolean estimateIfNecessary)
+Int64 HSHbaseTableDef::getRowCount(NABoolean &isEstimate, 
+                                   Int32 &errorCode,
+                                   Int32 &breadCrumb,
+                                   NABoolean estimateIfNecessary)
 {
+  errorCode = 0;
+  breadCrumb = -2;
   isEstimate = TRUE;
   if (estimateIfNecessary &&
       !naTbl_->isSeabaseMDTable() &&
       CmpCommon::getDefault(USTAT_ESTIMATE_HBASE_ROW_COUNT) == DF_ON)
-    return naTbl_->estimateHBaseRowCount();
+    // use a 4 minute retry limit (expressed in milliseconds)
+    return naTbl_->estimateHBaseRowCount(4*60*1000, errorCode, breadCrumb);
   else
     return 0;
 }
@@ -1204,6 +1238,8 @@ Int64 HSHbaseTableDef::getRowCount(NABoolean &isEstimate,
                                   Int64 &numUpdates,
                                   Int64 &numPartitions,
                                   Int64 &minRowCtPerPartition,
+                                  Int32 &errorCode,
+                                  Int32 &breadCrumb,
                                   NABoolean estimateIfNecessary)
 {
   // Comparable code for Hive tables:
@@ -1221,7 +1257,7 @@ Int64 HSHbaseTableDef::getRowCount(NABoolean &isEstimate,
   //numPartitions = getNumPartitions();
   //minRowCtPerPartition = minPartitionRows_;
 
-  return getRowCount(isEstimate, estimateIfNecessary);
+  return getRowCount(isEstimate, errorCode, breadCrumb, estimateIfNecessary);
 }
 
 Lng32 HSHbaseTableDef::DescribeColumnNames()
@@ -1257,4 +1293,32 @@ Lng32 HSHbaseTableDef::DescribeColumnNames()
 
   return 0;
 }
+
+//
+// METHOD:  addTruncatedSelectList()
+//
+// PURPOSE: Generates a SELECT list consisting of 
+//          column references or a SUBSTRING
+//          on column references which truncates the
+//          column to the maximum length allowed in
+//          UPDATE STATISTICS.
+//
+// INPUT:   'qry' - the SQL query string to append the 
+//          select list to.
+//
+void HSTableDef::addTruncatedSelectList(NAString & qry)
+  {
+    bool first = true;
+    for (Lng32 i = 0; i < getNumCols(); i++)
+      {
+        if (!ComTrafReservedColName(*getColInfo(i).colname))
+          {
+            if (!first)
+              qry += ", ";
+
+            getColInfo(i).addTruncatedColumnReference(qry);
+            first = false;
+          }
+      }
+  }
 

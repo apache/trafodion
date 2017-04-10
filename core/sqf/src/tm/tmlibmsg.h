@@ -822,6 +822,8 @@ typedef struct registerregion_rsp {
 } Register_Region_Rsp_Type;
 
 typedef struct ddlrequest_rsp {
+    char	iv_err_str[TM_MAX_ERROR_STRING];
+    int     iv_err_str_len;
 } Ddl_Request_Rsp_Type;
 
 typedef struct hbaseregioninfo_rsp {
@@ -846,6 +848,8 @@ typedef struct _tmlibmsg_h_as_35 {
 } Begin_Trans_Rsp_Type;
 
 typedef struct _tmlibmsg_h_as_36 {
+  char      iv_err_str[TM_MAX_ERROR_STRING];
+  int       iv_err_str_len;
 } End_Trans_Rsp_Type;
 
 typedef struct _tmlibmsg_h_as_37 {
@@ -969,6 +973,7 @@ typedef struct _tmlibmsg_h_as_44 {
         Wait_TmUp_Rsp_Type      iv_wait_tmup;
         Test_Tx_Count_Rsp_Type  iv_count;
         Tm_RolloverCP_Rsp_Type  iv_control_point;
+        Ddl_Request_Rsp_Type    iv_ddl_response;
 #ifndef HP_CLOSED_SOURCE_1
         HbaseRegionInfo_Rsp_Type iv_hbaseregion_info;
         TM_GetNextSeqNum_Rsp_Type iv_GetNextSeqNum;

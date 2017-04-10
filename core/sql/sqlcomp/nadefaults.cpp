@@ -459,6 +459,7 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
  // see comments in DefaultConstants.h
   DDkwd__(BIGNUM_IO,		                "SYSTEM"),
 
+  DDint__(BLOCK_ENCRYPTION_MODE,             "0"),
  XDDkwd__(BLOCK_TO_PREVENT_HALLOWEEN,           "ON"),
 
   DDflte_(BMO_CITIZENSHIP_FACTOR,             "1."),
@@ -1151,16 +1152,23 @@ SDDkwd__(CAT_ENABLE_QUERY_INVALIDATION, "ON"),
  DDkwd__(CSE_CACHE_TEMP_QUERIES,               "OFF"),
  // "cleanup obsolete volatile tables" command cleans up Hive temp tables
  DDkwd__(CSE_CLEANUP_HIVE_TABLES,              "OFF"),
+ // don't temp if all consumers have preds on n key columns
+ DDui___(CSE_COMMON_KEY_PRED_CONTROL,          "1"),
  // emit warnings that help diagnose why CSEs are not shared
  DDkwd__(CSE_DEBUG_WARNINGS,                   "OFF"),
  // create a CommonSubExpr node for CTEs defined in WITH clauses (OFF/ON)
  DDkwd__(CSE_FOR_WITH,                         "OFF"),
  // use Hive tables as temp tables
  DDkwd__(CSE_HIVE_TEMP_TABLE,                  "ON"),
+ // don't temp if avg consumer has preds on more than n percent of key cols
+ DDflt0_(CSE_PCT_KEY_COL_PRED_CONTROL,         "49.9"),
  // print debugging info on stdout
  DDkwd__(CSE_PRINT_DEBUG_INFO,                 "OFF"),
+ // limit temp table size (based on max. card and regular card)
+ DDflt0_(CSE_TEMP_TABLE_MAX_MAX_SIZE,          "1E12"),
+ DDflt0_(CSE_TEMP_TABLE_MAX_SIZE,              "1E9"),
  // implement CommonSubExpr as a temp table (OFF/SYSTEM/ON)
- DDkwd__(CSE_USE_TEMP,                         "ON"),
+ DDkwd__(CSE_USE_TEMP,                         "SYSTEM"),
 
 SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
 
@@ -1710,6 +1718,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // When less or equal to this CQD (5000 rows by default), a partial root 
   // will be running in the Master. Set to 0 to disable the feature.
   DDint__(GROUP_BY_PARTIAL_ROOT_THRESHOLD,	"5000"),
+  DDkwd__(GROUP_BY_PUSH_TO_BOTH_SIDES_OF_JOIN,    "ON"),
 
   DDkwd__(GROUP_OR_ORDER_BY_EXPR,		"ON"),
 
@@ -1969,6 +1978,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DD_____(HIVE_USE_FAKE_SQ_NODE_NAMES,          "" ),
   DDkwd__(HIVE_USE_FAKE_TABLE_DESC,             "OFF"),
   DDkwd__(HIVE_USE_HASH2_AS_PARTFUNCION,        "ON"),
+  DDkwd__(HIVE_VIEWS,                           "ON"),
+  DDkwd__(HIVE_VIEWS_CREATE_EXTERNAL_TABLE,     "ON"),
 
  // -------------------------------------------------------------------------
 
@@ -3109,7 +3120,7 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
  DD_____(SCRATCH_DIRS,                        ""),
  DDkwd__(SCRATCH_DISK_LOGGING,                 "OFF"),
  SDDpct__(SCRATCH_FREESPACE_THRESHOLD_PERCENT,      "1"),
-  DDui___(SCRATCH_IO_BLOCKSIZE_SORT,            "524288"),
+  DDui___(SCRATCH_IO_BLOCKSIZE_SORT_MAX,        "5242880"),
   //On LINUX, writev and readv calls are used to perform
   //scratch file IO. This CQD sets the vector size to use
   //in writev and readv calls. Overall IO size is affected
@@ -3321,6 +3332,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
  
   DDkwd__(TRAF_ENABLE_ORC_FORMAT,                 "OFF"),   
 
+  DDkwd__(TRAF_HBASE_MAPPED_TABLES,             "ON"),   
+  DDkwd__(TRAF_HBASE_MAPPED_TABLES_IUD,         "OFF"),   
+
   DDkwd__(TRAF_INDEX_ALIGNED_ROW_FORMAT,        "ON"),   
   DDkwd__(TRAF_INDEX_CREATE_OPT,          "OFF"),
 
@@ -3330,7 +3344,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
   DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
   DD_____(TRAF_LOAD_ERROR_COUNT_TABLE,          "ERRORCOUNTER" ),
-  DD_____(TRAF_LOAD_ERROR_LOGGING_LOCATION,     "/bulkload/logs/" ),
+  DD_____(TRAF_LOAD_ERROR_LOGGING_LOCATION,     "/bulkload/logs" ),
   DDint__(TRAF_LOAD_FLUSH_SIZE_IN_KB,           "1024"),
   DDkwd__(TRAF_LOAD_FORCE_CIF,                  "ON"),
   DDkwd__(TRAF_LOAD_LOG_ERROR_ROWS,             "OFF"),
@@ -3350,10 +3364,11 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_INDEXES,   "ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_STATS,     "OFF"),
 
- // max size in bytes of a char or varchar column.
-  DDui2__(TRAF_MAX_CHARACTER_COL_LENGTH,	"200000"),
+  // max size in bytes of a char or varchar column. Set to 16M
+  DDui___(TRAF_MAX_CHARACTER_COL_LENGTH,     MAX_CHAR_COL_LENGTH_IN_BYTES_STR),
+  DDkwd__(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,    "OFF"),
 
- DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
+  DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
 
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
@@ -3409,13 +3424,15 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,           "OFF"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
   DDkwd__(TRAF_UPSERT_MODE,                            "MERGE"),
-  DDkwd__(TRAF_UPSERT_TO_EFF_TREE,                     "OFF"),
+  DDkwd__(TRAF_UPSERT_TO_EFF_TREE,                     "ON"),
   DDint__(TRAF_UPSERT_WB_SIZE,                         "2097152"),
   DDkwd__(TRAF_UPSERT_WRITE_TO_WAL,                    "OFF"),
 
   DDkwd__(TRAF_USE_REGION_XN,                          "OFF"),
 
   DDkwd__(TRAF_USE_RWRS_FOR_MD_INSERT,                   "ON"),
+  DDkwd__(TRANSLATE_ERROR,                             "ON"),
+  DDkwd__(TRANSLATE_ERROR_UNICODE_TO_UNICODE,          "ON"),
 
   DDkwd__(TRY_DP2_REPARTITION_ALWAYS,		"OFF"),
 
@@ -3511,6 +3528,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(USTAT_COLLECT_MC_SKEW_VALUES,         "OFF"),
 
+  DDkwd__(USTAT_COMPACT_VARCHARS,               "OFF"),  // If on, internal sort does not pad out varchars
   DD_____(USTAT_CQDS_ALLOWED_FOR_SPAWNED_COMPILERS, ""), // list of CQDs that can be pushed to seconday compilers
                                                          // CQDs are delimited by ","
 
@@ -4035,7 +4053,7 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
     // On SQ, the way to get an envvar from inside a un-attached process
     // is to use the msg_getenv_str() call and set the env inside
     // the SQ_PROP_ property file. In this case the property
-    // file is $MY_SQROOT/etc/SQ_PROP_tdm_arkcmp which contains the line
+    // file is $TRAF_HOME/etc/SQ_PROP_tdm_arkcmp which contains the line
     // "SQLMX_REGRESS=1". This file was generated by tools/setuplnxenv.
    //    resetNeoDefaults = (msg_getenv_str("SQLMX_REGRESS") != NULL);
     resetNeoDefaults = (getenv("SQLMX_REGRESS") != NULL);
@@ -4769,7 +4787,7 @@ void NADefaults::readFromSQLTables(Provenance overwriteIfNotYet, Int32 errOrWarn
     {
       // Read system defaults from configuration file.
       // keep this name in sync with file cli/SessionDefaults.cpp
-      NAString confFile(getenv("MY_SQROOT"));
+      NAString confFile(getenv("TRAF_HOME"));
       confFile += "/etc/SQSystemDefaults.conf";
       readFromFlatFile(confFile, overwriteIfNotYet, errOrWarn);  
       tablesRead_.insert(confFile);           
@@ -5920,8 +5938,39 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
      }
      break;
 
-      default:  break;
-      }
+     // max char col length is 10M (10485760).
+     // max char col length is defined in common/ComSmallDefs.h
+     // Currently set to 16M
+     // In special cases, it could be overridden. Internal use only or
+     // use only under trafodion supervision.
+     case TRAF_MAX_CHARACTER_COL_LENGTH:
+     {
+       NABoolean override = (getToken(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE) == DF_ON);
+       double d = atof(value.data());
+       if ((NOT override) &&
+           (NOT (d >= 0 && d <= MAX_CHAR_COL_LENGTH_IN_BYTES)))
+         {
+           *CmpCommon::diags() << DgSqlCode(-2055)
+                               << DgString0(value)
+                               << DgString1(lookupAttrName(attrEnum));
+         }
+     }
+     break;
+
+     case TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE:
+     {
+       // if override is being turned off, reset max_char_len to default value.
+       if (value == "OFF")
+         {
+           NAString val;
+           validateAndInsert("TRAF_MAX_CHARACTER_COL_LENGTH", val, TRUE);
+         }
+     }
+     break;
+
+    default:  
+    break;
+    }
     }	  // code to valid overwrite (insert)
 
     if (reset && overwrite) {

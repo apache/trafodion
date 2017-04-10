@@ -165,7 +165,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 							SQLSMALLINT	SQLDatetimeCode,
 							SQLPOINTER	targetDataPtr,
 							SQLINTEGER	targetLength,
-							SQLSMALLINT	targetPrecision,
+							SQLINTEGER	targetPrecision,
 							SQLSMALLINT	targetScale,
 							SQLSMALLINT targetUnsigned,
 							SQLINTEGER      targetCharSet,
@@ -361,7 +361,16 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 	case SQL_VARCHAR:
 	case SQL_LONGVARCHAR:
 	case SQL_WVARCHAR:
-		Offset = sizeof(USHORT);			//Note there is no break, I want it to fall thru
+		{
+			if(targetPrecision > SHRT_MAX)
+			{
+				Offset = sizeof(UINT);
+			}
+			else
+			{
+				Offset = sizeof(USHORT);
+			}
+		}
 	case SQL_CHAR:
 	case SQL_WCHAR:
 		switch (CDataType)
@@ -646,12 +655,10 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 		if (Offset != 0)
 		{
 //#ifndef MXSUN
-			if(DataLen>32767){
-				*(int *)targetDataPtr = DataLen;
+			if(targetPrecision > SHRT_MAX){
 				outDataPtr = (unsigned char *)targetDataPtr + sizeof(int);
 			}
 			else{
-				*(unsigned short *)targetDataPtr = DataLen;
 				outDataPtr = (unsigned char *)targetDataPtr + sizeof(USHORT);
 			}
 //#else
@@ -3210,7 +3217,12 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 //					}
 				}
 				if (Offset != 0)
-					*(unsigned short *)targetDataPtr = DataLen;
+				{
+					if(targetPrecision > SHRT_MAX)
+						*(unsigned int *)targetDataPtr = DataLen;
+					else
+						*(unsigned short *)targetDataPtr = DataLen;
+				}
 			}
 			else if (targetCharSet == SQLCHARSETCODE_UCS2)
 			{
@@ -3256,10 +3268,22 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 					DataLen = translateLength;
 				}
 				if (Offset != 0)
-					if(iconv->getUCS2Translation())
-						*(unsigned short *)targetDataPtr = DataLen*2;
+				{
+					if(targetPrecision > SHRT_MAX)
+					{
+						if(iconv->getUCS2Translation())
+							*(unsigned int *)targetDataPtr = DataLen*2;
+						else
+							*(unsigned int *)targetDataPtr = DataLen;
+					}
 					else
-						*(unsigned short *)targetDataPtr = DataLen;
+					{
+						if(iconv->getUCS2Translation())
+							*(unsigned short *)targetDataPtr = DataLen*2;
+						else
+							*(unsigned short *)targetDataPtr = DataLen;
+					}
+				}
 			}
 // needs to work with UTF8 columns
 			else if (targetCharSet == SQLCHARSETCODE_UTF8)
@@ -3305,7 +3329,12 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
                                                 DataLen = translateLength;
 				}
 				if (Offset != 0)
-					*(unsigned short *)targetDataPtr = DataLen;
+				{
+					if(targetPrecision > SHRT_MAX)
+						*(unsigned int *)targetDataPtr = DataLen;
+					else
+						*(unsigned short *)targetDataPtr = DataLen;
+				}
 			}
 
 			if (ODBCDataType == SQL_WCHAR || ODBCDataType == SQL_WVARCHAR)

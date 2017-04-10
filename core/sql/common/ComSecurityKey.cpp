@@ -37,6 +37,25 @@
 #include "PrivMgrDefs.h"
 
 // ****************************************************************************
+// function: qiSubjectMatchesRole
+//
+// This function compares the subjectKey with the list of roles the current
+// user has been granted.  If it matches one of the roles, return TRUE, 
+// otherwise it returns FALSE.
+// ****************************************************************************
+NABoolean qiSubjectMatchesRole(uint32_t subjectKey)
+{
+  NAList <Int32> roleIDs(NULL);
+  ComUser::getCurrentUserRoles(roleIDs);
+  for (int i = 0; i < roleIDs.entries(); i++)
+  {
+    if (subjectKey = ComSecurityKey::generateHash(roleIDs[i]))
+      return TRUE;
+  }
+  return FALSE;
+}
+
+// ****************************************************************************
 // function: qiCheckForInvalidObject
 //
 // This function compares the list of query invalidate keys that changed to
@@ -83,6 +102,21 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
       case COM_QI_OBJECT_USAGE:
       case COM_QI_OBJECT_REFERENCES: 
       case COM_QI_OBJECT_EXECUTE:
+        for (Int32 j = 0; j < numObjectKeys && !found; j++ )
+        {
+          ComSecurityKey keyValue = objectKeys[j];
+          if ( ( invalidationKeys[i].revokeKey.object ==
+                 keyValue.getObjectHashValue() )  &&
+               ( invalidationKeyType ==
+                 keyValue.getSecurityKeyType() ) )
+          {
+            if ( invalidationKeys[i].revokeKey.subject ==
+                   keyValue.getSubjectHashValue() ||
+                 qiSubjectMatchesRole(invalidationKeys[i].revokeKey.subject) )
+              found = TRUE;
+          }
+        }
+        break;
       case COM_QI_USER_GRANT_SPECIAL_ROLE:
       case COM_QI_USER_GRANT_ROLE:
       {
@@ -120,48 +154,51 @@ NABoolean qiCheckForInvalidObject (const Int32 numInvalidationKeys,
 //   SUBJECT_IS_USER - support for granting roles to user
 //   SUBJECT_IS_ROLE - not supported until we grant roles to roles
 //
+// returns false is unable to build keys
 // ****************************************************************************
-bool buildSecurityKeys( const int32_t granteeID,
-                        const int32_t roleID,
+bool buildSecurityKeys( const int32_t userID,
+                        const int32_t granteeID,
                         const int64_t objectUID,
                         const PrivMgrCoreDesc &privs,
                         ComSecurityKeySet &secKeySet )
 {
   if (privs.isNull())
-    return STATUS_GOOD;
+    return true;
 
+  // If public is the grantee, generate special security key
+  // A user cannot be revoked from public
+  if (ComUser::isPublicUserID(granteeID))
+  {
+    ComSecurityKey key(granteeID, ComSecurityKey::OBJECT_IS_SPECIAL_ROLE);
+    if (key.isValid())
+      secKeySet.insert(key);
+    else
+      return false;
+  }
+
+  // If the grantee is a role, generate a special security key
+  // If the role is revoked from the user, this key takes affect
+  if (PrivMgr::isRoleID(granteeID))
+  {
+    ComSecurityKey key (userID, granteeID, ComSecurityKey::SUBJECT_IS_USER);
+    if (key.isValid())
+     secKeySet.insert(key);
+    else
+      return false;
+  }
+
+  // Generate object invalidation keys
   // Only need to generate keys for DML privileges
   for ( size_t i = FIRST_DML_PRIV; i <= LAST_DML_PRIV; i++ )
   {
     if ( privs.getPriv(PrivType(i)))
     {
-      if (roleID != NA_UserIdDefault && ComUser::isPublicUserID(roleID))
-      {
-        ComSecurityKey key(granteeID, ComSecurityKey::OBJECT_IS_SPECIAL_ROLE);
-        if (key.isValid())
-          secKeySet.insert(key);
-        else
-          false;
-      }
-          
-      else if (roleID != NA_UserIdDefault && PrivMgr::isRoleID(roleID))
-      {
-        ComSecurityKey key (granteeID, roleID, ComSecurityKey::SUBJECT_IS_USER);
-        if (key.isValid())
-         secKeySet.insert(key);
-        else
-          false;
-      }
-
+      ComSecurityKey key (granteeID, objectUID, PrivType(i), 
+                          ComSecurityKey::OBJECT_IS_OBJECT);
+      if (key.isValid())
+       secKeySet.insert(key);
       else
-      {
-        ComSecurityKey key (granteeID, objectUID, PrivType(i), 
-                            ComSecurityKey::OBJECT_IS_OBJECT);
-        if (key.isValid())
-         secKeySet.insert(key);
-        else
-          false;
-      }
+        return false;
     }
   }
 
@@ -172,7 +209,8 @@ bool buildSecurityKeys( const int32_t granteeID,
 // Function that returns the types of invalidation to perform
 //   For DDL invalidation keys, always need to update caches
 //   For security invalidation keys
-//      update caches if key is for an object revoke from the current user
+//      update caches if key is for an object revoke from the current user or
+//        current users roles
 //      reset list of roles if key is a revoke role from the current user
 //
 // returns:
@@ -193,12 +231,7 @@ void qiInvalidationType (const Int32 numInvalidationKeys,
   // Note: The following code doesn't care about the object's hash value or the resulting 
   // ComSecurityKey's ActionType....we just need the hash value for the User's ID.
   // Perhaps a new constructor would be good (also done in RelRoot::checkPrivileges)
-  int64_t objectUID = 12345;
-  ComSecurityKey userKey( userID, objectUID
-                         , SELECT_PRIV
-                         , ComSecurityKey::OBJECT_IS_OBJECT
-                        );
-  uint32_t userHashValue = userKey.getSubjectHashValue();
+  uint32_t userHashValue = ComSecurityKey::generateHash(userID);
 
   for ( Int32 i = 0; i < numInvalidationKeys && !resetRoleList && !updateCaches; i++ )
   {
@@ -220,7 +253,12 @@ void qiInvalidationType (const Int32 numInvalidationKeys,
       case COM_QI_OBJECT_USAGE:
       case COM_QI_OBJECT_REFERENCES:
       case COM_QI_OBJECT_EXECUTE:
+        // If the current user matches the revoke subject, update
         if (invalidationKeys[i].revokeKey.subject == userHashValue)
+          updateCaches = true;
+
+        // If one of the users roles matches the revokes subject, update
+        else if (qiSubjectMatchesRole(invalidationKeys[i].revokeKey.subject))
           updateCaches = true;
         break;
 
@@ -246,8 +284,8 @@ void qiInvalidationType (const Int32 numInvalidationKeys,
         resetRoleList = true;
         updateCaches = true;
         break;
-      }
-  }
+    }
+  } 
 }
 
 
@@ -399,14 +437,14 @@ return (result);
 }
 
 // Basic method to generate hash values
-uint32_t ComSecurityKey::generateHash(int64_t hashInput) const
+uint32_t ComSecurityKey::generateHash(int64_t hashInput)
 {
   uint32_t hashResult = ExHDPHash::hash8((char*)&hashInput, ExHDPHash::NO_FLAGS);
   return hashResult;
 }
 
 // Generate hash value based on authorization ID
-uint32_t ComSecurityKey::generateHash(int32_t hashID) const
+uint32_t ComSecurityKey::generateHash(int32_t hashID)
 {
   int64_t hVal = (int64_t) hashID;
   uint32_t hashResult = generateHash(hVal);

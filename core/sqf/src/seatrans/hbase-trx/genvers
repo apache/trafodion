@@ -24,4 +24,4 @@
 #
 
 CV_VERS=1.0.1
-$MY_SQROOT/export/include/SCMBuildJava.sh $CV_VERS
+$TRAF_HOME/export/include/SCMBuildJava.sh $CV_VERS

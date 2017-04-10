@@ -543,6 +543,7 @@ static char * FCString (const char *idString, int isFC)
 %token INITIALIZE REINITIALIZE
 %token CATALOG SCHEMA
 %token HIVEtoken
+%token PROCESStoken
 %token IF WHILE
 %token MPLOC
 %token NAMETYPE
@@ -1130,6 +1131,43 @@ sqlci_cmd :	MODE REPORT
 		    $$ = new Shape(FALSE, identifier_name_internal, $7);
                   }
 
+	|       SETtoken STATISTICS OFF
+                  {
+		    $$ = new Statistics(0,0,Statistics::SET_OFF, NULL);
+		  }
+
+        |       SETtoken STATISTICS ON
+                  {
+		    // display statistics in old format
+		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
+					(char *)"of");
+             	  }
+
+        |       SETtoken STATISTICS PERTABLEtoken
+                  {
+		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
+					(char *)"PERTABLE");
+		  }
+
+        |       SETtoken STATISTICS PROGRESStoken
+                  {
+		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
+					(char *)"PROGRESS");
+		  }
+
+        |       SETtoken STATISTICS DEFAULTtoken
+                  {
+		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
+					(char *)"DEFAULT");
+		  }
+
+        |       SETtoken STATISTICS ALLtoken
+                  {
+		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
+					(char *)"ALL");
+		  }
+
+
         |       SETtoken STATISTICS ON COMMA GETtoken STATISTICS
                   {
 		    // display stats in new format
@@ -1142,19 +1180,7 @@ sqlci_cmd :	MODE REPORT
 		    // quoted_string
 		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
 					$9);
-		  }
-
-        |       SETtoken STATISTICS ON
-                  {
-		    // display statistics in old format
-		    $$ = new Statistics(NULL, 0, Statistics::SET_ON,
-					(char *)"of");
-		  }
-
-	|       SETtoken STATISTICS OFF
-                  {
-		    $$ = new Statistics(0,0,Statistics::SET_OFF, NULL);
-		  }
+                  }
 
         |       SETtoken LISTCOUNT NUMBER
                   {
@@ -2178,16 +2204,16 @@ cursor_info : dml_simple_table_type
 dml_type :
 	 	dml_simple_table_type	{}
 	|	CONTROL 		{$$ = DML_CONTROL_TYPE;}
-	|    OSIM               {$$ = DML_OSIM_TYPE;}
+	|       OSIM                    {$$ = DML_OSIM_TYPE;}
 	|	SETtoken CATALOG	{$$ = DML_CONTROL_TYPE;}
 	|	SETtoken SCHEMA		{$$ = DML_CONTROL_TYPE;}
-	|	SETtoken HIVEtoken		{$$ = DML_CONTROL_TYPE;}
+	|	SETtoken HIVEtoken	{$$ = DML_CONTROL_TYPE;}
         |       SETtoken MPLOC          {$$ = DML_CONTROL_TYPE;}
         |       SETtoken NAMETYPE       {$$ = DML_CONTROL_TYPE;}
         |       SETtoken SESSIONtoken   {$$ = DML_CONTROL_TYPE;}
 	|	UPDATEtoken  		{$$ = DML_UPDATE_TYPE;}
-	|	INSERTtoken  		{$$ = DML_INSERT_TYPE;}
-        |      UPSERTtoken            {$$ = DML_INSERT_TYPE;}
+	| 	INSERTtoken  		{$$ = DML_INSERT_TYPE;}
+        |       UPSERTtoken             {$$ = DML_INSERT_TYPE;}
 	|	ROWSETtoken  		{$$ = DML_INSERT_TYPE;}
 	|	DELETEtoken  		{$$ = DML_DELETE_TYPE;}
 	|	MERGEtoken  		{$$ = DML_UPDATE_TYPE;}
@@ -2253,6 +2279,7 @@ dml_type :
         |       DOWNGRADEtoken          {$$ = DML_DDL_TYPE;}
         |       GETtoken                {$$ = DML_DESCRIBE_TYPE;}
  	|       LABEL_ALTER             {$$ = DML_DDL_TYPE;}
+ 	|       PROCESStoken            {$$ = DML_DDL_TYPE;}
 ;
 
 dml_simple_table_type :

@@ -23,7 +23,7 @@
 
 .PHONY: clean all
 
-include $(MY_SQROOT)/macros.gmk #top level
+include $(TRAF_HOME)/macros.gmk #top level
 
 #--------------------------------------------------------------------------
 # Standard Linux flags
@@ -46,7 +46,7 @@ INCPATH_64luo = -I/use/include \
 		-I$(HADOOP_INC_DIR) \
 		-I$(JAVA_HOME)/include \
 		-I$(JAVA_HOME)/include/linux \
-		-I$(MY_SQROOT)/export/include
+		-I$(TRAF_HOME)/export/include
 
 LIBS_64luo = -lodbc -lodbcinst -lz -ldl
 EXEC_64luo = odb64luo
@@ -70,7 +70,7 @@ odb64luo: odb64luo.o mreadline.o memcpy_wrapper.o versodb.o
 		-o $(EXEC_64luo) bin/memcpy_wrapper.o bin/odb64luo.o bin/mreadline.o bin/versodb.o \
 		-D ODBBLD=$(ODBBLD_64luo) $(LIBPATH_64luo) $(INCPATH_64luo) $(LIBS_64luo) -o bin/odb64luo
 	tar -czf ../clients/odb64_linux.tar.gz bin/odb64luo README
-	ln -sf $(MY_SQROOT)/../conn/odb/bin/odb64luo $(MY_SQROOT)/export/bin$(SQ_MBTYPE)/odb64luo
+	ln -sf $(TRAF_HOME)/../conn/odb/bin/odb64luo $(TRAF_HOME)/export/bin$(SQ_MBTYPE)/odb64luo
 
 odb64luo.o: odb.c
 	mkdir -p bin

@@ -496,10 +496,10 @@ CConfigContainer::CConfigContainer(void)
     // Open the configuration database file
     char dbase[MAX_PROCESS_PATH];
     //    snprintf(dbase, sizeof(dbase), "%s/sql/scripts/sqconfig.db.%d",
-    //             getenv("MY_SQROOT"),MyPNID);
+    //             getenv("TRAF_HOME"),MyPNID);
 
     snprintf(dbase, sizeof(dbase), "%s/sql/scripts/sqconfig.db",
-             getenv("MY_SQROOT"));
+             getenv("TRAF_HOME"));
     int rc = sqlite3_open_v2(dbase, &db_,
                              SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX,
                              NULL);

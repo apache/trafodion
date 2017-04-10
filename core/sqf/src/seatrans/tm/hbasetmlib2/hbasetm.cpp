@@ -174,40 +174,15 @@ CHbaseTM::CHbaseTM() : JavaObjectInterfaceTM()
    iv_traceMask = HBASETM_TraceOff;
    ip_tmTimer = NULL;
    iv_next_msgNum = 1;
-   unlock();
 
    // Need to check return and handle error
    int lv_result = initJVM();
    if(lv_result != JOI_OK) {
-      cout << "CHbaseTM constructor encountered JOI error " << lv_result << " from call to initJVM()."  << endl;
+      tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::CHbaseTM()-1", (char *) _tlp_error_msg->c_str(), -1LL);
       abort();
    }
-}
-
-// CHbaseTM Methods
-#if 0
-CHbaseTM::CHbaseTM(JavaVM *jvm, JNIEnv *jenv) 
-   : JavaObjectInterfaceTM(jvm, jenv)
-{
-   // Mutex attributes: Recursive = true, ErrorCheck=false
-   // ip_mutex = new TM_Mutex(true, false);
-   iv_tm_stats = false;
-
-   lock();
-   iv_initialized = false;
-   my_nid(-1);     // Indicates that the node hasn't been set yet.
-   iv_traceMask = HBASETM_TraceOff;
-   ip_tmTimer = NULL;
-   iv_next_msgNum = 1;
    unlock();
-
-   // Need to check return and handle error
-   if(initJVM()) {
-      cout << "Error on initJVM()\n";
-      abort();
-   }
 }
-#endif
 
 // TM Destructor
 CHbaseTM::~CHbaseTM() 
@@ -280,20 +255,21 @@ short CHbaseTM::initConnection(short pv_nid)
   return RET_OK;
 }
 
-short CHbaseTM::addControlPoint(){
+short CHbaseTM::addControlPoint() {
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::addControlPoint()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
   jlong jresult = _tlp_jenv->CallLongMethod(javaObj_, JavaMethods_[JM_CNTPOINT].methodID);
   if (getExceptionDetails(NULL)) {
      tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::addControlPoint()", (char *)_tlp_error_msg->c_str(), -1LL);
+     _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
   }
+  _tlp_jenv->PopLocalFrame(NULL);
   if (jresult == 0L) {
     return RET_EXCEPTION;
   }
@@ -303,72 +279,89 @@ short CHbaseTM::addControlPoint(){
 short CHbaseTM::beginTransaction(int64 *pp_transid) {
   jlong  jlv_transid = *pp_transid;
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::beginTransaction()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
   jlong jresult = _tlp_jenv->CallLongMethod(javaObj_, JavaMethods_[JM_BEGIN].methodID, jlv_transid);
   if (getExceptionDetails(NULL)) {
      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::beginTransaction()", (char *)_tlp_error_msg->c_str(), *pp_transid);
+     _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
   }
   *pp_transid = (long)jresult;
 
+  _tlp_jenv->PopLocalFrame(NULL);
   return RET_OK;
 }
 
 short CHbaseTM::abortTransaction(int64 pv_transid) {
   jlong  jlv_transid = pv_transid;
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::abortTransaction()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
   jshort jresult = _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_ABORT].methodID, jlv_transid);
   if (getExceptionDetails(NULL)) {
      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::abortTransaction()", (char *)_tlp_error_msg->c_str(), pv_transid);
+     _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
   }
+  _tlp_jenv->PopLocalFrame(NULL);
   //  RET_NOTX means the transaction wasn't found by the HBase client code (trx).  This is ok here, it
   //  simply means the transaction hasn't been seen by the HBase client code, so no work was done on it.
   if (jresult == RET_NOTX)
   {
     return RET_OK;
   } 
-
   return jresult;
 }
 
 
-short CHbaseTM::prepareCommit(int64 pv_transid) {
+short CHbaseTM::prepareCommit(int64 pv_transid , char *errstr, int &errstrlen) {
   jlong   jlv_transid = pv_transid;
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::prepareCommit()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
   jshort jresult = _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_PRECOMMIT].methodID, jlv_transid);
-  if (getExceptionDetails(NULL)) {
-     tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::prepareCommit()", (char *)_tlp_error_msg->c_str(), pv_transid);
-     return RET_EXCEPTION;
+  if (getExceptionDetails(NULL, (short*)&lv_joi_retcode)) {
+      int errMsgLen = (int)_tlp_error_msg->length();
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen  : errstrlen -1;
+      strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+      errstr[errstrlen] = '\0';
+      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR,(char*)"CHbaseTM::prepareCommit()", (char *)_tlp_error_msg->c_str(), pv_transid);
+     
+     //If an exception is received, it is only due to some issue.
+     //Exception can come back with error code set or not set.
+     //If there is an error code passed as part of exception, pass this
+     //back to my caller. Else return RET_EXCEPTION; 
+     if(lv_joi_retcode != JOI_OK)
+       jresult = lv_joi_retcode;
+     else
+     {
+       _tlp_jenv->PopLocalFrame(NULL);
+       return RET_EXCEPTION;
+     }
   }
 
-  if (jresult <= RET_LAST)
+  _tlp_jenv->PopLocalFrame(NULL);
+  if (jresult <= RET_LAST) {
      return jresult;
+  }
 
   // For building
-  if(pv_transid) {
+  if(pv_transid) 
     return RET_OK;
-  }
+
   return RET_OK;
 }
 
@@ -376,19 +369,20 @@ short CHbaseTM::prepareCommit(int64 pv_transid) {
 short CHbaseTM::doCommit(int64 pv_transid) {
   jlong   jlv_transid = pv_transid;
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::doCommit()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
   jshort jresult = _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_DOCOMMIT].methodID, jlv_transid);
   if (getExceptionDetails(NULL)) {
      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::doCommit()", (char *)_tlp_error_msg->c_str(), pv_transid);
+     _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
   }
 
+  _tlp_jenv->PopLocalFrame(NULL);
   if (jresult == 1)
   {
     // jresult from abort java method - 1 is error
@@ -407,10 +401,9 @@ short CHbaseTM::doCommit(int64 pv_transid) {
 short CHbaseTM::tryCommit(int64 pv_transid) {
   jlong   jlv_transid = pv_transid;
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::tryCommit()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
@@ -420,6 +413,7 @@ short CHbaseTM::tryCommit(int64 pv_transid) {
      return RET_EXCEPTION;
   }
 
+  _tlp_jenv->PopLocalFrame(NULL);
   //  RET_NOTX means the transaction wasn't found by the HBase client code (trx).  This is ok here, it
   //  simply means the transaction hasn't been seen by the HBase client code, so no work was done on it.
   if (jresult == RET_NOTX)
@@ -434,19 +428,20 @@ short CHbaseTM::tryCommit(int64 pv_transid) {
 short CHbaseTM::completeRequest(int64 pv_transid) {
   jlong   jlv_transid = pv_transid;
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::completeRequest()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
   jshort jresult = _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_COMPLETEREQUEST].methodID, jlv_transid);
   if (getExceptionDetails(NULL)) {
      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::completeRequest()", (char *)_tlp_error_msg->c_str(), pv_transid);
+     _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
   }
 
+  _tlp_jenv->PopLocalFrame(NULL);
   if (jresult == 1)
   {
     // jresult from abort java method - 1 is error
@@ -624,21 +619,24 @@ int CHbaseTM::registerRegion(int64 pv_transid,
    HBASETrace(HBASETM_TraceAPI, (HDR "CHbaseTM::registerRegion : Txn ID (%d,%d), startid %ld, hostname: %s.\n",
 				 lv_tid.node(), lv_tid.seqnum(), jlv_startid, pa_hostname));
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::registerRegion()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
   jbyteArray jba_hostname = _tlp_jenv->NewByteArray(pv_hostname_Length+1);
-  if (jba_hostname == NULL)
+  if (jba_hostname == NULL) {
+    _tlp_jenv->PopLocalFrame(NULL);
     return RET_ADD_PARAM;
+  }
   _tlp_jenv->SetByteArrayRegion(jba_hostname, 0, pv_hostname_Length, (const jbyte*) pa_hostname);
 
   jbyteArray jba_regionInfo = _tlp_jenv->NewByteArray(pv_regionInfo_Length);
-  if (jba_regionInfo == NULL)
+  if (jba_regionInfo == NULL) {
+    _tlp_jenv->PopLocalFrame(NULL);
     return RET_ADD_PARAM;
+  }
 
   _tlp_jenv->SetByteArrayRegion(jba_regionInfo, 0, pv_regionInfo_Length, (const jbyte*)pa_regionInfo);
 
@@ -653,14 +651,14 @@ int CHbaseTM::registerRegion(int64 pv_transid,
 					jba_regionInfo);
   if (getExceptionDetails(NULL)) {
      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::registerRegion()", (char *)_tlp_error_msg->c_str(), pv_transid);
+     _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
   }
-  _tlp_jenv->DeleteLocalRef(jba_hostname);
-  _tlp_jenv->DeleteLocalRef(jba_regionInfo);
 
   HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::registerRegion : Error %d, Txn ID (%d,%d), hostname %s.\n", 
                 lv_error, lv_tid.node(), lv_tid.seqnum(), pa_hostname));
 
+  _tlp_jenv->PopLocalFrame(NULL);
   return lv_error;
 } //CHbaseTM::registerRegion
 
@@ -724,18 +722,19 @@ int CHbaseTM::participatingRegions(int64 pv_transid)
    HBASETrace(HBASETM_TraceAPI, (HDR "CHbaseTM::participatingRegions : Txn ID (%d,%d).\n", lv_transid.node(), lv_transid.seqnum()));
 
    JOI_RetCode lv_joi_retcode = JOI_OK;
-   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
-  if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
-    abort();
-  }
+   lv_joi_retcode = initJNIEnv();
+   if (lv_joi_retcode != JOI_OK) {
+      tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::participatingRegions()", (char *)_tlp_error_msg->c_str(), -1LL);
+      abort();
+   }
 
    lv_participating = _tlp_jenv->CallIntMethod(javaObj_, JavaMethods_[JM_PARREGION].methodID, lv_transid_j);
-  if (getExceptionDetails(NULL)) {
-     tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::participatingRegions()", (char *)_tlp_error_msg->c_str(), pv_transid);
-     lv_participatingCount = -1;
-  }
+   if (getExceptionDetails(NULL)) {
+      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::participatingRegions()", (char *)_tlp_error_msg->c_str(), pv_transid);
+      lv_participatingCount = -1;
+   }
+   _tlp_jenv->PopLocalFrame(NULL);
+
    lv_participatingCount = lv_participating;
 
    HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::participatingRegions : Count %d.\n", lv_participatingCount));
@@ -762,10 +761,9 @@ int CHbaseTM::unresolvedRegions(int64 pv_transid)
 short CHbaseTM::stall(int where){
   jint jiv_where = where;
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::stall()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
@@ -773,18 +771,19 @@ short CHbaseTM::stall(int where){
   _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_STALL].methodID, jiv_where);
   if (getExceptionDetails(NULL)) {
      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::stall()", (char *)_tlp_error_msg->c_str(), -1LL);
+     _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
-  }
+  } 
+  _tlp_jenv->PopLocalFrame(NULL);
   return RET_OK;
 }
 
 short CHbaseTM::nodeDown(int32 nid){
   jint jiv_nid = nid;
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::nodeDown()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
@@ -792,8 +791,10 @@ short CHbaseTM::nodeDown(int32 nid){
   _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_NODEDOWN].methodID, jiv_nid);
   if (getExceptionDetails(NULL)) {
      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::nodeDown()", (char *)_tlp_error_msg->c_str(), -1LL);
+     _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
   }
+  _tlp_jenv->PopLocalFrame(NULL);
   return RET_OK;
 }
 
@@ -801,10 +802,9 @@ short CHbaseTM::nodeDown(int32 nid){
 short CHbaseTM::nodeUp(int32 nid){
   jint jiv_nid = nid;
   JOI_RetCode lv_joi_retcode = JOI_OK;
-  lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+  lv_joi_retcode = initJNIEnv();
   if (lv_joi_retcode != JOI_OK) {
-    printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-    fflush(stdout);
+    tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::nodeUp()", (char *)_tlp_error_msg->c_str(), -1LL);
     abort();
   }
 
@@ -812,8 +812,10 @@ short CHbaseTM::nodeUp(int32 nid){
   _tlp_jenv->CallShortMethod(javaObj_, JavaMethods_[JM_NODEUP].methodID, jiv_nid);
   if (getExceptionDetails(NULL)) {
      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::nodeUp()", (char *)_tlp_error_msg->c_str(), -1LL);
+    _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
   }
+  _tlp_jenv->PopLocalFrame(NULL);
   return RET_OK;
 }
 
@@ -826,7 +828,9 @@ int CHbaseTM::createTable(int64 pv_transid,
                            int pv_tbldesc_len,
                            char** pv_keys,
                            int pv_numsplits,
-                           int pv_keylen)
+                           int pv_keylen,
+                           char *errstr,
+                           int &errstrlen)
 {
    int lv_error = FEOK;
    jlong jlv_transid = pv_transid;
@@ -836,16 +840,17 @@ int CHbaseTM::createTable(int64 pv_transid,
               (HDR "CHbaseTM::createTable returning %d.\n", lv_error));
 
    JOI_RetCode lv_joi_retcode = JOI_OK;
-   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   lv_joi_retcode = initJNIEnv();
    if (lv_joi_retcode != JOI_OK) {
-      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-      fflush(stdout);
+      tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::createTable()", (char *)_tlp_error_msg->c_str(), -1LL);
       abort();
    }
 
    jbyteArray jba_tbldesc = _tlp_jenv->NewByteArray(pv_tbldesc_len);
-   if (jba_tbldesc == NULL)
+   if (jba_tbldesc == NULL) {
+      _tlp_jenv->PopLocalFrame(NULL);
       return RET_ADD_PARAM;
+   }
    _tlp_jenv->SetByteArrayRegion(jba_tbldesc, 0, pv_tbldesc_len, (const jbyte*) pa_tbldesc);
 
    jobjectArray j_keys = NULL;
@@ -860,16 +865,18 @@ int CHbaseTM::createTable(int64 pv_transid,
                     jba_tbldesc,
                     j_keys);
   if (getExceptionDetails(NULL)) {
-     tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::createTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
+     int errMsgLen = (int)_tlp_error_msg->length();
+	 errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen  : errstrlen -1;
+	 strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+	 errstr[errstrlen] = '\0';
+	 tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::createTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
+     _tlp_jenv->PopLocalFrame(NULL);
      return RET_EXCEPTION;
   }
 
-   _tlp_jenv->DeleteLocalRef(jba_tbldesc);
-   _tlp_jenv->DeleteLocalRef(j_keys);
-
    HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::createTable : Error %d, Txn ID (%d,%d), hostname %s.\n",
                 lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tbldesc));
-
+   _tlp_jenv->PopLocalFrame(NULL);
    return lv_error;
 }
 
@@ -882,26 +889,29 @@ int CHbaseTM::alterTable(int64 pv_transid,
                         int pv_tblname_len,
                         char ** buffer_tblopts,
                         int pv_numtblopts,
-                        int pv_tbloptslen)
+                        int pv_tbloptslen,
+                        char *errstr,
+                        int &errstrlen)
 {
    int lv_error = FEOK;
    jlong jlv_transid = pv_transid;
    CTmTxKey lv_tid(pv_transid);
 
    HBASETrace(HBASETM_TraceExitError,
-              (HDR "CHbaseTM::createTable returning %d.\n", lv_error));
+              (HDR "CHbaseTM::alterTable returning %d.\n", lv_error));
 
    JOI_RetCode lv_joi_retcode = JOI_OK;
-   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   lv_joi_retcode = initJNIEnv();
    if (lv_joi_retcode != JOI_OK) {
-      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-      fflush(stdout);
+      tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::alterTable()", (char *)_tlp_error_msg->c_str(), -1LL);
       abort();
    }
 
    jbyteArray jba_tblname = _tlp_jenv->NewByteArray(pv_tblname_len);
-   if (jba_tblname == NULL)
+   if (jba_tblname == NULL) {
+      _tlp_jenv->PopLocalFrame(NULL);
       return RET_ADD_PARAM;
+   }
    _tlp_jenv->SetByteArrayRegion(jba_tblname, 0, pv_tblname_len, (const jbyte*) pa_tblname);
 
    jobjectArray j_tblopts = NULL;
@@ -913,12 +923,15 @@ int CHbaseTM::alterTable(int64 pv_transid,
                     jba_tblname,
                     j_tblopts);
    if (getExceptionDetails(NULL)) {
+      int errMsgLen = (int)_tlp_error_msg->length();
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen -1;
+      strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+      errstr[errstrlen] = '\0';
       tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::alterTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
+      _tlp_jenv->PopLocalFrame(NULL);
       return RET_EXCEPTION;
    }
-
-   _tlp_jenv->DeleteLocalRef(jba_tblname);
-   _tlp_jenv->DeleteLocalRef(j_tblopts);
+   _tlp_jenv->PopLocalFrame(NULL);
 
    HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::createTable : Error %d, Txn ID (%d,%d), hostname %s.\n",
                 lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tblname));
@@ -933,7 +946,9 @@ int CHbaseTM::alterTable(int64 pv_transid,
 // ---------------------------------------------------------------------------
 int CHbaseTM::regTruncateOnAbort(int64 pv_transid,
                            const char* pa_tblname,
-                           int pv_tblname_len)
+                           int pv_tblname_len,
+                           char *errstr,
+                           int &errstrlen)
 {
    int lv_error = FEOK;
    jlong jlv_transid = pv_transid;
@@ -943,16 +958,17 @@ int CHbaseTM::regTruncateOnAbort(int64 pv_transid,
               (HDR "CHbaseTM::regTruncateOnAbort returning %d.\n", lv_error));
 
    JOI_RetCode lv_joi_retcode = JOI_OK;
-   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   lv_joi_retcode = initJNIEnv();
    if (lv_joi_retcode != JOI_OK) {
-      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-      fflush(stdout);
+      tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::regTruncateAbort()", (char *)_tlp_error_msg->c_str(), -1LL);
       abort();
    }
 
    jbyteArray jba_tblname = _tlp_jenv->NewByteArray(pv_tblname_len);
-   if (jba_tblname == NULL)
+   if (jba_tblname == NULL) {
+      _tlp_jenv->PopLocalFrame(NULL);
       return RET_ADD_PARAM;
+   }
    _tlp_jenv->SetByteArrayRegion(jba_tblname, 0, pv_tblname_len, (const jbyte*) pa_tblname);
 
    lv_error = _tlp_jenv->CallShortMethod(javaObj_,
@@ -960,10 +976,15 @@ int CHbaseTM::regTruncateOnAbort(int64 pv_transid,
                     jlv_transid,
                     jba_tblname);
    if (getExceptionDetails(NULL)) {
+      int errMsgLen = (int)_tlp_error_msg->length();
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen -1;
+      strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+      errstr[errstrlen] = '\0';
       tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::regTruncateOnAbort()", (char *)_tlp_error_msg->c_str(), pv_transid);
+      _tlp_jenv->PopLocalFrame(NULL);
       return RET_EXCEPTION;
    }
-   _tlp_jenv->DeleteLocalRef(jba_tblname);
+   _tlp_jenv->PopLocalFrame(NULL);
 
    HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::regTruncateOnAbort : Error %d, Txn ID (%d,%d), hostname %s.\n",
                 lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tblname));
@@ -978,7 +999,9 @@ int CHbaseTM::regTruncateOnAbort(int64 pv_transid,
 // ---------------------------------------------------------------------------
 int CHbaseTM::dropTable(int64 pv_transid,
                            const char* pa_tblname,
-                           int pv_tblname_len)
+                           int pv_tblname_len,
+                           char *errstr,
+                           int &errstrlen)
 {
    int lv_error = FEOK;
    jlong jlv_transid = pv_transid;
@@ -988,16 +1011,17 @@ int CHbaseTM::dropTable(int64 pv_transid,
               (HDR "CHbaseTM::dropTable returning %d.\n", lv_error));
 
    JOI_RetCode lv_joi_retcode = JOI_OK;
-   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   lv_joi_retcode = initJNIEnv();
    if (lv_joi_retcode != JOI_OK) {
-      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-      fflush(stdout);
+      tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::dropTable()", (char *)_tlp_error_msg->c_str(), -1LL);
       abort();
    }
 
    jbyteArray jba_tblname = _tlp_jenv->NewByteArray(pv_tblname_len);
-   if (jba_tblname == NULL)
+   if (jba_tblname == NULL) {
+      _tlp_jenv->PopLocalFrame(NULL);
       return RET_ADD_PARAM;
+   }
    _tlp_jenv->SetByteArrayRegion(jba_tblname, 0, pv_tblname_len, (const jbyte*) pa_tblname);
 
    lv_error = _tlp_jenv->CallShortMethod(javaObj_,
@@ -1005,11 +1029,16 @@ int CHbaseTM::dropTable(int64 pv_transid,
                     jlv_transid,
                     jba_tblname);
    if (getExceptionDetails(NULL)) {
+      int errMsgLen = (int)_tlp_error_msg->length();
+      errstrlen = ((errMsgLen < errstrlen) && (errMsgLen > 0)) ? errMsgLen : errstrlen -1;
+      strncpy(errstr, _tlp_error_msg->c_str(), errstrlen);
+      errstr[errstrlen] = '\0';
       tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::dropTable()", (char *)_tlp_error_msg->c_str(), pv_transid);
+      _tlp_jenv->PopLocalFrame(NULL);
       return RET_EXCEPTION;
    }
 
-   _tlp_jenv->DeleteLocalRef(jba_tblname);
+   _tlp_jenv->PopLocalFrame(NULL);
 
    HBASETrace(HBASETM_TraceExit, (HDR "CHbaseTM::dropTable : Error %d, Txn ID (%d,%d), hostname %s.\n",
                 lv_error, lv_tid.node(), lv_tid.seqnum(), pa_tblname));
@@ -1100,24 +1129,27 @@ void CHbaseTM::shutdown()
 HashMapArray* CHbaseTM::requestRegionInfo(){
 
    JOI_RetCode lv_joi_retcode = JOI_OK;
-   lv_joi_retcode = JavaObjectInterfaceTM::initJVM();
+   lv_joi_retcode = initJNIEnv();
    if (lv_joi_retcode != JOI_OK) {
-      printf("JavaObjectInterfaceTM::initJVM returned: %d\n", lv_joi_retcode);
-      fflush(stdout);
+      tm_log_write(DTM_SEA_SOFT_FAULT, SQ_LOG_CRIT, (char *)"CHbaseTM::requestRegionInfo()", (char *)_tlp_error_msg->c_str(), -1LL);
       abort();
    }
    jobject jHashMapArray = _tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_RQREGINFO].methodID);
    if (getExceptionDetails(NULL)) {
       tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"CHbaseTM::requestRegionInfo()", (char *)_tlp_error_msg->c_str(), -1LL);
+      _tlp_jenv->PopLocalFrame(NULL);
       return NULL;
    }
 
-   if(jHashMapArray == NULL)
+   if (jHashMapArray == NULL) {
+      _tlp_jenv->PopLocalFrame(NULL);
       return NULL;
+   }
 
    HashMapArray* regionMap = new HashMapArray(jvm_, _tlp_jenv, jHashMapArray);
    regionMap->init();
 
+   _tlp_jenv->PopLocalFrame(NULL);
    return regionMap;
 }
 
@@ -1164,6 +1196,8 @@ HMN_RetCode HashMapArray::init()
       JavaMethods_[JM_GET_HOSTNAME   ].jm_signature  = "(I)Ljava/lang/String;";
       JavaMethods_[JM_GET_PORT       ].jm_name       = "getPort";
       JavaMethods_[JM_GET_PORT       ].jm_signature  = "(I)Ljava/lang/String;";
+      JavaMethods_[JM_GET_REGINFO    ].jm_name       = "getRegionInfo";
+      JavaMethods_[JM_GET_REGINFO    ].jm_signature  = "(J)Ljava/lang/String;";
 
       return (HMN_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, JavaMethods_, (int32)JM_LAST, false);
     }
@@ -1178,6 +1212,22 @@ char* HashMapArray::get(int tid)
    }
    if(js_val == NULL){
        printf("hbasetm::HashMapArray::get - js_val is NULL");
+       return NULL;
+   }
+
+   const jbyte* jb_val = (jbyte*)_tlp_jenv->GetStringUTFChars(js_val, NULL);
+   char* cp_val = (char *)jb_val;
+   return cp_val;
+}
+
+char* HashMapArray::getRegionInfo(int64 tid)
+{
+   jstring js_val = (jstring)(_tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_REGINFO].methodID, tid));
+   if (getExceptionDetails(NULL)) {
+      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"HashMapArray::getRegionInfo()", (char *)_tlp_error_msg->c_str(), -1LL);
+      return NULL;
+   }
+   if(js_val == NULL){
        return NULL;
    }
 

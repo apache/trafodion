@@ -39,6 +39,8 @@ int main () {
    short lv_retcode = 0;
    long  lv_txid = 20500;
    short lv_dtmid = 0;
+   char *errStr = NULL;
+   int   errStrLen = 0;
    long ctrlPtNum;
    CHbaseTM *lp_myHbaseTM = 0;
 
@@ -58,7 +60,7 @@ int main () {
    lp_myHbaseTM->beginTransaction(&lv_txid);
    printf("After lp_myHbaseTM->beginTransaction, transactionId = %ld \n", lv_txid);
 
-   lv_retcode = lp_myHbaseTM->prepareCommit(lv_txid);
+   lv_retcode = lp_myHbaseTM->prepareCommit(lv_txid, errStr, errStrLen);
    printf("After lp_myHbaseTM->prepareCommit(transactionId = %ld), retcode = %d \n", lv_txid, lv_retcode);
 
    lv_retcode = lp_myHbaseTM->participatingRegions(lv_txid);
@@ -127,7 +129,7 @@ int main () {
    lp_myHbaseTM->beginTransaction(&lv_txid);
    printf("After lp_myHbaseTM->beginTransaction, transactionId = %ld \n", lv_txid);
 
-   lv_retcode = lp_myHbaseTM->prepareCommit(lv_txid);
+   lv_retcode = lp_myHbaseTM->prepareCommit(lv_txid, errStr, errStrLen);
    printf("After lp_myHbaseTM->prepareCommit(transactionId = %ld), retcode = %d \n", lv_txid, lv_retcode);
 
    lv_retcode = lp_myHbaseTM->participatingRegions(lv_txid);

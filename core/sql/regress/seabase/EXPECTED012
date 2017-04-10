@@ -41,7 +41,7 @@
 >>invoke t012t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T012T1
--- Definition current  Wed Nov 16 21:22:44 2016
+-- Definition current  Sat Jan 14 03:57:20 2017
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -65,7 +65,7 @@
 >>invoke t012v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T012V1
--- Definition current  Wed Nov 16 21:22:48 2016
+-- Definition current  Sat Jan 14 03:57:23 2017
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -361,8 +361,8 @@ T012T11V1
 Tables in View ZSCHEMA1.V
 =========================
 
-ZSCHEMA1.T
-ZSCHEMA2.T
+TRAFODION.ZSCHEMA1.T
+TRAFODION.ZSCHEMA2.T
 
 --- SQL operation complete.
 >>get views on table zschema1.t;
@@ -380,7 +380,7 @@ ZSCHEMA2.V
 Tables in View ZSCHEMA2.V2
 ==========================
 
-ZSCHEMA2.T
+TRAFODION.ZSCHEMA2.T
 
 --- SQL operation complete.
 >>get all tables in view zschema2.v2;
@@ -388,8 +388,8 @@ ZSCHEMA2.T
 Tables in View ZSCHEMA2.V2
 ==========================
 
-ZSCHEMA1.T
-ZSCHEMA2.T
+TRAFODION.ZSCHEMA1.T
+TRAFODION.ZSCHEMA2.T
 
 --- SQL operation complete.
 >>get views in view zschema2.v2;
@@ -397,7 +397,7 @@ ZSCHEMA2.T
 Views in View ZSCHEMA2.V2
 =========================
 
-ZSCHEMA1.V
+TRAFODION.ZSCHEMA1.V
 
 --- SQL operation complete.
 >>get all objects in view zschema2.v2;
@@ -405,9 +405,9 @@ ZSCHEMA1.V
 Objects in View ZSCHEMA2.V2
 ===========================
 
-ZSCHEMA1.T
-ZSCHEMA1.V
-ZSCHEMA2.T
+TRAFODION.ZSCHEMA1.T
+TRAFODION.ZSCHEMA1.V
+TRAFODION.ZSCHEMA2.T
 
 --- SQL operation complete.
 >>

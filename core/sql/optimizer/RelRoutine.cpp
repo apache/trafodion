@@ -335,6 +335,7 @@ TableMappingUDF::TableMappingUDF(const TableMappingUDF & other)
   constParamBuffer_ = other.constParamBuffer_; // shallow copy is ok
   constParamBufferLen_ = other.constParamBufferLen_;
   udfOutputToChildInputMap_ = other.udfOutputToChildInputMap_;
+  isNormalized_ = other.isNormalized_;
 }
 
 //! TableMappingUDF::~TableMappingUDF Destructor
@@ -352,9 +353,9 @@ RelExpr * TableMappingUDF::copyTopNode(RelExpr *derivedNode,
 
    if (derivedNode == NULL)
    {
-     result = new (outHeap) TableMappingUDF(NULL,
-                               getOperatorType(),
-                               outHeap);
+     result = new (outHeap) TableMappingUDF(getArity(),
+                                            NULL,
+                                            outHeap);
    }
    else
      result = (TableMappingUDF *) derivedNode;
@@ -376,6 +377,7 @@ RelExpr * TableMappingUDF::copyTopNode(RelExpr *derivedNode,
   result->constParamBufferLen_ = constParamBufferLen_;
   result->predsEvaluatedByUDF_ = predsEvaluatedByUDF_;
   result->udfOutputToChildInputMap_ = udfOutputToChildInputMap_;
+  result->isNormalized_ = isNormalized_;
   return TableValuedFunction::copyTopNode(result, outHeap);
 }
 
@@ -505,60 +507,82 @@ void TableMappingUDF::pushdownCoveredExpr(
      const ValueIdSet *nonPredNonOutputExprOnOperator,
      Lng32 childId)
 {
-  ValueIdSet exprOnParent;
-  ValueIdSet predsToPushDown;
-  // At this point, we have determined the characteristic outputs
-  // of the TableMappingUDF and a set of selection predicates to
-  // be evaluated on the result of the UDF.
-
-  // Call the UDF code to determine which child outputs we should
-  // require as child characteristic outputs and what to do with the
-  // selection predicates
-
-  // The logic below only works if we push preds to all children
-  // at the same time.
-  CMPASSERT(childId == -MAX_REL_ARITY);
-
-  // interact with the UDF
-  NABoolean status = dllInteraction_->describeDataflow(
-       this,
-       exprOnParent,
-       selectionPred(),
-       predsEvaluatedByUDF_,
-       predsToPushDown);
-  // no good way to return failure, error will be detected
-  // at the end of the normalization phase
-
-  // rewrite the predicates to be pushed down in terms
-  // of the values produced by the table-valued inputs
-  ValueIdSet childPredsToPushDown;
-  udfOutputToChildInputMap_.rewriteValueIdSetDown(
-       predsToPushDown, childPredsToPushDown);
-
-  // remaining selection predicates stay with the parent
-  exprOnParent += selectionPred();
-  if(nonPredNonOutputExprOnOperator)
-    exprOnParent += *nonPredNonOutputExprOnOperator;
-
-  RelExpr::pushdownCoveredExpr(outputExprOnOperator,
-                               newExternalInputs,
-                               childPredsToPushDown,
-                               &exprOnParent,
-                               childId);
-
-  // apply any leftover predicates back to the parent, but need
-  // to rewrite them in terms of the parent first
-  if (!childPredsToPushDown.isEmpty())
+  if (!isNormalized_)
     {
-      predsToPushDown.clear();
-      // Map the leftovers back to the language of out outputs.
-      // Note that since we rewrote these values on the way down,
-      // a simple mapping will suffice when going back up, as they
-      // are recorded already in the map table.
-      udfOutputToChildInputMap_.mapValueIdSetUp(predsToPushDown,
-                                                childPredsToPushDown);
-      selectionPred() += predsToPushDown;
+      ValueIdSet exprOnParent;
+      ValueIdSet predsToPushDown;
+      // At this point, we have determined the characteristic outputs
+      // of the TableMappingUDF and a set of selection predicates to
+      // be evaluated on the result of the UDF.
+
+      // Call the UDF code to determine which child outputs we should
+      // require as child characteristic outputs and what to do with the
+      // selection predicates
+
+      // The logic below only works if we push preds to all children
+      // at the same time.
+      CMPASSERT(childId == -MAX_REL_ARITY);
+
+      // interact with the UDF
+      NABoolean status = dllInteraction_->describeDataflow(
+           this,
+           exprOnParent,
+           selectionPred(),
+           predsEvaluatedByUDF_,
+           predsToPushDown);
+      // no good way to return failure, error will be detected
+      // at the end of the normalization phase
+
+      // rewrite the predicates to be pushed down in terms
+      // of the values produced by the table-valued inputs
+      ValueIdSet childPredsToPushDown;
+      udfOutputToChildInputMap_.rewriteValueIdSetDown(
+           predsToPushDown, childPredsToPushDown);
+
+      // remaining selection predicates stay with the parent
+      exprOnParent += selectionPred();
+      if(nonPredNonOutputExprOnOperator)
+        exprOnParent += *nonPredNonOutputExprOnOperator;
+
+      RelExpr::pushdownCoveredExpr(outputExprOnOperator,
+                                   newExternalInputs,
+                                   childPredsToPushDown,
+                                   &exprOnParent,
+                                   childId);
+
+      // apply any leftover predicates back to the parent, but need
+      // to rewrite them in terms of the parent first
+      if (!childPredsToPushDown.isEmpty())
+        {
+          predsToPushDown.clear();
+          // Map the leftovers back to the language of out outputs.
+          // Note that since we rewrote these values on the way down,
+          // a simple mapping will suffice when going back up, as they
+          // are recorded already in the map table.
+          udfOutputToChildInputMap_.mapValueIdSetUp(predsToPushDown,
+                                                    childPredsToPushDown);
+          selectionPred() += predsToPushDown;
+        }
+      // indicate that we did this step and recorded needed columns
+      // and pushed predicate in the InvocationInfo, don't change this
+      // information from now on (unless recording such changes in
+      // UDRPlanInfo)
+      isNormalized_ = TRUE;
     }
+  // else
+  // If this is past the normalizer UDF interface call,
+  // pushdownCoveredExpr() has already been called in the
+  // normalizer. We cannot push down predicates and/or eliminate
+  // columns in this phase, because the UDR has already been told
+  // which columns and predicates we need. Also, this situation could
+  // apply only to one plan alternative and the UDRInvocationInfo
+  // object that records the predicates and columns is shared among
+  // all the alternatives. If we want to do such pushdown in the
+  // future (and this would be very desirable, something like a
+  // "routine join"), then we'll have to record the pushed down
+  // predicates and eliminated columns in the UDRPlanInfo object and
+  // we'll have to add another compiler interface method for the UDR
+  // writer.
 };
 
 
@@ -1007,11 +1031,12 @@ NARoutine * TableMappingUDF::getRoutineMetadata(
 // -----------------------------------------------------------------------
 
 PredefinedTableMappingFunction::PredefinedTableMappingFunction(
+       int arity,
        const CorrName &name,
        ItemExpr *params,
        OperatorTypeEnum otype,
        CollHeap *oHeap) :
-     TableMappingUDF(name, params, otype, oHeap)
+     TableMappingUDF(name, params, arity, otype, oHeap)
 {}
 
 PredefinedTableMappingFunction::~PredefinedTableMappingFunction()
@@ -1019,7 +1044,7 @@ PredefinedTableMappingFunction::~PredefinedTableMappingFunction()
 
 // static method to find out whether a given name is a
 // built-in table-mapping function - returns operator type
-// of predefined function if so, REL_TABLE_MAPPING_UDF otherwise
+// of predefined function if so, REL_ANY_TABLE_MAPPING_UDF otherwise
 OperatorTypeEnum PredefinedTableMappingFunction::nameIsAPredefinedTMF(const CorrName &name)
 {
   // Predefined functions don't reside in a schema, they are referenced with an unqualified name
@@ -1027,7 +1052,7 @@ OperatorTypeEnum PredefinedTableMappingFunction::nameIsAPredefinedTMF(const Corr
   const NAString &funcName = qualName.getObjectName();
 
   if (! qualName.getSchemaName().isNull())
-    return REL_TABLE_MAPPING_UDF;
+    return REL_ANY_TABLE_MAPPING_UDF;
 
   if (funcName == "EVENT_LOG_READER")
     return REL_TABLE_MAPPING_BUILTIN_LOG_READER;
@@ -1037,7 +1062,7 @@ OperatorTypeEnum PredefinedTableMappingFunction::nameIsAPredefinedTMF(const Corr
     return REL_TABLE_MAPPING_BUILTIN_JDBC;
   else
     // none of the built-in names matched, so it must be a UDF
-    return REL_TABLE_MAPPING_UDF;
+    return REL_ANY_TABLE_MAPPING_UDF;
 }
 
 const NAString PredefinedTableMappingFunction::getText() const
@@ -1070,6 +1095,7 @@ RelExpr * PredefinedTableMappingFunction::copyTopNode(RelExpr *derivedNode,
 
   if (derivedNode == NULL)
     result = new(outHeap) PredefinedTableMappingFunction(
+         getArity(),
          getUserTableName(),
          NULL, // params get copied by parent classes
          getOperatorType(),
@@ -1094,8 +1120,8 @@ NARoutine * PredefinedTableMappingFunction::getRoutineMetadata(
   NAString libraryPath;
 
   // the libraries for predefined UDRs are in the regular
-  // library directory $MY_SQROOT/export/lib${SQ_MBTYPE}
-  libraryPath += getenv("MY_SQROOT");
+  // library directory $TRAF_HOME/export/lib${SQ_MBTYPE}
+  libraryPath += getenv("TRAF_HOME");
   libraryPath += "/export/lib";
 
   switch (getOperatorType())
@@ -1156,7 +1182,7 @@ RelExpr * PhysicalTableMappingUDF::copyTopNode(RelExpr *derivedNode,
   PhysicalTableMappingUDF *result;
 
   if (derivedNode == NULL)
-    result = new(outHeap) PhysicalTableMappingUDF(outHeap);
+    result = new(outHeap) PhysicalTableMappingUDF(getArity(), outHeap);
   else
     result = (PhysicalTableMappingUDF *) derivedNode;
 

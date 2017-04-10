@@ -248,7 +248,7 @@ NABoolean openMessageCatalog(nl_catd* msgCatalog)
     char defaultMessageFile[MAX_MESSAGE_PATH_LEN];
     defaultMessageFile[0] = '\0';
 
-    char *mySQROOT          = getenv("MY_SQROOT");
+    char *mySQROOT          = getenv("TRAF_HOME");
     const char *msgCatPath2 = "/export/bin";
     const char *mbType      = getenv("SQ_MBTYPE");
     const char *msgCatPath4 = "/mxcierrors.cat";

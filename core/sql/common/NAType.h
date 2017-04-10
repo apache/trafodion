@@ -166,6 +166,9 @@ public:
   // Identical as NAType::operator==() except null attribute is not compared.
   virtual NABoolean equalIgnoreNull(const NAType& other) const;
 
+  // Identical as NAType::operator==() except length attribute is not compared.
+  virtual NABoolean equalIgnoreLength(const NAType& other) const;
+
   // Checks NATypes to see if they are equal just like the operator==
   // except for the SQLnullFlag_  flags. For the SQLnullFlag_ it
   // checks to see if it's physical.

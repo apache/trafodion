@@ -124,7 +124,9 @@ short RelExpr::generateShape(CollHeap * c, char * buf, NAString * shapeStr)
      }
     break;
 
-   case REL_TABLE_MAPPING_UDF:
+   case REL_LEAF_TABLE_MAPPING_UDF:
+   case REL_UNARY_TABLE_MAPPING_UDF:
+   case REL_BINARY_TABLE_MAPPING_UDF:
    case REL_TABLE_MAPPING_BUILTIN_LOG_READER:
    case REL_TABLE_MAPPING_BUILTIN_TIMESERIES:
    case REL_TABLE_MAPPING_BUILTIN_JDBC:

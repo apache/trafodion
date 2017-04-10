@@ -673,3 +673,124 @@ select name, SOUNDEX(name) from t006emp1 where SOUNDEX(name)=SOUNDEX('Lynn');
 select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Jon');
 select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Roy');
 select name, SOUNDEX(name) from t006emp2 where SOUNDEX(name)=SOUNDEX('Lynn');
+select sha2('the original data', 0) from dual;
+select sha2('the original data', 128) from dual;
+select sha2('the original data', 224) from dual;
+select sha2('the original data', 256) from dual;
+select sha2('the original data', 384) from dual;
+select sha2('the original data', 512) from dual;
+
+-- Test LOG() for any radix with 2 parameters
+select log(2,8) from dual;
+select log(5,10) from dual;
+select log(10,100) from dual;
+select log(2) from dual;
+select log(2.71828) from dual;
+
+-- TEST aes_encrypt/aes_decrypt
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02', '1234567812345678') from dual;
+select aes_decrypt(X'EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '1';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'0D9C1230E4B129757607D2E7C10805C9483C239A6A760FD1CECD8FC4D159E76F', '1234567812345678') from dual;
+select aes_decrypt(X'0D9C1230E4B129757607D2E7C10805C9483C239A6A760FD1CECD8FC4D159E76F', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '2';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985', '1234567812345678') from dual;
+select aes_decrypt(X'EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '3';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'12FF81AF2AB65E82DEFAE32D2CF0E7E5C14F90BAA80DF073608CE6ED0C47737F', '1234567812345678') from dual;
+select aes_decrypt(X'12FF81AF2AB65E82DEFAE32D2CF0E7E5C14F90BAA80DF073608CE6ED0C47737F', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '4';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'1A1332592C987A79374609C89BB53F89A8F0B0A2B71E06B824894D1B95E1D953', '1234567812345678') from dual;
+select aes_decrypt(X'1A1332592C987A79374609C89BB53F89A8F0B0A2B71E06B824894D1B95E1D953', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '5';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'E22114AB552C8613622ADD34B3FEDCE840A18C84FDEA9D6394F57A14F6DB2497', '1234567812345678') from dual;
+select aes_decrypt(X'E22114AB552C8613622ADD34B3FEDCE840A18C84FDEA9D6394F57A14F6DB2497', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '6';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'2A23CC234BC4175E6AE90793BFBD03E4D7F2921AC6032E45D1C0', '1234567812345678') from dual;
+select aes_decrypt(X'2A23CC234BC4175E6AE90793BFBD03E4D7F2921AC6032E45D1C0', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '7';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'09389E6E99083B18F50D2B4D14106CFCF9F9EEAD004929940C17', '1234567812345678') from dual;
+select aes_decrypt(X'09389E6E99083B18F50D2B4D14106CFCF9F9EEAD004929940C17', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '8';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'209F05F9B3E25391258A434F6FA9663F14886E9FF7E6C2CF5EF9', '1234567812345678') from dual;
+select aes_decrypt(X'209F05F9B3E25391258A434F6FA9663F14886E9FF7E6C2CF5EF9', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '9';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'0C45C8DB6AE2F87AE36420AE711AC1121576FEECB26BD9B246AB', '1234567812345678') from dual;
+select aes_decrypt(X'0C45C8DB6AE2F87AE36420AE711AC1121576FEECB26BD9B246AB', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '10';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'2C39ACEEBF859846261D8B1B712BBC7965F64889293C26CDFE61', '1234567812345678') from dual;
+select aes_decrypt(X'2C39ACEEBF859846261D8B1B712BBC7965F64889293C26CDFE61', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '11';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'6A3C1001A693B34DD2619B066413995BDEC5259A73E1E6D2DEBC', '1234567812345678') from dual;
+select aes_decrypt(X'6A3C1001A693B34DD2619B066413995BDEC5259A73E1E6D2DEBC', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '12';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A47901D8036903B6603DF43E5', '1234567812345678') from dual;
+select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A47901D8036903B6603DF43E5', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '13';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152245E8DD142FC6CD57D57E2', '1234567812345678') from dual;
+select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152245E8DD142FC6CD57D57E2', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '14';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB07435157353DAE7BC6203', '1234567812345678') from dual;
+select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB07435157353DAE7BC6203', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '15';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A4790B5D857207B417EFB52D8', '1234567812345678') from dual;
+select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A4790B5D857207B417EFB52D8', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '16';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152244B6E78427EC604C84868', '1234567812345678') from dual;
+select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152244B6E78427EC604C84868', '1234567812345678', '1234567812345678') from dual;
+
+cqd block_encryption_mode '17';
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
+select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
+select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128', '1234567812345678') from dual;
+select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128', '1234567812345678', '1234567812345678') from dual;

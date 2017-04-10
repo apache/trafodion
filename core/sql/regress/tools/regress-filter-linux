@@ -280,8 +280,8 @@ s/\(EXTERNAL PATH\) '[^']*'/\1 '@path@'/
 # For SHOWLABEL COMPRESSION
 s/\\(ATTRIBUTES \\([^,][^,]*, \\)\\{0,1\\}\\)[ NO]*COMPRESSION/\1@compress@/g
 
-s/ SERIALIZED//
-s/ NOT SERIALIZED//
+#s/ SERIALIZED//
+#s/ NOT SERIALIZED//
 
 # For error 11205 (Java class not found)
 /ERROR\[11205\]/s/\(external path\) '[^']*'/\1 '@path@'/
@@ -370,6 +370,10 @@ s/nist586\.mdf.*/nist586.mdf/g
 s/WARNING.8024.*/WARNING 8024 filtered/g
 
 s/WARNING.1389.*/WARNING 1389 Object does not exist in TRAFODION./g
+
+#Added for core/TEST116
+s/Detail :.*$/Detail @conflict details@/
+/org.TRAFODION.dtm.HBaseTxClient.prepareCommit*/d
 
 # ... NonStop(TM) SQL/MX Compiler 2.0
 #                                 ^^^

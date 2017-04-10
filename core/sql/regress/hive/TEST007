@@ -1,0 +1,253 @@
+-- Tests for trafodion views on hive tables and native hive views
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+
+obey TEST007(clean_up_traf);
+obey TEST007(clean_up_hive);
+
+log LOG007 clear;
+obey TEST007(setup_traf);
+obey TEST007(tests_traf);
+obey TEST007(error_tests_traf);
+
+obey TEST007(setup_hive);
+obey TEST007(tests_hive);
+obey TEST007(error_tests_hive);
+
+log;
+obey TEST007(clean_up_traf);
+obey TEST007(clean_up_hive);
+
+exit;
+
+?section clean_up_traf
+drop view trafodion.sch007.vhive1 cascade;
+drop view trafodion.sch007.vhive11 cascade;
+drop view trafodion.sch007.vhive2 cascade;
+drop view trafodion.sch007.vhive3 cascade;
+drop view trafodion.sch007.vhive4 cascade;
+drop view trafodion.sch007.vhive5 cascade;
+drop view trafodion.sch007.vhive6 cascade;
+drop external table thive1 for hive.hive.thive1 cascade;
+cleanup table trafodion."_HV_HIVE_".thive1;
+drop external table thive2 for hive.hive.thive2 cascade;
+process hive statement 'drop table thive1';
+process hive statement 'drop table thive2';
+drop external table thive3 for hive.hive.thive3;
+process hive statement 'drop table thive3';
+drop table if exists trafodion.sch007.thbase1 cascade;
+
+?section setup_traf
+set schema hive.hive;
+cqd HIVE_MAX_STRING_LENGTH '20' ;
+create schema if not exists trafodion.sch007;
+
+?section tests_traf
+-- tests for views on hive tables
+process hive statement 'drop table thive1';
+process hive statement 'create table thive1(a int, b int)';
+sh echo "insert into thive1 values (1, 2);" > TEST007_junk;
+sh regrhive.ksh -f TEST007_junk;
+
+process hive statement 'drop table thive2';
+process hive statement 'create table thive2(a int, b int)';
+sh echo "insert into thive2 values (1, 2);" > TEST007_junk;
+sh regrhive.ksh -f TEST007_junk;
+
+create external table thive2 for hive.hive.thive2;
+
+create view trafodion.sch007.vhive1 as select * from thive1;
+showddl hive.hive.thive1;
+
+create view trafodion.sch007.vhive11 as select * from thive2;
+create view trafodion.sch007.vhive2 as select x.a, y.b from thive1 x, thive2 y
+  where x.a < 2 and x.b = y.b;
+create view trafodion.sch007.vhive3 as select * from trafodion.sch007.vhive2;
+
+-- view on hive and traf tables
+drop table if exists trafodion.sch007.thbase1;
+create table trafodion.sch007.thbase1 (aa int, bb int);
+create view trafodion.sch007.vhivehbase as select * from 
+        trafodion.sch007.thbase1, thive2 where a = aa;
+insert into trafodion.sch007.thbase1 values (1,2);
+invoke trafodion.sch007.vhivehbase;
+select * from trafodion.sch007.vhivehbase;
+
+select * from thive1;
+insert into trafodion.sch007.vhive1 values (3,4);
+select * from thive1;
+
+prepare s from select * from trafodion.sch007.vhive1;
+explain options 'f' s;
+execute s;
+
+prepare s from select * from trafodion.sch007.vhive2;
+explain options 'f' s;
+execute s;
+
+prepare s from select * from trafodion.sch007.vhive3;
+explain options 'f' s;
+execute s;
+
+get tables in view trafodion.sch007.vhive1;
+get tables in view trafodion.sch007.vhive11;
+
+get all tables in view trafodion.sch007.vhive3;
+get views in view trafodion.sch007.vhive3;
+get views on table hive.hive.thive1;
+get all views on table hive.hive.thive2;
+
+drop external table thive2 for hive.hive.thive2 cascade;
+showddl hive.hive.thive2;
+showddl trafodion.sch007.vhive3;
+get all views on table hive.hive.thive2;
+
+?section error_tests_traf
+
+create view trafodion.sch007.vhive4 as select x.a, y.b from thive1 x, thive1 y;
+
+-- insert not allowed
+insert into trafodion.sch007.vhive4 values (3,4);
+
+-- del/upd not allowed
+delete from trafodion.sch007.vhive1;
+update trafodion.sch007.vhive1 set b = 1;
+
+--  traf view is not updatable
+delete from trafodion.sch007.vhive4;
+
+-- traf view must be in traf cat/sch
+create view vhive5 as select * from thive1;
+
+-- if underlying hive table is dropped, an error is returned
+prepare s from select * from trafodion.sch007.vhive1;
+execute s;
+process hive statement 'drop table thive1';
+execute s;
+select * from trafodion.sch007.vhive1;
+
+-- if external table creation has been disabled, then view usage will
+-- not available
+cqd hive_views_create_external_table 'OFF';
+process hive statement 'drop table thive3';
+process hive statement 'create table thive3(a int, b int)';
+create view trafodion.sch007.vhive6 as select * from hive.hive.thive3;
+showddl hive.hive.thive3;
+get all views on table hive.hive.thive3;
+get all tables in view trafodion.sch007.vhive6;
+
+?section clean_up_hive
+process hive statement 'drop table hivesch007.thive1';
+process hive statement 'drop view hivesch007.vhive11';
+process hive statement 'drop view hivesch007.vhive1';
+process hive statement 'drop database hivesch007';
+process hive statement 'drop table thive007';
+process hive statement 'drop view vhive007';
+
+drop view trafodion.sch007.vtrafonhive;
+
+drop schema trafodion.sch007 cascade;
+
+?section setup_hive
+process hive statement 'create database hivesch007';
+
+process hive statement 'create table hivesch007.thive1 (a int)';
+
+sh echo "insert into hivesch007.thive1 values (1);" > TEST007_junk;
+sh regrhive.ksh -f TEST007_junk;
+
+process hive statement 'create view hivesch007.vhive1 as select * from hivesch007.thive1 where thive1.a > 0';
+
+process hive statement 'create view hivesch007.vhive11 as select * from hivesch007.vhive1 where vhive1.a > 0';
+
+process hive statement 'create table thive007 (a int)';
+
+process hive statement 'create view vhive007 as select * from thive007 where a > 0';
+
+insert into hive.hive.thive007 values (1);
+
+?section tests_hive
+invoke hive.hivesch007.vhive1;
+showddl hive.hivesch007.vhive1;
+
+prepare s from select * from hive.hivesch007.vhive1;
+explain options 'f' s;
+execute s;
+
+invoke hive.hivesch007.vhive11;
+showddl hive.hivesch007.vhive11;
+
+prepare s from select * from hive.hivesch007.vhive11;
+explain options 'f' s;
+execute s;
+
+prepare s from select * from hive.hive.vhive007;
+explain options 'f' s;
+execute s;
+
+get tables in schema hive.hivesch007;
+get views in schema hive.hivesch007;
+
+get tables in schema hive.hive, match '%007%';
+get views in schema hive.hive, match '%007%';
+
+get tables in catalog hive, match 'hivesch007%';
+get views in catalog hive, match 'hivesch007%';
+
+set schema hive.hive;
+prepare s from select * from vhive007 x, hive.hivesch007.vhive1 y
+  where x.a = y.a;
+explain options 'f' s;
+execute s;
+
+-- create traf view on native hive view
+create schema if not exists trafodion.sch007;
+create view trafodion.sch007.vtrafonhive as select * from hive.hivesch007.vhive11;
+showddl trafodion.sch007.vtrafonhive;
+prepare s from select * from trafodion.sch007.vtrafonhive;
+explain options 'f' s;
+execute s;
+get tables in view trafodion.sch007.vtrafonhive;
+
+?section error_tests_hive
+get tables in view hive.hivesch007.vhive11;
+get views  on table hive.hivesch007.thive1;
+
+insert into hive.hivesch007.vhive1 values (1);
+delete from hive.hivesch007.vhive1;
+
+-- drop underlying hive table
+cqd auto_query_retry_warnings 'ON';
+
+process hive statement 'drop table hivesch007.thive1';
+
+prepare s from select * from hive.hivesch007.vhive11;
+execute s;
+
+process hive statement 'create table hivesch007.thive1 (a int)';
+
+prepare s from select * from hive.hivesch007.vhive11;
+execute s;
+
+process hive statement 'drop table hivesch007.thive1';
+
+execute s;

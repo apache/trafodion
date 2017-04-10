@@ -2507,6 +2507,11 @@ short RelRoot::codeGen(Generator * generator)
 	 {
 	   root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_LOB_EXTRACT);
 	 }
+       else if(exeUtil->getExeUtilType() == ExeUtilExpr::LOB_UPDATE_UTIL_)
+         {
+           root_tdb->setSubqueryType(ComTdbRoot::SQL_STMT_LOB_UPDATE_UTIL
+); 
+         }
 
       else if (exeUtil->isExeUtilQueryType())
 	{
@@ -3040,9 +3045,15 @@ short Sort::generateTdb(Generator * generator,
   
   CostScalar bufferSize = getDefault(GEN_SORT_MAX_BUFFER_SIZE);
 
-  ULng32 bufferSize_as_ulong = 
-    (ULng32)(MINOF(CostScalar(UINT_MAX), bufferSize)).getValue(); 
+  UInt32 bufferSize_as_ulong = 
+    (UInt32)(MINOF(CostScalar(UINT_MAX), bufferSize)).getValue(); 
 
+  // allocate buffer to hold atlease one row
+  bufferSize_as_ulong = MAXOF(bufferSize_as_ulong, sortRecLen);
+
+  GenAssert(sortRecLen <= bufferSize_as_ulong, 
+      "Record Len greater than GEN_SORT_MAX_BUFFER_SIZE");
+  
   ComTdbSort * sort_tdb = 0;
   // always start with quick sort. Sort will switch to
   // replacement sort in case of overflow at runtime.
@@ -3066,7 +3077,19 @@ short Sort::generateTdb(Generator * generator,
   sort_options->scratchFreeSpaceThresholdPct() = threshold;
   sort_options->sortMaxHeapSize() = (short)getDefault(SORT_MAX_HEAP_SIZE_MB);
   sort_options->mergeBufferUnit() = (short)getDefault(SORT_MERGE_BUFFER_UNIT_56KB);
-  sort_options->scratchIOBlockSize() = (Int32)getDefault(SCRATCH_IO_BLOCKSIZE_SORT);
+ 
+  //512kb default size initiliazed in sort_options.
+  if(sortRecLen >= sort_options->scratchIOBlockSize())
+  {
+    Int32 maxScratchIOBlockSize = (Int32)getDefault(SCRATCH_IO_BLOCKSIZE_SORT_MAX);
+    // allocate space for atleast one row.
+    maxScratchIOBlockSize = MAXOF(maxScratchIOBlockSize, sortRecLen);
+
+    GenAssert(sortRecLen <= maxScratchIOBlockSize, 
+         "sortRecLen is greater than SCRATCH_IO_BLOCKSIZE_SORT_MAX");
+    sort_options->scratchIOBlockSize() = MINOF(sortRecLen * 128, maxScratchIOBlockSize);
+  }
+  
   sort_options->scratchIOVectorSize() = (Int16)getDefault(SCRATCH_IO_VECTOR_SIZE_SORT);
 
   if (sortNRows())

@@ -307,7 +307,7 @@ userForTrafodion=`grep "$TRAF_USER:" /etc/passwd | wc -l`
 
 if [[ "$userForTrafodion" != "0" ]]; then
 
-   if [[ -e $SQ_ROOT/sql/scripts/sqcheck ]]; then
+   if [[ -e $TRAF_HOME/sql/scripts/sqcheck ]]; then
 
       isTrafUp=$(sudo su $TRAF_USER --login --command "sqcheck" 2>/dev/null)
       returnCode=$?
@@ -736,8 +736,8 @@ echo "******************************"
 echo " TRAFODION CONFIGURATION"
 echo "******************************"
 echo
-sudo mkdir -p $SQ_ROOT
-sudo chown $TRAF_USER.trafodion $SQ_ROOT
+sudo mkdir -p $TRAF_HOME
+sudo chown $TRAF_USER.trafodion $TRAF_HOME
 /bin/cp -rf $LOCAL_WORKDIR/traf_config $TRAF_WORKDIR/installer/traf_config
 
 sudo su $TRAF_USER --login --command "$TRAF_WORKDIR/installer/traf_config" 2>&1 | tee -a $INSTALL_LOG

@@ -262,7 +262,7 @@ typedef struct TM_HBASEREGIONINFO {
     int iv_seqnum;              // Transaction sequence number
     int iv_owner_nid;           // Transaction owner nid
     int iv_owner_pid;           // Transaction owner pid
-    char iv_tablename[300];     // Tablename
+    char iv_tablename[2000];     // Tablename
     char iv_enc_regionname[50]; // Encoded region name
     char iv_regionname[300];   // Region name
     char iv_is_offline[20];     // IsOffline
@@ -274,11 +274,19 @@ typedef struct TM_HBASEREGIONINFO {
 // Trafodion start //
 #define TM_MAX_REGIONSERVER_STRING 2048
 #define TM_MAX_DDLREQUEST_STRING 2048
+#define TM_MAX_ERROR_STRING 2048
 extern "C" short REGISTERREGION(long transid, long startid, int port, char *hostname, int hostname_length, long startcode, char *regionInfo, int regionInfo_Length);
-extern "C" short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, char** pv_keys, int pv_numsplits, int pv_keylen, long transid);
-extern "C" short REGTRUNCATEONABORT(char *pv_tblname, int pv_tblname_len, long pv_transid);
-extern "C" short DROPTABLE(char *pv_tblname, int pv_tblname_len, long transid);
-extern "C" short ALTERTABLE(char *pv_tblname, int pv_tblname_len, char ** pv_tbloptions, int pv_tbloptslen, int pv_tbloptscnt, long pv_transid);
+extern "C" short CREATETABLE(char *pa_tbldesc, int pv_tbldesc_length, char *pv_tblname, char** pv_keys, int pv_numsplits, int pv_keylen, long transid,
+				char *&pv_err_str, int &pv_err_len);
+extern "C" short REGTRUNCATEONABORT(char *pv_tblname, int pv_tblname_len,
+                                    long pv_transid, char* &pv_err_str, 
+                                    int &pv_err_len);
+extern "C" short DROPTABLE(char *pv_tblname, int pv_tblname_len, long transid, 
+                          char* &pv_err_str, int &pv_err_len);
+extern "C" short ALTERTABLE(char *pv_tblname, int pv_tblname_len, 
+                            char ** pv_tbloptions, int pv_tbloptslen, 
+                            int pv_tbloptscnt, long pv_transid, 
+                            char* &pv_err_str, int &pv_err_len);
 extern "C" short HBASETM_REQUESTREGIONINFO(TM_HBASEREGIONINFO pa_trans[], short *pp_count);
 extern "C" short DTM_GETNEXTSEQNUMBLOCK(unsigned int &pp_seqNum_start, unsigned int &pp_seqNum_count);
 extern "C" bool DTM_LOCALTRANSACTION(int32 *pp_node, int32 *pp_seqnum);
@@ -288,6 +296,14 @@ extern "C" short ABORTTRANSACTION();
 extern "C" short BEGINTRANSACTION(int *tag);
 extern "C" short BEGINTX(int *tag, int timeout=0, int64 type_flags=0);
 extern "C" short ENDTRANSACTION();
+
+//ENDTRANSACTION_ERR() is same as ENDTRANSACTION(). However,
+//errStr is allocated if errlen is not zero. Caller must deallocate errStr
+//by calling DELLAOCATE_ERR.
+//Rest of functionality same as ENDTRANSACTION.
+extern "C" short ENDTRANSACTION_ERR(char *&errStr, int &errlen);
+extern "C" void  DEALLOCATE_ERR(char *&errStr);
+
 extern "C" short STATUSTRANSACTION(short *status, int64 transid = 0);
 extern "C" short GETTRANSID(short *transid);
 extern "C" short GETTRANSINFO(short *transid, int64 *type_flags);
@@ -299,6 +315,7 @@ extern "C" short JOINTRANSACTION(int64 transid);
 extern "C" short TMF_GETTXHANDLE_(short *handle);
 extern "C" short TMF_SETTXHANDLE_(short *handle);
 extern "C" short TMWAIT();
+extern "C" short TMCLIENTEXIT();
 
 // Extended API
 extern "C" short GETTRANSID_EXT (TM_Transid_Type *transid);
@@ -327,7 +344,6 @@ extern "C" short DTM_GETTRANSINFO_EXT(TM_Transid_Type pv_transid, int32 *pp_seq_
                                       int16 *pp_checksum, int64 *pp_timestamp);
 extern "C" short DTM_GETTRANSIDSTR(int64 pv_transid, char *pp_transidstr);
 extern "C" short DTM_GETTRANSIDSTR_EXT(TM_Transid_Type pv_transid, char *pp_transidstr);
-
 
 // Internal use only!!
 extern "C" short DTM_QUIESCE(int32 pv_node); //Use for testing only

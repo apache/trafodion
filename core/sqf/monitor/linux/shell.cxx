@@ -354,7 +354,7 @@ MonCwd::MonCwd(): cwdChanged_(false)
     }
     else
     {
-        env = getenv("MY_SQROOT");
+        env = getenv("TRAF_HOME");
         if ( env )
         {
             string monWdir;
@@ -2144,7 +2144,7 @@ int get_pnid_by_node_name( char *node_name )
     pnodeConfig = ClusterConfig.GetFirstPNodeConfig();
     for ( ; pnodeConfig; pnodeConfig = pnodeConfig->GetNext() )
     {
-        if ( strcmp( node_name, pnodeConfig->GetName() ) == 0 )
+        if ( CPNodeConfigContainer::hostnamecmp( node_name, pnodeConfig->GetName() ) == 0 )
         {
             return( pnodeConfig->GetPNid() );
         }
@@ -2286,7 +2286,7 @@ bool get_spare_set_state( char *node_name, STATE &spare_set_state )
                                 , method_name, __LINE__, MyName
                                 , spareNodeConfig->GetName() );
 
-                if ( strcmp( spareNodeConfig->GetName(), node_name ) == 0 )
+                if ( CPNodeConfigContainer::hostnamecmp( spareNodeConfig->GetName(), node_name ) == 0 )
                 {
                     if ( trace_settings & TRACE_SHELL_CMD )
                         trace_printf( "%s@%d [%s] Skipping member node=%s\n"
@@ -2657,7 +2657,7 @@ int get_node_name( char *node_name )
     pnodeConfig = ClusterConfig.GetFirstPNodeConfig();
     for ( ; pnodeConfig; pnodeConfig = pnodeConfig->GetNext() )
     {
-        if ( strcmp( node_name, pnodeConfig->GetName() ) == 0 )
+        if ( CPNodeConfigContainer::hostnamecmp( node_name, pnodeConfig->GetName() ) == 0 )
         {
             return( 0 );
         }
@@ -4713,7 +4713,7 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     bool nodeInConfig = false;
     for ( i = 0; i < NumNodes; i++ )
     {
-        if ( strcmp( mynode, PNode[i]) == 0 )
+        if ( CPNodeConfigContainer::hostnamecmp( mynode, PNode[i]) == 0 )
         {
             nodeInConfig = true;
             break;
@@ -4798,8 +4798,8 @@ bool start_monitor( char *cmd_tail, bool warmstart, bool reintegrate )
     argv[idx+3] = path;
     idx+=3;
     argv[idx+1] = (char *) "-env";
-    argv[idx+2] = (char *) "MY_SQROOT";
-    env=getenv("MY_SQROOT");
+    argv[idx+2] = (char *) "TRAF_HOME";
+    env=getenv("TRAF_HOME");
     strcpy (sqroot, (env?env:""));
     argv[idx+3] = sqroot;
     idx+=3;
@@ -5309,7 +5309,7 @@ int up_node( int nid, char *node_name, bool nowait )
 
         // remove shared segment on the node
         char cmd[256];
-        sprintf(cmd, "pdsh -w %s \"sqipcrm %s >> $MY_SQROOT/logs/node_up_%s.log\"", node_name, node_name, node_name);
+        sprintf(cmd, "pdsh -w %s \"sqipcrm %s >> $TRAF_HOME/logs/node_up_%s.log\"", node_name, node_name, node_name);
         system(cmd);
 
         // Start a monitor process on the node
@@ -5583,7 +5583,7 @@ void write_startup_log( char *msg )
     char fname[PATH_MAX];
     char msgString[MAX_BUFFER] = { 0 };
 
-    char *tmpDir = getenv( "MY_SQROOT" );
+    char *tmpDir = getenv( "TRAF_HOME" );
     if ( tmpDir )
     {
         snprintf( fname, sizeof(fname), "%s/sql/scripts/startup.log", tmpDir );

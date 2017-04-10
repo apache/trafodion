@@ -28,7 +28,7 @@ setup:
         export PATH=$PATH:$PWD/Linux-x86_64/dbg
 
 3.  Set the following environment variable so the shell looks in the
-    current directory instead of $MY_SQROOT/sql/scripts:
+    current directory instead of $TRAF_HOME/sql/scripts:
        export SQ_SHELL_NOCWD=1
 
 -----------------------------------

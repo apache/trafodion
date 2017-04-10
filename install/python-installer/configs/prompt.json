@@ -1,0 +1,225 @@
+{
+  "traf_dirname":
+  {
+      "prompt":"Enter directory name to install trafodion to"
+  },
+  "home_dir":
+  {
+      "prompt":"Enter trafodion user's home directory",
+      "default":"/home"
+  },
+  "traf_start":
+  {
+      "prompt":"Start instance after installation",
+      "default":"Y",
+      "isYN":true
+  },
+  "dcs_ha":
+  {
+      "prompt":"Enable DCS High Avalability",
+      "default":"N",
+      "isYN":true
+  },
+  "dcs_floating_ip":
+  {
+      "prompt":"Enter Floating IP address for DCS HA",
+      "isIP":true
+  },
+  "dcs_interface":
+  {
+      "prompt":"Enter interface for Floating IP address",
+      "default":"eth0"
+  },
+  "dcs_backup_nodes":
+  {
+      "prompt":"Enter DCS Backup Master Nodes for DCS HA (comma separated)"
+  },
+  "kdc_server":
+  {
+      "prompt":"Enter KDC server address"
+  },
+  "admin_principal":
+  {
+      "prompt":"Enter admin principal (include realm)"
+  },
+  "kdcadmin_pwd":
+  {
+      "prompt":"Enter password for admin principal",
+      "ispasswd":true
+  },
+  "hdfs_keytab":
+  {
+      "prompt":"Enter fully qualified name for HDFS keytab"
+  },
+  "hbase_keytab":
+  {
+      "prompt":"Enter fully qualified name for HBase keytab"
+  },
+  "max_lifetime":
+  {
+      "prompt":"Enter max lifetime for Trafodion principal (valid format required)",
+      "default":"24hours"
+  },
+  "max_renew_lifetime":
+  {
+      "prompt":"Enter renew lifetime for Trafodion principal (valid format required)",
+      "default":"7days"
+  },
+  "traf_keytab":
+  {
+      "prompt":"Enter Trafodion keytab name"
+  },
+  "ldap_security":
+  {
+      "prompt":"Enable LDAP security",
+      "default":"N",
+      "isYN":true
+  },
+  "ldap_hosts":
+  {
+      "prompt":"Enter list of LDAP Hostnames (comma separated if more than one host)"
+  },
+  "ldap_port":
+  {
+      "prompt":"Enter LDAP Port number (Example: 389 for no encryption or TLS, 636 for SSL)",
+      "default":"389",
+      "isdigit":true
+  },
+  "ldap_identifiers":
+  {
+      "prompt":"Enter all LDAP unique identifiers (semi-colon separated if more than one identifier)"
+  },
+  "ldap_encrypt":
+  {
+      "prompt":"Enter LDAP Encryption Level (0: Encryption not used, 1: SSL, 2: TLS)",
+      "default":"0",
+      "isdigit":true
+  },
+  "ldap_certpath":
+  {
+      "prompt":"Enter full path to TLS certificate file (*.pem)",
+      "isexist":true
+  },
+  "ldap_userinfo":
+  {
+      "prompt":"If Requred search user name/password",
+      "default":"N",
+      "isYN":true
+  },
+  "ldap_user":
+  {
+      "prompt":"Enter Search user name (if required)",
+      "default":" "
+  },
+  "ldap_pwd":
+  {
+      "prompt":"Enter Search password (if required)",
+      "default":" "
+  },
+  "scratch_locs":
+  {
+      "prompt":"Enter trafodion scratch file folder location(should be a large disk),\nif more than one folder, use comma seperated",
+      "default":"$TRAF_HOME/tmp"
+  },
+  "local_repo_dir":
+  {
+      "prompt":"Enter local repository folder location to install trafodion RPM dependencies",
+      "isexist":true
+  },
+  "java_home":
+  {
+      "prompt":"Specify location of Java(JDK) on trafodion nodes",
+      "isremote_exist":true,
+      "default":"/usr/lib/jvm/java-1.7.0-openjdk.x86_64"
+  },
+  "dcs_cnt_per_node":
+  {
+      "prompt":"Enter number of DCS client connections per node",
+      "default":"4",
+      "isdigit":true
+  },
+  "first_rsnode":
+  {
+      "prompt":"Enter the hostname of first Apache HBase RegionServer node"
+  },
+  "hdfs_user":
+  {
+      "prompt":"Enter hadoop user name",
+      "default":"hdfs",
+      "isuser":true
+  },
+  "hbase_user":
+  {
+      "prompt":"Enter hbase user name",
+      "default":"hbase",
+      "isuser":true
+  },
+  "hadoop_home":
+  {
+      "prompt":"Enter Apache Hadoop directory location",
+      "isremote_exist":true
+  },
+  "hbase_home":
+  {
+      "prompt":"Enter Apache HBase directory location",
+      "isremote_exist":true
+  },
+  "hive_home":
+  {
+      "prompt":"Enter Apache Hive directory location if exists",
+      "default":"NO_HIVE"
+  },
+  "mgr_url":
+  {
+      "prompt":"Enter HDP/CDH web manager URL:port, (full URL, if no http/https prefix, default prefix is http://)"
+  },
+  "mgr_user":
+  {
+      "prompt":"Enter HDP/CDH web manager user name",
+      "default":"admin",
+      "isuser":true
+  },
+  "mgr_pwd":
+  {
+      "prompt":"Enter HDP/CDH web manager user password",
+      "ispasswd":true
+  },
+  "traf_user":
+  {
+      "prompt":"Enter trafodion user name",
+      "default":"trafodion",
+      "isuser":true
+  },
+  "traf_pwd":
+  {
+      "prompt":"Enter trafodion user password",
+      "ispasswd":true
+  },
+  "traf_package":
+  {
+      "prompt":"Enter full path to Trafodion tar file",
+      "isexist":true
+  },
+  "db_root_user":
+  {
+      "prompt":"Enter LDAP user name to be assigned DB root privileges (DB__ROOT)",
+      "default":"trafodion",
+      "isuser":true
+  },
+  "node_list":
+  {
+      "prompt":"Enter list of Nodes separated by comma, support simple numeric RE,\n i.e. \"n[01-12],n[21-25]\",\"n0[1-5].com\""
+  },
+  "cluster_no":
+  {
+      "prompt":"Select the above cluster number for installing Trafodion",
+      "default":"1",
+      "isdigit":true
+  },
+  "use_data_node":
+  {
+      "prompt":"Install Trafodion nodes on all DataNodes",
+      "default":"Y",
+      "isYN":true
+  }
+}

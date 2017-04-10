@@ -112,7 +112,6 @@ public:
   // -------------------------------------------------------------------
    PrivStatus buildSecurityKeys(
       const int32_t granteeID, 
-      const int32_t roleID,
       const PrivMgrCoreDesc &privs,
       std::vector <ComSecurityKey *> & secKeySet);
       
@@ -223,7 +222,9 @@ public:
   // -------------------------------------------------------------------
   // helpers
   // -------------------------------------------------------------------
-  bool isAuthIDGrantedPrivs(const int32_t authID);
+  bool isAuthIDGrantedPrivs(
+    const int32_t authID,
+    std::vector<int64_t> &objectUIDs);
 
 protected:
 

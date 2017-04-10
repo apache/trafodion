@@ -271,7 +271,12 @@ Lng32 ExpHbaseInterface::coProcAggr(
 
 char * getHbaseErrStr(Lng32 errEnum)
 {
-  return (char*)hbaseErrorEnumStr[errEnum - (Lng32)HBASE_MIN_ERROR_NUM];
+  Lng32 lv_errEnum;
+  if (errEnum < HBASE_MIN_ERROR_NUM || errEnum >= HBASE_MAX_ERROR_NUM)
+     lv_errEnum = HBASE_GENERIC_ERROR; 
+  else
+     lv_errEnum = errEnum;
+  return (char*)hbaseErrorEnumStr[lv_errEnum - (Lng32)HBASE_MIN_ERROR_NUM];
 }
 
 
@@ -1465,16 +1470,21 @@ Lng32 ExpHbaseInterface_JNI::completeAsyncOperation(Int32 timeout, NABoolean *re
 Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
                                               Int32 partialRowSize,
                                               Int32 numCols,
-                                              Int64& estRC)
+                                              Int32 retryLimitMilliSeconds,
+                                              Int64& estRC,
+                                              Int32& breadCrumb)
 {
+  breadCrumb = 11;
   if (client_ == NULL)
   {
+    breadCrumb = 12;
     if (init(hbs_) != HBASE_ACCESS_SUCCESS)
       return -HBASE_ACCESS_ERROR;
   }
 
   estRC = 0;
-  retCode_ = client_->estimateRowCount(tblName.val, partialRowSize, numCols, estRC);
+  retCode_ = client_->estimateRowCount(tblName.val, partialRowSize, numCols, 
+                                       retryLimitMilliSeconds, estRC, breadCrumb /* out */);
   return retCode_;
 }
 

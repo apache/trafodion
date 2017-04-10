@@ -670,6 +670,36 @@ NABoolean QualifiedName::isSeabasePrivMgrMD() const
     (getCatalogName(), getSchemaName());
 }
 
+NABoolean QualifiedName::isHbaseMappedName() const
+{
+  return ((isSeabase(getCatalogName())) &&
+          (ComIsHbaseMappedSchemaName(getSchemaName())));
+}
+
+NABoolean QualifiedName::isHbaseCell() const
+{
+  if (isHbase() && (getSchemaName() == "_CELL_"))
+    return TRUE;
+  else
+    return FALSE;
+}
+
+NABoolean QualifiedName::isHbaseRow() const
+{
+  if (isHbase() && (getSchemaName() == "_ROW_"))
+    return TRUE;
+  else
+    return FALSE;
+}
+
+NABoolean QualifiedName::isHbaseCellOrRow() const
+{
+  if (isHbase() && 
+      ((getSchemaName() == "_CELL_") || (getSchemaName() == "_ROW_")))
+    return TRUE;
+  else
+    return FALSE;
+}
 
 // -----------------------------------------------------------------------
 // Methods for class CorrName
@@ -964,20 +994,17 @@ NABoolean CorrName::isHbase() const
 
 NABoolean CorrName::isHbaseCell() const
 {
-  if ((getQualifiedNameObj().isHbase()) &&
-      (getQualifiedNameObj().getSchemaName() == "_CELL_"))
-    return TRUE;
-  else
-    return FALSE;
+  return getQualifiedNameObj().isHbaseCell();
 }
 
 NABoolean CorrName::isHbaseRow() const
 {
-  if ((getQualifiedNameObj().isHbase()) &&
-      (getQualifiedNameObj().getSchemaName() == "_ROW_"))
-    return TRUE;
-  else
-    return FALSE;
+ return getQualifiedNameObj().isHbaseRow();
+}
+
+NABoolean CorrName::isHbaseMap() const
+{
+  return getQualifiedNameObj().isHbaseMappedName();
 }
 
 NAString CorrName::getCorrNameAsString() const

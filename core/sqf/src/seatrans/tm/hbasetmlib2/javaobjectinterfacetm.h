@@ -20,8 +20,8 @@
 //
 // @@@ END COPYRIGHT @@@
 // **********************************************************************
-#ifndef JNI_H
-#define JNI_H
+#ifndef JAVAOBJECTINTERFACETM_H
+#define JAVAOBJECTINTERFACETM_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +50,7 @@ typedef enum {
  ,JOI_ERROR_FINDCLASS           // JNI FindClass() failed
  ,JOI_ERROR_GETMETHOD           // JNI GetMethodID() failed
  ,JOI_ERROR_NEWOBJ              // JNI NewObject() failed
+ ,JOI_ERROR_INIT_JNI            // initJNIEnv failed
  ,JOI_LAST
 } JOI_RetCode;
 
@@ -112,9 +113,7 @@ protected:
   // Get the error description.
   virtual char* getErrorText(JOI_RetCode errEnum);
 
-  // Write the description of a Java error to the log file.
-  void logError(const char* cat, const char* methodName, jstring jresult);
-  void logError(const char* cat, const char* file, int line);
+  JOI_RetCode initJNIEnv();
 
   void setHBaseCompatibilityMode(bool val)
   {
@@ -141,8 +140,9 @@ public:
   {
     return isInitialized_;
   }
-  bool getExceptionDetails(JNIEnv *jenv);
+  bool getExceptionDetails(JNIEnv *jenv, short *errCode = NULL);
   void appendExceptionMessages(JNIEnv *jenv, jthrowable a_exception, std::string &error_msg);
+  short getExceptionErrorCode(JNIEnv *jenv, jthrowable a_exception);
   
 protected:
   static JavaVM*   jvm_;
@@ -154,10 +154,14 @@ protected:
   int       debugTimeout_;
   static jclass gThrowableClass;
   static jclass gStackTraceClass;
+  static jclass gTransactionManagerExceptionClass;
   static jmethodID gGetStackTraceMethodID;
   static jmethodID gThrowableToStringMethodID;
   static jmethodID gStackFrameToStringMethodID;
   static jmethodID gGetCauseMethodID;
+  static jmethodID gGetErrorCodeMethodID;
 };
 
+void set_error_msg(std::string &error_msg); 
+void set_error_msg(char *error_msg); 
 #endif

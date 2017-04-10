@@ -677,6 +677,7 @@ enum DefaultConstants
                                          //   salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   USTAT_ATTEMPT_ESP_PARALLELISM,  // use parallel plans for reading columns to form histograms
   USTAT_CHECK_HIST_ACCURACY,   // After stats collection, examine full table and calculate accuray of hists
+  USTAT_COMPACT_VARCHARS,      // For internal sort, store only the actual # chars used in each value
   USTAT_CLUSTER_SAMPLE_BLOCKS, // number of blocks for cluster sampling
   USTAT_ESTIMATE_HBASE_ROW_COUNT,  // If ON, estimate row count of HBase table instead of count(*), subject
                                    //     to USTAT_MIN_ESTIMATE_FOR_ROWCOUNT setting)
@@ -2584,7 +2585,7 @@ enum DefaultConstants
   SCRATCH_DISK_LOGGING,
   SCRATCH_MGMT_OPTION,
   SCRATCH_PREALLOCATE_EXTENTS,
-  SCRATCH_IO_BLOCKSIZE_SORT,
+  SCRATCH_IO_BLOCKSIZE_SORT_MAX,
   SCRATCH_IO_VECTOR_SIZE_HASH,
   SCRATCH_IO_VECTOR_SIZE_SORT,
 
@@ -3628,8 +3629,13 @@ enum DefaultConstants
 
   TRAF_TRANS_TYPE, 
 
- // max size in bytes of a char or varchar column in a trafodion table.
+  // max size in bytes of a char or varchar column in a trafodion table.
+  // Valid values are 0 through 10M (10485760).
   TRAF_MAX_CHARACTER_COL_LENGTH,
+
+  // In special cases, previous default value could be overridden. 
+  // Internal use only or use only under trafodion supervision.
+  TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,
 
   // set when metadata definition is to be read from hardcoded structs
   // and not from metadata. 
@@ -3737,6 +3743,14 @@ enum DefaultConstants
   HBASE_UPDATE_COSTING,
   TRAF_LOAD_FLUSH_SIZE_IN_KB,
 
+  // if ON, then trafodion views on hive objects are supported.
+  HIVE_VIEWS,
+
+  // if ON, then external table is automatically created for all hive tables 
+  // referenced in the view definition.
+  // External table is needed to keep track of view usage and privileges.
+  HIVE_VIEWS_CREATE_EXTERNAL_TABLE,
+
   // Specify whic additional restriction check to apply
   //  0: no check
   //  1: apply majority of keys with predicates check
@@ -3773,6 +3787,10 @@ enum DefaultConstants
   // REALLY needed by users.
   // Currently syskey, _salt_, _division_.
   TRAF_ALLOW_RESERVED_COLNAMES,
+
+  // enable support for hbase tables mapped to relational traf tables
+  TRAF_HBASE_MAPPED_TABLES,
+  TRAF_HBASE_MAPPED_TABLES_IUD,
 
   //if 0, regular scanner is used. From 0.x to 1.0, percentage of regions that need to be scanned that will be done in parallel.
   //if >= 2, set a fixed number of thread, real DOP. 2.0 2 thread, 3.0 3 thread etc.
@@ -3870,6 +3888,19 @@ enum DefaultConstants
   CSE_CLEANUP_HIVE_TABLES,
   CSE_CACHE_TEMP_QUERIES,
 
+
+  // mode for AES_ENCRYPT/AED_DECRYPT
+  BLOCK_ENCRYPTION_MODE,
+
+  GROUP_BY_PUSH_TO_BOTH_SIDES_OF_JOIN,
+
+  CSE_TEMP_TABLE_MAX_SIZE,
+  CSE_TEMP_TABLE_MAX_MAX_SIZE,
+  CSE_COMMON_KEY_PRED_CONTROL,
+  CSE_PCT_KEY_COL_PRED_CONTROL,
+
+  TRANSLATE_ERROR,
+  TRANSLATE_ERROR_UNICODE_TO_UNICODE,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

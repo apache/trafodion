@@ -36,7 +36,7 @@ else
   SQENV_MTYPE=sq32env.sh
 endif
 STUBLIBDIR=stublibs/lib/linux/$(MTYPE_BTYPE)
-SQL_W=$(MY_SQROOT)/../sql
+SQL_W=$(TRAF_HOME)/../sql
 
     DP2=se
 
@@ -70,7 +70,7 @@ smstub:
 
 make_sql: $(SEAMONSTER_TARGET) win hbase_utilities
 	cd sql; $(MAKE) WROOT=$(SQL_W) 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
-	cd $(MY_SQROOT)/sql/scripts && ./makemsg.ksh 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
+	cd $(TRAF_HOME)/sql/scripts && ./makemsg.ksh 2>&1 | sed -e "s/$$/	##(SQL)/" ; exit $${PIPESTATUS[0]}
 
 make_monitor: stfs make_sqevlog seabed
 	cd monitor/linux; $(MAKE) 2>&1 | sed -e "s/$$/	##(SQF)/" ; exit $${PIPESTATUS[0]}
@@ -110,7 +110,7 @@ clean: setupdir_clean
 	-cd sqevlog; $(MAKE) clean
 	-cd hbase_utilities; $(MAKE) clean
 	# from genverhdr.ksh
-	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java
+	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java export/include/buildId
 	# from makemsg.ksh
 	rm -f sql/scripts/SqlciErrors.[gm] export/bin*/mxcierrors.cat
 
@@ -125,7 +125,7 @@ cleanall: setupdir_clean
 	-cd sqevlog; $(MAKE) cleanall
 	-cd hbase_utilities; $(MAKE) clean
 	# from genverhdr.ksh
-	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java
+	rm -f export/include/SCMBuildStr.h export/include/SCMBuildStr.java export/include/buildId
 	# from makemsg.ksh
 	rm -f sql/scripts/SqlciErrors.[gm] export/bin*/mxcierrors.cat
 
@@ -196,7 +196,7 @@ setupdir:
 	-ln -sf $(SQL_W)/sqludr/sqludr.h $(EXPORTINCSQL_DIR)
 	@#
 	mkdir -p export/include/nsk
-	-ln -sf $(MY_SQROOT)/inc/cextdecs/cextdecs.h export/include/nsk
+	-ln -sf $(TRAF_HOME)/inc/cextdecs/cextdecs.h export/include/nsk
 	@# USTAT
 	-mkdir -p export/lib/mx_ustat
 	-ln -sf $(SQL_W)/ustat/USAS.sh export/lib/mx_ustat
@@ -283,6 +283,7 @@ PKG_DCS_TEST_TAR ?= "../../${DISTRIBUTION_DIR}/${PKG_DCS}-tests.tgz"
 
 PKG_BIN_OBJS ?= export/bin$(SQ_MBTYPE) export/include export/lib export/lib$(SQ_MBTYPE) export/share gdb sql/scripts sqenvcom.sh opt tools conf hbase_utilities/backup_and_restore
 
+PKG_BIN_OBJS += sysinstall
 PKG_BIN_OBJS += trafci
 PKG_BIN_OBJS += samples
 PKG_BIN_OBJS += export/limited-support-tools
@@ -356,14 +357,14 @@ pkglist-symlinks: LICENSE NOTICE DISCLAIMER rest-${TRAFODION_VER} dcs-${TRAFODIO
 
 #	Targets to tar/gzip the self installer
 packagebin:
-	cat $(MY_SQROOT)/sql/scripts/sqinstall > $(PKG_BIN)
+	cat $(TRAF_HOME)/sql/scripts/sqinstall > $(PKG_BIN)
 	echo "__ARCHIVE_BELOW__" >> $(PKG_BIN)
 	tar chzf - -X  build-scripts/package.exclude $(PKG_BIN_OBJS) >> $(PKG_BIN)
 	chmod +x $(PKG_BIN)
 
 #	Targets to create self-installer with sqinstaller
 packageinstaller:
-	cat $(MY_SQROOT)/sql/scripts/sqinstaller > $(PKG_BIN)
+	cat $(TRAF_HOME)/sql/scripts/sqinstaller > $(PKG_BIN)
 	echo "__ARCHIVE_BELOW__" >> $(PKG_BIN)
 	tar chzf - -X  build-scripts/package.exclude $(PKG_BIN_OBJS) >> $(PKG_BIN)
 	chmod +x $(PKG_BIN)
@@ -387,7 +388,7 @@ package-dcs:
 #	Targets to tar/gzip the self installer with sources
 srcpackagebin:
 	-rm etc/ms.env
-	cat $(MY_SQROOT)/sql/scripts/sqinstall > $(SRC_PKG_BIN)
+	cat $(TRAF_HOME)/sql/scripts/sqinstall > $(SRC_PKG_BIN)
 	echo "__ARCHIVE_BELOW__" >> $(SRC_PKG_BIN)
 	tar chzf - -X build-scripts/package.exclude -X build-scripts/package.exclude.$(SQ_MBTYPE) . >> $(SRC_PKG_BIN)
 	chmod +x $(SRC_PKG_BIN)

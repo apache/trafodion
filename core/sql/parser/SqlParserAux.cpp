@@ -847,6 +847,8 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
 
   NABoolean createTinyLiteral = 
     ((CmpCommon::getDefault(TRAF_CREATE_TINYINT_LITERAL)) == DF_ON);
+  NABoolean createLargeintUnsignedLiteral =
+    ((CmpCommon::getDefault(TRAF_LARGEINT_UNSIGNED_IO)) == DF_ON);
   
   char numericVal[8];
   short datatype = -1;
@@ -861,10 +863,9 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
     datatype = (createSignedDatatype ? REC_BIN32_SIGNED : REC_BIN32_UNSIGNED);
     length = sizeof(Lng32);
   } else if (strSize <= 19) {
-    datatype = (createSignedDatatype ? REC_BIN64_SIGNED : REC_BIN64_UNSIGNED);
+    datatype = (createSignedDatatype || !createLargeintUnsignedLiteral ? REC_BIN64_SIGNED : REC_BIN64_UNSIGNED);
     length = sizeof(Int64);
-  } else if (strSize == 20) {
-    createSignedDatatype = FALSE;
+  } else if ((strSize == 20) && (!createSignedDatatype) && (createLargeintUnsignedLiteral)) {
     datatype = REC_BIN64_UNSIGNED;
     length = sizeof(Int64);
   }    
@@ -3319,6 +3320,11 @@ TableTokens::setTableTokens(StmtDDLCreateTable *pNode)
 
     case TableTokens::TYPE_EXTERNAL_TABLE:
       pNode->setIsExternal(TRUE);
+      break;
+
+    case TableTokens::TYPE_IMPLICIT_EXTERNAL_TABLE:
+      pNode->setIsExternal(TRUE);
+      pNode->setIsImplicitExternal(TRUE);
       break;
 
     case TableTokens::TYPE_SET_TABLE:

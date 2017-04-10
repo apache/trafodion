@@ -25,7 +25,8 @@
 [[quickstart]]
 = Quick Start
 
-This chapter provides a quick start for how to use the {project-name} Installer to install {project-name}. 
+This chapter provides a quick start for how to use the command-line {project-name} Installer to install {project-name}. 
+*If you prefer to intall on HDP distribution using Ambari, refer to the <<install-ambari,Ambari Install>> section.*
 
 You need the following before using the information herein:
 
@@ -47,60 +48,55 @@ NOTE: You can download and install the {project-name} Clients once you've instal
 
 *Example*
 
+Download the Trafodion Installer and Server binaries:
 ```
 $ mkdir $HOME/trafodion-download
 $ cd $HOME/trafodion-download
 $ # Download the Trafodion Installer binaries
-$ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-1.3.0.incubating/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
+$ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-2.1.0.incubating/apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz
 Resolving http://apache.cs.utah.edu... 192.168.1.56
 Connecting to http://apache.cs.utah.edu|192.168.1.56|:80... connected.
 HTTP request sent, awaiting response... 200 OK
 Length: 68813 (67K) [application/x-gzip]
-Saving to: "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz"
+Saving to: "apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz"
 
 100%[=====================================================================================================================>] 68,813       124K/s   in 0.5s
 
-2016-02-14 04:19:42 (124 KB/s) - "apache-trafodion-installer-1.3.0-incubating-bin.tar.gz" saved [68813/68813]
-```
+2016-02-14 04:19:42 (124 KB/s) - "apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz" saved [68813/68813]
 
-<<<
-```
-$ # Download the Trafodion Server binaries
-$ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-1.3.0.incubating/apache-trafodion-1.3.0-incubating-bin.tar.gz
+$ wget http://apache.cs.utah.edu/incubator/trafodion/trafodion-2.1.0.incubating/apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz
 Resolving http://apache.cs.utah.edu... 192.168.1.56
 Connecting to http://apache.cs.utah.edu|192.168.1.56|:80... connected.
 HTTP request sent, awaiting response... 200 OK
 Length: 214508243 (205M) [application/x-gzip]
-Saving to: "apache-trafodion-1.3.0-incubating-bin.tar.gz"
+Saving to: "apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz"
 
 100%[=====================================================================================================================>] 214,508,243 3.90M/s   in 55s
 
-2016-02-14 04:22:14 (3.72 MB/s) - "apache-trafodion-1.3.0-incubating-bin.tar.gz" saved [214508243/214508243]
+2016-02-14 04:22:14 (3.72 MB/s) - "apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz" saved [214508243/214508243]
 
 $ ls -l
-total 209552
--rw-rw-r-- 1 centos centos 214508243 Jan 12 20:10 apache-trafodion-1.3.0-incubating-bin.tar.gz
--rw-rw-r-- 1 centos centos     68813 Jan 12 20:10 apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
+-rw-rw-r--. 1 centos centos     74237 Feb 13 14:53 apache-trafodion_pyinstaller-2.1.0-incubating.tar.gz
+-rw-rw-r--. 1 centos centos 183114066 Feb 10 22:34 apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz
 $
 ```
 
 [[quickstart-unpack-installer]]
-== Unpack Installer
+== Unpack Installer and Server package
 
 The first step in the installation process is to unpack the {project-name} Installer tar file.
+{project-name} server package tar file can be auto detected by installer if put it in installer's folder.
 
 *Example*
 
 ```
 $ mkdir $HOME/trafodion-installer
 $ cd $HOME/trafodion-downloads
-$ tar -zxf apache-trafodion-installer-1.3.0-incubating-bin.tar.gz -C $HOME/trafodion-installer
-$ ls $HOME/trafodion-installer/installer
-bashrc_default           tools                             traf_config_check           trafodion_apache_hadoop_install  traf_package_setup
-build-version-1.3.0.txt  traf_add_user                     traf_config_setup           trafodion_config_default         traf_setup
-dcs_installer            traf_apache_hadoop_config_setup   traf_create_systemdefaults  trafodion_install                traf_sqconfig
-rest_installer           traf_authentication_conf_default  traf_getHadoopNodes         trafodion_license                traf_start
-setup_known_hosts.exp    traf_cloudera_mods98              traf_hortonworks_mods98     trafodion_uninstaller
+$ tar -zxf apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz -C $HOME/trafodion-installer
+$ cp -f apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz $HOME/trafodion-installer
+$ ls $HOME/trafodion-installer/python-installer
+apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz  db_install.py    DISCLAIMER    LICENSE  prettytable.py  scripts
+configs                                                    db_uninstall.py  discovery.py  NOTICE   README.md
 $
 ```
 
@@ -109,19 +105,15 @@ $
 
 Collect/decide the following information:
 
-=== Location of {project-name} Server-Side Binary
-
-You need the fully-qualified name of the {project-name} server-side binary. 
-
-*Example*
-
-```
-/home/trafodion-downloads/apache-trafodion-installer-1.3.0-incubating-bin.tar.gz
-```
 
 === Java Location
 
-You need to record the location of the Java. For example, use `ps -ef | grep java | grep hadoop | grep hbase` to determine what version HBase is running.
+Java location can be automatically detected by installer. You need to provide the java location only if installer cannot detect it.
+
+How to detect java location manually:
+
+1. Login to trafodion' node
+2. Use `ps -ef | grep java | grep hadoop | grep hbase` to determine what version HBase is running.
 
 *Example*
 
@@ -135,7 +127,9 @@ The Java location is: `/usr/jdk64/jdk1.7.0_67`
 <<<
 === Data Nodes
 
-{projet-name} is installed on all data nodes in your Hadoop cluster. You need to record the fully-qualified domain name node for each node.
+{project-name} is installed on all data nodes in your Hadoop cluster. Data nodes can be automatically detected by installer while installing on a HDP/CDH cluster.
+
+You need to record hostname for each node when you install {project-name} on Apache Hadoop.
 For example, refer to `/etc/hosts`.
 
 *Example*
@@ -145,29 +139,16 @@ $ cat /etc/hosts
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 
-172.31.56.238	      ip-172-31-56-238.ec2.internal node01
-172.31.61.110	      ip-172-31-61-110.ec2.internal node02
-172.31.57.143	      ip-172-31-57-143.ec2.internal node03
+172.31.56.238	      node-1.internal node-1
+172.31.61.110	      node-2.internal node-2
 ```
 
-Record the node names in a space-separated list.
-
-*Example*
-
-```
-ip-172-31-56-238.ec2.internal ip-172-31-61-110.ec2.internal ip-172-31-57-143.ec2.internal
-```
-
-=== {project-name} Runtime User Home Directory
-
-The Installer creates the `trafodion` user ID. You need to decide the home directory for this user. 
-
-The default is: `/home`
+Record the node names in a comma-separated list `node-1, node-2` or in regular expression mode `node-[1-2]`
 
 === Distribution Manager URL
 
 The Installer interacts with the Distribution Manager (for example, Apache Ambari or Cloudera Manager) to modify the
-Hadoop configuration. 
+Hadoop configuration.
 
 *Example*
 
@@ -181,417 +162,7 @@ http://myhost.com:8080
 [[quickstart-run-installer]]
 == Run Installer
 
-You run the Installer once you've collected the base information as described in 
+You run the Installer once you've collected the base information as described in
 <<quickstart-collect-information, Collect Information>> above.
 
-The following example shows a guided install of {project-name} on a three-node Hortonworks Hadoop cluster.
-
-NOTE: By default, the {project-name} Installer invokes `sqlci` so that you can enter the `initialize trafodion;` command.
-This is shown in the example below.
-
-*Example*
-
-1. Run the {project-name} Installer in guided mode.
-+
-```
-$ cd $HOME/trafodion-installer/installer
-$ ./trafodion_install 2>&1 | tee install.log
-******************************
- TRAFODION INSTALLATION START
-******************************
-
-***INFO: testing sudo access
-***INFO: Log file located at /var/log/trafodion/trafodion_install_2016-06-30-21-02-38.log
-***INFO: Config directory: /etc/trafodion
-***INFO: Working directory: /usr/lib/trafodion
-
-************************************
- Trafodion Configuration File Setup
-************************************
-
-***INFO: Please press [Enter] to select defaults.
-
-Is this a cloud environment (Y/N), default is [N]: N
-Enter trafodion password, default is [traf123]: 
-Enter list of data nodes (blank separated), default []: ip-172-31-56-238.ec2.internal ip-172-31-61-110.ec2.internal ip-172-31-57-143.ec2.internal
-Do you h ave a set of management nodes (Y/N), default is N: N
-Enter Trafodion userid's home directory prefix, default is [/home]: /opt
-Specify  location of Java 1.7.0_65 or higher (JDK), default is []: /usr/jdk64/jdk1.7.0_67
-Enter full path (including .tar or .tar.gz) of trafodion tar file []: /home/trafodion-downloads/apache-trafodion_server-2.0.1-incubating.tar.gz
-Enter Backup/Restore username (can be Trafodion), default is [trafodion]: 
-Specify the Hadoop distribut ion installed (1: Cloudera, 2: Hortonworks, 3: Other): 2
-Enter Hadoop admin username, default is [admin]: Enter Hadoop admin pas sword, default is [admin]: 
-Enter full Hadoop external network URL:port (include 'http://' or 'https://), default is []: http://ip-172-31-56-238.ec2.internal:8080
-Enter  HDFS username or username running HDFS, default is [hdfs]: 
-Enter HBase username or username running HBase, default is [hbase]:
-Enter HBase group, default is [hbase]: 
-Enter Zookeeper username or username running Zookeeper, default is [zookeeper]: 
-Enter  directory to install trafodion to, default is [/opt/trafodion/apache-trafodion_server-2.0.1-incubating]: 
-Start Trafodion after install (Y/N), default is Y: 
-Total number of client connections per cluster, default [24]: 96
-Enter the node of primary DcsMaste r, default [ip-172-31-56-238.ec2.internal]: 
-Enable High Availability (Y/N), default is N: 
-Enable simple LDAP security (Y/N), d efault is N: 
-***INFO: Trafodion configuration setup complete
-***INFO: Trafodion Configuration File Check
-***INFO: Testing sudo access on node ip-172-31-56-238
-***INFO: Testing sudo access on node ip-172-31-61-110
-***INFO: Testing sudo access on node ip-172-31-57-143
-***INFO: Testing ssh on ip-172-31-56-238
-***INFO: Testing ssh on ip-172-31-61-110
-***INFO: Testing ssh on ip-172-31-57-143
-#!/bin/bash
-#
-# @@@ START COPYRIGHT @@@
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
-.
-.
-.
-9. Accepting Warranty or Additional Liability. While redistributing
-the Work or Derivative Works thereof, You may choose to offer, and
-charge a fee for, acceptance of support, warranty, indemnity, or
-other liability obligations and/or rights consistent with this
-License. However, in accepting such obligations, You may act only
-on Your own behalf and on Your sole responsibility, not on behalf
-of any other Contributor, and only if You agree to indemnify, defend,
-and hold each Contributor harmless for any liability incurred by,
-or claims asserted against, such Contributor by reason of your
-accepting any such warranty or additional liability.
-
-END OF TERMS AND CONDITIONS
-
-BY TYPING "ACCEPT" YOU AGREE TO THE TERMS OF THIS AGREEMENT: ***INFO: testing sudo access
-***INFO: Starting Trafodion Package Setup (2016-06-30-21-06-40)
-***INFO: Installing required packages
-***INFO: Log file located in /var/log/trafodion
-***INFO: ... pdsh on node ip-172-31-56-238
-***INFO: ... pdsh on node ip-172-31-61-110
-***INFO: ... pdsh on node ip-172-31-57-143
-***INFO: Checking if apr is installed ...
-***INFO: Checking if apr-util is installed ...
-***INFO: Checking if sqlite is installed ...
-***INFO: Checking if expect is installed ...
-***INFO: Checking if perl-DBD-SQLite* is installed ...
-***INFO: Checking if protobuf is installed ...
-***INFO: Checking if xerces-c is installed ...
-***INFO: Checking if perl-Params-Validate is installed ...
-***INFO: Checking if perl-Time-HiRes is installed ...
-***INFO: Checking if gzip is installed ...
-***INFO: Checking if lzo is installed ...
-***INFO: Checking if lzop is installed ...
-***INFO: Checking if unzip is installed ...
-***INFO: modifying limits in /usr/lib/trafodion/trafodion.conf on all nodes
-***INFO: create Trafodion userid "trafodion" 
-***INFO: Trafodion userid's (trafodion) home directory: /opt/trafodion
-***INFO: testing sudo access
-Generating public/private rsa key pair.
-Created directory '/opt/trafodion/.ssh'.
-Your identification has been saved in /opt/trafodion/.ssh/id_rsa.
-Your public key has been saved in /opt/trafodion/.ssh/id_rsa.pub.
-The key fingerprint is:
-12:59:ab:d7:59:a2:0e:e8:38:1c:e9:e1:86:f6:18:23 trafodion@ip-172-31-56-238
-The key's randomart image is:
-+--[ RSA 2048]----+
-|        .        |
-|       o .       |
-|      o . . .    |
-|   . . o o +     |
-|  + . + S o      |
-| = =   =         |
-|E+B .   .        |
-|o.=.             |
-| . .             |
-+-----------------+
-***INFO: creating .bashrc file
-***INFO: Setting up userid trafodion on all other nodes in cluster
-***INFO: Creating known_hosts file for all nodes
-ip-172-31-56-238
-ip-172-31-56-238 ip-172-31-61-110 ip-172-31-57-143
-ip-172-31-61-110
-ip-172-31-56-238 ip-172-31-61-110 ip-172-31-57-143
-ip-172-31-57-143
-ip-172-31-56-238 ip-172-31-61-110 ip-172-31-57-143
-***INFO: trafodion user added successfully
-***INFO: Trafodion environment setup completed
-***INFO: creating sqconfig file
-***INFO: Reserving DCS ports
-
-***INFO: Creating trafodion sudo access file
-
-
-******************************
- TRAFODION MODS
-******************************
-
-***INFO: Hortonworks installed will run traf_hortonworks_mods
-***INFO: copying hbase-trx-hdp2_3-*.jar to all nodes
-***INFO: hbase-trx-hdp2_3-*.jar copied correctly! Huzzah.
-USERID=admin
-PASSWORD=admin
-PORT=:8080
-########## Performing 'set' hbase.master.distributed.log.splitting:true on (Site:hbase-site, Tag:version1)
-########## PUTting json into: doSet_version1467320863286001262.json
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-101  5757  102  3588  103  2169    98k  60930 --:--:-- --:--:-- --:--:--  100k
-{
-  "resources" : [
-    {
-      "href" : "http://ip-172-31-56-238.ec2.internal:8080/api/v1/clusters/trafodion/configurations/service_config_versions?ser
-vice_name=HBASE&service_config_version=2",
-.
-.
-.
-    {
-      "href" : "http://ip-172-31-56-238.ec2.internal:8080/api/v1/clusters/trafodion/requests/12/tasks/128",
-      "Tasks" : {
-        "cluster_name" : "trafodion",
-        "id" : 128,
-        "request_id" : 12,
-        "stage_id" : 2
-      }
-    },
-    {
-      "href" : "http://ip-172-31-56-238.ec2.internal:8080/api/v1/clusters/trafodion/requests/12/tasks/129",
-      "Tasks" : {
-        "cluster_name" : "trafodion",
-        "id" : 129,
-        "request_id" : 12,
-        "stage_id" : 2
-      }
-    },
-    {
-      "href" : "http://ip-172-31-56-238.ec2.internal:8080/api/v1/clusters/trafodion/requests/12/tasks/130",
-      "Tasks" : {
-        "cluster_name" : "trafodion",
-        "id" : 130,
-        "request_id" : 12,
-        "stage_id" : 2
-      }
-    }
-  ],
-  "stages" : [
-    {
-      "href" : "http://ip-172-31-56-238.ec2.internal:8080/api/v1/clusters/trafodion/requests/12/stages/0",
-      "Stage" : {
-        "cluster_name" : "trafodion",
-        "request_id" : 12,
-        "stage_id" : 0
-      }
-    },
-    {
-      "href" : "http://ip-172-31-56-238.ec2.internal:8080/api/v1/clusters/trafodion/requests/12/stages/1",
-      "Stage" : {
-        "cluster_name" : "trafodion",
-        "request_id" : 12,
-        "stage_id" : 1
-      }
-    },
-    {
-      "href" : "http://ip-172-31-56-238.ec2.internal:8080/api/v1/clusters/trafodion/requests/12/stages/2",
-      "Stage" : {
-        "cluster_name" : "trafodion",
-        "request_id" : 12,
-        "stage_id" : 2
-      }
-    }
-  ]
-}***INFO: ...polling every 30 seconds until HBase start is completed.
-***INFO: HBase restart completed
-***INFO: Setting HDFS ACLs for snapshot scan support
-cp: `trafodion_config' and `/home/trafinstall/trafodion-2.0.1/installer/trafodion_config' are the same file
-***INFO: Trafodion Mods ran successfully.
-
-******************************
- TRAFODION CONFIGURATION
-******************************
-
-/usr/lib/trafodion/installer/..
-/opt/trafodion/apache-trafodion_server-2.0.1-incubating
-***INFO: untarring file  to /opt/trafodion/apache-trafodion_server-2.0.1-incubating
-***INFO: modifying .bashrc to set Trafodion environment variables
-***INFO: copying .bashrc file to all nodes
-***INFO: copying sqconfig file (/opt/trafodion/sqconfig) to /opt/trafodion/apache-trafodion_server-2.0.1-incubating/sql/script
-s/sqconfig
-***INFO: Creating /opt/trafodion/apache-trafodion_server-2.0.1-incubating directory on all nodes
-***INFO: Start of DCS install
-***INFO: DCS Install Directory: /opt/trafodion/apache-trafodion_server-2.0.1-incubating/dcs-2.0.1
-***INFO: modifying /opt/trafodion/apache-trafodion_server-2.0.1-incubating/dcs-2.0.1/conf/dcs-env.sh
-***INFO: modifying /opt/trafodion/apache-trafodion_server-2.0.1-incubating/dcs-2.0.1/conf/dcs-site.xml
-***INFO: creating /opt/trafodion/apache-trafodion_server-2.0.1-incubating/dcs-2.0.1/conf/servers file
-***INFO: End of DCS install.
-***INFO: Start of REST Server install
-***INFO: Rest Install Directory: /opt/trafodion/apache-trafodion_server-2.0.1-incubating/rest-2.0.1
-***INFO: modifying /opt/trafodion/apache-trafodion_server-2.0.1-incubating/rest-2.0.1/conf/rest-site.xml
-***INFO: End of REST Server install.
-***INFO: starting sqgen
-ip-172-31-56-238,ip-172-31-57-143,ip-172-31-61-110
-
-Creating directories on cluster nodes
-/usr/bin/pdsh -R exec -w ip-172-31-56-238,ip-172-31-57-143,ip-172-31-61-110 -x ip-172-31-56-238 ssh -q -n %h mkdir -p /opt/tra
-fodion/apache-trafodion_server-2.0.1-incubating/etc 
-/usr/bin/pdsh -R exec -w ip-172-31-56-238,ip-172-31-57-143,ip-172-31-61-110 -x ip-172-31-56-238 ssh -q -n %h mkdir -p /opt/tra
-fodion/apache-trafodion_server-2.0.1-incubating/logs 
-/usr/bin/pdsh -R exec -w ip-172-31-56-238,ip-172-31-57-143,ip-172-31-61-110 -x ip-172-31-56-238 ssh -q -n %h mkdir -p /opt/tra
-fodion/apache-trafodion_server-2.0.1-incubating/tmp 
-/usr/bin/pdsh -R exec -w ip-172-31-56-238,ip-172-31-57-143,ip-172-31-61-110 -x ip-172-31-56-238 ssh -q -n %h mkdir -p /opt/tra
-fodion/apache-trafodion_server-2.0.1-incubating/sql/scripts 
-
-Generating SQ environment variable file: /opt/trafodion/apache-trafodion_server-2.0.1-incubating/etc/ms.env
-
-Note: Using cluster.conf format type 2.
-
-Generating SeaMonster environment variable file: /opt/trafodion/apache-trafodion_server-2.0.1-incubating/etc/seamonster.env
-
-
-Generated SQ startup script file: ./gomon.cold
-Generated SQ startup script file: ./gomon.warm
-Generated SQ cluster config file: /opt/trafodion/apache-trafodion_server-2.0.1-incubating/tmp/cluster.conf
-Generated SQ Shell          file: sqshell
-Generated RMS Startup       file: rmsstart
-Generated RMS Stop          file: rmsstop
-Generated RMS Check         file: rmscheck.sql
-Generated SSMP Startup      file: ssmpstart
-Generated SSMP Stop         file: ssmpstop
-Generated SSCP Startup      file: sscpstart
-Generated SSCP Stop         file: sscpstop
-
-
-Copying the generated files to all the nodes in the cluster
-.
-.
-.
-SQ Startup script (/opt/trafodion/apache-trafodion_server-2.0.1-incubating/sql/scripts/gomon.cold) ran successfully. Performin
-g further checks...
-Checking if processes are up.
-Checking attempt: 1; user specified max: 2. Execution time in seconds: 0.
-
-The SQ environment is up!
-
-
-Process		Configured	Actual	    Down
--------		----------	------	    ----
-DTM		3		3	    
-RMS		6		6	    
-DcsMaster	1		0	    1
-DcsServer	3		0	    3
-mxosrvr		96		0	    96
-
-Thu Jun 30 21:15:29 UTC 2016
-Checking if processes are up.
-Checking attempt: 1; user specified max: 1. Execution time in seconds: 0.
-
-The SQ environment is up!
-
-
-Process		Configured	Actual	    Down
--------		----------	------	    ----
-DTM		3		3	    
-RMS		6		6	    
-DcsMaster	1		0	    1
-DcsServer	3		0	    3
-mxosrvr		96		0	    96
-
-Starting the DCS environment now
-starting master, logging to /opt/trafodion/apache-trafodion_server-2.0.1-incubating/dcs-2.0.1/bin/../logs/dcs-trafodion-1-mast
-er-ip-172-31-56-238.out
-ip-172-31-56-238: starting server, logging to /opt/trafodion/apache-trafodion_server-2.0.1-incubating/dcs-2.0.1/bin/../logs/dc
-s-trafodion-1-server-ip-172-31-56-238.out
-ip-172-31-57-143: starting server, logging to /opt/trafodion/apache-trafodion_server-2.0.1-incubating/dcs-2.0.1/bin/../logs/dc
-s-trafodion-3-server-ip-172-31-57-143.out
-ip-172-31-61-110: starting server, logging to /opt/trafodion/apache-trafodion_server-2.0.1-incubating/dcs-2.0.1/bin/../logs/dc
-s-trafodion-2-server-ip-172-31-61-110.out
-Checking if processes are up.
-Checking attempt: 1; user specified max: 2. Execution time in seconds: 1.
-
-The SQ environment is up!
-
-
-Process		Configured	Actual	    Down
--------		----------	------	    ----
-DTM		3		3	    
-RMS		6		6	    
-DcsMaster	1		1	    
-DcsServer	3		3	    
-mxosrvr		96		7	    89
-
-Starting the REST environment now
-starting rest, logging to /opt/trafodion/apache-trafodion_server-2.0.1-incubating/rest-2.0.1/bin/../logs/rest-trafodion-1-rest
--ip-172-31-56-238.out
-
-
-
-Zookeeper listen port: 2181
-DcsMaster listen port: 23400
-
-Configured Primary DcsMaster: "ip-172-31-56-238.ec2.internal"
-Active DcsMaster            : "ip-172-31-56-238"
-
-Process		Configured	Actual		Down
----------	----------	------		----
-DcsMaster	1		1		
-DcsServer	3		3		
-mxosrvr		96		94		2
-
-
-You can monitor the SQ shell log file : /opt/trafodion/apache-trafodion_server-2.0.1-incubating/logs/sqmon.log
-
-
-Startup time  0 hour(s) 2 minute(s) 19 second(s)
-Apache Trafodion Conversational Interface 2.0.1
-Copyright (c) 2015-2016 Apache Software Foundation
->>
---- SQL operation complete.
->>
-
-End of MXCI Session
-
-***INFO: Installation setup completed successfully.
-
-******************************
- TRAFODION INSTALLATION END
-******************************
-```
-
-2. Switch to the {project-name} Runtime User and check the status of {project-name}.
-+
-```
-$ sudo su - trafodion
-$ sqcheck
-Checking if processes are up.
-Checking attempt: 1; user specified max: 2. Execution time in seconds: 0.
-
-The SQ environment is up!
-
-
-Process		Configured	Actual	    Down
--------		----------	------	    ----
-DTM		3		3	    
-RMS		6		6	    
-DcsMaster	1		1	    
-DcsServer	3		3	    
-mxosrvr		96		96	    
-$
-```
-
-{project-name} is now running on your Hadoop cluster. Please refer to the <<activate,Activate>> chapter for
-basic instructions on how to verify the {project-name} management and how to perform basic management
-operations.
-
+Please refer to <<install-guided-install, Guided Install>> for the *example* of installing {project-name} on a two-node Cloudera Hadoop cluster.

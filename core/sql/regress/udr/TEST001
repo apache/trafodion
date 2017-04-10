@@ -40,7 +40,7 @@ drop table t001_Datatypes;
 drop table_mapping function sessionize_dynamic;
 drop table_mapping function sessionize_dynamic_shared;
 drop table_mapping function sessionize_err;
-drop table_mapping function fibonacci;
+drop table_mapping function "Fibonacci";
 drop library TEST001;
 drop table_mapping function sessionize_java;
 drop table_mapping function fibonacci_java;
@@ -104,6 +104,8 @@ c_integer_unsigned integer unsigned,
 c_largeint largeint,
 c_smallint smallint,
 c_smallint_unsigned smallint unsigned,
+c_tinyint tinyint,
+c_tinyint_unsigned tinyint unsigned,
 c_float float(10),
 c_real real,
 c_double_precision double precision,
@@ -117,7 +119,8 @@ c_interval interval year to month,
 c_intervals86 interval second(8,6),
 c_intervald6s interval day(6) to second(6),
 c_blob blob (100),
-c_clob clob (100)
+c_clob clob (100),
+c_boolean boolean
 );
 
 insert into t001_Datatypes values (
@@ -145,6 +148,8 @@ insert into t001_Datatypes values (
 -1,
 -1,
 1,
+-1,
+1,
 -1.11,
 -1.11,
 -1.11,
@@ -162,7 +167,8 @@ interval '666666 23:59:59.999999' day(6) to second(6),
 --stringtolob('CLOB_1')
 -- for now, use simple chars, see cqd TRAF_BLOB_AS_VARCHAR above
 'BLOB_1',
-'CLOB_1'
+'CLOB_1',
+true
 );
 
 ?section register_functions
@@ -208,7 +214,7 @@ library TEST001;
 -- DDL time. We will get an error at runtime, though.
 
 -- Testing a TMUDF with no table-valued inputs
-create table_mapping function fibonacci(start_row int, num_rows int)
+create table_mapping function "Fibonacci"(start_row int, num_rows int)
 returns (ordinal int, fibonacci_number largeint)
 external name 'Fibonacci'
 language cpp
@@ -238,6 +244,27 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                                          JULIANTIMESTAMP(ts) as TS,
                                          ipAddr
                                   FROM clicks
+                                  PARTITION BY 1 ORDER BY 2),
+                            'USERID',
+                            'TS',
+                            60000000));
+
+SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
+FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
+                                         JULIANTIMESTAMP(ts) as TS,
+                                         ipAddr
+                                  FROM clicks
+                                  WHERE userid='super-user'
+                                  PARTITION BY 1 ORDER BY 2),
+                            'USERID',
+                            'TS',
+                            60000000));
+SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
+FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
+                                         JULIANTIMESTAMP(ts) as TS,
+                                         ipAddr
+                                  FROM clicks
+                                  WHERE userid='super-user'
                                   PARTITION BY 1 ORDER BY 2),
                             'USERID',
                             'TS',
@@ -336,16 +363,16 @@ execute s;
 -- will fail until tinyint support is added for spj/procedures
 cqd traf_tinyint_spj_support 'ON';
 select *
-from UDF(fibonacci(1,10)) XO
+from UDF("Fibonacci"(1,10)) XO
 order by 1;
 cqd traf_tinyint_spj_support reset;
 
 select *
-from UDF(fibonacci(1,10)) XO
+from UDF("Fibonacci"(1,10)) XO
 order by 1;
 
 select sum(fibonacci_number)
-from UDF(fibonacci(50,10)) XO;
+from UDF("Fibonacci"(50,10)) XO;
 
 select *
 from UDF(fibonacci_java(1,10)) XO
@@ -356,11 +383,11 @@ from UDF(fibonacci_java(50,10)) XO;
 
 control query shape join(tmudf, tmudf);
 select *
-from UDF(fibonacci(1,10)) natural join UDF(fibonacci_java(1,10));
+from UDF("Fibonacci"(1,10)) natural join UDF(fibonacci_java(1,10));
 control query shape off;
 
 select *
-from UDF(fibonacci(1,10)) cpp1 natural join
+from UDF("Fibonacci"(1,10)) cpp1 natural join
      UDF(fibonacci_java(1,10)) java1 natural join
      UDF(fibonacci_java(1,10)) java2;
 

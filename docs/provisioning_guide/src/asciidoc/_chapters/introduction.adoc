@@ -50,9 +50,9 @@ respective environment's configuration settings per {project-name} requirements.
 <<requirements-trafodion-provisioning-user,{project-name} Provisioning User>> for more information
 about the requirements and usage associated with this user ID.
 
-* *Runtime User*: A Linux-level user under which the {project-name} software runs. This user ID must be registered
-as a user in the Hadoop Distributed File System (HDFS) to store and  access objects in HDFS, HBase, and Hive.
-In addition, this  user ID requires passwordless access among the nodes where {project-name} is installed.
+* *Runtime User*: A Linux-level user under which the {project-name} software runs, default name is `trafodion`. This user ID must be registered
+as a user in the Hadoop Distributed File System (HDFS) to store and access objects in HDFS, HBase, and Hive.
+In addition, this user ID requires passwordless access among the nodes where {project-name} is installed.
 Refer to <<requirements-trafodion-runtime-user,{project-name} Runtime User>> for more information about this user ID.
 
 * *{project-name} Database Users*: {project-name} users are managed by {project-name} security features (grant, revoke, etc.),
@@ -92,28 +92,24 @@ such as LDAP search.  Refer to
 [[introduction-provisioning-options]]
 == Provisioning Options
 
-{project-name} ships with a set of scripts that takes care of many of the installation and upgrade
-tasks associated with the {project-name} software and its requirements. The main features include:
+{project-name} includes two options for installation: a plug-in integration with Apache Ambari and command-line installation scripts.
 
-* *{project-name} installer*: Performs installation and upgrade for {project-name}
-* *{project-name} uninstaller*: Uninstalls {project-name}
-* *{project-name} security installer*: Enables security features including Kerberos and LDAP for an existing {project-name} installation
+The Ambari integration provides support for Hortonworks Hadoop distributions, while the command-line {project-name} Installer
+supports Cloudera and  Hortonworks Hadoop distributions, and for select vanilla Hadoop installations.
 
-Currently, the {project-name} Installer is able to install {project-name} on select Cloudera and  Hortonworks Hadoop distributions, and for select vanilla Hadoop installations.
-The {project-name} Installer limitations are noted as they apply in the different chapters below. For example, the {project-name} Installer
-is less capable on SUSE than it is on RedHat/CentOS; you have to install the prerequisite software packages outside the {project-name} Installer.
+The {project-name} Installer supports Linux distributions SUSE and RedHat/CentOS. There are, however, some differences.
+Prerequisite software packages are not installed automatically on SUSE.
 
-The {project-name} Installer automates many of the tasks required to install/upgrade {project-name}, spanning from downloading and
-installing required software packages and making required changes to your Hadoop environment via creating
+The {project-name} Installer automates many of the tasks required to install/upgrade {project-name}, from downloading and
+installing required software packages and making required configuration changes to your Hadoop environment via creating
 the {project-name} runtime user ID to installing and starting {project-name}. It is, therefore,  highly recommend that
 you use the {project-name} Installer for initial installation and upgrades of {project-name}. These steps are referred to as
 "Script-Based Provisioning" in this guide. Refer to <<introduction-trafodion-installer, {project-name} Installer>> that provides
 usage information.
 
-If, for any reason, you choose not to use the {project-name} Installer, then separate chapters provide
-step-by-step recipes for the tasks required to install/upgrade {project-name}. These steps are referred to as
-*Recipe-Based Provisioning* in this guide. It is assumed that you are well-versed in Linux and Hadoop
-administrative tasks if using Recipe-Based Provisioning.
+The command-line installer has been replaced for the 2.1.0 release. Written in python, it replaces the legacy bash-script installer.
+The bash command-line installer is deprecated as of 2.1.0, but is still provided, just in case you experience any problems with
+the new installer. If so, please report those problems to the project team, since the legacy installer will soon be obsoleted.
 
 [[introduction-provisioning-activities]]
 == Provisioning Activities
@@ -146,13 +142,13 @@ include basic management tasks such as starting and checking the status of the {
 
 * *<<enable-security,Enable Security>>*: Activities related to enabling security features on an already installed
 {project-name} installation.  These activities include tasks such as adding Kerberos principals and keytabs,
-and setting up the LDAP configuration files.
+and setting up the LDAP configuration files. *Only support in bash installer for now*
 
 [[introduction-provisioning-master-node]]
 == Provisioning Master Node
-All provisioning tasks are performed from a single node in the cluster, which must be part
-of the Hadoop environment you're adding {project-name} to. This node is referred to as the
-"*Provisioning Master Node*" in this guide.
+All provisioning tasks are performed from a single node in the cluster, which can be any node
+as long as it has access to the Hadoop environment you're adding {project-name} to.
+This node is referred to as the "*Provisioning Master Node*" in this guide.
 
 The {project-name} Provisioning User must have access to all other nodes from the Provisioning
 Master Node in order to perform provisioning tasks on the cluster.
@@ -169,24 +165,23 @@ Next, you unpack the tar file.
 ```
 $ mkdir $HOME/trafodion-installer
 $ cd $HOME/trafodion-downloads
-$ tar -zxf apache-trafodion-installer-1.3.0-incubating-bin.tar.gz -C $HOME/trafodion-installer
-$ 
+$ tar -zxf apache-trafodion-pyinstaller-2.1.0-incubating.tar.gz -C $HOME/trafodion-installer
+$
 ```
 
 <<<
 The {project-name} Installer supports two different modes:
 
 1. *Guided Setup*: Prompts for information as it works through the installation/upgrade process. This mode is recommended for new users.
-2. *Automated Setup*: Required information is provided in a pre-formatted bash-script configuration file, which is provided
-via a command argument when running the {project-name} Installer thereby suppressing all prompts. There is one exception, 
-if Kerberos is enabled on the cluster, then you will always be prompted for the KDC admin password.  We do not store the 
-KDC admin password as part of installation anywhere.
+2. *Automated Setup*: Required information is provided in a pre-formatted ini configuration file, which is provided
+via a command argument when running the {project-name} Installer thereby suppressing all prompts. This ini configuration file only exists
+on the *Provisioning Master Node*, please secure this file or delete it after you installed {project-name} successfully.
 +
-A template of the configuration file is available here within the installer directory: `trafodion_config_default`.
+A template of the configuration file is available here within the installer directory: `configs/db_config_default.ini`.
 Make a copy of the file in your directory and populate the needed information.
 +
 Automated Setup is recommended since it allows you to record the required provisioning information ahead of time.
-Refer to <<introduction-trafodion-automated-setup,Automated Setup>> for information about how to
+Refer to <<introduction-trafodion-installer-automated-setup,Automated Setup>> for information about how to
 populate this file.
 
 [[introduction-trafodion-installer-usage]]
@@ -195,21 +190,30 @@ populate this file.
 The following shows help for the {project-name} Installer.
 
 ```
-./trafodion_install --help
-
-This script will install Trafodion. It will create a configuration
-file (if one has not been created), setup of the environment needed
-for Trafodion, configure HBase with Hbase-trx and co-processors needed,
-and install a specified Trafodion build.
+$ ./db_install.py -h
+**********************************
+  Trafodion Installation ToolKit
+**********************************
+Usage: db_install.py [options]
+  Trafodion install main script.
 
 Options:
-    --help             Print this message and exit
-    --accept_license   If provided, the user agrees to accept all the
-                       provisions in the Trafodion license.  This allows
-                       for automation by skipping the display and prompt of
-                       the Trafodion license.
-    --config_file      If provided, all install prompts will be
-                       taken from this file and not prompted for.
+  -h, --help            show this help message and exit
+  -c FILE, --config-file=FILE
+                        Json format file. If provided, all install prompts
+                        will be taken from this file and not prompted for.
+  -u USER, --remote-user=USER
+                        Specify ssh login user for remote server,
+                        if not provided, use current login user as default.
+  -v, --verbose         Verbose mode, will print commands.
+  --silent              Do not ask user to confirm configuration result
+  --enable-pwd          Prompt SSH login password for remote hosts.
+                        If set, 'sshpass' tool is required.
+  --build               Build the config file in guided mode only.
+  --reinstall           Reinstall Trafodion without restarting Hadoop.
+  --apache-hadoop       Install Trafodion on top of Apache Hadoop.
+  --offline             Enable local repository for offline installing
+                        Trafodion.
 ```
 
 <<<
@@ -221,6 +225,8 @@ or an upgrade by looking for the {project-name} Runtime User in the `/etc/passwd
 
 * If the user ID doesn't exist, then the {project-name} Installer runs in install mode.
 * If the user ID exists, then the {project-name} Installer runs in upgrade mode.
+* If `--reinstall` option is specified, then the {project-name} Installer will not restart Hadoop. It's only available when
+you reinstall the same release version, otherwise an error will be reported during installation.
 
 
 [[introduction-trafodion-installer-guided-setup]]
@@ -237,16 +243,16 @@ Refer to the following sections for examples:
 [[introduction-trafodion-installer-automated-setup]]
 === Automated Setup
 
-The `--config_file` option runs the {project-name} in Automated Setup mode.
+The `--config-file` option runs the {project-name} in Automated Setup mode.
 
 Before running the {project-name} Installer with this option, you do the following:
 
-1. Copy the `trafodion_config_default` file.
+1. Copy the `db_config_default.ini` file.
 +
 *Example*
 +
 ```
-cp trafodion_config_default my_config
+cp configs/db_config_default.ini my_config
 ```
 
 2. Edit the new file using information you collect in the
@@ -258,258 +264,137 @@ section in the <<prepare,Prepare>> chapter.
 *Example*
 +
 ```
-./trafodion_installer --config_file my_config
+./db_install.py --config-file my_config
 ```
 
 NOTE: Your {project-name} Configuration File contains the password for the {project-name} Runtime User
 and for the Distribution Manager. Therefore, we recommend that you secure the file in a manner
-that matches the security policies of your organization. 
+that matches the security policies of your organization.
 
-NOTE: If you are installing {project-name} on a version of Hadoop that has been instrumented with Kerberos,
-you will be asked for a password associated with a Kerberos administrator.  
+==== Example: Quick start using a {project-name} Configuration File
+The {project-name} Installer supports a minimum configuration to quick start your installation in two steps.
+1. Copy {project-name} server binary file to your installer directory.
+```
+cp /path/to/apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz python-installer/
+```
+2. Modify configuration file `my_config`, add the Hadoop Distribution Manager URL in `mgr_url`.
+```
+mgr_url = 192.168.0.1:8080
+```
+Once completed, run the {project-name} Installer with the --config-file option.
 
 ==== Example: Creating a {project-name} Configuration File
 
 Using the instructions in <<prepare-gather-configuration-information,Gather Configuration Information>>
-in the <<prepare,Prepare>> chapter, you record the following information.
-
-[cols="30%l,50%,20%",options="header"]
-|===
-| ID                      | Information                                                                                | Setting                       
-| ADMIN                   | Administrator user name for Apache Ambari or Cloudera Manager.                             | admin                         
-| ADMIN_PRINCIPAL         | Kerberos principal for the KDC admin user including the realm.                             |
-| BACKUP_DCS_NODES        | List of nodes where to start the backup DCS Master components.                             | 
-| CLOUD_CONFIG            | Whether you're installing {project-name} on a cloud environment.                                | N 
-| CLOUD_TYPE              | What type of cloud environment you're installing {project-name} on.                             | 
-| CLUSTER_NAME            | The name of the Hadoop Cluster.                                                            | Cluster 1
-| DB_ROOT_NAME            | LDAP name used to connect as database root user | trafodion
-| DCS_BUILD               | Tar file containing the DCS component.                                                     | 
-| DCS_PRIMARY_MASTER_NODE | The node where the primary DCS should run.                                                 | 
-| DCS_SERVER_PARM         | Number of concurrent client sessions per node.                                             | 8
-| ENABLE_HA               | Whether to run DCS in high-availability (HA) mode.                                         | N
-| EPEL_RPM                | Location of EPEL RPM. Specify if you don't have access to the Internet.                    | 
-| FLOATING_IP             | IP address if running DCS in HA mode.                                                      | 
-| HADOOP_TYPE             | The type of Hadoop distribution you're installing {project-name} on.                            | cloudera
-| HBASE_GROUP             | Linux group name for the HBASE administrative user.                                         | hbase
-| HBASE_KEYTAB            | Kerberos service keytab for HBase admin principal.                                                      | Default based on distribution
-| HBASE_USER              | Linux user name for the HBASE administrative user.                                          | hbase
-| HDFS_KEYTAB             | Kerberos service keytab for HDFS admin principal.                                                       | Default based on distribution
-| HDFS_USER               | Linux user name for the HDFS administrative user.                                           | hdfs 
-| HOME_DIR                | Root directory under which the `trafodion` home directory should be created.               | /home 
-| INIT_TRAFODION          | Whether to automatically initialize the {project-name} database.                                | Y
-| INTERFACE               | Interface type used for $FLOATING_IP.                                                      | 
-| JAVA_HOME               | Location of Java 1.7.0_65 or higher (JDK).                                                 | /usr/java/jdk1.7.0_67-cloudera
-| KDC_SERVER              | Location of Kerberos server for admin access                                               |
-| LDAP_CERT               | Full path to TLS certificate.                                                              | 
-| LDAP_HOSTS              | List of nodes where LDAP Identity Store servers are running.                               | 
-| LDAP_ID                 | List of LDAP unique identifiers.                                                           | 
-| LDAP_LEVEL              | LDAP Encryption Level.                                                                     | 
-| LDAP_PASSWORD           | Password for LDAP_USER.                                                                    | 
-| LDAP_PORT               | Port used to communicate with LDAP Identity Store.                                         | 
-| LDAP_SECURITY           | Whether to enable LDAP authentication.                                                     | N   
-| LDAP_USER               | LDAP Search user name.                                                                     | 
-| LOCAL_WORKDIR           | The directory where the {project-name} Installer is located.                                    | /home/centos/trafodion-installer/installer
-| MANAGEMENT_ENABLED      | Whether your installation uses separate management nodes.                                  | N
-| MANAGEMENT_NODES        | The FQDN names of management nodes, if any.                                                | 
-| MAX_LIFETIME            | Kerberos ticket lifetime for {project-name} principal                                      | 24hours
-| NODE_LIST               | The FQDN names of the nodes where {project-name} will be installed.                             | trafodion-1 trafodion-2
-| PASSWORD                | Administrator password for Apache Ambari or Cloudera Manager.                              | admin
-| RENEW_LIFETIME          | Kerberos ticket renewal lifetime for {project-name} principal                              | 7days
-| REST_BUILD              | Tar file containing the REST component.                                                    | 
-| SECURE_HADOOP           | Indicates whether Hadoop has Kerberos enabled                                               | Based on whether Kerberos is enabled for your Hadoop installation
-| SQ_ROOT                 | Target directory for the {project-name} software.                                               | /home/trafodion/apache-trafodion-1.3.0-incubating-bin
-| START                   | Whether to start {project-name} after install/upgrade.                                          | Y
-| SUSE_LINUX              | Whether your installing {project-name} on SUSE Linux.                                           | false
-| TRAF_PACKAGE            | The location of the {project-name} installation package tar file or core installation tar file. | /home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz
-| TRAF_KEYTAB             | Kerberos keytab for `trafodion` principal.                                                      | Default keytab based on distribution
-| TRAF_KEYTAB_DIR         | Location of Kerberos keytab for the `trafodion` principal.                                      | Default location based on distribution
-| TRAF_USER               | The {project-name} runtime user ID. Must be `trafodion` in this release.                         | trafodion
-| TRAF_USER_PASSWORD      | The password used for the `trafodion:trafodion` user ID.                                   | traf123
-| URL                     | FQDN and port for the Distribution Manager's REST API.                                     | trafodion-1.apache.org:7180
-|===
-
-Next, you edit `my_config` to contain the following:
+in the <<prepare,Prepare>> chapter, record the information and edit `my_config` to contain the following:
 
 ```
-#!/bin/bash
-# @@@ START COPYRIGHT @@@
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
-# @@@ END COPYRIGHT @@@
+[dbconfigs]
+# NOTICE: if you are using CDH/HDP hadoop distro,
+# you can only specifiy management url address for a quick install
 
-#====================================================
-# Trafodion Configuration File
-# This file contains default values for the installer.
+##################################
+# Common Settings
+##################################
 
-# Users can also edit this file and provide values for all parameters
-# and then specify this file on the run line of trafodion_install.
-# Example:
-# ./trafodion_install --config_file <Trafodion-config-file>
-# WARNING: This mode is for advanced users!
-#
-#=====================================================
+# trafodion username and password
+traf_user = trafodion
+traf_pwd = traf123
+# trafodion user's home directory
+home_dir = /home
+# the directory location of trafodion binary
+# if not provided, the default value will be {package_name}-{version}
+traf_dirname =
 
+# trafodion used java(JDK) path on trafodion nodes
+# if not provided, installer will auto detect installed JDK
+java_home =
 
-#=====================================================
-#Must be set to 'true' if on a SUSE linux system. If on another type of system
-#this must be set to false.
+# cloudera/ambari management url(i.e. http://192.168.0.1:7180 or just 192.168.0.1)
+# if 'http' or 'https' prefix is not provided, the default one is 'http'
+# if port is not provided, the default port is cloudera port '7180'
+mgr_url = 192.168.0.1:8080
+# user name for cloudera/ambari management url
+mgr_user = admin
+# password for cloudera/ambari management url
+mgr_pwd = admin
+# set the cluster number if multiple clusters managed by one Cloudera manager
+# ignore it if only one cluster being managed
+cluster_no = 1
 
-export SUSE_LINUX="false"
+# trafodion tar package file location
+# no need to provide it if the package can be found in current installer's directory
+traf_package =
+# the number of dcs servers on each node
+dcs_cnt_per_node = 4
 
-# The working directory where Trafodion installer untars files, etc.
-# do not change this unless you really know what you are doing
-export TRAF_WORKDIR="/usr/lib/trafodion"
+# scratch file location, seperated by comma if more than one
+scratch_locs = $TRAF_HOME/tmp
 
-# This is the directory where the installer scripts were untarred to
-export LOCAL_WORKDIR="/home/centos/trafodion-installer/installer"
+# start trafodion instance after installation completed
+traf_start = Y
 
-# The maximum number of dcs servers, i.e. client connections
-export DCS_SERVERS_PARM="8"
+##################################
+# DCS HA configuration
+##################################
 
-# "true" if this is an upgrade
-export UPGRADE_TRAF="false"
+# set it to 'Y' if enable DCS HA
+dcs_ha = N
+# if HA is enabled, provide floating ip, network interface and the hostname of backup dcs master nodes
+dcs_floating_ip =
+# network interface that dcs used
+dcs_interface =
+# backup dcs master nodes, seperated by comma if more than one
+dcs_backup_nodes =
 
-# Trafodion userid, This is the userid the Trafodion instance will run under
-export TRAF_USER="trafodion"
+##################################
+# Offline installation setting
+##################################
 
-# Trafodion userid's password
-export TRAF_USER_PASSWORD="traf123"
+# set offline mode to Y if no internet connection
+offline_mode = N
+# if offline mode is set, you must provide a local repository directory with all needed RPMs
+local_repo_dir =
 
-# a blank separated list of nodes in your cluster
-# node names should include full domain names
-#This can not be left blank!
-export NODE_LIST="trafodion-1 trafodion-2"
+##################################
+# LDAP security configuration
+##################################
 
-# count of nodes in node list
-export node_count="2"
+# set it to 'Y' if enable LDAP security
+ldap_security = N
+# LDAP user name and password to be assigned as DB admin privilege
+db_admin_user = admin
+db_admin_pwd = traf123
+# LDAP user to be assigned DB root privileges (DB__ROOT)
+db_root_user = trafodion
+# if LDAP security is enabled, provide the following items
+ldap_hosts =
+# 389 for no encryption or TLS, 636 for SSL
+ldap_port = 389
+ldap_identifiers =
+ldap_encrypt = 0
+ldap_certpath =
 
-# another list of the same nodes in NODE_LIST but specified in a pdsh usable format
-# i.e.  "-w centos-cdh[1-6]"  or "-w node1 -w node2 -w node3"
-export MY_NODES="-w trafodion-[1-2]"
+# set to Y if user info is needed
+ldap_userinfo = N
+# provide if ldap_userinfo = Y
+ladp_user =
+ladp_pwd =
 
-# the directory prefix for the trafodion userid's $HOME directory
-# i.e. /opt/home, not /opt/home/trafodion
-export HOME_DIR="/home"
+##################################
+# Kerberos security configuration
+##################################
+# if kerberos is enabled in your hadoop system, provide below info
 
-#JAVA HOME must be a JDK. Must include FULL Path. Must be 1.7.0_65 or higher.
-
-export JAVA_HOME="/usr/java/jdk1.7.0_67-cloudera"
-
-# If your machine doesn't have external internet access then you must
-# specify the location of the EPEL rpm, otherwise leave blank and it
-# will be installed from the internet
-export EPEL_RPM=""
-
-# full path of the Trafodion package tar file
-export TRAF_PACKAGE="/home/centos/trafodion-download/apache-trafodion-1.3.0-incubating-bin.tar.gz"
-
-# if TRAF_PACKAGE wasn't specified then these two values must be specified
-# TRAF_BUILD is the trafodion_server tar file
-# DCS_BUILD is the DCS tar file
-# REST_BUILD is the REST tar file
-export TRAF_BUILD=""
-export DCS_BUILD=""
-export REST_BUILD=""
-# Either "cloudera" or "hortonworks" (all lowercase)
-export HADOOP_TYPE="cloudera"
-
-# The URL for Cloudera/Hortonworks REST API (i.e. node1.host.com:8080)
-export URL="trafodion-1.apache.org:7180"
-
-# Cloudera/Hortonworks UI admin's userid and password
-export ADMIN="admin"
-export PASSWORD="admin"
-
-# hadoop cluster name
-export CLUSTER_NAME=""
-
-# the Hadoop HDFS userid
-export HDFS_USER="hdfs"
-
-# the Hadoop HBase userid and group
-export HBASE_USER="hbase"
-export HBASE_GROUP="hbase"
-
-# The hadoop HBase service name
-export HBASE="hbase"
-
-# full path of where to install Trafodion to
-# Example is used below. If $HOME_DIR or $TRAF_USER have been changed
-# then this will need to be changed.
-# On an upgrade, it is recommend to choose a different directory.
-# First time install : /home/trafodion/traf
-# On Upgrade: /home/trafodion/traf_<date>
-# By doing this the previous version will remain and allow for an easier rollback.
-export SQ_ROOT="/home/trafodion/apache-trafodion-1.3.0-incubating-bin"
-
-# Start Trafodion after install completes
-export START="Y"
-
-# initialize trafodion after starting
-export INIT_TRAFODION="Y"
-
-# full path to the sqconfig file
-# Default is to leave as is and this file will be created.
-export SQCONFIG=""
-
-#-----------------  security configuration information -----------------
-#Enter in Kerberos details if Kerberos is enabled on your cluster
-
-#Indicate Kerberos is enabled
-export SECURE_HADOOP="N"
-
-#Location of Kerberos server for admin access
-export KDC_SERVER=""
-
-#Kerberos Admin principal used to create Trafodion principals and keytabs
-#Please include realm, for example: trafadmin/admin@MYREALM.COM
-export ADMIN_PRINCIPAL=""
-
-#Keytab for HBase admin user, used to grant Trafodion user CRWE privilege
-export HBASE_KEYTAB=""
-
-#Keytab for HDFS admin user, used to create data directories for Trafodion 
-export HDFS_KEYTAB=""
-
-#Kerberos ticket defaults for the Trafodion user
-export MAX_LIFETIME="24hours"
-export RENEW_LIFETIME="7days"
-
-#Trafodion keytab information
-export TRAF_KEYTAB=""
-export TRAF_KEYTAB_DIR=""
-
-#Enter in LDAP configuration information
-#Turn on authentication - MUST have existing LDAP configured.
-export LDAP_SECURITY="Y"
-
-#Name of LDAP Config file
-export LDAP_AUTH_FILE="traf_authentication_config_`hostname -s`"
-
-#LDAP name to map to database user DB__ROOT
-DB_ROOT_NAME="trafodion"
-#-----------------      end security configuration     -----------------
-
-export CONFIG_COMPLETE="true"
+# KDC server address
+kdc_server =
+# include realm, i.e. admin/admin@EXAMPLE.COM
+admin_principal =
+# admin password for admin principal, it is used to create trafodion user's principal and keytab
+kdcadmin_pwd =
 ```
 
-Once completed, run the {project-name} Installer with the `--config_file` option.
+Once completed, run the {project-name} Installer with the `--config-file` option.
 
 Refer to the following sections for examples:
 
@@ -522,9 +407,3 @@ Refer to the following sections for examples:
 {project-name} stores its provisioning information in the following directories on each node in the cluster:
 
 * `/etc/trafodion`: Configuration information.
-* `/usr/lib/trafodion`: Copies of the files required by the installer.
-
-
-
-
-

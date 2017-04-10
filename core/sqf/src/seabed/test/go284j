@@ -28,7 +28,7 @@ rm -f core.* sbt*
 go69mon -start
 t284srv -attach $* &
 sleep 1
-LD_PRELOAD=$MY_SQROOT/export/lib64/libseabasesig.so $JAVA_HOME/bin/java -cp Linux-x86_64/64/rls com.hp.traf.t284cli $*
+LD_PRELOAD=$TRAF_HOME/export/lib64/libseabasesig.so $JAVA_HOME/bin/java -cp Linux-x86_64/64/rls com.hp.traf.t284cli $*
 wait %1
 
 go69mon -stop

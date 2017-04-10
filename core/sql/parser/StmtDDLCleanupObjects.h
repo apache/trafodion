@@ -92,6 +92,8 @@ public:
   virtual Int32 getArity() const;
   virtual ExprNode * getChild(Lng32 index);
 
+  inline const QualifiedName & getOrigTableNameAsQualifiedName() const;
+  inline       QualifiedName & getOrigTableNameAsQualifiedName();
   inline const QualifiedName * getTableNameAsQualifiedName() const;
   inline       QualifiedName * getTableNameAsQualifiedName() ;
 
@@ -142,6 +144,10 @@ private:
   // private data members
   // ---------------------------------------------------------------------
 
+  // the tablename specified by user in the drop stmt.
+  // This name is not fully qualified during bind phase.
+  QualifiedName origTableQualName_;
+
   // The syntax of table name is
   // [ [ catalog-name . ] schema-name . ] table-name
   QualifiedName * tableQualName_;
@@ -158,6 +164,18 @@ private:
 // -----------------------------------------------------------------------
 // definitions of inline methods for class StmtDDLCleanupObjects
 // -----------------------------------------------------------------------
+inline QualifiedName &
+StmtDDLCleanupObjects::getOrigTableNameAsQualifiedName()
+{
+  return origTableQualName_;
+}
+
+inline const QualifiedName &
+StmtDDLCleanupObjects::getOrigTableNameAsQualifiedName() const
+{
+  return origTableQualName_;
+}
+
 inline QualifiedName * 
 StmtDDLCleanupObjects::getTableNameAsQualifiedName()
 {

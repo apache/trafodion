@@ -25,12 +25,12 @@
 
 [[remove]]
 = Remove
-You use the {project-name} Provisioning User for these instructions.	
+You use the {project-name} Provisioning User for these instructions.
 
-NOTE: You do not need to use the `trafodion_uninstaller` script if upgrading {project-name}. Instead, use the `trafodion_install` script,
+NOTE: You do not need to use the `db_uninstall.py` script before upgrading {project-name}. Instead, use the `db_install.py` script,
 which automatically upgrades the version of {project-name}. Please refer to the <<install,Install>> chapter for further instructions.
 
-Run the commands from the first node of the cluster. Do not run them from a machine that is not part of the {project-name} cluster.
+Run the commands from the first node of the cluster. You can also run it from any node, but you need to specifiy the hostnames of Trafodion cluster.
 
 == Stop {project-name}
 
@@ -38,7 +38,7 @@ Do the following:
 
 ```
 su trafodion
-cd $MY_SQROOT/sql/scripts or cds
+cd $TRAF_HOME/sql/scripts or cds
 sqstop
 exit
 ```
@@ -63,11 +63,7 @@ Processing cluster.conf on local host trafodion-1
 .
 .
 .
-```
 
-<<<
-
-```
 [$Z000HDS] 001,00024772 001 GEN  ES--A-- $Z010K7S    NONE        mxosrvr
 [$Z000HDS] 001,00024782 001 GEN  ES--U-- $ZLOBSRV1   NONE        mxlobsrvr
 shutdown
@@ -84,35 +80,25 @@ Mon Feb 15 07:49:26 UTC 2016
 [admin@trafodion-1 ~]$
 ```
 
-== Run `trafodion_uninstaller`
+== Run `db_uninstall.py`
 
-The `trafodion_uninstaller` completely removes {project-name}.
+The `db_uninstall.py` completely removes {project-name}, includes {project-name} user's home directory.
 
 *Example*
 
 ```
-[admin@trafodion-1 ~]$ cd $HOME/trafodion-installer/installer
-[admin@trafodion-1 installer]$ ./trafodion_uninstaller
-Do you want to uninstall Trafodion (Everything will be removed)? (Y/N) y
-***INFO: testing sudo access
-***INFO: NOTE, rpms that were installed will not be removed.
-***INFO: stopping Trafodion instance
-SQ environment is not up.
-Going to execute ckillall
+[admin@trafodion-1 ~]$ cd $HOME/trafodion-installer/python-installer
+[admin@trafodion-1 installer]$ ./db_uninstall.py
+*****************************
+  Trafodion Uninstall Start
+*****************************
+Uninstall Trafodion on [node-1 node-2] [N]: y
 
-Can't find file /home/trafodion/.vnc/trafodion-1:1.pid
-You'll have to kill the Xvnc process manually
+***[INFO]: Remove Trafodion on node [node-1] ... 
 
-***INFO: restoring linux system files that were changed
-***INFO: removing hbase-trx* from Hadoop directories
-pdsh@trafodion-1: trafodion-1: ssh exited with exit code 1
-pdsh@trafodion-1: trafodion-2: ssh exited with exit code 1
-pdsh@trafodion-1: trafodion-1: ssh exited with exit code 1
-pdsh@trafodion-1: trafodion-2: ssh exited with exit code 1
-***INFO remove the Trafodion userid and group
-***INFO: removing all files from /home/trafodion/apache-trafodion-1.3.0-incubating-bin
-***INFO: removing all files from /usr/lib/trafodion and /var/log/trafodion
-***INFO: removing all files from /etc/trafodion
-***INFO: Trafodion uninstall complete.
+***[INFO]: Remove Trafodion on node [node-2] ... 
+*********************************
+  Trafodion Uninstall Completed
+*********************************
 [admin@trafodion-1 installer]$
 ```

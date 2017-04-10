@@ -19,7 +19,7 @@
 #
 # @@@ END COPYRIGHT @@@
 
-include $(MY_SQROOT)/macros.gmk
+include $(TRAF_HOME)/macros.gmk
 
 ifndef SQ_MTYPE
 SQ_MTYPE	= 32

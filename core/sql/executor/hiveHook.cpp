@@ -71,16 +71,8 @@ HiveMetaData::HiveMetaData() : tbl_(NULL),
 
 HiveMetaData::~HiveMetaData()
 {
-  CollHeap *h = CmpCommon::contextHeap();
-
+  clear();
   disconnect();
-
-  hive_tbl_desc* ptr ;
-  while (tbl_) {
-    ptr = tbl_->next_;       
-    NADELETEBASIC(tbl_, h);
-    tbl_ = ptr;
-  }
 }
 
 NABoolean HiveMetaData::init()
@@ -195,6 +187,20 @@ void HiveMetaData::advance()
 NABoolean HiveMetaData::atEnd()
 {
   return (currDesc_ ? FALSE : TRUE);
+}
+
+void HiveMetaData::clear()
+{
+  CollHeap *h = CmpCommon::contextHeap();
+
+  hive_tbl_desc* ptr ;
+  while (tbl_) {
+    ptr = tbl_->next_;       
+    NADELETEBASIC(tbl_, h);
+    tbl_ = ptr;
+  }
+
+  tbl_ = NULL;
 }
 
 NABoolean HiveMetaData::recordError(Int32 errCode,
@@ -468,7 +474,8 @@ struct hive_skey_desc* populateSortCols(HiveMetaData *md, Int32 sdID,
                   "populateSortCols::sortCols:],###"))
     return NULL;
   
-  
+  if ((foundE - pos)<=10) //this is important to avoid major performance impact when looking for non existent Order(col over and over, parsing to the end of string. hot spot flagged using gprof
+    return NULL;
   Int32 colIdx = 0;
   while (pos < foundE)
     {
@@ -673,7 +680,7 @@ struct hive_tbl_desc* HiveMetaData::getFakedTableDesc(const char* tblName)
 
    hive_tbl_desc* tbl1 = new (h) hive_tbl_desc(1, "myHive", "default", "me",
                                                "MANAGED",
-                                               0, sd1, 0);
+                                               0, NULL, NULL, sd1, 0);
 
    return tbl1;
 }
@@ -776,6 +783,21 @@ struct hive_tbl_desc* HiveMetaData::getTableDesc(const char* schemaName,
                        tableTypeStr, "getTableDesc:tableType:###"))
      return NULL;
    
+   NAText viewOriginalStr;
+   NAText viewExpandedStr;
+   if ((NOT tableTypeStr.empty()) && (tableTypeStr == "VIRTUAL_VIEW"))
+     {
+       pos = 0;
+       if(!extractValueStr(this, tblStr, pos, " viewOriginalText:", ", viewExpandedText:", 
+                           viewOriginalStr, "getTableDesc:viewOriginalText:###"))
+         return NULL;
+
+       pos = 0;
+       if(!extractValueStr(this, tblStr, pos, "viewExpandedText:", ", tableType:", 
+                           viewExpandedStr, "getTableDesc:viewExpandedText:###"))
+         return NULL;
+     }
+
    result = 
      new (CmpCommon::contextHeap()) 
      struct hive_tbl_desc(0, // no tblID with JNI 
@@ -784,6 +806,8 @@ struct hive_tbl_desc* HiveMetaData::getTableDesc(const char* schemaName,
                           ownerStr.c_str(),
                           tableTypeStr.c_str(),
                           creationTS,
+                          viewOriginalStr.c_str(),
+                          viewExpandedStr.c_str(),
                           sd, pkey);
    
    // add the new table to the cache
@@ -823,9 +847,14 @@ NABoolean HiveMetaData::validate(Int32 tableId, Int64 redefTS,
 hive_tbl_desc::hive_tbl_desc(Int32 tblID, const char* name, const char* schName,
                              const char * owner,
                              const char * tableType,
-                             Int64 creationTS, struct hive_sd_desc* sd,
+                             Int64 creationTS, 
+                             const char * viewOriginalText,
+                             const char * viewExpandedText,
+                             struct hive_sd_desc* sd,
                              struct hive_pkey_desc* pk)
-     : tblID_(tblID), sd_(sd), creationTS_(creationTS), pkey_(pk), next_(NULL)
+     : tblID_(tblID), 
+       viewOriginalText_(NULL), viewExpandedText_(NULL),
+       sd_(sd), creationTS_(creationTS), pkey_(pk), next_(NULL)
 {  
   tblName_ = strduph(name, CmpCommon::contextHeap());
   schName_ = strduph(schName, CmpCommon::contextHeap()); 
@@ -839,6 +868,20 @@ hive_tbl_desc::hive_tbl_desc(Int32 tblID, const char* name, const char* schName,
     tableType_ = strduph(tableType, CmpCommon::contextHeap());
   else
     tableType_ = NULL;
+
+  if (isView())
+    {
+      if (viewOriginalText)
+        viewOriginalText_ = strduph(viewOriginalText, CmpCommon::contextHeap());
+      else
+        viewOriginalText_ = NULL;
+
+      if (viewExpandedText)
+        viewExpandedText_ = strduph(viewExpandedText, CmpCommon::contextHeap());
+      else
+        viewExpandedText_ = NULL;
+    }
+
 }
 
 struct hive_column_desc* hive_tbl_desc::getColumns()

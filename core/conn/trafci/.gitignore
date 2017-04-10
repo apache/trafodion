@@ -3,3 +3,9 @@ temp/
 utils/trafci.cmd
 utils/trafci.sh
 /target/
+/target/
+install/Installer.java
+src/main/java/org/trafodion/ci/Vproc.java
+/target/
+/target/
+/target/

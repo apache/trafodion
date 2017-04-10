@@ -75,15 +75,15 @@ function printHelp {
 # check to see if the Trafodion environment is up
 function chkInstance
 {
-  if [ -z $MY_SQROOT ]; then
-     echo "ERROR: You need to set up the MY_SQROOT environment variable "
+  if [ -z $TRAF_HOME ]; then
+     echo "ERROR: You need to set up the TRAF_HOME environment variable "
      echo "to continue using this script."
      echo
      echo "Exiting the sqsmdstats script." 
      exit 1;
   fi
 
-  $MY_SQROOT/sql/scripts/sqcheck -i 1 -d 1 > /dev/null 2>&1
+  $TRAF_HOME/sql/scripts/sqcheck -i 1 -d 1 > /dev/null 2>&1
   sqcheck_result=$?
 
   if   [ $sqcheck_result -eq 0 ]; then
@@ -279,7 +279,7 @@ function generateOutput
 # **************************************************************************
 # FUNCTION: adjustSavedFiles
 # removes old versions of saved files, only retain $archiveCount versions
-# copies final list of files to $MY_SQROOT/logs/sqsmdstats_logs directory
+# copies final list of files to $TRAF_HOME/logs/sqsmdstats_logs directory
 #   on all nodes
 function adjustSavedFiles
 {
@@ -499,7 +499,7 @@ fi
  
 # set up script location, name of results file, etc.
 if [ "$scriptAndLogLoc" = "" ]; then
-   scriptAndLogLoc=$MY_SQROOT/logs/sqsmdstats_logs
+   scriptAndLogLoc=$TRAF_HOME/logs/sqsmdstats_logs
 fi
 
 resultsFile=$scriptAndLogLoc/sqsmdstats_details_$scriptStartTime.log

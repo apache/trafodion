@@ -73,8 +73,8 @@ if [ "$SQ_STARTUP" == "" ]; then
   fi
 fi   # sourcing sqend.sh
 
-if [ -z "$MY_SQROOT" ]; then
-  echo "  ERROR: MY_SQROOT is not set. "
+if [ -z "$TRAF_HOME" ]; then
+  echo "  ERROR: TRAF_HOME is not set. "
   return 1
 fi
 
@@ -82,25 +82,25 @@ fi
 # Finally, add the regression variables and make sure the directories
 # actually exist
 #
-echo "  MY_SQROOT is set to: $MY_SQROOT"
-export MY_SQROOT=$MY_SQROOT
-export SQLMX_MODULE_DIR=${MY_SQROOT}/sql/sqlmx/USERMODULES
-export SQLMX_SYSMODULE_DIR=${MY_SQROOT}/sql/sqlmx/SYSTEMMODULES
+echo "  TRAF_HOME is set to: $TRAF_HOME"
+export TRAF_HOME=$TRAF_HOME
+export SQLMX_MODULE_DIR=${TRAF_HOME}/sql/sqlmx/USERMODULES
+export SQLMX_SYSMODULE_DIR=${TRAF_HOME}/sql/sqlmx/SYSTEMMODULES
 
 if [ -z "$mxcidir" ]; then
-  export mxcidir=${MY_SQROOT}/export/bin${SQ_MBTYPE}
+  export mxcidir=${TRAF_HOME}/export/bin${SQ_MBTYPE}
 fi
 if [ -z "$mxcmpdir" ]; then
-  export mxcmpdir=${MY_SQROOT}/export/bin${SQ_MBTYPE}
+  export mxcmpdir=${TRAF_HOME}/export/bin${SQ_MBTYPE}
 fi
 if [ -z "$rundir" ]; then
-  export rundir=${MY_SQROOT}/rundir
+  export rundir=${TRAF_HOME}/rundir
 fi
 if [ -z "$scriptsdir" ]; then
-  export scriptsdir=${MY_SQROOT}/sql/regress
+  export scriptsdir=${TRAF_HOME}/sql/regress
 fi
 if [ -z "$mxlibdir" ]; then
-  export mxlibdir=${MY_SQROOT}/export/lib
+  export mxlibdir=${TRAF_HOME}/export/lib
 fi
 
 for i in $mxcmpdir $mxcidir $rundir $scriptsdir $mxlibdir
@@ -111,7 +111,7 @@ do
   fi
 done
 
-if [ -d $MY_SQROOT/sql/local_hadoop ]; then
+if [ -d $TRAF_HOME/sql/local_hadoop ]; then
   . $(dirname $(which swhadoop))/sw_env.sh
 fi
 

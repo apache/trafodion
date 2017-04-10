@@ -87,6 +87,7 @@ class ExExeUtilDisplayExplainTdb;
 class ExExeUtilDisplayExplainComplexTdb;
 class ExExeUtilFastDeleteTdb;
 class ExExeUtilHiveTruncateTdb;
+class ExExeUtilHiveQueryTdb;
 class ExExeUtilSuspendTdb;
 class ExExeUtilSuspendTcb;
 class ExpHbaseInterface;
@@ -252,6 +253,7 @@ class ExExeUtilTcb : public ex_tcb
                          const char * status,
                          const char * object,
                          char * outBuf,
+                         NABoolean isET = FALSE,
                          char * timeBuf = NULL,
                          char * queryBuf = NULL,
                          char * sqlcodeBuf = NULL);
@@ -434,6 +436,7 @@ class ExExeUtilPrivateState : public ex_tcb_private_state
   friend class ExExeUtilCreateTableAsTcb;
   friend class ExExeUtilFastDeleteTcb;
   friend class ExExeUtilHiveTruncateTcb;
+  friend class ExExeUtilHiveQueryTcb;
   friend class ExExeUtilAQRTcb;
   friend class ExExeUtilHBaseBulkLoadTcb;
   friend class ExExeUtilHBaseBulkUnLoadTcb;
@@ -1546,6 +1549,7 @@ class ExExeUtilGetStatisticsTcb : public ExExeUtilTcb
 {
   friend class ExExeUtilGetStatisticsTdb;
   friend class ExExeUtilPrivateState;
+  friend class ExExeUtilGetRTSStatisticsTcb;
 
 public:
   // Constructor
@@ -1564,7 +1568,6 @@ public:
   {
     return (ExExeUtilGetStatisticsTdb &) tdb;
   };
-
  protected:
   void moveCompilationStatsToUpQueue(CompilationStatsData *cmpStats);
 
@@ -2216,6 +2219,7 @@ public:
   void initSqlStatsItems(SQLSTATS_ITEM *sqlStatsItem,
                                   ULng32  noOfStatsItem,
                                   NABoolean initTdbIdOnly);
+  NABoolean singleLineFormat() { return singleLineFormat_; } 
 
 private:
   enum Step
@@ -2317,6 +2321,7 @@ private:
   void formatWInt64(SQLSTATS_ITEM stat, char* targetString);
   char *formatTimestamp(char *buf, Int64 inTime);
   char *formatElapsedTime(char *buf, Int64 inTime);
+  NABoolean singleLineFormat_;
 };
 
 class ExExeUtilGetRTSStatisticsPrivateState : public ex_tcb_private_state
@@ -2486,10 +2491,17 @@ protected:
 
 private:
 
-  Lng32 setupObjectTypeForUserQuery();
-  Lng32 setupPrivilegesTypeForUserQuery();
-  Int32 setupAuthIDInfo(const char * authName, char authID[MAX_AUTHIDTYPE_CHAR], AuthIdType roleOnly);
-  Int32 setupCurrentUserInfo(char authID[MAX_USERINFO_CHAR]);
+  NABoolean checkUserPrivs(ContextCli * currConnext, const ComTdbExeUtilGetMetadataInfo::QueryType queryType);
+  Int32 getAuthID(
+    const char *authName,
+    const char *catName,
+    const char *schName,
+    const char *objName);
+  char * getRoleList(
+    const Int32 userID,
+    const char *catName,
+    const char *schName,
+    const char *objName);
 
 };
 
@@ -2911,7 +2923,7 @@ public:
 			 ex_globals * glob = 0);
   
   virtual short work();
-
+  
   ExExeUtilLobExtractTdb & lobTdb() const
   {
     return (ExExeUtilLobExtractTdb &) tdb;
@@ -2969,8 +2981,92 @@ public:
   LOBglobals *lobGlobals_;
 };
 
+
+
+//////////////////////////////////////////////////////////////////////////
 // -----------------------------------------------------------------------
-// ExExeUtilFileExtractTcb
+// ExExeUtilLobUpdateTdb
+// -----------------------------------------------------------------------
+class ExExeUtilLobUpdateTdb : public ComTdbExeUtilLobUpdate
+{
+ public:
+
+  // ---------------------------------------------------------------------
+  // Constructor is only called to instantiate an object used for
+  // retrieval of the virtual table function pointer of the class while
+  // unpacking. An empty constructor is enough.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC ExExeUtilLobUpdateTdb()
+    {}
+
+  NA_EIDPROC virtual ~ExExeUtilLobUpdateTdb()
+    {}
+
+
+  // ---------------------------------------------------------------------
+  // Build a TCB for this TDB. Redefined in the Executor project.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+private:
+};
+
+//////////////////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------
+// ExExeUtilLobUpdateTcb
+// -----------------------------------------------------------------------
+
+
+class ExExeUtilLobUpdateTcb : public ExExeUtilTcb
+{
+  friend class ExExeUtilLobUpdateTdb;
+  friend class ExExeUtilPrivateState;
+
+public:
+  // Constructor
+  ExExeUtilLobUpdateTcb(const ComTdbExeUtilLobUpdate & exe_util_tdb,
+			 const ex_tcb * child_tcb, 
+			 ex_globals * glob = 0);
+  
+  virtual short work();
+  
+  ExExeUtilLobUpdateTdb & lobTdb() const
+  {
+    return (ExExeUtilLobUpdateTdb &) tdb;
+  };
+  LOBglobals *getLobGlobals() { return lobGlobals_;}
+ protected:
+  enum Step
+    {
+      EMPTY_,
+      GET_HANDLE_,
+      UPDATE_LOB_DATA_,
+      EMPTY_LOB_DATA_,
+      APPEND_LOB_DATA_,
+      RETURN_STATUS_,
+      DONE_,
+      CANCEL_,
+      HANDLE_ERROR_,
+      CANCELLED_
+    };
+  Step step_;
+  Lng32 lobHandleLen_;
+  char  lobHandle_[2050];
+  char lobInputHandleBuf_[4096];
+  char lobNameBuf_[1024];
+  Lng32 lobNameLen_;
+  char * lobName_;
+  Lng32 lobType_;
+  char * lobData_;
+  Int64 lobDataLen_;
+  Int64 requestTag_;
+  char lobLoc_[1024];
+  ExLobStats lobStats_;
+  char statusString_[200];
+  fstream indata_;
+  LOBglobals *lobGlobals_;
+};
+// -----------------------------------------------------------------------
+// ExExeUtilFileUpdateTcb
 // -----------------------------------------------------------------------
 class ExExeUtilFileExtractTcb : public ExExeUtilLobExtractTcb
 {
@@ -3245,14 +3341,19 @@ protected:
   enum Step
   {
     INITIAL_,
-    READ_HIVE_MD_,
+    SETUP_SCHEMAS_,
+    GET_ALL_SCHEMAS_,
+    GET_ALL_TABLES_,
+    GET_ALL_TABLES_IN_SCHEMA_,
     POSITION_,
+    FETCH_SCHEMA_,
     FETCH_TABLE_,
     FETCH_COLUMN_,
     FETCH_PKEY_,
     APPLY_PRED_,
     RETURN_ROW_,
     ADVANCE_ROW_,
+    ADVANCE_SCHEMA_,
     DONE_,
     HANDLE_ERROR_,
     CANCELLED_
@@ -3265,9 +3366,11 @@ protected:
   hive_column_desc * currColDesc_;
   hive_pkey_desc * currPartnDesc_;
   hive_bkey_desc * currKeyDesc_;
+  Int32 currSchNum_;
   Int32 currColNum_;
 
   char * mdRow_;
+  LIST (NAText *) schNames_;
   LIST (NAText *) tblNames_;
 
   char hiveCat_[1024];
@@ -3285,7 +3388,6 @@ public:
   ~ExExeUtilHiveMDaccessPrivateState();        // destructor
 protected:
 };
-
 
 // -----------------------------------------------------------------------
 // ExExeUtilHiveTruncateTdb
@@ -3388,6 +3490,100 @@ class ExExeUtilHiveTruncatePrivateState : public ex_tcb_private_state
  protected:
 };
 
+// -----------------------------------------------------------------------
+// ExExeUtilHiveQueryTdb
+// -----------------------------------------------------------------------
+class ExExeUtilHiveQueryTdb : public ComTdbExeUtilHiveQuery
+{
+ public:
+
+  // ---------------------------------------------------------------------
+  // Constructor is only called to instantiate an object used for
+  // retrieval of the virtual table function pointer of the class while
+  // unpacking. An empty constructor is enough.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC ExExeUtilHiveQueryTdb()
+    {}
+
+  NA_EIDPROC virtual ~ExExeUtilHiveQueryTdb()
+    {}
+
+  // ---------------------------------------------------------------------
+  // Build a TCB for this TDB. Redefined in the Executor project.
+  // ---------------------------------------------------------------------
+  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+
+ private:
+  // ---------------------------------------------------------------------
+  // !!!!!!! IMPORTANT -- NO DATA MEMBERS ALLOWED IN EXECUTOR TDB !!!!!!!!
+  // *********************************************************************
+  // The Executor TDB's are only used for the sole purpose of providing a
+  // way to supplement the Compiler TDB's (in comexe) with methods whose
+  // implementation depends on Executor objects. This is done so as to
+  // decouple the Compiler from linking in Executor objects unnecessarily.
+  //
+  // When a Compiler generated TDB arrives at the Executor, the same data
+  // image is "cast" as an Executor TDB after unpacking. Therefore, it is
+  // a requirement that a Compiler TDB has the same object layout as its
+  // corresponding Executor TDB. As a result of this, all Executor TDB's
+  // must have absolutely NO data members, but only member functions. So,
+  // if you reach here with an intention to add data members to a TDB, ask
+  // yourself two questions:
+  //
+  // 1. Are those data members Compiler-generated?
+  //    If yes, put them in the ComTdbDLL instead.
+  //    If no, they should probably belong to someplace else (like TCB).
+  //
+  // 2. Are the classes those data members belong defined in the executor
+  //    project?
+  //    If your answer to both questions is yes, you might need to move
+  //    the classes to the comexe project.
+  // ---------------------------------------------------------------------
+};
+
+///////////////////////////////////////////////////////////////
+// ExExeUtilHiveQueryTcb
+///////////////////////////////////////////////////////////////
+class ExExeUtilHiveQueryTcb : public ExExeUtilTcb
+{
+ public:
+  // Constructor
+  ExExeUtilHiveQueryTcb(const ComTdbExeUtilHiveQuery & exe_util_tdb,
+                        ex_globals * glob = 0);
+
+  ~ExExeUtilHiveQueryTcb();
+
+  virtual short work();
+
+  virtual ex_tcb_private_state * allocatePstates(
+       Lng32 &numElems,      // inout, desired/actual elements
+       Lng32 &pstateLength); // out, length of one element
+
+ private:
+  enum Step
+    {
+      INITIAL_,
+      ERROR_,
+      PROCESS_QUERY_,
+      DONE_
+    };
+
+  ExExeUtilHiveQueryTdb & htTdb() const
+    {return (ExExeUtilHiveQueryTdb &) tdb;};
+
+  Step step_;
+};
+
+class ExExeUtilHiveQueryPrivateState : public ex_tcb_private_state
+{
+  friend class ExExeUtilHiveQueryTcb;
+
+ public:
+  ExExeUtilHiveQueryPrivateState();
+  ~ExExeUtilHiveQueryPrivateState();        // destructor
+ protected:
+};
+
 //////////////////////////////////////////////////////////////////////////
 // -----------------------------------------------------------------------
 // ExExeUtilHbaseLoadTdb
@@ -3450,7 +3646,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   // Constructor
   ExExeUtilHBaseBulkLoadTcb(const ComTdbExeUtil & exe_util_tdb,
                             ex_globals * glob = 0);
-
+  ~ExExeUtilHBaseBulkLoadTcb();
   virtual short work();
 
   ExExeUtilHBaseBulkLoadTdb & hblTdb() const
@@ -3461,6 +3657,8 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   virtual short moveRowToUpQueue(const char * row, Lng32 len = -1,
                                  short * rc = NULL, NABoolean isVarchar = TRUE);
 
+  short printLoggingLocation(int bufPos);
+ 
   void setEndStatusMsg(const char * operation,
                                        int bufPos = 0,
                                        NABoolean   withtime= FALSE);
@@ -3472,7 +3670,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
-
+  void setLoggingLocation();
  private:
   enum Step
     {
@@ -3484,12 +3682,15 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
       LOAD_END_,
       LOAD_END_ERROR_,
       PREPARATION_,
+      LOADING_DATA_,
       COMPLETE_BULK_LOAD_, //load incremental
       POST_LOAD_CLEANUP_,
       TRUNCATE_TABLE_,
       DISABLE_INDEXES_,
       POPULATE_INDEXES_,
+      POPULATE_INDEXES_EXECUTE_,
       UPDATE_STATS_,
+      UPDATE_STATS_EXECUTE_,
       RETURN_STATUS_MSG_,
       DONE_,
       HANDLE_ERROR_, DELETE_DATA_AND_ERROR_,
@@ -3505,7 +3706,7 @@ class ExExeUtilHBaseBulkLoadTcb : public ExExeUtilTcb
   Int64 rowsAffected_;
   char statusMsgBuf_[BUFFER_SIZE];
   ExpHbaseInterface * ehi_;
-
+  char *loggingLocation_;
   short setCQDs();
   short restoreCQDs();
 };
@@ -3788,7 +3989,7 @@ protected:
                             NABoolean adjustLen = TRUE);
 
   short collectStats(char * tableName);
-  short populateStats(Int32 currIndex, NABoolean nullTerminate = FALSE);
+  short populateStats(Int32 currIndex);
 
   char * hbaseRootdir_;
 
@@ -3811,6 +4012,8 @@ protected:
   char * schName_;
   char * objName_;
   char * regionName_;
+
+  NAString extNameForHbase_;
 };
 
 //////////////////////////////////////////////////////////////////////////

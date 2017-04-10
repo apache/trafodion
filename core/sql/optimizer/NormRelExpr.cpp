@@ -4673,8 +4673,9 @@ NABoolean Join::prepareMeForCSESharing(
      const ValueIdSet &predicatesToRemove,
      const ValueIdSet &commonPredicatesToAdd,
      const ValueIdSet &inputsToRemove,
-     CSEInfo *info,
-     NABoolean testRun)
+     ValueIdSet &valuesForVEGRewrite,
+     ValueIdSet &keyColumns,
+     CSEInfo *info)
 {
   if (isTSJForWrite() ||
       isTSJForUndo() ||
@@ -4682,15 +4683,12 @@ NABoolean Join::prepareMeForCSESharing(
       getIsForTrafLoadPrep())
     return FALSE;
 
-  if (!testRun)
-    {
-      // The caller of this methods added "commonPredicatesToAdd" to
-      // predicates_ (the generic selection predicates stored in the
-      // RelExpr). That works for both inner and non-inner joins.  The
-      // only thing we have left to do is to recompute the equi-join
-      // predicates.
-      findEquiJoinPredicates();
-    }
+  // The caller of this methods added "commonPredicatesToAdd" to
+  // predicates_ (the generic selection predicates stored in the
+  // RelExpr). That works for both inner and non-inner joins.  The
+  // only thing we have left to do is to recompute the equi-join
+  // predicates.
+  findEquiJoinPredicates();
 
   return TRUE;
 }
@@ -5013,8 +5011,9 @@ NABoolean Union::prepareTreeForCSESharing(
      const ValueIdSet &predicatesToRemove,
      const ValueIdSet &commonPredicatesToAdd,
      const ValueIdSet &inputsToRemove,
-     CSEInfo *info,
-     NABoolean testRun)
+     ValueIdSet &valuesForVEGRewrite,
+     ValueIdSet &keyColumns,
+     CSEInfo *info)
 {
   NABoolean result = TRUE;
 
@@ -5024,8 +5023,7 @@ NABoolean Union::prepareTreeForCSESharing(
   if (getSelectionPred().entries() > 0)
     {
       info->getConsumer(0)->emitCSEDiagnostics(
-           "Selection predicates on union node not supported",
-           !testRun);
+           "Selection predicates on union node not supported");
       return FALSE;
     }
 
@@ -5038,6 +5036,9 @@ NABoolean Union::prepareTreeForCSESharing(
       ValueIdSet childPredsToAdd;
       ValueIdMap *map = (i==0 ? &getLeftMap() : &getRightMap());
       ValueIdSet availableValues(map->getTopValues());
+      ValueIdSet dummyValuesForVEGRewrite;
+      ValueIdSet mappedKeyColumns;
+      ValueIdSet childKeyColumns;
 
       // if there are outputs to add, we can only do that for
       // outputs that already exist in the ValueIdMap
@@ -5045,8 +5046,7 @@ NABoolean Union::prepareTreeForCSESharing(
       if (locOutputsToAdd.removeUnCoveredExprs(availableValues))
         {
           info->getConsumer(0)->emitCSEDiagnostics(
-               "Not able to add output values unknown to union operator",
-               !testRun);
+               "Not able to add output values unknown to union operator");
           result = FALSE;
         }
 
@@ -5059,14 +5059,36 @@ NABoolean Union::prepareTreeForCSESharing(
            childPredsToRemove,
            childPredsToAdd,
            inputsToRemove,
-           info,
-           testRun);
+           dummyValuesForVEGRewrite,
+           childKeyColumns,
+           info);
+
+      map->mapValueIdSetUp(mappedKeyColumns, childKeyColumns);
+      // include only those that actually got mapped
+      mappedKeyColumns -= childKeyColumns;
+      keyColumns += mappedKeyColumns;
     }
 
-  if (result && !testRun)
+  if (result)
     {
+      NABoolean dummy;
+      CollIndex nu = unionMap_->leftColMap_.getBottomValues().entries();
+
       getGroupAttr()->addCharacteristicOutputs(outputsToAdd);
       getGroupAttr()->removeCharacteristicInputs(inputsToRemove);
+
+      // add columns that are a constant in at least one of the
+      // UNION's children to the key columns. Such columns can be used
+      // to eliminate entire legs of the union and therefore act like
+      // key or partition key columns.
+      for (CollIndex u=0; u<nu; u++)
+        {
+          if (unionMap_->leftColMap_.getBottomValues()[u].getItemExpr()->
+                castToConstValue(dummy) ||
+              unionMap_->rightColMap_.getBottomValues()[u].getItemExpr()->
+                castToConstValue(dummy))
+            keyColumns += unionMap_->colMapTable_[u];
+        }
     }
 
   // there is no need to call prepareMeForCSESharing() here
@@ -5702,38 +5724,37 @@ NABoolean GroupByAgg::prepareMeForCSESharing(
      const ValueIdSet &predicatesToRemove,
      const ValueIdSet &commonPredicatesToAdd,
      const ValueIdSet &inputsToRemove,
-     CSEInfo *info,
-     NABoolean testRun)
+     ValueIdSet &valuesForVEGRewrite,
+     ValueIdSet &keyColumns,
+     CSEInfo *info)
 {
   // The caller of this method took care of most adjustments to
   // make. The main thing the groupby node needs to do is to add any
   // outputs that are required to its characteristic outputs.
 
-  if (!testRun)
-    {
-      ValueIdSet myAvailableValues(groupExpr_);
-      ValueIdSet referencedValues;
-      ValueIdSet myOutputsToAdd;
-      ValueIdSet unCoveredExpr;
+  ValueIdSet myAvailableValues(groupExpr_);
+  ValueIdSet referencedValues;
+  ValueIdSet myOutputsToAdd;
+  ValueIdSet unCoveredExpr;
 
-      myAvailableValues += aggregateExpr_;
+  myAvailableValues += aggregateExpr_;
+  valuesForVEGRewrite += aggregateExpr_;
 
-      // The caller may be asking for expressions on columns, maybe
-      // even an expression involving grouping columns and aggregates
-      // and multiple tables, therefore use the isCovered method to
-      // determine those subexpressions that we can produce here.
-      NABoolean allCovered =
-        outputsToAdd.isCovered(myAvailableValues,
-                               *(getGroupAttr()),
-                               referencedValues,
-                               myOutputsToAdd,
-                               unCoveredExpr);
+  // The caller may be asking for expressions on columns, maybe
+  // even an expression involving grouping columns and aggregates
+  // and multiple tables, therefore use the isCovered method to
+  // determine those subexpressions that we can produce here.
+  NABoolean allCovered =
+    outputsToAdd.isCovered(myAvailableValues,
+                           *(getGroupAttr()),
+                           referencedValues,
+                           myOutputsToAdd,
+                           unCoveredExpr);
 
-      if (allCovered)
-        myOutputsToAdd = outputsToAdd;
+  if (allCovered)
+    myOutputsToAdd = outputsToAdd;
 
-      getGroupAttr()->addCharacteristicOutputs(myOutputsToAdd);
-    }
+  getGroupAttr()->addCharacteristicOutputs(myOutputsToAdd);
 
   return TRUE;
 }
@@ -6101,32 +6122,33 @@ NABoolean Scan::prepareMeForCSESharing(
      const ValueIdSet &predicatesToRemove,
      const ValueIdSet &commonPredicatesToAdd,
      const ValueIdSet &inputsToRemove,
-     CSEInfo *info,
-     NABoolean testRun)
+     ValueIdSet &valuesForVEGRewrite,
+     ValueIdSet &keyColumns,
+     CSEInfo *info)
 {
   // The caller of this method took care of most adjustments to
   // make. The main thing the scan node needs to do is to add any
   // outputs that are required to its characteristic outputs.
 
-  if (!testRun)
-    {
-      ValueIdSet myColSet(getTableDesc()->getColumnVEGList());
-      ValueIdSet referencedCols;
-      ValueIdSet myOutputsToAdd;
-      ValueIdSet unCoveredExpr;
+  ValueIdSet myColSet(getTableDesc()->getColumnVEGList());
+  ValueIdSet referencedCols;
+  ValueIdSet myOutputsToAdd;
+  ValueIdSet unCoveredExpr;
 
-      // The caller may be asking for expressions on columns, maybe
-      // even an expression involving multiple tables, therefore use
-      // the isCovered method to determine those subexpressions that we
-      // can produce here.
-      outputsToAdd.isCovered(myColSet,
-                             *(getGroupAttr()),
-                             referencedCols,
-                             myOutputsToAdd,
-                             unCoveredExpr);
+  // The caller may be asking for expressions on columns, maybe
+  // even an expression involving multiple tables, therefore use
+  // the isCovered method to determine those subexpressions that we
+  // can produce here.
+  outputsToAdd.isCovered(myColSet,
+                         *(getGroupAttr()),
+                         referencedCols,
+                         myOutputsToAdd,
+                         unCoveredExpr);
 
-      getGroupAttr()->addCharacteristicOutputs(myOutputsToAdd);
-    }
+  getGroupAttr()->addCharacteristicOutputs(myOutputsToAdd);
+  valuesForVEGRewrite.insertList(getTableDesc()->getColumnList());
+
+  keyColumns.insertList(getTableDesc()->getClusteringIndex()->getIndexKey());
 
   return TRUE;
 }
@@ -6863,6 +6885,17 @@ RelExpr * GenericUpdate::normalizeNode(NormWA & normWARef)
        return this;
      }
   }
+
+  if (producedMergeIUDIndicator_ != NULL_VALUE_ID)
+    {
+      ValueId dummy;
+      if (NOT getGroupAttr()->getCharacteristicOutputs().referencesTheGivenValue(
+               producedMergeIUDIndicator_,
+               dummy))
+        // nobody asked for the merge IUD indicator, therefore remove
+        // it, (e.g. simple table without index maintenance)
+        producedMergeIUDIndicator_ = NULL_VALUE_ID;
+    }
 
   return normalizedThis;
 }
@@ -7674,6 +7707,11 @@ RelExpr * RelRoot::semanticQueryOptimizeNode(NormWA & normWARef)
                                 );
   }
 
+  // for debugging
+  if (normWARef.getCommonSubExprRefCount() > 0 &&
+      CmpCommon::getDefault(CSE_PRINT_DEBUG_INFO) == DF_ON)
+    CommonSubExprRef::displayAll();
+
   return this;
 
 } // RelRoot::semanticQueryOptimizeNode()
@@ -7717,8 +7755,11 @@ RelExpr * RelRoot::inlineTempTablesForCSEs(NormWA & normWARef)
         if (cses->at(i)->getInsertIntoTemp() != NULL)
           toDoVec += i;
 
-      // loop over the to-do list, finding new entries for which we
-      // already processed all of their predecessors
+      // Loop over the to-do list, finding new entries for which we
+      // already processed all of their predecessors. In this context,
+      // the children are the predecessors, since we have to build the
+      // graph bottom-up. In other words, find a topological reverse
+      // order of the lexical graph of the CSEs.
       while (toDoVec.entries() > 0)
         {
           RelExpr *thisLevelOfInserts = NULL;
@@ -7726,15 +7767,18 @@ RelExpr * RelRoot::inlineTempTablesForCSEs(NormWA & normWARef)
           for (CollIndex c=0; toDoVec.nextUsed(c); c++)
             {
               CSEInfo *info = cses->at(c);
-              // predecessor CSEs that have to be computed before we
+              // predecessor (child) CSEs that have to be computed before we
               // can attempt to compute this one
-              const LIST(CSEInfo *) &predecessors(info->getChildCSEs());
+              const LIST(CountedCSEInfo) &predecessors(info->getChildCSEs());
               NABoolean isReady = TRUE;
 
               for (CollIndex p=0; p<predecessors.entries(); p++)
                 {
-                  if (!doneVec.contains(p) &&
-                      cses->at(p)->getInsertIntoTemp() != NULL)
+                  Int32 cseId = predecessors[p].getInfo()->getCSEId();
+
+                  CMPASSERT(cses->at(cseId)->getCSEId() == cseId);
+                  if (!doneVec.contains(cseId) &&
+                      cses->at(cseId)->getInsertIntoTemp() != NULL)
                     // a predecessor CSE for which we have to
                     // materialize a temp table has not yet
                     // been processed - can't do this one
@@ -8017,8 +8061,9 @@ NABoolean RelExpr::prepareTreeForCSESharing(
      const ValueIdSet &predicatesToRemove,
      const ValueIdSet &newPredicatesToAdd,
      const ValueIdSet &inputsToRemove,
-     CSEInfo *info,
-     NABoolean testRun)
+     ValueIdSet &valuesForVEGRewrite,
+     ValueIdSet &keyColumns,
+     CSEInfo *info)
 {
   NABoolean result = TRUE;
   CollIndex nc = getArity();
@@ -8045,19 +8090,17 @@ NABoolean RelExpr::prepareTreeForCSESharing(
            childPredsToRemove,
            childPredsToAdd,
            inputsToRemove,
-           info,
-           testRun);
+           valuesForVEGRewrite,
+           keyColumns,
+           info);
 
-      if (!testRun)
-        {
-          // if the child already had or has added any of the requested
-          // outputs, then add them to our own char. outputs
-          ValueIdSet childAddedOutputs(
-               child(i).getGroupAttr()->getCharacteristicOutputs());
+      // if the child already had or has added any of the requested
+      // outputs, then add them to our own char. outputs
+      ValueIdSet childAddedOutputs(
+           child(i).getGroupAttr()->getCharacteristicOutputs());
 
-          childAddedOutputs.intersectSet(outputsToAdd);
-          getGroupAttr()->addCharacteristicOutputs(childAddedOutputs);
-        }
+      childAddedOutputs.intersectSet(outputsToAdd);
+      getGroupAttr()->addCharacteristicOutputs(childAddedOutputs);
 
       // Todo: CSE: consider using recursivePushDownCoveredExpr
       // instead of pushing these new predicates in this method
@@ -8065,10 +8108,10 @@ NABoolean RelExpr::prepareTreeForCSESharing(
       newLocalPredicates -= childPredsToAdd;
     }
 
-  if (result && !testRun)
+  if (result)
     {
       // Remove the predicates from our selection predicates.
-      // Note that the virtual method above is supposed to remove
+      // Note that prepareMeForCSESharing() is supposed to remove
       // these predicates from all other places in the node.
       predicates_ -= predicatesToRemove;
 
@@ -8103,8 +8146,9 @@ NABoolean RelExpr::prepareTreeForCSESharing(
                                     predicatesToRemove,
                                     newLocalPredicates,
                                     inputsToRemove,
-                                    info,
-                                    testRun);
+                                    valuesForVEGRewrite,
+                                    keyColumns,
+                                    info);
 
   return result;
 }
@@ -8129,8 +8173,9 @@ NABoolean RelExpr::prepareMeForCSESharing(
      const ValueIdSet &predicatesToRemove,
      const ValueIdSet &newPredicatesToAdd,
      const ValueIdSet &inputsToRemove,
-     CSEInfo *info,
-     NABoolean testRun)
+     ValueIdSet &valuesForVEGRewrite,
+     ValueIdSet &keyColumns,
+     CSEInfo *info)
 {
   // A class derived from RelExpr must explicitly define
   // this method to support being part of a shared CSE
@@ -8140,7 +8185,7 @@ NABoolean RelExpr::prepareMeForCSESharing(
   snprintf(buf, sizeof(buf), "Operator %s not supported",
            getText().data());
 
-  info->getConsumer(0)->emitCSEDiagnostics(buf, !testRun);
+  info->getConsumer(0)->emitCSEDiagnostics(buf);
 
   return FALSE;
 }
@@ -8990,6 +9035,11 @@ void CommonSubExprRef::transformNode(NormWA & normWARef,
     return;
   markAsTransformed();
 
+  // set lexicalRefNumFromParent_ for expanded refs, now that
+  // we can be sure the lexical ref has been bound
+  if (isAnExpansionOf_)
+    lexicalRefNumFromParent_ = isAnExpansionOf_->lexicalRefNumFromParent_;
+
   // Allocate a new VEG region for the child, to prevent VEGies that
   // cross the potentially common part and the rest of the query tree.
   //normWARef.allocateAndSetVEGRegion(EXPORT_ONLY, this);
@@ -9012,10 +9062,6 @@ void CommonSubExprRef::pullUpPreds()
   // pulled-up predicates here
   // RelExpr::pullUpPreds();
   // pulledPredicates_ += selectionPred();
-
-  // this is also the time to record the original set of inputs
-  // for this node, before predicate pushdown can alter the inputs
-  commonInputs_ = getGroupAttr()->getCharacteristicInputs();
 }
 
 void CommonSubExprRef::pushdownCoveredExpr(
@@ -9032,6 +9078,11 @@ void CommonSubExprRef::pushdownCoveredExpr(
   // common to all the consumers must be pulled back out before we can
   // share a common query tree.
   ValueIdSet predsPushedThisTime(predicatesOnParent);
+
+  if (pushedPredicates_.isEmpty())
+    // this is also the time to record the original set of inputs
+    // for this node, before predicate pushdown can alter the inputs
+    commonInputs_ = getGroupAttr()->getCharacteristicInputs();
 
   RelExpr::pushdownCoveredExpr(outputExpr,
                                newExternalInputs,
@@ -9059,13 +9110,13 @@ RelExpr * CommonSubExprRef::semanticQueryOptimizeNode(NormWA & normWARef)
   RelExpr *result = this;
   NABoolean ok = TRUE;
   CSEInfo *info = CmpCommon::statement()->getCSEInfo(internalName_);
-  CSEInfo::CSEAnalysisOutcome action = CSEInfo::UNKNOWN_ANALYSIS;
+
+  // do the analysis top-down
+  analyzeAndPrepareForSharing(*info);
 
   RelExpr::semanticQueryOptimizeNode(normWARef);
 
-  action = analyzeAndPrepareForSharing(*info);
-
-  switch (action)
+  switch (info->getAnalysisOutcome(id_))
     {
     case CSEInfo::EXPAND:
       // Not able to share the CSE, expand the CSE by eliminating
@@ -9108,11 +9159,6 @@ RelExpr * CommonSubExprRef::semanticQueryOptimizeNode(NormWA & normWARef)
       CMPASSERT(0);
     }
 
-  // for debugging
-  if (CmpCommon::getDefault(CSE_PRINT_DEBUG_INFO) == DF_ON &&
-      info->getIdOfAnalyzingConsumer() == id_)
-    displayAll(internalName_);
-
   if (result == NULL)
     emitCSEDiagnostics("Error in creating temp table or temp table insert",
                        TRUE);
@@ -9120,9 +9166,47 @@ RelExpr * CommonSubExprRef::semanticQueryOptimizeNode(NormWA & normWARef)
   return result;
 }
 
+NABoolean CommonSubExprRef::prepareMeForCSESharing(
+     const ValueIdSet &outputsToAdd,
+     const ValueIdSet &predicatesToRemove,
+     const ValueIdSet &commonPredicatesToAdd,
+     const ValueIdSet &inputsToRemove,
+     ValueIdSet &valuesForVEGRewrite,
+     ValueIdSet &keyColumns,
+     CSEInfo *info)
+{
+  // the caller of this method already took care of the adjustments to
+  // make, just make sure that all predicates could be pushed down to
+  // the child
+
+  if (!getSelectionPred().isEmpty())
+    {
+      // this should not happen
+      emitCSEDiagnostics("Unable to push common predicates into child tree");
+      return FALSE;
+    }
+  return TRUE;
+}
+
 CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInfo &info)
 {
   // do a few simple shortcuts first
+
+  // Make sure this consumer is in the main list of consumers. Note
+  // that the analysis is done top-down and that currently the only
+  // two places where we make copies of the tree are in
+  // RelRoot::semanticQueryOptimizeNode() and in this method. The copy
+  // made in the root is only used when we bypass SQO completely.
+  // Although we may sometimes look at unused copies during the CSE
+  // analysis phase, this guarantees (for now) that the analyzing
+  // consumer always is and stays in the list of consumers. If we ever
+  // make additional copies of the tree we may need to reconsider this
+  // logic.
+  if (info.getConsumer(id_) != this)
+    {
+      info.replaceConsumerWithAnAlternative(this);
+      DCMPASSERT(info.getConsumer(id_) == this);
+    }
 
   // If another consumer has already done the analysis, return its result.
   // Note: Right now, all the consumers do the same, in the future, we could
@@ -9130,6 +9214,7 @@ CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInf
   if (info.getIdOfAnalyzingConsumer() >= 0)
     return info.getAnalysisOutcome(id_);
 
+  // mark me as the analyzing consumer
   info.setIdOfAnalyzingConsumer(id_);
 
   if (CmpCommon::getDefault(CSE_USE_TEMP) == DF_OFF)
@@ -9145,6 +9230,7 @@ CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInf
   ValueIdList tempTableColumns;
   const ValueIdSet &charOutputs(getGroupAttr()->getCharacteristicOutputs());
   CollIndex numConsumers = info.getNumConsumers();
+  RelExpr *copyOfChildTree = NULL;
 
   // A laundry list of changes to undo the effects of normalization,
   // specifically of pushing predicates down and of minimizing the
@@ -9160,6 +9246,10 @@ CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInf
     new(CmpCommon::statementHeap()) ValueIdMap[numConsumers];
   ItemExpr *nonCommonPredicatesORed = NULL;
   int numORedPreds = 0;
+  NABoolean singleLexicalRefWithTempedAncestors =
+    (info.getNumLexicalRefs() == 1);
+  Int32 numPreliminaryRefs = 0;
+  ValueIdSet childTreeKeyColumns;
 
   // ------------------------------------------------------------------
   // CSE Analysis phase
@@ -9179,6 +9269,35 @@ CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInf
       const ValueIdSet &cPreds(consumer->pushedPredicates_);
       ValueIdSet mappedPreds;
       ValueId dummy;
+      CSEInfo *infoToCheck = &info;
+      CommonSubExprRef *childToCheck = consumer;
+      NABoolean ancestorIsTemped = FALSE;
+
+      // look for a chain of only lexical ancestors of which one is
+      // materialized in a temp table
+      while (!ancestorIsTemped &&
+             infoToCheck->getNumLexicalRefs() == 1 &&
+             childToCheck &&
+             childToCheck->parentRefId_ >= 0)
+        {
+          // look at the ancestor and what it is planning to do
+          infoToCheck = CmpCommon::statement()->getCSEInfoById(
+               childToCheck->parentCSEId_);
+          CMPASSERT(infoToCheck);
+          CommonSubExprRef *parent =
+            infoToCheck->getConsumer(childToCheck->parentRefId_);
+          CSEInfo::CSEAnalysisOutcome parentOutcome =
+            infoToCheck->getAnalysisOutcome(parent->getId());
+
+          if (parentOutcome == CSEInfo::CREATE_TEMP ||
+              parentOutcome == CSEInfo::TEMP)
+            ancestorIsTemped = TRUE;
+
+          childToCheck = parent;
+        }
+
+      if (!ancestorIsTemped)
+        singleLexicalRefWithTempedAncestors = FALSE;
 
       requiredValues += cPreds;
       availableValues +=
@@ -9273,13 +9392,24 @@ CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInf
             // own ValueIds
             myColsToConsumerMaps[c].rewriteValueIdSetUp(mappedPreds, cPreds);
 
-            commonPredicates.findCommonSubexpressions(mappedPreds, TRUE);
+            commonPredicates.findCommonSubexpressions(mappedPreds, FALSE);
 
           }
       // Save the mapped preds for later.
       // Note: These are not final yet, until we have found
       // common predicates among all the consumers.
       nonCommonPredicatesArray[c] = mappedPreds;
+    }
+
+  if (singleLexicalRefWithTempedAncestors)
+    {
+      // if all the parent refs are materialized and each one is a
+      // copy of a single lexical ref, then that means that we will
+      // evaluate this CSE only once, therefore no need to materialize
+      // it
+      emitCSEDiagnostics(
+           "expression is only evaluated once because parent is materialized");
+      canShare = FALSE;
     }
 
   // translate the bit vector of required columns into a set of values
@@ -9293,6 +9423,15 @@ CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInf
   predicatesToRemove -= commonPredicates;
   info.setCommonPredicates(commonPredicates);
 
+  if (canShare && info.getNeededColumns().entries() == 0)
+    {
+      // Temp table has no columns, looks like all we care about is
+      // the number of rows returned. This is not yet supported. We
+      // could make a table with a dummy column.
+      emitCSEDiagnostics("Temp table with no columns is not yet supported");
+      canShare = FALSE;
+    }
+
   // Make an ORed predicate of all those non-common predicates of the
   // consumers, to be applied on the common subexpression when creating
   // the temp table. Also determine non-common predicates to be applied
@@ -9305,7 +9444,11 @@ CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInf
       // tables. What we can do, however, is to OR these "uncommon"
       // predicates and apply that OR predicate when building the
       // temp table.
-      nonCommonPredicatesArray[n] -= commonPredicates;
+
+      // repeat step from above, but this time remove the common
+      // preds from the array of non-common ones
+      commonPredicates.findCommonSubexpressions(nonCommonPredicatesArray[n],
+                                                TRUE);
 
       if (nonCommonPredicatesArray[n].entries() > 0)
         {
@@ -9348,38 +9491,6 @@ CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInf
       info.addCommonPredicates(newPredicatesToAdd);
     }
 
-  outputsToAdd -= child(0).getGroupAttr()->getCharacteristicOutputs();
-  inputsToRemove -= commonInputs_;
-
-  // do a dry-run first, before we change the child tree,
-  // because if we can't prepare the tree for CSE sharing,
-  // we'll need it in its original form to be able to expand it
-  if (canShare)
-    canShare = child(0)->prepareTreeForCSESharing(
-         outputsToAdd,
-         predicatesToRemove,
-         newPredicatesToAdd,
-         inputsToRemove,
-         &info,
-         TRUE);
-
-  if (canShare &&
-      CmpCommon::getDefault(CSE_USE_TEMP) != DF_ON)
-    {
-      // Todo: CSE: make a heuristic decision
-      emitCSEDiagnostics("Heuristically decided not to materialize");
-      canShare = FALSE;
-    }
-
-  if (canShare && info.getNeededColumns().entries() == 0)
-    {
-      // Temp table has no columns, looks like all we care about is
-      // the number of rows returned. This is not yet supported. We
-      // could make a table with a dummy column.
-      emitCSEDiagnostics("Temp table with no columns is not supported");
-      canShare = FALSE;
-    }
-
 
   // ------------------------------------------------------------------
   // Preparation phase
@@ -9387,38 +9498,152 @@ CSEInfo::CSEAnalysisOutcome CommonSubExprRef::analyzeAndPrepareForSharing(CSEInf
 
   if (canShare)
     {
-      canShare = child(0)->prepareTreeForCSESharing(
+      // make a copy of the child tree, so we can revert back to the
+      // original tree if things don't work out
+      copyOfChildTree = child(0)->copyRelExprTree(CmpCommon::statementHeap());
+
+      outputsToAdd -= child(0).getGroupAttr()->getCharacteristicOutputs();
+      inputsToRemove -= commonInputs_;
+
+      canShare = copyOfChildTree->prepareTreeForCSESharing(
            outputsToAdd,
            predicatesToRemove,
            newPredicatesToAdd,
            inputsToRemove,
-           &info,
-           FALSE);
+           nonVEGColumns_,
+           childTreeKeyColumns,
+           &info);
 
-      // If this failed we are in trouble, we potentially changed the
-      // child tree, preventing us from expanding it. Therefore we
-      // have to error out. We should therefore find most problems
-      // in the dry run above.
       if (!canShare)
-        {
-          emitCSEDiagnostics("Failed to prepare child tree for materialization",
-                             TRUE);
-          result = CSEInfo::ERROR;
-        }
-      else if (!child(0).getGroupAttr()->getCharacteristicOutputs().contains(
+        emitCSEDiagnostics("Failed to prepare child tree for materialization");
+      else if (!copyOfChildTree->getGroupAttr()->getCharacteristicOutputs().contains(
                     outputsToAdd))
         {
           // we failed to produce the requested additional outputs
-          emitCSEDiagnostics("Failed to produce all the required output columns",
-                             TRUE);
+          emitCSEDiagnostics("Failed to produce all the required output columns");
           canShare = FALSE;
-          result = CSEInfo::ERROR;
+        }
+      else
+        {
+          // remember est. log. props of the child, those will be transplanted
+          // into the temp scan later
+          cseEstLogProps_ =
+            copyOfChildTree->getGroupAttr()->outputLogProp(
+                 (*GLOBAL_EMPTY_INPUT_LOGPROP));
+          // Get a preliminary bearing on how many times we are going
+          // to evaluate this CSE if it isn't shared. Note that this
+          // looks at the parent CSE's analysis outcome, and not all
+          // of these parents may be analyzed yet, so this may be an
+          // overestimate.
+          numPreliminaryRefs = info.getTotalNumRefs();
+
+          for (CollIndex k=0; k<tempTableColumns.entries(); k++)
+            if (childTreeKeyColumns.contains(tempTableColumns[k]))
+              info.addCSEKeyColumn(k);
+        }
+    }
+
+  if (canShare &&
+      CmpCommon::getDefault(CSE_USE_TEMP) != DF_ON)
+    {
+      // When CSE_USE_TEMP is set to SYSTEM, make a heuristic decision
+
+      // calculate some metrics for the temp table, based on row length,
+      // cardinality (or max. cardinality) and number of times it is used
+      Lng32 tempTableRowLength = tempTableColumns.getRowLength();
+      CostScalar cseTempTableSize = cseEstLogProps_->getResultCardinality() *
+        tempTableRowLength / numPreliminaryRefs;
+      CostScalar cseTempTableMaxSize = cseEstLogProps_->getMaxCardEst() *
+        tempTableRowLength / numPreliminaryRefs;
+      double maxTableSize =
+        ActiveSchemaDB()->getDefaults().getAsDouble(CSE_TEMP_TABLE_MAX_SIZE);
+      double maxTableSizeBasedOnMaxCard =
+        ActiveSchemaDB()->getDefaults().getAsDouble(CSE_TEMP_TABLE_MAX_MAX_SIZE);
+
+      // cumulative number of key columns referenced in consumers
+      Int32 totalKeyColPreds = 0;
+
+      // key cols that are referenced by a predicate in all consumers
+      ValueIdSet commonKeyCols(childTreeKeyColumns);
+
+      // check the total size of the temp table, divided by the number
+      // of times it is used
+      if (maxTableSize > 0 && cseTempTableSize > maxTableSize)
+        {
+          char buf[200];
+
+          snprintf(buf, sizeof(buf),
+                   "Temp table size %e exceeds limit %e",
+                   cseTempTableSize.getValue(),
+                   maxTableSize);
+          emitCSEDiagnostics(buf);
+          canShare = FALSE;
+        }
+      else if (maxTableSizeBasedOnMaxCard > 0 &&
+               cseTempTableMaxSize > maxTableSizeBasedOnMaxCard)
+        {
+          char buf[200];
+
+          snprintf(buf, sizeof(buf),
+                   "Temp table size %e (based on max card) exceeds limit %e",
+                   cseTempTableMaxSize.getValue(),
+                   maxTableSizeBasedOnMaxCard);
+          emitCSEDiagnostics(buf);
+          canShare = FALSE;
         }
 
+      // determine which "key" columns are referenced by non-common
+      // predicates
+      for (CollIndex ncp=0; ncp<numConsumers; ncp++)
+        {
+          const ValueIdSet &nonCommonPreds(nonCommonPredicatesArray[ncp]);
+          ValueIdSet tempRefCols;
+
+          tempRefCols.accumulateReferencedValues(childTreeKeyColumns,
+                                                 nonCommonPreds);
+          totalKeyColPreds += tempRefCols.entries();
+          nonCommonPreds.weedOutUnreferenced(commonKeyCols);
+        }
+
+      // decide against materialization if the average number of "key"
+      // columns referenced in each consumer is greater than
+      // CSE_PCT_KEY_COL_PRED_CONTROL percent
+      if (totalKeyColPreds >
+          (numConsumers * childTreeKeyColumns.entries() *
+           ActiveSchemaDB()->getDefaults().getAsDouble(CSE_PCT_KEY_COL_PRED_CONTROL) / 100.0))
+        {
+          char buf[200];
+
+          snprintf(buf, sizeof(buf),
+                   "Number of potential key predicates in consumers (%d) exceeds limit %f",
+                   totalKeyColPreds,
+                   (numConsumers * childTreeKeyColumns.entries() *
+                    ActiveSchemaDB()->getDefaults().getAsDouble(CSE_PCT_KEY_COL_PRED_CONTROL) / 100.0));
+          
+          emitCSEDiagnostics(buf);
+          canShare = FALSE;
+        }
+
+      // decide against materialization if the number of key columns
+      // referenced by every consumer is > CSE_COMMON_KEY_PRED_CONTROL
+      if (commonKeyCols.entries() >
+          ActiveSchemaDB()->getDefaults().getAsLong(CSE_COMMON_KEY_PRED_CONTROL))
+        {
+          char buf[200];
+          snprintf(buf, sizeof(buf),
+                   "All consumers have a predicate on %d common key columns, limit is %d",
+                   commonKeyCols.entries(),
+                   ActiveSchemaDB()->getDefaults().getAsLong(CSE_COMMON_KEY_PRED_CONTROL));
+          emitCSEDiagnostics(buf);
+          canShare = FALSE;
+        }
     }
 
   if (canShare)
-    result = CSEInfo::CREATE_TEMP;
+    {
+      result = CSEInfo::CREATE_TEMP;
+      child(0) = copyOfChildTree;
+    }
   else if (result == CSEInfo::UNKNOWN_ANALYSIS)
     result = CSEInfo::EXPAND;
 

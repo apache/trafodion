@@ -401,8 +401,10 @@ Lng32 HSFuncExecTransactionalQueryWithRetry( const char *dml
     return retcode;
   }
 
-  // The HSErrorCatcher captures any diagnostics when it goes out-of-scope.
-  HSErrorCatcher errorCatcher(retcode, sqlcode, errorToken, TRUE);
+  // Note: We don't use the HSErrorCatcher object to capture diagnostic
+  // information here. The reason is, HSErrorCatcher works by lexical scope,
+  // but the place where diagnostics are available to us does not nicely
+  // match lexical scope. Instead, we call HSFuncMergeDiags directly.
  
   // On very busy system, some "update statistics" implementation steps like
   // "COLLECT FILE STATISTICS" step in HSTableDef::collectFileStatistics()
@@ -452,6 +454,15 @@ Lng32 HSFuncExecTransactionalQueryWithRetry( const char *dml
       }
     }
 
+    // If we are on our last retry, capture any diagnostics from
+    // the begin or statement failure. (If we don't capture them
+    // now, they will be cleared out of the CLI when we do the
+    // ROLLBACK below.)
+    if (retcode && (retry >= limit))
+    {
+      HSFuncMergeDiags(sqlcode, errorToken, NULL, TRUE /* get CLI diags */);
+    }
+
     // If we had an error (on the begin, the statement or the commit),
     // try rolling back the transaction. It might have already been
     // rolled back, in which case the Rollback method just ignores
@@ -499,6 +510,12 @@ Lng32 HSClearCLIDiagnostics()
   return retcode;
 }
 
+// Obtain any JNI diagnostic text stored in the CLI
+const char * HSFuncGetJniErrorStr()
+{
+  return GetCliGlobals()->currContext()->getJniErrorStrPtr();
+}
+
 // -----------------------------------------------------------------------
 // Create histogram tables if they don't exist.
 // -----------------------------------------------------------------------
@@ -522,6 +539,8 @@ Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal)
 
     // Call createHistogramTables to create any table that does not yet exist.
     NAString histogramsLocation = getHistogramsTableLocation(hsGlobal->catSch->data(), FALSE);
+
+    HSTranController TC("Create histogram tables.",&retcode);
     retcode = (CmpSeabaseDDL::createHistogramTables(NULL, histogramsLocation, TRUE, tableNotCreated)); 
     if (retcode < 0 && LM->LogNeeded())
       {
@@ -1036,7 +1055,7 @@ Lng32 HSTranMan::Begin(const char *title,NABoolean inactivateErrorCatcher)
           {
             NAString stmtText = "BEGIN WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
-                                       HS_QUERY_ERROR, NULL, NULL, inactivateErrorCatcher);
+                                       HS_QUERY_ERROR, NULL, NULL, 0, FALSE, inactivateErrorCatcher);
             if (retcode_ >= 0)
               {
                 transStarted_ = TRUE;
@@ -1091,7 +1110,7 @@ Lng32 HSTranMan::Commit(NABoolean inactivateErrorCatcher)
           {
             NAString stmtText = "COMMIT WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
-                                       HS_QUERY_ERROR, NULL, NULL, inactivateErrorCatcher);
+                                       HS_QUERY_ERROR, NULL, NULL, 0, FALSE, inactivateErrorCatcher);
 
             // transaction has ended
             transStarted_ = FALSE;
@@ -1173,7 +1192,7 @@ Lng32 HSTranMan::Rollback(NABoolean inactivateErrorCatcher)
           {
             NAString stmtText = "ROLLBACK WORK";
             retcode_ = HSFuncExecQuery(stmtText.data(), - UERR_INTERNAL_ERROR, NULL,
-                                       HS_QUERY_ERROR, NULL, NULL, inactivateErrorCatcher);
+                                       HS_QUERY_ERROR, NULL, NULL, 0, FALSE, inactivateErrorCatcher);
             // transaction has ended
             transStarted_ = FALSE;
             if (retcode_ < 0)
@@ -2949,7 +2968,12 @@ Lng32 HSCursor::setRowsetPointers(HSColGroupStruct *group, Lng32 maxRows)
       // Character data is written into a different buffer, and the data buffer
       // will consist of pointers to the char values.
       if (DFS2REC::isAnyCharacter(group->ISdatatype))
-        rowset_fields_[j].var_ptr = (void *)group->strNextData;
+        {
+          if (DFS2REC::isSQLVarChar(group->ISdatatype) && group->isCompacted())
+            rowset_fields_[j].var_ptr = (void *)group->varcharFetchBuffer;
+          else
+            rowset_fields_[j].var_ptr = (void *)group->strNextData;
+        }
       else
         rowset_fields_[j].var_ptr = (void *)group->nextData;
       j++;
@@ -5476,86 +5500,6 @@ NAString HSSample::getTempTablePartitionInfo(NABoolean unpartitionedSample,
 
     return tableOptions;
   }
-
-
-//
-// METHOD:  addTruncatedSelectList()
-//
-// PURPOSE: Generates a SELECT list consisting of 
-//          column references or a SUBSTRING
-//          on column references which truncates the
-//          column to the maximum length allowed in
-//          UPDATE STATISTICS.
-//
-// INPUT:   'qry' - the SQL query string to append the 
-//          select list to.
-//
-void HSSample::addTruncatedSelectList(NAString & qry)
-  {
-    bool first = true;
-    for (Lng32 i = 0; i < objDef->getNumCols(); i++)
-      {
-        if (!ComTrafReservedColName(*objDef->getColInfo(i).colname))
-          {
-            if (!first)
-              qry += ", ";
-
-            addTruncatedColumnReference(qry,objDef->getColInfo(i));
-            first = false;
-          }
-      }
-  }
-
-
-//
-// METHOD:  addTruncatedColumnReference()
-//
-// PURPOSE: Generates a column reference or a SUBSTRING
-//          on a column reference which truncates the
-//          column to the maximum length allowed in
-//          UPDATE STATISTICS.
-//
-// INPUT:   'qry' - the SQL query string to append the 
-//          reference to.
-//          'colInfo' - struct containing datatype info
-//          about the column.
-//
-void HSSample::addTruncatedColumnReference(NAString & qry,HSColumnStruct & colInfo)
-  {
-    HSGlobalsClass *hs_globals = GetHSContext();
-    Lng32 maxLengthInBytes = hs_globals->maxCharColumnLengthInBytes;
-    bool isOverSized = DFS2REC::isAnyCharacter(colInfo.datatype) &&
-                           (colInfo.length > maxLengthInBytes);
-    if (isOverSized)
-      {
-        // Note: The result data type of SUBSTRING is VARCHAR, always.
-        // But if the column is CHAR, many places in the ustat code are not
-        // expecting a VARCHAR. So, we stick a CAST around it to convert
-        // it back to a CHAR in these cases.
-
-        NABoolean isFixedChar = DFS2REC::isSQLFixedChar(colInfo.datatype);
-        if (isFixedChar)
-          qry += "CAST(";
-        qry += "SUBSTRING(";
-        qry += colInfo.externalColumnName->data();
-        qry += " FOR ";
-        
-        char temp[20];  // big enough for "nnnnnn)"
-        sprintf(temp,"%d)", maxLengthInBytes / CharInfo::maxBytesPerChar(colInfo.charset));
-        qry += temp;
-        if (isFixedChar)
-          {
-            qry += " AS CHAR(";
-            qry += temp;
-            qry += ")";
-          }
-        qry += " AS ";
-        qry += colInfo.externalColumnName->data();
-      }
-    else
-      qry += colInfo.externalColumnName->data();
-  }
-
 
 // Print the heading for the display of a query plan to the log.
 void printPlanHeader(HSLogMan *LM)

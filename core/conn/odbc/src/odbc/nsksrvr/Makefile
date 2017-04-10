@@ -22,7 +22,7 @@
 # Makefile for building ndcs sql server on Linux
 #
 
-include $(MY_SQROOT)/macros.gmk # top level
+include $(TRAF_HOME)/macros.gmk # top level
 include ../macros.gmk       # odbc level
 
 #
@@ -103,7 +103,7 @@ ODBC_OBJS = $(OUTDIR)/odbcas_drvr.o \
 
 OBJS = $(COMMON_OBJS) $(COMPRESS_OBJS) $(DBT_OBJS) $(ODBC_OBJS) $(WMS_OBJS)
 
-INCLUDES     = -I. -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(SQ_HOME)/export/include/sql -I$(SQ_HOME)/inc/tmf_tipapi -I$(SQ_HOME)/inc -I$(SQ_HOME)/export/include -I$(SQ_HOME)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(SQ_HOME)/../sql/cli -I$(SQ_HOME)/../dbsecurity/cert/inc -I$(SQ_HOME)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include -I$(SQ_HOME)/commonLogger -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
+INCLUDES     = -I. -I../Common -I../Common/linux -I../EventMsgs -I../SrvrMsg -I../nsksrvrcore -I./Interface -I./Interface/linux -I../dependencies/include -I../dependencies/linux -I../dependencies/liblzf -I../Krypton/generated_incs -I$(TRAF_HOME)/export/include/sql -I$(TRAF_HOME)/inc/tmf_tipapi -I$(TRAF_HOME)/inc -I$(TRAF_HOME)/export/include -I$(TRAF_HOME)/inc/rosetta -I ../OssCfgCl/src -I../CmdCfgDll -I$(TRAF_HOME)/../sql/cli -I$(TRAF_HOME)/../dbsecurity/cert/inc -I$(TRAF_HOME)/../dbsecurity/auth/inc -I$(ZOOKEEPER_DIR)/include -I$(TRAF_HOME)/commonLogger -I$(LOG4CXX_INC_DIR) -I$(LOG4CXX_INC_DIR)/lib4cxx
 
 
 COMMON_DEFINES = -DNA_LINUX -DSIZEOF_LONG_INT=4 -DSQ_GUARDIAN_CALL -DUSE_NEW_PHANDLE -DTIMER_FIXED -w -DNSK_ODBC_SRVR -D__TIME_LOGGER -DTHREADED
@@ -121,7 +121,7 @@ DBT_LIBS =
 
 EARLY_LIBS = -ljsig
 
-COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -llog4cxx
+COMMON_LIBS = -lsbfs -lsbms -levlsq -lwin -lpthread -ltdm_sqlcli -larkcmp_dll -L../nsksrvrcore -lmxocore -llog4cxx
 
 ifeq ($(SQ_MTYPE),64)
 LOC_JSIG=$(JAVA_HOME)/jre/lib/amd64/server
@@ -136,7 +136,7 @@ GCCMODE        += -Xlinker --copy-dt-needed-entries
 $(BINEXPDIR)/mxosrvr: $(OBJS) $(LIBEXPDIR)/libzookeeper_mt.so
 	$(CXX) $(GCCMODE) -o $@ $(DBG_FLGS)  -L$(LIBEXPDIR) -D_SQ64 -L$(LOC_JSIG) $(EARLY_LIBS) $(COMMON_LIBS) $(DBT_LIBS) -lzookeeper_mt $(HADOOP_LIBS) $(OBJS) -lz
 
-$(OUTDIR)/ndcsversion.o: $(MY_SQROOT)/export/include/SCMBuildStr.h 
+$(OUTDIR)/ndcsversion.o: $(TRAF_HOME)/export/include/SCMBuildStr.h 
 
 # copy in lib & any associate versions & links
 $(LIBEXPDIR)/libzookeeper_mt.so: $(ZOOKEEPER_DIR)/lib/libzookeeper_mt.so

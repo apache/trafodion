@@ -21,7 +21,7 @@ REM
 REM @@@ END COPYRIGHT @@@
 
 CLS
-set MY_SQROOT=
+set TRAF_HOME=
 set CMD_LINE_ARGS=
 set TRAFODION_VER_PROD=@prodver@
 set PRODUCT_COPYRIGHT_HEADER=@copyrighthdr@

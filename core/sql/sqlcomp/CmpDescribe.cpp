@@ -191,26 +191,27 @@ short CmpDescribeHiveTable (
                              CollHeap *heap);
 
 short CmpDescribeSeabaseTable ( 
-                             const CorrName  &dtName,
-                             short type, // 1, invoke. 2, showddl. 3, createLike
-                             char* &outbuf,
-                             ULng32 &outbuflen,
-                             CollHeap *heap,
-                             const char * pkeyStr = NULL,
-                             NABoolean withPartns = FALSE,
-                             NABoolean withoutSalt = FALSE,
-                             NABoolean withoutDivisioning = FALSE,
-                             UInt32 columnLengthLimit = UINT_MAX,
-                             NABoolean noTrailingSemi = FALSE,
-
-                             // used to add,rem,alter column definition from col list.
-                             // valid for 'createLike' mode. 
-                             // Used for 'alter add/drop/alter col'.
-                             char * colName = NULL,
-                             short ada = 0, // 0,add. 1,drop. 2,alter
-                             const NAColumn * nacol = NULL,
-                             const NAType * natype = NULL,
-                             Space *inSpace = NULL);
+     const CorrName  &dtName,
+     short type, // 1, invoke. 2, showddl. 3, createLike
+     char* &outbuf,
+     ULng32 &outbuflen,
+     CollHeap *heap,
+     const char * pkeyStr = NULL,
+     NABoolean withPartns = FALSE,
+     NABoolean withoutSalt = FALSE,
+     NABoolean withoutDivisioning = FALSE,
+     NABoolean withoutRowFormat = FALSE,
+     UInt32 columnLengthLimit = UINT_MAX,
+     NABoolean noTrailingSemi = FALSE,
+     
+     // used to add,rem,alter column definition from col list.
+     // valid for 'createLike' mode. 
+     // Used for 'alter add/drop/alter col'.
+     char * colName = NULL,
+     short ada = 0, // 0,add. 1,drop. 2,alter
+     const NAColumn * nacol = NULL,
+     const NAType * natype = NULL,
+     Space *inSpace = NULL);
 
 short CmpDescribeSequence ( 
                              const CorrName  &dtName,
@@ -2255,11 +2256,49 @@ short CmpDescribeHiveTable (
   // emit an initial newline
   outputShortLine(space, " ");
 
+  if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN,
+                               naTable->getPrivInfo(),
+                               COM_BASE_TABLE_OBJECT))
+    return -1;
+
+
+  NABoolean isView = (naTable->getViewText() ? TRUE : FALSE);
+
+  if ((type == 2) && (isView))
+    {
+      outputShortLine(space,"Original native Hive view text:");
+      NAString origViewText(naTable->getHiveOriginalViewText());
+      outputLongLine(space, origViewText, 0);
+      outputShortLine(space, " ");
+
+      outputShortLine(space,"Expanded native Hive view text:");
+      NAString viewtext(naTable->getViewText());
+
+      viewtext = viewtext.strip(NAString::trailing, ';');
+      viewtext += " ;";
+
+      outputLongLine(space, viewtext, 0);
+
+      outbuflen = space.getAllocatedSpaceSize();
+      outbuf = new (heap) char[outbuflen];
+      space.makeContiguous(outbuf, outbuflen);
+      
+      NADELETEBASIC(buf, heap);
+      
+      return 0;
+    }
+
   if (type == 1)
     {
-      sprintf(buf,  "-- Definition of hive table %s\n"
-              "-- Definition current  %s",
-              tableName.data(), ctime(&tp));
+      if (isView)
+        sprintf(buf, "-- Definition of native Hive view %s\n"
+                "-- Definition current  %s",
+                tableName.data(), ctime(&tp));
+      else
+        sprintf(buf, "-- Definition of hive table %s\n"
+                "-- Definition current  %s",
+                tableName.data(), ctime(&tp));
+      
       outputShortLine(space, buf);
     }
   else if (type == 2)
@@ -2298,28 +2337,32 @@ short CmpDescribeHiveTable (
 
   outputShortLine(space, "  )");
 
-  const HHDFSTableStats* hTabStats = 
-    naTable->getClusteringIndex()->getHHDFSTableStats();
-  if (hTabStats->isOrcFile())
+  const HHDFSTableStats* hTabStats = NULL;
+  if (naTable->getClusteringIndex())
+    hTabStats = naTable->getClusteringIndex()->getHHDFSTableStats();
+  if (hTabStats)
     {
-      if (type == 1)
-        outputShortLine(space, "  /* stored as orc */");
-      else
-        outputShortLine(space, "  stored as orc ");
-    }
-  else if (hTabStats->isTextFile())
-    {
-      if (type == 1)
-        outputShortLine(space, "  /* stored as textfile */");
-      else
-        outputShortLine(space, "  stored as textfile ");
-    }
-  else if (hTabStats->isSequenceFile())
-    {
-      if (type == 1)
-        outputShortLine(space, "  /* stored as sequence */");
-      else
-        outputShortLine(space, "  stored as sequence ");
+      if (hTabStats->isOrcFile())
+        {
+          if (type == 1)
+            outputShortLine(space, "  /* stored as orc */");
+          else
+            outputShortLine(space, "  stored as orc ");
+        }
+      else if (hTabStats->isTextFile())
+        {
+          if (type == 1)
+            outputShortLine(space, "  /* stored as textfile */");
+          else
+            outputShortLine(space, "  stored as textfile ");
+        }
+      else if (hTabStats->isSequenceFile())
+        {
+          if (type == 1)
+            outputShortLine(space, "  /* stored as sequence */");
+          else
+            outputShortLine(space, "  stored as sequence ");
+        }
     }
 
   if (type == 2)
@@ -2354,7 +2397,8 @@ short CmpDescribeHiveTable (
                                          type,
                                          dummyBuf, dummyLen, heap, 
                                          NULL, 
-                                         TRUE, FALSE, FALSE, UINT_MAX, TRUE,
+                                         TRUE, FALSE, FALSE, FALSE, 
+                                         UINT_MAX, TRUE,
                                          NULL, 0, NULL, NULL, &space);
 
       outputShortLine(space, ";");
@@ -2404,14 +2448,24 @@ short cmpDisplayColumn(const NAColumn *nac,
     colFam = "";
   else if (nac->getNATable() && nac->getNATable()->isSeabaseTable())
     {
-      int index = 0;
-      CmpSeabaseDDL::extractTrafColFam(nac->getHbaseColFam(), index);
+      const char * col_fam = NULL;
+      if (nac->getNATable()->isHbaseMapTable())
+        {
+          col_fam = nac->getHbaseColFam().data();
+        }
+      else
+        {
+          int index = 0;
+          CmpSeabaseDDL::extractTrafColFam(nac->getHbaseColFam(), index);
+          
+          if (index >= naTable->allColFams().entries())
+            return -1;
 
-      if (index >= naTable->allColFams().entries())
-        return -1;
-
-      colFam = ANSI_ID(naTable->allColFams()[index].data());
+          col_fam = naTable->allColFams()[index].data();
+        }
       
+      colFam = ANSI_ID(col_fam);
+
       colFam += ".";
     }
 
@@ -2722,6 +2776,7 @@ short CmpDescribeSeabaseTable (
                                NABoolean withPartns,
                                NABoolean withoutSalt,
                                NABoolean withoutDivisioning,
+                               NABoolean withoutRowFormat,
                                UInt32 columnLengthLimit,
                                NABoolean noTrailingSemi,
                                char * colName,
@@ -2745,8 +2800,9 @@ short CmpDescribeSeabaseTable (
 
   // set isExternalTable to allow Hive External tables to be described
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
-  bindWA.setAllowExternalTables (TRUE);
-  NATable *naTable = bindWA.getNATable((CorrName&)dtName); 
+
+  NATable *naTable = bindWA.getNATableInternal((CorrName&)dtName); 
+
   TableDesc *tdesc = NULL;
   if (naTable == NULL || bindWA.errStatus())
     return -1;
@@ -2766,6 +2822,8 @@ short CmpDescribeSeabaseTable (
 
   NABoolean isVolatile = naTable->isVolatileTable();
   NABoolean isExternalTable = naTable->isExternalTable();
+  NABoolean isImplicitExternalTable = naTable->isImplicitExternalTable();
+  NABoolean isHbaseMapTable = naTable->isHbaseMapTable();
 
   NABoolean isExternalHbaseTable = FALSE;
   NABoolean isExternalHiveTable = FALSE;
@@ -2802,8 +2860,7 @@ short CmpDescribeSeabaseTable (
 
   NABoolean displayPrivilegeGrants = TRUE;
   if (((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM) && sqlmxRegr) ||
-      (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF) ||
-      (isExternalTable))
+      (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF)) 
     displayPrivilegeGrants = FALSE;
  
   // display syscols for invoke if not running regrs
@@ -2924,16 +2981,33 @@ short CmpDescribeSeabaseTable (
       else
         sprintf(buf,  "-- Definition of Trafodion%stable %s\n"
                 "-- Definition current  %s",
-                (isVolatile ? " volatile " : isExternalTable ? " external " : " "), 
-                tableName.data(), 
+                (isVolatile ? " volatile " : 
+                 (isHbaseMapTable ? " HBase mapped " :
+                  (isExternalTable ? " external " : " "))), 
+                (isHbaseMapTable ? objectName.data() : 
+                 tableName.data()),
                 ctime(&tp));
       outputShortLine(*space, buf);
     }
   else if (type == 2)
     {
-      sprintf(buf,  "CREATE%sTABLE %s",
-              (isVolatile ? " VOLATILE " : isExternalTable ? " EXTERNAL " : " "), 
-              (isExternalTable ? objectName.data() : tableName.data()));
+      NAString tabType;
+      if (isVolatile)
+        tabType = " VOLATILE ";
+      else if (isExternalTable)
+        {
+          if (isImplicitExternalTable)
+            tabType = " /*IMPLICIT*/ EXTERNAL ";
+          else
+            tabType = " EXTERNAL ";
+        }
+      else
+        tabType = " ";
+
+      sprintf(
+           buf,  "CREATE%sTABLE %s",
+           tabType.data(),
+           (isExternalTable ? objectName.data() : tableName.data()));
       outputShortLine(*space, buf);
     }
 
@@ -2942,7 +3016,8 @@ short CmpDescribeSeabaseTable (
   NAList<const NAColumn *> truncatedColumnList(heap);
   if ((NOT isExternalTable) ||
       ((isExternalTable) && 
-       ((isExternalHbaseTable && (type == 1)) ||
+       ((isExternalHbaseTable && ((type == 1) || (type == 3))) ||
+        (isExternalHbaseTable && naTable->isHbaseMapTable() && (type == 2)) ||
         (isExternalHiveTable && (type != 2)) ||
         (isExternalHiveTable && (type == 2) && (naTable->hiveExtColAttrs())))))
     {
@@ -2952,7 +3027,8 @@ short CmpDescribeSeabaseTable (
                         displaySystemCols, 
                         FALSE,
                         identityColPos,
-                        isExternalTable, naTable->isSQLMXAlignedTable(),
+                        (isExternalTable && (NOT isHbaseMapTable)),
+                        naTable->isSQLMXAlignedTable(),
                         colName, ada, nacol, natype,
                         columnLengthLimit,
                         &truncatedColumnList);
@@ -3045,6 +3121,22 @@ short CmpDescribeSeabaseTable (
           else
             sprintf(buf,  "  , PRIMARY KEY ");
           
+          // if all primary key columns are 'not serialized primary key',
+          // then display that.
+          NABoolean serialized = FALSE;
+          for (Int32 jj = 0; 
+               ((NOT serialized) && (jj <  naf->getIndexKeyColumns().entries())); jj++)
+            {
+              NAColumn * nac = (naf->getIndexKeyColumns())[jj];
+              if (NOT nac->isPrimaryKeyNotSerialized())
+                serialized = TRUE;
+            }
+
+          if (((type == 1) || (type == 2)) && (NOT serialized))
+            {
+              strcat(&buf[strlen(buf)], "NOT SERIALIZED ");
+            }
+
           cmpDisplayPrimaryKey(naf->getIndexKeyColumns(), 
                                naf->getIndexKeyColumns().entries(),
                                displaySystemCols,
@@ -3171,17 +3263,30 @@ short CmpDescribeSeabaseTable (
         }
 
       NABoolean attributesSet = FALSE;
-      if ((((NOT isAudited) || (isAligned))) ||
+      NABoolean formatSet = FALSE;
+      char attrs[2000];
+      if ((type == 3/*create like*/) && (NOT withoutRowFormat))
+        {
+          strcpy(attrs, " ATTRIBUTES ");
+          if (isAligned)
+            strcat(attrs, "ALIGNED FORMAT ");
+          else
+            strcat(attrs, "HBASE FORMAT ");
+          attributesSet = TRUE;
+          formatSet = TRUE;
+        }
+
+      if (((NOT isAudited) || (isAligned)) ||
           ((sqlmxRegr) && (type == 3) && ((NOT isAudited) || (isAligned))) ||
           ((NOT naTable->defaultColFam().isNull()) && 
            (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY)))
         {
-          char attrs[2000];
-          strcpy(attrs, " ATTRIBUTES ");
+          if (NOT attributesSet)
+            strcpy(attrs, " ATTRIBUTES ");
 
           if (NOT isAudited)
             strcat(attrs, "NO AUDIT ");
-          if (isAligned)
+          if ((NOT formatSet) && isAligned)
             strcat(attrs, "ALIGNED FORMAT ");
           if ((NOT naTable->defaultColFam().isNull()) &&
               (naTable->defaultColFam() != SEABASE_DEFAULT_COL_FAMILY))
@@ -3190,9 +3295,13 @@ short CmpDescribeSeabaseTable (
               strcat(attrs, naTable->defaultColFam());
               strcat(attrs, "'");
             }
-          outputShortLine(*space, attrs);
+
+          attributesSet = TRUE;
         }
 
+      if (attributesSet)
+        outputShortLine(*space, attrs);
+        
       if (!isView && (naTable->hbaseCreateOptions()) &&
           (naTable->hbaseCreateOptions()->entries() > 0))
         {
@@ -3215,9 +3324,18 @@ short CmpDescribeSeabaseTable (
         }
 
       if ((isExternalTable) &&
+          (NOT isHbaseMapTable) &&
           (type == 2))
         {
           sprintf(buf, "  FOR %s", extName.data());
+          outputShortLine(*space, buf);
+        }
+
+      if ((isHbaseMapTable) && (type != 3))
+        {
+          sprintf(buf, "  MAP TO HBASE TABLE %s DATA FORMAT %s",
+                  dtName.getQualifiedNameObj().getObjectName().data(),
+                  (naTable->isHbaseDataFormatString() ? "VARCHAR" : "NATIVE"));
           outputShortLine(*space, buf);
         }
 

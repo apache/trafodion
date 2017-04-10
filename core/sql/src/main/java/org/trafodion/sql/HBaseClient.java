@@ -24,6 +24,7 @@ package org.trafodion.sql;
 import com.google.protobuf.ServiceException;
 
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -95,6 +96,7 @@ import org.apache.hadoop.hbase.regionserver.StoreFileInfo;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.DtmConst;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.hadoop.hbase.util.CompressionTest;
 
 import com.google.protobuf.ServiceException;
 
@@ -137,6 +139,9 @@ public class HBaseClient {
     public static final int HBASE_DURABILITY = 20;
     public static final int HBASE_MEMSTORE_FLUSH_SIZE = 21;
     public static final int HBASE_SPLIT_POLICY = 22;
+    public static final int HBASE_CACHE_DATA_IN_L1 = 23;
+    public static final int HBASE_PREFETCH_BLOCKS_ON_OPEN = 24;
+
 
     private static Connection connection; 
     public HBaseClient() {
@@ -151,8 +156,8 @@ public class HBaseClient {
     	//use the default HBaseClient config.
     	String confFile = System.getProperty("hbaseclient.log4j.properties");
     	if(confFile == null) {
-    		System.setProperty("trafodion.hdfs.log", System.getenv("MY_SQROOT") + "/logs/trafodion.hdfs.log");
-    		confFile = System.getenv("MY_SQROOT") + "/conf/log4j.hdfs.config";
+    		System.setProperty("trafodion.hdfs.log", System.getenv("TRAF_HOME") + "/logs/trafodion.hdfs.log");
+    		confFile = System.getenv("TRAF_HOME") + "/conf/log4j.hdfs.config";
     	}
     	PropertyConfigurator.configure(confFile);
         config = TrafConfiguration.create();
@@ -244,7 +249,8 @@ public class HBaseClient {
    private ChangeFlags setDescriptors(Object[] tableOptions,
                                       HTableDescriptor desc,
                                       HColumnDescriptor colDesc,
-                                      int defaultVersionsValue) {
+                                      int defaultVersionsValue) 
+       throws IOException {
        ChangeFlags returnStatus = new ChangeFlags();
        String trueStr = "TRUE";
        for (int i = 0; i < tableOptions.length; i++) {
@@ -293,15 +299,27 @@ public class HBaseClient {
                break ;
            case HBASE_COMPRESSION:
                if (tableOption.equalsIgnoreCase("GZ"))
+	       {    // throws IOException
+		   CompressionTest.testCompression(Algorithm.GZ);
                    colDesc.setCompressionType(Algorithm.GZ);
+	       }
                else if (tableOption.equalsIgnoreCase("LZ4"))
+	       {   // throws IOException
+		   CompressionTest.testCompression(Algorithm.LZ4);
                    colDesc.setCompressionType(Algorithm.LZ4);
+	       }
                else if (tableOption.equalsIgnoreCase("LZO"))
+	       {   // throws IOException
+		   CompressionTest.testCompression(Algorithm.LZO);
                    colDesc.setCompressionType(Algorithm.LZO);
+	       }
                else if (tableOption.equalsIgnoreCase("NONE"))
                    colDesc.setCompressionType(Algorithm.NONE);
                else if (tableOption.equalsIgnoreCase("SNAPPY"))
+	       {   // throws IOException
+		   CompressionTest.testCompression(Algorithm.SNAPPY);
                    colDesc.setCompressionType(Algorithm.SNAPPY); 
+	       }
                returnStatus.setColumnDescriptorChanged();
                break ;
            case HBASE_BLOOMFILTER:
@@ -353,16 +371,28 @@ public class HBaseClient {
                returnStatus.setColumnDescriptorChanged();
                break ;
            case HBASE_COMPACT_COMPRESSION:
-               if (tableOption.equalsIgnoreCase("GZ"))
-                   colDesc.setCompactionCompressionType(Algorithm.GZ);
-               else if (tableOption.equalsIgnoreCase("LZ4"))
+               if (tableOption.equalsIgnoreCase("GZ")) {
+		   // throws IOException
+		   CompressionTest.testCompression(Algorithm.GZ);
+                   colDesc.setCompactionCompressionType(Algorithm.GZ); 
+	       }
+               else if (tableOption.equalsIgnoreCase("LZ4")) {
+		   // throws IOException
+		   CompressionTest.testCompression(Algorithm.LZ4);
                    colDesc.setCompactionCompressionType(Algorithm.LZ4);
-               else if (tableOption.equalsIgnoreCase("LZO"))
+	       }
+               else if (tableOption.equalsIgnoreCase("LZO")) {
+		   // throws IOException
+		   CompressionTest.testCompression(Algorithm.LZO);
                    colDesc.setCompactionCompressionType(Algorithm.LZO);
+	       }
                else if (tableOption.equalsIgnoreCase("NONE"))
                    colDesc.setCompactionCompressionType(Algorithm.NONE);
-               else if (tableOption.equalsIgnoreCase("SNAPPY"))
+               else if (tableOption.equalsIgnoreCase("SNAPPY")) {
+		   // throws IOException
+		   CompressionTest.testCompression(Algorithm.SNAPPY);
                    colDesc.setCompactionCompressionType(Algorithm.SNAPPY); 
+	       }
                returnStatus.setColumnDescriptorChanged();
                break ;
            case HBASE_PREFIX_LENGTH_KEY:
@@ -419,6 +449,20 @@ public class HBaseClient {
                    (Long.parseLong(tableOption));
                returnStatus.setTableDescriptorChanged();
                break ;
+	   case HBASE_CACHE_DATA_IN_L1:
+	       if (tableOption.equalsIgnoreCase(trueStr))
+                   colDesc.setCacheDataInL1(true);
+               else
+                   colDesc.setCacheDataInL1(false); 
+               returnStatus.setColumnDescriptorChanged();
+               break ;
+	   case HBASE_PREFETCH_BLOCKS_ON_OPEN:
+              if (tableOption.equalsIgnoreCase(trueStr))
+		  colDesc.setPrefetchBlocksOnOpen(true);
+	      else
+		  colDesc.setPrefetchBlocksOnOpen(false); 
+	      returnStatus.setColumnDescriptorChanged();
+	      break ;
            case HBASE_SPLIT_POLICY:
                // This method not yet available in earlier versions
                // desc.setRegionSplitPolicyClassName(tableOption));
@@ -832,7 +876,6 @@ public class HBaseClient {
                     oneRegion += String.valueOf(writeRequestsCount) + "|";
                     
                     regionInfo[regionStatsEntries++] = oneRegion.getBytes();
-
                 }
             }
             finally {
@@ -1092,16 +1135,65 @@ public class HBaseClient {
        return rc;
     }
 
+
+    // Estimates row count for tblName. Has a retry loop for the 
+    // case of java.io.FileNotFoundException, which can happen if
+    // compactions are in flight when we call estimateRowCountBody.
+    // We try again with geometrically higher timeouts in hopes that
+    // the compaction will go away. But after 4 minutes plus of retries
+    // we'll give up and invite the user to try later.
+    public boolean estimateRowCount(String tblName, int partialRowSize,
+                                    int numCols, int retryLimitMilliSeconds, long[] rc)
+                   throws MasterNotRunningException, IOException, ClassNotFoundException, URISyntaxException {
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.estimateRowCount(" + tblName + ") called."); 
+      boolean retcode = false;  // assume failure
+      int retryWait = 2000;     // initial sleep before retry interval is 2 seconds
+      int cumulativeSleepTime = 0;
+      while (retryWait > 0) {
+        try {
+          retcode = estimateRowCountBody(tblName,partialRowSize,numCols,rc);
+          retryWait = 0;  // for normal loop exit
+        }
+        catch (FileNotFoundException fne) {
+
+          if (cumulativeSleepTime < retryLimitMilliSeconds) {   // stop retrying if we've exceeded limit
+            if (logger.isDebugEnabled()) logger.debug("FileNotFoundException encountered (" + fne.getMessage()
+                                                      + ") retrying in " + Integer.toString(retryWait/1000) + " seconds." );
+            try {
+              Thread.sleep(retryWait);  // sleep for a while or until interrupted
+              cumulativeSleepTime += retryWait;
+            }
+            catch (InterruptedException e) {
+              // ignore the interruption and keep going
+            }  
+            retryWait = 2 * retryWait;
+            if (retryWait > 30000)
+              retryWait = 30000;  // max out the retry wait at 30 seconds
+          }
+          else {
+            // we've retried enough; just re-throw
+            if (logger.isDebugEnabled()) logger.debug("FileNotFoundException encountered (" + fne.getMessage()
+                                                      + "); not retrying." );
+            throw fne;
+          }      
+        }
+      }
+ 
+      return retcode;
+    }
+        
+    
+
     // Estimates row count for tblName by iterating over the HFiles for
     // the table, extracting the KeyValue entry count from the file's
     // trailer block, summing the counts, and dividing by the number of
     // columns in the table. An adjustment is made for the estimated
     // number of missing values by sampling the first several
     // hundred KeyValues to see how many are missing.
-    public boolean estimateRowCount(String tblName, int partialRowSize,
+    private boolean estimateRowCountBody(String tblName, int partialRowSize,
                                     int numCols, long[] rc)
                    throws MasterNotRunningException, IOException, ClassNotFoundException, URISyntaxException {
-      if (logger.isDebugEnabled()) logger.debug("HBaseClient.estimateRowCount(" + tblName + ") called.");
+      if (logger.isDebugEnabled()) logger.debug("HBaseClient.estimateRowCountBody(" + tblName + ") called.");
 
       final String REGION_NAME_PATTERN = "[0-9a-f]*";
       final String HFILE_NAME_PATTERN  = "[0-9a-f]*";

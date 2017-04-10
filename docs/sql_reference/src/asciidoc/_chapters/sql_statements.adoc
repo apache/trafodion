@@ -135,7 +135,7 @@ Use these statements to register users, create roles, and grant and revoke privi
 | <<alter_user_statement,ALTER USER Statement>>                                 | Changes attributes associated with a user who is registered in the database.
 | <<create_role_statement,CREATE ROLE Statement>>                               | Creates an SQL role.
 | <<drop_role_statement,DROP ROLE Statement>>                                   | Deletes an SQL role.
-| <<grant_statement,GRANT Statement>>                                           | Grants access privileges on an SQL object to specified users or roles.
+| <<grant_statement,GRANT Statement>>                                           | Grants access privileges on an SQL object or an SQL object's columns to specified users or roles.
 | <<grant_component_privilege_statement,GRANT COMPONENT PRIVILEGE Statement>>   | Grants one or more component privileges to a user or role.
 | <<grant_role_statement,GRANT ROLE Statement>>                                 | Grants one or more roles to a user.
 | <<register_user_statement,REGISTER USER Statement>>                           | Registers a user in the SQL database, associating the user's login name with a database user name.
@@ -307,6 +307,61 @@ ALTER LIBRARY sales.saleslib FILE Sales2.jar;`
 ALTER LIBRARY myudfs FILE $TMUDFLIB;
 ```
 ////
+
+<<<
+[[alter_sequence_statement]]
+== ALTER SEQUENCE Statement
+
+The ALTER SEQUENCE Statement changes the future behavior of exiting sequence, including INCREMENT, MAXVALUE, CACHE and CYCLE. 
+
+Multiple options can be concurrently specified and separated by a space. Any options not altered will
+retain their previous settings.
+
+ALTER SEQUENCE is a Trafodion SQL extension.
+
+For more inforamation, see <<create_sequence_statement,CREATE SEQUENCE Statement>> or <<drop_sequence_statement,DROP SEQUENCE Statement>>.
+
+```
+ALTER SEQUENCE [[catalog-name.]schema-name.]sequence
+[INCREMENT BY integer]
+[MAXVALUE integer | NO MAXVALUE]
+[CACHE integer]
+[CYCLE | NO CYCLE]
+```
+<<<
+[[alter_sequence_syntax]]
+=== Syntax Description of ALTER SEQUENCE
+
+The options above serve the same purposes as they serve when you create a sequence. For more information, see <<create_sequence_statement,CREATE SEQUENCE Statement>>.
+
+NOTE:
+
+* START WITH, MINVALUE, NO CACHE and DATA TYPE cannot be changed. Instead, drop and recreate the sequence specifying the desired options.
+
+* The unused preallocated values will be lost if a sequence is altered.
+
+* Some sequence values will be skipped if you change the INCREMENT BY before the first reference to `seqnum(SEQUENCE, next)`.
+
+<<<
+[[alter_sequence_considerations]]
+=== Considerations for ALTER SEQUENCE
+To issue an ALTER SEQUENCE statement, one of the following must be true:
+
+* You are DB ROOT.
+
+* You have the ALTER or ALTER_SEQUENCE component privilege for the SQL_OPERATIONS component.
+
+<<<
+[[alter_sequence_examples]]
+=== Examples of ALTER SEQUENCE
+
+The following statement changes the MAXVALUE and CACHE for the sequence named `employee_seq`, which is created in <<create_sequence_examples,Examples of CRAETE SEQUENCE>>.
+
+```
+ALTER SEQUENCE employee_seq 
+MAXVALUE 20000
+CACHE 30
+```
 
 <<<
 [[alter_table_statement]]
@@ -1335,17 +1390,15 @@ create function reverse (varchar(32))
 == CREATE INDEX Statement
 
 The CREATE INDEX statement creates an SQL index based on one or more columns of a table or table-like object.
-The CREATE VOLATILE INDEX statement creates an SQL index with a lifespan that is limited to the SQL session that
-the index is created. Volatile indexes are dropped automatically when the session ends. See <<Indexes,Indexes>>.
 
-CREATE INDEX is a {project-name} SQL extension.
+CREATE INDEX is a Trafodion SQL extension.
 
 NOTE: DDL statements are not currently supported in transactions. That means that you cannot run this statement
 inside a user-defined transaction (BEGIN WORK&#8230;COMMIT WORK) or when AUTOCOMMIT is OFF. To run this statement,
 AUTOCOMMIT must be turned ON (the default) for the session.
 
 ```
-CREATE [VOLATILE] INDEX index ON table
+CREATE [VOLATILE | UNIQUE] INDEX index ON table
    (column-name [ASC[ENDING] | DESC[ENDING]]
    [,column-name [ASC[ENDING] | DESC[ENDING]]]...)
    [HBASE_OPTIONS (hbase-options-list)]
@@ -1357,6 +1410,19 @@ hbase-options-list is:
 
 [[create_index_syntax]]
 === Syntax Description of CREATE INDEX
+* `VOLATILE`
++
+The CREATE VOLATILE INDEX statement creates an SQL index with a lifespan that is limited to the SQL session that the index is created. Volatile indexes are dropped automatically when the session ends. See <<indexes,Indexes>>.
+
+* `UNIQUE`
++
+The CREATE UNIQUE INDEX statement creates a unique index on a table and enforces uniqueness for the indexed field, that is, it imposes the restriction that any duplicate column values are disallowed and must be eliminated before creating a unique index on a column. 
+
++
+Unique index not only improves the query performance, but also provides data integrity checking. The constraint is checked when rows of the table are inserted or updated.
+
++
+NOTE: Multiple NULL values are treated as duplicate values for a column which can contain only one NULL value.
 
 * `_index_`
 +
@@ -1491,6 +1557,74 @@ No restriction exists on the number of indexes per table.
 ```
 CREATE INDEX xempname
 ON persnl.employee (last_name, first_name);
+```
+
+* This example shows that a volatile index can be created only on a volatile table.
++
+```
+SQL>create volatile table test2(c1 int);
+--- SQL operation complete.
+
+SQL>create volatile index idx_test2 on test2(c1);
+--- SQL operation complete. 
+
+SQL>create table test1(c1 int);
+--- SQL operation complete. 
+
+SQL>create volatile index idx_test1 on test1 (c1);
+
+*** ERROR[4082] Object TEST1 does not exist or is inaccessible. [2017-01-13 11:35:26] 
+```
+
+* This example shows a unique index can be created on a table which has only one NULL value.
++
+```
+SQL>select * from t25;
+
+A           B
+----------- ----------
+          1 NULL
+          2 aaa
+
+--- 2 row(s) selected. 
+
+SQL>create unique index idx_t25 on t25(b);
+--- SQL operation complete. 
+
+SQL>showddl t25;
+
+CREATE TABLE TRAFODION.SEABASE.T25
+   (
+     A                              INT DEFAULT NULL NOT SERIALIZED,
+     B                              CHAR(10) CHARACTER SET ISO88591 COLLATE DEFAULT DEFAULT NULL NOT SERIALIZED
+    )
+    ATTRIBUTES ALIGNED FORMAT;
+
+CREATE UNIQUE INDEX IDX_T25 ON TRAFODION.SEABASE.T25
+   (
+     B ASC
+   )
+   ATTRIBUTES ALIGNED FORMAT;
+
+--- SQL operation complete. 
+```
+
+* This example shows a unique index cannot be created on a table which has multiple NULL values.
++
+```
+SQL>select * from t25;
+
+A           B
+----------- ----------
+          1 NULL
+          2 aaa
+
+--- 2 row(s) selected.
+
+SQL>create unique index idx_t25 on t25(b);
+
+*** ERROR[8110] Duplicate rows detected. [2017-01-12 17:17:51]
+*** ERROR[1053] Unique index TRAFODION.SEABASE.IDX_T25 could not be created because the specified column(s) contain duplicate data. [2017-01-12 17:17:51]
 ```
 
 <<<
@@ -2220,6 +2354,210 @@ CREATE PRIVATE SCHEMA AUTHORIZATION JSmith;
 ```
 
 <<<
+[[create_sequence_statement]]
+== CREATE SEQUENCE Statement
+
+The CREATE SEQUENCE Statement produces an automatic ascending sequence of numeric values, which can be used by multiple users as primary key values. For example, to generate only odd numbers in a sequence, you can create a sequence defined with START WITH=1, INCREMENT BY=2.
+
+Multiple options can be concurrently specified and separated by a space. 
+
+There are two expressions can be used with sequence:
+
+* `seqnum(SEQUENCE, current)`: get the current value which is returned from the sequence on the current session rather than the current value of the sequence. 
+
++
+For example, a sequence object called `employee_seq` which starts with 1 and caches up to 25 with only three users.
+
++
+If User A calls `seqnum(SEQUENCE, current)`, it will return 1 and reserve from 1 to 25, and User B immediately calls `seqnum(SEQUENCE, current)` and it will return 26 and reserve from 26 to 51, then User C immediately calls `seqnum(SEQUENCE, current)` and it will return 51 and reserve from 51 to 75. 
+
++
+Now, if User A immediately calls `seqnum(SEQUENCE, next)`, it will return 2 rather than 76. 76 will be returned if User A immediately calls `seqnum(SEQUENCE, next)` after achieving 25 where the cache for User A is exhausted.
+
+* `seqnum(SEQUENCE, next)`: advance the sequence and retrieve the next value. For an ascending sequence, this value is increasing.
+
++
+NOTE: 
+
+** It always returns the initial value of the sequence by calling `seqnum(SEQUENCE, current)` or `seqnum(SEQUENCE, next)` for the first time.
+
+** It returns a new incremented value of the sequence with each subsequent reference to `seqnum(SEQUENCE, next)`.
+
+CREATE SEQUENCE is a Trafodion SQL extension.
+
+For more inforamation, see <<drop_sequence_statement,DROP SEQUENCE Statement>> or <<alter_sequence_statement,ALTER SEQUENCE Statement>>.
+
+```
+CREATE SEQUENCE [[catalog-name.]schema-name.]sequence
+[START WITH integer]
+[INCREMENT BY integer]
+[MAXVALUE integer | NOMAXVALUE]
+[MINVALUE integer]
+[CACHE integer | NO CACHE]
+[CYCLE | NO CYCLE]
+[DATA TYPE]
+```
+By default, it is an ascending sequence that starts with 1, increments by 1, has cache value of 25 and the
+maximum value of 2^63^-2, does not cycle and belongs to LARGEINT data type.
+
+[[create_sequence_syntax]]
+=== Syntax Description of CREATE SEQUENCE
+
+* `[[catalog-name.]schema-name.]sequence`
+
++
+Specifies the name of the sequence to be created, with optional catalog and schema name, where each part of the name is a valid sql identifier with a maximum of 128 characters.
+
++
+The name should be unique and does not exist for any session in the same schema. Trafodion does not support the overloading of session names. That is, you cannot register the same session name more than once.
+
++
+If you do not fully qualify the session name, Trafodion qualifies it according to the schema of the current session. For more information, see <<identifiers,Identifiers>> and <<database_object_names,Database Object Names>>.
+
+* `START WITH`
+
++
+Specifies the initial value. This value can only be positive, and must be greater than or equal to MINVALUE (if NO CACHE is specified) and less than MAXVALUE.  
+
++
+NOTE: If the initial value is beyond the range specified by MINVALUE or MAXVALUE, an error will be raised.
+
++
+If not specified, the START WITH defaults to 1. For an ascending sequence, this value is MINVALUE.
+
+* `INCREMENT BY`
++
+Specifies the increment value between consecutive sequence values. 
+
++
+NOTE: This value can only be positive, so that Trafodion only supports ascending sequence. The value must be smaller than or equal to the difference between MAXVALUE and MINVALUE. 
+
++
+If not specified, the INCREMENT BY defaults to 1.
+
+* `MAXVALUE`
++
+Specifies the maximum value where an ascending sequence stops generating values or cycles. The default is 2^^63^-2.
+
++
+The MAXVALUE of a sequence depends on the maximum value supported by the data type, and you can also specify a MAXVALUE within the range.
+
++
+NOTE:
+
+** An error is returned if MAXVALUE is beyond supported range, or if subsequent value is generated for an ascending sequence when the MAXVALUE is exceeded with NO CYCLE specified.
+
+** MAXVALUE might not be same as the actual maximum value that the sequence generated if the INCREAMENT BY is a value other than 1. For example, when a sequence is specified with START WITH 3, INCREMENT 4 and MAXVALUE 12 will return a maximum value of 11.
+
+* `NONMAXVALUE`
++
+If NOMAXVALUE is specified, for an ascending sequence, the MAXVALUE is the value you specified or the maximum value supported by the data type.
+
+* `MINVALUE`
++
+Specifies the minimum value where an ascending sequence cycles after hitting the maximum limit. The default is 1.
+
++
+The MINVALUE of a sequence depends on the minimum value supported by the data type, and you can also specify a MINVALUE within the range.
+
++
+If MINVALUE and START WITH are not specified, for an ascending sequence, the MINVALUE defaults to 1.
+
+* `CYCLE`
++
+Specifies that the sequence exhausts its range and wraps around after reaching its MAXVALUE.
+
++
+If specified, for an ascending sequence, it restarts from MINVALUE after reaching MAXVALUE. 
+
+* `NOCYCLE`
++
+Specifies that the sequence cannot cycle once the MAXVALUE is reached, and throws an exception when generating subsequent value if the limit is exceeded. 
+
++
+NOCYCLE is the default. 
+
+* `CACHE`
++
+Specifies the range of upcoming successive values preallocated and stored in memory for speeding up future request. 
+
++
+The default CACHE value is 25. 
+
++
+The minimum CACHE value is 2.
+
++
+The CACHE value must be less than or equal to the value determined by following formula: 
+
++
+`(MAXVALUE – START WITH + 1) / INCREMENT BY`
+
++
+The sequence cache will be repopulated when the cache is exhausted.
+
++
+NOTE: The unused preallocated values will be lost and leave unintended gaps if unexpected shutdown occurs or the sequence object is manually restarted, Trafodion will continue to cache new values from where it left off, so that the same value will never appear twice unless CYCLE is specified.
+
+* `NOCACHE`
++
+Specifies the values of the sequence are not preallocated, which lowers the risk of losing values even if it might cause performance degradation. In this case, every request for a new value will be synchronously updated in the system table.
+
++
+If both CACHE and NOCACHE are not specified, it will cache 25 values by default.
+
+* `DATA TYPE`
++
+A sequence can be specified as following data types:
+
++
+[cols="1,1,1,options="header"]
+|===
+| Type   | Minimum value | Maximum value 
+| UNSIGNED SMALLINT   | 1                | 2^16^-1
+| UNSIGHED INTEGER    | 1                | 2^32^-1
+| LARGEINT            | 1                | 2^63^-2
+|===
+                
++
+If not specified, the default data type is LARGEINT.
+
+<<<
+[[create_sequence_considerations]]
+=== Considerations for CREATE SEQUENCE
+
+To issue a CREATE SEQUENCE statement, one of the following must be true:
+
+* You are DB ROOT.
+
+* You are creating the sequence in a shared schema.
+
+* You are the private schema owner.
+
+* You have the CREATE or CREATE_SEQUENCE component privilege for the SQL_OPERATIONS component.
+
++
+NOTE: In this case, if you create a sequence in a private schema, it will be owned by the schema owner.
+
+<<<
+[[create_sequence_examples]]
+=== Examples of CREATE SEQUENCE
+
+The following statement creates a sequence named `employee_seq`, that starts with 1, increments by 1, has maximum value of 10000, does not cycle, caches 20 at a time and belongs to UNSIGNED SAMLLINT.
+
+```
+CREATE SEQUENCE   employee_seq
+START WITH        1
+INCREMENT BY      1
+MAXVALUE          10000   
+NOCYCLE
+CACHE             20  
+UNSIGNED SMALLINT
+```
+
+The first reference to `seqnum(empolyee_seq, next)` will return 10000, and the second reference will return 10001. Each subsequent reference will return a value 1 greater than the previous value.
+
+<<<
 [[create_table_statement]]
 == CREATE TABLE Statement
 
@@ -2616,7 +2954,7 @@ If the constraint refers to the other table in a query expression, you must also
 * Volatile temporary tables are closely linked to the session. Their name space is unique across multiple concurrent
 sessions, and therefore allow multiple sessions to use the same volatile temporary table names simultaneously without
 any conflicts.
-* Volatile tables support creation of indexes.
+* Volatile tables support creation of indexes. Volatile index can be created only on volatile table.
 * Volatile tables are partitioned by the system. The number of partitions is limited to four partitions by default.
 The partitions will be distributed across the cluster. The default value is four partitions regardless of the system
 configuration.
@@ -3818,6 +4156,54 @@ DROP SCHEMA sales;
 ```
 
 <<<
+[[drop_sequence_statement]]
+== DROP SEQUENCE Statement
+
+The DROP SEQUENCE Statement removes a sequence from the Trafodion database.
+
+NOTE: DDL statements are not currently supported in transactions. That means that you cannot run DDL statements inside a user-defined transaction (BEGIN WORK…COMMIT WORK) or when AUTOCOMMIT is OFF. To run these statements, AUTOCOMMIT must be turned ON (the default) for the session.
+
+If you want to change the initial value of a sequence, you can drop and then recreate a sequence with the same name and different START WITH value.
+
+DROP SEQUENCE is a Trafodion SQL extension.
+
+For more inforamation, see <<create_sequence_statement,CREATE SEQUENCE Statement>> or <<alter_sequence_statement,ALTER SEQUENCE Statement>>.
+
+```
+DROP SEQUENCE [[catalog-name.]schema-name.]sequence 
+```
+
+<<<
+[[drop_sequence_syntax]]
+=== Syntax Description of DROP SEQUENCE
+
+* `[[catalog-name.]schema-name.]sequence`
+
++
+Specifies the name of the sequence to be dropped, with optional catalog and schema name, where each part of the name is a valid sql identifier with a maximum of 128 characters. 
+
+<<<
+[[drop_sequence_considerations]]
+=== Considerations for DROP SEQUENCE
+To issue a DROP SEQUENCE statement, one of the following must be true:
+
+* You are DB ROOT.
+
+* You are the owner of the sequence.
+
+* You have the DROP or DROP_SEQUENCE component privilege for the SQL_OPERATIONS component.
+
+<<<
+[[drop_sequence_examples]]
+=== Examples of DROP SEQUENCE
+
+The following statement drops the sequence named `employee_seq`, which is created in <<create_sequence_examples,Examples of CRAETE SEQUENCE>>.
+
+```
+DROP SEQUENCE employee_seq
+```
+
+<<<
 [[drop_table_statement]]
 == DROP TABLE Statement
 
@@ -4103,7 +4489,7 @@ execute other SQL statements (for example, SELECT). For more information on the 
 EXPLAIN is a {project-name} SQL extension.
 
 ```
-EXPLAIN [OPTIONS {'f'}] { FOR QID query-id | FOR QID CURRENT | prepared-stmt-name }
+EXPLAIN [OPTIONS {'f'}] { FOR QID query-id | FOR QID CURRENT | prepared-stmt-name | query-text }
 ```
 
 Plans displayed by the EXPLAIN statement are ordered from top (root operator) to bottom (leaf operators).
@@ -4123,7 +4509,7 @@ provide information for the latest compiled query.
 
 * `_query-id_`
 +
-specifies the query ID of an executing query, which is a unique identifier generated by the SQL compiler.
+specifies the query ID of a prepared or executing query, which is a unique identifier generated by the SQL compiler.
 
 * `_prepared-stmt-name_`
 +
@@ -4131,6 +4517,15 @@ an SQL identifier containing the name of a statement already prepared in this se
 case-insensitive (will be in uppercase) unless it is double-quoted. It must be double-quoted if it contains blanks,
 lowercase letters, or special characters. It must start with a letter. When you refer to the prepared query in a
 SELECT statement, you must use uppercase.
+
+Note: A few non-reserved words that can be used for prepared statement names cannot be used directly in EXPLAIN.
+For example, 'EXPLAIN access;' results in a syntax error. You can still use the name, however, by using a
+delimited identifier. That is, specify the name in upper case, surrounded by double-quotes. For example,
+'EXPLAIN "ACCESS";' will work.
+
+* `_query-text_`
++
+specifies the text of a query.
 
 <<<
 [[explain_considerations]]
@@ -4220,6 +4615,11 @@ PREPARE q FROM SELECT * FROM REGION;
 EXPLAIN options 'f' q;
 ```
 
+EXPLAIN can also be used with the query text directly:
+
+```
+EXPLAIN options 'f' SELECT * FROM REGION;
+```
 <<<
 [[get_statement]]
 == GET Statement
@@ -4775,7 +5175,8 @@ System Version 0.9.1. Expected Version 1.0.0.
 [[grant_statement]]
 == GRANT Statement
 
-The GRANT statement grants access privileges on an SQL object to specified users or roles.
+The GRANT statement grants access privileges on an SQL object and its columns to specified users or roles.
+Privileges can be granted on the object, on one or more columns, or both.
 
 IMPORTANT: This statement works only when authentication and
 authorization are enabled in {project-name}. For more information, see
@@ -4784,30 +5185,34 @@ authorization are enabled in {project-name}. For more information, see
 ```
 GRANT {privilege [,privilege]... |ALL [PRIVILEGES]} 
   ON [object-type] [schema.]object
-  TO {grantee [,grantee ]...} 
-    [WITH GRANT OPTION]
-    [[granted] by grantor]
+  TO {grantee} 
+  [WITH GRANT OPTION]
+  [[GRANTED] BY grantor]
 
 privilege is: 
-    select
-  | delete
-  | insert
-  | references
-  | update
-  | execute
-  | usage
+    DELETE
+  | EXECUTE
+  | INSERT     [column-list]
+  | REFERENCES [column-list]
+  | SELECT     [column-list]
+  | UPDATE     [column-list]
+  | USAGE
 
 object-type is: 
-    table
-  | procedure
-  | library
-  | function
+    FUNCTION
+  | PROCEDURE
+  | LIBRARY
+  | SEQUENCE 
+  | TABLE
 
 grantee is:
     auth-name
 
 grantor is:
-   role-name
+    role-name
+
+column-list is:
+    (column [,colummn] ...)
 
 ```
 
@@ -4816,58 +5221,65 @@ grantor is:
 
 * `_privilege_ [,_privilege_ ] &#8230; | all [privileges]`
 +
-specifies the privileges to grant. you can specify these privileges for an object.
+Specifies the privileges to grant. You can specify these privileges for an object.
 +
 [cols="25%,75%"]
 |===
-| select     | can use the select statement.
-| delete     | can use the delete statement.
-| insert     | can use the insert statement.
-| references | can create constraints that reference the object.
-| update     | can use the update statement on table objects.
-| execute    | can execute a stored procedure using a call statement or can execute a user-defined function (UDF).
-| usage      | can access a library using the create procedure or create function statement. this privilege provides you 
-with read access to the library’s underlying library file.
-| all        | all the applicable privileges. when you specify all for a table or view, this includes the select, delete, 
-insert, references, and update privileges. when the object is a stored procedure or user-defined function (UDF), only the 
-execute privilege is applied. when the object is a library, only the update and usage privileges are applied.
+| DELETE                   | Can use the delete statement.
+| EXECUTE                  | Can execute a stored procedure using a call statement or can execute a user-defined function (UDF).
+| INSERT     [column-list] | Can use the insert statement.
+| REFERENCES [column-list] | Can create constraints that reference the object.
+| SELECT     [column-list] | Can use the select statement.
+| UPDATE     [column-list] | Can use the update statement on table objects.
+| USAGE                    | For libraries, can create procedures and functions on library objects.
+For sequence generators, can use the sequence in a SQL statement.
+| ALL                      | All the applicable privileges. When you specify all for a table or view, 
+this includes the select, delete, insert, references, and update privileges. When the object is a 
+stored procedure or user-defined function (UDF), only the execute privilege is applied. When the 
+object is a library, only the update and usage privileges are applied. When the object is a sequence
+generator, only the usage privilege is applied.
 |===
 
-* `on [_object-type_] [_schema_.]_object_`
+* `ON [_object-type_] [_schema_.]_object_`
 +
-specifies an object on which to grant privileges. _object-type_ can be:
+Specifies an object on which to grant privileges. If none is specified, it defaults to TABLE.  See <<database_object_names,"Database Object Names>> for more details. _object-type_ can be:
 
-** `[table] [_schema_.]_object_`, where _object_ is a table or view. see <<database_object_names,database object names>>.
-** `[procedure] [_schema_.]_procedure-name_`, where _procedure-name_ is the name of a stored procedure in java (SPJ) 
+** `FUNCTION [_schema_.]_function-name_`, where _function-name_ is the name of a user-defined function (UDF) in the database.
+** `LIBRARY [_schema_.]_library-name_`, where _library-name_ is the name of a library object in the database.
+** `PROCEDURE [_schema_.]_procedure-name_`, where _procedure-name_ is the name of a stored procedure in java (SPJ) 
 registered in the database.
-** `[library] [_schema_.]_library-name_`, where _library-name_ is the name of a library object in the database.
-** `[function] [_schema_.]_function-name_`, where _function-name_ is the name of a user-defined function (UDF) in the database.
+** `SEQUENCE [_schema_.]_sequence-name_`, where _sequence-name_ is the name of a sequence object in the database.
+** `[TABLE] [_schema_.]_object_`, where _object_ is a table or view. 
 
-* `to {_grantee_ [, _grantee_] &#8230; }`
+* `TO {_grantee_ &#8230; }`
 +
-specifies one or more _auth-names_ to which you grant privileges.
+Specifies the  _auth-name_ to which you grant privileges.
 
 * `_auth-name_`
 +
-specifies the name of an authorization id to which you grant privileges. see <<authorization_ids,authorization ids>>. 
-the authorization id must be a registered database username, an existing role name, or public. the name is a regular 
-or delimited case-insensitive identifier. see <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
-if you grant a privilege to public, the privilege remains available to all users, unless it is later revoked from public.
+Specifies the name of an authorization id to which you grant privileges. See <<authorization_ids,authorization ids>>. 
+The authorization id must be a registered database username, an existing role name, or public. the name is a regular 
+or delimited case-insensitive identifier. See <<case_insensitive_delimited_identifiers,case-insensitive delimited identifiers>>.
+If you grant a privilege to public, the privilege remains available to all users, unless it is later revoked from public.
 
-* `with grant option`
+* `WITH GRANT OPTION`
 +
-specifies that the _auth-name_ to which a privilege is granted may in turn grant the same privilege to other users or roles.
+Specifies that the _auth-name_ to which a privilege is granted may in turn grant the same privilege to other users or roles.
 
-* `[granted] by _grantor_`
+* `[GRANTED] BY _grantor_`
 +
-allows you to grant privileges on behalf of a role. if not specified, the privileges will be granted on your behalf as 
+Allows you to grant privileges on behalf of a role. If not specified, the privileges will be granted on your behalf as 
 the current user/grantor.
 
 * `_role-name_`
 +
-specifies a role on whose behalf the grant operation is performed. to grant the privileges on behalf of a role, you must 
+Specifies a role on whose behalf the grant operation is performed. To grant the privileges on behalf of a role, you must 
 be a member of the role, and the role must have the authority to grant the privileges; that is, the role must have been 
 granted the privileges with grant option.
+
+* `_column-list_`
++
+Specifies the list of columns to grant the requested privilege to.
 
 [[grant_considerations]]
 === Considerations for GRANT
@@ -4892,11 +5304,11 @@ an error.
 [[grant_examples]]
 === Examples of GRANT
 
-* To grant SELECT and DELETE privileges on a table to two specified users:
+* To grant column level SELECT and object level DELETE privileges on a table:
 +
 ```
-GRANT SELECT, DELETE ON TABLE invent.partloc
-  TO ajones, "MO.Neill@company.com";]
+GRANT SELECT (part_no, part_name), DELETE ON TABLE invent.partloc
+  TO "MO.Neill@company.com";]
 ```
 
 * To grant SELECT privileges on a table to a user:
@@ -4940,33 +5352,40 @@ specifies one or more component privileges to grant. The comma-separated list ca
 | Component      | Component Privilege    | Description
 | SQL_OPERATIONS | ALTER                  | Privilege to alter database objects
 // |                | ALTER_LIBRARY          | Privilege to alter libraries
+|                | ALTER_SCHEMA           | Privilege to alter schemas
+|                | ALTER_SEQUENCE         | Privilege to alter sequence generators
 |                | ALTER_TABLE            | Privilege to alter tables
 |                | ALTER_VIEW             | Privilege to alter views
 |                | CREATE                 | Privilege to create database objects
-|                | CREATE_CATALOG         | Privilege to create catalogs in the database
 |                | CREATE_INDEX           | Privilege to create indexes
 |                | CREATE_LIBRARY         | Privilege to create libraries in the database
-|                | CREATE_ROUTINE         | Privilege to create stored procedures in Java (SPJs), user-defined functions (UDFs), 
+|                | CREATE_PROCEDURE       | Privilege to create stored procedures in Java (SPJs)
+|                | CREATE_ROUTINE         | Privilege to create user-defined functions (UDFs), 
 table-mapping functions, and other routines in the database
 |                | CREATE_SCHEMA          | Privilege to create schemas in the database
+|                | CREATE_SEQUENCE        | Privilege to create sequence generators in the database
 |                | CREATE_TABLE           | Privilege to create tables in the database
 |                | CREATE_VIEW            | Privilege to create views in the database
 |                | DROP                   | Privilege to drop database objects
-|                | DROP_CATALOG           | Privilege to drop catalogs
 |                | DROP_INDEX             | Privilege to drop indexes
 |                | DROP_LIBRARY           | Privilege to drop libraries
-|                | DROP_ROUTINE           | Privilege to drop stored procedures in Java (SPJs), user-defined functions (UDFs), 
+|                | DROP_PROCEDURE         | Privilege to drop stored procedures in Java (SPJs)
+|                | DROP_ROUTINE           | Privilege to drop user-defined functions (UDFs), 
 table-mapping functions, and other routines from the database
 |                | DROP_SCHEMA            | Privilege to drop schemas
+|                | DROP_SEQUENCE          | Privilege to drop sequence generators
 |                | DROP_TABLE             | Privilege to drop tables
 |                | DROP_VIEW              | Privilege to drop views
+|                | MANAGE_COMPONENT       | Privilege to perform component commands, such as register, create, and grant privileges
 |                | MANAGE_LIBRARY         | Privilege to perform library-related commands, such as creating and dropping libraries
 |                | MANAGE_LOAD            | Privilege to perform LOAD and UNLOAD commands
 |                | MANAGE_ROLES           | Privilege to create, alter, drop, grant, and revoke roles
 |                | MANAGE_STATISTICS      | Privilege to update and display statistics
 |                | MANAGE_USERS           | Privilege to register or unregister users, alter users, and grant or revoke 
 component privileges.
-|                | QUERY_CANCEL           | Privilege to cancel an executing query.
+|                | QUERY_ACTIVATE         | Privilege to activate and executing query after it has been suspended
+|                | QUERY_CANCEL           | Privilege to cancel an executing query
+|                | QUERY_SUSPEND          | Privilege to suspend an executing query
 |                | SHOW                   | Privilege to run EXPLAIN, GET, INVOKE, and SHOW commands. The SHOW privilege 
 has been granted to PUBLIC by default.
 |===
@@ -5794,6 +6213,7 @@ REGISTER USER "jsmith@company.com";
 == REVOKE Statement
 
 The REVOKE statement revokes access privileges on an SQL object from specified users or roles.
+Privileges can be revoked from the object, from one or more columns, or both.
 
 IMPORTANT: This statement works only when authentication and authorization are enabled in {project-name}. For more information,
 {docs-url}/provisioning_guide/index.html#enable-security [Enable Secure {project-name}].
@@ -5802,102 +6222,103 @@ IMPORTANT: This statement works only when authentication and authorization are e
 REVOKE [GRANT OPTION FOR]
    {privilege [,privilege]...| ALL [PRIVILEGES]}
    ON [object-type] [schema.]object
-   FROM {grantee [,grantee]...}
-   [[GRANTED] BY grantor] [RESTRICT | CASCADE]
+   FROM {grantee}
+   [[GRANTED] BY grantor] 
 
 privilege is:
-    SELECT
-  | DELETE
-  | INSERT
-  | REFERENCES
-  | UPDATE
-  | EXECUTE
+    DELETE
+  | EXECUTE 
+  | INSERT      [column-list]
+  | REFERENCES  [column-list]
+  | SELECT      [column-list]
+  | UPDATE      [column-list]
   | USAGE
 
 object-type is:
-    TABLE
-  | PROCEDURE
+    FUNCTION
   | LIBRARY
-  | FUNCTION
+  | PROCEDURE
+  | SEQUENCE
+  | TABLE
 
 grantee is:
     auth-name
 
 grantor is:
     role-name
+
+column-list is:
+    (column [,column]...)
+
 ```
 
 === Syntax Description of REVOKE
 
 * `GRANT OPTION FOR`
 +
-specifies that the grantee’s authority to grant the specified privileges to other users or roles (that is, WITH GRANT
+Specifies that the grantee’s authority to grant the specified privileges to other users or roles (that is, WITH GRANT
 OPTION) be revoked. This is an optional clause. When this clause is specified, only the ability to grant the privilege
 to another user is revoked.
 
 * `_privilege_ [, _privilege_ ] &#8230; | ALL [ PRIVILEGES ]`
 +
-specifies the privileges to revoke. You can specify these privileges for an object:
+Specifies the privileges to revoke. You can specify these privileges for an object:
 +
 [cols="20%,80%"]
 |===
-| SELECT       | Revokes the ability to use the SELECT statement.
-| DELETE       | Revokes the ability to use the DELETE statement.
-| INSERT       | Revokes the ability to use the INSERT statement.
-| REFERENCES   | Revokes the ability to create constraints that reference the object.
-| UPDATE       | Revokes the ability to use the UPDATE statement.
-| EXECUTE      | Revokes the ability to execute a stored procedure using a CALL statement or revokes the ability
+| DELETE                   | Revokes the ability to use the DELETE statement.
+| EXECUTE                  | Revokes the ability to execute a stored procedure using a CALL statement or revokes the ability
+| INSERT     [columm-list] | Revokes the ability to use the INSERT statement.
+| REFERENCES [column-list] | Revokes the ability to create constraints that reference the object.
+| SELECT     [column-list] | Revokes the ability to use the SELECT statement.
+| UPDATE     [column-list] | Revokes the ability to use the UPDATE statement.
 to execute a user-defined function (UDF).
-| USAGE        | Revokes the ability to access a library using the CREATE PROCEDURE or CREATE FUNCTION statement.
-Revokes read access to the library’s underlying library file.
-| ALL          | Revokes the ability to use all privileges that apply to the object type.
-When you specify ALL for a table or view, this includes the SELECT, DELETE, INSERT, REFERENCES, and UPDATE
-privileges. When the object is a stored procedure or user-defined function (UDF), this includes the EXECUTE privilege.
-When the object is a library, this includes the UPDATE and USAGE privileges.
+| USAGE                    | For libraries, revokes the ability to access a library using the 
+CREATE PROCEDURE or CREATE FUNCTION statement.
+For sequence generators, revokes the ability to access a sequence in a SQL query.
+| ALL                      | Revokes the ability to use all privileges that apply to the object type.
+When you specify ALL for a table or view, this includes the SELECT, DELETE, INSERT, REFERENCES, and 
+UPDATE privileges. When the object is a stored procedure or user-defined function (UDF), this includes 
+the EXECUTE privilege.  When the object is a library, this includes the UPDATE and USAGE privileges. 
+When the object is a sequence generator, only the usage privilege is applied.
 |===
 
 * `ON [_object-type_] [_schema_.]_object_`
 +
-specifies an object on which to grant privileges. _object-type_ can be:
+Specifies an object on which to grant privileges. If none is specified, it defaults to TABLE. See <<database_object_names,"Database Object Names>> for more details. _object-type_ can be:
 
-** [TABLE] [_schema_.]_object_, where _object_ is a table or view. See <<database_object_names,Database Object Names>>.
-** [PROCEDURE] [_schema_.]_procedure-name_, where _procedure-name_ is the name of a stored procedure in Java (SPJ)
-registered in the database. See <<database_object_names,"Database Object Names>>.
-** [LIBRARY] [_schema_.]_library-name_, where _library-name_ is the name of a library object in the database. See
-<<database_object_names,"Database Object Names>>,
-** [FUNCTION] [_schema_.]_function-name_, where _function-name_ is the name of a user-defined function in the database.
-See <<database_object_names,"Database Object Names>>
+** FUNCTION [_schema_.]_function-name_, where _function-name_ is the name of a user-defined function in the database.
+** LIBRARY [_schema_.]_library-name_, where _library-name_ is the name of a library object in the database. 
+** PROCEDURE [_schema_.]_procedure-name_, where _procedure-name_ is the name of a stored procedure in Java (SPJ)
+registered in the database. 
+** SEQUENCE [_schema_.]_sequence-name_, where _sequence-name_ is the name of a sequence generator.
+** [TABLE] [_schema_.]_object-name_, where _object-name_ is the name of a table or view. 
 
 * `FROM {_grantee_ [,_grantee_] &#8230; }`
 +
-specifies an _auth-name_ from which you revoke privileges.
+Specifies an _auth-name_ from which you revoke privileges.
 
 * `_auth-name_`
 +
-specifies the name of an authorization ID from which you revoke privileges. See <<authorization_ids,Authorization IDs>>.
+Specifies the name of an authorization ID from which you revoke privileges. See <<authorization_ids,Authorization IDs>>.
 The authorization ID must be a registered database username, existing role name, or PUBLIC. The name is
 a regular or delimited case-insensitive identifier. See
 <<case_insensitive_delimited_identifiers,Case-Insensitive Delimited Identifiers>>.
 
 * `[GRANTED] BY _grantor_`
 +
-allows you to revoke privileges on behalf of a role. If not specified, the privileges will be revoked
+Allows you to revoke privileges on behalf of a role. If not specified, the privileges will be revoked
 on your behalf as the current user/grantor.
 
 * `_role-name_`
 +
-specifies a role on whose behalf the GRANT operation was performed. To revoke the privileges on behalf of a role,
+Specifies a role on whose behalf the GRANT operation was performed. To revoke the privileges on behalf of a role,
 you must be a member of the role, and the role must have the authority to revoke the privileges;
 that is, the role must have been granted the privileges WITH GRANT OPTION.
 
-* `[RESTRICT | CASCADE]`
+* `_column-list_`
 +
-If you specify RESTRICT, the REVOKE operation fails if any privileges were granted or any objects were created
-based upon the specified privileges.
-
-If you specify CASCADE, any such dependent privileges and objects are removed as part of the REVOKE operation.
-
-The default value is RESTRICT.
+Specifies the list of columns to revoke the requested privilege from.
 
 [[revoke_considerations]]
 === Considerations for REVOKE
@@ -5916,16 +6337,16 @@ When you specify the CASCADE option, all objects that were created based upon th
 [[revoke_examples]]
 === Examples of REVOKE
 
-* To revoke the privilege to grant SELECT and DELETE privileges on a table from a user:
+* To revoke GRANT OPTION for column level SELECT and table level DELETE privileges on a table from a user:
 +
 ```
-REVOKE GRANT OPTION FOR SELECT, DELETE ON TABLE invent.partloc FROM jsmith;
+REVOKE GRANT OPTION FOR SELECT (part_no, part_name), DELETE ON TABLE invent.partloc FROM jsmith;
 ```
 
 * To revoke the privilege to grant SELECT and DELETE privileges on a table from a user and a role:
 +
 ```
-REVOKE GRANT OPTION FOR SELECT, DELETE ON TABLE invent.partloc FROM jsmith, clerks;
+REVOKE SELECT (part_no, part_name), DELETE ON TABLE invent.partloc FROM jsmith, clerks;
 ```
 
 * To revoke a user’s SELECT privileges on a table:
@@ -6221,6 +6642,7 @@ sql-query is:
   | query-expr-and-order
 
 query-specification is:
+[with-clause]
 SELECT [ "[" ANY N "]" | "[" FIRST N "]" ] [ALL | DISTINCT] select-list
    FROM table-ref [,table-ref]...
    [WHERE search-condition]
@@ -6231,8 +6653,17 @@ SELECT [ "[" ANY N "]" | "[" FIRST N "]" ] [ALL | DISTINCT] select-list
       [,colname [ASC[ENDING] | DESC[ENDING]]]...]
    [GROUP BY {colname | colnum} [,{colname | colnum}]...]
    [HAVING search-condition]
-   [access-clause ]
+   [access-clause]
    [mode-clause]
+
+With-clause is:
+WITH with_clause_elements
+
+with_clause_elements is: 
+with_clause_element [,with_clause_element] …
+
+with_clause_element is: 
+cte-table-name AS (sql-query)
 
 query-expr-and-order is:
     query-expr [order-by-clause] [access-clause] [mode-clause]
@@ -6240,6 +6671,8 @@ query-expr-and-order is:
 query-expr is:
     query-primary
   | query-expr UNION [ALL] query-primary
+  | query-expr INTERSECT query-primary
+  | query-expr EXCEPT query-primary
 
 query-primary is:
     simple-table | (query-expr)
@@ -6334,6 +6767,26 @@ transpose-item-list is:
 
 [[select_syntax]]
 === Syntax Description of SELECT
+
+* with-clause
+
++
+With-clause, known as Common Table Expressions (CTEs) or subquery factoring clause, was introduced in the SQL-99 standard and has been implemented into Trafodion R2.1.
+
++
+The with-clause assigns an alias to a complex expression. The alias is treated like a temporary table or an inline view that lasts only for the duration of the query and can be referenced multiple times in the same query.
+
++
+By abstracting the complicated parts of the query into simpler, separate and logical blocks, and possibly materializing the results of these parts to avoid recomputing it multiple times, the with-clause has following advantages:
+
+** Simplifies complicated queries, increasing readability and reducing repeated references.
+** Builds reusable units and decreases maintenance cost.
+** Shortens response time and enhances performance of the query.
+** Improves  compatibility with other systems which support with-clause as well.
+
+* cte-table-name
++
+specifies the unique name of the CTE to be created, which is a valid SQL identifier with a maximum of 128 characters. Duplicate names are not allowed in a single with-clause.
 
 * `"[" ANY _N_ "]" | "[" FIRST _N_ "]"`
 +
@@ -6742,6 +7195,29 @@ The column names in the result table of the union are the same as the correspond
 SELECT statement. A column resulting from the union of expressions or constants has the name (EXPR).
 See <<considerations_for_union,Considerations for UNION>>.
 
+* `_select-stmt_ INTERSECT _select-stmt_`
++
+specifies a set intersect operation between the result table of a SELECT statement and the result table of another SELECT statement.
+The result of the intersect operation is a table that consists of rows appear in both result sets.
++
+The result of INTERSECT does not contain any duplicate rows.
++
+The select lists in the two SELECT statements of an intersect operation must have the same number of columns, and columns in
+corresponding positions within the lists must have compatible data types. The select lists must not be preceded by
+[ANY _N_] or [FIRST N].
+
+* `_select-stmt_ EXCEPT _select-stmt_`
++
+specifies a set except operation between the result table of a SELECT statement and the result table of another SELECT statement.
+The result of the except operation is a table that consists of rows that are in the result of the left SELECT statement but not in 
+the result of the right one.
++
+The result of EXCEPT does not contain any duplicate rows.
++
+The select lists in the two SELECT statements of an except operation must have the same number of columns, and columns in
+corresponding positions within the lists must have compatible data types. The select lists must not be preceded by
+[ANY _N_] or [FIRST N].
+
 * `ORDER BY {_colname_ | _colnum_} [ASC[ENDING] | DESC[ENDING]] [,{_colname_ | _colnum_} [ASC[ENDING] | DESC[ENDING]]]&#8230;`
 +
 specifies the order in which to sort the rows of the final result table.
@@ -6856,6 +7332,15 @@ SELECT sum(distinct a), count(distinct a), avg(distinct a) from T group by d;
 ```
 SELECT sum(distinct a), avg(distinct b), sum(c) from T group by d;
 ```
+
+[[select_considerations_for_with-clause]]
+==== Considerations for with-clause
+
+* Materialization of CTEs in temporary tables is not yet enabled by default. 
+
+* Trafodion only supports non-recursive common table expressions, which means with-clause cannot be self-referencing, but it can reference a previously defined CTE within the same with-clause.
+
+* The with-clause in Trafodion can be specified only once, at the beginning of a SELECT statement. INSERT, UPDATE, DELETE and CREATE VIEW statements are not supported yet.
 
 [[select_considerations_for_select_list]]
 ==== Considerations for Select List
@@ -6989,6 +7474,79 @@ A parenthesized union of SELECT statements is evaluated first, from left to righ
 <<<
 [[select_examples]]
 === Examples of SELECT
+
+* The following example defines two CTEs, w1 and w2. w2 references w1 which is defined before w2.
+```
+>>select * from t1
+
+ C1 C2
+ ----------
+
+  1 1
+  2 2
+  3 3
+  4 4
+  5 5
+
+ --- SQL operation complete.
+
+>>with w1 as (select * from t1),
+>>w2 as (select * from w1)
+>>select * from w2;
+
+ C1 C2
+ ----------
+
+  1 1
+  2 2
+  3 3
+  4 4
+  5 5
+
+ --- SQL operation complete.
+```
+
+* The following example defines two CTEs, w1 and w2, and then perform a JOIN between them.
+```
+>>select * from t1
+
+ C1 C2
+ ----------
+
+  1 1
+  2 2
+  3 3
+  4 4
+  5 5
+
+ --- SQL operation complete.
+
+>>select * from t2
+
+ C1 C2
+ ----------
+
+  3 3
+  4 4
+  5 5
+  6 6
+  7 7
+
+ --- SQL operation complete.
+
+>>with w1 as (select c1, c2 from t1),
+>>w2 as (select c1, c2 from t2)
+>>select * from w1, w2 where w1.c1 = w2.c1;
+
+ C1 C2 C1 C2
+ ----------
+
+  3 3 3 3
+  4 4 4 4
+  5 5 5 5
+
+ --- SQL operation complete.
+```
 
 * Retrieve information from the EMPLOYEE table for employees with a job code greater than 500 and who are in departments
 with numbers less than or equal to 3000, displaying the results in ascending order by job code:

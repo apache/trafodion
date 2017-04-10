@@ -2146,7 +2146,7 @@ CNode *CNodeContainer::GetNode(char *name )
 
     while (node)
     {
-        if ( strcmp( node->GetName(), name) == 0 )
+        if ( CPNodeConfigContainer::hostnamecmp( node->GetName(), name) == 0 )
         { 
             break;
         }

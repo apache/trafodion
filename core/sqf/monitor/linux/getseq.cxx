@@ -192,53 +192,6 @@ void process_startup (int argc, char *argv[])
     }
 }
 
-int get_seq_number (void)
-{
-    int count;
-    MPI_Status status;
-
-    printf ("[%s] sending get TM seq num message.\n", MyName);
-    fflush (stdout);
-
-
-    gp_local_mon_io->acquire_msg( &msg );
-
-    msg->type = MsgType_Service;
-    msg->noreply = false;
-    msg->reply_tag = REPLY_TAG;
-    msg->u.request.type = ReqType_TmSeqNum;
-
-
-    gp_local_mon_io->send_recv( msg );
-    count = sizeof (*msg);
-    status.MPI_TAG = msg->reply_tag;
-
-    if ((status.MPI_TAG == REPLY_TAG) &&
-        (count == sizeof (struct message_def)))
-    {
-        if ((msg->type == MsgType_Service) &&
-            (msg->u.reply.type == ReplyType_TmSeqNum))
-        {
-            return msg->u.reply.u.tm_seqnum;
-        }
-        else
-        {
-            printf
-                ("[%s] Invalid MsgType(%d)/ReplyType(%d) for TM seq num message\n",
-                 MyName, msg->type, msg->u.reply.type);
-        }
-    }
-    else
-    {
-        printf ("[%s] TM seq num reply invalid.\n", MyName);
-    }
-    fflush (stdout);
-
-    gp_local_mon_io->release_msg(msg);
-
-    return -1;
-}
-
 void flush_incoming_msgs( void )
 {
     int count;
@@ -486,13 +439,6 @@ int main (int argc, char *argv[])
     }
 
     process_startup (argc, argv);
-
-    // get and display TM cluster sequence number
-    for( i=0; i<10; i++ )
-    {
-        printf("[%s] TM Seq #=%d\n",MyName,get_seq_number());
-        fflush(stdout);
-    }
 
     // exit my process
     exit_process ();

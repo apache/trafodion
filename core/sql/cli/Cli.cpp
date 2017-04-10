@@ -2997,62 +2997,6 @@ Lng32 SQLCLI_PerformTasks(
 	   stmt->setOltOpt(TRUE);
        }
     }
-  if (stmt->getRootTdb() && 
-      (((ComTdb*)stmt->getRootTdb())->getCollectStatsType() == ComTdb::MEASURE_STATS))
-    {
-      // save Measure status
-      NABoolean oldMeasStmtEnabled = 0; //SQ TBD
-      NABoolean oldMeasProcEnabled = 0;
-
-      // get current Measure status.
-      // set sqlstmt enabled in statement globals when either
-      // sqlproc or sqlstmt is set.  sqlproc counters need stats info
-      // from stmt counters.
-      cliGlobals->checkMeasStatus();
-      stmt->getGlobals()->
-	setMeasStmtEnabled(cliGlobals->getMeasStmtEnabled() ||
-			   cliGlobals->getMeasProcEnabled());
-      
-      // if Measure status changed from Disabled to Enabled, 
-      // call Measure to initialize process and statement counters.
-      //LCOV_EXCL_START
-      if (cliGlobals->getMeasProcEnabled() && !oldMeasProcEnabled)
-	cliGlobals->getMeasProcCntrs()->ExMeasProcCntrsBump();
-      //LCOV_EXCL_STOP
-      ExStatisticsArea *stats = stmt->getGlobals()->getStatsArea();
-      //LCOV_EXCL_START
-      if (stmt->getGlobals()->measStmtEnabled()) 
-        {
-	  if ((stmt->getModule() != NULL) &&  // static sql
-	      stmt->getModule()->getStmtCntrsSpace(0))
-	  {
-	    // setup stmt counter, if Measure not previously enabled.
-	    // space already allocated(in Comtdb::build).
-	 
-	    if (!oldMeasStmtEnabled && cliGlobals->getMeasStmtEnabled())
-	      {
-		ExMeasStmtCntrs *stmtCntrs = (ExMeasStmtCntrs *)stmt->
-		             getModule()->getStmtCntrsSpace(0);
-		stmtCntrs->ExMeasStmtCntrsBump
-		         (stmt->getModule()->getStatementCount(),
-			  stmt->getModule()->getModuleName(),
-			  stmt->getModule()->getModuleNameLen());
-	      }
-	    // setup stmt counter in master stmt globals.
-	    stmt->getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->
-		setStmtCntrs((ExMeasStmtCntrs *) stmt->getModule()->
-				getStmtCntrsSpace(stmt->getStatementIndex()) );
-
-	  }
-	  else  // dynamic sql, allocate stmt counter. 
-	  {
-	    if (!oldMeasStmtEnabled && cliGlobals->getMeasStmtEnabled())
-	      stmt->allocDynamicStmtCntrs();
-	  }
-	}
-      //LCOV_EXCL_STOP
-    }
-
   stmt->getGlobals()->setNoNewRequest(FALSE);
 
   Descriptor * input_desc = NULL;
@@ -3209,23 +3153,7 @@ Lng32 SQLCLI_PerformTasks(
       if ((stmt->getRootTdb()) &&
 	  (((ComTdb*)stmt->getRootTdb())->getCollectStats()))
 	{
-	  // enable stats collection for measure, if measure is enabled.
-	  if (((ComTdb*)stmt->getRootTdb())->getCollectStatsType() == ComTdb::MEASURE_STATS)
-	    {
-
-	      cliGlobals->checkMeasStatus();
-	      if ((cliGlobals->getMeasStmtEnabled()) ||
-		  (cliGlobals->getMeasProcEnabled()))
-		{
-		  stmt->getGlobals()->setMeasStmtEnabled(TRUE);
-		}
-	      stmt->getGlobals()->setStatsEnabled(
-		       cliGlobals->getMeasSubsysRunning());
-
-	    }
-	  else
-	    // for all other case, enable stats collection.
-	    stmt->getGlobals()->setStatsEnabled(TRUE);
+	  stmt->getGlobals()->setStatsEnabled(TRUE);
 #ifdef _DEBUG
 	  if (getenv("DISABLE_STATS"))
 	    stmt->getGlobals()->setStatsEnabled(FALSE);
@@ -3258,12 +3186,6 @@ Lng32 SQLCLI_PerformTasks(
 	  // by fastpath OLT execution.
 	  if (NOT doNormalExecute)
 	    {
-	      // update Measure if enabled.
-	      if (stmt->getGlobals()->getMeasStmtCntrs())
-		{
-		  stmt->getGlobals()->getMeasStmtCntrs()->incCalls(1);
-		}
-	      cliGlobals->updateMeasure(stmt, startTime);
               if (stmt->getState() != Statement::CLOSE_)
                 stmt->close(diags);
  	      return CliEpilogue(cliGlobals,statement_id,retcode);
@@ -3400,7 +3322,6 @@ Lng32 SQLCLI_PerformTasks(
 
       if (isERROR(retcode))
 	{
-	  cliGlobals->updateMeasure(stmt, startTime);
 	  return CliEpilogue(cliGlobals,statement_id,retcode);
 	}
       else if (retcode == WARNING)
@@ -3431,7 +3352,6 @@ Lng32 SQLCLI_PerformTasks(
 	      retcode = stmt->fetch(cliGlobals, 0 /*no output desc*/,diags, TRUE);
 	      if (retcode == SUCCESS)
 		{
-		  cliGlobals->updateMeasure(stmt, startTime);
 		  diags << DgSqlCode(-CLI_SELECT_INTO_ERROR);
 		  stmt->close(diags);
 		  return CliEpilogue(cliGlobals,statement_id,-CLI_SELECT_INTO_ERROR);
@@ -3459,9 +3379,6 @@ Lng32 SQLCLI_PerformTasks(
   // Close the statement.
   if (tasks & CLI_PT_CLOSE)
     {
-      // Update Measure sqlstmt and sqlproc counters.
-      cliGlobals->updateMeasure(stmt, startTime);
-
       Lng32 tretcode = stmt->close(diags);
 
       if (isERROR(tretcode))
@@ -8570,7 +8487,7 @@ Lng32 SQLCLI_GetSystemVolume_Internal(
   // Very first time the SMD Location is uninitialized in CliGlobals. In this
   // case the location is acquired from
   // the environment variable SQLMX_SMD_LOCATION defined in the
-  // $MY_SQROOT/etc/ms.env configuration file
+  // $TRAF_HOME/etc/ms.env configuration file
   // (The SQLMX_SMD_LOCATION value should contain a valid volume name only;
   //  for example: SQLMX_SMD_LOCATION='$DATA2' - The default volume name
   //  $SYSTEM is used when SQLMX_SMD_LOCATION is not defined or when the
@@ -9709,40 +9626,41 @@ Lng32 SQLCLI_LOBcliInterface
 	    goto error_return;
 	  }
 
-	// insert into lob descriptor chunks table
-	if (blackBox && (blackBoxLen && (*blackBoxLen > 0)))
-	  {
+        
+        // insert into lob descriptor chunks table
+        if (blackBox && (blackBoxLen && (*blackBoxLen > 0)))
+          {
             //blackBox points to external file name
-	    str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, '%s')",
-			lobDescChunksName, descPartnKey, descSyskey,
-			(dataLen ? *dataLen : 0),
-			(dataOffset ? *dataOffset : 0),
-			blackBox);
+            str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, '%s')",
+                        lobDescChunksName, descPartnKey, descSyskey,
+                        (dataLen ? *dataLen : 0),
+                        (dataOffset ? *dataOffset : 0),
+                        blackBox);
             lobDebugInfo(query,0,__LINE__,lobTrace);
-	  }
-	else
-	  {
-	    str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, NULL)",
-			lobDescChunksName, descPartnKey, descSyskey,
-			(dataLen ? *dataLen : 0),
-			(dataOffset ? *dataOffset : 0));
+          }
+        else
+          {
+            str_sprintf(query, "insert into table(ghost table %s) values (%Ld, %Ld, 1, %Ld, %Ld, NULL)",
+                        lobDescChunksName, descPartnKey, descSyskey,
+                        (dataLen ? *dataLen : 0),
+                        (dataOffset ? *dataOffset : 0));
             lobDebugInfo(query,0,__LINE__,lobTrace);
-	  }
+          }
 
-	// set parserflags to allow ghost table
-	currContext.setSqlParserFlags(0x1);
+        // set parserflags to allow ghost table
+        currContext.setSqlParserFlags(0x1);
 	
-	cliRC = cliInterface->executeImmediate(query);
+        cliRC = cliInterface->executeImmediate(query);
 
-	currContext.resetSqlParserFlags(0x1);
+        currContext.resetSqlParserFlags(0x1);
 
-	if (cliRC < 0)
-	  {
-	    cliInterface->retrieveSQLDiagnostics(myDiags);
+        if (cliRC < 0)
+          {
+            cliInterface->retrieveSQLDiagnostics(myDiags);
 	    
-	    goto error_return;
-	  }
-
+            goto error_return;
+          }
+        
 	if (inoutDescPartnKey)
 	  *inoutDescPartnKey = descPartnKey;
 
@@ -10121,8 +10039,23 @@ Lng32 SQLCLI_LOBcliInterface
 	    if (inoutDescSyskey)
 	      *inoutDescSyskey = inDescSyskey;
 	  }
-	//	else
-	//cliRC = -100;
+        else
+          {
+            if (cliRC == 100)
+              {
+                if (dataLen)
+                  *dataLen = 0;
+                if (dataOffset)
+                  *dataOffset = 0;
+                if (blackBoxLen)
+                  *blackBoxLen = 0;
+                if (inoutDescPartnKey)
+                  *inoutDescPartnKey = descPartnKey;
+
+                if (inoutDescSyskey)
+                  *inoutDescSyskey = inDescSyskey;
+              }
+          }
 
 	Lng32 saveCliErr = cliRC;
 
@@ -10433,7 +10366,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   // set parserflags to allow ghost table
   currContext.setSqlParserFlags(0x1);
 	
-  Lng32 numEntries = 0;
+  Int64 numEntries = 0;
   Lng32 len;
   cliRC = cliInterface->executeImmediate(query, (char*)&numEntries, &len, FALSE);
   str_sprintf(logBuf,"Number of entries in descchunktable %s is %d",lobDescChunksName, numEntries);
@@ -10642,7 +10575,8 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/     short *lobNumList,
  /*IN*/     short *lobTypList,
  /*IN*/     char* *lobLocList,
- /*IN*/     char *hdfsServer,
+/*IN*/      char* *lobColNameList,
+ /*IN*/     char *lobHdfsServer,
  /*IN*/     Int32 hdfsPort,
 /*IN*/    Int64 lobMaxSize,
 /*IN*/    NABoolean lobTrace
@@ -10672,13 +10606,14 @@ Lng32 SQLCLI_LOBddlInterface
   str_sprintf(logBuf,"lobMDName %s", lobMDName);
   lobDebugInfo(logBuf,0,__LINE__,lobTrace);
   char * query = new(currContext.exHeap()) char[4096];
-
+  char *hdfsServer = new(currContext.exHeap()) char[256];
+  strcpy(hdfsServer,lobHdfsServer);
   switch (qType)
     {
     case LOB_CLI_CREATE:
       {
 	// create lob metadata table
-	str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, primary key (lobnum)) ",lobMDName);
+	str_sprintf(query, "create ghost table %s (lobnum smallint not null, storagetype smallint not null, location varchar(4096) not null, column_name varchar(256 bytes) character set utf8, primary key (lobnum)) ",lobMDName);
 	 lobDebugInfo(query,0,__LINE__,lobTrace);
 
 	// set parserflags to allow ghost table
@@ -10697,9 +10632,9 @@ Lng32 SQLCLI_LOBddlInterface
 	// populate the lob metadata table
 	for (Lng32 i = 0; i < numLOBs; i++)
 	  {
-	    str_sprintf(query, "insert into table (ghost table %s) values (%d, %d, '%s')",
+	    str_sprintf(query, "insert into table (ghost table %s) values (%d, %d, '%s','%s')",
 			lobMDName, 
-			lobNumList[i], lobTypList[i], lobLocList[i]);
+			lobNumList[i], lobTypList[i], lobLocList[i],lobColNameList[i]);
             lobDebugInfo(query,0,__LINE__,lobTrace);
 
 	    // set parserflags to allow ghost table
@@ -10925,11 +10860,11 @@ Lng32 SQLCLI_LOBddlInterface
     case LOB_CLI_SELECT_UNIQUE:
        {
 	 if (qType == LOB_CLI_SELECT_CURSOR)
-	   str_sprintf(query, "select lobnum, storagetype, location from table(ghost table %s) order by lobnum for read uncommitted access",
+	   str_sprintf(query, "select lobnum, storagetype, location,column_name from table(ghost table %s) order by lobnum for read uncommitted access",
 		       lobMDName);
          
 	 else
-	   str_sprintf(query, "select lobnum, storagetype, location from table(ghost table %s) where lobnum = %d for read uncommitted access",
+	   str_sprintf(query, "select lobnum, storagetype, location ,column_name from table(ghost table %s) where lobnum = %d for read uncommitted access",
 		       lobMDName, numLOBs);
          lobDebugInfo(query,0,__LINE__,lobTrace);
 
@@ -10979,7 +10914,9 @@ Lng32 SQLCLI_LOBddlInterface
 
 		cliInterface->getPtrAndLen(3, ptr, len);
 		str_cpy_and_null(lobLocList[j], ptr, len, '\0', ' ', TRUE);
-
+	
+                cliInterface->getPtrAndLen(4, ptr, len);
+		str_cpy_and_null(lobColNameList[j], ptr, len, '\0', ' ', TRUE);
 		j++;
 
 		if ((qType == LOB_CLI_SELECT_UNIQUE) &&
@@ -11019,7 +10956,7 @@ Lng32 SQLCLI_LOBddlInterface
 
  error_return:
   NADELETEBASIC(query, currContext.exHeap());
-
+  NADELETEBASIC(hdfsServer,currContext.exHeap());
   delete cliInterface;
  
   if (cliRC < 0)

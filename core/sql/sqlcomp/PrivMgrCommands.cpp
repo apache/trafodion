@@ -162,17 +162,13 @@ bool PrivMgrUserPrivs::initUserPrivs(
     }
 
     // set up security invalidation keys
-    Int32 grantee = privs.getGrantee();
-    Int32 role = (ComUser::isPublicUserID(grantee) || PrivMgr::isRoleID(grantee)) 
-        ? grantee : NA_UserIdDefault;
-
-    if (!buildSecurityKeys(userID, role, objectUID, privs.getTablePrivs(), secKeySet))
+    if (!buildSecurityKeys(userID, privs.getGrantee(), objectUID, privs.getTablePrivs(), secKeySet))
       return false;
 
     for (int k = 0; k < colPrivsList_.size(); k++)
     {
       PrivMgrCoreDesc colDesc(colPrivsList_[k], colGrantableList_[k]);
-      if (!buildSecurityKeys(userID, role, objectUID, colDesc, secKeySet))
+      if (!buildSecurityKeys(userID, privs.getGrantee(), objectUID, colDesc, secKeySet))
         return false;
     }
   }
@@ -536,6 +532,62 @@ PrivStatus PrivMgrCommands::getGrantorDetailsForObject(
 // ----------------------------------------------------------------------------
 // method: getPrivileges
 //
+// returns the list of privileges and security keys for the userID given the  
+// specified objectUID
+//
+// Input:
+//     naTable - a pointer to the object
+//     userID - user to gather privs
+//     userPrivileges - returns available privileges
+//     secKeySet - the security keys for the object/user
+//
+// returns true if results were found, false otherwise
+// The Trafodion diags area contains any errors that were encountered
+// ----------------------------------------------------------------------------
+PrivStatus PrivMgrCommands::getPrivileges(
+  NATable *naTable,
+  const int32_t userID,
+  PrivMgrUserPrivs &userPrivs,
+  std::vector <ComSecurityKey *>* secKeySet)
+{
+  PrivMgrDesc privsOfTheUser;
+
+  // authorization is not enabled, return bitmaps with all bits set
+  // With all bits set, privilege checks will always succeed
+  if (!authorizationEnabled())
+  {
+    privsOfTheUser.setAllTableGrantPrivileges(true);
+    userPrivs.initUserPrivs(privsOfTheUser);
+    return STATUS_GOOD;
+  }
+
+  // if a hive table and does not have an external table, assume no privs
+  if (naTable->isHiveTable() && !naTable->hasExternalTable())
+  {
+    PrivMgrDesc emptyDesc;
+    userPrivs.initUserPrivs(emptyDesc);
+  }
+  else
+  {
+    PrivMgrPrivileges objectPrivs (metadataLocation_, pDiags_);
+    PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser((int64_t)naTable->objectUid().get_value(),
+                                                             naTable->getObjectType(),
+                                                             userID,
+                                                             privsOfTheUser,
+                                                             secKeySet);
+    if (retcode != STATUS_GOOD)
+      return retcode;
+
+    userPrivs.initUserPrivs(privsOfTheUser);
+  }
+
+  return STATUS_GOOD;
+}
+
+
+// ----------------------------------------------------------------------------
+// method: getPrivileges
+//
 // Creates a set of priv descriptors for all user grantees on an object
 // Used by Trafodion compiler to store as part of the table descriptor.
 //                                                       
@@ -595,9 +647,9 @@ PrivStatus PrivMgrCommands::getPrivileges(
   {
     PrivMgrPrivileges objectPrivs (metadataLocation_, pDiags_);
     PrivStatus retcode = objectPrivs.getPrivsOnObjectForUser(objectUID,
-                                                             objectType, 
-                                                             userID, 
-                                                             privsOfTheUser, 
+                                                             objectType,
+                                                             userID,
+                                                             privsOfTheUser,
                                                              secKeySet);
     if (retcode != STATUS_GOOD)
       return retcode;
@@ -609,10 +661,9 @@ PrivStatus PrivMgrCommands::getPrivileges(
     privsOfTheUser.getTablePrivs().setAllPrivAndWgo(true);
 
   userPrivs.initUserPrivs(privsOfTheUser);
-    
+
   return STATUS_GOOD;
 }
-
 
 // ----------------------------------------------------------------------------
 // method: getRoles

@@ -572,6 +572,8 @@ public:
   const char *getViewCheck() const              { return viewCheck_; }
   const NAList<ComViewColUsage*> *getViewColUsages() const  { return viewColUsages_; }
 
+  const char *getHiveOriginalViewText() const { return hiveOrigViewText_; }
+
   NABoolean hasSaltedColumn(Lng32 * saltColPos = NULL);
   NABoolean hasDivisioningColumn(Lng32 * divColPos = NULL);
 
@@ -726,11 +728,29 @@ public:
   NABoolean isExternalTable() const
   {  return (flags_ & IS_EXTERNAL_TABLE) != 0; }
 
+  void setIsImplicitExternalTable( NABoolean value )
+  {  value ? flags_ |= IS_IMPLICIT_EXTERNAL_TABLE : flags_ &= ~IS_IMPLICIT_EXTERNAL_TABLE; }
+
+  NABoolean isImplicitExternalTable() const
+  {  return (flags_ & IS_IMPLICIT_EXTERNAL_TABLE) != 0; }
+
   void setHasExternalTable( NABoolean value )
   {  value ? flags_ |= HAS_EXTERNAL_TABLE : flags_ &= ~HAS_EXTERNAL_TABLE; }
 
   NABoolean hasExternalTable() const
   {  return (flags_ & HAS_EXTERNAL_TABLE) != 0; }
+
+  void setIsHbaseMapTable( NABoolean value )
+  {  value ? flags_ |= HBASE_MAP_TABLE : flags_ &= ~HBASE_MAP_TABLE; }
+
+  NABoolean isHbaseMapTable() const
+  {  return (flags_ & HBASE_MAP_TABLE) != 0; }
+
+  void setHbaseDataFormatString( NABoolean value )
+  {  value ? flags_ |= HBASE_DATA_FORMAT_STRING : flags_ &= ~HBASE_DATA_FORMAT_STRING; }
+
+  NABoolean isHbaseDataFormatString() const
+  {  return (flags_ & HBASE_DATA_FORMAT_STRING) != 0; }
 
   void setIsHistogramTable( NABoolean value )
   {  value ? flags_ |= IS_HISTOGRAM_TABLE : flags_ &= ~IS_HISTOGRAM_TABLE; }
@@ -883,7 +903,7 @@ public:
   // without accessing HBase. The result is passed to estimateHBaseRowCount(),
   // which completes the row size calculation with HBase info.
   Int32 computeHBaseRowSizeFromMetaData() const ;
-  Int64 estimateHBaseRowCount() const;
+  Int64 estimateHBaseRowCount(Int32 retryLimitMilliSeconds, Int32& errorCode, Int32& breadCrumb) const;
   NABoolean getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const;
   NABoolean getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames) const;
 
@@ -971,9 +991,12 @@ private:
     IS_EXTERNAL_TABLE         = 0x00080000,
     HAS_EXTERNAL_TABLE        = 0x00100000,
     IS_HISTOGRAM_TABLE        = 0x00200000,
-    HAS_HIVE_EXT_TABLE        = 0x00400000,
-    HIVE_EXT_COL_ATTRS        = 0x00800000,
-    HIVE_EXT_KEY_ATTRS        = 0x01000000,
+    HBASE_MAP_TABLE           = 0x00400000,
+    HBASE_DATA_FORMAT_STRING  = 0x00800000,
+    HAS_HIVE_EXT_TABLE        = 0x01000000,
+    HIVE_EXT_COL_ATTRS        = 0x02000000,
+    HIVE_EXT_KEY_ATTRS        = 0x04000000,
+    IS_IMPLICIT_EXTERNAL_TABLE= 0x08000000
   };
     
   UInt32 flags_;
@@ -1094,6 +1117,9 @@ private:
   CharInfo::CharSet viewTextCharSet_;
   char *viewCheck_;
   NAList<ComViewColUsage *> *viewColUsages_;
+
+  // original hive select text used when view was created.
+  char *hiveOrigViewText_;
 
   // ---------------------------------------------------------------------
   // Flags

@@ -56,6 +56,6 @@ clients/DISCLAIMER: ../../DISCLAIMER
 	cp -f $? $@
 
 clean:	
-	$(RM) -rf $(MY_SQROOT)/../conn/clients 
-	$(RM) -f $(MY_SQROOT)/../conn/*.mf
+	$(RM) -rf $(TRAF_HOME)/../conn/clients 
+	$(RM) -f $(TRAF_HOME)/../conn/*.mf
 	$(RM) -f $(CLIENT_TAR)

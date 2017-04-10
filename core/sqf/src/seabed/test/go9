@@ -36,14 +36,14 @@ if [ $check = 1 ]; then
 	export LD_LIBRARY_PATH=../evsim:$LD_LIBRARY_PATH
 	vg=`which valgrind`
 	# strlen/strcmp/memcmp problem workaround on RH6
-	sed "s|MY_SQROOT|$MY_SQROOT|" ./t9thread.rh6.supp > ./t9thread.rh6x.supp
+	sed "s|TRAF_HOME|$TRAF_HOME|" ./t9thread.rh6.supp > ./t9thread.rh6x.supp
 	supp="--suppressions=./t9thread.rh6x.supp"
 	# To rebuild the suppressions file:
 	# uncomment the following
 	# go9 -check -vg 2>zx
 	# edit zx:
         #   remove all lines that start with '=='
-        #   change expanded version of $MY_SQROOT with 'MY_SQROOT' (no $!)
+        #   change expanded version of $TRAF_HOME with 'TRAF_HOME' (no $!)
         #   edit <insert_a_suppression_name_here>
 	# copy zx to t9thread.rh6.supp
 	# svn commit t9thread.rh6.supp

@@ -66,7 +66,6 @@ enum InternalType
 enum SyncType
 {
     SyncType_NULL,                  // No sync requested
-    SyncType_TmSeqNum,              // sync to exchange TM cluster seq #
     SyncType_TmData,                // sync to exchange TM data amoung TMs
     SyncType_TmSyncState            // sync the current TmSync state across the cluster
 };

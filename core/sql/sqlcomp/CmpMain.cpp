@@ -1728,6 +1728,13 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(const char *input_str,           //IN
 	<< DgString0(e.getMsg())
 	<< DgString1(e.getFileName())
 	<< DgInt0((Lng32)e.getLineNum());
+    if(e.getStackTrace())
+     SQLMXLoggingArea::logSQLMXAssertionFailureEvent(e.getFileName(),
+                                                     e.getLineNum(),
+                                                     "Compiler Fatal Exception",
+                                                     e.getMsg(),
+                                                     NULL,
+                                                     e.getStackTrace());
     }
   }
   catch(AssertException & e){
@@ -1735,6 +1742,14 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(const char *input_str,           //IN
       << DgString0(e.getCondition())
       << DgString1(e.getFileName())
       << DgInt0((Lng32)e.getLineNum());
+    if(e.getStackTrace())
+      SQLMXLoggingArea::logSQLMXAssertionFailureEvent(e.getFileName(),
+                                                      e.getLineNum(),
+                                                      "Compiler Internal Assert Failure",
+                                                      e.getCondition(),
+                                                      NULL,
+                                                      e.getStackTrace());
+      
   }
   catch(BaseException & e){
     // Probably not reach here, just a safe net

@@ -90,6 +90,9 @@ class ComUser
      static Int16 getAuthIDFromAuthName (const char  * authName,
                                          Int32 & authID);
 
+     static bool currentUserHasRole(Int32 roleID);
+     static void getCurrentUserRoles(NAList <Int32> &roleList);
+
      static Int32 getRoleList (char *roleList,
                                Int32 &actualLen,
                                const Int32 maxLen,

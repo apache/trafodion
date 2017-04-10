@@ -293,8 +293,8 @@ Statement::Statement(SQLSTMT_ID * statement_id_,
              context_, (Lng32) context_->getContextHandle());
 
   clonedStatements = new(&heap_) Queue(&heap_);
-  // for now a statement space is allocated from the executor memory
-  space_.setParent(context_->exHeap());
+  // for now a statement space is allocated from the statement heap 
+  space_.setParent(&heap_);
 
   // Set up a space object which might be used during unpacking to allocate
   // additional space for potential upgrading of objects in the plan. This
@@ -2100,6 +2100,13 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
                 << DgString2(getLobErrStr(intParam1))
                 << DgInt0(intParam1)
                 << DgInt1(0);
+
+      if (intParam1 == LOB_DATA_FILE_NOT_FOUND_ERROR)
+        {
+          diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
+                    << DgString0(si->tableName());
+        }
+
       return ERROR;
     }
 
@@ -5696,85 +5703,6 @@ RETCODE Statement::completeUdrRequests(NABoolean allRequests) const
   return result;
 }
 
-
-Int32 Statement::updateMeasStmtCntrs(Int64 startTime)
-{
-  // update Measure statement counters if enabled.
-
-  ExStatisticsArea *myStats = getStatsArea();
-  ExMeasStmtCntrs *stmtCntrs = getGlobals()->getMeasStmtCntrs();
-
-  if (getGlobals()->measStmtEnabled() && stmtCntrs)
-    {
-      stmtCntrs->incElapseBusyTime(NA_JulianTimestamp() - startTime);
-      if (getModule() != NULL)  // static sql
-       {
-	 // if OLT, call ExMeas::ExMeasStmtCntrsBump directly since the 
-         // counters are updated by Arkfs.
-	 // For non-OLT, call ExStatisticsArea::updateStmtCntrs to 
-	 // merge ExDp2Stats entries before calling 
-	 // ExMeas::ExMeasStmtCntrsBump
-
-	 if (oltOpt())
-	   return stmtCntrs->ExMeasStmtCntrsBump
-				  (getModule()->getStatementCount(),
-				   getModule()->getModuleName(),
-				   getModule()->getModuleNameLen());
-	 else
-	   if (myStats)
-	     return myStats->updateStmtCntrs
-				  (stmtCntrs,
-				   getModule()->getStatementCount(),
-				   getModule()->getModuleName(),
-				   getModule()->getModuleNameLen());
-       }
-      else
-      {
-	// Dynamic statement. 
-	// Fabricate the module name: SQLMX^EXECUTE_<stmt-name>
-	// The same code appears in Statement::allocDynamicStmtCntrs.
-    	// Could save the fabricatd name in Statement if performance is a 
-	// concern.
- Int32 nameLen = 0;
-	char modName[MODULE_ID_SIZE + 1];
-	modName[MODULE_ID_SIZE] = 0;
-
-	char * stmtName = NULL;
- Int32 idPrefixLen = 0;
-
-	str_pad (&modName[0], MODULE_ID_SIZE);
-	if (getUniqueStmtId() == NULL)
-	  {
-	    str_cpy (&modName[0], DYNAMIC_STMT_NAME, DYNAMIC_STMT_NAME_SIZE);
-	    stmtName = (char *)getIdentifier();
-	    
-	    idPrefixLen = DYNAMIC_STMT_NAME_SIZE;
-	  }
-	else
-	  {
-	    stmtName = getUniqueStmtId();
-	  }
-	
-	if (stmtName) 
-	  {
-	    nameLen = str_len(stmtName);
-	    if (nameLen > (MODULE_ID_SIZE - idPrefixLen))
-	      nameLen = MODULE_ID_SIZE - idPrefixLen;
-	    str_cpy (&modName[idPrefixLen], stmtName, nameLen);
-	  }
-	     
-	if (oltOpt())
-	  return stmtCntrs->ExMeasStmtCntrsBump(1, &modName[0], 
-						nameLen + idPrefixLen);
-	else
-	  if (myStats)
-	    return myStats->updateStmtCntrs(stmtCntrs, 1, &modName[0], 
-                                            nameLen + idPrefixLen);
-      }
-    }
-  return 0;
-}
-
 void Statement::setUniqueStmtId(char * id)
 {
   if (uniqueStmtId_)
@@ -5822,50 +5750,6 @@ void Statement::setUniqueStmtId(char * id)
 				 );
     }
 }
-
-void Statement::allocDynamicStmtCntrs()
-{
-  // Allocate a stmt counter and set the
-  // module name to SQLMX^EXECUTE_<stmt-name>
-  // or to the uniqueStmtId which was generated for this stmt.
-  Int32 nameLen = 0;
-  char modName[MODULE_ID_SIZE + 1];
-  modName[MODULE_ID_SIZE] = 0;
-
-  char * stmtName = NULL;
-  Int32 idPrefixLen = 0;
-  str_pad (&modName[0], MODULE_ID_SIZE);
-  if (getUniqueStmtId() == NULL)
-    {
-      str_cpy (&modName[0], DYNAMIC_STMT_NAME, DYNAMIC_STMT_NAME_SIZE);
-      stmtName = (char *)getIdentifier();
-
-      idPrefixLen = DYNAMIC_STMT_NAME_SIZE;
-      if (stmtName)
-	nameLen = str_len(stmtName);
-    }
-  else
-    {
-      stmtName = getUniqueStmtId();
-      nameLen = getUniqueStmtIdLen();
-    }
-
-  if (stmtName) 
-    {
-      if (nameLen > (MODULE_ID_SIZE - idPrefixLen))
-	nameLen = MODULE_ID_SIZE - idPrefixLen;
-      str_cpy (&modName[idPrefixLen], stmtName, nameLen);
-    }
-  
-  ExMeasStmtCntrs *stmtCntrs = statementGlobals_->getStmtCntrs();
-  if (stmtCntrs != NULL)
-    NADELETE(stmtCntrs, ExMeasStmtCntrs, &heap_);
-  stmtCntrs = new(&heap_)ExMeasStmtCntrs();
-  stmtCntrs->ExMeasStmtCntrsBump(1, &modName[0], 
-				  nameLen + idPrefixLen);
-
-  statementGlobals_->setStmtCntrs(stmtCntrs);
-}  
 
 // This method should always be used to assign a new value to the
 // root_tdb data member. The method will keep the root_tdb pointer for

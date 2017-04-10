@@ -42,6 +42,8 @@ export SQLMX_REGRESS=1
 export SEABASE_REGRESS=2
 
 TEST_SUBDIRS="core compGeneral executor seabase hive fullstack2 charsets qat privs1 privs2 udr" 
+BASE_SUBDIRS="core compGeneral executor seabase hive"
+OTHER_SUBDIRS="fullstack2 charsets qat privs1 privs2 udr"
 
 #
 # Make sure we're running from the regress subdir
@@ -56,6 +58,8 @@ fi
 
 diffOnly=0
 failedOnly=0
+baseTests=0
+otherTests=0
 
 OK=-1
 while [ $OK -ne 0 ]; do		# loop to allow options to appear in any order
@@ -76,10 +80,26 @@ while [ $OK -ne 0 ]; do		# loop to allow options to appear in any order
     OK=1
   fi
 
+  if [ "$1" = "-basetests" ]; then
+    baseTests=1
+    OK=1
+  fi
+
+  if [ "$1" = "-othertests" ]; then
+    otherTests=1
+    OK=1
+  fi
+
 done
 
-test ! -d $MY_SQROOT/sql/regress && ln -s $MY_SQROOT/../sql/regress $MY_SQROOT/sql/regress
-test ! -d $MY_SQROOT/sql/sqludr && ln -s $MY_SQROOT/../sql/sqludr $MY_SQROOT/sql/sqludr
+if [ $baseTests -ne 0 ]; then
+  TEST_SUBDIRS=$BASE_SUBDIRS
+elif [ $otherTests -ne 0 ]; then
+  TEST_SUBDIRS=$OTHER_SUBDIRS
+fi
+
+test ! -d $TRAF_HOME/sql/regress && ln -s $TRAF_HOME/../sql/regress $TRAF_HOME/sql/regress
+test ! -d $TRAF_HOME/sql/sqludr && ln -s $TRAF_HOME/../sql/sqludr $TRAF_HOME/sql/sqludr
 
 pushd tools
 . ./setuplnxenv
@@ -106,7 +126,7 @@ fi
 #
 
 # Check if resource is a cluster
-SQCONFIG=$MY_SQROOT/sql/scripts/sqconfig
+SQCONFIG=$TRAF_HOME/sql/scripts/sqconfig
 CONN_NODE=$(grep -v '^#' $SQCONFIG | grep -m 1 connection | sed -e "s@node-name=\(n[0-9]*\);.*@\1@" | cut -d ';' -f2)
 
 # if CONN_NODE is empty then resource is a workstation otherwise resource is a cluster
@@ -114,7 +134,7 @@ if [ -z $CONN_NODE ]
 then
     sqcheck
 else
-    ssh $CONN_NODE $MY_SQROOT/sql/scripts/sqcheck
+    ssh $CONN_NODE $TRAF_HOME/sql/scripts/sqcheck
 fi
 
 if [[ $? -ne 0 ]]; then

@@ -117,12 +117,12 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   , checkRangeDelimiter_(FALSE)
   , dataModCheckDone_(FALSE)
   , loggingErrorDiags_(NULL)
-  , runTimeRanges_(NULL)
-  , numRunTimeRanges_(0)
+  , loggingFileName_(NULL)
+  , hdfsFileInfoListAsArray_(glob->getDefaultHeap(), hdfsScanTdb.getHdfsFileInfoList()->numEntries())
 {
   Space * space = (glob ? glob->getSpace() : 0);
   CollHeap * heap = (glob ? glob->getDefaultHeap() : 0);
-
+  lobGlob_ = NULL;
   const int readBufSize =  (Int32)hdfsScanTdb.hdfsBufSize_;
   hdfsScanBuffer_ = new(space) char[ readBufSize + 1 ]; 
   hdfsScanBuffer_[readBufSize] = '\0';
@@ -187,8 +187,7 @@ ExHdfsScanTcb::ExHdfsScanTcb(
   registerResizeSubtasks();
 
   Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
-  ExHbaseAccessTcb::buildLoggingPath(((ExHdfsScanTdb &)hdfsScanTdb).getLoggingLocation(),
-                     (char *)((ExHdfsScanTdb &)hdfsScanTdb).getErrCountRowId(),
+  ExHbaseAccessTcb::buildLoggingFileName((NAHeap *)getHeap(), ((ExHdfsScanTdb &)hdfsScanTdb).getLoggingLocation(),
                      ((ExHdfsScanTdb &)hdfsScanTdb).tableName(),
                      "hive_scan_err",
                      fileNum,
@@ -205,6 +204,19 @@ ExHdfsScanTcb::ExHdfsScanTcb(
                                         jniDebugPort,
                                         jniDebugTimeout);
 
+  // Populate the hdfsInfo list into an array to gain o(1) lookup access
+  Queue* hdfsInfoList = hdfsScanTdb.getHdfsFileInfoList();
+  if ( hdfsInfoList && hdfsInfoList->numEntries() > 0 )
+  {
+     hdfsInfoList->position();
+     int i = 0;
+     HdfsFileInfo* fInfo = NULL;
+     while ((fInfo = (HdfsFileInfo*)hdfsInfoList->getNext()) != NULL)
+        {
+          hdfsFileInfoListAsArray_.insertAt(i, fInfo);
+          i++;
+        }
+  }
 }
     
 ExHdfsScanTcb::~ExHdfsScanTcb()
@@ -214,6 +226,10 @@ ExHdfsScanTcb::~ExHdfsScanTcb()
 
 void ExHdfsScanTcb::freeResources()
 {
+  if (loggingFileName_ != NULL) {
+     NADELETEBASIC(loggingFileName_, getHeap());
+     loggingFileName_ = NULL;
+  }
   if (workAtp_)
   {
     workAtp_->release();
@@ -262,8 +278,7 @@ void ExHdfsScanTcb::freeResources()
     delete qparent_.down;
     qparent_.down = NULL;
   }
-  if (runTimeRanges_)
-    deallocateRuntimeRanges();
+  deallocateRuntimeRanges();
   if (lobGlob_) { 
      ExpLOBinterfaceCleanup(lobGlob_, getGlobals()->getDefaultHeap());
      lobGlob_ = NULL;
@@ -284,41 +299,22 @@ NABoolean ExHdfsScanTcb::needStatsEntry()
     return FALSE;
 }
 
-ExOperStats * ExHdfsScanTcb::doAllocateStatsEntry(
-                                                        CollHeap *heap,
+ExOperStats * ExHdfsScanTcb::doAllocateStatsEntry(CollHeap *heap,
                                                         ComTdb *tdb)
 {
-  ExOperStats * stats = NULL;
-
-  ExHdfsScanTdb * myTdb = (ExHdfsScanTdb*) tdb;
+  ExEspStmtGlobals *espGlobals = getGlobals()->castToExExeStmtGlobals()->castToExEspStmtGlobals();
+  StmtStats *ss; 
+  if (espGlobals != NULL)
+     ss = espGlobals->getStmtStats();
+  else
+     ss = getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals()->getStatement()->getStmtStats(); 
   
-  return new(heap) ExHdfsScanStats(heap,
+  ExHdfsScanStats *hdfsScanStats = new(heap) ExHdfsScanStats(heap,
 				   this,
 				   tdb);
-  
-  ComTdb::CollectStatsType statsType = 
-                     getGlobals()->getStatsArea()->getCollectStatsType();
-  if (statsType == ComTdb::OPERATOR_STATS)
-    {
-      return ex_tcb::doAllocateStatsEntry(heap, tdb);
-    }
-  else if (statsType == ComTdb::PERTABLE_STATS)
-    {
-      // sqlmp style per-table stats, one entry per table
-      stats = new(heap) ExPertableStats(heap, 
-					this,
-					tdb);
-      ((ExOperStatsId*)(stats->getId()))->tdbId_ = tdb->getPertableStatsTdbId();
-      return stats;
-    }
-  else
-    {
-      ExHdfsScanTdb * myTdb = (ExHdfsScanTdb*) tdb;
-      
-      return new(heap) ExHdfsScanStats(heap,
-				       this,
-				       tdb);
-    }
+  if (ss != NULL) 
+     hdfsScanStats->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
+  return hdfsScanStats;
 }
 
 void ExHdfsScanTcb::registerSubtasks()
@@ -421,7 +417,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                 step_ = ASSIGN_RANGES_AT_RUNTIME;
                 break;
               }
-	    else if (hdfsScanTdb().getHdfsFileInfoList()->isEmpty())
+	    else if (getHdfsFileInfoListAsArray().isEmpty())
 	      {
                 step_ = CHECK_FOR_DATA_MOD_AND_DONE;
 		break;
@@ -625,8 +621,14 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                     ((hdfsErrorDetail == ENOENT) || (hdfsErrorDetail == EAGAIN)))
                   {
                     ComDiagsArea * diagsArea = NULL;
-                    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                    if (hdfsErrorDetail == ENOENT)
+                      ExRaiseSqlError(getHeap(), &diagsArea, 
+                                      (ExeErrorCode)(EXE_TABLE_NOT_FOUND), NULL,
+                                      NULL, NULL, NULL,
+                                      hdfsScanTdb().tableName());
+                    else
+                      ExRaiseSqlError(getHeap(), &diagsArea, 
+                                      (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
                     pentry_down->setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_AND_DONE;
                     break;
@@ -686,6 +688,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                 "HDFS",
                                 (char*)"ExpLOBInterfaceSelectCursor/open",
                                 getLobErrStr(intParam1));
+                
                 pentry_down->setDiagsArea(diagsArea);
                 step_ = HANDLE_ERROR;
                 break;
@@ -1331,12 +1334,11 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	{
 	  step_ = nextStep_;
 	  exception_ = FALSE;
-
+	  Int64 exceptionCount = 0;
+          ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, 
+                 hdfsScanTdb().getErrCountTable(),hdfsScanTdb().getErrCountRowId()); 
 	  if (hdfsScanTdb().getMaxErrorRows() > 0)
 	  {
-	    Int64 exceptionCount = 0;
-            ExHbaseAccessTcb::incrErrorCount( ehi_,exceptionCount, 
-                 hdfsScanTdb().getErrCountTable(),hdfsScanTdb().getErrCountRowId()); 
 	    if (exceptionCount >  hdfsScanTdb().getMaxErrorRows())
 	    {
 	      if (pentry_down->getDiagsArea())
@@ -1479,7 +1481,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                     getLobErrStr(intParam1));
                     pentry_down->setDiagsArea(diagsArea);
                   }
-                  retcode = ehi_->hdfsClose();
             } 
 	    if (step_ == CLOSE_FILE)
 	      {
@@ -1505,6 +1506,8 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 	  {
 	    if (qparent_.up->isFull())
 	      return WORK_OK;
+            if (ehi_ != NULL)
+               retcode = ehi_->hdfsClose();
 	    ex_queue_entry *up_entry = qparent_.up->getTailEntry();
 	    up_entry->copyAtp(pentry_down);
 	    up_entry->upState.parentIndex =
@@ -1723,6 +1726,7 @@ void ExHdfsScanTcb::computeRangesAtRuntime()
   Int64 myShare = 0;
   Int64 runningSum = 0;
   Int64 myStartPositionInBytes = 0;
+  Int64 myEndPositionInBytes = 0;
   Int64 firstFileStartingOffset = 0;
   Int64 lastFileBytesToRead = -1;
   Int32 numParallelInstances = MAXOF(getGlobals()->getNumOfInstances(),1);
@@ -1733,8 +1737,7 @@ void ExHdfsScanTcb::computeRangesAtRuntime()
                                               hdfsScanTdb().hdfsRootDir_,
                                               &numFiles);
 
-  if (runTimeRanges_)
-    deallocateRuntimeRanges();
+  deallocateRuntimeRanges();
 
   // in a first round, count the total number of bytes
   for (int f=0; f<numFiles; f++)
@@ -1753,8 +1756,17 @@ void ExHdfsScanTcb::computeRangesAtRuntime()
 
   if (totalSize > 0)
     {
+      if (myInstNum_ < numParallelInstances-1)
+        // read "myShare" bytes
+        myEndPositionInBytes = myStartPositionInBytes + myShare;
+      else
+        // the last ESP reads whatever is remaining
+        myEndPositionInBytes = totalSize;
+
       // second round, find out the range of files I need to read
-      for (int g=0; g<numFiles; g++)
+      for (int g=0;
+           g < numFiles && runningSum < myEndPositionInBytes;
+           g++)
         {
           Int64 prevSum = runningSum;
 
@@ -1772,80 +1784,62 @@ void ExHdfsScanTcb::computeRangesAtRuntime()
 
               numRanges_++;
 
-              if (runningSum > (myStartPositionInBytes + myShare) &&
-                  myInstNum_ < numParallelInstances-1)
-                // the next file is beyond the range that I need to read
-                lastFileBytesToRead =
-                  myStartPositionInBytes + myShare - prevSum;
-                break;
-            }
-        }
+              if (runningSum > myEndPositionInBytes)
+                // I don't need to read all the way to the end of this file
+                lastFileBytesToRead = myEndPositionInBytes - prevSum;
 
-      // now that we now how many ranges we need, allocate them
-      numRunTimeRanges_ = numRanges_;
-      runTimeRanges_ = new(getHeap()) HdfsFileInfo[numRunTimeRanges_];
-    }
+            } // file is at or beyond my starting file
+        } // loop over files, determining ranges
+    } // total size > 0
   else
     beginRangeNum_ = 0;
 
   // third round, populate the ranges that this ESP needs to read
   for (int h=beginRangeNum_; h<beginRangeNum_+numRanges_; h++)
     {
-      HdfsFileInfo &e(runTimeRanges_[h-beginRangeNum_]);
+      HdfsFileInfo *e = new(getHeap()) HdfsFileInfo;
       const char *fileName = fileInfos[h].mName;
       Int32 fileNameLen = strlen(fileName) + 1;
 
-      e.entryNum_ = h;
-      e.flags_    = 0;
-      e.fileName_ = new(getHeap()) char[fileNameLen];
-      str_cpy_all(e.fileName_, fileName, fileNameLen);
+      e->entryNum_ = h;
+      e->flags_    = 0;
+      e->fileName_ = new(getHeap()) char[fileNameLen];
+      str_cpy_all(e->fileName_, fileName, fileNameLen);
       if (h == beginRangeNum_ &&
           firstFileStartingOffset > 0)
         {
-          e.startOffset_ = firstFileStartingOffset;
-          e.setFileIsSplitBegin(TRUE);
+          e->startOffset_ = firstFileStartingOffset;
+          e->setFileIsSplitBegin(TRUE);
         }
       else
-        e.startOffset_ = 0;
+        e->startOffset_ = 0;
 
       
       if (h == beginRangeNum_+numRanges_-1 && lastFileBytesToRead > 0)
         {
-          e.bytesToRead_ = lastFileBytesToRead;
-          e.setFileIsSplitEnd(TRUE);
+          e->bytesToRead_ = lastFileBytesToRead;
+          e->setFileIsSplitEnd(TRUE);
         }
       else
-        e.bytesToRead_ = (Int64) fileInfos[h].mSize;
+        e->bytesToRead_ = (Int64) fileInfos[h].mSize;
+
+      hdfsFileInfoListAsArray_.insertAt(h, e);
     }
 }
 
 void ExHdfsScanTcb::deallocateRuntimeRanges()
 {
-  if (runTimeRanges_)
+  if (hdfsScanTdb().getAssignRangesAtRuntime() &&
+      hdfsFileInfoListAsArray_.entries() > 0)
     {
-      for (int i=0; i<numRunTimeRanges_; i++)
-        NADELETEBASIC(runTimeRanges_[i].fileName_.getPointer(), getHeap());
-      NADELETEBASIC(runTimeRanges_, getHeap());
-      runTimeRanges_ = NULL;
-      numRunTimeRanges_ = 0;
+      for (int i=0; i<hdfsFileInfoListAsArray_.getUsedLength(); i++)
+        if (hdfsFileInfoListAsArray_.used(i))
+          {
+            NADELETEBASIC(hdfsFileInfoListAsArray_[i]->fileName_.getPointer(), getHeap());
+            NADELETEBASIC(hdfsFileInfoListAsArray_[i], getHeap());
+          }
+      hdfsFileInfoListAsArray_.clear();
     }
-}
-
-HdfsFileInfo * ExHdfsScanTcb::getRange(Int32 r)
-{
-  ex_assert(r >= beginRangeNum_ &&
-            r < beginRangeNum_+numRanges_,
-            "HDFS scan range num out of range");
-
-  if (hdfsScanTdb().getAssignRangesAtRuntime())
-    {
-      ex_assert(numRunTimeRanges_ == numRanges_,
-                "numRunTimeRanges_ != numRanges_");
-      return &runTimeRanges_[r-beginRangeNum_];
-    }
-  else
-    return (HdfsFileInfo*)
-      hdfsScanTdb().getHdfsFileInfoList()->get(r);
 }
 
 short ExHdfsScanTcb::moveRowToUpQueue(const char * row, Lng32 len, 

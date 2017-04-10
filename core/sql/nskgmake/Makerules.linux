@@ -37,12 +37,12 @@ ifdef MAKECMDGOALS
     ifeq (,$(filter $(FLAVOR),release debug doc))
       $(error Cannot determine the flavor - debug or release)
     else
-      ifndef MY_SQROOT
-        $(error MY_SQROOT must be defined for a Linux build)
+      ifndef TRAF_HOME
+        $(error TRAF_HOME must be defined for a Linux build)
       endif
 
       # Pick up the top-level project definitions
-      include $(MY_SQROOT)/sql/macros.gmk
+      include $(TRAF_HOME)/sql/macros.gmk
     endif
   endif
 endif
@@ -80,13 +80,13 @@ OBJSUFFIX := o
 #######################################################################
 # Define several directories used by various parts of the Linux build
 #######################################################################
-LIBROOT         = $(MY_SQROOT)/export/lib$(SQ_MBTYPE)
-TRAF_BIN	= $(MY_SQROOT)/export/bin$(SQ_MBTYPE)
+LIBROOT         = $(TRAF_HOME)/export/lib$(SQ_MBTYPE)
+TRAF_BIN	= $(TRAF_HOME)/export/bin$(SQ_MBTYPE)
 XMPIROOT        = $(LIBROOT)
 ifeq ($(SQ_BUILD_TYPE),release)
-  STUBLIBROOT     = $(MY_SQROOT)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/release
+  STUBLIBROOT     = $(TRAF_HOME)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/release
 else
-  STUBLIBROOT     = $(MY_SQROOT)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/debug
+  STUBLIBROOT     = $(TRAF_HOME)/sql/stublibs/lib/linux/$(SQ_MTYPE)bit/debug
 endif
 PGO_DIR         := $(shell /bin/pwd)/pgo_profile_data
 ifeq ($(SQ_BUILD_TYPE),release)
@@ -192,18 +192,18 @@ ifdef USE_HADOOP_1
 endif
 
 SYS_INCLUDES :=
-   SYS_INCLUDES += -I$(MY_SQROOT)/inc \
-	-I$(MY_SQROOT)/export/include \
+   SYS_INCLUDES += -I$(TRAF_HOME)/inc \
+	-I$(TRAF_HOME)/export/include \
         -I$(PROTOBUFS_INC) \
 	$(THRIFT_INC) $(LOG4CXX_INC)	 $(LIBCURL_INC)  \
 	-I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux
 
-OTHER_INCLUDES := -include "$(MY_SQROOT)/inc/seaquest/sqtypes.h" \
+OTHER_INCLUDES := -include "$(TRAF_HOME)/inc/seaquest/sqtypes.h" \
 	-I$(LLVM_INC_ROOT) \
 	-I$(LLVM_INC_ROOT2) \
 	-I$(UDIS86_INC_ROOT) \
-	-I$(MY_SQROOT)/../dbsecurity/auth/inc \
-	-I$(MY_SQROOT)/commonLogger
+	-I$(TRAF_HOME)/../dbsecurity/auth/inc \
+	-I$(TRAF_HOME)/commonLogger
 
 LOC_LIBS := \
 	-L$(RESULTDIR) \
@@ -257,7 +257,9 @@ CFLAGS += -fshort-wchar
   #                          same time.
   #   -g3                  : Highest level of debugging
   #   -ggdb                : Use native debugging format with gdb extensions.
-  SYS_CXXFLAGS += -fno-strict-aliasing -msse2 -mfpmath=sse -g3 -ggdb
+  #   -rdynamic            : Adds dynamic linker symbols to get the stack trace
+  #                      of a running program. Note these are not debug symbols.
+  SYS_CXXFLAGS += -fno-strict-aliasing -msse2 -mfpmath=sse -g3 -ggdb -rdynamic
   CFLAGS += -fno-strict-aliasing -msse2 -mfpmath=sse -g3 -ggdb
 
 # Some more definitions are added when building for a 64-bit target.
@@ -425,7 +427,7 @@ copytoolslibs:
 	# if these are not found, then...
 	-cp -Pf $(HADOOP_BLD_LIB)/$(LIBHDFS_SO)* $(LIBROOT)
 	-cp -Pf $(HADOOP_BLD_LIB)/$(LIBHADOOP_SO)* $(LIBROOT)
-	-cp -Pf $(HADOOP_BLD_INC)/hdfs.h $(MY_SQROOT)/export/include
+	-cp -Pf $(HADOOP_BLD_INC)/hdfs.h $(TRAF_HOME)/export/include
 	# download Hadoop-common distro
 	get_libhdfs_files --verbose
 
