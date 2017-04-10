@@ -61,6 +61,9 @@ class Hint : public NABasicObject
 
   Hint* setSelectivity(double s) { selectivity_ = s; return this; }
 
+  void replaceIndexHint(CollIndex x, const NAString &newIndexName)
+                                    { indexes_[x] = newIndexName; }
+
   // accessors
   NABoolean hasIndexHint(const NAString &xName); 
   CollIndex indexCnt() const { return indexes_.entries(); }

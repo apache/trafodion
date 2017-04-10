@@ -1364,9 +1364,9 @@ $1~String1 --------------------------------
 4366 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Invalid Select list index.
 4367 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Using rank function and sequence functions together in the same query scope is not supported.
 4368 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Nesting rank functions is not supported.
-4369 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Paramaters and outer references are not supported with rank function.
+4369 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Parameters and outer references are not supported with rank function.
 4370 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Unused ----
-4371 ZZZZZ 99999 BEGINNER MAJOR DBADMIN -- Unused ----
+4371 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Only $0~Int0 of the $1~Int1 indexes in the hint match actual indexes of the table $2~TableName.
 4372 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Snapshot scan cannot be used with table $0~String0 because $1~String1.
 4373 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The base temporary location for snapshot scan cannot be an empty string and needs to end with the character /.
 4374 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Invalid escape sequence specified as BULK UNLOAD field delimiter or record separator. Only the following escape sequences are allowed: \\a, \\b, \\f, \\n, \\r, \\t, or \\v.
@@ -1381,7 +1381,7 @@ $1~String1 --------------------------------
 4383 ZZZZZ 99999 BEGINNER MINOR DBADMIN A float value cannot be inserted into a numeric data type column $0~ColumnName, if the column is part of the partitioning key.
 4384 ZZZZZ 99999 BEGINNER MINOR DBADMIN GROUP BY ROLLUP clause not allowed for this statement. Reason: $0~String0
 4390 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The OLAP History row size exceeds the limit of $0~Int0 bytes
-4391 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Paramaters and outer references in the PARTITION BY or ORDER BY clause of a window function are not supported.
+4391 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Parameters and outer references in the PARTITION BY or ORDER BY clause of a window function are not supported.
 4392 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The REGEXP predicate only supports the default collating sequence.
 4400 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Internal error
 4401 ZZZZZ 99999 BEGINNER MAJOR LOGONLY No Privileged Segment

@@ -798,6 +798,9 @@ IndexDesc * findSmallestIndex(const SET(IndexDesc *) & indexes)
   IndexDesc * smallestIndex = NULL;
   IndexDesc * index = NULL;
   CollIndex numIndexOnlyIndexes = indexes.entries();
+  int maxPriorityDelta = 0;
+  int priorityDelta = 0;
+
   for(CollIndex i=0;i<numIndexOnlyIndexes;i++)
     {
       index = indexes[i];
@@ -821,11 +824,19 @@ IndexDesc * findSmallestIndex(const SET(IndexDesc *) & indexes)
 	    }
 	}
 
-      kbPerVol = index->getKbPerVolume();
-      if(kbPerVol < minKbPerVol OR smallestIndex == NULL)
+      priorityDelta = index->indexHintPriorityDelta();
+      // check priority first, then size
+      if (priorityDelta >= maxPriorityDelta)
       {
-	minKbPerVol = kbPerVol;
-	smallestIndex = index;
+        kbPerVol = index->getKbPerVolume();
+        if(kbPerVol < minKbPerVol OR
+           smallestIndex == NULL OR
+           priorityDelta > maxPriorityDelta)
+          {
+            minKbPerVol = kbPerVol;
+            smallestIndex = index;
+          }
+        maxPriorityDelta = priorityDelta;
       }
     }
   return smallestIndex;
@@ -1026,8 +1037,6 @@ void createAndInsertDP2Scan( const IndexDesc * idesc,
 
         // Set the sampling related fields
         fileScan->sampledColumns() += bef->sampledColumns();
-	fileScan->setScanSelectivityFactor(bef->getScanSelectivityFactor() );
-	fileScan->setScanCardinalityHint(bef->getScanCardinalityHint() );
         fileScan->samplePercent(bef->samplePercent());
         fileScan->clusterSize(bef->clusterSize());
 	fileScan->setMdamFlag(ixMdamFlag);
@@ -1084,8 +1093,6 @@ void createAndInsertHbaseScan(IndexDesc * idesc,
 
    // Set the sampling related fields
    hbaseScan->sampledColumns() += bef->sampledColumns();
-   hbaseScan->setScanSelectivityFactor(bef->getScanSelectivityFactor() );
-   hbaseScan->setScanCardinalityHint(bef->getScanCardinalityHint() );
    hbaseScan->samplePercent(bef->samplePercent());
    hbaseScan->clusterSize(bef->clusterSize());
    hbaseScan->setMdamFlag(ixMdamFlag);
@@ -1094,9 +1101,6 @@ void createAndInsertHbaseScan(IndexDesc * idesc,
   /////////////////////////////////////////////////////////////////////////
   // now set the group attributes of the result's top node
   hbaseScan->setGroupAttr(bef->getGroupAttr());
-
-  // copy index info 
-  //hbaseScan->copyIndexInfo(bef);
 
   // add the scan to the list of substitutes
   memory->insert(hbaseScan);

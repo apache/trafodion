@@ -451,8 +451,8 @@ RelExpr::synthEstLogPropForUnaryLeafOp (const EstLogPropSharedPtr& inputEstLogPr
   if (opType == REL_SCAN)
   {
     Scan * scanExpr = (Scan *)this;
-    selHint = scanExpr->getTableDesc()->getSelectivityHint();
-    cardHint = scanExpr->getTableDesc()->getCardinalityHint();
+    selHint = scanExpr->getSelectivityHint();
+    cardHint = scanExpr->getCardinalityHint();
 
     ColStatDescList columnStatsForMaxSel(CmpCommon::statementHeap());
     columnStatsForMaxSel.makeDeepCopy (columnStats) ;
@@ -5335,7 +5335,7 @@ Scan::finishSynthEstLogProp()
       CardinalityHint * cardHint = tableDesc->cardinalityHint();
       SelectivityHint * selHint = tableDesc->selectivityHint();
 
-      if (cardHint || selHint)
+      if ((cardHint || selHint) && !suppressHints_)
       {
 		if ((cardHint && ( cardHint->getBaseScanSelectivityFactor() == -1.0 ) ) ||
 			(selHint && ( selHint->getBaseScanSelectivityFactor() == -1.0 ) ) )

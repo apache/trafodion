@@ -2472,52 +2472,45 @@ Context* PlanWorkSpace::getChildContext(Lng32 childIndex, Lng32 planNumber) cons
     return childContexts_[childIndex]->at(planNumber);
 } // PlanWorkSpace::getChildContext()
 
-// Is this plan's right leaf a scan?
-NABoolean PlanWorkSpace::getRightLeaf(Lng32 planNumber, FileScan **rLeaf) const
+// Is this plan's n-th child a scan?
+NABoolean PlanWorkSpace::getScanLeaf(int childNumber,
+                                     int planNumber,
+                                     FileScan *&scanLeaf) const
 {
-  Context* rchildContext = getChildContext(1,planNumber);
-  const CascadesPlan *rPlan = 
-    rchildContext ? rchildContext->getSolution() : NULL;
-  RelExpr *rChild = rPlan ? rPlan->getPhysicalExpr() : NULL;
-  if (!rChild)
-    return FALSE;
+  Context* childContext = getChildContext(childNumber,planNumber);
+  scanLeaf = NULL;
+  int i = 0;
 
-  if (rChild->getOperatorType() == REL_EXCHANGE) {
-    rchildContext = rPlan->getContextForChild(0);
-    rPlan = rchildContext ? rchildContext->getSolution() : NULL;
-    rChild = rPlan ? rPlan->getPhysicalExpr() : NULL;
-  }
-  if (!rChild)
-    return FALSE;
+  while (++i < 20 /*guard against loops*/) {
 
-  OperatorTypeEnum rOp = rChild->getOperatorType();
-  switch (rOp) {
-  case REL_FILE_SCAN:
-    *rLeaf = static_cast<FileScan*>(rChild);
-    return TRUE;
-  case REL_NESTED_JOIN:
-    // is it a TSJ to an index scan?
-    if (rChild->getGroupAttr() && 
-        rChild->getGroupAttr()->getNumBaseTables() == 1) { // yes
-      // get its right leaf scan node
-      rchildContext = rPlan->getContextForChild(1);
-      rPlan = rchildContext ? rchildContext->getSolution() : NULL;
-      rChild = rPlan ? rPlan->getPhysicalExpr() : NULL;
-      if (rChild && rChild->getOperatorType() == REL_EXCHANGE) {
-        rchildContext = rPlan->getContextForChild(0);
-        rPlan = rchildContext ? rchildContext->getSolution() : NULL;
-        rChild = rPlan ? rPlan->getPhysicalExpr() : NULL;
-      }
-      if (rChild && 
-          (rOp=rChild->getOperatorType())== REL_FILE_SCAN) {
-        *rLeaf = static_cast<FileScan*>(rChild);
-        return TRUE;
-      }
-    }
-    break;
-  default:
-    break;
-  }
+    const CascadesPlan *plan = 
+      childContext ? childContext->getSolution() : NULL;
+    RelExpr *child = plan ? plan->getPhysicalExpr() : NULL;
+
+    if (!child)
+      return FALSE;
+
+    switch (child->getOperatorType()) {
+    case REL_FILE_SCAN:
+      // found the scan we were looking for
+      scanLeaf = static_cast<FileScan*>(child);
+      return TRUE;
+    case REL_EXCHANGE:
+      // exchange, try its child
+      childContext = plan->getContextForChild(0);
+      break;
+    case REL_NESTED_JOIN:
+      // is it a TSJ to an index scan?
+      if (static_cast<Join*>(child)->isIndexJoin())
+        // get its right leaf scan node
+        childContext = plan->getContextForChild(1);
+      else
+        return FALSE;
+      break;
+    default:
+      return FALSE;
+    } // switch
+  } // while
   return FALSE;
 } // PlanWorkSpace::getRightLeaf()
 

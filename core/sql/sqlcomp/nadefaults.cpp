@@ -2020,6 +2020,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(INCORPORATE_SKEW_IN_COSTING,		  "ON"),
   DDkwd__(INDEX_ELIMINATION_LEVEL,              "AGGRESSIVE"),
   DDui1__(INDEX_ELIMINATION_THRESHOLD,          "50"),
+  DDkwd__(INDEX_HINT_WARNINGS,                  "ON"),
  SDDkwd__(INFER_CHARSET,			"OFF"),
 
   // UDF initial row cost CQDs
