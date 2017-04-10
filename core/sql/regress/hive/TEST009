@@ -80,7 +80,7 @@ drop schema "_HB__CELL__" cascade;
 reset parserflags 131072;
 
 --cqd hive_use_ext_table_attrs 'ON';
-cqd hive_max_string_length '20';
+cqd hive_max_string_length_in_bytes '20';
  
 ?section create_db
 

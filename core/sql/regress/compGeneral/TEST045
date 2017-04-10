@@ -43,7 +43,7 @@ cleanup obsolete volatile tables;
 
 -- general setup
 cqd hist_missing_stats_warning_level '0';
-cqd hive_max_string_length '32';
+cqd hive_max_string_length_in_bytes '32';
 cqd mode_special_4 'on';
 
 create schema T045_CSES;

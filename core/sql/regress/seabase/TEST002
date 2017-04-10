@@ -169,7 +169,7 @@ select cast('RegionName: ' || trim(region_name) as char(30) character set iso885
  group by 1 order by 2 desc;
 
 ?section hive_md
-cqd hive_max_string_length '20';
+cqd hive_max_string_length_in_bytes '20';
 invoke table(hivemd(tables));
 invoke table(hivemd(columns));
 select cast(table_name as char(30) character set iso88591), 

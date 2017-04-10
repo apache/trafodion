@@ -5856,10 +5856,7 @@ NATable::NATable(BindWA *bindWA,
   if(postCreateNATableWarnings != preCreateNATableWarnings)
     tableConstructionHadWarnings_=TRUE;
 
-  hiveDefaultStringLen_ = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
-  Int32 hiveDefaultStringLenInBytes = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
-  if( hiveDefaultStringLenInBytes != 32000 ) 
-    hiveDefaultStringLen_ = hiveDefaultStringLenInBytes;
+  hiveDefaultStringLen_ = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
 
   // LCOV_EXCL_STOP
   initialSize_ = heap_->getAllocSize();
@@ -7470,12 +7467,8 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
               //     values < 20 or so are impractical.
               Int64 refreshInterval = 
                 (Int64) CmpCommon::getDefaultLong(HIVE_METADATA_REFRESH_INTERVAL);
-              Int32 defaultStringLen = 
-                CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
               Int32 defaultStringLenInBytes = 
                 CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
-              if(defaultStringLenInBytes != 32000)
-                defaultStringLen = defaultStringLenInBytes;
               Int64 expirationTimestamp = refreshInterval;
               NAString defSchema =
                 ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_SCHEMA);
@@ -7485,7 +7478,7 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
                 expirationTimestamp = NA_JulianTimestamp() - 1000000 * refreshInterval;
 
               // if default string length changed, don't reuse this entry
-              if (defaultStringLen != cachedNATable->getHiveDefaultStringLen())
+              if (defaultStringLenInBytes != cachedNATable->getHiveDefaultStringLen())
                 removeEntry = TRUE;
 
               QualifiedName objName = cachedNATable->getTableName();

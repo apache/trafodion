@@ -26,7 +26,7 @@ create schema trafodion.hbase;
 set schema trafodion.hbase;
 cqd comp_bool_226 'on';
 cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD  '0';
-cqd hive_max_string_length '60';
+cqd hive_max_string_length_in_bytes '60';
 cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
 cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 
@@ -410,7 +410,7 @@ sh regrhadoop.ksh fs -rm   /user/hive/exttables/unload_customer_demographics/* ;
 sh regrhadoop.ksh fs -copyFromLocal /tmp/merged_customer_demogs_2  /user/hive/exttables/unload_customer_demographics ;
 sh rm /bulkload/merged_customer_demogs_2 ;
 
-cqd HIVE_MAX_STRING_LENGTH '100';
+cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '100';
 select [first 100] * from hive.hive.unload_customer_demographics where cd_demo_sk <200 order by cd_demo_sk;
 
 

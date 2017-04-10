@@ -8,7 +8,7 @@
 >>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
 
 --- SQL operation complete.
->>cqd HIVE_MAX_STRING_LENGTH '25' ;
+>>cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 
 --- SQL operation complete.
 >>cqd mode_seahive 'ON';
@@ -72,7 +72,7 @@
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1487805469, failedModTS = 1487805508, failedLoc = hdfs://localhost:24200/user/hive/exttables/customer_ddl
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491514410, failedModTS = 1491514487, failedLoc = hdfs://localhost:30200/user/hive/exttables/customer_ddl
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -108,7 +108,7 @@ Y                                          9525
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1487805469, failedModTS = 1487805508, failedLoc = hdfs://localhost:24200/user/hive/exttables/customer_ddl
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491514410, failedModTS = 1491514487, failedLoc = hdfs://localhost:30200/user/hive/exttables/customer_ddl
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -177,7 +177,7 @@ Y                                          9525
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1487805512, failedModTS = 1487805521, failedLoc = hdfs://localhost:24200/user/hive/warehouse/newtable
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491514491, failedModTS = 1491514501, failedLoc = hdfs://localhost:30200/user/hive/warehouse/newtable
 
 A                        
 -------------------------
@@ -227,7 +227,7 @@ xyz
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1487805508, failedModTS = 1487805540, failedLoc = hdfs://localhost:24200/user/hive/exttables/customer_ddl
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491514487, failedModTS = 1491514524, failedLoc = hdfs://localhost:30200/user/hive/exttables/customer_ddl
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -242,7 +242,7 @@ Y                                         18984
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1487805508, failedModTS = 1487805540, failedLoc = hdfs://localhost:24200/user/hive/exttables/customer_ddl
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491514487, failedModTS = 1491514524, failedLoc = hdfs://localhost:30200/user/hive/exttables/customer_ddl
 
 C_PREFERRED_CUST_FLAG      (EXPR)              
 -------------------------  --------------------
@@ -298,7 +298,7 @@ Y                                         18984
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1487805537, failedModTS = 1487805547, failedLoc = hdfs://localhost:24200/user/hive/warehouse/newtable
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491514521, failedModTS = 1491514532, failedLoc = hdfs://localhost:30200/user/hive/warehouse/newtable
 
 A            B                        
 -----------  -------------------------
@@ -617,18 +617,18 @@ C1           C2                    C3                         C4               C
 --- 1 row(s) selected.
 >>load with continue on error into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TRAF_TBL_BAD
-Task:  CLEANUP         Status: Started    Time: 2017-02-22 23:20:03.392
-Task:  CLEANUP         Status: Ended      Time: 2017-02-22 23:20:03.405
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.012
-Task:  LOADING DATA    Status: Started    Time: 2017-02-22 23:20:03.405
+Task:  CLEANUP         Status: Started    Time: 2017-04-06 21:36:49.645
+Task:  CLEANUP         Status: Ended      Time: 2017-04-06 21:36:49.665
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.020
+Task:  LOADING DATA    Status: Started    Time: 2017-04-06 21:36:49.665
        Rows Processed: 8 
        Error Rows:     5 
-Task:  LOADING DATA    Status: Ended      Time: 2017-02-22 23:20:03.802
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.397
-Task:  COMPLETION      Status: Started    Time: 2017-02-22 23:20:03.802
+Task:  LOADING DATA    Status: Ended      Time: 2017-04-06 21:36:50.106
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.441
+Task:  COMPLETION      Status: Started    Time: 2017-04-06 21:36:50.107
        Rows Loaded:    3 
-Task:  COMPLETION      Status: Ended      Time: 2017-02-22 23:20:04.443
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.641
+Task:  COMPLETION      Status: Ended      Time: 2017-04-06 21:36:51.349
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.928
 
 --- 3 row(s) loaded.
 >>select count(*) from trafodion.seabase.traf_tbl_bad;
@@ -644,19 +644,19 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.641
 --- 3 row(s) deleted.
 >>load with log error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TRAF_TBL_BAD
-Task:  CLEANUP         Status: Started    Time: 2017-02-22 23:20:05.530
-Task:  CLEANUP         Status: Ended      Time: 2017-02-22 23:20:05.544
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.015
-       Logging Location: /bulkload/logs/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20170222_232005
-Task:  LOADING DATA    Status: Started    Time: 2017-02-22 23:20:05.544
+Task:  CLEANUP         Status: Started    Time: 2017-04-06 21:36:52.131
+Task:  CLEANUP         Status: Ended      Time: 2017-04-06 21:36:52.143
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.012
+       Logging Location: /bulkload/logs/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20170406_213652
+Task:  LOADING DATA    Status: Started    Time: 2017-04-06 21:36:52.143
        Rows Processed: 8 
        Error Rows:     5 
-Task:  LOADING DATA    Status: Ended      Time: 2017-02-22 23:20:06.487
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.504
-Task:  COMPLETION      Status: Started    Time: 2017-02-22 23:20:06.488
+Task:  LOADING DATA    Status: Ended      Time: 2017-04-06 21:36:52.719
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.575
+Task:  COMPLETION      Status: Started    Time: 2017-04-06 21:36:52.719
        Rows Loaded:    3 
-Task:  COMPLETION      Status: Ended      Time: 2017-02-22 23:20:07.504
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.455
+Task:  COMPLETION      Status: Ended      Time: 2017-04-06 21:36:53.345
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.627
 
 --- 3 row(s) loaded.
 >>select count(*) from trafodion.seabase.traf_tbl_bad;
@@ -669,19 +669,19 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.455
 --- 1 row(s) selected.
 >>load with log error rows to '/bulkload/logs/TEST005' into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TRAF_TBL_BAD
-Task:  CLEANUP         Status: Started    Time: 2017-02-22 23:20:08.497
-Task:  CLEANUP         Status: Ended      Time: 2017-02-22 23:20:08.514
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.017
-       Logging Location: /bulkload/logs/TEST005/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20170222_232008
-Task:  LOADING DATA    Status: Started    Time: 2017-02-22 23:20:08.514
+Task:  CLEANUP         Status: Started    Time: 2017-04-06 21:36:54.360
+Task:  CLEANUP         Status: Ended      Time: 2017-04-06 21:36:54.374
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.014
+       Logging Location: /bulkload/logs/TEST005/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20170406_213654
+Task:  LOADING DATA    Status: Started    Time: 2017-04-06 21:36:54.374
        Rows Processed: 8 
        Error Rows:     5 
-Task:  LOADING DATA    Status: Ended      Time: 2017-02-22 23:20:09.440
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:00.529
-Task:  COMPLETION      Status: Started    Time: 2017-02-22 23:20:09.440
+Task:  LOADING DATA    Status: Ended      Time: 2017-04-06 21:36:55.492
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:01.117
+Task:  COMPLETION      Status: Started    Time: 2017-04-06 21:36:55.492
        Rows Loaded:    3 
-Task:  COMPLETION      Status: Ended      Time: 2017-02-22 23:20:09.664
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.621
+Task:  COMPLETION      Status: Ended      Time: 2017-04-06 21:36:55.875
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.383
 
 --- 3 row(s) loaded.
 >>select count(*) from trafodion.seabase.traf_tbl_bad;
@@ -697,10 +697,10 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.621
 --- 6 row(s) deleted.
 >>load with stop after 3 error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TRAF_TBL_BAD
-Task:  CLEANUP         Status: Started    Time: 2017-02-22 23:20:10.706
-Task:  CLEANUP         Status: Ended      Time: 2017-02-22 23:20:10.717
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.011
-Task:  LOADING DATA    Status: Started    Time: 2017-02-22 23:20:10.717
+Task:  CLEANUP         Status: Started    Time: 2017-04-06 21:36:56.927
+Task:  CLEANUP         Status: Ended      Time: 2017-04-06 21:36:56.945
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.018
+Task:  LOADING DATA    Status: Started    Time: 2017-04-06 21:36:56.945
 
 *** ERROR[8113] The maximum number of error rows is exceeded.
 
@@ -715,11 +715,11 @@ Task:  LOADING DATA    Status: Started    Time: 2017-02-22 23:20:10.717
 --- 1 row(s) selected.
 >>load with log error rows, stop after 3 error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 Task:  LOAD            Status: Started    Object: TRAFODION.SEABASE.TRAF_TBL_BAD
-Task:  CLEANUP         Status: Started    Time: 2017-02-22 23:20:12.677
-Task:  CLEANUP         Status: Ended      Time: 2017-02-22 23:20:12.877
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.020
-       Logging Location: /bulkload/logs/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20170222_232012
-Task:  LOADING DATA    Status: Started    Time: 2017-02-22 23:20:12.877
+Task:  CLEANUP         Status: Started    Time: 2017-04-06 21:36:58.356
+Task:  CLEANUP         Status: Ended      Time: 2017-04-06 21:36:58.374
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.017
+       Logging Location: /bulkload/logs/ERR_TRAFODION.SEABASE.TRAF_TBL_BAD_20170406_213658
+Task:  LOADING DATA    Status: Started    Time: 2017-04-06 21:36:58.374
 
 *** ERROR[8113] The maximum number of error rows is exceeded.
 
@@ -807,7 +807,7 @@ Task:  LOADING DATA    Status: Started    Time: 2017-02-22 23:20:12.877
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1487805630, failedModTS = 1487805645, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491514634, failedModTS = 1491514650, failedLoc = hdfs://localhost:30200/user/hive/warehouse/thive
 
 A          
 -----------
@@ -842,7 +842,7 @@ A
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1487805647, failedModTS = 1487805663, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491514654, failedModTS = 1491514672, failedLoc = hdfs://localhost:30200/user/hive/warehouse/thive
 
 A          
 -----------
@@ -869,7 +869,7 @@ A            B
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1487805663, failedModTS = 1487805668, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491514672, failedModTS = 1491514677, failedLoc = hdfs://localhost:30200/user/hive/warehouse/thive
 
 --- 0 row(s) selected.
 >>insert into hive.hive.thive values (10, 20);
@@ -893,7 +893,7 @@ A            B
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry. 
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1487805672, failedModTS = 1487805674, failedLoc = hdfs://localhost:24200/user/hive/warehouse/thive
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491514679, failedModTS = 1491514680, failedLoc = hdfs://localhost:30200/user/hive/warehouse/thive
 
 --- 0 row(s) selected.
 >>
@@ -985,7 +985,7 @@ t005part.a	t005part.b	t005part.c
 >>invoke hive.hive.thive_insert_smallint;
 
 -- Definition of hive table THIVE_INSERT_SMALLINT
--- Definition current  Wed Feb 22 23:23:48 2017
+-- Definition current  Thu Apr  6 21:40:46 2017
 
   (
     A                                SMALLINT
@@ -1090,7 +1090,7 @@ A
 >>invoke hive.hive.thive_insert_varchar;
 
 -- Definition of hive table THIVE_INSERT_VARCHAR
--- Definition current  Wed Feb 22 23:23:56 2017
+-- Definition current  Thu Apr  6 21:40:54 2017
 
   (
     A                                VARCHAR(1 CHAR) CHARACTER SET UTF8 COLLATE

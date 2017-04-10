@@ -4,7 +4,7 @@
 >>cqd hist_missing_stats_warning_level '0';
 
 --- SQL operation complete.
->>cqd hive_max_string_length '32';
+>>cqd hive_max_string_length_in_bytes '32';
 
 --- SQL operation complete.
 >>cqd mode_special_4 'on';

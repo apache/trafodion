@@ -4,7 +4,7 @@
 --- SQL operation complete.
 >>set terminal_charset utf8;
 >>
->>cqd HIVE_MAX_STRING_LENGTH '25' ;
+>>cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 
 --- SQL operation complete.
 >>cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';

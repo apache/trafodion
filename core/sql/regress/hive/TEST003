@@ -69,7 +69,7 @@ set schema hive.hive;
 --cqd attempt_esp_parallelism 'off';
 --cqd hive_max_esps  '1';
 --cqd PARALLEL_NUM_ESPS '1';
-cqd HIVE_MAX_STRING_LENGTH '25' ;
+cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 cqd mode_seahive 'ON';
 cqd auto_query_retry_warnings 'ON';
 
@@ -166,7 +166,7 @@ cqd attempt_esp_parallelism 'on';
 cqd PARALLEL_NUM_ESPS '2';
 set schema hive;
 cqd hive_max_esps '2';
-cqd HIVE_MAX_STRING_LENGTH '25' ;
+cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 truncate ins_store_sales_summary;
 control query shape esp_exchange(cut);
 prepare s from insert into table ins_store_sales_summary select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales group by  ss_sold_date_sk ,ss_store_sk; 
