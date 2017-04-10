@@ -5,7 +5,7 @@
 >>--cqd attempt_esp_parallelism 'off';
 >>--cqd hive_max_esps  '1';
 >>--cqd PARALLEL_NUM_ESPS '1';
->>cqd HIVE_MAX_STRING_LENGTH '25' ;
+>>cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 
 --- SQL operation complete.
 >>cqd mode_seahive 'ON';
@@ -191,7 +191,7 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472755958, failedModTS = 1472755959
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491850476, failedModTS = 1491850478, failedLoc = hdfs://localhost:30200/user/hive/exttables/ins_customer_address
 
 (EXPR)              
 --------------------
@@ -529,7 +529,7 @@ T_TIME_SK    T_TIME_ID                  T_TIME       T_HOUR       T_MINUTE     T
 >>cqd hive_max_esps '2';
 
 --- SQL operation complete.
->>cqd HIVE_MAX_STRING_LENGTH '25' ;
+>>cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 
 --- SQL operation complete.
 >>truncate ins_store_sales_summary;
@@ -651,7 +651,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---
 > *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 > 
-> *** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: genModTS = 1472756038, failedModTS = 1472756057
+> *** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491850590, failedModTS = 1491850614, failedLoc = hdfs://localhost:30200/user/hive/exttables/ins_store_sales_summary
 > 
 > SS_SOLD_DATE_SK  SS_STORE_SK  SS_QUANTITY
 > ---------------  -----------  -----------

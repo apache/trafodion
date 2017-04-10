@@ -1943,9 +1943,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  // CQDs for Trafodion on Hive
  // Main ones to use:
- // HIVE_MAX_STRING_LENGTH: Hive "string" data type gets converted
- //                         into a VARCHAR with this length
- //                         This should be deprecated from Trafodion R2.1
  // HIVE_MAX_STRING_LENGTH_IN_BYTES: Hive "string" data type gets converted
  //                                  into a VARCHAR with this length
  // HIVE_MIN_BYTES_PER_ESP_PARTITION: Make one ESP for this many bytes
@@ -1965,7 +1962,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
   DDint__(HIVE_LOCALITY_BALANCE_LEVEL,          "0"),
   DDui___(HIVE_MAX_ESPS,                        "9999"),
-  DDui___(HIVE_MAX_STRING_LENGTH,               "32000"),
   DDui___(HIVE_MAX_STRING_LENGTH_IN_BYTES,      "32000"),
   DDkwd__(HIVE_METADATA_JAVA_ACCESS,            "ON"),
   DDint__(HIVE_METADATA_REFRESH_INTERVAL,       "0"),

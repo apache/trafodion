@@ -58,7 +58,7 @@ drop table if exists trafodion.sch007.thbase1 cascade;
 
 ?section setup_traf
 set schema hive.hive;
-cqd HIVE_MAX_STRING_LENGTH '20' ;
+cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '20' ;
 create schema if not exists trafodion.sch007;
 
 ?section tests_traf

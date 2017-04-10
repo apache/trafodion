@@ -446,7 +446,7 @@ Z            Z            (EXPR)  (EXPR)
 >>invoke t031t10;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T10
--- Definition current  Tue Mar 14 19:41:33 2017
+-- Definition current  Thu Apr  6 21:08:27 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -495,7 +495,7 @@ Z            Z            (EXPR)  (EXPR)
 >>sh echo "create table t031hive(z int, a string, b string);" > TEST031_junk;
 >>sh regrhive.ksh -f TEST031_junk;
 >>
->>cqd hive_max_string_length '1000000';
+>>cqd hive_max_string_length_in_bytes '1000000';
 
 --- SQL operation complete.
 >>insert into hive.hive.t031hive select * from t031t1;
@@ -648,7 +648,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Mar 14 19:42:19 2017
+-- Definition current  Thu Apr  6 21:09:19 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -679,7 +679,7 @@ A            B
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Mar 14 19:42:25 2017
+-- Definition current  Thu Apr  6 21:09:27 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -730,7 +730,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Mar 14 19:42:33 2017
+-- Definition current  Thu Apr  6 21:09:36 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -759,7 +759,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Mar 14 19:42:41 2017
+-- Definition current  Thu Apr  6 21:09:43 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -784,7 +784,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Mar 14 19:42:46 2017
+-- Definition current  Thu Apr  6 21:09:54 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -804,7 +804,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Mar 14 19:42:53 2017
+-- Definition current  Thu Apr  6 21:10:00 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -819,7 +819,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Mar 14 19:42:56 2017
+-- Definition current  Thu Apr  6 21:10:03 2017
 
   (
     A                                INT DEFAULT NULL
@@ -842,7 +842,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Mar 14 19:43:00 2017
+-- Definition current  Thu Apr  6 21:10:07 2017
 
   (
     A                                INT DEFAULT NULL
@@ -860,7 +860,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Mar 14 19:43:09 2017
+-- Definition current  Thu Apr  6 21:10:15 2017
 
   (
     A                                INT DEFAULT NULL
@@ -947,7 +947,7 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 >>invoke table(index_table t031t1i1);
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1I1
--- Definition current  Tue Mar 14 19:43:33 2017
+-- Definition current  Thu Apr  6 21:10:36 2017
 
   (
     "A@"                             INT NO DEFAULT
@@ -1076,7 +1076,7 @@ HIVE
 >>create external table t031hivet1 for hive.hive.t031hivet1;
 
 --- SQL operation complete.
->>cqd hive_max_string_length '10';
+>>cqd hive_max_string_length_in_bytes '10';
 
 --- SQL operation complete.
 >>showddl hive.hive.t031hivet1;

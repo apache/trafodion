@@ -183,7 +183,7 @@ sh regrhive.ksh -f TEST031_junk;
 sh echo "create table t031hive(z int, a string, b string);" > TEST031_junk;
 sh regrhive.ksh -f TEST031_junk;
 
-cqd hive_max_string_length '1000000';
+cqd hive_max_string_length_in_bytes '1000000';
 insert into hive.hive.t031hive select * from t031t1;
 select count(*) from hive.hive.t031hive;
 select substring(a, 1, 10), cast(b as char(10)) from hive.hive.t031hive;
@@ -318,7 +318,7 @@ process hive statement 'drop table t031hivet1';
 process hive statement 'create table t031hivet1 (a string)';
 drop external table if exists t031hivet1 for hive.hive.t031hivet1;
 create external table t031hivet1 for hive.hive.t031hivet1;
-cqd hive_max_string_length '10';
+cqd hive_max_string_length_in_bytes '10';
 showddl hive.hive.t031hivet1;
 
 -- volatile and external table operation in default hive schema

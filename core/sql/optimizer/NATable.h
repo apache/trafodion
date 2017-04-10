@@ -886,6 +886,7 @@ public:
   void setIsUserUpdatableSeabaseMDTable(NABoolean v) 
   { isUserUpdatableSeabaseMD_ = v; }
 
+  // returns default string length in bytes
   Int32 getHiveDefaultStringLen() const { return hiveDefaultStringLen_; }
   Int32 getHiveTableId() const                   { return hiveTableId_; }
 
@@ -1208,7 +1209,7 @@ private:
   NABoolean isUserUpdatableSeabaseMD_;
 
   NABoolean resetHDFSStatsAfterStmt_;
-  Int32 hiveDefaultStringLen_;
+  Int32 hiveDefaultStringLen_;  // in bytes
   Int32 hiveTableId_;
   
   // Object containing info on all privileges the current user has for this table.

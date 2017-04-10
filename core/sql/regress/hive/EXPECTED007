@@ -2,7 +2,7 @@
 >>set schema hive.hive;
 
 --- SQL operation complete.
->>cqd HIVE_MAX_STRING_LENGTH '20' ;
+>>cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '20' ;
 
 --- SQL operation complete.
 >>create schema if not exists trafodion.sch007;
@@ -83,7 +83,7 @@ CREATE /*IMPLICIT*/ EXTERNAL TABLE THIVE1
 >>invoke trafodion.sch007.vhivehbase;
 
 -- Definition of Trafodion view TRAFODION.SCH007.VHIVEHBASE
--- Definition current  Thu Feb 23 20:03:32 2017
+-- Definition current  Thu Apr  6 21:43:36 2017
 
   (
     AA                               INT DEFAULT NULL
@@ -416,7 +416,7 @@ CREATE TABLE THIVE3
 >>invoke hive.hivesch007.vhive1;
 
 -- Definition of native Hive view VHIVE1
--- Definition current  Thu Feb 23 20:05:17 2017
+-- Definition current  Thu Apr  6 21:45:25 2017
 
   (
     A                                INT
@@ -458,7 +458,7 @@ A
 >>invoke hive.hivesch007.vhive11;
 
 -- Definition of native Hive view VHIVE11
--- Definition current  Thu Feb 23 20:05:21 2017
+-- Definition current  Thu Apr  6 21:45:28 2017
 
   (
     A                                INT
