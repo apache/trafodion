@@ -358,7 +358,7 @@
 (EXPR)                   
 -------------------------
 
-March 01, 2016, 10:11:12 
+March 01, 2016, 10:11    
 
 --- 1 row(s) selected.
 >>select to_char (time '10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
