@@ -3399,6 +3399,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
 
   case DATETIME_FORMAT_TS9:
     {
+      Lng32 length = ExpDatetime::getDatetimeFormatMaxLen(DATETIME_FORMAT_TS9);
+      memset(dstDataPtr, ' ', length);
       convertMonthToStrLongFormat(month, dstDataPtr, 3);
       *dstDataPtr++ = ' ';
       
@@ -3476,11 +3478,13 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
       char minute = *srcData++;
       convertToAscii(minute, dstDataPtr, 2);
       if (endField > REC_DATE_MINUTE) {
-	if ((format == DATETIME_FORMAT_EUROPEAN) ||
+        if (format == DATETIME_FORMAT_TS9)
+          return (dstDataPtr - dstData);
+        else if ((format == DATETIME_FORMAT_EUROPEAN) ||
             (format == DATETIME_FORMAT_TS10))
-	  *dstDataPtr++ = '.';
-	else if (format != DATETIME_FORMAT_TS1)
-	  *dstDataPtr++ = ':';
+          *dstDataPtr++ = '.';
+        else if (format != DATETIME_FORMAT_TS1)
+          *dstDataPtr++ = ':';
        }
       break;
     }
