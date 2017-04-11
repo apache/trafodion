@@ -2691,8 +2691,9 @@ short HbaseInsert::codeGen(Generator *generator)
   queue_index downqueuelength = (queue_index)getDefault(GEN_DP2I_SIZE_DOWN);
   Int32 numBuffers = getDefault(GEN_DP2I_NUM_BUFFERS);
 
-  if (getInsertType() == Insert::VSBB_INSERT_USER &&
-              generator->oltOptInfo()->multipleRowsReturned())
+  if ((getInsertType() == Insert::VSBB_INSERT_USER || // covers upsert
+       getInsertType() == Insert::UPSERT_LOAD)  && // covers upsert using load and bulk load
+      generator->oltOptInfo()->multipleRowsReturned())
   {
     downqueuelength = getDefault(HBASE_ROWSET_VSBB_SIZE);
     queue_index dq = 1;
