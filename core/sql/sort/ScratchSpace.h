@@ -293,9 +293,9 @@ protected:
 class SortScratchSpace : public ScratchSpace{
   public :
     SortScratchSpace(CollHeap* heap, SortError* error,
-                Int32 scratchIOVectorSize,
                 Int32 explainNodeId,
                 Int32 scratchIOBlockSize,
+                Int32 scratchIOVectorSize,
 		NABoolean logInfoEvent=FALSE,
                Int32 scratchMgmtOption = 0);
    ~SortScratchSpace(void);
@@ -417,9 +417,9 @@ public:
 class HashScratchSpace : public ScratchSpace{
   public :
     HashScratchSpace(CollHeap* heap, SortError* error,
-                 Int32 scratchIOVectorSize,
                  Int32 explainNodeId,
                  Int32 blockSize,
+                 Int32 scratchIOVectorSize,
                  NABoolean logInfoEvent=FALSE,
                  Int32 scratchMgmtOption = 0);
    ~HashScratchSpace(void);

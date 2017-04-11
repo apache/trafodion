@@ -10473,7 +10473,6 @@ void ExBMOStats::init(NABoolean resetDop)
   topN_ = -1;
   timer_.reset();
   scratchIOMaxTime_ = 0;
-  scratchIOSize_ = 0;
 }
 
 UInt32 ExBMOStats::packedLength()
