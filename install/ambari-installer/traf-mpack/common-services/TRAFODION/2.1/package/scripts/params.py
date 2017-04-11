@@ -62,9 +62,13 @@ traf_scratch = config['configurations']['trafodion-env']['traf.node.dir']
 
 traf_ldap_template = config['configurations']['trafodion-env']['ldap_content']
 traf_ldap_enabled = config['configurations']['trafodion-env']['traf.ldap.enabled']
-ldap_hosts = config['configurations']['trafodion-env']['traf.ldap.hosts']
+ldap_hosts = ''
+for host in config['configurations']['trafodion-env']['traf.ldap.hosts'].split(','):
+  ldap_hosts += '  LDAPHostName: %s\n' % host
 ldap_port = config['configurations']['trafodion-env']['traf.ldap.port']
-ldap_identifiers = config['configurations']['trafodion-env']['traf.ldap.identifiers']
+ldap_identifiers = ''
+for identifier in config['configurations']['trafodion-env']['traf.ldap.identifiers'].split(';'):
+  ldap_identifiers += '  UniqueIdentifier: %s\n' % identifier
 ldap_user = config['configurations']['trafodion-env']['traf.ldap.user']
 ldap_pwd = config['configurations']['trafodion-env']['traf.ldap.pwd']
 ldap_encrypt = config['configurations']['trafodion-env']['traf.ldap.encrypt']

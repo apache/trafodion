@@ -95,7 +95,7 @@
     <name>traf.ldap.identifiers</name>
     <display-name>LDAP unique identifiers</display-name>
     <value></value>
-    <description>All LDAP unique identifiers (blank separated)</description>
+    <description>All LDAP unique identifiers (semi-colon separated)</description>
     <value-attributes>
       <type>string</type>
       <empty-value-valid>true</empty-value-valid>
@@ -217,13 +217,13 @@ SECTION: local
 
 # One or more identically configured hosts must be specified here,
 # one name: value pair for each host.
-  LdapHostname: {{ ldap_hosts }}
+{{ ldap_hosts }}
 
 # Default is port 389, change if using 636 or any other port
   LdapPort: {{ ldap_port }}
 
 # Must specify one or more unique identifiers, one name: value pair for each
-  UniqueIdentifier: {{ ldap_identifiers }}
+{{ ldap_identifiers }}
 
 # If the configured LDAP server requires a username and password to
 # to perform name lookup, provide those here.

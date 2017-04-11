@@ -21,13 +21,13 @@
             "service_version" : "2.1"
         },
         {  
-           "name" : "TRAFODION-2.1",
+           "name" : "TRAFODION-2.2",
            "type" : "stack-addon-service-definitions",
            "source_dir": "custom-services",
            "service_versions_map": [
              {
               "service_name" : "TRAFODION",
-              "service_version" : "2.1",
+              "service_version" : "MPACK_VERSION",
               "applicable_stacks" : [
                   {
                      "stack_name" : "HDP", "stack_version" : "2.3"
