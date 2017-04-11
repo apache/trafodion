@@ -1824,8 +1824,8 @@ public:
   // ---------------------------------------------------------------------
   Context* getChildContext(Lng32 childIndex, Lng32 planNumber = 0) const;
 
-  // Is this plan's right leaf a scan?
-  NABoolean getRightLeaf(Lng32 planNumber, FileScan **rLeaf) const;
+  // Is this plan's n-th child a scan?
+  NABoolean getScanLeaf(int childNumber, int planNumber, FileScan *&scanLeaf) const;
 
   // -----------------------------------------------------------------------
   // Erase the latest context.

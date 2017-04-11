@@ -122,7 +122,7 @@ public:
   const LIST(IndexDesc *) &getVerticalPartitions() const { return vertParts_; }
   const IndexDesc * getClusteringIndex() const     { return clusteringIndex_; }
 
-  const LIST(IndexDesc *) &getHintIndexes() const      { return hintIndexes_; }
+  const LIST(const IndexDesc *) &getHintIndexes() const{ return hintIndexes_; }
   NABoolean hasHintIndexes() const       { return hintIndexes_.entries() > 0; }
 
   const ValueIdList &getColUpdated() const              { return colUpdated_; }
@@ -166,7 +166,7 @@ public:
   void addIndex(IndexDesc *idesc)                  { indexes_.insert(idesc); }
   void addUniqueIndex(IndexDesc *idesc)		   { uniqueIndexes_.insert(idesc); }
   void addVerticalPartition(IndexDesc *idesc)    { vertParts_.insert(idesc); }
-  void addHintIndex(IndexDesc *idesc)          { hintIndexes_.insert(idesc); }
+  void addHintIndex(const IndexDesc *idesc)    { hintIndexes_.insert(idesc); }
   void setClusteringIndex(IndexDesc *idesc)      { clusteringIndex_ = idesc; }
   void setCorrName(const CorrName &corrName)	     { corrName_ = corrName; }
   void setLocationName(const NAString &locName) {corrName_.setLocationName(locName);}
@@ -276,7 +276,7 @@ private:
   // ---------------------------------------------------------------------
   // List of recommended indexes by user hints
   // ---------------------------------------------------------------------
-  LIST(IndexDesc *) hintIndexes_;
+  LIST(const IndexDesc *) hintIndexes_;
 
   // ---------------------------------------------------------------------
   // List of available column statistics

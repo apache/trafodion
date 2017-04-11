@@ -5952,7 +5952,7 @@ PlanPriority NestedJoin::computeOperatorPriority
 
     // is right a single table?
     FileScan *rScan = NULL;
-    NABoolean rightIsTable = pws->getRightLeaf(planNumber, &rScan);
+    NABoolean rightIsTable = pws->getScanLeaf(1, planNumber, rScan);
 
     // is right table small?
     NABoolean isSmallTable = 
@@ -8279,6 +8279,7 @@ NABoolean Scan::duplicateMatch(const RelExpr & other) const
       NOT (possibleIndexJoins_ == o.possibleIndexJoins_) OR
       NOT (numIndexJoins_ == o.numIndexJoins_)))
       OR
+      NOT (suppressHints_ == o.suppressHints_) OR
       NOT (isSingleVPScan_ == o.isSingleVPScan_) OR
       NOT (getExtraOutputColumns() == o.getExtraOutputColumns()) OR
       NOT (samplePercent() == o.samplePercent()) OR
@@ -8305,8 +8306,7 @@ RelExpr * Scan::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->pkeyHvarList_     = pkeyHvarList_;
   result->setOptStoi(stoi_);
   result->samplePercent(samplePercent());
-  result->setScanSelectivityFactor(getScanSelectivityFactor() );
-  result->setScanCardinalityHint(getScanCardinalityHint() );
+  result->suppressHints_    = suppressHints_;
   result->clusterSize(clusterSize());
   result->scanFlags_ = scanFlags_;
   result->setExtraOutputColumns(getExtraOutputColumns());
@@ -8316,7 +8316,7 @@ RelExpr * Scan::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->commonSubExpr_ = commonSubExpr_;
 
   // don't copy values that can be calculated by addIndexInfo()
-  // (could be done, but we are lazy and just call addIndexInfo() again)
+  // (some callers will change selection preds, which requires recomputation)
 
   return RelExpr::copyTopNode(result, outHeap);
 }
@@ -8328,24 +8328,6 @@ void Scan::copyIndexInfo(RelExpr *derivedNode)
 
   Scan * scan = (Scan *)derivedNode;
   forcedIndexInfo_ = scan->forcedIndexInfo_;
-
-  // set the selectivity factor if defined by the user
-  if (scan->cardinalityHint_ >= 1.0)
-    cardinalityHint_ = scan->cardinalityHint_;
-  else
-    cardinalityHint_ = -1.0;
-
-  if (scan->selectivityFactor_ >= 0.0)
-  {
-    if (scan->selectivityFactor_ <= 1.0)
-      selectivityFactor_ = scan->selectivityFactor_;
-    else
-      selectivityFactor_ = csOne;
-  }
-  else
-    selectivityFactor_ = -1.0;
-
-
   if (NOT scan->getIndexOnlyIndexes().isEmpty() OR
       scan->getPossibleIndexJoins().entries() > 0)
   {
@@ -8433,13 +8415,6 @@ void Scan::addIndexInfo()
     preds.clear();
     resultOld->convertToValueIdSet(preds, NULL, ITM_AND);
     doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,resultOld);
-
-//	 ValueIdSet resultSet;
-//	 revertBackToOldTreeUsingValueIdSet(preds, resultSet);
-//	 ItemExpr* resultOld =  resultSet.rebuildExprTree(ITM_AND,FALSE,FALSE);
-//	 preds.clear();
-//	 preds += resultSet;
-//	 doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,resultOld);
   }
 
 
@@ -8488,11 +8463,6 @@ void Scan::addIndexInfo()
   // that contribute to VEGPredicates as explicitly required values.
   addBaseColsFromVEGPreds(requiredValueIds);
 
-  // for debugging in ObjectCenter
-  if (tableDesc == NULL)
-    {
-      requiredValueIds.display();
-    }
   // using old predicate tree:
   if ((CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON ) &&
       (preds.entries()))
@@ -8550,8 +8520,6 @@ void Scan::addIndexInfo()
            (getGroupAttr()->isEmbeddedUpdateOrDelete())
            OR
 	   (getGroupAttr()->isStream())
-	   OR
-	   (tableDesc->hasHintIndexes()) // xxx this could be done better
           );
 
 		      
@@ -8760,10 +8728,6 @@ void Scan::addIndexInfo()
 	      ItemExpr * resultOld = revertBackToOldTree(CmpCommon::statementHeap(), inputItemExprTree);
 	      resultOld->convertToValueIdSet(selectionpreds, NULL, ITM_AND);
 	      doNotReplaceAnItemExpressionForLikePredicates(resultOld,selectionpreds,resultOld);
-
-//          revertBackToOldTreeUsingValueIdSet(selectionPred(), selectionpreds);
-//	      ItemExpr* resultOld =  selectionpreds.rebuildExprTree(ITM_AND,FALSE,FALSE);
-//	      doNotReplaceAnItemExpressionForLikePredicates(resultOld,selectionpreds,resultOld);
 	    }
 
 	      // For now, only consider indexes that covers one of the selection
@@ -8854,7 +8818,7 @@ void Scan::addIndexInfo()
                         ixProp = new(CmpCommon::statementHeap())
                            IndexProperty(idesc, mdamFlag, isGoodIndexJoin);
 
-                      if ( !tryToEliminateIndex ) {
+                      if ( !tryToEliminateIndex || idesc->indexHintPriorityDelta() > 0) {
 
                          if ( produceSameIndexOutputs && ixi->indexPredicates_ == newIndexPredicates )
                          {
@@ -8996,9 +8960,9 @@ void Scan::addIndexInfo()
                          }
 
                          break;
-                      }
-		   }
-		}
+                      } // try to eliminate this index from consideration
+                    } // found another index join with the same covered values
+		} // for loop: does another index join have the same covered values?
 
 	      if (!idescAbsorbed)
 		{
@@ -9822,6 +9786,7 @@ PlanPriority FileScan::computeOperatorPriority
     (CmpCommon::getDefault(INTERACTIVE_ACCESS) == DF_ON) OR
     ( QueryAnalysis::Instance() AND
       QueryAnalysis::Instance()->optimizeForFirstNRows());
+  int indexPriorityDelta = getIndexDesc()->indexHintPriorityDelta();
 
   if (interactiveAccess)
   {
@@ -9838,8 +9803,10 @@ PlanPriority FileScan::computeOperatorPriority
     }
   }
 
-  if (isRecommendedByHints())
-    result.incrementLevels(INDEX_HINT_PRIORITY,0);
+  if (indexPriorityDelta && !areHintsSuppressed())
+    // yes, the index is one of the indexes listed in the hint
+    result.incrementLevels(indexPriorityDelta, 0);
+
   return result;
 }
 
@@ -9859,12 +9826,6 @@ PlanPriority PhysicalMapValueIds::computeOperatorPriority
   }
 
   return result;
-}
-
-// Is this fileScan recommended by the user via the optimizer hints?
-NABoolean FileScan::isRecommendedByHints()
-{
-  return getIndexDesc()->isHintIndex();
 }
 
 const NAString FileScan::getText() const

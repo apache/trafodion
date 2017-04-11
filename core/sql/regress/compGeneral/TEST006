@@ -36,6 +36,7 @@ obey TEST006(defaults_tests);
 obey TEST006(misc_tests);
 obey TEST006(mode_special_tests);
 obey TEST006(olap_functions);
+obey TEST006(optimizer_hints);
 log;
 obey TEST006(clean_up);
 
@@ -51,6 +52,7 @@ drop table t006t5;
 drop table t006t6;
 drop table t006t7;
 drop table t006t8;
+drop table t006t9;
 drop schema $$TEST_CATALOG$$.TEST_PUBLIC_SCHEMA cascade;
 -- used for large scrope rules tests
 drop table x1 cascade;
@@ -86,6 +88,13 @@ create view t006t1_v as select a from t006t1;
 create table t006t7 (a float);
 
 create table t006t8 (a time);
+
+-- used for index hints
+create table t006t9 (a int not null primary key, b int, c int) salt using 2 partitions ;
+create index t006t9ix1 on t006t9(b) ;
+create index t006t9ix2 on t006t9(c) ;
+create index t006t9ix3 on t006t9(b) salt like table;
+create index t006t9ix4 on t006t9(c) salt like table;
 
 -- used for large scope rules
 create table x1 (a int not null, b int not null primary key);
@@ -794,3 +803,109 @@ select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678'
 select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128', '1234567812345678') from dual;
 select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128', '1234567812345678', '1234567812345678') from dual;
+
+?section optimizer_hints
+
+insert into t006t9 values (1,2,3), (10,20,30);
+prepare expl from
+select operator, cardinality,
+       cast(substring(description, position('scan_type: ' in description), position('object_type: ' in description) - position('scan_type: ' in description)) as char(100)) scan_type
+from table(explain(null, 'S'))
+where operator like '%SCAN%';
+
+prepare s from
+select * from t006t9 <<+ index TRAFODION.SCH.T006T9IX1>> where b > 10;
+execute expl;
+execute s;
+
+prepare s from
+select * from t006t9 <<+ index t006t9ix3>> where b > 10;
+execute expl;
+execute s;
+
+prepare s from
+select * from t006t9 <<+ index t006t9>> where b > 10;
+execute expl;
+execute s;
+
+prepare s from
+select a,b from t006t9 <<+ index TRAFODION.SCH.T006T9IX1>> where b > 10;
+execute expl;
+execute s;
+
+prepare s from
+select a,b from t006t9 <<+ index TRAFODION.SCH.T006T9IX3 | cardinality 2000.0>> where b > 10;
+execute expl;
+execute s;
+
+prepare s from
+update t006t9 <<+ index TRAFODION.SCH.T006T9IX1>> set c = 5 where b > 10;
+execute expl;
+execute s;
+
+prepare s from
+update t006t9 <<+ cardinality 2e4 | index sch.T006T9IX1>> as x set c = 5 where b = 10;
+execute expl;
+execute s;
+
+prepare s from
+update t006t9 <<+ index TRAFODION.SCH.T006T9IX3 | cardinality 1e7>> set c = 5 where b > 10;
+execute expl;
+execute s;
+
+prepare s from
+update t006t9 <<+ index TRAFODION.SCH.T006T9IX3>> set c = 5 where b = 10;
+execute expl;
+execute s;
+
+prepare s from
+delete from t006t9 <<+ index TRAFODION.SCH.T006T9IX2>> where c > 10;
+execute expl;
+execute s;
+
+prepare s from
+delete from t006t9 <<+ index TRAFODION.SCH.T006T9IX2 | selectivity 0.03 >> where c = 10;
+execute expl;
+execute s;
+
+prepare s from
+delete from t006t9 <<+ index TRAFODION.SCH.T006T9IX4>> where c > 10;
+execute expl;
+execute s;
+
+prepare s from
+delete [first 10] from t006t9 <<+ index TRAFODION.SCH.T006T9IX4>> where c = 10;
+execute expl;
+execute s;
+
+prepare s from
+delete from t006t9 <<+ index t006t9ix2, t006t9ix4>> where c > 10;
+-- this can pick either index
+with expl as
+(select operator, cardinality,
+        cast(substring(description, position('scan_type: ' in description), position('object_type: ' in description) - position('scan_type: ' in description)) as char(100)) scan_type
+ from table(explain(null, 'S'))
+ where operator like '%SCAN%')
+select count(*) from expl where scan_type like '%T006T9IX2%' or scan_type like '%T006T9IX4%';
+execute s;
+
+prepare s from
+merge into t006t5
+  using (select * from t006t9 <<+index SCH.t006t9ix3 | cardinality 1e7>>) as src
+  on t006t5.a = src.a
+when matched
+  then update set b='abc'
+when not matched
+  then insert values (src.a, 'cde', date '2000-01-01');
+execute expl;
+execute s;
+
+-- negative tests
+prepare s from
+select * from t006t9 <<+ index nosuchindex>> where b > 10;
+execute s;
+
+cqd index_hint_warnings 'off';
+prepare s from
+select * from t006t9 <<+ index nosuchindex>> where b > 10;
+execute s;

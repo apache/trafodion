@@ -279,11 +279,25 @@ NABoolean IndexDesc::isPartitioned() const
     return FALSE;
 }
 
-// Is it recommended by user hint
-NABoolean IndexDesc::isHintIndex() const
+// Should the plan priority of this index adjusted, due to a hint?
+// Returns:
+//   0:          if there are no hints or the index isn't mentioned in a hint
+//   otherwise:  the value to add to the plan priority
+//               (a positive value indicates a more desirable plan)
+int IndexDesc::indexHintPriorityDelta() const
 {
-  IndexDesc* thisIndex = (IndexDesc*) this;
-  return tableDesc_->getHintIndexes().contains(thisIndex);
+  if (tableDesc_->getHintIndexes().entries() == 0)
+    return 0;
+
+  CollIndex found = tableDesc_->getHintIndexes().index(this);
+
+  if (found == NULL_COLL_INDEX)
+    // no hints or index not listed in the hint
+    return 0;
+  else
+    // index mentioned in hint, all indexes get the same priority, so
+    // we select the best one based on cost
+    return INDEX_HINT_PRIORITY;
 }
 
 // Print function
@@ -811,6 +825,19 @@ IndexProperty::compareIndexPromise(const IndexProperty *ixProp) const
 
      CostScalar myKbForLPred = index->getKbForLocalPred();
      CostScalar othKbForLPred = otherIndex->getKbForLocalPred();
+     int myDelta = index->indexHintPriorityDelta();
+     int otherDelta = otherIndex->indexHintPriorityDelta();
+
+     if (myDelta != otherDelta)
+       {
+         // return a result based on index hints given
+
+         if (myDelta > otherDelta)
+           // only I am mentioned in the hints
+           return MORE;
+
+         return LESS;
+       }
 
      // If stats is available for this and the other index, compare the
      // amount of data accessed through the local predicate. The one

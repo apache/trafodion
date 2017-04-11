@@ -1813,6 +1813,18 @@ static TableDesc *createTableDesc2(BindWA *bindWA,
 
   }
 
+  if (hint AND hint->indexCnt() > tdesc->getHintIndexes().entries() AND
+      CmpCommon::getDefault(INDEX_HINT_WARNINGS) != DF_OFF)
+    {
+      // emit a warning that we didn't process all the index hints,
+      // there is probably a spelling mistake
+      *CmpCommon::diags() << DgSqlCode(4371)
+                          << DgInt0(tdesc->getHintIndexes().entries())
+                          << DgInt1(hint->indexCnt())
+                          << DgTableName(naTable->getTableName().
+                                         getQualifiedNameAsAnsiString());
+    }
+
   // For each vertical partition, create an IndexDesc.
   // Add this VP to the list of VPs for the TableDesc.
  for (i = 0; i < naTable->getVerticalPartitionList().entries(); i++) {
@@ -7763,6 +7775,16 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
   
 } // setupStoi()
 
+static void bindHint(Hint *hint, BindWA *bindWA)
+{
+  // bind the index names, make them fully qualified
+  for (CollIndex x=0; hint && x<hint->indexCnt(); x++)
+    {
+      QualifiedName qualIxName((*hint)[x], 1, bindWA->wHeap(), bindWA);
+      hint->replaceIndexHint(x, qualIxName.getQualifiedNameAsAnsiString());
+    }
+}
+
 //----------------------------------------------------------------------------
 RelExpr *Scan::bindNode(BindWA *bindWA)
 {
@@ -7941,6 +7963,9 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
     os = bindWA->getToOverrideSchema();
     bindWA->setToOverrideSchema(FALSE);  
   }
+
+  if (getHint())
+    bindHint(getHint(), bindWA);
 
   TableDesc * tableDesc = NULL;
 

@@ -39,6 +39,23 @@
 
 --- SQL operation complete.
 >>
+>>-- used for index hints
+>>create table t006t9 (a int not null primary key, b int, c int) salt using 2 partitions ;
+
+--- SQL operation complete.
+>>create index t006t9ix1 on t006t9(b) ;
+
+--- SQL operation complete.
+>>create index t006t9ix2 on t006t9(c) ;
+
+--- SQL operation complete.
+>>create index t006t9ix3 on t006t9(b) salt like table;
+
+--- SQL operation complete.
+>>create index t006t9ix4 on t006t9(c) salt like table;
+
+--- SQL operation complete.
+>>
 >>-- used for large scope rules
 >>create table x1 (a int not null, b int not null primary key);
 
@@ -681,7 +698,7 @@
 >>-- Error 4391
 >>prepare xx from select variance(a) over (order by ?p) from t006t2;
 
-*** ERROR[4391] Paramaters and outer references in the PARTITION BY or ORDER BY clause of a window function are not supported.
+*** ERROR[4391] Parameters and outer references in the PARTITION BY or ORDER BY clause of a window function are not supported.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1871,8 +1888,8 @@ bc0050f3ff7a540c74a42664c53a7f9fd485622374a43eb4a62cd84e48f483237bed50f6562f8c6e
 >>-- TEST aes_encrypt/aes_decrypt
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02
 
@@ -1881,28 +1898,28 @@ EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02
 
 *** WARNING[8956] IV option ignored
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                          
+--------------------------------
 
-abcdedfhijklmnopqrstuvwxyz
+abcdedfhijklmnopqrstuvwxyz      
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'EC10187492EB7FB319E09AFF8806B1CA4F1382B41D23C00B118B3DDD9A9CFA02', '1234567812345678', '1234567812345678') from dual;
 
 *** WARNING[8956] IV option ignored
 
-(EXPR)
-----------
+(EXPR)                          
+--------------------------------
 
-abcdedfhijklmnopqrstuvwxyz
+abcdedfhijklmnopqrstuvwxyz      
 
 --- 1 row(s) selected.
 >>
@@ -1911,8 +1928,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- SQL operation complete.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 0D9C1230E4B129757607D2E7C10805C9483C239A6A760FD1CECD8FC4D159E76F
 
@@ -1921,28 +1938,28 @@ abcdedfhijklmnopqrstuvwxyz
 
 *** WARNING[8956] IV option ignored
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 0D9C1230E4B129757607D2E7C10805C9483C239A6A760FD1CECD8FC4D159E76F
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'0D9C1230E4B129757607D2E7C10805C9483C239A6A760FD1CECD8FC4D159E76F', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                          
+--------------------------------
 
-abcdedfhijklmnopqrstuvwxyz
+abcdedfhijklmnopqrstuvwxyz      
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'0D9C1230E4B129757607D2E7C10805C9483C239A6A760FD1CECD8FC4D159E76F', '1234567812345678', '1234567812345678') from dual;
 
 *** WARNING[8956] IV option ignored
 
-(EXPR)
-----------
+(EXPR)                          
+--------------------------------
 
-abcdedfhijklmnopqrstuvwxyz
+abcdedfhijklmnopqrstuvwxyz      
 
 --- 1 row(s) selected.
 >>
@@ -1951,8 +1968,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- SQL operation complete.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985
 
@@ -1961,28 +1978,28 @@ EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985
 
 *** WARNING[8956] IV option ignored
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                          
+--------------------------------
 
-abcdedfhijklmnopqrstuvwxyz
+abcdedfhijklmnopqrstuvwxyz      
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'EFB4059C8975543222830627F7433861A173BECA31B8902540174253476CA985', '1234567812345678', '1234567812345678') from dual;
 
 *** WARNING[8956] IV option ignored
 
-(EXPR)
-----------
+(EXPR)                          
+--------------------------------
 
-abcdedfhijklmnopqrstuvwxyz
+abcdedfhijklmnopqrstuvwxyz      
 
 --- 1 row(s) selected.
 >>
@@ -1996,8 +2013,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 12FF81AF2AB65E82DEFAE32D2CF0E7E5C14F90BAA80DF073608CE6ED0C47737F
 
@@ -2009,10 +2026,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'12FF81AF2AB65E82DEFAE32D2CF0E7E5C14F90BAA80DF073608CE6ED0C47737F', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                          
+--------------------------------
 
-abcdedfhijklmnopqrstuvwxyz
+abcdedfhijklmnopqrstuvwxyz      
 
 --- 1 row(s) selected.
 >>
@@ -2026,8 +2043,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 1A1332592C987A79374609C89BB53F89A8F0B0A2B71E06B824894D1B95E1D953
 
@@ -2039,10 +2056,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'1A1332592C987A79374609C89BB53F89A8F0B0A2B71E06B824894D1B95E1D953', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                          
+--------------------------------
 
-abcdedfhijklmnopqrstuvwxyz
+abcdedfhijklmnopqrstuvwxyz      
 
 --- 1 row(s) selected.
 >>
@@ -2056,8 +2073,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
 E22114AB552C8613622ADD34B3FEDCE840A18C84FDEA9D6394F57A14F6DB2497
 
@@ -2069,10 +2086,10 @@ E22114AB552C8613622ADD34B3FEDCE840A18C84FDEA9D6394F57A14F6DB2497
 --- 0 row(s) selected.
 >>select aes_decrypt(X'E22114AB552C8613622ADD34B3FEDCE840A18C84FDEA9D6394F57A14F6DB2497', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                          
+--------------------------------
 
-abcdedfhijklmnopqrstuvwxyz
+abcdedfhijklmnopqrstuvwxyz      
 
 --- 1 row(s) selected.
 >>
@@ -2086,10 +2103,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-2A23CC234BC4175E6AE90793BFBD03E4D7F2921AC6032E45D1C0
+2A23CC234BC4175E6AE90793BFBD03E4D7F2921AC6032E45D1C0            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'2A23CC234BC4175E6AE90793BFBD03E4D7F2921AC6032E45D1C0', '1234567812345678') from dual;
@@ -2099,8 +2116,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'2A23CC234BC4175E6AE90793BFBD03E4D7F2921AC6032E45D1C0', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2116,10 +2133,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-09389E6E99083B18F50D2B4D14106CFCF9F9EEAD004929940C17
+09389E6E99083B18F50D2B4D14106CFCF9F9EEAD004929940C17            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'09389E6E99083B18F50D2B4D14106CFCF9F9EEAD004929940C17', '1234567812345678') from dual;
@@ -2129,8 +2146,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'09389E6E99083B18F50D2B4D14106CFCF9F9EEAD004929940C17', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2146,10 +2163,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-209F05F9B3E25391258A434F6FA9663F14886E9FF7E6C2CF5EF9
+209F05F9B3E25391258A434F6FA9663F14886E9FF7E6C2CF5EF9            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'209F05F9B3E25391258A434F6FA9663F14886E9FF7E6C2CF5EF9', '1234567812345678') from dual;
@@ -2159,8 +2176,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'209F05F9B3E25391258A434F6FA9663F14886E9FF7E6C2CF5EF9', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2176,10 +2193,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-0C45C8DB6AE2F87AE36420AE711AC1121576FEECB26BD9B246AB
+0C45C8DB6AE2F87AE36420AE711AC1121576FEECB26BD9B246AB            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'0C45C8DB6AE2F87AE36420AE711AC1121576FEECB26BD9B246AB', '1234567812345678') from dual;
@@ -2189,8 +2206,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'0C45C8DB6AE2F87AE36420AE711AC1121576FEECB26BD9B246AB', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2206,10 +2223,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-2C39ACEEBF859846261D8B1B712BBC7965F64889293C26CDFE61
+2C39ACEEBF859846261D8B1B712BBC7965F64889293C26CDFE61            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'2C39ACEEBF859846261D8B1B712BBC7965F64889293C26CDFE61', '1234567812345678') from dual;
@@ -2219,8 +2236,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'2C39ACEEBF859846261D8B1B712BBC7965F64889293C26CDFE61', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2236,10 +2253,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-6A3C1001A693B34DD2619B066413995BDEC5259A73E1E6D2DEBC
+6A3C1001A693B34DD2619B066413995BDEC5259A73E1E6D2DEBC            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'6A3C1001A693B34DD2619B066413995BDEC5259A73E1E6D2DEBC', '1234567812345678') from dual;
@@ -2249,8 +2266,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'6A3C1001A693B34DD2619B066413995BDEC5259A73E1E6D2DEBC', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2266,10 +2283,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-0CCE7F3282239C8853A5E704FC8A47901D8036903B6603DF43E5
+0CCE7F3282239C8853A5E704FC8A47901D8036903B6603DF43E5            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A47901D8036903B6603DF43E5', '1234567812345678') from dual;
@@ -2279,8 +2296,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A47901D8036903B6603DF43E5', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2296,10 +2313,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-2C6B7A87519F9E95E0F46EDA774152245E8DD142FC6CD57D57E2
+2C6B7A87519F9E95E0F46EDA774152245E8DD142FC6CD57D57E2            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152245E8DD142FC6CD57D57E2', '1234567812345678') from dual;
@@ -2309,8 +2326,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152245E8DD142FC6CD57D57E2', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2326,10 +2343,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-6A0D74250CB7E54F4690801A7AD9CDB07435157353DAE7BC6203
+6A0D74250CB7E54F4690801A7AD9CDB07435157353DAE7BC6203            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB07435157353DAE7BC6203', '1234567812345678') from dual;
@@ -2339,8 +2356,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB07435157353DAE7BC6203', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2356,10 +2373,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-0CCE7F3282239C8853A5E704FC8A4790B5D857207B417EFB52D8
+0CCE7F3282239C8853A5E704FC8A4790B5D857207B417EFB52D8            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A4790B5D857207B417EFB52D8', '1234567812345678') from dual;
@@ -2369,8 +2386,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'0CCE7F3282239C8853A5E704FC8A4790B5D857207B417EFB52D8', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2386,10 +2403,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-2C6B7A87519F9E95E0F46EDA774152244B6E78427EC604C84868
+2C6B7A87519F9E95E0F46EDA774152244B6E78427EC604C84868            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152244B6E78427EC604C84868', '1234567812345678') from dual;
@@ -2399,8 +2416,8 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'2C6B7A87519F9E95E0F46EDA774152244B6E78427EC604C84868', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
 
@@ -2416,10 +2433,10 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select converttohex(aes_encrypt('abcdedfhijklmnopqrstuvwxyz', '1234567812345678', '1234567812345678')) from dual;
 
-(EXPR)
-----------
+(EXPR)                                                          
+----------------------------------------------------------------
 
-6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128
+6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128            
 
 --- 1 row(s) selected.
 >>select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128', '1234567812345678') from dual;
@@ -2429,10 +2446,342 @@ abcdedfhijklmnopqrstuvwxyz
 --- 0 row(s) selected.
 >>select aes_decrypt(X'6A0D74250CB7E54F4690801A7AD9CDB053213B2F461EA174E128', '1234567812345678', '1234567812345678') from dual;
 
-(EXPR)
-----------
+(EXPR)                    
+--------------------------
 
 abcdedfhijklmnopqrstuvwxyz
+
+--- 1 row(s) selected.
+>>
+>>obey TEST006(optimizer_hints);
+>>
+>>insert into t006t9 values (1,2,3), (10,20,30);
+
+--- 2 row(s) inserted.
+>>prepare expl from
++>select operator, cardinality,
++>       cast(substring(description, position('scan_type: ' in description), position('object_type: ' in description) - position('scan_type: ' in description)) as char(100)) scan_type
++>from table(explain(null, 'S'))
++>where operator like '%SCAN%';
+
+--- SQL command prepared.
+>>
+>>prepare s from
++>select * from t006t9 <<+ index TRAFODION.SCH.T006T9IX1>> where b > 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             3.3000000E+001  scan_type: subset scan of index TRAFODION.SCH.T006T9IX1(TRAFODION.SCH.T006T9)                       
+TRAFODION_VSBB_SCAN              1.0000000E+000  scan_type: subset scan of table TRAFODION.SCH.T006T9                                                
+
+--- 2 row(s) selected.
+>>execute s;
+
+A            B            C          
+-----------  -----------  -----------
+
+         10           20           30
+
+--- 1 row(s) selected.
+>>
+>>prepare s from
++>select * from t006t9 <<+ index t006t9ix3>> where b > 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             3.3000000E+001  scan_type: subset scan of index TRAFODION.SCH.T006T9IX3(TRAFODION.SCH.T006T9)                       
+TRAFODION_VSBB_SCAN              1.0000000E+000  scan_type: subset scan of table TRAFODION.SCH.T006T9                                                
+
+--- 2 row(s) selected.
+>>execute s;
+
+A            B            C          
+-----------  -----------  -----------
+
+         10           20           30
+
+--- 1 row(s) selected.
+>>
+>>prepare s from
++>select * from t006t9 <<+ index t006t9>> where b > 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_SCAN                   3.3000000E+001  scan_type: subset scan of table TRAFODION.SCH.T006T9                                                
+
+--- 1 row(s) selected.
+>>execute s;
+
+A            B            C          
+-----------  -----------  -----------
+
+         10           20           30
+
+--- 1 row(s) selected.
+>>
+>>prepare s from
++>select a,b from t006t9 <<+ index TRAFODION.SCH.T006T9IX1>> where b > 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             3.3000000E+001  scan_type: subset scan of index TRAFODION.SCH.T006T9IX1(TRAFODION.SCH.T006T9)                       
+
+--- 1 row(s) selected.
+>>execute s;
+
+A            B          
+-----------  -----------
+
+         10           20
+
+--- 1 row(s) selected.
+>>
+>>prepare s from
++>select a,b from t006t9 <<+ index TRAFODION.SCH.T006T9IX3 | cardinality 2000.0>> where b > 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             2.0000000E+003  scan_type: subset scan of index TRAFODION.SCH.T006T9IX3(TRAFODION.SCH.T006T9)                       
+
+--- 1 row(s) selected.
+>>execute s;
+
+A            B          
+-----------  -----------
+
+         10           20
+
+--- 1 row(s) selected.
+>>
+>>prepare s from
++>update t006t9 <<+ index TRAFODION.SCH.T006T9IX1>> set c = 5 where b > 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             3.3000000E+001  scan_type: subset scan of index TRAFODION.SCH.T006T9IX1(TRAFODION.SCH.T006T9)                       
+TRAFODION_VSBB_SCAN              1.0000000E+000  scan_type: subset scan of table TRAFODION.SCH.T006T9                                                
+
+--- 2 row(s) selected.
+>>execute s;
+
+--- 1 row(s) updated.
+>>
+>>prepare s from
++>update t006t9 <<+ cardinality 2e4 | index sch.T006T9IX1>> as x set c = 5 where b = 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             2.0000000E+004  scan_type: subset scan of index TRAFODION.SCH.T006T9IX1(TRAFODION.SCH.T006T9 X)                     
+TRAFODION_VSBB_SCAN              7.1000000E-003  scan_type: subset scan of table TRAFODION.SCH.T006T9 X                                              
+
+--- 2 row(s) selected.
+>>execute s;
+
+--- 0 row(s) updated.
+>>
+>>prepare s from
++>update t006t9 <<+ index TRAFODION.SCH.T006T9IX3 | cardinality 1e7>> set c = 5 where b > 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             1.0000000E+007  scan_type: subset scan of index TRAFODION.SCH.T006T9IX3(TRAFODION.SCH.T006T9)                       
+TRAFODION_VSBB_SCAN              1.0000000E+000  scan_type: subset scan of table TRAFODION.SCH.T006T9                                                
+
+--- 2 row(s) selected.
+>>execute s;
+
+--- 1 row(s) updated.
+>>
+>>prepare s from
++>update t006t9 <<+ index TRAFODION.SCH.T006T9IX3>> set c = 5 where b = 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             1.0000000E+001  scan_type: subset scan of index TRAFODION.SCH.T006T9IX3(TRAFODION.SCH.T006T9)                       
+TRAFODION_VSBB_SCAN              4.0000000E-001  scan_type: subset scan of table TRAFODION.SCH.T006T9                                                
+
+--- 2 row(s) selected.
+>>execute s;
+
+--- 0 row(s) updated.
+>>
+>>prepare s from
++>delete from t006t9 <<+ index TRAFODION.SCH.T006T9IX2>> where c > 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             3.3000000E+001  scan_type: subset scan of index TRAFODION.SCH.T006T9IX2(TRAFODION.SCH.T006T9)                       
+TRAFODION_VSBB_SCAN              1.0000000E+000  scan_type: subset scan of table TRAFODION.SCH.T006T9                                                
+
+--- 2 row(s) selected.
+>>execute s;
+
+--- 0 row(s) deleted.
+>>
+>>prepare s from
++>delete from t006t9 <<+ index TRAFODION.SCH.T006T9IX2 | selectivity 0.03 >> where c = 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             3.0000000E+000  scan_type: subset scan of index TRAFODION.SCH.T006T9IX2(TRAFODION.SCH.T006T9)                       
+TRAFODION_VSBB_SCAN              6.6666668E-001  scan_type: subset scan of table TRAFODION.SCH.T006T9                                                
+
+--- 2 row(s) selected.
+>>execute s;
+
+--- 0 row(s) deleted.
+>>
+>>prepare s from
++>delete from t006t9 <<+ index TRAFODION.SCH.T006T9IX4>> where c > 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             3.3000000E+001  scan_type: subset scan of index TRAFODION.SCH.T006T9IX4(TRAFODION.SCH.T006T9)                       
+TRAFODION_VSBB_SCAN              1.0000000E+000  scan_type: subset scan of table TRAFODION.SCH.T006T9                                                
+
+--- 2 row(s) selected.
+>>execute s;
+
+--- 0 row(s) deleted.
+>>
+>>prepare s from
++>delete [first 10] from t006t9 <<+ index TRAFODION.SCH.T006T9IX4>> where c = 10;
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             1.0000000E+001  scan_type: subset scan of index TRAFODION.SCH.T006T9IX4(TRAFODION.SCH.T006T9)                       
+TRAFODION_VSBB_SCAN              4.0000000E-001  scan_type: subset scan of table TRAFODION.SCH.T006T9                                                
+
+--- 2 row(s) selected.
+>>execute s;
+
+--- 0 row(s) deleted.
+>>
+>>prepare s from
++>delete from t006t9 <<+ index t006t9ix2, t006t9ix4>> where c > 10;
+
+--- SQL command prepared.
+>>-- this can pick either index
+>>with expl as
++>(select operator, cardinality,
++>        cast(substring(description, position('scan_type: ' in description), position('object_type: ' in description) - position('scan_type: ' in description)) as char(100)) scan_type
++> from table(explain(null, 'S'))
++> where operator like '%SCAN%')
++>select count(*) from expl where scan_type like '%T006T9IX2%' or scan_type like '%T006T9IX4%';
+
+(EXPR)              
+--------------------
+
+                   1
+
+--- 1 row(s) selected.
+>>execute s;
+
+--- 0 row(s) deleted.
+>>
+>>prepare s from
++>merge into t006t5
++>  using (select * from t006t9 <<+index SCH.t006t9ix3 | cardinality 1e7>>) as src
++>  on t006t5.a = src.a
++>when matched
++>  then update set b='abc'
++>when not matched
++>  then insert values (src.a, 'cde', date '2000-01-01');
+
+--- SQL command prepared.
+>>execute expl;
+
+OPERATOR                        CARDINALITY      SCAN_TYPE
+------------------------------  ---------------  ----------------------------------------------------------------------------------------------------
+
+TRAFODION_INDEX_SCAN             1.0000000E+007  scan_type: subset scan of index TRAFODION.SCH.T006T9IX3(TRAFODION.SCH.T006T9)                       
+
+--- 1 row(s) selected.
+>>execute s;
+
+--- 2 row(s) updated.
+>>
+>>-- negative tests
+>>prepare s from
++>select * from t006t9 <<+ index nosuchindex>> where b > 10;
+
+*** WARNING[4371] Only 0 of the 1 indexes in the hint match actual indexes of the table TRAFODION.SCH.T006T9.
+
+--- SQL command prepared.
+>>execute s;
+
+A            B            C          
+-----------  -----------  -----------
+
+         10           20            5
+
+--- 1 row(s) selected.
+>>
+>>cqd index_hint_warnings 'off';
+
+--- SQL operation complete.
+>>prepare s from
++>select * from t006t9 <<+ index nosuchindex>> where b > 10;
+
+--- SQL command prepared.
+>>execute s;
+
+A            B            C          
+-----------  -----------  -----------
+
+         10           20            5
 
 --- 1 row(s) selected.
 >>log;

@@ -10185,7 +10185,7 @@ M           23000                    10
 >>set param ?p 2;
 >>select rank(annualsalary + ?p) from tdemployee;
 
-*** ERROR[4369] Paramaters and outer references are not supported with rank function.
+*** ERROR[4369] Parameters and outer references are not supported with rank function.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -10194,7 +10194,7 @@ M           23000                    10
 >>select num,( select rank(o.num) from tdemployee i where i.num=1)
 +>from tdemployee o;
 
-*** ERROR[4369] Paramaters and outer references are not supported with rank function.
+*** ERROR[4369] Parameters and outer references are not supported with rank function.
 
 *** ERROR[8822] The statement was not prepared.
 

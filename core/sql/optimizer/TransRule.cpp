@@ -1452,6 +1452,7 @@ RelExpr * IndexJoinRule1::makeSubstituteFromIndexInfo(Scan *bef,
   Scan *rightScan = new (CmpCommon::statementHeap())
     Scan(bef->getTableName(),bef->getTableDesc());
   rightScan->setForceIndexInfo();
+  rightScan->setSuppressHints();
 
   // propagate SqlTableOpen information pointers
   leftScan->setOptStoi(bef->getOptStoi());
