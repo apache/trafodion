@@ -7060,7 +7060,15 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 
       BiRelat *br = (BiRelat *) beginKey;
       br->setLikeSelectivity(selectivity);
-      br->setOriginalLikeExprId(getValueId() );
+      // Like pred has non_wildcard beginning and ends in %
+      // Later we will collapse histogram into one interval if this flag is set.
+      // In this simple case, it is better to not flag this BiRelat as 
+      // originating from LIKE so that we get a better histogram on it. 
+      // We may lose some knowledge of correlation between begin/end keys 
+      // but it is better to have 2 unrelated birelats with good stats than 
+      // correlated begin/end preds with a single interval histogram. JIRA 2512
+      if(boundExpr)
+        br->setOriginalLikeExprId(getValueId());
 
       // Compute the value following the beginKey prefix:
       // If beginKey == 'ab', this will return 'ac';
@@ -7127,7 +7135,8 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 
 	// set selectivity of the second range predicate equal to 1.0
 	br->setLikeSelectivity(1.0);
-	br->setOriginalLikeExprId(getValueId() );
+        if(boundExpr)
+          br->setOriginalLikeExprId(getValueId());
 
 
 	if (boundExpr)
