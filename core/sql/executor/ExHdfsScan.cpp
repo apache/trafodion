@@ -399,9 +399,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	    ex_assert(hdfsStats_, "hdfs stats cannot be null");
 
-	    if (hdfsStats_)
-	      hdfsStats_->init();
-
 	    beginRangeNum_ = -1;
 	    numRanges_ = -1;
 	    hdfsOffset_ = 0;
@@ -2083,9 +2080,6 @@ ExWorkProcRetcode ExOrcScanTcb::work()
 	      hdfsStats_ = getStatsEntry()->castToExHdfsScanStats();
 
 	    ex_assert(hdfsStats_, "hdfs stats cannot be null");
-
-	    if (hdfsStats_)
-	      hdfsStats_->init();
 
 	    beginRangeNum_ = -1;
 	    numRanges_ = -1;

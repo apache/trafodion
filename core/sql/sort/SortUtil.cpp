@@ -101,9 +101,9 @@ NABoolean SortUtil::scratchInitialize(void)
                                              &sortError_,
                                              explainNodeId_,
                                              config_->scratchIOBlockSize_,
+                                             config_->getScratchIOVectorSize(),
                                              config_->logInfoEvent_,
-                                             config_->scratchMgmtOption_
-                                              );  
+                                             config_->scratchMgmtOption_);  
 
     if (scratch_ == NULL)
       {

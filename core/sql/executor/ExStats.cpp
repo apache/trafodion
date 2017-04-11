@@ -867,12 +867,13 @@ ExOperStats::~ExOperStats()
 {
 }
 
-void ExOperStats::init()
+void ExOperStats::init(NABoolean resetDop)
 {
   operTimer_.reset();
   actualRowsReturned_ = 0;
   numberCalls_ = 0;
-  dop_ = 0;
+  if (resetDop)
+     dop_ = 0;
   clearHasSentMsgIUD();
   // fillerForFutureUse_ = 0;
   allStats.downQueueStats_.init();
@@ -1441,11 +1442,10 @@ ExFragRootOperStats::ExFragRootOperStats(NAMemory * heap,
     flags_(0)
 {
   executionCount_ = 0;
-  init();
+  init(FALSE);
   initHistory();
   queryId_ = NULL;
   queryIdLen_ = 0;
-  restoreDop();
 
   if (tdb && tcb && tcb->getGlobals())
     {
@@ -1465,13 +1465,12 @@ ExFragRootOperStats::ExFragRootOperStats(NAMemory * heap)
     flags_(0)
 {
   executionCount_ = 0;
-  init();
+  init(FALSE);
   initHistory();
   queryId_ = NULL;
   queryIdLen_ = 0;
   stmtIndex_ = -1;
   timestamp_ = 0;
-  restoreDop();
 }
 
 ExFragRootOperStats::ExFragRootOperStats(NAMemory *heap,
@@ -1489,13 +1488,12 @@ ExFragRootOperStats::ExFragRootOperStats(NAMemory *heap,
        flags_(0)
 {
    // Set the Id so that 
-  init();
+  init(FALSE);
   initHistory();
   queryId_ = NULL;
   queryIdLen_ = 0;
   stmtIndex_ = -1;
   timestamp_ = 0;
-  restoreDop();
 }
 
 ExFragRootOperStats::~ExFragRootOperStats()
@@ -1516,9 +1514,9 @@ ExFragRootOperStats::~ExFragRootOperStats()
   }
 }
 
-void ExFragRootOperStats::init()
+void ExFragRootOperStats::init(NABoolean resetDop)
 {
-  ExOperStats::init();
+  ExOperStats::init(resetDop);
   spaceUsage_ = 0;
   spaceAlloc_ = 0;
   heapUsage_ = 0;
@@ -2081,7 +2079,7 @@ ExHdfsScanStats::ExHdfsScanStats(NAMemory * heap,
 
   queryId_ = NULL;
   queryIdLen_ = 0;
-  init();
+  init(FALSE);
 }
 
 ExHdfsScanStats::ExHdfsScanStats(NAMemory * heap)
@@ -2092,11 +2090,12 @@ ExHdfsScanStats::ExHdfsScanStats(NAMemory * heap)
 {
   queryId_ = NULL;
   queryIdLen_ = 0;
-  init();
+  init(FALSE);
 }
 
-void ExHdfsScanStats::init()
+void ExHdfsScanStats::init(NABoolean resetDop)
 {
+  ExOperStats::init(resetDop);
   timer_.reset();
 
   lobStats_.init();
@@ -2467,7 +2466,7 @@ ExHbaseAccessStats::ExHbaseAccessStats(NAMemory * heap,
     }
   queryId_ = NULL;
   queryIdLen_ = 0;
-  init();
+  init(FALSE);
 }
 
 ExHbaseAccessStats::ExHbaseAccessStats(NAMemory * heap)
@@ -2478,11 +2477,12 @@ ExHbaseAccessStats::ExHbaseAccessStats(NAMemory * heap)
 {
   queryId_ = NULL;
   queryIdLen_ = 0;
-  init();
+  init(FALSE);
 }
 
-void ExHbaseAccessStats::init()
+void ExHbaseAccessStats::init(NABoolean resetDop)
 {
+  ExOperStats::init(resetDop);
   timer_.reset();
 
   lobStats_.init();
@@ -2846,7 +2846,7 @@ ExProbeCacheStats::ExProbeCacheStats(NAMemory * heap,
     bufferSize_(bufferSize),
     numCacheEntries_(numCacheEntries)
 {
-  init();
+  init(FALSE);
   longestChain_ = 0;
   numChains_ = 0;
   maxNumChains_ = 0;
@@ -2858,7 +2858,7 @@ ExProbeCacheStats::ExProbeCacheStats(NAMemory * heap)
     bufferSize_(0),
     numCacheEntries_(0)
 {
-  init();
+  init(FALSE);
   longestChain_ = 0;
   numChains_ = 0;
   maxNumChains_ = 0;
@@ -2919,9 +2919,9 @@ void ExProbeCacheStats::unpack(const char* &buffer)
   unpackBuffer(buffer,  canceledNotStarted_);
 }
 
-void ExProbeCacheStats::init()
+void ExProbeCacheStats::init(NABoolean resetDop)
 {
-  ExOperStats::init();
+  ExOperStats::init(resetDop);
 
   highestUseCount_ = 0;
   cacheHits_ = 0;
@@ -3089,13 +3089,13 @@ ExPartitionAccessStats::~ExPartitionAccessStats()
     heap_->deallocateMemory((void*)fileName_);
 }
 
-void ExPartitionAccessStats::init()
+void ExPartitionAccessStats::init(NABoolean resetDop)
 {
-  ExOperStats::init();
+  ExOperStats::init(resetDop);
 
-  exeSEStats()->init();
+  exeSEStats()->init(resetDop);
 
-  bufferStats()->init();
+  bufferStats()->init(resetDop);
 }
 
 void ExPartitionAccessStats::copyContents(ExPartitionAccessStats* other)
@@ -3350,9 +3350,9 @@ ExHashGroupByStats::ExHashGroupByStats(NAMemory * heap)
     clusterStats_(NULL),
     lastStat_(NULL) {}
 
-void ExHashGroupByStats::init()
+void ExHashGroupByStats::init(NABoolean resetDop)
 {
-  ExBMOStats::init();
+  ExBMOStats::init(resetDop);
   partialGroups_ = 0;
   memSize_ = 0;
   ioSize_ = 0;
@@ -3598,9 +3598,9 @@ ExHashJoinStats::ExHashJoinStats(NAMemory * heap)
     clusterStats_(NULL),
     lastStat_(NULL) {};
 
-void ExHashJoinStats::init()
+void ExHashJoinStats::init(NABoolean resetDop)
 {
-  ExBMOStats::init();
+  ExBMOStats::init(resetDop);
   for (short p = 0; p < 3; p++)
     phaseTimes_[p].reset();
   phase_ = 0;
@@ -3876,10 +3876,11 @@ ExESPStats::ExESPStats(NAMemory * heap)
   : ExOperStats(heap, ESP_STATS),
     sendTopStatID_(-1){}
 
-void ExESPStats::init(){
-  ExOperStats::init();
+void ExESPStats::init(NABoolean resetDop)
+{
+  ExOperStats::init(resetDop);
 
-  bufferStats_.init();
+  bufferStats_.init(resetDop);
 }
 
 UInt32 ExESPStats::packedLength()
@@ -4042,8 +4043,9 @@ ExSplitTopStats::ExSplitTopStats(NAMemory * heap)
     actChildren_(0)
 {}
 
-void ExSplitTopStats::init(){
-  ExOperStats::init();
+void ExSplitTopStats::init(NABoolean resetDop)
+{
+  ExOperStats::init(resetDop);
   actChildren_ = 0;
 }
 
@@ -4181,9 +4183,9 @@ ExSortStats::ExSortStats(NAMemory * heap)
        scrNumAwaitio_(0)
 {}
 
-void ExSortStats::init()
+void ExSortStats::init(NABoolean resetDop)
 {
-  ExBMOStats::init();
+  ExBMOStats::init(resetDop);
 
   runSize_ = 0;          
   numRuns_ = 0;
@@ -4430,9 +4432,9 @@ void ExMeasBaseStats::unpack(const char* &buffer) {
    exeSEStats()->setMaxIOTime(temp1);
 }
 
-void ExMeasBaseStats::init() {
-  ExOperStats::init();
-  exeSEStats()->init();
+void ExMeasBaseStats::init(NABoolean resetDop) {
+  ExOperStats::init(resetDop);
+  exeSEStats()->init(resetDop);
 }
 
 void ExMeasBaseStats::merge(ExMeasBaseStats* other)
@@ -4515,7 +4517,7 @@ ExMeasStats::ExMeasStats(NAMemory * heap,
      : ExMeasBaseStats(heap, MEAS_STATS, tcb, NULL)
 {
   executionCount_ = 0;
-  init();
+  init(FALSE);
   initHistory();
   if (tdb != NULL)
     scratchOverflowMode_ = ((ComTdb *)tdb)->getOverFlowMode();
@@ -4527,7 +4529,7 @@ ExMeasStats::ExMeasStats(NAMemory * heap)
      : ExMeasBaseStats(heap, MEAS_STATS)
 {  
   executionCount_ = 0;
-  init();
+  init(FALSE);
   initHistory();
   queryId_ = NULL;
   queryIdLen_ = 0;
@@ -4738,9 +4740,9 @@ void ExMeasStats::unpack(const char* &buffer)
   }
 }
 
-void ExMeasStats::init()
+void ExMeasStats::init(NABoolean resetDop)
 {
-  ExMeasBaseStats::init();
+  ExMeasBaseStats::init(resetDop);
   newprocess_ = 0;
   newprocessTime_ = 0;
   timeouts_ = 0;
@@ -5259,10 +5261,10 @@ ExUDRStats::~ExUDRStats()
     heap_->deallocateMemory((void*)UDRName_);
 }
 
-void ExUDRStats::init()
+void ExUDRStats::init(NABoolean resetDop)
 {
-  ExUDRBaseStats::init();
-  bufferStats()->init();
+  ExUDRBaseStats::init(resetDop);
+  bufferStats()->init(resetDop);
   sentControlBuffers_.init();
   sentContinueBuffers_.init();
 }
@@ -5547,7 +5549,7 @@ void ExStatisticsArea::initEntries()
 
   ExOperStats * stat;
   while ((stat = getNext()) != NULL) {
-    stat->init();
+    stat->init(TRUE);
   }
   
   if (masterStats_ != NULL)
@@ -5560,17 +5562,6 @@ void ExStatisticsArea::restoreDop()
   ExOperStats * stat;
   while ((stat = getNext()) != NULL) 
      stat->restoreDop();
-}
-
-void ExStatisticsArea::resetDopInEid()
-{
-  if (!statsInDp2())
-     return;
-
-  entries_->position();
-  ExOperStats * stat;
-  while ((stat = getNext()) != NULL) 
-    stat->resetDop();
 }
 
 
@@ -8464,7 +8455,7 @@ ex_tcb_private_state * ExStatsPrivateState::allocate_new(const ex_tcb *tcb)
 };
 
 
-void ExMasterStats::init()
+void ExMasterStats::init(NABoolean resetDop)
 {
   elapsedStartTime_ = -1;
   elapsedEndTime_ = -1;
@@ -8528,7 +8519,7 @@ void ExMasterStats::init()
 
 void ExMasterStats::reuse()
 {
-  init();
+  init(FALSE);
 }
 
 void ExMasterStats::initBeforeExecute(Int64 currentTimeStamp)
@@ -8578,7 +8569,7 @@ ExMasterStats::ExMasterStats(NAHeap *heap)
   delayBeforeAqrRetry_=0;
   sIKeys_ = NULL;
   objUIDs_ = NULL;
-  init();
+  init(FALSE);
 }
 
 ExMasterStats::ExMasterStats()
@@ -8595,7 +8586,7 @@ ExMasterStats::ExMasterStats()
   delayBeforeAqrRetry_=0;
   sIKeys_ = NULL;
   objUIDs_ = NULL;
-  init();
+  init(FALSE);
 }
 
 ExMasterStats::ExMasterStats(NAHeap *heap, char *sourceStr, Lng32 storedSqlTextLen, Lng32 originalSqlTextLen, 
@@ -8635,7 +8626,7 @@ ExMasterStats::ExMasterStats(NAHeap *heap, char *sourceStr, Lng32 storedSqlTextL
   delayBeforeAqrRetry_=0;
   sIKeys_ = NULL;
   objUIDs_ = NULL;
-  init();
+  init(FALSE);
 }
 
 ExMasterStats::~ExMasterStats()
@@ -10423,16 +10414,18 @@ Lng32 ExRMSStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
 ExBMOStats::ExBMOStats(NAMemory *heap)
   :ExOperStats(heap, BMO_STATS)
 {
-  init();
+  init(FALSE);
   spaceBufferSize_ = -1;
+  scratchIOSize_ = -1;
   scratchOverflowMode_ = -1;
 }
 
 ExBMOStats::ExBMOStats(NAMemory *heap, StatType statType)
   :ExOperStats(heap, statType)
 {
-  init();
+  init(FALSE);
   spaceBufferSize_ = -1;
+  scratchIOSize_ = -1;
   scratchOverflowMode_ = -1;
 }
 
@@ -10441,8 +10434,9 @@ ExBMOStats::ExBMOStats(NAMemory *heap, StatType statType,
 			 const ComTdb * tdb)
   :ExOperStats(heap, statType, tcb, tdb)
 {
-  init();
+  init(FALSE);
   spaceBufferSize_ = -1;
+  scratchIOSize_ = -1;
   if (tdb != NULL)
     scratchOverflowMode_ = ((ComTdb *)tdb)->getOverFlowMode();
   else
@@ -10455,7 +10449,7 @@ ExBMOStats::ExBMOStats(NAMemory *heap,
   : ExOperStats(heap, BMO_STATS, tcb, tdb)
   , timer_(CLOCK_MONOTONIC)
 {
-  init();
+  init(FALSE);
   spaceBufferSize_ = -1;
   if (tdb != NULL)
     scratchOverflowMode_ = ((ComTdb *)tdb)->getOverFlowMode();
@@ -10463,9 +10457,9 @@ ExBMOStats::ExBMOStats(NAMemory *heap,
     scratchOverflowMode_ = -1;
 }
 
-void ExBMOStats::init()
+void ExBMOStats::init(NABoolean resetDop)
 {
-  ExOperStats::init();
+  ExOperStats::init(resetDop);
   bmoHeapAlloc_ = 0;
   bmoHeapUsage_ = 0;
   bmoHeapWM_ = 0;
@@ -10478,6 +10472,7 @@ void ExBMOStats::init()
   scratchWriteCount_ = 0;
   topN_ = -1;
   timer_.reset();
+  scratchIOMaxTime_ = 0;
 }
 
 UInt32 ExBMOStats::packedLength()
@@ -10537,9 +10532,9 @@ const char * ExBMOStats::getNumValTxt(Int32 i) const
     case 1:
       return "OperCpuTime";
     case 2:
-      return "scrBuffferRead";
+      return "scrIORead";
     case 3:
-      return "scrBufferWritten";
+      return "scrIOWritten";
     case 4:
       return "scrFileCount";
   }
@@ -10553,9 +10548,9 @@ Int64 ExBMOStats::getNumVal(Int32 i) const
      case 1:
         return ExOperStats::getNumVal(i);
      case 2:
-        return scratchBufferBlockRead_;
+        return scratchReadCount_;
      case 3:
-        return scratchBufferBlockWritten_;
+        return scratchWriteCount_;
      case 4:
         return scratchFileCount_;
   }
@@ -10572,7 +10567,7 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
        "statsRowType: %d explainTdbId: %d bmoHeapUsed: %d bmoHeapTotal: %d bmoHeapWM: %d "
        "bmoSpaceBufferSize: %d bmoSpaceBufferCount: %d "
        "scrOverFlowMode: %d scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %d scrBufferWritten: %d "
-       "scrWriteCount: %Ld scrReadCount: %Ld topN: %Ld scrIOTime: %Ld ",
+       "scrWriteCount: %Ld scrReadCount: %Ld topN: %Ld scrIOSize: %d scrIOTime: %Ld scrIOMaxTime: %Ld ",
         statType(),
         getExplainNodeId(),
         bmoHeapUsage_,
@@ -10588,7 +10583,9 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
         scratchWriteCount_,
         scratchReadCount_,
         topN_,
-        timer_.getTime()
+        scratchIOSize_,
+        timer_.getTime(),
+        scratchIOMaxTime_
        );
   buf += str_len(buf);
   *(short*)dataLen = (short) (buf - dataBuffer);
@@ -10611,6 +10608,8 @@ void ExBMOStats::merge(ExBMOStats* other)
   spaceBufferCount_ += other->spaceBufferCount_;
   if (other->scratchBufferBlockSize_ != -1)
     scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
+  if (other->scratchIOSize_ != -1)
+    scratchIOSize_ = other->scratchIOSize_;
   if (other->topN_ != -1)
     topN_ = other->topN_;
   scratchOverflowMode_ = other->scratchOverflowMode_;
@@ -10619,6 +10618,8 @@ void ExBMOStats::merge(ExBMOStats* other)
   scratchBufferBlockWritten_ += other->scratchBufferBlockWritten_;
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
+  if (other->scratchIOMaxTime_ > scratchIOMaxTime_)
+     scratchIOMaxTime_ = other->scratchIOMaxTime_;
 }
 
 Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
@@ -10671,6 +10672,12 @@ Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_SCRATCH_IO_TIME:
     sqlStats_item->int64_value = timer_.getTime();
     break;
+  case SQLSTATS_SCRATCH_IO_SIZE:
+    sqlStats_item->int64_value = scratchIOSize_;
+    break;
+  case SQLSTATS_SCRATCH_IO_MAX_TIME:
+    sqlStats_item->int64_value = scratchIOMaxTime_;
+    break;
   case SQLSTATS_DETAIL:
    if (sqlStats_item->str_value != NULL)
     {
@@ -10711,13 +10718,13 @@ const char *ExBMOStats::getScratchOverflowMode(Int16 overflowMode)
 ExUDRBaseStats::ExUDRBaseStats(NAMemory *heap)
   :ExOperStats(heap, UDR_BASE_STATS)
 {
-  init();
+  init(FALSE);
 }
 
 ExUDRBaseStats::ExUDRBaseStats(NAMemory *heap, StatType statType)
   :ExOperStats(heap, statType)
 {
-  init();
+  init(FALSE);
 }
 
 ExUDRBaseStats::ExUDRBaseStats(NAMemory *heap, StatType statType,
@@ -10725,7 +10732,7 @@ ExUDRBaseStats::ExUDRBaseStats(NAMemory *heap, StatType statType,
 			 const ComTdb * tdb)
   :ExOperStats(heap, statType, tcb, tdb)
 {
-  init();
+  init(FALSE);
 }
 
 ExUDRBaseStats::ExUDRBaseStats(NAMemory *heap, 
@@ -10733,12 +10740,12 @@ ExUDRBaseStats::ExUDRBaseStats(NAMemory *heap,
 			 const ComTdb * tdb)
   :ExOperStats(heap, UDR_BASE_STATS, tcb, tdb)
 {
-  init();
+  init(FALSE);
 }
 
-void ExUDRBaseStats::init()
+void ExUDRBaseStats::init(NABoolean resetDop)
 {
-  ExOperStats::init();
+  ExOperStats::init(resetDop);
   reqMsgCnt_ = 0;
   reqMsgBytes_ = 0;
   replyMsgCnt_ = 0;
@@ -10940,9 +10947,9 @@ ExFastExtractStats::ExFastExtractStats(NAMemory * heap)
        sentBytes_(0)
 {}
 
-void ExFastExtractStats::init()
+void ExFastExtractStats::init(NABoolean resetDop)
 {
-  ExOperStats::init();
+  ExOperStats::init(resetDop);
   buffersCount_ = 0;
   processedRowsCount_ = 0;
   errorRowsCount_ = 0;
@@ -11113,7 +11120,7 @@ ExProcessStats::ExProcessStats(NAMemory * heap)
   numESPsBad_ = 0;
   numESPsInUse_ = 0;
   numESPsFree_ = 0;
-  init();  
+  init(FALSE);  
 }
 
 ExProcessStats::ExProcessStats(NAMemory * heap, 
@@ -11129,10 +11136,10 @@ ExProcessStats::ExProcessStats(NAMemory * heap,
   numESPsBad_ = 0;
   numESPsInUse_ = 0;
   numESPsFree_ = 0;
-  init();
+  init(FALSE);
 }
 
-void ExProcessStats::init()
+void ExProcessStats::init(NABoolean resetDop)
 
 {
   exeMemHighWM_ = 0;

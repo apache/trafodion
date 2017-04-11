@@ -1624,6 +1624,7 @@ NABoolean Cluster::initScratch(ExeErrorCode * rc)
 		    sortError,
                    clusterDb_->explainNodeId_,
                    clusterDb_->bufferSize_,
+                   clusterDb_->getScratchIOVectorSize(),
 		    clusterDb_->doLog_,
 		    sfo->getScratchMgmtOption());
     

@@ -370,6 +370,7 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
 
 ExSortTcb::~ExSortTcb()
 {
+  freeResources();
   if (sortUtil_)
     delete sortUtil_;
 
@@ -382,9 +383,6 @@ ExSortTcb::~ExSortTcb()
   if (nfDiags_)
      nfDiags_->deallocate();
    nfDiags_ = NULL;
-  
-  freeResources();
-
 };
   
 ////////////////////////////////////////////////////////////////////////

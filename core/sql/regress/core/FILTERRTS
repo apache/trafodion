@@ -6,7 +6,7 @@ if [ "$fil" = "" ]; then
   exit 1
 fi
 sed  "
-/SE IOs  SE IO Bytes/{N
+/SE_IOs  SE_IO_Bytes/{N
 s/[A-Z0-9 ,-]*\.[A-Z0-9]*\.TSTAT/#CAT.#SCH.TSTAT pertableStats/
 }
 /6       EX_HASH_GRBY/{N
@@ -88,15 +88,13 @@ s/IPC Memory Used[ 0-9]*/IPC Memory Used @exeMemory@/
 s/EXE Memory Used[ 0-9]*/EXE Memory Used @ipcMemory@/
 s/PID[0-9 ]*/PID @pid@/
 s/RMS Stats Reset Timestamp[ ]*[0-9]*\/[0-9]*\/[0-9]* [0-9]*:[0-9]*:[0-9]*.[0-9]*/RMS Stats Reset Timestamp @rmsStatsResetTimestamp@/
-s/EX_ROOT[ ]*[0-9, |]*/EX_ROOT @exRootCounters@/
+s/10   .    11   .    5    0    EX_ROOT                  1[ ]*[0-9, |]*/10   .    11   .    5    0    EX_ROOT                  1 @exRootCounters@/
 s/EX_SPLIT_TOP[ ]*[0-9, |]*/EX_SPLIT_TOP @exSplitTopCounters@/
 s/EX_SPLIT_BOTTOM[ ]*[0-9, |]*/EX_SPLIT_BOTTOM @exSplitBottomCounters@/
 s/EX_SEND_TOP[ ]*[0-9, |]*/EX_SEND_TOP @exSendTopCounters@/
 s/EX_SEND_BOTTOM[ ]*[0-9, |]*/EX_SEND_BOTTOM @exSendBottomCounters@/
-s/EX_HASH_GRBY[ ]*[0-9, -|A-Z]*/EX_HASH_GRBY @exHashGrbyCounters@/
-s/EX_PARTN_ACCESS[ ]*[A-Za-z0-9, |.#]*/EX_PARTN_ACCESS @exPartnAccessCounters@/
-s/EX_EID_ROOT[ ]*[0-9, |]*/EX_EID_ROOT @exEidRootCounters@/
-s/EX_TRAF_KEY_SELECT[ ]*[0-9, |]*/EX_TRAF_KEY_SELECT @exTrafKeySelectCounters@/
+s/5    .    6    7    3    2    EX_HASH_GRBY             2[ ]*[0-9, -|A-Z]*/5    .    6    7    3    2    EX_HASH_GRBY             2 @exHashGrbyCounters@/
+s/.    .    1    2    1    3    EX_TRAF_KEY_SELECT       2[ ]*[0-9, |]*/.    .    1    2    1    3    EX_TRAF_KEY_SELECT       2 @exTrafKeySelectCounters@/
 
 /[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*/{N
 s/[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*\n[0-9 ,]*/#CAT.#SCH.TSTAT pertableStats/

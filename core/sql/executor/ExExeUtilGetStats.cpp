@@ -1931,11 +1931,6 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           {
             switch (sqlStatsDesc_[currStatsDescEntry_].stats_type)
             {
-/*
-            case SQLSTATS_DESC_PERTABLE_STATS:
-              step_ = GET_PERTABLE_STATS_ENTRY_;
-              break;
-*/
             case SQLSTATS_DESC_MASTER_STATS:
               step_ = GET_MASTER_STATS_ENTRY_;
               break;
@@ -2836,8 +2831,8 @@ short ExExeUtilGetRTSStatisticsTcb::work()
         if (singleLineFormat_) {
            str_sprintf(statsBuf_, "%-9s%-10s%-19s%-19s%-19s%-19s%-13s%-13s%-19s%-19s%-10s",
                 "ID", "DOP",
-		"Est.Rows Accessed", "Est.Records Used",  "Act.Rows Accessed", "Act.Rows Used", "SE IOs", 
-                "SE IO Bytes", "SE IO Sum Time", "SE IO Max Time", "TableName");
+                "EstRowsAccessed", "EstRecordsUsed",  "ActRowsAccessed", "ActRowsUsed", "SE_IOs",
+                "SE_IO_Bytes", "SE_IO_SumTime", "SE_IO_MaxTime", "TableName");
            moveRowToUpQueue(statsBuf_);
         }
         else {
@@ -3003,8 +2998,8 @@ short ExExeUtilGetRTSStatisticsTcb::work()
         if (singleLineFormat_) {
            str_sprintf(statsBuf_, "%-9s%-10s%-19s%-19s%-19s%-19s%-13s%-13s%-19s%-19s%-10s",
                 "ID", "DOP",
-		"Est.Rows Accessed", "Est.Records Used",  "Act.Rows Accessed", "Act.Rows Used", "SE IOs", 
-                "SE IO Bytes", "SE IO Sum Time", "SE IO Max Time", "TableName");
+                "EstRowsAccessed", "EstRecordsUsed",  "ActRowsAccessed", "ActRowsUsed", "SE_IOs",
+                "SE_IO_Bytes", "SE_IO_SumTime", "SE_IO_MaxTime", "TableName");
            moveRowToUpQueue(statsBuf_);
         }
         else {
@@ -3061,8 +3056,10 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             FormatFloat(formattedFloatVal, intSize, valSize, hiveStatsItems_[i].double_value,
 			FALSE, TRUE);
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", formattedFloatVal);
-            if (moveRowToUpQueue(statsBuf_, strlen(statsBuf_), &rc) == -1)
-              return rc;
+            if (! singleLineFormat_) {
+               if (moveRowToUpQueue(statsBuf_, strlen(statsBuf_), &rc) == -1)
+                  return rc;
+            }
             break;
           case SQLSTATS_ACT_ROWS_ACCESSED:
             str_sprintf(Int64Val, "%Ld", hiveStatsItems_[i].int64_value);
@@ -3118,7 +3115,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (bmoStatsItems_ == NULL)
         {
-          maxBMOStatsItems_ = 18;
+          maxBMOStatsItems_ = 17;
           bmoStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxBMOStatsItems_];
           initSqlStatsItems(bmoStatsItems_, maxBMOStatsItems_, FALSE);
@@ -3128,19 +3125,19 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           bmoStatsItems_[3].statsItem_id = SQLSTATS_DOP;
           bmoStatsItems_[4].statsItem_id = SQLSTATS_TOPN;
           bmoStatsItems_[5].statsItem_id = SQLSTATS_OPER_CPU_TIME;
-          bmoStatsItems_[6].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
-          bmoStatsItems_[7].statsItem_id = SQLSTATS_BMO_HEAP_USED;
-          bmoStatsItems_[8].statsItem_id = SQLSTATS_BMO_HEAP_ALLOC;
-          bmoStatsItems_[9].statsItem_id = SQLSTATS_BMO_HEAP_WM;
-          bmoStatsItems_[10].statsItem_id = SQLSTATS_BMO_SPACE_BUFFER_SIZE;
-          bmoStatsItems_[11].statsItem_id = SQLSTATS_BMO_SPACE_BUFFER_COUNT;
-          bmoStatsItems_[12].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
-          bmoStatsItems_[13].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
-          bmoStatsItems_[14].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
-          bmoStatsItems_[15].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
-          bmoStatsItems_[16].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
-          bmoStatsItems_[17].statsItem_id = SQLSTATS_SCRATCH_IO_TIME;
-          // maxBMOStatsItems_ is set to 18
+          bmoStatsItems_[6].statsItem_id = SQLSTATS_BMO_HEAP_USED;
+          bmoStatsItems_[7].statsItem_id = SQLSTATS_BMO_HEAP_ALLOC;
+          bmoStatsItems_[8].statsItem_id = SQLSTATS_BMO_HEAP_WM;
+          bmoStatsItems_[9].statsItem_id = SQLSTATS_BMO_SPACE_BUFFER_SIZE;
+          bmoStatsItems_[10].statsItem_id = SQLSTATS_BMO_SPACE_BUFFER_COUNT;
+          bmoStatsItems_[11].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
+          bmoStatsItems_[12].statsItem_id = SQLSTATS_SCRATCH_IO_SIZE;
+          bmoStatsItems_[13].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
+          bmoStatsItems_[14].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
+          bmoStatsItems_[15].statsItem_id = SQLSTATS_SCRATCH_IO_TIME;
+          bmoStatsItems_[16].statsItem_id = SQLSTATS_SCRATCH_IO_MAX_TIME;
+           
+          // maxBMOStatsItems_ is set to 17 
           // TDB_NAME
           bmoStatsItems_[1].str_value = new (getGlobals()->getDefaultHeap())
                       char[MAX_TDB_NAME_LEN+1];
@@ -3177,26 +3174,25 @@ short ExExeUtilGetRTSStatisticsTcb::work()
 	      return WORK_CALL_AGAIN;
        moveRowToUpQueue(" ");
        if (singleLineFormat()) {       
-          str_sprintf(statsBuf_, "%-5s%-19s%-19s%-10s%-9s%-20s%-20s%-24s%-19s%-19s%-20s%-20s%-5s%-19s%-19s%-19s%-20s%-20s",
-               "Id", "TDB Name", "Mode", "DOP", "TopN", "CPU Time","File Count",
-                "BMO Heap Used", "BMO Heap Total", "BMO Heap WM",
-                "BMO Space BufSz","BMO Space BufCnt", "Size",
-                "ScrBlk Read", "ScrBlk Written", "ScrIO Read", "ScrIO Written", "ScrIO Time");
+          str_sprintf(statsBuf_, "%-5s%-19s%-19s%-10s%-9s%-20s%-24s%-19s%-19s%-20s%-20s%-12s%-11s%-19s%-19s%-20s%-20s",
+               "Id", "TDBName", "Mode", "DOP", "TopN", "CPUTime",
+                "BMOHeapUsed", "BMOHeapAllocated", "BMOHeapWM",
+                "BMOSpaceBufSz","BMOSpaceBufCnt", "ScrFileCnt", "ScrIOSize",
+                "ScrIORead", "ScrIOWritten", "ScrIOTime", "ScrIOMaxTime");
           moveRowToUpQueue(statsBuf_);
        }
        else {
-          str_sprintf(statsBuf_, "%-5s%-19s%-19s%-10s%-9s%-20s%-20s",
-               "Id", "TDB Name", "Mode", "DOP", "TopN", "CPU Time","File Count");
+          str_sprintf(statsBuf_, "%-5s%-19s%-19s%-10s%-9s%-20s",
+               "Id", "TDBName", "Mode", "DOP", "TopN", "CPUTime");
           moveRowToUpQueue(statsBuf_);
         
           str_sprintf(statsBuf_, "%-24s%-19s%-19s%-20s%-20s",
-                "BMO Heap Used", "BMO Heap Total", "BMO Heap WM",
-                "BMO Space BufSz","BMO Space BufCnt");
+                "BMOHeapUsed", "BMOHeapAllocated", "BMOHeapWM",
+                "BMOSpaceBufSz","BMOSpaceBufCnt");
           moveRowToUpQueue(statsBuf_);
        
-          str_sprintf(statsBuf_, "%-5s%-19s%-19s%-19s%-20s%-20s",
-                "Size",
-                "ScrBlk Read", "ScrBlk Written", "ScrIO Read", "ScrIO Written", "ScrIO Time");
+          str_sprintf(statsBuf_, "%-11s%-13s%-19s%-19s%-20s%-20s",
+                "ScrFileCnt", "ScrIOSize", "ScrIORead", "ScrIOWritten", "ScrIOTime", "ScrIOMaxTime");
           moveRowToUpQueue(statsBuf_);
         }
         isBMOHeadingDisplayed_ = TRUE;
@@ -3233,12 +3229,6 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-9s", Int64Val);
             break;
           case SQLSTATS_OPER_CPU_TIME:
-            str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
-            intSize = str_len(Int64Val);
-            AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
-            break;
-          case SQLSTATS_SCRATCH_FILE_COUNT:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
@@ -3280,20 +3270,14 @@ short ExExeUtilGetRTSStatisticsTcb::work()
                   return rc;
             }
             break;
-          case SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE:
+          case SQLSTATS_SCRATCH_FILE_COUNT:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             if (singleLineFormat_) 
                str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-5s", Int64Val);
             else
                str_sprintf(statsBuf_, "%-5s", Int64Val);
             break;
-          case SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ:
-            str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
-            intSize = str_len(Int64Val);
-            AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
-            break;
-          case SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN:
+          case SQLSTATS_SCRATCH_IO_SIZE:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
@@ -3309,9 +3293,15 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
-            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-19s", Int64Val);
             break;
           case SQLSTATS_SCRATCH_IO_TIME:
+            str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
+            break;
+          case SQLSTATS_SCRATCH_IO_MAX_TIME:
             str_sprintf(Int64Val, "%Ld", bmoStatsItems_[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 

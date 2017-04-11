@@ -492,7 +492,7 @@ NA_EIDPROC
   inline void setMaxIOTime(Int64 cnt) { maxIOTime_ = cnt; }
   inline void incMaxIOTime(Int64 i = 1) { maxIOTime_ +=  + i; }
 
-  void init()
+  void init(NABoolean resetDop)
   {
     accessedRows_ = 0;
     usedRows_ = 0;
@@ -575,7 +575,7 @@ NA_EIDPROC
   ExStatsCounter& recdBuffers() { return recdBuffers_; }
 
 NA_EIDPROC
-  void init()
+  void init(NABoolean resetDop)
   {
     totalSentBytes_ = 0;
     totalRecdBytes_ = 0;
@@ -711,9 +711,6 @@ NA_EIDPROC
 NA_EIDPROC
    inline void setSubReqType(short subReqType) 
            { subReqType_ = subReqType; }
-
-NA_EIDPROC
-  inline void resetDop() { dop_ = 0; }
 
 NA_EIDPROC
   inline void restoreDop() { 
@@ -855,7 +852,7 @@ NA_EIDPROC
 // and does NOT reset the tdbName and similar data members.
 //////////////////////////////////////////////////////////////////
 NA_EIDPROC
-  virtual void init();
+  virtual void init(NABoolean resetDop);
 
 //////////////////////////////////////////////////////////////////
 // subTaskReturn is used by the scheduler to set the return code
@@ -1162,7 +1159,7 @@ public:
   ExBMOStats(NAMemory *heap,
 	      ex_tcb *tcb,
 	      const ComTdb * tdb);
-  void init();
+  void init(NABoolean resetDop);
   UInt32 packedLength();
   UInt32 pack(char * buffer);
   void unpack(const char* &buffer);
@@ -1186,6 +1183,7 @@ public:
   inline void incScratchBufferBlockWritten(Int32 count = 1) { scratchBufferBlockWritten_ += count; }
   inline void incScratchReadCount(Int32 count = 1) { scratchReadCount_ += count; }
   inline void incScratchWriteCount(Int32 count = 1) { scratchWriteCount_ += count; }
+  inline void incScratchIOMaxTime(Int64 v) {scratchIOMaxTime_ += v;}
   inline void setSpaceBufferSize(Int32 size)
   {
     spaceBufferSize_ = size >> 10; 
@@ -1208,6 +1206,8 @@ public:
   inline Int64 getScratchReadCount(void) { return scratchReadCount_; }
   static const char *getScratchOverflowMode(Int16 overflowMode);
   ExTimeStats &getScratchIOTimer() { return timer_; }
+  inline void setScratchIOSize(Int64 size) { scratchIOSize_ = size; }
+
 private:
   ExTimeStats timer_;
   Int32 bmoHeapAlloc_;
@@ -1219,10 +1219,12 @@ private:
   Int32 scratchBufferBlockSize_;
   Int32 scratchBufferBlockRead_;
   Int32 scratchBufferBlockWritten_;
+  Int32 scratchIOSize_;
   Int64 scratchReadCount_;
   Int64 scratchWriteCount_;
+  Int64 scratchIOMaxTime_;
   Int16 scratchOverflowMode_;   // 0 - disk 1 - SSD
-  Int64 topN_;                 // TOPN value
+  Int32 topN_;                 // TOPN value
 };
 
 
@@ -1256,7 +1258,7 @@ NA_EIDPROC
   ~ExFragRootOperStats();
 
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
   
 NA_EIDPROC
   UInt32 packedLength();
@@ -1495,7 +1497,7 @@ NA_EIDPROC
   ~ExPartitionAccessStats();
 
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
 NA_EIDPROC
   void copyContents(ExPartitionAccessStats* other);
@@ -1607,7 +1609,7 @@ NA_EIDPROC
   ~ExProbeCacheStats(){};
 
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
 NA_EIDPROC
   void merge(ExProbeCacheStats* other);
@@ -1727,7 +1729,7 @@ NA_EIDPROC
   ~ExHashGroupByStats(){};
   
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
 NA_EIDPROC
   void copyContents(ExHashGroupByStats* other);
@@ -1817,7 +1819,7 @@ NA_EIDPROC
   ~ExHashJoinStats(){};
 
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
 NA_EIDPROC
   void copyContents(ExHashJoinStats* other);
@@ -1925,7 +1927,7 @@ NA_EIDPROC
   ~ExESPStats(){};
 
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
 NA_EIDPROC
   void copyContents(ExESPStats* other);
@@ -2000,7 +2002,7 @@ NA_EIDPROC
   ~ExSplitTopStats(){};
 
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
 NA_EIDPROC
   void merge(ExSplitTopStats* other);
@@ -2081,7 +2083,7 @@ NA_EIDPROC
   ~ExSortStats(){};
   
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
 NA_EIDPROC
   void copyContents(ExSortStats* other);
@@ -2164,7 +2166,7 @@ NA_EIDPROC
   ~ExHdfsScanStats();
 
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
 NA_EIDPROC
   void merge(ExHdfsScanStats* other);
@@ -2273,7 +2275,7 @@ class ExHbaseAccessStats : public ExOperStats {
     ~ExHbaseAccessStats();
   
   NA_EIDPROC
-    void init();
+    void init(NABoolean resetDop);
   
   NA_EIDPROC
     void merge(ExHbaseAccessStats* other);
@@ -2560,7 +2562,7 @@ NA_EIDPROC
   ~ExMeasBaseStats(){};
 
 NA_EIDPROC
-  virtual void init();
+  virtual void init(NABoolean resetDop);
   
 NA_EIDPROC
   virtual UInt32 packedLength();
@@ -2655,7 +2657,7 @@ NA_EIDPROC
   ExMeasStats * castToExMeasStats();
 
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
   
 NA_EIDPROC
   UInt32 packedLength();
@@ -2852,7 +2854,7 @@ public:
   ExUDRBaseStats(NAMemory *heap,
 	      ex_tcb *tcb,
 	      const ComTdb * tdb);
-  void init();
+  void init(NABoolean resetDop);
   UInt32 packedLength();
   UInt32 pack(char * buffer);
   void unpack(const char* &buffer);
@@ -2912,7 +2914,7 @@ NA_EIDPROC
   ~ExUDRStats();
 
 NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
 NA_EIDPROC
   void copyContents(ExUDRStats* other);
@@ -3017,9 +3019,6 @@ NA_EIDPROC
 
 NA_EIDPROC
   void restoreDop();
-
-NA_EIDPROC
-  void resetDopInEid();
 
 NA_EIDPROC
   Lng32 numEntries();
@@ -3791,7 +3790,7 @@ NA_EIDPROC
   void setReadyToSuspend() { readyToSuspend_ = READY; }
   void setNotReadyToSuspend() { readyToSuspend_ = NOT_READY; }
 
-  void init();
+  void init(NABoolean resetDop);
   void reuse();
   void initBeforeExecute(Int64 currentTimestamp);
   void resetAqrInfo();
@@ -4084,7 +4083,7 @@ public:
   ~ExFastExtractStats(){};
 
   NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
   NA_EIDPROC
   void copyContents(ExFastExtractStats* other);
@@ -4192,7 +4191,7 @@ public:
   };
 
   NA_EIDPROC
-  void init();
+  void init(NABoolean resetDop);
 
   NA_EIDPROC
   void copyContents(ExProcessStats* other);
