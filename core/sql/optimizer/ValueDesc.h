@@ -984,6 +984,9 @@ public:
   // vegPredicate or the equal predicate.
   NABoolean containsAsEquiLocalPred(ValueId x) const;
 
+  // return TRUE iff x appears in this in a vegRef and is part of a 
+  // range predicate (<.<=,>,>=) whee the other side is a constant
+  NABoolean containsAsRangeLocalPred(ValueId x) const;
 
   // --------------------------------------------------------------------
   // ValueIdSet::getVEGesWithMultipleConsts()
@@ -1483,7 +1486,7 @@ public:
 
   // ---------------------------------------------------------------------
   // Returns a boolean to indicate if this vid set has a vid that 
-  // corresponds to a FlaseConstant. Such a constant is generated 
+  // corresponds to a FalseConstant. Such a constant is generated 
   // during constant folding. For example a user given predicate such as 
   // 1 = 0 will cause constant folding to generate such a Constant. 
   // The reference to a ValueId given is initialized to the ValueID 

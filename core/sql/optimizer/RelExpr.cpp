@@ -8580,9 +8580,10 @@ void Scan::addIndexInfo()
     {
       IndexDesc *idesc = ixlist[indexNo];
 
-
+      NABoolean dummy; // halloweenProtection is decided using updateableIndex
+      // in GU::normalizeNode. Here this parameter is not used.
       // Determine if this index can be used for a scan during an update.
-      if (updatingCol AND NOT updateableIndex(idesc))
+      if (updatingCol AND NOT updateableIndex(idesc, preds, dummy))
         continue;
 
       ValueIdSet indexColumns(idesc->getIndexColumns());
@@ -9055,19 +9056,33 @@ void Scan::setTableAttributes(CANodeId nodeId)
   setBaseCardinality(MIN_ONE (tableDesc->getNATable()->getEstRowCount())) ;
 }
 
-NABoolean Scan::updateableIndex(IndexDesc *idx)
+NABoolean Scan::updateableIndex(IndexDesc *idx, ValueIdSet& preds, 
+                                NABoolean & needsHalloweenProtection)
 {
   //
-  // Returns TRUE if the index (idx) can be used for a scan during 
-  // an UPDATE. Halloween problem is protected with a sort using
-  // Scan::requiresHalloweenForUpdateUsingIndexScan(). 
-  // Returns FALSE only for certain embedded updates now.
+  // Returns TRUE if the index (idx) can be used for a scan during an UPDATE.
+  // Returns TRUE with needsHalloweenProtection also set to TRUE, if the index
+  // needs a blocking sort for Halloween protection
+  // Otherwise, returns FALSE to prevent use of this index. 
+  // Using the index in this case requires Halloween protection, but is likely 
+  // inefficient since there are no useful preds on the index key columns, so
+  // we don't add this index to list of candidates.
   //
 
-  if (!getGroupAttr()->isEmbeddedUpdate())
-    return TRUE ;
+  // The conditions of when this index returns TRUE can also be expressed as
+  // returns true for an index if it is 
+  // a) a unique/clustering index or 
+  // b) has a unique predicate on its key or 
+  // c) has an equals or range predicate on all the index columns that 
+  // get updated. If one of the key columns being updated has a range predicate
+  // then needsHalloweenProtection is set to TRUE.
+  // Note that if a key column is being updated and has no predicate on it then
+  // we return FALSE.
 
+  // preds has predicate in non-RangeSpec form, 
+  // while pred will be in RangeSpec form if feature is enabled.
   ValueIdSet pred = getSelectionPredicates(), dummySet;
+
   SearchKey searchKey(idx->getIndexKey(),
 	              idx->getOrderOfKeyValues(),
 	              getGroupAttr()->getCharacteristicInputs(),
@@ -9076,10 +9091,11 @@ NABoolean Scan::updateableIndex(IndexDesc *idx)
                       dummySet, // needed by the interface but not used here
                       idx
                       );
+
   // Unique index is OK to use.
   if (searchKey.isUnique())
     return TRUE;
-
+  
   const ValueIdList colUpdated = getTableDesc()->getColUpdated();
   const ValueIdList indexKey = idx->getIndexKey();
 
@@ -9093,79 +9109,83 @@ NABoolean Scan::updateableIndex(IndexDesc *idx)
     for (CollIndex j = 0; j < indexKey.entries(); j++)
     {
       ItemExpr *keyCol = indexKey[j].getItemExpr();
-      ItemExpr *baseCol = 
-        ((IndexColumn*)keyCol)->getDefinition().getItemExpr();
+      ItemExpr *baseCol = ((IndexColumn*)keyCol)->getDefinition().getItemExpr();
       CMPASSERT(baseCol->getOperatorType() == ITM_BASECOLUMN);
-      if (((BaseColumn*)updateCol)->getColNumber() ==
-          ((BaseColumn*)baseCol)->getColNumber())
-        return FALSE;
-    }
-  }
+      if (getGroupAttr()->isEmbeddedUpdate()){
+        if (((BaseColumn*)updateCol)->getColNumber() ==
+            ((BaseColumn*)baseCol)->getColNumber())
+          return FALSE;
+      }
+      if ((NOT(idx->isUniqueIndex() || idx->isClusteringIndex()) && 
+           (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) != DF_AGGRESSIVE))
+          ||
+	  (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) == DF_OFF))
+      {
+        if (((BaseColumn*)updateCol)->getColNumber() ==
+            ((BaseColumn*)baseCol)->getColNumber()) 
+        {
+          if (preds.containsAsEquiLocalPred(baseCol->getValueId()))
+            continue;
+          else if (preds.containsAsRangeLocalPred(baseCol->getValueId()))
+            needsHalloweenProtection = TRUE;
+          else {
+            needsHalloweenProtection = FALSE;
+            return FALSE;
+          }
+        } // index key col is being updated
+      } // not a clustering or unique index
+    } // loop over index key cols
+  } // loop over cols being updated
+
   return TRUE;
 } // Scan::updateableIndex
 
 NABoolean Scan::requiresHalloweenForUpdateUsingIndexScan()
-{
-
-  // Returns TRUE if any non clustering index can be used for a scan 
-  // during an UPDATE and a key column of that index is in the SET
-  // clause of the update. If this method returns TRUE we will use a 
-  // sort node to prevent the "Halloween Update Problem".
-  //
+{ 
+  // Returns TRUE if any index that is in the list of indexes that will be 
+  // added later in addIndexInfo() to drive the scan for an UPDATE requires 
+  // Halloween protection. This is decided by using Scan::updateableIndex(). 
+  // If this method returns TRUE we will use a sort node to prevent the 
+  // "Halloween Update Problem".
 
   // preds are in RangeSpec form
   ValueIdSet preds = getSelectionPredicates();
-  const ValueIdList colUpdated = getTableDesc()->getColUpdated();
+  const ValueIdList & colUpdated = getTableDesc()->getColUpdated();
   const LIST(IndexDesc *) & ixlist = getTableDesc()->getIndexes();
-
+  
   if ((colUpdated.entries() == 0) || (preds.entries() == 0) ||
       (ixlist.entries() == 1) || // this is the clustering index
       (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) 
        == DF_AGGRESSIVE)) // this setting means no Halloween protection
     return FALSE;
-
-   if (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON)
-   {
-     ValueIdList selectionPredList(preds);
-     ItemExpr *inputItemExprTree = 
-       selectionPredList.rebuildExprTree(ITM_AND,FALSE,FALSE);
-     ItemExpr * resultOld = revertBackToOldTree(STMTHEAP, 
-                                                inputItemExprTree);
-     preds.clear();
-     resultOld->convertToValueIdSet(preds, NULL, ITM_AND);
-     doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,
-                                                   resultOld);
-   }
-
+ 
+  if (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON)
+  {
+    ValueIdList selectionPredList(preds);
+    ItemExpr *inputItemExprTree = 
+      selectionPredList.rebuildExprTree(ITM_AND,FALSE,FALSE);
+    ItemExpr * resultOld = revertBackToOldTree(STMTHEAP, 
+                                               inputItemExprTree);
+    preds.clear();
+    resultOld->convertToValueIdSet(preds, NULL, ITM_AND);
+    doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,
+                                                  resultOld);
+  }
+  
+  NABoolean needsHalloweenProtection ;
   for (CollIndex indexNo = 0; indexNo < ixlist.entries(); indexNo++)
   {
     IndexDesc *idx = ixlist[indexNo];
     if (idx->isClusteringIndex() || 
         (idx->isUniqueIndex() && 
-        (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) 
-         == DF_ON)))
+         (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) 
+          == DF_ON)))
       continue ; // skip this idesc
-
-    const ValueIdList indexKey = idx->getIndexKey();
-    // Determine if the columns being updated are key columns. Each key
-    // column being updated must have an associated equality clause in
-    // the WHERE clause of the UPDATE for it to be used.
-    for (CollIndex i = 0; i < colUpdated.entries(); i++)
-    {
-      ItemExpr *updateCol = colUpdated[i].getItemExpr();
-      CMPASSERT(updateCol->getOperatorType() == ITM_BASECOLUMN);
-      for (CollIndex j = 0; j < indexKey.entries(); j++)
-      {
-        ItemExpr *keyCol = indexKey[j].getItemExpr();
-        ItemExpr *baseCol = 
-          ((IndexColumn*)keyCol)->getDefinition().getItemExpr();
-        CMPASSERT(baseCol->getOperatorType() == ITM_BASECOLUMN);
-        if (((BaseColumn*)updateCol)->getColNumber() ==
-            ((BaseColumn*)baseCol)->getColNumber() AND
-            NOT preds.containsAsEquiLocalPred(baseCol->getValueId()))
-          return TRUE;
-      }
-    }
+    
+    needsHalloweenProtection = FALSE;
+    if(updateableIndex(idx, preds, needsHalloweenProtection) && 
+       needsHalloweenProtection)
+      return TRUE; // if even one index requires Halloween, then we add the sort
   }
   return FALSE;
 }
