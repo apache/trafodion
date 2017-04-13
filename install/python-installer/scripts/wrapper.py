@@ -35,16 +35,19 @@ class RemoteRun(Remote):
 
     def __init__(self, host, logger, user='', pwd='', quiet=False):
         self.sudo_prefix = ''
-        if not user:
-            self.sudo_prefix = get_sudo_prefix()
-        elif user != 'root':
-            self.sudo_prefix = 'sudo -n'
-
-        super(RemoteRun, self).__init__(host, user, pwd)
-
+        self.host = host
+        self.user = user
+        self.pwd = pwd
         self.quiet = quiet # no output
         self.logger = logger
 
+        if not self.user:
+            self.sudo_prefix = get_sudo_prefix()
+        elif self.user != 'root':
+            self.sudo_prefix = 'sudo -n'
+
+    def initialize(self):
+        super(RemoteRun, self).__init__(self.host, self.user, self.pwd)
         # create tmp folder
         self.execute('mkdir -p %s' % TMP_DIR)
 
@@ -205,6 +208,11 @@ def run(dbcfgs, options, mode='install', pwd=''):
             remote_instances = [RemoteRun(host, logger, user=user, pwd=pwd, quiet=True) for host in hosts]
         else:
             remote_instances = [RemoteRun(host, logger, user=user, pwd=pwd) for host in hosts]
+        # do init in threads to improve performance
+        threads = [Thread(target=r.initialize) for r in remote_instances]
+        for t in threads: t.start()
+        for t in threads: t.join()
+
         first_instance = remote_instances[0]
         for instance in remote_instances:
             if instance.host == dbcfgs['first_rsnode']:
