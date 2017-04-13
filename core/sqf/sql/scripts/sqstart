@@ -458,6 +458,15 @@ sqipcrm > sqipcrm.out
 echoLog "Executing cleanZKNodes (output to cleanZKNodes.out)"
 cleanZKNodes > cleanZKNodes.out 2>&1
 
+echoLog "Checking whether HBase is up"
+hbcheck 4 30
+if [ $? != 0 ]; then
+    lv_msg="It looks like HBase is not up, hbcheck utility failed."
+    echoLog "$lv_msg"
+    LogIt "End $script_name $sq_start, exit code: 1, $lv_msg"
+  exit 1
+fi
+
 rm -f $SQSTART_EXIT_STATUS
 SQStartProcesses &
 getJobInfo SQStartProcesses
@@ -640,6 +649,10 @@ STOPtime=$(date +%s)
 elapsed_seconds=$(( $STOPtime - $STARTtime))
 printf "Startup time "
 hms  "$elapsed_seconds"
+
+if [ $lv_startup_status '!=' 0 ]; then
+  LogIt "Please check the log files in $SQLOG_DIR for errors."
+fi
 
 LogIt "End $script_name $sq_start, exit code: ${lv_startup_status}"
 exit ${lv_startup_status}
