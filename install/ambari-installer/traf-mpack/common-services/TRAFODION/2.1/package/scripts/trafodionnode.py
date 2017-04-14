@@ -102,6 +102,13 @@ class Node(Script):
     Execute(cmd)
 
     ##################
+    # Make sure our JVM files are owned by us
+    if os.path.exists("/tmp/hsperfdata_%s" % params.traf_user):
+      cmd = "chown -R %s:%s /tmp/hsperfdata_%s" % (params.traf_user, params.traf_group, params.traf_user)
+      Execute(cmd)
+
+
+    ##################
     # LDAP config
     # In future, should move to traf_conf_dir
     if params.traf_ldap_enabled == 'YES':
