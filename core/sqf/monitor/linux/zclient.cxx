@@ -53,6 +53,9 @@
 // The monitors register their znodes under the cluster znode
 #define ZCLIENT_CLUSTER_ZNODE               "/cluster"
 
+// zookeeper connection retry count
+#define ZOOKEEPER_RETRY_COUNT                3
+
 using namespace std;
 
 extern char Node_name[MPI_MAX_PROCESSOR_NAME];
@@ -748,8 +751,16 @@ int CZClient::InitializeZClient( void )
     TRACE_ENTRY;
 
     int rc;
+    int retries = 0;
 
     rc = MakeClusterZNodes();
+
+    while ( rc != ZOK and retries < ZOOKEEPER_RETRY_COUNT)
+    {
+        retries++;
+        rc = MakeClusterZNodes();
+    }
+
     if ( rc == ZOK )
     {
         rc = RegisterMyNodeZNode();
