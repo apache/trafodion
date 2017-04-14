@@ -3783,9 +3783,10 @@ void CostMethodHbaseUpdateOrDelete::computeIOCostsForCursorOperation(
   ) const
 {
   const CostScalar & kbPerBlock = CIDesc->getBlockSizeInKb();
+  // if rowsize is bigger than blocksize, rowsPerBlock will be 1.
   const CostScalar rowsPerBlock =
     ((kbPerBlock * csOneKiloBytes) /
-     CIDesc->getNAFileSet()->getRecordLength()).getFloor();
+     CIDesc->getNAFileSet()->getRecordLength()).getCeiling();
   CostScalar totalIndexBlocks(csZero);
 
   if (probesInOrder)

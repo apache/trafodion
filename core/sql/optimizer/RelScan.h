@@ -427,8 +427,9 @@ public:
 
   // find out which indexes on the base table are usable for this scan
   void addIndexInfo();
-  NABoolean equalityPredOnCol(ItemExpr*);
-  NABoolean updateableIndex(IndexDesc*);
+  NABoolean updateableIndex(IndexDesc*, ValueIdSet& preds, 
+                            NABoolean & needsHalloweenProtection);
+  NABoolean requiresHalloweenForUpdateUsingIndexScan();
 
   // iterate over the usable indexes (index-only and index joins)
   CollIndex numUsableIndexes();

@@ -2764,6 +2764,54 @@ NABoolean ValueIdSet::containsAsEquiLocalPred(ValueId x) const
 
 } // ValueIdSet::containsAsEquiPred()
 
+NABoolean ValueIdSet::containsAsRangeLocalPred(ValueId x) const
+{
+  NABoolean result = FALSE; // until proven otherwise
+  if (entries() <= 0)
+    return result; // has no predicates at all
+  ItemExpr* constExpr = NULL;
+  NABoolean found = FALSE;
+
+  for (ValueId vid = init(); next(vid); advance(vid))
+  {
+    ItemExpr *expr = vid.getItemExpr();
+    switch (expr->getOperatorType())
+    {      
+    case ITM_LESS:
+    case ITM_LESS_EQ:
+    case ITM_LESS_OR_LE:
+    case ITM_GREATER:
+    case ITM_GREATER_EQ:
+    case ITM_GREATER_OR_GE:
+      
+      // consider range-predicate "a<1", "1>a", "a>1" or "1<xa" 
+      for (CollIndex i=0; i<2; i++ ) {
+        if ( expr->child(i)->getOperatorType() == ITM_VEG_REFERENCE ) 
+        {
+          ItemExpr* childExpr = expr->child(i);
+          found = ((VEGReference*)(childExpr))->getVEG()
+            ->getAllValues().contains(x);
+        } else
+          found = (expr->child(i) == x);
+        
+        if (found) {
+          CollIndex j = (i==0) ? 1 : 0;
+          ValueIdSet vset(expr->child(j));
+          if ( vset.entries() == 1 &&
+               vset.referencesAConstExpr(&constExpr) == TRUE )
+            return TRUE;
+        }
+      }      
+      break;
+      
+    default:
+      return FALSE;
+    }
+  }
+  return result;
+
+} // ValueIdSet::containsAsRangeLocalPred()
+
 
 void ValueIdSet::insertList(const ValueIdList &other)
 {
@@ -4479,6 +4527,33 @@ NABoolean ValueIdSet::containsAnyTrue(ValueId &refAnyTrue ) const
    }
    return FALSE;
 } // ValueIdSet::containsAnyTrue
+
+NABoolean ValueIdSet::containsFalseConstant(ValueId &falseConstant ) const
+{
+
+   for ( ValueId vid = init(); next(vid); advance(vid))
+   {
+     OperatorTypeEnum OpType = vid.getItemExpr()->getOperatorType();
+     
+     if( OpType == ITM_RETURN_FALSE )
+     {
+       falseConstant = vid;
+       return TRUE;
+     }
+     else if ( OpType == ITM_CONSTANT )
+     {
+       NABoolean negate;
+       ConstValue *cv = vid.getItemExpr()->castToConstValue(negate);
+       if( cv && cv->isAFalseConstant())
+       {
+         falseConstant = vid;
+         return TRUE;
+       }
+     }
+   }
+   return FALSE;
+
+} // ValueIdSet::containsFalseConstant
 
 // -----------------------------------------------------------------------
 // Methods used for debugging and display.

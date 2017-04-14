@@ -168,6 +168,10 @@ static NABoolean processConstHBaseKeys(Generator * generator,
       exePreds += relExpr->getSelectionPred();
       exePreds.subtractSet(keyPreds);
 
+      ValueId falseConst = NULL_VALUE_ID;
+      if (exePreds.containsFalseConstant(falseConst))
+        keyPreds += falseConst;
+
       HbaseSearchKey::makeHBaseSearchKeys(
            skey,
            skey->getIndexDesc()->getIndexKey(),
@@ -183,6 +187,15 @@ static NABoolean processConstHBaseKeys(Generator * generator,
       // Include any remaining key predicates that have not been 
       // picked up (to be used as the HBase search keys).
       exePreds += keyPreds;
+
+      if(falseConst != NULL_VALUE_ID)
+      {
+	for (CollIndex i = 0; i<mySearchKeys.entries(); i++ ) 
+        {
+          HbaseSearchKey* searchKey = mySearchKeys[i];
+	  searchKey->setIsFalsePred(TRUE);
+	}
+      }
 
       TableDesc *tdesc = NULL;
       if (mySearchKeys.entries()>0)
@@ -3916,6 +3929,10 @@ RelExpr * FileScan::preCodeGen(Generator * generator,
 
           if (getSearchKey()) 
             exePreds += getSearchKey()->getExecutorPredicates();
+
+          ValueId falseConst = NULL_VALUE_ID;
+          if (exePreds.containsFalseConstant(falseConst))
+            replaceSearchKey = FALSE;
 
           // pick one search key and add the remaining
           // predicates (if any) to exePreds
@@ -11224,27 +11241,27 @@ short HbaseAccess::processSQHbaseKeyPreds(Generator * generator,
 	  scanSpec.endKeyExclusive_ = FALSE;
 	  scanSpec.rowTS_ = -1;
 	  
-	  if ( !searchKey->areAllBeginKeysMissing() )
-	    {
-	      if ( (ct=searchKey->getCoveredLeadingKeys()) > 0 )
-		{
-		  ValueIdList beginKeyValues = searchKey->getBeginKeyValues();
-		  beginKeyValues.convertToTextKey(searchKey->getKeyColumns(), scanSpec.beginRowId_);
-		  scanSpec.beginKeyExclusive_ = searchKey->isBeginKeyExclusive();
-		} 
-	    } 
+          if ((( !searchKey->areAllBeginKeysMissing() ) && 
+	       ((ct=searchKey->getCoveredLeadingKeys()) > 0 )) ||
+	      searchKey->isFalsePred())
+	  {
+	    ValueIdList beginKeyValues = searchKey->getBeginKeyValues();
+	    beginKeyValues.convertToTextKey(searchKey->getKeyColumns(), 
+					    scanSpec.beginRowId_);
+	    scanSpec.beginKeyExclusive_ = 
+              searchKey->isBeginKeyExclusive();
+	  } 
 	  
-	  if ( !searchKey->areAllEndKeysMissing() ) 
-	    {
-	      if ( (ct=searchKey->getCoveredLeadingKeys()) )
-		{
-		  ValueIdList endKeyValues = searchKey->getEndKeyValues();
-		  endKeyValues.convertToTextKey(searchKey->getKeyColumns(), scanSpec.endRowId_);
-		  scanSpec.endKeyExclusive_ = searchKey->isEndKeyExclusive();
-		} 
-	    } 
-	  
-	  //	  scanSpec.addColumnNames(searchKey->getRequiredOutputColumns());
+	  if ((( !searchKey->areAllEndKeysMissing() ) && 
+	       (ct=searchKey->getCoveredLeadingKeys())) ||
+	      searchKey->isFalsePred())
+	  {
+	    ValueIdList endKeyValues = searchKey->getEndKeyValues();
+	    endKeyValues.convertToTextKey(searchKey->getKeyColumns(), 
+					  scanSpec.endRowId_);
+	    scanSpec.endKeyExclusive_ = searchKey->isEndKeyExclusive();
+	  }  
+	 
 	  listOfRangeRows.insertAt(listOfRangeRows.entries(), scanSpec);
 	}
     } // for
