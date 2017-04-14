@@ -1966,6 +1966,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HIVE_METADATA_JAVA_ACCESS,            "ON"),
   DDint__(HIVE_METADATA_REFRESH_INTERVAL,       "0"),
   DDflt0_(HIVE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
+  DDkwd__(HIVE_NO_REGISTER_OBJECTS,             "OFF"),
   DDui___(HIVE_NUM_ESPS_PER_DATANODE,           "2"),
   DDpct__(HIVE_NUM_ESPS_ROUND_DEVIATION,        "34"),
   DDint__(HIVE_SCAN_SPECIAL_MODE,                "0"),
@@ -1975,7 +1976,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HIVE_USE_FAKE_TABLE_DESC,             "OFF"),
   DDkwd__(HIVE_USE_HASH2_AS_PARTFUNCION,        "ON"),
   DDkwd__(HIVE_VIEWS,                           "ON"),
-  DDkwd__(HIVE_VIEWS_CREATE_EXTERNAL_TABLE,     "ON"),
 
  // -------------------------------------------------------------------------
 
@@ -5935,9 +5935,7 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
      }
      break;
 
-     // max char col length is 10M (10485760).
-     // max char col length is defined in common/ComSmallDefs.h
-     // Currently set to 16M
+     // max char col length is defined in common/ComSmallDefs.h.
      // In special cases, it could be overridden. Internal use only or
      // use only under trafodion supervision.
      case TRAF_MAX_CHARACTER_COL_LENGTH:

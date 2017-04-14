@@ -3045,13 +3045,13 @@ short Sort::generateTdb(Generator * generator,
   
   CostScalar bufferSize = getDefault(GEN_SORT_MAX_BUFFER_SIZE);
 
-  UInt32 bufferSize_as_ulong = 
+  UInt32 bufferSize_as_uint32 = 
     (UInt32)(MINOF(CostScalar(UINT_MAX), bufferSize)).getValue(); 
 
   // allocate buffer to hold atlease one row
-  bufferSize_as_ulong = MAXOF(bufferSize_as_ulong, sortRecLen);
+  bufferSize_as_uint32 = MAXOF(bufferSize_as_uint32, sortRecLen);
 
-  GenAssert(sortRecLen <= bufferSize_as_ulong, 
+  GenAssert(sortRecLen <= bufferSize_as_uint32, 
       "Record Len greater than GEN_SORT_MAX_BUFFER_SIZE");
   
   ComTdbSort * sort_tdb = 0;
@@ -3209,7 +3209,7 @@ short Sort::generateTdb(Generator * generator,
 	       (queue_index)getDefault(GEN_SORT_SIZE_UP),
 	       (Cardinality) (getInputCardinality() * getEstRowsUsed()).getValue(),
 	       numBuffers,
-	       bufferSize_as_ulong,
+	       bufferSize_as_uint32,
 	       max_num_buffers,
 	       sort_options,
            sortGrowthPercent);

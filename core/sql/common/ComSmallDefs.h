@@ -103,6 +103,7 @@ typedef NABoolean               ComBoolean;
 #define COM_PUBLIC_ACCESS_SCHEMA "PUBLIC_ACCESS_SCHEMA"
 
 #define HIVE_SYSTEM_CATALOG          "HIVE"
+#define HIVE_SYSTEM_CATALOG_LC       "hive"
 #define HIVE_SYSTEM_SCHEMA           "HIVE"
 #define HIVE_SYSTEM_SCHEMA_LC        "hive"
 

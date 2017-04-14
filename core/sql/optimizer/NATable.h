@@ -531,8 +531,8 @@ public:
   // table object (if any) for a native table.
   // Set objectUID_ to 0 if no such external table exists;
   // set objectUID_ to -1 if there is error during the fetch operation;
-  NABoolean fetchObjectUIDForNativeTable(const CorrName& corrName);
-
+  NABoolean fetchObjectUIDForNativeTable(const CorrName& corrName,
+                                         NABoolean isView);
 
   Int64 lookupObjectUid();  // Used to look up uid on demand for metadata tables.
                             // On return, the "Object Not Found" error (-1389) 
@@ -562,6 +562,7 @@ public:
   { return viewTextInNAWchars_.length() > 0 ? viewTextInNAWchars_.data() : NULL; }
   const NAWString &getViewTextAsNAWString() const     { return viewTextInNAWchars_; }
   CharInfo::CharSet getViewTextCharSet() const    { return viewTextCharSet_; }
+  NABoolean isView() const { return (viewText_ != NULL); }
 
   // getViewLen is needed to compute buffer len for a parseDML call
   // locale-to-unicode conversion in parseDML requires buffer len (tcr)
@@ -772,6 +773,18 @@ public:
   {  value ? flags_ |= HIVE_EXT_KEY_ATTRS : flags_ &= ~HIVE_EXT_KEY_ATTRS; }
   NABoolean hiveExtKeyAttrs() const
   {  return (flags_ & HIVE_EXT_KEY_ATTRS) != 0; }
+
+  void setIsRegistered( NABoolean value )
+  {  value ? flags_ |= IS_REGISTERED : flags_ &= ~IS_REGISTERED; }
+
+  NABoolean isRegistered() const
+  {  return (flags_ & IS_REGISTERED) != 0; }
+
+  void setIsInternalRegistered( NABoolean value )
+  {  value ? flags_ |= IS_INTERNAL_REGISTERED : flags_ &= ~IS_INTERNAL_REGISTERED; }
+
+  NABoolean isInternalRegistered() const
+  {  return (flags_ & IS_INTERNAL_REGISTERED) != 0; }
  
   const CheckConstraintList &getCheckConstraints() const
                                                 { return checkConstraints_; }
@@ -997,7 +1010,9 @@ private:
     HAS_HIVE_EXT_TABLE        = 0x01000000,
     HIVE_EXT_COL_ATTRS        = 0x02000000,
     HIVE_EXT_KEY_ATTRS        = 0x04000000,
-    IS_IMPLICIT_EXTERNAL_TABLE= 0x08000000
+    IS_IMPLICIT_EXTERNAL_TABLE= 0x08000000,
+    IS_REGISTERED             = 0x10000000,
+    IS_INTERNAL_REGISTERED    = 0x20000000
   };
     
   UInt32 flags_;

@@ -47,11 +47,7 @@ CREATE TABLE THIVE1
   stored as textfile
 ;
 
-/* Trafodion DDL */
-
-CREATE /*IMPLICIT*/ EXTERNAL TABLE THIVE1
-  FOR HIVE.HIVE.THIVE1
-;
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.THIVE1;
 
 --- SQL operation complete.
 >>
@@ -227,22 +223,22 @@ TRAFODION.SCH007.VHIVE2
 --- SQL operation complete.
 >>get views on table hive.hive.thive1;
 
-Views on Table _HV_HIVE_.THIVE1
-===============================
+Views on Table HIVE.THIVE1
+==========================
 
-SCH007.VHIVE1
-SCH007.VHIVE2
+TRAFODION.SCH007.VHIVE1
+TRAFODION.SCH007.VHIVE2
 
 --- SQL operation complete.
 >>get all views on table hive.hive.thive2;
 
-Views on Table _HV_HIVE_.THIVE2
-===============================
+Views on Table HIVE.THIVE2
+==========================
 
-SCH007.VHIVE11
-SCH007.VHIVE2
-SCH007.VHIVE3
-SCH007.VHIVEHBASE
+TRAFODION.SCH007.VHIVE11
+TRAFODION.SCH007.VHIVE2
+TRAFODION.SCH007.VHIVE3
+TRAFODION.SCH007.VHIVEHBASE
 
 --- SQL operation complete.
 >>
@@ -260,13 +256,25 @@ CREATE TABLE THIVE2
   stored as textfile
 ;
 
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.THIVE2;
+
 --- SQL operation complete.
 >>showddl trafodion.sch007.vhive3;
 
-*** ERROR[4082] Object TRAFODION.SCH007.VHIVE3 does not exist or is inaccessible.
+CREATE VIEW TRAFODION.SCH007.VHIVE3 AS
+  SELECT TRAFODION.SCH007.VHIVE2.A, TRAFODION.SCH007.VHIVE2.B FROM
+    TRAFODION.SCH007.VHIVE2 ;
 
---- SQL operation failed with errors.
+--- SQL operation complete.
 >>get all views on table hive.hive.thive2;
+
+Views on Table HIVE.THIVE2
+==========================
+
+TRAFODION.SCH007.VHIVE11
+TRAFODION.SCH007.VHIVE2
+TRAFODION.SCH007.VHIVE3
+TRAFODION.SCH007.VHIVEHBASE
 
 --- SQL operation complete.
 >>
@@ -332,52 +340,39 @@ A            B
 --- SQL operation complete.
 >>execute s;
 
-*** ERROR[4262] Object HIVE.HIVE.THIVE1 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'drop external table' command to drop the external table.
+*** ERROR[4263] Object HIVE.HIVE.THIVE1 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup hive table/view' command to cleanup this object.
 
 *** ERROR[8822] The statement was not prepared.
 
 --- 0 row(s) selected.
 >>select * from trafodion.sch007.vhive1;
 
-*** ERROR[4262] Object HIVE.HIVE.THIVE1 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'drop external table' command to drop the external table.
+*** ERROR[4263] Object HIVE.HIVE.THIVE1 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup hive table/view' command to cleanup this object.
 
 *** ERROR[8822] The statement was not prepared.
 
->>
->>-- if external table creation has been disabled, then view usage will
->>-- not available
->>cqd hive_views_create_external_table 'OFF';
+>>unregister hive table if exists hive.hive.thive1;
+
+*** ERROR[4263] Object HIVE.HIVE.THIVE1 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup hive table/view' command to cleanup this object.
+
+*** ERROR[3251] UNREGISTER operation could not be completed.
+
+--- SQL operation failed with errors.
+>>select * from hive.hive.thive1;
+
+*** ERROR[4263] Object HIVE.HIVE.THIVE1 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup hive table/view' command to cleanup this object.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>cleanup hive table hive.hive.thive1;
 
 --- SQL operation complete.
->>process hive statement 'drop table thive3';
+>>select * from hive.hive.thive1;
 
---- SQL operation complete.
->>process hive statement 'create table thive3(a int, b int)';
+*** ERROR[1388] Object HIVE.HIVE.THIVE1 does not exist in hive metadata.
 
---- SQL operation complete.
->>create view trafodion.sch007.vhive6 as select * from hive.hive.thive3;
+*** ERROR[8822] The statement was not prepared.
 
-*** WARNING[1071] View usage information for the following hive tables could not be set. Make sure that an external table either already exists or implicit creation has not been disabled. Hive tables: HIVE.HIVE.THIVE3
-
---- SQL operation complete.
->>showddl hive.hive.thive3;
-
-/* Hive DDL */
-CREATE TABLE THIVE3
-  (
-    A                                int
-  , B                                int
-  )
-  stored as textfile
-;
-
---- SQL operation complete.
->>get all views on table hive.hive.thive3;
-
---- SQL operation complete.
->>get all tables in view trafodion.sch007.vhive6;
-
---- SQL operation complete.
 >>
 >>
 >>obey TEST007(setup_hive);
@@ -634,18 +629,204 @@ A
 >>get tables in view trafodion.sch007.vtrafonhive;
 
 --- SQL operation complete.
->>
->>obey TEST007(error_tests_hive);
->>get tables in view hive.hivesch007.vhive11;
+>>get views in view trafodion.sch007.vtrafonhive;
 
-*** ERROR[4219] This command is not supported on the specified object or an incorrect object type was specified.
+Views in View SCH007.VTRAFONHIVE
+================================
 
-*** ERROR[8822] The statement was not prepared.
+HIVE.HIVESCH007.VHIVE11
 
->>get views  on table hive.hivesch007.thive1;
+--- SQL operation complete.
+>>get views on view hive.hivesch007.vhive11;
+
+Views ON View HIVESCH007.VHIVE11
+================================
+
+TRAFODION.SCH007.VTRAFONHIVE
 
 --- SQL operation complete.
 >>
+>>unregister hive view hive.hivesch007.vhive11 cascade;
+
+--- SQL operation complete.
+>>get tables in view hive.hivesch007.vhive11;
+
+--- SQL operation complete.
+>>get views on table hive.hivesch007.thive1;
+
+--- SQL operation complete.
+>>
+>>register hive view hive.hivesch007.vhive11 cascade;
+
+--- SQL operation complete.
+>>showddl hive.hivesch007.vhive11;
+
+Original native Hive view text:
+select * from hivesch007.vhive1 where vhive1.a > 0
+
+Expanded native Hive view text:
+CREATE VIEW vhive11 AS
+  select vhive1.a from hivesch007.vhive1 where vhive1.a > 0 ;
+
+REGISTER HIVE VIEW HIVE.HIVESCH007.VHIVE11;
+
+--- SQL operation complete.
+>>get tables in view hive.hivesch007.vhive11;
+
+--- SQL operation complete.
+>>get views in view hive.hivesch007.vhive11;
+
+Views in View HIVESCH007.VHIVE11
+================================
+
+HIVE.HIVESCH007.VHIVE1
+
+--- SQL operation complete.
+>>get views on table hive.hivesch007.thive1;
+
+Views on Table HIVESCH007.THIVE1
+================================
+
+HIVE.HIVESCH007.VHIVE1
+
+--- SQL operation complete.
+>>get views on view hive.hivesch007.vhive1;
+
+Views ON View HIVESCH007.VHIVE1
+===============================
+
+HIVE.HIVESCH007.VHIVE11
+
+--- SQL operation complete.
+>>
+>>-- tests for recursive hive view/table register/unregister operations
+>>process hive statement 'create database hivesch0071';
+
+--- SQL operation complete.
+>>process hive statement 'create table hivesch0071.h1 (a int)';
+
+--- SQL operation complete.
+>>process hive statement 'create view hivesch0071.vh1 as select * from hivesch0071.h1';
+
+--- SQL operation complete.
+>>process hive statement 'create view hivesch0071.vh11 as select vh1.a x, h1.a y from hivesch0071.vh1, hivesch0071.h1';
+
+--- SQL operation complete.
+>>
+>>set schema hive.hivesch0071;
+
+--- SQL operation complete.
+>>showddl hive.hivesch0071.vh11;
+
+Original native Hive view text:
+select vh1.a x, h1.a y from hivesch0071.vh1, hivesch0071.h1
+
+Expanded native Hive view text:
+CREATE VIEW vh11 AS
+  select vh1.a x, h1.a y from hivesch0071.vh1, hivesch0071.h1 ;
+
+--- SQL operation complete.
+>>get tables in view vh11;
+
+--- SQL operation complete.
+>>get views in view vh11;
+
+--- SQL operation complete.
+>>get all objects in view vh11;
+
+--- SQL operation complete.
+>>
+>>register hive view vh11 cascade;
+
+--- SQL operation complete.
+>>get tables in view vh11;
+
+Tables in View HIVESCH0071.VH11
+===============================
+
+HIVE.HIVESCH0071.H1
+
+--- SQL operation complete.
+>>get views in view vh11;
+
+Views in View HIVESCH0071.VH11
+==============================
+
+HIVE.HIVESCH0071.VH1
+
+--- SQL operation complete.
+>>get all objects in view vh11;
+
+Objects in View HIVESCH0071.VH11
+================================
+
+HIVE.HIVESCH0071.H1
+HIVE.HIVESCH0071.VH1
+
+--- SQL operation complete.
+>>
+>>get hive registered tables in catalog trafodion, match '%hivesch0071%';
+
+Hive Registered Tables in Catalog TRAFODION
+===========================================
+
+hive.hivesch0071.h1
+
+--- SQL operation complete.
+>>get hive registered views in catalog trafodion, match '%hivesch0071%';
+
+Hive Registered Views in Catalog TRAFODION
+==========================================
+
+hive.hivesch0071.vh1
+hive.hivesch0071.vh11
+
+--- SQL operation complete.
+>>get hive registered objects in catalog trafodion, match '%hivesch0071%';
+
+Hive Registered Objects in Catalog TRAFODION
+============================================
+
+hive.hivesch0071.h1
+hive.hivesch0071.vh1
+hive.hivesch0071.vh11
+
+--- SQL operation complete.
+>>
+>>select object_name from trafodion."_MD_".objects where schema_name = 'HIVESCH0071';
+
+OBJECT_NAME
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+VH11                                                                                                                                                                                                                                                            
+VH1                                                                                                                                                                                                                                                             
+H1                                                                                                                                                                                                                                                              
+
+--- 3 row(s) selected.
+>>
+>>unregister hive view vh11 cascade;
+
+--- SQL operation complete.
+>>get hive registered objects in catalog trafodion, match '%hivesch0071%';
+
+--- SQL operation complete.
+>>
+>>showddl vh11;
+
+Original native Hive view text:
+select vh1.a x, h1.a y from hivesch0071.vh1, hivesch0071.h1
+
+Expanded native Hive view text:
+CREATE VIEW vh11 AS
+  select vh1.a x, h1.a y from hivesch0071.vh1, hivesch0071.h1 ;
+
+--- SQL operation complete.
+>>
+>>select object_name from trafodion."_MD_".objects where schema_name = 'HIVESCH0071';
+
+--- 0 row(s) selected.
+>>
+>>obey TEST007(error_tests_hive);
 >>insert into hive.hivesch007.vhive1 values (1);
 
 *** ERROR[4027] Table or view HIVE.HIVESCH007.VHIVE1 does not permit insertions.
@@ -670,7 +851,7 @@ A
 >>
 >>prepare s from select * from hive.hivesch007.vhive11;
 
-*** ERROR[1388] Object HIVE.HIVESCH007.THIVE1 does not exist in hive metadata.
+*** ERROR[4263] Object HIVE.HIVESCH007.THIVE1 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup hive table/view' command to cleanup this object.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -696,7 +877,7 @@ A
 >>
 >>execute s;
 
-*** ERROR[1388] Object HIVE.HIVESCH007.THIVE1 does not exist in hive metadata.
+*** ERROR[4263] Object HIVE.HIVESCH007.THIVE1 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup hive table/view' command to cleanup this object.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -705,5 +886,190 @@ A
 *** WARNING[8577] Table, index, or view HIVE.HIVESCH007.THIVE1 was not found.
 
 --- 0 row(s) selected.
+>>
+>>-- test compatibility with hive tables created prior to registration change)
+>>set schema hive.hivesch007;
+
+--- SQL operation complete.
+>>process hive statement 'drop table hivesch007.thive9';
+
+--- SQL operation complete.
+>>process hive statement 'create table hivesch007.thive9 (a int)';
+
+--- SQL operation complete.
+>>unregister hive table if exists hive.hivesch007.thive9;
+
+--- SQL operation complete.
+>>cqd hive_no_register_objects 'ON';
+
+--- SQL operation complete.
+>>drop external table if exists thive9 for hive.hivesch007.thive9;
+
+--- SQL operation complete.
+>>create external table thive9 for hive.hivesch007.thive9;
+
+--- SQL operation complete.
+>>showddl thive9;
+
+/* Hive DDL */
+CREATE TABLE THIVE9
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+CREATE EXTERNAL TABLE THIVE9
+  FOR HIVE.HIVESCH007.THIVE9
+;
+
+--- SQL operation complete.
+>>grant select on hive.hivesch007.thive9 to sql_user3;
+
+--- SQL operation complete.
+>>get privileges for user sql_user3;
+
+Privileges for User SQL_USER3
+=============================
+
+S------    HIVE.HIVESCH007.THIVE9
+
+--- SQL operation complete.
+>>insert into hive.hivesch007.thive9 values (1), (2), (3), (4), (5), (6);
+
+--- 6 row(s) inserted.
+>>update statistics for table hive.hivesch007.thive9 on every column;
+
+--- SQL operation complete.
+>>showstats for table hive.hivesch007.thive9 on every column;
+
+Histogram data for Table HIVE.HIVESCH007.THIVE9
+Table ID: 1101817735408395584
+
+   Hist ID # Ints    Rowcount         UEC Colname(s)
+========== ====== =========== =========== ===========================
+ 808652373      6           6           6 A
+
+
+--- SQL operation complete.
+>>create view trafodion.sch007.vhive9 as select * from hive.hivesch007.thive9;
+
+--- SQL operation complete.
+>>showddl hive.hivesch007.thive9;
+
+/* Hive DDL */
+CREATE TABLE THIVE9
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+CREATE EXTERNAL TABLE THIVE9
+  FOR HIVE.HIVESCH007.THIVE9
+;
+
+--- SQL operation complete.
+>>
+>>register hive table hive.hivesch007.thive9;
+
+--- SQL operation complete.
+>>showddl thive9;
+
+/* Hive DDL */
+CREATE TABLE THIVE9
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+REGISTER HIVE TABLE HIVE.HIVESCH007.THIVE9;
+
+/* Trafodion DDL */
+
+CREATE EXTERNAL TABLE THIVE9
+  FOR HIVE.HIVESCH007.THIVE9
+;
+
+--- SQL operation complete.
+>>showstats for table hive.hivesch007.thive9 on every column;
+
+Histogram data for Table HIVE.HIVESCH007.THIVE9
+Table ID: 1101817735408395584
+
+   Hist ID # Ints    Rowcount         UEC Colname(s)
+========== ====== =========== =========== ===========================
+ 808652373      6           6           6 A
+
+
+--- SQL operation complete.
+>>unregister hive table hive.hivesch007.thive9;
+
+--- SQL operation complete.
+>>showddl thive9;
+
+/* Hive DDL */
+CREATE TABLE THIVE9
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+/* Trafodion DDL */
+
+CREATE EXTERNAL TABLE THIVE9
+  FOR HIVE.HIVESCH007.THIVE9
+;
+
+--- SQL operation complete.
+>>showstats for table hive.hivesch007.thive9 on every column;
+
+Histogram data for Table HIVE.HIVESCH007.THIVE9
+Table ID: 1101817735408395584
+
+   Hist ID # Ints    Rowcount         UEC Colname(s)
+========== ====== =========== =========== ===========================
+ 808652373      6           6           6 A
+
+
+--- SQL operation complete.
+>>drop view trafodion.sch007.vhive9;
+
+--- SQL operation complete.
+>>drop external table thive9 for hive.hivesch007.thive9;
+
+--- SQL operation complete.
+>>
+>>showddl thive9;
+
+/* Hive DDL */
+CREATE TABLE THIVE9
+  (
+    A                                int
+  )
+  stored as textfile
+;
+
+--- SQL operation complete.
+>>showstats for table hive.hivesch007.thive9 on every column;
+
+Histogram data for Table HIVE.HIVESCH007.THIVE9
+Table ID: 0
+
+   Hist ID # Ints    Rowcount         UEC Colname(s)
+========== ====== =========== =========== ===========================
+
+No Histograms exist for the requested columns or groups
+
+
+--- SQL operation complete.
+>>
+>>
 >>
 >>log;

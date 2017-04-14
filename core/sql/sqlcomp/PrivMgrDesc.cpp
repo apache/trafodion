@@ -257,6 +257,10 @@ void PrivMgrCoreDesc::setAllObjectGrantPrivilege(
       case COM_STORED_PROCEDURE_OBJECT:
          setAllUdrGrantPrivileges(wgo);
          break;
+      case COM_VIEW_OBJECT:
+        // will reach here for native hive views
+         setAllTableGrantPrivileges(wgo);
+         break;
       default:
          ; //TODO: internal error?
    }   

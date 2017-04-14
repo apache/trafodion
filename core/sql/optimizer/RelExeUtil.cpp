@@ -82,6 +82,7 @@
 #include "StmtDDLDropRoutine.h"
 #include "StmtDDLCleanupObjects.h"
 #include "StmtDDLAlterLibrary.h"
+#include "StmtDDLRegOrUnregHive.h"
 
 #include <cextdecs/cextdecs.h>
 #include "wstr.h"
@@ -941,6 +942,7 @@ RelExpr * ExeUtilHiveQuery::bindNode(BindWA *bindWA)
   if (NOT ((hiveQuery_.index("CREATE", 0, NAString::ignoreCase) == 0) ||
            (hiveQuery_.index("DROP", 0, NAString::ignoreCase) == 0) ||
            (hiveQuery_.index("ALTER", 0, NAString::ignoreCase) == 0) ||
+           //           (hiveQuery_.index("INSERT", 0, NAString::ignoreCase) == 0) ||
            (hiveQuery_.index("TRUNCATE", 0, NAString::ignoreCase) == 0)))
     {
       // error case
@@ -4037,6 +4039,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
   NABoolean alterLibrary = FALSE;
   NABoolean externalTable = FALSE;
   NABoolean isVolatile = FALSE;
+  NABoolean isRegister = FALSE;
 
   returnStatus_ = FALSE;
 
@@ -4497,6 +4500,13 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       returnStatus_ = 
         getExprNode()->castToStmtDDLNode()->castToStmtDDLCleanupObjects()->getStatus();
     }
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLRegOrUnregHive())
+    {
+      isRegister = TRUE;
+
+      qualObjName_ = getExprNode()->castToStmtDDLNode()->
+        castToStmtDDLRegOrUnregHive()->getObjNameAsQualifiedName();
+    }
 
     if (isCleanup_)
       {
@@ -4504,9 +4514,9 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
           hbaseDDLNoUserXn_ = TRUE;
       }
 
-    if ((isCreateSchema || isDropSchema || isAlterSchema) ||
+    if ((isCreateSchema || isDropSchema || isAlterSchema) || isRegister ||
         ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&
-         (isCreate_ || isDrop_ || purgedataHbase_ ||
+         (isCreate_ || isDrop_ || purgedataHbase_ || 
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
 			alterAddConstr || alterDropConstr || alterRenameTable ||
                         alterStoredDesc ||
@@ -4536,7 +4546,21 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 	    bindWA->setErrStatus();
 	    return NULL;
 	  }
-	
+
+        if (isRegister)
+          {
+            if (NOT qualObjName_.isHive())
+              {
+                *CmpCommon::diags() << DgSqlCode(-3242) << 
+                  DgString0("Register/Unregister statement must specify a hive object.");
+                
+                bindWA->setErrStatus();
+                return NULL;
+              }
+
+            isHbase_ = TRUE;
+          }
+
 	// if a user ddl operation, it cannot run under a user transaction.
 	// If an internal ddl request, like a CREATE internally issued onbehalf
 	// of a CREATE LIKE, then allow it to run under a user Xn.
@@ -4564,7 +4588,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
         bindWA->setErrStatus();
         return NULL;
       }
-    }
+  }
 
   RelExpr * boundExpr = GenericUtilExpr::bindNode(bindWA);
   if (bindWA->errStatus())

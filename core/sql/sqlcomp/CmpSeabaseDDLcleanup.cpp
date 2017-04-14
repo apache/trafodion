@@ -65,7 +65,8 @@ CmpSeabaseMDcleanup::CmpSeabaseMDcleanup(NAHeap *heap)
     numOrphanMetadataEntries_(0),
     numOrphanHbaseEntries_(0),
     numOrphanObjectsEntries_(0),
-    numOrphanViewsEntries_(0)
+    numOrphanViewsEntries_(0),
+    numInconsistentHiveEntries_(0)
 {};
 
 Int64 CmpSeabaseMDcleanup::getCleanupObjectUID(
@@ -1033,6 +1034,81 @@ short CmpSeabaseMDcleanup::cleanupUIDs(ExeCliInterface *cliInterface,
   return 0;
 }
 
+void CmpSeabaseMDcleanup::cleanupHiveObject(const StmtDDLCleanupObjects * stmtCleanupNode,
+                                             ExeCliInterface *cliInterface)
+{
+
+  Lng32 cliRC = 0;
+  char query[1000];
+  NABoolean errorSeen = FALSE;
+
+  // check if this table exists in hive metadata
+  NABoolean hiveObjExists = TRUE;
+  NAString objName(stmtCleanupNode->getTableNameAsQualifiedName()->getObjectName());
+  objName.toLower();
+  str_sprintf(query, "select * from (get %s in schema %s.%s, no header, match '%s') x(a)",
+              (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_)
+              ? "tables" : "views",
+               stmtCleanupNode->getTableNameAsQualifiedName()->getCatalogName().data(),
+              stmtCleanupNode->getTableNameAsQualifiedName()->getSchemaName().data(),    
+              objName.data());
+  cliRC = cliInterface->fetchRowsPrologue(query, TRUE/*no exec*/);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+  
+  cliRC = cliInterface->clearExecFetchClose(NULL, 0);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+      return;
+    }
+  
+  if (cliRC == 100) // did not find the row
+    {
+      hiveObjExists = FALSE;
+    }
+    
+  // if underlying hive object doesn't exist, drop external table and unregister
+  // objects
+  if (NOT hiveObjExists)
+    {
+      // drop external table
+      if (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_)
+        {
+          str_sprintf(query, "drop external table if exists %s for %s;",
+                      objName.data(),
+                      stmtCleanupNode->getTableNameAsQualifiedName()->
+                      getQualifiedNameAsString().data());
+          cliRC = cliInterface->executeImmediate(query);
+          if (cliRC < 0)
+            {
+              if (processCleanupErrors(NULL, errorSeen))
+                return;
+            }          
+        }
+      
+      // unregister registered table or view
+      if (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_)
+        str_sprintf(query, "unregister hive table if exists %s cleanup;",
+                    stmtCleanupNode->getTableNameAsQualifiedName()->getQualifiedNameAsString().data());
+      else
+        str_sprintf(query, "unregister hive view if exists %s cleanup;",
+                    stmtCleanupNode->getTableNameAsQualifiedName()->getQualifiedNameAsString().data());
+      
+      cliRC = cliInterface->executeImmediate(query);
+      if (cliRC < 0)
+        {
+          if (processCleanupErrors(NULL, errorSeen))
+            return;
+        }
+    }
+
+  return;
+}
+
 short CmpSeabaseMDcleanup::addReturnDetailsEntry(
                                                  ExeCliInterface * cliInterface,
                                                  Queue* &list, const char *value, 
@@ -1474,6 +1550,90 @@ short CmpSeabaseMDcleanup::cleanupOrphanViewsEntries(ExeCliInterface *cliInterfa
   return 0;
 }
 
+// remove hive objects that are registered in traf metadata but the 
+// corresponding object is missing in hive database.
+short CmpSeabaseMDcleanup::cleanupInconsistentHiveEntries(
+     ExeCliInterface *cliInterface,
+     ExpHbaseInterface *ehi)
+{
+  Lng32 cliRC = 0;
+  char query[4000];
+  NABoolean errorSeen = FALSE;
+
+  // get all registered tables that do not have corresponding hive objects.
+  str_sprintf(query, "select trim(O.a), 'table' from "
+              "(select lower(trim(catalog_name) || '.' || trim(schema_name)"
+              " || '.' || trim(object_name)) from %s.\"%s\".%s "
+              "where object_type = '%s' and catalog_name = 'HIVE') O(a) left join "
+              "(select '%s' || '.' || trim(y) from "
+              "(get tables in catalog %s, no header) x(y)) G(b) "
+              "on O.a = G.b where G.b is null "
+              "  union all "
+              "select trim(O.a), 'view' from "
+              "(select lower(trim(catalog_name) || '.' || trim(schema_name)"
+              " || '.' || trim(object_name)) from %s.\"%s\".%s "
+              "where object_type = '%s' and catalog_name = 'HIVE') O(a) left join "
+              "(select '%s' || '.' || trim(y) from "
+              "(get views in catalog %s, no header) x(y)) G(b) "
+              "on O.a = G.b where G.b is null ;",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              COM_BASE_TABLE_OBJECT_LIT,
+              HIVE_SYSTEM_CATALOG_LC,
+              HIVE_SYSTEM_CATALOG_LC,
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              COM_VIEW_OBJECT_LIT,
+              HIVE_SYSTEM_CATALOG_LC,
+              HIVE_SYSTEM_CATALOG_LC);
+  Queue * orphanHiveObjs = NULL;
+  cliRC = cliInterface->fetchAllRows
+    (orphanHiveObjs, query, 0, FALSE, FALSE, TRUE);
+  if (cliRC < 0)
+    {
+      if (processCleanupErrors(cliInterface, errorSeen))
+        return -1;
+    }
+
+  numInconsistentHiveEntries_ = 0;
+  returnDetailsList_ = NULL;
+  addReturnDetailsEntry(cliInterface, returnDetailsList_, NULL, TRUE);
+
+  numInconsistentHiveEntries_ += orphanHiveObjs->numEntries();
+
+  orphanHiveObjs->position();
+  for (size_t i = 0; i < orphanHiveObjs->numEntries(); i++)
+    {
+      
+      OutputInfo * oi = (OutputInfo*)orphanHiveObjs->getCurr(); 
+       
+      if (addReturnDetailsEntry(cliInterface, returnDetailsList_, 
+                                oi->get(0), FALSE))
+        return -1;
+
+      if (NOT checkOnly_)
+        {
+          if (strcmp(oi->get(1), "table") == 0)
+            str_sprintf(query, "unregister hive table if exists %s cleanup;",
+                        oi->get(0));
+          else
+            str_sprintf(query, "unregister hive view if exists %s cleanup;",
+                        oi->get(0));
+            
+          cliRC = cliInterface->executeImmediate(query);
+          if (cliRC < 0)
+            {
+              cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+              return -1;
+            }
+        }
+
+      orphanHiveObjs->advance();
+    }
+
+  numOrphanMetadataEntries_ = orphanHiveObjs->numEntries();
+
+  return 0;
+}
+
 void CmpSeabaseMDcleanup::populateBlackBox(ExeCliInterface *cliInterface,
                                            Queue *returnDetailsList,
                                            Int32 &blackBoxLen,
@@ -1716,7 +1876,7 @@ void CmpSeabaseMDcleanup::cleanupMetadataEntries(ExeCliInterface *cliInterface,
                   dws->setBlackBox(blackBox);
                    
                   dws->setMsg(buf);
-                  dws->setStep(DONE_CLEANUP);
+                  dws->setStep(HIVE_ENTRIES);
                   dws->setSubstep(0);
                   dws->setEndStep(TRUE);
                   
@@ -1725,6 +1885,49 @@ void CmpSeabaseMDcleanup::cleanupMetadataEntries(ExeCliInterface *cliInterface,
                 break;
               } // switch
           } // VIEWS_ENTRIES
+
+        case HIVE_ENTRIES:
+          {
+            switch (dws->subStep())
+              {
+              case 0:
+                {
+                  dws->setMsg("  Start: Cleanup Inconsistent Hive Entries");
+                  dws->subStep()++;
+                  dws->setEndStep(FALSE);
+                  
+                  return;
+                }
+                break;
+                
+              case 1:
+                {
+
+                  if (cleanupInconsistentHiveEntries(cliInterface, ehi))
+                    return;
+                  
+                  str_sprintf(buf, "  End:   Cleanup Inconsistent Hive Entries (%d %s %s)",
+                              numInconsistentHiveEntries_,
+                              (numInconsistentHiveEntries_ == 1 ? "entry" : "entries"),
+                              (checkOnly_ ? "found" : "cleaned up"));
+                  
+                  Int32 blackBoxLen = 0;
+                  char * blackBox = NULL;
+                  populateBlackBox(cliInterface, returnDetailsList_, blackBoxLen, blackBox);
+
+                  dws->setBlackBoxLen(blackBoxLen);
+                  dws->setBlackBox(blackBox);
+                   
+                  dws->setMsg(buf);
+                  dws->setStep(DONE_CLEANUP);
+                  dws->setSubstep(0);
+                  dws->setEndStep(TRUE);
+                  
+                  return;
+                }
+                break;
+              } // switch
+          } // HIVE_ENTRIES
 
        case DONE_CLEANUP:
           {
@@ -1797,6 +2000,13 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
       (objType_ == COM_SHARED_SCHEMA_OBJECT_LIT))
     {
       return cleanupSchemaObjects(&cliInterface);
+    }
+
+  if (stmtCleanupNode &&
+      ((stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_TABLE_) ||
+       (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_VIEW_)))
+    {
+      return cleanupHiveObject(stmtCleanupNode, &cliInterface);
     }
 
   if (gatherDependentObjects(&cliInterface))

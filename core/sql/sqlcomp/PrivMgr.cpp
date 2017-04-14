@@ -382,8 +382,10 @@ const char * PrivMgr::getSQLOperationName(SQLOperation operation)
       case SQLOperation::QUERY_ACTIVATE: return "QUERY_ACTIVATE";
       case SQLOperation::QUERY_CANCEL: return "QUERY_CANCEL";
       case SQLOperation::QUERY_SUSPEND: return "QUERY_SUSPEND";
+      case SQLOperation::REGISTER_HIVE_OBJECT: return "REGISTER_HIVE_OBJECT";
       case SQLOperation::REMAP_USER: return "REMAP_USER";
       case SQLOperation::SHOW: return "SHOW";
+      case SQLOperation::UNREGISTER_HIVE_OBJECT: return "UNREGISTER_HIVE_OBJECT";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "USE_ALTERNATE_SCHEMA";
       default:
          return "UNKNOWN";   
@@ -475,8 +477,10 @@ const char * PrivMgr::getSQLOperationCode(SQLOperation operation)
       case SQLOperation::QUERY_ACTIVATE: return "QA";
       case SQLOperation::QUERY_CANCEL: return "QC";
       case SQLOperation::QUERY_SUSPEND: return "QS";
+      case SQLOperation::REGISTER_HIVE_OBJECT: return "RH";
       case SQLOperation::REMAP_USER: return "RU";
       case SQLOperation::SHOW: return "SW";
+      case SQLOperation::UNREGISTER_HIVE_OBJECT: return "UH";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "UA";
       default:
          return "  ";   
@@ -571,8 +575,10 @@ const char * PrivMgr::getSQLOperationDescription(SQLOperation operation)
       case SQLOperation::QUERY_ACTIVATE: return "Allow grantee to activate queries";
       case SQLOperation::QUERY_CANCEL: return "Allow grantee to cancel queries";
       case SQLOperation::QUERY_SUSPEND: return "Allow grantee to suspend queries";
+      case SQLOperation::REGISTER_HIVE_OBJECT: return "Allow grantee to register hive object in traf metadata";
       case SQLOperation::REMAP_USER: return "Allow grantee to remap DB__ users to a different external username";
       case SQLOperation::SHOW: return "Allow grantee to view metadata information about objects";
+      case SQLOperation::UNREGISTER_HIVE_OBJECT: return "Allow grantee to unregister hive object from traf metadata";
       case SQLOperation::USE_ALTERNATE_SCHEMA: return "Allow grantee to use non-default schemas";
       default:
          return "";   
@@ -868,13 +874,7 @@ bool PrivMgr::isSQLManageOperation(SQLOperation operation)
 const char * PrivMgr::ObjectEnumToLit(ComObjectType objectType)
 
 {
-
-   for (size_t i = 0; i < occurs(objectTypeConversionTable); i++)
-      if (objectType == objectTypeConversionTable[i].enum_)
-         return objectTypeConversionTable[i].literal_;
-
-   return COM_UNKNOWN_OBJECT_LIT;  
-    
+  return comObjectTypeLit(objectType);
 }
 //********************* End of PrivMgr::ObjectEnumToLit ************************
 

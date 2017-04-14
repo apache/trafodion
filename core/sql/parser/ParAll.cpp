@@ -62,6 +62,7 @@
 #include "StmtDMLSetTransaction.cpp" 
 #include "StmtNode.cpp"
 #include "StmtDDLRegisterUser.cpp"
+#include "StmtDDLRegOrUnregHive.cpp"
 #include "StmtDDLCreateRole.cpp"
 #include "StmtDDLRoleGrant.cpp"
 #include "StmtDDLMisc.cpp"

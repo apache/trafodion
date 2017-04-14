@@ -2415,7 +2415,7 @@ public:
 protected:
   enum
   {
-    NUM_MAX_PARAMS_ = 20
+    NUM_MAX_PARAMS_ = 25
   };
 
   enum Step

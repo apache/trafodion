@@ -41,7 +41,7 @@
 >>invoke t012t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T012T1
--- Definition current  Sat Jan 14 03:57:20 2017
+-- Definition current  Thu Mar  2 09:40:48 2017
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -65,7 +65,7 @@
 >>invoke t012v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T012V1
--- Definition current  Sat Jan 14 03:57:23 2017
+-- Definition current  Thu Mar  2 09:40:52 2017
 
   (
     A                                SMALLINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -370,8 +370,8 @@ TRAFODION.ZSCHEMA2.T
 Views on Table ZSCHEMA1.T
 =========================
 
-ZSCHEMA1.V
-ZSCHEMA2.V
+TRAFODION.ZSCHEMA1.V
+TRAFODION.ZSCHEMA2.V
 
 --- SQL operation complete.
 >>

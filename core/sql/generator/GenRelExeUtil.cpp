@@ -1591,7 +1591,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "SYSTEM", "SCHEMAS",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
     {  "ALL",    "SCHEMAS",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
 
-    {  "USER",    "SEQUENCES",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
+    {  "USER",   "SEQUENCES",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
     {  "ALL",    "SEQUENCES",   "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
 
     {  "USER",   "TABLES",    "",      "",         1,      0,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
@@ -1634,13 +1634,17 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "USER",   "SCHEMAS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
     {  "SYSTEM", "SCHEMAS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
     {  "ALL",    "SCHEMAS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_ },
-    {  "ALL",   "VIEWS",   "IN",      "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_ },
-    {  "USER",   "VIEWS",   "IN",      "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_ },
-    {  "ALL",   "INVALID_VIEWS",   "IN",      "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_CATALOG_ },
-    {  "USER",   "SEQUENCES",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
-    {  "ALL", "SEQUENCES",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
-    {  "USER",   "TABLES",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_CATALOG_ },
+    {  "ALL",    "VIEWS",     "IN",    "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_ },
+    {  "USER",   "VIEWS",     "IN",    "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_ },
+    {  "ALL",    "INVALID_VIEWS",   "IN",      "CATALOG",         1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::INVALID_VIEWS_IN_CATALOG_ },
+    {  "USER",   "SEQUENCES", "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
+    {  "ALL",    "SEQUENCES", "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::SEQUENCES_IN_CATALOG_ },
+    {  "USER",   "TABLES",    "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_CATALOG_ },
     {  "USER",   "OBJECTS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_CATALOG_ },
+    {  "USER",   "HIVE_REG_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_ },
+    {  "USER",   "HIVE_REG_VIEWS", "IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_ },
+    {  "USER",   "HIVE_REG_OBJECTS", "IN", "CATALOG",  1,      1,        0,      0,  ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_ },
+    {  "USER",   "HIVE_EXT_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_EXT_TABLES_IN_CATALOG_ },
 
     {  "USER",   "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
     {  "SYSTEM", "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
@@ -1899,10 +1903,32 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
   NAString hiveDefSchName = "";
   CmpCommon::getDefault(HIVE_DEFAULT_SCHEMA, hiveDefSchName, FALSE);
   hiveDefSchName.toUpper();
-  
+
+  //  if ((catName.isNull() && schName.isNull()) &&
+  if ((catName.isNull()) &&
+      (generator->currentCmpContext()->schemaDB_->getDefaultSchema().
+       getCatalogName() == HIVE_SYSTEM_CATALOG) &&
+      ((queryType == ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_) ||
+       (queryType == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_) ||
+       (queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_)))
+    {
+      catName = 
+        generator->currentCmpContext()->schemaDB_->getDefaultSchema().
+        getCatalogName();
+
+      if (schName.isNull())
+        schName = 
+          generator->currentCmpContext()->schemaDB_->getDefaultSchema().
+          getSchemaName();
+    }
+
   if (((catName == hiveDefCatName) ||
        (catName == HIVE_SYSTEM_CATALOG)) &&
-      (queryType != ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_))
+      ((queryType != ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_) &&
+       (queryType != ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_) &&
+       (queryType != ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_) &&
+       (queryType != ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_) &&
+       (queryType != ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_VIEW_)))
     {
       setHiveObjects(TRUE);
     }
@@ -1939,6 +1965,9 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
               (queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_CATALOG_) ||
               (queryType == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_CATALOG_) ||
               (queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_) ||
+              (queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_VIEW_) ||
+              (queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_VIEW_) ||
+              (queryType == ComTdbExeUtilGetMetadataInfo::TABLES_IN_VIEW_) ||
               (queryType == ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_)))
 	{
 	  *CmpCommon::diags() << DgSqlCode(-4219);
@@ -2043,7 +2072,8 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
       if (((catName == hiveDefCatName) ||
            (catName == HIVE_SYSTEM_CATALOG)) &&
           ((queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_ON_TABLE_) &&
-           (naTable && naTable->hasExternalTable())))
+           (naTable && (NOT naTable->isRegistered()) &&
+            naTable->hasExternalTable())))
         {
           // Convert the native name to its Trafodion form
           NAString tabName = ComConvertNativeNameToTrafName

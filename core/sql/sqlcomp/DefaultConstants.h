@@ -3629,7 +3629,8 @@ enum DefaultConstants
   TRAF_TRANS_TYPE, 
 
   // max size in bytes of a char or varchar column in a trafodion table.
-  // Valid values are 0 through 10M (10485760).
+  // Valid values are 0 through MAX_CHAR_COL_LENGTH_IN_BYTES.
+  //     (defined in common/ComSmallDefs.h)
   TRAF_MAX_CHARACTER_COL_LENGTH,
 
   // In special cases, previous default value could be overridden. 
@@ -3744,11 +3745,6 @@ enum DefaultConstants
 
   // if ON, then trafodion views on hive objects are supported.
   HIVE_VIEWS,
-
-  // if ON, then external table is automatically created for all hive tables 
-  // referenced in the view definition.
-  // External table is needed to keep track of view usage and privileges.
-  HIVE_VIEWS_CREATE_EXTERNAL_TABLE,
 
   // Specify whic additional restriction check to apply
   //  0: no check
@@ -3901,6 +3897,17 @@ enum DefaultConstants
   TRANSLATE_ERROR,
   TRANSLATE_ERROR_UNICODE_TO_UNICODE,
   INDEX_HINT_WARNINGS,
+
+  // Operations on hive objects also register it in traf OBJECTS metadata table,
+  // if not already registered. create external table, grant, upd stats, create
+  // views are the current operations that also register hive objects.
+  // 
+  // This default is used to simulate the 
+  // scenario prior to 'hive registration' change. At that time, hive objects
+  // were represented by an external table. With this default set, operations
+  // on hive could be created without registering them.
+  // This default is for internal testing usage only and not externalized.
+  HIVE_NO_REGISTER_OBJECTS,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

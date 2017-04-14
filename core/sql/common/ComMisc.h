@@ -51,9 +51,12 @@ NABoolean ComIsTrafodionReservedSchema(
                                        const NAString &schName);
 
 // schema names of pattern "_HV_ ... _" and "_HB_ ... _" are reserved to store
-// external hive and hbase tables
+// external hive and hbase tables.
+// If isHive is passed in, then it is set to TRUE if this is a hive schema,
+// and set to FALSE otherwise.
 NABoolean ComIsTrafodionExternalSchemaName (
-                                            const NAString &schName);
+     const NAString &schName,
+     NABoolean * isHive = NULL);
 
 NABoolean ComIsHbaseMappedSchemaName (const NAString &schName);
 

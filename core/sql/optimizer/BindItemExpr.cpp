@@ -5882,10 +5882,13 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 	       (naType1->getTypeQualifier() == NA_DATETIME_TYPE) &&
                (getOperatorType() == ITM_MINUS))
 	{
-          // Column of DATE datatype is internally created as TIMESTAMP(0).
-          // timestamp(0) - date               =  diff in days
+          // timestamp(0) - date          =  diff in days
+          // date - date                  = diff in days
+          //
+          // In mode_special_4,
+          // Column of DATE datatype is internally created as TIMESTAMP(0)
+          // and their diff is in days.
           // timestamp(0) - timestamp(0)  = diff in days
-          // date - date                            = diff in days
 	  const DatetimeType* datetime1 = (DatetimeType*)naType0;
 	  const DatetimeType* datetime2 = (DatetimeType*)naType1;
           if (((datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) ||

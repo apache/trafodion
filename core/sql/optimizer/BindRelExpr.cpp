@@ -5351,6 +5351,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 		       (naTable->getObjectType() == COM_INDEX_OBJECT)) &&
 		      ((naTable->isSeabaseTable()) ||
                        ((naTable->isHiveTable()) &&
+                        (NOT naTable->isView()) &&
+                        (naTable->getClusteringIndex()) &&
                         (naTable->getClusteringIndex()->getHHDFSTableStats()->isOrcFile()))))
 		    {
 		      Aggregate * agg = 

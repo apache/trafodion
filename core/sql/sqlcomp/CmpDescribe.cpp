@@ -2279,6 +2279,18 @@ short CmpDescribeHiveTable (
 
       outputLongLine(space, viewtext, 0);
 
+      // if this hive view is registered in traf metadata, show that.
+      if (naTable->isRegistered())
+        {
+          outputShortLine(space, " ");
+
+          sprintf(buf,  "REGISTER%sHIVE VIEW %s;",
+                  (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
+                  naTable->getTableName().getQualifiedNameAsString().data());
+          NAString bufnas(buf);
+          outputLongLine(space, bufnas, 0);
+        }
+
       outbuflen = space.getAllocatedSpaceSize();
       outbuf = new (heap) char[outbuflen];
       space.makeContiguous(outbuf, outbuflen);
@@ -2368,6 +2380,21 @@ short CmpDescribeHiveTable (
   if (type == 2)
     outputShortLine(space, ";");
 
+  // if this hive table is registered in traf metadata, show that.
+  if ((type == 2) &&
+      (naTable->isRegistered()))
+    {
+      outputShortLine(space, " ");
+
+      sprintf(buf,  "REGISTER%sHIVE %s %s;",
+              (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
+              (isView ? "VIEW" : "TABLE"),
+              naTable->getTableName().getQualifiedNameAsString().data());
+
+      NAString bufnas(buf);
+      outputLongLine(space, bufnas, 0);
+    }
+
   // if this hive table has an associated external table, show ddl
   // for that external table.
   if ((type == 2) &&
@@ -2403,6 +2430,49 @@ short CmpDescribeHiveTable (
 
       outputShortLine(space, ";");
     }
+
+  // If SHOWDDL and authorization is enabled, display GRANTS
+  if (type == 2)
+  {
+    int64_t objectUID = (int64_t)naTable->objectUid().get_value();
+
+    char * sqlmxRegr = getenv("SQLMX_REGRESS");
+    NABoolean displayPrivilegeGrants = TRUE;
+    if (((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM) && sqlmxRegr) ||
+        (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF) ||
+        (NOT CmpCommon::context()->isAuthorizationEnabled()) ||
+        (objectUID <= 0))
+      displayPrivilegeGrants = FALSE;
+
+    if (displayPrivilegeGrants)
+    {
+      // Used for context switches
+      CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+
+      // now get the grant stmts
+      std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
+      privMDLoc += std::string(".\"") + 
+                   std::string(SEABASE_PRIVMGR_SCHEMA) + 
+                   std::string("\"");
+      PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags(),
+                                    PrivMgr::PRIV_INITIALIZED);
+      PrivMgrObjectInfo objectInfo(naTable);
+      std::string privilegeText;
+      if (cmpSBD.switchCompiler())
+      {
+        *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+        return -1;
+      }
+ 
+      if (privInterface.describePrivileges(objectInfo, privilegeText))
+      {
+        outputShortLine(space, " ");
+        outputLine(space, privilegeText.c_str(), 0);
+      }
+
+      cmpSBD.switchBackCompiler();
+    }
+  }
 
   outbuflen = space.getAllocatedSpaceSize();
   outbuf = new (heap) char[outbuflen];
