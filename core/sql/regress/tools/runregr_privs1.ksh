@@ -286,18 +286,8 @@ for ix in $testfiles; do
     efile=$REGRTSTDIR/$exp
   fi
 
-sqlci > $ix.tmp 2>&1 << eof
-env;
-eof
-authDisabled=`cat $ix.tmp | grep AUTHORIZATION | grep disabled`
-if [ "$authDisabled" = "" ]; then
-  echo "Authorization is enabled"
-else
-  echo "Authorization is not initialized, to initialize it"
   sqlci -i $scriptsdir/tools/reg_users.sql;
   echo "Authorization has been enabled"
-fi
-rm -f $ix.tmp 2>$NULL
 
   #--------------------------------------------------
   # Run test if the -diff option not specified     --
