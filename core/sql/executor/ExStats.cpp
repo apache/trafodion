@@ -9799,7 +9799,8 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
       detailTemp = ptr;
     }
     else
-    if (strncasecmp(ptr, "TDBID_DETAIL", 12) == 0)
+    if ((strncasecmp(ptr, "TDBID_DETAIL", 12) == 0)
+        || (strncasecmp(ptr, "TCBID_DETAIL", 12) == 0))
     {
       ptr = str_tok(NULL, ',', &internal);
       tdbIdDetailTemp = ptr;
@@ -10451,6 +10452,7 @@ ExBMOStats::ExBMOStats(NAMemory *heap,
 {
   init(FALSE);
   spaceBufferSize_ = -1;
+  scratchIOSize_ = -1;
   if (tdb != NULL)
     scratchOverflowMode_ = ((ComTdb *)tdb)->getOverFlowMode();
   else

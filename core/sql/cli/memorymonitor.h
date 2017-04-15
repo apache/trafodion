@@ -78,7 +78,7 @@ public:
   Int64 availablePhyMemKb() { return memFree_; }
   static DWORD WINAPI memMonitorUpdateThread(void * param);
 private:
-  void update(float &scale);
+  void update();
   void updatePageFaultRate(Int64 pageFaultValue);
 
 private:
@@ -94,8 +94,11 @@ private:
   float pageFaultRate_;
   Int64 prevPageFault_;
   Int64 prevTime_;
+  Int64 currTime_;
+  Int64 logTime_;
   Int64 memTotal_;
-
+  Int64 memActive_;
+  Int64 memInactive_;
   // Written by monitor thread, and read by main thread.
   Int64 memFree_;   //pages that are free in kb.
   float entryCount_;
@@ -120,7 +123,6 @@ private:
   static ULng32 threadId_;
   FILE* fd_meminfo_;
   FILE* fd_vmstat_;
-  FILE* fd_logfile_;
 };
 #endif
 
