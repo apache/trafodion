@@ -1122,6 +1122,44 @@ Lng32 CreateExternalTable(const NAString& catName, const NAString& schName, cons
    return retcode;
 }
 
+static 
+Lng32 RegisterHiveTable(const NAString& catName, const NAString& schName, const NAString& nativeTableName)
+{
+   HSLogMan *LM = HSLogMan::Instance();
+   if (LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Registering hive table %s on demand.",
+                          nativeTableName.data());
+        LM->Log(LM->msg);
+      }
+
+   // do not have to worry about the catalog and schema for the new external table 
+   // here. These names will be determined by the processing logic. 
+   NAString ddl = "REGISTER INTERNAL HIVE TABLE IF NOT EXISTS ";
+   ddl.append(catName);
+   ddl.append(".");
+   ddl.append(schName);
+   ddl.append(".");
+   ddl.append(nativeTableName);
+   ddl.append(" IN TRAFODION METADATA");
+
+   // set INTERNAL_QUERY_FROM_EXEUTIL bit in Sql_ParserFlags.
+   // This is needed to process 'register internal' syntax
+   ULng32 flagToSet = INTERNAL_QUERY_FROM_EXEUTIL;
+   PushAndSetSqlParserFlags savedParserFlags(flagToSet);
+
+   Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
+                            "register hive table", NULL);
+
+   if (retcode < 0 && LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Registration of the hive table failed.");
+        LM->Log(LM->msg);
+      }
+
+   return retcode;
+}
+
 NABoolean HSTableDef::setObjectUID(NABoolean createExternalTable)
 {
   objectUID_ = naTbl_->objectUid().get_value();
@@ -1134,8 +1172,12 @@ NABoolean HSTableDef::setObjectUID(NABoolean createExternalTable)
     NAString catName = getCatName(EXTERNAL_FORMAT);
     NAString schName = getSchemaName(EXTERNAL_FORMAT);
     NAString objName = getObjectName(EXTERNAL_FORMAT);
-    Lng32 retcode = CreateExternalTable(catName, schName, objName);
-
+    Lng32 retcode = 0;
+    if (catName == HIVE_SYSTEM_CATALOG)
+      retcode = RegisterHiveTable(catName, schName, objName);
+    else
+      retcode = CreateExternalTable(catName, schName, objName);
+      
     if (retcode != 0)
       return FALSE;
 
@@ -1145,7 +1187,7 @@ NABoolean HSTableDef::setObjectUID(NABoolean createExternalTable)
 
     CorrName corrName(getObjectName(), STMTHEAP, getSchemaName(), getCatName());
 
-    if ( !naTbl_->fetchObjectUIDForNativeTable(corrName) )
+    if ( !naTbl_->fetchObjectUIDForNativeTable(corrName, naTbl_->isView()) )
       return FALSE;
 
     objectUID_ = naTbl_->objectUid().get_value();

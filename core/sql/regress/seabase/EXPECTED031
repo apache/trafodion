@@ -478,7 +478,7 @@ Z            Z            (EXPR)  (EXPR)
 >>-- should fail, exceeds max
 >>prepare s from select repeat('11234567890', 1648576 ) from dual;
 
-*** ERROR[4129] The character-typed result of the function REPEAT is longer than max supported size.
+*** ERROR[4129] The character-typed result of the function REPEAT is longer than the maximum supported size.
 
 *** ERROR[8822] The statement was not prepared.
 
@@ -1088,6 +1088,8 @@ CREATE TABLE T031HIVET1
   )
   stored as textfile
 ;
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.T031HIVET1;
 
 /* Trafodion DDL */
 

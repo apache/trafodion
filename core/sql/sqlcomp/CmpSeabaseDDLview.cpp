@@ -371,16 +371,16 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
             }
 
           if ((naTable->isHiveTable()) &&
-              (NOT naTable->getViewText()) &&
-              (NOT naTable->hasExternalTable()) &&
-              (CmpCommon::getDefault(HIVE_VIEWS_CREATE_EXTERNAL_TABLE) == DF_ON))
+              (CmpCommon::getDefault(HIVE_NO_REGISTER_OBJECTS) == DF_OFF))
+
             {
-              // create an external table for this hive table.
-              str_sprintf(query, "create implicit external table \"%s\" for %s.\"%s\".\"%s\"",
-                          objectNamePart.data(), 
+              // register this hive object in traf metadata, if not already 
+              str_sprintf(query, "register internal hive %s if not exists %s.\"%s\".\"%s\" %s",
+                          (naTable->isView() ? "view" : "table"),
                           catalogNamePart.data(),
                           schemaNamePart.data(),
-                          objectNamePart.data());
+                          objectNamePart.data(),
+                          (naTable->isView() ? "cascade" : " "));
               Lng32 cliRC = cliInterface->executeImmediate(query);
               if (cliRC < 0)
                 {
@@ -388,10 +388,12 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
                   return -1;
                 }
 
-              // remove NATable and reload it to include external table defn.
+              // remove NATable and reload it to include object uid of register
+              // operation.
               ActiveSchemaDB()->getNATableDB()->removeNATable
                 (cn,
-                 ComQiScope::REMOVE_MINE_ONLY, COM_BASE_TABLE_OBJECT,
+                 ComQiScope::REMOVE_MINE_ONLY, 
+                 (naTable->isView() ? COM_VIEW_OBJECT : COM_BASE_TABLE_OBJECT),
                  FALSE, FALSE);
               
               naTable = bindWA.getNATableInternal(cn);
@@ -400,17 +402,17 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
                   SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in updateViewUsage");
                   return -1; 
                 }
-            }
+            } // isHiveTable
 
           if ((naTable->isHiveTable()) &&
-              (naTable->hasExternalTable()) &&
               (naTable->objectUid().get_value() > 0))
             {
               usedObjUID = naTable->objectUid().get_value();
-              strcpy(objType, COM_BASE_TABLE_OBJECT_LIT);
+              strcpy(objType, 
+                     (naTable->isView() ? COM_VIEW_OBJECT_LIT : COM_BASE_TABLE_OBJECT_LIT));
             }
 
-          // do not put in view usage list if it doesn't have an external table
+          // do not put in view usage list if it is not registered in traf
           if (usedObjUID == -1)
             {
               if (! naTable->getViewText())
@@ -1651,7 +1653,9 @@ static bool checkAccessPrivileges(
 
       // If hive or ORC table and table does not have an external table,
       // skip priv checks.
-      if ((naTable->isHiveTable()) && !naTable->hasExternalTable()) 
+      if ((naTable->isHiveTable()) && 
+          ((NOT naTable->isRegistered()) ||
+           (!naTable->hasExternalTable())))
       {
         privs.setOwnerDefaultPrivs();
         pPrivInfo = &privs;

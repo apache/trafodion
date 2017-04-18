@@ -201,6 +201,7 @@ static const QueryString getPrivsForAuthsQuery[] =
   {"      else '-' end as privs "},
   {" from %s.\"%s\".%s "},
   {" where grantee_id %s "},
+
   {" union "},
   {"  (select translate(rtrim(object_name) using ucs2toutf8) || ' <Column> ' || "},
   {"          translate(rtrim(column_name) using ucs2toutf8), "},
@@ -221,7 +222,37 @@ static const QueryString getPrivsForAuthsQuery[] =
   {"   from %s.\"%s\".%s p, %s.\"%s\".%s c "},
   {"   where p.object_uid = c.object_uid "},
   {"     and p.column_number = c.column_number "},
-  {"     and grantee_id %s )"},
+  {"     and grantee_id %s ) "},
+
+  {" union "}, // for privileges on hive objects
+  {"  (select translate(rtrim(o.catalog_name) using ucs2toutf8) || '.' || "},
+  {"          translate(rtrim(o.schema_name) using ucs2toutf8) || '.'  || "},
+  {"          translate(rtrim(o.object_name) using ucs2toutf8) || '.'  || "},
+  {"                        ' <Column> ' ||                    "},
+  {"          translate(rtrim(column_name) using ucs2toutf8), "},
+  {"    case when bitextract(privileges_bitmap,63,1) = 1 then 'S' "},
+  {"      else '-' end || "},
+  {"     case when bitextract(privileges_bitmap,62,1) = 1 then 'I' "},
+  {"      else '-' end || "},
+  {"     case when bitextract(privileges_bitmap,61,1) = 1 then 'D' "},
+  {"      else '-' end || "},
+  {"     case when bitextract(privileges_bitmap,60,1) = 1 then 'U' "},
+  {"      else '-' end || "},
+  {"     case when bitextract(privileges_bitmap,59,1) = 1 then 'G' "},
+  {"      else '-' end || "},
+  {"     case when bitextract(privileges_bitmap,58,1) = 1 then 'R' "},
+  {"      else '-' end || "},
+  {"     case when bitextract(privileges_bitmap,57,1) = 1 then 'E' "},
+  {"      else '-' end as privs "},
+  {"   from %s.\"%s\".%s p, %s.\"%s\".%s o,                        "},
+  {"        table(hivemd(columns)) c                               "},
+  {"   where p.object_uid = o.object_uid "},
+  {"         and o.catalog_name = upper(c.catalog_name) "},
+  {"         and o.schema_name = upper(c.schema_name) "},
+  {"         and o.object_name = upper(c.table_name) "},
+  {"     and p.column_number = c.column_number "},
+  {"     and grantee_id %s ) "},
+
   {" union "},
   {"  (select translate(rtrim(schema_name) using ucs2toutf8), "},
   {"    case when bitextract(privileges_bitmap,63,1) = 1 then 'S' "},
@@ -239,7 +270,7 @@ static const QueryString getPrivsForAuthsQuery[] =
   {"     case when bitextract(privileges_bitmap,57,1) = 1 then 'E' "},
   {"      else '-' end as privs "},
   {"   from %s.\"%s\".%s "},
-  {"   where grantee_id %s )"},
+  {"   where grantee_id %s ) "},
   {" order by 1 "},
   {" ; "}
 };
@@ -434,7 +465,7 @@ static const QueryString getTrafObjectsInViewQuery[] =
 
 static const QueryString getTrafViewsOnObjectQuery[] =
 {
-  {" select trim(T.schema_name) || '.' || trim(T.object_name) from "},
+  {" select trim(T.catalog_name) || '.' || trim(T.schema_name) || '.' || trim(T.object_name) from "},
   {"   %s.\"%s\".%s T "},
   {"   where T.object_uid in "},
   {"   (select using_view_uid from  %s.\"%s\".%s VU "},
@@ -490,6 +521,43 @@ static const QueryString getTrafRoles[] =
   {" order by 1 "},
   {"  ; "}
 };
+
+static const QueryString getHiveRegObjectsInCatalogQuery[] =
+{
+  {" select trim(O.a) ||  "                                    },
+  {" case when G.b is null then ' (inconsistent)' else '' end "},
+  {" from "                                                    },
+  {"  (select lower(trim(catalog_name) || '.' || "             },
+  {"    trim(schema_name) || '.' || trim(object_name)) "       },
+  {"   from %s.\"%s\".%s where catalog_name = 'HIVE' and "     },
+  {"                           %s) O(a) "                      },
+  {"  left join "                                              },
+  {"   (select '%s' || '.' || trim(y) from "                   },
+  {"    (get %s in catalog %s, no header) x(y)) G(b)"          },
+  {"   on O.a = G.b  "                                         },
+  {" order by 1 "                                              },
+  {"; "                                                        }
+};
+
+static const QueryString getHiveExtTablesInCatalogQuery[] =
+{
+  {" select trim(O.a) ||  "                                    },
+  {" case when G.b is null then ' (inconsistent)' else '' end "},
+  {" from "                                                    },
+  {"  (select '%s' || '.' || "                                 },
+  {"   lower(trim(substring(schema_name, 5, "                  },
+  {"                char_length(schema_name)-5))) "            },
+  {"    || '.' || lower(trim(object_name)) "                   },
+  {"   from %s.\"%s\".%s where object_type = '%s' "            },
+  {"    and schema_name like '|_HV|_%%|_' escape '|') O(a)   " },
+  {"  left join "                                              },
+  {"   (select '%s' || '.' || trim(y) from "                   },
+  {"    (get %s in catalog %s, no header) x(y)) G(b) "         },
+  {"   on O.a = G.b  "                                         },
+  {" order by 1 "                                              },
+  {"; "                                                        }
+};
+
 Lng32 ExExeUtilGetMetadataInfoTcb::getUsingView(Queue * infoList,
 					       NABoolean isShorthandView,
 					       char* &viewName, Lng32 &len)
@@ -846,6 +914,34 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
     case ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_CATALOG_:
       {
 	str_sprintf(headingBuf_, "Objects in Catalog %s",
+		    getMItdb().getCat());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "Hive Registered Tables in Catalog %s",
+		    getMItdb().getCat());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "Hive Registered Views in Catalog %s",
+		    getMItdb().getCat());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "Hive Registered Objects in Catalog %s",
+		    getMItdb().getCat());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::HIVE_EXT_TABLES_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "Hive External Tables in Catalog %s",
 		    getMItdb().getCat());
       }
     break;
@@ -1564,6 +1660,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
             char componentPrivileges[100];
             char routine[100];
             char library_usage[100];
+            char hiveObjType[100];
+            char hiveGetType[10];
+            char hiveSysCat[10];
 
 	    cliInterface()->getCQDval("SEABASE_CATALOG", cat);
 
@@ -1585,6 +1684,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
             strcpy(componentPrivileges, "COMPONENT_PRIVILEGES");
             strcpy(routine, SEABASE_ROUTINES);
             strcpy(library_usage, SEABASE_LIBRARIES_USAGE);
+            strcpy(hiveSysCat, HIVE_SYSTEM_CATALOG_LC);
 
             // Determine if need to restrict data to user visable data only.
             NABoolean doPrivCheck = checkUserPrivs(currContext, getMItdb().queryType_);  
@@ -1682,6 +1782,63 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[4] = sch;
 		  param_[5] = view;
 		  param_[6] = getMItdb().cat_;
+		}
+	      break;
+	      
+	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_:
+	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_:
+	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_:
+		{
+		  qs = getHiveRegObjectsInCatalogQuery;
+		  sizeOfqs = sizeof(getHiveRegObjectsInCatalogQuery);
+
+                  if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_)
+                    {
+                      strcpy(hiveGetType, "tables");
+                      str_sprintf(hiveObjType, " (object_type = '%s') ",
+                                  COM_BASE_TABLE_OBJECT_LIT);
+                    }
+                  else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_)
+                    {
+                      strcpy(hiveGetType, "views");
+                      str_sprintf(hiveObjType, " (object_type = '%s') ",
+                                  COM_VIEW_OBJECT_LIT);
+                    }
+                  else
+                    {
+                      strcpy(hiveGetType, "objects");
+                      str_sprintf(hiveObjType, " (object_type = '%s' or object_type = '%s') ",
+                                  COM_BASE_TABLE_OBJECT_LIT, 
+                                  COM_VIEW_OBJECT_LIT);
+                    }
+                    
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+		  param_[3] = hiveObjType;
+		  param_[4] = hiveSysCat;
+                  param_[5] = hiveGetType, 
+		  param_[6] = hiveSysCat;
+		}
+	      break;
+	      
+	      case ComTdbExeUtilGetMetadataInfo::HIVE_EXT_TABLES_IN_CATALOG_:
+		{
+		  qs = getHiveExtTablesInCatalogQuery;
+		  sizeOfqs = sizeof(getHiveExtTablesInCatalogQuery);
+
+                  strcpy(hiveObjType, COM_BASE_TABLE_OBJECT_LIT);
+                  strcpy(hiveGetType, "tables");
+
+		  param_[0] = hiveSysCat;
+		  param_[1] = cat;
+		  param_[2] = sch;
+		  param_[3] = tab;
+		  param_[4] = hiveObjType;
+		  param_[5] = hiveSysCat;
+                  param_[6] = hiveGetType, 
+		  param_[7] = hiveSysCat;
+
 		}
 	      break;
 	      
@@ -2061,6 +2218,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   param_[1] = pmsch;
                   param_[2] = objPrivs;
                   param_[3] = (char *) privWhereClause.data();
+
                   param_[4] = cat;
                   param_[5] = pmsch;
                   param_[6] = colPrivs;
@@ -2068,10 +2226,19 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   param_[8] = sch;
                   param_[9] = col;
                   param_[10] = (char *) privWhereClause.data();
+
                   param_[11] = cat;
                   param_[12] = pmsch;
-                  param_[13] = schPrivs;
-                  param_[14] = (char *) privWhereClause.data();
+                  param_[13] = colPrivs;
+                  param_[14] = cat;
+                  param_[15] = sch;
+                  param_[16] = tab;
+                  param_[17] = (char *) privWhereClause.data();
+
+                  param_[18] = cat;
+                  param_[19] = pmsch;
+                  param_[20] = schPrivs;
+                  param_[21] = (char *) privWhereClause.data();
 
                   numOutputEntries_ = 2;
                 }
@@ -2248,7 +2415,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	     str_sprintf(queryBuf_, gluedQuery,
 			 param_[0], param_[1], param_[2], param_[3], param_[4],
 			 param_[5], param_[6], param_[7], param_[8], param_[9],
-			 param_[10], param_[11], param_[12], param_[13], param_[14], param_[15]);
+			 param_[10], param_[11], param_[12], param_[13], param_[14], param_[15],
+                         param_[16], param_[17], param_[18], param_[19], param_[20],
+                         param_[21]);
              NADELETEBASIC(gluedQuery, getMyHeap());	     
 	     step_ = FETCH_ALL_ROWS_;
 	  }
@@ -2345,7 +2514,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		(vi->get(1) && (strcmp(vi->get(1), "VI") != 0)))
 	      exprRetCode = ex_expr::EXPR_FALSE;
 	    else if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::MVS_IN_MV_) &&
-		(vi->get(1) && (strcmp(vi->get(1), "MV") != 0)))
+                     (vi->get(1) && (strcmp(vi->get(1), "MV") != 0)))
 	      exprRetCode = ex_expr::EXPR_FALSE;
 
 	    if (exprRetCode == ex_expr::EXPR_TRUE)
@@ -2948,29 +3117,6 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 		rowsFound = TRUE;
 	      }
 
-	    // Get indexes in schema
-	    str_sprintf(queryBuf_, "get indexes in schema \"%s\".\"%s\" %s",
-			getMItdb().getCat(), getMItdb().getSch(),
-			patternStr_);
-
-	    retcode = 100;
-	    if (NOT systemObjs)
-	      {
-		if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
-		  {
-		    step_ = HANDLE_ERROR_;
-
-		    break;
-		  }
-	      }
-
-	    // insert a NULL entry, this will cause a blank row to be returned
-	    if (retcode != 100) // some rows were found
-	      {
-		infoList_->insert((new(getHeap()) OutputInfo(1)));
-		rowsFound = TRUE;
-	      }
-
 	    // Get views in schema
 	    str_sprintf(queryBuf_, "get views in schema \"%s\".\"%s\" %s",
 			getMItdb().getCat(), getMItdb().getSch(),
@@ -2994,63 +3140,90 @@ short ExExeUtilGetMetadataInfoComplexTcb::work()
 		rowsFound = TRUE;
 	      }
 
-	    // Get mvs in schema
-	    str_sprintf(queryBuf_, "get mvs in schema \"%s\".\"%s\" %s",
-			getMItdb().getCat(), getMItdb().getSch(),
-			patternStr_);
-
-	    retcode = 100;
-	    if (NOT systemObjs)
-	      {
-		if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
-		  {
-                    // if error is 4222 (command not supported), ignore it.
-                    if (getDiagsArea()->mainSQLCODE() != -4222)
+            // get indexes, mvs, synonyms for trafodion catalog
+            if (strcmp(getMItdb().getCat(), TRAFODION_SYSCAT_LIT) == 0)
+              {
+                // Get indexes in schema
+                str_sprintf(queryBuf_, "get indexes in schema \"%s\".\"%s\" %s",
+                            getMItdb().getCat(), getMItdb().getSch(),
+                            patternStr_);
+                
+                retcode = 100;
+                if (NOT systemObjs)
+                  {
+                    if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
                       {
                         step_ = HANDLE_ERROR_;
                         
                         break;
                       }
+                  }
+                
+                // insert a NULL entry, this will cause a blank row to be returned
+                if (retcode != 100) // some rows were found
+                  {
+                    infoList_->insert((new(getHeap()) OutputInfo(1)));
+                    rowsFound = TRUE;
+                  }
 
-                    getDiagsArea()->clear();
-		  }
-	      }
-
-	    // insert a NULL entry, this will cause a blank row to be returned
-	    if (retcode != 100) // some rows were found
-	      {
-		infoList_->insert((new(getHeap()) OutputInfo(1)));
-		rowsFound = TRUE;
-	      }
-
-	    // Get synonyms in schema
-	    str_sprintf(queryBuf_, "get synonyms in schema \"%s\".\"%s\" %s",
-			getMItdb().getCat(), getMItdb().getSch(),
-			patternStr_);
-
-	    retcode = 100;
-	    if (NOT systemObjs)
-	      {
-		if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
-		  {
-                    // if error is 4222 (command not supported), ignore it.
-                    if (getDiagsArea()->mainSQLCODE() != -4222)
+                // Get mvs in schema
+                str_sprintf(queryBuf_, "get mvs in schema \"%s\".\"%s\" %s",
+                            getMItdb().getCat(), getMItdb().getSch(),
+                            patternStr_);
+                
+                retcode = 100;
+                if (NOT systemObjs)
+                  {
+                    if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
                       {
-                        step_ = HANDLE_ERROR_;
+                        // if error is 4222 (command not supported), ignore it.
+                        if (getDiagsArea()->mainSQLCODE() != -4222)
+                          {
+                            step_ = HANDLE_ERROR_;
+                            
+                            break;
+                          }
                         
-                        break;
+                        getDiagsArea()->clear();
                       }
-
-                    getDiagsArea()->clear();
-		  }
-	      }
-
-	    // insert a NULL entry, this will cause a blank row to be returned
-	    if (retcode != 100) // some rows were found
-	      {
-		infoList_->insert((new(getHeap()) OutputInfo(1)));
-		rowsFound = TRUE;
-	      }
+                  }
+                
+                // insert a NULL entry, this will cause a blank row to be returned
+                if (retcode != 100) // some rows were found
+                  {
+                    infoList_->insert((new(getHeap()) OutputInfo(1)));
+                    rowsFound = TRUE;
+                  }
+                
+                // Get synonyms in schema
+                str_sprintf(queryBuf_, "get synonyms in schema \"%s\".\"%s\" %s",
+                            getMItdb().getCat(), getMItdb().getSch(),
+                            patternStr_);
+                
+                retcode = 100;
+                if (NOT systemObjs)
+                  {
+                    if (fetchAllRows(infoList_, queryBuf_, 1, FALSE, retcode) < 0)
+                      {
+                        // if error is 4222 (command not supported), ignore it.
+                        if (getDiagsArea()->mainSQLCODE() != -4222)
+                          {
+                            step_ = HANDLE_ERROR_;
+                            
+                            break;
+                          }
+                        
+                        getDiagsArea()->clear();
+                      }
+                  }
+                
+                // insert a NULL entry, this will cause a blank row to be returned
+                if (retcode != 100) // some rows were found
+                  {
+                    infoList_->insert((new(getHeap()) OutputInfo(1)));
+                    rowsFound = TRUE;
+                  }
+              } // not HIVE catalog
 
 	    if (rowsFound)
 	      infoList_->removeTail();

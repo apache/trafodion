@@ -561,8 +561,11 @@ PrivStatus PrivMgrCommands::getPrivileges(
     return STATUS_GOOD;
   }
 
-  // if a hive table and does not have an external table, assume no privs
-  if (naTable->isHiveTable() && !naTable->hasExternalTable())
+  // if a hive table and does not have an external table and is not
+  // registered in traf metadata, assume no privs
+  if ((naTable->isHiveTable()) && 
+      (NOT naTable->isRegistered()) &&
+      (!naTable->hasExternalTable()))
   {
     PrivMgrDesc emptyDesc;
     userPrivs.initUserPrivs(emptyDesc);

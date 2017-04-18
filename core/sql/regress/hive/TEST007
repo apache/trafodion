@@ -144,28 +144,39 @@ execute s;
 process hive statement 'drop table thive1';
 execute s;
 select * from trafodion.sch007.vhive1;
-
--- if external table creation has been disabled, then view usage will
--- not available
-cqd hive_views_create_external_table 'OFF';
-process hive statement 'drop table thive3';
-process hive statement 'create table thive3(a int, b int)';
-create view trafodion.sch007.vhive6 as select * from hive.hive.thive3;
-showddl hive.hive.thive3;
-get all views on table hive.hive.thive3;
-get all tables in view trafodion.sch007.vhive6;
+unregister hive table if exists hive.hive.thive1;
+select * from hive.hive.thive1;
+cleanup hive table hive.hive.thive1;
+select * from hive.hive.thive1;
 
 ?section clean_up_hive
+unregister hive table hive.hive.thive1 cleanup;
+
+unregister hive view hive.hivesch007.vhive1 cascade cleanup;
+unregister hive view hive.hivesch007.vhive11 cascade cleanup;
+
 process hive statement 'drop table hivesch007.thive1';
 process hive statement 'drop view hivesch007.vhive11';
 process hive statement 'drop view hivesch007.vhive1';
-process hive statement 'drop database hivesch007';
+process hive statement 'drop database hivesch007 cascade';
 process hive statement 'drop table thive007';
 process hive statement 'drop view vhive007';
+
+cleanup hive view hive.hivesch007.vhive11;
 
 drop view trafodion.sch007.vtrafonhive;
 
 drop schema trafodion.sch007 cascade;
+
+process hive statement 'drop table hivesch0071.h1';
+process hive statement 'drop view hivesch0071.vh1';
+process hive statement 'drop view hivesch0071.vh11';
+
+process hive statement 'drop table hivesch007.thive9';
+drop view trafodion.sch007.vhive9;
+drop external table thive9 for hive.hivesch007.thive9;
+
+process hive statement 'drop database hivesch0071 cascade';
 
 ?section setup_hive
 process hive statement 'create database hivesch007';
@@ -227,11 +238,51 @@ prepare s from select * from trafodion.sch007.vtrafonhive;
 explain options 'f' s;
 execute s;
 get tables in view trafodion.sch007.vtrafonhive;
+get views in view trafodion.sch007.vtrafonhive;
+get views on view hive.hivesch007.vhive11;
+
+unregister hive view hive.hivesch007.vhive11 cascade;
+get tables in view hive.hivesch007.vhive11;
+get views on table hive.hivesch007.thive1;
+
+register hive view hive.hivesch007.vhive11 cascade;
+showddl hive.hivesch007.vhive11;
+get tables in view hive.hivesch007.vhive11;
+get views in view hive.hivesch007.vhive11;
+get views on table hive.hivesch007.thive1;
+get views on view hive.hivesch007.vhive1;
+
+-- tests for recursive hive view/table register/unregister operations
+process hive statement 'create database hivesch0071';
+process hive statement 'create table hivesch0071.h1 (a int)';
+process hive statement 'create view hivesch0071.vh1 as select * from hivesch0071.h1';
+process hive statement 'create view hivesch0071.vh11 as select vh1.a x, h1.a y from hivesch0071.vh1, hivesch0071.h1';
+
+set schema hive.hivesch0071;
+showddl hive.hivesch0071.vh11;
+get tables in view vh11;
+get views in view vh11;
+get all objects in view vh11;
+
+register hive view vh11 cascade;
+get tables in view vh11;
+get views in view vh11;
+get all objects in view vh11;
+
+get hive registered tables in catalog trafodion, match '%hivesch0071%';
+get hive registered views in catalog trafodion, match '%hivesch0071%';
+get hive registered objects in catalog trafodion, match '%hivesch0071%';
+
+select object_name from trafodion."_MD_".objects where schema_name = 'HIVESCH0071';
+
+unregister hive view vh11 cascade;
+get hive registered objects in catalog trafodion, match '%hivesch0071%';
+
+showddl vh11;
+
+select object_name from trafodion."_MD_".objects where schema_name = 'HIVESCH0071';
 
 ?section error_tests_hive
-get tables in view hive.hivesch007.vhive11;
-get views  on table hive.hivesch007.thive1;
-
 insert into hive.hivesch007.vhive1 values (1);
 delete from hive.hivesch007.vhive1;
 
@@ -251,3 +302,34 @@ execute s;
 process hive statement 'drop table hivesch007.thive1';
 
 execute s;
+
+-- test compatibility with hive tables created prior to registration change)
+set schema hive.hivesch007;
+process hive statement 'drop table hivesch007.thive9';
+process hive statement 'create table hivesch007.thive9 (a int)';
+unregister hive table if exists hive.hivesch007.thive9;
+cqd hive_no_register_objects 'ON';
+drop external table if exists thive9 for hive.hivesch007.thive9;
+create external table thive9 for hive.hivesch007.thive9;
+showddl thive9;
+grant select on hive.hivesch007.thive9 to sql_user3;
+get privileges for user sql_user3;
+insert into hive.hivesch007.thive9 values (1), (2), (3), (4), (5), (6);
+update statistics for table hive.hivesch007.thive9 on every column;
+showstats for table hive.hivesch007.thive9 on every column;
+create view trafodion.sch007.vhive9 as select * from hive.hivesch007.thive9;
+showddl hive.hivesch007.thive9;
+
+register hive table hive.hivesch007.thive9;
+showddl thive9;
+showstats for table hive.hivesch007.thive9 on every column;
+unregister hive table hive.hivesch007.thive9;
+showddl thive9;
+showstats for table hive.hivesch007.thive9 on every column;
+drop view trafodion.sch007.vhive9;
+drop external table thive9 for hive.hivesch007.thive9;
+
+showddl thive9;
+showstats for table hive.hivesch007.thive9 on every column;
+
+

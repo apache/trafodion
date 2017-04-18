@@ -435,7 +435,7 @@ select _ucs2 x'0a$#' from (values(1))x;
 >>--large length values should not cause core-dump (case 10-040218-2346)
 >>select space(2147483647,ucs2) from (values (1)) as x;
 
-*** ERROR[4129] The character-typed result of the function REPEAT is longer than max supported size.
+*** ERROR[4129] The character-typed result of the function REPEAT is longer than the maximum supported size.
 
 *** ERROR[4062] The preceding error actually occurred in function SPACE.
 
@@ -443,13 +443,13 @@ select _ucs2 x'0a$#' from (values(1))x;
 
 >>select rpad(N'test',2147483647,N'T') from (values(1)) as x;
 
-*** ERROR[4129] The character-typed result of the function RPAD is longer than max supported size.
+*** ERROR[4129] The character-typed result of the function RPAD is longer than the maximum supported size.
 
 *** ERROR[8822] The statement was not prepared.
 
 >>select lpad(N'test',2147483647,N'T') from (values(1)) as x;
 
-*** ERROR[4129] The character-typed result of the function REPEAT is longer than max supported size.
+*** ERROR[4129] The character-typed result of the function REPEAT is longer than the maximum supported size.
 
 *** ERROR[4062] The preceding error actually occurred in function LPAD.
 

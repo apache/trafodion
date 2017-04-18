@@ -1371,6 +1371,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_REGEXP
 %token <tokval> TOK_REGION
 %token <tokval> TOK_REGISTER            /* Tandem extension */
+%token <tokval> TOK_REGISTERED
 %token <tokval> TOK_UNREGISTER          /* Tandem extension */
 %token <tokval> TOK_RENAME              /* Tandem extension */
 %token <tokval> TOK_REPLICATE           /* Tandem extension non-reserved word*/
@@ -2433,8 +2434,11 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>                drop_component_privilege_stmt
 %type <pStmtDDL>                register_component_statement
 %type <pStmtDDL>                register_user_statement
+%type <pStmtDDL>                register_hive_statement
+%type <boolean>                 optional_internal_clause
 %type <pStmtDDL>                unregister_component_statement
 %type <pStmtDDL>		unregister_user_statement
+%type <pStmtDDL>		unregister_hive_statement
 %type <pElemDDL>  		privileges
 %type <pElemDDL>  		privilege_action_list
 %type <pElemDDL>  		privilege_action
@@ -14463,6 +14467,12 @@ sql_schema_definition_statement :
               | cleanup_objects_statement
                                 {
                                 }
+              | register_hive_statement
+                                {
+                                }
+              | unregister_hive_statement
+                                {
+                                }
 
 /* type pStmtDDL */
 sql_schema_manipulation_statement :
@@ -15841,6 +15851,10 @@ objects_identifier :
                   | TOK_INVALID TOK_VIEWS { $$ = new (PARSERHEAP()) NAString("INVALID_VIEWS"); }
                   | TOK_FUNCTIONS { $$ = new (PARSERHEAP()) NAString("FUNCTIONS"); }
                   | TOK_TABLE_MAPPING TOK_FUNCTIONS { $$ = new (PARSERHEAP()) NAString("TABLE_FUNCTIONS"); }
+                  | TOK_HIVE TOK_REGISTERED TOK_TABLES { $$ = new (PARSERHEAP()) NAString("HIVE_REG_TABLES"); }
+                  | TOK_HIVE TOK_REGISTERED TOK_VIEWS { $$ = new (PARSERHEAP()) NAString("HIVE_REG_VIEWS"); }
+                  | TOK_HIVE TOK_REGISTERED TOK_OBJECTS { $$ = new (PARSERHEAP()) NAString("HIVE_REG_OBJECTS"); }
+                  | TOK_HIVE TOK_EXTERNAL TOK_TABLES { $$ = new (PARSERHEAP()) NAString("HIVE_EXT_TABLES"); }
 
 privileges_identifier :
                     TOK_PRIVILEGES { $$ = new (PARSERHEAP()) NAString("PRIVILEGES"); }
@@ -30276,6 +30290,10 @@ cleanup_objects_statement : TOK_CLEANUP cleanup_object_identifier ddl_qualified_
                    ot = StmtDDLCleanupObjects::SCHEMA_PRIVATE_;
                  else if (*$2 == "SCHEMA_S")
                    ot = StmtDDLCleanupObjects::SCHEMA_SHARED_;
+                 else if (*$2 == "HIVE_TABLE")
+                   ot = StmtDDLCleanupObjects::HIVE_TABLE_;
+                 else if (*$2 == "HIVE_VIEW")
+                   ot = StmtDDLCleanupObjects::HIVE_VIEW_;
                  else if (*$2 == "OBJECT")
                    ot = StmtDDLCleanupObjects::UNKNOWN_;
                  else
@@ -30394,6 +30412,8 @@ cleanup_object_identifier : object_identifier
                        | TOK_PRIVATE TOK_SCHEMA   { $$ = new (PARSERHEAP()) NAString("SCHEMA_P"); }
                        | TOK_SHARED TOK_SCHEMA   { $$ = new (PARSERHEAP()) NAString("SCHEMA_S"); }
                        | TOK_OBJECT { $$ = new (PARSERHEAP()) NAString("OBJECT");}
+                       | TOK_HIVE TOK_TABLE { $$ = new (PARSERHEAP()) NAString("HIVE_TABLE");}
+                       | TOK_HIVE TOK_VIEW { $$ = new (PARSERHEAP()) NAString("HIVE_VIEW");}
 
 /* type boolean */
 optional_cleanup_return_details : empty
@@ -32988,6 +33008,84 @@ nsk_node_name: BACKSLASH_SYSTEM_NAME
                 delete $1;
                }
 
+/* type pStmtDDL */
+// Syntax: 
+// register [internal] hive {table|view|schema} 
+//          [if not exists] <obj-name> [cascade]
+//
+register_hive_statement : TOK_REGISTER optional_internal_clause TOK_HIVE object_identifier optional_if_not_exists_clause ddl_qualified_name optional_cascade
+                          {
+                            if (NOT ((*$4 == "TABLE") ||
+                                     (*$4 == "VIEW") ||
+                                     (*$4 == "SCHEMA")))
+                              {
+                                YYERROR;
+                              }
+      
+                            if ($7 && (*$4 != "VIEW"))
+                              {
+                                YYERROR;
+                              }
+
+                            $$ = new (PARSERHEAP())
+                              StmtDDLRegOrUnregHive(
+                                   *$6,
+                                   TRUE, // register
+                                   (*$4 == "TABLE" ? COM_BASE_TABLE_OBJECT
+                                    : (*$4 == "VIEW" ? COM_VIEW_OBJECT
+                                       : COM_SHARED_SCHEMA_OBJECT)),
+                                   $5, // if not exists?
+                                   $2, // is internal registration?
+                                   $7, // is cascade?
+                                   FALSE,
+                                   PARSERHEAP());
+                            delete $6;
+                          }
+
+// Syntax: 
+// unregister [internal] hive {table|view|schema} 
+//            [if exists] <obj-name> [cascade]
+//
+unregister_hive_statement : TOK_UNREGISTER optional_internal_clause TOK_HIVE object_identifier optional_if_exists_clause ddl_qualified_name optional_cascade optional_cleanup
+                              {
+                                if (NOT ((*$4 == "TABLE") ||
+                                         (*$4 == "VIEW") ||
+                                         (*$4 == "SCHEMA")))
+                                  {
+                                    YYERROR;
+                                  }
+                                
+                                if ($7 &&
+                                    (*$4 != "VIEW"))
+                                  {
+                                    YYERROR;
+                                  }
+                                
+                                $$ = new (PARSERHEAP())
+                                  StmtDDLRegOrUnregHive(
+                                       *$6,
+                                       FALSE, // unregister
+                                       (*$4 == "TABLE" ? COM_BASE_TABLE_OBJECT
+                                        : (*$4 == "VIEW" ? COM_VIEW_OBJECT
+                                           : COM_SHARED_SCHEMA_OBJECT)),
+                                       $5, // if exists?
+                                       $2, // is internal unregister?
+                                       $7, // is cascade?
+                                       $8, // is cleanup?
+                                       PARSERHEAP());
+                                delete $6;
+                              }
+
+/* type boolean */
+optional_internal_clause : empty
+                  {
+                    $$ = FALSE;
+                  }
+                  | TOK_INTERNAL
+                  {
+		    $$ = TRUE;
+		  }
+
 /*CREATE ROLE*/
 create_role_statement : TOK_CREATE TOK_ROLE authorization_identifier
                              optional_with_admin_clause
@@ -33739,6 +33837,7 @@ nonreserved_word :      TOK_ABORT
                       | TOK_REFRESH // MV
                       | TOK_REGION
                       | TOK_REGISTER
+                      | TOK_REGISTERED
                       | TOK_REINITIALIZE
                       | TOK_RELATED
                       | TOK_RELATEDNESS     // Versioning

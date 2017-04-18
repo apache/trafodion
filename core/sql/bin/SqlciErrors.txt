@@ -1000,7 +1000,7 @@ $1~String1 --------------------------------
 3243 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Duplicate ENFORCED clauses were specified.
 3244 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The NOT ENFORCED constraint attribute is allowed only in a Referential Integrity constraint.
 3250 42000 99999 BEGINNER MAJOR DBADMIN The specified blocksize is not valid. Blocksize of 32768 is used instead.
-
+3251 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~String0 operation could not be completed.$1~string1
 3260 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The formal parameter list may not appear in in definition of universal user defined function.
 3261 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. The RETURN[S] clause may not appear in the definition of procedure.
 3262 ZZZZZ 99999 BEGINNER MAJOR DBADMIN A syntax error occurred. Only OUT parameter mode can appear within the RETURN[S] clause in the defintion of a procedure..
@@ -1198,7 +1198,7 @@ $1~String1 --------------------------------
 4126 42000 99999 BEGINNER MAJOR DBADMIN The row value constructors in a VALUES clause must be of equal degree.
 4127 42000 99999 BEGINNER MAJOR DBADMIN Type $0~String0 cannot be assigned to type $1~String1.
 4128 42000 99999 BEGINNER MAJOR DBADMIN Default volume and subvolume information could not be retrieved from =_DEFAULTS define - DEFINEINFO error $0~int0.
-4129 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character-typed result of the function $0~String0 is longer than max supported size.
+4129 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The character-typed result of the function $0~String0 is longer than the maximum supported size.
 4130 ZZZZZ 99999 BEGINNER MAJOR DBADMIN $0~string0 is a read-only DEFAULTS attribute and cannot be updated.
 4131 42000 99999 BEGINNER MAJOR DBADMIN Current_time, current_date, or current_timestamp is not allowed in a check constraint.
 4132 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Current_user, session_user, or system_user is not allowed in a check constraint.
@@ -1310,7 +1310,8 @@ $1~String1 --------------------------------
 4259 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Primary Key clause must be specified for an HBase mapped table.
 4260 ZZZZZ 99999 BEGINNER MAJOR DBADMIN HBase table($0~String0) to be mapped as an external table does not exist.
 4261 ZZZZZ 99999 BEGINNER MAJOR DBADMIN The schema name $0~SchemaName is reserved for HBase mapped tables and cannot be explicitly specified.
-4262 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'drop external table' command to drop the external table.
+4262 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It has an external table but the correponding hive table does not exist. Use 'cleanup hive table' command to cleanup this table.
+4263 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~String0 has invalid state and cannot be accessed. It is registered in trafodion metadata but the correponding hive object does not exist. Use 'cleanup hive table/view' command to cleanup this object.
 4300 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of procedure $0~TableName was not valid - a UDR was invoked within a trigger.
 4301 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Use of routine $0~TableName was not valid - return of result sets is not allowed within a trigger.
 4302 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Procedure $0~TableName expects $1~Int0 parameters but was called with $1~int1 parameters.

@@ -114,6 +114,13 @@ class CmpSeabaseMDcleanup : public CmpSeabaseDDL
   short cleanupOrphanViewsEntries(ExeCliInterface *cliInterface,
                                   ExpHbaseInterface *ehi,
                                   CmpDDLwithStatusInfo *dws);
+
+  short cleanupInconsistentHiveEntries(
+       ExeCliInterface *cliInterface,
+       ExpHbaseInterface *ehi);
+
+  void cleanupHiveObject(const StmtDDLCleanupObjects * stmtCleanupNode,
+                         ExeCliInterface *cliInterface);
     
   void populateBlackBox(ExeCliInterface *cliInterface,
                         Queue *returnDetailsList,
@@ -136,6 +143,7 @@ class CmpSeabaseMDcleanup : public CmpSeabaseDDL
     HBASE_ENTRIES,
     INCONSISTENT_OBJECTS_ENTRIES,
     VIEWS_ENTRIES,
+    HIVE_ENTRIES,
     DONE_CLEANUP
   };
 
@@ -175,6 +183,7 @@ class CmpSeabaseMDcleanup : public CmpSeabaseDDL
   Lng32 numOrphanHbaseEntries_;
   Lng32 numOrphanObjectsEntries_;
   Lng32 numOrphanViewsEntries_;
+  Lng32 numInconsistentHiveEntries_;
 };
 
 #endif

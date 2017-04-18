@@ -4744,8 +4744,10 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
  //
  // ----------------------------------------------------------------------------      
  static Int64 lookupObjectUidByName( const QualifiedName& qualName
-                                   , ComObjectType objectType
-                                   , NABoolean reportError
+                                     , ComObjectType objectType
+                                     , NABoolean reportError
+                                     , Int64 *objectFlags = NULL
+                                     , Int64 *createTime = NULL
                                    )
  {
    ExeCliInterface cliInterface(STMTHEAP);
@@ -4760,43 +4762,145 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
        return -1;
      }
 
-   objectUID = cmpSBD.getObjectUID(&cliInterface,
-                                   qualName.getCatalogName().data(),
-                                   qualName.getSchemaName().data(),
-                                   qualName.getObjectName().data(),
-                                   comObjectTypeLit(objectType),
-                                   NULL,
-                                   NULL,
-                                   FALSE,
-                                   reportError);
+   Int32 objectOwner, schemaOwner;
+   Int64 l_objFlags = 0;
+   Int64 l_createTime = -1;
+   objectUID = cmpSBD.getObjectInfo(&cliInterface,
+                                    qualName.getCatalogName().data(),
+                                    qualName.getSchemaName().data(),
+                                    qualName.getObjectName().data(),
+                                    objectType,
+                                    objectOwner,
+                                    schemaOwner,
+                                    l_objFlags,
+                                    reportError,
+                                    FALSE,
+                                    &l_createTime);
+
+   if (objectFlags)
+     *objectFlags = l_objFlags;
+
+   if (createTime)
+     *createTime = l_createTime;
 
    cmpSBD.switchBackCompiler();
 
    return objectUID;
  }
 
- NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName)
+// Object UID for hive tables. 
+// 3 cases:
+// case 1: external hive table has an object uid in metadata but the hive
+//         table itself is not registered.
+//         This is the case for external tables created prior to the
+//         hive registration change.
+//         Return object UID for external table.
+// case 2: hive table is registered but there is no external table.
+//         Return object UID for the registered table.
+// case 3: UIDs for external and registered tables exist in metadata.
+//         This can happen if an external table is created with the new
+//         change where hive table is automatically registered before
+//         creating the external table.
+//         Or it can happen if an older external table is explicitly registered
+//         with the new code.
+//         Return the object UID that was created earlier.
+// 
+// case 4: For external hbase tables. Get external object uid.
+// 
+// Set my objectUID_ with the object uid determined based on the previous steps.
+NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
+                                                NABoolean isView)
  {
-    NAString adjustedName = ComConvertNativeNameToTrafName
-          (corrName.getQualifiedNameObj().getCatalogName(),
-           corrName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString(),
-           corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
-    QualifiedName extObjName (adjustedName, 3, STMTHEAP);
+   objectUID_ = 0;
 
-    objectUID_ = lookupObjectUidByName(extObjName, COM_BASE_TABLE_OBJECT, FALSE);
+   // get uid if this hive table has been registered in traf metadata.
+   Int64 regCreateTime = -1;
+   Int64 extCreateTime = -1;
+   Int64 regObjectUID = -1;
+   Int64 extObjectUID = -1;
+   if (corrName.isHive())
+     {
+       // first get uid for the registered table/view.
+       Int64 objectFlags = 0;
+       regObjectUID = lookupObjectUidByName(corrName.getQualifiedNameObj(),
+                                            (isView ? COM_VIEW_OBJECT :
+                                             COM_BASE_TABLE_OBJECT), FALSE,
+                                            &objectFlags,
+                                            &regCreateTime);
+       
+       if (NOT isView)
+         {
+           // then get uid for corresponding external table.
+           NAString adjustedName = ComConvertNativeNameToTrafName
+             (corrName.getQualifiedNameObj().getCatalogName(),
+              corrName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString(),
+              corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
+           QualifiedName extObjName (adjustedName, 3, STMTHEAP);
+           extObjectUID = lookupObjectUidByName(extObjName, 
+                                                COM_BASE_TABLE_OBJECT, FALSE,
+                                                NULL, &extCreateTime);
+         }
 
-    // If the objectUID is not found, then the table is not externally defined
-    // in Trafodion, set the objectUID to 0
-    // If an unexpected error occurs, then return with the error
-    if (objectUID_ <= 0)
-      {
-        if (CmpCommon::diags()->mainSQLCODE() < 0)
-          return FALSE;
-        else
-          objectUID_ = 0;
-      }
+       if ((regObjectUID <= 0) && (extObjectUID > 0))
+         {
+           // case 1
+           objectUID_ = extObjectUID;
+         }
+       else if ((extObjectUID <= 0) && (regObjectUID > 0))
+         {
+           // case 2
+           objectUID_ = regObjectUID;
+         }
+       else if ((regObjectUID > 0) && (extObjectUID > 0))
+         {
+           // case 3
+           if (regCreateTime < extCreateTime)
+             objectUID_ = regObjectUID;
+           else
+             objectUID_ = extObjectUID;
+         }
 
-    return TRUE;
+       if (regObjectUID > 0) // hive table is registered
+         {
+           setIsRegistered(TRUE);
+           
+           if (CmpSeabaseDDL::isMDflagsSet(objectFlags, MD_OBJECTS_HIVE_INTERNAL_REGISTER))
+             setIsInternalRegistered(TRUE);
+         }
+
+       if (extObjectUID > 0)
+         {
+           setHasExternalTable(TRUE);
+         }
+     } // is hive
+   else 
+     {
+       // case 4. external hbase table.
+       NAString adjustedName = ComConvertNativeNameToTrafName
+         (corrName.getQualifiedNameObj().getCatalogName(),
+          corrName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString(),
+          corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
+       QualifiedName extObjName (adjustedName, 3, STMTHEAP);
+       
+       objectUID_ = lookupObjectUidByName(extObjName, 
+                                          COM_BASE_TABLE_OBJECT, FALSE,
+                                          NULL, &extCreateTime);
+       if (objectUID_ > 0)
+         setHasExternalTable(TRUE);
+     }
+
+   // If the objectUID is not found, then the table is not registered or 
+   // externally defined in Trafodion. Set the objectUID to 0
+   // If an unexpected error occurs, then return with the error
+   if (objectUID_ <= 0)
+     {
+       if (CmpCommon::diags()->mainSQLCODE() < 0)
+         return FALSE;
+       else
+         objectUID_ = 0;
+     }
+   
+   return TRUE;
  }
 
  // -----------------------------------------------------------------------
@@ -5047,11 +5151,8 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
    // been defined in Trafodion use this value, otherwise, set to 0
    if (isHbaseCell_ || isHbaseRow_)
      {
-       if ( !fetchObjectUIDForNativeTable(corrName) )
+       if ( !fetchObjectUIDForNativeTable(corrName, FALSE) )
          return;
-
-       if (objectUID_ > 0 )
-         setHasExternalTable(TRUE);
      }
 
    if (table_desc->tableDesc()->owner)
@@ -5078,7 +5179,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
      {
        setIsExternalTable(TRUE);
 
-       if (table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_IMPLICIT_EXTERNAL_HIVE)   
+       if (table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_IMPLICIT_EXTERNAL)
          setIsImplicitExternalTable(TRUE);
      }
 
@@ -5711,11 +5812,9 @@ NATable::NATable(BindWA *bindWA,
   // If the HIVE table has been registered in Trafodion, get the objectUID
   // from Trafodion, otherwise, set it to 0.
   // TBD - does getQualifiedNameObj handle delimited names correctly?
-  if ( !fetchObjectUIDForNativeTable(corrName) )
-    return;
 
-  if ( objectUID_ > 0 )
-    setHasExternalTable(TRUE);
+  if ( !fetchObjectUIDForNativeTable(corrName, htbl->isView()) )
+    return;
 
   // for HIVE objects, the schema owner and table owner is HIVE_ROLE_ID
   if (CmpCommon::context()->isAuthorizationEnabled())
@@ -8354,7 +8453,8 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
                     qn.getCatalogName(),
                     qn.getSchemaName(),
                     qn.getObjectName(),
-                    COM_BASE_TABLE_OBJECT);
+                    COM_BASE_TABLE_OBJECT,
+                    TRUE);
                
                if (table && etDesc)
                  {
@@ -8398,6 +8498,18 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
                 qn.getObjectName(),
                 COM_BASE_TABLE_OBJECT);
            
+           // find out if this table is registered in traf metadata
+           Int64 regObjUid = 0;
+           // is this a base table
+           regObjUid = lookupObjectUidByName(corrName.getQualifiedNameObj(),
+                                             COM_BASE_TABLE_OBJECT, FALSE);
+           if (regObjUid <= 0)
+             {
+               // is this a view
+               regObjUid = lookupObjectUidByName(corrName.getQualifiedNameObj(),
+                                                 COM_VIEW_OBJECT, FALSE);
+             }
+
            // if this is to drop an external table and underlying hive
            // tab doesn't exist, return NATable for external table.
            if ((etDesc) &&
@@ -8416,6 +8528,12 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
                      {
                        *CmpCommon::diags()
                          << DgSqlCode(-4262)
+                         << DgString0(corrName.getExposedNameAsAnsiString());
+                     }
+                   else if (regObjUid > 0) // is registered
+                     {
+                       *CmpCommon::diags()
+                         << DgSqlCode(-4263)
                          << DgString0(corrName.getExposedNameAsAnsiString());
                      }
                    else
@@ -9009,8 +9127,13 @@ NATableDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
   {
     NATable * currTable = cachedTableList_[currIndx];
 
-    // Only need to remove seabase tables and external Hive/hbase tables
-    if (!currTable->isSeabaseTable() && !currTable->hasExternalTable())
+    // Only need to remove seabase, hive or external Hive/hbase tables
+    NABoolean toRemove = FALSE;
+    if ((currTable->isSeabaseTable()) ||
+        (currTable->isHiveTable()) ||
+        (currTable->hasExternalTable()))
+      toRemove = TRUE;
+    if (! toRemove)
     {
       currIndx++;
       continue;

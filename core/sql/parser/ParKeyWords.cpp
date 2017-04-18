@@ -876,6 +876,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("REGEXP",             TOK_REGEXP,      NONRESTOKEN_),
   ParKeyWord("REGION",             TOK_REGION,      NONRESTOKEN_),
   ParKeyWord("REGISTER",           TOK_REGISTER,    NONRESTOKEN_),
+  ParKeyWord("REGISTERED",         TOK_REGISTERED,  NONRESTOKEN_),
   ParKeyWord("REINITIALIZE",       TOK_REINITIALIZE, FIRST_|NONRESTOKEN_),
   ParKeyWord("RELATED",            TOK_RELATED,     NONRESTOKEN_),
   ParKeyWord("RELATEDNESS",        TOK_RELATEDNESS, NONRESTOKEN_),
