@@ -658,8 +658,8 @@
          </dependency>
          <!-- JDBCT2 dependencies -->    
          <dependency>    
-            <groupId>org.trafodion.jdbc.t2.T2Driver</groupId>
-            <artifactId>t2driver</artifactId>
+            <groupId>org.apache.trafodion.jdbc</groupId>
+            <artifactId>trafjdbcT2</artifactId>
             <version>${jdbct2.version}</version>
          </dependency>
       </dependencies>

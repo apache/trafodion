@@ -575,7 +575,7 @@ def prog_parse_args():
         if req_envs_error_string:
             parser.error(req_envs_error_string)
 
-        myjdbc_groupid = 'org.trafodion.jdbc.t2.T2Driver'
+        myjdbc_groupid = 'org.apache.trafodion.jdbc.t2.T2Driver'
         myjdbc_artid = 't2driver'
 
     # Automatically generate the prop file if the user did not specify one

@@ -42,18 +42,18 @@
 #include "JdbcDriverGlobal.h"
 #include "CoreCommon.h"
 #include "SQLMXCommonFunctions.h"
-#include "org_trafodion_jdbc_t2_SQLMXResultSet.h"
-#include "org_trafodion_jdbc_t2_SQLMXStatement.h"
+#include "org_apache_trafodion_jdbc_t2_SQLMXResultSet.h"
+#include "org_apache_trafodion_jdbc_t2_SQLMXStatement.h"
 #include "CSrvrStmt.h"
 #include "SrvrCommon.h"
 #include "Debug.h"
 
-JNIEXPORT jboolean JNICALL Java_org_trafodion_jdbc_t2_SQLMXResultSet_fetchN
+JNIEXPORT jboolean JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXResultSet_fetchN
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, jint txnMode,
 		jlong stmtId, 
 		jint maxRowCnt, jint queryTimeout, jint holdability)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXResultSet_fetchN",("server=%s, dialogueId=0x%08x, txid=0x%08x, txnMode=%ld, stmtId=0x%08x, maxRowCnt=%ld, queryTimeout=%ld, holdability=%ld",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXResultSet_fetchN",("server=%s, dialogueId=0x%08x, txid=0x%08x, txnMode=%ld, stmtId=0x%08x, maxRowCnt=%ld, queryTimeout=%ld, holdability=%ld",
 		DebugJString(jenv,server),
 		dialogueId,
 		txid,
@@ -146,11 +146,11 @@ JNIEXPORT jboolean JNICALL Java_org_trafodion_jdbc_t2_SQLMXResultSet_fetchN
 
 //venu changed dialogueId and stmtId from int to long for 64 bit
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXResultSet_close
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXResultSet_close
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, jboolean autoCommit, jint txnMode,
 	jlong stmtId, jboolean dropStmt)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXResultSet_close",("server=%s, dialogueId=0x%08x, txid=0x%08x, autoCommit=%s, txnMode=%ld, stmtId=0x%08x, dropStmt=%s",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXResultSet_close",("server=%s, dialogueId=0x%08x, txid=0x%08x, autoCommit=%s, txnMode=%ld, stmtId=0x%08x, dropStmt=%s",
 		DebugJString(jenv,server),
 		dialogueId,
 		txid,
@@ -227,10 +227,10 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXResultSet_close
 }
 
 //venu changed dialogueId and stmtId from int to long for 64 bit 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXResultSet_getResultSetInfo
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXResultSet_getResultSetInfo
   (JNIEnv *jenv, jobject jobj, jlong dialogueId, jlong stmtId, jobject RSInfo)
 {
-	FUNCTION_ENTRY_LEVEL(DEBUG_LEVEL_STMT,"Java_org_trafodion_jdbc_t2_SQLMXResultSet_getResultSetInfo",
+	FUNCTION_ENTRY_LEVEL(DEBUG_LEVEL_STMT,"Java_org_apache_trafodion_jdbc_t2_SQLMXResultSet_getResultSetInfo",
 		("dialogueId=0x%08x, stmtId=0x%08x, RSInfo=0x%08x",
 		dialogueId,
 		stmtId,

@@ -85,7 +85,7 @@ public class JdbcMxLobAdmin
 		try
 		{
 			if (create || trigger || drop)
-				Class.forName("org.trafodion.jdbc.t2.T2Driver");
+				Class.forName("org.apache.trafodion.jdbc.t2.T2Driver");
 			if (fileName != null)
 				out_ = new PrintStream(new FileOutputStream(fileName, true), true);
 			else

@@ -25,7 +25,7 @@
 //
 /**************************************************************************/
 /*
-  * Methods Changed: Java_org_trafodion_jdbc_t2_T2Driver_SQLMXInitialize(JNIEnv *, jclass, jstring, jint, jstring, jstring)
+  * Methods Changed: Java_org_apache_trafodion_jdbc_t2_T2Driver_SQLMXInitialize(JNIEnv *, jclass, jstring, jint, jstring, jstring)
   */
 #include <platform_ndcs.h>
 #include <sys/types.h> /* optional except for POSIX.1 */
@@ -45,7 +45,7 @@
 #include "SrvrCommon.h"
 #include "JdbcDriverGlobal.h"
 #include "SQLMXCommonFunctions.h"
-#include "org_trafodion_jdbc_t2_T2Driver.h"
+#include "org_apache_trafodion_jdbc_t2_T2Driver.h"
 #include "Debug.h"
 #include "GlobalInformation.h"
 #include "CommonLogger.h"
@@ -66,20 +66,20 @@ void setTM_enable_cleanup ()
   sv_envvar_setup = true;
 }
 
-JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_T2Driver_getPid (JNIEnv *env, jclass cls)
+JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_getPid (JNIEnv *env, jclass cls)
 {
 	return (jint)getpid();
 }
 /*
-* Class:     org_trafodion_jdbc_t2_T2Driver
+* Class:     org_apache_trafodion_jdbc_t2_T2Driver
 * Method:    SQLMXInitialize
 * Signature: (Ljava/lang/String;I)V
 */
 // MFC - added two parameters to set the MFC on/off and the directory
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_SQLMXInitialize(JNIEnv *jenv, jclass cls,
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_SQLMXInitialize(JNIEnv *jenv, jclass cls,
 																		 jstring language, jint nowaitOn, jstring moduleCaching, jstring compiledModuleLocation)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_T2Driver_SQLMXInitialize",("language=%s, nowaitOn=%ld",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_T2Driver_SQLMXInitialize",("language=%s, nowaitOn=%ld",
 		DebugJString(jenv,language),
 		nowaitOn));
 	const char 					*nLanguage;
@@ -236,14 +236,14 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_SQLMXInitialize(JNIEn
 
 
 /*
-* Class:     org_trafodion_jdbc_t2_T2Driver
+* Class:     org_apache_trafodion_jdbc_t2_T2Driver
 * Method:    setDefaultEncoding
 * Signature: (Ljava/lang/String;)V
 */
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_setDefaultEncoding(JNIEnv *jenv, jclass jcls,
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_setDefaultEncoding(JNIEnv *jenv, jclass jcls,
 																			jstring encoding)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_T2Driver_setDefaultEncoding",("encoding=%s",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_T2Driver_setDefaultEncoding",("encoding=%s",
 		DebugJString(jenv,encoding)));
 	gJNICache.defaultCharset = SQLCHARSETCODE_UNKNOWN;
 	if (encoding)
@@ -260,17 +260,17 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_setDefaultEncoding(JN
 
 
 /*
-* Class:     org_trafodion_jdbc_t2_T2Driver
+* Class:     org_apache_trafodion_jdbc_t2_T2Driver
 * Method:    setCharsetEncodingOverride
 * Signature: (I)Ljava/lang/String;
 * Note: This function is a generic implementation to allow setting the
 *       char set override encoding for the given charset (currently only the ISO88591
 *       column is allowed to be overriden)
 */
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_setCharsetEncodingOverride(JNIEnv *jenv, jclass jcls,
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_setCharsetEncodingOverride(JNIEnv *jenv, jclass jcls,
 																					jint charset, jstring encodingOverride)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_T2Driver_setCharsetEncodingOverride",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_T2Driver_setCharsetEncodingOverride",
 		("charset=%ld, encodingOverride=%s",charset, DebugJString(jenv,encodingOverride)));
 
 	//Added for connect/disconnect impro.
@@ -295,11 +295,11 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_setCharsetEncodingOve
 }
 
 /*
-* Class:     org_trafodion_jdbc_t2_T2Driver
+* Class:     org_apache_trafodion_jdbc_t2_T2Driver
 * Method:    checkLibraryVersion
 * Signature: (Ljava/lang/String;)V
 */
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_checkLibraryVersion(JNIEnv *jenv, jclass jcls,
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_checkLibraryVersion(JNIEnv *jenv, jclass jcls,
 																			 jstring javaVproc)
 {
 
@@ -318,7 +318,7 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_checkLibraryVersion(J
 	//Added for R3.0 Transaction issue sol. 10-100430-9906
 
 
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_T2Driver_checkLibraryVersion",("javaVproc=%s",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_T2Driver_checkLibraryVersion",("javaVproc=%s",
 		DebugJString(jenv,javaVproc)));
 
 	// Set the TMLIB cleanup 
@@ -360,9 +360,9 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_T2Driver_checkLibraryVersion(J
 	FUNCTION_RETURN_VOID((NULL));
 }
 
-JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_T2Driver_getDatabaseMajorVersionJNI(JNIEnv *jenv, jclass jcls)
+JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_getDatabaseMajorVersionJNI(JNIEnv *jenv, jclass jcls)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_T2Driver_getDatabaseMajorVersionJNI",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_T2Driver_getDatabaseMajorVersionJNI",("..."));
 
 	int databaseMajorVersion = TRAFODION_JDBCT2_VER_MAJOR;
 
@@ -370,9 +370,9 @@ JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_T2Driver_getDatabaseMajorVersi
 		("Database Major Version = %d", databaseMajorVersion));
 }
 
-JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_T2Driver_getDatabaseMinorVersionJNI(JNIEnv *jenv, jclass jcls)
+JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_T2Driver_getDatabaseMinorVersionJNI(JNIEnv *jenv, jclass jcls)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_T2Driver_getDatabaseMinorVersionJNI",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_T2Driver_getDatabaseMinorVersionJNI",("..."));
 
 	int databaseMinorVersion=TRAFODION_JDBCT2_VER_MINOR;
 

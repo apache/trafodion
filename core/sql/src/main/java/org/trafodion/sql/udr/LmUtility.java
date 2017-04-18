@@ -77,8 +77,8 @@ public class LmUtility {
     static final int RS_INFO_ERROR                = 11235;
     static final int NO_COMPATIBLE_METHODS        = 11239;
 
-    static final String SQLMXRS_CLASS = "org.trafodion.jdbc.t2.SQLMXResultSet";
-    static final String RSINFO_CLASS = "org.trafodion.jdbc.t2.ResultSetInfo";
+    static final String SQLMXRS_CLASS = "org.apache.trafodion.jdbc.t2.SQLMXResultSet";
+    static final String RSINFO_CLASS = "org.apache.trafodion.jdbc.t2.ResultSetInfo";
     static final String GETRSINFO_METHOD = "getResultSetInfo";
     static final String GETVERSION_METHOD = "getVersion";
 
@@ -1363,7 +1363,7 @@ public class LmUtility {
        throws Exception
      {
 
-       // Load org.trafodion.jdbc.t2.SQLMXResultSet class
+       // Load org.apache.trafodion.jdbc.t2.SQLMXResultSet class
        // Get the method ID of SQLMXResultSet::getResultSetInfo()
        try {
          rsT2Cls_ = Class.forName( SQLMXRS_CLASS );
@@ -1382,7 +1382,7 @@ public class LmUtility {
          throw new Exception(t);
        }
 
-       // Load org.trafodion.jdbc.t2.ResultSetInfo class
+       // Load org.apache.trafodion.jdbc.t2.ResultSetInfo class
        // Get the public fields in the above class
        try {
          rsInfoCls_ = Class.forName( RSINFO_CLASS );
@@ -1475,9 +1475,9 @@ public class LmUtility {
      * Method to get data pertaining to a specific result set object. This
      * method calls the getResultSetInfo() method provided by the JDBC/MX
      * driver. The above method call returns a
-     * org.trafodion.jdbc.t2.ResultSetInfo object whose structure is as below.
+     * org.apache.trafodion.jdbc.t2.ResultSetInfo object whose structure is as below.
 
-     * class org.trafodion.jdbc.t2.ResultSetInfo
+     * class org.apache.trafodion.jdbc.t2.ResultSetInfo
      * {
      *   public:
      *	  boolean LOBDataDetected;
@@ -1543,12 +1543,12 @@ public class LmUtility {
     Object rsInfoObj = null;
     
     // First check if the rsObj is an instance of 
-    // org.trafodion.jdbc.t2.SQLMXResultSet class
+    // org.apache.trafodion.jdbc.t2.SQLMXResultSet class
     if( !(rsT2Cls_.isInstance( rsObj )) ) {
       errCode[0] = RS_INFO_ERROR;
       errDetail[0] =
         "One or more returned result sets are not instances of " +
-        "class org.trafodion.jdbc.t2.SQLMXResultSet";
+        "class org.apache.trafodion.jdbc.t2.SQLMXResultSet";
       return;
     }
     

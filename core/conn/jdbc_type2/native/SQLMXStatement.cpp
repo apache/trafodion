@@ -33,17 +33,17 @@
 #include <sqlext.h>
 #include "JdbcDriverGlobal.h"
 #include "CoreCommon.h"
-#include "org_trafodion_jdbc_t2_SQLMXStatement.h"
+#include "org_apache_trafodion_jdbc_t2_SQLMXStatement.h"
 #include "SQLMXCommonFunctions.h"
 #include "CSrvrConnect.h"
 #include "Debug.h"
 
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_executeDirect
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeDirect
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, jboolean autoCommit, jint txnMode, 
   jstring stmtLabel, jstring cursorName, jstring sql, jboolean isSelect, jint queryTimeout,
   jint holdability, jobject resultSet, jlong currentStmtId)
 {
-	FUNCTION_ENTRY_LEVEL(DEBUG_LEVEL_STMT,"Java_org_trafodion_jdbc_t2_SQLMXStatement_executeDirect",
+	FUNCTION_ENTRY_LEVEL(DEBUG_LEVEL_STMT,"Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeDirect",
 		("... dialogueId=0x%08x, txid=%ld, autoCommit=%s, stmtLabel=%s, cursorName=%s, sql=%s, txnMode=%ld, isSelect=%s, holdability=%ld, resultSet=0x%08x",
 		dialogueId,
 		txid,
@@ -200,11 +200,11 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_executeDirect
 }
 
 //venu changed dialogueId and stmtId from int to long for 64 bit
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_executeRS
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeRS
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, jboolean autoCommit, jint txnMode,
   jstring stmtLabel, jstring RSstmtLabel,  jboolean isSelect, jlong stmtId, jint ResultSetIndex, jobject resultSet)
 {
-	FUNCTION_ENTRY_LEVEL(DEBUG_LEVEL_STMT, "Java_org_trafodion_jdbc_t2_SQLMXStatement_executeRS",
+	FUNCTION_ENTRY_LEVEL(DEBUG_LEVEL_STMT, "Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeRS",
 	("...dialogueId=0x%08x, txid=0x%08x, stmtLabel=%s, RSstmtLabel=%s, isSelect=%s, stmtId=0x%08x, ResultSetIndex=%ld, resultSet=0x%08x",
         dialogueId,
 		txid,
@@ -311,11 +311,11 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_executeRS
 }
 
 //venu changed dialogueId and stmtId from int to long for 64 bit
-JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_close
+JNIEXPORT jint JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_close
   (JNIEnv *jenv, jclass jclass, jstring server, jlong dialogueId, 
 		jlong stmtId, jboolean dropStmt)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXStatement_close",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_close",
 		("... dialogueId=0x%08x, stmtId=%ld, dropStmt=%s",
 		dialogueId,
 		stmtId,
@@ -361,11 +361,11 @@ JNIEXPORT jint JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_close
 /* RFE: Batch update improvements
  * executeBatch() now contains an additional argument: contBatchOnError
  */
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_executeBatch
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeBatch
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jint txid, jboolean autoCommit, jint txnMode,  
   jstring stmtLabel, jstring cursorName, jobjectArray sqlCommands, jboolean isSelect, jint queryTimeout, jboolean contBatchOnError, jlong currentStmtId)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXStatement_executeBatch",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_executeBatch",
 		("... dialogueId=0x%08x, txid=%ld, autoCommit=%s, stmtLabel=%s, cursorName=%s,txnMode=%ld, isSelect=%s,contBatchOnError=%s ...",
 		dialogueId,
 		txid,
@@ -597,11 +597,11 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_executeBatch
 	FUNCTION_RETURN_VOID((NULL));
 }
 		
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_closeUsingLabel
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_closeUsingLabel
   (JNIEnv *jenv, jclass jclass, jstring server, jlong dialogueId, 
 		jstring stmtLabel, jboolean dropStmt)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXStatement_closeUsingLabel",("... stmtLabel=%s, dialogueId=0x%08x, dropStmt=%s",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_closeUsingLabel",("... stmtLabel=%s, dialogueId=0x%08x, dropStmt=%s",
 		DebugJString(jenv,stmtLabel),
 		dialogueId,
 		DebugBoolStr(dropStmt)));
@@ -650,10 +650,10 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_closeUsingLabel
 }
 
 //venu changed dialogueId and stmtId from int to long for 64 bit
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_cancel
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_cancel
   (JNIEnv *jenv, jobject jobj, jstring server, jlong dialogueId, jlong stmtId)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXStatement_cancel",("..."));
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_cancel",("..."));
 
 	ExceptionStruct				exception_;
 	ERROR_DESC_LIST_def			sqlWarning;
@@ -688,10 +688,10 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_cancel
 
 
 //venu changed dialogueId and stmtId from int to long for 64 bit
-JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_resetFetchSize
+JNIEXPORT void JNICALL Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_resetFetchSize
   (JNIEnv *, jobject, jlong dialogueId, jlong stmtId, jint fetchSize)
 {
-	FUNCTION_ENTRY("Java_org_trafodion_jdbc_t2_SQLMXStatement_resetFetchSize",
+	FUNCTION_ENTRY("Java_org_apache_trafodion_jdbc_t2_SQLMXStatement_resetFetchSize",
 		("... dialogueId=0x%08x, , stmtId=%ld, fetchSize=%ld",
 		dialogueId,
 		stmtId,
@@ -704,13 +704,13 @@ JNIEXPORT void JNICALL Java_org_trafodion_jdbc_t2_SQLMXStatement_resetFetchSize
 long SQLMXStatement_EXECUTE_FAILED(void)
 {
 	FUNCTION_ENTRY("SQLMXStatement_EXECUTE_FAILED",(NULL));
-	FUNCTION_RETURN_NUMERIC(org_trafodion_jdbc_t2_SQLMXStatement_JNI_EXECUTE_FAILED,
-		("org_trafodion_jdbc_t2_SQLMXStatement_JNI_EXECUTE_FAILED"));
+	FUNCTION_RETURN_NUMERIC(org_apache_trafodion_jdbc_t2_SQLMXStatement_JNI_EXECUTE_FAILED,
+		("org_apache_trafodion_jdbc_t2_SQLMXStatement_JNI_EXECUTE_FAILED"));
 }
 
 long SQLMXStatement_SUCCESS_NO_INFO(void)
 {
 	FUNCTION_ENTRY("SQLMXStatement_SUCCESS_NO_INFO",(NULL));
-	FUNCTION_RETURN_NUMERIC(org_trafodion_jdbc_t2_SQLMXStatement_JNI_SUCCESS_NO_INFO,
-		("org_trafodion_jdbc_t2_SQLMXStatement_JNI_SUCCESS_NO_INFO"));
+	FUNCTION_RETURN_NUMERIC(org_apache_trafodion_jdbc_t2_SQLMXStatement_JNI_SUCCESS_NO_INFO,
+		("org_apache_trafodion_jdbc_t2_SQLMXStatement_JNI_SUCCESS_NO_INFO"));
 }

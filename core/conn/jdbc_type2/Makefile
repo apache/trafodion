@@ -57,7 +57,15 @@ T2_OBJS  = $(OUTDIR)/CommonDiags.o \
        $(OUTDIR)/ResStatisticsStatement.o \
        $(OUTDIR)/Vproc.o \
        $(OUTDIR)/type2version.o
-
+CSES := org.apache.trafodion.jdbc.t2.JdbcDebug \
+		org.apache.trafodion.jdbc.t2.DataWrapper \
+		org.apache.trafodion.jdbc.t2.SQLMXCallableStatement \
+		org.apache.trafodion.jdbc.t2.SQLMXConnection \
+		org.apache.trafodion.jdbc.t2.SQLMXDatabaseMetaData \
+		org.apache.trafodion.jdbc.t2.T2Driver \
+		org.apache.trafodion.jdbc.t2.SQLMXPreparedStatement \
+		org.apache.trafodion.jdbc.t2.SQLMXResultSet \
+		org.apache.trafodion.jdbc.t2.SQLMXStatement
 OBJS = $(COMMON_OBJS) $(T2_OBJS)
 MXODIR = $(TRAF_HOME)/../conn/odbc/src/odbc
 
@@ -70,17 +78,42 @@ CODEGEN = -fPIC
 
 .PHONY: all
 
-all: $(LIBEXPDIR)/libjdbcT2.so
+LN :=/bin/ln -sf
+JAVAH :=$(JAVA_HOME)/bin/javah
+EXPROOT :=  ${TRAF_HOME}/export
+CP := /bin/cp -f
+all: LICENSE NOTICE $(LIBEXPDIR)/libjdbcT2.so  
+
+$(EXPROOT)/lib/jdbcT2.jar:
+	./getBuildInfo
+	$(MAVEN) install -DskipTests
+	$(CP) target/trafjdbcT2-${TRAFODION_VER}.jar $(EXPROOT)/lib
+	`cd ${TRAF_HOME}/export/lib;$(LN) trafjdbcT2-${TRAFODION_VER}.jar jdbcT2.jar` 
+	$(JAVAH) -cp $(EXPROOT)/lib/jdbcT2.jar -d native $(CSES)
 
 $(LIBEXPDIR)/libjdbcT2.so: $(OBJS)
 	$(CXX) -shared $(GCCMODE) -o $@ $(DBG_FLGS) -L$(LIBEXPDIR) -lsbfs -lsbms -levlsq -lwin -ltdm_sqlcli  -larkcmp_dll -larkcmplib -lcommon -lsort -lexecutor -lcomexe -lcli $(OBJS)
 
+$(OBJS): $(EXPROOT)/lib/jdbcT2.jar
+
 $(OUTDIR)/type2version.o: $(TRAF_HOME)/export/include/SCMBuildStr.h
 
 clean:
+	$(MAVEN) clean
 	$(RM) $(LIBEXPDIR)/libjdbcT2.so
+	$(RM) -f $(EXPROOT)/lib/jdbcT2*.jar
 	$(RM) -rf $(OUTDIR)
 	$(RM) -rf $(BUILD_PLAT)
+	echo '$(CSES)'|sed -e 's/\./_/g' -e 's/[[:space:]]/\n/g' |xargs -i rm -f 'native/{}.h'
 
 cleanall: clean
 	$(RM) -rf $(BUILD_PLAT)
+
+LICENSE: ../../../licenses/LICENSE-clients
+	cp -f $? $@
+
+../../../licenses/LICENSE-clients:
+	cd $(@D) && $(MAKE) $(@F)
+
+NOTICE: ../../../NOTICE
+	cp -f $? $@

@@ -1,5 +1,11 @@
+/target/
 buildId
+/target/
 classes/
 native/Vproc.*
-native/org_trafodion_jdbc_t2_*.h
-src/main/java/org/trafodion/jdbc/t2/DriverInfo.java
+native/org_apache_trafodion_jdbc_t2_*.h
+src/main/java/org/apache/trafodion/jdbc/t2/DriverInfo.java
+src/main/resources/META-INF/LICENSE
+src/main/resources/META-INF/NOTICE
+LICENSE
+NOTICE
