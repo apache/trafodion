@@ -85,6 +85,7 @@ int main(int argc, const char * argv[])
       cout << "Blob test to update to lob lobhandle   6   "<< endl;
       cout << "Blob test to append to lobhandle   7      "<< endl;
       cout << "Blob test to truncate to lobhandle   8      "<< endl;
+      cout << "Blob test append  lobhandle from a buffer in chunks from file 9 " << endl;
       return 0;
     }
   Int32 retcode = 0;
@@ -316,7 +317,9 @@ case 7:
 	  return retcode;
           }
         cout << "LOB handle for "<< columnname << ": " << lobHandle << endl;
-	retcode = updateAppendBufferToLobHandle(cliGlob,lobHandle);
+        char *source= new char[300];
+        strcpy(source,"zzzzzzzzzzzzzzzzzzzz");
+	retcode = updateAppendBufferToLobHandle(cliGlob,lobHandle,20,(Int64)source);
 	return retcode;
       }
       break;
@@ -351,6 +354,64 @@ case 8:
       }
       break;
 
+case 9:
+      {
+	
+	cout <<"*************************************"  <<endl;
+	cout << "Blob test append  lobhandle from a buffer from file " << endl;
+	cout << "Input lob table name :" << endl;
+	cin.getline(tablename,40);
+	cout << "Table name : " << tablename << endl;
+	cout << "Input lob column name to get handle from :" << endl;
+	cin.getline(columnname,40); 
+	cout << "Column Name : " << columnname << endl;
+        cout << "Input source file name :" << endl;
+	cin.getline(filename,512);
+	cout << "Source name : " << filename << endl;
+        //extract lob handle
+      
+        char *lobHandle = new char[1024];
+        str_cpy_all(lobHandle," ",1024);
+        cout << "Extracting  lob handle for column " << columnname << "..." << endl;
+        retcode = extractLobHandle(cliGlob, lobHandle, (char *)columnname,tablename);
+        if (retcode)
+          {
+            cout << "extractLobHandle returned " << retcode <<endl;
+	
+            delete lobHandle;
+	  return retcode;
+          }
+        cout << "LOB handle for "<< columnname << ": " << lobHandle << endl;
+
+
+        //read from input source file in chunks and append
+        int fdSourceFile = open(filename,O_RDONLY);
+        struct stat statbuf;
+        if (stat(filename, &statbuf) != 0) {
+          return -1;
+       }
+
+        Int64 sourceEOF = statbuf.st_size;
+        char *fileInputData= new char[32*1024*1024]; //32 KB chunks
+        //char *fileInputData = new char[10000];
+        Int64 lengthRead=0;
+        Int64 offset=0;
+        Int64 chunkLen = 32*1024*1024;
+        //Int64 chunkLen = 10000;
+
+        while ((offset < sourceEOF) )
+          {
+            if (lengthRead=pread(fdSourceFile, fileInputData, chunkLen, offset) == -1) {
+              close(fdSourceFile);
+              return -1;
+            }
+            chunkLen = min(chunkLen,sourceEOF-offset);
+            retcode = updateAppendBufferToLobHandle(cliGlob,lobHandle,chunkLen,(Int64)fileInputData);
+            offset +=chunkLen;
+          }
+	return retcode;
+      }
+      break;
     }//end switch
   
   return 0;

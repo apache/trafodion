@@ -11458,15 +11458,14 @@ convDoIt(char * source,
       *(Int64*)target = (year - 1900)* 10000 + month * 100 + day;
     }
   break;
-
+  
   case CONV_BLOB_BLOB:
     {
-      str_cpy_all(target, source, sourceLen);
-
-      setVCLength(varCharLen, varCharLenSize, sourceLen);
+        str_cpy_all(target, source, sourceLen);
+        setVCLength(varCharLen, varCharLenSize, sourceLen);
     }
     break;
-
+ 
   case CONV_BLOB_ASCII_F:
     {
       // conversion from internal format blob handle to external format 

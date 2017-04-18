@@ -6065,14 +6065,20 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
   }
 #endif  
 
-  ItemExpr *boundExpr ;
+  ItemExpr *boundExpr, *boundExpr_0, *boundExpr_1 ;
 
-  boundExpr = child(0)->bindNode(bindWA);
+  boundExpr_0 = child(0)->bindNode(bindWA);
   if (bindWA->errStatus())
       return this;
-  child(0) = boundExpr;
+  child(0) = boundExpr_0;
  
-
+  if (child(1))
+    {
+      boundExpr_1 = child(1)->bindNode(bindWA);
+      if (bindWA->errStatus())
+        return this;
+      child(1) = boundExpr_1;
+    }
   if (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON)
   {
     // if an untyped param is being assigned to a column, and
@@ -6085,6 +6091,44 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 	      return ie;
   }
 
+ 
+  NABuiltInTypeEnum targetType =  child(0)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
+  if  (targetType == NA_LOB_TYPE)
+    {  
+      if (child(1))
+        {
+          NABuiltInTypeEnum sourceType =  child(1)->castToItemExpr()->getValueId().getType().getTypeQualifier() ; 
+          //If it's a dynamic param with unknown type or if it is a 
+          // character type, trasnform the insert.
+          if ((child(1)->getOperatorType() == ITM_DYN_PARAM && sourceType == NA_UNKNOWN_TYPE)  || sourceType == NA_CHARACTER_TYPE)
+            {
+              ValueId vid1 = child(1)->castToItemExpr()->getValueId();  
+              // Add a stringToLob node
+              ItemExpr *newChild;
+              const NAType &desiredType = child(0)->getValueId().getType();
+              SQLBlob &lobType = (SQLBlob&)desiredType;
+
+              NAType * newType = new SQLBlob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), 
+                                             lobType.getLobStorage(), 
+                                             TRUE, FALSE, TRUE, 
+                                             CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024); 
+              //              vid1.coerceType(desiredType, NA_LOB_TYPE); 
+              vid1.coerceType(*newType, NA_LOB_TYPE); 
+              if (bindWA->getCurrentScope()->context()->inUpdate())
+                {
+                  newChild =  new (bindWA->wHeap()) LOBupdate( vid1.getItemExpr(), child(0), NULL,LOBoper::STRING_, FALSE,TRUE);
+                }
+              else
+                {
+                  newChild =  new (bindWA->wHeap()) LOBinsert( vid1.getItemExpr(),NULL, LOBoper::STRING_, FALSE,TRUE); 
+                }   
+              newChild->bindNode(bindWA);
+              if (bindWA->errStatus())
+                return boundExpr; 
+              setChild(1, newChild);
+            }
+        }
+    }
   // Assign is a directly derived subclass of ItemExpr; safe to invoke this
   boundExpr = ItemExpr::bindNode(bindWA);
   if (bindWA->errStatus())
@@ -6173,18 +6217,8 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
     } // QSTUFF
 
   } // isUserSpecified
-  NABuiltInTypeEnum sourceType =  child(1)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
-  NABuiltInTypeEnum targetType =  child(0)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
-  if ((sourceType == NA_CHARACTER_TYPE) && (targetType == NA_LOB_TYPE))
-    {
-      ValueId vid1 = child(1)->castToItemExpr()->getValueId();  
-      // Add a stringToLob node
-      ItemExpr *newChild =  new (bindWA->wHeap()) LOBinsert( vid1.getItemExpr(), NULL, LOBoper::STRING_, FALSE);    
-      newChild->bindNode(bindWA);
-      if (bindWA->errStatus())
-	return boundExpr; 
-      setChild(1, newChild);
-    }
+ 
+ targetType =  child(0)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
  
   if ((NOT child(0)->getValueId().getType().
        isCompatible(child(1)->getValueId().getType())) &&

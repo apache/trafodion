@@ -1604,7 +1604,6 @@ const ex_conv_clause::ConvInstrStruct ex_conv_clause::convInstrInfo[] = {
   {REC_BYTE_F_ASCII,       REC_NCHAR_V_ANSI_UNICODE,   instrAndText(CONV_ASCII_TO_ANSI_V_UNICODE)},
 
   {REC_BYTE_F_ASCII,      REC_BOOLEAN,                 instrAndText(CONV_ASCII_BOOL)},
-
   {REC_NCHAR_F_UNICODE,    REC_NCHAR_F_UNICODE,        instrAndText(CONV_UNICODE_F_F)},
   {REC_NCHAR_F_UNICODE,    REC_NCHAR_V_UNICODE,        instrAndText(CONV_UNICODE_F_V)},
   {REC_NCHAR_F_UNICODE,    REC_BYTE_F_ASCII,        instrAndText(CONV_UNICODE_F_ASCII_F)},
@@ -1719,7 +1718,7 @@ const ex_conv_clause::ConvInstrStruct ex_conv_clause::convInstrInfo[] = {
   {REC_NCHAR_V_ANSI_UNICODE, REC_NCHAR_F_UNICODE, instrAndText(CONV_ANSI_V_UNICODE_TO_UNICODE_F)},
   {REC_NCHAR_V_ANSI_UNICODE, REC_NCHAR_V_UNICODE, instrAndText(CONV_ANSI_V_UNICODE_TO_UNICODE_V)},
 
-  {REC_BLOB,          REC_BLOB,              instrAndText(CONV_BLOB_BLOB)},
+  {REC_BLOB,          REC_BLOB,              instrAndText(CONV_BLOB_BLOB)},     
   {REC_BLOB,          REC_BYTE_F_ASCII,      instrAndText(CONV_BLOB_ASCII_F)},
 
   {REC_CLOB,          REC_CLOB,              instrAndText(CONV_BLOB_BLOB)},

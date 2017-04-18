@@ -10384,7 +10384,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   ExLobInMemoryDescChunksEntry *dcInMemoryArray = new ExLobInMemoryDescChunksEntry[numEntries];
   //Read the desc chunks table into memory
         
-  str_sprintf(query, "select dataOffset, descPartnKey,descSyskey,chunkLen,chunkNum from table(ghost table %s) order by dataOffset for read committed access",
+  str_sprintf(query, "select dataOffset, descPartnKey,descSyskey,chunkLen,chunkNum from table(ghost table %s) order by dataOffset,chunkLen for read committed access",
               lobDescChunksName);
   lobDebugInfo(logBuf,0,__LINE__,lobTrace);
   // set parserflags to allow ghost table

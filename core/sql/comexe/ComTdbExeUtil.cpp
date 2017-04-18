@@ -2426,7 +2426,7 @@ ComTdbExeUtilLobExtract::ComTdbExeUtilLobExtract
   if (toType_ == ExtractToType::TO_FILE_)
       {
 	// extractSize_ is irrelevant since the whole lob will be read into the output file
-	// bufAddr_ is not passed in by user. It is a CQD value LOB_OUTPUT_SIZE
+	// bufAddr_ is not passed in by user. It is a CQD value LOB_MAX_CHUNK_MEM_SIZE
 	extractSizeIOAddr_ = 0;
 	bufAddr_ = 0;
 	

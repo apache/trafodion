@@ -2937,10 +2937,12 @@ class LOBinsert : public LOBoper
 	   ItemExpr *val2Ptr,
 	   ObjectType fromObj, 
 	   NABoolean isAppend = FALSE,
+           NABoolean treatLobAsVarchar =FALSE,
 	   OperatorTypeEnum otype = ITM_LOBINSERT)
    : LOBoper(otype, val1Ptr, val2Ptr,NULL,fromObj),
     objectUID_(-1),
     append_(isAppend),
+    lobAsVarchar_(treatLobAsVarchar),
     lobSize_(0),
     fsType_(REC_BLOB)
     {};
@@ -2969,7 +2971,7 @@ class LOBinsert : public LOBoper
   Lng32 & lobSize() { return lobSize_; }
 
   Lng32 & lobFsType() { return fsType_; }
-
+  NABoolean lobAsVarchar() const { return lobAsVarchar_;}
  protected:
   // ---------------------------------------------------------------//
   // ObjectUID of the table this blob is being inserted into
@@ -2987,6 +2989,8 @@ class LOBinsert : public LOBoper
   Lng32 fsType_;
 
   NABoolean append_;
+  NABoolean lobAsVarchar_;//This means this lob insert will get it's input data 
+                          // in varchar format
 }; // class LOBinsert
 
 class LOBselect : public LOBoper
@@ -3040,11 +3044,13 @@ class LOBupdate : public LOBoper
 	    ItemExpr *val2Ptr,
 	    ItemExpr *val3Ptr,
 	    ObjectType fromObj, 
-	    NABoolean isAppend = FALSE)
+	    NABoolean isAppend = FALSE,
+            NABoolean treatLobAsVarchar =FALSE)
     : LOBoper(ITM_LOBUPDATE, val1Ptr, val2Ptr,val3Ptr,fromObj),
-    objectUID_(-1),
-    lobSize_(0),
-    append_(isAppend)
+      objectUID_(-1),
+      lobSize_(0),
+      append_(isAppend),
+      lobAsVarchar_(treatLobAsVarchar)
     {};
   
   // copyTopNode method
@@ -3065,6 +3071,7 @@ class LOBupdate : public LOBoper
   
   NAString &updatedTableSchemaName() { return schName_; }
   Lng32 & lobSize() { return lobSize_; }
+  NABoolean lobAsVarchar() const { return lobAsVarchar_;}
  private:
   // ---------------------------------------------------------------//
   // ObjectUID of the table this blob is being inserted into
@@ -3077,6 +3084,8 @@ class LOBupdate : public LOBoper
 
   NABoolean append_;
   Lng32 lobSize_;
+  NABoolean lobAsVarchar_;//This means this lob insert will get it's input data 
+                          // in varchar format
 }; // class LOBupdate
 
 class LOBconvert : public LOBoper
