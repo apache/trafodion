@@ -99,6 +99,7 @@ MemoryMonitor::MemoryMonitor(Lng32 windowSize,
     memFree_(-1),
     memActive_(-1),
     memInactive_(-1),
+    loggerEnabled_(FALSE),
     sampleInterval_(sampleInterval * 1000)
 {
   // if the windowSize is 0, we do not need memory monitor.
@@ -263,7 +264,7 @@ void MemoryMonitor::update() {
         float normalizedPageFaultRate = pageFaultRate_ / physKBytesRatio_;
 	Lng32 prevPressure = pressure_;
         pressure_ = MAXOF(((1 - 4 * percentFree) * (normalizedPageFaultRate / 25) * commitPhysRatio_), 0);
-        if ((pressure_ != prevPressure) || (currTime_ - logTime_ > LOG_INTERVAL)) {
+        if (isLoggerEnabled() && ((pressure_ != prevPressure) || (currTime_ - logTime_ > LOG_INTERVAL))) {
            QRLogger::log(CAT_SQL_SSCP, LL_INFO,  
                  "pctFree=%.3f, pctActive=%.3f, pctInactive=%.3f pageFaultRate=%.3f, (free*normpagefault*commitratio) = (%.3f * %.3f * %.3f), pressure=%d\n",
                  percentFree,

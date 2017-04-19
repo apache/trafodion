@@ -75,6 +75,8 @@ public:
   }
 
   inline void setEnable(NABoolean b) { enable_ = b; }
+  inline void enableLogger() {loggerEnabled_ = TRUE; }
+  inline NABoolean isLoggerEnabled() { return loggerEnabled_; }
   Int64 availablePhyMemKb() { return memFree_; }
   static DWORD WINAPI memMonitorUpdateThread(void * param);
 private:
@@ -114,6 +116,8 @@ private:
   NABoolean resetOnce_;
 
   Lng32 sampleInterval_;                // in milliseconds
+
+  NABoolean loggerEnabled_;
 
 //SQ_LINUX #ifdef NA_WINNT
 

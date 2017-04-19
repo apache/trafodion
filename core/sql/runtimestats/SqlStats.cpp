@@ -1698,6 +1698,7 @@ void StatsGlobals::createMemoryMonitor()
    memMonitor_ = new (&statsHeap_) MemoryMonitor(memMonitorWindowSize,
                                                       memMonitorSampleInterval,
                                                       &statsHeap_);
+   memMonitor_->enableLogger();
 }
 
 short getMasterCpu(char *uniqueStmtId, Lng32 uniqueStmtIdLen, char *nodeName, short maxLen, short &cpu)
