@@ -24,6 +24,9 @@
 obey TEST007(clean_up_traf);
 obey TEST007(clean_up_hive);
 
+initialize authorization;
+register user sql_user3 as sql_user3;
+
 log LOG007 clear;
 obey TEST007(setup_traf);
 obey TEST007(tests_traf);

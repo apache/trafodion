@@ -1055,6 +1055,9 @@ select cast(cast(N'-2147483649' as integer) as nchar(1)) from t022u;
 select cast(cast(N'42949672960000' as DEC) as nchar(10)) from t022u;
 select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(20)) from t022u;
 
+-- "timestamp - timestamp" should return result in seconds
+select timestamp '2018-10-10 10:10:10' - timestamp '2017-10-10 10:10:10' from dual;
+
 -- negative test on cast DEC to VAR/NCAR 
 select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(2)) from t022u;
 

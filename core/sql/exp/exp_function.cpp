@@ -159,6 +159,7 @@ ex_function_upper::ex_function_upper(){};
 ex_function_substring::ex_function_substring(){};
 ex_function_trim_char::ex_function_trim_char(){};
 ExFunctionTokenStr::ExFunctionTokenStr(){};
+ExFunctionReverseStr::ExFunctionReverseStr(){};
 ex_function_current::ex_function_current(){};
 ex_function_unique_execute_id::ex_function_unique_execute_id(){};//Trigger -
 ex_function_get_triggers_status::ex_function_get_triggers_status(){};//Trigger -
@@ -421,6 +422,12 @@ ex_function_trim_char::ex_function_trim_char(OperatorTypeEnum oper_type,
 ExFunctionTokenStr::ExFunctionTokenStr(OperatorTypeEnum oper_type,
 				       Attributes ** attr, Space * space)
      : ex_function_clause(oper_type, 3, attr, space)
+{
+};
+
+ExFunctionReverseStr::ExFunctionReverseStr(OperatorTypeEnum oper_type,
+                                           Attributes ** attr, Space * space)
+     : ex_function_clause(oper_type, 2, attr, space)
 {
 };
 
@@ -2484,6 +2491,79 @@ ex_expr::exp_return_type ExFunctionTokenStr::eval(char *op_data[],
 
   return ex_expr::EXPR_OK;
 };
+
+ex_expr::exp_return_type ExFunctionReverseStr::eval(char *op_data[],
+                                                    CollHeap* heap,
+                                                    ComDiagsArea** diagsArea)
+{
+  CharInfo::CharSet cs = ((SimpleType *)getOperand(1))->getCharSet();
+  Lng32 len1 = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
+
+  char * tgt = op_data[0];
+  char * src = op_data[1];
+  Lng32 srcPos = 0;
+  Lng32 tgtPos = 0;
+  if (cs == CharInfo::ISO88591)
+    {
+      tgtPos = len1 - 1;
+      for (srcPos = 0; srcPos < len1; srcPos++)
+        {
+          tgt[tgtPos--] = src[srcPos];
+        }
+    }
+  else if (cs == CharInfo::UCS2)
+    {
+      Lng32 bpc = unicode_char_set::bytesPerChar();
+      srcPos = 0;
+      tgtPos = len1 - bpc;
+      while (srcPos < len1)
+        {
+          str_cpy_all(&tgt[tgtPos], &src[srcPos], bpc);
+          tgtPos -= bpc;
+          srcPos += bpc;
+        }
+    }
+  else if (cs == CharInfo::UTF8)
+    {
+      UInt32 UCS4value;
+      
+      cnv_charset charset = convertCharsetEnum(cs);
+      Lng32 charLen;
+      srcPos = 0;
+      tgtPos = len1;
+      while(srcPos < len1)
+        {
+          charLen = LocaleCharToUCS4(&op_data[1][srcPos],
+                                     len1 - srcPos,
+                                     &UCS4value,
+                                     charset);
+          if (charLen < 0)
+            {
+              const char *csname = CharInfo::getCharSetName(cs);
+              ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHARACTER);
+              *(*diagsArea) << DgString0(csname) << DgString1("REVERSE FUNCTION"); 
+              return ex_expr::EXPR_ERROR;
+            }
+
+          tgtPos -= charLen;
+          str_cpy_all(&tgt[tgtPos], &src[srcPos], charLen);
+          srcPos += charLen;
+        }
+    }
+  else
+    {
+      const char *csname = CharInfo::getCharSetName(cs);
+      ExRaiseSqlError(heap, diagsArea, EXE_INVALID_CHARACTER);
+      *(*diagsArea) << DgString0(csname) << DgString1("REVERSE FUNCTION"); 
+      return ex_expr::EXPR_ERROR;
+    }
+
+  if (getOperand(0)->getVCIndicatorLength() > 0)
+    getOperand(0)->setVarLength(len1, op_data[-MAX_OPERANDS]);
+
+  return ex_expr::EXPR_OK;
+};
+
 // LCOV_EXCL_STOP
 ex_expr::exp_return_type ex_function_current::eval(char *op_data[],
 						   CollHeap*,

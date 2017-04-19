@@ -188,6 +188,14 @@ ItemExpr * buildEncodeTree(TrafDesc * column,
   if (column->columnsDesc()->isCaseInsensitive())
     caseinsensitiveEncode = TRUE;
 
+  // cannot have a NULL source value for a non-nullable column
+  if (NOT column->columnsDesc()->isNullable() &&
+      dataBuffer->length() >= 4 &&
+      str_cmp(*dataBuffer, "NULL", 4) == 0)
+    {
+      return NULL;
+    }
+
   if (column->columnsDesc()->isNullable() &&
       dataBuffer->length() >= 4 &&
       str_cmp(*dataBuffer, "NULL", 4) == 0)

@@ -1335,6 +1335,28 @@ const NAType *BuiltinFunction::synthesizeType()
       }
     break;
 
+    case ITM_REVERSE:
+      {
+	// reserve(<value>);
+	ValueId vid1 = child(0)->getValueId();
+
+	// untyped param operands are typed as CHAR
+	vid1.coerceType(NA_CHARACTER_TYPE);
+
+	const NAType &typ1 = vid1.getType();
+
+	if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+	  {
+	    // 4043 The operand of a $0~String0 function must be character.
+	    *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
+	    return NULL;
+	  }
+
+        // return type same as child type
+        retType = typ1.newCopy(HEAP);
+      }
+    break;
+
     case ITM_UNIQUE_ID:
       {
 	retType = new HEAP SQLChar(16, FALSE);

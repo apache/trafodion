@@ -1250,6 +1250,7 @@ Int32 ItemExpr::shouldPushTranslateDown(CharInfo::CharSet chrset) const
      case ITM_CAST_CONVERT:          // a) internal node, too late to do ICAT
      case ITM_CAST_TYPE:
      case ITM_DATEFORMAT:
+     case ITM_REVERSE:
        return -1;
 
      case ITM_LEFT:                  // b) counts characters
@@ -5891,10 +5892,15 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
           // timestamp(0) - timestamp(0)  = diff in days
 	  const DatetimeType* datetime1 = (DatetimeType*)naType0;
 	  const DatetimeType* datetime2 = (DatetimeType*)naType1;
-          if (((datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) ||
-               (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLDate)) &&
-              ((datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) ||
-               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLDate)))
+          if (((datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) &&
+               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLDate)) ||
+              ((datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLDate) &&
+               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLDate)) ||
+              ((CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) &&
+               (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) &&
+               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) &&
+               (datetime1->getFractionPrecision() == 0) &&
+               (datetime2->getFractionPrecision() == 0)))
             {
               ItemExpr * newChild = NULL;
               if (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp)

@@ -281,6 +281,40 @@ select char_length( TRIM( TRAILING trimc from uf8v ) ),
        octet_length( TRIM( TRAILING trimc from uf8v ) ),
        converttohex( TRIM( TRAILING trimc from uf8v ) ) from cs315t4 order by 1,2,3;
 
+-- tests for REVERSE function on single and multibyte characters
+select char_length(reverse('abc')) from dual;
+select reverse('abc') from dual;
+
+select char_length(reverse('')) from dual;
+select reverse('') from dual;
+
+select char_length(reverse(cast('abc' as varchar(10)))) from dual;
+select reverse(cast('abc' as varchar(10))) from dual;
+
+select char_length(_utf8 x'C3B6C3BAC3BBE0A0A0') from dual;
+select converttohex(_utf8 x'C3B6C3BAC3BBE0A0A0') from dual;
+
+select char_length(reverse(_utf8 x'C3B6C3BAC3BBE0A0A0')) from dual;
+select converttohex(reverse(_utf8 x'C3B6C3BAC3BBE0A0A0')) from dual;
+
+select char_length(cast(_utf8 x'C3B6C3BAC3BBE0A0A0' as varchar(10))) from dual;
+select converttohex(cast(_utf8 x'C3B6C3BAC3BBE0A0A0' as varchar(10))) from dual;
+
+select char_length(reverse(cast(_utf8 x'C3B6C3BAC3BBE0A0A0' as varchar(10)))) from dual;
+select converttohex(reverse(cast(_utf8 x'C3B6C3BAC3BBE0A0A0' as varchar(10)))) from dual;
+
+select char_length('abc' || _utf8 x'C3B6C3BAC3BBE0A0A0') from dual;
+select converttohex('abc' || _utf8 x'C3B6C3BAC3BBE0A0A0') from dual;
+
+select char_length(reverse('abc' || _utf8 x'C3B6C3BAC3BBE0A0A0')) from dual;
+select converttohex(reverse('abc' || _utf8 x'C3B6C3BAC3BBE0A0A0')) from dual;
+
+select char_length(_ucs2 x'515a515b515c515d') from dual;
+select converttohex(_ucs2 x'515a515b515c515d') from dual;
+
+select char_length(reverse(_ucs2 x'515a515b515c515d')) from dual;
+select converttohex(reverse(_ucs2 x'515a515b515c515d')) from dual;
+
 ?section clnup
 
 drop schema cs315s cascade;
