@@ -2180,7 +2180,7 @@ Reply Message Bytes      42,416
  ScrFileCnt    ScrIOSize          ScrIORead       ScrIOWritten           ScrIOTime        ScrIOMaxTime
     6       EX_HASH_GRBY               DISK         2       -1               2,638
                        0                  0                  0                 256                   0
-    0                  0                  0                  0                   0                   0
+    0                 -1                  0                  0                   0                   0
 
 --- SQL operation complete.
 >>get statistics for QID MXID11000009156212358279905535000000000000206U3333300_305_S1 PROGRESS;
@@ -2241,7 +2241,7 @@ Reply Message Bytes      42,416
  ScrFileCnt    ScrIOSize          ScrIORead       ScrIOWritten           ScrIOTime        ScrIOMaxTime
     6       EX_HASH_GRBY               DISK         2       -1               2,638
                        0                  0                  0                 256                   0
-    0                  0                  0                  0                   0                   0
+    0                 -1                  0                  0                   0                   0
 
 --- SQL operation complete.
 >>log;
@@ -2577,7 +2577,7 @@ Reply Message Bytes      42,416
  ScrFileCnt    ScrIOSize          ScrIORead       ScrIOWritten           ScrIOTime        ScrIOMaxTime
     6       EX_HASH_GRBY               DISK         2       -1               2,638
                        0                  0                  0                 256                   0
-    0                  0                  0                  0                   0                   0
+    0                 -1                  0                  0                   0                   0
 
 --- SQL operation complete.
 >>get statistics for qid current progress, options 'sl' ;
@@ -2630,7 +2630,7 @@ Reply Message Bytes      42,416
         1         2                  0                100                  4                  4            4            0              6,690              3,572 TRAFODION.SCH.TSTAT
 
    Id            TDBName               Mode       DOP     TopN             CPUTime             BMOHeapUsed   BMOHeapAllocated          BMOHeapWM       BMOSpaceBufSz      BMOSpaceBufCnt  ScrFileCnt  ScrIOSize          ScrIORead       ScrIOWritten           ScrIOTime        ScrIOMaxTime
-    6       EX_HASH_GRBY               DISK         2       -1               2,638                       4              1,024              7,687                 256                   0    0                  0                  0                  0                   0                   0
+    6       EX_HASH_GRBY               DISK         2       -1               2,638                       4              1,024              7,687                 256                   0    0                -1                  0                  0                   0                   0
 
 --- SQL operation complete.
 >>get statistics for qid current default ;
@@ -2924,7 +2924,7 @@ Reply Message Bytes      42,416
  ScrFileCnt    ScrIOSize          ScrIORead       ScrIOWritten           ScrIOTime        ScrIOMaxTime
     6       EX_HASH_GRBY               DISK         2       -1               2,638
                        0                  0                  0                 256                   0
-    0                  0                  0                  0                   0                   0
+    0                 -1                  0                  0                   0                   0
 
 --- SQL operation complete.
 >>set session default statistics_view_type 'pertable' ;
@@ -3063,7 +3063,7 @@ Reply Message Bytes      45,408
         1         2                  0                100                  4                  4            4            0              5,679              3,559 TRAFODION.SCH.TSTAT
 
    Id            TDBName               Mode       DOP     TopN             CPUTime             BMOHeapUsed   BMOHeapAllocated          BMOHeapWM       BMOSpaceBufSz      BMOSpaceBufCnt  ScrFileCnt  ScrIOSize          ScrIORead       ScrIOWritten           ScrIOTime        ScrIOMaxTime
-    6       EX_HASH_GRBY               DISK         2       -1               2,760                       4              1,024              7,687                 256                   2    0                  0                  0                  0                   0                   0
+    6       EX_HASH_GRBY               DISK         2       -1               2,760                       4              1,024              7,687                 256                   2    0                -1                  0                  0                   0                   0
 
 --- SQL operation complete.
 >>set statistics default ;
@@ -3187,7 +3187,7 @@ Reply Message Bytes      45,408
         1         2                  0                100                  4                  4            4            0              3,457              1,846 TRAFODION.SCH.TSTAT
 
    Id            TDBName               Mode       DOP     TopN             CPUTime             BMOHeapUsed   BMOHeapAllocated          BMOHeapWM       BMOSpaceBufSz      BMOSpaceBufCnt  ScrFileCnt  ScrIOSize          ScrIORead       ScrIOWritten           ScrIOTime        ScrIOMaxTime
-    6       EX_HASH_GRBY               DISK         2       -1               2,236                       4              1,024              7,687                 256                   2    0                  0                  0                  0                   0                   0
+    6       EX_HASH_GRBY               DISK         2       -1               2,236                       4              1,024              7,687                 256                   2    0                -1                  0                  0                   0                   0
 
 --- SQL operation complete.
 Qid                      MXID11000009156212358279905535000000000000206U3333300_305_S1

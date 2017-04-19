@@ -58,6 +58,7 @@ extern std::string CAT_SQL_COMP_XML;
 extern std::string CAT_SQL_EXE;
 extern std::string CAT_SQL_COMP;
 extern std::string CAT_SQL_ESP;
+extern std::string CAT_SQL_SSCP;
 extern std::string CAT_SQL_PRIVMGR;
 
 // HDFS
