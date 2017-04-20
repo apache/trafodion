@@ -154,10 +154,10 @@ public class HBaseClient {
     	//log events in their own log files or console.
     	//So, check for alternate log4j.properties otherwise
     	//use the default HBaseClient config.
-    	String confFile = System.getProperty("hbaseclient.log4j.properties");
-    	if(confFile == null) {
-    		System.setProperty("trafodion.hdfs.log", System.getenv("TRAF_HOME") + "/logs/trafodion.hdfs.log");
-    		confFile = System.getenv("TRAF_HOME") + "/conf/log4j.hdfs.config";
+    	String confFile = System.getProperty("trafodion.log4j.configFile");
+    	if (confFile == null) {
+    		System.setProperty("trafodion.sql.log", System.getenv("TRAF_HOME") + "/logs/trafodion.sql.java.log");
+    		confFile = System.getenv("TRAF_HOME") + "/conf/log4j.sql.config";
     	}
     	PropertyConfigurator.configure(confFile);
         config = TrafConfiguration.create();

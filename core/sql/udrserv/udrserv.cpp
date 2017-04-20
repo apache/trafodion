@@ -330,12 +330,8 @@ Int32 main(Int32 argc, char **argv)
   UDR_DEBUG0("[MXUDR] Registered Exit handler");
 
  
-  // setup log4cxx, need to be done here so initLog4cxx can have access to
-  // process information since it is needed to compose the log name
-  // the log4cxx log name for this master and all its subordinates will be
-  // based on this process' node number and its pid
-  QRLogger::instance().setModule(QRLogger::QRL_UDR);
-  QRLogger::instance().initLog4cxx("log4cxx.trafodion.udr.config");
+  // setup log4cxx,
+  QRLogger::initLog4cxx(QRLogger::QRL_UDR);
 
   // Synchronize C and C++ output streams
   ios::sync_with_stdio();
