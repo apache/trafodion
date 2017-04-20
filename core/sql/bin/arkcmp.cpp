@@ -203,11 +203,6 @@ Int32 main(Int32 argc, char **argv)
   // Instantiate CliGlobals
   CliGlobals *cliGlobals = CliGlobals::createCliGlobals(FALSE);
 
-
-
-  
-
-
   if (getenv("SQL_CMP_MSGBOX_PROCESS") != NULL )
      MessageBox(NULL, "Server: Process Launched", "tdm_arkcmp",
 		MB_OK|MB_ICONINFORMATION);
@@ -215,11 +210,8 @@ Int32 main(Int32 argc, char **argv)
   // same order on NSK and Windows.
   cout.sync_with_stdio();
 
-
   initializeArkcmp(argc, argv);
-
-      
-
+  QRLogger::initLog4cxx(QRLogger::QRL_MXCMP);
 
   cmpISPInterface.InitISPFuncs();
 
@@ -274,8 +266,6 @@ Int32 main(Int32 argc, char **argv)
            (CmpContext::IS_MXCMP),
            cmpContextHeap);
 
-        QRLogger::instance().setModule(QRLogger::QRL_MXCMP);
-        QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
       }
       catch (...)
       {

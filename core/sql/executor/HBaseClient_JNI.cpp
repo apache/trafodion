@@ -2993,9 +2993,8 @@ HBC_RetCode HBaseClient_JNI::checkAndDeleteRow(NAHeap *heap, const char *tableNa
   }
 
   if (jresult == false) {
-     logError(CAT_SQL_HBASE, "HBaseClient_JNI::checkAndDeleteRow()", getLastError());
      jenv_->PopLocalFrame(NULL);
-    if (htc != NULL)
+     if (htc != NULL)
         NADELETE(htc, HTableClient_JNI, heap);
      return HBC_ERROR_CHECKANDDELETEROW_NOTFOUND;
   }
