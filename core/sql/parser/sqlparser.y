@@ -34020,7 +34020,6 @@ nonreserved_word :      TOK_ABORT
 // QSTUFF
                       | TOK_VALIDATE
                       | TOK_RMS
-                      | TOK_REVERSE
 
 // This was added for JIRA Trafodion 2367. There are oddities in
 // how PREPARE is parsed vs. how EXPLAIN is parsed, along with
@@ -34316,6 +34315,7 @@ MP_nonreserved_func_word : TOK_CAST
                          | TOK_MIN
                          | TOK_OCTET_LENGTH
                          | TOK_POSITION
+                         | TOK_REVERSE
                          | TOK_TRIM
                          | TOK_SUBSTRING
                          | TOK_UPPER
