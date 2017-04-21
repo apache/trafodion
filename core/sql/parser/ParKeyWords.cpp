@@ -904,6 +904,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("RETURNED_OCTET_LENGTH", TOK_RETURNED_OCTET_LENGTH, NONRESTOKEN_),
   ParKeyWord("RETURNED_SQLSTATE",  TOK_RETURNED_SQLSTATE, NONRESTOKEN_),
   ParKeyWord("RETURNS",            TOK_RETURNS,     POTANS_|RESWORD_),
+  ParKeyWord("REVERSE",            TOK_REVERSE,     NONRESTOKEN_),
   ParKeyWord("REVOKE",             TOK_REVOKE,      ANS_|RESWORD_),
   ParKeyWord("REWRITE",            TOK_REWRITE,     FLAGSNONE_),
   ParKeyWord("RIGHT",              TOK_RIGHT,       ANS_|RESWORD_|MPWORD_),

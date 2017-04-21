@@ -1141,7 +1141,6 @@ Lng32 RegisterHiveTable(const NAString& catName, const NAString& schName, const 
    ddl.append(schName);
    ddl.append(".");
    ddl.append(nativeTableName);
-   ddl.append(" IN TRAFODION METADATA");
 
    // set INTERNAL_QUERY_FROM_EXEUTIL bit in Sql_ParserFlags.
    // This is needed to process 'register internal' syntax

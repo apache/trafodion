@@ -1195,6 +1195,35 @@ public:
   // ---------------------------------------------------------------------
 };
 
+class SQLEXP_LIB_FUNC  ExFunctionReverseStr : public ex_function_clause {
+public:
+  ExFunctionReverseStr(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  ExFunctionReverseStr();
+
+  ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+                                ComDiagsArea** = 0);  
+  //  Long pack(void *);
+  
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
 class SQLEXP_LIB_FUNC  ex_function_trim_doublebyte : public ex_function_trim {
 public:
   NA_EIDPROC ex_function_trim_doublebyte(OperatorTypeEnum oper_type,
