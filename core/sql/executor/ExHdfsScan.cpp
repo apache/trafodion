@@ -1650,7 +1650,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
                   // for non-varchar, length of zero indicates a null value.
                   // For all datatypes, HIVE_DEFAULT_NULL_STRING('\N') indicates a null value.
                   if (((len == 0) && (tgtAttr && (NOT DFS2REC::isSQLVarChar(tgtAttr->getDatatype())))) ||
-                      ((len > 0) && (memcmp(sourceData, HIVE_DEFAULT_NULL_STRING, len) == 0)))
+                      ((len == strlen(HIVE_DEFAULT_NULL_STRING)) && (memcmp(sourceData, HIVE_DEFAULT_NULL_STRING, len) == 0)))
                     {
                       *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
                     }
