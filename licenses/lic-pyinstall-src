@@ -5,8 +5,8 @@ MIT-like licenses:
 +++++++++++++++++++++++++++++
 
 BSD-3 clause for files in:
-    installer/python-installer/prettytable.py
-    installer/python-installer/scripts/httplib2/socks.py
+    install/python-installer/prettytable.py
+    install/python-installer/scripts/httplib2/socks.py
 
 
 Redistribution and use in source and binary forms, with or without

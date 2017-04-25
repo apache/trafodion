@@ -178,8 +178,9 @@ typedef enum {
    Lob_File,
    Lob_Memory,
    Lob_Buffer,
-   Lob_Foreign_Lob,
-   Lob_External
+   Lob_Lob, // tranfer from lob column of one table to another
+   Lob_External_Lob,//transfer from external lob of one table to another
+   Lob_External_File // link external hdfs file into traf lob column without an hdfs copy. 
 } LobsSubOper;
 
 typedef enum {

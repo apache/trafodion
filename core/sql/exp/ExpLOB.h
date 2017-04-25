@@ -488,6 +488,15 @@ class ExpLOBiud : public ExpLOBoper {
   {
     (v) ? liudFlags_ |= FROM_LOB: liudFlags_ &= ~FROM_LOB;
   };
+  NA_EIDPROC NABoolean fromLobExternal()
+  {
+    return ((liudFlags_ & FROM_LOB_EXTERNAL) != 0);
+  };
+
+  NA_EIDPROC inline void setFromLobExternal(NABoolean v)
+  {
+    (v) ? liudFlags_ |= FROM_LOB_EXTERNAL: liudFlags_ &= ~FROM_LOB_EXTERNAL;
+  };
 
   NA_EIDPROC NABoolean fromExternal()
   {
@@ -512,7 +521,8 @@ class ExpLOBiud : public ExpLOBoper {
     FROM_LOB           = 0x0010,
     FROM_EXTERNAL      = 0x0020,
     FROM_BUFFER        = 0x0040,
-    FROM_EMPTY         = 0x0080
+    FROM_EMPTY         = 0x0080,
+    FROM_LOB_EXTERNAL  = 0x0100
   };
 
   Lng32 liudFlags_;

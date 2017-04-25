@@ -5526,7 +5526,7 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
       setInsertType(Insert::SIMPLE_INSERT);
 
       NAColumnArray colArray;
-      NAColumn *col;
+      NAColumn *tgtCol, *srcCol;
 
       for (CollIndex ii = 0;
            ii < newRecExprArray().entries(); ii++)
@@ -5540,8 +5540,8 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 	  ValueId srcValueId =
 	    assignExpr->child(1)->castToItemExpr()->getValueId();
 
-	  col = tgtValueId.getNAColumn( TRUE );
-	  
+	  tgtCol = tgtValueId.getNAColumn( TRUE );
+	  srcCol = srcValueId.getNAColumn( TRUE );
 	  ItemExpr * child1Expr = assignExpr->child(1);
 	  if (srcValueId.getType().isLob())
 	    {
@@ -5570,18 +5570,36 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
                   li->lobSize() = tgtValueId.getType().getPrecision();
 		  li->lobFsType() = tgtValueId.getType().getFSDatatype();
 
-		  li->lobNum() = col->lobNum();
+		  li->lobNum() = tgtCol->lobNum();
                   if ((child1Expr->getOperatorType() == ITM_CONSTANT) && 
                       !(((ConstValue *)child1Expr)->isNull()))
-                    if (li->lobStorageType() != col->lobStorageType())
+                    {
+                    if (srcCol->lobStorageType() != tgtCol->lobStorageType())
                       {
                         *CmpCommon::diags() << DgSqlCode(-1432)
-                                            << DgInt0((Int32)li->lobStorageType())
-                                            << DgInt1((Int32)col->lobStorageType())
-                                            << DgString0(col->getColName());
+                                            << DgInt0((Int32)srcCol->lobStorageType())
+                                            << DgInt1((Int32)tgtCol->lobStorageType())
+                                            << DgString0(tgtCol->getColName());
                         GenExit();
                       }
-		  li->lobStorageLocation() = col->lobStorageLocation();
+                    }
+                    else
+                      if ((child1Expr->getOperatorType() == ITM_BASECOLUMN)||
+                          (child1Expr->getOperatorType() == ITM_INDEXCOLUMN))
+                        {
+                          if (srcCol->lobStorageType() != tgtCol->lobStorageType())
+                            {
+                              *CmpCommon::diags() << DgSqlCode(-1432)
+                                                  << DgInt0((Int32)srcCol->lobStorageType())
+                                                  << DgInt1((Int32)tgtCol->lobStorageType())
+                                                  << DgString0(tgtCol->getColName());
+                              GenExit();
+                            }
+                          
+                        }
+                  li->lobStorageType() = tgtCol->lobStorageType();
+
+		  li->lobStorageLocation() = tgtCol->lobStorageLocation();
 
 		  li->bindNode(generator->getBindWA());
 
@@ -5606,22 +5624,22 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 			   getTableName().getSchemaName());
 		  li->insertedTableSchemaName() += "\"";
 		  
-		  li->lobNum() = col->lobNum();
+		  li->lobNum() = tgtCol->lobNum();
                   //If we are initializing an empty_lob, assume the storage 
                   //type of the underlying column
                   if (li->lobStorageType() == Lob_Empty)
                     {
-                      li->lobStorageType() = col->lobStorageType();
+                      li->lobStorageType() = tgtCol->lobStorageType();
                     }
-                  if (li->lobStorageType() != col->lobStorageType())
+                  if (li->lobStorageType() != tgtCol->lobStorageType())
                     {
                       *CmpCommon::diags() << DgSqlCode(-1432)
                                           << DgInt0((Int32)li->lobStorageType())
-                                          << DgInt1((Int32)col->lobStorageType())
-                                          << DgString0(col->getColName());
+                                          << DgInt1((Int32)tgtCol->lobStorageType())
+                                          << DgString0(tgtCol->getColName());
                         GenExit();
                       }
-		  li->lobStorageLocation() = col->lobStorageLocation();
+		  li->lobStorageLocation() = tgtCol->lobStorageLocation();
 		  
 		  li->lobSize() = tgtValueId.getType().getPrecision();
 
@@ -5651,9 +5669,9 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
                       li->lobSize() = tgtValueId.getType().getPrecision();
 		      li->lobFsType() = tgtValueId.getType().getFSDatatype();
 
-		      li->lobNum() = col->lobNum();
+		      li->lobNum() = tgtCol->lobNum();
 		     
-		      li->lobStorageLocation() = col->lobStorageLocation();
+		      li->lobStorageLocation() = tgtCol->lobStorageLocation();
 		      
 		      li->bindNode(generator->getBindWA());
 
