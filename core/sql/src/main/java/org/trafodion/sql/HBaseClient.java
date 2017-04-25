@@ -1440,17 +1440,18 @@ public class HBaseClient {
       tblInfo[0] = indexLevel;
       tblInfo[1] = blockSize;
       Table htbl = null;
+      HTableDescriptor htblDesc = null;
 
       // get block size
       try
       {
          htbl = getConnection().getTable(TableName.valueOf(tblName));
+         htblDesc = htbl.getTableDescriptor();
       }
       catch (TableNotFoundException te) 
       {
          return false;
       }
-      HTableDescriptor htblDesc = htbl.getTableDescriptor();
       HColumnDescriptor[] families = htblDesc.getColumnFamilies();
       blockSize = families[0].getBlocksize();
       tblInfo[1] = blockSize;
