@@ -60,6 +60,7 @@ import org.apache.hadoop.hbase.security.access.UserPermission;
 import org.apache.hadoop.hbase.security.access.Permission;
 import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.ZooKeeperConnectionException;
+import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.snapshot.SnapshotCreationException;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription;
 import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos.SnapshotDescription.Type;
@@ -77,6 +78,7 @@ import org.trafodion.sql.TrafConfiguration;
 import org.apache.hadoop.hbase.ServerLoad;
 import org.apache.hadoop.hbase.RegionLoad;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.ClusterStatus;
 import org.apache.hadoop.hbase.ServerName;
@@ -831,8 +833,6 @@ public class HBaseClient {
             if (tableName == null) //tableName.isEmpty())
                 return getClusterStats();
 
-            //            HBaseAdmin admin = new HBaseAdmin(config);
-
             HTable htbl = new HTable(config, tableName);
             HRegionInfo hregInfo = null;
             byte[][] regionInfo = null;
@@ -1353,7 +1353,8 @@ public class HBaseClient {
         // at the first family name, and multiply its length times the number of
         // columns. Even if more than one family is used in the future, presumably
         // they will all be the same short size.
-        HTable htbl = new HTable(config, tblName);
+        Table htbl = getConnection().getTable(TableName.valueOf(tblName));
+        //HTable htbl = new HTable(config, tblName);
         HTableDescriptor htblDesc = htbl.getTableDescriptor();
         HColumnDescriptor[] families = htblDesc.getColumnFamilies();
         rowSize += (families[0].getName().length * numCols);
@@ -1438,9 +1439,17 @@ public class HBaseClient {
       int blockSize = 0;
       tblInfo[0] = indexLevel;
       tblInfo[1] = blockSize;
+      Table htbl = null;
 
       // get block size
-      HTable htbl = new HTable(config, tblName);
+      try
+      {
+         htbl = getConnection().getTable(TableName.valueOf(tblName));
+      }
+      catch (TableNotFoundException te) 
+      {
+         return false;
+      }
       HTableDescriptor htblDesc = htbl.getTableDescriptor();
       HColumnDescriptor[] families = htblDesc.getColumnFamilies();
       blockSize = families[0].getBlocksize();
@@ -1493,7 +1502,7 @@ public class HBaseClient {
          return true;
       // get random region from the region array
       int regInd = 0;
-      regInd = tblName.hashCode() % regArr.length;
+      regInd = Math.abs(tblName.hashCode()) % regArr.length;
 
       Path regName = regArr[regInd].getPath();
       // extract MD5 hash name of random region from its path including colFam name. 
