@@ -324,7 +324,7 @@ static short ft_codegen(Generator *generator,
   for (i = 0; i < childVals.entries(); i++)
   {
     ItemExpr &inputExpr = *(childVals[i].getItemExpr());
-    const NAType &formalType = childVals[i].getType();
+    NAType *formalType = (NAType*)(&childVals[i].getType());
     ItemExpr *lmExpr = NULL;
     ItemExpr *lmExpr2 = NULL;
     int res;
@@ -362,10 +362,11 @@ static short ft_codegen(Generator *generator,
               ((Cast*)newExpr)->setConvertNullWhenError(TRUE);
             
             lmExpr = newExpr;
+            formalType = (NAType*)hiveNAType;
           }
       }
 
-    res = CreateAllCharsExpr(formalType, // [IN] Child output type
+    res = CreateAllCharsExpr(*formalType, // [IN] Child output type
         *lmExpr, // [IN] Actual input value
         cmpContext, // [IN] Compilation context
         lmExpr2 // [OUT] Returned expression

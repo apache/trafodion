@@ -644,6 +644,14 @@ short BuiltinFunction::codeGen(Generator * generator)
       }
     break;
 
+    case ITM_REVERSE:
+      {
+	function_clause =
+	  new(generator->getSpace()) ExFunctionReverseStr(getOperatorType(), 
+                                                          attr, space);
+      }
+    break;
+
     case ITM_UNIQUE_ID:
       {
 	function_clause =

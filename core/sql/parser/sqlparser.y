@@ -1444,7 +1444,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_CPU              /* Tandem extension non-reserved word */
 %token <tokval> TOK_ACTIVE           /* Tandem extension non-reserved word */
 %token <tokval> TOK_RMS         /* Tandem extension non-reserved word */
-
+%token <tokval> TOK_REVERSE
 
 %token <tokval> TOK_DATA_OFFSET        /* INTERNAL non-reserved word */
 %token <tokval> TOK_NULL_IND_OFFSET    /* INTERNAL non-reserved word */
@@ -9216,6 +9216,13 @@ string_function :
 	  $$ = new (PARSERHEAP()) 
 	    BuiltinFunction(ITM_TOKENSTR, CmpCommon::statementHeap(), 2, cv, $5);
         } 
+
+     | TOK_REVERSE    '('   value_expression   ')'
+        {
+	  $$ = new (PARSERHEAP()) 
+	    BuiltinFunction(ITM_REVERSE, CmpCommon::statementHeap(), 1, $3);
+        } 
+
 
 /* type item */
 builtin_function_user : TOK_USER
@@ -34308,6 +34315,7 @@ MP_nonreserved_func_word : TOK_CAST
                          | TOK_MIN
                          | TOK_OCTET_LENGTH
                          | TOK_POSITION
+                         | TOK_REVERSE
                          | TOK_TRIM
                          | TOK_SUBSTRING
                          | TOK_UPPER

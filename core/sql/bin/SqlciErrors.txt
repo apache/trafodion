@@ -404,7 +404,7 @@
 1421 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped or altered as it is used in the secondary index $1~TableName.
 1422 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid HBase name was specified in this DDL statement. A valid name can only contain these characters: [a-zA-Z_0-9-.]
 1423 ZZZZZ 99999 BEGINNER MINOR DBADMIN Insert into metadata table $0~string0 failed.
-1424 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as that would leave the table with no user defined columns.
+1424 ZZZZZ 99999 BEGINNER MINOR DBADMIN Column $0~ColumnName cannot be dropped as that would leave the table with no user defined or user updatable columns.
 1425 ZZZZZ 99999 BEGINNER MINOR DBADMIN This operation could not be performed on $0~TableName. $0~String0
 1426 ZZZZZ 99999 BEGINNER MINOR DBADMIN An invalid HBase column name $0~String0 was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
 1427 ZZZZZ 99999 BEGINNER MINOR DBADMIN Table cannot be renamed. $0~String0

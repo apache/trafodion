@@ -5914,9 +5914,33 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
   NAString tgtCols;
   NAString srcCols;
 
- NABoolean xnWasStartedHere = FALSE;
+  NABoolean xnWasStartedHere = FALSE;
+
+  NABoolean identityGenAlways = FALSE;
 
   char buf[4000];
+
+  // identity 'generated always' columns do not permit inserting user specified
+  // values. Override it since we want to move original values to tgt.
+  for (Int32 c = 0; c < naColArr.entries(); c++)
+    {
+      const NAColumn * nac = naColArr[c];
+      if (nac->isIdentityColumnAlways())
+        {
+          identityGenAlways = TRUE;
+          break;
+        }
+    } // for
+
+  if (identityGenAlways)
+    {
+      cliRC = cliInterface.holdAndSetCQD("override_generated_identity_values", "ON");
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          goto label_restore;
+        }
+    }
 
   if (cloneSeabaseTable(naTable->getTableName().getQualifiedNameAsAnsiString(), //cn, 
                         naTable->objectUid().castToInt64(),
@@ -5970,6 +5994,14 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
 
   tgtCols = tgtCols.strip(NAString::trailing, ',');
 
+  if (tgtCols.isNull())
+    {
+      *CmpCommon::diags() << DgSqlCode(-1424)
+                          << DgColumnName(altColName);
+
+      goto label_restore;
+    }
+
   str_sprintf(buf, "upsert using load into %s(%s) select %s from %s",
               naTable->getTableName().getQualifiedNameAsAnsiString().data(),
               tgtCols.data(),
@@ -5981,6 +6013,9 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       goto label_restore;
     }
+
+  if (identityGenAlways)
+    cliInterface.restoreCQD("override_generated_identity_values");
 
   if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
                                   ddlXns)) < 0)
@@ -6008,6 +6043,9 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
 
  label_restore:
   endXnIfStartedHere(&cliInterface, xnWasStartedHere, -1);
+
+  if (identityGenAlways)
+    cliInterface.restoreCQD("override_generated_identity_values");
 
   ActiveSchemaDB()->getNATableDB()->removeNATable
     (cn,
@@ -6260,6 +6298,9 @@ void CmpSeabaseDDL::alterSeabaseTableDropColumn(
       // Return an error.
       *CmpCommon::diags() << DgSqlCode(-1424)
                           << DgColumnName(colName);
+
+      processReturn();
+      return;
     }
 
   // this operation cannot be done if a xn is already in progress.

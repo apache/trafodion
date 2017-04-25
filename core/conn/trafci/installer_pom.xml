@@ -36,7 +36,7 @@
             <version>2.12</version>
         </dependency>
         <dependency>
-            <groupId>org.trafodion.jdbc.t4</groupId>
+            <groupId>org.apache.trafodion.jdbc.t4</groupId>
             <artifactId>jdbcT4</artifactId>
             <version>${TRAFODION_VER}</version>
         </dependency>

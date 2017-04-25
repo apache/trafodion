@@ -4182,6 +4182,16 @@ Hello
 
 --- 2 row(s) selected.
 >>
+>>-- "timestamp - timestamp" should return result in seconds
+>>select timestamp '2018-10-10 10:10:10' - timestamp '2017-10-10 10:10:10' from dual;
+
+(EXPR)       
+-------------
+
+     31536000
+
+--- 1 row(s) selected.
+>>
 >>-- negative test on cast DEC to VAR/NCAR 
 >>select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(2)) from t022u;
 
@@ -4261,7 +4271,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-08-11 19:03:15.784758
+10:13:14.0000  10:13:14.0000  2017-04-19 20:56:28.350262
 
 --- 1 row(s) selected.
 >>--test on precision of time
@@ -8952,6 +8962,16 @@ Hello
 
 --- 2 row(s) selected.
 >>
+>>-- "timestamp - timestamp" should return result in seconds
+>>select timestamp '2018-10-10 10:10:10' - timestamp '2017-10-10 10:10:10' from dual;
+
+(EXPR)       
+-------------
+
+     31536000
+
+--- 1 row(s) selected.
+>>
 >>-- negative test on cast DEC to VAR/NCAR 
 >>select cast(cast(N'12345.56' as DEC (7,2) unsigned) as nchar(2)) from t022u;
 
@@ -9031,7 +9051,7 @@ Hello
 (EXPR)         (EXPR)         (EXPR)                    
 -------------  -------------  --------------------------
 
-10:13:14.0000  10:13:14.0000  2016-08-11 19:06:25.121155
+10:13:14.0000  10:13:14.0000  2017-04-19 21:00:34.634137
 
 --- 1 row(s) selected.
 >>--test on precision of time

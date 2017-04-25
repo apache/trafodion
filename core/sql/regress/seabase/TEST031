@@ -332,5 +332,16 @@ drop volatile table vtt;
 create external table t031hive for t031hive;
 drop external table t031hive for t031hive;
 
+-- create index on an added column 
+set schema trafodion.sch;
+drop table if exists t031t1 cascade;
+create table t031t1 (a char(5) not null primary key);
+insert into t031t1 values ('abcde');
+select a from t031t1;
+alter table t031t1 add column b char(5);
+select a from t031t1;
+create index t031t1i on t031t1(b);
+explain options 'f' select a from t031t1;
+select a from t031t1;
 
 log;

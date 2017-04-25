@@ -542,6 +542,7 @@ enum OperatorTypeEnum {
                         ITM_CONVERTTOHEX = 2272,
                         ITM_CONVERTFROMHEX = 2273,
                         ITM_TOKENSTR = 2292,
+                        ITM_REVERSE = 2294,
 
                         // UNICODE/DOUBLEBYTE charsets built-in functions
                         ITM_SUBSTR_DOUBLEBYTE = 2274,

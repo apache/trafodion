@@ -10498,7 +10498,14 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           {
             Assign * assign = (Assign*)newRecExprArray()[i].getItemExpr();
             ItemExpr * ie = assign->getSource().getItemExpr();
-            if (NOT ie->wasDefaultClause())
+
+            // The IDENTITY column type of GENERATED ALWAYS AS IDENTITY
+            // can not be used with user specified values.
+            // However, if the override CQD is set, then
+            // allow user specified values to be added
+            // for a GENERATED ALWAYS AS IDENTITY column.
+            if ((NOT ie->wasDefaultClause()) &&
+                (CmpCommon::getDefault(OVERRIDE_GENERATED_IDENTITY_VALUES) == DF_OFF))
               {
                 *CmpCommon::diags() << DgSqlCode(-3428)
                                     << DgString0(nacol->getColName());
@@ -14820,8 +14827,14 @@ RelExpr * RelTransaction::bindNode(BindWA *bindWA)
         (mode_->getAutoBeginOn() != 0) ||
         (mode_->getAutoBeginOff() != 0))
     {
-      CMPASSERT(mode_->isolationLevel() == TransMode::IL_NOT_SPECIFIED_ &&
-                mode_->accessMode()     == TransMode::AM_NOT_SPECIFIED_);
+      if (NOT (mode_->isolationLevel() == TransMode::IL_NOT_SPECIFIED_ &&
+               mode_->accessMode()     == TransMode::AM_NOT_SPECIFIED_))
+        {
+          *CmpCommon::diags() << DgSqlCode(-3242)
+                              << DgString0("Isolation level or Access mode options cannot be specified along with autocommit or autobegin options.");
+          bindWA->setErrStatus();
+          return this;
+        }
     }
     else 
     {

@@ -7385,7 +7385,7 @@ BuiltinFunction::BuiltinFunction(OperatorTypeEnum otype,
     case ITM_NULLIFZERO:
     case ITM_QUERYID_EXTRACT:
     case ITM_TOKENSTR:
-      {
+    case ITM_REVERSE: {
 	allowsSQLnullArg() = FALSE;
       }
     break;
@@ -7460,6 +7460,7 @@ NABoolean BuiltinFunction::isCacheableExpr(CacheWA& cwa)
     break;
 
     case ITM_NVL:
+    case ITM_REVERSE:
       {
 	return FALSE;
       }
@@ -7688,6 +7689,8 @@ const NAString BuiltinFunction::getText() const
       return "scalar_max";
     case ITM_TOKENSTR:
       return "TOKENSTR";
+    case ITM_REVERSE:
+      return "REVERSE";
 
     // ZZZBinderFunction classes (for error messages only)
     case ITM_DATE_TRUNC_YEAR:
@@ -7829,6 +7832,7 @@ ItemExpr * BuiltinFunction::copyTopNode(ItemExpr * derivedNode,
         case ITM_MD5:
         case ITM_CRC32:
 	case ITM_SOUNDEX:
+        case ITM_REVERSE:
 	  {
 	    result = new (outHeap) BuiltinFunction(getOperatorType(),
 						   outHeap, 1, child(0));
