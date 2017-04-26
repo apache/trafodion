@@ -31,6 +31,7 @@ This section describes the {project-name} SQL utilities:
 
 [cols=","]
 |===
+| <<cleanup_statement,CLEANUP Statement>>                     | Cleans up objects whose information is inconsistent in the metadata.
 | <<load_statement,LOAD Statement>>                           | Uses the {project-name} Bulk Loader to load data from a source table, either
 a {project-name} table or a Hive table, into a target {project-name} table.
 | <<populate_index_utility,POPULATE INDEX Utility>>           | Loads indexes.
@@ -46,6 +47,326 @@ files using a client-based tool, such as the {project-name} Command Interface
 (TrafCI). To install and configure a client application that enables you
 to connect to and issue SQL utilities, see the
 {docs-url}/client_installation/index.html[_{project-name} Client Installation Guide_].
+
+<<<
+[[cleanup_statement]]
+== CLEANUP Statement
+
+The CLEANUP Statement cleans up objects whose information is inconsistent in the metadata. This command can be used to clean up individual objects or all objects in a schema. This command can also be used to locate all inconsistent objects in the Trafodion metadata and then clean them up.
+
+Inconsistent objects can be cleaned up and removed from the metadata and HBase by using one of the following options.
+
+```
+CLEANUP {obj-type} {obj-name} [ ,UID {object-uid} ]
+
+CLEANUP [ PRIVATE | SHARED ] SCHEMA {schema-name}
+
+CLEANUP UID {object-uid}
+
+CLEANUP METADATA [ , CHECK ] [ , RETURN DETAILS ]
+```
+
+```
+{obj-type} is: TABLE | INDEX | SEQUENCE | OBJECT
+
+{obj-name} is: Name of the object that needs to be cleaned up
+
+{object-uid} is: UID (Unique ID) of the object that is stored in metadata
+
+{schema-name} is: Name of the schema whose contents need to be cleaned up
+```
+
+[[cleanup_syntax]]
+=== Syntax Description of CLEANUP Statement
+
+* `CLEANUP {obj-type} {obj-name} [ , UID {object-uid} ]`
++
+This command will clean up the specified object from all Trafodion metadata tables
+and HBase. If an object cannot be found in the metadata but exists in HBase,
+then it will be removed from HBase. All dependent objects, such as indexes,
+views, LOBs, internal sequences, and constraints, are also removed from the
+metadata and HBase.
+
+** `obj-type` 
+
+*** If an object type is specified as TABLE, INDEX, or SEQUENCE and that object exists
+in the metadata, then a check will be done to make sure that the specified {obj-name} is of the specified type. An error is returned if they are not the same.
+
+*** If an object type is specified as OBJECT, then any object that matches the
+specified name is removed from the metadata and HBase.
+
+** `obj-name` 
++
+Specifies the name of the object to be removed.
+
+** `object-uid` 
++
+If an object exists in the OBJECTS metadata table, then the stored object UID is compared with the specified object UID. If they do not match, then cleanup is not done. If an object does not exist in the OBJECTS metadata table, then all entries matching the specified object UID are removed from the metadata tables.
+
+* `CLEANUP [ PRIVATE | SHARED ] SCHEMA {schema-name}`
++
+This command will clean up all objects that are created in the specified schema.
+
+* `CLEANUP UID {object-uid}`
++
+This command will remove all entries from all metadata tables that match the specified object UID. If the specified object UID exists in the OBJECTS metadata table and the object name associated with that UID can be retrieved, then that object is also removed from HBase.
+
+* `CLEANUP METADATA [ , CHECK ] [ , RETURN DETAILS ]`
++
+This command will look for inconsistent entries in the metadata, return information about them, and clean them up. Multiple checks are done to validate metadata consistency.
+
+** `CHECK`
++
+One can check for inconsistent metadata entries without actually cleaning them up.
+This can be done by specifying the `CHECK` option. If `CHECK` is specified, the following checks will be performed simultaneously, and a summary of inconsistent objects belonging to the categories listed below will be returned.
+
+*** Orphan Metadata Objects
++
+This check is done to validate that objects that exist in metadata also exist in HBase. If the object does not exist in HBase, then it is marked as an orphan metadata object.
+
+*** Orphan HBase Objects
++
+This check is done to validate that objects that exist in HBase also exist in metadata. If the object does not exist in metadata, then it is marked as an orphan HBase object.
+
+*** Inconsistent Object Entries
++
+This check is done to make sure that all entries in the OBJECTS table also exist in
+the OBJECTS unique index (OBJECTS_UNIQ_IDX) and that all entries in OBJECTS_UNIQ_IDX also exist in the OBJECTS table. It also checks to make sure that all entries in the COLUMNS table have a corresponding entry in the OBJECTS table. If any of the previous checks fail, then that entry is marked as inconsistent.
+
+*** Inconsistent View Entries
++
+This check is done to make sure that all view entries are consistent among the views and the OBJECTS table.
+
+** `RETURN DETAILS`
++
+If `RETURN DETAILS` is specified, then details on which objects are inconsistent is also returned.
+
+<<<
+[[cleanup_considerations]]
+=== Considerations for CLEANUP Statement
+
+[[security_and_privileges]]
+==== Security and Privileges
+
+To clean up an object, one needs to have DROP privileges. If object privileges cannot be retrieved from the metadata or if metadata cleanup is being done, then one needs to be DB_ROOT to perform the cleanup.
+
+[[consistency_checks_during_access]]
+==== Consistency Checks During Access
+
+If an object exists in the metadata but does not exist in HBase, then error 4254 will be returned if that object is accessed during any DML or DDL operation.
+
+An object is also marked as inconsistent during any complex DDL operation. For example, if a CREATE TABLE also creates implicit indexes or constraints, then the object will be marked as inconsistent until the complex DDL operation is completed. If an abnormal error happens (like a process crash or a node failure), then that object remains inconsistent. Any attempt to access that object will return error 4254.
+
+An inconsistent object will need to be cleaned up before it can be accessed.
+
+<<<
+[[cleanup_examples]]
+=== Examples of CLEANUP Statement
+
+* Accessing Inconsistent Objects
++
+Table T026T1 has been marked as inconsistent from a previous session. Any operation on it will return error 4254. For this test case, a metadata update was done, and the table was marked as invalid in the OBJECTS table.
+
++
+```
+>>invoke t026t1;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+*** ERROR[4082] Object TRAFODION.SCH026.T026T1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>drop table t026t1;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>select * from t026t1;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+*** ERROR[4082] Object TRAFODION.SCH026.T026T1 does not exist or is inaccessible.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+```
+
+* Accessing Incorrect Objects
++
+If an object type is specified, then the object stored in the metadata must match it. In this example, object ‘TI’ is an index that cannot be cleaned up as a table.
+
++
+```
+>>create index ti on t(b);
+
+--- SQL operation complete.
+>>cleanup table ti;
+
+*** ERROR[1389] Object TI does not exist in Trafodion.
+
+*** ERROR[4256] Object type specified for this object does not match the object type stored in metadata.
+
+--- SQL operation failed with errors.
+>>
+```
+
+* Cleaning Up an Inconsistent Object
++
+A CLEANUP command will need to be used to clean up an object in invalid state.
+
++
+```
+>>drop table t026t1;
+
+*** ERROR[4254] Object TRAFODION.SCH026.T026T1 has invalid state and cannot be accessed. Use cleanup command to drop it.
+
+--- SQL operation failed with errors.
+>>cleanup  table t026t1;
+
+--- SQL operation complete.
+>>invoke t026t1;
+
+*** ERROR[4082] Object TRAFODION.SCH026.T026T1 does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>
+```
+
++
+DROP TABLE, CREATE TABLE, DROP INDEX, and CREATE INDEX failures will call cleanup.
+
+* Cleaning Up an Object by Specifying its UID
++
+Specify object T by its object UID and clean it up.
+
++
+```
+>>select object_uid from "_MD_".objects where schema_name = 'SCH026' and object_name = 'T';
+
+OBJECT_UID          
+--------------------
+
+  127287511636506969
+
+--- 1 row(s) selected.
+>>cleanup uid 127287511636506969;
+
+--- SQL operation complete.
+>>invoke t;
+
+*** ERROR[4082] Object TRAFODION.SCH026.T does not exist or is inaccessible.
+
+--- SQL operation failed with errors.
+>>
+```
+
+* Metadata Cleanup
++
+This example shows that the metadata is consistent and that there are no issues with it.
+
++
+```
+>>cleanup metadata, check, return details;
+Metadata Cleanup: started, check only
+
+  Start: Cleanup Orphan Objects Entries
+  End:   Cleanup Orphan Objects Entries (0 entries found)
+
+  Start: Cleanup Orphan Hbase Entries
+  End:   Cleanup Orphan Hbase Entries (0 entries found)
+
+  Start: Cleanup Inconsistent Objects Entries
+  End:   Cleanup Inconsistent Objects Entries (0 entries found)
+
+  Start: Cleanup Inconsistent Views Entries
+  End:   Cleanup Inconsistent Views Entries (0 entries found)
+
+Metadata Cleanup: done
+
+--- SQL operation complete.
+>>
+```
+
++
+This example shows inconsistencies in the metadata:
+
++
+```
+>>cleanup metadata, check, return details;
+Metadata Cleanup: started, check only
+
+  Start: Cleanup Orphan Objects Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T10
+  End:   Cleanup Orphan Objects Entries (1 entry found)
+
+  Start: Cleanup Orphan Hbase Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T11
+  End:   Cleanup Orphan Hbase Entries (1 entry found)
+
+  Start: Cleanup Inconsistent Objects Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T12
+    Entry #2(UID):    29899934458095403
+  End:   Cleanup Inconsistent Objects Entries (2 entries found)
+
+  Start: Cleanup Inconsistent Views Entries
+  End:   Cleanup Inconsistent Views Entries (0 entries found)
+
+Metadata Cleanup: done
+
+--- SQL operation complete.
+>>
+```
+
++
+Running the CLEANUP METADATA command cleans up the inconsistent metadata:
+
++
+```
+>>cleanup metadata, return details;
+Metadata Cleanup: started
+
+  Start: Cleanup Orphan Objects Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T10
+  End:   Cleanup Orphan Objects Entries (1 entry cleaned up)
+
+  Start: Cleanup Orphan Hbase Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T11
+  End:   Cleanup Orphan Hbase Entries (1 entry cleaned up)
+
+  Start: Cleanup Inconsistent Objects Entries
+    Entry #1(OBJECT): TRAFODION.SCH026.T026T12
+    Entry #2(UID):    29899934458095403
+  End:   Cleanup Inconsistent Objects Entries (2 entries cleaned up)
+
+  Start: Cleanup Inconsistent Views Entries
+  End:   Cleanup Inconsistent Views Entries (0 entries cleaned up)
+
+Metadata Cleanup: done
+
+
+--- SQL operation complete.
+>>
+>>cleanup metadata, check, return details;
+Metadata Cleanup: started, check only
+
+  Start: Cleanup Orphan Objects Entries
+  End:   Cleanup Orphan Objects Entries (0 entries found)
+
+  Start: Cleanup Orphan Hbase Entries
+  End:   Cleanup Orphan Hbase Entries (0 entries found)
+
+  Start: Cleanup Inconsistent Objects Entries
+  End:   Cleanup Inconsistent Objects Entries (0 entries found)
+
+  Start: Cleanup Inconsistent Views Entries
+  End:   Cleanup Inconsistent Views Entries (0 entries found)
+
+Metadata Cleanup: done
+
+
+--- SQL operation complete.
+```
 
 <<<
 [[load_statement]]
@@ -273,7 +594,7 @@ The overall throughput is influenced by row format, row length, number of
 columns, skew in data, etc. LOAD sas upsert semantics (duplicate constraint
 not checked with existing data). LOAD has lower CPU abd disk activity than
 similar trickle load (INSERT, UPSERT, or UPSERT USING LOAD), Also, LOAD has
-lower compaction activity after completion than Trickle Load. 
+lower compaction activity after completion than Trickle Load.
 
 ==== Hive Scans
 
@@ -287,13 +608,13 @@ Tables must be created/dropped/altered through Hive itself.
 {project-name}:
 
 * Reads Hive metadata to determine information about table.
-* UPDATE STATISTICS can be performed on Hive tables - improves performance! 
+* UPDATE STATISTICS can be performed on Hive tables - improves performance!
 * Can write to Hive tables in both Text and Sequence formats (used by UNLOAD).
 
 <<<
 [[load_examples]]
 === Examples of LOAD
-    
+
 * For customer demographics data residing in
 `/hive/tpcds/customer_demographics`, create an external Hive table using
 the following Hive SQL:
@@ -875,7 +1196,7 @@ than specified, or if the sample size is greater than the system limit,
 **** `r_ rows`
 +
 A row sample is used to read _r_ rows from the table. The value _r_ must
-be an integer that is greater than zero 
+be an integer that is greater than zero
 
 **** `RANDOM _percent_ PERCENT`
 +
@@ -1083,7 +1404,7 @@ update statistics for table _table-name_ on necessary columns sample;
 
 UPDATE STATISTICS processing time can be lengthy for very large tables.
 One strategy for reducing the time is to create histograms only for
-columns that actually need them (for example, using the ON NECESSARY COLUMNS 
+columns that actually need them (for example, using the ON NECESSARY COLUMNS
 column group). Another strategy is to update statistics incrementally. These
 strategies can be used together if desired.
 
@@ -1169,7 +1490,7 @@ table ADDRESS:
 UPDATE STATISTICS FOR TABLE address ON street CLEAR;
 ```
 
-* This example generates statistics but also creates a persistent 
+* This example generates statistics but also creates a persistent
 sample table for use when updating statistics incrementally:
 +
 ```
