@@ -197,6 +197,9 @@ prepare update_teams from
 prepare select_players from select count(*) from players;
 prepare select_standings from select team_number, seqnum(team_seq) from standings;
 prepare select_stats from select team_number, num_players from stats;
+-- the next two lines insure that explain isn't a back door (JIRA TRAFODION-2294)
+explain options 'f' select * from games;
+select * from games;
 
 -- sql_user9 also has no privileges
 sh sqlci -i "TEST120(select_queries)" -u sql_user9;

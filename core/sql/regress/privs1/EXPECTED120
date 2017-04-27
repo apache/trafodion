@@ -297,6 +297,22 @@ SQL_USER6
 
 *** ERROR[8822] The statement was not prepared.
 
+>>-- the next two lines insure that explain isn't a back door (JIRA TRAFODION-2294)
+>>explain options 'f' select * from games;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+002
+.    .    1    trafodion_scan                  GAMES                 1.00E+002
+
+--- SQL operation complete.
+>>select * from games;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- sql_user9 also has no privileges
 >>sh sqlci -i "TEST120(select_queries)" -u sql_user9;

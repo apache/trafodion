@@ -1275,7 +1275,10 @@ enum PREPARE_FLAGS
   PREPARE_MONITOR_THIS_QUERY = 0x0040,
 
   /* set when embedded compiler needs to be called */
-  PREPARE_USE_EMBEDDED_ARKCMP = 0x0080 
+  PREPARE_USE_EMBEDDED_ARKCMP = 0x0080,
+
+  /* set when we don't want the plan to go in the query cache */
+  PREPARE_DONT_CACHE          = 0x0100 
 };
 
 /* used to put and get DDL redefinition invalidation keys */
