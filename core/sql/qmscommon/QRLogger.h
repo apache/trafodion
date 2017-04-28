@@ -259,6 +259,8 @@ public:
                        const char *logMsgTemplate ...);
 
   void introduceSelf();
+  
+  static NABoolean initLog4cxx(ExecutableModule module);
 
 protected:
 

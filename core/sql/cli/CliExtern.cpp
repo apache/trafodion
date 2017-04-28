@@ -894,7 +894,7 @@ short sqInit()
     try
     {
       short retcode = my_mpi_setup(&largc, &largv);
-      QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
+      QRLogger::initLog4cxx(QRLogger::QRL_MXEXE);
     }
     catch (...)
     {
