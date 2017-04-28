@@ -84,7 +84,7 @@ public class SsccTransactionState extends TransactionState{
     public SsccTransactionState(final long transactionId, final long rLogStartSequenceId, AtomicLong hlogSeqId,
     		final HRegionInfo regionInfo, HTableDescriptor htd, WAL hLog, boolean logging, long SsccSequenceId) {
 
-       super(transactionId,rLogStartSequenceId,hlogSeqId,regionInfo,htd,hLog,logging, /* region TX */ false);
+       super(transactionId,rLogStartSequenceId,hlogSeqId,regionInfo,htd,hLog,logging,SsccSequenceId, /* region TX */ false);
        setStartId(SsccSequenceId);
        if(LOG.isTraceEnabled()) LOG.trace("SsccTransactionState : new state object for transid: " + transactionId + " with sequence: " + SsccSequenceId + " complete");
     }
@@ -93,7 +93,7 @@ public class SsccTransactionState extends TransactionState{
             final HRegionInfo regionInfo, HTableDescriptor htd, WAL hLog, boolean logging, long SsccSequenceId,
             boolean regionTx) {
 
-        super(transactionId,rLogStartSequenceId,hlogSeqId,regionInfo,htd,hLog,logging, regionTx);
+        super(transactionId,rLogStartSequenceId,hlogSeqId,regionInfo,htd,hLog,logging,SsccSequenceId,regionTx);
         setStartId(SsccSequenceId);
         if(LOG.isTraceEnabled()) LOG.trace("SsccTransactionState : new state object for transid: " + transactionId + " with sequence: " + SsccSequenceId + " complete");
     }

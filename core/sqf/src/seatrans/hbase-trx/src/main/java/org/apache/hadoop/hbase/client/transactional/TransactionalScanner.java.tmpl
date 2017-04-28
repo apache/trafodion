@@ -64,7 +64,7 @@ public class TransactionalScanner extends AbstractClientScanner {
     public TransactionalTable ttable;
     protected boolean closed = false;
     // Experiment with this parameter, may be faster without having to send the final close()
-    protected boolean doNotCloseOnLast = true;
+    protected boolean regionShouldNotCloseOnLast = true;
     protected int nbRows = 100;
     protected long nextCallSeq = 0;
     private boolean hasMore = true;
@@ -141,21 +141,26 @@ public class TransactionalScanner extends AbstractClientScanner {
     protected boolean nextScanner(final boolean done) throws IOException{
         if(LOG.isTraceEnabled()) LOG.trace("nextScanner() -- ENTRY txID: " + ts.getTransactionId());
         if(this.currentBeginKey != null) {
-            if(LOG.isTraceEnabled()) LOG.trace("nextScanner() currentBeginKey != null txID: " + ts.getTransactionId());
-            if (doNotCloseOnLast)
+            if(LOG.isTraceEnabled()) LOG.trace("nextScanner() currentBeginKey != null txID: " + ts.getTransactionId()
+                    + " currentBeginKey=" + (Bytes.equals(this.currentBeginKey, HConstants.EMPTY_START_ROW) ?
+                      "INFINITE" : Hex.encodeHexString(this.currentBeginKey)));
+            if (regionShouldNotCloseOnLast){ // if the region won't automatically we need to tell it to close
+              if(LOG.isTraceEnabled()) LOG.trace("nextScanner() regionShouldNotCloseOnLast is true; closing scanner");
               close();
+            }
             if((this.currentEndKey == HConstants.EMPTY_END_ROW) || 
                 Bytes.equals(this.currentEndKey, HConstants.EMPTY_BYTE_ARRAY) ||
                 checkScanStopRow(this.currentEndKey) || 
                 done) {
-                if(LOG.isTraceEnabled()) LOG.trace("endKey: " + Bytes.toString(this.currentEndKey));
+                if(LOG.isTraceEnabled()) LOG.trace("endKey: " + (Bytes.equals(this.currentEndKey, HConstants.EMPTY_END_ROW) ?
+                      "INFINITE" : Hex.encodeHexString(this.currentEndKey)));
                 if(LOG.isTraceEnabled()) LOG.trace("nextScanner() -- EXIT -- returning false txID: " + ts.getTransactionId());
                 this.moreScanners = false;
                 return false;
             }
             else
-                //this.currentBeginKey = TransactionManager.binaryIncrementPos(this.currentEndKey,1);
-                  this.currentBeginKey = this.currentEndKey;
+                this.currentBeginKey = TransactionManager.binaryIncrementPos(this.currentEndKey,1);
+                //this.currentBeginKey = this.currentEndKey;
         }
         else {
             // First call to nextScanner
@@ -165,15 +170,25 @@ public class TransactionalScanner extends AbstractClientScanner {
         this.currentRegion = ttable.getRegionLocation(this.currentBeginKey, false).getRegionInfo();
         this.currentEndKey = this.currentRegion.getEndKey();
 
-        if(LOG.isTraceEnabled()) LOG.trace("nextScanner() txID: " + ts.getTransactionId() + " Region Info: " + currentRegion.getRegionNameAsString()+ 
-                         "currentBeginKey: " + Hex.encodeHexString(this.currentBeginKey) + "currentEndKey: " + Hex.encodeHexString(this.currentEndKey));
-        //if(this.currentEndKey != HConstants.EMPTY_END_ROW)
-        //   this.currentEndKey = TransactionManager.binaryIncrementPos(currentRegion.getEndKey(), -1);
+        if(LOG.isTraceEnabled()) LOG.trace("nextScanner() txID: " + ts.getTransactionId() + " Region Info: " + currentRegion.getRegionNameAsString()
+              + "currentBeginKey: " + (Bytes.equals(this.currentBeginKey, HConstants.EMPTY_START_ROW) ?
+                      "INFINITE" : Hex.encodeHexString(this.currentBeginKey))
+              + " currentEndKey: " + (Bytes.equals(this.currentEndKey, HConstants.EMPTY_END_ROW) ?
+                      "INFINITE" : Hex.encodeHexString(this.currentEndKey)));
+        if ( ! (Bytes.equals(this.currentEndKey, HConstants.EMPTY_END_ROW)))
+           this.currentEndKey = TransactionManager.binaryIncrementPos(currentRegion.getEndKey(), -1);
 
         this.closed = false;
 
+        // Need to add the next region as a participant to the transaction so it gets phase 1 notification
+        // and does not orphan the TransactionState object in the region that gets created during the scan
+        if (LOG.isTraceEnabled()) LOG.trace("nextScanner() calling RMInterface.registerTransaction for startKey "
+                  +  Hex.encodeHexString(this.currentBeginKey));
+        RMInterface.registerTransaction(ttable, ts, this.currentBeginKey);
+
       TrxRegionProtos.OpenScannerRequest.Builder requestBuilder = OpenScannerRequest.newBuilder();
       requestBuilder.setTransactionId(ts.getTransactionId());
+      requestBuilder.setStartId(ts.getStartId());
       requestBuilder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
       requestBuilder.setScan(ProtobufUtil.toScan(scan));
       TrxRegionProtos.OpenScannerRequest openRequest = requestBuilder.build();
@@ -212,10 +227,11 @@ public class TransactionalScanner extends AbstractClientScanner {
                 final long nextCallSeqInput = this.nextCallSeq;
                 TrxRegionProtos.PerformScanRequest.Builder requestBuilder = PerformScanRequest.newBuilder();
                 requestBuilder.setTransactionId(ts.getTransactionId());
+                requestBuilder.setStartId(ts.getStartId());
                 requestBuilder.setRegionName(ByteString.copyFromUtf8(currentRegion.getRegionNameAsString()));
                 requestBuilder.setScannerId(scannerID);
                 requestBuilder.setNumberOfRows(nbRows);
-                if (doNotCloseOnLast)
+                if (regionShouldNotCloseOnLast)
                     requestBuilder.setCloseScanner(false);
                 else
                     requestBuilder.setCloseScanner(true);

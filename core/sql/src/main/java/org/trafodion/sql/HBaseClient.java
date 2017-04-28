@@ -949,10 +949,11 @@ public class HBaseClient {
 
     public void releaseHTableClient(HTableClient htable) 
                     throws IOException {
+        if (logger.isDebugEnabled()) logger.debug("HBaseClient.releaseHTableClient("
+            + (htable == null ? " htable is null " : htable.getTableName()) + "). ");
         if (htable == null)
             return;
 	                
-        if (logger.isDebugEnabled()) logger.debug("HBaseClient.releaseHTableClient(" + htable.getTableName() + ").");
         boolean cleanJniObject = false;
         htable.release(cleanJniObject);
     }
