@@ -155,9 +155,9 @@ Lng32 ExpLOBoper::createLOB(void * exLobGlob, void *currContext, void * lobHeap,
 			    char * lobLoc,Int32 hdfsPort,char *hdfsServer,
 			    Int64 uid, Lng32 num, Int64 lobMaxSize )
 {
-  char buf[100];
+  char buf[LOB_NAME_LEN];
   
-  char * lobName = ExpGetLOBname(uid, num, buf, 100);
+  char * lobName = ExpGetLOBname(uid, num, buf, LOB_NAME_LEN);
   if (lobName == NULL)
     return -1;
 
@@ -279,9 +279,9 @@ Lng32 ExpLOBoper::dropLOB(void * exLobGlob, void * lobHeap, void *currContext,
 			  char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 			  Int64 uid, Lng32 num)
 {
-  char buf[101];
+  char buf[LOB_NAME_LEN];
   
-  char * lobName = ExpGetLOBname(uid, num, buf, 100);
+  char * lobName = ExpGetLOBname(uid, num, buf, LOB_NAME_LEN);
   if (lobName == NULL)
     return -1;
 
@@ -307,9 +307,9 @@ Lng32 ExpLOBoper::purgedataLOB(void * exLobGlob, char * lobLoc,
                                
 			       Int64 uid, Lng32 num)
 {
-  char buf[100];
+  char buf[LOB_NAME_LEN];
   
-  char * lobName = ExpGetLOBname(uid, num, buf, 100);
+  char * lobName = ExpGetLOBname(uid, num, buf, LOB_NAME_LEN);
   if (lobName == NULL)
     return -1;
 
@@ -706,8 +706,8 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
 		      (ExeErrorCode)(8434));
       return ex_expr::EXPR_ERROR;
     }
-  char tgtLobNameBuf[100];
-  char * tgtLobName = ExpGetLOBname(objectUID_, lobNum(), tgtLobNameBuf, 100);
+  char tgtLobNameBuf[LOB_NAME_LEN];
+  char * tgtLobName = ExpGetLOBname(objectUID_, lobNum(), tgtLobNameBuf, LOB_NAME_LEN);
 
   if (tgtLobName == NULL)
     return ex_expr::EXPR_ERROR;
@@ -929,8 +929,8 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 		       handle);
   
    // get the lob name where data need to be inserted
-  char tgtLobNameBuf[100];
-  char * tgtLobName = ExpGetLOBname(uid, lobNum, tgtLobNameBuf, 100);
+  char tgtLobNameBuf[LOB_NAME_LEN];
+  char * tgtLobName = ExpGetLOBname(uid, lobNum, tgtLobNameBuf, LOB_NAME_LEN);
 
   if (tgtLobName == NULL)
     return ex_expr::EXPR_ERROR;
@@ -1112,8 +1112,8 @@ ex_expr::exp_return_type ExpLOBdelete::eval(char *op_data[],
   Lng32 handleLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
 
   // get the lob name where data need to be deleted
-  char lobNameBuf[100];
-  char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, 100);
+  char lobNameBuf[LOB_NAME_LEN];
+  char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, LOB_NAME_LEN);
   if (lobName == NULL)
     return ex_expr::EXPR_ERROR;
 
@@ -1294,18 +1294,18 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 
   
   // get the lob name where data need to be updated
-  char tgtLobNameBuf[100];
-  char * tgtLobName = ExpGetLOBname(sUid, sLobNum, tgtLobNameBuf, 100);
+  char tgtLobNameBuf[LOB_NAME_LEN];
+  char * tgtLobName = ExpGetLOBname(sUid, sLobNum, tgtLobNameBuf, LOB_NAME_LEN);
 
   if (tgtLobName == NULL)
     return ex_expr::EXPR_ERROR;
 
-  char fromLobNameBuf[100];
+  char fromLobNameBuf[LOB_NAME_LEN];
   char * fromLobName = NULL;
   Int64 fromDescKey = 0;
   Int64 fromDescTS = 0;
   short fromSchNameLen = 0;
-  char  fromSchName[500];
+  char  fromSchName[ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1];
   if (0) // TBD. fromLob())
     {
       Lng32 fromLobType;
@@ -1318,7 +1318,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 			   op_data[1]);
 
       // get the lob name where data will be read from
-      fromLobName = ExpGetLOBname(fromLobUid, fromLobNum, fromLobNameBuf, 100);
+      fromLobName = ExpGetLOBname(fromLobUid, fromLobNum, fromLobNameBuf, LOB_NAME_LEN);
       if (fromLobName == NULL)
 	return ex_expr::EXPR_ERROR;
     }
@@ -1563,8 +1563,8 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 			   &schNameLen, schName,
 			   lobHandle);
   // get the lob name where data need to be inserted
-  char lobNameBuf[100];
-  char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, 100);
+  char lobNameBuf[LOB_NAME_LEN];
+  char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, LOB_NAME_LEN);
       
   if (descKey == -1) //This is an empty_blob/clob
     {

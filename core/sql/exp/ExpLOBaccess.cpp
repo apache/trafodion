@@ -2569,16 +2569,16 @@ Ex_Lob_Error ExLobsOper (
         Int32 lobType;
         Int64 uid, inDescSyskey, descPartnKey;
         short schNameLen;
-        char schName[1024];
-        char sourceHandle[512]  = {};
+        char schName[ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1];
+        char sourceHandle[LOB_HANDLE_LEN]  = {};
         str_cpy_all(sourceHandle, source, sourceLen);
         ExpLOBoper::extractFromLOBhandle(&flags, &lobType, &lobNum, &uid,  
                                    &inDescSyskey, &descPartnKey,
                                    &schNameLen, schName,
                                    sourceHandle); 
-        char srcLobNameBuf[100];
+        char srcLobNameBuf[LOB_NAME_LEN];
         char * srcLobName = 
-          ExpLOBoper::ExpGetLOBname(uid, lobNum, srcLobNameBuf, 100);
+          ExpLOBoper::ExpGetLOBname(uid, lobNum, srcLobNameBuf, LOB_NAME_LEN);
         lobMap_it it2;
         it2 = lobMap->find(string(srcLobName));
 

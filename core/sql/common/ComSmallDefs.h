@@ -53,6 +53,7 @@ using namespace std;
 #include "NAString.h"
 #include "Int64.h"
 #include "dfs2rec.h"
+
 #ifndef NULL
 #define NULL 0
 #endif

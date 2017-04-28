@@ -67,15 +67,6 @@
 using namespace std;
 
 
-#define MAX_LOB_FILE_NAME_LEN 256
-#define MAX_HANDLE_IN_LEN 1024
-#define MAX_HANDLE_OUT_LEN 1024
-#define MAX_BLACK_BOX_LEN 2048
-#define LOB_DESC_HEADER_KEY 1
-#define NUM_WORKER_THREADS 2 
-// 2 threads at most, one to read and the other to pick up next read from preOpen
-
-#define LOB_CURSOR_PREFETCH_BYTES_MAX (1 << 27) // 128MB
 
 class ExLobGlobals;
 // This class defines the request used to construct the message to send over 
@@ -133,9 +124,9 @@ class ExLobRequest
     Int64 reqNum_;
     Int64 descNumIn_;
     Int64 descNumOut_;
-    char handleIn_[MAX_HANDLE_IN_LEN];
+    char handleIn_[LOB_HANDLE_LEN];
     Int64 handleInLen_;
-    char handleOut_[MAX_HANDLE_OUT_LEN];
+    char handleOut_[LOB_HANDLE_LEN];
     Int64 handleOutLen_;
     Int64 dataOffset_;
     LobsRequest type_;

@@ -45,7 +45,6 @@
 #include "exp_clause.h"
 #include "ExpLOBenums.h"
 
-#define LOB_HANDLE_LEN 1024
 
 class ExLobInMemoryDescChunksEntry;
 ////////////////////////////////
@@ -384,16 +383,16 @@ protected:
   char outLobHandle_[LOB_HANDLE_LEN];
   Int32 outHandleLen_;
 
-  char blackBox_[1024];
+  char blackBox_[MAX_BLACK_BOX_LEN];
   Int64 blackBoxLen_;
 
-  char lobStorageLocation_[1024];
+  char lobStorageLocation_[MAX_LOB_FILE_NAME_LEN];
 
-  char lobHdfsServer_[512];
+  char lobHdfsServer_[256];
   Lng32 lobHdfsPort_;
 
   short descSchNameLen_;
-  char  descSchName_[510];
+  char  descSchName_[ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1];
   Int64 lobSize_;
   Int64 lobMaxSize_;
   Int64 lobMaxChunkMemSize_;
