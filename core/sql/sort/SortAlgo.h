@@ -56,7 +56,7 @@ class SortAlgo : public NABasicObject
 
    SortAlgo(ULng32 runsize, ULng32 recsize, 
             NABoolean doNotallocRec, ULng32 keysize, 
-            SortScratchSpace* scratch, Lng32 explainNodeId);
+            SortScratchSpace* scratch, Lng32 explainNodeId, ExBMOStats *bmoStats);
    ~SortAlgo() {}; 
      
    //------------------------------------------------------------
@@ -96,6 +96,7 @@ class SortAlgo : public NABasicObject
    NABoolean internalSort_;
    NABoolean doNotallocRec_;
    Lng32 explainNodeId_;
+   ExBMOStats *bmoStats_;
 
 };
 

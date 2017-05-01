@@ -43,9 +43,11 @@
 #include <iostream>
 #include <fstream>
 #include <string.h>
+#include "ex_stdh.h"
 #include "TourTree.h"
 #include "SortUtil.h"
 #include "ex_ex.h"
+#include "ExStats.h"
 
 //------------------------------------------------------------------------
 // This file contains the all member function definitions of Tree class. 
@@ -68,8 +70,8 @@
 Tree::Tree(ULng32 numruns, ULng32 runsize, ULng32 recsize, 
            NABoolean doNotAllocRec, ULng32 keysize,
            SortScratchSpace* scratch, CollHeap *heap, SortError *sorterror, 
-           Lng32 explainNodeId, SortUtil* sortUtil, Lng32 runnum, NABoolean merge,NABoolean waited) :
-           SortAlgo(runsize, recsize, doNotAllocRec, keysize, scratch, explainNodeId),
+           Lng32 explainNodeId, ExBMOStats *bmoStats, SortUtil* sortUtil, Lng32 runnum, NABoolean merge,NABoolean waited) :
+           SortAlgo(runsize, recsize, doNotAllocRec, keysize, scratch, explainNodeId, bmoStats),
            maxRuns_(0), currentRun_(0), winnerRun_(0), sortError_(sorterror),
            heap_(heap), sortUtil_(sortUtil) 
 {
@@ -378,6 +380,8 @@ Lng32 Tree::generateInterRuns()
        {
          rSize = winner_->record()->getRecSize();
        }
+       if (bmoStats_)
+           bmoStats_->incInterimRowCount();
        retcode = winner_->outputScr(currentRun_+numRuns, rSize, scratch_,TRUE_L);
        if (retcode != 0)
        {

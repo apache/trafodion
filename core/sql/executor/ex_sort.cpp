@@ -55,6 +55,14 @@
 void ReleaseTupp(void * td);
 void CaptureTupp(void * td);
 
+// Dont exceed more than 11 characters
+const char *ExSortTcb::SortPhaseStr[] = {
+  "SORT_PREP",
+  "SORT_SEND",
+  "SORT_RECV",
+  "SORT_MERGE"
+};
+
 NABoolean ExSortTcb::needStatsEntry()
 {
   ComTdb::CollectStatsType statsType = getGlobals()->getStatsArea()->getCollectStatsType();
@@ -685,7 +693,8 @@ short ExSortTcb::workUp()
 		sortDiag_ = NULL;              // reset
                 // LCOV_EXCL_STOP
 	      }
-	    
+	    if (bmoStats_)
+               bmoStats_->setBmoPhase(SORT_PHASE_END-SORT_PREP_PHASE);
 	    setupPoolBuffers(pentry_down);
  
       if((request == ex_queue::GET_N) &&
@@ -737,6 +746,8 @@ short ExSortTcb::workUp()
 	    ex_queue_entry * centry = qchild_.up->getHeadEntry();
 	    ex_queue::up_status child_status = centry->upState.status;
 	    ex_queue_entry *upEntry = qparent_.up->getTailEntry();
+	    if (bmoStats_)
+               bmoStats_->setBmoPhase(SORT_PHASE_END-SORT_SEND_PHASE); 
 	    
 	    rc = sortSend(centry, child_status, pentry_down, upEntry, 
 			  FALSE, // not sort from top
@@ -846,6 +857,8 @@ short ExSortTcb::workUp()
 	    if (qparent_.up->isFull()){
 	      return workStatus(WORK_OK); // parent queue is full. Just return
 	    }
+	    if (bmoStats_)
+               bmoStats_->setBmoPhase(SORT_PHASE_END-SORT_RECV_PHASE); 
 
 	    ex_queue_entry * pentry = qparent_.up->getTailEntry();
 	    rc = sortReceive(pentry_down, request, pentry, FALSE,
@@ -1279,6 +1292,8 @@ short ExSortTcb::sortSend(ex_queue_entry * srcEntry,
 		  }
 	      }
 	  }
+        if (bmoStats_)
+           bmoStats_->incInterimRowCount();
 	// LCOV_EXCL_STOP
 	rc = sortUtil_->sortSend(dataPointer,
 				 newRecLen,

@@ -75,6 +75,9 @@
 #include "Statement.h"
 #include "ComTdbRoot.h"
 #include "ComDistribution.h"
+#include "ex_hashj.h"
+#include "ex_sort.h"
+#include "ex_hash_grby.h"
 
 #include <unistd.h>
 #include <errno.h>
@@ -1543,11 +1546,13 @@ void ExFragRootOperStats::init(NABoolean resetDop)
   localCpuTime_ = 0;
   scratchOverflowMode_ = -1;
   scratchFileCount_ = 0;
-  scratchBufferBlockSize_ = 0;
-  scratchBufferBlockRead_ = 0;
-  scratchBufferBlockWritten_ = 0;
+  scratchIOSize_ = 0;
+  spaceBufferSize_ = 0;
+  spaceBufferCount_ = 0;
   scratchWriteCount_ = 0;
   scratchReadCount_ = 0;
+  scratchIOMaxTime_ = 0;
+  interimRowCount_ = 0;
   udrCpuTime_ = 0;
   topN_ = -1;
   waitTime_ = 0;
@@ -1716,18 +1721,26 @@ void ExFragRootOperStats::merge(ExFragRootOperStats* other)
   if (scratchOverflowMode_ == -1)
     scratchOverflowMode_ = other->scratchOverflowMode_;
   scratchFileCount_ += other->scratchFileCount_;
-
-  if (scratchBufferBlockSize_ == 0 &&
-     other->scratchBufferBlockSize_ > 0)
-     scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
   Float32 mFactor = 1;
-  if(scratchBufferBlockSize_ > 0)
-    mFactor = (Float32)other->scratchBufferBlockSize_ / scratchBufferBlockSize_;
-  scratchBufferBlockRead_ += Int32 (other->scratchBufferBlockRead_ * mFactor);
-  scratchBufferBlockWritten_ += Int32 (other->scratchBufferBlockWritten_ * mFactor);
+  if (spaceBufferSize_ == 0 &&
+     other->spaceBufferSize_ > 0)
+     spaceBufferSize_ = other->spaceBufferSize_;
+  mFactor = 1;
+  if(spaceBufferSize_ > 0)
+    mFactor = (Float32)other->spaceBufferSize_ / spaceBufferSize_;
+  spaceBufferCount_ += Int32(other->spaceBufferCount_ * mFactor);
+  if (scratchIOSize_ == 0 &&
+     other->scratchIOSize_ > 0)
+     scratchIOSize_ = other->scratchIOSize_;
+  mFactor = 1;
+  if(scratchIOSize_ > 0)
+    mFactor = (Float32)other->scratchIOSize_ / scratchIOSize_;
 
-  scratchReadCount_ += other->scratchReadCount_;
-  scratchWriteCount_ += other->scratchWriteCount_;
+  scratchReadCount_ += Int32(other->scratchReadCount_ * mFactor);
+  scratchWriteCount_ += Int32(other->scratchWriteCount_ * mFactor);
+  if (other->scratchIOMaxTime_ > scratchIOMaxTime_)
+     scratchIOMaxTime_ = other->scratchIOMaxTime_;
+  interimRowCount_ += other->interimRowCount_;
   udrCpuTime_ += other->udrCpuTime_;
   if(topN_ == -1 && other->topN_ > 0)
     topN_ = other->topN_;
@@ -1751,18 +1764,24 @@ void ExFragRootOperStats::merge(ExBMOStats *other)
 {
   scratchFileCount_ += other->scratchFileCount_;
   scratchOverflowMode_ = other->scratchOverflowMode_;
-  
-  if (scratchBufferBlockSize_ == 0 &&
-     other->scratchBufferBlockSize_ > 0)
-     scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
   Float32 mFactor = 1;
-  if(scratchBufferBlockSize_ > 0)
-    mFactor = (Float32)other->scratchBufferBlockSize_ / scratchBufferBlockSize_;
-  scratchBufferBlockRead_ += Int32 (other->scratchBufferBlockRead_ * mFactor);
-  scratchBufferBlockWritten_ += Int32 (other->scratchBufferBlockWritten_ * mFactor);
-
-  scratchReadCount_ += other->scratchReadCount_;
-  scratchWriteCount_ += other->scratchWriteCount_;
+  if (spaceBufferSize_ == 0 &&
+     other->spaceBufferSize_ > 0)
+     spaceBufferSize_ = other->spaceBufferSize_;
+  mFactor = 1;
+  if(spaceBufferSize_ > 0)
+    mFactor = (Float32)other->spaceBufferSize_ / spaceBufferSize_;
+  spaceBufferCount_ += Int32(other->spaceBufferCount_ * mFactor);
+  if (scratchIOSize_ == 0 &&
+     other->scratchIOSize_ > 0)
+     scratchIOSize_ = other->scratchIOSize_;
+  mFactor = 1;
+  if(scratchIOSize_ > 0)
+    mFactor = (Float32)other->scratchIOSize_ / scratchIOSize_;
+  scratchReadCount_ += Int32 (other->scratchReadCount_ * mFactor);
+  scratchWriteCount_ += Int32 (other->scratchWriteCount_ * mFactor);
+  scratchIOMaxTime_ += other->scratchIOMaxTime_;
+  interimRowCount_ += other->interimRowCount_;
   if(topN_ == -1 && other->topN_ > 0)
     topN_ = other->topN_;
 }
@@ -1895,8 +1914,8 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		"Newprocess: %u NewprocessTime: %Ld reqMsgCnt: %Ld "
 		"regMsgBytes: %Ld replyMsgCnt: %Ld replyMsgBytes: %Ld "
 		"PMemUsed: %Ld scrOverFlowMode: %d sortTopN: %Ld"
-		"scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %Ld scrBufferWritten: %Ld "
-		"scrWriteCount:%Ld scrReadCount: %Ld udrCpuTime: %Ld "
+		"scrFileCount: %d bmoSpaceBufferSize: %d bmoSpaceBufferCount: %Ld scrIOSize: %d " 
+		"scrWriteCount:%Ld scrReadCount: %Ld scrIOMaxTime: %Ld bmoInterimRowCount: %Ld udrCpuTime: %Ld "
 		"maxWaitTime: %Ld avgWaitTime: %Ld "
 		"hdfsAccess: %Ld ",
 		cpuTime_,
@@ -1918,11 +1937,13 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		scratchOverflowMode_,
 		topN_,
 		scratchFileCount_,
-		scratchBufferBlockSize_,
-		scratchBufferBlockRead_,
-		scratchBufferBlockWritten_,
+                spaceBufferSize_,
+                spaceBufferCount_,
+		scratchIOSize_,
 		scratchWriteCount_,
 		scratchReadCount_,
+                scratchIOMaxTime_,
+                interimRowCount_,
 		udrCpuTime_,
 		maxWaitTime_,
 		getAvgWaitTime(),
@@ -2008,20 +2029,26 @@ Lng32 ExFragRootOperStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     case SQLSTATS_TOPN:
       sqlStats_item->int64_value = topN_;
       break;
-    case SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE:
-      sqlStats_item->int64_value = scratchBufferBlockSize_;
+    case SQLSTATS_BMO_SPACE_BUFFER_SIZE:
+      sqlStats_item->int64_value = spaceBufferSize_;
       break;
-    case SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ:
-      sqlStats_item->int64_value = scratchBufferBlockRead_;
+    case SQLSTATS_BMO_SPACE_BUFFER_COUNT:
+      sqlStats_item->int64_value = spaceBufferCount_;
       break;
-    case SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN:
-      sqlStats_item->int64_value = scratchBufferBlockWritten_;
+    case SQLSTATS_SCRATCH_IO_SIZE:
+      sqlStats_item->int64_value = scratchIOSize_;
       break;
     case SQLSTATS_SCRATCH_READ_COUNT:
       sqlStats_item->int64_value = scratchReadCount_;
       break;
     case SQLSTATS_SCRATCH_WRITE_COUNT:
       sqlStats_item->int64_value = scratchWriteCount_;
+      break;
+    case SQLSTATS_SCRATCH_IO_MAX_TIME:
+      sqlStats_item->int64_value = scratchIOMaxTime_;
+      break;
+    case SQLSTATS_INTERIM_ROW_COUNT:
+      sqlStats_item->int64_value = interimRowCount_;
       break;
     case SQLSTATS_UDR_CPU_BUSY_TIME:
       sqlStats_item->int64_value = udrCpuTime_;
@@ -4585,19 +4612,8 @@ UInt32 ExMeasStats::packedLength()
   else
   {
     size = ExMeasBaseStats::packedLength();
-    if (NOT statsInDp2())
-    {
-      alignSizeForNextObj(size);
-      size += sizeof(ExMeasStats)-sizeof(ExMeasBaseStats);
-    }
-    else
-    {
-      size += sizeof(spaceUsage_);
-      size += sizeof(spaceAlloc_);
-      size += sizeof(heapUsage_);
-      size += sizeof(heapAlloc_);
-      size += sizeof(heapWM_);
-    }
+    alignSizeForNextObj(size);
+    size += sizeof(ExMeasStats)-sizeof(ExMeasBaseStats);
   }
   return size;
 }
@@ -4648,27 +4664,12 @@ UInt32 ExMeasStats::pack(char * buffer)
   else
   {
     size = ExMeasBaseStats::pack(buffer);
-    if (NOT statsInDp2())
-    {
-      alignSizeForNextObj(size);
-      buffer += size;
-      srcLen = sizeof(ExMeasStats)-sizeof(ExMeasBaseStats);
-      char * srcPtr = (char *)this+sizeof(ExMeasBaseStats);
-      memcpy(buffer, (void *)srcPtr, srcLen);
-      size += srcLen;
-    }
-    else
-    {
-      buffer += size;
-      if (getVersion() >= _STATS_RTS_VERSION_R22)
-      {
-        size += packIntoBuffer(buffer, spaceUsage_);
-        size += packIntoBuffer(buffer, spaceAlloc_);
-        size += packIntoBuffer(buffer, heapUsage_);
-        size += packIntoBuffer(buffer, heapAlloc_);
-        size += packIntoBuffer(buffer, heapWM_);
-      }
-    }
+    alignSizeForNextObj(size);
+    buffer += size;
+    srcLen = sizeof(ExMeasStats)-sizeof(ExMeasBaseStats);
+    char * srcPtr = (char *)this+sizeof(ExMeasBaseStats);
+    memcpy(buffer, (void *)srcPtr, srcLen);
+    size += srcLen;
   }
   return size;
 }
@@ -4714,15 +4715,13 @@ void ExMeasStats::unpack(const char* &buffer)
   }
   else
   {
-    if (NOT statsInDp2())
-    {
-      alignBufferForNextObj(buffer); 
-      UInt32 srcLen = sizeof(ExMeasStats)-sizeof(ExMeasBaseStats);
-      char * srcPtr = (char *)this+sizeof(ExMeasBaseStats);
-      memcpy((void *)srcPtr, buffer, srcLen);
-      buffer += srcLen;
-      if (statsInEsp())
-      {
+     alignBufferForNextObj(buffer); 
+     UInt32 srcLen = sizeof(ExMeasStats)-sizeof(ExMeasBaseStats);
+     char * srcPtr = (char *)this+sizeof(ExMeasBaseStats);
+     memcpy((void *)srcPtr, buffer, srcLen);
+     buffer += srcLen;
+     if (statsInEsp())
+     {
         espSpaceUsage_ += spaceUsage_;
         espSpaceAlloc_ += spaceAlloc_;
         espHeapUsage_  += heapUsage_;
@@ -4735,7 +4734,6 @@ void ExMeasStats::unpack(const char* &buffer)
         heapAlloc_ = 0;
         heapWM_ = 0;
         cpuTime_ = 0;
-      }
     }
   }
 }
@@ -4771,9 +4769,11 @@ void ExMeasStats::init(NABoolean resetDop)
   localCpuTime_ = 0;
   scratchOverflowMode_ = -1;
   scratchFileCount_ = 0;
-  scratchBufferBlockSize_ = 0;
-  scratchBufferBlockRead_ = 0;
-  scratchBufferBlockWritten_ = 0;
+  spaceBufferSize_ = 0;
+  spaceBufferCount_ = 0;
+  scratchIOSize_ = 0;
+  interimRowCount_ = 0;
+  scratchIOMaxTime_ = 0;
   scratchWriteCount_ = 0;
   scratchReadCount_ = 0;
   udrCpuTime_ = 0;
@@ -4818,17 +4818,20 @@ void ExMeasStats::merge(ExBMOStats *other)
 {
   scratchFileCount_ += other->scratchFileCount_;
   scratchOverflowMode_ = other->scratchOverflowMode_;
-  if (scratchBufferBlockSize_ == 0 &&
-     other->scratchBufferBlockSize_ > 0)
-     scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
+  if (spaceBufferSize_ == 0 &&
+     other->spaceBufferSize_ > 0)
+     spaceBufferSize_ = other->spaceBufferSize_;
   Float32 mFactor = 1;
-  if(scratchBufferBlockSize_ > 0)
-    mFactor = (Float32)other->scratchBufferBlockSize_ / scratchBufferBlockSize_;
-  scratchBufferBlockRead_ += Int32 (other->scratchBufferBlockRead_ * mFactor);
-  scratchBufferBlockWritten_ += Int32 (other->scratchBufferBlockWritten_ * mFactor);
-
-  scratchReadCount_ += other->scratchReadCount_;
-  scratchWriteCount_ += other->scratchWriteCount_;
+  if(spaceBufferSize_ > 0)
+    mFactor = (Float32)other->spaceBufferSize_ / spaceBufferSize_;
+  spaceBufferCount_ += Int32 (other->spaceBufferCount_ * mFactor);
+  mFactor = 1;
+  if(scratchIOSize_ > 0)
+    mFactor = (Float32)other->scratchIOSize_ / scratchIOSize_;
+  scratchReadCount_ += (other->scratchReadCount_ * mFactor);
+  scratchWriteCount_ += (other->scratchWriteCount_ * mFactor);
+  scratchIOMaxTime_ += other->scratchIOMaxTime_;   
+  interimRowCount_ += other->interimRowCount_;
   if (topN_ == -1 && other->topN_ > 0)
       topN_ = other->topN_;
 }
@@ -4879,17 +4882,21 @@ void ExMeasStats::merge(ExMeasStats* other)
   replyMsgBytes_    += other -> replyMsgBytes_;
   scratchFileCount_ += other->scratchFileCount_;
 
-  if (scratchBufferBlockSize_ == 0 &&
-     other->scratchBufferBlockSize_ > 0)
-     scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
+  if (spaceBufferSize_ == 0 &&
+     other->spaceBufferSize_ > 0)
+     spaceBufferSize_ = other->spaceBufferSize_;
   Float32 mFactor = 1;
-  if(scratchBufferBlockSize_ > 0)
-    mFactor = (Float32)other->scratchBufferBlockSize_ / scratchBufferBlockSize_;
-  scratchBufferBlockRead_ += Int32 (other->scratchBufferBlockRead_ * mFactor);
-  scratchBufferBlockWritten_ += Int32 (other->scratchBufferBlockWritten_ * mFactor);
-
-  scratchReadCount_ += other->scratchReadCount_;
-  scratchWriteCount_ += other->scratchWriteCount_;
+  if(spaceBufferSize_ > 0)
+    mFactor = (Float32)other->spaceBufferSize_ / spaceBufferSize_;
+  spaceBufferCount_ += Int32 (other->spaceBufferCount_ * mFactor);
+  mFactor = 1;
+  if(scratchIOSize_ > 0)
+    mFactor = (Float32)other->scratchIOSize_ / scratchIOSize_;
+  scratchReadCount_ += (other->scratchReadCount_ * mFactor);
+  scratchWriteCount_ += (other->scratchWriteCount_ * mFactor);
+  if (other->scratchIOMaxTime_ > scratchIOMaxTime_)
+     scratchIOMaxTime_ = other->scratchIOMaxTime_;   
+  interimRowCount_ += other->interimRowCount_;
   udrCpuTime_ += other->udrCpuTime_;
   if (topN_ == -1 && other->topN_ > 0)
       topN_ = other->topN_;
@@ -4995,11 +5002,13 @@ void ExMeasStats::copyContents(ExMeasStats *other)
   replyMsgCnt_  = other->replyMsgCnt_;
   replyMsgBytes_  = other->replyMsgBytes_;
   scratchFileCount_ = other->scratchFileCount_;
-  scratchBufferBlockSize_ = other->scratchBufferBlockSize_;
-  scratchBufferBlockRead_ = other->scratchBufferBlockRead_;
-  scratchBufferBlockWritten_ = other->scratchBufferBlockWritten_;
+  spaceBufferSize_ = other->spaceBufferSize_;
+  spaceBufferCount_ = other->spaceBufferCount_;
+  scratchIOSize_ = other->scratchIOSize_;
   scratchReadCount_ = other->scratchReadCount_;
   scratchWriteCount_ = other->scratchWriteCount_;
+  scratchIOMaxTime_ = other->scratchIOMaxTime_;
+  interimRowCount_ = interimRowCount_;
   udrCpuTime_ = other->udrCpuTime_;
   topN_ = other->topN_;
   }
@@ -5064,8 +5073,8 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
     "SpaceTotal: %d  SpaceUsed: %d HeapTotal: %d HeapUsed: %d HeapWM: %u CpuTime: %Ld "
     "reqMsgCnt: %Ld reqMsgBytes: %Ld replyMsgCnt: %Ld "
     "replyMsgBytes: %Ld scrOverflowMode: %d sortTopN: %Ld"
-    "scrFileCount: %d scrBufferBlockSize: %d scrBufferRead: %Ld scrBufferWritten: %Ld "
-    "scrWriteCount: %Ld scrReadCount: %Ld udrCpuTime: %Ld",
+    "scrFileCount: %d bmoSpaceBufferSize: %d bmoSpaceBufferCount: %Ld scrIoSize: %d "
+    "scrWriteCount: %Ld scrReadCount: %Ld scrIOMaxTime: %Ld interimRowCount: %Ld udrCpuTime: %Ld ",
 	      statType(),
               getNewprocess(),
 	      getNewprocessTime(),
@@ -5085,11 +5094,13 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
               scratchOverflowMode_,
               topN_,
               scratchFileCount_,
-              scratchBufferBlockSize_,
-              scratchBufferBlockRead_,
-              scratchBufferBlockWritten_,
+              spaceBufferSize_,
+              spaceBufferCount_,
+              scratchIOSize_,
               scratchWriteCount_,
               scratchReadCount_,
+              scratchIOMaxTime_,
+              interimRowCount_,
               udrCpuTime_
               );
   }
@@ -5178,20 +5189,29 @@ Lng32 ExMeasStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_SCRATCH_OVERFLOW_MODE:
     sqlStats_item->int64_value = scratchOverflowMode_;
     break;
-  case SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE:
-    sqlStats_item->int64_value = scratchBufferBlockSize_;
+  case SQLSTATS_BMO_SPACE_BUFFER_SIZE:
+    sqlStats_item->int64_value = spaceBufferSize_;
     break;
-  case SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ:
-    sqlStats_item->int64_value = scratchBufferBlockRead_;
-    break;
-  case SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN:
-    sqlStats_item->int64_value = scratchBufferBlockWritten_;
+  case SQLSTATS_BMO_SPACE_BUFFER_COUNT:
+    sqlStats_item->int64_value = spaceBufferCount_;
     break;
   case SQLSTATS_SCRATCH_READ_COUNT:
     sqlStats_item->int64_value = scratchReadCount_;
     break;
   case SQLSTATS_SCRATCH_WRITE_COUNT:
     sqlStats_item->int64_value = scratchWriteCount_;
+    break;
+  case SQLSTATS_SCRATCH_IO_SIZE:
+    sqlStats_item->int64_value = scratchIOSize_;
+    break;
+  case SQLSTATS_SCRATCH_IO_MAX_TIME:
+    sqlStats_item->int64_value = scratchIOMaxTime_;
+    break;
+  case SQLSTATS_INTERIM_ROW_COUNT:
+    sqlStats_item->int64_value = interimRowCount_;
+    break;
+  case SQLSTATS_TOPN:
+    sqlStats_item->int64_value = topN_;
     break;
   case SQLSTATS_UDR_CPU_BUSY_TIME:
     sqlStats_item->int64_value = udrCpuTime_;
@@ -6961,7 +6981,7 @@ const char *ExStatisticsArea::getStatsTypeText(short statsType)
   case SQLCLI_PROGRESS_STATS:
     return "PROGRESS_STATS";
   default:
-    return "UNKNOW";
+    return "UNKNOWN";
   }
 }
 
@@ -10475,6 +10495,8 @@ void ExBMOStats::init(NABoolean resetDop)
   topN_ = -1;
   timer_.reset();
   scratchIOMaxTime_ = 0;
+  phase_ = 0;
+  interimRowCount_ = 0;
 }
 
 UInt32 ExBMOStats::packedLength()
@@ -10566,12 +10588,14 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
   char *buf = dataBuffer;
   str_sprintf (
        buf,
-       "statsRowType: %d explainTdbId: %d bmoHeapUsed: %d bmoHeapTotal: %d bmoHeapWM: %d "
+       "statsRowType: %d explainTdbId: %d bmoPhase: %s bmoIntCount: %Ld estMemory: %0.2f bmoHeapUsed: %d bmoHeapTotal: %d bmoHeapWM: %d "
        "bmoSpaceBufferSize: %d bmoSpaceBufferCount: %d "
        "scrOverFlowMode: %d scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %d scrBufferWritten: %d "
        "scrWriteCount: %Ld scrReadCount: %Ld topN: %Ld scrIOSize: %d scrIOTime: %Ld scrIOMaxTime: %Ld ",
         statType(),
         getExplainNodeId(),
+        getBmoPhaseStr(),
+        interimRowCount_,
         bmoHeapUsage_,
         bmoHeapAlloc_,
         bmoHeapWM_,
@@ -10613,15 +10637,32 @@ void ExBMOStats::merge(ExBMOStats* other)
   if (other->scratchIOSize_ != -1)
     scratchIOSize_ = other->scratchIOSize_;
   if (other->topN_ != -1)
-    topN_ = other->topN_;
+     topN_ = other->topN_;
+  if (other->phase_ > phase_)
+     phase_ = other->phase_;
   scratchOverflowMode_ = other->scratchOverflowMode_;
   scratchFileCount_ += other->scratchFileCount_;
   scratchBufferBlockRead_ += other->scratchBufferBlockRead_;
   scratchBufferBlockWritten_ += other->scratchBufferBlockWritten_;
   scratchReadCount_ += other->scratchReadCount_;
   scratchWriteCount_ += other->scratchWriteCount_;
+  interimRowCount_ += other->interimRowCount_;
   if (other->scratchIOMaxTime_ > scratchIOMaxTime_)
      scratchIOMaxTime_ = other->scratchIOMaxTime_;
+}
+
+const char *ExBMOStats::getBmoPhaseStr()
+{
+  ComTdb::ex_node_type tdbType = getTdbType();
+  
+  if (tdbType == ComTdb::ex_HASHJ)
+     return ex_hashj_tcb::HashJoinPhaseStr[phase_];
+  else if (tdbType == ComTdb::ex_SORT)
+    return ExSortTcb::SortPhaseStr[phase_];
+  else if (tdbType == ComTdb::ex_HASH_GRBY)
+     return ex_hash_grby_tcb::HashGrbyPhaseStr[phase_];
+  else
+    return "UNKNOWN";  
 }
 
 Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
@@ -10680,6 +10721,23 @@ Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
   case SQLSTATS_SCRATCH_IO_MAX_TIME:
     sqlStats_item->int64_value = scratchIOMaxTime_;
     break;
+  case SQLSTATS_INTERIM_ROW_COUNT:
+    sqlStats_item->int64_value = interimRowCount_;
+    break;
+  case SQLSTATS_BMO_PHASE:
+    if (sqlStats_item->str_value != NULL)
+    {
+       const char *bmoPhase = getBmoPhaseStr();
+       len = strlen(bmoPhase);
+       if (len > sqlStats_item->str_max_len)
+          sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
+       else
+          str_cpy(sqlStats_item->str_value, bmoPhase, len);
+       sqlStats_item->str_ret_len = len;
+    }
+    else
+       sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
+    break;
   case SQLSTATS_DETAIL:
    if (sqlStats_item->str_value != NULL)
     {
@@ -10694,6 +10752,8 @@ Lng32 ExBMOStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
         str_cpy(sqlStats_item->str_value, tmpBuf, len);
       sqlStats_item->str_ret_len = len;
     }
+    else
+       sqlStats_item->error_code = EXE_ERROR_IN_STAT_ITEM;
     break;
   default:
     ExOperStats::getStatsItem(sqlStats_item);
