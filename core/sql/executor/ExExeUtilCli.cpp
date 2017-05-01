@@ -278,20 +278,21 @@ Lng32 ExeCliInterface::allocStuff(SQLMODULE_ID * &module,
 }
 
 Lng32 ExeCliInterface::prepare(const char * stmtStr,
-			      SQLMODULE_ID * module,
-			      SQLSTMT_ID * stmt,
-			      SQLDESC_ID * sql_src,
-			      SQLDESC_ID * input_desc,
-			      SQLDESC_ID * output_desc,
-			      char ** outputBuf,
+                              SQLMODULE_ID * module,
+                              SQLSTMT_ID * stmt,
+                              SQLDESC_ID * sql_src,
+                              SQLDESC_ID * input_desc,
+                              SQLDESC_ID * output_desc,
+                              char ** outputBuf,
                               Queue * outputVarPtrList,
-			      char ** inputBuf,
+                              char ** inputBuf,
                               Queue * inputVarPtrList,
                               char *uniqueStmtId,
                               Lng32 *uniqueStmtIdLen,
                               SQL_QUERY_COST_INFO *query_cost_info, 
-			      SQL_QUERY_COMPILER_STATS_INFO *comp_stats_info,
-			      NABoolean monitorThis)
+                              SQL_QUERY_COMPILER_STATS_INFO *comp_stats_info,
+                              NABoolean monitorThis,
+                              NABoolean doNotCachePlan)
 {
   Lng32 retcode = 0;
   ULng32 prepFlags = 0;
@@ -305,6 +306,12 @@ Lng32 ExeCliInterface::prepare(const char * stmtStr,
     {
       if(currContext_->getSessionDefaults()->callEmbeddedArkcmp())
 	prepFlags |= PREPARE_USE_EMBEDDED_ARKCMP;
+    }
+
+  if (doNotCachePlan)
+    {
+      prepFlags |= PREPARE_NO_TEXT_CACHE;
+      prepFlags |= PREPARE_DONT_CACHE;
     }
 
   retcode = SQL_EXEC_SetDescItem(sql_src, 1, SQLDESC_LENGTH,

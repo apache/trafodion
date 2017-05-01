@@ -1437,6 +1437,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
   NABoolean deCache      = (cliFlags & PREPARE_WITH_DECACHE) != 0;
   NABoolean noTextCache  = (cliFlags & PREPARE_NO_TEXT_CACHE) != 0;
   NABoolean standaloneQuery = (cliFlags & PREPARE_STANDALONE_QUERY) != 0;
+  NABoolean doNotCache   = (cliFlags & PREPARE_DONT_CACHE) != 0;
   this->setStandaloneQ(standaloneQuery);
 
   NABoolean wmsMonitoringNeeded = (cliFlags & PREPARE_MONITOR_THIS_QUERY) !=0;
@@ -1651,6 +1652,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 		    c.setAqrPrepare(aqRetry);
 		  else if (noTextCache)
 		  c.setNoTextCache(noTextCache);
+		  c.setDoNotCachePlan(doNotCache);
 		  
 		  if (standaloneQuery)
 		    c.setStandaloneQuery(standaloneQuery);
@@ -1704,6 +1706,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 		    c.setAqrPrepare(aqRetry);
 		  else if (noTextCache)
 		  c.setNoTextCache(noTextCache);
+		  c.setDoNotCachePlan(doNotCache);
 
 		  if (standaloneQuery)
 		    c.setStandaloneQuery(standaloneQuery);

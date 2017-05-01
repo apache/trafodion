@@ -377,6 +377,11 @@ public:
   void setHbaseDDL(NABoolean v)
     { (v ? flags_ |= HBASE_DDL : flags_ &= ~HBASE_DDL); }
 
+  NABoolean doNotCachePlan()
+    { return (flags_ & DO_NOT_CACHE_PLAN) != 0; }
+  void setDoNotCachePlan(NABoolean v)
+    { (v ? flags_ |= DO_NOT_CACHE_PLAN : flags_ &= ~DO_NOT_CACHE_PLAN); }
+
   enum { FILLERSIZE = 56 /* used to be 60 - took 4 bytes for sqlTextCharSet_ */ } ; // of original 72
 
 protected:
@@ -410,7 +415,10 @@ protected:
 
     // this is a request to perform a SQL ddl operation that will be converted
     // to an hbase object
-    HBASE_DDL                               = 0x0800
+    HBASE_DDL                               = 0x0800,
+
+    // do not cache the resulting query plan
+    DO_NOT_CACHE_PLAN = 0x1000
   };
 
   char * sqltext_;        // 00-07
