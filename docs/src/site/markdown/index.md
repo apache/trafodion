@@ -42,8 +42,10 @@ Trafodion provides SQL access to structured, semi-structured, and unstructured d
 
 
 <table><tr><td>
-  <p><h5>We're working on release 2.1!</h5></p> 
+  <p><h5>We're working on release 2.2!</h5></p> 
   <p>Check out the <a href="https://cwiki.apache.org/confluence/display/TRAFODION/Roadmap">Roadmap</a> page for planned content.</p>
+  <p><h5>Apache Trafodion 2.1.0-incubating was released on May 1, 2017</h5></p> 
+  <p>Check it out on the <a href="http://trafodion.incubator.apache.org/download.html">Download</a> page.</p>
   <p><h5>Want to disucss Trafodion in Chinese? Join the Trafodion discussion on Tencent QQ!</h5></p> 
   <p><a href="http://im.qq.com/">QQ</a> Group ID: 176011868.</p>
 </td></tr></table>
