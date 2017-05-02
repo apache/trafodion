@@ -426,7 +426,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_CELL_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Mon Dec 12 23:03:22 2016
+-- Definition current  Tue May  2 16:52:50 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -445,7 +445,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_ROW_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Mon Dec 12 23:03:23 2016
+-- Definition current  Tue May  2 16:52:50 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -465,7 +465,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_CELL_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Mon Dec 12 23:03:23 2016
+-- Definition current  Tue May  2 16:52:50 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -484,7 +484,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_ROW_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Mon Dec 12 23:03:24 2016
+-- Definition current  Tue May  2 16:52:51 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -603,7 +603,7 @@ ROW_ID      (EXPR)
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:03:37 2016
+-- Definition current  Tue May  2 16:53:06 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -619,7 +619,7 @@ ROW_ID      (EXPR)
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:03:38 2016
+-- Definition current  Tue May  2 16:53:07 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -635,8 +635,8 @@ ROW_ID      (EXPR)
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion table TRAFODION.SCH.T022HBM1
--- Definition current  Mon Dec 12 23:03:40 2016
+-- Definition of Trafodion table TRAFODION.SEABASE.T022HBM1
+-- Definition current  Tue May  2 16:53:11 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -650,7 +650,7 @@ ROW_ID      (EXPR)
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:03:49 2016
+-- Definition current  Tue May  2 16:53:20 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -698,7 +698,7 @@ a2              ?
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:03:53 2016
+-- Definition current  Tue May  2 16:53:25 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -720,8 +720,8 @@ a2              ?
 --- SQL operation complete.
 >>invoke t022hbm1_like;
 
--- Definition of Trafodion table TRAFODION.SCH.T022HBM1_LIKE
--- Definition current  Mon Dec 12 23:03:58 2016
+-- Definition of Trafodion table TRAFODION.SEABASE.T022HBM1_LIKE
+-- Definition current  Tue May  2 16:53:33 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -770,7 +770,7 @@ a2    ?               ?
 --- SQL operation complete.
 >>invoke t022hbm1;
 
-*** ERROR[4082] Object TRAFODION.SCH.T022HBM1 does not exist or is inaccessible.
+*** ERROR[4082] Object TRAFODION.SEABASE.T022HBM1 does not exist or is inaccessible.
 
 --- SQL operation failed with errors.
 >>create external table t022hbm1 ("cf".a varchar(4) not null,
@@ -782,7 +782,7 @@ a2    ?               ?
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:04:14 2016
+-- Definition current  Tue May  2 16:53:49 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -799,7 +799,7 @@ a2    ?               ?
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:04:17 2016
+-- Definition current  Tue May  2 16:53:54 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -815,7 +815,7 @@ a2    ?               ?
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:04:20 2016
+-- Definition current  Tue May  2 16:53:56 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -941,7 +941,7 @@ b               ?
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:04:35 2016
+-- Definition current  Tue May  2 16:54:08 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -1001,7 +1001,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:04:41 2016
+-- Definition current  Tue May  2 16:54:12 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1024,7 +1024,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:04:49 2016
+-- Definition current  Tue May  2 16:54:18 2017
 
   (
     "cf".A                           CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1046,7 +1046,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:04:54 2016
+-- Definition current  Tue May  2 16:54:24 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1068,7 +1068,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:04:58 2016
+-- Definition current  Tue May  2 16:54:28 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1091,7 +1091,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:05:03 2016
+-- Definition current  Tue May  2 16:54:34 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1115,7 +1115,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:05:07 2016
+-- Definition current  Tue May  2 16:54:40 2017
 
   (
     "cf".A                           CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1138,7 +1138,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:05:15 2016
+-- Definition current  Tue May  2 16:54:43 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1190,7 +1190,7 @@ A            B            C
 >>invoke t022hbm2;
 
 -- Definition of Trafodion HBase mapped table T022HBM2
--- Definition current  Mon Dec 12 23:05:29 2016
+-- Definition current  Tue May  2 16:54:58 2017
 
   (
     "cf1".A                          INT DEFAULT NULL
@@ -1231,7 +1231,7 @@ a1             10
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Mon Dec 12 23:05:32 2016
+-- Definition current  Tue May  2 16:55:00 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
