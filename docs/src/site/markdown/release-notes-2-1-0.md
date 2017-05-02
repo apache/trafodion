@@ -129,7 +129,7 @@ Build instructions are available in the [Trafodion Contributor Guide](https://cw
 * Ambari Integration ([TRAFODION-2291](https://issues.apache.org/jira/browse/TRAFODION-2291))<br/>
 Integration with Ambari cluster manager ambari interface/integration. The Ambari integration provides support for Hortonworks Hadoop distributions, while the command-line Trafodion Installer supports Cloudera and Hortonworks Hadoop distributions, and for select vanilla Hadoop installations.
 * Python Installer ([TRAFODION-1839](https://issues.apache.org/jira/browse/TRAFODION-1839))<br/>
-Trafodion Installer Evolution The command-line installer has been replaced for the 2.1.0 release. Written in python, it replaces the legacy bash-script installer. The bash command-line installer is deprecated as of 2.1.0, but is still provided, just in case you experience any problems with the new installer. If so, please report those problems to the project team, since the legacy installer will soon be obsoleted.
+Trafodion Installer Evolution. The command-line installer has been replaced for the 2.1.0 release. Written in python, it replaces the legacy bash-script installer. The bash command-line installer is deprecated as of 2.1.0, but is still provided, just in case you experience any problems with the new installer. If so, please report those problems to the project team, since the legacy installer will soon be obsolete.
 * Trafodion Configuration File ([TRAFODION-2306](https://issues.apache.org/jira/browse/TRAFODION-2306))<br/>
 Introducing a configuration file traf-site.xml specific to Trafodion similar to hbase configuration file hbase-site.xml.  This configuration file extends the properties inherited from the standard hbase-site.xml.
 * The environment variable MY_SQROOT has been renamed to TRAF_HOME.
@@ -140,7 +140,7 @@ This release contains fixes for 300+ JIRAs. Here is a [list of resolved JIRAs in
 
 ## Documentation Updates
 
-Several updates have been made to the SQL Reference Manual to reflect the new functions added in 2.1. Some have not been done but have JIRas outstading and will be completed by the next release. Provisioning Guide has been updated to reflect instructions for using hte new Ambari Installer or the python installation script. 
+Several updates have been made to the SQL Reference Manual to reflect the new functions added in 2.1. Some functions have not been documented yet but have JIRAs outstading and will be completed by the next release. Provisioning Guide has been updated to reflect instructions for using hte new Ambari Installer or the python installation script. 
 
 ## Supported Platforms
 
