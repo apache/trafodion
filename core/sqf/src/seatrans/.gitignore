@@ -11,6 +11,7 @@ hbase-trx/src/main/java/org/apache/hadoop/hbase/coprocessor/transactional/TrxReg
 hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/CleanOldTransactionsChore.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/KeyValueListScanner.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/MemoryUsageChore.java
+hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/TransactionalRegionScannerHolder.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/TrxTransactionState.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/client/ClientScanner98.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/client/TrafParallelClientScanner.java
