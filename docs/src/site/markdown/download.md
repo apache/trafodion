@@ -37,7 +37,7 @@ To build Trafodion from source code, see the [Trafodion Contributor Guide](https
     * [Ambari Plugin][ap210]  -  [PGP][appgp210] [MD5][apmd5210] [SHA1][apsha210]
 * [Documentation](documentation.html#210_Release)
 
-[src210]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.1.0-incubating/apache-trafodion-2.1.0-incubating-src.tar.gz
+[src210]: http://www.apache.org/dyn/closer.lua/incubator/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz
 [pgp210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.asc
 [md5210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.md5
 [sha210]: http://www.apache.org/dist/incubator/trafodion/apache-trafodion-2.1.0-incubating/src/apache-trafodion-2.1.0-incubating-src.tar.gz.sha
