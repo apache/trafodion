@@ -328,7 +328,6 @@ class StmtDDLGiveSchema;
 class StmtDDLGrant;
 class StmtDDLGrantComponentPrivilege;
 class StmtDDLSchGrant;
-class StmtDDLPublish;
 class StmtDDLInitializeSQL;
 class StmtDDLReInitializeSQL;
 class StmtDDLRevoke;
@@ -670,7 +669,6 @@ public:
   virtual StmtDDLGrant                  * castToStmtDDLGrant();
   virtual StmtDDLGrantComponentPrivilege * castToStmtDDLGrantComponentPrivilege();
   virtual StmtDDLSchGrant		* castToStmtDDLSchGrant();
-  virtual StmtDDLPublish                * castToStmtDDLPublish();
   virtual StmtDDLReInitializeSQL        * castToStmtDDLReInitializeSQL();
   virtual StmtDDLInitializeSQL          * castToStmtDDLInitializeSQL();
   virtual StmtDDLRevoke                 * castToStmtDDLRevoke();

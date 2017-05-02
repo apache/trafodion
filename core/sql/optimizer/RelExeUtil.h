@@ -242,7 +242,6 @@ public:
     purgedataHbase_(FALSE),
     initAuthorization_(FALSE),
     dropAuthorization_(FALSE),
-    addSeqTable_(FALSE),
     addSchemaObjects_(FALSE),
     minimal_(FALSE),
     returnStatus_(FALSE),
@@ -257,7 +256,7 @@ public:
  DDLExpr(NABoolean initHbase, NABoolean dropHbase,
 	 NABoolean createMDviews, NABoolean dropMDviews,
          NABoolean initAuthorization, NABoolean dropAuthorization,
-	 NABoolean addSeqTable, NABoolean updateVersion, NABoolean addSchemaObjects,
+	 NABoolean /* formerly addSeqTable */ dummy, NABoolean updateVersion, NABoolean addSchemaObjects,
          NABoolean minimal,
 	 char * ddlStmtText,
 	 CharInfo::CharSet ddlStmtTextCharSet,
@@ -283,7 +282,6 @@ public:
     purgedataHbase_(FALSE),
     initAuthorization_(initAuthorization),
     dropAuthorization_(dropAuthorization),
-    addSeqTable_(addSeqTable),
     addSchemaObjects_(addSchemaObjects),
     minimal_(minimal),
     returnStatus_(FALSE),
@@ -323,7 +321,6 @@ public:
     purgedataHbase_(purgedataHbase),
     initAuthorization_(FALSE),
     dropAuthorization_(FALSE),
-    addSeqTable_(FALSE),
     addSchemaObjects_(FALSE),
     minimal_(FALSE),
     returnStatus_(FALSE),
@@ -396,7 +393,6 @@ public:
   NABoolean purgedataHbase() { return purgedataHbase_; }
   NABoolean initAuthorization() { return initAuthorization_; }
   NABoolean dropAuthorization() { return dropAuthorization_; }
-  NABoolean addSeqTable() { return addSeqTable_; }
   NABoolean addSchemaObjects() { return addSchemaObjects_; }
   NABoolean minimal() { return minimal_; }
 
@@ -497,7 +493,6 @@ public:
   NABoolean purgedataHbase_;
   NABoolean initAuthorization_;
   NABoolean dropAuthorization_;
-  NABoolean addSeqTable_;
   NABoolean addSchemaObjects_;
   NABoolean minimal_;  // meaningful only when initHbase_ is true; if this is true,
                        // means create the metadata tables only (and not repository etc.)
