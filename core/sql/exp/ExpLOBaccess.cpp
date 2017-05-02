@@ -58,6 +58,7 @@
 #include "ExpLOBaccess.h"
 #include "ExpLOBinterface.h"
 #include "ExpLOBexternal.h"
+#include "ExpLOB.h"
 #include "NAVersionedObject.h"
 #include "ComQueue.h"
 #include "QRLogger.h"
@@ -803,7 +804,7 @@ Ex_Lob_Error ExLob::readExternalSourceFile(char *srcfile, char *&fileData, Int32
   return LOB_OPER_OK;
 }
 
-Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOper, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemSize,Int64 lobGCLimit, char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char *handleOut, Int32 &handleOutLen, void *lobGlobals)
+Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOper, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemSize,Int64 lobGCLimit, char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char *handleOut, Int32 &handleOutLen, Int64 xnId, void *lobGlobals)
 {
   Ex_Lob_Error err=LOB_OPER_OK; 
     Int64 dataOffset = 0;
@@ -813,8 +814,15 @@ Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOpe
     char logBuf[4096];
   
     lobDebugInfo("In ExLob::writeDesc",0,__LINE__,lobTrace_);
+    //if external lob input, make sure it resides in hdfs
+    if (subOper == Lob_External_File)
+      {
+       LobInputOutputFileType srcFileType = fileType(source);
+       if (srcFileType != HDFS_FILE)
+         return  LOB_SOURCE_FILE_READ_ERROR;
+      }
     // Calculate sourceLen for each subOper.
-    if ((subOper == Lob_File)||(subOper == Lob_External))
+    if ((subOper == Lob_File))
       {
 	err = statSourceFile(source, sourceLen); 
 	if (err != LOB_OPER_OK)
@@ -823,9 +831,9 @@ Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOpe
     if (sourceLen < 0 || sourceLen > lobMaxSize)
       {
 	return LOB_MAX_LIMIT_ERROR; //exceeded the size of the max lob size
-        //TBD trigger compaction
+        
       }
-    if (subOper != Lob_External) 
+    if (subOper != Lob_External_File) 
       {
         lobDebugInfo("Calling ExLob::allocateDesc",0,__LINE__,lobTrace_);
         err = allocateDesc((unsigned int)sourceLen, descNumOut, dataOffset, lobMaxSize, lobMaxChunkMemSize,handleIn, handleInLen, lobGCLimit,lobGlobals);
@@ -845,7 +853,7 @@ Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOpe
                                      &dataOffset, &sourceLen,
                                      &outDescPartnKey, &outDescSyskey, 
 				     0,
-				     0,lobTrace_);
+				     xnId,lobTrace_);
     if (clierr < 0 ) {
       str_sprintf(logBuf,"CLI LOB_CLI_INSERT returned error %d",clierr);
       lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
@@ -856,7 +864,7 @@ Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOpe
 }
 
 
-Ex_Lob_Error ExLob::insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 handleInLen,  char *handleOut, Int32 &handleOutLen, char *blackBox, Int32 blackBoxLen,void *lobGlobals) 
+Ex_Lob_Error ExLob::insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 handleInLen,  char *handleOut, Int32 &handleOutLen, char *blackBox, Int32 blackBoxLen,Int64 xnId, void *lobGlobals) 
 {
   
    Lng32 clierr;
@@ -880,7 +888,7 @@ Ex_Lob_Error ExLob::insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 
                                      &offset, &size,
                                      &outDescPartnKey, &outDescSyskey, 
 				     0,
-				     0,lobTrace_);
+				     xnId,lobTrace_);
    str_sprintf(logBuf,"After LOB_CLI_INSERT: ChunkNum: OutSyskey:%Ld",
                chunkNum,outDescSyskey);
    lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
@@ -903,7 +911,7 @@ Ex_Lob_Error ExLob::writeLobData(char *source, Int64 sourceLen, LobsSubOper subO
     Int32 allocMemSize = 0;
     Int64 inputSize = sourceLen;
     Int64 writeOffset = tgtOffset;
-    if (subOperation == Lob_External)
+    if (subOperation == Lob_External_File)
       return LOB_OPER_OK;
     while(inputSize > 0)
       {
@@ -973,7 +981,7 @@ Ex_Lob_Error ExLob::readToMem(char *memAddr, Int64 size,  Int64 &operLen,char * 
        return err;
      }
    sizeToRead = MINOF(size,desc.getSize());
-   if (blackBox)
+   if (blackBox && blackBoxLen >0 )
      {
        
        // we have received the external data file name from the descriptor table
@@ -1082,7 +1090,103 @@ Ex_Lob_Error ExLob::readToFile(char *tgtFileName, Int64 tgtLength, Int64 &operLe
   return LOB_OPER_OK;
 }
 
-Ex_Lob_Error ExLob::append(char *data, Int64 size, LobsSubOper so, Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemSize, Int64 lobGCLimit, char *handleIn, Int32 handleInLen,  char * handleOut, Int32 &handleOutLen,void *lobGlobals)
+
+Ex_Lob_Error ExLob::insertSelect(ExLob *srcLobPtr,
+                                 char *handleIn,Int32 handleInLen,char *source,
+                                 Int64 sourceLen, Int64 &operLen,
+                                 Int64 lobMaxSize, Int64 lobMaxChunkMemLen,
+                                 Int64 lobGCLimit, char *blackBox, 
+                                 Int32 blackBoxLen,char *handleOut, 
+                                 Int32 &handleOutLen,LobsSubOper so, Int64 xnId,void *lobGlobals)
+{
+  Ex_Lob_Error err = LOB_OPER_OK;
+  Int32 cliRC;
+  Int16 flags;
+  Lng32  lobNum;
+  Int64 descNumOut,descNumIn,descSyskey = 0;
+  Int32 lobType = 0;
+  Int64 uid, inDescSyskey, descPartnKey;
+  short schNameLen;
+  char schName[1024];
+  Int64 inputLobDataLen = 0;
+  Int64 retOperLen = 0; 
+  Int64 dummy = 0;
+  char logBuf[4096];
+  char sourceHandle[LOB_HANDLE_LEN]  = {};
+ 
+  str_cpy_all(sourceHandle, source, sourceLen);
+
+  if (so == Lob_External_Lob)
+    {
+      ExLobDesc desc;
+      char extFileName[MAX_LOB_FILE_NAME_LEN+6];
+      Int64 extFileNameLen = 0;
+      // retrieve the external file name from the source log descriptor
+      err = getDesc(desc,sourceHandle,sourceLen,blackBox,&blackBoxLen,handleOut,handleOutLen,xnId);
+      if (err != LOB_OPER_OK)
+        return LOB_DESC_READ_ERROR;
+      // we have received the external data file name from the descriptor table
+      // replace the contents of the lobDataFile with this name      
+      str_cpy_all(extFileName, blackBox, blackBoxLen);
+      extFileNameLen = blackBoxLen;
+      // Now insert this into the target lob descriptor
+      
+      err = writeDesc(extFileNameLen, extFileName, Lob_External_File, descNumOut, 
+                      retOperLen, lobMaxSize, lobMaxChunkMemLen,lobGCLimit,
+                      handleIn,handleInLen,(char *)blackBox, &blackBoxLen,
+                      handleOut,handleOutLen,xnId,lobGlobals);
+ 
+      if (err != LOB_OPER_OK)
+        return err;
+      return err;
+    }
+  // First retrieve length of the lob pointed to by source (input handle) 
+  cliRC = SQL_EXEC_LOBcliInterface(sourceHandle, sourceLen,
+                                   NULL,NULL,NULL,NULL,
+                                   LOB_CLI_SELECT_LOBLENGTH,LOB_CLI_ExecImmed,
+                                   0,&inputLobDataLen, &dummy, &dummy,0,0,FALSE);
+  if (cliRC < 0)
+    {
+      str_sprintf(logBuf,"cli LOB_CLI_SElECT_LOBLENGTH returned :%d", cliRC);
+      lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);   
+      return LOB_DESC_READ_ERROR;
+    }
+      		   
+  // Allocate memory to hold the lob data from the input lob handle
+  char *inputLobData = (char *)(getLobGlobalHeap()->allocateMemory(inputLobDataLen));
+  // retrieve the section/sections from the lob pointed to by the input handle
+  // into memory
+  err = srcLobPtr->readToMem(inputLobData, inputLobDataLen,retOperLen, 
+                             sourceHandle,sourceLen,
+                             blackBox, blackBoxLen,
+                             handleOut, handleOutLen,xnId);
+  if (err != LOB_OPER_OK)
+    return err;
+
+  
+  // write the lob data into the target lob 
+  
+
+  err = writeDesc(inputLobDataLen, inputLobData, Lob_Memory, descNumOut, retOperLen, lobMaxSize, lobMaxChunkMemLen,lobGCLimit,handleIn,handleInLen,(char *)blackBox, &blackBoxLen,handleOut,handleOutLen,xnId,lobGlobals);
+ 
+  if (err != LOB_OPER_OK)
+    return err;
+  if (handleOutLen > 0)
+    {
+      ExpLOBoper::extractFromLOBhandle(NULL, &lobType, NULL, NULL, &descSyskey,
+				       NULL, NULL, NULL, handleOut);
+      
+      ExpLOBoper::updLOBhandle(descSyskey, 0, handleIn); 
+    }
+
+  err =  insertData(inputLobData, inputLobDataLen, Lob_Memory, descNumIn, retOperLen, lobMaxSize,lobMaxChunkMemLen,handleIn,handleInLen,(char *)blackBox, blackBoxLen,handleOut,handleOutLen,lobGlobals);
+  
+  if (err != LOB_OPER_OK)
+    return err;
+  return LOB_OPER_OK;
+}
+
+Ex_Lob_Error ExLob::append(char *data, Int64 size, LobsSubOper so, Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemSize, Int64 lobGCLimit, char *handleIn, Int32 handleInLen,  char * handleOut, Int32 &handleOutLen,Int64 xnId,void *lobGlobals)
 {
     Ex_Lob_Error err = LOB_OPER_OK;
     Int64 dummyParam;
@@ -1095,7 +1199,7 @@ Ex_Lob_Error ExLob::append(char *data, Int64 size, LobsSubOper so, Int64 headDes
     char *blackBox = NULL;
     Int32 blackBoxLen = 0;
 
-    if (so ==Lob_External)
+    if (so ==Lob_External_File)
       {
         blackBox = data;
         blackBoxLen = (Int32)size;
@@ -1126,7 +1230,7 @@ Ex_Lob_Error ExLob::append(char *data, Int64 size, LobsSubOper so, Int64 headDes
                                       &dataOffset, &sourceLen,
                                       &outDescPartnKey, &outDescSyskey, 
 				      0,
-				      0,lobTrace_);
+				      xnId,lobTrace_);
     
     
     if (clierr < 0 || clierr == 100) { // some error or EOD.
@@ -1185,7 +1289,7 @@ Ex_Lob_Error ExLob::insertData(char *data, Int64 size, LobsSubOper so,Int64 head
     }
     return LOB_OPER_OK;
 }
-Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize, Int64 lobGCLimit, char *handleIn, Int32 handleInLen,  char *handleOut, Int32 &handleOutLen, void *lobGlobals)
+Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize, Int64 lobGCLimit, char *handleIn, Int32 handleInLen,  char *handleOut, Int32 &handleOutLen, Int64 xnId,void *lobGlobals)
 {
     Ex_Lob_Error err = LOB_OPER_OK;
     Int64 dummyParam;
@@ -1198,13 +1302,13 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
     char *blackBox = NULL;
     Int32 blackBoxLen = 0;
 
-    if (so == Lob_External)
+    if (so == Lob_External_File)
       {
         blackBox = data;
         blackBoxLen = (Int32)size;
       }
     lobDebugInfo("In ExLob::update",0,__LINE__,lobTrace_);
-    if ((so == Lob_File) || (so == Lob_External))
+    if ((so == Lob_File) || (so == Lob_External_File))
       {
         str_sprintf(logBuf,"Calling statSourceFile: source:%s, sourceLen: %Ld",
                data,sourceLen);
@@ -1213,7 +1317,7 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
 	if (err != LOB_OPER_OK)
 	  return err;
       }
-    if(so != Lob_External)
+    if(so != Lob_External_File)
       {
         if (sourceLen < 0 || sourceLen > lobMaxSize)
           {
@@ -1233,7 +1337,7 @@ Ex_Lob_Error ExLob::update(char *data, Int64 size, LobsSubOper so,Int64 headDesc
                                       &dataOffset, &sourceLen,
                                       &outDescPartnKey, &outDescSyskey, 
 				      0,
-				      0,lobTrace_);
+				      xnId,lobTrace_);
     
     if (clierr < 0 || clierr == 100) { // some error or EOD.
       
@@ -2435,11 +2539,13 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_InsertDesc:
-      err = lobPtr->writeDesc(sourceLen, source, subOperation, descNumOut, retOperLen, lobMaxSize, lobMaxChunkMemSize,lobGCLimit,handleIn,handleInLen,(char *)blackBox, &blackBoxLen,handleOut,handleOutLen,lobGlobals);
+      
+      err = lobPtr->writeDesc(sourceLen, source, subOperation, descNumOut, retOperLen, lobMaxSize, lobMaxChunkMemSize,lobGCLimit,handleIn,handleInLen,(char *)blackBox, &blackBoxLen,handleOut,handleOutLen,transId,lobGlobals);
       if (err != LOB_OPER_OK)
         {
           lobDebugInfo("writeDesc failed ",err,__LINE__,lobGlobals->lobTrace_);
         }
+        
       break;
 
     case Lob_InsertData:
@@ -2454,7 +2560,55 @@ Ex_Lob_Error ExLobsOper (
       err = lobPtr->writeDataSimple(source, sourceLen, subOperation, retOperLen,
 				    bufferSize , replication , blockSize);
       break;
+    case Lob_InsSel:
+      {
+        
+        ExLob *srcLobPtr;
+        Int16 flags;
+        Lng32  lobNum;
+        Int32 lobType;
+        Int64 uid, inDescSyskey, descPartnKey;
+        short schNameLen;
+        char schName[ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1];
+        char sourceHandle[LOB_HANDLE_LEN]  = {};
+        str_cpy_all(sourceHandle, source, sourceLen);
+        ExpLOBoper::extractFromLOBhandle(&flags, &lobType, &lobNum, &uid,  
+                                   &inDescSyskey, &descPartnKey,
+                                   &schNameLen, schName,
+                                   sourceHandle); 
+        char srcLobNameBuf[LOB_NAME_LEN];
+        char * srcLobName = 
+          ExpLOBoper::ExpGetLOBname(uid, lobNum, srcLobNameBuf, LOB_NAME_LEN);
+        lobMap_it it2;
+        it2 = lobMap->find(string(srcLobName));
 
+        if (it2 == lobMap->end())
+	{
+	  srcLobPtr = new (lobGlobals->getHeap())ExLob(lobGlobals->getHeap());
+	  if (srcLobPtr == NULL) 
+	    return LOB_ALLOC_ERROR;
+
+	  err = srcLobPtr->initialize(srcLobName, EX_LOB_RW, lobStorageLocation, storage, hdfsServer, hdfsPort, lobStorageLocation,bufferSize, replication, blockSize,lobMaxSize,lobGlobals);
+	  if (err != LOB_OPER_OK)
+            {
+              char buf[5000];
+              str_sprintf(buf,"Lob initialization failed;filename:%s;location:%s;hdfsserver:%s;hdfsPort:%d;lobMaxSize:%Ld",srcLobName,lobStorageLocation,hdfsServer,lobMaxSize);
+              lobDebugInfo(buf,err,__LINE__,lobGlobals->lobTrace_);
+              return err;
+            }
+
+	  lobMap->insert(pair<string, ExLob*>(string(srcLobName), srcLobPtr));
+	}
+      else	
+        srcLobPtr = it2->second;
+
+        err = lobPtr->insertSelect(srcLobPtr,handleIn, handleInLen, source, sourceLen, retOperLen, lobMaxSize, lobMaxChunkMemSize,lobGCLimit,(char *)blackBox, blackBoxLen,handleOut,handleOutLen,subOperation,transId, lobGlobals);
+        if (err != LOB_OPER_OK)
+          {
+            lobDebugInfo("insertSelect failed ",err,__LINE__,lobGlobals->lobTrace_);
+          }
+      }
+      break;
     case Lob_Read:
       if (storage == Lob_External_HDFS_File)   
         //Allocate storage to read the lob external file name from the 
@@ -2546,10 +2700,6 @@ Ex_Lob_Error ExLobsOper (
       if (lobPtr->hasNoOpenCursors()) {
 	lobGlobals->traceMessage("Lob_CloseFile",NULL,__LINE__);
 	err = lobPtr->closeFile();
-	it = lobMap->find(string(lobName));
-	lobMap->erase(it);
-	delete lobPtr;
-	lobPtr = NULL;
       }  
       break;
 
@@ -2572,9 +2722,9 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_Append:
-      if ((subOperation == Lob_Memory) ||(subOperation == Lob_Buffer) || (subOperation ==Lob_External))
+      if ((subOperation == Lob_Memory) ||(subOperation == Lob_Buffer) || (subOperation ==Lob_External_File))
         {
-          err = lobPtr->append(source, sourceLen, subOperation, descNumIn, retOperLen,lobMaxSize, lobMaxChunkMemSize,lobGCLimit,handleIn,handleInLen,handleOut,handleOutLen,lobGlobals);
+          err = lobPtr->append(source, sourceLen, subOperation, descNumIn, retOperLen,lobMaxSize, lobMaxChunkMemSize,lobGCLimit,handleIn,handleInLen,handleOut,handleOutLen,transId, lobGlobals);
           if (err != LOB_OPER_OK)
             {
               lobDebugInfo("append(Memory,Buffer) failed ",err,__LINE__,lobGlobals->lobTrace_);
@@ -2582,7 +2732,7 @@ Ex_Lob_Error ExLobsOper (
         }
       else if (subOperation == Lob_File)
         {
-          err = lobPtr->append(source, -1, subOperation, descNumIn, retOperLen,lobMaxSize, lobMaxChunkMemSize,lobGCLimit,handleIn,handleInLen,handleOut,handleOutLen,lobGlobals);
+          err = lobPtr->append(source, -1, subOperation, descNumIn, retOperLen,lobMaxSize, lobMaxChunkMemSize,lobGCLimit,handleIn,handleInLen,handleOut,handleOutLen,transId,lobGlobals);
           if (err != LOB_OPER_OK)
             {
               lobDebugInfo("append(File) failed ",err,__LINE__,lobGlobals->lobTrace_);
@@ -2593,9 +2743,9 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_Update:
-      if ((subOperation == Lob_Memory)||(subOperation == Lob_Buffer)||(subOperation ==Lob_External))
+      if ((subOperation == Lob_Memory)||(subOperation == Lob_Buffer)||(subOperation ==Lob_External_File))
         {
-          err = lobPtr->update(source, sourceLen, subOperation, descNumIn, retOperLen, lobMaxSize, lobMaxChunkMemSize,lobGCLimit,handleIn,handleInLen,handleOut,handleOutLen,lobGlobals);
+          err = lobPtr->update(source, sourceLen, subOperation, descNumIn, retOperLen, lobMaxSize, lobMaxChunkMemSize,lobGCLimit,handleIn,handleInLen,handleOut,handleOutLen,transId, lobGlobals);
           if (err != LOB_OPER_OK)
             {
               lobDebugInfo("update(Memory,Buffer) failed ",err,__LINE__,lobGlobals->lobTrace_);
@@ -2603,7 +2753,7 @@ Ex_Lob_Error ExLobsOper (
         }
       else if (subOperation == Lob_File)
         {
-          err = lobPtr->update(source, -1, subOperation,descNumIn, retOperLen,lobMaxSize, lobMaxChunkMemSize,lobGCLimit,handleIn,handleInLen,handleOut,handleOutLen,lobGlobals); 
+          err = lobPtr->update(source, -1, subOperation,descNumIn, retOperLen,lobMaxSize, lobMaxChunkMemSize,lobGCLimit,handleIn,handleInLen,handleOut,handleOutLen,transId,lobGlobals); 
           if (err != LOB_OPER_OK)
             {
               lobDebugInfo("update(Memory,Buffer) failed ",err,__LINE__,lobGlobals->lobTrace_);
@@ -3182,6 +3332,13 @@ ExLobGlobals::~ExLobGlobals()
            numWorkerThreads_--;
        }
     }
+
+    //Free the preOpenList AFTER the worker threads have left to avoid the 
+    //case where a slow worker thread is still processing a preOpen and 
+    //may access the preOpenList.
+    preOpenListLock_.lock();
+    preOpenList_.clear();
+    preOpenListLock_.unlock();
     // Free the post fetch bugf list AFTER the worker threads have left to 
     // avoid slow worker thread being stuck and master deallocating these 
     // buffers and not consuming the buffers which could cause a  lock.
