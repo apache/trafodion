@@ -204,7 +204,7 @@ int main(int argc, const char * argv[])
 	}
       cout << "LOB data length :" << lengthOfLob << endl;
       //extract lob data to buffer
-      cout << "Extracting lob data into file in chunks of 1000 ..." << endl;
+      cout << "Extracting lob data into file in chunks ..." << endl;
       retCode = extractLobToFileInChunks(cliGlob,lobHandle, filename, lengthOfLob,columnname,tablename);
       if (retcode)
 	{

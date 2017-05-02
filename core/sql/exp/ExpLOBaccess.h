@@ -67,15 +67,6 @@
 using namespace std;
 
 
-#define MAX_LOB_FILE_NAME_LEN 256
-#define MAX_HANDLE_IN_LEN 1024
-#define MAX_HANDLE_OUT_LEN 1024
-#define MAX_BLACK_BOX_LEN 2048
-#define LOB_DESC_HEADER_KEY 1
-#define NUM_WORKER_THREADS 2 
-// 2 threads at most, one to read and the other to pick up next read from preOpen
-
-#define LOB_CURSOR_PREFETCH_BYTES_MAX (1 << 27) // 128MB
 
 class ExLobGlobals;
 // This class defines the request used to construct the message to send over 
@@ -133,9 +124,9 @@ class ExLobRequest
     Int64 reqNum_;
     Int64 descNumIn_;
     Int64 descNumOut_;
-    char handleIn_[MAX_HANDLE_IN_LEN];
+    char handleIn_[LOB_HANDLE_LEN];
     Int64 handleInLen_;
-    char handleOut_[MAX_HANDLE_OUT_LEN];
+    char handleOut_[LOB_HANDLE_LEN];
     Int64 handleOutLen_;
     Int64 dataOffset_;
     LobsRequest type_;
@@ -413,7 +404,7 @@ class ExLob : public NABasicObject
                             int blocksize=0, Int64 lobMaxSize = 0, 
                             ExLobGlobals *lobGlobals = NULL);
 
-  Ex_Lob_Error writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOperation, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,Int64 lobGCLimit, char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
+  Ex_Lob_Error writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOperation, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,Int64 lobGCLimit, char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char * handleOut, Int32 &handleOutLen, Int64 xnId,void *lobGlobals);
     Ex_Lob_Error writeLobData(char *source, Int64 sourceLen, 
 			      LobsSubOper subOperation, 
 			      Int64 tgtOffset,Int64 &operLen, 
@@ -433,8 +424,9 @@ class ExLob : public NABasicObject
     Ex_Lob_Error deleteCursor(const char *cursorName, ExLobGlobals *lobGlobals);
   Ex_Lob_Error fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOffset, Int64 &outSize,NABoolean &isEOD,Int64 transId);
   Ex_Lob_Error insertData(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemSize,char *handleIn,Int32 handleInLen, char *blackBox, Int32 blackBoxLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
-  Ex_Lob_Error append(char *data, Int64 size, LobsSubOper so, Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemLen,Int64 lobGCLimit, char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
-  Ex_Lob_Error update(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemLen,Int64 lobGCLimit,char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, void *lobGlobals);
+  Ex_Lob_Error insertSelect(ExLob *srcLobPtr,char *handleIn,Int32 handleInLen, char *source, Int64 sourceLen, Int64 &operLen,Int64 lobMaxSize, Int64 lobMaxChunkMemLen,Int64 lobGCLimit, char *blackBox, Int32 blackBoxLen, char *handleOut, Int32 &handleOutLen,LobsSubOper so,Int64 xnId,void *lobGlobals);
+  Ex_Lob_Error append(char *data, Int64 size, LobsSubOper so, Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize, Int64 lobMaxChunkMemLen,Int64 lobGCLimit, char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, Int64 xnId,void *lobGlobals);
+  Ex_Lob_Error update(char *data, Int64 size, LobsSubOper so,Int64 headDescNum, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemLen,Int64 lobGCLimit,char *handleIn,Int32 handleInLen, char * handleOut, Int32 &handleOutLen, Int64 xnId,void *lobGlobals);
   Ex_Lob_Error readSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
   Ex_Lob_Error readHdfsSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
   Ex_Lob_Error readLocalSourceFile(char *srcfile, char *&fileData, Int32 &size, Int64 offset);
@@ -454,7 +446,7 @@ class ExLob : public NABasicObject
   Ex_Lob_Error readStats(char *buffer);
   Ex_Lob_Error initStats();
   
-  Ex_Lob_Error insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 handleInLen,  char *handleOut, Int32 &handleOutLen, char *blackBox, Int32 blackBoxLen,void *lobGlobals) ;
+  Ex_Lob_Error insertDesc(Int64 offset, Int64 size,  char *handleIn, Int32 handleInLen,  char *handleOut, Int32 &handleOutLen, char *blackBox, Int32 blackBoxLen,Int64 xnId,void *lobGlobals) ;
   
   Ex_Lob_Error lockDesc();
   Ex_Lob_Error unlockDesc();

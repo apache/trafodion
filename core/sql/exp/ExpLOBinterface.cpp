@@ -559,49 +559,66 @@ Lng32 ExpLOBInterfaceInsertSelect(void * exLobGlob,
 				  char * lobHdfsServer ,
 				  Lng32 lobHdfsPort ,
 				  char * tgtLobName,
+                                  LobsSubOper so,
 				  char * lobStorageLocation,
-				  
-				  Lng32 handleLen,
+                                  Int32 lobType,
+                                  Int64 xnId,
+				   Lng32 handleLen,
 				  char * lobHandle,
+                                  Int32 *outHandleLen,
+                                  char * outLobHandle,
+                                  char * lobData, 
+                                  Int64 lobLen,
+                                  char * blackBox,
+                                  Int64 blackBoxLen,
+                                  Int64 lobMaxSize,
+                                  Int64 lobMaxChunkMemSize ,
+                                  Int64 lobGCLimit ,
+                                  int    bufferSize ,
+                                  short  replication ,
+                                  int    blocksize
 				  
-				  Int64 &descSyskey,
-				  Int64 &lobLen,
-				  
-				  char * lobData, 
-				  
-				  char * srcLobName, 
-				  short srcDescSchNameLen,
-				  char * srcDescSchName,
-				  
-				  Int64 srcDescKey, 
-				  Int64 srcDescTS)
+				 )
 {
   Ex_Lob_Error err;
 
-  LobsSubOper lso = Lob_Foreign_Lob;
+  
   Ex_Lob_Error status;
   Int64 dummyParam=0;
   Int32 dummyParam2 = 0;
   Int64 cliError = -1;
-
+  LobsStorage ls = (LobsStorage)lobType;
+ 
   err = ExLobsOper(tgtLobName, 
 		   lobHandle, handleLen, 
-		   NULL, 0, // hdfs server/port
-                   NULL, dummyParam2, -1, descSyskey, lobLen,
-                   0, dummyParam, status, cliError, 
-		   lobStorageLocation, Lob_HDFS_File,
-		   lobData, lobLen, //strlen(srcLobData),
+		   lobHdfsServer, lobHdfsPort,
+                   outLobHandle, *outHandleLen,
+                   dummyParam, dummyParam,
+                   dummyParam,
+                   dummyParam, dummyParam,
+                   status,cliError,
+                   lobStorageLocation, ls, //Lob_HDFS_File,
+		   lobData, lobLen, 
 		   0,NULL,
-		   Lob_Insert,
-		   lso,
-                   1, 
+		   Lob_InsSel, 
+		   so,
+                   dummyParam,
 		   exLobGlob,
-		   0, NULL, 0
+		   xnId, 
+		   blackBox, blackBoxLen,
+		   lobMaxSize,
+		   lobMaxChunkMemSize,
+                   lobGCLimit,
+		   bufferSize,
+                   replication,
+                   blocksize
 		   );
-
-  if (err != LOB_OPER_OK)
+  if (err != LOB_OPER_OK) 
     return -err;
+    
 
+  
+  
   return 0;
 }
 
@@ -641,7 +658,7 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * exLobGlob,
   Ex_Lob_Error status;
   Int64 cliError = -1;
   Int64 srcLen = 0;
-  if((so == Lob_Memory) || (so== Lob_External))
+  if((so == Lob_Memory) || (so== Lob_External_File))
     srcLen = strlen(srcLobData);
   else if (so == Lob_Buffer)
     srcLen = tgtLobLen;
@@ -711,7 +728,7 @@ Lng32 ExpLOBInterfaceUpdate(void * exLobGlob,
   Ex_Lob_Error status;
   Int64 cliError = -1;
   Int64 sourceLen = 0;
-  if((so == Lob_Memory) || (so == Lob_External))
+  if((so == Lob_Memory) || (so == Lob_External_File))
     sourceLen = strlen(srcLobData);
   else if (so == Lob_Buffer)
     sourceLen = tgtLobLen;
@@ -813,7 +830,7 @@ Lng32 ExpLOBInterfaceSelect(void * exLobGlob,
 			    Lng32 lobType,
 			    char * lobHdfsServer,
 			    Lng32 lobHdfsPort,
-
+                          
 			    Lng32 handleLen,
 			    char * lobHandle,
 			    Int64 &requestTag,

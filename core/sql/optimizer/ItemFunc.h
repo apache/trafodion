@@ -2875,7 +2875,7 @@ public:
      hdfsPort_((Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT)),
      hdfsServer_( CmpCommon::getDefaultString(LOB_HDFS_SERVER))
    {
-     if ((obj == STRING_) || (obj == BUFFER_) || (obj == FILE_) )
+     if ((obj == STRING_) || (obj == BUFFER_) || (obj == FILE_) || (obj ==LOB_) )
        lobStorageType_ = Lob_HDFS_File;
      else if (obj == EXTERNAL_)
        lobStorageType_ = Lob_External_HDFS_File;

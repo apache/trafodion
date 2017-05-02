@@ -105,10 +105,34 @@ insert into t130var values (1,'var char 1'),(2,'var char 22222222222222222222222
 insert into t130lob2(c1,c2) select c1,c2 from t130var;
 select lobtostring(c2,100) from t130lob2;
 
+--insert select from a source lob column to a target varchar column.
+delete from t130var;
+insert into t130var select c1, lobtostring(c2,100) from t130lob2;
+delete from t130var;
+----negative case
+insert into t130var select c1,c2 from t130lob2;
+delete from t130var;
+delete from t130lob2;
+
 --test insert select from a source hive varchar column to lob
 delete from t130lob2;
 insert into t130lob2 select [first 10] d_date_sk,d_date_id from hive.hive.date_dim;
-select lobtostring(c2,40) from t130lob2;
+select lobtostring(c2,40) from t130lob2 order by c1;
+delete from t130lob2;
+
+
+--insert select from a source lob column to a target lob column
+delete from t130lob3;
+insert into t130lob2 values(1,stringtolob('inserted row11'));
+insert into t130lob2 values(2,stringtolob('inserted row12'));
+insert into t130lob2 values(3,stringtolob('inserted row13'));
+insert into t130lob3 select c1,c2,c2 from t130lob2;
+select c1, lobtostring(c2,100),lobtostring(c3,100) from t130lob3;
+delete from t130lob3;
+delete from t130lob2;
+
+
+
 
 --test values clause
 values((select * from t130lob1));
@@ -524,6 +548,8 @@ select * from table(lob stats(tlob130gt));
 ?section lob_external
 --test external lobs
 create table tlob130ext (c1 int not null, c2 blob, c3 clob, c4 blob storage 'external', primary key (c1));
+create table tlob130ext2 (c1 int not null, c2 blob, c3 clob, c4 blob storage 'external', primary key (c1));
+create table tlob130_not_external (c1 int not null , c2 blob, c3 blob, c4 blob, primary key (c1));
 insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///lobs/lob_input_a1.txt'),externaltolob('hdfs:///lobs/lob_input_a1.txt'));
 insert into tlob130ext values(2, stringtolob('second lob'), filetolob('hdfs:///lobs/lob_input_b1.txt'),externaltolob('hdfs:///lobs/lob_input_b1.txt'));
 insert into tlob130ext values(3, stringtolob('third lob'), filetolob('hdfs:///lobs/lob_input_c1.txt'),externaltolob('hdfs:///lobs/lob_input_c1.txt'));
@@ -557,6 +583,13 @@ get lob stats for table tlob130ext;
 select * from table(lob stats(tlob130ext));
 sh clitestdriver 2 < TEST130_argfile2 2>&1 | tee -a LOG130;
 sh cat lobc4ext.txt |tee -a LOG130;
+
+--insert select from a source external lob column to a target external lob column
+select lobtostring(c2,50),lobtostring(c3,50),lobtostring(c3,50) from tlob130ext;
+insert into tlob130ext2 select * from tlob130ext;
+select lobtostring(c2,50),lobtostring(c3,50),lobtostring(c3,50) from tlob130ext2;
+----negative test
+insert into tlob130_not_external select * from tlob130ext; 
 
 ?section update_lob_handle
 -- test lob update via "update lob" command
@@ -637,6 +670,7 @@ drop table tlob130bt;
 drop table tlob130txt2;
 drop table tlob130bin2; 
 drop table tlob130ext;
+drop table tlob130ext2;
 sh rm TMP130;
 sh rm tlob130txt2;
 sh rm lobc2out.jpg;
@@ -645,6 +679,7 @@ sh rm TEST130_argfile*;
 drop table tlob130gc;
 drop table tlob130gt;
 drop table tlob130t5;
+drop table tlob130_not_external;
 drop external table if exists date_dim for hive.hive.date_dim;
 drop schema trafodion.lob130 cascade;
 

@@ -155,9 +155,9 @@ Lng32 ExpLOBoper::createLOB(void * exLobGlob, void *currContext, void * lobHeap,
 			    char * lobLoc,Int32 hdfsPort,char *hdfsServer,
 			    Int64 uid, Lng32 num, Int64 lobMaxSize )
 {
-  char buf[100];
+  char buf[LOB_NAME_LEN];
   
-  char * lobName = ExpGetLOBname(uid, num, buf, 100);
+  char * lobName = ExpGetLOBname(uid, num, buf, LOB_NAME_LEN);
   if (lobName == NULL)
     return -1;
 
@@ -279,9 +279,9 @@ Lng32 ExpLOBoper::dropLOB(void * exLobGlob, void * lobHeap, void *currContext,
 			  char * lobLoc,Int32 hdfsPort, char *hdfsServer,
 			  Int64 uid, Lng32 num)
 {
-  char buf[101];
+  char buf[LOB_NAME_LEN];
   
-  char * lobName = ExpGetLOBname(uid, num, buf, 100);
+  char * lobName = ExpGetLOBname(uid, num, buf, LOB_NAME_LEN);
   if (lobName == NULL)
     return -1;
 
@@ -307,9 +307,9 @@ Lng32 ExpLOBoper::purgedataLOB(void * exLobGlob, char * lobLoc,
                                
 			       Int64 uid, Lng32 num)
 {
-  char buf[100];
+  char buf[LOB_NAME_LEN];
   
-  char * lobName = ExpGetLOBname(uid, num, buf, 100);
+  char * lobName = ExpGetLOBname(uid, num, buf, LOB_NAME_LEN);
   if (lobName == NULL)
     return -1;
 
@@ -706,8 +706,8 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
 		      (ExeErrorCode)(8434));
       return ex_expr::EXPR_ERROR;
     }
-  char tgtLobNameBuf[100];
-  char * tgtLobName = ExpGetLOBname(objectUID_, lobNum(), tgtLobNameBuf, 100);
+  char tgtLobNameBuf[LOB_NAME_LEN];
+  char * tgtLobName = ExpGetLOBname(objectUID_, lobNum(), tgtLobNameBuf, LOB_NAME_LEN);
 
   if (tgtLobName == NULL)
     return ex_expr::EXPR_ERROR;
@@ -743,18 +743,15 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   else if (fromString() || fromLoad())
     so = Lob_Memory;
   else if (fromLob())
-    so = Lob_Foreign_Lob;
+    so = Lob_Lob;
+  else if (fromLobExternal())
+    so = Lob_External_Lob;
   else if (fromBuffer())
     so = Lob_Buffer;
   else if (fromExternal())
-    so = Lob_External;
+    so = Lob_External_File;
   else if (fromEmpty())
     {
-      /* str_cpy_all(result, lobHandle, handleLen);
-
-       getOperand(0)->setVarLength(handleLen, op_data[-MAX_OPERANDS]);
-      //we can return now - nothing to insert into the descriptors
-      return ex_expr::EXPR_OK; */
       so = Lob_Memory;
     }
 
@@ -784,7 +781,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   // until SQL_EXEC_LOBcliInterface is changed to allow for unlimited
   // black box sizes, we have to prevent over-sized file names from
   // being stored
-  if ((so == Lob_External) && (lobLen > MAX_LOB_FILE_NAME_LEN))
+  if ((so == Lob_External_File) && (lobLen > MAX_LOB_FILE_NAME_LEN))
     {
       ExRaiseSqlError(h, diagsArea, 
 		      (ExeErrorCode)(8557));
@@ -803,7 +800,7 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   char * lobData = NULL;
   lobData= new(h) char[lobLen];
   //send lobData only if it's a lob_file operation
-  if ((so == Lob_File) || (so == Lob_External))
+  if ((so == Lob_File) || (so == Lob_External_File) || (so == Lob_Lob) || (so == Lob_External_Lob))
     {
       str_cpy_and_null(lobData,op_data[1],lobLen,'\0',' ',TRUE);
       
@@ -828,6 +825,21 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   else
     lobMaxSize = getLobMaxSize();
     
+  if ((so == Lob_Lob) || (so == Lob_External_Lob))
+    {
+      
+      rc = ExpLOBInterfaceInsertSelect
+        (getExeGlobals()->getExLobGlobal(), 
+         getLobHdfsServer(), getLobHdfsPort(),
+         tgtLobName, 
+         so,
+         lobStorageLocation(),lobStorageType(),
+         getExeGlobals()->lobGlobals()->xnId(),
+         handleLen, lobHandle,  &outHandleLen_, outLobHandle_,            
+         lobData, lobLen, blackBox_, blackBoxLen_,lobMaxSize, getLobMaxChunkMemSize(),getLobGCLimit()); 
+        
+    }
+else
   rc = ExpLOBInterfaceInsert
     (getExeGlobals()->getExLobGlobal(), 
      tgtLobName, 
@@ -917,8 +929,8 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 		       handle);
   
    // get the lob name where data need to be inserted
-  char tgtLobNameBuf[100];
-  char * tgtLobName = ExpGetLOBname(uid, lobNum, tgtLobNameBuf, 100);
+  char tgtLobNameBuf[LOB_NAME_LEN];
+  char * tgtLobName = ExpGetLOBname(uid, lobNum, tgtLobNameBuf, LOB_NAME_LEN);
 
   if (tgtLobName == NULL)
     return ex_expr::EXPR_ERROR;
@@ -931,9 +943,11 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
         lobLen = getOperand(1)->getLength(op_data[1]- getOperand(1)->getVCIndicatorLength());  
     }
   char * lobData = NULL;
-  if (fromExternal())
+  if (fromExternal() || fromLob() || fromLobExternal())
     {
       //no need to insert any data. All data resides in the external file
+      // for external LOB and it has already been read/inserted during 
+      // ::insertDesc for insert from another  LOB
       return ex_expr::EXPR_OK;
     }
   if(fromFile())
@@ -965,11 +979,11 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
   else if (fromString() || fromLoad())
     so = Lob_Memory;
   else if (fromLob())
-    so = Lob_Foreign_Lob;
+    so = Lob_Lob;
   else if(fromBuffer())
     so = Lob_Buffer;
   else if (fromExternal())
-    so = Lob_External;
+    so = Lob_External_File;
 
  
   Lng32 waitedOp = 0;
@@ -986,26 +1000,7 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 
   blackBoxLen_ = 0;
 
-  if (fromLob())
-    {
-      Int64 srcDescKey = -1;
-      Int64 srcDescTS = -1;
-      char srcLobNameBuf[100];
-      char * srcLobName = NULL;
-      short srcSchNameLen = 0;
-      char  srcSchName[500];
-      extractFromLOBhandle(NULL, &lobType, &lobNum, &uid,
-			   &srcDescKey, &srcDescTS, 
-			   &srcSchNameLen, srcSchName,
-			   op_data[1]);
-      
-      // get the lob name where data will be read from
-      srcLobName = ExpGetLOBname(uid, lobNum, srcLobNameBuf, 100);
-      if (srcLobName == NULL)
-	return ex_expr::EXPR_ERROR;
-    }
-  else
-    {
+  
       rc = ExpLOBInterfaceInsert(getExeGlobals()->getExLobGlobal(),
 				 tgtLobName, 
 				 lobStorageLocation(),
@@ -1029,7 +1024,7 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 				 lobLen,getLobMaxSize(),
                                  getLobMaxChunkMemSize(),
                                  getLobGCLimit());
-    }
+    
 
   if (rc == LOB_ACCESS_PREEMPT)
     {
@@ -1117,8 +1112,8 @@ ex_expr::exp_return_type ExpLOBdelete::eval(char *op_data[],
   Lng32 handleLen = getOperand(1)->getLength(op_data[-MAX_OPERANDS+1]);
 
   // get the lob name where data need to be deleted
-  char lobNameBuf[100];
-  char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, 100);
+  char lobNameBuf[LOB_NAME_LEN];
+  char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, LOB_NAME_LEN);
   if (lobName == NULL)
     return ex_expr::EXPR_ERROR;
 
@@ -1299,18 +1294,18 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 
   
   // get the lob name where data need to be updated
-  char tgtLobNameBuf[100];
-  char * tgtLobName = ExpGetLOBname(sUid, sLobNum, tgtLobNameBuf, 100);
+  char tgtLobNameBuf[LOB_NAME_LEN];
+  char * tgtLobName = ExpGetLOBname(sUid, sLobNum, tgtLobNameBuf, LOB_NAME_LEN);
 
   if (tgtLobName == NULL)
     return ex_expr::EXPR_ERROR;
 
-  char fromLobNameBuf[100];
+  char fromLobNameBuf[LOB_NAME_LEN];
   char * fromLobName = NULL;
   Int64 fromDescKey = 0;
   Int64 fromDescTS = 0;
   short fromSchNameLen = 0;
-  char  fromSchName[500];
+  char  fromSchName[ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1];
   if (0) // TBD. fromLob())
     {
       Lng32 fromLobType;
@@ -1323,7 +1318,7 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 			   op_data[1]);
 
       // get the lob name where data will be read from
-      fromLobName = ExpGetLOBname(fromLobUid, fromLobNum, fromLobNameBuf, 100);
+      fromLobName = ExpGetLOBname(fromLobUid, fromLobNum, fromLobNameBuf, LOB_NAME_LEN);
       if (fromLobName == NULL)
 	return ex_expr::EXPR_ERROR;
     }
@@ -1334,11 +1329,11 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
   else if (fromString())
     so = Lob_Memory;
   else if (fromLob())
-    so = Lob_Foreign_Lob;
+    so = Lob_Lob;
   else if (fromBuffer())
     so= Lob_Buffer;
   else if (fromExternal())
-    so = Lob_External;
+    so = Lob_External_File;
  
    
  
@@ -1568,8 +1563,8 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
 			   &schNameLen, schName,
 			   lobHandle);
   // get the lob name where data need to be inserted
-  char lobNameBuf[100];
-  char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, 100);
+  char lobNameBuf[LOB_NAME_LEN];
+  char * lobName = ExpGetLOBname(uid, lobNum, lobNameBuf, LOB_NAME_LEN);
       
   if (descKey == -1) //This is an empty_blob/clob
     {

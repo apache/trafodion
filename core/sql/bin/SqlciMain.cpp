@@ -319,10 +319,7 @@ Int32 main (Int32 argc, char *argv[])
 
   // setup log4cxx, need to be done here so initLog4cxx can have access to
   // process information since it is needed to compose the log name
-  // the log4cxx log name for this master and all its subordinates will be
-  // based on this process' node number and its pid
-  QRLogger::instance().setModule(QRLogger::QRL_MXEXE);
-  QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
+  QRLogger::initLog4cxx(QRLogger::QRL_MXEXE);
 
   // run it -- this is where the action is!
   if (in_filename || input_string)

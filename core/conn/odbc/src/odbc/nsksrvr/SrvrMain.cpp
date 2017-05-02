@@ -246,8 +246,20 @@ catch(SB_Fatal_Excep sbfe)
 	myProcName = proc_info.process_name;
 
 	char logNameSuffix[32];
-	sprintf( logNameSuffix, "_%d_%d.log", myNid, myPid );
-	CommonLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config", logNameSuffix);
+        const char *lv_configFileName = "log4cxx.trafodion.sql.config";
+        bool singleSqlLogFile = TRUE;
+        if (getenv("TRAF_MULTIPLE_SQL_LOG_FILE"))
+           singleSqlLogFile = FALSE;
+        if (singleSqlLogFile) {
+	   sprintf( logNameSuffix, "_%d.log", myNid );
+           lv_configFileName = "log4cxx.trafodion.sql.config";
+        }
+        else 
+        {
+	   sprintf( logNameSuffix, "_%d_%d.log", myNid, myPid );
+           lv_configFileName = "log4cxx.trafodion.masterexe.config";
+        }
+	CommonLogger::instance().initLog4cxx(lv_configFileName, logNameSuffix);
 
     if(retcode == FALSE )
    {

@@ -2882,7 +2882,12 @@ short LOBinsert::codeGen(Generator * generator)
   else if (obj_ == LOBoper::LOAD_)
     li->setFromLoad(TRUE);
   else if (obj_ == LOBoper::LOB_)
-    li->setFromLob(TRUE);
+    {
+      if (lobStorageType() != Lob_External_HDFS_File)
+        li->setFromLob(TRUE);
+      else
+        li->setFromLobExternal(TRUE);
+    }
   else if (obj_ == LOBoper::EXTERNAL_)
     li->setFromExternal(TRUE);
   else if (obj_ ==LOBoper::BUFFER_)

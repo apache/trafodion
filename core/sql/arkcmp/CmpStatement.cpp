@@ -329,7 +329,8 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
 					    NABoolean &odbcProcess,
 					    NABoolean &noTextCache,
 					    NABoolean &aqrPrepare,
-					    NABoolean &standaloneQuery)
+					    NABoolean &standaloneQuery,
+					    NABoolean &doNotCachePlan)
 {
   char * catSchStr = NULL;
   cmpInfo->getUnpackedFields(sqlStr, catSchStr, recompControlInfo);
@@ -341,6 +342,7 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
   noTextCache = FALSE;
   aqrPrepare  = FALSE;
   standaloneQuery = FALSE;
+  doNotCachePlan = FALSE;
 
   if (!sqlStr)
     {
@@ -360,6 +362,7 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
   noTextCache = cmpInfo->noTextCache();
   aqrPrepare  = cmpInfo->aqrPrepare();
   standaloneQuery = cmpInfo->standaloneQuery();
+  doNotCachePlan = cmpInfo->doNotCachePlan();
 
   if (recompControlInfo)
     {
@@ -425,6 +428,7 @@ CmpStatement::process (const CmpMessageSQLText& sqltext)
   NABoolean noTextCache;
   NABoolean aqrPrepare;
   NABoolean standaloneQuery;
+  NABoolean doNotCachePlan;
   if (processRecvdCmpCompileInfo(this,
 				 sqltext,
   				 sqltext.getCmpCompileInfo(),
@@ -439,7 +443,8 @@ CmpStatement::process (const CmpMessageSQLText& sqltext)
 				 odbcProcess,
 				 noTextCache,
 				 aqrPrepare,
-				 standaloneQuery))
+				 standaloneQuery,
+				 doNotCachePlan))
     return CmpStatement_ERROR;
 
   reply_ = new(outHeap_) CmpMessageReplyCode( outHeap_, sqltext.id(), 0, 0, outHeap_);
@@ -499,7 +504,7 @@ CmpStatement::process (const CmpMessageSQLText& sqltext)
     cmpmain.sqlcomp(qText, 0, 
 		    &(reply_->data()), &(reply_->size()),
 		    reply_->outHeap(), CmpMain::END, 
-		    &fragmentDir, typ);
+		    &fragmentDir, typ, !doNotCachePlan);
   }
   catch (...)
   {
@@ -623,6 +628,7 @@ CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
   NABoolean noTextCache;
   NABoolean aqrPrepare;
   NABoolean standaloneQuery;
+  NABoolean doNotCachePlan;
   if (processRecvdCmpCompileInfo(this,
 				 compilestmt,
   				 compilestmt.getCmpCompileInfo(),
@@ -637,7 +643,8 @@ CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
 				 odbcProcess,
 				 noTextCache,
 				 aqrPrepare,
-				 standaloneQuery))
+				 standaloneQuery,
+				 doNotCachePlan))
     return CmpStatement_ERROR;
 
   reply_ =
@@ -758,6 +765,7 @@ CmpStatement::process (const CmpMessageDDL& statement)
   NABoolean noTextCache;
   NABoolean aqrPrepare;
   NABoolean standaloneQuery;
+  NABoolean doNotCachePlan;
   isDDL_ = TRUE;
 
   if (processRecvdCmpCompileInfo(this,
@@ -774,7 +782,8 @@ CmpStatement::process (const CmpMessageDDL& statement)
 				 odbcProcess,
 				 noTextCache,
 				 aqrPrepare,
-				 standaloneQuery))
+				 standaloneQuery,
+				 doNotCachePlan))
     return CmpStatement_ERROR;
 
   CmpCommon::context()->sqlSession()->setParentQid(
@@ -1056,6 +1065,7 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
   NABoolean noTextCache;
   NABoolean aqrPrepare;
   NABoolean standaloneQuery;
+  NABoolean doNotCachePlan;
   isDDL_ = TRUE;
 
   if (processRecvdCmpCompileInfo(NULL,
@@ -1072,7 +1082,8 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
 				 odbcProcess,
 				 noTextCache,
 				 aqrPrepare,
-				 standaloneQuery))
+				 standaloneQuery,
+				 doNotCachePlan))
     return CmpStatement_ERROR;
   CmpCommon::context()->sqlSession()->setParentQid(statement.getParentQid());
 
