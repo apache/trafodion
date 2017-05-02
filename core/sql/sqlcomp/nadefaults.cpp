@@ -2093,7 +2093,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DD_____(LOB_STORAGE_FILE_DIR,                 "/lobs"), 
 
   // storage types defined in exp/ExpLOBenum.h. 
-  // Default is hdfs_file (value = 1)
+  // Default is hdfs_file (value = 2)
   DDint__(LOB_STORAGE_TYPE,                     "2"),
 
   //New default size for buffer size for local node

@@ -45,7 +45,6 @@
 #include "exp_clause.h"
 #include "ExpLOBenums.h"
 
-#define LOB_HANDLE_LEN 1024
 
 class ExLobInMemoryDescChunksEntry;
 ////////////////////////////////
@@ -384,16 +383,16 @@ protected:
   char outLobHandle_[LOB_HANDLE_LEN];
   Int32 outHandleLen_;
 
-  char blackBox_[1024];
+  char blackBox_[MAX_BLACK_BOX_LEN];
   Int64 blackBoxLen_;
 
-  char lobStorageLocation_[1024];
+  char lobStorageLocation_[MAX_LOB_FILE_NAME_LEN];
 
-  char lobHdfsServer_[512];
+  char lobHdfsServer_[256];
   Lng32 lobHdfsPort_;
 
   short descSchNameLen_;
-  char  descSchName_[510];
+  char  descSchName_[ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1];
   Int64 lobSize_;
   Int64 lobMaxSize_;
   Int64 lobMaxChunkMemSize_;
@@ -488,6 +487,15 @@ class ExpLOBiud : public ExpLOBoper {
   {
     (v) ? liudFlags_ |= FROM_LOB: liudFlags_ &= ~FROM_LOB;
   };
+  NA_EIDPROC NABoolean fromLobExternal()
+  {
+    return ((liudFlags_ & FROM_LOB_EXTERNAL) != 0);
+  };
+
+  NA_EIDPROC inline void setFromLobExternal(NABoolean v)
+  {
+    (v) ? liudFlags_ |= FROM_LOB_EXTERNAL: liudFlags_ &= ~FROM_LOB_EXTERNAL;
+  };
 
   NA_EIDPROC NABoolean fromExternal()
   {
@@ -512,7 +520,8 @@ class ExpLOBiud : public ExpLOBoper {
     FROM_LOB           = 0x0010,
     FROM_EXTERNAL      = 0x0020,
     FROM_BUFFER        = 0x0040,
-    FROM_EMPTY         = 0x0080
+    FROM_EMPTY         = 0x0080,
+    FROM_LOB_EXTERNAL  = 0x0100
   };
 
   Lng32 liudFlags_;
