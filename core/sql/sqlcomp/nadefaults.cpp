@@ -1956,7 +1956,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HIVE_DEFAULT_CHARSET,            (char *)SQLCHARSETSTRING_UTF8),
   DD_____(HIVE_DEFAULT_SCHEMA,                  "HIVE"),
   DD_____(HIVE_FILE_CHARSET,                    ""),
-  DD_____(HIVE_FILE_NAME,     "/hive/tpcds/customer/customer.dat" ),
+  DD_____(HIVE_FILE_NAME,     "/user/trafodion/hive/tpcds/customer/customer.dat" ),
   DD_____(HIVE_HDFS_STATS_LOG_FILE,             ""),
   DDui___(HIVE_INSERT_ERROR_MODE,               "1"),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
@@ -2090,7 +2090,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // (unused)default size is 32000. Change this to extract more data into memory.
   DDui___(LOB_OUTPUT_SIZE,                         "32000"),
 
-  DD_____(LOB_STORAGE_FILE_DIR,                 "/lobs"), 
+  DD_____(LOB_STORAGE_FILE_DIR,                 "/user/trafodion/lobs"), 
 
   // storage types defined in exp/ExpLOBenum.h. 
   // Default is hdfs_file (value = 1)
@@ -3341,7 +3341,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_CONTINUE_ON_ERROR,          "OFF"),
   DD_____(TRAF_LOAD_ERROR_COUNT_ID,             "" ),
   DD_____(TRAF_LOAD_ERROR_COUNT_TABLE,          "ERRORCOUNTER" ),
-  DD_____(TRAF_LOAD_ERROR_LOGGING_LOCATION,     "/bulkload/logs" ),
+  DD_____(TRAF_LOAD_ERROR_LOGGING_LOCATION,     "/user/trafodion/bulkload/logs" ),
   DDint__(TRAF_LOAD_FLUSH_SIZE_IN_KB,           "1024"),
   DDkwd__(TRAF_LOAD_FORCE_CIF,                  "ON"),
   DDkwd__(TRAF_LOAD_LOG_ERROR_ROWS,             "OFF"),
@@ -3356,7 +3356,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   //need add code to check if folder exists or not. if not issue an error and ask
   //user to create it
-  DD_____(TRAF_LOAD_PREP_TMP_LOCATION,                 "/bulkload/" ),
+  DD_____(TRAF_LOAD_PREP_TMP_LOCATION,                 "/user/trafodion/bulkload/" ),
   DDkwd__(TRAF_LOAD_TAKE_SNAPSHOT ,                    "OFF"),
   DDkwd__(TRAF_LOAD_USE_FOR_INDEXES,   "ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_STATS,     "OFF"),
@@ -3378,7 +3378,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_READ_OBJECT_DESC,                       "OFF"),   
 
   DDkwd__(TRAF_RELOAD_NATABLE_CACHE,                   "OFF"),
-  DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/sample/"),
+  DD_____(TRAF_SAMPLE_TABLE_LOCATION,                  "/user/trafodion/sample/"),
   DDint__(TRAF_SEQUENCE_CACHE_SIZE,        "-1"),
 
   DDkwd__(TRAF_SIMILARITY_CHECK,			"ROOT"),
@@ -3404,7 +3404,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   //timeout before we give up when trying to create the snapshot scanner
   DDint__(TRAF_TABLE_SNAPSHOT_SCAN_TIMEOUT,            "6000"),
   //location for temporary links and files produced by snapshot scan
-  DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION,       "/bulkload/"),
+  DD_____(TRAF_TABLE_SNAPSHOT_SCAN_TMP_LOCATION,       "/user/trafodion/bulkload/"),
 
   DDkwd__(TRAF_TINYINT_INPUT_PARAMS,                   "OFF"),
   DDkwd__(TRAF_TINYINT_RETURN_VALUES,                  "OFF"),

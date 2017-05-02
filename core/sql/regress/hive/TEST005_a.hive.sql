@@ -42,7 +42,7 @@ create external table customer_ddl
     c_last_review_date        string
 )
 row format delimited fields terminated by '|'
-location '/user/hive/exttables/customer_ddl';
+location '/user/trafodion/hive/exttables/customer_ddl';
 
 drop table customer_temp;
 create external table customer_temp
@@ -67,7 +67,7 @@ create external table customer_temp
     c_last_review_date        string
 )
 row format delimited fields terminated by '|'
-location '/user/hive/exttables/customer_temp';
+location '/user/trafodion/hive/exttables/customer_temp';
 
 drop table customer_bp;
 create table customer_bp
@@ -104,7 +104,7 @@ create external table tbl_utf8
     translator   string
 )
 row format delimited fields terminated by '|'
-location '/user/hive/exttables/tbl_utf8';
+location '/user/trafodion/hive/exttables/tbl_utf8';
 
 drop table tbl_utf8_temp;
 create table tbl_utf8_temp
@@ -145,7 +145,7 @@ create external table tbl_type
      d30         decimal(30)
 )
 row format delimited fields terminated by '|'
-location '/user/hive/exttables/tbl_type';
+location '/user/trafodion/hive/exttables/tbl_type';
 
 drop table tbl_type_temp;
 create table tbl_type_temp
@@ -174,7 +174,7 @@ create external table tbl_gbk
     c2           string
 )
 row format delimited fields terminated by '\t'
-location '/user/hive/exttables/tbl_gbk';
+location '/user/trafodion/hive/exttables/tbl_gbk';
 
 drop table tbl_dos;
 CREATE  external TABLE  tbl_dos(
@@ -183,7 +183,7 @@ CREATE  external TABLE  tbl_dos(
    c3  int,
    c4  string)
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/tbl_dos'
+location '/user/trafodion/hive/exttables/tbl_dos'
 ;
 
 drop table tbl_dos_num;
@@ -191,7 +191,7 @@ CREATE  external TABLE  tbl_dos_num(
    c1  int,
    c2  int)
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/tbl_dos_num'
+location '/user/trafodion/hive/exttables/tbl_dos_num'
 ;
 
 drop table tbl_bad;
@@ -208,7 +208,7 @@ c8 tinyint
 ROW FORMAT DELIMITED
   FIELDS TERMINATED BY '|'
 LOCATION
-'/user/hive/exttables/tbl_bad';
+'/user/trafodion/hive/exttables/tbl_bad';
 
 drop table thive_insert_smallint;
 create table thive_insert_smallint (a smallint);

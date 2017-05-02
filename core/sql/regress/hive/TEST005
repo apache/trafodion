@@ -26,33 +26,33 @@
 --
 -- @@@ END COPYRIGHT @@@
 
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/customer_ddl;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/customer_temp;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_utf8;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_type;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_gbk;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_dos;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_dos_num;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/tbl_bad;
+sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/customer_ddl;
+sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/customer_temp;
+sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/tbl_utf8;
+sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/tbl_type;
+sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/tbl_gbk;
+sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/tbl_dos;
+sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/tbl_dos_num;
+sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/tbl_bad;
 --empty folders
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/customer_ddl/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/customer_temp/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_utf8/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_type/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_gbk/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_dos/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_dos_num/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/tbl_bad/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/customer_ddl/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/customer_temp/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/tbl_utf8/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/tbl_type/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/tbl_gbk/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/tbl_dos/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/tbl_dos_num/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/tbl_bad/*;
 
 --- setup Hive tables
 sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_a.hive.sql;
 
-sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_utf8.data /user/hive/exttables/tbl_utf8;
-sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_type.data /user/hive/exttables/tbl_type;
-sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_gbk.data /user/hive/exttables/tbl_gbk;
-sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_dos.data /user/hive/exttables/tbl_dos;
-sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_dos_numeric.data /user/hive/exttables/tbl_dos_num;
-sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_bad.data /user/hive/exttables/tbl_bad;
+sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_utf8.data /user/trafodion/hive/exttables/tbl_utf8;
+sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_type.data /user/trafodion/hive/exttables/tbl_type;
+sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_gbk.data /user/trafodion/hive/exttables/tbl_gbk;
+sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_dos.data /user/trafodion/hive/exttables/tbl_dos;
+sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_dos_numeric.data /user/trafodion/hive/exttables/tbl_dos_num;
+sh regrhadoop.ksh fs -put $REGRTSTDIR/tbl_bad.data /user/trafodion/hive/exttables/tbl_bad;
 
 log LOG005 clear;
 
@@ -155,7 +155,7 @@ select * from hiveregr5.newtable2;
 -- add a second partition to customer_bp
 sh regrhive.ksh -v -f $REGRTSTDIR/TEST005_c.hive.sql;
 -- add more files to customer_ddl
-sh regrhadoop.ksh dfs -cp /user/hive/exttables/customer_temp/* /user/hive/exttables/customer_ddl;
+sh regrhadoop.ksh dfs -cp /user/trafodion/hive/exttables/customer_temp/* /user/trafodion/hive/exttables/customer_ddl;
 
 -- no query cache hit, but NATable cache hit
 prepare s3 from 
@@ -266,7 +266,7 @@ select count(*) from trafodion.seabase.traf_tbl_bad;
 delete from trafodion.seabase.traf_tbl_bad ;
 load with log error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 select count(*) from trafodion.seabase.traf_tbl_bad;
-load with log error rows to '/bulkload/logs/TEST005' into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
+load with log error rows to '/user/trafodion/bulkload/logs/TEST005' into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
 select count(*) from trafodion.seabase.traf_tbl_bad;
 delete from trafodion.seabase.traf_tbl_bad ;
 load with stop after 3 error rows into trafodion.seabase.traf_tbl_bad select * from tbl_bad;
