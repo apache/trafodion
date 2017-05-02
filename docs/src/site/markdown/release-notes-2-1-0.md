@@ -130,7 +130,7 @@ Build instructions are available in the [Trafodion Contributor Guide](https://cw
 Integration with Ambari cluster manager ambari interface/integration. The Ambari integration provides support for Hortonworks Hadoop distributions, while the command-line Trafodion Installer supports Cloudera and Hortonworks Hadoop distributions, and for select vanilla Hadoop installations.
 * Python Installer ([TRAFODION-1839](https://issues.apache.org/jira/browse/TRAFODION-1839))<br/>
 Trafodion Installer Evolution The command-line installer has been replaced for the 2.1.0 release. Written in python, it replaces the legacy bash-script installer. The bash command-line installer is deprecated as of 2.1.0, but is still provided, just in case you experience any problems with the new installer. If so, please report those problems to the project team, since the legacy installer will soon be obsoleted.
-* Trafodion Configuration File ([TRAFODION-2306](https://issues.apache.org/jira/browse/TRAFODION-2306))<br/>  
+* Trafodion Configuration File ([TRAFODION-2306](https://issues.apache.org/jira/browse/TRAFODION-2306))<br/>
 Introducing a configuration file traf-site.xml specific to Trafodion similar to hbase configuration file hbase-site.xml.  This configuration file extends the properties inherited from the standard hbase-site.xml.
 * The environment variable MY_SQROOT has been renamed to TRAF_HOME.
 
