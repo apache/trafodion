@@ -140,7 +140,7 @@ This release contains fixes for 300+ JIRAs. Here is a [list of resolved JIRAs in
 
 ## Documentation Updates
 
-Several updates have been made to the SQL Reference Manual to reflect the new functions added in 2.1. Some functions have not been documented yet but have JIRAs outstading and will be completed by the next release. Provisioning Guide has been updated to reflect instructions for using hte new Ambari Installer or the python installation script. 
+Several updates have been made to the SQL Reference Manual to reflect the new functions added in 2.1. Some functions have not been documented yet but have JIRAs outstanding and will be completed by the next release. Provisioning Guide has been updated to reflect instructions for using hte new Ambari Installer or the python installation script. 
 
 ## Supported Platforms
 
