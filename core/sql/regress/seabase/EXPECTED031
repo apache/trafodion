@@ -416,13 +416,86 @@ Z            Z            (EXPR)  (EXPR)
 
 --- 7 row(s) selected.
 >>
+>>process hive statement 'drop table t031hive';
+
+--- SQL operation complete.
+>>process hive statement 'create table t031hive(z int, a string, b string)';
+
+--- SQL operation complete.
+>>
+>>-- really large columns
+>>drop table if exists t031t10;
+
+--- SQL operation complete.
+>>
+>>-- should fail, exceeds max
+>>create table t031t10 (a varchar(20485760));
+
+*** ERROR[4247] Specified size in bytes (20485760) exceeds the maximum size allowed (1000000) for column A.
+
+--- SQL operation failed with errors.
+>>cqd traf_max_character_col_length_override 'ON';
+
+--- SQL operation complete.
+>>cqd traf_max_character_col_length '25000000';
+
+--- SQL operation complete.
+>>create table t031t10 (a varchar(20485760));
+
+--- SQL operation complete.
+>>invoke t031t10;
+
+-- Definition of Trafodion table TRAFODION.SCH.T031T10
+-- Definition current  Wed Apr 19 23:24:34 2017
+
+  (
+    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A                                VARCHAR(20485760) CHARACTER SET ISO88591
+      COLLATE DEFAULT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>cqd traf_max_character_col_length_override 'OFF';
+
+--- SQL operation complete.
+>>
+>>-- should fail, exceeds max
+>>drop table if exists t031t11;
+
+--- SQL operation complete.
+>>create table t031t11 (a varchar(20485760));
+
+*** ERROR[4247] Specified size in bytes (20485760) exceeds the maximum size allowed (16777216) for column A.
+
+--- SQL operation failed with errors.
+>>create table t031t11 (a varchar(10485760));
+
+--- SQL operation complete.
+>>prepare s from select repeat('1234567890', 1048576 ) from dual;
+
+--- SQL command prepared.
+>>
+>>-- should fail, exceeds max
+>>prepare s from select repeat('11234567890', 1648576 ) from dual;
+
+*** ERROR[4129] The character-typed result of the function REPEAT is longer than the maximum supported size.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
+>>-- should fail, exceeds max. TBD.
+>>prepare s from select ' ' || repeat('1234567890', 1048576) from dual;
+
+--- SQL command prepared.
+>>
+>>-- hive tables
 >>sh echo "drop table t031hive;" > TEST031_junk;
 >>sh regrhive.ksh -f TEST031_junk;
 >>
 >>sh echo "create table t031hive(z int, a string, b string);" > TEST031_junk;
 >>sh regrhive.ksh -f TEST031_junk;
 >>
->>cqd hive_max_string_length '1000000';
+>>cqd hive_max_string_length_in_bytes '1000000';
 
 --- SQL operation complete.
 >>insert into hive.hive.t031hive select * from t031t1;
@@ -557,6 +630,14 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
+>>-- should return error.
+>>process hive statement 'insert into t values (1)';
+
+*** ERROR[3242] This statement is not supported. Reason: Only CREATE, DROP, ALTER or TRUNCATE hive DDL statements can be specified.
+
+*** ERROR[8822] The statement was not prepared.
+
+>>
 >>-- default USER
 >>drop table if exists t031t1;
 
@@ -567,7 +648,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:15 2016
+-- Definition current  Wed Apr 19 23:25:42 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -598,7 +679,7 @@ A            B
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:18 2016
+-- Definition current  Wed Apr 19 23:25:51 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -649,7 +730,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:28 2016
+-- Definition current  Wed Apr 19 23:26:03 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -678,7 +759,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:36 2016
+-- Definition current  Wed Apr 19 23:26:15 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -703,7 +784,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:44 2016
+-- Definition current  Wed Apr 19 23:26:24 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -723,7 +804,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Tue Sep 20 11:39:54 2016
+-- Definition current  Wed Apr 19 23:26:29 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -738,7 +819,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Sep 20 11:39:56 2016
+-- Definition current  Wed Apr 19 23:26:33 2017
 
   (
     A                                INT DEFAULT NULL
@@ -761,7 +842,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Sep 20 11:40:04 2016
+-- Definition current  Wed Apr 19 23:26:42 2017
 
   (
     A                                INT DEFAULT NULL
@@ -779,7 +860,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Tue Sep 20 11:40:09 2016
+-- Definition current  Wed Apr 19 23:26:52 2017
 
   (
     A                                INT DEFAULT NULL
@@ -866,7 +947,7 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 >>invoke table(index_table t031t1i1);
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1I1
--- Definition current  Tue Sep 20 11:40:37 2016
+-- Definition current  Wed Apr 19 23:27:18 2017
 
   (
     "A@"                             INT NO DEFAULT
@@ -876,6 +957,145 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 
 --- SQL operation complete.
 >>reset parserflags;
+
+--- SQL operation complete.
+>>
+>>-- purgedata of table with delimited name
+>>drop table if exists "tT";
+
+--- SQL operation complete.
+>>create table "tT" (a int);
+
+--- SQL operation complete.
+>>purgedata "tT";
+
+--- SQL operation complete.
+>>
+>>-- group by rollup would sometimes crash compiler.
+>>drop table if exists mytable;
+
+--- SQL operation complete.
+>>create table mytable(a char(10), b char(10), c int, d int);
+
+--- SQL operation complete.
+>>insert into mytable values
++>('A1', 'B1', 1, 1),
++>('A1', 'B1', 1, 2),
++>('A1', 'B1', 2, 3),
++>('A1', 'B1', 2, 4),
++>('A1', 'B2', 3, 5),
++>('A1', 'B2', 3, 6),
++>('A1', 'B2', 4, 7),
++>('A1', 'B2', 4, 8),
++>('A2', 'B3', 5, 9),
++>('A2', 'B3', 5, 10),
++>('A2', 'B3', 6, 11),
++>('A2', 'B3', 6, 12),
++>('A2', 'B4', 7, 13),
++>('A2', 'B4', 7, 14),
++>('A2', 'B4', 8, 15),
++>('A2', 'B4', 8, 16);
+
+--- 16 row(s) inserted.
+>>select a, b, c, sum(d) as newcol from mytable where a in ('A1') 
++>  group by(a, b, c);
+
+A           B           C            NEWCOL              
+----------  ----------  -----------  --------------------
+
+A1          B1                    1                     3
+A1          B2                    3                    11
+A1          B2                    4                    15
+A1          B1                    2                     7
+
+--- 4 row(s) selected.
+>>select a, b, c, sum(d) as newcol from mytable where d > 5 
++>  group by rollup(a, b, c);
+
+A           B           C            NEWCOL              
+----------  ----------  -----------  --------------------
+
+A1          B2                    3                     6
+A1          B2                    4                    15
+A1          B2                    ?                    21
+A1          ?                     ?                    21
+A2          B3                    5                    19
+A2          B3                    6                    23
+A2          B3                    ?                    42
+A2          B4                    7                    27
+A2          B4                    8                    31
+A2          B4                    ?                    58
+A2          ?                     ?                   100
+?           ?                     ?                   121
+
+--- 12 row(s) selected.
+>>select a, b, c, sum(d) as newcol from mytable where a in ('A1') 
++>  group by rollup(a, b, c);
+
+A           B           C            NEWCOL              
+----------  ----------  -----------  --------------------
+
+A1          B1                    1                     3
+A1          B1                    2                     7
+A1          B1                    ?                    10
+A1          B2                    3                    11
+A1          B2                    4                    15
+A1          B2                    ?                    26
+A1          B3                    5                    19
+A1          B3                    6                    23
+A1          B3                    ?                    42
+A1          B4                    7                    27
+A1          B4                    8                    31
+A1          B4                    ?                    58
+A1          ?                     ?                   136
+A1          ?                     ?                   136
+
+--- 14 row(s) selected.
+>>
+>>-- GET CATALOGS support
+>>get catalogs;
+
+Catalogs
+========
+
+TRAFODION
+HIVE
+
+--- SQL operation complete.
+>>
+>>-- external and hive table mismatch on hive 'string' datatype
+>>process hive statement 'drop table t031hivet1';
+
+--- SQL operation complete.
+>>process hive statement 'create table t031hivet1 (a string)';
+
+--- SQL operation complete.
+>>drop external table if exists t031hivet1 for hive.hive.t031hivet1;
+
+--- SQL operation complete.
+>>create external table t031hivet1 for hive.hive.t031hivet1;
+
+--- SQL operation complete.
+>>cqd hive_max_string_length_in_bytes '10';
+
+--- SQL operation complete.
+>>showddl hive.hive.t031hivet1;
+
+/* Hive DDL */
+CREATE TABLE T031HIVET1
+  (
+    A                                string
+  )
+  stored as textfile
+;
+
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.T031HIVET1;
+
+/* Trafodion DDL */
+
+CREATE EXTERNAL TABLE T031HIVET1
+  FOR HIVE.HIVE.T031HIVET1
+;
 
 --- SQL operation complete.
 >>
@@ -905,5 +1125,58 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 >>drop external table t031hive for t031hive;
 
 --- SQL operation complete.
+>>
+>>-- create index on an added column 
+>>set schema trafodion.sch;
+
+--- SQL operation complete.
+>>drop table if exists t031t1 cascade;
+
+--- SQL operation complete.
+>>create table t031t1 (a char(5) not null primary key);
+
+--- SQL operation complete.
+>>insert into t031t1 values ('abcde');
+
+--- 1 row(s) inserted.
+>>select a from t031t1;
+
+A    
+-----
+
+abcde
+
+--- 1 row(s) selected.
+>>alter table t031t1 add column b char(5);
+
+--- SQL operation complete.
+>>select a from t031t1;
+
+A    
+-----
+
+abcde
+
+--- 1 row(s) selected.
+>>create index t031t1i on t031t1(b);
+
+--- SQL operation complete.
+>>explain options 'f' select a from t031t1;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+002
+.    .    1    trafodion_index_scan            T031T1I               1.00E+002
+
+--- SQL operation complete.
+>>select a from t031t1;
+
+A    
+-----
+
+abcde
+
+--- 1 row(s) selected.
 >>
 >>log;

@@ -63,6 +63,7 @@
 #include "StmtDDLReInitializeSQL.h"
 #include "StmtDDLRegisterComponent.h"
 #include "StmtDDLRegisterUser.h"
+#include "StmtDDLRegOrUnregHive.h"
 #include "StmtDDLCreateRole.h"
 #include "StmtDDLRoleGrant.h"
 #include "StmtDDLCleanupObjects.h"

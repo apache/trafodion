@@ -113,6 +113,18 @@ select converttohex(UPPER(TRANSLATE(_ucs2 x'0131017F' using UCS2toUTF8))) from (
 select converttohex(TRANSLATE(UPPER(_ucs2 x'0131017F') using UCS2toUTF8)) from (values(0))x;
 select converttohex(UPPER(TRANSLATE(_ucs2 x'017F0131' using UCS2toUTF8))) from (values(0))x;
 select converttohex(TRANSLATE(UPPER(_ucs2 x'017F0131') using UCS2toUTF8)) from (values(0))x;
+-- Invalid UTF-16 surrogate pairs
+select converttohex(TRANSLATE(_ucs2 X'D8340041' using UCS2toUTF8)) from (values(0))x;
+select converttohex(TRANSLATE(_ucs2 X'DD1E0041' using UCS2toUTF8)) from (values(0))x;
+cqd TRANSLATE_ERROR_UNICODE_TO_UNICODE 'off';
+select converttohex(TRANSLATE(_ucs2 X'D8340041' using UCS2toUTF8)) from (values(0))x;
+select converttohex(TRANSLATE(_ucs2 X'DD1E0041' using UCS2toUTF8)) from (values(0))x;
+select converttohex(cast(cast(_ucs2 X'DD1E0041' as char(2) character set ucs2) as char(2) character set UTF8)) from (values(0))x;
+cqd TRANSLATE_ERROR_UNICODE_TO_UNICODE reset;
+cqd TRANSLATE_ERROR 'off';
+select converttohex(TRANSLATE(_ucs2 X'D8340041' using UCS2toUTF8)) from (values(0))x;
+select converttohex(TRANSLATE(_ucs2 X'DD1E0041' using UCS2toUTF8)) from (values(0))x;
+select converttohex(cast(cast(_ucs2 X'DD1E0041' as char(2) character set ucs2) as char(2) character set UTF8)) from (values(0))x;
 --
 select converttohex(LEFT(      x'C2 80 C2 81 C2 82 DF BE DF BF',4)) from (values(0))x;
 select converttohex(LEFT(_utf8 x'C2 80 C2 81 C2 82 DF BE DF BF',4)) from (values(0))x;

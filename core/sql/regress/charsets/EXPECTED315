@@ -1061,6 +1061,194 @@ GOOD
 
 --- 6 row(s) selected.
 >>
+>>-- tests for REVERSE function on single and multibyte characters
+>>select char_length(reverse('abc')) from dual;
+
+(EXPR)    
+----------
+
+         3
+
+--- 1 row(s) selected.
+>>select reverse('abc') from dual;
+
+(EXPR)
+------
+
+cba   
+
+--- 1 row(s) selected.
+>>
+>>select char_length(reverse('')) from dual;
+
+(EXPR)    
+----------
+
+         0
+
+--- 1 row(s) selected.
+>>select reverse('') from dual;
+
+(EXPR)
+------
+
+      
+
+--- 1 row(s) selected.
+>>
+>>select char_length(reverse(cast('abc' as varchar(10)))) from dual;
+
+(EXPR)    
+----------
+
+         3
+
+--- 1 row(s) selected.
+>>select reverse(cast('abc' as varchar(10))) from dual;
+
+(EXPR)    
+----------
+
+cba       
+
+--- 1 row(s) selected.
+>>
+>>select char_length(_utf8 x'C3B6C3BAC3BBE0A0A0') from dual;
+
+(EXPR)    
+----------
+
+         4
+
+--- 1 row(s) selected.
+>>select converttohex(_utf8 x'C3B6C3BAC3BBE0A0A0') from dual;
+
+(EXPR)            
+------------------
+
+C3B6C3BAC3BBE0A0A0
+
+--- 1 row(s) selected.
+>>
+>>select char_length(reverse(_utf8 x'C3B6C3BAC3BBE0A0A0')) from dual;
+
+(EXPR)    
+----------
+
+         4
+
+--- 1 row(s) selected.
+>>select converttohex(reverse(_utf8 x'C3B6C3BAC3BBE0A0A0')) from dual;
+
+(EXPR)            
+------------------
+
+E0A0A0C3BBC3BAC3B6
+
+--- 1 row(s) selected.
+>>
+>>select char_length(cast(_utf8 x'C3B6C3BAC3BBE0A0A0' as varchar(10))) from dual;
+
+(EXPR)    
+----------
+
+         4
+
+--- 1 row(s) selected.
+>>select converttohex(cast(_utf8 x'C3B6C3BAC3BBE0A0A0' as varchar(10))) from dual;
+
+(EXPR)
+--------------------------------------------------------------------------------
+
+C3B6C3BAC3BBE0A0A0                                                              
+
+--- 1 row(s) selected.
+>>
+>>select char_length(reverse(cast(_utf8 x'C3B6C3BAC3BBE0A0A0' as varchar(10)))) from dual;
+
+(EXPR)    
+----------
+
+         4
+
+--- 1 row(s) selected.
+>>select converttohex(reverse(cast(_utf8 x'C3B6C3BAC3BBE0A0A0' as varchar(10)))) from dual;
+
+(EXPR)
+--------------------------------------------------------------------------------
+
+E0A0A0C3BBC3BAC3B6                                                              
+
+--- 1 row(s) selected.
+>>
+>>select char_length('abc' || _utf8 x'C3B6C3BAC3BBE0A0A0') from dual;
+
+(EXPR)    
+----------
+
+         7
+
+--- 1 row(s) selected.
+>>select converttohex('abc' || _utf8 x'C3B6C3BAC3BBE0A0A0') from dual;
+
+(EXPR)                  
+------------------------
+
+616263C3B6C3BAC3BBE0A0A0
+
+--- 1 row(s) selected.
+>>
+>>select char_length(reverse('abc' || _utf8 x'C3B6C3BAC3BBE0A0A0')) from dual;
+
+(EXPR)    
+----------
+
+         7
+
+--- 1 row(s) selected.
+>>select converttohex(reverse('abc' || _utf8 x'C3B6C3BAC3BBE0A0A0')) from dual;
+
+(EXPR)                  
+------------------------
+
+E0A0A0C3BBC3BAC3B6636261
+
+--- 1 row(s) selected.
+>>
+>>select char_length(_ucs2 x'515a515b515c515d') from dual;
+
+(EXPR)    
+----------
+
+         4
+
+--- 1 row(s) selected.
+>>select converttohex(_ucs2 x'515a515b515c515d') from dual;
+
+(EXPR)          
+----------------
+
+515A515B515C515D
+
+--- 1 row(s) selected.
+>>
+>>select char_length(reverse(_ucs2 x'515a515b515c515d')) from dual;
+
+(EXPR)    
+----------
+
+         4
+
+--- 1 row(s) selected.
+>>select converttohex(reverse(_ucs2 x'515a515b515c515d')) from dual;
+
+(EXPR)          
+----------------
+
+515D515C515B515A
+
+--- 1 row(s) selected.
+>>
 >>
 >>obey test315(clnup);
 >>

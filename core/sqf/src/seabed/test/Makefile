@@ -23,15 +23,15 @@ CHK		= $(OUTDIR) tcheck testfiles
 PROGS		= t2 t3 t4 t5 t6 t9 t14 t15 t16 t17 t18 t19 \
 		  t20 t21 t22 t23 t24 t25     t27 \
 		  t30 t31 t32         t35 t36 t37 t38 t39 \
-		  t40 t41 t42 t43 t44 t45         t48 t49 \
-		  t50 t51 t52 t53 t54 t55 t56 t57 t58 \
+		  t40 t41 t42 t43 t44             t48 t49 \
+		  t50 t51 t52             t56 t57 t58 \
 		      t61 t62 t63 t64 t65 t66 t67 t68 t69 \
 		  t70 t71 t72 t73 t74 t75 t76 t77 t78 t79 \
 		  t80         t83 t84 t85 t86     t88 \
-		      t91 t92 t93 t94 t95 t96     t98 \
+		      t91 t92 t93 t94     t96     t98 \
 		  t100 t101 t102 t103 t104 t105                     \
 		                           t115           t118      \
-		                      t124      t126 t127 t128 t129 \
+		                      t124           t127 t128 t129 \
 		  t130 t131 t132 t133      t135      t137 t138 t139 \
 		       t141 t142           t145                t149 \
 		       t151 t152 t153      t155 t156 t157           \
@@ -43,11 +43,11 @@ PROGS		= t2 t3 t4 t5 t6 t9 t14 t15 t16 t17 t18 t19 \
 		  t210      t212 t213 t214 t215 t216 t217      t219 \
 		  t220 t221 t222                t226 t227 t228 \
 		       t231      t233 t234 t235           t238      \
-		  t240 t241 t242           t245 t246           t249 \
-		  t250           t253                               \
+		  t240 t241 t242           t245 t246                \
+		                 t253                               \
 		       t261 t262                t266           \
 		                                     t277      t279 \
-		  t280 t281 t282 t284 t285 \
+		  t280 t281 t282 t284      \
 		  tcheck tsock ttee
 PROGSI		= t2fs t3ms t4ms \
 		  t5ms t6ms t9thread t14ms \
@@ -58,19 +58,19 @@ PROGSI		= t2fs t3ms t4ms \
 		  t30cli t30srv t31fs t32fsx \
 		  t35ms t36ms t37fs t38fs t39fs \
 		  t40fs t41cli t41srv t42cli t42srv t43ms t44ms \
-		  t45fs t48fs t49cli t49srv \
-		  t50fs t51ms t52ms t53fs t54fs t55fs t56fs t57ms t58ms \
+		  t48fs t49cli t49srv \
+		  t50fs t51ms t52ms t56fs t57ms t58ms \
 		  t61ms t62fs t63ms t64ms \
 		  t65fs t66ms t67fs t68ms t69ms \
 		  t70cli t70srv t71ms t72fs t73ms t74ms \
 		  t75ms t76fs t77fs t78fs t79fs \
 		  t80fs t83fs t84fs t85ms t86ms t88ms \
-		  t91ms t92ms t93ms t94fs t95fs t96ms t98ms \
+		  t91ms t92ms t93ms t94fs t96ms t98ms \
 		  t100ms t101fs t102fs t103fs t104ms \
 		  t105ms \
 		  t115ms t118ms \
 		  t124fs \
-		  t126fs t127ms t128fs t129ms \
+		  t127ms t128fs t129ms \
 		  t130map t131ms t132ms t133cli t133srv \
 		  t135ms t137ms t138ms t139cl \
 		  t141ms t142cli t142srv \
@@ -95,12 +95,12 @@ PROGSI		= t2fs t3ms t4ms \
 		  t233ms t234ms \
 		  t235ms t238ms \
 		  t240ms t241ms t242fs \
-		  t245ms t246ms t249ms \
-		  t250ms t253ms \
+		  t245ms t246ms \
+		  t253ms \
 		  t261ms t262ms \
 		  t266ms \
 	          t277fs t279ms \
-	          t280fs t281ms t282ms t284cli t284srv t285fs
+	          t280fs t281ms t282ms t284cli t284srv
 
 ###########################################################################
 

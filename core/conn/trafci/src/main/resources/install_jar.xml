@@ -59,7 +59,7 @@
             <outputDirectory>lib</outputDirectory>
             <includes>
                 <include>jline:jline</include>
-                <include>org.trafodion.jdbc.t4:jdbcT4</include>
+                <include>org.apache.trafodion.jdbc.t4:jdbcT4</include>
             </includes>
             <scope>compile</scope>
         </dependencySet>

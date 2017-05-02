@@ -146,18 +146,18 @@
 >>load with no recovery into customer_address 
 +>select * from hive.hive.customer_address;
 Task:  LOAD            Status: Started    Object: TRAFODION.HBASE.CUSTOMER_ADDRESS
-Task:  CLEANUP         Status: Started    Time: 2016-12-23 16:56:04.662
-Task:  CLEANUP         Status: Ended      Time: 2016-12-23 16:56:04.708
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.046
-Task:  LOADING DATA    Status: Started    Time: 2016-12-23 16:56:04.708
+Task:  CLEANUP         Status: Started    Time: 2017-04-06 22:12:34.718
+Task:  CLEANUP         Status: Ended      Time: 2017-04-06 22:12:34.740
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.022
+Task:  LOADING DATA    Status: Started    Time: 2017-04-06 22:12:34.740
        Rows Processed: 50000 
-       Error Rows:     0
-Task:  LOADING DATA    Status: Ended      Time: 2016-12-23 16:56:11.794
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:07.086
-Task:  COMPLETION      Status: Started    Time: 2016-12-23 16:56:11.794
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2017-04-06 22:12:44.470
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:09.306
+Task:  COMPLETION      Status: Started    Time: 2017-04-06 22:12:44.471
        Rows Loaded:    50000 
-Task:  COMPLETION      Status: Ended      Time: 2016-12-23 16:56:12.925
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.298
+Task:  COMPLETION      Status: Ended      Time: 2017-04-06 22:12:44.324
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.277
 
 --- 50000 row(s) loaded.
 >>--
@@ -182,18 +182,18 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.298
 >>load  with no recovery  into customer_demographics 
 +>select * from hive.hive.customer_demographics  where cd_demo_sk <= 20000;
 Task:  LOAD            Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS
-Task:  CLEANUP         Status: Started    Time: 2016-12-23 16:56:14.442
-Task:  CLEANUP         Status: Ended      Time: 2016-12-23 16:56:14.466
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.024
-Task:  LOADING DATA    Status: Started    Time: 2016-12-23 16:56:14.466
+Task:  CLEANUP         Status: Started    Time: 2017-04-06 22:12:49.421
+Task:  CLEANUP         Status: Ended      Time: 2017-04-06 22:12:49.444
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.023
+Task:  LOADING DATA    Status: Started    Time: 2017-04-06 22:12:49.444
        Rows Processed: 20000 
-       Error Rows:     0
-Task:  LOADING DATA    Status: Ended      Time: 2016-12-23 16:56:26.696
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:12.230
-Task:  COMPLETION      Status: Started    Time: 2016-12-23 16:56:26.696
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2017-04-06 22:13:02.917
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:12.647
+Task:  COMPLETION      Status: Started    Time: 2017-04-06 22:13:02.920
        Rows Loaded:    20000 
-Task:  COMPLETION      Status: Ended      Time: 2016-12-23 16:56:27.527
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.357
+Task:  COMPLETION      Status: Ended      Time: 2017-04-06 22:13:02.456
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.364
 
 --- 20000 row(s) loaded.
 >>--
@@ -219,18 +219,18 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.357
 >>load  with no recovery into customer_demographics_salt 
 +>select * from hive.hive.customer_demographics  where cd_demo_sk <= 20000;
 Task:  LOAD            Status: Started    Object: TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
-Task:  CLEANUP         Status: Started    Time: 2016-12-23 16:56:30.212
-Task:  CLEANUP         Status: Ended      Time: 2016-12-23 16:56:30.235
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.023
-Task:  LOADING DATA    Status: Started    Time: 2016-12-23 16:56:30.235
+Task:  CLEANUP         Status: Started    Time: 2017-04-06 22:13:07.339
+Task:  CLEANUP         Status: Ended      Time: 2017-04-06 22:13:07.489
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.015
+Task:  LOADING DATA    Status: Started    Time: 2017-04-06 22:13:07.489
        Rows Processed: 20000 
-       Error Rows:     0
-Task:  LOADING DATA    Status: Ended      Time: 2016-12-23 16:56:34.537
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:04.302
-Task:  COMPLETION      Status: Started    Time: 2016-12-23 16:56:34.538
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2017-04-06 22:13:16.513
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:09.465
+Task:  COMPLETION      Status: Started    Time: 2017-04-06 22:13:16.513
        Rows Loaded:    20000 
-Task:  COMPLETION      Status: Ended      Time: 2016-12-23 16:56:34.832
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.295
+Task:  COMPLETION      Status: Ended      Time: 2017-04-06 22:13:16.803
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.290
 
 --- 20000 row(s) loaded.
 >>--                                                                              
@@ -246,18 +246,18 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.295
 >>load  with no recovery  into customer_salt 
 +>select * from hive.hive.customer;
 Task:  LOAD            Status: Started    Object: TRAFODION.HBASE.CUSTOMER_SALT
-Task:  CLEANUP         Status: Started    Time: 2016-12-23 16:56:36.442
-Task:  CLEANUP         Status: Ended      Time: 2016-12-23 16:56:36.464
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.021
-Task:  LOADING DATA    Status: Started    Time: 2016-12-23 16:56:36.464
+Task:  CLEANUP         Status: Started    Time: 2017-04-06 22:13:19.244
+Task:  CLEANUP         Status: Ended      Time: 2017-04-06 22:13:19.256
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.012
+Task:  LOADING DATA    Status: Started    Time: 2017-04-06 22:13:19.256
        Rows Processed: 100000 
-       Error Rows:     0
-Task:  LOADING DATA    Status: Ended      Time: 2016-12-23 16:56:42.200
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:05.736
-Task:  COMPLETION      Status: Started    Time: 2016-12-23 16:56:42.200
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2017-04-06 22:13:31.650
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:11.808
+Task:  COMPLETION      Status: Started    Time: 2017-04-06 22:13:31.651
        Rows Loaded:    100000 
-Task:  COMPLETION      Status: Ended      Time: 2016-12-23 16:56:42.512
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.312
+Task:  COMPLETION      Status: Ended      Time: 2017-04-06 22:13:31.364
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.299
 
 --- 100000 row(s) loaded.
 >>--
@@ -282,18 +282,18 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.312
 >>load  with no recovery into store_sales_salt 
 +>select * from hive.hive.store_sales where ss_item_sk <= 1000;
 Task:  LOAD            Status: Started    Object: TRAFODION.HBASE.STORE_SALES_SALT
-Task:  CLEANUP         Status: Started    Time: 2016-12-23 16:56:45.493
-Task:  CLEANUP         Status: Ended      Time: 2016-12-23 16:56:45.514
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.022
-Task:  LOADING DATA    Status: Started    Time: 2016-12-23 16:56:45.514
+Task:  CLEANUP         Status: Started    Time: 2017-04-06 22:13:35.969
+Task:  CLEANUP         Status: Ended      Time: 2017-04-06 22:13:35.986
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.017
+Task:  LOADING DATA    Status: Started    Time: 2017-04-06 22:13:35.986
        Rows Processed: 160756 
-       Error Rows:     0
-Task:  LOADING DATA    Status: Ended      Time: 2016-12-23 16:56:55.363
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:09.849
-Task:  COMPLETION      Status: Started    Time: 2016-12-23 16:56:55.363
+       Error Rows:     0 
+Task:  LOADING DATA    Status: Ended      Time: 2017-04-06 22:13:50.490
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:14.504
+Task:  COMPLETION      Status: Started    Time: 2017-04-06 22:13:50.490
        Rows Loaded:    160756 
-Task:  COMPLETION      Status: Ended      Time: 2016-12-23 16:56:55.713
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.350
+Task:  COMPLETION      Status: Ended      Time: 2017-04-06 22:13:50.824
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.334
 
 --- 160756 row(s) loaded.
 >>--
@@ -380,13 +380,13 @@ a
 +>   into '/user/hive/exttables/null_format_default'
 +>   select * from null_format_src;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:57:01.102
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:57:01.109
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:14:00.918
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:14:00.164
 Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.007
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:57:01.109
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:14:00.164
        Rows Processed: 10 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:57:01.186
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.077
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:14:00.442
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.426
 
 --- 10 row(s) unloaded.
 >>select * from hive.hive.null_format_default;
@@ -411,13 +411,13 @@ a
 +>   into '/user/hive/exttables/null_format_empty'
 +>   select * from null_format_src;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:57:01.852
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:57:01.856
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:14:01.304
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:14:01.308
 Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.004
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:57:01.856
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:14:01.308
        Rows Processed: 10 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:57:01.910
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.054
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:14:01.529
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.221
 
 --- 10 row(s) unloaded.
 >>select * from hive.hive.null_format_empty;
@@ -442,13 +442,13 @@ a                                                             ?
 +>   into '/user/hive/exttables/null_format_colon'
 +>   select * from null_format_src;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:57:02.573
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:57:02.581
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.009
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:57:02.581
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:14:03.674
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:14:03.680
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.007
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:14:03.680
        Rows Processed: 10 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:57:02.644
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.063
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:14:03.778
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.098
 
 --- 10 row(s) unloaded.
 >>select * from hive.hive.null_format_colon;
@@ -510,16 +510,16 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 +>select * from trafodion.hbase.customer_address 
 +>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:57:55.333
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:57:55.340
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.007
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:57:55.340
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:14:57.526
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:14:57.532
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.006
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:14:57.532
        Rows Processed: 50000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:57:55.995
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.655
-Task:  MERGE FILES     Status: Started    Time: 2016-12-23 16:57:55.995
-Task:  MERGE FILES     Status: Ended      Time: 2016-12-23 16:57:56.696
-Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.074
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:14:58.628
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:01.096
+Task:  MERGE FILES     Status: Started    Time: 2017-04-06 22:14:58.628
+Task:  MERGE FILES     Status: Ended      Time: 2017-04-06 22:14:58.678
+Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.050
 
 --- 50000 row(s) unloaded.
 >>log;
@@ -551,16 +551,16 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 +>select * from trafodion.hbase.customer_demographics 
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:57:59.223
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:57:59.229
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.007
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:57:59.229
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:02.643
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:02.651
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.008
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:02.651
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:57:59.418
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.189
-Task:  MERGE FILES     Status: Started    Time: 2016-12-23 16:57:59.418
-Task:  MERGE FILES     Status: Ended      Time: 2016-12-23 16:57:59.450
-Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.032
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:03.182
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.531
+Task:  MERGE FILES     Status: Started    Time: 2017-04-06 22:15:03.182
+Task:  MERGE FILES     Status: Ended      Time: 2017-04-06 22:15:03.208
+Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.026
 
 --- 20000 row(s) unloaded.
 >>log;
@@ -578,16 +578,16 @@ cat /tmp/merged_customer_demogs | wc -l
 +>select * from trafodion.hbase.customer_demographics 
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:02.413
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:02.422
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.009
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:02.422
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:06.683
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:06.695
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.012
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:06.695
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:02.614
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.192
-Task:  MERGE FILES     Status: Started    Time: 2016-12-23 16:58:02.614
-Task:  MERGE FILES     Status: Ended      Time: 2016-12-23 16:58:02.654
-Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.039
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:07.116
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.316
+Task:  MERGE FILES     Status: Started    Time: 2017-04-06 22:15:07.118
+Task:  MERGE FILES     Status: Ended      Time: 2017-04-06 22:15:07.390
+Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.027
 
 --- 20000 row(s) unloaded.
 >>log;
@@ -618,16 +618,16 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 +>select * from trafodion.hbase.customer_demographics_salt 
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:06.573
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:06.580
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.007
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:06.580
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:12.414
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:12.419
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.005
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:12.419
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:09.327
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:02.747
-Task:  MERGE FILES     Status: Started    Time: 2016-12-23 16:58:09.327
-Task:  MERGE FILES     Status: Ended      Time: 2016-12-23 16:58:09.379
-Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.053
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:13.186
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.767
+Task:  MERGE FILES     Status: Started    Time: 2017-04-06 22:15:13.186
+Task:  MERGE FILES     Status: Ended      Time: 2017-04-06 22:15:13.222
+Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.036
 
 --- 20000 row(s) unloaded.
 >>
@@ -644,16 +644,16 @@ regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_de
 +>select * from trafodion.hbase.customer_demographics_salt 
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:11.962
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:11.968
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:16.391
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:16.448
 Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.006
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:11.968
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:16.449
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:12.617
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.649
-Task:  MERGE FILES     Status: Started    Time: 2016-12-23 16:58:12.617
-Task:  MERGE FILES     Status: Ended      Time: 2016-12-23 16:58:12.666
-Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.049
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:16.503
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.459
+Task:  MERGE FILES     Status: Started    Time: 2017-04-06 22:15:16.503
+Task:  MERGE FILES     Status: Ended      Time: 2017-04-06 22:15:16.551
+Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.047
 
 --- 20000 row(s) unloaded.
 >>
@@ -685,13 +685,13 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 +>select * from trafodion.hbase.customer_demographics_salt 
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:15.603
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:15.612
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.009
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:15.612
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:19.875
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:19.883
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.008
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:19.883
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:15.979
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.367
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:20.492
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.609
 
 --- 20000 row(s) unloaded.
 >>
@@ -710,16 +710,16 @@ regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/file* |  grep file | 
 +>select * from trafodion.hbase.customer_demographics_salt 
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:21.137
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:21.289
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.015
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:21.289
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:26.413
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:26.427
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.014
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:26.427
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:21.364
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.336
-Task:  MERGE FILES     Status: Started    Time: 2016-12-23 16:58:21.364
-Task:  MERGE FILES     Status: Ended      Time: 2016-12-23 16:58:21.431
-Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.067
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:26.994
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.567
+Task:  MERGE FILES     Status: Started    Time: 2017-04-06 22:15:26.994
+Task:  MERGE FILES     Status: Ended      Time: 2017-04-06 22:15:27.511
+Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.056
 
 --- 20000 row(s) unloaded.
 >>
@@ -729,7 +729,7 @@ Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.067
 >>sh regrhadoop.ksh fs -copyFromLocal /tmp/merged_customer_demogs_2  /user/hive/exttables/unload_customer_demographics ;
 >>sh rm /bulkload/merged_customer_demogs_2 ;
 >>
->>cqd HIVE_MAX_STRING_LENGTH '100';
+>>cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '100';
 
 --- SQL operation complete.
 >>select [first 100] * from hive.hive.unload_customer_demographics where cd_demo_sk <200 order by cd_demo_sk;
@@ -851,16 +851,16 @@ CD_DEMO_SK   CD_GENDER                                                          
 +>select * from trafodion.hbase.customer_demographics_salt 
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:30.627
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:30.691
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.006
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:30.691
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:36.975
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:36.980
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.005
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:36.980
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:30.407
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.338
-Task:  MERGE FILES     Status: Started    Time: 2016-12-23 16:58:30.407
-Task:  MERGE FILES     Status: Ended      Time: 2016-12-23 16:58:30.457
-Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.050
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:37.782
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.802
+Task:  MERGE FILES     Status: Started    Time: 2017-04-06 22:15:37.782
+Task:  MERGE FILES     Status: Ended      Time: 2017-04-06 22:15:37.834
+Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.051
 
 --- 20000 row(s) unloaded.
 >>log;
@@ -894,16 +894,16 @@ regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/merged* | grep merge 
 +>select * from trafodion.hbase.customer_demographics_salt 
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:33.253
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:33.260
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.007
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:33.260
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:41.344
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:41.352
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.008
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:41.352
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:33.465
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.205
-Task:  MERGE FILES     Status: Started    Time: 2016-12-23 16:58:33.465
-Task:  MERGE FILES     Status: Ended      Time: 2016-12-23 16:58:33.529
-Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.064
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:41.871
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.518
+Task:  MERGE FILES     Status: Started    Time: 2017-04-06 22:15:41.871
+Task:  MERGE FILES     Status: Ended      Time: 2017-04-06 22:15:41.922
+Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.051
 
 --- 20000 row(s) unloaded.
 >>--sh sleep 10;
@@ -952,13 +952,13 @@ CD_DEMO_SK   CD_GENDER                                                          
 +>select * from trafodion.hbase.customer_demographics_salt 
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:35.183
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:35.190
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.007
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:35.190
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:43.724
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:43.729
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.005
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:43.729
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:35.431
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.241
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:44.561
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.832
 
 --- 20000 row(s) unloaded.
 >>--sh sleep 10;
@@ -966,7 +966,7 @@ Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.241
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1482512313, failedModTS = 1482512315, failedLoc = hdfs://localhost:27000/user/hive/exttables/unload_customer_demographics
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491516941, failedModTS = 1491516943, failedLoc = hdfs://localhost:30200/user/hive/exttables/unload_customer_demographics
 
 (EXPR)              
 --------------------
@@ -1008,13 +1008,13 @@ CD_DEMO_SK   CD_GENDER                                                          
 +>INTO '/user/hive/exttables/unload_customer_address'
 +>select * from trafodion.hbase.customer_address ;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:37.253
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:37.259
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.006
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:37.259
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:47.646
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:47.101
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.037
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:47.101
        Rows Processed: 50000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:37.632
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.373
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:47.960
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.859
 
 --- 50000 row(s) unloaded.
 >>--sh sleep 10;
@@ -1063,13 +1063,13 @@ CA_ADDRESS_SK  CA_ADDRESS_ID                                                    
 +>INTO '/user/hive/exttables/unload_customer_address'
 +>select * from trafodion.hbase.customer_address ;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:39.383
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:39.389
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.007
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:39.389
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:50.334
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:50.339
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.005
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:50.339
        Rows Processed: 50000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:39.714
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.324
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:51.398
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:01.059
 
 --- 50000 row(s) unloaded.
 >>--sh sleep 10;
@@ -1077,7 +1077,7 @@ Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.324
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1482512317, failedModTS = 1482512319, failedLoc = hdfs://localhost:27000/user/hive/exttables/unload_customer_address
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491516947, failedModTS = 1491516950, failedLoc = hdfs://localhost:30200/user/hive/exttables/unload_customer_address
 
 (EXPR)              
 --------------------
@@ -1131,13 +1131,13 @@ CA_ADDRESS_SK  CA_ADDRESS_ID                                                    
 +>INTO '/user/hive/exttables/unload_customer'
 +>select * from trafodion.hbase.customer_salt;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:41.613
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:41.618
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.005
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:41.618
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:15:54.359
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:15:54.366
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.006
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:15:54.366
        Rows Processed: 100000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:43.282
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:01.410
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:15:58.306
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:03.665
 
 --- 100000 row(s) unloaded.
 >>--sh sleep 10;
@@ -1187,13 +1187,13 @@ C_CUSTOMER_SK  C_CUSTOMER_ID                                                    
 +>INTO '/user/hive/exttables/unload_customer_demographics'
 +>select * from trafodion.hbase.customer_demographics_salt;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:44.842
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:44.854
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.012
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:44.854
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:16:00.724
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:16:00.732
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.008
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:16:00.732
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:45.417
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.187
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:16:00.991
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.259
 
 --- 20000 row(s) unloaded.
 >>--sh sleep 10;
@@ -1242,16 +1242,16 @@ CD_DEMO_SK   CD_GENDER                                                          
 +>INTO '/bulkload/customer_address'
 +>select * from trafodion.hbase.customer_address where ca_address_sk < 100;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:46.352
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:46.358
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.006
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:46.358
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:16:02.675
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:16:02.679
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.005
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:16:02.679
        Rows Processed: 99 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:46.394
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.036
-Task:  MERGE FILES     Status: Started    Time: 2016-12-23 16:58:46.394
-Task:  MERGE FILES     Status: Ended      Time: 2016-12-23 16:58:46.431
-Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.036
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:16:02.736
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.056
+Task:  MERGE FILES     Status: Started    Time: 2017-04-06 22:16:02.736
+Task:  MERGE FILES     Status: Ended      Time: 2017-04-06 22:16:02.759
+Task:  MERGE FILES     Status: Ended      Elapsed Time:    00:00:00.023
 
 --- 99 row(s) unloaded.
 >>
@@ -1286,13 +1286,13 @@ regrhadoop.ksh fs -rm /user/hive/exttables/unload_customer_demographics/*
 +>INTO '/user/hive/exttables/unload_store_sales_summary'
 +>select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales_salt group by  ss_sold_date_sk ,ss_store_sk;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:49.642
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:49.648
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.006
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:49.648
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:16:06.343
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:16:06.349
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.005
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:16:06.349
        Rows Processed: 12349 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:52.810
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:03.162
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:16:10.661
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:04.312
 
 --- 12349 row(s) unloaded.
 >>--sh sleep 10;
@@ -1410,13 +1410,13 @@ SS_SOLD_DATE_SK  SS_STORE_SK  SS_QUANTITY
 +>INTO '/user/hive/exttables/unload_customer_and_address'
 +>select * from trafodion.hbase.customer_salt c join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk ;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:58:54.222
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:58:54.230
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.008
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:58:54.230
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:16:12.575
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:16:12.581
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.005
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:16:12.581
        Rows Processed: 100000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:58:58.609
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:03.831
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:16:15.847
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:03.267
 
 --- 100000 row(s) unloaded.
 >>--sh sleep 10;
@@ -1463,13 +1463,13 @@ C_CUSTOMER_SK  C_CUSTOMER_ID                                                    
 +>INTO '/user/hive/exttables/unload_customer_address'
 +>select * from customer_address where ca_address_sk < 1000 union select * from customer_address where ca_address_sk > 40000  and ca_address_sk < 41000;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 16:59:00.922
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 16:59:00.928
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.005
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 16:59:00.928
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:16:19.304
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:16:19.318
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.014
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:16:19.318
        Rows Processed: 1998 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 16:59:01.606
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.133
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:16:19.610
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.292
 
 --- 1998 row(s) unloaded.
 >>--sh sleep 10;
@@ -1580,7 +1580,7 @@ ESP_EXCHANGE ==============================  SEQ_NO 3        ONLY CHILD 2
   use_snapshot_scan ...... TRUE
   full_table_name ........ TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT
   snapshot_name .......... TRAFODION.HBASE.CUSTOMER_DEMOGRAPHICS_SALT_SNAP111
-  snapshot_temp_location   /bulkload/20161223165903/
+  snapshot_temp_location   /bulkload/20170406221624/
 grep -i -e 'explain reg' -e snapshot -e full_table_name  -e esp_exchange  LOG018_REGULAR_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id
 >>--no snapshot
 >>explain reg;
@@ -1664,7 +1664,7 @@ grep -i -e 'explain snp' -e snapshot -e full_table_name -e esp_exchange LOG018_S
   use_snapshot_scan ...... TRUE
   full_table_name ........ TRAFODION.HBASE.CUSTOMER_ADDRESS
   snapshot_name .......... TRAFODION.HBASE.CUSTOMER_ADDRESS_SNAP111
-  snapshot_temp_location   /bulkload/20161223165910/
+  snapshot_temp_location   /bulkload/20170406221732/
 grep -i -e 'explain reg' -e snapshot -e full_table_name  -e esp_exchange  LOG018_REGULAR_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id
 >>--no snapshot
 >>explain reg;
@@ -1759,12 +1759,12 @@ ESP_EXCHANGE ==============================  SEQ_NO 6        ONLY CHILD 5
   use_snapshot_scan ...... TRUE
   full_table_name ........ TRAFODION.HBASE.CUSTOMER_SALT
   snapshot_name .......... TRAFODION.HBASE.CUSTOMER_SALT_SNAP111
-  snapshot_temp_location   /bulkload/20161223165928/
+  snapshot_temp_location   /bulkload/20170406221755/
 ESP_EXCHANGE ==============================  SEQ_NO 2        ONLY CHILD 1
   use_snapshot_scan ...... TRUE
   full_table_name ........ TRAFODION.HBASE.CUSTOMER_ADDRESS
   snapshot_name .......... TRAFODION.HBASE.CUSTOMER_ADDRESS_SNAP111
-  snapshot_temp_location   /bulkload/20161223165928/
+  snapshot_temp_location   /bulkload/20170406221755/
 grep -i -e 'explain reg' -e snapshot -e full_table_name  -e esp_exchange  LOG018_REGULAR_SCAN_PLAN.TXT | grep -v snapshot_scan_run_id
 >>--no snapshot
 >>explain reg;
@@ -1882,17 +1882,17 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 +>select * from customer_address
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 17:01:06.282
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 17:01:06.300
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.018
-Task:  VERIFY SNAPSHO  Status: Started    Time: 2016-12-23 17:01:06.300
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:20:33.855
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:20:33.860
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.004
+Task:  VERIFY SNAPSHO  Status: Started    Time: 2017-04-06 22:20:33.860
        Snapshots verified: 1 
-Task:  VERIFY SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:06.525
-Task:  VERIFY SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.225
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 17:01:06.525
+Task:  VERIFY SNAPSHO  Status: Ended      Time: 2017-04-06 22:20:34.402
+Task:  VERIFY SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.543
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:20:34.403
        Rows Processed: 50000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 17:01:07.741
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.549
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:20:35.493
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:01.091
 
 --- 50000 row(s) unloaded.
 >>
@@ -1963,17 +1963,17 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 +>INTO '/user/hive/exttables/unload_customer_demographics'
 +>select * from trafodion.hbase.customer_demographics_salt <<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 17:01:09.252
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 17:01:09.255
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:20:39.602
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:20:39.628
 Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.003
-Task:  VERIFY SNAPSHO  Status: Started    Time: 2016-12-23 17:01:09.255
+Task:  VERIFY SNAPSHO  Status: Started    Time: 2017-04-06 22:20:39.629
        Snapshots verified: 1 
-Task:  VERIFY SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:09.470
-Task:  VERIFY SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.215
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 17:01:09.470
+Task:  VERIFY SNAPSHO  Status: Ended      Time: 2017-04-06 22:20:39.506
+Task:  VERIFY SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.444
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:20:39.506
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 17:01:23.331
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:13.861
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:20:48.647
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:09.141
 
 --- 20000 row(s) unloaded.
 >>
@@ -2020,21 +2020,21 @@ CD_DEMO_SK   CD_GENDER                                                          
 +>INTO '/user/hive/exttables/unload_customer_demographics'
 +>select * from trafodion.hbase.customer_demographics_salt <<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 17:01:24.632
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 17:01:24.643
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.011
-Task:  CREATE SNAPSHO  Status: Started    Time: 2016-12-23 17:01:24.643
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:20:50.443
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:20:50.452
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.008
+Task:  CREATE SNAPSHO  Status: Started    Time: 2017-04-06 22:20:50.452
        Snapshots created: 1 
-Task:  CREATE SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:25.179
-Task:  CREATE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.536
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 17:01:25.179
+Task:  CREATE SNAPSHO  Status: Ended      Time: 2017-04-06 22:20:51.116
+Task:  CREATE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.664
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:20:51.116
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 17:01:26.780
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.898
-Task:  DELETE SNAPSHO  Status: Started    Time: 2016-12-23 17:01:26.780
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:20:52.248
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:01.132
+Task:  DELETE SNAPSHO  Status: Started    Time: 2017-04-06 22:20:52.248
        Snapshots deleted: 1 
-Task:  DELETE SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:26.100
-Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.023
+Task:  DELETE SNAPSHO  Status: Ended      Time: 2017-04-06 22:20:52.262
+Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.013
 
 --- 20000 row(s) unloaded.
 >>
@@ -2042,7 +2042,7 @@ Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.023
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1482512483, failedModTS = 1482512485, failedLoc = hdfs://localhost:27000/user/hive/exttables/unload_customer_demographics
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491517248, failedModTS = 1491517251, failedLoc = hdfs://localhost:30200/user/hive/exttables/unload_customer_demographics
 
 (EXPR)              
 --------------------
@@ -2085,21 +2085,21 @@ CD_DEMO_SK   CD_GENDER                                                          
 +>INTO '/user/hive/exttables/unload_customer_demographics'
 +>select * from trafodion.hbase.customer_demographics_salt <<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 17:01:27.932
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 17:01:27.942
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.009
-Task:  CREATE SNAPSHO  Status: Started    Time: 2016-12-23 17:01:27.942
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:20:54.745
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:20:54.756
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.011
+Task:  CREATE SNAPSHO  Status: Started    Time: 2017-04-06 22:20:54.756
        Snapshots created: 1 
-Task:  CREATE SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:28.471
-Task:  CREATE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.530
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 17:01:28.471
+Task:  CREATE SNAPSHO  Status: Ended      Time: 2017-04-06 22:20:56.343
+Task:  CREATE SNAPSHO  Status: Ended      Elapsed Time:    00:00:01.587
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:20:56.343
        Rows Processed: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 17:01:29.494
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.578
-Task:  DELETE SNAPSHO  Status: Started    Time: 2016-12-23 17:01:29.494
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:20:57.250
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.907
+Task:  DELETE SNAPSHO  Status: Started    Time: 2017-04-06 22:20:57.250
        Snapshots deleted: 1 
-Task:  DELETE SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:29.602
-Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.011
+Task:  DELETE SNAPSHO  Status: Ended      Time: 2017-04-06 22:20:57.256
+Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.006
 
 --- 20000 row(s) unloaded.
 >>
@@ -2115,7 +2115,7 @@ Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.011
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1482512486, failedModTS = 1482512488, failedLoc = hdfs://localhost:27000/user/hive/exttables/unload_customer_demographics
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491517252, failedModTS = 1491517256, failedLoc = hdfs://localhost:30200/user/hive/exttables/unload_customer_demographics
 
 CD_DEMO_SK   CD_GENDER                                                                                             CD_MARITAL_STATUS                                                                                     CD_EDUCATION_STATUS                                                                                   CD_PURCHASE_ESTIMATE  CD_CREDIT_RATING                                                                                      CD_DEP_COUNT  CD_DEP_EMPLOYED_COUNT  CD_DEP_COLLEGE_COUNT
 -----------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------  ----------------------------------------------------------------------------------------------------  ------------  ---------------------  --------------------
@@ -2151,21 +2151,21 @@ CD_DEMO_SK   CD_GENDER                                                          
 +>INTO '/user/hive/exttables/unload_customer_address'
 +>select * from customer_address where ca_address_sk < 1000 union select * from customer_address where ca_address_sk > 40000  and ca_address_sk < 41000;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 17:01:30.862
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 17:01:30.868
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.006
-Task:  CREATE SNAPSHO  Status: Started    Time: 2016-12-23 17:01:30.868
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:20:59.803
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:20:59.808
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.005
+Task:  CREATE SNAPSHO  Status: Started    Time: 2017-04-06 22:20:59.808
        Snapshots created: 1 
-Task:  CREATE SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:31.218
-Task:  CREATE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.350
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 17:01:31.219
+Task:  CREATE SNAPSHO  Status: Ended      Time: 2017-04-06 22:21:01.106
+Task:  CREATE SNAPSHO  Status: Ended      Elapsed Time:    00:00:01.298
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:21:01.106
        Rows Processed: 1998 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 17:01:31.521
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.302
-Task:  DELETE SNAPSHO  Status: Started    Time: 2016-12-23 17:01:31.521
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:21:01.858
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.751
+Task:  DELETE SNAPSHO  Status: Started    Time: 2017-04-06 22:21:01.858
        Snapshots deleted: 1 
-Task:  DELETE SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:31.527
-Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.006
+Task:  DELETE SNAPSHO  Status: Ended      Time: 2017-04-06 22:21:01.861
+Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.004
 
 --- 1998 row(s) unloaded.
 >>
@@ -2239,21 +2239,21 @@ CA_ADDRESS_SK  CA_ADDRESS_ID                                                    
 +>INTO '/user/hive/exttables/unload_customer_and_address'
 +>select * from trafodion.hbase.customer_salt c join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk ;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 17:01:32.982
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 17:01:32.990
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.007
-Task:  CREATE SNAPSHO  Status: Started    Time: 2016-12-23 17:01:32.990
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:21:03.814
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:21:03.821
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.008
+Task:  CREATE SNAPSHO  Status: Started    Time: 2017-04-06 22:21:03.821
        Snapshots created: 2 
-Task:  CREATE SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:34.364
-Task:  CREATE SNAPSHO  Status: Ended      Elapsed Time:    00:00:01.374
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 17:01:34.364
+Task:  CREATE SNAPSHO  Status: Ended      Time: 2017-04-06 22:21:06.616
+Task:  CREATE SNAPSHO  Status: Ended      Elapsed Time:    00:00:02.795
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:21:06.616
        Rows Processed: 100000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 17:01:36.497
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:02.134
-Task:  DELETE SNAPSHO  Status: Started    Time: 2016-12-23 17:01:36.497
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:21:10.370
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:03.754
+Task:  DELETE SNAPSHO  Status: Started    Time: 2017-04-06 22:21:10.370
        Snapshots deleted: 2 
-Task:  DELETE SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:36.516
-Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.019
+Task:  DELETE SNAPSHO  Status: Ended      Time: 2017-04-06 22:21:10.388
+Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.017
 
 --- 100000 row(s) unloaded.
 >>--sh sleep 10;
@@ -2320,21 +2320,21 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 +>INTO '/user/hive/exttables/unload_customer_name'
 +>select c_first_name,c_last_name from trafodion.hbase.customer_salt;
 Task: UNLOAD           Status: Started
-Task:  EMPTY TARGET    Status: Started    Time: 2016-12-23 17:01:39.562
-Task:  EMPTY TARGET    Status: Ended      Time: 2016-12-23 17:01:39.567
-Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.004
-Task:  CREATE SNAPSHO  Status: Started    Time: 2016-12-23 17:01:39.567
+Task:  EMPTY TARGET    Status: Started    Time: 2017-04-06 22:21:13.583
+Task:  EMPTY TARGET    Status: Ended      Time: 2017-04-06 22:21:13.603
+Task:  EMPTY TARGET    Status: Ended      Elapsed Time:    00:00:00.020
+Task:  CREATE SNAPSHO  Status: Started    Time: 2017-04-06 22:21:13.603
        Snapshots created: 1 
-Task:  CREATE SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:39.883
-Task:  CREATE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.316
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 17:01:39.883
+Task:  CREATE SNAPSHO  Status: Ended      Time: 2017-04-06 22:21:14.362
+Task:  CREATE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.759
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:21:14.362
        Rows Processed: 100000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 17:01:40.690
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.807
-Task:  DELETE SNAPSHO  Status: Started    Time: 2016-12-23 17:01:40.690
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:21:16.999
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:01.737
+Task:  DELETE SNAPSHO  Status: Started    Time: 2017-04-06 22:21:16.100
        Snapshots deleted: 1 
-Task:  DELETE SNAPSHO  Status: Ended      Time: 2016-12-23 17:01:40.699
-Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.009
+Task:  DELETE SNAPSHO  Status: Ended      Time: 2017-04-06 22:21:16.105
+Task:  DELETE SNAPSHO  Status: Ended      Elapsed Time:    00:00:00.006
 
 --- 100000 row(s) unloaded.
 >>--sh sleep 10;
@@ -2378,15 +2378,15 @@ C_FIRST_NAME                                                                    
 >>--unload 100 --should give error [8447]
 >>unload into '//\a//c' select * from CUSTOMER_ADDRESS;
 Task: UNLOAD           Status: Started
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 17:01:42.393
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:21:19.554
 
 *** ERROR[8447] An error occurred during hdfs access. Error Detail: Java exception in hdfsCreate(). java.io.IOException: No FileSystem for scheme: null
-org.apache.hadoop.fs.FileSystem.getFileSystemClass(FileSystem.java:2676)
-org.apache.hadoop.fs.FileSystem.createFileSystem(FileSystem.java:2690)
-org.apache.hadoop.fs.FileSystem.access$200(FileSystem.java:94)
-org.apache.hadoop.fs.FileSystem$Cache.getInternal(FileSystem.java:2733)
-org.apache.hadoop.fs.FileSystem$Cache.get(FileSystem.java:2715)
-org.apache.hadoop.fs.FileSystem.get(FileSystem.java:382)
+org.apache.hadoop.fs.FileSystem.getFileSystemClass(FileSystem.java:2584)
+org.apache.hadoop.fs.FileSystem.createFileSystem(FileSystem.java:2591)
+org.apache.hadoop.fs.FileSystem.access$200(FileSystem.java:91)
+org.apache.hadoop.fs.FileSystem$Cache.getInternal(FileSystem.java:2630)
+org.apache.hadoop.fs.FileSystem$Cache.get(FileSystem.java:2612)
+org.apache.hadoop.fs.FileSystem.get(FileSystem.java:370)
 org.trafodion.sql.SequenceFileWriter.hdfsCreate(SequenceFileWriter.java:155)
 
 --- 0 row(s) unloaded.
@@ -2412,10 +2412,10 @@ unload with delimiter 0 into '/bulkload/test' select * from CUSTOMER_ADDRESS;
 >>--unload  103 -- should not give an error
 >>unload with delimiter '\a' into '/bulkload/test' select * from customer_address;
 Task: UNLOAD           Status: Started
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 17:01:42.863
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:21:20.555
        Rows Processed: 50000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 17:01:43.215
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.351
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:21:20.962
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.906
 
 --- 50000 row(s) unloaded.
 >>--unload  24 -- should give an error
@@ -2478,10 +2478,10 @@ regrhadoop.ksh fs -rm /user/hive/exttables/unload_customer_demographics/*
 +>INTO '/user/hive/exttables/unload_customer_demographics'
 +>(select * from trafodion.hbase.customer_demographics_salt) ;
 Task: UNLOAD           Status: Started
-Task:  EXTRACT         Status: Started    Time: 2016-12-23 17:01:45.913
+Task:  EXTRACT         Status: Started    Time: 2017-04-06 22:21:24.484
        Rows Processed but NOT Written to Disk: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2016-12-23 17:01:46.910
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.178
+Task:  EXTRACT         Status: Ended      Time: 2017-04-06 22:21:24.849
+Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.365
 
 --- 20000 row(s) unloaded.
 >>--sh sleep 10;

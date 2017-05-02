@@ -26,9 +26,10 @@
 import sys
 import json
 from threading import Thread
-from common import ParseJson, Remote, run_cmd, err
+from constants import SSHKEY_FILE
+from common import ParseJson, Remote, run_cmd, err, get_sudo_prefix
 
-def run(pwd):
+def run(user, pwd):
     """ gen ssh key on local and copy to all nodes
         copy traf package file from local to all nodes
     """
@@ -36,31 +37,18 @@ def run(pwd):
     hosts = dbcfgs['node_list'].split(',')
     traf_package = dbcfgs['traf_package']
 
-    # save db configs to a tmp file and copy to all trafodion nodes
-    dbcfgs_file = '/tmp/dbcfgs'
-    p = ParseJson(dbcfgs_file)
-    # remove password from config file
-    try:
-        dbcfgs.pop('mgr_pwd')
-        dbcfgs.pop('traf_pwd')
-        dbcfgs.pop('kdcadmin_pwd')
-    except KeyError:
-        pass
-    p.save(dbcfgs)
+    sudo_prefix = get_sudo_prefix()
+    run_cmd('%s rm -rf %s*' % (sudo_prefix, SSHKEY_FILE))
+    run_cmd('%s echo -e "y" | ssh-keygen -t rsa -N "" -f %s' % (sudo_prefix, SSHKEY_FILE))
 
-    key_file = '/tmp/id_rsa'
-    run_cmd('sudo -n rm -rf %s*' % key_file)
-    run_cmd('sudo -n echo -e "y" | ssh-keygen -t rsa -N "" -f %s' % key_file)
+    files = [SSHKEY_FILE, SSHKEY_FILE+'.pub', traf_package]
 
-    files = [key_file, key_file+'.pub', traf_package, dbcfgs_file]
-
-    remote_insts = [Remote(h, pwd=pwd) for h in hosts]
+    remote_insts = [Remote(h, user=user, pwd=pwd) for h in hosts]
     threads = [Thread(target=r.copy, args=(files, '/tmp')) for r in remote_insts]
     for thread in threads: thread.start()
     for thread in threads: thread.join()
     for r in remote_insts:
         if r.rc != 0: err('Failed to copy files to %s' % r.host)
-
 
 # main
 try:
@@ -71,6 +59,11 @@ except IndexError:
 try:
     pwd = sys.argv[2]
 except IndexError:
-    pwd = ''
+    user = pwd = ''
 
-run(pwd)
+try:
+    user = sys.argv[3]
+except IndexError:
+    user = ''
+
+run(user, pwd)

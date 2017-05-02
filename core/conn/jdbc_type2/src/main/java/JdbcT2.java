@@ -29,6 +29,6 @@
            return;
        }
        if (args[0].equals("-version"))
-           System.out.println(org.trafodion.jdbc.t2.T2Driver.driverVproc);
+           System.out.println(org.apache.trafodion.jdbc.t2.T2Driver.driverVproc);
    }
  }

@@ -481,7 +481,6 @@ PrivMgrPrivileges::~PrivMgrPrivileges()
 // *****************************************************************************
 PrivStatus PrivMgrPrivileges::buildSecurityKeys(
   const int32_t granteeID,
-  const int32_t roleID,
   const PrivMgrCoreDesc &privs,
   std::vector <ComSecurityKey *> & secKeySet)
 {
@@ -494,12 +493,9 @@ PrivStatus PrivMgrPrivileges::buildSecurityKeys(
     if ( privs.getPriv(PrivType(i)))
     {
       ComSecurityKey *key = NULL;
-      if (roleID != NA_UserIdDefault && ComUser::isPublicUserID(roleID))
+      if (ComUser::isPublicUserID(granteeID))
         key = new ComSecurityKey(granteeID, 
                                  ComSecurityKey::OBJECT_IS_SPECIAL_ROLE);
-      else if (roleID != NA_UserIdDefault && isRoleID(roleID))
-        key = new ComSecurityKey(granteeID, roleID,
-                                 ComSecurityKey::SUBJECT_IS_USER);
       else
         key = new ComSecurityKey(granteeID, 
                                  objectUID_,
@@ -3603,10 +3599,26 @@ void PrivMgrPrivileges::scanObjectBranch( const PrivType pType, // in
                               privsList );
                 else
                   {
-                    int32_t granteeAsGrantor(thisGrantee);
+                    int32_t granteeAsGrantor;
+                    if (isRoleID(thisGrantee))
+                    {
+                      std::vector<int32_t> roleIDs;
+                      std::vector<int32_t> userIDs;
+                      roleIDs.push_back(thisGrantee);
+                      if (getUserIDsForRoleIDs(roleIDs,userIDs) == STATUS_ERROR)
+                        return;
+                      for (size_t j = 0; j < userIDs.size(); j++)
+                      {
+                         granteeAsGrantor = userIDs[j];
+                         scanObjectBranch( pType, // Scan for this grantee as grantor.
+                                           granteeAsGrantor,
+                                           privsList );
+                      }
+                    }
+                    granteeAsGrantor = thisGrantee;
                     scanObjectBranch( pType, // Scan for this grantee as grantor.
-                                 granteeAsGrantor,
-                                 privsList );
+                                      granteeAsGrantor,
+                                      privsList );
                   }
               }
          }  // end this grantee has wgo
@@ -3936,10 +3948,8 @@ PrivStatus PrivMgrPrivileges::sendSecurityKeysToRMS(
 {
   // Go through the list of table privileges and generate SQL_QIKEYs
   std::vector<ComSecurityKey *> keyList;
-  int32_t roleID = (ComUser::isPublicUserID(granteeID)) ? PUBLIC_USER : NA_UserIdDefault;
   const PrivMgrCoreDesc &privs = revokedPrivs.getTablePrivs();
   PrivStatus privStatus = buildSecurityKeys(granteeID,
-                                            roleID,
                                             revokedPrivs.getTablePrivs(),
                                             keyList);
   if (privStatus != STATUS_GOOD)
@@ -3954,7 +3964,6 @@ PrivStatus PrivMgrPrivileges::sendSecurityKeysToRMS(
   {
     const NAList<PrivMgrCoreDesc> &columnPrivs = revokedPrivs.getColumnPrivs();
     privStatus = buildSecurityKeys(granteeID,
-                                   roleID,
                                    columnPrivs[i],
                                    keyList);
     if (privStatus != STATUS_GOOD)
@@ -4376,7 +4385,6 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
       if (secKeySet)
       {
         retcode = buildSecurityKeys(granteeID,
-                                    row.granteeID_,
                                     temp,
                                     *secKeySet);
         if (retcode == STATUS_ERROR)
@@ -4417,7 +4425,6 @@ PrivStatus PrivMgrPrivileges::getPrivsFromAllGrantors(
     if (secKeySet)
     {
       retcode = buildSecurityKeys(granteeID,
-                                  row.granteeID_,
                                   temp,
                                   *secKeySet);
       if (retcode == STATUS_ERROR)

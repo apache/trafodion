@@ -2634,8 +2634,22 @@ void ExHbaseAccessTcb::allocateDirectRowBufferForJNI(
                                     4 )) // for col value len 
                         + numCols; // 1 byte null value
      maxRowLen  = rowLen + directBufferOverhead;
-     directRowBufferLen_ = (maxRowLen * maxRows);
-     directBufferMaxRows_ = maxRows;
+
+     // limit direct buffer len to 1G
+     Int64 tempDirectBuflen = (Int64)maxRowLen * (Int64)maxRows;
+     Int64 maxDirectBuflen = 1024*1024*1024;
+
+     if (tempDirectBuflen > maxDirectBuflen)
+       {
+         directRowBufferLen_ = MINOF(tempDirectBuflen, maxDirectBuflen);
+         directBufferMaxRows_ = (Int64)directRowBufferLen_ / (Int64)maxRowLen;
+       }
+     else
+       {
+         directRowBufferLen_ = (maxRowLen * maxRows);
+         directBufferMaxRows_ = maxRows;
+       }
+
      directRowBuffer_ = new (getHeap()) BYTE[directRowBufferLen_];
      rows_.val = (char *)directRowBuffer_;
      rows_.len = 0;

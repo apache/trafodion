@@ -4744,8 +4744,10 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
  //
  // ----------------------------------------------------------------------------      
  static Int64 lookupObjectUidByName( const QualifiedName& qualName
-                                   , ComObjectType objectType
-                                   , NABoolean reportError
+                                     , ComObjectType objectType
+                                     , NABoolean reportError
+                                     , Int64 *objectFlags = NULL
+                                     , Int64 *createTime = NULL
                                    )
  {
    ExeCliInterface cliInterface(STMTHEAP);
@@ -4760,43 +4762,145 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
        return -1;
      }
 
-   objectUID = cmpSBD.getObjectUID(&cliInterface,
-                                   qualName.getCatalogName().data(),
-                                   qualName.getSchemaName().data(),
-                                   qualName.getObjectName().data(),
-                                   comObjectTypeLit(objectType),
-                                   NULL,
-                                   NULL,
-                                   FALSE,
-                                   reportError);
+   Int32 objectOwner, schemaOwner;
+   Int64 l_objFlags = 0;
+   Int64 l_createTime = -1;
+   objectUID = cmpSBD.getObjectInfo(&cliInterface,
+                                    qualName.getCatalogName().data(),
+                                    qualName.getSchemaName().data(),
+                                    qualName.getObjectName().data(),
+                                    objectType,
+                                    objectOwner,
+                                    schemaOwner,
+                                    l_objFlags,
+                                    reportError,
+                                    FALSE,
+                                    &l_createTime);
+
+   if (objectFlags)
+     *objectFlags = l_objFlags;
+
+   if (createTime)
+     *createTime = l_createTime;
 
    cmpSBD.switchBackCompiler();
 
    return objectUID;
  }
 
- NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName)
+// Object UID for hive tables. 
+// 3 cases:
+// case 1: external hive table has an object uid in metadata but the hive
+//         table itself is not registered.
+//         This is the case for external tables created prior to the
+//         hive registration change.
+//         Return object UID for external table.
+// case 2: hive table is registered but there is no external table.
+//         Return object UID for the registered table.
+// case 3: UIDs for external and registered tables exist in metadata.
+//         This can happen if an external table is created with the new
+//         change where hive table is automatically registered before
+//         creating the external table.
+//         Or it can happen if an older external table is explicitly registered
+//         with the new code.
+//         Return the object UID that was created earlier.
+// 
+// case 4: For external hbase tables. Get external object uid.
+// 
+// Set my objectUID_ with the object uid determined based on the previous steps.
+NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
+                                                NABoolean isView)
  {
-    NAString adjustedName = ComConvertNativeNameToTrafName
-          (corrName.getQualifiedNameObj().getCatalogName(),
-           corrName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString(),
-           corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
-    QualifiedName extObjName (adjustedName, 3, STMTHEAP);
+   objectUID_ = 0;
 
-    objectUID_ = lookupObjectUidByName(extObjName, COM_BASE_TABLE_OBJECT, FALSE);
+   // get uid if this hive table has been registered in traf metadata.
+   Int64 regCreateTime = -1;
+   Int64 extCreateTime = -1;
+   Int64 regObjectUID = -1;
+   Int64 extObjectUID = -1;
+   if (corrName.isHive())
+     {
+       // first get uid for the registered table/view.
+       Int64 objectFlags = 0;
+       regObjectUID = lookupObjectUidByName(corrName.getQualifiedNameObj(),
+                                            (isView ? COM_VIEW_OBJECT :
+                                             COM_BASE_TABLE_OBJECT), FALSE,
+                                            &objectFlags,
+                                            &regCreateTime);
+       
+       if (NOT isView)
+         {
+           // then get uid for corresponding external table.
+           NAString adjustedName = ComConvertNativeNameToTrafName
+             (corrName.getQualifiedNameObj().getCatalogName(),
+              corrName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString(),
+              corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
+           QualifiedName extObjName (adjustedName, 3, STMTHEAP);
+           extObjectUID = lookupObjectUidByName(extObjName, 
+                                                COM_BASE_TABLE_OBJECT, FALSE,
+                                                NULL, &extCreateTime);
+         }
 
-    // If the objectUID is not found, then the table is not externally defined
-    // in Trafodion, set the objectUID to 0
-    // If an unexpected error occurs, then return with the error
-    if (objectUID_ <= 0)
-      {
-        if (CmpCommon::diags()->mainSQLCODE() < 0)
-          return FALSE;
-        else
-          objectUID_ = 0;
-      }
+       if ((regObjectUID <= 0) && (extObjectUID > 0))
+         {
+           // case 1
+           objectUID_ = extObjectUID;
+         }
+       else if ((extObjectUID <= 0) && (regObjectUID > 0))
+         {
+           // case 2
+           objectUID_ = regObjectUID;
+         }
+       else if ((regObjectUID > 0) && (extObjectUID > 0))
+         {
+           // case 3
+           if (regCreateTime < extCreateTime)
+             objectUID_ = regObjectUID;
+           else
+             objectUID_ = extObjectUID;
+         }
 
-    return TRUE;
+       if (regObjectUID > 0) // hive table is registered
+         {
+           setIsRegistered(TRUE);
+           
+           if (CmpSeabaseDDL::isMDflagsSet(objectFlags, MD_OBJECTS_HIVE_INTERNAL_REGISTER))
+             setIsInternalRegistered(TRUE);
+         }
+
+       if (extObjectUID > 0)
+         {
+           setHasExternalTable(TRUE);
+         }
+     } // is hive
+   else 
+     {
+       // case 4. external hbase table.
+       NAString adjustedName = ComConvertNativeNameToTrafName
+         (corrName.getQualifiedNameObj().getCatalogName(),
+          corrName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString(),
+          corrName.getQualifiedNameObj().getUnqualifiedObjectNameAsAnsiString());
+       QualifiedName extObjName (adjustedName, 3, STMTHEAP);
+       
+       objectUID_ = lookupObjectUidByName(extObjName, 
+                                          COM_BASE_TABLE_OBJECT, FALSE,
+                                          NULL, &extCreateTime);
+       if (objectUID_ > 0)
+         setHasExternalTable(TRUE);
+     }
+
+   // If the objectUID is not found, then the table is not registered or 
+   // externally defined in Trafodion. Set the objectUID to 0
+   // If an unexpected error occurs, then return with the error
+   if (objectUID_ <= 0)
+     {
+       if (CmpCommon::diags()->mainSQLCODE() < 0)
+         return FALSE;
+       else
+         objectUID_ = 0;
+     }
+   
+   return TRUE;
  }
 
  // -----------------------------------------------------------------------
@@ -4848,6 +4952,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
      viewTextCharSet_(CharInfo::UnknownCharSet),
      viewCheck_(NULL),
      viewColUsages_(NULL),
+     hiveOrigViewText_(NULL),
      flags_(IS_INSERTABLE | IS_UPDATABLE),
      insertMode_(COM_REGULAR_TABLE_INSERT_MODE),
      isSynonymTranslationDone_(FALSE),
@@ -4963,36 +5068,36 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 
    // Check if the synonym name translation to reference object has been done.
    if (table_desc->tableDesc()->isSynonymTranslationDone())
-   {
-     isSynonymTranslationDone_ = TRUE;
-     NAString synonymReferenceName(table_desc->tableDesc()->tablename);
-     synonymReferenceName_ = synonymReferenceName;
-     ComUID uid(table_desc->tableDesc()->objectUID);
-     synonymReferenceObjectUid_ = uid;
-   }
+     {
+       isSynonymTranslationDone_ = TRUE;
+       NAString synonymReferenceName(table_desc->tableDesc()->tablename);
+       synonymReferenceName_ = synonymReferenceName;
+       ComUID uid(table_desc->tableDesc()->objectUID);
+       synonymReferenceObjectUid_ = uid;
+     }
    // Check if it is a UMD table, or SMD table or MV related UMD object
    // and set cll correcsponding flags to indicate this.
    if (table_desc->tableDesc()->isUMDTable())
-   {
-      isUMDTable_ = TRUE;
-   }
+     {
+       isUMDTable_ = TRUE;
+     }
 
    if (table_desc->tableDesc()->isSystemTableCode())
-   {
-      isSMDTable_ = TRUE;
-   }
+     {
+       isSMDTable_ = TRUE;
+     }
 
    if (table_desc->tableDesc()->isMVMetadataObject())
-   {
-      isMVUMDTable_ = TRUE;
-   }
+     {
+       isMVUMDTable_ = TRUE;
+     }
 
    isTrigTempTable_ = (qualifiedName_.getSpecialType() == ExtendedQualName::TRIGTEMP_TABLE);
 
    if (table_desc->tableDesc()->isVolatileTable())
-   {
-     setVolatileTable( TRUE );
-   }
+     {
+       setVolatileTable( TRUE );
+     }
 
    switch(table_desc->tableDesc()->rowFormat())
      {
@@ -5008,541 +5113,547 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
      }
 
    if (table_desc->tableDesc()->isInMemoryObject())
-   {
-     setInMemoryObjectDefn( TRUE );
-   }
+     {
+       setInMemoryObjectDefn( TRUE );
+     }
 
    if (table_desc->tableDesc()->isDroppable())
-   {
-     setDroppableTable( TRUE );
-   }
+     {
+       setDroppableTable( TRUE );
+     }
 
    if (corrName.isExternal())
-   {
-     setIsExternalTable(TRUE);
-   }
+     {
+       setIsExternalTable(TRUE);
+     }
 
    if (qualifiedName_.getQualifiedNameObj().isHistograms() || 
        qualifiedName_.getQualifiedNameObj().isHistogramIntervals())
-   {
-     setIsHistogramTable(TRUE);
-   }
+     {
+       setIsHistogramTable(TRUE);
+     }
  
-  insertMode_ = table_desc->tableDesc()->insertMode();
+   insertMode_ = table_desc->tableDesc()->insertMode();
 
-  setRecordLength(table_desc->tableDesc()->record_length);
-  //
-  // Add timestamp information.
-  //
-  createTime_ = table_desc->tableDesc()->createTime;
-  redefTime_  = table_desc->tableDesc()->redefTime;
-  cacheTime_  = table_desc->tableDesc()->cacheTime;
+   setRecordLength(table_desc->tableDesc()->record_length);
+   //
+   // Add timestamp information.
+   //
+   createTime_ = table_desc->tableDesc()->createTime;
+   redefTime_  = table_desc->tableDesc()->redefTime;
+   cacheTime_  = table_desc->tableDesc()->cacheTime;
 
-  catalogUID_ = table_desc->tableDesc()->catUID;
-  schemaUID_ = table_desc->tableDesc()->schemaUID;
-  objectUID_ = table_desc->tableDesc()->objectUID;
+   catalogUID_ = table_desc->tableDesc()->catUID;
+   schemaUID_ = table_desc->tableDesc()->schemaUID;
+   objectUID_ = table_desc->tableDesc()->objectUID;
 
-  // Set the objectUID_ for hbase Cell and Row tables, if the table has
-  // been defined in Trafodion use this value, otherwise, set to 0
-  if (isHbaseCell_ || isHbaseRow_)
-    {
-      if ( !fetchObjectUIDForNativeTable(corrName) )
-        return;
+   // Set the objectUID_ for hbase Cell and Row tables, if the table has
+   // been defined in Trafodion use this value, otherwise, set to 0
+   if (isHbaseCell_ || isHbaseRow_)
+     {
+       if ( !fetchObjectUIDForNativeTable(corrName, FALSE) )
+         return;
+     }
 
-      if (objectUID_ > 0 )
-        setHasExternalTable(TRUE);
-    }
+   if (table_desc->tableDesc()->owner)
+     {
+       Int32 userInfo (table_desc->tableDesc()->owner);
+       owner_ = userInfo;
+     }
+   if (table_desc->tableDesc()->schemaOwner)
+     {
+       Int32 schemaUser(table_desc->tableDesc()->schemaOwner);
+       schemaOwner_ = schemaUser;
+     }
 
-  if (table_desc->tableDesc()->owner)
-    {
-      Int32 userInfo (table_desc->tableDesc()->owner);
-      owner_ = userInfo;
-    }
-  if (table_desc->tableDesc()->schemaOwner)
-    {
-      Int32 schemaUser(table_desc->tableDesc()->schemaOwner);
-      schemaOwner_ = schemaUser;
-    }
+   objectType_ = table_desc->tableDesc()->objectType();
+   partitioningScheme_ = table_desc->tableDesc()->partitioningScheme();
 
-  objectType_ = table_desc->tableDesc()->objectType();
-  partitioningScheme_ = table_desc->tableDesc()->partitioningScheme();
-
-  // Set up privs
-  if ((corrName.getSpecialType() == ExtendedQualName::SG_TABLE) ||
-      (!(corrName.isSeabaseMD() || corrName.isSpecialTable())))
+   // Set up privs
+   if ((corrName.getSpecialType() == ExtendedQualName::SG_TABLE) ||
+       (!(corrName.isSeabaseMD() || corrName.isSpecialTable())))
      getPrivileges(table_desc->tableDesc()->priv_desc);
 
-  if ((table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HIVE) != 0 ||
-      (table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HBASE) != 0)
-    setIsExternalTable(TRUE);
+   if ((table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HIVE) != 0 ||
+       (table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_EXTERNAL_HBASE) != 0)
+     {
+       setIsExternalTable(TRUE);
 
-  if (CmpSeabaseDDL::isMDflagsSet
-      (table_desc->tableDesc()->tablesFlags, MD_TABLES_HIVE_EXT_COL_ATTRS))
-    setHiveExtColAttrs(TRUE);
-  if (CmpSeabaseDDL::isMDflagsSet
-      (table_desc->tableDesc()->tablesFlags, MD_TABLES_HIVE_EXT_KEY_ATTRS))
-    setHiveExtKeyAttrs(TRUE);
+       if (table_desc->tableDesc()->objectFlags & SEABASE_OBJECT_IS_IMPLICIT_EXTERNAL)
+         setIsImplicitExternalTable(TRUE);
+     }
 
-  if (table_desc->tableDesc()->snapshotName)
-    {
-    snapshotName_ =
-        new(heap_) char[strlen(table_desc->tableDesc()->snapshotName) + 1];
-      strcpy(snapshotName_, table_desc->tableDesc()->snapshotName);
-    }
+   if (CmpSeabaseDDL::isMDflagsSet
+       (table_desc->tableDesc()->tablesFlags, MD_TABLES_HIVE_EXT_COL_ATTRS))
+     setHiveExtColAttrs(TRUE);
+   if (CmpSeabaseDDL::isMDflagsSet
+       (table_desc->tableDesc()->tablesFlags, MD_TABLES_HIVE_EXT_KEY_ATTRS))
+     setHiveExtKeyAttrs(TRUE);
 
-  if (table_desc->tableDesc()->default_col_fam)
-    defaultColFam_ = table_desc->tableDesc()->default_col_fam;
+   if (table_desc->tableDesc()->snapshotName)
+     {
+       snapshotName_ =
+         new(heap_) char[strlen(table_desc->tableDesc()->snapshotName) + 1];
+       strcpy(snapshotName_, table_desc->tableDesc()->snapshotName);
+     }
 
-  if (table_desc->tableDesc()->all_col_fams)
-    {
-      // Space delimited col families.
+   if (table_desc->tableDesc()->default_col_fam)
+     defaultColFam_ = table_desc->tableDesc()->default_col_fam;
 
-	    string buf; // Have a buffer string
-	    stringstream ss(table_desc->tableDesc()->all_col_fams); // Insert the string into a stream
+   if (table_desc->tableDesc()->all_col_fams)
+     {
+       // Space delimited col families.
 
-	    while (ss >> buf)
-	    {
-		    allColFams_.insert(buf.c_str());
-	    }
-    }
-  else
-	  allColFams_.insert(defaultColFam_);
+       string buf; // Have a buffer string
+       stringstream ss(table_desc->tableDesc()->all_col_fams); // Insert the string into a stream
 
-  TrafDesc * files_desc = table_desc->tableDesc()->files_desc;
+       while (ss >> buf)
+         {
+           allColFams_.insert(buf.c_str());
+         }
+     }
+   else
+     allColFams_.insert(defaultColFam_);
 
-  // Some objects don't have a file_desc set up (e.g. views)
-  // Therefore, only setup the partnsDesc_ if this is a partitionable object
-  if (files_desc)
-  {
-	  if (files_desc->filesDesc()->partns_desc)
-		  partnsDesc_ = files_desc->filesDesc()->partns_desc;
-  }
-  else
-	  partnsDesc_ = NULL;
+   TrafDesc * files_desc = table_desc->tableDesc()->files_desc;
 
-  //
-  // Insert a NAColumn in the colArray_ for this NATable for each
-  // columns_desc from the ARK SMD. Returns TRUE if error creating NAColumns.
-  //
-  if (createNAColumns(table_desc->tableDesc()->columns_desc,
-			  this,
-			  colArray_ /*OUT*/,
-			  heap_))
-	  //coverity[leaked_storage]
-	  return; // colcount_ == 0 indicates an error
+   // Some objects don't have a file_desc set up (e.g. views)
+   // Therefore, only setup the partnsDesc_ if this is a partitionable object
+   if (files_desc)
+     {
+       if (files_desc->filesDesc()->partns_desc)
+         partnsDesc_ = files_desc->filesDesc()->partns_desc;
+     }
+   else
+     partnsDesc_ = NULL;
 
-  //
-  // Add view information, if this is a view
-  //
-  TrafDesc *view_desc = table_desc->tableDesc()->views_desc;
-  if (view_desc)
-  {
-	  viewText_ = new (heap_) char[strlen(view_desc->viewDesc()->viewtext) + 2];
-	  strcpy(viewText_, view_desc->viewDesc()->viewtext);
-	  strcat(viewText_, ";");
+   //
+   // Insert a NAColumn in the colArray_ for this NATable for each
+   // columns_desc from the ARK SMD. Returns TRUE if error creating NAColumns.
+   //
+   if (createNAColumns(table_desc->tableDesc()->columns_desc,
+                       this,
+                       colArray_ /*OUT*/,
+                       heap_))
+     //coverity[leaked_storage]
+     return; // colcount_ == 0 indicates an error
 
-	  viewTextCharSet_ = (CharInfo::CharSet)view_desc->viewDesc()->viewtextcharset;
+   //
+   // Add view information, if this is a view
+   //
+   TrafDesc *view_desc = table_desc->tableDesc()->views_desc;
+   if (view_desc)
+     {
+       viewText_ = new (heap_) char[strlen(view_desc->viewDesc()->viewtext) + 2];
+       strcpy(viewText_, view_desc->viewDesc()->viewtext);
+       strcat(viewText_, ";");
 
-	  viewCheck_    = NULL; //initialize
-	  if(view_desc->viewDesc()->viewchecktext){
-		  UInt32 viewCheckLength = str_len(view_desc->viewDesc()->viewchecktext)+1;
-		  viewCheck_ = new (heap_) char[ viewCheckLength];
-		  memcpy(viewCheck_, view_desc->viewDesc()->viewchecktext,
-				  viewCheckLength);
-	  }
+       viewTextCharSet_ = (CharInfo::CharSet)view_desc->viewDesc()->viewtextcharset;
 
-	  viewColUsages_ = NULL;
-	  if(view_desc->viewDesc()->viewcolusages){
-		  viewColUsages_ = new (heap_) NAList<ComViewColUsage *>(heap_); //initialize empty list
-		  char * beginStr (view_desc->viewDesc()->viewcolusages);
-		  char * endStr = strchr(beginStr, ';');
-		  while (endStr != NULL) {
-			  ComViewColUsage *colUsage = new (heap_) ComViewColUsage;
-			  NAString currentUsage(beginStr, endStr - beginStr + 1); 
-			  colUsage->unpackUsage (currentUsage.data());
-			  viewColUsages_->insert(colUsage);
-			  beginStr = endStr+1;
-			  endStr = strchr(beginStr, ';');
-		  }
-	  }
-	  setUpdatable(view_desc->viewDesc()->isUpdatable());
-	  setInsertable(view_desc->viewDesc()->isInsertable());
+       viewCheck_    = NULL; //initialize
+       if(view_desc->viewDesc()->viewchecktext){
+         UInt32 viewCheckLength = str_len(view_desc->viewDesc()->viewchecktext)+1;
+         viewCheck_ = new (heap_) char[ viewCheckLength];
+         memcpy(viewCheck_, view_desc->viewDesc()->viewchecktext,
+                viewCheckLength);
+       }
 
-	  //
-	  // The updatable flag is false for an MP view only if it is NOT a
-	  // protection view. Therefore updatable == FALSE iff it is a
-	  // shorthand view. See ReadTableDef.cpp, l. 3379.
-	  //
+       viewColUsages_ = NULL;
+       if(view_desc->viewDesc()->viewcolusages){
+         viewColUsages_ = new (heap_) NAList<ComViewColUsage *>(heap_); //initialize empty list
+         char * beginStr (view_desc->viewDesc()->viewcolusages);
+         char * endStr = strchr(beginStr, ';');
+         while (endStr != NULL) {
+           ComViewColUsage *colUsage = new (heap_) ComViewColUsage;
+           NAString currentUsage(beginStr, endStr - beginStr + 1); 
+           colUsage->unpackUsage (currentUsage.data());
+           viewColUsages_->insert(colUsage);
+           beginStr = endStr+1;
+           endStr = strchr(beginStr, ';');
+         }
+       }
+       setUpdatable(view_desc->viewDesc()->isUpdatable());
+       setInsertable(view_desc->viewDesc()->isInsertable());
 
-	  viewFileName_ = NULL;
-	  CMPASSERT(view_desc->viewDesc()->viewfilename);
-	  UInt32 viewFileNameLength = str_len(view_desc->viewDesc()->viewfilename) + 1;
-	  viewFileName_ = new (heap_) char[viewFileNameLength];
-	  memcpy(viewFileName_, view_desc->viewDesc()->viewfilename,
-			  viewFileNameLength);
-  }
-  else
-  {
-	  //keep track of memory used by NAFileSets
-	  Lng32 preCreateNAFileSetsMemSize = heap_->getAllocSize();
+       //
+       // The updatable flag is false for an MP view only if it is NOT a
+       // protection view. Therefore updatable == FALSE iff it is a
+       // shorthand view. See ReadTableDef.cpp, l. 3379.
+       //
 
-	  //
-	  // Process indexes and vertical partitions for this table.
-	  //
-	  if (createNAFileSets(table_desc       /*IN*/,
-				  this             /*IN*/,
-				  colArray_        /*IN*/,
-				  indexes_         /*OUT*/,
-				  vertParts_       /*OUT*/,
-				  clusteringIndex_ /*OUT*/,
-				  tableIdList_     /*OUT*/,
-				  heap_,
-				  bindWA,
-				  newColumns_,     /*OUT*/
-				  maxIndexLevelsPtr)) {
-		  return; // colcount_ == 0 indicates an error
-	  }
+       viewFileName_ = NULL;
+       CMPASSERT(view_desc->viewDesc()->viewfilename);
+       UInt32 viewFileNameLength = str_len(view_desc->viewDesc()->viewfilename) + 1;
+       viewFileName_ = new (heap_) char[viewFileNameLength];
+       memcpy(viewFileName_, view_desc->viewDesc()->viewfilename,
+              viewFileNameLength);
+     }
+   else
+     {
+       //keep track of memory used by NAFileSets
+       Lng32 preCreateNAFileSetsMemSize = heap_->getAllocSize();
 
-	  // Add constraint info.
-	  //
-	  // This call to createConstraintInfo, calls the parser on
-	  // the constraint name
-	  //
+       //
+       // Process indexes and vertical partitions for this table.
+       //
+       if (createNAFileSets(table_desc       /*IN*/,
+                            this             /*IN*/,
+                            colArray_        /*IN*/,
+                            indexes_         /*OUT*/,
+                            vertParts_       /*OUT*/,
+                            clusteringIndex_ /*OUT*/,
+                            tableIdList_     /*OUT*/,
+                            heap_,
+                            bindWA,
+                            newColumns_,     /*OUT*/
+                            maxIndexLevelsPtr)) {
+         return; // colcount_ == 0 indicates an error
+       }
 
-	  NABoolean  errorOccurred =
-		  createConstraintInfo(table_desc        /*IN*/,
-				  getTableName()    /*IN*/,
-				  getNAColumnArray()/*IN (some columns updated)*/,
-				  checkConstraints_ /*OUT*/,
-				  uniqueConstraints_/*OUT*/,
-				  refConstraints_   /*OUT*/,
-				  heap_,
-				  bindWA);
+       // Add constraint info.
+       //
+       // This call to createConstraintInfo, calls the parser on
+       // the constraint name
+       //
 
-	  if (errorOccurred) {
-		  // return before setting colcount_, indicating that there
-		  // was an error in constructing this NATable.
-		  //
-		  return;
-	  }
+       NABoolean  errorOccurred =
+         createConstraintInfo(table_desc        /*IN*/,
+                              getTableName()    /*IN*/,
+                              getNAColumnArray()/*IN (some columns updated)*/,
+                              checkConstraints_ /*OUT*/,
+                              uniqueConstraints_/*OUT*/,
+                              refConstraints_   /*OUT*/,
+                              heap_,
+                              bindWA);
 
-	  //
-	  // FetchHistograms call used to be here -- moved to getStatistics().
-	  //
-  }
+       if (errorOccurred) {
+         // return before setting colcount_, indicating that there
+         // was an error in constructing this NATable.
+         //
+         return;
+       }
 
-  // change partFunc for base table if PARTITION clause has been used
-  // to limit the number of partitions that will be accessed.
-  if ((qualifiedName_.isPartitionNameSpecified()) ||
-		  (qualifiedName_.isPartitionRangeSpecified())) {
-	  if (filterUnusedPartitions(corrName.getPartnClause())) {
-		  return ;
-	  }
-  }
+       //
+       // FetchHistograms call used to be here -- moved to getStatistics().
+       //
+     }
 
-  //
-  // Set colcount_ after all possible errors (Binder uses nonzero colcount
-  // as an indicator of valid table definition).
-  //
-  CMPASSERT(table_desc->tableDesc()->colcount >= 0);   // CollIndex cast ok?
-  colcount_ = (CollIndex)table_desc->tableDesc()->colcount;
+   // change partFunc for base table if PARTITION clause has been used
+   // to limit the number of partitions that will be accessed.
+   if ((qualifiedName_.isPartitionNameSpecified()) ||
+       (qualifiedName_.isPartitionRangeSpecified())) {
+     if (filterUnusedPartitions(corrName.getPartnClause())) {
+       return ;
+     }
+   }
 
-  // If there is a host variable associated with this table, store it
-  // for use by the generator to generate late-name resolution information.
-  //
-  HostVar *hv = corrName.getPrototype();
-  prototype_ = hv ? new (heap_) HostVar(*hv) : NULL;
+   //
+   // Set colcount_ after all possible errors (Binder uses nonzero colcount
+   // as an indicator of valid table definition).
+   //
+   CMPASSERT(table_desc->tableDesc()->colcount >= 0);   // CollIndex cast ok?
+   colcount_ = (CollIndex)table_desc->tableDesc()->colcount;
 
-  // MV
-  // Initialize the MV support data members
-  isAnMV_           = table_desc->tableDesc()->isMVTable();
-  isAnMVMetaData_   = table_desc->tableDesc()->isMVMetadataObject();
-  mvAttributeBitmap_.initBitmap(table_desc->tableDesc()->mvAttributesBitmap);
+   // If there is a host variable associated with this table, store it
+   // for use by the generator to generate late-name resolution information.
+   //
+   HostVar *hv = corrName.getPrototype();
+   prototype_ = hv ? new (heap_) HostVar(*hv) : NULL;
 
-  TrafDesc *mvs_desc = NULL; // using mvs not set or returned for traf tables
-  // Memory Leak
-  while (mvs_desc)
-  {
-	  TrafUsingMvDesc* mv = mvs_desc->usingMvDesc();
+   // MV
+   // Initialize the MV support data members
+   isAnMV_           = table_desc->tableDesc()->isMVTable();
+   isAnMVMetaData_   = table_desc->tableDesc()->isMVMetadataObject();
+   mvAttributeBitmap_.initBitmap(table_desc->tableDesc()->mvAttributesBitmap);
 
-	  UsingMvInfo *usingMv = new(heap_)
-		  UsingMvInfo(mv->mvName, mv->refreshType(), mv->rewriteEnabled,
-				  mv->isInitialized, heap_);
-	  mvsUsingMe_.insert(usingMv);
+   TrafDesc *mvs_desc = NULL; // using mvs not set or returned for traf tables
+   // Memory Leak
+   while (mvs_desc)
+     {
+       TrafUsingMvDesc* mv = mvs_desc->usingMvDesc();
 
-	  mvs_desc = mvs_desc->next;
-  }
+       UsingMvInfo *usingMv = new(heap_)
+         UsingMvInfo(mv->mvName, mv->refreshType(), mv->rewriteEnabled,
+                     mv->isInitialized, heap_);
+       mvsUsingMe_.insert(usingMv);
 
-  // ++MV
+       mvs_desc = mvs_desc->next;
+     }
 
-  // fix the special-type for MV objects. There are case where the type is
-  // set to NORMAL_TABLE although this is an MV.
-  //
-  // Example:
-  // --------
-  // in the statement "select * from MV1" mv1 will have a NORMAL_TABLE
-  // special-type, while in "select * from table(mv_table MV1)" it will
-  // have the MV_TABLE special-type.
+   // ++MV
 
-  if (isAnMV_)
-  {
-	  switch(qualifiedName_.getSpecialType())
-	  {
-		  case ExtendedQualName::GHOST_TABLE:
-			  qualifiedName_.setSpecialType(ExtendedQualName::GHOST_MV_TABLE);
-			  break;
-		  case ExtendedQualName::GHOST_MV_TABLE:
-			  // Do not change it
-			  break;
-		  default:
-			  qualifiedName_.setSpecialType(ExtendedQualName::MV_TABLE);
-			  break;
-	  }
-  }
+   // fix the special-type for MV objects. There are case where the type is
+   // set to NORMAL_TABLE although this is an MV.
+   //
+   // Example:
+   // --------
+   // in the statement "select * from MV1" mv1 will have a NORMAL_TABLE
+   // special-type, while in "select * from table(mv_table MV1)" it will
+   // have the MV_TABLE special-type.
 
-  // --MV
+   if (isAnMV_)
+     {
+       switch(qualifiedName_.getSpecialType())
+         {
+         case ExtendedQualName::GHOST_TABLE:
+           qualifiedName_.setSpecialType(ExtendedQualName::GHOST_MV_TABLE);
+           break;
+         case ExtendedQualName::GHOST_MV_TABLE:
+           // Do not change it
+           break;
+         default:
+           qualifiedName_.setSpecialType(ExtendedQualName::MV_TABLE);
+           break;
+         }
+     }
 
-  // Initialize the sequence generator fields
-  TrafDesc *sequence_desc = table_desc->tableDesc()->sequence_generator_desc;
-  if (sequence_desc != NULL) {
-	  TrafSequenceGeneratorDesc *sg_desc = sequence_desc->sequenceGeneratorDesc();
+   // --MV
 
-	  if (sg_desc != NULL)
-	  {
-		  sgAttributes_ = 
-			  new(heap_) SequenceGeneratorAttributes(
-					  sg_desc->startValue,
-					  sg_desc->increment,
-					  sg_desc->maxValue,
-					  sg_desc->minValue,
-					  sg_desc->sgType(),
-					  (ComSQLDataType)sg_desc->sqlDataType,
-					  (ComFSDataType)sg_desc->fsDataType,
-					  sg_desc->cycleOption,
-					  FALSE,
-					  sg_desc->objectUID,
-					  sg_desc->cache,
-					  sg_desc->nextValue,
-					  0,
-					  sg_desc->redefTime);
-	  }
-  }
+   // Initialize the sequence generator fields
+   TrafDesc *sequence_desc = table_desc->tableDesc()->sequence_generator_desc;
+   if (sequence_desc != NULL) {
+     TrafSequenceGeneratorDesc *sg_desc = sequence_desc->sequenceGeneratorDesc();
+
+     if (sg_desc != NULL)
+       {
+         sgAttributes_ = 
+           new(heap_) SequenceGeneratorAttributes(
+                sg_desc->startValue,
+                sg_desc->increment,
+                sg_desc->maxValue,
+                sg_desc->minValue,
+                sg_desc->sgType(),
+                (ComSQLDataType)sg_desc->sqlDataType,
+                (ComFSDataType)sg_desc->fsDataType,
+                sg_desc->cycleOption,
+                FALSE,
+                sg_desc->objectUID,
+                sg_desc->cache,
+                sg_desc->nextValue,
+                0,
+                sg_desc->redefTime);
+       }
+   }
 #ifndef NDEBUG
-  if (getenv("NATABLE_DEBUG"))
-  {
-	  cout << "NATable " << (void*)this << " "
-		  << qualifiedName_.getQualifiedNameObj().getQualifiedNameAsAnsiString() << " "
-		  << (Int32)qualifiedName_.getSpecialType() << endl;
-	  colArray_.print();
-  }
+   if (getenv("NATABLE_DEBUG"))
+     {
+       cout << "NATable " << (void*)this << " "
+            << qualifiedName_.getQualifiedNameObj().getQualifiedNameAsAnsiString() << " "
+            << (Int32)qualifiedName_.getSpecialType() << endl;
+       colArray_.print();
+     }
 #endif
-  //this guy is cacheable
-  if((qualifiedName_.isCacheable())&&
-		  (NOT (isHbaseTable())) && 
-		  //this object is not on the statement heap (i.e. it is being cached)
-		  ((heap_ != CmpCommon::statementHeap())||
-		   (OSIM_runningInCaptureMode())))
-  {
-	  char * nodeName = NULL;
-	  char * catStr = NULL;
-	  char * schemaStr = NULL;
-	  char * fileStr = NULL;
-	  short nodeNameLen = 0;
-	  Int32 catStrLen = 0;
-	  Int32 schemaStrLen = 0;
-	  Int32 fileStrLen = 0;
+   //this guy is cacheable
+   if((qualifiedName_.isCacheable())&&
+      (NOT (isHbaseTable())) && 
+      //this object is not on the statement heap (i.e. it is being cached)
+      ((heap_ != CmpCommon::statementHeap())||
+       (OSIM_runningInCaptureMode())))
+     {
+       char * nodeName = NULL;
+       char * catStr = NULL;
+       char * schemaStr = NULL;
+       char * fileStr = NULL;
+       short nodeNameLen = 0;
+       Int32 catStrLen = 0;
+       Int32 schemaStrLen = 0;
+       Int32 fileStrLen = 0;
 #ifdef NA_64BIT
-	  // dg64 - match signature
-	  int_32 primaryNodeNum=0;
+       // dg64 - match signature
+       int_32 primaryNodeNum=0;
 #else
-	  Int32 primaryNodeNum=0;
+       Int32 primaryNodeNum=0;
 #endif
-	  short error = 0;
+       short error = 0;
 
-	  //clusteringIndex has physical filename that can be used to check
-	  //if a catalog operation has been performed on a table.
-	  //Views don't have clusteringIndex, so we get physical filename
-	  //from the viewFileName_ datamember.
-	  if(viewText_)
-	  {
-		  //view filename starts with node name
-		  //filename is in format \<node_name>.$<volume>.<subvolume>.<file>
-		  //catStr => <volume>
-		  //schemaStr => <subvolume>
-		  //fileStr => <file>
-		  nodeName = viewFileName_;
-		  catStr = nodeName;
+       //clusteringIndex has physical filename that can be used to check
+       //if a catalog operation has been performed on a table.
+       //Views don't have clusteringIndex, so we get physical filename
+       //from the viewFileName_ datamember.
+       if(viewText_)
+         {
+           //view filename starts with node name
+           //filename is in format \<node_name>.$<volume>.<subvolume>.<file>
+           //catStr => <volume>
+           //schemaStr => <subvolume>
+           //fileStr => <file>
+           nodeName = viewFileName_;
+           catStr = nodeName;
 
-		  //skip over node name
-		  //measure node name length
-		  //get to begining of volume name
-		  //Measure length of node name
-		  //skip over node name i.e. \MAYA, \AZTEC, etc
-		  //and get to volume name
-		  while((nodeName[nodeNameLen]!='.')&&
-				  (nodeNameLen < 8)){
-			  catStr++;
-			  nodeNameLen++;
-		  };
+           //skip over node name
+           //measure node name length
+           //get to begining of volume name
+           //Measure length of node name
+           //skip over node name i.e. \MAYA, \AZTEC, etc
+           //and get to volume name
+           while((nodeName[nodeNameLen]!='.')&&
+                 (nodeNameLen < 8)){
+             catStr++;
+             nodeNameLen++;
+           };
 
-		  //skip over '.' and the '$' in volume name
-		  catStr=&nodeName[nodeNameLen+2];
-		  schemaStr=catStr;
+           //skip over '.' and the '$' in volume name
+           catStr=&nodeName[nodeNameLen+2];
+           schemaStr=catStr;
 
-		  //skip over the volume/catalog name
-		  //while measuring catalog name length
-		  while((catStr[catStrLen]!='.')&&
-				  (catStrLen < 8))
-		  {
-			  schemaStr++;
-			  catStrLen++;
-		  }
+           //skip over the volume/catalog name
+           //while measuring catalog name length
+           while((catStr[catStrLen]!='.')&&
+                 (catStrLen < 8))
+             {
+               schemaStr++;
+               catStrLen++;
+             }
 
-		  //skip over the '.'
-		  schemaStr++;
-		  fileStr=schemaStr;
+           //skip over the '.'
+           schemaStr++;
+           fileStr=schemaStr;
 
-		  //skip over the subvolume/schema name
-		  //while measuring schema name length
-		  while((schemaStr[schemaStrLen]!='.')&&
-				  (schemaStrLen < 8))
-		  {
-			  fileStr++;
-			  schemaStrLen++;
-		  }
+           //skip over the subvolume/schema name
+           //while measuring schema name length
+           while((schemaStr[schemaStrLen]!='.')&&
+                 (schemaStrLen < 8))
+             {
+               fileStr++;
+               schemaStrLen++;
+             }
 
-		  //skip over the '.'
-		  fileStr++;
-		  fileStrLen = str_len(fileStr);
+           //skip over the '.'
+           fileStr++;
+           fileStrLen = str_len(fileStr);
 
-		  //figure out the node number for the node
-		  //which has the primary partition.
-		  primaryNodeNum=0;
+           //figure out the node number for the node
+           //which has the primary partition.
+           primaryNodeNum=0;
 
-		  if(!OSIM_runningSimulation())        
-			  primaryNodeNum = gpClusterInfo->mapNodeNameToNodeNum(NAString(nodeName));
-	  }
-	  else{
-		  //get qualified name of the clustering index which should
-		  //be the actual physical file name of the table
-		  const QualifiedName fileNameObj = getClusteringIndex()->
-			  getRandomPartition();
-		  const NAString fileName = fileNameObj.getObjectName();
+           if(!OSIM_runningSimulation())        
+             primaryNodeNum = gpClusterInfo->mapNodeNameToNodeNum(NAString(nodeName));
+         }
+       else{
+         //get qualified name of the clustering index which should
+         //be the actual physical file name of the table
+         const QualifiedName fileNameObj = getClusteringIndex()->
+           getRandomPartition();
+         const NAString fileName = fileNameObj.getObjectName();
 
-		  //get schemaName object
-		  const SchemaName schemaNameObj = fileNameObj.getSchemaName();
-		  const NAString schemaName = schemaNameObj.getSchemaName();
+         //get schemaName object
+         const SchemaName schemaNameObj = fileNameObj.getSchemaName();
+         const NAString schemaName = schemaNameObj.getSchemaName();
 
-		  //get catalogName object
-		  //this contains a string in the form \<node_name>.$volume
-		  const CatalogName catalogNameObj = fileNameObj.getCatalogName();
-		  const NAString catalogName = catalogNameObj.getCatalogName();
-		  nodeName = (char*) catalogName.data();
-		  catStr = nodeName;
+         //get catalogName object
+         //this contains a string in the form \<node_name>.$volume
+         const CatalogName catalogNameObj = fileNameObj.getCatalogName();
+         const NAString catalogName = catalogNameObj.getCatalogName();
+         nodeName = (char*) catalogName.data();
+         catStr = nodeName;
 
-		  //Measure length of node name
-		  //skip over node name i.e. \MAYA, \AZTEC, etc
-		  //and get to volume name
-		  while((nodeName[nodeNameLen]!='.')&&
-				  (nodeNameLen < 8)){
-			  catStr++;
-			  nodeNameLen++;
-		  };
+         //Measure length of node name
+         //skip over node name i.e. \MAYA, \AZTEC, etc
+         //and get to volume name
+         while((nodeName[nodeNameLen]!='.')&&
+               (nodeNameLen < 8)){
+           catStr++;
+           nodeNameLen++;
+         };
 
-		  //get volume/catalog name
-		  //skip ".$"
-		  catStr=&nodeName[nodeNameLen+2];
+         //get volume/catalog name
+         //skip ".$"
+         catStr=&nodeName[nodeNameLen+2];
 #pragma nowarn(1506)   // warning elimination
-		  catStrLen = catalogName.length() - (nodeNameLen+2);
+         catStrLen = catalogName.length() - (nodeNameLen+2);
 #pragma warn(1506)  // warning elimination
 
-		  //get subvolume/schema name
-		  schemaStr = (char *) schemaName.data();
+         //get subvolume/schema name
+         schemaStr = (char *) schemaName.data();
 #pragma nowarn(1506)   // warning elimination
-		  schemaStrLen = schemaName.length();
+         schemaStrLen = schemaName.length();
 #pragma warn(1506)  // warning elimination
 
-		  //get file name
-		  fileStr = (char *) fileName.data();
+         //get file name
+         fileStr = (char *) fileName.data();
 #pragma nowarn(1506)   // warning elimination
-		  fileStrLen = fileName.length();
+         fileStrLen = fileName.length();
 #pragma warn(1506)  // warning elimination
 
-		  //figure out the node number for the node
-		  //which has the primary partition.
-		  primaryNodeNum=0;
+         //figure out the node number for the node
+         //which has the primary partition.
+         primaryNodeNum=0;
 
-		  primaryNodeNum = gpClusterInfo->mapNodeNameToNodeNum(NAString(nodeName));
+         primaryNodeNum = gpClusterInfo->mapNodeNameToNodeNum(NAString(nodeName));
 
-	  }
-  }
+       }
+     }
 
-  Lng32 postCreateNATableWarnings = CmpCommon::diags()->getNumber(DgSqlCode::WARNING_);
+   Lng32 postCreateNATableWarnings = CmpCommon::diags()->getNumber(DgSqlCode::WARNING_);
 
-  if(postCreateNATableWarnings != preCreateNATableWarnings)
-	  tableConstructionHadWarnings_=TRUE;
-  const char *lobHdfsServer = CmpCommon::getDefaultString(LOB_HDFS_SERVER);
-  Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
-  if (hasLobColumn())
-  {
-	  // read lob related information from lob metadata
-	  //     setFromStoredDesc(TRUE);
-      //
-	    short *lobNumList = new (heap_) short[getColumnCount()];
-	    short *lobTypList = new (heap_) short[getColumnCount()];
-	    char  **lobLocList = new (heap_) char*[getColumnCount()];
-            char  **lobColNameList = new (heap_) char*[getColumnCount()];
-	    const NAColumnArray &colArray = getNAColumnArray();
-	    NAColumn *nac = NULL;
 
-	    Lng32 j = 0;
-	    for (CollIndex i = 0; i < getColumnCount(); i++)
-	    {
-		    nac = colArray.getColumn(i);
+   if(postCreateNATableWarnings != preCreateNATableWarnings)
+     tableConstructionHadWarnings_=TRUE;
+   char  lobHdfsServer[256] ; // max length determined by dfs.namenode.fs-limits.max-component-length(255)
+   memset(lobHdfsServer,0,256);
+   strncpy(lobHdfsServer,CmpCommon::getDefaultString(LOB_HDFS_SERVER), sizeof(lobHdfsServer)-1);// leave a NULL terminator at the end. 
+   
+   Int32 lobHdfsPort = (Lng32)CmpCommon::getDefaultNumeric(LOB_HDFS_PORT);
+   if (hasLobColumn())
+     {
+       // read lob related information from lob metadata
+       //     setFromStoredDesc(TRUE);
+       //
+       short *lobNumList = new (heap_) short[getColumnCount()];
+       short *lobTypList = new (heap_) short[getColumnCount()];
+       char  **lobLocList = new (heap_) char*[getColumnCount()];
+       char  **lobColNameList = new (heap_) char*[getColumnCount()];
+       const NAColumnArray &colArray = getNAColumnArray();
+       NAColumn *nac = NULL;
 
-		    if (nac->getType()->getTypeQualifier() == NA_LOB_TYPE)
-		    {
-			    lobLocList[j] = new (heap_) char[1024];
-                            lobColNameList[j] = new (heap_)char[256];
-			    j++;
-		    }
-	    }      
+       Lng32 j = 0;
+       for (CollIndex i = 0; i < getColumnCount(); i++)
+         {
+           nac = colArray.getColumn(i);
 
-	    NAString schNam;
-	    schNam = "\"";
-	    schNam += getTableName().getCatalogName();
-	    schNam += "\".\"";
-	    schNam += getTableName().getSchemaName();
-	    schNam += "\"";
+           if (nac->getType()->getTypeQualifier() == NA_LOB_TYPE)
+             {
+               lobLocList[j] = new (heap_) char[1024];
+               lobColNameList[j] = new (heap_)char[256];
+               j++;
+             }
+         }      
 
-	    Lng32 numLobs = 0;
-	    Lng32 cliRC = SQL_EXEC_LOBddlInterface
-		    (
-		     (char*)schNam.data(),
-		     schNam.length(),
-		     objectUid().castToInt64(),
-		     numLobs,
-		     LOB_CLI_SELECT_CURSOR,
-		     lobNumList,
-		     lobTypList,
-		     lobLocList,lobColNameList,(char *)lobHdfsServer,lobHdfsPort,0,FALSE);
+       NAString schNam;
+       schNam = "\"";
+       schNam += getTableName().getCatalogName();
+       schNam += "\".\"";
+       schNam += getTableName().getSchemaName();
+       schNam += "\"";
 
-	    if (cliRC == 0)
-	    {
-		    for (Lng32 i = 0; i < numLobs; i++)
-		    {
-			    nac = colArray.getColumn(lobNumList[i]);
+       Lng32 numLobs = 0;
+       Lng32 cliRC = SQL_EXEC_LOBddlInterface
+         (
+              (char*)schNam.data(),
+              schNam.length(),
+              objectUid().castToInt64(),
+              numLobs,
+              LOB_CLI_SELECT_CURSOR,
+              lobNumList,
+              lobTypList,
+              lobLocList,lobColNameList,lobHdfsServer,lobHdfsPort,0,FALSE);
 
-			    nac->lobNum() = lobNumList[i];
-			    nac->lobStorageType() = (LobsStorage)lobTypList[i];
-			    nac->lobStorageLocation() = lobLocList[i];
-		    }
-	    } // if
-    } // if
+       if (cliRC == 0)
+         {
+           for (Lng32 i = 0; i < numLobs; i++)
+             {
+               nac = colArray.getColumn(lobNumList[i]);
 
-  // LCOV_EXCL_STOP
-  initialSize_ = heap_->getAllocSize();
-  MonitorMemoryUsage_Exit((char*)mmPhase.data(), heap_, NULL, TRUE);
+               nac->lobNum() = lobNumList[i];
+               nac->lobStorageType() = (LobsStorage)lobTypList[i];
+               nac->lobStorageLocation() = lobLocList[i];
+             }
+         } // if
+     } // if
+
+   // LCOV_EXCL_STOP
+   initialSize_ = heap_->getAllocSize();
+   MonitorMemoryUsage_Exit((char*)mmPhase.data(), heap_, NULL, TRUE);
  } // NATable()
 #pragma warn(770)  // warning elimination
 
@@ -5552,286 +5663,323 @@ NATable::NATable(BindWA *bindWA,
                  const CorrName& corrName,
 		 NAMemory *heap,
 		 struct hive_tbl_desc* htbl)
-  //
-  // The NATable heap ( i.e. heap_ ) used to come from ContextHeap
-  // (i.e. heap) but it creates high memory usage/leakage in Context
-  // Heap. Although the NATables are deleted at the end of each statement,
-  // the heap_ is returned to heap (i.e. context heap) which caused
-  // context heap containing a lot of not used chunk of memory. So it is
-  // changed to be from whatever heap is passed in at the call in
-  // NATableDB.getNATable.
-  //
-  // Now NATable objects can be cached.If an object is to be cached (persisted
-  // across statements) a NATable heap is allocated for the object
-  // and is passed in (this is done in NATableDB::get(CorrName& corrName...).
-  // Otherwise a reference to the Statement heap is passed in. When a cached
-  // object is to be deleted the object's heap is deleted which wipes out the
-  // NATable object all its related stuff. NATable objects that are not cached
-  // are wiped out at the end of the statement when the statement heap is deleted.
-  //
-  : heap_(heap),
-    referenceCount_(0),
-    refsIncompatibleDP2Halloween_(FALSE),
-    isHalloweenTable_(FALSE),
-    qualifiedName_(corrName.getExtendedQualNameObj(),heap),
-    synonymReferenceName_(heap),
-    fileSetName_(corrName.getQualifiedNameObj(),heap),   // for now, set equal
-    clusteringIndex_(NULL),
-    colcount_(0),
-    colArray_(heap),
-    recordLength_(0),
-    indexes_(heap),
-    vertParts_(heap),
-    colStats_(NULL),
-    statsFetched_(FALSE),
-    viewFileName_(NULL),
-    viewText_(NULL),
-    viewTextInNAWchars_(heap),
-    viewTextCharSet_(CharInfo::UnknownCharSet),
-    viewCheck_(NULL),
-    viewColUsages_(NULL),
-    flags_(IS_INSERTABLE | IS_UPDATABLE),
-    insertMode_(COM_REGULAR_TABLE_INSERT_MODE),
-    isSynonymTranslationDone_(FALSE),
-    checkConstraints_(heap),
-    createTime_(htbl->creationTS_),
-    redefTime_(htbl->redeftime()),
-    cacheTime_(0),
-    statsTime_(0),
-    catalogUID_(0),
-    schemaUID_(0),
-    objectUID_(0),
-    objectType_(COM_UNKNOWN_OBJECT),
-    partitioningScheme_(COM_UNKNOWN_PARTITIONING),
-    uniqueConstraints_(heap),
-    refConstraints_(heap),
-    isAnMV_(FALSE),
-    isAnMVMetaData_(FALSE),
-    mvsUsingMe_(heap),
-    mvInfo_(NULL),
-    accessedInCurrentStatement_(TRUE),
-    setupForStatement_(FALSE),
-    resetAfterStatement_(FALSE),
-    hitCount_(0),
-    replacementCounter_(2),
-    sizeInCache_(0),
-    recentlyUsed_(TRUE),
-    tableConstructionHadWarnings_(FALSE),
-    isAnMPTableWithAnsiName_(FALSE),
-    isUMDTable_(FALSE),
-    isSMDTable_(FALSE),
-    isMVUMDTable_(FALSE),
+     //
+     // The NATable heap ( i.e. heap_ ) used to come from ContextHeap
+     // (i.e. heap) but it creates high memory usage/leakage in Context
+     // Heap. Although the NATables are deleted at the end of each statement,
+     // the heap_ is returned to heap (i.e. context heap) which caused
+     // context heap containing a lot of not used chunk of memory. So it is
+     // changed to be from whatever heap is passed in at the call in
+     // NATableDB.getNATable.
+     //
+     // Now NATable objects can be cached.If an object is to be cached (persisted
+     // across statements) a NATable heap is allocated for the object
+     // and is passed in (this is done in NATableDB::get(CorrName& corrName...).
+     // Otherwise a reference to the Statement heap is passed in. When a cached
+     // object is to be deleted the object's heap is deleted which wipes out the
+     // NATable object all its related stuff. NATable objects that are not cached
+     // are wiped out at the end of the statement when the statement heap is deleted.
+     //
+     : heap_(heap),
+       referenceCount_(0),
+       refsIncompatibleDP2Halloween_(FALSE),
+       isHalloweenTable_(FALSE),
+       qualifiedName_(corrName.getExtendedQualNameObj(),heap),
+       synonymReferenceName_(heap),
+       fileSetName_(corrName.getQualifiedNameObj(),heap),   // for now, set equal
+       clusteringIndex_(NULL),
+       colcount_(0),
+       colArray_(heap),
+       recordLength_(0),
+       indexes_(heap),
+       vertParts_(heap),
+       colStats_(NULL),
+       statsFetched_(FALSE),
+       viewFileName_(NULL),
+       viewText_(NULL),
+       viewTextInNAWchars_(heap),
+       viewTextCharSet_(CharInfo::UnknownCharSet),
+       viewCheck_(NULL),
+       viewColUsages_(NULL),
+       hiveOrigViewText_(NULL),
+       flags_(IS_INSERTABLE | IS_UPDATABLE),
+       insertMode_(COM_REGULAR_TABLE_INSERT_MODE),
+       isSynonymTranslationDone_(FALSE),
+       checkConstraints_(heap),
+       createTime_(htbl->creationTS_),
+       redefTime_(htbl->redeftime()),
+       cacheTime_(0),
+       statsTime_(0),
+       catalogUID_(0),
+       schemaUID_(0),
+       objectUID_(0),
+       objectType_(COM_UNKNOWN_OBJECT),
+       partitioningScheme_(COM_UNKNOWN_PARTITIONING),
+       uniqueConstraints_(heap),
+       refConstraints_(heap),
+       isAnMV_(FALSE),
+       isAnMVMetaData_(FALSE),
+       mvsUsingMe_(heap),
+       mvInfo_(NULL),
+       accessedInCurrentStatement_(TRUE),
+       setupForStatement_(FALSE),
+       resetAfterStatement_(FALSE),
+       hitCount_(0),
+       replacementCounter_(2),
+       sizeInCache_(0),
+       recentlyUsed_(TRUE),
+       tableConstructionHadWarnings_(FALSE),
+       isAnMPTableWithAnsiName_(FALSE),
+       isUMDTable_(FALSE),
+       isSMDTable_(FALSE),
+       isMVUMDTable_(FALSE),
 
-    // For virtual tables, we set the object schema version
-    // to be the current schema version
-    osv_(COM_VERS_CURR_SCHEMA),
-    ofv_(COM_VERS_CURR_SCHEMA),
-    partnsDesc_(NULL),
-    colsWithMissingStats_(NULL),
-    originalCardinality_(-1.0),
-    tableIdList_(heap),
-    rcb_(NULL),
-    rcbLen_(0),
-    keyLength_(0),
-    parentTableName_(NULL),
-    sgAttributes_(NULL),
-    isHive_(TRUE),
-    isHbase_(FALSE),
-    isHbaseCell_(FALSE),
-    isHbaseRow_(FALSE),
-    isSeabase_(FALSE),
-    isSeabaseMD_(FALSE),
-    isSeabasePrivSchemaTable_(FALSE),
-    isUserUpdatableSeabaseMD_(FALSE),
-    resetHDFSStatsAfterStmt_(FALSE),
-    hiveDefaultStringLen_(0),
-    hiveTableId_(htbl->tblID_),
-    tableDesc_(NULL),
-    secKeySet_(heap),
-    privInfo_(NULL),
-    newColumns_(heap),
-    snapshotName_(NULL),
-    allColFams_(heap)
+       // For virtual tables, we set the object schema version
+       // to be the current schema version
+       osv_(COM_VERS_CURR_SCHEMA),
+       ofv_(COM_VERS_CURR_SCHEMA),
+       partnsDesc_(NULL),
+       colsWithMissingStats_(NULL),
+       originalCardinality_(-1.0),
+       tableIdList_(heap),
+       rcb_(NULL),
+       rcbLen_(0),
+       keyLength_(0),
+       parentTableName_(NULL),
+       sgAttributes_(NULL),
+       isHive_(TRUE),
+       isHbase_(FALSE),
+       isHbaseCell_(FALSE),
+       isHbaseRow_(FALSE),
+       isSeabase_(FALSE),
+       isSeabaseMD_(FALSE),
+       isSeabasePrivSchemaTable_(FALSE),
+       isUserUpdatableSeabaseMD_(FALSE),
+       resetHDFSStatsAfterStmt_(FALSE),
+       hiveDefaultStringLen_(0),
+       hiveTableId_(htbl->tblID_),
+       tableDesc_(NULL),
+       secKeySet_(heap),
+       privInfo_(NULL),
+       newColumns_(heap),
+       snapshotName_(NULL),
+       allColFams_(heap)
 {
 
-	NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
-	NAString mmPhase;
+  NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
+  NAString mmPhase;
 
-	Lng32 preCreateNATableWarnings = CmpCommon::diags()->getNumber(DgSqlCode::WARNING_);
+  Lng32 preCreateNATableWarnings = CmpCommon::diags()->getNumber(DgSqlCode::WARNING_);
 
-	//set heap type
-	if(heap_ == CmpCommon::statementHeap()){
-		heapType_ = STATEMENT;
-		mmPhase = "NATable Init (Stmt) - " + tblName;
-	}else if (heap_ == CmpCommon::contextHeap()){
-		heapType_ = CONTEXT;
-		mmPhase = "NATable Init (Cnxt) - " + tblName;
-	}else {
-		heapType_ = OTHER;
-		mmPhase = "NATable Init (Other) - " + tblName;
-	}
+  //set heap type
+  if(heap_ == CmpCommon::statementHeap()){
+    heapType_ = STATEMENT;
+    mmPhase = "NATable Init (Stmt) - " + tblName;
+  }else if (heap_ == CmpCommon::contextHeap()){
+    heapType_ = CONTEXT;
+    mmPhase = "NATable Init (Cnxt) - " + tblName;
+  }else {
+    heapType_ = OTHER;
+    mmPhase = "NATable Init (Other) - " + tblName;
+  }
 
-	MonitorMemoryUsage_Enter((char*)mmPhase.data(), heap_, TRUE);
-
-
-	isTrigTempTable_ = FALSE;
+  MonitorMemoryUsage_Enter((char*)mmPhase.data(), heap_, TRUE);
 
 
-	insertMode_ = 
-		COM_MULTISET_TABLE_INSERT_MODE; // allow dup, to check
-	//ComInsertMode::COM_MULTISET_TABLE_INSERT_MODE; // allow dup, to check
-
-	//
-	// Add timestamp information.
-	//
-
-	// To get from Hive
-	/*
-	   createTime_ = longArrayToInt64(table_desc->tableDesc()->createtime);
-	   redefTime_  = longArrayToInt64(table_desc->tableDesc()->redeftime);
-	   cacheTime_  = longArrayToInt64(table_desc->tableDesc()->cachetime);
-	   */
-
-	// NATable has a schemaUID column, probably should propogate it.
-	// for now, set to 0.
-	schemaUID_ = 0;
-
-	// Set the objectUID_
-	// If the HIVE table has been registered in Trafodion, get the objectUID
-	// from Trafodion, otherwise, set it to 0.
-	// TBD - does getQualifiedNameObj handle delimited names correctly?
-	if ( !fetchObjectUIDForNativeTable(corrName) )
-		return;
-
-	if ( objectUID_ > 0 )
-		setHasExternalTable(TRUE);
-
-	// for HIVE objects, the schema owner and table owner is HIVE_ROLE_ID
-	if (CmpCommon::context()->isAuthorizationEnabled())
-	{
-		owner_ = HIVE_ROLE_ID;
-		schemaOwner_ = HIVE_ROLE_ID;
-	}
-	else
-	{
-		owner_ = SUPER_USER;
-		schemaOwner_ = SUPER_USER;
-	}
-
-        getPrivileges(NULL); 
-
-	// TBD - if authorization is enabled and there is no external table to store
-	// privileges, go get privilege information from HIVE metadata ...
-
-	// TBD - add a check to verify that the column list coming from HIVE matches
-	// the column list stored in the external table.  Maybe some common method
-	// that can be used to compare other things as well...
-
-	objectType_ = COM_BASE_TABLE_OBJECT;
-
-	// to check
-	partitioningScheme_ = COM_UNKNOWN_PARTITIONING;
-
-	// to check
-	rcb_ = 0;
-	rcbLen_ = 0;
-	keyLength_ = 0;
-
-	partnsDesc_ = NULL;
-
-	//
-	// Insert a NAColumn in the colArray_ for this NATable for each
-	// columns_desc from the ARK SMD. Returns TRUE if error creating NAColumns.
-	//
-
-	if (createNAColumns(htbl->getColumns(),
-				this,
-				colArray_ /*OUT*/,
-				heap_))
-		//coverity[leaked_storage]
-		return;
+  isTrigTempTable_ = FALSE;
 
 
-	//
-	// Set colcount_ after all possible errors (Binder uses nonzero colcount
-	// as an indicator of valid table definition).
-	//
+  insertMode_ = 
+    COM_MULTISET_TABLE_INSERT_MODE; // allow dup, to check
+  //ComInsertMode::COM_MULTISET_TABLE_INSERT_MODE; // allow dup, to check
 
-	// To set it via the new createNAColumns()
-	colcount_ = colArray_.entries();
+  //
+  // Add timestamp information.
+  //
 
-	// compute record length from colArray
+  // To get from Hive
+  /*
+    createTime_ = longArrayToInt64(table_desc->tableDesc()->createtime);
+    redefTime_  = longArrayToInt64(table_desc->tableDesc()->redeftime);
+    cacheTime_  = longArrayToInt64(table_desc->tableDesc()->cachetime);
+  */
 
-	Int32 recLen = 0;
-	for ( CollIndex i=0; i<colcount_; i++ ) {
-		recLen += colArray_[i]->getType()->getNominalSize();
-	} 
+  // NATable has a schemaUID column, probably should propogate it.
+  // for now, set to 0.
+  schemaUID_ = 0;
 
-	setRecordLength(recLen);
+  // Set the objectUID_
+  // If the HIVE table has been registered in Trafodion, get the objectUID
+  // from Trafodion, otherwise, set it to 0.
+  // TBD - does getQualifiedNameObj handle delimited names correctly?
 
-	if (createNAFileSets(htbl             /*IN*/,
-				this             /*IN*/,
-				colArray_        /*IN*/,
-				indexes_         /*OUT*/,
-				vertParts_       /*OUT*/,
-				clusteringIndex_ /*OUT*/,
-				tableIdList_     /*OUT*/,
-				heap_,
-				bindWA
-			    )) {
-		colcount_ = 0; // indicates failure
-		return;
-	}
+  if ( !fetchObjectUIDForNativeTable(corrName, htbl->isView()) )
+    return;
 
-	// HIVE-TBD ignore constraint info creation for now
+  // for HIVE objects, the schema owner and table owner is HIVE_ROLE_ID
+  if (CmpCommon::context()->isAuthorizationEnabled())
+    {
+      owner_ = HIVE_ROLE_ID;
+      schemaOwner_ = HIVE_ROLE_ID;
+    }
+  else
+    {
+      owner_ = SUPER_USER;
+      schemaOwner_ = SUPER_USER;
+    }
+
+  getPrivileges(NULL); 
+
+  // TBD - if authorization is enabled and there is no external table to store
+  // privileges, go get privilege information from HIVE metadata ...
+
+  // TBD - add a check to verify that the column list coming from HIVE matches
+  // the column list stored in the external table.  Maybe some common method
+  // that can be used to compare other things as well...
+
+  objectType_ = COM_BASE_TABLE_OBJECT;
+
+  // to check
+  partitioningScheme_ = COM_UNKNOWN_PARTITIONING;
+
+  // to check
+  rcb_ = 0;
+  rcbLen_ = 0;
+  keyLength_ = 0;
+
+  partnsDesc_ = NULL;
+
+  //
+  // Insert a NAColumn in the colArray_ for this NATable for each
+  // columns_desc from the ARK SMD. Returns TRUE if error creating NAColumns.
+  //
+
+  if (createNAColumns(htbl->getColumns(),
+                      this,
+                      colArray_ /*OUT*/,
+                      heap_))
+    //coverity[leaked_storage]
+    return;
 
 
-	// If there is a host variable associated with this table, store it
-	// for use by the generator to generate late-name resolution information.
-	//
-	HostVar *hv = corrName.getPrototype();
-	prototype_ = hv ? new (heap_) HostVar(*hv) : NULL;
+  //
+  // Set colcount_ after all possible errors (Binder uses nonzero colcount
+  // as an indicator of valid table definition).
+  //
 
-	// MV
-	// Initialize the MV support data members
-	isAnMV_           = FALSE;
-	isAnMVMetaData_   = FALSE;
+  // To set it via the new createNAColumns()
+  colcount_ = colArray_.entries();
 
-	Lng32 postCreateNATableWarnings = CmpCommon::diags()->getNumber(DgSqlCode::WARNING_);
+  // compute record length from colArray
 
-	if(postCreateNATableWarnings != preCreateNATableWarnings)
-		tableConstructionHadWarnings_=TRUE;
+  Int32 recLen = 0;
+  for ( CollIndex i=0; i<colcount_; i++ ) {
+    recLen += colArray_[i]->getType()->getNominalSize();
+  } 
 
-	hiveDefaultStringLen_ = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
-	Int32 hiveDefaultStringLenInBytes = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
-	if( hiveDefaultStringLenInBytes != 32000 ) 
-		hiveDefaultStringLen_ = hiveDefaultStringLenInBytes;
+  setRecordLength(recLen);
 
-	// LCOV_EXCL_STOP
-	initialSize_ = heap_->getAllocSize();
-	MonitorMemoryUsage_Exit((char*)mmPhase.data(), heap_, NULL, TRUE);
+  //
+  // Add view information, if this is a native hive view
+  //
+  if (htbl->isView())
+    {
+      NAString viewExpandedText(htbl->viewExpandedText_);
+
+      // expanded hive view text quotes table and column names with
+      // back single quote (`). It also refers to default hive schema
+      // as `default`.
+      // Convert hive text to traf format.
+      // hive "default" schema is referred as "hive" in traf.
+      // replace `default` with hive and replace ` with "
+
+      // replace `default` with "hive"
+      viewExpandedText = replaceAll(viewExpandedText, "`default`", "hive");
+
+      // replace ` with "
+      viewExpandedText = replaceAll(viewExpandedText, "`", "");
+      
+      NAString createViewStmt("CREATE VIEW ");
+      createViewStmt += htbl->tblName_ + NAString(" AS ") +
+        viewExpandedText + NAString(";");
+      
+      Lng32 viewTextLen = createViewStmt.length();
+      viewText_ = new (heap_) char[viewTextLen+ 2];
+      strcpy(viewText_, createViewStmt.data());
+      hiveOrigViewText_ = new (heap_) char[strlen(htbl->viewOriginalText_)+2];
+      strcpy(hiveOrigViewText_, htbl->viewOriginalText_);
+
+      viewTextCharSet_ = CharInfo::UTF8;
+      
+      viewFileName_ = NULL;
+      UInt32 viewFileNameLength = str_len(htbl->tblName_) + 1;
+      viewFileName_ = new (heap_) char[viewFileNameLength];
+      memcpy(viewFileName_, htbl->tblName_, viewFileNameLength);
+      
+      setUpdatable(FALSE);
+      setInsertable(FALSE);
+    }
+  else
+    {
+      if (createNAFileSets(htbl             /*IN*/,
+                           this             /*IN*/,
+                           colArray_        /*IN*/,
+                           indexes_         /*OUT*/,
+                           vertParts_       /*OUT*/,
+                           clusteringIndex_ /*OUT*/,
+                           tableIdList_     /*OUT*/,
+                           heap_,
+                           bindWA
+                           )) {
+        colcount_ = 0; // indicates failure
+        return;
+      }
+    }
+  
+  // HIVE-TBD ignore constraint info creation for now
+
+
+  // If there is a host variable associated with this table, store it
+  // for use by the generator to generate late-name resolution information.
+  //
+  HostVar *hv = corrName.getPrototype();
+  prototype_ = hv ? new (heap_) HostVar(*hv) : NULL;
+
+  // MV
+  // Initialize the MV support data members
+  isAnMV_           = FALSE;
+  isAnMVMetaData_   = FALSE;
+
+  Lng32 postCreateNATableWarnings = CmpCommon::diags()->getNumber(DgSqlCode::WARNING_);
+
+  if(postCreateNATableWarnings != preCreateNATableWarnings)
+    tableConstructionHadWarnings_=TRUE;
+
+  hiveDefaultStringLen_ = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+
+  // LCOV_EXCL_STOP
+  initialSize_ = heap_->getAllocSize();
+  MonitorMemoryUsage_Exit((char*)mmPhase.data(), heap_, NULL, TRUE);
 } // NATable()
 #pragma warn(770)  // warning elimination
 
 
-
-
 NABoolean NATable::doesMissingStatsWarningExist(CollIndexSet & colsSet) const
 {
-	return colsWithMissingStats_->contains(&colsSet);
+  return colsWithMissingStats_->contains(&colsSet);
 }
 
 NABoolean NATable::insertMissingStatsWarning(CollIndexSet colsSet) const
 {
-	CollIndexSet * setOfColsWithMissingStats = new (STMTHEAP) CollIndexSet (colsSet);
+  CollIndexSet * setOfColsWithMissingStats = new (STMTHEAP) CollIndexSet (colsSet);
 
-	Int32 someVar = 1;
-	CollIndexSet * result = colsWithMissingStats_->insert(setOfColsWithMissingStats, &someVar);
+  Int32 someVar = 1;
+  CollIndexSet * result = colsWithMissingStats_->insert(setOfColsWithMissingStats, &someVar);
 
-	if (result == NULL)
-		return FALSE;
-	else
-		return TRUE;
+  if (result == NULL)
+    return FALSE;
+  else
+    return TRUE;
 }
 
 // This gets called in the Optimizer phase -- the Binder phase will already have
@@ -5839,523 +5987,523 @@ NABoolean NATable::insertMissingStatsWarning(CollIndexSet colsSet) const
 // below can decide which histograms and histints to leave in the stats list
 // and which to remove.
 //
-	StatsList &
+StatsList &
 NATable::getStatistics()
 {
-	if (!statsFetched_)
-	{
-		// mark the kind of histograms needed for this table's columns
-		markColumnsForHistograms();
+  if (!statsFetched_)
+    {
+      // mark the kind of histograms needed for this table's columns
+      markColumnsForHistograms();
 
-		NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
-		NAString mmPhase = "NATable getStats - " + tblName;
-		MonitorMemoryUsage_Enter((char*)mmPhase.data(), NULL, TRUE);
+      NAString tblName = qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString();
+      NAString mmPhase = "NATable getStats - " + tblName;
+      MonitorMemoryUsage_Enter((char*)mmPhase.data(), NULL, TRUE);
 
-		//trying to get statistics for a new statement allocate colStats_
-		colStats_ = new (CmpCommon::statementHeap()) StatsList(CmpCommon::statementHeap());
+      //trying to get statistics for a new statement allocate colStats_
+      colStats_ = new (CmpCommon::statementHeap()) StatsList(CmpCommon::statementHeap());
 
-		// Do not create statistics on the fly for the following tables
-		if (isAnMV() || isUMDTable() ||
-				isSMDTable() || isMVUMDTable() ||
-				isTrigTempTable() )
-			CURRSTMT_OPTDEFAULTS->setHistDefaultSampleSize(0);
+      // Do not create statistics on the fly for the following tables
+      if (isAnMV() || isUMDTable() ||
+          isSMDTable() || isMVUMDTable() ||
+          isTrigTempTable() )
+        CURRSTMT_OPTDEFAULTS->setHistDefaultSampleSize(0);
 
-		CURRCONTEXT_HISTCACHE->getHistograms(*this);
+      CURRCONTEXT_HISTCACHE->getHistograms(*this);
 
-		if ((*colStats_).entries() > 0)
-			originalCardinality_ = (*colStats_)[0]->getRowcount();
-		else
-			originalCardinality_ = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
+      if ((*colStats_).entries() > 0)
+        originalCardinality_ = (*colStats_)[0]->getRowcount();
+      else
+        originalCardinality_ = ActiveSchemaDB()->getDefaults().getAsDouble(HIST_NO_STATS_ROWCOUNT);
 
-		// -----------------------------------------------------------------------
-		// So now we have read in the contents of the HISTOGRM & HISTINTS
-		// tables from the system catalog.  Before we can use them, we need
-		// to massage them into a format we can use.  In particular, we need
-		// to make sure that what we read in (which the user may have mucked
-		// about with) matches the histogram classes' internal semantic
-		// requirements.  Also, we need to generate the MultiColumnUecList.
-		//  ----------------------------------------------------------------------
+      // -----------------------------------------------------------------------
+      // So now we have read in the contents of the HISTOGRM & HISTINTS
+      // tables from the system catalog.  Before we can use them, we need
+      // to massage them into a format we can use.  In particular, we need
+      // to make sure that what we read in (which the user may have mucked
+      // about with) matches the histogram classes' internal semantic
+      // requirements.  Also, we need to generate the MultiColumnUecList.
+      //  ----------------------------------------------------------------------
 
-		// what did the user set as the max number of intervals?
-		NADefaults &defs = ActiveSchemaDB()->getDefaults();
-		CollIndex maxIntervalCount = defs.getAsLong(HIST_MAX_NUMBER_OF_INTERVALS);
+      // what did the user set as the max number of intervals?
+      NADefaults &defs = ActiveSchemaDB()->getDefaults();
+      CollIndex maxIntervalCount = defs.getAsLong(HIST_MAX_NUMBER_OF_INTERVALS);
 
-		//-----------------------------------------------------------------------------------
-		// Need to flag the MC colStatsDesc so it is only used for the range partitioning task
-		// and not any cardinality calculations tasks. Flagging it also makes the logic
-		// to check fo the presence for this MC easier (at the time we need to create
-		// the range partitioning function)
-		//-----------------------------------------------------------------------------------
+      //-----------------------------------------------------------------------------------
+      // Need to flag the MC colStatsDesc so it is only used for the range partitioning task
+      // and not any cardinality calculations tasks. Flagging it also makes the logic
+      // to check fo the presence for this MC easier (at the time we need to create
+      // the range partitioning function)
+      //-----------------------------------------------------------------------------------
 
-		if (CmpCommon::getDefault(HBASE_RANGE_PARTITIONING_MC_SPLIT) == DF_ON && 
-				!(*colStats_).allFakeStats())
-		{
-			CollIndex currentMaxsize = 1;
-			Int32 posMCtoUse = -1;
+      if (CmpCommon::getDefault(HBASE_RANGE_PARTITIONING_MC_SPLIT) == DF_ON && 
+          !(*colStats_).allFakeStats())
+        {
+          CollIndex currentMaxsize = 1;
+          Int32 posMCtoUse = -1;
 
-			NAColumnArray partCols;
+          NAColumnArray partCols;
 
-			if (getClusteringIndex()->getPartitioningKeyColumns().entries() > 0)
-				partCols = getClusteringIndex()->getPartitioningKeyColumns();
-			else
-				partCols = getClusteringIndex()->getIndexKeyColumns();
+          if (getClusteringIndex()->getPartitioningKeyColumns().entries() > 0)
+            partCols = getClusteringIndex()->getPartitioningKeyColumns();
+          else
+            partCols = getClusteringIndex()->getIndexKeyColumns();
 
-			CollIndex partColNum = partCols.entries();
+          CollIndex partColNum = partCols.entries();
 
-			// look for MC histograms that have multiple intervals and whose columns are a prefix for the
-			// paritition column list. If multiple pick the one with the most matching columns
-			for (Int32 i=0; i < (*colStats_).entries(); i++)
-			{
-				NAColumnArray statsCols = (*colStats_)[i]->getStatColumns();
-				CollIndex colNum = statsCols.entries();
+          // look for MC histograms that have multiple intervals and whose columns are a prefix for the
+          // paritition column list. If multiple pick the one with the most matching columns
+          for (Int32 i=0; i < (*colStats_).entries(); i++)
+            {
+              NAColumnArray statsCols = (*colStats_)[i]->getStatColumns();
+              CollIndex colNum = statsCols.entries();
 
-				CollIndex j = 0;
+              CollIndex j = 0;
 
-				NABoolean potentialMatch = TRUE;
-				if ((colNum > currentMaxsize) && 
-						(!(*colStats_)[i]->isSingleIntHist()) && // no SIH -- number of histograms is large enough to do splitting
-						(colNum <= partColNum))
-				{
-					while ((j < colNum) && potentialMatch)
-					{
-						j++;
-						NAColumn * col = partCols[j-1];
-						if (statsCols[j-1]->getPosition() != partCols[j-1]->getPosition())
-						{
-							potentialMatch = FALSE;
-							break;
-						}   
-					}
-				}
-				else
-				{
-					potentialMatch = FALSE;
-				}
+              NABoolean potentialMatch = TRUE;
+              if ((colNum > currentMaxsize) && 
+                  (!(*colStats_)[i]->isSingleIntHist()) && // no SIH -- number of histograms is large enough to do splitting
+                  (colNum <= partColNum))
+                {
+                  while ((j < colNum) && potentialMatch)
+                    {
+                      j++;
+                      NAColumn * col = partCols[j-1];
+                      if (statsCols[j-1]->getPosition() != partCols[j-1]->getPosition())
+                        {
+                          potentialMatch = FALSE;
+                          break;
+                        }   
+                    }
+                }
+              else
+                {
+                  potentialMatch = FALSE;
+                }
 
-				if (potentialMatch)
-				{
-					currentMaxsize = j;
-					posMCtoUse = i;
-				}
+              if (potentialMatch)
+                {
+                  currentMaxsize = j;
+                  posMCtoUse = i;
+                }
 
-				// we got what we need, just return
-				if (potentialMatch && (currentMaxsize == partColNum))
-				{
-					break;
-				}
-			}
+              // we got what we need, just return
+              if (potentialMatch && (currentMaxsize == partColNum))
+                {
+                  break;
+                }
+            }
 
-			if (posMCtoUse >= 0)
-			{
-				(*colStats_)[posMCtoUse]->setMCforHbasePartitioning (TRUE);
-			}
-		}
+          if (posMCtoUse >= 0)
+            {
+              (*colStats_)[posMCtoUse]->setMCforHbasePartitioning (TRUE);
+            }
+        }
 
-		// *************************************************************************
-		// FIRST: Generate the stats necessary to later create the
-		// MultiColumnUecList; then filter out the multi-column histograms
-		// because later code doesn't know how to handle them
-		// In the same loop, also mark another flag for originally fake histogram
-		// This is to differentiate the cases when the histogram is fake because
-		// it has no statistics and the case where the histogram has been termed
-		// fake by the optimizer because its statistics is no longer reliable.
-		// *************************************************************************
-		CollIndex i ;
-		for ( i = 0 ; i < (*colStats_).entries() ; /* no automatic increment */ )
-		{
-			// the StatsList has two lists which it uses to store the information we
-			// need to fill the MultiColumnUecList with <table-col-list,uec value> pairs:
-			//
-			// LIST(NAColumnArray) groupUecColumns_
-			// LIST(CostScalar)    groupUecValues_
-			//
-			// ==> insert the NAColumnArray & uec total values for each
-			// entry in colStats_
+      // *************************************************************************
+      // FIRST: Generate the stats necessary to later create the
+      // MultiColumnUecList; then filter out the multi-column histograms
+      // because later code doesn't know how to handle them
+      // In the same loop, also mark another flag for originally fake histogram
+      // This is to differentiate the cases when the histogram is fake because
+      // it has no statistics and the case where the histogram has been termed
+      // fake by the optimizer because its statistics is no longer reliable.
+      // *************************************************************************
+      CollIndex i ;
+      for ( i = 0 ; i < (*colStats_).entries() ; /* no automatic increment */ )
+        {
+          // the StatsList has two lists which it uses to store the information we
+          // need to fill the MultiColumnUecList with <table-col-list,uec value> pairs:
+          //
+          // LIST(NAColumnArray) groupUecColumns_
+          // LIST(CostScalar)    groupUecValues_
+          //
+          // ==> insert the NAColumnArray & uec total values for each
+          // entry in colStats_
 
-			// don't bother storing multicolumnuec info for fake histograms
-			// but do set the originallly fake histogram flag to TRUE
-			if ( (*colStats_)[i]->isFakeHistogram() )
-				(*colStats_)[i]->setOrigFakeHist(TRUE);
-			else
-			{
-				NAColumnArray cols = (*colStats_)[i]->getStatColumns() ;
-				(*colStats_).groupUecColumns_.insert(cols) ;
+          // don't bother storing multicolumnuec info for fake histograms
+          // but do set the originallly fake histogram flag to TRUE
+          if ( (*colStats_)[i]->isFakeHistogram() )
+            (*colStats_)[i]->setOrigFakeHist(TRUE);
+          else
+            {
+              NAColumnArray cols = (*colStats_)[i]->getStatColumns() ;
+              (*colStats_).groupUecColumns_.insert(cols) ;
 
-				CostScalar uecs = (*colStats_)[i]->getTotalUec() ;
-				(*colStats_).groupUecValues_.insert(uecs) ;
+              CostScalar uecs = (*colStats_)[i]->getTotalUec() ;
+              (*colStats_).groupUecValues_.insert(uecs) ;
 
-				if (CmpCommon::getDefault(USTAT_COLLECT_MC_SKEW_VALUES) == DF_ON)
-				{
-					MCSkewedValueList mcSkewedValueList = (*colStats_)[i]->getMCSkewedValueList() ;
-					(*colStats_).groupMCSkewedValueLists_.insert(mcSkewedValueList) ;
-				}
-			}
+              if (CmpCommon::getDefault(USTAT_COLLECT_MC_SKEW_VALUES) == DF_ON)
+                {
+                  MCSkewedValueList mcSkewedValueList = (*colStats_)[i]->getMCSkewedValueList() ;
+                  (*colStats_).groupMCSkewedValueLists_.insert(mcSkewedValueList) ;
+                }
+            }
 
-			// MCH:
-			// once we've stored the column/uec information, filter out the
-			// multi-column histograms, since our synthesis code doesn't
-			// handle them
-			if (( (*colStats_)[i]->getStatColumns().entries() != 1) &&
-					(!(*colStats_)[i]->isMCforHbasePartitioning()))
-			{
-				(*colStats_).removeAt(i) ;
-			}
-			else
-			{
-				i++ ; // in-place removal from a list is a bother!
-			}
-		}
+          // MCH:
+          // once we've stored the column/uec information, filter out the
+          // multi-column histograms, since our synthesis code doesn't
+          // handle them
+          if (( (*colStats_)[i]->getStatColumns().entries() != 1) &&
+              (!(*colStats_)[i]->isMCforHbasePartitioning()))
+            {
+              (*colStats_).removeAt(i) ;
+            }
+          else
+            {
+              i++ ; // in-place removal from a list is a bother!
+            }
+        }
 
-		// *************************************************************************
-		// SECOND: do some fixup work to make sure the histograms maintain
-		// the semantics we later expect (& enforce)
-		// *************************************************************************
+      // *************************************************************************
+      // SECOND: do some fixup work to make sure the histograms maintain
+      // the semantics we later expect (& enforce)
+      // *************************************************************************
 
-		// -------------------------------------------------------------------------
-		// HISTINT fixup-code : char-string histograms
-		// -------------------------------------------------------------------------
-		// problem arises with HISTINTs that are for char* columns
-		// here's what we can get:
-		//
-		// Rows    Uec    Value
-		// ----    ---    -----
-		//    0      0    "value"
-		//   10      5    "value"
-		//
-		// this is not good!  The problem is our (lousy) encoding of
-		// char strings into EncodedValue's
-		//
-		// After much deliberation, here's our current fix:
-		//
-		// Rows    Uec    Value
-		// ----    ---    -----
-		//    0      0    "valu" <-- reduce the min value of 1st interval
-		//   10      5    "value"    by a little bit
-		//
-		// When we find two intervals like this where they aren't the
-		// first intervals in the histogram, we simply merge them into
-		// one interval (adding row/uec information) and continue; note
-		// that in this case, we haven't actually lost any information;
-		// we've merely made sense out of (the garbage) what we've got
-		//
-		// -------------------------------------------------------------------------
-		// additional HISTINT fixup-code
-		// -------------------------------------------------------------------------
-		// 1. If there are zero or one HISTINTs, then set the HISTINTs to match
-		// the max/min information contained in the COLSTATS object.
-		//
-		// 2. If there are any HISTINTs whose boundary values are out-of-order,
-		// we abort with an an ERROR message.
-		//
-		// 3. If there is a NULL HISTINT at the end of the Histogram, then we
-		// need to make sure there are *TWO* NULL HISTINTS, to preserve correct
-		// histogram semantics for single-valued intervals.
-		// -------------------------------------------------------------------------
+      // -------------------------------------------------------------------------
+      // HISTINT fixup-code : char-string histograms
+      // -------------------------------------------------------------------------
+      // problem arises with HISTINTs that are for char* columns
+      // here's what we can get:
+      //
+      // Rows    Uec    Value
+      // ----    ---    -----
+      //    0      0    "value"
+      //   10      5    "value"
+      //
+      // this is not good!  The problem is our (lousy) encoding of
+      // char strings into EncodedValue's
+      //
+      // After much deliberation, here's our current fix:
+      //
+      // Rows    Uec    Value
+      // ----    ---    -----
+      //    0      0    "valu" <-- reduce the min value of 1st interval
+      //   10      5    "value"    by a little bit
+      //
+      // When we find two intervals like this where they aren't the
+      // first intervals in the histogram, we simply merge them into
+      // one interval (adding row/uec information) and continue; note
+      // that in this case, we haven't actually lost any information;
+      // we've merely made sense out of (the garbage) what we've got
+      //
+      // -------------------------------------------------------------------------
+      // additional HISTINT fixup-code
+      // -------------------------------------------------------------------------
+      // 1. If there are zero or one HISTINTs, then set the HISTINTs to match
+      // the max/min information contained in the COLSTATS object.
+      //
+      // 2. If there are any HISTINTs whose boundary values are out-of-order,
+      // we abort with an an ERROR message.
+      //
+      // 3. If there is a NULL HISTINT at the end of the Histogram, then we
+      // need to make sure there are *TWO* NULL HISTINTS, to preserve correct
+      // histogram semantics for single-valued intervals.
+      // -------------------------------------------------------------------------
 
-		CollIndex j ;
-		for ( i = 0 ; i < (*colStats_).entries() ; i++ )
-		{
-			// we only worry about histograms on char string columns
-			// correction: it turns out that these semantically-deranged
-			// ----------  histograms were being formed for other, non-char string
-			//             columns, so we commented out the code below
-			// if ( colStats_[i]->getStatColumns()[0]->getType()->getTypeQualifier() !=
-			//     NA_CHARACTER_TYPE)
-			//   continue ; // not a string, skip to next
+      CollIndex j ;
+      for ( i = 0 ; i < (*colStats_).entries() ; i++ )
+        {
+          // we only worry about histograms on char string columns
+          // correction: it turns out that these semantically-deranged
+          // ----------  histograms were being formed for other, non-char string
+          //             columns, so we commented out the code below
+          // if ( colStats_[i]->getStatColumns()[0]->getType()->getTypeQualifier() !=
+          //     NA_CHARACTER_TYPE)
+          //   continue ; // not a string, skip to next
 
-			ColStatsSharedPtr stats = (*colStats_)[i] ;
+          ColStatsSharedPtr stats = (*colStats_)[i] ;
 
-			HistogramSharedPtr hist = stats->getHistogramToModify() ;
-			// histograms for key columns of a table that are not
-			// referenced in the query are read in with zero intervals
-			// (to conserve memory); however, internal
-			// histogram-semantic checking code assumes that any
-			// histogram which has zero intervals is FAKE; however
-			// however, MDAM will not be chosen in the case where one of
-			// the histograms for a key column is FAKE.  Thus -- we will
-			// avoid this entire issue by creating a single interval for
-			// any Histograms that we read in that are empty.
-			if ( hist->entries() < 2 )
-			{
-				if(stats->getMinValue() > stats->getMaxValue())
-				{
-					*CmpCommon::diags() << DgSqlCode(CATALOG_HISTOGRM_HISTINTS_TABLES_CONTAIN_BAD_VALUE)
-						<< DgString0("")
-						<< DgString1(stats->getStatColumns()[0]->getFullColRefNameAsAnsiString().data() );
+          HistogramSharedPtr hist = stats->getHistogramToModify() ;
+          // histograms for key columns of a table that are not
+          // referenced in the query are read in with zero intervals
+          // (to conserve memory); however, internal
+          // histogram-semantic checking code assumes that any
+          // histogram which has zero intervals is FAKE; however
+          // however, MDAM will not be chosen in the case where one of
+          // the histograms for a key column is FAKE.  Thus -- we will
+          // avoid this entire issue by creating a single interval for
+          // any Histograms that we read in that are empty.
+          if ( hist->entries() < 2 )
+            {
+              if(stats->getMinValue() > stats->getMaxValue())
+                {
+                  *CmpCommon::diags() << DgSqlCode(CATALOG_HISTOGRM_HISTINTS_TABLES_CONTAIN_BAD_VALUE)
+                                      << DgString0("")
+                                      << DgString1(stats->getStatColumns()[0]->getFullColRefNameAsAnsiString().data() );
 
-					stats->createFakeHist();
-					continue;
-				}
+                  stats->createFakeHist();
+                  continue;
+                }
 
-				stats->setToSingleInterval ( stats->getMinValue(),
-						stats->getMaxValue(),
-						stats->getRowcount(),
-						stats->getTotalUec() ) ;
-				// now we have to undo some of the automatic flag-setting
-				// of ColStats::setToSingleInterval()
-				stats->setMinSetByPred (FALSE) ;
-				stats->setMaxSetByPred (FALSE) ;
-				stats->setShapeChanged (FALSE) ;
-				continue ; // skip to next ColStats
-			}
+              stats->setToSingleInterval ( stats->getMinValue(),
+                                           stats->getMaxValue(),
+                                           stats->getRowcount(),
+                                           stats->getTotalUec() ) ;
+              // now we have to undo some of the automatic flag-setting
+              // of ColStats::setToSingleInterval()
+              stats->setMinSetByPred (FALSE) ;
+              stats->setMaxSetByPred (FALSE) ;
+              stats->setShapeChanged (FALSE) ;
+              continue ; // skip to next ColStats
+            }
 
-			// NB: we'll handle the first Interval last
-			for ( j = 1 ; j < hist->entries()-1 ; /* no automatic increment */ )
-			{
+          // NB: we'll handle the first Interval last
+          for ( j = 1 ; j < hist->entries()-1 ; /* no automatic increment */ )
+            {
 
-				if ( (*hist)[j].getUec() == 0 || (*hist)[j].getCardinality() == 0 )
-				{
-					hist->removeAt(j) ;
-					continue ; // don't increment, loop again
-				}
+              if ( (*hist)[j].getUec() == 0 || (*hist)[j].getCardinality() == 0 )
+                {
+                  hist->removeAt(j) ;
+                  continue ; // don't increment, loop again
+                }
 
-				// intervals must be in order!
-				if ( (*hist)[j].getBoundary() > (*hist)[j+1].getBoundary() )
-				{
-					*CmpCommon::diags() <<
-						DgSqlCode(CATALOG_HISTINTS_TABLES_CONTAIN_BAD_VALUES)
-						<< DgInt0(j)
-						<< DgInt1(j+1)
-						<< DgString1(stats->getStatColumns()[0]->getFullColRefNameAsAnsiString().data() );
+              // intervals must be in order!
+              if ( (*hist)[j].getBoundary() > (*hist)[j+1].getBoundary() )
+                {
+                  *CmpCommon::diags() <<
+                    DgSqlCode(CATALOG_HISTINTS_TABLES_CONTAIN_BAD_VALUES)
+                                      << DgInt0(j)
+                                      << DgInt1(j+1)
+                                      << DgString1(stats->getStatColumns()[0]->getFullColRefNameAsAnsiString().data() );
 
-					stats->createFakeHist();
-					break ; // skip to next ColStats
-				}
+                  stats->createFakeHist();
+                  break ; // skip to next ColStats
+                }
 
-				if ( (*hist)[j].getBoundary() == (*hist)[j+1].getBoundary() )
-				{
-					// merge Intervals, if the two consecutive intervals have same 
-					// boundaries and these are not single valued (UEC > 1)
-					// If there are more two single valued intervals, then merge
-					// all except the last one.
-					NABoolean mergeIntervals = FALSE;
+              if ( (*hist)[j].getBoundary() == (*hist)[j+1].getBoundary() )
+                {
+                  // merge Intervals, if the two consecutive intervals have same 
+                  // boundaries and these are not single valued (UEC > 1)
+                  // If there are more two single valued intervals, then merge
+                  // all except the last one.
+                  NABoolean mergeIntervals = FALSE;
 
-					if (CmpCommon::getDefault(COMP_BOOL_79) == DF_ON)
-					{
-						mergeIntervals = TRUE;
+                  if (CmpCommon::getDefault(COMP_BOOL_79) == DF_ON)
+                    {
+                      mergeIntervals = TRUE;
 
-						if( (j < (hist->entries() - 2)) && ((*hist)[j+1].getUec() == 1) &&
-								((*hist)[j+1].getBoundary() != (*hist)[j+2].getBoundary())
-								||
-								(j == (hist->entries() - 2)) && ((*hist)[j+1].getUec() == 1) )
-							mergeIntervals = FALSE;
-					}
-					else
-					{
-						if ( (*hist)[j+1].getUec() > 1)
-							mergeIntervals = TRUE;
-					}
+                      if( (j < (hist->entries() - 2)) && ((*hist)[j+1].getUec() == 1) &&
+                          ((*hist)[j+1].getBoundary() != (*hist)[j+2].getBoundary())
+                          ||
+                          (j == (hist->entries() - 2)) && ((*hist)[j+1].getUec() == 1) )
+                        mergeIntervals = FALSE;
+                    }
+                  else
+                    {
+                      if ( (*hist)[j+1].getUec() > 1)
+                        mergeIntervals = TRUE;
+                    }
 
-					if ( mergeIntervals ) 
-					{
-						// if the intervals with same boundary are not SVI, just merge them 
-						// together.
-						// Also do the merge, if there are more than one SVIs with same 
-						// encoded interval boundary. Example, we want to avoid intervals
-						// such as
-						//   boundary   inclusive_flag  UEC
-						//   12345.00    <               1
-						//   12345.00    <               1
-						//   12345.00    <=              1
-						// These would be changed to 
-						//   12345.00    <               2
-						//   12345.00    <=              1
-						CostScalar combinedRows = (*hist)[ j ].getCardinality() +
-							(*hist)[j+1].getCardinality() ;
-						CostScalar combinedUec  = (*hist)[ j ].getUec() +
-							(*hist)[j+1].getUec() ;
-						(*hist)[j].setCardAndUec (combinedRows, combinedUec) ;
-						stats->setIsColWithBndryConflict(TRUE);
-						hist->removeAt(j+1) ;
-					}
-					else
-					{
-						// for some reason, some SVI's aren't being
-						// generated correctly!
-						(*hist)[j].setBoundIncl(FALSE) ;
-						(*hist)[j+1].setBoundIncl(TRUE) ;
-						j++;
-					}
-				}
-				else
-					j++ ; // in-place removal from a list is a bother!
-			} // loop over intervals
+                  if ( mergeIntervals ) 
+                    {
+                      // if the intervals with same boundary are not SVI, just merge them 
+                      // together.
+                      // Also do the merge, if there are more than one SVIs with same 
+                      // encoded interval boundary. Example, we want to avoid intervals
+                      // such as
+                      //   boundary   inclusive_flag  UEC
+                      //   12345.00    <               1
+                      //   12345.00    <               1
+                      //   12345.00    <=              1
+                      // These would be changed to 
+                      //   12345.00    <               2
+                      //   12345.00    <=              1
+                      CostScalar combinedRows = (*hist)[ j ].getCardinality() +
+                        (*hist)[j+1].getCardinality() ;
+                      CostScalar combinedUec  = (*hist)[ j ].getUec() +
+                        (*hist)[j+1].getUec() ;
+                      (*hist)[j].setCardAndUec (combinedRows, combinedUec) ;
+                      stats->setIsColWithBndryConflict(TRUE);
+                      hist->removeAt(j+1) ;
+                    }
+                  else
+                    {
+                      // for some reason, some SVI's aren't being
+                      // generated correctly!
+                      (*hist)[j].setBoundIncl(FALSE) ;
+                      (*hist)[j+1].setBoundIncl(TRUE) ;
+                      j++;
+                    }
+                }
+              else
+                j++ ; // in-place removal from a list is a bother!
+            } // loop over intervals
 
-			// ----------------------------------------------------------------------
-			// now we handle the first interval
-			//
-			// first, it must be in order w.r.t. the second interval!
-			if ( (*hist)[0].getBoundary() > (*hist)[1].getBoundary() )
-			{
-				*CmpCommon::diags() <<
-					DgSqlCode(CATALOG_HISTINTS_TABLES_CONTAIN_BAD_VALUES)
-					<< DgInt0(0)
-					<< DgInt1(1)
-					<< DgString1(stats->getStatColumns()[0]->getFullColRefNameAsAnsiString().data() );
+          // ----------------------------------------------------------------------
+          // now we handle the first interval
+          //
+          // first, it must be in order w.r.t. the second interval!
+          if ( (*hist)[0].getBoundary() > (*hist)[1].getBoundary() )
+            {
+              *CmpCommon::diags() <<
+                DgSqlCode(CATALOG_HISTINTS_TABLES_CONTAIN_BAD_VALUES)
+                                  << DgInt0(0)
+                                  << DgInt1(1)
+                                  << DgString1(stats->getStatColumns()[0]->getFullColRefNameAsAnsiString().data() );
 
-				stats->createFakeHist();
-				continue ; // skip to next ColStats
-			}
+              stats->createFakeHist();
+              continue ; // skip to next ColStats
+            }
 
-			// second, handle the case where first and second interval are the same
-			if ( hist->entries() > 1 && // avoid the exception! might just be a single NULL
-					//                     // interval after the loop above
-					(*hist)[0].getBoundary() == (*hist)[1].getBoundary() &&
-					(*hist)[1].getUec() > 1 )
-			{
-				const double KLUDGE_VALUE = 0.0001 ;
-				const double oldVal = (*hist)[0].getBoundary().getDblValue() ;
-				const EncodedValue newVal =
-					EncodedValue(oldVal - (_ABSOLUTE_VALUE_(oldVal) * KLUDGE_VALUE)) ; // kludge alert!
-				//Absolute of oldval due to CR 10-010426-2457
-				(*hist)[0].setBoundary( newVal ) ;
-				(*hist)[0].setBoundIncl( FALSE ) ; // no longer a real boundary!
-				(*colStats_)[i]->setMinValue( newVal ) ; // set aggr info also
-			}
-			// done with first interval
-			// ----------------------------------------------------------------------
+          // second, handle the case where first and second interval are the same
+          if ( hist->entries() > 1 && // avoid the exception! might just be a single NULL
+               //                     // interval after the loop above
+               (*hist)[0].getBoundary() == (*hist)[1].getBoundary() &&
+               (*hist)[1].getUec() > 1 )
+            {
+              const double KLUDGE_VALUE = 0.0001 ;
+              const double oldVal = (*hist)[0].getBoundary().getDblValue() ;
+              const EncodedValue newVal =
+                EncodedValue(oldVal - (_ABSOLUTE_VALUE_(oldVal) * KLUDGE_VALUE)) ; // kludge alert!
+              //Absolute of oldval due to CR 10-010426-2457
+              (*hist)[0].setBoundary( newVal ) ;
+              (*hist)[0].setBoundIncl( FALSE ) ; // no longer a real boundary!
+              (*colStats_)[i]->setMinValue( newVal ) ; // set aggr info also
+            }
+          // done with first interval
+          // ----------------------------------------------------------------------
 
-			//
-			// NULL values must only be stored in single-valued intervals
-			// in the histograms ; so, just in case we're only getting
-			// *one* HistInt for the NULL interval, insert a 2nd one
-			//
-			// 0   1   2
-			// |   |   |
-			// |   |   |    entries() == 3
-			//         NULL
-			//
-			// 0   1   2   3
-			// |   |   |   |
-			// |   |   |   |    entries() == 4
-			//        new  NULL
-			//        NULL
-			//
-			if ( hist->lastHistInt().isNull() )
-			{
-				CollIndex count = hist->entries() ;
-				if ( !(*hist)[count-2].isNull() )
-				{
-					// insert a 2nd NULL HISTINT, with boundaryIncl value FALSE
-					HistInt secondLast (hist->lastHistInt().getBoundary(), FALSE) ;
-					hist->insertAt(count-1,secondLast) ;
-					// new HISTINT by default has row/uec of 0, which is what we want
-				}
-			}
+          //
+          // NULL values must only be stored in single-valued intervals
+          // in the histograms ; so, just in case we're only getting
+          // *one* HistInt for the NULL interval, insert a 2nd one
+          //
+          // 0   1   2
+          // |   |   |
+          // |   |   |    entries() == 3
+          //         NULL
+          //
+          // 0   1   2   3
+          // |   |   |   |
+          // |   |   |   |    entries() == 4
+          //        new  NULL
+          //        NULL
+          //
+          if ( hist->lastHistInt().isNull() )
+            {
+              CollIndex count = hist->entries() ;
+              if ( !(*hist)[count-2].isNull() )
+                {
+                  // insert a 2nd NULL HISTINT, with boundaryIncl value FALSE
+                  HistInt secondLast (hist->lastHistInt().getBoundary(), FALSE) ;
+                  hist->insertAt(count-1,secondLast) ;
+                  // new HISTINT by default has row/uec of 0, which is what we want
+                }
+            }
 
-			//
-			// Now, reduce the total number of intervals to be the number
-			// that the user wants.  This is used to test the tradeoffs
-			// between compile time & rowcount estimation.
-			//
-			(*colStats_)[i]->setMaxIntervalCount (maxIntervalCount) ;
-			(*colStats_)[i]->reduceToMaxIntervalCount () ;
+          //
+          // Now, reduce the total number of intervals to be the number
+          // that the user wants.  This is used to test the tradeoffs
+          // between compile time & rowcount estimation.
+          //
+          (*colStats_)[i]->setMaxIntervalCount (maxIntervalCount) ;
+          (*colStats_)[i]->reduceToMaxIntervalCount () ;
 
-			if ((*colStats_)[i]->getRowcount() == (*colStats_)[i]->getTotalUec() )
-				(*colStats_)[i]->setAlmostUnique(TRUE);
+          if ((*colStats_)[i]->getRowcount() == (*colStats_)[i]->getTotalUec() )
+            (*colStats_)[i]->setAlmostUnique(TRUE);
 
-		} // outer for loop -- done with this COLSTATS, continue with next one
-		// ***********************************************************************
+        } // outer for loop -- done with this COLSTATS, continue with next one
+      // ***********************************************************************
 
-		statsFetched_ = TRUE;
-		MonitorMemoryUsage_Exit((char*)mmPhase.data(), NULL, NULL, TRUE);
-	} // !statsFetched_
+      statsFetched_ = TRUE;
+      MonitorMemoryUsage_Exit((char*)mmPhase.data(), NULL, NULL, TRUE);
+    } // !statsFetched_
 
-	return (*colStats_);
+  return (*colStats_);
 }
 
-	StatsList &
+StatsList &
 NATable::generateFakeStats()
 {
-	if (colStats_ == NULL)
-	{
-		//trying to get statistics for a new statement allocate colStats_
-		colStats_ = new (CmpCommon::statementHeap()) StatsList(CmpCommon::statementHeap());
-	}
+  if (colStats_ == NULL)
+    {
+      //trying to get statistics for a new statement allocate colStats_
+      colStats_ = new (CmpCommon::statementHeap()) StatsList(CmpCommon::statementHeap());
+    }
 
-	if (colStats_->entries() > 0)
-		return (*colStats_);
+  if (colStats_->entries() > 0)
+    return (*colStats_);
 
-	NAColumnArray colList = getNAColumnArray() ;
-	double defaultFakeRowCount = (ActiveSchemaDB()->getDefaults()).getAsDouble(HIST_NO_STATS_ROWCOUNT);
-	double defaultFakeUec = (ActiveSchemaDB()->getDefaults()).getAsDouble(HIST_NO_STATS_UEC);
+  NAColumnArray colList = getNAColumnArray() ;
+  double defaultFakeRowCount = (ActiveSchemaDB()->getDefaults()).getAsDouble(HIST_NO_STATS_ROWCOUNT);
+  double defaultFakeUec = (ActiveSchemaDB()->getDefaults()).getAsDouble(HIST_NO_STATS_UEC);
 
-	if ( isHiveTable() ) {
-		defaultFakeRowCount = getOriginalRowCount().value();
-	}
+  if ( isHiveTable() ) {
+    defaultFakeRowCount = getOriginalRowCount().value();
+  }
 
-	/*  if ( isHbaseTable() ) {
-	    defaultFakeRowCount = getOriginalRowCount().value();
-	    }
-	    */
+  /*  if ( isHbaseTable() ) {
+      defaultFakeRowCount = getOriginalRowCount().value();
+      }
+  */
 
-	for (CollIndex i = 0; i < colList.entries(); i++ )
-	{
-		NAColumn * col = colList[i];
+  for (CollIndex i = 0; i < colList.entries(); i++ )
+    {
+      NAColumn * col = colList[i];
 
-		if (col->isUnique() )
-			defaultFakeUec = defaultFakeRowCount;
-		else
-			defaultFakeUec = MINOF(defaultFakeUec, defaultFakeRowCount);
+      if (col->isUnique() )
+        defaultFakeUec = defaultFakeRowCount;
+      else
+        defaultFakeUec = MINOF(defaultFakeUec, defaultFakeRowCount);
 
-		EncodedValue dummyVal(0.0);
+      EncodedValue dummyVal(0.0);
 
-		EncodedValue lowBound = dummyVal.minMaxValue(col->getType(), TRUE);
-		EncodedValue highBound = dummyVal.minMaxValue(col->getType(), FALSE);
+      EncodedValue lowBound = dummyVal.minMaxValue(col->getType(), TRUE);
+      EncodedValue highBound = dummyVal.minMaxValue(col->getType(), FALSE);
 
-		HistogramSharedPtr emptyHist(new (HISTHEAP) Histogram(HISTHEAP));
+      HistogramSharedPtr emptyHist(new (HISTHEAP) Histogram(HISTHEAP));
 
-		HistInt newFirstHistInt(lowBound, FALSE);
+      HistInt newFirstHistInt(lowBound, FALSE);
 
-		HistInt newSecondHistInt(highBound, TRUE);
+      HistInt newSecondHistInt(highBound, TRUE);
 
-		newSecondHistInt.setCardAndUec(defaultFakeRowCount,
-				defaultFakeUec);
+      newSecondHistInt.setCardAndUec(defaultFakeRowCount,
+                                     defaultFakeUec);
 
-		emptyHist->insert(newFirstHistInt);
-		emptyHist->insert(newSecondHistInt);
+      emptyHist->insert(newFirstHistInt);
+      emptyHist->insert(newSecondHistInt);
 
-		ComUID histid(NA_JulianTimestamp());
-		ColStatsSharedPtr fakeColStats(
-				new (HISTHEAP) ColStats(histid,
-					defaultFakeUec,
-					defaultFakeRowCount,
-					defaultFakeRowCount,
-					col->isUnique(),
-					FALSE,
-					emptyHist,
-					FALSE,
-					1.0,
-					1.0,
-					-1, // avg varchar size
-					HISTHEAP));
+      ComUID histid(NA_JulianTimestamp());
+      ColStatsSharedPtr fakeColStats(
+           new (HISTHEAP) ColStats(histid,
+                                   defaultFakeUec,
+                                   defaultFakeRowCount,
+                                   defaultFakeRowCount,
+                                   col->isUnique(),
+                                   FALSE,
+                                   emptyHist,
+                                   FALSE,
+                                   1.0,
+                                   1.0,
+                                   -1, // avg varchar size
+                                   HISTHEAP));
 
-		fakeColStats->setFakeHistogram(TRUE);
-		fakeColStats->setOrigFakeHist(TRUE);
-		fakeColStats->setMinValue(lowBound);
-		fakeColStats->setMaxValue(highBound);
-		fakeColStats->statColumns().insert(col);
+      fakeColStats->setFakeHistogram(TRUE);
+      fakeColStats->setOrigFakeHist(TRUE);
+      fakeColStats->setMinValue(lowBound);
+      fakeColStats->setMaxValue(highBound);
+      fakeColStats->statColumns().insert(col);
 
-		colStats_->insert(fakeColStats);
-	}
-	setStatsFetched(TRUE);
-	setOriginalRowCount(defaultFakeRowCount);
+      colStats_->insert(fakeColStats);
+    }
+  setStatsFetched(TRUE);
+  setOriginalRowCount(defaultFakeRowCount);
 
-	return (*colStats_);
+  return (*colStats_);
 }
 
 NABoolean NATable::rowsArePacked() const
 {
-	// If one fileset is packed, they all are
-	return (getVerticalPartitionList().entries() &&
-			getVerticalPartitionList()[0]->isPacked());
+  // If one fileset is packed, they all are
+  return (getVerticalPartitionList().entries() &&
+          getVerticalPartitionList()[0]->isPacked());
 }
 
 // MV
 // Read materialized view information from the catalog manager.
 MVInfoForDML *NATable::getMVInfo(BindWA *bindWA)
 {
-	return mvInfo_;
+  return mvInfo_;
 }
 
 // MV
@@ -6363,43 +6511,43 @@ MVInfoForDML *NATable::getMVInfo(BindWA *bindWA)
 // If not initialized, keep a list and report error at runtime.
 NABoolean NATable::verifyMvIsInitializedAndAvailable(BindWA *bindWA) const
 {
-	CMPASSERT(isAnMV());
-	const ComMvAttributeBitmap& bitmap = getMvAttributeBitmap();
+  CMPASSERT(isAnMV());
+  const ComMvAttributeBitmap& bitmap = getMvAttributeBitmap();
 
-	// First check if the table is Unavailable.
-	NAString value;
-	if (bitmap.getIsMvUnAvailable())
-	{
+  // First check if the table is Unavailable.
+  NAString value;
+  if (bitmap.getIsMvUnAvailable())
+    {
 
-		// 12312 Materialized View $0~TableName is unavailable.
-		*CmpCommon::diags() << DgSqlCode(-12312)
-			<< DgTableName(getTableName().getQualifiedNameAsString());
-		bindWA->setErrStatus();
+      // 12312 Materialized View $0~TableName is unavailable.
+      *CmpCommon::diags() << DgSqlCode(-12312)
+                          << DgTableName(getTableName().getQualifiedNameAsString());
+      bindWA->setErrStatus();
 
-		return TRUE;
-	}
+      return TRUE;
+    }
 
-	// if the mv is uninitialized,
-	// add it to the uninitializedMvList in the BindWA
-	if (bitmap.getIsMvUnInitialized())
-	{
+  // if the mv is uninitialized,
+  // add it to the uninitializedMvList in the BindWA
+  if (bitmap.getIsMvUnInitialized())
+    {
 
-		// get physical and ansi names
-		NAString fileName(
-				getClusteringIndex()->getFileSetName().getQualifiedNameAsString(),
-				bindWA->wHeap() );
+      // get physical and ansi names
+      NAString fileName(
+           getClusteringIndex()->getFileSetName().getQualifiedNameAsString(),
+           bindWA->wHeap() );
 
-		NAString ansiName( getTableName().getQualifiedNameAsAnsiString(),
-				bindWA->wHeap() );
+      NAString ansiName( getTableName().getQualifiedNameAsAnsiString(),
+                         bindWA->wHeap() );
 
-		// get physical and ansi name
-		bindWA->addUninitializedMv(
-				convertNAString( fileName, bindWA->wHeap() ),
-				convertNAString( ansiName, bindWA->wHeap() ) );
-	}
+      // get physical and ansi name
+      bindWA->addUninitializedMv(
+           convertNAString( fileName, bindWA->wHeap() ),
+           convertNAString( ansiName, bindWA->wHeap() ) );
+    }
 
 
-	return FALSE;
+  return FALSE;
 }
 
 // Return value: TRUE, found an index or constr. FALSE, not found.
@@ -6415,245 +6563,245 @@ NABoolean NATable::verifyMvIsInitializedAndAvailable(BindWA *bindWA) const
 //                            FALSE, accept any index that has the
 //                            same columns, in any sequence.
 NABoolean NATable::getCorrespondingIndex(NAList<NAString> &inputCols,
-		NABoolean lookForExplicitIndex,
-		NABoolean lookForUniqueIndex,
-		NABoolean lookForPrimaryKey,
-		NABoolean lookForAnyIndexOrPkey,
-		NABoolean lookForSameSequenceOfCols,
-		NABoolean excludeAlwaysComputedSystemCols,
-		NAString *indexName)
+                                         NABoolean lookForExplicitIndex,
+                                         NABoolean lookForUniqueIndex,
+                                         NABoolean lookForPrimaryKey,
+                                         NABoolean lookForAnyIndexOrPkey,
+                                         NABoolean lookForSameSequenceOfCols,
+                                         NABoolean excludeAlwaysComputedSystemCols,
+                                         NAString *indexName)
 {
-	NABoolean indexFound = FALSE;
-	CollIndex numInputCols = inputCols.entries();
+  NABoolean indexFound = FALSE;
+  CollIndex numInputCols = inputCols.entries();
 
-	if (numInputCols == 0)
-	{
-		lookForPrimaryKey = TRUE;
-		lookForUniqueIndex = FALSE;
-		lookForAnyIndexOrPkey = FALSE;
-	}
+  if (numInputCols == 0)
+    {
+      lookForPrimaryKey = TRUE;
+      lookForUniqueIndex = FALSE;
+      lookForAnyIndexOrPkey = FALSE;
+    }
 
-	Lng32 numBTpkeys = getClusteringIndex()->getIndexKeyColumns().entries();
+  Lng32 numBTpkeys = getClusteringIndex()->getIndexKeyColumns().entries();
 
-	const NAFileSetList &indexList = getIndexList();
-	for (Int32 i = 0; (NOT indexFound && (i < indexList.entries())); i++)
-	{
-		NABoolean isPrimaryKey = FALSE;
-		NABoolean isUniqueIndex = FALSE;
+  const NAFileSetList &indexList = getIndexList();
+  for (Int32 i = 0; (NOT indexFound && (i < indexList.entries())); i++)
+    {
+      NABoolean isPrimaryKey = FALSE;
+      NABoolean isUniqueIndex = FALSE;
 
-		const NAFileSet * naf = indexList[i];
-		if (naf->getKeytag() == 0)
-			isPrimaryKey = TRUE;
-		else if (naf->uniqueIndex())
-			isUniqueIndex = TRUE;
+      const NAFileSet * naf = indexList[i];
+      if (naf->getKeytag() == 0)
+        isPrimaryKey = TRUE;
+      else if (naf->uniqueIndex())
+        isUniqueIndex = TRUE;
 
-		if ((NOT lookForPrimaryKey) && (isPrimaryKey))
-			continue;
+      if ((NOT lookForPrimaryKey) && (isPrimaryKey))
+        continue;
 
-		NABoolean found = FALSE;
-		if (lookForAnyIndexOrPkey)
-			found = TRUE;
-		else if (lookForPrimaryKey && isPrimaryKey)
-			found = TRUE;
-		else if (lookForUniqueIndex && isUniqueIndex)
-			found = TRUE;
+      NABoolean found = FALSE;
+      if (lookForAnyIndexOrPkey)
+        found = TRUE;
+      else if (lookForPrimaryKey && isPrimaryKey)
+        found = TRUE;
+      else if (lookForUniqueIndex && isUniqueIndex)
+        found = TRUE;
 
-		if (found)
-		{
-			if (lookForExplicitIndex)  // need an explicit index to match.
-			{
-				if ((naf->isCreatedExplicitly()) ||
-						(isPrimaryKey))
-					found = TRUE;
-				else
-					found = FALSE;
-			}
-		}
+      if (found)
+        {
+          if (lookForExplicitIndex)  // need an explicit index to match.
+            {
+              if ((naf->isCreatedExplicitly()) ||
+                  (isPrimaryKey))
+                found = TRUE;
+              else
+                found = FALSE;
+            }
+        }
 
-		if (NOT found)
-			continue;
+      if (NOT found)
+        continue;
 
-		Int32 numMatchedCols = 0;
-		NABoolean allColsMatched = TRUE;
+      Int32 numMatchedCols = 0;
+      NABoolean allColsMatched = TRUE;
 
-		if (numInputCols > 0)
-		{
-			const NAColumnArray &nacArr = naf->getIndexKeyColumns();
+      if (numInputCols > 0)
+        {
+          const NAColumnArray &nacArr = naf->getIndexKeyColumns();
 
-			Lng32 numKeyCols = naf->getCountOfColumns(
-					TRUE,           // exclude non-key cols
-					!isPrimaryKey,  // exclude cols other than user-specified index cols
-					FALSE,          // don't exclude all system cols like SYSKEY
-					excludeAlwaysComputedSystemCols);
+          Lng32 numKeyCols = naf->getCountOfColumns(
+               TRUE,           // exclude non-key cols
+               !isPrimaryKey,  // exclude cols other than user-specified index cols
+               FALSE,          // don't exclude all system cols like SYSKEY
+               excludeAlwaysComputedSystemCols);
 
-			// compare # of columns first and disqualify the index
-			// if it doesn't have the right number of columns
-			if (numInputCols != numKeyCols)
-				continue;
+          // compare # of columns first and disqualify the index
+          // if it doesn't have the right number of columns
+          if (numInputCols != numKeyCols)
+            continue;
 
-			// compare individual key columns with the provided input columns
-			for (Int32 j = 0; j < nacArr.entries() && allColsMatched; j++)
-			{
-				NAColumn *nac = nacArr[j];
+          // compare individual key columns with the provided input columns
+          for (Int32 j = 0; j < nacArr.entries() && allColsMatched; j++)
+            {
+              NAColumn *nac = nacArr[j];
 
-				// exclude the same types of columns that we excluded in
-				// the call to naf->getCountOfColumns() above
-				if (!isPrimaryKey &&
-						nac->getIndexColName() == nac->getColName())
-					continue;
+              // exclude the same types of columns that we excluded in
+              // the call to naf->getCountOfColumns() above
+              if (!isPrimaryKey &&
+                  nac->getIndexColName() == nac->getColName())
+                continue;
 
-				if (excludeAlwaysComputedSystemCols &&
-						nac->isComputedColumnAlways() && nac->isSystemColumn())
-					continue;
+              if (excludeAlwaysComputedSystemCols &&
+                  nac->isComputedColumnAlways() && nac->isSystemColumn())
+                continue;
 
-				const NAString &keyColName = nac->getColName();
-				NABoolean colFound = FALSE;
+              const NAString &keyColName = nac->getColName();
+              NABoolean colFound = FALSE;
 
-				// look up the key column name in the provided input columns
-				if (lookForSameSequenceOfCols)
-				{
-					// in this case we know exactly where to look
-					colFound = (keyColName == inputCols[numMatchedCols]);
-				}
-				else
-					for (Int32 k = 0; !colFound && k < numInputCols; k++)
-					{
-						if (keyColName == inputCols[k])
-							colFound = TRUE;
-					} // loop over provided input columns
+              // look up the key column name in the provided input columns
+              if (lookForSameSequenceOfCols)
+                {
+                  // in this case we know exactly where to look
+                  colFound = (keyColName == inputCols[numMatchedCols]);
+                }
+              else
+                for (Int32 k = 0; !colFound && k < numInputCols; k++)
+                  {
+                    if (keyColName == inputCols[k])
+                      colFound = TRUE;
+                  } // loop over provided input columns
 
-				if (colFound)
-					numMatchedCols++;
-				else
-					allColsMatched = FALSE;
-			} // loop over key columns of the index
+              if (colFound)
+                numMatchedCols++;
+              else
+                allColsMatched = FALSE;
+            } // loop over key columns of the index
 
-			if (allColsMatched)
-			{
-				// just checking that the above loop and
-				// getCountOfColumns() don't disagree
-				CMPASSERT(numMatchedCols == numKeyCols);
+          if (allColsMatched)
+            {
+              // just checking that the above loop and
+              // getCountOfColumns() don't disagree
+              CMPASSERT(numMatchedCols == numKeyCols);
 
-				indexFound = TRUE;
-			}
-		} // inputCols specified
-		else
-			indexFound = TRUE; // primary key, no input cols specified
+              indexFound = TRUE;
+            }
+        } // inputCols specified
+      else
+        indexFound = TRUE; // primary key, no input cols specified
 
-		if (indexFound)
-		{
-			if (indexName)
-			{
-				*indexName = naf->getExtFileSetName();
-			}
-		}
-	} // loop over indexes of the table
+      if (indexFound)
+        {
+          if (indexName)
+            {
+              *indexName = naf->getExtFileSetName();
+            }
+        }
+    } // loop over indexes of the table
 
-	return indexFound;
+  return indexFound;
 }
 
 NABoolean NATable::getCorrespondingConstraint(NAList<NAString> &inputCols,
-		NABoolean uniqueConstr,
-		NAString *constrName,
-		NABoolean * isPkey,
-		NAList<int> *reorderList)
+                                              NABoolean uniqueConstr,
+                                              NAString *constrName,
+                                              NABoolean * isPkey,
+                                              NAList<int> *reorderList)
 {
-	NABoolean constrFound = FALSE;
-	NABoolean lookForPrimaryKey = (inputCols.entries() == 0);
+  NABoolean constrFound = FALSE;
+  NABoolean lookForPrimaryKey = (inputCols.entries() == 0);
 
-	const AbstractRIConstraintList &constrList = 
-		(uniqueConstr ? getUniqueConstraints() : getRefConstraints());
+  const AbstractRIConstraintList &constrList = 
+    (uniqueConstr ? getUniqueConstraints() : getRefConstraints());
 
-	if (isPkey)
-		*isPkey = FALSE;
+  if (isPkey)
+    *isPkey = FALSE;
 
-	for (Int32 i = 0; (NOT constrFound && (i < constrList.entries())); i++)
-	{
-		AbstractRIConstraint *ariConstr = constrList[i];
+  for (Int32 i = 0; (NOT constrFound && (i < constrList.entries())); i++)
+    {
+      AbstractRIConstraint *ariConstr = constrList[i];
 
-		if (uniqueConstr && (ariConstr->getOperatorType() != ITM_UNIQUE_CONSTRAINT))
-			continue;
+      if (uniqueConstr && (ariConstr->getOperatorType() != ITM_UNIQUE_CONSTRAINT))
+        continue;
 
-		if (lookForPrimaryKey && (NOT ((UniqueConstraint*)ariConstr)->isPrimaryKeyConstraint()))
-			continue;
+      if (lookForPrimaryKey && (NOT ((UniqueConstraint*)ariConstr)->isPrimaryKeyConstraint()))
+        continue;
 
-		if ((NOT uniqueConstr) && (ariConstr->getOperatorType() != ITM_REF_CONSTRAINT))
-			continue;
+      if ((NOT uniqueConstr) && (ariConstr->getOperatorType() != ITM_REF_CONSTRAINT))
+        continue;
 
-		if (NOT lookForPrimaryKey)
-		{
-			Int32 numUniqueCols = 0;
-			NABoolean allColsMatched = TRUE;
-			NABoolean reorderNeeded = FALSE;
+      if (NOT lookForPrimaryKey)
+        {
+          Int32 numUniqueCols = 0;
+          NABoolean allColsMatched = TRUE;
+          NABoolean reorderNeeded = FALSE;
 
-			if (reorderList)
-				reorderList->clear();
+          if (reorderList)
+            reorderList->clear();
 
-			for (Int32 j = 0; j < ariConstr->keyColumns().entries() && allColsMatched; j++)
-			{
-				// The RI constraint contains a dummy NAColumn, get to the
-				// real one to test for computed columns
-				NAColumn *nac = getNAColumnArray()[ariConstr->keyColumns()[j]->getPosition()];
+          for (Int32 j = 0; j < ariConstr->keyColumns().entries() && allColsMatched; j++)
+            {
+              // The RI constraint contains a dummy NAColumn, get to the
+              // real one to test for computed columns
+              NAColumn *nac = getNAColumnArray()[ariConstr->keyColumns()[j]->getPosition()];
 
-				if (nac->isComputedColumnAlways() && nac->isSystemColumn())
-					// always computed system columns in the key are redundant,
-					// don't include them (also don't include them in the DDL)
-					continue;
+              if (nac->isComputedColumnAlways() && nac->isSystemColumn())
+                // always computed system columns in the key are redundant,
+                // don't include them (also don't include them in the DDL)
+                continue;
 
-				const NAString &uniqueColName = (ariConstr->keyColumns()[j])->getColName();
-				NABoolean colFound = FALSE;
+              const NAString &uniqueColName = (ariConstr->keyColumns()[j])->getColName();
+              NABoolean colFound = FALSE;
 
-				// compare the unique column name to the provided input columns
-				for (Int32 k = 0; !colFound && k < inputCols.entries(); k++)
-					if (uniqueColName == inputCols[k])
-					{
-						colFound = TRUE;
-						numUniqueCols++;
-						if (reorderList)
-							reorderList->insert(k);
-						if (j != k)
-							// inputCols and key columns come in different order
-							// (order/sequence of column names, ignoring ASC/DESC)
-							reorderNeeded = TRUE;
-					}
+              // compare the unique column name to the provided input columns
+              for (Int32 k = 0; !colFound && k < inputCols.entries(); k++)
+                if (uniqueColName == inputCols[k])
+                  {
+                    colFound = TRUE;
+                    numUniqueCols++;
+                    if (reorderList)
+                      reorderList->insert(k);
+                    if (j != k)
+                      // inputCols and key columns come in different order
+                      // (order/sequence of column names, ignoring ASC/DESC)
+                      reorderNeeded = TRUE;
+                  }
 
-				if (!colFound)
-					allColsMatched = FALSE;
-			}
+              if (!colFound)
+                allColsMatched = FALSE;
+            }
 
-			if (inputCols.entries() == numUniqueCols && allColsMatched)
-			{
-				constrFound = TRUE;
+          if (inputCols.entries() == numUniqueCols && allColsMatched)
+            {
+              constrFound = TRUE;
 
-				if (reorderList && !reorderNeeded)
-					reorderList->clear();
-			}
-		}
-		else
-		{
-			// found the primary key constraint we were looking for
-			constrFound = TRUE;
-		}
+              if (reorderList && !reorderNeeded)
+                reorderList->clear();
+            }
+        }
+      else
+        {
+          // found the primary key constraint we were looking for
+          constrFound = TRUE;
+        }
 
-		if (constrFound)
-		{
-			if (constrName)
-			{
-				*constrName = ariConstr->getConstraintName().getQualifiedNameAsAnsiString();
-			}
+      if (constrFound)
+        {
+          if (constrName)
+            {
+              *constrName = ariConstr->getConstraintName().getQualifiedNameAsAnsiString();
+            }
 
-			if (isPkey)
-			{
-				if ((uniqueConstr) && (((UniqueConstraint*)ariConstr)->isPrimaryKeyConstraint()))
-					*isPkey = TRUE;
-			}
-		}
-		else
-			if (reorderList)
-				reorderList->clear();
-	}
+          if (isPkey)
+            {
+              if ((uniqueConstr) && (((UniqueConstraint*)ariConstr)->isPrimaryKeyConstraint()))
+                *isPkey = TRUE;
+            }
+        }
+      else
+        if (reorderList)
+          reorderList->clear();
+    }
 
-	return constrFound;
+  return constrFound;
 }
 
 // Extract priv bitmaps and security invalidation keys for the current user
@@ -6752,64 +6900,64 @@ void NATable::getPrivileges(TrafDesc * priv_desc)
 // update privInfo_ and secKeySet_ members with values 
 void NATable::readPrivileges ()
 {
-	privInfo_ = new(heap_) PrivMgrUserPrivs;
+  privInfo_ = new(heap_) PrivMgrUserPrivs;
 
-	bool testError = false;
+  bool testError = false;
 #ifndef NDEBUG
-	char *tpie = getenv("TEST_PRIV_INTERFACE_ERROR");
-	if (tpie && *tpie == '1')
-		testError = true;
+  char *tpie = getenv("TEST_PRIV_INTERFACE_ERROR");
+  if (tpie && *tpie == '1')
+    testError = true;
 #endif
 
-	// use embedded compiler.
-	CmpSeabaseDDL cmpSBD(STMTHEAP);
-	if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
-	{
-		if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
-			*CmpCommon::diags() << DgSqlCode( -4400 );
+  // use embedded compiler.
+  CmpSeabaseDDL cmpSBD(STMTHEAP);
+  if (cmpSBD.switchCompiler(CmpContextInfo::CMPCONTEXT_TYPE_META))
+    {
+      if (CmpCommon::diags()->getNumber(DgSqlCode::ERROR_) == 0)
+        *CmpCommon::diags() << DgSqlCode( -4400 );
 
-		return;
-	}
+      return;
+    }
 
-	NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
-	privMDLoc += ".\"";
-	privMDLoc += SEABASE_PRIVMGR_SCHEMA;
-	privMDLoc += "\"";
+  NAString privMDLoc = CmpSeabaseDDL::getSystemCatalogStatic();
+  privMDLoc += ".\"";
+  privMDLoc += SEABASE_PRIVMGR_SCHEMA;
+  privMDLoc += "\"";
 
-	PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(),PrivMgr::PRIV_INITIALIZED);
-	std::vector <ComSecurityKey *> secKeyVec;
+  PrivMgrCommands privInterface(privMDLoc.data(), CmpCommon::diags(),PrivMgr::PRIV_INITIALIZED);
+  std::vector <ComSecurityKey *> secKeyVec;
 
-	if (testError || (STATUS_GOOD !=
-				privInterface.getPrivileges((NATable *)this,
-					ComUser::getCurrentUser(), *privInfo_, &secKeyVec)))
-	{
-		if (testError)
+  if (testError || (STATUS_GOOD !=
+                    privInterface.getPrivileges((NATable *)this,
+                                                ComUser::getCurrentUser(), *privInfo_, &secKeyVec)))
+    {
+      if (testError)
 #ifndef NDEBUG
-			*CmpCommon::diags() << DgSqlCode(-8142) <<
-				DgString0("TEST_PRIV_INTERFACE_ERROR")  << DgString1(tpie) ;
+        *CmpCommon::diags() << DgSqlCode(-8142) <<
+          DgString0("TEST_PRIV_INTERFACE_ERROR")  << DgString1(tpie) ;
 #else
-		abort();
+      abort();
 #endif
-		NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
-		privInfo_ = NULL;
+      NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
+      privInfo_ = NULL;
 
-		cmpSBD.switchBackCompiler();
-		return;
-	}
+      cmpSBD.switchBackCompiler();
+      return;
+    }
 
-	CMPASSERT (privInfo_);
+  CMPASSERT (privInfo_);
 
-	cmpSBD.switchBackCompiler();
+  cmpSBD.switchBackCompiler();
 
-	for (std::vector<ComSecurityKey*>::iterator iter = secKeyVec.begin();
-			iter != secKeyVec.end();
-			iter++)
-	{
-		// Insertion of the dereferenced pointer results in NASet making
-		// a copy of the object, and then we delete the original.
-		secKeySet_.insert(**iter);
-		delete *iter;
-	}
+  for (std::vector<ComSecurityKey*>::iterator iter = secKeyVec.begin();
+       iter != secKeyVec.end();
+       iter++)
+    {
+      // Insertion of the dereferenced pointer results in NASet making
+      // a copy of the object, and then we delete the original.
+      secKeySet_.insert(**iter);
+      delete *iter;
+    }
 
 }
 
@@ -6819,719 +6967,720 @@ void NATable::readPrivileges ()
 // 
 Int64 NATable::lookupObjectUid()
 {
-	QualifiedName qualName = getExtendedQualName().getQualifiedNameObj();
-	objectUID_ = lookupObjectUidByName(qualName, objectType_, FALSE);
+  QualifiedName qualName = getExtendedQualName().getQualifiedNameObj();
+  objectUID_ = lookupObjectUidByName(qualName, objectType_, FALSE);
 
-	if (objectUID_ <= 0 && CmpCommon::diags()->mainSQLCODE() >= 0)
-		// object not found, no serious error
-		objectUID_ = 0;
+  if (objectUID_ <= 0 && CmpCommon::diags()->mainSQLCODE() >= 0)
+    // object not found, no serious error
+    objectUID_ = 0;
 
-	return objectUID_.get_value();
+  return objectUID_.get_value();
 }
 
 bool NATable::isEnabledForDDLQI() const
 {
-	if (isSeabaseMD_ || isSMDTable_ || (getSpecialType() == ExtendedQualName::VIRTUAL_TABLE))
-		return false;
-	else 
-	{
-		if (objectUID_.get_value() == 0)
-		{
-			// Looking up object UIDs at code-gen time was shown to cause
-			// more than 10% performance regression in YCSB benchmark. In
-			// that investigation, we learned that metadata and histogram 
-			// NATables would have no object UID at code-gen and would 
-			// require the lookup.  We're pretty sure these are the only 
-			// types of tables but will abend here otherwise. If this 
-			// causes problems, the envvar below can be used as a 
-			// temporary workaround. 
-			char *noAbendOnLp1398600 = getenv("NO_ABEND_ON_LP_1398600");
-			if (!noAbendOnLp1398600 || *noAbendOnLp1398600 == '0')
-				abort();
-		}
-		return true;
-	}
+  if (isSeabaseMD_ || isSMDTable_ || (getSpecialType() == ExtendedQualName::VIRTUAL_TABLE))
+    return false;
+  else 
+    {
+      if (objectUID_.get_value() == 0)
+        {
+          // Looking up object UIDs at code-gen time was shown to cause
+          // more than 10% performance regression in YCSB benchmark. In
+          // that investigation, we learned that metadata and histogram 
+          // NATables would have no object UID at code-gen and would 
+          // require the lookup.  We're pretty sure these are the only 
+          // types of tables but will abend here otherwise. If this 
+          // causes problems, the envvar below can be used as a 
+          // temporary workaround. 
+          char *noAbendOnLp1398600 = getenv("NO_ABEND_ON_LP_1398600");
+          if (!noAbendOnLp1398600 || *noAbendOnLp1398600 == '0')
+            abort();
+        }
+      return true;
+    }
 }
 
 NATable::~NATable()
 {
-	// remove the map entries of associated table identifers in
-	// NAClusterInfo::tableToClusterMap_.
-	CMPASSERT(gpClusterInfo);
-	NAColumn *col;
-	NABoolean delHeading = ActiveSchemaDB()->getNATableDB()->cachingMetaData();
-	const LIST(CollIndex) & tableIdList = getTableIdList();
+  // remove the map entries of associated table identifers in
+  // NAClusterInfo::tableToClusterMap_.
+  CMPASSERT(gpClusterInfo);
+  NAColumn *col;
+  NABoolean delHeading = ActiveSchemaDB()->getNATableDB()->cachingMetaData();
+  const LIST(CollIndex) & tableIdList = getTableIdList();
 
-	if (privInfo_)
-	{
-		NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
-		privInfo_ = NULL;
-	}
+  if (privInfo_)
+    {
+      NADELETE(privInfo_, PrivMgrUserPrivs, heap_);
+      privInfo_ = NULL;
+    }
 
-	if (! isHive_) {
-		for (int i = 0 ; i < colcount_ ; i++) {
-			col = (NAColumn *)colArray_[i];
-			if (delHeading) {
-				if (col->getDefaultValue())
-					NADELETEBASIC(col->getDefaultValue(), heap_);
-				if (col->getHeading())
-					NADELETEBASIC(col->getHeading(), heap_);
-				if (col->getComputedColumnExprString())
-					NADELETEBASIC(col->getComputedColumnExprString(),heap_);
-			}
-			NADELETE(col->getType(), NAType, heap_);
-			NADELETE(col, NAColumn, heap_);
-		}
-		colArray_.clear();
-	}
+  if (! isHive_) {
+    for (int i = 0 ; i < colcount_ ; i++) {
+      col = (NAColumn *)colArray_[i];
+      if (delHeading) {
+        if (col->getDefaultValue())
+          NADELETEBASIC(col->getDefaultValue(), heap_);
+        if (col->getHeading())
+          NADELETEBASIC(col->getHeading(), heap_);
+        if (col->getComputedColumnExprString())
+          NADELETEBASIC(col->getComputedColumnExprString(),heap_);
+      }
+      NADELETE(col->getType(), NAType, heap_);
+      NADELETE(col, NAColumn, heap_);
+    }
+    colArray_.clear();
+  }
 
 
 
-	if (parentTableName_ != NULL)
-	{
-		NADELETEBASIC(parentTableName_, heap_);
-		parentTableName_ = NULL;
-	} 
-	if (snapshotName_ != NULL)
-	{
-		NADELETEBASIC(snapshotName_, heap_);
-		snapshotName_ = NULL;
-	}
-	if (viewText_ != NULL)
-	{
-		NADELETEBASIC(viewText_, heap_);
-		viewText_ = NULL;
-	} 
-	if (viewCheck_ != NULL)
-	{
-		NADELETEBASIC(viewCheck_, heap_);
-		viewCheck_ = NULL;
-	} 
-	if (viewColUsages_ != NULL)
-	{
-		for(Int32 i = 0; i < viewColUsages_->entries(); i++)
-		{
-			ComViewColUsage *pUsage = viewColUsages_->operator[](i);
-			NADELETEBASIC(pUsage, heap_);
-		}
-		NADELETEBASIC(viewColUsages_, heap_);
-		viewColUsages_ = NULL;
-	} 
-	if (viewFileName_ != NULL)
-	{
-		NADELETEBASIC(viewFileName_, heap_);
-		viewFileName_ = NULL;
-	} 
-	if (prototype_ != NULL)
-	{
-		NADELETE(prototype_, HostVar, heap_);
-		prototype_ = NULL;
-	}
-	if (sgAttributes_ != NULL)
-	{
-		NADELETE(sgAttributes_, SequenceGeneratorAttributes, heap_);
-		sgAttributes_ = NULL;
-	}
-	// clusteringIndex_ is part of indexes - No need to delete clusteringIndex_
-	CollIndex entryCount = indexes_.entries();
-	for (CollIndex i = 0 ; i < entryCount; i++) {
-		NADELETE(indexes_[i], NAFileSet, heap_);
-	}
-	indexes_.clear();
-	entryCount  = vertParts_.entries();
-	for (CollIndex i = 0 ; i < entryCount; i++) {
-		NADELETE(vertParts_[i], NAFileSet, heap_);
-	}
-	vertParts_.clear();
-	entryCount  = newColumns_.entries();
-	for (int i = 0 ; i < entryCount ; i++) {
-		col = (NAColumn *)newColumns_[i];
-		NADELETE(col, NAColumn, heap_);
-	}
-	newColumns_.clear();
-	entryCount  = checkConstraints_.entries();
-	for (CollIndex i = 0 ; i < entryCount; i++) {
-		NADELETE(checkConstraints_[i], CheckConstraint, heap_);
-	}
-	checkConstraints_.clear();
-	entryCount  = uniqueConstraints_.entries();
-	for (CollIndex i = 0 ; i < entryCount; i++) {
-		NADELETE((UniqueConstraint *)uniqueConstraints_[i], UniqueConstraint, heap_);
-	}
-	uniqueConstraints_.clear();
-	entryCount  = refConstraints_.entries();
-	for (CollIndex i = 0 ; i < entryCount; i++) {
-		NADELETE((RefConstraint *)refConstraints_[i], RefConstraint, heap_);
-	}
-	refConstraints_.clear();
-	entryCount  = mvsUsingMe_.entries();
-	for (CollIndex i = 0 ; i < entryCount; i++) {
-		NADELETE(mvsUsingMe_[i], UsingMvInfo, heap_);
-	}
-	mvsUsingMe_.clear();
-	// mvInfo_ is not used at all
-	// tableIDList_ is list of ints - No need to delete the entries
-	// colStats_ and colsWithMissingStats_ comes from STMTHEAP
-	// secKeySet_ is the set that holds ComSecurityKeySet object itself
+  if (parentTableName_ != NULL)
+    {
+      NADELETEBASIC(parentTableName_, heap_);
+      parentTableName_ = NULL;
+    } 
+  if (snapshotName_ != NULL)
+    {
+      NADELETEBASIC(snapshotName_, heap_);
+      snapshotName_ = NULL;
+    }
+  if (viewText_ != NULL)
+    {
+      NADELETEBASIC(viewText_, heap_);
+      viewText_ = NULL;
+    } 
+  if (viewCheck_ != NULL)
+    {
+      NADELETEBASIC(viewCheck_, heap_);
+      viewCheck_ = NULL;
+    } 
+  if (viewColUsages_ != NULL)
+    {
+      for(Int32 i = 0; i < viewColUsages_->entries(); i++)
+        {
+          ComViewColUsage *pUsage = viewColUsages_->operator[](i);
+          NADELETEBASIC(pUsage, heap_);
+        }
+      NADELETEBASIC(viewColUsages_, heap_);
+      viewColUsages_ = NULL;
+    } 
+  if (viewFileName_ != NULL)
+    {
+      NADELETEBASIC(viewFileName_, heap_);
+      viewFileName_ = NULL;
+    } 
+  if (hiveOrigViewText_ != NULL)
+    {
+      NADELETEBASIC(hiveOrigViewText_, heap_);
+      hiveOrigViewText_ = NULL;
+    } 
+  if (prototype_ != NULL)
+    {
+      NADELETE(prototype_, HostVar, heap_);
+      prototype_ = NULL;
+    }
+  if (sgAttributes_ != NULL)
+    {
+      NADELETE(sgAttributes_, SequenceGeneratorAttributes, heap_);
+      sgAttributes_ = NULL;
+    }
+  // clusteringIndex_ is part of indexes - No need to delete clusteringIndex_
+  CollIndex entryCount = indexes_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+    NADELETE(indexes_[i], NAFileSet, heap_);
+  }
+  indexes_.clear();
+  entryCount  = vertParts_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+    NADELETE(vertParts_[i], NAFileSet, heap_);
+  }
+  vertParts_.clear();
+  entryCount  = newColumns_.entries();
+  for (int i = 0 ; i < entryCount ; i++) {
+    col = (NAColumn *)newColumns_[i];
+    NADELETE(col, NAColumn, heap_);
+  }
+  newColumns_.clear();
+  entryCount  = checkConstraints_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+    NADELETE(checkConstraints_[i], CheckConstraint, heap_);
+  }
+  checkConstraints_.clear();
+  entryCount  = uniqueConstraints_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+    NADELETE((UniqueConstraint *)uniqueConstraints_[i], UniqueConstraint, heap_);
+  }
+  uniqueConstraints_.clear();
+  entryCount  = refConstraints_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+    NADELETE((RefConstraint *)refConstraints_[i], RefConstraint, heap_);
+  }
+  refConstraints_.clear();
+  entryCount  = mvsUsingMe_.entries();
+  for (CollIndex i = 0 ; i < entryCount; i++) {
+    NADELETE(mvsUsingMe_[i], UsingMvInfo, heap_);
+  }
+  mvsUsingMe_.clear();
+  // mvInfo_ is not used at all
+  // tableIDList_ is list of ints - No need to delete the entries
+  // colStats_ and colsWithMissingStats_ comes from STMTHEAP
+  // secKeySet_ is the set that holds ComSecurityKeySet object itself
 }
 
 void NATable::resetAfterStatement() // ## to be implemented?
 {
-	if(resetAfterStatement_)
-		return;
-	//It is not clear to me whether virtual tables and resource forks
-	//(any "special" table type) can/should be reused.  Maybe certain
-	//types can; I just have no idea right now.  But as we're not reading
-	//metadata tables for them anyway, there seems little savings in
-	//caching them; perhaps we should just continue to build them on the fly.
-	//
-	//All the real metadata in NATable members can stay as it is.
-	//But there are a few pieces of for-this-query-only data:
+  if(resetAfterStatement_)
+    return;
+  //It is not clear to me whether virtual tables and resource forks
+  //(any "special" table type) can/should be reused.  Maybe certain
+  //types can; I just have no idea right now.  But as we're not reading
+  //metadata tables for them anyway, there seems little savings in
+  //caching them; perhaps we should just continue to build them on the fly.
+  //
+  //All the real metadata in NATable members can stay as it is.
+  //But there are a few pieces of for-this-query-only data:
 
-	referenceCount_ = 0;
-	refsIncompatibleDP2Halloween_ = FALSE;
-	isHalloweenTable_ = FALSE;
-	//And we now optimize/filter/reduce histogram statistics for each
-	//individual query, so stats and adminicular structures must be reset:
+  referenceCount_ = 0;
+  refsIncompatibleDP2Halloween_ = FALSE;
+  isHalloweenTable_ = FALSE;
+  //And we now optimize/filter/reduce histogram statistics for each
+  //individual query, so stats and adminicular structures must be reset:
 
-	statsFetched_ = FALSE;
+  statsFetched_ = FALSE;
 
-	//set this to NULL, the object pointed to by mvInfo_ is on the
-	//statement heap, for the next statement this will be set again
-	//this is set in 'MVInfoForDML *NATable::getMVInfo' which is called
-	//in the binder after the construction of the NATable. Therefore
-	//This will be set for every statement
-	mvInfo_ = NULL;
+  //set this to NULL, the object pointed to by mvInfo_ is on the
+  //statement heap, for the next statement this will be set again
+  //this is set in 'MVInfoForDML *NATable::getMVInfo' which is called
+  //in the binder after the construction of the NATable. Therefore
+  //This will be set for every statement
+  mvInfo_ = NULL;
 
-	//delete/clearAndDestroy colStats_
-	//set colStats_ pointer to NULL the object itself is deleted when
-	//the statement heap is disposed at the end of a statement
-	colStats_ = NULL;
+  //delete/clearAndDestroy colStats_
+  //set colStats_ pointer to NULL the object itself is deleted when
+  //the statement heap is disposed at the end of a statement
+  colStats_ = NULL;
 
-	//mark table as unaccessed for following statements
-	accessedInCurrentStatement_ = FALSE;
+  //mark table as unaccessed for following statements
+  accessedInCurrentStatement_ = FALSE;
 
-	//for (i in colArray_) colArray_[i]->setReferenced(FALSE);
-	for (UInt32 i = 0; i < colArray_.entries(); i++)
-	{
-		//reset each NAColumn
-		if(colArray_[i])
-			colArray_[i]->resetAfterStatement();
-	}
+  //for (i in colArray_) colArray_[i]->setReferenced(FALSE);
+  for (UInt32 i = 0; i < colArray_.entries(); i++)
+    {
+      //reset each NAColumn
+      if(colArray_[i])
+        colArray_[i]->resetAfterStatement();
+    }
 
-	//reset the clustering index
-	if(clusteringIndex_)
-		clusteringIndex_->resetAfterStatement();
+  //reset the clustering index
+  if(clusteringIndex_)
+    clusteringIndex_->resetAfterStatement();
 
-	//reset the fileset for indices
-	for (UInt32 j=0; j < indexes_.entries(); j++)
-	{
-		//reset the fileset for each index
-		if(indexes_[j])
-			indexes_[j]->resetAfterStatement();
-	}
+  //reset the fileset for indices
+  for (UInt32 j=0; j < indexes_.entries(); j++)
+    {
+      //reset the fileset for each index
+      if(indexes_[j])
+        indexes_[j]->resetAfterStatement();
+    }
 
-	//reset the fileset for each vertical partition
-	for (UInt32 k=0; k < vertParts_.entries(); k++)
-	{
-		//reset the fileset for each index
-		if(vertParts_[k])
-			vertParts_[k]->resetAfterStatement();
-	}
+  //reset the fileset for each vertical partition
+  for (UInt32 k=0; k < vertParts_.entries(); k++)
+    {
+      //reset the fileset for each index
+      if(vertParts_[k])
+        vertParts_[k]->resetAfterStatement();
+    }
 
-	// reset the pointers (keyColumns_ in refConstraintsReferencingMe)
-	// that are referencing the NATable of the 'other table'.
-	uniqueConstraints_.resetAfterStatement();
+  // reset the pointers (keyColumns_ in refConstraintsReferencingMe)
+  // that are referencing the NATable of the 'other table'.
+  uniqueConstraints_.resetAfterStatement();
 
-	// reset the pointers (keyColumns_ in uniqueConstraintsReferencedByMe_)
-	// that are referencing the NATable of the 'other table'.
-	refConstraints_.resetAfterStatement();
+  // reset the pointers (keyColumns_ in uniqueConstraintsReferencedByMe_)
+  // that are referencing the NATable of the 'other table'.
+  refConstraints_.resetAfterStatement();
 
-	colsWithMissingStats_ = NULL;
+  colsWithMissingStats_ = NULL;
 
-	resetAfterStatement_ = TRUE;
-	setupForStatement_ = FALSE;
+  resetAfterStatement_ = TRUE;
+  setupForStatement_ = FALSE;
 
-	sizeAfterLastStatement_ = heap_->getAllocSize();
-	return;
+  sizeAfterLastStatement_ = heap_->getAllocSize();
+  return;
 }
 
 void NATable::setupForStatement()
 {
 
-	if(setupForStatement_)
-		return;
+  if(setupForStatement_)
+    return;
 
-	if( NOT qualifiedName_.isSpecialTable() )
-		gpClusterInfo->setMaxOSV(qualifiedName_.getQualifiedNameObj(), osv_);
+  if( NOT qualifiedName_.isSpecialTable() )
+    gpClusterInfo->setMaxOSV(qualifiedName_.getQualifiedNameObj(), osv_);
 
-	//reset the clustering index
-	if(clusteringIndex_)
-		clusteringIndex_->setupForStatement();
+  //reset the clustering index
+  if(clusteringIndex_)
+    clusteringIndex_->setupForStatement();
 
-	//reset the fileset for indices
-	for (UInt32 i=0; i < indexes_.entries(); i++)
-	{
-		//reset the fileset for each index
-		if(indexes_[i])
-			indexes_[i]->setupForStatement();
-	}
+  //reset the fileset for indices
+  for (UInt32 i=0; i < indexes_.entries(); i++)
+    {
+      //reset the fileset for each index
+      if(indexes_[i])
+        indexes_[i]->setupForStatement();
+    }
 
-	//reset the fileset for each vertical partition
-	for (UInt32 j=0; j < vertParts_.entries(); j++)
-	{
-		//reset the fileset for each index
-		if(vertParts_[j])
-			vertParts_[j]->setupForStatement();
-	}
+  //reset the fileset for each vertical partition
+  for (UInt32 j=0; j < vertParts_.entries(); j++)
+    {
+      //reset the fileset for each index
+      if(vertParts_[j])
+        vertParts_[j]->setupForStatement();
+    }
 
-	// We are doing this here, as we want this to be maintained on a per statement basis
-	colsWithMissingStats_ = new (STMTHEAP) NAHashDictionary<CollIndexSet, Int32>
-		(&(hashColPosList),107,TRUE,STMTHEAP);
+  // We are doing this here, as we want this to be maintained on a per statement basis
+  colsWithMissingStats_ = new (STMTHEAP) NAHashDictionary<CollIndexSet, Int32>
+    (&(hashColPosList),107,TRUE,STMTHEAP);
 
-	setupForStatement_ = TRUE;
-	resetAfterStatement_ = FALSE;
+  setupForStatement_ = TRUE;
+  resetAfterStatement_ = FALSE;
 
-	return;
+  return;
 }
 
 static void formatPartitionNameString(const NAString &tbl,
-		const NAString &pName,
-		NAString &fmtOut)
+                                      const NAString &pName,
+                                      NAString &fmtOut)
 {
-	fmtOut = NAString("(TABLE ") + tbl +
-		", PARTITION " + pName + ")";
+  fmtOut = NAString("(TABLE ") + tbl +
+    ", PARTITION " + pName + ")";
 }
 static void formatPartitionNumberString(const NAString &tbl,
-		Lng32 pNumber,
-		NAString &fmtOut)
+                                        Lng32 pNumber,
+                                        NAString &fmtOut)
 {
-	char buf[10];
-	sprintf(buf, "%d", pNumber);
+  char buf[10];
+  sprintf(buf, "%d", pNumber);
 
-	fmtOut = NAString("(TABLE ") + tbl +
-		", PARTITION NUMBER " + buf + ")";
+  fmtOut = NAString("(TABLE ") + tbl +
+    ", PARTITION NUMBER " + buf + ")";
 }
 
 NABoolean NATable::filterUnusedPartitions(const PartitionClause& pClause)
 {
-	if (pClause.isEmpty())
-		return TRUE;
+  if (pClause.isEmpty())
+    return TRUE;
 
-	if (getViewText())
-	{
-		*CmpCommon::diags()
-			<< DgSqlCode(-1276)
-			<< DgString0(pClause.getPartitionName())
-			<< DgTableName(getTableName().getQualifiedNameAsString());
-		return TRUE;
-	}
+  if (getViewText())
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-1276)
+        << DgString0(pClause.getPartitionName())
+        << DgTableName(getTableName().getQualifiedNameAsString());
+      return TRUE;
+    }
 
-	if ((pClause.partnNumSpecified() && pClause.getPartitionNumber() < 0) ||
-			(pClause.partnNameSpecified() && IsNAStringSpaceOrEmpty(pClause.getPartitionName())))
-		// Partion Number specified is less than zero or name specified was all blanks.
-		return TRUE ;
+  if ((pClause.partnNumSpecified() && pClause.getPartitionNumber() < 0) ||
+      (pClause.partnNameSpecified() && IsNAStringSpaceOrEmpty(pClause.getPartitionName())))
+    // Partion Number specified is less than zero or name specified was all blanks.
+    return TRUE ;
 
-	CMPASSERT(indexes_.entries() > 0);
-	NAFileSet* baseTable = indexes_[0];
-	PartitioningFunction* oldPartFunc = baseTable->getPartitioningFunction();
-	CMPASSERT(oldPartFunc);
-	const NodeMap* oldNodeMap = oldPartFunc->getNodeMap();
-	CMPASSERT(oldNodeMap);
-	const NodeMapEntry* oldNodeMapEntry = NULL;
-	PartitioningFunction* newPartFunc = NULL; 
-	if (pClause.partnRangeSpecified())
-	{
-		/*      if (NOT oldPartFunc->isAHash2PartitioningFunction())
-			{
-		// ERROR 1097 Unable to find specified partition...
-		 *CmpCommon::diags()
-		 << DgSqlCode(-1097)
-		 << DgString0("")
-		 << DgTableName(getTableName().getQualifiedNameAsAnsiString());
-		 return TRUE;
-		 }
-		 */
+  CMPASSERT(indexes_.entries() > 0);
+  NAFileSet* baseTable = indexes_[0];
+  PartitioningFunction* oldPartFunc = baseTable->getPartitioningFunction();
+  CMPASSERT(oldPartFunc);
+  const NodeMap* oldNodeMap = oldPartFunc->getNodeMap();
+  CMPASSERT(oldNodeMap);
+  const NodeMapEntry* oldNodeMapEntry = NULL;
+  PartitioningFunction* newPartFunc = NULL; 
+  if (pClause.partnRangeSpecified())
+    {
+      /*      if (NOT oldPartFunc->isAHash2PartitioningFunction())
+              {
+              // ERROR 1097 Unable to find specified partition...
+              *CmpCommon::diags()
+              << DgSqlCode(-1097)
+              << DgString0("")
+              << DgTableName(getTableName().getQualifiedNameAsAnsiString());
+              return TRUE;
+              }
+      */
 
-		NAString errorString;
-		// partition range specified
-		if ((pClause.getBeginPartitionNumber() == -1) ||
-				((pClause.getBeginPartitionNumber() > 0) &&
-				 (oldPartFunc->getCountOfPartitions() >= pClause.getBeginPartitionNumber())))
-		{
-			oldPartFunc->setRestrictedBeginPartNumber(
-					pClause.getBeginPartitionNumber());
-		}
-		else
-		{
-			formatPartitionNumberString(
-					getTableName().getQualifiedNameAsAnsiString(),
-					pClause.getBeginPartitionNumber(), errorString);
-		}
+      NAString errorString;
+      // partition range specified
+      if ((pClause.getBeginPartitionNumber() == -1) ||
+          ((pClause.getBeginPartitionNumber() > 0) &&
+           (oldPartFunc->getCountOfPartitions() >= pClause.getBeginPartitionNumber())))
+        {
+          oldPartFunc->setRestrictedBeginPartNumber(
+               pClause.getBeginPartitionNumber());
+        }
+      else
+        {
+          formatPartitionNumberString(
+               getTableName().getQualifiedNameAsAnsiString(),
+               pClause.getBeginPartitionNumber(), errorString);
+        }
 
-		if ((pClause.getEndPartitionNumber() == -1) ||
-				((pClause.getEndPartitionNumber() > 0) &&
-				 (oldPartFunc->getCountOfPartitions() >= pClause.getEndPartitionNumber())))
-		{
-			oldPartFunc->setRestrictedEndPartNumber(
-					pClause.getEndPartitionNumber());
-		}
-		else
-		{
-			formatPartitionNumberString(
-					getTableName().getQualifiedNameAsAnsiString(),
-					pClause.getEndPartitionNumber(), errorString);
-		}
+      if ((pClause.getEndPartitionNumber() == -1) ||
+          ((pClause.getEndPartitionNumber() > 0) &&
+           (oldPartFunc->getCountOfPartitions() >= pClause.getEndPartitionNumber())))
+        {
+          oldPartFunc->setRestrictedEndPartNumber(
+               pClause.getEndPartitionNumber());
+        }
+      else
+        {
+          formatPartitionNumberString(
+               getTableName().getQualifiedNameAsAnsiString(),
+               pClause.getEndPartitionNumber(), errorString);
+        }
 
-		if (NOT errorString.isNull())
-		{
-			// ERROR 1097 Unable to find specified partition...
-			*CmpCommon::diags()
-				<< DgSqlCode(-1097)
-				<< DgString0(errorString)
-				<< DgTableName(getTableName().getQualifiedNameAsAnsiString());
-			return TRUE;
-		} // Unable to find specified partition.
-	} // partition range specified
-	else 
-	{
-		// single partition specified
-		if (pClause.getPartitionNumber() >= 0) // PARTITION NUMBER was specified
-		{ 
-			if ((pClause.getPartitionNumber() > 0) &&
-					(oldPartFunc->getCountOfPartitions() >= pClause.getPartitionNumber()))
-				oldNodeMapEntry = oldNodeMap->getNodeMapEntry(pClause.getPartitionNumber()-1);
-			else
-			{
-				NAString errorString;
-				formatPartitionNumberString(getTableName().getQualifiedNameAsAnsiString(),
-						pClause.getPartitionNumber(), errorString);
+      if (NOT errorString.isNull())
+        {
+          // ERROR 1097 Unable to find specified partition...
+          *CmpCommon::diags()
+            << DgSqlCode(-1097)
+            << DgString0(errorString)
+            << DgTableName(getTableName().getQualifiedNameAsAnsiString());
+          return TRUE;
+        } // Unable to find specified partition.
+    } // partition range specified
+  else 
+    {
+      // single partition specified
+      if (pClause.getPartitionNumber() >= 0) // PARTITION NUMBER was specified
+        { 
+          if ((pClause.getPartitionNumber() > 0) &&
+              (oldPartFunc->getCountOfPartitions() >= pClause.getPartitionNumber()))
+            oldNodeMapEntry = oldNodeMap->getNodeMapEntry(pClause.getPartitionNumber()-1);
+          else
+            {
+              NAString errorString;
+              formatPartitionNumberString(getTableName().getQualifiedNameAsAnsiString(),
+                                          pClause.getPartitionNumber(), errorString);
 
-				// ERROR 1097 Unable to find specified partition...
-				*CmpCommon::diags()
-					<< DgSqlCode(-1097)
-					<< DgString0(errorString)
-					<< DgTableName(getTableName().getQualifiedNameAsAnsiString());
-				return TRUE;
-			} // Unable to find specified partition.
-		}
-		else  // PARTITION NAME was specified
-		{
-			for (CollIndex i =0; i < oldNodeMap->getNumEntries(); i++)
-			{
-				oldNodeMapEntry = oldNodeMap->getNodeMapEntry(i);
-				if (oldNodeMapEntry->getGivenName() == pClause.getPartitionName())
-					break;
-				if ( i == (oldNodeMap->getNumEntries() -1)) // match not found
-				{
-					NAString errorString;
-					formatPartitionNameString(getTableName().getQualifiedNameAsAnsiString(),
-							pClause.getPartitionName(), errorString);
+              // ERROR 1097 Unable to find specified partition...
+              *CmpCommon::diags()
+                << DgSqlCode(-1097)
+                << DgString0(errorString)
+                << DgTableName(getTableName().getQualifiedNameAsAnsiString());
+              return TRUE;
+            } // Unable to find specified partition.
+        }
+      else  // PARTITION NAME was specified
+        {
+          for (CollIndex i =0; i < oldNodeMap->getNumEntries(); i++)
+            {
+              oldNodeMapEntry = oldNodeMap->getNodeMapEntry(i);
+              if (oldNodeMapEntry->getGivenName() == pClause.getPartitionName())
+                break;
+              if ( i == (oldNodeMap->getNumEntries() -1)) // match not found
+                {
+                  NAString errorString;
+                  formatPartitionNameString(getTableName().getQualifiedNameAsAnsiString(),
+                                            pClause.getPartitionName(), errorString);
 
-					// ERROR 1097 Unable to find specified partition...
-					*CmpCommon::diags()
-						<< DgSqlCode(-1097)
-						<< DgString0(errorString)
-						<< DgTableName(getTableName().getQualifiedNameAsAnsiString());
-					return TRUE;
-				}
-			}
-		}
+                  // ERROR 1097 Unable to find specified partition...
+                  *CmpCommon::diags()
+                    << DgSqlCode(-1097)
+                    << DgString0(errorString)
+                    << DgTableName(getTableName().getQualifiedNameAsAnsiString());
+                  return TRUE;
+                }
+            }
+        }
 
-		if (!isHbaseTable())
-		{
-			// Create DP2 node map for partitioning function with only the partition requested
-			NodeMap* newNodeMap = new (heap_) NodeMap(heap_);
-			NodeMapEntry newEntry((char *)oldNodeMapEntry->getPartitionName(),
-					(char *)oldNodeMapEntry->getGivenName(),
-					heap_,oldNodeMap->getTableIdent());
-			newNodeMap->setNodeMapEntry(0,newEntry,heap_);
-			newNodeMap->setTableIdent(oldNodeMap->getTableIdent());
+      if (!isHbaseTable())
+        {
+          // Create DP2 node map for partitioning function with only the partition requested
+          NodeMap* newNodeMap = new (heap_) NodeMap(heap_);
+          NodeMapEntry newEntry((char *)oldNodeMapEntry->getPartitionName(),
+                                (char *)oldNodeMapEntry->getGivenName(),
+                                heap_,oldNodeMap->getTableIdent());
+          newNodeMap->setNodeMapEntry(0,newEntry,heap_);
+          newNodeMap->setTableIdent(oldNodeMap->getTableIdent());
 
-			/*  if (oldPartFunc->getPartitioningFunctionType() == 
-			    PartitioningFunction::ROUND_ROBIN_PARTITIONING_FUNCTION)
-			    {
-			// For round robin partitioning, must create the partitioning function
-			// even for one partition, since the SYSKEY must be generated for
-			// round robin and this is trigger off the partitioning function.
-			newPartFunc = new (heap) RoundRobinPartitioningFunction(1, newNodeMap, heap_);
-			}
-			else */
-			newPartFunc = new (heap_) SinglePartitionPartitioningFunction(newNodeMap, heap_);
+          /*  if (oldPartFunc->getPartitioningFunctionType() == 
+              PartitioningFunction::ROUND_ROBIN_PARTITIONING_FUNCTION)
+              {
+              // For round robin partitioning, must create the partitioning function
+              // even for one partition, since the SYSKEY must be generated for
+              // round robin and this is trigger off the partitioning function.
+              newPartFunc = new (heap) RoundRobinPartitioningFunction(1, newNodeMap, heap_);
+              }
+              else */
+          newPartFunc = new (heap_) SinglePartitionPartitioningFunction(newNodeMap, heap_);
 
-			baseTable->setPartitioningFunction(newPartFunc);
-			baseTable->setCountOfFiles(1);
-			baseTable->setHasRemotePartitions(checkRemote(NULL,
-						(char *)oldNodeMapEntry->getPartitionName()));
-			// for now we are not changing indexlevels_ It could potentially be larger than the 
-			// number of index levels for the requested partition.
-			QualifiedName physicalName(oldNodeMapEntry->getPartitionName(),
-					1, heap_, NULL);
-			baseTable->setFileSetName(physicalName);
-		}
-		else
-		{
-			// For HBase tables, we attach a predicate to select a single partition in Scan::bindNode
-			oldPartFunc->setRestrictedBeginPartNumber(pClause.getPartitionNumber());
-			oldPartFunc->setRestrictedEndPartNumber(pClause.getPartitionNumber());
-		}
+          baseTable->setPartitioningFunction(newPartFunc);
+          baseTable->setCountOfFiles(1);
+          baseTable->setHasRemotePartitions(checkRemote(NULL,
+                                                        (char *)oldNodeMapEntry->getPartitionName()));
+          // for now we are not changing indexlevels_ It could potentially be larger than the 
+          // number of index levels for the requested partition.
+          QualifiedName physicalName(oldNodeMapEntry->getPartitionName(),
+                                     1, heap_, NULL);
+          baseTable->setFileSetName(physicalName);
+        }
+      else
+        {
+          // For HBase tables, we attach a predicate to select a single partition in Scan::bindNode
+          oldPartFunc->setRestrictedBeginPartNumber(pClause.getPartitionNumber());
+          oldPartFunc->setRestrictedEndPartNumber(pClause.getPartitionNumber());
+        }
 
-	} // single partition specified
+    } // single partition specified
 
-	return FALSE;
+  return FALSE;
 }
 
 const LIST(CollIndex) &
 NATable::getTableIdList() const
 {
-	return tableIdList_;
+  return tableIdList_;
 }
 
 void NATable::resetReferenceCount()
 { 
-	referenceCount_ = 0;
-	refsIncompatibleDP2Halloween_ = FALSE; 
-	isHalloweenTable_ = FALSE; 
+  referenceCount_ = 0;
+  refsIncompatibleDP2Halloween_ = FALSE; 
+  isHalloweenTable_ = FALSE; 
 }
 
 void NATable::decrReferenceCount()
 { 
-	--referenceCount_; 
-	if (referenceCount_ == 0)
-	{
-		refsIncompatibleDP2Halloween_ = FALSE; 
-		isHalloweenTable_ = FALSE;
-	}
+  --referenceCount_; 
+  if (referenceCount_ == 0)
+    {
+      refsIncompatibleDP2Halloween_ = FALSE; 
+      isHalloweenTable_ = FALSE;
+    }
 }
 
 CollIndex NATable::getUserColumnCount() const
 {
-	CollIndex result = 0;
+  CollIndex result = 0;
 
-	for (CollIndex i=0; i<colArray_.entries(); i++)
-		if (colArray_[i]->isUserColumn())
-			result++;
+  for (CollIndex i=0; i<colArray_.entries(); i++)
+    if (colArray_[i]->isUserColumn())
+      result++;
 
-	return result;
+  return result;
 }
 
 // NATableDB function definitions
 NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean findInCacheOnly)
 {
-	//get the cached NATable entry
-	NATable * cachedNATable =
-		NAKeyLookup<ExtendedQualName,NATable>::get(key);
+  //get the cached NATable entry
+  NATable * cachedNATable =
+    NAKeyLookup<ExtendedQualName,NATable>::get(key);
 
-	//entry not found in cache
-	if(!cachedNATable)
-		return NULL;
+  //entry not found in cache
+  if(!cachedNATable)
+    return NULL;
 
-	//This flag determines if a cached object should be deleted and
-	//reconstructed
-	NABoolean removeEntry = FALSE;
+  //This flag determines if a cached object should be deleted and
+  //reconstructed
+  NABoolean removeEntry = FALSE;
 
-	if ( cachedNATable->isHbaseTable() ) {
+  if ( cachedNATable->isHbaseTable() ) {
 
-		const NAFileSet* naSet = cachedNATable -> getClusteringIndex();
+    const NAFileSet* naSet = cachedNATable -> getClusteringIndex();
 
-		if ( naSet ) {
-			PartitioningFunction* pf = naSet->getPartitioningFunction();
+    if ( naSet ) {
+      PartitioningFunction* pf = naSet->getPartitioningFunction();
 
-			if ( pf ) {
-				NABoolean rangeSplitSaltedTable = 
-					CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) == DF_OFF ||
-					(bindWA && bindWA->isTrafLoadPrep());
+      if ( pf ) {
+        NABoolean rangeSplitSaltedTable = 
+          CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) == DF_OFF ||
+          (bindWA && bindWA->isTrafLoadPrep());
 
-				// if force to range partition a salted table, and the salted table is 
-				// not a range, do not return the cached object.
-				if ( rangeSplitSaltedTable &&
-						cachedNATable->hasSaltedColumn() &&
-						pf->castToHash2PartitioningFunction() ) {
-					removeEntry = TRUE;
-				} else 
-					// if force to hash2 partition a salted table, and the cached table is 
-					// not a hash2, do not return the cached object.
-					if ( 
-							CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) != DF_OFF &&
-							cachedNATable->hasSaltedColumn() &&
-							pf->castToHash2PartitioningFunction() == NULL
-					   )
-						removeEntry = TRUE;
-			} 
-		}
-	}
+        // if force to range partition a salted table, and the salted table is 
+        // not a range, do not return the cached object.
+        if ( rangeSplitSaltedTable &&
+             cachedNATable->hasSaltedColumn() &&
+             pf->castToHash2PartitioningFunction() ) {
+          removeEntry = TRUE;
+        } else 
+          // if force to hash2 partition a salted table, and the cached table is 
+          // not a hash2, do not return the cached object.
+          if ( 
+               CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) != DF_OFF &&
+               cachedNATable->hasSaltedColumn() &&
+               pf->castToHash2PartitioningFunction() == NULL
+               )
+            removeEntry = TRUE;
+      } 
+    }
+  }
 
-	// the reload cqd will be set during aqr after compiletime and runtime
-	// timestamp mismatch is detected.
-	// If set, reload hive metadata.
-	if ((cachedNATable->isHiveTable()) &&
-			(CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
-			(CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
-	{
-		removeEntry = TRUE;
-	}
+  // the reload cqd will be set during aqr after compiletime and runtime
+  // timestamp mismatch is detected.
+  // If set, reload hive metadata.
+  if ((cachedNATable->isHiveTable()) &&
+      (CmpCommon::getDefault(HIVE_DATA_MOD_CHECK) == DF_ON) &&
+      (CmpCommon::getDefault(TRAF_RELOAD_NATABLE_CACHE) == DF_ON))
+    {
+      removeEntry = TRUE;
+    }
 
-	//Found in cache.  If that's all the caller wanted, return now.
-	if ( !removeEntry && findInCacheOnly )
-		return cachedNATable;
+  //Found in cache.  If that's all the caller wanted, return now.
+  if ( !removeEntry && findInCacheOnly )
+    return cachedNATable;
 
-	//if this is the first time this cache entry has been accessed
-	//during the current statement
-	if( !removeEntry && !cachedNATable->accessedInCurrentStatement())
-	{
-		//Note: cachedNATable->labelDisplayKey_ won't not be NULL
-		//for NATable Objects that are in the cache. If the object
-		//is not a cached object from a previous statement then we
-		//will not come into this code.
+  //if this is the first time this cache entry has been accessed
+  //during the current statement
+  if( !removeEntry && !cachedNATable->accessedInCurrentStatement())
+    {
+      //Note: cachedNATable->labelDisplayKey_ won't not be NULL
+      //for NATable Objects that are in the cache. If the object
+      //is not a cached object from a previous statement then we
+      //will not come into this code.
 
-		//Read label to get time of last catalog operation
-		short error = 0;
-		//Get redef time of table
-		const Int64 tableRedefTime = cachedNATable->getRedefTime();
-		//Get last catalog operation time
-		Int64 labelCatalogOpTime = tableRedefTime;
-		Int64 rforkCatalogOpTime = tableRedefTime;
-		Int64 currentSchemaRedefTS = 0;
-		Int64 cachedSchemaRedefTS = 0;
+      //Read label to get time of last catalog operation
+      short error = 0;
+      //Get redef time of table
+      const Int64 tableRedefTime = cachedNATable->getRedefTime();
+      //Get last catalog operation time
+      Int64 labelCatalogOpTime = tableRedefTime;
+      Int64 rforkCatalogOpTime = tableRedefTime;
+      Int64 currentSchemaRedefTS = 0;
+      Int64 cachedSchemaRedefTS = 0;
 
-		if (!OSIM_runningSimulation())
-		{
-			if ((!cachedNATable->isHiveTable()) &&
-					(!cachedNATable->isHbaseTable()))
-			{
-			} // non-hive table
-			else if (!cachedNATable->isHbaseTable())
-			{
-				// oldest cache entries we will still accept
-				// Values for CQD HIVE_METADATA_REFRESH_INTERVAL:
-				// -1: Never invalidate any metadata
-				//  0: Always check for the latest metadata in the compiler,
-				//     no check in the executor
-				// >0: Check in the compiler, metadata is valid n seconds
-				//     (n = value of CQD). Recompile plan after n seconds.
-				//     NOTE: n has to be long enough to compile the statement,
-				//     values < 20 or so are impractical.
-				Int64 refreshInterval = 
-					(Int64) CmpCommon::getDefaultLong(HIVE_METADATA_REFRESH_INTERVAL);
-				Int32 defaultStringLen = 
-					CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
-				Int32 defaultStringLenInBytes = 
-					CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
-				if(defaultStringLenInBytes != 32000)
-					defaultStringLen = defaultStringLenInBytes;
-				Int64 expirationTimestamp = refreshInterval;
-				NAString defSchema =
-					ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_SCHEMA);
-				defSchema.toUpper();
+      if (!OSIM_runningSimulation())
+        {
+          if ((!cachedNATable->isHiveTable()) &&
+              (!cachedNATable->isHbaseTable()))
+            {
+            } // non-hive table
+          else if (!cachedNATable->isHbaseTable())
+            {
+              // oldest cache entries we will still accept
+              // Values for CQD HIVE_METADATA_REFRESH_INTERVAL:
+              // -1: Never invalidate any metadata
+              //  0: Always check for the latest metadata in the compiler,
+              //     no check in the executor
+              // >0: Check in the compiler, metadata is valid n seconds
+              //     (n = value of CQD). Recompile plan after n seconds.
+              //     NOTE: n has to be long enough to compile the statement,
+              //     values < 20 or so are impractical.
+              Int64 refreshInterval = 
+                (Int64) CmpCommon::getDefaultLong(HIVE_METADATA_REFRESH_INTERVAL);
+              Int32 defaultStringLenInBytes = 
+                CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
+              Int64 expirationTimestamp = refreshInterval;
+              NAString defSchema =
+                ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_SCHEMA);
+              defSchema.toUpper();
 
-				if (refreshInterval > 0)
-					expirationTimestamp = NA_JulianTimestamp() - 1000000 * refreshInterval;
+              if (refreshInterval > 0)
+                expirationTimestamp = NA_JulianTimestamp() - 1000000 * refreshInterval;
 
-				// if default string length changed, don't reuse this entry
-				if (defaultStringLen != cachedNATable->getHiveDefaultStringLen())
-					removeEntry = TRUE;
+              // if default string length changed, don't reuse this entry
+              if (defaultStringLenInBytes != cachedNATable->getHiveDefaultStringLen())
+                removeEntry = TRUE;
 
-				QualifiedName objName = cachedNATable->getTableName();
-				NAString        sName = objName.getSchemaName();
-				const NAString  tName = objName.getObjectName();
+              QualifiedName objName = cachedNATable->getTableName();
+              NAString        sName = objName.getSchemaName();
+              const NAString  tName = objName.getObjectName();
 
-				// map the Trafodion default Hive schema (usually "HIVE")
-				// to the name used in Hive (usually "default")
-				if (objName.getUnqualifiedSchemaNameAsAnsiString() == defSchema)
-					sName = hiveMetaDB_->getDefaultSchemaName();
+              // map the Trafodion default Hive schema (usually "HIVE")
+              // to the name used in Hive (usually "default")
+              if (objName.getUnqualifiedSchemaNameAsAnsiString() == defSchema)
+                sName = hiveMetaDB_->getDefaultSchemaName();
 
-				// validate Hive table timestamps
-				if (!hiveMetaDB_->validate(cachedNATable->getHiveTableId(),
-							cachedNATable->getRedefTime(),
-							sName.data(), tName.data()))
-					removeEntry = TRUE;
+              // validate Hive table timestamps
+              if (!hiveMetaDB_->validate(cachedNATable->getHiveTableId(),
+                                         cachedNATable->getRedefTime(),
+                                         sName.data(), tName.data()))
+                removeEntry = TRUE;
 
-				// validate HDFS stats and update them in-place, if needed
-				if (!removeEntry)
-					removeEntry = 
-						! (cachedNATable->getClusteringIndex()->
-								getHHDFSTableStats()->validateAndRefresh(expirationTimestamp));
-			}
-		} // ! osim simulation
+              // validate HDFS stats and update them in-place, if needed
+              if (!removeEntry && (cachedNATable->getClusteringIndex()))
+                removeEntry = 
+                  ! (cachedNATable->getClusteringIndex()->
+                     getHHDFSTableStats()->validateAndRefresh(expirationTimestamp));
+            }
+        } // ! osim simulation
 
-		//if time of last catalog operation and table redef times
-		//don't match, then delete this cache entry since it is
-		//stale.
-		//if error is non-zero then we were not able to read file
-		//label and therefore delete this cached entry because
-		//we cannot ensure it is fresh.
-		if((CmpCommon::statement()->recompiling())||
-				(labelCatalogOpTime != tableRedefTime )||
-				(error)||
-				(currentSchemaRedefTS != cachedSchemaRedefTS) ||
-				(!usingCache()) ||
-				(refreshCacheInThisStatement_) ||
-				(removeEntry == TRUE)) // to avoid unnecessary read of metadata
-		{
-			//mark this entry to be removed
-			removeEntry = TRUE;
-		}
-	} // !cachedNATable->accessedInCurrentStatement()
+      //if time of last catalog operation and table redef times
+      //don't match, then delete this cache entry since it is
+      //stale.
+      //if error is non-zero then we were not able to read file
+      //label and therefore delete this cached entry because
+      //we cannot ensure it is fresh.
+      if((CmpCommon::statement()->recompiling())||
+         (labelCatalogOpTime != tableRedefTime )||
+         (error)||
+         (currentSchemaRedefTS != cachedSchemaRedefTS) ||
+         (!usingCache()) ||
+         (refreshCacheInThisStatement_) ||
+         (removeEntry == TRUE)) // to avoid unnecessary read of metadata
+        {
+          //mark this entry to be removed
+          removeEntry = TRUE;
+        }
+    } // !cachedNATable->accessedInCurrentStatement()
 
-	if(removeEntry)
-	{
-		//remove from list of cached NATables
-		cachedTableList_.remove(cachedNATable);
+  if(removeEntry)
+    {
+      //remove from list of cached NATables
+      cachedTableList_.remove(cachedNATable);
 
-		//remove pointer to NATable from cache
-		remove(key);
+      //remove pointer to NATable from cache
+      remove(key);
 
-		//if metadata caching is ON, then adjust cache size
-		//since we are deleting a caching entry
-		if(cacheMetaData_)
-			currentCacheSize_ = heap_->getAllocSize();
+      //if metadata caching is ON, then adjust cache size
+      //since we are deleting a caching entry
+      if(cacheMetaData_)
+        currentCacheSize_ = heap_->getAllocSize();
 
-		//insert into list of tables that will be deleted
-		//at the end of the statement after the query has
-		//been compiled and the plan has been sent to the
-		//executor. The delete is done in method
-		//NATableDB::resetAfterStatement(). This basically
-		//gives a little performance saving because the delete
-		//won't be part of the compile time as perceived by the
-		//client of the compiler
-		tablesToDeleteAfterStatement_.insert(cachedNATable);
+      //insert into list of tables that will be deleted
+      //at the end of the statement after the query has
+      //been compiled and the plan has been sent to the
+      //executor. The delete is done in method
+      //NATableDB::resetAfterStatement(). This basically
+      //gives a little performance saving because the delete
+      //won't be part of the compile time as perceived by the
+      //client of the compiler
+      tablesToDeleteAfterStatement_.insert(cachedNATable);
 
-		return NULL;
-	}
-	else {
-		// Special tables are not added to the statement table list.
-		if( (NOT cachedNATable->getExtendedQualName().isSpecialTable()) ||
-				(cachedNATable->getExtendedQualName().getSpecialType() == 
-				 ExtendedQualName::MV_TABLE) || 
-				(cachedNATable->getExtendedQualName().getSpecialType() == 
-				 ExtendedQualName::GHOST_MV_TABLE) ||
-				(cachedNATable->getExtendedQualName().getSpecialType() ==
-				 ExtendedQualName::GHOST_INDEX_TABLE) ||
-				(cachedNATable->getExtendedQualName().getSpecialType() ==
-				 ExtendedQualName::INDEX_TABLE)
-		  )
-			statementTableList_.insert(cachedNATable);
-	}
+      return NULL;
+    }
+  else {
+    // Special tables are not added to the statement table list.
+    if( (NOT cachedNATable->getExtendedQualName().isSpecialTable()) ||
+        (cachedNATable->getExtendedQualName().getSpecialType() == 
+         ExtendedQualName::MV_TABLE) || 
+        (cachedNATable->getExtendedQualName().getSpecialType() == 
+         ExtendedQualName::GHOST_MV_TABLE) ||
+        (cachedNATable->getExtendedQualName().getSpecialType() ==
+         ExtendedQualName::GHOST_INDEX_TABLE) ||
+        (cachedNATable->getExtendedQualName().getSpecialType() ==
+         ExtendedQualName::INDEX_TABLE)
+        )
+      statementTableList_.insert(cachedNATable);
+  }
 
-	//increment the replacement, if not already max
-	if(cachedNATable)
-	{
-		cachedNATable->replacementCounter_+=2;
+  //increment the replacement, if not already max
+  if(cachedNATable)
+    {
+      cachedNATable->replacementCounter_+=2;
 
-		//don't let replacementcounter go over NATABLE_MAX_REFCOUNT
-		if(cachedNATable->replacementCounter_ > NATABLE_MAX_REFCOUNT)
-			cachedNATable->replacementCounter_ = NATABLE_MAX_REFCOUNT;
+      //don't let replacementcounter go over NATABLE_MAX_REFCOUNT
+      if(cachedNATable->replacementCounter_ > NATABLE_MAX_REFCOUNT)
+        cachedNATable->replacementCounter_ = NATABLE_MAX_REFCOUNT;
 
-		//Keep track of tables accessed during current statement
-		if((!cachedNATable->accessedInCurrentStatement()))
-		{
-			cachedNATable->setAccessedInCurrentStatement();
-			statementCachedTableList_.insert(cachedNATable);
-		}
-	}
+      //Keep track of tables accessed during current statement
+      if((!cachedNATable->accessedInCurrentStatement()))
+        {
+          cachedNATable->setAccessedInCurrentStatement();
+          statementCachedTableList_.insert(cachedNATable);
+        }
+    }
 
-	//return NATable from cache
-	return cachedNATable;
+  //return NATable from cache
+  return cachedNATable;
 }
 
 // by default column histograms are marked to not be fetched, 
@@ -7540,105 +7689,105 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
 // where they have been referenced in the query
 void NATable::markColumnsForHistograms()
 {
-	// Check if Show Query Stats command is being run
-	NABoolean runningShowQueryStatsCmd = CmpCommon::context()->showQueryStats();
+  // Check if Show Query Stats command is being run
+  NABoolean runningShowQueryStatsCmd = CmpCommon::context()->showQueryStats();
 
-	// we want to get 1 key column that is not SYSKEY
-	NABoolean addSingleIntHist = FALSE;
-	if(colArray_.getColumn("SYSKEY"))
-		addSingleIntHist = TRUE;
+  // we want to get 1 key column that is not SYSKEY
+  NABoolean addSingleIntHist = FALSE;
+  if(colArray_.getColumn("SYSKEY"))
+    addSingleIntHist = TRUE;
 
-	// iterate over all the columns in the table
-	for(UInt32 i=0;i<colArray_.entries();i++)
-	{
-		// get a reference to the column
-		NAColumn * column = colArray_[i];
+  // iterate over all the columns in the table
+  for(UInt32 i=0;i<colArray_.entries();i++)
+    {
+      // get a reference to the column
+      NAColumn * column = colArray_[i];
 
-		// is column part of a key
-		NABoolean isAKeyColumn = (column->isIndexKey() OR column->isPrimaryKey()
+      // is column part of a key
+      NABoolean isAKeyColumn = (column->isIndexKey() OR column->isPrimaryKey()
 				OR column->isPartitioningKey());
 
-		//check if this column requires histograms
-		if(column->isReferencedForHistogram() ||
-				(isAKeyColumn && isHbaseTable()))
-			column->setNeedFullHistogram();
-		else
-			// if column is:
-			// * a key
-			// OR
-			// * isReferenced but not for histogram and addSingleIntHist is true
-			if (isAKeyColumn ||
-					((runningShowQueryStatsCmd || addSingleIntHist) && 
-					 column->isReferenced() && !column->isReferencedForHistogram()))
-			{
-				// if column is not a syskey
-				if (addSingleIntHist && (column->getColName() != "SYSKEY"))
-					addSingleIntHist = FALSE;
+      //check if this column requires histograms
+      if(column->isReferencedForHistogram() ||
+         (isAKeyColumn && isHbaseTable()))
+        column->setNeedFullHistogram();
+      else
+        // if column is:
+        // * a key
+        // OR
+        // * isReferenced but not for histogram and addSingleIntHist is true
+        if (isAKeyColumn ||
+            ((runningShowQueryStatsCmd || addSingleIntHist) && 
+             column->isReferenced() && !column->isReferencedForHistogram()))
+          {
+            // if column is not a syskey
+            if (addSingleIntHist && (column->getColName() != "SYSKEY"))
+              addSingleIntHist = FALSE;
 
-				column->setNeedCompressedHistogram();      
-			}
-			else
-				if (column->getType()->getVarLenHdrSize() &&
-						(CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) != DF_OFF ||
-						 CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT_BMO) != DF_OFF ))
-				{
-					column->setNeedCompressedHistogram();
-				}
-	}
+            column->setNeedCompressedHistogram();      
+          }
+        else
+          if (column->getType()->getVarLenHdrSize() &&
+              (CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT) != DF_OFF ||
+               CmpCommon::getDefault(COMPRESSED_INTERNAL_FORMAT_BMO) != DF_OFF ))
+            {
+              column->setNeedCompressedHistogram();
+            }
+    }
 }
 
 const QualifiedName& NATable::getFullyQualifiedGuardianName()
 {
-	//qualified name and fileSetName are different 
-	//so we use fileSetName because it will contain
-	//fully qualified guardian name
-	QualifiedName * fileName;
+  //qualified name and fileSetName are different 
+  //so we use fileSetName because it will contain
+  //fully qualified guardian name
+  QualifiedName * fileName;
 
-	if(qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString()
-			!= fileSetName_.getQualifiedNameAsString())
-	{
-		fileName = new(CmpCommon::statementHeap()) QualifiedName
-			(fileSetName_,CmpCommon::statementHeap());
-	}
-	else
-	{
-		fileName = new(CmpCommon::statementHeap()) QualifiedName
-			(qualifiedName_.getQualifiedNameObj(),CmpCommon::statementHeap());
-	}
-	return *fileName;
+  if(qualifiedName_.getQualifiedNameObj().getQualifiedNameAsString()
+     != fileSetName_.getQualifiedNameAsString())
+    {
+      fileName = new(CmpCommon::statementHeap()) QualifiedName
+        (fileSetName_,CmpCommon::statementHeap());
+    }
+  else
+    {
+      fileName = new(CmpCommon::statementHeap()) QualifiedName
+        (qualifiedName_.getQualifiedNameObj(),CmpCommon::statementHeap());
+    }
+  return *fileName;
 }
 
 ExtendedQualName::SpecialTableType NATable::getTableType()
 {
-	return qualifiedName_.getSpecialType();
+  return qualifiedName_.getSpecialType();
 }
 
 NABoolean NATable::hasSaltedColumn(Lng32 * saltColPos)
 {
-	for (CollIndex i=0; i<colArray_.entries(); i++ )
-	{
-		if ( colArray_[i]->isSaltColumn() ) 
-		{
-			if (saltColPos)
-				*saltColPos = i;
-			return TRUE;
-		}
-	}
-	return FALSE;
+  for (CollIndex i=0; i<colArray_.entries(); i++ )
+    {
+      if ( colArray_[i]->isSaltColumn() ) 
+        {
+          if (saltColPos)
+            *saltColPos = i;
+          return TRUE;
+        }
+    }
+  return FALSE;
 }
 
 NABoolean NATable::hasDivisioningColumn(Lng32 * divColPos)
 {
-	for (CollIndex i=0; i<colArray_.entries(); i++ )
-	{
-		if ( colArray_[i]->isDivisioningColumn() ) 
-		{
-			if (divColPos)
-				*divColPos = i;
-			return TRUE;
-		}
-	}
-	return FALSE;
+  for (CollIndex i=0; i<colArray_.entries(); i++ )
+    {
+      if ( colArray_[i]->isDivisioningColumn() ) 
+        {
+          if (divColPos)
+            *divColPos = i;
+          return TRUE;
+        }
+    }
+  return FALSE;
 }
 
 // Get the part of the row size that is computable with info we have available
@@ -7666,46 +7815,46 @@ NABoolean NATable::hasDivisioningColumn(Lng32 * divColPos)
 // possible future changes.
 Int32 NATable::computeHBaseRowSizeFromMetaData() const
 {
-	Int32 partialRowSize = 0;
-	Int32 rowKeySize = 0;
-	const NAColumnArray& keyCols = clusteringIndex_->getIndexKeyColumns();
-	CollIndex numKeyCols = keyCols.entries();
+  Int32 partialRowSize = 0;
+  Int32 rowKeySize = 0;
+  const NAColumnArray& keyCols = clusteringIndex_->getIndexKeyColumns();
+  CollIndex numKeyCols = keyCols.entries();
 
-	// For each column of the table, add the length of its value and the length of
-	// its name (HBase column qualifier). If a given column is part of the primary
-	// key, add the length of its value again, because it is part of the HBase row
-	// key.
-	for (Int32 colInx=0; colInx<colcount_; colInx++)
-	{
-		// Get length of the column qualifier and its data.
-		NAColumn* col = colArray_[colInx];;
-		Lng32 colLen = col->getType()->getNominalSize(); // data length
-		Lng32 colPos = col->getPosition();  // position in table
+  // For each column of the table, add the length of its value and the length of
+  // its name (HBase column qualifier). If a given column is part of the primary
+  // key, add the length of its value again, because it is part of the HBase row
+  // key.
+  for (Int32 colInx=0; colInx<colcount_; colInx++)
+    {
+      // Get length of the column qualifier and its data.
+      NAColumn* col = colArray_[colInx];;
+      Lng32 colLen = col->getType()->getNominalSize(); // data length
+      Lng32 colPos = col->getPosition();  // position in table
 
-		partialRowSize += colLen;
+      partialRowSize += colLen;
 
-		// The qualifier is not the actual column name, but a binary value
-		// representing the ordinal position of the col in the table.
-		// Single byte is used if possible.
-		partialRowSize++;
-		if (colPos > 255)
-			partialRowSize++;
+      // The qualifier is not the actual column name, but a binary value
+      // representing the ordinal position of the col in the table.
+      // Single byte is used if possible.
+      partialRowSize++;
+      if (colPos > 255)
+        partialRowSize++;
 
-		// Add col length again if a primary key column, because it will be part
-		// of the row key.
-		NABoolean found = FALSE;
-		for (CollIndex keyColInx=0; keyColInx<numKeyCols && !found; keyColInx++)
-		{
-			if (colPos == keyCols[keyColInx]->getPosition())
-			{
-				rowKeySize += colLen;
-				found = TRUE;
-			}
-		}
-	}
+      // Add col length again if a primary key column, because it will be part
+      // of the row key.
+      NABoolean found = FALSE;
+      for (CollIndex keyColInx=0; keyColInx<numKeyCols && !found; keyColInx++)
+        {
+          if (colPos == keyCols[keyColInx]->getPosition())
+            {
+              rowKeySize += colLen;
+              found = TRUE;
+            }
+        }
+    }
 
-	partialRowSize += rowKeySize;
-	return partialRowSize;
+  partialRowSize += rowKeySize;
+  return partialRowSize;
 }
 
 // For an HBase table, we can estimate the number of rows by dividing the number
@@ -7721,6 +7870,8 @@ Int64 NATable::estimateHBaseRowCount(Int32 retryLimitMilliSeconds, Int32& errorC
     {
       HbaseStr fqTblName;
       NAString tblName = getTableName().getQualifiedNameAsString();
+      if (getTableName().isHbaseCellOrRow())
+        tblName = getTableName().getObjectName();
       fqTblName.len = tblName.length();
       fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
       strncpy(fqTblName.val, tblName.data(), fqTblName.len);
@@ -7757,115 +7908,115 @@ Int64 NATable::estimateHBaseRowCount(Int32 retryLimitMilliSeconds, Int32& errorC
 // Method to get hbase regions servers node names
 ExpHbaseInterface* NATable::getHBaseInterface() const
 {
-	if (!isHbaseTable() || isSeabaseMDTable() ||
-			getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
-			getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME ||
-			getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
-		return NULL;
+  if (!isHbaseTable() || isSeabaseMDTable() ||
+      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HISTINT_NAME ||
+      getExtendedQualName().getQualifiedNameObj().getObjectName() == HBASE_HIST_NAME ||
+      getSpecialType() == ExtendedQualName::VIRTUAL_TABLE)
+    return NULL;
 
-	return NATable::getHBaseInterfaceRaw();
+  return NATable::getHBaseInterfaceRaw();
 }
 
 ExpHbaseInterface* NATable::getHBaseInterfaceRaw() 
 {
-	NADefaults* defs = &ActiveSchemaDB()->getDefaults();
-	const char* server = defs->getValue(HBASE_SERVER);
-	const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
-	ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
-		(STMTHEAP, server, zkPort);
+  NADefaults* defs = &ActiveSchemaDB()->getDefaults();
+  const char* server = defs->getValue(HBASE_SERVER);
+  const char* zkPort = defs->getValue(HBASE_ZOOKEEPER_PORT);
+  ExpHbaseInterface* ehi = ExpHbaseInterface::newInstance
+    (STMTHEAP, server, zkPort);
 
-	Lng32 retcode = ehi->init(NULL);
-	if (retcode < 0)
-	{
-		*CmpCommon::diags()
-			<< DgSqlCode(-8448)
-			<< DgString0((char*)"ExpHbaseInterface::init()")
-			<< DgString1(getHbaseErrStr(-retcode))
-			<< DgInt0(-retcode)
-			<< DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
-		delete ehi;
-		return NULL;
-	}
+  Lng32 retcode = ehi->init(NULL);
+  if (retcode < 0)
+    {
+      *CmpCommon::diags()
+        << DgSqlCode(-8448)
+        << DgString0((char*)"ExpHbaseInterface::init()")
+        << DgString1(getHbaseErrStr(-retcode))
+        << DgInt0(-retcode)
+        << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
+      delete ehi;
+      return NULL;
+    }
 
-	return ehi;
+  return ehi;
 }
 
 NAArray<HbaseStr> *NATable::getRegionsBeginKey(const char* hbaseName) 
 {
-	ExpHbaseInterface* ehi = getHBaseInterfaceRaw();
-	NAArray<HbaseStr> *keyArray = NULL;
+  ExpHbaseInterface* ehi = getHBaseInterfaceRaw();
+  NAArray<HbaseStr> *keyArray = NULL;
 
-	if (!ehi)
-		return NULL;
-	else
-	{
-		keyArray = ehi->getRegionBeginKeys(hbaseName);
+  if (!ehi)
+    return NULL;
+  else
+    {
+      keyArray = ehi->getRegionBeginKeys(hbaseName);
 
-		delete ehi;
-	}
-	return keyArray;
+      delete ehi;
+    }
+  return keyArray;
 }
 
 
 NABoolean  NATable::getRegionsNodeName(Int32 partns, ARRAY(const char *)& nodeNames ) const
 {
-	ExpHbaseInterface* ehi = getHBaseInterface();
+  ExpHbaseInterface* ehi = getHBaseInterface();
 
-	if (!ehi)
-		return FALSE;
-	else
-	{
-		HbaseStr fqTblName;
+  if (!ehi)
+    return FALSE;
+  else
+    {
+      HbaseStr fqTblName;
 
-		CorrName corrName(getTableName());
+      CorrName corrName(getTableName());
 
-		NAString tblName = (corrName.isHbaseCell() || corrName.isHbaseRow()) ?
-			corrName.getQualifiedNameObj().getObjectName()
-			:
-			getTableName().getQualifiedNameAsString();
+      NAString tblName = (corrName.isHbaseCell() || corrName.isHbaseRow()) ?
+        corrName.getQualifiedNameObj().getObjectName()
+        :
+        getTableName().getQualifiedNameAsString();
 
-		fqTblName.len = tblName.length();
-		fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
-		strncpy(fqTblName.val, tblName.data(), fqTblName.len);
-		fqTblName.val[fqTblName.len] = '\0';
+      fqTblName.len = tblName.length();
+      fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
+      strncpy(fqTblName.val, tblName.data(), fqTblName.len);
+      fqTblName.val[fqTblName.len] = '\0';
 
-		Lng32 retcode = ehi->getRegionsNodeName(fqTblName, partns, nodeNames);
+      Lng32 retcode = ehi->getRegionsNodeName(fqTblName, partns, nodeNames);
 
-		NADELETEBASIC(fqTblName.val, STMTHEAP);
-		delete ehi;
-		if (retcode < 0)
-			return FALSE;
-	}
-	return TRUE;
+      NADELETEBASIC(fqTblName.val, STMTHEAP);
+      delete ehi;
+      if (retcode < 0)
+        return FALSE;
+    }
+  return TRUE;
 
 }
 
 // Method to get hbase table index levels and block size
 NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize) const
 {
-	ExpHbaseInterface* ehi = getHBaseInterface();
+  ExpHbaseInterface* ehi = getHBaseInterface();
 
-	if (!ehi)
-		return FALSE;
-	else
-	{
-		HbaseStr fqTblName;
-		NAString tblName = getTableName().getQualifiedNameAsString();
-		fqTblName.len = tblName.length();
-		fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
-		strncpy(fqTblName.val, tblName.data(), fqTblName.len);
-		fqTblName.val[fqTblName.len] = '\0';
+  if (!ehi)
+    return FALSE;
+  else
+    {
+      HbaseStr fqTblName;
+      NAString tblName = getTableName().getQualifiedNameAsString();
+      fqTblName.len = tblName.length();
+      fqTblName.val = new(STMTHEAP) char[fqTblName.len+1];
+      strncpy(fqTblName.val, tblName.data(), fqTblName.len);
+      fqTblName.val[fqTblName.len] = '\0';
 
-		Lng32 retcode = ehi->getHbaseTableInfo(fqTblName,
-				hbtIndexLevels,
-				hbtBlockSize);
+      Lng32 retcode = ehi->getHbaseTableInfo(fqTblName,
+                                             hbtIndexLevels,
+                                             hbtBlockSize);
 
-		NADELETEBASIC(fqTblName.val, STMTHEAP);
-		delete ehi;
-		if (retcode < 0)
-			return FALSE;
-	}
-	return TRUE;
+      NADELETEBASIC(fqTblName.val, STMTHEAP);
+      delete ehi;
+      if (retcode < 0)
+        return FALSE;
+    }
+  return TRUE;
 }
 
 // This method is called on a hive NATable.
@@ -7875,90 +8026,90 @@ NABoolean  NATable::getHbaseTableInfo(Int32& hbtIndexLevels, Int32& hbtBlockSize
 // Currently, column and clustering key info is moved.
 short NATable::updateExtTableAttrs(NATable *etTable)
 {
-	NAFileSet *fileset = this->getClusteringIndex();
-	NAFileSet *etFileset = etTable->getClusteringIndex();
+  NAFileSet *fileset = this->getClusteringIndex();
+  NAFileSet *etFileset = etTable->getClusteringIndex();
 
-	colcount_ = etTable->getColumnCount();
-	colArray_ = etTable->getNAColumnArray();
-	fileset->allColumns_ = etFileset->getAllColumns();
-	if (NOT etFileset->hasOnlySyskey()) // explicit key was specified
-	{
-		keyLength_ = etTable->getKeyLength();
-		recordLength_ = etTable->getRecordLength();
+  colcount_ = etTable->getColumnCount();
+  colArray_ = etTable->getNAColumnArray();
+  fileset->allColumns_ = etFileset->getAllColumns();
+  if (NOT etFileset->hasOnlySyskey()) // explicit key was specified
+    {
+      keyLength_ = etTable->getKeyLength();
+      recordLength_ = etTable->getRecordLength();
 
-		fileset->keysDesc_ = etFileset->getKeysDesc();
-		fileset->indexKeyColumns_ = etFileset->getIndexKeyColumns();
-		fileset->keyLength_ = etFileset->getKeyLength();
-		fileset->encodedKeyLength_ = etFileset->getEncodedKeyLength();
-	}
+      fileset->keysDesc_ = etFileset->getKeysDesc();
+      fileset->indexKeyColumns_ = etFileset->getIndexKeyColumns();
+      fileset->keyLength_ = etFileset->getKeyLength();
+      fileset->encodedKeyLength_ = etFileset->getEncodedKeyLength();
+    }
 
-	/*
-	   fileset->partitioningKeyColumns_ = etFileset->getPartitioningKeyColumns();
-	   fileset->partFunc_ = etFileset->getPartitioningFunction();
-	   fileset->countOfFiles_ = etFileset->getCountOfFiles();
-	   */
+  /*
+    fileset->partitioningKeyColumns_ = etFileset->getPartitioningKeyColumns();
+    fileset->partFunc_ = etFileset->getPartitioningFunction();
+    fileset->countOfFiles_ = etFileset->getCountOfFiles();
+  */
 
-	return 0;
+  return 0;
 }
 
 // get details of this NATable cache entry
 void NATableDB::getEntryDetails(
-		Int32 ii,                      // (IN) : NATable cache iterator entry
-		NATableEntryDetails &details)  // (OUT): cache entry's details
+     Int32 ii,                      // (IN) : NATable cache iterator entry
+     NATableEntryDetails &details)  // (OUT): cache entry's details
 {
-	Int32      NumEnt = cachedTableList_.entries();
-	if  ( ( NumEnt == 0 ) || ( NumEnt <= ii ) )
-	{
-		memset(&details, 0, sizeof(details));
-	}
-	else {
-		NATable * object = cachedTableList_[ii];
-		QualifiedName QNO = object->qualifiedName_.getQualifiedNameObj();
+  Int32      NumEnt = cachedTableList_.entries();
+  if  ( ( NumEnt == 0 ) || ( NumEnt <= ii ) )
+    {
+      memset(&details, 0, sizeof(details));
+    }
+  else {
+    NATable * object = cachedTableList_[ii];
+    QualifiedName QNO = object->qualifiedName_.getQualifiedNameObj();
 
-		Int32 partLen = QNO.getCatalogName().length();
-		strncpy(details.catalog, (char *)(QNO.getCatalogName().data()), partLen );
-		details.catalog[partLen] = '\0';
+    Int32 partLen = QNO.getCatalogName().length();
+    strncpy(details.catalog, (char *)(QNO.getCatalogName().data()), partLen );
+    details.catalog[partLen] = '\0';
 
-		partLen = QNO.getSchemaName().length();
-		strncpy(details.schema, (char *)(QNO.getSchemaName().data()), partLen );
-		details.schema[partLen] = '\0';
+    partLen = QNO.getSchemaName().length();
+    strncpy(details.schema, (char *)(QNO.getSchemaName().data()), partLen );
+    details.schema[partLen] = '\0';
 
-		partLen = QNO.getObjectName().length();
-		strncpy(details.object, (char *)(QNO.getObjectName().data()), partLen );
-		details.object[partLen] = '\0';
+    partLen = QNO.getObjectName().length();
+    strncpy(details.object, (char *)(QNO.getObjectName().data()), partLen );
+    details.object[partLen] = '\0';
 
-		details.size = object->sizeInCache_;
-	}
+    details.size = object->sizeInCache_;
+  }
 }
 
 
 NABoolean NATableDB::isHiveTable(CorrName& corrName)
 {
-	return corrName.isHive();
+  return corrName.isHive();
 }
 
 NABoolean NATableDB::isSQUtiDisplayExplain(CorrName& corrName)
 {
-	const char* tblName = corrName.getQualifiedNameObj().getObjectName();
-	if ( !strcmp(tblName, "EXE_UTIL_DISPLAY_EXPLAIN__"))
-		return TRUE;
+  const char* tblName = corrName.getQualifiedNameObj().getObjectName();
+  if ( !strcmp(tblName, "EXE_UTIL_DISPLAY_EXPLAIN__"))
+    return TRUE;
 
-	if ( !strcmp(tblName, "EXPLAIN__"))
-		return TRUE;
+  if ( !strcmp(tblName, "EXPLAIN__"))
+    return TRUE;
 
-	if ( !strcmp(tblName, "HIVEMD__"))
-		return TRUE;
+  if ( !strcmp(tblName, "HIVEMD__"))
+    return TRUE;
 
-	if ( !strcmp(tblName, "DESCRIBE__"))
-		return TRUE;
+  if ( !strcmp(tblName, "DESCRIBE__"))
+    return TRUE;
 
-	if ( !strcmp(tblName, "EXE_UTIL_EXPR__"))
-		return TRUE;
+  if ( !strcmp(tblName, "EXE_UTIL_EXPR__"))
+    return TRUE;
 
-	if ( !strcmp(tblName, "STATISTICS__"))
-		return TRUE;
+  if ( !strcmp(tblName, "STATISTICS__"))
+    return TRUE;
 
-	return FALSE;
+  return FALSE;
 }
 
 
@@ -8278,6 +8429,13 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
        else
          htbl = hiveMetaDB_->getTableDesc(schemaNameInt, tableNameInt);
 
+       NAString extName = ComConvertNativeNameToTrafName(
+            corrName.getQualifiedNameObj().getCatalogName(),
+            corrName.getQualifiedNameObj().getSchemaName(),
+            corrName.getQualifiedNameObj().getObjectName());
+       
+       QualifiedName qn(extName, 3);
+
        if ( htbl )
          {
            table = new (naTableHeap) NATable
@@ -8291,17 +8449,12 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
              {
                // if this hive/orc table has an associated external table, 
                // get table desc for it.
-               NAString extName = ComConvertNativeNameToTrafName(
-                    corrName.getQualifiedNameObj().getCatalogName(),
-                    corrName.getQualifiedNameObj().getSchemaName(),
-                    corrName.getQualifiedNameObj().getObjectName());
-               
-               QualifiedName qn(extName, 3);
                TrafDesc *etDesc = cmpSBD.getSeabaseTableDesc(
                     qn.getCatalogName(),
                     qn.getSchemaName(),
                     qn.getObjectName(),
-                    COM_BASE_TABLE_OBJECT);
+                    COM_BASE_TABLE_OBJECT,
+                    TRUE);
                
                if (table && etDesc)
                  {
@@ -8336,30 +8489,76 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
                  } // ext table 
              } // allowExternalTables
          } // htbl
-       else 
+       else
          {
-           if ((hiveMetaDB_->getErrCode() == 0)||
-               (hiveMetaDB_->getErrCode() == 100))
+           // find out if this table has an associated external table.
+           TrafDesc *etDesc = cmpSBD.getSeabaseTableDesc(
+                qn.getCatalogName(),
+                qn.getSchemaName(),
+                qn.getObjectName(),
+                COM_BASE_TABLE_OBJECT);
+           
+           // find out if this table is registered in traf metadata
+           Int64 regObjUid = 0;
+           // is this a base table
+           regObjUid = lookupObjectUidByName(corrName.getQualifiedNameObj(),
+                                             COM_BASE_TABLE_OBJECT, FALSE);
+           if (regObjUid <= 0)
              {
-               *CmpCommon::diags()
-                 << DgSqlCode(-1388)
-                 << DgTableName(corrName.getExposedNameAsAnsiString());
+               // is this a view
+               regObjUid = lookupObjectUidByName(corrName.getQualifiedNameObj(),
+                                                 COM_VIEW_OBJECT, FALSE);
+             }
+
+           // if this is to drop an external table and underlying hive
+           // tab doesn't exist, return NATable for external table.
+           if ((etDesc) &&
+               (bindWA->externalTableDrop()))
+             {
+               CorrName cn(qn);
+               table = new (naTableHeap) NATable
+                 (bindWA, cn, naTableHeap, etDesc);
              }
            else
              {
-               *CmpCommon::diags()
-                 << DgSqlCode(-1192)
-                 << DgString0(hiveMetaDB_->getErrMethodName())
-                 << DgString1(hiveMetaDB_->getErrCodeStr())
-                 << DgString2(hiveMetaDB_->getErrDetail())
-                 << DgInt0(hiveMetaDB_->getErrCode());
+               if ((hiveMetaDB_->getErrCode() == 0) ||
+                   (hiveMetaDB_->getErrCode() == 100))
+                 {
+                   if (etDesc)
+                     {
+                       *CmpCommon::diags()
+                         << DgSqlCode(-4262)
+                         << DgString0(corrName.getExposedNameAsAnsiString());
+                     }
+                   else if (regObjUid > 0) // is registered
+                     {
+                       *CmpCommon::diags()
+                         << DgSqlCode(-4263)
+                         << DgString0(corrName.getExposedNameAsAnsiString());
+                     }
+                   else
+                     {
+                       *CmpCommon::diags()
+                         << DgSqlCode(-1388)
+                         << DgTableName(corrName.getExposedNameAsAnsiString());
+                     }
+                 }
+               else
+                 {
+                   *CmpCommon::diags()
+                     << DgSqlCode(-1192)
+                     << DgString0(hiveMetaDB_->getErrMethodName())
+                     << DgString1(hiveMetaDB_->getErrCodeStr())
+                     << DgString2(hiveMetaDB_->getErrDetail())
+                     << DgInt0(hiveMetaDB_->getErrCode());
+                   
+                   hiveMetaDB_->resetErrorInfo();
+                 } 
 
-               hiveMetaDB_->resetErrorInfo();
-             } 
-
-          bindWA->setErrStatus();
-          return NULL;
-       }
+               bindWA->setErrStatus();
+               return NULL;
+             } // else
+         }
 
     } else
       // ------------------------------------------------------------------
@@ -8928,8 +9127,13 @@ NATableDB::free_entries_with_QI_key(Int32 numKeys, SQL_QIKEY* qiKeyArray)
   {
     NATable * currTable = cachedTableList_[currIndx];
 
-    // Only need to remove seabase tables and external Hive/hbase tables
-    if (!currTable->isSeabaseTable() && !currTable->hasExternalTable())
+    // Only need to remove seabase, hive or external Hive/hbase tables
+    NABoolean toRemove = FALSE;
+    if ((currTable->isSeabaseTable()) ||
+        (currTable->isHiveTable()) ||
+        (currTable->hasExternalTable()))
+      toRemove = TRUE;
+    if (! toRemove)
     {
       currIndx++;
       continue;

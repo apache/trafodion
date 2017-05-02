@@ -116,7 +116,8 @@ private:
 		Lng32 *uniqueStmtIdLen = NULL,
 		SQL_QUERY_COST_INFO *query_cost_info = NULL,
 		SQL_QUERY_COMPILER_STATS_INFO *comp_stats_info = NULL,
-		NABoolean monitorThis = FALSE);
+		NABoolean monitorThis = FALSE,
+		NABoolean doNotCachePlan = FALSE);
 
   Lng32 setupExplainData(SQLMODULE_ID * module,
                        SQLSTMT_ID * stmt);

@@ -141,8 +141,8 @@ public:
   // mutator functions
   void markAsClusteringIndex()        { clusteringIndexFlag_ = TRUE; }
 
-  // Is it recommended by user hint
-  NABoolean isHintIndex() const;
+  // Is it recommended by user hint, and what delta to use
+  int indexHintPriorityDelta() const;
 
   // On return:
   //   the amount of data that the local predicate will produce, when 

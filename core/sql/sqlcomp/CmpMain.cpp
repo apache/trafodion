@@ -636,8 +636,9 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
                                        ULng32 *gen_code_len, //OUT
                                        CollHeap *heap,              //IN
                                        CompilerPhase phase,         //IN
-				                       FragmentDir **fragmentDir,   //OUT
-                                       IpcMessageObjType op)        //IN
+                                       FragmentDir **fragmentDir,   //OUT
+                                       IpcMessageObjType op,        //IN
+                                       NABoolean useQueryCache)     //IN
 {
   TimeVal begTime;
   GETTIMEOFDAY(&begTime, 0);
@@ -693,9 +694,10 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
     sqlcompCleanup("", queryExpr, FALSE);
     return PARSERERROR;
   }
-  // make at most 2 tries to compile a query: 1st with caching on, and
+  // make at most 2 tries to compile a query: 1st with caching on
+  // (assuming our caller wants it on), and
   // on any error, retry it with caching off if query was cacheable
-  NABoolean useQueryCache=TRUE, cacheable=FALSE, useTextCache=TRUE;
+  NABoolean cacheable=FALSE, useTextCache=TRUE;
 
   // if running in OSIM capture mode or simulation, don't use the cache
   if (OSIM_runningInCaptureMode()||OSIM_runningSimulation())

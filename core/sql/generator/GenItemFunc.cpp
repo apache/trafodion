@@ -644,6 +644,14 @@ short BuiltinFunction::codeGen(Generator * generator)
       }
     break;
 
+    case ITM_REVERSE:
+      {
+	function_clause =
+	  new(generator->getSpace()) ExFunctionReverseStr(getOperatorType(), 
+                                                          attr, space);
+      }
+    break;
+
     case ITM_UNIQUE_ID:
       {
 	function_clause =
@@ -1873,6 +1881,8 @@ short NoOp::codeGen(Generator * generator)
 short Translate::codeGen(Generator * generator)
 {
   Attributes ** attr;
+  NABoolean unicodeToUnicode = FALSE;
+  Int16 translateFlags = 0;
   
   if (generator->getExpGenerator()->genItemExpr(this, &attr, (1 + getArity()), -1) == 1)
     return 0;
@@ -1893,12 +1903,14 @@ short Translate::codeGen(Generator * generator)
 	break;
      case UTF8_TO_UCS2:
 	convType = CONV_UTF8_F_UCS2_V;
+        unicodeToUnicode = TRUE;
 	break;
      case UCS2_TO_SJIS:
 	convType = CONV_UCS2_F_SJIS_V;
 	break;
      case UCS2_TO_UTF8:
 	convType = CONV_UCS2_F_UTF8_V;
+        unicodeToUnicode = TRUE;
 	break;
      case GBK_TO_UTF8:
         convType = CONV_GBK_F_UTF8_V;
@@ -1911,11 +1923,19 @@ short Translate::codeGen(Generator * generator)
 	convType = CONV_ASCII_F_V;
 	break;
   }
+
+  if (CmpCommon::getDefault(TRANSLATE_ERROR) == DF_OFF ||
+      (unicodeToUnicode &&
+       CmpCommon::getDefault(TRANSLATE_ERROR_UNICODE_TO_UNICODE) == DF_OFF))
+    translateFlags |= ex_function_translate::TRANSLATE_FLAG_ALLOW_INVALID_CODEPOINT;
+
   ex_clause * function_clause = 
 	new(generator->getSpace()) ex_function_translate(
 			         getOperatorType(),
 				 attr, 
-				 generator->getSpace(), convType
+				 generator->getSpace(),
+                                 convType,
+                                 translateFlags
 				);
 
   generator->getExpGenerator()->linkClause(this, function_clause);

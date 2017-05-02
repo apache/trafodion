@@ -33,7 +33,7 @@ cqd hive_max_esps  '1';
 cqd PARALLEL_NUM_ESPS '1';
 cqd parallel_num_esps '1';
 
-cqd HIVE_MAX_STRING_LENGTH '25' ;
+cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 cqd mode_seahive 'ON';
 
 select [first 100] * from hive.ins_customer order by c_customer_sk;

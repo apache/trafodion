@@ -5952,7 +5952,7 @@ PlanPriority NestedJoin::computeOperatorPriority
 
     // is right a single table?
     FileScan *rScan = NULL;
-    NABoolean rightIsTable = pws->getRightLeaf(planNumber, &rScan);
+    NABoolean rightIsTable = pws->getScanLeaf(1, planNumber, rScan);
 
     // is right table small?
     NABoolean isSmallTable = 
@@ -8279,6 +8279,7 @@ NABoolean Scan::duplicateMatch(const RelExpr & other) const
       NOT (possibleIndexJoins_ == o.possibleIndexJoins_) OR
       NOT (numIndexJoins_ == o.numIndexJoins_)))
       OR
+      NOT (suppressHints_ == o.suppressHints_) OR
       NOT (isSingleVPScan_ == o.isSingleVPScan_) OR
       NOT (getExtraOutputColumns() == o.getExtraOutputColumns()) OR
       NOT (samplePercent() == o.samplePercent()) OR
@@ -8305,8 +8306,7 @@ RelExpr * Scan::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->pkeyHvarList_     = pkeyHvarList_;
   result->setOptStoi(stoi_);
   result->samplePercent(samplePercent());
-  result->setScanSelectivityFactor(getScanSelectivityFactor() );
-  result->setScanCardinalityHint(getScanCardinalityHint() );
+  result->suppressHints_    = suppressHints_;
   result->clusterSize(clusterSize());
   result->scanFlags_ = scanFlags_;
   result->setExtraOutputColumns(getExtraOutputColumns());
@@ -8316,7 +8316,7 @@ RelExpr * Scan::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->commonSubExpr_ = commonSubExpr_;
 
   // don't copy values that can be calculated by addIndexInfo()
-  // (could be done, but we are lazy and just call addIndexInfo() again)
+  // (some callers will change selection preds, which requires recomputation)
 
   return RelExpr::copyTopNode(result, outHeap);
 }
@@ -8328,24 +8328,6 @@ void Scan::copyIndexInfo(RelExpr *derivedNode)
 
   Scan * scan = (Scan *)derivedNode;
   forcedIndexInfo_ = scan->forcedIndexInfo_;
-
-  // set the selectivity factor if defined by the user
-  if (scan->cardinalityHint_ >= 1.0)
-    cardinalityHint_ = scan->cardinalityHint_;
-  else
-    cardinalityHint_ = -1.0;
-
-  if (scan->selectivityFactor_ >= 0.0)
-  {
-    if (scan->selectivityFactor_ <= 1.0)
-      selectivityFactor_ = scan->selectivityFactor_;
-    else
-      selectivityFactor_ = csOne;
-  }
-  else
-    selectivityFactor_ = -1.0;
-
-
   if (NOT scan->getIndexOnlyIndexes().isEmpty() OR
       scan->getPossibleIndexJoins().entries() > 0)
   {
@@ -8433,13 +8415,6 @@ void Scan::addIndexInfo()
     preds.clear();
     resultOld->convertToValueIdSet(preds, NULL, ITM_AND);
     doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,resultOld);
-
-//	 ValueIdSet resultSet;
-//	 revertBackToOldTreeUsingValueIdSet(preds, resultSet);
-//	 ItemExpr* resultOld =  resultSet.rebuildExprTree(ITM_AND,FALSE,FALSE);
-//	 preds.clear();
-//	 preds += resultSet;
-//	 doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,resultOld);
   }
 
 
@@ -8488,11 +8463,6 @@ void Scan::addIndexInfo()
   // that contribute to VEGPredicates as explicitly required values.
   addBaseColsFromVEGPreds(requiredValueIds);
 
-  // for debugging in ObjectCenter
-  if (tableDesc == NULL)
-    {
-      requiredValueIds.display();
-    }
   // using old predicate tree:
   if ((CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON ) &&
       (preds.entries()))
@@ -8550,8 +8520,6 @@ void Scan::addIndexInfo()
            (getGroupAttr()->isEmbeddedUpdateOrDelete())
            OR
 	   (getGroupAttr()->isStream())
-	   OR
-	   (tableDesc->hasHintIndexes()) // xxx this could be done better
           );
 
 		      
@@ -8587,9 +8555,10 @@ void Scan::addIndexInfo()
     {
       IndexDesc *idesc = ixlist[indexNo];
 
-
+      NABoolean dummy; // halloweenProtection is decided using updateableIndex
+      // in GU::normalizeNode. Here this parameter is not used.
       // Determine if this index can be used for a scan during an update.
-      if (updatingCol AND NOT updateableIndex(idesc))
+      if (updatingCol AND NOT updateableIndex(idesc, preds, dummy))
         continue;
 
       ValueIdSet indexColumns(idesc->getIndexColumns());
@@ -8760,10 +8729,6 @@ void Scan::addIndexInfo()
 	      ItemExpr * resultOld = revertBackToOldTree(CmpCommon::statementHeap(), inputItemExprTree);
 	      resultOld->convertToValueIdSet(selectionpreds, NULL, ITM_AND);
 	      doNotReplaceAnItemExpressionForLikePredicates(resultOld,selectionpreds,resultOld);
-
-//          revertBackToOldTreeUsingValueIdSet(selectionPred(), selectionpreds);
-//	      ItemExpr* resultOld =  selectionpreds.rebuildExprTree(ITM_AND,FALSE,FALSE);
-//	      doNotReplaceAnItemExpressionForLikePredicates(resultOld,selectionpreds,resultOld);
 	    }
 
 	      // For now, only consider indexes that covers one of the selection
@@ -8854,7 +8819,7 @@ void Scan::addIndexInfo()
                         ixProp = new(CmpCommon::statementHeap())
                            IndexProperty(idesc, mdamFlag, isGoodIndexJoin);
 
-                      if ( !tryToEliminateIndex ) {
+                      if ( !tryToEliminateIndex || idesc->indexHintPriorityDelta() > 0) {
 
                          if ( produceSameIndexOutputs && ixi->indexPredicates_ == newIndexPredicates )
                          {
@@ -8996,9 +8961,9 @@ void Scan::addIndexInfo()
                          }
 
                          break;
-                      }
-		   }
-		}
+                      } // try to eliminate this index from consideration
+                    } // found another index join with the same covered values
+		} // for loop: does another index join have the same covered values?
 
 	      if (!idescAbsorbed)
 		{
@@ -9062,41 +9027,32 @@ void Scan::setTableAttributes(CANodeId nodeId)
   setBaseCardinality(MIN_ONE (tableDesc->getNATable()->getEstRowCount())) ;
 }
 
-NABoolean Scan::equalityPredOnCol(ItemExpr *col)
-{
-  //
-  // Returns TRUE if the column (col) has an equality predicate
-  // associated with it the scan's predicate list.
-  //
-  ValueIdSet pred = getSelectionPredicates();
-
-  for (ValueId vid=pred.init(); pred.next(vid); pred.advance(vid))
-  {
-    if ( vid.getItemExpr()->getOperatorType() != ITM_VEG_PREDICATE )
-      continue;
-
-    ItemExpr *expr = vid.getItemExpr();
-    ValueId id;
-    VEG *veg = ((VEGPredicate*)expr)->getVEG();
-
-    if (veg->getAllValues().referencesTheGivenValue(col->getValueId(), id))
-      return TRUE;
-  }
-
-  return FALSE;
-
-} // Scan::equalityPredOnCol
-
-NABoolean Scan::updateableIndex(IndexDesc *idx)
+NABoolean Scan::updateableIndex(IndexDesc *idx, ValueIdSet& preds, 
+                                NABoolean & needsHalloweenProtection)
 {
   //
   // Returns TRUE if the index (idx) can be used for a scan during an UPDATE.
-  // Otherwise, returns FALSE to prevent the "Halloween Update Problem".
+  // Returns TRUE with needsHalloweenProtection also set to TRUE, if the index
+  // needs a blocking sort for Halloween protection
+  // Otherwise, returns FALSE to prevent use of this index. 
+  // Using the index in this case requires Halloween protection, but is likely 
+  // inefficient since there are no useful preds on the index key columns, so
+  // we don't add this index to list of candidates.
   //
-  ValueIdSet
-    pred = getSelectionPredicates(),
-    dummySet;
 
+  // The conditions of when this index returns TRUE can also be expressed as
+  // returns true for an index if it is 
+  // a) a unique/clustering index or 
+  // b) has a unique predicate on its key or 
+  // c) has an equals or range predicate on all the index columns that 
+  // get updated. If one of the key columns being updated has a range predicate
+  // then needsHalloweenProtection is set to TRUE.
+  // Note that if a key column is being updated and has no predicate on it then
+  // we return FALSE.
+
+  // preds has predicate in non-RangeSpec form, 
+  // while pred will be in RangeSpec form if feature is enabled.
+  ValueIdSet pred = getSelectionPredicates(), dummySet;
 
   SearchKey searchKey(idx->getIndexKey(),
 	              idx->getOrderOfKeyValues(),
@@ -9110,7 +9066,7 @@ NABoolean Scan::updateableIndex(IndexDesc *idx)
   // Unique index is OK to use.
   if (searchKey.isUnique())
     return TRUE;
-
+  
   const ValueIdList colUpdated = getTableDesc()->getColUpdated();
   const ValueIdList indexKey = idx->getIndexKey();
 
@@ -9121,38 +9077,89 @@ NABoolean Scan::updateableIndex(IndexDesc *idx)
   {
     ItemExpr *updateCol = colUpdated[i].getItemExpr();
     CMPASSERT(updateCol->getOperatorType() == ITM_BASECOLUMN);
-
     for (CollIndex j = 0; j < indexKey.entries(); j++)
     {
       ItemExpr *keyCol = indexKey[j].getItemExpr();
-
       ItemExpr *baseCol = ((IndexColumn*)keyCol)->getDefinition().getItemExpr();
       CMPASSERT(baseCol->getOperatorType() == ITM_BASECOLUMN);
-
-      // QSTUFF
       if (getGroupAttr()->isEmbeddedUpdate()){
         if (((BaseColumn*)updateCol)->getColNumber() ==
-          ((BaseColumn*)baseCol)->getColNumber())
+            ((BaseColumn*)baseCol)->getColNumber())
           return FALSE;
       }
-      // QSTUFF
-
-      if ((NOT(idx->isUniqueIndex() || idx->isClusteringIndex()))
-	     ||
+      if ((NOT(idx->isUniqueIndex() || idx->isClusteringIndex()) && 
+           (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) != DF_AGGRESSIVE))
+          ||
 	  (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) == DF_OFF))
-
       {
-      if (((BaseColumn*)updateCol)->getColNumber() ==
-          ((BaseColumn*)baseCol)->getColNumber() AND
-	  NOT equalityPredOnCol(baseCol))
-	return FALSE;
-    }
-  }
-  }
+        if (((BaseColumn*)updateCol)->getColNumber() ==
+            ((BaseColumn*)baseCol)->getColNumber()) 
+        {
+          if (preds.containsAsEquiLocalPred(baseCol->getValueId()))
+            continue;
+          else if (preds.containsAsRangeLocalPred(baseCol->getValueId()))
+            needsHalloweenProtection = TRUE;
+          else {
+            needsHalloweenProtection = FALSE;
+            return FALSE;
+          }
+        } // index key col is being updated
+      } // not a clustering or unique index
+    } // loop over index key cols
+  } // loop over cols being updated
 
   return TRUE;
-
 } // Scan::updateableIndex
+
+NABoolean Scan::requiresHalloweenForUpdateUsingIndexScan()
+{ 
+  // Returns TRUE if any index that is in the list of indexes that will be 
+  // added later in addIndexInfo() to drive the scan for an UPDATE requires 
+  // Halloween protection. This is decided by using Scan::updateableIndex(). 
+  // If this method returns TRUE we will use a sort node to prevent the 
+  // "Halloween Update Problem".
+
+  // preds are in RangeSpec form
+  ValueIdSet preds = getSelectionPredicates();
+  const ValueIdList & colUpdated = getTableDesc()->getColUpdated();
+  const LIST(IndexDesc *) & ixlist = getTableDesc()->getIndexes();
+  
+  if ((colUpdated.entries() == 0) || (preds.entries() == 0) ||
+      (ixlist.entries() == 1) || // this is the clustering index
+      (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) 
+       == DF_AGGRESSIVE)) // this setting means no Halloween protection
+    return FALSE;
+ 
+  if (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON)
+  {
+    ValueIdList selectionPredList(preds);
+    ItemExpr *inputItemExprTree = 
+      selectionPredList.rebuildExprTree(ITM_AND,FALSE,FALSE);
+    ItemExpr * resultOld = revertBackToOldTree(STMTHEAP, 
+                                               inputItemExprTree);
+    preds.clear();
+    resultOld->convertToValueIdSet(preds, NULL, ITM_AND);
+    doNotReplaceAnItemExpressionForLikePredicates(resultOld,preds,
+                                                  resultOld);
+  }
+  
+  NABoolean needsHalloweenProtection ;
+  for (CollIndex indexNo = 0; indexNo < ixlist.entries(); indexNo++)
+  {
+    IndexDesc *idx = ixlist[indexNo];
+    if (idx->isClusteringIndex() || 
+        (idx->isUniqueIndex() && 
+         (CmpCommon::getDefault(UPDATE_CLUSTERING_OR_UNIQUE_INDEX_KEY) 
+          == DF_ON)))
+      continue ; // skip this idesc
+    
+    needsHalloweenProtection = FALSE;
+    if(updateableIndex(idx, preds, needsHalloweenProtection) && 
+       needsHalloweenProtection)
+      return TRUE; // if even one index requires Halloween, then we add the sort
+  }
+  return FALSE;
+}
 
 // how many index descriptors can be used with this scan node?
 CollIndex Scan::numUsableIndexes()
@@ -9822,6 +9829,7 @@ PlanPriority FileScan::computeOperatorPriority
     (CmpCommon::getDefault(INTERACTIVE_ACCESS) == DF_ON) OR
     ( QueryAnalysis::Instance() AND
       QueryAnalysis::Instance()->optimizeForFirstNRows());
+  int indexPriorityDelta = getIndexDesc()->indexHintPriorityDelta();
 
   if (interactiveAccess)
   {
@@ -9838,8 +9846,10 @@ PlanPriority FileScan::computeOperatorPriority
     }
   }
 
-  if (isRecommendedByHints())
-    result.incrementLevels(INDEX_HINT_PRIORITY,0);
+  if (indexPriorityDelta && !areHintsSuppressed())
+    // yes, the index is one of the indexes listed in the hint
+    result.incrementLevels(indexPriorityDelta, 0);
+
   return result;
 }
 
@@ -9859,12 +9869,6 @@ PlanPriority PhysicalMapValueIds::computeOperatorPriority
   }
 
   return result;
-}
-
-// Is this fileScan recommended by the user via the optimizer hints?
-NABoolean FileScan::isRecommendedByHints()
-{
-  return getIndexDesc()->isHintIndex();
 }
 
 const NAString FileScan::getText() const

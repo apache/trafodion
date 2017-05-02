@@ -225,6 +225,17 @@ NABoolean NAType::operator==(const NAType& other) const
     return FALSE;
 } // operator==()
 
+NABoolean NAType::equalIgnoreLength(const NAType& other) const
+{
+  if (typeName_ == other.typeName_ &&
+      qualifier_ == other.qualifier_ &&
+      SQLnullFlag_ == other.SQLnullFlag_ &&
+      varLenFlag_ == other.varLenFlag_)
+    return TRUE;
+  else
+    return FALSE;
+}
+
 NABoolean NAType::equalIgnoreNull(const NAType& other) const
 {
   if (typeName_ == other.typeName_ &&
@@ -974,16 +985,13 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
  
   if ( !strcmp(hiveType, "string"))
     {
-      Int32 len = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH);
       Int32 lenInBytes = CmpCommon::getDefaultLong(HIVE_MAX_STRING_LENGTH_IN_BYTES);
-      if( lenInBytes != 32000 ) 
-        len = lenInBytes;
       NAString hiveCharset = CmpCommon::getDefaultString(HIVE_DEFAULT_CHARSET);
       //        ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_CHARSET);
       hiveCharset.toUpper();
       CharInfo::CharSet hiveCharsetEnum = CharInfo::getCharSetEnum(hiveCharset);
       Int32 maxNumChars = 0;
-      Int32 storageLen = len;
+      Int32 storageLen = lenInBytes;
       SQLVarChar * nat = 
         new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
                               TRUE, // allow NULL
@@ -1044,7 +1052,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     if (CharInfo::isVariableWidthMultiByteCharSet(hiveCharsetEnum))
     {
       // For Hive VARCHARs, the number specified is the max. number of characters,
-      // while we count in bytes when using HIVE_MAX_STRING_LENGTH for Hive STRING
+      // while we count in bytes when using HIVE_MAX_STRING_LENGTH_IN_BYTES for Hive STRING
       // columns. Set the max character constraint and also adjust the required storage length.
        maxNumChars = len;
        storageLen = len * CharInfo::maxBytesPerChar(hiveCharsetEnum);

@@ -542,6 +542,7 @@ enum OperatorTypeEnum {
                         ITM_CONVERTTOHEX = 2272,
                         ITM_CONVERTFROMHEX = 2273,
                         ITM_TOKENSTR = 2292,
+                        ITM_REVERSE = 2294,
 
                         // UNICODE/DOUBLEBYTE charsets built-in functions
                         ITM_SUBSTR_DOUBLEBYTE = 2274,
@@ -956,6 +957,7 @@ enum OperatorTypeEnum {
                         DDL_REGISTER_COMPONENT,
                         DDL_UNREGISTER_CATALOG,
                         DDL_REGISTER_USER,
+                        DDL_REG_OR_UNREG_HIVE,
                         DDL_REINITIALIZE_SQL,
                         DDL_REVOKE,
                         DDL_REVOKE_COMPONENT_PRIVILEGE,

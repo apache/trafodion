@@ -40,27 +40,9 @@ except ImportError:
     import xml.etree.ElementTree as ET
 from ConfigParser import ConfigParser
 from collections import defaultdict
+from constants import VERSION_FILE
 
-INSTALLER_LOC = re.search('(.*)/\w+',os.path.dirname(os.path.abspath(__file__))).groups()[0]
-
-CONFIG_DIR = INSTALLER_LOC + '/configs'
-SCRIPTS_DIR = INSTALLER_LOC + '/scripts'
-
-USER_PROMPT_FILE = CONFIG_DIR + '/prompt.json'
-SCRCFG_FILE = CONFIG_DIR + '/script.json'
-VERSION_FILE = CONFIG_DIR + '/version.json'
-MODCFG_FILE = CONFIG_DIR + '/mod_cfgs.json'
-DEF_PORT_FILE = CONFIG_DIR + '/default_ports.ini'
-
-DBCFG_FILE = INSTALLER_LOC + '/db_config'
-DBCFG_TMP_FILE = INSTALLER_LOC + '/.db_config_temp'
-
-TMP_DIR = '/tmp/.trafodion_install_temp'
 MARK = '[ERR]'
-
-def version():
-    print 'Installer version: %s' % __VERSION__
-    exit(0)
 
 def ok(msg):
     print '\n\33[32m***[OK]: %s \33[0m' % msg
@@ -105,7 +87,7 @@ def run_cmd(cmd):
     return stdout.strip()
 
 def run_cmd_as_user(user, cmd):
-    return run_cmd('sudo -n su - %s -c \'%s\'' % (user, cmd))
+    return run_cmd('%s su - %s -c \'%s\'' % (get_sudo_prefix(), user, cmd))
 
 def cmd_output(cmd):
     """ return command output but not check return value """
@@ -113,6 +95,17 @@ def cmd_output(cmd):
     stdout, stderr = p.communicate()
 
     return stdout.strip() if stdout else stderr
+
+def get_default_home():
+    return cmd_output('%s cat /etc/default/useradd |grep HOME |cut -d "=" -f 2' % get_sudo_prefix())
+
+def get_sudo_prefix():
+    """ donnot use sudo prefix if user is root """
+    uid = os.getuid()
+    if uid == 0:
+        return ''
+    else:
+        return 'sudo -n'
 
 def mod_file(template_file, change_items):
     """

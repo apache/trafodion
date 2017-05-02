@@ -162,17 +162,13 @@ bool PrivMgrUserPrivs::initUserPrivs(
     }
 
     // set up security invalidation keys
-    Int32 grantee = privs.getGrantee();
-    Int32 role = (ComUser::isPublicUserID(grantee) || PrivMgr::isRoleID(grantee)) 
-        ? grantee : NA_UserIdDefault;
-
-    if (!buildSecurityKeys(userID, role, objectUID, privs.getTablePrivs(), secKeySet))
+    if (!buildSecurityKeys(userID, privs.getGrantee(), objectUID, privs.getTablePrivs(), secKeySet))
       return false;
 
     for (int k = 0; k < colPrivsList_.size(); k++)
     {
       PrivMgrCoreDesc colDesc(colPrivsList_[k], colGrantableList_[k]);
-      if (!buildSecurityKeys(userID, role, objectUID, colDesc, secKeySet))
+      if (!buildSecurityKeys(userID, privs.getGrantee(), objectUID, colDesc, secKeySet))
         return false;
     }
   }
@@ -565,8 +561,11 @@ PrivStatus PrivMgrCommands::getPrivileges(
     return STATUS_GOOD;
   }
 
-  // if a hive table and does not have an external table, assume no privs
-  if (naTable->isHiveTable() && !naTable->hasExternalTable())
+  // if a hive table and does not have an external table and is not
+  // registered in traf metadata, assume no privs
+  if ((naTable->isHiveTable()) && 
+      (NOT naTable->isRegistered()) &&
+      (!naTable->hasExternalTable()))
   {
     PrivMgrDesc emptyDesc;
     userPrivs.initUserPrivs(emptyDesc);

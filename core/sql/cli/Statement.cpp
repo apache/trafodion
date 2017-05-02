@@ -293,8 +293,8 @@ Statement::Statement(SQLSTMT_ID * statement_id_,
              context_, (Lng32) context_->getContextHandle());
 
   clonedStatements = new(&heap_) Queue(&heap_);
-  // for now a statement space is allocated from the executor memory
-  space_.setParent(context_->exHeap());
+  // for now a statement space is allocated from the statement heap 
+  space_.setParent(&heap_);
 
   // Set up a space object which might be used during unpacking to allocate
   // additional space for potential upgrading of objects in the plan. This
@@ -1437,6 +1437,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
   NABoolean deCache      = (cliFlags & PREPARE_WITH_DECACHE) != 0;
   NABoolean noTextCache  = (cliFlags & PREPARE_NO_TEXT_CACHE) != 0;
   NABoolean standaloneQuery = (cliFlags & PREPARE_STANDALONE_QUERY) != 0;
+  NABoolean doNotCache   = (cliFlags & PREPARE_DONT_CACHE) != 0;
   this->setStandaloneQ(standaloneQuery);
 
   NABoolean wmsMonitoringNeeded = (cliFlags & PREPARE_MONITOR_THIS_QUERY) !=0;
@@ -1651,6 +1652,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 		    c.setAqrPrepare(aqRetry);
 		  else if (noTextCache)
 		  c.setNoTextCache(noTextCache);
+		  c.setDoNotCachePlan(doNotCache);
 		  
 		  if (standaloneQuery)
 		    c.setStandaloneQuery(standaloneQuery);
@@ -1704,6 +1706,7 @@ RETCODE Statement::prepare2(char *source, ComDiagsArea &diagsArea,
 		    c.setAqrPrepare(aqRetry);
 		  else if (noTextCache)
 		  c.setNoTextCache(noTextCache);
+		  c.setDoNotCachePlan(doNotCache);
 
 		  if (standaloneQuery)
 		    c.setStandaloneQuery(standaloneQuery);
@@ -2100,6 +2103,13 @@ RETCODE Statement::doHiveTableSimCheck(TrafSimilarityTableInfo *si,
                 << DgString2(getLobErrStr(intParam1))
                 << DgInt0(intParam1)
                 << DgInt1(0);
+
+      if (intParam1 == LOB_DATA_FILE_NOT_FOUND_ERROR)
+        {
+          diagsArea << DgSqlCode(-EXE_TABLE_NOT_FOUND)
+                    << DgString0(si->tableName());
+        }
+
       return ERROR;
     }
 

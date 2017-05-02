@@ -1250,6 +1250,7 @@ Int32 ItemExpr::shouldPushTranslateDown(CharInfo::CharSet chrset) const
      case ITM_CAST_CONVERT:          // a) internal node, too late to do ICAT
      case ITM_CAST_TYPE:
      case ITM_DATEFORMAT:
+     case ITM_REVERSE:
        return -1;
 
      case ITM_LEFT:                  // b) counts characters
@@ -5882,16 +5883,24 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 	       (naType1->getTypeQualifier() == NA_DATETIME_TYPE) &&
                (getOperatorType() == ITM_MINUS))
 	{
-          // Column of DATE datatype is internally created as TIMESTAMP(0).
-          // timestamp(0) - date               =  diff in days
+          // timestamp(0) - date          =  diff in days
+          // date - date                  = diff in days
+          //
+          // In mode_special_4,
+          // Column of DATE datatype is internally created as TIMESTAMP(0)
+          // and their diff is in days.
           // timestamp(0) - timestamp(0)  = diff in days
-          // date - date                            = diff in days
 	  const DatetimeType* datetime1 = (DatetimeType*)naType0;
 	  const DatetimeType* datetime2 = (DatetimeType*)naType1;
-          if (((datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) ||
-               (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLDate)) &&
-              ((datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) ||
-               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLDate)))
+          if (((datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) &&
+               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLDate)) ||
+              ((datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLDate) &&
+               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLDate)) ||
+              ((CmpCommon::getDefault(MODE_SPECIAL_4) == DF_ON) &&
+               (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) &&
+               (datetime2->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp) &&
+               (datetime1->getFractionPrecision() == 0) &&
+               (datetime2->getFractionPrecision() == 0)))
             {
               ItemExpr * newChild = NULL;
               if (datetime1->getSubtype() == DatetimeType::SUBTYPE_SQLTimestamp)
@@ -6065,14 +6074,20 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
   }
 #endif  
 
-  ItemExpr *boundExpr ;
+  ItemExpr *boundExpr, *boundExpr_0, *boundExpr_1 ;
 
-  boundExpr = child(0)->bindNode(bindWA);
+  boundExpr_0 = child(0)->bindNode(bindWA);
   if (bindWA->errStatus())
       return this;
-  child(0) = boundExpr;
-
-
+  child(0) = boundExpr_0;
+ 
+  if (child(1))
+    {
+      boundExpr_1 = child(1)->bindNode(bindWA);
+      if (bindWA->errStatus())
+        return this;
+      child(1) = boundExpr_1;
+    }
   if (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON)
   {
     // if an untyped param is being assigned to a column, and
@@ -6085,6 +6100,44 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 	      return ie;
   }
 
+ 
+  NABuiltInTypeEnum targetType =  child(0)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
+  if  (targetType == NA_LOB_TYPE)
+    {  
+      if (child(1))
+        {
+          NABuiltInTypeEnum sourceType =  child(1)->castToItemExpr()->getValueId().getType().getTypeQualifier() ; 
+          //If it's a dynamic param with unknown type or if it is a 
+          // character type, trasnform the insert.
+          if ((child(1)->getOperatorType() == ITM_DYN_PARAM && sourceType == NA_UNKNOWN_TYPE)  || sourceType == NA_CHARACTER_TYPE)
+            {
+              ValueId vid1 = child(1)->castToItemExpr()->getValueId();  
+              // Add a stringToLob node
+              ItemExpr *newChild;
+              const NAType &desiredType = child(0)->getValueId().getType();
+              SQLBlob &lobType = (SQLBlob&)desiredType;
+
+              NAType * newType = new SQLBlob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), 
+                                             lobType.getLobStorage(), 
+                                             TRUE, FALSE, TRUE, 
+                                             CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024); 
+              //              vid1.coerceType(desiredType, NA_LOB_TYPE); 
+              vid1.coerceType(*newType, NA_LOB_TYPE); 
+              if (bindWA->getCurrentScope()->context()->inUpdate())
+                {
+                  newChild =  new (bindWA->wHeap()) LOBupdate( vid1.getItemExpr(), child(0), NULL,LOBoper::STRING_, FALSE,TRUE);
+                }
+              else
+                {
+                  newChild =  new (bindWA->wHeap()) LOBinsert( vid1.getItemExpr(),NULL, LOBoper::STRING_, FALSE,TRUE); 
+                }   
+              newChild->bindNode(bindWA);
+              if (bindWA->errStatus())
+                return boundExpr; 
+              setChild(1, newChild);
+            }
+        }
+    }
   // Assign is a directly derived subclass of ItemExpr; safe to invoke this
   boundExpr = ItemExpr::bindNode(bindWA);
   if (bindWA->errStatus())
@@ -6173,7 +6226,9 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
     } // QSTUFF
 
   } // isUserSpecified
-
+ 
+ targetType =  child(0)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
+ 
   if ((NOT child(0)->getValueId().getType().
        isCompatible(child(1)->getValueId().getType())) &&
       (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_ON) &&
@@ -6191,13 +6246,13 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
 	return boundExpr;
       setChild(1, newChild);
     }
-
+    
+ 
   // If we assign a numeric type and the source has a larger scale then
   // the target we cast the source to reduce the scale (truncate).
   // We also cast (truncate) if we deal with char and the source is larger
   // than the target.
-  NABuiltInTypeEnum targetType =
-    child(0)->getValueId().getType().getTypeQualifier();
+  targetType =  child(0)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
   if (targetType == NA_CHARACTER_TYPE) {
     Lng32 sourceLength = ((CharType&)(child(1)->getValueId().getType())).getStrCharLimit();
     Lng32 targetLength = ((CharType&)(child(0)->getValueId().getType())).getStrCharLimit();
@@ -7048,7 +7103,15 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 
       BiRelat *br = (BiRelat *) beginKey;
       br->setLikeSelectivity(selectivity);
-      br->setOriginalLikeExprId(getValueId() );
+      // Like pred has non_wildcard beginning and ends in %
+      // Later we will collapse histogram into one interval if this flag is set.
+      // In this simple case, it is better to not flag this BiRelat as 
+      // originating from LIKE so that we get a better histogram on it. 
+      // We may lose some knowledge of correlation between begin/end keys 
+      // but it is better to have 2 unrelated birelats with good stats than 
+      // correlated begin/end preds with a single interval histogram. JIRA 2512
+      if(boundExpr)
+        br->setOriginalLikeExprId(getValueId());
 
       // Compute the value following the beginKey prefix:
       // If beginKey == 'ab', this will return 'ac';
@@ -7115,7 +7178,8 @@ ItemExpr *Like::applyBeginEndKeys(BindWA *bindWA, ItemExpr *boundExpr,
 
 	// set selectivity of the second range predicate equal to 1.0
 	br->setLikeSelectivity(1.0);
-	br->setOriginalLikeExprId(getValueId() );
+        if(boundExpr)
+          br->setOriginalLikeExprId(getValueId());
 
 
 	if (boundExpr)
@@ -11283,7 +11347,12 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
         }
 
         if ( getOperatorType() == ITM_RIGHT )
-	  strcpy(buf, "SUBSTRING(@A1 FROM (CHAR_LENGTH(@A1) - CAST(@A2 AS INT UNSIGNED) + 1));");
+	  // The case expression is needed for cases where the length supplied
+          // exceeds the length of the string; in this case we want to return 
+          // the whole string. SUBSTR of a 0 or negative value doesn't do that.
+          strcpy(buf, "SUBSTRING(@A1 FROM "
+                      "CASE WHEN(CHAR_LENGTH(@A1) - CAST(@A2 AS INT UNSIGNED) + 1) > 1 "
+                      "THEN (CHAR_LENGTH(@A1) - CAST(@A2 AS INT UNSIGNED) + 1) ELSE 1 END);");
         else
 	  strcpy(buf, "SUBSTRING(@A1 FROM 1 FOR @A2);"); // LEFT()
 

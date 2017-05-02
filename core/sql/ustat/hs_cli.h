@@ -239,9 +239,6 @@ class HSSample
 
     NABoolean isIUS() { return isIUS_; }
 
-    void addTruncatedSelectList(NAString & qry);
-    static void addTruncatedColumnReference(NAString & qry, HSColumnStruct & colInfo);
-
   private:
     // Member function
     void makeTableName(NABoolean isPersSample = FALSE);

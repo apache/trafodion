@@ -263,7 +263,17 @@ enum SeabaseObjectsFlags {
   MD_OBJECTS_STORED_DESC           = 0x0000000000000004,
 
   // stored descriptor is disabled, should not be used
-  MD_OBJECTS_DISABLE_STORED_DESC   = 0x0000000000000008
+  MD_OBJECTS_DISABLE_STORED_DESC   = 0x0000000000000008,
+
+  // set if this object was created as an implicit external table.
+  // This happens if an external table was created for internal usage
+  // (currently for: privilege info, ustat, views).
+  SEABASE_OBJECT_IS_IMPLICIT_EXTERNAL  = 0x0000000000000010,
+
+  // set if this hive object was internally registered in traf metadata.
+  // This can happen for upd stats, create views or grant privs.
+  MD_OBJECTS_HIVE_INTERNAL_REGISTER  = 0x0000000000000020
+
 };
 
 static const QString seabaseRefConstraintsDDL[] =

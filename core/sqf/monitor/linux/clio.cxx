@@ -1941,9 +1941,6 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
             case ReplyType_Startup:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.startup_info);
                 break;
-            case ReplyType_TmSeqNum:
-                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.tm_seqnum);
-                break;
             case ReplyType_TmSync:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.tm_sync);
                 break;
@@ -2045,9 +2042,6 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
                 break;
             case ReqType_TmReady:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.tm_ready);
-                break;
-            case ReqType_TmSeqNum:
-                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.tm_seqnum);
                 break;
             case ReqType_TmSync:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.tm_sync);
@@ -2300,7 +2294,6 @@ const char * Local_IO_To_Monitor::reqTypes_[] = {
     "Stfsd",
     "TmLeader",
     "TmReady",
-    "TmSeqNum",
     "TmSync",
     "TransInfo",
     "ZoneInfo",
@@ -2322,7 +2315,6 @@ const char * Local_IO_To_Monitor::replyTypes_[] = {
     "ProcessInfo",
     "Stfsd",
     "Startup",
-    "TmSeqNum",
     "TmSync",
     "TransInfo",
     "ZoneInfo",

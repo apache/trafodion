@@ -578,12 +578,8 @@ Lng32 main(Lng32 argc, char *argv[])
       exit(1);
       // LCOV_EXCL_STOP
     }
-  // setup log4cxx, need to be done here so initLog4cxx can have access to
-  // process information since it is needed to compose the log name
-  // the log4cxx log name for this lob process  will be
-  // based on this process' node number mxlobsrvr_<nid>.log
-  QRLogger::instance().setModule(QRLogger::QRL_LOB);
-  QRLogger::instance().initLog4cxx("log4cxx.trafodion.lob.config");
+    // setup log4cxx
+    QRLogger::initLog4cxx(QRLogger::QRL_LOB);
     // initialize lob globals
     lobGlobals = new ExLobGlobals();
     if (lobGlobals == NULL) 

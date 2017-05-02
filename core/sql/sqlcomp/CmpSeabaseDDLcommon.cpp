@@ -109,6 +109,13 @@ static bool hasValue(
    std::vector<int32_t> container,
    int32_t value);   
 
+static NABoolean isTrueFalseStr(const NAText& str);
+static NABoolean isHBaseCompressionOption(const NAText& str);
+static NABoolean isHBaseDurabilityOption(const NAText& str);
+static NABoolean isHBaseEncodingOption(const NAText& str);
+static NABoolean isHBaseBloomFilterOption(const NAText& str);
+
+
 #include "EncodedKeyValue.h"
 #include "SCMVersHelp.h"
 
@@ -2218,6 +2225,42 @@ NABoolean CmpSeabaseDDL::isEncodingNeededForSerialization(NAColumn * nac)
   return FALSE;
 }
 
+// removing leading and trailing blank pad characters and
+// converting characters to upper case is done earlier.
+static NABoolean isTrueFalseStr(const NAText& str) 
+{
+  if (str == "TRUE" || str == "FALSE")
+    return TRUE;
+  return FALSE;
+}
+static NABoolean isHBaseCompressionOption(const NAText& str)
+{
+  if (str == "NONE" || str == "GZ" || str == "LZO" || 
+      str == "LZ4" || str == "SNAPPY")
+    return TRUE;
+  return FALSE;
+}
+static NABoolean isHBaseDurabilityOption(const NAText& str)
+{
+  if (str == "ASYNC_WAL" || str == "FSYNC_WAL" || str == "SKIP_WAL" || 
+      str == "SYNC" || str == "USE_DEFAULT")
+    return TRUE;
+  return FALSE;
+}
+static NABoolean isHBaseEncodingOption(const NAText& str)
+{
+  if (str == "NONE" || str == "PREFIX" || str == "PREFIX_TREE" || 
+      str == "DIFF" || str == "FAST_DIFF")
+    return TRUE;
+  return FALSE;
+}
+static NABoolean isHBaseBloomFilterOption(const NAText& str)
+{
+  if (str == "NONE" || str == "ROW" || str == "ROWCOL")
+    return TRUE;
+  return FALSE;
+}
+
 // note: this function expects hbaseCreateOptionsArray to have
 // HBASE_MAX_OPTIONS elements
 short CmpSeabaseDDL::generateHbaseOptionsArray(
@@ -2251,162 +2294,213 @@ short CmpSeabaseDDL::generateHbaseOptionsArray(
       NABoolean isError = FALSE;
       if (hbaseOption->key() == "NAME")
         {
+	  if (!hbaseCreateOptionsArray[HBASE_NAME].empty())
+	    isError = TRUE;
           hbaseCreateOptionsArray[HBASE_NAME] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "MAX_VERSIONS")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+                       hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_MAX_VERSIONS].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_MAX_VERSIONS] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "MIN_VERSIONS")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_MIN_VERSIONS].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_MIN_VERSIONS] = hbaseOption->val();
         }
       else if ((hbaseOption->key() == "TIME_TO_LIVE") ||
                (hbaseOption->key() == "TTL"))
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
-            isError = TRUE;
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_TTL].empty()))
+	    isError = TRUE;
           hbaseCreateOptionsArray[HBASE_TTL] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "BLOCKCACHE")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_BLOCKCACHE].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_BLOCKCACHE] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "IN_MEMORY")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_IN_MEMORY].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_IN_MEMORY] = hbaseOption->val();
         }
-      else if (hbaseOption->key() == "COMPRESSION")
+      else if (hbaseOption->key() == "COMPRESSION") 
         {
+	  if ((!isHBaseCompressionOption(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_COMPRESSION].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_COMPRESSION] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "BLOOMFILTER")
         {
+	  if ((!isHBaseBloomFilterOption(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_BLOOMFILTER].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_BLOOMFILTER] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "BLOCKSIZE")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_BLOCKSIZE].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_BLOCKSIZE] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "DATA_BLOCK_ENCODING")
         {
-          if (hbaseOption->val() != "NONE" &&
-              hbaseOption->val() != "PREFIX" &&
-              hbaseOption->val() != "DIFF" &&
-              hbaseOption->val() != "FAST_DIFF")
-            isError = TRUE;
+	  if ((!isHBaseEncodingOption(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_DATA_BLOCK_ENCODING].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_DATA_BLOCK_ENCODING] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "CACHE_BLOOMS_ON_WRITE")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_CACHE_BLOOMS_ON_WRITE].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_CACHE_BLOOMS_ON_WRITE] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "CACHE_DATA_ON_WRITE")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_CACHE_DATA_ON_WRITE].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_CACHE_DATA_ON_WRITE] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "CACHE_INDEXES_ON_WRITE")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_CACHE_INDEXES_ON_WRITE].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_CACHE_INDEXES_ON_WRITE] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "COMPACT_COMPRESSION")
         {
+	  if ((!isHBaseCompressionOption(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_COMPACT_COMPRESSION].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_COMPACT_COMPRESSION] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "PREFIX_LENGTH_KEY")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_PREFIX_LENGTH_KEY].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_PREFIX_LENGTH_KEY] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "EVICT_BLOCKS_ON_CLOSE")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_EVICT_BLOCKS_ON_CLOSE].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_EVICT_BLOCKS_ON_CLOSE] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "KEEP_DELETED_CELLS")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_KEEP_DELETED_CELLS].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_KEEP_DELETED_CELLS] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "REPLICATION_SCOPE")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_REPLICATION_SCOPE].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_REPLICATION_SCOPE] = 
             hbaseOption->val();
         }
       else if (hbaseOption->key() == "MAX_FILESIZE")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_MAX_FILESIZE].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_MAX_FILESIZE] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "COMPACT")
         {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_COMPACT].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_COMPACT] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "DURABILITY")
         {
+	  if ((!isHBaseDurabilityOption(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_DURABILITY].empty()))
+	    isError = TRUE ;
           hbaseCreateOptionsArray[HBASE_DURABILITY] = hbaseOption->val();
         }
       else if (hbaseOption->key() == "MEMSTORE_FLUSH_SIZE")
         {
-          if (str_atoi(hbaseOption->val().data(), 
-                       hbaseOption->val().length()) == -1)
+          if ((str_atoi(hbaseOption->val().data(), 
+			hbaseOption->val().length()) == -1) ||
+	      (!hbaseCreateOptionsArray[HBASE_MEMSTORE_FLUSH_SIZE].empty()))
             isError = TRUE;
           hbaseCreateOptionsArray[HBASE_MEMSTORE_FLUSH_SIZE] = 
             hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "CACHE_DATA_IN_L1")
+        {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_CACHE_DATA_IN_L1].empty()))
+	    isError = TRUE ;
+          hbaseCreateOptionsArray[HBASE_CACHE_DATA_IN_L1] = hbaseOption->val();
+        }
+      else if (hbaseOption->key() == "PREFETCH_BLOCKS_ON_OPEN")
+        {
+	  if ((!isTrueFalseStr(hbaseOption->val())) ||
+	      (!hbaseCreateOptionsArray[HBASE_PREFETCH_BLOCKS_ON_OPEN].empty()))
+	    isError = TRUE ;
+          hbaseCreateOptionsArray[HBASE_PREFETCH_BLOCKS_ON_OPEN] = 
+	    hbaseOption->val();
         }
       else if (hbaseOption->key() == "SPLIT_POLICY")
         {
           // for now, restrict the split policies to some well-known
           // values, because specifying an invalid class gets us into
           // a hang situation in the region server
-          if (valInOrigCase == "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy" ||
-              valInOrigCase == "org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy"
+          if ((valInOrigCase == "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy" ||
+	       valInOrigCase == "org.apache.hadoop.hbase.regionserver.IncreasingToUpperBoundRegionSplitPolicy"
  ||
-              valInOrigCase == "org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy")
+	       valInOrigCase == "org.apache.hadoop.hbase.regionserver.KeyPrefixRegionSplitPolicy") &&  (hbaseCreateOptionsArray[HBASE_SPLIT_POLICY].empty()))
             hbaseCreateOptionsArray[HBASE_SPLIT_POLICY] = valInOrigCase;
           else
-            {
-              *CmpCommon::diags() << DgSqlCode(-8449)
-                                  << DgString0(hbaseOption->key().data())
-                                  << DgString1(valInOrigCase.data());
-              return -1;
-            }
+	      isError = TRUE;
         }
       else
         isError = TRUE;
 
       if (isError)
         {
-          short retcode = -HBASE_CREATE_OPTIONS_ERROR;
-          *CmpCommon::diags() << DgSqlCode(-8448)
-                              << DgString0((char*)"CmpSeabaseDDL::generateHbaseOptionsArray()")
-                              << DgString1(getHbaseErrStr(-retcode))
-                              << DgInt0(-retcode)
-                              << DgString2((char*)hbaseOption->key().data());
-              
+          *CmpCommon::diags() << DgSqlCode(-8449)
+			      << DgString0(hbaseOption->key().data())
+			      << DgString1(valInOrigCase.data());
+	  
           return -1;
         }
     } // for
@@ -3600,7 +3694,8 @@ Int64 CmpSeabaseDDL::getObjectInfo(
                                    Int32 & schemaOwner,
                                    Int64 & objectFlags,
                                    bool reportErrorNow,
-                                   NABoolean checkForValidDef)
+                                   NABoolean checkForValidDef,
+                                   Int64 *createTime)
 {
   Lng32 retcode = 0;
   Lng32 cliRC = 0;
@@ -3619,7 +3714,7 @@ Int64 CmpSeabaseDDL::getObjectInfo(
     strcpy(cfvd, " and valid_def = 'Y' ");
 
   char buf[4000];
-  str_sprintf(buf, "select object_uid, object_owner, schema_owner, flags from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' %s ",
+  str_sprintf(buf, "select object_uid, object_owner, schema_owner, flags, create_time from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s'  and object_type = '%s' %s ",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName, quotedSchName.data(), quotedObjName.data(),
               objectTypeLit, cfvd);
@@ -3665,6 +3760,11 @@ Int64 CmpSeabaseDDL::getObjectInfo(
   cliInterface->getPtrAndLen(4, ptr, len);
   objectFlags = *(Int64*)ptr;
 
+  // return create_time
+  cliInterface->getPtrAndLen(5, ptr, len);
+  if (createTime)
+    *createTime = *(Int64*)ptr;
+  
   cliInterface->fetchRowsEpilogue(NULL, TRUE);
 
   return objUID;
@@ -3991,7 +4091,7 @@ short CmpSeabaseDDL::getAllUsingViews(ExeCliInterface *cliInterface,
   str_sprintf(buf, "select '\"' || trim(o.catalog_name) || '\"' || '.' || '\"' || trim(o.schema_name) || '\"' || '.' || '\"' || trim(o.object_name) || '\"' "
     ", o.create_time from %s.\"%s\".%s O, "
     " (get all views on table \"%s\".\"%s\".\"%s\") x(a) "
-    " where trim(O.schema_name) || '.' || trim(O.object_name) = x.a "
+    " where trim(O.catalog_name) || '.' || trim(O.schema_name) || '.' || trim(O.object_name) = x.a "
     " order by 2",
               getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
               catName.data(), schName.data(), objName.data());
@@ -4461,7 +4561,7 @@ short CmpSeabaseDDL::updateSeabaseMDObjectsTable(
               objUID,
               createTime, 
               createTime,
-              validDef,
+              (validDef ? validDef : COM_YES_LIT),
               COM_NO_LIT,
               objOwnerID,
               schemaOwnerID,
@@ -4478,6 +4578,39 @@ short CmpSeabaseDDL::updateSeabaseMDObjectsTable(
     
 }
 
+short CmpSeabaseDDL::deleteFromSeabaseMDObjectsTable(
+     ExeCliInterface *cliInterface,
+     const char * catName,
+     const char * schName,
+     const char * objName,
+     const ComObjectType & objectType)
+{
+  Lng32 retcode = 0;
+  Lng32 cliRC = 0;
+
+  char buf[4000];
+
+  NAString quotedSchName;
+  ToQuotedString(quotedSchName, NAString(schName), FALSE);
+  NAString quotedObjName;
+  ToQuotedString(quotedObjName, NAString(objName), FALSE);
+  char objectTypeLit[3] = {0};
+  strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objectType),2);
+
+  str_sprintf(buf, "delete from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
+              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
+              catName, quotedSchName.data(), quotedObjName.data(), objectTypeLit);
+  cliRC = cliInterface->executeImmediate(buf);
+  if (cliRC < 0)
+    {
+      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
+
+      return -1;
+    }
+
+  return 0;
+}
+  
 static short AssignColEntry(ExeCliInterface *cliInterface, Lng32 entry,
                             char * currRWRSptr, const char * srcPtr, 
                             Lng32 firstColOffset)
@@ -4542,7 +4675,8 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
                                          const ComTdbVirtTableKeyInfo * keyInfo,
                                          Lng32 numIndexes,
                                          const ComTdbVirtTableIndexInfo * indexInfo,
-                                         Int64 &inUID)
+                                         Int64 &inUID,
+                                         NABoolean updPrivs)
 {
   NABoolean useRWRS = FALSE;
   if (CmpCommon::getDefault(TRAF_USE_RWRS_FOR_MD_INSERT) == DF_ON)
@@ -4925,9 +5059,9 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
         }
     } // is an index
 
-
    // Grant owner privileges
-  if (isAuthorizationEnabled())
+  if ((isAuthorizationEnabled()) &&
+      (updPrivs))
     {
       NAString fullName (catName);
       fullName += ".";
@@ -5106,23 +5240,16 @@ short CmpSeabaseDDL::deleteFromSeabaseMDTable(
   Lng32 cliRC = 0;
 
   char buf[4000];
-
-  NAString quotedSchName;
-  ToQuotedString(quotedSchName, NAString(schName), FALSE);
-  NAString quotedObjName;
-  ToQuotedString(quotedObjName, NAString(objName), FALSE);
   char objectTypeLit[3] = {0};
   strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objType),2);
-
   Int64 objUID = getObjectUID(cliInterface, catName, schName, objName, objectTypeLit);
 
   if (objUID < 0)
      return -1;
 
-  str_sprintf(buf, "delete from %s.\"%s\".%s where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' and object_type = '%s' ",
-              getSystemCatalog(), SEABASE_MD_SCHEMA, SEABASE_OBJECTS,
-              catName, quotedSchName.data(), quotedObjName.data(), objectTypeLit);
-  cliRC = cliInterface->executeImmediate(buf);
+  cliRC = deleteFromSeabaseMDObjectsTable(cliInterface,
+                                          catName, schName, objName,
+                                          objType);
   if (cliRC < 0)
     {
       cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
@@ -6799,7 +6926,7 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
   const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
   const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
   const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
-  const NAString extTableName = tableName.getExternalName(TRUE);
+  NAString extTableName = tableName.getExternalName(TRUE);
   const NAString extNameForHbase = catalogNamePart + "." + schemaNamePart + "." + objectNamePart;
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
@@ -6808,29 +6935,72 @@ short CmpSeabaseDDL::dropSeabaseObject(ExpHbaseInterface * ehi,
   if (dropFromMD)
     {
       if (isAuthorizationEnabled())
-      {
-        // Revoke owner privileges for object
-        //   it would be more efficient to pass in the object owner and UID
-        //   than to do an extra I/O.
-        Int32 objOwnerID = 0;
-        Int32 schemaOwnerID = 0;
-        Int64 objectFlags = 0;
-        Int64 objUID = getObjectInfo(&cliInterface,
+        {
+          NABoolean isHive = FALSE;
+          NAString hiveNativeName;
+          Int32 objOwnerID = 0;
+          Int32 schemaOwnerID = 0;
+          Int64 objectFlags = 0;
+          Int64 objUID = -1;
+
+          // remove priv info if this hive table is not registered in traf
+          // metadata. Could happen for hive external tables created prior
+          // to hive registration support.
+          if ((ComIsTrafodionExternalSchemaName(schemaNamePart, &isHive)) &&
+              (isHive))
+            {
+              NAString quotedSchemaName;
+              
+              quotedSchemaName = '\"';
+              quotedSchemaName += schemaNamePart;
+              quotedSchemaName += '\"';
+
+              hiveNativeName = ComConvertTrafNameToNativeName(
+                   catalogNamePart, quotedSchemaName, objectNamePart);
+              
+              // see if this hive table has been registered in traf metadata
+              ComObjectName hiveTableName(hiveNativeName);
+              const NAString hiveCatName = hiveTableName.getCatalogNamePartAsAnsiString();
+              const NAString hiveSchName = hiveTableName.getSchemaNamePartAsAnsiString();
+              const NAString hiveObjName = hiveTableName.getObjectNamePartAsAnsiString();           
+              CorrName cn(hiveObjName, STMTHEAP, hiveSchName, hiveCatName);
+              BindWA bindWA(ActiveSchemaDB(),CmpCommon::context(),FALSE/*inDDL*/);
+              NATable *naTable = bindWA.getNATableInternal(cn);
+              if ((naTable) && (naTable->isHiveTable()))
+                {
+                  if (NOT naTable->isRegistered())
+                    {
+                      objUID = naTable->objectUid().get_value();
+                      extTableName = hiveTableName.getExternalName(TRUE);
+
+                      objOwnerID = naTable->getOwner();
+                      schemaOwnerID = naTable->getSchemaOwner();
+                    }
+                }
+            }
+          
+          
+          // Revoke owner privileges for object
+          //   it would be more efficient to pass in the object owner and UID
+          //   than to do an extra I/O.
+          if (objUID < 0)
+            {
+              objUID = getObjectInfo(&cliInterface,
                                      catalogNamePart.data(), schemaNamePart.data(),
                                      objectNamePart.data(), objType,
                                      objOwnerID,schemaOwnerID,objectFlags);
-
-        if (objUID < 0 || objOwnerID == 0)
-          { //TODO: Internal error?
-            return -1;
-          }
-
-        if (!deletePrivMgrInfo ( extTableName, objUID, objType )) 
-          {
-            return -1;
-          }
-      }
-
+            }
+          if (objUID < 0 || objOwnerID == 0)
+            { //TODO: Internal error?
+              return -1;
+            }
+          
+          if (!deletePrivMgrInfo ( extTableName, objUID, objType )) 
+            {
+              return -1;
+            }
+        }
+      
       if (deleteFromSeabaseMDTable(&cliInterface, 
                                    catalogNamePart, schemaNamePart, objectNamePart, objType ))
         return -1;
@@ -8285,14 +8455,20 @@ NABoolean CmpSeabaseDDL::insertPrivMgrInfo(const Int64 objUID,
   if (!PrivMgr::isSecurableObject(objectType))
     return TRUE;
 
-  // View privileges are handled differently than other objects.  For views,
+  // Traf view privileges are handled differently than other objects. For views,
   // the creator does not automatically get all privileges.  Therefore, view 
   // owner privileges are not granted through this mechanism - 
   // see gatherViewPrivileges for details on how owner privileges are 
-  // calculated and granted. Just return TRUE.
+  // calculated and granted.
+  // Hive views are created outside of trafodion. They are treated like base 
+  // table objects.
+  // Return TRUE if traf views.
   if (objectType == COM_VIEW_OBJECT)
-    return TRUE;
-
+    {
+      ComObjectName viewName(objName, COM_TABLE_NAME);
+      if (viewName.getCatalogNamePartAsAnsiString() == TRAFODION_SYSCAT_LIT)
+        return TRUE;
+    }
 
   // If authorization is not enabled, return TRUE, no grants are needed
   if (!isAuthorizationEnabled())
@@ -9251,6 +9427,13 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           else
             unregisterSeabaseUser(registerUserParseNode);
         }
+      else if (ddlNode->getOperatorType() == DDL_REG_OR_UNREG_HIVE)
+        {
+         StmtDDLRegOrUnregHive *regOrUnregHiveParseNode =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLRegOrUnregHive();
+         regOrUnregHiveObjects(
+              regOrUnregHiveParseNode, currCatName, currSchName);
+        }
       else if (ddlNode->getOperatorType() == DDL_CREATE_ROLE)
         {
          StmtDDLCreateRole *createRoleParseNode =
@@ -9596,7 +9779,7 @@ Lng32 cliRC = 0;
                fromOwnerID);
                
 int32_t length = 0;
-int32_t rowCount = 0;
+Int64 rowCount = 0;
 
    cliRC = cliInterface.executeImmediate(buf,(char*)&rowCount,&length,NULL);
   

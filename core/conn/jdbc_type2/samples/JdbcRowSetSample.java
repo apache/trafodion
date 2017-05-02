@@ -21,7 +21,7 @@
 
 import java.sql.*;
 import java.math.BigDecimal;
-import org.trafodion.jdbc.t2.*;
+import org.apache.trafodion.jdbc.t2.*;
 
 public class JdbcRowSetSample
 {
@@ -38,7 +38,7 @@ public class JdbcRowSetSample
 
 		try
 		{
-			Class.forName("org.trafodion.jdbc.t2.T2Driver");
+			Class.forName("org.apache.trafodion.jdbc.t2.T2Driver");
 		}
 		catch (Exception e)
 		{

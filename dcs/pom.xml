@@ -652,14 +652,14 @@
       <dependencies>
          <!-- JDBCT4 dependencies -->    
          <dependency>    
-          <groupId>org.trafodion.jdbc.t4</groupId>
+          <groupId>org.apache.trafodion.jdbc.t4</groupId>
           <artifactId>jdbcT4</artifactId>
           <version>${jdbct4.version}</version>
          </dependency>
          <!-- JDBCT2 dependencies -->    
          <dependency>    
-            <groupId>org.trafodion.jdbc.t2.T2Driver</groupId>
-            <artifactId>t2driver</artifactId>
+            <groupId>org.apache.trafodion.jdbc</groupId>
+            <artifactId>trafjdbcT2</artifactId>
             <version>${jdbct2.version}</version>
          </dependency>
       </dependencies>

@@ -172,7 +172,8 @@ public:
                         NAMemory *h = NULL,
                         CompilerPhase = END,
 			FragmentDir **framentDir = NULL,
-                        IpcMessageObjType op=CmpMessageObj::SQLTEXT_COMPILE);
+                        IpcMessageObjType op=CmpMessageObj::SQLTEXT_COMPILE,
+                        NABoolean useQueryCache=TRUE);
 
   // sqlcomp will compile a RelExpr into code from generator
   ReturnStatus sqlcomp (const char *input_str, Lng32 charset,

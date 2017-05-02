@@ -90,24 +90,24 @@ public class TestConnectionPool
                     // Connection using plain DataSource
                     // Statement pooling is enabled
                     ds = (DataSource)ctx.lookup("jdbc/TestDataSource");
-                    ((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxStatements(100);
-                    ((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxPoolSize(5);
-                    ((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setMinPoolSize(5);
+                    ((org.apache.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxStatements(100);
+                    ((org.apache.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxPoolSize(5);
+                    ((org.apache.trafodion.jdbc.t2.SQLMXDataSource)ds).setMinPoolSize(5);
                     break;
                 case 1:
                     // Connection using plain DataSource
                     // Statement pooling is disabled
                     ds = (DataSource)ctx.lookup("jdbc/TestDataSource");
-                    ((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxStatements(0);
-                    ((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxPoolSize(5);
-                    ((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setMinPoolSize(5);
+                    ((org.apache.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxStatements(0);
+                    ((org.apache.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxPoolSize(5);
+                    ((org.apache.trafodion.jdbc.t2.SQLMXDataSource)ds).setMinPoolSize(5);
                     break;
                 case 2:
                     // Connection using plain DataSource
                     // Statement pooling is disabled
                     ds = (DataSource)ctx.lookup("jdbc/TestDataSource");
-                    ((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxStatements(0);
-                    ((org.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxPoolSize(-1);
+                    ((org.apache.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxStatements(0);
+                    ((org.apache.trafodion.jdbc.t2.SQLMXDataSource)ds).setMaxPoolSize(-1);
                     break;
                 default:
                     System.out.println("Invalid test type.");

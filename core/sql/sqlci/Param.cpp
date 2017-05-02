@@ -346,19 +346,28 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
   case REC_BYTE_V_ASCII_LONG:
   case REC_NCHAR_F_UNICODE:
   case REC_NCHAR_V_UNICODE:
+  case REC_BLOB:
   {
     char *VCLen = NULL;
     short VCLenSize = 0;
-
-// 5/27/98: added VARNCHAR cases
+    short origTargetType = 0;
+    if ((targetType == REC_BLOB) || (targetType == REC_CLOB))
+      {       
+        // convert the format to a varchar format with 4 bytes of length
+        origTargetType = REC_BLOB;
+        targetType = REC_BYTE_V_ASCII;
+        vcIndLen = sizeof(Int32);
+      }
+        
+    // 5/27/98: added VARCHAR cases
     if ((targetType == REC_BYTE_V_ASCII) || 
         (targetType == REC_BYTE_V_ASCII_LONG) ||
-        (targetType == REC_NCHAR_V_UNICODE)) 
-    {
-      // add bytes for variable length field
-      VCLenSize = vcIndLen; //sizeof(short);
-      VCLen = converted_value = new char[targetLen + VCLenSize];
-    } else
+        (targetType == REC_NCHAR_V_UNICODE))       
+      {
+        // add bytes for variable length field
+        VCLenSize = vcIndLen; //sizeof(short);
+        VCLen = converted_value = new char[targetLen + VCLenSize];
+      } else
       converted_value = new char[targetLen];
 
 
@@ -369,10 +378,13 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
     
     NAString* tempstr;
     if ( 
-        DFS2REC::isAnyCharacter(sourceType) && DFS2REC::isAnyCharacter(targetType) &&
-        !(getUTF16StrLit() != NULL && sourceType == REC_NCHAR_F_UNICODE && targetScale == CharInfo::UCS2) &&
-        /*source*/cs != targetScale/*i.e., targetCharSet*/
-        )
+         (
+              DFS2REC::isAnyCharacter(sourceType) && DFS2REC::isAnyCharacter(targetType) &&
+              !(getUTF16StrLit() != NULL && sourceType == REC_NCHAR_F_UNICODE && targetScale == CharInfo::UCS2) &&
+              /*source*/cs != targetScale/*i.e., targetCharSet*/
+          ) && (origTargetType != REC_BLOB)
+         )
+         
     {
       charBuf cbuf((unsigned char*)pParamValue, sourceLen);
       NAWcharBuf* wcbuf = 0;
@@ -393,7 +405,7 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       if ( sourceLen > targetLen )
         return SQL_Error;
     }
-
+    
     ok = convDoIt(pParamValue,
 		  sourceLen, 
 		  sourceType,

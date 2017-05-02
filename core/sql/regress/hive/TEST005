@@ -61,7 +61,7 @@ set schema hive.hive;
 set terminal_charset utf8;
 
 cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
-cqd HIVE_MAX_STRING_LENGTH '25' ;
+cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '25' ;
 cqd mode_seahive 'ON';
 cqd HIST_ROWCOUNT_REQUIRING_STATS '50000';
 
@@ -298,11 +298,8 @@ cqd HIVE_SCAN_SPECIAL_MODE reset;
 -- tests for hive timestamp mismatch check
 cqd auto_query_retry_warnings 'ON';
 
-sh echo "drop table thive;" > TEST005_junk;
-sh regrhive.ksh -f TEST005_junk;
-
-sh echo "create table thive(a int);" > TEST005_junk;
-sh regrhive.ksh -f TEST005_junk;
+process hive statement 'drop table thive';
+process hive statement 'create table thive(a int)';
 
 select a from hive.hive.thive;
 
@@ -313,11 +310,8 @@ select a from hive.hive.thive;
 insert into hive.hive.thive values (2);
 select a from hive.hive.thive;
 
-sh echo "drop table thive;" > TEST005_junk;
-sh regrhive.ksh -f TEST005_junk;
-
-sh echo "create table thive(a int, b int);" > TEST005_junk;
-sh regrhive.ksh -f TEST005_junk;
+process hive statement 'drop table thive';
+process hive statement 'create table thive(a int, b int)';
 
 sh echo "insert into thive values (1,2);" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk;
@@ -337,10 +331,8 @@ truncate hive.hive.thive;
 select * from hive.hive.thive;
 
 -- truncate of partitioned hive table
-sh echo "drop table t005part;" > TEST005_junk;
-sh regrhive.ksh -f TEST005_junk;
-sh echo "create table t005part(a int) partitioned by (b int, c int);" > TEST005_junk;
-sh regrhive.ksh -f TEST005_junk;
+process hive statement 'drop table t005part';
+process hive statement 'create table t005part(a int) partitioned by (b int, c int)';
 
 sh echo "insert into t005part partition (b=10,c=11) values (5);" > TEST005_junk;
 sh regrhive.ksh -f TEST005_junk;

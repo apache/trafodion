@@ -82,6 +82,8 @@ class StmtDDLDropSequence;
 class StmtDDLDropSchema;
 class StmtDDLAlterSchema;
 
+class StmtDDLRegOrUnregHive;
+
 // Classes for user management
 class StmtDDLRegisterUser;
 class StmtDDLAlterUser;
@@ -376,7 +378,8 @@ class CmpSeabaseDDL
        Int32 & schemaOwner,
        Int64 & objectFlags,
        bool reportErrorNow = true,
-       NABoolean checkForValidDef = FALSE);
+       NABoolean checkForValidDef = FALSE,
+       Int64 * createTime = NULL);
   
   short getObjectName(
        ExeCliInterface *cliInterface,
@@ -675,7 +678,14 @@ protected:
                                     Int32 schemaOwnerID,
                                     Int64 objectFlags,
                                     Int64 & inUID);
-                                    
+                                
+  short deleteFromSeabaseMDObjectsTable(
+       ExeCliInterface *cliInterface,
+       const char * catName,
+       const char * schName,
+       const char * objName,
+       const ComObjectType & objectType);
+  
   short getAllIndexes(ExeCliInterface *cliInterface,
                       Int64 objUID,
                       NABoolean includeInvalidDefs,
@@ -695,7 +705,8 @@ protected:
 			     const ComTdbVirtTableKeyInfo * keyInfo,
 			     Lng32 numIndexes,
 			     const ComTdbVirtTableIndexInfo * indexInfo,
-                             Int64 &inUID);
+                             Int64 &inUID,
+                             NABoolean updPrivs = TRUE);
 
   short deleteFromSeabaseMDTable(
 				 ExeCliInterface *cliInterface,
@@ -862,6 +873,10 @@ protected:
   short updateViewUsage(StmtDDLCreateView * createViewParseNode,
 			Int64 viewUID,
 			ExeCliInterface * cliInterface);
+
+  short unregisterHiveViewUsage(StmtDDLCreateView * createViewParseNode,
+                                Int64 viewUID,
+                                ExeCliInterface * cliInterface);
   
   short gatherViewPrivileges (const StmtDDLCreateView * createViewParseNode,
                               ExeCliInterface * cliInterface,
@@ -1280,6 +1295,53 @@ protected:
   short createLibmgrProcs(ExeCliInterface * cliInterface);
   short grantLibmgrPrivs(ExeCliInterface *cliInterface);
 
+  short registerHiveTable
+  (
+       const NAString &catalogNamePart,
+       const NAString &schemaNamePart,
+       const NAString &objectNamePart,
+       Int32 objOwnerId,
+       Int32 schemaOwnerId,
+       ExeCliInterface &cliInterface,
+       NABoolean isRegister,
+       NABoolean isInternal
+   );
+
+  short unregisterHiveTable
+  (
+       const NAString &catalogNamePart,
+       const NAString &schemaNamePart,
+       const NAString &objectNamePart,
+       ExeCliInterface &cliInterface
+   );
+
+  short registerHiveView
+  (
+       const NAString &catalogNamePart,
+       const NAString &schemaNamePart,
+       const NAString &objectNamePart,
+       Int32 objOwnerId,
+       Int32 schemaOwnerId,
+       NATable *naTable,
+       ExeCliInterface &cliInterface,
+       NABoolean isInternal,
+       NABoolean cascade
+   );
+
+  short unregisterHiveView
+  (
+       const NAString &catalogNamePart,
+       const NAString &schemaNamePart,
+       const NAString &objectNamePart,
+       NATable *naTable,
+       ExeCliInterface &cliInterface,
+       NABoolean cascade
+   );
+
+  void regOrUnregHiveObjects (
+       StmtDDLRegOrUnregHive * regOrUnregHiveNode,
+       NAString &currCatName, NAString &currSchName);
+  
   short adjustHiveExternalSchemas(ExeCliInterface *cliInterface);
 
   void createSeabaseSequence(StmtDDLCreateSequence  * createSequenceNode,

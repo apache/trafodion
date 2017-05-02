@@ -2102,11 +2102,12 @@ Ex_Lob_Error ExLob::readDataToLocalFile(char *fileName,  Int64 offset, Int64 siz
 	    //handle reading the multiple chunks like a cursor
 	    err = readCursor(lobData,chunkSize, handleIn,
 			     handleInLen, operLen, transId);
-
+            if ((operLen == 0) && (err == LOB_OPER_OK)) //this may be an empty lob section
+              continue;
 	    if ((err != LOB_OPER_OK) || (operLen != chunkSize))
 	      {
 		getLobGlobalHeap()->deallocateMemory(lobData);
-		return err;
+		return LOB_DATA_READ_ERROR;
 	      }
        
 	    writeOperLen += pwrite(fdDestFile, lobData, chunkSize, tgtOffset) ; 
@@ -2224,7 +2225,8 @@ Ex_Lob_Error ExLob::readDataToHdfsFile(char *tgtFileName,  Int64 offset, Int64 s
 	  //handle reading the multiple chunks like a cursor
 	  err = readCursor(lobData,chunkSize, handleIn,
 			   handleInLen, operLen, transId);
-
+          if ((operLen == 0) && (err == LOB_OPER_OK)) //this may be an empty lob section
+              continue;
 	  if ((err != LOB_OPER_OK) || (operLen != chunkSize))
 	    {
 	      getLobGlobalHeap()->deallocateMemory(lobData);
@@ -3498,7 +3500,7 @@ void ExLobGlobals::traceMessage(const char *logMessage, ExLobCursor *cursor,
 }
 
 //Enable envvar TRACE_LOB_ACTIONS to enable tracing. 
-//The output file will be in the masterexec.<pid> logs in the 
+//The output file will be in 
 //$TRAF_HOME/logs directory on each node
 
 void lobDebugInfo(const char *logMessage,Int32 errorcode,

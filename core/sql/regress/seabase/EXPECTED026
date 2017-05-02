@@ -297,6 +297,9 @@ Metadata Cleanup: started, check only
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries found)
 
+  Start: Cleanup Inconsistent Hive Entries
+  End:   Cleanup Inconsistent Hive Entries (0 entries found)
+
 Metadata Cleanup: done
 
 
@@ -332,6 +335,9 @@ Metadata Cleanup: started, check only
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries found)
 
+  Start: Cleanup Inconsistent Hive Entries
+  End:   Cleanup Inconsistent Hive Entries (0 entries found)
+
 Metadata Cleanup: done
 
 
@@ -349,18 +355,21 @@ Metadata Cleanup: started, check only
 
   Start: Cleanup Inconsistent Objects Entries
     Entry #1(OBJECT): TRAFODION.SCH026.T026T12
-    Entry #2(OBJECT): TRAFODION.SCH026.T026T20_128588266_9589
-    Entry #3(OBJECT): TRAFODION.SCH026.T026T2_498588266_9589
+    Entry #2(OBJECT): TRAFODION.SCH026.T026T20_438564838_6459
+    Entry #3(OBJECT): TRAFODION.SCH026.T026T2_442664838_6459
     Entry #4(OBJECT): TRAFODION.SCH026.SB_HISTOGRAMS_PK
     Entry #5(OBJECT): TRAFODION.SCH026.SB_HISTOGRAM_INTERVALS_PK
     Entry #6(OBJECT): TRAFODION.SCH026.SB_PERSISTENT_SAMPLES_PK
-    Entry #7(OBJECT): TRAFODION.SCH026.LOBMD_03901336551423_331332878_4561
-    Entry #8(OBJECT): TRAFODION.SCH026.LOBDescChunks_039013_645332878_4561
-    Entry #9(UID):    3901336551423203710
+    Entry #7(OBJECT): TRAFODION.SCH026.LOBMD__0210724475547_466795482_9143
+    Entry #8(OBJECT): TRAFODION.SCH026.LOBDescChunks__02107_334895482_9143
+    Entry #9(UID):    2107244755479165497
   End:   Cleanup Inconsistent Objects Entries (9 entries found)
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries found)
+
+  Start: Cleanup Inconsistent Hive Entries
+  End:   Cleanup Inconsistent Hive Entries (0 entries found)
 
 Metadata Cleanup: done
 
@@ -379,18 +388,21 @@ Metadata Cleanup: started
 
   Start: Cleanup Inconsistent Objects Entries
     Entry #1(OBJECT): TRAFODION.SCH026.T026T12
-    Entry #2(OBJECT): TRAFODION.SCH026.T026T20_128588266_9589
-    Entry #3(OBJECT): TRAFODION.SCH026.T026T2_498588266_9589
+    Entry #2(OBJECT): TRAFODION.SCH026.T026T20_438564838_6459
+    Entry #3(OBJECT): TRAFODION.SCH026.T026T2_442664838_6459
     Entry #4(OBJECT): TRAFODION.SCH026.SB_HISTOGRAMS_PK
     Entry #5(OBJECT): TRAFODION.SCH026.SB_HISTOGRAM_INTERVALS_PK
     Entry #6(OBJECT): TRAFODION.SCH026.SB_PERSISTENT_SAMPLES_PK
-    Entry #7(OBJECT): TRAFODION.SCH026.LOBMD_03901336551423_331332878_4561
-    Entry #8(OBJECT): TRAFODION.SCH026.LOBDescChunks_039013_645332878_4561
-    Entry #9(UID):    3901336551423203710
+    Entry #7(OBJECT): TRAFODION.SCH026.LOBMD__0210724475547_466795482_9143
+    Entry #8(OBJECT): TRAFODION.SCH026.LOBDescChunks__02107_334895482_9143
+    Entry #9(UID):    2107244755479165497
   End:   Cleanup Inconsistent Objects Entries (9 entries cleaned up)
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries cleaned up)
+
+  Start: Cleanup Inconsistent Hive Entries
+  End:   Cleanup Inconsistent Hive Entries (0 entries cleaned up)
 
 Metadata Cleanup: done
 
@@ -410,6 +422,9 @@ Metadata Cleanup: started, check only
 
   Start: Cleanup Inconsistent Views Entries
   End:   Cleanup Inconsistent Views Entries (0 entries found)
+
+  Start: Cleanup Inconsistent Hive Entries
+  End:   Cleanup Inconsistent Hive Entries (0 entries found)
 
 Metadata Cleanup: done
 

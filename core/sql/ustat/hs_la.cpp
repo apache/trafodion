@@ -883,6 +883,16 @@ NABoolean HSHiveTableDef::objExists(NABoolean createExternalTable)
   if (!setObjectUID(createExternalTable))
     return FALSE;
 
+  // cannot upd stats if the object is a hive view
+  if (naTbl_->getViewText())
+    {
+      *CmpCommon::diags()
+          << DgSqlCode(-UERR_INVALID_OBJECT)
+          << DgString0(naTbl_->getTableName().getQualifiedNameAsString());
+
+      return FALSE;
+    }
+
   tableStats_ = naTbl_->getClusteringIndex()->getHHDFSTableStats();
 
   *ansiName_ = *catalog_;
@@ -1084,7 +1094,7 @@ Lng32 CreateExternalTable(const NAString& catName, const NAString& schName, cons
 
    // do not have to worry about the catalog and schema for the new external table 
    // here. These names will be determined by the processing logic. 
-   NAString ddl = "CREATE EXTERNAL TABLE ";
+   NAString ddl = "CREATE IMPLICIT EXTERNAL TABLE ";
    ddl.append(nativeTableName);
    ddl.append(" FOR ");
    ddl.append(catName);
@@ -1095,12 +1105,54 @@ Lng32 CreateExternalTable(const NAString& catName, const NAString& schName, cons
    ddl.append(" ATTRIBUTE NO AUDIT"); // The external table will not be audited because it 
                                       // does not store any data.
 
+   // set INTERNAL_QUERY_FROM_EXEUTIL bit in Sql_ParserFlags.
+   // This is needed to process 'implicit external' syntax
+   ULng32 flagToSet = INTERNAL_QUERY_FROM_EXEUTIL;
+   PushAndSetSqlParserFlags savedParserFlags(flagToSet);
+
    Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
-                            "Create external table", NULL);
+                            "Create implicit external table", NULL);
 
    if (retcode < 0 && LM->LogNeeded())
       {
         snprintf(LM->msg, sizeof(LM->msg), "Creation of the external table failed.");
+        LM->Log(LM->msg);
+      }
+
+   return retcode;
+}
+
+static 
+Lng32 RegisterHiveTable(const NAString& catName, const NAString& schName, const NAString& nativeTableName)
+{
+   HSLogMan *LM = HSLogMan::Instance();
+   if (LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Registering hive table %s on demand.",
+                          nativeTableName.data());
+        LM->Log(LM->msg);
+      }
+
+   // do not have to worry about the catalog and schema for the new external table 
+   // here. These names will be determined by the processing logic. 
+   NAString ddl = "REGISTER INTERNAL HIVE TABLE IF NOT EXISTS ";
+   ddl.append(catName);
+   ddl.append(".");
+   ddl.append(schName);
+   ddl.append(".");
+   ddl.append(nativeTableName);
+
+   // set INTERNAL_QUERY_FROM_EXEUTIL bit in Sql_ParserFlags.
+   // This is needed to process 'register internal' syntax
+   ULng32 flagToSet = INTERNAL_QUERY_FROM_EXEUTIL;
+   PushAndSetSqlParserFlags savedParserFlags(flagToSet);
+
+   Lng32 retcode = HSFuncExecDDL(ddl.data(), - UERR_INTERNAL_ERROR, NULL,
+                            "register hive table", NULL);
+
+   if (retcode < 0 && LM->LogNeeded())
+      {
+        snprintf(LM->msg, sizeof(LM->msg), "Registration of the hive table failed.");
         LM->Log(LM->msg);
       }
 
@@ -1119,8 +1171,12 @@ NABoolean HSTableDef::setObjectUID(NABoolean createExternalTable)
     NAString catName = getCatName(EXTERNAL_FORMAT);
     NAString schName = getSchemaName(EXTERNAL_FORMAT);
     NAString objName = getObjectName(EXTERNAL_FORMAT);
-    Lng32 retcode = CreateExternalTable(catName, schName, objName);
-
+    Lng32 retcode = 0;
+    if (catName == HIVE_SYSTEM_CATALOG)
+      retcode = RegisterHiveTable(catName, schName, objName);
+    else
+      retcode = CreateExternalTable(catName, schName, objName);
+      
     if (retcode != 0)
       return FALSE;
 
@@ -1130,7 +1186,7 @@ NABoolean HSTableDef::setObjectUID(NABoolean createExternalTable)
 
     CorrName corrName(getObjectName(), STMTHEAP, getSchemaName(), getCatName());
 
-    if ( !naTbl_->fetchObjectUIDForNativeTable(corrName) )
+    if ( !naTbl_->fetchObjectUIDForNativeTable(corrName, naTbl_->isView()) )
       return FALSE;
 
     objectUID_ = naTbl_->objectUid().get_value();
@@ -1278,4 +1334,32 @@ Lng32 HSHbaseTableDef::DescribeColumnNames()
 
   return 0;
 }
+
+//
+// METHOD:  addTruncatedSelectList()
+//
+// PURPOSE: Generates a SELECT list consisting of 
+//          column references or a SUBSTRING
+//          on column references which truncates the
+//          column to the maximum length allowed in
+//          UPDATE STATISTICS.
+//
+// INPUT:   'qry' - the SQL query string to append the 
+//          select list to.
+//
+void HSTableDef::addTruncatedSelectList(NAString & qry)
+  {
+    bool first = true;
+    for (Lng32 i = 0; i < getNumCols(); i++)
+      {
+        if (!ComTrafReservedColName(*getColInfo(i).colname))
+          {
+            if (!first)
+              qry += ", ";
+
+            getColInfo(i).addTruncatedColumnReference(qry);
+            first = false;
+          }
+      }
+  }
 

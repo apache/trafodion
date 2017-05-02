@@ -1363,8 +1363,6 @@ void TM_Info::init_and_recover_rms()
       lv_rmid=(lv_error) ? 0 : (atoi(la_value));
        */   
       lv_rmid.iv_rmid = 0;
-      //if (lv_rmid.iv_rmid == 0) //TODO
-      //    msg_mon_get_tm_seq((int *) &lv_rmid.iv_rmid);
       lv_rmid.s.iv_nid = nid();
       lv_rmid.s.iv_num = lv_index;
 
@@ -4249,8 +4247,6 @@ void TM_Info::CheckFailed_RMs(char *pp_rmname)
       {
          // If no RMID was configured, allocate one now
          if (lv_rmid == 0)
-             //M8_TODO encapsulate and clean up rmid allocation
-             //msg_mon_get_tm_seq(&lv_rmid); 
          {
              RMID llv_rmid;
              llv_rmid.s.iv_nid = nid(); //TMs nid

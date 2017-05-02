@@ -134,14 +134,9 @@ void CascadesGroup::addLogExpr(RelExpr * expr, RelExpr *src)
   // the indexes of any scan inserted to the group.
   if (expr->getOperatorType() == REL_SCAN)
   {
-	Scan* scanNode = (Scan*) expr;
+    Scan* scanNode = (Scan*) expr;
 
-	// if this scanNode was created by FilterRule0 and this expression is
-	// not an duplicate then we must have some properties that requires us
-	// to re-evaluate the indexes and their applicability
-	if(scanNode->isIndexInfoForced() == FALSE) scanNode->removeIndexInfo();
-
-	scanNode->addIndexInfo();
+    scanNode->addIndexInfo();
     getGroupAttr()->addToAvailableBtreeIndexes(scanNode->deriveIndexOnlyIndexDesc());
     getGroupAttr()->addToAvailableBtreeIndexes(scanNode->deriveIndexJoinIndexDesc());
   }

@@ -10366,7 +10366,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   // set parserflags to allow ghost table
   currContext.setSqlParserFlags(0x1);
 	
-  Lng32 numEntries = 0;
+  Int64 numEntries = 0;
   Lng32 len;
   cliRC = cliInterface->executeImmediate(query, (char*)&numEntries, &len, FALSE);
   str_sprintf(logBuf,"Number of entries in descchunktable %s is %d",lobDescChunksName, numEntries);
@@ -10384,7 +10384,7 @@ Lng32 SQLCLI_LOB_GC_Interface
   ExLobInMemoryDescChunksEntry *dcInMemoryArray = new ExLobInMemoryDescChunksEntry[numEntries];
   //Read the desc chunks table into memory
         
-  str_sprintf(query, "select dataOffset, descPartnKey,descSyskey,chunkLen,chunkNum from table(ghost table %s) order by dataOffset for read committed access",
+  str_sprintf(query, "select dataOffset, descPartnKey,descSyskey,chunkLen,chunkNum from table(ghost table %s) order by dataOffset,chunkLen for read committed access",
               lobDescChunksName);
   lobDebugInfo(logBuf,0,__LINE__,lobTrace);
   // set parserflags to allow ghost table
@@ -10576,7 +10576,7 @@ Lng32 SQLCLI_LOBddlInterface
  /*IN*/     short *lobTypList,
  /*IN*/     char* *lobLocList,
 /*IN*/      char* *lobColNameList,
- /*IN*/     char *hdfsServer,
+ /*IN*/     char *lobHdfsServer,
  /*IN*/     Int32 hdfsPort,
 /*IN*/    Int64 lobMaxSize,
 /*IN*/    NABoolean lobTrace
@@ -10606,7 +10606,8 @@ Lng32 SQLCLI_LOBddlInterface
   str_sprintf(logBuf,"lobMDName %s", lobMDName);
   lobDebugInfo(logBuf,0,__LINE__,lobTrace);
   char * query = new(currContext.exHeap()) char[4096];
-
+  char *hdfsServer = new(currContext.exHeap()) char[256];
+  strcpy(hdfsServer,lobHdfsServer);
   switch (qType)
     {
     case LOB_CLI_CREATE:
@@ -10955,7 +10956,7 @@ Lng32 SQLCLI_LOBddlInterface
 
  error_return:
   NADELETEBASIC(query, currContext.exHeap());
-
+  NADELETEBASIC(hdfsServer,currContext.exHeap());
   delete cliInterface;
  
   if (cliRC < 0)

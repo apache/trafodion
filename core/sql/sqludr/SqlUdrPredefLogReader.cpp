@@ -695,6 +695,7 @@ void ReadCppEventsUDFInterface::processData(UDRInvocationInfo &info,
       // the config file 
       if (suffix && strstr(suffix, expectedSuffixPart) != NULL &&
 	  (strstr(fileName, "master_exec_")          == fileName ||
+	   strstr(fileName, "trafodion.sql_")        == fileName ||
 	   strstr(fileName, eventLogFileName.data()) == fileName ||
 	   strstr(fileName, "tm_")                   == fileName ||
 	   strstr(fileName, "mxlobsrvr_")            == fileName ||

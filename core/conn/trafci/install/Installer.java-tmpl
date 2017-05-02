@@ -124,7 +124,7 @@ public class Installer
    //private static String nixDefaultInstallJDBC="/usr/local/trafci/jdbcT4.jar";
    //private static String defaultInstallJDBC=wDefaultInstallJDBC;
    
-   //static String jdbcFileLoc=null;
+   static String jdbcFileLoc=null;
    static String targetDirectory=null;
    static String osName=null;
    
@@ -245,7 +245,7 @@ public class Installer
             else
                JOptionPane.showMessageDialog(null,"Invalid JDBC jar file specified", "Error", JOptionPane.ERROR_MESSAGE);
          }
-         //jdbcFileLoc=jdbcFile.getAbsolutePath();
+         jdbcFileLoc=jdbcFile.getAbsolutePath();
          return JFileChooser.APPROVE_OPTION;
       }
 
@@ -648,21 +648,21 @@ public class Installer
                 }
                 
             }
-//            else if (event.getSource() == fileBrowseButton)
-//            {
-//               if (getJDBCLocation()==JFileChooser.APPROVE_OPTION)
-//                  jdbcFileText.setText(jdbcFileLoc);
-//               if (jdbcFileLoc != null && targetDirectory != null)
-//                  nextButtonInstallerPath.setEnabled(true);
-//              
-//            }
-//            else if (event.getSource() == dirBrowseButton)
-//            {
-//               if (getTargetInstallLocation()==JFileChooser.APPROVE_OPTION)
-//                  targetDirText.setText(targetDirectory);
-//               if (jdbcFileLoc != null && targetDirectory != null)
-//                  nextButtonInstallerPath.setEnabled(true);
-//            }
+            else if (event.getSource() == fileBrowseButton)
+            {
+               if (getJDBCLocation()==JFileChooser.APPROVE_OPTION)
+                  jdbcFileText.setText(jdbcFileLoc);
+               if (jdbcFileLoc != null && targetDirectory != null)
+                  nextButtonInstallerPath.setEnabled(true);
+              
+            }
+            else if (event.getSource() == dirBrowseButton)
+            {
+               if (getTargetInstallLocation()==JFileChooser.APPROVE_OPTION)
+                  targetDirText.setText(targetDirectory);
+               if (jdbcFileLoc != null && targetDirectory != null)
+                  nextButtonInstallerPath.setEnabled(true);
+            }
             else if (event.getSource() == choiceStandardInstall)
             {
                 /* reset defaults */
@@ -3062,7 +3062,7 @@ void processCmdMode(String zipfile)
    public static void main(String args[])
    {
 
-      //jdbcFileLoc=null;
+      jdbcFileLoc=null;
       targetDirectory=null;
       
  

@@ -58,3 +58,25 @@ for $nid (0..$count-1) {
 	sqconfigdb::addDbPNode($pnid, $node_name, $first_excl, $last_excl);
 	sqconfigdb::addDbLNode($nid, $pnid, $num_proc, $role_set, $first_core, $last_core);
 }
+sqconfigdb::addDbPersistData( "PERSIST_PROCESS_KEYS", "DTM,PSD,WDG"  );
+sqconfigdb::addDbPersistData( "DTM_PROCESS_NAME", "\$TM%nid+"  );
+sqconfigdb::addDbPersistData( "DTM_PROCESS_TYPE", "DTM"  );
+sqconfigdb::addDbPersistData( "DTM_PROGRAM_NAME", "tm"  );
+sqconfigdb::addDbPersistData( "DTM_REQUIRES_DTM", "N"  );
+sqconfigdb::addDbPersistData( "DTM_STDOUT", "stdout_DTM%nid"  );
+sqconfigdb::addDbPersistData( "DTM_PERSIST_RETRIES", "2,30"  );
+sqconfigdb::addDbPersistData( "DTM_PERSIST_ZONES", "%zid"  );
+sqconfigdb::addDbPersistData( "PSD_PROCESS_NAME", "\$PSD%nid+"  );
+sqconfigdb::addDbPersistData( "PSD_PROCESS_TYPE", "PSD"  );
+sqconfigdb::addDbPersistData( "PSD_PROGRAM_NAME", "pstartd"  );
+sqconfigdb::addDbPersistData( "PSD_REQUIRES_DTM", "N"  );
+sqconfigdb::addDbPersistData( "PSD_STDOUT", "stdout_PSD%nid"  );
+sqconfigdb::addDbPersistData( "PSD_PERSIST_RETRIES", "10,60"  );
+sqconfigdb::addDbPersistData( "PSD_PERSIST_ZONES", "%zid"  );
+sqconfigdb::addDbPersistData( "WDG_PROCESS_NAME", "\$WDG%nid+"  );
+sqconfigdb::addDbPersistData( "WDG_PROCESS_TYPE", "WDG"  );
+sqconfigdb::addDbPersistData( "WDG_PROGRAM_NAME", "sqwatchdog"  );
+sqconfigdb::addDbPersistData( "WDG_REQUIRES_DTM", "N"  );
+sqconfigdb::addDbPersistData( "WDG_STDOUT", "stdout_WDG%nid"  );
+sqconfigdb::addDbPersistData( "WDG_PERSIST_RETRIES", "10,60"  );
+sqconfigdb::addDbPersistData( "WDG_PERSIST_ZONES", "%zid"  );

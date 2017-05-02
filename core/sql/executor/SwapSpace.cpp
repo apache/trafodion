@@ -312,7 +312,7 @@ namespace ExOverflow
     Lng32 bufSize = (Lng32) swapBufferSize_;
 #endif
     NAMemory* heap = memory_.getHeap();
-    store_ = new(heap) ScratchSpace(heap, &sortError_,bufSize, -1, //explain node
+    store_ = new(heap) ScratchSpace(heap, &sortError_,bufSize, 1, -1, //explain node
                                     false);   // logInfoEvent = false
     store_->configure(stmtGlobals_, ioEventHandler_, scratchThresholdPct_);
     store_->setScratchOverflowMode(ovMode_);

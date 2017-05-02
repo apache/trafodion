@@ -38,6 +38,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.io.*;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.lang.reflect.Field;
 import java.lang.Class;
@@ -74,8 +77,8 @@ public class LmUtility {
     static final int RS_INFO_ERROR                = 11235;
     static final int NO_COMPATIBLE_METHODS        = 11239;
 
-    static final String SQLMXRS_CLASS = "org.trafodion.jdbc.t2.SQLMXResultSet";
-    static final String RSINFO_CLASS = "org.trafodion.jdbc.t2.ResultSetInfo";
+    static final String SQLMXRS_CLASS = "org.apache.trafodion.jdbc.t2.SQLMXResultSet";
+    static final String RSINFO_CLASS = "org.apache.trafodion.jdbc.t2.ResultSetInfo";
     static final String GETRSINFO_METHOD = "getResultSetInfo";
     static final String GETVERSION_METHOD = "getVersion";
 
@@ -886,21 +889,37 @@ public class LmUtility {
       try
       {  
         lmcl = createClassLoader(externalPath, 0);
-        lmcl.removeCpURLs();
-        targetClass = lmcl.findClass(className);
-        lmcl.addCpURLs();
+
+        // use findResourceInternal first, to validate that
+        // the class is actually found in the container
+        final String dname = className.replace('.', '/') + ".class";
+        File f = lmcl.findResourceInternal(dname);
+
+        if (f != null)
+          // then load the class the regular way (note that if the
+          // class is also found earlier in the CLASSPATH, we don't
+          // load it from the container, but from the jar or class
+          // found earlier)
+          targetClass = lmcl.loadClass(className);
+        else
+          {
+            retSig[0] = "";
+            errCode[0] = CLASS_NOT_FOUND;
+            errDetail[0] = "";
+            return;
+          }
       }
       catch (ClassNotFoundException cnfe)
       {
         retSig[0] = "";
-        errCode[0] = CLASS_NOT_FOUND;//Class not found
+        errCode[0] = CLASS_NOT_FOUND;
         errDetail[0] = "";
         return;
       }
       catch (NoClassDefFoundError cdnfe)
       {
         retSig[0] = "";
-        errCode[0] = CLASS_DEF_NOT_FOUND;//No Class definition found
+        errCode[0] = CLASS_DEF_NOT_FOUND;
         errDetail[0] = "";
         return;
       }
@@ -920,16 +939,117 @@ public class LmUtility {
     }  // Method validateMethod() ends
 
     /**
+     * Returns the generic user id for isolated UDRs. This generic
+     * id is used to store files available to all UDRs and it is
+     * also used as a sandbox for systems that don't have user ids
+     * for isolated UDRs (note that such user ids are not implemented
+     * as of March 2017, when this is written).
+     *
+     * @return: generic isolated UDR user id
+     *
+     **/
+    public static String getPublicUserId()
+    {
+        return "public";
+    }
+
+    /**
+     * Returns the directory in which all UDR-related files should reside
+     *
+     * @return: Root directory for UDR-related files
+     *
+     **/
+    public static Path getSandboxRoot()
+    {
+        return Paths.get(System.getenv("TRAF_HOME"), "udr");
+    }
+
+    /**
+     * Returns the directory in which all UDR-related files for a
+     * particular isolated UDR user id should reside
+     *
+     * @param userid user id for which we return the sandbox root. If empty
+     *               or null, returns the sandbox root for the public user id.
+     * @return: Root directory for UDR-related files for user "user"
+     *
+     **/
+    public static Path getSandboxRootForUser(String userid)
+    {
+        if (userid == null || userid.length() == 0)
+            return getSandboxRootForUser(getPublicUserId());
+
+        return Paths.get(System.getenv("TRAF_HOME"), "udr", userid);
+    }
+
+    /**
+     * Returns the directory in which all external libraries for a
+     * particular isolated UDR user id should reside
+     *
+     * @param userid user id for which we return the libraries dir. If empty
+     *               or null, returns the sandbox root for the public user id.
+     * @return: external libs dir for UDR-related files for user "user"
+     *
+     **/
+    public static Path getExternalLibsDirForUser(String userid)
+    {
+        if (userid == null || userid.length() == 0)
+            return getExternalLibsDirForUser(getPublicUserId());
+
+        return Paths.get(System.getenv("TRAF_HOME"), "udr", userid, "external_libs");
+    }
+
+    static class JarFilter implements FilenameFilter {
+        JarFilter()
+        {}
+
+        @Override
+        public boolean accept(File dir, String name) {
+            return name.endsWith(".jar");
+        }
+    }
+
+    /**
      * Creates an object of LmClassLoader class.
      * @param  path   external path for CL
-     * @param  debug  debug flag
+     * @param  debug  debug flag (currently ignored)
      * @return: Object of LmClassLoader type
      *
      **/
     public static LmClassLoader createClassLoader(String path, int debug)
+        throws Exception
     {
-      LmClassLoader lmcl = new LmClassLoader(path, debug);
-      return lmcl;
+        // We pass a list of URLs to search to the class loader:
+        // - The first URL is the path provided as an argument, that
+        //   is the actual container name
+        // - The second URL is the external libs dir, returned by
+        //   getExternalLibsDirForUser()
+        // - Following are jars that are available to the UDR,
+        //   stored in the external libs dir
+
+        Path extraJarPath = getExternalLibsDirForUser(getPublicUserId());
+        File extraJarDir = extraJarPath.toFile();
+        final int numStdURLs = 2; // 2 URLs that are always provided
+        int numExtraURLs = 0;     // URLs of the jar files in the libs dir
+        File[] extraJarFiles = null;
+        URL[] extraJarURLs = null;
+
+        if (extraJarDir.isDirectory())
+            {
+                extraJarFiles = extraJarDir.listFiles(new JarFilter());
+                numExtraURLs += extraJarFiles.length;
+            }
+
+        extraJarURLs = new URL[numStdURLs+numExtraURLs];
+
+        // add the two standard URLs
+        extraJarURLs[0] = new File(path).toURI().toURL();
+        extraJarURLs[1] = extraJarDir.toURI().toURL();
+        // add any jars that we collected above
+        for (int f=0; f<numExtraURLs; f++)
+            extraJarURLs[f+numStdURLs] = extraJarFiles[f].toURI().toURL();
+
+        LmClassLoader lmcl = new LmClassLoader(extraJarURLs);
+        return lmcl;
     }
 
 
@@ -1243,7 +1363,7 @@ public class LmUtility {
        throws Exception
      {
 
-       // Load org.trafodion.jdbc.t2.SQLMXResultSet class
+       // Load org.apache.trafodion.jdbc.t2.SQLMXResultSet class
        // Get the method ID of SQLMXResultSet::getResultSetInfo()
        try {
          rsT2Cls_ = Class.forName( SQLMXRS_CLASS );
@@ -1262,7 +1382,7 @@ public class LmUtility {
          throw new Exception(t);
        }
 
-       // Load org.trafodion.jdbc.t2.ResultSetInfo class
+       // Load org.apache.trafodion.jdbc.t2.ResultSetInfo class
        // Get the public fields in the above class
        try {
          rsInfoCls_ = Class.forName( RSINFO_CLASS );
@@ -1355,9 +1475,9 @@ public class LmUtility {
      * Method to get data pertaining to a specific result set object. This
      * method calls the getResultSetInfo() method provided by the JDBC/MX
      * driver. The above method call returns a
-     * org.trafodion.jdbc.t2.ResultSetInfo object whose structure is as below.
+     * org.apache.trafodion.jdbc.t2.ResultSetInfo object whose structure is as below.
 
-     * class org.trafodion.jdbc.t2.ResultSetInfo
+     * class org.apache.trafodion.jdbc.t2.ResultSetInfo
      * {
      *   public:
      *	  boolean LOBDataDetected;
@@ -1423,12 +1543,12 @@ public class LmUtility {
     Object rsInfoObj = null;
     
     // First check if the rsObj is an instance of 
-    // org.trafodion.jdbc.t2.SQLMXResultSet class
+    // org.apache.trafodion.jdbc.t2.SQLMXResultSet class
     if( !(rsT2Cls_.isInstance( rsObj )) ) {
       errCode[0] = RS_INFO_ERROR;
       errDetail[0] =
         "One or more returned result sets are not instances of " +
-        "class org.trafodion.jdbc.t2.SQLMXResultSet";
+        "class org.apache.trafodion.jdbc.t2.SQLMXResultSet";
       return;
     }
     

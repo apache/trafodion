@@ -763,19 +763,27 @@ ExWorkProcRetcode ExHbaseAccessUpsertVsbbSQTcb::work()
       nextRequest_ = qparent_.down->getHeadIndex();
 
       ex_queue_entry *pentry_down = qparent_.down->getHeadEntry();
-      if (pentry_down->downState.request == ex_queue::GET_NOMORE)
+      if ((step_ == HANDLE_ERROR) ||
+          (step_ == CLOSE_AND_DONE))
+        {
+          // move down to error/close case.
+        }
+      else if (pentry_down->downState.request == ex_queue::GET_NOMORE)
 	step_ = CLOSE_AND_DONE;
       else if (pentry_down->downState.request == ex_queue::GET_EOD)
-        if (currRowNum_ > rowsInserted_)
-          {
-            step_ = PROCESS_INSERT_AND_CLOSE;
-          }
-        else
-          {
-            if (lastHandledStep_ == ALL_DONE)
-              matches_=0;
-            step_ = ALL_DONE;
-          }
+        {
+          if (currRowNum_ > rowsInserted_)
+            {
+              step_ = PROCESS_INSERT_AND_CLOSE;
+            }
+          else
+            {
+              if (lastHandledStep_ == ALL_DONE)
+                matches_=0;
+              step_ = ALL_DONE;
+            }
+        }
+
       switch (step_)
 	{
 	case NOT_STARTED:
@@ -3916,9 +3924,6 @@ ExHbaseAccessSQRowsetTcb::ExHbaseAccessSQRowsetTcb(
   ExHbaseAccessTcb( hbaseAccessTdb, glob)
   , step_(NOT_STARTED)
 {
-  if (getHbaseAccessStats())
-    getHbaseAccessStats()->init();
-
   prevTailIndex_ = 0;
 
   nextRequest_ = qparent_.down->getHeadIndex();

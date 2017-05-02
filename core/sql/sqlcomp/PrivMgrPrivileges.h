@@ -112,7 +112,6 @@ public:
   // -------------------------------------------------------------------
    PrivStatus buildSecurityKeys(
       const int32_t granteeID, 
-      const int32_t roleID,
       const PrivMgrCoreDesc &privs,
       std::vector <ComSecurityKey *> & secKeySet);
       

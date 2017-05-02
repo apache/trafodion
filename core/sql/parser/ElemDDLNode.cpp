@@ -1827,6 +1827,12 @@ ElemDDLNode::castToStmtDDLRegisterUser()
   return NULL;
 }
 
+StmtDDLRegOrUnregHive *
+ElemDDLNode::castToStmtDDLRegOrUnregHive()
+{
+  return NULL;
+}
+
 StmtDDLCreateRole *
 ElemDDLNode::castToStmtDDLCreateRole()
 {

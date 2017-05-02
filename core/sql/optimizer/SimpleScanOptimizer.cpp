@@ -304,8 +304,8 @@ SimpleFileScanOptimizer::computeSingleSubsetSize()
       IndexDescHistograms innerHistograms(*getIndexDesc(),
                                           singleSubsetPrefixColumn + 1);
 
-      const SelectivityHint * selHint = getIndexDesc()->getPrimaryTableDesc()->getSelectivityHint();
-      const CardinalityHint * cardHint = getIndexDesc()->getPrimaryTableDesc()->getCardinalityHint();
+      const SelectivityHint * selHint = getFileScan().getSelectivityHint();
+      const CardinalityHint * cardHint = getFileScan().getCardinalityHint();
 
       // Exclude the added computed predicates since they do not contribute
       // to the cardinality. 
@@ -2400,8 +2400,8 @@ SimpleFileScanOptimizer::estimateEffTotalRowCount(
   //
   if( hasAtleastOneConstExpr )
     {
-      const SelectivityHint * selHint = getIndexDesc()->getPrimaryTableDesc()->getSelectivityHint();
-      const CardinalityHint * cardHint = getIndexDesc()->getPrimaryTableDesc()->getCardinalityHint();
+      const SelectivityHint * selHint = getFileScan().getSelectivityHint();
+      const CardinalityHint * cardHint = getFileScan().getCardinalityHint();
 
       innerHistograms.applyPredicates(totalPreds, getRelExpr(), selHint, cardHint, REL_SCAN);
 

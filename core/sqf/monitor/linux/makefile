@@ -146,7 +146,6 @@ MONITORSRC += reqshutdown.cxx
 MONITORSRC += reqstartup.cxx
 MONITORSRC += reqtmleader.cxx
 MONITORSRC += reqtmready.cxx
-MONITORSRC += reqtmseqnum.cxx
 MONITORSRC += reqtmsync.cxx
 MONITORSRC += reqzoneinfo.cxx
 MONITORSRC += replicate.cxx
@@ -211,7 +210,6 @@ MONITOROBJS += $(OUTDIR)/reqshutdown.o
 MONITOROBJS += $(OUTDIR)/reqstartup.o
 MONITOROBJS += $(OUTDIR)/reqtmleader.o
 MONITOROBJS += $(OUTDIR)/reqtmready.o
-MONITOROBJS += $(OUTDIR)/reqtmseqnum.o
 MONITOROBJS += $(OUTDIR)/reqtmsync.o
 MONITOROBJS += $(OUTDIR)/reqzoneinfo.o
 ifeq ($(USE_FORK_SUSPEND_RESUME),1)

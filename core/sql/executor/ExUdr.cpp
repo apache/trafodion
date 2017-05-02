@@ -1132,7 +1132,7 @@ NABoolean ExUdrTcb::insertUpQueueEntry(ex_queue::up_status status,
       upEntry->setDiagsArea(diags);
       diags->incrRefCount();
     }
-    else
+    else if (atpDiags != diags)
     {
       atpDiags->mergeAfter(*diags);
       // errors have been reported, clear the passed-in diags

@@ -50,7 +50,8 @@ import org.apache.hadoop.hbase.TableExistsException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.util.Bytes;
-
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
 
 public class TmDDL {
 
@@ -300,4 +301,34 @@ public class TmDDL {
             Delete d = new Delete(Bytes.toBytes(lvTransid));
             table.delete(d);
     }
+    
+    public List<Long> getTxIdList(short tmID) throws IOException {
+      byte [] value = null;
+      Scan s = new Scan();
+      s.setCaching(100);
+      s.setCacheBlocks(false);
+      ArrayList<Long> txIdList = new ArrayList<Long>();
+      ResultScanner ss = table.getScanner(s);
+      try{
+        for (Result r : ss) {
+        Long txid = Bytes.toLong(r.getRow());
+        if(TransactionState.getNodeId(txid) != tmID)
+        {
+          //not owned by this tmID
+          continue;
+        }
+        value = r.getValue(TDDL_FAMILY, TDDL_STATE);
+        if((value != null) && (value.length > 0) && 
+           (Bytes.toString(value).equals("VALID") ||
+            Bytes.toString(value).equals("REDRIVE")))
+          txIdList.add(txid);
+        }
+      }
+      finally {
+          ss.close();
+      }
+      
+      return txIdList;
+    }
+    
  }

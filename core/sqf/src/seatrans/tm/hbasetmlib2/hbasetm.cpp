@@ -1196,6 +1196,8 @@ HMN_RetCode HashMapArray::init()
       JavaMethods_[JM_GET_HOSTNAME   ].jm_signature  = "(I)Ljava/lang/String;";
       JavaMethods_[JM_GET_PORT       ].jm_name       = "getPort";
       JavaMethods_[JM_GET_PORT       ].jm_signature  = "(I)Ljava/lang/String;";
+      JavaMethods_[JM_GET_REGINFO    ].jm_name       = "getRegionInfo";
+      JavaMethods_[JM_GET_REGINFO    ].jm_signature  = "(J)Ljava/lang/String;";
 
       return (HMN_RetCode)JavaObjectInterfaceTM::init(className, javaClass_, JavaMethods_, (int32)JM_LAST, false);
     }
@@ -1210,6 +1212,22 @@ char* HashMapArray::get(int tid)
    }
    if(js_val == NULL){
        printf("hbasetm::HashMapArray::get - js_val is NULL");
+       return NULL;
+   }
+
+   const jbyte* jb_val = (jbyte*)_tlp_jenv->GetStringUTFChars(js_val, NULL);
+   char* cp_val = (char *)jb_val;
+   return cp_val;
+}
+
+char* HashMapArray::getRegionInfo(int64 tid)
+{
+   jstring js_val = (jstring)(_tlp_jenv->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_REGINFO].methodID, tid));
+   if (getExceptionDetails(NULL)) {
+      tm_log_write(DTM_TM_JNI_ERROR, SQ_LOG_ERR, (char *)"HashMapArray::getRegionInfo()", (char *)_tlp_error_msg->c_str(), -1LL);
+      return NULL;
+   }
+   if(js_val == NULL){
        return NULL;
    }
 

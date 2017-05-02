@@ -81,10 +81,10 @@
 
 ScratchSpace::ScratchSpace(CollHeap* heap, SortError* sorterror, 
                            Lng32 blocksize,
+                           Int32 scratchIOVectorSize,
                            Int32 explainNodeId, 
 			   NABoolean logInfoEvent,
-                         Int32 scratchMgmtOption):
-			
+                           Int32 scratchMgmtOption): 
 sortError_(sorterror),
 heap_(heap),
 explainNodeId_(explainNodeId),
@@ -130,7 +130,7 @@ scratchMgmtOption_(scratchMgmtOption)
     asyncReadQueue_ = FALSE;
     scratchMaxOpens_ = 1;
     bmoStats_ = NULL;
-    scratchIOVectorSize_ = 1;
+    scratchIOVectorSize_ = scratchIOVectorSize;
     ovMode_ = SCRATCH_DISK;
 } 
 
@@ -158,6 +158,8 @@ void ScratchSpace::setCallingTcb(ex_tcb *tcb)
     if (stat)
       bmoStats_ = stat->castToExBMOStats();
   }
+  if (bmoStats_ != NULL)
+     bmoStats_->setScratchIOSize((scratchIOVectorSize_ * blockSize_) >> 10);
 }
   
 //-----------------------------------------------------------------------
@@ -1234,11 +1236,13 @@ SortScratchSpace::SortScratchSpace(CollHeap* heap,
                          SortError* error,
                          Int32 explainNodeId,
                          Int32 scratchIOBlockSize,
+                         Int32 scratchIOVectorSize,
                          NABoolean logInfoEvent,
                          Int32 scratchMgmtOption)
                          :ScratchSpace(heap,
                                    error,
                                    scratchIOBlockSize,
+                                   scratchIOVectorSize,
                                    explainNodeId,
                                    logInfoEvent,
                                    scratchMgmtOption)
@@ -1809,14 +1813,16 @@ HashScratchSpace::HashScratchSpace(CollHeap* heap,
                           SortError* error,
                           Int32 explainNodeId,
                           Int32 blockSize,
+                          Int32 scratchIOVectorSize,
                           NABoolean logInfoEvent,
                           Int32 scratchMgmtOption)
                           :ScratchSpace(heap,
                                     error,
                                     blockSize,
+                                    scratchIOVectorSize,
                                     explainNodeId,
                                     logInfoEvent,
-	                             scratchMgmtOption)
+	                            scratchMgmtOption)
 {
   numClusters_ = INITIAL_MAX_CLUSTERS;
   clusterDList_ = (ClusterDirectory*) new(heap_)ClusterDirectory[numClusters_];

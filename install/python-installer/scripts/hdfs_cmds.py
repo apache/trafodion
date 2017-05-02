@@ -26,18 +26,19 @@
 import os
 import sys
 import json
-from common import err, run_cmd, cmd_output, run_cmd_as_user
+from constants import DEF_HDFS_BIN, PARCEL_HBASE_LIB, PARCEL_HDFS_BIN
+from common import err, run_cmd, cmd_output, run_cmd_as_user, get_sudo_prefix
 
 def run():
-    hdfs_bin = '/usr/bin/hdfs'
+    hdfs_bin = DEF_HDFS_BIN
 
     dbcfgs = json.loads(dbcfgs_json)
-    DISTRO = dbcfgs['distro']
+    distro = dbcfgs['distro']
 
-    if 'CDH' in DISTRO:
-        parcel_lib = '/opt/cloudera/parcels/CDH/lib/hbase/lib'
-        if os.path.exists(parcel_lib): hdfs_bin = '/opt/cloudera/parcels/CDH/bin/hdfs'
-    elif 'APACHE' in DISTRO:
+    if 'CDH' in distro:
+        parcel_lib = PARCEL_HBASE_LIB
+        if os.path.exists(parcel_lib): hdfs_bin = PARCEL_HDFS_BIN
+    elif 'APACHE' in distro:
         hdfs_bin = dbcfgs['hadoop_home'] + '/bin/hdfs'
 
     traf_loc = '/user/trafodion'
@@ -55,7 +56,7 @@ def run():
 
     # Grant all privileges to the Trafodion principal in HBase
     if dbcfgs['secure_hadoop'] == 'Y':
-        run_cmd('echo "grant \'%s\', \'RWXC\'" | sudo -u %s hbase shell > /tmp/hbase_shell.out' % (traf_user, hbase_user))
+        run_cmd('echo "grant \'%s\', \'RWXC\'" | %s su - %s -s /bin/bash -c "hbase shell" > /tmp/hbase_shell.out' % (traf_user, get_sudo_prefix(), hbase_user))
         has_err = cmd_output('grep -c ERROR /tmp/hbase_shell.out')
         if int(has_err):
             err('Failed to grant HBase privileges to %s' % traf_user)

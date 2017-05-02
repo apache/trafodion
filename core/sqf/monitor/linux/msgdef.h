@@ -254,7 +254,6 @@ typedef enum {
     ReqType_Stfsd,                          // process stfsd request
     ReqType_TmLeader,                       // request to become the TM leader
     ReqType_TmReady,                        // request to indicate TM ready for transactions
-    ReqType_TmSeqNum,                       // request the next TM cluster sequence number
     ReqType_TmSync,                         // request to sync data across all TM's in cluster
     ReqType_TransInfo,                      // request transaction enlistment information
     ReqType_ZoneInfo,                       // zone information request 
@@ -283,7 +282,6 @@ typedef enum {
     ReplyType_ProcessInfo,                  // reply with info on list of processes
     ReplyType_Stfsd,                        // reply with stfsd info
     ReplyType_Startup,                      // reply with startup info
-    ReplyType_TmSeqNum,                     // reply with the next TM cluster sequence number
     ReplyType_TmSync,                       // reply from unsolicited TmSync message
     ReplyType_TransInfo,                    // reply with transaction enlistment process list
     ReplyType_ZoneInfo,                     // reply with info on list of zones

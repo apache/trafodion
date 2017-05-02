@@ -820,12 +820,12 @@ TableAnalysis * QueryAnalysis::newTableAnalysis(RelExpr* tableExpr)
       return NULL;
   }
 
+  const IndexDesc *tableIndexDesc = tableDesc->getClusteringIndex();
   // Record the highest no of partitions for a table among all of the tables 
   // in a query. This is used in opt.cpp to adjust max parallelism.
   if (CmpCommon::getDefault(COMP_BOOL_24) == DF_ON)
   {
     // Get the number of partitions for the table
-    const IndexDesc *tableIndexDesc = tableDesc->getClusteringIndex();
     Lng32 tableNumOfPartns = tableIndexDesc->getNAFileSet()->getCountOfPartitions();
 
     // Check and save highest no of partitions
@@ -859,6 +859,10 @@ TableAnalysis * QueryAnalysis::newTableAnalysis(RelExpr* tableExpr)
   // append columns referenced in the scan required outputs
   tableExpr->getGroupAttr()->getCharacteristicOutputs()
     .findAllReferencedBaseCols(usedCols);
+ // add table's clustering key for index joins
+  ValueIdSet keyAsSet(tableIndexDesc->getIndexKey());
+  keyAsSet.findAllReferencedBaseCols(usedCols) ;
+
 
   const ValueIdSet tableCols(tableDesc->getColumnList());
 

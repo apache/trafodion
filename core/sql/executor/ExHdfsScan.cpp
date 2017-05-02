@@ -399,9 +399,6 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
 
 	    ex_assert(hdfsStats_, "hdfs stats cannot be null");
 
-	    if (hdfsStats_)
-	      hdfsStats_->init();
-
 	    beginRangeNum_ = -1;
 	    numRanges_ = -1;
 	    hdfsOffset_ = 0;
@@ -621,8 +618,14 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                     ((hdfsErrorDetail == ENOENT) || (hdfsErrorDetail == EAGAIN)))
                   {
                     ComDiagsArea * diagsArea = NULL;
-                    ExRaiseSqlError(getHeap(), &diagsArea, 
-                                    (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
+                    if (hdfsErrorDetail == ENOENT)
+                      ExRaiseSqlError(getHeap(), &diagsArea, 
+                                      (ExeErrorCode)(EXE_TABLE_NOT_FOUND), NULL,
+                                      NULL, NULL, NULL,
+                                      hdfsScanTdb().tableName());
+                    else
+                      ExRaiseSqlError(getHeap(), &diagsArea, 
+                                      (ExeErrorCode)(EXE_HIVE_DATA_MOD_CHECK_ERROR));
                     pentry_down->setDiagsArea(diagsArea);
                     step_ = HANDLE_ERROR_AND_DONE;
                     break;
@@ -682,6 +685,7 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                                 "HDFS",
                                 (char*)"ExpLOBInterfaceSelectCursor/open",
                                 getLobErrStr(intParam1));
+                
                 pentry_down->setDiagsArea(diagsArea);
                 step_ = HANDLE_ERROR;
                 break;
@@ -1646,7 +1650,7 @@ char * ExHdfsScanTcb::extractAndTransformAsciiSourceToSqlRow(int &err,
                   // for non-varchar, length of zero indicates a null value.
                   // For all datatypes, HIVE_DEFAULT_NULL_STRING('\N') indicates a null value.
                   if (((len == 0) && (tgtAttr && (NOT DFS2REC::isSQLVarChar(tgtAttr->getDatatype())))) ||
-                      ((len > 0) && (memcmp(sourceData, HIVE_DEFAULT_NULL_STRING, len) == 0)))
+                      ((len == strlen(HIVE_DEFAULT_NULL_STRING)) && (memcmp(sourceData, HIVE_DEFAULT_NULL_STRING, len) == 0)))
                     {
                       *(short *)&hdfsAsciiSourceData_[attr->getNullIndOffset()] = -1;
                     }
@@ -2076,9 +2080,6 @@ ExWorkProcRetcode ExOrcScanTcb::work()
 	      hdfsStats_ = getStatsEntry()->castToExHdfsScanStats();
 
 	    ex_assert(hdfsStats_, "hdfs stats cannot be null");
-
-	    if (hdfsStats_)
-	      hdfsStats_->init();
 
 	    beginRangeNum_ = -1;
 	    numRanges_ = -1;

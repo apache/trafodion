@@ -374,6 +374,17 @@ bool ComUser::currentUserHasRole(Int32 roleID)
   return false;
 }
 
+void ComUser::getCurrentUserRoles(NAList <Int32> &roleList)
+{
+  Int32 numRoles = 0;
+  Int32 *roleIDs = 0;
+  Int32 retcode = SQL_EXEC_GetRoleList(numRoles, roleIDs);
+  assert(retcode == 0);
+
+  for (Int32 i = 0; i < numRoles; i++)
+    roleList.insert (roleIDs[i]);
+}
+
 
 // ----------------------------------------------------------------------------
 // method: getRoleList

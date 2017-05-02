@@ -663,14 +663,19 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL operation complete.
 >>
 >>-- group by rollup and grouping on hive tables
->>sh echo "drop table t033hive1;" > TEST033_junk;
->>sh regrhive.ksh -f TEST033_junk;
->>sh echo "create table t033hive1(a int, b int);" > TEST033_junk;
->>sh regrhive.ksh -f TEST033_junk;
->>sh echo "drop table t033hive2;" > TEST033_junk;
->>sh regrhive.ksh -f TEST033_junk;
->>sh echo "create table t033hive2(a int, b int);" > TEST033_junk;
->>sh regrhive.ksh -f TEST033_junk;
+>>process hive statement 'drop table t033hive1';
+
+--- SQL operation complete.
+>>process hive statement 'create table t033hive1(a int, b int)';
+
+--- SQL operation complete.
+>>process hive statement 'drop table t033hive2';
+
+--- SQL operation complete.
+>>process hive statement 'create table t033hive2(a int, b int)';
+
+--- SQL operation complete.
+>>
 >>insert into hive.hive.t033hive1 values (1,2), (null, null);
 
 --- 2 row(s) inserted.

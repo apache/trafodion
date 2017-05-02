@@ -1254,7 +1254,7 @@ if (hTabStats->isOrcFile())
     }
 
   char * tablename = 
-    space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getIndexDesc()->getNAFileSet()->getFileSetName()), 0);
+    space->AllocateAndCopyToAlignedSpace(GenGetQualifiedName(getTableDesc()->getNATable()->getTableName()), 0);
 
   char * nullFormat = NULL;
   if (hTabStats->getNullFormat())
@@ -2426,6 +2426,13 @@ short HbaseAccess::codeGen(Generator * generator)
   if (getTableDesc()->getNATable()->hasAddedColumn())
     hasAddedColumns = TRUE;
 
+  NABoolean isSecondaryIndex = FALSE;
+  if (getIndexDesc()->getNAFileSet()->getKeytag() != 0)
+    {
+      isSecondaryIndex = TRUE;
+      hasAddedColumns = FALSE; // secondary index doesn't have added cols
+    }
+
   NABoolean isAlignedFormat = getTableDesc()->getNATable()->isAlignedFormat(getIndexDesc());
   NABoolean isHbaseMapFormat = getTableDesc()->getNATable()->isHbaseMapTable();
 
@@ -2660,7 +2667,8 @@ short HbaseAccess::codeGen(Generator * generator)
 			   ExpTupleDesc::LONG_FORMAT,            // [optional IN] desc format
                            0,
                            NULL,
-                           (NAColumnArray*)colArray);
+                           (NAColumnArray*)colArray,
+                           isSecondaryIndex);
   
   work_cri_desc->setTupleDescriptor(asciiTuppIndex, asciiTupleDesc);
 

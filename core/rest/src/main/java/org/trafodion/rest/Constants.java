@@ -170,7 +170,7 @@ public final class Constants {
   public static final boolean REST_MASTER_TRAFODION_QUERY_TOOLS_IS_NOT_ENABLED = false;
 
   /** T2 Driver name */
-  public static final String T2_DRIVER_CLASS_NAME = "org.trafodion.jdbc.t2.T2Driver";
+  public static final String T2_DRIVER_CLASS_NAME = "org.apache.trafodion.jdbc.t2.T2Driver";
   /** T2 Driver URL */
   public static final String T2_DRIVER_URL = "jdbc:t2jdbc:"; 
   /** CQD to turn table stats off */

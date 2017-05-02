@@ -26,9 +26,11 @@
 #include "Globals.h"
 #include "ComUser.h"
 
-// Changed the default to 512 to limit java heap size used by SQL processes.
+// Changed the default to 256 to limit java heap size used by SQL processes.
 // Keep this define in sync with udrserv/udrserv.cpp
-#define DEFAULT_JVM_MAX_HEAP_SIZE 512
+#define DEFAULT_JVM_MAX_HEAP_SIZE 256
+#define DEFAULT_COMPRESSED_CLASSSPACE_SIZE 128
+#define DEFAULT_MAX_METASPACE_SIZE 128
 #define TRAF_DEFAULT_JNIHANDLE_CAPACITY 32
 // ===========================================================================
 // ===== Class JavaObjectInterface
@@ -101,7 +103,7 @@ char* JavaObjectInterface::buildClassPath()
   return classPathBuffer;
 }
 
-#define MAX_NO_JVM_OPTIONS 10
+#define MAX_NO_JVM_OPTIONS 12
 //////////////////////////////////////////////////////////////////////////////
 // Create a new JVM instance.
 //////////////////////////////////////////////////////////////////////////////
@@ -136,6 +138,34 @@ int JavaObjectInterface::createJVM()
                     jvm_options[numJVMOptions].optionString);
     numJVMOptions++;
   }
+
+  char compressedClassSpaceSizeOptions[64];
+  int compressedClassSpaceSize = 0;
+  const char *compressedClassSpaceSizeStr = getenv("JVM_COMPRESSED_CLASS_SPACE_SIZE");
+  if (compressedClassSpaceSizeStr)
+    compressedClassSpaceSize = atoi(compressedClassSpaceSizeStr);
+  if (compressedClassSpaceSize <= 0)
+     compressedClassSpaceSize = DEFAULT_COMPRESSED_CLASSSPACE_SIZE;
+  sprintf(compressedClassSpaceSizeOptions, "-XX:CompressedClassSpaceSize=%dm", compressedClassSpaceSize);
+  jvm_options[numJVMOptions].optionString = compressedClassSpaceSizeOptions;
+  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
+                    "CompressedClassSpaceSize: %s",
+                    jvm_options[numJVMOptions].optionString);
+  numJVMOptions++;
+
+  char maxMetaspaceSizeOptions[64];
+  int maxMetaspaceSize = 0;
+  const char *maxMetaspaceSizeStr = getenv("JVM_MAX_METASPACE_SIZE");
+  if (maxMetaspaceSizeStr)
+    maxMetaspaceSize = atoi(maxMetaspaceSizeStr);
+  if (maxMetaspaceSize <= 0)
+     maxMetaspaceSize = DEFAULT_MAX_METASPACE_SIZE;
+  sprintf(maxMetaspaceSizeOptions, "-XX:MaxMetaspaceSize=%dm", maxMetaspaceSize);
+  jvm_options[numJVMOptions].optionString = maxMetaspaceSizeOptions;
+  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
+                    "MaxMetaspaceSize: %s",
+                    jvm_options[numJVMOptions].optionString);
+  numJVMOptions++;
 
   char initHeapOptions[64];
   const char *initHeapSizeStr = getenv("JVM_INIT_HEAP_SIZE_MB");

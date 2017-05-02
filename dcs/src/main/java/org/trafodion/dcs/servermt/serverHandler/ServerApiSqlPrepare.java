@@ -31,7 +31,7 @@ import java.nio.channels.spi.*;
 import java.util.*;
 import java.math.*;
 
-import org.trafodion.jdbc.t2.*;
+import org.apache.trafodion.jdbc.t2.*;
 
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.*;

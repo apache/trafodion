@@ -40,9 +40,10 @@ except ImportError:
     print 'Python module prettytable is not found. Install python-prettytable first.'
     exit(1)
 from scripts import wrapper
-from scripts.common import DEF_PORT_FILE, DBCFG_FILE, USER_PROMPT_FILE, DBCFG_TMP_FILE, \
-                           INSTALLER_LOC, Remote, Version, ParseHttp, ParseInI, ParseJson, \
-                           http_start, http_stop, format_output, err_m, expNumRe, run_cmd, info
+from scripts.constants import DEF_PORT_FILE, DBCFG_FILE, USER_PROMPT_FILE, DBCFG_TMP_FILE, INSTALLER_LOC, \
+                              DEF_HBASE_XML_FILE, PARCEL_HBASE_LIB, DEF_HBASE_LIB, HDP_HBASE_LIB, TRAF_USER
+from scripts.common import Remote, Version, ParseHttp, ParseInI, ParseJson, run_cmd, info, \
+                           http_start, http_stop, format_output, err_m, expNumRe
 
 # init global cfgs for user input
 cfgs = defaultdict(str)
@@ -188,11 +189,11 @@ class HadoopDiscover(object):
                 if parcel_config['items'] and parcel_config['items'][0]['name'] == 'parcels_directory':
                     hbase_lib_path = parcel_config['items'][0]['value'] + '/CDH/lib/hbase/lib'
                 else:
-                    hbase_lib_path = '/opt/cloudera/parcels/CDH/lib/hbase/lib'
+                    hbase_lib_path = PARCEL_HBASE_LIB
             else:
-                hbase_lib_path = '/usr/lib/hbase/lib'
+                hbase_lib_path = DEF_HBASE_LIB
         elif 'HDP' in self.distro:
-            hbase_lib_path = '/usr/hdp/current/hbase-regionserver/lib'
+            hbase_lib_path = HDP_HBASE_LIB
 
         return hbase_lib_path
 
@@ -349,6 +350,9 @@ def user_input(options, prompt_mode=True, pwd=''):
     if os.path.exists(DBCFG_TMP_FILE) and prompt_mode == True:
         tp = ParseInI(DBCFG_TMP_FILE, 'dbconfigs')
         cfgs = tp.load()
+        if not cfgs:
+            # set cfgs to defaultdict again
+            cfgs = defaultdict(str)
 
     u = UserInput(options, pwd)
     g = lambda n: u.get_input(n, cfgs[n], prompt_mode=prompt_mode)
@@ -432,12 +436,12 @@ def user_input(options, prompt_mode=True, pwd=''):
 
     # set some system default configs
     cfgs['config_created_date'] = time.strftime('%Y/%m/%d %H:%M %Z')
-    cfgs['traf_user'] = 'trafodion'
+    cfgs['traf_user'] = TRAF_USER
     if apache:
         cfgs['hbase_xml_file'] = cfgs['hbase_home'] + '/conf/hbase-site.xml'
         cfgs['hdfs_xml_file'] = cfgs['hadoop_home'] + '/etc/hadoop/hdfs-site.xml'
     else:
-        cfgs['hbase_xml_file'] = '/etc/hbase/conf/hbase-site.xml'
+        cfgs['hbase_xml_file'] = DEF_HBASE_XML_FILE
 
     ### discover system settings, return a dict
     system_discover = wrapper.run(cfgs, options, mode='discover', pwd=pwd)
@@ -462,6 +466,8 @@ def user_input(options, prompt_mode=True, pwd=''):
             log_err('HBase is not found')
         if content_dict['hbase'] == 'N/S':
             log_err('HBase version is not supported')
+        else:
+            cfgs['hbase_ver'] = content_dict['hbase']
         if content_dict['home_dir']: # trafodion user exists
             has_home_dir += 1
             cfgs['home_dir'] = content_dict['home_dir']
@@ -516,8 +522,6 @@ def user_input(options, prompt_mode=True, pwd=''):
     g('ldap_security')
     if cfgs['ldap_security'].upper() == 'Y':
         g('db_root_user')
-        g('db_admin_user')
-        g('db_admin_pwd')
         g('ldap_hosts')
         g('ldap_port')
         g('ldap_identifiers')
@@ -628,9 +632,6 @@ def main():
     else:
         print '\n** Loading configs from config file ... \n'
         cfgs = p.load()
-        # remove java home info from default config file
-        if config_file == DBCFG_FILE and cfgs.has_key('java_home'):
-            cfgs.pop('java_home')
         if options.offline and cfgs['offline_mode'] != 'Y':
             log_err('To enable offline mode, must set "offline_mode = Y" in config file')
         user_input(options, prompt_mode=False, pwd=pwd)

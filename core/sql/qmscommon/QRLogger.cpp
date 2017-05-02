@@ -33,6 +33,7 @@
 #include "ComDiags.h"
 #include "logmxevent.h"
 #include "NLSConversion.h"
+#include "Globals.h"
 
 #include "PortProcessCalls.h"
 #include "seabed/ms.h"
@@ -154,24 +155,7 @@ void getMyNidSuffix(char stringNidSuffix[])
   myPhandle.getmine();
   myPhandle.decompose();
   
-  char processName[MS_MON_MAX_PROCESS_NAME + 1];
-
-  memset(processName, 0, sizeof(processName));
-  memcpy(processName, myPhandle.getPhandleString(), myPhandle.getPhandleStringLen());
-
-  MS_Mon_Process_Info_Type procInfo;
-  Int32 rc = 0;
-
-  Int32 myNid = 0;
-  
-  rc = msg_mon_get_process_info_detail(processName, &procInfo);
-  if (rc != 0) {
-    // at least let the logging proceed
-    myNid = 9999;
-  }
-  else {
-    myNid = procInfo.nid;
-  }
+  Int32 myNid = myPhandle.getCpu();
 
   snprintf (stringNidSuffix, 5+sizeof(Int32), "_%d.log", myNid);
 }
@@ -196,24 +180,31 @@ NABoolean QRLogger::initLog4cxx(const char* configFileName)
 
   // gets the top ancestor process name that will be used to name the file appender log
   char logFileSuffix [100]="";
-  
+  NABoolean singleSqlLogFile = TRUE;
+  if (getenv("TRAF_MULTIPLE_SQL_LOG_FILE")) 
+     singleSqlLogFile = FALSE; 
   switch (module_)
-    {
+  {
     case QRL_NONE:
     case QRL_MXCMP:
     case QRL_ESP:
     case QRL_MXEXE:
     case QRL_UDR:
-      getMyTopAncestor(logFileSuffix);
+      if (singleSqlLogFile) 
+         getMyNidSuffix(logFileSuffix);
+      else 
+         getMyTopAncestor(logFileSuffix);
       break;
     case QRL_LOB:
+      getMyNidSuffix(logFileSuffix);
+      break; 
     case QRL_SSMP:
     case QRL_SSCP:
       getMyNidSuffix(logFileSuffix);
       break;
     default:
       break;
-    }
+  }
 
   
   if (CommonLogger::initLog4cxx(configFileName, logFileSuffix))
@@ -658,4 +649,19 @@ void QRLogger::log(std::string &cat,
 
   va_end(args);
 }
+
+NABoolean QRLogger::initLog4cxx(ExecutableModule module)
+{
+   NABoolean retcode;
+   bool singleSqlLogFile = TRUE;
+   if (getenv("TRAF_MULTIPLE_SQL_LOG_FILE"))
+      singleSqlLogFile = FALSE;
+   QRLogger::instance().setModule(module);
+   if (singleSqlLogFile)
+      retcode =  QRLogger::instance().initLog4cxx("log4cxx.trafodion.sql.config");
+   else
+      retcode =  QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
+   return retcode;
+}
+
 

@@ -427,7 +427,6 @@ typedef enum {
     MS_ReqType_Stfsd,
     MS_ReqType_TmLeader,
     MS_ReqType_TmReady,
-    MS_ReqType_TmSeqNum,
     MS_ReqType_TmSync,
     MS_ReqType_TransInfo,
     MS_ReqType_ZoneInfo
@@ -1134,12 +1133,6 @@ SB_Export int msg_mon_get_process_name2(int            nid,
                                         char          *name)
 SB_DIAG_UNUSED;
 #endif
-
-//
-// Call this to get tm seq number
-//
-SB_Export int msg_mon_get_tm_seq(int *tm_seq)
-SB_DIAG_UNUSED;
 
 //
 // Call this to get trans info for process

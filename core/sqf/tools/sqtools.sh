@@ -440,7 +440,7 @@ function sqsavelogs {
     cp -p $TRAF_HOME/logs/pstart*.log ${lv_copy_to_dir}
     cp -p $TRAF_HOME/logs/smstats.*.log ${lv_copy_to_dir}
     cp -p $TRAF_HOME/logs/sqmo*.log ${lv_copy_to_dir}
-    cp -p $TRAF_HOME/logs/trafodion.dtm.log* ${lv_copy_to_dir}
+    cp -p $TRAF_HOME/logs/trafodion.*log* ${lv_copy_to_dir}
     cp -p $TRAF_HOME/logs/tm*.log ${lv_copy_to_dir}
     cp -p $TRAF_HOME/logs/wdt.*.log ${lv_copy_to_dir}
 

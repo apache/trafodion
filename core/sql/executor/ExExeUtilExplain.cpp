@@ -52,6 +52,8 @@
 #include  "ComRtUtils.h"
 #include  "ExStats.h"
 
+#include "SqlParserGlobalsEnum.h"
+
 //////////////////////////////////////////////////////////
 // classes defined in this file:
 //
@@ -254,13 +256,23 @@ short ExExeUtilDisplayExplainTcb::work()
 		pstate.step_ = HANDLE_ERROR_;
 		break;
 	      }
-	    
+	   
 	    char * stmtStr = exeUtilTdb().getQuery();
 	    retcode = cliInterface()->prepare(stmtStr, 
 					      module_,
 					      stmt_, sql_src_,
 					      input_desc_, output_desc_,
-					      NULL);
+					      NULL /* outputBuf */,
+					      NULL /* outputVarPtrList */,
+					      NULL /* inputBuf */,
+					      NULL /* inputVarPtrList */,
+					      NULL /* uniqueStmtId */,
+					      NULL /* uniqueStmtIdLen */,
+					      NULL /* query_cost_info */, 
+					      NULL /* comp_stats_info */,
+					      FALSE /* monitorThis */,
+					      TRUE /* doNotCachePlan */);
+	    
 	    if (retcode < 0)
 	      {
 		cliInterface()->retrieveSQLDiagnostics(getDiagsArea());
@@ -277,7 +289,7 @@ short ExExeUtilDisplayExplainTcb::work()
 	  {
 	    // set sqlparserflags to disable stats for explain query
 	    // DISABLE_RUNTIME_STATS 0x80000
-	    masterGlob->getStatement()->getContext()->setSqlParserFlags(0x80000);
+	    masterGlob->getStatement()->getContext()->setSqlParserFlags(DISABLE_RUNTIME_STATS);
 	    
 	    /*set the flag here, use it later*/
 	    if (exeUtilTdb().isOptionF() > 0)
@@ -619,7 +631,7 @@ short ExExeUtilDisplayExplainTcb::work()
 
             // reset sqlparserflags that disabled stats for Explain query
             // DISABLE_RUNTIME_STATS = 0x80000
-            masterGlob->getStatement()->getContext()->resetSqlParserFlags(0x80000);
+            masterGlob->getStatement()->getContext()->resetSqlParserFlags(DISABLE_RUNTIME_STATS);
 
 	    //reset variables used for options E_ and N_
 	    cntLines_ = 0;

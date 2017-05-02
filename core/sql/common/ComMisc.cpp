@@ -103,7 +103,8 @@ NABoolean ComIsTrafodionReservedSchemaName(
 // schema names of pattern "_HV_ ... _" and "_HB_ ... _" are reserved to store
 // external hive and hbase tables
 NABoolean ComIsTrafodionExternalSchemaName (
-                                    const NAString &schName)
+     const NAString &schName,
+     NABoolean * isHive)
 {
   Int32 len (schName.length());
 
@@ -117,13 +118,20 @@ NABoolean ComIsTrafodionExternalSchemaName (
       len = len - 2;
     }
 
+  if (isHive)
+    *isHive = FALSE;
+
   // check for HIVE
   Int32 prefixLen = sizeof(HIVE_EXT_SCHEMA_PREFIX);
   if (len > prefixLen && 
       (schName((quoted ? 1 : 0), prefixLen-1) == HIVE_EXT_SCHEMA_PREFIX && 
        schName((quoted ? 1 : 0) + len-1) == '_' ))
-    return TRUE;
-  
+    {
+      if (isHive)
+        *isHive = TRUE;
+      return TRUE;
+    }
+
   // check for HBASE
   prefixLen = sizeof(HBASE_EXT_SCHEMA_PREFIX);
   if (len > prefixLen && 

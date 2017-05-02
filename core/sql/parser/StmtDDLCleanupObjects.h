@@ -68,6 +68,8 @@ public:
     SEQUENCE_,
     SCHEMA_PRIVATE_,
     SCHEMA_SHARED_,
+    HIVE_TABLE_,
+    HIVE_VIEW_,
     UNKNOWN_,
     OBSOLETE_
   };

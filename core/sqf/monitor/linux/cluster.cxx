@@ -375,26 +375,6 @@ void CCluster::NodeReady( CNode *spareNode )
 }
 
 
-long CCluster::AssignTmSeqNumber( void )
-{
-    struct sync_def sync;
-    
-    const char method_name[] = "CCluster::AssignTmSeqNumber";
-    TRACE_ENTRY;
-
-    sync.type = SyncType_TmSeqNum;
-    sync.length = 0;
-    syncCycle_.lock();
-    exchangeTmSyncData( &sync );
-    syncCycle_.unlock();
-
-    if (trace_settings & TRACE_ENTRY_EXIT)
-        trace_printf("%s@%d" " - Exit - sequence number = "  "%d" "\n", method_name, __LINE__, TmSeqAssigned[MyPNID]);
-    TRACE_EXIT;
-    return TmSeqAssigned[MyPNID];
-}
-
-
 // Assigns a new TMLeader if given pnid is same as TmLeaderNid 
 // TmLeader is a logical node num. 
 // pnid has gone down, so if that node was previously the TM leader, a new one needs to be chosen.
@@ -500,10 +480,8 @@ CCluster::CCluster (void)
       configPNodesCount_ (-1),
       configPNodesMax_ (-1),
       NodeMap (NULL),
-      LastTmSeqNum (-1),
       TmLeaderNid (-1),
       tmReadyCount_(0),
-      TmSeqAssigned (NULL ),
       minRecvCount_(4096),
       recvBuffer_(NULL),
       recvBuffer2_(NULL),
@@ -531,10 +509,6 @@ CCluster::CCluster (void)
       ,verifierNum_(0)
 {
     int i;
-    char  buffer[32];
-    char  fname[MAX_PROCESS_PATH];
-    FILE *ini;
-    
     const char method_name[] = "CCluster::CCluster";
     TRACE_ENTRY;
 
@@ -638,41 +612,12 @@ CCluster::CCluster (void)
     // the maximum number that can be configured.
     recvBuffer_ = new struct sync_buffer_def[GetConfigPNodesMax()];
     recvBuffer2_ = new struct sync_buffer_def[GetConfigPNodesMax()];
-    TmSeqAssigned = new int [GetConfigPNodesMax()];
 
-    // Read initialization file
-    snprintf(fname, sizeof(fname), "%s/monitor.ini",getenv("MPI_TMPDIR"));
-    ini = fopen(fname, "r");
-    if( ini )
-    {
-        for (i=0; i<=MyPNID; i++)
-        {
-            fgets(buffer,32,ini);
-            LastTmSeqNum = atol( &buffer[13] );
-        }
-        fclose(ini);
-    }
-    if( LastTmSeqNum == -1 )
-    {
-        LastTmSeqNum = 0;
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf(buf, sizeof(buf), "[CCluster::CCluster], Error= No monitor.ini found, setting to defaults. \n");
-        mon_log_write(MON_CLUSTER_CLUSTER_2, SQ_LOG_ERR, buf);  
-    }
-    if (trace_settings & TRACE_INIT)
-       trace_printf("%s@%d" " - Initialized LastTmSeqNum="  "%d" "\n", method_name, __LINE__, LastTmSeqNum);
-    
     TRACE_EXIT;
 }
 
 CCluster::~CCluster (void)
 {
-    int ini=-1;
-    long pos=0;
-    char buf[32];
-    char fname[MAX_PROCESS_PATH];
-    
     const char method_name[] = "CCluster::~CCluster";
     TRACE_ENTRY;
 
@@ -684,32 +629,6 @@ CCluster::~CCluster (void)
     {
         delete [] NodeMap;
         NodeMap = NULL;
-    }
-    
-    delete [] TmSeqAssigned;
-
-
-
-    // Read initialization file
-    snprintf(fname,sizeof(fname),"%s/monitor.ini",getenv("MPI_TMPDIR"));
-    ini = open(fname, O_WRONLY | O_SYNC | O_CREAT, S_IRUSR | S_IWUSR );
-    if( ini != -1 )
-    {
-        LOCKFILE(ini);
-        if (ret == -1)
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf(buf, sizeof(buf), "[CCluster::~CCluster], Error= Can't lock monitor.ini file. \n");
-            mon_log_write(MON_CLUSTER_UCLUSTER, SQ_LOG_ERR, buf); 
-        }
-        pos = lseek(ini,(long)(24*MyPNID),SEEK_SET);
-        if( pos != -1 )
-        {
-            snprintf (buf, sizeof(buf), "%3.3d:TmSeqNum:%10.10d\n", MyPNID, LastTmSeqNum);
-            write(ini,buf,strlen(buf));
-        }
-        UNLOCKFILE(ini);
-        close(ini);
     }
 
     delete [] recvBuffer2_;
@@ -727,21 +646,6 @@ int CCluster::incrGetVerifierNum()
     }
 
     return verifierNum_;
-}
-
-void CCluster::CoordinateTmSeqNumber( int pnid )
-{
-    const char method_name[] = "CCluster::CoordinateTmSeqNumber";
-    TRACE_ENTRY;
-
-    LastTmSeqNum++;
-    if( LastTmSeqNum >= MAX_SEQ_VALUE )
-    {
-        LastTmSeqNum = 1;
-    }
-    TmSeqAssigned[pnid] = LastTmSeqNum;
-
-    TRACE_EXIT;
 }
 
 // For a reintegrated monitor node, following the first sync cycle, obtain the
@@ -2349,11 +2253,6 @@ void CCluster::HandleOtherNodeMsg (struct internal_msg_def *recv_msg,
                          recv_msg->u.sync.type);
         switch (recv_msg->u.sync.type )
         {
-        case SyncType_TmSeqNum:
-            if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
-                trace_printf("%s@%d - TMSYNC(TmSeqNum) on Node %s (pnid=%d)\n", method_name, __LINE__, Node[pnid]->GetName(), pnid);
-            CoordinateTmSeqNumber(pnid);
-            break;
         case SyncType_TmData:
             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                 trace_printf("%s@%d - TMSYNC(TmData) on Node %s (pnid=%d)\n", method_name, __LINE__, Node[pnid]->GetName(), pnid);
@@ -2732,11 +2631,6 @@ void CCluster::HandleMyNodeMsg (struct internal_msg_def *recv_msg,
                          , method_name, __LINE__, Node[pnid]->GetName(), pnid, recv_msg->u.sync.type);
         switch (recv_msg->u.sync.type )
         {
-        case SyncType_TmSeqNum:
-            if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
-                trace_printf("%s@%d    - TMSYNC(TmSeqNum) on Node %s (pnid=%d)\n", method_name, __LINE__, Node[MyPNID]->GetName(), MyPNID);
-            CoordinateTmSeqNumber(pnid);
-            break;
         case SyncType_TmData:
             if (trace_settings & (TRACE_SYNC | TRACE_TMSYNC))
                 trace_printf("%s@%d    - TMSYNC(TmData) on Node %s (pnid=%d)\n", method_name, __LINE__, Node[MyPNID]->GetName(), MyPNID);

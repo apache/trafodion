@@ -2262,11 +2262,55 @@ short CmpDescribeHiveTable (
     return -1;
 
 
+  NABoolean isView = (naTable->getViewText() ? TRUE : FALSE);
+
+  if ((type == 2) && (isView))
+    {
+      outputShortLine(space,"Original native Hive view text:");
+      NAString origViewText(naTable->getHiveOriginalViewText());
+      outputLongLine(space, origViewText, 0);
+      outputShortLine(space, " ");
+
+      outputShortLine(space,"Expanded native Hive view text:");
+      NAString viewtext(naTable->getViewText());
+
+      viewtext = viewtext.strip(NAString::trailing, ';');
+      viewtext += " ;";
+
+      outputLongLine(space, viewtext, 0);
+
+      // if this hive view is registered in traf metadata, show that.
+      if (naTable->isRegistered())
+        {
+          outputShortLine(space, " ");
+
+          sprintf(buf,  "REGISTER%sHIVE VIEW %s;",
+                  (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
+                  naTable->getTableName().getQualifiedNameAsString().data());
+          NAString bufnas(buf);
+          outputLongLine(space, bufnas, 0);
+        }
+
+      outbuflen = space.getAllocatedSpaceSize();
+      outbuf = new (heap) char[outbuflen];
+      space.makeContiguous(outbuf, outbuflen);
+      
+      NADELETEBASIC(buf, heap);
+      
+      return 0;
+    }
+
   if (type == 1)
     {
-      sprintf(buf,  "-- Definition of hive table %s\n"
-              "-- Definition current  %s",
-              tableName.data(), ctime(&tp));
+      if (isView)
+        sprintf(buf, "-- Definition of native Hive view %s\n"
+                "-- Definition current  %s",
+                tableName.data(), ctime(&tp));
+      else
+        sprintf(buf, "-- Definition of hive table %s\n"
+                "-- Definition current  %s",
+                tableName.data(), ctime(&tp));
+      
       outputShortLine(space, buf);
     }
   else if (type == 2)
@@ -2305,32 +2349,51 @@ short CmpDescribeHiveTable (
 
   outputShortLine(space, "  )");
 
-  const HHDFSTableStats* hTabStats = 
-    naTable->getClusteringIndex()->getHHDFSTableStats();
-  if (hTabStats->isOrcFile())
+  const HHDFSTableStats* hTabStats = NULL;
+  if (naTable->getClusteringIndex())
+    hTabStats = naTable->getClusteringIndex()->getHHDFSTableStats();
+  if (hTabStats)
     {
-      if (type == 1)
-        outputShortLine(space, "  /* stored as orc */");
-      else
-        outputShortLine(space, "  stored as orc ");
-    }
-  else if (hTabStats->isTextFile())
-    {
-      if (type == 1)
-        outputShortLine(space, "  /* stored as textfile */");
-      else
-        outputShortLine(space, "  stored as textfile ");
-    }
-  else if (hTabStats->isSequenceFile())
-    {
-      if (type == 1)
-        outputShortLine(space, "  /* stored as sequence */");
-      else
-        outputShortLine(space, "  stored as sequence ");
+      if (hTabStats->isOrcFile())
+        {
+          if (type == 1)
+            outputShortLine(space, "  /* stored as orc */");
+          else
+            outputShortLine(space, "  stored as orc ");
+        }
+      else if (hTabStats->isTextFile())
+        {
+          if (type == 1)
+            outputShortLine(space, "  /* stored as textfile */");
+          else
+            outputShortLine(space, "  stored as textfile ");
+        }
+      else if (hTabStats->isSequenceFile())
+        {
+          if (type == 1)
+            outputShortLine(space, "  /* stored as sequence */");
+          else
+            outputShortLine(space, "  stored as sequence ");
+        }
     }
 
   if (type == 2)
     outputShortLine(space, ";");
+
+  // if this hive table is registered in traf metadata, show that.
+  if ((type == 2) &&
+      (naTable->isRegistered()))
+    {
+      outputShortLine(space, " ");
+
+      sprintf(buf,  "REGISTER%sHIVE %s %s;",
+              (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
+              (isView ? "VIEW" : "TABLE"),
+              naTable->getTableName().getQualifiedNameAsString().data());
+
+      NAString bufnas(buf);
+      outputLongLine(space, bufnas, 0);
+    }
 
   // if this hive table has an associated external table, show ddl
   // for that external table.
@@ -2367,6 +2430,49 @@ short CmpDescribeHiveTable (
 
       outputShortLine(space, ";");
     }
+
+  // If SHOWDDL and authorization is enabled, display GRANTS
+  if (type == 2)
+  {
+    int64_t objectUID = (int64_t)naTable->objectUid().get_value();
+
+    char * sqlmxRegr = getenv("SQLMX_REGRESS");
+    NABoolean displayPrivilegeGrants = TRUE;
+    if (((CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_SYSTEM) && sqlmxRegr) ||
+        (CmpCommon::getDefault(SHOWDDL_DISPLAY_PRIVILEGE_GRANTS) == DF_OFF) ||
+        (NOT CmpCommon::context()->isAuthorizationEnabled()) ||
+        (objectUID <= 0))
+      displayPrivilegeGrants = FALSE;
+
+    if (displayPrivilegeGrants)
+    {
+      // Used for context switches
+      CmpSeabaseDDL cmpSBD((NAHeap*)heap);
+
+      // now get the grant stmts
+      std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
+      privMDLoc += std::string(".\"") + 
+                   std::string(SEABASE_PRIVMGR_SCHEMA) + 
+                   std::string("\"");
+      PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags(),
+                                    PrivMgr::PRIV_INITIALIZED);
+      PrivMgrObjectInfo objectInfo(naTable);
+      std::string privilegeText;
+      if (cmpSBD.switchCompiler())
+      {
+        *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+        return -1;
+      }
+ 
+      if (privInterface.describePrivileges(objectInfo, privilegeText))
+      {
+        outputShortLine(space, " ");
+        outputLine(space, privilegeText.c_str(), 0);
+      }
+
+      cmpSBD.switchBackCompiler();
+    }
+  }
 
   outbuflen = space.getAllocatedSpaceSize();
   outbuf = new (heap) char[outbuflen];
@@ -2786,6 +2892,7 @@ short CmpDescribeSeabaseTable (
 
   NABoolean isVolatile = naTable->isVolatileTable();
   NABoolean isExternalTable = naTable->isExternalTable();
+  NABoolean isImplicitExternalTable = naTable->isImplicitExternalTable();
   NABoolean isHbaseMapTable = naTable->isHbaseMapTable();
 
   NABoolean isExternalHbaseTable = FALSE;
@@ -2958,7 +3065,12 @@ short CmpDescribeSeabaseTable (
       if (isVolatile)
         tabType = " VOLATILE ";
       else if (isExternalTable)
-        tabType = " EXTERNAL ";
+        {
+          if (isImplicitExternalTable)
+            tabType = " /*IMPLICIT*/ EXTERNAL ";
+          else
+            tabType = " EXTERNAL ";
+        }
       else
         tabType = " ";
 

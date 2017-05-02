@@ -1335,6 +1335,28 @@ const NAType *BuiltinFunction::synthesizeType()
       }
     break;
 
+    case ITM_REVERSE:
+      {
+	// reserve(<value>);
+	ValueId vid1 = child(0)->getValueId();
+
+	// untyped param operands are typed as CHAR
+	vid1.coerceType(NA_CHARACTER_TYPE);
+
+	const NAType &typ1 = vid1.getType();
+
+	if (typ1.getTypeQualifier() != NA_CHARACTER_TYPE)
+	  {
+	    // 4043 The operand of a $0~String0 function must be character.
+	    *CmpCommon::diags() << DgSqlCode(-4043) << DgString0(getTextUpper());
+	    return NULL;
+	  }
+
+        // return type same as child type
+        retType = typ1.newCopy(HEAP);
+      }
+    break;
+
     case ITM_UNIQUE_ID:
       {
 	retType = new HEAP SQLChar(16, FALSE);
@@ -1853,6 +1875,7 @@ const NAType *Assign::doSynthesizeType(ValueId & targetId, ValueId & sourceId)
 {
   NABoolean ODBC = (CmpCommon::getDefault(ODBC_PROCESS) == DF_ON);
   NABoolean JDBC = (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON);
+  NABoolean isSourceNullConst = FALSE;
   NABoolean forceSourceParamToBeNullable = 
     (CmpCommon::getDefault(COMP_BOOL_173) == DF_ON);
 
@@ -1866,7 +1889,7 @@ const NAType *Assign::doSynthesizeType(ValueId & targetId, ValueId & sourceId)
 
   NABoolean sourceIsUntypedParam = 
     (sourceId.getType().getTypeQualifier() == NA_UNKNOWN_TYPE);
-
+ 
   // Charset inference.
   const NAType& sourceType = sourceId.getType();
   targetId.coerceType(sourceType);
@@ -3860,14 +3883,15 @@ const NAType *Repeat::synthesizeType()
   Int64 size_in_bytes;
   Int64 size_in_chars;
 
+  Int32 maxCharColLen = CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH);
+
   // figure out the max length of result.
   NABoolean negate;
   if (maxLengthWasExplicitlySet_)
     {
       // cap max len at traf_max_character_col_length
       size_in_bytes = 
-        MINOF(CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH), 
-              getMaxLength());
+        MINOF(maxCharColLen, getMaxLength());
       size_in_chars = 
         size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
     }
@@ -3898,21 +3922,21 @@ const NAType *Repeat::synthesizeType()
       size_in_chars = ctyp1.getStrCharLimit() * repeatCount;
       // check size limit only for fixed character type
       if ( ! typ1.isVaryingLen() ) {
-         if ( size_in_bytes > CONST_100K ) {
+         if ( size_in_bytes > maxCharColLen ) {
 	    *CmpCommon::diags() << DgSqlCode(-4129)
                                 << DgString0(getTextUpper());
             return NULL;
          }
        } else // varchar. The nominal size of the result is
-              // the min of (size, CONST_100K).
+              // the min of (size, maxCharColLen).
          {
-            size_in_bytes = MINOF(CONST_100K, size_in_bytes);
+            size_in_bytes = MINOF(maxCharColLen, size_in_bytes);
             size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
          }
     }
   else if (getMaxLength() > -1)
     {
-      size_in_bytes = MINOF(CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH), 
+      size_in_bytes = MINOF(maxCharColLen, 
                             getMaxLength() * typ1.getNominalSize());
       size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
     }
@@ -3920,8 +3944,7 @@ const NAType *Repeat::synthesizeType()
     {
       // Assign some arbitrary max result size since we can't
       // figure out the actual max size.
-      size_in_bytes = 
-        CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH);
+      size_in_bytes = maxCharColLen;
       size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1.getCharSet());
     }
 
@@ -6691,8 +6714,7 @@ const NAType *LOBoper::synthesizeType()
 	  result = new HEAP SQLClob(1000, Lob_Invalid_Storage,
 				    typ1.supportsSQLnull());
 	}
-    }
-  
+    } 
   return result;
 }
 
@@ -6704,7 +6726,7 @@ const NAType *LOBinsert::synthesizeType()
   if (child(0))
     {
       vid1 = child(0)->getValueId();
-      typ1 = &vid1.getType();
+      typ1 = &vid1.getType();     
     }
 
   if ((obj_ == STRING_) ||
@@ -6712,12 +6734,16 @@ const NAType *LOBinsert::synthesizeType()
       (obj_ == EXTERNAL_) ||
       (obj_ == LOAD_))
     {
-      if (typ1 && typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
-	{
-	  // 4221 The operand of a $0~String0 function must be character.
-	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
-			      << DgString1("CHARACTER");
-	  return NULL;
+
+        if (typ1 && typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
+	{          
+          if (!lobAsVarchar())
+            {
+              // 4221 The operand of a $0~String0 function must be character.
+              *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBINSERT")
+                                  << DgString1("CHARACTER");
+              return NULL;
+            }
 	}
     }
   else if (obj_ == LOB_)
@@ -6793,22 +6819,28 @@ const NAType *LOBupdate::synthesizeType()
       (obj_ == FILE_) ||
       (obj_ == EXTERNAL_))
     {
-      if (typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
+     
+       if (typ1->getTypeQualifier() != NA_CHARACTER_TYPE)
 	{
-	  // 4221 The operand of a $0~String0 function must be character.
-	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
-			      << DgString1("CHARACTER");
-	  return NULL;
+          if(!lobAsVarchar())
+            {
+              // 4221 The operand of a $0~String0 function must be character.
+              *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
+                                  << DgString1("CHARACTER");
+              return NULL;
+            }
 	}
     }
   else if (obj_ == LOB_)
     {
       if (typ1->getTypeQualifier() != NA_LOB_TYPE)
 	{
-	  // 4043 The operand of a $0~String0 function must be blob
-	  *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
+            
+          // 4043 The operand of a $0~String0 function must be blob
+          *CmpCommon::diags() << DgSqlCode(-4221) << DgString0("LOBUPDATE")
 			      << DgString1("LOB");
-	  return NULL;
+          return NULL;
+            
 	}
     }
   else if (obj_ == BUFFER_)

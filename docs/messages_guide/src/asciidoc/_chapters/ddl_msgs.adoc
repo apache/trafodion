@@ -1234,12 +1234,12 @@ Dropping the only partition of an object is not allowed. At least two partitions
 == SQL 1118
 
 ```
-Creating object <table-name> is not allowed in metadata schema.
+Creating object <table-name> is not allowed in a reserved system schema.
 ```
 
 Where <table-name> is the name of the object.
 
-*Cause:* You attempted to create an object in the metadata schema.
+*Cause:* You attempted to create an object in a reserved system schema.
 
 *Effect:* The operation fails.
 
@@ -1268,17 +1268,16 @@ destroy the database.
 == SQL 1120
 
 ```
-Use of float datatype in a partitioning key is not allowed.
+Use of an approximate numeric datatype (float, real, double precision) in a partitioning key or salt clause is not allowed.
 ```
 
-*Cause:* You attempted an operation on a partitionable table that has
-float datatype in the partitioning key.
+*Cause:* You attempted to create a table using a column having an approximate numeric datatype
+as a partitioning key or as a salt column.
 
 *Effect:* The operation fails.
 
-*Recovery:* Enable the default
-ALLOW_FLOAT_DATATYPES_IN_PARTITIONING_KEY via a control query default
-statement and retry the operation.
+*Recovery:* Change the data type to an exact data type, or use different columns
+for the partitioning key or salt column.
 
 [[SQL-1121]]
 == SQL 1121
@@ -1337,35 +1336,18 @@ contains an element that is not supported.
 *Recovery:* Correct the syntax and resubmit.
 
 <<<
-[[SQL-1124]]
-== SQL 1124
-
-```
-Use of a float datatype in a partitioning key has been enabled by the default ALLOW_FLOAT_DATATYPES_IN_PARTIONING_KEY. This could give some incorrect results and the users should be aware of it.
-```
-
-*Cause:* You attempted an operation on a partitionable table that has
-float datatype in the partitioning key.
-
-*Effect:* The operation completes without errors, but the results might
-not be correct.
-The float data value might not be evaluated consistently to the same
-value each time.
-
-*Recovery:* Do not use float data types in the partitioning key of a
-partitionable table.
-
 [[SQL-1127]]
 == SQL 1127
 
 ```
-The specified table <table-name> is not a base table. Please verify that the correct table was specified.
+The specified table <table-name> does not exist, is inaccessible or is not a base table. Please verify that the correct table was specified.
 ```
 
 Where <table-name> is the name of the table.
 
 *Cause:* You attempted to perform an operation that can be performed
-only on a base table, and the specified object is not a base table.
+only on a base table, and the specified object does not exist,
+is inaccessible, or is not a base table.
 
 *Effect:* The operation fails.
 
@@ -1390,7 +1372,7 @@ without specifying a default value.
 == SQL 1132
 
 ```
-An added column cannot have both DEFAULT NULL and NOT NULL.
+An added column cannot be declared with both DEFAULT NULL and NOT NULL.
 ```
 
 *Cause:* You attempted to add a column that is both DEFAULT NULL and NOT
@@ -1406,7 +1388,7 @@ NULL and resubmit.
 == SQL 1133
 
 ```
-Only super ID can perform this operation.
+Only the super ID can perform this operation.
 ```
 
 *Cause:* You attempted to perform an operation that can be performed
@@ -1415,24 +1397,6 @@ only by the super ID.
 *Effect:* The operation fails.
 
 *Recovery:* Log on as the super ID and then resubmit.
-
-[[SQL-1134]]
-== SQL 1134
-
-```
-A concurrent utility or DDL is being performed on object <object-name>, its parent, or one of its dependencies. That operation must complete before the requested operation can run.
-```
-
-Where <object-name> is the name of the object.
-
-*Cause:* You attempted to execute a utility or alter the DDL of an
-object while a concurrent utility or DDL operation was being performed
-on the object, its parent, or its dependencies.
-
-*Effect:* The operation fails.
-
-*Recovery:* Wait until the concurrent operation has finished and then
-resubmit.
 
 <<<
 [[SQL-1135]]
@@ -1511,40 +1475,6 @@ exceeds the maximum allowed row size.
 calculations. Change the column definitions and reissue the statement.
 
 <<<
-[[SQL-1141]]
-== SQL 1141
-
-```
-Label <file-name> for object could not be accessed. File system error <error-number>.
-```
-
-Where <file-name> is the {project-name} platform file name of a partition of
-object.
-
-Where <error-number> is a {project-name} platform file system error.
-
-*Cause:* An ALTER TABLE or ALTER INDEX operation encountered a file
-system error.
-
-*Effect:* The operation fails.
-
-*Recovery:* For information about file system errors, see <<file_system_errors,File-System Errors>>.
-
-[[SQL-1142]]
-== SQL 1142
-
-```
-Because it is not audited, this table cannot have a column added that is declared NOT NULL, or has a CHECK, UNIQUE, PRIMARY KEY, or FOREIGN KEY constraint.
-```
-
-*Cause:* Internal error.
-
-*Effect:* The {project-name} database is unable to perform the requested
-operation.
-
-*Recovery:* None. Contact the {project-name} User Distribution List
-
-<<<
 [[SQL-1143]]
 == SQL 1143
 
@@ -1596,23 +1526,6 @@ specified is one of the character data types.
 compatible with the type of column <column-name> and resubmit.
 
 <<<
-[[SQL-1145]]
-== SQL 1145
-
-```
-The catalog name <catalog-name> is reserved for {project-name} metadata.
-```
-
-Where <catalog-name> is the name of a {project-name} database catalog.
-
-*Cause:* {project-name} reserves certain catalog names
-for its own use.
-
-*Effect:* The operation fails.
-
-*Recovery:* See the {docs-url}/sql_reference/index.html[_{project-name} SQL Reference Manual_] for reserved names.
-Change <catalog-name> to a name that is not reserved and resubmit.
-
 [[SQL-1146]]
 == SQL 1146
 

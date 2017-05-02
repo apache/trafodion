@@ -1666,18 +1666,36 @@ NATable *BindWA::getNATable(CorrName& corrName,
           return NULL;
         }
       
-      // Compare column lists
+      // Compare native and external table definitions.
+      // -- If this call is to drop external table, skip comparison.
+      // -- Otherwise compare that number of columns is the same.
+      // -- Compare type for corresponding columns. But if external table 
+      //    was created with explicit col attrs, then skip type check for cols.
+      // 
       // TBD - return what mismatches
-      if ( nativeNATable && 
-           !(table->getNAColumnArray() == nativeNATable->getNAColumnArray()) &&
-           (NOT bindWA->externalTableDrop()))
-        {
-          *CmpCommon::diags() << DgSqlCode(-3078)
-                              << DgString0(adjustedName)
-                              << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
-          bindWA->setErrStatus();
-          nativeNATable->setRemoveFromCacheBNC(TRUE);
-          return NULL;
+      NABoolean compError = FALSE;
+      if (nativeNATable &&
+          (NOT bindWA->externalTableDrop()))
+        { 
+          if (table->getNAColumnArray().entries() != 
+              nativeNATable->getNAColumnArray().entries())
+            compError = TRUE;
+          if ((NOT compError) &&
+              (NOT table->hiveExtColAttrs()) &&
+              (NOT table->hiveExtKeyAttrs()))
+            {
+              if (NOT (table->getNAColumnArray() == nativeNATable->getNAColumnArray()))
+                compError = TRUE;
+            }
+          if (compError)
+            {
+              *CmpCommon::diags() << DgSqlCode(-3078)
+                                  << DgString0(adjustedName)
+                                  << DgTableName(table->getTableName().getQualifiedNameAsAnsiString());
+              bindWA->setErrStatus();
+              nativeNATable->setRemoveFromCacheBNC(TRUE);
+              return NULL;
+            }
         }
     }
   
@@ -1794,6 +1812,18 @@ static TableDesc *createTableDesc2(BindWA *bindWA,
       }
 
   }
+
+  if (hint AND hint->indexCnt() > tdesc->getHintIndexes().entries() AND
+      CmpCommon::getDefault(INDEX_HINT_WARNINGS) != DF_OFF)
+    {
+      // emit a warning that we didn't process all the index hints,
+      // there is probably a spelling mistake
+      *CmpCommon::diags() << DgSqlCode(4371)
+                          << DgInt0(tdesc->getHintIndexes().entries())
+                          << DgInt1(hint->indexCnt())
+                          << DgTableName(naTable->getTableName().
+                                         getQualifiedNameAsAnsiString());
+    }
 
   // For each vertical partition, create an IndexDesc.
   // Add this VP to the list of VPs for the TableDesc.
@@ -2000,7 +2030,20 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   CMPASSERT(viewName.getQualifiedNameObj() == naTable->getTableName());
 
   NABoolean inViewExpansion = bindWA->setInViewExpansion(TRUE);   // QSTUFF
-  
+
+  // If this is a native hive view, then temporarily change the default schema to
+  // that of viewName. This will make sure that all unqualified objects in view
+  // text are expanded in this schema. 
+  NABoolean defSchWasChanged = FALSE;
+  SchemaName savedSch(bindWA->getDefaultSchema());
+  if (viewName.isHive())
+    {
+      SchemaName s(viewName.getQualifiedNameObj().getSchemaName(),
+                   viewName.getQualifiedNameObj().getCatalogName());
+      bindWA->setDefaultSchema(s);
+      defSchWasChanged = TRUE;
+    }
+
   // set a flag for overrride_schema
   //if (overrideSchemaEnabled())
     bindWA->getCurrentScope()->setInViewExpansion(TRUE);
@@ -2077,6 +2120,10 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
 
   if (NOT viewTree) {
     bindWA->setErrStatus();
+
+    if (defSchWasChanged)
+      bindWA->setDefaultSchema(savedSch);
+
     return NULL;
   }
 
@@ -2150,13 +2197,16 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   queryTree = queryTree->bindNode(bindWA);
 
   if (bindWA->errStatus())
-    return NULL;
+    {
+      if (defSchWasChanged)
+        bindWA->setDefaultSchema(savedSch);
+      
+      return NULL;
+    }
+
   bindWA->setNameLocListPtr(saveNameLocList);
 
   bindWA->viewCount()--;
-
-  if (bindWA->errStatus())
-    return NULL;
 
   // if RelRoot has an order by, insert a Logical Sort node below it
   // and move the order by expr from view root to this sort node.
@@ -2315,8 +2365,10 @@ RelExpr *BindWA::bindView(const CorrName &viewName,
   bindWA->getUpdateToScanValueIds().clear();
   // QSTUFF
 
-  return queryTree;
+  if (defSchWasChanged)
+    bindWA->setDefaultSchema(savedSch);
 
+  return queryTree;
 } // BindWA::bindView()
 
 // -----------------------------------------------------------------------
@@ -5299,6 +5351,8 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
 		       (naTable->getObjectType() == COM_INDEX_OBJECT)) &&
 		      ((naTable->isSeabaseTable()) ||
                        ((naTable->isHiveTable()) &&
+                        (NOT naTable->isView()) &&
+                        (naTable->getClusteringIndex()) &&
                         (naTable->getClusteringIndex()->getHHDFSTableStats()->isOrcFile()))))
 		    {
 		      Aggregate * agg = 
@@ -7109,7 +7163,18 @@ NABoolean RelRoot::checkPrivileges(BindWA* bindWA)
 //   COM_QI_USER_GRANT_ROLE: privileges granted to the user via a role 
 //   COM_QI_USER_GRANT_SPECIAL_ROLE: privileges granted to PUBLIC
 //
-// COM_QI_OBJECT_<priv> types are preferred over COM_QI_USER_GRANT_ROLE.
+// Keys are added as follows:
+//   if a privilege has been granted via a role, add a RoleUserKey
+//      if this role is revoked from the user, then invalidation is forced
+//   if a privilege has been granted to public, add a UserObjectPublicKey
+//      if a privilege is revoked from public, then invalidation is forced
+//   if a privilege has been granted directly to an object, add UserObjectKey
+//      if the privilege is revoked from the user, then invalidation is forced
+//   If a privilege has not been granted to an object, but is has been granted
+//      to a role, add a RoleObjectKey
+//
+//   So if the same privilege has been granted directly to the user and via
+//   a role granted to the user, we only add a UserObjectKey
 // ****************************************************************************
 void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
                                           , const uint32_t userHashValue
@@ -7123,6 +7188,7 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
    ComSecurityKey * UserObjectKey = NULL;
    ComSecurityKey * RoleObjectKey = NULL;
    ComSecurityKey * UserObjectPublicKey = NULL;
+   ComSecurityKey * RoleUserKey = NULL;
    
    // These may be implemented at a later time
    ComSecurityKey * UserSchemaKey = NULL; //privs granted at schema level to user
@@ -7153,6 +7219,12 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
             if ( ! UserObjectKey ) 
                UserObjectKey = thisKey;
          }
+         // Found a security key for a role associated with the user
+         else
+         {
+            if ( ! RoleObjectKey )
+               RoleObjectKey = thisKey;
+         }
       }
      
       // See if the security key is role related
@@ -7160,8 +7232,8 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
       {
          if ( thisKey->getSubjectHashValue() == userHashValue )
          {
-            if (! RoleObjectKey ) 
-               RoleObjectKey = thisKey;
+            if (! RoleUserKey ) 
+               RoleUserKey = thisKey;
          }
       }
 
@@ -7183,7 +7255,12 @@ void RelRoot::findKeyAndInsertInOutputList( ComSecurityKeySet KeysForTab
    if ( BestKey != NULL)
       securityKeySet_.insert(*BestKey);
 
-   // Add public if it exists
+   // Add RoleUserKey if priv comes from role - handles revoke role from user
+   if (BestKey == RoleObjectKey)
+      if ( RoleUserKey )
+         securityKeySet_.insert(*RoleUserKey );
+
+   // Add public if it exists - handles revoke public from user
    if ( UserObjectPublicKey != NULL )
      securityKeySet_.insert(*UserObjectPublicKey); 
 }
@@ -7700,6 +7777,16 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
   
 } // setupStoi()
 
+static void bindHint(Hint *hint, BindWA *bindWA)
+{
+  // bind the index names, make them fully qualified
+  for (CollIndex x=0; hint && x<hint->indexCnt(); x++)
+    {
+      QualifiedName qualIxName((*hint)[x], 1, bindWA->wHeap(), bindWA);
+      hint->replaceIndexHint(x, qualIxName.getQualifiedNameAsAnsiString());
+    }
+}
+
 //----------------------------------------------------------------------------
 RelExpr *Scan::bindNode(BindWA *bindWA)
 {
@@ -7878,6 +7965,9 @@ RelExpr *Scan::bindNode(BindWA *bindWA)
     os = bindWA->getToOverrideSchema();
     bindWA->setToOverrideSchema(FALSE);  
   }
+
+  if (getHint())
+    bindHint(getHint(), bindWA);
 
   TableDesc * tableDesc = NULL;
 
@@ -10408,7 +10498,14 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
           {
             Assign * assign = (Assign*)newRecExprArray()[i].getItemExpr();
             ItemExpr * ie = assign->getSource().getItemExpr();
-            if (NOT ie->wasDefaultClause())
+
+            // The IDENTITY column type of GENERATED ALWAYS AS IDENTITY
+            // can not be used with user specified values.
+            // However, if the override CQD is set, then
+            // allow user specified values to be added
+            // for a GENERATED ALWAYS AS IDENTITY column.
+            if ((NOT ie->wasDefaultClause()) &&
+                (CmpCommon::getDefault(OVERRIDE_GENERATED_IDENTITY_VALUES) == DF_OFF))
               {
                 *CmpCommon::diags() << DgSqlCode(-3428)
                                     << DgString0(nacol->getColName());
@@ -13036,7 +13133,12 @@ RelExpr * GenericUpdate::bindNode(BindWA *bindWA)
     setTableDesc(naTableToptableDesc);
 
     // Now naTable has the Scan's table, and naTableTop has the GU's table.
-    isScanOnDifferentTable = (naTable != naTableTop);
+    // Rather than compare naTable pointers we now compare the extended
+    // qualified name contained in them. This name is the key to an natable
+    // object in NATableDB and will enable us to tell if scan's table and 
+    // GU's table are the same.
+    isScanOnDifferentTable = (naTable->getExtendedQualName() != 
+			      naTableTop->getExtendedQualName());
   }
 
   if (bindWA->errStatus())
@@ -14725,8 +14827,14 @@ RelExpr * RelTransaction::bindNode(BindWA *bindWA)
         (mode_->getAutoBeginOn() != 0) ||
         (mode_->getAutoBeginOff() != 0))
     {
-      CMPASSERT(mode_->isolationLevel() == TransMode::IL_NOT_SPECIFIED_ &&
-                mode_->accessMode()     == TransMode::AM_NOT_SPECIFIED_);
+      if (NOT (mode_->isolationLevel() == TransMode::IL_NOT_SPECIFIED_ &&
+               mode_->accessMode()     == TransMode::AM_NOT_SPECIFIED_))
+        {
+          *CmpCommon::diags() << DgSqlCode(-3242)
+                              << DgString0("Isolation level or Access mode options cannot be specified along with autocommit or autobegin options.");
+          bindWA->setErrStatus();
+          return this;
+        }
     }
     else 
     {

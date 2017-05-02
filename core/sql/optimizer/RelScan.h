@@ -228,9 +228,8 @@ public:
           // QSTUFF
          stream_ (stream),
          embeddedUpdateOrDelete_ (FALSE),
-	 selectivityFactor_(-1.0),
-	 cardinalityHint_(-1.0),
 	 forcedIndexInfo_(FALSE),
+         suppressHints_(FALSE),
          baseCardinality_(0),
           // QSTUFF
          isRewrittenMV_(FALSE),
@@ -257,9 +256,8 @@ public:
                  // QSTUFF
          stream_ (stream),
          embeddedUpdateOrDelete_ (FALSE),
-	 selectivityFactor_(-1.0),
-	 cardinalityHint_(-1.0),
 	 forcedIndexInfo_(FALSE),
+         suppressHints_(FALSE),
          baseCardinality_(0),
           // QSTUFF
          isRewrittenMV_(FALSE),
@@ -289,9 +287,8 @@ public:
                  // QSTUFF
          stream_ (stream),
          embeddedUpdateOrDelete_ (FALSE),
-	 selectivityFactor_(-1.0),
-	 cardinalityHint_(-1.0),
 	 forcedIndexInfo_(FALSE),
+         suppressHints_(FALSE),
          baseCardinality_(0),
           // QSTUFF
          isRewrittenMV_(FALSE),
@@ -319,9 +316,8 @@ public:
                  // QSTUFF
 	 stream_ (FALSE),
          embeddedUpdateOrDelete_ (FALSE),
-	 selectivityFactor_(-1.0),
-	 cardinalityHint_(-1.0),
 	 forcedIndexInfo_(FALSE),
+         suppressHints_(FALSE),
          baseCardinality_(0),
          // QSTUFF
          isRewrittenMV_(FALSE),
@@ -431,8 +427,9 @@ public:
 
   // find out which indexes on the base table are usable for this scan
   void addIndexInfo();
-  NABoolean equalityPredOnCol(ItemExpr*);
-  NABoolean updateableIndex(IndexDesc*);
+  NABoolean updateableIndex(IndexDesc*, ValueIdSet& preds, 
+                            NABoolean & needsHalloweenProtection);
+  NABoolean requiresHalloweenForUpdateUsingIndexScan();
 
   // iterate over the usable indexes (index-only and index joins)
   CollIndex numUsableIndexes();
@@ -488,6 +485,11 @@ public:
   const StmtLevelAccessOptions  accessOptions() const { return accessOptions_; }
         StmtLevelAccessOptions &accessOptions()       { return accessOptions_; }
 
+  const SelectivityHint * getSelectivityHint() const
+              { return (suppressHints_ ? NULL : tabId_->getSelectivityHint()); }
+  const CardinalityHint * getCardinalityHint() const 
+              { return (suppressHints_ ? NULL : tabId_->getCardinalityHint()); }
+
   // ---------------------------------------------------------------------
   // Scan::normalizeNode()
   // Invokes ItemExpr::normalizeNode() & then performs mdamBuildDisjuncts
@@ -518,6 +520,10 @@ public:
   void setForceIndexInfo() { forcedIndexInfo_ = TRUE; }
   void resetForceIndexInfo() { forcedIndexInfo_ = FALSE; }
   NABoolean isIndexInfoForced() const { return forcedIndexInfo_; }
+
+  void setSuppressHints(NABoolean x = TRUE)            { suppressHints_ = x; }
+  NABoolean areHintsSuppressed() const              { return suppressHints_; }
+
   // ---------------------------------------------------------------------
   // Vertical Partitioning related methods
   // ---------------------------------------------------------------------
@@ -550,12 +556,6 @@ public:
 
   Float32 samplePercent() const               { return samplePercent_; };
   void samplePercent(Float32 sp)              { samplePercent_ = sp; };
-
-  CostScalar getScanSelectivityFactor() const     { return selectivityFactor_ ; };
-  void setScanSelectivityFactor(CostScalar sf) { selectivityFactor_ = sf; };
-
-  CostScalar getScanCardinalityHint() const       { return cardinalityHint_ ; };
-  void setScanCardinalityHint(CostScalar ch)   { cardinalityHint_ = ch; };
 
   NABoolean checkForCardRange(const ValueIdSet & setOfPredicates,
                         CostScalar & newRowCount /* in and out */);
@@ -767,12 +767,11 @@ private:
   // scan produces a continuous stream without returning an end-of-data
   NABoolean stream_;
 
-  // is this scan created by FilterRule0
+  // is this scan created by a rule that wants to force a specific index?
   NABoolean forcedIndexInfo_;
 
-  // selectivity hint from user. Set in the parser. Set if > 0, set -1 otherwise
-  CostScalar selectivityFactor_;
-  CostScalar cardinalityHint_;
+  // do not apply hints (e.g. used for inner table of index join)
+  NABoolean suppressHints_;
 
   // hbase options. Like: number of trafodion row versions to retrieve from hbase.
   HbaseAccessOptions *hbaseAccessOptions_;
@@ -1006,8 +1005,6 @@ public:
   // -----------------------------------------------------
   virtual short generateShape(CollHeap * space, char * buf, NAString * shapeStr = NULL);
 
-
-  NABoolean isRecommendedByHints();
   inline const CostScalar getEstRowsAccessed() const 
     { return estRowsAccessed_; }
   inline void setEstRowsAccessed(CostScalar r)  { estRowsAccessed_ = r; }

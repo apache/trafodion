@@ -402,7 +402,7 @@ public:
 
   short ddlXnsInfo(NABoolean &ddlXns, NABoolean &xnCanBeStarted);
 
-  NAString getQualObjName() { return qualObjName_.getQualifiedNameAsString(); }
+  NAString getQualObjName() { return qualObjName_.getQualifiedNameAsAnsiString(); }
 
   void setCreateMDViews(NABoolean v)
   {(v ? flags_ |= CREATE_MD_VIEWS : flags_ &= ~CREATE_MD_VIEWS); }
@@ -577,7 +577,8 @@ public:
     ORC_FAST_AGGR_            = 37,
     GET_QID_                  = 38,
     HIVE_TRUNCATE_            = 39,
-    LOB_UPDATE_UTIL_          = 40
+    LOB_UPDATE_UTIL_          = 40,
+    HIVE_QUERY_               = 41
   };
 
   ExeUtilExpr(ExeUtilType type,
@@ -1167,6 +1168,45 @@ private:
   NABoolean dropTableOnDealloc_;
 };
 
+class ExeUtilHiveQuery : public ExeUtilExpr
+{
+public:
+  enum HiveSourceType
+    {
+      FROM_STRING,
+      FROM_FILE
+    };
+
+  ExeUtilHiveQuery(const NAString &hive_query,
+                   HiveSourceType type,
+                   CollHeap *oHeap = CmpCommon::statementHeap())
+       : ExeUtilExpr(HIVE_QUERY_, CorrName("dummyName"), 
+                     NULL, NULL, 
+                     NULL,
+                     CharInfo::UnknownCharSet, oHeap),
+         type_(type),
+         hiveQuery_(hive_query)
+  { }
+
+  virtual NABoolean isExeUtilQueryType() { return TRUE; }
+
+  virtual RelExpr * copyTopNode(RelExpr *derivedNode = NULL,
+				CollHeap* outHeap = 0);
+
+  virtual RelExpr * bindNode(BindWA *bindWAPtr);
+
+  // method to do code generation
+  virtual short codeGen(Generator*);
+  
+  NAString &hiveQuery() { return hiveQuery_; }
+  const NAString &hiveQuery() const { return hiveQuery_; }
+
+  HiveSourceType sourceType() { return type_;}
+private:
+  HiveSourceType type_;
+  NAString hiveQuery_;
+};
+
 class ExeUtilMaintainObject : public ExeUtilExpr
 {
 public:
@@ -1513,6 +1553,7 @@ protected:
   // ds: Detailed Stats
   // of: old format (mxci display statistics output)
   // tf: tokenized format, each stats value preceded by a predefined token.
+  // sl: A single line report of BMO and PERTABLE stats
   NAString optionsStr_;
 
   NABoolean compilerStats_;
@@ -1529,6 +1570,7 @@ protected:
   short statsReqType_;
   short statsMergeType_;
   short activeQueryNum_;
+  NABoolean singleLineFormat_;
 };
 
 class ExeUtilGetProcessStatistics : public ExeUtilGetStatistics
@@ -1630,6 +1672,9 @@ public:
   NABoolean hbaseObjects() { return hbaseObjs_;}
   void setHbaseObjects(NABoolean v) { hbaseObjs_ = v; }
   
+  NABoolean cascade() { return cascade_;}
+  void setCascade(NABoolean v) { cascade_ = v; }
+
 private:
   NAString ausStr_; // all/user/system objects
   NAString infoType_;
@@ -1650,6 +1695,7 @@ private:
 
   NABoolean hiveObjs_;
   NABoolean hbaseObjs_;
+  NABoolean cascade_;
 };
 
 

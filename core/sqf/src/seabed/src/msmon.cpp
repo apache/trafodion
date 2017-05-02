@@ -3274,49 +3274,6 @@ int msg_mon_get_ref_count(SB_Phandle_Type *pp_phandle) {
 }
 
 //
-// Purpose: get tm seq number
-//
-SB_Export int msg_mon_get_tm_seq(int *pp_tm_seq) {
-    const char   *WHERE = "msg_mon_get_tm_seq";
-    Mon_Msg_Type *lp_msg;
-    int           lv_mpierr;
-    SB_API_CTR   (lv_zctr, MSG_MON_GET_TM_SEQ);
-
-    SB_UTRACE_API_ADD2(SB_UTRACE_API_OP_MSG_MON_GET_TM_SEQ, 0);
-
-    if (gv_ms_trace_mon)
-        trace_where_printf(WHERE, "ENTER tm-seq=%p\n", pfp(pp_tm_seq));
-    if (!gv_ms_mon_calls_ok) // msg_mon_get_tm_seq
-        return ms_err_rtn_msg(WHERE, "msg_init() or startup not called or shutdown",
-                              XZFIL_ERR_INVALIDSTATE);
-
-    Mon_Msg_Auto lv_msg;
-    lp_msg = &lv_msg;
-    lp_msg->type = MsgType_Service;
-    lp_msg->noreply = false;
-    lp_msg->u.request.type = ReqType_TmSeqNum;
-    if (gv_ms_trace_mon)
-        trace_where_printf(WHERE, "send tm-seq-num req to mon\n");
-    lv_mpierr = msg_mon_sendrecv_mon(WHERE,
-                                     "tm-seq-num",
-                                     lp_msg,
-                                     lv_msg.get_error());
-    if (msg_mon_msg_ok(WHERE,
-                       "tm-seq-num req",
-                       &lv_mpierr,
-                       lp_msg,
-                       MsgType_Service,
-                       ReplyType_TmSeqNum)) {
-        int lv_tm_seq = lp_msg->u.reply.u.tm_seqnum;
-        if (gv_ms_trace_mon)
-            trace_where_printf(WHERE, "EXIT OK tm-seq-num req, tm-seq-num=%d\n",
-                               lv_tm_seq);
-        *pp_tm_seq = lv_tm_seq;
-    }
-    return ms_err_mpi_rtn_msg(WHERE, "EXIT", lv_mpierr);
-}
-
-//
 // Purpose: get trans info
 //
 static int msg_mon_get_trans_info_com(const char             *pp_where,
@@ -3652,13 +3609,11 @@ void msg_mon_init() {
 
     SB_util_static_assert(static_cast<int>(MS_Mon_State_Unknown) ==
                           static_cast<int>(State_Unknown)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_Mon_State_Initializing) ==
-                          static_cast<int>(State_Initializing)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_Mon_State_Takeover) ==
+                          static_cast<int>(State_Takeover)); // sw fault
 
     SB_util_static_assert(static_cast<int>(MS_Mon_ShutdownLevel_Undefined) ==
                           static_cast<int>(ShutdownLevel_Undefined)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_Mon_ShutdownLevel_Normal) ==
-                          static_cast<int>(ShutdownLevel_Normal)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_Mon_ShutdownLevel_Abrupt) ==
                           static_cast<int>(ShutdownLevel_Abrupt)); // sw fault
 
@@ -3674,115 +3629,11 @@ void msg_mon_init() {
 
     SB_util_static_assert(static_cast<int>(MS_MsgType_Change) ==
                           static_cast<int>(MsgType_Change)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_Close) ==
-                          static_cast<int>(MsgType_Close)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_Event) ==
-                          static_cast<int>(MsgType_Event)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_NodeAdded) ==
-                          static_cast<int>(MsgType_NodeAdded)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_NodeChanged) ==
-                          static_cast<int>(MsgType_NodeChanged)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_NodeDeleted) ==
-                          static_cast<int>(MsgType_NodeDeleted)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_NodeDown) ==
-                          static_cast<int>(MsgType_NodeDown)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_NodeJoining) ==
-                          static_cast<int>(MsgType_NodeJoining)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_NodePrepare) ==
-                          static_cast<int>(MsgType_NodePrepare)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_NodeQuiesce) ==
-                          static_cast<int>(MsgType_NodeQuiesce)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_NodeUp) ==
-                          static_cast<int>(MsgType_NodeUp)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_Open) ==
-                          static_cast<int>(MsgType_Open)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_ProcessCreated) ==
-                          static_cast<int>(MsgType_ProcessCreated)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_ProcessDeath) ==
-                          static_cast<int>(MsgType_ProcessDeath)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_ReintegrationError) ==
-                          static_cast<int>(MsgType_ReintegrationError)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_Service) ==
-                          static_cast<int>(MsgType_Service)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_SpareUp) ==
-                          static_cast<int>(MsgType_SpareUp)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_Shutdown) ==
-                          static_cast<int>(MsgType_Shutdown)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_TmRestarted) ==
-                          static_cast<int>(MsgType_TmRestarted)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_TmSyncAbort) ==
-                          static_cast<int>(MsgType_TmSyncAbort)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_TmSyncCommit) ==
-                          static_cast<int>(MsgType_TmSyncCommit)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_MsgType_UnsolicitedMessage) ==
                           static_cast<int>(MsgType_UnsolicitedMessage)); // sw fault
 
     SB_util_static_assert(static_cast<int>(MS_ReqType_Close) ==
                           static_cast<int>(ReqType_Close)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Dump) ==
-                          static_cast<int>(ReqType_Dump)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Event) ==
-                          static_cast<int>(ReqType_Event)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Exit) ==
-                          static_cast<int>(ReqType_Exit)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Get) ==
-                          static_cast<int>(ReqType_Get)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Kill) ==
-                          static_cast<int>(ReqType_Kill)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_MonStats) ==
-                          static_cast<int>(ReqType_MonStats)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Mount) ==
-                          static_cast<int>(ReqType_Mount)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_NewProcess) ==
-                          static_cast<int>(ReqType_NewProcess)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_NodeAdd) ==
-                          static_cast<int>(ReqType_NodeAdd)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_NodeDelete) ==
-                          static_cast<int>(ReqType_NodeDelete)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_NodeDown) ==
-                          static_cast<int>(ReqType_NodeDown)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_NodeInfo) ==
-                          static_cast<int>(ReqType_NodeInfo)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_NodeName) ==
-                          static_cast<int>(ReqType_NodeName)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_NodeUp) ==
-                          static_cast<int>(ReqType_NodeUp)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Notice) ==
-                          static_cast<int>(ReqType_Notice)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Notify) ==
-                          static_cast<int>(ReqType_Notify)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Open) ==
-                          static_cast<int>(ReqType_Open)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_OpenInfo) ==
-                          static_cast<int>(ReqType_OpenInfo)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_PersistAdd) ==
-                          static_cast<int>(ReqType_PersistAdd)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_PersistDelete) ==
-                          static_cast<int>(ReqType_PersistDelete)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_PNodeInfo) ==
-                          static_cast<int>(ReqType_PNodeInfo)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_ProcessInfo) ==
-                          static_cast<int>(ReqType_ProcessInfo)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_ProcessInfoCont) ==
-                          static_cast<int>(ReqType_ProcessInfoCont)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Set) ==
-                          static_cast<int>(ReqType_Set)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Shutdown) ==
-                          static_cast<int>(ReqType_Shutdown)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Startup) ==
-                          static_cast<int>(ReqType_Startup)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_Stfsd) ==
-                          static_cast<int>(ReqType_Stfsd)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_TmLeader) ==
-                          static_cast<int>(ReqType_TmLeader)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_TmReady) ==
-                          static_cast<int>(ReqType_TmReady)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_TmSeqNum) ==
-                          static_cast<int>(ReqType_TmSeqNum)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_TmSync) ==
-                          static_cast<int>(ReqType_TmSync)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_ReqType_TransInfo) ==
-                          static_cast<int>(ReqType_TransInfo)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_ReqType_ZoneInfo) ==
                           static_cast<int>(ReqType_ZoneInfo)); // sw fault
 

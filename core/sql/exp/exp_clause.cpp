@@ -527,6 +527,9 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_TOKENSTR:
 	  setClassID(FUNC_TOKENSTR_ID);
 	  break;
+	case ITM_REVERSE:
+	  setClassID(FUNC_REVERSE_ID);
+	  break;
 	case ITM_CAST_TYPE:
 	  setClassID(FUNC_CAST_TYPE);
 	  break;
@@ -967,6 +970,9 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_TOKENSTR_ID:
       GetVTblPtr(vtblPtr, ExFunctionTokenStr);
       break;
+    case ex_clause::FUNC_REVERSE_ID:
+      GetVTblPtr(vtblPtr, ExFunctionReverseStr);
+      break;
     case ex_clause::LOB_INSERT:
       GetVTblPtr(vtblPtr, ExpLOBinsert);
       break;
@@ -1362,6 +1368,7 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_CONVERTTOHEX: return "ITM_CONVERTTOHEX";
     case ITM_CONVERTFROMHEX: return "ITM_CONVERTFROMHEX";
     case ITM_TOKENSTR: return "ITM_TOKENSTR";
+    case ITM_REVERSE: return "ITM_REVERSE";
 
     // UNICODE/DOUBLEBYTE charsets built-in functions
     case ITM_SUBSTR_DOUBLEBYTE: return "ITM_SUBSTR_DOUBLEBYTE";

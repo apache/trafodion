@@ -765,15 +765,23 @@ Int32 SQScratchFile::redriveVectorIO(Int32 index)
 	  {
 		if(type_ == PEND_READ)
 		{
+		  if (bmoStats)
+                      bmoStats->getScratchIOTimer().start();
 		  bytesCompleted = readv(fileHandle_[index].fileNum, (struct iovec*)remainingAddr_, remainingVectorSize_);
-		  if(bmoStats)
-			bmoStats->incScratchReadCount();
+		  if (bmoStats) {
+                     bmoStats->incScratchReadCount();
+                     bmoStats->incScratchIOMaxTime(bmoStats->getScratchIOTimer().stop());
+                  }
 		}
 		else
 		{
+		  if (bmoStats)
+                      bmoStats->getScratchIOTimer().start();
 		  bytesCompleted = writev(fileHandle_[index].fileNum, (struct iovec*)remainingAddr_, remainingVectorSize_);
-		  if(bmoStats)
-			bmoStats->incScratchWriteCount();
+		  if (bmoStats) {
+                     bmoStats->incScratchWriteCount();
+                     bmoStats->incScratchIOMaxTime(bmoStats->getScratchIOTimer().stop());
+                  }
 		}
 
 		if(bytesCompleted == -1)

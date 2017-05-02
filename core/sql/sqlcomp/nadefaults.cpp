@@ -1569,7 +1569,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_MATR_SIZE_UP,			"8"),
   DDui___(GEN_MAX_NUM_PART_DISK_ENTRIES,       "3"),
   DDui___(GEN_MAX_NUM_PART_NODE_ENTRIES,       "255"),
-  DDui1__(GEN_MEM_PRESSURE_THRESHOLD,		"100"),
+  DDui1__(GEN_MEM_PRESSURE_THRESHOLD,		"10000"),
   DDui1__(GEN_MJ_BUFFER_SIZE,			"32768"),
   DDui1__(GEN_MJ_NUM_BUFFERS,			"1"),
   DDui1__(GEN_MJ_SIZE_DOWN,			"2"),
@@ -1771,7 +1771,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  DDui1__(HBASE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
 
   DDkwd__(HBASE_NATIVE_IUD,		"ON"),
- DDui1__(HBASE_NUM_CACHE_ROWS_MAX,	"10000"),
+ DDui1__(HBASE_NUM_CACHE_ROWS_MAX,	"1024"),
  DDui1__(HBASE_NUM_CACHE_ROWS_MIN,	"100"),
 
   DDkwd__(HBASE_RANGE_PARTITIONING,	        "ON"),
@@ -1943,9 +1943,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
  // CQDs for Trafodion on Hive
  // Main ones to use:
- // HIVE_MAX_STRING_LENGTH: Hive "string" data type gets converted
- //                         into a VARCHAR with this length
- //                         This should be deprecated from Trafodion R2.1
  // HIVE_MAX_STRING_LENGTH_IN_BYTES: Hive "string" data type gets converted
  //                                  into a VARCHAR with this length
  // HIVE_MIN_BYTES_PER_ESP_PARTITION: Make one ESP for this many bytes
@@ -1965,11 +1962,11 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDint__(HIVE_LIB_HDFS_PORT_OVERRIDE,          "-1"),
   DDint__(HIVE_LOCALITY_BALANCE_LEVEL,          "0"),
   DDui___(HIVE_MAX_ESPS,                        "9999"),
-  DDui___(HIVE_MAX_STRING_LENGTH,               "32000"),
   DDui___(HIVE_MAX_STRING_LENGTH_IN_BYTES,      "32000"),
   DDkwd__(HIVE_METADATA_JAVA_ACCESS,            "ON"),
   DDint__(HIVE_METADATA_REFRESH_INTERVAL,       "0"),
   DDflt0_(HIVE_MIN_BYTES_PER_ESP_PARTITION,     "67108864"),
+  DDkwd__(HIVE_NO_REGISTER_OBJECTS,             "OFF"),
   DDui___(HIVE_NUM_ESPS_PER_DATANODE,           "2"),
   DDpct__(HIVE_NUM_ESPS_ROUND_DEVIATION,        "34"),
   DDint__(HIVE_SCAN_SPECIAL_MODE,                "0"),
@@ -1979,7 +1976,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(HIVE_USE_FAKE_TABLE_DESC,             "OFF"),
   DDkwd__(HIVE_USE_HASH2_AS_PARTFUNCION,        "ON"),
   DDkwd__(HIVE_VIEWS,                           "ON"),
-  DDkwd__(HIVE_VIEWS_CREATE_EXTERNAL_TABLE,     "ON"),
 
  // -------------------------------------------------------------------------
 
@@ -2020,6 +2016,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(INCORPORATE_SKEW_IN_COSTING,		  "ON"),
   DDkwd__(INDEX_ELIMINATION_LEVEL,              "AGGRESSIVE"),
   DDui1__(INDEX_ELIMINATION_THRESHOLD,          "50"),
+  DDkwd__(INDEX_HINT_WARNINGS,                  "ON"),
  SDDkwd__(INFER_CHARSET,			"OFF"),
 
   // UDF initial row cost CQDs
@@ -2085,12 +2082,12 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DDint__(LOB_HDFS_PORT,                       "0"),
   DD_____(LOB_HDFS_SERVER,                 "default"), 
  
-   // Size of memoryin bytes  used to perform I/O to lob data file 
+   // Size of memoryin Megabytes  used to perform I/O to lob data file 
   // default size is 512MB   . Change to adjust memory usage. 
   DDint__(LOB_MAX_CHUNK_MEM_SIZE,            "512"), 
   // default size is 10 G  (10000 M)
   DDint__(LOB_MAX_SIZE,                         "10000"),
-  // default size is 32000. Change this to extract more data into memory.
+  // (unused)default size is 32000. Change this to extract more data into memory.
   DDui___(LOB_OUTPUT_SIZE,                         "32000"),
 
   DD_____(LOB_STORAGE_FILE_DIR,                 "/lobs"), 
@@ -3364,10 +3361,11 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_INDEXES,   "ON"),
   DDkwd__(TRAF_LOAD_USE_FOR_STATS,     "OFF"),
 
- // max size in bytes of a char or varchar column.
-  DDui2__(TRAF_MAX_CHARACTER_COL_LENGTH,	"200000"),
+  // max size in bytes of a char or varchar column. Set to 16M
+  DDui___(TRAF_MAX_CHARACTER_COL_LENGTH,     MAX_CHAR_COL_LENGTH_IN_BYTES_STR),
+  DDkwd__(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,    "OFF"),
 
- DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
+  DDkwd__(TRAF_MULTI_COL_FAM,     "ON"),
 
   DDkwd__(TRAF_NO_CONSTR_VALIDATION,                   "OFF"),
 
@@ -3430,6 +3428,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(TRAF_USE_REGION_XN,                          "OFF"),
 
   DDkwd__(TRAF_USE_RWRS_FOR_MD_INSERT,                   "ON"),
+  DDkwd__(TRANSLATE_ERROR,                             "ON"),
+  DDkwd__(TRANSLATE_ERROR_UNICODE_TO_UNICODE,          "ON"),
 
   DDkwd__(TRY_DP2_REPARTITION_ALWAYS,		"OFF"),
 
@@ -3525,6 +3525,7 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
 
   DDkwd__(USTAT_COLLECT_MC_SKEW_VALUES,         "OFF"),
 
+  DDkwd__(USTAT_COMPACT_VARCHARS,               "OFF"),  // If on, internal sort does not pad out varchars
   DD_____(USTAT_CQDS_ALLOWED_FOR_SPAWNED_COMPILERS, ""), // list of CQDs that can be pushed to seconday compilers
                                                          // CQDs are delimited by ","
 
@@ -5934,8 +5935,37 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
      }
      break;
 
-      default:  break;
-      }
+     // max char col length is defined in common/ComSmallDefs.h.
+     // In special cases, it could be overridden. Internal use only or
+     // use only under trafodion supervision.
+     case TRAF_MAX_CHARACTER_COL_LENGTH:
+     {
+       NABoolean override = (getToken(TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE) == DF_ON);
+       double d = atof(value.data());
+       if ((NOT override) &&
+           (NOT (d >= 0 && d <= MAX_CHAR_COL_LENGTH_IN_BYTES)))
+         {
+           *CmpCommon::diags() << DgSqlCode(-2055)
+                               << DgString0(value)
+                               << DgString1(lookupAttrName(attrEnum));
+         }
+     }
+     break;
+
+     case TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE:
+     {
+       // if override is being turned off, reset max_char_len to default value.
+       if (value == "OFF")
+         {
+           NAString val;
+           validateAndInsert("TRAF_MAX_CHARACTER_COL_LENGTH", val, TRUE);
+         }
+     }
+     break;
+
+    default:  
+    break;
+    }
     }	  // code to valid overwrite (insert)
 
     if (reset && overwrite) {

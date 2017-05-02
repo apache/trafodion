@@ -128,9 +128,9 @@ short SqlciStats::displayStats(SqlciEnv * sqlci_env)
   if (statsOptions_)
   {
      if (strcmp(statsOptions_, "PERTABLE") == 0)
-        strcat(newStr, "FOR QID CURRENT PERTABLE ");
+        strcat(newStr, "FOR QID CURRENT PERTABLE, OPTIONS 'SL'");
      else if (strcmp(statsOptions_, "PROGRESS") == 0)
-        strcat(newStr, "FOR QID CURRENT PROGRESS ");
+        strcat(newStr, "FOR QID CURRENT PROGRESS, OPTIONS 'SL'");
      else if (strcmp(statsOptions_, "DEFAULT") == 0)
         strcat(newStr, "FOR QID CURRENT DEFAULT ");
      else if (strcmp(statsOptions_, "ALL") == 0)
@@ -148,7 +148,7 @@ short SqlciStats::displayStats(SqlciEnv * sqlci_env)
   statsDisplay_ = FALSE;
   if (displayAll)
   {
-     strcpy(newStr, "GET STATISTICS FOR QID CURRENT PROGRESS ;");
+     strcpy(newStr, "GET STATISTICS FOR QID CURRENT PROGRESS , OPTIONS 'SL'");
      DML dml(newStr, DML_DESCRIBE_TYPE, "__MXCI_GET_STATS__");
      retcode = dml.process(sqlci_env);
      strcpy(newStr, "GET STATISTICS FOR QID CURRENT DEFAULT ;");

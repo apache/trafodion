@@ -4,7 +4,7 @@
 >>set schema hive.hive;
 
 --- SQL operation complete.
->>cqd HIVE_MAX_STRING_LENGTH '20' ;
+>>cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '20' ;
 
 --- SQL operation complete.
 >>cqd mode_seahive 'ON';

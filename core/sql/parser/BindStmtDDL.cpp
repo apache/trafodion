@@ -2485,6 +2485,29 @@ StmtDDLRegisterUser::bindNode(BindWA * pBindWA)
 }
 
 // -----------------------------------------------------------------------
+// bindNode() for class StmtDDLRegOrUnregHive
+// -----------------------------------------------------------------------
+//
+////
+// a virtual function for performing name
+// binding within the Register hive tree.
+//
+ExprNode *
+StmtDDLRegOrUnregHive::bindNode(BindWA * pBindWA)
+{
+  ComASSERT(pBindWA);
+
+  if (applyDefaultsAndValidateObject(pBindWA, &objQualName_))
+    {
+      pBindWA->setErrStatus();
+      return this;
+    }
+
+  markAsBound();
+  return this;
+}
+
+// -----------------------------------------------------------------------
 // bindNode() for class StmtDDLRoleGrant
 // -----------------------------------------------------------------------
 //

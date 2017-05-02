@@ -179,6 +179,8 @@ static Int32 processSingleCommandFromFile(FILE *f, UdrGlobals &glob);
 // Changed the default to 512 to limit java heap size used by SQL processes.
 // Keep this define in sync with executor/JavaObjectInterface.cpp
 #define DEFAULT_JVM_MAX_HEAP_SIZE 512
+#define DEFAULT_COMPRESSED_CLASSSPACE_SIZE 128
+#define DEFAULT_MAX_METASPACE_SIZE 128
 
 static NAString initErrText("");
 /*************************************************************************
@@ -236,7 +238,27 @@ void InitializeJavaOptionsFromEnvironment(LmJavaOptions &javaOptions
    int maxHeapEnvvarMB = DEFAULT_JVM_MAX_HEAP_SIZE;
    sprintf(maxHeapOption, "-Xmx%dm", maxHeapEnvvarMB);
    javaOptions.addOption((const char *)maxHeapOption, TRUE);
-   
+
+   char compressedClassSpaceSizeOptions[64];
+   int compressedClassSpaceSize = 0;
+   const char *compressedClassSpaceSizeStr = getenv("JVM_COMPRESSED_CLASS_SPACE_SIZE");
+   if (compressedClassSpaceSizeStr)
+      compressedClassSpaceSize = atoi(compressedClassSpaceSizeStr);
+   if (compressedClassSpaceSize <= 0)
+      compressedClassSpaceSize = DEFAULT_COMPRESSED_CLASSSPACE_SIZE;
+   sprintf(compressedClassSpaceSizeOptions, "-XX:CompressedClassSpaceSize=%dm", compressedClassSpaceSize);
+   javaOptions.addOption((const char *)compressedClassSpaceSizeOptions, TRUE);
+
+   char maxMetaspaceSizeOptions[64];
+   int maxMetaspaceSize = 0;
+   const char *maxMetaspaceSizeStr = getenv("JVM_MAX_METASPACE_SIZE");
+   if (maxMetaspaceSizeStr)
+      maxMetaspaceSize = atoi(maxMetaspaceSizeStr);
+   if (maxMetaspaceSize <= 0)
+      maxMetaspaceSize = DEFAULT_MAX_METASPACE_SIZE;
+   sprintf(maxMetaspaceSizeOptions, "-XX:MaxMetaspaceSize=%dm", maxMetaspaceSize);
+   javaOptions.addOption((const char *)maxMetaspaceSizeOptions, TRUE);
+
    /* Look for java startup options and envvars in configuration file */
    if (UdrCfgParser::cfgFileIsOpen(initErrText))
    {
@@ -308,12 +330,8 @@ Int32 main(Int32 argc, char **argv)
   UDR_DEBUG0("[MXUDR] Registered Exit handler");
 
  
-  // setup log4cxx, need to be done here so initLog4cxx can have access to
-  // process information since it is needed to compose the log name
-  // the log4cxx log name for this master and all its subordinates will be
-  // based on this process' node number and its pid
-  QRLogger::instance().setModule(QRLogger::QRL_UDR);
-  QRLogger::instance().initLog4cxx("log4cxx.trafodion.udr.config");
+  // setup log4cxx,
+  QRLogger::initLog4cxx(QRLogger::QRL_UDR);
 
   // Synchronize C and C++ output streams
   ios::sync_with_stdio();

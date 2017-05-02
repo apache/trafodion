@@ -27,7 +27,7 @@ FLAGS = $(CFLAGS)
 #FLAGS+= -fdiagnostics-show-option
 FLAGS+= -Wall -Wextra
 
-LIBS+=  -lsqlite3
+LIBS+= -L$(LIBEXPDIR) -L$(ZOOKEEPER_DIR)/lib -lsqlite3 -ltrafconfig
 
 INCLUDES =  -I$(INCEXPDIR) -I../linux
 

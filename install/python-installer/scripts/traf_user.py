@@ -27,68 +27,69 @@ import os
 import sys
 import json
 import socket
+from constants import TRAF_CFG_DIR, TRAF_CFG_FILE, TRAF_HSPERFDATA_FILE, SSHKEY_FILE
 from common import ParseXML, run_cmd, append_file, mod_file, write_file, \
-                   cmd_output, run_cmd_as_user, err, TMP_DIR
+                   cmd_output, run_cmd_as_user, err, get_default_home
 
 def run():
     """ create trafodion user, bashrc, setup passwordless SSH """
     dbcfgs = json.loads(dbcfgs_json)
 
-    DISTRO = dbcfgs['distro']
-    if 'CDH' in DISTRO:
+    distro = dbcfgs['distro']
+    if 'CDH' in distro:
         hadoop_type = 'cloudera'
-    elif 'HDP' in DISTRO:
+    elif 'HDP' in distro:
         hadoop_type = 'hortonworks'
-    elif 'APACHE' in DISTRO:
+    elif 'APACHE' in distro:
         hadoop_type = 'apache'
 
-    TRAF_USER = dbcfgs['traf_user']
-    TRAF_GROUP = TRAF_USER
-    HOME_DIR = cmd_output('cat /etc/default/useradd |grep HOME |cut -d "=" -f 2').strip()
+    home_dir = get_default_home()
     # customize trafodion home dir
     if dbcfgs.has_key('home_dir') and dbcfgs['home_dir']:
-        HOME_DIR = dbcfgs['home_dir']
+        home_dir = dbcfgs['home_dir']
 
-    TRAF_USER_DIR = '%s/%s' % (HOME_DIR, TRAF_USER)
-    TRAF_DIRNAME = dbcfgs['traf_dirname']
-    TRAF_HOME = '%s/%s' % (TRAF_USER_DIR, TRAF_DIRNAME)
+    traf_user = dbcfgs['traf_user']
+    traf_user_dir = '%s/%s' % (home_dir, traf_user)
+    traf_dirname = dbcfgs['traf_dirname']
+    traf_home = '%s/%s' % (traf_user_dir, traf_dirname)
 
-    TRAFODION_CFG_DIR = '/etc/trafodion/'
-    TRAFODION_CFG_FILE = '/etc/trafodion/trafodion_config'
-    HBASE_XML_FILE = dbcfgs['hbase_xml_file']
-    KEY_FILE = '/tmp/id_rsa'
-    AUTH_KEY_FILE = '%s/.ssh/authorized_keys' % TRAF_USER_DIR
-    SSH_CFG_FILE = '%s/.ssh/config' % TRAF_USER_DIR
-    ULIMITS_FILE = '/etc/security/limits.d/%s.conf' % TRAF_USER
-    HSPERFDATA_FILE = '/tmp/hsperfdata_trafodion'
+    hbase_xml_file = dbcfgs['hbase_xml_file']
+    auth_key_file = '%s/.ssh/authorized_keys' % traf_user_dir
+    ssh_cfg_file = '%s/.ssh/config' % traf_user_dir
+    ulimits_file = '/etc/security/limits.d/%s.conf' % traf_user
 
     # create trafodion user and group
-    if not cmd_output('getent group %s' % TRAF_GROUP):
-        run_cmd('groupadd %s > /dev/null 2>&1' % TRAF_GROUP)
+    if cmd_output('getent passwd %s' % traf_user):
+        # trafodion user exists, set actual trafodion group
+        traf_group = cmd_output('id -ng %s' % traf_user)
+    else:
+        # default trafodion group
+        traf_group = traf_user
+        if not cmd_output('getent group %s' % traf_group):
+            run_cmd('groupadd %s > /dev/null 2>&1' % traf_group)
+        traf_pwd = dbcfgs['traf_pwd']
+        run_cmd('useradd --shell /bin/bash -m %s -g %s --home %s --password "$(openssl passwd %s)"' % (traf_user, traf_group, traf_user_dir, traf_pwd))
 
-    if not cmd_output('getent passwd %s' % TRAF_USER):
-        TRAF_PWD = dbcfgs['traf_pwd']
-        run_cmd('useradd --shell /bin/bash -m %s -g %s --home %s --password "$(openssl passwd %s)"' % (TRAF_USER, TRAF_GROUP, TRAF_USER_DIR, TRAF_PWD))
-    elif not os.path.exists(TRAF_USER_DIR):
-        run_cmd('mkdir -p %s' % TRAF_USER_DIR)
-        run_cmd('chmod 700 %s' % TRAF_USER_DIR)
+    if not os.path.exists(traf_user_dir):
+        run_cmd('mkdir -p %s' % traf_user_dir)
+        run_cmd('chmod 700 %s' % traf_user_dir)
 
     # set ssh key
-    run_cmd_as_user(TRAF_USER, 'echo -e "y" | ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa')
+    run_cmd_as_user(traf_user, 'echo -e "y" | ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa')
     # the key is generated in copy_file script running on the installer node
-    run_cmd('cp %s{,.pub} %s/.ssh/' % (KEY_FILE, TRAF_USER_DIR))
+    run_cmd('cp %s{,.pub} %s/.ssh/' % (SSHKEY_FILE, traf_user_dir))
 
-    run_cmd_as_user(TRAF_USER, 'cat ~/.ssh/id_rsa.pub > %s' % AUTH_KEY_FILE)
-    run_cmd('chmod 644 %s' % AUTH_KEY_FILE)
+    run_cmd_as_user(traf_user, 'cat ~/.ssh/id_rsa.pub > %s' % auth_key_file)
+    run_cmd('chmod 644 %s' % auth_key_file)
 
     ssh_cfg = 'StrictHostKeyChecking=no\nNoHostAuthenticationForLocalhost=yes\n'
-    with open(SSH_CFG_FILE, 'w') as f:
+    with open(ssh_cfg_file, 'w') as f:
         f.write(ssh_cfg)
-    run_cmd('chmod 600 %s' % SSH_CFG_FILE)
+    run_cmd('chmod 600 %s' % ssh_cfg_file)
 
-    run_cmd('chown -R %s:%s %s/.ssh/' % (TRAF_USER, TRAF_GROUP, TRAF_USER_DIR))
+    run_cmd('chown -R %s:%s %s/.ssh/' % (traf_user, traf_group, traf_user_dir))
 
-    hb = ParseXML(HBASE_XML_FILE)
+    hb = ParseXML(hbase_xml_file)
     zk_nodes = hb.get_property('hbase.zookeeper.quorum')
     zk_port = hb.get_property('hbase.zookeeper.property.clientPort')
     # set trafodion_config
@@ -106,22 +107,23 @@ export ZOOKEEPER_NODES="%s"
 export ZOOKEEPER_PORT="%s"
 export SECURE_HADOOP="%s"
 export CLUSTERNAME="%s"
-""" % (TRAF_HOME, dbcfgs['java_home'], ' '.join(nodes), ' -w ' + ' -w '.join(nodes),
+""" % (traf_home, dbcfgs['java_home'], ' '.join(nodes), ' -w ' + ' -w '.join(nodes),
        str(len(nodes)), hadoop_type, dbcfgs['enable_ha'], zk_nodes, zk_port, dbcfgs['secure_hadoop'], socket.gethostname())
 
-    run_cmd('mkdir -p %s' % TRAFODION_CFG_DIR)
-    write_file(TRAFODION_CFG_FILE, trafodion_config)
+    run_cmd('mkdir -p %s' % TRAF_CFG_DIR)
+    write_file(TRAF_CFG_FILE, trafodion_config)
 
-    if 'APACHE' in DISTRO:
+    if 'APACHE' in distro:
         extra_config = """
 export HADOOP_PREFIX=%s
 export HBASE_HOME=%s
+export HIVE_HOME=%s
 export PATH=$PATH:$HADOOP_PREFIX/bin:$HADOOP_PREFIX/sbin:$HBASE_HOME/bin
-        """ % (dbcfgs['hadoop_home'], dbcfgs['hbase_home'])
+        """ % (dbcfgs['hadoop_home'], dbcfgs['hbase_home'], dbcfgs['hive_home'])
         append_file(TRAFODION_CFG_FILE, extra_config)
 
     # set permission
-    run_cmd('chown -R %s:%s %s*' % (TRAF_USER, TRAF_GROUP, TRAFODION_CFG_DIR))
+    run_cmd('chown -R %s:%s %s*' % (traf_user, traf_group, TRAF_CFG_DIR))
 
 
     # set ulimits for trafodion user
@@ -137,16 +139,16 @@ export PATH=$PATH:$HADOOP_PREFIX/bin:$HADOOP_PREFIX/sbin:$HBASE_HOME/bin
 %s   hard   nproc 100000
 %s   soft nofile 8192
 %s   hard nofile 65535
-''' % ((TRAF_USER,) * 10)
+''' % ((traf_user,) * 10)
 
-    write_file(ULIMITS_FILE, ulimits_config)
+    write_file(ulimits_file, ulimits_config)
 
     # change permission for hsperfdata
-    if os.path.exists(HSPERFDATA_FILE):
-        run_cmd('chown -R %s:%s %s' % (TRAF_USER, TRAF_GROUP, HSPERFDATA_FILE))
+    if os.path.exists(TRAF_HSPERFDATA_FILE):
+        run_cmd('chown -R %s:%s %s' % (traf_user, traf_group, TRAF_HSPERFDATA_FILE))
 
     # clean up unused key file at the last step
-    run_cmd('rm -rf %s{,.pub}' % KEY_FILE)
+    run_cmd('rm -rf %s{,.pub}' % SSHKEY_FILE)
 
     print 'Setup trafodion user successfully!'
 

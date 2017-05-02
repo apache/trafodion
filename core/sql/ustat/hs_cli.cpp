@@ -539,6 +539,8 @@ Lng32 CreateHistTables (const HSGlobalsClass* hsGlobal)
 
     // Call createHistogramTables to create any table that does not yet exist.
     NAString histogramsLocation = getHistogramsTableLocation(hsGlobal->catSch->data(), FALSE);
+
+    HSTranController TC("Create histogram tables.",&retcode);
     retcode = (CmpSeabaseDDL::createHistogramTables(NULL, histogramsLocation, TRUE, tableNotCreated)); 
     if (retcode < 0 && LM->LogNeeded())
       {
@@ -2966,7 +2968,12 @@ Lng32 HSCursor::setRowsetPointers(HSColGroupStruct *group, Lng32 maxRows)
       // Character data is written into a different buffer, and the data buffer
       // will consist of pointers to the char values.
       if (DFS2REC::isAnyCharacter(group->ISdatatype))
-        rowset_fields_[j].var_ptr = (void *)group->strNextData;
+        {
+          if (DFS2REC::isSQLVarChar(group->ISdatatype) && group->isCompacted())
+            rowset_fields_[j].var_ptr = (void *)group->varcharFetchBuffer;
+          else
+            rowset_fields_[j].var_ptr = (void *)group->strNextData;
+        }
       else
         rowset_fields_[j].var_ptr = (void *)group->nextData;
       j++;
@@ -5493,86 +5500,6 @@ NAString HSSample::getTempTablePartitionInfo(NABoolean unpartitionedSample,
 
     return tableOptions;
   }
-
-
-//
-// METHOD:  addTruncatedSelectList()
-//
-// PURPOSE: Generates a SELECT list consisting of 
-//          column references or a SUBSTRING
-//          on column references which truncates the
-//          column to the maximum length allowed in
-//          UPDATE STATISTICS.
-//
-// INPUT:   'qry' - the SQL query string to append the 
-//          select list to.
-//
-void HSSample::addTruncatedSelectList(NAString & qry)
-  {
-    bool first = true;
-    for (Lng32 i = 0; i < objDef->getNumCols(); i++)
-      {
-        if (!ComTrafReservedColName(*objDef->getColInfo(i).colname))
-          {
-            if (!first)
-              qry += ", ";
-
-            addTruncatedColumnReference(qry,objDef->getColInfo(i));
-            first = false;
-          }
-      }
-  }
-
-
-//
-// METHOD:  addTruncatedColumnReference()
-//
-// PURPOSE: Generates a column reference or a SUBSTRING
-//          on a column reference which truncates the
-//          column to the maximum length allowed in
-//          UPDATE STATISTICS.
-//
-// INPUT:   'qry' - the SQL query string to append the 
-//          reference to.
-//          'colInfo' - struct containing datatype info
-//          about the column.
-//
-void HSSample::addTruncatedColumnReference(NAString & qry,HSColumnStruct & colInfo)
-  {
-    HSGlobalsClass *hs_globals = GetHSContext();
-    Lng32 maxLengthInBytes = hs_globals->maxCharColumnLengthInBytes;
-    bool isOverSized = DFS2REC::isAnyCharacter(colInfo.datatype) &&
-                           (colInfo.length > maxLengthInBytes);
-    if (isOverSized)
-      {
-        // Note: The result data type of SUBSTRING is VARCHAR, always.
-        // But if the column is CHAR, many places in the ustat code are not
-        // expecting a VARCHAR. So, we stick a CAST around it to convert
-        // it back to a CHAR in these cases.
-
-        NABoolean isFixedChar = DFS2REC::isSQLFixedChar(colInfo.datatype);
-        if (isFixedChar)
-          qry += "CAST(";
-        qry += "SUBSTRING(";
-        qry += colInfo.externalColumnName->data();
-        qry += " FOR ";
-        
-        char temp[20];  // big enough for "nnnnnn)"
-        sprintf(temp,"%d)", maxLengthInBytes / CharInfo::maxBytesPerChar(colInfo.charset));
-        qry += temp;
-        if (isFixedChar)
-          {
-            qry += " AS CHAR(";
-            qry += temp;
-            qry += ")";
-          }
-        qry += " AS ";
-        qry += colInfo.externalColumnName->data();
-      }
-    else
-      qry += colInfo.externalColumnName->data();
-  }
-
 
 // Print the heading for the display of a query plan to the log.
 void printPlanHeader(HSLogMan *LM)

@@ -543,6 +543,7 @@ static char * FCString (const char *idString, int isFC)
 %token INITIALIZE REINITIALIZE
 %token CATALOG SCHEMA
 %token HIVEtoken
+%token PROCESStoken
 %token IF WHILE
 %token MPLOC
 %token NAMETYPE
@@ -2278,6 +2279,7 @@ dml_type :
         |       DOWNGRADEtoken          {$$ = DML_DDL_TYPE;}
         |       GETtoken                {$$ = DML_DESCRIBE_TYPE;}
  	|       LABEL_ALTER             {$$ = DML_DDL_TYPE;}
+ 	|       PROCESStoken            {$$ = DML_DDL_TYPE;}
 ;
 
 dml_simple_table_type :

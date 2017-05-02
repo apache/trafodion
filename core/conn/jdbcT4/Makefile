@@ -31,7 +31,8 @@ build_all: LICENSE NOTICE
 	cp target/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib
 	mkdir -p ../clients
 	mv target/jdbcT4-${TRAFODION_VER}.zip ../clients
-	ln -sf ${TRAF_HOME}/export/lib/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib/jdbcT4.jar
+	#ln -sf ${TRAF_HOME}/export/lib/jdbcT4-${TRAFODION_VER}.jar ${TRAF_HOME}/export/lib/jdbcT4.jar
+	`cd ${TRAF_HOME}/export/lib;ln -sf jdbcT4-${TRAFODION_VER}.jar jdbcT4.jar`
 
 clean:
 	-$(MAVEN) clean | grep ERROR

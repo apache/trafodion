@@ -309,16 +309,16 @@ public class DatabaseQuery extends QueryWrapper
          String qryRowCnt = qryObj.getRowCount();
          if (sessObj.getSessionStatsType().equals("ALL"))
          {
-            queryStr = "GET STATISTICS FOR QID CURRENT PROGRESS";
+            queryStr = "GET STATISTICS FOR QID CURRENT PROGRESS, OPTIONS 'SL'";
             qryObj.resetQueryText(queryStr);
             parser.setRemainderStr(queryStr);
             qryObj.setRowCount(null);
             execGet(false);
          }
          if (sessObj.getSessionStatsType().equals("PERTABLE"))
-            queryStr = "GET STATISTICS FOR QID CURRENT PERTABLE";
+            queryStr = "GET STATISTICS FOR QID CURRENT PERTABLE, OPTIONS 'SL'";
          else if (sessObj.getSessionStatsType().equals("PROGRESS"))
-            queryStr = "GET STATISTICS FOR QID CURRENT PROGRESS";
+            queryStr = "GET STATISTICS FOR QID CURRENT PROGRESS, OPTIONS 'SL'";
          else if (sessObj.getSessionStatsType().equals("DEFAULT"))
             queryStr = "GET STATISTICS FOR QID CURRENT DEFAULT";
          else if (sessObj.getSessionStatsType().equals("ALL"))

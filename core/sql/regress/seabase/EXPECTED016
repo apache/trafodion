@@ -291,7 +291,7 @@ DESCRIPTION
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART7
   object_type ............ Trafodion
-  cache_size ........ 10,000
+  cache_size ......... 1,024
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -437,7 +437,7 @@ DESCRIPTION
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART5
   object_type ............ Trafodion
-  cache_size ........ 10,000
+  cache_size ......... 1,024
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -583,7 +583,7 @@ DESCRIPTION
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART3
   object_type ............ Trafodion
-  cache_size ........ 10,000
+  cache_size ......... 1,024
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -729,7 +729,7 @@ DESCRIPTION
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART6
   object_type ............ Trafodion
-  cache_size ........ 10,000
+  cache_size ......... 1,024
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -875,7 +875,7 @@ DESCRIPTION
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART2
   object_type ............ Trafodion
-  cache_size ........ 10,000
+  cache_size ......... 1,024
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -1021,7 +1021,7 @@ DESCRIPTION
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART1
   object_type ............ Trafodion
-  cache_size ........ 10,000
+  cache_size ......... 1,024
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09
@@ -1167,7 +1167,7 @@ DESCRIPTION
   fragment_type .......... esp
   scan_type .............. subset scan of table TRAFODION.HBASE.MCSTATPART8
   object_type ............ Trafodion
-  cache_size ........ 10,000
+  cache_size ......... 1,024
   cache_blocks ........... OFF
   probes ................. 1
   rows_accessed .......... 1e+09

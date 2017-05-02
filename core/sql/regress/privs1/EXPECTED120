@@ -15,7 +15,7 @@
 >>--
 >>--    games     - multiple roles giving same privileges
 >>--    teams     - multiple privileges through different roles
->>--    players   - control, not roles involved in privileges
+>>--    players   - control, no roles involved in privileges
 >>--    standings - used to test sequence privileges and revoke role
 >>--    stats     - tests revoke PUBLIC authorization ID
 >>-- =================================================================
@@ -297,6 +297,22 @@ SQL_USER6
 
 *** ERROR[8822] The statement was not prepared.
 
+>>-- the next two lines insure that explain isn't a back door (JIRA TRAFODION-2294)
+>>explain options 'f' select * from games;
+
+LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
+---- ---- ---- --------------------  --------  --------------------  ---------
+
+1    .    2    root                                                  1.00E+002
+.    .    1    trafodion_scan                  GAMES                 1.00E+002
+
+--- SQL operation complete.
+>>select * from games;
+
+*** ERROR[4481] The user does not have SELECT privilege on table or view TRAFODION.T120SCH.GAMES.
+
+*** ERROR[8822] The statement was not prepared.
+
 >>
 >>-- sql_user9 also has no privileges
 >>sh sqlci -i "TEST120(select_queries)" -u sql_user9;
@@ -570,12 +586,14 @@ End of MXCI Session
 >>--   AR - role involved, check query plans that rely on roles during revoke
 >>log;
 Query_Invalidation_Keys explain output for select_games, select_teams, insert_teams, update_teams, select_players, select_standings: 
-Query_Invalidation_Keys{,,UR}
-Query_Invalidation_Keys{,,OS}
-Query_Invalidation_Keys{,,UR}
 Query_Invalidation_Keys{,,OS}{,,UR}
 Query_Invalidation_Keys{,,OS}
-Query_Invalidation_Keys{,,OS}{,,UR}
+Query_Invalidation_Keys{,,OI}{,,UR}
+Query_Invalidation_Keys{,,OS}{,,
+OU}{,,UR}
+Query_Invalidation_Keys{,,OS}
+Query_Invalidation_Keys{,,OS}{,,
+OG}{,,UR}
 >>
 >>-- Verify that sql_user9 can select from games
 >>sh sqlci -i "TEST120(select_queries)" -u sql_user9;
@@ -746,6 +764,109 @@ TEAM_NUMBER  TEAM_NAME
 
 --- 5 row(s) selected.
 >>
+>>-- revoke insert, delete privilege from t120role2
+>>sh sqlci -i "TEST120(revoke_t120role2p)" -u sql_user3;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>
+>>revoke insert, delete on teams from t120role2;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>-- still have privilege
+>>execute select_teams;
+
+TEAM_NUMBER  TEAM_NAME           
+-----------  --------------------
+
+          1  White Socks         
+          2  Giants              
+          3  Cardinals           
+          4  Indians             
+          5  Tigers              
+
+--- 5 row(s) selected.
+>>-- no longer has privilege (4481) and query attempted recompilation
+>>execute insert_teams;
+
+*** ERROR[4481] The user does not have INSERT privilege on table or view TRAFODION.T120SCH.TEAMS.
+
+*** ERROR[8822] The statement was not prepared.
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8734] Statement must be recompiled to allow privileges to be re-evaluated.
+
+--- 0 row(s) inserted.
+>>
+>>-- grant privilege back
+>>sh sqlci -i "TEST120(grant_t120role2p)" -u sql_user3;
+>>values (current_user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER3                                                                                                                        
+
+--- 1 row(s) selected.
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>cqd AUTO_QUERY_RETRY_WARNINGS 'ON';
+
+--- SQL operation complete.
+>>set schema t120sch;
+
+--- SQL operation complete.
+>>
+>>grant insert, delete on teams to t120role2;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>execute select_teams;
+
+TEAM_NUMBER  TEAM_NAME           
+-----------  --------------------
+
+          1  White Socks         
+          2  Giants              
+          3  Cardinals           
+          4  Indians             
+          5  Tigers              
+
+--- 5 row(s) selected.
+>>-- now works and query recompiled (8597)
+>>execute insert_teams;
+
+*** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
+
+*** WARNING[8583] This statement contains no generated plan to execute at runtime. An error during query compilation caused this condition.
+
+--- 1 row(s) inserted.
+>>
 >>-- revoke t120role2 from sql_user6
 >>sh sqlci -i "TEST120(revoke_t120role2)" -u sql_user3;
 >>values (current_user);
@@ -797,8 +918,9 @@ TEAM_NUMBER
           3
           4
           5
+          6
 
---- 5 row(s) selected.
+--- 6 row(s) selected.
 >>select player_number from players;
 
 PLAYER_NUMBER
@@ -879,8 +1001,9 @@ TEAM_NUMBER  TEAM_NAME
           3  Cardinals           
           4  Indians             
           5  Tigers              
+          6  Braves              
 
---- 5 row(s) selected.
+--- 6 row(s) selected.
 >>execute select_standings;
 
 TEAM_NUMBER  (EXPR)              
@@ -980,8 +1103,9 @@ TEAM_NUMBER
           3
           4
           5
+          6
 
---- 5 row(s) selected.
+--- 6 row(s) selected.
 >>select player_number from players;
 
 PLAYER_NUMBER
@@ -1055,8 +1179,9 @@ TEAM_NUMBER  TEAM_NAME
           3  Cardinals           
           4  Indians             
           5  Tigers              
+          6  Braves              
 
---- 5 row(s) selected.
+--- 6 row(s) selected.
 >>execute select_players;
 
 (EXPR)              
@@ -1125,7 +1250,7 @@ End of MXCI Session
 --- SQL command prepared.
 >>log;
 Query_Invalidation_Keys explain output for select_stats: 
-Query_Invalidation_Keys{,,UZ}
+Query_Invalidation_Keys{,,OS}{,,UZ}
 >>shecho"Query_Invalidation_Keysexplainoutputforselect_stats:">>LOG;
 >>
 >>execute select_stats;

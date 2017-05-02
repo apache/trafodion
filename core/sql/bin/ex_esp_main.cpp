@@ -218,13 +218,8 @@ Int32 main(Int32 argc, char **argv)
   try {
     file_mon_process_startup(true);
 
-    // setup log4cxx, need to be done here so initLog4cxx can have access to 
-    // process information since it is needed to compose the log name
-    // the log name for the ESP should be based on the master process information
-    // since the master and all its subordinate processes log to the same
-    // log4cxx file
-    QRLogger::instance().setModule(QRLogger::QRL_ESP);
-    QRLogger::instance().initLog4cxx("log4cxx.trafodion.masterexe.config");
+    // Initialize log4cxx 
+    QRLogger::initLog4cxx(QRLogger::QRL_ESP);
   }
   catch (SB_Fatal_Excep &e) {
     SQLMXLoggingArea::logExecRtInfo(__FILE__, __LINE__, e.what(), 0);

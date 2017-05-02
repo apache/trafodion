@@ -1346,9 +1346,6 @@ void RequestTypeString( char *str, REQTYPE type )
         case ReqType_TmLeader:
             sprintf(str, "%s", "ReqType_TmLeader" );
             break;
-        case ReqType_TmSeqNum:
-            sprintf(str, "%s", "ReqType_TmSeqNum" );
-            break;
         case ReqType_TmSync:
             sprintf(str, "%s", "ReqType_TmSync" );
             break;

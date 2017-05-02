@@ -1,7 +1,8 @@
 >>obey TEST009(set_up);
 >>prepare get_hv_schemas from
 +>select schema_name from "_MD_".objects
-+>where schema_name like '\_HV\_%' escape '\' and object_type = 'PS';
++>where (schema_name = '_HV_HIVE_' or schema_name = '_HV_SCH_T009_')
++>       and object_type = 'PS';
 
 --- SQL command prepared.
 >>
@@ -309,13 +310,14 @@ End of MXCI Session
 CATALOG_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       OBJECT_NAME
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              CUSTOMER                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
 HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              SCH_T009                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_HIVE_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_SCH_T009_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              OBJECTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
 
---- 5 row(s) selected.
+--- 6 row(s) selected.
 >>drop external table t009t1 for hive.sch_t009.t009t1;
 
 --- SQL operation complete.
@@ -324,13 +326,14 @@ TRAFODION                                                                       
 CATALOG_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      SCHEMA_NAME                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       OBJECT_NAME
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              CUSTOMER                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
 HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 HIVE                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              SCH_T009                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_HIVE_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         PROMOTION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _HV_SCH_T009_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     T009T2                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 TRAFODION                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         _MD_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              OBJECTS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
 
---- 5 row(s) selected.
+--- 6 row(s) selected.
 >>create external table t009t1 for hive.sch_t009.t009t1;
 
 --- SQL operation complete.
@@ -346,7 +349,7 @@ T009T2
 >>invoke hive.sch_t009.t009t1;
 
 -- Definition of hive table T009T1
--- Definition current  Tue Jan 31 21:32:51 2017
+-- Definition current  Fri Mar 17 07:19:26 2017
 
   (
     A                                INT
@@ -416,7 +419,7 @@ _HB__CELL__
 >>invoke trafodion."_HB__ROW__"."baseball";
 
 -- Definition of Trafodion external table TRAFODION."_HB__ROW__"."baseball"
--- Definition current  Tue Jan 31 21:33:04 2017
+-- Definition current  Fri Mar 17 07:19:38 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -429,7 +432,7 @@ _HB__CELL__
 >>invoke trafodion."_HB__CELL__"."baseball";
 
 -- Definition of Trafodion external table TRAFODION."_HB__CELL__"."baseball"
--- Definition current  Tue Jan 31 21:33:06 2017
+-- Definition current  Fri Mar 17 07:19:39 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -518,7 +521,7 @@ ROW_ID      COLS
 >>invoke hive.hive.store_sales;
 
 -- Definition of hive table STORE_SALES
--- Definition current  Tue Jan 31 21:33:17 2017
+-- Definition current  Fri Mar 17 07:19:57 2017
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -562,7 +565,7 @@ ROW_ID      COLS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352658397193063
+PLAN_ID .................. 212356495197335919
 ROWS_OUT ............. 1,709
 EST_TOTAL_COST ........... 0.27
 STATEMENT ................ select * from store_sales where ss_item_sk = 1;
@@ -691,7 +694,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352658398567771
+PLAN_ID .................. 212356495197600410
 ROWS_OUT ......... 2,920,643
 EST_TOTAL_COST ........... 1.07
 STATEMENT ................ select *
@@ -893,7 +896,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Tue Jan 31 21:33:22 2017
+-- Definition current  Fri Mar 17 07:20:06 2017
 
   (
     D_DATE_SK                        INT
@@ -976,6 +979,8 @@ CREATE TABLE DATE_DIM
   stored as textfile
 ;
 
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM;
+
 /* Trafodion DDL */
 
 CREATE EXTERNAL TABLE DATE_DIM
@@ -1034,7 +1039,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352658405327436
+PLAN_ID .................. 212356495214064420
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -1125,7 +1130,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Tue Jan 31 21:33:32 2017
+-- Definition current  Fri Mar 17 07:20:22 2017
 
   (
     D_DATE_SK                        INT
@@ -1208,6 +1213,8 @@ CREATE TABLE DATE_DIM
   stored as textfile
 ;
 
+REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM;
+
 /* Trafodion DDL */
 
 CREATE EXTERNAL TABLE DATE_DIM
@@ -1266,7 +1273,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212352658415800073
+PLAN_ID .................. 212356495226927260
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *

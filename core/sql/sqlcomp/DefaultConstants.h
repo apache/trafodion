@@ -677,6 +677,7 @@ enum DefaultConstants
                                          //   salted table when ON EVERY KEY or ON EVERY COLUMN is specified.
   USTAT_ATTEMPT_ESP_PARALLELISM,  // use parallel plans for reading columns to form histograms
   USTAT_CHECK_HIST_ACCURACY,   // After stats collection, examine full table and calculate accuray of hists
+  USTAT_COMPACT_VARCHARS,      // For internal sort, store only the actual # chars used in each value
   USTAT_CLUSTER_SAMPLE_BLOCKS, // number of blocks for cluster sampling
   USTAT_ESTIMATE_HBASE_ROW_COUNT,  // If ON, estimate row count of HBase table instead of count(*), subject
                                    //     to USTAT_MIN_ESTIMATE_FOR_ROWCOUNT setting)
@@ -3322,7 +3323,6 @@ enum DefaultConstants
   // need to be debugged.
   COLLECT_REORG_STATS,
   
-  HIVE_MAX_STRING_LENGTH,
   HIVE_MAX_STRING_LENGTH_IN_BYTES,
   HIVE_USE_FAKE_TABLE_DESC,
   HIVE_LIB_HDFS_PORT_OVERRIDE,
@@ -3628,8 +3628,14 @@ enum DefaultConstants
 
   TRAF_TRANS_TYPE, 
 
- // max size in bytes of a char or varchar column in a trafodion table.
+  // max size in bytes of a char or varchar column in a trafodion table.
+  // Valid values are 0 through MAX_CHAR_COL_LENGTH_IN_BYTES.
+  //     (defined in common/ComSmallDefs.h)
   TRAF_MAX_CHARACTER_COL_LENGTH,
+
+  // In special cases, previous default value could be overridden. 
+  // Internal use only or use only under trafodion supervision.
+  TRAF_MAX_CHARACTER_COL_LENGTH_OVERRIDE,
 
   // set when metadata definition is to be read from hardcoded structs
   // and not from metadata. 
@@ -3739,11 +3745,6 @@ enum DefaultConstants
 
   // if ON, then trafodion views on hive objects are supported.
   HIVE_VIEWS,
-
-  // if ON, then external table is automatically created for all hive tables 
-  // referenced in the view definition.
-  // External table is needed to keep track of view usage and privileges.
-  HIVE_VIEWS_CREATE_EXTERNAL_TABLE,
 
   // Specify whic additional restriction check to apply
   //  0: no check
@@ -3892,6 +3893,21 @@ enum DefaultConstants
   CSE_TEMP_TABLE_MAX_MAX_SIZE,
   CSE_COMMON_KEY_PRED_CONTROL,
   CSE_PCT_KEY_COL_PRED_CONTROL,
+
+  TRANSLATE_ERROR,
+  TRANSLATE_ERROR_UNICODE_TO_UNICODE,
+  INDEX_HINT_WARNINGS,
+
+  // Operations on hive objects also register it in traf OBJECTS metadata table,
+  // if not already registered. create external table, grant, upd stats, create
+  // views are the current operations that also register hive objects.
+  // 
+  // This default is used to simulate the 
+  // scenario prior to 'hive registration' change. At that time, hive objects
+  // were represented by an external table. With this default set, operations
+  // on hive could be created without registering them.
+  // This default is for internal testing usage only and not externalized.
+  HIVE_NO_REGISTER_OBJECTS,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

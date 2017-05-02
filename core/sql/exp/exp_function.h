@@ -1195,6 +1195,35 @@ public:
   // ---------------------------------------------------------------------
 };
 
+class SQLEXP_LIB_FUNC  ExFunctionReverseStr : public ex_function_clause {
+public:
+  ExFunctionReverseStr(OperatorTypeEnum oper_type,
+				Attributes ** attr,
+				Space * space);
+  ExFunctionReverseStr();
+
+  ex_expr::exp_return_type eval(char *op_data[], CollHeap*, 
+                                ComDiagsArea** = 0);  
+  //  Long pack(void *);
+  
+  // ---------------------------------------------------------------------
+  // Redefinition of methods inherited from NAVersionedObject.
+  // ---------------------------------------------------------------------
+  virtual unsigned char getClassVersionID()
+  {
+    return 1;
+  }
+
+  virtual void populateImageVersionIDArray()
+  {
+    setImageVersionID(2,getClassVersionID());
+    ex_function_clause::populateImageVersionIDArray();
+  }
+
+  virtual short getClassSize() { return (short)sizeof(*this); }
+  // ---------------------------------------------------------------------
+};
+
 class SQLEXP_LIB_FUNC  ex_function_trim_doublebyte : public ex_function_trim {
 public:
   NA_EIDPROC ex_function_trim_doublebyte(OperatorTypeEnum oper_type,
@@ -1345,8 +1374,10 @@ class SQLEXP_LIB_FUNC  ex_function_translate : public ex_function_clause {
 
 public:
   NA_EIDPROC ex_function_translate (OperatorTypeEnum oper_type,
-                               Attributes ** attr,
-                               Space * space, Int32 conv_type);
+                                    Attributes ** attr,
+                                    Space * space,
+                                    Int32 conv_type,
+                                    Int16 flags);
   NA_EIDPROC ex_function_translate () {};
 
 
@@ -1371,16 +1402,28 @@ public:
   }
 
   NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+
+  // flags:
+  // 0x0001 set the CONV_ALLOW_INVALID_CODE_VALUE flag when converting
+  //        the data to allow invalid code points and replace them
+  //        with a replacement character
+  enum TranslateFlags
+  {
+    TRANSLATE_FLAG_ALLOW_INVALID_CODEPOINT = 0x001
+  };
+
   // ---------------------------------------------------------------------
 
 private:
   Int32            conv_type_;           // 00-03
+  // flags, see TranslateFlags enum above
+  Int16            flags_;               // 04-05
   // ---------------------------------------------------------------------
   // Fillers for potential future extensions without changing class size.
   // When a new member is added, size of this filler should be reduced so
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
-  char             fillers_[4];          // 04-07
+  char             fillers_[2];          // 06-07
 
 };
 

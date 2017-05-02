@@ -1420,6 +1420,80 @@ void ComTdbExeUtilHiveTruncate::displayContents(Space * space,
 
 ///////////////////////////////////////////////////////////////////////////
 //
+// Methods for class ComTdbExeUtilHiveQuery
+//
+///////////////////////////////////////////////////////////////////////////
+ComTdbExeUtilHiveQuery::ComTdbExeUtilHiveQuery(
+     char * hiveQuery,
+     ULng32 hiveQueryLen,
+     ex_cri_desc * given_cri_desc,
+     ex_cri_desc * returned_cri_desc,
+     queue_index down,
+     queue_index up,
+     Lng32 num_buffers,
+     ULng32 buffer_size)
+     : ComTdbExeUtil(ComTdbExeUtil::HIVE_QUERY_,
+		     NULL, 0, (Int16)SQLCHARSETCODE_UNKNOWN,
+		     NULL, 0,
+		     NULL, 0,
+		     NULL, 0,
+		     NULL,
+                     NULL, 0,
+		     given_cri_desc, returned_cri_desc,
+		     down, up, 
+		     num_buffers, buffer_size),
+       flags_(0),
+       hiveQuery_(hiveQuery),
+       hiveQueryLen_(hiveQueryLen)
+{
+  setNodeType(ComTdb::ex_HIVE_QUERY);
+}
+
+Long ComTdbExeUtilHiveQuery::pack(void * space)
+{
+  if (hiveQuery_)
+    hiveQuery_.pack(space);
+
+  return ComTdbExeUtil::pack(space);
+}
+
+Lng32 ComTdbExeUtilHiveQuery::unpack(void * base, void * reallocator)
+{
+  if(hiveQuery_.unpack(base))
+    return -1;
+
+  return ComTdbExeUtil::unpack(base, reallocator);
+}
+
+void ComTdbExeUtilHiveQuery::displayContents(Space * space,
+					      ULng32 flag)
+{
+  ComTdb::displayContents(space,flag & 0xFFFFFFFE);
+  
+  if(flag & 0x00000008)
+    {
+      char buf[500];
+      str_sprintf(buf, "\nFor ComTdbExeUtilHiveQuery :");
+      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
+      
+      if (getHiveQuery() != NULL)
+	{
+	  str_sprintf(buf,"HiveQuery = %s ",getHiveQuery());
+	  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), 
+					       sizeof(short));
+	}
+    }
+  
+  if (flag & 0x00000001)
+    {
+      displayExpression(space,flag);
+      displayChildren(space,flag);
+    }
+
+}
+
+///////////////////////////////////////////////////////////////////////////
+//
 // Methods for class ComTdbExeUtilGetStatistics
 //
 ///////////////////////////////////////////////////////////////////////////
@@ -2352,7 +2426,7 @@ ComTdbExeUtilLobExtract::ComTdbExeUtilLobExtract
   if (toType_ == ExtractToType::TO_FILE_)
       {
 	// extractSize_ is irrelevant since the whole lob will be read into the output file
-	// bufAddr_ is not passed in by user. It is a CQD value LOB_OUTPUT_SIZE
+	// bufAddr_ is not passed in by user. It is a CQD value LOB_MAX_CHUNK_MEM_SIZE
 	extractSizeIOAddr_ = 0;
 	bufAddr_ = 0;
 	

@@ -27,19 +27,27 @@ import json
 import subprocess
 from glob import glob
 from threading import Thread
-from common import err_m, run_cmd, time_elapse, get_logger, Remote, \
-                   ParseJson, INSTALLER_LOC, TMP_DIR, SCRCFG_FILE, \
-                   CONFIG_DIR, SCRIPTS_DIR
+from constants import INSTALLER_LOC, TMP_DIR, SCRCFG_FILE, CONFIG_DIR, SCRIPTS_DIR
+from common import err_m, run_cmd, time_elapse, get_logger, get_sudo_prefix, Remote, ParseJson
 
 class RemoteRun(Remote):
     """ run commands or scripts remotely using ssh """
 
     def __init__(self, host, logger, user='', pwd='', quiet=False):
-        super(RemoteRun, self).__init__(host, user, pwd)
-
+        self.sudo_prefix = ''
+        self.host = host
+        self.user = user
+        self.pwd = pwd
         self.quiet = quiet # no output
         self.logger = logger
 
+        if not self.user:
+            self.sudo_prefix = get_sudo_prefix()
+        elif self.user != 'root':
+            self.sudo_prefix = 'sudo -n'
+
+    def initialize(self):
+        super(RemoteRun, self).__init__(self.host, self.user, self.pwd)
         # create tmp folder
         self.execute('mkdir -p %s' % TMP_DIR)
 
@@ -53,19 +61,19 @@ class RemoteRun(Remote):
 
     def __del__(self):
         # clean up
-        self.execute('sudo -n rm -rf %s' % TMP_DIR, chkerr=False)
+        self.execute('%s rm -rf %s' % (self.sudo_prefix, TMP_DIR), chkerr=False)
 
     def run_script(self, script, run_user, json_string, verbose=False):
         """ @param run_user: run the script with this user """
 
         if run_user:
-            # format string in order to run with 'sudo -n su $user -c $cmd'
+            # format string in order to run with 'su $user -c $cmd'
             json_string = json_string.replace('"', '\\\\\\"').replace(' ', '').replace('{', '\\{').replace('$', '\\\\\\$')
             # this command only works with shell=True
-            script_cmd = '"sudo -n su - %s -c \'%s/scripts/%s %s\'"' % (run_user, TMP_DIR, script, json_string)
+            script_cmd = '"%s su - %s -c \'%s/scripts/%s %s\'"' % (self.sudo_prefix, run_user, TMP_DIR, script, json_string)
             self.execute(script_cmd, verbose=verbose, shell=True, chkerr=False)
         else:
-            script_cmd = 'sudo -n %s/scripts/%s \'%s\'' % (TMP_DIR, script, json_string)
+            script_cmd = '%s %s/scripts/%s \'%s\'' % (self.sudo_prefix, TMP_DIR, script, json_string)
             self.execute(script_cmd, verbose=verbose, chkerr=False)
 
         format1 = 'Host [%s]: Script [%s]: %s' % (self.host, script, self.stdout)
@@ -109,7 +117,10 @@ class Status(object):
         with open(self.stat_file, 'r') as f:
             st = f.readlines()
         for s in st:
-            if s.split()[0] == self.name: return True
+            try:
+                if s.split()[0] == self.name: return True
+            except IndexError:
+                return False
         return False
 
     def set_status(self):
@@ -121,9 +132,9 @@ def run(dbcfgs, options, mode='install', pwd=''):
     """ main entry
         mode: install/discover
     """
-    STAT_FILE = '%s/%s.status' % (INSTALLER_LOC, mode)
-    LOG_FILE = '%s/logs/%s_%s.log' % (INSTALLER_LOC, mode, time.strftime('%Y%m%d_%H%M'))
-    logger = get_logger(LOG_FILE)
+    stat_file = '%s/%s.status' % (INSTALLER_LOC, mode)
+    log_file = '%s/logs/%s_%s.log' % (INSTALLER_LOC, mode, time.strftime('%Y%m%d_%H%M'))
+    logger = get_logger(log_file)
 
     verbose = True if hasattr(options, 'verbose') and options.verbose else False
     reinstall = True if hasattr(options, 'reinstall') and options.reinstall else False
@@ -157,17 +168,17 @@ def run(dbcfgs, options, mode='install', pwd=''):
         skipped_scripts += ['apache_mods', 'apache_restart']
 
     # set ssh config file to avoid known hosts verify on current installer node
-    SSH_CFG_FILE = os.environ['HOME'] + '/.ssh/config'
+    ssh_cfg_file = os.environ['HOME'] + '/.ssh/config'
     ssh_cfg = 'StrictHostKeyChecking=no\nNoHostAuthenticationForLocalhost=yes\n'
-    with open(SSH_CFG_FILE, 'w') as f:
+    with open(ssh_cfg_file, 'w') as f:
         f.write(ssh_cfg)
-    run_cmd('chmod 600 %s' % SSH_CFG_FILE)
+    run_cmd('chmod 600 %s' % ssh_cfg_file)
 
     def run_local_script(script, json_string, req_pwd):
         cmd = '%s/%s \'%s\'' % (SCRIPTS_DIR, script, json_string)
 
         # pass the ssh password to sub scripts which need SSH password
-        if req_pwd: cmd += ' ' + pwd
+        if req_pwd: cmd += ' ' + pwd + ' ' + user
 
         if verbose: print cmd
 
@@ -197,6 +208,11 @@ def run(dbcfgs, options, mode='install', pwd=''):
             remote_instances = [RemoteRun(host, logger, user=user, pwd=pwd, quiet=True) for host in hosts]
         else:
             remote_instances = [RemoteRun(host, logger, user=user, pwd=pwd) for host in hosts]
+        # do init in threads to improve performance
+        threads = [Thread(target=r.initialize) for r in remote_instances]
+        for t in threads: t.start()
+        for t in threads: t.join()
+
         first_instance = remote_instances[0]
         for instance in remote_instances:
             if instance.host == dbcfgs['first_rsnode']:
@@ -219,7 +235,7 @@ def run(dbcfgs, options, mode='install', pwd=''):
             elif cfg['req_pwd'] == 'yes':
                 req_pwd = True
 
-            status = Status(STAT_FILE, script)
+            status = Status(stat_file, script)
             if status.get_status():
                 msg = 'Script [%s] had already been executed' % script
                 state_skip(msg)
@@ -253,7 +269,7 @@ def run(dbcfgs, options, mode='install', pwd=''):
                     for t in threads: t.join()
 
                     if sum([r.rc for r in parted_remote_inst]) != 0:
-                        err_m('Script failed to run on one or more nodes, exiting ...\nCheck log file %s for details.' % LOG_FILE)
+                        err_m('Script failed to run on one or more nodes, exiting ...\nCheck log file %s for details.' % log_file)
 
                     script_output += [{r.host:r.stdout.strip()} for r in parted_remote_inst]
 
@@ -266,7 +282,14 @@ def run(dbcfgs, options, mode='install', pwd=''):
         err_m('User quit')
 
     # remove status file if all scripts run successfully
-    os.remove(STAT_FILE)
+    os.remove(stat_file)
+
+    # remove ^M dos format in log file
+    with open(log_file, 'r') as f:
+        lines = f.readlines()
+    with open(log_file, 'w') as f:
+        for line in lines:
+            f.write(line.rstrip('\r\n') + '\n')
 
     return script_output
 

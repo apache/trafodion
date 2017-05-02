@@ -117,7 +117,6 @@ static const string ReqType_Set = " - Set";
 static const string ReqType_Shutdown = " - Shutdown";
 static const string ReqType_Startup = " - Startup";
 static const string ReqType_TmLeader = " - TmLeader";
-static const string ReqType_TmSeqNum = " - TmSeqNum";
 static const string ReqType_TmSync = " - TmSync";
 static const string ReqType_Unknown = " - Unknown request";
 static const string ReplyType_TmSync = " - Unsolicited TmSync Reply";
@@ -548,19 +547,6 @@ processSpecial( ProcessInfo *proc, string intime, string line )
            mkReqInfo( ReqType_TmLeader, "ReqType_TmLeader" );
       }
       proc->lastReq = ReqType_TmLeader;
-    }
-    else if(line.find(ReqType_TmSeqNum) != string::npos)
-    {
-/*
-      cout << ReqType_TmSeqNum << " was received" 
-           << " with useMPI=" << proc->useMPI << endl;
-*/
-      if ((reqInfo = proc->reqInfoMap[ReqType_TmSeqNum]) == NULL)
-      {
-        proc->reqInfoMap[ReqType_TmSeqNum] = 
-           mkReqInfo( ReqType_TmSeqNum, "ReqType_TmSeqNum" );
-      }
-      proc->lastReq = ReqType_TmSeqNum;
     }
     else if(line.find(ReqType_TmSync) != string::npos)
     {

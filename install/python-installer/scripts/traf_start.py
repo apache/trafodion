@@ -34,8 +34,8 @@ def run():
     dbcfgs = json.loads(dbcfgs_json)
 
     print 'Starting trafodion'
-    TRAF_HOME = os.environ['TRAF_HOME']
-    if os.path.exists('%s/sql/scripts/trafstart' % TRAF_HOME):
+    traf_home = os.environ['TRAF_HOME']
+    if os.path.exists('%s/sql/scripts/trafstart' % traf_home):
         run_cmd('trafstart')
     else:
         run_cmd('sqstart')
@@ -59,15 +59,13 @@ def run():
     run_cmd('rm -rf %s' % tmp_file)
     if dbcfgs['ldap_security'] == 'Y':
         run_cmd('echo "initialize authorization; alter user DB__ROOT set external name \\\"%s\\\";" | sqlci > %s' % (dbcfgs['db_root_user'], tmp_file))
-        if dbcfgs.has_key('db_admin_user'):
-            run_cmd('echo "alter user DB__ADMIN set external name \\\"%s\\\";" | sqlci >> %s' % (dbcfgs['db_admin_user'], tmp_file))
 
         secure_output = cmd_output('cat %s' % tmp_file)
         if 'ERROR' in secure_output:
             err('Failed to setup security for trafodion:\n %s' % secure_output)
 
     run_cmd('rm -rf %s' % tmp_file)
-    if os.path.exists('%s/sql/scripts/connstart' % TRAF_HOME):
+    if os.path.exists('%s/sql/scripts/connstart' % traf_home):
         run_cmd('connstart')
 
     print 'Start trafodion successfully.'
