@@ -971,7 +971,6 @@ protected:
 
   short createMetadataViews(ExeCliInterface * cliInterface);
   short dropMetadataViews(ExeCliInterface * cliInterface);
-  short createSeqTable(ExeCliInterface * cliInterface);
  
   int addSchemaObject(
      ExeCliInterface & cliInterface,
@@ -1387,7 +1386,6 @@ protected:
   void dropSeabaseMD(NABoolean ddlXns);
   void createSeabaseMDviews();
   void dropSeabaseMDviews();
-  void createSeabaseSeqTable();
   void createSeabaseSchemaObjects();
   void updateVersion();
 

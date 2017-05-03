@@ -1715,12 +1715,6 @@ ElemDDLNode::castToStmtDDLSchGrant()
   return NULL;
 }
 
-StmtDDLPublish *
-ElemDDLNode::castToStmtDDLPublish()
-{
-  return NULL;
-}
-
 StmtDDLGiveAll *
 ElemDDLNode::castToStmtDDLGiveAll()
 {

@@ -2275,32 +2275,6 @@ StmtDDLSchGrant::bindNode(BindWA * pBindWA)
   return this;
 }
 
-
-// -----------------------------------------------------------------------
-// definition of method bindNode() for class StmtDDLPublish
-// -----------------------------------------------------------------------
-
-//
-// a virtual function for performing name
-// binding within the Publish tree
-//
-ExprNode *
-StmtDDLPublish::bindNode(BindWA * pBindWA)
-{
-  ComASSERT(pBindWA);
-  //  objectQualName_.applyDefaults(pBindWA->getDefaultSchema());
-  if (applyDefaultsAndValidateObject(pBindWA, &objectQualName_))
-    {
-      pBindWA->setErrStatus();
-      return this;
-    }
-
-  objectName_ = objectQualName_.getQualifiedNameAsAnsiString();
-
-  markAsBound();
-  return this;
-}
-
 // -----------------------------------------------------------------------
 // definition of method bindNode() for class StmtDDLGiveAll
 // -----------------------------------------------------------------------
