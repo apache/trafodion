@@ -5185,7 +5185,7 @@ authorization are enabled in {project-name}. For more information, see
 ```
 GRANT {privilege [,privilege]... |ALL [PRIVILEGES]} 
   ON [object-type] [schema.]object
-  TO {grantee} 
+  TO grantee
   [WITH GRANT OPTION]
   [[GRANTED] BY grantor]
 
