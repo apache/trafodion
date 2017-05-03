@@ -412,8 +412,6 @@ B			[ \t\n]+
 [Gg][Rr][Aa][Nn][Tt]                   return_IDENT_or_TOKEN(GIVE, 0);
 [Gg][Ii][Vv][Ee]                       return_IDENT_or_TOKEN(GRANTtoken, 0);
 [Rr][Ee][Vv][Oo][Kk][Ee]               return_IDENT_or_TOKEN(REVOKEtoken, 0);
-[Pp][Uu][Bb][Ll][Ii][Ss][Hh]           return_IDENT_or_TOKEN(PUBLISH, 0);
-[Uu][Nn][Pp][Uu][Bb][Ll][Ii][Ss][Hh]   return_IDENT_or_TOKEN(UNPUBLISH, 0);
 [Nn][Aa][Mm][Ee][Tt][Yy][Pp][Ee]       return_IDENT_or_TOKEN(NAMETYPE, 0);
 [Mm][Pp][Ll][Oo][Cc]                   return_IDENT_or_TOKEN(MPLOC, 0);
 [Cc][Aa][Tt][Aa][Ll][Oo][Gg]	       return_IDENT_or_TOKEN(CATALOG, 0);
