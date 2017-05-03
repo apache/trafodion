@@ -178,11 +178,11 @@ insert into hbase."_ROW_".t022hbt2 values
                                        ('cf:1a', repeat('a', 40000)),
                                        ('cf:1b', repeat('z', 40000))));
 select count(*) from hbase."_CELL_".t022hbt2;
-select char_length(col_value) from hbase."_CELL_".t022hbt2;
+select char_length(col_value) from hbase."_CELL_".t022hbt2 order by 1;
 select count(*) from hbase."_CELL_".t022hbt2;
-select char_length(col_value) from hbase."_CELL_".t022hbt2;
+select char_length(col_value) from hbase."_CELL_".t022hbt2 order by 1;
 select count(*) from hbase."_ROW_".t022hbt2;
-select char_length(column_details) from hbase."_ROW_".t022hbt2;
+select char_length(column_details) from hbase."_ROW_".t022hbt2 order by 1;
 select left(row_id, 10) row_id, left(column_display(column_details), 40) 
            from hbase."_ROW_".t022hbt2;
 
@@ -286,9 +286,9 @@ insert into t022hbm1 values (1,2,3);
 insert into t022hbm1 values (1,2,3);
 insert into t022hbm1 values (1, 1, 1);
 insert into t022hbm1 values (-1, -2, -3);
-select * from t022hbm1;
+select * from t022hbm1 order by 1;
 upsert into t022hbm1 values (1,2,4);
-select * from t022hbm1;
+select * from t022hbm1 order by 1;
 
 -- various serialization options
 drop external table t022hbm1;
