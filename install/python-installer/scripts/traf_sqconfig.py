@@ -38,6 +38,7 @@ def run():
     traf_home = os.environ['TRAF_HOME']
     if traf_home == '': err('TRAF_HOME var is empty')
     sqconfig_file = traf_home + '/sql/scripts/sqconfig'
+    sqconfig_persist_file = traf_home + '/sql/scripts/sqconfig.persist'
 
     core, processor = run_cmd("lscpu|grep -E '(^CPU\(s\)|^Socket\(s\))'|awk '{print $2}'").split('\n')[:2]
     core = int(core)-1 if int(core) <= 256 else 255
@@ -51,17 +52,13 @@ def run():
             lines.append(line)
 
     lines.append('end node\n')
-    lines.append('\n')
-    lines.append('begin overflow\n')
 
-    for scratch_loc in scratch_locs:
-        line = 'hdd %s\n' % scratch_loc
-        lines.append(line)
-
-    lines.append('end overflow\n')
-
+    # write out the node section
     with open(sqconfig_file, 'w') as f:
         f.writelines(lines)
+
+    # append the current persist section
+    run_cmd('sed \'1,20d\' %s >> %s' % (sqconfig_file, sqconfig_persist_file))
 
     print 'sqconfig generated successfully!'
 
