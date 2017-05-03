@@ -57,7 +57,7 @@ The CLEANUP Statement cleans up objects whose information is inconsistent in the
 Inconsistent objects can be cleaned up and removed from the metadata and HBase by using one of the following options.
 
 ```
-CLEANUP {obj-type} {obj-name} [ ,UID {object-uid} ]
+CLEANUP object-type object-name [ ,UID {object-uid} ]
 
 CLEANUP [ PRIVATE | SHARED ] SCHEMA {schema-name}
 
@@ -67,19 +67,19 @@ CLEANUP METADATA [ , CHECK ] [ , RETURN DETAILS ]
 ```
 
 ```
-{obj-type} is: TABLE | INDEX | SEQUENCE | OBJECT
+object-type is: TABLE | INDEX | SEQUENCE | OBJECT
 
-{obj-name} is: Name of the object that needs to be cleaned up
+object-name is: Name of the object that needs to be cleaned up
 
-{object-uid} is: UID (Unique ID) of the object that is stored in metadata
+object-uid is: UID (Unique ID) of the object that is stored in metadata
 
-{schema-name} is: Name of the schema whose contents need to be cleaned up
+schema-name is: Name of the schema whose contents need to be cleaned up
 ```
 
 [[cleanup_syntax]]
 === Syntax Description of CLEANUP Statement
 
-* `CLEANUP {obj-type} {obj-name} [ , UID {object-uid} ]`
+* `CLEANUP object-type object-name [ , UID {object-uid} ]`
 +
 This command will clean up the specified object from all Trafodion metadata tables
 and HBase. If an object cannot be found in the metadata but exists in HBase,
@@ -87,15 +87,15 @@ then it will be removed from HBase. All dependent objects, such as indexes,
 views, LOBs, internal sequences, and constraints, are also removed from the
 metadata and HBase.
 
-** `obj-type` 
+** `object-type` 
 
 *** If an object type is specified as TABLE, INDEX, or SEQUENCE and that object exists
-in the metadata, then a check will be done to make sure that the specified {obj-name} is of the specified type. An error is returned if they are not the same.
+in the metadata, then a check will be done to make sure that the specified `object-name` is of the specified type. An error is returned if they are not the same.
 
 *** If an object type is specified as OBJECT, then any object that matches the
 specified name is removed from the metadata and HBase.
 
-** `obj-name` 
+** `object-name` 
 +
 Specifies the name of the object to be removed.
 
@@ -155,7 +155,7 @@ To clean up an object, one needs to have DROP privileges. If object privileges c
 
 If an object exists in the metadata but does not exist in HBase, then error 4254 will be returned if that object is accessed during any DML or DDL operation.
 
-An object is also marked as inconsistent during any complex DDL operation. For example, if a CREATE TABLE also creates implicit indexes or constraints, then the object will be marked as inconsistent until the complex DDL operation is completed. If an abnormal error happens (like a process crash or a node failure), then that object remains inconsistent. Any attempt to access that object will return error 4254.
+An object is also marked as inconsistent during any complex DDL operation. For example, if a CREATE TABLE also creates implicit indexes or constraints, then the object will be marked as inconsistent until the complex DDL operation is completed. If an abnormal error happens (such as a process crash or a node failure), then that object remains inconsistent. Any attempt to access that object will return error 4254.
 
 An inconsistent object will need to be cleaned up before it can be accessed.
 
