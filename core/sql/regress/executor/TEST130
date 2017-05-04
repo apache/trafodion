@@ -117,7 +117,7 @@ delete from t130lob2;
 --test insert select from a source hive varchar column to lob
 delete from t130lob2;
 insert into t130lob2 select [first 10] d_date_sk,d_date_id from hive.hive.date_dim;
-select lobtostring(c2,40) from t130lob2 order by c1;
+select lobtostring(c2,4) from t130lob2 order by c1;
 delete from t130lob2;
 
 
