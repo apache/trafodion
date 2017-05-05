@@ -110,15 +110,15 @@ void ExSortTcb::setupPoolBuffers(ex_queue_entry *pentry_down)
     //receivePool_ always allocated outside of quota system.
     //so no need to adjust quota system especially when sortSendPool_ 
     //and receivePool_ are not the same.
-    delete receivePool_;
+    NADELETE(receivePool_, ExSortBufferPool, sortSpace_);
     receivePool_ = NULL;
     
-    delete sortPool_;
+    NADELETE(sortPool_, sql_buffer_pool, sortSpace_);
     sortPool_ = NULL;
         
     //Also delete and reallocate the space object from which the sortPool_ is 
     //allocated. This will really release the memory.
-    delete sortSpace_;
+    NADELETE(sortSpace_, Space, sortHeap_);
     sortSpace_ = NULL;
   }
   
@@ -237,19 +237,19 @@ void ExSortTcb::deleteAndReallocateSortPool()
       (sortSendPool_->get_number_of_buffers() - initialNumOfPoolBuffers_) * 
        sortTdb().bufferSize_);
   
-  delete sortSendPool_;
+  NADELETE(sortSendPool_, ExSortBufferPool, sortSpace_);
   sortSendPool_ = NULL;
   receivePool_ = NULL; 
   
   //delete actual pool.
   //if we are here, sortPool_ must be valid since we should not
   //reach here if topNSort or partial sort.
-  delete sortPool_;
+  NADELETE(sortPool_, sql_buffer_pool, sortSpace_);
   sortPool_ = NULL;
   
   //Also delete and reallocate the space object from which the pool was 
   //allocated. This will really release the memory.
-  delete sortSpace_;
+  NADELETE(sortSpace_, Space, sortHeap_);
   sortSpace_ = new(sortHeap_)Space(Space::EXECUTOR_SPACE, TRUE,(char*)"Sort Space reallocated");
   sortSpace_->setParent(sortHeap_);
   
@@ -457,14 +457,9 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
 ExSortTcb::~ExSortTcb()
 {
   freeResources();
-  if (sortUtil_)
-    delete sortUtil_;
-
-  if (sortCfg_)
-    delete sortCfg_;
-
+  
   if (sortHeap_)
-    delete sortHeap_;
+    NADELETE(sortHeap_, NAHeap, getHeap());
  
   if (nfDiags_)
      nfDiags_->deallocate();
@@ -476,19 +471,25 @@ ExSortTcb::~ExSortTcb()
 //
 void ExSortTcb::freeResources()
 {
+  if (sortUtil_)
+    NADELETE(sortUtil_, SortUtil, sortHeap_);
+
+  if (sortCfg_)
+    NADELETE(sortCfg_, SortUtilConfig, sortHeap_);
+
   if (partialSortPool_)
   {
-    delete partialSortPool_;
+    NADELETE(partialSortPool_, sql_buffer_pool, sortSpace_);
     partialSortPool_ = NULL;
   }
   if (sortPool_)
   {
-    delete sortPool_;
+    NADELETE(sortPool_, sql_buffer_pool, sortSpace_);
     sortPool_ = NULL;
   }
   if (topNSortPool_)
   {
-    delete topNSortPool_;
+    NADELETE(topNSortPool_, ExSimpleSQLBuffer, sortSpace_);
     topNSortPool_ = NULL;
   }
   
@@ -498,19 +499,19 @@ void ExSortTcb::freeResources()
   {
     if(sortSendPool_ != receivePool_)
     {
-      delete sortSendPool_;
+      NADELETE(sortSendPool_, ExSortBufferPool, sortSpace_);
     }
     sortSendPool_ = NULL;
   }
   if (receivePool_)
   {
-    delete receivePool_;
+    NADELETE(receivePool_, ExSortBufferPool, sortSpace_);
     receivePool_ = NULL;
   }
   
   if(sortSpace_)
   {
-    delete sortSpace_;
+    NADELETE(sortSpace_, Space, sortHeap_);
     sortSpace_ = NULL;
   }
   
