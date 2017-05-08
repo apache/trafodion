@@ -32,12 +32,12 @@
 #Product version (Trafodion or derivative product)
 export TRAFODION_VER_PROD="Apache Trafodion"
 export TRAFODION_VER_MAJOR=2
-export TRAFODION_VER_MINOR=2
+export TRAFODION_VER_MINOR=1
 export TRAFODION_VER_UPDATE=0
 export TRAFODION_VER="${TRAFODION_VER_MAJOR}.${TRAFODION_VER_MINOR}.${TRAFODION_VER_UPDATE}"
 
 # Product copyright header
-export PRODUCT_COPYRIGHT_HEADER="2015-2016 Apache Software Foundation"
+export PRODUCT_COPYRIGHT_HEADER="2015-2017 Apache Software Foundation"
 ##############################################################
 # Trafodion authentication:
 #    Set TRAFODION_ENABLE_AUTHENTICATION to YES to enable
@@ -407,7 +407,7 @@ elif [[ -n "$(ls /etc/init.d/ambari* 2>/dev/null)" ]]; then
   export HADOOP_JAR_DIRS="/usr/hdp/current/hadoop-client
                           /usr/hdp/current/hadoop-client/lib
                           /usr/hdp/current/hadoop-yarn-client"
-  export HADOOP_JAR_FILES="/usr/hdp/current/hadoop-client/client/hadoop-hdfs-*.jar"
+  export HADOOP_JAR_FILES="/usr/hdp/current/hadoop-hdfs-client/hadoop-hdfs-*.jar"
   export HIVE_JAR_DIRS="/usr/hdp/current/hive-client/lib"
   export HIVE_JAR_FILES="/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core*.jar"
 
@@ -491,12 +491,6 @@ else
   function vanilla_apache_usage {
 
   cat <<EOF
-    If you haven't set HBASE_DISTRO, please set it before source current file
-      export HBASE_DISTRO=APACHE1.0 (APACHE HBASE1.0)
-      export HBASE_DISTRO=APACHE1.1 (APACHE HBASE1.1)
-      export HBASE_DISTRO=CDH5.4    (cloudera 1.0.0-cdh5.4.4) 
-      export HBASE_DISTRO=CDH5.5    (cloudera 1.0.0-cdh5.5.1) 
-      export HBASE_DISTRO=HDP       (hortonworks 2.3)
 
     If you are ready to build Trafodion, perform one of the following options:
 
@@ -504,19 +498,15 @@ else
       make package     (Build Trafodion, DCS, REST, and Client drivers)  OR
       make package-all (Build Trafodion, DCS, REST, Client drivers, and Tests)
 
-    If Trafodion has been built and you want test: 
-
-       Execute the install_local_hadoop script which performs a single node
-       install using a popular Hadoop distribution 
-
-          cd $TRAF_HOME/sql/scripts
-          install_local_hadoop [-p <port option>]
-          install_traf_components 
-          configure Trafodion and start the processes
-          HAVE FUN!
-
-   You can also choose to install_local_hadoop before building Trafodion.
-
+   If Trafodion has been built and you want test: 
+   Ensure Hadoop is installed :
+    Follow instructions for user environment : 
+    http://trafodion.apache.org/docs/provisioning_guide/index.html
+    Follow instructions for dev environment at :  
+    https://cwiki.apache.org/confluence/display/TRAFODION/Create+Test+Environment
+                              
+   You can also choose to install hadoop before building Trafodion.
+                        HAVE FUN!
 EOF
   }
 
