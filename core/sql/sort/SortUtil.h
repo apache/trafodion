@@ -105,13 +105,15 @@ public:
   UInt32 estimateMemoryToAvoidIntMerge(UInt32 numruns, Int32 sortMergeBlocksPerBuffer);
   UInt32 estimateMergeOrder(UInt32 maxMergeMemory, Int32 sortMergeBlocksPerBuffer);
 protected :
-  Lng32 sortSendEndProcessing();
+  Lng32 sortReceivePrepare();
 
 private:
-  
+  void reInit();
   short    version_;     // The ArkSort version
   SORT_STATE state_;      
   SortUtilConfig *config_;
+  NABoolean internalSort_; //indicates if overflowed or not.
+  NABoolean sortReceivePrepared_; //if sort overflowed, prepare the merge tree for receive.
   SortAlgo *sortAlgo_;   // Algorithms are implemented as sub-classes
                          // of  Sort algorithm base class.      
                          // This implementation  allows extensibility as
