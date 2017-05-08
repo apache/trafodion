@@ -139,7 +139,7 @@ echo "hdfs_uri: ${hdfs_uri}"
 echo "hdfs_backup_location:${hdfs_backup_location}"
 # if hdfs backup location is empty generate one
 if [[ -z "$hdfs_backup_location" ]] ; then
-  new_path=${hdfs_uri}/trafodion_backups/backup_${date_str}
+  new_path=${hdfs_uri}/user/trafodion/trafodion_backups/backup_${date_str}
   confirm_choice "Would you like to use this path as the backup folder: ${new_path} ?"
   if [[ $? -ne 0 ]]; then
     echo "***[ERROR]: New path ${new_path} could not be validated."    | tee -a  ${log_file}

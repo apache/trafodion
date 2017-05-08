@@ -264,7 +264,7 @@ A            B            C
 >>-- this causes the external table to be invalid
 >>
 >>-- cleanup data from the old table, and create/load data with additional column
->>sh regrhadoop.ksh fs -rm   /user/hive/exttables/t009t1/*;
+>>sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/t009t1/*;
 >>sh regrhive.ksh -v -f $REGRTSTDIR/TEST009_b.hive.sql &> $REGRRUNDIR/LOG009_b.hive.log;
 >>
 >>-- should fail - column mismatch
@@ -349,7 +349,7 @@ T009T2
 >>invoke hive.sch_t009.t009t1;
 
 -- Definition of hive table T009T1
--- Definition current  Fri Mar 17 07:19:26 2017
+-- Definition current  Mon May  1 18:17:29 2017
 
   (
     A                                INT
@@ -419,7 +419,7 @@ _HB__CELL__
 >>invoke trafodion."_HB__ROW__"."baseball";
 
 -- Definition of Trafodion external table TRAFODION."_HB__ROW__"."baseball"
--- Definition current  Fri Mar 17 07:19:38 2017
+-- Definition current  Mon May  1 18:17:41 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -432,7 +432,7 @@ _HB__CELL__
 >>invoke trafodion."_HB__CELL__"."baseball";
 
 -- Definition of Trafodion external table TRAFODION."_HB__CELL__"."baseball"
--- Definition current  Fri Mar 17 07:19:39 2017
+-- Definition current  Mon May  1 18:17:42 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -521,7 +521,7 @@ ROW_ID      COLS
 >>invoke hive.hive.store_sales;
 
 -- Definition of hive table STORE_SALES
--- Definition current  Fri Mar 17 07:19:57 2017
+-- Definition current  Mon May  1 18:18:05 2017
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -565,7 +565,7 @@ ROW_ID      COLS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212356495197335919
+PLAN_ID .................. 212360422685553602
 ROWS_OUT ............. 1,709
 EST_TOTAL_COST ........... 0.27
 STATEMENT ................ select * from store_sales where ss_item_sk = 1;
@@ -694,7 +694,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212356495197600410
+PLAN_ID .................. 212360422686017142
 ROWS_OUT ......... 2,920,643
 EST_TOTAL_COST ........... 1.07
 STATEMENT ................ select *
@@ -896,7 +896,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Fri Mar 17 07:20:06 2017
+-- Definition current  Mon May  1 18:18:15 2017
 
   (
     D_DATE_SK                        INT
@@ -1039,7 +1039,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212356495214064420
+PLAN_ID .................. 212360422699701203
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
@@ -1130,7 +1130,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Fri Mar 17 07:20:22 2017
+-- Definition current  Mon May  1 18:18:30 2017
 
   (
     D_DATE_SK                        INT
@@ -1273,7 +1273,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212356495226927260
+PLAN_ID .................. 212360422714471702
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select *
