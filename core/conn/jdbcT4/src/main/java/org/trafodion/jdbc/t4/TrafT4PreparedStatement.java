@@ -1051,8 +1051,27 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		}
 		validateSetInvocation(parameterIndex);
 		inputDesc_[parameterIndex - 1].checkValidNumericConversion(connection_.getLocale());
-		Utility.checkLongBoundary(connection_.getLocale(), BigDecimal.valueOf(x));
 		addParamValue(parameterIndex, Long.toString(x));
+	}
+
+	private void setLong(int parameterIndex, BigDecimal x) throws SQLException {
+		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
+			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, x);
+			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4PreparedStatement", "setLong", "", p);
+		}
+		if (connection_.props_.getLogWriter() != null) {
+			LogRecord lr = new LogRecord(Level.FINE, "");
+			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, parameterIndex, x);
+			lr.setParameters(p);
+			lr.setSourceClassName("TrafT4PreparedStatement");
+			lr.setSourceMethodName("setLong");
+			T4LogFormatter lf = new T4LogFormatter();
+			String temp = lf.format(lr);
+			connection_.props_.getLogWriter().println(temp);
+		}
+		validateSetInvocation(parameterIndex);
+		inputDesc_[parameterIndex - 1].checkValidNumericConversion(connection_.getLocale());
+		addParamValue(parameterIndex, x);
 	}
 
 	public void setNull(int parameterIndex, int sqlType) throws SQLException {
@@ -1192,6 +1211,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		if (x == null) {
 			setNull(parameterIndex, Types.NULL);
 		} else {
+			int type = inputDesc_[parameterIndex - 1].sqlDataType_;
 			switch (targetSqlType) {
 			case Types.CHAR:
 			case Types.VARCHAR:
@@ -1258,9 +1278,12 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 				break;
 			case Types.BIGINT:
 				tmpbd = Utility.getBigDecimalValue(locale, x);
-				Utility.checkLongBoundary(locale, tmpbd);
 				//Utility.checkLongTruncation(parameterIndex, tmpbd);
-				setLong(parameterIndex, tmpbd.longValue());
+				if (type == InterfaceResultSet.SQLTYPECODE_LARGEINT_UNSIGNED){
+				    setLong(parameterIndex, tmpbd);
+				} else{
+				    setLong(parameterIndex, tmpbd.longValue());
+				}
 				break;
 			case Types.DECIMAL:
 				// precision = getPrecision(parameterIndex - 1);
@@ -1279,7 +1302,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.TINYINT:
 				tmpbd = Utility.getBigDecimalValue(locale, x);
 				tmpbd = Utility.setScale(tmpbd, scale, roundingMode_);
-                                Utility.checkSignedTinyintBoundary(locale, tmpbd);
+				Utility.checkSignedTinyintBoundary(locale, tmpbd);
 				setShort(parameterIndex, tmpbd.shortValue());
 				break;
 			case Types.FLOAT:
