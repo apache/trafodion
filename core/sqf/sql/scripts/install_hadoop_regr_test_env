@@ -212,31 +212,31 @@ fi
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table reason      >>${MY_LOG_FILE} 2>&1
   ./dsdgen -force $FORCE -dir $MY_TPCDS_DATA_DIR -scale $SCALE -table ship_mode   >>${MY_LOG_FILE} 2>&1
 
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds                        >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/date_dim               >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/time_dim               >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/item                   >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/customer               >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/customer_demographics  >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/household_demographics >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/customer_address       >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/store                  >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/promotion              >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/store_sales            >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/ship_mode              >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/reason                 >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/income_band            >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/warehouse              >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/web_page               >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/web_site               >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/catalog_page           >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/call_center            >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/inventory              >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/web_returns            >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/web_sales              >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/catalog_returns        >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/catalog_sales          >>${MY_LOG_FILE} 2>&1
-  $MY_HDFS_CMD dfs -mkdir -p /hive/tpcds/store_returns          >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds                        >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/date_dim               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/time_dim               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/item                   >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/customer               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/customer_demographics  >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/household_demographics >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/customer_address       >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/store                  >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/promotion              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/store_sales            >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/ship_mode              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/reason                 >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/income_band            >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/warehouse              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/web_page               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/web_site               >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/catalog_page           >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/call_center            >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/inventory              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/web_returns            >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/web_sales              >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/catalog_returns        >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/catalog_sales          >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -mkdir -p /user/trafodion/hive/tpcds/store_returns          >>${MY_LOG_FILE} 2>&1
 
   cd $MY_TPCDS_DATA_DIR
 
@@ -256,10 +256,10 @@ fi
   echo "Copying generated data to HDFS..."
   for t in date_dim time_dim item customer customer_demographics household_demographics customer_address store promotion store_sales store_returns catalog_sales catalog_returns web_sales web_returns inventory call_center catalog_page web_site web_page warehouse income_band reason reason
     do
-      $MY_HDFS_CMD dfs -put ${t}.dat /hive/tpcds/${t}        >>${MY_LOG_FILE} 2>&1
+      $MY_HDFS_CMD dfs -put ${t}.dat /user/trafodion/hive/tpcds/${t}        >>${MY_LOG_FILE} 2>&1
     done
 
-  $MY_HDFS_CMD dfs -ls -R /hive/tpcds/*/*.dat                >>${MY_LOG_FILE} 2>&1
+  $MY_HDFS_CMD dfs -ls -R /user/trafodion/hive/tpcds/*/*.dat                >>${MY_LOG_FILE} 2>&1
 
   echo "Creating tables in Hive..." | tee -a ${MY_LOG_FILE}
   $MY_HIVE_CMD <<EOF >>${MY_LOG_FILE} 2>&1
@@ -292,7 +292,7 @@ create external table store_sales
     ss_net_profit             float                  
 )
 row format delimited fields terminated by '|' 
-location '/hive/tpcds/store_sales';
+location '/user/trafodion/hive/tpcds/store_sales';
 
 create external table customer_demographics
 (
@@ -307,7 +307,7 @@ create external table customer_demographics
     cd_dep_college_count      int 
 )
 row format delimited fields terminated by '|' 
-location '/hive/tpcds/customer_demographics';
+location '/user/trafodion/hive/tpcds/customer_demographics';
 
 create external table date_dim
 (
@@ -341,7 +341,7 @@ create external table date_dim
     d_current_year            string 
 )
 row format delimited fields terminated by '|' 
-location '/hive/tpcds/date_dim';
+location '/user/trafodion/hive/tpcds/date_dim';
 
 create external table time_dim
 (
@@ -357,7 +357,7 @@ create external table time_dim
     t_meal_time               string
 )
 row format delimited fields terminated by '|' 
-location '/hive/tpcds/time_dim';
+location '/user/trafodion/hive/tpcds/time_dim';
 
 create external table item
 (
@@ -385,7 +385,7 @@ create external table item
     i_product_name            string
 )
 row format delimited fields terminated by '|' 
-location '/hive/tpcds/item';
+location '/user/trafodion/hive/tpcds/item';
 
 create external table store
 (
@@ -420,7 +420,7 @@ create external table store
     s_tax_precentage          float                  
 )
 row format delimited fields terminated by '|' 
-location '/hive/tpcds/store';
+location '/user/trafodion/hive/tpcds/store';
 
 create external table customer
 (
@@ -444,7 +444,7 @@ create external table customer
     c_last_review_date        string
 )
 row format delimited fields terminated by '|' 
-location '/hive/tpcds/customer';
+location '/user/trafodion/hive/tpcds/customer';
 
 create external table promotion
 (
@@ -469,7 +469,7 @@ create external table promotion
     p_discount_active         string 
 )
 row format delimited fields terminated by '|' 
-location '/hive/tpcds/promotion';
+location '/user/trafodion/hive/tpcds/promotion';
 
 create external table household_demographics
 (
@@ -480,7 +480,7 @@ create external table household_demographics
     hd_vehicle_count          int
 )
 row format delimited fields terminated by '|' 
-location '/hive/tpcds/household_demographics';
+location '/user/trafodion/hive/tpcds/household_demographics';
 
 create external table customer_address
 (
@@ -499,7 +499,7 @@ create external table customer_address
     ca_location_type          string
 )
 row format delimited fields terminated by '|' 
-location '/hive/tpcds/customer_address';
+location '/user/trafodion/hive/tpcds/customer_address';
 
 create table store_orc stored as orc as select * from store;
 
@@ -527,7 +527,7 @@ create external table store_returns
     sr_net_loss                 float
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/store_returns';
+location '/user/trafodion/hive/tpcds/store_returns';
 
 
 create external table catalog_sales
@@ -568,7 +568,7 @@ create external table catalog_sales
     cs_net_profit           float
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/catalog_sales';
+location '/user/trafodion/hive/tpcds/catalog_sales';
 
 
 create external table  catalog_returns
@@ -602,7 +602,7 @@ create external table  catalog_returns
     cr_net_loss                 float
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/catalog_returns';
+location '/user/trafodion/hive/tpcds/catalog_returns';
 
 create external table  web_sales
 (
@@ -642,7 +642,7 @@ create external table  web_sales
     ws_net_profit               float
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/web_sales';
+location '/user/trafodion/hive/tpcds/web_sales';
 
 create external table web_returns
 (
@@ -672,7 +672,7 @@ create external table web_returns
     wr_net_loss                 float
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/web_returns';
+location '/user/trafodion/hive/tpcds/web_returns';
 
 create external table inventory
 (
@@ -682,7 +682,7 @@ create external table inventory
     inv_quantity_on_hand    int
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/inventory';
+location '/user/trafodion/hive/tpcds/inventory';
 
 create external table call_center
 (
@@ -719,7 +719,7 @@ create external table call_center
     cc_tax_percentage       float
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/call_center';
+location '/user/trafodion/hive/tpcds/call_center';
 
 create external table catalog_page
 (
@@ -734,7 +734,7 @@ create external table catalog_page
     cp_type                 string
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/catalog_page';
+location '/user/trafodion/hive/tpcds/catalog_page';
 
 create external table web_site
 (
@@ -766,7 +766,7 @@ create external table web_site
     web_tax_percentage      float
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/web_site';
+location '/user/trafodion/hive/tpcds/web_site';
 
 create external table Web_page
 (
@@ -786,7 +786,7 @@ create external table Web_page
     wp_max_ad_count         int
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/web_page';
+location '/user/trafodion/hive/tpcds/web_page';
 
 create external table warehouse
 (
@@ -806,7 +806,7 @@ create external table warehouse
     w_gmt_offset            float
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/warehouse';
+location '/user/trafodion/hive/tpcds/warehouse';
 
 create external table income_band
 (
@@ -815,7 +815,7 @@ create external table income_band
     ib_upper_bound          int
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/income_band';
+location '/user/trafodion/hive/tpcds/income_band';
 
 create external table reason
 (
@@ -824,7 +824,7 @@ create external table reason
     r_reason_desc           string
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/reason';
+location '/user/trafodion/hive/tpcds/reason';
 
 create external table ship_mode
 (
@@ -836,7 +836,7 @@ create external table ship_mode
     sm_contract             string
 )
 row format delimited fields terminated by '|'
-location '/hive/tpcds/ship_mode';
+location '/user/trafodion/hive/tpcds/ship_mode';
 
 quit;
 

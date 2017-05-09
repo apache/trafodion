@@ -33,7 +33,7 @@ create external table t009t1
     c int
 )
 row format delimited fields terminated by '|'
-location '/user/hive/exttables/t009t1';
+location '/user/trafodion/hive/exttables/t009t1';
 
 -- Our version of HIVE does not support insert ... VALUES clause, so use the
 -- load command from an existing table.
@@ -52,7 +52,7 @@ create external table t009t2
     c int
 )
 row format delimited fields terminated by '|'
-location '/user/hive/exttables/t009t2';
+location '/user/trafodion/hive/exttables/t009t2';
 
 insert into table t009t2
 select c_customer_sk, c_birth_day, c_birth_month
