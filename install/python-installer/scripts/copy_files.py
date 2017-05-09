@@ -37,7 +37,7 @@ def run(user, pwd):
     hosts = dbcfgs['node_list'].split(',')
     traf_package = dbcfgs['traf_package']
 
-    udo_prefix = get_sudo_prefix()
+    sudo_prefix = get_sudo_prefix()
     run_cmd('%s rm -rf %s*' % (sudo_prefix, SSHKEY_FILE))
     run_cmd('%s echo -e "y" | ssh-keygen -t rsa -N "" -f %s' % (sudo_prefix, SSHKEY_FILE))
 
