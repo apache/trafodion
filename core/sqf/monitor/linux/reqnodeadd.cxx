@@ -131,8 +131,8 @@ void CExtNodeAddReq::performRequest()
                         strncpy( lnodeConfigInfo.nodename
                                , msg_->u.request.u.node_add.node_name
                                , sizeof(lnodeConfigInfo.nodename) );
-                        lnodeConfigInfo.lastCore  = msg_->u.request.u.node_add.first_core;
-                        lnodeConfigInfo.firstCore = msg_->u.request.u.node_add.last_core;
+                        lnodeConfigInfo.firstCore = msg_->u.request.u.node_add.first_core;
+                        lnodeConfigInfo.lastCore  = msg_->u.request.u.node_add.last_core;
                         lnodeConfigInfo.processor = msg_->u.request.u.node_add.processors;
                         clusterConfig->SetCoreMask( lnodeConfigInfo.lastCore
                                                   , lnodeConfigInfo.firstCore

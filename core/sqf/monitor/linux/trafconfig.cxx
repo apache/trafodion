@@ -135,12 +135,19 @@ TC_Export int tc_put_node( node_configuration_t *node_config )
 {
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.SaveLNodeData( node_config->nid
+    rc = SqliteConfig.SavePNodeData( node_config->node_name
                                    , node_config->pnid
-                                   , node_config->first_core
-                                   , node_config->last_core
-                                   , node_config->processors
-                                   , node_config->roles );
+                                   , node_config->excluded_first_core
+                                   , node_config->excluded_last_core );
+    if (rc == TCSUCCESS)
+    {
+        rc = SqliteConfig.SaveLNodeData( node_config->nid
+                                       , node_config->pnid
+                                       , node_config->first_core
+                                       , node_config->last_core
+                                       , node_config->processors
+                                       , node_config->roles );
+    }
 
     return( rc );
 }

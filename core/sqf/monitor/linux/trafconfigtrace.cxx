@@ -188,7 +188,7 @@ void CTrafConfigTrace::TraceInit( bool traceEnabled
     {
         traceSettingsSaved_ = TcTraceSettings;
 
-        if (pfname != NULL)
+        if (strlen( trace_file_name))
         {
             trace_init(trace_file_name,
                        false,  // don't append pid to file name

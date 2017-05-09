@@ -76,6 +76,7 @@ import org.apache.hadoop.hbase.regionserver.ScannerContext;
 #endif
 #ifdef CDH5.7 APACHE1.2
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.conf.Configuration;
 #endif
 import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -90,7 +91,9 @@ import org.apache.hadoop.io.DataInputBuffer;
 public class TrxTransactionState extends TransactionState {
 
     static java.lang.reflect.Constructor c1_0 = null;
-
+#ifdef CDH5.7 APACHE1.2
+    static Configuration config = HBaseConfiguration.create();
+#endif
     static {
         String version = VersionInfo.getVersion();// the hbase version string, eg. "0.6.3-dev"
         LOG.info("Got info of Class ScanQueryMatcher for HBase version :" + version);
@@ -694,7 +697,7 @@ public class TrxTransactionState extends TransactionState {
             
             //Store.ScanInfo scaninfo = new Store.ScanInfo(null, 0, 1, HConstants.FOREVER, false, 0, Cell.COMPARATOR);
 #ifdef CDH5.7 APACHE1.2
-            ScanInfo scaninfo = new ScanInfo(HBaseConfiguration.create(), null, 0, 1, HConstants.FOREVER,KeepDeletedCells.FALSE, 0, KeyValue.COMPARATOR);
+            ScanInfo scaninfo = new ScanInfo(getConfig(), null, 0, 1, HConstants.FOREVER,KeepDeletedCells.FALSE, 0, KeyValue.COMPARATOR);
 #else
             ScanInfo scaninfo = new ScanInfo(null, 0, 1, HConstants.FOREVER,KeepDeletedCells.FALSE, 0, KeyValue.COMPARATOR);
 #endif
@@ -1032,4 +1035,10 @@ public class TrxTransactionState extends TransactionState {
             }
         }
     }
+    
+#ifdef CDH5.7 APACHE1.2
+    public Configuration getConfig() {
+      return config;
+    }
+#endif
 }

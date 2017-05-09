@@ -19,23 +19,19 @@
 #
 # @@@ END COPYRIGHT @@@
 
-begin node
-_virtualnodes 2
-end node
+begin persist
 
 #
-# The folling process types are persistent and have special process management:
+# The following PROCESS_TYPEs are persistent and have special process management:
 #    DTM
 #    TMID
 #    SSMP
 #    PSD
 #    WDG
 #
-# Generic persistent processes are of process type:
+# Generic persistent processes are of PROCESS_TYPE:
 #    PERSIST
 #
-
-begin persist
 
 PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG
 
@@ -88,3 +84,4 @@ WDG_PERSIST_RETRIES  = 10,60
 WDG_PERSIST_ZONES    = %zid
 
 end persist
+
