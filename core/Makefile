@@ -120,7 +120,7 @@ cleanall: sqroot eclipseclean cleantests
 	cd conn/trafci        &&	$(MAKE) clean
 	cd conn/jdbcT4        &&	$(MAKE) clean
 	cd conn &&			$(MAKE) clean
-	cd conn/jdbc_type2 &&	        $(ANT) clean && $(MAKE) clean
+	cd conn/jdbc_type2 && $(MAKE) clean
 	cd rest &&			$(MAKE) clean
 	cd conn/odb &&			$(MAKE) clean
 	cd ../dcs &&			$(MAKE) clean
