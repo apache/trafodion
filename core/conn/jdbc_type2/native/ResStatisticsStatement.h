@@ -153,6 +153,12 @@ private:
      short      ScratchOverflowMode;
      int64      ScratchBufferReadCount;
      int64      ScratchBufferWriteCount;
+     int64	ScratchIOMaxTime;
+     int32      ScratchIOSize;
+     int32      bmoSpaceBufferSize;
+     int64      bmoSpaceBufferCount;
+     int64      bmoInterimRowCount;
+     int32      topN;
      char        subQryType[SUB_QRY_TYPE_LEN+1];
      char        parentSysName[PAR_SYS_NAME_LEN+1];
 
@@ -176,11 +182,14 @@ private:
      Int64        SpaceUsed;                //YES
      Int64        HeapTotal;                //YES
      Int64        HeapUsed;             //YES
+     Int64        HeapWM;
      int64   CpuTime;
      Int64        Dp2SpaceTotal;            //YES
      Int64        Dp2SpaceUsed;         //YES
      Int64        Dp2HeapTotal;         //YES
      Int64        Dp2HeapUsed;          //YES
+
+
 
      // Currently not in R2.5. To be enabled post R2.5/SQ
      int64       UdrCpuTime;            //YES

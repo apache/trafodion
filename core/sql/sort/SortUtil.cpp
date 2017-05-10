@@ -191,6 +191,7 @@ NABoolean SortUtil::sortInitialize(SortUtilConfig& config, ULng32 topNSize)
                                   config.heapAddr_,
                                   &sortError_,
                                   explainNodeId_,
+                                  bmoStats_,
                                   this);
 
   }
@@ -207,6 +208,7 @@ NABoolean SortUtil::sortInitialize(SortUtilConfig& config, ULng32 topNSize)
                                    config.heapAddr_,
                                    &sortError_,
                                    explainNodeId_,
+                                   bmoStats_,
                                    this);
   }
   if (sortAlgo_ == NULL)
@@ -514,7 +516,8 @@ Lng32 SortUtil::sortReceivePrepare(void)
   if (stats_.numRuns_ > (Lng32) config_->mergeOrder_)
   {
     state_ = SORT_INTERMEDIATE_MERGE;
-
+    if (bmoStats_)
+       bmoStats_->setBmoPhase(ExSortTcb::SortPhase::SORT_PHASE_END-ExSortTcb::SortPhase::SORT_MERGE_PHASE);
     if (config_->logInfoEvent())
     {
       char msg[500];
@@ -540,6 +543,7 @@ Lng32 SortUtil::sortReceivePrepare(void)
                                                   config_->heapAddr_,
                                                   &sortError_,
                                                   explainNodeId_,
+                                                  bmoStats_,
                                                   this,
                                                   runnum, 
                                                   TRUE_L, TRUE);
@@ -601,6 +605,7 @@ Lng32 SortUtil::sortReceivePrepare(void)
                                                   config_->heapAddr_,
                                                   &sortError_,
                                                   explainNodeId_,
+                                                  bmoStats_,
                                                   this,
                                                   runnum, 
                                                   TRUE_L,TRUE);
@@ -698,6 +703,7 @@ Lng32 SortUtil::sortReceivePrepare(void)
                                             config_->heapAddr_,
                                             &sortError_,
                                             explainNodeId_,
+                                            bmoStats_,
                                             this,
                                             runnum, 
                                             TRUE_L,

@@ -137,8 +137,19 @@ public:
     SORT_CANCEL_CHILD,
     SORT_DONE_WITH_QND
     };
+
+  // Change ExSortTcb::SortPhaseStr[] when a new value is added to this enum
+  // Add new value before SORT_PHASE_END
+  enum SortPhase  {
+    SORT_PREP_PHASE,
+    SORT_SEND_PHASE,
+    SORT_RECV_PHASE,
+    SORT_MERGE_PHASE,
+    SORT_PHASE_END
+  };
+  static const char *SortPhaseStr[];
 private:
-  void deleteAndReallocateSortPool();
+   void deleteAndReallocateSortPool();
 protected:
   friend class   ExSortTdb;
   friend class   ExSortPrivateState;
