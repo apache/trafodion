@@ -34,7 +34,7 @@ create external table t009t1
     d int
 )
 row format delimited fields terminated by '|'
-location '/user/hive/exttables/t009t1';
+location '/user/trafodion/hive/exttables/t009t1';
 
 -- Our version of HIVE does not support insert ... VALUES clause, so use the
 -- load command from an existing table.

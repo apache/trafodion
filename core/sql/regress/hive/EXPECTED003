@@ -191,7 +191,7 @@ P_PROMO_SK   P_PROMO_ID                 P_START_DATE_SK  P_END_DATE_SK  P_ITEM_S
 
 *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 
-*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491850476, failedModTS = 1491850478, failedLoc = hdfs://localhost:30200/user/hive/exttables/ins_customer_address
+*** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1493660577, failedModTS = 1493660579, failedLoc = hdfs://localhost:25600/user/trafodion/hive/exttables/ins_customer_address
 
 (EXPR)              
 --------------------
@@ -587,7 +587,7 @@ test lp bug # 1355477
 --- 12 row(s) selected.
 >>
 >>-- hadoop ls should return 2 files
->>-- sh regrhadoop.ksh fs -ls  /user/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
+>>-- sh regrhadoop.ksh fs -ls  /user/trafodion/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
 >>log;
 2
 1c1
@@ -651,7 +651,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---
 > *** WARNING[8597] Statement was automatically retried 1 time(s). Delay before each retry was 0 seconds. See next entry for the error that caused this retry.
 > 
-> *** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1491850590, failedModTS = 1491850614, failedLoc = hdfs://localhost:30200/user/hive/exttables/ins_store_sales_summary
+> *** WARNING[8436] Mismatch detected between compiletime and runtime hive table definitions. DataModMismatchDetails: compiledModTS = 1493660691, failedModTS = 1493660717, failedLoc = hdfs://localhost:25600/user/trafodion/hive/exttables/ins_store_sales_summary
 > 
 > SS_SOLD_DATE_SK  SS_STORE_SK  SS_QUANTITY
 > ---------------  -----------  -----------

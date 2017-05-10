@@ -117,7 +117,7 @@ delete from t130lob2;
 --test insert select from a source hive varchar column to lob
 delete from t130lob2;
 insert into t130lob2 select [first 10] d_date_sk,d_date_id from hive.hive.date_dim;
-select lobtostring(c2,40) from t130lob2 order by c1;
+select lobtostring(c2,4) from t130lob2 order by c1;
 delete from t130lob2;
 
 
@@ -339,9 +339,9 @@ drop table tlob130bin2;
 sh rm TMP130;
 sh rm tlob130txt2;
 sh rm tlob130_txt2.txt;
-sh regrhadoop.ksh fs -rm /lobs/tlob130_deep.jpg;
-sh regrhadoop.ksh fs -rm /lobs/tlob130_anoush.jpg;
-sh regrhadoop.ksh fs -rm /lobs/tlob130_txt2.txt;
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/tlob130_deep.jpg;
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/tlob130_anoush.jpg;
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/tlob130_txt2.txt;
 
 
 ?section lob_hdfs_file
@@ -349,35 +349,35 @@ log LOG130;
 create table tlob130txt2 (c1 int not null, c2 clob, primary key (c1));
 create table tlob130bin2 (c1 int not null, c2 blob, primary key (c1));
 
-sh regrhadoop.ksh fs -copyFromLocal lob_input_a1.txt /lobs/lob_input_a1.txt;
-sh regrhadoop.ksh fs -copyFromLocal lob_input_b1.txt /lobs/lob_input_b1.txt;
-sh regrhadoop.ksh fs -copyFromLocal lob_input_c1.txt /lobs/lob_input_c1.txt;
-sh regrhadoop.ksh fs -copyFromLocal lob_input_d1.txt /lobs/lob_input_d1.txt;
-sh regrhadoop.ksh fs -copyFromLocal lob_input_e1.txt /lobs/lob_input_e1.txt;
-sh regrhadoop.ksh fs -copyFromLocal deep.jpg /lobs/deep.jpg;
-sh regrhadoop.ksh fs -copyFromLocal anoush.jpg /lobs/anoush.jpg;
+sh regrhadoop.ksh fs -copyFromLocal lob_input_a1.txt /user/trafodion/lobs/lob_input_a1.txt;
+sh regrhadoop.ksh fs -copyFromLocal lob_input_b1.txt /user/trafodion/lobs/lob_input_b1.txt;
+sh regrhadoop.ksh fs -copyFromLocal lob_input_c1.txt /user/trafodion/lobs/lob_input_c1.txt;
+sh regrhadoop.ksh fs -copyFromLocal lob_input_d1.txt /user/trafodion/lobs/lob_input_d1.txt;
+sh regrhadoop.ksh fs -copyFromLocal lob_input_e1.txt /user/trafodion/lobs/lob_input_e1.txt;
+sh regrhadoop.ksh fs -copyFromLocal deep.jpg /user/trafodion/lobs/deep.jpg;
+sh regrhadoop.ksh fs -copyFromLocal anoush.jpg /user/trafodion/lobs/anoush.jpg;
 -- the next one is a really long file name intended to test error message 8557
-sh regrhadoop.ksh fs -copyFromLocal lob_input_a1.txt /lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt;
+sh regrhadoop.ksh fs -copyFromLocal lob_input_a1.txt /user/trafodion/lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt;
 sh sleep(20);
 
 
-insert into tlob130txt2 values (1, filetolob('hdfs:///lobs/lob_input_a1.txt'));
+insert into tlob130txt2 values (1, filetolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'));
 
 -- second line
-insert into tlob130txt2 values (2, filetolob('hdfs:///lobs/lob_input_b1.txt'));
+insert into tlob130txt2 values (2, filetolob('hdfs:///user/trafodion/lobs/lob_input_b1.txt'));
 
 -- third line
-insert into tlob130txt2 values (3, filetolob('hdfs:///lobs/lob_input_c1.txt'));
+insert into tlob130txt2 values (3, filetolob('hdfs:///user/trafodion/lobs/lob_input_c1.txt'));
 select lobtostring(c2, 40 ) from tlob130txt2;
 
 --updates
 
 --should update with full poem
-update tlob130txt2 set c2=filetolob('hdfs:///lobs/lob_input_d1.txt', append) where c1 = 3;
+update tlob130txt2 set c2=filetolob('hdfs:///user/trafodion/lobs/lob_input_d1.txt', append) where c1 = 3;
 select lobtostring(c2, 200 ) from tlob130txt2;
 
 -- should see wrong text in the last few lines
-update tlob130txt2 set c2=filetolob('hdfs:///lobs/lob_input_e1.txt') where c1 =3 ;
+update tlob130txt2 set c2=filetolob('hdfs:///user/trafodion/lobs/lob_input_e1.txt') where c1 =3 ;
 select lobtostring(c2, 200 ) from tlob130txt2;
 
 --delete
@@ -396,7 +396,7 @@ log;
 log LOG130;
 sh rm t130_extract_command;
 
-sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_txt2.txt');/g" >> t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user/trafodion/lobs\/tlob130_txt2.txt');/g" >> t130_extract_command;
 
 obey t130_extract_command;
 
@@ -412,7 +412,7 @@ log;
 
 log LOG130;
 sh rm t130_extract_command;
-sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_deep.jpg');/g" >> t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user/trafodion/lobs\/tlob130_deep.jpg');/g" >> t130_extract_command;
 obey t130_extract_command;
 
 update tlob130bin2 set c2=filetolob('anoush.jpg') ;
@@ -426,7 +426,7 @@ log;
 
 log LOG130;
 sh rm t130_extract_command;
-sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_anoush.jpg');/g" >> t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user/trafodion/lobs\/tlob130_anoush.jpg');/g" >> t130_extract_command;
 
 obey t130_extract_command;
 
@@ -444,7 +444,7 @@ drop table tlob130bin3;
 drop table tlob130bt;
 sh rm tlob130_deep2.jpg;
 sh rm tlob130_txt1.txt;
-sh regrhadoop.ksh fs -rm /lobs/tlob130_anoush2.jpg;
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/tlob130_anoush2.jpg;
 sh rm tlob130_anoush3.jpg;
 
 
@@ -477,7 +477,7 @@ log;
 
 log LOG130;
 sh rm t130_extract_command;
-sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/lobs\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
+sh grep "^LOBH" TMP130 | sed "s/^/extract lobtofile(LOB '/g" | sed "s/$/' , 'hdfs:\/\/\/user/trafodion/lobs\/tlob130_anoush2.jpg');/g" >> t130_extract_command;
 obey t130_extract_command;
 
 -- combination blob and clob columns
@@ -548,24 +548,26 @@ select * from table(lob stats(tlob130gt));
 ?section lob_external
 --test external lobs
 create table tlob130ext (c1 int not null, c2 blob, c3 clob, c4 blob storage 'external', primary key (c1));
+
 create table tlob130ext2 (c1 int not null, c2 blob, c3 clob, c4 blob storage 'external', primary key (c1));
 create table tlob130_not_external (c1 int not null , c2 blob, c3 blob, c4 blob, primary key (c1));
-insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///lobs/lob_input_a1.txt'),externaltolob('hdfs:///lobs/lob_input_a1.txt'));
-insert into tlob130ext values(2, stringtolob('second lob'), filetolob('hdfs:///lobs/lob_input_b1.txt'),externaltolob('hdfs:///lobs/lob_input_b1.txt'));
-insert into tlob130ext values(3, stringtolob('third lob'), filetolob('hdfs:///lobs/lob_input_c1.txt'),externaltolob('hdfs:///lobs/lob_input_c1.txt'));
+insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'));
+insert into tlob130ext values(2, stringtolob('second lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_b1.txt'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_b1.txt'));
+insert into tlob130ext values(3, stringtolob('third lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_c1.txt'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_c1.txt'));
+
 --negative cases
-insert into tlob130ext values(2, externaltolob('first lob'), filetolob('hdfs:///lobs/lob_input_a1.txt'),externaltolob('hdfs:///lobs/lob_input_a1.txt'));
-insert into tlob130ext values(3, stringtolob('first lob'), filetolob('hdfs:///lobs/lob_input_a1.txt'),filetolob('hdfs:///lobs/lob_input_a1.txt'));
-update tlob130ext set c4=stringtolob('hdfs:///lobs/lob_input_a1.txt', append) where c1=1;
-update tlob130ext set c4=externaltolob('hdfs:///lobs/lob_input_a1.txt', append) where c1=1;
-update tlob130ext set c3=externaltolob('hdfs:///lobs/lob_input_b1.txt') where c1=1;
+insert into tlob130ext values(2, externaltolob('first lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'));
+insert into tlob130ext values(3, stringtolob('first lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'),filetolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'));
+update tlob130ext set c4=stringtolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt', append) where c1=1;
+update tlob130ext set c4=externaltolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt', append) where c1=1;
+update tlob130ext set c3=externaltolob('hdfs:///user/trafodion/lobs/lob_input_b1.txt') where c1=1;
 update tlob130ext set c4=stringtolob('cannot allow this') where c1=1;
 delete from tlob130ext where c1=1;
-insert into tlob130ext values(1, stringtolob('first lob'),externaltolob('hdfs:///lobs/lob_input_a1.txt'),externaltolob('hdfs:///lobs/lob_input_a1.txt'));
-insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///lobs/lob_input_a1.txt'),externaltolob('hdfs:///lobs/lob_input_a1.txt'));
+insert into tlob130ext values(1, stringtolob('first lob'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'));
+insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'),externaltolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'));
 -- the next one should see error 8557
-insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///lobs/lob_input_a1.txt'),
-externaltolob('hdfs:///lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt'));
+insert into tlob130ext values(1, stringtolob('first lob'), filetolob('hdfs:///user/trafodion/lobs/lob_input_a1.txt'),
+externaltolob('hdfs:///user/trafodion/lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt'));
 
 select lobtostring(c2,50),lobtostring(c3,50),lobtostring(c4,50) from tlob130ext;
 update tlob130ext set c3=stringtolob('can allow this') where c1=1;
@@ -573,11 +575,11 @@ select lobtostring(c2,50),lobtostring(c3,50),lobtostring(c4,50) from tlob130ext;
 
 
 
-update tlob130ext set c4=externaltolob('hdfs:///lobs/lob_input_d1.txt') where c1=2;
+update tlob130ext set c4=externaltolob('hdfs:///user/trafodion/lobs/lob_input_d1.txt') where c1=2;
 select lobtostring(c2,50),lobtostring(c3,50),lobtostring(c4,50) from tlob130ext;
 
 
-update tlob130ext set c2=filetolob('hdfs:///lobs/lob_input_b1.txt') where c1=2;
+update tlob130ext set c2=filetolob('hdfs:///user/trafodion/lobs/lob_input_b1.txt') where c1=2;
 select lobtostring(c2,50),lobtostring(c3,50),lobtostring(c3,50) from tlob130ext;
 get lob stats for table tlob130ext;
 select * from table(lob stats(tlob130ext));
@@ -618,7 +620,7 @@ select c2 from tlob130ext;
 -- following should return error since only external lobs will be allowed
 update tlob130ext set c4=stringtolob('gggg'); 
 -- following should work. 
-update tlob130ext set c4=externaltolob('hdfs:///lobs/lob_input_b1.txt');
+update tlob130ext set c4=externaltolob('hdfs:///user/trafodion/lobs/lob_input_b1.txt');
 delete from tlob130ext;
 
 -- test to ensure all lob dependent tables and schemas containing lob tables
@@ -644,13 +646,13 @@ set schema trafodion.lob130;
 ?section lob_general_cleanup
 log;
 sh rm t130_*;
-sh regrhadoop.ksh fs -rm /lobs/tlob130*
-sh regrhadoop.ksh fs -rm /lobs/lobinput_a1.txt
-sh regrhadoop.ksh fs -rm /lobs/lobinput_b1.txt
-sh regrhadoop.ksh fs -rm /lobs/lobinput_c1.txt
-sh regrhadoop.ksh fs -rm /lobs/lobinput_d1.txt
-sh regrhadoop.ksh fs -rm /lobs/lobinput_e1.txt
-sh regrhadoop.ksh fs -rm /lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt;
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/tlob130*
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/lobinput_a1.txt
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/lobinput_b1.txt
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/lobinput_c1.txt
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/lobinput_d1.txt
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/lobinput_e1.txt
+sh regrhadoop.ksh fs -rm /user/trafodion/lobs/reallyLongDirectoryName0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789/lob_input_a1012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.txt;
 sh rm lobinput_*;
 sh rm deep.jpg;
 sh rm anoush.jpg;
