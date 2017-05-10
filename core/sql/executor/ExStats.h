@@ -1199,7 +1199,7 @@ public:
   {
     scratchOverflowMode_ = overflowMode;
   }
-  inline void setTopN(Int64 size) 
+  inline void setTopN(Int32 size) 
   { 
     topN_ = size;
   }
@@ -1467,7 +1467,7 @@ private:
   Int64 interimRowCount_;
   Int64 scratchIOMaxTime_;
   Int64 udrCpuTime_;
-  Int64 topN_;
+  Int32 topN_;
   // process id of this fragment instance (to correlate it with MEASURE data)
   // Also used by logic on runtimestats/CancelBroker.cpp
   SB_Phandle_Type phandle_;

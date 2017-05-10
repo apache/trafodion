@@ -1913,11 +1913,10 @@ void ExFragRootOperStats::getVariableStatsInfo(char * dataBuffer,
 		"SpaceUsed: %u SpaceTotal: %u HeapUsed: %u HeapTotal: %u HeapWM: %u "
 		"Newprocess: %u NewprocessTime: %Ld reqMsgCnt: %Ld "
 		"regMsgBytes: %Ld replyMsgCnt: %Ld replyMsgBytes: %Ld "
-		"PMemUsed: %Ld scrOverFlowMode: %d sortTopN: %Ld"
+		"PMemUsed: %Ld scrOverFlowMode: %d sortTopN: %d "
 		"scrFileCount: %d bmoSpaceBufferSize: %d bmoSpaceBufferCount: %Ld scrIOSize: %d " 
 		"scrWriteCount:%Ld scrReadCount: %Ld scrIOMaxTime: %Ld bmoInterimRowCount: %Ld udrCpuTime: %Ld "
-		"maxWaitTime: %Ld avgWaitTime: %Ld "
-		"hdfsAccess: %Ld ",
+		"maxWaitTime: %Ld avgWaitTime: %Ld hdfsAccess: %d ",
 		cpuTime_,
 		(((txtVal = getTextVal()) != NULL) ? txtVal : "NULL"),
 		stmtIndex_,
@@ -5072,7 +5071,7 @@ void ExMeasStats::getVariableStatsInfo(char * dataBuffer, char * datalen,
     "statsRowType: %d Newprocess: %u NewprocessTime: %Ld Timeouts: %u NumSorts: %u SortElapsedTime: %Ld "
     "SpaceTotal: %d  SpaceUsed: %d HeapTotal: %d HeapUsed: %d HeapWM: %u CpuTime: %Ld "
     "reqMsgCnt: %Ld reqMsgBytes: %Ld replyMsgCnt: %Ld "
-    "replyMsgBytes: %Ld scrOverflowMode: %d sortTopN: %Ld"
+    "replyMsgBytes: %Ld scrOverflowMode: %d sortTopN: %d "
     "scrFileCount: %d bmoSpaceBufferSize: %d bmoSpaceBufferCount: %Ld scrIoSize: %d "
     "scrWriteCount: %Ld scrReadCount: %Ld scrIOMaxTime: %Ld interimRowCount: %Ld udrCpuTime: %Ld ",
 	      statType(),
@@ -10588,10 +10587,10 @@ void ExBMOStats::getVariableStatsInfo(char * dataBuffer,
   char *buf = dataBuffer;
   str_sprintf (
        buf,
-       "statsRowType: %d explainTdbId: %d bmoPhase: %s bmoIntCount: %Ld estMemory: %0.2f bmoHeapUsed: %d bmoHeapTotal: %d bmoHeapWM: %d "
+       "statsRowType: %d explainTdbId: %d bmoPhase: %s bmoIntCount: %Ld estMemory: %f bmoHeapUsed: %d bmoHeapTotal: %d bmoHeapWM: %d "
        "bmoSpaceBufferSize: %d bmoSpaceBufferCount: %d "
        "scrOverFlowMode: %d scrFileCount: %d scrBufferBlockSize: %d scrBuffferRead: %d scrBufferWritten: %d "
-       "scrWriteCount: %Ld scrReadCount: %Ld topN: %Ld scrIOSize: %d scrIOTime: %Ld scrIOMaxTime: %Ld ",
+       "scrWriteCount: %Ld scrReadCount: %Ld sortTopN: %d scrIOSize: %d scrIOTime: %Ld scrIOMaxTime: %Ld ",
         statType(),
         getExplainNodeId(),
         getBmoPhaseStr(),
