@@ -1821,8 +1821,8 @@ ElemDDLNode::castToStmtDDLRegisterUser()
   return NULL;
 }
 
-StmtDDLRegOrUnregHive *
-ElemDDLNode::castToStmtDDLRegOrUnregHive()
+StmtDDLRegOrUnregObject *
+ElemDDLNode::castToStmtDDLRegOrUnregObject()
 {
   return NULL;
 }

@@ -1,5 +1,5 @@
-#ifndef STMTDDLREGORUNREGHIVE_H
-#define STMTDDLREGORUNREGHIVE_H
+#ifndef STMTDDLREGORUNREGOBJECT_H
+#define STMTDDLREGORUNREGOBJECT_H
 //******************************************************************************
 // @@@ START COPYRIGHT @@@
 //
@@ -25,9 +25,9 @@
 /* -*-C++-*-
  *****************************************************************************
  *
- * File:         StmtDDLRegOrUnregHive.h
+ * File:         StmtDDLRegOrUnregObject.h
  * Description:  class for parse nodes representing register and unregister
- *               of hive objects in traf metadata.
+ *               of hive/hbase objects in traf metadata.
  *
  * Created:      
  * Language:     C++
@@ -44,7 +44,7 @@
 // -----------------------------------------------------------------------
 // contents of this file
 // -----------------------------------------------------------------------
-class StmtDDLRegOrUnregHive;
+class StmtDDLRegOrUnregObject;
 
 // -----------------------------------------------------------------------
 // forward references
@@ -52,28 +52,36 @@ class StmtDDLRegOrUnregHive;
 // None
 
 // -----------------------------------------------------------------------
-// Register and unregister hive statements
+// Register and unregister hive or hbase statements
 // -----------------------------------------------------------------------
-class StmtDDLRegOrUnregHive : public StmtDDLNode
+class StmtDDLRegOrUnregObject : public StmtDDLNode
 {
 public:
+  enum StorageType
+    {
+      HIVE  = 0,
+      HBASE = 1
+    };
 
   // constructors
-  // register hive
-  StmtDDLRegOrUnregHive(const QualifiedName & origObjName,
-                        const NABoolean isRegister, // true, register. false, unregister
-                        const ComObjectType objType,
-                        const NABoolean existsOption,
-                        const NABoolean isInternal,
-                        const NABoolean cascade,
-                        const NABoolean cleanup,
-                        CollHeap * heap);
-
+  // register hive or hbase
+  StmtDDLRegOrUnregObject(const QualifiedName & origObjName,
+                          const StorageType storageType,
+                          
+                          // true, register. false, unregister
+                          const NABoolean isRegister, 
+                          const ComObjectType objType,
+                          const NABoolean existsOption,
+                          const NABoolean isInternal,
+                          const NABoolean cascade,
+                          const NABoolean cleanup,
+                          CollHeap * heap);
+  
   // virtual destructor
-  virtual ~StmtDDLRegOrUnregHive();
+  virtual ~StmtDDLRegOrUnregObject();
 
   // cast
-  virtual StmtDDLRegOrUnregHive * castToStmtDDLRegOrUnregHive();
+  virtual StmtDDLRegOrUnregObject * castToStmtDDLRegOrUnregObject();
 
   // for binding
   ExprNode * bindNode(BindWA *bindWAPtr);
@@ -105,6 +113,9 @@ private:
   // private data members
   // ---------------------------------------------------------------------
 
+  // type of object to be registered (hive, hbase)
+  StorageType storageType_;
+
   // the tablename specified by user in the register/unregister stmt.
   // This name is not fully qualified during bind phase.
   QualifiedName origObjName_;
@@ -129,6 +140,6 @@ private:
 
   // set to true if cleanup option is specified with unregister
   NABoolean cleanup_;
-}; // class StmtDDLRegOrUnregHive
+}; // class StmtDDLRegOrUnregObject
 
-#endif // STMTDDLREGORUNREGHIVE_H
+#endif // STMTDDLREGORUNREGOBJECT_H

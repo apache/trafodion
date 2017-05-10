@@ -99,6 +99,7 @@ StmtDDLCleanupObjects::bindNode(BindWA * pBindWA)
       (type_ == SCHEMA_SHARED_) ||
       (type_ == HIVE_TABLE_) ||
       (type_ == HIVE_VIEW_) ||
+      (type_ == HBASE_TABLE_) ||
       (type_ == UNKNOWN_))
     {
       ComObjectName tableName(param1_);

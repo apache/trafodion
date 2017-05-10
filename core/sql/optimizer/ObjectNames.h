@@ -285,9 +285,9 @@ public:
   NABoolean fullyExpanded() const	{ return catalogName_ != (const char *)""; }
 
   Int32 numberExpanded() const {
-    if(catalogName_) return 3;
-    if(schemaName_) return 2;
-    if(objectName_) return 1;
+    if(NOT catalogName_.isNull()) return 3;
+    if(NOT schemaName_.isNull()) return 2;
+    if(NOT objectName_.isNull()) return 1;
     return 0;
   }
 

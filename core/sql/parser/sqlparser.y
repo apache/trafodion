@@ -2431,10 +2431,12 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <pStmtDDL>                register_component_statement
 %type <pStmtDDL>                register_user_statement
 %type <pStmtDDL>                register_hive_statement
+%type <pStmtDDL>                register_hbase_statement
 %type <boolean>                 optional_internal_clause
 %type <pStmtDDL>                unregister_component_statement
 %type <pStmtDDL>		unregister_user_statement
 %type <pStmtDDL>		unregister_hive_statement
+%type <pStmtDDL>		unregister_hbase_statement
 %type <pElemDDL>  		privileges
 %type <pElemDDL>  		privilege_action_list
 %type <pElemDDL>  		privilege_action
@@ -14468,6 +14470,12 @@ sql_schema_definition_statement :
               | unregister_hive_statement
                                 {
                                 }
+              | register_hbase_statement
+                                {
+                                }
+              | unregister_hbase_statement
+                                {
+                                }
 
 /* type pStmtDDL */
 sql_schema_manipulation_statement :
@@ -15850,6 +15858,8 @@ objects_identifier :
                   | TOK_HIVE TOK_REGISTERED TOK_VIEWS { $$ = new (PARSERHEAP()) NAString("HIVE_REG_VIEWS"); }
                   | TOK_HIVE TOK_REGISTERED TOK_OBJECTS { $$ = new (PARSERHEAP()) NAString("HIVE_REG_OBJECTS"); }
                   | TOK_HIVE TOK_EXTERNAL TOK_TABLES { $$ = new (PARSERHEAP()) NAString("HIVE_EXT_TABLES"); }
+                  | TOK_HBASE TOK_REGISTERED TOK_TABLES { $$ = new (PARSERHEAP()) NAString("HBASE_REG_TABLES"); }
+
 
 privileges_identifier :
                     TOK_PRIVILEGES { $$ = new (PARSERHEAP()) NAString("PRIVILEGES"); }
@@ -30214,6 +30224,8 @@ cleanup_objects_statement : TOK_CLEANUP cleanup_object_identifier ddl_qualified_
                    ot = StmtDDLCleanupObjects::HIVE_TABLE_;
                  else if (*$2 == "HIVE_VIEW")
                    ot = StmtDDLCleanupObjects::HIVE_VIEW_;
+                 else if (*$2 == "HBASE_TABLE")
+                   ot = StmtDDLCleanupObjects::HBASE_TABLE_;
                  else if (*$2 == "OBJECT")
                    ot = StmtDDLCleanupObjects::UNKNOWN_;
                  else
@@ -30334,6 +30346,7 @@ cleanup_object_identifier : object_identifier
                        | TOK_OBJECT { $$ = new (PARSERHEAP()) NAString("OBJECT");}
                        | TOK_HIVE TOK_TABLE { $$ = new (PARSERHEAP()) NAString("HIVE_TABLE");}
                        | TOK_HIVE TOK_VIEW { $$ = new (PARSERHEAP()) NAString("HIVE_VIEW");}
+                       | TOK_HBASE TOK_TABLE { $$ = new (PARSERHEAP()) NAString("HBASE_TABLE");}
 
 /* type boolean */
 optional_cleanup_return_details : empty
@@ -32948,8 +32961,9 @@ register_hive_statement : TOK_REGISTER optional_internal_clause TOK_HIVE object_
                               }
 
                             $$ = new (PARSERHEAP())
-                              StmtDDLRegOrUnregHive(
+                              StmtDDLRegOrUnregObject(
                                    *$6,
+                                   StmtDDLRegOrUnregObject::HIVE,
                                    TRUE, // register
                                    (*$4 == "TABLE" ? COM_BASE_TABLE_OBJECT
                                     : (*$4 == "VIEW" ? COM_VIEW_OBJECT
@@ -32982,8 +32996,9 @@ unregister_hive_statement : TOK_UNREGISTER optional_internal_clause TOK_HIVE obj
                                   }
                                 
                                 $$ = new (PARSERHEAP())
-                                  StmtDDLRegOrUnregHive(
+                                  StmtDDLRegOrUnregObject(
                                        *$6,
+                                       StmtDDLRegOrUnregObject::HIVE,
                                        FALSE, // unregister
                                        (*$4 == "TABLE" ? COM_BASE_TABLE_OBJECT
                                         : (*$4 == "VIEW" ? COM_VIEW_OBJECT
@@ -32992,6 +33007,44 @@ unregister_hive_statement : TOK_UNREGISTER optional_internal_clause TOK_HIVE obj
                                        $2, // is internal unregister?
                                        $7, // is cascade?
                                        $8, // is cleanup?
+                                       PARSERHEAP());
+                                delete $6;
+                              }
+
+/* type pStmtDDL */
+// Syntax: register [internal] hbase table [if not exists] <table-name> 
+register_hbase_statement : TOK_REGISTER optional_internal_clause TOK_HBASE TOK_TABLE optional_if_not_exists_clause ddl_qualified_name
+                          {
+                            StmtDDLRegOrUnregObject *pNode = new (PARSERHEAP())
+                              StmtDDLRegOrUnregObject(
+                                   *$6,
+                                   StmtDDLRegOrUnregObject::HBASE,
+                                   TRUE, // register
+                                   COM_BASE_TABLE_OBJECT,
+                                   $5, // if not exists?
+                                   $2, // is internal registration?
+                                   FALSE,
+                                   FALSE,
+                                   PARSERHEAP());
+
+                            $$ = pNode;
+                            delete $6;
+                          }
+
+/* type pStmtDDL */
+// Syntax: unregister [internal] hbase table [if exists] <table-name>
+unregister_hbase_statement : TOK_UNREGISTER optional_internal_clause TOK_HBASE TOK_TABLE optional_if_exists_clause ddl_qualified_name optional_cleanup
+                              {
+                                $$ = new (PARSERHEAP())
+                                  StmtDDLRegOrUnregObject(
+                                       *$6,
+                                       StmtDDLRegOrUnregObject::HBASE,
+                                       FALSE, // unregister
+                                       COM_BASE_TABLE_OBJECT,
+                                       $5, // if exists?
+                                       $2, // is internal unregister?
+                                       FALSE,
+                                       $7, // is cleanup?
                                        PARSERHEAP());
                                 delete $6;
                               }

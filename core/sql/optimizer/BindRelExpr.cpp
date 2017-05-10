@@ -1534,6 +1534,15 @@ NATable *BindWA::getNATable(CorrName& corrName,
         }
       }
 
+      // if specified name is an HBASE name, see if a mapped table exists
+      if ((corrName.getQualifiedNameObj().getCatalogName() == HBASE_SYSTEM_CATALOG) &&
+          ((corrName.getQualifiedNameObj().getSchemaName() == HBASE_MAP_SCHEMA) ||
+           (corrName.getQualifiedNameObj().getSchemaName() == HBASE_SYSTEM_SCHEMA)))
+        {
+          corrName.getQualifiedNameObj().setCatalogName(TRAFODION_SYSCAT_LIT);
+          corrName.getQualifiedNameObj().setSchemaName(HBASE_EXT_MAP_SCHEMA);
+        }
+      
       //get NATable (from cache or from metadata)
       table = bindWA->getSchemaDB()->getNATableDB()->
                                      get(corrName, bindWA, inTableDescStruct);
@@ -1594,9 +1603,23 @@ NATable *BindWA::getNATable(CorrName& corrName,
       // move to here, after public schema try because BindUtil_CollectTableUsageInfo
       // saves table info for mv definition, etc.
       // Conditionally (usually) do stuff for Catalog Manager (static func above).
+
       if (catmanCollectTableUsages)
         if (corrName.getSpecialType() != ExtendedQualName::TRIGTEMP_TABLE)
-          BindUtil_CollectTableUsageInfo(bindWA, corrName); 
+          {
+            if ((bindWA->inViewDefinition()) &&
+                (corrName.isHbaseMap()))
+              {
+                // this is an internal hbase mapped name.
+                // Use the original name to store in view definition.
+                CorrName origName(corrName);
+                origName.getQualifiedNameObj().setCatalogName(HBASE_SYSTEM_CATALOG);
+                origName.getQualifiedNameObj().setSchemaName(HBASE_MAP_SCHEMA);
+                BindUtil_CollectTableUsageInfo(bindWA, origName); 
+              }
+            else
+              BindUtil_CollectTableUsageInfo(bindWA, corrName); 
+          }
 
       if (!table)
         {
@@ -5343,13 +5366,15 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
                   (selList[0]->getOperatorType() == ITM_COUNT) &&
 		  (selList[0]->origOpType() == ITM_COUNT_STAR__ORIGINALLY))
                 {
-		  NATable *naTable = bindWA->getNATable(scan->getTableName());
+                  CorrName cn(scan->getTableName());
+                  NATable *naTable = bindWA->getNATable(cn);
 		  if (bindWA->errStatus()) 
 		    return this;
 
 		  if (((naTable->getObjectType() == COM_BASE_TABLE_OBJECT) ||
 		       (naTable->getObjectType() == COM_INDEX_OBJECT)) &&
-		      ((naTable->isSeabaseTable()) ||
+		      (((naTable->isSeabaseTable()) &&
+                        (NOT naTable->isHbaseMapTable())) ||
                        ((naTable->isHiveTable()) &&
                         (NOT naTable->isView()) &&
                         (naTable->getClusteringIndex()) &&
@@ -5374,12 +5399,12 @@ RelExpr *RelRoot::bindNode(BindWA *bindWA)
                       if (naTable->isSeabaseTable())
                         eue = 
                           new(CmpCommon::statementHeap())
-                          ExeUtilHbaseCoProcAggr(scan->getTableName(),
+                          ExeUtilHbaseCoProcAggr(cn,
                                                  aggrSet);
                       else
                         eue = 
                           new(CmpCommon::statementHeap())
-                          ExeUtilOrcFastAggr(scan->getTableName(),
+                          ExeUtilOrcFastAggr(cn,
                                              aggrSet);
 		      
 		      eue->bindNode(bindWA);

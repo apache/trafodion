@@ -4818,15 +4818,16 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
    Int64 extCreateTime = -1;
    Int64 regObjectUID = -1;
    Int64 extObjectUID = -1;
-   if (corrName.isHive())
+   if ((corrName.isHive()) || (corrName.isHbase()))
      {
        // first get uid for the registered table/view.
        Int64 objectFlags = 0;
+
        regObjectUID = lookupObjectUidByName(corrName.getQualifiedNameObj(),
                                             (isView ? COM_VIEW_OBJECT :
                                              COM_BASE_TABLE_OBJECT), FALSE,
-                                            &objectFlags,
-                                            &regCreateTime);
+                                             &objectFlags,
+                                             &regCreateTime);
        
        if (NOT isView)
          {
@@ -4864,7 +4865,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
          {
            setIsRegistered(TRUE);
            
-           if (CmpSeabaseDDL::isMDflagsSet(objectFlags, MD_OBJECTS_HIVE_INTERNAL_REGISTER))
+           if (CmpSeabaseDDL::isMDflagsSet(objectFlags, MD_OBJECTS_INTERNAL_REGISTER))
              setIsInternalRegistered(TRUE);
          }
 
@@ -5791,18 +5792,6 @@ NATable::NATable(BindWA *bindWA,
 
   insertMode_ = 
     COM_MULTISET_TABLE_INSERT_MODE; // allow dup, to check
-  //ComInsertMode::COM_MULTISET_TABLE_INSERT_MODE; // allow dup, to check
-
-  //
-  // Add timestamp information.
-  //
-
-  // To get from Hive
-  /*
-    createTime_ = longArrayToInt64(table_desc->tableDesc()->createtime);
-    redefTime_  = longArrayToInt64(table_desc->tableDesc()->redeftime);
-    cacheTime_  = longArrayToInt64(table_desc->tableDesc()->cachetime);
-  */
 
   // NATable has a schemaUID column, probably should propogate it.
   // for now, set to 0.
@@ -8375,6 +8364,9 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         {
           table->setIsHbaseMapTable(TRUE);
           table->setIsExternalTable(TRUE);
+
+          //          if (! table->fetchObjectUIDForNativeTable(corrName, FALSE))
+          //            return NULL;
         }
     }
     else if (isHiveTable(corrName) &&

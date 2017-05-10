@@ -119,6 +119,9 @@ typedef NABoolean               ComBoolean;
 
 #define HBASE_SYSTEM_CATALOG          "HBASE"
 #define HBASE_SYSTEM_SCHEMA           "HBASE"
+#define HBASE_CELL_SCHEMA             "_CELL_"
+#define HBASE_ROW_SCHEMA              "_ROW_"
+#define HBASE_MAP_SCHEMA              "_MAP_"
 #define HBASE_HIST_NAME               "SB_HISTOGRAMS"
 #define HBASE_HISTINT_NAME            "SB_HISTOGRAM_INTERVALS"
 #define HBASE_PERS_SAMP_NAME          "SB_PERSISTENT_SAMPLES"

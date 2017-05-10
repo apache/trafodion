@@ -9353,12 +9353,12 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           else
             unregisterSeabaseUser(registerUserParseNode);
         }
-      else if (ddlNode->getOperatorType() == DDL_REG_OR_UNREG_HIVE)
+      else if (ddlNode->getOperatorType() == DDL_REG_OR_UNREG_OBJECT)
         {
-         StmtDDLRegOrUnregHive *regOrUnregHiveParseNode =
-            ddlNode->castToStmtDDLNode()->castToStmtDDLRegOrUnregHive();
-         regOrUnregHiveObjects(
-              regOrUnregHiveParseNode, currCatName, currSchName);
+         StmtDDLRegOrUnregObject *regOrUnregObjectParseNode =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLRegOrUnregObject();
+         regOrUnregNativeObject(
+              regOrUnregObjectParseNode, currCatName, currSchName);
         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_ROLE)
         {

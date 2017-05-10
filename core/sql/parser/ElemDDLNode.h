@@ -345,7 +345,7 @@ class StmtDDLCreateExceptionTable;
 class StmtDDLDropExceptionTable;
 class StmtDDLRegisterComponent;
 class StmtDDLRegisterUser;
-class StmtDDLRegOrUnregHive;
+class StmtDDLRegOrUnregObject;
 class StmtDDLCreateRole;
 class StmtDDLRoleGrant;
 class StmtDDLCleanupObjects;
@@ -684,7 +684,7 @@ public:
   virtual StmtDDLDropExceptionTable     * castToStmtDDLDropExceptionTable();
   virtual StmtDDLRegisterComponent      * castToStmtDDLRegisterComponent();
   virtual StmtDDLRegisterUser           * castToStmtDDLRegisterUser();
-  virtual StmtDDLRegOrUnregHive         * castToStmtDDLRegOrUnregHive();
+  virtual StmtDDLRegOrUnregObject       * castToStmtDDLRegOrUnregObject();
   virtual StmtDDLCreateRole             * castToStmtDDLCreateRole();
   virtual StmtDDLRoleGrant              * castToStmtDDLRoleGrant();
   virtual StmtDDLCleanupObjects         * castToStmtDDLCleanupObjects();

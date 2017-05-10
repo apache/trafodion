@@ -34,8 +34,6 @@ fi
 #Table ID: 56910649950845593
 #2071939932      8           8           8 SYSKEY
 sed " 
-s/Table ID: *[0-9]*/Table ID: <ID removed>/g
 s/\/\* ObjectUID = *[0-9]*/ObjectUID = <UID removed>/g
 s:^[ ]\{0,9\}[0-9]\{1,10\}:0000000000:
 " $fil
-
