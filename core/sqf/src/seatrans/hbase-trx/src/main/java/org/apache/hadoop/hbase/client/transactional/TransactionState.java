@@ -291,7 +291,7 @@ public class TransactionState {
     }
 
     // Used at the client end - the one performing the mutation - e.g. the SQL process
-    public void registerLocation(final TransactionRegionLocation location) throws IOException {
+    public void registerLocation(final HRegionLocation location) throws IOException {
         byte [] lv_hostname = location.getHostname().getBytes();
         int lv_port = location.getPort();
         long lv_startcode = location.getServerName().getStartcode();

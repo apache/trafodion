@@ -159,8 +159,8 @@ public class TransactionalScanner extends AbstractClientScanner {
                 return false;
             }
             else
-                this.currentBeginKey = TransactionManager.binaryIncrementPos(this.currentEndKey,1);
-                //this.currentBeginKey = this.currentEndKey;
+                //this.currentBeginKey = TransactionManager.binaryIncrementPos(this.currentEndKey,1);
+                  this.currentBeginKey = this.currentEndKey;
         }
         else {
             // First call to nextScanner
@@ -175,8 +175,8 @@ public class TransactionalScanner extends AbstractClientScanner {
                       "INFINITE" : Hex.encodeHexString(this.currentBeginKey))
               + " currentEndKey: " + (Bytes.equals(this.currentEndKey, HConstants.EMPTY_END_ROW) ?
                       "INFINITE" : Hex.encodeHexString(this.currentEndKey)));
-        if ( ! (Bytes.equals(this.currentEndKey, HConstants.EMPTY_END_ROW)))
-           this.currentEndKey = TransactionManager.binaryIncrementPos(currentRegion.getEndKey(), -1);
+        //if(this.currentEndKey != HConstants.EMPTY_END_ROW)
+        //   this.currentEndKey = TransactionManager.binaryIncrementPos(currentRegion.getEndKey(), -1);
 
         this.closed = false;
 

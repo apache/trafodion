@@ -1388,9 +1388,10 @@ public class HTableClient {
                             else {
                                 table.delete(del);
                             }
-                            return true;
+                            return new Boolean(res);
                         }
                     });
+		    return true;
             }
             else {
                 if (useTRex && (transID != 0)) {

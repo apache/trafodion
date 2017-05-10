@@ -346,7 +346,7 @@ public class RMInterface {
         else {
             if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction - Found TS in map for tx " + ts);
         }
-        HRegionLocation location = ttable.getRegionLocation(row, false /*reload*/);
+        HRegionLocation location = pv_table.getRegionLocation(row, false /*reload*/);
 
         if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction - retrieved location with startKey="
               + Hex.encodeHexString(location.getRegionInfo().getStartKey()) + ", endKey="
@@ -367,7 +367,7 @@ public class RMInterface {
 
         // register region with TM.
         if (register) {
-            ts.registerLocation(trLocation);
+            ts.registerLocation(location);
              if (LOG.isTraceEnabled()) LOG.trace("RMInterface:registerTransaction, called registerLocation TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() +  "\nEncodedName: [" + trLocation.getRegionInfo().getEncodedName() + "], endKey: "
                   + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " to transaction [" + transactionID + "]");
         }
@@ -426,7 +426,7 @@ public class RMInterface {
 
        // register region with TM.
        if (register) {
-          ts.registerLocation(trLocation);
+          ts.registerLocation(location);
           if (LOG.isTraceEnabled()) LOG.trace("static RMInterface:registerTransaction, called registerLocation TransactionRegionLocation [" + trLocation.getRegionInfo().getRegionNameAsString() +  "\nEncodedName: [" + trLocation.getRegionInfo().getEncodedName() + "], endKey: "
                    + Hex.encodeHexString(trLocation.getRegionInfo().getEndKey()) + " to transaction [" + transactionID + "]");
        }

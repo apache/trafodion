@@ -120,7 +120,7 @@ import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
-#ifdef HDP2.3 HDP2.4 CDH5.5 CDH5.7 APACHE1.2
+#ifdef HDP2.3 HDP2.4 CDH5.7 APACHE1.2
 import org.apache.hadoop.hbase.ChoreService;
 import org.apache.hadoop.hbase.ScheduledChore;
 #endif
@@ -4891,7 +4891,7 @@ CoprocessorService, Coprocessor {
     throws IOException {
 
     if (LOG.isTraceEnabled()) LOG.trace("Enter checkAndPut, txid: "
-                + transactionId + ", on HRegion " + this);
+                + transactionId + ", on HRegion " + m_regionDetails);
     TrxTransactionState state = this.beginTransIfNotExist(transactionId, startId);
     if (!state.getStatus().equals(Status.PENDING)) { // Active
        throw new IOException("checkAndPut late checkin for transaction " + transactionId + " in region " + m_regionDetails);
@@ -4909,7 +4909,7 @@ CoprocessorService, Coprocessor {
       get.addColumn(family, qualifier);
 
       // this will call getScanner (and then add a state scan range), and later put will call addWrite and then addRead
-      // would also add a scan range, maybe leave it nnow and optimize later
+      // would also add a scan range, maybe leave it now and optimize later
       Result rs = this.get(transactionId, startId, get);
 
       boolean valueIsNull = value == null ||
@@ -4925,7 +4925,7 @@ CoprocessorService, Coprocessor {
           result = true;
         }
         else {
-          if (LOG.isTraceEnabled()) LOG.trace("checkAndPut - txid " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row) + ", first check setting result to false");
+          if (LOG.isTraceEnabled()) LOG.trace("checkAndPut - txid " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row) + ", first check setting result to false in region " + m_regionDetails);
           result = false;
         }
       } else if ((!rs.isEmpty()) && !valueIsNull   
@@ -4933,7 +4933,7 @@ CoprocessorService, Coprocessor {
          this.put(transactionId, startId, put);
          result = true;
       } else {
-          if (LOG.isTraceEnabled()) LOG.trace("checkAndPut - txid " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row) + ", second check setting result to false");
+          if (LOG.isTraceEnabled()) LOG.trace("checkAndPut - txid " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row) + ", second check setting result to false in region " + m_regionDetails);
         result = false;
       }
     } catch (Exception e) {
@@ -4941,7 +4941,7 @@ CoprocessorService, Coprocessor {
       throw new IOException("checkAndPut - " + e.toString());
     }
 
-    if (LOG.isTraceEnabled()) LOG.trace("checkAndPut EXIT - returns " + result + ", transId " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row));
+    if (LOG.isTraceEnabled()) LOG.trace("checkAndPut EXIT - returns " + result + ", transId " + transactionId + ", row " + Bytes.toStringBinary(row) + ", row in hex " + Hex.encodeHexString(row) + " in region " + m_regionDetails);
 
     return result;
   }
