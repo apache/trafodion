@@ -125,7 +125,12 @@ then
   $MY_HIVE_CMD -e 'describe ship_mode;' >/dev/null 2>&1
   if (( $? == 0 ))
   then
-    echo "Hive table ship_mode found. Skipping TPC-DS set-up."
+      #check if the files exist in hdfs 
+      $MY_HDFS_CMD dfs  -ls /user/trafodion/hive/tpcds/ship_mode >/dev/null 2>&1
+      if (( $? == 0 ))
+	  then
+	  echo "Hive table ship_mode found. Skipping TPC-DS set-up."
+      fi
     exit 0
   fi
 fi
