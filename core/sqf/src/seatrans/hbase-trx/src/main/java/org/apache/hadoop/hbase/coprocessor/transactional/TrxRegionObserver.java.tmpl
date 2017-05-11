@@ -142,6 +142,7 @@ private ConcurrentHashMap<Long,TransactionalRegionScannerHolder> scanners =
 static ConcurrentHashMap<String, Object> trxRegionMap;
 
 private ConcurrentHashMap<String, TrxTransactionState> transactionsById = new ConcurrentHashMap<String, TrxTransactionState>();
+private SortedMap<Long, TrxTransactionState> commitedTransactionsBySequenceNumber = Collections.synchronizedSortedMap(new TreeMap<Long, TrxTransactionState>());
 private Set<TrxTransactionState> commitPendingTransactions = Collections.synchronizedSet(new HashSet<TrxTransactionState>());
 private AtomicBoolean blockAll = new AtomicBoolean(false);
 private AtomicBoolean blockNonPhase2 = new AtomicBoolean(false);
@@ -277,6 +278,17 @@ public void start(CoprocessorEnvironment e) throws IOException {
        transactionsRefMap.put(lv_regionName+trxkeytransactionsById, this.transactionsById);
    }
 
+   @SuppressWarnings("unchecked")
+   SortedMap<Long, TrxTransactionState> commitedTransactionsBySequenceNumberCheck = (SortedMap<Long, TrxTransactionState>)
+                                                                       transactionsRefMap
+                                                                       .get(lv_regionName+trxkeycommitedTransactionsBySequenceNumber);
+   if(commitedTransactionsBySequenceNumberCheck != null) {
+       this.commitedTransactionsBySequenceNumber = commitedTransactionsBySequenceNumberCheck;
+   }
+   else {
+       transactionsRefMap.put(lv_regionName+trxkeycommitedTransactionsBySequenceNumber, this.commitedTransactionsBySequenceNumber);
+   }
+   
    @SuppressWarnings("unchecked")
    Set<TrxTransactionState> commitPendingTransactionsCheck = (Set<TrxTransactionState>)transactionsRefMap
                                                           .get(lv_regionName+trxkeycommitPendingTransactions);
@@ -774,6 +786,11 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
 
     @Override
     public void    preClose(ObserverContext<RegionCoprocessorEnvironment> c, boolean abortRequested) {
+    
+        LOG.info("preClose - " + regionInfo.getRegionNameAsString() + " - transactionsById (" + transactionsById.size()
+                        + " ), committed Transactions (" + commitedTransactionsBySequenceNumber.size()
+                        +"), scanners (" + scanners.size() + ")");
+                        
         if (hasFlushed ||
             hasClosed ||
             splitDelayNoFlush ||
@@ -782,7 +799,13 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
             return;
 
         if(LOG.isTraceEnabled()) LOG.trace("preClose -- commitPendingTransactions (" + commitPendingTransactions.size() +")");
-
+        
+        //This flag indicates if pendingAndScannersWait call completed successfully.
+        //Setting this flag to true indicates there are no pending scanners or 
+        //commitPendingList outstanding. OR commitPendingList may have transactions
+        //in commitPending that have the table marked for drop in the same transaction.
+        boolean commitAndScannersChecked = false; 
+            
         if (!hasClosed) {
                 blockNonPhase2.set(true);
 
@@ -796,6 +819,7 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
 	        }
 	        try {
                  sbHelper.pendingAndScannersWait(commitPendingTransactions, scanners, transactionsById, pendingDelayLen);
+                 commitAndScannersChecked = true;
 	        } catch(IOException ioe) {
 	          LOG.error("Encountered exception when calling pendingAndScannersWait(): " + ioe);
 	        }
@@ -808,6 +832,13 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
             c.getEnvironment().getRegionServerServices().isStopped() ||
             hasFlushed)
             return;
+        
+        if (((transactionsById.size() <= 0) && (commitPendingTransactions.size() <= 0)) ||
+             commitAndScannersChecked ) {
+            hasFlushed = true;
+            commitedTransactionsBySequenceNumber.clear();
+            return;
+        }
 
         @SuppressWarnings("rawtypes")
         TrxRegionEndpoint tre = (TrxRegionEndpoint)trxRegionMap.get(regionInfo.getRegionNameAsString()+TrxRegionEndpoint.trxkeyEPCPinstance);
@@ -825,6 +856,7 @@ public void createRecoveryzNode(int node, String encodedName, byte [] data) thro
               }
             }
             hasFlushed = true;
+            commitedTransactionsBySequenceNumber.clear();
           } catch (IOException ioe) {
             if (LOG.isErrorEnabled()) LOG.error("Unable to flush to filesystem");
             hasFlushed = false;
