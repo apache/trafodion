@@ -676,6 +676,11 @@ short ExDDLwithStatusTcb::work()
                  (cmp_->getDiags()->getNumber(DgSqlCode::ERROR_) > 0)))
               {
                 getDiagsArea()->mergeAfter(*cmp_->getDiags());
+                if (cmpStatus == ExSqlComp::ERROR)
+                  {
+                    step_ = HANDLE_ERROR_;
+                    break;
+                  }
               }
 
             step_ = PROCESS_REPLY_;
@@ -695,7 +700,9 @@ short ExDDLwithStatusTcb::work()
                 replyDWS_ = (CmpDDLwithStatusInfo*)(new(getHeap()) char[replyBufLen_]);
                 memcpy((char*)replyDWS_, replyBuf_, replyBufLen_);
                 cmp_->getHeap()->deallocateMemory((void*)replyBuf_);
-                
+                replyBuf_ = NULL;
+                replyBufLen_ = 0;
+
                 replyDWS_->unpack((char*)replyDWS_);
 
                 if (mdi_->computeST())
