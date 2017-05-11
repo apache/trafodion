@@ -398,10 +398,11 @@ execute s;
 execute s;
 
 prepare s from
-select * from udf(sessionize_java(table(select * from t001_Datatypes),
+select * from udf(sessionize_java(table(select *, cast(? as int)
+                                        from t001_Datatypes),
                                   'C_VARCHAR', 'C_DECIMAL_UNSIGNED', 60));
-execute s;
-execute s;
+execute s using 123;
+execute s using 456;
 
 prepare s from
 select * 
