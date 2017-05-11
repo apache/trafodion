@@ -23,18 +23,18 @@
 -- @@@ END COPYRIGHT @@@
 
 --if dirs exist belo will fail
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_customer;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_promotion;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_customer_address;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_store;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_store_sales;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_customer_demographics;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_date_dim;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_time_dim;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_item;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_household_demographics;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_customerNaddress;
-sh regrhadoop.ksh fs -mkdir  /user/trafodion/hive/exttables/ins_store_sales_summary;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_customer;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_promotion;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_customer_address;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_store;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_store_sales;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_customer_demographics;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_date_dim;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_time_dim;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_item;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_household_demographics;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_customerNaddress;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_store_sales_summary;
 --empty folders
 sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_customer/*;
 sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_promotion/*;
