@@ -131,6 +131,14 @@ digraph hasjoin {
 }
 */
 
+// In the reverse order of ex_hashj_tcb::HashJoinPhase
+const char *ex_hashj_tcb::HashJoinPhaseStr[] = {
+    "PHASE_END",
+    "PHASE_3",
+    "PHASE_2",
+    "PHASE_1"
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  TDB procedures
@@ -1161,7 +1169,7 @@ ExWorkProcRetcode ex_hashj_tcb::workDown() {
 	// If new input matches the previous input, then reuse the old hash-table
 	if ( will_reuse_old_HT = isSameInputAgain(downParentEntry) ) {
 	  // the hash table is already prepared. Go on with phase 2 of the join
-	  pstate.setPhase(PHASE_2);
+	  pstate.setPhase(PHASE_2, bmoStats_);
 	  pstate.usePreviousHT();
 	  pstate.reliesOnIdx = prevReqIdx_;
 	  pstate.setState(HASHJ_READ_OUTER); // all set to start reading the outer
@@ -1226,7 +1234,7 @@ ExWorkProcRetcode ex_hashj_tcb::workDown() {
 	  // Even though we reuse, still need to finish up few things before
 	  // phase two; e.g., handle delayed or non-delayed left request
 	  pstate.setState(HASHJ_END_PHASE_1);
-	  pstate.setPhase(PHASE_1);  // needed ?  just in case ...
+	  pstate.setPhase(PHASE_1, bmoStats_);  // needed ?  just in case ...
 	}
 	else { // no reuse
 	  // Change the request: only one row from the right child is needed
@@ -1647,7 +1655,7 @@ short ex_hashj_tcb::workReadInner() {
 
   switch (rightEntry->upState.status) {
   case ex_queue::Q_OK_MMORE: {
-   
+
     if ( isAllOrNothing_ ) {  // Special case: AntiSemi HJ, no search expr
       pstate.setReadRightRow(); // this request actualy read a row from the right
       anyRightRowsRead_ = TRUE ; // Got a right row --> left rows are not needed !!
@@ -2033,9 +2041,8 @@ void ex_hashj_tcb::workEndPhase1() {
   } // if logDiagnostics
 
 #endif
-
   // all clusters are prepared. Go on with phase 2 of the join
-  pstate.setPhase(PHASE_2);
+  pstate.setPhase(PHASE_2, bmoStats_);
 
   // from now on, we want to charge the next phase with time
   if (hashJoinStats_)
@@ -2370,7 +2377,7 @@ void ex_hashj_tcb::workEndPhase2() {
   // all clusters are prepared. Go on with phase 3 of the join
   // set the first inner cluster to read
   clusterDb_->setClusterToRead(clusterDb_->getClusterList());
-  pstate.setPhase(PHASE_3);
+  pstate.setPhase(PHASE_3, bmoStats_);
   // from now on, we want to charge the next phase with time
   if (hashJoinStats_)
     hashJoinStats_->incPhase();
@@ -2545,6 +2552,9 @@ short ex_hashj_tcb::workProbe() {
     workAtp_->getTupp(hashJoinTdb().extRightRowAtpIndex1_).
       setDataPointer(hashRow->getData());
 
+    if (bmoStats_)
+       bmoStats_->incInterimRowCount();
+
     // evaluate beforeJoinPredicate
     beforeJoinPred = phase2 ? beforeJoinPred1_ : beforeJoinPred2_ ;
 
@@ -2566,7 +2576,7 @@ short ex_hashj_tcb::workProbe() {
     // if right-outer join, mark this right row
     if (isRightJoin())  
       hashRow->setBit(TRUE);
-
+   
     // if this is a left outer join or semi join and if we are in a hash loop,
     // the outer cluster has a bitmap. Update this bitmap now
     if( oCluster && oCluster->hasBitMap() )  oCluster->updateBitMap();
@@ -3482,7 +3492,7 @@ ExWorkProcRetcode ExUniqueHashJoinTcb::workUp()
           else
             {
               pstate.setState(HASHJ_READ_OUTER);
-	      pstate.setPhase(PHASE_2);
+	      pstate.setPhase(PHASE_2, bmoStats_);
 
               // from now on, we want to charge the next phase with time
               if (hashJoinStats_)

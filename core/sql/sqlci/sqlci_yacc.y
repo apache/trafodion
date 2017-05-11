@@ -538,8 +538,6 @@ static char * FCString (const char *idString, int isFC)
 %token GRANTtoken REVOKEtoken
 %token REGISTER UNREGISTER
 %token GIVE 
-%token PUBLISH 
-%token UNPUBLISH
 %token INITIALIZE REINITIALIZE
 %token CATALOG SCHEMA
 %token HIVEtoken
@@ -2229,8 +2227,6 @@ dml_type :
         |       GIVE                    {$$ = DML_DDL_TYPE;}
         |       GRANTtoken              {$$ = DML_DDL_TYPE;}
         |       REVOKEtoken             {$$ = DML_DDL_TYPE;}
-        |       PUBLISH                 {$$ = DML_DDL_TYPE;}
-        |       UNPUBLISH               {$$ = DML_DDL_TYPE;}
         |       REGISTER                {$$ = DML_DDL_TYPE;}
         |       UNREGISTER              {$$ = DML_DDL_TYPE;}
 	|       SHOWCONTROL 		{$$ = DML_DESCRIBE_TYPE;}

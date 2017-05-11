@@ -24,7 +24,7 @@
  * File:         StmtDDLNode.C
  * Description:  member functions for classes StmtDDLNode, StmtDDLGrant,
  *               StmtDDLGrantArray, StmtDDLInitializeSQL, StmtDDLRevoke,
- *		 StmtDDLSchRevoke, StmtDDLPublish 
+ *		 StmtDDLSchRevoke
  *
  * Created:      3/9/95
  * Language:     C++
@@ -45,7 +45,6 @@
 #include "StmtDDLGrantArray.h"
 #include "StmtDDLSchGrant.h"
 #include "StmtDDLSchGrantArray.h"
-#include "StmtDDLPublish.h"
 #include "StmtDDLInitializeSQL.h"
 #include "StmtDDLRevoke.h"
 #include "StmtDDLSchRevoke.h"
@@ -1514,198 +1513,6 @@ const NAString
 StmtDDLSchRevoke::getText() const
 {
   return "StmtDDLSchRevoke";
-}
-
-// LCOV_EXCL_STOP
-
-
-// -----------------------------------------------------------------------
-// member functions for class StmtDDLPublish
-// -----------------------------------------------------------------------
-
-//
-// constructor
-//
-
-StmtDDLPublish::StmtDDLPublish(ElemDDLNode * pPrivileges,
-                               const QualifiedName & objectName,
-                               const NAString & synonymName,
-                               ComBoolean isRole,
-                               ElemDDLNode * pGranteeList,
-                               ComBoolean isPublish,
-                               CollHeap    * heap)
-: StmtDDLNode(DDL_PUBLISH), 
-  objectName_(heap),
-  objectQualName_(objectName, heap),
-  synonymName_(synonymName, heap),
-  isSynonymNameSpec_(FALSE),
-  isRoleList_(isRole),
-  isPublish_(isPublish),
-  isAllPrivileges_(FALSE),
-  privActArray_(heap),
-  granteeArray_(heap)
-{
-  setChild(PUBLISH_PRIVILEGES, pPrivileges);
-  setChild(PUBLISH_GRANTEE_LIST, pGranteeList);
-  objectName_ = objectQualName_.getQualifiedNameAsAnsiString();
-
-  if (!synonymName.isNull())
-    isSynonymNameSpec_ = TRUE;
-
-  //
-  // inserts pointers to parse nodes representing privilege
-  // actions to privActArray_ so the user can access the
-  // information about privilege actions easier.
-  //
-
-  ComASSERT(pPrivileges NEQ NULL);
-  ElemDDLPrivileges * pPrivsNode = pPrivileges->castToElemDDLPrivileges();
-  ComASSERT(pPrivsNode NEQ NULL);
-  if (pPrivsNode->isAllPrivileges())
-  {
-    isAllPrivileges_ = TRUE;
-  }
-  else
-  {
-    ElemDDLNode * pPrivActs = pPrivsNode->getPrivilegeActionList();
-    for (CollIndex i = 0; i < pPrivActs->entries(); i++)
-    {
-      ElemDDLPrivAct *pPrivAct = (*pPrivActs)[i]->castToElemDDLPrivAct();
-      privActArray_.insert(pPrivAct);
-    }
-  }
-
-  //
-  // copies pointers to parse nodes representing grantee
-  // to granteeArray_ so the user can access the information
-  // easier.
-  //
-
-  ComASSERT(pGranteeList NEQ NULL);
-  for (CollIndex i = 0; i < pGranteeList->entries(); i++)
-  {
-    granteeArray_.insert((*pGranteeList)[i]->castToElemDDLGrantee());
-  }
-
-} // StmtDDLPublish::StmtDDLPublish()
-
-// virtual destructor
-StmtDDLPublish::~StmtDDLPublish()
-{
-  // delete all children
-  for (Int32 i = 0; i < getArity(); i++)
-  {
-    delete getChild(i);
-  }
-}
-
-// cast
-StmtDDLPublish *
-StmtDDLPublish::castToStmtDDLPublish()
-{
-  return this;
-}
-
-//
-// accessors
-//
-
-Int32
-StmtDDLPublish::getArity() const
-{
-  return MAX_STMT_DDL_PUBLISH_ARITY;
-}
-
-ExprNode *
-StmtDDLPublish::getChild(Lng32 index)
-{
-  ComASSERT(index >= 0 AND index < getArity());
-  return children_[index];
-}
-
-//
-// mutators
-//
-
-void
-StmtDDLPublish::setChild(Lng32 index, ExprNode * pChildNode)
-{
-  ComASSERT(index >= 0 AND index < getArity());
-  if (pChildNode NEQ NULL)
-  {
-    ComASSERT(pChildNode->castToElemDDLNode() NEQ NULL);
-    children_[index] = pChildNode->castToElemDDLNode();
-  }
-  else
-  {
-    children_[index] = NULL;
-  }
-}
-
-//
-// methods for tracing
-//
-
-// LCOV_EXCL_START
-
-const NAString
-StmtDDLPublish::displayLabel1() const
-{
-  return NAString("Object name: ") + getObjectName();
-}
-
-NATraceList
-StmtDDLPublish::getDetailInfo() const
-{
-  NAString        detailText;
-  NATraceList detailTextList;
-
-  //
-  // object name
-  //
-
-  detailTextList.append(displayLabel1());   // object name
-
-  //
-  // privileges
-  //
-
-  StmtDDLPublish * localThis = (StmtDDLPublish *)this;
-
-  detailTextList.append(localThis->getChild(PUBLISH_PRIVILEGES)
-                                 ->castToElemDDLNode()
-                                 ->castToElemDDLPrivileges()
-                                 ->getDetailInfo());
-  // grantee list
-  //
-
-  const ElemDDLGranteeArray & granteeArray = getGranteeArray();
-
-  detailText = "Grantee list [";
-  detailText += LongToNAString((Lng32)granteeArray.entries());
-  detailText += " element(s)]";
-  detailTextList.append(detailText);
-
-  for (CollIndex i = 0; i < granteeArray.entries(); i++)
-  {
-    detailText = "[grantee ";
-    detailText += LongToNAString((Lng32)i);
-    detailText += "]";
-    detailTextList.append(detailText);
-
-    ComASSERT(granteeArray[i] NEQ NULL AND
-              granteeArray[i]->castToElemDDLGrantee() NEQ NULL);
-    detailTextList.append("    ", granteeArray[i]->castToElemDDLGrantee()
-                                                 ->getDetailInfo());
-  }
-  return detailTextList;
-
-} // StmtDDLPublish::getDetailInfo
-
-const NAString
-StmtDDLPublish::getText() const
-{
-  return "StmtDDLPublish";
 }
 
 // LCOV_EXCL_STOP

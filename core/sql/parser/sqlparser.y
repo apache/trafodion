@@ -1360,8 +1360,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_PRIVILEGE           /* HP extension non-reserved word */
 %token <tokval> TOK_PRIVILEGES
 %token <tokval> TOK_PUBLIC
-%token <tokval> TOK_PUBLISH             /* Tandem extension */
-%token <tokval> TOK_UNPUBLISH           /* Tandem extension */
 %token <tokval> TOK_PURGEDATA
 %token <tokval> TOK_RANGE               /* Tandem extension non-reserved word*/
 %token <tokval> TOK_RANGE_N             /* TD extension that HP wants to ignore */
@@ -2428,8 +2426,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <boolean>                 optional_granted
  /*%type <boolean>                 admin_option_for*/
 %type <pElemDDL>                optional_granted_by
-%type <pStmtDDL>                publish_statement
-%type <pStmtDDL>                unpublish_statement
 %type <pStmtDDL>                create_component_privilege_stmt
 %type <pStmtDDL>                drop_component_privilege_stmt
 %type <pStmtDDL>                register_component_statement
@@ -2738,7 +2734,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <accesstype>    		access_type
 %type <pStmtDDL>                create_synonym_stmt
 %type <pStmtDDL>                drop_synonym_stmt
-%type <boolean>                 synonym_grantee_type
 %type <pStmtDDL>                drop_sql
 %type <pStmtDDL>                drop_table_constraint_definition
 %type <pStmtDDL>                drop_module
@@ -14399,13 +14394,6 @@ sql_schema_definition_statement :
               | drop_component_privilege_stmt
                                 {
                                 }
-              | publish_statement
-                                {
-                                }
-
-              | unpublish_statement
-                                {
-                                }
 
               | register_component_statement
                                 {
@@ -15287,7 +15275,7 @@ exe_util_get_statistics : TOK_GET TOK_STATISTICS stats_merge_clause get_statisti
                   {
                     stats =
                       new (PARSERHEAP ()) ExeUtilGetStatistics
-                    (*$5, NULL,
+                    (*$5, ($7 ? (char*)$7->data() : NULL),
                       PARSERHEAP (), SQLCLI_STATS_REQ_QID, (short)$6, -1); /*RtsQueryId::ANY_QUERY_*/
                   }
                   $$ = stats;
@@ -16559,23 +16547,6 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 		 $$ = mu;
 	       }
 
-             | TOK_INITIALIZE TOK_TRAFODION ',' TOK_CREATE TOK_SEQUENCE
-               {
-		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
-		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
-						   , PARSERHEAP() 
-	                                       );
-
-		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
-                                                          FALSE, FALSE,
-							  TRUE, FALSE, FALSE, FALSE,
-							  (char*)stmt->data(),
-							  stmtCharSet,
-							  PARSERHEAP());
-
-                 $$ = de;
-
-               }
              | TOK_INITIALIZE TOK_TRAFODION ',' TOK_CREATE TOK_SCHEMA TOK_OBJECTS
                {
 		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
@@ -28700,69 +28671,11 @@ optional_by_auth_identifier : empty
                                   delete $2 /*authorization_identifier*/;
                                 }
 
-publish_statement : TOK_PUBLISH privileges TOK_ON ddl_qualified_name
-                    TOK_AS identifier
-                    TOK_TO synonym_grantee_type grantee_list
-                      {
-                        $$ = new (PARSERHEAP())
-                          StmtDDLPublish(
-                                $2 /*privileges*/,
-                                *$4 /*object*/,
-                                *$6 /*synonym_name*/,
-                                $8 /*grantee type*/,
-                                $9 /*grantee_list*/,
-                                TRUE /*isPublish*/);
-                        delete $4;
-                        delete $6;
-                      }
-
-                  | TOK_PUBLISH privileges TOK_ON ddl_qualified_name
-                    TOK_TO synonym_grantee_type grantee_list
-                      {
-                        NAString noSynonym;
-                        $$ = new (PARSERHEAP())
-                          StmtDDLPublish(
-                                $2 /*privileges*/,
-                                *$4 /*object*/,
-                                noSynonym /*synonym_name*/,
-                                $6 /*grantee type*/,
-                                $7 /*grantee_list*/,
-                                TRUE /*isPublish*/);
-                        delete $4;
-                      }
 
 
 
-unpublish_statement : TOK_UNPUBLISH privileges TOK_ON ddl_qualified_name
-                      TOK_FOR identifier
-                      TOK_FROM synonym_grantee_type grantee_list
-                        {
-                          $$ = new (PARSERHEAP())
-                            StmtDDLPublish(
-                                  $2 /*privileges*/,
-                                  *$4 /*object*/,
-                                  *$6 /*synonym_name*/,
-                                  $8 /*grantee type*/,
-                                  $9 /*grantee_list*/,
-                                  FALSE /*isPublish*/);
-                          delete $4;
-                          delete $6;
-                        }
 
-                    | TOK_UNPUBLISH privileges TOK_ON ddl_qualified_name
-                      TOK_FROM synonym_grantee_type grantee_list
-                        {
-                          NAString noSynonym;
-                          $$ = new (PARSERHEAP())
-                            StmtDDLPublish(
-                                  $2 /*privileges*/,
-                                  *$4 /*object*/,
-                                  noSynonym /*synonym_name*/,
-                                  $6 /*grantee type*/,
-                                  $7 /*grantee_list*/,
-                                  FALSE /*isPublish*/);
-                          delete $4;
-                        }
+
 /* type pQualName */
 constraint_name : ddl_qualified_name
 
@@ -33281,15 +33194,6 @@ create_synonym_stmt : TOK_CREATE TOK_SYNONYM
                                   delete $5 /*ddl_qualified_name*/;
                                }
 
-synonym_grantee_type : TOK_USER
-                     {
-                       $$ = FALSE;
-                     }
-                     | TOK_ROLE
-                     {
-                       $$ = TRUE;
-                     }
-
 /* type longint */
 options : /* empty */
              { $$ = 0x0000000E; }
@@ -33819,7 +33723,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_PROCESS
                       | TOK_PROGRESS
                       | TOK_PROMPT
-                      | TOK_PUBLISH
                       | TOK_QID
                       | TOK_QID_INTERNAL
 	              | TOK_QUERY
@@ -33953,7 +33856,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_UNLOCK
                       | TOK_UNLOAD
                       | TOK_UNNAMED
-                      | TOK_UNPUBLISH
                       | TOK_UNREGISTER
                       | TOK_UNSIGNED
                       | TOK_UPD

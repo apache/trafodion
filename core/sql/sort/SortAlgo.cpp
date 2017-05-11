@@ -30,7 +30,7 @@
 //-----------------------------------------------------------------------
 SortAlgo::SortAlgo(ULng32 runsize, ULng32 recsize, 
                    NABoolean doNotAllocRec, ULng32 keysize, 
-                   SortScratchSpace* scratch, Lng32 explainNodeId)
+                   SortScratchSpace* scratch, Lng32 explainNodeId, ExBMOStats *bmoStats)
 {
   sendNotDone_   = TRUE_L;
   runSize_       = runsize;
@@ -41,6 +41,7 @@ SortAlgo::SortAlgo(ULng32 runsize, ULng32 recsize,
   numCompares_   = 0L;
   internalSort_  = TRUE_L;
   explainNodeId_ = explainNodeId;
+  bmoStats_      = bmoStats;
 }
 
 

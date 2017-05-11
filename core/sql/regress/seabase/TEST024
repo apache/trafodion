@@ -55,8 +55,6 @@ drop table test024t2;
 drop schema seqsch cascade;
 
 ?section setup
--- add sequence metadata, if  doesn't already exists
-initialize trafodion, create sequence;
 
 initialize trafodion, create metadata views;
 

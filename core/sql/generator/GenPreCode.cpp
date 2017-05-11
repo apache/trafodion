@@ -2810,7 +2810,6 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
        (dropMDViews()) ||
        (initAuthorization()) ||
        (dropAuthorization()) ||
-       (addSeqTable()) ||
        (createRepos()) ||
        (dropRepos()) ||
        (upgradeRepos()) ||
