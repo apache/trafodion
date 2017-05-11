@@ -17295,10 +17295,36 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
     CollIndex numChildCols = childRetDesc->getColumnList()->entries();
     for(CollIndex j=0; j < numChildCols; j++)
     {
-      NAColumn * childCol = new (heap) NAColumn(
+      const NAType &childColType = childRetDesc->getType(j);
+      const NAType *adjustedChildColType = &childColType;
+      NAColumn * childCol = NULL;
+
+      if (childColType.getSimpleTypeName() == "NUMERIC" &&
+          getBinaryStorageSize(childColType.getPrecision()) !=
+          childColType.getNominalSize())
+        {
+          // In the optimizer code, we may choose different storage
+          // sizes for the same type, for example a NUMERIC(1,0)
+          // sometimes has one byte, sometimes 2 bytes of storage. For
+          // examples, see NumericType::synthesizeType() and CQD
+          // TRAF_CREATE_TINYINT_LITERAL.
+
+          // In the TMUDF code, on the other hand, we compute the
+          // storage size from the precision. So, make sure we follow
+          // the TMUDF rules here, when we describe its input table
+          adjustedChildColType = new(heap) SQLNumeric(
+               getBinaryStorageSize(childColType.getPrecision()),
+               childColType.getPrecision(),
+               childColType.getScale(),
+               ((const NumericType &) childColType).isSigned(),
+               childColType.supportsSQLnull(),
+               heap);
+        }
+
+      childCol = new (heap) NAColumn(
         childRetDesc->getColRefNameObj(j).getColName().data(),
         j,
-        childRetDesc->getType(j).newCopy(heap),
+        adjustedChildColType->newCopy(heap),
         heap);
       childColumns.insert(childCol);
 
