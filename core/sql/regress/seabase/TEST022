@@ -258,22 +258,23 @@ create external table t022hbm1 (a varchar(4) not null, b int)
         attribute default column family 'cf'
         map to hbase table t022hbm1
         data format native;
-
-insert into t022hbm1 values ('a', 1);
-select * from t022hbm1;
-update t022hbm1 set b = b + 1;
-select * from t022hbm1;
-insert into t022hbm1 values ('a', 1); -- should fail
-insert into t022hbm1 values ('b', null);
-select * from t022hbm1;
-delete from t022hbm1 where a = 'a';
-select * from t022hbm1;
-update t022hbm1 set b = 10;
-select * from t022hbm1;
-update t022hbm1 set b = null;
-select * from t022hbm1;
-delete from t022hbm1;
-select * from t022hbm1;
+--This part of the test is being commented out due to non deterministic results
+--It needs to be renabled after this JIRA is fixed : TRAFODION-2613
+--insert into t022hbm1 values ('a', 1);
+--select * from t022hbm1;
+--update t022hbm1 set b = b + 1;
+--select * from t022hbm1;
+--insert into t022hbm1 values ('a', 1); -- should fail
+--insert into t022hbm1 values ('b', null);
+--select * from t022hbm1;
+--delete from t022hbm1 where a = 'a';
+--select * from t022hbm1;
+--update t022hbm1 set b = 10;
+--select * from t022hbm1;
+--update t022hbm1 set b = null;
+--select * from t022hbm1;
+--delete from t022hbm1;
+--select * from t022hbm1;
 
 drop external table t022hbm1;
 create external table t022hbm1 (a int not null, b int not null, c int) 

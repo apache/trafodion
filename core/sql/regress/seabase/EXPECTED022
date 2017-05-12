@@ -635,8 +635,8 @@ ROW_ID (EXPR)
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of table #CAT.#SCH.T022HBM1
--- Definition current
+-- Definition of Trafodion table TRAFODION.SCH.T022HBM1
+-- Definition current  Thu May 11 22:43:35 2017
 
  (
  SYSKEY LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -720,8 +720,8 @@ a2 ?
 --- SQL operation complete.
 >>invoke t022hbm1_like;
 
--- Definition of table #CAT.#SCH.T022HBM1_LIKE
--- Definition current
+-- Definition of Trafodion table TRAFODION.SCH.T022HBM1_LIKE
+-- Definition current  Thu May 11 22:43:57 2017
 
  (
  "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -847,86 +847,23 @@ a2 ? ?
 +> data format native;
 
 --- SQL operation complete.
->>
->>insert into t022hbm1 values ('a', 1);
-
---- 1 row(s) inserted.
->>select * from t022hbm1;
-
-A B
----- -----------
-
-a 1
-
---- 1 row(s) selected.
->>update t022hbm1 set b = b + 1;
-
---- 1 row(s) updated.
->>select * from t022hbm1;
-
-A B
----- -----------
-
-a 2
-
---- 1 row(s) selected.
->>insert into t022hbm1 values ('a', 1);
-
-*** ERROR[8102] The operation is prevented by a unique constraint.
-
---- 0 row(s) inserted.
->> -- should fail
->>insert into t022hbm1 values ('b', null);
-
---- 1 row(s) inserted.
->>select * from t022hbm1;
-
-A B
----- -----------
-
-a 2
-b ?
-
---- 2 row(s) selected.
->>delete from t022hbm1 where a = 'a';
-
---- 1 row(s) deleted.
->>select * from t022hbm1;
-
-A B
----- -----------
-
-b ?
-
---- 1 row(s) selected.
->>update t022hbm1 set b = 10;
-
---- 1 row(s) updated.
->>select * from t022hbm1;
-
-A B
----- -----------
-
-b 10
-
---- 1 row(s) selected.
->>update t022hbm1 set b = null;
-
---- 1 row(s) updated.
->>select * from t022hbm1;
-
-A B
----- -----------
-
-b ?
-
---- 1 row(s) selected.
->>delete from t022hbm1;
-
---- 1 row(s) deleted.
->>select * from t022hbm1;
-
---- 0 row(s) selected.
+>>--This part of the test is being commented out due to non deterministic results
+>>--It needs to be renabled after this JIRA is fixed : TRAFODION-2613
+>>--insert into t022hbm1 values ('a', 1);
+>>--select * from t022hbm1;
+>>--update t022hbm1 set b = b + 1;
+>>--select * from t022hbm1;
+>>--insert into t022hbm1 values ('a', 1); -- should fail
+>>--insert into t022hbm1 values ('b', null);
+>>--select * from t022hbm1;
+>>--delete from t022hbm1 where a = 'a';
+>>--select * from t022hbm1;
+>>--update t022hbm1 set b = 10;
+>>--select * from t022hbm1;
+>>--update t022hbm1 set b = null;
+>>--select * from t022hbm1;
+>>--delete from t022hbm1;
+>>--select * from t022hbm1;
 >>
 >>drop external table t022hbm1;
 
@@ -1086,30 +1023,6 @@ A B C
 +> primary key not serialized (a)
 +> attribute default column family 'cf'
 +> map to hbase table t022hbm1;
-
---- SQL operation complete.
->>invoke t022hbm1;
-
--- Definition of TRAFODION HBase mapped table T022HBM1
--- Definition current
-
- (
- "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
- DEFAULT NO @eof@ NULL NOT DROPPABLE
- , "cf".B INT DEFAULT NULL
- )
- PRIMARY KEY NOT SERIALIZED (A ASC)
-
---- SQL operation complete.
->>
->>drop external table t022hbm1;
-
---- SQL operation complete.
->>create external table t022hbm1 (a char(4) not null, b int)
-+> primary key serialized (a)
-+> attribute default column family 'cf'
-+> map to hbase table t022hbm1
-+> data format native;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
