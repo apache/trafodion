@@ -635,8 +635,8 @@ ROW_ID (EXPR)
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion table TRAFODION.SCH.T022HBM1
--- Definition current  Thu May 11 22:43:35 2017
+-- Definition of table #CAT.#SCH.T022HBM1
+-- Definition current
 
  (
  SYSKEY LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -720,8 +720,8 @@ a2 ?
 --- SQL operation complete.
 >>invoke t022hbm1_like;
 
--- Definition of Trafodion table TRAFODION.SCH.T022HBM1_LIKE
--- Definition current  Thu May 11 22:43:57 2017
+-- Definition of table #CAT.#SCH.T022HBM1_LIKE
+-- Definition current
 
  (
  "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1023,6 +1023,30 @@ A B C
 +> primary key not serialized (a)
 +> attribute default column family 'cf'
 +> map to hbase table t022hbm1;
+
+--- SQL operation complete.
+>>invoke t022hbm1;
+
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
+
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B INT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
+
+--- SQL operation complete.
+>>
+>>drop external table t022hbm1;
+
+--- SQL operation complete.
+>>create external table t022hbm1 (a char(4) not null, b int)
++> primary key serialized (a)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1
++> data format native;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
