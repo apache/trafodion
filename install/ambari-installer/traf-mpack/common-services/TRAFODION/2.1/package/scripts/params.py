@@ -27,6 +27,8 @@ config = Script.get_config()
 java_home = config['hostLevelParams']['java_home']
 java_version = int(config['hostLevelParams']['java_version'])
 
+cluster_name = str(config['clusterName'])
+
 dcs_servers = config['configurations']['dcs-env']['dcs.servers']
 dcs_master_port = config['configurations']['dcs-site']['dcs.master.port']
 dcs_info_port = config['configurations']['dcs-site']['dcs.master.info.port']
