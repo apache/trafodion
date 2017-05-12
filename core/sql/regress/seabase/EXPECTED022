@@ -31,11 +31,11 @@
 
 --- 1 row(s) inserted.
 >>insert into hbase."_ROW_".t022hbt1 values ('2', column_create('cf:2b', '201')),
-+>                              ('1', column_create('cf:1b', '102'));
++> ('1', column_create('cf:1b', '102'));
 
 --- 2 row(s) inserted.
->>prepare s from insert into hbase."_ROW_".t022hbt1 values 
-+>         (?, column_create((?, ?), ('cf:3b', '302')));
+>>prepare s from insert into hbase."_ROW_".t022hbt1 values
++> (?, column_create((?, ?), ('cf:3b', '302')));
 
 --- SQL command prepared.
 >>execute s using '3', 'cf:3a', '301';
@@ -43,49 +43,49 @@
 --- 1 row(s) inserted.
 >>
 >>select left(row_id, 10) row_id, column_display(column_details, 40) column_details
-+>           from hbase."_ROW_".t022hbt1;
++> from hbase."_ROW_".t022hbt1;
 
-ROW_ID      COLUMN_DETAILS                          
-----------  ----------------------------------------
+ROW_ID COLUMN_DETAILS
+----------
 
-1           cf:1a => 101, cf:1b => 102              
-2           cf:2b => 201                            
-3           cf:3a => 301, cf:3b => 302              
-
---- 3 row(s) selected.
->>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
-+>           from hbase."_ROW_".t022hbt1;
-
-ROW_ID      (EXPR)                                  
-----------  ----------------------------------------
-
-1           cf:1a => 101, cf:1b => 102              
-2           cf:2b => 201                            
-3           cf:3a => 301, cf:3b => 302              
+1 cf:1a => 101, cf:1b => 102
+2 cf:2b => 201
+3 cf:3a => 301, cf:3b => 302
 
 --- 3 row(s) selected.
->>select left(row_id, 10) row_id, left(column_display(column_details, ('cf:2b', 'cf:1b')), 40) 
-+>           from hbase."_ROW_".t022hbt1;
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40)
++> from hbase."_ROW_".t022hbt1;
 
-ROW_ID      (EXPR)                                  
-----------  ----------------------------------------
+ROW_ID (EXPR)
+----------
 
-1           cf:1b => 102                            
-2           cf:2b => 201                            
+1 cf:1a => 101, cf:1b => 102
+2 cf:2b => 201
+3 cf:3a => 301, cf:3b => 302
+
+--- 3 row(s) selected.
+>>select left(row_id, 10) row_id, left(column_display(column_details, ('cf:2b', 'cf:1b')), 40)
++> from hbase."_ROW_".t022hbt1;
+
+ROW_ID (EXPR)
+----------
+
+1 cf:1b => 102
+2 cf:2b => 201
 
 --- 2 row(s) selected.
 >>
 >>-- no rows updated. where pred fails.
->>update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:a', 
-+>          (cast(column_lookup(column_details, 'cf:a') as varchar(10)) || '0103'))
-+>   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '3021';
+>>update hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:a',
++> (cast(column_lookup(column_details, 'cf:a') as varchar(10)) || '0103'))
++> where row_id = '3' and column_lookup(column_details, 'cf:3b') = '3021';
 
 --- 0 row(s) updated.
 >>
 >>-- no rows updated. column not found in set clause.
->>update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:a', 
-+>          (cast(column_lookup(column_details, 'cf:a') as varchar(10)) || '0103'))
-+>   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
+>>update hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:a',
++> (cast(column_lookup(column_details, 'cf:a') as varchar(10)) || '0103'))
++> where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
 
 --- 0 row(s) updated.
 >>
@@ -93,36 +93,36 @@ ROW_ID      (EXPR)
 
 --- SQL operation complete.
 >>-- one row updated
->>update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:3a', 
-+>          (cast(column_lookup(column_details, 'cf:3a') as varchar(10)) || '0103'))
-+>   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
+>>update hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:3a',
++> (cast(column_lookup(column_details, 'cf:3a') as varchar(10)) || '0103'))
++> where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
 
 --- 1 row(s) updated.
 >>
->>select left(row_id, 10) row_id, left(column_display(column_details), 50) 
-+>           from hbase."_ROW_".t022hbt1;
+>>select left(row_id, 10) row_id, left(column_display(column_details), 50)
++> from hbase."_ROW_".t022hbt1;
 
-ROW_ID      (EXPR)                                            
-----------  --------------------------------------------------
+ROW_ID (EXPR)
+----------
 
-1           cf:1a => 101, cf:1b => 102                        
-2           cf:2b => 201                                      
-3           cf:3a => 3010103, cf:3a => 301, cf:3b => 302      
+1 cf:1a => 101, cf:1b => 102
+2 cf:2b => 201
+3 cf:3a => 3010103, cf:3a => 301, cf:3b => 302
 
 --- 3 row(s) selected.
 >>rollback work;
 
 --- SQL operation complete.
 >>
->>select left(row_id, 10) row_id, left(column_display(column_details), 50) 
-+>           from hbase."_ROW_".t022hbt1;
+>>select left(row_id, 10) row_id, left(column_display(column_details), 50)
++> from hbase."_ROW_".t022hbt1;
 
-ROW_ID      (EXPR)                                            
-----------  --------------------------------------------------
+ROW_ID (EXPR)
+----------
 
-1           cf:1a => 101, cf:1b => 102                        
-2           cf:2b => 201                                      
-3           cf:3a => 301, cf:3b => 302                        
+1 cf:1a => 101, cf:1b => 102
+2 cf:2b => 201
+3 cf:3a => 301, cf:3b => 302
 
 --- 3 row(s) selected.
 >>
@@ -130,53 +130,53 @@ ROW_ID      (EXPR)
 
 --- SQL operation complete.
 >>-- one row updated
->>update  hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:3a', 
-+>          (cast(column_lookup(column_details, 'cf:3a') as varchar(10)) || '0103'))
-+>   where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
+>>update hbase."_ROW_".t022hbt1 set column_details = column_create ('cf:3a',
++> (cast(column_lookup(column_details, 'cf:3a') as varchar(10)) || '0103'))
++> where row_id = '3' and column_lookup(column_details, 'cf:3b') = '302';
 
 --- 1 row(s) updated.
 >>
->>select left(row_id, 10) row_id, left(column_display(column_details), 50) 
-+>           from hbase."_ROW_".t022hbt1;
+>>select left(row_id, 10) row_id, left(column_display(column_details), 50)
++> from hbase."_ROW_".t022hbt1;
 
-ROW_ID      (EXPR)                                            
-----------  --------------------------------------------------
+ROW_ID (EXPR)
+----------
 
-1           cf:1a => 101, cf:1b => 102                        
-2           cf:2b => 201                                      
-3           cf:3a => 3010103, cf:3a => 301, cf:3b => 302      
+1 cf:1a => 101, cf:1b => 102
+2 cf:2b => 201
+3 cf:3a => 3010103, cf:3a => 301, cf:3b => 302
 
 --- 3 row(s) selected.
 >>commit work;
 
 --- SQL operation complete.
 >>
->>select left(row_id, 10) row_id, left(column_display(column_details), 50) 
-+>           from hbase."_ROW_".t022hbt1;
+>>select left(row_id, 10) row_id, left(column_display(column_details), 50)
++> from hbase."_ROW_".t022hbt1;
 
-ROW_ID      (EXPR)                                            
-----------  --------------------------------------------------
+ROW_ID (EXPR)
+----------
 
-1           cf:1a => 101, cf:1b => 102                        
-2           cf:2b => 201                                      
-3           cf:3a => 3010103, cf:3b => 302                    
+1 cf:1a => 101, cf:1b => 102
+2 cf:2b => 201
+3 cf:3a => 3010103, cf:3b => 302
 
 --- 3 row(s) selected.
 >>
 >>begin work;
 
 --- SQL operation complete.
->>insert into hbase."_ROW_".t022hbt1 values 
-+>       ('4', column_create(('cf:4a', '301'), ('cf:4b', '302')));
+>>insert into hbase."_ROW_".t022hbt1 values
++> ('4', column_create(('cf:4a', '301'), ('cf:4b', '302')));
 
 --- 1 row(s) inserted.
->>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
-+>           from hbase."_ROW_".t022hbt1 where row_id = '4';
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40)
++> from hbase."_ROW_".t022hbt1 where row_id = '4';
 
-ROW_ID      (EXPR)                                  
-----------  ----------------------------------------
+ROW_ID (EXPR)
+----------
 
-4           cf:4a => 301, cf:4b => 302              
+4 cf:4a => 301, cf:4b => 302
 
 --- 1 row(s) selected.
 >>rollback work;
@@ -185,93 +185,93 @@ ROW_ID      (EXPR)
 >>
 >>select col_family, col_name, left(col_value, 20) from hbase."_CELL_".t022hbt1;
 
-COL_FAMILY                                                                                            COL_NAME                                                                                              (EXPR)
-----------------------------------------------------------------------------------------------------  ----------------------------------------------------------------------------------------------------  --------------------
+COL_FAMILY COL_NAME (EXPR)
+----------
 
-cf                                                                                                    1a                                                                                                    101                 
-cf                                                                                                    1b                                                                                                    102                 
-cf                                                                                                    2b                                                                                                    201                 
-cf                                                                                                    3a                                                                                                    3010103             
-cf                                                                                                    3b                                                                                                    302                 
+cf 1a 101
+cf 1b 102
+cf 2b 201
+cf 3a 3010103
+cf 3b 302
 
 --- 5 row(s) selected.
->>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
-+>           from hbase."_ROW_".t022hbt1 where row_id = '4';
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40)
++> from hbase."_ROW_".t022hbt1 where row_id = '4';
 
 --- 0 row(s) selected.
 >>
 >>select left(column_lookup (column_details, 'cf:1a'), 20) from hbase."_ROW_".t022hbt1;
 
-(EXPR)              
---------------------
+(EXPR)
+----------
 
-101                 
-
---- 1 row(s) selected.
->>
->>select left(column_lookup (column_details, 'cf:3a'), 20) from hbase."_ROW_".t022hbt1
-+>  where column_lookup (column_details, 'cf:3b') = '302';
-
-(EXPR)              
---------------------
-
-3010103             
+101
 
 --- 1 row(s) selected.
 >>
 >>select left(column_lookup (column_details, 'cf:3a'), 20) from hbase."_ROW_".t022hbt1
-+>  where column_lookup (column_details, 'cf:3a') = '301' 
-+>     and column_lookup (column_details, 'cf:3b') = '302';
++> where column_lookup (column_details, 'cf:3b') = '302';
+
+(EXPR)
+----------
+
+3010103
+
+--- 1 row(s) selected.
+>>
+>>select left(column_lookup (column_details, 'cf:3a'), 20) from hbase."_ROW_".t022hbt1
++> where column_lookup (column_details, 'cf:3a') = '301'
++> and column_lookup (column_details, 'cf:3b') = '302';
 
 --- 0 row(s) selected.
 >>
 >>select left(column_lookup (column_details, 'cf:3a'), 20) from hbase."_ROW_".t022hbt1
-+>  where column_lookup (column_details, 'cf:3a') = '3010103' 
-+>     and column_lookup (column_details, 'cf:3b') = '302';
++> where column_lookup (column_details, 'cf:3a') = '3010103'
++> and column_lookup (column_details, 'cf:3b') = '302';
 
-(EXPR)              
---------------------
+(EXPR)
+----------
 
-3010103             
+3010103
 
 --- 1 row(s) selected.
 >>
 >>select left(column_lookup (column_details, 'cf:3c'), 20) from hbase."_ROW_".t022hbt1
-+>  where column_lookup (column_details, 'cf:3b') = '3020';
++> where column_lookup (column_details, 'cf:3b') = '3020';
 
 --- 0 row(s) selected.
 >>
 >>select left(column_lookup (column_details, 'cf:3c'), 20) from hbase."_ROW_".t022hbt1
-+>  where column_lookup (column_details, 'cf:3b') = '302';
++> where column_lookup (column_details, 'cf:3b') = '302';
 
-(EXPR)              
---------------------
+(EXPR)
+----------
 
-?                   
-
---- 1 row(s) selected.
->>
->>select column_lookup (column_details, 'cf:3a', cast as int),
-+>       column_lookup (column_details, 'cf:3a', cast as int) + 1 
-+>  from hbase."_ROW_".t022hbt1;
-
-(EXPR)       (EXPR)              
------------  --------------------
-
-    3010103               3010104
+?
 
 --- 1 row(s) selected.
 >>
 >>select column_lookup (column_details, 'cf:3a', cast as int),
-+>       column_lookup (column_details, 'cf:3a', cast as int) + 1 
-+>  from hbase."_ROW_".t022hbt1
-+>   where 
-+>       column_lookup (column_details, 'cf:3b', cast as int) = 302;
++> column_lookup (column_details, 'cf:3a', cast as int) + 1
++> from hbase."_ROW_".t022hbt1;
 
-(EXPR)       (EXPR)              
------------  --------------------
+(EXPR) (EXPR)
+----------
 
-    3010103               3010104
+ 3010103 3010104
+
+--- 1 row(s) selected.
+>>
+>>select column_lookup (column_details, 'cf:3a', cast as int),
++> column_lookup (column_details, 'cf:3a', cast as int) + 1
++> from hbase."_ROW_".t022hbt1
++> where
++> column_lookup (column_details, 'cf:3b', cast as int) = 302;
+
+(EXPR) (EXPR)
+----------
+
+ 3010103 3010104
 
 --- 1 row(s) selected.
 >>
@@ -283,11 +283,11 @@ cf                                                                              
 --- 1 row(s) deleted.
 >>select left(row_id, 10) from hbase."_ROW_".t022hbt1;
 
-(EXPR)    
+(EXPR)
 ----------
 
-1         
-2         
+1
+2
 
 --- 2 row(s) selected.
 >>commit work;
@@ -295,25 +295,25 @@ cf                                                                              
 --- SQL operation complete.
 >>select left(row_id, 10) from hbase."_ROW_".t022hbt1;
 
-(EXPR)    
+(EXPR)
 ----------
 
-1         
-2         
+1
+2
 
 --- 2 row(s) selected.
 >>
->>delete columns ('cf:1a') from hbase."_ROW_".t022hbt1  where row_id  = '1';
+>>delete columns ('cf:1a') from hbase."_ROW_".t022hbt1 where row_id = '1';
 
 --- 1 row(s) deleted.
 >>select left(row_id, 10) row_id, column_display(column_details, 40) column_details
-+>           from hbase."_ROW_".t022hbt1;
++> from hbase."_ROW_".t022hbt1;
 
-ROW_ID      COLUMN_DETAILS                          
-----------  ----------------------------------------
+ROW_ID COLUMN_DETAILS
+----------
 
-1           cf:1b => 102                            
-2           cf:2b => 201                            
+1 cf:1b => 102
+2 cf:2b => 201
 
 --- 2 row(s) selected.
 >>
@@ -322,14 +322,14 @@ ROW_ID      COLUMN_DETAILS
 --- 2 row(s) deleted.
 >>select count(*) from hbase."_ROW_".t022hbt1;
 
-(EXPR)              
---------------------
+(EXPR)
+----------
 
-                   0
+ 0
 
 --- 1 row(s) selected.
 >>
->>-- operations between trafodion and hbase tables
+>>-- operations between TRAFODION and hbase tables
 >>begin work;
 
 --- SQL operation complete.
@@ -341,18 +341,18 @@ ROW_ID      COLUMN_DETAILS
 --- 1 row(s) inserted.
 >>select count(*) from t022t1;
 
-(EXPR)              
---------------------
+(EXPR)
+----------
 
-                   1
+ 1
 
 --- 1 row(s) selected.
 >>select count(*) from hbase."_ROW_".t022hbt1;
 
-(EXPR)              
---------------------
+(EXPR)
+----------
 
-                   1
+ 1
 
 --- 1 row(s) selected.
 >>rollback work;
@@ -360,40 +360,40 @@ ROW_ID      COLUMN_DETAILS
 --- SQL operation complete.
 >>select count(*) from t022t1;
 
-(EXPR)              
---------------------
+(EXPR)
+----------
 
-                   0
+ 0
 
 --- 1 row(s) selected.
 >>select count(*) from hbase."_ROW_".t022hbt1;
 
-(EXPR)              
---------------------
+(EXPR)
+----------
 
-                   0
+ 0
 
 --- 1 row(s) selected.
 >>
->>insert into hbase."_ROW_".t022hbt1 values 
-+>       ('3', column_create(('cf:3a', '301'), ('cf:3b', '302')));
+>>insert into hbase."_ROW_".t022hbt1 values
++> ('3', column_create(('cf:3a', '301'), ('cf:3b', '302')));
 
 --- 1 row(s) inserted.
 >>update hbase."_ROW_".t022hbt1 set column_details = column_create('cf:3b', '3022')
-+>  where row_id = '3' and column_lookup(column_details, 'cf:3a', cast as int) = 3011;
++> where row_id = '3' and column_lookup(column_details, 'cf:3a', cast as int) = 3011;
 
 --- 0 row(s) updated.
 >>update hbase."_ROW_".t022hbt1 set column_details = column_create('cf:3b', '3022')
-+>  where row_id = '3' and column_lookup(column_details, 'cf:3a', cast as int) = 301;
++> where row_id = '3' and column_lookup(column_details, 'cf:3a', cast as int) = 301;
 
 --- 1 row(s) updated.
->>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
-+>           from hbase."_ROW_".t022hbt1;
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40)
++> from hbase."_ROW_".t022hbt1;
 
-ROW_ID      (EXPR)                                  
-----------  ----------------------------------------
+ROW_ID (EXPR)
+----------
 
-3           cf:3a => 301, cf:3b => 3022             
+3 cf:3a => 301, cf:3b => 3022
 
 --- 1 row(s) selected.
 >>
@@ -406,7 +406,7 @@ ROW_ID      (EXPR)
 
 >>insert into hbase."_ROW_".t022hbt1 values ('2', column_create(':b', '201'));
 
-*** ERROR[1426] An invalid HBase column name :b was specified. A valid name must be of the format:   <ColumnFamily>:<ColumnName>
+*** ERROR[1426] An invalid HBase column name :b was specified. A valid name must be of the format: <ColumnFamily>:<ColumnName>
 
 --- 0 row(s) inserted.
 >>insert into hbase."_ROW_".t022hbt1 values ('2', '100');
@@ -425,35 +425,35 @@ ROW_ID      (EXPR)
 >>-- tests with large rows
 >>invoke hbase."_CELL_".t022hbt2;
 
--- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Thu May 11 22:43:14 2017
+-- Definition of table HBASE."_CELL_".T022HBT2
+-- Definition current
 
-  (
-    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , COL_FAMILY                       VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , COL_NAME                         VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , COL_TIMESTAMP                    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
-  , COL_VALUE                        VARCHAR(1000) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-  PRIMARY KEY (ROW_ID ASC)
+ (
+ ROW_ID VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_FAMILY VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_NAME VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_TIMESTAMP LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_VALUE VARCHAR(1000) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ )
+ PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_ROW_".t022hbt2;
 
--- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Thu May 11 22:43:14 2017
+-- Definition of table HBASE."_ROW_".T022HBT2
+-- Definition current
 
-  (
-    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , COLUMN_DETAILS                   VARCHAR(10000) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-  PRIMARY KEY (ROW_ID ASC)
+ (
+ ROW_ID VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COLUMN_DETAILS VARCHAR(10000) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ )
+ PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>cqd hbase_max_column_val_length '100000';
@@ -464,107 +464,107 @@ ROW_ID      (EXPR)
 --- SQL operation complete.
 >>invoke hbase."_CELL_".t022hbt2;
 
--- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Thu May 11 22:43:14 2017
+-- Definition of table HBASE."_CELL_".T022HBT2
+-- Definition current
 
-  (
-    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , COL_FAMILY                       VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , COL_NAME                         VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , COL_TIMESTAMP                    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
-  , COL_VALUE                        VARCHAR(100000) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-  PRIMARY KEY (ROW_ID ASC)
+ (
+ ROW_ID VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_FAMILY VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_NAME VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_TIMESTAMP LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COL_VALUE VARCHAR(100000) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ )
+ PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>invoke hbase."_ROW_".t022hbt2;
 
--- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Thu May 11 22:43:15 2017
+-- Definition of table HBASE."_ROW_".T022HBT2
+-- Definition current
 
-  (
-    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , COLUMN_DETAILS                   VARCHAR(100000) CHARACTER SET ISO88591
-      COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-  PRIMARY KEY (ROW_ID ASC)
+ (
+ ROW_ID VARCHAR(100) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ , COLUMN_DETAILS VARCHAR(100000) CHARACTER SET ISO88591
+ COLLATE DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
+ )
+ PRIMARY KEY (ROW_ID ASC)
 
 --- SQL operation complete.
 >>insert into hbase."_CELL_".t022hbt2 values ('1', 'cf', 'a', -1, repeat('a', 100000));
 
 --- 1 row(s) inserted.
->>insert into hbase."_ROW_".t022hbt2 values 
-+>                              ('2', column_create(
-+>                                       ('cf:1a', repeat('a', 40000)),
-+>                                       ('cf:1b', repeat('z', 40000))));
+>>insert into hbase."_ROW_".t022hbt2 values
++> ('2', column_create(
++> ('cf:1a', repeat('a', 40000)),
++> ('cf:1b', repeat('z', 40000))));
 
 --- 1 row(s) inserted.
 >>select count(*) from hbase."_CELL_".t022hbt2;
 
-(EXPR)              
---------------------
-
-                   3
-
---- 1 row(s) selected.
->>select char_length(col_value) from hbase."_CELL_".t022hbt2;
-
-(EXPR)    
+(EXPR)
 ----------
 
-    100000
-     40000
-     40000
+ 3
+
+--- 1 row(s) selected.
+>>select char_length(col_value) from hbase."_CELL_".t022hbt2 order by 1;
+
+(EXPR)
+----------
+
+ 40000
+ 40000
+ 100000
 
 --- 3 row(s) selected.
 >>select count(*) from hbase."_CELL_".t022hbt2;
 
-(EXPR)              
---------------------
-
-                   3
-
---- 1 row(s) selected.
->>select char_length(col_value) from hbase."_CELL_".t022hbt2;
-
-(EXPR)    
+(EXPR)
 ----------
 
-    100000
-     40000
-     40000
+ 3
+
+--- 1 row(s) selected.
+>>select char_length(col_value) from hbase."_CELL_".t022hbt2 order by 1;
+
+(EXPR)
+----------
+
+ 40000
+ 40000
+ 100000
 
 --- 3 row(s) selected.
 >>select count(*) from hbase."_ROW_".t022hbt2;
 
-(EXPR)              
---------------------
-
-                   2
-
---- 1 row(s) selected.
->>select char_length(column_details) from hbase."_ROW_".t022hbt2;
-
-(EXPR)    
+(EXPR)
 ----------
 
-    100000
-     80022
+ 2
+
+--- 1 row(s) selected.
+>>select char_length(column_details) from hbase."_ROW_".t022hbt2 order by 1;
+
+(EXPR)
+----------
+
+ 80022
+ 100000
 
 --- 2 row(s) selected.
->>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
-+>           from hbase."_ROW_".t022hbt2;
+>>select left(row_id, 10) row_id, left(column_display(column_details), 40)
++> from hbase."_ROW_".t022hbt2;
 
-ROW_ID      (EXPR)                                  
-----------  ----------------------------------------
+ROW_ID (EXPR)
+----------
 
-1           cf:a => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-2           cf:1a => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+1 cf:a => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+2 cf:1a => aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 --- 2 row(s) selected.
 >>
@@ -580,8 +580,8 @@ ROW_ID      (EXPR)
 >>create hbase table t022hbm1 (column family 'cf');
 
 --- SQL operation complete.
->>insert into hbase."_ROW_".t022hbm1 values ('a1', 
-+>                 column_create(('cf:B', '100 ')));
+>>insert into hbase."_ROW_".t022hbm1 values ('a1',
++> column_create(('cf:B', '100 ')));
 
 --- 1 row(s) inserted.
 >>insert into hbase."_ROW_".t022hbm1 values ('a2', column_create(('cf:A', 'a2')));
@@ -595,39 +595,39 @@ ROW_ID      (EXPR)
 
 --- SQL operation complete.
 >>create external table t022hbm1 (a varchar(4) not null, b char(4))
-+>        primary key (a)
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1;
++> primary key (a)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:43:31 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           CHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B CHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
 >>-- if no schema is specified, table is looked in regular and then mapped schema
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:43:31 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           CHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B CHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>create table t022hbm1 (a int);
@@ -635,13 +635,13 @@ ROW_ID      (EXPR)
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion table TRAFODION.SCH.T022HBM1
--- Definition current  Thu May 11 22:43:35 2017
+-- Definition of table #CAT.#SCH.T022HBM1
+-- Definition current
 
-  (
-    SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
-  , A                                INT DEFAULT NULL
-  )
+ (
+ SYSKEY LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+ , A INT DEFAULT NULL
+ )
 
 --- SQL operation complete.
 >>drop table t022hbm1;
@@ -649,16 +649,16 @@ ROW_ID      (EXPR)
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:43:43 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           CHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B CHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
@@ -667,28 +667,28 @@ ROW_ID      (EXPR)
 --- SQL command prepared.
 >>execute s;
 
-A     B   
-----  ----
+A B
+---- ----
 
-a1    100 
-a2    ?   
+a1 100
+a2 ?
 
 --- 2 row(s) selected.
 >>select * from t022hbm1 where a = 'a1';
 
-A     B   
-----  ----
+A B
+---- ----
 
-a1    100 
+a1 100
 
 --- 1 row(s) selected.
 >>select a, cast(b as int) from t022hbm1;
 
-A     (EXPR)     
-----  -----------
+A (EXPR)
+---- -----------
 
-a1            100
-a2              ?
+a1 100
+a2 ?
 
 --- 2 row(s) selected.
 >>
@@ -697,17 +697,17 @@ a2              ?
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:43:50 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           CHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
-  , "cf".C                           INT DEFAULT NULL /*added_col*/
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B CHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT DEFAULT NULL
+ , "cf".C INT DEFAULT NULL /*added_col*/
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
@@ -720,17 +720,17 @@ a2              ?
 --- SQL operation complete.
 >>invoke t022hbm1_like;
 
--- Definition of Trafodion table TRAFODION.SCH.T022HBM1_LIKE
--- Definition current  Thu May 11 22:43:57 2017
+-- Definition of table #CAT.#SCH.T022HBM1_LIKE
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           CHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT DEFAULT NULL
-  , "cf".C                           INT DEFAULT NULL
-  )
-  PRIMARY KEY (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B CHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT DEFAULT NULL
+ , "cf".C INT DEFAULT NULL
+ )
+ PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>
@@ -739,11 +739,11 @@ a2              ?
 --- 2 row(s) inserted.
 >>select * from t022hbm1_like;
 
-A     B     C          
-----  ----  -----------
+A B C
+---- ---- -----------
 
-a1    100             ?
-a2    ?               ?
+a1 100 ?
+a2 ? ?
 
 --- 2 row(s) selected.
 >>
@@ -752,11 +752,11 @@ a2    ?               ?
 --- 2 row(s) inserted.
 >>select * from t022hbm1_ctas;
 
-A     B     C          
-----  ----  -----------
+A B C
+---- ---- -----------
 
-a1    100             ?
-a2    ?               ?
+a1 100 ?
+a2 ? ?
 
 --- 2 row(s) selected.
 >>
@@ -770,26 +770,26 @@ a2    ?               ?
 --- SQL operation complete.
 >>invoke t022hbm1;
 
-*** ERROR[4082] Object TRAFODION.SCH.T022HBM1 does not exist or is inaccessible.
+*** ERROR[4082] Object #CAT.#SCH.T022HBM1 does not exist or is inaccessible.
 
 --- SQL operation failed with errors.
 >>create external table t022hbm1 ("cf".a varchar(4) not null,
-+>            b int)
-+>        primary key (a)
-+>        map to hbase table t022hbm1;
++> b int)
++> primary key (a)
++> map to hbase table t022hbm1;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:44:15 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , B                                INT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , B INT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
@@ -798,14 +798,14 @@ a2    ?               ?
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:44:21 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
@@ -814,15 +814,15 @@ a2    ?               ?
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:44:24 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           INT DEFAULT NULL /*added_col*/
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B INT DEFAULT NULL /*added_col*/
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
@@ -840,11 +840,11 @@ a2    ?               ?
 >>drop external table t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a varchar(4) not null, b int) 
-+>        primary key (a)
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1
-+>        data format native;
+>>create external table t022hbm1 (a varchar(4) not null, b int)
++> primary key (a)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1
++> data format native;
 
 --- SQL operation complete.
 >>--This part of the test is being commented out due to non deterministic results
@@ -868,24 +868,24 @@ a2    ?               ?
 >>drop external table t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a int not null, b int not null, c int) 
-+>        primary key (a, b)
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1
-+>        data format native;
+>>create external table t022hbm1 (a int not null, b int not null, c int)
++> primary key (a, b)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1
++> data format native;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:44:37 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           INT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".C                           INT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC, B ASC)
+ (
+ "cf".A INT NO DEFAULT NOT NULL NOT DROPPABLE
+ , "cf".B INT NO DEFAULT NOT NULL NOT DROPPABLE
+ , "cf".C INT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC, B ASC)
 
 --- SQL operation complete.
 >>insert into t022hbm1 values (1,2,3);
@@ -902,27 +902,27 @@ a2    ?               ?
 >>insert into t022hbm1 values (-1, -2, -3);
 
 --- 1 row(s) inserted.
->>select * from t022hbm1;
+>>select * from t022hbm1 order by 1;
 
-A            B            C          
------------  -----------  -----------
+A B C
+----------
 
-          1            1            1
-          1            2            3
-         -1           -2           -3
+ 1 1 1
+ 1 2 3
+ -1 -2 -3
 
 --- 3 row(s) selected.
 >>upsert into t022hbm1 values (1,2,4);
 
 --- 1 row(s) inserted.
->>select * from t022hbm1;
+>>select * from t022hbm1 order by 1;
 
-A            B            C          
------------  -----------  -----------
+A B C
+----------
 
-          1            1            1
-          1            2            4
-         -1           -2           -3
+ 1 1 1
+ 1 2 4
+ -1 -2 -3
 
 --- 3 row(s) selected.
 >>
@@ -930,159 +930,159 @@ A            B            C
 >>drop external table t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a varchar(4) not null, primary key not serialized (a), b int) 
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null, primary key not serialized (a), b int)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:44:46 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           INT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B INT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
 >>drop external table t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a char(4) not null, primary key serialized (a), b int) 
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1
-+>        data format native;
+>>create external table t022hbm1 (a char(4) not null, primary key serialized (a), b int)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1
++> data format native;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:44:51 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           CHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           INT DEFAULT NULL
-  )
-  PRIMARY KEY (A ASC)
+ (
+ "cf".A CHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B INT DEFAULT NULL
+ )
+ PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>
 >>drop external table t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a varchar(4) not null, primary key(a), b int) 
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null, primary key(a), b int)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:44:56 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           INT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B INT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
 >>drop external table t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a varchar(4) not null primary key, b int) 
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null primary key, b int)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:45:05 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           INT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B INT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
 >>drop external table t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a varchar(4) not null, b int) 
-+>        primary key not serialized (a)
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null, b int)
++> primary key not serialized (a)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:45:13 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           INT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B INT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
 >>drop external table t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a char(4) not null, b int) 
-+>        primary key serialized (a) 
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1
-+>        data format native;
+>>create external table t022hbm1 (a char(4) not null, b int)
++> primary key serialized (a)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1
++> data format native;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:45:18 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           CHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           INT DEFAULT NULL
-  )
-  PRIMARY KEY (A ASC)
+ (
+ "cf".A CHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B INT DEFAULT NULL
+ )
+ PRIMARY KEY (A ASC)
 
 --- SQL operation complete.
 >>
 >>drop external table t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a varchar(4) not null, b int) 
-+>        primary key (a)
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null, b int)
++> primary key (a)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1;
 
 --- SQL operation complete.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:45:26 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           INT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B INT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
@@ -1095,10 +1095,10 @@ A            B            C
 >>drop external table if exists t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a varchar(4) not null, b int) 
-+>        primary key (a) 
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null, b int)
++> primary key (a)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1;
 
 --- SQL operation complete.
 >>insert into hbase."_ROW_".t022hbm1 values ('a1', column_create(('cf:B', '10')));
@@ -1115,35 +1115,35 @@ A            B            C
 >>create hbase table t022hbm2 (column family 'cf1', column family 'cf2');
 
 --- SQL operation complete.
->>create external table t022hbm2 ("cf1".A int, "cf2".B int, 
-+>                           "cf1".Z varchar(4) not null primary key) 
-+>     map to hbase table t022hbm2;
+>>create external table t022hbm2 ("cf1".A int, "cf2".B int,
++> "cf1".Z varchar(4) not null primary key)
++> map to hbase table t022hbm2;
 
 --- SQL operation complete.
->>insert into hbase."_ROW_".t022hbm2 values ('a11', 
-+>           column_create(('cf1:A', '10'), ('cf2:B', '20')));
+>>insert into hbase."_ROW_".t022hbm2 values ('a11',
++> column_create(('cf1:A', '10'), ('cf2:B', '20')));
 
 --- 1 row(s) inserted.
 >>invoke t022hbm2;
 
--- Definition of Trafodion HBase mapped table T022HBM2
--- Definition current  Thu May 11 22:45:52 2017
+-- Definition of TRAFODION HBase mapped table T022HBM2
+-- Definition current
 
-  (
-    "cf1".A                          INT DEFAULT NULL
-  , "cf2".B                          INT DEFAULT NULL
-  , "cf1".Z                          VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  )
-  PRIMARY KEY NOT SERIALIZED (Z ASC)
+ (
+ "cf1".A INT DEFAULT NULL
+ , "cf2".B INT DEFAULT NULL
+ , "cf1".Z VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ )
+ PRIMARY KEY NOT SERIALIZED (Z ASC)
 
 --- SQL operation complete.
 >>select * from t022hbm2;
 
-A            B            Z   
------------  -----------  ----
+A B Z
+----------
 
-         10           20  a11 
+ 10 20 a11
 
 --- 1 row(s) selected.
 >>
@@ -1152,10 +1152,10 @@ A            B            Z
 >>-- primary key cannot be missing
 >>select * from t022hbm1;
 
-A     B          
-----  -----------
+A B
+---- -----------
 
-a1             10
+a1 10
 
 --- 1 row(s) selected.
 >>
@@ -1167,19 +1167,19 @@ a1             10
 --- SQL operation failed with errors.
 >>invoke t022hbm1;
 
--- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Thu May 11 22:45:55 2017
+-- Definition of TRAFODION HBase mapped table T022HBM1
+-- Definition current
 
-  (
-    "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
-      DEFAULT NO DEFAULT NOT NULL NOT DROPPABLE
-  , "cf".B                           INT DEFAULT NULL
-  )
-  PRIMARY KEY NOT SERIALIZED (A ASC)
+ (
+ "cf".A VARCHAR(4) CHARACTER SET ISO88591 COLLATE
+ DEFAULT NO @eof@ NULL NOT DROPPABLE
+ , "cf".B INT DEFAULT NULL
+ )
+ PRIMARY KEY NOT SERIALIZED (A ASC)
 
 --- SQL operation complete.
 >>
->>set schema trafodion."_HB_MAP_";
+>>set schema TRAFODION."_HB_MAP_";
 
 --- SQL operation complete.
 >>
@@ -1210,13 +1210,13 @@ a1             10
 *** ERROR[4261] The schema name _HB_MAP_ is reserved for HBase mapped tables and cannot be explicitly specified.
 
 --- SQL operation failed with errors.
->>alter table trafodion."_HB_MAP_".t022hbm1 drop column b;
+>>alter table TRAFODION."_HB_MAP_".t022hbm1 drop column b;
 
 *** ERROR[4261] The schema name _HB_MAP_ is reserved for HBase mapped tables and cannot be explicitly specified.
 
 --- SQL operation failed with errors.
 >>
->>set schema trafodion.sch;
+>>set schema #CAT.#SCH;
 
 --- SQL operation complete.
 >>
@@ -1225,18 +1225,18 @@ a1             10
 --- SQL operation complete.
 >>
 >>-- cannot specify serialized option
->>create external table t022hbm1 (a varchar(4) not null, b int) 
-+>        primary key serialized (a) 
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null, b int)
++> primary key serialized (a)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1;
 
 *** ERROR[3242] This statement is not supported. Reason: SERIALIZED option cannot be specified for primary key of this table.
 
 --- SQL operation failed with errors.
 >>
 >>-- cannot be aligned format
->>create external table t022hbm1 (a varchar(4) not null primary key) 
-+>  attribute aligned format map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null primary key)
++> attribute aligned format map to hbase table t022hbm1;
 
 *** ERROR[3242] This statement is not supported. Reason: Aligned format cannot be specified for an HBase mapped table.
 
@@ -1250,17 +1250,17 @@ a1             10
 --- SQL operation failed with errors.
 >>
 >>-- external and hbase table names must be the same
->>create external table t022hbm11 (a char(4) not null primary key) 
-+>        map to hbase table t022hbm1;
+>>create external table t022hbm11 (a char(4) not null primary key)
++> map to hbase table t022hbm1;
 
-*** ERROR[1180] Trying to create an external HBASE table with a different schema or table name (T022HBM11) than the source table (T022HBM1).  The external schema and table name must be the same as the source.
+*** ERROR[1180] Trying to create an external HBASE table with a different schema or table name (T022HBM11) than the source table (T022HBM1). The external schema and table name must be the same as the source.
 
 --- SQL operation failed with errors.
 >>
 >>-- all non-pkey columns must be nullable
 >>create external table t022hbm1 (a varchar(4) not null primary key,
-+>              b int not null)
-+>              map to hbase table t022hbm1;
++> b int not null)
++> map to hbase table t022hbm1;
 
 *** ERROR[3242] This statement is not supported. Reason: Non-key columns of an HBase mapped table must be nullable with default value of NULL.
 
@@ -1268,28 +1268,28 @@ a1             10
 >>
 >>-- all non-pkey columns must have default value of null
 >>create external table t022hbm1 (a varchar(4) not null primary key,
-+>              b int default 10)
-+>              map to hbase table t022hbm1;
++> b int default 10)
++> map to hbase table t022hbm1;
 
 *** ERROR[3242] This statement is not supported. Reason: Non-key columns of an HBase mapped table must be nullable with default value of NULL.
 
 --- SQL operation failed with errors.
 >>
 >>-- mapped table already exist
->>create external table t022hbm1 (a varchar(4) not null primary key) 
-+>              map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null primary key)
++> map to hbase table t022hbm1;
 
 --- SQL operation complete.
->>create external table t022hbm1 (a varchar(4) not null primary key) 
-+>              map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null primary key)
++> map to hbase table t022hbm1;
 
-*** ERROR[1390] Object TRAFODION."_HB_MAP_".T022HBM1 already exists in Trafodion.
+*** ERROR[1390] Object TRAFODION."_HB_MAP_".T022HBM1 already exists in TRAFODION.
 
 --- SQL operation failed with errors.
 >>
 >>-- hbase table doesn't exist
->>create external table t022hbm11 (a char(4) not null primary key) 
-+>                map to hbase table t022hbm11;
+>>create external table t022hbm11 (a char(4) not null primary key)
++> map to hbase table t022hbm11;
 
 *** ERROR[4260] HBase table(T022HBM11) to be mapped as an external table does not exist.
 
@@ -1318,20 +1318,20 @@ a1             10
 >>create hbase table t022hbm1 (column family 'cf');
 
 --- SQL operation complete.
->>create external table t022hbm1 (a varchar(4) not null, b int) 
-+>        primary key (a) 
-+>        attribute default column family 'cf'
-+>        map to hbase table t022hbm1;
+>>create external table t022hbm1 (a varchar(4) not null, b int)
++> primary key (a)
++> attribute default column family 'cf'
++> map to hbase table t022hbm1;
 
 --- SQL operation complete.
->>insert into hbase."_ROW_".t022hbm1 values ('a1', 
-+>                               column_create(('cf:A', '10')));
+>>insert into hbase."_ROW_".t022hbm1 values ('a1',
++> column_create(('cf:A', '10')));
 
 --- 1 row(s) inserted.
 >>-- rowID must match pkey col contents
 >>select * from t022hbm1;
 
-*** ERROR[8556] An error occurred while accessing HBase table T022HBM1.  Details: HBase rowID content must match the primary key column content.
+*** ERROR[8556] An error occurred while accessing HBase table T022HBM1. Details: HBase rowID content must match the primary key column content.
 
 --- 0 row(s) selected.
 >>
@@ -1341,14 +1341,14 @@ a1             10
 >>create hbase table t022hbm1 (column family 'cf');
 
 --- SQL operation complete.
->>insert into hbase."_ROW_".t022hbm1 values ('a1234567', 
-+>                               column_create(('cf:B', '10')));
+>>insert into hbase."_ROW_".t022hbm1 values ('a1234567',
++> column_create(('cf:B', '10')));
 
 --- 1 row(s) inserted.
 >>-- primary key col length must be big enough to hold rowID
 >>select * from t022hbm1;
 
-*** ERROR[8556] An error occurred while accessing HBase table T022HBM1.  Details: retrieved rowID of length 8 is larger than the specified key size of 4.
+*** ERROR[8556] An error occurred while accessing HBase table T022HBM1. Details: retrieved rowID of length 8 is larger than the specified key size of 4.
 
 --- 0 row(s) selected.
 >>
@@ -1358,8 +1358,8 @@ a1             10
 >>create hbase table t022hbm1 (column family 'cf');
 
 --- SQL operation complete.
->>insert into hbase."_ROW_".t022hbm1 values ('a1', 
-+>                               column_create(('cf:B', '1000000')));
+>>insert into hbase."_ROW_".t022hbm1 values ('a1',
++> column_create(('cf:B', '1000000')));
 
 --- 1 row(s) inserted.
 >>-- buffer to retrieve column value must be big enough
@@ -1368,7 +1368,7 @@ a1             10
 --- SQL operation complete.
 >>select * from t022hbm1;
 
-*** ERROR[8556] An error occurred while accessing HBase table T022HBM1.  Details: actual column value length of 7 is greater than the expected max buffer size of 5.
+*** ERROR[8556] An error occurred while accessing HBase table T022HBM1. Details: actual column value length of 7 is greater than the expected max buffer size of 5.
 
 --- 0 row(s) selected.
 >>

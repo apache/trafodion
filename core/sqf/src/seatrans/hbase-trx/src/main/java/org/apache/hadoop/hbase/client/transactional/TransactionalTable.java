@@ -38,16 +38,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 
 import org.apache.commons.codec.binary.Hex;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.KeyValueUtil;
@@ -58,6 +57,7 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.TrafParallelClientScanner;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
@@ -107,12 +107,15 @@ import java.util.concurrent.ThreadPoolExecutor;
  * Table with transactional support.
  */
 public class TransactionalTable extends HTable implements TransactionalTableClient {
-    static final Log LOG = LogFactory.getLog(RMInterface.class);
+    static final Log LOG = LogFactory.getLog(TransactionalTable.class);
+    static Configuration       config;
     static private Connection connection = null;
     static ThreadPoolExecutor threadPool = null;
     static int                 retries = 15;
     static int                 delay = 1000;
-    private String retryErrMsg = "Coprocessor result is null, retries exhausted";
+    static int                 regionNotReadyDelay = 30000;
+
+    private String retryErrMsg = "Coprocessor result is null, retries exhausted for table " + this.getName().getNameAsString();
 
     static {
        Configuration config = HBaseConfiguration.create();
@@ -176,6 +179,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
         org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.GetTransactionalRequest.Builder builder = GetTransactionalRequest.newBuilder();            
         builder.setGet(ProtobufUtil.toGet(get));
         builder.setTransactionId(transactionState.getTransactionId());
+        builder.setStartId(transactionState.getStartId());
         builder.setRegionName(ByteString.copyFromUtf8(regionName));
    
         instance.get(controller, builder.build(), rpcCallback);
@@ -198,8 +202,17 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
             retry = false;
           } 
 
-          if(result == null || result.getException().contains("closing region")) {
-            Thread.sleep(TransactionalTable.delay);
+          if(result == null || result.getException().contains("closing region")
+                            || result.getException().contains("NewTransactionStartedBefore")) {
+            if (result != null && result.getException().contains("NewTransactionStartedBefore")) {
+               if (LOG.isTraceEnabled()) LOG.trace("Get retrying because region is recovering,"
+                      + " transaction [" + transactionState.getTransactionId() + "]");
+
+               Thread.sleep(TransactionalTable.regionNotReadyDelay);
+            }
+            else{
+               Thread.sleep(TransactionalTable.delay);
+            }
             retry = true;
             transactionState.setRetried(true);
             retryCount++;
@@ -242,6 +255,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
           public DeleteTransactionalResponse call(TrxRegionService instance) throws IOException {
             org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteTransactionalRequest.Builder builder = DeleteTransactionalRequest.newBuilder();      
             builder.setTransactionId(transactionState.getTransactionId());
+            builder.setStartId(transactionState.getStartId());
             builder.setRegionName(ByteString.copyFromUtf8(regionName));
             
             MutationProto m1 = ProtobufUtil.toMutation(MutationType.DELETE, delete);
@@ -268,8 +282,17 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
               retry = false;
             }
 
-            if(result == null || result.getException().contains("closing region")) {
-              Thread.sleep(TransactionalTable.delay);
+            if(result == null || result.getException().contains("closing region")
+                              || result.getException().contains("NewTransactionStartedBefore")) {
+              if (result != null && result.getException().contains("NewTransactionStartedBefore")) {
+                 if (LOG.isTraceEnabled()) LOG.trace("Delete retrying because region is recovering,"
+                          + " transaction [" + transactionState.getTransactionId() + "]");
+
+                 Thread.sleep(TransactionalTable.regionNotReadyDelay);
+              }
+              else{
+                 Thread.sleep(TransactionalTable.delay);
+              }
               retry = true;
               transactionState.setRetried(true);
               retryCount++;
@@ -286,7 +309,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
     }
 
     public void deleteRegionTx(final long tid, final Delete delete, final boolean autoCommit) throws IOException {
-  	if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.deleteRegionTx ENTRY, autoCommit: " + autoCommit);
+        if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.deleteRegionTx ENTRY, autoCommit: "
+                + autoCommit);
         SingleVersionDeleteNotSupported.validateDelete(delete);
         final String regionName = super.getRegionLocation(delete.getRow()).getRegionInfo().getRegionNameAsString();
 
@@ -300,6 +324,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
           public DeleteRegionTxResponse call(TrxRegionService instance) throws IOException {
             org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteRegionTxRequest.Builder builder = DeleteRegionTxRequest.newBuilder();
             builder.setTid(tid);
+            builder.setCommitId(-1);
             builder.setAutoCommit(autoCommit);
             builder.setRegionName(ByteString.copyFromUtf8(regionName));
 
@@ -358,7 +383,6 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
     }
 
     public synchronized void put(final TransactionState transactionState, final Put put, final boolean bool_addLocation) throws IOException {
-      validatePut(put);
     	if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.put ENTRY");
     
       if (bool_addLocation) addLocation(transactionState, super.getRegionLocation(put.getRow()));
@@ -373,6 +397,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
       public PutTransactionalResponse call(TrxRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutTransactionalRequest.Builder builder = PutTransactionalRequest.newBuilder();
         builder.setTransactionId(transactionState.getTransactionId());
+        builder.setStartId(transactionState.getStartId());
         builder.setRegionName(ByteString.copyFromUtf8(regionName));
   
         
@@ -398,8 +423,17 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
           retry = false;
         }
 
-        if(result == null || result.getException().contains("closing region")) {
-          Thread.sleep(TransactionalTable.delay);
+        if(result == null || result.getException().contains("closing region")
+                          || result.getException().contains("NewTransactionStartedBefore")) {
+          if (result != null && result.getException().contains("NewTransactionStartedBefore")) {
+             if (LOG.isTraceEnabled()) LOG.trace("Put retrying because region is recovering,"
+                      + " transaction [" + transactionState.getTransactionId() + "]");
+
+             Thread.sleep(TransactionalTable.regionNotReadyDelay);
+          }
+          else{
+             Thread.sleep(TransactionalTable.delay);
+          }
           retry = true;
           transactionState.setRetried(true);
           retryCount++;
@@ -420,9 +454,9 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
   }
 
    public synchronized void putRegionTx(final long tid, final Put put, final boolean autoCommit) throws IOException{
-        if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.putRegionTx ENTRY, autoCommit: " + autoCommit);
+        if (LOG.isTraceEnabled()) LOG.trace("TransactionalTable.putRegionTx ENTRY, autoCommit: "
+               + autoCommit);
 
-        validatePut(put);
         final String regionName = super.getRegionLocation(put.getRow()).getRegionInfo().getRegionNameAsString();
 
         Batch.Call<TrxRegionService, PutRegionTxResponse> callable =
@@ -434,6 +468,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
         public PutRegionTxResponse call(TrxRegionService instance) throws IOException {
           org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutRegionTxRequest.Builder builder = PutRegionTxRequest.newBuilder();
           builder.setTid(tid);
+          builder.setCommitId(-1);
           builder.setAutoCommit(autoCommit);
           builder.setRegionName(ByteString.copyFromUtf8(regionName));
           MutationProto m1 = ProtobufUtil.toMutation(MutationType.PUT, put);
@@ -480,13 +515,21 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
   }
 
   public synchronized ResultScanner getScanner(final TransactionState transactionState, final Scan scan) throws IOException {
-    if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.getScanner");
+    if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.getScanner for transaction " + transactionState.getTransactionId() + " scan ");
     if (scan.getCaching() <= 0) {
         scan.setCaching(getScannerCaching());
     }
     
     Long value = (long) 0;
     TransactionalScanner scanner = new TransactionalScanner(this, transactionState, scan, value);
+    if (LOG.isTraceEnabled()){
+        String startRow = (Bytes.equals(scan.getStartRow(), HConstants.EMPTY_START_ROW) ?
+                "INFINITE" : Hex.encodeHexString(scan.getStartRow()));
+        String stopRow = (Bytes.equals(scan.getStopRow(), HConstants.EMPTY_END_ROW) ?
+                "INFINITE" : Hex.encodeHexString(scan.getStopRow()));
+       LOG.trace("Exit TransactionalTable.getScanner for transaction "
+            + transactionState.getTransactionId() + " scan startRow=" + startRow + ", stopRow=" + stopRow);
+    }
     
     return scanner;         
   }
@@ -495,7 +538,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 		  final byte[] family, final byte[] qualifier, final byte[] value,
           final Delete delete, final boolean autoCommit) throws IOException {
     if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.checkAndDeleteRegionTx row: " + row
-    		+ " family: " + family + " qualifier: " + qualifier + " value: " + value);
+                + " family: " + family + " qualifier: " + qualifier + " value: " + value
+                + " autoCommit: " + autoCommit);
     if (!Bytes.equals(row, delete.getRow())) {
        throw new IOException("checkAndDeleteRegionTx action's getRow must match the passed row");
     }
@@ -512,6 +556,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
     public CheckAndDeleteRegionTxResponse call(TrxRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteRegionTxRequest.Builder builder = CheckAndDeleteRegionTxRequest.newBuilder();
         builder.setTid(tid);
+        builder.setCommitId(-1);
         builder.setRegionName(ByteString.copyFromUtf8(regionName));
         builder.setRow(HBaseZeroCopyByteString.wrap(row));
         builder.setAutoCommit(autoCommit);
@@ -589,6 +634,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
       public CheckAndDeleteResponse call(TrxRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndDeleteRequest.Builder builder = CheckAndDeleteRequest.newBuilder();
         builder.setTransactionId(transactionState.getTransactionId());
+        builder.setStartId(transactionState.getStartId());
         builder.setRegionName(ByteString.copyFromUtf8(regionName));
         builder.setRow(HBaseZeroCopyByteString.wrap(row));
         if(family != null)
@@ -629,8 +675,17 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
             retry = false;
           }
 
-          if(result == null || result.getException().contains("closing region")) {
-            Thread.sleep(TransactionalTable.delay);
+          if(result == null || result.getException().contains("closing region")
+                            || result.getException().contains("NewTransactionStartedBefore")) {
+            if (result != null && result.getException().contains("NewTransactionStartedBefore")) {
+               if (LOG.isTraceEnabled()) LOG.trace("CheckAndDelete retrying because region is recovering, "
+                             + " transaction [" + transactionState.getTransactionId() + "]");
+
+               Thread.sleep(TransactionalTable.regionNotReadyDelay);
+            }
+            else{
+               Thread.sleep(TransactionalTable.delay);
+            }
             retry = true;
             transactionState.setRetried(true);
             retryCount++;
@@ -651,8 +706,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 			final byte[] row, final byte[] family, final byte[] qualifier,
 			final byte[] value, final Put put) throws IOException {
 
-		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.checkAndPut row: " + row
-				+ " family: " + family + " qualifier: " + qualifier
+		if (LOG.isTraceEnabled()) LOG.trace("Enter TransactionalTable.checkAndPut row: " + Hex.encodeHexString(row)
+				+ " put.row " + Hex.encodeHexString(put.getRow()) + " family: " + family + " qualifier: " + qualifier
 				+ " value: " + value);
 		if (!Bytes.equals(row, put.getRow())) {
 			throw new IOException("Action's getRow must match the passed row");
@@ -672,6 +727,8 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
       public CheckAndPutResponse call(TrxRegionService instance) throws IOException {
         org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRequest.Builder builder = CheckAndPutRequest.newBuilder();
         builder.setTransactionId(transactionState.getTransactionId());
+        if (LOG.isTraceEnabled()) LOG.trace("checkAndPut, seting request startid: " + transactionState.getStartId());
+        builder.setStartId(transactionState.getStartId());
         builder.setRegionName(ByteString.copyFromUtf8(regionName));
         builder.setRow(HBaseZeroCopyByteString.wrap(row));
         if (family != null)
@@ -711,8 +768,17 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
             retry = false;
           }
 
-          if(result == null || result.getException().contains("closing region")) {
-            Thread.sleep(TransactionalTable.delay);
+          if(result == null || result.getException().contains("closing region")
+                            || result.getException().contains("NewTransactionStartedBefore")) {
+            if (result != null && result.getException().contains("NewTransactionStartedBefore")) {
+               if (LOG.isTraceEnabled()) LOG.trace("CheckAndPut retrying because region is recovering ,"
+                       + " transaction [" + transactionState.getTransactionId() + "]");
+
+               Thread.sleep(TransactionalTable.regionNotReadyDelay);
+            }
+            else{
+               Thread.sleep(TransactionalTable.delay);
+            }
             retry = true;
             transactionState.setRetried(true);
             retryCount++;
@@ -775,6 +841,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 	      public CheckAndPutRegionTxResponse call(TrxRegionService instance) throws IOException {
 	        org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.CheckAndPutRegionTxRequest.Builder builder = CheckAndPutRegionTxRequest.newBuilder();
 	        builder.setTid(tid);
+            builder.setCommitId(-1);
 	        builder.setRegionName(ByteString.copyFromUtf8(regionName));
 	        builder.setRow(HBaseZeroCopyByteString.wrap(row));
 	        if (family != null)
@@ -881,6 +948,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
    	      public DeleteMultipleTransactionalResponse call(TrxRegionService instance) throws IOException {
    	        org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.DeleteMultipleTransactionalRequest.Builder builder = DeleteMultipleTransactionalRequest.newBuilder();
    	        builder.setTransactionId(transactionState.getTransactionId());
+            builder.setStartId(transactionState.getStartId());
    	        builder.setRegionName(ByteString.copyFromUtf8(regionName));
 
    	        for(Delete delete : rowsInSameRegion) {
@@ -908,8 +976,19 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
  	            retry = false;
  	          }
 
- 	          if(result == null || result.getException().contains("closing region")) {
- 	            Thread.sleep(TransactionalTable.delay);
+                if(result == null || result.getException().contains("closing region")
+                     || result.getException().contains("NewTransactionStartedBefore")) {
+                if (result != null && result.getException().contains("NewTransactionStartedBefore")) {
+                   if (LOG.isTraceEnabled()) LOG.trace("delete <List> retrying because region is recovering trRegion ["
+                           + location.getRegionInfo().getEncodedName() + "], endKey: "
+                           + Hex.encodeHexString(location.getRegionInfo().getEndKey())
+                           + " and transaction [" + transactionId + "]");
+
+                   Thread.sleep(TransactionalTable.regionNotReadyDelay);
+                }
+                else{
+                   Thread.sleep(TransactionalTable.delay);
+                }
  	            retry = true;
  	            transactionState.setRetried(true);
  	            retryCount++;
@@ -946,7 +1025,6 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 		List<Put> list = null;
                 int size = 0;
 		for (Put put : puts) {
-			validatePut(put);
 			hlocation = this.getRegionLocation(put.getRow(), false);
                         location = new TransactionRegionLocation(hlocation.getRegionInfo(), hlocation.getServerName());
                 if (LOG.isTraceEnabled()) LOG.trace("put <List> with trRegion [" + location.getRegionInfo().getEncodedName() + "], endKey: "
@@ -976,6 +1054,7 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
 	      public PutMultipleTransactionalResponse call(TrxRegionService instance) throws IOException {
 	        org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.PutMultipleTransactionalRequest.Builder builder = PutMultipleTransactionalRequest.newBuilder();
 	        builder.setTransactionId(transactionState.getTransactionId());
+            builder.setStartId(transactionState.getStartId());
 	        builder.setRegionName(ByteString.copyFromUtf8(regionName));
 
 	        for (Put put : rowsInSameRegion){
@@ -1002,8 +1081,19 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
             retry = false;
           }
 
-          if(result == null || result.getException().contains("closing region")) {
-            Thread.sleep(TransactionalTable.delay);
+          if(result == null || result.getException().contains("closing region")
+                       || result.getException().contains("NewTransactionStartedBefore")) {
+            if (result != null && result.getException().contains("NewTransactionStartedBefore")) {
+               if (LOG.isTraceEnabled()) LOG.trace("put <List> retrying because region is recovering trRegion ["
+                      + location.getRegionInfo().getEncodedName() + "], endKey: "
+                      + Hex.encodeHexString(location.getRegionInfo().getEndKey())
+                      + " and transaction [" + transactionId + "]");
+
+               Thread.sleep(TransactionalTable.regionNotReadyDelay);
+            }
+            else{
+                Thread.sleep(TransactionalTable.delay);
+            }
             retry = true;
             transactionState.setRetried(true);
             retryCount++;
@@ -1020,24 +1110,6 @@ public class TransactionalTable extends HTable implements TransactionalTableClie
      }
 		}
 	
-    // validate for well-formedness
-    public void validatePut(final Put put) throws IllegalArgumentException {
-        if (put.isEmpty()) {
-            throw new IllegalArgumentException("No columns to insert");
-        }
-        if (maxKeyValueSize > 0) {
-            for (List<Cell> list : put.getFamilyCellMap().values()) {
-                for (Cell c : list) {
-                    if (KeyValueUtil.length(c) > maxKeyValueSize) {
-                        throw new IllegalArgumentException("KeyValue size too large");
-                    }
-                }
-            }
-        }
-    }
-
-    private int maxKeyValueSize;
-
     public HRegionLocation getRegionLocation(byte[] row, boolean f)
                                   throws IOException {
         return super.getRegionLocation(row,f);
