@@ -244,8 +244,7 @@ public class SplitBalanceHelper {
                 }
             }
             // Reaching here means pendingListClear.
-            if (LOG.isDebugEnabled())
-                LOG.debug("pendingListClear is true because dropTableRecorded is true " + hri.getRegionNameAsString());
+            LOG.info("pendingListClear is true because dropTableRecorded is true " + hri.getRegionNameAsString());
             return true;
         }
     }
