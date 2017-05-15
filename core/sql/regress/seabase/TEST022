@@ -208,8 +208,18 @@ invoke t022hbm1;
 invoke t022hbm1;
 create table t022hbm1 (a int);
 invoke t022hbm1;
+
+-- join between traf and hbase table with the same name.
+prepare s from select * from t022hbm1, hbase."_MAP_".t022hbm1;
+explain options 'f' s;
+
 drop table t022hbm1;
 invoke t022hbm1;
+
+-- should return error 4056
+prepare s from select * from t022hbm1, hbase."_MAP_".t022hbm1;
+
+prepare s from select * from t022hbm1 x, hbase."_MAP_".t022hbm1 y;
 
 prepare s from select * from t022hbm1;
 execute s;
@@ -359,6 +369,47 @@ insert into hbase."_ROW_".t022hbm2 values ('a11',
            column_create(('cf1:A', '10'), ('cf2:B', '20')));
 invoke t022hbm2;
 select * from t022hbm2;
+cleanup hbase table t022hbm2;
+
+-- registration of external hbase tables
+drop external table if exists t022hbm2;
+drop hbase table t022hbm2;
+create hbase table t022hbm2 (column family 'cf1', column family 'cf2');
+create external table t022hbm2 ("cf1".A int, "cf2".B int, 
+                           "cf1".Z varchar(4) not null primary key) 
+     map to hbase table t022hbm2;
+
+insert into hbase."_ROW_".t022hbm2 values ('a11', 
+           column_create(('cf1:A', '10'), ('cf2:B', '20')));
+invoke t022hbm2;
+select * from t022hbm2;
+
+showddl hbase."_CELL_".t022hbm2;
+get hbase registered tables in catalog trafodion, match '%T022HBM2%';
+register hbase table t022hbm2;
+get hbase registered tables in catalog trafodion, match '%T022HBM2%';
+showddl hbase."_CELL_".t022hbm2;
+showddl hbase."_ROW_".t022hbm2;
+unregister hbase table t022hbm2;
+get hbase registered tables in catalog trafodion, match '%T022HBM2%';
+showddl hbase."_CELL_".t022hbm2;
+
+--showstats for table hbase."_CELL_".t022hbm2 on every column;
+update statistics for table hbase."_CELL_".t022hbm2 on every column;
+showstats for table hbase."_CELL_".t022hbm2 on every column;
+get hbase registered tables in catalog trafodion, match '%T022HBM2%';
+showddl hbase."_CELL_".t022hbm2;
+
+showstats for table hbase."_ROW_".t022hbm2 on every column;
+update statistics for table hbase."_CELL_".t022hbm2 on every column;
+showstats for table hbase."_CELL_".t022hbm2 on every column;
+get hbase registered tables in catalog trafodion, match '%T022HBM2%';
+showddl hbase."_CELL_".t022hbm2;
+
+showstats for table hbase."_MAP_".t022hbm2 on every column;
+update statistics for table hbase."_MAP_".t022hbm2 on every column;
+showstats for table hbase."_MAP_".t022hbm2 on every column;
+showddl hbase."_MAP_".t022hbm2;
 
 -- error cases
 

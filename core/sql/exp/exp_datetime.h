@@ -340,7 +340,7 @@ static
   {
     for (Lng32 i = DATETIME_FORMAT_MIN; i <= DATETIME_FORMAT_MAX; i++)
       {
-        if (strcmp(formatStr, datetimeFormat[i].str) == 0)
+        if (stricmp(formatStr, datetimeFormat[i].str) == 0)
           {
             if (datetimeFormat[i].format != i)
               return -1;
@@ -351,7 +351,7 @@ static
 
     for (Lng32 i = DATETIME_FORMAT_MIN_NUM; i <= DATETIME_FORMAT_MAX_NUM; i++)
       {
-        if (strcmp(formatStr, datetimeFormat[i].str) == 0)
+        if (stricmp(formatStr, datetimeFormat[i].str) == 0)
           {
             if (datetimeFormat[i].format != i)
               return -1;
@@ -362,7 +362,7 @@ static
 
     for (Lng32 i = DATETIME_FORMAT_MIN_UNRESOLVED; i <= DATETIME_FORMAT_MAX_UNRESOLVED; i++)
       {
-        if (strcmp(formatStr, datetimeFormat[i].str) == 0)
+        if (stricmp(formatStr, datetimeFormat[i].str) == 0)
           {
             if (datetimeFormat[i].format != i)
               return -1;

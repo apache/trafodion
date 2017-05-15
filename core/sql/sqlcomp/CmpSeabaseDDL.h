@@ -82,7 +82,7 @@ class StmtDDLDropSequence;
 class StmtDDLDropSchema;
 class StmtDDLAlterSchema;
 
-class StmtDDLRegOrUnregHive;
+class StmtDDLRegOrUnregObject;
 
 // Classes for user management
 class StmtDDLRegisterUser;
@@ -1294,7 +1294,7 @@ protected:
   short createLibmgrProcs(ExeCliInterface * cliInterface);
   short grantLibmgrPrivs(ExeCliInterface *cliInterface);
 
-  short registerHiveTable
+  short registerNativeTable
   (
        const NAString &catalogNamePart,
        const NAString &schemaNamePart,
@@ -1306,7 +1306,7 @@ protected:
        NABoolean isInternal
    );
 
-  short unregisterHiveTable
+  short unregisterNativeTable
   (
        const NAString &catalogNamePart,
        const NAString &schemaNamePart,
@@ -1337,8 +1337,8 @@ protected:
        NABoolean cascade
    );
 
-  void regOrUnregHiveObjects (
-       StmtDDLRegOrUnregHive * regOrUnregHiveNode,
+  void regOrUnregNativeObject (
+       StmtDDLRegOrUnregObject * regOrUnregObject,
        NAString &currCatName, NAString &currSchName);
   
   short adjustHiveExternalSchemas(ExeCliInterface *cliInterface);
@@ -1353,15 +1353,15 @@ protected:
 			   NAString &currCatName, NAString &currSchName);
   
   void seabaseGrantRevoke(
-			  StmtDDLNode                  * stmtDDLNode,
+			  StmtDDLNode * stmtDDLNode,
 			  NABoolean isGrant,
 			  NAString &currCatName, NAString &currSchName,
-                          NABoolean useHBase = FALSE);
+                          NABoolean internalCall = FALSE);
   
-  void seabaseGrantRevokeHBase(StmtDDLNode                  * stmtDDLNode,
-                               NABoolean isGrant,
-                               NAString &currCatName, NAString &currSchName);
-
+  void hbaseGrantRevoke(StmtDDLNode * stmtDDLNode,
+                        NABoolean isGrant,
+                        NAString &currCatName, NAString &currSchName);
+  
   void dropSeabaseSchema(StmtDDLDropSchema * dropSchemaNode);
 
   void alterSeabaseSchema(StmtDDLAlterSchema * alterSchemaNode);

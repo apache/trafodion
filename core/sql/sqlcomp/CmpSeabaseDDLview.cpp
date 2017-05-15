@@ -349,16 +349,23 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
 				.getQualifiedNameAsAnsiString(),
 				vtul[i].getAnsiNameSpace());
       
-      const NAString catalogNamePart = usedObjName.getCatalogNamePartAsAnsiString();
-      const NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
+      NAString catalogNamePart = usedObjName.getCatalogNamePartAsAnsiString();
+      NAString schemaNamePart = usedObjName.getSchemaNamePartAsAnsiString(TRUE);
       const NAString objectNamePart = usedObjName.getObjectNamePartAsAnsiString(TRUE);
       const NAString extUsedObjName = usedObjName.getExternalName(TRUE);
 
+      if (usedObjName.isHBaseMappedExtFormat())
+        {
+          ComConvertHBaseMappedExtToInt(catalogNamePart, schemaNamePart,
+                                        catalogNamePart, schemaNamePart);
+        }
+
       char objType[10];
       Int64 usedObjUID = -1;      
-      if ((CmpCommon::getDefault(HIVE_VIEWS) == DF_ON) &&
-          (catalogNamePart == HIVE_SYSTEM_CATALOG))
-        {
+      if (((CmpCommon::getDefault(HIVE_VIEWS) == DF_ON) &&
+           (catalogNamePart == HIVE_SYSTEM_CATALOG)) ||
+          (catalogNamePart == HBASE_SYSTEM_CATALOG))
+       {
           CorrName cn(objectNamePart,STMTHEAP, schemaNamePart,catalogNamePart);
 
           BindWA bindWA(ActiveSchemaDB(),CmpCommon::context(),FALSE/*inDDL*/);
@@ -370,12 +377,13 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
               return -1; 
             }
 
-          if ((naTable->isHiveTable()) &&
-              (CmpCommon::getDefault(HIVE_NO_REGISTER_OBJECTS) == DF_OFF))
-
+          if (((naTable->isHiveTable()) &&
+               (CmpCommon::getDefault(HIVE_NO_REGISTER_OBJECTS) == DF_OFF)) ||
+              ((naTable->isHbaseCellTable()) || (naTable->isHbaseRowTable())))
             {
-              // register this hive object in traf metadata, if not already 
-              str_sprintf(query, "register internal hive %s if not exists %s.\"%s\".\"%s\" %s",
+              // register this object in traf metadata, if not already 
+              str_sprintf(query, "register internal %s %s if not exists %s.\"%s\".\"%s\" %s",
+                          (naTable->isHiveTable() ? "hive" : "hbase"),
                           (naTable->isView() ? "view" : "table"),
                           catalogNamePart.data(),
                           schemaNamePart.data(),
@@ -402,10 +410,9 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
                   SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in updateViewUsage");
                   return -1; 
                 }
-            } // isHiveTable
+            } // hive or hbase row/cell
 
-          if ((naTable->isHiveTable()) &&
-              (naTable->objectUid().get_value() > 0))
+          if (naTable->objectUid().get_value() > 0)
             {
               usedObjUID = naTable->objectUid().get_value();
               strcpy(objType, 
@@ -419,11 +426,12 @@ short CmpSeabaseDDL::updateViewUsage(StmtDDLCreateView * createViewParseNode,
                 appendErrorObjName(hiveObjsNoUsage, extUsedObjName);
               continue;
             }
-        } // hive table
+        } // hive or hbase table
 
       if (usedObjUID == -1)
         usedObjUID = getObjectUID(cliInterface,
-                                  catalogNamePart.data(), schemaNamePart.data(), 
+                                  catalogNamePart.data(), 
+                                  schemaNamePart.data(), 
                                   objectNamePart.data(),
                                   NULL,
                                   NULL,

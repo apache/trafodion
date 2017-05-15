@@ -150,6 +150,48 @@ NABoolean ComIsHbaseMappedSchemaName (
   return (schName == HBASE_EXT_MAP_SCHEMA);
 }
 
+// external format of an HBase mapped table used by 
+// users: HBASE."_MAP_".<tablename>
+NABoolean ComIsHBaseMappedExtFormat(const NAString &catalogNamePart,
+                                    const NAString &schemaNamePart)
+{
+  if ((catalogNamePart == HBASE_SYSTEM_CATALOG) &&
+      (schemaNamePart == HBASE_MAP_SCHEMA))
+    return TRUE;
+
+  return FALSE;
+}
+
+// internal format of HBase mapped table as stored in traf
+// metadata: TRAFODION."_HB_MAP_".<tablename>
+NABoolean ComIsHBaseMappedIntFormat(const NAString &catalogNamePart,
+                                    const NAString &schemaNamePart)
+{
+  if ((catalogNamePart == TRAFODION_SYSCAT_LIT) &&
+      (schemaNamePart == HBASE_EXT_MAP_SCHEMA))
+    return TRUE;
+
+  return FALSE;
+}
+
+void ComConvertHBaseMappedIntToExt(const NAString &inCatName,
+                                   const NAString &inSchName,
+                                   NAString &outCatName, 
+                                   NAString &outSchName)
+{
+  outCatName = HBASE_SYSTEM_CATALOG;
+  outSchName = HBASE_MAP_SCHEMA;
+}
+
+void ComConvertHBaseMappedExtToInt(const NAString &inCatName,
+                                   const NAString &inSchName,
+                                   NAString &outCatName, 
+                                   NAString &outSchName)
+{
+  outCatName = TRAFODION_SYSCAT_LIT;
+  outSchName = HBASE_EXT_MAP_SCHEMA;
+}
+
 // ----------------------------------------------------------------------------
 // function: ComConvertNativeNameToTrafName
 //

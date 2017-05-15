@@ -2459,7 +2459,7 @@ StmtDDLRegisterUser::bindNode(BindWA * pBindWA)
 }
 
 // -----------------------------------------------------------------------
-// bindNode() for class StmtDDLRegOrUnregHive
+// bindNode() for class StmtDDLRegOrUnregObject
 // -----------------------------------------------------------------------
 //
 ////
@@ -2467,16 +2467,57 @@ StmtDDLRegisterUser::bindNode(BindWA * pBindWA)
 // binding within the Register hive tree.
 //
 ExprNode *
-StmtDDLRegOrUnregHive::bindNode(BindWA * pBindWA)
+StmtDDLRegOrUnregObject::bindNode(BindWA * pBindWA)
 {
   ComASSERT(pBindWA);
 
+  if (storageType_ == HBASE)
+    {
+      if (origObjName_.numberExpanded() == 1)
+        {
+          objQualName_ = QualifiedName(origObjName_.getObjectName(),
+                                       NAString(HBASE_SYSTEM_SCHEMA),
+                                       NAString(HBASE_SYSTEM_CATALOG));
+        }
+      
+     if (origObjName_.numberExpanded() == 2)
+        {
+          *CmpCommon::diags() << DgSqlCode(-1026)
+                              << DgString0(origObjName_.getQualifiedNameAsString());
+          pBindWA->setErrStatus();
+          return NULL;
+        }
+ 
+     if ((origObjName_.numberExpanded() == 3) &&
+         ((origObjName_.getCatalogName() != HBASE_SYSTEM_CATALOG) ||
+          (NOT ((origObjName_.getSchemaName() == HBASE_CELL_SCHEMA) ||
+                (origObjName_.getSchemaName() == HBASE_ROW_SCHEMA) ||
+                (origObjName_.getSchemaName() == HBASE_MAP_SCHEMA)))))
+        {
+          *CmpCommon::diags() << DgSqlCode(-1026)
+                              << DgString0(origObjName_.getQualifiedNameAsString());
+          pBindWA->setErrStatus();
+          return NULL;
+        }
+    }
+  
   if (applyDefaultsAndValidateObject(pBindWA, &objQualName_))
     {
       pBindWA->setErrStatus();
       return this;
     }
-
+  
+  if (((storageType_ == HIVE) &&
+       (objQualName_.getCatalogName() != HIVE_SYSTEM_CATALOG)) ||
+      ((storageType_ == HBASE) &&
+       (objQualName_.getCatalogName() != HBASE_SYSTEM_CATALOG)))
+    {
+      *CmpCommon::diags() << DgSqlCode(-1026)
+                          << DgString0(origObjName_.getQualifiedNameAsString());
+      pBindWA->setErrStatus();
+      return NULL;
+    }
+      
   markAsBound();
   return this;
 }

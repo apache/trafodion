@@ -396,73 +396,6 @@ A            B            C            D
 --- 10 row(s) selected.
 >>
 >>obey TEST009(test_hbase);
->>-- create external tables for precreated tables
->>create external table "baseball" for hbase."_ROW_"."baseball";
-
---- SQL operation complete.
->>create external table "baseball" for hbase."_CELL_"."baseball";
-
---- SQL operation complete.
->>
->>-- should create schemas called "_HB__ROW__" and "_HB__CELL__"
->>execute get_hb_schemas;
-
-SCHEMA_NAME
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-_HB__ROW__                                                                                                                                                                                                                                                      
-_HB__CELL__                                                                                                                                                                                                                                                     
-
---- 2 row(s) selected.
->>
->>-- Verify tables were created
->>invoke trafodion."_HB__ROW__"."baseball";
-
--- Definition of Trafodion external table TRAFODION."_HB__ROW__"."baseball"
--- Definition current  Mon May  1 18:17:41 2017
-
-  (
-    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
-  , COLUMN_DETAILS                   VARCHAR(10000) CHARACTER SET ISO88591
-      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
-  )
-
---- SQL operation complete.
->>invoke trafodion."_HB__CELL__"."baseball";
-
--- Definition of Trafodion external table TRAFODION."_HB__CELL__"."baseball"
--- Definition current  Mon May  1 18:17:42 2017
-
-  (
-    ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
-  , COL_FAMILY                       VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
-  , COL_NAME                         VARCHAR(100) CHARACTER SET ISO88591
-      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
-  , COL_TIMESTAMP                    LARGEINT DEFAULT NULL NOT NULL NOT
-      DROPPABLE
-  , COL_VALUE                        VARCHAR(1000) CHARACTER SET ISO88591
-      COLLATE DEFAULT DEFAULT NULL NOT NULL NOT DROPPABLE
-  )
-
---- SQL operation complete.
->>showddl trafodion."_HB__ROW__"."baseball";
-
-CREATE EXTERNAL TABLE baseball
-  FOR HBASE."_ROW_"."baseball"
-;
-
---- SQL operation complete.
->>showddl trafodion."_HB__CELL__"."baseball";
-
-CREATE EXTERNAL TABLE baseball
-  FOR HBASE."_CELL_"."baseball"
-;
-
---- SQL operation complete.
->>
 >>select count(*) from hbase."_ROW_"."baseball";
 
 (EXPR)              
@@ -491,20 +424,12 @@ ROW_ID      COLS
 
 --- 3 row(s) selected.
 >>
->>-- fails since accesses to the external name are prohibited
->>select * from trafodion."_HB__ROW__"."baseball";
+>>-- error. Cannot create a non-hbase-mapped table
+>>create external table "baseball" for hbase."_ROW_"."baseball";
 
-*** ERROR[4258] Trying to access external table TRAFODION."_HB__ROW__"."baseball" through its external name format. Please use the native table name.
+*** ERROR[3242] This statement is not supported. Reason: Cannot create external table on a native HBase table without the MAP TO option.
 
-*** ERROR[8822] The statement was not prepared.
-
->>
->>drop external table trafodion."_HB__ROW__"."baseball";
-
---- SQL operation complete.
->>drop external table "baseball" for hbase."_CELL_"."baseball";
-
---- SQL operation complete.
+--- SQL operation failed with errors.
 >>
 >>obey TEST009(test_ext);
 >>-- test external table attributes
@@ -980,6 +905,7 @@ CREATE TABLE DATE_DIM
 ;
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM;
+/* ObjectUID = 9189160505820275449 */
 
 /* Trafodion DDL */
 
@@ -1214,6 +1140,7 @@ CREATE TABLE DATE_DIM
 ;
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM;
+/* ObjectUID = 9189160505820275449 */
 
 /* Trafodion DDL */
 

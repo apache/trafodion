@@ -4499,12 +4499,12 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       returnStatus_ = 
         getExprNode()->castToStmtDDLNode()->castToStmtDDLCleanupObjects()->getStatus();
     }
-    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLRegOrUnregHive())
+    else if (getExprNode()->castToStmtDDLNode()->castToStmtDDLRegOrUnregObject())
     {
       isRegister = TRUE;
 
       qualObjName_ = getExprNode()->castToStmtDDLNode()->
-        castToStmtDDLRegOrUnregHive()->getObjNameAsQualifiedName();
+        castToStmtDDLRegOrUnregObject()->getObjNameAsQualifiedName();
     }
 
     if (isCleanup_)
@@ -4548,15 +4548,6 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 
         if (isRegister)
           {
-            if (NOT qualObjName_.isHive())
-              {
-                *CmpCommon::diags() << DgSqlCode(-3242) << 
-                  DgString0("Register/Unregister statement must specify a hive object.");
-                
-                bindWA->setErrStatus();
-                return NULL;
-              }
-
             isHbase_ = TRUE;
           }
 

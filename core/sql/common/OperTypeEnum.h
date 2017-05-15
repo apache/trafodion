@@ -957,7 +957,7 @@ enum OperatorTypeEnum {
                         DDL_REGISTER_COMPONENT,
                         DDL_UNREGISTER_CATALOG,
                         DDL_REGISTER_USER,
-                        DDL_REG_OR_UNREG_HIVE,
+                        DDL_REG_OR_UNREG_OBJECT,
                         DDL_REINITIALIZE_SQL,
                         DDL_REVOKE,
                         DDL_REVOKE_COMPONENT_PRIVILEGE,

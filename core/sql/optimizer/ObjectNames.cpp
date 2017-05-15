@@ -678,7 +678,7 @@ NABoolean QualifiedName::isHbaseMappedName() const
 
 NABoolean QualifiedName::isHbaseCell() const
 {
-  if (isHbase() && (getSchemaName() == "_CELL_"))
+  if (isHbase() && (getSchemaName() == HBASE_CELL_SCHEMA))
     return TRUE;
   else
     return FALSE;
@@ -686,7 +686,7 @@ NABoolean QualifiedName::isHbaseCell() const
 
 NABoolean QualifiedName::isHbaseRow() const
 {
-  if (isHbase() && (getSchemaName() == "_ROW_"))
+  if (isHbase() && (getSchemaName() == HBASE_ROW_SCHEMA))
     return TRUE;
   else
     return FALSE;
@@ -695,7 +695,8 @@ NABoolean QualifiedName::isHbaseRow() const
 NABoolean QualifiedName::isHbaseCellOrRow() const
 {
   if (isHbase() && 
-      ((getSchemaName() == "_CELL_") || (getSchemaName() == "_ROW_")))
+      ((getSchemaName() == HBASE_CELL_SCHEMA) || 
+       (getSchemaName() == HBASE_ROW_SCHEMA)))
     return TRUE;
   else
     return FALSE;

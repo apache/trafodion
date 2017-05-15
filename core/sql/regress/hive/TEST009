@@ -196,29 +196,13 @@ select * from hive.sch_t009.t009t1;
 select * from hive.sch_t009.t009t2;
 
 ?section test_hbase
--- create external tables for precreated tables
-create external table "baseball" for hbase."_ROW_"."baseball";
-create external table "baseball" for hbase."_CELL_"."baseball";
-
--- should create schemas called "_HB__ROW__" and "_HB__CELL__"
-execute get_hb_schemas;
-
--- Verify tables were created
-invoke trafodion."_HB__ROW__"."baseball";
-invoke trafodion."_HB__CELL__"."baseball";
-showddl trafodion."_HB__ROW__"."baseball";
-showddl trafodion."_HB__CELL__"."baseball";
-
 select count(*) from hbase."_ROW_"."baseball";
 select count(*) from hbase."_CELL_"."baseball";
 
 select left(row_id, 10) as row_id, left(column_display(column_details, ('teams:team_number', 'games:visitor_team', 'games:game_time')), 100) as cols from hbase."_ROW_"."baseball";
 
--- fails since accesses to the external name are prohibited
-select * from trafodion."_HB__ROW__"."baseball";
-
-drop external table trafodion."_HB__ROW__"."baseball";
-drop external table "baseball" for hbase."_CELL_"."baseball";
+-- error. Cannot create a non-hbase-mapped table
+create external table "baseball" for hbase."_ROW_"."baseball";
 
 ?section test_ext
 -- test external table attributes

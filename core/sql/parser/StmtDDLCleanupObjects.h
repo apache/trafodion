@@ -70,6 +70,7 @@ public:
     SCHEMA_SHARED_,
     HIVE_TABLE_,
     HIVE_VIEW_,
+    HBASE_TABLE_,
     UNKNOWN_,
     OBSOLETE_
   };

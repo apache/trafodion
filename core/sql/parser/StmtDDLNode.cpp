@@ -183,6 +183,7 @@ StmtDDLGrant::StmtDDLGrant(ElemDDLNode * pPrivileges,
   setChild(INDEX_GRANTEE_LIST, pGranteeList);
   setChild(INDEX_WITH_GRANT_OPTION, pWithGrantOption);
   setChild(INDEX_BY_GRANTOR_OPTION, pByGrantorOption);
+  origObjectName_ = objectQualName_.getQualifiedNameAsAnsiString();
   objectName_ = objectQualName_.getQualifiedNameAsAnsiString();
   //
   // inserts pointers to parse nodes representing privilege
@@ -1067,7 +1068,7 @@ StmtDDLRevoke::StmtDDLRevoke(NABoolean isGrantOptionFor,
   //
   // Fully expand the name. 
   //
-  
+  origObjectName_ = objectQualName_.getQualifiedNameAsAnsiString();  
   objectName_ = objectQualName_.getQualifiedNameAsAnsiString();
  
   //
