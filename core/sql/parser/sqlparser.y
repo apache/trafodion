@@ -15283,7 +15283,7 @@ exe_util_get_statistics : TOK_GET TOK_STATISTICS stats_merge_clause get_statisti
                   {
                     stats =
                       new (PARSERHEAP ()) ExeUtilGetStatistics
-                    (*$5, NULL,
+                    (*$5, ($7 ? (char*)$7->data() : NULL),
                       PARSERHEAP (), SQLCLI_STATS_REQ_QID, (short)$6, -1); /*RtsQueryId::ANY_QUERY_*/
                   }
                   $$ = stats;

@@ -60,8 +60,8 @@
 SortTopN::SortTopN(ULng32 runsize, ULng32 sortmaxmem, ULng32  recsize,
              NABoolean doNotallocRec, ULng32  keysize, 
              SortScratchSpace* scratch, NABoolean iterSort,
-             CollHeap* heap, SortError* sorterror, Lng32 explainNodeId, SortUtil* sortutil):
-             SortAlgo(runsize, recsize, doNotallocRec, keysize, scratch, explainNodeId),
+             CollHeap* heap, SortError* sorterror, Lng32 explainNodeId, ExBMOStats *bmoStats, SortUtil* sortutil):
+             SortAlgo(runsize, recsize, doNotallocRec, keysize, scratch, explainNodeId, bmoStats),
              loopIndex_(0), heap_(heap), sortError_(sorterror),
              sortUtil_(sortutil)
 {
@@ -79,11 +79,6 @@ SortTopN::SortTopN(ULng32 runsize, ULng32 sortmaxmem, ULng32  recsize,
   ex_assert(topNKeys_  != NULL, "Sort: Initial topNKeys_ allocation failed");  
   
   recNum_ = 0;
-  ExOperStats *stat = sortUtil_->config()->getCallingTcb()->getStatsEntry();
-  if (stat)
-    bmoStats_ = stat->castToExBMOStats();
-  else
-    bmoStats_ = NULL;
   if (bmoStats_)
     bmoStats_->updateBMOHeapUsage((NAHeap *)heap_);
 }

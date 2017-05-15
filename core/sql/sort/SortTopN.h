@@ -49,7 +49,7 @@ public:
 
   SortTopN(ULng32 recmax,ULng32 sortmaxmem, ULng32 recsize, NABoolean doNotallocRec, 
   ULng32 keysize, SortScratchSpace* scratch,NABoolean iterQuickSort,
-  CollHeap* heap, SortError* sorterror, Lng32 explainNodeId, SortUtil* sortutil);
+  CollHeap* heap, SortError* sorterror, Lng32 explainNodeId, ExBMOStats *bmoStats, SortUtil* sortutil);
   ~SortTopN(void);
 
   Lng32 sortSend(void* rec, ULng32 len, void* tupp);
@@ -81,7 +81,6 @@ private:
   SortError* sortError_;
   CollHeap* heap_;
   SortUtil* sortUtil_;
-  ExBMOStats *bmoStats_;
 };
 
 #endif

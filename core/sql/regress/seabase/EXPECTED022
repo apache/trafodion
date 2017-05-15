@@ -426,7 +426,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_CELL_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Wed May 10 18:52:26 2017
+-- Definition current  Mon May 15 01:28:23 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -445,7 +445,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_ROW_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Wed May 10 18:52:27 2017
+-- Definition current  Mon May 15 01:28:24 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -465,7 +465,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_CELL_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_CELL_".T022HBT2
--- Definition current  Wed May 10 18:52:28 2017
+-- Definition current  Mon May 15 01:28:24 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -484,7 +484,7 @@ ROW_ID      (EXPR)
 >>invoke hbase."_ROW_".t022hbt2;
 
 -- Definition of Trafodion table HBASE."_ROW_".T022HBT2
--- Definition current  Wed May 10 18:52:28 2017
+-- Definition current  Mon May 15 01:28:25 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -512,14 +512,14 @@ ROW_ID      (EXPR)
                    3
 
 --- 1 row(s) selected.
->>select char_length(col_value) from hbase."_CELL_".t022hbt2;
+>>select char_length(col_value) from hbase."_CELL_".t022hbt2 order by 1;
 
 (EXPR)    
 ----------
 
+     40000
+     40000
     100000
-     40000
-     40000
 
 --- 3 row(s) selected.
 >>select count(*) from hbase."_CELL_".t022hbt2;
@@ -530,14 +530,14 @@ ROW_ID      (EXPR)
                    3
 
 --- 1 row(s) selected.
->>select char_length(col_value) from hbase."_CELL_".t022hbt2;
+>>select char_length(col_value) from hbase."_CELL_".t022hbt2 order by 1;
 
 (EXPR)    
 ----------
 
+     40000
+     40000
     100000
-     40000
-     40000
 
 --- 3 row(s) selected.
 >>select count(*) from hbase."_ROW_".t022hbt2;
@@ -548,13 +548,13 @@ ROW_ID      (EXPR)
                    2
 
 --- 1 row(s) selected.
->>select char_length(column_details) from hbase."_ROW_".t022hbt2;
+>>select char_length(column_details) from hbase."_ROW_".t022hbt2 order by 1;
 
 (EXPR)    
 ----------
 
-    100000
      80022
+    100000
 
 --- 2 row(s) selected.
 >>select left(row_id, 10) row_id, left(column_display(column_details), 40) 
@@ -603,7 +603,7 @@ ROW_ID      (EXPR)
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:52:37 2017
+-- Definition current  Mon May 15 01:28:41 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -619,7 +619,7 @@ ROW_ID      (EXPR)
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:52:38 2017
+-- Definition current  Mon May 15 01:28:41 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -636,7 +636,7 @@ ROW_ID      (EXPR)
 >>invoke t022hbm1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T022HBM1
--- Definition current  Wed May 10 18:52:40 2017
+-- Definition current  Mon May 15 01:28:44 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -667,7 +667,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:52:47 2017
+-- Definition current  Mon May 15 01:28:50 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -727,7 +727,7 @@ a2              ?
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:52:51 2017
+-- Definition current  Mon May 15 01:28:55 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -750,7 +750,7 @@ a2              ?
 >>invoke t022hbm1_like;
 
 -- Definition of Trafodion table TRAFODION.SCH.T022HBM1_LIKE
--- Definition current  Wed May 10 18:52:56 2017
+-- Definition current  Mon May 15 01:29:01 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -811,7 +811,7 @@ a2    ?               ?
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:53:16 2017
+-- Definition current  Mon May 15 01:29:22 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -828,7 +828,7 @@ a2    ?               ?
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:53:19 2017
+-- Definition current  Mon May 15 01:29:25 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -844,7 +844,7 @@ a2    ?               ?
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:53:22 2017
+-- Definition current  Mon May 15 01:29:28 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -876,86 +876,23 @@ a2    ?               ?
 +>        data format native;
 
 --- SQL operation complete.
->>
->>insert into t022hbm1 values ('a', 1);
-
---- 1 row(s) inserted.
->>select * from t022hbm1;
-
-A     B          
-----  -----------
-
-a               1
-
---- 1 row(s) selected.
->>update t022hbm1 set b = b + 1;
-
---- 1 row(s) updated.
->>select * from t022hbm1;
-
-A     B          
-----  -----------
-
-a               2
-
---- 1 row(s) selected.
->>insert into t022hbm1 values ('a', 1);
-
-*** ERROR[8102] The operation is prevented by a unique constraint.
-
---- 0 row(s) inserted.
->> -- should fail
->>insert into t022hbm1 values ('b', null);
-
---- 1 row(s) inserted.
->>select * from t022hbm1;
-
-A     B          
-----  -----------
-
-a               2
-b               ?
-
---- 2 row(s) selected.
->>delete from t022hbm1 where a = 'a';
-
---- 1 row(s) deleted.
->>select * from t022hbm1;
-
-A     B          
-----  -----------
-
-b               ?
-
---- 1 row(s) selected.
->>update t022hbm1 set b = 10;
-
---- 1 row(s) updated.
->>select * from t022hbm1;
-
-A     B          
-----  -----------
-
-b              10
-
---- 1 row(s) selected.
->>update t022hbm1 set b = null;
-
---- 1 row(s) updated.
->>select * from t022hbm1;
-
-A     B          
-----  -----------
-
-b               ?
-
---- 1 row(s) selected.
->>delete from t022hbm1;
-
---- 1 row(s) deleted.
->>select * from t022hbm1;
-
---- 0 row(s) selected.
+>>--This part of the test is being commented out due to non deterministic results
+>>--It needs to be renabled after this JIRA is fixed : TRAFODION-2613
+>>--insert into t022hbm1 values ('a', 1);
+>>--select * from t022hbm1;
+>>--update t022hbm1 set b = b + 1;
+>>--select * from t022hbm1;
+>>--insert into t022hbm1 values ('a', 1); -- should fail
+>>--insert into t022hbm1 values ('b', null);
+>>--select * from t022hbm1;
+>>--delete from t022hbm1 where a = 'a';
+>>--select * from t022hbm1;
+>>--update t022hbm1 set b = 10;
+>>--select * from t022hbm1;
+>>--update t022hbm1 set b = null;
+>>--select * from t022hbm1;
+>>--delete from t022hbm1;
+>>--select * from t022hbm1;
 >>
 >>drop external table t022hbm1;
 
@@ -970,7 +907,7 @@ b               ?
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:53:41 2017
+-- Definition current  Mon May 15 01:29:41 2017
 
   (
     "cf".A                           INT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -994,7 +931,7 @@ b               ?
 >>insert into t022hbm1 values (-1, -2, -3);
 
 --- 1 row(s) inserted.
->>select * from t022hbm1;
+>>select * from t022hbm1 order by 1;
 
 A            B            C          
 -----------  -----------  -----------
@@ -1007,7 +944,7 @@ A            B            C
 >>upsert into t022hbm1 values (1,2,4);
 
 --- 1 row(s) inserted.
->>select * from t022hbm1;
+>>select * from t022hbm1 order by 1;
 
 A            B            C          
 -----------  -----------  -----------
@@ -1030,7 +967,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:53:47 2017
+-- Definition current  Mon May 15 01:29:47 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1053,7 +990,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:53:52 2017
+-- Definition current  Mon May 15 01:29:52 2017
 
   (
     "cf".A                           CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1075,7 +1012,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:54:00 2017
+-- Definition current  Mon May 15 01:29:56 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1097,7 +1034,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:54:05 2017
+-- Definition current  Mon May 15 01:30:01 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1120,7 +1057,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:54:10 2017
+-- Definition current  Mon May 15 01:30:06 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1144,7 +1081,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:54:15 2017
+-- Definition current  Mon May 15 01:30:11 2017
 
   (
     "cf".A                           CHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1167,7 +1104,7 @@ A            B            C
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:54:20 2017
+-- Definition current  Mon May 15 01:30:15 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE
@@ -1219,7 +1156,7 @@ A            B            C
 >>invoke t022hbm2;
 
 -- Definition of Trafodion HBase mapped table T022HBM2
--- Definition current  Wed May 10 18:54:36 2017
+-- Definition current  Mon May 15 01:30:31 2017
 
   (
     "cf1".A                          INT DEFAULT NULL
@@ -1265,7 +1202,7 @@ A            B            Z
 >>invoke t022hbm2;
 
 -- Definition of Trafodion HBase mapped table T022HBM2
--- Definition current  Wed May 10 18:54:54 2017
+-- Definition current  Mon May 15 01:30:52 2017
 
   (
     "cf1".A                          INT DEFAULT NULL
@@ -1346,7 +1283,7 @@ CREATE TABLE HBASE."_CELL_".T022HBM2
 CREATE HBASE TABLE T022HBM2 ( COLUMN FAMILY '#1')
 
 REGISTER HBASE TABLE T022HBM2;
-/* ObjectUID = 8119556248046151337 */
+/* ObjectUID = 8642537124144485947 */
 
 --- SQL operation complete.
 >>showddl hbase."_ROW_".t022hbm2;
@@ -1367,7 +1304,7 @@ CREATE TABLE HBASE."_ROW_".T022HBM2
 CREATE HBASE TABLE T022HBM2 ( COLUMN FAMILY '#1')
 
 REGISTER HBASE TABLE T022HBM2;
-/* ObjectUID = 8119556248046151348 */
+/* ObjectUID = 8642537124144485957 */
 
 --- SQL operation complete.
 >>unregister hbase table t022hbm2;
@@ -1402,28 +1339,31 @@ CREATE HBASE TABLE T022HBM2 ( COLUMN FAMILY '#1')
 >>
 >>showstats for table hbase."_CELL_".t022hbm2 on every column;
 
-*** ERROR[9200] UPDATE STATISTICS for table HBASE._CELL_.T022HBM2 encountered an error (4082) from statement .
+Histogram data for Table HBASE."_CELL_".T022HBM2
+Table ID: 0
 
-*** ERROR[4082] Object TRAFODION."_HBASESTATS_".SB_HISTOGRAMS does not exist or is inaccessible.
+   Hist ID # Ints    Rowcount         UEC Colname(s)
+========== ====== =========== =========== ===========================
 
-*** ERROR[8822] The statement was not prepared.
+No Histograms exist for the requested columns or groups
 
---- SQL operation failed with errors.
+
+--- SQL operation complete.
 >>update statistics for table hbase."_CELL_".t022hbm2 on every column;
 
 --- SQL operation complete.
 >>showstats for table hbase."_CELL_".t022hbm2 on every column;
 
 Histogram data for Table HBASE."_CELL_".T022HBM2
-Table ID: 8224264939402516521
+Table ID: 8849702707055529909
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-2014915224      1           2           1 ROW_ID
-2014915219      2           2           2 COL_FAMILY
-2014915214      2           2           2 COL_NAME
-2014915209      1           2           1 COL_TIMESTAMP
-2014915204      2           2           2 COL_VALUE
+2003317081      1           2           1 ROW_ID
+2003317076      2           2           2 COL_FAMILY
+2003317071      2           2           2 COL_NAME
+2003317066      1           2           1 COL_TIMESTAMP
+2003317061      2           2           2 COL_VALUE
 
 
 --- SQL operation complete.
@@ -1477,15 +1417,15 @@ No Histograms exist for the requested columns or groups
 >>showstats for table hbase."_CELL_".t022hbm2 on every column;
 
 Histogram data for Table HBASE."_CELL_".T022HBM2
-Table ID: 8224264939402516521
+Table ID: 8849702707055529909
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-2014915225      1           2           1 ROW_ID
-2014915218      2           2           2 COL_FAMILY
-2014915215      2           2           2 COL_NAME
-2014915208      1           2           1 COL_TIMESTAMP
-2014915205      2           2           2 COL_VALUE
+2003317080      1           2           1 ROW_ID
+2003317077      2           2           2 COL_FAMILY
+2003317070      2           2           2 COL_NAME
+2003317067      1           2           1 COL_TIMESTAMP
+2003317060      2           2           2 COL_VALUE
 
 
 --- SQL operation complete.
@@ -1524,7 +1464,7 @@ CREATE HBASE TABLE T022HBM2 ( COLUMN FAMILY '#1')
 >>showstats for table hbase."_MAP_".t022hbm2 on every column;
 
 Histogram data for Table HBASE."_MAP_".T022HBM2
-Table ID: 8119556248046150805
+Table ID: 8642537124144485432
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
@@ -1539,13 +1479,13 @@ No Histograms exist for the requested columns or groups
 >>showstats for table hbase."_MAP_".t022hbm2 on every column;
 
 Histogram data for Table HBASE."_MAP_".T022HBM2
-Table ID: 8119556248046150805
+Table ID: 8642537124144485432
 
    Hist ID # Ints    Rowcount         UEC Colname(s)
 ========== ====== =========== =========== ===========================
-2035453721      1           1           1 A
-2035453716      1           1           1 B
-2035453711      1           1           1 Z
+2023711938      1           1           1 A
+2023711933      1           1           1 B
+2023711928      1           1           1 Z
 
 
 --- SQL operation complete.
@@ -1585,7 +1525,7 @@ a1             10
 >>invoke t022hbm1;
 
 -- Definition of Trafodion HBase mapped table T022HBM1
--- Definition current  Wed May 10 18:55:45 2017
+-- Definition current  Mon May 15 01:31:41 2017
 
   (
     "cf".A                           VARCHAR(4) CHARACTER SET ISO88591 COLLATE

@@ -1199,7 +1199,7 @@ public:
   {
     scratchOverflowMode_ = overflowMode;
   }
-  inline void setTopN(Int64 size) 
+  inline void setTopN(Int32 size) 
   { 
     topN_ = size;
   }
@@ -1207,7 +1207,11 @@ public:
   static const char *getScratchOverflowMode(Int16 overflowMode);
   ExTimeStats &getScratchIOTimer() { return timer_; }
   inline void setScratchIOSize(Int64 size) { scratchIOSize_ = size; }
-
+  const char *getBmoPhaseStr();
+  inline void setBmoPhase(Int16 phase) { phase_ = phase; }
+  inline Int16 getBmoPhase() { return phase_; }
+  void resetInterimRowCount() { interimRowCount_ = 0;}
+  void incInterimRowCount() { interimRowCount_++; }
 private:
   ExTimeStats timer_;
   Int32 bmoHeapAlloc_;
@@ -1225,6 +1229,8 @@ private:
   Int64 scratchIOMaxTime_;
   Int16 scratchOverflowMode_;   // 0 - disk 1 - SSD
   Int32 topN_;                 // TOPN value
+  Int64 interimRowCount_;
+  Int16 phase_;
 };
 
 
@@ -1453,13 +1459,15 @@ private:
   char *queryId_;
   Lng32 queryIdLen_;
   Int32 scratchFileCount_;
-  Int32 scratchBufferBlockSize_;
-  Int64 scratchBufferBlockRead_;
-  Int64 scratchBufferBlockWritten_;
+  Int32 spaceBufferSize_;
+  Int64 spaceBufferCount_;
+  Int32 scratchIOSize_;
   Int64 scratchReadCount_;
   Int64 scratchWriteCount_;
+  Int64 interimRowCount_;
+  Int64 scratchIOMaxTime_;
   Int64 udrCpuTime_;
-  Int64 topN_;
+  Int32 topN_;
   // process id of this fragment instance (to correlate it with MEASURE data)
   // Also used by logic on runtimestats/CancelBroker.cpp
   SB_Phandle_Type phandle_;
@@ -2831,13 +2839,15 @@ private:
   Int64 localCpuTime_;
   Int16 scratchOverflowMode_;
   Int32 scratchFileCount_;
-  Int32 scratchBufferBlockSize_;
-  Int64 scratchBufferBlockRead_;
-  Int64 scratchBufferBlockWritten_;
+  Int32 spaceBufferSize_;
+  Int64 spaceBufferCount_;
   Int64 scratchReadCount_;
   Int64 scratchWriteCount_;
   Int64 udrCpuTime_;
-  Int64 topN_;
+  Int32 topN_;
+  Int32 scratchIOSize_;
+  Int64 interimRowCount_;
+  Int64 scratchIOMaxTime_;
 };
 
 

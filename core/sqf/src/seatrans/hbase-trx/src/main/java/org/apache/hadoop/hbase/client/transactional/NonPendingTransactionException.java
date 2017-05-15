@@ -1,7 +1,5 @@
-<?xml version="1.0"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-<!--
-     * @@@ START COPYRIGHT @@@
+/**
+* @@@ START COPYRIGHT @@@
 *
 * Licensed to the Apache Software Foundation (ASF) under one
 * or more contributor license agreements.  See the NOTICE file
@@ -21,22 +19,29 @@
 * under the License.
 *
 * @@@ END COPYRIGHT @@@
--->
- 
-<configuration supports_final="false">
-  <property>
-    <name>content</name>
-    <display-name>traf-cluster-env template</display-name>
-    <description>Template for cluster-env.sh file</description>
-    <value>
-export NODE_LIST="{{traf_nodes}}"
-export MY_NODES="{{traf_w_nodes}}"
-export node_count="{{traf_node_count}}"
-export CLUSTERNAME="{{cluster_name}}"
+**/
 
-    </value>
-    <value-attributes>
-      <type>content</type>
-    </value-attributes>
-  </property>
-</configuration>
+package org.apache.hadoop.hbase.client.transactional;
+
+import org.apache.hadoop.hbase.DoNotRetryIOException;
+
+/**
+ * Thrown if a region server receives a commit before a commit request
+ */
+public class NonPendingTransactionException extends DoNotRetryIOException {
+
+  private static final long serialVersionUID = 698575374929591099L;
+
+  /** constructor */
+  public NonPendingTransactionException() {
+    super();
+  }
+
+  /**
+   * Constructor
+   * @param s message
+   */
+  public NonPendingTransactionException(String s) {
+    super(s);
+  }
+}

@@ -178,11 +178,11 @@ insert into hbase."_ROW_".t022hbt2 values
                                        ('cf:1a', repeat('a', 40000)),
                                        ('cf:1b', repeat('z', 40000))));
 select count(*) from hbase."_CELL_".t022hbt2;
-select char_length(col_value) from hbase."_CELL_".t022hbt2;
+select char_length(col_value) from hbase."_CELL_".t022hbt2 order by 1;
 select count(*) from hbase."_CELL_".t022hbt2;
-select char_length(col_value) from hbase."_CELL_".t022hbt2;
+select char_length(col_value) from hbase."_CELL_".t022hbt2 order by 1;
 select count(*) from hbase."_ROW_".t022hbt2;
-select char_length(column_details) from hbase."_ROW_".t022hbt2;
+select char_length(column_details) from hbase."_ROW_".t022hbt2 order by 1;
 select left(row_id, 10) row_id, left(column_display(column_details), 40) 
            from hbase."_ROW_".t022hbt2;
 
@@ -268,22 +268,23 @@ create external table t022hbm1 (a varchar(4) not null, b int)
         attribute default column family 'cf'
         map to hbase table t022hbm1
         data format native;
-
-insert into t022hbm1 values ('a', 1);
-select * from t022hbm1;
-update t022hbm1 set b = b + 1;
-select * from t022hbm1;
-insert into t022hbm1 values ('a', 1); -- should fail
-insert into t022hbm1 values ('b', null);
-select * from t022hbm1;
-delete from t022hbm1 where a = 'a';
-select * from t022hbm1;
-update t022hbm1 set b = 10;
-select * from t022hbm1;
-update t022hbm1 set b = null;
-select * from t022hbm1;
-delete from t022hbm1;
-select * from t022hbm1;
+--This part of the test is being commented out due to non deterministic results
+--It needs to be renabled after this JIRA is fixed : TRAFODION-2613
+--insert into t022hbm1 values ('a', 1);
+--select * from t022hbm1;
+--update t022hbm1 set b = b + 1;
+--select * from t022hbm1;
+--insert into t022hbm1 values ('a', 1); -- should fail
+--insert into t022hbm1 values ('b', null);
+--select * from t022hbm1;
+--delete from t022hbm1 where a = 'a';
+--select * from t022hbm1;
+--update t022hbm1 set b = 10;
+--select * from t022hbm1;
+--update t022hbm1 set b = null;
+--select * from t022hbm1;
+--delete from t022hbm1;
+--select * from t022hbm1;
 
 drop external table t022hbm1;
 create external table t022hbm1 (a int not null, b int not null, c int) 
@@ -296,9 +297,9 @@ insert into t022hbm1 values (1,2,3);
 insert into t022hbm1 values (1,2,3);
 insert into t022hbm1 values (1, 1, 1);
 insert into t022hbm1 values (-1, -2, -3);
-select * from t022hbm1;
+select * from t022hbm1 order by 1;
 upsert into t022hbm1 values (1,2,4);
-select * from t022hbm1;
+select * from t022hbm1 order by 1;
 
 -- various serialization options
 drop external table t022hbm1;

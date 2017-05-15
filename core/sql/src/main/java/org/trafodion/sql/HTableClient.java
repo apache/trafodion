@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableSet;
 
+import org.apache.commons.codec.binary.Hex;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.Executors;
@@ -42,6 +43,7 @@ import java.nio.LongBuffer;
 import java.nio.ByteOrder;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.client.Delete;
@@ -51,10 +53,12 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.client.coprocessor.AggregationClient;
 import org.apache.hadoop.hbase.client.transactional.RMInterface;
 import org.apache.hadoop.hbase.client.transactional.TransactionalAggregationClient;
+import org.apache.hadoop.hbase.client.transactional.TransactionalTable;
 import org.apache.hadoop.hbase.client.transactional.TransactionState;
 
 import org.apache.log4j.Logger;
@@ -262,6 +266,7 @@ public class HTableClient {
 
 	   public void release() throws IOException
 	   {
+         if (logger.isTraceEnabled()) logger.trace("HTableClient.release(" + (tableName == null ? " tableName is null " : tableName) + ") called.");
 	     if (admin != null)
 	     {
 	       admin.close();
@@ -793,9 +798,13 @@ public class HTableClient {
                                  int espNum,
                                  int versions)
 	        throws IOException {
-	  if (logger.isTraceEnabled()) logger.trace("Enter startScan() " + tableName + " txid: " + transID+ " CacheBlocks: " + cacheBlocks + " numCacheRows: " + numCacheRows + " Bulkread: " + useSnapshotScan);
 
 	  Scan scan;
+
+	  if (logger.isTraceEnabled()) logger.trace("Enter startScan() " + tableName + " txid: " + transID + " startRow="
+			    + ((startRow != null) ? (Bytes.equals(startRow, HConstants.EMPTY_START_ROW) ? "INFINITE" : Hex.encodeHexString(startRow)) : "NULL")
+			    + " stopRow=" + ((stopRow != null) ? (Bytes.equals(stopRow, HConstants.EMPTY_START_ROW) ? "INFINITE" : Hex.encodeHexString(stopRow)) : "NULL")
+		        + " CacheBlocks: " + cacheBlocks + " numCacheRows: " + numCacheRows + " Bulkread: " + useSnapshotScan);
 
 	  if (startRow != null && startRow.toString() == "")
 	    startRow = null;
@@ -1351,8 +1360,8 @@ public class HTableClient {
                                  boolean asyncOperation,
                                  final boolean useRegionXn) throws IOException {
 
-            if (logger.isTraceEnabled()) logger.trace("Enter deleteRow(" + new String(rowID) + ", "
-                                                      + timestamp + ") " + tableName);
+            if (logger.isTraceEnabled()) logger.trace("Enter deleteRow transID " + transID
+                  + " (" + new String(rowID) + ", " + timestamp + ") " + tableName);
             
             final Delete del;
             if (timestamp == -1)
@@ -1379,9 +1388,10 @@ public class HTableClient {
                             else {
                                 table.delete(del);
                             }
-                            return true;
+                            return new Boolean(res);
                         }
                     });
+		    return true;
             }
             else {
                 if (useTRex && (transID != 0)) {
@@ -1402,7 +1412,8 @@ public class HTableClient {
 		      long timestamp,
                       boolean asyncOperation) throws IOException {
 
-	        if (logger.isTraceEnabled()) logger.trace("Enter deleteRows() " + tableName);
+	        if (logger.isTraceEnabled()) logger.trace("Enter deleteRowsInt() transID "
+	              + transID + " " + tableName);
 
 		final List<Delete> listOfDeletes = new ArrayList<Delete>();
 		listOfDeletes.clear();
@@ -1463,9 +1474,8 @@ public class HTableClient {
 					 byte[] columnToCheck, byte[] colValToCheck,
 					 long timestamp, final boolean useRegionXn) throws IOException {
 
-            if (logger.isTraceEnabled()) logger.trace("Enter checkAndDeleteRow(" + new String(rowID) + ", "
-                                                      + new String(columnToCheck) + ", " + new String(colValToCheck) + ", " + timestamp + ") " + tableName);
-            
+            if (logger.isTraceEnabled()) logger.trace("Enter checkAndDeleteRow transID " + transID
+                    + " (" + new String(rowID) + ", "  + new String(columnToCheck) + ", " + new String(colValToCheck) + ", " + timestamp + ") " + tableName);
             Delete del;
             if (timestamp == -1)
                 del = new Delete(rowID);
@@ -1503,7 +1513,10 @@ public class HTableClient {
                               final boolean useRegionXn) throws IOException, InterruptedException, 
                           ExecutionException 
 	{
-		if (logger.isTraceEnabled()) logger.trace("Enter putRow() " + tableName);
+		if (logger.isTraceEnabled()) logger.trace("Enter putRow() " + tableName + 
+							  " transID: " + transID +
+							  " useTRex: " + useTRex +
+							  " useRegionXn: " + useRegionXn);
 
 	 	final Put put;
 		ByteBuffer bb;
@@ -1618,8 +1631,9 @@ public class HTableClient {
                        long timestamp, boolean asyncOperation)
 			throws IOException, InterruptedException, ExecutionException  {
 
-		if (logger.isTraceEnabled()) logger.trace("Enter putRows() " + tableName);
-
+		if (logger.isTraceEnabled()) logger.trace("Enter putRows() " + tableName +
+							  " transID: " + transID + 
+							  " useTRex: " + useTRex);
 		Put put;
 		ByteBuffer bbRows, bbRowIDs;
 		short numCols, numRows;
@@ -1725,16 +1739,19 @@ public class HTableClient {
 		    Configuration customConf = connection.getConfiguration();
                     long rowCount = 0;
 
-                    if (transID > 0) {
-		      TransactionalAggregationClient aggregationClient = 
+       if (transID > 0) {
+          TransactionalAggregationClient aggregationClient = 
                           new TransactionalAggregationClient(customConf, connection);
 		      Scan scan = new Scan();
 		      scan.addFamily(colFamily);
 		      scan.setCacheBlocks(false);
 		      final ColumnInterpreter<Long, Long, EmptyMsg, LongMsg, LongMsg> ci =
-			new LongColumnInterpreter();
+              new LongColumnInterpreter();
 		      byte[] tname = getTableName().getBytes();
-		      rowCount = aggregationClient.rowCount(transID, 
+              TransactionalTable lv_ttable = new TransactionalTable(getTableName(), connection);
+              TransactionState ts = table.registerTransaction(lv_ttable, transID, startRowID);
+
+		      rowCount = aggregationClient.rowCount(transID, ts.getStartId(),
                         org.apache.hadoop.hbase.TableName.valueOf(getTableName()),
                         ci,
                         scan);
