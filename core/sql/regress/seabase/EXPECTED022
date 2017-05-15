@@ -1337,18 +1337,7 @@ CREATE HBASE TABLE T022HBM2 ( COLUMN FAMILY '#1')
 
 --- SQL operation complete.
 >>
->>showstats for table hbase."_CELL_".t022hbm2 on every column;
-
-Histogram data for Table HBASE."_CELL_".T022HBM2
-Table ID: 0
-
-   Hist ID # Ints    Rowcount         UEC Colname(s)
-========== ====== =========== =========== ===========================
-
-No Histograms exist for the requested columns or groups
-
-
---- SQL operation complete.
+>>--showstats for table hbase."_CELL_".t022hbm2 on every column;
 >>update statistics for table hbase."_CELL_".t022hbm2 on every column;
 
 --- SQL operation complete.

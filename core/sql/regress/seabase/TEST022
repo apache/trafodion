@@ -394,7 +394,7 @@ unregister hbase table t022hbm2;
 get hbase registered tables in catalog trafodion, match '%T022HBM2%';
 showddl hbase."_CELL_".t022hbm2;
 
-showstats for table hbase."_CELL_".t022hbm2 on every column;
+--showstats for table hbase."_CELL_".t022hbm2 on every column;
 update statistics for table hbase."_CELL_".t022hbm2 on every column;
 showstats for table hbase."_CELL_".t022hbm2 on every column;
 get hbase registered tables in catalog trafodion, match '%T022HBM2%';
