@@ -276,7 +276,7 @@ select * from hive.hive.t; -- explicit table name
 
 1. The value `_n_` is determined by `CQD HIVE_MAX_STRING_LENGTH`. See the
 {docs-url}/cqd_reference/index.hmtl[{project-name} Control Query Default (CQD) Reference Guide].
-2. If p is less than 18, decimal (precision, scale) is mapped to decimal (precision, scale).
+2. If p is less than or equal to 18, decimal (precision, scale) is mapped to decimal (precision, scale).
 3. If p is greater than 18, decimal (precision, scale) is mapped to numeric (precision, scale).
 4. Hive supports timestamps with nanosecond resolution (precision of 9). {project-name} SQL supports only microsecond resolution (precision 6).
 
