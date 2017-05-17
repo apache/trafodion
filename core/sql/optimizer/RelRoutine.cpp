@@ -487,6 +487,18 @@ void TableMappingUDF::recomputeOuterReferences()
   exprSet.getLeafValuesForCoverTest(leafExprSet, emptyGA, emptySet); 
   leafExprSet += getSelectionPred();
 
+  // Also add any values mentioned in the select list, order by or
+  // partition by of the child queries. Those may contain expressions
+  // that are not stored anywhere else and may not be evaluated in the
+  // child. For example, if the child query is "select a, current_date..."
+  // then the child may only produce a, but not current_date.
+  for (CollIndex c=0; c<getArity(); c++)
+    {
+      leafExprSet += childInfo_[c]->getPartitionBy();
+      leafExprSet.insertList(childInfo_[c]->getOrderBy());
+      leafExprSet.insertList(childInfo_[c]->getOutputs());
+    }
+
   leafExprSet.weedOutUnreferenced(outerRefs);
 
   // Add to outerRefs those that my children need.
