@@ -34,6 +34,7 @@
 #define CONNECTION_TIMEOUT_DEFAULT	60
 #define LOGIN_TIMEOUT_DEFAULT		60
 #define	QUERY_TIMEOUT_DEFAULT		0
+#define IOCOMPRESSION_DEFAULT       1000
 #define FETCH_BUFFER_SIZE_DEFAULT	512 * 1024
 //#define FETCH_BUFFER_SIZE_DEFAULT   0
 
@@ -515,6 +516,28 @@ short CDataSource::readDSValues(char *DSName, char* transError)
 	else
 		m_DSIOCompression = 0;
 
+	//get threshold of compression ,default is 1000
+	keyValueLength = sizeof(keyValueBuf);
+	error = RegQueryValueEx(keyHandle,
+		"Compressionlimits",
+		NULL,				// Reserved
+		&keyValueType,
+		keyValueBuf,
+		&keyValueLength);
+
+	if (error == ERROR_SUCCESS)
+	{
+		if (strcmp((const char *)keyValueBuf, SYSTEM_DEFAULT) == 0)
+			m_DSIOCompressionlimits = IOCOMPRESSION_DEFAULT;
+		else
+		{
+			m_DSIOCompressionlimits = atol((const char *)keyValueBuf);
+		}
+
+	}
+	else
+		m_DSIOCompressionlimits = IOCOMPRESSION_DEFAULT;
+
 	keyValueLength = sizeof(keyValueBuf);
 	error = RegQueryValueEx(keyHandle,
 						"RowsetErrorRecovery",
@@ -731,6 +754,15 @@ void CDataSource::updateDSValues(short DSNType, CONNECT_FIELD_ITEMS *connectFiel
 				}
 				else{
 					m_DSIOCompression = atol(AttrValue);
+				}
+				break;
+			    case KEY_COMPRESSIONLIMIT:
+				if (stricmp(AttrValue, SYSTEM_DEFAULT) == 0){
+					  m_DSIOCompressionlimits = IOCOMPRESSION_DEFAULT;
+				}
+				else
+				{
+				         m_DSIOCompressionlimits = atol((const char *)AttrValue);
 				}
 				break;
 			default:
