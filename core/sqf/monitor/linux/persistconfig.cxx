@@ -191,8 +191,10 @@ const char *FormatZidString( FormatZid_t type )
 
 CPersistConfig::CPersistConfig( persistConfigInfo_t &persistConfigInfo )
               : persistPrefix_(persistConfigInfo.persistPrefix)
+              , processName_("")
               , processNamePrefix_(persistConfigInfo.processNamePrefix)
               , processNameFormat_(persistConfigInfo.processNameFormat)
+              , stdoutFile_("")
               , stdoutPrefix_(persistConfigInfo.stdoutPrefix)
               , stdoutFormat_(persistConfigInfo.stdoutFormat)
               , programName_(persistConfigInfo.programName)
@@ -294,6 +296,44 @@ const char *CPersistConfig::GetProcessName( int nid )
     return( processName_.c_str() );
 }
 
+const char *CPersistConfig::GetStdoutFile( int nid )
+{
+    const char method_name[] = "CPersistConfig::GetStdoutFile";
+    TRACE_ENTRY;
+
+    char nidStr[MAX_PROCESS_NAME];
+
+    switch (stdoutNidFormat_)
+    {
+    case Nid_ALL:
+    case Nid_RELATIVE:
+        if (nid == -1)
+        {
+            stdoutFile_ = stdoutPrefix_;
+        }
+        else
+        {
+            sprintf( nidStr, "%d", nid );
+            stdoutFile_ = stdoutPrefix_ + nidStr;
+        }
+        break;
+    case Nid_Undefined:
+        stdoutFile_ = stdoutPrefix_;
+    }
+
+    if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+    {
+        trace_printf( "%s@%d stdout prefix=%s, file=%s, format=%s\n"
+                    , method_name, __LINE__
+                    , stdoutPrefix_.c_str()
+                    , stdoutFile_.c_str()
+                    , FormatNidString(stdoutNidFormat_));
+    }
+
+    TRACE_EXIT;
+    return( stdoutFile_.c_str() );
+}
+
 bool CPersistConfig::IsPersistConfig( const char *processName, int nid )
 {
     const char method_name[] = "CPersistConfig:IsPersistConfig";
@@ -305,6 +345,44 @@ bool CPersistConfig::IsPersistConfig( const char *processName, int nid )
     if ( name.compare( processName ) == 0 )
     {
         match = true;
+    }
+
+    TRACE_EXIT;
+    return( match );
+}
+
+bool CPersistConfig::IsZoneMatch( int zid )
+{
+    const char method_name[] = "CPersistConfig:IsZoneMatch";
+    TRACE_ENTRY;
+    
+    bool match = false;
+
+    switch (stdoutNidFormat_)
+    {
+    case Zid_ALL:
+        if (zid == -1)
+        {
+            match = false;
+        }
+        else
+        {
+            match = true;
+        }
+        break;
+    case Zid_RELATIVE:
+        if (zid == -1)
+        {
+            match = false;
+        }
+        else
+        {
+            match = true;
+        }
+        break;
+    case Zid_Undefined:
+        match = true;
+        break;
     }
 
     TRACE_EXIT;

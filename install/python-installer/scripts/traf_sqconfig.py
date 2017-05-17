@@ -57,10 +57,6 @@ def run():
     with open(sqconfig_file, 'w') as f:
         f.writelines(lines)
 
-    # append the current persist section to the Trafodion configuration file
-    run_cmd('echo "sed \'1,20d\' %s >> %s"' % (sqconfig_persist_file, sqconfig_file))
-    run_cmd('sed \'1,20d\' %s >> %s' % (sqconfig_persist_file, sqconfig_file))
-
     print 'sqconfig generated successfully!'
 
     run_cmd('sqgen')

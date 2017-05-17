@@ -110,10 +110,11 @@ public:
     inline CPersistConfig *GetNext( void ){ return( next_); }
 
     inline const char   *GetPersistPrefix( void ) { return( persistPrefix_.c_str() ); }
-    const char          *GetProcessName( int nid );
+           const char   *GetProcessName( int nid );
     inline const char   *GetProcessNamePrefix( void ) { return( processNamePrefix_.c_str() ); }
     inline const char   *GetProcessNameFormat( void ) { return( processNameFormat_.c_str() ); }
     inline FormatNid_t   GetProcessNameNidFormat( void ) { return( processNameNidFormat_ ); }
+           const char   *GetStdoutFile( int nid );
     inline const char   *GetStdoutPrefix( void ) { return( stdoutPrefix_.c_str() ); }
     inline const char   *GetStdoutFormat( void ) { return( stdoutFormat_.c_str() ); }
     inline FormatNid_t   GetStdoutNidFormat( void ) { return( stdoutNidFormat_ ); }
@@ -124,7 +125,8 @@ public:
     inline bool          GetRequiresDTM( void ) { return ( requiresDTM_ ); }
     inline int           GetPersistRetries( void ) { return ( persistRetries_ ); }
     inline int           GetPersistWindow( void ) { return ( persistWindow_ ); }
-    inline bool          IsPersistConfig( const char *processName, int nid );
+           bool          IsPersistConfig( const char *processName, int nid );
+           bool          IsZoneMatch( int zid );
 
 protected:
 private:
@@ -132,6 +134,7 @@ private:
     string          processName_;
     string          processNamePrefix_;
     string          processNameFormat_;
+    string          stdoutFile_;
     string          stdoutPrefix_;
     string          stdoutFormat_;
     string          programName_;

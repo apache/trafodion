@@ -78,10 +78,6 @@ done
 
 echo "end node" >> $sqconfig
 
-# The following sed is dependent on the nunber of lines in the copyright,
-# as they are excluded. If the copyright gets larger this needs to change.
-sed '1,20d' $LOCAL_WORKDIR/sqconfig_persist.txt >> $sqconfig
-
 sudo cp $sqconfig $UNTAR_DIR
 sudo cp $sqconfig $TRAF_USER_DIR/sqconfig
 sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/sqconfig

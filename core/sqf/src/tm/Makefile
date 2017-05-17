@@ -131,6 +131,7 @@ IDSRVOBJS	= $(OUTDIR)/idtmsrv.o \
 ALLOBJS	= $(LIBSTMOBJS) \
 		  $(LIBSXATMOBJS) \
 		  $(TMOBJS) \
+		  $(IDSRVOBJS) \
 		  $(LIBXARMOBJS) \
 
 CFILES		= `ls *.c`
@@ -190,6 +191,9 @@ setup:
 clean:
 	$(RM) $(LIBEXPDIR)/libsxatmlib.so $(LIBEXPDIR)/libxarm.so $(LIBEXPDIR)/libstmlib.so *.gcda *.gcno *.gcov
 	$(RM)  $(BINEXPDIR)/tm
+	$(RM)  $(BINEXPDIR)/idtmsrv
+	$(RM)  $(OUTDIR)/tm
+	$(RM)  $(OUTDIR)/idtmsrv
 	$(RM)  $(ALLOBJS)
 	$(RM)  $(CDEPFILES)
 	cd $(HBASE_TRX_LOC); make clean

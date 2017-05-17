@@ -40,6 +40,7 @@ using namespace std;
 #include <mpi.h>
 
 #include "msgdef.h"
+#include "montrace.h"
 #include "sqevlog/evl_sqlog_writer.h"
 #include "clusterconf.h"
 
@@ -588,6 +589,13 @@ int main( int argc, char *argv[] )
             DisplayUsage();
             return 0;
         }
+    }
+
+    char *env;
+    env = getenv("TC_TRACE_ENABLE");
+    if ( env && *env == '1' )
+    {
+        trace_settings |= TRACE_TRAFCONFIG;
     }
 
     if ( !ClusterConfig.Initialize() )

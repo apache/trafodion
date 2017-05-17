@@ -256,6 +256,10 @@ PSTARTDOBJS += $(OUTDIR)/lock.o
 PSTARTDOBJS += $(OUTDIR)/monlogging.o
 PSTARTDOBJS += $(OUTDIR)/verspstartd.o
 PSTARTDOBJS += $(OUTDIR)/CommonLogger.o
+PSTARTDOBJS += $(OUTDIR)/clusterconf.o
+PSTARTDOBJS += $(OUTDIR)/lnodeconfig.o
+PSTARTDOBJS += $(OUTDIR)/pnodeconfig.o
+PSTARTDOBJS += $(OUTDIR)/persistconfig.o
 
 MEMLOGOBJS = $(OUTDIR)/monmemlog.o
 MEMLOGOBJS += $(OUTDIR)/versmemlog.o

@@ -46,6 +46,7 @@ class CMonUtil
     int getNid() { return nid_; }
     int getPid() { return pid_; }
     int getPNid() { return pnid_; }
+    int getZid() { return zid_; }
     const char *getProcName() { return processName_; }
     bool getTrace() { return trace_; }
     int getVerifier() { return verifier_; }
@@ -80,6 +81,7 @@ class CMonUtil
  private:
     char   processName_[MAX_PROCESS_PATH];   // current process name
     int    pnid_;          // current process physical node id
+    int    zid_;           // current process node id
     int    nid_;           // current process node id
     int    pid_;           // current process process id
     Verifier_t verifier_;  // current process verifier
@@ -99,18 +101,14 @@ class CRequest
 class CNodeUpReq: public CRequest
 {
  public:
-    CNodeUpReq(int nid, char nodeName[], bool requiresDTM)
-        : nid_(nid), requiresDTM_(requiresDTM)
-    { 
-        strncpy(nodeName_, nodeName, sizeof(nodeName_));
-        nodeName_[sizeof(nodeName_)-1] = '\0';
-    }
+    CNodeUpReq(int nid, char nodeName[], bool requiresDTM);
     virtual ~CNodeUpReq() {}
 
     void performRequest();
 
  private:
     int  nid_;
+    int  zid_;
     bool requiresDTM_;
     char nodeName_[MPI_MAX_PROCESSOR_NAME];
 };
@@ -133,32 +131,16 @@ class CPStartD : public CLock
     typedef enum { NodeUp } pStartD_t;
 
     void enqueueReq(CRequest * req);
-
     CRequest * getReq( void );
-
     int getReqCount( void );
-
-    void waitForEvent( void ) ;
-
-    void startProcess( const char *pName
-                     , const char *prefix
-                     , persist_configuration_t &persistConfig );
-
-    void startProcs ( int nid, bool requiresDTM );
-
-    bool seapilotDisabled ( void );
-
-    bool zoneMatch ( const char *zones );
-
+    bool loadConfiguration( void );
+    void startProcess( CPersistConfig *persistConfig );
+    void startProcs ( bool requiresDTM );
+    void waitForEvent( void );
 
  private:
-    void processKeys(const char *keys, list<string> &keyList);
-    void replaceNid(char *str);
-    void replaceZid(char *str);
 
     list<CRequest *>  workQ_;
-
-    bool            trafConfigInitialized_;
 };
 
 #endif

@@ -453,6 +453,7 @@ bool CClusterConfig::LoadPersistConfig( void )
     for (pkit = pkeysVector.begin(); pkit < pkeysVector.end(); pkit++ )
     {
         memset( &persistConfig, 0, sizeof(persist_configuration_t) );
+        memset( &persistConfigInfo, 0, sizeof(persistConfigInfo_t) );
         strncpy( persistConfig.persist_prefix
                , pkit->c_str()
                , sizeof(persistConfig.persist_prefix));

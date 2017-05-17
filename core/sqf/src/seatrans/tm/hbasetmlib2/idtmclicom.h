@@ -448,14 +448,12 @@ static int do_get_servers2(MS_Mon_Process_Info_Type  *pp_pi,
     lv_scount = 0;
     for (lv_inx = 0; lv_inx < pv_count; lv_inx++) {
         lp_sname = pp_pi[lv_inx].process_name;
-        if (memcmp(lp_sname, "$TSID", 5) == 0) {
-            if (isdigit(lp_sname[5])) {
-                if (gv_verbose)
-                    printf("cli: sname=%s\n", lp_sname);
-                assert(lv_scount < pv_max);
-                ppp_snames[lv_scount] = lp_sname;
-                lv_scount++;
-            }
+        if (memcmp(lp_sname, "$TMID", 5) == 0) {
+            if (gv_verbose)
+                printf("cli: sname=%s\n", lp_sname);
+            assert(lv_scount < pv_max);
+            ppp_snames[lv_scount] = lp_sname;
+            lv_scount++;
         }
     }
     return lv_scount;

@@ -231,7 +231,7 @@ sqlite3 -init createConfigDb $SQCONFIG_DB_FILE <<eof
 .quit
 eof
 
-./gensq.pl $SQCONFIG_FILE $SQSCRIPT_FILE `hostname` $FT_FLAG $PERF_FLAG
+./gensq.pl $SQSCRIPT_FILE `hostname` $FT_FLAG $PERF_FLAG $SQCONFIG_FILE $TRAF_HOME/sql/scripts/sqconfig.persist
 sq_stat=$?
 if [[ $sq_stat != 0 ]]; then 
     exit $sq_stat;

@@ -50,6 +50,7 @@ CLNodeConfig::CLNodeConfig( CPNodeConfig *pnodeConfig
                           , lnodeConfigInfo_t &lnodeConfigInfo
                           )
             : nid_(lnodeConfigInfo.nid)
+            , zid_(pnodeConfig->GetPNid())
             , coreMask_(lnodeConfigInfo.coreMask)
             , firstCore_(lnodeConfigInfo.firstCore)
             , lastCore_(lnodeConfigInfo.lastCore)
@@ -86,7 +87,7 @@ const char *CLNodeConfig::GetName( void )
 
 int  CLNodeConfig::GetPNid( void ) 
 {
-    return( pnodeConfig_->GetPNid( ) );
+    return( pnodeConfig_->GetPNid() );
 }
 
 CLNodeConfigContainer::CLNodeConfigContainer( void )

@@ -92,6 +92,7 @@ public:
     inline CLNodeConfig *GetNext( void ) { return( next_); }
     inline CLNodeConfig *GetNextP( void ) { return( nextP_); }
     inline int           GetNid( void ) { return( nid_ ); }
+    inline int           GetZid( void ) { return( zid_ ); }
     int                  GetPNid( void );
     CPNodeConfig        *GetPNodeConfig( void ) { return(pnodeConfig_); }
 
@@ -101,6 +102,7 @@ public:
 protected:
 private:
     int           nid_;         // Logical Node Identifier
+    int           zid_;         // Zone Identifier
     cpu_set_t     coreMask_;    // mask of SMP processor cores used by logical node
     int           firstCore_;   // First SMP processor core used by logical node
     int           lastCore_;    // Last SMP processor core used by logical node

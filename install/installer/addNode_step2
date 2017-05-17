@@ -379,11 +379,6 @@ sudo su $TRAF_USER --login --command "cd $TRAF_HOME/sql/scripts; sqregen -config
 
 }
 
-function rmsStart {
-
-sudo su $TRAF_USER --login --command "cd $SQ_ROOT/sql/scripts; rmsstart"
-}
-
 function dcsStart {
 
 sudo su $TRAF_USER --login --command "cd $TRAF_HOME/sql/scripts; dcsstart"
@@ -428,7 +423,6 @@ copySqcert
 addUpNodes
 sqRegen
 copysqConfig
-rmsStart
 dcsStart
 cleanUp
 printMessage

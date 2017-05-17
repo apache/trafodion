@@ -436,7 +436,7 @@ sub printSQShellCommand {
 sub processNodes {
     my $bNodeSpecified = 0;
 
-    while (<SRC>) {
+    while (<>) {
         next if (/^$/);
         next if (/^#/);
         if (/^_virtualnodes/) {
@@ -502,7 +502,7 @@ sub processNodes {
 
 sub processPersist {
     my $err = 0;
-    while (<SRC>) {
+    while (<>) {
         if (/^begin persist/) {
         }
         elsif (/^end persist/) {
@@ -541,7 +541,7 @@ sub printZoneList {
 }
 
 sub processFloatingIp {
-    while (<SRC>) {
+    while (<>) {
         if (/^process/) {
             @this_line = split(/;/, $_);
         if($#this_line >= 2) {
@@ -632,9 +632,6 @@ sub printInitLinesAuxFiles {
 
 sub openFiles {
 
-    open (SRC,"<$infile")
-        or die("unable to open $infile");
-
     open (SQS,">$coldscriptFileName")
         or die("unable to open $coldscriptFileName");
 
@@ -694,7 +691,6 @@ sub endGame {
     print "Generated SSCP Startup      file: $startSSCP\n";
     print "Generated SSCP Stop         file: $stopSSCP\n";
 
-    close(SRC);
     close(SQS);
     close(SQSH);
 
@@ -731,11 +727,11 @@ sub endGame {
 
 sub doInit {
 
-    $infile=@ARGV[0];
-    $scriptFileName=@ARGV[1];
-    $g_HostName=$ARGV[2];
-    $g_FTFlag=$ARGV[3];
-    $g_PERFFlag=$ARGV[4];
+    $scriptFileName= shift(@ARGV);
+    $g_HostName= shift(@ARGV);
+    $g_FTFlag= shift(@ARGV);
+    $g_PERFFlag= shift(@ARGV);
+    # remaining args are input files
 
 
     $startIDTM="idtmstart";
@@ -769,7 +765,7 @@ doInit();
 openFiles;
 
 
-while (<SRC>) {
+while (<>) {
     if (/^begin node/) {
         processNodes;
         printInitialLines;

@@ -34,6 +34,7 @@
 #include "msgdef.h"
 #include "seabed/trace.h"
 #include "montrace.h"
+#include "clusterconf.h"
 #include "pstartd.h"
 
 
@@ -42,6 +43,7 @@ char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connection port - not used
 
 long trace_settings = 0;
 int MyPNID = -1;
+int MyZid = -1;
 int MyNid = -1;
 int MyPid = -1;
 int gv_ms_su_nid = -1;          // Local IO nid to make compatible w/ Seabed
@@ -50,12 +52,15 @@ SB_Verif_Type  gv_ms_su_verif = -1;
 bool tracing = false;
 bool shuttingDown = false;
 
+CClusterConfig ClusterConfig; // Trafodion Configuration objects
 CMonUtil monUtil;
 CPStartD *pStartD;
 CMonLog *MonLog = NULL;
 
 DEFINE_EXTERN_COMP_DOVERS(pstartd)
 DEFINE_EXTERN_COMP_PRINTVERS(pstartd)
+
+const char *ProcessTypeString( PROCESSTYPE type );
 
 const char *MessageTypeString( MSGTYPE type )
 {
@@ -136,65 +141,6 @@ const char *MessageTypeString( MSGTYPE type )
     return( str );
 }
 
-const char *ProcessTypeString( PROCESSTYPE type )
-{
-    const char *str;
-
-    switch( type )
-    {
-        case ProcessType_TSE:
-            str = "TSE";
-            break;
-        case ProcessType_DTM:
-            str = "DTM";
-            break;
-        case ProcessType_ASE:
-            str = "ASE";
-            break;
-        case ProcessType_Generic:
-            str = "Generic";
-            break;
-        case ProcessType_Watchdog:
-            str = "Watchdog";
-            break;
-        case ProcessType_AMP:
-            str = "AMP";
-            break;
-        case ProcessType_Backout:
-            str = "Backout";
-            break;
-        case ProcessType_VolumeRecovery:
-            str = "VolumeRecovery";
-            break;
-        case ProcessType_MXOSRVR:
-            str = "MXOSRVR";
-            break;
-        case ProcessType_SPX:
-            str = "SPX";
-            break;
-        case ProcessType_SSMP:
-            str = "SSMP";
-            break;
-        case ProcessType_PSD:
-            str = "PSD";
-            break;
-        case ProcessType_SMS:
-            str = "SMS";
-            break;
-        case ProcessType_TMID:
-            str = "TMID";
-            break;
-        case ProcessType_PERSIST:
-            str = "PERSIST";
-            break;
-        default:
-            str = "Undefined";
-            break;
-    }
-
-    return( str );
-}
-
 void InitLocalIO( void )
 {
     gp_local_mon_io = new Local_IO_To_Monitor( -1 );
@@ -252,13 +198,6 @@ void localIONoticeCallback(struct message_def *recv_msg, int )
                           method_name, __LINE__, recv_msg->u.request.u.up.nid,
                           recv_msg->u.request.u.up.node_name);
         }
-        CNodeUpReq * reqNodeUp;
-        reqNodeUp = new CNodeUpReq(recv_msg->u.request.u.up.nid,
-                                   recv_msg->u.request.u.up.node_name,
-                                   true);
-
-        pStartD->enqueueReq( reqNodeUp );
-        pStartD->CLock::wakeOne();
         break;
 
     case MsgType_ProcessDeath:
@@ -860,59 +799,58 @@ void CMonUtil::processArgs( int argc, char *argv[] )
     pnid_ = atoi(argv[2]);
     nid_ = atoi(argv[3]);
     pid_ = atoi(argv[4]);
+    zid_ = atoi(argv[8]);
     gv_ms_su_verif  = verifier_ = atoi(argv[9]);
 
     strncpy( processName_, argv[5], sizeof(processName_) );
     processName_[sizeof(processName_)-1] = '\0';
 }
 
+CNodeUpReq::CNodeUpReq(int nid, char nodeName[], bool requiresDTM)
+          : nid_(nid)
+          , requiresDTM_(requiresDTM)
+    { 
+        strncpy(nodeName_, nodeName, sizeof(nodeName_));
+        nodeName_[sizeof(nodeName_)-1] = '\0';
+
+        CLNodeConfig *lnodeConfig = ClusterConfig.GetLNodeConfig( nid );
+        zid_ = lnodeConfig->GetZid();
+    }
+
 void CNodeUpReq::performRequest()
 {
     const char method_name[] = "CNodeUpReq::performRequest";
 
     char buf[MON_STRING_BUF_SIZE];
-    snprintf( buf, sizeof(buf), "Received 'Node Up' event for node %d, "
-              "requires DTM flag=%d\n", nid_, requiresDTM_);
+    snprintf( buf, sizeof(buf)
+            , "Received 'Node Up' event for node %d, "
+              "requires DTM flag=%d\n"
+            , nid_, requiresDTM_);
     monproc_log_write( MONUTIL_PERFORM_REQUEST_1, SQ_LOG_INFO, buf );
 
-    //    [ todo: need to check if nid_ is any one of the logical nodes in
-    //      the physical node ]
-    if ( nid_ == MyPNID )
+    if ( zid_ == MyZid )
     {
         if ( tracing )
         {
             trace_printf("%s@%d invoking startProcs(%d, %d)\n",
                          method_name, __LINE__, nid_, requiresDTM_);
         }
-        pStartD->startProcs(nid_, requiresDTM_);
+        pStartD->startProcs( requiresDTM_ );
     }
     else
     {
         if ( tracing )
         {
-            trace_printf("%s@%d Ignoring node up for for node %d (%s), my node is %d\n", method_name, __LINE__, nid_, nodeName_, MyPNID );
+            trace_printf( "%s@%d Ignoring node up for for node %s, nid=%d, "
+                          ", zid=%d, MyZid=%d\n"
+                        , method_name, __LINE__
+                        , nodeName_, nid_, zid_, MyZid );
         }
     }
 }
 
 CPStartD::CPStartD()
-         :trafConfigInitialized_(false)
 {
-    const char method_name[] = "CPStartD::CPStartD";
-
-    int rc = tc_initialize( tracing );
-    if ( rc )
-    {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s], Can't initialize configuration!\n"
-                , method_name );
-        monproc_log_write( PSTARTD_PSTARTD_1, SQ_LOG_CRIT, buf );
-    }
-    else
-    {
-        trafConfigInitialized_ = true;
-    }
 }
 
 CPStartD::~CPStartD()
@@ -942,359 +880,243 @@ void CPStartD::enqueueReq(CRequest * req)
     workQ_.push_back ( req );
 }
 
+bool CPStartD::loadConfiguration( void )
+{
+    if ( ClusterConfig.IsConfigReady() )
+    {
+        // It was previously loaded, remove the old configuration
+        ClusterConfig.Clear();
+    }
+
+    if ( ClusterConfig.Initialize() )
+    {
+        if ( ! ClusterConfig.LoadConfig() )
+        {
+            printf("[%s], Failed to load cluster configuration.\n", MyName);
+            abort();
+        }
+    }
+    else
+    {
+        printf( "[%s] Warning: No cluster.conf found\n",MyName);
+        abort();
+    }
+
+    return true;
+}
+
+void CPStartD::startProcess( CPersistConfig *persistConfig )
+{
+    const char method_name[] = "CPStartD::startProcess";
+
+    PROCESSTYPE procType = ProcessType_Undefined;
+    int progArgC = 0;
+    string procName;
+    string progArgs;
+    string progStdout;
+    string progProgram;
+    char newProcName[MAX_PROCESS_PATH];
+    bool result;
+    int newNid;
+    int newPid;
+    int argBegin[MAX_ARGS];
+    int argLen[MAX_ARGS];
+
+    procName = persistConfig->GetProcessName( MyNid );
+    procType = persistConfig->GetProcessType();
+    progStdout = persistConfig->GetStdoutFile( MyNid );
+    progProgram = persistConfig->GetProgramName();
+
+    if ( tracing )
+    {
+        trace_printf( "%s@%d Will start process: nid=%d, type=%s, name=%s, "
+                      "prog=%s, stdout=%s, argc=%d, args=%s\n"
+                    , method_name, __LINE__, MyNid
+                    , ProcessTypeString(procType), procName.c_str()
+                    , progProgram.c_str(), progStdout.c_str()
+                    , progArgC, progArgs.c_str());
+    }
+
+    char buf[MON_STRING_BUF_SIZE];
+    snprintf( buf, sizeof(buf)
+            , "Starting process %s on nid=%d, program=%s, type=%s\n"
+            , procName.c_str(), MyNid, progProgram.c_str()
+            , ProcessTypeString(procType));
+    monproc_log_write( PSTARTD_START_PROCESS_1, SQ_LOG_INFO, buf );
+
+    result = monUtil.requestNewProcess( MyNid
+                                      , procType
+                                      , procName.c_str()
+                                      , progProgram.c_str()
+                                      , ""
+                                      , progStdout.c_str()
+                                      , progArgC
+                                      , progArgs.c_str()
+                                      , argBegin
+                                      , argLen
+                                      , newNid
+                                      , newPid
+                                      , newProcName);
+    if ( tracing )
+    {
+        trace_printf("%s@%d requestNewProcess returned: %d\n",
+                     method_name, __LINE__, result);
+    }
+}
+
+void CPStartD::startProcs ( bool requiresDTM )
+{
+    const char method_name[] = "CPStartD::startProcs";
+
+    /*
+     1. use persist configuration objects
+     2. for each persistent configuration object:
+        a) determine if the process type is candidate for restart in this nid
+        b) ask monitor if process is currently running in this nid
+        c) if not running, start it
+    */
+
+    bool foundConfig = false;
+    CPersistConfig *persistConfig;
+    string procName = "";
+    
+    persistConfig = ClusterConfig.GetFirstPersistConfig();
+    if (persistConfig)
+    {
+        for ( ; persistConfig; persistConfig = persistConfig->GetNext() )
+        {
+            if ( tracing )
+            {
+                trace_printf( "%s@%d Persist Prefix =%s\n"
+                              "\t\tProcess Name    = %s\n"
+                              "\t\tProcess Type    = %s\n"
+                              "\t\tProgram Name    = %s\n"
+                              "\t\tSTDOUT          = %s\n"
+                              "\t\tRequires DTM    = %s\n"
+                              "\t\tPersist Retries = %d\n"
+                              "\t\tPersist Window  = %d\n"
+                              "\t\tPersist Zones   = %s\n"
+                            , method_name, __LINE__
+                            , persistConfig->GetPersistPrefix()
+                            , persistConfig->GetProcessName( MyNid )
+                            , ProcessTypeString(persistConfig->GetProcessType())
+                            , persistConfig->GetProgramName()
+                            , persistConfig->GetStdoutFile( MyNid )
+                            , persistConfig->GetRequiresDTM() ? "Y" : "N"
+                            , persistConfig->GetPersistRetries()
+                            , persistConfig->GetPersistWindow()
+                            , persistConfig->GetZoneFormat() );
+            }
+    
+            switch (persistConfig->GetProcessType())
+            {
+            case ProcessType_TMID:
+            case ProcessType_PERSIST:
+            case ProcessType_SSMP:
+                if ( persistConfig->GetRequiresDTM() && !requiresDTM )
+                {
+                    if ( tracing )
+                    {
+                        trace_printf("%s@%d Persist type %s NOT targeted for restart DTM not ready\n",
+                                     method_name, __LINE__, persistConfig->GetPersistPrefix() );
+                    }
+                    break;
+                }
+                else if ( !persistConfig->GetRequiresDTM() && requiresDTM )
+                {
+                    if ( tracing )
+                    {
+                        trace_printf("%s@%d Persist type %s NOT targeted for restart DTM ready\n",
+                                     method_name, __LINE__, persistConfig->GetPersistPrefix() );
+                    }
+                    break;
+                }
+
+                procName = persistConfig->GetProcessName( MyNid );
+        
+                if ( tracing )
+                {
+                    trace_printf( "%s@%d Persist %s process type %s targeted for restart\n"
+                                , method_name, __LINE__
+                                , persistConfig->GetPersistPrefix()
+                                , ProcessTypeString(persistConfig->GetProcessType()) );
+                }
+                
+                if (procName.length() != 0)
+                {
+                    int procNid = -1;
+                    int procPid = -1;
+        
+                    if (persistConfig->IsZoneMatch( MyZid ))
+                    {
+                        if ( ! monUtil.requestProcInfo( procName.c_str()
+                                                      , procNid
+                                                      , procPid))
+                        {   // Process does not exist, so start it
+                            startProcess( persistConfig );
+                        }
+                        else
+                        {
+                            if ( procNid != -1)
+                            {
+                                char buf[MON_STRING_BUF_SIZE];
+                                snprintf( buf, sizeof(buf), "Not starting process %s "
+                                          "because it is already running\n",
+                                          procName.c_str());
+                                monproc_log_write( PSTARTD_STARTPROCS_1, SQ_LOG_INFO, buf );
+            
+                                if ( tracing )
+                                {
+                                    trace_printf( "%s@%d %s"
+                                                , method_name, __LINE__, buf);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        char buf[MON_STRING_BUF_SIZE];
+                        snprintf( buf, sizeof(buf)
+                                , "[%s] Zone does not match for persist type %s"
+                                  ", zone format=%s, MyZid=%d\n"
+                                , method_name
+                                , persistConfig->GetPersistPrefix()
+                                , persistConfig->GetZoneFormat()
+                                , MyZid );
+                        monproc_log_write( PSTARTD_STARTPROCS_2, SQ_LOG_CRIT, buf );
+                    }
+                }
+                break;
+            case ProcessType_DTM:
+            case ProcessType_PSD:
+            case ProcessType_Watchdog:
+            default:
+                // Skip these, they are managed by DTM Lead and monitor processes
+                if ( tracing )
+                {
+                    trace_printf("%s@%d Persist type %s NOT targeted for restart\n",
+                                 method_name, __LINE__, persistConfig->GetPersistPrefix() );
+                }
+                break;
+            }
+        }
+    }
+    if (!foundConfig)
+    {
+        printf ("[%s] Persistent process configuration does not exist\n", MyName);
+    }
+}
+
 void CPStartD::waitForEvent( void )
 {
     CAutoLock autoLock(getLocker());
     wait();
 }
 
-
-void CPStartD::startProcess( const char *pName
-                           , const char *prefix
-                           , persist_configuration_t &persistConfig )
-{
-    const char method_name[] = "CPStartD::startProcess";
-
-    PROCESSTYPE progType = ProcessType_Undefined;
-    int progArgC = 0;
-    string progArgs;
-    string progStdout;
-    string progProgram;
-    char newProcName[MAX_PROCESS_PATH];
-    int progNid = MyNid;
-    bool result;
-    int newNid;
-    int newPid;
-    int okMask = 0;
-    int argBegin[MAX_ARGS];
-    int argLen[MAX_ARGS];
-
-    string value = persistConfig.process_type;
-    okMask |= 0x1;
-    if (value.compare("DTM") == 0)
-        progType = ProcessType_DTM;
-    else if (value.compare("GENERIC") == 0)
-        progType = ProcessType_Generic;
-    else if (value.compare("PERSIST") == 0)
-        progType = ProcessType_PERSIST;
-    else if (value.compare("PSD") == 0)
-        progType = ProcessType_PSD;
-    else if (value.compare("SPX") == 0)
-        progType = ProcessType_SPX;
-    else if (value.compare("SSMP") == 0)
-        progType = ProcessType_SSMP;
-    else if (value.compare("SMS") == 0)
-        progType = ProcessType_SMS;
-    else if (value.compare("TMID") == 0)
-        progType = ProcessType_TMID;
-    else if (value.compare("WDG") == 0)
-        progType = ProcessType_Watchdog;
-
-    okMask |= 0x2;
-    progStdout = persistConfig.std_out;
-    okMask |= 0x4;
-    progProgram = persistConfig.program_name;
-
-    if ( okMask & 0x7 )
-    {
-        if ( tracing )
-        {
-            trace_printf("%s@%d Will start process: nid=%d, type=%s, name=%s, "
-                         "prog=%s, stdout=%s, argc=%d, args=%s\n",
-                         method_name, __LINE__, progNid,
-                         ProcessTypeString(progType), pName, progProgram.c_str(),
-                         progStdout.c_str(), progArgC, progArgs.c_str());
-        }
-
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf), "Starting process %s on nid=%d, program="
-                  "%s, type=%d\n", pName, progNid, progProgram.c_str(), progType);
-        monproc_log_write( PSTARTD_START_PROCESS_1, SQ_LOG_INFO, buf );
-
-        result = monUtil.requestNewProcess(progNid,
-                                           progType, pName,
-                                           progProgram.c_str(), "",
-                                           progStdout.c_str(),
-                                           progArgC, progArgs.c_str(),
-                                           argBegin, argLen,
-                                           newNid, newPid, newProcName);
-        if ( tracing )
-        {
-            trace_printf("%s@%d requestNewProcess returned: %d\n",
-                         method_name, __LINE__, result);
-        }
-    }
-
-}
-
-bool CPStartD::seapilotDisabled ( void )
-{
-    const char method_name[] = "CPStartD::seapilotDisabled";
-
-    bool disabled = false;
-
-    struct Get_reply_def * regData;
-    monUtil.requestGet (ConfigType_Cluster, "", "SQ_SEAPILOT_SUSPENDED", false,
-                        regData);
-    if ( regData->num_returned == 1 )
-    {
-        disabled = strcmp(regData->list[0].value, "1") == 0;
-    }
-    if ( tracing )
-    {
-        trace_printf("%s@%d regData->num_returned=%d, regData->list[0].value=%s\n", method_name, __LINE__, regData->num_returned, regData->list[0].value);
-        trace_printf("%s@%d Registry: seapilotDisabled=%d\n",
-                     method_name, __LINE__, disabled);
-    }
-    free(regData);
-
-    return disabled;
-}
-
-void CPStartD::startProcs ( int nid, bool requiresDTM )
-{
-    const char method_name[] = "CPStartD::startProcs";
-
-    /*
-1. cache configuation database to find all persistent data.
-2. for each persistent process:
-   a) ask monitor if process is currently running
-   b) if not running, start it on the logical node using process
-      definition from the database.
-    */
-
-    list<pair<string,string> > procsToStart;
-    list<string> prefixToStart;
-    list<string> keys;
-    map<string,string> persistDataMap;
-    persist_configuration_t persistConfig;
-    
-
-    // Get persistent process keys
-    int rc;
-    char persistProcessKeys[TC_PERSIST_KEYS_VALUE_MAX];
-    rc = tc_get_persist_keys( persistProcessKeys );
-    if ( rc )
-    {
-        char buf[MON_STRING_BUF_SIZE];
-        snprintf( buf, sizeof(buf)
-                , "[%s] Persist keys configuration does not exist!\n"
-                , method_name );
-        monproc_log_write( PSTARTD_STARTPROCS_1, SQ_LOG_CRIT, buf );
-
-        return; // no keys, no work
-    }
-
-    if ( strlen( persistProcessKeys ) )
-    {
-        processKeys( persistProcessKeys, keys );
-    }
-
-    // Get persistent process configuration for each key
-    list<string>::iterator keyIt;
-    for (keyIt = keys.begin(); keyIt != keys.end(); ++keyIt)
-    {
-        string procName = "";
-        string procType = "";
-        string zones = "";
-        string prefix = (*keyIt);
-        rc = tc_get_persist_process( prefix.c_str(), &persistConfig );
-        if ( rc )
-        {
-            char buf[MON_STRING_BUF_SIZE];
-            snprintf( buf, sizeof(buf)
-                    , "[%s] Persist configuration for %s does not exist!\n"
-                    , method_name, prefix.c_str() );
-            monproc_log_write( PSTARTD_STARTPROCS_2, SQ_LOG_ERR, buf );
-            continue;
-        }
-
-        if ( tracing )
-        {
-            trace_printf( "%s@%d Persist Prefix =%s\n"
-                          "\t\tProcess Name    = %s\n"
-                          "\t\tProcess Type    = %s\n"
-                          "\t\tProgram Name    = %s\n"
-                          "\t\tSTDOUT          = %s\n"
-                          "\t\tRequires DTM    = %s\n"
-                          "\t\tPersist Retries = %d\n"
-                          "\t\tPersist Window  = %d\n"
-                          "\t\tPersist Zones   = %s\n"
-                        , method_name, __LINE__
-                        , persistConfig.persist_prefix
-                        , persistConfig.process_name
-                        , persistConfig.process_type
-                        , persistConfig.program_name
-                        , persistConfig.std_out
-                        , persistConfig.requires_DTM ? "Y" : "N"
-                        , persistConfig.persist_retries
-                        , persistConfig.persist_window
-                        , persistConfig.persist_zones );
-        }
-
-        procName = persistConfig.process_name;
-
-        if ( persistConfig.requires_DTM && !requiresDTM )
-        {
-            if ( tracing )
-            {
-                trace_printf("%s@%d Persist type %s NOT targeted for restart DTM not ready\n",
-                             method_name, __LINE__, persistConfig.persist_prefix );
-            }
-            continue;
-        }
-        else if ( persistConfig.requires_DTM && requiresDTM )
-        {
-            if ( tracing )
-            {
-                trace_printf("%s@%d Persist type %s NOT targeted for restart DTM ready\n",
-                             method_name, __LINE__, persistConfig.persist_prefix );
-            }
-            continue;
-        }
-
-        procType = persistConfig.process_type;
-        zones    = persistConfig.persist_zones;
-
-        if ( tracing )
-        {
-            trace_printf("%s@%d Persist %s process type %s targeted for restart\n",
-                         method_name, __LINE__,
-                         prefix.c_str(), persistConfig.process_type );
-        }
-        
-
-        if ((procName.length() != 0) && (zones.length() != 0))
-        {
-            int procNid = -1;
-            int procPid = -1;
-
-            if (zoneMatch(zones.c_str()))
-            {
-                if (!monUtil.requestProcInfo(procName.c_str(), procNid, procPid))
-                {   // Save this process name
-                    procsToStart.push_back(pair<string,string>(procName, prefix));
-                }
-                else
-                {
-                    if ( procNid != -1)
-                    {
-                        char buf[MON_STRING_BUF_SIZE];
-                        snprintf( buf, sizeof(buf), "Not starting process %s "
-                                  "because it is already running\n",
-                                  procName.c_str());
-                        monproc_log_write( PSTARTD_STARTPROCS_3, SQ_LOG_INFO, buf );
-    
-                        if ( tracing )
-                        {
-                            trace_printf("%s@%d %s", method_name, __LINE__,
-                                         buf);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    list<pair<string,string> >::iterator it;
-    for ( it = procsToStart.begin(); it != procsToStart.end(); ++it)
-    {
-        const char * procName = (*it).first.c_str();
-        const char * prefix = (*it).second.c_str();
-
-        if ( tracing )
-        {
-            trace_printf("%s@%d Will start process %s for zone %d\n",
-                         method_name, __LINE__, procName, nid);
-        }
-        startProcess( procName, prefix, persistConfig );
-    }
-    procsToStart.clear();
-}
-
-void CPStartD::processKeys(const char *keys, list<string> &keyList)
-{
-    char *keyDup = strdup(keys);
-    char *k = keyDup;
-    for (;;)
-    {
-        char *kComma = index(k, ',');
-        if (kComma == NULL)
-        {
-            keyList.push_back(k);
-            break;
-        }
-        else
-        {
-            *kComma = '\0';
-            keyList.push_back(k);
-            k = &kComma[1];
-        }
-    }
-    free(keyDup);
-}
-
-void CPStartD::replaceNid(char *str)
-{
-    for (;;)
-    {
-        //                     1234
-        char *p = strstr(str, "%nid");
-        if (p == NULL)
-            break;
-        char tail[1000];
-        if (p[4] == '+')
-            strcpy(tail, &p[5]);
-        else
-            strcpy(tail, &p[4]);
-        sprintf(p, "%d", MyNid);
-        strcat(p, tail);
-    }
-}
-
-void CPStartD::replaceZid(char *str)
-{
-    for (;;) {
-        //                     1234
-        char *p = strstr(str, "%zid");
-        if (p == NULL)
-            break;
-        char tail[1000];
-        if (p[4] == '+')
-            strcpy(tail, &p[5]);
-        else
-            strcpy(tail, &p[4]);
-        sprintf(p, "%d", MyNid);
-        strcat(p, tail);
-    }
-}
-
-bool CPStartD::zoneMatch ( const char *zones )
-{
-    bool ret;
-    int zone;
-    const char *z = zones;
-    for (;;)
-    {
-        const char *zComma = index(z, ',');
-        if (zComma == NULL)
-        {
-            sscanf(z, "%d", &zone);
-            ret = (zone == MyNid);
-            break;
-        }
-        else
-        {
-            sscanf(z, "%d", &zone);
-            ret = (zone == MyNid);
-            if (ret)
-                 break;
-            z = &zComma[1];
-        }
-    }
-    return ret;
-}
-
+//
+// To enable tracing, add the following to sql/scripts/mon.env file:
+// PSD_TRACE=1
+//
 void TraceInit( int & argc, char **& argv )
 {
     char traceFileName[MAX_PROCESS_PATH];
@@ -1389,12 +1211,19 @@ int main (int argc, char *argv[])
     monUtil.processArgs (argc, argv);
     MyName = monUtil.getProcName();
     gv_ms_su_nid = MyPNID = monUtil.getPNid();
+    MyZid = monUtil.getZid();
     MyNid = monUtil.getNid();
     MyPid = monUtil.getPid();
 
     MonLog = new CMonLog( "log4cxx.monitor.psd.config", "PSD", "alt.pstartd", MyPNID, MyNid, MyPid, MyName );
 
     pStartD = new CPStartD;
+
+    if ( !pStartD->loadConfiguration() )
+    {
+        trace_printf("%s@%d Exiting!\n",  method_name, __LINE__);
+        exit (1);
+    }
 
     InitLocalIO( );
 
