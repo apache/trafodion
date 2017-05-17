@@ -3477,7 +3477,7 @@ short ExExeUtilLobUpdateTcb::work()
   if (lobTdb().getFromType() == ComTdbExeUtilLobUpdate::FROM_STRING_)
     so = Lob_Memory;
   else if (lobTdb().getFromType() == ComTdbExeUtilLobUpdate::FROM_EXTERNAL_)
-    so = Lob_External;
+    so = Lob_External_File;
   else if (lobTdb().getFromType() == ComTdbExeUtilLobUpdate::FROM_BUFFER_)  //Only this is supported
     so= Lob_Buffer;
   

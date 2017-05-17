@@ -24,7 +24,19 @@
 #define EXP_LOB_ENUMS_H
 
 #include "ComSmallDefs.h"
+#include "ComAnsiNamePart.h"
+#define LOB_HANDLE_LEN 1024
+#define LOB_NAME_LEN 50 // LOBP_<objectUid>_<LOBnum>  
+                         //      <---20----> <--4--->Need 30 bytes -  allocating extra.
+#define MAX_LOB_FILE_NAME_LEN 256
+#define MAX_BLACK_BOX_LEN 2048
+#define LOB_DESC_HEADER_KEY 1
+#define NUM_WORKER_THREADS 2
 
+ 
+// 2 threads at most, one to read and the other to pick up next read from preOpen
+
+#define LOB_CURSOR_PREFETCH_BYTES_MAX (1 << 27) // 128MB
 // IMPORTANT //
 // If an enum is added here, make sure that a corresponding entry is
 // made in lobErrorEnumStr that follows this enum list.
@@ -178,8 +190,9 @@ typedef enum {
    Lob_File,
    Lob_Memory,
    Lob_Buffer,
-   Lob_Foreign_Lob,
-   Lob_External
+   Lob_Lob, // tranfer from lob column of one table to another
+   Lob_External_Lob,//transfer from external lob of one table to another
+   Lob_External_File // link external hdfs file into traf lob column without an hdfs copy. 
 } LobsSubOper;
 
 typedef enum {

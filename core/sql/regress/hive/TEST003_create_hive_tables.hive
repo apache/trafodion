@@ -42,7 +42,7 @@ create external table ins_customer
     c_last_review_date        string
 )
 row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
-location '/user/hive/exttables/ins_customer';
+location '/user/trafodion/hive/exttables/ins_customer';
 
 
 drop table ins_promotion;
@@ -69,7 +69,7 @@ create external table ins_promotion
     p_discount_active         string 
 )
 row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
-location '/user/hive/exttables/ins_promotion';
+location '/user/trafodion/hive/exttables/ins_promotion';
 
 drop table ins_customer_address;
 create external table ins_customer_address
@@ -89,7 +89,7 @@ create external table ins_customer_address
     ca_location_type          string
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/ins_customer_address';
+location '/user/trafodion/hive/exttables/ins_customer_address';
 
 
 
@@ -127,7 +127,7 @@ create external table ins_store
     s_tax_precentage          float                  
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/ins_store';
+location '/user/trafodion/hive/exttables/ins_store';
 
 
 
@@ -159,7 +159,7 @@ create external table ins_store_sales
     ss_net_profit             float                  
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/ins_store_sales';
+location '/user/trafodion/hive/exttables/ins_store_sales';
 
 
 drop table ins_customer_demographics;
@@ -176,7 +176,7 @@ create external table ins_customer_demographics
     cd_dep_college_count      int 
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/ins_customer_demographics';
+location '/user/trafodion/hive/exttables/ins_customer_demographics';
 
 drop table ins_date_dim;
 create external table ins_date_dim
@@ -211,7 +211,7 @@ create external table ins_date_dim
     d_current_year            string 
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/ins_date_dim';
+location '/user/trafodion/hive/exttables/ins_date_dim';
 
 drop table ins_time_dim;
 create external table ins_time_dim
@@ -228,7 +228,7 @@ create external table ins_time_dim
     t_meal_time               string
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/ins_time_dim';
+location '/user/trafodion/hive/exttables/ins_time_dim';
 
 drop table ins_item;
 create external table ins_item
@@ -257,7 +257,7 @@ create external table ins_item
     i_product_name            string
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/ins_item';
+location '/user/trafodion/hive/exttables/ins_item';
 
 drop table ins_household_demographics;
 create external table ins_household_demographics
@@ -269,7 +269,7 @@ create external table ins_household_demographics
     hd_vehicle_count          int
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/ins_household_demographics';
+location '/user/trafodion/hive/exttables/ins_household_demographics';
 
 drop table ins_customerNaddress;
 create external table ins_customerNaddress
@@ -292,7 +292,7 @@ create external table ins_customerNaddress
 
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/ins_customerNaddress';
+location '/user/trafodion/hive/exttables/ins_customerNaddress';
 
 
 drop table ins_store_sales_summary;
@@ -305,7 +305,7 @@ create external table ins_store_sales_summary
     ss_quantity               int
 )
 row format delimited fields terminated by '|' 
-location  '/user/hive/exttables/ins_store_sales_summary';
+location  '/user/trafodion/hive/exttables/ins_store_sales_summary';
 
 quit;
 

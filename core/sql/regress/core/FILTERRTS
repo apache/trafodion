@@ -6,13 +6,13 @@ if [ "$fil" = "" ]; then
   exit 1
 fi
 sed  "
-/SE_IOs  SE_IO_Bytes/{N
+/6        EX_HASH_GRBY/{N
+s/6        EX_HASH_GRBY[ ]*[A-Z0-9 ,._-]*\n/hash_grby_stats/
+}
+s/6 EX_HASH_GRBY [A-Z0-9 ,._-]*/@hash_grby_stats@/
+s/hash_grby_stats[0-9 ,.]*/@hash_grby_stats@/
+s/[A-Z0-9 ,-]*\.[A-Z0-9]*\.TSTATI/#CAT.#SCH.TSTATI pertableStats/
 s/[A-Z0-9 ,-]*\.[A-Z0-9]*\.TSTAT/#CAT.#SCH.TSTAT pertableStats/
-}
-/6       EX_HASH_GRBY/{N
-s/6       EX_HASH_GRBY[ ]*[A-Z0-9 ,-]*\n/hash_grby_stats/
-}
-s/hash_grby_stats[0-9 ,]*/@hash_grby_stats@/
 s/QID[ ]*MXID[A-Z0-9_]*/QID @QID@/
 s/QID[ ]*'MXID[A-Z0-9_]*'/QID '@QID@'/
 s/Qid[ ]*MXID[A-Z0-9_]*/Qid @QID@/
@@ -96,11 +96,11 @@ s/EX_SEND_BOTTOM[ ]*[0-9, |]*/EX_SEND_BOTTOM @exSendBottomCounters@/
 s/5    .    6    7    3    2    EX_HASH_GRBY             2[ ]*[0-9, -|A-Z]*/5    .    6    7    3    2    EX_HASH_GRBY             2 @exHashGrbyCounters@/
 s/.    .    1    2    1    3    EX_TRAF_KEY_SELECT       2[ ]*[0-9, |]*/.    .    1    2    1    3    EX_TRAF_KEY_SELECT       2 @exTrafKeySelectCounters@/
 
-/[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*/{N
-s/[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*\n[0-9 ,]*/#CAT.#SCH.TSTAT pertableStats/
-}
 /[A-Z0-9]*\.[A-Z0-9]*\.TSTATI[ ]*/{N
 s/[A-Z0-9]*\.[A-Z0-9]*\.TSTATI[ ]*\n[0-9 ,]*/#CAT.#SCH.TSTATI pertableStats/
+}
+/[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*/{N
+s/[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*\n[0-9 ,]*/#CAT.#SCH.TSTAT pertableStats/
 }
 /TSTAT(TSTAT)[ ]*/{N
 s/TSTAT(TSTAT)[ ]*\n[0-9 ]*\n[0-9 ,]*/TSTAT(TSTAT) @pertableStats@/

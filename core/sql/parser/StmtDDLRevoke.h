@@ -96,6 +96,14 @@ public:
   inline       QualifiedName & getRevokeNameAsQualifiedName();   
   
   inline NAString getObjectName() const;
+  inline NAString getOrigObjectName() const
+  {return origObjectName_;}
+
+  void setObjectQualName(QualifiedName qn)
+  {
+    objectQualName_ = qn;
+    objectName_ = qn.getQualifiedNameAsAnsiString();
+  }
 
   inline const QualifiedName * getActionNameAsQualifiedName() const;
 
@@ -155,6 +163,7 @@ public:
 
 private:
 
+  NAString origObjectName_;
   NAString objectName_;
   QualifiedName objectQualName_;
 

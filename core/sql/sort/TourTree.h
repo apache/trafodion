@@ -65,6 +65,7 @@ class Tree : public SortAlgo { //SortAlgo inherits from NABasciObject
        CollHeap* heap,
        SortError* sorterror,
        Lng32 explainNodeId,
+       ExBMOStats *bmoStats,
        SortUtil* sortUtil,
        Lng32  runnum = 0,
        NABoolean  merge = FALSE_L,NABoolean waited = FALSE_L);

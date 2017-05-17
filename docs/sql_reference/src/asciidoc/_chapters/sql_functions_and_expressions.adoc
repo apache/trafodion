@@ -201,8 +201,7 @@ corresponding quarter of the year.
 corresponding second of the minute.
 | <<timestampadd_function,TIMESTAMPADD Function>>                           | Adds the interval of time specified by _interval-ind_ and
 _num_expr_ to _datetime_expr_.
-| <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer value for the number of _interval-ind_
-units of time between _startdate_ and _enddate_.
+| <<timestampdiff_function,TIMESTAMPDIFF Function>>                         | Returns the integer value for the number of _interval-ind_units of time between _startdate_ and _enddate_.
 | <<to_char_function,TO_CHAR Function>>                                     | Converts a datetime value to a character value.
 | <<to_date_function,TO_DATE Function>>                                     | Converts a character value to a date or timestamp value.
 | <<to_time_function,TO_TIME Function>>                                     | Converts a character value to a time value.
@@ -8405,3 +8404,4 @@ NULL.
 ```
 ZEROIFNULL (salary)
 ```
+

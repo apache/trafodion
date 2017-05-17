@@ -2282,6 +2282,8 @@ short CmpDescribeHiveTable (
       // if this hive view is registered in traf metadata, show that.
       if (naTable->isRegistered())
         {
+          Int64 objectUID = (Int64)naTable->objectUid().get_value();
+
           outputShortLine(space, " ");
 
           sprintf(buf,  "REGISTER%sHIVE VIEW %s;",
@@ -2289,6 +2291,9 @@ short CmpDescribeHiveTable (
                   naTable->getTableName().getQualifiedNameAsString().data());
           NAString bufnas(buf);
           outputLongLine(space, bufnas, 0);
+
+          str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+          outputShortLine(space, buf);
         }
 
       outbuflen = space.getAllocatedSpaceSize();
@@ -2384,6 +2389,8 @@ short CmpDescribeHiveTable (
   if ((type == 2) &&
       (naTable->isRegistered()))
     {
+      Int64 objectUID = (Int64)naTable->objectUid().get_value();
+
       outputShortLine(space, " ");
 
       sprintf(buf,  "REGISTER%sHIVE %s %s;",
@@ -2393,6 +2400,9 @@ short CmpDescribeHiveTable (
 
       NAString bufnas(buf);
       outputLongLine(space, bufnas, 0);
+
+      str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+      outputShortLine(space, buf);
     }
 
   // if this hive table has an associated external table, show ddl
@@ -2894,6 +2904,8 @@ short CmpDescribeSeabaseTable (
   NABoolean isExternalTable = naTable->isExternalTable();
   NABoolean isImplicitExternalTable = naTable->isImplicitExternalTable();
   NABoolean isHbaseMapTable = naTable->isHbaseMapTable();
+  NABoolean isHbaseCellOrRowTable = 
+    (naTable->isHbaseCellTable() || naTable->isHbaseRowTable());
 
   NABoolean isExternalHbaseTable = FALSE;
   NABoolean isExternalHiveTable = FALSE;
@@ -3061,6 +3073,9 @@ short CmpDescribeSeabaseTable (
     }
   else if (type == 2)
     {
+      if (isHbaseCellOrRowTable)
+        outputShortLine(*space, "/*");
+
       NAString tabType;
       if (isVolatile)
         tabType = " VOLATILE ";
@@ -3411,6 +3426,9 @@ short CmpDescribeSeabaseTable (
 
       if (NOT noTrailingSemi)
         outputShortLine(*space, ";");
+
+      if (isHbaseCellOrRowTable)
+        outputShortLine(*space, "*/");
     }
 
   // showddl internal sequences created for identity cols
@@ -3685,13 +3703,46 @@ short CmpDescribeSeabaseTable (
         } // showddl
     }
 
+  Int64 objectUID = (Int64)naTable->objectUid().get_value();
+  if ((type == 2) &&
+      (naTable->isHbaseCellTable() || naTable->isHbaseRowTable()) &&
+      (NOT isView))
+    {
+      outputShortLine(*space, " ");
+
+      outputShortLine(*space,"/* HBase DDL */");
+      sprintf(buf,  "CREATE HBASE TABLE %s ( COLUMN FAMILY '%s') ",
+              naTable->getTableName().getObjectName().data(),
+              "#1");
+      outputShortLine(*space, buf);
+      
+      // if this hbase table is registered in traf metadata, show that.
+      if (naTable->isRegistered())
+        {
+          outputShortLine(*space, " ");
+          
+          sprintf(buf,  "REGISTER%sHBASE %s %s;",
+                  (naTable->isInternalRegistered() ? " /*INTERNAL*/ " : " "),
+                  "TABLE",
+                  naTable->getTableName().getObjectName().data());
+          
+          NAString bufnas(buf);
+          outputLongLine(*space, bufnas, 0);
+
+          str_sprintf(buf, "/* ObjectUID = %Ld */", objectUID);
+          outputShortLine(*space, buf);
+        }
+    }
+
   // If SHOWDDL and authorization is enabled, display GRANTS
   if (type == 2)
   {
-    if (CmpCommon::context()->isAuthorizationEnabled() && displayPrivilegeGrants)
+    //objectUID = (int64_t)naTable->objectUid().get_value();
+    if ((CmpCommon::context()->isAuthorizationEnabled()) && 
+        displayPrivilegeGrants &&
+        (objectUID > 0))
     {
       // now get the grant stmts
-      int64_t objectUID = (int64_t)naTable->objectUid().get_value();
       std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
       privMDLoc += std::string(".\"") + 
                    std::string(SEABASE_PRIVMGR_SCHEMA) + 

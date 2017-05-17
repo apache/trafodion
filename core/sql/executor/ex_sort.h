@@ -46,6 +46,7 @@
 #include "NABoolean.h"
 #include "ComTdbSort.h"
 #include "ExSimpleSqlBuffer.h"
+#include "ExStats.h"
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -136,7 +137,19 @@ public:
     SORT_CANCEL_CHILD,
     SORT_DONE_WITH_QND
     };
-  
+
+  // Change ExSortTcb::SortPhaseStr[] when a new value is added to this enum
+  // Add new value before SORT_PHASE_END
+  enum SortPhase  {
+    SORT_PREP_PHASE,
+    SORT_SEND_PHASE,
+    SORT_RECV_PHASE,
+    SORT_MERGE_PHASE,
+    SORT_PHASE_END
+  };
+  static const char *SortPhaseStr[];
+private:
+   void deleteAndReallocateSortPool();
 protected:
   friend class   ExSortTdb;
   friend class   ExSortPrivateState;
@@ -155,17 +168,28 @@ protected:
   ExSubtask *ioEventHandler_;  
   // this heap is used by sort.
   NAHeap         * sortHeap_;
+  
+  // this space is used for sort pools.
+  Space          * sortSpace_;
 
   // store a sort error in case up queue is full we still have a handle on it
   ComDiagsArea   * sortDiag_;
   NAList<ComDiagsArea *>  *nfDiags_;
 
   sql_buffer_pool *partialSortPool_;   //used exclusively by partial sort
-  sql_buffer_pool *regularSortPool_;   //used by regular sort and partial sort.
+  sql_buffer_pool *sortPool_;          //used by regular sort and partial sort.
   ExSimpleSQLBuffer *topNSortPool_;    //used only by topNSort
-  
 
-  ExSortBufferPool *sortPool_;     // pool reference handle used for sorting.
+  //sortPool_ or partialSortPool_ initial number of 
+  //buffers used outside of memoryQuota.
+  Lng32 initialNumOfPoolBuffers_;
+  
+  //sortSendPool_ and receivepool_ are generic handles
+  //that point to the actual pool like partialSortPool_ or 
+  //sortPool_ or topNSortPool_. 
+  //If sort does not overflow, sortSendPool_ and receivePool_ 
+  //point to the same pools.
+  ExSortBufferPool *sortSendPool_;     // pool reference handle used for sorting.
   ExSortBufferPool *receivePool_;  // pool reference handle used for receiving sorted rows
 
 
@@ -371,8 +395,9 @@ class ExSortBufferPool : public NABasicObject
     SQL_BUFFER_TYPE
      };
 
-    ExSortBufferPool(void *pool, PoolType poolType)
+    ExSortBufferPool(void *pool, PoolType poolType, ExBMOStats *bmoStats)
     {
+      bmoStats_ = bmoStats;
       if(poolType == SIMPLE_BUFFER_TYPE)
       {
         simplePool_ = (ExSimpleSQLBuffer *)pool;
@@ -416,10 +441,14 @@ class ExSortBufferPool : public NABasicObject
     
     SqlBufferBase * addBuffer(Lng32 totalBufferSize, bool failureIsFatal = true)
     {
+      SqlBufferBase * buf = NULL;
       if (sqlBufferPool_)
-        return sqlBufferPool_->addBuffer(totalBufferSize, failureIsFatal);
-      else
-        return NULL; 
+      {
+        SqlBufferBase * buf = sqlBufferPool_->addBuffer(totalBufferSize, failureIsFatal);
+        if (bmoStats_)
+          bmoStats_->setSpaceBufferCount(sqlBufferPool_->get_number_of_buffers());
+      }
+      return buf;
     }
     
     inline Lng32 get_number_of_buffers() const
@@ -475,6 +504,7 @@ class ExSortBufferPool : public NABasicObject
     PoolType poolType_;
     ExSimpleSQLBuffer *simplePool_;
     sql_buffer_pool   *sqlBufferPool_;
+    ExBMOStats *bmoStats_;
     
 };
 

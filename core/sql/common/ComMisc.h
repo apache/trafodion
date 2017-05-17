@@ -60,6 +60,26 @@ NABoolean ComIsTrafodionExternalSchemaName (
 
 NABoolean ComIsHbaseMappedSchemaName (const NAString &schName);
 
+// external format of an HBase mapped table used by 
+// users: HBASE."_MAP_".<tablename>
+NABoolean ComIsHBaseMappedExtFormat(const NAString &catName,
+                                    const NAString &schName);
+
+// internal format of HBase mapped table as stored in traf
+// metadata: TRAFODION."_HB_MAP_".<tablename>
+NABoolean ComIsHBaseMappedIntFormat(const NAString &catName,
+                                    const NAString &schName);
+
+void ComConvertHBaseMappedIntToExt(const NAString &inCatName,
+                                   const NAString &inSchName,
+                                   NAString &outCatName, 
+                                   NAString &outSchName);
+
+void ComConvertHBaseMappedExtToInt(const NAString &inCatName,
+                                   const NAString &inSchName,
+                                   NAString &outCatName, 
+                                   NAString &outSchName);
+
 NAString ComConvertNativeNameToTrafName ( 
                                          const NAString &catalogName,
                                          const NAString &schemaName,

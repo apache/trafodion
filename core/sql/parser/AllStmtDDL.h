@@ -55,7 +55,6 @@
 #include "StmtDDLGrant.h"
 #include "StmtDDLGrantComponentPrivilege.h"
 #include "StmtDDLSchGrant.h"
-#include "StmtDDLPublish.h"
 #include "StmtDDLInitializeSQL.h"
 #include "StmtDDLRevoke.h"
 #include "StmtDDLRevokeComponentPrivilege.h"

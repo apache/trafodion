@@ -2344,6 +2344,11 @@ ExplainTuple *ExeUtilHbaseCoProcAggr::addSpecificExplainInfo(
     description += "OFF " ;
   }
 
+  NAString aggr("aggr on table ");
+  aggr += NAString(((ComTdbHbaseCoProcAggr *)tdb)->getTableName());
+  description += "coproc_type: ";
+  description += aggr;
+
   explainTuple->setDescription(description);
 
   return explainTuple;

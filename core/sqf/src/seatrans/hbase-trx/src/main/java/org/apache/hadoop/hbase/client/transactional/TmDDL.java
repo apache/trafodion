@@ -80,11 +80,29 @@ public class TmDDL {
 
       boolean tDDLTableExists = admin.tableExists(tablename);
 
-      if (tDDLTableExists==false && dtmid ==0) {
-            HTableDescriptor desc = new HTableDescriptor(tablename);
-            desc.addFamily(new HColumnDescriptor(TDDL_FAMILY));
-            admin.createTable(desc);
-      }
+      boolean loopExit = false;
+      do
+      {
+        try {
+           if (tDDLTableExists==false) {
+              if (dtmid == 0){
+                 HTableDescriptor desc = new HTableDescriptor(tablename);
+                 desc.addFamily(new HColumnDescriptor(TDDL_FAMILY));
+                 admin.createTable(desc);
+              }
+              else {
+                 Thread.sleep(3000);  // Sleep 3 seconds to allow table creation
+              }
+           }
+           loopExit = true;
+        }
+        catch (InterruptedException ie) {}
+        catch (IOException e) {
+           loopExit = true;
+           LOG.error("Exception at the time of creating TmDDL ", e);
+           throw e;
+        }
+      } while (loopExit == false);
 
       tablePutLock = new Object();
 

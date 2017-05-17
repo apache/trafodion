@@ -1360,8 +1360,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_PRIVILEGE           /* HP extension non-reserved word */
 %token <tokval> TOK_PRIVILEGES
 %token <tokval> TOK_PUBLIC
-%token <tokval> TOK_PUBLISH             /* Tandem extension */
-%token <tokval> TOK_UNPUBLISH           /* Tandem extension */
 %token <tokval> TOK_PURGEDATA
 %token <tokval> TOK_RANGE               /* Tandem extension non-reserved word*/
 %token <tokval> TOK_RANGE_N             /* TD extension that HP wants to ignore */
@@ -2428,17 +2426,17 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <boolean>                 optional_granted
  /*%type <boolean>                 admin_option_for*/
 %type <pElemDDL>                optional_granted_by
-%type <pStmtDDL>                publish_statement
-%type <pStmtDDL>                unpublish_statement
 %type <pStmtDDL>                create_component_privilege_stmt
 %type <pStmtDDL>                drop_component_privilege_stmt
 %type <pStmtDDL>                register_component_statement
 %type <pStmtDDL>                register_user_statement
 %type <pStmtDDL>                register_hive_statement
+%type <pStmtDDL>                register_hbase_statement
 %type <boolean>                 optional_internal_clause
 %type <pStmtDDL>                unregister_component_statement
 %type <pStmtDDL>		unregister_user_statement
 %type <pStmtDDL>		unregister_hive_statement
+%type <pStmtDDL>		unregister_hbase_statement
 %type <pElemDDL>  		privileges
 %type <pElemDDL>  		privilege_action_list
 %type <pElemDDL>  		privilege_action
@@ -2738,7 +2736,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <accesstype>    		access_type
 %type <pStmtDDL>                create_synonym_stmt
 %type <pStmtDDL>                drop_synonym_stmt
-%type <boolean>                 synonym_grantee_type
 %type <pStmtDDL>                drop_sql
 %type <pStmtDDL>                drop_table_constraint_definition
 %type <pStmtDDL>                drop_module
@@ -14399,13 +14396,6 @@ sql_schema_definition_statement :
               | drop_component_privilege_stmt
                                 {
                                 }
-              | publish_statement
-                                {
-                                }
-
-              | unpublish_statement
-                                {
-                                }
 
               | register_component_statement
                                 {
@@ -14478,6 +14468,12 @@ sql_schema_definition_statement :
                                 {
                                 }
               | unregister_hive_statement
+                                {
+                                }
+              | register_hbase_statement
+                                {
+                                }
+              | unregister_hbase_statement
                                 {
                                 }
 
@@ -15287,7 +15283,7 @@ exe_util_get_statistics : TOK_GET TOK_STATISTICS stats_merge_clause get_statisti
                   {
                     stats =
                       new (PARSERHEAP ()) ExeUtilGetStatistics
-                    (*$5, NULL,
+                    (*$5, ($7 ? (char*)$7->data() : NULL),
                       PARSERHEAP (), SQLCLI_STATS_REQ_QID, (short)$6, -1); /*RtsQueryId::ANY_QUERY_*/
                   }
                   $$ = stats;
@@ -15862,6 +15858,8 @@ objects_identifier :
                   | TOK_HIVE TOK_REGISTERED TOK_VIEWS { $$ = new (PARSERHEAP()) NAString("HIVE_REG_VIEWS"); }
                   | TOK_HIVE TOK_REGISTERED TOK_OBJECTS { $$ = new (PARSERHEAP()) NAString("HIVE_REG_OBJECTS"); }
                   | TOK_HIVE TOK_EXTERNAL TOK_TABLES { $$ = new (PARSERHEAP()) NAString("HIVE_EXT_TABLES"); }
+                  | TOK_HBASE TOK_REGISTERED TOK_TABLES { $$ = new (PARSERHEAP()) NAString("HBASE_REG_TABLES"); }
+
 
 privileges_identifier :
                     TOK_PRIVILEGES { $$ = new (PARSERHEAP()) NAString("PRIVILEGES"); }
@@ -16559,23 +16557,6 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 		 $$ = mu;
 	       }
 
-             | TOK_INITIALIZE TOK_TRAFODION ',' TOK_CREATE TOK_SEQUENCE
-               {
-		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
-		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
-						   , PARSERHEAP() 
-	                                       );
-
-		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
-                                                          FALSE, FALSE,
-							  TRUE, FALSE, FALSE, FALSE,
-							  (char*)stmt->data(),
-							  stmtCharSet,
-							  PARSERHEAP());
-
-                 $$ = de;
-
-               }
              | TOK_INITIALIZE TOK_TRAFODION ',' TOK_CREATE TOK_SCHEMA TOK_OBJECTS
                {
 		 CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
@@ -28700,69 +28681,11 @@ optional_by_auth_identifier : empty
                                   delete $2 /*authorization_identifier*/;
                                 }
 
-publish_statement : TOK_PUBLISH privileges TOK_ON ddl_qualified_name
-                    TOK_AS identifier
-                    TOK_TO synonym_grantee_type grantee_list
-                      {
-                        $$ = new (PARSERHEAP())
-                          StmtDDLPublish(
-                                $2 /*privileges*/,
-                                *$4 /*object*/,
-                                *$6 /*synonym_name*/,
-                                $8 /*grantee type*/,
-                                $9 /*grantee_list*/,
-                                TRUE /*isPublish*/);
-                        delete $4;
-                        delete $6;
-                      }
-
-                  | TOK_PUBLISH privileges TOK_ON ddl_qualified_name
-                    TOK_TO synonym_grantee_type grantee_list
-                      {
-                        NAString noSynonym;
-                        $$ = new (PARSERHEAP())
-                          StmtDDLPublish(
-                                $2 /*privileges*/,
-                                *$4 /*object*/,
-                                noSynonym /*synonym_name*/,
-                                $6 /*grantee type*/,
-                                $7 /*grantee_list*/,
-                                TRUE /*isPublish*/);
-                        delete $4;
-                      }
 
 
 
-unpublish_statement : TOK_UNPUBLISH privileges TOK_ON ddl_qualified_name
-                      TOK_FOR identifier
-                      TOK_FROM synonym_grantee_type grantee_list
-                        {
-                          $$ = new (PARSERHEAP())
-                            StmtDDLPublish(
-                                  $2 /*privileges*/,
-                                  *$4 /*object*/,
-                                  *$6 /*synonym_name*/,
-                                  $8 /*grantee type*/,
-                                  $9 /*grantee_list*/,
-                                  FALSE /*isPublish*/);
-                          delete $4;
-                          delete $6;
-                        }
 
-                    | TOK_UNPUBLISH privileges TOK_ON ddl_qualified_name
-                      TOK_FROM synonym_grantee_type grantee_list
-                        {
-                          NAString noSynonym;
-                          $$ = new (PARSERHEAP())
-                            StmtDDLPublish(
-                                  $2 /*privileges*/,
-                                  *$4 /*object*/,
-                                  noSynonym /*synonym_name*/,
-                                  $6 /*grantee type*/,
-                                  $7 /*grantee_list*/,
-                                  FALSE /*isPublish*/);
-                          delete $4;
-                        }
+
 /* type pQualName */
 constraint_name : ddl_qualified_name
 
@@ -30301,6 +30224,8 @@ cleanup_objects_statement : TOK_CLEANUP cleanup_object_identifier ddl_qualified_
                    ot = StmtDDLCleanupObjects::HIVE_TABLE_;
                  else if (*$2 == "HIVE_VIEW")
                    ot = StmtDDLCleanupObjects::HIVE_VIEW_;
+                 else if (*$2 == "HBASE_TABLE")
+                   ot = StmtDDLCleanupObjects::HBASE_TABLE_;
                  else if (*$2 == "OBJECT")
                    ot = StmtDDLCleanupObjects::UNKNOWN_;
                  else
@@ -30421,6 +30346,7 @@ cleanup_object_identifier : object_identifier
                        | TOK_OBJECT { $$ = new (PARSERHEAP()) NAString("OBJECT");}
                        | TOK_HIVE TOK_TABLE { $$ = new (PARSERHEAP()) NAString("HIVE_TABLE");}
                        | TOK_HIVE TOK_VIEW { $$ = new (PARSERHEAP()) NAString("HIVE_VIEW");}
+                       | TOK_HBASE TOK_TABLE { $$ = new (PARSERHEAP()) NAString("HBASE_TABLE");}
 
 /* type boolean */
 optional_cleanup_return_details : empty
@@ -33035,8 +32961,9 @@ register_hive_statement : TOK_REGISTER optional_internal_clause TOK_HIVE object_
                               }
 
                             $$ = new (PARSERHEAP())
-                              StmtDDLRegOrUnregHive(
+                              StmtDDLRegOrUnregObject(
                                    *$6,
+                                   StmtDDLRegOrUnregObject::HIVE,
                                    TRUE, // register
                                    (*$4 == "TABLE" ? COM_BASE_TABLE_OBJECT
                                     : (*$4 == "VIEW" ? COM_VIEW_OBJECT
@@ -33069,8 +32996,9 @@ unregister_hive_statement : TOK_UNREGISTER optional_internal_clause TOK_HIVE obj
                                   }
                                 
                                 $$ = new (PARSERHEAP())
-                                  StmtDDLRegOrUnregHive(
+                                  StmtDDLRegOrUnregObject(
                                        *$6,
+                                       StmtDDLRegOrUnregObject::HIVE,
                                        FALSE, // unregister
                                        (*$4 == "TABLE" ? COM_BASE_TABLE_OBJECT
                                         : (*$4 == "VIEW" ? COM_VIEW_OBJECT
@@ -33079,6 +33007,44 @@ unregister_hive_statement : TOK_UNREGISTER optional_internal_clause TOK_HIVE obj
                                        $2, // is internal unregister?
                                        $7, // is cascade?
                                        $8, // is cleanup?
+                                       PARSERHEAP());
+                                delete $6;
+                              }
+
+/* type pStmtDDL */
+// Syntax: register [internal] hbase table [if not exists] <table-name> 
+register_hbase_statement : TOK_REGISTER optional_internal_clause TOK_HBASE TOK_TABLE optional_if_not_exists_clause ddl_qualified_name
+                          {
+                            StmtDDLRegOrUnregObject *pNode = new (PARSERHEAP())
+                              StmtDDLRegOrUnregObject(
+                                   *$6,
+                                   StmtDDLRegOrUnregObject::HBASE,
+                                   TRUE, // register
+                                   COM_BASE_TABLE_OBJECT,
+                                   $5, // if not exists?
+                                   $2, // is internal registration?
+                                   FALSE,
+                                   FALSE,
+                                   PARSERHEAP());
+
+                            $$ = pNode;
+                            delete $6;
+                          }
+
+/* type pStmtDDL */
+// Syntax: unregister [internal] hbase table [if exists] <table-name>
+unregister_hbase_statement : TOK_UNREGISTER optional_internal_clause TOK_HBASE TOK_TABLE optional_if_exists_clause ddl_qualified_name optional_cleanup
+                              {
+                                $$ = new (PARSERHEAP())
+                                  StmtDDLRegOrUnregObject(
+                                       *$6,
+                                       StmtDDLRegOrUnregObject::HBASE,
+                                       FALSE, // unregister
+                                       COM_BASE_TABLE_OBJECT,
+                                       $5, // if exists?
+                                       $2, // is internal unregister?
+                                       FALSE,
+                                       $7, // is cleanup?
                                        PARSERHEAP());
                                 delete $6;
                               }
@@ -33280,15 +33246,6 @@ create_synonym_stmt : TOK_CREATE TOK_SYNONYM
                                   delete $3 /*ddl_qualified_name*/;
                                   delete $5 /*ddl_qualified_name*/;
                                }
-
-synonym_grantee_type : TOK_USER
-                     {
-                       $$ = FALSE;
-                     }
-                     | TOK_ROLE
-                     {
-                       $$ = TRUE;
-                     }
 
 /* type longint */
 options : /* empty */
@@ -33819,7 +33776,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_PROCESS
                       | TOK_PROGRESS
                       | TOK_PROMPT
-                      | TOK_PUBLISH
                       | TOK_QID
                       | TOK_QID_INTERNAL
 	              | TOK_QUERY
@@ -33953,7 +33909,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_UNLOCK
                       | TOK_UNLOAD
                       | TOK_UNNAMED
-                      | TOK_UNPUBLISH
                       | TOK_UNREGISTER
                       | TOK_UNSIGNED
                       | TOK_UPD

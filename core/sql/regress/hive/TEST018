@@ -83,11 +83,11 @@ drop table store_sales_salt;
 drop table nulls;
 drop table null_format_src;
 
-sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_address.gz ;
-sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs.gz ;
-sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs_3;
-sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs_4.gz ;
-sh regrhadoop.ksh fs -rm   /bulkload/merged_customer_demogs_2.gz ;
+sh regrhadoop.ksh fs -rm   /user/trafodion/bulkload/merged_customer_address.gz ;
+sh regrhadoop.ksh fs -rm   /user/trafodion/bulkload/merged_customer_demogs.gz ;
+sh regrhadoop.ksh fs -rm   /user/trafodion/bulkload/merged_customer_demogs_3;
+sh regrhadoop.ksh fs -rm   /user/trafodion/bulkload/merged_customer_demogs_4.gz ;
+sh regrhadoop.ksh fs -rm   /user/trafodion/bulkload/merged_customer_demogs_2.gz ;
 sh  regrhbase.ksh $REGRTSTDIR/TEST018_drop_hbase_objects.hbase &> $REGRRUNDIR/TEST018_drop_hbase_objects.log ;
 ?section setup
 --------------------------------------------------------------------------
@@ -260,17 +260,17 @@ select * from hive.hive.null_format_colon;
 
 -- using unload
 unload with purgedata from target
-   into '/user/hive/exttables/null_format_default'
+   into '/user/trafodion/hive/exttables/null_format_default'
    select * from null_format_src;
 select * from hive.hive.null_format_default;
 
 unload with purgedata from target
-   into '/user/hive/exttables/null_format_empty'
+   into '/user/trafodion/hive/exttables/null_format_empty'
    select * from null_format_src;
 select * from hive.hive.null_format_empty;
 
 unload with purgedata from target
-   into '/user/hive/exttables/null_format_colon'
+   into '/user/trafodion/hive/exttables/null_format_colon'
    select * from null_format_src;
 select * from hive.hive.null_format_colon;
 
@@ -285,7 +285,7 @@ alter table hbase.customer_salt generate stored descriptor;
 
 --exp1
 explain options 'f' 
-UNLOAD EXTRACT TO '/bulkload/customer_address'
+UNLOAD EXTRACT TO '/user/trafodion/bulkload/customer_address'
 select * from trafodion.hbase.customer_address 
 <<+ cardinality 10e10 >>;
 --unload1
@@ -294,12 +294,12 @@ WITH
  PURGEDATA FROM TARGET DELIMITER '|' RECORD_SEPARATOR '\n' NULL_STRING 'NULL'
 MERGE FILE  'merged_customer_address.gz' OVERWRITE
 COMPRESSION GZIP
-INTO '/bulkload/customer_address'
+INTO '/user/trafodion/bulkload/customer_address'
 select * from trafodion.hbase.customer_address 
 ;
 log;
-sh echo "regrhadoop.ksh fs -copyToLocal  /bulkload/customer_address/merged_customer_address.gz /tmp " >> LOG018 ;;
-sh regrhadoop.ksh fs -copyToLocal  /bulkload/customer_address/merged_customer_address.gz /tmp ;
+sh echo "regrhadoop.ksh fs -copyToLocal  /user/trafodion/bulkload/customer_address/merged_customer_address.gz /tmp " >> LOG018 ;;
+sh regrhadoop.ksh fs -copyToLocal  /user/trafodion/bulkload/customer_address/merged_customer_address.gz /tmp ;
 sh echo "gunzip -f /tmp/merged_customer_address.gz" >> LOG018 ; ;
 sh gunzip -f /tmp/merged_customer_address.gz  ;
 sh echo "cat /tmp/merged_customer_address | wc -l" >> LOG018 ;
@@ -316,12 +316,12 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 MERGE FILE  'merged_customer_demogs.gz' OVERWRITE
 COMPRESSION GZIP
-INTO '/bulkload/customer_demographics'
+INTO '/user/trafodion/bulkload/customer_demographics'
 select * from trafodion.hbase.customer_demographics 
 <<+ cardinality 10e10 >>;
 log;
-sh echo "regrhadoop.ksh fs -copyToLocal  /bulkload/customer_demographics/merged_customer_demogs.gz /tmp " >> LOG018 ;
-sh regrhadoop.ksh fs -copyToLocal  /bulkload/customer_demographics/merged_customer_demogs.gz /tmp   ;
+sh echo "regrhadoop.ksh fs -copyToLocal  /user/trafodion/bulkload/customer_demographics/merged_customer_demogs.gz /tmp " >> LOG018 ;
+sh regrhadoop.ksh fs -copyToLocal  /user/trafodion/bulkload/customer_demographics/merged_customer_demogs.gz /tmp   ;
 sh echo "gunzip -f /tmp/merged_customer_demogs.gz" >> LOG018 ;
 sh gunzip -f /tmp/merged_customer_demogs.gz  ;
 sh echo "cat /tmp/merged_customer_demogs | wc -l" >> LOG018 ;
@@ -333,17 +333,17 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 MERGE FILE  'merged_customer_demogs_2' OVERWRITE
 --COMPRESSION GZIP
-INTO '/bulkload/customer_demographics'
+INTO '/user/trafodion/bulkload/customer_demographics'
 select * from trafodion.hbase.customer_demographics 
 <<+ cardinality 10e10 >>;
 log;
-sh echo "regrhadoop.ksh fs -cat  /bulkload/customer_demographics/merged_customer_demogs_2 | wc -l " >> LOG018 ;
-sh regrhadoop.ksh fs -cat  /bulkload/customer_demographics/merged_customer_demogs_2 | wc -l >> LOG018  ;
+sh echo "regrhadoop.ksh fs -cat  /user/trafodion/bulkload/customer_demographics/merged_customer_demogs_2 | wc -l " >> LOG018 ;
+sh regrhadoop.ksh fs -cat  /user/trafodion/bulkload/customer_demographics/merged_customer_demogs_2 | wc -l >> LOG018  ;
 log LOG018;
 ----------------------------------
 --exp 3
 explain options 'f' 
-UNLOAD EXTRACT TO '/bulkload/customer_demographics_salt'
+UNLOAD EXTRACT TO '/user/trafodion/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 --unload 4
@@ -356,8 +356,8 @@ select * from trafodion.hbase.customer_demographics_salt
 <<+ cardinality 10e10 >>;
 
 log;
-sh echo "regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_demogs_3" >> LOG018 ;
-sh regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_demogs_3 >> LOG018 ;
+sh echo "regrhadoop.ksh fs -du -s /user/trafodion/bulkload/customer_demographics_salt/merged_customer_demogs_3" >> LOG018 ;
+sh regrhadoop.ksh fs -du -s /user/trafodion/bulkload/customer_demographics_salt/merged_customer_demogs_3 >> LOG018 ;
 log LOG018;
 -------------------
 --unload 5
@@ -365,34 +365,34 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 MERGE FILE  'merged_customer_demogs_4.gz' OVERWRITE
 COMPRESSION GZIP
-INTO '/bulkload/customer_demographics_salt'
+INTO '/user/trafodion/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 
 log;
-sh echo "regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_demogs_4.gz" >> LOG018 ;
-sh regrhadoop.ksh fs -du -s /bulkload/customer_demographics_salt/merged_customer_demogs_4.gz >> LOG018 ;
+sh echo "regrhadoop.ksh fs -du -s /user/trafodion/bulkload/customer_demographics_salt/merged_customer_demogs_4.gz" >> LOG018 ;
+sh regrhadoop.ksh fs -du -s /user/trafodion/bulkload/customer_demographics_salt/merged_customer_demogs_4.gz >> LOG018 ;
 log LOG018;
 
 --exp4
 explain options 'f' 
-UNLOAD EXTRACT TO '/bulkload/customer_demographics_salt'
+UNLOAD EXTRACT TO '/user/trafodion/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 --unload 6
 UNLOAD  
 WITH PURGEDATA FROM TARGET
---MERGE FILE  '/bulkload/merged_customer_demogs_2.gz' OVERWRITE
+--MERGE FILE  '/user/trafodion/bulkload/merged_customer_demogs_2.gz' OVERWRITE
 --COMPRESSION GZIP
-INTO '/bulkload/customer_demographics_salt'
+INTO '/user/trafodion/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 
 log;
-sh echo "regrhadoop.ksh fs -cat /bulkload/customer_demographics_salt/file* | wc -l" >> LOG018 ;
-sh regrhadoop.ksh fs -cat /bulkload/customer_demographics_salt/file* | wc -l >> LOG018 ;
-sh echo "regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/file* |  grep file | wc -l" >> LOG018 ;
-sh regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/file* |  grep file |  wc -l >> LOG018 ;
+sh echo "regrhadoop.ksh fs -cat /user/trafodion/bulkload/customer_demographics_salt/file* | wc -l" >> LOG018 ;
+sh regrhadoop.ksh fs -cat /user/trafodion/bulkload/customer_demographics_salt/file* | wc -l >> LOG018 ;
+sh echo "regrhadoop.ksh fs -ls /user/trafodion/bulkload/customer_demographics_salt/file* |  grep file | wc -l" >> LOG018 ;
+sh regrhadoop.ksh fs -ls /user/trafodion/bulkload/customer_demographics_salt/file* |  grep file |  wc -l >> LOG018 ;
 log LOG018;
 
 --unload 7
@@ -400,15 +400,15 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 MERGE FILE  'merged_customer_demogs_2.gz' OVERWRITE
 COMPRESSION GZIP
-INTO '/bulkload/customer_demographics_salt'
+INTO '/user/trafodion/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 
-sh regrhadoop.ksh fs -copyToLocal  /bulkload/customer_demographics_salt/merged_customer_demogs_2.gz /tmp ;
+sh regrhadoop.ksh fs -copyToLocal  /user/trafodion/bulkload/customer_demographics_salt/merged_customer_demogs_2.gz /tmp ;
 sh gunzip -f /tmp/merged_customer_demogs_2.gz  ;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/unload_customer_demographics/* ;
-sh regrhadoop.ksh fs -copyFromLocal /tmp/merged_customer_demogs_2  /user/hive/exttables/unload_customer_demographics ;
-sh rm /bulkload/merged_customer_demogs_2 ;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/unload_customer_demographics/* ;
+sh regrhadoop.ksh fs -copyFromLocal /tmp/merged_customer_demogs_2  /user/trafodion/hive/exttables/unload_customer_demographics ;
+sh rm /user/trafodion/bulkload/merged_customer_demogs_2 ;
 
 cqd HIVE_MAX_STRING_LENGTH_IN_BYTES '100';
 select [first 100] * from hive.hive.unload_customer_demographics where cd_demo_sk <200 order by cd_demo_sk;
@@ -420,12 +420,12 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 MERGE FILE  'merged_customer_demogs_4.gz' OVERWRITE
 COMPRESSION GZIP
-INTO '/bulkload/customer_demographics_salt'
+INTO '/user/trafodion/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 log;
-sh echo "regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/merged* | grep merge | wc -l" >> LOG018 ;
-sh regrhadoop.ksh fs -ls /bulkload/customer_demographics_salt/merged* |  grep merge | wc -l >> LOG018 ;
+sh echo "regrhadoop.ksh fs -ls /user/trafodion/bulkload/customer_demographics_salt/merged* | grep merge | wc -l" >> LOG018 ;
+sh regrhadoop.ksh fs -ls /user/trafodion/bulkload/customer_demographics_salt/merged* |  grep merge | wc -l >> LOG018 ;
 log LOG018;
 
 
@@ -435,7 +435,7 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 MERGE FILE  'merged_customer_demogs_2' OVERWRITE
 COMPRESSION GZIP
-INTO '/bulkload/customer_demographics_salt'
+INTO '/user/trafodion/bulkload/customer_demographics_salt'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 
@@ -446,7 +446,7 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 MERGE FILE  'merged_customer_demographics' OVERWRITE
 --COMPRESSION GZIP
-INTO '/user/hive/exttables/unload_customer_demographics'
+INTO '/user/trafodion/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 --sh sleep 10;
@@ -458,7 +458,7 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 --MERGE FILE  'merged_customer_demographics' OVERWRITE
 --COMPRESSION GZIP
-INTO '/user/hive/exttables/unload_customer_demographics'
+INTO '/user/trafodion/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt 
 <<+ cardinality 10e10 >>;
 --sh sleep 10;
@@ -468,7 +468,7 @@ select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk
 --unload 12
 UNLOAD  
 WITH PURGEDATA FROM TARGET
-INTO '/user/hive/exttables/unload_customer_address'
+INTO '/user/trafodion/hive/exttables/unload_customer_address'
 select * from trafodion.hbase.customer_address ;
 --sh sleep 10;
 select count(*) from hive.hive.unload_customer_address;
@@ -478,7 +478,7 @@ select [first 20] * from hive.hive.unload_customer_address where ca_address_sk <
 --test with numeric delimiers
 UNLOAD  
 WITH PURGEDATA FROM TARGET DELIMITER 124  RECORD_SEPARATOR 10
-INTO '/user/hive/exttables/unload_customer_address'
+INTO '/user/trafodion/hive/exttables/unload_customer_address'
 select * from trafodion.hbase.customer_address ;
 --sh sleep 10;
 select count(*) from hive.hive.unload_customer_address;
@@ -493,7 +493,7 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 --MERGE FILE  'merged_customer_demographics' OVERWRITE
 --COMPRESSION GZIP
-INTO '/user/hive/exttables/unload_customer'
+INTO '/user/trafodion/hive/exttables/unload_customer'
 select * from trafodion.hbase.customer_salt;
 --sh sleep 10;
 select count(*) from hive.hive.unload_customer;
@@ -504,7 +504,7 @@ UNLOAD
 WITH PURGEDATA FROM TARGET
 --MERGE FILE  'merged_customer_demographics' OVERWRITE
 --COMPRESSION GZIP
-INTO '/user/hive/exttables/unload_customer_demographics'
+INTO '/user/trafodion/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt;
 --sh sleep 10;
 select count(*) from hive.hive.unload_customer_demographics;
@@ -516,7 +516,7 @@ WITH
  PURGEDATA FROM TARGET DELIMITER '|' RECORD_SEPARATOR '\n' NULL_STRING 'NULL'
 MERGE FILE  'merged_customer_address.gz' OVERWRITE
 COMPRESSION GZIP
-INTO '/bulkload/customer_address'
+INTO '/user/trafodion/bulkload/customer_address'
 select * from trafodion.hbase.customer_address where ca_address_sk < 100;
 
 --unload 16
@@ -525,13 +525,13 @@ WITH
  PURGEDATA FROM TARGET DELIMITER '|' RECORD_SEPARATOR '\n' NULL_STRING 'NULL'
 MERGE FILE  'merged_customer_address.gz' 
 COMPRESSION GZIP
-INTO '/bulkload/customer_address'
+INTO '/user/trafodion/bulkload/customer_address'
 select * from trafodion.hbase.customer_address where ca_address_sk < 100;
 
 
 log;
-sh echo "regrhadoop.ksh fs -rm /user/hive/exttables/unload_customer_demographics/*" >> LOG018 ;
-sh regrhadoop.ksh fs -rm /user/hive/exttables/unload_customer_demographics/* ;
+sh echo "regrhadoop.ksh fs -rm /user/trafodion/hive/exttables/unload_customer_demographics/*" >> LOG018 ;
+sh regrhadoop.ksh fs -rm /user/trafodion/hive/exttables/unload_customer_demographics/* ;
 log LOG018;
 
 
@@ -541,7 +541,7 @@ cqd attempt_esp_parallelism reset;
 UNLOAD  
 WITH 
  PURGEDATA FROM TARGET DELIMITER '|' RECORD_SEPARATOR '\n' 
-INTO '/user/hive/exttables/unload_store_sales_summary'
+INTO '/user/trafodion/hive/exttables/unload_store_sales_summary'
 select ss_sold_date_sk,ss_store_sk, sum (ss_quantity) from store_sales_salt group by  ss_sold_date_sk ,ss_store_sk; 
 --sh sleep 10;
 select  [first 100] * from hive.hive.unload_store_sales_summary order by  ss_sold_date_sk,ss_store_sk; 
@@ -549,7 +549,7 @@ select  [first 100] * from hive.hive.unload_store_sales_summary order by  ss_sol
 --unload 18
 UNLOAD  
 WITH PURGEDATA FROM TARGET
-INTO '/user/hive/exttables/unload_customer_and_address'
+INTO '/user/trafodion/hive/exttables/unload_customer_and_address'
 select * from trafodion.hbase.customer_salt c join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk ;
 --sh sleep 10;
 select count(*) from hive.hive.unload_customer_and_address;
@@ -559,7 +559,7 @@ select [first 20] * from hive.hive.unload_customer_and_address order by ca_addre
 UNLOAD  
 WITH 
  PURGEDATA FROM TARGET 
-INTO '/user/hive/exttables/unload_customer_address'
+INTO '/user/trafodion/hive/exttables/unload_customer_address'
 select * from customer_address where ca_address_sk < 1000 union select * from customer_address where ca_address_sk > 40000  and ca_address_sk < 41000;
 --sh sleep 10;
 select count(*) from hive.hive.unload_customer_address;
@@ -629,14 +629,14 @@ cqd TRAF_TABLE_SNAPSHOT_SCAN_TABLE_SIZE_THRESHOLD '0';
 
 cqd comp_bool_226 'on';  -- allow the extract syntax
 explain options 'f' 
-UNLOAD EXTRACT TO '/bulkload/customer_address'
+UNLOAD EXTRACT TO '/user/trafodion/bulkload/customer_address'
 select * from trafodion.hbase.customer_address <<+ cardinality 10e10 >>;
 cqd comp_bool_226 reset;
 
 UNLOAD
 WITH PURGEDATA FROM TARGET
  EXISTING SNAPSHOT HAVING SUFFIX 'SNAP111' 
-INTO '/user/hive/exttables/unload_customer_address'
+INTO '/user/trafodion/hive/exttables/unload_customer_address'
 select * from customer_address
 <<+ cardinality 10e10 >>;
 
@@ -647,14 +647,14 @@ select [first 20] * from hive.hive.unload_customer_address  where ca_address_sk 
 
 cqd comp_bool_226 'on';  -- allow the extract syntax
 explain options 'f' 
-UNLOAD EXTRACT TO '/user/hive/exttables/unload_customer_demographics'
+UNLOAD EXTRACT TO '/user/trafodion/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt <<+ cardinality 10e10 >>;
 cqd comp_bool_226 reset;
 
 UNLOAD  
 WITH PURGEDATA FROM TARGET
  EXISTING SNAPSHOT HAVING SUFFIX 'SNAP111'
-INTO '/user/hive/exttables/unload_customer_demographics'
+INTO '/user/trafodion/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt <<+ cardinality 10e10 >>;
 
 select count(*) from hive.hive.unload_customer_demographics;
@@ -664,7 +664,7 @@ select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk
 UNLOAD
 WITH PURGEDATA FROM TARGET
  NEW SNAPSHOT HAVING  SUFFIX 'SNAP112' 
-INTO '/user/hive/exttables/unload_customer_demographics'
+INTO '/user/trafodion/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt <<+ cardinality 10e10 >>;
 
 select count(*) from hive.hive.unload_customer_demographics;
@@ -674,7 +674,7 @@ select [first 20] * from hive.hive.unload_customer_demographics where cd_demo_sk
 UNLOAD
 WITH PURGEDATA FROM TARGET
  NEW SNAPSHOT HAVING  SUFFIX   'SNAP'  
-INTO '/user/hive/exttables/unload_customer_demographics'
+INTO '/user/trafodion/hive/exttables/unload_customer_demographics'
 select * from trafodion.hbase.customer_demographics_salt <<+ cardinality 10e10 >>;
 
 select count(*) from hive.hive.unload_customer_demographics;
@@ -685,7 +685,7 @@ UNLOAD
 WITH 
  PURGEDATA FROM TARGET 
  NEW SNAPSHOT HAVING  SUFFIX 'SNAP'
-INTO '/user/hive/exttables/unload_customer_address'
+INTO '/user/trafodion/hive/exttables/unload_customer_address'
 select * from customer_address where ca_address_sk < 1000 union select * from customer_address where ca_address_sk > 40000  and ca_address_sk < 41000;
 
 select count(*) from hive.hive.unload_customer_address;
@@ -696,7 +696,7 @@ select [first 20] * from hive.hive.unload_customer_address order by ca_address_s
 UNLOAD  
 WITH PURGEDATA FROM TARGET
  NEW SNAPSHOT HAVING  SUFFIX 'SNAP'
-INTO '/user/hive/exttables/unload_customer_and_address'
+INTO '/user/trafodion/hive/exttables/unload_customer_and_address'
 select * from trafodion.hbase.customer_salt c join trafodion.hbase.customer_address ca on c.c_current_addr_sk = ca.ca_address_sk ;
 --sh sleep 10;
 select count(*) from hive.hive.unload_customer_and_address;
@@ -705,14 +705,14 @@ select [first 20] * from hive.hive.unload_customer_and_address order by ca_addre
 --unload 26 --test with index scan
 cqd comp_bool_226 'on';  -- allow the extract syntax
 explain options 'f' 
-UNLOAD EXTRACT TO '/bulkload/customer_name'
+UNLOAD EXTRACT TO '/user/trafodion/bulkload/customer_name'
 select c_first_name,c_last_name from trafodion.hbase.customer_salt;
 cqd comp_bool_226 reset;
 
 UNLOAD
 WITH PURGEDATA FROM TARGET
  NEW SNAPSHOT HAVING SUFFIX 'SNAP111' 
-INTO '/user/hive/exttables/unload_customer_name'
+INTO '/user/trafodion/hive/exttables/unload_customer_name'
 select c_first_name,c_last_name from trafodion.hbase.customer_salt;
 --sh sleep 10;
 select count(*) from hive.hive.unload_customer_name;
@@ -723,38 +723,38 @@ select [first 20] * from hive.hive.unload_customer_name order by c_first_name,c_
 unload into '//\a//c' select * from CUSTOMER_ADDRESS;
 
 --unload 101 --should give syntax error
-unload with delimiter 0 into '/bulkload/test' select * from CUSTOMER_ADDRESS;
+unload with delimiter 0 into '/user/trafodion/bulkload/test' select * from CUSTOMER_ADDRESS;
 
 --unload 102 --should give an error
-unload with MERGE FILE 'folder/cust_addr' into '/bulkload/test' select * from customer_address;
+unload with MERGE FILE 'folder/cust_addr' into '/user/trafodion/bulkload/test' select * from customer_address;
 
 --unload  103 -- should not give an error
-unload with delimiter '\a' into '/bulkload/test' select * from customer_address;
+unload with delimiter '\a' into '/user/trafodion/bulkload/test' select * from customer_address;
 --unload  24 -- should give an error
-unload with delimiter 'abca' into '/bulkload/test' select * from customer_address;
+unload with delimiter 'abca' into '/user/trafodion/bulkload/test' select * from customer_address;
 
 --unload  104 -- should give an error
-unload with record_separator '\abca' into '/bulkload/test' select * from customer_address;
+unload with record_separator '\abca' into '/user/trafodion/bulkload/test' select * from customer_address;
 --unload  105 -- should give an error
-unload with record_separator '\z' into '/bulkload/test' select * from customer_address;
+unload with record_separator '\z' into '/user/trafodion/bulkload/test' select * from customer_address;
 --unload 106 --should give error
-unload  into '/bulkload/test' select * from customer_address order by ca_address_id;
+unload  into '/user/trafodion/bulkload/test' select * from customer_address order by ca_address_id;
 --unload 107  --should give error
 cqd comp_bool_226 'on';
-unload  extract to '/bulkload/test' select * from customer_address order by ca_address_id;
+unload  extract to '/user/trafodion/bulkload/test' select * from customer_address order by ca_address_id;
 cqd comp_bool_226 reset;
 
 --unload 150
 
 log;
-sh echo "regrhadoop.ksh fs -rm /user/hive/exttables/unload_customer_demographics/*" >> LOG018 ;
-sh regrhadoop.ksh fs -rm /user/hive/exttables/unload_customer_demographics/* ;
+sh echo "regrhadoop.ksh fs -rm /user/trafodion/hive/exttables/unload_customer_demographics/*" >> LOG018 ;
+sh regrhadoop.ksh fs -rm /user/trafodion/hive/exttables/unload_customer_demographics/* ;
 log LOG018;
 
 CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'ON';
 UNLOAD  
 WITH PURGEDATA FROM TARGET
-INTO '/user/hive/exttables/unload_customer_demographics'
+INTO '/user/trafodion/hive/exttables/unload_customer_demographics'
 (select * from trafodion.hbase.customer_demographics_salt) ;
 --sh sleep 10;
 select count(*) from hive.hive.unload_customer_demographics;

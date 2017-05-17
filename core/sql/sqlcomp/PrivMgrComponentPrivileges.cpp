@@ -691,6 +691,15 @@ PrivStatus PrivMgrComponentPrivileges::grantPrivilege(
    for (size_t i = 0; i < operations.size(); i ++)
    {
       std::string operationName = operations[i];
+
+      // For the moment we are disabling DML_* privileges. We might remove
+      // them in the future. Note that it will still be possible to revoke 
+      // them. (Note: sizeof counts null terminator, hence the -1.)
+      if (strncmp(operationName.c_str(),"DML_",sizeof("DML_")-1) == 0)
+      {
+         *pDiags_ << DgSqlCode(-CAT_UNSUPPORTED_COMMAND_ERROR);
+         return STATUS_ERROR;
+      }
       
       //TODO: 
       // If we can't find an operation in the list, we give up.  No warnings or 

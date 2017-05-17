@@ -81,7 +81,7 @@ Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfL
   char *lobFinalBuf = new char[lengthOfLob];
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobExtractLen = 1000;
+  Int64 lobExtractLen = 10000;
   char *lobDataBuf = new char[lobExtractLen];
   
   str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %Ld, SIZE %Ld) ", lobHandle, (Int64)lobDataBuf, &lobExtractLen);
@@ -128,7 +128,7 @@ Int32 extractLobToFileInChunks(CliGlobals *cliglob,  char * lobHandle, char *fil
   
   char statusBuf[200] = {'\0'};
   Int32 statusBufLen = 0;
-  Int64 lobExtractLen = 1000;
+  Int64 lobExtractLen = 10000;
   char *lobDataBuf = new char[lobExtractLen];
   Int64 *inputOutputAddr = &lobExtractLen;
 

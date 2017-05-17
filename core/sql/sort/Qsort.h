@@ -122,7 +122,7 @@ public:
 
   Qsort(ULng32 recmax,ULng32 sortmaxmem, ULng32 recsize, NABoolean doNotallocRec, 
         ULng32 keysize, SortScratchSpace* scratch,NABoolean iterQuickSort,
-        CollHeap* heap, SortError* sorterror, Lng32 explainNodeId, SortUtil* sortutil);
+        CollHeap* heap, SortError* sorterror, Lng32 explainNodeId, ExBMOStats *bmoStats, SortUtil* sortutil);
   ~Qsort(void);
 
   Lng32 sortSend(void* rec, ULng32 len, void* tupp);
@@ -162,7 +162,6 @@ private:
   CollHeap* heap_;
   SortUtil* sortUtil_;
   ULng32 initialRunSize_;
-  ExBMOStats *bmoStats_;
 };
 
 #endif

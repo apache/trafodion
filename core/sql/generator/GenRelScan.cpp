@@ -3389,10 +3389,19 @@ short HbaseAccessCoProcAggr::codeGen(Generator * generator)
   // primary access.
   char * tablename = NULL;
 
-  tablename = 
-      space->AllocateAndCopyToAlignedSpace(
-					   GenGetQualifiedName(getTableName()), 0);
-  
+  if (getTableDesc()->getNATable()->isHbaseMapTable())
+    {
+      tablename =
+        space->AllocateAndCopyToAlignedSpace(
+             GenGetQualifiedName(getTableName().getQualifiedNameObj().getObjectName()), 0);
+    }
+  else
+    {
+      tablename = 
+        space->AllocateAndCopyToAlignedSpace(
+             GenGetQualifiedName(getTableName()), 0);
+    }
+
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
   char * server = space->allocateAlignedSpace(serverNAS.length() + 1);

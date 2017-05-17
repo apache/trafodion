@@ -21,7 +21,7 @@
 // @@@ END COPYRIGHT @@@
  ****************************************************************************
  *
- * File:         StmtDDLRegOrUnregHive.cpp
+ * File:         StmtDDLRegOrUnregObject.cpp
  * Description:  Methods for classes representing DDL (Un)Register Hive Objs
  *
  * Language:     C++
@@ -48,45 +48,47 @@
 
 
 // -----------------------------------------------------------------------
-// methods for class StmtDDLRegOrUnregHive
+// methods for class StmtDDLRegOrUnregObject
 // -----------------------------------------------------------------------
 
 //
 // constructor
 //
 // constructor used for REGISTER/UNREGISTER HIVE objects
-StmtDDLRegOrUnregHive::StmtDDLRegOrUnregHive(const QualifiedName & origObjName,
-                                             const NABoolean isRegister,
-                                             const ComObjectType objType,
-                                             const NABoolean existsOption,
-                                             const NABoolean isInternal,
-                                             const NABoolean cascade,
-                                             const NABoolean cleanup,
-                                             CollHeap * heap)
-  : StmtDDLNode(DDL_REG_OR_UNREG_HIVE),
-    origObjName_(origObjName, PARSERHEAP()),
-    objQualName_(origObjName, PARSERHEAP()),
-    isRegister_(isRegister),
-    objType_(objType),
-    existsOption_(existsOption),
-    isInternal_(isInternal),
-    cascade_(cascade),
-    cleanup_(cleanup)
+StmtDDLRegOrUnregObject::StmtDDLRegOrUnregObject(const QualifiedName & origObjName,
+                                                 const StorageType storageType,
+                                                 const NABoolean isRegister,
+                                                 const ComObjectType objType,
+                                                 const NABoolean existsOption,
+                                                 const NABoolean isInternal,
+                                                 const NABoolean cascade,
+                                                 const NABoolean cleanup,
+                                                 CollHeap * heap)
+     : StmtDDLNode(DDL_REG_OR_UNREG_OBJECT),
+       origObjName_(origObjName, PARSERHEAP()),
+       objQualName_(origObjName, PARSERHEAP()),
+       storageType_(storageType),
+       isRegister_(isRegister),
+       objType_(objType),
+       existsOption_(existsOption),
+       isInternal_(isInternal),
+       cascade_(cascade),
+       cleanup_(cleanup)
 {
 }
 
 //
 // virtual destructor
 //
-StmtDDLRegOrUnregHive::~StmtDDLRegOrUnregHive()
+StmtDDLRegOrUnregObject::~StmtDDLRegOrUnregObject()
 {
 }
 
 //
 // cast
 //
-StmtDDLRegOrUnregHive *
-StmtDDLRegOrUnregHive::castToStmtDDLRegOrUnregHive()
+StmtDDLRegOrUnregObject *
+StmtDDLRegOrUnregObject::castToStmtDDLRegOrUnregObject()
 {
   return this;
 }

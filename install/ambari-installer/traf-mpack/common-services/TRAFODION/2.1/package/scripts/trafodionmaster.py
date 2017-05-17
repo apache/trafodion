@@ -94,7 +94,8 @@ class Master(Script):
          content=InlineTemplate(params.traf_clust_template,
                                 traf_nodes=traf_nodes,
                                 traf_w_nodes=traf_w_nodes,
-                                traf_node_count=traf_node_count),
+                                traf_node_count=traf_node_count,
+                                cluster_name=params.cluster_name),
          mode=0644)
 
     # install cluster-env on all nodes

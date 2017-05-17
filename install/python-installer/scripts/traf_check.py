@@ -46,6 +46,11 @@ class Check(object):
         if not cmd_output('grep "^UsePAM yes" %s' % SSH_CONFIG_FILE):
             err('\'UsePAM\' should be set to \'yes\' in %s' % SSH_CONFIG_FILE)
 
+    def check_ssh_pam(self):
+        """ check if UsePAM is set to yes in sshd_config """
+        if not cmd_output('grep "^UsePAM yes" %s' % SSH_CONFIG_FILE):
+            err('\'UsePAM\' should be set to \'yes\' in %s' % SSH_CONFIG_FILE)
+
     def check_hbase_xml(self):
         """ check if hbase-site.xml file exists """
         hbase_xml_file = self.dbcfgs['hbase_xml_file']

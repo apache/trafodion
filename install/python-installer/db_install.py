@@ -152,12 +152,11 @@ class HadoopDiscover(object):
             self._get_rsnodes_hdp()
 
         self.rsnodes.sort()
-        # use short hostname
-        try:
-            self.rsnodes = [re.match(r'([\w\-]+).*', node).group(1) for node in self.rsnodes]
-
-        except AttributeError:
-            pass
+        ## use short hostname
+        #try:
+        #    self.rsnodes = [re.match(r'([\w\-]+).*', node).group(1) for node in self.rsnodes]
+        #except AttributeError:
+        #    pass
         return self.rsnodes
 
     def _get_rsnodes_cdh(self):

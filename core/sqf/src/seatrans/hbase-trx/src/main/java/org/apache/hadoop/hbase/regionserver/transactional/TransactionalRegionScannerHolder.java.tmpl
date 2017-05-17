@@ -25,7 +25,11 @@ package org.apache.hadoop.hbase.regionserver.transactional;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+#ifdef APACHE1.2 || CDH5.7
+import org.apache.hadoop.hbase.regionserver.Region;
+#else
 import org.apache.hadoop.hbase.regionserver.HRegion;
+#endif
 import org.apache.hadoop.hbase.regionserver.RegionScanner;
 
 /**
@@ -33,7 +37,11 @@ import org.apache.hadoop.hbase.regionserver.RegionScanner;
  */
  public class TransactionalRegionScannerHolder {
     public RegionScanner s;
+#ifdef APACHE1.2 || CDH5.7
+    public Region r;
+#else
     public HRegion r;
+#endif
     public long nextCallSeq;
     public long numberOfRows;
     public long rowsRemaining;
@@ -41,10 +49,18 @@ import org.apache.hadoop.hbase.regionserver.RegionScanner;
     public long scannerId;
     public boolean hasMore;
 
+
+#ifdef APACHE1.2 || CDH5.7
+    public TransactionalRegionScannerHolder(long transId,
+                                            long scannerId,
+                                            RegionScanner s, 
+                                            Region r) {
+#else
     public TransactionalRegionScannerHolder(long transId,
                                             long scannerId,
                                             RegionScanner s, 
                                             HRegion r) {
+#endif
       this.transId = transId;
       this.scannerId = scannerId;
       this.s = s;

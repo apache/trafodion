@@ -28,7 +28,7 @@ if [ "$fil" = "" ]; then
 fi
 
 sed "
-s/Logging Location: \/bulkload\/logs\/ERR.*/Logging Location:@loggingLocation@/
-s/Logging Location: \/bulkload\/logs\/TEST005\/ERR.*/Logging Location:@TEST005LoggingLocation@/
+s/Logging Location: \/user\/trafodion\/bulkload\/logs\/ERR.*/Logging Location:@loggingLocation@/
+s/Logging Location: \/user\/trafodion\/bulkload\/logs\/TEST005\/ERR.*/Logging Location:@TEST005LoggingLocation@/
 s/Time:.*/Time:@time@/
 " $fil

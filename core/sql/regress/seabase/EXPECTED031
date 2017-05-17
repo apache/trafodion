@@ -446,7 +446,7 @@ Z            Z            (EXPR)  (EXPR)
 >>invoke t031t10;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T10
--- Definition current  Wed Apr 19 23:24:34 2017
+-- Definition current  Wed May  3 15:06:43 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -648,7 +648,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed Apr 19 23:25:42 2017
+-- Definition current  Wed May  3 15:07:47 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -679,7 +679,7 @@ A            B
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed Apr 19 23:25:51 2017
+-- Definition current  Wed May  3 15:07:53 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -730,7 +730,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed Apr 19 23:26:03 2017
+-- Definition current  Wed May  3 15:07:58 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -759,7 +759,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed Apr 19 23:26:15 2017
+-- Definition current  Wed May  3 15:08:09 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -784,7 +784,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed Apr 19 23:26:24 2017
+-- Definition current  Wed May  3 15:08:13 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -804,7 +804,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed Apr 19 23:26:29 2017
+-- Definition current  Wed May  3 15:08:16 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -819,7 +819,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Wed Apr 19 23:26:33 2017
+-- Definition current  Wed May  3 15:08:19 2017
 
   (
     A                                INT DEFAULT NULL
@@ -842,7 +842,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Wed Apr 19 23:26:42 2017
+-- Definition current  Wed May  3 15:08:23 2017
 
   (
     A                                INT DEFAULT NULL
@@ -860,7 +860,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Wed Apr 19 23:26:52 2017
+-- Definition current  Wed May  3 15:08:31 2017
 
   (
     A                                INT DEFAULT NULL
@@ -947,7 +947,7 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 >>invoke table(index_table t031t1i1);
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1I1
--- Definition current  Wed Apr 19 23:27:18 2017
+-- Definition current  Wed May  3 15:08:49 2017
 
   (
     "A@"                             INT NO DEFAULT
@@ -1090,6 +1090,7 @@ CREATE TABLE T031HIVET1
 ;
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.T031HIVET1;
+/* ObjectUID = 4568467281340475481 */
 
 /* Trafodion DDL */
 
