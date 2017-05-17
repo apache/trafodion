@@ -267,15 +267,18 @@ select * from hive.hive.t; -- explicit table name
 | `varchar`             | `varchar`
 | `char`                | `char`
 | `float`               | `real`
-| `decimal (precision, scale)`                | `decimal (precision, scale)`
+| `decimal (precision, scale)`                | `decimal (precision, scale)`^2^ +
+`numeric (precision, scale)`^3^
 | `double`              | `float(54)`
-| `timestamp`           | `timestamp(6)`^2^
+| `timestamp`           | `timestamp(6)`^4^
 | `date`                | `date`
 |===
 
 1. The value `_n_` is determined by `CQD HIVE_MAX_STRING_LENGTH`. See the
 {docs-url}/cqd_reference/index.hmtl[{project-name} Control Query Default (CQD) Reference Guide].
-2. Hive supports timestamps with nanosecond resolution (precision of 9). {project-name} SQL supports only microsecond resolution (precision 6).
+2. If p is less than 18, decimal (precision, scale) is mapped to decimal (precision, scale).
+3. If p is greater than 18, decimal (precision, scale) is mapped to numeric (precision, scale).
+4. Hive supports timestamps with nanosecond resolution (precision of 9). {project-name} SQL supports only microsecond resolution (precision 6).
 
 [[supported_sql_statements_with_hive_tables]]
 === Supported SQL Statements With Hive Tables
