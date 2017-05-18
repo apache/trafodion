@@ -120,7 +120,7 @@ For more information about {project-name} SQL tables, see
 ==== Cell-Per-Row Access to HBase Tables (Technology Preview)
 
 NOTE: This is a _Technology Preview (Complete But Not Tested)_ feature, meaning that it is functionally
-complete but has not been tested or debugged. 
+complete but has not been tested or debugged.
 
 To access HBase data using cell-per-row mode, specify the schema `HBASE."_CELL_"` and the full ANSI
 name of the table as a delimited table name. You can specify the name of any HBase table, regardless of whether
@@ -264,14 +264,21 @@ select * from hive.hive.t; -- explicit table name
 | `int`                 | `int`
 | `bigint`              | `largeint`
 | `string`              | `varchar(_n_ bytes) character set utf8`^1^
+| `varchar`             | `varchar`
+| `char`                | `char`
 | `float`               | `real`
+| `decimal (precision, scale)`                | `decimal (precision, scale)`^2^ +
+`numeric (precision, scale)`^3^
 | `double`              | `float(54)`
-| `timestamp`           | `timestamp(6)`^2^
+| `timestamp`           | `timestamp(6)`^4^
+| `date`                | `date`
 |===
 
 1. The value `_n_` is determined by `CQD HIVE_MAX_STRING_LENGTH`. See the
 {docs-url}/cqd_reference/index.hmtl[{project-name} Control Query Default (CQD) Reference Guide].
-2. Hive supports timestamps with nanosecond resolution (precision of 9). {project-name} SQL supports only microsecond resolution (precision 6).
+2. If p is less than or equal to 18, decimal (precision, scale) is mapped to decimal (precision, scale).
+3. If p is greater than 18, decimal (precision, scale) is mapped to numeric (precision, scale).
+4. Hive supports timestamps with nanosecond resolution (precision of 9). {project-name} SQL supports only microsecond resolution (precision 6).
 
 [[supported_sql_statements_with_hive_tables]]
 === Supported SQL Statements With Hive Tables
@@ -508,11 +515,3 @@ All other functions are {project-name} SQL extensions.
 ```
 
 The message number is the SQLCODE value (without the sign). In this example, the SQLCODE value is `1000`.
-
-
-
-
-
-
-
-
