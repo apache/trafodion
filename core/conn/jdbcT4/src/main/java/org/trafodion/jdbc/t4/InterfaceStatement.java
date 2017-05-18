@@ -529,7 +529,7 @@ class InterfaceStatement {
                         
 			Utility.checkUnsignedTinyintBoundary(locale, tmpbd);
 
-			Bytes.insertShort(values, noNullValue, tmpbd.byteValueExact(), this.ic_.getByteSwap());
+			Bytes.insertShort(values, noNullValue, tmpbd.byteValue(), this.ic_.getByteSwap());
                         break;
 		case InterfaceResultSet.SQLTYPECODE_SMALLINT:
 			tmpbd = Utility.getBigDecimalValue(locale, paramValue);
@@ -563,7 +563,7 @@ class InterfaceStatement {
 				// range checking
 			}
 
-			Utility.checkSignedShortBoundary(locale, tmpbd);
+			Utility.checkUnsignedShortBoundary(locale, tmpbd);
 
 			// check boundary condition for Numeric.
 			Utility.checkDecimalBoundary(locale, tmpbd, precision);
@@ -578,7 +578,19 @@ class InterfaceStatement {
 
 				// check boundary condition for Numeric.
 			}
+			Utility.checkLongBoundary(locale, tmpbd);
 			Utility.checkDecimalBoundary(locale, tmpbd, precision);
+			Bytes.insertLong(values, noNullValue, tmpbd.longValue(), this.ic_.getByteSwap());
+			break;
+		case InterfaceResultSet.SQLTYPECODE_LARGEINT_UNSIGNED:
+			tmpbd = Utility.getBigDecimalValue(locale, paramValue);
+
+			if (scale > 0) {
+				tmpbd = tmpbd.movePointRight(scale);
+
+				// check boundary condition for Numeric.
+			}
+			Utility.checkUnsignedLongBoundary(locale, tmpbd);
 			Bytes.insertLong(values, noNullValue, tmpbd.longValue(), this.ic_.getByteSwap());
 			break;
 		case InterfaceResultSet.SQLTYPECODE_DECIMAL:
@@ -670,6 +682,11 @@ class InterfaceStatement {
 			tmpbd = Utility.getBigDecimalValue(locale, paramValue);
 			byte[] b = InterfaceUtilities.convertBigDecimalToSQLBigNum(tmpbd, maxLength, scale);
 			System.arraycopy(b, 0, values, noNullValue, maxLength);
+			break;
+		case InterfaceResultSet.SQLTYPECODE_BOOLEAN:
+			tmpbd = Utility.getBigDecimalValue(locale, paramValue);
+
+			Bytes.insertShort(values, noNullValue, tmpbd.shortValue(), this.ic_.getByteSwap());
 			break;
 		// You will not get this type, since server internally converts it
 		// SMALLINT, INTERGER or LARGEINT
