@@ -124,18 +124,18 @@
 +>  , SS_NET_PROFIT     
 +>from hive.hive.store_sales where ss_sold_date_sk is not null;
 Task:  LOAD            Status: Started    Object: TRAFODION.SCH.T140C
-Task:  CLEANUP         Status: Started    Time: 2017-02-05 01:40:08.961
-Task:  CLEANUP         Status: Ended      Time: 2017-02-05 01:40:08.981
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.020
-Task:  LOADING DATA    Status: Started    Time: 2017-02-05 01:40:08.981
+Task:  CLEANUP         Status: Started    Time: 2017-05-18 19:50:17.884
+Task:  CLEANUP         Status: Ended      Time: 2017-05-18 19:50:17.906
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.022
+Task:  LOADING DATA    Status: Started    Time: 2017-05-18 19:50:17.906
        Rows Processed: 2750311 
        Error Rows:     0 
-Task:  LOADING DATA    Status: Ended      Time: 2017-02-05 01:41:00.169
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:51.188
-Task:  COMPLETION      Status: Started    Time: 2017-02-05 01:41:00.169
+Task:  LOADING DATA    Status: Ended      Time: 2017-05-18 19:50:57.493
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:39.586
+Task:  COMPLETION      Status: Started    Time: 2017-05-18 19:50:57.493
        Rows Loaded:    2750311 
-Task:  COMPLETION      Status: Ended      Time: 2017-02-05 01:41:04.557
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:04.389
+Task:  COMPLETION      Status: Ended      Time: 2017-05-18 19:50:59.480
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.987
 
 --- 2750311 row(s) loaded.
 >>update statistics for table t140c on every column sample;
@@ -156,7 +156,7 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:04.389
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018896818344
+PLAN_ID .................. 212361897088994366
 ROWS_OUT ................ 33
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select a from t140 where b>500;
@@ -194,7 +194,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111338
+  ObjectUIDs ............. 3998763283695617040
   select_list ............ TRAFODION.SCH.T140.A
 
 
@@ -242,7 +242,7 @@ A
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018897196230
+PLAN_ID .................. 212361897089356492
 ROWS_OUT ................ 33
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an from t140b where b<=200;
@@ -280,7 +280,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111582
+  ObjectUIDs ............. 3998763283695617402
   select_list ............ TRAFODION.SCH.T140B.AN
 
 
@@ -315,7 +315,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018897383558
+PLAN_ID .................. 212361897089555947
 ROWS_OUT ................ 33
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an from t140 where b<=200;
@@ -353,7 +353,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111338
+  ObjectUIDs ............. 3998763283695617040
   select_list ............ TRAFODION.SCH.T140.AN
 
 
@@ -399,7 +399,7 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018897576677
+PLAN_ID .................. 212361897089760158
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an from t140 where b=200 and an is not null;
@@ -437,7 +437,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111338
+  ObjectUIDs ............. 3998763283695617040
   select_list ............ TRAFODION.SCH.T140.AN
   input_variables ........ %(200)
 
@@ -481,7 +481,7 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018897781591
+PLAN_ID .................. 212361897089997296
 ROWS_OUT ................ 67
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an, a from t140 where b!=500;
@@ -519,7 +519,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111338
+  ObjectUIDs ............. 3998763283695617040
   select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
 
 
@@ -599,7 +599,7 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018898069979
+PLAN_ID .................. 212361897090271231
 ROWS_OUT ................ 10
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an from t140 where bn=201 and an is not null;
@@ -637,7 +637,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111338
+  ObjectUIDs ............. 3998763283695617040
   select_list ............ TRAFODION.SCH.T140.AN
   input_variables ........ %(201)
 
@@ -680,7 +680,7 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018898270061
+PLAN_ID .................. 212361897090489336
 ROWS_OUT ................ 67
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an, a from t140 where bn!=501;
@@ -718,7 +718,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111338
+  ObjectUIDs ............. 3998763283695617040
   select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
 
 
@@ -813,7 +813,7 @@ A
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018898546250
+PLAN_ID .................. 212361897090784717
 ROWS_OUT ................ 11
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select an from t140 where an between 20 and 40;
@@ -851,7 +851,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111338
+  ObjectUIDs ............. 3998763283695617040
   select_list ............ TRAFODION.SCH.T140.AN
 
 
@@ -918,7 +918,7 @@ AN
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018898817447
+PLAN_ID .................. 212361897091104921
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select avg(a) from t140b;
@@ -958,7 +958,7 @@ DESCRIPTION
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  2
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111582
+  ObjectUIDs ............. 3998763283695617402
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * 10000 ...0)) / cast(count(1 )))) / 10000
                              ...0)))
@@ -1018,7 +1018,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018899076823
+PLAN_ID .................. 212361897091443690
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select avg(a) from t140b;
@@ -1058,7 +1058,7 @@ DESCRIPTION
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  1
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111582
+  ObjectUIDs ............. 3998763283695617402
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * 10000 ...0)) / cast(count(1 )))) / 10000
                              ...0)))
@@ -1114,7 +1114,7 @@ DESCRIPTION
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID .................. 212353018899076823
+PLAN_ID .................. 212361897091569821
 ROWS_OUT ................. 1
 EST_TOTAL_COST ........... 0.01
 STATEMENT ................ select avg(a) from t140b;
@@ -1153,8 +1153,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... OFF
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  1
-  GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ............. 6461097501759111582
+  ObjectUIDs ............. 3998763283695617402
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * 10000 ...0)) / cast(count(1 )))) / 10000
                              ...0)))
