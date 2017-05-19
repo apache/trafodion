@@ -149,6 +149,12 @@ public:
   { PREPARSE, PARSE, BIND, TRANSFORM, NORMALIZE, SEMANTIC_OPTIMIZE, ANALYSIS,
     OPTIMIZE, PRECODEGEN, GENERATOR, END };
 
+  enum QueryCachingOption
+  { NORMAL   // normal operation, attempt to generate cacheable plan and cache it
+  , EXPLAIN  // attempt to generate a cacheable plan but do not cache it
+  , NOCACHE  // do not attempt a cacheable plan, and do not cache it
+  };
+
   CmpMain();
   virtual ~CmpMain() {} // LCOV_EXCL_LINE  
 
@@ -173,7 +179,7 @@ public:
                         CompilerPhase = END,
 			FragmentDir **framentDir = NULL,
                         IpcMessageObjType op=CmpMessageObj::SQLTEXT_COMPILE,
-                        NABoolean useQueryCache=TRUE);
+                        QueryCachingOption useQueryCache=NORMAL);
 
   // sqlcomp will compile a RelExpr into code from generator
   ReturnStatus sqlcomp (const char *input_str, Lng32 charset,
@@ -183,7 +189,7 @@ public:
 			CompilerPhase p= END,
 			FragmentDir **fragmentDir = NULL,
                         IpcMessageObjType op=CmpMessageObj::SQLTEXT_COMPILE,
-                        NABoolean useQueryCache=FALSE,
+                        QueryCachingOption useQueryCache=NOCACHE,
                         NABoolean* cacheable=NULL,
                         TimeVal* begTime=NULL,
                         NABoolean shouldLog=FALSE);
@@ -261,7 +267,7 @@ private:
 		       CompilerPhase p,
 		       FragmentDir **fragmentDir,
 		       IpcMessageObjType op,
-		       NABoolean useQueryCache,
+		       QueryCachingOption useQueryCache,
 		       NABoolean* cacheable,
 		       TimeVal* begTime,
                        NABoolean shouldLog);

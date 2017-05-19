@@ -638,7 +638,7 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
                                        CompilerPhase phase,         //IN
                                        FragmentDir **fragmentDir,   //OUT
                                        IpcMessageObjType op,        //IN
-                                       NABoolean useQueryCache)     //IN
+                                       QueryCachingOption useQueryCache) //IN
 {
   TimeVal begTime;
   GETTIMEOFDAY(&begTime, 0);
@@ -702,7 +702,7 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
   // if running in OSIM capture mode or simulation, don't use the cache
   if (OSIM_runningInCaptureMode()||OSIM_runningSimulation())
   {
-    useQueryCache = FALSE;
+    useQueryCache = NOCACHE;
     useTextCache = FALSE;
   }
 
@@ -768,12 +768,8 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
     //metadata from disk.
     CmpCommon::context()->schemaDB_->getNATableDB()->useCache();
 
-    //The following two statements reset the parser flag
-    //when we are re-trying compilation.
-    //set parser flags to 0, to cleanup the parser flags
-    Set_SqlParser_Flags(0);
     //set the parser flags to the original value.
-    Set_SqlParser_Flags(originalParserFlags);
+    Assign_SqlParser_Flags(originalParserFlags);
 
     //if using special tables e.g. using index as base table
     //select * from table (index_table T018ibc);
@@ -839,7 +835,7 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(QueryText& input,            //IN
       if ( cacheable )
       {
          // retry any error (once) if query was cacheable
-         useQueryCache = FALSE; // retry with caching off
+         useQueryCache = NOCACHE; // retry with caching off
          Retried_without_QC = TRUE;
          Retried_for_priv_failure = FALSE;
          CURRENTQCACHE->incNOfRetries(); // count retries
@@ -944,7 +940,8 @@ CmpMain::ReturnStatus CmpMain::sqlcompStatic
 
   // make at most 2 tries to compile a query: 1st with caching on, and
   // on any error, retry it with caching off if query was cacheable
-  NABoolean useQueryCache=TRUE, cacheable=FALSE, useTextCache=TRUE;
+  QueryCachingOption useQueryCache = NORMAL;
+  NABoolean cacheable=FALSE, useTextCache=TRUE;
 
   Lng32 here = CmpCommon::diags()->mark();
   CmpMain::ReturnStatus rc = PARSERERROR;
@@ -993,12 +990,8 @@ CmpMain::ReturnStatus CmpMain::sqlcompStatic
       }
     }
 
-    //The following two statements reset the parser flag
-    //when we are re-trying compilation.
-    //set parser flags to 0, to cleanup the parser flags
-    Set_SqlParser_Flags(0);
     //set the parser flags to the original value.
-    Set_SqlParser_Flags(originalParserFlags);
+    Assign_SqlParser_Flags(originalParserFlags);
 
     CmpCommon::context()->SetMode(STMT_STATIC);
     MonitorMemoryUsage_Enter("Parser");
@@ -1065,7 +1058,7 @@ CmpMain::ReturnStatus CmpMain::sqlcompStatic
     CmpCommon::context()->SetMode(mode);
     if (rc != SUCCESS && x==0 && cacheable) {
       // retry any error (once) if query was cacheable
-      useQueryCache = FALSE; // retry with caching off
+      useQueryCache = NOCACHE; // retry with caching off
       // toss pre-retry errors/warnings
       CmpCommon::diags()->rewind(here, TRUE/*update maxDiagsId_*/);
       CURRENTQCACHE->incNOfRetries(); // count retries
@@ -1679,7 +1672,7 @@ CmpMain::ReturnStatus CmpMain::sqlcomp(const char *input_str,           //IN
                                        CompilerPhase phase,             //IN
 				       FragmentDir **fragmentDir,       //OUT
                                        IpcMessageObjType op,            //IN
-                                       NABoolean useQueryCache,         //IN
+                                       QueryCachingOption useQueryCache, //IN
                                        NABoolean* cacheable,            //OUT
                                        TimeVal* begTime,                //IN
                                        NABoolean shouldLog)             //IN
@@ -1837,7 +1830,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
                                        CompilerPhase phase,             //IN
 				       FragmentDir **fragmentDir,       //OUT
                                        IpcMessageObjType op,            //IN
-                                       NABoolean useQueryCache,         //IN
+                                       QueryCachingOption useQueryCache, //IN
                                        NABoolean* cacheable,            //OUT
                                        TimeVal* begTime,                //IN
                                        NABoolean shouldLog)             //IN
@@ -1869,13 +1862,13 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context());
 
 
-  if (useQueryCache && CmpCommon::getDefault(NSK_DBG) == DF_ON) {
-    useQueryCache = FALSE; // LCOV_EXCL_LINE   
+  if (useQueryCache != NOCACHE && CmpCommon::getDefault(NSK_DBG) == DF_ON) {
+    useQueryCache = NOCACHE; // LCOV_EXCL_LINE   
   }
 
   // Every compile goes through here so we are guranteed that the
   //doNotAbort gloabal flag is reset appropriately for each statement.
-  CmpCommon::context()->setDoNotAbort(useQueryCache);
+  CmpCommon::context()->setDoNotAbort(useQueryCache != NOCACHE);
 
   //if this is a secondary MXCMP set NATable Caching OFF
   if(CmpCommon::context()->isSecondaryMxcmp())
@@ -1915,7 +1908,7 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
 
 
   NABoolean bPatchOK=FALSE;
-  if (useQueryCache && phase == END) {
+  if (useQueryCache == NORMAL && phase == END) {
     cachewa.setPhase(PARSE);
     TaskMonitor hqcCmpBackPatch;
     hqcCmpBackPatch.enter();
@@ -2131,21 +2124,21 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
     }
 
 #ifdef NA_DEBUG_GUI
-  if (useQueryCache && ((RelRoot *)queryExpr)->getDisplayTree()
+  if (useQueryCache == NORMAL && ((RelRoot *)queryExpr)->getDisplayTree()
       && CmpMain::pExpFuncs_
       ) {
   }
 #endif
 
-  if (useQueryCache && CmpCommon::getDefault(NSK_DBG) == DF_ON) {
-    useQueryCache = FALSE;
+  if (useQueryCache != NOCACHE && CmpCommon::getDefault(NSK_DBG) == DF_ON) {
+    useQueryCache = NOCACHE;
   }
 
   // -------------------------------------------------------------------
   // try to compile query via (after BIND stage) cache hit
   // -------------------------------------------------------------------
   if (!CURRENTQCACHE->getHQC()->isPlanNoAQROrHiveAccess()
-      && useQueryCache && phase == END) {
+      && useQueryCache != NOCACHE && phase == END) {
     cachewa.setPhase(BIND);
     TaskMonitor hqcCmpBackPatch;
     hqcCmpBackPatch.enter();
@@ -2461,7 +2454,9 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
             //    has a parameterized equality predicate then
             // do NOT cache it because it can result in a false hit
             // that can cause wrong results
-            if (!generator.isNonCacheablePlan()) {
+            // do NOT cache it if this is for EXPLAIN (useQueryCache == EXPLAIN)
+            // to avoid security holes
+            if ((!generator.isNonCacheablePlan()) && (useQueryCache == NORMAL)) {
               tkey = 
                 cachewa.getTextKey(input_str, charset, getStmtAttributes());
 

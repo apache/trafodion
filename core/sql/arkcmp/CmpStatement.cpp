@@ -504,7 +504,7 @@ CmpStatement::process (const CmpMessageSQLText& sqltext)
     cmpmain.sqlcomp(qText, 0, 
 		    &(reply_->data()), &(reply_->size()),
 		    reply_->outHeap(), CmpMain::END, 
-		    &fragmentDir, typ, !doNotCachePlan);
+		    &fragmentDir, typ, doNotCachePlan ? CmpMain::EXPLAIN : CmpMain::NORMAL);
   }
   catch (...)
   {
