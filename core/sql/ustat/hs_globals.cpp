@@ -3298,13 +3298,30 @@ Lng32 HSGlobalsClass::Initialize()
     LM->StartTimer("getRowCount()");
     Int32 errorCode = 0;
     Int32 breadCrumb = 0;
-    actualRowCount = objDef->getRowCount(currentRowCountIsEstimate_,
-                                         inserts, deletes, updates,
-                                         numPartitions,
-                                         minRowCtPerPartition_,
-                                         errorCode /* out */,
-                                         breadCrumb /* out */,
-                                         optFlags & (SAMPLE_REQUESTED | IUS_OPT));
+    if ((optFlags & ROWCOUNT_OPT) == 0)
+      actualRowCount = objDef->getRowCount(currentRowCountIsEstimate_,
+                                           inserts, deletes, updates,
+                                           numPartitions,
+                                           minRowCtPerPartition_,
+                                           errorCode /* out */,
+                                           breadCrumb /* out */,
+                                           optFlags & (SAMPLE_REQUESTED | IUS_OPT));
+    else
+      {
+        // skip the potentially expensive step of determining the row
+        // count, if it was specified by the user
+        actualRowCount = userSuppliedRowCount;
+        currentRowCountIsEstimate_ = FALSE;
+        inserts = deletes = updates = 0;
+        numPartitions = 1;
+        minRowCtPerPartition_ = actualRowCount;
+        if (LM->LogNeeded())
+          {
+            convertInt64ToAscii(actualRowCount, intStr);
+            sprintf(LM->msg, "\t\t\tUser provided rowcount: rows=%s", intStr);
+            LM->Log(LM->msg);
+          }
+      }
     LM->StopTimer();
     if (LM->LogNeeded())
       {
@@ -3343,18 +3360,7 @@ Lng32 HSGlobalsClass::Initialize()
     // place of the estimate, unless the user supplied his own row count..
     if (currentRowCountIsEstimate_ && !(optFlags & CLEAR_OPT))
       {
-        if (optFlags & ROWCOUNT_OPT)                /* rowcount provided */
-          {
-            actualRowCount = userSuppliedRowCount;
-            currentRowCountIsEstimate_ = FALSE;
-            if (LM->LogNeeded())
-              {
-                convertInt64ToAscii(actualRowCount, intStr);
-                sprintf(LM->msg, "\t\t\tUser provided rowcount: rows=%s", intStr);
-                LM->Log(LM->msg);
-              }
-          }
-        else if (convertInt64ToDouble(actualRowCount) <   // may be 0 (no estimate) or -1 (error doing estimation)
+        if (convertInt64ToDouble(actualRowCount) <   // may be 0 (no estimate) or -1 (error doing estimation)
                      CmpCommon::getDefaultNumeric(USTAT_MIN_ESTIMATE_FOR_ROWCOUNT))
           {
             if (LM->LogNeeded() && actualRowCount > 0)
