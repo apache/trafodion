@@ -168,7 +168,6 @@ public class ParseArguments
          printUsage();
          throw new InvalidNumberOfArguments();
       }
-
       
       argsList=null;
       
@@ -178,7 +177,6 @@ public class ParseArguments
       {
          String option=args[i++].trim();
          String value=args[i].trim();
-
          if (option.equalsIgnoreCase("-u")|| option.equalsIgnoreCase("-user"))
          {
             userName=value;
@@ -210,6 +208,9 @@ public class ParseArguments
                portNumber=portValue;
             }
 
+         }
+         else if (option.equalsIgnoreCase("-j")|| option.equalsIgnoreCase("-jline")) {
+             continue;
          }
          else if (isLaunchConnect && (option.equalsIgnoreCase("-q")|| option.equalsIgnoreCase("-sql")))
          {
@@ -338,8 +339,12 @@ public class ParseArguments
       if (!this.isLaunchConnect) 
          breakConnectPrompt = "Command Interrupted - Please hit <Enter> ... "+SessionDefaults.lineSeperator;
 
-      crObj.setPrompt(breakConnectPrompt,false,false);
-      cwObj.print(prompt);
+      if (crObj.isJline()) {
+          crObj.setPrompt(prompt,false,false);
+      }else {
+          crObj.setPrompt(breakConnectPrompt,false,false);
+          cwObj.print(prompt);
+      }
 
       //set retry count to 0 if user hits a Ctrl+C while entering login parameters
       try
@@ -428,7 +433,11 @@ public class ParseArguments
       if (!this.isLaunchConnect) 
          breakConnectPrompt = "Command Interrupted - Please hit <Enter> ... "+SessionDefaults.lineSeperator;
 
-      crObj.setPrompt(breakConnectPrompt,false,false);
+      if (! crObj.isJline()) {
+          crObj.setPrompt(breakConnectPrompt,false,false);
+      } else {
+          crObj.setPrompt("",false,false);
+      }
 
 
       try

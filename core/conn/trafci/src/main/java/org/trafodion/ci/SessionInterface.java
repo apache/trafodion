@@ -415,7 +415,7 @@ public class SessionInterface implements SessionDefaults
                if (!OS_EOF)
                {
             	   if(!sessObj.isSessionStartup()) {
-	                  if  (!userPressedCtrlC && sessObj.isLogCmdText() && sessObj.isLogCmdEcho() )
+	                  if  (!userPressedCtrlC && sessObj.isLogCmdText() && sessObj.isLogCmdEcho() && !reader.getConsoleReader().isJline() )
 	                  {
 	                     writer.write(sessObj.getSessionPrompt());
 	                  }

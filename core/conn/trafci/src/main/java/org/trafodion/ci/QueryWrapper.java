@@ -184,17 +184,23 @@ public abstract class QueryWrapper
       {
          if ((matchTrigStmt)&& (utils.rtrim(queryStr).equals(crTrigTerminator)))
             break;
-         else if ((!matchTrigStmt) && (queryStr.trim().toUpperCase().endsWith(sessObj.getSessionSQLTerminator())))
-			{this.sessObj.getConsoleReader().cr.setPrompt("SQL>");
-            break;
-			}
+         else if ((!matchTrigStmt) && (queryStr.trim().toUpperCase().endsWith(sessObj.getSessionSQLTerminator()))) {
+             if (this.sessObj.getConsoleReader().isJline()) {
+                 this.sessObj.getConsoleReader().cr.setPrompt("SQL>");
+             }
+             break;
+         }
          if (( (writer.getWriterMode() == SessionDefaults.CONSOLE_WRITE_MODE ||
             writer.getWriterMode() == SessionDefaults.CONSOLE_SPOOL_WRITE_MODE))  )
          {
-            if((reader.getReadMode() == SessionDefaults.OBEY_READ_MODE  && !sessObj.isQuietEnabled()) || !(reader.getReadMode() == SessionDefaults.OBEY_READ_MODE) )            
-                {//writer.getConsoleWriter().print(sessObj.getSessionCprompt());
-				this.sessObj.getConsoleReader().cr.setPrompt("+>");
-				}
+            if((reader.getReadMode() == SessionDefaults.OBEY_READ_MODE  && !sessObj.isQuietEnabled()) || !(reader.getReadMode() == SessionDefaults.OBEY_READ_MODE) )
+            {
+                if (this.sessObj.getConsoleReader().isJline()) {
+                    this.sessObj.getConsoleReader().cr.setPrompt("+>");
+                } else {
+                    writer.getConsoleWriter().print(sessObj.getSessionCprompt());
+                }
+            }
          }
          try
          {

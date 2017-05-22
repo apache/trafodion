@@ -52,21 +52,30 @@ public class ConsoleReader
    private MaskingThread mt=null;
    WCIUtils wcs=null;
 
+    private boolean isJline = false;
     jline.console.ConsoleReader cr = null;
 
-   ConsoleReader()
-   {
-      newLine=System.getProperty("line.separator");
-      defaultEncoding=System.getProperty("file.encoding");
-    
-      CTRLCHandler = new MySignalHandlerClass();
-      try {
-      INTSignal=new Signal("INT");
-      } catch (Exception e) {}
-   }
+    ConsoleReader() {
+        this(false);
+    }
+
+    public ConsoleReader(boolean isJline) {
+        this.isJline = isJline;
+        newLine = System.getProperty("line.separator");
+        defaultEncoding = System.getProperty("file.encoding");
+
+        CTRLCHandler = new MySignalHandlerClass();
+        try {
+            INTSignal = new Signal("INT");
+        } catch (Exception e) {
+        }
+    }
 
    public void setPrompt(String ps, boolean time, boolean ampmFmt)
    {
+      if (isJline) {
+          this.cr.setPrompt(ps);
+      }
       this.prompt = ps;
       this.time = time;
       this.ampmFmt = ampmFmt;
@@ -110,9 +119,11 @@ public class ConsoleReader
    public void initialize() throws IOException
    {
       this.in=System.in;
-        cr = new jline.console.ConsoleReader();
-        cr.setPrompt(this.prompt);
-        cr.setHandleUserInterrupt(true);
+      if (isJline) {
+          cr = new jline.console.ConsoleReader();
+          cr.setPrompt(this.prompt);
+          cr.setHandleUserInterrupt(true);
+      }
    }
 
    public String getLine() throws IOException, UserInterruption
@@ -123,69 +134,61 @@ public class ConsoleReader
 
    public String readLine() throws UnsupportedEncodingException, UserInterruption, IOException
    {
-/*      StringBuffer lineBuffer=null;
-      lineBuffer=new StringBuffer();
-	  int i=-1;
-            
-      try {
-         if (CTRLCHandler != null)
-         {
-            Signal.handle(INTSignal, CTRLCHandler);
-         }
-      } catch (Exception e) {}
+        if (!isJline) {
+            StringBuffer lineBuffer = null;
+            lineBuffer = new StringBuffer();
+            int i = -1;
 
-      while (true)
-      {
-         queryInterrupted = false;
-         this.in.mark(1);
-         try{
-         if ((i = this.in.read()) != -1)
-         {
-            if (queryInterrupted)
-            {
-               in.reset();
-               throw new UserInterruption();
+            try {
+                if (CTRLCHandler != null) {
+                    Signal.handle(INTSignal, CTRLCHandler);
+                }
+            } catch (Exception e) {
             }
 
-            lineBuffer.append((char)i);
-            line = lineBuffer.toString();
-            
-            if (!defaultEncoding.equalsIgnoreCase("Cp1047")) 
-            {
-               byte[] ba=line.getBytes("ISO-8859-1"); // added for nls character support
-               line=new String(ba,defaultEncoding);
-            }
-            
-            if (line != null && line.endsWith(newLine))
-            {
-               return line.substring(0,line.length() - newLine.length());
-            }
-         }
-         }catch (ArrayIndexOutOfBoundsException e)
-         	{        	 
-        	 	 System.out.println(SessionError.OUT_OF_BOUNDS);
-        	 	 
-        	 if(doTrace)
-        	 {
-        		 e.printStackTrace();
-        	 }
-         	}
-                 
-         if (queryInterrupted)
-         {
-            in.reset();
-            throw new UserInterruption();
+            while (true) {
+                queryInterrupted = false;
+                this.in.mark(1);
+                try {
+                    if ((i = this.in.read()) != -1) {
+                        if (queryInterrupted) {
+                            in.reset();
+                            throw new UserInterruption();
+                        }
 
-         }
-      }
-*/
-        String readLine = null;
-        try {
-            readLine = cr.readLine();
-        } catch (UserInterruptException e) {
-            // TODO Auto-generated catch block
+                        lineBuffer.append((char) i);
+                        line = lineBuffer.toString();
+
+                        if (!defaultEncoding.equalsIgnoreCase("Cp1047")) {
+                            byte[] ba = line.getBytes("ISO-8859-1"); // added for nls character support
+                            line = new String(ba, defaultEncoding);
+                        }
+
+                        if (line != null && line.endsWith(newLine)) {
+                            return line.substring(0, line.length() - newLine.length());
+                        }
+                    }
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    System.out.println(SessionError.OUT_OF_BOUNDS);
+
+                    if (doTrace) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if (queryInterrupted) {
+                    in.reset();
+                    throw new UserInterruption();
+                }
+            }
+        } else {
+            String readLine = null;
+            try {
+                readLine = cr.readLine();
+            } catch (UserInterruptException e) {
+            }
+            return readLine;
         }
-        return readLine;
    }
 
    public boolean next() throws IOException, UserInterruption
@@ -227,5 +230,8 @@ public class ConsoleReader
       return (num <= 0 ? true:false);
    }
 
+    public boolean isJline() {
+        return isJline;
+    }
 }
 
