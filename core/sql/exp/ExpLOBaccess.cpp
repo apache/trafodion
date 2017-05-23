@@ -1664,7 +1664,7 @@ Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset,
     if (fInfo)
       dataOffset = fInfo->mSize;
 
-    if (dataOffset > lobGCLimit) // 5 GB default
+    if ((lobGCLimit != 0) && (dataOffset > lobGCLimit)) // 5 GB default
       {
         str_sprintf(logBuf,"Starting GC. Current Offset : %Ld",dataOffset);
         lobDebugInfo(logBuf,0,__LINE__,lobTrace_);

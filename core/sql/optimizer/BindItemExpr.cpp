@@ -6088,18 +6088,7 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
         return this;
       child(1) = boundExpr_1;
     }
-  if (CmpCommon::getDefault(JDBC_PROCESS) == DF_ON)
-  {
-    // if an untyped param is being assigned to a column, and
-    // the column heading indicates its a 'BLOB/CLOB' column,
-    // then assign that heading and column's tablename to the
-    // parameter. This is being done for WLI BLOB/CLOB support.
-    // See sqlparser.y for details.
-    ItemExpr *ie = SetParamHeadingAndTablename(bindWA);
-    if (bindWA->errStatus())
-	      return ie;
-  }
-
+ 
  
   NABuiltInTypeEnum targetType =  child(0)->castToItemExpr()->getValueId().getType().getTypeQualifier() ;
   if  (targetType == NA_LOB_TYPE)
@@ -6109,7 +6098,7 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
           NABuiltInTypeEnum sourceType =  child(1)->castToItemExpr()->getValueId().getType().getTypeQualifier() ; 
           //If it's a dynamic param with unknown type or if it is a 
           // character type, trasnform the insert.
-          if ((child(1)->getOperatorType() == ITM_DYN_PARAM && sourceType == NA_UNKNOWN_TYPE)  || sourceType == NA_CHARACTER_TYPE)
+          if ((((child(1)->getOperatorType() == ITM_DYN_PARAM) ||(child(1)->getOperatorType() == ITM_ROWSETARRAY_SCAN))  && sourceType == NA_UNKNOWN_TYPE)  || sourceType == NA_CHARACTER_TYPE)
             {
               ValueId vid1 = child(1)->castToItemExpr()->getValueId();  
               // Add a stringToLob node
@@ -6385,61 +6374,7 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
   return boundExpr;
 } // Assign::bindNode()
 
-ItemExpr *Assign::SetParamHeadingAndTablename(BindWA *bindWA) {
-  if (isUserSpecified())
-    {
-      //
-      // Ensure the target is a column;
-      // and that it is a user column (4013).
-      //
-      const NAColumn *nacolTgt = child(0).getNAColumn();
-      if ((nacolTgt->isUserColumn()) &&
-	  (nacolTgt->getHeading()))
-	{
-	  if ((strcmp(nacolTgt->getHeading(),
-		      "JDBC_BLOB_COLUMN -") == 0) ||
-	      (strcmp(nacolTgt->getHeading(),
-		      "JDBC_CLOB_COLUMN -") == 0))
-	    {
 
-	      if (NOT child(1)->castToItemExpr()->nodeIsBound())
-		{
-		  ItemExpr * boundExpr =
-		    child(1)->castToItemExpr()->bindNode(bindWA);
-		  if (bindWA->errStatus())
-		    return boundExpr;
-		  child(1) = boundExpr;
-		}
-
-	      OperatorTypeEnum ieOperType ;
-	      ieOperType = child(1)->castToItemExpr()->getOperatorType() ;
-
-	      if ( ieOperType == ITM_DYN_PARAM || ieOperType == ITM_ROWSETARRAY_SCAN )
-		{
-		  if (child(1)->castToItemExpr()->getValueId().getType().getTypeQualifier() == NA_UNKNOWN_TYPE)
-		    {
-
-		      if (ieOperType == ITM_DYN_PARAM) {
-			DynamicParam * param =
-			  (DynamicParam *)child(1)->castToItemExpr();
-			param->setParamHeading(nacolTgt->getHeading());
-			param->setParamTablename(nacolTgt->getTableName()->getObjectName());
-		      }
-		      else {  // ITM_ROWSETARRAY_SCAN
-			HostVar * hv =
-			  (HostVar *)child(1)->child(0)->castToItemExpr();
-			hv->setParamHeading(nacolTgt->getHeading());
-			hv->setParamTablename(nacolTgt->getTableName()->getObjectName());
-		      }
-
-		    } // source is untyped scalar or array param
-
-		} // source is dynamic scalar or array param ( i.e. rowset)
-	    } // blob/clob'ed
-	} // user column
-    } // user specified
-  return this;
-} // Assign::setParamHeadingAndTablename
 
 // -----------------------------------------------------------------------
 // member functions for class Cast
