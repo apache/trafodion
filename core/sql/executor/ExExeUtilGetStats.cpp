@@ -2873,7 +2873,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
            str_sprintf(statsBuf_, "%-5s%-10s%-15s%-20s%-15s%-20s%-20s%-20s%-20s%-20s%-10s",
                 "Id", "DOP",
                 "EstRowsAccess", "ActRowsAccess", "EstRowUsed", "ActRowsUsed", "SE_IOs",
-                "SE_IO_Bytes", "SE_IO_SumTime", "SE_IO_MaxTime", "TableName");
+                "SE_IO_KBytes", "SE_IO_SumTime", "SE_IO_MaxTime", "TableName");
            moveRowToUpQueue(statsBuf_);
         }
         else {
@@ -2881,7 +2881,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
                 "Id", "DOP","Table Name");
 	   moveRowToUpQueue(statsBuf_);
            str_sprintf(statsBuf_, "%-15s%-20s%-15s%-20s%-20s%-20s%-20s%-20s",
-		"EstRowsAccess", "ActRowsAccess", "EstRowsUsed", "ActRowsUsed", "SE_IOs", "SE_IO_Bytes", "SE_IO_SumTime", "SE_IO_MaxTime");
+		"EstRowsAccess", "ActRowsAccess", "EstRowsUsed", "ActRowsUsed", "SE_IOs", "SE_IO_KBytes", "SE_IO_SumTime", "SE_IO_MaxTime");
            moveRowToUpQueue(statsBuf_);
         }
         isHeadingDisplayed_ = TRUE;
@@ -2955,24 +2955,28 @@ short ExExeUtilGetRTSStatisticsTcb::work()
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
             break;
           case SQLSTATS_HBASE_IOS:
+          case SQLSTATS_HIVE_IOS:
            str_sprintf(Int64Val, "%Ld", statsItems[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
             break;
           case SQLSTATS_HBASE_IO_BYTES:
-            str_sprintf(Int64Val, "%Ld", statsItems[i].int64_value/1024/1024);
+          case SQLSTATS_HIVE_IO_BYTES:
+            str_sprintf(Int64Val, "%Ld", statsItems[i].int64_value/1024);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
             break;
           case SQLSTATS_HBASE_IO_ELAPSED_TIME:
+          case SQLSTATS_HIVE_IO_ELAPSED_TIME:
             str_sprintf(Int64Val, "%Ld", statsItems[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 
             str_sprintf(&statsBuf_[strlen(statsBuf_)], "%-20s", Int64Val);
             break;
           case SQLSTATS_HBASE_IO_MAX_TIME:
+          case SQLSTATS_HIVE_IO_MAX_TIME:
             str_sprintf(Int64Val, "%Ld", statsItems[i].int64_value);
             intSize = str_len(Int64Val);
             AddCommas(Int64Val,intSize); 

@@ -1074,7 +1074,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              20,398              10,610
 
@@ -1137,7 +1137,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              20,398              10,610
 
@@ -1331,7 +1331,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              20,398              10,610
 
@@ -1394,7 +1394,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              20,398              10,610
 
@@ -2080,7 +2080,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              22,124              12,163
 
@@ -2143,7 +2143,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              22,124              12,163
 
@@ -2199,7 +2199,7 @@ Reply Message Count      15
 Reply Message Bytes      42,696
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              22,124              12,163
 
@@ -2258,7 +2258,7 @@ Reply Message Count      15
 Reply Message Bytes      42,696
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              22,124              12,163
 
@@ -2543,7 +2543,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              22,124              12,163
 
@@ -2595,7 +2595,7 @@ Reply Message Count      15
 Reply Message Bytes      42,696
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              22,124              12,163
 
@@ -2653,7 +2653,7 @@ Request Message Bytes    40,128
 Reply Message Count      15
 Reply Message Bytes      42,696
 
-   Id       DOP  EstRowsAccess       ActRowsAccess     EstRowUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime TableName
+   Id       DOP  EstRowsAccess       ActRowsAccess     EstRowUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime TableName
     1         2              0                   4            100                   4                   4                   0              22,124              12,163 TRAFODION.SCH.TSTAT
 
    Id             TDBName Mode       DOP      TopN    BMOPhase     InterimRowCount             CPUTime         BMOHeapUsed    BMOHeapAllocated           BMOHeapWM       BMOSpaceBufSz      BMOSpaceBufCnt   FileCnt ScrIOSize           ScrIORead        ScrIOWritten           ScrIOTime        ScrIOMaxTime
@@ -2888,7 +2888,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              22,124              12,163
 
@@ -2943,7 +2943,7 @@ Reply Message Count      15
 Reply Message Bytes      42,696
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         2   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   4                   0              22,124              12,163
 
@@ -3028,7 +3028,7 @@ Scr. Write Count         0
 Scr. IO Max Time         0
 Sort TopN                -1
 
-   Id       DOP  EstRowsAccess       ActRowsAccess     EstRowUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime TableName
+   Id       DOP  EstRowsAccess       ActRowsAccess     EstRowUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime TableName
     1         2              0                   4            100                   4                   4                   0              17,792               9,698 TRAFODION.SCH.TSTAT
 
 --- SQL operation complete.
@@ -3089,7 +3089,7 @@ Request Message Bytes    5,856
 Reply Message Count      6
 Reply Message Bytes      45,688
 
-   Id       DOP  EstRowsAccess       ActRowsAccess     EstRowUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime TableName
+   Id       DOP  EstRowsAccess       ActRowsAccess     EstRowUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime TableName
     1         2              0                   4            100                   4                   4                   0              19,458              13,439 TRAFODION.SCH.TSTAT
 
    Id             TDBName Mode       DOP      TopN    BMOPhase     InterimRowCount             CPUTime         BMOHeapUsed    BMOHeapAllocated           BMOHeapWM       BMOSpaceBufSz      BMOSpaceBufCnt   FileCnt ScrIOSize           ScrIORead        ScrIOWritten           ScrIOTime        ScrIOMaxTime
@@ -3213,7 +3213,7 @@ Request Message Bytes    5,856
 Reply Message Count      6
 Reply Message Bytes      45,688
 
-   Id       DOP  EstRowsAccess       ActRowsAccess     EstRowUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime TableName
+   Id       DOP  EstRowsAccess       ActRowsAccess     EstRowUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime TableName
     1         2              0                   4            100                   4                   4                   0               8,634               5,986 TRAFODION.SCH.TSTAT
 
    Id             TDBName Mode       DOP      TopN    BMOPhase     InterimRowCount             CPUTime         BMOHeapUsed    BMOHeapAllocated           BMOHeapWM       BMOSpaceBufSz      BMOSpaceBufCnt   FileCnt ScrIOSize           ScrIORead        ScrIOWritten           ScrIOTime        ScrIOMaxTime
@@ -3533,7 +3533,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         1   TRAFODION.SCH.TSTATI
               0                   4            100                   4                   2                   0              35,112              35,112
 
@@ -3596,7 +3596,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         1   TRAFODION.SCH.TSTATI
               0                   4            100                   4                   2                   0              35,112              35,112
 
@@ -3673,7 +3673,7 @@ Scr. IO Max Time         0
 Sort TopN                -1
 
    Id       DOP          Table Name
-  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
     1         1   TRAFODION.SCH.TSTAT
               0                   4            100                   4                   2                   0              13,212              13,212
 
@@ -3712,7 +3712,7 @@ Sort TopN                -1
 > Number of Cpus           2
 34a36,46
 >    Id       DOP          Table Name
->   EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_Bytes       SE_IO_SumTime       SE_IO_MaxTime
+>   EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs         SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
 >     1         0   TRAFODION.SCH.TSTATI
 >               0                   0            100                   0                   0                   0                   0                   0
 >     6         0   TRAFODION.SCH.TSTATI
