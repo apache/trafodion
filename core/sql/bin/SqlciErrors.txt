@@ -25,7 +25,7 @@
 1023 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1024 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
 1025 ZZZZZ 99999 BEGINNER MINOR DBADMIN Request failed.  Dependent object $0~string0 exists.
-1026 ZZZZZ 99999 BEGINNER MINOR DBADMIN --- unused ---
+1026 ZZZZZ 99999 BEGINNER MINOR DBADMIN Specified object name $0~String0 is invalid for this command.
 1027 ZZZZZ 99999 BEGINNER MINOR DBADMIN The view $0~TableName was created before column privileges were supported. To grant column privileges, please recreate the view.
 1028 ZZZZZ 99999 BEGINNER MINOR DBADMIN The schema must be empty.  It contains at least one object $0~TableName.
 1029 ZZZZZ 99999 BEGINNER MINOR DBADMIN Object $0~TableName could not be created.

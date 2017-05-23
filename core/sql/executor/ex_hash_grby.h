@@ -140,6 +140,16 @@ class ex_hash_grby_tcb : public ex_tcb {
     HASH_GRBY_CANCELED
   };
 
+  // the phase of the hash groupby algorithm
+  // Change ex_hash_grby_tcb::HashGrbyPhaseStr when you add new value to this enum
+  // New phase enum value should be added before PHASE_END
+  enum HashGrbyPhase {
+    HGB_READ_PHASE,
+    HGB_RETURN_PHASE,
+    HGB_READ_SPILL_PHASE,
+    PHASE_END
+  };
+
   Space * space_;
   CollHeap * heap_;
 #ifndef __EID
@@ -302,6 +312,7 @@ NA_EIDPROC
   void resetClusterAndReadFromChild(); // Tmobile.
 
 public:
+  static const char *HashGrbyPhaseStr[];
 
 NA_EIDPROC
   ex_hash_grby_tcb(const ex_hash_grby_tdb & hash_grby_tdb,    

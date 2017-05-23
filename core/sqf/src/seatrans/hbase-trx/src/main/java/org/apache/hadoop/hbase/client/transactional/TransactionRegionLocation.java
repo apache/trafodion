@@ -28,7 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.codec.binary.Hex;
 
 import org.apache.hadoop.hbase.util.Bytes;
-
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
 import org.apache.hadoop.hbase.ServerName;
@@ -63,62 +63,79 @@ public class TransactionRegionLocation extends HRegionLocation {
 
    @Override
    public int compareTo(HRegionLocation o) {
-      if (LOG.isTraceEnabled()) LOG.trace("compareTo ENTRY: " + o);
-      int result = super.getHostname().compareTo(o.getHostname());
-      if (result != 0){
-         if (LOG.isTraceEnabled()) LOG.trace("compareTo hostnames differ: mine: " + super.getHostname() + " hex: " +
-              Hex.encodeHexString(Bytes.toBytes(super.getHostname())) + " object's: " + o.getHostname() + " hex: " + Hex.encodeHexString(Bytes.toBytes(o.getHostname())));
-         return result;
+      if (o == null) {
+        if (LOG.isDebugEnabled()) LOG.debug("CompareTo TransactionRegionLocation object is null");
+        return 1;
       }
-      result = super.getPort() - o.getPort();
-      if (result != 0) {
-         if (LOG.isTraceEnabled()) LOG.trace("compareTo ports differ: mine: " + super.getPort() + " object's: " + o.getPort());
-         return result;
-      }
-      result = super.getRegionInfo().compareTo(o.getRegionInfo());
-      if (result != 0) {
-         if (LOG.isTraceEnabled()) LOG.trace("compareTo regionInfo differs: mine: " + super.getRegionInfo() + " hex: " +
-             Hex.encodeHexString(super.getRegionInfo().getRegionName()) + " object's: " + o.getRegionInfo() + "hex: " +
-             Hex.encodeHexString(o.getRegionInfo().getRegionName()));
-      }
-      if (LOG.isTraceEnabled()) LOG.trace("compareTo HRegionLocation result is: " + result );
-      return result;
-   }
 
-   public int compareTo(TransactionRegionLocation o) {
-      if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation ENTRY: " + o.getRegionInfo().getRegionNameAsString());
-      int result = super.getHostname().compareTo(o.getHostname());
+      if (LOG.isDebugEnabled()) LOG.debug("CompareTo TransactionRegionLocation Entry:  TableNames :\n      mine: "
+              + this.getRegionInfo().getTable().getNameAsString() + "\n object's : " + o.getRegionInfo().getTable().getNameAsString());
+
+      // Make sure this is the same table
+      int result = this.getRegionInfo().getTable().compareTo(o.getRegionInfo().getTable());
       if (result != 0){
-         if (LOG.isTraceEnabled()) LOG.trace("compareTo hostnames differ: mine: " + super.getHostname() + " hex: " +
-              Hex.encodeHexString(Bytes.toBytes(super.getHostname())) + " object's: " + o.getHostname() + " hex: " + Hex.encodeHexString(Bytes.toBytes(o.getHostname())));
+         if (LOG.isDebugEnabled()) LOG.debug("compareTo TransactionRegionLocation TableNames are different: result is " + result);
          return result;
       }
-      result = super.getPort() - o.getPort();
-      if (result != 0) {
-         if (LOG.isTraceEnabled()) LOG.trace("compareTo ports differ: mine: " + super.getPort() + " object's: " + o.getPort());
-         return result;
+
+      if (LOG.isDebugEnabled()) LOG.debug("Tables match - comparing keys for "
+              + this.getRegionInfo().getTable().getNameAsString()
+              + "\n This start key    : " + Hex.encodeHexString(this.getRegionInfo().getStartKey())
+              + "\n Object's start key: " + Hex.encodeHexString(o.getRegionInfo().getStartKey())
+              + "\n This end key    : " + Hex.encodeHexString(this.getRegionInfo().getEndKey())
+              + "\n Object's end key: " + Hex.encodeHexString(o.getRegionInfo().getEndKey()));
+
+      // Here we are going to compare the keys as a range we can return 0
+      // For these comparisons it's important to remember that 'this' is the object that is being added
+      // and that 'object' is an object already added in the participationRegions set.
+      //
+      // We are trying to limit the registration of daughter regions after a region split.
+      // So if a location is already added whose startKey is less than ours and whose end
+      // key is greater than ours we will return 0 so that 'this' does not get added into
+      // the participatingRegions list.
+
+      // firstKeyInRange will be true if object's startKey is less than ours.
+      int startKeyResult = Bytes.compareTo(this.getRegionInfo().getStartKey(), o.getRegionInfo().getStartKey());
+      boolean firstKeyInRange = startKeyResult >= 0;
+      boolean objLastKeyInfinite = Bytes.equals(o.getRegionInfo().getEndKey(), HConstants.EMPTY_END_ROW);
+      boolean thisLastKeyInfinite = Bytes.equals(this.getRegionInfo().getEndKey(), HConstants.EMPTY_END_ROW);
+      int endKeyResult = Bytes.compareTo(this.getRegionInfo().getEndKey(), o.getRegionInfo().getEndKey());
+
+      // lastKey is in range if the existing object has an infinite end key, no matter what this end key is.
+      boolean lastKeyInRange =  objLastKeyInfinite || ( ! thisLastKeyInfinite && endKeyResult <= 0);
+      if (LOG.isDebugEnabled()) LOG.debug("firstKeyInRange " + firstKeyInRange + " lastKeyInRange " + lastKeyInRange);
+
+      if (firstKeyInRange && lastKeyInRange) {
+         if (LOG.isDebugEnabled()) LOG.debug("Object's region contains this region's start and end keys.  Regions match for "
+                                   + o.getRegionInfo().getTable().getNameAsString());
+         return 0;
       }
-      result = super.getRegionInfo().compareTo(o.getRegionInfo());
-      if (result != 0) {
-         if (super.getRegionInfo().getEncodedName().compareTo(o.getRegionInfo().getEncodedName()) == 0){
-            if (LOG.isTraceEnabled()) LOG.trace("compareTo regionInfo RegionNames match " + o.getRegionInfo().getEncodedName());
-            if (super.getRegionInfo().containsRange(o.getRegionInfo().getStartKey(), o.getRegionInfo().getEndKey())) {
-               if (LOG.isTraceEnabled()) LOG.trace("This region contains object's start and end keys.  Regions match " + o.getRegionInfo().getEncodedName());
-               result = 0;
-               return result;
-            }
-            if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation regionInfo RegionNames match, but object end keys differ:\n  this hex name: "
-                        + Hex.encodeHexString(super.getRegionInfo().getRegionName()) + "\n   obj hex name: "
-                        + Hex.encodeHexString(o.getRegionInfo().getRegionName())
-                        + "\n This end key    : " + Hex.encodeHexString(super.getRegionInfo().getEndKey())
-                        + "\n Object's end key: " + Hex.encodeHexString(o.getRegionInfo().getEndKey())  + "\n result " + result);
-         }
-         else {
-            if (LOG.isTraceEnabled()) LOG.trace("compareTo TransactionRegionLocation regionInfo.getEncodedName differs:\n      mine: "
-                    + super.getRegionInfo().getEncodedName() + "\n object's : " + o.getRegionInfo().getEncodedName() + " result is " + result);
-         }
+
+      if (startKeyResult != 0){
+         if (LOG.isDebugEnabled()) LOG.debug("compareTo TransactionRegionLocation startKeys don't match: result is " + startKeyResult);
+         return startKeyResult;
       }
-      return result;
+
+      if (objLastKeyInfinite) {
+         if (LOG.isInfoEnabled()) LOG.info("Object's region contains this region's end keys for "
+                  + o.getRegionInfo().getTable().getNameAsString()
+                  + "\n This start key    : " + Hex.encodeHexString(this.getRegionInfo().getStartKey())
+                  + "\n Object's start key: " + Hex.encodeHexString(o.getRegionInfo().getStartKey())
+                  + "\n This end key    : " + Hex.encodeHexString(this.getRegionInfo().getEndKey())
+                  + "\n Object's end key: " + Hex.encodeHexString(o.getRegionInfo().getEndKey()));
+      }
+
+      if (this.getRegionInfo().getStartKey().length != 0 && this.getRegionInfo().getEndKey().length == 0) {
+         if (LOG.isDebugEnabled()) LOG.debug("compareTo TransactionRegionLocation \"this\" is the last region: result is 1");
+         return 1; // this is last region
+      }
+      if (o.getRegionInfo().getStartKey().length != 0 && o.getRegionInfo().getEndKey().length == 0) {
+         if (LOG.isDebugEnabled()) LOG.debug("compareTo TransactionRegionLocation \"object\" is the last region: result is -1");
+         return -1; // o is the last region
+      }
+      if (LOG.isDebugEnabled()) LOG.debug("compareTo TransactionRegionLocation endKeys comparison: result is " + endKeyResult);
+      return endKeyResult;
+
    }
 
   /**
@@ -126,20 +143,32 @@ public class TransactionRegionLocation extends HRegionLocation {
    */
   @Override
   public boolean equals(Object o) {
-    if (LOG.isTraceEnabled()) LOG.trace("equals ENTRY: this: " + this + " o: " + o);
+    if (LOG.isDebugEnabled()) LOG.debug("equals ENTRY: this: " + this + " o: " + o);
     if (this == o) {
-      if (LOG.isTraceEnabled()) LOG.trace("equals same object: " + o);
+      if (LOG.isDebugEnabled()) LOG.debug("equals same object: " + o);
       return true;
     }
     if (o == null) {
-      if (LOG.isTraceEnabled()) LOG.trace("equals o is null");
+      if (LOG.isDebugEnabled()) LOG.debug("equals o is null");
       return false;
     }
-    if (!(o instanceof TransactionRegionLocation)) {
-      if (LOG.isTraceEnabled()) LOG.trace("equals o is not an instance of: " + o);
+    if (!(o instanceof HRegionLocation)) {
+      if (LOG.isDebugEnabled()) LOG.debug("equals o is not an instance of: " + o);
       return false;
     }
-    return this.compareTo((TransactionRegionLocation)o) == 0;
+    return this.compareTo((HRegionLocation)o) == 0;
   }
 
+  /**
+   * toString
+   * @return String this
+   *
+   */
+  @Override
+  public String toString() {
+    return super.toString() + "encodedName " + super.getRegionInfo().getEncodedName()
+            + " start key: " + Hex.encodeHexString(super.getRegionInfo().getStartKey())
+            + " end key: " + Hex.encodeHexString(super.getRegionInfo().getEndKey())
+            + " tableRecodedDropped " + isTableRecodedDropped();
+  }
 }

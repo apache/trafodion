@@ -361,6 +361,8 @@ NA_EIDPROC
   UInt16  getBMOMaxMemThresholdMB()
   { return bmoMaxMemThresholdMB_; }
 
+  NABoolean isNonBMOPartialGroupBy() { return (isPartialGroup_ == TRUE); }
+
 };
 
 

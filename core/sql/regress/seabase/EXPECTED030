@@ -7,7 +7,7 @@
 2016-03-01
 
 --- 1 row(s) selected.
->>select to_date('03/01/2016', 'MM/DD/YYYY') from (values(1)) x(a);
+>>select to_date('03/01/2016', 'mm/dd/yyyy') from (values(1)) x(a);
 
 (EXPR)    
 ----------
@@ -71,7 +71,7 @@
 2016-03-01
 
 --- 1 row(s) selected.
->>select to_date('201603', 'YYYYMM') from (values(1)) x(a);
+>>select to_date('201603', 'YYYYmm') from (values(1)) x(a);
 
 (EXPR)    
 ----------

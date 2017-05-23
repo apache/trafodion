@@ -490,7 +490,7 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
   }
 
   if (createTableNode->mapToHbaseTable())
-    return 0;
+      return 0;
 
   const NAString extTgtTableName = tgtTableName.getExternalName(TRUE);
 
@@ -554,6 +554,14 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
   Int32 numCols = 0;
   ComTdbVirtTableColumnInfo * colInfoArray = NULL;
         
+  ElemDDLColDefArray &colArray = createTableNode->getColDefArray();
+  ElemDDLColRefArray &keyArray =
+    (createTableNode->getIsConstraintPKSpecified() ?
+     createTableNode->getPrimaryKeyColRefArray() :
+     (createTableNode->getStoreOption() == COM_KEY_COLUMN_LIST_STORE_OPTION ?
+      createTableNode->getKeyColumnArray() :
+      createTableNode->getPrimaryKeyColRefArray()));
+
   // Get a description of the source table
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   NATable *naTable = bindWA.getNATable(cnSrc);
@@ -575,14 +583,6 @@ short CmpSeabaseDDL::createSeabaseTableExternal(
       
       return -1;
     }
-
-  ElemDDLColDefArray &colArray = createTableNode->getColDefArray();
-  ElemDDLColRefArray &keyArray =
-    (createTableNode->getIsConstraintPKSpecified() ?
-     createTableNode->getPrimaryKeyColRefArray() :
-     (createTableNode->getStoreOption() == COM_KEY_COLUMN_LIST_STORE_OPTION ?
-      createTableNode->getKeyColumnArray() :
-      createTableNode->getPrimaryKeyColRefArray()));
 
   // cqd HIVE_USE_EXT_TABLE_ATTRS:
   //  if OFF, col or key attrs cannot be specified during ext table creation.
@@ -1708,9 +1708,9 @@ short CmpSeabaseDDL::createSeabaseTable2(
   Lng32 cliRC = 0;
 
   ComObjectName tableName(createTableNode->getTableName());
+
   ComAnsiNamePart currCatAnsiName(currCatName);
   ComAnsiNamePart currSchAnsiName(currSchName);
-  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
 
   // external table to be mapped to an existing hbase table
   NABoolean hbaseMapFormat = FALSE;
@@ -1719,9 +1719,10 @@ short CmpSeabaseDDL::createSeabaseTable2(
   // See ComRowFormat in common/ComSmallDefs.h for details.
   NABoolean hbaseMappedDataFormatIsString = FALSE;
 
-  // Make some additional checks if creating an external table
+  // Make some additional checks if creating an external hive table
   ComObjectName *srcTableName = NULL;
-  if (createTableNode->isExternal())
+  if ((createTableNode->isExternal()) &&
+      (NOT createTableNode->mapToHbaseTable()))
     {
       // The schema name of the target table, if specified,  must match the 
       // schema name of the source table
@@ -1731,26 +1732,16 @@ short CmpSeabaseDDL::createSeabaseTable2(
       srcTableName = new(STMTHEAP) ComObjectName
           (createTableNode->getLikeSourceTableName(), COM_TABLE_NAME);
 
-      if (createTableNode->mapToHbaseTable())
+      srcTableName->applyDefaults(currCatAnsiName, currSchAnsiName);
+
+      if (srcTableName->getCatalogNamePartAsAnsiString() == HBASE_SYSTEM_CATALOG)
         {
-          if (CmpCommon::getDefault(TRAF_HBASE_MAPPED_TABLES) == DF_OFF)
-            {
-              *CmpCommon::diags() << DgSqlCode(-3242)
-                                  << DgString0("HBase mapped tables not supported.");
-
-              return -1;
-            }
-
-          ComAnsiNamePart cn(HBASE_SYSTEM_CATALOG);
-          ComAnsiNamePart sn("MAP");
-          srcTableName->applyDefaults(cn, sn);
-
-          hbaseMapFormat = TRUE;
-          hbaseMappedDataFormatIsString = 
-            createTableNode->isHbaseDataFormatString();
+          *CmpCommon::diags()
+            << DgSqlCode(-3242)
+            << DgString0("Cannot create external table on a native HBase table without the MAP TO option.");
+          
+          return -1;
         }
-      else
-        srcTableName->applyDefaults(currCatAnsiName, currSchAnsiName);
 
       // Convert the native table name to its trafodion name
       NAString tabName = ComConvertNativeNameToTrafName 
@@ -1759,7 +1750,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
          tableName.getObjectNamePartAsAnsiString());
                                
       ComObjectName adjustedName(tabName, COM_TABLE_NAME);
-      NAString type = adjustedName.isExternalHive() ? "HIVE" : "HBASE";
+      NAString type = "HIVE";
       tableName = adjustedName;
 
       // Verify that the name with prepending is not too long
@@ -1797,7 +1788,51 @@ short CmpSeabaseDDL::createSeabaseTable2(
             << DgString1((srcTableName->getObjectNamePart().getExternalName()));
           return -1;
         }
-    } // external table
+    } // external hive table
+
+  // Make some additional checks if creating an external hbase mapped table
+  if ((createTableNode->isExternal()) &&
+      (createTableNode->mapToHbaseTable()))
+    {
+      if (CmpCommon::getDefault(TRAF_HBASE_MAPPED_TABLES) == DF_OFF)
+        {
+          *CmpCommon::diags() << DgSqlCode(-3242)
+                              << DgString0("HBase mapped tables not supported.");
+          
+          return -1;
+        }
+      
+      srcTableName = new(STMTHEAP) ComObjectName
+          (createTableNode->getLikeSourceTableName(), COM_TABLE_NAME);
+
+      ComAnsiNamePart hbCat(HBASE_SYSTEM_CATALOG);
+      ComAnsiNamePart hbSch(HBASE_SYSTEM_SCHEMA);
+      srcTableName->applyDefaults(hbCat, hbSch);
+      
+      hbaseMapFormat = TRUE;
+      hbaseMappedDataFormatIsString = 
+        createTableNode->isHbaseDataFormatString();
+
+      ComAnsiNamePart trafCat(TRAFODION_SYSCAT_LIT);
+      ComAnsiNamePart trafSch(NAString(HBASE_EXT_MAP_SCHEMA), 
+                              ComAnsiNamePart::INTERNAL_FORMAT);
+
+      tableName.setCatalogNamePart(trafCat);
+      tableName.setSchemaNamePart(trafSch);
+
+      // For now the object name of the target table must match the
+      // object name of the source table
+      if (tableName.getObjectNamePart().getExternalName() !=
+          srcTableName->getObjectNamePart().getExternalName())
+        {
+          *CmpCommon::diags()
+            << DgSqlCode(-CAT_EXTERNAL_NAME_MISMATCH)
+            << DgString0 ("HBASE")
+            << DgTableName(tableName.getObjectNamePart().getExternalName())
+            << DgString1((srcTableName->getObjectNamePart().getExternalName()));
+          return -1;
+        }
+    } // external hbase mapped table
 
   const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
   const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
@@ -1825,7 +1860,6 @@ short CmpSeabaseDDL::createSeabaseTable2(
 
       return -1;
     }
-
 
   retcode = existsInSeabaseMDTable(&cliInterface, 
                                    catalogNamePart, schemaNamePart, objectNamePart,
@@ -2935,7 +2969,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
         ("hbase_serialization", hbVal, FALSE);
     }
   return -1;
-}
+} // createSeabaseTable2
 
 void CmpSeabaseDDL::createSeabaseTable(
                                        StmtDDLCreateTable * createTableNode,
@@ -9493,8 +9527,9 @@ void CmpSeabaseDDL::alterSeabaseTableDropConstraint(
 void CmpSeabaseDDL::seabaseGrantRevoke(
                                       StmtDDLNode * stmtDDLNode,
                                       NABoolean isGrant,
-                                      NAString &currCatName, NAString &currSchName,
-                                      NABoolean useHBase)
+                                      NAString &currCatName, 
+                                      NAString &currSchName,
+                                      NABoolean internalCall)
 {
   Lng32 retcode = 0;
 
@@ -9507,6 +9542,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   StmtDDLGrant * grantNode = NULL;
   StmtDDLRevoke * revokeNode = NULL;
   NAString tabName;
+  NAString origTabName;
   ComAnsiNameSpace nameSpace;  
 
   NAString grantedByName;
@@ -9515,6 +9551,7 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
     {
       grantNode = stmtDDLNode->castToStmtDDLGrant();
       tabName = grantNode->getTableName();
+      origTabName = grantNode->getOrigObjectName();
       nameSpace = grantNode->getGrantNameAsQualifiedName().getObjectNameSpace();
       isGrantedBySpecified = grantNode->isByGrantorOptionSpecified();
       grantedByName = 
@@ -9524,38 +9561,24 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
     {
       revokeNode = stmtDDLNode->castToStmtDDLRevoke();
       tabName = revokeNode->getTableName();
+      origTabName = revokeNode->getOrigObjectName();
       nameSpace = revokeNode->getRevokeNameAsQualifiedName().getObjectNameSpace();
       isGrantedBySpecified = revokeNode->isByGrantorOptionSpecified();
       grantedByName = 
        isGrantedBySpecified ? revokeNode->getByGrantor()->getAuthorizationIdentifier(): "";
     }
 
-  // If using HBase to perform authorization, call it now.
-  ComObjectName tableName(tabName, COM_TABLE_NAME);
-  if (useHBase || isHbase(tableName))
-  {
-    seabaseGrantRevokeHBase(stmtDDLNode, isGrant, currCatName, currSchName);
-    return;
-  }
-
-  ComAnsiNamePart currCatAnsiName(currCatName);
-  ComAnsiNamePart currSchAnsiName(currSchName);
-  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
-
-  const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
-  const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
-  const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
-  const NAString extTableName = tableName.getExternalName(TRUE);
+  ComObjectName origTableName(origTabName, COM_TABLE_NAME);
 
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
   CmpCommon::context()->sqlSession()->getParentQid());
 
-
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
-  CorrName cn(tableName.getObjectNamePart().getInternalName(),
+
+  CorrName cn(origTableName.getObjectNamePart().getInternalName(),
               STMTHEAP,
-              tableName.getSchemaNamePart().getInternalName(),
-              tableName.getCatalogNamePart().getInternalName());
+              origTableName.getSchemaNamePart().getInternalName(),
+              origTableName.getCatalogNamePart().getInternalName());
               
   // set up common information for all grantees
   ComObjectType objectType = COM_BASE_TABLE_OBJECT;
@@ -9581,6 +9604,8 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   Int32 schemaOwnerID = 0;
   Int64 objectFlags =  0 ;
   NATable *naTable = NULL;
+
+  ComObjectName tableName(tabName, COM_TABLE_NAME);
   if (objectType == COM_BASE_TABLE_OBJECT)
     {
       naTable = bindWA.getNATable(cn);
@@ -9599,7 +9624,19 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       objectType = naTable->getObjectType();
       if (naTable->isView())
         objectType = COM_VIEW_OBJECT;
+
+      NAString tns = naTable->getTableName().getQualifiedNameAsAnsiString();
+      tableName = ComObjectName(tns);
     }
+
+  ComAnsiNamePart currCatAnsiName(currCatName);
+  ComAnsiNamePart currSchAnsiName(currSchName);
+  tableName.applyDefaults(currCatAnsiName, currSchAnsiName);
+
+  const NAString catalogNamePart = tableName.getCatalogNamePartAsAnsiString();
+  const NAString schemaNamePart = tableName.getSchemaNamePartAsAnsiString(TRUE);
+  const NAString objectNamePart = tableName.getObjectNamePartAsAnsiString(TRUE);
+  const NAString extTableName = tableName.getExternalName(TRUE);
 
   ElemDDLGranteeArray & pGranteeArray = 
     (isGrant ? grantNode->getGranteeArray() : revokeNode->getGranteeArray());
@@ -9629,9 +9666,11 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
         return;
       }
 
-  // If column privs specified for non SELECT ops for Hive native tables, 
+  // If column privs specified for non SELECT ops for Hive/HBase native tables, 
   // return an error
-  if (cn.isHive() && (colPrivs.size() > 0))
+  if (naTable && 
+      (naTable->getTableName().isHive() || naTable->getTableName().isHbase()) &&
+      (colPrivs.size() > 0))
     {
       if (hasValue(colPrivs, INSERT_PRIV) ||
           hasValue(colPrivs, UPDATE_PRIV) ||
@@ -9730,6 +9769,52 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
       objectType = naTable->getObjectType();
       if (naTable->isView())
         objectType = COM_VIEW_OBJECT;
+    }
+
+  // HBase tables must be registered in traf metadata
+  if (objectUID == 0 &&
+      naTable && 
+      ((naTable->isHbaseCellTable()) || (naTable->isHbaseRowTable())))
+    {
+      // For native hbase tables, grantor must be DB__ROOT or belong
+      // to one of the admin roles:  DB__ROOTROLE, DB__HIVEROLE
+      // In hive, you must be an admin, DB__ROOTROLE and DB__HIVEROLE
+      // is the equivalent of an admin.
+      if (!ComUser::isRootUserID() &&
+          !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
+          !ComUser::currentUserHasRole(HBASE_ROLE_ID)) 
+        {
+          *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
+          processReturn();
+          return;
+        }
+
+      // register this hive table in traf metadata
+      char query[(ComMAX_ANSI_IDENTIFIER_EXTERNAL_LEN*4) + 100];
+      snprintf(query, sizeof(query),
+               "register internal hbase table if not exists %s.\"%s\".\"%s\"",
+               catalogNamePart.data(),
+               schemaNamePart.data(),
+               objectNamePart.data());
+       Lng32 retcode = cliInterface.executeImmediate(query);
+      if (retcode < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          return;
+        }
+
+      // reload NATable to get registered objectUID
+      naTable = bindWA.getNATable(cn);
+      if (naTable == NULL)
+        {
+          SEABASEDDL_INTERNAL_ERROR("Bad NATable pointer in seabaseGrantRevoke");
+          return;
+        }
+
+      objectUID = (int64_t)naTable->objectUid().get_value();
+      objectOwnerID = (int32_t)naTable->getOwner();
+      schemaOwnerID = naTable->getSchemaOwner();
+      objectType = naTable->getObjectType();
     }
 
   // for metadata tables, the objectUID is not initialized in the NATable
@@ -9852,6 +9937,9 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   if (result == STATUS_ERROR)
     return;
 
+  if (isHbase(tableName))
+    hbaseGrantRevoke(stmtDDLNode, isGrant, currCatName, currSchName);
+
   // Adjust the stored descriptor
   char objectTypeLit[3] = {0};
   strncpy(objectTypeLit,PrivMgr::ObjectEnumToLit(objectType),2);
@@ -9862,10 +9950,10 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   return;
 }
 
-void CmpSeabaseDDL::seabaseGrantRevokeHBase(
-                                             StmtDDLNode * stmtDDLNode,
-                                             NABoolean isGrant,
-                                             NAString &currCatName, NAString &currSchName)
+void CmpSeabaseDDL::hbaseGrantRevoke(
+     StmtDDLNode * stmtDDLNode,
+     NABoolean isGrant,
+     NAString &currCatName, NAString &currSchName)
 {
   Lng32 cliRC = 0;
   Lng32 retcode = 0;
@@ -9903,7 +9991,7 @@ void CmpSeabaseDDL::seabaseGrantRevokeHBase(
     {
       *CmpCommon::diags() << DgSqlCode(-1118)
                           << DgTableName(extTableName);
-      //      deallocEHI(ehi); 
+
       processReturn();
       return;
     }
@@ -10138,7 +10226,7 @@ void CmpSeabaseDDL::dropNativeHbaseTable(
   
 }
 
-short CmpSeabaseDDL::registerHiveTable
+short CmpSeabaseDDL::registerNativeTable
 (
      const NAString &catalogNamePart,
      const NAString &schemaNamePart,
@@ -10156,7 +10244,7 @@ short CmpSeabaseDDL::registerHiveTable
 
   Int64 flags = 0;
   if (isRegister && isInternal)
-    flags = MD_OBJECTS_HIVE_INTERNAL_REGISTER;
+    flags = MD_OBJECTS_INTERNAL_REGISTER;
   
   Int64 objUID = -1;
   retcode =
@@ -10198,7 +10286,7 @@ short CmpSeabaseDDL::registerHiveTable
   return 0;
 }
 
-short CmpSeabaseDDL::unregisterHiveTable
+short CmpSeabaseDDL::unregisterNativeTable
 (
      const NAString &catalogNamePart,
      const NAString &schemaNamePart,
@@ -10284,7 +10372,7 @@ short CmpSeabaseDDL::registerHiveView
 
   Int64 flags = 0;
   if (isInternal)
-    flags = MD_OBJECTS_HIVE_INTERNAL_REGISTER;
+    flags = MD_OBJECTS_INTERNAL_REGISTER;
 
   ComObjectType objType = COM_VIEW_OBJECT;
 
@@ -10558,8 +10646,8 @@ short CmpSeabaseDDL::unregisterHiveViewUsage(StmtDDLCreateView * createViewParse
   return 0;
 } 
 
-void CmpSeabaseDDL::regOrUnregHiveObjects (
-     StmtDDLRegOrUnregHive * regOrUnregHiveNode,
+void CmpSeabaseDDL::regOrUnregNativeObject(
+     StmtDDLRegOrUnregObject * regOrUnregObject,
      NAString &currCatName, NAString &currSchName)
 {
   Lng32 retcode = 0;
@@ -10568,29 +10656,45 @@ void CmpSeabaseDDL::regOrUnregHiveObjects (
   ExeCliInterface cliInterface(STMTHEAP, NULL, NULL, 
                                CmpCommon::context()->sqlSession()->getParentQid());
 
-  NAString catalogNamePart = regOrUnregHiveNode->getObjNameAsQualifiedName().
+  NAString catalogNamePart = regOrUnregObject->getObjNameAsQualifiedName().
     getCatalogName();
-  NAString schemaNamePart = regOrUnregHiveNode->getObjNameAsQualifiedName().
+  NAString schemaNamePart = regOrUnregObject->getObjNameAsQualifiedName().
     getSchemaName();
-  NAString objectNamePart = regOrUnregHiveNode->getObjNameAsQualifiedName().
+  NAString objectNamePart = regOrUnregObject->getObjNameAsQualifiedName().
     getObjectName();
   ComObjectName tableName;
   NAString tabName;
   NAString extTableName;
 
-  // make sure that underlying hive object exists
+  NABoolean isHive  = (catalogNamePart == HIVE_SYSTEM_CATALOG);
+  NABoolean isHBase = (catalogNamePart == HBASE_SYSTEM_CATALOG);
+
+  if (NOT (isHive || isHBase))
+    {
+      *CmpCommon::diags() << DgSqlCode(-3242) << 
+        DgString0("Register/Unregister statement must specify a hive or hbase object.");
+      
+      processReturn();
+      return;
+    }
+
+  // make sure that underlying hive/hbase object exists
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
-  CorrName cn(objectNamePart, STMTHEAP, schemaNamePart, catalogNamePart);
+  CorrName cn(objectNamePart, STMTHEAP, 
+              (isHBase? HBASE_CELL_SCHEMA : schemaNamePart),
+              catalogNamePart);
 
   NATable * naTable = bindWA.getNATable(cn);
   if (((naTable == NULL) || (bindWA.errStatus())) &&
-      ((regOrUnregHiveNode->isRegister()) || // register
-       (NOT regOrUnregHiveNode->cleanup()))) // unreg and not cleanup
+      ((regOrUnregObject->isRegister()) || // register
+       (NOT regOrUnregObject->cleanup()))) // unreg and not cleanup
     {
+      CmpCommon::diags()->clear();
+
       *CmpCommon::diags() << DgSqlCode(-3251)
-                          << (regOrUnregHiveNode->isRegister() ? DgString0("REGISTER") :
+                          << (regOrUnregObject->isRegister() ? DgString0("REGISTER") :
                               DgString0("UNREGISTER"))
-                          << DgString1(" ");
+                          << DgString1(NAString(" Reason: Specified object ") + objectNamePart + NAString(" does not exist."));
       
       processReturn();
       
@@ -10602,13 +10706,13 @@ void CmpSeabaseDDL::regOrUnregHiveObjects (
 
   if (naTable)
     {
-      if (regOrUnregHiveNode->isRegister() && 
+      if (regOrUnregObject->isRegister() && 
           (naTable->isRegistered())) // already registered
         {
-          if (NOT regOrUnregHiveNode->existsOption())
+          if (NOT regOrUnregObject->existsOption())
             {
               str_sprintf(errReason, " Reason: %s has already been registered.",
-                          regOrUnregHiveNode->getObjNameAsQualifiedName().
+                          regOrUnregObject->getObjNameAsQualifiedName().
                           getQualifiedNameAsString().data());
               *CmpCommon::diags() << DgSqlCode(-3251)
                                   << DgString0("REGISTER")
@@ -10619,13 +10723,13 @@ void CmpSeabaseDDL::regOrUnregHiveObjects (
           
           return;
         }
-      else if ((NOT regOrUnregHiveNode->isRegister()) && // unregister
+      else if ((NOT regOrUnregObject->isRegister()) && // unregister
                (NOT naTable->isRegistered())) // not registered
         {
-          if (NOT regOrUnregHiveNode->existsOption())
+          if (NOT regOrUnregObject->existsOption())
             {
               str_sprintf(errReason, " Reason: %s has not been registered.",
-                          regOrUnregHiveNode->getObjNameAsQualifiedName().
+                          regOrUnregObject->getObjNameAsQualifiedName().
                           getQualifiedNameAsString().data());
               *CmpCommon::diags() << DgSqlCode(-3251)
                                   << DgString0("UNREGISTER")
@@ -10638,25 +10742,26 @@ void CmpSeabaseDDL::regOrUnregHiveObjects (
         }
     }
 
-  // For native hive tables, grantor must be DB__ROOT or belong
-  // to one of the admin roles:  DB__ROOTROLE, DB__HIVEROLE
-  // In hive, you must be an admin, DB__ROOTROLE and DB__HIVEROLE
+  // For native hive/hbase tables, grantor must be DB__ROOT or belong
+  // to one of the admin roles:  DB__ROOTROLE, DB__HIVEROLE/DB__HBASEROLE.
+  // In hive/hbase, you must be an admin, DB__ROOTROLE,DB__HIVEROLE/HBASEROLE
   // is the equivalent of an admin.
   if (!ComUser::isRootUserID() &&
       !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
-      !ComUser::currentUserHasRole(HIVE_ROLE_ID)) 
+      ((isHive && !ComUser::currentUserHasRole(HIVE_ROLE_ID)) ||
+       (isHBase && !ComUser::currentUserHasRole(HBASE_ROLE_ID))))
     {
       *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
       processReturn();
       return;
     }
 
-  Int32 objOwnerId = HIVE_ROLE_ID;
-  Int32 schemaOwnerId = HIVE_ROLE_ID;
+  Int32 objOwnerId = (isHive ? HIVE_ROLE_ID : HBASE_ROLE_ID);
+  Int32 schemaOwnerId = (isHive ? HIVE_ROLE_ID : HBASE_ROLE_ID);
   Int64 objUID = -1;
   Int64 flags = 0;
-  if ((regOrUnregHiveNode->isRegister()) &&
-      (regOrUnregHiveNode->objType() == COM_SHARED_SCHEMA_OBJECT))
+  if ((regOrUnregObject->isRegister()) &&
+      (regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT))
     {
       retcode =
         updateSeabaseMDObjectsTable
@@ -10664,26 +10769,26 @@ void CmpSeabaseDDL::regOrUnregHiveObjects (
          catalogNamePart.data(),
          schemaNamePart.data(),
          "__SCHEMA__",
-         regOrUnregHiveNode->objType(),
+         regOrUnregObject->objType(),
          NULL,
          objOwnerId, schemaOwnerId,
          flags, objUID);
     }
-  else if (regOrUnregHiveNode->isRegister())
+  else if (regOrUnregObject->isRegister())
     {
-      if (((regOrUnregHiveNode->objType() == COM_BASE_TABLE_OBJECT) &&
-           (naTable->isView())) ||
-          ((regOrUnregHiveNode->objType() == COM_VIEW_OBJECT) &&
-           (! naTable->isView())))
+      if (((regOrUnregObject->objType() == COM_BASE_TABLE_OBJECT) &&
+           (naTable && naTable->isView())) ||
+          ((regOrUnregObject->objType() == COM_VIEW_OBJECT) &&
+           (naTable && (! naTable->isView()))))
         {
           // underlying object is a view but registered object type specified
           // in the register statement is a table, or
           // underlying object is a table but registered object type specified
           // in the register statement is a view
           str_sprintf(errReason, " Reason: Mismatch between specified(%s) and underlying(%s) type for %s.",
-                      (regOrUnregHiveNode->objType() == COM_BASE_TABLE_OBJECT ? "TABLE" : "VIEW"),
+                      (regOrUnregObject->objType() == COM_BASE_TABLE_OBJECT ? "TABLE" : "VIEW"),
                       (naTable->isView() ? "VIEW" : "TABLE"),
-                      regOrUnregHiveNode->getObjNameAsQualifiedName().
+                      regOrUnregObject->getObjNameAsQualifiedName().
                       getQualifiedNameAsString().data());
 
           *CmpCommon::diags() << DgSqlCode(-3251)
@@ -10695,14 +10800,34 @@ void CmpSeabaseDDL::regOrUnregHiveObjects (
           return;
         }
 
-      if (regOrUnregHiveNode->objType() == COM_BASE_TABLE_OBJECT)
+      if (regOrUnregObject->objType() == COM_BASE_TABLE_OBJECT)
         {
-          retcode = registerHiveTable(
-               catalogNamePart, schemaNamePart, objectNamePart,
-               objOwnerId, schemaOwnerId,
-               cliInterface, 
-               regOrUnregHiveNode->isRegister(), 
-               regOrUnregHiveNode->isInternal());
+          if (schemaNamePart == HBASE_SYSTEM_SCHEMA)
+            {
+              // register CELL and ROW formats of HBase table
+              retcode = registerNativeTable(
+                   catalogNamePart, HBASE_CELL_SCHEMA, objectNamePart,
+                   objOwnerId, schemaOwnerId,
+                   cliInterface, 
+                   regOrUnregObject->isRegister(), 
+                   regOrUnregObject->isInternal());
+
+              retcode = registerNativeTable(
+                   catalogNamePart, HBASE_ROW_SCHEMA, objectNamePart,
+                   objOwnerId, schemaOwnerId,
+                   cliInterface, 
+                   regOrUnregObject->isRegister(), 
+                   regOrUnregObject->isInternal());
+            }
+          else
+            {
+              retcode = registerNativeTable(
+                   catalogNamePart, schemaNamePart, objectNamePart,
+                   objOwnerId, schemaOwnerId,
+                   cliInterface, 
+                   regOrUnregObject->isRegister(), 
+                   regOrUnregObject->isInternal());
+            }
         }
       else // COM_VIEW_OBJECT
         {
@@ -10711,8 +10836,8 @@ void CmpSeabaseDDL::regOrUnregHiveObjects (
                objOwnerId, schemaOwnerId,
                naTable,
                cliInterface, 
-               regOrUnregHiveNode->isInternal(),
-               regOrUnregHiveNode->cascade());
+               regOrUnregObject->isInternal(),
+               regOrUnregObject->cascade());
         }
 
       if (retcode < 0)
@@ -10720,11 +10845,25 @@ void CmpSeabaseDDL::regOrUnregHiveObjects (
     }
   else // unregister
     {
-      if (regOrUnregHiveNode->objType() == COM_BASE_TABLE_OBJECT)
+      if (regOrUnregObject->objType() == COM_BASE_TABLE_OBJECT)
         {
-          retcode = unregisterHiveTable(
-               catalogNamePart, schemaNamePart, objectNamePart,
-               cliInterface);
+          if (schemaNamePart == HBASE_SYSTEM_SCHEMA)
+            {
+              // unregister CELL and ROW formats of HBase table
+              retcode = unregisterNativeTable(
+                   catalogNamePart, HBASE_CELL_SCHEMA, objectNamePart,
+                   cliInterface);
+
+              retcode = unregisterNativeTable(
+                   catalogNamePart, HBASE_ROW_SCHEMA, objectNamePart,
+                   cliInterface);
+            }
+          else
+            {
+              retcode = unregisterNativeTable(
+                   catalogNamePart, schemaNamePart, objectNamePart,
+                   cliInterface);
+            }
         }
       else // view
         {
@@ -10732,7 +10871,7 @@ void CmpSeabaseDDL::regOrUnregHiveObjects (
                catalogNamePart, schemaNamePart, objectNamePart,
                naTable,
                cliInterface,
-               regOrUnregHiveNode->cascade());
+               regOrUnregObject->cascade());
         }
     } // unregister
 
@@ -10741,8 +10880,20 @@ void CmpSeabaseDDL::regOrUnregHiveObjects (
 
   ActiveSchemaDB()->getNATableDB()->removeNATable
     (cn,
-     ComQiScope::REMOVE_FROM_ALL_USERS, regOrUnregHiveNode->objType(),
+     ComQiScope::REMOVE_FROM_ALL_USERS, regOrUnregObject->objType(),
      FALSE, FALSE);
+  
+  if (isHBase)
+    {
+      CorrName cn(objectNamePart, STMTHEAP, 
+                  HBASE_ROW_SCHEMA,
+                  catalogNamePart);
+
+      ActiveSchemaDB()->getNATableDB()->removeNATable
+        (cn,
+         ComQiScope::REMOVE_FROM_ALL_USERS, regOrUnregObject->objType(),
+         FALSE, FALSE);
+    }
   
   return;
 }

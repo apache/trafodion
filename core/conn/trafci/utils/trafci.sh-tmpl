@@ -132,24 +132,22 @@ while [ $# -gt 0 ]; do  # {{
          USER_ARG=$1
          shift;
          USER_OPTION="$1"
+      elif [ "ci$OPT_VALUE" = "ci-p"  -o "ci$OPT_VALUE" = "ci-password" ]; then # {{{{{{{
+         PASSWORD_ARG=$1
+         shift;
+         PASSWORD_OPTION="$1"
+      elif [ "ci$OPT_VALUE" = "ci-r"  -o "ci$OPT_VALUE" = "ci-role" ]; then # {{{{{{{{
+         ROLE_ARG=$1
+         shift;
+         ROLE_VALUE=$1
+         UIMAINCLASS_PARAMS="$UIMAINCLASS_PARAMS $ROLE_ARG \"$ROLE_VALUE\""
+      elif [ "ci$OPT_VALUE" = "ci-j"  -o "ci$OPT_VALUE" = "ci-jline" ]; then
+         JLINE_ARG=$1
+         shift;
+         JLINE_VALUE=$1
       else
-         if [ "ci$OPT_VALUE" = "ci-p"  -o "ci$OPT_VALUE" = "ci-password" ]; then # {{{{{{{
-           PASSWORD_ARG=$1
-           shift;
-           PASSWORD_OPTION="$1"
-         else
-           if [ "ci$OPT_VALUE" = "ci-r"  -o "ci$OPT_VALUE" = "ci-role" ]; then # {{{{{{{{
-             ROLE_ARG=$1
-             shift;
-             ROLE_VALUE=$1
-             UIMAINCLASS_PARAMS="$UIMAINCLASS_PARAMS $ROLE_ARG \"$ROLE_VALUE\""
-           else
-             UIMAINCLASS_PARAMS="$UIMAINCLASS_PARAMS $1"
+         UIMAINCLASS_PARAMS="$UIMAINCLASS_PARAMS $1"
             
-           fi # End of check for Role }}}}}}}}          
-         
-         fi # End of check for password }}}}}}}
-         
       fi # End of check for user }}}}}}
 
    fi  #  }}} End of  IF the option is -q or -sql.
@@ -176,12 +174,20 @@ if [ ! -z "$PASSWORD_ARG" ]; then
    jusercred_opts="$jusercred_opts $PASSWORD_ARG \"$PASSWORD_OPTION\""
 fi
 
+extention_opts=""
+if [ ! -z "$JLINE_ARG" ]; then
+   extention_opts="-Djline=$JLINE_VALUE"
+else
+   extention_opts="-Djline=no"
+fi
+
 #echo "***DEBUG*** jusercred_opts = $jusercred_opts"
+#echo "***DEBUG*** extention_opts = $extention_opts"
 #echo ""
 #echo "***DEBUG*** running command = java $jcmd_opts $jusercred_opts $QUERY_OPTION \"$QUERY_ARG\"  "
 
 if [ ! -z "$QUERY_OPTION"  ]; then
-        eval java $jcmd_opts $jusercred_opts $QUERY_OPTION \'"$QUERY_ARG"\'
+        eval java $extention_opts $jcmd_opts $jusercred_opts $QUERY_OPTION \'"$QUERY_ARG"\'
 else
-        eval java $jcmd_opts $jusercred_opts
+        eval java $extention_opts $jcmd_opts $jusercred_opts
 fi

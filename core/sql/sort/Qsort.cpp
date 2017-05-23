@@ -59,8 +59,8 @@
 Qsort::Qsort(ULng32 runsize, ULng32 sortmaxmem, ULng32  recsize,
              NABoolean doNotallocRec, ULng32  keysize, 
              SortScratchSpace* scratch, NABoolean iterSort,
-             CollHeap* heap, SortError* sorterror, Lng32 explainNodeId, SortUtil* sortutil):
-             SortAlgo(runsize, recsize, doNotallocRec, keysize, scratch, explainNodeId),
+             CollHeap* heap, SortError* sorterror, Lng32 explainNodeId, ExBMOStats *bmoStats, SortUtil* sortutil):
+             SortAlgo(runsize, recsize, doNotallocRec, keysize, scratch, explainNodeId, bmoStats),
              currentRun_(1), loopIndex_(0), heap_(heap), sortError_(sorterror),
              sortMaxMem_(sortmaxmem), sortUtil_(sortutil)
 {
@@ -92,11 +92,6 @@ Qsort::Qsort(ULng32 runsize, ULng32 sortmaxmem, ULng32  recsize,
   //-----------------------------------------------------------------------
   loopIndex_ = 0;
   recNum_ = 0;
-  ExOperStats *stat = sortUtil_->config()->getCallingTcb()->getStatsEntry();
-  if (stat)
-    bmoStats_ = stat->castToExBMOStats();
-  else
-    bmoStats_ = NULL;
   if (bmoStats_)
     bmoStats_->updateBMOHeapUsage((NAHeap *)heap_);
 }

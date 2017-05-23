@@ -46,4 +46,5 @@ s/num_cache_entries[ ]* .*/num_cache_entries... removed/g
 s/num_inner_tuples[ ]* .*/num_inner_tuples... removed/g
 s/REQUESTS_IN[ ]*[\.]* .*/REQUESTS_IN... removed/g
 s/ROWS\/REQUEST[ ]*[\.]* .*/ROWS\/REQUESTS... removed/g
+s/\/\* ObjectUID = *[0-9]*/ObjectUID = <UID removed>/g
 " $fil

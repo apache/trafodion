@@ -37,7 +37,7 @@ create external table unload_customer_address
     ca_location_type          string
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/unload_customer_address';
+location '/user/trafodion/hive/exttables/unload_customer_address';
 
 
 drop table unload_customer_demographics;
@@ -54,7 +54,7 @@ create external table unload_customer_demographics
     cd_dep_college_count      int 
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/unload_customer_demographics';
+location '/user/trafodion/hive/exttables/unload_customer_demographics';
 
 drop table unload_customer;
 create external table unload_customer
@@ -79,7 +79,7 @@ create external table unload_customer
     c_last_review_date        string
 )
 row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
-location '/user/hive/exttables/unload_customer';
+location '/user/trafodion/hive/exttables/unload_customer';
 
 drop table unload_customer_name;
 create external table unload_customer_name
@@ -88,7 +88,7 @@ create external table unload_customer_name
     c_last_name               string
 )
 row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
-location '/user/hive/exttables/unload_customer_name';
+location '/user/trafodion/hive/exttables/unload_customer_name';
 
 drop table unload_customer_and_address;
 create external table unload_customer_and_address
@@ -126,7 +126,7 @@ create external table unload_customer_and_address
     ca_location_type          string
 )
 row format delimited fields terminated by '|' LINES TERMINATED BY '\n'
-location '/user/hive/exttables/unload_customer_and_address';
+location '/user/trafodion/hive/exttables/unload_customer_and_address';
 
 drop table tmp_unload_table;
 create external table tmp_unload_table
@@ -134,7 +134,7 @@ create external table tmp_unload_table
     filed string
 )
 row format delimited fields terminated by '|' 
-location '/user/hive/exttables/tmp_unload_table';
+location '/user/trafodion/hive/exttables/tmp_unload_table';
 
 drop table unload_store_sales_summary;
 create external table unload_store_sales_summary
@@ -146,7 +146,7 @@ create external table unload_store_sales_summary
     ss_quantity               int
 )
 row format delimited fields terminated by '|' 
-location  '/user/hive/exttables/unload_store_sales_summary';
+location  '/user/trafodion/hive/exttables/unload_store_sales_summary';
 
 drop table null_format_default;
 create external table null_format_default (a string, b string);

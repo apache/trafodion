@@ -45,7 +45,11 @@ public enum TransState {
 		STATE_FORGOTTEN_HEUR(15), //S5 - HEURISTIC - Waiting Superior TM xa_forget request
 		STATE_ABORTING_PART2(16), // Internal State
 		STATE_TERMINATING(17),
-		STATE_LAST(17),
+		STATE_FORGOTTEN_COMMITTED(18), //N/A
+		STATE_FORGOTTEN_ABORT(19), //N/A
+		STATE_RECOVERY_COMMITTED(20), //N/A
+		STATE_RECOVERY_ABORT(21), //N/A
+		STATE_LAST(21),
 		STATE_BAD(-1);
     private Integer value;
     

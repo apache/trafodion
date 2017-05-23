@@ -316,7 +316,7 @@ drop external table if exists thive9 for hive.hivesch007.thive9;
 create external table thive9 for hive.hivesch007.thive9;
 showddl thive9;
 grant select on hive.hivesch007.thive9 to sql_user3;
-get privileges for user sql_user3;
+get privileges for user sql_user3, match '%HIVESCH007%';
 insert into hive.hivesch007.thive9 values (1), (2), (3), (4), (5), (6);
 update statistics for table hive.hivesch007.thive9 on every column;
 showstats for table hive.hivesch007.thive9 on every column;

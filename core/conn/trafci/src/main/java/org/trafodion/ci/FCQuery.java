@@ -78,7 +78,11 @@ public class FCQuery
          } 
          if (sessObj.isLogCmdText()) {
                writer.writeln(sessObj.getSessionPrompt() + multiLineQry[lineNo]); // print the line to be edited
-               writer.write(fcPrompt); //print the fc prompt 
+               if (reader.getConsoleReader().isJline()) {
+                   reader.getConsoleReader().setPrompt(fcPrompt, false, false);
+               } else {
+                   writer.write(fcPrompt); // print the fc prompt
+               }
          }
          //read the fc command
          fcCommand= reader.getLine().toCharArray();
@@ -129,7 +133,11 @@ public class FCQuery
                   }
                   if (sessObj.isLogCmdText()) {
                        writer.writeln(sessObj.getSessionPrompt() + qryText );
-                       writer.write(fcPrompt);
+                       if (reader.getConsoleReader().isJline()) {
+                           reader.getConsoleReader().setPrompt(fcPrompt, false, false);
+                       } else {
+                           writer.write(fcPrompt);
+                       }
                   }
                   fcCommand= reader.getLine().toCharArray();
 

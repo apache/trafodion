@@ -270,9 +270,9 @@ enum SeabaseObjectsFlags {
   // (currently for: privilege info, ustat, views).
   SEABASE_OBJECT_IS_IMPLICIT_EXTERNAL  = 0x0000000000000010,
 
-  // set if this hive object was internally registered in traf metadata.
+  // set if this object was internally registered in traf metadata.
   // This can happen for upd stats, create views or grant privs.
-  MD_OBJECTS_HIVE_INTERNAL_REGISTER  = 0x0000000000000020
+  MD_OBJECTS_INTERNAL_REGISTER  = 0x0000000000000020
 
 };
 

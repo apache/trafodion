@@ -1244,17 +1244,16 @@ EOF
 
   echo "Creating HDFS directories" 2>&1 | tee -a ${MY_LOG_FILE}
   bin/hdfs dfs -mkdir /tmp                           >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user                          >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/$USER                    >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/hive                     >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user                          >>${MY_LOG_FILE} 2>&1  
   bin/hdfs dfs -mkdir /user/trafodion                >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /bulkload                      >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion/$USER                    >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion/hive                     >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -mkdir /user/trafodion/bulkload       >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /user/hive/warehouse           >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -mkdir /hive                          >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion/hive/warehouse           >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -mkdir /user/trafodion/hive                          >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -chmod g+w /tmp                       >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /user/hive/warehouse       >>${MY_LOG_FILE} 2>&1
-  bin/hdfs dfs -chmod g+w /bulkload                  >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /user/trafodion/hive/warehouse       >>${MY_LOG_FILE} 2>&1
+  bin/hdfs dfs -chmod g+w /user/traofdion/bulkload                  >>${MY_LOG_FILE} 2>&1
   bin/hdfs dfs -chmod g+w /user/trafodion/bulkload   >>${MY_LOG_FILE} 2>&1
   bin/hadoop fs -ls -R /                 2>&1 | tee -a ${MY_LOG_FILE}
   echo "Done: Creating HDFS directories" 2>&1 | tee -a ${MY_LOG_FILE}

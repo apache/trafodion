@@ -23,31 +23,31 @@
 -- @@@ END COPYRIGHT @@@
 
 --if dirs exist belo will fail
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_customer;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_promotion;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_customer_address;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_store;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_store_sales;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_customer_demographics;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_date_dim;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_time_dim;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_item;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_household_demographics;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_customerNaddress;
-sh regrhadoop.ksh fs -mkdir  /user/hive/exttables/ins_store_sales_summary;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_customer;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_promotion;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_customer_address;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_store;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_store_sales;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_customer_demographics;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_date_dim;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_time_dim;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_item;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_household_demographics;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_customerNaddress;
+sh regrhadoop.ksh fs -mkdir  -p /user/trafodion/hive/exttables/ins_store_sales_summary;
 --empty folders
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_customer/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_promotion/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_customer_address/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_store/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_store_sales/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_customer_demographics/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_date_dim/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_time_dim/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_item/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_household_demographics/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_customerNaddress/*;
-sh regrhadoop.ksh fs -rm   /user/hive/exttables/ins_store_sales_summary/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_customer/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_promotion/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_customer_address/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_store/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_store_sales/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_customer_demographics/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_date_dim/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_time_dim/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_item/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_household_demographics/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_customerNaddress/*;
+sh regrhadoop.ksh fs -rm   /user/trafodion/hive/exttables/ins_store_sales_summary/*;
 
 
 --- setup tabkles to insert into
@@ -176,9 +176,9 @@ control query shape cut;
 select [first 12] 'test lp bug # 1355477' from ins_store_sales_summary;
 
 -- hadoop ls should return 2 files
--- sh regrhadoop.ksh fs -ls  /user/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
+-- sh regrhadoop.ksh fs -ls  /user/trafodion/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
 log;
-sh regrhadoop.ksh fs -ls  /user/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
+sh regrhadoop.ksh fs -ls  /user/trafodion/hive/exttables/ins_store_sales_summary/* | grep ins_store_sales_summary | wc -l | tee -a LOG003;
 log LOG003_orig_store_sales_summary.dat clear;
 select ss_sold_date_sk,ss_store_sk, sum (ss_quantity)  from store_sales group by  ss_sold_date_sk ,ss_store_sk order by  ss_sold_date_sk,ss_store_sk; 
 log;

@@ -7697,75 +7697,6 @@ short CmpSeabaseDDL::createPrivMgrRepos(ExeCliInterface *cliInterface,
   return 0;
 }
 
-void CmpSeabaseDDL::createSeabaseSeqTable()
-{
-  Lng32 retcode = 0;
-  Lng32 cliRC = 0;
-
-  ExeCliInterface cliInterface(STMTHEAP, NULL, NULL,
-    CmpCommon::context()->sqlSession()->getParentQid());
-
-  if ((CmpCommon::context()->isUninitializedSeabase()) &&
-      (CmpCommon::context()->uninitializedSeabaseErrNum() == -1393))
-    {
-      *CmpCommon::diags() << DgSqlCode(-1393);
-      return;
-    }
-
-  if (createSeqTable(&cliInterface))
-    {
-      return;
-    }
-
-}
-
-short CmpSeabaseDDL::createSeqTable(ExeCliInterface *cliInterface)
-{
-  Lng32 retcode = 0;
-  Lng32 cliRC = 0;
-
-  char queryBuf[5000];
-
-  const QString * qs = NULL;
-  Int32 sizeOfqs = 0;
-  
-  qs = seabaseSeqGenDDL;
-  sizeOfqs = sizeof(seabaseSeqGenDDL);
-  
-  Int32 qryArraySize = sizeOfqs / sizeof(QString);
-  char * gluedQuery;
-  Lng32 gluedQuerySize;
-  glueQueryFragments(qryArraySize,  qs,
-                     gluedQuery, gluedQuerySize);
-  
-  param_[0] = getSystemCatalog();
-  param_[1] = SEABASE_MD_SCHEMA;
-
-  str_sprintf(queryBuf, gluedQuery,
-              param_[0], param_[1]);
-  NADELETEBASIC(gluedQuery, STMTHEAP);
-
-  NABoolean xnWasStartedHere = FALSE;
-  if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
-    return -1;
-
-  cliRC = cliInterface->executeImmediate(queryBuf);
-  if (cliRC == -1390)  // already exists
-    {
-      // ignore error.
-      cliRC = 0;
-    }
-  else if (cliRC < 0)
-    {
-      cliInterface->retrieveSQLDiagnostics(CmpCommon::diags());
-    }
-  
-  if (endXnIfStartedHere(cliInterface, xnWasStartedHere, cliRC) < 0)
-    return -1;
-
-  return 0;
-}
-
 void  CmpSeabaseDDL::createSeabaseSequence(StmtDDLCreateSequence  * createSequenceNode,
                                            NAString &currCatName, NAString &currSchName)
 {
@@ -9010,7 +8941,6 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       ((ddlExpr->initHbase()) ||
        (ddlExpr->createMDViews()) ||
        (ddlExpr->dropMDViews()) ||
-       (ddlExpr->addSeqTable()) ||
        (ddlExpr->createRepos()) ||
        (ddlExpr->dropRepos()) ||
        (ddlExpr->upgradeRepos()) ||
@@ -9121,10 +9051,6 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
   else if (ddlExpr->cleanupAuth())
     {
        dropSeabaseAuthorization(&cliInterface, TRUE);
-    }
-  else if (ddlExpr->addSeqTable())
-    {
-      createSeabaseSeqTable();
     }
   else if (ddlExpr->addSchemaObjects())
     {
@@ -9427,12 +9353,12 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
           else
             unregisterSeabaseUser(registerUserParseNode);
         }
-      else if (ddlNode->getOperatorType() == DDL_REG_OR_UNREG_HIVE)
+      else if (ddlNode->getOperatorType() == DDL_REG_OR_UNREG_OBJECT)
         {
-         StmtDDLRegOrUnregHive *regOrUnregHiveParseNode =
-            ddlNode->castToStmtDDLNode()->castToStmtDDLRegOrUnregHive();
-         regOrUnregHiveObjects(
-              regOrUnregHiveParseNode, currCatName, currSchName);
+         StmtDDLRegOrUnregObject *regOrUnregObjectParseNode =
+            ddlNode->castToStmtDDLNode()->castToStmtDDLRegOrUnregObject();
+         regOrUnregNativeObject(
+              regOrUnregObjectParseNode, currCatName, currSchName);
         }
       else if (ddlNode->getOperatorType() == DDL_CREATE_ROLE)
         {

@@ -558,7 +558,7 @@ static {
       switch (this.mode)
       {
          case SessionDefaults.SQL_MODE:
-            //prompt =  sessionSQLPrompt;
+            prompt =  sessionSQLPrompt;
             break;
          default:
             prompt =  sessionSQLPrompt;

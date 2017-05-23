@@ -39,7 +39,7 @@
  */
 
 #include "cluster.h"
-
+#include "ExStats.h"
 /////////////////////////////////////////////////////////////////////////////
 // Task Definition Block
 // for a description of the expressions see GerRelJoin.C
@@ -110,8 +110,6 @@ private:
   // ---------------------------------------------------------------------
 };
 
-
-
 /////////////////////////////////////////////////////
 // Task control block
 /////////////////////////////////////////////////////
@@ -162,11 +160,17 @@ public:
   };
 
   // the phase of the hash join algorithm
+  // Change ex_hashj_tcb::HashJoinPhaseStr when you add new value to this enum
+  // New phase enum value should be added before PHASE_END
   enum HashJoinPhase {
     PHASE_1,
     PHASE_2,
-    PHASE_3
+    PHASE_3,
+    PHASE_END
   };
+
+  static const char *HashJoinPhaseStr[];
+
   virtual NA_EIDPROC NABoolean needStatsEntry();
   virtual NA_EIDPROC ExOperStats *doAllocateStatsEntry(CollHeap *heap,
                                                        ComTdb *tdb);
@@ -451,7 +455,7 @@ public:
   inline ex_hashj_tcb::HashJoinState getState();
   inline void setOldState(ex_hashj_tcb::HashJoinState state);
   inline ex_hashj_tcb::HashJoinState getOldState();
-  inline void setPhase(ex_hashj_tcb::HashJoinPhase phase);
+  inline void setPhase(ex_hashj_tcb::HashJoinPhase phase, ExBMOStats *bmoStats);
   inline ex_hashj_tcb::HashJoinPhase getPhase();
   inline void usePreviousHT();
   inline NABoolean usingPreviousHT();
@@ -487,8 +491,10 @@ inline ex_hashj_tcb::HashJoinState ex_hashj_private_state::getOldState() {
   return (oldState_);
 }
 
-inline void ex_hashj_private_state::setPhase(ex_hashj_tcb::HashJoinPhase phase) {
+inline void ex_hashj_private_state::setPhase(ex_hashj_tcb::HashJoinPhase phase, ExBMOStats *bmoStats) {
   phase_ = phase;
+  if (bmoStats)
+     bmoStats->setBmoPhase(ex_hashj_tcb::HashJoinPhase::PHASE_END-phase);
 }
 
 inline ex_hashj_tcb::HashJoinPhase ex_hashj_private_state::getPhase() {

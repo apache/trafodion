@@ -1645,6 +1645,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "USER",   "HIVE_REG_VIEWS", "IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_ },
     {  "USER",   "HIVE_REG_OBJECTS", "IN", "CATALOG",  1,      1,        0,      0,  ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_ },
     {  "USER",   "HIVE_EXT_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_EXT_TABLES_IN_CATALOG_ },
+    {  "USER",   "HBASE_REG_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HBASE_REG_TABLES_IN_CATALOG_ },
 
     {  "USER",   "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
     {  "SYSTEM", "TABLES",    "IN",    "SCHEMA",   1,      2,        0,      0,      ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_ },
@@ -5160,10 +5161,21 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
   // primary access.
   char * tablename = NULL;
 
-  tablename = 
-      space->AllocateAndCopyToAlignedSpace(
-					   GenGetQualifiedName(getTableName()), 0);
-  
+  TableDesc *tableDesc = getUtilTableDesc();
+  if (tableDesc->getNATable()->isHbaseMapTable())
+    {
+      tablename =
+        space->AllocateAndCopyToAlignedSpace(
+             GenGetQualifiedName(getTableName().getQualifiedNameObj()
+                                 .getObjectName()), 0);
+    }
+  else
+    {
+      tablename = 
+        space->AllocateAndCopyToAlignedSpace(
+             GenGetQualifiedName(getTableName()), 0);
+    }
+
   NAString serverNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_SERVER);
   NAString zkPortNAS = ActiveSchemaDB()->getDefaults().getValue(HBASE_ZOOKEEPER_PORT);
   char * server = space->allocateAlignedSpace(serverNAS.length() + 1);
@@ -5171,7 +5183,6 @@ short ExeUtilHbaseCoProcAggr::codeGen(Generator * generator)
   char * zkPort = space->allocateAlignedSpace(zkPortNAS.length() + 1);
   strcpy(zkPort, zkPortNAS.data());
 
-  TableDesc *tableDesc = getUtilTableDesc();
   ComTdbHbaseAccess::HbasePerfAttributes * hbpa =
     new(space) ComTdbHbaseAccess::HbasePerfAttributes();
 

@@ -5,10 +5,6 @@
 
 --- SQL operation complete.
 >>obey TEST024(setup);
->>-- add sequence metadata, if  doesn't already exists
->>initialize trafodion, create sequence;
-
---- SQL operation complete.
 >>
 >>initialize trafodion, create metadata views;
 
@@ -757,7 +753,7 @@ CREATE SEQUENCE TRAFODION.SEQSCH.TEST024SEQ8
 >>invoke trafodion."_MD_".sequences_view;
 
 -- Definition of Trafodion view TRAFODION."_MD_".SEQUENCES_VIEW
--- Definition current  Sun May 31 00:41:24 2015
+-- Definition current  Tue May  2 20:12:05 2017
 
   (
     CATALOG_NAME                     VARCHAR(256 BYTES) CHARACTER SET UTF8

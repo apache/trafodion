@@ -539,6 +539,22 @@ static const QueryString getHiveRegObjectsInCatalogQuery[] =
   {"; "                                                        }
 };
 
+static const QueryString getHBaseRegTablesInCatalogQuery[] =
+{
+  {" select '\"' || trim(O.s) || '\"' || '.' || trim(O.o) ||  "},
+  {" case when G.b is null then ' (inconsistent)' else '' end "},
+  {" from "                                                    },
+  {"  (select trim(schema_name), trim(object_name)            "},
+  {"   from %s.\"%s\".%s where catalog_name = 'HBASE'     "    },
+  {"      and object_type = 'BT') O(s, o) "                    },
+  {"  left join "                                              },
+  {"   (select trim(y) from "                                  },
+  {"    (get external hbase objects) x(y)) G(b)"               },
+  {"   on O.o = G.b  "                                         },
+  {" group by 1 order by 1 "                                   },
+  {"; "                                                        }
+};
+
 static const QueryString getHiveExtTablesInCatalogQuery[] =
 {
   {" select trim(O.a) ||  "                                    },
@@ -921,6 +937,13 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
     case ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_:
       {
 	str_sprintf(headingBuf_, "Hive Registered Tables in Catalog %s",
+		    getMItdb().getCat());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::HBASE_REG_TABLES_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "HBase Registered Tables in Catalog %s",
 		    getMItdb().getCat());
       }
     break;
@@ -1819,6 +1842,17 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[4] = hiveSysCat;
                   param_[5] = hiveGetType, 
 		  param_[6] = hiveSysCat;
+		}
+	      break;
+
+	      case ComTdbExeUtilGetMetadataInfo::HBASE_REG_TABLES_IN_CATALOG_:
+		{
+		  qs = getHBaseRegTablesInCatalogQuery;
+		  sizeOfqs = sizeof(getHBaseRegTablesInCatalogQuery);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
 		}
 	      break;
 	      

@@ -134,6 +134,7 @@ ResStatisticsStatement::ResStatisticsStatement(bool useCLI)
     SpaceUsed = 0;
     HeapTotal = 0;
     HeapUsed = 0;
+    HeapWM = 0;
     CpuTime = 0;
     Dp2SpaceTotal = 0;
     Dp2SpaceUsed = 0;
@@ -156,7 +157,12 @@ ResStatisticsStatement::ResStatisticsStatement(bool useCLI)
     ScratchOverflowMode = 0;
     ScratchBufferReadCount = 0;
     ScratchBufferWriteCount = 0;
-
+    bmoSpaceBufferSize = 0;
+    bmoSpaceBufferCount = 0;
+    bmoInterimRowCount = 0;
+    ScratchIOSize = 0;
+    ScratchIOMaxTime = 0;
+    topN = 0;
     estimatedCost = 0;
 
     rtsExeCols = NULL;
@@ -1321,7 +1327,7 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
 #define MAX_PERTABLE_STATS_DESC     30
 
 #define MAX_MASTERSTATS_ENTRY       31
-#define MAX_MEASSTATS_ENTRY         26 
+#define MAX_MEASSTATS_ENTRY         30
 #define MAX_PERTABLE_ENTRY          10
 
     int i;
@@ -1545,23 +1551,27 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
                 measStatsItems_[7].statsItem_id = SQLSTATS_SQL_SPACE_USED;
                 measStatsItems_[8].statsItem_id = SQLSTATS_SQL_HEAP_ALLOC;
                 measStatsItems_[9].statsItem_id = SQLSTATS_SQL_HEAP_USED;
-                measStatsItems_[10].statsItem_id = SQLSTATS_OPENS;
-                measStatsItems_[11].statsItem_id = SQLSTATS_OPEN_TIME;
-                measStatsItems_[12].statsItem_id = SQLSTATS_PROCESS_CREATED;
-                measStatsItems_[13].statsItem_id = SQLSTATS_PROCESS_CREATE_TIME;
-                measStatsItems_[14].statsItem_id = SQLSTATS_REQ_MSG_CNT;
-                measStatsItems_[15].statsItem_id = SQLSTATS_REQ_MSG_BYTES;
-                measStatsItems_[16].statsItem_id = SQLSTATS_REPLY_MSG_CNT;
-                measStatsItems_[17].statsItem_id = SQLSTATS_REPLY_MSG_BYTES;
-                measStatsItems_[18].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
-                measStatsItems_[19].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE;
-                measStatsItems_[20].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ;
-                measStatsItems_[21].statsItem_id = SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN;
-                measStatsItems_[22].statsItem_id = SQLSTATS_SCRATCH_OVERFLOW_MODE;
-                measStatsItems_[23].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
-                measStatsItems_[24].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
-                measStatsItems_[25].statsItem_id = SQLSTATS_UDR_CPU_BUSY_TIME;
-                // MAX_MEASSTATS_ENTRY is set to 26
+                measStatsItems_[10].statsItem_id = SQLSTATS_SQL_HEAP_WM;
+                measStatsItems_[11].statsItem_id = SQLSTATS_OPENS;
+                measStatsItems_[12].statsItem_id = SQLSTATS_OPEN_TIME;
+                measStatsItems_[13].statsItem_id = SQLSTATS_PROCESS_CREATED;
+                measStatsItems_[14].statsItem_id = SQLSTATS_PROCESS_CREATE_TIME;
+                measStatsItems_[15].statsItem_id = SQLSTATS_REQ_MSG_CNT;
+                measStatsItems_[16].statsItem_id = SQLSTATS_REQ_MSG_BYTES;
+                measStatsItems_[17].statsItem_id = SQLSTATS_REPLY_MSG_CNT;
+                measStatsItems_[18].statsItem_id = SQLSTATS_REPLY_MSG_BYTES;
+                measStatsItems_[19].statsItem_id = SQLSTATS_SCRATCH_OVERFLOW_MODE;
+                measStatsItems_[20].statsItem_id = SQLSTATS_SCRATCH_FILE_COUNT;
+                measStatsItems_[21].statsItem_id = SQLSTATS_BMO_SPACE_BUFFER_SIZE;
+                measStatsItems_[22].statsItem_id = SQLSTATS_BMO_SPACE_BUFFER_COUNT;
+                measStatsItems_[23].statsItem_id = SQLSTATS_SCRATCH_IO_SIZE;
+                measStatsItems_[24].statsItem_id = SQLSTATS_SCRATCH_READ_COUNT;
+                measStatsItems_[25].statsItem_id = SQLSTATS_SCRATCH_WRITE_COUNT;
+                measStatsItems_[26].statsItem_id = SQLSTATS_SCRATCH_IO_MAX_TIME;
+                measStatsItems_[27].statsItem_id = SQLSTATS_INTERIM_ROW_COUNT;
+                measStatsItems_[28].statsItem_id = SQLSTATS_TOPN;
+                measStatsItems_[29].statsItem_id = SQLSTATS_UDR_CPU_BUSY_TIME;
+                // MAX_MEASSTATS_ENTRY is set to 30
 
                 cliRC = SQL_EXEC_GetStatisticsItems(
                     reqType,
@@ -1826,6 +1836,9 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
                 case SQLSTATS_SQL_HEAP_USED:            //int64
                     HeapUsed = measStatsItems_[i].int64_value;
                     break;
+                case SQLSTATS_SQL_HEAP_WM:            //int64
+                    HeapWM = measStatsItems_[i].int64_value;
+                    break;
                 case SQLSTATS_OPENS:                    //int64
                     Opens = measStatsItems_[i].int64_value;
                     break;
@@ -1853,14 +1866,14 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
                 case SQLSTATS_SCRATCH_FILE_COUNT:
                     ScratchFileCount = measStatsItems_[i].int64_value;
                     break;
-                case SQLSTATS_SCRATCH_BUFFER_BLOCK_SIZE:
-                    ScratchBufferBlockSize = measStatsItems_[i].int64_value;
+                case SQLSTATS_BMO_SPACE_BUFFER_SIZE:
+                    bmoSpaceBufferSize = measStatsItems_[i].int64_value;
                     break;
-                case SQLSTATS_SCRATCH_BUFFER_BLOCKS_READ:
-                    ScratchBufferBlocksRead = measStatsItems_[i].int64_value;
+                case SQLSTATS_BMO_SPACE_BUFFER_COUNT:
+                    bmoSpaceBufferCount = measStatsItems_[i].int64_value;
                     break;
-                case SQLSTATS_SCRATCH_BUFFER_BLOCKS_WRITTEN:
-                    ScratchBufferBlocksWritten = measStatsItems_[i].int64_value;
+                case SQLSTATS_SCRATCH_IO_SIZE:
+                    ScratchIOSize = measStatsItems_[i].int64_value;
                     break;
                 case SQLSTATS_SCRATCH_OVERFLOW_MODE:
                     ScratchOverflowMode = (short)measStatsItems_[i].int64_value;
@@ -1870,6 +1883,15 @@ void ResStatisticsStatement::setStatistics(SRVR_STMT_HDL *pSrvrStmt, SQLSTATS_TY
                     break;
                 case SQLSTATS_SCRATCH_WRITE_COUNT:
                     ScratchBufferWriteCount = measStatsItems_[i].int64_value;
+                    break;
+                case SQLSTATS_SCRATCH_IO_MAX_TIME:
+                    ScratchIOMaxTime = measStatsItems_[i].int64_value;
+                    break;
+                case SQLSTATS_INTERIM_ROW_COUNT:
+                    bmoInterimRowCount = measStatsItems_[i].int64_value;
+                    break;
+                case SQLSTATS_TOPN:
+                    topN = measStatsItems_[i].int64_value;
                     break;
                 case SQLSTATS_UDR_CPU_BUSY_TIME:
                     UdrCpuTime = measStatsItems_[i].int64_value;

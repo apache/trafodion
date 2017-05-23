@@ -284,6 +284,12 @@ class ComObjectName : public NABasicObject
     inline NABoolean isExternalHive() const;  
     inline NABoolean isExternalHbase() const;
 
+    // external format of an HBase mapped table: HBASE."_MAP_".<tablename>
+    inline NABoolean isHBaseMappedExtFormat() const;
+
+    // internal format of HBase mapped table: TRAFODION."_HB_MAP_".<tablename>
+    inline NABoolean isHBaseMappedIntFormat() const;
+
   protected:
 
     // The following constructor is invoked by a constructor of class CatRoutineActionName
@@ -629,6 +635,18 @@ ComObjectName::isExternalHbase() const
   if (ComIsTrafodionExternalSchemaName(schemaName))
     return (schemaName(0,sizeof(HBASE_EXT_SCHEMA_PREFIX)-1) == HBASE_EXT_SCHEMA_PREFIX); 
   return FALSE;
+}
+
+NABoolean ComObjectName::isHBaseMappedExtFormat() const
+{
+  return ComIsHBaseMappedExtFormat(getCatalogNamePartAsAnsiString(), 
+                                   getSchemaNamePartAsAnsiString(TRUE));
+}
+
+NABoolean ComObjectName::isHBaseMappedIntFormat() const
+{
+  return ComIsHBaseMappedIntFormat(getCatalogNamePartAsAnsiString(), 
+                                   getSchemaNamePartAsAnsiString(TRUE));
 }
 
 void

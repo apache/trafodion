@@ -65,7 +65,7 @@ extern THREAD_P NAClusterInfo *gpClusterInfo;
 extern const WordAsBits SingleBitArray[];
 
 //the dir path should start from /bulkload
-#define UNLOAD_HDFS_DIR "/bulkload/osim_capture"
+#define UNLOAD_HDFS_DIR "/user/trafodion/bulkload/osim_capture"
 
 static ULng32 hashFunc_int(const Int32& Int)
 {

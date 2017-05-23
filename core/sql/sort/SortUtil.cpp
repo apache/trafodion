@@ -63,12 +63,15 @@ SortUtil::SortUtil(Lng32 explainNodeId) :
   version_             = 1;
   state_               = SORT_INIT;
   config_              = NULL;
+  internalSort_        = TRUE;
+  sortReceivePrepared_ = FALSE;
   sortAlgo_            = NULL;
   scratch_             = NULL;
   memoryQuotaUtil_     = 0;
   memMonitor_          = NULL;
   overheadPerRecord_   = 0;
   bmoStats_ = NULL;
+  
 }
 
 SortUtil::~SortUtil(void)
@@ -81,6 +84,21 @@ SortUtil::~SortUtil(void)
    delete scratch_;       // delete ScratchSpace
    scratch_ = NULL;
  }
+}
+
+void SortUtil::reInit()
+{
+  doCleanUp();
+  
+  version_             = 1;
+  state_               = SORT_INIT;
+  internalSort_        = TRUE;
+  sortReceivePrepared_ = FALSE;
+  sortAlgo_            = NULL;
+  scratch_             = NULL;
+  memoryQuotaUtil_     = 0;
+  memMonitor_          = NULL;
+  overheadPerRecord_   = 0;
 }
 
 void SortUtil::DeleteSortAlgo() //delete Tree or Qsort after each merge
@@ -157,7 +175,7 @@ NABoolean SortUtil::sortInitialize(SortUtilConfig& config, ULng32 topNSize)
   // Basically we delete any memory that was allocated dynamically
   // but was not yet released.  Also, the sortError is reset.
   //---------------------------------------------------------------
-  doCleanUp();
+  reInit();
   
   //if topNSize_ is set, then use TopN.
   if(config.topNSort_ && topNSize)
@@ -173,6 +191,7 @@ NABoolean SortUtil::sortInitialize(SortUtilConfig& config, ULng32 topNSize)
                                   config.heapAddr_,
                                   &sortError_,
                                   explainNodeId_,
+                                  bmoStats_,
                                   this);
 
   }
@@ -189,6 +208,7 @@ NABoolean SortUtil::sortInitialize(SortUtilConfig& config, ULng32 topNSize)
                                    config.heapAddr_,
                                    &sortError_,
                                    explainNodeId_,
+                                   bmoStats_,
                                    this);
   }
   if (sortAlgo_ == NULL)
@@ -238,6 +258,10 @@ NABoolean SortUtil::sortEnd(void)
   //gets used.
   returnExcessMemoryQuota(overheadPerRecord_);
 
+  //update heap one final time.
+  if (bmoStats_)
+    bmoStats_->updateBMOHeapUsage((NAHeap *)config_->heapAddr_);
+    
 //  SQLMXLoggingArea::logExecRtInfo(NULL,0,"Sort operation has ended", explainNodeId_);
   return SORT_SUCCESS;
 }
@@ -304,33 +328,25 @@ Lng32 SortUtil::sortSendEnd(NABoolean& internalSort)
 
   retcode =   sortAlgo_->sortSendEnd() ;
 
-  if (retcode)
-   return retcode;
-
   if (sortAlgo_->isInternalSort()) 
+      internalSort_ = internalSort = TRUE_L;
+  else
+      internalSort_ = internalSort = FALSE_L;
+  
+  if(config_->logInfoEvent())
   {
-    internalSort = TRUE_L;
-    if(config_->logInfoEvent())
-    {
-      char msg[500];
-      str_sprintf(msg,
-      "Sort is performing internal sort: NumRecs:%d", stats_.numRecs_);
-      
-      SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
-    }
+    char msg[500];
+    str_sprintf(msg,
+    "Sort is performing %s sort: NumRecs:%d",
+        internalSort? "internal":"external", stats_.numRecs_);
+    SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
   }
-  else 
-  {
-    internalSort = FALSE_L;
-    retcode =  sortSendEndProcessing() ; 
-    return retcode;
-  }
-
+  
   return retcode;
 }
 
 //----------------------------------------------------------------------
-// Name         : sortSendEndProcessing
+// Name         : sortReceivePrepare
 // 
 // Parameters   : ...
 //
@@ -341,7 +357,7 @@ Lng32 SortUtil::sortSendEnd(NABoolean& internalSort)
 //   SORT_FAILURE if any error encounterd. 
 //
 //----------------------------------------------------------------------
-Lng32 SortUtil::sortSendEndProcessing(void)
+Lng32 SortUtil::sortReceivePrepare(void)
 {
   ULng32 initialRunSize = 0;
   Lng32 runnum = 1L;
@@ -490,13 +506,18 @@ Lng32 SortUtil::sortSendEndProcessing(void)
     }
   }
 
+  //update heap usage after allocating merge buffers.
+  if (bmoStats_)
+    bmoStats_->updateBMOHeapUsage((NAHeap *)config_->heapAddr_);
+    
   //This is the result merge order. Set this in stats_.mergeOrder_.
   stats_.mergeOrder_ = config_->mergeOrder_;
 
   if (stats_.numRuns_ > (Lng32) config_->mergeOrder_)
   {
     state_ = SORT_INTERMEDIATE_MERGE;
-
+    if (bmoStats_)
+       bmoStats_->setBmoPhase(ExSortTcb::SortPhase::SORT_PHASE_END-ExSortTcb::SortPhase::SORT_MERGE_PHASE);
     if (config_->logInfoEvent())
     {
       char msg[500];
@@ -522,6 +543,7 @@ Lng32 SortUtil::sortSendEndProcessing(void)
                                                   config_->heapAddr_,
                                                   &sortError_,
                                                   explainNodeId_,
+                                                  bmoStats_,
                                                   this,
                                                   runnum, 
                                                   TRUE_L, TRUE);
@@ -566,7 +588,11 @@ Lng32 SortUtil::sortSendEndProcessing(void)
           }
         }
       }
-
+     
+     //after first merge order update heap usage.
+     if (bmoStats_)
+       bmoStats_->updateBMOHeapUsage((NAHeap *)config_->heapAddr_);
+       
       //subsequent merges in loop.
       for (Int32 i = 0; i < stats_.numInterPasses_; i++)
       {   
@@ -579,6 +605,7 @@ Lng32 SortUtil::sortSendEndProcessing(void)
                                                   config_->heapAddr_,
                                                   &sortError_,
                                                   explainNodeId_,
+                                                  bmoStats_,
                                                   this,
                                                   runnum, 
                                                   TRUE_L,TRUE);
@@ -661,10 +688,6 @@ Lng32 SortUtil::sortSendEndProcessing(void)
   state_ = SORT_FINAL_MERGE;
 
   stats_.scrNumBlocks_ = scratch_->getTotalNumOfScrBlocks();
-  ScratchFileMap* tempFilesMap;
-  tempFilesMap = scratch_->getScrFilesMap();
-  //stats_.scrNumWrites_ = tempFilesMap->totalNumOfWrites();
-  //stats_.scrNumAwaitio_ = tempFilesMap->totalNumOfAwaitio();  
   scratch_->getTotalIoWaitTime(stats_.ioWaitTime_);
   stats_.memSizeB_ += stats_.finalMergeOrder_*stats_.scrBlockSize_*2 +
                      stats_.finalMergeOrder_*sizeof(TreeNode) +
@@ -680,6 +703,7 @@ Lng32 SortUtil::sortSendEndProcessing(void)
                                             config_->heapAddr_,
                                             &sortError_,
                                             explainNodeId_,
+                                            bmoStats_,
                                             this,
                                             runnum, 
                                             TRUE_L,
@@ -697,7 +721,11 @@ Lng32 SortUtil::sortSendEndProcessing(void)
      return SORT_FAILURE;
 
   state_ = SORT_RECEIVE;
-
+  
+  //final merge tree setup. update heap usage.
+  if (bmoStats_)
+    bmoStats_->updateBMOHeapUsage((NAHeap *)config_->heapAddr_);
+    
  return SORT_SUCCESS;
 
 }
@@ -718,14 +746,20 @@ Lng32 SortUtil::sortSendEndProcessing(void)
 Lng32 SortUtil::sortReceive(void* record, ULng32& len)
 {
   Lng32 status;
+  
+  if(!internalSort_ && !sortReceivePrepared_)
+  {
+      Lng32 retCode = sortReceivePrepare();
+      if(retCode != SORT_SUCCESS)
+          return retCode;
+      
+      sortReceivePrepared_ = TRUE;
+  }
+  
   status = sortAlgo_->sortReceive(record, len);
   if ((len == 0) && (!config_->partialSort_)) {
     if(scratch_)
      {
-        ScratchFileMap* tempFilesMap;
-        tempFilesMap = scratch_->getScrFilesMap();
-        //stats_.scrNumReads_ = tempFilesMap->totalNumOfReads();
-        //stats_.scrNumAwaitio_ = tempFilesMap->totalNumOfAwaitio();
         scratch_->getTotalIoWaitTime(stats_.ioWaitTime_);    
      }
     stats_.numCompares_ += sortAlgo_->getNumOfCompares();
@@ -760,10 +794,6 @@ Lng32 SortUtil::sortReceive(void*& record,ULng32& len,void*& tupp)
   if ((len == 0) && (!config_->partialSort_)) {
     if(scratch_)
      {
-      ScratchFileMap* tempFilesMap;
-      tempFilesMap = scratch_->getScrFilesMap();
-      //stats_.scrNumReads_ = tempFilesMap->totalNumOfReads();
-      //stats_.scrNumAwaitio_ = tempFilesMap->totalNumOfAwaitio();      
       scratch_->getTotalIoWaitTime(stats_.ioWaitTime_);    
      }
     stats_.numCompares_ += sortAlgo_->getNumOfCompares();  
@@ -771,7 +801,7 @@ Lng32 SortUtil::sortReceive(void*& record,ULng32& len,void*& tupp)
     stats_.elapsedTime_ = currentTimeJ - stats_.beginSortTime_; 
     if (config_->logInfoEvent()) {
       char msg[500];
-      str_sprintf(msg, "Sort elapsed time : %Ld; Num runs : %d; runsize :%d",
+      str_sprintf(msg, "Internal sort performed. Sort elapsed time : %Ld; Num runs : %d; runsize :%d",
 		stats_.elapsedTime_,stats_.numInitRuns_,sortAlgo_->getRunSize());
       SQLMXLoggingArea::logExecRtInfo(NULL, 0,msg, explainNodeId_);
     }

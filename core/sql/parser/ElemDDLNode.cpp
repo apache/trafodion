@@ -1715,12 +1715,6 @@ ElemDDLNode::castToStmtDDLSchGrant()
   return NULL;
 }
 
-StmtDDLPublish *
-ElemDDLNode::castToStmtDDLPublish()
-{
-  return NULL;
-}
-
 StmtDDLGiveAll *
 ElemDDLNode::castToStmtDDLGiveAll()
 {
@@ -1827,8 +1821,8 @@ ElemDDLNode::castToStmtDDLRegisterUser()
   return NULL;
 }
 
-StmtDDLRegOrUnregHive *
-ElemDDLNode::castToStmtDDLRegOrUnregHive()
+StmtDDLRegOrUnregObject *
+ElemDDLNode::castToStmtDDLRegOrUnregObject()
 {
   return NULL;
 }

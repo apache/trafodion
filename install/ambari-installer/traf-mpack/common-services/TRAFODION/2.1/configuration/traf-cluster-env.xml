@@ -32,6 +32,7 @@
 export NODE_LIST="{{traf_nodes}}"
 export MY_NODES="{{traf_w_nodes}}"
 export node_count="{{traf_node_count}}"
+export CLUSTERNAME="{{cluster_name}}"
 
     </value>
     <value-attributes>

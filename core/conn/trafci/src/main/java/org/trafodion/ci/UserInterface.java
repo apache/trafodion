@@ -54,8 +54,8 @@ public class UserInterface {
 		int exitCode = 0;
 		boolean doTrace = Boolean.getBoolean(SessionDefaults.PROP_TRACE);
 		String mySQRoot = System.getenv("TRAF_HOME");
-		
-
+		//to decide using jline
+		boolean isJline = "yes".equalsIgnoreCase(System.getProperty("jline")) ? true : false;
 
 		/* handle AWT exceptions */
 		try {
@@ -78,7 +78,7 @@ public class UserInterface {
 				e1.printStackTrace();
 			System.exit(SessionDefaults.abruptExit);
 		}
-		crObj = new ConsoleReader();
+		crObj = new ConsoleReader(isJline);
 
 		try {
 			crObj.initialize();
@@ -92,6 +92,7 @@ public class UserInterface {
 
 		banner();
         
+		System.out.println("using jline: "+ isJline);
 		// parse the arguments
 		ParseArguments paObj = new ParseArguments(crObj, cwObj);
 

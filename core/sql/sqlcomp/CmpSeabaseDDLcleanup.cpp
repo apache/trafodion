@@ -1109,6 +1109,41 @@ void CmpSeabaseMDcleanup::cleanupHiveObject(const StmtDDLCleanupObjects * stmtCl
   return;
 }
 
+void CmpSeabaseMDcleanup::cleanupHBaseObject(const StmtDDLCleanupObjects * stmtCleanupNode,
+                                             ExeCliInterface *cliInterface)
+{
+
+  Lng32 cliRC = 0;
+  char query[1000];
+  NABoolean errorSeen = FALSE;
+
+  NAString objName(stmtCleanupNode->getTableNameAsQualifiedName()->getObjectName());
+
+  // drop external table
+  str_sprintf(query, "drop external table if exists %s;",
+              objName.data(),
+              stmtCleanupNode->getTableNameAsQualifiedName()->
+              getQualifiedNameAsString().data());
+  cliRC = cliInterface->executeImmediate(query);
+  if (cliRC < 0)
+    {
+      if (processCleanupErrors(NULL, errorSeen))
+        return;
+    }          
+  
+  // unregister registered table
+  str_sprintf(query, "unregister hbase table if exists %s cleanup;",
+              objName.data());
+  cliRC = cliInterface->executeImmediate(query);
+  if (cliRC < 0)
+    {
+      if (processCleanupErrors(NULL, errorSeen))
+        return;
+    }
+
+  return;
+}
+
 short CmpSeabaseMDcleanup::addReturnDetailsEntry(
                                                  ExeCliInterface * cliInterface,
                                                  Queue* &list, const char *value, 
@@ -2007,6 +2042,12 @@ void CmpSeabaseMDcleanup::cleanupObjects(StmtDDLCleanupObjects * stmtCleanupNode
        (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HIVE_VIEW_)))
     {
       return cleanupHiveObject(stmtCleanupNode, &cliInterface);
+    }
+
+  if (stmtCleanupNode &&
+      (stmtCleanupNode->getType() == StmtDDLCleanupObjects::HBASE_TABLE_))
+    {
+      return cleanupHBaseObject(stmtCleanupNode, &cliInterface);
     }
 
   if (gatherDependentObjects(&cliInterface))

@@ -63,6 +63,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+// In the reverse order of ex_hash_grbytcb::HashGrbyPhase
+// Limit to 11 characters
+const char *ex_hash_grby_tcb::HashGrbyPhaseStr[] = {
+    "PHASE_END",
+    "READ_SPILL",
+    "RETURN_ROWS",
+    "READ_ROWS"
+}; 
+
 NABoolean ex_hash_grby_tcb::needStatsEntry()
 {
   ComTdb::CollectStatsType statsType = getGlobals()->getStatsArea()->getCollectStatsType();
@@ -77,7 +86,9 @@ ExOperStats * ex_hash_grby_tcb::doAllocateStatsEntry(CollHeap *heap,
                                                      ComTdb *tdb)
 {
   ExBMOStats *stat;
-
+  ComTdbHashGrby *comTdbHashGrby = (ComTdbHashGrby *)tdb;
+  if (comTdbHashGrby->isNonBMOPartialGroupBy()) 
+     return ex_tcb::doAllocateStatsEntry(heap, tdb); 
   ComTdb::CollectStatsType statsType = getGlobals()->getStatsArea()->getCollectStatsType();
   if (statsType == ComTdb::OPERATOR_STATS)
     stat =  new (heap) ExBMOStats(heap, this, tdb);
@@ -452,6 +463,8 @@ short ex_hash_grby_tcb::work() {
             hasFreeTupp_ = TRUE;
     	};
       };
+      if (bmoStats_)
+         bmoStats_->setBmoPhase(PHASE_END-HGB_READ_PHASE);
 
       // now read the next row from the child queue
       workReadChild();
@@ -488,6 +501,9 @@ short ex_hash_grby_tcb::work() {
     } break;
 
     case HASH_GRBY_READ_BUFFER: {
+       if (bmoStats_ && (bmoStats_->getBmoPhase() == (PHASE_END-HGB_READ_PHASE)))
+         bmoStats_->setBmoPhase(PHASE_END-HGB_READ_SPILL_PHASE);
+
       workReadBuffer();
       if (state_ == HASH_GRBY_READ_BUFFER)
 	// I/O is not done yet
@@ -537,6 +553,9 @@ short ex_hash_grby_tcb::work() {
 	  else
 	    hasFreeTupp_ = TRUE;
 	};
+  
+       if (bmoStats_ && (bmoStats_->getBmoPhase() == (PHASE_END-HGB_READ_PHASE)))
+         bmoStats_->setBmoPhase(PHASE_END-HGB_RETURN_PHASE);
 	
 	// now we are ready to return a row
 	ULng32 retCode = workReturnRows(tryToDefrag);

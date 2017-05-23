@@ -121,7 +121,10 @@ class CmpSeabaseMDcleanup : public CmpSeabaseDDL
 
   void cleanupHiveObject(const StmtDDLCleanupObjects * stmtCleanupNode,
                          ExeCliInterface *cliInterface);
-    
+
+  void cleanupHBaseObject(const StmtDDLCleanupObjects * stmtCleanupNode,
+                          ExeCliInterface *cliInterface);
+  
   void populateBlackBox(ExeCliInterface *cliInterface,
                         Queue *returnDetailsList,
                         Int32 &blackBoxLen,

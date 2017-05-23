@@ -1555,6 +1555,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 							}
 							srcLength = TransStringLength + 1;
+                            DataLen = sizeof(DATE_STRUCT);
 						}
 						else
 						{
@@ -1582,6 +1583,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 							}
 							srcLength = TransStringLength + 1;
+                            DataLen = sizeof(DATE_STRUCT);
 						}
 						else
 						{
@@ -2018,6 +2020,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 							}
 							srcLength = TransStringLength + 1;
+                            DataLen = sizeof(TIMESTAMP_STRUCT);
 						}
 						else
 						{
@@ -2045,6 +2048,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 								return IDS_22_003;
 							}
 							srcLength = TransStringLength + 1;
+                            DataLen = sizeof(TIMESTAMP_STRUCT);
 						}
 						else
 						{
