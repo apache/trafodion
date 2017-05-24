@@ -92,6 +92,11 @@ public class TmDDL {
               }
               else {
                  Thread.sleep(3000);  // Sleep 3 seconds to allow table creation
+                 if (admin.tableExists(tablename) == false){
+                     // still not present; try again
+                     if (LOG.isTraceEnabled()) LOG.trace("TmDDL still not created for dtmid: " + dtmid);
+                     continue;
+                 }
               }
            }
            loopExit = true;
