@@ -188,7 +188,8 @@ short CmpDescribeHiveTable (
                              short type, // 1, invoke. 2, showddl. 3, createLike
                              char* &outbuf,
                              ULng32 &outbuflen,
-                             CollHeap *heap);
+                             CollHeap *heap,
+                             UInt32 columnLengthLimit = UINT_MAX);
 
 short CmpDescribeSeabaseTable ( 
      const CorrName  &dtName,
@@ -2206,7 +2207,8 @@ short CmpDescribeHiveTable (
                              short type, // 1, invoke. 2, showddl. 3, createLike
                              char* &outbuf,
                              ULng32 &outbuflen,
-                             CollHeap *heap)
+                             CollHeap *heap,
+                             UInt32 columnLengthLimit)
 {
   const NAString& tableName =
     dtName.getQualifiedNameObj().getObjectName();
@@ -2242,8 +2244,10 @@ short CmpDescribeHiveTable (
   if (NOT naTable->isHiveTable())
     return -1;
 
+#ifdef __ignore
   if (NOT ((type == 1) || (type == 2)))
     return -1;
+#endif
 
   char * buf = new (heap) char[15000];
   CMPASSERT(buf);
@@ -2340,11 +2344,29 @@ short CmpDescribeHiveTable (
               ANSI_ID(colName.data()));
       
       NAString nas;
-      if (type == 1)
+      if ((type == 1) || (type == 3))
         nat->getMyTypeAsText(&nas, FALSE);
       else
         nat->getMyTypeAsHiveText(&nas);
       
+      // if it is a character type and it is longer than the length
+      // limit in bytes, then shorten the target type
+      if ((type == 3) &&
+          (nat->getTypeQualifier() == NA_CHARACTER_TYPE) &&
+          (!nat->isLob()) &&
+          (columnLengthLimit < UINT_MAX))
+        {
+          const CharType * natc = (const CharType *)nat;
+          if (natc->getDataStorageSize() > columnLengthLimit)
+            {
+              CharType * newType = (CharType *)natc->newCopy(NULL);
+              newType->setDataStorageSize(columnLengthLimit);
+              nas.clear();
+              newType->getMyTypeAsText(&nas, FALSE);
+              delete newType;
+            }
+        }
+
       sprintf(&buf[strlen(buf)], "%s", nas.data());
 
       NAString colString(buf);
@@ -2363,21 +2385,21 @@ short CmpDescribeHiveTable (
         {
           if (type == 1)
             outputShortLine(space, "  /* stored as orc */");
-          else
+          else if (type == 2)
             outputShortLine(space, "  stored as orc ");
         }
       else if (hTabStats->isTextFile())
         {
           if (type == 1)
             outputShortLine(space, "  /* stored as textfile */");
-          else
+          else if (type == 2)
             outputShortLine(space, "  stored as textfile ");
         }
       else if (hTabStats->isSequenceFile())
         {
           if (type == 1)
             outputShortLine(space, "  /* stored as sequence */");
-          else
+          else if (type == 2)
             outputShortLine(space, "  stored as sequence ");
         }
     }
@@ -3427,7 +3449,7 @@ short CmpDescribeSeabaseTable (
       if (NOT noTrailingSemi)
         outputShortLine(*space, ";");
 
-      if (isHbaseCellOrRowTable)
+      if ((type == 2) && isHbaseCellOrRowTable)
         outputShortLine(*space, "*/");
     }
 

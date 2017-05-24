@@ -46,3 +46,9 @@ update statistics for table hive.hive.customer on every column sample random 1 p
 
 update statistics for table customer clear;
 
+-- force sample table creation
+cqd ustat_internal_sort 'OFF';
+cqd ustat_force_temp 'ON';
+update statistics for table hive.hive.store_sales on every column 
+sample random 10 percent;
+

@@ -152,6 +152,23 @@
 
 --- 1 row(s) selected.
 >>
+>>select to_date('2017/05/15 10:11:12', 'yyyy/mm/dd hh24:mi:ss') from dual;
+
+(EXPR)                    
+--------------------------
+
+2017-05-15 10:11:12.000000
+
+--- 1 row(s) selected.
+>>select to_char(timestamp '2017-05-15 10:11:12', 'yyyy/mm/dd hh24:mi:ss') from dual;
+
+(EXPR)             
+-------------------
+
+2017/05/15 10:11:12
+
+--- 1 row(s) selected.
+>>
 >>select to_time ('10:23:34', 'HH24:MI:SS') from (values(1)) x(a);
 
 (EXPR)  

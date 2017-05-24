@@ -155,6 +155,7 @@ const ExpDatetime::DatetimeFormatInfo ExpDatetime::datetimeFormat[] =
     {ExpDatetime::DATETIME_FORMAT_TS8,       "DD-MON-YYYY HH:MI:SS",  20, 20},
     {ExpDatetime::DATETIME_FORMAT_TS9,       "MONTH DD, YYYY, HH:MI", 19, 25},
     {ExpDatetime::DATETIME_FORMAT_TS10,      "DD.MM.YYYY HH24.MI.SS", 19, 19},
+    {ExpDatetime::DATETIME_FORMAT_TS11,      "YYYY/MM/DD HH24:MI:SS", 19, 19},
  
     {ExpDatetime::DATETIME_FORMAT_NUM1,      "99:99:99:99",           11, 11},
     {ExpDatetime::DATETIME_FORMAT_NUM2,      "-99:99:99:99",          12, 12},
@@ -2940,6 +2941,43 @@ ExpDatetime::convAsciiToDate(char *srcData,
     };  
     break;
 
+  case DATETIME_FORMAT_TS11: // YYYY/MM/DD HH24:MI:SS
+    {
+      char sep = '/';
+
+      // the year
+      if (convSrcDataToDst(4, srcData, 2, dstData, &sep, heap, diagsArea))
+        return -1;
+
+      // the month
+      if (convSrcDataToDst(2, srcData, 1, &dstData[2], &sep, heap, diagsArea))
+        return -1;
+
+      // the day
+      if (convSrcDataToDst(2, srcData, 1, &dstData[3], " ", heap, diagsArea))
+        return -1;
+
+      // the hour
+      if (convSrcDataToDst(2, srcData, 1, &dstData[4], ":", heap, diagsArea))
+        return -1;
+
+      // the minute
+      if (convSrcDataToDst(2, srcData, 1, &dstData[5], ":", heap, diagsArea))
+        return -1;
+
+      // the second
+      if (convSrcDataToDst(2, srcData, 1, &dstData[6], NULL, heap, diagsArea))
+        return -1;
+
+      dstData[7]  = 0;
+      dstData[8]  = 0;
+      dstData[9]  = 0;
+      dstData[10] = 0;
+
+      timeData = &dstData[4];
+    };  
+    break;
+
   case DATETIME_FORMAT_TS8: // DD-MON-YYYY HH:MI:SS
     {
       // the day
@@ -3295,6 +3333,7 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
   case DATETIME_FORMAT_TS1:
   case DATETIME_FORMAT_TS3:
   case DATETIME_FORMAT_TS5:
+  case DATETIME_FORMAT_TS11:
     if (year) {
       if (format == DATETIME_FORMAT_USA5)
 	convertToAscii(year, dstDataPtr, 2);
@@ -3306,7 +3345,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
 	    (format == DATETIME_FORMAT_TS3))
 	  *dstDataPtr++ = '-';
 	else if ((format == DATETIME_FORMAT_USA3) ||
-		 (format == DATETIME_FORMAT_USA5))
+		 (format == DATETIME_FORMAT_USA5) ||
+                 (format == DATETIME_FORMAT_TS11))
 	  *dstDataPtr++ = '/';
       }
     }
@@ -3317,7 +3357,8 @@ ExpDatetime::convDatetimeToASCII(char *srcData,
 	    (format == DATETIME_FORMAT_TS3))
 	  *dstDataPtr++ = '-';
 	else if ((format == DATETIME_FORMAT_USA3) ||
-		 (format == DATETIME_FORMAT_USA5))
+		 (format == DATETIME_FORMAT_USA5) ||
+		 (format == DATETIME_FORMAT_TS11))
 	  *dstDataPtr++ = '/';
       }
     }

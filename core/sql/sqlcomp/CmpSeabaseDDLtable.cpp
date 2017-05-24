@@ -81,6 +81,14 @@ extern short CmpDescribeSeabaseTable (
      const NAType * natype = NULL,
      Space *inSpace = NULL);
 
+short CmpDescribeHiveTable ( 
+                             const CorrName  &dtName,
+                             short type, // 1, invoke. 2, showddl. 3, createLike
+                             char* &outbuf,
+                             ULng32 &outbuflen,
+                             CollHeap *heap,
+                             UInt32 columnLengthLimit = UINT_MAX);
+
 // type:  1, invoke. 2, showddl. 3, create_like
 extern short cmpDisplayColumn(const NAColumn *nac,
                               char * inColName,
@@ -368,14 +376,18 @@ void CmpSeabaseDDL::createSeabaseTableLike(ExeCliInterface * cliInterface,
   
   char * buf = NULL;
   ULng32 buflen = 0;
-  retcode = CmpDescribeSeabaseTable(cn, 3/*createlike*/, buf, buflen, STMTHEAP,
-                                    NULL,
-                                    likeOptions.getIsWithHorizontalPartitions(),
-                                    likeOptions.getIsWithoutSalt(),
-                                    likeOptions.getIsWithoutDivision(),
-                                    likeOptions.getIsWithoutRowFormat(),
-                                    likeOptions.getIsLikeOptColumnLengthLimit(),
-                                    TRUE);
+  if (srcCatNamePart == HIVE_SYSTEM_CATALOG)
+    retcode = CmpDescribeHiveTable(cn, 3/*createlike*/, buf, buflen, STMTHEAP,
+                                   likeOptions.getIsLikeOptColumnLengthLimit());
+  else
+    retcode = CmpDescribeSeabaseTable(cn, 3/*createlike*/, buf, buflen, STMTHEAP,
+                                      NULL,
+                                      likeOptions.getIsWithHorizontalPartitions(),
+                                      likeOptions.getIsWithoutSalt(),
+                                      likeOptions.getIsWithoutDivision(),
+                                      likeOptions.getIsWithoutRowFormat(),
+                                      likeOptions.getIsLikeOptColumnLengthLimit(),
+                                      TRUE);
   if (retcode)
     return;
 
@@ -6004,7 +6016,7 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
       cliRC = -1;
       goto label_restore;
     }
-  
+
   ActiveSchemaDB()->getNATableDB()->removeNATable
     (cn,
      ComQiScope::REMOVE_FROM_ALL_USERS, 
@@ -6036,6 +6048,16 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
       goto label_restore;
     }
 
+  if (naTable->hasSecondaryIndexes()) // user indexes
+    {
+      cliRC = cliInterface.holdAndSetCQD("hide_indexes", "ALL");
+      if (cliRC < 0)
+        {
+          cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
+          goto label_restore;
+        }
+    }
+
   str_sprintf(buf, "upsert using load into %s(%s) select %s from %s",
               naTable->getTableName().getQualifiedNameAsAnsiString().data(),
               tgtCols.data(),
@@ -6050,6 +6072,9 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
 
   if (identityGenAlways)
     cliInterface.restoreCQD("override_generated_identity_values");
+
+  if (naTable->hasSecondaryIndexes()) // user indexes
+    cliInterface.restoreCQD("hide_indexes");
 
   if ((cliRC = recreateUsingViews(&cliInterface, viewNameList, viewDefnList,
                                   ddlXns)) < 0)
@@ -6070,6 +6095,7 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
       cliInterface.retrieveSQLDiagnostics(CmpCommon::diags());
       goto label_restore;
     }
+
   
   deallocEHI(ehi); 
   
@@ -6080,6 +6106,9 @@ short CmpSeabaseDDL::alignedFormatTableDropColumn
 
   if (identityGenAlways)
     cliInterface.restoreCQD("override_generated_identity_values");
+
+  if (naTable->hasSecondaryIndexes()) // user indexes
+    cliInterface.restoreCQD("hide_indexes");
 
   ActiveSchemaDB()->getNATableDB()->removeNATable
     (cn,

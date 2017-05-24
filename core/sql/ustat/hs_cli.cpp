@@ -607,18 +607,8 @@ Lng32 HSSample::create(NAString& tblName, NABoolean unpartitioned, NABoolean isP
 
     HSGlobalsClass *hs_globals = GetHSContext();
 
-    // If the table is a native one, convert the fully qualified user table name NT
-    // to a fully qualified external table name ET. The sample table will be created
-    // like ET.
     NABoolean isNativeTable =  
       HSGlobalsClass::isNativeCat(objDef->getCatName(HSTableDef::EXTERNAL_FORMAT));
-
-    if ( isNativeTable ) {
-      userTabName = ComConvertNativeNameToTrafName(
-                      objDef->getCatName(HSTableDef::EXTERNAL_FORMAT),
-                      objDef->getSchemaName(HSTableDef::EXTERNAL_FORMAT),
-                      objDef->getObjectName(HSTableDef::EXTERNAL_FORMAT));
-    }
 
     NAString userLocation;
     ComObjectName *sampleName;

@@ -81,7 +81,14 @@ reset parserflags 131072;
 
 --cqd hive_use_ext_table_attrs 'ON';
 cqd hive_max_string_length_in_bytes '20';
- 
+
+drop table bblike1;
+drop table bblike2;
+drop table t009hivecust1;
+drop table t009hivecust2;
+
+process hive statement 'drop view t009cust';
+
 ?section create_db
 
 -- The version of hive installed does not support special characters
@@ -148,9 +155,16 @@ create table newtable3 (a int);
 create schema hive_t009;
 set schema hive_t009;
 
--- these creates fail
-create table hive_customer like hive.hive.customer;
+-- create like on hive tables/views
+create table t009hivecust1 like hive.hive.customer;
+invoke t009hivecust1;
 create table newtable1 like hive.hive.customer;
+process hive statement 'drop view t009cust';
+process hive statement 'create view t009cust as select * from customer';
+create table t009hivecust2 like hive.hive.t009cust;
+invoke t009hivecust2;
+
+-- these creates fail
 create external table seabase.customer like hive.hive.customer;
 create external table customer1 like hive.hive.customer;
 create table t009t2 as select * from "_HV_SCH_T009_".t009t2;
@@ -200,6 +214,12 @@ select count(*) from hbase."_ROW_"."baseball";
 select count(*) from hbase."_CELL_"."baseball";
 
 select left(row_id, 10) as row_id, left(column_display(column_details, ('teams:team_number', 'games:visitor_team', 'games:game_time')), 100) as cols from hbase."_ROW_"."baseball";
+
+-- create like on native hbase tables
+create table bblike1 like hbase."_ROW_"."baseball";
+invoke bblike1;
+create table bblike2 like hbase."_CELL_"."baseball";
+invoke bblike2;
 
 -- error. Cannot create a non-hbase-mapped table
 create external table "baseball" for hbase."_ROW_"."baseball";

@@ -1169,6 +1169,21 @@ NABoolean HSTableDef::setObjectUID(NABoolean createExternalTable)
     NAString objName = getObjectName(EXTERNAL_FORMAT);
     Lng32 retcode = 0;
 
+    setNATable();
+    if (!naTbl_)
+      return FALSE;
+
+   if ((catName == HIVE_SYSTEM_CATALOG) &&
+        (naTbl_->isView()))
+      {
+        CmpCommon::diags()->clear();
+        *CmpCommon::diags()
+          << DgSqlCode(-UERR_INVALID_OBJECT)
+          << DgString0(naTbl_->getTableName().getQualifiedNameAsString());
+        
+        return FALSE;
+      }
+
     if (catName == HIVE_SYSTEM_CATALOG)
       retcode = RegisterHiveTable(catName, schName, objName);
     else
