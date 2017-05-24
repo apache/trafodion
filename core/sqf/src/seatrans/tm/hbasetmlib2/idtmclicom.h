@@ -417,13 +417,13 @@ static int do_get_servers(MS_Mon_Process_Info_Type **ppp_pi,
     int lv_ferr;
     int lv_tmpcount;
 
-    lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_Generic,
+    lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_TMID,
                                             pp_count,
                                             0,      // max
                                             NULL);  // info
     if (lv_ferr == XZFIL_ERR_OK) {
         *ppp_pi = new MS_Mon_Process_Info_Type[*pp_count];
-        lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_Generic,
+        lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_TMID,
                                                 &lv_tmpcount,
                                                 *pp_count, // max
                                                 *ppp_pi);  // info
@@ -448,12 +448,16 @@ static int do_get_servers2(MS_Mon_Process_Info_Type  *pp_pi,
     lv_scount = 0;
     for (lv_inx = 0; lv_inx < pv_count; lv_inx++) {
         lp_sname = pp_pi[lv_inx].process_name;
-        if (memcmp(lp_sname, "$TMID", 5) == 0) {
-            if (gv_verbose)
-                printf("cli: sname=%s\n", lp_sname);
-            assert(lv_scount < pv_max);
-            ppp_snames[lv_scount] = lp_sname;
-            lv_scount++;
+                if (gv_verbose)
+                    printf("cli(%d): sname=%s\n", getpid(), lp_sname);
+        if (memcmp(lp_sname, "$TSID", 5) == 0) {
+            if (isdigit(lp_sname[5])) {
+                if (gv_verbose)
+                    printf("cli: sname=%s\n", lp_sname);
+                assert(lv_scount < pv_max);
+                ppp_snames[lv_scount] = lp_sname;
+                lv_scount++;
+            }
         }
     }
     return lv_scount;

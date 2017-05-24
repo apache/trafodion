@@ -58,7 +58,7 @@
 
 using namespace std;
 
-extern char Node_name[MPI_MAX_PROCESSOR_NAME];
+extern char Node_name[MAX_PROCESSOR_NAME];
 extern int MyPNID;
 extern int MyNid;
 extern int MyPid;
@@ -442,8 +442,9 @@ void CZClient::CheckCluster( void )
                 {
                     char buf[MON_STRING_BUF_SIZE];
                     snprintf( buf, sizeof(buf)
-                            , "[%s], GetZNodeData() failed!\n"
-                            , method_name );
+                            , "[%s], GetZNodeData(%s) failed!\n"
+                            , method_name
+                            , monZnode.c_str() );
                     mon_log_write(MON_ZCLIENT_CHECKCLUSTER_2, SQ_LOG_ERR, buf);
                 }
                 else
@@ -613,7 +614,7 @@ int CZClient::GetZNodeData( string &monZnode, string &nodeName, int &pnid )
 
     char  pnidStr[8] = { 0 };
     char *tkn = NULL;
-    char  zkData[MPI_MAX_PROCESSOR_NAME];
+    char  zkData[MAX_PROCESSOR_NAME];
     int   rc = -1;
     int   zkDataLen = sizeof(zkData);
     Stat  stat;
@@ -683,8 +684,8 @@ void CZClient::HandleExpiredZNode( void )
 
     if ( IsCheckCluster() )
     {
-        char  pathStr[MPI_MAX_PROCESSOR_NAME] = { 0 };
-        char  nodeName[MPI_MAX_PROCESSOR_NAME] = { 0 };
+        char  pathStr[MAX_PROCESSOR_NAME] = { 0 };
+        char  nodeName[MAX_PROCESSOR_NAME] = { 0 };
         char *tkn = NULL;
         char *tknStart = pathStr;
         char *tknLast = NULL;
@@ -889,8 +890,8 @@ int CZClient::MakeClusterZNodes( void )
     default:
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s], zoo_exists() failed with error %s\n"
-                , method_name, ZooErrorStr(rc) );
+                , "[%s], zoo_exists(%s) failed with error %s\n"
+                , method_name, rootDir.c_str(), ZooErrorStr(rc) );
         mon_log_write(MON_ZCLIENT_CHECKCLUSTERZNODES_1, SQ_LOG_ERR, buf);
         if (rc) return(rc); // Return the error
         break;
@@ -923,8 +924,8 @@ int CZClient::MakeClusterZNodes( void )
     default:
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s], zoo_exists() failed with error %s\n"
-                , method_name, ZooErrorStr(rc) );
+                , "[%s], zoo_exists(%s) failed with error %s\n"
+                , method_name, instanceDir.c_str( ), ZooErrorStr(rc) );
         mon_log_write(MON_ZCLIENT_CHECKCLUSTERZNODES_2, SQ_LOG_ERR, buf);
         break;
     }
@@ -957,8 +958,8 @@ int CZClient::MakeClusterZNodes( void )
     default:
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s], zoo_exists() failed with error %s\n"
-                , method_name, ZooErrorStr(rc) );
+                , "[%s], zoo_exists(%s) failed with error %s\n"
+                , method_name, clusterDir.c_str( ), ZooErrorStr(rc) );
         mon_log_write(MON_ZCLIENT_CHECKCLUSTERZNODES_3, SQ_LOG_ERR, buf);
         break;
     }
@@ -1222,7 +1223,7 @@ int CZClient::SetZNodeWatch( string &monZnode )
     const char method_name[] = "CZClient::SetZNodeWatch";
     TRACE_ENTRY;
 
-    char  zkData[MPI_MAX_PROCESSOR_NAME];
+    char  zkData[MAX_PROCESSOR_NAME];
     int   rc = -1;
     int   zkDataLen = sizeof(zkData);
     Stat  stat;
@@ -1504,7 +1505,8 @@ void CZClient::WatchCluster( void )
                 {
                     char buf[MON_STRING_BUF_SIZE];
                     snprintf( buf, sizeof(buf)
-                            , "[%s], GetZNodeData() failed!\n"
+                            , "[%s], GetZNodeData(%s) failed!\n"
+                            , monZnode.c_str()
                             , method_name );
                     mon_log_write(MON_ZCLIENT_WATCHCLUSTER_2, SQ_LOG_ERR, buf);
 
@@ -1559,8 +1561,9 @@ int CZClient::WatchNode( const char *nodeName )
     {
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
-                , "[%s], SetZNodeWatch() failed!\n"
-                , method_name );
+                , "[%s], SetZNodeWatch(%s) failed!\n"
+                , method_name
+                , monZnode.c_str() );
         mon_log_write(MON_ZCLIENT_WATCHNODE_1, SQ_LOG_ERR, buf);
     }
     else

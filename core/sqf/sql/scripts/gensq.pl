@@ -418,6 +418,12 @@ sub generateRMS {
     printRMSCheckScript(1, "cast(tokenstr('Status:', variable_info) as varchar(10)) status \n");
     printRMSCheckScript(1, "from table(statistics(null, ?));\n");
 
+    for ($i=0; $i < $gdNumNodes; $i++) {
+
+        my $l_string =  sprintf("execute rms_check using 'RMS_CHECK=%d' ;\n", $i);
+        printRMSCheckScript(1, $l_string);
+    }
+
     printRMSScript(1, "\n");
 
     printScript(1, "rmsstart\n");

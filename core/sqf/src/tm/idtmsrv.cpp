@@ -368,7 +368,7 @@ void do_init(int pv_argc, char **ppp_argv) {
             gv_verbose = true;
     }
     if (lv_attach)
-        lv_ferr = msg_init_attach(&pv_argc, &ppp_argv, false, (char *) "$TMID");
+        lv_ferr = msg_init_attach(&pv_argc, &ppp_argv, false, (char *) "$TSID0");
     else
         lv_ferr = msg_init(&pv_argc, &ppp_argv);
     assert(lv_ferr == XZFIL_ERR_OK);
@@ -378,8 +378,9 @@ void do_init(int pv_argc, char **ppp_argv) {
     if (lv_delay_s != NULL) {
        gv_time_refresh_delay = 100 * (atoi(lv_delay_s));      
     }
-
-    printf("TM_IDTMSRV_REFRESH_DELAY_SECONDS is %s.  Setting gv_time_refresh_delay to %d \n", lv_delay_s, gv_time_refresh_delay);
+    if (gv_verbose){
+        printf("TM_IDTMSRV_REFRESH_DELAY_SECONDS is %s.  Setting gv_time_refresh_delay to %d \n", lv_delay_s, gv_time_refresh_delay);
+    }   
 
     if (gv_shook)
         msg_debug_hook("s", "s");
@@ -702,7 +703,8 @@ int main(int pv_argc, char *pa_argv[]) {
         }
     }
 
-    printf("server %s shutting down\n", ga_name);
+    if (gv_verbose)
+        printf("server %s shutting down\n", ga_name);
     lv_ferr = msg_mon_process_shutdown();
     assert(lv_ferr == XZFIL_ERR_OK);
 

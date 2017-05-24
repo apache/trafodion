@@ -756,7 +756,7 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         rename(port_fname, temp_fname);
     }
 
-    if (node->GetState() != State_Down || node->isInQuiesceState())
+    if (node->GetState() != State_Down || !node->isInQuiesceState())
     {
         snprintf(buf, sizeof(buf),
                  "[CCluster::HardNodeDown], Node %s (%d) is going down.\n",
@@ -1356,7 +1356,11 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                     rc = ZClient->WatchNode( node->GetName() );
                     if ( rc != ZOK )
                     {
-                        abort();
+                        char    buf[MON_STRING_BUF_SIZE];
+                        snprintf( buf, sizeof(buf)
+                                , "[%s], Unable to set node watch on %s, pnid%d\n"
+                                , method_name, node->GetName(), node->GetPNid() );
+                        mon_log_write(MON_CLUSTER_HARDNODEUP_1, SQ_LOG_ERR, buf);
                     }
                 }
             }
@@ -4547,7 +4551,13 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                                     clock_gettime(CLOCK_REALTIME, &currentTime);
                                     if (currentTime.tv_sec < peer->znodeFailedTime.tv_sec)
                                     {
-                                        continue;
+                                        // Failsafe
+                                        peer->p_timeout_count++;
+   
+                                        if ( peer->p_timeout_count < sv_epoll_retry_count )
+                                        {
+                                            continue;
+                                        }
                                     }
                                     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
                                     {
@@ -4558,11 +4568,16 @@ int CCluster::AllgatherSock( int nbytes, void *sbuf, char *rbuf, int tag, MPI_St
                                                     , currentTime.tv_sec
                                                     , peer->znodeFailedTime.tv_sec);
                                     }
-                                    
                                 }
                                 else
                                 {
-                                    continue;
+                                    // Failsafe
+                                    peer->p_timeout_count++;
+
+                                    if ( peer->p_timeout_count < sv_epoll_retry_count )
+                                    {
+                                        continue;
+                                    }
                                 }
                             }
                         }

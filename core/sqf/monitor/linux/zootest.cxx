@@ -45,7 +45,7 @@ using namespace std;
 bool debugFlag = true;
 
 bool ZClientEnabled = true;
-char Node_name[MPI_MAX_PROCESSOR_NAME] = {'\0'};
+char Node_name[MAX_PROCESSOR_NAME] = {'\0'};
 char MyPNidStr[8];
 int MyPNID = -1;
 int MyNid = -1;
@@ -86,7 +86,7 @@ void CreateZookeeperClient( void )
         string       zkQuorumHosts;
         stringstream zkQuorumPort;
         char *env;
-        char  hostsStr[MPI_MAX_PROCESSOR_NAME*3] = { 0 };
+        char  hostsStr[MAX_PROCESSOR_NAME*3] = { 0 };
         char *tkn = NULL;
 
         int zport;
@@ -190,7 +190,7 @@ int main( int argc, char *argv[], char *envp[] )
     TRACE_ENTRY;
 
     char *env;
-    char  MyName[MPI_MAX_PROCESSOR_NAME];
+    char  MyName[MAX_PROCESSOR_NAME];
 
     trace_settings |= TRACE_INIT;
 
@@ -214,7 +214,7 @@ int main( int argc, char *argv[], char *envp[] )
     sigaddset( &newset,SIGTERM );
     sigprocmask( SIG_BLOCK,&newset,&oldset );
 
-    gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
+    gethostname(Node_name, MAX_PROCESSOR_NAME);
 
     sprintf( MyName,"zooclient" );
     MyPid = getpid();

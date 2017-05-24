@@ -788,7 +788,7 @@ void CMonitor::CreateZookeeperClient( void )
         string       zkQuorumHosts;
         stringstream zkQuorumPort;
         char *env;
-        char  hostsStr[MPI_MAX_PROCESSOR_NAME * 3] = { 0 };
+        char  hostsStr[MAX_PROCESSOR_NAME * 3] = { 0 };
         char *tkn = NULL;
 
         int zport;
