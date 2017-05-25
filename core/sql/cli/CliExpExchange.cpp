@@ -4187,7 +4187,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
 
 	    if (noDatetimeValidation())
 	      convFlags |= CONV_NO_DATETIME_VALIDATION;
-            if (sourceType==REC_BLOB)
+            if ((sourceType==REC_BLOB) || (sourceType ==REC_CLOB))
 	    {
 	      // the first 4 bytes of data are actually the variable 
 	      // length indicator

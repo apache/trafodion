@@ -347,6 +347,7 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
   case REC_NCHAR_F_UNICODE:
   case REC_NCHAR_V_UNICODE:
   case REC_BLOB:
+  case REC_CLOB:
   {
     char *VCLen = NULL;
     short VCLenSize = 0;
