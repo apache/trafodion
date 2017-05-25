@@ -720,11 +720,22 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		}
 		validateSetInvocation(parameterIndex);
 		inputDesc_[parameterIndex - 1].checkValidNumericConversion(connection_.getLocale());
-		if (x) {
-			addParamValue(parameterIndex, "1"); // true
+		int sqltype = inputDesc_[parameterIndex - 1].sqlDataType_;
+		Object valueObj = null;
+		if (sqltype == InterfaceResultSet.SQLTYPECODE_BOOLEAN) {
+			if (x) {
+				valueObj = 1;
+			} else {
+				valueObj = 0;
+			}
 		} else {
-			addParamValue(parameterIndex, "0"); // false
+			if (x) {
+				valueObj = "1";
+			} else {
+				valueObj = "0";
+			}
 		}
+		addParamValue(parameterIndex, valueObj);
 	}
 
 	public void setByte(int parameterIndex, byte x) throws SQLException {

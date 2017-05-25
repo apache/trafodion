@@ -1832,6 +1832,9 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 
 
 		case Types.CHAR:
+			if (sqltype == InterfaceResultSet.SQLTYPECODE_BOOLEAN) {
+				return String.valueOf(getBoolean(columnIndex));
+			}
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
 		case Types.BLOB:

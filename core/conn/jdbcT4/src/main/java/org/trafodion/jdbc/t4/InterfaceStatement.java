@@ -686,7 +686,7 @@ class InterfaceStatement {
 		case InterfaceResultSet.SQLTYPECODE_BOOLEAN:
 			tmpbd = Utility.getBigDecimalValue(locale, paramValue);
 
-			Bytes.insertShort(values, noNullValue, tmpbd.shortValue(), this.ic_.getByteSwap());
+			Bytes.insertByte(values, noNullValue, tmpbd.byteValue());
 			break;
 		// You will not get this type, since server internally converts it
 		// SMALLINT, INTERGER or LARGEINT

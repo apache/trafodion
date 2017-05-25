@@ -122,6 +122,11 @@ class Bytes {
 		return value;
 	}
 
+	static int insertByte(byte[] array, int offset, byte value) {
+		array[offset] = value;
+		return offset + 1;
+	}
+
 	static int insertShort(byte[] array, int offset, short value, boolean swap) {
 		if (swap) {
 			array[offset + 1] = (byte) ((value >>> 8) & 0xff);
