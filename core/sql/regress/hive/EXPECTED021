@@ -24,4 +24,16 @@
 
 --- SQL operation complete.
 >>
+>>-- force sample table creation
+>>cqd ustat_internal_sort 'OFF';
+
+--- SQL operation complete.
+>>cqd ustat_force_temp 'ON';
+
+--- SQL operation complete.
+>>update statistics for table hive.hive.store_sales on every column 
++>sample random 10 percent;
+
+--- SQL operation complete.
+>>
 >>log;

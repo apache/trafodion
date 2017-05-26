@@ -344,4 +344,15 @@ create index t031t1i on t031t1(b);
 explain options 'f' select a from t031t1;
 select a from t031t1;
 
+-- drop column on table with indexes
+drop table if exists t031t1 cascade;
+create table t031t1 (a int, b int, constraint t031const1  unique (a));
+insert into t031t1 values (1,1), (2,2);
+showddl t031t1;
+alter table t031t1 drop column b;
+showddl t031t1;
+select * from t031t1;
+set parserflags 1;
+select * from table(index_table t031const1);
+
 log;

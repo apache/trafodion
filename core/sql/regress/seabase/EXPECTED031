@@ -446,7 +446,7 @@ Z            Z            (EXPR)  (EXPR)
 >>invoke t031t10;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T10
--- Definition current  Wed May  3 15:06:43 2017
+-- Definition current  Tue May 23 23:30:09 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -648,7 +648,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed May  3 15:07:47 2017
+-- Definition current  Tue May 23 23:31:07 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -679,7 +679,7 @@ A            B
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed May  3 15:07:53 2017
+-- Definition current  Tue May 23 23:31:13 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -730,7 +730,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed May  3 15:07:58 2017
+-- Definition current  Tue May 23 23:31:23 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -759,7 +759,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed May  3 15:08:09 2017
+-- Definition current  Tue May 23 23:31:32 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -784,7 +784,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed May  3 15:08:13 2017
+-- Definition current  Tue May 23 23:31:36 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -804,7 +804,7 @@ A            B                     C
 >>invoke t031t1;
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1
--- Definition current  Wed May  3 15:08:16 2017
+-- Definition current  Tue May 23 23:31:40 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -819,7 +819,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Wed May  3 15:08:19 2017
+-- Definition current  Tue May 23 23:31:43 2017
 
   (
     A                                INT DEFAULT NULL
@@ -842,7 +842,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Wed May  3 15:08:23 2017
+-- Definition current  Tue May 23 23:31:50 2017
 
   (
     A                                INT DEFAULT NULL
@@ -860,7 +860,7 @@ A            B                     C
 >>invoke t031v1;
 
 -- Definition of Trafodion view TRAFODION.SCH.T031V1
--- Definition current  Wed May  3 15:08:31 2017
+-- Definition current  Tue May 23 23:31:59 2017
 
   (
     A                                INT DEFAULT NULL
@@ -947,7 +947,7 @@ CREATE INDEX T031T1I1 ON TRAFODION.SCH.T031T1
 >>invoke table(index_table t031t1i1);
 
 -- Definition of Trafodion table TRAFODION.SCH.T031T1I1
--- Definition current  Wed May  3 15:08:49 2017
+-- Definition current  Tue May 23 23:32:19 2017
 
   (
     "A@"                             INT NO DEFAULT
@@ -1090,7 +1090,7 @@ CREATE TABLE T031HIVET1
 ;
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.T031HIVET1;
-/* ObjectUID = 4568467281340475481 */
+/* ObjectUID = 6847852784245519545 */
 
 /* Trafodion DDL */
 
@@ -1179,5 +1179,89 @@ A
 abcde
 
 --- 1 row(s) selected.
+>>
+>>-- drop column on table with indexes
+>>drop table if exists t031t1 cascade;
+
+--- SQL operation complete.
+>>create table t031t1 (a int, b int, constraint t031const1  unique (a));
+
+--- SQL operation complete.
+>>insert into t031t1 values (1,1), (2,2);
+
+--- 2 row(s) inserted.
+>>showddl t031t1;
+
+CREATE TABLE TRAFODION.SCH.T031T1
+  (
+    A                                INT DEFAULT NULL
+  , B                                INT DEFAULT NULL
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX T031CONST1 ON TRAFODION.SCH.T031T1
+  (
+    A ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.T031T1 ADD CONSTRAINT TRAFODION.SCH.T031CONST1
+  UNIQUE
+  (
+    A
+  )
+;
+
+--- SQL operation complete.
+>>alter table t031t1 drop column b;
+
+--- SQL operation complete.
+>>showddl t031t1;
+
+CREATE TABLE TRAFODION.SCH.T031T1
+  (
+    A                                INT DEFAULT NULL
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+-- The following index is a system created index --
+CREATE UNIQUE INDEX T031CONST1 ON TRAFODION.SCH.T031T1
+  (
+    A ASC
+  )
+;
+
+ALTER TABLE TRAFODION.SCH.T031T1 ADD CONSTRAINT TRAFODION.SCH.T031CONST1
+  UNIQUE
+  (
+    A
+  )
+;
+
+--- SQL operation complete.
+>>select * from t031t1;
+
+A          
+-----------
+
+          1
+          2
+
+--- 2 row(s) selected.
+>>set parserflags 1;
+
+--- SQL operation complete.
+>>select * from table(index_table t031const1);
+
+A@           SYSKEY              
+-----------  --------------------
+
+          1   2968565314541304116
+          2   2968565314541629166
+
+--- 2 row(s) selected.
 >>
 >>log;

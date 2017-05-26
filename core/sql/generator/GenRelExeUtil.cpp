@@ -1911,7 +1911,8 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
        getCatalogName() == HIVE_SYSTEM_CATALOG) &&
       ((queryType == ComTdbExeUtilGetMetadataInfo::TABLES_IN_SCHEMA_) ||
        (queryType == ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_SCHEMA_) ||
-       (queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_)))
+       (queryType == ComTdbExeUtilGetMetadataInfo::VIEWS_IN_SCHEMA_) ||
+       (queryType == ComTdbExeUtilGetMetadataInfo::SCHEMAS_IN_CATALOG_)))
     {
       catName = 
         generator->currentCmpContext()->schemaDB_->getDefaultSchema().
