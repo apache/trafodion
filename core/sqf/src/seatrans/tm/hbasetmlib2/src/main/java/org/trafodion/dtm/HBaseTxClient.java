@@ -127,7 +127,7 @@ public class HBaseTxClient {
       if (LOG.isDebugEnabled()) LOG.debug("Enter init, hBasePath:" + hBasePath);
       if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
       if (config == null) {
-         config = TrafConfiguration.create();
+         config = TrafConfiguration.create(TrafConfiguration.HBASE_CONF);
          connection = ConnectionFactory.createConnection(config);
       }
       config.set("hbase.zookeeper.quorum", zkServers);
@@ -206,7 +206,7 @@ public class HBaseTxClient {
       setupLog4j();
       if (LOG.isDebugEnabled()) LOG.debug("Enter init(" + dtmid + ")");
       if (config == null) {
-         config = TrafConfiguration.create();
+         config = TrafConfiguration.create(TrafConfiguration.HBASE_CONF);
          connection = ConnectionFactory.createConnection(config);
       }
       config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");
