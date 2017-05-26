@@ -530,7 +530,7 @@ short CmpSeabaseDDL::processDDLandCreateDescs(
   exprNode = parser.parseDML((const char*)gluedQuery, strlen(gluedQuery), 
                              CharInfo::ISO88591);
 
-  NADELETEBASIC(gluedQuery, STMTHEAP);
+  NADELETEBASICARRAY(gluedQuery, STMTHEAP);
 
   if (! exprNode)
     return resetCQDs(hbaseSerialization, hbVal, -1);

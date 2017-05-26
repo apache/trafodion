@@ -7145,6 +7145,8 @@ int msg_mon_send_process_info(const char    *pp_where,
         pp_msg->u.request.u.process_info.target_verifier = pv_verif;
 #endif
         pp_msg->u.request.u.process_info.type = static_cast<PROCESSTYPE>(pv_ptype);
+        ms_util_string_clear(pp_msg->u.request.u.process_info.target_process_pattern,
+                             sizeof(pp_msg->u.request.u.process_info.target_process_pattern));
         if (pp_name == NULL) {
             ms_util_string_clear(pp_msg->u.request.u.process_info.target_process_name,
                                  sizeof(pp_msg->u.request.u.process_info.target_process_name));
