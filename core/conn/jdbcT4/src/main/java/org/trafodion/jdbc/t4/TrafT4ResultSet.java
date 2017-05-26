@@ -698,6 +698,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 							"invalid_cast_specification", null);
 				}
+
 				d1 = d.doubleValue();
 				// To allow -128.999.. and 127.999...
 				if (d1 > (double) Byte.MIN_VALUE - 1 && d1 < (double) Byte.MAX_VALUE + 1) {
@@ -1470,13 +1471,16 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 		validateGetInvocation(columnIndex);
 		dataType = outputDesc_[columnIndex - 1].dataType_;
 		precision = outputDesc_[columnIndex - 1].sqlPrecision_;
+		int sqltype = outputDesc_[columnIndex - 1].sqlDataType_;
 		switch (dataType) {
 		case Types.TINYINT:
-			byteValue = getByte(columnIndex);
 			if (wasNull_) {
 				return null;
+			}
+			if (sqltype == InterfaceResultSet.SQLTYPECODE_TINYINT_UNSIGNED) {
+				return new Short(getShort(columnIndex));
 			} else {
-				return new Byte(byteValue);
+				return new Byte(getByte(columnIndex));
 			}
 		case Types.SMALLINT:
 			shortValue = getShort(columnIndex);
@@ -1493,11 +1497,13 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 				return new Integer(intValue);
 			}
 		case Types.BIGINT:
-			longValue = getLong(columnIndex);
 			if (wasNull_) {
 				return null;
+			}
+			if (sqltype == InterfaceResultSet.SQLTYPECODE_LARGEINT_UNSIGNED) {
+				return getBigDecimal(columnIndex);
 			} else {
-				return new Long(longValue);
+				return new Long(getLong(columnIndex));
 			}
 		case Types.REAL:
 			floatValue = getFloat(columnIndex);
@@ -1525,6 +1531,12 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 				return new Boolean(booleanValue);
 			}
 		case Types.CHAR:
+			if (wasNull_) {
+				return null;
+			}
+			if (sqltype == InterfaceResultSet.SQLTYPECODE_BOOLEAN) {
+				return new Boolean(getBoolean(columnIndex));
+			}
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
 		case Types.BLOB:

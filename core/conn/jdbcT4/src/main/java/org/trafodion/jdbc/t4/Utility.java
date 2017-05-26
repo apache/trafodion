@@ -162,12 +162,11 @@ class Utility {
 	 * @return none
 	 * 
 	 */
-	static void checkSignedLongBoundary(Locale locale, BigDecimal inbd) throws SQLException {
-		long inlong = inbd.longValue();
+	static void checkUnsignedLongBoundary(Locale locale, BigDecimal inbd) throws SQLException {
 		BigDecimal maxbd = new BigDecimal(Long.MAX_VALUE);
-		maxbd = maxbd.add(maxbd);
-		if ((inlong < 0) || (inbd.compareTo(maxbd) > 0)) {
-			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inlong));
+		maxbd = maxbd.add(maxbd).add(BigDecimal.valueOf(1));
+		if ((inbd.compareTo(BigDecimal.valueOf(0)) < 0) || (inbd.compareTo(maxbd) > 0)) {
+			throw TrafT4Messages.createSQLException(null, locale, "numeric_out_of_range", String.valueOf(inbd));
 		}
 	} // end checkIntegerBoundary
 
@@ -183,7 +182,7 @@ class Utility {
 	 * @return none
 	 * 
 	 */
-	static void checkSignedShortBoundary(Locale locale, BigDecimal inbd) throws SQLException {
+	static void checkUnsignedShortBoundary(Locale locale, BigDecimal inbd) throws SQLException {
 		long inlong = inbd.longValue();
 		long maxushort = (Short.MAX_VALUE * 2) + 1;
 		if ((inlong < 0) || (inlong > maxushort)) {
