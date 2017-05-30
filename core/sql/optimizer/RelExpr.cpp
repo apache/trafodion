@@ -8348,6 +8348,7 @@ void Scan::copyIndexInfo(RelExpr *derivedNode)
       indexOnlyIndexes_.insert(ixDescs[j]);
     }
   }
+  generatedCCPreds_ = scan->generatedCCPreds_;
 }
 
 void Scan::removeIndexInfo()
@@ -8355,6 +8356,7 @@ void Scan::removeIndexInfo()
 	possibleIndexJoins_.clear();
 	indexOnlyIndexes_.clear();
         indexJoinScans_.clear();
+        generatedCCPreds_.clear();
 	forcedIndexInfo_ = FALSE;
 }
 
