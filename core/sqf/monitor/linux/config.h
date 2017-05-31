@@ -26,12 +26,11 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#include <string>
+//#include <sqlite3.h>
 #include "msgdef.h"
 #include "internal.h"
-#include <string>
-
-#include <sqlite3.h>
-//#include "sqlite/sqlite3.h" 
+#include "clusterconf.h"
 
 class CConfigGroup;
 
@@ -136,7 +135,7 @@ private:
     char          localNodeName_[MAX_KEY_NAME];
     CConfigGroup *Head;         // Head of process configuration group list
     CConfigGroup *Tail;         // Tail of process configuration group list
-    sqlite3      *db_;
+    //sqlite3      *db_;
 };
 
 #endif /*CONFIG_H_*/

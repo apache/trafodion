@@ -47,7 +47,8 @@ using namespace std;
 
 extern int MyPNID;
 extern CMonLog *MonLog;
-extern CMonLog *SnmpLog;
+
+pthread_mutex_t       MonLogMutex = PTHREAD_MUTEX_INITIALIZER;
 
 int mon_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
@@ -78,19 +79,6 @@ int monproc_log_write(int eventType, posix_sqlog_severity_t severity, char *msg)
     else
     {
         MonLog->writeMonProcLog(eventType, severity, msg);
-    }
-    return(0);
-}
-
-int snmp_log_write(int eventType, char *msg)
-{
-    if (SnmpLog->isUseAltLog())
-    {
-        SnmpLog->writeSnmpAltLog(eventType, msg);
-    }
-    else
-    {
-        SnmpLog->writeMonLog(eventType, SQ_LOG_CRIT, msg);
     }
     return(0);
 }
@@ -268,60 +256,21 @@ void CMonLog::writeAltLog(int eventType, posix_sqlog_severity_t severity, char *
     return;
 }
 
-void CMonLog::writeSnmpAltLog(int eventType, const char *msg)
-{
-    char   logFileDir[PATH_MAX];
-    char  *logFileDirPtr;
-    char   logFilePrefix[MAX_FILE_NAME];
-    char  *rootDir;
-
-    if ( useAltLog_ )
-    {
-        rootDir = getenv("TRAF_HOME");
-        if (rootDir == NULL)
-        {
-            logFileDirPtr = NULL;
-        }
-        else
-        {
-            sprintf(logFileDir, "%s/logs", rootDir);
-            logFileDirPtr = logFileDir;
-        }
-
-        // log file prefix will be snmp.mon.nn
-        // nn is the file number. If the log file becomes too big,
-        // LogFileNum can be incremented.
-        sprintf( logFilePrefix, "%s.%s.%02d"
-               , logFileNamePrefix_.c_str(), (char *)&startTimeFmt_, logFileNum_);
-
-        SBX_log_write(logFileType_,            // log_type
-                      logFileDirPtr,           // log_file_dir
-                      logFilePrefix,           // log_file_prefix
-                      SQEVL_MONITOR,           // component id
-                      eventType,               // event id
-                      SQ_LOG_SEAQUEST,         // facility
-                      SQ_LOG_CRIT,             // severity
-                      myProcessName_.c_str(),  // name
-                      NULL,                    // msg_prefix
-                      msg,                     // msg
-                      NULL,                    // snmptrap_cmd
-                      NULL,                    // msg_snmptrap
-                      NULL,                    // msg_ret
-                      0);                      // msg_ret size
-    }
-
-    return;
-}
-
 void CMonLog::writeMonLog(int eventType, posix_sqlog_severity_t severity, char *msg)
 {
     logLevel llevel = getLogLevel( severity );
+
+    int status = pthread_mutex_lock(&MonLogMutex);
+    assert(status == 0);
 
     // Log4cxx logging
     CommonLogger::log( log4cxxComponent_
                      , llevel
                      , "Node Number: %u,, PIN: %u , Process Name: %s,,, TID: %d, Message ID: %u, %s"
                      , myPNid_, myPid_, myProcessName_.c_str(), gettid(), eventType,  msg);
+    status = pthread_mutex_unlock(&MonLogMutex);
+    assert(status == 0);
+    
     return;
 }
 
@@ -329,11 +278,18 @@ void CMonLog::writeMonProcLog(int eventType, posix_sqlog_severity_t severity, ch
 {
     logLevel llevel = getLogLevel( severity );
 
+    int status = pthread_mutex_lock(&MonLogMutex);
+    assert(status == 0);
+
     // Log4cxx logging
     CommonLogger::log( log4cxxComponent_
                      , llevel
                      , "Node Number: %u, CPU: %u, PIN: %u , Process Name: %s,,, TID: %u, Message ID: %u, %s"
                      , myPNid_, myNid_, myPid_, myProcessName_.c_str(), gettid(), eventType, msg);
+
+    status = pthread_mutex_unlock(&MonLogMutex);
+    assert(status == 0);
+    
     return;
 }
 

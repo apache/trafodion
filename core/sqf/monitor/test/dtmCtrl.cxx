@@ -529,7 +529,7 @@ bool infoPersistentRequiredDTM( int node_id )
     int  verifier = -1;
     char procName[MAX_PROCESS_NAME] = {0};
 
-    sprintf( procName, "$ZSC%03d", node_id );
+    sprintf( procName, "$PSD%d", node_id );
     
     printf( "[%s] Getting info on process %s\n"
           , MyName

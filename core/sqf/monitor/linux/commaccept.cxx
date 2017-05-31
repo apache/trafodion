@@ -92,15 +92,15 @@ bool CCommAccept::sendNodeInfoMPI( MPI_Comm interComm )
     TRACE_ENTRY;
     bool sentData = true;
 
-    int cfgPNodes = Monitor->GetNumNodes();
+    int pnodeCount = Nodes->GetPNodesCount();
 
     nodeId_t *nodeInfo;
-    nodeInfo = new nodeId_t[cfgPNodes];
+    nodeInfo = new nodeId_t[pnodeCount];
     int rc;
 
     CNode *node;
 
-    for (int i=0; i<cfgPNodes; ++i)
+    for (int i=0; i<pnodeCount; ++i)
     {
         node = Nodes->GetNode( i );
         if ( node->GetState() == State_Up)
@@ -141,7 +141,7 @@ bool CCommAccept::sendNodeInfoMPI( MPI_Comm interComm )
                     __LINE__);
     }
 
-    rc = Monitor->SendMPI((char *) nodeInfo, sizeof(nodeId_t)*cfgPNodes, 0,
+    rc = Monitor->SendMPI((char *) nodeInfo, sizeof(nodeId_t)*pnodeCount, 0,
                        MON_XCHNG_DATA, interComm);
     if ( rc != MPI_SUCCESS )
     {
@@ -169,18 +169,18 @@ bool CCommAccept::sendNodeInfoSock( int sockFd )
     TRACE_ENTRY;
     bool sentData = true;
 
-    int cfgPNodes = Monitor->GetNumNodes();
+    int pnodeCount = Nodes->GetPNodesCount();
 
     nodeId_t *nodeInfo;
-    size_t nodeInfoSize = (sizeof(nodeId_t) * cfgPNodes);
+    size_t nodeInfoSize = (sizeof(nodeId_t) * pnodeCount);
     nodeInfo = (nodeId_t *) new char[nodeInfoSize];
     int rc;
 
     CNode *node;
 
-    for (int i=0; i<cfgPNodes; ++i)
+    for (int i=0; i<pnodeCount; ++i)
     {
-        node = Nodes->GetNode( i );
+        node = Nodes->GetNodeByMap( i );
         if ( node->GetState() == State_Up)
         {
             strncpy(nodeInfo[i].nodeName, node->GetName(),
@@ -190,28 +190,15 @@ bool CCommAccept::sendNodeInfoSock( int sockFd )
             strncpy(nodeInfo[i].syncPort, node->GetSyncPort(),
                     sizeof(nodeInfo[i].syncPort));
             nodeInfo[i].pnid = node->GetPNid();
-            nodeInfo[i].creatorPNid = ( i == MyPNID) ? MyPNID : -1;
-
-            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-            {
-                trace_printf( "%s@%d - Node info for pnid=%d (%s)\n"
-                              "        CommPort=%s\n"
-                              "        SyncPort=%s\n"
-                              "        creatorPNid=%d\n"
-                            , method_name, __LINE__
-                            , nodeInfo[i].pnid
-                            , nodeInfo[i].nodeName
-                            , nodeInfo[i].commPort
-                            , nodeInfo[i].syncPort
-                            , nodeInfo[i].creatorPNid );
-            }
+            nodeInfo[i].creatorPNid = (nodeInfo[i].pnid == MyPNID) ? MyPNID : -1;
         }
         else
         {
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             {
-                trace_printf("%s@%d - No node info for pnid=%d (%s) node not up!\n",
-                             method_name, __LINE__, i, node->GetName());
+                trace_printf( "%s@%d - No nodeInfo[%d] for pnid=%d (%s) node not up!\n"
+                            , method_name, __LINE__
+                            , i, node->GetPNid(), node->GetName());
             }
 
             nodeInfo[i].pnid = -1;
@@ -224,16 +211,17 @@ bool CCommAccept::sendNodeInfoSock( int sockFd )
 
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
-        trace_printf("%s@%d - Sending port info to new monitor\n", method_name,
-                    __LINE__);
-        for (int i=0; i<cfgPNodes; i++)
+        trace_printf( "%s@%d - Sending port info to new monitor\n"
+                    , method_name, __LINE__);
+        for (int i=0; i<pnodeCount; i++)
         {
             trace_printf( "Port info for pnid=%d\n"
                           "        nodeInfo[%d].nodeName=%s\n"
                           "        nodeInfo[%d].commPort=%s\n"
                           "        nodeInfo[%d].syncPort=%s\n"
                           "        nodeInfo[%d].creatorPNid=%d\n"
-                        , i , i, nodeInfo[i].nodeName
+                        , nodeInfo[i].pnid
+                        , i, nodeInfo[i].nodeName
                         , i, nodeInfo[i].commPort
                         , i, nodeInfo[i].syncPort
                         , i, nodeInfo[i].creatorPNid );
@@ -537,14 +525,20 @@ void CCommAccept::processNewSock( int joinFd )
     
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
     {
-        trace_printf( "%s@%d - Accepted connection from node %d (%s), "
-                      "commPort=%s, syncPort=%s, creator=%d, "
-                      "creatorShellPid=%d:%d\n"
+        trace_printf( "%s@%d - Accepted connection from pnid=%d\n"
+                      "        myNodeInfo.nodeName=%s\n"
+                      "        myNodeInfo.commPort=%s\n"
+                      "        myNodeInfo.syncPort=%s\n"
+                      "        myNodeInfo.creatorPNid=%d\n"
+                      "        myNodeInfo.creator=%d\n"
+                      "        myNodeInfo.creatorShellPid=%d\n"
+                      "        myNodeInfo.creatorShellVerifier=%d\n"
                     , method_name, __LINE__
                     , nodeId.pnid
                     , nodeId.nodeName
                     , nodeId.commPort
                     , nodeId.syncPort
+                    , nodeId.creatorPNid
                     , nodeId.creator
                     , nodeId.creatorShellPid
                     , nodeId.creatorShellVerifier );
@@ -724,7 +718,7 @@ void CCommAccept::processNewSock( int joinFd )
 
         if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
         {
-            trace_printf( "%s@%d - Connected to new monitor for node %d\n",
+            trace_printf( "%s@%d - Connected to new monitor in node %d\n",
                           method_name, __LINE__, pnid );
         }
 

@@ -1163,18 +1163,21 @@ int Local_IO_To_Monitor::process_notice(struct message_def *pp_msg) {
         }
         break;
 
+    case MsgType_NodeAdded:
+    case MsgType_NodeChanged:
+    case MsgType_NodeDeleted:
     case MsgType_NodeDown:
+    case MsgType_NodeJoining:
     case MsgType_NodeQuiesce:
     case MsgType_NodePrepare:
     case MsgType_NodeUp:
-    case MsgType_NodeJoining:
     case MsgType_SpareUp:
     case MsgType_ProcessDeath:
+    case MsgType_ReintegrationError:
     case MsgType_Shutdown:
     case MsgType_TmRestarted:
     case MsgType_TmSyncAbort:
     case MsgType_TmSyncCommit:
-    case MsgType_ReintegrationError:
         if (cv_trace)
             trace_where_printf(WHERE,
                               "notice %d received\n",
@@ -1823,8 +1826,24 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
         lv_len = lv_preamble + sizeof(pp_msg->u.request.u.event_notice);
         break;
 
+    case MsgType_NodeAdded:
+        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.node_added);
+        break;
+
+    case MsgType_NodeChanged:
+        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.node_changed);
+        break;
+
+    case MsgType_NodeDeleted:
+        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.node_deleted);
+        break;
+
     case MsgType_NodeDown:
         lv_len = lv_preamble + sizeof(pp_msg->u.request.u.down);
+        break;
+
+    case MsgType_NodeJoining:
+        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.joining);
         break;
 
     case MsgType_NodePrepare:
@@ -1851,8 +1870,20 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
         lv_len = lv_preamble + sizeof(pp_msg->u.request.u.death);
         break;
 
+    case MsgType_ReintegrationError:
+        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.reintegrate);
+        break;
+
     case MsgType_Shutdown:
         lv_len = lv_preamble + sizeof(pp_msg->u.request.u.shutdown);
+        break;
+
+    case MsgType_SpareUp:
+        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.spare_up);
+        break;
+
+    case MsgType_TmRestarted:
+        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.tm_restart);
         break;
 
     case MsgType_TmSyncAbort:
@@ -1865,18 +1896,6 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
             lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.unsolicited_tm_sync);
         else
             lv_len = lv_preamble + sizeof(pp_msg->u.request.u.unsolicited_tm_sync);
-        break;
-
-    case MsgType_NodeJoining:
-        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.joining);
-        break;
-
-    case MsgType_SpareUp:
-        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.spare_up);
-        break;
-
-    case MsgType_ReintegrationError:
-        lv_len = lv_preamble + sizeof(pp_msg->u.request.u.reintegrate);
         break;
 
     case MsgType_Service:
@@ -1892,23 +1911,32 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
             case ReplyType_Get:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.get);
                 break;
+            case ReplyType_MonStats:
+                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.mon_info);
+                break;
+            case ReplyType_Mount:
+                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.mount);
+                break;
             case ReplyType_NewProcess:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.new_process);
                 break;
             case ReplyType_NodeInfo:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.node_info);
                 break;
-            case ReplyType_PNodeInfo:
-                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.pnode_info);
-                break;
-            case ReplyType_ProcessInfo:
-                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.process_info);
+            case ReplyType_NodeName:
+                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.nodename);
                 break;
             case ReplyType_Open:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.open);
                 break;
             case ReplyType_OpenInfo:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.open_info);
+                break;
+            case ReplyType_PNodeInfo:
+                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.pnode_info);
+                break;
+            case ReplyType_ProcessInfo:
+                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.process_info);
                 break;
             case ReplyType_Startup:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.startup_info);
@@ -1918,12 +1946,6 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
                 break;
             case ReplyType_TransInfo:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.trans_info);
-                break;
-            case ReplyType_Mount:
-                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.mount);
-                break;
-            case ReplyType_MonStats:
-                lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.mon_info);
                 break;
             case ReplyType_ZoneInfo:
                 lv_len = lv_preamble + sizeof(pp_msg->u.reply.u.zone_info);
@@ -1952,17 +1974,27 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
             case ReqType_Kill:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.kill);
                 break;
+            //   ReqType_MonStats: see default: below
             case ReqType_Mount:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.mount);
                 break;
             case ReqType_NewProcess:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.new_process);
                 break;
+            case ReqType_NodeAdd:
+                lv_len = lv_preamble + sizeof(pp_msg->u.request.u.node_add);
+                break;
+            case ReqType_NodeDelete:
+                lv_len = lv_preamble + sizeof(pp_msg->u.request.u.node_delete);
+                break;
             case ReqType_NodeDown:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.down);
                 break;
             case ReqType_NodeInfo:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.node_info);
+                break;
+            case ReqType_NodeName:
+                lv_len = lv_preamble + sizeof(pp_msg->u.request.u.nodename);
                 break;
             case ReqType_NodeUp:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.up);
@@ -1979,6 +2011,13 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
             case ReqType_OpenInfo:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.open_info);
                 break;
+            //TODO:
+            //case ReqType_PersistAdd:
+            //    lv_len = lv_preamble + sizeof(pp_msg->u.request.u.persist);
+            //    break;
+            //case ReqType_PersistDelete:
+            //    lv_len = lv_preamble + sizeof(pp_msg->u.request.u.persist);
+            //    break;
             case ReqType_PNodeInfo:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.pnode_info);
                 break;
@@ -1997,6 +2036,7 @@ int Local_IO_To_Monitor::size_of_msg( struct message_def *pp_msg, bool reply) {
             case ReqType_Startup:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.startup);
                 break;
+            //case ReqType_Stfsd:
             case ReqType_TmLeader:
                 lv_len = lv_preamble + sizeof(pp_msg->u.request.u.leader);
                 break;
@@ -2201,6 +2241,8 @@ const char * Local_IO_To_Monitor::msgTypes_[] = {
     "Change",
     "Close",
     "Event",
+    "NodeAdded",
+    "NodeDeleted",
     "NodeDown",
     "NodeJoining",
     "NodePrepare",
@@ -2209,13 +2251,14 @@ const char * Local_IO_To_Monitor::msgTypes_[] = {
     "Open",
     "ProcessCreated",
     "ProcessDeath",
+    "ReintegrationError",
     "Service",
-    "SpareUp",
     "Shutdown",
+    "SpareUp",
+    "TmRestarted",
     "TmSyncAbort",
     "TmSyncCommit",
     "UnsolicitedMessage",
-    "ReintegrationError",
     "invalid"
 };
 
@@ -2227,16 +2270,22 @@ const char * Local_IO_To_Monitor::reqTypes_[] = {
     "Exit",
     "Get",
     "Kill",
+    "MonStats",
     "Mount",
     "NewProcess",
+    "NodeAdd",
+    "NodeDelete",
     "NodeDown",
     "NodeInfo",
+    "NodeName",
     "NodeUp",
     "Notice",
     "Notify",
     "Open",
     "OpenInfo",
-    "PhysicalNodeInfo",
+    "PersistAdd",
+    "PersistDelete",
+    "PNodeInfo",
     "ProcessInfo",
     "ProcessInfoCont",
     "Set",
@@ -2247,7 +2296,6 @@ const char * Local_IO_To_Monitor::reqTypes_[] = {
     "TmReady",
     "TmSync",
     "TransInfo",
-    "MonStats",
     "ZoneInfo",
     "invalid"
 };
@@ -2256,18 +2304,19 @@ const char * Local_IO_To_Monitor::replyTypes_[] = {
     "Generic",
     "Dump",
     "Get",
+    "MonStats",
+    "Mount",
     "NewProcess",
     "NodeInfo",
-    "PhysicalNodeInfo",
-    "ProcessInfo",
+    "NodeName",
     "Open",
     "OpenInfo",
-    "TmSync",
-    "TransInfo",
+    "PNodeInfo",
+    "ProcessInfo",
     "Stfsd",
     "Startup",
-    "Mount",
-    "MonStats",
+    "TmSync",
+    "TransInfo",
     "ZoneInfo",
     "invalid"
 };

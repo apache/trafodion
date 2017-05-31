@@ -328,6 +328,8 @@ static int do_cli_open(JNIEnv *j_env, SB_Phandle_Type *pp_phandle, int *pp_oid) 
     int                       lv_hash;
     int                       lv_scount;
 
+    if (gv_verbose)
+         printf("cli: do_cli_open() pid=%d\n", getpid());
     lv_ferr = do_get_servers(&lp_pi, &lv_count);
     if (lv_ferr == XZFIL_ERR_OK) {
         lv_scount = do_get_servers2(lp_pi, lv_count, MAX_P, lp_snames);
@@ -417,13 +419,13 @@ static int do_get_servers(MS_Mon_Process_Info_Type **ppp_pi,
     int lv_ferr;
     int lv_tmpcount;
 
-    lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_Generic,
+    lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_TMID,
                                             pp_count,
                                             0,      // max
                                             NULL);  // info
     if (lv_ferr == XZFIL_ERR_OK) {
         *ppp_pi = new MS_Mon_Process_Info_Type[*pp_count];
-        lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_Generic,
+        lv_ferr = msg_mon_get_process_info_type(MS_ProcessType_TMID,
                                                 &lv_tmpcount,
                                                 *pp_count, // max
                                                 *ppp_pi);  // info
@@ -448,6 +450,8 @@ static int do_get_servers2(MS_Mon_Process_Info_Type  *pp_pi,
     lv_scount = 0;
     for (lv_inx = 0; lv_inx < pv_count; lv_inx++) {
         lp_sname = pp_pi[lv_inx].process_name;
+        if (gv_verbose)
+            printf("cli(%d): sname=%s\n", getpid(), lp_sname?lp_sname:"");
         if (memcmp(lp_sname, "$TSID", 5) == 0) {
             if (isdigit(lp_sname[5])) {
                 if (gv_verbose)

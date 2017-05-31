@@ -195,7 +195,7 @@ bool CExtOpenReq::prepare()
     }
 
     if ((msg_->u.request.u.open.nid < 0) ||
-        (msg_->u.request.u.open.nid >= Nodes->NumberLNodes))
+        (msg_->u.request.u.open.nid >= Nodes->GetLNodesConfigMax()))
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "%s, Invalid Node ID (%d)\n", method_name,

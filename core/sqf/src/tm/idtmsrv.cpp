@@ -399,8 +399,10 @@ void do_mon_msg(BMS_SRE *pp_sre, bool *pp_done) {
                              (char *) &lv_mon_msg,      // reqdata
                              (int) sizeof(lv_mon_msg)); // bytecount
     assert(lv_ferr == XZFIL_ERR_OK);
-    if (lv_mon_msg.type == MS_MsgType_Shutdown)
+    if (lv_mon_msg.type == MS_MsgType_Shutdown) {
+        printf("%s: received shutdown message\n", ga_name);
         *pp_done = true;
+    }
     if (gv_verbose)
         printf("srv: received mon message\n");
     do_reply(pp_sre, NULL, 0, 0);

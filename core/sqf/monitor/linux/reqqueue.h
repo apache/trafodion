@@ -326,6 +326,32 @@ private:
     void populateRequestString( void );
 };
 
+class CExtNodeAddReq: public CExternalReq
+{
+public:
+    CExtNodeAddReq (reqQueueMsg_t msgType, int pid,
+                     struct message_def *msg );
+    virtual ~CExtNodeAddReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+
+class CExtNodeDeleteReq: public CExternalReq
+{
+public:
+    CExtNodeDeleteReq (reqQueueMsg_t msgType, int pid,
+                     struct message_def *msg );
+    virtual ~CExtNodeDeleteReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+};
+
 class CExtNodeDownReq: public CExternalReq
 {
 public:
@@ -437,7 +463,8 @@ class CExtProcInfoBase: public CExternalReq
     int ProcessInfo_BuildReply(CProcess *process,
                                struct message_def * msg,
                                PROCESSTYPE type,
-                               bool getDataForAllNodes);
+                               bool getDataForAllNodes,
+                               char *pattern);
 };
 
 class CExtProcInfoReq: public CExtProcInfoBase
@@ -853,7 +880,11 @@ private:
 class CIntNodeNameReq: public CInternalReq
 {
 public:
-    CIntNodeNameReq( const char *current_name, const char *new_name );
+    CIntNodeNameReq( int req_nid
+                   , int req_pid
+                   , Verifier_t req_verifier
+                   , const char *current_name
+                   , const char *new_name );
     virtual ~CIntNodeNameReq();
 
     void performRequest();
@@ -861,8 +892,60 @@ public:
 private:
     void populateRequestString( void );
 
+    int req_nid_;
+    int req_pid_;
+    Verifier_t req_verifier_;
     string current_name_;
     string new_name_;
+};
+
+class CIntNodeAddReq: public CInternalReq
+{
+public:
+    CIntNodeAddReq( int req_nid
+                  , int req_pid
+                  , Verifier_t req_verifier
+                  , char *nodeName
+                  , int  firstCore
+                  , int  lastCore
+                  , int  processors
+                  , int  roles
+                  );
+    virtual ~CIntNodeAddReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int req_nid_;
+    int req_pid_;
+    Verifier_t req_verifier_;
+    char nodeName_[MPI_MAX_PROCESSOR_NAME];
+    int  first_core_;
+    int  last_core_;
+    int  processors_;
+    int  roles_;
+};
+
+class CIntNodeDeleteReq: public CInternalReq
+{
+public:
+    CIntNodeDeleteReq( int req_nid
+                     , int req_pid
+                     , Verifier_t req_verifier
+                     , int pnid );
+    virtual ~CIntNodeDeleteReq();
+
+    void performRequest();
+
+private:
+    void populateRequestString( void );
+
+    int req_nid_;
+    int req_pid_;
+    Verifier_t req_verifier_;
+    int  pnid_;
 };
 
 class CIntDownReq: public CInternalReq
@@ -1042,8 +1125,24 @@ class CReqQueue
     void enqueueUniqStrReq( struct uniqstr_def *uniqStrDef );
     void enqueueChildDeathReq ( pid_t pid );
     void enqueueAttachedDeathReq ( pid_t pid );
+    void enqueueNodeAddReq( int req_nid
+                          , int req_pid
+                          , Verifier_t req_verifier
+                          , char *node_name
+                          , int firstCore
+                          , int lastCore
+                          , int processors
+                          , int roles );
+    void enqueueNodeDeleteReq( int req_nid
+                             , int req_pid
+                             , Verifier_t req_verifier
+                             , int pnid );
     void enqueueDownReq( int pnid );
-    void enqueueNodeNameReq( char *current_name, char *new_name);
+    void enqueueNodeNameReq( int req_nid
+                           , int req_pid
+                           , Verifier_t req_verifier
+                           , char *current_name
+                           , char *new_name);
     void enqueueSoftNodeDownReq( int pnid );
     void enqueueSoftNodeUpReq( int pnid );
     void enqueueShutdownReq( int level );
@@ -1129,23 +1228,23 @@ private:
       RQIG   CIntSnapshotReq
       RQIH   CIntShutdownReq
       RQII   CIntProcInitReq
-      RQIJ   (unused)
+      RQIJ   CIntNodeAddReq
       RQIK   CIntKillReq
       RQIL   CIntCloneProcReq
-      RQIM   (unused)
+      RQIM   CIntActivateSpareReq
       RQIN   CIntNewProcReq
       RQIO   CIntOpenReq
       RQIP   CIntDownReq
       RQIQ   CIntUpReq
       RQIR   CIntReviveReq
       RQIS   CIntSetReq
-      RQIT   (unused)
+      RQIT   CIntNodeDeleteReq
       RQIU   CQuiesceReq
-      RQIV   (unused)
+      RQIV   CIntTmReadyReq
       RQIW   CIntCreatePrimitiveReq
       RQIX   CIntSoftNodeDownReq
       RQIY   CIntSoftNodeUpReq
-      RQIZ   (unused)
+      RQIZ   CIntNodeNameReq
 
    CExternalReq:
       RQEA   CExtAttachStartupReq
@@ -1171,8 +1270,8 @@ private:
       RQET   CExtTmLeaderReq
       RQEV   CExtTmSyncReq
       RQEW   CExtZoneInfoReq
-      RQEX   (unused)
-      RQEY   (unused)
+      RQEX   CExtNodeAddReq
+      RQEY   CExtNodeDeleteReq
       RQEZ   CExtNodeNameReq
       RQE_   CExtNullReq
 

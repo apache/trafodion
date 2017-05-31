@@ -158,6 +158,7 @@ CProcess::CProcess (CProcess * parent, int nid, int pid, PROCESSTYPE type,
     , program_()
     , pathStrId_(pathStrId)
     , ldpathStrId_(ldpathStrId)
+    , firstInstance_(true)
     , cmpOrEsp_(false)
     , sqRoot_()
     , fd_stdin_(-1)
@@ -203,16 +204,17 @@ CProcess::CProcess (CProcess * parent, int nid, int pid, PROCESSTYPE type,
             break;
         case ProcessType_Watchdog:
         case ProcessType_PSD:
-            Persistent = true;
             Priority = priority;
             break;
         case ProcessType_AMP:
         case ProcessType_Backout:
         case ProcessType_VolumeRecovery:
         case ProcessType_MXOSRVR:
+        case ProcessType_PERSIST:
         case ProcessType_SMS:
         case ProcessType_SPX:
         case ProcessType_SSMP:
+        case ProcessType_TMID:
         case ProcessType_Generic:
             Priority = (priority<APP_BASE_NICE?APP_BASE_NICE:priority);
             break;
@@ -221,6 +223,22 @@ CProcess::CProcess (CProcess * parent, int nid, int pid, PROCESSTYPE type,
             snprintf(la_buf, sizeof(la_buf),
                      "[CProcess::CProcess], Invalid process type!\n");
             mon_log_write(MON_PROCESS_PROCESS_1, SQ_LOG_ERR, la_buf);
+    }
+
+    switch (Type)
+    {
+        case ProcessType_DTM:
+        case ProcessType_PSD:
+        case ProcessType_PERSIST:
+        case ProcessType_SMS:
+        case ProcessType_SPX:
+        case ProcessType_SSMP:
+        case ProcessType_TMID:
+        case ProcessType_Watchdog:
+            Persistent = true;
+            break;
+        default:
+            break;
     }
 
     if (parent)
@@ -653,10 +671,6 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
                                        bool system_messages, bool preclone,
                                        struct timespec *creation_time)
 {
-    char keyname[MAX_KEY_NAME];
-    CConfigGroup *group;
-    CConfigKey *key;
-
     const char method_name[] = "CProcess::CompleteProcessStartup";
     TRACE_ENTRY;
 
@@ -773,18 +787,6 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
         }
     }
 
-    // Check if process is configured as persistent
-    group = Config->GetGroup(Name);
-    if (group)
-    {
-        strcpy(keyname,"PERSIST_ZONES");
-        key = group->GetKey(keyname);
-        if (key)
-        {
-            Persistent = true;
-        }
-    }
- 
     // some special handling for native processes
     if ( !Clone )
     {
@@ -821,6 +823,38 @@ void CProcess::CompleteProcessStartup (char *port, int os_pid, bool event_messag
         {
             // Tell remote DTMs that this DTM was restarted
             Monitor->SoftNodeUpPrepare( MyPNID );
+        }
+    }
+
+    TRACE_EXIT;
+}
+
+void CProcess::CompleteRequest( int status )
+{
+    struct message_def *msg;
+
+    const char method_name[] = "CProcess::CompleteRequest";
+    TRACE_ENTRY;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
+       trace_printf("%s@%d - Process %s (%d,%d:%d), status %d\n",
+                    method_name, __LINE__, Name, Nid, Pid, Verifier, status);
+
+    if ( !Clone )
+    {
+        msg = parentContext();
+        if ( msg )
+        { // reply pending, so send reply
+            msg->noreply = false;
+            msg->u.reply.type = ReplyType_Generic;
+            msg->u.reply.u.generic.nid = Nid;
+            msg->u.reply.u.generic.pid = Pid;
+            msg->u.reply.u.generic.verifier = Verifier;
+            msg->u.reply.u.generic.process_name[0] = '\0';
+            msg->u.reply.u.generic.return_code = status;
+    
+            CRequest::lioreply (msg, Pid);
+            parentContext( NULL );
         }
     }
 
@@ -2689,6 +2723,7 @@ void CProcess::Exit( CProcess *parent )
             case ProcessType_VolumeRecovery:
             case ProcessType_SPX:
             case ProcessType_PSD:
+            case ProcessType_PERSIST:
                 // No special handling needed on exit
                 break;
             default:
@@ -2722,7 +2757,7 @@ void CProcess::Exit( CProcess *parent )
         {
             // Send local SPX this SPX's death message
             CLNode *lnode = MyNode->GetFirstLNode();
-            for ( ; lnode; lnode = lnode->GetNext() )
+            for ( ; lnode; lnode = lnode->GetNextP() )
             {
                 CProcess *spxProcess = lnode->GetProcessLByType( ProcessType_SPX );
                 if ( spxProcess && MyNode->GetState() == State_Up )
@@ -2761,7 +2796,7 @@ void CProcess::Exit( CProcess *parent )
         {
             // Send local DTMs this DTM's death message
             CLNode *lnode = MyNode->GetFirstLNode();
-            for ( ; lnode; lnode = lnode->GetNext() )
+            for ( ; lnode; lnode = lnode->GetNextP() )
             {
                 CProcess *tmProcess = lnode->GetProcessLByType( ProcessType_DTM );
                 if ( tmProcess && MyNode->GetState() == State_Up )
@@ -5367,184 +5402,257 @@ bool CProcessContainer::Open_Process (int nid, int pid, Verifier_t verifier, int
     return status;
 }
 
-bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNode )
+//
+// Persistent process re-creation logic:
+//
+// o Process object is target of re-create
+// o Process object type determines persist configuration template
+// o Persist configuration template determines re-creation rules
+//
+//  Re-creation rules:
+//
+//  PROCESS_NAME format defines (%nid+/%nid) node re-creation scope
+//          $<prefix>%nid+ or $<prefix>%nid or $<name>
+//
+//  PERSIST_ZONES format defines (%zid+/%zid) rules of re-creation within scope
+//
+//  (%nid+) Nid_ALL = one process in each node
+//              Zid_ALL       = n/a
+//              Zid_RELATIVE  = recreate only in initial <nid> assigned
+//  (%nid ) Nid_RELATIVE = one process in cluster
+//              Zid_ALL       = recreate in current up <nid> or next up <nid>
+//              Zid_RELATIVE  = recreate only in initial <nid> assigned (non-HA)
+//  (     ) Nid_Undefined = one process in cluster
+//              Zid_ALL       = recreate in current up <nid> or next up <nid>
+//              Zid_RELATIVE  = recreate only in initial <nid> assigned (non-HA)
+//
+bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNid )
 {
-    bool successful = false;
-    bool restart = false;
-    char ch;
-    char *ptr;
-    char *str;
-    char keyname[MAX_KEY_NAME];
-    char value[MAX_VALUE_SIZE];
-    int nid;
-    int max_retries = 3;
-    int retry_max_time = 1;
-    CNode *old_node;
-    CNode *new_node;
-    CLNode *old_lnode;
-    CLNode *new_lnode;
-    CProcess *parent = NULL;
-    CConfigGroup *group;
-    CConfigKey *key;
-
     const char method_name[] = "CProcessContainer::RestartPersistentProcess";
     TRACE_ENTRY;
 
-    // if 1st time retrying to restart process
-    if (process->GetPersistentCreateTime() == 0)
-    {
-        process->SetPersistentCreateTime ( time(NULL) );
-    }
+    bool successful = false;
+    bool restart = false;
+    int nid = -1;
+    int max_retries = 3;
+    int retry_max_time = 1;
+    CNode *currenNode;
+    CNode *newNode;
+    CLNode *currentLNode;
+    CLNode *newLNode;
+    CProcess *parent = NULL;
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+    CPersistConfig *persistConfig = NULL;
 
-    // get the configured retry values
-    group = Config->GetGroup(process->GetName());
-    if (group)
+    assert(clusterConfig != NULL);
+
+    persistConfig = clusterConfig->GetPersistConfig( process->GetType()
+                                                   , process->GetName()
+                                                   , process->GetNid() );
+    if (persistConfig)
     {
-        strcpy(keyname,"PERSIST_RETRIES");
-        key = group->GetKey(keyname);
-        if (key)
-        {
-            strcpy(value,key->GetValue());
-            for (str=ptr=value; *ptr; ptr++)
-            {
-                if (*ptr == '\0' || *ptr == ',')
-                {
-                    if ( *ptr )
-                    {
-                        *ptr = '\0';
-                        max_retries = atoi(str);
-                        retry_max_time = atoi(++ptr);
-                    }
-                    else
-                    {
-                        max_retries = atoi(str);
-                        retry_max_time = 1;
-                    }
-                    break;
-                }
-            }
-        }
-        else
-        {
-            max_retries = 3;
-            retry_max_time = 1;
-        }
+        max_retries = persistConfig->GetPersistRetries();
+        retry_max_time = persistConfig->GetPersistWindow();
     }
     else
     {
-        // Can't find group for this process
-        // ERROR -- we should not be able to get here
-        if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-            trace_printf("%s@%d - Can't find registry group for process %s\n"
-                         , method_name, __LINE__, process->GetName());
-
         char buf[MON_STRING_BUF_SIZE];
-    
-        snprintf(buf, sizeof(buf), "[%s], Persistent process %s not "
-                 "restarted because the process registry group is "
-                 "missing.\n", method_name, process->GetName());
+        snprintf( buf, sizeof(buf)
+                , "[%s], Persistent process %s not "
+                  "restarted because the persist configuration is "
+                  "missing.\n"
+                , method_name
+                , process->GetName() );
         mon_log_write(MON_PROCESS_PERSIST_2, SQ_LOG_ERR, buf);
-
         return false;
+    }
+    
+    // if 1st time retrying to restart process
+    if (process->GetPersistentCreateTime() == 0)
+    {
+        process->SetFirstInstance(false);
+        process->SetPersistentCreateTime ( time(NULL) );
     }
 
     if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-       trace_printf("%s@%d" " - Persistent process retries = " "%d" " time limit = " "%d"", down nid=%d\n", method_name, __LINE__, max_retries, retry_max_time,downNode);
+       trace_printf( "%s@%d - Persistent process retries = %d, "
+                     "time limit = %d, down nid=%d\n"
+                   , method_name, __LINE__
+                   , max_retries, retry_max_time, downNid);
 
     // get the parent process if any
     if (process->GetParentNid() != -1 && process->GetParentPid() != -1)
     {
-        parent = Nodes->GetLNode(process->GetParentNid())->GetProcessL(process->GetParentPid());
+        parent = Nodes->GetLNode( process->GetParentNid())->GetProcessL(process->GetParentPid() );
     }
 
-    // check if we need to do something because the node is down and 
-    // spare node is not activating
-    old_lnode = Nodes->GetLNode (process->GetNid());
-    if ( (downNode != -1 && !old_lnode->GetNode()->IsSpareNode()) || old_lnode->GetState() == State_Down )
+    currentLNode = Nodes->GetLNode( process->GetNid() );
+    newLNode     = Nodes->GetLNodeNext( process->GetNid() );
+    
+    switch (persistConfig->GetProcessNameNidFormat())
     {
-        // We need to find a new node for the process
-        strcpy(keyname,"PERSIST_ZONES");
-        key = group->GetKey(keyname);
-        if (key)
+    case Nid_ALL:       // one process in each <nid>
+        switch (persistConfig->GetZoneZidFormat())
         {
-            // See if our node is the next restart node.
-            strcpy(value,key->GetValue());
-            str=ptr=value;
-            do
+        case Zid_ALL:       // n/a
+            char buf[MON_STRING_BUF_SIZE];
+            snprintf( buf, sizeof(buf)
+                    , "[%s], Persistent process %s not "
+                      "restarted because the persist configuration is "
+                      "inconsistent for key %s.\n"
+                    , method_name
+                    , process->GetName()
+                    , persistConfig->GetPersistPrefix() );
+            mon_log_write(MON_PROCESS_PERSIST_2, SQ_LOG_ERR, buf);
+            return false;
+        case Zid_RELATIVE:  // recreate only in initial <nid> assigned
+        default:
+            // Is this a node down and node going down is process' node?
+            if ( downNid != -1 && currentLNode->GetNid() == downNid )
             {
-                ptr++;
-                if (*ptr == '\0' || *ptr == ',')
+                if (trace_settings & 
+                    (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                    trace_printf( "%s@%d - original node is not available, nid=%d, downNid=%d\n"
+                                , method_name, __LINE__
+                                , currentLNode->GetNid()
+                                , downNid );
+            }
+            else
+            {
+                if ( currentLNode->GetState() == State_Up)
                 {
-                    ch = *ptr;
-                    *ptr = '\0';
-                    nid = atoi(str);
-                    *ptr = ch;
-                    new_lnode = Nodes->GetLNode (nid);
-                    if (new_lnode && (new_lnode->GetState() == State_Up && new_lnode->GetNid() != downNode ) )
+                    if (trace_settings & 
+                        (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
                     {
-                        if (MyNode->IsMyNode(nid))
-                        {
-                            // OK we need to move the process to our node
-                            if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-                                trace_printf("%s@%d" " - Moving process from nid=" "%d" " to new nid=" "%d""\n", method_name, __LINE__, process->GetNid(), nid);
-                            old_node = old_lnode->GetNode();
-                            old_node->RemoveFromList(process);
-                            process->SetNid ( nid );
-                            process->SetPid ( -1 );
-                            new_node = new_lnode->GetNode();
-                            new_node->AddToList( process );
-                            process->SetClone( false );
-                            // Replicate the clone to other nodes
-                            CReplClone *repl = new CReplClone(process);
-                            Replicator.addItem(repl);
-                            restart = true;
-                        }
-                        else
-                        {
-                            if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-                                trace_printf("%s@%d" " - Not moving process from nid=" "%d" " to nid=" "%d""\n", method_name, __LINE__, process->GetNid(), nid);
-                        }
-                        break;
+                        trace_printf( "%s@%d - original node is available, nid=%d\n"
+                                    , method_name, __LINE__, process->GetNid());
+                    }
+
+                    if ( MyNode->IsMyNode(process->GetNid()) )
+                    {
+                        restart = true;
+                    }
+                }
+                else
+                {
+                    if (trace_settings & 
+                        (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                        trace_printf( "%s@%d - original node is not available, nid=%d, downNid=%d\n"
+                                    , method_name, __LINE__
+                                    , currentLNode->GetNid()
+                                    , downNid );
+                }
+            }
+        } // switch
+        break;
+    case Nid_RELATIVE:  // one process in cluster
+    case Nid_Undefined: // one process in cluster
+    default:
+        switch (persistConfig->GetZoneZidFormat())
+        {
+        case Zid_ALL:       // recreate in current up <nid> or next up <nid>
+            // check if we need to do something because the node is down and 
+            // spare node is not activating
+            if ((downNid != -1 && !currentLNode->GetNode()->IsSpareNode()) ||
+                 currentLNode->GetState() == State_Down )
+            {
+                nid = (newLNode) ? newLNode->GetNid() : -1;
+                if ( newLNode && 
+                    (newLNode->GetState() == State_Up && 
+                     newLNode->GetNid() != downNid ) )
+                {
+                    if (MyNode->IsMyNode(nid))
+                    {
+                        // OK we need to move the process to our node
+                        if (trace_settings & 
+                            (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                            trace_printf( "%s@%d - Moving process from nid=%d to new nid=%d\n"
+                                        , method_name, __LINE__
+                                        , process->GetNid(), nid);
+                        currenNode = currentLNode->GetNode();
+                        currenNode->RemoveFromList(process);
+                        process->SetNid ( nid );
+                        process->SetPid ( -1 );
+                        newNode = newLNode->GetNode();
+                        newNode->AddToList( process );
+                        process->SetClone( false );
+                        // Replicate the clone to other nodes
+                        CReplClone *repl = new CReplClone(process);
+                        Replicator.addItem(repl);
+                        restart = true;
                     }
                     else
                     {
-                        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-                           trace_printf("%s@%d" " - Next possible node is not available, nid=" "%d" "\n", method_name, __LINE__, nid);
+                        if (trace_settings & 
+                            (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                            trace_printf( "%s@%d - Not moving process from nid=%d to nid=%d""\n"
+                                        , method_name, __LINE__
+                                        , process->GetNid(), nid);
                     }
-                    if ( *ptr ) str = &ptr[1];
+                }
+                else
+                {
+                    if (trace_settings & 
+                        (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                       trace_printf( "%s@%d - Next possible node is not available, nid=%d\n"
+                                    , method_name, __LINE__, nid);
                 }
             }
-            while ( *ptr );
-        }
-        else
-        {
-            // Can't find key for this process
-            // ERROR -- we should not be able to get here
-            if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
-                trace_printf("%s@%d - Can't find PERSIST_ZONES key in "
-                             "registry for process %s\n", method_name,
-                             __LINE__, process->GetName());
+            else
+            {
+                if (trace_settings & 
+                    (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                    trace_printf( "%s@%d - original node is available, nid=%d\n"
+                                , method_name, __LINE__, process->GetNid());
 
-            char buf[MON_STRING_BUF_SIZE];
+                if ( MyNode->IsMyNode(process->GetNid()) )
+                {
+                    restart = true;
+                }
+            }
+            break;
+        case Zid_RELATIVE:  // recreate only in initial <nid> assigned (non-HA)
+        default:
+            // Is this a node down and node going down is process' node?
+            if ( downNid != -1 && currentLNode->GetNid() == downNid )
+            {
+                if (trace_settings & 
+                    (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                    trace_printf( "%s@%d - original node is not available, nid=%d, downNid=%d\n"
+                                , method_name, __LINE__
+                                , currentLNode->GetNid()
+                                , downNid );
+            }
+            else
+            {
+                if ( currentLNode->GetState() == State_Up)
+                {
+                    if (trace_settings & 
+                        (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                    {
+                        trace_printf( "%s@%d - original node is available, nid=%d\n"
+                                    , method_name, __LINE__, process->GetNid());
+                    }
+
+                    if ( MyNode->IsMyNode(process->GetNid()) )
+                    {
+                        restart = true;
+                    }
+                }
+                else
+                {
+                    if (trace_settings & 
+                        (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
+                        trace_printf( "%s@%d - original node is not available, nid=%d, downNid=%d\n"
+                                    , method_name, __LINE__
+                                    , currentLNode->GetNid()
+                                    , downNid );
+                }
+            }
+        }
+        break;
+    }
     
-            snprintf(buf, sizeof(buf), "[%s], Persistent process %s not "
-                     "restarted because the PERSIST_ZONES registry key is "
-                     "missing.\n", method_name, process->GetName());
-            mon_log_write(MON_PROCESS_PERSIST_3, SQ_LOG_ERR, buf);
-
-            return false;
-        }
-    }
-    else
-    {
-        if (trace_settings & (TRACE_SYNC_DETAIL | TRACE_REQUEST_DETAIL | TRACE_PROCESS_DETAIL))
-            trace_printf("%s@%d" " - original node is available, nid=" "%d" "\n", method_name, __LINE__, process->GetNid());
-        if ( MyNode->IsMyNode(process->GetNid()) )
-        {
-            restart = true;
-        }
-    }
-
     if ( Nodes->IsShutdownActive() )
     {
         if (trace_settings & (TRACE_SYNC | TRACE_REQUEST | TRACE_PROCESS))
@@ -5586,6 +5694,9 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNod
                     mon_log_write(MON_PROCESS_PERSIST_1, SQ_LOG_INFO, buf);
 
                     if ( process->GetType() == ProcessType_DTM ||
+                         process->GetType() == ProcessType_PSD ||
+                         process->GetType() == ProcessType_TMID ||
+                         process->GetType() == ProcessType_Watchdog ||
                          process->GetType() == ProcessType_SMS )
                     {
                         if ( process->GetType() == ProcessType_DTM )
@@ -5652,7 +5763,7 @@ bool CProcessContainer::RestartPersistentProcess( CProcess *process, int downNod
                     snprintf( buf, sizeof(buf)
                             , "[%s], DTM (%s) persistent restart failed, Node %s going down\n"
                             , method_name, process->GetName(), MyNode->GetName());
-                    mon_log_write(MON_PROCESS_PERSIST_5, SQ_LOG_INFO, buf);
+                    mon_log_write(MON_PROCESS_PERSIST_6, SQ_LOG_INFO, buf);
 
                     snprintf( buf, sizeof(buf),
                               "DTM (%s) persistent restart failed, Node %s going down\n",

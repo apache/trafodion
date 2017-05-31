@@ -376,6 +376,9 @@ typedef enum {
     MS_MsgType_Change = 1,
     MS_MsgType_Close,
     MS_MsgType_Event,
+    MS_MsgType_NodeAdded,
+    MS_MsgType_NodeChanged,
+    MS_MsgType_NodeDeleted,
     MS_MsgType_NodeDown,
     MS_MsgType_NodeJoining,
     MS_MsgType_NodePrepare,
@@ -384,14 +387,14 @@ typedef enum {
     MS_MsgType_Open,
     MS_MsgType_ProcessCreated,
     MS_MsgType_ProcessDeath,
+    MS_MsgType_ReintegrationError,
     MS_MsgType_Service,
-    MS_MsgType_SpareUp,
     MS_MsgType_Shutdown,
+    MS_MsgType_SpareUp,
     MS_MsgType_TmRestarted,
     MS_MsgType_TmSyncAbort,
     MS_MsgType_TmSyncCommit,
-    MS_MsgType_UnsolicitedMessage,
-    MS_MsgType_ReintegrationError
+    MS_MsgType_UnsolicitedMessage
 } MS_Mon_MSGTYPE;
 typedef enum {
     MS_ReqType_Close = 1,
@@ -400,15 +403,21 @@ typedef enum {
     MS_ReqType_Exit,
     MS_ReqType_Get,
     MS_ReqType_Kill,
+    MS_ReqType_MonStats,
     MS_ReqType_Mount,
     MS_ReqType_NewProcess,
+    MS_ReqType_NodeAdd,
+    MS_ReqType_NodeDelete,
     MS_ReqType_NodeDown,
     MS_ReqType_NodeInfo,
+    MS_ReqType_NodeName,
     MS_ReqType_NodeUp,
     MS_ReqType_Notice,
     MS_ReqType_Notify,
     MS_ReqType_Open,
     MS_ReqType_OpenInfo,
+    MS_ReqType_PersistAdd,
+    MS_ReqType_PersistDelete,
     MS_ReqType_PNodeInfo,
     MS_ReqType_ProcessInfo,
     MS_ReqType_ProcessInfoCont,
@@ -420,9 +429,7 @@ typedef enum {
     MS_ReqType_TmReady,
     MS_ReqType_TmSync,
     MS_ReqType_TransInfo,
-    MS_ReqType_MonStats,
-    MS_ReqType_ZoneInfo,
-    MS_ReqType_TmRestarted
+    MS_ReqType_ZoneInfo
 } MS_Mon_REQTYPE;
 typedef enum {
     MS_ProcessType_Undefined = 0,
@@ -438,7 +445,9 @@ typedef enum {
     MS_ProcessType_SPX,
     MS_ProcessType_SSMP,
     MS_ProcessType_PSD,
-    MS_ProcessType_SMS
+    MS_ProcessType_SMS,
+    MS_ProcessType_TMID,
+    MS_ProcessType_PERSIST
 } MS_Mon_PROCESSTYPE;
 struct MS_Mon_Change_def {
     MS_Mon_ConfigType type;
@@ -467,6 +476,33 @@ struct MS_Mon_NewProcess_Notice_def {
     char            process_name[MS_MON_MAX_PROCESS_NAME];
     int             ferr; // return_code;
 };
+
+struct MS_Mon_NodeAdded_def
+{
+    int  nid;
+    int  zid;
+    char node_name[MS_MON_MAX_PROCESSOR_NAME];
+};
+
+struct MS_Mon_NodeChanged_def
+{
+    int  nid;
+    int  zid;
+    int  pnid;
+    char node_name[MS_MON_MAX_PROCESSOR_NAME];
+    int  first_core;
+    int  last_core;
+    int  processors;
+    int  roles;
+};
+
+struct MS_Mon_NodeDeleted_def
+{
+    int  nid;
+    int  zid;
+    char node_name[MS_MON_MAX_PROCESSOR_NAME];
+};
+
 struct MS_Mon_NodeDown_def {
     int  nid;
     char node_name[MS_MON_MAX_PROCESSOR_NAME];
@@ -567,6 +603,9 @@ typedef struct MS_Mon_Msg {
         struct MS_Mon_TmSyncNotice_def        tmsync;
         struct MS_Mon_NodeUp_def              up;
         struct MS_Mon_TmRestarted_def         tmrestarted;        
+        struct MS_Mon_NodeAdded_def           added;
+        struct MS_Mon_NodeChanged_def         changed;
+        struct MS_Mon_NodeDeleted_def         deleted;
     } u;
 } MS_Mon_Msg;
 typedef struct MS_Mon_Open_Comp_Type {

@@ -107,9 +107,7 @@ function start_qmm
   # construct sqshell script
   cat > $qmmscr <<EOF
     sqshell -a <<eof
-    set  {process \\\$$qmmName} PERSIST_RETRIES=10,60
-    set  {process \\\$$qmmName} PERSIST_ZONES=0
-    exec {name \\\$$qmmName, nid 0, nowait, out stdout_$qmmName} tdm_arkqmm
+    persist exec QMN
     exit
 eof
 EOF

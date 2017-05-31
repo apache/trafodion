@@ -3609,13 +3609,11 @@ void msg_mon_init() {
 
     SB_util_static_assert(static_cast<int>(MS_Mon_State_Unknown) ==
                           static_cast<int>(State_Unknown)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_Mon_State_Initializing) ==
-                          static_cast<int>(State_Initializing)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_Mon_State_Takeover) ==
+                          static_cast<int>(State_Takeover)); // sw fault
 
     SB_util_static_assert(static_cast<int>(MS_Mon_ShutdownLevel_Undefined) ==
                           static_cast<int>(ShutdownLevel_Undefined)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_Mon_ShutdownLevel_Normal) ==
-                          static_cast<int>(ShutdownLevel_Normal)); // sw fault
     SB_util_static_assert(static_cast<int>(MS_Mon_ShutdownLevel_Abrupt) ==
                           static_cast<int>(ShutdownLevel_Abrupt)); // sw fault
 
@@ -3631,8 +3629,8 @@ void msg_mon_init() {
 
     SB_util_static_assert(static_cast<int>(MS_MsgType_Change) ==
                           static_cast<int>(MsgType_Change)); // sw fault
-    SB_util_static_assert(static_cast<int>(MS_MsgType_ReintegrationError) ==
-                          static_cast<int>(MS_MsgType_ReintegrationError)); // sw fault
+    SB_util_static_assert(static_cast<int>(MS_MsgType_UnsolicitedMessage) ==
+                          static_cast<int>(MsgType_UnsolicitedMessage)); // sw fault
 
     SB_util_static_assert(static_cast<int>(MS_ReqType_Close) ==
                           static_cast<int>(ReqType_Close)); // sw fault
@@ -3651,6 +3649,12 @@ void msg_mon_init() {
                           sizeof(Close_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NewProcess_Notice_def) ==
                           sizeof(NewProcess_Notice_def)); // sw fault
+    SB_util_static_assert(sizeof(MS_Mon_NodeAdded_def) ==
+                          sizeof(NodeAdded_def)); // sw fault
+    SB_util_static_assert(sizeof(MS_Mon_NodeChanged_def) ==
+                          sizeof(NodeChanged_def)); // sw fault
+    SB_util_static_assert(sizeof(MS_Mon_NodeDeleted_def) ==
+                          sizeof(NodeDeleted_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeDown_def) ==
                           sizeof(NodeDown_def)); // sw fault
     SB_util_static_assert(sizeof(MS_Mon_NodeJoining_def) ==
@@ -7141,6 +7145,8 @@ int msg_mon_send_process_info(const char    *pp_where,
         pp_msg->u.request.u.process_info.target_verifier = pv_verif;
 #endif
         pp_msg->u.request.u.process_info.type = static_cast<PROCESSTYPE>(pv_ptype);
+        ms_util_string_clear(pp_msg->u.request.u.process_info.target_process_pattern,
+                             sizeof(pp_msg->u.request.u.process_info.target_process_pattern));
         if (pp_name == NULL) {
             ms_util_string_clear(pp_msg->u.request.u.process_info.target_process_name,
                                  sizeof(pp_msg->u.request.u.process_info.target_process_name));

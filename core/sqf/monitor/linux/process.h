@@ -217,6 +217,7 @@ class CProcess
                                 , _TM_Txid_External trans_id );
     void CompleteDump(DUMPSTATUS status, char *core_file);
     void CompleteProcessStartup( char *port, int os_pid, bool event_messages, bool system_messages, bool preclone, struct timespec *creation_time );
+    void CompleteRequest( int status );
     bool Create (CProcess *parent, int & result);
     bool Dump (CProcess *dumper, char *core_path);
     void DumpBegin(int nid, int pid, Verifier_t verifier, char *core_path);
@@ -256,6 +257,8 @@ class CProcess
     inline bool IsOpened ( ) { return (OpenedCount > 0); }
     inline void SetStartupCompleted ( bool completed ) 
                           { StartupCompleted = completed; }
+    inline bool IsFirstInstance ( ) { return firstInstance_; }
+    inline void SetFirstInstance ( bool firstInstance ) { firstInstance_ = firstInstance; }
     inline bool IsPersistent ( ) { return Persistent; }
     inline void SetPersistent ( bool isPersistent ) { Persistent = isPersistent; }
     inline bool IsPaired ( ) { return Paired; }
@@ -457,6 +460,7 @@ private:
     string       program_;   // object file name
     strId_t      pathStrId_;
     strId_t      ldpathStrId_;
+    bool         firstInstance_; // reset on persistent process re-creation
     bool         cmpOrEsp_;
     string       sqRoot_;     // TRAF_HOME passed to object file
 

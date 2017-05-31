@@ -21,15 +21,22 @@
 # @@@ END COPYRIGHT @@@
 
 if [ $# -lt 1 ]; then
-	echo "gohost <line> [<conf>]"
+	echo "gohost <line>"
 	exit 1
 fi
 line=$1
 shift
-if [ $# -ge 1 ]; then
-	conf=$1
-	shift
-else
-conf=cluster.conf
-fi
-cat $conf | sed -n -e "$line p"  | cut -d: -f3
+# showConfigDb -x' outputs something like:
+#   Physical nodes:
+#   pnid=0, node-name=n1, excluded-cores=-1 -1
+#   pnid=1, node-name=n2, excluded-cores=-1 -1
+# first grep trims output to something like:
+#   pnid=0, node-name=n1, excluded-cores=-1 -1
+#   pnid=1, node-name=n2, excluded-cores=-1 -1
+# sed trims output to something like:
+#   pnid=1, node-name=n2, excluded-cores=-1 -1
+# first cut trims output to something like:
+#   node-name=n2
+# second cut trims output to something like:
+#   n2
+showConfigDb -x | grep -v Physical | sed -n -e "$line p" | cut -d, -f2|cut -d= -f2

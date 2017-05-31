@@ -121,7 +121,6 @@ CDeviceContainer *Devices = NULL;
 int MyPNID = -1;
 CNode *MyNode;
 CMonLog *MonLog =  NULL;
-CMonLog *SnmpLog =  NULL;
 CMonStats * MonStats = NULL;
 extern CMonTrace *MonTrace;
 CRedirector Redirector;
@@ -547,6 +546,15 @@ char * CMonitor::ProcCopy(char *bufPtr, CProcess *process)
     procObj->argc = process->argc();
     procObj->creation_time = process->GetCreationTime();
 
+
+    if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
+            trace_printf( "%s@%d - Packing process %s (%d,%d:%d)\n"
+                        , method_name, __LINE__
+                        , process->GetName()
+                        , process->GetNid()
+                        , process->GetPid()
+                        , process->GetVerifier() );
+
     char * stringData = &procObj->stringData;
 
     // Copy the program name
@@ -595,7 +603,6 @@ int CMonitor::PackProcObjs( char *&buffer )
     const char method_name[] = "CMonitor::PackProcObjs";
     TRACE_ENTRY;
 
-    int nid = 0;
     CLNode *lnode = NULL;
     CProcess *process = NULL;
     int procCount = 0;
@@ -603,9 +610,9 @@ int CMonitor::PackProcObjs( char *&buffer )
     char *bufPtr = buffer;
 
     // first copy all primary and generic processes
-    for (nid = 0; nid < Nodes->NumberLNodes; nid++)
+    lnode = Nodes->GetFirstLNode();
+    for ( ; lnode ; lnode = lnode->GetNext() )
     {
-        lnode = Nodes->GetLNode(nid);
         process = lnode->GetFirstProcess();
         while (process)
         {
@@ -620,9 +627,9 @@ int CMonitor::PackProcObjs( char *&buffer )
     }
 
     // copy all the backup processes
-    for (nid = 0; nid < Nodes->NumberLNodes; nid++)
+    lnode = Nodes->GetFirstLNode();
+    for ( ; lnode ; lnode = lnode->GetNext() )
     {
-        lnode = Nodes->GetLNode(nid);
         process = lnode->GetFirstProcess();
         while (process)
         {
@@ -781,7 +788,7 @@ void CMonitor::CreateZookeeperClient( void )
         string       zkQuorumHosts;
         stringstream zkQuorumPort;
         char *env;
-        char  hostsStr[MAX_PROCESSOR_NAME*3] = { 0 };
+        char  hostsStr[MAX_PROCESSOR_NAME * 3] = { 0 };
         char *tkn = NULL;
 
         int zport;
@@ -955,7 +962,6 @@ int main (int argc, char *argv[])
     const char method_name[] = "main";
 
     MonLog = new CMonLog( "log4cxx.monitor.mon.config", "MON", "alt.mon", -1, -1, getpid(), "$MONITOR" );
-    SnmpLog = new CMonLog( "log4cxx.monitor.mon.snmp.config", "MON-SNMP", "alt.mon.snmp", -1, -1, getpid(), "$MONITOR" );
 
     MonLog->setupInMemoryLog();
 
@@ -1074,7 +1080,6 @@ int main (int argc, char *argv[])
     MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyPNID);
     MonLog->setPNid( MyPNID );
-    SnmpLog->setPNid( MyPNID );
 
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
     char *tmpptr = Node_name;
@@ -1322,7 +1327,7 @@ int main (int argc, char *argv[])
                 MPI_Abort(MPI_COMM_SELF,99); // too early to call failsafe node down.
             }
         }
-        nodename = new char [Monitor->NumNodes * MPI_MAX_PROCESSOR_NAME];
+        nodename = new char [Monitor->GetConfigPNodesCount() * MPI_MAX_PROCESSOR_NAME];
 
         // Create health check thread
         HealthCheck.start();

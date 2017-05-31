@@ -222,6 +222,9 @@ static const char *ga_ms_mon_msg_type_labels[] = {
     "MS_MsgType_Change",
     "MS_MsgType_Close",
     "MS_MsgType_Event",
+    "MS_MsgType_NodeAdded",
+    "MS_MsgType_NodeChanged",
+    "MS_MsgType_NodeDeleted",
     "MS_MsgType_NodeDown",
     "MS_MsgType_NodeJoining",
     "MS_MsgType_NodePrepare",
@@ -230,14 +233,14 @@ static const char *ga_ms_mon_msg_type_labels[] = {
     "MS_MsgType_Open",
     "MS_MsgType_ProcessCreated",
     "MS_MsgType_ProcessDeath",
+    "MS_MsgType_ReintegrationError",
     "MS_MsgType_Service",
-    "MS_MsgType_SpareUp",
     "MS_MsgType_Shutdown",
+    "MS_MsgType_SpareUp",
     "MS_MsgType_TmRestarted",
     "MS_MsgType_TmSyncAbort",
     "MS_MsgType_TmSyncCommit",
     "MS_MsgType_UnsolicitedMessage",
-    "MS_MsgType_ReintegrationError",
     SB_LABEL_END
 };
 
@@ -245,6 +248,9 @@ static const char *ga_ms_mon_msg_type_short_labels[] = {
     "Change",
     "Close",
     "Event",
+    "NodeAdded",
+    "NodeChanged",
+    "NodeDeleted",
     "NodeDown",
     "NodeJoining",
     "NodePrepare",
@@ -253,14 +259,14 @@ static const char *ga_ms_mon_msg_type_short_labels[] = {
     "Open",
     "ProcessCreated",
     "ProcessDeath",
+    "ReintegrationError",
     "Service",
-    "SpareUp",
     "Shutdown",
+    "SpareUp",
     "TmRestarted",
     "TmSyncAbort",
     "TmSyncCommit",
     "UnsolicitedMessage",
-    "ReintegrationError",
     SB_LABEL_END
 };
 
@@ -309,6 +315,8 @@ static const char *ga_ms_mon_process_type_labels[] = {
     "MS_ProcessType_SSMP",
     "MS_ProcessType_PSD",
     "MS_ProcessType_SMS",
+    "MS_ProcessType_TMID",
+    "MS_ProcessType_PERSIST",
     SB_LABEL_END
 };
 
@@ -327,6 +335,8 @@ static const char *ga_ms_mon_process_type_short_labels[] = {
     "SSMP",
     "PSD",
     "SMS",
+    "TMID",
+    "PERSIST",
     SB_LABEL_END
 };
 
@@ -337,15 +347,21 @@ static const char *ga_ms_mon_req_type_labels[] = {
     "MS_ReqType_Exit",
     "MS_ReqType_Get",
     "MS_ReqType_Kill",
+    "MS_ReqType_MonStats",
     "MS_ReqType_Mount",
     "MS_ReqType_NewProcess",
+    "MS_ReqType_NodeAdd",
+    "MS_ReqType_NodeDelete",
     "MS_ReqType_NodeDown",
     "MS_ReqType_NodeInfo",
+    "MS_ReqType_NodeName",
     "MS_ReqType_NodeUp",
     "MS_ReqType_Notice",
     "MS_ReqType_Notify",
     "MS_ReqType_Open",
     "MS_ReqType_OpenInfo",
+    "MS_ReqType_PersistAdd",
+    "MS_ReqType_PersistDelete",
     "MS_ReqType_PNodeInfo",
     "MS_ReqType_ProcessInfo",
     "MS_ReqType_ProcessInfoCont",
@@ -357,7 +373,6 @@ static const char *ga_ms_mon_req_type_labels[] = {
     "MS_ReqType_TmReady",
     "MS_ReqType_TmSync",
     "MS_ReqType_TransInfo",
-    "MS_ReqType_MonStats",
     "MS_ReqType_ZoneInfo",
     SB_LABEL_END
 };
@@ -369,15 +384,21 @@ static const char *ga_ms_mon_req_type_short_labels[] = {
     "Exit",
     "Get",
     "Kill",
+    "MonStats",
     "Mount",
     "NewProcess",
+    "NodeAdd",
+    "NodeDelete",
     "NodeDown",
     "NodeInfo",
+    "NodeName",
     "NodeUp",
     "Notice",
     "Notify",
     "Open",
     "OpenInfo",
+    "PersistAdd",
+    "PersistDelete",
     "PNodeInfo",
     "ProcessInfo",
     "ProcessInfoCont",
@@ -389,7 +410,6 @@ static const char *ga_ms_mon_req_type_short_labels[] = {
     "TmReady",
     "TmSync",
     "TransInfo",
-    "MonStats",
     "ZoneInfo",
     SB_LABEL_END
 };
@@ -439,18 +459,19 @@ static const char *ga_sb_msmon_reply_type_labels[] = {
     "Generic",
     "Dump",
     "Get",
+    "MonStats",
+    "Mount",
     "NewProcess",
     "NodeInfo",
-    "PNodeInfo",
-    "ProcessInfo",
+    "NodeName",
     "Open",
     "OpenInfo",
-    "TmSync",
-    "TransInfo",
+    "PNodeInfo",
+    "ProcessInfo",
     "Stfsd",
     "Startup",
-    "Mount",
-    "MonStats",
+    "TmSync",
+    "TransInfo",
     "ZoneInfo",
     SB_LABEL_END
 };
@@ -517,6 +538,9 @@ static const char *ga_sb_utrace_api_mon_msgtype_labels[] = {
     "MsgType_Change",
     "MsgType_Close",
     "MsgType_Event",
+    "MsgType_NodeAdded",
+    "MsgType_NodeChanged",
+    "MsgType_NodeDeleted",
     "MsgType_NodeDown",
     "MsgType_NodeJoining",
     "MsgType_NodePrepare",
@@ -525,14 +549,14 @@ static const char *ga_sb_utrace_api_mon_msgtype_labels[] = {
     "MsgType_Open",
     "MsgType_ProcessCreated",
     "MsgType_ProcessDeath",
+    "MsgType_ReintegrationError",
     "MsgType_Service",
-    "MsgType_SpareUp",
     "MsgType_Shutdown",
+    "MsgType_SpareUp",
     "MsgType_TmRestarted",
     "MsgType_TmSyncAbort",
     "MsgType_TmSyncCommit",
     "MsgType_UnsolicitedMessage",
-    "MsgType_ReintegrationError",
     "MsgType_Invalid",
     SB_LABEL_END
 };
@@ -544,15 +568,21 @@ static const char *ga_sb_utrace_api_mon_reqtype_labels[] = {
     "ReqType_Exit",
     "ReqType_Get",
     "ReqType_Kill",
+    "ReqType_MonStats",
     "ReqType_Mount",
     "ReqType_NewProcess",
+    "ReqType_NodeAdd",
+    "ReqType_NodeDelete",
     "ReqType_NodeDown",
     "ReqType_NodeInfo",
+    "ReqType_NodeName",
     "ReqType_NodeUp",
     "ReqType_Notice",
     "ReqType_Notify",
     "ReqType_Open",
     "ReqType_OpenInfo",
+    "ReqType_PersistAdd",
+    "ReqType_PersistDelete",
     "ReqType_PNodeInfo",
     "ReqType_ProcessInfo",
     "ReqType_ProcessInfoCont",
@@ -564,7 +594,6 @@ static const char *ga_sb_utrace_api_mon_reqtype_labels[] = {
     "ReqType_TmReady",
     "ReqType_TmSync",
     "ReqType_TransInfo",
-    "ReqType_MonStats",
     "ReqType_ZoneInfo",
     SB_LABEL_END
 };
@@ -797,7 +826,7 @@ static SB_Label_Map gv_ms_mon_device_state_short_label_map = {
 
 enum {
     MS_LABEL_LIMIT_MON_MSG_TYPE_LO = MS_MsgType_Change,
-    MS_LABEL_LIMIT_MON_MSG_TYPE_HI = MS_MsgType_ReintegrationError
+    MS_LABEL_LIMIT_MON_MSG_TYPE_HI = MS_MsgType_UnsolicitedMessage
 };
 SB_Label_Map gv_ms_mon_msg_type_label_map = {
     MS_LABEL_LIMIT_MON_MSG_TYPE_LO,
@@ -831,7 +860,7 @@ static SB_Label_Map gv_ms_mon_proc_state_short_label_map = {
 
 enum {
     MS_LABEL_LIMIT_MON_PROCESS_TYPE_LO = MS_ProcessType_Undefined,
-    MS_LABEL_LIMIT_MON_PROCESS_TYPE_HI = MS_ProcessType_SMS
+    MS_LABEL_LIMIT_MON_PROCESS_TYPE_HI = MS_ProcessType_PERSIST
 };
 SB_Label_Map gv_ms_mon_process_type_label_map = {
     MS_LABEL_LIMIT_MON_PROCESS_TYPE_LO,

@@ -215,11 +215,12 @@ void CExtEventReq::performRequest()
 
             // process events
             num_procs = 0;
-            for (; nid < Nodes->NumberLNodes; nid++)
+            CLNode *lnode = Nodes->GetFirstLNode();
+            for ( ; lnode; lnode = lnode->GetNext() )
             {
                 if (target_nid == -1)
                 {
-                    process = Nodes->GetLNode(nid)->GetFirstProcess();
+                    process = lnode->GetFirstProcess();
                 }
                 while (process && num_procs < MAX_PROC_LIST)
                 {

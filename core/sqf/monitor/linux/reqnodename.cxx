@@ -64,51 +64,98 @@ void CExtNodeNameReq::populateRequestString( void )
 
 void CExtNodeNameReq::performRequest()
 {
-   const char method_name[] = "CExtNodeNameReq::performRequest";
+    const char method_name[] = "CExtNodeNameReq::performRequest";
     TRACE_ENTRY;
 
-    CNode    *node = NULL;
+    int             rc = MPI_SUCCESS;
+    CClusterConfig *clusterConfig = NULL;
+    CPNodeConfig   *pnodeConfig = NULL; 
+    CProcess       *requester = NULL;
 
-    // Trace info about request
-     node = Nodes->GetNode(msg_->u.request.u.nodename.current_name); 
-     if (node)
-     {
-           if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-           {
-                 trace_printf("[%s], Requested node name change from %s to %s\n" , method_name, msg_->u.request.u.nodename.current_name, msg_->u.request.u.nodename.new_name);
-           }
-
-           node->SetName(msg_->u.request.u.nodename.new_name);
-
-           CReplNodeName *repl = new CReplNodeName(msg_->u.request.u.nodename.current_name, 
-                                msg_->u.request.u.nodename.new_name);
-           Replicator.addItem(repl);
-           if (!msg_->noreply)  // client needs a reply 
-           {
-                msg_->u.reply.type = ReplyType_NodeInfo;
-                msg_->u.reply.u.generic.return_code = MPI_SUCCESS;
-   
-                // Send reply to requester
-                lioreply(msg_, pid_);
-           }
-        } else 
+    requester = MyNode->GetProcess( pid_ );
+    if ( requester )
+    {
+        clusterConfig = Nodes->GetClusterConfig();
+        if (clusterConfig)
         {
-        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
-           {
-                trace_printf("[%s], Internal Error - Requested node name change from %s to %s\n" , method_name, msg_->u.request.u.nodename.current_name, msg_->u.request.u.nodename.new_name);
-           }
-
-            if (!msg_->noreply)  // client needs a reply 
+            // Check for existence of current node name in the configuration
+            pnodeConfig = clusterConfig->GetPNodeConfig( msg_->u.request.u.nodename.current_name );
+            if (pnodeConfig)
             {
-                msg_->u.reply.type = ReplyType_NodeInfo;
-                msg_->u.reply.u.generic.return_code = MPI_ERR_UNKNOWN;
-   
-                // Send reply to requester
-                 lioreply(msg_, pid_);
+                if ( trace_settings & (TRACE_REQUEST | TRACE_PROCESS) )
+                {
+                    trace_printf( "%s@%d Requested node name change from %s to %s\n"
+                                , method_name, __LINE__
+                                , msg_->u.request.u.nodename.current_name
+                                , msg_->u.request.u.nodename.new_name );
+                }
+        
+                // Tell all monitors to change this node's name in the configuration database
+                // Replicate request to be processed by CIntNodeAdd in all nodes
+                CReplNodeName *repl = new CReplNodeName( msg_->u.request.u.nodename.current_name
+                                                       , msg_->u.request.u.nodename.new_name
+                                                       , requester );
+                if (repl)
+                {
+                    // we will not reply at this time ... but wait for 
+                    // node name change to be processed in CIntNodeNameReq
+    
+                    // Retain reference to requester's request buffer so can
+                    // send completion message.
+                    requester->parentContext( msg_ );
+                    msg_->noreply = true;
+    
+                    Replicator.addItem(repl);
+                }
+                else
+                {
+                    delete pnodeConfig;
+                    char la_buf[MON_STRING_BUF_SIZE];
+                    sprintf(la_buf, "[%s], Failed to allocate CReplNodeName, no memory!\n",
+                            method_name);
+                    mon_log_write(MON_REQ_NODE_NAME_1, SQ_LOG_ERR, la_buf);
+
+                    rc = MPI_ERR_NO_MEM;
+                }
             }
-	  
-	}
+            else
+            {
+                // Node name does not exist
+                rc = MPI_ERR_NAME;
+            }
+        }
+        else
+        {
+            char la_buf[MON_STRING_BUF_SIZE];
+            sprintf(la_buf, "[%s], Failed to retrive ClusterConfig object!\n",
+                    method_name);
+            mon_log_write(MON_REQ_NODE_NAME_2, SQ_LOG_CRIT, la_buf);
+
+            rc = MPI_ERR_INTERN;
+        }
+        
+
+        if (rc != MPI_SUCCESS)
+        {
+            // Unable to initiate node name change request
+            msg_->u.reply.type = ReplyType_Generic;
+            msg_->u.reply.u.generic.nid = requester->GetNid();
+            msg_->u.reply.u.generic.pid = pid_;
+            msg_->u.reply.u.generic.verifier = requester->GetVerifier() ;
+            msg_->u.reply.u.generic.process_name[0] = '\0';
+            msg_->u.reply.u.generic.return_code = rc;
+    
+            // Send reply to requester
+            lioreply(msg_, pid_);
+        }
+    }
+    else
+    {
+        if (trace_settings & (TRACE_REQUEST | TRACE_PROCESS))
+            trace_printf("%s@%d - Can't find requester, rc=%d\n", method_name, __LINE__, MPI_ERR_NAME);
+        // We don't know about this process.
+        errorReply( MPI_ERR_EXITED );
+    }
 
     TRACE_EXIT;
-
 }

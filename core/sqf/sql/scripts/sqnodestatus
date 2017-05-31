@@ -26,12 +26,11 @@
 # Implements:
 #   ssh -M "ConnectTimeout 1" -o "ConnectionAttempts 3" n028 hostinfo 2>&1
 #
-# Uses:
-#   export MY_NODES=' -w n028 -w n044 -w n029 -w n045 -w n030 -w n031 -w n032 '
+# Uses the following enviroment variables:
 #   export SQ_MON_SSH_OPTIONS=' -o "ConnectTimeout 1" -o "ConnectionAttempts 3" '
 #
 
-my $node_context=lc(readpipe("echo \$NODE_LIST"));
+my $node_context=readpipe("trafconf -name");
 my %node_hash=();
 my $sq_mon_ssh_options=readpipe("echo -n \$SQ_MON_SSH_OPTIONS");
 my $json=$ARGV[0];

@@ -20,25 +20,5 @@
 #
 # @@@ END COPYRIGHT @@@
 
-function StartLobProcesses
-{
-echo Starting lob server processes
-let count=0
-tmp_node_status=`mktemp -t`
-sqshell -c zone > $tmp_node_status
-let totalNodes=`grep 'Up' $tmp_node_status | wc -l`
-while [ ${count} -lt $totalNodes ]
-do
-sqshell -a > /dev/null << eof
-set {process \$zlobsrv${count} } PERSIST_RETRIES=10,60
-set {process \$zlobsrv${count} } PERSIST_ZONES=${count}
-exec {name \$zlobsrv${count}, nowait, nid ${count}, out stdout_\$ZLOBSRV${count} } mxlobsrvr
-eof
-echo Successfully started \$zlobsrv${count}
-let count=count+1
-done
-}
-
-StartLobProcesses
-
-exit 0
+sqshell -c persist exec LOB
+exit $?

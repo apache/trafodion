@@ -1494,7 +1494,7 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
 	}
       else
 	{
-          NADELETEBASIC(gluedQuery, STMTHEAP);
+          NADELETEBASICARRAY(gluedQuery, STMTHEAP);
 	  continue;
 	}
 
@@ -1504,7 +1504,7 @@ short CmpSeabaseDDL::createMetadataViews(ExeCliInterface * cliInterface)
 		  param_[10], param_[11], param_[12], param_[13], param_[14],
 		  param_[15], param_[16], param_[17], param_[18]);
 
-      NADELETEBASIC(gluedQuery, STMTHEAP);
+      NADELETEBASICARRAY(gluedQuery, STMTHEAP);
 
       NABoolean xnWasStartedHere = FALSE;
       if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))

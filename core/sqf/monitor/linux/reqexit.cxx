@@ -116,7 +116,7 @@ void CExtExitReq::performRequest()
     }
 
     if ((msg_->u.request.u.exit.nid < 0) ||
-        (msg_->u.request.u.exit.nid >= Nodes->NumberLNodes))
+        (msg_->u.request.u.exit.nid >= Nodes->GetLNodesConfigMax()))
     {
         char buf[MON_STRING_BUF_SIZE];
         sprintf(buf, "[CMonitor::ExitProcess], Invalid Node ID!\n");

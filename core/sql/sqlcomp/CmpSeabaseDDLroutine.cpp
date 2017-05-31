@@ -1671,7 +1671,7 @@ short CmpSeabaseDDL::createLibmgrProcs(ExeCliInterface * cliInterface)
                     strlen(SEABASE_LIBMGR_LIBRARY) + gluedQuerySize + 200]; 
 
       str_sprintf(queryBuf, gluedQuery, param_[0], param_[1], param_[2], param_[3], param_[4]);
-      NADELETEBASIC(gluedQuery, STMTHEAP);
+      NADELETEBASICARRAY(gluedQuery, STMTHEAP);
 
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC < 0)

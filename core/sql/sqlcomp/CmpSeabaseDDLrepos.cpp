@@ -107,7 +107,7 @@ short CmpSeabaseDDL::createRepos(ExeCliInterface * cliInterface)
       param_[1] = SEABASE_REPOS_SCHEMA;
 
       str_sprintf(queryBuf, gluedQuery, param_[0], param_[1]);
-      NADELETEBASIC(gluedQuery, STMTHEAP);
+      NADELETEBASICARRAY(gluedQuery, STMTHEAP);
 
       if (beginXnIfNotInProgress(cliInterface, xnWasStartedHere))
         goto label_error;

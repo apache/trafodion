@@ -57,8 +57,7 @@
 // Input/output redirection from child processes
 #define TRACE_REDIRECTION     0x10000
 // Cluster Configration
-#define TRACE_CLUST_CONF        0x20000
-#define TRACE_CLUST_CONF_DETAIL 0x20000
+#define TRACE_TRAFCONFIG      0x20000
 // Health check
 #define TRACE_HEALTH          0x40000
 // Signal handler

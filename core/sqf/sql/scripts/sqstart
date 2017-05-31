@@ -31,11 +31,9 @@ function LogIt {
 function Usage {
 
     echo
-    echo "Usage: $script_name { -w | -c | -r } -x"
+    echo "Usage: $script_name { -c } -x"
     echo
-    echo "-w Perform a Warm Start"
     echo "-c Perform a Cold Start"
-    echo "-r Perform a Cold Start with volume recovery"
     echo "-x Perform Extra Checks (chk_dbperms) before allowing startup"
     echo
     exit 1;
@@ -55,17 +53,11 @@ function hms
 
 function GetOpts {
 
-    while getopts "qvcrwhx" arg
+    while getopts "chx" arg
       do
        case $arg in
           c)
              sq_start=c;
-             ;;
-          r)
-             sq_start=r;
-             ;;
-          w)
-             sq_start=w;
              ;;
           x)
              run_chk_dbperms=1;
@@ -104,11 +96,6 @@ function gomonColdStart {
 function gomonColdRecoveryStart {
 
     SQSCRIPT_FILE=$COLD_STARTFILE
-}
-
-function gomonWarmStart {
-    echoLog "Performing a Warm Start"
-    SQSCRIPT_FILE=$WARM_STARTFILE
 }
 
 function CheckMonitorLink {
@@ -413,30 +400,12 @@ fi
 
 
 COLD_STARTFILE=$SQSCRIPTS_DIR/gomon.cold
-WARM_STARTFILE=$SQSCRIPTS_DIR/gomon.warm
-COLD_RECOV_STARTFILE=$SQSCRIPTS_DIR/gomon.cold.recovery
 
-# If -c or -w options are set, start based on the option supplied
-if [[ $sq_start == "w" ]]; then
-    gomonWarmStart
-elif [[ $sq_start == "c" ]]; then
+# If -c option is set, start based on the option supplied
+if [[ $sq_start == "c" ]]; then
     gomonColdStart
-elif [[ $sq_start == "r" ]]; then
-    gomonColdRecoveryStart
 else
-# Otherwise, start based on whether a SHUTDOWN line is found in cluster.conf
-    if [ -e $$MPI_TMPDIR/cluster.conf ]; then
-        warmstart=`grep SHUTDOWN $MPI_TMPDIR/cluster.conf`
-    else
-        warmstart=""
-    fi
-
-    # If SHUTDOWN was found warm start, otherwise recovery start
-    if [[ $warmstart != "" ]]; then
-        gomonWarmStart
-    else
-        gomonColdRecoveryStart
-    fi
+    gomonColdRecoveryStart
 fi
 
 echoLog "Removing old mpijob* files from $MPI_TMPDIR"

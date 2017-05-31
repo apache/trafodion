@@ -43,162 +43,140 @@
 ################################################################
 
 begin node
+
 node-id=0;node-name=n7;cores=0-1;processors=2;roles=connection,aggregation,storage
 node-id=1;node-name=n7;cores=2-3;processors=2;roles=connection,aggregation,storage
 node-id=2;node-name=n6;cores=0-1;processors=2;roles=connection,aggregation,storage
 node-id=3;node-name=n6;cores=2-3;processors=2;roles=connection,aggregation,storage
 node-id=4;node-name=n5;cores=0-1;processors=2;roles=connection,aggregation,storage
 node-id=5;node-name=n5;cores=2-3;processors=2;roles=connection,aggregation,storage
-node-name=n4;cores=0-3;spares=0,1,2,3,4,5
+
 end node
 
-################################################################
-#
-# Format: '<role name> <list of node ids (space separated)>
-#
-# node id: an index into the nodes specified above 
-#          (with the base as 0)
-#
-#          A -1 as node_id means all the nodes in the cluster
-#
-# The following would be used for virtual nodes only.
-#
-################################################################
 
-begin role_node_map
-storage -1
-end role_node_map
-
-################################################################
+###############################################################################
 #
-# storage_loc
+# Section to configure persistent processes
 #
-# This is to specify the directory in which a volume's
-# directory exists. 
+#
+# PERSIST_PROCESS_KEYS = { <persist-prefix> } [ , <persist-prefix> ] …
 # 
-# This is used if the storage location is not specified 
-# explicitly for a particular TSE/ASE.
+# { <persist-prefix>_PROCESS_NAME    = {$<string><nid-format>} }
+# [ <persist-prefix>_PROCESS_TYPE    = {DTM|PERSIST|PSD|SSMP|TMID|WDG} ]
+# { <persist-prefix>_PROGRAM_NAME    = {<program-name>} }
+# { <persist-prefix>_REQUIRES_DTM    = {Y|N} } 
+# [ <persist-prefix>_STDOUT          = {<file-name-prefix><nid-format>} ]
+# { <persist-prefix>_PERSIST_RETRIES = {<retries> , <time-window-secs>} }
+# { <persist-prefix>_PERSIST_ZONES   = {<zid-format> [,<zid-format>] . . . }
+#
+# Where <persist-process-prefix> is currently one of the following:
+#     DTM
+#     TMID
+#     SSCP
+#     SSMP
+#     LOB
+#
+# Where <nid-format> is one of the following:
+#     %nid+     is translated to use all the currently configured node-ids, 
+#               0 - n-1 (all <nid>s)
+#     %nid      is translated to use the node-id relative to the _PROCESS_NAME 
+#               node-id %nid
+#
+# Where <zid-format> is one of the following:
+#     %zid+     is translated to use all the currently configured zone-ids, 
+#               0 - n-1 (all <zid>s)
+#     %zid      is translated to use the zone-id relative to the node-id %nid 
+#
+###############################################################################
+begin persist
+
+#
+# The folling process types are persistent and have special process management:
+#    DTM
+#    TMID
+#    SSMP
+#    PSD
+#    WDG
+#
+# Generic persistent processes are of process type
+#    PERSIST
+#
+
+PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG
+#PERSIST_PROCESS_KEYS = DTM,TMID,SSCP,SSMP,PSD,WDG,QMN,LOB
+
+DTM_PROCESS_NAME     = $TM%nid+
+DTM_PROCESS_TYPE     = DTM
+DTM_PROGRAM_NAME     = tm
+DTM_REQUIRES_DTM     = N
+DTM_STDOUT           = stdout_DTM%nid
+DTM_PERSIST_RETRIES  = 2,30
+DTM_PERSIST_ZONES    = %zid
+
+TMID_PROCESS_NAME    = $TMID
+TMID_PROCESS_TYPE    = TMID
+TMID_PROGRAM_NAME    = idtmsrv
+TMID_REQUIRES_DTM    = N
+TMID_STDOUT          = stdout_TMID
+TMID_PERSIST_RETRIES = 2,30
+TMID_PERSIST_ZONES   = %zid+
+
+SSCP_PROCESS_NAME    = $ZSC%nid+
+SSCP_PROCESS_TYPE    = PERSIST
+SSCP_PROGRAM_NAME    = mxsscp
+SSCP_REQUIRES_DTM    = Y
+SSCP_STDOUT          = stdout_ZSC%nid
+SSCP_PERSIST_RETRIES = 10,60
+SSCP_PERSIST_ZONES   = %zid
+
+SSMP_PROCESS_NAME    = $ZSM%nid+
+SSMP_PROCESS_TYPE    = SSMP
+SSMP_PROGRAM_NAME    = mxssmp
+SSMP_REQUIRES_DTM    = Y
+SSMP_STDOUT          = stdout_ZSM%nid
+SSMP_PERSIST_RETRIES = 10,60
+SSMP_PERSIST_ZONES   = %zid
+
+PSD_PROCESS_NAME     = $PSD%nid+
+PSD_PROCESS_TYPE     = PSD
+PSD_PROGRAM_NAME     = pstartd
+PSD_REQUIRES_DTM     = N
+PSD_STDOUT           = stdout_PSD%nid
+PSD_PERSIST_RETRIES  = 10,60
+PSD_PERSIST_ZONES    = %zid
+
+WDG_PROCESS_NAME     = $WDG%nid+
+WDG_PROCESS_TYPE     = WDG
+WDG_PROGRAM_NAME     = sqwatchdog
+WDG_REQUIRES_DTM     = N
+WDG_STDOUT           = stdout_WDG%nid
+WDG_PERSIST_RETRIES  = 10,60
+WDG_PERSIST_ZONES    = %zid
+
+#QMN_PROCESS_NAME    = $ZQM0000
+#QMN_PROCESS_TYPE    = PERSIST
+#QMN_PROGRAM_NAME    = tdm_arkqmm
+#QMN_REQUIRES_DTM    = Y
+#QMN_STDOUT          = stdout_ZQM0000
+#QMN_PERSIST_RETRIES = 10,60
+#QMN_PERSIST_ZONES   = %zid+
+
+#LOB_PROCESS_NAME     = $ZLOB%nid+
+#LOB_PROCESS_TYPE     = PERSIST
+#LOB_PROGRAM_NAME     = mxlobsrvr
+#LOB_REQUIRES_DTM     = Y
+#LOB_STDOUT           = stdout_ZLOB%nid
+#LOB_PERSIST_RETRIES  = 10,60
+#LOB_PERSIST_ZONES    = %zid
+
+end persist
+
+###############################################################################
 # 
-# You are not required to use this directive, but is very 
-# convenient when all the TSE's/ASE's are under the same 
-# location, say /database
-#
-################################################################
-
-storage_loc $TRAF_HOME/sql/database
-storage_mir_loc $TRAF_HOME/sql/databasem
-
-# Extents are for data audit volumes only, not $TLOG
-# Minimum is 1550
-begin at_extent_size
-1550
-end at_extent_size
-
-# Files per volume are for data audit volumes only, not $TLOG
-# Minimum is 10
-begin at_files_per_volume
-10
-end at_files_per_volume
-
-# Percentage of audit allowed before TX is DOOMED
-# Maximum is 40
-begin tx_capacity_threshold
-40
-end tx_capacity_threshold
-
-# Number of unique Backout processes per TSE
-# Maximum is 3
-begin backouts_per_tse
-1
-end backouts_per_tse
-
-################################################################
-# 
-# The specification for the TM's ASE
-#
-#################################################################
-
-begin tmase
-$TLOG
-end tmase
-
-################################################################
-# 
-# To list all the TSE's ASE processes
-#
-# The specification is the same as for a TSE
-#
-# If the ASE volumes are under a different parent directory,
-# you could specify the storage_loc again (before 'begin ase')
-#
-#################################################################
-
-begin ase
-$AUDIT1
-end ase
-
-################################################################
-#
-# storage_loc
-#
-# This is to specify the directory in which a volume's
-# directory exists. 
-# 
-# This is used if the storage location is not specified 
-# explicitly for a particular TSE/ASE.
-# 
-# You are not required to use this directive, but is very 
-# convenient when all the TSE's/ASE's are under the same 
-# location, say /database
-#
-################################################################
-
-storage_loc $TRAF_HOME/sql/database
-
-################################################################
-#
-# begin tse/end tse
-#
-# volumeName [node id] [storage location]
-#
-# node id: if the nodeid is not provided then it distributes the 
-#          volumes on the storage nodes specified in the 
-#          role_node_map using a round robin scheme.
-# 
-# storage location: 
-#          if it is not provided then it uses the value provided 
-#          by the 'storage_loc' directive and appends the name 
-#          of the volume.
-#
-#          To specify the storage location, you have to specify
-#          the node_id (can use -1 to specify that the next node
-#          in the round robin scheme be used).
-#
-# Important: The directories referred by the volumes below
-#            should exist when starting the SQ environment 
-# 
-#            A file sq_tse.create is generated that contains 
-#            commands to create the storage engine directories.
-#
-#            A file sq_tse.delete is generated that contains 
-#            commands to delete the storage engine directories.
-#
-################################################################
-
-begin tse
-$SYSTEM
-$DATA
-$DATA1
-$DATA2
-$DATA3
-$DATA4
-end tse
-
-#
 # Note: You could use '%' as the first character on the line followed by
 #       any SQ shell command. All the text would be passed verbatim.
 #
-####################################################################
+###############################################################################
 #
 # Section to configure Floating IP (Optional).
 #
@@ -237,7 +215,7 @@ end tse
 #
 # The  following are sample values - please update as appropriate
 #
-#########################################################################################       
+###############################################################################
 
 begin floating_ip
 process=$MXOAS;interface=eth1;external-ip=xx.xxx.xxx.xx
@@ -245,34 +223,4 @@ process=$MXOAS;interface=eth0;internal-ip=xxx.xxx.xxx.xxx
 floating_ip_node_id  1
 floating_ip_failover_node_id 0
 end floating_ip
-
-
-################################################################
-#
-# Section to configure BDR (Bulk Data Replicator).
-#
-# bdr_cluster_name : SQ cluster name (Maximum of 24 characters) - Need not be the DNS name
-#
-# bdr_node_id      : Logical node id of the SQ cluster with roles set to connection only
-#                    If no such node available, any logical node id with roles set to connection
-#                    and other roles. If floating_ip_node_id is configured, 
-#                    then this should be "floating"
-#
-# bdr_ip_address   : Externally accessible IP Address of the above node where BDR service 
-#                    process $ZBDR would run. If floating ip address is configured
-#                    then this should be "floating"
-#
-# bdr_port_number  : Listening port number for the $ZBDR 
-#                    process. Should reserve m+1 port numbers,
-#                    where m is the number of sql nodes. Default is 17500
-# 
-# The  following are sample values - please update as appropriate
-#
-################################################################
-begin bdr
-bdr_cluster_name seaquest
-bdr_ip_address 172.100.100.221
-bdr_node_id 0
-bdr_port_number 17500
-end bdr
 

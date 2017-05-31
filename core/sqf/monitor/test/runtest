@@ -51,8 +51,8 @@ function Usage
     echo "         2     - Multi-Node"
     echo "         3     - Registry"
     echo "         4     - Death Notice"
-    echo "         5     - Persistent Process"
-    echo "         6     - DTM Process"
+    echo "         5     - Persistent Process (FAILS-TBD)"
+    echo "         6     - DTM Process (FAILS-TBD)"
     echo "         7     - SPX Process"
     echo "         8     - Process Create"
     echo "         9     - Node down before startup"
@@ -314,7 +314,9 @@ eof
      grep FAILED $PWD/dtmTest.lst
  fi
 else
- echo "DTM is not configured as a persistent process. Skipping test 6!"
+   if ( ([ $test '==' -1 ] || [ $test '==' 6 ]) ); then
+     echo "DTM is not configured as a persistent process. Skipping test 6!"
+   fi
 fi
 
 if ( [ $test '==' -1 ] || [ $test '==' 7 ] ); then

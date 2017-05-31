@@ -5721,7 +5721,7 @@ char *getServerProcessName(IpcServerType serverType, const char *nodeName, short
            return NULL;
        }
    }
-   str_sprintf(processName, "%s%03d", processPrefix, cpuNum);
+   str_sprintf(processName, "%s%d", processPrefix, cpuNum);
   return processName;
 }
 

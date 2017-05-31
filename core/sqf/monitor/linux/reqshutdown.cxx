@@ -91,16 +91,17 @@ void CExtShutdownReq::performRequest()
         shutdownRejected = false;
         if( msg_->u.request.u.shutdown.level != ShutdownLevel_Abrupt )
         {
-            for ( int pnid = 0; pnid < Nodes->NumberPNodes; pnid++ )
+            CNode *node = Nodes->GetFirstNode();
+            for ( ; node ; node = node->GetNext() )
             {
-                if ( Nodes->GetNode(pnid)->GetState() == State_Up && Nodes->GetNode(pnid)->isInQuiesceState() )
+                if ( node->GetState() == State_Up && node->isInQuiesceState() )
                 {
                     msg_->u.reply.u.generic.return_code = MPI_ERR_OP;
                     if (trace_settings & TRACE_REQUEST)
-                        trace_printf("%s@%d" " - Shutdown rejected. Node %d is quiescing." "\n", method_name, __LINE__, pnid);
+                        trace_printf("%s@%d" " - Shutdown rejected. Node %d is quiescing." "\n", method_name, __LINE__, node->GetPNid());
 
                     char buf[MON_STRING_BUF_SIZE];
-                    sprintf(buf, "[CMonitor::ProcessRequest], Shutdown rejected. Node %d is quiescing.\n", pnid);
+                    sprintf(buf, "[CMonitor::ProcessRequest], Shutdown rejected. Node %d is quiescing.\n", node->GetPNid());
                     mon_log_write(MON_MONITOR_PROCESSREQUEST_6, SQ_LOG_ERR, buf);
                     shutdownRejected = true;
                     break;

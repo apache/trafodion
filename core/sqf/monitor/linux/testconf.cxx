@@ -25,10 +25,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                                                           
-//                   Seaquest Foundation
-//                                                                           
-///////////////////////////////////////////////////////////////////////////////
-//                                                                           
 // File:        testconf.cxx
 //                                                                           
 // Description: Cluster configuration classes test program
@@ -58,6 +54,12 @@ static bool ClusterConfigTest   = false;
 char Node_name[MPI_MAX_PROCESSOR_NAME];
 int MyPNID = -1;
 long trace_settings = 0;
+
+extern const char *PersistProcessTypeString( PROCESSTYPE type );
+extern const char *ProcessTypeString( PROCESSTYPE type );
+
+const char *FormatNidString( FormatNid_t type );
+const char *FormatZidString( FormatZid_t type );
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -137,35 +139,38 @@ void SpareListString( char *str, int sparePNids[], int spareCount )
 // Usage:           Invoked by TestClusterConfig()
 //
 ///////////////////////////////////////////////////////////////////////////////
-void ZoneTypeString( char *str, ZoneType type )
+const char *ZoneTypeString( ZoneType type )
 {
+    const char *str;
+    
     switch( type )
     {
         case ZoneType_Edge:
-            sprintf(str, "%s", "Edge" );
+            str = "Edge";
             break;
         case ZoneType_Excluded:
-            sprintf(str, "%s", "Excluded" );
+            str = "Excluded";
             break;
         case ZoneType_Aggregation:
-            sprintf(str, "%s", "Aggregation" );
+            str = "Aggregation";
             break;
         case ZoneType_Storage:
-            sprintf(str, "%s", "Storage" );
+            str = "Storage";
             break;
         case ZoneType_Frontend:
-            sprintf(str, "%s", "Frontend" );
+            str = "Frontend";
             break;
         case ZoneType_Backend:
-            sprintf(str, "%s", "Backend" );
+            str = "Backend";
             break;
         case ZoneType_Any:
-            sprintf(str, "%s", "Any" );
+            str = "Any";
             break;
         default:
-            sprintf(str, "%s", "Undefined" );
-            break;
+            str = "Undefined";
     }
+
+    return( str );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -185,14 +190,14 @@ int TestClusterConfig( void )
     int spareListCount;
     int sparePNids[MAX_NODES];
     char coreMaskStr[17] = {'0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','\0'};
-    char zoneTypeStr[30] = {'\0'};
     char spareListStr[80] = {'\0'};
     CClusterConfig  clusterConfig;
     CPNodeConfig   *pnodeConfig;
     CLNodeConfig   *lnodeConfig;
+    CPersistConfig *persistConfig;
     cpu_set_t       coreMask;
 
-    printf( "BEGIN 'cluster.conf' Test\n" );
+    printf( "BEGIN 'sqconfig.db' Test\n" );
     
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
     if ( clusterConfig.Initialize() )
@@ -262,13 +267,13 @@ int TestClusterConfig( void )
                     
                     coreMask = lnodeConfig->GetCoreMask();
                     CoreMaskString( coreMaskStr, coreMask );
-                    ZoneTypeString( zoneTypeStr, lnodeConfig->GetZoneType() );
+                    
                     printf( "pnid=%d, nid=%d, processors=%d, coremask=%s, zone=%s\n"
                           , lnodeConfig->GetPNid()
                           , lnodeConfig->GetNid()
                           , lnodeConfig->GetProcessors()
                           , coreMaskStr
-                          , zoneTypeStr
+                          , ZoneTypeString(lnodeConfig->GetZoneType())
                           );
                 }
             }
@@ -281,13 +286,12 @@ int TestClusterConfig( void )
                 {
                     coreMask = lnodeConfig->GetCoreMask();
                     CoreMaskString( coreMaskStr, coreMask );
-                    ZoneTypeString( zoneTypeStr, lnodeConfig->GetZoneType() );
                     printf( "pnid=%d, nid=%d, processors=%d, coremask=%s, zone=%s\n"
                           , lnodeConfig->GetPNid()
                           , lnodeConfig->GetNid()
                           , lnodeConfig->GetProcessors()
                           , coreMaskStr
-                          , zoneTypeStr
+                          , ZoneTypeString(lnodeConfig->GetZoneType())
                           );
                 }
             }
@@ -313,12 +317,11 @@ int TestClusterConfig( void )
                         {
                             coreMask = lnodeConfig->GetCoreMask();
                             CoreMaskString( coreMaskStr, coreMask );
-                            ZoneTypeString( zoneTypeStr, lnodeConfig->GetZoneType() );
                             printf( " nid=%d, processors=%d, coremask=%s, zone=%s\n"
                                   , lnodeConfig->GetNid()
                                   , lnodeConfig->GetProcessors()
                                   , coreMaskStr
-                                  , zoneTypeStr
+                                  , ZoneTypeString(lnodeConfig->GetZoneType())
                                   );
                         }
                     }
@@ -359,19 +362,52 @@ int TestClusterConfig( void )
                 }
             }
 
+            // Print persistent processes
+            printf( "persistent processes list test\n" );
+            persistConfig = clusterConfig.GetFirstPersistConfig();
+            for ( ; persistConfig; persistConfig = persistConfig->GetNext() )
+            {
+                if ( persistConfig )
+                {
+                    printf( "type = %s\n"
+                            "   processName = {%s:%s} (%s)\n"
+                            "   processType = %s\n"
+                            "   programName = %s\n"
+                            "   stdout      = {%s:%s} (%s)\n"
+                            "   requiresDTM = %s\n"
+                            "   retries     = {%d:%d}\n"
+                            "   zid         = {%s} (%s)\n"
+                          , persistConfig->GetPersistPrefix()
+                          , persistConfig->GetProcessNamePrefix()
+                          , persistConfig->GetProcessNameFormat()
+                          , FormatNidString(persistConfig->GetProcessNameNidFormat())
+                          , ProcessTypeString(persistConfig->GetProcessType())
+                          , persistConfig->GetProgramName()
+                          , persistConfig->GetStdoutPrefix()
+                          , persistConfig->GetStdoutFormat()
+                          , FormatNidString(persistConfig->GetStdoutNidFormat())
+                          , persistConfig->GetRequiresDTM()?"Y":"N"
+                          , persistConfig->GetPersistRetries()
+                          , persistConfig->GetPersistWindow()
+                          , persistConfig->GetZoneFormat()
+                          , FormatZidString(persistConfig->GetZoneZidFormat())
+                          );
+                }
+            }
+
             rc = 0;
         }
         else
         {
-            printf( "FAILED 'cluster.conf' Load\n" );
+            printf( "FAILED 'sqconfig.db' Load\n" );
         }
     }
     else
     {
-        printf( "FAILED 'cluster.conf' Initialize\n" );
+        printf( "FAILED 'sqconfig.db' Initialize\n" );
     }
 
-    printf( "\nEND 'cluster.conf' Test\n" );
+    printf( "\nEND 'sqconfig.db' Test\n" );
     return( rc );
 }
 
@@ -415,7 +451,7 @@ int main( int argc, char *argv[] )
     }
 
     printf( "BEGIN Unit Test\n\n" );
-    
+
     if ( ClusterConfigTest )
     {
         error = TestClusterConfig( );

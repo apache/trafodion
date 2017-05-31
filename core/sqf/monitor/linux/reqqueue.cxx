@@ -40,7 +40,9 @@
 #include "healthcheck.h"
 
 extern int MyPNID;
+extern bool Emulate_Down;
 extern CMonitor *Monitor;
+extern CNodeContainer *Nodes;
 extern CNode *MyNode;
 extern CMonStats *MonStats;
 extern CLock MemModLock;
@@ -1623,8 +1625,15 @@ void CIntShutdownReq::performRequest()
     TRACE_EXIT;
 }
 
-CIntNodeNameReq::CIntNodeNameReq( const char *current_name, const char *new_name  ) 
-    : CInternalReq()
+CIntNodeNameReq::CIntNodeNameReq( int req_nid
+                                , int req_pid
+                                , Verifier_t req_verifier
+                                , const char *current_name
+                                , const char *new_name  ) 
+                : CInternalReq()
+                , req_nid_(req_nid)
+                , req_pid_(req_pid)
+                , req_verifier_(req_verifier)
 {
     // Add eyecatcher sequence as a debugging aid
     memcpy(&eyecatcher_, "RQIZ", 4);
@@ -1651,19 +1660,310 @@ void CIntNodeNameReq::performRequest()
 {
     const char method_name[] = "CIntNodeNameReq::performRequest";
     TRACE_ENTRY;
-    char current_n[MAX_PROCESS_NAME];
-    char new_n[MAX_PROCESS_NAME];
+
+    int rc = MPI_SUCCESS;
+    char current_n[MPI_MAX_PROCESSOR_NAME];
+    char new_n[MPI_MAX_PROCESSOR_NAME];
+    CPNodeConfig   *pnodeConfig = NULL; 
+    CProcess *requester = NULL;
     
     strcpy (current_n, current_name_.c_str());
     strcpy (new_n, new_name_.c_str());
 
-    CNode    *node = Nodes->GetNode(current_n); 
-    if (node)
-        node->SetName(new_n);
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+    if (clusterConfig)
+    {
+        // Check for existence of node name in the configuration
+        pnodeConfig = clusterConfig->GetPNodeConfig( current_n );
+        if (pnodeConfig)
+        {
+            // Update the node name in the configuration database
+            if (clusterConfig->UpdatePNodeConfig( pnodeConfig->GetPNid()
+                    , new_n
+                    , pnodeConfig->GetExcludedFirstCore()
+                    , pnodeConfig->GetExcludedLastCore() ))
+            {
+                // lock sync thread since we are making a change the monitor's
+                // operational view of the cluster
+                if ( !Emulate_Down )
+                {
+                    Monitor->EnterSyncCycle();
+                }
+        
+                // Change node name in monitor's view of cluster
+                CNode    *node = Nodes->GetNode(current_n); 
+                if (node)
+                {
+                    node->SetName( new_n );
+                    Nodes->ChangedNode( node ); 
+                }
+                else
+                {
+                    char buf[MON_STRING_BUF_SIZE];
+                    sprintf( buf
+                           , "[%s], Failed to retrive node object for node %s!\n"
+                           ,  method_name, current_n);
+                    mon_log_write(MON_INTREQ_NODE_NAME_1, SQ_LOG_ERR, buf);
+
+                    rc = MPI_ERR_INTERN;
+                }
+            
+                // unlock sync thread
+                if ( !Emulate_Down )
+                {
+                    Monitor->ExitSyncCycle();
+                }
+            }
+            else
+            {
+                rc = MPI_ERR_IO;
+            }
+        }
+        else
+        {
+            char buf[MON_STRING_BUF_SIZE];
+            sprintf( buf
+                   , "[%s], Failed to retrive pnodeConfig object for node %s!\n"
+                   ,  method_name, current_n);
+            mon_log_write(MON_INTREQ_NODE_NAME_2, SQ_LOG_ERR, buf);
+    
+            rc = MPI_ERR_INTERN;
+        }
+    }
+    else
+    {
+        char buf[MON_STRING_BUF_SIZE];
+        sprintf(buf, "[%s], Failed to retrive ClusterConfig object!\n",
+                method_name);
+        mon_log_write(MON_INTREQ_NODE_NAME_3, SQ_LOG_ERR, buf);
+
+        rc = MPI_ERR_INTERN;
+    }
+
+    requester = Nodes->GetProcess( req_nid_
+                                 , req_pid_
+                                 , req_verifier_ );
+    if (requester)
+    {
+        // Reply to requester
+        requester->CompleteRequest( rc );
+    }
+
 
     TRACE_EXIT;
 }
 
+
+CIntNodeAddReq::CIntNodeAddReq( int req_nid
+                              , int req_pid
+                              , Verifier_t req_verifier
+                              , char *nodeName
+                              , int  firstCore
+                              , int  lastCore
+                              , int  processors
+                              , int  roles
+                              )
+              : CInternalReq()
+              , req_nid_(req_nid)
+              , req_pid_(req_pid)
+              , req_verifier_(req_verifier)
+              , first_core_(firstCore)
+              , last_core_(lastCore)
+              , processors_(processors)
+              , roles_(roles)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RQIJ", 4);
+    STRCPY( nodeName_, nodeName );
+}
+
+CIntNodeAddReq::~CIntNodeAddReq()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rqij", 4);
+}
+
+void CIntNodeAddReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    snprintf( strBuf, sizeof(strBuf), 
+              "IntReq(%s) req #=%ld "
+              "(node_name=%s/first_core=%d/last_core=%d/processors=%d/roles=%d)"
+            , CReqQueue::intReqType[InternalType_NodeAdd]
+            , getId()
+            , nodeName_
+            , first_core_
+            , last_core_
+            , processors_
+            , roles_ );
+    requestString_.assign( strBuf );
+}
+
+void CIntNodeAddReq::performRequest()
+{
+    const char method_name[] = "CIntNodeAddReq::performRequest";
+    TRACE_ENTRY;
+
+    int nid;
+    int pnid;
+    int rc = MPI_SUCCESS;
+    CProcess *requester = NULL;
+
+    if (trace_settings & (TRACE_SYNC | TRACE_PROCESS))
+    {
+        trace_printf("%s@%d - Node add request (%s), "
+                     "node_name=%s, first_core=%d, last_core=%d, "
+                     "processors=%d, roles=%d\n"
+                    , method_name, __LINE__
+                    , requester ? requester->GetName() : ""
+                    , nodeName_
+                    , first_core_
+                    , last_core_
+                    , processors_
+                    , roles_ );
+    }
+
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+
+    // Get the next pnid and nid available for assignment
+    nid  = clusterConfig->GetNextNid();
+    pnid = clusterConfig->GetNextPNid();
+
+    // Insert node in configuration database and 
+    // add to configuration object in monitor
+    if (clusterConfig->SaveNodeConfig( nodeName_
+                                     , nid
+                                     , pnid
+                                     , first_core_
+                                     , last_core_
+                                     , processors_
+                                     , -1 // excludedFirstCore
+                                     , -1 // excludedLastCore
+                                     , roles_ ))
+    {
+        // lock sync thread since we are making a change the monitor's
+        // operational view of the cluster
+        if ( !Emulate_Down )
+        {
+            Monitor->EnterSyncCycle();
+        }
+
+        // Add node to monitor's view of cluster and broadcast node added notice
+        if (!Monitor->ReinitializeConfigCluster( true, pnid ))
+        {
+            rc = MPI_ERR_INTERN;
+        }
+    
+        // unlock sync thread
+        if ( !Emulate_Down )
+        {
+            Monitor->ExitSyncCycle();
+        }
+    }
+    else
+    {
+        rc = MPI_ERR_IO;
+    }
+
+    requester = Nodes->GetProcess( req_nid_
+                                 , req_pid_
+                                 , req_verifier_ );
+    if (requester)
+    {
+        // Reply to requester
+        requester->CompleteRequest( rc );
+    }
+
+    TRACE_EXIT;
+}
+
+CIntNodeDeleteReq::CIntNodeDeleteReq( int req_nid
+                                    , int req_pid
+                                    , Verifier_t req_verifier
+                                    , int pnid ) 
+                 : CInternalReq()
+                 , req_nid_(req_nid)
+                 , req_pid_(req_pid)
+                 , req_verifier_(req_verifier)
+                 , pnid_(pnid)
+{
+    // Add eyecatcher sequence as a debugging aid
+    memcpy(&eyecatcher_, "RQIT", 4);
+}
+
+CIntNodeDeleteReq::~CIntNodeDeleteReq()
+{
+    // Alter eyecatcher sequence as a debugging aid to identify deleted object
+    memcpy(&eyecatcher_, "rqit", 4);
+}
+
+void CIntNodeDeleteReq::populateRequestString( void )
+{
+    char strBuf[MON_STRING_BUF_SIZE/2];
+    snprintf( strBuf, sizeof(strBuf), 
+              "IntReq(%s) req #=%ld "
+              "(pnid=%d)"
+            , CReqQueue::intReqType[InternalType_NodeDelete]
+            , getId()
+            , pnid_ );
+    requestString_.assign( strBuf );
+}
+
+void CIntNodeDeleteReq::performRequest()
+{
+    const char method_name[] = "CIntNodeDeleteReq::performRequest";
+    TRACE_ENTRY;
+
+    int rc = MPI_SUCCESS;
+    CProcess *requester = NULL;
+
+    requester = Nodes->GetProcess( req_nid_
+                                 , req_pid_
+                                 , req_verifier_ );
+
+    if (trace_settings & (TRACE_SYNC | TRACE_REQUEST))
+        trace_printf( "%s@%d - Node delete request (%s), pnid=%d\n"
+                    , method_name, __LINE__
+                    , requester ? requester->GetName() : ""
+                    , pnid_ );
+
+    CClusterConfig *clusterConfig = Nodes->GetClusterConfig();
+    if (clusterConfig->DeleteNodeConfig( pnid_ ))
+    {
+        // lock sync thread
+        if ( !Emulate_Down )
+        {
+            Monitor->EnterSyncCycle();
+        }
+
+        // Reload the static configuration and broadcast node deleted notice
+        if (!Monitor->ReinitializeConfigCluster( false, pnid_ ))
+        {
+            rc = MPI_ERR_INTERN;
+        }
+
+        // unlock sync thread
+        if ( !Emulate_Down )
+        {
+            Monitor->ExitSyncCycle();
+        }
+    }
+    else
+    {
+        rc = MPI_ERR_IO;
+    }
+
+    requester = Nodes->GetProcess( req_nid_
+                                 , req_pid_
+                                 , req_verifier_ );
+    if (requester)
+    {
+        // Reply to requester
+        requester->CompleteRequest( rc );
+    }
+
+    TRACE_EXIT;
+}
 
 CIntDownReq::CIntDownReq( int pnid ) 
     : CInternalReq(),
@@ -1834,13 +2134,13 @@ CIntActivateSpareReq::CIntActivateSpareReq(CNode *spareNode, CNode *downNode, bo
     checkHealth_(checkHealth)
 {
     // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RQIR", 4);
+    memcpy(&eyecatcher_, "RQIM", 4);
 }
 
 CIntActivateSpareReq::~CIntActivateSpareReq()
 {
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
-    memcpy(&eyecatcher_, "rqir", 4);
+    memcpy(&eyecatcher_, "rqim", 4);
 }
 
 void CIntActivateSpareReq::populateRequestString( void )
@@ -2164,6 +2464,7 @@ void CIntSnapshotReq::performRequest()
             abort();
     }
 
+#if 0
     // copy sqconfig.db
     char cmd[256];
     sprintf(cmd, "pdcp -p -w %s %s/sql/scripts/sqconfig.db %s/sql/scripts/.", Monitor->GetIntegratingNode()->GetName(), 
@@ -2175,10 +2476,11 @@ void CIntSnapshotReq::performRequest()
         trace_printf("%s@%d - Copied config.db (%s) Error = %d\n", method_name, __LINE__, cmd, error);
 
     mem_log_write(MON_REQQUEUE_SNAPSHOT_3, error);
-
+#endif
+    
     // estimate size of snapshot buffer
     // about 100 bytes per process, 1.5 times total
-    int procSize = Nodes->ProcessCount() * 1.5 * 100;
+    int procSize = Nodes->ProcessCount() * 1.75 * 100;
     int spareNodeSize = Nodes->GetSpareNodesList()->size() * sizeof(int); // pnids
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
@@ -2552,13 +2854,13 @@ CIntTmReadyReq::CIntTmReadyReq( int nid )
                ,nid_ ( nid )
 {
     // Add eyecatcher sequence as a debugging aid
-    memcpy(&eyecatcher_, "RQIX", 4);
+    memcpy(&eyecatcher_, "RQIV", 4);
 }
 
 CIntTmReadyReq::~CIntTmReadyReq()
 {
     // Alter eyecatcher sequence as a debugging aid to identify deleted object
-    memcpy(&eyecatcher_, "rqix", 4);
+    memcpy(&eyecatcher_, "rqiv", 4);
 }
 
 void CIntTmReadyReq::populateRequestString( void )
@@ -2633,11 +2935,6 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
-        case ReqType_NodeName:
-            request = new CExtNodeNameReq(msgType, pid, msg);
-            request->setConcurrent(reqConcurrent[msg->u.request.type]);
-            break;
-   
         case ReqType_ProcessInfo:
             request = new CExtProcInfoReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -2657,6 +2954,7 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request = new CExtPNodeInfoReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
+
         case ReqType_Set:
             request = new CExtSetReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -2721,16 +3019,41 @@ CExternalReq *CReqQueue::prepExternalReq(CExternalReq::reqQueueMsg_t msgType,
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
+        case ReqType_NodeAdd:
+            request = new CExtNodeAddReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
+        case ReqType_NodeDelete:
+            request = new CExtNodeDeleteReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+
         case ReqType_NodeDown:
             request = new CExtNodeDownReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
 
+        case ReqType_NodeName:
+            request = new CExtNodeNameReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+   
         case ReqType_NodeUp:
             request = new CExtNodeUpReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
             break;
+#if 0
+        case ReqType_PersistAdd:
+            request = new CExtPersistAddReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
 
+        case ReqType_PersistDelete:
+            request = new CExtPersistDeleteReq(msgType, pid, msg);
+            request->setConcurrent(reqConcurrent[msg->u.request.type]);
+            break;
+#endif
         case ReqType_Shutdown:
             request = new CExtShutdownReq(msgType, pid, msg);
             request->setConcurrent(reqConcurrent[msg->u.request.type]);
@@ -2947,6 +3270,50 @@ void CReqQueue::enqueueDeviceReq ( char *ldevName )
     enqueueReq ( request );
 }
 
+void CReqQueue::enqueueNodeAddReq( int req_nid
+                                 , int req_pid
+                                 , Verifier_t req_verifier
+                                 , char *node_name
+                                 , int firstCore
+                                 , int lastCore
+                                 , int processors
+                                 , int roles
+                                 )
+{
+    CInternalReq * request;
+
+    request = new CIntNodeAddReq( req_nid
+                                , req_pid
+                                , req_verifier
+                                , node_name
+                                , firstCore
+                                , lastCore
+                                , processors
+                                , roles
+                                );
+
+    request->setPriority(CRequest::High);
+
+    enqueueReq ( request );
+}
+
+void CReqQueue::enqueueNodeDeleteReq( int req_nid
+                                    , int req_pid
+                                    , Verifier_t req_verifier
+                                    , int pnid )
+{
+    CInternalReq * request;
+
+    request = new CIntNodeDeleteReq( req_nid
+                                   , req_pid
+                                   , req_verifier
+                                   , pnid );
+
+    request->setPriority(CRequest::High);
+
+    enqueueReq ( request );
+}
+
 void CReqQueue::enqueueDownReq( int pnid )
 {
     CInternalReq * request;
@@ -2958,11 +3325,19 @@ void CReqQueue::enqueueDownReq( int pnid )
     enqueueReq ( request );
 }
 
-void CReqQueue::enqueueNodeNameReq( char *current_name, char *new_name)
+void CReqQueue::enqueueNodeNameReq( int req_nid
+                                  , int req_pid
+                                  , Verifier_t req_verifier
+                                  , char *current_name
+                                  , char *new_name)
 {
     CInternalReq * request;
 
-    request = new CIntNodeNameReq ( current_name, new_name );
+    request = new CIntNodeNameReq( req_nid
+                                 , req_pid
+                                 , req_verifier
+                                 , current_name
+                                 , new_name );
 
     enqueueReq ( request );
 }
@@ -3584,44 +3959,7 @@ void CReqQueue::stats()
     TRACE_EXIT;
 }
 
-
 // Definition of which requests can execute concurrently
-// (final version of table)
-#ifdef Final
-const bool CReqQueue::reqConcurrent[] = {
-   false,    // unused, request types start at 1
-   true,     // ReqType_Close
-   true,     // ReqType_Dump
-   false,    // ReqType_Event
-   true,     // ReqType_Exit
-   true,     // ReqType_Get
-   true,     // ReqType_Kill
-   false,    // ReqType_Mount
-   true,     // ReqType_NewProcess
-   false,    // ReqType_NodeDown
-   true,     // ReqType_NodeInfo
-   false,    // ReqType_NodeUp
-   false,    // ReqType_Notice -- not an actual request
-   true,     // ReqType_Notify
-   true,     // ReqType_Open
-   true,     // ReqType_OpenInfo
-   true,     // ReqType_ProcessInfo
-   true,     // ReqType_ProcessInfoCont
-   true,     // ReqType_Set
-   false,    // ReqType_Shutdown
-   true,     // ReqType_Startup
-   false,    // ReqType_Stfsd
-   false,    // ReqType_TmLeader
-   false,    // ReqType_TmSync
-   false,    // ReqType_TransInfo
-   true,     // ReqType_MonStats
-   true,     // ReqType_ZoneInfo
-   false     // ReqType_NodeName
-};
-#endif
-
-// Definition of which requests can execute concurrently
-// (temporary version of table for experimenation)
 const bool CReqQueue::reqConcurrent[] = {
    false,    // unused, request types start at 1
    false,    // ReqType_Close
@@ -3630,15 +3968,21 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_Exit
    true,     // ReqType_Get
    false,    // ReqType_Kill
+   false,    // ReqType_MonStats
    false,    // ReqType_Mount
    false,    // ReqType_NewProcess
+   false,    // ReqType_NodeAdd
+   false,    // ReqType_NodeDelete
    false,    // ReqType_NodeDown
    false,    // ReqType_NodeInfo
+   false,    // ReqType_NodeName 
    false,    // ReqType_NodeUp
    false,    // ReqType_Notice -- not an actual request
    false,    // ReqType_Notify
    true,     // ReqType_Open
    false,    // ReqType_OpenInfo
+   false,    // ReqType_PersistAdd
+   false,    // ReqType_PersistDelete
    false,    // ReqType_PNodeInfo
    false,    // ReqType_ProcessInfo
    false,    // ReqType_ProcessInfoCont
@@ -3650,31 +3994,9 @@ const bool CReqQueue::reqConcurrent[] = {
    false,    // ReqType_TmReady,
    false,    // ReqType_TmSync
    false,    // ReqType_TransInfo
-   false,    // ReqType_MonStats
    false,    // ReqType_ZoneInfo
-   false,    // ReqType_NodeName 
    false     // ReqType_Invalid
 };
-
-#ifdef final
-
-
-MsgType_Change=1,                       // registry information has changed notification
-MsgType_Close,                          // process close notification
-MsgType_Event,                          // generic event notification
-MsgType_NodeDown       invalid
-MsgType_NodeUp         invalid
-MsgType_Open           invalid
-MsgType_ProcessCreated,                 // process creation completed notification
-MsgType_ProcessDeath   invalid
-MsgType_Service,                        // request a service from the monitor
-MsgType_Shutdown,                       // system shutdown notification
-MsgType_TmSyncAbort,                    // request to abort TM sync data previously received
-MsgType_TmSyncCommit,                   // request to commit previously received TM sync data
-MsgType_UnsolicitedMessage              // Outgoing monitor msg expecting a reply 
-
-
-#endif
 
 // Request names used for trace output
 const char * CReqQueue::svcReqType[] = {
@@ -3685,15 +4007,21 @@ const char * CReqQueue::svcReqType[] = {
     "Exit",
     "Get",
     "Kill",
+    "MonStats",
     "Mount",
     "NewProcess",
+    "NodeAdd",
+    "NodeDelete",
     "NodeDown",
     "NodeInfo",
+    "NodeName",
     "NodeUp",
     "Notice",
     "Notify",
     "Open",
     "OpenInfo",
+    "PersistAdd",
+    "PersistDelete",
     "PNodeInfo",
     "ProcessInfo",
     "ProcessInfoCont",
@@ -3705,7 +4033,6 @@ const char * CReqQueue::svcReqType[] = {
     "TmReady",
     "TmSync",
     "TransInfo",
-    "MonStats",
     "ZoneInfo"
 };
 
@@ -3722,7 +4049,14 @@ const char * CReqQueue::intReqType[] = {
     , "Exit"
     , "IoData"
     , "Kill"
+    , "NodeAdd"
+    , "NodeAdded"
+    , "NodeDelete"
+    , "NodeDeleted"
+    , "NodeName"
     , "Notify"
+    , "PersistAdd"
+    , "PersistDelete"
     , "Process"
     , "ProcessInit"
     , "Open"

@@ -30,31 +30,51 @@
 
 #include "lnodeconfig.h"
 
+class CLNodeConfig;
+class CPNodeConfig;
+
 typedef list<CPNodeConfig *>   PNodesConfigList_t;
+
+typedef struct pnodeConfigInfo_s
+{
+    int        pnid;
+    char       nodename[MPI_MAX_PROCESSOR_NAME];
+    int        excludedFirstCore;
+    int        excludedLastCore;
+    cpu_set_t  excludedCoreMask;
+    int        spareCount;
+    int        sparePNid[MAX_NODES];
+} pnodeConfigInfo_t;
 
 class CPNodeConfigContainer
 {
 public:
-    CPNodeConfigContainer( void );
+    CPNodeConfigContainer( int pnodesConfigMax );
     ~CPNodeConfigContainer( void );
 
-    static int hostnamecmp(const char *p_str1, const char *p_str2);
-    CPNodeConfig *AddPNodeConfig( int pnid, char *name, bool spare );
+    CPNodeConfig *AddPNodeConfig( pnodeConfigInfo_t &pnodeConfigInfo );
+    void          Clear( void );
+    static int    hostnamecmp(const char *p_str1, const char *p_str2);
     void          DeletePNodeConfig( CPNodeConfig *pnodeConfig );
     inline CPNodeConfig *GetFirstPNodeConfig( void ) { return ( head_ ); }
+    inline int    GetNextPNid( void ) { return ( nextPNid_ ); }
     int           GetPNid( char  *nodename );
+    CPNodeConfig *GetPNodeConfig( char *nodename );
     CPNodeConfig *GetPNodeConfig( int pnid );
+    inline int    GetPNodesConfigMax( void ) { return ( pnodesConfigMax_ ); }
     inline int    GetPNodesCount( void ) { return ( pnodesCount_ ); }
     inline int    GetSNodesCount( void ) { return ( snodesCount_ ); }
     inline PNodesConfigList_t *GetSpareNodesConfigList( void ) { return ( &spareNodesConfigList_ ); }
     void          GetSpareNodesConfigSet( const char *name, PNodesConfigList_t &spareSet );
 
 protected:
-    CPNodeConfig  **pnodeConfig_; // array of physical node configuration objects
+    CPNodeConfig  **pnodesConfig_;// array of physical node configuration objects
     int             pnodesCount_; // # of physical nodes 
     int             snodesCount_; // # of spare nodes
+    int             nextPNid_;    // next physical node id available
 
 private:
+    int             pnodesConfigMax_; // maximum number of physical nodes
     PNodesConfigList_t  spareNodesConfigList_; // configured spare nodes list
     CPNodeConfig  *head_; // head of physical nodes linked list
     CPNodeConfig  *tail_; // tail of physical nodes linked list
@@ -63,30 +83,31 @@ private:
 
 class CPNodeConfig : public CLNodeConfigContainer
 {
-    friend CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( int pnid, char *name, bool spare );
-    friend void CPNodeConfigContainer::DeletePNodeConfig( CPNodeConfig *entry );
+    friend CPNodeConfig *CPNodeConfigContainer::AddPNodeConfig( pnodeConfigInfo_t &pnodeConfigInfo );
+    friend void CPNodeConfigContainer::DeletePNodeConfig( CPNodeConfig *pnodeConfig );
 public:
 
     CPNodeConfig( CPNodeConfigContainer *pnodesConfig
-                , int                    pnid
-                , const char            *hostname
+                , pnodeConfigInfo_t &pnodeConfigInfo
                 );
     ~CPNodeConfig( void );
 
     inline cpu_set_t    &GetExcludedCoreMask( void ) { return (excludedCoreMask_); }
-    inline int           GetLNodesCount( void ) { return ( CLNodeConfigContainer::lnodesCount_ ); }
+    inline int           GetExcludedFirstCore( void ) { return ( excludedFirstCore_ ); }
+    inline int           GetExcludedLastCore( void ) { return ( excludedLastCore_ ); }
     inline const char   *GetName( void ) { return ( name_ ); }
     inline CPNodeConfig *GetNext( void ) { return ( next_ ); }
     inline int           GetPNid( void ) { return ( pnid_ ); }
-    void                 SetName( char *newName ); 
+    void                 SetName( const char *newName ); 
+    void                 SetExcludedFirstCore( int excludedFirstCore ); 
+    void                 SetExcludedLastCore( int excludedLastCore ); 
     int                  GetSpareList( int sparePNid[] );
     inline int           GetSparesCount( void ) { return ( sparePNidsCount_ ); }
 
     inline bool          IsSpareNode( void ) { return ( spareNode_ ); }
     inline void          SetExcludedCoreMask( cpu_set_t &coreMask ) { excludedCoreMask_ = coreMask; }
-
-    void        SetSpareList( int sparePNid[], int spareCount );
-    void        ResetSpare( void );
+    void                 SetSpareList( int sparePNid[], int spareCount );
+    void                 ResetSpare( void );
 
 protected:
 private:
@@ -94,6 +115,8 @@ private:
     char                   name_[MPI_MAX_PROCESSOR_NAME]; // hostname
     int                    pnid_;         // physical node identifier
     cpu_set_t              excludedCoreMask_; // mask of excluded SMP processor cores
+    int                    excludedFirstCore_;// First excluded SMP processor core used by logical node
+    int                    excludedLastCore_; // Last excluded SMP processor core used by logical node
     bool                   spareNode_;    // true when this is a spare physical node
     int                   *sparePNids_;   // array of pnids this physical node can spare
     int                    sparePNidsCount_; // # of entries in spare sparePNids_ array

@@ -224,8 +224,6 @@ declare -i cfg_rms_cnt
 declare -i cfg_mxo_cnt
 declare -i cfg_lnode_cnt
 declare -i cfg_pnode_cnt
-declare -i exc_lnode_cnt
-declare -i exc_pnode_cnt
 
 let act_dtm_cnt=0
 let act_rms_cnt=0
@@ -237,8 +235,6 @@ let act_lnode_up_cnt=0
 let act_pnode_up_cnt=0
 let cfg_lnode_cnt=0
 let cfg_pnode_cnt=0
-let exc_lnode_cnt=0
-let exc_pnode_cnt=0
 
 let cfg_mxo_cnt=0
 let act_mxo_down_cnt=0
@@ -255,9 +251,6 @@ if [[ -z $SQSCRIPTS_DIR ]]; then
     SQSCRIPTS_DIR=$TRAF_HOME/sql/scripts
 fi
 
-SQSCRIPT_FILE="$SQSCRIPTS_DIR/gomon.cold"
-STARTSSMP_FILE="$SQSCRIPTS_DIR/ssmpstart"
-STARTSSCP_FILE="$SQSCRIPTS_DIR/sscpstart"
 
 if [ $check_node '>' -1 ]; then
    getNodeStatus
@@ -291,14 +284,6 @@ for pnodedn in `cat $sq_tmp_pnode_dn`; do
     let ++act_pnode_down_cnt
 done
 
-### EXCLUDED NODEs (assumes 1:1 logical node to physical node mapping)
-sq_exc_node=`mktemp -t`
-echo $TRAF_EXCLUDE_LIST > $sq_exc_node
-for enode in `cat $sq_exc_node`; do
-    let ++exc_lnode_cnt
-    let ++exc_pnode_cnt
-done
-
 if [ $act_lnode_up_cnt '>' 0 ]; then
     cfg_lnode_cnt=(act_lnode_up_cnt+act_lnode_down_cnt)
     cfg_pnode_cnt=(act_pnode_up_cnt+act_pnode_down_cnt)
@@ -309,22 +294,18 @@ rm -f $sq_tmp_pnode_up
 rm -f $sq_tmp_lnode_dn
 rm -f $sq_tmp_pnode_dn
 rm -f $sq_tmp_node_info
-rm -f $sq_exc_node
 
-### CONFIGURED DTMs
-let cfg_dtm_cnt=`grep -i 'type dtm,' $SQSCRIPT_FILE | wc -l`
-let cfg_dtm_cnt=$cfg_dtm_cnt-$exc_lnode_cnt
-sq_tmp_dtms_names=`mktemp -t`
+### CONFIGURED DTMs (based on logical nodes configured)
+let cfg_dtm_cnt=cfg_lnode_cnt
 let num_dtms=0
-grep -i 'type dtm,' $SQSCRIPT_FILE | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_dtms_names
-for dtms in `cat $sq_tmp_dtms_names`; do
-    if ( [ "$num_dtms" '<' "$cfg_dtm_cnt" ] ); then 
-        cfg_dtms[num_dtms]=$dtms
-        let ++num_dtms
-    fi
+while [[ $num_dtms -lt $cfg_dtm_cnt ]];
+do
+    dtm_name=`echo \\$TM$num_dtms`
+    cfg_dtms[num_dtms]=$dtm_name
+    let ++num_dtms
 done
+# Trace print
 #echo ${cfg_dtms[*]}
-rm -f $sq_tmp_dtms_names
 
 ### CONFIGURED MXOSRVR
 if [ -z ${DCS_INSTALL_DIR} ]; then
@@ -338,36 +319,32 @@ fi
 
 ### CONFIGURED RMSs 
 if [[ $SQ_START_RMS == "1" ]]; then
-    let cfg_sscp_cnt=`grep -i 'exec ' $STARTSSCP_FILE | egrep -i ' mxsscp' | wc -l`
-    let cfg_ssmp_cnt=`grep -i 'exec ' $STARTSSMP_FILE | egrep -i ' mxssmp' | wc -l`
-      # Adjust the configured counts with the number of excluded elastic nodes
-    let cfg_sscp_cnt=$cfg_sscp_cnt-$exc_lnode_cnt
-    let cfg_ssmp_cnt=$cfg_ssmp_cnt-$exc_lnode_cnt
+    let cfg_sscp_cnt=cfg_lnode_cnt
+    let cfg_ssmp_cnt=cfg_lnode_cnt
     let cfg_rms_cnt=$cfg_sscp_cnt+$cfg_ssmp_cnt
     sq_tmp_rms_names=`mktemp -t`
     let num_sscp=0
     let num_ssmp=0
     let num_rms=0
-    grep -i 'exec ' $STARTSSCP_FILE | egrep -i 'mxsscp' | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_rms_names
-    for rms in `cat $sq_tmp_rms_names`; do
-        if ( [ "$num_sscp" '<' "$cfg_sscp_cnt" ] ); then 
-            cfg_rms[num_rms]=$rms
-            let ++num_sscp
-            let ++num_rms
-        fi
+    while [[ $num_sscp -lt $cfg_lnode_cnt ]];
+    do
+        rms_name=`echo \\$ZSC$num_sscp`
+        cfg_rms[num_rms]=$rms_name
+        let ++num_sscp
+        let ++num_rms
     done
-    grep -i 'exec ' $STARTSSMP_FILE | egrep -i 'mxssmp' | grep -o 'name \\\$[A-Za-z]*[0-9]*' | grep -o '\\\$[A-Za-z]*[0-9]*' > $sq_tmp_rms_names
-    for rms in `cat $sq_tmp_rms_names`; do
-        if ( [ "$num_ssmp" '<' "$cfg_ssmp_cnt" ] ); then 
-            cfg_rms[num_rms]=$rms
-            let ++num_ssmp
-            let ++num_rms
-        fi
+    while [[ $num_ssmp -lt $cfg_lnode_cnt ]];
+    do
+        rms_name=`echo \\$ZSM$num_ssmp`
+        cfg_rms[num_rms]=$rms_name
+        let ++num_ssmp
+        let ++num_rms
     done
-    rm -f $sq_tmp_rms_names
 else
     let cfg_rms_cnt=0
 fi
+# Trace print
+#echo ${cfg_rms[*]}
 
 sq_tmp_ps=`mktemp -t`
 if [[ $? != 0 ]]; then
@@ -402,7 +379,7 @@ fi
   sqps > $sq_tmp_ps 2>&1
 
   #DTM
-  let act_dtm_cnt=`< $sq_tmp_ps grep -a -i '$TM' | wc -l`
+  let act_dtm_cnt=`< $sq_tmp_ps grep -a ' DTM ' | wc -l`
   if [ $reset_counter '==' 1 ]; then
       let lv_cnt_check=(act_dtm_cnt '>' last_dtm_cnt)
       if [ $lv_cnt_check '==' 1 ]; then

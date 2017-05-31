@@ -326,7 +326,7 @@ int CTmSync_Container::CoordinateTmDataBlock ( struct sync_def *sync )
                 {
                     // send unsolicited messages to other TMs in
                     // local physical node and wait for them to reply
-                    if ( MyNode->GetNumLNodes() > 1 )
+                    if ( MyNode->GetLNodesCount() > 1 )
                     {
                         if ( PendingSlaveTmSync )
                         {
@@ -451,7 +451,7 @@ void CTmSync_Container::EndTmSync( MSGTYPE type )
             }
             if ( TmSyncPNid == MyPNID )
             {
-                if ( MyNode->GetNumLNodes() > 1 )
+                if ( MyNode->GetLNodesCount() > 1 )
                 {
                     if ( req->Unsolicited )
                     {
@@ -494,7 +494,7 @@ void CTmSync_Container::EndTmSync( MSGTYPE type )
     msg->u.request.u.tm_sync_notice.orig_count = orig_count;
 
     lnode = MyNode->GetFirstLNode();
-    for ( ; lnode  ; lnode = lnode->GetNext() )
+    for ( ; lnode  ; lnode = lnode->GetNextP() )
     {
         if ( lnode->GetState() == State_Up )
         {
@@ -603,7 +603,7 @@ void CTmSync_Container::EndPendingTmSync( struct sync_def *sync )
         msg->u.request.u.tm_sync_notice.orig_count = orig_count;
 
         lnode = MyNode->GetFirstLNode();
-        for ( ; lnode  ; lnode = lnode->GetNext() )
+        for ( ; lnode  ; lnode = lnode->GetNextP() )
         {
             if ( lnode->GetNid() == sync->syncnid &&
                  lnode->GetState() == State_Up )
@@ -933,7 +933,7 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                 if ( numTMs == 0 )
                 {
                     lnode = MyNode->GetFirstLNode();
-                    for ( ; lnode  ; lnode = lnode->GetNext() )
+                    for ( ; lnode  ; lnode = lnode->GetNextP() )
                     {
                         if ( lnode->GetNid() != req->Nid )
                         {
@@ -948,7 +948,7 @@ void CTmSync_Container::SendUnsolicitedMessages (void)
                    trace_printf("%s@%d" " - Unsolicited TmSync notices, total=%d, replies=%d, pending=%d\n", method_name, __LINE__, GetTotalSlaveTmSyncCount(), GetTmSyncReplies(), GetPendingSlaveTmSyncCount() );
                    
                 lnode = MyNode->GetFirstLNode();
-                for ( ; lnode  ; lnode = lnode->GetNext() )
+                for ( ; lnode  ; lnode = lnode->GetNextP() )
                 {
                     if ( lnode->GetState() == State_Up && 
                          lnode->GetNid()   != req->Nid      )

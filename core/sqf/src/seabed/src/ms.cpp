@@ -1391,11 +1391,11 @@ SB_THROWS_FATAL {
                         true, // args
                         &lv_cmdline,
                         lv_cmdline.size());
-#if 0
+
 #ifdef SQ_PHANDLE_VERIFIER
-    sprintf(&lv_line, "msg_init - p-id=%d/%d" PFVY ", tid=%ld, pname=%s, cmdline=%s, %s\n",
+    snprintf(&lv_line, sizeof(lv_line), "msg_init - p-id=%d/%d" PFVY ", tid=%ld, pname=%s, cmdline=%s, %s\n",
 #else
-    sprintf(&lv_line, "msg_init - p-id=%d/%d, tid=%ld, pname=%s, cmdline=%s, %s\n",
+    snprintf(&lv_line, sizeof(lv_line), "msg_init - p-id=%d/%d, tid=%ld, pname=%s, cmdline=%s, %s\n",
 #endif
             gv_ms_su_nid,
             gv_ms_su_pid,
@@ -1406,7 +1406,6 @@ SB_THROWS_FATAL {
             ga_ms_su_pname,
             &lv_cmdline,
             ms_seabed_vers());
-#endif
 
     // setup timer module
     sb_timer_init();

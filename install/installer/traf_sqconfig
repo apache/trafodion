@@ -77,9 +77,7 @@ do
 done
 
 echo "end node" >> $sqconfig
-#Can be added back later
-##This sed is dependent on the nubmer of line in the Apahce copyright. If it get larger this needs to change.
-#sed '1,21d' $LOCAL_WORKDIR/sqconfig_persist.txt >> $sqconfig
+
 sudo cp $sqconfig $UNTAR_DIR
 sudo cp $sqconfig $TRAF_USER_DIR/sqconfig
 sudo chown $TRAF_USER.$TRAF_GROUP $TRAF_USER_DIR/sqconfig

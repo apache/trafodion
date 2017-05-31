@@ -37,58 +37,7 @@ extern CNodeContainer *Nodes;
 extern CReplicate Replicator;
 extern CDeviceContainer *Devices;
 
-const char *ProcessTypeString( PROCESSTYPE type )
-{
-    const char *str;
-    
-    switch( type )
-    {
-        case ProcessType_TSE:
-            str = "TSE";
-            break;
-        case ProcessType_DTM:
-            str = "DTM";
-            break;
-        case ProcessType_ASE:
-            str = "ASE";
-            break;
-        case ProcessType_Generic:
-            str = "Generic";
-            break;
-        case ProcessType_Watchdog:
-            str = "Watchdog";
-            break;
-        case ProcessType_AMP:
-            str = "AMP";
-            break;
-        case ProcessType_Backout:
-            str = "Backout";
-            break;
-        case ProcessType_VolumeRecovery:
-            str = "VolumeRecovery";
-            break;
-        case ProcessType_MXOSRVR:
-            str = "MXOSRVR";
-            break;
-        case ProcessType_SPX:
-            str = "SPX";
-            break;
-        case ProcessType_SSMP:
-            str = "SSMP";
-            break;
-        case ProcessType_PSD:
-            str = "PSD";
-            break;
-        case ProcessType_SMS:
-            str = "SMS";
-            break;
-        default:
-            str = "Undefined";
-            break;
-    }
-
-    return( str );
-}
+extern const char *ProcessTypeString( PROCESSTYPE type );
 
 CExtNewProcReq::CExtNewProcReq (reqQueueMsg_t msgType, int pid,
                                 struct message_def *msg )
@@ -170,7 +119,7 @@ void CExtNewProcReq::performRequest()
         if ( msg_->u.request.u.new_process.type == ProcessType_SSMP ) 
         {
             if (( msg_->u.request.u.new_process.nid < 0  ||
-                  msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )
+                  msg_->u.request.u.new_process.nid >= Nodes->GetLNodesConfigMax() )   )
             {
                 // Nid must be specified
                 msg_->u.reply.type = ReplyType_NewProcess;
@@ -202,7 +151,7 @@ void CExtNewProcReq::performRequest()
         if ( msg_->u.request.u.new_process.type == ProcessType_DTM )
         {
             if (( msg_->u.request.u.new_process.nid < 0  ||
-                  msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )
+                  msg_->u.request.u.new_process.nid >= Nodes->GetLNodesConfigMax() )   )
             {
                 // Nid must be specified
                 msg_->u.reply.type = ReplyType_NewProcess;
@@ -241,7 +190,7 @@ void CExtNewProcReq::performRequest()
         if ( msg_->u.request.u.new_process.type == ProcessType_SPX ) 
         {
             if (( msg_->u.request.u.new_process.nid < 0  ||
-                  msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )
+                  msg_->u.request.u.new_process.nid >= Nodes->GetLNodesConfigMax() )   )
             {
                 // Nid must be specified
                 msg_->u.reply.type = ReplyType_NewProcess;
@@ -403,7 +352,7 @@ void CExtNewProcReq::performRequest()
         }
         else if (( msg_->u.request.u.new_process.type == ProcessType_DTM         ) &&
                  (( msg_->u.request.u.new_process.nid < 0                    ) ||
-                  ( msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )   )
+                  ( msg_->u.request.u.new_process.nid >= Nodes->GetLNodesConfigMax() )   )   )
         {
             msg_->u.reply.type = ReplyType_NewProcess;
             msg_->u.reply.u.new_process.return_code = MPI_ERR_SPAWN;
@@ -418,7 +367,7 @@ void CExtNewProcReq::performRequest()
         }
         else if (( msg_->u.request.u.new_process.type != ProcessType_DTM         ) &&
                  (( msg_->u.request.u.new_process.nid < 0                    ) ||
-                  ( msg_->u.request.u.new_process.nid >= Nodes->NumberLNodes )   )   )
+                  ( msg_->u.request.u.new_process.nid >= Nodes->GetLNodesConfigMax() )   )   )
         {
             msg_->u.reply.type = ReplyType_NewProcess;
             msg_->u.reply.u.new_process.return_code = MPI_ERR_SPAWN;

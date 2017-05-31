@@ -202,84 +202,6 @@ sudo chmod 777 $TRAF_CONFIG
 
 }
 
-function removeNodeExclude {
-
-source $TRAF_CONFIG
-temp=""
-
-for node in $TRAF_EXCLUDE_LIST
-do
-   if [[ ! $NODES  =~ .*$node.* ]]; then
-      temp="$temp $node"
-   fi
-
-done
-excludeCount=$(echo $TRAF_EXCLUDE_LIST | wc -w)
-tempCount=$(echo $temp | wc -w)
-
-
-if [[ "$excludeCount" -eq "$tempCount" ]]; then
-#New node name
-   changeNodeName
-   NAME_CHANGE="true"
-   sudo chmod 777 $TRAF_CONFIG
-   sed -i '/NAME_CHANGE\=/d' $TRAF_CONFIG
-   echo "export NAME_CHANGE=\"$NAME_CHANGE\"" >> $TRAF_CONFIG
-   sudo chmod 777 $TRAF_CONFIG
-else
-   TRAF_EXCLUDE_LIST=$temp
-   sudo chmod 777 $TRAF_CONFIG
-   sed -i '/TRAF_EXCLUDE_LIST\=/d' $TRAF_CONFIG
-   echo "export TRAF_EXCLUDE_LIST=\"$TRAF_EXCLUDE_LIST\"" >> $TRAF_CONFIG
-   sudo chmod 777 $TRAF_CONFIG
-fi
-
-}
-
-function changeNodeName {
-
-source $TRAF_CONFIG
-
-for node in $NODES
-do
-
-   export oldNODENAME=$(echo $TRAF_EXCLUDE_LIST | head -n1 | awk '{print $1;}')
-   temp=""
-
-   for nodes in $TRAF_EXCLUDE_LIST
-   do
-       if [[ "$oldNODENAME" != $nodes ]]; then
-          temp="$temp $nodes"
-       fi
-   done 
-   export TRAF_EXCLUDE_LIST=$temp
-
-   oldToNew="$oldNODENAME $node"
-   echo
-   echo "********************************************************************"
-   echo "***VERY IMPORTANT: User must change old user name to a new user name."
-   echo "***VERY IMPORTANT: open another session and sudo su trafodion"
-   echo "***VERY IMPORTANT: sqshell -a"
-   echo "***VERY IMPORTANT: node name $oldToNew"
-   sleep 5
-   echo -n "***VERY IMPORTANT: Press any key when complete."
-   read answer  
-   echo
-   echo "********************************************************************"
-  
-   sudo sed -i -e "s/\<$oldNODENAME\>/$node/g" $TRAF_HOME/tmp/cluster.conf
-   sudo sed -i -e "s/\<$oldNODENAME\>/$node/g" $TRAF_HOME/sql/scripts/sqconfig
-   sudo rm -rf $TRAF_HOME/tmp/se*
-   sudo rm -rf $TRAF_HOME/sql/scripts/se*
-   sudo chmod 777 $TRAF_CONFIG
-   sed -i '/TRAF_EXCLUDE_LIST\=/d' $TRAF_CONFIG
-   echo "export TRAF_EXCLUDE_LIST=\"$TRAF_EXCLUDE_LIST\"" >> $TRAF_CONFIG
-   sudo chmod 777 $TRAF_CONFIG
-
-done
-
-}
-
 function createConfigDir {
 
 $TRAF_NEW_PDSH sudo mkdir -p /etc/trafodion
@@ -328,6 +250,7 @@ $TRAF_NEW_PDSH rm -rf trafodion-util*
 function printMessage {
 
 source $TRAF_CONFIG
+echo
 echo "***IMPORTANT: Go restart HBase on new nodes"
 echo "***IMPORTANT: Wait until that is done... then..."
 echo "***IMPORTANT: Ready to run addNode_step2"
@@ -342,7 +265,6 @@ checkForHA
 addNewNodesConfig
 copyHBaseTrx
 createNewNodes
-removeNodeExclude
 createConfigDir
 copyConfig
 checkHBaseTrx

@@ -32,11 +32,7 @@
 
 // Compile options
 //#define DEBUGGING
-#define USE_ONE_SYNC_RECV_BUFFER
 #define NO_OPEN_CLOSE_NOTICES
-//#define USE_MEMORY_LOADBALANCING
-
-#define VERSION "Monitor v0.12 2-17-2009" 
 
 #define SERVICE_TAG      1
 #define INTERNAL_TAG     2
@@ -67,7 +63,9 @@
 #define MAX_NODES        256   // This can be higher when needed and will
                                // have performance implications
                                // Increment by 64 to match node state bitmask
-#define MAX_LNODES       (MAX_NODES*4)  // The 4 is a per physical node limit
+#define MAX_LNODES_PER_NODE 1  // The 1 is a per physical node limit 
+                               // (it can be more, but it is not currently used)
+#define MAX_LNODES       (MAX_NODES*MAX_LNODES_PER_NODE)  
 #define MAX_NODE_BITMASK  64   // A 64 bit mask, each bit represent pnid state
                                // 0 = down, 1 = up
 #define MAX_NODE_MASKS   (MAX_NODES/MAX_NODE_BITMASK) // Node bit mask array size
@@ -79,13 +77,15 @@
 #define MAX_NODE_LIST    64
 #define MAX_OPEN_LIST    256
 #define MAX_OPEN_CONTEXT 5
-#define MAX_PID_VALUE    0x00FFD1C9
+#define MAX_PID_VALUE    0x00FFD1C9        // 16,765,385
+#define MAX_PERSIST_KEY_STR   51
+#define MAX_PERSIST_VALUE_STR 51
 #define MAX_PRIMITIVES   1    // SQWatchog (WDG) is last to exit on shutdown
 #define MAX_PROC_LIST    256
 #define MAX_PROCINFO_LIST 64
 #define MAX_PROC_CONTEXT 5
 #define MAX_PROCESS_NAME MAX_KEY_NAME
-#define MAX_PROCESS_NAME_STR 12 
+#define MAX_PROCESS_NAME_STR 12
 #define MAX_PROCESS_PATH 256
 #define MAX_PROCESSOR_NAME 128
 #define MAX_REASON_TEXT  256
@@ -203,13 +203,10 @@ typedef enum {
 } JOINING_PHASE;
 
 typedef enum {
-    RoleType_Undefined=0,       // Maps to ZoneType_Any
-    RoleType_Maintenance,       // Maps to ZoneType_Edge, Frontend or Any
-    RoleType_Operation,         // Maps to ZoneType_Edge, Frontend or Any
-    RoleType_Connection,        // Maps to ZoneType_Edge, Frontend or Any
-    RoleType_Loader,            // Maps to ZoneType_Edge, Frontend or Any
-    RoleType_Aggregation,       // Maps to ZoneType_Aggregation, Backend or Any
-    RoleType_Storage            // Maps to ZoneType_Storage, Backend or Any
+    RoleType_Undefined   = 0x0000,          // Maps to ZoneType_Any
+    RoleType_Connection  = 0x0001,          // Maps to ZoneType_Edge, Frontend or Any
+    RoleType_Aggregation = 0x0002,          // Maps to ZoneType_Aggregation, Backend or Any
+    RoleType_Storage     = 0x0004           // Maps to ZoneType_Storage, Backend or Any
 } RoleType;
 
 typedef enum {
@@ -232,21 +229,27 @@ typedef enum {
     ReqType_Dump,                           // dump process
     ReqType_Event,                          // send target processes an Event notice
     ReqType_Exit,                           // process is exiting
-    ReqType_Get,                            // Retrieve information from the registry
+    ReqType_Get,                            // retrieve information from the registry
     ReqType_Kill,                           // stop and cleanup the identified process
+    ReqType_MonStats,                       // get monitor statistics
     ReqType_Mount,                          // mount device associated with process    
     ReqType_NewProcess,                     // process is request server to be spawned
-    ReqType_NodeDown,                       // request to take down the identified node
-    ReqType_NodeInfo,                       // node information request 
-    ReqType_NodeUp,                         // request to bring up the identified node
+    ReqType_NodeAdd,                        // add node to configuration database
+    ReqType_NodeDelete,                     // delete node from configuration database
+    ReqType_NodeDown,                       // take down the identified node
+    ReqType_NodeInfo,                       // node operational status information request 
+    ReqType_NodeName,                       // change node name in configuration database
+    ReqType_NodeUp,                         // bring up the identified node
     ReqType_Notice,                         // this is a informational message only
     ReqType_Notify,                         // register process to receive death notifications
     ReqType_Open,                           // process opening server request
     ReqType_OpenInfo,                       // request open information for process
+    ReqType_PersistAdd,                     // add persist template to configuration database
+    ReqType_PersistDelete,                  // delete persist template from configuration database
     ReqType_PNodeInfo,                      // physical node information request 
     ReqType_ProcessInfo,                    // process information request
     ReqType_ProcessInfoCont,                // process information request (continuation)
-    ReqType_Set,                            // Add configuration infomation to the registry 
+    ReqType_Set,                            // add configuration information to the registry 
     ReqType_Shutdown,                       // request cluster shutdown
     ReqType_Startup,                        // process startup notification
     ReqType_Stfsd,                          // process stfsd request
@@ -254,9 +257,7 @@ typedef enum {
     ReqType_TmReady,                        // request to indicate TM ready for transactions
     ReqType_TmSync,                         // request to sync data across all TM's in cluster
     ReqType_TransInfo,                      // request transaction enlistment information
-    ReqType_MonStats,                       // get monitor statistics
     ReqType_ZoneInfo,                       // zone information request 
-    ReqType_NodeName,                       // change node name request
 
     ReqType_Invalid                         // marks the end of the request
                                             // types, add any new request types 
@@ -271,20 +272,20 @@ typedef enum {
     ReplyType_Generic=100,                  // general reply across message types
     ReplyType_Dump,                         // reply with dump info
     ReplyType_Get,                          // reply with configuration key/value pairs
+    ReplyType_MonStats,                     // reply with monitor statistics
+    ReplyType_Mount,                        // reply with mount info
     ReplyType_NewProcess,                   // reply with new process information
     ReplyType_NodeInfo,                     // reply with info on list of nodes
-    ReplyType_PNodeInfo,                    // reply with info on list of physical nodes
-    ReplyType_ProcessInfo,                  // reply with info on list of processes
+    ReplyType_NodeName,                     // reply with results
     ReplyType_Open,                         // reply with open server information
     ReplyType_OpenInfo,                     // reply with list of opens for a process
-    ReplyType_TmSync,                       // reply from unsolicited TmSync message
-    ReplyType_TransInfo,                    // reply with transaction enlistment process list
+    ReplyType_PNodeInfo,                    // reply with info on list of physical nodes
+    ReplyType_ProcessInfo,                  // reply with info on list of processes
     ReplyType_Stfsd,                        // reply with stfsd info
     ReplyType_Startup,                      // reply with startup info
-    ReplyType_Mount,                        // reply with mount info
-    ReplyType_MonStats,                     // reply with monitor statistics
+    ReplyType_TmSync,                       // reply from unsolicited TmSync message
+    ReplyType_TransInfo,                    // reply with transaction enlistment process list
     ReplyType_ZoneInfo,                     // reply with info on list of zones
-    ReplyType_NodeName,                     // reply with results
 
 
     ReplyType_Invalid                       // marks the end of the reply types,
@@ -300,6 +301,9 @@ typedef enum {
     MsgType_Change=1,                       // registry information has changed notification
     MsgType_Close,                          // process close notification
     MsgType_Event,                          // generic event notification
+    MsgType_NodeAdded,                      // node added to configuration notification
+    MsgType_NodeChanged,                    // node configuration changed notification
+    MsgType_NodeDeleted,                    // node deleted from configuration notification
     MsgType_NodeDown,                       // node is down notification
     MsgType_NodeJoining,                    // node is joining notification
     MsgType_NodePrepare,                    // node prepare notification
@@ -308,14 +312,14 @@ typedef enum {
     MsgType_Open,                           // process open notification
     MsgType_ProcessCreated,                 // process creation completed notification
     MsgType_ProcessDeath,                   // process death notification
+    MsgType_ReintegrationError,             // Problem during node reintegration
     MsgType_Service,                        // request a service from the monitor
-    MsgType_SpareUp,                        // spare node is up notification
     MsgType_Shutdown,                       // system shutdown notification
+    MsgType_SpareUp,                        // spare node is up notification
     MsgType_TmRestarted,                    // DTM process restarted notification
     MsgType_TmSyncAbort,                    // request to abort TM sync data previously received
     MsgType_TmSyncCommit,                   // request to commit previously received TM sync data
     MsgType_UnsolicitedMessage,             // Outgoing monitor msg expecting a reply 
-    MsgType_ReintegrationError,             // Problem during node reintegration
 
     MsgType_Invalid                         // marks the end of the message
                                             // types, add any new message types 
@@ -337,6 +341,8 @@ typedef enum {
     ProcessType_SSMP,                       // Identifies a SQL Statistics Merge Process (SSMP)
     ProcessType_PSD,                        // Identifies the monitor's process start daemon processes
     ProcessType_SMS,                        // Identifies a SeaMonster Service process
+    ProcessType_TMID,                       // Identifies a Transaction Management ID process
+    ProcessType_PERSIST,                    // Identifies a generic persistent process
 
     ProcessType_Invalid                     // marks the end of the process
                                             // types, add any new process
@@ -513,7 +519,7 @@ struct NewProcess_def
     char path[MAX_SEARCH_PATH];             // process's object lookup path to program
     char ldpath[MAX_SEARCH_PATH];           // process's library load path for program
     char program[MAX_PROCESS_PATH];         // full path to object file
-    char process_name[MAX_PROCESS_NAME];    // NSK process name
+    char process_name[MAX_PROCESS_NAME];    // process name
     int  argc;                              // number of additional command line argument
     char argv[MAX_ARGS][MAX_ARG_SIZE];      // array of additional command line arguments
     char infile[MAX_PROCESS_PATH];          // if null then use monitor's infile
@@ -526,7 +532,7 @@ struct NewProcess_reply_def
     int  nid;                               // node id of started process
     int  pid;                               // internal process id of started process
     Verifier_t verifier;                    // Process verifier
-    char process_name[MAX_PROCESS_NAME];    // NSK process names assigned to started process
+    char process_name[MAX_PROCESS_NAME];    // process names assigned to started process
     int  return_code;                       // mpi error code of spawn operation
 };
 
@@ -537,8 +543,53 @@ struct NewProcess_Notice_def
     Verifier_t verifier;                    // Process verifier
     long long tag;                          // user tag sent with original request
     char port[MPI_MAX_PORT_NAME];           // mpi port to started process
-    char process_name[MAX_PROCESS_NAME];    // NSK process names assigned to started process
+    char process_name[MAX_PROCESS_NAME];    // process names assigned to started process
     int  return_code;                       // mpi error code of spawn operation
+};
+
+struct NodeAdd_def
+{
+    int      nid;                               // node id of requesting process
+    int      pid;                               // process id of requesting process
+    char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+    int      first_core;                        // First or only core assigned
+    int      last_core;                         // Last core assigned or -1
+    int      processors;                        // Number of processors in logical node
+    int      roles;                             // Role assigment
+};
+
+struct NodeAdded_def                            // Node added to configuration notice
+{
+    int  nid;
+    int  zid;
+    char node_name[MPI_MAX_PROCESSOR_NAME];
+};
+
+struct NodeChanged_def                          // Node configuration changed notice
+{
+    int      nid;                               // node id 
+    int      zid;                               // zone id
+    int      pnid;                              // physical node id
+    char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+    int      first_core;                        // First or only core assigned
+    int      last_core;                         // Last core assigned or -1
+    int      processors;                        // Number of processors in logical node
+    int      roles;                             // Role assigment
+};
+
+struct NodeDelete_def
+{
+    int      nid;                                      // node id of requesting process
+    int      pid;                                      // process id of requesting process
+    int      target_pnid;                              // Target physical node id
+    char     target_node_name[MPI_MAX_PROCESSOR_NAME]; // Target node name
+};
+
+struct NodeDeleted_def                          // Node deleted from configuration notice
+{
+    int  nid;
+    int  zid;
+    char node_name[MPI_MAX_PROCESSOR_NAME];
 };
 
 struct NodeDown_def
@@ -623,49 +674,6 @@ struct NodeJoining_def
     int  pnid;
     char node_name[MPI_MAX_PROCESSOR_NAME];
     JOINING_PHASE  phase;
-};
-
-struct PNodeInfo_def
-{
-    int  nid;                               // node id of requesting process
-    int  pid;                               // process id of requesting process
-    int  target_pnid;                       // get information on pnode id (-1 for all when node_name is null string)
-    char target_name[MPI_MAX_PROCESSOR_NAME]; // get information on pnode by node name
-    int  last_pnid;                         // Last Physical Node ID returned
-    bool continuation;                      // true if continuation of earlier request
-};
-
-struct PNodeInfo_reply_def
-{
-    int num_nodes;                          // Number of logical nodes in the cluster
-    int num_pnodes;                         // Number of physical nodes in the cluster
-    int num_spares;                         // Number of spare nodes in the cluster
-    int num_available_spares;               // Number of currenly available spare nodes in the cluster
-    int num_returned;                       // Number of nodes returned
-    struct
-    {
-        int      pnid;                      // Node's Physical ID 
-        char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
-        STATE    pstate;                    // Physical Node's state (i.e. UP, DOWN, STOPPING)
-        int      lnode_count;               // Number of logical nodes
-        int      process_count;             // Number of processes in executing on the node
-        bool     spare_node;                // True when physical node is spare
-        unsigned int memory_total;          // Node's total memory
-        unsigned int memory_free;           // Node's current free memory
-        unsigned int swap_free;             // Node's current free swap
-        unsigned int cache_free;            // Node's current free buffer/cache
-        unsigned int memory_active;         // Node's memory in active use
-        unsigned int memory_inactive;       // Node's memory available for reclamation
-        unsigned int memory_dirty;          // Node's memory waiting to be written to disk
-        unsigned int memory_writeback;      // Node's memory being written to disk
-        unsigned int memory_VMallocUsed;    // Node's amount of used virtual memory
-        unsigned int btime;                 // Boot time (secs since 1/1/1970)
-        int      cores;                     // Number of processors in physical node
-    } node[MAX_NODE_LIST];
-    int return_code;                        // error returned to sender
-    int last_pnid;                          // Last Physical Node ID returned
-    bool integrating;                       // true if re-integration in progress in local monitor
-    bool continuation;                      // true if continuation of earlier request
 };
 
 struct NodePrepare_def
@@ -774,6 +782,49 @@ struct OpenInfo_reply_def
     int  return_code;                       // error returned to sender
 };
 
+struct PNodeInfo_def
+{
+    int  nid;                               // node id of requesting process
+    int  pid;                               // process id of requesting process
+    int  target_pnid;                       // get information on pnode id (-1 for all when node_name is null string)
+    char target_name[MPI_MAX_PROCESSOR_NAME]; // get information on pnode by node name
+    int  last_pnid;                         // Last Physical Node ID returned
+    bool continuation;                      // true if continuation of earlier request
+};
+
+struct PNodeInfo_reply_def
+{
+    int num_nodes;                          // Number of logical nodes in the cluster
+    int num_pnodes;                         // Number of physical nodes in the cluster
+    int num_spares;                         // Number of spare nodes in the cluster
+    int num_available_spares;               // Number of currenly available spare nodes in the cluster
+    int num_returned;                       // Number of nodes returned
+    struct
+    {
+        int      pnid;                      // Node's Physical ID
+        char     node_name[MPI_MAX_PROCESSOR_NAME]; // Node's name
+        STATE    pstate;                    // Physical Node's state (i.e. UP, DOWN, STOPPING)
+        int      lnode_count;               // Number of logical nodes
+        int      process_count;             // Number of processes in executing on the node
+        bool     spare_node;                // True when physical node is spare
+        unsigned int memory_total;          // Node's total memory
+        unsigned int memory_free;           // Node's current free memory
+        unsigned int swap_free;             // Node's current free swap
+        unsigned int cache_free;            // Node's current free buffer/cache
+        unsigned int memory_active;         // Node's memory in active use
+        unsigned int memory_inactive;       // Node's memory available for reclamation
+        unsigned int memory_dirty;          // Node's memory waiting to be written to disk
+        unsigned int memory_writeback;      // Node's memory being written to disk
+        unsigned int memory_VMallocUsed;    // Node's amount of used virtual memory
+        unsigned int btime;                 // Boot time (secs since 1/1/1970)
+        int      cores;                     // Number of processors in physical node
+    } node[MAX_NODE_LIST];
+    int return_code;                        // error returned to sender
+    int last_pnid;                          // Last Physical Node ID returned
+    bool integrating;                       // true if re-integration in progress in local monitor
+    bool continuation;                      // true if continuation of earlier request
+};
+
 struct ProcessDeath_def
 {
     int nid;                                // dead process's node id
@@ -798,6 +849,7 @@ struct ProcessInfo_def
     int  target_pid;                        // Process id of process for status request (-1 for all)
     Verifier_t target_verifier;             // Verifier of process for status request (-1 for if not used)
     char target_process_name[MAX_PROCESS_NAME]; // Name of process for status request (NULL if not used)
+    char target_process_pattern[MAX_PROCESS_NAME]; // Name of process pattern for status request (NULL if not used)
     PROCESSTYPE type;                       // Return only processes of this type (ProcessType_Undefined for all)
 };
 
@@ -881,7 +933,7 @@ struct Startup_def
     int   nid;                              // process's node id argv[3] or -1 for attach
     int   pid;                              // process's process id argv[4] or -1 for attach
     int   os_pid;                           // process's native OS process id
-    char  process_name[MAX_PROCESS_NAME];   // process's NSK name argv[5] or assign for attach, "" will autogenerate name
+    char  process_name[MAX_PROCESS_NAME];   // process's name argv[5] or assign for attach, "" will autogenerate name
     char  port_name[MPI_MAX_PORT_NAME];     // mpi port name from MPI_Open_port
     char  program[MAX_PROCESS_PATH];        // process's object filename
     bool  event_messages;                   // true if want event messages
@@ -1044,7 +1096,13 @@ struct request_def
         struct Mount_def             mount;
         struct Kill_def              kill;
         struct NewProcess_def        new_process;
+        struct NodeAdd_def           node_add;
+        struct NodeAdded_def         node_added;
+        struct NodeChanged_def       node_changed;
+        struct NodeDelete_def        node_delete;
+        struct NodeDeleted_def       node_deleted;
         struct NodeInfo_def          node_info;
+        struct NodeName_def          nodename;
         struct Notify_def            notify;
         struct Open_def              open;
         struct OpenInfo_def          open_info;
@@ -1072,7 +1130,6 @@ struct request_def
         struct PNodeInfo_def         pnode_info;
         struct SpareUp_def           spare_up;
         struct NodeReInt_def         reintegrate;
-        struct NodeName_def          nodename;
     } u;
 };
 

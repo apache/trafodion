@@ -33,7 +33,7 @@ endif
 #DEBUG = -O0 -g3
 DEBUG = $(CFLAGS)
 
-FLAGS = $(DEBUG) -Wno-deprecated -fmessage-length=0
+FLAGS = $(DEBUG) -Wno-deprecated -fmessage-length=0 -fPIC
 ifeq ($(USE_DMALLOC),1)
  FLAGS+= -DDMALLOC
 endif
@@ -48,14 +48,14 @@ FLAGS+= -UNDEBUG
 FLAGS+= -Wall -Wextra
 
 # Flags for use in compiling Seabed trace modules
-SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries
+SBFLAGS = -Wall -Wextra -pedantic -Werror  -Wno-long-long $(DBG_FLGS) $(OPTIM_FLGS) -Xlinker --copy-dt-needed-entries -fPIC
 SBDIR = ../../src/seabed/src
 
 COMMONLOGGERDIR = ../../commonLogger
 
 INCLUDE = monitor.h msgdef.h internal.h monlogging.h clio.h mlio.h localio.h lock.h
 
-LIBS = -L$(LIBEXPDIR) -L$(ZOOKEEPER_DIR)/lib -lrt -lsblogalt -lzookeeper_mt
+LIBS = -L$(LIBEXPDIR) -L$(ZOOKEEPER_DIR)/lib -lrt -lsblogalt -lzookeeper_mt -ltrafconfig
 
 LIBS+= -lmpich
 
@@ -112,6 +112,7 @@ MONITORSRC += lock.cxx
 MONITORSRC += clusterconf.cxx
 MONITORSRC += lnodeconfig.cxx
 MONITORSRC += pnodeconfig.cxx
+MONITORSRC += persistconfig.cxx
 MONITORSRC += lnode.cxx
 MONITORSRC += pnode.cxx
 MONITORSRC += intprocess.cxx
@@ -131,6 +132,8 @@ MONITORSRC += reqkill.cxx
 MONITORSRC += reqmonstats.cxx
 MONITORSRC += reqmount.cxx
 MONITORSRC += reqnewproc.cxx
+MONITORSRC += reqnodeadd.cxx
+MONITORSRC += reqnodedelete.cxx
 MONITORSRC += reqnodedown.cxx
 MONITORSRC += reqnodeinfo.cxx
 MONITORSRC += reqnodename.cxx
@@ -148,6 +151,7 @@ MONITORSRC += reqzoneinfo.cxx
 MONITORSRC += replicate.cxx
 MONITORSRC += gentrap.cxx
 MONITORSRC += monrobsem.cxx
+
 MONITOROBJS = $(OUTDIR)/versmon.o
 MONITOROBJS += $(OUTDIR)/monitor.o
 MONITOROBJS += $(OUTDIR)/cluster.o
@@ -171,6 +175,7 @@ MONITOROBJS += $(OUTDIR)/lock.o
 MONITOROBJS += $(OUTDIR)/clusterconf.o
 MONITOROBJS += $(OUTDIR)/lnodeconfig.o
 MONITOROBJS += $(OUTDIR)/pnodeconfig.o
+MONITOROBJS += $(OUTDIR)/persistconfig.o
 MONITOROBJS += $(OUTDIR)/lnode.o
 MONITOROBJS += $(OUTDIR)/pnode.o
 MONITOROBJS += $(OUTDIR)/intprocess.o
@@ -190,6 +195,8 @@ MONITOROBJS += $(OUTDIR)/reqkill.o
 MONITOROBJS += $(OUTDIR)/reqmonstats.o
 MONITOROBJS += $(OUTDIR)/reqmount.o
 MONITOROBJS += $(OUTDIR)/reqnewproc.o
+MONITOROBJS += $(OUTDIR)/reqnodeadd.o
+MONITOROBJS += $(OUTDIR)/reqnodedelete.o
 MONITOROBJS += $(OUTDIR)/reqnodedown.o
 MONITOROBJS += $(OUTDIR)/reqnodeinfo.o
 MONITOROBJS += $(OUTDIR)/reqnodename.o
@@ -221,6 +228,7 @@ SHELLOBJS += $(OUTDIR)/versshell.o
 SHELLOBJS += $(OUTDIR)/clusterconf.o
 SHELLOBJS += $(OUTDIR)/lnodeconfig.o
 SHELLOBJS += $(OUTDIR)/pnodeconfig.o
+SHELLOBJS += $(OUTDIR)/persistconfig.o
 SHELLOBJS += $(OUTDIR)/cmsh.o
 SHELLOBJS += $(OUTDIR)/phnode.o
 SHELLOBJS += $(OUTDIR)/system.o
@@ -248,6 +256,10 @@ PSTARTDOBJS += $(OUTDIR)/lock.o
 PSTARTDOBJS += $(OUTDIR)/monlogging.o
 PSTARTDOBJS += $(OUTDIR)/verspstartd.o
 PSTARTDOBJS += $(OUTDIR)/CommonLogger.o
+PSTARTDOBJS += $(OUTDIR)/clusterconf.o
+PSTARTDOBJS += $(OUTDIR)/lnodeconfig.o
+PSTARTDOBJS += $(OUTDIR)/pnodeconfig.o
+PSTARTDOBJS += $(OUTDIR)/persistconfig.o
 
 MEMLOGOBJS = $(OUTDIR)/monmemlog.o
 MEMLOGOBJS += $(OUTDIR)/versmemlog.o
@@ -257,6 +269,7 @@ CLIENTOBJS += $(OUTDIR)/props.o
 CLIENTOBJS += $(OUTDIR)/clusterconf.o
 CLIENTOBJS += $(OUTDIR)/lnodeconfig.o
 CLIENTOBJS += $(OUTDIR)/pnodeconfig.o
+CLIENTOBJS += $(OUTDIR)/persistconfig.o
 
 MONWDTOBJS = $(OUTDIR)/monwdt.o
 MONWDTOBJS += $(OUTDIR)/versmwdt.o
@@ -276,6 +289,30 @@ TRACE_LOG_OBJS += $(OUTDIR)/threadtls.o
 RTSIGBLOCK_SRC = rtsigblock.cxx
 RTSIGBLOCK_OBJS = $(OUTDIR)/rtsigblock.o
 
+CONFOBJS = $(OUTDIR)/testconf.o
+CONFOBJS += $(OUTDIR)/clusterconf.o
+CONFOBJS += $(OUTDIR)/lnodeconfig.o
+CONFOBJS += $(OUTDIR)/pnodeconfig.o
+CONFOBJS += $(OUTDIR)/persistconfig.o
+
+TRAFCONFOBJS = $(OUTDIR)/trafconf.o
+TRAFCONFOBJS += $(OUTDIR)/clusterconf.o
+TRAFCONFOBJS += $(OUTDIR)/lnodeconfig.o
+TRAFCONFOBJS += $(OUTDIR)/pnodeconfig.o
+TRAFCONFOBJS += $(OUTDIR)/persistconfig.o
+
+SQLITECONFIG_SRC = sqliteconfig.cxx
+SQLITECONFIG_OBJS = $(OUTDIR)/sqliteconfig.o
+
+TRAFCONFIGLOG_SRC = trafconfiglog.cxx
+TRAFCONFIGLOG_OBJS = $(OUTDIR)/trafconfiglog.o
+
+TRAFCONFIGTRACE_SRC = trafconfigtrace.cxx
+TRAFCONFIGTRACE_OBJS = $(OUTDIR)/trafconfigtrace.o
+
+TRAFCONFIG_SRC = trafconfig.cxx
+TRAFCONFIG_OBJS = $(OUTDIR)/trafconfig.o
+
 ALLOBJS = $(MONITOROBJS)
 ALLOBJS += $(SHELLOBJS)
 ALLOBJS += $(CLIENTOBJS)
@@ -288,13 +325,21 @@ ALLOBJS += $(CONFOBJS)
 ALLOBJS += $(MEMLOGOBJS)
 ALLOBJS += $(RTSIGBLOCK_OBJS)
 ALLOBJS += $(ZOOMONOBJS)
+ALLOBJS += $(TRAFCONFOBJS)
+ALLOBJS += $(SQLITECONFIG_OBJS)
+ALLOBJS += $(TRAFCONFIG_OBJS)
+ALLOBJS += $(TRAFCONFIGLOG_OBJS)
+ALLOBJS += $(TRAFCONFIGTRACE_OBJS)
 
-PGMS = $(BINEXPDIR)/monitor
+SHAREDLIBS =   $(LIBEXPDIR)/libtrafconfig.so
+SHAREDLIBS +=  $(LIBEXPDIR)/libseabasesig.so
+
+PGMS =   $(BINEXPDIR)/monitor
 PGMS +=  $(BINEXPDIR)/shell
 PGMS +=  $(BINEXPDIR)/sqwatchdog
 PGMS +=  $(BINEXPDIR)/monmemlog
 PGMS +=  $(BINEXPDIR)/pstartd
-PGMS +=  $(LIBEXPDIR)/libseabasesig.so
+PGMS +=  $(BINEXPDIR)/trafconf
 
 TEST_PGMS = $(OUTDIR)/client
 TEST_PGMS += $(OUTDIR)/client2
@@ -327,7 +372,7 @@ $(BINEXPDIR)/%:%.cxx $(INCLUDE) $(CLIENTOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -335,7 +380,7 @@ $(OUTDIR)/%:%.cxx $(INCLUDE) $(CLIENTOBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: C++ Compile & Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $(CLIENTOBJS) $(TRACE_LOG_OBJS) $<
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -377,14 +422,18 @@ $(OUTDIR)/%.o:$(COMMONLOGGERDIR)/%.cpp $(INCLUDE)
 
 # Targets
 # Uncomment the following target to disable parallel make
-#.NOTPARALLEL: $(PGMS)
+.NOTPARALLEL:
 
-all: $(PGMS) example
+all: programs examples
+
+programs: sharedlibs $(PGMS)
+
+examples: $(TEST_PGMS)
+
+sharedlibs: $(SHAREDLIBS)
 
 montim:
 	@$(MAKE) $(OUTDIR)/montim
-
-example : $(TEST_PGMS)
 
 $(OUTDIR)/client : client.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
@@ -408,16 +457,19 @@ $(OUTDIR)/testtm : testtm.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
 $(OUTDIR)/pingpong2 : pingpong2.cxx  $(CLIENTOBJS) $(TRACE_LOG_OBJS)
 
-CONFOBJS = $(OUTDIR)/testconf.o \
-	$(OUTDIR)/clusterconf.o \
-	$(OUTDIR)/lnodeconfig.o \
-	$(OUTDIR)/pnodeconfig.o
-
 $(OUTDIR)/testconf : $(CONFOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $^
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+$(BINEXPDIR)/trafconf : $(TRAFCONFOBJS) $(TRACE_LOG_OBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: Linker'
+	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt  $^
+	@$(CXX) $(CDEPFLAGS) $(FLAGS) $(OPTIONS) $(INCLUDES) -o $@ -lrt $(LIBS) $^
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -433,7 +485,7 @@ $(BINEXPDIR)/shell : $(SHELLOBJS) $(TRACE_LOG_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Linker'
 	@echo $(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $^
-	@$(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $^
+	@$(CXX) -lreadline -lcurses $(LNK_FLGS) -o$@ -lrt $(LIBS) $^
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -480,6 +532,15 @@ $(LIBEXPDIR)/libseabasesig.so: $(RTSIGBLOCK_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
+$(LIBEXPDIR)/libtrafconfig.so: $(TRAFCONFIG_OBJS) $(SQLITECONFIG_OBJS) $(TRACE_LOG_OBJS) $(TRAFCONFIGLOG_OBJS) $(TRAFCONFIGTRACE_OBJS)
+	@echo 'Building target: $@'
+	@echo 'Invoking: Linker'
+	@echo $(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(SQLITECONFIG_OBJS) $(TRACE_LOG_OBJS) $(TRAFCONFIGLOG_OBJS) $(TRAFCONFIGTRACE_OBJS)
+	@$(CXX) $(LNK_FLGS) -shared -o $@ $(TRAFCONFIG_OBJS) $(SQLITECONFIG_OBJS) $(TRACE_LOG_OBJS) $(TRAFCONFIGLOG_OBJS) $(TRAFCONFIGTRACE_OBJS)
+	@echo 'Finished building target: $@'
+	@echo ' '
+
+
 setup:
 	@# do nothing
 
@@ -488,6 +549,7 @@ clean:
 	-rm -f $(ALLOBJS)
 	-rm -f $(CDEP_DIR)/*.dep
 	-rm -f $(LIBEXPDIR)/libseabasesig.so
+	-rm -f $(LIBEXPDIR)/libtrafconfig.so
 	@echo ' '
 
 cleanall: clean
@@ -496,29 +558,20 @@ cleanall: clean
 cleaner: clean
 	-rm -f *~
 
-install:
-	@echo 'Installing programs in $(INSTALL_DIR)'
-	-cp $(PGMS) $(INSTALL_DIR)
-	@echo 'Finished installing programs'
-	@echo ' '
+#install:
+#	@echo 'Installing programs in $(INSTALL_DIR)'
+#	-cp $(PGMS) $(INSTALL_DIR)
+#	@echo 'Finished installing programs'
+#	@echo ' '
 
-uninstall:
-	@echo 'Uninstalling programs from $(INSTALL_DIR)'
-	-cd $(INSTALL_DIR);rm -f $(PGMS) $(TEST_PGMS)
-	@echo 'Finished uninstalling programs'
-	@echo ' '
+#uninstall:
+#	@echo 'Uninstalling programs from $(INSTALL_DIR)'
+#	-cd $(INSTALL_DIR);rm -f $(PGMS) $(TEST_PGMS)
+#	@echo 'Finished uninstalling programs'
+#	@echo ' '
 
 rebuild: clean all
 	-@echo ' '
-
-$(RTSIGBLOCK_OBJS):$(RTSIGBLOCK_SRC)
-	@echo 'Building target: $@'
-	@echo 'Invoking: C++ Compiler'
-	@echo $(CXX) $(CDEPFLAGS) $(FLAGS) -fPIC $(OPTIONS) $(INCLUDES) -c -o $@ $<
-	@$(CXX) $(CDEPFLAGS) $(FLAGS) -fPIC $(OPTIONS) $(INCLUDES) -c -o $@ $<
-	@echo 'Finished building target: $@'
-	@echo ' '
-
 
 -include $(CDEP_DIR)/*.dep
 _dummy := $(shell if [ ! -d $(CDEP_DIR) ]; then mkdir -p $(CDEP_DIR); fi)

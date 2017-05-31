@@ -24,100 +24,92 @@
 
 pragma synchronous = OFF;
 
-create table monRegProcName
-(
-procId integer primary key autoincrement,
-procName varchar(32) unique
-);
+--
+-- Node tables
+--
 
-create table monRegKeyName
-(
-keyId integer primary key autoincrement,
-keyname varchar(32) unique
-);
-
-create table monRegProcData
-(
-procId integer,
-keyId integer,
-dataValue varchar (4096),
-primary key (procId, keyId)
-);
-
-
-create table monRegNodeData
-(
-nodeId integer,
-keyId integer,
-dataValue varchar (4096),
-primary key (nodeId, keyId)
-);
-
-create table monRegClusterData
-(
-keyId integer primary key,
-dataValue varchar (4096)
-);
-
-create table monRegNodeName
-(
-nodeId integer primary key,
-nodeName varchar(32) unique
-);
-
-create table monRegUniqueStrings
-(
-nid integer,
-id integer,
-dataValue varchar (4096),
-primary key ( nid, id )
-);
-
-create table persist (
-procName varchar(32),
-zone integer,
-reqTm integer );
-
-create table procs
-(
-procType integer,
-name varchar(32),
-nid integer,
-program varchar(32),
-stdoutFile varchar(256),
-args varchar(4096)
-);
-
--- For sqha, define primary/backup relationship for storage engine processes
-create table seconfig
-(
-procname varchar(32),
-pnid integer,
-bnid integer
-);
-
+-- Physical Node (gensq.pl)
 create table pnode
 (
-pNid integer  primary key,
-nodeName varchar(32) unique
--- startCore integer,
--- endCore   integer,
--- excluded
+   pNid         integer  primary key,
+   nodeName     varchar(128),
+   excFirstCore integer,
+   excLastCore  integer
 );
 
+-- Logical Node (gensq.pl)
 create table lnode
 (
-lNid       integer  primary key,
-pNid       integer,  -- from monRegNodeName table
-processors integer,
-roles      integer,  -- bit map of roles
-firstCore  integer,
-lastCore   integer
+   lNid        integer  primary key,
+   pNid        integer,  -- currently generated in sqnode.pm:genConfig
+   processors  integer,
+   roles       integer,  -- bit map of roles
+   firstCore   integer,
+   lastCore    integer
 );
 
-create table spare
+-- Spare Node (gensq.pl)
+create table snode
 (
-pNid       integer,   -- from monRegNodeName table
-spareFor   integer    -- physical node for which the nodeId can be a spare
+   pNid        integer,  -- currently from sqnode.pm:genConfig
+   nodeName    varchar(128),
+   firstCore   integer,
+   lastCore    integer,
+   spNid       integer,  -- physical node for which the pNid can be a spare
+   primary key (pNid, spNid)
+);
+
+--
+-- Registry tables
+--
+
+-- Process Name registry entry (monitor)
+create table monRegProcName
+(
+   procId      integer primary key autoincrement,
+   procName    varchar(64) unique
+);
+
+-- registry key name (monitor gensq.pl)
+create table monRegKeyName
+(
+   keyId       integer primary key autoincrement,
+   keyname     varchar(64) unique
+);
+
+-- Process Scope registry entry (monitor gensq.pl)
+create table monRegProcData
+(
+   procId      integer,
+   keyId       integer,
+   dataValue   varchar (4096),
+   primary key (procId, keyId)
+);
+
+-- Cluster registry entries (monitor gensq.pl)
+create table monRegClusterData
+(
+   keyId       integer primary key,
+   dataValue   varchar (4096)
+);
+
+-- Unique String (monitor)
+-- Stores unique string id (nid,id)
+-- The string id is passed on cluster state exchanges across after the first
+-- exchange. This was to reduce the amount of data moved around in the
+-- monitor sync cycles.
+create table monRegUniqueStrings
+(
+   nid         integer,
+   id          integer,
+   dataValue   varchar (4096),
+   primary key ( nid, id )
+);
+
+-- Persist Data (monitor gensq.pl)
+create table monRegPersistData
+(
+   keyName     varchar(50) primary key,
+   valueName   varchar(50)
 );
 

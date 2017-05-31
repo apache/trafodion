@@ -24,6 +24,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>
+#include <regex.h>
 #include "reqqueue.h"
 #include "montrace.h"
 #include "monsonar.h"
@@ -120,22 +121,27 @@ CProcess * CExtProcInfoBase::ProcessInfo_GetProcess (int &nid, bool getDataForAl
     CProcess * process;
     CLNode *lnode = NULL;
 
+    lnode = Nodes->GetLNode( nid );
     do
     {
-        lnode = Nodes->GetLNode (nid);
-        if ( lnode && 
-             (lnode->GetState() == State_Up ||
-              lnode->GetState() == State_Shutdown) )
+        if (lnode)
         {
-            process = lnode->GetFirstProcess();
-            if (process != 0) return process;
+            if (lnode->GetState() == State_Up ||
+                lnode->GetState() == State_Shutdown)
+            {
+                process = lnode->GetFirstProcess();
+                if (process != 0)
+                {
+                    return process;
+                }
+            }
+            lnode = lnode->GetNext();
+            nid = lnode ? lnode->GetNid() : nid;
         }
+    } while (getDataForAllNodes && lnode);
 
-    } while (getDataForAllNodes && ++nid < Nodes->NumberLNodes);
-
-    return 0;
+    return(NULL);
 }
-
 
 // Information for more than one process is being requested.  Iterate
 // through the process list and return process information for processes
@@ -143,12 +149,34 @@ CProcess * CExtProcInfoBase::ProcessInfo_GetProcess (int &nid, bool getDataForAl
 int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
                                      struct message_def * msg,
                                      PROCESSTYPE type,
-                                     bool getDataForAllNodes)
+                                     bool getDataForAllNodes,
+                                     char *pattern)
 {
-    int currentNode = (process != 0) ? process->GetNid() : Nodes->NumberLNodes;
+    int currentIndex = (process != 0) 
+            ? Nodes->GetNidIndex( process->GetNid() )
+            : Nodes->GetLNodesCount();
     bool moreToRetrieve;
+    bool copy = true;
+    bool reg = false;
     int count = 0;
+    int rerr;
+    char *process_pattern = pattern;
+    regex_t regex;
 
+    if (strlen( pattern ) > 0)
+    {
+        if (*process_pattern == '$')
+        {
+            process_pattern++;
+        }
+        // Compile pattern regex
+        rerr = regcomp( &regex, process_pattern, REG_EXTENDED );
+        if (rerr == 0)
+        {
+            copy = false;
+            reg = true;
+        }
+    }
     do
     {
         // Retrieve process data for processes on current node
@@ -156,10 +184,18 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
         {
             if (type == ProcessType_Undefined || type == process->GetType())
             {
-                ProcessInfo_CopyData(process,
-                                     msg->u.reply.u.process_info.process[count]);
-                count++;
-
+                if (reg)
+                {
+                    // Check for regex match
+                    rerr  = regexec( &regex, process->GetName(), 0 , NULL, 0 );
+                    copy = (rerr == 0) ? true : false;
+                }
+                if (copy)
+                {
+                    ProcessInfo_CopyData(process,
+                                         msg->u.reply.u.process_info.process[count]);
+                    count++;
+                }
             }
             process = process->GetNextL();
             if ( count == MAX_PROCINFO_LIST )
@@ -168,25 +204,33 @@ int CExtProcInfoBase::ProcessInfo_BuildReply(CProcess *process,
                 // of whether there is more data remaining.
                 msg->u.reply.u.process_info.more_data
                     = (process != 0)
-                    || (++currentNode < Nodes->NumberLNodes);
+                    || (++currentIndex < Nodes->GetLNodesCount());
                 return count;
             }
         }
 
         moreToRetrieve = false;
-        if (getDataForAllNodes && ++currentNode < Nodes->NumberLNodes)
+        if (getDataForAllNodes && ++currentIndex < Nodes->GetLNodesCount())
         {   // Start retrieving process data for next node.  We ask
-            // ProcessInfo_GetProcess for the first process on
-            // "currentNode" which has just been incremented.  Note
+            // ProcessInfo_GetProcess for the first process on lnode of
+            // "currentIndex" which has just been incremented.  Note
             // that it is possible there are no processes on that node
             // so ProcessInfo_GetProcess will return a process on the
-            // first node it finds and "currentNode" will be updated
-            // to be the node number where the process resides.
+            // first node it finds and "currentIndex" will be updated
+            // to be the node index number where the process resides.
 
-            process = ProcessInfo_GetProcess(currentNode, getDataForAllNodes);
+            int nid = Nodes->GetNidByMap( currentIndex );
+            if (nid == -1) break;
+            process = ProcessInfo_GetProcess( nid, getDataForAllNodes);
+            currentIndex = Nodes->GetNidIndex( nid );
             moreToRetrieve = true;
         }
     } while (moreToRetrieve);
+
+    if (reg)
+    {
+        regfree( &regex );
+    }
 
     msg->u.reply.u.process_info.more_data = false;
     return count;
@@ -213,7 +257,7 @@ void CExtProcInfoReq::populateRequestString( void )
     snprintf( strBuf, sizeof(strBuf), 
               "ExtReq(%s) req #=%ld "
               "requester(name=%s/nid=%d/pid=%d/os_pid=%d/verifier=%d) "
-              "target(name=%s/nid=%d/pid=%d/verifier=%d)"
+              "target(name=%s/nid=%d/pid=%d/verifier=%d) pattern(name=%s)"
             , CReqQueue::svcReqType[reqType_], getId()
             , msg_->u.request.u.process_info.process_name
             , msg_->u.request.u.process_info.nid
@@ -223,7 +267,8 @@ void CExtProcInfoReq::populateRequestString( void )
             , msg_->u.request.u.process_info.target_process_name
             , msg_->u.request.u.process_info.target_nid
             , msg_->u.request.u.process_info.target_pid
-            , msg_->u.request.u.process_info.target_verifier );
+            , msg_->u.request.u.process_info.target_verifier
+            , msg_->u.request.u.process_info.target_process_pattern );
     requestString_.assign( strBuf );
 }
 
@@ -327,11 +372,12 @@ void CExtProcInfoReq::performRequest()
             }
 
             // get info for all processes in all nodes
-            int nid = 0;
+            int nid = Nodes->GetFirstNid();
             count = ProcessInfo_BuildReply( ProcessInfo_GetProcess(nid, true)
                                           , msg_
                                           , msg_->u.request.u.process_info.type
-                                          , true);
+                                          , true
+                                          , msg_->u.request.u.process_info.target_process_pattern );
         }
         else
         {
@@ -347,12 +393,13 @@ void CExtProcInfoReq::performRequest()
             if (target_pid == -1)
             {
                 // get info for all processes in node
-                if (target_nid >= 0 && target_nid < Nodes->NumberLNodes)
+                if (target_nid >= 0 && target_nid < Nodes->GetLNodesConfigMax())
                 {
                     count = ProcessInfo_BuildReply(Nodes->GetNode(target_nid)->GetFirstProcess(), 
                                                    msg_,
                                                    msg_->u.request.u.process_info.type,
-                                                   false);
+                                                   false,
+                                                   msg_->u.request.u.process_info.target_process_pattern);
                 }
             }
             else
@@ -368,7 +415,7 @@ void CExtProcInfoReq::performRequest()
                                          msg_->u.reply.u.process_info.process[0]);
                     count = 1;
                 }
-                else if (target_nid >= 0 && target_nid < Nodes->NumberLNodes)
+                else if (target_nid >= 0 && target_nid < Nodes->GetLNodesConfigMax())
                 { // find by nid/pid (check node state, don't check process state, backup is Ok)
                     CProcess *process = Nodes->GetProcess( target_nid
                                                          , target_pid
@@ -466,7 +513,7 @@ void CExtProcInfoContReq::performRequest()
     {
         nid = msg_->u.request.u.process_info_cont.context[i].nid;
         pid = msg_->u.request.u.process_info_cont.context[i].pid;
-        if (nid >= 0 && nid < Nodes->NumberLNodes)
+        if (nid >= 0 && nid < Nodes->GetLNodesConfigMax())
         {
             process = Nodes->GetLNode(nid)->GetProcessL(pid);
         }
@@ -479,7 +526,7 @@ void CExtProcInfoContReq::performRequest()
         nid = msg_->u.request.u.process_info_cont.context[0].nid;
         if (trace_settings & TRACE_REQUEST)
            trace_printf("%s@%d" " could not find context process, restarting for node="  "%d" "\n", method_name, __LINE__, nid);
-        if (nid >= 0 && nid < Nodes->NumberLNodes)
+        if (nid >= 0 && nid < Nodes->GetLNodesConfigMax())
         {
             process = ProcessInfo_GetProcess (nid, msg_->u.request.u.process_info_cont.allNodes);
         }
@@ -493,7 +540,7 @@ void CExtProcInfoContReq::performRequest()
         if (!process)
         {   // We were at the last process on the node.  Get first process
             // on the next node (if there is a next node).
-            if (++nid < Nodes->NumberLNodes)
+            if (++nid < Nodes->GetLNodesConfigMax())
             {
                 process = ProcessInfo_GetProcess(nid,
                                 msg_->u.request.u.process_info_cont.allNodes);
@@ -506,7 +553,8 @@ void CExtProcInfoContReq::performRequest()
                                 process,
                                 msg_,
                                 msg_->u.request.u.process_info_cont.type,
-                                msg_->u.request.u.process_info_cont.allNodes);
+                                msg_->u.request.u.process_info_cont.allNodes,
+                                (char *) "");
 
         }
     }

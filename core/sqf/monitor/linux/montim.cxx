@@ -105,6 +105,8 @@ static const string ReqType_Kill = " - Kill";
 static const string ReqType_Mount = " - Mount";
 static const string ReqType_NodeInfo = " - NodeInfo";
 static const string ReqType_NewProcess = " - NewProcess";
+static const string ReqType_NodeAdd = " - Add node";
+static const string ReqType_NodeDelete = " - Delete node";
 static const string ReqType_NodeDown = " - Down node";
 static const string ReqType_NodeUp = " - Up node";
 static const string ReqType_Notify = " - Notify";
@@ -389,6 +391,32 @@ processSpecial( ProcessInfo *proc, string intime, string line )
       }
       proc->lastReq = ReqType_NewProcess;
       //cout << "set proc->lastReq: " << proc->lastReq << endl;
+    }
+    else if(line.find(ReqType_NodeAdd) != string::npos)
+    {
+/*
+      cout << ReqType_NodeAdd << " was received" 
+           << " with useMPI=" << proc->useMPI << endl;
+*/
+      if ((reqInfo = proc->reqInfoMap[ReqType_NodeAdd]) == NULL)
+      {
+        proc->reqInfoMap[ReqType_NodeAdd] = 
+           mkReqInfo( ReqType_NodeAdd, "ReqType_NodeAdd" );
+      }
+      proc->lastReq = ReqType_NodeAdd;
+    }
+    else if(line.find(ReqType_NodeDelete) != string::npos)
+    {
+/*
+      cout << ReqType_NodeDelete << " was received" 
+           << " with useMPI=" << proc->useMPI << endl;
+*/
+      if ((reqInfo = proc->reqInfoMap[ReqType_NodeDelete]) == NULL)
+      {
+        proc->reqInfoMap[ReqType_NodeDelete] = 
+           mkReqInfo( ReqType_NodeDelete, "ReqType_NodeDelete" );
+      }
+      proc->lastReq = ReqType_NodeDelete;
     }
     else if(line.find(ReqType_NodeDown) != string::npos)
     {

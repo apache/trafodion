@@ -72,6 +72,7 @@ void CExtZoneInfoReq::performRequest()
     int zid;
     int target_nid = msg_->u.request.u.zone_info.target_nid;
     int target_zid = msg_->u.request.u.zone_info.target_zid;
+    int lnodesCount = 0;
     CLNode *lnode = NULL;
     CNode *pnode = NULL;
     char la_buf[MON_STRING_BUF_SIZE];
@@ -106,23 +107,23 @@ void CExtZoneInfoReq::performRequest()
          msg_->u.request.u.zone_info.target_zid == -1 )
     {
         nid = 0;
-        end_nid = Nodes->NumberLNodes-1;
+        end_nid = Nodes->GetLNodesConfigMax()-1;
     }
     else if ((msg_->u.request.u.zone_info.target_zid == -1 &&
               (msg_->u.request.u.zone_info.target_nid >= 0)) ||
              (msg_->u.request.u.zone_info.target_nid < 
-              (Nodes->NumberPNodes - Nodes->GetSNodesCount())) )
+              (Nodes->GetPNodesConfigMax() - Nodes->GetSNodesCount())) )
     {
         nid = 0;
-        end_nid = Nodes->NumberLNodes-1;
+        end_nid = Nodes->GetLNodesConfigMax()-1;
     }
     else if ((msg_->u.request.u.zone_info.target_nid == -1 &&
               (msg_->u.request.u.zone_info.target_zid >= 0)) ||
              (msg_->u.request.u.zone_info.target_zid < 
-              (Nodes->NumberPNodes - Nodes->GetSNodesCount())) )
+              (Nodes->GetPNodesConfigMax() - Nodes->GetSNodesCount())) )
     {
         nid = 0;
-        end_nid = Nodes->NumberLNodes-1;
+        end_nid = Nodes->GetLNodesConfigMax()-1;
     }
     else
     {
@@ -139,6 +140,7 @@ void CExtZoneInfoReq::performRequest()
             if ( msg_->u.request.u.zone_info.last_nid > -1 )
             {
                 nid = (msg_->u.request.u.zone_info.last_nid + 1);
+                lnodesCount = nid;
             }
             else
             {
@@ -149,11 +151,14 @@ void CExtZoneInfoReq::performRequest()
         msg_->u.reply.u.zone_info.num_nodes = Nodes->GetLNodesCount();
         if ( nid != -1 )
         {
-            for (num_returned=0; nid < Nodes->NumberLNodes && nid < MAX_NODES && nid <= end_nid; nid++)
+            for (num_returned=0; 
+                 (nid < Nodes->GetLNodesConfigMax() && nid <= end_nid) && lnodesCount < Nodes->GetLNodesCount();
+                 nid++)
             {
                 lnode  = Nodes->GetLNode(nid);
                 if ( lnode )
                 {
+                    lnodesCount++;
                     pnode = lnode->GetNode();
                     if ( pnode )
                     {
@@ -194,8 +199,11 @@ void CExtZoneInfoReq::performRequest()
                 }
                 else
                 {
-                    sprintf(la_buf, "[%s], Can't find lnode for Nid=%d\n", method_name, nid);
-                    mon_log_write(MON_MONITOR_NODEINFO_2, SQ_LOG_ERR, la_buf);
+                    if (trace_settings & TRACE_REQUEST)
+                    {
+                        trace_printf( "%s@%d Can't find lnode, nid=%d\n"
+                                    , method_name, __LINE__, nid);
+                    }
                 }
             }
         }

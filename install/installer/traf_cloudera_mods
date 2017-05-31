@@ -100,7 +100,7 @@ if [ $node_count -ne 1 ]; then
     $PDSH_HADOOP_NODES sudo chmod 644 $HADOOP_PATH/$hbase_trx_jar
     $PDSH_HADOOP_NODES sudo chmod 644 $HADOOP_PATH/$traf_util_jar
     $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$hbase_trx_jar 2>/dev/null
-    $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$traf_util_jar 2>/dev/null
+    $PDSH_HADOOP_NODES rm $LOCAL_WORKDIR/$traf_util_jar 2>/dev/null    
 else
     for node in $HBASE_NODES
     do

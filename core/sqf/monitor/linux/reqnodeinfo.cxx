@@ -74,6 +74,8 @@ void CExtNodeInfoReq::performRequest()
     int last_pnid = msg_->u.request.u.node_info.last_pnid;
     int end_pnid = -1;
     int target_nid = msg_->u.request.u.node_info.target_nid;
+    int lnodesCount = 0;
+    int pnodesCount = 0;
     CLNode *lnode = NULL;
     CNode *pnode = NULL;
     char la_buf[MON_STRING_BUF_SIZE];
@@ -104,12 +106,12 @@ void CExtNodeInfoReq::performRequest()
     if ( target_nid == -1 )
     {
         nid = 0;
-        end_nid = Nodes->NumberLNodes-1;
+        end_nid = Nodes->GetLNodesConfigMax()-1;
         pnid = 0;
-        end_pnid = Nodes->NumberPNodes-1;
+        end_pnid = Nodes->GetPNodesConfigMax()-1;
     }
-    else if ((target_nid >= 0                 ) ||
-             (target_nid < Nodes->NumberLNodes)   )
+    else if ((target_nid >= 0                         ) ||
+             (target_nid < Nodes->GetLNodesConfigMax()) )
     {
         nid = end_nid = target_nid;
     }
@@ -128,29 +130,35 @@ void CExtNodeInfoReq::performRequest()
             if ( last_nid > -1 )
             {
                 nid = (last_nid + 1);
+                lnodesCount = nid;
             }
             else
             {
                 nid = -1;
                 pnid = (last_pnid + 1);
+                pnodesCount = pnid;
             }
         }
 
         // Load the logical nodes first
         msg_->u.reply.u.node_info.num_nodes = Nodes->GetLNodesCount();
-        msg_->u.reply.u.node_info.num_pnodes = Nodes->GetNodesCount();
+        msg_->u.reply.u.node_info.num_pnodes = Nodes->GetPNodesCount();
         msg_->u.reply.u.node_info.num_spares = Nodes->GetSNodesCount();
         msg_->u.reply.u.node_info.num_available_spares = Nodes->GetAvailableSNodesCount();
         if ( nid != -1 )
         {
-            for (num_returned=0; nid < Nodes->NumberLNodes && nid < MAX_NODES && nid <= end_nid; nid++)
+            for (num_returned=0;
+                 (nid < Nodes->GetLNodesConfigMax() && nid <= end_nid) && lnodesCount < Nodes->GetLNodesCount() ;
+                 nid++)
             {
                 lnode  = Nodes->GetLNode(nid);
                 if ( lnode )
                 {
+                    lnodesCount++;
                     pnode = lnode->GetNode();
                     if ( pnode )
                     {
+                        pnodesCount++;
                         msg_->u.reply.u.node_info.node[num_returned].nid = lnode->GetNid();
                         msg_->u.reply.u.node_info.node[num_returned].state = lnode->GetState();
                         msg_->u.reply.u.node_info.node[num_returned].type = lnode->GetZoneType();
@@ -228,8 +236,11 @@ void CExtNodeInfoReq::performRequest()
                 }
                 else
                 {
-                    sprintf(la_buf, "[%s], Can't find lnode for Nid=%d\n", method_name, nid);
-                    mon_log_write(MON_MONITOR_NODEINFO_2, SQ_LOG_ERR, la_buf);
+                    if (trace_settings & TRACE_REQUEST)
+                    {
+                        trace_printf( "%s@%d Can't find lnode, nid=%d\n"
+                                    , method_name, __LINE__, nid);
+                    }
                 }
             }
         }
@@ -241,24 +252,24 @@ void CExtNodeInfoReq::performRequest()
                 if ( last_nid == -1 )
                 {
                     pnid = (last_pnid + 1);
+                    pnodesCount = pnid;
                 }
                 else
                 {
                     pnid = 0;
                 }
             }
-            else
-            {
-                pnid = 0;
-            }
     
             // Now the remainder of physical nodes
-            for ( ; pnid < Nodes->NumberPNodes && pnid < MAX_NODES && pnid <= end_pnid; pnid++)
+            for (; 
+                 (pnid < Nodes->GetPNodesConfigMax() && pnid <= end_pnid) && pnodesCount < Nodes->GetPNodesCount();
+                 pnid++)
             {
                 pnode = Nodes->GetNode( pnid );
                 if ( pnode )
                 {
-                    if ( pnode->GetNumLNodes() == 0 )
+                    pnodesCount++;
+                    if ( pnode->GetLNodesCount() == 0 )
                     {
                         msg_->u.reply.u.node_info.node[num_returned].nid = -1;
                         msg_->u.reply.u.node_info.node[num_returned].state = State_Unknown;
@@ -304,8 +315,11 @@ void CExtNodeInfoReq::performRequest()
                 }
                 else
                 {
-                    sprintf(la_buf, "[%s], Can't find PNid=%d\n", method_name, pnid);
-                    mon_log_write(MON_MONITOR_NODEINFO_3, SQ_LOG_ERR, la_buf);
+                    if (trace_settings & TRACE_REQUEST)
+                    {
+                        trace_printf( "%s@%d Can't find node, pnid=%d\n"
+                                    , method_name, __LINE__, pnid);
+                    }
                 }
             }
         }

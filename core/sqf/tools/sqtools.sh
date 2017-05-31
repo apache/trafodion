@@ -22,15 +22,25 @@
 # @@@ END COPYRIGHT @@@
 #
 
+function setup_my_nodes {
+    if [ -z "$MY_NODES" ]; then
+        echo
+    else
+        wnode_names=`trafconf -wname`
+        export MY_NODES="$wnode_names"
+    fi
+}
+
 function setup_sqpdsh {
     if [ -e $SQ_PDSH ]; then
-	if [ -z "$MY_NODES" ]; then
-	    export SQPDSHA="$SQ_PDSH -a"
-	else
-	    export SQPDSHA="$PDSH $MY_NODES $PDSH_SSH_CMD"
-	fi
+        if [ -z "$MY_NODES" ]; then
+            export SQPDSHA="$SQ_PDSH -a"
+        else
+            setup_my_nodes
+            export SQPDSHA="$PDSH $MY_NODES $PDSH_SSH_CMD"
+        fi
     else
-	export SQPDSHA="eval"
+        export SQPDSHA="eval"
     fi
 }
 
@@ -894,6 +904,7 @@ function sqgdb_help {
 }
 
 #The following allows the above functions to be used from some other shell scripts spawned from this shell
+export -f setup_my_nodes
 export -f setup_sqpdsh
 export -f cmaph
 export -f cmapt
