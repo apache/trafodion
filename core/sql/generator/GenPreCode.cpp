@@ -5648,7 +5648,8 @@ RelExpr * HbaseInsert::preCodeGen(Generator * generator,
 		      ItemExpr * liChild = li->child(0);
 		      ItemExpr * liChild1 = li->child(1);
 		      li = new(generator->wHeap())
-			LOBinsert(liChild, liChild1, li->getObj());
+			LOBinsert(liChild, liChild1, li->getObj(),FALSE, 
+                                  li->lobAsVarchar());
 		      
 		      li->insertedTableObjectUID() = 
 			getIndexDesc()->getPrimaryTableDesc()->

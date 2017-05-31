@@ -2076,7 +2076,8 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   SDDkwd__(LIMIT_MAX_NUMERIC_PRECISION,		"SYSTEM"),
 
  // Size in bytes  used to perform garbage collection  to lob data file 
-  // default size is 5GB   . Change to adjust disk usage. 
+  // default size is 5GB   . Change to adjust disk usage. If 0 it means
+ // don't do GC
   DDint__(LOB_GC_LIMIT_SIZE,            "5000"),
   
   DDint__(LOB_HDFS_PORT,                       "0"),
