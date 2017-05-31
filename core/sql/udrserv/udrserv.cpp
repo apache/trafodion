@@ -2850,6 +2850,9 @@ Int32 PerformWaitedReplyToClient(UdrGlobals *UdrGlob,
 
   sendDataReply(UdrGlob, msgStream, NULL);
 
+  // cleanup no longer used buffers
+  msgStream.cleanupBuffers();
+
   //Note down the current sp so that we can restore it back
   //once ProcessARequest() call is complete. There are scenarios
   //in ProcessARequest to reset spInfo in udrGlobals once Spinfo

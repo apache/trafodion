@@ -3494,15 +3494,13 @@ RelExpr * FilterRule0::nextSubstitute(RelExpr * before,
   // copy the tree underneath the filter
   result = getSubstitute()->copyTree(CmpCommon::statementHeap());
 
-  // if the original child of the filter is a scan, then also copy
-  // index information to prevent enumerating potential index joins again.
-  if ((leafNode->getOperatorType() == REL_SCAN))
-    ((Scan *)result)->copyIndexInfo(leafNode);
-
   // now set the group attributes of the result's top node
   result->setGroupAttr(before->getGroupAttr());
 
   result->selectionPred() += bef->selectionPred();
+
+  if ((leafNode->getOperatorType() == REL_SCAN))
+    ((Scan *)result)->addIndexInfo();
 
   return result;
 }
