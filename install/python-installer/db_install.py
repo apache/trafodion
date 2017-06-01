@@ -182,7 +182,14 @@ class HadoopDiscover(object):
             for c in self.cm['clusters']:
                 if c['displayName'] == self.cluster_name:
                     parcels = c['parcels']
-            if parcels:
+
+            cdh_parcel_enabled = False
+            for parcel in parcels:
+                if parcel['product'] == 'CDH':
+                    cdh_parcel_enabled = True
+                    break
+
+            if cdh_parcel_enabled:
                 parcel_config = self.hg.get('%s/api/v6/cm/allHosts/config' % self.url)
                 # custom parcel dir exists
                 if parcel_config['items'] and parcel_config['items'][0]['name'] == 'parcels_directory':
