@@ -178,89 +178,24 @@ Lng32 AddTableName( const hs_table_type type
       }
     else
       {
-        // When CQD DEFAULT_SCHEMA_ACCESS_ONLY is on, 
-        // users cannot update stats on tables not in the default/public schemas.
-        if ( schema && 
-             ActiveSchemaDB()->getDefaults().getToken(DEFAULT_SCHEMA_ACCESS_ONLY)==DF_ON )
-        {
-          SchemaName objSchName;
-          NAString curSchName(schema);
-          NAString curCatName;
-          objSchName.setSchemaName(curSchName);
-          if (catalog)
-          {
-            curCatName = catalog;
-            objSchName.setCatalogName(curCatName);
-          }
-          else
-            curCatName = ActiveSchemaDB()->getDefaultSchema().getCatalogName();
-
-          // If the schema is neither default nor public,
-          // issue inaccessible error.
-          if (!objSchName.matchDefaultPublicSchema())
-          {
-            NAString dataObj(curCatName);
-            if (!dataObj.isNull()) dataObj += ".";
-            dataObj += curSchName + ".";
-            dataObj += table;
-            HSFuncMergeDiags(-UERR_OBJECT_INACCESSIBLE, dataObj.data());
-            retcode = -1;
-            HSHandleError(retcode);
-          }
-        }
-
         if (catalog)
           catName = catalog;
         else
           {
-            // LCOV_EXCL_START :nsk
-            if (SqlParser_NAMETYPE == DF_NSK)
-              {
-                catName = SqlParser_MPLOC.getSysDotVol();
-                hs_globals->tableType = GUARDIAN_TABLE;
-                hs_globals->tableFormat = SQLMP;
-              }
-            else
-            // LCOV_EXCL_STOP
-              catName = ActiveSchemaDB()->getDefaultSchema().getCatalogName();
+            catName = ActiveSchemaDB()->getDefaultSchema().getCatalogName();
           }
   
         if (schema) 
           schName = schema;
         else
           {
-            // LCOV_EXCL_START :nsk
-            if (SqlParser_NAMETYPE == DF_NSK)
-              {
-                schName = SqlParser_MPLOC.getSubvolName();
-                hs_globals->tableFormat = SQLMP;
-              }
-            else
-            // LCOV_EXCL_STOP
-              schName = ActiveSchemaDB()->getDefaultSchema().getSchemaName();
+            schName = ActiveSchemaDB()->getDefaultSchema().getSchemaName();
           }
   
         objName = table;
         extName = catName + "." + schName + "." + objName;
       }
   
-    // LCOV_EXCL_START :nsk
-    if (hs_globals->tableFormat == SQLMP)
-      {
-        ComMPLoc loc(extName, ComMPLoc::FILE);
-        if (loc.getFormat() == ComMPLoc::INVALID)
-          {
-            HSFuncMergeDiags(-UERR_OBJECT_INACCESSIBLE, extName);
-            retcode = -1;
-            HSHandleError(retcode);
-          }
-  
-        catName = loc.getSysDotVol();
-        schName = loc.getSubvolName();
-        objName = loc.getFileName();
-      }
-    // LCOV_EXCL_STOP
-
     hs_globals->objDef = NULL;
     
     // Search in volatile schema first. If not found, search in regular cat/sch.
@@ -408,9 +343,11 @@ Lng32 AddTableName( const hs_table_type type
     }
 
     //10-040123-2660 We only support tables. We do not allow views.
-    // Tables can be metadata tables.
-    if ((hs_globals->objDef->getObjectType() != COM_BASE_TABLE_OBJECT) &&
-        (hs_globals->objDef->getObjectType() != COM_MV_OBJECT)) 
+    // Tables cannot be metadata tables.
+    if (((hs_globals->objDef->getObjectType() != COM_BASE_TABLE_OBJECT) &&
+         (hs_globals->objDef->getObjectType() != COM_MV_OBJECT)) ||
+        (hs_globals->objDef->getNATable()->isSeabaseMDTable()) ||
+        (hs_globals->objDef->getNATable()->isSeabasePrivSchemaTable())) 
       {
         HSFuncMergeDiags(-UERR_INVALID_OBJECT, extName);
         retcode = -1;

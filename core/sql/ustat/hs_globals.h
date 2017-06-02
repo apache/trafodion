@@ -44,6 +44,7 @@
 #include "nawstring.h"
 #include "Collections.h"
 #include "ComVersionDefs.h" 	
+#include "ComSmallDefs.h"
 #include "NABitVector.h"
 #include <exp_function.h>
 
@@ -1457,15 +1458,10 @@ public:
       return (isNativeHbaseCat(catName) || isHiveCat(catName));
     }
 
-
-    static NABoolean isHBaseMeta(const NAString& schName)
-    { return (schName == "_MD_" || schName == "_PRIVMGR_MD_"); }
-
-    //static NABoolean isHBaseSchema(const NAString& schName)
-    //{ return (schName == "HBASE"); }
-
     static NABoolean isTrafodionCatalog(const NAString& catName)
-    { return (catName == "TRAFODION"); }
+    { 
+      return (catName == TRAFODION_SYSCAT_LIT); 
+    }
 
     static NABoolean isHBaseUMDHistogram(const NAString& tableName)
     { return (tableName == HBASE_HIST_NAME || 

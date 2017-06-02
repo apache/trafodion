@@ -3776,7 +3776,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
        if (privs == NULL)
          {
            *CmpCommon::diags() << DgSqlCode(-1034);
-            authorized = FALSE;
+            return FALSE;
          }
 
        // Requester must have at least select privilege
@@ -3788,7 +3788,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
             << DgSqlCode( -4481 )
             << DgString0( "SELECT or MANAGE_STATISTICS" )
             << DgString1( objDef->getNATable()->getTableName().getQualifiedNameAsAnsiString() );
-            authorized = FALSE;
+            return FALSE;
           }
        }
 

@@ -2982,53 +2982,57 @@ short CmpDescribeSeabaseTable (
   // Verify that user can perform the describe command
   // No need to check privileges for create like operations (type 3)
   // since the create code performs authorization checks
-  if (type != 3)
-    {
-      PrivMgrUserPrivs privs; 
-      PrivMgrUserPrivs *pPrivInfo = NULL;
+  // Nor for hiveExternal tables - already checked
+  if (!isExternalHiveTable)
+  {
+    if (type != 3)
+      {
+        PrivMgrUserPrivs privs; 
+        PrivMgrUserPrivs *pPrivInfo = NULL;
     
-      // metadata tables do not cache privilege information, go get it now
-      if (CmpCommon::context()->isAuthorizationEnabled() &&
-          naTable->getPrivInfo() == NULL)
-        {
-          std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
-          privMDLoc += std::string(".\"") +
-             std::string(SEABASE_PRIVMGR_SCHEMA) +
-             std::string("\"");
-          PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags(), 
-                                        PrivMgr::PRIV_INITIALIZED);
-
-
-          // we should switch to another CI only if we are in an embedded CI
-          if (cmpSBD.switchCompiler())
+        // metadata tables do not cache privilege information, go get it now
+        if (CmpCommon::context()->isAuthorizationEnabled() &&
+            naTable->getPrivInfo() == NULL)
           {
-             *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
-             return -1;
-          }
- 
-          PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
-                                                           naTable->getObjectType(),
-                                                           ComUser::getCurrentUser(),
-                                                           privs);
+            std::string privMDLoc(ActiveSchemaDB()->getDefaults().getValue(SEABASE_CATALOG));
+            privMDLoc += std::string(".\"") +
+               std::string(SEABASE_PRIVMGR_SCHEMA) +
+               std::string("\"");
+            PrivMgrCommands privInterface(privMDLoc, CmpCommon::diags(), 
+                                          PrivMgr::PRIV_INITIALIZED);
 
-          // switch back the original commpiler, ignore error for now
-          cmpSBD.switchBackCompiler();
 
-          if (retcode == STATUS_ERROR)
+            // we should switch to another CI only if we are in an embedded CI
+            if (cmpSBD.switchCompiler())
             {
-              *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
-              return -1;
+               *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+               return -1;
             }
-          pPrivInfo = &privs;
-        }
-      else
-        pPrivInfo = naTable->getPrivInfo();
+ 
+            PrivStatus retcode = privInterface.getPrivileges((int64_t)naTable->objectUid().get_value(),
+                                                             naTable->getObjectType(),
+                                                             ComUser::getCurrentUser(),
+                                                             privs);
+
+            // switch back the original commpiler, ignore error for now
+            cmpSBD.switchBackCompiler();
+
+            if (retcode == STATUS_ERROR)
+              {
+                *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_RETRIEVE_PRIVS);
+                return -1;
+              }
+            pPrivInfo = &privs;
+          }
+        else
+          pPrivInfo = naTable->getPrivInfo();
 
 
-      if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
-                                   pPrivInfo,
-                                   COM_BASE_TABLE_OBJECT))
-        return -1;
+        if (!CmpDescribeIsAuthorized(SQLOperation::UNKNOWN, 
+                                     pPrivInfo,
+                                     COM_BASE_TABLE_OBJECT))
+          return -1;
+      }
     }
 
   if ((type == 2) && (isView))
