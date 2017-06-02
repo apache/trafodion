@@ -1,5 +1,7 @@
 ## Top-level Makefile for building Trafodion components
 
+# dummy change to test automation
+
 # @@@ START COPYRIGHT @@@
 #
 # Licensed to the Apache Software Foundation (ASF) under one
