@@ -1555,6 +1555,69 @@ EXTRACTLOB_IOMessage(
             );
 }
 
+void UPDATELOB_IOMessage(
+          /* In  */ CEE_tag_def objtag_
+        , /* In  */ const CEE_handle_def *call_id_
+        )
+{
+    CInterface * pnode = (CInterface *)objtag_;
+    CEE_status  sts = CEE_SUCCESS;
+
+    IDL_char   *curptr;
+    IDL_long   inputPosition = 0;
+
+    IDL_long   lobUpdateType = 0;
+    IDL_long   lobHandleLen = 0;
+    IDL_string lobHandle = NULL;
+    IDL_long   lobHandleCharset = 0;
+
+    IDL_long_long   totalLength = 0;
+    IDL_long_long   offset = 0;
+    IDL_long_long   length = 0;
+    BYTE     * data = NULL;
+
+    curptr = pnode->r_buffer();
+
+    lobUpdateType = *(IDL_long *)(curptr + inputPosition);
+    inputPosition += sizeof(lobUpdateType);
+
+    lobHandleLen = *(IDL_long *)(curptr + inputPosition);
+    inputPosition += sizeof(lobHandleLen);
+
+    if (lobHandleLen > 0)
+    {
+        lobHandle = curptr + inputPosition;
+        inputPosition += lobHandleLen;
+        lobHandleCharset = *(IDL_long *)(curptr + inputPosition);
+        inputPosition += sizeof(lobHandleCharset);
+    }
+
+    totalLength = *(IDL_long_long *)(curptr + inputPosition);
+    inputPosition += sizeof(IDL_long_long);
+
+    offset = *(IDL_long_long *)(curptr + inputPosition);
+    inputPosition += sizeof(IDL_long_long);
+
+    length = *(IDL_long_long *)(curptr + inputPosition);
+    inputPosition += sizeof(IDL_long_long);
+
+    if (length > 0)
+    {
+        data = (BYTE *)curptr + inputPosition;
+        inputPosition += length;
+    }
+
+    odbc_SQLSrvr_UpdateLob_ame_(
+            objtag_,
+            call_id_,
+            lobUpdateType,
+            lobHandle,
+            totalLength,
+            offset,
+            length,
+            data);
+}
+
 void LOG_MSG(CError* ierror, short level)
 {
 	char buffer[500];
@@ -1872,6 +1935,9 @@ void DISPATCH_TCPIPRequest(
 		break;
     case SRVR_API_EXTRACTLOB:
         EXTRACTLOB_IOMessage(objtag_, call_id_);
+        break;
+    case SRVR_API_UPDATELOB:
+        UPDATELOB_IOMessage(objtag_, call_id_);
         break;
 	default:
 //LCOV_EXCL_START

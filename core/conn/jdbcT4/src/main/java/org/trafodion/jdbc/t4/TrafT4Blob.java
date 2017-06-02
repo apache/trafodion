@@ -27,57 +27,24 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
+import java.sql.Types;
 
-public class TrafT4Blob implements Blob {
-	private byte[] data_ = null;
-	private boolean isFreed_ = false;
-	private String lobHandle_ = null;
-	private TrafT4Connection connection_ = null;
-
-	public TrafT4Blob(TrafT4Connection connection, String lobHandle) throws SQLException{
-		if (connection == null) {
-			throw TrafT4Messages.createSQLException(connection_.props_, null, null, null);
-		}
-
-		this.connection_ = connection;
-		this.lobHandle_ = lobHandle;
-
-		if (connection_.props_.t4Logger_.isLoggable(Level.FINE) == true) {
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, lobHandle);
-			connection_.props_.t4Logger_.logp(Level.FINE, "TrafT4ResultSet", "getClob", "", p);
-		}
-		if (connection_.props_.getLogWriter() != null) {
-			LogRecord lr = new LogRecord(Level.FINE, "");
-			Object p[] = T4LoggingUtilities.makeParams(connection_.props_, connection, lobHandle);
-			lr.setParameters(p);
-			lr.setSourceClassName("TrafT4ResultSet");
-			lr.setSourceMethodName("getClob");
-			T4LogFormatter lf = new T4LogFormatter();
-			String temp = lf.format(lr);
-			connection_.props_.getLogWriter().println(temp);
-		}
-
-		T4Connection t4connection = this.connection_.getServerHandle().getT4Connection();
-		LogicalByteArray wbuffer = ExtractLobMessage.marshal(ExtractLobMessage.LOB_EXTRACT_BUFFER, lobHandle_, 1, 0,
-				connection_.ic_);
-		LogicalByteArray rbuffer = t4connection.getReadBuffer(TRANSPORT.SRVR_API_EXTRACTLOB, wbuffer);
-		ExtractLobReply reply = new ExtractLobReply(rbuffer, connection_.ic_);
-
-		this.data_ = reply.lobDataValue;
+public class TrafT4Blob extends TrafT4Lob implements Blob
+{
+	public TrafT4Blob(TrafT4Connection connection, String lobHandle, byte[] data) throws SQLException {
+		super(connection, lobHandle, data, Types.BLOB);
 	}
 
+	@Override
 	public InputStream getBinaryStream() throws SQLException {
 		testAvailability();
-		return new ByteArrayInputStream(this.data_);
+		return new ByteArrayInputStream((byte[]) data_);
 	}
 
+	@Override
 	public InputStream getBinaryStream(long pos, long length) throws SQLException {
 		testAvailability();
-		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(),
-				"getBinaryStream()");
-		return null;
+		return new ByteArrayInputStream((byte[]) data_);
 	}
 
 	/*
@@ -85,6 +52,8 @@ public class TrafT4Blob implements Blob {
 	 * as an array of bytes. This byte array contains up to length consecutive
 	 * bytes starting at position pos.
 	 *  */
+
+	@Override
 	public byte[] getBytes(long pos, int length) throws SQLException {
 		testAvailability();
 
@@ -92,25 +61,28 @@ public class TrafT4Blob implements Blob {
 		int startPos = (int)pos - 1;
 		int endPos = startPos + length;
 
-		if((startPos > data_.length) || (startPos < 0) || (length < 0))
+		byte[] binaryData = (byte[]) data_;
+		if ((startPos > binaryData.length) || (startPos < 0) || (length < 0))
 			throw TrafT4Messages.createSQLException(this.connection_.props_, this.connection_.getLocale(),
 					"out_of_lob_bound", null);
 
-		if((endPos - 1) > data_.length) {
-			length = data_.length - startPos;
+		if ((endPos - 1) > binaryData.length) {
+			length = binaryData.length - startPos;
 		}
 		buf = new byte[length];
-		System.arraycopy(data_, startPos, buf, 0, length);
+		System.arraycopy(binaryData, startPos, buf, 0, length);
 
 		return buf;
 	}
 
+	@Override
 	public int setBytes(long pos, byte[] bytes) throws SQLException {
 		testAvailability();
 
 		return setBytes(pos, bytes, 0, bytes.length);
 	}
 
+	@Override
 	public int setBytes(long pos, byte[] bytes, int offset, int len) throws SQLException {
 		testAvailability();
 		OutputStream out = setBinaryStream(pos);
@@ -119,7 +91,7 @@ public class TrafT4Blob implements Blob {
 			out.write(bytes, offset, len);
 		} catch (IOException e) {
 			throw TrafT4Messages.createSQLException(this.connection_.props_, this.connection_.getLocale(),
-					"blob_io_error", e.getMessage());
+					"lob_io_error", e.getMessage());
 		} finally {
 			try {
 				out.close();
@@ -130,26 +102,28 @@ public class TrafT4Blob implements Blob {
 		return len;
 	}
 
+	@Override
 	public long position(Blob pattern, long start) throws SQLException {
-		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "position()");
-		return 0;
+		return position(pattern.getBytes(0, (int) pattern.length()), start);
 	}
 
+	@Override
 	public long position(byte[] pattern, long start) throws SQLException {
 		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(), "position()");
 		return 0;
 	}
 
+	@Override
 	public OutputStream setBinaryStream(long pos) throws SQLException {
-		TrafT4Messages.throwUnsupportedFeatureException(connection_.props_, connection_.getLocale(),
-				"setBinaryStream()");
-		return null;
+		testAvailability();
+		return setOutputStream(pos);
 	}
 
+	@Override
 	public void truncate(long len) throws SQLException {
 		testAvailability();
 
-		if (len < 0 || len > this.data_.length) {
+		if (len < 0 || len > ((byte[]) data_).length) {
 			throw TrafT4Messages.createSQLException(this.connection_.props_, this.connection_.getLocale(),
 					"out_of_lob_bound", null);
 		}
@@ -170,11 +144,14 @@ public class TrafT4Blob implements Blob {
 			throw TrafT4Messages.createSQLException(null, null, "lob_has_been_freed", null);
 	}
 
+
+	@Override
 	public long length() throws SQLException {
 		testAvailability();
-		return data_.length;
+		return data_ == null ? 0 : ((byte[]) data_).length;
 	}
 
+	@Override
 	public void free() throws SQLException {
 		data_ = null;
 		isFreed_ = true;

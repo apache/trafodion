@@ -35,6 +35,8 @@
 #include <platform_utils.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <map>
+#include <string>
 
 //  Used to disable and enable dumps via setrlimit in a release env.
 #ifndef _DEBUG
@@ -55,7 +57,6 @@
 #include "ResStatisticsSession.h"
 #include "ResStatisticsStatement.h"
 #include "NskUtil.h"
-
 
 // reserved names for seabase metadata where SQL table information is kept
 #ifndef SEABASE_MD_SCHEMA
@@ -6381,6 +6382,7 @@ ret:
 
 } // odbc_SQLSrvr_FetchPerf_sme_()
 
+
 extern "C" void
 odbc_SQLSrvr_ExtractLob_sme_(
     /* In    */ CEE_tag_def objtag_
@@ -6389,7 +6391,7 @@ odbc_SQLSrvr_ExtractLob_sme_(
   , /* In    */ IDL_long extractLobAPI
   , /* In    */ IDL_string lobHandle
   , /* Out   */ IDL_long_long &lobDataLen
-  , /* Out   */ IDL_char *& lobDataValue
+  , /* Out   */ BYTE *& lobDataValue
   )
 {
     char LobExtractQuery[1000];
@@ -6450,7 +6452,7 @@ odbc_SQLSrvr_ExtractLob_sme_(
         exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECDIRECT_FAILED;
     }
 
-    lobDataValue = new IDL_char[lobDataLen + 1];
+    lobDataValue = new BYTE[lobDataLen + 1];
     if (lobDataValue == NULL)
     {
         exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
@@ -6508,6 +6510,87 @@ odbc_SQLSrvr_ExtractLob_sme_(
             lobDataValue = NULL;
         }
     }
+}
+
+extern "C" void
+odbc_SQLSrvr_UpdateLob_sme_(
+    /* In   */ CEE_tag_def objtag_
+  , /* In   */ const CEE_handle_def * call_id_
+  , /* In   */ odbc_SQLSvc_UpdateLob_exc_ * exception_
+  , /* In   */ IDL_short lobUpdateType
+  , /* In   */ IDL_string lobHandle
+  , /* In   */ IDL_long_long totalLength
+  , /* In   */ IDL_long_long offset
+  , /* In   */ IDL_long_long length
+  , /* In   */ BYTE * data)
+{
+	char lobUpdateQuery[1000] = {0};
+	char RequestError[200] = {0};
+
+	SRVR_STMT_HDL * QryLobUpdateSrvrStmt = NULL;
+
+	if ((QryLobUpdateSrvrStmt = getSrvrStmt("MXOSRVR_UPDATELOB", TRUE)) == NULL)
+	{
+		SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR,
+			         EVENTLOG_ERROR_TYPE,
+			         srvrGlobal->nskProcessInfo.processId,
+			         ODBCMX_SERVER,
+			         srvrGlobal->srvrObjRef,
+			         2,
+			         "LOB UPDATE APIs",
+			         "Allocate Statement");
+
+		exception_->exception_nr = odbc_SQLSvc_UpdateLob_ParamError_exn_;
+		exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_UNABLE_TO_ALLOCATE_SQL_STMT;
+	}
+
+    if (offset == 0)
+    {
+        snprintf(lobUpdateQuery, sizeof(lobUpdateQuery),  "UPDATE LOB (LOB'%s', LOCATION %Ld, SIZE %Ld)", lobHandle, (Int64)data, length);
+    }
+    else
+    {
+        snprintf(lobUpdateQuery, sizeof(lobUpdateQuery),  "UPDATE LOB (LOB'%s', LOCATION %Ld, SIZE %Ld, APPEND)", lobHandle, (Int64)data, length);
+    }
+
+    short retcode = 0;
+	try
+	{
+        retcode = QryLobUpdateSrvrStmt->ExecDirect(NULL, lobUpdateQuery, INTERNAL_STMT, TYPE_UNKNOWN, SQL_ASYNC_ENABLE_OFF, 0);
+
+        if (retcode == SQL_ERROR)
+        {
+            ERROR_DESC_def * p_buffer = QryLobUpdateSrvrStmt->sqlError.errorList._buffer;
+            strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
+
+            SendEventMsg(MSG_SQL_ERROR,
+                         EVENTLOG_ERROR_TYPE,
+                         srvrGlobal->nskProcessInfo.processId,
+                         ODBCMX_SERVER,
+                         srvrGlobal->srvrObjRef,
+                         2,
+                         p_buffer->sqlcode,
+                         RequestError);
+            exception_->exception_nr = odbc_SQLSvc_UpdateLob_ParamError_exn_;
+            exception_->u.SQLError.errorList._length = QryLobUpdateSrvrStmt->sqlError.errorList._length;
+            exception_->u.SQLError.errorList._buffer = QryLobUpdateSrvrStmt->sqlError.errorList._buffer;
+            exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECUTE_FAILED;
+        }
+    }
+    catch (...)
+    {
+        SendEventMsg(MSG_PROGRAMMING_ERROR,
+                     EVENTLOG_ERROR_TYPE,
+                     srvrGlobal->nskProcessInfo.processId,
+                     ODBCMX_SERVER,
+                     srvrGlobal->srvrObjRef,
+                     1,
+                     "Exception in executing UPDATE_LOB");
+
+        exception_->exception_nr = odbc_SQLSvc_UpdateLob_ParamError_exn_;
+        exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECUTE_FAILED;
+    }
+
 }
 
 //========================================================================

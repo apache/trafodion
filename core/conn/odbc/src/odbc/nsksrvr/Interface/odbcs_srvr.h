@@ -176,6 +176,17 @@ ValidateToken_IOMessage(
   , /* In    */ const CEE_handle_def *call_id_
   );
 
+void
+EXTRACTLOB_IOMessage(
+    /* In    */CEE_tag_def objtag_
+  , /* In    */const CEE_handle_def *call_id_
+  );
+
+void
+UPDATELOB_IOMessage(
+    /* In  */ CEE_tag_def objtag_
+  , /* In  */ const CEE_handle_def *call_id_
+  );
 void LOG_MSG(CError* ierror, short level);
 
 void LOG_ERROR(CError* ierror);

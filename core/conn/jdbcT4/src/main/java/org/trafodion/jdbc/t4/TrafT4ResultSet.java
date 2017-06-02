@@ -764,8 +764,6 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 		case Types.CHAR:
 		case Types.VARCHAR: // Extension allows varchar and
 		case Types.LONGVARCHAR: // longvarchar data types
-		case Types.BLOB:
-		case Types.CLOB:
 
 			Object x = getCurrentRow().getUpdatedArrayElement(columnIndex);
 			if (x == null) {
@@ -782,8 +780,11 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 							"invalid_cast_specification", null);
 				}
 			}
-
-
+        case Types.BLOB:
+        case Types.CLOB:
+            x = getLocalString(columnIndex);
+            Blob blob = new TrafT4Blob(connection_, (String) x, null);
+            return blob.getBytes(1, (int)blob.length());
 		default:
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
@@ -839,14 +840,16 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 		case Types.BINARY:
 		case Types.VARBINARY:
 		case Types.LONGVARBINARY:
-		case Types.BLOB:
-		case Types.CLOB:
 			data = getString(columnIndex);
 			if (data != null) {
 				return new java.io.StringReader(data);
 			} else {
 				return null;
 			}
+        case Types.BLOB:
+        case Types.CLOB:
+            Clob clob = getClob(columnIndex);
+            return clob.getCharacterStream(); 
 		default:
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
@@ -1837,8 +1840,6 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 			}
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
-		case Types.BLOB:
-		case Types.CLOB:
 			data = getLocalString(columnIndex);
 			if (stmt_ != null && stmt_.maxFieldSize_ != 0) {
 				if (data.length() > stmt_.maxFieldSize_) {
@@ -1846,6 +1847,20 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 				}
 			}
 			break;
+        case Types.BLOB:
+            data = getLocalString(columnIndex);
+            if (data != null) {
+                Blob blob = new TrafT4Blob(connection_, data, null);
+                return new String((blob.getBytes(1, (int) blob.length())));
+            }
+            break;
+        case Types.CLOB:
+            data = getLocalString(columnIndex);
+            if (data != null) {
+                Clob clob = new TrafT4Clob(connection_, data, null);
+                return clob.getSubString(1, (int)clob.length());
+            }
+            break;
 		case Types.VARBINARY:
 		case Types.BINARY:
 		case Types.LONGVARBINARY:
@@ -4886,9 +4901,26 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 		outputDesc_[columnIndex - 1].checkValidNumericConversion(connection_.getLocale());
 
 		lobHandle = getLocalString(columnIndex);
+        int dataType = outputDesc_[columnIndex - 1].dataType_;
+        switch (dataType) {
+        case Types.CLOB:
+        case Types.BLOB:
+            lobHandle = getLocalString(columnIndex);
+            if (lobHandle != null) {
+                return new TrafT4Clob(connection_, lobHandle, null);
+            }
+            break;
 
-		if (lobHandle != null) {
-			return new TrafT4Clob(connection_, lobHandle);
+        case Types.VARCHAR:
+        case Types.CHAR:
+        case Types.LONGVARCHAR:
+            String data = getString(columnIndex);
+            if (data != null) {
+                return new TrafT4Clob(connection_, null, data);
+            }
+
+        default:
+            return null;
 		}
 		return null;
 	}
@@ -4936,7 +4968,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 		lobHandle = getLocalString(columnIndex);
 
 		if (lobHandle != null) {
-			return new TrafT4Blob(connection_, lobHandle);
+            return new TrafT4Blob(connection_, lobHandle, null);
 		}
 		return null;
 	}

@@ -169,6 +169,7 @@ class TRANSPORT {
 
 	// extent API used to extract lob data
 	static final short SRVR_API_EXTRACTLOB = 3030;
+	static final short SRVR_API_UPDATELOB = 3031;
 
 	static final short SQL_ATTR_ROWSET_RECOVERY = 2000;
 

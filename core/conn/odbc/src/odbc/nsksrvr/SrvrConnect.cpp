@@ -8532,7 +8532,7 @@ odbc_SQLSrvr_ExtractLob_ame_(
 {
     ERROR_DESC_LIST_def sqlWarning = {0, 0};
     IDL_long_long lobDataLen = 0;
-    IDL_char * lobDataValue = NULL;
+    BYTE * lobDataValue = NULL;
 
     odbc_SQLsrvr_ExtractLob_exc_ exception_ = {0, 0};
 
@@ -8551,6 +8551,36 @@ odbc_SQLSrvr_ExtractLob_ame_(
                                     lobDataValue);
 }
 
+void
+odbc_SQLSrvr_UpdateLob_ame_(
+     /* In   */ CEE_tag_def objtag_
+  ,  /* In   */ const CEE_handle_def *call_id_
+  ,  /* In   */ IDL_short lobUpdateType
+  ,  /* In   */ IDL_string lobHandle
+  ,  /* In   */ IDL_long_long totalLength
+  ,  /* In   */ IDL_long_long offset
+  ,  /* In   */ IDL_long_long length
+  ,  /* In   */ BYTE * data)
+{
+    ERROR_DESC_LIST_def  sqlWarning = {0, 0};
+    odbc_SQLSvc_UpdateLob_exc_ exception_ = {0, 0};
+
+    odbc_SQLSrvr_UpdateLob_sme_(objtag_,
+                                call_id_,
+                                &exception_,
+                                lobUpdateType,
+                                lobHandle,
+                                totalLength,
+                                offset,
+                                length,
+                                data);
+
+    odbc_SQLSrvr_UpdateLob_ts_res_(objtag_,
+                                   call_id_,
+                                   &exception_
+                                   );
+
+}
 
 void getCurrentCatalogSchema()
 {

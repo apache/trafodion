@@ -2075,6 +2075,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // precision but degraded performance.
   SDDkwd__(LIMIT_MAX_NUMERIC_PRECISION,		"SYSTEM"),
 
+  DDint__(LOB_BATCH_SIZE,    "4096"),
  // Size in bytes  used to perform garbage collection  to lob data file 
   // default size is 5GB   . Change to adjust disk usage. If 0 it means
  // don't do GC

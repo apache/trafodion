@@ -6105,12 +6105,21 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
               ItemExpr *newChild;
               const NAType &desiredType = child(0)->getValueId().getType();
               SQLBlob &lobType = (SQLBlob&)desiredType;
+              short fs_datatype = child(0)->castToItemExpr()->getValueId().getType().getFSDatatype();
 
-              NAType * newType = new SQLBlob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), 
+              NAType * newType = NULL;
+              if (fs_datatype == REC_CLOB) {
+                  newType = new SQLClob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024),
+                         lobType.getLobStorage(),
+                         TRUE, FALSE, TRUE,
+                         CmpCommon::getDefaultNumeric(LOB_BATCH_SIZE));
+              }
+              else {
+              newType = new SQLBlob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024),
                                              lobType.getLobStorage(), 
                                              TRUE, FALSE, TRUE, 
-                                             CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024); 
-              //              vid1.coerceType(desiredType, NA_LOB_TYPE); 
+                                             CmpCommon::getDefaultNumeric(LOB_BATCH_SIZE));
+              }
               vid1.coerceType(*newType, NA_LOB_TYPE); 
               if (bindWA->getCurrentScope()->context()->inUpdate())
                 {
