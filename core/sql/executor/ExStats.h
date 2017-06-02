@@ -2248,6 +2248,8 @@ NA_EIDPROC
      queryIdLen_ = queryIdLen;} 
   char *getQueryId() { return queryId_; }
   Lng32 getQueryIdLen() { return queryIdLen_; }
+  inline void incHdfsCalls() {++numHdfsCalls_;}
+  Int64 hdfsCalls() const {return numHdfsCalls_;}
 
 private:
 
@@ -2259,6 +2261,7 @@ private:
   Int64  numBytesRead_;
   Int64  accessedRows_;
   Int64  usedRows_;
+  Int64  numHdfsCalls_;
   Int64  maxHdfsIOTime_;
   char *queryId_;
   Lng32 queryIdLen_;
