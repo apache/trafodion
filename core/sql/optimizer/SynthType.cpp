@@ -3670,15 +3670,78 @@ const NAType *BitOperFunc::synthesizeType()
 // -----------------------------------------------------------------------
 // member functions for class MathFunc
 // -----------------------------------------------------------------------
+	
+NAType* MathFunc::findReturnTypeForFloorCeil(NABoolean nullable)
+{
+  assert (getArity() == 1);
+
+  for (Int32 i = 0; i < getArity(); i++) {
+      ValueId vid = child(i)->getValueId();
+      const NAType &typ = vid.getType();
+      
+      if (typ.getTypeQualifier() != NA_NUMERIC_TYPE)
+        break;
+
+      const NumericType& nuTyp = (NumericType&)(typ);
+
+      // If the child is a SQL integer, just return the same type
+      // for the function.
+      if ( nuTyp.isInteger() ) 
+         return nuTyp.newCopy(HEAP);
+
+      // Here we only return a modified data type for SQLDecimal 
+      // or SQLNumeric. For all others, we return SQLDoublePrecision.
+      if ( !nuTyp.decimalPrecision() )
+        break;
+
+      switch ( nuTyp.getFSDatatype() ) {
+
+        // for SQLDecimal
+        case REC_DECIMAL_UNSIGNED:
+        case REC_DECIMAL_LSE:
+          return new HEAP SQLDecimal(nuTyp.getNominalSize()
+                                    ,0
+                                    ,!nuTyp.isUnsigned()
+                                    ,nuTyp.supportsSQLnull()
+                                    ,HEAP
+                                    );
+          break;
+
+        // for SQLNumeric
+        case REC_BIN8_UNSIGNED:
+        case REC_BIN16_UNSIGNED:
+        case REC_BIN32_UNSIGNED:
+        case REC_BIN64_UNSIGNED:
+        case REC_BIN8_SIGNED:
+        case REC_BIN16_SIGNED:
+        case REC_BIN32_SIGNED:
+        case REC_BIN64_SIGNED:
+           return new HEAP SQLNumeric(nuTyp.getNominalSize()
+                                     ,nuTyp.getPrecision()
+                                     ,0
+                                     ,!nuTyp.isUnsigned()
+                                     ,nuTyp.supportsSQLnull()
+                                     ,HEAP
+                                     );
+
+        default: 
+          break;
+    }
+  }
+  return new HEAP SQLDoublePrecision(nullable);
+}
+
 const NAType *MathFunc::synthesizeType()
 {
   CMPASSERT(getArity() <= 2);
 
   NABoolean nullable = FALSE;
+
   for (Int32 i = 0; i < getArity(); i++)
     {
       // type cast any params
       ValueId vid = child(i)->getValueId();
+
       SQLDoublePrecision dp(TRUE);
       vid.coerceType(dp, NA_NUMERIC_TYPE);
 
@@ -3712,13 +3775,11 @@ const NAType *MathFunc::synthesizeType()
     case ITM_ASIN:
     case ITM_ATAN:
     case ITM_ATAN2:
-    case ITM_CEIL:
     case ITM_COS:
     case ITM_COSH:
     case ITM_DEGREES:
     case ITM_EXP:
     case ITM_EXPONENT:
-    case ITM_FLOOR:
     case ITM_LOG:
     case ITM_LOG10:
     case ITM_LOG2:
@@ -3734,6 +3795,13 @@ const NAType *MathFunc::synthesizeType()
     case ITM_TANH:
       {
 	result = new HEAP SQLDoublePrecision(nullable);
+      }
+      break;
+
+    case ITM_FLOOR:
+    case ITM_CEIL:
+      {
+	result = findReturnTypeForFloorCeil(nullable);
       }
       break;
 

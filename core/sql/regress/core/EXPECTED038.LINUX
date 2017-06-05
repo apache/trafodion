@@ -243,10 +243,10 @@ ORDER_NUM    ORDER_DATE  ORDER_TIME  ORDER_QTY
 -----------  ----------  ----------  -----------
 
         100  1997-01-30    13:40:05         1000
-        200  2016-07-09    05:13:55           99
+        200  2017-06-05    18:32:25           99
         300  1996-08-10    10:20:10         6000
-        400  1997-05-12    05:13:55           99
-        500  2016-07-09    05:13:55           99
+        400  1997-05-12    18:32:25           99
+        500  2017-06-05    18:32:25           99
 
 --- 5 row(s) selected.
 >>
@@ -264,7 +264,7 @@ ORDER_NUM    ORDER_DATE  ORDER_TIME  ORDER_QTY
 T038PART_NUM  ORDER_TIME                
 ------------  --------------------------
 
-         600  2016-07-09 05:13:57.638206
+         600  2017-06-05 18:32:29.319949
 
 --- 1 row(s) selected.
 >>
@@ -661,9 +661,9 @@ GANESAN               DEV                   YOW
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
-        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
+        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
 >>SELECT *
@@ -675,6 +675,7 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
         100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
 
@@ -689,9 +690,9 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
-        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
+        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
 >>SELECT *
@@ -703,8 +704,8 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
 
 --- 3 row(s) selected.
 >>
@@ -744,8 +745,8 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
         100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
+        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
 >>
@@ -4758,6 +4759,55 @@ test      55  trim on non-s
           4
 
 --- 4 row(s) selected.
+>>
+>>
+>>-- floor/ceil function test
+>>create table T038fcl (a int , b decimal(5,2), c numeric (4,1), d largeint, e largeint);
+
+--- SQL operation complete.
+>>insert into T038fcl values
++>(1, 300.10, 202.2, 1, 1), (2, -300.10, -202.2, 2, 2);
+
+--- 2 row(s) inserted.
+>>
+>>select floor(a) floor_a, floor(b) floor_b, floor(c) floor_c, floor(d+e) bignumfloor,
++>       ceil(a) ceil_a, ceil(b) ceil_b, ceil(c) ceil_c, ceil(d+e) bignumceil
++>from T038fcl order by 1;
+
+FLOOR_A      FLOOR_B  FLOOR_C  BIGNUMFLOOR           CEIL_A       CEIL_B  CEIL_C  BIGNUMCEIL
+-----------  -------  -------  --------------------  -----------  ------  ------  --------------------
+
+          1      300      202                     2            1     301     203                     2
+          2     -301     -203                     4            2    -300    -202                     4
+
+--- 2 row(s) selected.
+>>
+>>create table T038fc2 as
++>(
++>select floor(a) floor_a, floor(b) floor_b, floor(c) floor_c, floor(d+e) bignumfloor,
++>       ceil(a) ceil_a, ceil(b) ceil_b, ceil(c) ceil_c, ceil(d+e) bignumceil 
++>from T038fcl
++>);
+
+--- 2 row(s) inserted.
+>>
+>>showddl T038fc2;
+
+CREATE TABLE TRAFODION.SCH.T038FC2
+  (
+    FLOOR_A                          INT DEFAULT NULL
+  , FLOOR_B                          DECIMAL(5, 0) DEFAULT NULL
+  , FLOOR_C                          NUMERIC(4, 0) DEFAULT NULL
+  , BIGNUMFLOOR                      LARGEINT DEFAULT NULL
+  , CEIL_A                           INT DEFAULT NULL
+  , CEIL_B                           DECIMAL(5, 0) DEFAULT NULL
+  , CEIL_C                           NUMERIC(4, 0) DEFAULT NULL
+  , BIGNUMCEIL                       LARGEINT DEFAULT NULL
+  )
+ ATTRIBUTES ALIGNED FORMAT
+;
+
+--- SQL operation complete.
 >>
 >>log;
 >>

@@ -2387,6 +2387,40 @@ ex_expr::exp_return_type convAsciiToDec(char *target,
 };
 
 ///////////////////////////////////////////////////////////////////
+// function to convert a DOUBLE to BIGNUM. 
+///////////////////////////////////////////////////////////////////
+NA_EIDPROC
+ex_expr::exp_return_type convDoubleToBigNum(char *target,
+                                            Lng32 targetLen,
+                                            Lng32 targetType,
+                                            Lng32 targetPrecision,
+                                            Lng32 targetScale,
+                                            double source,
+                                            CollHeap *heap,
+                                            ComDiagsArea** diagsArea)
+{
+  SimpleType sourceAttr(REC_FLOAT64, sizeof(double), 0, 0,
+                        ExpTupleDesc::SQLMX_FORMAT,
+                        8, 0, 0, 0, Attributes::NO_DEFAULT, 0);
+  char * opData[2];
+  opData[0] = target;
+  opData[1] = (char*)&source;
+  NABoolean isSigned = (targetType == REC_NUM_BIG_SIGNED);
+  BigNum bn(targetLen, targetPrecision, (short)targetScale, isSigned);
+  bn.setTempSpaceInfo(ITM_CAST, 0, targetLen);
+  if (bn.castFrom(&sourceAttr, opData, heap, diagsArea) != 0)
+    {
+      ExRaiseDetailSqlError(heap, diagsArea, EXE_NUMERIC_OVERFLOW, 
+                            (char*)&source,
+                            8, REC_FLOAT64, 0, targetType, 0 /* flags */);
+			      
+      return ex_expr::EXPR_ERROR; 
+    }
+
+  return ex_expr::EXPR_OK;
+}
+
+///////////////////////////////////////////////////////////////////
 // function to convert an ASCII string to BIGNUM. 
 // 
 // First convert from ASCII to LARGEDEC, then convert from LARGEDEC

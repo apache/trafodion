@@ -1200,6 +1200,25 @@ create table T038nvl (a int not null, b int, primary key(a));
 insert into T038nvl values (1, null), (2, 2), (3, null), (4, 4);
 select nvl(b,a) from T038nvl;
 
+
+-- floor/ceil function test
+create table T038fcl (a int , b decimal(5,2), c numeric (4,1), d largeint, e largeint);
+insert into T038fcl values
+(1, 300.10, 202.2, 1, 1), (2, -300.10, -202.2, 2, 2);
+
+select floor(a) floor_a, floor(b) floor_b, floor(c) floor_c, floor(d+e) bignumfloor,
+       ceil(a) ceil_a, ceil(b) ceil_b, ceil(c) ceil_c, ceil(d+e) bignumceil
+from T038fcl order by 1;
+
+create table T038fc2 as
+(
+select floor(a) floor_a, floor(b) floor_b, floor(c) floor_c, floor(d+e) bignumfloor,
+       ceil(a) ceil_a, ceil(b) ceil_b, ceil(c) ceil_c, ceil(d+e) bignumceil 
+from T038fcl
+);
+
+showddl T038fc2;
+
 log;
 
 ?section aqr
@@ -1261,5 +1280,7 @@ drop table T038LI;
 drop table T038part;
 drop table T038sf;
 drop table T038nvl;
+drop table T038fcl;
+drop table T038fc2;
 
 
