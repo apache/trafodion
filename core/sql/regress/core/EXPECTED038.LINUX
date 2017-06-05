@@ -243,10 +243,10 @@ ORDER_NUM    ORDER_DATE  ORDER_TIME  ORDER_QTY
 -----------  ----------  ----------  -----------
 
         100  1997-01-30    13:40:05         1000
-        200  2017-06-05    18:32:25           99
+        200  2017-06-05    21:43:42           99
         300  1996-08-10    10:20:10         6000
-        400  1997-05-12    18:32:25           99
-        500  2017-06-05    18:32:25           99
+        400  1997-05-12    21:43:42           99
+        500  2017-06-05    21:43:42           99
 
 --- 5 row(s) selected.
 >>
@@ -264,7 +264,7 @@ ORDER_NUM    ORDER_DATE  ORDER_TIME  ORDER_QTY
 T038PART_NUM  ORDER_TIME                
 ------------  --------------------------
 
-         600  2017-06-05 18:32:29.319949
+         600  2017-06-05 21:43:45.699265
 
 --- 1 row(s) selected.
 >>
@@ -661,9 +661,9 @@ GANESAN               DEV                   YOW
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
-        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
+        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
 >>SELECT *
@@ -674,9 +674,8 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
-        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
         100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
+        100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
@@ -690,8 +689,8 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
-        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
         100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
+        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
@@ -703,9 +702,9 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
+        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
 
 --- 3 row(s) selected.
 >>
@@ -732,8 +731,8 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
 
 --- 3 row(s) selected.
 >>SELECT *
@@ -744,9 +743,9 @@ EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME           
 EMPNUM       EMPNAME               DEPTNUM      DEPTNUM      DEPTNAME              MANAGER               UNITNUM      DEPTNUM      REVENVUE
 -----------  --------------------  -----------  -----------  --------------------  --------------------  -----------  -----------  ------------
 
-        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
-        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
         100  BHAVE                        6400         6400  DEV                   YOW                           101         6400     10000.000
+        100  RAO                          6500         6500  QA                    DENNIS                          ?            ?             ?
+        100  GANESAN                      6400         6400  DEV                   YOW                           101         6400     10000.000
 
 --- 3 row(s) selected.
 >>
