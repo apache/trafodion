@@ -50,7 +50,7 @@ if [ -f $TRAF_HOME/sqenv.sh ]; then
         source ./sqenv.sh
         popd >/dev/null
         export MANPATH=$MANPATH:$MPI_ROOT/share/man
-        #setup_my_nodes
+        setup_my_nodes
 fi
 
 #-------------------------------------------

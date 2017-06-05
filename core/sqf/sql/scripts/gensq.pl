@@ -21,7 +21,6 @@
 #
 # @@@ END COPYRIGHT @@@
 #
-require "ctime.pl";
 use sqnodes;
 use sqpersist;
 use POSIX;
@@ -134,8 +133,12 @@ sub printTMScript {
     print TM @rest;
 }
 
+sub getTime {
+    return strftime("%a %b %d %H:%M:%S %Y\n", localtime(time));
+}
+
 sub printTime {
-    printScript(1, "# Trafodion Startup script generated @ ",&ctime(time),"\n");
+    printScript(1, "# Trafodion Startup script generated @ ",getTime(),"\n");
 }
 
 sub printInitialLines {
@@ -319,7 +322,7 @@ sub genComponentTmWait {
 sub genIDTMSrv {
     if ($SQ_IDTMSRV > 0) {
         printIDTMScript(1, "#!/bin/sh\n");
-        printIDTMScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
+        printIDTMScript(1, "# Trafodion config/utility file generated @ ",getTime(),"\n");
         
         printIDTMScript(1, "sqshell -c persist exec TMID\n");
         printIDTMScript(1, "exit $?\n");
@@ -331,7 +334,7 @@ sub genIDTMSrv {
 sub genDTM {
 
     printTMScript(1, "#!/bin/sh\n");
-    printTMScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
+    printTMScript(1, "# Trafodion config/utility file generated @ ",getTime(),"\n");
  
     printTMScript(1, "sqshell -a <<eof\n");
     printTMScript(1, "\n! Start DTM\n");
@@ -379,13 +382,13 @@ sub generateRMS {
     
     #generate rmsstart and rmsstop scripts
     printRMSScript(0, "#!/bin/sh\n");
-    printRMSScript(0, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
+    printRMSScript(0, "# Trafodion config/utility file generated @ ",getTime(),"\n");
     printRMSScript(0, "\n# Start the RMS processes\n");
     printRMSScript(0, "sscpstart\n");
     printRMSScript(0, "ssmpstart\n");
 
     printRMSStopScript(0, "#!/bin/sh\n");
-    printRMSStopScript(0, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
+    printRMSStopScript(0, "# Trafodion config/utility file generated @ ",getTime(),"\n");
     printRMSStopScript(0, "\n# Stop the RMS processes\n");
     printRMSStopScript(0, "ssmpstop\n");
     printRMSStopScript(0, "sscpstop\n");
@@ -393,7 +396,7 @@ sub generateRMS {
 
     #generate ssmpstart, ssmpstop, sscpstart, sscpstop scripts
     printRMSScript(1, "#!/bin/sh\n");
-    printRMSScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
+    printRMSScript(1, "# Trafodion config/utility file generated @ ",getTime(),"\n");
     printRMSScript(2, "\n# Start the SSMP processes\n");
     printRMSScript(2, "sqshell -c persist exec SSMP\n");
     printRMSScript(2, "exit \$?\n");
@@ -402,7 +405,7 @@ sub generateRMS {
     printRMSScript(3, "exit \$?\n");
 
     printRMSStopScript(1, "#!/bin/sh\n");
-    printRMSStopScript(1, "# Trafodion config/utility file generated @ ",&ctime(time),"\n");
+    printRMSStopScript(1, "# Trafodion config/utility file generated @ ",getTime(),"\n");
     printRMSStopScript(2, "\n# Stop the SSMP processes\n");
     printRMSStopScript(2, "sqshell -c persist kill SSMP\n");
     printRMSStopScript(2, "exit \$?\n");
@@ -411,7 +414,7 @@ sub generateRMS {
     printRMSStopScript(3, "exit \$?\n");
    
 
-    printRMSCheckScript(1, "-- Trafodion config/utility file generated @ ",&ctime(time),"\n");
+    printRMSCheckScript(1, "-- Trafodion config/utility file generated @ ",getTime(),"\n");
     printRMSCheckScript(1, "prepare rms_check from select current_timestamp, \n");
     printRMSCheckScript(1, "cast('Node' as varchar(5)), \n");
     printRMSCheckScript(1, "cast(tokenstr('nodeId:', variable_info) as varchar(3)) node, \n");
@@ -633,7 +636,7 @@ sub printInitLinesAuxFiles {
     my $file_ptr  = @_[0];
 
     print $file_ptr "#!/bin/sh\n";
-    print $file_ptr "# Trafodion config/utility file generated @ ", &ctime(time), "\n";
+    print $file_ptr "# Trafodion config/utility file generated @ ", getTime(), "\n";
 }
 
 sub openFiles {
