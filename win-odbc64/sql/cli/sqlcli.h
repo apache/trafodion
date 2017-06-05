@@ -354,6 +354,11 @@ enum SQLTYPE_CODE {
     /* INTEGER/INT Tandem extensions */
     SQLTYPECODE_INTEGER_UNSIGNED       = -401,
     SQLTYPECODE_LARGEINT               = -402,
+	SQLTYPECODE_LARGEINT_UNSIGNED      = -405,
+
+	/* TINYINT */
+	SQLTYPECODE_TINYINT                = -403,
+	SQLTYPECODE_TINYINT_UNSIGNED	   = -404,
 
     /* SMALLINT */
     SQLTYPECODE_SMALLINT = 5,
@@ -416,6 +421,9 @@ enum SQLTYPE_CODE {
     /* LONG VARCHAR/ODBC CHARACTER VARYING */
     SQLTYPECODE_VARCHAR_LONG  = -1,		/* ## NEGATIVE??? */
 
+	/* BOOLEAN */
+	SQLTYPECODE_BOOLEAN  = -701,
+
     /* no ANSI value 13 */
 
     /* BIT */
@@ -424,6 +432,8 @@ enum SQLTYPE_CODE {
     /* BIT VARYING */
     SQLTYPECODE_BITVAR   = 15   /* not supported */
 };
+
+#define SQL_BOOLEAN			13
 
 /* #ifndef SQLDTCODE_DATE */
 /* specifies the type of datetime data type */
