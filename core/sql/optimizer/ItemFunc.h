@@ -3563,6 +3563,8 @@ public:
   virtual NABoolean calculateMinMaxUecs(ColStatDescList & histograms,
 					       CostScalar & minUec,
 					       CostScalar & maxUec);
+
+  NAType* findReturnTypeForFloorCeil(NABoolean nullable);
 };
 
 class Abs : public MathFunc

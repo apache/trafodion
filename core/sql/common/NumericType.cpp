@@ -1905,6 +1905,7 @@ double SQLNumeric::getMinValue() const
 	    break;
 
 	    case sizeof(short):
+	    case sizeof(Int8):
 	    {
 	       short temp = 0;
 	       Lng32 i=0;
@@ -1969,6 +1970,7 @@ double SQLNumeric::getMaxValue() const
         break;
 
         case sizeof(short):
+        case sizeof(Int8):
         {
 	   short temp = 0;
 	   Lng32 i=0;

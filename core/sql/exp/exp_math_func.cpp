@@ -76,6 +76,23 @@
 #define HUGE_VAL_REAL64         1.15792089237316192E+77
 #define HUGE_VAL_INT64          0777777777777777777777
 
+NA_EIDPROC
+ex_expr::exp_return_type convInt64ToDec(char *target,
+                                        Lng32 targetLen,
+                                        Int64 source,
+                                        CollHeap *heap,
+                                        ComDiagsArea** diagsArea);
+
+NA_EIDPROC
+ex_expr::exp_return_type convDoubleToBigNum(char *target,
+                                            Lng32 targetLen,
+                                            Lng32 targetType,
+                                            Lng32 targetPrecision,
+                                            Lng32 targetScale,
+                                            double source,
+                                            CollHeap *heap,
+                                            ComDiagsArea** diagsArea);
+
 ex_expr::exp_return_type ex_function_abs::eval(char *op_data[],
 					       CollHeap *heap,
 					       ComDiagsArea** diagsArea)
@@ -140,11 +157,19 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
   short err = 0;
   errno = 0;
 
-  if ((getOperand()) &&
-      (getOperand(0)->getDatatype() != REC_FLOAT64))
-    {
-      return evalUnsupportedOperations(op_data, heap, diagsArea);
+  if (getOperand()) {
+
+    switch (getOperType()) {
+      case ITM_FLOOR:
+      case ITM_CEIL:
+        break;
+
+      default:
+        if (getOperand(0)->getDatatype() != REC_FLOAT64)
+           return evalUnsupportedOperations(op_data, heap, diagsArea);
+        break;
     }
+  }
 
   switch (getOperType())
     {
@@ -291,7 +316,99 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
     case ITM_CEIL:
       // No error checks, all numeric values allowed.
 
-      *(double *)op_data[0] = MathCeil(*(double *)op_data[1], err);
+        switch( getOperand(0)->getDatatype() )
+         {
+          case REC_DECIMAL_UNSIGNED:
+          {
+            UInt64 temp = (UInt64)MathCeil(*(double *)op_data[1], err);
+            if ( convInt64ToDec(op_data[0],
+                                getOperand(0)->getLength(),
+                                temp,
+                                heap,
+                                diagsArea) != ex_expr::EXPR_OK)
+            {
+	      ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+	      **diagsArea << DgString0("CEIL");
+	      return ex_expr::EXPR_ERROR;
+            }
+            break;
+          }
+
+          case REC_DECIMAL_LSE:
+          {
+            Int64 temp = (Int64)MathCeil(*(double *)op_data[1], err);
+            if ( convInt64ToDec(op_data[0],
+                                getOperand(0)->getLength(),
+                                temp,
+                                heap,
+                                diagsArea) != ex_expr::EXPR_OK)
+            {
+	      ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+	      **diagsArea << DgString0("CEIL");
+	      return ex_expr::EXPR_ERROR;
+            }
+            break;
+          }
+
+          case REC_BIN8_SIGNED:
+            *(Int8*)op_data[0] = (Int8)MathCeil(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN8_UNSIGNED:
+            *(UInt8*)op_data[0] = (UInt8)MathCeil(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN16_SIGNED:
+            *(Int16*)op_data[0] = (Int16)MathCeil(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN16_UNSIGNED:
+            *(UInt16*)op_data[0] = (UInt16)MathCeil(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN32_SIGNED:
+            *(Int32*)op_data[0] = (Int32)MathCeil(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN32_UNSIGNED:
+            *(UInt32*)op_data[0] = (UInt32)MathCeil(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN64_SIGNED:
+            *(Int64*)op_data[0] = (Int64)MathCeil(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN64_UNSIGNED:
+            *(UInt64*)op_data[0] = (UInt64)MathCeil(*(double *)op_data[1], err);
+            break;
+
+          case REC_FLOAT64:
+            *(double *)op_data[0] = MathCeil(*(double *)op_data[1], err);
+            break;
+
+          case REC_NUM_BIG_SIGNED:
+          case REC_NUM_BIG_UNSIGNED:
+            {
+              double temp = MathCeil(*(double *)op_data[1], err);
+              if ( convDoubleToBigNum(op_data[0],
+                                      getOperand(0)->getLength(),
+                                      getOperand(0)->getDatatype(),
+                                      getOperand(0)->getPrecision(),
+                                      getOperand(0)->getScale(),
+                                      temp,
+                                      heap,
+                                      diagsArea) != ex_expr::EXPR_OK)
+              {
+	        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+	        **diagsArea << DgString0("FLOOR");
+	        return ex_expr::EXPR_ERROR;
+              }
+            }
+            break;
+
+          default:
+           return evalUnsupportedOperations(op_data, heap, diagsArea);
+         }
       break;
 
     case ITM_COS:
@@ -327,8 +444,99 @@ ex_expr::exp_return_type ExFunctionMath::eval(char *op_data[],
 
     case ITM_FLOOR:
       // No error checks, all numeric values allowed.
+      //
+        switch( getOperand(0)->getDatatype() )
+         {
+          case REC_DECIMAL_UNSIGNED:
+          {
+            UInt64 temp = (UInt64)MathFloor(*(double *)op_data[1], err);
+            if ( convInt64ToDec(op_data[0],
+                                getOperand(0)->getLength(),
+                                temp,
+                                heap,
+                                diagsArea) != ex_expr::EXPR_OK)
+            {
+	      ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+	      **diagsArea << DgString0("FLOOR");
+	      return ex_expr::EXPR_ERROR;
+            }
+            break;
+          }
+          case REC_DECIMAL_LSE:
+          {
+            Int64 temp = (Int64)MathFloor(*(double *)op_data[1], err);
+            if ( convInt64ToDec(op_data[0],
+                                getOperand(0)->getLength(),
+                                temp,
+                                heap,
+                                diagsArea) != ex_expr::EXPR_OK)
+            {
+	      ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+	      **diagsArea << DgString0("FLOOR");
+	      return ex_expr::EXPR_ERROR;
+            }
+            break;
+          }
 
-      *(double *)op_data[0] = MathFloor(*(double *)op_data[1], err);
+          case REC_BIN8_SIGNED:
+            *(Int8*)op_data[0] = (Int8)MathFloor(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN8_UNSIGNED:
+            *(UInt8*)op_data[0] = (UInt8)MathFloor(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN16_SIGNED:
+            *(Int16*)op_data[0] = (Int16)MathFloor(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN16_UNSIGNED:
+            *(UInt16*)op_data[0] = (UInt16)MathFloor(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN32_SIGNED:
+            *(Int32*)op_data[0] = (Int32)MathFloor(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN32_UNSIGNED:
+            *(UInt32*)op_data[0] = (UInt32)MathFloor(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN64_SIGNED:
+            *(Int64*)op_data[0] = (Int64)MathFloor(*(double *)op_data[1], err);
+            break;
+
+          case REC_BIN64_UNSIGNED:
+            *(UInt64*)op_data[0] = (UInt64)MathFloor(*(double *)op_data[1], err);
+            break;
+
+          case REC_FLOAT64:
+            *(double *)op_data[0] = MathFloor(*(double *)op_data[1], err);
+            break;
+
+          case REC_NUM_BIG_SIGNED:
+          case REC_NUM_BIG_UNSIGNED:
+            {
+              double temp = MathFloor(*(double *)op_data[1], err);
+              if ( convDoubleToBigNum(op_data[0],
+                                      getOperand(0)->getLength(),
+                                      getOperand(0)->getDatatype(),
+                                      getOperand(0)->getPrecision(),
+                                      getOperand(0)->getScale(),
+                                      temp,
+                                      heap,
+                                      diagsArea) != ex_expr::EXPR_OK)
+              {
+	        ExRaiseSqlError(heap, diagsArea, EXE_BAD_ARG_TO_MATH_FUNC);
+	        **diagsArea << DgString0("FLOOR");
+	        return ex_expr::EXPR_ERROR;
+              }
+            }
+            break;
+
+          default:
+           return evalUnsupportedOperations(op_data, heap, diagsArea);
+         }
       break;
 
     case ITM_LOG:
