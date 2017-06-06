@@ -525,7 +525,7 @@ fi
 # PreAuto Step #3. Create progress directory if not already running.
 # This will keep another USAS program from running at the same time.
 
-  doPreAutoStep3="$TRAF_HOME/tmp/doPreAutoStep3"
+  doPreAutoStep3="$TRAF_VAR/doPreAutoStep3"
 
   echo "rm -fr $PREV" > $doPreAutoStep3
   echo "mv $AUTODIR $PREV" >> $doPreAutoStep3

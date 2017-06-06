@@ -158,7 +158,7 @@ distribution manager's REST API.
 | mgr_pwd            | Administrator password for Apache Ambari or Cloudera Manager.  | admin                         | A user that can change configuration and restart services via the
 distribution manager's REST API.
 | offline_mode       | Whether to install Trafodion without internet connection.      | N                             | If Y, then you need to provide local directory in local_repo_dir
-| scratch_locs       | Overflow scratch files location for large queries that cannot fit in memory.    | $TRAF_HOME/tmp                |  Comma seperated if more than one folder, it should be set in a large disk
+| scratch_locs       | Overflow scratch files location for large queries that cannot fit in memory.    | $TRAF_VAR                     |  Comma seperated if more than one folder, it should be set in a large disk
 | traf_dirname       | Target folder name for the {project-name} software.            | apache-trafodion-{version}    | {project-name} is installed in this directory under `$HOME` on all nodes in `$NODE_LIST`.
 | traf_package       | The location of the {project-name} server package tar file.    | auto detected in installer folder | The package file contains the {project-name} server, DCS, and REST software
 | traf_pwd           | The password used for the {project-name} runtime user ID.      | traf123                      | Must be 6-8 characters long.
