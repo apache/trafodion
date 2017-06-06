@@ -4022,6 +4022,77 @@ Num ESPs Free                 2
 Recent Qid                    MXID11000004343212360895605883001000000000206U3333300_519___SQLCI_DML_LAST__
 
 --- SQL operation complete.
+>>control query shape cut;
+
+--- SQL operation complete.
+>>
+>>obey TESTRTS(hive_tests);
+>>select [last 0] * from hive.hive.store;
+
+--- 0 row(s) selected.
+>>get statistics for qid current ;
+Qid                      MXID11000029980212363173591852000000000000206U3333300_549___SQLCI_DML_LAST__
+Compile Start Time       2017/06/02 14:29:59.710027
+Compile End Time         2017/06/02 14:30:05.652952
+Compile Elapsed Time                 0:00:05.942925
+Execute Start Time       2017/06/02 14:30:05.653486
+Execute End Time         2017/06/02 14:30:05.702914
+Execute Elapsed Time                 0:00:00.049428
+State                    DEALLOCATED
+Rows Affected            0
+SQL Error Code           100
+Stats Error Code         0
+Query Type               SQL_SELECT_NON_UNIQUE
+Sub Query Type           SQL_STMT_NA
+Estimated Accessed Rows  0
+Estimated Used Rows      0
+Parent Qid               NONE
+Parent Query System      NONE
+Child Qid                NONE
+Number of SQL Processes  1
+Number of Cpus           1
+Transaction Id           -1
+Source String            select [last 0] * from hive.hive.store;
+SQL Source Length        39
+Rows Returned            0
+First Row Returned Time  -1
+Last Error before AQR    0
+Number of AQR retries    0
+Delay before AQR         0
+No. of times reclaimed   0
+Cancel Time              -1
+Last Suspend Time        -1
+Stats Collection Type    OPERATOR_STATS
+SQL Process Busy Time    6,102
+UDR Process Busy Time    0
+SQL Space Allocated      72,584                    KB
+SQL Space Used           72,577                    KB
+SQL Heap Allocated       139,153                   KB
+SQL Heap Used            139,152                   KB
+SQL Heap WM              139,152                   KB
+Processes Created        0
+Process Create Time      0
+Request Message Count    0
+Request Message Bytes    0
+Reply Message Count      0
+Reply Message Bytes      0
+BMO Space Buffer Size    0
+BMO Space Buffer Count   0
+BMO Interim Row Count    0
+Scr. Overflow Mode       UNKNOWN
+Scr. File Count          0
+Scr. IO Size             0
+Scr. Read Count          0
+Scr. Write Count         0
+Scr. IO Max Time         0
+Sort TopN                -1
+
+   Id       DOP          Table Name
+  EstRowsAccess       ActRowsAccess    EstRowsUsed         ActRowsUsed              SE_IOs        SE_IO_KBytes       SE_IO_SumTime       SE_IO_MaxTime
+    1         1   HIVE.HIVE.STORE
+              0                  12              0                  12                   1                   3               2,131               2,131
+
+--- SQL operation complete.
 >>
 >>obey TESTRTS(clean_up);
 >>drop table tstat;

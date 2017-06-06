@@ -2129,6 +2129,7 @@ void ExHdfsScanStats::init(NABoolean resetDop)
   numBytesRead_ = 0;
   accessedRows_ = 0;
   usedRows_     = 0;
+  numHdfsCalls_ = 0;
   maxHdfsIOTime_ = 0;
   blockTime_ = 0;
 }
@@ -2158,6 +2159,7 @@ UInt32 ExHdfsScanStats::packedLength()
   size += sizeof(numBytesRead_);
   size += sizeof(accessedRows_);
   size += sizeof(usedRows_);
+  size += sizeof(numHdfsCalls_);
   size += sizeof(maxHdfsIOTime_);
   if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
   {
@@ -2180,6 +2182,7 @@ UInt32 ExHdfsScanStats::pack(char *buffer)
   size += packIntoBuffer(buffer, numBytesRead_);
   size += packIntoBuffer(buffer, accessedRows_);
   size += packIntoBuffer(buffer, usedRows_);
+  size += packIntoBuffer(buffer, numHdfsCalls_);
   size += packIntoBuffer(buffer, maxHdfsIOTime_);
   if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
   {
@@ -2204,6 +2207,7 @@ void ExHdfsScanStats::unpack(const char* &buffer)
   unpackBuffer(buffer, numBytesRead_);
   unpackBuffer(buffer, accessedRows_);
   unpackBuffer(buffer, usedRows_);
+  unpackBuffer(buffer, numHdfsCalls_);
   unpackBuffer(buffer, maxHdfsIOTime_);
   if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
   {
@@ -2226,6 +2230,7 @@ void ExHdfsScanStats::merge(ExHdfsScanStats *other)
   numBytesRead_ += other->numBytesRead_;
   accessedRows_ += other->accessedRows_;
   usedRows_     += other->usedRows_;
+  numHdfsCalls_    += other->numHdfsCalls_;
   if (maxHdfsIOTime_ < other->maxHdfsIOTime_) // take the larger value
     maxHdfsIOTime_ = other->maxHdfsIOTime_;
 }
@@ -2248,6 +2253,7 @@ void ExHdfsScanStats::copyContents(ExHdfsScanStats *other)
   numBytesRead_ = other->numBytesRead_;
   accessedRows_ = other->accessedRows_;
   usedRows_     = other->usedRows_;
+  numHdfsCalls_  = other->numHdfsCalls_;
   maxHdfsIOTime_ = other->maxHdfsIOTime_;
   if ((Int32)getCollectStatsType() == SQLCLI_SE_OFFENDER_STATS)
   {
@@ -2294,12 +2300,6 @@ const char *ExHdfsScanStats::getNumValTxt(Int32 i) const
       return "TimeWaitingOnHdfs";
     case 4:
       return "AccessedRows";
-    case 5:
-      return "UsedRows";
-    case 6:
-      return "NumHdfsCalls";
-    case 7:
-      return "MaxHdfsIOTime";
     }
   return NULL;
 }
@@ -2316,12 +2316,6 @@ Int64 ExHdfsScanStats::getNumVal(Int32 i) const
       return timer_.getTime();
     case 4:
       return accessedRows_;
-    case 5:
-      return usedRows_;
-    case 6:
-      return lobStats_.numReadReqs;
-    case 7:
-      return maxHdfsIOTime_;
     }
   return 0;
 }
@@ -2366,10 +2360,10 @@ void ExHdfsScanStats::getVariableStatsInfo(char * dataBuffer,
   str_sprintf (buf, 
 	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HiveIOCalls: %Ld HiveSumIOTime: %Ld HdfsMaxIOTime: %Ld",
 	       (char*)tableName_,
-	       numBytesRead(), //lobStats()->bytesRead,
+	       numBytesRead(), 
 	       rowsAccessed(),
 	       rowsUsed(),
-	       lobStats()->numReadReqs, 
+               numHdfsCalls_,
 	       timer_.getTime(),
 	       maxHdfsIOTime_
 	       );
@@ -2418,7 +2412,7 @@ Lng32 ExHdfsScanStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     sqlStats_item->int64_value = usedRows_;
     break;
   case SQLSTATS_HIVE_IOS:
-    sqlStats_item->int64_value = lobStats()->numReadReqs;
+    sqlStats_item->int64_value = numHdfsCalls_;
     break;
   case SQLSTATS_HIVE_IO_BYTES:
     sqlStats_item->int64_value = numBytesRead_;
@@ -2759,14 +2753,12 @@ void ExHbaseAccessStats::getVariableStatsInfo(char * dataBuffer,
   str_sprintf (buf, 
 	   "AnsiName: %s  MessagesBytes: %Ld AccessedRows: %Ld UsedRows: %Ld HbaseSumIOCalls: %Ld HbaseSumIOTime: %Ld HbaseMaxIOTime: %Ld",
 	       (char*)tableName_,
-	       numBytesRead(), //lobStats()->bytesRead,
+	       numBytesRead(), 
 	       rowsAccessed(),
 	       rowsUsed(),
-	       hbaseCalls(), //lobStats()->numReadReqs, 
+	       hbaseCalls(), 
 	       timer_.getTime(),
 	       maxHbaseIOTime()
-  //	       lobStats()->hdfsAccessLayerTime/1000 
-  //	       lobStats()->CumulativeReadTime/1000 
 	       );
   buf += str_len(buf);
   

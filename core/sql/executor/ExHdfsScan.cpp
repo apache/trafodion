@@ -777,8 +777,10 @@ ExWorkProcRetcode ExHdfsScanTcb::work()
                    );
                   
                 if (hdfsStats_)
+                {
                   hdfsStats_->incMaxHdfsIOTime(hdfsStats_->getHdfsTimer().stop());
-	          
+                  hdfsStats_->incHdfsCalls();
+	        }  
 	        if (retcode < 0)
 	          {
 		    Lng32 cliError = 0;

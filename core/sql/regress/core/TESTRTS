@@ -30,6 +30,7 @@ obey TESTRTS(clean_up);
 obey TESTRTS(create_insert);
 obey TESTRTS(test_rts);
 obey TESTRTS(esp_idle_timeout);
+obey TESTRTS(hive_tests);
 obey TESTRTS(clean_up);
 log ;
 exit;
@@ -303,4 +304,9 @@ get process statistics for current ;
 sh sleep 70;
 select distinct d from tstat ;
 get process statistics for current ;
+control query shape cut;
+
+?section hive_tests
+select [last 0] * from hive.hive.store;
+get statistics for qid current ;
 

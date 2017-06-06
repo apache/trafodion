@@ -105,6 +105,9 @@ s/[A-Z0-9]*\.[A-Z0-9]*\.TSTAT[ ]*\n[0-9 ,]*/#CAT.#SCH.TSTAT pertableStats/
 /TSTAT(TSTAT)[ ]*/{N
 s/TSTAT(TSTAT)[ ]*\n[0-9 ]*\n[0-9 ,]*/TSTAT(TSTAT) @pertableStats@/
 }
+/STORE/{N
+s/STORE\n[0-9 ,]*/STORE @pertableStats@/
+}
 /pertableStats/{N
 s/pertableStats\n[0-9 ,]*/@pertableStats@/
 }
