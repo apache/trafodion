@@ -3780,7 +3780,7 @@ NABoolean HSGlobalsClass::isAuthorized(NABoolean isShowStats)
          }
 
        // Requester must have at least select privilege
-       if ( privs->hasSelectPriv() )
+       else if ( privs->hasSelectPriv() )
          authorized = TRUE;
        else
          {

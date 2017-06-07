@@ -168,9 +168,13 @@ class CmpSeabaseDDL
 			       const NAString &schName,
 			       const NAString &objName);
  
+  static ComBoolean isSeabaseMD(const ComObjectName &name);
+
   static NABoolean isSeabasePrivMgrMD(const NAString &catName,
 			              const NAString &schName);
  
+  static ComBoolean isSeabasePrivMgrMD(const ComObjectName &name);
+
   static NABoolean isUserUpdatableSeabaseMD(const NAString &catName,
 			       const NAString &schName,
 			       const NAString &objName);
@@ -465,10 +469,6 @@ protected:
   inline const char * getMDSchema() {return seabaseMDSchema_.data();};
 
   const char * getSystemCatalog();
-
-  ComBoolean isSeabaseMD(const ComObjectName &name);
-
-  ComBoolean isSeabasePrivMgrMD(const ComObjectName &name);
 
   ComBoolean isSeabaseReservedSchema(const ComObjectName &name);
 

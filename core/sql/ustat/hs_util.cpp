@@ -50,6 +50,7 @@
 #include "ComCextdecs.h"                        // NA_JulianTimestamp()
 #include "NAHeap.h"                             // For NADELETEARRAY.
 #include "CmpContext.h"
+#include "CmpSeabaseDDL.h"
 
 
 #include "ComSmallDefs.h"
@@ -99,9 +100,8 @@ NABoolean isHBaseUmdHistograms(const ComObjectName& objectName)
 NABoolean isHBaseMeta(const ComObjectName& objectName)
 {
     return
-    ( HSGlobalsClass::isHBaseMeta(
-               objectName.getSchemaNamePart().getInternalName()
-                                     ) ||
+    ( CmpSeabaseDDL::isSeabaseMD (objectName) || 
+      CmpSeabaseDDL::isSeabasePrivMgrMD(objectName) ||
       isHBaseUmdHistograms(objectName)
     );
 }
@@ -109,9 +109,7 @@ NABoolean isHBaseMeta(const ComObjectName& objectName)
 NABoolean isHBaseMeta(const QualifiedName& qualifiedName)
 {
     return
-    ( HSGlobalsClass::isHBaseMeta(
-           qualifiedName.getUnqualifiedSchemaNameAsAnsiString()
-                                 ) ||
+    ( qualifiedName.isSeabaseMD() || qualifiedName.isSeabasePrivMgrMD() ||
       isHBaseUmdHistograms(qualifiedName)
     );
 }
