@@ -108,7 +108,12 @@ ControlDB::~ControlDB()
 
 void ControlDB::setRequiredShape(ControlQueryShape *shape)
 {
-  delete requiredShape_;
+  if (requiredShape_)
+    {
+      delete requiredShape_->getShape();
+      delete requiredShape_;
+    }
+
   if (!shape
 	  ||
 	  !shape->getShape()
