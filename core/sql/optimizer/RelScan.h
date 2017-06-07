@@ -1302,7 +1302,8 @@ public:
   static TrafDesc *createVirtualTableDesc(const char * name,
 					     NABoolean isRW = FALSE,
 					     NABoolean isCW = FALSE, 
-                                             NAArray<HbaseStr> * hbaseKeys = NULL);
+					     NAArray<HbaseStr> * hbaseKeys = NULL,
+					     NAMemory * heap = NULL);
 
   static TrafDesc *createVirtualTableDesc(const char * name,
 					     NAList<char*> &colNameList,

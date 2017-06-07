@@ -284,6 +284,7 @@ TrafDesc *ExeUtilExpr::createVirtualTableDesc()
 {
   TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
+				      NULL, // let it decide what heap to use
 				      ComTdbExeUtil::getVirtTableNumCols(),
 				      ComTdbExeUtil::getVirtTableColumnInfo(),
 				      ComTdbExeUtil::getVirtTableNumKeys(),
@@ -316,6 +317,7 @@ TrafDesc *ExeUtilDisplayExplain::createVirtualTableDesc()
   TrafDesc * table_desc = 
     Generator::createVirtualTableDesc
     (getVirtualTableName(),
+     NULL, // let it decide what heap to use
      ComTdbExeUtilDisplayExplain::getVirtTableNumCols(),
      vtci,
      ComTdbExeUtil::getVirtTableNumKeys(),
@@ -1225,6 +1227,7 @@ TrafDesc *ExeUtilGetUID::createVirtualTableDesc()
 {
   TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
+				      NULL, // let it decide what heap to use
 				      ComTdbExeUtilGetUID::getVirtTableNumCols(),
 				      ComTdbExeUtilGetUID::getVirtTableColumnInfo(),
 				      ComTdbExeUtilGetUID::getVirtTableNumKeys(),
@@ -1303,6 +1306,7 @@ TrafDesc *ExeUtilGetQID::createVirtualTableDesc()
 {
   TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
+				      NULL, // let it decide what heap to use
 				      ComTdbExeUtilGetQID::getVirtTableNumCols(),
 				      ComTdbExeUtilGetQID::getVirtTableColumnInfo(),
 				      ComTdbExeUtilGetQID::getVirtTableNumKeys(),
@@ -3538,6 +3542,7 @@ TrafDesc *ExeUtilRegionStats::createVirtualTableDesc()
   else
     table_desc = Generator::createVirtualTableDesc(
 	 getVirtualTableName(),
+	 NULL, // let it decide what heap to use
 	 rs.getVirtTableNumCols(),
 	 rs.getVirtTableColumnInfo(),
 	 rs.getVirtTableNumKeys(),
@@ -3674,6 +3679,7 @@ TrafDesc *ExeUtilLobInfo::createVirtualTableDesc()
    if (tableFormat_)
     table_desc = Generator::createVirtualTableDesc(
 	 getVirtualTableName(),
+	 NULL, // let it decide what heap to use
 	 ComTdbExeUtilLobInfo::getVirtTableNumCols(),
 	 ComTdbExeUtilLobInfo::getVirtTableColumnInfo(),
 	 ComTdbExeUtilLobInfo::getVirtTableNumKeys(),
@@ -4673,6 +4679,7 @@ TrafDesc *HiveMDaccessFunc::createVirtualTableDesc()
   TrafDesc * table_desc =
     Generator::createVirtualTableDesc(
 				      getVirtualTableName(),
+				      NULL, // let it decide what heap to use
 				      ComTdbExeUtilHiveMDaccess::getVirtTableNumCols((char*)mdType_.data()),
 				      ComTdbExeUtilHiveMDaccess::getVirtTableColumnInfo((char*)mdType_.data()),
 				      ComTdbExeUtilHiveMDaccess::getVirtTableNumKeys((char*)mdType_.data()),

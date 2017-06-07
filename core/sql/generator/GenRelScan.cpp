@@ -1492,7 +1492,7 @@ void populateRangeDescForBeginKey(char* buf, Int32 len, struct TrafDesc* target,
 }
 
 TrafDesc *HbaseAccess::createVirtualTableDesc(const char * name,
-						 NABoolean isRW, NABoolean isCW, NAArray<HbaseStr>* beginKeys)
+  NABoolean isRW, NABoolean isCW, NAArray<HbaseStr>* beginKeys, NAMemory * heap)
 {
   TrafDesc * table_desc = NULL;
 
@@ -1500,6 +1500,7 @@ TrafDesc *HbaseAccess::createVirtualTableDesc(const char * name,
     table_desc =
       Generator::createVirtualTableDesc(
 					name,
+					heap,
 					ComTdbHbaseAccess::getVirtTableRowwiseNumCols(),
 					ComTdbHbaseAccess::getVirtTableRowwiseColumnInfo(),
 					ComTdbHbaseAccess::getVirtTableRowwiseNumKeys(),
@@ -1507,6 +1508,7 @@ TrafDesc *HbaseAccess::createVirtualTableDesc(const char * name,
   else if (isCW)
     table_desc =
       Generator::createVirtualTableDesc(name,
+					heap,
 					ComTdbHbaseAccess::getVirtTableNumCols(),
 					ComTdbHbaseAccess::getVirtTableColumnInfo(),
 					ComTdbHbaseAccess::getVirtTableNumKeys(),
@@ -1514,7 +1516,7 @@ TrafDesc *HbaseAccess::createVirtualTableDesc(const char * name,
 
   if (table_desc)
     {
-      struct TrafDesc* head = Generator::assembleDescs(beginKeys, NULL, NULL);
+      struct TrafDesc* head = Generator::assembleDescs(beginKeys, heap);
 
       table_desc->tableDesc()->hbase_regionkey_desc = head;
 
@@ -1668,6 +1670,7 @@ TrafDesc *HbaseAccess::createVirtualTableDesc(const char * name,
 
    table_desc =
       Generator::createVirtualTableDesc(name,
+					NULL, // let it decide what heap to use
 					numCols, //ComTdbHbaseAccess::getVirtTableNumCols(),
 					colInfoArray, //ComTdbHbaseAccess::getVirtTableColumnInfo(),
 					numKeys, //ComTdbHbaseAccess::getVirtTableNumKeys(),

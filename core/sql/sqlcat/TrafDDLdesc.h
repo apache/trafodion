@@ -104,7 +104,7 @@ public:
   enum {CURR_VERSION = 1};
 
   TrafDesc(UInt16 nodeType);
-  TrafDesc() : NAVersionedObject(-1) {}
+  TrafDesc() : NAVersionedObject(-1),descExtension(NULL) {}
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
@@ -163,7 +163,7 @@ public:
 
 class TrafCheckConstrntsDesc : public TrafDesc {
 public:
-  TrafCheckConstrntsDesc() : TrafDesc(DESC_CHECK_CONSTRNTS_TYPE)
+  TrafCheckConstrntsDesc() : TrafDesc(DESC_CHECK_CONSTRNTS_TYPE), constrnt_text(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -192,7 +192,9 @@ public:
 
 class TrafColumnsDesc : public TrafDesc {
 public:
-  TrafColumnsDesc() : TrafDesc(DESC_COLUMNS_TYPE) 
+  TrafColumnsDesc() : TrafDesc(DESC_COLUMNS_TYPE), colname(NULL),
+    pictureText(NULL), defaultvalue(NULL), heading(NULL),
+    computed_column_text(NULL), hbaseColFam(NULL), hbaseColQual(NULL)
   {};
 
   // ---------------------------------------------------------------------
@@ -305,7 +307,7 @@ public:
 
 class TrafConstrntKeyColsDesc : public TrafDesc {
 public:
-  TrafConstrntKeyColsDesc() : TrafDesc(DESC_CONSTRNT_KEY_COLS_TYPE)
+  TrafConstrntKeyColsDesc() : TrafDesc(DESC_CONSTRNT_KEY_COLS_TYPE), colname(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -338,7 +340,8 @@ public:
 
 class TrafConstrntsDesc : public TrafDesc {
 public:
-  TrafConstrntsDesc() : TrafDesc(DESC_CONSTRNTS_TYPE)
+  TrafConstrntsDesc() : TrafDesc(DESC_CONSTRNTS_TYPE),
+    constrntname(NULL), tablename(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -432,7 +435,8 @@ public:
 
 class TrafHbaseRegionDesc : public TrafDesc {
 public:
-  TrafHbaseRegionDesc() : TrafDesc(DESC_HBASE_RANGE_REGION_TYPE)
+  TrafHbaseRegionDesc() : TrafDesc(DESC_HBASE_RANGE_REGION_TYPE),
+    beginKey(NULL), endKey(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -468,7 +472,8 @@ public:
 
 class TrafHistogramDesc : public TrafDesc {
 public:
-  TrafHistogramDesc() : TrafDesc(DESC_HISTOGRAM_TYPE)
+  TrafHistogramDesc() : TrafDesc(DESC_HISTOGRAM_TYPE),
+    tablename(NULL), histid(NULL), highval(NULL), lowval(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -512,7 +517,8 @@ public:
 
 class TrafHistIntervalDesc : public TrafDesc {
 public:
-  TrafHistIntervalDesc() : TrafDesc(DESC_HIST_INTERVAL_TYPE)
+  TrafHistIntervalDesc() : TrafDesc(DESC_HIST_INTERVAL_TYPE),
+    histid(NULL), intboundary(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -551,7 +557,9 @@ public:
 
 class TrafIndexesDesc : public TrafDesc {
 public:
-  TrafIndexesDesc() : TrafDesc(DESC_INDEXES_TYPE)
+  TrafIndexesDesc() : TrafDesc(DESC_INDEXES_TYPE), 
+    partitioningScheme_(COM_UNSPECIFIED_PARTITIONING),
+    tablename(NULL), indexname(NULL), hbaseSplitClause(NULL), hbaseCreateOptions(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -646,7 +654,8 @@ public:
 
 class TrafKeysDesc : public TrafDesc {
 public:
-  TrafKeysDesc() : TrafDesc(DESC_KEYS_TYPE)
+  TrafKeysDesc() : TrafDesc(DESC_KEYS_TYPE), keyname(NULL),
+    hbaseColFam(NULL), hbaseColQual(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -692,7 +701,8 @@ public:
 
 class TrafLibraryDesc : public TrafDesc {
 public:
-  TrafLibraryDesc() : TrafDesc(DESC_LIBRARY_TYPE)
+  TrafLibraryDesc() : TrafDesc(DESC_LIBRARY_TYPE),
+    libraryName(NULL), libraryFilename(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -727,7 +737,15 @@ public:
 
 class TrafPartnsDesc : public TrafDesc {
 public:
-  TrafPartnsDesc() : TrafDesc(DESC_PARTNS_TYPE)
+  TrafPartnsDesc() : TrafDesc(DESC_PARTNS_TYPE),
+    tablename(NULL), 
+    partitionname(NULL),
+    logicalpartitionname(NULL),
+    firstkey(NULL),
+    encodedkey(NULL),
+    lowKey(NULL),
+    highKey(NULL),
+    givenname(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -769,7 +787,8 @@ public:
 
 class TrafRefConstrntsDesc : public TrafDesc {
 public:
-  TrafRefConstrntsDesc() : TrafDesc(DESC_REF_CONSTRNTS_TYPE)
+  TrafRefConstrntsDesc() : TrafDesc(DESC_REF_CONSTRNTS_TYPE),
+    constrntname(NULL), tablename(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -801,7 +820,9 @@ public:
 
 class TrafRoutineDesc : public TrafDesc {
 public:
-  TrafRoutineDesc() : TrafDesc(DESC_ROUTINE_TYPE)
+  TrafRoutineDesc() : TrafDesc(DESC_ROUTINE_TYPE),
+    routineName(NULL), externalName(NULL), librarySqlName(NULL), libraryFileName(NULL),
+    signature(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -856,7 +877,8 @@ public:
 
 class TrafSequenceGeneratorDesc : public TrafDesc {
 public:
-  TrafSequenceGeneratorDesc() : TrafDesc(DESC_SEQUENCE_GENERATOR_TYPE)
+  TrafSequenceGeneratorDesc() : TrafDesc(DESC_SEQUENCE_GENERATOR_TYPE),
+    sgLocation(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -907,7 +929,8 @@ public:
 
 class TrafTableDesc : public TrafDesc {
 public:
-  TrafTableDesc() : TrafDesc(DESC_TABLE_TYPE)
+  TrafTableDesc() : TrafDesc(DESC_TABLE_TYPE), tablename(NULL),
+    snapshotName(NULL), default_col_fam(NULL), all_col_fams(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -1051,7 +1074,7 @@ public:
 
 class TrafUsingMvDesc : public TrafDesc {
 public:
-  TrafUsingMvDesc() : TrafDesc(DESC_USING_MV_TYPE)
+  TrafUsingMvDesc() : TrafDesc(DESC_USING_MV_TYPE), mvName(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -1088,7 +1111,9 @@ public:
 
 class TrafViewDesc : public TrafDesc {
 public:
-  TrafViewDesc() : TrafDesc(DESC_VIEW_TYPE)
+  TrafViewDesc() : TrafDesc(DESC_VIEW_TYPE),
+    viewname(NULL), viewfilename(NULL), viewtext(NULL),
+    viewchecktext(NULL), viewcolusages(NULL)
   {}
 
   // ---------------------------------------------------------------------
@@ -1246,9 +1271,9 @@ public:
 };
 // ------------------------- end privilege descriptors -------------------------
 
-// if space is passed in, use it. Otherwise use HEAP of CmpCommon
+// if heap is passed in, use it. Otherwise use HEAP of CmpCommon
 TrafDesc *TrafAllocateDDLdesc(desc_nodetype nodetype, 
-                                 Space *space);
+                              NAMemory * heap);
 
 TrafDesc *TrafMakeColumnDesc
 (
@@ -1260,7 +1285,7 @@ TrafDesc *TrafMakeColumnDesc
      Lng32 &offset,		  // INOUT
      NABoolean null_flag,
      SQLCHARSET_CODE datacharset, // i.e., use CharInfo::DefaultCharSet;
-     Space * space
+     NAMemory * space
  );
 
 #endif

@@ -29,7 +29,7 @@
 // Allocate one of the primitive structs and initialize to all zeroes.
 // Uses HEAP (StatementHeap) of CmpCommon or space.
 // -----------------------------------------------------------------------
-TrafDesc *TrafAllocateDDLdesc(desc_nodetype nodetype, Space * space)
+TrafDesc *TrafAllocateDDLdesc(desc_nodetype nodetype, NAMemory * space)
 {
   size_t size = 0;
   TrafDesc * desc_ptr = NULL;
