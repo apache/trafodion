@@ -3630,6 +3630,7 @@ BOOL CStmt::setFetchOutputPerf(SQL_DataValue_def*& outputDataValue, long rowsFet
 				memOffSet += SQLMaxLength ;
 				break;
 			case SQLTYPECODE_LARGEINT:
+			case SQLTYPECODE_LARGEINT_UNSIGNED:
 				memOffSet = ((memOffSet + 8 - 1) >> 3) << 3; 
 				VarOffSet = memOffSet;					
 				memOffSet += SQLMaxLength ;
