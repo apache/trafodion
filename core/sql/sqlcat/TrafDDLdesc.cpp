@@ -106,7 +106,7 @@ TrafDesc *TrafAllocateDDLdesc(desc_nodetype nodetype, NAMemory * space)
 
   // if not being allocated from space, memset all bytes to 0.
   // If allocated from space, it will be set to 0 during space allocation.
-  if (! space)
+  if ((! space) || (!space->isComSpace()))
     memset((char*)desc_ptr+sizeof(TrafDesc), 0, 
            desc_ptr->getClassSize()-sizeof(TrafDesc));
 

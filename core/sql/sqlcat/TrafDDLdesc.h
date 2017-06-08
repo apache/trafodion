@@ -34,7 +34,11 @@
 // flatten out and stored in the text table related to object.  When the
 // compiler or DDL subsequently require this information, the flattened DDLDesc 
 // is read from the metadata and expanded. This information can then be used 
-// by the the different components - such as NATable. 
+// by the the different components - such as NATable.
+//
+// Why are there no initializers for most of these classes? The answer is
+// that they are all allocated via the factory function TrafAllocateDDLdesc
+// (declared at the end of this file). That function zeroes everything out.
 // ****************************************************************************
 
 #include "Platform.h"
@@ -104,7 +108,7 @@ public:
   enum {CURR_VERSION = 1};
 
   TrafDesc(UInt16 nodeType);
-  TrafDesc() : NAVersionedObject(-1),descExtension(NULL) {}
+  TrafDesc() : NAVersionedObject(-1) {}
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
@@ -163,7 +167,8 @@ public:
 
 class TrafCheckConstrntsDesc : public TrafDesc {
 public:
-  TrafCheckConstrntsDesc() : TrafDesc(DESC_CHECK_CONSTRNTS_TYPE), constrnt_text(NULL)
+  // why almost no initializers? see note at top of file
+  TrafCheckConstrntsDesc() : TrafDesc(DESC_CHECK_CONSTRNTS_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -192,9 +197,8 @@ public:
 
 class TrafColumnsDesc : public TrafDesc {
 public:
-  TrafColumnsDesc() : TrafDesc(DESC_COLUMNS_TYPE), colname(NULL),
-    pictureText(NULL), defaultvalue(NULL), heading(NULL),
-    computed_column_text(NULL), hbaseColFam(NULL), hbaseColQual(NULL)
+  // why almost no initializers? see note at top of file
+  TrafColumnsDesc() : TrafDesc(DESC_COLUMNS_TYPE) 
   {};
 
   // ---------------------------------------------------------------------
@@ -307,7 +311,8 @@ public:
 
 class TrafConstrntKeyColsDesc : public TrafDesc {
 public:
-  TrafConstrntKeyColsDesc() : TrafDesc(DESC_CONSTRNT_KEY_COLS_TYPE), colname(NULL)
+  // why almost no initializers? see note at top of file
+  TrafConstrntKeyColsDesc() : TrafDesc(DESC_CONSTRNT_KEY_COLS_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -340,8 +345,8 @@ public:
 
 class TrafConstrntsDesc : public TrafDesc {
 public:
-  TrafConstrntsDesc() : TrafDesc(DESC_CONSTRNTS_TYPE),
-    constrntname(NULL), tablename(NULL)
+  // why almost no initializers? see note at top of file
+  TrafConstrntsDesc() : TrafDesc(DESC_CONSTRNTS_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -397,6 +402,7 @@ public:
 
 class TrafFilesDesc : public TrafDesc {
 public:
+  // why almost no initializers? see note at top of file
   TrafFilesDesc() : TrafDesc(DESC_FILES_TYPE)
   {}
 
@@ -435,8 +441,8 @@ public:
 
 class TrafHbaseRegionDesc : public TrafDesc {
 public:
-  TrafHbaseRegionDesc() : TrafDesc(DESC_HBASE_RANGE_REGION_TYPE),
-    beginKey(NULL), endKey(NULL)
+  // why almost no initializers? see note at top of file
+  TrafHbaseRegionDesc() : TrafDesc(DESC_HBASE_RANGE_REGION_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -472,8 +478,8 @@ public:
 
 class TrafHistogramDesc : public TrafDesc {
 public:
-  TrafHistogramDesc() : TrafDesc(DESC_HISTOGRAM_TYPE),
-    tablename(NULL), histid(NULL), highval(NULL), lowval(NULL)
+  // why almost no initializers? see note at top of file
+  TrafHistogramDesc() : TrafDesc(DESC_HISTOGRAM_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -517,8 +523,8 @@ public:
 
 class TrafHistIntervalDesc : public TrafDesc {
 public:
-  TrafHistIntervalDesc() : TrafDesc(DESC_HIST_INTERVAL_TYPE),
-    histid(NULL), intboundary(NULL)
+  // why almost no initializers? see note at top of file
+  TrafHistIntervalDesc() : TrafDesc(DESC_HIST_INTERVAL_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -557,9 +563,8 @@ public:
 
 class TrafIndexesDesc : public TrafDesc {
 public:
-  TrafIndexesDesc() : TrafDesc(DESC_INDEXES_TYPE), 
-    partitioningScheme_(COM_UNSPECIFIED_PARTITIONING),
-    tablename(NULL), indexname(NULL), hbaseSplitClause(NULL), hbaseCreateOptions(NULL)
+  // why almost no initializers? see note at top of file
+  TrafIndexesDesc() : TrafDesc(DESC_INDEXES_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -654,8 +659,8 @@ public:
 
 class TrafKeysDesc : public TrafDesc {
 public:
-  TrafKeysDesc() : TrafDesc(DESC_KEYS_TYPE), keyname(NULL),
-    hbaseColFam(NULL), hbaseColQual(NULL)
+  // why almost no initializers? see note at top of file
+  TrafKeysDesc() : TrafDesc(DESC_KEYS_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -701,8 +706,8 @@ public:
 
 class TrafLibraryDesc : public TrafDesc {
 public:
-  TrafLibraryDesc() : TrafDesc(DESC_LIBRARY_TYPE),
-    libraryName(NULL), libraryFilename(NULL)
+  // why almost no initializers? see note at top of file
+  TrafLibraryDesc() : TrafDesc(DESC_LIBRARY_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -737,15 +742,8 @@ public:
 
 class TrafPartnsDesc : public TrafDesc {
 public:
-  TrafPartnsDesc() : TrafDesc(DESC_PARTNS_TYPE),
-    tablename(NULL), 
-    partitionname(NULL),
-    logicalpartitionname(NULL),
-    firstkey(NULL),
-    encodedkey(NULL),
-    lowKey(NULL),
-    highKey(NULL),
-    givenname(NULL)
+  // why almost no initializers? see note at top of file
+  TrafPartnsDesc() : TrafDesc(DESC_PARTNS_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -787,8 +785,8 @@ public:
 
 class TrafRefConstrntsDesc : public TrafDesc {
 public:
-  TrafRefConstrntsDesc() : TrafDesc(DESC_REF_CONSTRNTS_TYPE),
-    constrntname(NULL), tablename(NULL)
+  // why almost no initializers? see note at top of file
+  TrafRefConstrntsDesc() : TrafDesc(DESC_REF_CONSTRNTS_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -820,9 +818,8 @@ public:
 
 class TrafRoutineDesc : public TrafDesc {
 public:
-  TrafRoutineDesc() : TrafDesc(DESC_ROUTINE_TYPE),
-    routineName(NULL), externalName(NULL), librarySqlName(NULL), libraryFileName(NULL),
-    signature(NULL)
+  // why almost no initializers? see note at top of file
+  TrafRoutineDesc() : TrafDesc(DESC_ROUTINE_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -877,8 +874,8 @@ public:
 
 class TrafSequenceGeneratorDesc : public TrafDesc {
 public:
-  TrafSequenceGeneratorDesc() : TrafDesc(DESC_SEQUENCE_GENERATOR_TYPE),
-    sgLocation(NULL)
+  // why almost no initializers? see note at top of file
+  TrafSequenceGeneratorDesc() : TrafDesc(DESC_SEQUENCE_GENERATOR_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -929,8 +926,8 @@ public:
 
 class TrafTableDesc : public TrafDesc {
 public:
-  TrafTableDesc() : TrafDesc(DESC_TABLE_TYPE), tablename(NULL),
-    snapshotName(NULL), default_col_fam(NULL), all_col_fams(NULL)
+  // why almost no initializers? see note at top of file
+  TrafTableDesc() : TrafDesc(DESC_TABLE_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -1074,7 +1071,8 @@ public:
 
 class TrafUsingMvDesc : public TrafDesc {
 public:
-  TrafUsingMvDesc() : TrafDesc(DESC_USING_MV_TYPE), mvName(NULL)
+  // why almost no initializers? see note at top of file
+  TrafUsingMvDesc() : TrafDesc(DESC_USING_MV_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -1111,9 +1109,8 @@ public:
 
 class TrafViewDesc : public TrafDesc {
 public:
-  TrafViewDesc() : TrafDesc(DESC_VIEW_TYPE),
-    viewname(NULL), viewfilename(NULL), viewtext(NULL),
-    viewchecktext(NULL), viewcolusages(NULL)
+  // why almost no initializers? see note at top of file
+  TrafViewDesc() : TrafDesc(DESC_VIEW_TYPE)
   {}
 
   // ---------------------------------------------------------------------
@@ -1181,6 +1178,7 @@ public:
 //   column bits - list of TrafPrivBitmapDesc
 class TrafPrivDesc : public TrafDesc {
 public:
+  // why almost no initializers? see note at top of file
   TrafPrivDesc() : TrafDesc(DESC_PRIV_TYPE)
   {}
 
@@ -1210,6 +1208,7 @@ public:
 
 class TrafPrivGranteeDesc : public TrafDesc {
 public:
+  // why almost no initializers? see note at top of file
   TrafPrivGranteeDesc() : TrafDesc(DESC_PRIV_GRANTEE_TYPE)
   {}
 
@@ -1241,6 +1240,7 @@ public:
 
 class TrafPrivBitmapDesc : public TrafDesc {
 public:
+  // why almost no initializers? see note at top of file
   TrafPrivBitmapDesc() : TrafDesc(DESC_PRIV_BITMAP_TYPE)
   {}
 
@@ -1271,9 +1271,10 @@ public:
 };
 // ------------------------- end privilege descriptors -------------------------
 
-// if heap is passed in, use it. Otherwise use HEAP of CmpCommon
+// If "space" is passed in, use it. (It might be an NAHeap or a ComSpace.)
+// If "space" is null, use the statement heap.
 TrafDesc *TrafAllocateDDLdesc(desc_nodetype nodetype, 
-                              NAMemory * heap);
+                              NAMemory * space);
 
 TrafDesc *TrafMakeColumnDesc
 (
