@@ -587,6 +587,10 @@ SQLRETURN CConnect::Connect(SQLCHAR *ServerName,
 	if (m_srvrTCPIPSystem != NULL)
 		m_srvrTCPIPSystem->m_IOCompression = m_IOCompression;
 
+	if (m_asTCPIPSystem != NULL)
+		m_asTCPIPSystem->m_IOCompressionlimits = m_DSValue.m_DSIOCompressionlimits;
+	if (m_srvrTCPIPSystem != NULL)
+		m_srvrTCPIPSystem->m_IOCompressionlimits = m_DSValue.m_DSIOCompressionlimits;
 	//if (m_DSValue.m_DSServiceName[0] != 0)
 	///	strcpy(m_QSServiceName, m_DSValue.m_DSServiceName);
 	
