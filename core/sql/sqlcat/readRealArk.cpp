@@ -71,7 +71,7 @@ TrafDesc *TrafMakeColumnDesc(const char *tablename,
                                 Lng32 &offset,	// INOUT
                                 NABoolean null_flag,
                                 SQLCHARSET_CODE datacharset,
-                                Space * space
+                                NAMemory * space
                                 )
 {
   #undef  COLUMN

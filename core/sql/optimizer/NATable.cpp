@@ -8255,10 +8255,12 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 
           NAArray<HbaseStr> *keyArray = NATable::getRegionsBeginKey(extHBaseName);
 
+          // create the virtual table descriptor on the same heap that
+          // we are creating the NATable object on
 	  tableDesc = 
 	    HbaseAccess::createVirtualTableDesc
 	    (corrName.getExposedNameAsAnsiString(FALSE, TRUE).data(),
-	     isHbaseRow, isHbaseCell, keyArray);
+	     isHbaseRow, isHbaseCell, keyArray, naTableHeap);
           deleteNAArray(STMTHEAP, keyArray);
 
 	  isSeabase = FALSE;

@@ -6794,7 +6794,8 @@ ValueIdList::computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey,
    // cast away const since the method may compute and store the length
    keyBufLen = ((NAFileSet*)naf)->getEncodedKeyLength(); 
 
-   if ( naTable->isHbaseCellTable() || naTable->isHbaseRowTable() ) { 
+   if ( (count > 0) && (inputStrings[0]) && 
+        ( naTable->isHbaseCellTable() || naTable->isHbaseRowTable() ) ) { 
       // the encoded key for Native Hbase table is a null-terminated string ('<key>')
       NAString key;
       key.append("(");
@@ -6814,6 +6815,8 @@ ValueIdList::computeEncodedKey(const TableDesc* tDesc, NABoolean isMaxKey,
 
       memcpy(encodedKeyBuffer, key.data(), key.length());
       encodedKeyBuffer[key.length()] = NULL;
+
+      NADELETEARRAY(inputStrings, count, NAStringPtr, STMTHEAP);
 
       return encodedKeyBuffer;
 

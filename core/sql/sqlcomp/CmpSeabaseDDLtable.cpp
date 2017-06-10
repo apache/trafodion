@@ -11087,6 +11087,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseMDTableDesc(
   tableDesc =
     Generator::createVirtualTableDesc
     ((char*)extTableName.data(),
+     NULL, // let it decide what heap to use
      colInfoSize,
      (ComTdbVirtTableColumnInfo*)colInfo,
      keyInfoSize,
@@ -11183,6 +11184,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseHistTableDesc(const NAString &catName,
   tableDesc =
     Generator::createVirtualTableDesc
     ((char*)extTableName.data(),
+     NULL, // let it decide what heap to use
      numCols,
      colInfo,
      numKeys,
@@ -11662,6 +11664,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName,
   tableDesc =
     Generator::createVirtualTableDesc
     ((char*)extSeqName.data(),
+     NULL, // let it decide what heap to use
      0, NULL, // colInfo
      0, NULL, // keyInfo
      0, NULL,
@@ -12522,6 +12525,7 @@ TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName,
     Generator::createVirtualTableDesc
     (
      extTableName->data(), //objName,
+     NULL, // let it decide what heap to use
      numCols,
      colInfoArray,
      tableKeyInfo->numEntries(), //keyIndex,

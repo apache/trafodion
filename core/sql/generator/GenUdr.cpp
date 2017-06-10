@@ -1924,6 +1924,7 @@ TrafDesc *TableMappingUDF::createVirtualTableDesc()
   }
   TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getRoutineName().getQualifiedNameAsString().data(),
+                                      NULL, // let it decide what heap to use
                                       numOutputCols,
 				      outColsInfo,
 				      0,

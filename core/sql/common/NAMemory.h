@@ -478,6 +478,9 @@ NA_EIDPROC
   NABoolean  getSharedMemory() { return sharedMemory_; }
   void setSharedMemory() { sharedMemory_ = TRUE; }
 #endif
+
+  NABoolean isComSpace(void) { return derivedClass_ == COMSPACE_CLASS; } ;
+
 protected:
 
   // set the name of this memory

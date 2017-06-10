@@ -373,6 +373,7 @@ TrafDesc *DDLExpr::createVirtualTableDesc()
     {
       table_desc = 
         Generator::createVirtualTableDesc(getVirtualTableName(),
+                                          NULL, // let it decide what heap to use
                                           ComTdbDDL::getVirtTableNumCols(),
                                           ComTdbDDL::getVirtTableColumnInfo(),
                                           ComTdbDDL::getVirtTableNumKeys(),
@@ -5107,6 +5108,7 @@ TrafDesc *StatisticsFunc::createVirtualTableDesc()
 {
   TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
+				      NULL, // let it decide what heap to use    
 				      ComTdbStats::getVirtTableNumCols(),
 				      ComTdbStats::getVirtTableColumnInfo(),
 				      ComTdbStats::getVirtTableNumKeys(),
