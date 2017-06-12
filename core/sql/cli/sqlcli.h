@@ -430,8 +430,6 @@ enum SQLTYPE_CODE {
     SQLTYPECODE_BITVAR   = 15   /* not supported */
 };
 
-#define SQL_BOOLEAN     13
-
 /* #ifndef SQLDTCODE_DATE */
 /* specifies the type of datetime data type */
 enum SQLDATETIME_CODE {
