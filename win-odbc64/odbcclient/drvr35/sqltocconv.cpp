@@ -310,12 +310,6 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		srcUnsigned = true;
 	}
 
-	if (SQLDataType == SQLTYPECODE_BOOLEAN)
-	{
-		ODBCDataType = SQL_BOOLEAN;
-	}
-
-
 	if (CDataType == SQL_C_DEFAULT)
 	{
 		getCDefault(tODBCDataType, ODBCAppVersion, CDataType);
@@ -369,6 +363,16 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
+			if (SQLDataType == SQLTYPECODE_BOOLEAN)
+			{
+				tTmp = *((SCHAR *)srcDataPtr);
+				_ltoa(tTmp, cTmpBuf, 10);
+				DataLen = strlen(cTmpBuf);
+				if (DataLen > targetLength)
+					return IDS_22_003;
+				DataPtr = cTmpBuf;
+				break;
+			}
 		case SQL_WCHAR:
 			charlength = srcLength-1;
 			if (charlength == 0)
@@ -487,14 +491,6 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 //			if (totalReturnedLength != NULL)
 //				*totalReturnedLength = DataLen + Offset;
 			break;
-		case SQL_BOOLEAN:
-			tTmp = *((SCHAR *) srcDataPtr);
-			_ltoa(tTmp, cTmpBuf, 10);
-			DataLen = strlen(cTmpBuf);
-			if (DataLen > targetLength)
-				return IDS_22_003;
-			DataPtr = cTmpBuf;
-			break;
 		case SQL_TINYINT:
 			if (srcUnsigned)
 			{
@@ -543,7 +539,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			break;
 		case SQL_BIGINT:
 			if (srcUnsigned)
-				_snprintf(cTmpBuf, sizeof(__int64), "%I64u", *((__int64 *)srcDataPtr));
+				_snprintf(cTmpBuf, sizeof(__int64), "%I64u", *((unsigned __int64 *)srcDataPtr));
 			else
 				_snprintf(cTmpBuf, sizeof(__int64), "%I64d", *((__int64 *)srcDataPtr));
 			DataLen = strlen(cTmpBuf);
@@ -719,6 +715,16 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		switch (ODBCDataType)
 		{
 		 case SQL_CHAR:
+			 if (SQLDataType == SQLTYPECODE_BOOLEAN)
+			 {
+				 tTmp = *((SCHAR *)srcDataPtr);
+				 _ltoa(tTmp, cTmpBuf, 10);
+				 DataLen = strlen(cTmpBuf);
+				 if (DataLen > targetLength)
+					 return IDS_22_003;
+				 DataPtr = cTmpBuf;
+				 break;
+			 }
 		 case SQL_WCHAR:
 			charlength = srcLength-1;
 			if (charlength == 0)
@@ -839,14 +845,6 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			}
 //			if (totalReturnedLength != NULL)
 //				*totalReturnedLength = DataLen + Offset;
-			break;
-		case SQL_BOOLEAN:
-			tTmp = *((SCHAR *) srcDataPtr);
-			_ltoa(tTmp, cTmpBuf, 10);
-			DataLen = strlen(cTmpBuf);
-			if (DataLen > targetLength)
-				return IDS_22_003;
-			DataPtr = cTmpBuf;
 			break;
 		case SQL_TINYINT:
 			if (srcUnsigned)
@@ -1081,6 +1079,11 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
+			if (SQLDataType == SQLTYPECODE_BOOLEAN)
+			{
+				dTmp = *((SCHAR *)srcDataPtr);
+				break;
+			}
 		case SQL_VARCHAR:
 		case SQL_LONGVARCHAR:
 		case SQL_WCHAR:
@@ -1207,9 +1210,6 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		case SQL_INTERVAL_MINUTE_TO_SECOND:
 			if ((retCode = ConvertSQLCharToNumeric(srcDataPtr, srcLength, ODBCDataType, dTmp)) != SQL_SUCCESS)
 				return retCode;
-			break;
-		case SQL_BOOLEAN:
-			dTmp = *((SCHAR *) srcDataPtr);
 			break;
 		case SQL_TINYINT:
 			if (srcUnsigned)
@@ -1457,7 +1457,8 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 				ODBCDataType != SQL_LONGVARCHAR && 
 				ODBCDataType != SQL_WCHAR &&
 				ODBCDataType != SQL_WVARCHAR &&
-				ODBCDataType != SQL_WLONGVARCHAR)
+				ODBCDataType != SQL_WLONGVARCHAR ||
+				SQLDataType == SQLTYPECODE_BOOLEAN)
 				tempVal64 = dTmp;
 			DataPtr = &tempVal64;
 			DataLen = sizeof(tempVal64);
@@ -2401,7 +2402,6 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 //			if (totalReturnedLength != NULL)
 //				*totalReturnedLength = DataLen + Offset;
 			break;
-		case SQL_BOOLEAN:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -2431,6 +2431,13 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 		switch (ODBCDataType)
 		{
 		case SQL_CHAR:
+			if (SQLDataType == SQLTYPECODE_BOOLEAN)
+			{
+				tTmp = *((SCHAR *)srcDataPtr);
+				DataPtr = &tTmp;
+				DataLen = sizeof(SCHAR);
+				break;
+			}
 		case SQL_WCHAR:
 			charlength = srcLength-1;
 			if (charlength == 0)
@@ -2519,11 +2526,6 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 					return retCode;
 			DataPtr = &intervalTmp;
 			DataLen = sizeof(SQL_INTERVAL_STRUCT);
-			break;
-		case SQL_BOOLEAN:
-			tTmp = *((SCHAR *) srcDataPtr);
-			DataPtr = &tTmp;
-			DataLen = sizeof(SCHAR);
 			break;
 		case SQL_TINYINT:
 			if (srcUnsigned)
