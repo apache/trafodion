@@ -10289,6 +10289,11 @@ static int Ocopy(int eid)
                 goto ocopy_exit;
             }
             if ( etab[eid].dbt != VERTICA ) { /* Vertica's CHAR field length is in bytes (not chars) */
+                if ( etab[eid].dbt == ORACLE && Odt[j] == SQL_TYPE_TIMESTAMP )
+                /* The precision of Oracle's Timestamp is always 9 */
+                {
+                    Ors[j] = SQL_TIMESTAMP_LEN + 10; /* Display Size of TIMESTAMP(9) */
+                }
                 switch ( Odt[j] ) {
                 case SQL_WCHAR:
                 case SQL_WVARCHAR:
