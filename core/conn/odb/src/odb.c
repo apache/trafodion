@@ -6012,9 +6012,9 @@ static void etabshuffle()
     
     srand((unsigned int)time(0));
     if ( no ) {                 /* more than one element in etab[] */
-        for ( i = 0; i < no ; i++ ) {
+        for ( i = 0; i < no - 1 ; i++ ) {
             if ( etab[i].type != 'q' ) {    /* etab[] type 'q' entries are linked to qtab[] */
-                j = (int) ( i + rand() / ( RAND_MAX + 1.0 ) * ( no - i + 1 ) );
+                j = (int) ( i + rand() / ( RAND_MAX + 1.0 ) * ( no - i ) );
                 save = etab[j].run;
                 etab[j].run = etab[i].run;
                 etab[i].run = save;
