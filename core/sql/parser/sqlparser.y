@@ -15856,6 +15856,7 @@ objects_identifier :
                   | TOK_TABLE_MAPPING TOK_FUNCTIONS { $$ = new (PARSERHEAP()) NAString("TABLE_FUNCTIONS"); }
                   | TOK_HIVE TOK_REGISTERED TOK_TABLES { $$ = new (PARSERHEAP()) NAString("HIVE_REG_TABLES"); }
                   | TOK_HIVE TOK_REGISTERED TOK_VIEWS { $$ = new (PARSERHEAP()) NAString("HIVE_REG_VIEWS"); }
+                  | TOK_HIVE TOK_REGISTERED TOK_SCHEMAS { $$ = new (PARSERHEAP()) NAString("HIVE_REG_SCHEMAS"); }
                   | TOK_HIVE TOK_REGISTERED TOK_OBJECTS { $$ = new (PARSERHEAP()) NAString("HIVE_REG_OBJECTS"); }
                   | TOK_HIVE TOK_EXTERNAL TOK_TABLES { $$ = new (PARSERHEAP()) NAString("HIVE_EXT_TABLES"); }
                   | TOK_HBASE TOK_REGISTERED TOK_TABLES { $$ = new (PARSERHEAP()) NAString("HBASE_REG_TABLES"); }
