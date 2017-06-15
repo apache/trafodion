@@ -96,6 +96,7 @@ def run():
     nodes = dbcfgs['node_list'].split(',')
     trafodion_config = """
 export TRAF_HOME="%s"
+export TRAF_VAR=$TRAF_HOME/tmp
 export MY_SQROOT=$TRAF_HOME # for compatibility
 export JAVA_HOME="%s"
 export NODE_LIST="%s"

@@ -42,7 +42,7 @@ echo "***"
 cd $TRAF_HOME/src/seabed/test
 echo $PWD
 # Copy 'cluster.conf' file generated above to test directory
-cp -fp $TRAF_HOME/tmp/cluster.conf .
+cp -fp $TRAF_VAR/cluster.conf .
 
 echo "***"
 echo "*** Running Seabed tests"

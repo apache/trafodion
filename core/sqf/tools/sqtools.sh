@@ -51,7 +51,7 @@ function cmaph {
 	l_nl=$1
     fi
     setup_sqpdsh
-    eval '$SQPDSHA "head --quiet --lines $l_nl $TRAF_HOME/tmp/monitor.map.[0-9]*.*" 2>/dev/null | sort -k1'
+    eval '$SQPDSHA "head --quiet --lines $l_nl $TRAF_VAR/monitor.map.[0-9]*.*" 2>/dev/null | sort -k1'
 }
 
 # tail of the monitor.map.[0-9]*.* files in the cluster
@@ -61,19 +61,19 @@ function cmapt {
 	l_nl=$1
     fi
     setup_sqpdsh
-    eval '$SQPDSHA "tail --quiet --lines $l_nl $TRAF_HOME/tmp/monitor.map.[0-9]*.*" 2>/dev/null | sort -k1'
+    eval '$SQPDSHA "tail --quiet --lines $l_nl $TRAF_VAR/monitor.map.[0-9]*.*" 2>/dev/null | sort -k1'
 }
 
 #grep the monitor map file(s) on a node for the given string
 function ngrepmm {
     l_lookup=$*
-    grep -h "$l_lookup" $TRAF_HOME/tmp/monitor.map.[0-9]*.*
+    grep -h "$l_lookup" $TRAF_VAR/monitor.map.[0-9]*.*
 }
 
 #grep the monitor map file(s) on a node for the given string and then filters anything other than tdm_arkesp 
 function ngrepmms {
     l_lookup=$*
-    grep -h "$l_lookup" $TRAF_HOME/tmp/monitor.map.[0-9]*.* | grep tdm_arkesp
+    grep -h "$l_lookup" $TRAF_VAR/monitor.map.[0-9]*.* | grep tdm_arkesp
 }
 
 # lookup the monitor.map.[0-9]*.* files in the cluster
@@ -158,7 +158,7 @@ function cmappc {
 	l_nl=$1
     fi
     setup_sqpdsh
-    eval '$SQPDSHA "grep -h $l_nl $TRAF_HOME/tmp/monitor.map.[0-9]*.* | grep BEGIN | wc -l" 2>/dev/null | sort -nk2'
+    eval '$SQPDSHA "grep -h $l_nl $TRAF_VAR/monitor.map.[0-9]*.* | grep BEGIN | wc -l" 2>/dev/null | sort -nk2'
 }
 
 
@@ -187,7 +187,7 @@ function sqmd5la {
 
 function cmapc {
     setup_sqpdsh
-    eval '$SQPDSHA "grep $1 $TRAF_HOME/tmp/monitor.map* | grep $2 | wc -l" '
+    eval '$SQPDSHA "grep $1 $TRAF_VAR/monitor.map* | grep $2 | wc -l" '
 }
 
 function pdsh_counter {
@@ -444,8 +444,8 @@ function sqsavelogs {
     cp -p $TRAF_HOME/logs/tm*.log ${lv_copy_to_dir}
     cp -p $TRAF_HOME/logs/wdt.*.log ${lv_copy_to_dir}
 
-    cp -p $TRAF_HOME/tmp/monitor.map.[0-9]*.* ${lv_copy_to_dir}
-    cp -p $TRAF_HOME/tmp/monitor.trace* ${lv_copy_to_dir}
+    cp -p $TRAF_VAR/monitor.map.[0-9]*.* ${lv_copy_to_dir}
+    cp -p $TRAF_VAR/monitor.trace* ${lv_copy_to_dir}
 
     lv_stdout_dir_name=${lv_copy_to_dir}/stdout_${lv_node}
     mkdir -p ${lv_stdout_dir_name}
