@@ -1661,7 +1661,10 @@ void __cdecl SRVR::ASTimerExpired(CEE_tag_def timer_tag)
 
 		if( !shutdownThisThing )
 		{
-			static long long timeout = JULIANTIMESTAMP();
+            timeval tv;
+            int retcode = gettimeofday(&tv, NULL);
+            long long current_time = tv.tv_sec * 1000LL + tv.tv_usec / 1000LL;
+
 			static long prevDialogueId = 0;
 			static short clientConnErrorTimeOut = 10;	// secs
 			long currDialogueId = 0;
@@ -1680,47 +1683,49 @@ void __cdecl SRVR::ASTimerExpired(CEE_tag_def timer_tag)
 				if( tkn == NULL )
 					goto HandleNoTokens;
 
-				if( stricmp(tkn, "CONNECTING") && stricmp(tkn, "CONNECT_FAILED") && stricmp(tkn, "CONNECT_REJECTED") )	// Not in CONNECTING state
-				{
-					timeout = JULIANTIMESTAMP();
-					prevDialogueId = 0;
-				}
-				else
-				{
-					strcpy( state, tkn );
+                enum {REG_CONNECTING, REG_CONNECT_FAILED, REG_CONNECT_REJECTED, REG_CONNECT_OTHER} reg_connection_state;
 
-					// Skip second token - Timestamp
-					tkn = strtok(NULL, ":");
-					if( tkn == NULL )
-						goto HandleNoTokens;
+                // use numeric to represent the state since the state will used again,
+                // and we don't want compare the string twice
+                if (stricmp(tkn, "CONNECTING") == 0) {
+                    reg_connection_state = REG_CONNECTING;
+                }
+                else if (stricmp(tkn, "CONNECT_FAILED") == 0) {
+                    reg_connection_state = REG_CONNECT_FAILED;
+                }
+                else if (stricmp(tkn, "CONNECT_REJECTED") == 0) {
+                    reg_connection_state = REG_CONNECT_REJECTED;
+                }
+                else {
+                    reg_connection_state = REG_CONNECT_OTHER;
+                    prevDialogueId = 0;
+                }
 
-					// Third token is dialogue ID
-					tkn = strtok(NULL, ":");
-					if( tkn == NULL )
-						goto HandleNoTokens;
+                if (reg_connection_state != REG_CONNECT_OTHER) {
+                    strcpy(state, tkn);
 
-					currDialogueId = atoi(tkn);
+                    // Skip second token - Timestamp
+                    tkn = strtok(NULL, ":");
+                    if (tkn == NULL)
+                        goto HandleNoTokens;
 
-					if( prevDialogueId == 0 || prevDialogueId != currDialogueId )
-					{
-						prevDialogueId = currDialogueId;
-						timeout = JULIANTIMESTAMP();
-					}
+                    // Third token is dialogue ID
+                    tkn = strtok(NULL, ":");
+                    if (tkn == NULL)
+                        goto HandleNoTokens;
 
-					if ( prevDialogueId == currDialogueId ) {
-						// In CONNECTING state and timeout > clientConnTimeOut
-						if( ((JULIANTIMESTAMP() - timeout) > (clientConnTimeOut * 1000000)) && stricmp(state, "CONNECTING") == 0 )
-							zkStatus = updateZKState(CONNECTING, AVAILABLE);
-						else
-						if( (JULIANTIMESTAMP() - timeout) > (clientConnErrorTimeOut * 1000000)) {
-							// In CONNECT_FAILED or CONNECT_REJECTED state and timeout > clientConnErrorTimeOut
-							if (stricmp(state, "CONNECT_FAILED") == 0)
-								zkStatus = updateZKState(CONNECT_FAILED, AVAILABLE);
-							else
-							if (stricmp(state, "CONNECT_REJECTED") == 0)
-								zkStatus = updateZKState(CONNECT_REJECTED, AVAILABLE);
-						}
-					}
+                    currDialogueId = atoi(tkn);
+                    prevDialogueId = currDialogueId;
+
+                    if (reg_connection_state == REG_CONNECTING && (current_time - stat.mtime) > (clientConnTimeOut * 1000))
+                        zkStatus = updateZKState(CONNECTING, AVAILABLE);
+                    else if ((current_time - stat.mtime) > (clientConnErrorTimeOut * 1000)) {
+                        if (reg_connection_state == REG_CONNECT_FAILED)
+                            zkStatus = updateZKState(CONNECT_FAILED, AVAILABLE);
+                        else if (reg_connection_state == REG_CONNECT_REJECTED)
+                            zkStatus = updateZKState(CONNECT_REJECTED, AVAILABLE);
+                    }
+
 					if( !zkStatus )
 					{
 						srvrGlobal->mutex->unlock();
@@ -2271,6 +2276,8 @@ odbc_SQLSvc_InitializeDialogue_ame_(
 					SETSECURITYERROR(retCode, &exception_.u.SQLError.errorList);
 					odbc_SQLSvc_InitializeDialogue_ts_res_(objtag_, call_id_, &exception_, &outContext);
 					updateSrvrState(SRVR_CONNECT_REJECTED);
+                    // reset the srvrState
+                    srvrGlobal->srvrState = SRVR_AVAILABLE;
 					if (retCode == SECMXO_INTERNAL_ERROR_FATAL)
 					{
 						SendEventMsg(MSG_PROGRAMMING_ERROR, EVENTLOG_ERROR_TYPE,
