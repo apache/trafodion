@@ -265,6 +265,13 @@ NAString LongToNAString(Lng32 l)
   return NAString(resultstr);
 }
 
+NAString LongToNAString(Lng32 l, NAHeap *heap)
+{
+  char resultstr[100];
+  sprintf(resultstr,"%d",l);
+  return NAString(resultstr, heap);
+}
+
 
 NAString UnsignedToNAString(UInt32 u)
 {

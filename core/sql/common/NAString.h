@@ -102,6 +102,7 @@ Lng32      NAStringToLong(const NAString &ns);
 double    NAStringToReal(const NAString &ns);
 UInt32  NAStringToUnsigned(const NAString &ns);
 NAString  LongToNAString(Lng32 l);
+NAString  LongToNAString(Lng32 l, NAHeap *heap);
 NAString  RealToNAString(double d);
 NAString  UnsignedToNAString(UInt32 u);
 NAString  Int64ToNAString(Int64 l);

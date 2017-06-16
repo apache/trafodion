@@ -1129,7 +1129,7 @@ void CharType::generateTextThenSetDisplayDataType ( CharInfo::CharSet cs   // in
 
   if ( charLimit * getBytesPerChar() == sizeInBytes )
   {
-    ddt += LongToNAString(charLimit);
+    ddt += LongToNAString(charLimit, (NAHeap *)ddt.heap());
     if (charLimit EQU 1)
       ddt += " CHAR";
     else
@@ -1137,7 +1137,7 @@ void CharType::generateTextThenSetDisplayDataType ( CharInfo::CharSet cs   // in
   }
   else
   {
-    ddt += LongToNAString(sizeInBytes);
+    ddt += LongToNAString(sizeInBytes, (NAHeap *)ddt.heap());
     if (sizeInBytes EQU 1)
       ddt += " BYTE";
     else

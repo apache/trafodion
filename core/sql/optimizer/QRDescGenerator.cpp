@@ -2786,7 +2786,7 @@ void QRDescGenerator::putVegMembersInEqualitySet(
   // persist beyond this function. Note that ValueId is not an NABasicObject,
   // so we use the system heap.
   // 
-  QRValueId* vegVidPtr = new QRValueId(vegVid);
+  QRValueId* vegVidPtr = new (mvqrHeap_) QRValueId(vegVid);
   vegsUsedHash_.insert(vegVidPtr, eqSet);
 
   // Put the veg members in the list and in the hash tables.
@@ -2801,7 +2801,7 @@ void QRDescGenerator::putVegMembersInEqualitySet(
       if (op == ITM_BASECOLUMN)
         {
           eqSet->insert(itemExpr);
-          vidPtr = new QRValueId(vid);
+          vidPtr = new (mvqrHeap_) QRValueId(vid);
           vegsUsedHash_.insert(vidPtr, eqSet);
         }
       else if (op != ITM_INDEXCOLUMN)
@@ -3074,7 +3074,7 @@ void QRDescGenerator::storeRangeInfo(OptRangeSpec* range, QRJBBPtr jbbElem)
   QRTRACER("QRDescGenerator::storeRangeInfo()");
   RangeInfo* rangeInfo = NULL;
   NAString* exprText = NULL;
-  QRValueId* key = new QRValueId(range->getRangeJoinPredId());
+  QRValueId* key = new (mvqrHeap_) QRValueId(range->getRangeJoinPredId());
 
   if (*key != NULL_VALUE_ID)
     rangeInfo = rangeColHash_.getFirstValue(key);
@@ -3085,7 +3085,7 @@ void QRDescGenerator::storeRangeInfo(OptRangeSpec* range, QRJBBPtr jbbElem)
     }
   else
     {
-      exprText = new NAString(range->getRangeExprText());
+      exprText = new (mvqrHeap_) NAString(range->getRangeExprText(), mvqrHeap_);
       rangeInfo = rangeExprHash_.getFirstValue(exprText);
     }
 
