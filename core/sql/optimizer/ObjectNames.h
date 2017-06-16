@@ -490,7 +490,8 @@ public:
 			  EXCEPTION_TABLE,
 			  GHOST_IUD_LOG_TABLE,
 			  SG_TABLE,
-			  LIBRARY_TABLE                  
+			  LIBRARY_TABLE,
+                          SCHEMA_TABLE
                         };
 
   // constructors

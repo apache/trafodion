@@ -2501,6 +2501,16 @@ StmtDDLRegOrUnregObject::bindNode(BindWA * pBindWA)
         }
     }
   
+
+  if ((storageType_ == HIVE) &&
+      (objType_ == COM_SHARED_SCHEMA_OBJECT) &&
+      (origObjName_.numberExpanded() == 2)) 
+    {
+      objQualName_ = QualifiedName(NAString("__SCHEMA__"),
+                                   origObjName_.getObjectName(),
+                                   NAString(HIVE_SYSTEM_CATALOG));
+    }
+  
   if (applyDefaultsAndValidateObject(pBindWA, &objQualName_))
     {
       pBindWA->setErrStatus();

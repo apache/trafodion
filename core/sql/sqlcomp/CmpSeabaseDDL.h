@@ -258,7 +258,8 @@ class CmpSeabaseDDL
   static bool describeSchema(
      const NAString & catalogName,
      const NAString & schemaName,
-     NAString & output);
+     NABoolean isHiveRegistered,
+     std::vector<std::string> & outlines);
      
   static Int64 getObjectTypeandOwner(ExeCliInterface *cliInterface,
                               const char * catName,
@@ -1311,7 +1312,8 @@ protected:
        const NAString &catalogNamePart,
        const NAString &schemaNamePart,
        const NAString &objectNamePart,
-       ExeCliInterface &cliInterface
+       ExeCliInterface &cliInterface,
+       ComObjectType objType = COM_BASE_TABLE_OBJECT
    );
 
   short registerHiveView
