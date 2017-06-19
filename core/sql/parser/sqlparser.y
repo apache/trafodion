@@ -14793,7 +14793,8 @@ interactive_query_expression:
 		  else
 		    {
 		      $$ = finalize(new (PARSERHEAP())
-				    DDLExpr($1, (char*)stmt->data(), stmtCharSet));
+				    DDLExpr($1, (char*)stmt->data(), 
+                                            stmtCharSet, PARSERHEAP()));
 		    }
 
                   delete stmt;
@@ -16456,12 +16457,14 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 						   , PARSERHEAP() 
 	                                       );
 
-		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, TRUE, FALSE,
-                                                          FALSE, FALSE,
-							  FALSE, FALSE, FALSE, FALSE,
-							  (char*)stmt->data(),
-							  stmtCharSet,
-							  PARSERHEAP());
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                   (NULL,
+                    (char*)stmt->data(), 
+                    stmtCharSet,
+                    PARSERHEAP());
+
+                 de->setInitHbase(TRUE);
+                 de->setCreateMDViews(TRUE);
 
 		 $$ = de;
 	       }
@@ -16473,12 +16476,15 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 						   , PARSERHEAP() 
 	                                       );
 
-		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, TRUE, FALSE,
-                                                          FALSE, FALSE,
-							  FALSE, FALSE, FALSE, TRUE /* minimal */,
-							  (char*)stmt->data(),
-							  stmtCharSet,
-							  PARSERHEAP());
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                   (NULL,
+                    (char*)stmt->data(), 
+                    stmtCharSet,
+                    PARSERHEAP());
+
+                 de->setInitHbase(TRUE);
+                 de->setCreateMDViews(TRUE);
+                 de->setMinimal(TRUE);
 
 		 $$ = de;                
                }
@@ -16490,12 +16496,14 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 						   , PARSERHEAP() 
 	                                       );
 
-		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(TRUE, FALSE, FALSE, FALSE,
-                                                          FALSE, FALSE,
-							  FALSE, FALSE, FALSE, FALSE,
-							  (char*)stmt->data(),
-							  stmtCharSet,
-							  PARSERHEAP());
+
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                   (NULL,
+                    (char*)stmt->data(), 
+                    stmtCharSet,
+                    PARSERHEAP());
+
+                 de->setInitHbase(TRUE);
 
 		 $$ = de;
 	       }
@@ -16507,12 +16515,14 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 						   , PARSERHEAP() 
 	                                       );
 
-		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, TRUE, FALSE, TRUE,
-                                                          FALSE, FALSE,
-							  FALSE, FALSE, FALSE, FALSE,
-							  (char*)stmt->data(),
-							  stmtCharSet,
-							  PARSERHEAP());
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                   (NULL,
+                    (char*)stmt->data(), 
+                    stmtCharSet,
+                    PARSERHEAP());
+
+                 de->setDropHbase(TRUE);
+                 de->setDropMDViews(TRUE);
 
 		 $$ = de;
 	       }
@@ -16524,12 +16534,13 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 						   , PARSERHEAP() 
 	                                       );
 
-		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, TRUE, FALSE,
-                                                          FALSE, FALSE,
-							  FALSE, FALSE, FALSE, FALSE,
-							  (char*)stmt->data(),
-							  stmtCharSet,
-							  PARSERHEAP());
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                   (NULL,
+                    (char*)stmt->data(), 
+                    stmtCharSet,
+                    PARSERHEAP());
+
+                 de->setCreateMDViews(TRUE);
 
 		 $$ = de;
 	       }
@@ -16541,12 +16552,13 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 						   , PARSERHEAP() 
 	                                       );
 
-		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, TRUE,
-                                                          FALSE, FALSE,
-							  FALSE, FALSE, FALSE, FALSE,
-							  (char*)stmt->data(),
-							  stmtCharSet,
-							  PARSERHEAP());
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                   (NULL,
+                    (char*)stmt->data(), 
+                    stmtCharSet,
+                    PARSERHEAP());
+
+                 de->setDropMDViews(TRUE);
 
 		 $$ = de;
 	       }
@@ -16565,12 +16577,13 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 						   , PARSERHEAP() 
 	                                       );
 
-		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
-                                                          FALSE, FALSE,
-							  FALSE, FALSE,	TRUE, FALSE,
-							  (char*)stmt->data(),
-							  stmtCharSet,
-							  PARSERHEAP());
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                   (NULL,
+                    (char*)stmt->data(), 
+                    stmtCharSet,
+                    PARSERHEAP());
+
+                 de->setAddSchemaObjects(TRUE);
 
                  $$ = de;
 
@@ -16585,8 +16598,8 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
                                                           (char*)stmt->data(),
-                                                           stmtCharSet);
-
+                                                          stmtCharSet,
+                                                          PARSERHEAP());
                  de->setCreateLibmgr(TRUE);
 
                  $$ = de;
@@ -16602,7 +16615,8 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
                  DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
                                                           (char*)stmt->data(),
-                                                          stmtCharSet);
+                                                          stmtCharSet,
+                                                          PARSERHEAP());
 
                  de->setDropLibmgr(TRUE);
 
@@ -16619,7 +16633,8 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
                  DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
                                                           (char*)stmt->data(),
-                                                          stmtCharSet);
+                                                          stmtCharSet,
+                                                          PARSERHEAP());
 
                  de->setUpgradeLibmgr(TRUE);
 
@@ -16636,7 +16651,8 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
 							  (char*)stmt->data(),
-							  stmtCharSet);
+							  stmtCharSet,
+                                                          PARSERHEAP());
 
                  de->setCreateRepos(TRUE);
 
@@ -16652,7 +16668,8 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
 							  (char*)stmt->data(),
-							  stmtCharSet);
+							  stmtCharSet,
+                                                          PARSERHEAP());
 
                  de->setDropRepos(TRUE);
 
@@ -16668,7 +16685,8 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
 							  (char*)stmt->data(),
-							  stmtCharSet);
+							  stmtCharSet,
+                                                          PARSERHEAP());
 
                  de->setUpgradeRepos(TRUE);
 
@@ -16681,13 +16699,16 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 		 NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
 						   , PARSERHEAP() 
 	                                       );
-		 DDLExpr * ia = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
-                                                          TRUE, FALSE,
-							  FALSE, FALSE, FALSE, FALSE,
-							  (char*)stmt->data(),
-							  stmtCharSet,
-							  PARSERHEAP());
-                 $$ = ia;
+
+                 DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                   (NULL,
+                    (char*)stmt->data(), 
+                    stmtCharSet,
+                    PARSERHEAP());
+
+                 de->setInitAuth(TRUE);
+
+                 $$ = de;
 
                }
 
@@ -16700,7 +16721,8 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 
 		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
 							  (char*)stmt->data(),
-							  stmtCharSet);
+							  stmtCharSet,
+                                                          PARSERHEAP());
 
                  de->setCleanupAuth(TRUE);
                  $$ = de;
@@ -16714,14 +16736,13 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 						   , PARSERHEAP() 
 	                                       );
 
-		 DDLExpr * ia = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
-                                                          FALSE, TRUE,
-							  FALSE, FALSE, FALSE, FALSE,
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
 							  (char*)stmt->data(),
 							  stmtCharSet,
-							  PARSERHEAP());
+                                                          PARSERHEAP());
+                 de->setDropAuth(TRUE);
 
-                 $$ = ia;
+                 $$ = de;
 
                }
 
@@ -16732,12 +16753,11 @@ exe_util_init_hbase : TOK_INITIALIZE TOK_TRAFODION
 						   , PARSERHEAP() 
 	                                       );
 
-		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(FALSE, FALSE, FALSE, FALSE,
-                                                          FALSE, FALSE,
-							  FALSE, TRUE, FALSE, FALSE,
+		 DDLExpr * de = new(PARSERHEAP()) DDLExpr(NULL,
 							  (char*)stmt->data(),
 							  stmtCharSet,
-							  PARSERHEAP());
+                                                          PARSERHEAP());
+                 de->setUpdateVersion(TRUE);
 
 		 $$ = de;
 	       }
@@ -17001,8 +17021,8 @@ exe_util_display_explain: explain_starting_tokens interactive_query_expression d
 			ddlExpr = (DDLExpr*)$2;
 		      else
 			ddlExpr = (DDLExpr*)($2->castToRelExpr()->child(0)->castToRelExpr());
-		      if ((ddlExpr->forShowddlExplain()) &&
-			  (NOT ddlExpr->internalShowddlExplain()))
+		      if ((ddlExpr->showddlExplain()) &&
+			  (NOT ddlExpr->showddlExplainInt()))
 			{
 			  complexExplain = TRUE;
 			  nodeToExplainComplex = ddlExpr;
@@ -22477,25 +22497,31 @@ show_statement:
 	     }
 	   | TOK_SHOWDDL table_name ',' TOK_EXPLAIN
 	     {
+               // this option is not supported and causes a crash.
+               // It either need to fixed or removed.
+               *SqlParser_Diags <<  DgSqlCode(-3131);
+               YYERROR;
+
                CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
 	       NAString * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
 	                                       , PARSERHEAP() // in  - NAMemory * heapUsedForOutputBuffers
 	                                       );
 	       // If we can not get a variable-width multi-byte or single-byte string here, report error 
 	       if ( stmt == NULL )
-	       {
-	         *SqlParser_Diags <<  DgSqlCode(-3406);
-	         YYERROR;
-	       }
-	       DDLExpr * de = 
-		 new (PARSERHEAP()) DDLExpr(NULL,
-					    (char*)stmt->data(),
-					    stmtCharSet,
-					    TRUE, // for explain
-					    FALSE,
-					    FALSE,
-					    &$2->getQualifiedNameObj());
-	       
+                 {
+                   *SqlParser_Diags <<  DgSqlCode(-3406);
+                   YYERROR;
+                 }
+
+               DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                 (NULL,
+                  (char*)stmt->data(), 
+                  stmtCharSet,
+                  PARSERHEAP());
+               
+               de->setShowddlExplain(TRUE);
+               de->setExplObjName($2->getQualifiedNameObj());
+
 	       ExeUtilDisplayExplainComplex * eue =
 		 new (PARSERHEAP()) 
 		 ExeUtilDisplayExplainComplex((char*)stmt->data(),
@@ -22508,6 +22534,11 @@ show_statement:
 	     }
 	   | TOK_SHOWDDL table_name ',' TOK_EXPLAIN ',' TOK_NO TOK_LABEL TOK_STATISTICS
 	     {
+               // this option is not supported and causes a crash.
+               // It either need to fixed or removed.
+               *SqlParser_Diags <<  DgSqlCode(-3131);
+               YYERROR;
+
 	       CharInfo::CharSet stmtCharSet = CharInfo::UnknownCharSet;
 	       NAString  * stmt = getSqlStmtStr ( stmtCharSet  // out - CharInfo::CharSet &
 						, PARSERHEAP() // in  - NAMemory * heapUsedForOutputBuffers
@@ -22518,15 +22549,17 @@ show_statement:
 	         *SqlParser_Diags <<  DgSqlCode(-3406);
 	         YYERROR;
 	       }
-	       DDLExpr * de = 
-		 new (PARSERHEAP()) DDLExpr(NULL,
-					    (char*)stmt->data(),
-					    stmtCharSet,
-					    TRUE, // for explain
-					    FALSE,
-					    TRUE,
-					    &$2->getQualifiedNameObj());
-	       
+
+               DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                 (NULL,
+                  (char*)stmt->data(), 
+                  stmtCharSet,
+                  PARSERHEAP());
+               
+               de->setShowddlExplain(TRUE);
+               de->setNoLabelStats(TRUE);
+               de->setExplObjName($2->getQualifiedNameObj());
+
 	       ExeUtilDisplayExplainComplex * eue =
 		 new (PARSERHEAP()) 
 		 ExeUtilDisplayExplainComplex((char*)stmt->data(),
@@ -22550,16 +22583,17 @@ show_statement:
 	         *SqlParser_Diags <<  DgSqlCode(-3406);
 	         YYERROR;
 	       }
-	       DDLExpr * de = 
-		 new (PARSERHEAP()) DDLExpr(NULL, 
-					    (char*)stmt->data(),
-					    stmtCharSet,
-					    TRUE, // for explain
-					    TRUE, // internal explain
-					    FALSE,
-					    &$2->getQualifiedNameObj(),
-					    numRows);
-	       
+               DDLExpr * de = new(PARSERHEAP()) DDLExpr
+                 (NULL,
+                  (char*)stmt->data(), 
+                  stmtCharSet,
+                  PARSERHEAP());
+               
+               de->setShowddlExplain(TRUE);
+               de->setShowddlExplainInt(TRUE);
+               de->setNumExplRows(numRows);
+               de->setExplObjName($2->getQualifiedNameObj());
+
 	       $$ = de;
 	     }
            | TOK_SHOWDDL table_name optional_showddl_object_options_list

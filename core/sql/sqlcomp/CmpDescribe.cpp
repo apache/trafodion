@@ -2275,11 +2275,6 @@ short CmpDescribeHiveTable (
   if (NOT naTable->isHiveTable())
     return -1;
 
-#ifdef __ignore
-  if (NOT ((type == 1) || (type == 2)))
-    return -1;
-#endif
-
   char * buf = new (heap) char[15000];
   CMPASSERT(buf);
 

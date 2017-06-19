@@ -10709,7 +10709,8 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
   // make sure that underlying hive/hbase object exists
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   CorrName cn(objectNamePart, STMTHEAP, 
-              (isHBase? HBASE_CELL_SCHEMA : schemaNamePart),
+              ((isHBase && (schemaNamePart == HBASE_SYSTEM_SCHEMA))
+               ? HBASE_CELL_SCHEMA : schemaNamePart),
               catalogNamePart);
   if (isHive && regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT)
     cn.setSpecialType(ExtendedQualName::SCHEMA_TABLE);
