@@ -11076,7 +11076,7 @@ static void Odiff(int eid)
     }
 
     /* Calculate rowset if buffer size is set */
-    if (etab[eid].rbs)
+    if ( etab[eid].rbs )
     {
         etab[eid].r = etab[eid].rbs / etab[eid].s;
         etab[eid].r = etab[eid].r < 1 ? 1 : etab[eid].r; // at least one record at a time
