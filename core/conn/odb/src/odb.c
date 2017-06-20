@@ -13147,7 +13147,11 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                     j++; 
                     q = 1;
                 }
-                for ( l = j ; ( str[j] && str[j] != '\n' ) && ( q || str[j] != ':' ) ; j++) {
+#ifdef _WIN32
+                for (l = j; (str[j] && str[j] != '\n') && (q || str[j] != ':') || str[j + 1] == '/'; j++) {
+#else
+                for (l = j; (str[j] && str[j] != '\n') && (q || str[j] != ':'); j++) {
+#endif
                     if ( q ) {
                         if ( str[j] == ']' && ( str[j+1] == ':' || str[j+1] == 0 || isspace((int)str[j+1]) ) ) {
                             q = 0;
