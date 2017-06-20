@@ -541,7 +541,7 @@ short ExeUtilDisplayExplainComplex::codeGen(Generator * generator)
   if (getExprNode()->getOperatorType() == REL_DDL)
     {
       DDLExpr * ddlExpr = (DDLExpr*)getExprNode()->castToRelExpr();
-      if (ddlExpr->forShowddlExplain())
+      if (ddlExpr->showddlExplain())
 	{
 	  exe_util_tdb->setIsShowddl(TRUE);
 	  

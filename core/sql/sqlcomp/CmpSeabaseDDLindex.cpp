@@ -897,14 +897,6 @@ void CmpSeabaseDDL::createSeabaseIndex( StmtDDLCreateIndex * createIndexNode,
   tableInfo->objOwnerID = naTable->getOwner(); 
   tableInfo->schemaOwnerID = naTable->getSchemaOwner();
 
-#ifdef __ignore
-  if (NOT createIndexNode->isNoPopulateOptionSpecified())
-    // if index is to be populated during create index, then initially create it as an
-    // unaudited index. That would avoid any transactional inserts.
-    // After the index has been populated, make it audited.
-    tableInfo->isAudited = 0;
-  else
-#endif
   tableInfo->isAudited = (nafs->isAudited() ? 1 : 0);
 
   tableInfo->validDef = 0;
