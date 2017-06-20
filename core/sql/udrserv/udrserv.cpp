@@ -188,7 +188,7 @@ static NAString initErrText("");
    found in an optional configuration file into an LmJavaOptions instance.
 
    File must be in location indicated by envvar TRAFUDRCFG, or if not found, 
-   use default of $TRAF_HOME/conf/trafodion.udr.config
+   use default of $TRAF_CONF/trafodion.udr.config
 *************************************************************************/
 void readCfgFileSection ( const char *section, LmJavaOptions &javaOptions )
 {

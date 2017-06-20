@@ -152,14 +152,14 @@ public class HBaseClient {
     static {
     	//Some clients of this class e.g., DcsServer/JdbcT2 
     	//want to use use their own log4j.properties file instead
-    	//of the /conf/lo4j.hdf.config so they can see their
+    	//of the lo4j.hdf.config so they can see their
     	//log events in their own log files or console.
     	//So, check for alternate log4j.properties otherwise
     	//use the default HBaseClient config.
     	String confFile = System.getProperty("trafodion.log4j.configFile");
     	if (confFile == null) {
     		System.setProperty("trafodion.sql.log", System.getenv("TRAF_HOME") + "/logs/trafodion.sql.java.log");
-    		confFile = System.getenv("TRAF_HOME") + "/conf/log4j.sql.config";
+    		confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
     	}
     	PropertyConfigurator.configure(confFile);
         config = TrafConfiguration.create();

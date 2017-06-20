@@ -205,6 +205,9 @@ echo "DCS_INSTALL_DIR=$dcsinstalldir"
 restinstalldir=$REST_INSTALL_DIR
 echo "REST_INSTALL_DIR=$restinstalldir"
 
+echo "TRAF_VAR=$TRAF_VAR"
+echo "TRAF_CONF=$TRAF_CONF"
+
 echo ""
 echo ""
 echo "# Added by gensq.pl"
