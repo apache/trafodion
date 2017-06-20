@@ -3474,6 +3474,8 @@ Please note the fixed length '6' in strmicmp: SELECT/UPDATET/DELETE/INSERT have 
         etab[eid].r = etab[eid].rbs / rsds;
         if ( etab[eid].mr && etab[eid].r > etab[eid].mr )   /* if # records to fetch < rowset ... */
             etab[eid].r = etab[eid].mr;                     /* make rowset = records to fetch */
+        if (etab[eid].r < 1)
+            etab[eid].r = 1;
     }
 
     /* Set output buffer length */
@@ -7019,6 +7021,8 @@ static void Oload(int eid)
         etab[eid].r = etab[eid].rbs / etab[eid].s;
         if ( etab[eid].mr && etab[eid].r > etab[eid].mr )   /* if # records to fetch < rowset ... */
             etab[eid].r = etab[eid].mr;                     /* make rowset = records to fetch */
+        if (etab[eid].r < 1)                                /* at least one record at a time */
+            etab[eid].r = 1;
     }
     if ( etab[eid].flg2 & 0001 )    /* commit as multiplier */
         etab[eid].cmt *= (int)etab[eid].r ;
