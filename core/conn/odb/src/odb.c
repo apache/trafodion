@@ -6599,8 +6599,12 @@ static void Oload(int eid)
                 fclose ( fe ) ;
                 /* count dataset elements (lines) */
                 for ( map[j].cl = 0 , sp = map[j].c ; *sp ; sp++ )
-                    if ( *sp == '\n' )
+                    if ( *sp == '\n' || *sp == '\r' )
+                    {
                         map[j].cl++;
+                        if( *(sp + 1) == '\n' ) /* windows linefeed use \r\n */
+                            sp++;
+                    }
                 /* allocate memory for dataset element array */
                 if ( ( map[j].el = calloc ( map[j].cl, sizeof(char *) ) ) == (void *)NULL) {
                     fprintf(stderr, "odb [Oload(%d)] - DSRAND error allocating element array for %s\n", 
@@ -6615,8 +6619,13 @@ static void Oload(int eid)
                 }
                 /* tokenize dataset and fill dataset element array */
                 for ( z = 0, sp = map[j].c, map[j].el[0] = map[j].c ; *sp ; sp++ ) {
-                    if ( *sp == '\n' ) {
+                    if ( *sp == '\n' || *sp == '\r' ) {
                         *sp = '\0';
+                        if ( *sp == '\r' && *(sp + 1) == '\n' )
+                        {
+                            *(sp + 1) = '\0';
+                            sp++;
+                        }
                         if ( map[j].eln[z] > (unsigned int)etab[eid].td[j].Osize ) {
                             fprintf(stderr, "odb [Oload(%d)] - DSRAND warning: dataset element \'%s\' will be truncated to fit \'%s\' column length (%d)\n", 
                                 __LINE__, map[j].el[z], (char *)etab[eid].td[j].Oname, (int)etab[eid].td[j].Osize);
