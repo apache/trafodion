@@ -525,12 +525,14 @@ static const QueryString getTrafRoles[] =
 static const QueryString getHiveRegObjectsInCatalogQuery[] =
 {
   {" select trim(O.a) ||  "                                    },
-  {" case when G.b is null then ' (inconsistent)' else '' end "},
+  {" case when G.b is null and O.t != 'SS' then ' (inconsistent)' else '' end "},
   {" from "                                                    },
-  {"  (select lower(trim(catalog_name) || '.' || "             },
-  {"    trim(schema_name) || '.' || trim(object_name)) "       },
+  {"  (select object_type, case when object_type = 'SS' "      },
+  {"   then lower(trim(catalog_name) || '.' || trim(schema_name)) "},
+  {"   else lower(trim(catalog_name) || '.' || "               },
+  {"    trim(schema_name) || '.' || trim(object_name)) end "       },
   {"   from %s.\"%s\".%s where catalog_name = 'HIVE' and "     },
-  {"                           %s) O(a) "                      },
+  {"                           %s) O(t, a) "                   },
   {"  left join "                                              },
   {"   (select '%s' || '.' || trim(y) from "                   },
   {"    (get %s in catalog %s, no header) x(y)) G(b)"          },
@@ -951,6 +953,13 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
     case ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_:
       {
 	str_sprintf(headingBuf_, "Hive Registered Views in Catalog %s",
+		    getMItdb().getCat());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "Hive Registered Schemas in Catalog %s",
 		    getMItdb().getCat());
       }
     break;
@@ -1810,6 +1819,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	      
 	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_:
 	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_:
+	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_:
 	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_:
 		{
 		  qs = getHiveRegObjectsInCatalogQuery;
@@ -1827,12 +1837,19 @@ short ExExeUtilGetMetadataInfoTcb::work()
                       str_sprintf(hiveObjType, " (object_type = '%s') ",
                                   COM_VIEW_OBJECT_LIT);
                     }
+                  else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_)
+                    {
+                      strcpy(hiveGetType, "schemas");
+                      str_sprintf(hiveObjType, " (object_type = '%s') ",
+                                  COM_SHARED_SCHEMA_OBJECT_LIT);
+                    }
                   else
                     {
                       strcpy(hiveGetType, "objects");
-                      str_sprintf(hiveObjType, " (object_type = '%s' or object_type = '%s') ",
+                      str_sprintf(hiveObjType, " (object_type = '%s' or object_type = '%s' or object_type = '%s' ) ",
                                   COM_BASE_TABLE_OBJECT_LIT, 
-                                  COM_VIEW_OBJECT_LIT);
+                                  COM_VIEW_OBJECT_LIT,
+                                  COM_SHARED_SCHEMA_OBJECT_LIT);
                     }
                     
 		  param_[0] = cat;
@@ -5441,7 +5458,14 @@ short ExExeUtilHiveMDaccessTcb::work()
               {
                 HVC_RetCode retCode = hiveMD_->getClient()->
                   getAllTables(currSch, tblNames_);
-                if ((retCode != HVC_OK) && (retCode != HVC_DONE)) 
+                if (retCode == HVC_ERROR_EXISTS_EXCEPTION)
+                  {
+                    *diags << DgSqlCode(-1003)
+                           << DgSchemaName(NAString("hive") + "." + currSch);
+                    step_ = HANDLE_ERROR_;
+                    break;
+                  }
+                else if ((retCode != HVC_OK) && (retCode != HVC_DONE)) 
                   {
                     *diags << DgSqlCode(-1190)
                            << DgString0((char*)

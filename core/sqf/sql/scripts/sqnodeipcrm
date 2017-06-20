@@ -59,13 +59,13 @@ function rm_shm {
 }
 
 declare -i portFilesCount
-let portFilesCount=`ls $TRAF_HOME/tmp/monitor.port.*.bak 2>/dev/null | wc -l`
+let portFilesCount=`ls $TRAF_VAR/monitor.port.*.bak 2>/dev/null | wc -l`
 if ( [ "$portFilesCount" '==' 0 ] ); then
    echo "Unable to get the monitor port number"
    exit 1
 fi
 
-portFiles=`ls $TRAF_HOME/tmp/monitor.port.*.bak`
+portFiles=`ls $TRAF_VAR/monitor.port.*.bak`
 for portFile in $portFiles; do
     rm_shm $portFile
 done

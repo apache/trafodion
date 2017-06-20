@@ -1398,26 +1398,27 @@ public:
        ComTdbVirtTableColumnInfo * columnInfo,
        Int16 numCols,
        UInt32 &offset,
-       Space * space);
+       NAMemory * space);
   
   static TrafDesc * createKeyDescs(Int32 numKeys,
-				      const ComTdbVirtTableKeyInfo * keyInfo,
-                                      Space * space);
+                                   const ComTdbVirtTableKeyInfo * keyInfo,
+                                   NAMemory * space);
 
   static TrafDesc * createConstrKeyColsDescs(Int32 numKeys,
-                                                ComTdbVirtTableKeyInfo * keyInfo,
-                                                Space * space);
+                                             ComTdbVirtTableKeyInfo * keyInfo,
+                                             NAMemory * space);
 
   static TrafDesc * createRefConstrDescStructs(
 						  Int32 numConstrs,
 						  ComTdbVirtTableRefConstraints * refConstrs,
-                                                  Space * space);
+						  NAMemory * space);
   
   static TrafDesc * createPrivDescs( const ComTdbVirtTablePrivInfo * privs,
-                                     Space * space);
+                                     NAMemory * space);
 
   static TrafDesc *createVirtualTableDesc(
-       const char * tableName, 
+       const char * tableName,
+       NAMemory * heap,  // in case caller wants a particular heap; if NULL is passed, we decide
        Int32 numCols,
        ComTdbVirtTableColumnInfo * columnInfo,
        Int32 numKeys,
@@ -1439,8 +1440,7 @@ public:
 
   static TrafDesc* assembleDescs(
      NAArray<HbaseStr >* keyArray, 
-     NAMemory* heap,
-     Space * space);
+     NAMemory* space);
 
   static TrafDesc *createVirtualRoutineDesc(
                                   const char *routineName,

@@ -38,6 +38,9 @@ $gRoleEnumStorage     = "storage";
 $gRoleEnumEdge        = "connection";
 $gRoleEnumAggregation = "aggregation";
 
+my @g_ssdOverflow = ();
+my @g_hddOverflow = ();
+
 my $gdNumNodes=0;
 my $gdZoneId=0;
 
@@ -50,6 +53,7 @@ my $gdNumCpuCores = 1;
 my $g_CCFormat = 2;
 
 my $gbInitialLinesPrinted = 0;
+my $gbOverflowLinesPrinted = 0;
 
 my $gShellStarted=0;
 
@@ -254,6 +258,30 @@ sub printInitialLines {
     genSQShellExit();
 
     $gbInitialLinesPrinted = 1;
+}
+
+sub printOverflowLines {
+    if($gbOverflowLinesPrinted) {
+        return;
+    }
+
+    $msenv = "$ENV{'SQETC_DIR'}/ms.env";
+
+    open (ETC,">>$msenv")
+        or die("unable to open $msenv");
+
+    if(@g_ssdOverflow) {
+        $ssdDir = join(':',@g_ssdOverflow);
+        print ETC "STFS_SSD_LOCATION=$ssdDir\n";
+    }
+
+    if(@g_hddOverflow) {
+        $hddDir = join(':',@g_hddOverflow);
+        print ETC "STFS_HDD_LOCATION=$hddDir\n";
+    }
+    close(ETC);
+
+    $gbOverflowLinesPrinted = 1;
 }
 
 sub printScriptEndLines {
@@ -549,6 +577,26 @@ sub printZoneList {
     }
 }
 
+sub processOverflow {
+    while (<>) {
+        if(/^ssd/) {
+            @ssdLine = split(' ',$_);
+            if(@ssdLine[1]) {
+                push(@g_ssdOverflow, @ssdLine[1]);
+            }
+        }
+        elsif(/^hdd/) {
+            @hddLine = split(' ',$_);
+            if(@hddLine[1]) {
+            push(@g_hddOverflow, @hddLine[1]);
+            }
+        }
+        elsif(/^end overflow/) {
+            return;
+        }
+    }
+}
+
 sub processFloatingIp {
     while (<>) {
         if (/^process/) {
@@ -778,6 +826,10 @@ while (<>) {
     if (/^begin node/) {
         processNodes;
         printInitialLines;
+    }
+    elsif (/^begin overflow/) {
+        processOverflow;
+        printOverflowLines;
     }
     elsif (/^begin floating_ip/) {
         processFloatingIp;

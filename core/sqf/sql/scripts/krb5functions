@@ -119,7 +119,7 @@ function getLogFile
 
 function getLockFile
 {
-  LOCK_FILE=$TRAF_HOME/tmp/krb5check
+  LOCK_FILE=$TRAF_VAR/krb5check
 }
 
 function getKeytab

@@ -1504,7 +1504,7 @@ TrafDesc* Generator::createColDescs(
   ComTdbVirtTableColumnInfo * columnInfo,
   Int16 numCols,
   UInt32 &offset,
-  Space * space)
+  NAMemory * space)
 {
   if (! columnInfo)
     return NULL;
@@ -1653,8 +1653,8 @@ TrafDesc* Generator::createColDescs(
 }
 
 static void initKeyDescStruct(TrafKeysDesc * tgt,
-			      const ComTdbVirtTableKeyInfo * src,
-                              Space * space)
+                              const ComTdbVirtTableKeyInfo * src,
+                              NAMemory * space)
 {
   if (src->colName)
     {
@@ -1685,8 +1685,8 @@ static void initKeyDescStruct(TrafKeysDesc * tgt,
 }
 
 TrafDesc * Generator::createKeyDescs(Int32 numKeys,
-					const ComTdbVirtTableKeyInfo * keyInfo,
-                                        Space * space)
+                                     const ComTdbVirtTableKeyInfo * keyInfo,
+                                     NAMemory * space)
 {
   TrafDesc * first_key_desc = NULL;
 
@@ -1713,8 +1713,8 @@ TrafDesc * Generator::createKeyDescs(Int32 numKeys,
 }
 
 TrafDesc * Generator::createConstrKeyColsDescs(Int32 numKeys,
-                                                  ComTdbVirtTableKeyInfo * keyInfo,
-                                                  Space * space)
+                                               ComTdbVirtTableKeyInfo * keyInfo,
+                                               NAMemory * space)
 {
   TrafDesc * first_key_desc = NULL;
 
@@ -1757,7 +1757,7 @@ TrafDesc * Generator::createConstrKeyColsDescs(Int32 numKeys,
 // see TrafDDLdesc.h for a description of TrafDesc for the priv_desc
 // ****************************************************************************
 TrafDesc * Generator::createPrivDescs( const ComTdbVirtTablePrivInfo * privInfo,
-                                       Space * space)
+                                       NAMemory * space)
 {
   // When authorization is enabled, each object must have at least one grantee
   // - the system grant to the object owner
@@ -1828,7 +1828,7 @@ TrafDesc * Generator::createPrivDescs( const ComTdbVirtTablePrivInfo * privInfo,
 TrafDesc * Generator::createRefConstrDescStructs(
 						    Int32 numConstrs,
 						    ComTdbVirtTableRefConstraints * refConstrs,
-                                                    Space * space)
+						    NAMemory * space)
 {
   TrafDesc * first_constr_desc = NULL;
 
@@ -1877,7 +1877,7 @@ static Lng32 createDescStructs(char * rforkName,
                                ComTdbVirtTableKeyInfo * keyInfo,
                                TrafDesc* &colDescs,
                                TrafDesc* &keyDescs,
-                               Space * space)
+                               NAMemory * space)
 {
   colDescs = NULL;
   keyDescs = NULL;
@@ -1900,7 +1900,7 @@ static void populateRegionDescForEndKey(char* buf, Int32 len, struct TrafDesc* t
    target->hbaseRegionDesc()->endKeyLen = len;
 }
 
-static void populateRegionDescAsRANGE(char* buf, Int32 len, struct TrafDesc* target, NAMemory*, Space*)
+static void populateRegionDescAsRANGE(char* buf, Int32 len, struct TrafDesc* target)
 {
    target->nodetype = DESC_HBASE_RANGE_REGION_TYPE;
    populateRegionDescForEndKey(buf, len, target);
@@ -1911,15 +1911,9 @@ static void populateRegionDescAsRANGE(char* buf, Int32 len, struct TrafDesc* tar
 // field points at hbaseRegion_desc. The order of the keyinfo, obtained from
 // org.apache.hadoop.hbase.client.HTable.getEndKey(), is preserved.
 //
-// Allocate space from STMTHEAP, per the call of this function
-// in CmpSeabaseDDL::getSeabaseTableDesc() and the
-// Generator::createVirtualTableDesc() call make before this one that
-// uses STMTPHEAP througout.
-//
 TrafDesc* Generator::assembleDescs(
      NAArray<HbaseStr >* keyArray,
-     NAMemory* heap,
-     Space * space)
+     NAMemory * space)
 {
    if (keyArray == NULL)
      return NULL;
@@ -1940,7 +1934,7 @@ TrafDesc* Generator::assembleDescs(
      TrafDesc* wrapper = 
        TrafAllocateDDLdesc(DESC_HBASE_RANGE_REGION_TYPE, space);
      
-     populateRegionDescAsRANGE(buf, len, wrapper, heap, space);
+     populateRegionDescAsRANGE(buf, len, wrapper);
      
      wrapper->next = result;
      result = wrapper;
@@ -1952,6 +1946,7 @@ TrafDesc* Generator::assembleDescs(
 TrafDesc * Generator::createVirtualTableDesc
 (
      const char * inTableName,
+     NAMemory * heap,
      Int32 numCols,
      ComTdbVirtTableColumnInfo * columnInfo,
      Int32 numKeys,
@@ -1976,10 +1971,30 @@ TrafDesc * Generator::createVirtualTableDesc
   // returned contiguous packed copy of it.
   // This packed copy will be stored in metadata.
 
+  // If heap is set (and genPackedDesc is not set), use the heap passed to
+  // us by our caller. For example, we might be called at NATableDB::get time,
+  // to create descriptors that are going to live in the NATable cache or on
+  // the statement heap rather than in a Generator space.
+
+  // There is some danger in this mixed use of the "space" variable as a
+  // base class pointer. The NAMemory and Space classes avoid using virtual
+  // functions, so we can't count on polymorphism to pick the right 
+  // implementation of a method on "space". Rather, the NAMemory methods
+  // will be used unless we explicitly override them. Fortunately, in
+  // almost all of this method, and the methods it calls, the only use of
+  // "space" is as an operand to the GENHEAP macro, which casts it as an
+  // NAMemory * anyway, for use by operator new. That works for both classes.
+  // There is one place in this method where we are concerned with contiguous
+  // placement of objects. There, we have to cast the "space" variable to
+  // class Space to get its methods. (Sorry about the variable naming; it
+  // would have been a lot more changes to rename the "space" variable.)
+
   Space lSpace(ComSpace::GENERATOR_SPACE);
-  Space * space = NULL;
+  NAMemory * space = NULL;
   if (genPackedDesc)
     space = &lSpace;
+  else if (heap)
+    space = heap;
   
   const char * tableName = (tableInfo ? tableInfo->tableName : inTableName);
   TrafDesc * table_desc = TrafAllocateDDLdesc(DESC_TABLE_TYPE, space);
@@ -2310,7 +2325,7 @@ TrafDesc * Generator::createVirtualTableDesc
     {
       // create a list of region descriptors
       table_desc->tableDesc()->hbase_regionkey_desc = 
-        assembleDescs(endKeyArray, STMTHEAP, space);
+        assembleDescs(endKeyArray, space);
     }
 
   if (snapshotName != NULL)
@@ -2322,12 +2337,20 @@ TrafDesc * Generator::createVirtualTableDesc
 
   if (genPackedDesc && space)
     {
-      // pack generated desc and move it to a contiguous buffer before return.
-      DescStructPtr((TrafDesc*)table_desc).pack(space);
+      if (! space->isComSpace() ) // to insure cast (Space *) is safe
+        {
+          table_desc = NULL;
+          return table_desc;
+        }  
 
-      Lng32 allocSize = space->getAllocatedSpaceSize();
+      Space * trueSpace = (Space *)space; // space really is a Space
+
+      // pack generated desc and move it to a contiguous buffer before return.
+      DescStructPtr((TrafDesc*)table_desc).pack(trueSpace);
+      Lng32 allocSize = trueSpace->getAllocatedSpaceSize();
       char * contigTableDesc = new HEAP char[allocSize];
-      if (! space->makeContiguous(contigTableDesc, allocSize))
+ 
+      if (! trueSpace->makeContiguous(contigTableDesc, allocSize))
         {
           table_desc = NULL;
           return table_desc;

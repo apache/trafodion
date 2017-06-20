@@ -1529,7 +1529,8 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
     {
       *node = NULL;
       DDLExpr * ddlExpr = new(CmpCommon::statementHeap()) 
-	DDLExpr(NULL, (char *)ns.data(), inputStrCharSet);
+	DDLExpr(NULL, (char *)ns.data(), inputStrCharSet, 
+                CmpCommon::statementHeap());
       RelExpr *queryExpr = new(CmpCommon::statementHeap())
 	RelRoot(ddlExpr);
 

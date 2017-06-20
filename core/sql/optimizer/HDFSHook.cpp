@@ -824,6 +824,9 @@ NABoolean HHDFSTableStats::populate(struct hive_tbl_desc *htd)
   // 12. Aggregate partition stats for all partitions of the table
 
   struct hive_sd_desc *hsd = htd->getSDs();
+  if (hsd == NULL)
+    return TRUE; // nothing need to be done
+
   diags_.reset();
   tableDir_ = hsd->location_;
   numOfPartCols_ = htd->getNumOfPartCols();

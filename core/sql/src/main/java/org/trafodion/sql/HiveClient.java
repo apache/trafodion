@@ -35,6 +35,7 @@ import org.apache.hadoop.util.StringUtils;
 
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.UnknownDBException;
@@ -166,7 +167,13 @@ public class HiveClient {
     }
 
     public Object[] getAllTables(String schName) 
-        throws MetaException {
+        throws MetaException, Exception {
+        //System.out.println("schName = " + schName);
+
+        Database db = hmsClient.getDatabase(schName);
+        if (db == null)
+            return null;
+
         List<String> tableList = hmsClient.getAllTables(schName);
         if (tableList != null)
            return tableList.toArray();

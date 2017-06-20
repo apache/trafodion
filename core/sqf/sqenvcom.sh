@@ -138,6 +138,7 @@ else
    export RH_MAJ_VERS=6
 fi
 export TRAF_HOME=$PWD
+export TRAF_VAR=${TRAF_VAR:-$TRAF_HOME/tmp}
 
 # normal installed location, can be overridden in .trafodion
 export DCS_INSTALL_DIR=$TRAF_HOME/dcs-$TRAFODION_VER
@@ -638,7 +639,7 @@ fi
 # for debugging
 # export LD_BIND_NOW=true
 
-export MPI_TMPDIR=$PWD/tmp
+export MPI_TMPDIR=$TRAF_VAR
 if [[ -d $MPI_TMPDIR ]]; then
   if [[ "$SQ_VERBOSE" == "1" ]]; then
     echo "Pre-existing directory found for MPI_TMPDIR: $MPI_TMPDIR"
@@ -709,7 +710,7 @@ export SQ_WDT_CHECK_CLUSTER_STATE=0
 # This can be useful in troubleshooting problems.  There is an overhead cost
 # incurred each time a process is started so do not enable this if performance
 # is critical.
-# Log process start/end messages in $TRAF_HOME/tmp/monitor.map
+# Log process start/end messages in $TRAF_VAR/monitor.map
 export SQ_PIDMAP=1
 
 #Enable RMS (SQL Run time statistics)
