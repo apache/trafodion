@@ -77,6 +77,31 @@
         "run_as_traf": "yes"
     }
 ],
+"addnodes_all": [
+    {
+        "script": "dcs_setup.py",
+        "desc": "DCS/REST Setup",
+        "node": "all",
+        "run_as_traf": "yes"
+    }
+],
+"addnodes_new": [
+    {
+        "script": "traf_addnodes.py",
+        "desc": "Add nodes Setup",
+        "node": "all"
+    },
+    {
+        "script": "traf_dep.py",
+        "desc": "Install Trafodion dependencies",
+        "node": "all"
+    },
+    {
+        "script": "traf_kerberos.py",
+        "desc": "Kerberos Setup",
+        "node": "all"
+    }
+],
 "discover": [
     {
         "script": "traf_discover.py",

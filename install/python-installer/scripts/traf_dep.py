@@ -92,7 +92,7 @@ def run():
                 run_cmd('yum install -y %s' % pkg)
 
     # pdsh should not exist on single node
-    if len(node_list) == 1:
+    if len(node_list) == 1 and not dbcfgs.has_key('traf_shadow'): # means we are running in adding node mode
         cmd_output('yum remove -y pdsh')
 
     # remove temp repo file
