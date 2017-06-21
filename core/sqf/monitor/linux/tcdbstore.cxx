@@ -20,25 +20,36 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
-//
+// 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef TRAFCONFIGLOG_H_
-#define TRAFCONFIGLOG_H_
+#include <stdlib.h>
+#include <string.h>
+#include <cctype>
+#include <string>
 
 using namespace std;
 
-#define TC_LOG_BUF_SIZE 256
+#include "tclog.h"
+#include "tctrace.h"
+#include "tcdbstore.h"
 
-#define TC_LOG_EMERG   0   /* system is unusable */
-#define TC_LOG_ALERT   1   /* action must be taken immediately */
-#define TC_LOG_CRIT    2   /* critical conditions */
-#define TC_LOG_ERR     3   /* error conditions */
-#define TC_LOG_WARNING 4   /* warning conditions */
-#define TC_LOG_NOTICE  5   /* normal but significant condition */
-#define TC_LOG_INFO    6   /* informational */
-#define TC_LOG_DEBUG   7   /* debug-level messages */
+///////////////////////////////////////////////////////////////////////////////
+//  Cluster Configuration
+///////////////////////////////////////////////////////////////////////////////
 
-int TcLogWrite(int event_type, int severity, char *evl_buf);
+CTcdbStore::CTcdbStore( TC_STORAGE_TYPE dbStorageType )
+          : dbStorageType_(dbStorageType)
+{
+    const char method_name[] = "CTcdbStore::CTcdbStore";
+    TRACE_ENTRY;
+    TRACE_EXIT;
+}
 
-#endif
+CTcdbStore::~CTcdbStore ( void )
+{
+    const char method_name[] = "CTcdbStore::~CTcdbStore";
+    TRACE_ENTRY;
+    TRACE_EXIT;
+}
+

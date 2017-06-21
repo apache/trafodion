@@ -26,6 +26,9 @@
 #ifndef MONTRACE_H_
 #define MONTRACE_H_
 
+using namespace std;
+
+#include <string>
 #include "seabed/trace.h"
 
 // Monitor request processing
@@ -82,6 +85,8 @@ public:
 
     void mon_trace_change(const char *key, const char *value);
 
+    inline const char *getTraceFileName(void) { return( traceFileName_.c_str() ); };
+
 private:
 
     const char *getenv_str(const char *key);
@@ -97,29 +102,28 @@ private:
     const char *mon_help_str(const char *key, const char *value,
                              const char *key_cmp);
 
-    // The number of trace areas held in "traceAreaList"
-    int numTraceAreas;
+    bool tracingEnabled_;
 
-    bool tracingEnabled;
+    // The number of trace areas held in "traceAreaList"
+    int     numTraceAreas_;
 
     // Save area for retaining prior trace settings if tracing is
     // disabled.  These are used to restore the values when tracing
     // is re-enabled.
-    long trace_settings_saved;
+    long    traceSettingsSaved_;
 
-    // Optional size of trace file buffer.
-    int  trace_file_fb;
-
-    char *trace_file_base;
+    int     traceFileFB_;  // Optional size of trace file buffer.
+    char   *traceFileBase_;
+    string  traceFileName_;
 
     // Array of strings defining various trace areas and the
     // trace bit flag associated with that area
-    typedef struct {const char *id; long bitFlag;} traceArea;
-    static const traceArea traceAreaList[];
+    typedef struct {const char *id; long bitFlag;} TraceArea_t;
+    static const TraceArea_t traceAreaList_[];
 
-    static const char *str_trace_enable;
-    static const char *str_trace_file;
-    static const char *str_trace_file_fb;
+    static const char *traceEnableStr_;
+    static const char *traceFileStr_;
+    static const char *traceFileFbStr_;
 };
 
 #endif

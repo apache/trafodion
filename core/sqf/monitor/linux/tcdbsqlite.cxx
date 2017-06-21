@@ -29,36 +29,43 @@
 
 using namespace std;
 
+#include "tclog.h"
+#include "tctrace.h"
 #include "trafconfig.h"
-#include "trafconfiglog.h"
-#include "trafconfigtrace.h"
-#include "sqliteconfig.h"
+#include "tcdbsqlite.h"
+
+#define MAX_PROCESS_PATH           256
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Cluster Configuration
 ///////////////////////////////////////////////////////////////////////////////
 
-CSqliteConfig::CSqliteConfig( void )
-              : db_(NULL)
+CTcdbSqlite::CTcdbSqlite( void )
+           : CTcdbStore( TCDBSQLITE )
+           , db_(NULL)
 {
-    const char method_name[] = "CSqliteConfig::CSqliteConfig";
+    const char method_name[] = "CTcdbSqlite::CTcdbSqlite";
     TRACE_ENTRY;
+
+    memcpy(&eyecatcher_, "TCSL", 4);
 
     TRACE_EXIT;
 }
 
-CSqliteConfig::~CSqliteConfig ( void )
+CTcdbSqlite::~CTcdbSqlite ( void )
 {
-    const char method_name[] = "CSqliteConfig::~CSqliteConfig";
+    const char method_name[] = "CTcdbSqlite::~CTcdbSqlite";
     TRACE_ENTRY;
+
+    memcpy(&eyecatcher_, "tcsl", 4);
 
     TRACE_EXIT;
 }
 
 // insert key into monRegKeyName table
-int CSqliteConfig::AddRegistryKey( const char *key )
+int CTcdbSqlite::AddRegistryKey( const char *key )
 {
-    const char method_name[] = "CSqliteConfig::AddRegistryKey";
+    const char method_name[] = "CTcdbSqlite::AddRegistryKey";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -141,9 +148,9 @@ int CSqliteConfig::AddRegistryKey( const char *key )
 }
 
 // insert key into monRegProcName table
-int CSqliteConfig::AddRegistryProcess( const char *name )
+int CTcdbSqlite::AddRegistryProcess( const char *name )
 {
-    const char method_name[] = "CSqliteConfig::AddRegistryProcess";
+    const char method_name[] = "CTcdbSqlite::AddRegistryProcess";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -225,10 +232,10 @@ int CSqliteConfig::AddRegistryProcess( const char *name )
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::AddRegistryClusterData( const char *key
-                                         , const char *dataValue )
+int CTcdbSqlite::AddRegistryClusterData( const char *key
+                                       , const char *dataValue )
 {
-    const char method_name[] = "CSqliteConfig::AddRegistryClusterData";
+    const char method_name[] = "CTcdbSqlite::AddRegistryClusterData";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -331,11 +338,11 @@ int CSqliteConfig::AddRegistryClusterData( const char *key
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::AddRegistryProcessData( const char *procName
-                                         , const char *key
-                                         , const char *dataValue )
+int CTcdbSqlite::AddRegistryProcessData( const char *procName
+                                       , const char *key
+                                       , const char *dataValue )
 {
-    const char method_name[] = "CSqliteConfig::AddRegistryProcessData";
+    const char method_name[] = "CTcdbSqlite::AddRegistryProcessData";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -461,11 +468,11 @@ int CSqliteConfig::AddRegistryProcessData( const char *procName
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::AddUniqueString( int nid
-                                  , int id
-                                  , const char *uniqStr )
+int CTcdbSqlite::AddUniqueString( int nid
+                                , int id
+                                , const char *uniqStr )
 {
-    const char method_name[] = "CSqliteConfig::AddUniqueString";
+    const char method_name[] = "CTcdbSqlite::AddUniqueString";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -576,9 +583,9 @@ int CSqliteConfig::AddUniqueString( int nid
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::Close( void )
+int CTcdbSqlite::Close( void )
 {
-    const char method_name[] = "CSqliteConfig::Close";
+    const char method_name[] = "CTcdbSqlite::Close";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -612,9 +619,9 @@ int CSqliteConfig::Close( void )
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::DeleteNodeData( int pnid )
+int CTcdbSqlite::DeleteNodeData( int pnid )
 {
-    const char method_name[] = "CSqliteConfig::DeleteNodeData";
+    const char method_name[] = "CTcdbSqlite::DeleteNodeData";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -763,9 +770,9 @@ int CSqliteConfig::DeleteNodeData( int pnid )
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::DeleteUniqueString( int nid )
+int CTcdbSqlite::DeleteUniqueString( int nid )
 {
-    const char method_name[] = "CSqliteConfig::DeleteUniqueString";
+    const char method_name[] = "CTcdbSqlite::DeleteUniqueString";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -847,9 +854,9 @@ int CSqliteConfig::DeleteUniqueString( int nid )
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::Initialize( void )
+int CTcdbSqlite::Initialize( void )
 {
-    const char method_name[] = "CSqliteConfig::Initialize";
+    const char method_name[] = "CTcdbSqlite::Initialize";
     TRACE_ENTRY;
 
     if ( IsInitialized() )
@@ -927,10 +934,10 @@ int CSqliteConfig::Initialize( void )
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetNode( int nid
-                          , node_configuration_t &nodeConfig )
+int CTcdbSqlite::GetNode( int nid
+                        , node_configuration_t &nodeConfig )
 {
-    const char method_name[] = "CSqliteConfig::GetNode";
+    const char method_name[] = "CTcdbSqlite::GetNode";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -1071,10 +1078,10 @@ int CSqliteConfig::GetNode( int nid
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetNode( const char *name
-                          , node_configuration_t &nodeConfig )
+int CTcdbSqlite::GetNode( const char *name
+                        , node_configuration_t &nodeConfig )
 {
-    const char method_name[] = "CSqliteConfig::GetNode";
+    const char method_name[] = "CTcdbSqlite::GetNode";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -1216,11 +1223,11 @@ int CSqliteConfig::GetNode( const char *name
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetNodes( int &count
-                           , int max
-                           , node_configuration_t nodeConfig[] )
+int CTcdbSqlite::GetNodes( int &count
+                         , int max
+                         , node_configuration_t nodeConfig[] )
 {
-    const char method_name[] = "CSqliteConfig::GetNodes";
+    const char method_name[] = "CTcdbSqlite::GetNodes";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -1362,10 +1369,10 @@ int CSqliteConfig::GetNodes( int &count
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetPNode( int pNid
-                           , physical_node_configuration_t &pnodeConfig )
+int CTcdbSqlite::GetPNode( int pNid
+                         , physical_node_configuration_t &pnodeConfig )
 {
-    const char method_name[] = "CSqliteConfig::GetPNode";
+    const char method_name[] = "CTcdbSqlite::GetPNode";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -1482,10 +1489,10 @@ int CSqliteConfig::GetPNode( int pNid
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetPNode( const char *name
-                           , physical_node_configuration_t &pnodeConfig )
+int CTcdbSqlite::GetPNode( const char *name
+                         , physical_node_configuration_t &pnodeConfig )
 {
-    const char method_name[] = "CSqliteConfig::GetPNode";
+    const char method_name[] = "CTcdbSqlite::GetPNode";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -1600,11 +1607,11 @@ int CSqliteConfig::GetPNode( const char *name
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetSNodes( int &count
-                            , int max
-                            , physical_node_configuration_t spareNodeConfig[] )
+int CTcdbSqlite::GetSNodes( int &count
+                          , int max
+                          , physical_node_configuration_t spareNodeConfig[] )
 {
-    const char method_name[] = "CSqliteConfig::GetSNodes";
+    const char method_name[] = "CTcdbSqlite::GetSNodes";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -1746,13 +1753,13 @@ int CSqliteConfig::GetSNodes( int &count
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetSNodeData( int pnid
-                               , const char *nodename
-                               , int excfirstcore
-                               , int exclastcore 
-                               , physical_node_configuration_t &spareNodeConfig )
+int CTcdbSqlite::GetSNodeData( int pnid
+                             , const char *nodename
+                             , int excfirstcore
+                             , int exclastcore 
+                             , physical_node_configuration_t &spareNodeConfig )
 {
-    const char method_name[] = "CSqliteConfig::GetSNodeData";
+    const char method_name[] = "CTcdbSqlite::GetSNodeData";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -1888,10 +1895,10 @@ int CSqliteConfig::GetSNodeData( int pnid
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetPersistProcess( const char *persistPrefix
-                                    , persist_configuration_t &persistConfig )
+int CTcdbSqlite::GetPersistProcess( const char *persistPrefix
+                                  , persist_configuration_t &persistConfig )
 {
-    const char method_name[] = "CSqliteConfig::GetPersistProcess";
+    const char method_name[] = "CTcdbSqlite::GetPersistProcess";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -2044,9 +2051,9 @@ int CSqliteConfig::GetPersistProcess( const char *persistPrefix
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetPersistProcessKeys( const char *persistProcessKeys )
+int CTcdbSqlite::GetPersistProcessKeys( const char *persistProcessKeys )
 {
-    const char method_name[] = "CSqliteConfig::GetPersistProcessKeys";
+    const char method_name[] = "CTcdbSqlite::GetPersistProcessKeys";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -2141,11 +2148,11 @@ int CSqliteConfig::GetPersistProcessKeys( const char *persistProcessKeys )
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetRegistryClusterSet( int &count
-                                        , int max
-                                        , registry_configuration_t registryConfig[] )
+int CTcdbSqlite::GetRegistryClusterSet( int &count
+                                      , int max
+                                      , registry_configuration_t registryConfig[] )
 {
-    const char method_name[] = "CSqliteConfig::GetRegistryClusterSet";
+    const char method_name[] = "CTcdbSqlite::GetRegistryClusterSet";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -2269,11 +2276,11 @@ int CSqliteConfig::GetRegistryClusterSet( int &count
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetRegistryProcessSet( int &count
-                                        , int max
-                                        , registry_configuration_t registryConfig[] )
+int CTcdbSqlite::GetRegistryProcessSet( int &count
+                                      , int max
+                                      , registry_configuration_t registryConfig[] )
 {
-    const char method_name[] = "CSqliteConfig::GetRegistryProcessSet";
+    const char method_name[] = "CTcdbSqlite::GetRegistryProcessSet";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -2405,9 +2412,9 @@ int CSqliteConfig::GetRegistryProcessSet( int &count
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetUniqueString( int nid, int id, const char *uniqStr )
+int CTcdbSqlite::GetUniqueString( int nid, int id, const char *uniqStr )
 {
-    const char method_name[] = "CSqliteConfig::GetUniqueString";
+    const char method_name[] = "CTcdbSqlite::GetUniqueString";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -2526,11 +2533,11 @@ int CSqliteConfig::GetUniqueString( int nid, int id, const char *uniqStr )
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetUniqueStringId( int nid
-                                    , const char *uniqStr
-                                    , int &id )
+int CTcdbSqlite::GetUniqueStringId( int nid
+                                  , const char *uniqStr
+                                  , int &id )
 {
-    const char method_name[] = "CSqliteConfig::GetUniqueStringId";
+    const char method_name[] = "CTcdbSqlite::GetUniqueStringId";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -2650,9 +2657,9 @@ int CSqliteConfig::GetUniqueStringId( int nid
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::GetUniqueStringIdMax( int nid, int &id )
+int CTcdbSqlite::GetUniqueStringIdMax( int nid, int &id )
 {
-    const char method_name[] = "CSqliteConfig::GetUniqueStringIdMax";
+    const char method_name[] = "CTcdbSqlite::GetUniqueStringIdMax";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -2748,14 +2755,14 @@ int CSqliteConfig::GetUniqueStringIdMax( int nid, int &id )
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::SaveLNodeData( int         nid
-                                , int         pnid
-                                , int         firstCore
-                                , int         lastCore
-                                , int         processors
-                                , int         roles )
+int CTcdbSqlite::SaveLNodeData( int         nid
+                              , int         pnid
+                              , int         firstCore
+                              , int         lastCore
+                              , int         processors
+                              , int         roles )
 {
-    const char method_name[] = "CSqliteConfig::SaveLNodeData";
+    const char method_name[] = "CTcdbSqlite::SaveLNodeData";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -2920,12 +2927,12 @@ int CSqliteConfig::SaveLNodeData( int         nid
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::SavePNodeData( const char *name
-                                , int         pnid
-                                , int         excludedFirstCore
-                                , int         excludedLastCore )
+int CTcdbSqlite::SavePNodeData( const char *name
+                              , int         pnid
+                              , int         excludedFirstCore
+                              , int         excludedLastCore )
 {
-    const char method_name[] = "CSqliteConfig::SavePNodeData";
+    const char method_name[] = "CTcdbSqlite::SavePNodeData";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  
@@ -3057,19 +3064,19 @@ int CSqliteConfig::SavePNodeData( const char *name
     return( TCSUCCESS );
 }
 
-void CSqliteConfig::SetLNodeData( int nid
-                                , int pnid
-                                , const char *nodename
-                                , int excfirstcore
-                                , int exclastcore
-                                , int firstcore
-                                , int lastcore
-                                , int processors
-                                , int roles 
-                                , node_configuration_t &nodeConfig )
+void CTcdbSqlite::SetLNodeData( int nid
+                              , int pnid
+                              , const char *nodename
+                              , int excfirstcore
+                              , int exclastcore
+                              , int firstcore
+                              , int lastcore
+                              , int processors
+                              , int roles 
+                              , node_configuration_t &nodeConfig )
                                  
 {
-    const char method_name[] = "CSqliteConfig::SetLNodeData";
+    const char method_name[] = "CTcdbSqlite::SetLNodeData";
     TRACE_ENTRY;
 
     if ( TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST) )
@@ -3103,14 +3110,14 @@ void CSqliteConfig::SetLNodeData( int nid
     TRACE_EXIT;
 }
 
-void CSqliteConfig::SetPNodeData( int pnid
-                                , const char *nodename
-                                , int excfirstcore
-                                , int exclastcore
-                                , physical_node_configuration_t &pnodeConfig )
+void CTcdbSqlite::SetPNodeData( int pnid
+                              , const char *nodename
+                              , int excfirstcore
+                              , int exclastcore
+                              , physical_node_configuration_t &pnodeConfig )
                                  
 {
-    const char method_name[] = "CSqliteConfig::SetLNodeData";
+    const char method_name[] = "CTcdbSqlite::SetLNodeData";
     TRACE_ENTRY;
 
     if ( TcTraceSettings & (TC_TRACE_NODE | TC_TRACE_REQUEST) )
@@ -3133,11 +3140,11 @@ void CSqliteConfig::SetPNodeData( int pnid
     TRACE_EXIT;
 }
 
-int CSqliteConfig::SetPersistProcessData( const char       *persistkey
-                                        , const char       *persistvalue
-                                        , persist_configuration_t &persistConfig )
+int CTcdbSqlite::SetPersistProcessData( const char       *persistkey
+                                      , const char       *persistvalue
+                                      , persist_configuration_t &persistConfig )
 {
-    const char method_name[] = "CSqliteConfig::GetPersistProcessData";
+    const char method_name[] = "CTcdbSqlite::GetPersistProcessData";
     TRACE_ENTRY;
 
     char workValue[TC_PERSIST_KEY_MAX];
@@ -3178,6 +3185,14 @@ int CSqliteConfig::SetPersistProcessData( const char       *persistkey
         strncpy( persistConfig.program_name
                , workValue
                , sizeof(persistConfig.program_name) );
+        goto done;
+    }
+    pch = (char *) strstr( persistkey, PERSIST_PROGRAM_ARGS_KEY );
+    if (pch != NULL)
+    {
+        strncpy( persistConfig.program_args
+               , workValue
+               , sizeof(persistConfig.program_args) );
         goto done;
     }
     pch = (char *) strstr( persistkey, PERSIST_STDOUT_KEY );
@@ -3232,12 +3247,12 @@ done:
     return( TCSUCCESS );
 }
 
-int CSqliteConfig::UpdatePNodeData( int         pnid
-                                  , const char *name
-                                  , int         excludedFirstCore
-                                  , int         excludedLastCore )
+int CTcdbSqlite::UpdatePNodeData( int         pnid
+                                , const char *name
+                                , int         excludedFirstCore
+                                , int         excludedLastCore )
 {
-    const char method_name[] = "CSqliteConfig::UpdatePNodeData";
+    const char method_name[] = "CTcdbSqlite::UpdatePNodeData";
     TRACE_ENTRY;
 
     if ( !IsInitialized() )  

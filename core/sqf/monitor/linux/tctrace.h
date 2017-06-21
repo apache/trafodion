@@ -20,8 +20,8 @@
 //
 // @@@ END COPYRIGHT @@@
 ********************************************************************/
-#ifndef TRAFCONFIGTRACE_H_
-#define TRAFCONFIGTRACE_H_
+#ifndef TCTRACE_H_
+#define TCTRACE_H_
 
 #include "seabed/trace.h"
 
@@ -100,4 +100,4 @@ private:
     static const char *strTraceFileFb_;
 };
 
-#endif // TRAFCONFIG_H_
+#endif /* TCTRACE_H_ */
