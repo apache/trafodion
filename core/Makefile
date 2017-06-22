@@ -258,5 +258,5 @@ eclipseclean:
 trafinstall:
 	cd $(TRAF_HOME)/sql/scripts && install_traf_components
 
-lib_mgmt:
+lib_mgmt: foundation
 	cd sql/lib_mgmt && $(MAKE) all

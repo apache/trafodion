@@ -46,8 +46,10 @@
 #define SYSTEM_PROC_LS           "LS"
 #define SYSTEM_PROC_LSALL        "LSALL"
 #define SYSTEM_PROC_PUT          "PUT"
+#define SYSTEM_PROC_PUTFILE      "PUTFILE"
 #define SYSTEM_PROC_RM           "RM"
 #define SYSTEM_PROC_RMREX        "RMREX"
+#define SYSTEM_TMUDF_SYNCLIBUDF  "SYNCLIBUDF"
 
 // Create procedure text for system procedures
 static const QString seabaseProcAddlibDDL[] =
@@ -183,6 +185,25 @@ static const QString seabaseProcPutDDL[] =
   {" ; "}
 };
 
+static const QString seabaseProcPutFileDDL[] =
+{
+  {" CREATE PROCEDURE IF NOT EXISTS %s.\"%s\".PUTFILE "},
+  {" ( "},
+  {"  IN FILEDATA VARCHAR(102400) CHARACTER SET ISO88591, "},
+  {"  IN FILENAME VARCHAR(256) CHARACTER SET UTF8, "},
+  {"  IN ISFIRSTCHUNK INTEGER, "},
+  {"  IN ISLASTCHUNK INTEGER, "},
+  {"  IN OVERWRITEEXISTINGFILE INTEGER) "},
+  {"  EXTERNAL NAME 'org.trafodion.libmgmt.FileMgmt.putFile(java.lang.String,java.lang.String,int,int,int)' "},
+  {"  EXTERNAL SECURITY DEFINER "},
+  {"  LIBRARY %s.\"%s\".%s "},
+  {"  LANGUAGE JAVA "},
+  {"  PARAMETER STYLE JAVA "},
+  {"  READS SQL DATA "},
+  {"  NO TRANSACTION REQUIRED "},
+  {" ; "}
+};
+
 static const QString seabaseProcRmDDL[] = 
 {
   {"  CREATE PROCEDURE IF NOT EXISTS %s.\"%s\".RM "},
@@ -214,9 +235,21 @@ static const QString seabaseProcRmrexDDL[] =
   {" ; "}
 };
 
+  static const QString seabaseTMUDFSyncLibDDL[] = 
+{
+  {"  CREATE TABLE_MAPPING FUNCTION IF NOT EXISTS %s.\"%s\".SYNCLIBUDF() "},
+  {"  EXTERNAL NAME 'org.trafodion.libmgmt.SyncLibUDF' "},
+  {"  LIBRARY %s.\"%s\".%s "},
+  {"  LANGUAGE JAVA "},
+  {" ; "}
+};
+
 struct LibmgrRoutineInfo
 {
-  // name of the procedure
+  // type of the UDR (used in grant)
+  const char * udrType;
+
+  // name of the UDR
   const char * newName;
 
   // ddl stmt corresponding to the current ddl.
@@ -225,54 +258,76 @@ struct LibmgrRoutineInfo
 };
 
 static const LibmgrRoutineInfo allLibmgrRoutineInfo[] = {
-  {SYSTEM_PROC_ADDLIB, 
+  {"PROCEDURE",
+   SYSTEM_PROC_ADDLIB, 
    seabaseProcAddlibDDL, 
    sizeof(seabaseProcAddlibDDL)
   },
 
-  {SYSTEM_PROC_ALTERLIB, 
+  {"PROCEDURE",
+   SYSTEM_PROC_ALTERLIB, 
    seabaseProcAlterlibDDL, 
    sizeof(seabaseProcAlterlibDDL)
   },
 
-  {SYSTEM_PROC_DROPLIB, 
+  {"PROCEDURE",
+   SYSTEM_PROC_DROPLIB, 
    seabaseProcDroplibDDL, 
    sizeof(seabaseProcDroplibDDL)
   },
 
-  {SYSTEM_PROC_GETFILE, 
+  {"PROCEDURE",
+   SYSTEM_PROC_GETFILE, 
    seabaseProcGetfileDDL, 
    sizeof(seabaseProcGetfileDDL)
   },
 
-  {SYSTEM_PROC_HELP, 
+  {"PROCEDURE",
+   SYSTEM_PROC_HELP, 
    seabaseProcHelpDDL, 
    sizeof(seabaseProcHelpDDL)
   },
 
-  {SYSTEM_PROC_LS, 
+  {"PROCEDURE",
+   SYSTEM_PROC_LS, 
    seabaseProcLsDDL, 
    sizeof(seabaseProcLsDDL)
   },
 
-  {SYSTEM_PROC_LSALL, 
+  {"PROCEDURE",
+   SYSTEM_PROC_LSALL, 
    seabaseProcLsallDDL, 
    sizeof(seabaseProcLsallDDL)
   },
 
-  {SYSTEM_PROC_PUT, 
+  {"PROCEDURE",
+   SYSTEM_PROC_PUT, 
    seabaseProcPutDDL, 
    sizeof(seabaseProcPutDDL)
   },
 
-  {SYSTEM_PROC_RM, 
+  {"PROCEDURE",
+   SYSTEM_PROC_PUTFILE, 
+   seabaseProcPutFileDDL, 
+   sizeof(seabaseProcPutFileDDL)
+  },
+
+  {"PROCEDURE",
+   SYSTEM_PROC_RM, 
    seabaseProcRmDDL, 
    sizeof(seabaseProcRmDDL)
   },
 
-  {SYSTEM_PROC_RMREX, 
+  {"PROCEDURE",
+   SYSTEM_PROC_RMREX, 
    seabaseProcRmrexDDL, 
    sizeof(seabaseProcRmrexDDL)
+  },
+
+  {"FUNCTION",
+   SYSTEM_TMUDF_SYNCLIBUDF,
+   seabaseTMUDFSyncLibDDL,
+   sizeof(seabaseTMUDFSyncLibDDL)
   }
 
 };

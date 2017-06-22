@@ -42,6 +42,12 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsAction;
+import org.apache.hadoop.fs.permission.FsPermission;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,8 +58,7 @@ public class FileMgmt {
 	private static final long MAX_JAR_FILE_SIZE = 104857600;
 	private static final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private static final int MaxDataSize = 12800;
-	private static final String CHARTSET = "ISO-8859-1";
-	private static final String DEL_POSTFIX = ".DELETE";
+	private static final String CHARSET = "ISO-8859-1";
 
 	/**
 	 * Print help info
@@ -63,18 +68,18 @@ public class FileMgmt {
 	 */
 	public static void help(String[] helps) {
 		String[] help = new String[] {
-				"PUT - Upload a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]PUT for more info.",
-				"LS - List JARs. SHOWDDL PROCEDURE [SCHEMA NAME.]LS for more info.",
-				"LSALL - List all JARs. SHOWDDL PROCEDURE [SCHEMA NAME.]LSALL for more info.",
-				"RM - Remove a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.",
-				"RMREX - Remove JARs by a perticular pattern. SHOWDDL PROCEDURE [SCHEMA NAME.]RMREX for more info.",
-				"GETFILE - Download a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]GETFILE for more info.",
+				"PUTFILE - Upload a library file. SHOWDDL PROCEDURE [SCHEMA NAME.]PUTFILE for more info.",
+				"LS - List library files. SHOWDDL PROCEDURE [SCHEMA NAME.]LS for more info.",
+				"LSALL - List all library files. SHOWDDL PROCEDURE [SCHEMA NAME.]LSALL for more info.",
+				"RM - Remove a library file. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.",
+				"RMREX - Remove library files by a perticular pattern. SHOWDDL PROCEDURE [SCHEMA NAME.]RMREX for more info.",
+				"GETFILE - Download a library file. SHOWDDL PROCEDURE [SCHEMA NAME.]GETFILE for more info.",
 				"ADDLIB - Create a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ADDLIB for more info.",
 				"ALTERLIB - Update a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ALTERLIB for more info.",
 				"DROPLIB - Drop a library. SHOWDDL PROCEDURE [SCHEMA NAME.]DROPLIB for more info."
 		};
 		List<String> index = new ArrayList<String>(help.length);
-		index.add("PUT");
+		index.add("PUTFILE");
 		index.add("LS");
 		index.add("LSALL");
 		index.add("RM");
@@ -121,37 +126,18 @@ public class FileMgmt {
 			String localFile) throws SQLException {
 		checkFileName(fileName);
 		Connection conn = getConn();
-		Statement st = null;
-		String sql = "";
-		try {
-			st = conn.createStatement();
-			String userPath = getCodeFilePath(conn);
-			sql = "create library " + libName + " file '" + userPath
+		String userPath = getCodeFilePath(conn);
+		String sql = "create library " + libName + " file '" + userPath
 					+ fileName + "'";
-			if (hostName != null && !"".equals(hostName.trim())) {
-				sql += " HOST NAME '" + hostName + "'";
-			}
-			if (localFile != null && !"".equals(localFile.trim())) {
-				sql += " LOCAL FILE '" + localFile + "'";
-			}
-			st.execute(sql);
-		} catch(SQLException e){
-			LOG.error(sql,e);
-			throw e;
-		}finally {
-			if (st != null) {
-				try {
-					st.close();
-				} catch (Exception e) {
-				}
-			}
-			if (conn != null){
-				try {
-					conn.close();
-				} catch (Exception e) {
-				}
-			}
-		}
+
+                if (hostName != null && !"".equals(hostName.trim())) {
+                        sql += " HOST NAME '" + hostName + "'";
+                }
+                if (localFile != null && !"".equals(localFile.trim())) {
+                        sql += " LOCAL FILE '" + localFile + "'";
+                }
+
+                execSQL(sql, conn);
 	}
 
 	/**
@@ -169,7 +155,6 @@ public class FileMgmt {
 			String hostName, String localFile) throws SQLException {
 		checkFileName(fileName);
 		Connection conn = getConn();
-		Statement st = null;
 		String userPath = getCodeFilePath(conn);
 		String sql = "alter library " + libName + " FILE '" + userPath
 				+ fileName + "'";
@@ -180,22 +165,8 @@ public class FileMgmt {
 		if (localFile != null  && !"".equals(localFile.trim())) {
 			sql += " LOCAL FILE '" + localFile + "'";
 		}
-		try {
-			st = conn.createStatement();
-			st.execute(sql);
-		} catch(SQLException e){
-			LOG.error(sql,e);
-			throw e;
-		} finally {
-			if (st != null)
-				st.close();
-			if (conn != null){
-				try {
-					conn.close();
-				} catch (Exception e) {
-				}
-			}
-		}
+
+                execSQL(sql, conn);
 	}
 
 	/**
@@ -207,35 +178,25 @@ public class FileMgmt {
 	 * @throws SQLException
 	 */
 	public static void dropLib(String libName, String mode) throws SQLException {
-		String sql = null;
-		Connection con = getConn();
-		Statement st = null;
-		try {
-			st = con.createStatement();
-			sql = "drop library " + libName;
-			if (mode != null)
-				if (mode.trim().equalsIgnoreCase("RESTRICT"))
-					sql += " RESTRICT";
-				else if (mode.trim().equalsIgnoreCase("CASCADE"))
-					sql += " CASCADE";
+		String sql = "drop library " + libName;
 
-			st.execute(sql);
-		} catch(SQLException e){
-			LOG.error(sql,e);
-			throw e;
-		} finally {
-			if (st != null)
-				st.close();
-			if (con != null){
-				try {
-					con.close();
-				} catch (Exception e) {
-				}
-			}
-		}
+                if (mode != null)
+                        if (mode.trim().equalsIgnoreCase("RESTRICT"))
+                                sql += " RESTRICT";
+                        else if (mode.trim().equalsIgnoreCase("CASCADE"))
+                                sql += " CASCADE";
+
+                execSQL(sql, getConn());
 	}
 
 	public static void syncJar(String userPath, String fileName) throws SQLException, IOException {
+                // the local staging directory is the same as the destination directory
+                syncJarPdcp(userPath, userPath, fileName);
+        }
+
+	public static void syncJarPdcp(String stagingPath,
+                                       String dstDir,
+                                       String fileName) throws SQLException, IOException {
 		checkFileName(fileName);
 		String nodes = System.getenv("MY_NODES");
 		LOG.info("syncJars " + fileName + ", MY_NODES=" + nodes);
@@ -249,23 +210,68 @@ public class FileMgmt {
 			if (pdsh == null) {
 				pdsh = "/usr/bin/pdsh";
 			}
-			execShell(pdsh + " " + nodes + " mkdir -p " + userPath);
-			execShell(pdcp + " " + nodes + " " + userPath + fileName.trim() + " " + userPath + " ");
-			execShell(pdsh + " " + nodes + " chmod 755 " + userPath + fileName.trim());
+			execShell(pdsh + " " + nodes + " mkdir -p " + dstDir);
+			execShell(pdcp + " " + nodes + " " + stagingPath + fileName.trim() + " " + dstDir);
+			execShell(pdsh + " " + nodes + " chmod 755 " + dstDir + fileName.trim());
 		}
 	}
 	
-	public static void rmJar(String userPath, String fileName) throws SQLException, IOException {
+	static void syncLibViaHDFS(String fileName, Connection conn) throws SQLException, IOException {
 		checkFileName(fileName);
-		LOG.info("syncJars " + fileName);
-		String nodes = System.getenv("MY_NODES");
-		if (nodes != null && !"".equals(nodes.trim())) {
-			String pdsh = System.getenv("SQ_PDSH");
-			if (pdsh == null) {
-				pdsh = "/usr/bin/pdsh";
-			}
-			execShell(pdsh + " " + nodes + " rm -rf " + userPath + fileName.trim());
-		}
+
+                String stagingDirPath = getLocalStagingDirPath(conn);
+                Path srcLocalPath = new Path(stagingDirPath, fileName);
+                Path dstHdfsDir   = new Path(getHdfsStagingDirName(getCurrentUser(conn)));
+                Path dstHdfsPath  = new Path(dstHdfsDir, fileName);
+
+                try {
+                        // using HDFS Java interface
+                        Configuration conf = new Configuration(true);
+                        FileSystem  fs = FileSystem.get(dstHdfsPath.toUri(),conf);
+
+                        fs.mkdirs(dstHdfsDir, new FsPermission(FsAction.ALL,
+                                                               FsAction.NONE,
+                                                               FsAction.NONE));
+                        fs.copyFromLocalFile(false, // do not delete src
+                                             true,  // overwrite tgt
+                                             srcLocalPath,
+                                             dstHdfsPath);
+
+                        LOG.info("syncJar " + fileName + ", target=" + dstHdfsDir.toString());
+
+                        // now execute a TMUDF that will copy the file across all nodes
+
+                        String sql = "select count(*) from udf(\"_LIBMGR_\".SyncLibUDF('c','"+ fileName + "'))";
+                        String result = execSQL(sql, conn, true);
+
+                        fs.delete(dstHdfsPath, false);
+                        LOG.info("syncJar " + fileName + ", numSyncedNodes=" + result);
+                }
+                catch (Exception e1) {
+                        try {
+                                LOG.warn("syncJar " + fileName + ", sync via HDFS failed, trying pdcp");
+                                // try using pdcp instead, this may not
+                                // work on all systems
+                                syncJarPdcp(stagingDirPath,
+                                            getCodeFilePath(conn),
+                                            fileName);
+                        } catch (Exception e2) {
+                                LOG.error(e1.getMessage(), e1);
+                                LOG.error(e2.getMessage(), e2);
+                                throw new SQLException(e1);
+                        }
+                }
+	}
+	
+        public static void rmJar(String fileName, Connection conn) throws SQLException, IOException {
+		checkFileName(fileName);
+
+                // execute a TMUDF that will delete the file across all nodes
+
+		String sql = "select count(*) from udf(\"_LIBMGR_\".SyncLibUDF('d','"+ fileName + "'))";
+                String result = execSQL(sql, conn, true);
+
+                LOG.info("rmJar " + fileName + ", numSyncedNodes=" + result);
 	}
 
 	private static String execShell(String cmd) throws IOException {
@@ -332,7 +338,7 @@ public class FileMgmt {
 			byte bArray[] = new byte[MaxDataSize];
 			int bytesRead = rAFile.read(bArray, 0, MaxDataSize);
 			if (bytesRead != -1) {
-				fileData[0] = new String(Arrays.copyOf(bArray, bytesRead), CHARTSET);
+				fileData[0] = new String(Arrays.copyOf(bArray, bytesRead), CHARSET);
 				fileLength[0] = file.length();
 				LOG.info("Download: " + fileName + ", offset:" + offset + ",compressed length:" + fileData[0].length()
 						+ ",file length:" + fileLength[0]);
@@ -364,33 +370,19 @@ public class FileMgmt {
 		Connection conn = getConn();
 		LOG.info("Remove " + fileName);
 		String userPath = getCodeFilePath(conn);
-		close(conn);
-		File file = new File(userPath + fileName);
-		File delFile = new File(fileName + DEL_POSTFIX);
-		boolean isSuccess = false;
-		if (file.exists()) {
-			try {
-				boolean isRenamed = file.renameTo(delFile);
-				if (isRenamed)
-					rmJar(userPath, fileName);
-				else {
-					throw new IOException("Delete " + fileName + " failed. File metrics: CanRead is " + file.canRead()
-							+ ", canWrite is " + file.canWrite() + ", canExecute is " + file.canExecute());
-				}
-				LOG.info("Remove " + fileName + " successfully!");
-				isSuccess = true;
-				return;
-			} finally {
-				if (isSuccess) {
-					delFile.delete();
-				} else {
-					delFile.renameTo(file);
-				}
-			}
-		} else {
-			LOG.error("No such file[" + fileName + "]");
-			throw new SQLException("No such file[" + fileName + "]");
-		}
+                try {
+                        File file = new File(userPath + fileName);
+                        if (file.exists()) {
+                            rmJar(fileName, conn);
+                            LOG.info("Removed " + fileName + " successfully!");
+                            return;
+                        } else {
+                            LOG.error("No such file[" + fileName + "]");
+                            throw new SQLException("No such file[" + fileName + "]");
+                        }
+                } finally {
+                        close(conn);
+                }
 	}
 
 	/**
@@ -408,36 +400,21 @@ public class FileMgmt {
 		Connection conn = getConn();
 		LOG.info("Try to remove files[" + pattern + "]");
 		String userPath = getCodeFilePath(conn);
-		close(conn);
 		File[] files = getFiles(pattern, new File(userPath));
-		File[] delFiles = new File[files.length];
 		StringBuilder sb = new StringBuilder();
 		sb.append("<rmRex>");
 		sb.append(toXML(files, "rmList"));
 		sb.append("<message>");
-		boolean hasError = false;
-		boolean isSuccess = false;
-		try {
-			for (int i = 0; i < files.length; i++) {
-				delFiles[i] = new File(files[i].getAbsolutePath() + DEL_POSTFIX);
-				files[i].renameTo(delFiles[i]);
-			}
-			rmJar(userPath, pattern);
-			isSuccess = true;
-		} finally {
-			if (isSuccess) {
-				for (int i = 0; i < delFiles.length; i++) {
-					delFiles[i].delete();
-				}
-			} else {
-				for (int i = 0; i < delFiles.length; i++) {
-					delFiles[i].renameTo(files[i]);
-				}
-			}
-		}
-		if (!hasError) {
-			sb.append("Remove the files successfully!");
-		}
+
+                try {
+                        for (int i = 0; i < files.length; i++) {
+                                rmJar(files[i].getName(), conn);
+                        }
+                } finally {
+                        close(conn);
+                }
+
+                sb.append("Removed the files successfully!");
 		sb.append("</message>");
 		sb.append("</rmRex>");
 		names[0] = sb.toString();
@@ -490,7 +467,7 @@ public class FileMgmt {
 	public static void put(String fileData, String fileName, int appendFlag, int overwriteOnCreate) throws SQLException, IOException {
 		checkFileName(fileName);
 		try {
-			byte[] data = fileData.getBytes(CHARTSET);
+			byte[] data = fileData.getBytes(CHARSET);
 
 			Connection conn = getConn();
 			LOG.info("Put " + fileName + ", length: " + data.length + ", file string length:" + fileData.length());
@@ -534,11 +511,122 @@ public class FileMgmt {
 		}
 	}
 
-	private static void checkFileName(String fileName) throws SQLException {
+	/**
+	 * upload a library (jar or DLL) in one or more chunks, passed in as strings
+	 * 
+	 * @param fileData     a string (chunk) of bytes to be added to the file on
+         *                     the server side. These bytes are assumed to be in the
+         *                     ISO-8859-1 character set, which allows any bit combination,
+         *                     so passing arbitrary bit patterns is ok.
+	 * @param fileName     unqualified name of the target file (library file)
+         * @param isFirstChunk indicates whether this is the first chunk for a file
+         * @param isLastChunk  indicates whether this is the last chunk for a file
+         * @param overwriteExistingFile (used only for the first chunk) indicates
+         *                     whether we should silently overwrite an existing file
+         *                     (true) or raise an exception, if file "fileName"
+         *                     already exists (false)
+	 * @throws SQLException
+         * @throws IOException
+	 */
+        public static void putFile(String fileData,
+                                   String fileName,
+                                   int isFirstChunk,
+                                   int isLastChunk,
+                                   int overwriteExistingFile)
+            throws SQLException, IOException {
+		checkFileName(fileName);
+		try {
+			byte[] data = fileData.getBytes(CHARSET);
+
+			Connection conn = getConn();
+			String stagingPath = getLocalStagingDirPath(conn);
+			String fname = stagingPath + fileName;
+                        String dstFileName = getCodeFilePath(conn) + fileName;
+                        boolean isFirst = (isFirstChunk != 0);
+                        boolean isLast = (isLastChunk != 0);
+
+			LOG.info("PutFile " + fileName +
+                                 (isFirst && isLast ? "(single chunk)" :
+                                  (isFirst ? "(first chunk)" :
+                                   (isLast ? "(last chunk)" : "(intermediate chunk)"))) +
+                                 ", length: " + data.length + ", file string length:" + fileData.length());
+
+			if (isFirst &&
+                            overwriteExistingFile == 0 &&
+                            new File(dstFileName).exists()) {
+				throw new IOException("File " + fileName + " already exists!");
+			}
+			checkFile(fname, data.length);
+                        File stagingDir = null;
+			FileOutputStream fos = null;
+			FileChannel channel = null;
+			FileLock lock = null;
+			try {
+                                if (isFirst) {
+                                        stagingDir = new File(stagingPath);
+
+                                        if (!stagingDir.exists())
+                                            stagingDir.mkdir();
+                                }
+
+				fos = new FileOutputStream(fname, !isFirst);
+				channel = fos.getChannel();
+				lock = channel.tryLock();
+				if (lock != null) {
+					fos.write(data);
+					fos.flush();
+				}else{
+					throw new SQLException("File "+fileName+" is locked, please try again later.");
+				}
+                                if (isLast)
+                                        syncLibViaHDFS(fileName, conn);
+			} finally {
+				if(lock != null){
+					lock.release();
+				}
+				if(channel !=null){
+					channel.close();
+				}
+				if (fos != null)
+					fos.close();
+                                if (isLast) {
+                                        // delete the file in the staging area
+                                        new File(fname).delete();
+                                }
+                                close(conn);
+			}
+
+			LOG.info("PutFile method out !!! " + fileName);
+		} catch (Throwable t) {
+			LOG.error(t.getMessage(), t);
+			throw new SQLException(t.getMessage());
+		}
+	}
+
+	static void checkFileName(String fileName) throws SQLException {
 		if (fileName.contains("/") || fileName.contains("\\"))
 			throw new SQLException("Illegal file name: " + fileName
 					+ ". File name must not contain \"/\".");
 	}
+
+        static String getHdfsStagingDirName(String userName) {
+            return "/user/trafodion/udr/lib/staging/" + userName;
+        }
+
+        static String getLocalLibDirName(String userName) throws SQLException {
+		String root = System.getenv("TRAF_HOME");
+		if (root == null || "".equals(root.trim())) {
+			LOG.error("Cant get your traf installation path!");
+			throw new SQLException("Cant get your traf installation path!");
+		}
+		File file = new File(root + "/udr/lib/" + userName);
+		if (!file.exists()) {
+			file.mkdirs();
+		} else if (!file.isDirectory()) {
+			throw new SQLException("User Directory is not valid or you dont have permission!");
+		}
+		return file.getAbsolutePath() + "/";
+        }
 
 	private static void checkFile(String fname, int dataSize) throws SQLException {
 		File jar = new File(fname);
@@ -550,19 +638,15 @@ public class FileMgmt {
 
 	private static String getCodeFilePath(Connection conn) throws SQLException {
 		String user = getCurrentUser(conn);
-		String root = System.getenv("TRAF_HOME");
-		if (root == null || "".equals(root.trim())) {
-			LOG.error("Cant get your traf installation path!");
-			throw new SQLException("Cant get your traf installation path!");
-		}
-		File file = new File(root + "/udr/lib/" + user);
-		if (!file.exists()) {
-			file.mkdirs();
-		} else if (!file.isDirectory()) {
-			throw new SQLException("User Directory is not valide or you dont have permission!");
-		}
-		LOG.info("SPJ JARs location: " + file.getAbsolutePath());
-		return file.getAbsolutePath() + "/";
+                String result = getLocalLibDirName(user);
+		LOG.info("SPJ JARs location: " + result);
+		return result;
+	}
+
+	private static String getLocalStagingDirPath(Connection conn) throws SQLException {
+                // this is the local directory where the put() method
+                // stores the file as it is being assembled from chunks
+                return getCodeFilePath(conn) + "staging/";
 	}
 
 	private static Connection getConn() throws SQLException {
@@ -577,37 +661,54 @@ public class FileMgmt {
 		return conn;
 	}
 
+        private static void execSQL(String sqlString,
+                                    Connection conn) throws SQLException {
+            execSQL(sqlString, conn, false);
+        }
+
+        private static String execSQL(String sqlString,
+                                      Connection conn,
+                                      boolean executeQuery) throws SQLException {
+            Statement st = null;
+            ResultSet rs = null;
+            String result = null;
+
+            try {
+                st = conn.createStatement();
+
+                if (executeQuery) {
+                    rs = st.executeQuery(sqlString);
+                    if (rs.next()) {
+                        result = rs.getString(1);
+                    }
+                }
+                else
+                    st.execute(sqlString);
+            } catch (Exception e) {
+                LOG.error(e.getMessage(), e);
+                throw new SQLException(e);
+            } finally {
+                if (rs != null) {
+                    try {
+                        rs.close();
+                    } catch (Exception e) {
+                        LOG.warn(e.getMessage(), e);
+                    }
+                }
+                if (st != null) {
+                    try {
+                        st.close();
+                    } catch (Exception e) {
+                        LOG.warn(e.getMessage(), e);
+                    }
+                }
+            }
+            return result;
+        }
+
 	private static String getCurrentUser(Connection conn) throws SQLException {
-		Statement st = null;
-		ResultSet rs = null;
-		String user = null;
-		try {
-			st = conn.createStatement();
-			rs = st.executeQuery("values(session_user)");
-			if (rs.next()) {
-				user = rs.getString(1);
-			}
-		} catch (Exception e) {
-			LOG.error(e.getMessage(), e);
-			throw new SQLException(e);
-		} finally {
-			if (rs != null) {
-				try {
-					rs.close();
-				} catch (Exception e) {
-					LOG.warn(e.getMessage(), e);
-				}
-			}
-			if (st != null) {
-				try {
-					st.close();
-				} catch (Exception e) {
-					LOG.warn(e.getMessage(), e);
-				}
-			}
-		}
-		
-		return user.replaceAll("[\\\\/]", "_");
+            String user = execSQL("values(session_user)", conn, true);
+            return user.replaceAll("[\\\\/]", "_");
 	}
 
 	private static File[] getFiles(String pattern, File dir) {
@@ -616,7 +717,7 @@ public class FileMgmt {
 
 			@Override
 			public boolean accept(File name) {
-				if (name == null || !name.isFile() || name.getName().endsWith(DEL_POSTFIX)) {
+				if (name == null || !name.isFile()) {
 					return false;
 				}
 				return name.getName().trim().toUpperCase().matches(p);

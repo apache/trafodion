@@ -31,33 +31,31 @@ make clean && make all
 
   Initialization
 
-cds && ./init_libmgmt.sql
+sqlci
+initialize trafodion, create library management;
+
+   if already initialized, do the following:
+
+sqlci
+initialize trafodion, upgrade library management;
+
 
    SPJ Example
 
-DB_LIBMGR.HELP(INOUT COMMANDNAME VARCHAR)
+"_LIBMGR_".HELP(INOUT COMMANDNAME VARCHAR)
  
 E.g.
  
 trafci>set param ?p1 help;
  
-trafci>call DB_LIBMGR.HELP(?p1)
- 
-PUT - Upload a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]PUT for more info.
- 
-LS - List JARs. SHOWDDL PROCEDURE [SCHEMA NAME.]LS for more info.
- 
-LSALL - List all JARs. SHOWDDL PROCEDURE [SCHEMA NAME.]LSALL for more info. 
- 
-RM - Remove a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.
+trafci>call "_LIBMGR_".HELP(?p1);
 
-RMREX - Remove JARs by a perticular pattern. SHOWDDL PROCEDURE  [SCHEMA NAME.]RMREX for more info.
-
-GETFILE - Download a JAR. SHOWDDL PROCEDURE [SCHEMA NAME.]GETFILE for more info.
-
+PUTFILE - Upload a library file. SHOWDDL PROCEDURE [SCHEMA NAME.]PUTFILE for more info.
+LS - List library files. SHOWDDL PROCEDURE [SCHEMA NAME.]LS for more info.
+LSALL - List all library files. SHOWDDL PROCEDURE [SCHEMA NAME.]LSALL for more info.
+RM - Remove a library file. SHOWDDL PROCEDURE [SCHEMA NAME.]RM for more info.
+RMREX - Remove library files by a perticular pattern. SHOWDDL PROCEDURE [SCHEMA NAME.]RMREX for more info.
+GETFILE - Download a library file. SHOWDDL PROCEDURE [SCHEMA NAME.]GETFILE for more info.
 ADDLIB - Create a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ADDLIB for more info.
-
 ALTERLIB - Update a library. SHOWDDL PROCEDURE [SCHEMA NAME.]ALTERLIB for more info.
-
 DROPLIB - Drop a library. SHOWDDL PROCEDURE [SCHEMA NAME.]DROPLIB for more info.
-

@@ -12278,6 +12278,8 @@ Context* RelRoot::createContextForAChild(Context* myContext,
   // the optimizer should attempt ESP parallelism.
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
   DefaultToken attESPPara = CURRSTMT_OPTDEFAULTS->attemptESPParallelism();
+  NABoolean hasTMUDFsOrLRU = (getGroupAttr()->getNumTMUDFs() > 0 ||
+                              containsLRU());
 
   // heuristics for nice context we want to detect the group which is just
   // below root. For example if group by is just below root we want it to
@@ -12318,9 +12320,11 @@ Context* RelRoot::createContextForAChild(Context* myContext,
 
   // Regardless of how the ATTEMPT_ESP_PARALLELISM CQD is set, some operations
   // like LRU always execute under ESPs for partitioned tables.
-  // These are indicated by mustUseESPs() == TRUE.
-  // Note that some conditions below may still override this.
-  if ( ((CURRSTMT_OPTDEFAULTS->attemptESPParallelism() != DF_OFF) OR mustUseESPs())
+  // Note that TMUDFs can control their own degree of parallelism,
+  // and that the method to do this is called after we reach here.
+  // Note also that some conditions below may still override this.
+  if ( ((CURRSTMT_OPTDEFAULTS->attemptESPParallelism() != DF_OFF) OR
+        hasTMUDFsOrLRU)
       // QSTUFF
       // we don't support paralled execution in the get_next
       // protocol yet - but for streams there should not be
@@ -12372,7 +12376,7 @@ Context* RelRoot::createContextForAChild(Context* myContext,
         (childOpType != REL_EXE_UTIL) &&
         (numExtractStreams_ == 0) &&
         !isFastLoadIntoTrafodion &&
-        !mustUseESPs())
+        !hasTMUDFsOrLRU)
     {
         countOfCPUs = 
             CURRSTMT_OPTDEFAULTS->getMaximumDegreeOfParallelism();
@@ -12504,7 +12508,7 @@ Context* RelRoot::createContextForAChild(Context* myContext,
     // To be replaced later by a different CQD
     if ( CmpCommon::getDefault(HBASE_RANGE_PARTITIONING) == DF_OFF  ||
          isASON ||
-         mustUseESPs())
+         hasTMUDFsOrLRU)
       canAdjustDoP = FALSE;
 
     // Adjust DoP based on table size, if possible
