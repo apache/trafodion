@@ -45,7 +45,7 @@ BEGIN
             VALUE "FileDescription", "TRAF ODBC TCPIPV6 DLL"
             VALUE "FileVersion", "2.2.0.0"
             VALUE "InternalName", "TRAF ODBC TCPIPV6 DLL"
-            VALUE "LegalCopyright", "?Copyright 2015-2016 Apache Software Foundation"
+            VALUE "LegalCopyright", "?Copyright 2015-2017 Apache Software Foundation"
             VALUE "OriginalFilename", "traf_tcpipv60100.dll"
             VALUE "ProductName", "TRAF ODBC"
             VALUE "ProductVersion", "2.2.0.0"
