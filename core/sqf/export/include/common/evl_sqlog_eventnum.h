@@ -810,7 +810,7 @@
 /* Module: persistconfig.cxx = 36 */
 #define MON_PERSISTCONFIG_ADDCONFIG_1       101360101
 
-/* Module: zoonode.cxx = 37 */
+/* Module: zclient.cxx = 37 */
 #define MON_ZCLIENT_ZCLIENT_1               101370101
 #define MON_ZCLIENT_ZCLIENT_2               101370102
 #define MON_ZCLIENT_ZCLIENT_3               101370103
@@ -846,8 +846,49 @@
 #define MON_ZCLIENT_CHECKMYZNODE_1          101371901
 #define MON_ZCLIENT_CHECKMYZNODE_2          101371902
 
-/* Module: sqliteconfig.cxx = 90 */
-#define MON_DATABASE_ERROR                  101900101
+/* Module: zconfig.cxx = 38 */
+#define ZCONFIG_ZCONFIG_1                   101380101
+#define ZCONFIG_ZCONFIG_2                   101380102
+#define ZCONFIG_ZCONFIG_3                   101380103
+#define ZCONFIG_ZCONFIG_4                   101380104
+#define ZCONFIG_CHECKCONFIG_1               101380201
+#define ZCONFIG_CHECKCONFIG_2               101380202
+#define ZCONFIG_GETCONFIGZNODESCHILDREN_1   101380301
+#define ZCONFIG_GETZNODEDATA_1              101380401
+#define ZCONFIG_GETZNODEDATA_2              101380402
+#define ZCONFIG_ISZNODEEXISTENT_1           101380501
+#define ZCONFIG_ISZNODEEXISTENT_2           101380502
+#define ZCONFIG_MAKECONFIGZNODE_1           101380601
+#define ZCONFIG_REGISTERZNODE_1             101380701
+#define ZCONFIG_SETZNODEWATCH_1             101380801
+#define ZCONFIG_SETZNODEWATCH_2             101380802
+#define ZCONFIG_WATCHCONFIG_1               101380901
+#define ZCONFIG_WATCHCONFIG_2               101380902
+#define ZCONFIG_WATCHCONFIG_2               101380902
+#define ZCONFIG_WATCHCONFIGZNODE_1          101381001
+#define ZCONFIG_DELETECONFIGZNODE_1         101381001
+#define ZCONFIG_DELETECONFIGZNODE_2         101381002
+#define ZCONFIG_DELETECONFIGZNODE_3         101381003
+
+/* Module: tcdb.cxx = 90 */
+#define TCDB_TCDB_1                         101900101
+#define TCDB_TCDB_2                         101900102
+#define TCDB_TCDB_3                         101900103
+
+/* Module: tcdbzstore.cxx = 91 */
+#define TCDB_ZSTORE_SESSIONWATCHER_1        101910101
+#define TCDB_ZSTORE_SESSIONWATCHER_2        101910102
+#define TCDB_ZSTORE_ZSTORE_1                101910201
+#define TCDB_ZSTORE_ZSTORE_2                101910202
+#define TCDB_ZSTORE_ZSTORE_3                101910203
+#define TCDB_ZSTORE_ZSTORE_4                101910204
+#define TCDB_ZSTORE_MAKECLUSTERZNODES_1     101910301
+#define TCDB_ZSTORE_MAKECLUSTERZNODES_2     101910302
+#define TCDB_ZSTORE_MAKECLUSTERZNODES_3     101910303
+
+/* Module: tcdbsqlite.cxx = 92 */
+#define SQLITE_DB_ACCESS_ERROR              101920101
+
 
 /**********************************************/
 

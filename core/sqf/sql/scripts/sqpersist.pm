@@ -40,6 +40,7 @@ my $g_prefixSave;
 my $g_processName;
 my $g_processType;
 my $g_programName;
+my $g_programArgs;
 my $g_requiresDtm;
 my $g_stdout;
 my $g_persistRetries;
@@ -246,7 +247,7 @@ sub parseStatement {
             my $eq;
             ($eq, $s) = parseEq($s);
             if ($eq) {
-                if ($s =~ /([a-zA-Z0-0_]+)/) {
+                if ($s =~ /([a-zA-Z0-9_]+)/) {
                     $g_programName = $1;
                     $s =~ s:$1::;
                     $g_opts |= 0x4;
@@ -255,6 +256,27 @@ sub parseStatement {
                 } else {
                     displayStmt($g_ok);
                     print "   Error: Expecting <program-name> e.g. tm, but saw $s\n"; #T
+                }
+            }
+        }
+    } elsif ($s =~ /(^[A-Z]+)(_PROGRAM_ARGS)\s*/) {
+        my $prefix = $1;
+        my $k = $2;
+        checkPrefix($prefix);
+        $s =~ s:$prefix$2\s*::;
+        if (validKey($prefix)) {
+            my $eq;
+            ($eq, $s) = parseEq($s);
+            if ($eq) {   # ([a-zA-Z0-9_]+)
+                if ($s =~ /([a-zA-Z0-9\!-\/\:-\@\[-\`\{-\~\h10]*)/) {
+                    $g_programArgs = $1;
+                    $s =~ s:$1::;
+                    $g_opts |= 0x80;
+                    push(@g_dbList, $g_prefix . $k, $g_programArgs);
+                    parseEnd($s);
+                } else {
+                    displayStmt($g_ok);
+                    print "   Error: Expecting <args> e.g. -t 1, but saw $s\n"; #T
                 }
             }
         }
@@ -382,6 +404,7 @@ sub resetVars
     $g_processName = '';
     $g_processType = '';
     $g_programName = '';
+    $g_programArgs = '';
     $g_requiresDtm = 0;
     $g_stdout = '';
     $g_persistRetries = '';
@@ -456,6 +479,11 @@ sub validatePrefix
         if (($g_opts & 0x40) == 0) {
             displayStmt($g_ok);
             my $str = "_PERSIST_ZONES";
+            print "   Error: missing $g_prefix$str\n"; #T
+        }
+        if (($g_opts & 0x80) == 0) {
+            displayStmt($g_ok);
+            my $str = "_PROGRAM_ARGS";
             print "   Error: missing $g_prefix$str\n"; #T
         }
         resetVars();

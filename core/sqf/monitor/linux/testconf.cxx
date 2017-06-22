@@ -197,7 +197,7 @@ int TestClusterConfig( void )
     CPersistConfig *persistConfig;
     cpu_set_t       coreMask;
 
-    printf( "BEGIN 'sqconfig.db' Test\n" );
+    printf( "BEGIN Trafodion Configuration Test\n" );
     
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
     if ( clusterConfig.Initialize() )
@@ -399,15 +399,15 @@ int TestClusterConfig( void )
         }
         else
         {
-            printf( "FAILED 'sqconfig.db' Load\n" );
+            printf( "FAILED Trafodion Configuration Load\n" );
         }
     }
     else
     {
-        printf( "FAILED 'sqconfig.db' Initialize\n" );
+        printf( "FAILED  Trafodion Configuration Initialize\n" );
     }
 
-    printf( "\nEND 'sqconfig.db' Test\n" );
+    printf( "\nEND Trafodion Configuration Test\n" );
     return( rc );
 }
 

@@ -44,10 +44,12 @@ public:
     void            Clear( void );
     bool            DeleteNodeConfig( int  pnid );
     bool            Initialize( void );
+    bool            Initialize( const char *traceFile );
     void            InitCoreMask( cpu_set_t &coreMask );
     inline bool     IsConfigReady( void ) { return( nodeReady_ && persistReady_ ); }
     inline bool     IsNodeReady( void ) { return( nodeReady_ ); }
     inline bool     IsPersistReady( void ) { return( persistReady_ ); }
+    inline TC_STORAGE_TYPE GetStorageType( void ) { return(trafConfigStorageType_); }
     bool            LoadConfig( void );
     bool            LoadNodeConfig( void );
     bool            LoadPersistConfig( void );
@@ -75,55 +77,10 @@ private:
     bool            persistReady_; // true when persist configuration loaded
     bool            newPNodeConfig_;
     bool            trafConfigInitialized_;
+    TC_STORAGE_TYPE trafConfigStorageType_;
     CPNodeConfig   *prevPNodeConfig_;
     CLNodeConfig   *prevLNodeConfig_;
     CPersistConfig *prevPersistConfig_;
-#if 0
-    bool       excludedCores_;
-    bool       newPNodeConfig_;
-    bool       newLNodeConfig_;
-    int        currNid_;
-    int        currPNid_;
-    int        currSPNid_;
-    char       currNodename_[MPI_MAX_PROCESSOR_NAME];
-    cpu_set_t  currExcludedCoreMask_;
-    cpu_set_t  currCoreMask_;
-    int        currExcludedFirstCore_;
-    int        currExcludedLastCore_;
-    int        currFirstCore_;
-    int        currLastCore_;
-    int        currProcessor_;
-    ZoneType   currZoneType_;
-    CPNodeConfig *currPNodeConfig_;
-    int        prevNid_;
-    int        prevPNid_;
-    int        prevSPNid_;
-    char       prevNodename_[MPI_MAX_PROCESSOR_NAME];
-    cpu_set_t  prevExcludedCoreMask_;
-    cpu_set_t  prevCoreMask_;
-    int        prevExcludedFirstCore_;
-    int        prevExcludedLastCore_;
-    int        prevFirstCore_;
-    int        prevLastCore_;
-    int        prevProcessor_;
-    ZoneType   prevZoneType_;
-    int        sparePNid_[MAX_NODES];
-    int        spareIndex_;
-    CPNodeConfig *prevPNodeConfig_;
-    CLNodeConfig *lnodeConfig_;
-    char            persistPrefix_[PERSIST_KEY_MAX];
-    char            processNamePrefix_[PERSIST_VALUE_MAX];
-    char            processNameFormat_[PERSIST_VALUE_MAX];
-    char            stdoutPrefix_[PERSIST_VALUE_MAX];
-    char            stdoutFormat_[PERSIST_VALUE_MAX];
-    char            programName_[PERSIST_VALUE_MAX];
-    char            zoneFormat_[PERSIST_VALUE_MAX];
-    PROCESSTYPE     processType_;
-    bool            requiresDTM_;
-    int             persistRetries_;
-    int             persistWindow_;
-    CPersistConfig *persistConfig_;
-#endif
 
     void  AddNodeConfiguration( pnodeConfigInfo_t &pnodeConfigInfo
                               , lnodeConfigInfo_t &lnodeConfigInfo );

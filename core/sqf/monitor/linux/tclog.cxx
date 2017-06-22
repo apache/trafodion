@@ -34,8 +34,8 @@ using namespace std;
 #include <sys/types.h>
 #include <unistd.h>
 #include <linux/unistd.h>
-#include "trafconfigtrace.h"
-#include "trafconfiglog.h"
+#include "tctrace.h"
+#include "tclog.h"
 
 #define gettid() syscall(__NR_gettid)
 
