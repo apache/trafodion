@@ -2068,7 +2068,15 @@ short NodeMap::codeGen(const PartitioningFunction *partFunc,
 NABoolean
 NodeMap::hasRemotePartitions() const
 {
-  short sysNum = OSIM_MYSYSTEMNUMBER();
+  short sysNum;
+  try {
+      sysNum = OSIM_MYSYSTEMNUMBER();
+  }
+  catch(OsimLogException & e)
+  {
+        OSIM_errorMessage(e.getErrMessage());
+        return FALSE;
+  }
 
   for (ULng32 i = 0; i < getNumEntries(); i++) {
     const NodeMapEntry *ne = getNodeMapEntry(i); 
@@ -2106,7 +2114,7 @@ void NodeMap::assignScanInfos(HivePartitionAndBucketKey *hiveSearchKey)
   NABoolean useLocality = useLocalityForHiveScanInfo();
   // distribute <n> files associated the hive scan among numESPs.
   HiveFileIterator i;
-  HHDFSStatsBase selectedStats;
+  HHDFSStatsBase selectedStats(/* HHDFSTableStats *table */ NULL);  // TODO: fix this later
 
   CMPASSERT(type_ = HIVE);
   hiveSearchKey->accumulateSelectedStats(selectedStats);

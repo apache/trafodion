@@ -14506,7 +14506,7 @@ PhysicalProperty * FileScan::synthHiveScanPhysicalProperty(
   const HHDFSTableStats *tableStats = hiveSearchKey_->getHDFSTableStats();
 
   // stats for partitions/buckets selected by predicates
-  HHDFSStatsBase selectedStats;
+  HHDFSStatsBase selectedStats((HHDFSTableStats *)tableStats);
 
   hiveSearchKey_->accumulateSelectedStats(selectedStats);
 
