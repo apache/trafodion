@@ -323,13 +323,13 @@ The following table summarizes the {project-name} SQL data types:
 [cols="14%,14%,24%,24%,24%",options="header"]
 |===
 | Category | Type | SQL Designation | Description | Size or Range^1^
-.7+| Character String Data Type .3+| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 32707 characters^2^
-| NCHAR                | Fixed-length character data in predefined national character set | 1 to 32707 bytes^3^ ^7^
-| NATIONAL CHAR[ACTER] | Fixed-length character data in predefined national character set | 1 to 32707 bytes^3^ ^7^
-.4+| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 32703 characters^4^
-| CHAR[ACTER] VARYING          | Variable-length ASCII character string | 1 to 32703 characters^4^
-| NCHAR VARYING                | Variable-length ASCII character string | 1 to 32703 bytes^4^ ^7^
-| NATIONAL CHAR[ACTER] VARYING | Variable-length ASCII character string | 1 to 32703 characters^4^ ^7^
+.7+| Character String Data Type .3+| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 200000 characters^2^ ^8^
+| NCHAR                | Fixed-length character data in predefined national character set | 1 to 200000 bytes^3^ ^7^ ^9^
+| NATIONAL CHAR[ACTER] | Fixed-length character data in predefined national character set | 1 to 200000 bytes^3^ ^7^ ^9^
+.4+| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
+| CHAR[ACTER] VARYING          | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
+| NCHAR VARYING                | Variable-length ASCII character string | 1 to 200000 bytes^4^ ^7^ ^9^
+| NATIONAL CHAR[ACTER] VARYING | Variable-length ASCII character string | 1 to 200000 characters^4^ ^7^ ^8^
 .6+| Datetime Data Types .6+| Date-Time | | Point in time, using the Gregorian calendar and a 24 hour clock system. The five supported designations are listed below.
 | YEAR 0001-9999 +
 MONTH 1-12 +
@@ -354,10 +354,10 @@ FRACTION in 4 bytes +
 | DATE                         | Date                                   | Format as YYYY-MM-DD; actual database storage size is 4 bytes
 | TIME                         | Time of day, 24 hour clock, no time precision. | Format as HH:MM:SS; actual database storage size is 3 bytes
 | TIME (with time precision)   | Time of day, 24 hour clock, with time precision | Format as HH:MM:SS.FFFFFF; actual database storage size is 7 bytes
-| TIMESTAMP                     | Point in time, no time precision | Format as YYYY-MM-DD HH:MM:SS; actual database storage size is 7 bytes
+| TIMESTAMP                     | Point in time, no time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 11 bytes
 | TIMESTAMP (with time precision) | Point in time, with time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 1 byte
 | Interval Data Types |Interval | INTERVAL | Duration of time; value is in the YEAR/MONTH range or the DAY/HOUR/MINUTE/YEAR/SECOND/FRACTION range
-| YEAR no constraint^6^ +
+| YEAR no constraint^5^ +
 MONTH 0-11 +
 DAY no constraint +
 HOUR 0-23 +
@@ -390,7 +390,7 @@ length of 8 bytes.
 * _precision_ specifies the allowed number of decimal digits.
 
 
-1. The size of a column that allows null values is 2 bytes larger than the size for the defined data type.
+1.  The size of a column that allows null values is 2 bytes larger than the size for the defined data type.
 2.  The maximum row size is 32708 bytes, but the actual row size is less than that because of bytes used by
 null indicators, varchar column length indicators, and actual data encoding.
 3.  Storage size is the same as that required by CHAR data type but store only half as many characters depending
@@ -402,6 +402,8 @@ Any INTERVAL field that is a starting field can have up to 18 digits minus the n
 The maximum is 16353 if the national character set was specified at installation time as UTF8.
 7.  The maximum is 32703 if the national character set was specified at installation time to be ISO88591.
 The maximum is 16351 if the national character set was specified at installation time as UTF8.
+8.  It defaults to 200000 characters and can be declared explicitly by using the TRAF_MAX_CHARACTER_COL_LENGTH CQD.
+9.  It defaults to 200000 bytes and can be declared explicitly by using the TRAF_MAX_CHARACTER_COL_LENGTH CQD.
 
 
 <<<
