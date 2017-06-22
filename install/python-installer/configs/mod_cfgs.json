@@ -2,14 +2,12 @@
 "MOD_CFGS": {
     "hbase-site": {
         "hbase.snapshot.master.timeoutMillis": "600000",
-        "hbase.coprocessor.region.classes": "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation",
         "hbase.hregion.impl": "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion",
         "hbase.regionserver.region.split.policy": "org.apache.hadoop.hbase.regionserver.ConstantSizeRegionSplitPolicy",
         "hbase.snapshot.enabled": "true",
         "hbase.bulkload.staging.dir": "/hbase-staging",
         "hbase.regionserver.region.transactional.tlog": "true",
         "hbase.snapshot.region.timeout": "600000",
-        "hbase.client.scanner.timeout.period": "600000",
         "hbase.client.keyvalue.maxsize": "0"
     },
     "hdfs-site": { "dfs.namenode.acls.enabled": "true" },
@@ -28,9 +26,6 @@
 
 "HBASE_RS_CONFIG": {
 "items" : [ {
-                "name" : "hbase_coprocessor_region_classes",
-                "value" : "org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionObserver,org.apache.hadoop.hbase.coprocessor.transactional.TrxRegionEndpoint,org.apache.hadoop.hbase.coprocessor.AggregateImplementation"
-                }, {
                 "name" : "hbase_regionserver_lease_period",
                 "value" : "600000"
                 }, {

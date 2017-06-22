@@ -34,7 +34,7 @@ all: rpmbuild
 # need repoinfo file per release
 # traf_ambari needs to support multiple releases so ambari can
 # select trafodion version for given HDP stack
-REPO_LIST= $(TRAFODION_VER) # for now, list is current release only
+REPO_LIST= 2.1.0 $(TRAFODION_VER)
 
 $(SOURCEDIR)/ambari_rpm.tar.gz: mpack-install/LICENSE mpack-install/NOTICE mpack-install/DISCLAIMER repofiles traf-mpack/mpack.json
 	rm -rf $(RPMROOT)
