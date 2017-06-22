@@ -604,14 +604,31 @@ numeric, datetime, or interval data.
 * `_character-type_` is:
 +
 ```
-CHAR[ACTER] [(_length_ [CHARACTERS])] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
-| CHAR[ACTER] VARYING(_length_) [CHARACTERS][_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
-| VARCHAR(_length_) [CHARACTERS] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
-| NCHAR [(_length_)] [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
-| NCHAR VARYING (_length_) [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
-| NATIONAL CHAR[ACTER] [(_length_)] [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
-| NATIONAL CHAR[ACTER] VARYING (_length_) [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
+CHAR[ACTER] [(length [unit])] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
+| CHAR[ACTER] VARYING(length [unit]) [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
+| VARCHAR(length [unit]) [CHARACTERS] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
+| NCHAR [(length)] [UPSHIFT] [[NOT]CASESPECIFIC]
+| NCHAR VARYING (length) [UPSHIFT] [[NOT]CASESPECIFIC]
+| NATIONAL CHAR[ACTER] [(length)] [UPSHIFT] [[NOT]CASESPECIFIC]
+| NATIONAL CHAR[ACTER] VARYING (length) [UPSHIFT] [[NOT]CASESPECIFIC]
 ```
+
++
+CHAR, NCHAR, and NATIONAL CHAR are fixed-length character types. CHAR
+VARYING, VARCHAR, NCHAR VARYING and NATIONAL CHAR VARYING are
+varying-length character types.
+
+* `_length_`
++
+is a positive integer that specifies the number of characters (or bytes, see below) allowed in
+the column. You must specify a value for _length_.
+
+* `_unit_`
++
+is an optional unit of either CHAR[ACTER[S]] or BYTE[S]. This unit is meaningful only for UTF8 characters.
+A UTF8 character is one to four bytes in length, therefore the storage length of a CHAR column that can hold _n_ UTF8 characters is 4*_n_ bytes.
+The same applies to the maximum length of a VARCHAR column.
+Specifying the length of UTF8 columns in bytes can lead to significant savings in space and resources.
 
 * `_char-set_` is
 +
@@ -619,24 +636,22 @@ CHAR[ACTER] [(_length_ [CHARACTERS])] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
 CHARACTER SET char-set-name
 ```
 
-CHAR, NCHAR, and NATIONAL CHAR are fixed-length character types. CHAR
-VARYING, VARCHAR, NCHAR VARYING and NATIONAL CHAR VARYING are
-varying-length character types.
-
-* `_length_`
+** `_char-set-name_`
 +
-is a positive integer that specifies the number of characters allowed in
-the column. You must specify a value for _length_.
+is the character set name, which can be ISO88591, UTF8 or UCS2.
 
-* `_char-set-name_`
-+
-is the character set name, which can be ISO88591 or UTF8.
+*** ISO88591 (ISO 8859-1) is a single-byte character set for US ASCII and Western European language characters.
 
-* `CHAR[ACTER] [(_length_ [CHARACTERS])] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
+*** UTF8 (UTF-8) is a variable-length (1 to 4 bytes) encoding of Unicode characters including those in supplementary planes. It is compatible with the US-ASCII character set.
+
+*** UCS2 (UCS-2) is a fixed-length, 2 byte encoding of Unicode characters of the Basic Multilingual Plane (BMP).
+Note that, while not strictly part of UCS2, {project-name} also tolerates UTF-16 surrogate pairs in UCS2 columns, but such surrogate pairs are interpreted as two separate characters.
+
+* `CHAR[ACTER] [(_length_ [_unit_])] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
 specifies a column with fixed-length character data.
 
-* `CHAR[ACTER] VARYING (_length_) [CHARACTERS] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
+* `CHAR[ACTER] VARYING (_length_ [_unit_]) [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
 specifies a column with varying-length character data. VARYING specifies
 that the number of characters stored in the column can be fewer than the
@@ -649,18 +664,18 @@ shorter than the maximum length, but the maximum internal size of a
 VARYING column is actually four bytes larger than the size required for
 an equivalent column that is not VARYING.
 
-* `VARCHAR (_length_) [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
+* `VARCHAR (_length_ [_unit_]) [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
 specifies a column with varying-length character data. VARCHAR is
 equivalent to data type CHAR[ACTER] VARYING.
 
 * `NCHAR [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC], NATIONAL CHAR[ACTER] [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
-specifies a column with data in the predefined national character set.
+specifies a column with data in the predefined national character set(USC2).
 
 * `NCHAR VARYING [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC], NATIONAL CHAR[ACTER] VARYING (_length_) [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
-specifies a column with varying-length data in the predefined national character set.
+specifies a column with varying-length data in the predefined national character set(USC2).
 
 [[considerations_for_character_string_data_types]]
 ==== Considerations for Character String Data Types
@@ -727,8 +742,8 @@ January 1, 1 A.D., 00:00:00.000000 (low value) December 31, 9999, 23:59:59.99999
 +
 ```
   DATE
-| TIME [(_time-precision_)]
-| TIMESTAMP [(_timestamp-precision_)]
+| TIME [(time-precision)]
+| TIMESTAMP [(timestamp-precision)]
 ```
 
 * `DATE`
@@ -938,18 +953,18 @@ datetime, or interval data types.
 * `_exact-numeric-type_` is:
 +
 ```
-   NUMERIC [(_precision_ [,_scale_])] [SIGNED|UNSIGNED]
+   NUMERIC [(precision [,scale])] [SIGNED|UNSIGNED]
 | TINYINT [SIGNED|UNSIGNED]
 | SMALLINT [SIGNED|UNSIGNED]
 | INT[EGER] [SIGNED|UNSIGNED]
 | LARGEINT
-| DEC[IMAL] [(_precision_ [,_scale_])] [SIGNED|UNSIGNED]
+| DEC[IMAL] [(precision [,scale])] [SIGNED|UNSIGNED]
 ```
 
 * `_approximate-numeric-type_` is:
 +
 ```
-   FLOAT [(_precision_)]
+   FLOAT [(precision)]
 | REAL
 | DOUBLE PRECISION
 ```
