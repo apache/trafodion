@@ -26,12 +26,11 @@
 function Usage {
     script_name=`/bin/basename $0`
     echo
-    echo $script_name generates the Trafodion rmscheck sqlci input file in the $TRAF_HOME/sql/scripts directory.
+    echo $script_name displays generated the Trafodion rmscheck sqlci statements
     echo
-    echo "Usage: $script_name [ -? | -h ] [<sqlci-in-file>]"
+    echo "Usage: $script_name [ -? | -h ]"
     echo "  -?    Help"
     echo "  -h    Help"
-    echo "  <sqlci-in-file> Name of the Trafodion rmscheck sqlci input file (in $TRAF_HOME/sql/scripts directory)(defaults to 'rmscheck.sql')"
     echo
     exit 1;
 }
@@ -93,17 +92,13 @@ function GenRmsCheckSql {
 # MAIN portion of sqgen begins
 ###########################################################
 
-SQLCI_IN_FILE=rmscheck.sql
-
-if [ -z $TRAF_HOME ]; then
+if [[ -z $TRAF_HOME ]]; then
     echo
     echo "The TRAF_HOME environment variable does not exist."
     echo "Please ensure sqenv.sh has been sourced."
     echo
     exit 1;
 fi
-
-rm -f $SQLCI_IN_FILE
 
 cd $TRAF_HOME/sql/scripts
 
@@ -114,10 +109,10 @@ while [ $# != 0 ]
     case "$flag" in
         -h)  Usage ;;
         -?)  Usage ;;
-        *)   SQLCI_IN_FILE=$1 ;;
+         *)  Usage ;;
     esac
     shift
   done
 
-GenRmsCheckSql > $SQLCI_IN_FILE
+GenRmsCheckSql
 

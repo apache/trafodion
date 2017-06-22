@@ -22,7 +22,7 @@
 # @@@ END COPYRIGHT @@@
 #
 
-if [ -z $TRAF_HOME ]; then
+if [[ -z $TRAF_HOME ]]; then
     echo
     echo "The TRAF_HOME environment variable does not exist."
     echo "Please ensure sqenv.sh has been sourced."
@@ -38,11 +38,5 @@ if [[ $sq_stat == 255 ]]; then
    exit 1
 fi
 
-# Generate the 'rmscheck.sql' file
-temp_rmscheck_sql=`mktemp -t`
-sqgenrmscheck $temp_rmscheck_sql
-echo temp_rmscheck_sql=$temp_rmscheck_sql
-
 echo "Timestamp                           Id    Status "
-sqlci -i $temp_rmscheck_sql | grep 'Node\|ERROR' | grep -v varchar
-rm -f $temp_rmscheck_sql
+sqgenrmscheck | sqlci | grep 'Node\|ERROR' | grep -v varchar
