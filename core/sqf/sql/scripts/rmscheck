@@ -21,7 +21,28 @@
 #
 # @@@ END COPYRIGHT @@@
 #
-# Most of this was stolen from WMScheck...  which may have started as NDCScheck
+
+if [ -z $TRAF_HOME ]; then
+    echo
+    echo "The TRAF_HOME environment variable does not exist."
+    echo "Please ensure sqenv.sh has been sourced."
+    echo
+    exit 1;
+fi
+
+# Check whether the Trafodion environment up.
+sqcheck -i 1 -d 1 > /dev/null 2>&1
+sq_stat=$?
+if [[ $sq_stat == 255 ]]; then
+   echo "The Trafodion environment is down. Exiting..."
+   exit 1
+fi
+
+# Generate the 'rmscheck.sql' file
+temp_rmscheck_sql=`mktemp -t`
+sqgenrmscheck $temp_rmscheck_sql
+echo temp_rmscheck_sql=$temp_rmscheck_sql
 
 echo "Timestamp                           Id    Status "
-sqlci -i $TRAF_HOME/sql/scripts/rmscheck.sql | grep 'Node\|ERROR' | grep -v varchar
+sqlci -i $temp_rmscheck_sql | grep 'Node\|ERROR' | grep -v varchar
+rm -f $temp_rmscheck_sql

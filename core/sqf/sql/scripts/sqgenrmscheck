@@ -1,0 +1,123 @@
+#!/bin/bash
+
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+# sqgen script - generates various files
+
+function Usage {
+    script_name=`/bin/basename $0`
+    echo
+    echo $script_name generates the Trafodion rmscheck sqlci input file in the $TRAF_HOME/sql/scripts directory.
+    echo
+    echo "Usage: $script_name [ -? | -h ] [<sqlci-in-file>]"
+    echo "  -?    Help"
+    echo "  -h    Help"
+    echo "  <sqlci-in-file> Name of the Trafodion rmscheck sqlci input file (in $TRAF_HOME/sql/scripts directory)(defaults to 'rmscheck.sql')"
+    echo
+    exit 1;
+}
+
+function GenRmsCheckSqlQuery {
+
+GENDATE=`date`
+
+echo "-- 'rmscheck.sql' Generated on $GENDATE"
+echo
+echo "-- Prepare the 'rms_check' query"
+echo "prepare rms_check from select current_timestamp,"
+echo "cast('Node' as varchar(5)),"
+echo "cast(tokenstr('nodeId:', variable_info) as varchar(3)) node,"
+echo "cast(tokenstr('Status:', variable_info) as varchar(10)) status"
+echo "from table(statistics(null, ?));"
+echo
+echo "-- Execute the 'rms_check' query for each node-id"
+
+}
+
+function GenRmsCheckSql {
+
+    # Get Trafodion node-id configuration
+    TempList=`trafconf -node | grep -o 'node-id=.[0-9]*' | cut -d "=" -f 2 | sort -u`
+
+    i=0
+    for NID in $TempList
+    do
+        TrNids[$i]=$NID
+        #echo "-- TrNids[${i}]=${TrNids[$i]}"
+        ((i=i+1))
+    done
+
+    # Check that the <nid>s were correctly added
+    ExNidList=`echo ${TrNids[@]}`
+    if [[ ! -z ${ExNidList[@]} ]]; then
+        GenRmsCheckSqlQuery
+        j=0
+        for Nid in ${TrNids[@]}
+        do
+            Nid=$Nid
+            #echo "j=$j Nid=${Nid}"
+            echo "execute rms_check using 'RMS_CHECK=${Nid}';"
+            ((j=j+1))
+        done
+        exit 0;
+    else
+        echo
+        echo "Could not obtain the Trafodion Configuration from the 'trafconf' utility!"
+        echo "Execute 'trafconf -node' to determine if Trafodion Configuration has been"
+        echo "initialized and can be accessed."
+        echo
+        exit 1;
+    fi
+}
+
+###########################################################
+# MAIN portion of sqgen begins
+###########################################################
+
+SQLCI_IN_FILE=rmscheck.sql
+
+if [ -z $TRAF_HOME ]; then
+    echo
+    echo "The TRAF_HOME environment variable does not exist."
+    echo "Please ensure sqenv.sh has been sourced."
+    echo
+    exit 1;
+fi
+
+rm -f $SQLCI_IN_FILE
+
+cd $TRAF_HOME/sql/scripts
+
+# Assume option is SQLCI_IN_FILE
+while [ $# != 0 ]
+  do
+    flag="$1"
+    case "$flag" in
+        -h)  Usage ;;
+        -?)  Usage ;;
+        *)   SQLCI_IN_FILE=$1 ;;
+    esac
+    shift
+  done
+
+GenRmsCheckSql > $SQLCI_IN_FILE
+

@@ -20,7 +20,7 @@
 # @@@ END COPYRIGHT @@@
 
 begin node
-_virtualnodes 2
+_virtualnodes 4
 end node
 
 ###############################################################################
