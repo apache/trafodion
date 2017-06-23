@@ -74,6 +74,7 @@ function GetSQcnfg {
 FT_FLAG=1
 PERF_FLAG=0
 SQCONFIG_FILE=sqconfig
+SQCONFIG_DB_FILE=sqconfig.db
 
 if [ -z $TRAF_HOME ]; then
     echo
@@ -119,15 +120,38 @@ cd $TRAF_HOME/sql/scripts
 
 # Check to make sure this is a real cluster
 if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then 
-
+    # The configuration database can only be created the first time.		
+    # Since nodes can be added and deleted through the 'shell node add/delete'		
+    # commands, the 'sqconfig' node section may not reflect the current node		
+    # configured. The 'sqregen' script can be used to update the SQCONFIG_FILE		
+    # node section to reflect the current node configuration stored in		
+    # the SQCONFIG_DB_FILE.		
+    echo "Checking for the configuration file ($SQCONFIG_DB_FILE)."		
+    if [ -f $SQCONFIG_DB_FILE ]; then		
+        echo		
+        echo "The configuration file ($SQCONFIG_DB_FILE) exists."		
+        echo "Use the 'sqshell node add/delete' commands to change the node membership in the configuration database."		
+        echo "Use the 'sqshell persist add/delete' commands to change the persist object configuration in the configuration database."		
+        echo "Use the 'sqregen -node' script to update the $SQCONFIG_FILE 'node' section with the"		
+        echo "current node membership in the configuration database."		
+        echo "Use the 'sqregen -persist' script to update the $SQCONFIG_FILE 'persist' section with the"		
+        echo "current persist configuration stored in the configuration database."		
+        exit 1		
+    fi
     GetSQcnfg
 
 else
-   echo "Workstation environment - Not a clustered environment"
+    echo
+    echo "Workstation environment - Not a clustered environment"
+    if [ -f $SQCONFIG_DB_FILE ]; then		
+        echo		
+        echo "The configuration file ($SQCONFIG_DB_FILE) was previously created."		
+        echo "Removing and re-creating $SQCONFIG_DB_FILE!"		
+        rm -f $SQCONFIG_DB_FILE		
+    fi		
 fi
 
-# -ft command line option indicates fault tolerance,
-# otherwise we assume option is SQCONFIG_FILE
+# assume option is SQCONFIG_FILE
 while [ $# != 0 ]
   do
     flag="$1"
@@ -147,7 +171,6 @@ mkdir -p $MPI_TMPDIR
 # mkdir a dir for CBF data used by SQL IUS feature
 mkdir -p $HOME/cbfs
 
-#If pdsh exists
 if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then    
     echo
     echo "Creating directories on cluster nodes"
@@ -167,7 +190,6 @@ if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then
 fi
 
 SQSCRIPT_FILE=./gomon
-SQCLUSTERCONF_FILE=$MPI_TMPDIR/cluster.conf
 SQESPENV_FILE=$TRAF_HOME/sql/scripts/tdm_arkesp.env
 
 echo
@@ -194,7 +216,7 @@ sqlite3 -init createConfigDb sqconfig.db <<eof
 .quit
 eof
 
-./gensq.pl $SQCONFIG_FILE $SQSCRIPT_FILE $SQCLUSTERCONF_FILE `hostname` $FT_FLAG $PERF_FLAG
+./gensq.pl $SQSCRIPT_FILE `hostname` $FT_FLAG $PERF_FLAG $SQCONFIG_FILE $TRAF_HOME/sql/scripts/sqconfig.persist
 sq_stat=$?
 if [[ $sq_stat != 0 ]]; then 
     exit $sq_stat;
@@ -230,16 +252,11 @@ if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then
     echo
     echo "Copying the generated files to all the nodes in the cluster"
     echo
-    echo "Copying $SQCLUSTERCONF_FILE to $MPI_TMPDIR of all the nodes"
-    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCLUSTERCONF_FILE $MPI_TMPDIR"
-    $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCLUSTERCONF_FILE $MPI_TMPDIR
-
 
     echo
     echo "Copying $SQETC_DIR/ms.env to $SQETC_DIR of all the nodes"
     echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR "
     $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQETC_DIR/ms.env   $SQETC_DIR
-
 
     echo
     echo "Copying $SQETC_DIR/seamonster.env to $SQETC_DIR of all the nodes"
@@ -261,8 +278,8 @@ if  [[ -n "$node_count" ]] && [[ "$node_count" -gt "1" ]]; then
     echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD"
     $PDCP -w ${ExNodeList[@]} -x `uname -n` sqconfig sqshell gomon.cold gomon.warm rmsstart rmsstop rmscheck.sql ssmpstart ssmpstop sscpstart sscpstop $PWD
 
-    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD "
-    $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE sqconfig.db $PWD
+    echo "$PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE $SQCONFIG_DB_FILE $PWD "
+    $PDCP -w ${ExNodeList[@]} -x `uname -n` $SQCONFIG_FILE $SQCONFIG_DB_FILE $PWD
 
 
     echo
