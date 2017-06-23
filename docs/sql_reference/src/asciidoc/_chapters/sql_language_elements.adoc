@@ -625,7 +625,7 @@ the column. You must specify a value for _length_.
 
 * `_unit_`
 +
-is an optional unit of either CHAR[ACTER[S]] or BYTE[S]. This unit is meaningful only for UTF8 characters.
+is an optional unit of either CHAR[ACTER[S]] or BYTE[S]. The default is CHAR[ACTER[S]]. This unit is meaningful only for UTF8 characters.
 A UTF8 character is one to four bytes in length, therefore the storage length of a CHAR column that can hold _n_ UTF8 characters is 4*_n_ bytes.
 The same applies to the maximum length of a VARCHAR column.
 Specifying the length of UTF8 columns in bytes can lead to significant savings in space and resources.
@@ -671,11 +671,11 @@ equivalent to data type CHAR[ACTER] VARYING.
 
 * `NCHAR [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC], NATIONAL CHAR[ACTER] [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
-specifies a column with data in the predefined national character set(USC2).
+specifies a column with data in the predefined national character set (UCS2).
 
 * `NCHAR VARYING [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC], NATIONAL CHAR[ACTER] VARYING (_length_) [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
-specifies a column with varying-length data in the predefined national character set(USC2).
+specifies a column with varying-length data in the predefined national character set (UCS2).
 
 [[considerations_for_character_string_data_types]]
 ==== Considerations for Character String Data Types
