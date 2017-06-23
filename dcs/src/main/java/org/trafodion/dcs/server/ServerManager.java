@@ -37,16 +37,13 @@ import java.text.DateFormat;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.hadoop.conf.Configuration;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.KeeperException;
-
 import org.trafodion.dcs.Constants;
 import org.trafodion.dcs.util.Bytes;
 import org.trafodion.dcs.util.DcsConfiguration;
@@ -88,6 +85,7 @@ public final class ServerManager implements Callable {
     private ServerHandler[] serverHandlers;
     private int maxRestartAttempts;
     private int retryIntervalMillis;
+    private int restartAttempts;
     private RetryCounterFactory retryCounterFactory;
     private String nid = null;
 
@@ -127,12 +125,17 @@ public final class ServerManager implements Callable {
         }
 
         public boolean monitor() throws Exception {
-            LOG.debug("registered path [" + registeredPath + "]");
-            stat = zkc.exists(registeredPath, false);
-            if (stat != null) { // User program znode found in
-                                // /registered...check pid
-                isRunning = isPidRunning();
-                LOG.debug("isRunning [" + isRunning + "]");
+            try {
+                LOG.debug("registered path [" + registeredPath + "]");
+                stat = zkc.exists(registeredPath, false);
+                if (stat != null) { // User program znode found in
+                                    // /registered...check pid
+                    isRunning = isPidRunning();
+                    LOG.debug("isRunning [" + isRunning + "]");
+                }
+            } catch (Exception e) {
+                isRunning = false;
+                return isRunning;
             }
 
             return isRunning;
@@ -251,6 +254,15 @@ public final class ServerManager implements Callable {
         int childInstance;
         String registeredPath;
         CountDownLatch startSignal = new CountDownLatch(1);
+        int restartAttempts;
+
+        public int getRestartAttempts() {
+            return restartAttempts;
+        }
+
+        public void setRestartAttempts(int time) {
+            this.restartAttempts = time;
+        }
 
         public ServerHandler(int childInstance) {
             this.childInstance = childInstance;
@@ -333,6 +345,9 @@ public final class ServerManager implements Callable {
         this.retryIntervalMillis = conf
                 .getInt(Constants.DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS,
                         Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS);
+        this.restartAttempts = this.conf
+                .getInt(Constants.DCS_MASTER_STARTUP_MXOSRVR_RETRY_ATTEMPTS,
+                        Constants.DEFAULT_DCS_MASTER_STARTUP_MXOSRVR_RETRY_ATTEMPTS);
         this.retryCounterFactory = new RetryCounterFactory(
                 this.maxRestartAttempts, this.retryIntervalMillis);
         serverHandlers = new ServerHandler[this.childServers];
@@ -400,7 +415,9 @@ public final class ServerManager implements Callable {
             // /bin/dcs-daemon script
             // which DOES NOT set childServers count.
             for (int childInstance = 1; childInstance <= childServers; childInstance++) {
-                serverHandlers[childInstance-1] = new ServerHandler(childInstance);
+                ServerHandler serverHandler = new ServerHandler(childInstance);
+                serverHandler.setRestartAttempts(this.restartAttempts);
+                serverHandlers[childInstance-1] = serverHandler;
                 completionService.submit(serverHandlers[childInstance-1]);
                 LOG.debug("Started server handler [" + instance + ":"
                         + childInstance + "]");
@@ -414,32 +431,40 @@ public final class ServerManager implements Callable {
                                                              // finish
                 if (f != null) {
                     Integer result = f.get();
+                    LOG.debug("Server handler [" + instance + ":" + result + "] finished");
                     int childInstance = result.intValue();
                     // get the node id
-                    boolean isRunning = serverHandlers[childInstance-1].serverMonitor.isPidRunning();
-                    String nid = serverHandlers[childInstance-1].serverMonitor.nid;
-                    String pid = serverHandlers[childInstance-1].serverMonitor.pid; 
-                    serverHandlers[childInstance-1] = null;
-                    LOG.debug("Server handler [" + instance + ":" + result
-                            + "] finished, restarting");
-                    if (isRunning)
-                        LOG.info("mxosrvr " + nid + "," + pid + " still running");
-                    else
-                        LOG.info("mxosrvr " + nid + "," + pid + " exited, restarting");
+                    boolean isRunning = serverHandlers[childInstance - 1].serverMonitor.monitor();
+                    String nid = serverHandlers[childInstance - 1].serverMonitor.nid;
+                    String pid = serverHandlers[childInstance - 1].serverMonitor.pid;
+                    int restartAttempts = serverHandlers[childInstance - 1].getRestartAttempts();
+
+                    serverHandlers[childInstance - 1] = null;
                     retryCounter = retryCounterFactory.create();
                     while (!isTrafodionRunning(nid)) {
-                       if (!retryCounter.shouldRetry()) {
-                          throw new IOException("Node " + nid + " is not Up");
-                       } else {
-                           retryCounter.sleepUntilNextRetry();
-                           retryCounter.useRetry();
-                       }
-                   }
-                   serverHandlers[childInstance-1] = new ServerHandler(childInstance);
-                   completionService.submit(serverHandlers[childInstance-1]);
+                        if (!retryCounter.shouldRetry()) {
+                            throw new IOException("Node " + nid + " is not Up");
+                        } else {
+                            retryCounter.sleepUntilNextRetry();
+                            retryCounter.useRetry();
+                        }
+                    }
+                    if (isRunning) {
+                        restartAttempts = this.restartAttempts;
+                        LOG.info("mxosrvr " + nid + "," + pid + " still running");
+                    }
+                    else {
+                        restartAttempts--;
+                        LOG.info("mxosrvr " + nid + "," + pid + " exited, restarting, restart time : " + restartAttempts);
+                    }
+                    if (restartAttempts > 0) {
+                        ServerHandler serverHandler = new ServerHandler(childInstance);
+                        serverHandler.setRestartAttempts(restartAttempts);
+                        serverHandlers[childInstance - 1] = serverHandler;
+                        completionService.submit(serverHandlers[childInstance - 1]);
+                    }
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
             LOG.error(e);

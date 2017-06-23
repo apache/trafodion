@@ -201,6 +201,12 @@ public final class Constants {
     /** Default value for user program restart handler retry interval millis */
     public static final int DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS = 5000;
 
+    /** DcsMaster startup mxosrvr retry times */
+    public static final String DCS_MASTER_STARTUP_MXOSRVR_RETRY_ATTEMPTS = "dcs.master.startup.mxosrvr.retry.attempts";
+
+    /** Default DcsMaster startup mxosrvr retry times */
+    public static final int DEFAULT_DCS_MASTER_STARTUP_MXOSRVR_RETRY_ATTEMPTS = 6;
+
     /** Name of ZooKeeper quorum configuration parameter. */
     public static final String ZOOKEEPER_QUORUM = "dcs.zookeeper.quorum";
 
