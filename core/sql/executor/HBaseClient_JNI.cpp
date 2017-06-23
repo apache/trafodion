@@ -106,9 +106,6 @@ static const char* const hbcErrorEnumStr[] =
  ,"Java exception in deleteSnapshot()."
  ,"JNI NewStringUTF() in verifySnapshot()."
  ,"Java exception in verifySnapshot()."
- ,"Preparing parameters for namespaceOperation()"
- ,"Java exception or Error in namespaceOperation()"
- ,"Namespace doesn't exist"
  ,"Preparing parameters for truncate()."
  ,"Java exception in truncate()."
 };
