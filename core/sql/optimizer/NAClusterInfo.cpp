@@ -310,7 +310,7 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
                                                           (&intHashFunc, 101,TRUE,heap);
                                                           
       activeClusters_= NULL;
-      smpCount_ = -1;
+      physicalSMPCount_ = -1;
 
       NADefaults::getNodeAndClusterNumbers(localSMP_ , localCluster_);
 
@@ -336,7 +336,7 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
       CMPASSERT(error == 0);
 
       maps *cpuList=new(heap) maps(heap);
-      smpCount_ = 0;
+      physicalSMPCount_ = 0;
 
       NAList<CollIndex> storageList(heap, nodeCount);
 
@@ -357,7 +357,7 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
             cpuList->insertToAggregationNodeList(nodeInfo[i].nid);
 
           if (!nodeInfo[i].spare_node)
-             smpCount_++;
+             physicalSMPCount_++;
 
           // store nodeName-nodeId pairs
           NAString *key_nodeName = new (heap_) NAString(nodeInfo[i].node_name, heap_);
@@ -414,7 +414,7 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
       clusterToCPUMap_ = NULL;
       nodeIdToNodeNameMap_ = NULL;
       activeClusters_= NULL;
-      smpCount_ = -1;
+      physicalSMPCount_ = -1;
       //load NAClusterInfo from OSIM file
       simulateNAClusterInfo();
       break;
@@ -466,181 +466,6 @@ NAClusterInfo::~NAClusterInfo()
     delete activeClusters_;
   }
 
-}
-
-//============================================================================
-// This method writes the information related to the NAClusterInfo class to a
-// logfile called "NAClusterInfo.txt".
-//============================================================================
-void NAClusterInfo::captureNAClusterInfo(ofstream & naclfile)
-{
-  CollIndex i, ci;
-  char filepath[OSIM_PATHMAX];
-  char filename[OSIM_FNAMEMAX];
-
-  // We don't capture data members that are computed during the compilation of
-  // a query. These include:
-  //
-  // * smpCount_;
-  // * tableToClusterMap_;
-  // * activeClusters_;
-  //
-
-  naclfile << "localCluster_: " << localCluster_ << endl
-           << "localSMP_: " << localSMP_ << endl;
-
-  CollIndex *key_collindex;  
-  maps *val_maps;
-  // Iterator for logging all the entries in clusterToCPUMap_ HashDictionary.
-  NAHashDictionaryIterator<CollIndex, maps> C2CPUIter (*clusterToCPUMap_, NULL, NULL);  
-  naclfile << "clusterToCPUMap_: " << C2CPUIter.entries() << " :" << endl;
-  if (C2CPUIter.entries() > 0)
-  {
-    // Write the header line for the table.
-    naclfile << "  ";
-    naclfile.width(10); 
-    naclfile << "clusterNum" << "  ";
-    naclfile << "cpuList" << endl;
-    for (i=0; i<C2CPUIter.entries(); i++)
-    {
-      C2CPUIter.getNext(key_collindex, val_maps);
-      naclfile << "  ";
-      naclfile.width(10); naclfile << *key_collindex << "  ";
-                          naclfile << val_maps->list->entries() << " : ";
-      for (ci=0; ci<val_maps->list->entries(); ci++)
-      {
-        naclfile.width(3); naclfile << (*(val_maps->list))[ci] << " ";
-      }
-      naclfile << endl;
-    }
-  }
-
-  Int32 * nodeID = NULL;
-  NAString* nodeName = NULL;
-  NAHashDictionaryIterator<Int32, NAString> nodeNameAndIDIter (*nodeIdToNodeNameMap_);
-  naclfile << "nodeIdAndNodeNameMap: " << nodeNameAndIDIter.entries() << endl;
-  for(nodeNameAndIDIter.getNext(nodeID, nodeName); nodeID && nodeName; nodeNameAndIDIter.getNext(nodeID, nodeName))
-  {
-      naclfile << *nodeID << " " << nodeName->data() << endl;
-  }
-
-  // Now save the OS-specific information to the NAClusterInfo.txt file
-  captureOSInfo(naclfile);
-}
-
-//============================================================================
-// This method reads the information needed for NAClusterInfo class from
-// a logfile called "NAClusterInfo.txt" and then populates the variables
-// accordigly.
-//============================================================================
-void NAClusterInfo::simulateNAClusterInfo()
-{
-  Int32 i, ci;
-  char var[256];
-
-  const char* filepath = CURRCONTEXT_OPTSIMULATOR->getLogFilePath(OptimizerSimulator::NACLUSTERINFO);
-
-  activeClusters_= NULL;
-  smpCount_ = -1;
-
-  ifstream naclfile(filepath);
-
-  if(!naclfile.good())
-  {
-    char errMsg[38+OSIM_PATHMAX+1]; // Error msg below + filename + '\0'
-    snprintf(errMsg, sizeof(errMsg), "Unable to open %s file for reading data.", filepath);
-    OsimLogException(errMsg, __FILE__, __LINE__).throwException();
-  }
-  
-  while(naclfile.good())
-  {
-    // Read the variable name from the file.
-    naclfile.getline(var, sizeof(var), ':');
-    if(!strcmp(var, "localCluster_"))
-    {
-      naclfile >> localCluster_; naclfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "localSMP_"))
-    {
-      naclfile >> localSMP_; naclfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "clusterToCPUMap_"))
-    {
-      Int32 C2CPU_entries, clusterNum, cpuList_entries, cpuNum;
-
-      clusterToCPUMap_ = new(heap_) NAHashDictionary<CollIndex,maps>(&clusterNumHashFunc,17,TRUE, heap_);
-      naclfile >> C2CPU_entries; naclfile.ignore(OSIM_LINEMAX, '\n');
-      if(C2CPU_entries > 0)
-      {
-        // Read and ignore the header line.
-        naclfile.ignore(OSIM_LINEMAX, '\n');
-        for (i=0; i<C2CPU_entries; i++)
-        {
-          naclfile >> clusterNum;
-          naclfile >> cpuList_entries; naclfile.ignore(OSIM_LINEMAX, ':');
-          CollIndex *key_clusterNum = new(heap_) CollIndex(clusterNum);
-          maps *val_cpuList = new(heap_) maps(heap_);
-          for (ci=0; ci<cpuList_entries; ci++)
-          {
-            naclfile >> cpuNum;
-            val_cpuList->list->insert(cpuNum);
-          }
-          naclfile.ignore(OSIM_LINEMAX, '\n');
-          CollIndex *checkClusterNum = clusterToCPUMap_->insert(key_clusterNum, val_cpuList);
-          CMPASSERT(checkClusterNum);
-        }
-      }
-    }
-    else if(!strcmp(var, "nodeIdAndNodeNameMap"))
-    {
-      Int32 id_name_entries;
-      Int32 nodeId;
-      char nodeName[256];
-      nodeIdToNodeNameMap_ = new(heap_) NAHashDictionary<Int32, NAString>
-                                                          (&intHashFunc, 101,TRUE,heap_);
-                                                          
-      nodeNameToNodeIdMap_ = new(heap_) NAHashDictionary<NAString, Int32>
-                                                          (&NAString::hash, 101,TRUE,heap_);
-      naclfile >> id_name_entries;
-      naclfile.ignore(OSIM_LINEMAX, '\n');
-      for(i = 0; i < id_name_entries; i++)
-      {
-          naclfile >> nodeId >> nodeName;
-          naclfile.ignore(OSIM_LINEMAX, '\n');
-          
-          //populate clusterId<=>clusterName map from file
-          Int32 * key_nodeId = new Int32(nodeId);
-          NAString * val_nodeName = new (heap_) NAString(nodeName, heap_);
-          Int32 * retId = nodeIdToNodeNameMap_->insert(key_nodeId, val_nodeName);
-          //CMPASSERT(retId);
-          
-          NAString * key_nodeName = new (heap_) NAString(nodeName, heap_);
-          Int32 * val_nodeId = new Int32(nodeId);
-          NAString * retName = nodeNameToNodeIdMap_->insert(key_nodeName, val_nodeId);
-          //some node names are like g4t3024:0, g4t3024:1
-          //I don't know why we need to remove strings after ':' or '.' in node name,
-          //but if string after ':' or '.' is removed, same node names correspond to different node ids,
-          //this can cause problems here
-          //CMPASSERT(retName);
-      }
-    }
-    else
-    {
-      // This variable will either be read in simulateNAClusterInfoNSK()
-      // method of NAClusterInfoNSK class or is not the one that we want
-      // to read here in this method. So discard it and continue.
-      naclfile.ignore(OSIM_LINEMAX, '\n');
-      while (naclfile.peek() == ' ')
-      {
-        // The main variables are listed at the beginning of a line
-        // with additional information indented. If one or more spaces
-        // are seen at the beginning of the line upon the entry to this
-        // while loop, it is because of that additional information.
-        // So, ignore this line since the variable is being ignored.
-        naclfile.ignore(OSIM_LINEMAX, '\n');
-      }
-    }
-  }
 }
 
 Lng32
@@ -804,10 +629,18 @@ void NAClusterInfo::setUseAggregationNodesOnly(NABoolean x)
 }
 
 Int32
+NAClusterInfo::numOfPhysicalSMPs()
+{
+  if (physicalSMPCount_ < 0)
+    physicalSMPCount_ = computeNumOfSMPs();
+
+  return physicalSMPCount_;
+}
+
+Int32
 NAClusterInfo::numOfSMPs()
 {
-  if(smpCount_ <0)
-    smpCount_ = computeNumOfSMPs();
+  CMPASSERT(physicalSMPCount_ > 0);
 
   // This is temporary patch for PARALLEL_NUM_ESPS issue. This CQD should
   // be used in many places for costing, NodeMap allocation, synthesizing
@@ -824,11 +657,11 @@ NAClusterInfo::numOfSMPs()
     // A value for PARALLEL_NUM_ESPS exists.  Use it for the count of cpus
     //  but don't exceed the number of cpus available in the cluster.
     // -------------------------------------------------------------------
-    smpCount_ = MINOF(smpCount_, 
+    physicalSMPCount_ = MINOF(physicalSMPCount_, 
         (Int32)(ActiveSchemaDB()->getDefaults().getAsLong(PARALLEL_NUM_ESPS)));
   }
 
-  return smpCount_; 
+  return physicalSMPCount_; 
 
 } // NAClusterInfo::numOfSMPs()  
 #pragma warn(1506)  // warning elimination 
@@ -987,7 +820,6 @@ void NAClusterInfo::cleanupPerStatement()
   //After every statement activeClusters_ should be NULL 
   // because statement heap has been cleared already. 
   activeClusters_ = NULL;
-  smpCount_ = -1;
   // reset the mebers for versioning support
   maxOSV_ = COM_VERS_UNKNOWN;
 }
@@ -1174,71 +1006,6 @@ void NAClusterInfoLinux::captureOSInfo(ofstream & nacllinuxfile) const
                 << "totalMemoryAvailable_: " << totalMemoryAvailable_ << endl
                 << "numCPUcoresPerNode_: " << numCPUcoresPerNode_ << endl;
 }
-
-void NAClusterInfoLinux::simulateNAClusterInfoLinux()
-{
-  char var[256];
-  
-  const char* filepath = CURRCONTEXT_OPTSIMULATOR->getLogFilePath(OptimizerSimulator::NACLUSTERINFO);
-
-  ifstream nacllinuxfile(filepath);
-
-  if(!nacllinuxfile.good())
-  {
-    char errMsg[38+OSIM_PATHMAX+1]; // Error msg below + filename + '\0'
-   // LCOV_EXCL_START
-    snprintf(errMsg, sizeof(errMsg), "Unable to open %s file for reading data.", filepath);
-    OsimLogException(errMsg, __FILE__, __LINE__).throwException();
-   // LCOV_EXCL_STOP
-  }
-
-  while(nacllinuxfile.good())
-  {
-    // Read the variable name from the file
-    nacllinuxfile.getline(var, sizeof(var), ':');
-    if(!strcmp(var, "frequency_"))
-    {
-      nacllinuxfile >> frequency_; nacllinuxfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "iorate_"))
-    {
-      nacllinuxfile >> iorate_; nacllinuxfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "seekTime_"))
-    {
-      nacllinuxfile >> seekTime_; nacllinuxfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "pageSize_"))
-    {
-      nacllinuxfile >> pageSize_; nacllinuxfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "totalMemoryAvailable_"))
-    {
-      nacllinuxfile >> totalMemoryAvailable_; nacllinuxfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else if (!strcmp(var, "numCPUcoresPerNode_"))
-    {
-      nacllinuxfile >> numCPUcoresPerNode_; nacllinuxfile.ignore(OSIM_LINEMAX, '\n');
-    }
-    else
-    {
-      // This variable either may have been read in simulateNAClusterInfo()
-      // method of NAClusterInfo class or is not the one that we want to
-      // read here in this method. So discard it.
-      nacllinuxfile.ignore(OSIM_LINEMAX, '\n');
-      while (nacllinuxfile.peek() == ' ')
-      {
-        // The main variables are listed at the beginning of a line
-        // with additional information indented. If one or more spaces
-        // are seen at the beginning of the line upon the entry to this
-        // while loop, it is because of that additional information.
-        // So, ignore this line since the variable is being ignored.
-        nacllinuxfile.ignore(OSIM_LINEMAX, '\n');
-      }
-    }
-  }
-}
-
 
 Int32 compareTSEs( const void* a, const void* b ) 
 {  

@@ -75,7 +75,7 @@ extern void setUpClusterInfo(CollHeap* heap);
 #define MAX_NUM_SMPS_NSK  16     // number of SMPs in the cluster for NSK
 #define MAX_NUM_SMPS_SQ   512    // number of CPUs in the cluster for SQ
 //<pb>
-
+ULng32 clusterNumHashFunc(const CollIndex& num);
 
 //used to encapsulate dp2 names
 class DP2name : public NABasicObject
@@ -179,6 +179,9 @@ public:
   virtual size_t   totalMemoryAvailable() const = 0;
   virtual size_t   virtualMemoryAvailable() = 0;
 
+  // number of physical nodes (from Trafodion monitor or OSIM)
+  Int32 numOfPhysicalSMPs();
+  // this is an adjusted number, based on CQDs
   Int32 numOfSMPs();
 
   // This is called by captureNAClusterInfo() to capture the OSIM
@@ -247,10 +250,9 @@ protected :
   short localSMP_;
 
   //------------------------------------------------------------------------
-  // Earlier smpCount_ was the number of CPUs on a segment.  On Linux,
-  // smpCount_ is the number of Linux nodes in the cluster.
+  // physical number of SMPs/Linux nodes (real configuration or OSIM config)
   //------------------------------------------------------------------------
-  Int32 smpCount_;
+  Int32 physicalSMPCount_;
 
   //------------------------------------------------------------------------
   // heap_ is where this NAClusterInfo was allocated.  This should be the
@@ -308,8 +310,6 @@ public:
    float    ioTransferRate() const;
    float    seekTime() const;
    Int32      cpuArchitecture() const;
-
-   size_t   numLinuxNodes() const { return smpCount_; }
 
    //-------------------------------------------------------------------------
    // On Linux, numberOfCpusPerSMP() returns the number of Linux nodes in the

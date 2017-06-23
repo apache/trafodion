@@ -4052,6 +4052,7 @@ const NAType *Replace::synthesizeType()
   const NAType *typ2 = &(child(1)->getValueId().getType());
   const NAType *typ3 = &(child(2)->getValueId().getType());
 
+
   /* Soln-10-050426-7137 begin */
 
   NAString defVal;
@@ -4155,9 +4156,13 @@ const NAType *Replace::synthesizeType()
      }
   }
 
-  if ( size_in_chars > CONST_32K ) size_in_chars = CONST_32K ;
-  if ( size_in_bytes > CONST_32K ) size_in_bytes = CONST_32K ;
-
+  Int32 maxLenInBytes = CmpCommon::getDefaultNumeric(TRAF_MAX_CHARACTER_COL_LENGTH);
+  if (size_in_bytes > maxLenInBytes)
+    {
+      size_in_bytes = maxLenInBytes;
+      size_in_chars = size_in_bytes / CharInfo::minBytesPerChar(ctyp1->getCharSet());
+    }
+ 
   CharLenInfo CLInfo( size_in_chars, size_in_bytes );
 
   NAType *result =

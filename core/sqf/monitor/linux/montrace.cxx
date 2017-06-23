@@ -37,11 +37,11 @@ using namespace std;
 extern int MyPNID;
 extern char Node_name[MPI_MAX_PROCESSOR_NAME];
 
-const char *CMonTrace::str_trace_enable  = "MON_TRACE_ENABLE";
-const char *CMonTrace::str_trace_file    = "MON_TRACE_FILE";
-const char *CMonTrace::str_trace_file_fb = "MON_TRACE_FILE_FB";
+const char *CMonTrace::traceEnableStr_  = "MON_TRACE_ENABLE";
+const char *CMonTrace::traceFileStr_    = "MON_TRACE_FILE";
+const char *CMonTrace::traceFileFbStr_  = "MON_TRACE_FILE_FB";
 
-const CMonTrace::traceArea CMonTrace::traceAreaList[] =
+const CMonTrace::TraceArea_t CMonTrace::traceAreaList_[] =
 { {"MON_TRACE_REQUEST",        TRACE_REQUEST},
   {"MON_TRACE_REQUEST_DETAIL", TRACE_REQUEST_DETAIL},
   {"MON_TRACE_PROCESS",        TRACE_PROCESS},
@@ -69,9 +69,15 @@ long trace_settings = 0;
 
 CMonTrace *MonTrace = new CMonTrace ();
 
-CMonTrace::CMonTrace() : tracingEnabled(false), trace_settings_saved(0), trace_file_fb(0), trace_file_base(NULL)
+CMonTrace::CMonTrace()
+         : tracingEnabled_(false)
+         , numTraceAreas_(0)
+         , traceSettingsSaved_(0)
+         , traceFileFB_(0)
+         , traceFileBase_(NULL)
+         , traceFileName_("")
 {
-    numTraceAreas = sizeof(traceAreaList)/sizeof(traceArea);
+    numTraceAreas_ = sizeof(traceAreaList_)/sizeof(TraceArea_t);
 }
 
 const char *CMonTrace::getenv_str(const char *key)
@@ -120,15 +126,15 @@ void CMonTrace::mon_trace_init(const char * traceLevel, const char *pfname)
     if (pfname == NULL)
     {   // Caller did not specify a trace file name, get name from
         // environment variable if specified.
-        pfname = getenv_str(str_trace_file);
+        pfname = getenv_str(traceFileStr_);
     }
 
     if (pfname != NULL)
     {   // User specified trace file name
 
         // Save the base trace file name for possible use later
-        trace_file_base = new char[strlen(pfname) + 1];
-        strcpy(trace_file_base, pfname);
+        traceFileBase_ = new char[strlen(pfname) + 1];
+        strcpy(traceFileBase_, pfname);
 
         if ((strcmp(pfname, "STDOUT") == 0)
           || strcmp(pfname, "STDERR") == 0)
@@ -142,24 +148,26 @@ void CMonTrace::mon_trace_init(const char * traceLevel, const char *pfname)
         }
     }
 
+    traceFileName_ = trace_file_name;
+    
     // Get any trace settings that were specified via environment variables
     const char *value;
 
-    for (int i=0; i<numTraceAreas; i++)
+    for (int i=0; i<numTraceAreas_; i++)
     {
-        value = getenv(traceAreaList[i].id);
+        value = getenv(traceAreaList_[i].id);
         if (value != NULL)
         {
             if (atoi(value) != 0)
                 // set the enabled flag for this trace area
-                trace_settings |= traceAreaList[i].bitFlag;
+                trace_settings |= traceAreaList_[i].bitFlag;
         }
     }
 
     // Get environment variable specifying whether tracing is enabled
-    tracingEnabled = getenv_bool(str_trace_enable);
+    tracingEnabled_ = getenv_bool(traceEnableStr_);
     // Get environment variable value for trace buffer size if specified
-    getenv_int (str_trace_file_fb, trace_file_fb);
+    getenv_int (traceFileFbStr_, traceFileFB_);
 
     // Convert the user specified trace level string to a number.  The
     // number can be specified as a decimal, octal or hexadecimal
@@ -173,18 +181,18 @@ void CMonTrace::mon_trace_init(const char * traceLevel, const char *pfname)
     }
 
     // If any trace settings were specified initialize the trace file
-    if (trace_settings != 0 || tracingEnabled)
+    if (trace_settings != 0 || tracingEnabled_)
     {
-        tracingEnabled = true;
-        trace_settings_saved = trace_settings;
+        tracingEnabled_ = true;
+        traceSettingsSaved_ = trace_settings;
 
         trace_init(trace_file_name,
                    false,  // don't append pid to file name
                    Node_name,  // prefix
                    false);
-        if (trace_file_fb > 0)
+        if (traceFileFB_ > 0)
         {
-            trace_set_mem(trace_file_fb);
+            trace_set_mem(traceFileFB_);
         }
     }
 }
@@ -214,68 +222,68 @@ const char *CMonTrace::mon_help_str(const char *key, const char *value,
 
 void CMonTrace::mon_trace_change(const char *key, const char *value)
 {
-    bool trace_was_enabled = tracingEnabled;
+    bool trace_was_enabled = tracingEnabled_;
     const char *pfname;
-    int  old_fb = trace_file_fb;
+    int  old_fb = traceFileFB_;
 
     if (key == NULL)
         return;
 
     // Restore saved trace settings in case trace flags get modified
-    trace_settings = trace_settings_saved;
+    trace_settings = traceSettingsSaved_;
 
     // Compare the key with each of the trace flag strings.  When
     // there is an equal compare, assign the value to the appropriate flag.
-    for (int i=0; i<numTraceAreas; i++)
+    for (int i=0; i<numTraceAreas_; i++)
     {
-        if (strcasecmp(key, traceAreaList[i].id) == 0)
+        if (strcasecmp(key, traceAreaList_[i].id) == 0)
         {
             if (atoi(value) != 0)
             {
                 // set the enabled flag for this trace area
-                trace_settings |= traceAreaList[i].bitFlag;
+                trace_settings |= traceAreaList_[i].bitFlag;
             }
             else // clear the enabled flag for this trace area
             {
-                trace_settings &= ~traceAreaList[i].bitFlag;
+                trace_settings &= ~traceAreaList_[i].bitFlag;
             }
             break;
         }
     }
     // Save current trace settings
-    trace_settings_saved = trace_settings;
+    traceSettingsSaved_ = trace_settings;
 
 
     // Check if tracing is being enabled/disabled
-    mon_help_bool(key, value, str_trace_enable, tracingEnabled);
+    mon_help_bool(key, value, traceEnableStr_, tracingEnabled_);
     // Check if trace file buffer size is being specified
-    mon_help_int (key, value, str_trace_file_fb, trace_file_fb);
+    mon_help_int (key, value, traceFileFbStr_, traceFileFB_);
 
     // Check if trace file base name is being specified
-    pfname = mon_help_str(key, value, str_trace_file);
+    pfname = mon_help_str(key, value, traceFileStr_);
     if (pfname != NULL)
     {   // Save trace file base name
-        delete [] trace_file_base;
-        trace_file_base = new char[strlen(pfname) + 1];
-        strcpy(trace_file_base, pfname);
+        delete [] traceFileBase_;
+        traceFileBase_ = new char[strlen(pfname) + 1];
+        strcpy(traceFileBase_, pfname);
     }
 
-    if (!trace_was_enabled && tracingEnabled)
+    if (!trace_was_enabled && tracingEnabled_)
     {
         char fname[MAX_PROCESS_PATH];
 
         // Formulate trace file name
-        if (trace_file_base != NULL)
+        if (traceFileBase_ != NULL)
         {  // User specified trace file name
-            if ((strcmp(trace_file_base, "STDOUT") == 0)
-                || strcmp(trace_file_base, "STDERR") == 0)
+            if ((strcmp(traceFileBase_, "STDOUT") == 0)
+                || strcmp(traceFileBase_, "STDERR") == 0)
             {
-                strcpy(fname, trace_file_base);
+                strcpy(fname, traceFileBase_);
             }
             else 
             {   // Make user specified file name unique per node
                 sprintf(fname,"%s/%s.%d.%s",getenv("MPI_TMPDIR"),
-                        trace_file_base,MyPNID,Node_name);
+                        traceFileBase_,MyPNID,Node_name);
             }
         }
         else
@@ -298,7 +306,7 @@ void CMonTrace::mon_trace_change(const char *key, const char *value)
                    Node_name,  // prefix
                    false);
     }
-    if (trace_was_enabled && !tracingEnabled)
+    if (trace_was_enabled && !tracingEnabled_)
     {
         // Tracing was enabled and now is disabled, flush trace.  Save
         // current trace settings.
@@ -308,6 +316,6 @@ void CMonTrace::mon_trace_change(const char *key, const char *value)
     }
 
     // If a new trace file buffer size was specified, set it
-    if ((trace_file_fb > 0) && (old_fb != trace_file_fb))
-        trace_set_mem(trace_file_fb);
+    if ((traceFileFB_ > 0) && (old_fb != traceFileFB_))
+        trace_set_mem(traceFileFB_);
 }

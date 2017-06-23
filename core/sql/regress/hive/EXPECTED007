@@ -827,6 +827,74 @@ CREATE VIEW vh11 AS
 
 --- 0 row(s) selected.
 >>
+>>-- register hive schemas
+>>get schemas in catalog hive, match '%hivesch0078%';
+
+--- SQL operation complete.
+>>get hive registered schemas in catalog trafodion, match '%hivesch0078%';
+
+--- SQL operation complete.
+>>showddl schema hive.hivesch0078;
+
+*** ERROR[1003] Schema HIVE.HIVESCH0078 does not exist.
+
+--- SQL operation failed with errors.
+>>get tables in schema hive.hivesch0078;
+
+*** ERROR[1003] Schema hive.HIVESCH0078 does not exist.
+
+--- SQL operation failed with errors.
+>>process hive statement 'create database hivesch0078';
+
+--- SQL operation complete.
+>>showddl schema hive.hivesch0078;
+
+/* Hive DDL */
+create database hivesch0078;
+
+
+--- SQL operation complete.
+>>register hive schema hive.hivesch0078;
+
+--- SQL operation complete.
+>>showddl schema hive.hivesch0078;
+
+/* Hive DDL */
+create database hivesch0078;
+
+REGISTER /*INTERNAL*/ HIVE SCHEMA hive.hivesch0078;
+
+--- SQL operation complete.
+>>get hive registered schemas in catalog trafodion, match '%hivesch0078%';
+
+Hive Registered Schemas in Catalog TRAFODION
+============================================
+
+hive.hivesch0078
+
+--- SQL operation complete.
+>>unregister hive schema hive.hivesch0078;
+
+--- SQL operation complete.
+>>showddl schema hive.hivesch0078;
+
+/* Hive DDL */
+create database hivesch0078;
+
+
+--- SQL operation complete.
+>>get hive registered schemas in catalog trafodion, match '%hivesch0078%';
+
+--- SQL operation complete.
+>>process hive statement 'drop database hivesch0078';
+
+--- SQL operation complete.
+>>showddl schema hive.hivesch0078;
+
+*** ERROR[1003] Schema HIVE.HIVESCH0078 does not exist.
+
+--- SQL operation failed with errors.
+>>
 >>obey TEST007(error_tests_hive);
 >>insert into hive.hivesch007.vhive1 values (1);
 

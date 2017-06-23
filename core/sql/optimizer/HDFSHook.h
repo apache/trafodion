@@ -49,6 +49,9 @@
 // forward declarations
 struct hive_tbl_desc;
 class HivePartitionAndBucketKey;
+class HHDFSTableStats;
+class OsimHHDFSStatsBase;
+class OptimizerSimulator;
 
 typedef CollIndex HostId;
 typedef Int64 BucketNum;
@@ -57,6 +60,7 @@ typedef Int64 Offset;
 
 class HHDFSMasterHostList : public NABasicObject
 {
+friend class OptimizerSimulator;
 public:
   HHDFSMasterHostList(NAMemory *heap) {}
   ~HHDFSMasterHostList();
@@ -112,13 +116,18 @@ private:
 
 class HHDFSStatsBase : public NABasicObject
 {
+  friend class OsimHHDFSStatsBase;
 public:
-  HHDFSStatsBase() : numBlocks_(0),
-                     numFiles_(0),
-                     totalSize_(0),
-                     modificationTS_(0),
-                     sampledBytes_(0),
-                     sampledRows_(0) {}
+  HHDFSStatsBase(HHDFSTableStats *table) : numBlocks_(0),
+                                           numFiles_(0),
+                                           totalRows_(0),
+                                           totalStringLengths_(0),
+                                           totalSize_(0),
+                                           numStripes_(0),
+                                           modificationTS_(0),
+                                           sampledBytes_(0),
+                                           sampledRows_(0),
+                                           table_(table) {}
 
   void add(const HHDFSStatsBase *o);
   void subtract(const HHDFSStatsBase *o);
@@ -126,6 +135,9 @@ public:
   Int64 getTotalSize() const { return totalSize_; }
   Int64 getNumFiles() const { return numFiles_; }
   Int64 getNumBlocks() const { return numBlocks_; }
+  Int64 getTotalRows() const { return totalRows_; }
+  Int64 getTotalStringLengths() { return totalStringLengths_; }
+  Int64 getNumStripes() const { return numStripes_; }
   Int64 getSampledBytes() const { return sampledBytes_; }
   Int64 getSampledRows() const { return sampledRows_; }
   time_t getModificationTS() const { return modificationTS_; }
@@ -133,22 +145,34 @@ public:
   Int64 getEstimatedRowCount() const;
   Int64 getEstimatedRecordLength() const;
   void print(FILE *ofd, const char *msg);
+  const HHDFSTableStats *getTable() const { return table_; }
+  HHDFSTableStats *getTable() { return table_; }
+  
+  virtual OsimHHDFSStatsBase* osimSnapShot(NAMemory * heap){ return NULL; }
 
 protected:
   Int64 numBlocks_;
   Int64 numFiles_;
+  Int64 totalRows_;  // for ORC files
+  Int64 numStripes_;  // for ORC files
+  Int64 totalStringLengths_;  // for ORC files
   Int64 totalSize_;
   time_t modificationTS_; // last modification time of this object (file, partition/directory, bucket or table)
   Int64 sampledBytes_;
   Int64 sampledRows_;
+  HHDFSTableStats *table_;
 };
 
 class HHDFSFileStats : public HHDFSStatsBase
 {
+  friend class OsimHHDFSFileStats;
 public:
-  HHDFSFileStats(NAMemory *heap) : heap_(heap),
-                                   fileName_(heap),
-                                   blockHosts_(NULL) {}
+  HHDFSFileStats(NAMemory *heap,
+                 HHDFSTableStats *table) :
+       HHDFSStatsBase(table),
+       heap_(heap),
+       fileName_(heap),
+       blockHosts_(NULL) {}
   ~HHDFSFileStats();
   void populate(hdfsFS fs,
                 hdfsFileInfo *fileInfo,
@@ -162,7 +186,9 @@ public:
   Int64 getBlockSize() const                            { return blockSize_; }
   HostId getHostId(Int32 replicate, Int64 blockNum) const
                         { return blockHosts_[replicate*numBlocks_+blockNum]; }
-  void print(FILE *ofd);
+  virtual void print(FILE *ofd);
+  
+  virtual OsimHHDFSStatsBase* osimSnapShot(NAMemory * heap);
 
 private:
 
@@ -178,8 +204,12 @@ private:
 
 class HHDFSBucketStats : public HHDFSStatsBase
 {
+  friend class OsimHHDFSBucketStats;
 public:
-  HHDFSBucketStats(NAMemory *heap) : heap_(heap), fileStatsList_(heap), scount_(0) {}
+  HHDFSBucketStats(NAMemory *heap,
+                   HHDFSTableStats *table) :
+       HHDFSStatsBase(table),
+       heap_(heap), fileStatsList_(heap), scount_(0) {}
   ~HHDFSBucketStats();
 
   const CollIndex entries() const         { return fileStatsList_.entries(); }
@@ -196,6 +226,10 @@ public:
   void removeAt(CollIndex i);
   void print(FILE *ofd);
 
+  void insertAt(Int32 pos, HHDFSFileStats* st){  fileStatsList_.insertAt(pos, st);  }
+  
+  virtual OsimHHDFSStatsBase* osimSnapShot(NAMemory * heap);
+
 private:
 
   // list of files in this bucket
@@ -207,8 +241,12 @@ private:
 
 class HHDFSListPartitionStats : public HHDFSStatsBase
 {
+    friend class OsimHHDFSListPartitionStats;
 public:
-  HHDFSListPartitionStats(NAMemory *heap) : heap_(heap), partitionDir_(heap),
+  HHDFSListPartitionStats(NAMemory *heap,
+                          HHDFSTableStats *table) :
+       HHDFSStatsBase(table),
+       heap_(heap), partitionDir_(heap),
     bucketStatsList_(heap),
     doEstimation_(FALSE),
     recordTerminator_(0)
@@ -232,10 +270,16 @@ public:
   Int32 determineBucketNum(const char *fileName);
   void print(FILE *ofd);
 
+  void insertAt(Int32 pos, HHDFSBucketStats* st){  bucketStatsList_.insertAt(pos, st);  }
+  
+  virtual OsimHHDFSStatsBase* osimSnapShot(NAMemory * heap);
+
 private:
 
   // directory of the partition
   NAString partitionDir_;
+  NAString partitionKeyValues_;
+  int partIndex_; // index in HDFSTableStats list
 
   // number of buckets (from table DDL) or 0 if partition is not bucketed
   // Note this value can never be 1. This value indicates the last
@@ -258,8 +302,11 @@ private:
 class HHDFSTableStats : public HHDFSStatsBase
 {
   friend class HivePartitionAndBucketKey; // to be able to make a subarray of the partitions
+  friend class OsimHHDFSTableStats;
+  friend class OptimizerSimulator;
 public:
-  HHDFSTableStats(NAMemory *heap) : currHdfsPort_(-1),
+  HHDFSTableStats(NAMemory *heap) : HHDFSStatsBase(this),
+                                    currHdfsPort_(-1),
                                     fs_(NULL),
                                     hdfsPortOverride_(-1),
                                     tableDir_(heap),
@@ -336,6 +383,11 @@ public:
   const NABoolean isOrcFile() const { return (type_ == ORC_);}
 
   const NAString &tableDir() const { return tableDir_; }
+
+  void insertAt(Int32 pos, HHDFSListPartitionStats * st) {  listPartitionStatsList_.insertAt(pos, st);  }
+  virtual OsimHHDFSStatsBase* osimSnapShot(NAMemory * heap);
+  void captureHiveTableStats(const NAString &tableName, Int64 lastModificationTs, hive_tbl_desc* hvt_desc );
+  static HHDFSTableStats * restoreHiveTableStats(const NAString & tableName,  Int64 lastModificationTs,  hive_tbl_desc* hvt_desc, NAMemory* heap);
 
   const Lng32 numOfPartCols() const { return numOfPartCols_; }
   const Lng32 totalNumPartitions() const { return totalNumPartitions_; }

@@ -25,14 +25,14 @@
 
 using namespace std;
 
-#include "sqliteconfig.h"
-#include "trafconfigtrace.h"
+#include "tcdb.h"
+#include "tctrace.h"
 #include "trafconfig.h"
 
 bool TcTraceEnabled = false;
 
 CTrafConfigTrace    TrafConfigTrace;
-CSqliteConfig       SqliteConfig;
+CTcdb               TrafConfigDb;
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Trafodion Configuration
@@ -40,7 +40,7 @@ CSqliteConfig       SqliteConfig;
 
 TC_Export int tc_close( void )
 {
-    int rc = SqliteConfig.Close();
+    int rc = TrafConfigDb.Close();
 
     if (TcTraceEnabled)
     {
@@ -76,15 +76,15 @@ TC_Export const char *tc_errmsg( int err )
     return "Error undefined!";
 }
 
-TC_Export int tc_initialize( bool traceEnabled )
+TC_Export int tc_initialize( bool traceEnabled, const char *traceFileName )
 {
     TcTraceEnabled = traceEnabled;
     if (TcTraceEnabled)
     {
-        TrafConfigTrace.TraceInit( TcTraceEnabled, "0", NULL );
+        TrafConfigTrace.TraceInit( TcTraceEnabled, "0", traceFileName );
     }
 
-    int rc = SqliteConfig.Initialize();
+    int rc = TrafConfigDb.Initialize();
 
     return( rc );
 }
@@ -93,12 +93,17 @@ TC_Export int tc_initialize( bool traceEnabled )
 TC_Export int tc_delete_node( int nid
                             , const char *node_name )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
     node_configuration_t nodeConfig;
 
     if (node_name)
     {
-        rc = SqliteConfig.GetNode( node_name, nodeConfig );
+        rc = TrafConfigDb.GetNode( node_name, nodeConfig );
         if ( rc != TCSUCCESS)
         {
             return( rc );
@@ -106,7 +111,7 @@ TC_Export int tc_delete_node( int nid
     }
     else
     {
-        rc = SqliteConfig.GetNode( nid, nodeConfig );
+        rc = TrafConfigDb.GetNode( nid, nodeConfig );
         if ( rc != TCSUCCESS)
         {
             return( rc );
@@ -115,7 +120,7 @@ TC_Export int tc_delete_node( int nid
 
     if ( nodeConfig.nid != -1)
     {
-        rc = SqliteConfig.DeleteNodeData( nodeConfig.pnid );
+        rc = TrafConfigDb.DeleteNodeData( nodeConfig.pnid );
     }
 
     return( rc );
@@ -124,24 +129,34 @@ TC_Export int tc_delete_node( int nid
 TC_Export int tc_get_node( const char *node_name
                          , node_configuration_t *node_config )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.GetNode( node_name, *node_config );
+    rc = TrafConfigDb.GetNode( node_name, *node_config );
 
     return( rc );
 }
 
 TC_Export int tc_put_node( node_configuration_t *node_config )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.SavePNodeData( node_config->node_name
+    rc = TrafConfigDb.SavePNodeData( node_config->node_name
                                    , node_config->pnid
                                    , node_config->excluded_first_core
                                    , node_config->excluded_last_core );
     if (rc == TCSUCCESS)
     {
-        rc = SqliteConfig.SaveLNodeData( node_config->nid
+        rc = TrafConfigDb.SaveLNodeData( node_config->nid
                                        , node_config->pnid
                                        , node_config->first_core
                                        , node_config->last_core
@@ -155,18 +170,28 @@ TC_Export int tc_put_node( node_configuration_t *node_config )
 TC_Export int tc_get_pnode( const char *node_name
                           , physical_node_configuration_t *pnode_config )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.GetPNode( node_name, *pnode_config );
+    rc = TrafConfigDb.GetPNode( node_name, *pnode_config );
 
     return( rc );
 }
 
 TC_Export int tc_put_pnode( physical_node_configuration_t *pnode_config )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.SavePNodeData( pnode_config->node_name
+    rc = TrafConfigDb.SavePNodeData( pnode_config->node_name
                                    , pnode_config->pnid
                                    , pnode_config->excluded_first_core
                                    , pnode_config->excluded_last_core );
@@ -178,6 +203,11 @@ TC_Export int tc_get_nodes( int *count
                           , int  max
                           , node_configuration_t *node_config )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
     if ( node_config == NULL )
@@ -185,7 +215,7 @@ TC_Export int tc_get_nodes( int *count
         max = 0;
     }
 
-    rc = SqliteConfig.GetNodes( *count, max, node_config );
+    rc = TrafConfigDb.GetNodes( *count, max, node_config );
 
     return( rc );
 }
@@ -194,6 +224,11 @@ TC_Export int tc_get_snodes( int *scount
                            , int  max
                            , physical_node_configuration_t *pnode_config )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
     if ( pnode_config == NULL )
@@ -201,13 +236,18 @@ TC_Export int tc_get_snodes( int *scount
         max = 0;
     }
 
-    rc = SqliteConfig.GetSNodes( *scount, max, pnode_config );
+    rc = TrafConfigDb.GetSNodes( *scount, max, pnode_config );
 
     return( rc );
 }
 
 TC_Export int tc_delete_persist_keys( void )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCNOTIMPLEMENTED;
 
     //
@@ -217,15 +257,25 @@ TC_Export int tc_delete_persist_keys( void )
 
 TC_Export int tc_get_persist_keys( const char *persist_keys )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.GetPersistProcessKeys( persist_keys );
+    rc = TrafConfigDb.GetPersistProcessKeys( persist_keys );
 
     return( rc );
 }
 
 TC_Export int tc_put_persist_keys( const char *persist_keys )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCNOTIMPLEMENTED;
 
     //
@@ -235,6 +285,11 @@ TC_Export int tc_put_persist_keys( const char *persist_keys )
 
 TC_Export int tc_delete_persist_process( const char *persist_key_prefix )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCNOTIMPLEMENTED;
 
     //
@@ -245,9 +300,14 @@ TC_Export int tc_delete_persist_process( const char *persist_key_prefix )
 TC_Export int tc_get_persist_process( const char *persist_key_prefix
                                     , persist_configuration_t *persist_config )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.GetPersistProcess( persist_key_prefix, *persist_config );
+    rc = TrafConfigDb.GetPersistProcess( persist_key_prefix, *persist_config );
 
     return( rc );
 }
@@ -255,6 +315,11 @@ TC_Export int tc_get_persist_process( const char *persist_key_prefix
 TC_Export int tc_put_persist_process( const char *persist_key_prefix
                                     , persist_configuration_t *persist_config )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCNOTIMPLEMENTED;
 
     //
@@ -266,9 +331,14 @@ TC_Export int tc_get_registry_cluster_set( int *count
                                          , int  max
                                          , registry_configuration_t *registry_config )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.GetRegistryClusterSet( *count, max, registry_config );
+    rc = TrafConfigDb.GetRegistryClusterSet( *count, max, registry_config );
 
     return( rc );
 }
@@ -277,45 +347,70 @@ TC_Export int tc_get_registry_process_set( int *count
                                          , int  max
                                          , registry_configuration_t *registry_config )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.GetRegistryProcessSet( *count, max, registry_config );
+    rc = TrafConfigDb.GetRegistryProcessSet( *count, max, registry_config );
 
     return( rc );
 }
 
 TC_Export int tc_get_registry_key( const char *key )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCNOTIMPLEMENTED;
 
-    //rc = SqliteConfig.GetRegistryKey( key );
+    //rc = TrafConfigDb.GetRegistryKey( key );
 
     return( rc );
 }
 
 TC_Export int tc_put_registry_key( const char *key )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.AddRegistryKey( key );
+    rc = TrafConfigDb.AddRegistryKey( key );
 
     return( rc );
 }
 
 TC_Export int tc_get_registry_process( const char *process_name )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCNOTIMPLEMENTED;
 
-    //rc = SqliteConfig.GetRegistryProcess( process_name );
+    //rc = TrafConfigDb.GetRegistryProcess( process_name );
 
     return( rc );
 }
 
 TC_Export int tc_put_registry_process( const char *process_name )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.AddRegistryProcess( process_name );
+    rc = TrafConfigDb.AddRegistryProcess( process_name );
 
     return( rc );
 }
@@ -323,9 +418,14 @@ TC_Export int tc_put_registry_process( const char *process_name )
 TC_Export int tc_get_registry_cluster_data( const char *key
                                           , const char *data )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCNOTIMPLEMENTED;
 
-    //rc = SqliteConfig.GetRegistryClusterData( key, data );
+    //rc = TrafConfigDb.GetRegistryClusterData( key, data );
 
     return( rc );
 }
@@ -333,9 +433,14 @@ TC_Export int tc_get_registry_cluster_data( const char *key
 TC_Export int tc_put_registry_cluster_data( const char *key
                                           , const char *data )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.AddRegistryClusterData( key, data );
+    rc = TrafConfigDb.AddRegistryClusterData( key, data );
 
     return( rc );
 }
@@ -344,9 +449,14 @@ TC_Export int tc_get_registry_process_data( const char *process_name
                                           , const char *key
                                           , const char *data )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCNOTIMPLEMENTED;
 
-    //rc = SqliteConfig.GetRegistryProcessData( process_name, key, data );
+    //rc = TrafConfigDb.GetRegistryProcessData( process_name, key, data );
 
     return( rc );
 }
@@ -355,18 +465,38 @@ TC_Export int tc_put_registry_process_data( const char *process_name
                                           , const char *key
                                           , const char *data )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.AddRegistryProcessData( process_name, key, data );
+    rc = TrafConfigDb.AddRegistryProcessData( process_name, key, data );
 
     return( rc );
 }
 
+TC_Export TC_STORAGE_TYPE tc_get_storage_type( void )
+{
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCDBSTOREUNDEFINED );
+    }
+
+    return( TrafConfigDb.GetStorageType() );
+}
+
 TC_Export int tc_delete_unique_strings( int nid )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.DeleteUniqueString( nid );
+    rc = TrafConfigDb.DeleteUniqueString( nid );
 
     return( rc );
 }
@@ -374,36 +504,56 @@ TC_Export int tc_delete_unique_strings( int nid )
 
 TC_Export int tc_get_unique_string( int nid, int id, const char *unique_string )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.GetUniqueString( nid, id, unique_string );
+    rc = TrafConfigDb.GetUniqueString( nid, id, unique_string );
 
     return( rc );
 }
 
 TC_Export int tc_put_unique_string( int nid, int id, const char *unique_string )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.AddUniqueString( nid, id, unique_string );
+    rc = TrafConfigDb.AddUniqueString( nid, id, unique_string );
 
     return( rc );
 }
 
 TC_Export int tc_get_unique_string_id( int nid, const char *unique_string, int *id )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.GetUniqueStringId( nid, unique_string, *id );
+    rc = TrafConfigDb.GetUniqueStringId( nid, unique_string, *id );
 
     return( rc );
 }
 
 TC_Export int tc_get_unique_string_id_max( int nid, int *id )
 {
+    if ( ! TrafConfigDb.IsInitialized() )
+    {
+        return( TCNOTINIT );
+    }
+
     int rc = TCDBOPERROR;
 
-    rc = SqliteConfig.GetUniqueStringIdMax( nid, *id );
+    rc = TrafConfigDb.GetUniqueStringIdMax( nid, *id );
 
     return( rc );
 }

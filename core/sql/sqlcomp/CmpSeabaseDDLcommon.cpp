@@ -9009,7 +9009,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     {
       dropSeabaseMDviews();
     }
-  else if (ddlExpr->initAuthorization())
+  else if (ddlExpr->initAuth())
     {
       std::vector<std::string> tablesCreated;
       std::vector<std::string> tablesUpgraded;
@@ -9042,7 +9042,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       cout << msgBuf.data() << endl;
 #endif
     }
-  else if (ddlExpr->dropAuthorization())
+  else if (ddlExpr->dropAuth())
     {
       dropSeabaseAuthorization(&cliInterface, FALSE);
     }
@@ -9070,7 +9070,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     {
       updateVersion();
     }
-  else if (ddlExpr->purgedataHbase())
+  else if (ddlExpr->purgedata())
     {
       purgedataHbaseTable(ddlExpr, currCatName, currSchName);
     }

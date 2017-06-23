@@ -259,6 +259,7 @@ select * from hive.hive.t; -- explicit table name
 [cols="2*",options="header"]
 |===
 | Hive Type             | {project-name} SQL Type
+| `tinyint`             | `tinyint`
 | `tinyint`             | `smallint`
 | `smallint`            | `smallint`
 | `int`                 | `int`

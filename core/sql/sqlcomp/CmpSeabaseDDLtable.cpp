@@ -10320,12 +10320,11 @@ short CmpSeabaseDDL::unregisterNativeTable
      const NAString &catalogNamePart,
      const NAString &schemaNamePart,
      const NAString &objectNamePart,
-     ExeCliInterface &cliInterface
+     ExeCliInterface &cliInterface,
+     ComObjectType objType
  )
 {
   short retcode = 0;
-
-  ComObjectType objType = COM_BASE_TABLE_OBJECT;
 
   Int64 objUID = getObjectUID(&cliInterface,
                               catalogNamePart.data(), 
@@ -10710,8 +10709,11 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
   // make sure that underlying hive/hbase object exists
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
   CorrName cn(objectNamePart, STMTHEAP, 
-              (isHBase? HBASE_CELL_SCHEMA : schemaNamePart),
+              ((isHBase && (schemaNamePart == HBASE_SYSTEM_SCHEMA))
+               ? HBASE_CELL_SCHEMA : schemaNamePart),
               catalogNamePart);
+  if (isHive && regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT)
+    cn.setSpecialType(ExtendedQualName::SCHEMA_TABLE);
 
   NATable * naTable = bindWA.getNATable(cn);
   if (((naTable == NULL) || (bindWA.errStatus())) &&
@@ -10723,7 +10725,10 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
       *CmpCommon::diags() << DgSqlCode(-3251)
                           << (regOrUnregObject->isRegister() ? DgString0("REGISTER") :
                               DgString0("UNREGISTER"))
-                          << DgString1(NAString(" Reason: Specified object ") + objectNamePart + NAString(" does not exist."));
+                          << DgString1(NAString(" Reason: Specified object ") +
+                                       (regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT ?
+                                        schemaNamePart : objectNamePart) +
+                                       NAString(" does not exist."));
       
       processReturn();
       
@@ -10741,8 +10746,10 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
           if (NOT regOrUnregObject->existsOption())
             {
               str_sprintf(errReason, " Reason: %s has already been registered.",
-                          regOrUnregObject->getObjNameAsQualifiedName().
-                          getQualifiedNameAsString().data());
+                          (regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT ?
+                           schemaNamePart.data() :
+                           regOrUnregObject->getObjNameAsQualifiedName().
+                           getQualifiedNameAsString().data()));
               *CmpCommon::diags() << DgSqlCode(-3251)
                                   << DgString0("REGISTER")
                                   << DgString1(errReason);
@@ -10758,8 +10765,10 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
           if (NOT regOrUnregObject->existsOption())
             {
               str_sprintf(errReason, " Reason: %s has not been registered.",
-                          regOrUnregObject->getObjNameAsQualifiedName().
-                          getQualifiedNameAsString().data());
+                          (regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT ?
+                           schemaNamePart.data() :
+                           regOrUnregObject->getObjNameAsQualifiedName().
+                           getQualifiedNameAsString().data()));
               *CmpCommon::diags() << DgSqlCode(-3251)
                                   << DgString0("UNREGISTER")
                                   << DgString1(errReason);
@@ -10874,7 +10883,8 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
     }
   else // unregister
     {
-      if (regOrUnregObject->objType() == COM_BASE_TABLE_OBJECT)
+      if ((regOrUnregObject->objType() == COM_BASE_TABLE_OBJECT) ||
+          (regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT))
         {
           if (schemaNamePart == HBASE_SYSTEM_SCHEMA)
             {
@@ -10891,7 +10901,9 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
             {
               retcode = unregisterNativeTable(
                    catalogNamePart, schemaNamePart, objectNamePart,
-                   cliInterface);
+                   cliInterface,
+                   (regOrUnregObject->objType() == COM_SHARED_SCHEMA_OBJECT ?
+                    COM_SHARED_SCHEMA_OBJECT : COM_BASE_TABLE_OBJECT));
             }
         }
       else // view

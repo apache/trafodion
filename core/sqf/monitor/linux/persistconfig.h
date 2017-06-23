@@ -52,6 +52,7 @@ typedef enum
 } FormatZid_t; 
 
 typedef vector<string>  pkeysVector_t;
+typedef vector<string>  stringVector_t;
 
 typedef struct persistConfigInfo_s
 {
@@ -61,6 +62,7 @@ typedef struct persistConfigInfo_s
     char            stdoutPrefix[TC_PERSIST_VALUE_MAX];
     char            stdoutFormat[TC_PERSIST_VALUE_MAX];
     char            programName[TC_PERSIST_VALUE_MAX];
+    char            programArgs[TC_PERSIST_VALUE_MAX];
     char            zoneFormat[TC_PERSIST_VALUE_MAX];
     PROCESSTYPE     processType;
     bool            requiresDTM;
@@ -119,6 +121,10 @@ public:
     inline const char   *GetStdoutFormat( void ) { return( stdoutFormat_.c_str() ); }
     inline FormatNid_t   GetStdoutNidFormat( void ) { return( stdoutNidFormat_ ); }
     inline const char   *GetProgramName( void ) { return( programName_.c_str() ); }
+    inline const char   *GetProgramArgs( void ) { return( programArgs_.c_str() ); }
+    inline int           GetProgramArgc( void ) { return( programArgc_ ); }
+    inline const char   *GetProgramArgv( void ) { return( programArgv_ ); }
+    inline int           GetProgramArgvLen( void ) { return( programArgvLen_ ); }
     inline const char   *GetZoneFormat( void ) { return( zoneFormat_.c_str() ); }
     inline FormatZid_t   GetZoneZidFormat( void ) { return( zoneZidFormat_ ); }
     inline PROCESSTYPE   GetProcessType( void ) { return ( processType_ ); }
@@ -138,6 +144,7 @@ private:
     string          stdoutPrefix_;
     string          stdoutFormat_;
     string          programName_;
+    string          programArgs_;
     string          zoneFormat_;
     PROCESSTYPE     processType_;
     FormatNid_t     processNameNidFormat_;
@@ -146,6 +153,10 @@ private:
     bool            requiresDTM_;
     int             persistRetries_;
     int             persistWindow_;
+
+    int             programArgc_;
+    char           *programArgv_;
+    int             programArgvLen_;
 
     CPersistConfig *next_;   // next PersistConfig in CPersistConfigContainer list
     CPersistConfig *prev_;   // previous PersistConfig in CPersistConfigContainer list

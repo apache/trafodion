@@ -614,17 +614,48 @@ short CmpDescribe(const char *query, const RelExpr *queryExpr,
           goto finally;
         }
       NAString schemaText;
+      std::vector<std::string> outlines;
       QualifiedName objQualName(d->getDescribedTableName().getQualifiedNameObj(),
                                 STMTHEAP);
+
+      NABoolean isHiveRegistered = FALSE;
+      if (objQualName.isHive())
+        {
+          CorrName cn(SEABASE_SCHEMA_OBJECTNAME, STMTHEAP,
+                      objQualName.getSchemaName(),
+                      objQualName.getCatalogName());
+          cn.setSpecialType(ExtendedQualName::SCHEMA_TABLE);
+          
+          BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
+          NATable *naTable = bindWA.getNATable(cn); 
+          if ((naTable == NULL) || (bindWA.errStatus()))
+            {
+              CmpCommon::diags()->clear();
+
+              *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
+                                  << DgSchemaName(objQualName.getCatalogName() +
+                                                  "." +  objQualName.getSchemaName());
+
+              rc = -1;
+              goto finally;
+            }
+                                         
+          isHiveRegistered = naTable->isRegistered();
+        }
+
       if (!CmpSeabaseDDL::describeSchema(objQualName.getCatalogName(),
                                          objQualName.getSchemaName(),
-                                         schemaText))
+                                         isHiveRegistered,
+                                         outlines))
+                                         //schemaText))
         {
           rc = -1;
           goto finally;
         }
         
-      outputLine(space, schemaText,0);
+      for(int i = 0; i < outlines.size(); i++)
+         outputLine(space, outlines[i].c_str(), 0);
+ 
       outbuflen = space.getAllocatedSpaceSize();
       outbuf = new (heap) char[outbuflen];
       space.makeContiguous(outbuf, outbuflen);
@@ -2243,11 +2274,6 @@ short CmpDescribeHiveTable (
 
   if (NOT naTable->isHiveTable())
     return -1;
-
-#ifdef __ignore
-  if (NOT ((type == 1) || (type == 2)))
-    return -1;
-#endif
 
   char * buf = new (heap) char[15000];
   CMPASSERT(buf);

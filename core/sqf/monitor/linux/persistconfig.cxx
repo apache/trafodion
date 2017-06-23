@@ -198,6 +198,7 @@ CPersistConfig::CPersistConfig( persistConfigInfo_t &persistConfigInfo )
               , stdoutPrefix_(persistConfigInfo.stdoutPrefix)
               , stdoutFormat_(persistConfigInfo.stdoutFormat)
               , programName_(persistConfigInfo.programName)
+              , programArgs_(persistConfigInfo.programArgs)
               , zoneFormat_(persistConfigInfo.zoneFormat)
               , processType_(persistConfigInfo.processType)
               , processNameNidFormat_(Nid_Undefined)
@@ -206,6 +207,9 @@ CPersistConfig::CPersistConfig( persistConfigInfo_t &persistConfigInfo )
               , requiresDTM_(persistConfigInfo.requiresDTM)
               , persistRetries_(persistConfigInfo.persistRetries)
               , persistWindow_(persistConfigInfo.persistWindow)
+              , programArgc_(0)
+              , programArgv_(NULL)
+              , programArgvLen_(0)
               , next_(NULL)
               , prev_(NULL)
 {
@@ -246,6 +250,69 @@ CPersistConfig::CPersistConfig( persistConfigInfo_t &persistConfigInfo )
         }
     }
 
+    char *token, *programArgs = NULL;
+    static const char *delim = " ";
+    stringVector_t argvVector;
+    
+    if (programArgs_.size())
+    {
+        programArgs = new char [programArgs_.size()+100];
+        memset(programArgs, 0, programArgs_.size()+100);
+        memcpy(programArgs, programArgs_.c_str(), programArgs_.size());
+        
+        token = strtok( programArgs, delim );
+        while (token != NULL)
+        {
+            if ( trace_settings & TRACE_INIT )
+            {
+                trace_printf("%s@%d Setting argvVector=%s\n",
+                             method_name, __LINE__, token);
+            }
+            argvVector.push_back( token );
+            token = strtok( NULL, delim );
+        }
+
+        programArgc_ = argvVector.size();
+
+        // Compute amount of space need to store argument strings
+        stringVector_t::iterator avit;
+        for (avit = argvVector.begin(); avit < argvVector.end(); avit++ )
+        {
+            programArgvLen_ += strlen(avit->c_str()) + 1;
+        }
+        
+        if ( trace_settings & TRACE_INIT )
+        {
+            trace_printf( "%s@%d - Copying arguments "
+                          "programArgc_=%d, programArgvLen_=%d\n"
+                        , method_name, __LINE__
+                        , programArgc_, programArgvLen_);
+        }
+
+        if (programArgvLen_ != 0)
+        {
+            programArgv_ = new char[programArgvLen_];
+            if (programArgv_)
+            {
+                memset(programArgv_, 0, programArgvLen_);
+                char *pProgramArgv = programArgv_;
+                for (avit = argvVector.begin(); avit < argvVector.end(); avit++ )
+                {
+                    if ( trace_settings & TRACE_INIT )
+                    {
+                        trace_printf("%s@%d - prefix=%s, Copying argvVector='%s'\n"
+                                    , method_name, __LINE__
+                                    , persistPrefix_.c_str(), avit->c_str());
+                    }
+                    strcpy (pProgramArgv, avit->c_str());
+                    pProgramArgv += strlen(avit->c_str()) + 1;
+                }
+            }
+        }
+    }
+    
+    if (programArgs) delete [] programArgs;
+
     TRACE_EXIT;
 }
 
@@ -253,6 +320,8 @@ CPersistConfig::~CPersistConfig( void )
 {
     const char method_name[] = "CPersistConfig::~CPersistConfig";
     TRACE_ENTRY;
+
+    if (programArgv_) delete [] programArgv_;
 
     TRACE_EXIT;
 }

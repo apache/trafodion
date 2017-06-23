@@ -164,6 +164,16 @@ class SQLMXDesc
 						return SQLCHARSETSTRING_UNICODE;
 					case SQLCHARSETCODE_UNKNOWN:
 						return SQLCHARSETSTRING_UNKNOWN;
+                    case SQLCHARSETCODE_SJIS:
+                        return SQLCHARSETSTRING_SJIS;
+                    case SQLCHARSETCODE_EUCJP:
+                        return SQLCHARSETSTRING_EUCJP;
+                    case SQLCHARSETCODE_GB18030:
+                        return SQLCHARSETSTRING_GB18030;
+                    case SQLCHARSETCODE_UTF8:
+                        return SQLCHARSETSTRING_UTF8;
+                    case SQLCHARSETCODE_GB2312:
+                        return SQLCHARSETSTRING_GB2312;
 					default:
 						return null;
 				}
@@ -408,12 +418,21 @@ class SQLMXDesc
 	public static final int SQLCHARSETCODE_KSC5601          = -2;
 	public static final int SQLCHARSETCODE_SJIS             = 10;
 	public static final int SQLCHARSETCODE_UCS2	            = 11;
+    public static final int SQLCHARSETCODE_EUCJP            = 12;
+    public static final int SQLCHARSETCODE_GB18030          = 14;
+    public static final int SQLCHARSETCODE_UTF8             = 15;
+    public static final int SQLCHARSETCODE_GB2312           = 17;
 
 	public static final String SQLCHARSETSTRING_UNKNOWN     = "UNKNOWN";
 	public static final String SQLCHARSETSTRING_ISO88591    = "ISO88591";
 	public static final String SQLCHARSETSTRING_KANJI       = "KANJI";
 	public static final String SQLCHARSETSTRING_KSC5601     = "KSC5601";
+    public static final String SQLCHARSETSTRING_SJIS        = "MS932";
 	public static final String SQLCHARSETSTRING_UNICODE	    = "UCS2";
+    public static final String SQLCHARSETSTRING_EUCJP       = "EUCJP";
+    public static final String SQLCHARSETSTRING_GB18030     = "GB18030";
+    public static final String SQLCHARSETSTRING_UTF8        = "UTF-8";
+    public static final String SQLCHARSETSTRING_GB2312      = "GB2312";
 
 
 	//fields

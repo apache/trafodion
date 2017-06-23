@@ -407,12 +407,14 @@ struct execute {
     size_t fsl;                 /* field separator length */
     size_t r;                   /* initial rowset, 'Z' thread: key section length */
     size_t ar;                  /* "actual" rowset (could be < r at the end) */
+    size_t AlreadyLoadRows;     /* already load rows */
     size_t rbs;                 /* rowset buffer size, Z thread: "actual" rowset for tgt threads */
     size_t s;                   /* rowbuffer length (includes data & indicator) */
     size_t sbl;                 /* allocated splitby buffer length (if !=0 grandfather should free etab[].sb) */
     size_t iobuff;              /* low level io buffer size. */
     size_t buffsz;              /* load: fread buffer size */
     unsigned long mr;           /* max number of records to insert/fetch; 0 = unlimited. Extract returns here tinit. Zthread:#records 'I" */
+    unsigned long TotalMaxRecords;  /* total number of records */
     int mer;                    /* max number of errors */
     int roe;                    /* restart on error */
     unsigned int roedel;        /* delay before restarting on error */
@@ -5463,8 +5465,10 @@ static void etabadd(char type, char *run, int id)
                     }
                 } else {                            /* not a load job */
                     etab[no].k = no;                /* record grandparent for copy/diff ops */
-                    if ( etab[no].ps )
+                    if ( etab[no].ps ){
+                        etab[no].TotalMaxRecords = etab[no].mr;
                         etab[no].mr /= etab[no].ps; /* each thread will get a portion of the max record to fetch */
+                    }
                     strmcpy(tabn, etab[no].src, sizeof(tabn));
                     if ( !SQL_SUCCEEDED(Oret=SQLAllocHandle(SQL_HANDLE_STMT, Oc, &Os))){
                         Oerr(-1, -1, __LINE__, Oc, SQL_HANDLE_DBC);
@@ -5858,6 +5862,8 @@ static void etabadd(char type, char *run, int id)
                                     l = no ;
                                 }
                                 cimutex(&etab[no].pmutex);
+                                if ( etab[or].TotalMaxRecords )
+                                    etab[or].mr += etab[or].TotalMaxRecords%etab[or].ps;
                                 for ( no++, j = 1 ; j < etab[l].ps ; j++ ) {
                                     etabnew ( l );
                                     etab[no].id = no;
@@ -6599,8 +6605,12 @@ static void Oload(int eid)
                 fclose ( fe ) ;
                 /* count dataset elements (lines) */
                 for ( map[j].cl = 0 , sp = map[j].c ; *sp ; sp++ )
-                    if ( *sp == '\n' )
+                    if ( *sp == '\n' || *sp == '\r' )
+                    {
                         map[j].cl++;
+                        if( *(sp + 1) == '\n' ) /* windows linefeed use \r\n */
+                            sp++;
+                    }
                 /* allocate memory for dataset element array */
                 if ( ( map[j].el = calloc ( map[j].cl, sizeof(char *) ) ) == (void *)NULL) {
                     fprintf(stderr, "odb [Oload(%d)] - DSRAND error allocating element array for %s\n", 
@@ -6615,8 +6625,13 @@ static void Oload(int eid)
                 }
                 /* tokenize dataset and fill dataset element array */
                 for ( z = 0, sp = map[j].c, map[j].el[0] = map[j].c ; *sp ; sp++ ) {
-                    if ( *sp == '\n' ) {
+                    if ( *sp == '\n' || *sp == '\r' ) {
                         *sp = '\0';
+                        if ( *sp == '\r' && *(sp + 1) == '\n' )
+                        {
+                            *(sp + 1) = '\0';
+                            sp++;
+                        }
                         if ( map[j].eln[z] > (unsigned int)etab[eid].td[j].Osize ) {
                             fprintf(stderr, "odb [Oload(%d)] - DSRAND warning: dataset element \'%s\' will be truncated to fit \'%s\' column length (%d)\n", 
                                 __LINE__, map[j].el[z], (char *)etab[eid].td[j].Oname, (int)etab[eid].td[j].Osize);
@@ -9349,6 +9364,11 @@ static int Oloadbuff(int eid)
             ts += tspdiff ( &tsp1 , &tsp2 ) ;
 #endif
         }
+        if ( (etab[eid].mr - etab[eid].AlreadyLoadRows) < etab[eid].r )
+            /* Reset Rowset size*/
+            if (!SQL_SUCCEEDED(Or=SQLSetStmtAttr(thps[tid].Os,
+                SQL_ATTR_PARAMSET_SIZE, (SQLPOINTER)(etab[eid].mr - etab[eid].AlreadyLoadRows), 0)))
+                Oerr(eid, tid, __LINE__, thps[tid].Os, SQL_HANDLE_STMT);
         if ( etab[eid].ar < etab[eid].r )       /* Reset Rowset size */ 
             if (!SQL_SUCCEEDED(Or=SQLSetStmtAttr(thps[tid].Os,
                 SQL_ATTR_PARAMSET_SIZE, (SQLPOINTER)(etab[eid].ar), 0)))
@@ -10289,6 +10309,11 @@ static int Ocopy(int eid)
                 goto ocopy_exit;
             }
             if ( etab[eid].dbt != VERTICA ) { /* Vertica's CHAR field length is in bytes (not chars) */
+                if ( etab[eid].dbt == ORACLE && Odt[j] == SQL_TYPE_TIMESTAMP )
+                /* The precision of Oracle's Timestamp is always 9 */
+                {
+                    Ors[j] = SQL_TIMESTAMP_LEN + 10; /* Display Size of TIMESTAMP(9) */
+                }
                 switch ( Odt[j] ) {
                 case SQL_WCHAR:
                 case SQL_WVARCHAR:
@@ -10670,6 +10695,7 @@ static int Ocopy(int eid)
             etab[i].lstat = 1;                  /* mark loader buffer read_available */
             MutexUnlock(&etab[eid].pmutex);     /* lock shared mutex */
             etab[i].ar = Orespl;                /* inform loader about #rec to insert */
+            etab[i].AlreadyLoadRows += Orespl;
             CondWakeAll(&etab[eid].pcvc);       /* wake-up sleeping loader threads */
 #ifdef ODB_PROFILE
             clock_gettime(CLOCK_MONOTONIC, &tsp2);
@@ -13133,7 +13159,11 @@ static int Otcol(int eid, SQLHDBC *Ocn)
                     j++; 
                     q = 1;
                 }
-                for ( l = j ; ( str[j] && str[j] != '\n' ) && ( q || str[j] != ':' ) ; j++) {
+#ifdef _WIN32
+                for (l = j; (str[j] && str[j] != '\n') && (q || str[j] != ':') || str[j + 1] == '/'; j++) {
+#else
+                for (l = j; (str[j] && str[j] != '\n') && (q || str[j] != ':'); j++) {
+#endif
                     if ( q ) {
                         if ( str[j] == ']' && ( str[j+1] == ':' || str[j+1] == 0 || isspace((int)str[j+1]) ) ) {
                             q = 0;

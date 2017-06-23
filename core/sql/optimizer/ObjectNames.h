@@ -188,6 +188,9 @@ public:
   const NAString  getUnqualifiedSchemaNameAsAnsiString() const
 				 { return ToAnsiIdentifier(schemaName_); }
 
+  // Translate Trafodion to Hive schema
+  void getHiveSchemaName(NAString &hiveSchemaName) const;
+
   // mutator
   void setSchemaName(const NAString &schName)   { schemaName_ = schName; }
 
@@ -490,7 +493,8 @@ public:
 			  EXCEPTION_TABLE,
 			  GHOST_IUD_LOG_TABLE,
 			  SG_TABLE,
-			  LIBRARY_TABLE                  
+			  LIBRARY_TABLE,
+                          SCHEMA_TABLE
                         };
 
   // constructors

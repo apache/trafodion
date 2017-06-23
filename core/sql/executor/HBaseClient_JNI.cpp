@@ -4265,6 +4265,16 @@ HVC_RetCode HiveClient_JNI::getAllTables(const char* schName,
     (jarray)jenv_->CallObjectMethod(javaObj_, JavaMethods_[JM_GET_ATL].methodID, 
                             js_schName);
 
+  if (j_tblNames == NULL) 
+    {
+      getExceptionDetails();
+
+      logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+      logError(CAT_SQL_HBASE, "HiveClient_JNI::getAllTables()", getLastError());
+      jenv_->PopLocalFrame(NULL);
+      return HVC_ERROR_EXISTS_EXCEPTION;
+    }
+
   if (jenv_->ExceptionCheck())
   {
     getExceptionDetails();
