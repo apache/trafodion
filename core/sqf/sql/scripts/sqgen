@@ -211,8 +211,7 @@ fi
 ./gensqstatem2lenv > $SQETC_DIR/sqstatem2l.env
 
 # Create configuration database tables
-rm -f sqconfig.db
-sqlite3 -init createConfigDb sqconfig.db <<eof 
+sqlite3 -init createConfigDb $SQCONFIG_DB_FILE <<eof 
 .quit
 eof
 
