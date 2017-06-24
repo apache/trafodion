@@ -16,10 +16,9 @@
 # @@@ END COPYRIGHT @@@
 RELEASE_VER ?= ${TRAFODION_VER}-incubating
 RELEASE_TYPE ?= $(shell echo $(TRAFODION_VER_PROD)| sed -e 's/ /-/g')
-INSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_installer-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
 PYINSTALLER_TARNAME = $(shell echo ${RELEASE_TYPE}_pyinstaller-${RELEASE_VER}.tar.gz |tr '[A-Z]' '[a-z]')
 
-all: pkg-installer pkg-pyinstaller pkg-ambari
+all: pkg-pyinstaller pkg-ambari
 
 pkg-ambari:
 	cd ambari-installer && $(MAKE) all
@@ -30,22 +29,6 @@ create-dir:
 pkg-pyinstaller: create-dir python-installer/LICENSE python-installer/NOTICE python-installer/DISCLAIMER
 	tar czf ${PYINSTALLER_TARNAME} python-installer
 	mv ${PYINSTALLER_TARNAME} ../distribution
-
-pkg-installer: create-dir installer/LICENSE installer/NOTICE installer/DISCLAIMER
-	tar czf ${INSTALLER_TARNAME} installer --exclude=tools
-	mv ${INSTALLER_TARNAME} ../distribution
-
-../licenses/LICENSE-install:
-	cd $(@D) && $(MAKE) $(@F)
-
-installer/LICENSE: ../licenses/LICENSE-install
-	cp -f $? $@
-
-installer/NOTICE: ../NOTICE
-	cp -f $? $@
-
-installer/DISCLAIMER: ../DISCLAIMER
-	cp -f $? $@
 
 ../licenses/LICENSE-pyinstall:
 	cd $(@D) && $(MAKE) $(@F)

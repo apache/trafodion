@@ -23,11 +23,8 @@
 
 ## Trafodion Installers
 
-* **install** - This is the current command-line installer. It installs a server tarball
-  on an existing CDH or HDP Hadoop cluster.
-* **python-installer** - This is the new command-line installer, meant to replace current
-  command-line installer. Likewise, installs server tarball on existing CDH, HDP,
-  or APACHE cluster.
+* **python-installer** - This is the command-line installer.
+  Installs server tarball on existing CDH, HDP, or APACHE cluster.
 * **ambari-installer** - This integrates with Ambari cluster manager, so only applies to HDP.
   In this case, trafodion server is installed via RPM. This is installed on Ambari server as
   a management pack. Trafodion can be included in the initial cluster creation or added later.
