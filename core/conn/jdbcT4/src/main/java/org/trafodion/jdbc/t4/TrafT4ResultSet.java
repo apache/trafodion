@@ -1474,13 +1474,18 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 		int sqltype = outputDesc_[columnIndex - 1].sqlDataType_;
 		switch (dataType) {
 		case Types.TINYINT:
-			if (wasNull_) {
-				return null;
-			}
 			if (sqltype == InterfaceResultSet.SQLTYPECODE_TINYINT_UNSIGNED) {
-				return new Short(getShort(columnIndex));
+				short s = getShort(columnIndex);
+				if (wasNull_) {
+					return null;
+				}
+				return s;
 			} else {
-				return new Byte(getByte(columnIndex));
+				byte b = getByte(columnIndex);
+				if (wasNull_) {
+					return null;
+				}
+				return b;
 			}
 		case Types.SMALLINT:
 			shortValue = getShort(columnIndex);
@@ -1497,13 +1502,15 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 				return new Integer(intValue);
 			}
 		case Types.BIGINT:
-			if (wasNull_) {
-				return null;
-			}
 			if (sqltype == InterfaceResultSet.SQLTYPECODE_LARGEINT_UNSIGNED) {
-				return getBigDecimal(columnIndex);
+				BigDecimal bd = getBigDecimal(columnIndex);
+				if (wasNull_) {
+					return null;
+				}
+				return bd;
 			} else {
-				return new Long(getLong(columnIndex));
+				long l = getLong(columnIndex);
+				return l;
 			}
 		case Types.REAL:
 			floatValue = getFloat(columnIndex);
@@ -1531,11 +1538,12 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 				return new Boolean(booleanValue);
 			}
 		case Types.CHAR:
-			if (wasNull_) {
-				return null;
-			}
 			if (sqltype == InterfaceResultSet.SQLTYPECODE_BOOLEAN) {
-				return new Boolean(getBoolean(columnIndex));
+				boolean b = getBoolean(columnIndex);
+				if (wasNull_) {
+					return null;
+				}
+				return b;
 			}
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
