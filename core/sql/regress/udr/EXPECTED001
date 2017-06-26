@@ -371,9 +371,11 @@ SESSION_ID            SEQUENCE_NO           USERID                            TS
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-3    .    4    root                                                  1.79E+001
-2    .    3    tmudf                           XO                    5.00E+001
-1    .    2    sort                                                  1.00E+002
+5    .    6    root                                                  1.79E+001
+4    .    5    esp_exchange                    1:4(hash2)            5.00E+001
+3    .    4    tmudf                           XO                    5.00E+001
+2    .    3    sort                                                  1.00E+002
+1    .    2    esp_exchange                    4(hash2):1            1.00E+002
 .    .    1    trafodion_scan                  CLICKS                1.00E+002
 
 --- SQL operation complete.
@@ -459,9 +461,11 @@ SESSION_ID            SEQUENCE_NO           USERID                            TS
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-3    .    4    root                                                  1.79E+001
-2    .    3    tmudf                           XO                    5.00E+001
-1    .    2    sort                                                  1.00E+002
+5    .    6    root                                                  1.79E+001
+4    .    5    esp_exchange                    1:4(hash2)            5.00E+001
+3    .    4    tmudf                           XO                    5.00E+001
+2    .    3    sort                                                  1.00E+002
+1    .    2    esp_exchange                    4(hash2):1            1.00E+002
 .    .    1    trafodion_scan                  CLICKS                1.00E+002
 
 --- SQL operation complete.

@@ -112,7 +112,6 @@ OFR_RetCode OrcFileReader::init()
     JavaMethods_[JM_CLOSE     ].jm_name      = "close";
     JavaMethods_[JM_CLOSE     ].jm_signature = "()Ljava/lang/String;";
    
-    setHBaseCompatibilityMode(FALSE);
     return (OFR_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, FALSE);
   }
 }
