@@ -31,7 +31,7 @@
 
 using namespace std;
 
-#include "trafconfigtrace.h"
+#include "tctrace.h"
 
 #define TC_PROCESS_PATH_MAX    256
 
@@ -98,6 +98,7 @@ void CTrafConfigTrace::TraceInit( bool traceEnabled
                                 , const char *traceLevel
                                 , const char *pfname)
 {
+    bool pathnameUsed = false;
     char trace_file_name[TC_PROCESS_PATH_MAX];
     char hostname[TC_PROCESS_PATH_MAX];
 
@@ -108,50 +109,60 @@ void CTrafConfigTrace::TraceInit( bool traceEnabled
         sprintf( hostname,"TC");
     }
 
-    // Format default trace file name and remove any existing trace file.
-    if( getenv("SQ_VIRTUAL_NODES") )
-    {
-        sprintf( trace_file_name,"%s/trafconfig.trace.%d.%s"
-               , getenv("MPI_TMPDIR")
-               , getpid()
-               , hostname);
-    }
-    else
-    {
-        sprintf( trace_file_name,"%s/trafconfig.trace.%s"
-               , getenv("MPI_TMPDIR")
-               , hostname);
-    }
-    
-    remove(trace_file_name);
-
     if (pfname == NULL)
     {   // Caller did not specify a trace file name, get name from
         // environment variable if specified.
         pfname = GetEnvStr(strTraceFile_);
     }
+    
+    if (pfname == NULL)
+    {   // Use default prefix
+        pfname = "tctrace";
+    }
 
     if (pfname != NULL)
     {   // User specified trace file name
 
-        // Save the base trace file name for possible use later
-        traceFileBase_ = new char[strlen(pfname) + 1];
-        strcpy(traceFileBase_, pfname);
-
-        if ((strcmp(pfname, "STDOUT") == 0)
-          || strcmp(pfname, "STDERR") == 0)
+        if ( pfname[0] == '/')
         {
+            // Use filename passed in
             strcpy(trace_file_name, pfname);
+            pathnameUsed = true;
         }
-        else // Make user specified file name unique per node
+        else
         {
-            sprintf(trace_file_name,"%s/%s.%d.%s"
-                    , getenv("MPI_TMPDIR")
-                    , pfname
-                    , getpid()
-                    , hostname);
+            // Format default trace file name and remove any existing trace file.
+            if( getenv("SQ_VIRTUAL_NODES") )
+            {
+                sprintf( trace_file_name,"%s/trafconfig.trace.%d.%s"
+                       , getenv("MPI_TMPDIR")
+                       , getpid()
+                       , hostname);
+            }
+            else
+            {
+                sprintf( trace_file_name,"%s/trafconfig.trace.%s"
+                       , getenv("MPI_TMPDIR")
+                       , hostname);
+            }
+            
+            if ((strcmp(pfname, "STDOUT") == 0)
+              || strcmp(pfname, "STDERR") == 0)
+            {
+                strcpy(trace_file_name, pfname);
+            }
+            else // Make user specified file name unique per node
+            {
+                sprintf(trace_file_name,"%s/%s.%d.%s"
+                        , getenv("MPI_TMPDIR")
+                        , pfname
+                        , getpid()
+                        , hostname);
+            }
         }
     }
+
+    remove(trace_file_name);
 
     // Get any trace settings that were specified via environment variables
     const char *value;
@@ -188,11 +199,11 @@ void CTrafConfigTrace::TraceInit( bool traceEnabled
     {
         traceSettingsSaved_ = TcTraceSettings;
 
-        if (strlen( trace_file_name))
+        if (pfname != NULL)
         {
             trace_init(trace_file_name,
                        false,  // don't append pid to file name
-                       "trafconfig",  // prefix
+                       pathnameUsed?(char*)"":(char*)"trafconfig", // file prefix
                        false);
             if (traceFileFb_ > 0)
             {

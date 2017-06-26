@@ -1867,9 +1867,8 @@ private:
 
     Lng32 prepareForIUSAlgorithm1(Int64& rows /* # of rows in the sample table */);
 
-    Lng32 generateSampleI(Int64 currentSampleSize, Int64 futureSampleSize,
-                          Int64 deleteSetSize); /* generate the sample set I */
-
+    // Generate the incremental sample (aka sample set I)
+    Lng32 generateSampleI(Int64 currentSampleSize, Int64 futureSampleSize);
 
     Lng32 moreColsForIUS();
 
@@ -2594,7 +2593,7 @@ class HSInMemoryTable : public NABasicObject
                                     NAString& queryText,
                                     NABoolean hasOversizedColumns, HSTableDef * objDef,
                                     Int64 currentSampleSize, Int64 futureSampleSize,
-                                    Int64 deleteSetSize, Int64 sourceSetSize);
+                                    Int64 sourceSetSize);
 
     void generateSelectDQuery(NAString& smplTable, NAString& queryTex);
     void generateSelectIQuery(NAString& smplTable, NAString& queryText);

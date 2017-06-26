@@ -125,13 +125,6 @@ sub printRMSStopScript{
     }
 }
 
-sub printRMSCheckScript{
-    ($dWhich, @rest) = @_;
-    if ($dWhich == 1) {
-       print RMSC @rest;
-    }
-}
-
 sub printTMScript {
     ($dWhich, @rest) = @_;
     print TM @rest;
@@ -441,20 +434,6 @@ sub generateRMS {
     printRMSStopScript(3, "sqshell -c persist kill SSCP\n");
     printRMSStopScript(3, "exit \$?\n");
    
-
-    printRMSCheckScript(1, "-- Trafodion config/utility file generated @ ",getTime(),"\n");
-    printRMSCheckScript(1, "prepare rms_check from select current_timestamp, \n");
-    printRMSCheckScript(1, "cast('Node' as varchar(5)), \n");
-    printRMSCheckScript(1, "cast(tokenstr('nodeId:', variable_info) as varchar(3)) node, \n");
-    printRMSCheckScript(1, "cast(tokenstr('Status:', variable_info) as varchar(10)) status \n");
-    printRMSCheckScript(1, "from table(statistics(null, ?));\n");
-
-    for ($i=0; $i < $gdNumNodes; $i++) {
-
-        my $l_string =  sprintf("execute rms_check using 'RMS_CHECK=%d' ;\n", $i);
-        printRMSCheckScript(1, $l_string);
-    }
-
     printRMSScript(1, "\n");
 
     printScript(1, "rmsstart\n");
@@ -704,9 +683,6 @@ sub openFiles {
     open (RMSS,">$stopRMS")
         or die("unable to open $stopRMS");
 
-    open (RMSC,">$checkRMS")
-        or die("unable to open $checkRMS");
-
     open (SSMP,">$startSSMP")
         or die("unable to open $startSSMP");
 
@@ -742,7 +718,6 @@ sub endGame {
     print "Generated TM Startup        file: $startTM\n";
     print "Generated RMS Startup       file: $startRMS\n";
     print "Generated RMS Stop          file: $stopRMS\n";
-    print "Generated RMS Check         file: $checkRMS\n";
     print "Generated SSMP Startup      file: $startSSMP\n";
     print "Generated SSMP Stop         file: $stopSSMP\n";
     print "Generated SSCP Startup      file: $startSSCP\n";
@@ -755,7 +730,6 @@ sub endGame {
 
     close(RMS);
     close(RMSS);
-    close(RMSC);
 
     close(SSMP);
     close(SSMPS);
@@ -773,7 +747,6 @@ sub endGame {
 
     chmod 0700, $startRMS;
     chmod 0700, $stopRMS;
-    chmod 0700, $checkRMS;
 
     chmod 0700, $startSSMP;
     chmod 0700, $stopSSMP;
@@ -800,7 +773,6 @@ sub doInit {
     $stopRMS="rmsstop";
     $stopSSMP="ssmpstop";
     $stopSSCP="sscpstop";
-    $checkRMS="rmscheck.sql";
 
 
     $coldscriptFileName=sprintf("%s.cold", $scriptFileName);

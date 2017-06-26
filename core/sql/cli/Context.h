@@ -207,6 +207,9 @@ public:
   //expose cmpContextInfo_ to get HQC info of different contexts
   const NAArray<CmpContextInfo *> & getCmpContextInfo() const { return cmpContextInfo_; }
 
+  //expose cmpContext stack to allow search
+  const LIST(CmpContext *)& getCmpContextsInUse() const { return  cmpContextInUse_; }
+
   CollIndex addTrustedRoutine(LmRoutine *r);
   LmRoutine *findTrustedRoutine(CollIndex ix);
   void putTrustedRoutine(CollIndex ix);

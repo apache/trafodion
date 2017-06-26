@@ -188,6 +188,9 @@ public:
   const NAString  getUnqualifiedSchemaNameAsAnsiString() const
 				 { return ToAnsiIdentifier(schemaName_); }
 
+  // Translate Trafodion to Hive schema
+  void getHiveSchemaName(NAString &hiveSchemaName) const;
+
   // mutator
   void setSchemaName(const NAString &schName)   { schemaName_ = schName; }
 

@@ -109,7 +109,7 @@ create table monRegUniqueStrings
 -- Persist Data (monitor gensq.pl)
 create table monRegPersistData
 (
-   keyName     varchar(50) primary key,
-   valueName   varchar(50)
+   keyName     varchar(64) primary key,
+   valueName   varchar(4096)
 );
 

@@ -3760,6 +3760,9 @@ enum DefaultConstants
   // A threshold of minitmal RC above which the above total UEC check will be applied.
   MDAM_TOTAL_UEC_CHECK_MIN_RC_THRESHOLD,
 
+  // A multiplier of cumulative probe cost for MDAM
+  MDAM_PROBE_TAX,
+
   // set to ON to aggressively allocate ESP per core
   AGGRESSIVE_ESP_ALLOCATION_PER_CORE,
 

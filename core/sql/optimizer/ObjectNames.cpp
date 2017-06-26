@@ -356,6 +356,23 @@ const NAString SchemaName::getSchemaNameAsAnsiString() const
   return result;
 }
 
+void SchemaName::getHiveSchemaName(
+     NAString &hiveSchemaName         // OUT: Hive schema name
+                                   ) const
+{
+  NAString hiveDefSchema =
+    ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_SCHEMA);
+  hiveDefSchema.toUpper();
+
+  if (schemaName_ == hiveDefSchema)
+    hiveSchemaName = HiveMetaData::getDefaultSchemaName();
+  else
+    {
+      hiveSchemaName = schemaName_;
+      hiveSchemaName.toLower();
+    }
+}
+
 
 // ODBC SHORTANSI -- the actual MPLoc is encoded in the schName
 // using underscore delimiters, i.e. "systemName_volumeName_subvolName".

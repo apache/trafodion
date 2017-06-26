@@ -29,7 +29,7 @@
 {project-name} SQL language elements, which include data types, expressions, functions, identifiers, literals, and
 predicates, occur within the syntax of SQL statements. The statement and command topics support the syntactical
 and semantic descriptions of the language elements in this section.
- 
+
 [[_authorization_ids]]
 == Authorization IDs
 
@@ -155,7 +155,7 @@ set of columns in the table specified in the REFERENCES clause.
 | PRIMARY KEY | Column or table constraint specifying the column or set of columns as the primary key for the table.
 | UNIQUE      | Column or table constraint that specifies that the column or set of columns cannot contain more than
 one occurrence of the same value or set of values.
-|=== 
+|===
 
 [[creating_or_adding_constraints_on_sql_tables]]
 === Creating or Adding Constraints on SQL Tables
@@ -320,62 +320,30 @@ more information, see <<cast_expression,CAST Expression>>.
 
 The following table summarizes the {project-name} SQL data types:
 
-[cols="13%,29%,29%,29%",options="header"]
+[cols="14%,14%,24%,24%,24%",options="header"]
 |===
-| Type | SQL Designation | Description | Size or Range^1^
-| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 32707 characters^2^
-|                        | NCHAR                | Fixed-length character data in predefined national character set | 1 to 32707 bytes^3^ ^7^
-|                        | NATIONAL CHAR[ACTER] | Fixed-length character data in predefined national character set | 1 to 32707 bytes^3^ ^7^
-| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 32703 characters^4^
-|                           | CHAR[ACTER] VARYING          | Variable-length ASCII character string | 1 to 32703 characters^4^
-|                           | NCHAR VARYING                | Variable-length ASCII character string | 1 to 32703 bytes^4^ ^8^
-|                           | NATIONAL CHAR[ACTER] VARYING | Variable-length ASCII character string | 1 to 32703 characters^4^ ^8^
-| Numeric
-| NUMERIC (1,_scale_) to +
-NUMERIC (128,_scale_)
-| Binary number with optional scale; signed or unsigned for 1 to 9 digits
-| 1 to 128 digits; stored: +
-1 to 4 digits in 2 bytes +
- +
-5 to 9 digits in 4 bytes +
- +
-10 to 128 digits in 8-64 bytes, depending on precision
-|                           | SMALLINT                      | Binary integer; signed or unsigned    | 0 to 65535 unsigned, -32768 to +32767 signed; stored in 2 bytes
-|                           | INTEGER                       | Binary integer; signed or unsigned    | 0 to 4294967295 unsigned, -2147483648 to +2147483647 signed; stored in 4 bytes
-|                           | LARGEINT                      | Binary integer; signed only           | -2**63 to +(2**63)-1; stored in 8 bytes
-| Numeric (extended numeric precision) | NUMERIC (precision 19 to 128) | Binary integer; signed or unsigned    | Stored as multiple chunks of 16-bit integers, with a minimum storage
-length of 8 bytes.
-| Floating point number
-| FLOAT[(_precision_)]
-| Floating point number; precision designates from 1 through 52 bits of precision
-| +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
-|                                      | REAL                          | Floating point number (32 bits)        | +/- 1.17549435e-38 through +/ 3.40282347e+38; stored in 4 bytes
-|
-| DOUBLE PRECISION
-| Floating-point numbers (64 bits) with 1 through 52 bits of precision (52 bits of binary precision and 1 bits of exponent)
-| +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 byte
-| Decimal number
-| DECIMAL (1,_scale_) to DECIMAL (18,_scale_)
-| Decimal number with optional scale; stored as ASCII characters; signed or unsigned for 1 to 9 digits; signed required for 10 or more digits
-| 1 to 18 digits. Byte length equals the number of digits. Sign is stored as the first bit of the leftmost byte.
-|
-| Date-Time
-| Point in time, using the Gregorian calendar and a 24 hour clock system. The five supported designations are listed below.
+| Category | Type | SQL Designation | Description | Size or Range^1^
+.7+| Character String Data Type .3+| Fixed-length character | CHAR[ACTER]          | Fixed-length character data            | 1 to 200000 characters^2^ ^8^
+| NCHAR                | Fixed-length character data in predefined national character set | 1 to 200000 bytes^3^ ^7^ ^9^
+| NATIONAL CHAR[ACTER] | Fixed-length character data in predefined national character set | 1 to 200000 bytes^3^ ^7^ ^9^
+.4+| Variable-length character | VARCHAR                      | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
+| CHAR[ACTER] VARYING          | Variable-length ASCII character string | 1 to 200000 characters^4^ ^8^
+| NCHAR VARYING                | Variable-length ASCII character string | 1 to 200000 bytes^4^ ^7^ ^9^
+| NATIONAL CHAR[ACTER] VARYING | Variable-length ASCII character string | 1 to 200000 characters^4^ ^7^ ^8^
+.6+| Datetime Data Types .6+| Date-Time | | Point in time, using the Gregorian calendar and a 24 hour clock system. The five supported designations are listed below.
 | YEAR 0001-9999 +
 MONTH 1-12 +
 DAY 1-31 +
- +
 DAY constrained by MONTH and YEAR +
  +
 HOUR 0-23 +
 MINUTE 0-59 +
 SECOND 0-59 +
 FRACTION(n) 0-999999 +
- +
 in which n is the number of significant digits, from 1 to 6
-(default is 6; minimum is 1; maximum is 6). Actual database storage is
-incremental, as follows:
+(default is 6; minimum is 1; maximum is 6). +
  +
+Actual database storage is incremental, as follows:
 YEAR in 2 bytes +
 MONTH in 1 byte +
 DAY in 1 byte +
@@ -383,28 +351,46 @@ HOUR in 1 byte +
 MINUTE in 1
 byte SECOND in 1 byte +
 FRACTION in 4 bytes +
-| | DATE                         | Date                                   | Format as YYYY-MM-DD; actual database storage size is 4 bytes
-| | TIME                         | Time of day, 24 hour clock, no time precision. Format as HH:MM:SS; actual database storage size is 3 bytes
-| | TIME (with time precision)   | Time of day, 24 hour clock, with time precision | Format as HH:MM:SS.FFFFFF; actual database storage size is 7 bytes
-| | TIMESTAMP                    | Point in time, no time precision | Format as YYYY-MM-DD HH:MM:SS; actual database storage size is 7 bytes
-| | TIMESTAMP (with time precision) Point in time, with time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 1 byte
-| Interval | INTERVAL | Duration of time; value is in the YEAR/MONTH range or the DAY/HOUR/MINUTE/YEAR/SECOND/FRACTION range
-| YEAR no constraint^6^ +
-MONTH 0-1 +
-DAY no contraint +
+| DATE                         | Date                                   | Format as YYYY-MM-DD; actual database storage size is 4 bytes
+| TIME                         | Time of day, 24 hour clock, no time precision. | Format as HH:MM:SS; actual database storage size is 3 bytes
+| TIME (with time precision)   | Time of day, 24 hour clock, with time precision | Format as HH:MM:SS.FFFFFF; actual database storage size is 7 bytes
+| TIMESTAMP                     | Point in time, no time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 11 bytes
+| TIMESTAMP (with time precision) | Point in time, with time precision | Format as YYYY-MM-DD HH:MM:SS.FFFFFF; actual database storage size is 1 byte
+| Interval Data Types |Interval | INTERVAL | Duration of time; value is in the YEAR/MONTH range or the DAY/HOUR/MINUTE/YEAR/SECOND/FRACTION range
+| YEAR no constraint^5^ +
+MONTH 0-11 +
+DAY no constraint +
 HOUR 0-23 +
 MINUTE 0-59 +
 SECOND 0-59 +
 FRACTION(n) 0-999999 +
 in which n is the number of significant digits (default is 6; minimum is 1; maximum is 6); +
 stored in 2, 4, or 8 bytes depending on number of digits^2^
+.10+| Numeric Data Types .5+| Numeric | NUMERIC (1,_scale_) to + NUMERIC (128,_scale_) | Binary number with optional scale; signed or unsigned for 1 to 9 digits
+| 1 to 128 digits; +
+stored: +
+1 to 4 digits in 2 bytes +
+5 to 9 digits in 4 bytes +
+10 to 128 digits in 8-64 bytes +
+depending on precision
+| TINYINT                       | Binary integer; signed or unsigned    | 0 to 255 unsigned, -128 to +127 signed; stored in 1 byte
+| SMALLINT                      | Binary integer; signed or unsigned    | 0 to 65535 unsigned, -32768 to +32767 signed; stored in 2 bytes
+| INTEGER                       | Binary integer; signed or unsigned    | 0 to 4294967295 unsigned, -2147483648 to +2147483647 signed; stored in 4 bytes
+| LARGEINT                      | Binary integer; signed only           | -2^63^ to +(2^63^)-1; stored in 8 bytes
+|Numeric (extended numeric precision) | NUMERIC (precision 19 to 128)  | Binary integer; signed or unsigned    | Stored as multiple chunks of 16-bit integers, with a minimum storage
+length of 8 bytes.
+.3+| Floating point number | FLOAT[(_precision_)] | Floating point number; precision designates from 1 through 52 bits of precision | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
+| REAL                  | Floating point number (32 bits)        | +/- 1.17549435e-38 through +/ 3.40282347e+38; stored in 4 bytes
+| DOUBLE PRECISION      | Floating-point numbers (64 bits) with 1 through 52 bits of precision (52 bits of binary precision and 1 bits of exponent) | +/- 2.2250738585072014e-308 through +/-1.7976931348623157e+308; stored in 8 bytes
+| Decimal number        | DECIMAL (1,_scale_) to DECIMAL (18,_scale_)     | Decimal number with optional scale; stored as ASCII characters; signed or unsigned for 1 to 9 digits; signed required for 10 or more digits
+| 1 to 18 digits. Byte length equals the number of digits. Sign is stored as the first bit of the leftmost byte.
 |===
 
 * _scale_ is the number of digits to the right of the decimal.
 * _precision_ specifies the allowed number of decimal digits.
 
 
-1. The size of a column that allows null values is 2 bytes larger than the size for the defined data type.
+1.  The size of a column that allows null values is 2 bytes larger than the size for the defined data type.
 2.  The maximum row size is 32708 bytes, but the actual row size is less than that because of bytes used by
 null indicators, varchar column length indicators, and actual data encoding.
 3.  Storage size is the same as that required by CHAR data type but store only half as many characters depending
@@ -416,6 +402,8 @@ Any INTERVAL field that is a starting field can have up to 18 digits minus the n
 The maximum is 16353 if the national character set was specified at installation time as UTF8.
 7.  The maximum is 32703 if the national character set was specified at installation time to be ISO88591.
 The maximum is 16351 if the national character set was specified at installation time as UTF8.
+8.  It defaults to 200000 characters and can be declared explicitly by using the TRAF_MAX_CHARACTER_COL_LENGTH CQD.
+9.  It defaults to 200000 bytes and can be declared explicitly by using the TRAF_MAX_CHARACTER_COL_LENGTH CQD.
 
 
 <<<
@@ -522,7 +510,7 @@ numeric type. The system actually computes the sum of 2 NUMERIC(18,4)
 columns as an extended precision NUMERIC(19,4) sum. But because no
 user-specified extended precision columns exist, the system casts the
 sum back to the user-specified type of NUMERIC(18,4).
-+    
++
 ```
 CREATE TABLE T(a NUMERIC(18,4), B NUMERIC(18,4));
 INSERT INTO T VALUES (1.1234, 2.1234);
@@ -616,14 +604,31 @@ numeric, datetime, or interval data.
 * `_character-type_` is:
 +
 ```
-CHAR[ACTER] [(_length_ [CHARACTERS])] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
-| CHAR[ACTER] VARYING(_length_) [CHARACTERS][_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
-| VARCHAR(_length_) [CHARACTERS] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
-| NCHAR [(_length_)] [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
-| NCHAR VARYING (_length_) [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
-| NATIONAL CHAR[ACTER] [(_length_)] [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
-| NATIONAL CHAR[ACTER] VARYING (_length_) [CHARACTERS] [UPSHIFT] [[NOT]CASESPECIFIC]
+CHAR[ACTER] [(length [unit])] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
+| CHAR[ACTER] VARYING(length [unit]) [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
+| VARCHAR(length [unit]) [CHARACTERS] [char-set] [UPSHIFT] [[NOT]CASESPECIFIC]
+| NCHAR [(length)] [UPSHIFT] [[NOT]CASESPECIFIC]
+| NCHAR VARYING (length) [UPSHIFT] [[NOT]CASESPECIFIC]
+| NATIONAL CHAR[ACTER] [(length)] [UPSHIFT] [[NOT]CASESPECIFIC]
+| NATIONAL CHAR[ACTER] VARYING (length) [UPSHIFT] [[NOT]CASESPECIFIC]
 ```
+
++
+CHAR, NCHAR, and NATIONAL CHAR are fixed-length character types. CHAR
+VARYING, VARCHAR, NCHAR VARYING and NATIONAL CHAR VARYING are
+varying-length character types.
+
+* `_length_`
++
+is a positive integer that specifies the number of characters (or bytes, see below) allowed in
+the column. You must specify a value for _length_.
+
+* `_unit_`
++
+is an optional unit of either CHAR[ACTER[S]] or BYTE[S]. The default is CHAR[ACTER[S]]. This unit is meaningful only for UTF8 characters.
+A UTF8 character is one to four bytes in length, therefore the storage length of a CHAR column that can hold _n_ UTF8 characters is 4*_n_ bytes.
+The same applies to the maximum length of a VARCHAR column.
+Specifying the length of UTF8 columns in bytes can lead to significant savings in space and resources.
 
 * `_char-set_` is
 +
@@ -631,24 +636,22 @@ CHAR[ACTER] [(_length_ [CHARACTERS])] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]
 CHARACTER SET char-set-name
 ```
 
-CHAR, NCHAR, and NATIONAL CHAR are fixed-length character types. CHAR
-VARYING, VARCHAR, NCHAR VARYING and NATIONAL CHAR VARYING are
-varying-length character types.
-
-* `_length_`
+** `_char-set-name_`
 +
-is a positive integer that specifies the number of characters allowed in
-the column. You must specify a value for _length_.
+is the character set name, which can be ISO88591, UTF8 or UCS2.
 
-* `_char-set-name_`
-+
-is the character set name, which can be ISO88591 or UTF8.
+*** ISO88591 (ISO 8859-1) is a single-byte character set for US ASCII and Western European language characters.
 
-* `CHAR[ACTER] [(_length_ [CHARACTERS])] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
+*** UTF8 (UTF-8) is a variable-length (1 to 4 bytes) encoding of Unicode characters including those in supplementary planes. It is compatible with the US-ASCII character set.
+
+*** UCS2 (UCS-2) is a fixed-length, 2 byte encoding of Unicode characters of the Basic Multilingual Plane (BMP).
+Note that, while not strictly part of UCS2, {project-name} also tolerates UTF-16 surrogate pairs in UCS2 columns, but such surrogate pairs are interpreted as two separate characters.
+
+* `CHAR[ACTER] [(_length_ [_unit_])] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
 specifies a column with fixed-length character data.
 
-* `CHAR[ACTER] VARYING (_length_) [CHARACTERS] [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
+* `CHAR[ACTER] VARYING (_length_ [_unit_]) [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
 specifies a column with varying-length character data. VARYING specifies
 that the number of characters stored in the column can be fewer than the
@@ -661,18 +664,18 @@ shorter than the maximum length, but the maximum internal size of a
 VARYING column is actually four bytes larger than the size required for
 an equivalent column that is not VARYING.
 
-* `VARCHAR (_length_) [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
+* `VARCHAR (_length_ [_unit_]) [_char-set_] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
 specifies a column with varying-length character data. VARCHAR is
 equivalent to data type CHAR[ACTER] VARYING.
 
 * `NCHAR [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC], NATIONAL CHAR[ACTER] [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
-specifies a column with data in the predefined national character set.
+specifies a column with data in the predefined national character set (UCS2).
 
 * `NCHAR VARYING [(_length_)] [UPSHIFT] [[NOT]CASESPECIFIC], NATIONAL CHAR[ACTER] VARYING (_length_) [UPSHIFT] [[NOT]CASESPECIFIC]`
 +
-specifies a column with varying-length data in the predefined national character set.
+specifies a column with varying-length data in the predefined national character set (UCS2).
 
 [[considerations_for_character_string_data_types]]
 ==== Considerations for Character String Data Types
@@ -739,8 +742,8 @@ January 1, 1 A.D., 00:00:00.000000 (low value) December 31, 9999, 23:59:59.99999
 +
 ```
   DATE
-| TIME [(_time-precision_)]
-| TIMESTAMP [(_timestamp-precision_)]
+| TIME [(time-precision)]
+| TIMESTAMP [(timestamp-precision)]
 ```
 
 * `DATE`
@@ -811,7 +814,7 @@ INTERVAL[-] { start-field TO end-field | single-field }
 {YEAR | MONTH | DAY | HOUR | MINUTE} [(_leading-precision_)]
 ```
 
-* `_end-field_ is:
+* `_end-field_ is:`
 +
 ```
 YEAR | MONTH | DAY | HOUR | MINUTE | SECOND [(_fractional-precision_)]
@@ -950,17 +953,18 @@ datetime, or interval data types.
 * `_exact-numeric-type_` is:
 +
 ```
-   NUMERIC [(_precision_ [,_scale_])] [SIGNED|UNSIGNED]
+   NUMERIC [(precision [,scale])] [SIGNED|UNSIGNED]
+| TINYINT [SIGNED|UNSIGNED]
 | SMALLINT [SIGNED|UNSIGNED]
 | INT[EGER] [SIGNED|UNSIGNED]
 | LARGEINT
-| DEC[IMAL] [(_precision_ [,_scale_])] [SIGNED|UNSIGNED]
+| DEC[IMAL] [(precision [,scale])] [SIGNED|UNSIGNED]
 ```
 
 * `_approximate-numeric-type_` is:
 +
 ```
-   FLOAT [(_precision_)]
+   FLOAT [(precision)]
 | REAL
 | DOUBLE PRECISION
 ```
@@ -988,6 +992,12 @@ between 10 and 18, and you specify UNSIGNED. _scale_ specifies the
 number of digits to the right of the decimal point.
 +
 The default is NUMERIC (9,0) SIGNED.
+
+* `TINYINT [SIGNED|UNSIGNED]`
++
+specifies an exact numeric column—a one-byte binary integer, SIGNED or
+UNSIGNED. The column stores integers in the range unsigned 0 to 255 or signed
+-128 to +127. The default is SIGNED.
 
 * `SMALLINT [SIGNED|UNSIGNED]`
 +
@@ -1246,7 +1256,7 @@ In the last expression, the datetime primary is this scalar subquery:
 ```
 ( SELECT ship_timestamp FROM project WHERE projcode=1000 )
 ```
- 
+
 The preceding subquery returns a value with TIMESTAMP data type.
 Therefore, the data type of the result is TIMESTAMP.
 
@@ -1269,7 +1279,7 @@ numeric value is automatically casted to an INTERVAL DAY value. When a
 numeric value is added to or subtracted from a time type or a timestamp
 type, the numeric value is automatically casted to an INTERVAL SECOND
 value. For information on CAST, see <<cast expression,CAST Expression>>.
-For more information on INTERVALS, see 
+For more information on INTERVALS, see
 <<interval_value_expressions,Interval Value Expressions>>
 
 When using these operations, note:
@@ -1881,14 +1891,14 @@ A identity column is an auto-increment column, which is defined to a column of a
 Identity column, unlike a sequence which works independently of table column, is bound to a table column and can be accessed only by the table column. For more information, see <<create_sequence_statement,CREATE SEQUENCE Statement>>.
 
 ```
-GENERATED [ALWAYS | BY DEFAULT] AS IDENTITY 
+GENERATED [ALWAYS | BY DEFAULT] AS IDENTITY
 [START WITH integer]
 [INCREMENT BY integer]
 [MAXVALUE integer | NOMAXVALUE]
 [MINVALUE integer]
 [CYCLE | NO CYCLE]
 [CACHE integer | NO CACHE]
-[DATA TYPE] 
+[DATA TYPE]
 ```
 
 [[syntax_description_of_identity_column]]
@@ -1896,7 +1906,7 @@ GENERATED [ALWAYS | BY DEFAULT] AS IDENTITY
 
 * `ALWAYS`
 +
-Indicates that when a row is inserted to a table, a value will always be generated for the column. 
+Indicates that when a row is inserted to a table, a value will always be generated for the column.
 
 * `BY DEFAULT`
 +
@@ -2589,7 +2599,7 @@ values in a list of sequences.
 | <<like_predicate,LIKE Predicate>> | Searches for character strings that match a pattern.
 | <<regexp_predicate,REGEXP Predicate>> | Searches for character strings that match an extended regular expression.
 | <<null_predicate,NULL Predicate>> | Determines whether all the values in a sequence of values are null.
-| <<quantified_comparison_predicates,Quantified Comparison Predicates>> +  
+| <<quantified_comparison_predicates,Quantified Comparison Predicates>> +
 (ALL, ANY, SOME ) | Compares the values of sequences of expressions to the values in each
 row selected by a table subquery. The comparison is quantified by ALL,
 ANY, or .
@@ -2624,7 +2634,7 @@ in parentheses.
 _expression_ cannot include an aggregate function unless _expression_ is
 in a HAVING clause. _expression_ can be a scalar subquery (a subquery
 that returns a single row consisting of a single column). See
-<<expressions,Expressions>>. 
+<<expressions,Expressions>>.
 +
 <<<
 +
@@ -3432,9 +3442,9 @@ part of the string to search for, not a wild-card character.
 [[regexp_predicate]]
 === REGEXP Predicate
 
-Performs a pattern match of a string expression against a pattern . 
-The pattern can be an extended regular expression. 
-Returns 1 if expression matches pattern; otherwise it returns 0. 
+Performs a pattern match of a string expression against a pattern .
+The pattern can be an extended regular expression.
+Returns 1 if expression matches pattern; otherwise it returns 0.
 If either expression or pattern is NULL, the result is NULL.
 
 [[regexp_syntax]]
@@ -3450,7 +3460,7 @@ search for that match the _regular-expression_.
 
 * `_regular-expression_`
 +
-is a character value expression that specifies a regular expression. 
+is a character value expression that specifies a regular expression.
 Trafodion regular expressions follow POSIX regular expression rules.
 
 
@@ -3469,7 +3479,7 @@ match any string in the _match-value_.
 col REGEXP '^[0-9]*\s*$'
 ```
 
-* Find valid words, no numbers 
+* Find valid words, no numbers
 +
 ```
 col REGEXP '^.[A-Za-z]+\s*$'
@@ -3808,8 +3818,8 @@ privilege granted to the remaining role.
 the role. The only way to revoke any such privilege is to revoke the
 role from the user. For more information, see
 <<roles,Roles>> .
-* Privileges granted on an object can be for all the columns of the object or just a subset of the columns. 
-Only the following subset of privileges is applicable at the column-level: INSERT, REFERENCES, SELECT, and UPDATE.  
+* Privileges granted on an object can be for all the columns of the object or just a subset of the columns.
+Only the following subset of privileges is applicable at the column-level: INSERT, REFERENCES, SELECT, and UPDATE.
 
 You can manage privileges by using the GRANT and REVOKE statements.
 
@@ -3977,7 +3987,7 @@ ORDERNUM    DELIV_DATE QTY_ORDERED
     100210  2008-04-10           6
     100250  2008-06-15           4
     101220  2008-12-15           3
-...  
+...
 
 --- 28 row(s) selected.
 ```
@@ -3998,7 +4008,7 @@ SUPPNAME
 NEW COMPUTERS INC
 NEW COMPUTERS INC
 NEW COMPUTERS INC
-... 
+...
 LEVERAGE INC
 
 --- 18 row(s) selected.
@@ -4216,4 +4226,3 @@ example, this EMPLIST view is defined as part of the EMPLOYEE table:
 In this sample view, the columns are EMPNUM, FIRST_NAME, LAST_NAME,
 DEPTNUM, and JOBCODE. The SALARY column in the EMPLOYEE table is not
 part of the EMPLIST view.
-

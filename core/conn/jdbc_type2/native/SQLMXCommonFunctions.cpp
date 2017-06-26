@@ -57,6 +57,10 @@ static Charset_def CHARSET_INFORMATION[] = {
 	{ SQLCHARSETCODE_SJIS,		"SJIS",			NULL,	NULL},
 //	{ SQLCHARSETCODE_UCS2,		"UTF-16BE",		NULL,	NULL},
 	{ SQLCHARSETCODE_UCS2,		"UTF-16LE",		NULL,	NULL},
+    { SQLCHARSETCODE_EUCJP,     "EUCJP",        NULL,   NULL},
+    { SQLCHARSETCODE_GB18030,   "GB18030",      NULL,   NULL},
+    { SQLCHARSETCODE_UTF8,      "UTF-8",        NULL,   NULL},
+    { SQLCHARSETCODE_GB2312,    "GB2312",       NULL,   NULL},
 	{ 0,						NULL,			NULL,	NULL}};
 
 	static bool createWrapper(struct WrapperInfoStruct *wrapperInfo, JNIEnv *jenv, jsize totalColumns, bool allocateWrapper)
@@ -1750,114 +1754,28 @@ static Charset_def CHARSET_INFORMATION[] = {
 					("encoding='%s' (from getCharsetEncodingJava)",DebugJString(wrapperInfo->jenv, encoding)));
 			}
 
-			switch(charSet)
-			{
-			case SQLCHARSETCODE_ISO88591:
-				if (encoding)
-					stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
-					gJNICache.getBytesEncodedMethodId, encoding);
-				else
-					stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
-					gJNICache.getBytesMethodId);
-				if (stringByteArray==NULL)
-				{
-					throwSQLException(wrapperInfo->jenv, PARAMETER_NOT_SET_ERROR, NULL, "07002", 0);
-					FUNCTION_RETURN_NUMERIC(FALSE,("getBytesEncodedMethod failed"));
-				}
+            if (encoding)
+                stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
+                        gJNICache.getBytesEncodedMethodId, encoding);
+            else
+                stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
+                        gJNICache.getBytesMethodId);
+            if (stringByteArray==NULL)
+            {
+                throwSQLException(wrapperInfo->jenv, PARAMETER_NOT_SET_ERROR, NULL, "07002", 0);
+                FUNCTION_RETURN_NUMERIC(FALSE,("getBytesEncodedMethod failed"));
+            }
+            if ((nParamValue = (const char *)JNI_GetByteArrayElements(wrapperInfo->jenv,stringByteArray, &isCopy)) == NULL)
+            {
+                throwSQLException(wrapperInfo->jenv, PARAMETER_NOT_SET_ERROR, NULL, "07002", 0);
+                FUNCTION_RETURN_NUMERIC(FALSE,("GetByteArrayElements() failed"));
+            }
+            dataLen = JNI_GetArrayLength(wrapperInfo->jenv,stringByteArray);
 
-				DEBUG_OUT(DEBUG_LEVEL_JAVA,("Calling GetByteArrayElements on byte array"));
-				if ((nParamValue = (const char *)JNI_GetByteArrayElements(wrapperInfo->jenv,stringByteArray, &isCopy)) == NULL)
-				{
-					throwSQLException(wrapperInfo->jenv, PARAMETER_NOT_SET_ERROR, NULL, "07002", 0);
-					FUNCTION_RETURN_NUMERIC(FALSE,("GetByteArrayElements() failed"));
-				}
-				DEBUG_OUT(DEBUG_LEVEL_JAVA,("Calling GetArrayLength on byte array"));
-				dataLen = JNI_GetArrayLength(wrapperInfo->jenv,stringByteArray);
+            DEBUG_OUT(DEBUG_LEVEL_UNICODE,("Shift_JIS byte array dataLen ='%ld'", dataLen));
+            MEMORY_DUMP(DEBUG_LEVEL_UNICODE,nParamValue,dataLen);
+            break;
 
-				DEBUG_OUT(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE,("wrapper object=0x%08x - dataLen='%ld'",
-					wrapperInfo->wrapper,
-					dataLen));
-				MEMORY_DUMP(DEBUG_LEVEL_DATA|DEBUG_LEVEL_UNICODE,nParamValue,dataLen);
-				break;
-
-			case SQLCHARSETCODE_KANJI:
-				if (encoding)
-					stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
-					gJNICache.getBytesEncodedMethodId, encoding);
-				else
-					stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
-					gJNICache.getBytesMethodId);
-				if (stringByteArray==NULL)
-				{
-					throwSQLException(wrapperInfo->jenv, PARAMETER_NOT_SET_ERROR, NULL, "07002", 0);
-					FUNCTION_RETURN_NUMERIC(FALSE,("getBytesEncodedMethod failed"));
-				}
-				if ((nParamValue = (const char *)JNI_GetByteArrayElements(wrapperInfo->jenv,stringByteArray, &isCopy)) == NULL)
-				{
-					throwSQLException(wrapperInfo->jenv, PARAMETER_NOT_SET_ERROR, NULL, "07002", 0);
-					FUNCTION_RETURN_NUMERIC(FALSE,("GetByteArrayElements() failed"));
-				}
-				dataLen = JNI_GetArrayLength(wrapperInfo->jenv,stringByteArray);
-
-				DEBUG_OUT(DEBUG_LEVEL_UNICODE,("Shift_JIS byte array dataLen ='%ld'", dataLen));
-				MEMORY_DUMP(DEBUG_LEVEL_UNICODE,nParamValue,dataLen);
-				break;
-
-			case SQLCHARSETCODE_UCS2:
-				if (encoding)
-					stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
-					gJNICache.getBytesEncodedMethodId, encoding);
-				else
-					stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
-					gJNICache.getBytesMethodId);
-				if (stringByteArray==NULL)
-				{
-					throwSQLException(wrapperInfo->jenv, PARAMETER_NOT_SET_ERROR, NULL, "07002", 0);
-					FUNCTION_RETURN_NUMERIC(FALSE,("getBytesEncodedMethod failed"));
-				}
-				if ((nParamValue = (const char *)JNI_GetByteArrayElements(wrapperInfo->jenv,stringByteArray, &isCopy)) == NULL)
-				{
-					throwSQLException(wrapperInfo->jenv, PARAMETER_NOT_SET_ERROR, NULL, "07002", 0);
-					FUNCTION_RETURN_NUMERIC(FALSE,("GetByteArrayElements() failed"));
-				}
-				dataLen = JNI_GetArrayLength(wrapperInfo->jenv,stringByteArray);
-
-				DEBUG_OUT(DEBUG_LEVEL_UNICODE,("UCS2 byte array dataLen ='%ld'", dataLen));
-				MEMORY_DUMP(DEBUG_LEVEL_UNICODE,nParamValue,dataLen);
-
-				break;
-
-			case SQLCHARSETCODE_KSC5601:
-				if (encoding)
-					stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
-					gJNICache.getBytesEncodedMethodId, encoding);
-				else
-					stringByteArray = (jbyteArray)wrapperInfo->jenv->CallObjectMethod(getWrapperObject(wrapperInfo,paramNumber),
-					gJNICache.getBytesMethodId);
-				if (stringByteArray==NULL)
-				{
-					throwSQLException(wrapperInfo->jenv, PARAMETER_NOT_SET_ERROR, NULL, "07002", 0);
-					FUNCTION_RETURN_NUMERIC(FALSE,("getBytesEncodedMethod failed"));
-				}
-				if ((nParamValue = (const char *)JNI_GetByteArrayElements(wrapperInfo->jenv,stringByteArray, &isCopy)) == NULL)
-				{
-					throwSQLException(wrapperInfo->jenv, PARAMETER_NOT_SET_ERROR, NULL, "07002", 0);
-					FUNCTION_RETURN_NUMERIC(FALSE,("GetByteArrayElements() failed"));
-				}
-				dataLen = JNI_GetArrayLength(wrapperInfo->jenv,stringByteArray);
-
-				DEBUG_OUT(DEBUG_LEVEL_UNICODE,("KSC5601 byte array dataLen ='%ld'", dataLen));
-				MEMORY_DUMP(DEBUG_LEVEL_UNICODE,nParamValue,dataLen);
-				break;
-
-			case SQLCHARSETCODE_SJIS:
-			default:
-				throwSQLException(wrapperInfo->jenv, UNSUPPORTED_ENCODING_ERROR, NULL, "HY000");
-				DEBUG_OUT(DEBUG_LEVEL_UNICODE,("Unsupported char set '%s' -- char set code '%ld'",
-					getCharsetEncoding(charSet), charSet));
-				goto func_exit;
-			}
-			break;
 
 		case SQLTYPECODE_IEEE_REAL:
 			*(float *)targetDataPtr = getWrapperFloat(wrapperInfo,paramNumber);

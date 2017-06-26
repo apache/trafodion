@@ -21,7 +21,9 @@
 # @@@ END COPYRIGHT @@@
 
 # The names of sample tables are generated from non-deterministic
-# criteria; we filter that out.
+# criteria; we filter that out. This is a bit hard, though,
+# because unfortunately some of them wrap lines. Also, a sampling
+# rate needs to be filtered out due to non-determinism.
 
 fil=$1
 if [ "$fil" = "" ]; then
@@ -32,5 +34,7 @@ fi
 sed "
 s/TRAF_SAMPLE_[0-9]*_[0-9]*_[0-9]*/TRAF_SAMPLE_nn_nnnnnnnnnn_nnnnnn/g
 s/E_[0-9]*_[0-9]*_[0-9]* WHERE/E_nn_nnnnnnnnnn_nnnnnn WHERE/g
+s/[0-9]*\.[0-9]* PERCENT/nn.nn PERCENT/g
+s/[0-9]*_I/nnnnnn_I/g
 " $fil
 

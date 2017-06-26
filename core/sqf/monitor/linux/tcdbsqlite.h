@@ -23,23 +23,20 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef SQLITECONFIG_H_
-#define SQLITECONFIG_H_
+#ifndef TCDBSQLITE_H_
+#define TCDBSQLITE_H_
 
 #include <stdlib.h>
 #include <sqlite3.h>
 #include "trafconfig.h"
+#include "tcdbstore.h"
 
-#define MAX_PROCESS_PATH           256
-
-#define SQLITE_DB_ACCESS_ERROR     101900101
-
-class CSqliteConfig
+class CTcdbSqlite : public CTcdbStore
 {
 public:
 
-    CSqliteConfig( void );
-    ~CSqliteConfig( void );
+    CTcdbSqlite( void );
+    ~CTcdbSqlite( void );
 
     int         Close( void );
     int         AddRegistryKey( const char *key );
@@ -80,7 +77,7 @@ public:
                                  , int &id );
     int         GetUniqueStringIdMax( int nid, int &id );
     int         Initialize( void );
-    inline bool IsInitialized( void ) { return ( (db_ != NULL) ); }
+    inline bool IsInitialized( void ) { return( (db_ != NULL) ); }
     int         SaveLNodeData( int nid
                              , int pnid
                              , int firstCore
@@ -130,4 +127,4 @@ private:
 };
 
 
-#endif /* SQLITECONFIG_H_ */
+#endif /* TCDBSQLITE_H_ */

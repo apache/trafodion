@@ -64,6 +64,7 @@ extern CNode *MyNode;
 extern CMonStats *MonStats;
 extern CRedirector Redirector;
 extern CReplicate Replicator;
+extern CMonTrace *MonTrace;
 
 extern bool IAmIntegrating;
 
@@ -1425,7 +1426,7 @@ CNodeContainer::CNodeContainer( void )
 
     SyncBuffer = new struct sync_buffer_def;
 
-    // Load cluster configuration from 'sqconfig.db'
+    // Load cluster configuration
     LoadConfig();
 
     // Allocate logical and physical node arrays
@@ -3142,7 +3143,7 @@ void CNodeContainer::LoadConfig( void )
     }
     if ( clusterConfig_ )
     {
-        if ( clusterConfig_->Initialize() )
+        if ( clusterConfig_->Initialize( MonTrace->getTraceFileName() ) )
         {
             if ( ! clusterConfig_->LoadConfig() )
             {

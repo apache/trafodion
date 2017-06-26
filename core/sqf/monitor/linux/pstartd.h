@@ -69,7 +69,7 @@ class CMonUtil
                             const char *progName, const char *inFile,
                             const char *outFile,
                             int progArgC, const char *progArgV,
-                            int argBegin[], int argEnd[],
+//                            int argBegin[], int argEnd[],
                             int& newNid, int& newPid,
                             char *newProcName);
 

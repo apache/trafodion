@@ -2381,7 +2381,8 @@ SQLRETURN CDesc::BuildValueList(CStmt *pHandle,  //AMR - changed this pointer ty
 
 				if(IPDDescRecPtr->m_ODBCDataType == SQL_VARCHAR ||
 				   IPDDescRecPtr->m_ODBCDataType == SQL_LONGVARCHAR ||
-				   IPDDescRecPtr->m_ODBCDataType == SQL_CHAR)
+				   IPDDescRecPtr->m_ODBCDataType == SQL_CHAR &&
+                   IPDDescRecPtr->m_SQLDataType != SQLTYPECODE_BOOLEAN)
 				{
 					if(m_ICUConv->getUCS2Translation())
 						SQLValue->dataValue._length = IPDDescRecPtr->m_SQLOctetLength -1;

@@ -3476,6 +3476,7 @@ Please note the fixed length '6' in strmicmp: SELECT/UPDATET/DELETE/INSERT have 
         etab[eid].r = etab[eid].rbs / rsds;
         if ( etab[eid].mr && etab[eid].r > etab[eid].mr )   /* if # records to fetch < rowset ... */
             etab[eid].r = etab[eid].mr;                     /* make rowset = records to fetch */
+        etab[eid].r = etab[eid].r < 1 ? 1 : etab[eid].r;    /* at least one record at a time  */
     }
 
     /* Set output buffer length */
@@ -7034,6 +7035,7 @@ static void Oload(int eid)
         etab[eid].r = etab[eid].rbs / etab[eid].s;
         if ( etab[eid].mr && etab[eid].r > etab[eid].mr )   /* if # records to fetch < rowset ... */
             etab[eid].r = etab[eid].mr;                     /* make rowset = records to fetch */
+        etab[eid].r = etab[eid].r < 1 ? 1 : etab[eid].r;    /* at least one record at a time  */
     }
     if ( etab[eid].flg2 & 0001 )    /* commit as multiplier */
         etab[eid].cmt *= (int)etab[eid].r ;
@@ -8125,6 +8127,7 @@ static void Oload2(int eid)
     /* Calculate rowset if buffer size is set */
     if ( etab[eid].rbs ) {
         etab[eid].r = etab[eid].rbs / etab[eid].s;
+        etab[eid].r = etab[eid].r < 1 ? 1 : etab[eid].r;    /* at least one record at a time  */
     }
     if ( etab[eid].flg2 & 0001 )    /* commit as multiplier */
         etab[eid].cmt *= (int)etab[eid].r ;
@@ -8802,6 +8805,7 @@ static void OloadX(int eid)
     /* Calculate rowset if buffer size is set */
     if ( etab[eid].rbs ) {
         etab[eid].r = etab[eid].rbs / etab[eid].s;
+        etab[eid].r = etab[eid].r < 1 ? 1 : etab[eid].r;    /* at least one record at a time  */
     }
     if ( etab[eid].flg2 & 0001 )    /* commit as multiplier */
         etab[eid].cmt *= (int)etab[eid].r ;
@@ -10401,6 +10405,7 @@ static int Ocopy(int eid)
     /* Calculate rowset if buffer size is set */
     if ( etab[eid].rbs ) {
         etab[eid].r = etab[eid].rbs / etab[eid].s;
+        etab[eid].r = etab[eid].r < 1 ? 1 : etab[eid].r;    /* at least one record at a time  */
         if ( etab[eid].mr && etab[eid].r > etab[eid].mr )   /* if # records to fetch < rowset ... */
             etab[eid].r = etab[eid].mr;                     /* make rowset = records to fetch */
         for ( i = echild ; i < echild + nchild ; i++ )
@@ -11098,7 +11103,10 @@ static void Odiff(int eid)
 
     /* Calculate rowset if buffer size is set */
     if ( etab[eid].rbs )
+    {
         etab[eid].r = etab[eid].rbs / etab[eid].s;
+        etab[eid].r = etab[eid].r < 1 ? 1 : etab[eid].r; // at least one record at a time
+    }
 
     /* Allocate memory for result set from source */
     rbl = etab[eid].r * etab[eid].s ;

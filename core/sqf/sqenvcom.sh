@@ -47,6 +47,9 @@ export PRODUCT_COPYRIGHT_HEADER="2015-2017 Apache Software Foundation"
 ##############################################################
 export TRAFODION_ENABLE_AUTHENTICATION=${TRAFODION_ENABLE_AUTHENTICATION:-NO}
 
+# Uncomment Trafodion Configuration store type
+#export TRAF_CONFIG_DBSTORE=Sqlite
+#export TRAF_CONFIG_DBSTORE=Zookeeper
 
 # default SQ_IC to TCP if it is not set in sqenv.sh. Values are
 # IBV for infiniband, TCP for tcp
@@ -695,6 +698,9 @@ export SQ_MON_EPOLL_RETRY_COUNT=16
 #    monitor's znode is checked. Uncomment to override default value.
 #    Default is 5 seconds.
 #export SQ_MON_ZCLIENT_MY_ZNODE_CHECKRATE=5
+
+# Trafodion Configuration Zookeeper store
+#export TC_ZCONFIG_SESSION_TIMEOUT=120
 
 # set to 0 to disable phandle verifier
 export SQ_PHANDLE_VERIFIER=1

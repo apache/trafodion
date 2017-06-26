@@ -379,6 +379,8 @@ public:
   NABoolean     contains(const NAString& pat, caseCompare cmp = exact) const;
 
   NAString      copy() const;
+  //Extract part of this string and append it to target
+  int extract(int begin, int end, NAString & target) const;
   inline const char*   toCharStar() const {return fbstring_.data();} ;
   const char*   data() const {return fbstring_.data();}
   size_t        first(char c) const { return fbstring_.find_first_of(c);}
@@ -393,6 +395,10 @@ public:
   UInt32      hash() const;
   UInt32      hashFoldCase() const;
   void        mash(UInt32& hash, UInt32 chars) const;
+
+  // index methods return:
+  //   NA_NPOS if not found.
+  //   0 based index, if found.
   size_t        index(const char* pat, size_t i=0, caseCompare cmp = exact)
                       const;
   
@@ -477,7 +483,7 @@ protected:
   void                  cow(size_t nc);                 // Do copy on write as needed
   
   void                  initChar(char, NAMemory *h);    // Initialize from char
-
+public:
   static char* buildBuffer(const char* formatTemplate, va_list args);
   
 private:
