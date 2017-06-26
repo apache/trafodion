@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.apache.hadoop.conf.Configuration;
+import org.trafodion.sql.TrafConfiguration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -83,7 +84,7 @@ public class SequenceFileWriter {
      * Class Constructor
      */
     static {
-       conf = new Configuration(true);
+       conf = TrafConfiguration.create(TrafConfiguration.HDFS_CONF);
     }
     SequenceFileWriter() throws IOException
     {

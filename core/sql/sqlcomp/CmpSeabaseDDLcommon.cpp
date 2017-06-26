@@ -7251,9 +7251,7 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
   tddlTable.len = tddlNAS.length();
   if (ehi->exists(tddlTable) == -1) // exists
     {
-      dropHbaseTable(ehi, &tddlTable, FALSE, FALSE);
-      createHbaseTable(ehi, &tddlTable, "tddlcf", 
-                       NULL, 0, 0, NULL, FALSE, FALSE);
+      ehi->truncate(tddlTable, TRUE, TRUE);
     }
 
   // create hbase physical objects
