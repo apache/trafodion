@@ -759,7 +759,8 @@ bool PrivMgr::isSQLCreateOperation(SQLOperation operation)
        operation == SQLOperation::CREATE_PROCEDURE ||
        operation == SQLOperation::CREATE_ROUTINE ||
        operation == SQLOperation::CREATE_ROUTINE_ACTION ||
-       operation == SQLOperation::CREATE_SYNONYM)
+       operation == SQLOperation::CREATE_SYNONYM ||
+       operation == SQLOperation::REGISTER_HIVE_OBJECT)
       return true;
       
    return false;
@@ -804,7 +805,8 @@ bool PrivMgr::isSQLDropOperation(SQLOperation operation)
        operation == SQLOperation::DROP_PROCEDURE ||
        operation == SQLOperation::DROP_ROUTINE ||
        operation == SQLOperation::DROP_ROUTINE_ACTION ||
-       operation == SQLOperation::DROP_SYNONYM)
+       operation == SQLOperation::DROP_SYNONYM ||
+       operation == SQLOperation::UNREGISTER_HIVE_OBJECT) 
       return true;
       
    return false;

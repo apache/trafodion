@@ -367,14 +367,15 @@ int DisplayPersistConfig( char *key )
 {
     int rc   = -1;
     bool foundConfig = false;
-    char persist_config_buf[MAX_VALUE_SIZE_INT];
-    char process_name_str[MAX_TOKEN];
-    char process_type_str[MAX_TOKEN];
-    char program_name_str[MAX_TOKEN];
-    char requires_dtm_str[MAX_TOKEN];
-    char stdout_str[MAX_TOKEN];
-    char persist_retries_str[MAX_TOKEN];
-    char persist_zones_str[MAX_TOKEN];
+    char persist_config_buf[TC_PERSIST_VALUE_MAX*2];
+    char process_name_str[TC_PERSIST_VALUE_MAX];
+    char process_type_str[TC_PERSIST_VALUE_MAX];
+    char program_name_str[TC_PERSIST_VALUE_MAX];
+    char program_args_str[TC_PERSIST_VALUE_MAX];
+    char requires_dtm_str[TC_PERSIST_VALUE_MAX];
+    char stdout_str[TC_PERSIST_VALUE_MAX];
+    char persist_retries_str[TC_PERSIST_VALUE_MAX];
+    char persist_zones_str[TC_PERSIST_VALUE_MAX];
     CPersistConfig *persistConfig;
 
     if ( DisplayBeginEnd )
@@ -419,6 +420,13 @@ int DisplayPersistConfig( char *key )
                         , PERSIST_PROGRAM_NAME_KEY
                         , persistConfig->GetProgramName()
                         );
+                snprintf( program_args_str, sizeof(program_args_str)
+                        , "%s_%s    = %s"
+                        , persistConfig->GetPersistPrefix()
+                        , PERSIST_PROGRAM_ARGS_KEY
+                        , strlen(persistConfig->GetProgramArgs())
+                            ?persistConfig->GetProgramArgs():""
+                        );
                 snprintf( requires_dtm_str, sizeof(requires_dtm_str)
                         , "%s_%s    = %s"
                         , persistConfig->GetPersistPrefix()
@@ -446,10 +454,11 @@ int DisplayPersistConfig( char *key )
                         , persistConfig->GetZoneFormat()
                         );
                 snprintf( persist_config_buf, sizeof(persist_config_buf)
-                        , "%s\n%s\n%s\n%s\n%s\n%s\n%s\n"
+                        , "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n"
                         , process_name_str
                         , process_type_str
                         , program_name_str
+                        , program_args_str
                         , requires_dtm_str
                         , stdout_str
                         , persist_retries_str
@@ -600,14 +609,14 @@ int main( int argc, char *argv[] )
 
     if ( !ClusterConfig.Initialize() )
     {
-        printf( "Failed to initialize 'sqconfig.db'!\n" );
+        printf( "Failed to initialize Trafodion Configuration!\n" );
         exit( EXIT_FAILURE );
     }
     else
     {
         if ( !ClusterConfig.LoadConfig() )
         {
-            printf( "Failed to load 'sqconfig.db'!\n" );
+            printf( "Failed to load Trafodion Configuration!\n" );
             exit( EXIT_FAILURE );
         }
     }

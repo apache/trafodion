@@ -108,7 +108,7 @@ char  nodePendingName[MPI_MAX_PROCESSOR_NAME];
 int   nodePendingPnid;
 CLock nodePendingLock;
 
-CClusterConfig ClusterConfig; // 'sqconfig.db' objects
+CClusterConfig ClusterConfig; // Configuration objects
 
 char PNode[MAX_NODES][MPI_MAX_PROCESSOR_NAME];
 char Node[MAX_NODES][MPI_MAX_PROCESSOR_NAME];
@@ -616,7 +616,7 @@ void TraceOpen ( void )
     // Initialize tracing
     trace_init(traceFileName,
                false,  // don't append pid to file name
-               "shell",  // prefix
+               (char *)"shell",  // prefix
                false);
     if (traceFileFb > 0)
     {
@@ -1824,9 +1824,12 @@ void get_persist_process_attributes( CPersistConfig *persistConfig
                                    , int             nid
                                    , PROCESSTYPE    &processType
                                    , char           *processName
+                                   , int            &programArgc
+                                   , char           *programArgs
                                    , char           *outfile
                                    , char           *persistRetries
-                                   , char           *persistZones )
+                                   , char           *persistZones
+                                   )
 {
     const char method_name[] = "get_persist_process_attributes";
     char zoneStr[MAX_PERSIST_VALUE_STR];
@@ -1875,6 +1878,14 @@ void get_persist_process_attributes( CPersistConfig *persistConfig
                , persistConfig->GetStdoutPrefix()
                , nid );
     }
+    
+    programArgc = persistConfig->GetProgramArgc();
+    if (programArgc)
+    {
+        sprintf( programArgs, "%s"
+               , persistConfig->GetProgramArgs() );
+    }
+
     sprintf( persistRetries, "%d,%d"
            , persistConfig->GetPersistRetries()
            , persistConfig->GetPersistWindow() );
@@ -2981,7 +2992,7 @@ bool load_configuration( void )
         // It was previously loaded, remove the current configuration
         ClusterConfig.Clear();
     }
-    if ( ClusterConfig.Initialize() )
+    if ( ClusterConfig.Initialize( traceFileName ) )
     {
         if ( ! ClusterConfig.LoadConfig() )
         {
@@ -3043,7 +3054,7 @@ bool load_configuration( void )
     }
     else
     {
-        printf( "[%s] Warning: No sqconfig.db found\n",MyName);
+        printf( "[%s] Error: Could not initialize Trafodion Configuration database\n",MyName);
         return false;
     }
 
@@ -3916,14 +3927,15 @@ int node_up( int nid, char *node_name, bool nowait )
 void persist_config( char *prefix )
 {
     bool foundConfig = false;
-    char persist_config_buf[MAX_VALUE_SIZE_INT];
-    char process_name_str[MAX_TOKEN];
-    char process_type_str[MAX_TOKEN];
-    char program_name_str[MAX_TOKEN];
-    char requires_dtm_str[MAX_TOKEN];
-    char stdout_str[MAX_TOKEN];
-    char persist_retries_str[MAX_TOKEN];
-    char persist_zones_str[MAX_TOKEN];
+    char persist_config_buf[TC_PERSIST_VALUE_MAX*2];
+    char process_name_str[TC_PERSIST_VALUE_MAX];
+    char process_type_str[TC_PERSIST_VALUE_MAX];
+    char program_name_str[TC_PERSIST_VALUE_MAX];
+    char program_args_str[TC_PERSIST_VALUE_MAX];
+    char requires_dtm_str[TC_PERSIST_VALUE_MAX];
+    char stdout_str[TC_PERSIST_VALUE_MAX];
+    char persist_retries_str[TC_PERSIST_VALUE_MAX];
+    char persist_zones_str[TC_PERSIST_VALUE_MAX];
     CPersistConfig *persistConfig;
 
     persistConfig = ClusterConfig.GetFirstPersistConfig();
@@ -3936,55 +3948,62 @@ void persist_config( char *prefix )
             {
                 foundConfig = true;
                 snprintf( process_name_str, sizeof(process_name_str)
-                        , "%s_%s=%s%s"
+                        , "%s_%s    = %s%s"
                         , persistConfig->GetPersistPrefix()
                         , PERSIST_PROCESS_NAME_KEY
                         , persistConfig->GetProcessNamePrefix()
                         , persistConfig->GetProcessNameFormat()
                         );
                 snprintf( process_type_str, sizeof(process_type_str)
-                        , "%s_%s=%s"
+                        , "%s_%s    = %s"
                         , persistConfig->GetPersistPrefix()
                         , PERSIST_PROCESS_TYPE_KEY
                         , PersistProcessTypeString(persistConfig->GetProcessType())
                         );
                 snprintf( program_name_str, sizeof(program_name_str)
-                        , "%s_%s=%s"
+                        , "%s_%s    = %s"
                         , persistConfig->GetPersistPrefix()
                         , PERSIST_PROGRAM_NAME_KEY
                         , persistConfig->GetProgramName()
                         );
+                snprintf( program_args_str, sizeof(program_args_str)
+                        , "%s_%s    = %s"
+                        , persistConfig->GetPersistPrefix()
+                        , PERSIST_PROGRAM_ARGS_KEY
+                        , persistConfig->GetProgramArgs()
+                        );
                 snprintf( requires_dtm_str, sizeof(requires_dtm_str)
-                        , "%s_%s=%s"
+                        , "%s_%s    = %s"
                         , persistConfig->GetPersistPrefix()
                         , PERSIST_REQUIRES_DTM
                         , persistConfig->GetRequiresDTM()?"Y":"N"
                         );
                 snprintf( stdout_str, sizeof(stdout_str)
-                        , "%s_%s=%s%s"
+                        , "%s_%s          = %s%s"
                         , persistConfig->GetPersistPrefix()
                         , PERSIST_STDOUT_KEY
                         , persistConfig->GetStdoutPrefix()
                         , persistConfig->GetStdoutFormat()
                         );
                 snprintf( persist_retries_str, sizeof(persist_retries_str)
-                        , "%s_%s=%d,%d"
+                        , "%s_%s = %d,%d"
                         , persistConfig->GetPersistPrefix()
                         , PERSIST_RETRIES_KEY
                         , persistConfig->GetPersistRetries()
                         , persistConfig->GetPersistWindow()
                         );
                 snprintf( persist_zones_str, sizeof(persist_zones_str)
-                        , "%s_%s=%s"
+                        , "%s_%s   = %s"
                         , persistConfig->GetPersistPrefix()
                         , PERSIST_ZONES_KEY
                         , persistConfig->GetZoneFormat()
                         );
                 snprintf( persist_config_buf, sizeof(persist_config_buf)
-                        , "%s\n%s\n%s\n%s\n%s\n%s\n%s\n"
+                        , "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n"
                         , process_name_str
                         , process_type_str
                         , program_name_str
+                        , program_args_str
                         , requires_dtm_str
                         , stdout_str
                         , persist_retries_str
@@ -4101,6 +4120,8 @@ bool persist_process_kill( CPersistConfig *persistConfig )
     char outfile[MAX_PROCESS_PATH];
     char persistRetries[MAX_PERSIST_VALUE_STR];
     char persistZones[MAX_VALUE_SIZE_INT];
+    char programArgs[MAX_VALUE_SIZE_INT];
+    int programArgc = 0;
     int nid;
     int pnid;
     int lnodesCount = 0;
@@ -4133,6 +4154,8 @@ bool persist_process_kill( CPersistConfig *persistConfig )
                                           , i
                                           , process_type
                                           , processName
+                                          , programArgc
+                                          , programArgs
                                           , outfile
                                           , persistRetries
                                           , persistZones );
@@ -4152,6 +4175,8 @@ bool persist_process_kill( CPersistConfig *persistConfig )
                                       , nid
                                       , process_type
                                       , processName
+                                      , programArgc
+                                      , programArgs
                                       , outfile
                                       , persistRetries
                                       , persistZones );
@@ -4168,6 +4193,8 @@ bool persist_process_kill( CPersistConfig *persistConfig )
                                       , -1
                                       , process_type
                                       , processName
+                                      , programArgc
+                                      , programArgs
                                       , outfile
                                       , persistRetries
                                       , persistZones );
@@ -4192,6 +4219,8 @@ bool persist_process_start( CPersistConfig *persistConfig )
     bool debug = false;
     bool nowait = false;
     char processName[MAX_PROCESS_NAME];
+    char programArgs[MAX_VALUE_SIZE_INT];
+    char programNameAndArgs[MAX_PROCESS_PATH+MAX_VALUE_SIZE_INT];
     char infile[MAX_PROCESS_PATH];
     char outfile[MAX_PROCESS_PATH];
     char persistRetries[MAX_PERSIST_VALUE_STR];
@@ -4199,6 +4228,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
     int nid;
     int pid;
     int pnid;
+    int programArgc = 0;
     int lnodesCount = 0;
     PROCESSTYPE process_type;
     int priority;
@@ -4207,6 +4237,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
     nid = -1;
     priority = 0;
     processName[0] = '\0';       // The monitor will assign name if null
+    programArgs[0] = '\0';
     infile[0] = '\0';           // The monitor's default infile is used
     outfile[0] = '\0';          // The monitor's default outfile is used
     process_type = ProcessType_Undefined;
@@ -4233,6 +4264,8 @@ bool persist_process_start( CPersistConfig *persistConfig )
                                           , i
                                           , process_type
                                           , processName
+                                          , programArgc
+                                          , programArgs
                                           , outfile
                                           , persistRetries
                                           , persistZones );
@@ -4240,6 +4273,17 @@ bool persist_process_start( CPersistConfig *persistConfig )
             {
                 printf( "Persistent process %s already exists\n", processName);
                 continue;
+            }
+            if (programArgc)
+            {
+                sprintf( programNameAndArgs, "%s %s"
+                       , persistConfig->GetProgramName()
+                       , programArgs );
+            }
+            else
+            {
+                sprintf( programNameAndArgs, "%s"
+                       , persistConfig->GetProgramName() );
             }
             pid = start_process( &i
                                , process_type
@@ -4249,7 +4293,8 @@ bool persist_process_start( CPersistConfig *persistConfig )
                                , nowait
                                , infile
                                , outfile
-                               , (char *)persistConfig->GetProgramName() );
+                               , programNameAndArgs );
+                               //, (char *)persistConfig->GetProgramName() );
             if (pid > 0)
             {
                 printf( "Persistent process %s created\n", processName);
@@ -4273,6 +4318,8 @@ bool persist_process_start( CPersistConfig *persistConfig )
                                       , nid
                                       , process_type
                                       , processName
+                                      , programArgc
+                                      , programArgs
                                       , outfile
                                       , persistRetries
                                       , persistZones );
@@ -4280,6 +4327,17 @@ bool persist_process_start( CPersistConfig *persistConfig )
         {
             printf( "Persistent process %s already exists\n", processName);
             break;
+        }
+        if (programArgc)
+        {
+            sprintf( programNameAndArgs, "%s %s"
+                   , persistConfig->GetProgramName()
+                   , programArgs );
+        }
+        else
+        {
+            sprintf( programNameAndArgs, "%s"
+                   , persistConfig->GetProgramName() );
         }
         pid = start_process( &nid
                            , process_type
@@ -4289,7 +4347,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
                            , nowait
                            , infile
                            , outfile
-                           , (char *)persistConfig->GetProgramName() );
+                           , programNameAndArgs );
         if (pid > 0)
         {
             printf( "Persistent process %s created\n", processName);
@@ -4311,6 +4369,8 @@ bool persist_process_start( CPersistConfig *persistConfig )
                                       , -1
                                       , process_type
                                       , processName
+                                      , programArgc
+                                      , programArgs
                                       , outfile
                                       , persistRetries
                                       , persistZones );
@@ -4318,6 +4378,17 @@ bool persist_process_start( CPersistConfig *persistConfig )
         {
             printf( "Persistent process %s already exists\n", processName);
             break;
+        }
+        if (programArgc)
+        {
+            sprintf( programNameAndArgs, "%s %s"
+                   , persistConfig->GetProgramName()
+                   , programArgs );
+        }
+        else
+        {
+            sprintf( programNameAndArgs, "%s"
+                   , persistConfig->GetProgramName() );
         }
         pid = start_process( &nid
                            , process_type
@@ -4327,7 +4398,7 @@ bool persist_process_start( CPersistConfig *persistConfig )
                            , nowait
                            , infile
                            , outfile
-                           , (char *)persistConfig->GetProgramName() );
+                           , programNameAndArgs );
         if (pid > 0)
         {
             printf( "Persistent process %s created\n", processName);
@@ -6930,9 +7001,12 @@ void node_up_cmd( char *cmd, char delimiter )
         {
             if ( get_node_name( cmd_tail ) == 0 ) 
             {
-                if ( copy_config_db( cmd_tail ) == 0 ) 
+                if ( ClusterConfig.GetStorageType() == TCDBSQLITE)
                 {
-                    node_up( -1, cmd_tail, nowait );
+                    if ( copy_config_db( cmd_tail ) == 0 ) 
+                    {
+                        node_up( -1, cmd_tail, nowait );
+                    }
                 }
             }
             else

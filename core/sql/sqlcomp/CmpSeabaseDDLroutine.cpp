@@ -1641,10 +1641,10 @@ short CmpSeabaseDDL::createLibmgrProcs(ExeCliInterface * cliInterface)
 {
   Lng32 cliRC = 0;
 
- // Create the procedures if they don't already exist
+ // Create the UDRs if they don't already exist
   for (Int32 i = 0; i < sizeof(allLibmgrRoutineInfo)/sizeof(LibmgrRoutineInfo); i++)
     {
-      // Get the next procedure routine details
+      // Get the next routine details
       const LibmgrRoutineInfo &prd = allLibmgrRoutineInfo[i];
 
       const QString * qs = NULL;
@@ -1698,8 +1698,11 @@ short CmpSeabaseDDL::grantLibmgrPrivs(ExeCliInterface *cliInterface)
       // Get the next procedure routine details
       const LibmgrRoutineInfo &prd = allLibmgrRoutineInfo[i];
 
-      str_sprintf (queryBuf, "grant execute on procedure %s.\"%s\".%s to %s with grant option",
-                              getSystemCatalog(),SEABASE_LIBMGR_SCHEMA,prd.newName,
+      str_sprintf (queryBuf, "grant execute on %s %s.\"%s\".%s to %s with grant option",
+                              prd.udrType,
+                              getSystemCatalog(),
+                              SEABASE_LIBMGR_SCHEMA,
+                              prd.newName,
                               DB__LIBMGRROLE);
       cliRC = cliInterface->executeImmediate(queryBuf);
       if (cliRC < 0)

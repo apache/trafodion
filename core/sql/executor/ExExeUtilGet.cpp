@@ -310,7 +310,7 @@ static const QueryString getTrafTablesInSchemaQuery[] =
   {"   %s.\"%s\".%s "},
   {"  where catalog_name = '%s' and "},
   {"        schema_name = '%s'  and "},
-  {"        object_type = 'BT'  "},
+  {"        object_type = 'BT' %s "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -321,7 +321,7 @@ static const QueryString getTrafIndexesInSchemaQuery[] =
   {"   %s.\"%s\".%s "},
   {"  where catalog_name = '%s' and "},
   {"        schema_name = '%s'  and "},
-  {"        object_type = 'IX'  "},
+  {"        object_type = 'IX' %s "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -349,7 +349,7 @@ static const QueryString getTrafProceduresInSchemaQuery[] =
   {"        T.schema_name = '%s'  and "},
   {"        T.object_type = 'UR'  and "},
   {"        T.object_uid = R.udr_uid  and "},
-  {"        R.udr_type = 'P ' "},
+  {"        R.udr_type = 'P ' %s "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -360,7 +360,7 @@ static const QueryString getTrafLibrariesInSchemaQuery[] =
   {"   %s.\"%s\".%s T "},
   {"  where T.catalog_name = '%s' and "},
   {"        T.schema_name = '%s'  and "},
-  {"        T.object_type = 'LB' "},
+  {"        T.object_type = 'LB' %s "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -373,7 +373,7 @@ static const QueryString getTrafFunctionsInSchemaQuery[] =
   {"        T.schema_name = '%s'  and "},
   {"        T.object_type = 'UR'  and "},
   {"        T.object_uid = R.udr_uid  and "},
-  {"        R.udr_type = 'F ' "},
+  {"        R.udr_type = 'F ' %s "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -386,7 +386,7 @@ static const QueryString getTrafTableFunctionsInSchemaQuery[] =
   {"        T.schema_name = '%s'  and "},
   {"        T.object_type = 'UR'  and "},
   {"        T.object_uid = R.udr_uid  and "},
-  {"        R.udr_type = 'T ' "},
+  {"        R.udr_type = 'T ' %s "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -411,7 +411,7 @@ static const QueryString getTrafSequencesInSchemaQuery[] =
   {"   %s.\"%s\".%s "},
   {"  where catalog_name = '%s' and "},
   {"        schema_name = '%s'  and "},
-  {"        object_type = 'SG' "},
+  {"        object_type = 'SG' %s "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -421,7 +421,7 @@ static const QueryString getTrafSequencesInCatalogQuery[] =
   {" select trim(schema_name) || '.' || object_name  from "},
   {"   %s.\"%s\".%s "},
   {"  where catalog_name = '%s' and "},
-  {"        object_type = 'SG' "},
+  {"        object_type = 'SG' %s "},
   {"  order by 1 "},
   {"  ; "}
 };
@@ -432,7 +432,7 @@ static const QueryString getTrafViewsInCatalogQuery[] =
   {" object_name from "},
   {"   %s.\"%s\".%s,  %s.\"%s\".%s "},
   {"  where view_uid = object_uid and "},
-  {"            catalog_name = '%s' "},
+  {"            catalog_name = '%s' %s "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -443,7 +443,7 @@ static const QueryString getTrafViewsInSchemaQuery[] =
   {"   %s.\"%s\".%s,  %s.\"%s\".%s "},
   {"  where view_uid = object_uid and "},
   {"             catalog_name = '%s' and "},
-  {"             schema_name = '%s' "},
+  {"             schema_name = '%s' %s "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -484,10 +484,9 @@ static const QueryString getTrafViewsOnObjectQuery[] =
 
 static const QueryString getTrafSchemasInCatalogQuery[] =
 {
-  {" select schema_name "},
+  {" select distinct schema_name "},
   {"   from %s.\"%s\".%s "},
-  {"  where catalog_name = '%s' "},
-  {"        and (object_type = 'PS' or object_type = 'SS') "},
+  {"  where catalog_name = '%s' %s "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -498,7 +497,7 @@ static const QueryString getTrafSchemasForAuthIDQuery[] =
   {"   from %s.\"%s\".%s T, "},
   {"        %s.\"%s\".%s A "},
   {"  where (T.object_type = 'PS' or T.object_type = 'SS') and "},
-  {"         A.auth_db_name = '%s' and T.object_owner = A.auth_id  "},
+  {"         A.auth_db_name = '%s' and T.object_owner = A.auth_id "},
   {" order by 1 "},
   {"  ; "}
 };
@@ -522,15 +521,51 @@ static const QueryString getTrafRoles[] =
   {"  ; "}
 };
 
+static const QueryString getTrafPrivsOnObject[] = 
+{
+  {" select grantee_name, "},
+  {"   case when bitextract(privileges_bitmap,63,1) = 1 then 'S' else '-' end || "},
+  {"   case when bitextract(privileges_bitmap,62,1) = 1 then 'I' else '-' end || "},
+  {"   case when bitextract(privileges_bitmap,61,1) = 1 then 'D' else '-' end || "},
+  {"   case when bitextract(privileges_bitmap,60,1) = 1 then 'U' else '-' end || "},
+  {"   case when bitextract(privileges_bitmap,59,1) = 1 then 'G' else '-' end || "},
+  {"   case when bitextract(privileges_bitmap,58,1) = 1 then 'R' else '-' end || "},
+  {"   case when bitextract(privileges_bitmap,57,1) = 1 then 'E' else '-' end as privs "},
+  {" from %s.\"%s\".%s "},
+  {" where grantor_id <> -2 "},
+  {"  and object_uid = "},
+  {"  (select object_uid from %s.\"%s\".%s "},
+  {"   where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' "},
+  {"     and object_type = '%s') %s "},
+  {"union "},
+  {"(select grantee_name, "},
+  {"  case when bitextract(privileges_bitmap,63,1) = 1 then 'S' else '-' end || "},
+  {"  case when bitextract(privileges_bitmap,62,1) = 1 then 'I' else '-' end || "},
+  {"  case when bitextract(privileges_bitmap,61,1) = 1 then 'D' else '-' end || "},
+  {"  case when bitextract(privileges_bitmap,60,1) = 1 then 'U' else '-' end || "},
+  {"  case when bitextract(privileges_bitmap,59,1) = 1 then 'G' else '-' end || "},
+  {"  case when bitextract(privileges_bitmap,58,1) = 1 then 'R' else '-' end || "},
+  {"  case when bitextract(privileges_bitmap,57,1) = 1 then 'E' else '-' end as privs "},
+  {" from %s.\"%s\".%s "},
+  {" where grantor_id <> -2 "},
+  {"  and object_uid = "},
+  {"  (select object_uid from %s.\"%s\".%s "},
+  {"   where catalog_name = '%s' and schema_name = '%s' and object_name = '%s' "},
+  {"     and object_type = '%s') %s )"},
+  {" ; "}
+};
+
 static const QueryString getHiveRegObjectsInCatalogQuery[] =
 {
   {" select trim(O.a) ||  "                                    },
-  {" case when G.b is null then ' (inconsistent)' else '' end "},
+  {" case when G.b is null and O.t != 'SS' then ' (inconsistent)' else '' end "},
   {" from "                                                    },
-  {"  (select lower(trim(catalog_name) || '.' || "             },
-  {"    trim(schema_name) || '.' || trim(object_name)) "       },
+  {"  (select object_type, case when object_type = 'SS' "      },
+  {"   then lower(trim(catalog_name) || '.' || trim(schema_name)) "},
+  {"   else lower(trim(catalog_name) || '.' || "               },
+  {"    trim(schema_name) || '.' || trim(object_name)) end "       },
   {"   from %s.\"%s\".%s where catalog_name = 'HIVE' and "     },
-  {"                           %s) O(a) "                      },
+  {"                           %s) O(t, a) "                   },
   {"  left join "                                              },
   {"   (select '%s' || '.' || trim(y) from "                   },
   {"    (get %s in catalog %s, no header) x(y)) G(b)"          },
@@ -951,6 +986,13 @@ short ExExeUtilGetMetadataInfoTcb::displayHeading()
     case ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_:
       {
 	str_sprintf(headingBuf_, "Hive Registered Views in Catalog %s",
+		    getMItdb().getCat());
+      }
+    break;
+
+    case ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_:
+      {
+	str_sprintf(headingBuf_, "Hive Registered Schemas in Catalog %s",
 		    getMItdb().getCat());
       }
     break;
@@ -1395,6 +1437,34 @@ Int32 ExExeUtilGetMetadataInfoTcb::getAuthID(
 }
 
 // ----------------------------------------------------------------------------
+// getGrantedPrivCmd
+//
+// Generates syntax that limits the result set to those objects where the 
+// current user has at least one privilege assigned. The syntax unions grantees
+// from object_privileges, column_privileges, and schema_privileges. The 
+// grantee list (authList) includes the current user and the current users 
+// roles.
+// ---------------------------------------------------------------------------- 
+NAString ExExeUtilGetMetadataInfoTcb::getGrantedPrivCmd(
+  const NAString &authList,
+  const char * cat)
+{
+  char buf [authList.length()*3 + MAX_SQL_IDENTIFIER_NAME_LEN*9 + 200];
+  snprintf(buf, sizeof(buf), "and object_uid in (select object_uid from %s.\"%s\".%s "
+                             "where grantee_id in %s union "
+                             "(select object_uid from %s.\"%s\".%s "
+                             " where grantee_id in %s) union "
+                             "(select object_uid from %s.\"%s\".%s "
+                             " where grantee_id in %s))",
+           cat, SEABASE_PRIVMGR_SCHEMA, PRIVMGR_OBJECT_PRIVILEGES, authList.data(),
+           cat, SEABASE_PRIVMGR_SCHEMA, PRIVMGR_COLUMN_PRIVILEGES, authList.data(),
+           cat, SEABASE_PRIVMGR_SCHEMA, PRIVMGR_SCHEMA_PRIVILEGES, authList.data());
+ 
+  NAString cmd(buf); 
+  return cmd;
+}
+
+// ----------------------------------------------------------------------------
 // getRoleList
 //
 // Reads the "_PRIVMGR_MD_".role_usage table to return the list of role IDs
@@ -1744,7 +1814,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
               ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::USERS_FOR_ROLE_
               ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::ROLES_FOR_USER_
               ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_
-              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_)
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_
+              ||getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_)
 	    {
                if (!CmpCommon::context()->isAuthorizationEnabled())
                {
@@ -1770,6 +1842,8 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  qs = getTrafTablesInSchemaQuery;
 		  sizeOfqs = sizeof(getTrafTablesInSchemaQuery);
 
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
                   param_[0] = catSchValue;
                   param_[1] = endQuote;
 		  param_[2] = cat;
@@ -1777,6 +1851,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[4] = tab;
 		  param_[5] = getMItdb().cat_;
 		  param_[6] = getMItdb().sch_;
+                  param_[7] = (char *)privWhereClause.data();
 		}
 	      break;
 	      
@@ -1785,11 +1860,15 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  qs = getTrafIndexesInSchemaQuery;
 		  sizeOfqs = sizeof(getTrafIndexesInSchemaQuery);
 
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
+
 		  param_[0] = cat;
 		  param_[1] = sch;
 		  param_[2] = tab;
 		  param_[3] = getMItdb().cat_;
 		  param_[4] = getMItdb().sch_;
+                  param_[5] = (char *)privWhereClause.data();
 		}
 	      break;
 	      
@@ -1798,6 +1877,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  qs = getTrafViewsInCatalogQuery;
 		  sizeOfqs = sizeof(getTrafViewsInCatalogQuery);
 
+                 if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
+
 		  param_[0] = cat;
 		  param_[1] = sch;
 		  param_[2] = tab;
@@ -1805,11 +1887,13 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[4] = sch;
 		  param_[5] = view;
 		  param_[6] = getMItdb().cat_;
+                  param_[7] = (char *)privWhereClause.data();
 		}
 	      break;
 	      
 	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_:
 	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_:
+	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_:
 	      case ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_:
 		{
 		  qs = getHiveRegObjectsInCatalogQuery;
@@ -1827,12 +1911,19 @@ short ExExeUtilGetMetadataInfoTcb::work()
                       str_sprintf(hiveObjType, " (object_type = '%s') ",
                                   COM_VIEW_OBJECT_LIT);
                     }
+                  else if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_)
+                    {
+                      strcpy(hiveGetType, "schemas");
+                      str_sprintf(hiveObjType, " (object_type = '%s') ",
+                                  COM_SHARED_SCHEMA_OBJECT_LIT);
+                    }
                   else
                     {
                       strcpy(hiveGetType, "objects");
-                      str_sprintf(hiveObjType, " (object_type = '%s' or object_type = '%s') ",
+                      str_sprintf(hiveObjType, " (object_type = '%s' or object_type = '%s' or object_type = '%s' ) ",
                                   COM_BASE_TABLE_OBJECT_LIT, 
-                                  COM_VIEW_OBJECT_LIT);
+                                  COM_VIEW_OBJECT_LIT,
+                                  COM_SHARED_SCHEMA_OBJECT_LIT);
                     }
                     
 		  param_[0] = cat;
@@ -1881,6 +1972,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  qs = getTrafViewsInSchemaQuery;
 		  sizeOfqs = sizeof(getTrafViewsInSchemaQuery);
 
+                 if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
+
 		  param_[0] = cat;
 		  param_[1] = sch;
 		  param_[2] = tab;
@@ -1889,6 +1983,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[5] = view;
 		  param_[6] = getMItdb().cat_;
 		  param_[7] = getMItdb().sch_;
+                  param_[8] = (char *)privWhereClause.data();
 		}
 	      break;
 
@@ -1969,10 +2064,14 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  qs = getTrafSchemasInCatalogQuery;
 		  sizeOfqs = sizeof(getTrafSchemasInCatalogQuery);
 
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
+
 		  param_[0] = cat;
 		  param_[1] = sch;
 		  param_[2] = tab;
 		  param_[3] = getMItdb().cat_;
+                  param_[4] = (char *) privWhereClause.data();
 		}
 	      break;
               case ComTdbExeUtilGetMetadataInfo::SCHEMAS_FOR_USER_:
@@ -2012,6 +2111,9 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   qs = getTrafProceduresInSchemaQuery;
                   sizeOfqs = sizeof(getTrafProceduresInSchemaQuery);
 
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
+
 		  param_[0] = cat;
 		  param_[1] = sch;
 		  param_[2] = tab;
@@ -2020,6 +2122,7 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[5] = routine;
 		  param_[6] = getMItdb().cat_;
 		  param_[7] = getMItdb().sch_;
+                  param_[8] = (char *) privWhereClause.data();
                 }
                 break ;
               case ComTdbExeUtilGetMetadataInfo::LIBRARIES_IN_SCHEMA_:
@@ -2027,11 +2130,15 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   qs = getTrafLibrariesInSchemaQuery;
                   sizeOfqs = sizeof(getTrafLibrariesInSchemaQuery);
 
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
+
 		  param_[0] = cat;
 		  param_[1] = sch;
 		  param_[2] = tab;
 		  param_[3] = getMItdb().cat_;
 		  param_[4] = getMItdb().sch_;
+                  param_[5] = (char *) privWhereClause.data();
                 }
                 break ;
               case ComTdbExeUtilGetMetadataInfo::FUNCTIONS_IN_SCHEMA_:
@@ -2039,20 +2146,8 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   qs = getTrafFunctionsInSchemaQuery;
                   sizeOfqs = sizeof(getTrafFunctionsInSchemaQuery);
 
-		  param_[0] = cat;
-		  param_[1] = sch;
-		  param_[2] = tab;
-                  param_[3] = cat;
-		  param_[4] = sch;
-		  param_[5] = routine;
-		  param_[6] = getMItdb().cat_;
-		  param_[7] = getMItdb().sch_;
-                }
-                break ;
-	      case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_:
-                {
-                  qs = getTrafTableFunctionsInSchemaQuery;
-                  sizeOfqs = sizeof(getTrafTableFunctionsInSchemaQuery);
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
 
 		  param_[0] = cat;
 		  param_[1] = sch;
@@ -2062,6 +2157,26 @@ short ExExeUtilGetMetadataInfoTcb::work()
 		  param_[5] = routine;
 		  param_[6] = getMItdb().cat_;
 		  param_[7] = getMItdb().sch_;
+                  param_[8] = (char *) privWhereClause.data();
+                }
+                break ;
+	      case ComTdbExeUtilGetMetadataInfo::TABLE_FUNCTIONS_IN_SCHEMA_:
+                {
+                  qs = getTrafTableFunctionsInSchemaQuery;
+                  sizeOfqs = sizeof(getTrafTableFunctionsInSchemaQuery);
+
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
+
+		  param_[0] = cat;
+		  param_[1] = sch;
+		  param_[2] = tab;
+                  param_[3] = cat;
+		  param_[4] = sch;
+		  param_[5] = routine;
+		  param_[6] = getMItdb().cat_;
+		  param_[7] = getMItdb().sch_;
+                  param_[8] = (char *) privWhereClause.data();
                 }
                 break ;
               case ComTdbExeUtilGetMetadataInfo::PROCEDURES_FOR_LIBRARY_:
@@ -2278,6 +2393,51 @@ short ExExeUtilGetMetadataInfoTcb::work()
                 }
               break;
 
+              case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_:
+              case ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_:
+              {
+                qs = getTrafPrivsOnObject;
+                sizeOfqs = sizeof(getTrafPrivsOnObject);
+
+                NAString objType;
+                if (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_)
+                  objType = COM_BASE_TABLE_OBJECT_LIT;
+                else
+                  objType = COM_VIEW_OBJECT_LIT;
+
+                if (doPrivCheck)
+                {
+                   char buf[authList.length() + 100];
+                   str_sprintf(buf, "and grantee_id in %s ", authList.data());
+                   privWhereClause = buf;
+                }
+                param_[0] = cat;
+                param_[1] = pmsch;
+                param_[2] = objPrivs;
+                param_[3] = cat;
+                param_[4] = sch;
+                param_[5] = tab;
+                param_[6] = getMItdb().cat_;
+                param_[7] = getMItdb().sch_;
+                param_[8] = getMItdb().obj_;
+                param_[9] = (char *)objType.data();
+                param_[10] = (char *)privWhereClause.data();
+                param_[11] = cat;
+                param_[12] = pmsch;
+                param_[13] = colPrivs;
+                param_[14] = cat;
+                param_[15] = sch;
+                param_[16] = tab;
+                param_[17] = getMItdb().cat_;
+                param_[18] = getMItdb().sch_;
+                param_[19] = getMItdb().obj_;
+                param_[20] = (char *)objType.data();
+                param_[21] = (char *)privWhereClause.data();
+
+                numOutputEntries_ = 2;
+                break;
+              }
+
               case ComTdbExeUtilGetMetadataInfo::COMPONENTS_:
               {
                 qs = getComponents;
@@ -2401,10 +2561,14 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   qs = getTrafSequencesInCatalogQuery;
                   sizeOfqs = sizeof(getTrafSequencesInCatalogQuery);
 
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
+
 		  param_[0] = cat;
 		  param_[1] = sch;
 		  param_[2] = tab;
 		  param_[3] = getMItdb().cat_;
+                  param_[4] = (char *) privWhereClause.data();
                 }
                 break ;
 
@@ -2413,11 +2577,15 @@ short ExExeUtilGetMetadataInfoTcb::work()
                   qs = getTrafSequencesInSchemaQuery;
                   sizeOfqs = sizeof(getTrafSequencesInSchemaQuery);
 
+                  if (doPrivCheck)
+                    privWhereClause = getGrantedPrivCmd(authList, cat);
+
 		  param_[0] = cat;
 		  param_[1] = sch;
 		  param_[2] = tab;
 		  param_[3] = getMItdb().cat_;
 		  param_[4] = getMItdb().sch_;
+                  param_[5] = (char *) privWhereClause.data();
                 }
                 break ;
 
@@ -2500,7 +2668,10 @@ short ExExeUtilGetMetadataInfoTcb::work()
 	    exprRetCode = ex_expr::EXPR_TRUE;
 
             if ((getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_USER_) ||
-                (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_))
+                (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_FOR_ROLE_) ||
+                (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_VIEW_) ||
+                (getMItdb().queryType_ == ComTdbExeUtilGetMetadataInfo::PRIVILEGES_ON_TABLE_))
+
             {
               // output:  privileges<4spaces>object name
               NAString outputStr (vi->get(1));
@@ -5441,7 +5612,14 @@ short ExExeUtilHiveMDaccessTcb::work()
               {
                 HVC_RetCode retCode = hiveMD_->getClient()->
                   getAllTables(currSch, tblNames_);
-                if ((retCode != HVC_OK) && (retCode != HVC_DONE)) 
+                if (retCode == HVC_ERROR_EXISTS_EXCEPTION)
+                  {
+                    *diags << DgSqlCode(-1003)
+                           << DgSchemaName(NAString("hive") + "." + currSch);
+                    step_ = HANDLE_ERROR_;
+                    break;
+                  }
+                else if ((retCode != HVC_OK) && (retCode != HVC_DONE)) 
                   {
                     *diags << DgSqlCode(-1190)
                            << DgString0((char*)

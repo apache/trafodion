@@ -28,15 +28,37 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import org.apache.hadoop.conf.Configuration;
+import org.trafodion.sql.TrafConfiguration;
 import org.apache.hadoop.fs.Path;
 
 import org.apache.hadoop.hive.serde2.objectinspector.*;
 import org.apache.hadoop.hive.ql.io.orc.*;
 
+import org.apache.log4j.PropertyConfigurator;		 
+import org.apache.log4j.Logger;
+
 public class OrcFileReader
 {
 
-    Configuration               m_conf;
+    static Logger logger = Logger.getLogger(OrcFileReader.class.getName());;
+    static Configuration               m_conf;
+    
+    static {
+
+	/* 
+	   The following code takes care of initializing log4j for the org.trafodion.sql package 
+	   (in case of an ESP, e.g.) when the class:org.trafodion.sql.HBaseClient (which initializes log4j 
+           for the org.trafodion.sql package) hasn't been loaded.
+	*/
+    	String confFile = System.getProperty("trafodion.log4j.configFile");
+    	if (confFile == null) {
+    		System.setProperty("trafodion.sql.log", System.getenv("TRAF_HOME") + "/logs/trafodion.sql.java.log");
+    		confFile = System.getenv("TRAF_HOME") + "/conf/log4j.sql.config";
+    	}
+    	PropertyConfigurator.configure(confFile);
+	m_conf = TrafConfiguration.create(TrafConfiguration.HDFS_CONF);
+    }
+    
     Path                        m_file_path;
     
     Reader                      m_reader;
@@ -59,7 +81,6 @@ public class OrcRowReturnSQL
 
 
     OrcFileReader() {
-	m_conf = new Configuration();
 	rowData = new OrcRowReturnSQL();	//TEMP: was in fetch
     }
 

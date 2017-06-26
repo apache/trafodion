@@ -229,8 +229,8 @@ RelExpr * DDLExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   if (derivedNode == NULL)
     result = new (outHeap) DDLExpr(getDDLNode(), // ExprNode * ddlNode
                                    (char *)NULL, // char * ddlStmtText
-                                   CharInfo::UnknownCharSet, // CharInfo::CharSet ddlStmtTextCharSet
-                                   FALSE, FALSE, FALSE, NULL, 0, outHeap);
+                                   CharInfo::UnknownCharSet,
+                                   outHeap);
   else
     result = (DDLExpr *) derivedNode;
 
@@ -238,9 +238,6 @@ RelExpr * DDLExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   result->ddlObjNATable_ = ddlObjNATable_;
 
-  result->forShowddlExplain_ = forShowddlExplain_;
-  result->internalShowddlExplain_ = internalShowddlExplain_;
-  result->noLabelStats_ = noLabelStats_;
   result->explObjName_ = explObjName_;
   result->numExplRows_ = numExplRows_;
 
@@ -265,11 +262,6 @@ RelExpr * DDLExpr::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
   result->isHbase_ = isHbase_;
   result->isNative_ = isNative_;
   result->hbaseDDLNoUserXn_ = hbaseDDLNoUserXn_;
-  result->initHbase_ = initHbase_;
-  result->dropHbase_ = dropHbase_;
-  result->updateVersion_ = updateVersion_;
-  result->purgedataHbase_ = purgedataHbase_;
-  result->addSchemaObjects_ = addSchemaObjects_;
 
   result->returnStatus_ = returnStatus_;
 
@@ -4052,12 +4044,12 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       return boundExpr;
       //      isHbase_ = TRUE;
     }
-  else if (initAuthorization() || dropAuthorization() || cleanupAuth())
+  else if (initAuth() || dropAuth() || cleanupAuth())
   {
     isHbase_ = TRUE;
     hbaseDDLNoUserXn_ = TRUE;
   }
-  else if (initHbase_ || dropHbase_ || createMDViews() || dropMDViews() ||
+  else if (initHbase() || dropHbase() || createMDViews() || dropMDViews() ||
       addSchemaObjects() || updateVersion())
   {
     isHbase_ = TRUE;
@@ -4073,7 +4065,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
       isHbase_ = TRUE;
       hbaseDDLNoUserXn_ = TRUE;
     }
-  else if (purgedataHbase_)
+  else if (purgedata())
   {
     isHbase_ = TRUE;
     hbaseDDLNoUserXn_ = TRUE;      
@@ -4515,7 +4507,7 @@ RelExpr * DDLExpr::bindNode(BindWA *bindWA)
 
     if ((isCreateSchema || isDropSchema || isAlterSchema) || isRegister ||
         ((isTable_ || isIndex_ || isView_ || isRoutine_ || isLibrary_ || isSeq) &&
-         (isCreate_ || isDrop_ || purgedataHbase_ || 
+         (isCreate_ || isDrop_ || purgedata() || 
           (isAlter_ && (alterAddCol || alterDropCol || alterDisableIndex || alterEnableIndex || 
 			alterAddConstr || alterDropConstr || alterRenameTable ||
                         alterStoredDesc ||
@@ -5193,10 +5185,13 @@ RelExpr * ExeUtilFastDelete::bindNode(BindWA *bindWA)
       return NULL;
     }
   
-  DDLExpr * ddlExpr = new(bindWA->wHeap()) DDLExpr(TRUE,
-                                                   getTableName(),
+  DDLExpr * ddlExpr = new(bindWA->wHeap()) DDLExpr(NULL,
                                                    getStmtText(),
-                                                   CharInfo::UnknownCharSet);
+                                                   CharInfo::UnknownCharSet,
+                                                   CmpCommon::statementHeap());
+  ddlExpr->setPurgedata(TRUE);
+  ddlExpr->setPurgedataTableName(getTableName());
+
   RelExpr * boundExpr = ddlExpr->bindNode(bindWA);
 
   return boundExpr;
@@ -5668,7 +5663,6 @@ RelExpr * ExeUtilLongRunning::bindNode(BindWA *bindWA)
 
   // indicate that this is a an LRU statement
   bindWA->getTopRoot()->setContainsLRU(TRUE);
-  bindWA->getTopRoot()->setMustUseESPs(TRUE);
 
   return boundExpr;
 }

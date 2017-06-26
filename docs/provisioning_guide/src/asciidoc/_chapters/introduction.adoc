@@ -107,9 +107,6 @@ you use the {project-name} Installer for initial installation and upgrades of {p
 "Script-Based Provisioning" in this guide. Refer to <<introduction-trafodion-installer, {project-name} Installer>> that provides
 usage information.
 
-The command-line installer has been replaced for the 2.1.0 release. Written in python, it replaces the legacy bash-script installer.
-The bash command-line installer is deprecated as of 2.1.0, but is still provided, just in case you experience any problems with
-the new installer. If so, please report those problems to the project team, since the legacy installer will soon be obsoleted.
 
 [[introduction-provisioning-activities]]
 == Provisioning Activities
@@ -139,10 +136,6 @@ The upgrade tasks vary depending on the differences between the current and new 
 include basic management tasks such as starting and checking the status of the {project-name} components and performing basic smoke tests.
 
 * *<<remove,Remove>>*: Activities related to removing {project-name} from your Hadoop cluster.
-
-* *<<enable-security,Enable Security>>*: Activities related to enabling security features on an already installed
-{project-name} installation.  These activities include tasks such as adding Kerberos principals and keytabs,
-and setting up the LDAP configuration files. *Only support in bash installer for now*
 
 [[introduction-provisioning-master-node]]
 == Provisioning Master Node

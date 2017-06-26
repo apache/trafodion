@@ -230,35 +230,6 @@ void InitializeJavaOptionsFromEnvironment(LmJavaOptions &javaOptions
 {
    char *val;
 
-   if ((val = getenv("CLASSPATH")))
-   {
-      javaOptions.addSystemProperty("java.class.path", val);
-   }
-   char maxHeapOption[64];
-   int maxHeapEnvvarMB = DEFAULT_JVM_MAX_HEAP_SIZE;
-   sprintf(maxHeapOption, "-Xmx%dm", maxHeapEnvvarMB);
-   javaOptions.addOption((const char *)maxHeapOption, TRUE);
-
-   char compressedClassSpaceSizeOptions[64];
-   int compressedClassSpaceSize = 0;
-   const char *compressedClassSpaceSizeStr = getenv("JVM_COMPRESSED_CLASS_SPACE_SIZE");
-   if (compressedClassSpaceSizeStr)
-      compressedClassSpaceSize = atoi(compressedClassSpaceSizeStr);
-   if (compressedClassSpaceSize <= 0)
-      compressedClassSpaceSize = DEFAULT_COMPRESSED_CLASSSPACE_SIZE;
-   sprintf(compressedClassSpaceSizeOptions, "-XX:CompressedClassSpaceSize=%dm", compressedClassSpaceSize);
-   javaOptions.addOption((const char *)compressedClassSpaceSizeOptions, TRUE);
-
-   char maxMetaspaceSizeOptions[64];
-   int maxMetaspaceSize = 0;
-   const char *maxMetaspaceSizeStr = getenv("JVM_MAX_METASPACE_SIZE");
-   if (maxMetaspaceSizeStr)
-      maxMetaspaceSize = atoi(maxMetaspaceSizeStr);
-   if (maxMetaspaceSize <= 0)
-      maxMetaspaceSize = DEFAULT_MAX_METASPACE_SIZE;
-   sprintf(maxMetaspaceSizeOptions, "-XX:MaxMetaspaceSize=%dm", maxMetaspaceSize);
-   javaOptions.addOption((const char *)maxMetaspaceSizeOptions, TRUE);
-
    /* Look for java startup options and envvars in configuration file */
    if (UdrCfgParser::cfgFileIsOpen(initErrText))
    {

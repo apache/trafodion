@@ -40,6 +40,7 @@ unless ( $major =~ /^\d+$/ && $minor =~ /^\d+$/ && $sp =~ /^\d+$/ && $revision =
 
 my @resource_files = ("TranslationDll/TranslationDll.rc",
     "drvr35adm/drvr35adm.rc",
+    "drvr35msg/DrvMsg35.rc",
     "drvr35/TCPIPV4/TCPIPV4.RC",
     "drvr35/TCPIPV6/TCPIPV6.RC",
     "drvr35/drvr35.rc",

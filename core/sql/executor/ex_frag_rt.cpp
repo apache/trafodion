@@ -241,9 +241,10 @@ void ExRtFragTable::setInactiveState()
   numRootRequests_--;
 }
 
+#define MAX_NUM_FRAGMENTS_PER_ESP 6
 // multi fragment esp - begin
 static NABoolean sv_esp_multi_fragment = TRUE;
-static UInt8 sv_esp_num_fragments = 3;
+static UInt8 sv_esp_num_fragments = MAX_NUM_FRAGMENTS_PER_ESP;
 static UInt16 sv_esp_multi_fragment_vm = 4000;
 static NABoolean sv_esp_fragment_quotas = TRUE;
 static char *sv_envvar_esp_multi_fragment = 0;
@@ -283,10 +284,10 @@ getAssignedEspEnvVar()
       sv_esp_multi_fragment = TRUE;
   }
   if (sv_esp_fragment_quotas == TRUE)
-    sv_esp_num_fragments = 6;
+    sv_esp_num_fragments = MAX_NUM_FRAGMENTS_PER_ESP;
   if (sv_envvar_esp_num_fragments) {
     lv_i = atoi(sv_envvar_esp_num_fragments);
-    if (lv_i > 0 && lv_i <=6) {
+    if (lv_i > 0 && lv_i <= MAX_NUM_FRAGMENTS_PER_ESP) {
       sv_esp_num_fragments = (UInt8)lv_i;
     }
   }

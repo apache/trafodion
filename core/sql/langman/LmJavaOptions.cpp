@@ -134,6 +134,17 @@ void LmJavaOptions::addOptions(const char *options,
   NADELETEBASIC(copy, collHeap());
 }
 
+CollIndex LmJavaOptions::findByPrefix(const char *prefix) const
+{
+  size_t prefixLen = strlen(prefix);
+
+  for (CollIndex i=0; i<options_.entries(); i++)
+    if (strncmp(options_[i], prefix, prefixLen) == 0)
+      return i;
+
+  return NULL_COLL_INDEX;
+}
+
 void LmJavaOptions::addSystemProperty(const char *name,
                                       const char *value)
 {

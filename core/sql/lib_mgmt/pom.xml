@@ -27,6 +27,11 @@
 	<groupId>org.trafodion</groupId>
 	<artifactId>lib_mgmt</artifactId>
 	<version>${env.TRAFODION_VER}</version>
+	<properties>
+		<maven.antrun.plugin.version>1.6</maven.antrun.plugin.version>
+                <hbase.version>${env.HBASE_DEP_VER_CDH}</hbase.version>
+                <hadoop.version>${env.HADOOP_DEP_VER}</hadoop.version>
+	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -34,10 +39,26 @@
 			<version>1.7.12</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-hdfs</artifactId>
+			<version>${hadoop.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-common</artifactId>
+			<version>${hadoop.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.trafodion</groupId>
+			<artifactId>trafodion-sql</artifactId>
+                        <version>${env.TRAFODION_VER}</version>
+                        <scope>system</scope>
+                        <systemPath>${env.TRAF_HOME}/export/lib/trafodion-sql-apache-${env.TRAFODION_VER}.jar</systemPath>
+		</dependency>
 	</dependencies>
-	<properties>
-		<maven.antrun.plugin.version>1.6</maven.antrun.plugin.version>
-	</properties>
 
 	<build>
 		<plugins>

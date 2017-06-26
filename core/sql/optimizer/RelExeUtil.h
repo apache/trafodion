@@ -215,120 +215,22 @@ public:
   DDLExpr(ExprNode * ddlNode,
 	  char * ddlStmtText,
 	  CharInfo::CharSet ddlStmtTextCharSet,
-	  NABoolean forShowddlExplain = FALSE,
-	  NABoolean internalShowddlExplain = FALSE,
-	  NABoolean noLabelStats = FALSE,
-	  QualifiedName * explObjName = NULL,
-	  double numExplRows = 0,
-	  CollHeap *oHeap = CmpCommon::statementHeap())
-    : GenericUtilExpr(ddlStmtText, ddlStmtTextCharSet, ddlNode, NULL, REL_DDL, oHeap),
-    specialDDL_(FALSE),
-    ddlObjNATable_(NULL),
-    forShowddlExplain_(forShowddlExplain),
-    internalShowddlExplain_(internalShowddlExplain),
-    noLabelStats_(noLabelStats),
-    numExplRows_(numExplRows),
-    isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
-    isDrop_(FALSE), isAlter_(FALSE), isCleanup_(FALSE),
-    isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
-    isSchema_(FALSE),
-    isLibrary_(FALSE), isRoutine_(FALSE),
-    isUstat_(FALSE),
-    isHbase_(FALSE),
-    isNative_(FALSE),
-    initHbase_(FALSE),
-    dropHbase_(FALSE),
-    updateVersion_(FALSE),
-    purgedataHbase_(FALSE),
-    initAuthorization_(FALSE),
-    dropAuthorization_(FALSE),
-    addSchemaObjects_(FALSE),
-    minimal_(FALSE),
-    returnStatus_(FALSE),
-    flags_(0)
+	  CollHeap *oHeap)
+       : GenericUtilExpr(ddlStmtText, ddlStmtTextCharSet, ddlNode, NULL, 
+                         REL_DDL, oHeap),
+         specialDDL_(FALSE),
+         ddlObjNATable_(NULL),
+         numExplRows_(0),
+         isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
+         isDrop_(FALSE), isAlter_(FALSE), isCleanup_(FALSE),
+         isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
+         isSchema_(FALSE), isLibrary_(FALSE), isRoutine_(FALSE),
+         isUstat_(FALSE),
+         isHbase_(FALSE),
+         isNative_(FALSE),
+         returnStatus_(FALSE),
+         flags_(0)
   {
-    if (explObjName)
-      explObjName_ = *explObjName;
-
-    setDDLXns(TRUE);
-  };
-
- DDLExpr(NABoolean initHbase, NABoolean dropHbase,
-	 NABoolean createMDviews, NABoolean dropMDviews,
-         NABoolean initAuthorization, NABoolean dropAuthorization,
-	 NABoolean /* formerly addSeqTable */ dummy, NABoolean updateVersion, NABoolean addSchemaObjects,
-         NABoolean minimal,
-	 char * ddlStmtText,
-	 CharInfo::CharSet ddlStmtTextCharSet,
-	  CollHeap *oHeap = CmpCommon::statementHeap())
-   : GenericUtilExpr(ddlStmtText, ddlStmtTextCharSet, NULL, NULL, REL_DDL, oHeap),
-    specialDDL_(FALSE),
-    ddlObjNATable_(NULL),
-    forShowddlExplain_(FALSE),
-    internalShowddlExplain_(FALSE),
-    noLabelStats_(FALSE),
-    numExplRows_(0),
-    isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
-    isDrop_(FALSE), isAlter_(FALSE), isCleanup_(FALSE),
-    isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
-    isSchema_(FALSE),
-    isLibrary_(FALSE), isRoutine_(FALSE),
-    isUstat_(FALSE),
-    isHbase_(FALSE),
-    isNative_(FALSE),
-    initHbase_(initHbase), 
-    dropHbase_(dropHbase),
-    updateVersion_(updateVersion),
-    purgedataHbase_(FALSE),
-    initAuthorization_(initAuthorization),
-    dropAuthorization_(dropAuthorization),
-    addSchemaObjects_(addSchemaObjects),
-    minimal_(minimal),
-    returnStatus_(FALSE),
-    flags_(0)
-  {
-    if (createMDviews)
-      setCreateMDViews(TRUE);
-    
-    if (dropMDviews)
-      setDropMDViews(TRUE);
-
-    setDDLXns(TRUE);
-  };
-
- DDLExpr(NABoolean purgedataHbase,
-	 CorrName &purgedataTableName,
-	 char * ddlStmtText,
-	 CharInfo::CharSet ddlStmtTextCharSet,
-	 CollHeap *oHeap = CmpCommon::statementHeap())
-   : GenericUtilExpr(ddlStmtText, ddlStmtTextCharSet, NULL, NULL, REL_DDL, oHeap),
-    specialDDL_(FALSE),
-    ddlObjNATable_(NULL),
-    forShowddlExplain_(FALSE),
-    internalShowddlExplain_(FALSE),
-    noLabelStats_(FALSE),
-    numExplRows_(0),
-    isCreate_(FALSE), isCreateLike_(FALSE), isVolatile_(FALSE), 
-    isDrop_(FALSE), isAlter_(FALSE), isCleanup_(FALSE),
-    isTable_(FALSE), isIndex_(FALSE), isMV_(FALSE), isView_(FALSE),
-    isSchema_(FALSE),
-    isUstat_(FALSE),
-    isHbase_(FALSE),
-    isNative_(FALSE),
-    initHbase_(FALSE), 
-    dropHbase_(FALSE),
-    updateVersion_(FALSE),
-    purgedataHbase_(purgedataHbase),
-    initAuthorization_(FALSE),
-    dropAuthorization_(FALSE),
-    addSchemaObjects_(FALSE),
-    minimal_(FALSE),
-    returnStatus_(FALSE),
-    flags_(0)
-  {
-    purgedataTableName_ = purgedataTableName;
-    qualObjName_ = purgedataTableName.getQualifiedNameObj();
-
     setDDLXns(TRUE);
   };
 
@@ -371,30 +273,23 @@ public:
   }
 
   CorrName &purgedataTableName() { return purgedataTableName_; }
+  void setPurgedataTableName(CorrName &cn) 
+  { 
+    purgedataTableName_ = cn; 
+    qualObjName_ = cn.getQualifiedNameObj();
+  }
 
   NABoolean &specialDDL() { return specialDDL_;}
   NABoolean &isUstat() { return isUstat_; }
 
-  NABoolean forShowddlExplain() { return forShowddlExplain_; }
-  NABoolean internalShowddlExplain() { return internalShowddlExplain_; }
-  NABoolean noLabelStats() { return noLabelStats_; }
-  void setNoLabelStats(NABoolean v) { noLabelStats_ = v; }
-
   QualifiedName &explObjName() { return explObjName_; }
+  void setExplObjName(QualifiedName &qn) { explObjName_ = qn; }
 
   double numExplRows() { return numExplRows_; }
+  void setNumExplRows(double nr) { numExplRows_ = nr; }
 
   virtual NABoolean dontUseCache() 
-  { return (forShowddlExplain() ? FALSE : TRUE); }
-
-  NABoolean initHbase() { return initHbase_; }
-  NABoolean dropHbase() { return dropHbase_; }
-  NABoolean updateVersion() { return updateVersion_; }
-  NABoolean purgedataHbase() { return purgedataHbase_; }
-  NABoolean initAuthorization() { return initAuthorization_; }
-  NABoolean dropAuthorization() { return dropAuthorization_; }
-  NABoolean addSchemaObjects() { return addSchemaObjects_; }
-  NABoolean minimal() { return minimal_; }
+  { return (showddlExplain() ? FALSE : TRUE); }
 
   short ddlXnsInfo(NABoolean &ddlXns, NABoolean &xnCanBeStarted);
 
@@ -440,21 +335,80 @@ public:
   {(v ? flags_ |= CLEANUP_AUTH : flags_ &= ~CLEANUP_AUTH); }
   NABoolean cleanupAuth() { return (flags_ & CLEANUP_AUTH) != 0;}
 
+  void setInitHbase(NABoolean v)
+  {(v ? flags_ |= INIT_HBASE : flags_ &= ~INIT_HBASE); }
+  NABoolean initHbase() { return (flags_ & INIT_HBASE) != 0;}
+
+  void setDropHbase(NABoolean v)
+  {(v ? flags_ |= DROP_HBASE : flags_ &= ~DROP_HBASE); }
+  NABoolean dropHbase() { return (flags_ & DROP_HBASE) != 0;}
+
+  void setInitAuth(NABoolean v)
+  {(v ? flags_ |= INIT_AUTH : flags_ &= ~INIT_AUTH); }
+  NABoolean initAuth() { return (flags_ & INIT_AUTH) != 0;}
+
+  void setDropAuth(NABoolean v)
+  {(v ? flags_ |= DROP_AUTH : flags_ &= ~DROP_AUTH); }
+  NABoolean dropAuth() { return (flags_ & DROP_AUTH) != 0;}
+
+  void setUpdateVersion(NABoolean v)
+  {(v ? flags_ |= UPDATE_VERSION : flags_ &= ~UPDATE_VERSION); }
+  NABoolean updateVersion() { return (flags_ & UPDATE_VERSION) != 0;}
+
+  void setAddSchemaObjects(NABoolean v)
+  {(v ? flags_ |= ADD_SCH_OBJS : flags_ &= ~ADD_SCH_OBJS); }
+  NABoolean addSchemaObjects() { return (flags_ & ADD_SCH_OBJS) != 0;}
+
+  // minimal: meaningful only when initHbase_ is true; if this is true,
+  // means create the metadata tables only (and not repository etc.)
+  void setMinimal(NABoolean v)
+  {(v ? flags_ |= MINIMAL : flags_ &= ~MINIMAL); }
+  NABoolean minimal() { return (flags_ & MINIMAL) != 0;}
+
+  void setPurgedata(NABoolean v)
+  {(v ? flags_ |= PURGEDATA : flags_ &= ~PURGEDATA); }
+  NABoolean purgedata() { return (flags_ & PURGEDATA) != 0;}
+
+  // this ddlexpr is created for 'showddl <obj>, explain' to
+  // explain the object explObjName.
+  void setShowddlExplain(NABoolean v)
+  {(v ? flags_ |= SHOWDDL_EXPLAIN : flags_ &= ~SHOWDDL_EXPLAIN); }
+  NABoolean showddlExplain() { return (flags_ & SHOWDDL_EXPLAIN) != 0;}
+
+  void setShowddlExplainInt(NABoolean v)
+  {(v ? flags_ |= SHOWDDL_EXPLAIN_INT : flags_ &= ~SHOWDDL_EXPLAIN_INT); }
+  NABoolean showddlExplainInt() { return (flags_ & SHOWDDL_EXPLAIN_INT) != 0;}
+
+  void setNoLabelStats(NABoolean v)
+  {(v ? flags_ |= NO_LABEL_STATS : flags_ &= ~NO_LABEL_STATS); }
+  NABoolean noLabelStats() { return (flags_ & NO_LABEL_STATS) != 0;}
+
   NABoolean ddlXns() { return ddlXns_; }
 
  protected:
   enum Flags
   {
-    CREATE_MD_VIEWS         = 0x0001,
-    DROP_MD_VIEWS           = 0x0002,
-    GET_MD_VERSION          = 0x0004,
-    CREATE_REPOS            = 0x0008,
-    DROP_REPOS              = 0x0010,
-    UPGRADE_REPOS           = 0x0020,
-    CLEANUP_AUTH            = 0X0040,
-    CREATE_LIBMGR           = 0x0080,
-    DROP_LIBMGR             = 0x0100,
-    UPGRADE_LIBMGR          = 0x0200
+    CREATE_MD_VIEWS         = 0x000001,
+    DROP_MD_VIEWS           = 0x000002,
+    GET_MD_VERSION          = 0x000004,
+    CREATE_REPOS            = 0x000008,
+    DROP_REPOS              = 0x000010,
+    UPGRADE_REPOS           = 0x000020,
+    CLEANUP_AUTH            = 0X000040,
+    CREATE_LIBMGR           = 0x000080,
+    DROP_LIBMGR             = 0x000100,
+    UPGRADE_LIBMGR          = 0x000200,
+    INIT_HBASE              = 0x000400,
+    DROP_HBASE              = 0x000800,
+    INIT_AUTH               = 0x001000,
+    DROP_AUTH               = 0x002000,
+    UPDATE_VERSION          = 0x004000,
+    ADD_SCH_OBJS            = 0x008000,
+    MINIMAL                 = 0x010000,
+    PURGEDATA               = 0x020000,
+    SHOWDDL_EXPLAIN         = 0x040000,
+    SHOWDDL_EXPLAIN_INT     = 0x080000,
+    NO_LABEL_STATS          = 0x100000,
   };
 
   // see method processSpecialDDL in sqlcomp/parser.cpp
@@ -464,11 +418,6 @@ public:
   // Set during bindNode phase.
   NATable * ddlObjNATable_;
 
-  // this ddlexpr is created for 'showddl <obj>, explain' to
-  // explain the object explObjName.
-  NABoolean forShowddlExplain_;
-  NABoolean internalShowddlExplain_;
-  NABoolean noLabelStats_;
   QualifiedName explObjName_;
   double numExplRows_;  // number of rows specified by user or actual count
 
@@ -486,19 +435,10 @@ public:
 
   NABoolean isHbase_; // a trafodion or hbase operation
   NABoolean isNative_; // an operation directly on a native hbase table, like
-                                  // creating an hbase table from trafodion interface.
-  NABoolean initHbase_;	  
-  NABoolean dropHbase_;	
-  NABoolean updateVersion_;
-  NABoolean purgedataHbase_;
-  NABoolean initAuthorization_;
-  NABoolean dropAuthorization_;
-  NABoolean addSchemaObjects_;
-  NABoolean minimal_;  // meaningful only when initHbase_ is true; if this is true,
-                       // means create the metadata tables only (and not repository etc.)
+                       // creating an hbase table from trafodion interface.
 
-  // if set, this ddl cannot run under a user transaction. It must run in autocommit
-  // mode.
+  // if set, this ddl cannot run under a user transaction. 
+  // It must run in autocommit mode.
   NABoolean hbaseDDLNoUserXn_;
 
   // set for create table index/MV only. Used during InMemory table
@@ -821,7 +761,7 @@ public:
 			      char * stmtText,
 			      CharInfo::CharSet stmtTextCharSet,
 			      CollHeap *oHeap = CmpCommon::statementHeap())
-       : DDLExpr(exprNode, stmtText, stmtTextCharSet, FALSE, FALSE, FALSE, NULL, 0, oHeap),
+       : DDLExpr(exprNode, stmtText, stmtTextCharSet, oHeap),
 	 isCreate_(FALSE),
 	 isTable_(FALSE),
 	 isIndex_(FALSE),
@@ -862,7 +802,7 @@ public:
 			       char * stmtText,
 			       CharInfo::CharSet stmtTextCharSet,
 			       CollHeap *oHeap = CmpCommon::statementHeap())
-       : DDLExpr(exprNode, stmtText, stmtTextCharSet, FALSE, FALSE, FALSE, NULL, 0, oHeap)
+       : DDLExpr(exprNode, stmtText, stmtTextCharSet, oHeap)
   {
   };
 

@@ -487,8 +487,8 @@ bool CMonUtil::requestNewProcess (int nid, PROCESSTYPE type,
                                   const char *processName,
                                   const char *progName, const char *inFile,
                                   const char *outFile,
-                                  int progArgC, const char *progArgs,
-                                  int argBegin[], int argLen[],
+                                  int progArgc, const char *progArgs,
+//                                  int argBegin[], int argLen[],
                                   int& newNid, int& newPid,
                                   char *newProcName)
 {
@@ -533,11 +533,28 @@ bool CMonUtil::requestNewProcess (int nid, PROCESSTYPE type,
     strcpy (msg->u.request.u.new_process.program, progName);
     STRCPY (msg->u.request.u.new_process.infile, inFile);
     STRCPY (msg->u.request.u.new_process.outfile, outFile);
-    msg->u.request.u.new_process.argc = progArgC;
-    for (int i=0; i<progArgC; i++)
+    msg->u.request.u.new_process.argc = progArgc;
+
+    char *token, *programArgs = NULL;
+    int argi = 0;
+    static const char *delim = " ";
+
+    programArgs = new char [MAX_ARG_SIZE*MAX_ARGS];
+    memset(programArgs, 0, MAX_ARG_SIZE*MAX_ARGS);
+    memcpy(programArgs, progArgs, strlen(progArgs)+1);
+    token = strtok( programArgs, delim );
+    while (token != NULL)
     {
-        strncpy (msg->u.request.u.new_process.argv[i], &progArgs[argBegin[i]],
-                 argLen[i]);
+        if ( trace_ )
+        {
+            trace_printf( "%s@%d Setting progArgc=%d, argv[%d]=%s\n"
+                        , method_name, __LINE__, progArgc, argi, token);
+        }
+        strncpy( msg->u.request.u.new_process.argv[argi]
+               , token
+               , strlen(token));
+        argi++;
+        token = strtok( NULL, delim );
     }
 
     gp_local_mon_io->send_recv( msg );
@@ -910,7 +927,7 @@ void CPStartD::startProcess( CPersistConfig *persistConfig )
     const char method_name[] = "CPStartD::startProcess";
 
     PROCESSTYPE procType = ProcessType_Undefined;
-    int progArgC = 0;
+    int progArgc = 0;
     string procName;
     string progArgs;
     string progStdout;
@@ -919,13 +936,15 @@ void CPStartD::startProcess( CPersistConfig *persistConfig )
     bool result;
     int newNid;
     int newPid;
-    int argBegin[MAX_ARGS];
-    int argLen[MAX_ARGS];
+//    int argBegin[MAX_ARGS];
+//    int argLen[MAX_ARGS];
 
     procName = persistConfig->GetProcessName( MyNid );
     procType = persistConfig->GetProcessType();
     progStdout = persistConfig->GetStdoutFile( MyNid );
     progProgram = persistConfig->GetProgramName();
+    progArgs = persistConfig->GetProgramArgs();
+    progArgc = persistConfig->GetProgramArgc();
 
     if ( tracing )
     {
@@ -934,7 +953,7 @@ void CPStartD::startProcess( CPersistConfig *persistConfig )
                     , method_name, __LINE__, MyNid
                     , ProcessTypeString(procType), procName.c_str()
                     , progProgram.c_str(), progStdout.c_str()
-                    , progArgC, progArgs.c_str());
+                    , progArgc, progArgs.c_str());
     }
 
     char buf[MON_STRING_BUF_SIZE];
@@ -950,10 +969,10 @@ void CPStartD::startProcess( CPersistConfig *persistConfig )
                                       , progProgram.c_str()
                                       , ""
                                       , progStdout.c_str()
-                                      , progArgC
+                                      , progArgc
                                       , progArgs.c_str()
-                                      , argBegin
-                                      , argLen
+                                    //  , argBegin
+                                    //  , argLen
                                       , newNid
                                       , newPid
                                       , newProcName);
@@ -996,6 +1015,8 @@ void CPStartD::startProcs ( bool requiresDTM )
                               "\t\tPersist Retries = %d\n"
                               "\t\tPersist Window  = %d\n"
                               "\t\tPersist Zones   = %s\n"
+                              "\t\tProgram Args    = %s\n"
+                              "\t\tProgram Argc    = %d\n"
                             , method_name, __LINE__
                             , persistConfig->GetPersistPrefix()
                             , persistConfig->GetProcessName( MyNid )
@@ -1005,7 +1026,9 @@ void CPStartD::startProcs ( bool requiresDTM )
                             , persistConfig->GetRequiresDTM() ? "Y" : "N"
                             , persistConfig->GetPersistRetries()
                             , persistConfig->GetPersistWindow()
-                            , persistConfig->GetZoneFormat() );
+                            , persistConfig->GetZoneFormat()
+                            , persistConfig->GetProgramArgs()
+                            , persistConfig->GetProgramArgc() );
             }
     
             switch (persistConfig->GetProcessType())

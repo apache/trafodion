@@ -60,8 +60,10 @@ CClusterConfig::CClusterConfig( void )
               , persistReady_(false)
               , newPNodeConfig_(true)
               , trafConfigInitialized_(false)
+              , trafConfigStorageType_(TCDBSTOREUNDEFINED)
               , prevPNodeConfig_(NULL)
               , prevLNodeConfig_(NULL)
+              , prevPersistConfig_(NULL)
 {
     const char method_name[] = "CClusterConfig::CClusterConfig";
     TRACE_ENTRY;
@@ -297,6 +299,11 @@ PROCESSTYPE CClusterConfig::GetProcessType( const char *processtype )
 
 bool CClusterConfig::Initialize( void )
 {
+    return( Initialize( NULL ) );
+}
+
+bool CClusterConfig::Initialize( const char *traceFile )
+{
     const char method_name[] = "CClusterConfig::Initialize";
     TRACE_ENTRY;
 
@@ -307,7 +314,7 @@ bool CClusterConfig::Initialize( void )
     }
 
     bool trafConfigTrace = (trace_settings & TRACE_TRAFCONFIG);
-    int rc = tc_initialize( trafConfigTrace );
+    int rc = tc_initialize( trafConfigTrace, traceFile );
     if ( rc )
     {
         char la_buf[MON_STRING_BUF_SIZE];
@@ -319,6 +326,7 @@ bool CClusterConfig::Initialize( void )
     }
 
     trafConfigInitialized_ = true;
+    trafConfigStorageType_ = tc_get_storage_type();
 
     TRACE_EXIT;
     return( true );
@@ -653,6 +661,10 @@ void CClusterConfig::ProcessPersistInfo( persist_configuration_t &persistConfig
     strncpy( persistConfigInfo.programName
            , persistConfig.program_name
            , sizeof(persistConfigInfo.programName) );
+
+    strncpy( persistConfigInfo.programArgs
+           , persistConfig.program_args
+           , sizeof(persistConfigInfo.programArgs) );
 
     persistConfigInfo.requiresDTM = persistConfig.requires_DTM;
 

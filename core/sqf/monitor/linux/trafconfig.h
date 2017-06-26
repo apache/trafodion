@@ -46,20 +46,34 @@
 #define TC_PERSIST_PROCESSOR_NAME_MAX  128
 #define TC_PERSIST_ROLES_MAX           128
 #define TC_PERSIST_KEY_MAX              64
-#define TC_PERSIST_VALUE_MAX            64
+#define TC_PERSIST_VALUE_MAX          4096
 #define TC_PERSIST_KEYS_VALUE_MAX     4096
 #define TC_NODES_MAX                   256
 #define TC_SPARE_NODES_MAX             256
 #define TC_UNIQUE_STRING_VALUE_MAX    4096
 
+#define TC_STORE_MYSQL             "MYSQL"
+#define TC_STORE_SQLITE            "SQLITE"
+#define TC_STORE_POSTGRESQL        "POSTGRESQL"
+#define TC_STORE_ZOOKEEPER         "ZOOKEEPER"
+
 #define PERSIST_PROCESS_KEYS       "PERSIST_PROCESS_KEYS"
 #define PERSIST_PROCESS_NAME_KEY   "PROCESS_NAME"
 #define PERSIST_PROCESS_TYPE_KEY   "PROCESS_TYPE"
 #define PERSIST_PROGRAM_NAME_KEY   "PROGRAM_NAME"
+#define PERSIST_PROGRAM_ARGS_KEY   "PROGRAM_ARGS"
 #define PERSIST_REQUIRES_DTM       "REQUIRES_DTM"
 #define PERSIST_STDOUT_KEY         "STDOUT"
 #define PERSIST_RETRIES_KEY        "PERSIST_RETRIES"
 #define PERSIST_ZONES_KEY          "PERSIST_ZONES"
+
+enum TC_STORAGE_TYPE {
+      TCDBSTOREUNDEFINED = 0     
+    , TCDBMYSQL          = 1 // MySQL Database        [TBD]
+    , TCDBPOSTGRESQL     = 2 // PostgresQL Database   [TBD]
+    , TCDBZOOKEEPER      = 3 // Zookeeper
+    , TCDBSQLITE         = 4 // Sqlite Database       [deprecated]
+};
 
 enum TC_ERRORS {
   TCSUCCESS = 0,        // Successful operation
@@ -108,6 +122,7 @@ typedef struct persist_configuration_s
     char process_name[TC_PERSIST_VALUE_MAX]; // Process name {<prefix>[<format>]}
     char process_type[TC_PERSIST_VALUE_MAX]; // DTM, TMID, PERSIST, ...
     char program_name[TC_PERSIST_VALUE_MAX]; // Program executable name (no path in name)
+    char program_args[TC_PERSIST_VALUE_MAX]; // Program program arguments (runtime options)
     char std_out[TC_PERSIST_VALUE_MAX];      // STDOUT {<prefix>[<format>]}
     bool requires_DTM;                       // True when process requires transaction support
     int  persist_retries;                    // Process create retries
@@ -122,7 +137,7 @@ TC_DIAG_UNUSED;
 TC_Export const char *tc_errmsg( int err )
 TC_DIAG_UNUSED;
 
-TC_Export int tc_initialize( bool traceEnabled )
+TC_Export int tc_initialize( bool traceEnabled, const char *traceFileName = NULL )
 TC_DIAG_UNUSED;
 
 
@@ -264,6 +279,10 @@ TC_DIAG_UNUSED;
 TC_Export int tc_put_registry_process_data( const char *process_name
                                           , const char *key
                                           , const char *data )
+TC_DIAG_UNUSED;
+
+
+TC_Export TC_STORAGE_TYPE tc_get_storage_type( void )
 TC_DIAG_UNUSED;
 
 

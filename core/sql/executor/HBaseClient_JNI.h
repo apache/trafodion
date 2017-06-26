@@ -405,6 +405,8 @@ typedef enum {
  ,HBC_ERROR_DELETE_SNAPSHOT_EXCEPTION
  ,HBC_ERROR_VERIFY_SNAPSHOT_PARAM
  ,HBC_ERROR_VERIFY_SNAPSHOT_EXCEPTION
+ ,HBC_ERROR_TRUNCATE_PARAM
+ ,HBC_ERROR_TRUNCATE_EXCEPTION
  ,HBC_LAST
 } HBC_RetCode;
 
@@ -437,6 +439,7 @@ public:
                      int numSplits, int keyLength, const char** splitValues, Int64 transID, NABoolean isMVCC);
   HBC_RetCode alter(const char* fileName, NAText*  hbaseOptions, Int64 transID);
   HBC_RetCode registerTruncateOnAbort(const char* fileName, Int64 transID);
+  HBC_RetCode truncate(const char* fileName, NABoolean preserveSplits, Int64 transID);
   HBC_RetCode drop(const char* fileName, bool async, Int64 transID);
   HBC_RetCode drop(const char* fileName, JNIEnv* jenv, Int64 transID); // thread specific
   HBC_RetCode dropAll(const char* pattern, bool async, Int64 transID);
@@ -571,6 +574,7 @@ private:
    ,JM_HBC_CREATE_SNAPSHOT
    ,JM_HBC_DELETE_SNAPSHOT
    ,JM_HBC_VERIFY_SNAPSHOT
+   ,JM_TRUNCATE
    ,JM_LAST
   };
   static jclass          javaClass_; 

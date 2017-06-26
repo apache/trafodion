@@ -347,7 +347,8 @@ void CmpSeabaseDDL::createSeabaseSchema(
 bool CmpSeabaseDDL::describeSchema(
    const NAString & catalogName,
    const NAString & schemaName,
-   NAString & output)
+   NABoolean isHiveRegistered,
+   std::vector<std::string> & outlines)
    
 {
 
@@ -357,6 +358,40 @@ ComSchemaClass schemaClass;
 Int32 objectOwner;
 Int32 schemaOwner;
 ComObjectType objectType;
+
+   NABoolean isHive = FALSE;
+   NAString lcat(catalogName);
+   lcat.toLower();
+   if (lcat == HIVE_SYSTEM_CATALOG_LC)
+     isHive = TRUE;
+
+   NAString output;
+   if (isHive)
+     {
+       output = "/* Hive DDL */";
+       outlines.push_back(output.data());
+
+       output = "create database ";
+       NAString lsch(schemaName);
+       lsch.toLower();
+       output += lsch.data();
+       output += ";";
+
+       outlines.push_back(output.data());
+
+       outlines.push_back(" ");
+
+       if (isHiveRegistered)
+         {
+           output = "REGISTER /*INTERNAL*/ HIVE SCHEMA hive.";
+           output += lsch.data();
+           output += ";";
+           
+           outlines.push_back(output.data());
+         }
+
+       return true;
+     }
 
    CmpSeabaseDDL cmpSBD(STMTHEAP);
    if (cmpSBD.switchCompiler())
@@ -372,7 +407,7 @@ Int64 schemaUID = getObjectTypeandOwner(&cliInterface,
                                         objectType,
                                         objectOwner);
                                         
-   if (schemaUID < 0)
+ if (schemaUID < 0)
    {
       *CmpCommon::diags() << DgSqlCode(-CAT_SCHEMA_DOES_NOT_EXIST_ERROR)
                           << DgSchemaName(catalogName + "." + schemaName);
@@ -396,16 +431,16 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
 // Generate output text
    output = "CREATE ";
    switch (objectType)
-   {
-      case COM_PRIVATE_SCHEMA_OBJECT:
-         output += "PRIVATE";
-         break;
-      case COM_SHARED_SCHEMA_OBJECT:
-         output += "SHARED";
-         break;
-      default:
-         return false;
-   }
+     {
+     case COM_PRIVATE_SCHEMA_OBJECT:
+       output += "PRIVATE";
+       break;
+     case COM_SHARED_SCHEMA_OBJECT:
+       output += "SHARED";
+       break;
+     default:
+       return false;
+     }
    output += " SCHEMA \"";
    output += catalogName.data();
    output += "\".\"";
@@ -415,6 +450,8 @@ Int16 status = ComUser::getAuthNameFromAuthID(objectOwner,username,
    output += "\" AUTHORIZATION \"";
    output += username;
    output += "\";";
+   
+   outlines.push_back(output.data());
 
    cmpSBD.switchBackCompiler();
    return true;

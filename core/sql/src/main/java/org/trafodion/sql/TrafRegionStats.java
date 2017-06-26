@@ -32,7 +32,7 @@ import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.trafodion.sql.TrafConfiguration;
+import org.apache.hadoop.hbase.client.Connection;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -62,7 +62,7 @@ class SizeInfo {
 
 public class TrafRegionStats {
 
-    private HBaseAdmin hbAdmin;
+    private Admin hbAdmin;
     private ClusterStatus clusterStatus;
     private Collection<ServerName> servers;
     private ServerName server;
@@ -71,6 +71,7 @@ public class TrafRegionStats {
     private Iterator iterRegion;
     private boolean firstTime;
     final long megaByte = 1024L * 1024L;
+
 
     private final Map<byte[], SizeInfo> sizeInfoMap = 
         new TreeMap<byte[], SizeInfo>(Bytes.BYTES_COMPARATOR);
@@ -157,14 +158,11 @@ public class TrafRegionStats {
     }
 
 
-    public TrafRegionStats () throws IOException {
-        Configuration config = TrafConfiguration.create();
-
-        hbAdmin = new HBaseAdmin(config);
+    public TrafRegionStats (Connection connection) throws IOException {
+        hbAdmin = connection.getAdmin();
     }
 
     public boolean Open () throws IOException {
-        
         clusterStatus = hbAdmin.getClusterStatus();
         servers = clusterStatus.getServers();
         iterServer = servers.iterator();

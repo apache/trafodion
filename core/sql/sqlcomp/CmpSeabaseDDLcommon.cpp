@@ -7251,9 +7251,7 @@ void CmpSeabaseDDL::initSeabaseMD(NABoolean ddlXns, NABoolean minimal)
   tddlTable.len = tddlNAS.length();
   if (ehi->exists(tddlTable) == -1) // exists
     {
-      dropHbaseTable(ehi, &tddlTable, FALSE, FALSE);
-      createHbaseTable(ehi, &tddlTable, "tddlcf", 
-                       NULL, 0, 0, NULL, FALSE, FALSE);
+      ehi->truncate(tddlTable, TRUE, TRUE);
     }
 
   // create hbase physical objects
@@ -9011,7 +9009,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     {
       dropSeabaseMDviews();
     }
-  else if (ddlExpr->initAuthorization())
+  else if (ddlExpr->initAuth())
     {
       std::vector<std::string> tablesCreated;
       std::vector<std::string> tablesUpgraded;
@@ -9044,7 +9042,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
       cout << msgBuf.data() << endl;
 #endif
     }
-  else if (ddlExpr->dropAuthorization())
+  else if (ddlExpr->dropAuth())
     {
       dropSeabaseAuthorization(&cliInterface, FALSE);
     }
@@ -9072,7 +9070,7 @@ short CmpSeabaseDDL::executeSeabaseDDL(DDLExpr * ddlExpr, ExprNode * ddlNode,
     {
       updateVersion();
     }
-  else if (ddlExpr->purgedataHbase())
+  else if (ddlExpr->purgedata())
     {
       purgedataHbaseTable(ddlExpr, currCatName, currSchName);
     }

@@ -20,6 +20,7 @@
 //
 // @@@ END COPYRIGHT @@@
 ********************************************************************/
+#include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/ioctl.h>
@@ -40,6 +41,7 @@
 #include "monlogging.h"
 #include "reqqueue.h"
 #include "pnode.h"
+#include "type2str.h"
 #include "zclient.h"
 
 //
@@ -53,8 +55,9 @@
 // The monitors register their znodes under the cluster znode
 #define ZCLIENT_CLUSTER_ZNODE               "/cluster"
 
-// zookeeper connection retry count
-#define ZOOKEEPER_RETRY_COUNT                3
+// zookeeper connection retries
+#define ZOOKEEPER_RETRY_COUNT                 3
+#define ZOOKEEPER_RETRY_WAIT                  1 // seconds
 
 using namespace std;
 
@@ -115,70 +118,6 @@ static const char *ZClientStateStr( CZClient::ZClientState_t state )
             break;
     }
     return "ZClient State Invalid";
-}
-
-static const char *ZooConnectionTypeStr( int type )
-{
-    if ( type == ZOO_CREATED_EVENT )
-        return "ZOO_CREATED_EVENT";
-    if ( type == ZOO_DELETED_EVENT )
-        return "ZOO_DELETED_EVENT";
-    if ( type == ZOO_CHANGED_EVENT )
-        return "ZOO_CHANGED_EVENT";
-    if ( type == ZOO_CHILD_EVENT )
-        return "ZOO_CHILD_EVENT";
-    if ( type == ZOO_SESSION_EVENT )
-        return "ZOO_SESSION_EVENT";
-    if ( type == ZOO_NOTWATCHING_EVENT )
-        return "ZOO_NOTWATCHING_EVENT";
-
-    return "INVALID_TYPE";
-}
-
-static const char *ZooConnectionStateStr( int state )
-{
-    if ( state == 0 )
-        return "CLOSED_STATE";
-    if ( state == ZOO_EXPIRED_SESSION_STATE )
-        return "EXPIRED_SESSION_STATE";
-    if ( state == ZOO_AUTH_FAILED_STATE )
-        return "AUTH_FAILED_STATE";
-    if ( state == ZOO_CONNECTING_STATE )
-        return "CONNECTING_STATE";
-    if ( state == ZOO_ASSOCIATING_STATE )
-        return "ASSOCIATING_STATE";
-    if ( state == ZOO_CONNECTED_STATE )
-        return "CONNECTED_STATE";
-
-    return "INVALID_STATE";
-}
-
-const char *ZooErrorStr( int error )
-{
-    if ( error == 0 )
-        return "ZOK";
-    if ( error == ZNONODE )
-        return "ZNONODE";
-    if ( error == ZNODEEXISTS )
-        return "ZNODEEXISTS";
-    if ( error == ZNOAUTH )
-        return "ZNOAUTH";
-    if ( error == ZNOCHILDRENFOREPHEMERALS )
-        return "ZNOCHILDRENFOREPHEMERALS";
-    if ( error == ZBADARGUMENTS )
-        return "ZBADARGUMENTS";
-    if ( error == ZINVALIDSTATE )
-        return "ZINVALIDSTATE";
-    if ( error == ZMARSHALLINGERROR )
-        return "ZMARSHALLINGERROR";
-    if ( error == ZCONNECTIONLOSS )
-        return "ZCONNECTIONLOSS";
-    if ( error == ZOPERATIONTIMEOUT )
-        return "ZOPERATIONTIMEOUT";
-
-    static char errorStr[20];
-    sprintf( errorStr, "%d", error );
-    return errorStr;
 }
 
 void ZSessionWatcher( zhandle_t *zzh
@@ -373,7 +312,7 @@ CZClient::CZClient( const char *quorumHosts
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s], Failed ZClient initialization (%s)\n"
-                , method_name, ZooErrorStr(rc) );
+                , method_name, zerror(rc) );
         mon_log_write(MON_ZCLIENT_ZCLIENT_3, SQ_LOG_ERR, buf);
         abort();
     }
@@ -487,12 +426,14 @@ void CZClient::CheckMyZNode( void )
             resetMyZNodeFailedTime_ = false;
             clock_gettime(CLOCK_REALTIME, &myZNodeFailedTime_);
             myZNodeFailedTime_.tv_sec += (GetSessionTimeout() * 2);
+#if 0
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
             {
                 trace_printf( "%s@%d" " - Resetting MyZnode Fail Time %ld(secs)\n"
                             , method_name, __LINE__
                             , myZNodeFailedTime_.tv_sec );
             }
+#endif
         }
         if ( ! IsZNodeExpired( Node_name, zerr ) )
         {
@@ -507,7 +448,7 @@ void CZClient::CheckMyZNode( void )
                     char buf[MON_STRING_BUF_SIZE];
                     snprintf( buf, sizeof(buf)
                             , "[%s], Zookeeper quorum comm error: %s - Handling my znode (%s) as expired! Node is going down.\n"
-                            , method_name, ZooErrorStr(zerr), Node_name );
+                            , method_name, zerror(zerr), Node_name );
                     mon_log_write(MON_ZCLIENT_CHECKMYZNODE_1, SQ_LOG_ERR, buf);
                     HandleMyNodeExpiration();
                 }
@@ -597,7 +538,7 @@ int CZClient::GetClusterZNodes( String_vector *nodes )
             char buf[MON_STRING_BUF_SIZE];
             snprintf( buf, sizeof(buf)
                     , "[%s], zoo_exists() for %s failed with error %s\n"
-                    ,  method_name, trafCluster.c_str( ), ZooErrorStr(rc));
+                    ,  method_name, trafCluster.c_str( ), zerror(rc));
             mon_log_write(MON_ZCLIENT_GETCLUSTERZNODES_2, SQ_LOG_ERR, buf);
             break;
         }
@@ -660,7 +601,7 @@ int CZClient::GetZNodeData( string &monZnode, string &nodeName, int &pnid )
             char buf[MON_STRING_BUF_SIZE];
             snprintf( buf, sizeof(buf)
                     , "[%s], zoo_get() for %s failed with error %s\n"
-                    ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
+                    ,  method_name, monZnode.c_str( ), zerror(rc));
             mon_log_write(MON_ZCLIENT_GETZNODEDATA_2, SQ_LOG_ERR, buf);
         }
     }
@@ -669,7 +610,7 @@ int CZClient::GetZNodeData( string &monZnode, string &nodeName, int &pnid )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_exists() for %s failed with error %s\n"
-                ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
+                ,  method_name, monZnode.c_str( ), zerror(rc));
         mon_log_write(MON_ZCLIENT_GETZNODEDATA_3, SQ_LOG_ERR, buf);
     }
 
@@ -755,8 +696,9 @@ int CZClient::InitializeZClient( void )
 
     rc = MakeClusterZNodes();
 
-    while ( rc != ZOK and retries < ZOOKEEPER_RETRY_COUNT)
+    while ( rc != ZOK && retries < ZOOKEEPER_RETRY_COUNT)
     {
+        sleep(ZOOKEEPER_RETRY_WAIT);
         retries++;
         rc = MakeClusterZNodes();
     }
@@ -788,11 +730,6 @@ bool CZClient::IsZNodeExpired( const char *nodeName, int &zerr )
 
     zerr = ZOK;
 
-    if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-    {
-        trace_printf( "%s@%d monZnode=%s\n"
-                    , method_name, __LINE__, monZnode.c_str() );
-    }
     rc = zoo_exists( ZHandle, monZnode.c_str( ), 0, &stat );
     if ( rc == ZNONODE )
     {
@@ -811,17 +748,12 @@ bool CZClient::IsZNodeExpired( const char *nodeName, int &zerr )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_exists() for %s failed with error %s\n"
-                ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
+                ,  method_name, monZnode.c_str( ), zerror(rc));
         mon_log_write(MON_ZCLIENT_ISZNODEEXPIRED_1, SQ_LOG_ERR, buf);
     }
     else if ( rc == ZOK )
     {
         expired = false;
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
-        {
-            trace_printf( "%s@%d monZnode=%s exist\n"
-                        , method_name, __LINE__, monZnode.c_str() );
-        }
     }
     else
     {
@@ -829,7 +761,7 @@ bool CZClient::IsZNodeExpired( const char *nodeName, int &zerr )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_exists() for %s failed with error %s\n"
-                ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
+                ,  method_name, monZnode.c_str( ), zerror(rc));
         mon_log_write(MON_ZCLIENT_ISZNODEEXPIRED_2, SQ_LOG_CRIT, buf);
         switch ( rc )
         {
@@ -891,7 +823,7 @@ int CZClient::MakeClusterZNodes( void )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_exists(%s) failed with error %s\n"
-                , method_name, rootDir.c_str(), ZooErrorStr(rc) );
+                , method_name, rootDir.c_str(), zerror(rc) );
         mon_log_write(MON_ZCLIENT_CHECKCLUSTERZNODES_1, SQ_LOG_ERR, buf);
         if (rc) return(rc); // Return the error
         break;
@@ -925,7 +857,7 @@ int CZClient::MakeClusterZNodes( void )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_exists(%s) failed with error %s\n"
-                , method_name, instanceDir.c_str( ), ZooErrorStr(rc) );
+                , method_name, instanceDir.c_str( ), zerror(rc) );
         mon_log_write(MON_ZCLIENT_CHECKCLUSTERZNODES_2, SQ_LOG_ERR, buf);
         break;
     }
@@ -959,7 +891,7 @@ int CZClient::MakeClusterZNodes( void )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_exists(%s) failed with error %s\n"
-                , method_name, clusterDir.c_str( ), ZooErrorStr(rc) );
+                , method_name, clusterDir.c_str(), zerror(rc) );
         mon_log_write(MON_ZCLIENT_CHECKCLUSTERZNODES_3, SQ_LOG_ERR, buf);
         break;
     }
@@ -1171,7 +1103,7 @@ int CZClient::RegisterZNode( const char *znodePath
                 , "[%s], zoo_create(%s) failed with error %s\n"
                 , method_name
                 , zpath.c_str()
-                , ZooErrorStr(rc) );
+                , zerror(rc) );
         mon_log_write(MON_ZCLIENT_REGISTERZNODE_1, SQ_LOG_ERR, buf);
     }
     if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
@@ -1255,7 +1187,7 @@ int CZClient::SetZNodeWatch( string &monZnode )
             char buf[MON_STRING_BUF_SIZE];
             snprintf( buf, sizeof(buf)
                     , "[%s], zoo_get() for %s failed with error %s\n"
-                    ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
+                    ,  method_name, monZnode.c_str( ), zerror(rc));
             mon_log_write(MON_ZCLIENT_SETZNODEWATCH_1, SQ_LOG_ERR, buf);
         }
     }
@@ -1264,7 +1196,7 @@ int CZClient::SetZNodeWatch( string &monZnode )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_exists() for %s failed with error %s\n"
-                ,  method_name, monZnode.c_str( ), ZooErrorStr(rc));
+                ,  method_name, monZnode.c_str( ), zerror(rc));
         mon_log_write(MON_ZCLIENT_SETZNODEWATCH_1, SQ_LOG_CRIT, buf);
         switch ( rc )
         {
@@ -1628,7 +1560,7 @@ int CZClient::WatchNodeDelete( const char *nodeName )
         char buf[MON_STRING_BUF_SIZE];
         snprintf( buf, sizeof(buf)
                 , "[%s], zoo_delete(%s) failed with error %s\n"
-                , method_name, nodeName, ZooErrorStr(rc) );
+                , method_name, nodeName, zerror(rc) );
         mon_log_write(MON_ZCLIENT_WATCHNODEDELETE_3, SQ_LOG_CRIT, buf);
         switch ( rc )
         {

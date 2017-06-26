@@ -87,7 +87,7 @@ then it will be removed from HBase. All dependent objects, such as indexes,
 views, LOBs, internal sequences, and constraints, are also removed from the
 metadata and HBase.
 
-** `object-type` 
+** `object-type`
 
 *** If an object type is specified as TABLE, INDEX, or SEQUENCE and that object exists
 in the metadata, then a check will be done to make sure that the specified `object-name` is of the specified type. An error is returned if they are not the same.
@@ -95,11 +95,11 @@ in the metadata, then a check will be done to make sure that the specified `obje
 *** If an object type is specified as OBJECT, then any object that matches the
 specified name is removed from the metadata and HBase.
 
-** `object-name` 
+** `object-name`
 +
 Specifies the name of the object to be removed.
 
-** `object-uid` 
+** `object-uid`
 +
 If an object exists in the OBJECTS metadata table, then the stored object UID is compared with the specified object UID. If they do not match, then cleanup is not done. If an object does not exist in the OBJECTS metadata table, then all entries matching the specified object UID are removed from the metadata tables.
 
@@ -244,7 +244,7 @@ Specify object T by its object UID and clean it up.
 ```
 >>select object_uid from "_MD_".objects where schema_name = 'SCH026' and object_name = 'T';
 
-OBJECT_UID          
+OBJECT_UID
 --------------------
 
   127287511636506969
@@ -1145,8 +1145,7 @@ establish existing columns.
 The NECESSARY COLUMN[S] keyword generates statistics for histograms that
 the optimizer has requested but do not exist. Update statistics
 automation must be enabled for NECESSARY COLUMN[S] to generate
-statistics. To enable automation, see <<update_statistics_automating_update_statistics,
-Automating Update Statistics>>.
+statistics.
 
 <<<
 * `_histogram-option_`
@@ -1362,42 +1361,6 @@ columns in the GROUP BY clause) to generate histogram statistics that
 enable the optimizer to choose a better plan. Similarly, when a query
 joins two tables by two or more columns, multi-column lists (consisting
 of the columns being joined) help the optimizer choose a better plan.
-
-[[update_statistics_automating_update_statistics]]
-==== Automating Update Statistics
-
-To enable update statistics automation, set the Control Query Default
-(CQD) attribute, USTAT_AUTOMATION_INTERVAL, in a session where you will
-run update statistics operations. For example:
-
-```
-control query default USTAT_AUTOMATION_INTERVAL '1440';
-```
-
-The value of USTAT_AUTOMATION_INTERVAL is intended to be an automation
-interval (in minutes), but, in {project-name} Release 1.0, this value does
-not act as a timing interval. Instead, any value greater than zero
-enables update statistics automation.
-
-After enabling update statistics automation, prepare each of the queries
-that you want to optimize. For example:
-
-```
-prepare s from select...;
-```
-
-The PREPARE statement causes the {project-name} SQL compiler to compile and
-optimize a query without executing it. When preparing queries with
-update statistic automation enabled, any histograms needed by the
-optimizer that are not present will cause those columns to be marked as
-needing histograms.
-
-Next, run this UPDATE STATISTICS statement against each table, using ON
-NECESSARY COLUMN[S] to generate the needed histograms:
-
-```
-update statistics for table _table-name_ on necessary columns sample;
-```
 
 [[update_statistics_incremental_update_statistics]]
 ==== Incremental Update Statistics

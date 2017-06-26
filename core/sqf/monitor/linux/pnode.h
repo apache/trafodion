@@ -149,7 +149,7 @@ protected:
 private:
     int     pnodeCount_;    // # of physical node objects in array
     int    *indexToPnid_;   // map of configuration entries to Node[pnid]
-    CClusterConfig *clusterConfig_;  // 'sqconfig.db' objects
+    CClusterConfig *clusterConfig_;  // configuration objects
     NodesList  spareNodesList_; // current spare physical nodes list
     NodesList  spareNodesConfigList_; // configured spare physical nodes list
     CNode  *head_;  // head of physical nodes linked list

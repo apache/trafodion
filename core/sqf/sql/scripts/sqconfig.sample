@@ -224,3 +224,23 @@ floating_ip_node_id  1
 floating_ip_failover_node_id 0
 end floating_ip
 
+###############################################################################
+#
+# Overflow directories for ssd and hdd. 
+#
+#    Format: <overflow-type> <directory>
+#
+#    Where:
+#
+#       <overflow-type> is one of the following:
+#
+#          hdd
+#          ssd
+#
+#       <directory>        - is a valid directory path
+#
+###############################################################################
+begin overflow
+hdd $TRAF_HOME/tmp
+#ssd /ssd/directory
+end overflow

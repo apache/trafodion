@@ -201,6 +201,8 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 	double		dTmp;
 	double		dTmp1;
 	double		scaleOffset;
+    SCHAR       tTmp;
+    UCHAR       utTmp;
 	SSHORT		sTmp;
 	USHORT		usTmp;
 	SLONG_P		lTmp;
@@ -372,6 +374,93 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 			}
 		}
 	case SQL_CHAR:
+        if( SQLDataType == SQLTYPECODE_BOOLEAN )
+        {
+            switch (CDataType)
+            {
+            case SQL_C_WCHAR:
+                if (iconv->isAppUTF16())
+                {
+                    if (srcLength != SQL_NTS)
+                        srcLength = srcLength/2;
+                    if (iconv->WCharToUTF8((UChar*)srcDataPtr, srcLength, srcDataLocale, sizeof(srcDataLocale), (int*)&translateLength, (char*)errorMsg) != SQL_SUCCESS)
+                        return IDS_193_DRVTODS_ERROR;
+                    srcDataPtr = srcDataLocale;
+                    srcLength = translateLength;
+                }
+            case SQL_C_CHAR:
+                retCode = ConvertCharToNumeric(srcDataPtr, srcLength, dTmp);
+                if (retCode != SQL_SUCCESS)
+                    return retCode;
+                break;
+            case SQL_C_SHORT:
+            case SQL_C_SSHORT:
+                dTmp = *(SSHORT *)srcDataPtr;
+                break;
+            case SQL_C_USHORT:
+                dTmp = *(USHORT *)srcDataPtr;
+                break;
+            case SQL_C_TINYINT:
+            case SQL_C_STINYINT:
+                dTmp = *(SCHAR *)srcDataPtr;
+                break;
+            case SQL_C_UTINYINT:
+            case SQL_C_BIT:
+                dTmp = *(UCHAR *)srcDataPtr;
+                break;
+            case SQL_C_SLONG:
+            case SQL_C_LONG:
+                dTmp = *(SLONG_P *)srcDataPtr;
+                break;
+            case SQL_C_ULONG:
+                dTmp = *(ULONG_P *)srcDataPtr;
+                break;
+            case SQL_C_FLOAT:
+                dTmp = *(SFLOAT *)srcDataPtr;
+                break;
+            case SQL_C_DOUBLE:
+                dTmp = *(DOUBLE *)srcDataPtr;
+                break;
+            case SQL_C_BINARY:
+                DataPtr = srcDataPtr;
+                break;
+            case SQL_C_DEFAULT:
+                if (ODBCAppVersion >= SQL_OV_ODBC3)
+                    DataPtr = srcDataPtr;
+                else
+                {
+                    retCode = ConvertCharToNumeric(srcDataPtr, srcLength, dTmp);
+                    if (retCode!= SQL_SUCCESS)
+                        return retCode;
+                }
+                break;
+            case SQL_C_SBIGINT:
+                dTmp = *(__int64 *)srcDataPtr;
+                break;
+            case SQL_C_NUMERIC:
+                ConvertCNumericToChar((SQL_NUMERIC_STRUCT*)srcDataPtr, cTmpBuf);
+                srcLength = strlen(cTmpBuf);
+                retCode = ConvertCharToNumeric((char*)cTmpBuf, srcLength, dTmp);
+                if (retCode != SQL_SUCCESS)
+                    return retCode;
+                break;
+            default:
+                return IDS_07_006;
+            }
+            if (DataPtr == NULL)
+            {
+                if(dTmp < 0)
+                    return IDS_22_003_02;
+                if(dTmp > 1)
+                    return IDS_22_003;
+                tTmp = (SCHAR)dTmp;
+                if(dTmp != tTmp)
+                    retCode = IDS_01_S07;
+                DataPtr = &tTmp;
+                DataLen = sizeof(SCHAR);
+            }
+            break;
+        }
 	case SQL_WCHAR:
 		switch (CDataType)
 		{
@@ -689,6 +778,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 			DataLen = sizeof(fltTmp);
 			break;
 		}
+    case SQL_TINYINT:
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_FLOAT:
@@ -913,6 +1003,39 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 			{
 				switch (ODBCDataType)
 				{
+                case SQL_TINYINT:
+                    if(targetUnsigned)
+                    {
+                        if (dTmp < 0)
+                            return IDS_22_003_02;  //negValue in unsigned column
+                        if(dTmp > UCHAR_MAX)
+                            return IDS_22_003;
+                        utTmp = (UCHAR)dTmp;
+                        if(dTmp != utTmp)
+                            retCode = IDS_01_S07;
+                        DataPtr = &utTmp;
+                        DataLen = sizeof(UCHAR);
+                    }
+                    else
+                    {
+                        if(unsignedInteger)
+                        {
+                            if(dTmp < 0 || dTmp > UCHAR_MAX)
+                                return IDS_22_003;
+                            tTmp = (SCHAR)dTmp;
+                        }
+                        else
+                        {
+                            if(dTmp < SCHAR_MIN || dTmp > SCHAR_MAX)
+                                return IDS_22_003;
+                            tTmp = (SCHAR)dTmp;
+                            if  (dTmp != tTmp)
+                                retCode = IDS_01_S07;
+                        }
+                        DataPtr = &tTmp;
+                        DataLen = sizeof(SCHAR);
+                    }
+                    break;
 				case SQL_SMALLINT:
 					if (targetUnsigned)
 					{
@@ -1074,6 +1197,26 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 
 				switch( SQLDataType )
 				{
+                case SQLTYPECODE_TINYINT_UNSIGNED:
+                    if (tempVal64 < 0)
+                        return IDS_22_003_02;
+                    if (tempVal64 > UCHAR_MAX)
+                        return IDS_22_003;
+                    utTmp = (UCHAR)tempVal64;
+                    if  (tempVal64 != utTmp)
+                        retCode = IDS_01_S07;
+                    DataPtr = &utTmp;
+                    DataLen = sizeof(UCHAR);
+                    break;
+                case SQLTYPECODE_TINYINT:
+                    if (tempVal64 < SCHAR_MIN || tempVal64 > SCHAR_MAX)
+                        return IDS_22_003;
+                    tTmp = (SCHAR)tempVal64;
+                    if  (tempVal64 != tTmp)
+                        retCode = IDS_01_S07;
+                    DataPtr = &tTmp;
+                    DataLen = sizeof(SCHAR);
+                    break;
 				case SQLTYPECODE_SMALLINT_UNSIGNED:
 					if (tempVal64 < 0)
 					       return IDS_22_003_02;
@@ -1164,6 +1307,9 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 		{
 			switch (ODBCDataType)
 			{
+            case SQL_TINYINT:
+                DataLen = sizeof(SCHAR);
+                break;
 			case SQL_SMALLINT:
 				DataLen = sizeof(SHORT);
 				break;
@@ -1624,6 +1770,21 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				dTmp *= scaleOffset;
 				switch (SQLDataType)
 				{
+                case SQLTYPECODE_BOOLEAN:
+                    tTmp = (SCHAR)dTmp;
+                    DataPtr = &tTmp;
+                    DataLen = sizeof(SCHAR);
+                    break;
+                case SQLTYPECODE_TINYINT_UNSIGNED:
+                    utTmp = (UCHAR)dTmp;
+                    DataPtr = &utTmp;
+                    DataLen = sizeof(UCHAR);
+                    break;
+                case SQLTYPECODE_TINYINT:
+                    tTmp = (SCHAR)dTmp;
+                    DataPtr = &tTmp;
+                    DataLen = sizeof(SCHAR);
+                    break;
 				case SQLTYPECODE_SMALLINT_UNSIGNED:
 					usTmp = (USHORT)dTmp;
 					DataPtr = &usTmp;
@@ -3155,7 +3316,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 				 DataPtr, DataLen);
 		if (DataPtr != NULL && DataLen > 0 &&
 			(ODBCDataType == SQL_CHAR || ODBCDataType == SQL_VARCHAR || ODBCDataType == SQL_LONGVARCHAR ||
-			ODBCDataType == SQL_WCHAR || ODBCDataType == SQL_WVARCHAR) && CDataType != SQL_C_BINARY)
+			ODBCDataType == SQL_WCHAR || ODBCDataType == SQL_WVARCHAR) && CDataType != SQL_C_BINARY && SQLDataType != SQLTYPECODE_BOOLEAN)
 		{
 			SQLRETURN rc = SQL_SUCCESS;
 			if (targetCharSet == SQLCHARSETCODE_ISO88591)
@@ -3355,7 +3516,7 @@ unsigned long ODBC::ConvertCToSQL(SQLINTEGER	ODBCAppVersion,
 			if (Datatype_Dependent_Swap((BYTE *)outDataPtr-Offset, SQLDataType, targetCharSet, DataLen, IEEE_TO_TANDEM) != STATUS_OK)
 				return IDS_HY_000;
 		}
-		if (ODBCDataType == SQL_CHAR || ODBCDataType == SQL_VARCHAR)
+		if (ODBCDataType == SQL_CHAR && SQLDataType != SQLTYPECODE_BOOLEAN || ODBCDataType == SQL_VARCHAR)
 			memset((unsigned char *)outDataPtr+DataLen, ' ', targetLength-DataLen-Offset-1);
 	}
 	if (dataTruncatedWarning)

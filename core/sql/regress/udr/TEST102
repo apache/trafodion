@@ -53,7 +53,7 @@ execute get_schemas;
 get libraries;
 get procedures;
 showddl procedure rm;
-set param ?h 'PUT';
+set param ?h 'PUTFILE';
 call help (?h);
 
 -- enable authorization
@@ -84,7 +84,7 @@ execute get_schemas;
 get libraries;
 get procedures;
 showddl procedure rm;
-set param ?h 'PUT';
+set param ?h 'PUTFILE';
 call help (?h);
 
 -- ****************************************************************************
@@ -111,9 +111,28 @@ initialize trafodion, create library management;
 execute get_schemas;
 get procedures;
 
+
+-- put a file in a single chunk
+call "_LIBMGR_".putfile('abcd', 'udr_test102_1', 1, 1, 1);
+
+-- put a file in three chunks
+call "_LIBMGR_".putfile('abcd', 'udr_test102_3', 1, 0, 1);
+call "_LIBMGR_".putfile('efgh', 'udr_test102_3', 0, 0, 1);
+call "_LIBMGR_".putfile('ijkl', 'udr_test102_3', 0, 1, 1);
+
+-- negative test, file already exists and no overwrite requested
+call "_LIBMGR_".putfile('abcd', 'udr_test102_1', 1, 1, 0);
+
+-- expect two lines with the contents of the two files below
+log;
+sh cat $$TRAF_HOME$$/udr/lib/DB__ROOT/udr_test102_1 >>LOG102;
+sh echo " " >>LOG102;
+sh cat $$TRAF_HOME$$/udr/lib/DB__ROOT/udr_test102_3 >>LOG102;
+sh echo " " >>LOG102;
+log LOG102;
+
+call "_LIBMGR_".rm('udr_test102_1');
+call "_LIBMGR_".rm('udr_test102_3');
+
 -- we are done
 exit;
-
-
-
-

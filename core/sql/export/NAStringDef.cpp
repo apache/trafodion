@@ -239,6 +239,19 @@ NAString::copy() const
   return temp;
 }
 
+int
+NAString::extract(int begin, int end, NAString & target) const
+{
+  if(end >= length() || begin < 0 ||end < begin) 
+      return -1;
+
+  for(int i = begin; i <= end; i++)
+      target.append((*this)[i]);
+
+  return end - begin;
+}
+
+
 UInt32 
 NAString::hashFoldCase() const
 {
@@ -424,6 +437,7 @@ char* NAString::buildBuffer(const char* formatTemplate, va_list args)
   int bufferSize = 20049;
   int msgSize = 0;
   //buffer is managed by this static function
+  //the allocated memory is shared by all NAString objects.
   static THREAD_P char *buffer = NULL;
   va_list args2;
   va_copy(args2, args);

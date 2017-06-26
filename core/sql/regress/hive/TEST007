@@ -285,6 +285,22 @@ showddl vh11;
 
 select object_name from trafodion."_MD_".objects where schema_name = 'HIVESCH0071';
 
+-- register hive schemas
+get schemas in catalog hive, match '%hivesch0078%';
+get hive registered schemas in catalog trafodion, match '%hivesch0078%';
+showddl schema hive.hivesch0078;
+get tables in schema hive.hivesch0078;
+process hive statement 'create database hivesch0078';
+showddl schema hive.hivesch0078;
+register hive schema hive.hivesch0078;
+showddl schema hive.hivesch0078;
+get hive registered schemas in catalog trafodion, match '%hivesch0078%';
+unregister hive schema hive.hivesch0078;
+showddl schema hive.hivesch0078;
+get hive registered schemas in catalog trafodion, match '%hivesch0078%';
+process hive statement 'drop database hivesch0078';
+showddl schema hive.hivesch0078;
+
 ?section error_tests_hive
 insert into hive.hivesch007.vhive1 values (1);
 delete from hive.hivesch007.vhive1;
