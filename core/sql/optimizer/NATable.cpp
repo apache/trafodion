@@ -4469,7 +4469,8 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 
        // For the time being, set it up as Hash2 partitioned table
 
-       Int32 numBuckets = hvt_desc->getSDs()->buckets_;
+       Int32 numBuckets = (hvt_desc->getSDs() ? hvt_desc->getSDs()->buckets_
+                           : 0);
 
        if (numBuckets>1 && partitioningKeyColumns.entries()>0) {
           if ( CmpCommon::getDefault(HIVE_USE_HASH2_AS_PARTFUNCION) == DF_ON )
@@ -4518,7 +4519,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
        Int64 estimatedRC = 0;
        Int64 estimatedRecordLength = 0;
 
-       if ( !sd_desc->isTrulyText() ) {
+       if ( sd_desc && (!sd_desc->isTrulyText()) ) {
           //
           // Poor man's estimation by assuming the record length in hive is the 
           // same as SQ's. We can do better once we know how the binary data is
@@ -4823,11 +4824,17 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
        // first get uid for the registered table/view.
        Int64 objectFlags = 0;
 
+       ComObjectType objType;
+       if (isView)
+         objType = COM_VIEW_OBJECT;
+       else if (corrName.isSpecialTable() && (corrName.getSpecialType() == ExtendedQualName::SCHEMA_TABLE))
+         objType = COM_SHARED_SCHEMA_OBJECT;
+       else
+         objType = COM_BASE_TABLE_OBJECT;
        regObjectUID = lookupObjectUidByName(corrName.getQualifiedNameObj(),
-                                            (isView ? COM_VIEW_OBJECT :
-                                             COM_BASE_TABLE_OBJECT), FALSE,
-                                             &objectFlags,
-                                             &regCreateTime);
+                                            objType, FALSE,
+                                            &objectFlags,
+                                            &regCreateTime);
        
        if (NOT isView)
          {
@@ -8255,10 +8262,12 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
 
           NAArray<HbaseStr> *keyArray = NATable::getRegionsBeginKey(extHBaseName);
 
+          // create the virtual table descriptor on the same heap that
+          // we are creating the NATable object on
 	  tableDesc = 
 	    HbaseAccess::createVirtualTableDesc
 	    (corrName.getExposedNameAsAnsiString(FALSE, TRUE).data(),
-	     isHbaseRow, isHbaseCell, keyArray);
+	     isHbaseRow, isHbaseCell, keyArray, naTableHeap);
           deleteNAArray(STMTHEAP, keyArray);
 
 	  isSeabase = FALSE;
@@ -8364,16 +8373,13 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
         {
           table->setIsHbaseMapTable(TRUE);
           table->setIsExternalTable(TRUE);
-
-          //          if (! table->fetchObjectUIDForNativeTable(corrName, FALSE))
-          //            return NULL;
         }
     }
     else if (isHiveTable(corrName) &&
-	(!isSQUmdTable(corrName)) &&
-	(!isSQUtiDisplayExplain(corrName)) &&
-	(!corrName.isSpecialTable()) &&
-	(!isSQInternalStoredProcedure(corrName))
+             (!isSQUmdTable(corrName)) &&
+             (!isSQUtiDisplayExplain(corrName)) &&
+             (!corrName.isSpecialTable()) &&
+             (!isSQInternalStoredProcedure(corrName))
 	) {
       // ------------------------------------------------------------------
       // Create an NATable object for a Hive table
@@ -8552,7 +8558,77 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
              } // else
          }
 
-    } else
+    }
+    else if (isHiveTable(corrName) &&
+             corrName.isSpecialTable() &&
+             (corrName.getSpecialType() == 
+              ExtendedQualName::SCHEMA_TABLE))
+      {
+        // ------------------------------------------------------------------
+        // Create an NATable object for a special Hive table
+        // ------------------------------------------------------------------
+        if ( hiveMetaDB_ == NULL ) 
+          {
+            hiveMetaDB_ = new (CmpCommon::contextHeap()) HiveMetaData();
+            
+            if ( !hiveMetaDB_->init() ) 
+              {
+                *CmpCommon::diags() << DgSqlCode(-1190)
+                                    << DgString0(hiveMetaDB_->getErrMethodName())
+                                    << DgString1(hiveMetaDB_->getErrCodeStr())
+                                    << DgString2(hiveMetaDB_->getErrDetail())
+                                    << DgInt0(hiveMetaDB_->getErrCode());
+                bindWA->setErrStatus();
+                
+                NADELETEBASIC(hiveMetaDB_, CmpCommon::contextHeap());
+                hiveMetaDB_ = NULL;
+                
+                return NULL;
+              }
+          }
+      
+        // this default schema name is what the Hive default schema is called in SeaHive
+        NAString defSchema = ActiveSchemaDB()->getDefaults().getValue(HIVE_DEFAULT_SCHEMA);
+        defSchema.toUpper();
+        struct hive_tbl_desc* htbl;
+        NAString schemaNameInt = corrName.getQualifiedNameObj().getSchemaName();
+        if (corrName.getQualifiedNameObj().getUnqualifiedSchemaNameAsAnsiString() == defSchema)
+          schemaNameInt = hiveMetaDB_->getDefaultSchemaName();
+        // Hive stores names in lower case
+        // Right now, just downshift, could check for mixed case delimited
+        // identifiers at a later point, or wait until Hive supports delimited identifiers
+        schemaNameInt.toLower();
+        
+        // check if this hive schema exists in hiveMD
+        LIST(NAText*) tblNames(naTableHeap);
+        HVC_RetCode rc =
+          hiveMetaDB_->getClient()->getAllTables(schemaNameInt, tblNames);
+        if ((rc != HVC_OK) && (rc != HVC_DONE))
+          {
+            *CmpCommon::diags()
+              << DgSqlCode(-1192)
+              << DgString0(hiveMetaDB_->getErrMethodName())
+              << DgString1(hiveMetaDB_->getErrCodeStr())
+              << DgString2(hiveMetaDB_->getErrDetail())
+              << DgInt0(hiveMetaDB_->getErrCode());
+            
+            hiveMetaDB_->resetErrorInfo();
+            
+            bindWA->setErrStatus();
+            return NULL;
+          }
+
+        htbl = new(naTableHeap) hive_tbl_desc
+          (0, 
+           corrName.getQualifiedNameObj().getObjectName(),
+           corrName.getQualifiedNameObj().getSchemaName(),
+           NULL, NULL,
+           0, NULL, NULL, NULL, NULL);
+        table = new (naTableHeap) NATable
+          (bindWA, corrName, naTableHeap, htbl);
+        
+      }
+    else
       // ------------------------------------------------------------------
       // Neither Trafodion nor Hive (probably dead code below)
       // ------------------------------------------------------------------
@@ -8563,10 +8639,12 @@ NATable * NATableDB::get(CorrName& corrName, BindWA * bindWA,
     
     //if there was a problem in creating the NATable object
     if (NOT ((table->getExtendedQualName().isSpecialTable()) &&
+	     ((table->getExtendedQualName().getSpecialType() == 
+	      ExtendedQualName::SG_TABLE) ||
 	     (table->getExtendedQualName().getSpecialType() == 
-	      ExtendedQualName::SG_TABLE)) &&
+	      ExtendedQualName::SCHEMA_TABLE))) &&
 	(table->getColumnCount() == 0)) {
-      
+
       bindWA->setErrStatus();
       
       return NULL;

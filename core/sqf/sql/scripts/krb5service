@@ -49,7 +49,7 @@
 # Location attributes (see krb5functions to change these values):
 #  [LOG_FILE]  : $TRAF_HOME/logs/krb5check - log where all events are stored
 #    (the log file is recreated each time the krb5service is started)
-#  [LOCK_FILE] : $TRAF_HOME/tmp/krb5check - file to keep track of krb5check process
+#  [LOCK_FILE] : $TRAF_VAR/krb5check - file to keep track of krb5check process
 #    (acts as a semiphore to prevent multiple occurrances from running)
 #  [CACHE_FILE]: /tmp/krb5cc_(trafodion linux UID) - default location for Kerberos
 #    cache ticket store (CACHE_FILE)

@@ -27,7 +27,7 @@ import os
 import sys
 import re
 import json
-from constants import DEF_HBASE_HOME, TRAF_SUDOER_FILE
+from constants import DEF_HBASE_HOME, TRAF_SUDOER_FILE, TRAF_CFG_FILE
 from common import err, cmd_output, run_cmd, get_default_home
 
 def run():
@@ -73,11 +73,11 @@ def run():
 
     ### create and set permission for scratch file dir ###
     for loc in scratch_locs:
-        # don't set permission for HOME folder
-        if not os.path.exists(loc):
-            run_cmd('mkdir -p %s' % loc)
-        if home_dir not in loc:
-            run_cmd('chmod 777 %s' % loc)
+        # expand any shell variables
+        locpath = cmd_output('source %s ; echo %s' % (TRAF_CFG_FILE,loc))
+        if not os.path.exists(locpath):
+            run_cmd('mkdir -p %s' % locpath)
+            run_cmd('chown %s %s' % (traf_user,locpath))
 
     ### copy jar files ###
     hbase_lib_path = dbcfgs['hbase_lib_path']

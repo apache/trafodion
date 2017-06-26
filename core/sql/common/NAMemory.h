@@ -468,11 +468,19 @@ NA_EIDPROC
   NAMemoryType getType() {  return type_; }
 NA_EIDPROC
   NABoolean getUsage(size_t* lastSegSize, size_t* freeSize, size_t* totalSize);
+  // for debugging
+NA_EIDPROC
+  NABoolean containsAddress(void *addr)
+        { return NABlock::blockHolding(firstBlk_, addr) != NULL; }
+
   // #ifdef NA_WINNT
 #ifndef __EID
   NABoolean  getSharedMemory() { return sharedMemory_; }
   void setSharedMemory() { sharedMemory_ = TRUE; }
 #endif
+
+  NABoolean isComSpace(void) { return derivedClass_ == COMSPACE_CLASS; } ;
+
 protected:
 
   // set the name of this memory

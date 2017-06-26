@@ -1,0 +1,245 @@
+-- ============================================================================
+-- TEST125 - tests get statements continued
+--
+-- @@@ START COPYRIGHT @@@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+--
+--   http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
+--
+-- @@@ END COPYRIGHT @@@
+--
+-- Tests that get statements return only what the user can see
+--  get schemas (in catalog)
+--  get tables (in schemas)
+--  get views (in catalogs)
+--  get views (in schemas)
+--  get indexes (in schemas)
+--  get sequences (in catalog
+--  get sequences (in schema)
+--  get functions, procedures, table mapping functions, libraries (in schema)
+--  get privileges on table
+--  get privileges on view
+--
+-- ============================================================================
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+obey TEST125(clean_up);
+log LOG125;
+
+obey TEST125(set_up);
+revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+-- sql_user8 can see all in t125sch3
+sh sqlci -i "TEST125(get_tests)" -u sql_user8;
+-- sql_user1 sees sch2 testhive, players sequence; sch3 games, games_by_player
+sh sqlci -i "TEST125(get_tests)" -u sql_user1;
+-- sql_user2 sees same as sql_user7 plus games, games_by_player in all schemas  
+sh sqlci -i "TEST125(get_tests)" -u sql_user2;
+-- sql_user7 is based on role1
+-- role1 sees sch2 teams; sch3 players and translateBitmap
+sh sqlci -i "TEST125(get_tests)" -u sql_user7;
+grant component privilege "SHOW" on sql_operations to "PUBLIC";
+log;
+obey TEST125(clean_up);
+exit;
+
+?section set_up
+create role t125_adminrole;
+grant role t125_adminrole to sql_user8;
+create role t125_role1;
+
+-- create schemas
+create schema t125sch1; 
+set schema t125sch1;
+obey TEST125(create_db);
+
+create schema t125sch2;
+set schema t125sch2;
+obey TEST125(create_db);
+
+create schema t125sch3 authorization t125_adminrole;
+set schema t125sch3;
+obey TEST125(create_db);
+
+-- privileges for role1 (sql_user7)
+grant role t125_role1 to sql_user7;
+grant select(team_number) on t125sch2.teams to t125_role1;
+grant all on t125sch3.players to t125_role1;
+grant all on function t125sch3.translateBitmap to t125_role1;
+
+-- privileges for sql_user1
+grant insert on t125sch3.games to sql_user1;
+grant select on t125sch3.games_by_player to sql_user1;
+grant select (player_name) on t125sch3.games_by_player to sql_user1;
+grant execute on procedure t125sch2.testhive to sql_user1;
+grant usage on sequence t125sch2.players_sequence to sql_user1;
+
+-- privileges for sql_user2 + role1
+grant role t125_role1 to sql_user2;
+grant all on t125sch1.games to sql_user2;
+grant all on t125sch2.games to sql_user2;
+grant all on t125sch3.games to sql_user2;
+grant select (game_number) on t125sch2.games to t125_role1;
+grant select on t125sch1.games_by_player to sql_user2;
+grant select on t125sch2.games_by_player to sql_user2;
+grant select on t125sch3.games_by_player to sql_user2;
+
+-- privileges for sql_user8 - all on t125sch3 (owner through role)
+
+get privileges for role t125_role1;
+get privileges for user sql_user1;
+get privileges for user sql_user2;
+get privileges for user sql_user7;
+get privileges for user sql_user8;
+
+obey TEST125(get_tests);
+
+?section create_db
+create table teams
+  (team_number int not null primary key,
+   team_name char(20) not null,
+   team_contact varchar(50) not null,
+   team_contact_number char (10) not null
+   )
+  ;
+
+alter table teams add constraint valid_team_no check (team_number > 0);
+
+create table games
+   ( home_team_number int not null,
+     visitor_team_number int not null,
+     game_number int not null primary key,
+     game_time timestamp not null,
+     game_location varchar(50) not null)
+  ;
+
+create table players
+  (player_number int not null,
+   player_name varchar (50) not null,
+   player_team_number int not null,
+   player_phone_number char (10) not null,
+   player_details varchar(50),
+   primary key (player_number, player_team_number))
+  no partition;
+
+alter table players add constraint players_teams
+   foreign key (player_team_number) references teams (team_number);
+
+create sequence players_sequence;
+
+create view home_teams_games as
+  select t.team_number, g.game_number, g.game_time
+  from "TEAMS" t,
+       "GAMES" g
+  where t.team_number = g.home_team_number
+  order by 1, game_number, game_time;
+
+create view players_on_team as
+  select player_name, team_name
+  from teams t, players p
+  where p.player_team_number = t.team_number
+  order by t.team_name;
+
+create view games_by_player as
+  select player_name, game_time
+  from teams t, games g, players p
+  where p.player_team_number = t.team_number and
+        t.team_number = g.home_team_number
+  order by player_name, team_number;
+
+-- create function to display bitmaps as a bitmap rather than longs
+-- set envvar REGRRUNDIR '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/rundir/privs1';
+-- set envvar REGRTSTDIR '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/privs1';
+-- set envvar scriptsdir '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress';
+sh rm -f ./etest141.dll;
+sh sh $$scriptsdir$$/tools/dll-compile.ksh etest141.cpp
+  2>&1 | tee LOG125-SECONDARY;
+set pattern $$DLL$$ etest141.dll;
+set pattern $$QUOTE$$ '''';
+
+create library t125_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
+language c parameter style sql external name 'translateBitmap'
+library t125_l1
+deterministic no sql final call allow any parallelism state area size 1024 ;
+
+sh sh $$scriptsdir$$/tools/java-compile.ksh Utils.java TestHive.java 2> LOG125-SECONDARY | tee -a LOG125;
+sh sh $$scriptsdir$$/tools/java-archive.ksh TEST125_procs.jar TestHive.class Utils.class 2>> LOG125-SECONDARY | tee -a LOG125;
+set pattern $$JARF$$ TEST125_procs.jar;
+
+create library t125_l2
+   file $$QUOTE$$ $$REGRRUNDIR$$/$$JARF$$ $$QUOTE$$;
+
+create procedure TestHive(
+  IN operation char(20),
+  OUT results varchar(1000))
+  EXTERNAL NAME 'TestHive.accessHive'
+  LIBRARY t125_l2
+  LANGUAGE JAVA
+  PARAMETER STYLE JAVA
+  READS SQL DATA
+  NO TRANSACTION REQUIRED
+  ISOLATE
+  ;
+
+?section clean_up
+drop schema t125sch1 cascade;
+drop schema t125sch2 cascade;
+drop schema t125sch3 cascade;
+
+revoke role t125_role1 from sql_user7;
+revoke role t125_role1 from sql_user2;
+
+drop role t125_role1;
+drop role t125_role2;
+
+revoke role t125_adminrole from sql_user8;
+drop role t125_adminrole;
+
+?section get_tests
+log LOG125;
+cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+values (user);
+obey TEST125(get_statements);
+
+?section get_statements
+get schemas, match 'T125SCH%';
+
+set schema t125sch1;
+get tables;
+get views;
+get indexes;
+get sequences, match 'T125SCH%';
+get libraries;
+get functions;
+get procedures;
+
+set schema t125sch2;
+get tables in schema t125sch2;
+get views in schema t125sch2;
+get indexes in schema t125sch2;
+get sequences in schema t125sch2;
+get libraries in schema t125sch2;
+get functions in schema t125sch2;
+get procedures in schema t125sch2;
+
+set schema t125sch3;
+get tables;
+get views in catalog trafodion, match 'T125SCH%';
+get indexes in schema t125sch3;
+get sequences in catalog trafodion, match 'T125SCH%';
+get libraries;
+get functions in schema t125sch3;
+get procedures;

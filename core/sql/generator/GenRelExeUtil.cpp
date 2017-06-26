@@ -284,6 +284,7 @@ TrafDesc *ExeUtilExpr::createVirtualTableDesc()
 {
   TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
+				      NULL, // let it decide what heap to use
 				      ComTdbExeUtil::getVirtTableNumCols(),
 				      ComTdbExeUtil::getVirtTableColumnInfo(),
 				      ComTdbExeUtil::getVirtTableNumKeys(),
@@ -316,6 +317,7 @@ TrafDesc *ExeUtilDisplayExplain::createVirtualTableDesc()
   TrafDesc * table_desc = 
     Generator::createVirtualTableDesc
     (getVirtualTableName(),
+     NULL, // let it decide what heap to use
      ComTdbExeUtilDisplayExplain::getVirtTableNumCols(),
      vtci,
      ComTdbExeUtil::getVirtTableNumKeys(),
@@ -539,7 +541,7 @@ short ExeUtilDisplayExplainComplex::codeGen(Generator * generator)
   if (getExprNode()->getOperatorType() == REL_DDL)
     {
       DDLExpr * ddlExpr = (DDLExpr*)getExprNode()->castToRelExpr();
-      if (ddlExpr->forShowddlExplain())
+      if (ddlExpr->showddlExplain())
 	{
 	  exe_util_tdb->setIsShowddl(TRUE);
 	  
@@ -1225,6 +1227,7 @@ TrafDesc *ExeUtilGetUID::createVirtualTableDesc()
 {
   TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
+				      NULL, // let it decide what heap to use
 				      ComTdbExeUtilGetUID::getVirtTableNumCols(),
 				      ComTdbExeUtilGetUID::getVirtTableColumnInfo(),
 				      ComTdbExeUtilGetUID::getVirtTableNumKeys(),
@@ -1303,6 +1306,7 @@ TrafDesc *ExeUtilGetQID::createVirtualTableDesc()
 {
   TrafDesc * table_desc =
     Generator::createVirtualTableDesc(getVirtualTableName(),
+				      NULL, // let it decide what heap to use
 				      ComTdbExeUtilGetQID::getVirtTableNumCols(),
 				      ComTdbExeUtilGetQID::getVirtTableColumnInfo(),
 				      ComTdbExeUtilGetQID::getVirtTableNumKeys(),
@@ -1643,6 +1647,7 @@ short ExeUtilGetMetadataInfo::codeGen(Generator * generator)
     {  "USER",   "OBJECTS",   "IN",    "CATALOG",  1,      1,        0,      0,      ComTdbExeUtilGetMetadataInfo::OBJECTS_IN_CATALOG_ },
     {  "USER",   "HIVE_REG_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_REG_TABLES_IN_CATALOG_ },
     {  "USER",   "HIVE_REG_VIEWS", "IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_REG_VIEWS_IN_CATALOG_ },
+    {  "USER",   "HIVE_REG_SCHEMAS", "IN", "CATALOG",  1,      1,        0,      0,  ComTdbExeUtilGetMetadataInfo::HIVE_REG_SCHEMAS_IN_CATALOG_ },
     {  "USER",   "HIVE_REG_OBJECTS", "IN", "CATALOG",  1,      1,        0,      0,  ComTdbExeUtilGetMetadataInfo::HIVE_REG_OBJECTS_IN_CATALOG_ },
     {  "USER",   "HIVE_EXT_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HIVE_EXT_TABLES_IN_CATALOG_ },
     {  "USER",   "HBASE_REG_TABLES","IN", "CATALOG",  1,      1,        0,      0,    ComTdbExeUtilGetMetadataInfo::HBASE_REG_TABLES_IN_CATALOG_ },
@@ -3538,6 +3543,7 @@ TrafDesc *ExeUtilRegionStats::createVirtualTableDesc()
   else
     table_desc = Generator::createVirtualTableDesc(
 	 getVirtualTableName(),
+	 NULL, // let it decide what heap to use
 	 rs.getVirtTableNumCols(),
 	 rs.getVirtTableColumnInfo(),
 	 rs.getVirtTableNumKeys(),
@@ -3674,6 +3680,7 @@ TrafDesc *ExeUtilLobInfo::createVirtualTableDesc()
    if (tableFormat_)
     table_desc = Generator::createVirtualTableDesc(
 	 getVirtualTableName(),
+	 NULL, // let it decide what heap to use
 	 ComTdbExeUtilLobInfo::getVirtTableNumCols(),
 	 ComTdbExeUtilLobInfo::getVirtTableColumnInfo(),
 	 ComTdbExeUtilLobInfo::getVirtTableNumKeys(),
@@ -4673,6 +4680,7 @@ TrafDesc *HiveMDaccessFunc::createVirtualTableDesc()
   TrafDesc * table_desc =
     Generator::createVirtualTableDesc(
 				      getVirtualTableName(),
+				      NULL, // let it decide what heap to use
 				      ComTdbExeUtilHiveMDaccess::getVirtTableNumCols((char*)mdType_.data()),
 				      ComTdbExeUtilHiveMDaccess::getVirtTableColumnInfo((char*)mdType_.data()),
 				      ComTdbExeUtilHiveMDaccess::getVirtTableNumKeys((char*)mdType_.data()),

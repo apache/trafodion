@@ -80,7 +80,7 @@ Enter trafodion user password:
 Confirm Enter trafodion user password:
 Enter number of DCS client connections per node [4]:
 Enter trafodion scratch file folder location(should be a large disk),
-if more than one folder, use comma seperated [$TRAF_HOME/tmp]:
+if more than one folder, use comma seperated [$TRAF_VAR]:
 Start instance after installation (Y/N)  [Y]:
 Enable LDAP security (Y/N)  [N]:
 Enable DCS High Avalability (Y/N)  [N]:
@@ -101,7 +101,7 @@ Enable DCS High Avalability (Y/N)  [N]:
 | mgr_url          | http://192.168.0.31:7180                                                          |
 | mgr_user         | admin                                                                             |
 | node_list        | node-1,node-2                                                                     |
-| scratch_locs     | $TRAF_HOME/tmp                                                                    |
+| scratch_locs     | $TRAF_VAR                                                                         |
 | traf_dirname     | apache-trafodion-2.1.0                                                            |
 | traf_package     | /data/python-installer/apache-trafodion_server-2.1.0-RH-x86_64-incubating.tar.gz  |
 | traf_start       | Y                                                                                 |

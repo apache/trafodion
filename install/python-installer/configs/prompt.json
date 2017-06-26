@@ -119,7 +119,7 @@
   "scratch_locs":
   {
       "prompt":"Enter trafodion scratch file folder location(should be a large disk),\nif more than one folder, use comma seperated",
-      "default":"$TRAF_HOME/tmp"
+      "default":"$TRAF_VAR"
   },
   "local_repo_dir":
   {

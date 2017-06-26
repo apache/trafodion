@@ -2804,12 +2804,12 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
   if (NOT ddlXns()) 
   { 
      if ((dropHbase()) ||
-       (purgedataHbase()) ||
+       (purgedata()) ||
        (initHbase()) ||
        (createMDViews()) ||
        (dropMDViews()) ||
-       (initAuthorization()) ||
-       (dropAuthorization()) ||
+       (initAuth()) ||
+       (dropAuth()) ||
        (createRepos()) ||
        (dropRepos()) ||
        (upgradeRepos()) ||
@@ -2845,7 +2845,7 @@ short DDLExpr::ddlXnsInfo(NABoolean &isDDLxn, NABoolean &xnCanBeStarted)
         ddlNode->castToStmtDDLNode()->ddlXns())
      isDDLxn = TRUE;
 
-     if (purgedataHbase() || upgradeRepos())
+     if (purgedata() || upgradeRepos())
         // transaction will be started and commited in called methods.
         xnCanBeStarted = FALSE;
      if ((ddlNode && ddlNode->castToStmtDDLNode() &&
@@ -2878,7 +2878,7 @@ RelExpr * DDLExpr::preCodeGen(Generator * generator,
     return NULL;
   
   if ((specialDDL()) ||
-      (initHbase_))
+      (initHbase()))
     {
       generator->setAqrEnabled(FALSE);
     }

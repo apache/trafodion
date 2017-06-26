@@ -1125,6 +1125,13 @@ std::string whereClause(" WHERE COMPONENT_UID = 1 AND (OPERATION_CODE = '");
             whereClause += "' OR OPERATION_CODE = '";
             whereClause += PrivMgr::getSQLOperationCode(SQLOperation::ALTER);
          }
+         else
+            if (PrivMgr::isSQLManageOperation(operation))
+            {
+               whereClause += "' OR OPERATION_CODE = '";
+               whereClause += PrivMgr::getSQLOperationCode(SQLOperation::MANAGE);
+            }
+
    
    whereClause += "') AND (GRANTEE_ID = -1 OR GRANTEE_ID = ";
    whereClause += authIDToString(authID);
