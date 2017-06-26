@@ -9788,45 +9788,8 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
       if (CmpCommon::getDefault(SIMPLE_COST_MODEL) == DF_ON)
       {
 	DCMPASSERT(scmCost != NULL);
-        // When RangeSpec feture transforms old mdam disjuncts in to "Range in"
-        // types, we apply all disjuncts at one shot. The old way of taking Min(prefixCost) does
-        // not make sense and leads to gross underestimation of MDAM plan.
-        // For example, consider a predicate like this "A in (10, 20) and B in (100, 200)"
-        // without RangeSpec: we have 4 disjuncts Like this:
-        //     dis0 : "A = 10 and B = 100", cost C1 = MIN (CostA, CostB) for values (10,100)
-        //     dis1 : "A = 10 and B = 200", cost C2 = MIN (CostA, CostB) for values (10,200)
-        //     dis2 : "A = 20 and B = 100", cost C3 = MIN (CostA, CostB) for values (20,100)
-        //     dis3 : "A = 20 and B = 200", cost C4 = MIN (CostA, CostB) for values (20,200)
-        //     Total Mdam Cost = C1 + C2 + C3 + C4
-        // with RangeSpec: we have 1 disjunct like this:
-        //     dis0 : "A = 10 or A = 20" and "B = 100 or B = 200"
-        // we should not take MIN (CostA, CostB) for the second case, it should be the cost to apply 
-        // last key predicate. 
-        //     Total Mdam Cost = CostB
-        //
-        //  This is a heuristics in that we unconditionally include the last key column 
-        //  with IN list (OR preds) predicate without going through the cost comparison 
-        //  step.
-        //
-        // Updated comments: The commentary above is incorrect but I don't know quite
-        // what to do with it yet. MDAM at run time is a recursive algorithm. In the 
-        // example above, it will materialize values in the A column, and for each one,
-        // do a subset access on the second column. So the cost is a sum of the
-        // materialization cost on the first column and the subset access on the second.
-        // If there is a third key column C with no predicates on it, it would be 
-        // inefficient to go MDAM to the last column position; rather it would be better
-        // to use B as the stop column. That is, do subsets on each distinct value of (A,B),
-        // rather than do subsets on each distinct (A,B,C). The larger the UEC of C, the
-        // more gross the inefficiency. Unfortunately, the code below will cause us to 
-        // go MDAM to column C. In reference to the comments above, we need to devise
-        // a better way to estimate cost in the presence of RangeSpecs.
-        if ( (CmpCommon::getDefault(RANGESPEC_TRANSFORMATION) == DF_ON ) &&
-              optimizer_.getDisjuncts().containsOrPredsInRanges() &&
-              prefixColumnPosition_ == (lastColumnPosition_ - 1) 
-           ) {
-          newMinimumFound = TRUE;
-        } else
-          newMinimumFound = (pMinCost_ == NULL) ? TRUE :
+   
+        newMinimumFound = (pMinCost_ == NULL) ? TRUE :
             (scmCost->scmCompareCosts(*pMinCost_) == LESS);
       }
       else
@@ -9868,17 +9831,6 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
       optSeqKBRead_ = prefixKBRead_;
       optKeyPreds_.insert(prefixKeyPreds_); // is a copy more efficient?
 
-      // Note: Formerly there was code here that would set stopColumn_
-      // to the last column position if the CQD RANGESPEC_TRANSFORMATION
-      // was on. This is incorrect; it would cause us to use MDAM to 
-      // traverse through all columns always, even though it may be
-      // grossly inefficient to do so. (See commentary earlier in this
-      // method.) As it stands now, so long as there are no RangeSpec
-      // key predicates, this code will correctly pick the stop column.
-      // If there are RangeSpec predicates, code earlier in this method
-      // may cause us to only consider MDAM traversing on all columns.
-      // We can improve this later by improving how RangeSpec predicates
-      // are costed for MDAM.
       stopColumn_ = prefixColumnPosition_;
 
       prevColChosen_ = TRUE;
