@@ -176,12 +176,6 @@ static Int32 processCommandsFromFile(const char *filename, UdrGlobals &glob);
 static Int32 processSingleCommandFromFile(FILE *f, UdrGlobals &glob);
 // LCOV_EXCL_STOP
 
-// Changed the default to 512 to limit java heap size used by SQL processes.
-// Keep this define in sync with executor/JavaObjectInterface.cpp
-#define DEFAULT_JVM_MAX_HEAP_SIZE 512
-#define DEFAULT_COMPRESSED_CLASSSPACE_SIZE 128
-#define DEFAULT_MAX_METASPACE_SIZE 128
-
 static NAString initErrText("");
 /*************************************************************************
    Helper function to propagate all Java-related environment settings
