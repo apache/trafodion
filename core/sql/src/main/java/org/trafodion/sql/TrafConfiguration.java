@@ -37,7 +37,7 @@ public class TrafConfiguration {
     Configuration lv_conf = new Configuration();
     switch (config) {
        case HBASE_CONF:
-          String trafSiteXml = new String(System.getenv("TRAF_HOME") + "/conf/trafodion-site.xml");
+          String trafSiteXml = new String(System.getenv("TRAF_CONF") + "/trafodion-site.xml");
           Path fileRes = new Path(trafSiteXml);
           lv_conf.addResource(fileRes);
           Iterator<Map.Entry<String,String>> iter = lv_conf.iterator();
