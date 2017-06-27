@@ -116,8 +116,8 @@ public class HBaseTxClient {
    void setupLog4j() {
         //System.out.println("In setupLog4J");
         System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
-        String confFile = System.getenv("TRAF_HOME")
-            + "/conf/log4j.dtm.config";
+        String confFile = System.getenv("TRAF_CONF")
+            + "/log4j.dtm.config";
         PropertyConfigurator.configure(confFile);
     }
 
