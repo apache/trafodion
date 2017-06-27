@@ -160,9 +160,6 @@ create view games_by_player as
   order by player_name, team_number;
 
 -- create function to display bitmaps as a bitmap rather than longs
--- set envvar REGRRUNDIR '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/rundir/privs1';
--- set envvar REGRTSTDIR '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/privs1';
--- set envvar scriptsdir '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress';
 sh rm -f ./etest141.dll;
 sh sh $$scriptsdir$$/tools/dll-compile.ksh etest141.cpp
   2>&1 | tee LOG125-SECONDARY;
@@ -175,6 +172,7 @@ language c parameter style sql external name 'translateBitmap'
 library t125_l1
 deterministic no sql final call allow any parallelism state area size 1024 ;
 
+-- create procedure that accesses hive tables
 sh sh $$scriptsdir$$/tools/java-compile.ksh Utils.java TestHive.java 2> LOG125-SECONDARY | tee -a LOG125;
 sh sh $$scriptsdir$$/tools/java-archive.ksh TEST125_procs.jar TestHive.class Utils.class 2>> LOG125-SECONDARY | tee -a LOG125;
 set pattern $$JARF$$ TEST125_procs.jar;
