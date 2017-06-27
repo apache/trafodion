@@ -32,4 +32,15 @@ fi
 mkdir -p $TRAF_HOME/logs
 lv_stderr_file="$TRAF_HOME/logs/hbcheck.log"
 echo "Stderr being written to the file: ${lv_stderr_file}"
-$JAVA_HOME/bin/java -Xmx512m org.trafodion.dtm.hbstatus $* 2>${lv_stderr_file}
+for interval in 5 10 15 30
+do
+  $JAVA_HOME/bin/java -Xmx512m org.trafodion.dtm.hbstatus $* 2>>${lv_stderr_file}
+  if [[ $? == 0 ]]
+  then
+    exit 0
+  fi
+  echo "HBase not available. Waiting $interval seconds."
+  sleep $interval
+done
+$JAVA_HOME/bin/java -Xmx512m org.trafodion.dtm.hbstatus $* 2>>${lv_stderr_file}
+exit $?
