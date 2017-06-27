@@ -209,7 +209,8 @@ from udf(timeseries(table(select * from t002_Timeseries
                     'VAL1', 'FC',
                     'VAL1', 'LC',
                     'VAL2', 'FC',
-                    'VAL2', 'LC'));
+                    'VAL2', 'LC'))
+order by p, slice_time;
 
 select *
 from udf(timeseries(table(select * from t002_Timeseries
@@ -228,7 +229,8 @@ from udf(timeseries(table(select * from t002_Timeseries
                     'VAL1', 'FLi',
                     'VAL1', 'LLi',
                     'VAL2', 'FLi',
-                    'VAL2', 'LLi'));
+                    'VAL2', 'LLi'))
+order by p, slice_time;
 
 -- JDBC queries through a TMUDF. Note that this requires the Trafodion T4
 -- driver jar to exist in $TRAF_HOME/udr/external_libs.
