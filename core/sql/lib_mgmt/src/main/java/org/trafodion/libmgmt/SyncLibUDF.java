@@ -43,10 +43,11 @@ public class SyncLibUDF extends UDR {
     public void describeParamsAndColumns(UDRInvocationInfo info)
         throws UDRException
     {
-        // this TMUDF takes no table-valued inputs, two string
+        // This TMUDF takes no table-valued inputs, two string
         // parameters, and generates a table with a single integer
-        // value. It assumes that it was created with the following
-        // DDL, without specifying parameters or return values:
+        // column (one row per parallel instance). It assumes that it
+        // was created with the following DDL, without specifying
+        // parameters or return values:
         //
         //  create table_mapping function SyncLibUDF()
         //  external name 'org.trafodion.libmgmt.SyncLibUDF'
