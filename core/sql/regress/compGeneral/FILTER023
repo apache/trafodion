@@ -33,8 +33,12 @@ fi
 
 sed "
 s/TRAF_SAMPLE_[0-9]*_[0-9]*_[0-9]*/TRAF_SAMPLE_nn_nnnnnnnnnn_nnnnnn/g
+s/TRAF_SAMPLE_[0-9]*_[0-9]*/TRAF_SAMPLE_nn_nnnnnnnnnn/g
+s/TRAF_SAMPLE_[0-9]*/TRAF_SAMPLE_nn/g
 s/E_[0-9]*_[0-9]*_[0-9]* WHERE/E_nn_nnnnnnnnnn_nnnnnn WHERE/g
 s/[0-9]*\.[0-9]* PERCENT/nn.nn PERCENT/g
+s/[0-9]*_[0-9]*_[0-9]*_I/nn_nnnnnnnnnn_nnnnnn_I/g
+s/[0-9]*_[0-9]*_I/nnnnnnnnnn_nnnnnn_I/g
 s/[0-9]*_I/nnnnnn_I/g
 " $fil
 
