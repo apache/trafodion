@@ -37,7 +37,7 @@ static std::string AUTH_COMPONENT = "DBSECURITY";
 // This function inserts an AuthEvent into the current list of authEvents
 //
 // DB_SECUITY_EVENTID - is the event ID to insert 
-//    see: $TRAF_HOME/log4cxx.trafodion.auth.config/evl_sqlog_eventnum.h
+//    see: $TRAF_HOME/export/include/common/evl_sqlog_eventnum.h
 // eventText - text to insert
 // severity - severity of the event
 // ****************************************************************************
