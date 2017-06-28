@@ -223,9 +223,6 @@
 --- SQL operation complete.
 >>
 >>-- create function to display bitmaps as a bitmap rather than longs
->>-- set envvar REGRRUNDIR '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/rundir/privs1';
->>-- set envvar REGRTSTDIR '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/privs1';
->>-- set envvar scriptsdir '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress';
 >>sh rm -f ./etest141.dll;
 >>sh sh $$scriptsdir$$/tools/dll-compile.ksh etest141.cpp
 +>  2>&1 | tee LOG125-SECONDARY;
@@ -242,6 +239,7 @@
 
 --- SQL operation complete.
 >>
+-- create procedure that accesses hive tables
 >>sh sh $$scriptsdir$$/tools/java-compile.ksh Utils.java TestHive.java 2> LOG125-SECONDARY | tee -a LOG125;
 ------------------------------------------------------------------------------
 -- Compiling Java source files: Utils.java TestHive.java
