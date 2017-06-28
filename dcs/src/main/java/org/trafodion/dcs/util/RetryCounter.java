@@ -62,8 +62,12 @@ public class RetryCounter {
   public void useRetry() {
     retriesRemaining--;
   }
-  
+
   public int getAttemptTimes() {
     return maxRetries-retriesRemaining+1;
+  }
+
+  public void resetAttemptTimes() {
+      this.retriesRemaining = maxRetries;
   }
 }

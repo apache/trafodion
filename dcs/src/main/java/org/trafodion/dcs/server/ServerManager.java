@@ -85,8 +85,6 @@ public final class ServerManager implements Callable {
     private ServerHandler[] serverHandlers;
     private int maxRestartAttempts;
     private int retryIntervalMillis;
-    private int restartAttempts;
-    private RetryCounterFactory retryCounterFactory;
     private String nid = null;
 
     class RegisteredWatcher implements Watcher {
@@ -124,7 +122,7 @@ public final class ServerManager implements Callable {
             this.registeredPath = registeredPath;
         }
 
-        public boolean monitor() throws Exception {
+        public boolean monitor() {
             try {
                 LOG.debug("registered path [" + registeredPath + "]");
                 stat = zkc.exists(registeredPath, false);
@@ -134,6 +132,7 @@ public final class ServerManager implements Callable {
                     LOG.debug("isRunning [" + isRunning + "]");
                 }
             } catch (Exception e) {
+                LOG.warn(e.getMessage(), e);
                 isRunning = false;
                 return isRunning;
             }
@@ -254,21 +253,35 @@ public final class ServerManager implements Callable {
         int childInstance;
         String registeredPath;
         CountDownLatch startSignal = new CountDownLatch(1);
-        int restartAttempts;
+        RetryCounter retryCounter;
 
-        public int getRestartAttempts() {
-            return restartAttempts;
+        public void reset() {
+            startSignal.countDown();
+            startSignal = new CountDownLatch(1);
+            boolean isRunning = this.serverMonitor.monitor();
+            String nid = this.serverMonitor.nid;
+            String pid = this.serverMonitor.pid;
+
+            if (isRunning) {
+                LOG.info("mxosrvr " + nid + "," + pid + " still running");
+                this.retryCounter.resetAttemptTimes();
+            } else {
+                LOG.info("mxosrvr " + nid + "," + pid + " exited, restarting, restart attempt time : "
+                        + this.retryCounter.getAttemptTimes());
+            }
         }
 
-        public void setRestartAttempts(int time) {
-            this.restartAttempts = time;
-        }
-
-        public ServerHandler(int childInstance) {
+        public ServerHandler(Configuration conf ,int childInstance) {
+            int maxRestartAttempts = conf.getInt(Constants.DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS,
+                    Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_ATTEMPTS);
+            int retryIntervalMillis = conf.getInt(
+                    Constants.DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS,
+                    Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS);
             this.childInstance = childInstance;
             this.registeredPath = parentZnode
                     + Constants.DEFAULT_ZOOKEEPER_ZNODE_SERVERS_REGISTERED
                     + "/" + hostName + ":" + instance + ":" + childInstance;
+            retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryIntervalMillis);
             serverMonitor = new ServerMonitor(childInstance, registeredPath);
             serverRunner = new ServerRunner(childInstance, registeredPath);
         }
@@ -345,11 +358,6 @@ public final class ServerManager implements Callable {
         this.retryIntervalMillis = conf
                 .getInt(Constants.DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS,
                         Constants.DEFAULT_DCS_SERVER_USER_PROGRAM_RESTART_HANDLER_RETRY_INTERVAL_MILLIS);
-        this.restartAttempts = this.conf
-                .getInt(Constants.DCS_MASTER_STARTUP_MXOSRVR_RETRY_ATTEMPTS,
-                        Constants.DEFAULT_DCS_MASTER_STARTUP_MXOSRVR_RETRY_ATTEMPTS);
-        this.retryCounterFactory = new RetryCounterFactory(
-                this.maxRestartAttempts, this.retryIntervalMillis);
         serverHandlers = new ServerHandler[this.childServers];
     }
 
@@ -394,7 +402,7 @@ public final class ServerManager implements Callable {
             getMaster();
             featureCheck();
             registerInRunning(instance);
-            RetryCounter retryCounter = retryCounterFactory.create();
+            RetryCounter retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryIntervalMillis);
             while (!isTrafodionRunning(nid)) {
                if (!retryCounter.shouldRetry()) {
                   if (nid != null)
@@ -415,9 +423,7 @@ public final class ServerManager implements Callable {
             // /bin/dcs-daemon script
             // which DOES NOT set childServers count.
             for (int childInstance = 1; childInstance <= childServers; childInstance++) {
-                ServerHandler serverHandler = new ServerHandler(childInstance);
-                serverHandler.setRestartAttempts(this.restartAttempts);
-                serverHandlers[childInstance-1] = serverHandler;
+                serverHandlers[childInstance-1] = new ServerHandler(conf, childInstance);
                 completionService.submit(serverHandlers[childInstance-1]);
                 LOG.debug("Started server handler [" + instance + ":"
                         + childInstance + "]");
@@ -432,15 +438,8 @@ public final class ServerManager implements Callable {
                 if (f != null) {
                     Integer result = f.get();
                     LOG.debug("Server handler [" + instance + ":" + result + "] finished");
-                    int childInstance = result.intValue();
-                    // get the node id
-                    boolean isRunning = serverHandlers[childInstance - 1].serverMonitor.monitor();
-                    String nid = serverHandlers[childInstance - 1].serverMonitor.nid;
-                    String pid = serverHandlers[childInstance - 1].serverMonitor.pid;
-                    int restartAttempts = serverHandlers[childInstance - 1].getRestartAttempts();
 
-                    serverHandlers[childInstance - 1] = null;
-                    retryCounter = retryCounterFactory.create();
+                    retryCounter = RetryCounterFactory.create(maxRestartAttempts, retryIntervalMillis);
                     while (!isTrafodionRunning(nid)) {
                         if (!retryCounter.shouldRetry()) {
                             throw new IOException("Node " + nid + " is not Up");
@@ -449,19 +448,16 @@ public final class ServerManager implements Callable {
                             retryCounter.useRetry();
                         }
                     }
-                    if (isRunning) {
-                        restartAttempts = this.restartAttempts;
-                        LOG.info("mxosrvr " + nid + "," + pid + " still running");
-                    }
-                    else {
-                        restartAttempts--;
-                        LOG.info("mxosrvr " + nid + "," + pid + " exited, restarting, restart time : " + restartAttempts);
-                    }
-                    if (restartAttempts > 0) {
-                        ServerHandler serverHandler = new ServerHandler(childInstance);
-                        serverHandler.setRestartAttempts(restartAttempts);
-                        serverHandlers[childInstance - 1] = serverHandler;
+                    int childInstance = result.intValue();
+                    // get the node id
+                    ServerHandler previousServerHandler = serverHandlers[childInstance - 1];
+                    previousServerHandler.reset();
+                    if (previousServerHandler.retryCounter.shouldRetry()) {
+                        previousServerHandler.retryCounter.useRetry();
+                        serverHandlers[childInstance - 1] = previousServerHandler;
                         completionService.submit(serverHandlers[childInstance - 1]);
+                    } else {
+                        serverHandlers[childInstance - 1] = null;
                     }
                 }
             }
@@ -589,7 +585,7 @@ public final class ServerManager implements Callable {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                LOG.error(e);
+                LOG.error(e.getMessage(), e);
             }
         }
     }
