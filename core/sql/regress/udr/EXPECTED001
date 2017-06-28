@@ -285,7 +285,8 @@ CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_JAVA
 +>                                  PARTITION BY 1 ORDER BY 2),
 +>                            'USERID',
 +>                            'TS',
-+>                            60000000));
++>                            60000000))
++>ORDER BY 2, 1, 3;
 
 (EXPR)           USERID                            SESSION_ID            IPADDR
 ---------------  --------------------------------  --------------------  ---------------
@@ -306,7 +307,8 @@ CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_JAVA
 +>                                  PARTITION BY 1 ORDER BY 2),
 +>                            'USERID',
 +>                            'TS',
-+>                            60000000));
++>                            60000000))
++>ORDER BY 2, 1, 3;
 
 (EXPR)           USERID                            SESSION_ID            IPADDR
 ---------------  --------------------------------  --------------------  ---------------
@@ -324,7 +326,8 @@ CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_JAVA
 +>                                  PARTITION BY 1 ORDER BY 2),
 +>                            'USERID',
 +>                            'TS',
-+>                            60000000));
++>                            60000000))
++>ORDER BY 2, 1, 3;
 
 (EXPR)           USERID                            SESSION_ID            IPADDR
 ---------------  --------------------------------  --------------------  ---------------
@@ -343,15 +346,16 @@ CREATE TABLE_MAPPING FUNCTION TRAFODION.SCH.SESSIONIZE_JAVA
 +>                                         PARTITION BY ipaddr ORDER BY ts),
 +>                                   'IPADDR',
 +>                                   cast('TS' as char(2)),
-+>                                   60000000)) XO;
++>                                   60000000)) XO
++>ORDER BY ipaddr, session_id, sequence_no;
 
 SESSION_ID            SEQUENCE_NO           USERID                            TS                    IPADDR
 --------------------  --------------------  --------------------------------  --------------------  ---------------
 
-                   1                     1  super-user                          212334861599500000  12.345.567.345 
-                   2                     1  super-user                          212334868799500000  12.345.567.345 
-                   2                     2  super-services                      212334868799500000  12.345.567.345 
-                   2                     3  super-services                      212334868799550000  12.345.567.345 
+                   1                     1  super-user                          212365360799500000  12.345.567.345 
+                   2                     1  super-user                          212365367999500000  12.345.567.345 
+                   2                     2  super-services                      212365367999500000  12.345.567.345 
+                   2                     3  super-services                      212365367999550000  12.345.567.345 
 
 --- 4 row(s) selected.
 >>
@@ -430,7 +434,8 @@ SESSION_ID            SEQUENCE_NO           USERID                            TS
 +>                               PARTITION BY 1 ORDER BY 2),
 +>                         'USERID',
 +>                         'TS',
-+>                         60000000));
++>                         60000000))
++>ORDER BY 2, 1, 3;
 
 (EXPR)           USERID                            SESSION_ID            IPADDR
 ---------------  --------------------------------  --------------------  ---------------
@@ -453,7 +458,8 @@ SESSION_ID            SEQUENCE_NO           USERID                            TS
 +>                         'IPADDR',
 +>                         cast('TS' as char(2)),
 +>                         60000000)) XO
-+>where session_id < 10;
++>where session_id < 10
++>ORDER BY 2, 1, 3;
 
 --- SQL command prepared.
 >>explain options 'f' s;
@@ -461,8 +467,9 @@ SESSION_ID            SEQUENCE_NO           USERID                            TS
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-5    .    6    root                                                  1.79E+001
-4    .    5    esp_exchange                    1:4(hash2)            5.00E+001
+6    .    7    root                                                  1.79E+001
+5    .    6    esp_exchange                    1:4(hash2) (m)        5.00E+001
+4    .    5    sort                                                  5.00E+001
 3    .    4    tmudf                           XO                    5.00E+001
 2    .    3    sort                                                  1.00E+002
 1    .    2    esp_exchange                    4(hash2):1            1.00E+002
