@@ -236,8 +236,7 @@ class TRAFODION21ServiceAdvisor(service_advisor.DefaultStackAdvisor):
         "hbase.snapshot.enabled": "true",
         "hbase.bulkload.staging.dir": "/apps/hbase/staging",
         "hbase.regionserver.region.transactional.tlog": "true",
-        "hbase.snapshot.region.timeout": "600000",
-        "hbase.client.keyvalue.maxsize": "0"
+        "hbase.snapshot.region.timeout": "600000"
     }
     return desired
 
