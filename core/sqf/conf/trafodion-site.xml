@@ -35,4 +35,8 @@
     <name>hbase.client.scanner.timeout.period</name>
     <value>3600000</value>
    </property>
+   <property>
+    <name>hbase.client.keyvalue.maxsize</name>
+    <value>0</value>
+   </property>
 </configuration>
