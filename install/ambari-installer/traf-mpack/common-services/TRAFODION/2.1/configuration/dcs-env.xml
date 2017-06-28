@@ -141,6 +141,7 @@ export DCS_USER_PROGRAM_HOME=$TRAF_HOME
 export DCS_MASTER_PORT={{dcs_master_port}}
 
 # DCS floating IP, if HA is enabled (from dcs-site.xml)
+export ENABLE_HA="{{dcs_enable_ha}}"
 export DCS_MASTER_FLOATING_IP="{{dcs_floating_ip}}"
     </value>
     <value-attributes>

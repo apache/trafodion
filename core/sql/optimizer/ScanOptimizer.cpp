@@ -639,6 +639,9 @@ private:
   // total number of rows in the table, it is akin to adding an additional
   // table scan.
   CostScalar cumulativePrefixSubsets_;
+  // Cached value of CQD MDAM_PROBE_TAX, to which cumulativePrefixSubsets_ 
+  // is multiplied when computing cost
+  double probeTax_;
   // # of subset seeks of each effective probe
   CostScalar prefixSubsetsAsSeeks_;
   // # of rows of all probes at the current column level
@@ -8901,6 +8904,7 @@ MDAMOptimalDisjunctPrefixWA::MDAMOptimalDisjunctPrefixWA
   ,firstColOverlaps_(FALSE)
   ,prefixSubsets_(csOne) // MDAM subsets
   ,cumulativePrefixSubsets_(csZero)
+  ,probeTax_(ActiveSchemaDB()->getDefaults().getAsDouble(MDAM_PROBE_TAX))
   ,prefixSubsetsAsSeeks_(csOne) // MDAM subsets for all probes
   ,prefixRows_(0)
   ,prefixRqsts_(csOne)
@@ -9475,6 +9479,8 @@ void MDAMOptimalDisjunctPrefixWA::updatePositions()
   // Note that there cannot be more positionings and more
   // subsets than there are rows in the table
 
+  MDAM_DEBUG1(MTL2, "updatePositions() entered, prefixColumnPosition_: %d:", prefixColumnPosition_);
+
   // The positionings include probing for the next subset
   if (prefixColumnPosition_ == 0)
     {
@@ -9483,6 +9489,9 @@ void MDAMOptimalDisjunctPrefixWA::updatePositions()
 	      uecForPreviousCol_.getValue());
       prefixSubsetsAsSeeks_ = prefixSubsets_;
       prefixRqstsForSubsetBoundaries_ = csZero;
+
+      MDAM_DEBUG1(MTL2, "updatePositions(), prefixSubsets_ set: %f:", prefixSubsets_.value());
+      MDAM_DEBUG1(MTL2, "updatePositions(), uecForPreviousCol_: %f:", uecForPreviousCol_.value());
     }
   else
     {
@@ -9500,11 +9509,11 @@ void MDAMOptimalDisjunctPrefixWA::updatePositions()
 	  // case, don't multiply:
 	  if (uecForPreviousCol_.isGreaterThanZero())
 	    {
-              MDAM_DEBUG1(MTL2, "updatePositions(), prefixSubsets_: %f:", prefixSubsets_.value());
+              MDAM_DEBUG1(MTL2, "updatePositions(), prefixSubsets_ before change: %f:", prefixSubsets_.value());
               MDAM_DEBUG1(MTL2, "updatePositions(), uecForPreviousCol_: %f:", uecForPreviousCol_.value());
 
               prefixSubsets_ *= uecForPreviousCol_;
-              MDAM_DEBUG1(MTL2, "updatePositions(), updated prefixSubsets_: %f:", prefixSubsets_.value());
+              MDAM_DEBUG1(MTL2, "updatePositions(), updated prefixSubsets_ after change: %f:", prefixSubsets_.value());
 
 	      prefixSubsets_ =
 		MINOF(innerRowsUpperBound_.getValue(),
@@ -9665,7 +9674,7 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
     // adding cumulativePrefixSubsets_ represents the row handling costs of the probes of
     // the MDAM algorithm as it traverses over key columns; the algorithm is recursive
     // and thus has cumulative costs
-    CostScalar scmPrefixRows = (prefixRows_ + cumulativePrefixSubsets_) * rowSizeFactor;
+    CostScalar scmPrefixRows = (prefixRows_ + (cumulativePrefixSubsets_ * probeTax_)) * rowSizeFactor;
     CostScalar scmPrefixOutputRows = prefixRows_ * outputRowSizeFactor;
 
     CostScalar rowSizeFactorSeqIO = optimizer_.scmRowSizeFactor(rowSize, 
@@ -9695,6 +9704,13 @@ void MDAMOptimalDisjunctPrefixWA::updateMinPrefix()
     scmCost =  
       optimizer_.scmCost(scmPrefixRows, scmPrefixOutputRows, csZero, scmPrefixIORand, 
                          scmPrefixIOSeq, incomingProbes_, rowSize, csZero, outputRowSize, csZero);
+
+    MDAM_DEBUG1(MTL2, "  Inputs to NCM cost for prefix: incomingProbes_: %f:", incomingProbes_.value());
+    MDAM_DEBUG1(MTL2, "  scmPrefixRows: %f:", scmPrefixRows.value());
+    MDAM_DEBUG1(MTL2, "  scmPrefixOutputRows: %f:", scmPrefixOutputRows.value());
+    MDAM_DEBUG1(MTL2, "  scmPrefixIORand: %f:", scmPrefixIORand.value());
+    MDAM_DEBUG1(MTL2, "  scmPrefixIOSeq: %f:", scmPrefixIOSeq.value());
+
     MDAM_DEBUG1(MTL2, "NCM cost for prefix: %f:", scmCost->convertToElapsedTime(NULL).value());
   }
   else

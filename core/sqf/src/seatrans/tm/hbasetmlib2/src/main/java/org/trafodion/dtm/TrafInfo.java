@@ -50,7 +50,7 @@ public class TrafInfo {
     }
 
     public void init() throws IOException {
-        this.config = TrafConfiguration.create();
+        this.config = TrafConfiguration.create(TrafConfiguration.HBASE_CONF);
         this.connection = ConnectionFactory.createConnection(config);
     }
 

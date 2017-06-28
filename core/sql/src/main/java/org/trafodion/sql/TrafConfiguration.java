@@ -27,44 +27,51 @@ import java.util.Map;
 /**
  * Adds Trafodion configuration files to a Configuration
  */
-public class TrafConfiguration extends HBaseConfiguration {
+public class TrafConfiguration {
 
   static Logger logger = Logger.getLogger(TrafConfiguration.class.getName());
+  public static final int HBASE_CONF = 1;
+  public static final int HDFS_CONF = 2;
 
-  public static Configuration addTrafResources(Configuration conf) {
+  public static Configuration addTrafResources(int config, Configuration conf) {
     Configuration lv_conf = new Configuration();
-    String trafSiteXml = new String(System.getenv("TRAF_HOME") + "/etc/trafodion-site.xml");
-    Path fileRes = new Path(trafSiteXml);
-    lv_conf.addResource(fileRes);
-    Iterator<Map.Entry<String,String>> iter = lv_conf.iterator();
-    String key;
-    while (iter.hasNext()) {
-       Map.Entry<String,String> entry = iter.next();
-       key = entry.getKey();
-       if (key.startsWith("trafodion."))
-          key = key.substring(10); // 10 - length of trafodion.
-       conf.set(key, entry.getValue());
+    switch (config) {
+       case HBASE_CONF:
+          String trafSiteXml = new String(System.getenv("TRAF_CONF") + "/trafodion-site.xml");
+          Path fileRes = new Path(trafSiteXml);
+          lv_conf.addResource(fileRes);
+          Iterator<Map.Entry<String,String>> iter = lv_conf.iterator();
+          String key;
+          while (iter.hasNext()) {
+             Map.Entry<String,String> entry = iter.next();
+             key = entry.getKey();
+             if (key.startsWith("trafodion."))
+                key = key.substring(10); // 10 - length of trafodion.
+             conf.set(key, entry.getValue());
+          }
+          break;
+       default:
+          break;
     }
     return conf;
   }
 
   /**
    * Creates a Configuration with Trafodion resources
-   * @return a Configuration with Trafodion and HBase resources
+   * @return a Configuration with Trafodion and HBase/HDFS resources
    */
-  public static Configuration create() {
-    Configuration conf = HBaseConfiguration.create();
-    return addTrafResources(conf);
-  }
 
-  /**
-   * @param that Configuration to clone.
-   * @return a Configuration created with the trafodion-site.xml files plus
-   * the given configuration.
-   */
-  public static Configuration create(final Configuration that) {
-    Configuration conf = create();
-    merge(conf, that);
-    return conf;
+  public static Configuration create(int config) {
+    Configuration conf = null;
+    switch (config) {
+       case HBASE_CONF:
+          conf = HBaseConfiguration.create();
+          break;
+       case HDFS_CONF:
+       default:
+          conf = new Configuration();
+          break;
+    } 
+    return addTrafResources(config, conf);
   }
 }

@@ -58,20 +58,18 @@ bool CommonLogger::initLog4cxx(const char* configFileName, const char* fileSuffi
 
   logFolder_ = "";
 
-  // Form the config path $TRAF_HOME/conf
-  char *installPath = getenv("TRAF_HOME");
+  // Form the config path $TRAF_CONF
+  char *installPath = getenv("TRAF_CONF");
   if (installPath)
   {
 	configPath = installPath;
     // Last char may or may not be a slash.
     if (configPath[configPath.length()-1] != SLASH_C)
 	  configPath += SLASH_C;  // LCOV_EXCL_LINE :nu
-
-    configPath += "conf" SLASH_S;
   }
   else
   {
-    // Environment variable $TRAF_HOME not found.
+    // Environment variable $TRAF_CONF not found.
     // use the current directory.
     configPath = "";
   }
@@ -81,15 +79,6 @@ bool CommonLogger::initLog4cxx(const char* configFileName, const char* fileSuffi
   else
     configPath += configFileName;
 
-/*
-  if (configFileName[0] == SLASH_C)
-    configPath = configFileName;
-  else
-  {
-    configPath = logFolder_;
-    configPath += configFileName;
-  }
-*/
 
   try
   {

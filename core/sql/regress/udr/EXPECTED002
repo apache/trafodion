@@ -6629,7 +6629,8 @@ LOG_TS                      SEVERITY    COMPONENT                               
 +>                    'VAL1', 'FC',
 +>                    'VAL1', 'LC',
 +>                    'VAL2', 'FC',
-+>                    'VAL2', 'LC'));
++>                    'VAL2', 'LC'))
++>order by p, slice_time;
 
 P            SLICE_TIME                  VAL1_FC      VAL1_LC      VAL2_FC       VAL2_LC
 -----------  --------------------------  -----------  -----------  ------------  ------------
@@ -6693,7 +6694,8 @@ P            SLICE_TIME                  VAL1_FC      VAL1_LC      VAL2_FC      
 +>                    'VAL1', 'FLi',
 +>                    'VAL1', 'LLi',
 +>                    'VAL2', 'FLi',
-+>                    'VAL2', 'LLi'));
++>                    'VAL2', 'LLi'))
++>order by p, slice_time;
 
 P            SLICE_TIME                  VAL1_FCI     VAL1_LCI     VAL2_FCI      VAL2_LCI      VAL1_FL                    VAL1_LL                    VAL2_FL                    VAL2_LL                    VAL1_FLI                   VAL1_LLI                   VAL2_FLI                   VAL2_LLI
 -----------  --------------------------  -----------  -----------  ------------  ------------  -------------------------  -------------------------  -------------------------  -------------------------  -------------------------  -------------------------  -------------------------  -------------------------

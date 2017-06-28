@@ -395,7 +395,12 @@ public :
   void setArkcmpEnvDirect(const char *name, const char *value,
                           NABoolean unset);
 
+  // variables managed by the HHDFSMasterHostList class
   ARRAY(const char *) *getHosts() { return &hosts_; }
+  CollIndex getNumSQNodes() { return numSQNodes_; }
+  void setNumSQNodes(CollIndex n) { numSQNodes_ = n; }
+  NABoolean getHasVirtualSQNodes() { return hasVirtualSQNodes_; }
+  void setHasVirtualSQNodes(NABoolean v) { hasVirtualSQNodes_ = v; }
 #endif // NA_CMPDLL
 
   // used by sendAllControlsAndFlags() and restoreAllControlsAndFlags()
@@ -585,6 +590,8 @@ private:
   Lng32 hbaseErrNum_; 
   NAString hbaseErrStr_;
   ARRAY(const char *) hosts_;
+  CollIndex numSQNodes_;
+  NABoolean hasVirtualSQNodes_;
   NAClusterInfo *clusterInfo_;
   RuleSet *ruleSet_;
   OptDebug *optDbg_;

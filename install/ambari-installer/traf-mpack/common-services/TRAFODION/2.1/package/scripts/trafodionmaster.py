@@ -106,7 +106,7 @@ class Master(Script):
     Execute(cmd,user=params.traf_user)
 
     # Execute SQ gen
-    Execute('source ~/.bashrc ; sqgen',user=params.traf_user)
+    Execute('source ~/.bashrc ; rm -f $TRAF_HOME/sql/scripts/sqconfig.db; sqgen',user=params.traf_user)
 
 
   #To stop the service, use the linux service stop command and pipe output to log file

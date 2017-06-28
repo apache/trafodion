@@ -496,6 +496,25 @@ Lng32 ExpHbaseInterface_JNI::registerTruncateOnAbort(HbaseStr &tblName, NABoolea
     return -HBASE_DROP_ERROR;
 }
 
+Lng32 ExpHbaseInterface_JNI::truncate(HbaseStr &tblName, NABoolean preserveSplits, NABoolean useHbaseXn)
+{
+  Int64 transID;
+  if (useHbaseXn)
+    transID = 0;
+  else
+    transID = getTransactionIDFromContext();
+
+  if (client_ == NULL)
+  {
+    if (init(hbs_) != HBASE_ACCESS_SUCCESS)
+      return -HBASE_ACCESS_ERROR;
+  }
+  retCode_ = client_->truncate(tblName.val, preserveSplits, transID);
+  if (retCode_ == HBC_OK)
+    return HBASE_ACCESS_SUCCESS;
+  else
+    return -HBASE_DROP_ERROR;
+}
 
 //----------------------------------------------------------------------------
 Lng32 ExpHbaseInterface_JNI::drop(HbaseStr &tblName, NABoolean async, NABoolean useHbaseXn)

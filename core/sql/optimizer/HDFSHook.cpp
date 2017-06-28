@@ -489,7 +489,7 @@ void HHDFSBucketStats::addFile(hdfsFS fs, hdfsFileInfo *fileInfo,
                                char recordTerminator,
                                CollIndex pos)
 {
-  HHDFSFileStats *fileStats = new(heap_) HHDFSFileStats(heap_);
+  HHDFSFileStats *fileStats = new(heap_) HHDFSFileStats(heap_, getTable());
 
   if ( scount_ > 10 )
     doEstimate = FALSE;
@@ -526,6 +526,19 @@ void HHDFSBucketStats::print(FILE *ofd)
     fileStatsList_[f]->print(ofd);
   HHDFSStatsBase::print(ofd, "bucket");
 }
+
+OsimHHDFSStatsBase* HHDFSBucketStats::osimSnapShot(NAMemory * heap)
+{
+    OsimHHDFSBucketStats* stats = new(heap) OsimHHDFSBucketStats(NULL, this, heap);
+    
+    for(Int32 i = 0; i < fileStatsList_.getUsedLength(); i++){
+            //"gaps" are not added, but record the position
+            if(fileStatsList_.getUsage(i) != UNUSED_COLL_ENTRY)
+                stats->addEntry(fileStatsList_[i]->osimSnapShot(heap), i);
+    }
+    return stats;
+}
+
 
 HHDFSListPartitionStats::~HHDFSListPartitionStats()
 {
@@ -580,7 +593,7 @@ void HHDFSListPartitionStats::populate(hdfsFS fs,
 
             if (! bucketStatsList_.used(bucketNum))
               {
-                bucketStats = new(heap_) HHDFSBucketStats(heap_);
+                bucketStats = new(heap_) HHDFSBucketStats(heap_, getTable());
                 bucketStatsList_.insertAt(bucketNum, bucketStats);
               }
             else
@@ -639,7 +652,7 @@ NABoolean HHDFSListPartitionStats::validateAndRefresh(hdfsFS fs, HHDFSDiags &dia
                 // first file for a new bucket got added
                 if (!refresh)
                   return FALSE;
-                bucketStats = new(heap_) HHDFSBucketStats(heap_);
+                bucketStats = new(heap_) HHDFSBucketStats(heap_, getTable());
                 bucketStatsList_.insertAt(bucketNum, bucketStats);
               }
             else
@@ -796,6 +809,19 @@ void HHDFSListPartitionStats::print(FILE *ofd)
         bucketStatsList_[b]->print(ofd);
       }
   HHDFSStatsBase::print(ofd, "partition");
+}
+
+OsimHHDFSStatsBase* HHDFSListPartitionStats::osimSnapShot(NAMemory * heap)
+{
+    OsimHHDFSListPartitionStats* stats = new(heap) OsimHHDFSListPartitionStats(NULL, this, heap);
+
+    for(Int32 i = 0; i < bucketStatsList_.getUsedLength(); i++)
+    {
+        //"gaps" are not added, but record the position
+        if(bucketStatsList_.getUsage(i) != UNUSED_COLL_ENTRY)
+            stats->addEntry(bucketStatsList_[i]->osimSnapShot(heap), i);
+    }
+    return stats;
 }
 
 HHDFSTableStats::~HHDFSTableStats()
@@ -1020,7 +1046,8 @@ NABoolean HHDFSTableStats::splitLocation(const char *tableLocation,
 void HHDFSTableStats::processDirectory(const NAString &dir, Int32 numOfBuckets, 
                                        NABoolean doEstimate, char recordTerminator)
 {
-  HHDFSListPartitionStats *partStats = new(heap_) HHDFSListPartitionStats(heap_);
+  HHDFSListPartitionStats *partStats = new(heap_)
+    HHDFSListPartitionStats(heap_, this);
   partStats->populate(fs_, dir, numOfBuckets, diags_, doEstimate, recordTerminator);
 
   if (diags_.isSuccess())
@@ -1120,4 +1147,27 @@ void HHDFSTableStats::disconnectHDFS()
   // No op. The disconnect happens at the context level wehn the session 
   // is dropped or the thread exits.
 }
+
+
+OsimHHDFSStatsBase* HHDFSTableStats::osimSnapShot(NAMemory * heap)
+{
+    OsimHHDFSTableStats* stats = new(heap) OsimHHDFSTableStats(NULL, this, heap);
+
+    for(Int32 i = 0; i < listPartitionStatsList_.getUsedLength(); i++)
+    {
+        //"gaps" are not added, but record the position
+        if(listPartitionStatsList_.getUsage(i) != UNUSED_COLL_ENTRY)
+            stats->addEntry(listPartitionStatsList_[i]->osimSnapShot(heap), i);
+    }
+    return stats;
+}
+
+OsimHHDFSStatsBase* HHDFSFileStats::osimSnapShot(NAMemory * heap)
+{
+    OsimHHDFSFileStats* stats = new(heap) OsimHHDFSFileStats(NULL, this, heap);
+
+    return stats;
+}
+
+
 

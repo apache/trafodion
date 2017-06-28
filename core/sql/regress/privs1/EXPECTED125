@@ -1,0 +1,1333 @@
+>>
+>>obey TEST125(set_up);
+>>create role t125_adminrole;
+
+--- SQL operation complete.
+>>grant role t125_adminrole to sql_user8;
+
+--- SQL operation complete.
+>>create role t125_role1;
+
+--- SQL operation complete.
+>>
+>>-- create schemas
+>>create schema t125sch1;
+
+--- SQL operation complete.
+>>set schema t125sch1;
+
+--- SQL operation complete.
+>>obey TEST125(create_db);
+>>create table teams
++>  (team_number int not null primary key,
++>   team_name char(20) not null,
++>   team_contact varchar(50) not null,
++>   team_contact_number char (10) not null
++>   )
++>  ;
+
+--- SQL operation complete.
+>>
+>>alter table teams add constraint valid_team_no check (team_number > 0);
+
+--- SQL operation complete.
+>>
+>>create table games
++>   ( home_team_number int not null,
++>     visitor_team_number int not null,
++>     game_number int not null primary key,
++>     game_time timestamp not null,
++>     game_location varchar(50) not null)
++>  ;
+
+--- SQL operation complete.
+>>
+>>create table players
++>  (player_number int not null,
++>   player_name varchar (50) not null,
++>   player_team_number int not null,
++>   player_phone_number char (10) not null,
++>   player_details varchar(50),
++>   primary key (player_number, player_team_number))
++>  no partition;
+
+--- SQL operation complete.
+>>
+>>alter table players add constraint players_teams
++>   foreign key (player_team_number) references teams (team_number);
+
+--- SQL operation complete.
+>>
+>>create sequence players_sequence;
+
+--- SQL operation complete.
+>>
+>>create view home_teams_games as
++>  select t.team_number, g.game_number, g.game_time
++>  from "TEAMS" t,
++>       "GAMES" g
++>  where t.team_number = g.home_team_number
++>  order by 1, game_number, game_time;
+
+--- SQL operation complete.
+>>
+>>create view players_on_team as
++>  select player_name, team_name
++>  from teams t, players p
++>  where p.player_team_number = t.team_number
++>  order by t.team_name;
+
+--- SQL operation complete.
+>>
+>>create view games_by_player as
++>  select player_name, game_time
++>  from teams t, games g, players p
++>  where p.player_team_number = t.team_number and
++>        t.team_number = g.home_team_number
++>  order by player_name, team_number;
+
+--- SQL operation complete.
+>>
+>>-- create function to display bitmaps as a bitmap rather than longs
+>>-- set envvar REGRRUNDIR '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/rundir/privs1';
+>>-- set envvar REGRTSTDIR '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/privs1';
+>>-- set envvar scriptsdir '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress';
+>>sh rm -f ./etest141.dll;
+>>sh sh $$scriptsdir$$/tools/dll-compile.ksh etest141.cpp
++>  2>&1 | tee LOG125-SECONDARY;
+>>set pattern $$DLL$$ etest141.dll;
+>>set pattern $$QUOTE$$ '''';
+>>
+>>create library t125_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+
+--- SQL operation complete.
+>>create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
++>language c parameter style sql external name 'translateBitmap'
++>library t125_l1
++>deterministic no sql final call allow any parallelism state area size 1024 ;
+
+--- SQL operation complete.
+>>
+>>sh sh $$scriptsdir$$/tools/java-compile.ksh Utils.java TestHive.java 2> LOG125-SECONDARY | tee -a LOG125;
+------------------------------------------------------------------------------
+-- Compiling Java source files: Utils.java TestHive.java
+-- Executing: $javac -d $REGRRUNDIR $REGRTSTDIR/Utils.java $REGRTSTDIR/TestHive.java
+-- $javac returned 0
+------------------------------------------------------------------------------
+>>sh sh $$scriptsdir$$/tools/java-archive.ksh TEST125_procs.jar TestHive.class Utils.class 2>> LOG125-SECONDARY | tee -a LOG125;
+------------------------------------------------------------------------------
+-- Archiving Java class files:
+--    TestHive.class
+--    Utils.class
+-- Archive will be written to: TEST125_procs.jar
+-- Executing: $jar cMf TEST125_procs.jar TestHive.class Utils.class
+-- $jar returned 0
+------------------------------------------------------------------------------
+>>set pattern $$JARF$$ TEST125_procs.jar;
+>>
+>>create library t125_l2
++>   file $$QUOTE$$ $$REGRRUNDIR$$/$$JARF$$ $$QUOTE$$;
+
+--- SQL operation complete.
+>>
+>>create procedure TestHive(
++>  IN operation char(20),
++>  OUT results varchar(1000))
++>  EXTERNAL NAME 'TestHive.accessHive'
++>  LIBRARY t125_l2
++>  LANGUAGE JAVA
++>  PARAMETER STYLE JAVA
++>  READS SQL DATA
++>  NO TRANSACTION REQUIRED
++>  ISOLATE
++>  ;
+
+--- SQL operation complete.
+>>
+>>
+>>create schema t125sch2;
+
+--- SQL operation complete.
+>>set schema t125sch2;
+
+--- SQL operation complete.
+>>obey TEST125(create_db);
+>>create table teams
++>  (team_number int not null primary key,
++>   team_name char(20) not null,
++>   team_contact varchar(50) not null,
++>   team_contact_number char (10) not null
++>   )
++>  ;
+
+--- SQL operation complete.
+>>
+>>alter table teams add constraint valid_team_no check (team_number > 0);
+
+--- SQL operation complete.
+>>
+>>create table games
++>   ( home_team_number int not null,
++>     visitor_team_number int not null,
++>     game_number int not null primary key,
++>     game_time timestamp not null,
++>     game_location varchar(50) not null)
++>  ;
+
+--- SQL operation complete.
+>>
+>>create table players
++>  (player_number int not null,
++>   player_name varchar (50) not null,
++>   player_team_number int not null,
++>   player_phone_number char (10) not null,
++>   player_details varchar(50),
++>   primary key (player_number, player_team_number))
++>  no partition;
+
+--- SQL operation complete.
+>>
+>>alter table players add constraint players_teams
++>   foreign key (player_team_number) references teams (team_number);
+
+--- SQL operation complete.
+>>
+>>create sequence players_sequence;
+
+--- SQL operation complete.
+>>
+>>create view home_teams_games as
++>  select t.team_number, g.game_number, g.game_time
++>  from "TEAMS" t,
++>       "GAMES" g
++>  where t.team_number = g.home_team_number
++>  order by 1, game_number, game_time;
+
+--- SQL operation complete.
+>>
+>>create view players_on_team as
++>  select player_name, team_name
++>  from teams t, players p
++>  where p.player_team_number = t.team_number
++>  order by t.team_name;
+
+--- SQL operation complete.
+>>
+>>create view games_by_player as
++>  select player_name, game_time
++>  from teams t, games g, players p
++>  where p.player_team_number = t.team_number and
++>        t.team_number = g.home_team_number
++>  order by player_name, team_number;
+
+--- SQL operation complete.
+>>
+>>-- create function to display bitmaps as a bitmap rather than longs
+>>sh rm -f ./etest141.dll;
+>>sh sh $$scriptsdir$$/tools/dll-compile.ksh etest141.cpp
++>  2>&1 | tee LOG125-SECONDARY;
+>>set pattern $$DLL$$ etest141.dll;
+>>set pattern $$QUOTE$$ '''';
+>>
+>>create library t125_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+
+--- SQL operation complete.
+>>create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
++>language c parameter style sql external name 'translateBitmap'
++>library t125_l1
++>deterministic no sql final call allow any parallelism state area size 1024 ;
+
+--- SQL operation complete.
+>>
+-- create procedure that accesses hive tables
+>>sh sh $$scriptsdir$$/tools/java-compile.ksh Utils.java TestHive.java 2> LOG125-SECONDARY | tee -a LOG125;
+------------------------------------------------------------------------------
+-- Compiling Java source files: Utils.java TestHive.java
+-- Executing: $javac -d $REGRRUNDIR $REGRTSTDIR/Utils.java $REGRTSTDIR/TestHive.java
+-- $javac returned 0
+------------------------------------------------------------------------------
+>>sh sh $$scriptsdir$$/tools/java-archive.ksh TEST125_procs.jar TestHive.class Utils.class 2>> LOG125-SECONDARY | tee -a LOG125;
+------------------------------------------------------------------------------
+-- Archiving Java class files:
+--    TestHive.class
+--    Utils.class
+-- Archive will be written to: TEST125_procs.jar
+-- Executing: $jar cMf TEST125_procs.jar TestHive.class Utils.class
+-- $jar returned 0
+------------------------------------------------------------------------------
+>>set pattern $$JARF$$ TEST125_procs.jar;
+>>
+>>create library t125_l2
++>   file $$QUOTE$$ $$REGRRUNDIR$$/$$JARF$$ $$QUOTE$$;
+
+--- SQL operation complete.
+>>
+>>create procedure TestHive(
++>  IN operation char(20),
++>  OUT results varchar(1000))
++>  EXTERNAL NAME 'TestHive.accessHive'
++>  LIBRARY t125_l2
++>  LANGUAGE JAVA
++>  PARAMETER STYLE JAVA
++>  READS SQL DATA
++>  NO TRANSACTION REQUIRED
++>  ISOLATE
++>  ;
+
+--- SQL operation complete.
+>>
+>>
+>>create schema t125sch3 authorization t125_adminrole;
+
+--- SQL operation complete.
+>>set schema t125sch3;
+
+--- SQL operation complete.
+>>obey TEST125(create_db);
+>>create table teams
++>  (team_number int not null primary key,
++>   team_name char(20) not null,
++>   team_contact varchar(50) not null,
++>   team_contact_number char (10) not null
++>   )
++>  ;
+
+--- SQL operation complete.
+>>
+>>alter table teams add constraint valid_team_no check (team_number > 0);
+
+--- SQL operation complete.
+>>
+>>create table games
++>   ( home_team_number int not null,
++>     visitor_team_number int not null,
++>     game_number int not null primary key,
++>     game_time timestamp not null,
++>     game_location varchar(50) not null)
++>  ;
+
+--- SQL operation complete.
+>>
+>>create table players
++>  (player_number int not null,
++>   player_name varchar (50) not null,
++>   player_team_number int not null,
++>   player_phone_number char (10) not null,
++>   player_details varchar(50),
++>   primary key (player_number, player_team_number))
++>  no partition;
+
+--- SQL operation complete.
+>>
+>>alter table players add constraint players_teams
++>   foreign key (player_team_number) references teams (team_number);
+
+--- SQL operation complete.
+>>
+>>create sequence players_sequence;
+
+--- SQL operation complete.
+>>
+>>create view home_teams_games as
++>  select t.team_number, g.game_number, g.game_time
++>  from "TEAMS" t,
++>       "GAMES" g
++>  where t.team_number = g.home_team_number
++>  order by 1, game_number, game_time;
+
+--- SQL operation complete.
+>>
+>>create view players_on_team as
++>  select player_name, team_name
++>  from teams t, players p
++>  where p.player_team_number = t.team_number
++>  order by t.team_name;
+
+--- SQL operation complete.
+>>
+>>create view games_by_player as
++>  select player_name, game_time
++>  from teams t, games g, players p
++>  where p.player_team_number = t.team_number and
++>        t.team_number = g.home_team_number
++>  order by player_name, team_number;
+
+--- SQL operation complete.
+>>
+>>-- create function to display bitmaps as a bitmap rather than longs
+>>-- set envvar REGRRUNDIR '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/rundir/privs1';
+>>-- set envvar REGRTSTDIR '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress/privs1';
+>>-- set envvar scriptsdir '/mnt/rmarton/gitws/incubator-trafodion/core/sql/regress';
+>>sh rm -f ./etest141.dll;
+>>sh sh $$scriptsdir$$/tools/dll-compile.ksh etest141.cpp
++>  2>&1 | tee LOG125-SECONDARY;
+>>set pattern $$DLL$$ etest141.dll;
+>>set pattern $$QUOTE$$ '''';
+>>
+>>create library t125_l1 file $$QUOTE$$ $$REGRRUNDIR$$/$$DLL$$ $$QUOTE$$ ;
+
+--- SQL operation complete.
+>>create function translateBitmap(bitmap largeint) returns (bitmap_string char (20))
++>language c parameter style sql external name 'translateBitmap'
++>library t125_l1
++>deterministic no sql final call allow any parallelism state area size 1024 ;
+
+--- SQL operation complete.
+>>
+>>sh sh $$scriptsdir$$/tools/java-compile.ksh Utils.java TestHive.java 2> LOG125-SECONDARY | tee -a LOG125;
+------------------------------------------------------------------------------
+-- Compiling Java source files: Utils.java TestHive.java
+-- Executing: $javac -d $REGRRUNDIR $REGRTSTDIR/Utils.java $REGRTSTDIR/TestHive.java
+-- $javac returned 0
+------------------------------------------------------------------------------
+>>sh sh $$scriptsdir$$/tools/java-archive.ksh TEST125_procs.jar TestHive.class Utils.class 2>> LOG125-SECONDARY | tee -a LOG125;
+------------------------------------------------------------------------------
+-- Archiving Java class files:
+--    TestHive.class
+--    Utils.class
+-- Archive will be written to: TEST125_procs.jar
+-- Executing: $jar cMf TEST125_procs.jar TestHive.class Utils.class
+-- $jar returned 0
+------------------------------------------------------------------------------
+>>set pattern $$JARF$$ TEST125_procs.jar;
+>>
+>>create library t125_l2
++>   file $$QUOTE$$ $$REGRRUNDIR$$/$$JARF$$ $$QUOTE$$;
+
+--- SQL operation complete.
+>>
+>>create procedure TestHive(
++>  IN operation char(20),
++>  OUT results varchar(1000))
++>  EXTERNAL NAME 'TestHive.accessHive'
++>  LIBRARY t125_l2
++>  LANGUAGE JAVA
++>  PARAMETER STYLE JAVA
++>  READS SQL DATA
++>  NO TRANSACTION REQUIRED
++>  ISOLATE
++>  ;
+
+--- SQL operation complete.
+>>
+>>
+>>-- privileges for role1 (sql_user7)
+>>grant role t125_role1 to sql_user7;
+
+--- SQL operation complete.
+>>grant select(team_number) on t125sch2.teams to t125_role1;
+
+--- SQL operation complete.
+>>grant all on t125sch3.players to t125_role1;
+
+--- SQL operation complete.
+>>grant all on function t125sch3.translateBitmap to t125_role1;
+
+--- SQL operation complete.
+>>
+>>-- privileges for sql_user1
+>>grant insert on t125sch3.games to sql_user1;
+
+--- SQL operation complete.
+>>grant select on t125sch3.games_by_player to sql_user1;
+
+--- SQL operation complete.
+>>grant select (player_name) on t125sch3.games_by_player to sql_user1;
+
+--- SQL operation complete.
+>>grant execute on procedure t125sch2.testhive to sql_user1;
+
+--- SQL operation complete.
+>>grant usage on sequence t125sch2.players_sequence to sql_user1;
+
+--- SQL operation complete.
+>>
+>>-- privileges for sql_user2 + role1
+>>grant role t125_role1 to sql_user2;
+
+--- SQL operation complete.
+>>grant all on t125sch1.games to sql_user2;
+
+--- SQL operation complete.
+>>grant all on t125sch2.games to sql_user2;
+
+--- SQL operation complete.
+>>grant all on t125sch3.games to sql_user2;
+
+--- SQL operation complete.
+>>grant select (game_number) on t125sch2.games to t125_role1;
+
+--- SQL operation complete.
+>>grant select on t125sch1.games_by_player to sql_user2;
+
+--- SQL operation complete.
+>>grant select on t125sch2.games_by_player to sql_user2;
+
+--- SQL operation complete.
+>>grant select on t125sch3.games_by_player to sql_user2;
+
+--- SQL operation complete.
+>>
+>>-- privileges for sql_user8 - all on t125sch3 (owner through role)
+>>
+>>get privileges for role t125_role1;
+
+Privileges for Role T125_ROLE1
+==============================
+
+S------    TRAFODION.T125SCH2.GAMES <Column> GAME_NUMBER
+S------    TRAFODION.T125SCH2.TEAMS <Column> TEAM_NUMBER
+SIDU-R-    TRAFODION.T125SCH3.PLAYERS
+------E    TRAFODION.T125SCH3.TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get privileges for user sql_user1;
+
+Privileges for User SQL_USER1
+=============================
+
+----G--    TRAFODION.T125SCH2.PLAYERS_SEQUENCE
+------E    TRAFODION.T125SCH2.TESTHIVE
+-I-----    TRAFODION.T125SCH3.GAMES
+S------    TRAFODION.T125SCH3.GAMES_BY_PLAYER
+S------    TRAFODION.T125SCH3.GAMES_BY_PLAYER <Column> PLAYER_NAME
+
+--- SQL operation complete.
+>>get privileges for user sql_user2;
+
+Privileges for User SQL_USER2
+=============================
+
+SIDU-R-    TRAFODION.T125SCH1.GAMES
+S------    TRAFODION.T125SCH1.GAMES_BY_PLAYER
+SIDU-R-    TRAFODION.T125SCH2.GAMES
+S------    TRAFODION.T125SCH2.GAMES <Column> GAME_NUMBER
+S------    TRAFODION.T125SCH2.GAMES_BY_PLAYER
+S------    TRAFODION.T125SCH2.TEAMS <Column> TEAM_NUMBER
+SIDU-R-    TRAFODION.T125SCH3.GAMES
+S------    TRAFODION.T125SCH3.GAMES_BY_PLAYER
+SIDU-R-    TRAFODION.T125SCH3.PLAYERS
+------E    TRAFODION.T125SCH3.TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get privileges for user sql_user7;
+
+Privileges for User SQL_USER7
+=============================
+
+S------    TRAFODION.T125SCH2.GAMES <Column> GAME_NUMBER
+S------    TRAFODION.T125SCH2.TEAMS <Column> TEAM_NUMBER
+SIDU-R-    TRAFODION.T125SCH3.PLAYERS
+------E    TRAFODION.T125SCH3.TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get privileges for user sql_user8;
+
+Privileges for User SQL_USER8
+=============================
+
+SIDU-R-    TRAFODION.T125SCH3.GAMES
+S----R-    TRAFODION.T125SCH3.GAMES_BY_PLAYER
+S----R-    TRAFODION.T125SCH3.HOME_TEAMS_GAMES
+SIDU-R-    TRAFODION.T125SCH3.PLAYERS
+S----R-    TRAFODION.T125SCH3.PLAYERS_ON_TEAM
+----G--    TRAFODION.T125SCH3.PLAYERS_SEQUENCE
+SIDU-R-    TRAFODION.T125SCH3.SB_HISTOGRAMS
+SIDU-R-    TRAFODION.T125SCH3.SB_HISTOGRAM_INTERVALS
+SIDU-R-    TRAFODION.T125SCH3.SB_PERSISTENT_SAMPLES
+---UG--    TRAFODION.T125SCH3.T125_L1
+---UG--    TRAFODION.T125SCH3.T125_L2
+SIDU-R-    TRAFODION.T125SCH3.TEAMS
+------E    TRAFODION.T125SCH3.TESTHIVE
+------E    TRAFODION.T125SCH3.TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>
+>>obey TEST125(get_tests);
+>>log LOG125;
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+DB__ROOT                                                                                                                         
+
+--- 1 row(s) selected.
+>>obey TEST125(get_statements);
+>>get schemas, match 'T125SCH%';
+
+Schemas in Catalog TRAFODION
+============================
+
+T125SCH1
+T125SCH2
+T125SCH3
+
+--- SQL operation complete.
+>>
+>>set schema t125sch1;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.T125SCH1
+===================================
+
+GAMES
+PLAYERS
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
+SB_PERSISTENT_SAMPLES
+TEAMS
+
+--- SQL operation complete.
+>>get views;
+
+Views in Schema TRAFODION.T125SCH1
+==================================
+
+GAMES_BY_PLAYER
+HOME_TEAMS_GAMES
+PLAYERS_ON_TEAM
+
+--- SQL operation complete.
+>>get indexes;
+
+Indexes in Schema TRAFODION.T125SCH1
+====================================
+
+PLAYERS_TEAMS
+
+--- SQL operation complete.
+>>get sequences, match 'T125SCH%';
+
+Sequences in catalog TRAFODION
+==============================
+
+T125SCH1.PLAYERS_SEQUENCE
+T125SCH2.PLAYERS_SEQUENCE
+T125SCH3.PLAYERS_SEQUENCE
+
+--- SQL operation complete.
+>>get libraries;
+
+Libraries in Schema TRAFODION.T125SCH1
+======================================
+
+T125_L1
+T125_L2
+
+--- SQL operation complete.
+>>get functions;
+
+Functions in Schema TRAFODION.T125SCH1
+======================================
+
+TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get procedures;
+
+Procedures in Schema TRAFODION.T125SCH1
+=======================================
+
+TESTHIVE
+
+--- SQL operation complete.
+>>
+>>set schema t125sch2;
+
+--- SQL operation complete.
+>>get tables in schema t125sch2;
+
+Tables in Schema TRAFODION.T125SCH2
+===================================
+
+GAMES
+PLAYERS
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
+SB_PERSISTENT_SAMPLES
+TEAMS
+
+--- SQL operation complete.
+>>get views in schema t125sch2;
+
+Views in Schema TRAFODION.T125SCH2
+==================================
+
+GAMES_BY_PLAYER
+HOME_TEAMS_GAMES
+PLAYERS_ON_TEAM
+
+--- SQL operation complete.
+>>get indexes in schema t125sch2;
+
+Indexes in Schema TRAFODION.T125SCH2
+====================================
+
+PLAYERS_TEAMS
+
+--- SQL operation complete.
+>>get sequences in schema t125sch2;
+
+Sequences in schema TRAFODION.T125SCH2
+======================================
+
+PLAYERS_SEQUENCE
+
+--- SQL operation complete.
+>>get libraries in schema t125sch2;
+
+Libraries in Schema TRAFODION.T125SCH2
+======================================
+
+T125_L1
+T125_L2
+
+--- SQL operation complete.
+>>get functions in schema t125sch2;
+
+Functions in Schema TRAFODION.T125SCH2
+======================================
+
+TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get procedures in schema t125sch2;
+
+Procedures in Schema TRAFODION.T125SCH2
+=======================================
+
+TESTHIVE
+
+--- SQL operation complete.
+>>
+>>set schema t125sch3;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.T125SCH3
+===================================
+
+GAMES
+PLAYERS
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
+SB_PERSISTENT_SAMPLES
+TEAMS
+
+--- SQL operation complete.
+>>get views in catalog trafodion, match 'T125SCH%';
+
+Views in Catalog TRAFODION
+==========================
+
+T125SCH1.GAMES_BY_PLAYER
+T125SCH1.HOME_TEAMS_GAMES
+T125SCH1.PLAYERS_ON_TEAM
+T125SCH2.GAMES_BY_PLAYER
+T125SCH2.HOME_TEAMS_GAMES
+T125SCH2.PLAYERS_ON_TEAM
+T125SCH3.GAMES_BY_PLAYER
+T125SCH3.HOME_TEAMS_GAMES
+T125SCH3.PLAYERS_ON_TEAM
+
+--- SQL operation complete.
+>>get indexes in schema t125sch3;
+
+Indexes in Schema TRAFODION.T125SCH3
+====================================
+
+PLAYERS_TEAMS
+
+--- SQL operation complete.
+>>get sequences in catalog trafodion, match 'T125SCH%';
+
+Sequences in catalog TRAFODION
+==============================
+
+T125SCH1.PLAYERS_SEQUENCE
+T125SCH2.PLAYERS_SEQUENCE
+T125SCH3.PLAYERS_SEQUENCE
+
+--- SQL operation complete.
+>>get libraries;
+
+Libraries in Schema TRAFODION.T125SCH3
+======================================
+
+T125_L1
+T125_L2
+
+--- SQL operation complete.
+>>get functions in schema t125sch3;
+
+Functions in Schema TRAFODION.T125SCH3
+======================================
+
+TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get procedures;
+
+Procedures in Schema TRAFODION.T125SCH3
+=======================================
+
+TESTHIVE
+
+--- SQL operation complete.
+>>
+>>
+>>revoke component privilege "SHOW" on sql_operations from "PUBLIC";
+
+--- SQL operation complete.
+>>-- sql_user8 can see all in t125sch3
+>>sh sqlci -i "TEST125(get_tests)" -u sql_user8;
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER8                                                                                                                        
+
+--- 1 row(s) selected.
+>>obey TEST125(get_statements);
+>>get schemas, match 'T125SCH%';
+
+Schemas in Catalog TRAFODION
+============================
+
+T125SCH3
+
+--- SQL operation complete.
+>>
+>>set schema t125sch1;
+
+--- SQL operation complete.
+>>get tables;
+
+--- SQL operation complete.
+>>get views;
+
+--- SQL operation complete.
+>>get indexes;
+
+--- SQL operation complete.
+>>get sequences, match 'T125SCH%';
+
+Sequences in catalog TRAFODION
+==============================
+
+T125SCH3.PLAYERS_SEQUENCE
+
+--- SQL operation complete.
+>>get libraries;
+
+--- SQL operation complete.
+>>get functions;
+
+--- SQL operation complete.
+>>get procedures;
+
+--- SQL operation complete.
+>>
+>>set schema t125sch2;
+
+--- SQL operation complete.
+>>get tables in schema t125sch2;
+
+--- SQL operation complete.
+>>get views in schema t125sch2;
+
+--- SQL operation complete.
+>>get indexes in schema t125sch2;
+
+--- SQL operation complete.
+>>get sequences in schema t125sch2;
+
+--- SQL operation complete.
+>>get libraries in schema t125sch2;
+
+--- SQL operation complete.
+>>get functions in schema t125sch2;
+
+--- SQL operation complete.
+>>get procedures in schema t125sch2;
+
+--- SQL operation complete.
+>>
+>>set schema t125sch3;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.T125SCH3
+===================================
+
+GAMES
+PLAYERS
+SB_HISTOGRAMS
+SB_HISTOGRAM_INTERVALS
+SB_PERSISTENT_SAMPLES
+TEAMS
+
+--- SQL operation complete.
+>>get views in catalog trafodion, match 'T125SCH%';
+
+Views in Catalog TRAFODION
+==========================
+
+T125SCH3.GAMES_BY_PLAYER
+T125SCH3.HOME_TEAMS_GAMES
+T125SCH3.PLAYERS_ON_TEAM
+
+--- SQL operation complete.
+>>get indexes in schema t125sch3;
+
+--- SQL operation complete.
+>>get sequences in catalog trafodion, match 'T125SCH%';
+
+Sequences in catalog TRAFODION
+==============================
+
+T125SCH3.PLAYERS_SEQUENCE
+
+--- SQL operation complete.
+>>get libraries;
+
+Libraries in Schema TRAFODION.T125SCH3
+======================================
+
+T125_L1
+T125_L2
+
+--- SQL operation complete.
+>>get functions in schema t125sch3;
+
+Functions in Schema TRAFODION.T125SCH3
+======================================
+
+TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get procedures;
+
+Procedures in Schema TRAFODION.T125SCH3
+=======================================
+
+TESTHIVE
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>-- sql_user1 sees sch2 testhive, players sequence; sch3 games, games_by_player
+>>sh sqlci -i "TEST125(get_tests)" -u sql_user1;
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER1                                                                                                                        
+
+--- 1 row(s) selected.
+>>obey TEST125(get_statements);
+>>get schemas, match 'T125SCH%';
+
+Schemas in Catalog TRAFODION
+============================
+
+T125SCH2
+T125SCH3
+
+--- SQL operation complete.
+>>
+>>set schema t125sch1;
+
+--- SQL operation complete.
+>>get tables;
+
+--- SQL operation complete.
+>>get views;
+
+--- SQL operation complete.
+>>get indexes;
+
+--- SQL operation complete.
+>>get sequences, match 'T125SCH%';
+
+Sequences in catalog TRAFODION
+==============================
+
+T125SCH2.PLAYERS_SEQUENCE
+
+--- SQL operation complete.
+>>get libraries;
+
+--- SQL operation complete.
+>>get functions;
+
+--- SQL operation complete.
+>>get procedures;
+
+--- SQL operation complete.
+>>
+>>set schema t125sch2;
+
+--- SQL operation complete.
+>>get tables in schema t125sch2;
+
+--- SQL operation complete.
+>>get views in schema t125sch2;
+
+--- SQL operation complete.
+>>get indexes in schema t125sch2;
+
+--- SQL operation complete.
+>>get sequences in schema t125sch2;
+
+Sequences in schema TRAFODION.T125SCH2
+======================================
+
+PLAYERS_SEQUENCE
+
+--- SQL operation complete.
+>>get libraries in schema t125sch2;
+
+--- SQL operation complete.
+>>get functions in schema t125sch2;
+
+--- SQL operation complete.
+>>get procedures in schema t125sch2;
+
+Procedures in Schema TRAFODION.T125SCH2
+=======================================
+
+TESTHIVE
+
+--- SQL operation complete.
+>>
+>>set schema t125sch3;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.T125SCH3
+===================================
+
+GAMES
+
+--- SQL operation complete.
+>>get views in catalog trafodion, match 'T125SCH%';
+
+Views in Catalog TRAFODION
+==========================
+
+T125SCH3.GAMES_BY_PLAYER
+
+--- SQL operation complete.
+>>get indexes in schema t125sch3;
+
+--- SQL operation complete.
+>>get sequences in catalog trafodion, match 'T125SCH%';
+
+Sequences in catalog TRAFODION
+==============================
+
+T125SCH2.PLAYERS_SEQUENCE
+
+--- SQL operation complete.
+>>get libraries;
+
+--- SQL operation complete.
+>>get functions in schema t125sch3;
+
+--- SQL operation complete.
+>>get procedures;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>-- sql_user2 sees same as sql_user7 plus games, games_by_player in all schemas  
+>>sh sqlci -i "TEST125(get_tests)" -u sql_user2;
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER2                                                                                                                        
+
+--- 1 row(s) selected.
+>>obey TEST125(get_statements);
+>>get schemas, match 'T125SCH%';
+
+Schemas in Catalog TRAFODION
+============================
+
+T125SCH1
+T125SCH2
+T125SCH3
+
+--- SQL operation complete.
+>>
+>>set schema t125sch1;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.T125SCH1
+===================================
+
+GAMES
+
+--- SQL operation complete.
+>>get views;
+
+Views in Schema TRAFODION.T125SCH1
+==================================
+
+GAMES_BY_PLAYER
+
+--- SQL operation complete.
+>>get indexes;
+
+--- SQL operation complete.
+>>get sequences, match 'T125SCH%';
+
+--- SQL operation complete.
+>>get libraries;
+
+--- SQL operation complete.
+>>get functions;
+
+--- SQL operation complete.
+>>get procedures;
+
+--- SQL operation complete.
+>>
+>>set schema t125sch2;
+
+--- SQL operation complete.
+>>get tables in schema t125sch2;
+
+Tables in Schema TRAFODION.T125SCH2
+===================================
+
+GAMES
+TEAMS
+
+--- SQL operation complete.
+>>get views in schema t125sch2;
+
+Views in Schema TRAFODION.T125SCH2
+==================================
+
+GAMES_BY_PLAYER
+
+--- SQL operation complete.
+>>get indexes in schema t125sch2;
+
+--- SQL operation complete.
+>>get sequences in schema t125sch2;
+
+--- SQL operation complete.
+>>get libraries in schema t125sch2;
+
+--- SQL operation complete.
+>>get functions in schema t125sch2;
+
+--- SQL operation complete.
+>>get procedures in schema t125sch2;
+
+--- SQL operation complete.
+>>
+>>set schema t125sch3;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.T125SCH3
+===================================
+
+GAMES
+PLAYERS
+
+--- SQL operation complete.
+>>get views in catalog trafodion, match 'T125SCH%';
+
+Views in Catalog TRAFODION
+==========================
+
+T125SCH1.GAMES_BY_PLAYER
+T125SCH2.GAMES_BY_PLAYER
+T125SCH3.GAMES_BY_PLAYER
+
+--- SQL operation complete.
+>>get indexes in schema t125sch3;
+
+--- SQL operation complete.
+>>get sequences in catalog trafodion, match 'T125SCH%';
+
+--- SQL operation complete.
+>>get libraries;
+
+--- SQL operation complete.
+>>get functions in schema t125sch3;
+
+Functions in Schema TRAFODION.T125SCH3
+======================================
+
+TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get procedures;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>-- sql_user7 is based on role1
+>>-- role1 sees sch2 teams; sch3 players and translateBitmap
+>>sh sqlci -i "TEST125(get_tests)" -u sql_user7;
+>>cqd SHOWDDL_DISPLAY_PRIVILEGE_GRANTS 'ON';
+
+--- SQL operation complete.
+>>values (user);
+
+(EXPR)
+---------------------------------------------------------------------------------------------------------------------------------
+
+SQL_USER7                                                                                                                        
+
+--- 1 row(s) selected.
+>>obey TEST125(get_statements);
+>>get schemas, match 'T125SCH%';
+
+Schemas in Catalog TRAFODION
+============================
+
+T125SCH2
+T125SCH3
+
+--- SQL operation complete.
+>>
+>>set schema t125sch1;
+
+--- SQL operation complete.
+>>get tables;
+
+--- SQL operation complete.
+>>get views;
+
+--- SQL operation complete.
+>>get indexes;
+
+--- SQL operation complete.
+>>get sequences, match 'T125SCH%';
+
+--- SQL operation complete.
+>>get libraries;
+
+--- SQL operation complete.
+>>get functions;
+
+--- SQL operation complete.
+>>get procedures;
+
+--- SQL operation complete.
+>>
+>>set schema t125sch2;
+
+--- SQL operation complete.
+>>get tables in schema t125sch2;
+
+Tables in Schema TRAFODION.T125SCH2
+===================================
+
+GAMES
+TEAMS
+
+--- SQL operation complete.
+>>get views in schema t125sch2;
+
+--- SQL operation complete.
+>>get indexes in schema t125sch2;
+
+--- SQL operation complete.
+>>get sequences in schema t125sch2;
+
+--- SQL operation complete.
+>>get libraries in schema t125sch2;
+
+--- SQL operation complete.
+>>get functions in schema t125sch2;
+
+--- SQL operation complete.
+>>get procedures in schema t125sch2;
+
+--- SQL operation complete.
+>>
+>>set schema t125sch3;
+
+--- SQL operation complete.
+>>get tables;
+
+Tables in Schema TRAFODION.T125SCH3
+===================================
+
+PLAYERS
+
+--- SQL operation complete.
+>>get views in catalog trafodion, match 'T125SCH%';
+
+--- SQL operation complete.
+>>get indexes in schema t125sch3;
+
+--- SQL operation complete.
+>>get sequences in catalog trafodion, match 'T125SCH%';
+
+--- SQL operation complete.
+>>get libraries;
+
+--- SQL operation complete.
+>>get functions in schema t125sch3;
+
+Functions in Schema TRAFODION.T125SCH3
+======================================
+
+TRANSLATEBITMAP
+
+--- SQL operation complete.
+>>get procedures;
+
+--- SQL operation complete.
+>>
+>>exit;
+
+End of MXCI Session
+
+>>grant component privilege "SHOW" on sql_operations to "PUBLIC";
+
+--- SQL operation complete.
+>>log;

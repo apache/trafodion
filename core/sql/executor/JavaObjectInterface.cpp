@@ -25,6 +25,7 @@
 #include "QRLogger.h"
 #include "Globals.h"
 #include "ComUser.h"
+#include "LmJavaOptions.h"
 
 // Changed the default to 256 to limit java heap size used by SQL processes.
 // Keep this define in sync with udrserv/udrserv.cpp
@@ -96,146 +97,190 @@ char* JavaObjectInterface::buildClassPath()
   char* classPathBuffer = (char*)malloc(size);
   
   strcpy(classPathBuffer, "-Djava.class.path=");
-  if (isHBaseCompatibilityMode())
-    strcat(classPathBuffer, "/opt/home/tools/hbase-0.94.5/lib/hadoop-core-1.0.4.jar:");
-  
   strcat(classPathBuffer, classPath);
   return classPathBuffer;
+}
+
+// helper method for JavaObjectInterface::createJVM() below
+static NABoolean isDefinedInOptions(LmJavaOptions *options,
+                                    const char *prefix)
+{
+  return (options &&
+          options->entries() &&
+          options->findByPrefix(prefix) != NULL_COLL_INDEX);
 }
 
 #define MAX_NO_JVM_OPTIONS 12
 //////////////////////////////////////////////////////////////////////////////
 // Create a new JVM instance.
 //////////////////////////////////////////////////////////////////////////////
-int JavaObjectInterface::createJVM()
+int JavaObjectInterface::createJVM(LmJavaOptions *options)
 {
   JavaVMInitArgs jvm_args;
-  JavaVMOption jvm_options[MAX_NO_JVM_OPTIONS];
-
-  char* classPathArg = buildClassPath();
+  JavaVMOption jvm_options[
+       MAX_NO_JVM_OPTIONS + (options ? options->entries() : 0)];
   int numJVMOptions = 0;
-  jvm_options[numJVMOptions].optionString = classPathArg;
-  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Using classpath: %s", 
-                 jvm_options[numJVMOptions].optionString);
-  numJVMOptions++;
+  char* classPathArg = NULL;
 
-  char maxHeapOptions[64];
-  bool passMaxHeapToJVM = true;
-  int maxHeapEnvvarMB = DEFAULT_JVM_MAX_HEAP_SIZE;
-  const char *maxHeapSizeStr = getenv("JVM_MAX_HEAP_SIZE_MB");
-  if (maxHeapSizeStr)
-  {
-    maxHeapEnvvarMB = atoi(maxHeapSizeStr);
-    if (maxHeapEnvvarMB <= 0)
-      passMaxHeapToJVM = false;
-  }
-  if (passMaxHeapToJVM)
-  {
-    sprintf(maxHeapOptions, "-Xmx%dm", maxHeapEnvvarMB);
-    jvm_options[numJVMOptions].optionString = maxHeapOptions;
-    QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
-                    "Max heap option: %s",
-                    jvm_options[numJVMOptions].optionString);
-    numJVMOptions++;
-  }
-
-  char compressedClassSpaceSizeOptions[64];
-  int compressedClassSpaceSize = 0;
-  const char *compressedClassSpaceSizeStr = getenv("JVM_COMPRESSED_CLASS_SPACE_SIZE");
-  if (compressedClassSpaceSizeStr)
-    compressedClassSpaceSize = atoi(compressedClassSpaceSizeStr);
-  if (compressedClassSpaceSize <= 0)
-     compressedClassSpaceSize = DEFAULT_COMPRESSED_CLASSSPACE_SIZE;
-  sprintf(compressedClassSpaceSizeOptions, "-XX:CompressedClassSpaceSize=%dm", compressedClassSpaceSize);
-  jvm_options[numJVMOptions].optionString = compressedClassSpaceSizeOptions;
-  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
-                    "CompressedClassSpaceSize: %s",
-                    jvm_options[numJVMOptions].optionString);
-  numJVMOptions++;
-
-  char maxMetaspaceSizeOptions[64];
-  int maxMetaspaceSize = 0;
-  const char *maxMetaspaceSizeStr = getenv("JVM_MAX_METASPACE_SIZE");
-  if (maxMetaspaceSizeStr)
-    maxMetaspaceSize = atoi(maxMetaspaceSizeStr);
-  if (maxMetaspaceSize <= 0)
-     maxMetaspaceSize = DEFAULT_MAX_METASPACE_SIZE;
-  sprintf(maxMetaspaceSizeOptions, "-XX:MaxMetaspaceSize=%dm", maxMetaspaceSize);
-  jvm_options[numJVMOptions].optionString = maxMetaspaceSizeOptions;
-  QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
-                    "MaxMetaspaceSize: %s",
-                    jvm_options[numJVMOptions].optionString);
-  numJVMOptions++;
-
-  char initHeapOptions[64];
-  const char *initHeapSizeStr = getenv("JVM_INIT_HEAP_SIZE_MB");
-  if (initHeapSizeStr)
-  {
-    const int initHeapEnvvarMB = atoi(initHeapSizeStr);
-    if (initHeapEnvvarMB > 0)
+  // call the helper method defined above to check for already defined options
+  if (!isDefinedInOptions(options, "-Djava.class.path="))
     {
-      sprintf(initHeapOptions, "-Xms%dm", initHeapEnvvarMB);
-      jvm_options[numJVMOptions].optionString = initHeapOptions;
-      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
-                    "Init heap option: %s",
+      classPathArg = buildClassPath();
+      jvm_options[numJVMOptions].optionString = classPathArg;
+      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG, "Using classpath: %s", 
                     jvm_options[numJVMOptions].optionString);
       numJVMOptions++;
     }
-  }
 
-  int debugPort = 0;
-  const char *debugPortStr = getenv("JVM_DEBUG_PORT");
-  if (debugPortStr != NULL)
-     debugPort = atoi(debugPortStr);
-  if (debugPort > 0
-#ifdef NDEBUG
-      // in a release build, only DB__ROOT can debug a process
-      && ComUser::isRootUserID()
-#endif
-     )
-  {
-     const char *debugTimeoutStr = getenv("JVM_DEBUG_TIMEOUT");
-     if (debugTimeoutStr != NULL)
-       debugTimeout_ = atoi(debugTimeoutStr);
-     const char *suspendOnDebug = getenv("JVM_SUSPEND_ON_DEBUG");
-     char debugOptions[300];
+  if (!isDefinedInOptions(options, "-Xmx"))
+    {
+      char maxHeapOptions[64];
+      bool passMaxHeapToJVM = true;
+      int maxHeapEnvvarMB = DEFAULT_JVM_MAX_HEAP_SIZE;
+      const char *maxHeapSizeStr = getenv("JVM_MAX_HEAP_SIZE_MB");
+      if (maxHeapSizeStr)
+        {
+          maxHeapEnvvarMB = atoi(maxHeapSizeStr);
+          if (maxHeapEnvvarMB <= 0)
+            passMaxHeapToJVM = false;
+        }
+      if (passMaxHeapToJVM)
+        {
+          snprintf(maxHeapOptions, sizeof(maxHeapOptions),
+                   "-Xmx%dm", maxHeapEnvvarMB);
+          jvm_options[numJVMOptions].optionString = maxHeapOptions;
+          QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
+                        "Max heap option: %s",
+                        jvm_options[numJVMOptions].optionString);
+          numJVMOptions++;
+        }
+    }
 
-     debugPort_ = debugPort;
-     // to allow debugging multiple processes at the same time,
-     // specify a port that is a multiple of 1000 and the code will
-     // add pid mod 1000 to the port number to use
-     if (debugPort_ % 1000 == 0)
-       debugPort_ += (GetCliGlobals()->myPin() % 1000);
-     sprintf(debugOptions,"-agentlib:jdwp=transport=dt_socket,address=%d,server=y,timeout=%d",
-            debugPort_,   debugTimeout_);
-     if (suspendOnDebug != NULL)
-        strcat(debugOptions, ",suspend=y");
-     else
-        strcat(debugOptions, ",suspend=n");
-     jvm_options[numJVMOptions].optionString = debugOptions;
-     QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_WARN,
-                     "Debugging JVM with options: %s", 
-                     jvm_options[numJVMOptions].optionString);
-     numJVMOptions++;
-  }
+  if (!isDefinedInOptions(options, "-XX:CompressedClassSpaceSize="))
+    {
+      char compressedClassSpaceSizeOptions[64];
+      int compressedClassSpaceSize = 0;
+      const char *compressedClassSpaceSizeStr = getenv("JVM_COMPRESSED_CLASS_SPACE_SIZE");
+      if (compressedClassSpaceSizeStr)
+        compressedClassSpaceSize = atoi(compressedClassSpaceSizeStr);
+      if (compressedClassSpaceSize <= 0)
+        compressedClassSpaceSize = DEFAULT_COMPRESSED_CLASSSPACE_SIZE;
+      snprintf(compressedClassSpaceSizeOptions,
+               sizeof(compressedClassSpaceSizeOptions),
+               "-XX:CompressedClassSpaceSize=%dm", compressedClassSpaceSize);
+      jvm_options[numJVMOptions].optionString = compressedClassSpaceSizeOptions;
+      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
+                    "CompressedClassSpaceSize: %s",
+                    jvm_options[numJVMOptions].optionString);
+      numJVMOptions++;
+    }
+
+  if (!isDefinedInOptions(options, "-XX:MaxMetaspaceSize="))
+    {
+      char maxMetaspaceSizeOptions[64];
+      int maxMetaspaceSize = 0;
+      const char *maxMetaspaceSizeStr = getenv("JVM_MAX_METASPACE_SIZE");
+      if (maxMetaspaceSizeStr)
+        maxMetaspaceSize = atoi(maxMetaspaceSizeStr);
+      if (maxMetaspaceSize <= 0)
+        maxMetaspaceSize = DEFAULT_MAX_METASPACE_SIZE;
+      snprintf(maxMetaspaceSizeOptions, sizeof(maxMetaspaceSizeOptions),
+               "-XX:MaxMetaspaceSize=%dm", maxMetaspaceSize);
+      jvm_options[numJVMOptions].optionString = maxMetaspaceSizeOptions;
+      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
+                    "MaxMetaspaceSize: %s",
+                    jvm_options[numJVMOptions].optionString);
+      numJVMOptions++;
+    }
+
+  if (!isDefinedInOptions(options, "-Xms"))
+    {
+      char initHeapOptions[64];
+      const char *initHeapSizeStr = getenv("JVM_INIT_HEAP_SIZE_MB");
+      if (initHeapSizeStr)
+        {
+          const int initHeapEnvvarMB = atoi(initHeapSizeStr);
+          if (initHeapEnvvarMB > 0)
+            {
+              snprintf(initHeapOptions, sizeof(initHeapOptions),
+                       "-Xms%dm", initHeapEnvvarMB);
+              jvm_options[numJVMOptions].optionString = initHeapOptions;
+              QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
+                            "Init heap option: %s",
+                            jvm_options[numJVMOptions].optionString);
+              numJVMOptions++;
+            }
+        }
+    }
+
+  if (!isDefinedInOptions(options, "-agentlib:jdwp="))
+    {
+      int debugPort = 0;
+      const char *debugPortStr = getenv("JVM_DEBUG_PORT");
+      if (debugPortStr != NULL)
+        debugPort = atoi(debugPortStr);
+      if (debugPort > 0)
+        {
+          const char *debugTimeoutStr = getenv("JVM_DEBUG_TIMEOUT");
+          if (debugTimeoutStr != NULL)
+            debugTimeout_ = atoi(debugTimeoutStr);
+          const char *suspendOnDebug = getenv("JVM_SUSPEND_ON_DEBUG");
+          char debugOptions[300];
+
+          debugPort_ = debugPort;
+          // to allow debugging multiple processes at the same time,
+          // specify a port that is a multiple of 1000 and the code will
+          // add pid mod 1000 to the port number to use
+          if (debugPort_ % 1000 == 0)
+            debugPort_ += (GetCliGlobals()->myPin() % 1000);
+          sprintf(debugOptions,"-agentlib:jdwp=transport=dt_socket,address=%d,server=y,timeout=%d",
+                  debugPort_,   debugTimeout_);
+          if (suspendOnDebug != NULL)
+            strcat(debugOptions, ",suspend=y");
+          else
+            strcat(debugOptions, ",suspend=n");
+          jvm_options[numJVMOptions].optionString = debugOptions;
+          QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_WARN,
+                        "Debugging JVM with options: %s", 
+                        jvm_options[numJVMOptions].optionString);
+          numJVMOptions++;
+        }
+    }
 
   const char *oomOption = "-XX:+HeapDumpOnOutOfMemoryError";
-  jvm_options[numJVMOptions].optionString = (char *)oomOption;
-  numJVMOptions++;
 
-  char *mySqRoot = getenv("TRAF_HOME");
-  int len;
-  char *oomDumpDir = NULL;
-  if (mySqRoot != NULL)
-  {
-     len = strlen(mySqRoot); 
-     oomDumpDir = new (heap_) char[len+50];
-     strcpy(oomDumpDir, "-XX:HeapDumpPath="); 
-     strcat(oomDumpDir, mySqRoot);
-     strcat(oomDumpDir, "/logs");
-     jvm_options[numJVMOptions].optionString = (char *)oomDumpDir;
-     numJVMOptions++;
-  }
+  if (!isDefinedInOptions(options, oomOption))
+    {
+      jvm_options[numJVMOptions].optionString = (char *)oomOption;
+      numJVMOptions++;
+    }
+
+  if (!isDefinedInOptions(options, "-XX:HeapDumpPath="))
+    {
+      char *mySqRoot = getenv("TRAF_HOME");
+      int len;
+      char *oomDumpDir = NULL;
+      if (mySqRoot != NULL)
+        {
+          len = strlen(mySqRoot); 
+          oomDumpDir = new (heap_) char[len+50];
+          strcpy(oomDumpDir, "-XX:HeapDumpPath="); 
+          strcat(oomDumpDir, mySqRoot);
+          strcat(oomDumpDir, "/logs");
+          jvm_options[numJVMOptions].optionString = (char *)oomDumpDir;
+          numJVMOptions++;
+        }
+    }
+
+  if (options)
+    for (CollIndex o=0; o<options->entries(); o++)
+      {
+        jvm_options[numJVMOptions].optionString = (char *) options->getOption(o);
+        QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
+                      "Option passed to JavaObjectInterface::createJVM(): %s",
+                      jvm_options[numJVMOptions].optionString);
+        numJVMOptions++;
+      }
 
   jvm_args.version            = JNI_VERSION_1_6;
   jvm_args.options            = jvm_options;
@@ -243,14 +288,15 @@ int JavaObjectInterface::createJVM()
   jvm_args.ignoreUnrecognized = 1;
 
   int ret = JNI_CreateJavaVM(&jvm_, (void**)&jenv_, &jvm_args);
-  free(classPathArg);
+  if (classPathArg)
+    free(classPathArg);
   return ret;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
-JOI_RetCode JavaObjectInterface::initJVM()
+JOI_RetCode JavaObjectInterface::initJVM(LmJavaOptions *options)
 {
   jint result;
   if (jvm_ == NULL)
@@ -266,7 +312,7 @@ JOI_RetCode JavaObjectInterface::initJVM()
     if (jvm_count == 0)
     {
       // No - create a new one.
-      result = createJVM();
+      result = createJVM(options);
       if (result != JNI_OK)
       {
          GetCliGlobals()->setJniErrorStr(getErrorText(JOI_ERROR_CHECK_JVM));

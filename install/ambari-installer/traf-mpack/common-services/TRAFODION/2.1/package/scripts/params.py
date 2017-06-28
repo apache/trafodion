@@ -32,6 +32,7 @@ cluster_name = str(config['clusterName'])
 dcs_servers = config['configurations']['dcs-env']['dcs.servers']
 dcs_master_port = config['configurations']['dcs-site']['dcs.master.port']
 dcs_info_port = config['configurations']['dcs-site']['dcs.master.info.port']
+dcs_enable_ha = config['configurations']['dcs-site']['dcs.master.floating.ip']
 dcs_floating_ip = config['configurations']['dcs-site']['dcs.master.floating.ip.external.ip.address']
 dcs_mast_node_list = default("/clusterHostInfo/traf_dcs_prime_hosts", '')
 dcs_back_node_list = default("/clusterHostInfo/traf_dcs_second_hosts", '')

@@ -2171,8 +2171,22 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   //
   XDDflt__(MC_SKEW_SENSITIVITY_THRESHOLD,        "0.1"),
 
-
-  DDui___(MDAM_APPLY_RESTRICTION_CHECK,	            "2"),
+  // Applies additional heuristics to turn off MDAM. This code was added
+  // at a time when cumulative probe cost was not considered in the MDAM
+  // cost model (a MAJOR error). The meaning of the values:
+  // 0 - do nothing (no additional heuristics)
+  // 1 - require that more key columns have predicates than key columns
+  //     without predicates
+  // 2 - require that the UECs of key columns lacking predicates is below
+  //     a given threshold
+  // 3 - AND of 1 and 2
+  // These heuristics made sense when the cost model was broken and we
+  // traversed more deeply into the key than we should have. The cost model
+  // now takes cumulative probe cost into account so these should no longer
+  // be necessary (and indeed these heuristics can cause us to miss some
+  // very good plans, because they prevent us from considering MDAM plans
+  // that probe prefix columns before a column with high UEC, for example).
+  DDui___(MDAM_APPLY_RESTRICTION_CHECK,	            "0"),
   DDflt0_(MDAM_CPUCOST_NET_OVH,			"2000."),
 
 
@@ -2184,6 +2198,9 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   // controls the max. number of seek positions under which MDAM will be
   // allowed. Set it to 0 turns off the feature.
   XDDui___(MDAM_NO_STATS_POSITIONS_THRESHOLD,       "10"),
+
+  // a multiplier of probe cost used for MDAM
+  DDflt0_(MDAM_PROBE_TAX,			"3"),
 
   // MDAM_SCAN_METHOD ON means MDAM is enabled,
   // OFF means MDAM is disabled. MDAM is enabled by default
@@ -4472,7 +4489,7 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
 
     case DEF_NUM_NODES_IN_ACTIVE_CLUSTERS:
 
-      utoa_(((NAClusterInfoLinux*)gpClusterInfo)->numLinuxNodes(), valuestr);
+      utoa_(gpClusterInfo->numOfPhysicalSMPs(), valuestr);
       strcpy(newValue, valuestr);
 
       if(reInit)

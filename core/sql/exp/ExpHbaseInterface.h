@@ -111,6 +111,7 @@ class ExpHbaseInterface : public NABasicObject
   // during create, we delay and retry for a fixed number of times since that table
   // may still be dropped by the worked thread.
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean useHbaseXn) = 0;
+  virtual Lng32 truncate(HbaseStr &tblName, NABoolean preserveSplits, NABoolean useHbaseXn) = 0;
 
   // drops all objects from hbase that match the pattern
   virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean useHbaseXn) = 0;
@@ -436,7 +437,7 @@ class ExpHbaseInterface_JNI : public ExpHbaseInterface
                       NABoolean useHbaseXn);
 
   virtual Lng32 registerTruncateOnAbort(HbaseStr &tblName, NABoolean useHbaseXn);
-
+  virtual Lng32 truncate(HbaseStr &tblName, NABoolean preserveSplits, NABoolean useHbaseXn);
   virtual Lng32 drop(HbaseStr &tblName, NABoolean async, NABoolean useHbaseXn);
   virtual Lng32 dropAll(const char * pattern, NABoolean async, NABoolean useHbaseXn);
 
