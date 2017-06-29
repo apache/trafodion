@@ -3547,9 +3547,8 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DD_____(USTAT_CQDS_ALLOWED_FOR_SPAWNED_COMPILERS, ""), // list of CQDs that can be pushed to seconday compilers
                                                          // CQDs are delimited by ","
 
-
-  DDkwd__(USTAT_DEBUG_FORCE_FETCHCOUNT,         "OFF"),
   DD_____(USTAT_DEBUG_TEST,                     ""),
+  DDkwd__(USTAT_DELETE_NO_ROLLBACK,             "ON"),   // If ON, use DELETE WITH NO ROLLBACK in IUS when updating sample table
   DDflte_(USTAT_DSHMAX,		                "50.0"),
   DDkwd__(USTAT_ESTIMATE_HBASE_ROW_COUNT,       "ON"),
   DDkwd__(USTAT_FETCHCOUNT_ACTIVE,              "OFF"),
