@@ -139,7 +139,8 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                                     Int16 tgtType,
                                     UInt32 flags,
                                     Int32 tgtLength = -1,
-                                    Int32 tgtScale = -1);
+                                    Int32 tgtScale = -1,
+                                    Int32 tgtPrecision = 0);
 NA_EIDPROC
 SQLEXP_LIB_FUNC
 char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen);

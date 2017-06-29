@@ -536,7 +536,8 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                                     Int16 tgtType,
                                     UInt32 flags,
                                     Int32 tgtLength,
-                                    Int32 tgtScale)
+                                    Int32 tgtScale,
+                                    Int32 tgtPrecision)
 {
   //if looping situation, no need to proceed further, return back.
   if(flags & CONV_CONTROL_LOOPING)
@@ -593,9 +594,10 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
   if ((DFS2REC::isAnyCharacter(tgtType)) &&
       (tgtLength >= 0) &&
       (tgtScale > 0))
-    str_sprintf(tgtDatatypeDetail, "%s,%d BYTES,%s", 
+    str_sprintf(tgtDatatypeDetail, "%s,%d %s,%s", 
                 getDatatypeAsString(tgtType, false), 
-                tgtLength,
+                tgtPrecision ? tgtPrecision : tgtLength,
+                tgtPrecision ? "CHARS" : "BYTES",
                 //                tgtLength/CharInfo::bytesPerChar((CharInfo::CharSet)tgtScale),
                 (tgtScale == CharInfo::ISO88591 ? "ISO88591" : "UTF8"));
   else
