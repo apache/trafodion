@@ -1323,12 +1323,7 @@ ItemExpr * getRangePartitionBoundaryValues
   Parser parser(CmpCommon::context());
   //partKeyValue = parser.getItemExprTree(keyValue);
   partKeyValue = parser.getItemExprTree(keyValue,length+1,strCharSet);
-  // Check to see if the key values parsed successfully.  An error
-  // could occur if the table is an MP Table and the first key values
-  // contain MP syntax that is not supported by MX.  For instance
-  // Datetime literals which do not have the max number of digits in
-  // each field. (e.g. DATETIME '1999-2-4' YEAR TO DAY)
-  //
+  // Check to see if the key values parsed successfully.
   if(partKeyValue == NULL) {
     return NULL;
   }
@@ -1604,7 +1599,7 @@ static ItemExpr * getRangePartitionBoundaryValuesFromEncodedKeys(
               // NOTE: This is generating un-encoded values, unlike
               //       the values we get from HBase. The next loop below
               //       will skip decoding for any values generated here.
-              Lng32 remainingBufLen = valEncodedLength;
+              Lng32 remainingBufLen = colEncodedLength;
 
               if (nullHdrSize && !nullHdrAlreadySet)
                 {
@@ -1883,7 +1878,7 @@ static RangePartitionBoundaries * createRangePartitionBoundaries
       encodedKey = partns_desc->partnsDesc()->encodedkey;
       size_t encodedKeyLen = partns_desc->partnsDesc()->encodedkeylen;
 
-      if(heap != CmpCommon::statementHeap())
+      if(heap != CmpCommon::statementHeap() && encodedKeyLen > 0)
       {
         //we don't know here if encodedkey is a regular char or a wchar
         //if it's a wchar then it should end with "\0\0", so add an extra
@@ -3678,14 +3673,6 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
   // The clustering key has a keytag 0.
   // ---------------------------------------------------------------------
 
-  // this dictionary is used for hiding remote indexes; the remote indexes
-  // are hidden when the CQD INDEX_ELIMINATION_LEVEL is set to aggressive
-  NAHashDictionary<NAString, Int32> *indexFilesetMap =
-    new (heap) NAHashDictionary<NAString, Int32>
-        (naStringHashFunc, 101, FALSE, CmpCommon::statementHeap());
-
-  NAList<NAString *> stringList (CmpCommon::statementHeap());
-
   TrafDesc *indexes_desc = table_desc->tableDesc()->indexes_desc;
 
   while (indexes_desc AND indexes_desc->indexesDesc()->keytag)
@@ -3755,7 +3742,8 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
       NAColumnArray partitioningKeyColumns(CmpCommon::statementHeap());// the partitioning key columns
       PartitioningFunction * partFunc = NULL;
       NABoolean isPacked = FALSE;
-      NABoolean indexAlignedRowFormat = (indexes_desc->indexesDesc()->rowFormat() == COM_ALIGNED_FORMAT_TYPE);
+      TrafIndexesDesc* currIndexDesc = indexes_desc->indexesDesc();
+      NABoolean indexAlignedRowFormat = (currIndexDesc->rowFormat() == COM_ALIGNED_FORMAT_TYPE);
 
       NABoolean isNotAvailable = FALSE;
 
@@ -3765,7 +3753,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
       // ---------------------------------------------------------------------
       // loop over the clustering key columns of the index
       // ---------------------------------------------------------------------
-      const TrafDesc *keys_desc = indexes_desc->indexesDesc()->keys_desc;
+      const TrafDesc *keys_desc = currIndexDesc->keys_desc;
       while (keys_desc)
 	{
           // Add an index/VP key column.
@@ -3793,7 +3781,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
           indexColumn = colArray.getColumn(tablecolnumber);
           
           if ((table->isHbaseTable()) &&
-              ((indexes_desc->indexesDesc()->keytag != 0) || 
+              ((currIndexDesc->keytag != 0) || 
                 (indexAlignedRowFormat  && indexAlignedRowFormat != tableAlignedRowFormat)))
             {
               newIndexColumn = new(heap) NAColumn(*indexColumn);
@@ -3880,15 +3868,14 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
       // These columns get added to the list of all the columns for the index/
       // VP.  Their length also contributes to the total record length.
       // ---------------------------------------------------------------------
-      const TrafDesc *non_keys_desc =
-                         indexes_desc->indexesDesc()->non_keys_desc;
+      const TrafDesc *non_keys_desc = currIndexDesc->non_keys_desc;
       while (non_keys_desc)
 	{
 	  Int32 tablecolnumber = non_keys_desc->keysDesc()->tablecolnumber;
           indexColumn = colArray.getColumn(tablecolnumber);
 
 	  if ((table->isHbaseTable()) &&
-	      ((indexes_desc->indexesDesc()->keytag != 0) || 
+	      ((currIndexDesc->keytag != 0) || 
                (indexAlignedRowFormat  && indexAlignedRowFormat != tableAlignedRowFormat)))
 	    {
 	      newIndexColumn = new(heap) NAColumn(*indexColumn);
@@ -3928,11 +3915,11 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 	  isSystemTable = table_desc->tableDesc()->isSystemTableCode();
 
           // Record length of clustering key is the same as that of the base table record
-          indexes_desc->indexesDesc()->record_length = table_desc->tableDesc()->record_length;
+          currIndexDesc->record_length = table_desc->tableDesc()->record_length;
 	} // endif (isTheClusteringKey)
       else
 	{
-	  if (indexes_desc->indexesDesc()->isUnique())
+	  if (currIndexDesc->isUnique())
 	    {
 	      // As mentioned above, if this is a unique index,
 	      // the last numClusteringKeyColumns are actually not
@@ -3950,8 +3937,8 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 	      //   indexKeyColumns.removeAt(indexKeyColumns.entries() - 1);
 	    }
 
-	  files_desc = indexes_desc->indexesDesc()->files_desc;
-	  isSystemTable = indexes_desc->indexesDesc()->isSystemTableCode();
+	  files_desc = currIndexDesc->files_desc;
+	  isSystemTable = currIndexDesc->isSystemTableCode();
 
 	} // endif (NOT isTheClusteringKey)
 
@@ -4020,7 +4007,10 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
       // beginning of this function.
       TrafDesc * partns_desc;
       Int32 indexLevels = 1;
-      Int32 blockSize = indexes_desc->indexesDesc()->blocksize;
+      Int32 blockSize = currIndexDesc->blocksize;
+      // Create fully qualified ANSI name from indexname
+      QualifiedName qualIndexName(currIndexDesc->indexname, 1, heap, 
+                                  bindWA);
       if (files_desc)
       {
 	if( (table->getSpecialType() != ExtendedQualName::VIRTUAL_TABLE AND
@@ -4028,7 +4018,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 	    OR files_desc->filesDesc()->partns_desc )
 	  {
             nodeMap = new (heap) NodeMap(heap);
-	    createNodeMap(files_desc->filesDesc()->partns_desc,
+            createNodeMap(files_desc->filesDesc()->partns_desc,
 			  nodeMap,
 			  heap,
 			  table_desc->tableDesc()->tablename,
@@ -4037,7 +4027,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 	  }
 	// Check whether the index has any remote partitions.
 	if (checkRemote(files_desc->filesDesc()->partns_desc,
-			indexes_desc->indexesDesc()->indexname))
+			currIndexDesc->indexname))
 	  hasRemotePartition = TRUE;
 	else
 	  hasRemotePartition = FALSE;
@@ -4046,7 +4036,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 	// partitioned same as the indexes, hence we used table partitioning
 	// to create partitionining function. But this is not true. Hence
 	// we now use the indexes partitioning function
-	switch (indexes_desc->indexesDesc()->partitioningScheme())
+	switch (currIndexDesc->partitioningScheme())
         {
 	case COM_ROUND_ROBIN_PARTITIONING :
 	  // Round Robin partitioned table
@@ -4082,47 +4072,75 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 	case COM_RANGE_PARTITIONING :
 	case COM_SYSTEM_PARTITIONING :
 	  {
-	    // If this is an MP Table, parse the first key
-	    // values as MP Stored Text.
-	    //
-
-              TrafDesc* hbd = table_desc->tableDesc()->hbase_regionkey_desc;
-
-              // splits will be 1 for single partitioned table.
-              Int32 splits = findDescEntries(hbd);
-
-              // Do Hash2 only if the table is salted orignally 
-              // and the current number of HBase regions is greater than 1.
+              // Do Hash2 only if the table is salted orignally.
               if ( doHash2 )
-                 doHash2 = (numOfSaltedPartitions > 0 && splits > 1);
+                doHash2 = (numOfSaltedPartitions > 0);
 
-              if ( hbd )
-                if ( doHash2 ) {
-	           partFunc = createHash2PartitioningFunctionForHBase(
-                        table_desc->tableDesc()->hbase_regionkey_desc,
-                      table,
-                      numOfSaltedPartitions,
-                      heap);
-
-                   partitioningKeyColumns = hbaseSaltOnColumns;
+              if ( doHash2 ) 
+                {
+                  partFunc = createHash2PartitioningFunctionForHBase(
+                       NULL, 
+                       table,
+                       numOfSaltedPartitions,
+                       heap);
+                  
+                  partitioningKeyColumns = hbaseSaltOnColumns;
                 }
-                else
-	           partFunc = createRangePartitioningFunctionForHBase(
-                        table_desc->tableDesc()->hbase_regionkey_desc,
-                        table,
-                        partitioningKeyColumns,
-                        heap);
-              else {
+              else
+                {
+                  // need hbase region descs for range partitioning for 
+                  // the following cases:
+                  //   -- cqd HBASE_HASH2_PARTITIONING is OFF
+                  //   -- or num salted partitions is 0
+                  //   -- or load command is being processed
+                  // If not already present, generate it now.
+                  NABoolean genHbaseRegionDesc = FALSE;
+                  TrafTableDesc* tDesc = table_desc->tableDesc(); 
+                  if (((! currIndexDesc->hbase_regionkey_desc) &&
+                       (table->getSpecialType() != ExtendedQualName::VIRTUAL_TABLE) &&
+                       (NOT table->isSeabaseMDTable()) &&
+                       (NOT table->isHistogramTable())) &&
+                      ((currIndexDesc->numSaltPartns == 0) ||
+                       (CmpCommon::getDefault(HBASE_HASH2_PARTITIONING) == DF_OFF) ||
+                       (bindWA && bindWA->isTrafLoadPrep())))
+                    genHbaseRegionDesc = TRUE;
+                  else
+                    genHbaseRegionDesc = FALSE;
+                  
+                  if (genHbaseRegionDesc) 
+                    {
+                      CmpSeabaseDDL cmpSBD((NAHeap *)heap);
+                      cmpSBD.genHbaseRegionDescs
+                        (currIndexDesc,
+                         qualIndexName.getCatalogName(),
+                         qualIndexName.getSchemaName(),
+                         qualIndexName.getObjectName());
 
-	        // no region descriptor, range partitioned or single partition table
-	        partFunc = createRangePartitioningFunction(
-	    	   files_desc->filesDesc()->partns_desc,
-	    	   partitioningKeyColumns,
-		   nodeMap,
-		   heap);
-              }
+                      if(currIndexDesc->keytag == 0)
+                        tDesc->hbase_regionkey_desc = 
+                          currIndexDesc->hbase_regionkey_desc;
+                    }
 
-
+                  if ((! tDesc->hbase_regionkey_desc) &&
+                      ((table->getSpecialType() == ExtendedQualName::VIRTUAL_TABLE) ||
+                       (table->isSeabaseMDTable()) ||
+                       (table->isHistogramTable())))
+                    {
+                      partFunc = createRangePartitioningFunction(
+                           files_desc->filesDesc()->partns_desc,
+                           partitioningKeyColumns,
+                           nodeMap,
+                           heap);                      
+                    }
+                  else
+                    {
+                      partFunc = createRangePartitioningFunctionForHBase(
+                           currIndexDesc->hbase_regionkey_desc,
+                           table,
+                           partitioningKeyColumns,
+                           heap);
+                    }
+                } // else
 	    break;
 	  }
 	case COM_UNKNOWN_PARTITIONING:
@@ -4172,12 +4190,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
       // $$$ to be computed by examining the EOFs of each individual
       // $$$ file that belongs to the file set.
 
-      // Create fully qualified ANSI name from indexname, the PHYSICAL name.
-      // If this descriptor was created for a sql/mp table, then the
-      // indexname is a fully qualified NSK name (\sys.$vol.subvol.name).
-      QualifiedName qualIndexName(indexes_desc->indexesDesc()->indexname,
-      				  1, heap, bindWA);
-
+    
       // This ext_indexname is expected to be set up correctly as an
       // EXTERNAL-format name (i.e., dquoted if any delimited identifiers)
       // by sqlcat/read*.cpp.  The ...AsAnsiString() is just-in-case (MP?).
@@ -4186,8 +4199,6 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 	   CmpCommon::statementHeap());
 
       QualifiedName qualExtIndexName;
-
-      //if (indexes_desc->indexesDesc()->isVolatile)
       if (table->getSpecialType() != ExtendedQualName::VIRTUAL_TABLE)
 	qualExtIndexName = QualifiedName(extIndexName, 1, heap, bindWA);
       else
@@ -4195,7 +4206,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 
       // for volatile tables, set the object part as the external name.
       // cat/sch parts are internal and should not be shown.
-      if (indexes_desc->indexesDesc()->isVolatile())
+      if (currIndexDesc->isVolatile())
 	{
 	  ComObjectName con(extIndexName);
 	  extIndexName = con.getObjectNamePartAsAnsiString();
@@ -4204,12 +4215,12 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
       if (partFunc)
 	numberOfFiles = partFunc->getCountOfPartitions();
 
-      CMPASSERT(indexes_desc->indexesDesc()->blocksize > 0);
+      CMPASSERT(currIndexDesc->blocksize > 0);
 
       NAList<HbaseCreateOption*>* hbaseCreateOptions = NULL;
-      if ((indexes_desc->indexesDesc()->hbaseCreateOptions) &&
+      if ((currIndexDesc->hbaseCreateOptions) &&
           (CmpSeabaseDDL::genHbaseCreateOptions
-           (indexes_desc->indexesDesc()->hbaseCreateOptions,
+           (currIndexDesc->hbaseCreateOptions,
             hbaseCreateOptions,
             heap,
             NULL,
@@ -4221,6 +4232,7 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
         indexLevels = hbtIndexLevels;
         blockSize = hbtBlockSize;
       }
+
       newIndex = new (heap)
 	NAFileSet(
 		  qualIndexName, // QN containing "\NSK.$VOL", FUNNYSV, FUNNYNM
@@ -4230,14 +4242,14 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
 		  isSystemTable,
 		  numberOfFiles,
 		  100,
-                  indexes_desc->indexesDesc()->record_length,
+                  currIndexDesc->record_length,
                   blockSize,
 		  indexLevels,
 		  allColumns,
 		  indexKeyColumns,
 		  partitioningKeyColumns,
 		  partFunc,
-		  indexes_desc->indexesDesc()->keytag,
+		  currIndexDesc->keytag,
                   0, 
                   files_desc ? files_desc->filesDesc()->isAudited() : 0,
                   0,
@@ -4248,33 +4260,33 @@ NABoolean createNAFileSets(TrafDesc * table_desc       /*IN*/,
                   0,
                   isPacked,
                   hasRemotePartition,
-                  ((indexes_desc->indexesDesc()->keytag != 0) &&
-                   (indexes_desc->indexesDesc()->isUnique())),
+                  ((currIndexDesc->keytag != 0) &&
+                   (currIndexDesc->isUnique())),
                   0,
                   0,
-                  (indexes_desc->indexesDesc()->isVolatile()),
-                  (indexes_desc->indexesDesc()->isInMemoryObject()),
-                  indexes_desc->indexesDesc()->indexUID,
-                  indexes_desc->indexesDesc()->keys_desc,
+                  (currIndexDesc->isVolatile()),
+                  (currIndexDesc->isInMemoryObject()),
+                  currIndexDesc->indexUID,
+                  currIndexDesc->keys_desc,
                   NULL, // no Hive stats
-                  indexes_desc->indexesDesc()->numSaltPartns,
+                  currIndexDesc->numSaltPartns,
                   hbaseCreateOptions,
                   heap);
       
       if (isNotAvailable)
          newIndex->setNotAvailable(TRUE);
 
-       newIndex->setRowFormat(indexes_desc->indexesDesc()->rowFormat());
+       newIndex->setRowFormat(currIndexDesc->rowFormat());
        // Mark each NAColumn in the list
        indexKeyColumns.setIndexKey();
-       if ((table->isHbaseTable()) && (indexes_desc->indexesDesc()->keytag != 0))
+       if ((table->isHbaseTable()) && (currIndexDesc->keytag != 0))
          saveNAColumns.setIndexKey();
 
-       if (indexes_desc->indexesDesc()->isExplicit())
+       if (currIndexDesc->isExplicit())
          newIndex->setIsCreatedExplicitly(TRUE);
 
        //if index is unique and is on one column, then mark column as unique
-       if ((indexes_desc->indexesDesc()->isUnique()) &&
+       if ((currIndexDesc->isUnique()) &&
            (indexKeyColumns.entries() == 1))
          indexKeyColumns[0]->setIsUnique();
 

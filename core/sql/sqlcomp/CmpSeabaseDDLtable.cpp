@@ -11691,6 +11691,43 @@ TrafDesc * CmpSeabaseDDL::getSeabaseSequenceDesc(const NAString &catName,
   return tableDesc;
 }
 
+short CmpSeabaseDDL::genHbaseRegionDescs(TrafDesc * desc,
+                                         const NAString &catName, 
+                                         const NAString &schName, 
+                                         const NAString &objName)
+{
+  if (! desc)
+    return -1;
+
+  ExpHbaseInterface* ehi = allocEHI();
+  if (ehi == NULL) 
+    return -1;
+  
+  const NAString extNameForHbase = genHBaseObjName
+    (catName, schName, objName);
+
+  NAArray<HbaseStr>* endKeyArray  = 
+    ehi->getRegionEndKeys(extNameForHbase);
+  
+  TrafDesc * regionKeyDesc = 
+    Generator::assembleDescs(endKeyArray, heap_);
+
+  deallocEHI(ehi);
+
+  TrafTableDesc* tDesc = desc->tableDesc();
+  if (tDesc)
+    tDesc->hbase_regionkey_desc = regionKeyDesc;
+  else {
+    TrafIndexesDesc* iDesc = desc->indexesDesc();
+  if (iDesc)
+    iDesc->hbase_regionkey_desc = regionKeyDesc;
+  else
+    return -1;
+  }
+  
+  return 0;
+}
+
 TrafDesc * CmpSeabaseDDL::getSeabaseUserTableDesc(const NAString &catName, 
                                                      const NAString &schName, 
                                                      const NAString &objName,

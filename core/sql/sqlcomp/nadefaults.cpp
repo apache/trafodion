@@ -2839,7 +2839,7 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
   DD_____(PCODE_DEBUG_LOGDIR,        ""  ), // Pathname of log directory for PCode work
   DDint__(PCODE_EXPR_CACHE_CMP_ONLY, "0" ), // PCode Expr Cache compare-only mode
   DDint__(PCODE_EXPR_CACHE_DEBUG,    "0" ), // PCode Expr Cache debug (set to 1 to enable dbg logging)
-  DDint__(PCODE_EXPR_CACHE_ENABLED,  "1" ), // PCode Expr Cache Enabled (set to 0 to disable the cache)
+  DDint__(PCODE_EXPR_CACHE_ENABLED,  "0" ), // PCode Expr Cache Enabled (set to 0 to disable the cache)
   DD0_10485760(PCODE_EXPR_CACHE_SIZE,"2000000"), // PCode Expr Cache Max Size
 
   // Maximum number of PCODE Branch Instructions in an Expr
