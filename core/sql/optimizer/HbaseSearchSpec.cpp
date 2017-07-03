@@ -88,30 +88,45 @@ const NAString HbaseUniqueRows::getText() const
 //     the total length of the source and the length of each pair.
 //
 static NABoolean extractKeyValuePairs(const NAString& source, NAString& result) 
-{
-   char buf[1024];
-
-   const char* data = source.data();
-   const char* end = data + source.length();
-
-   NABoolean hasData = ( data < end);
-
-   while ( data < end ) {
-       UInt16 len = 0;
-       memcpy((char*)&len, data, sizeof(len));
-
-       memcpy(buf, data+sizeof(len), len);
-       buf[len] = NULL;
-
-       result.append(buf);
-
-       data += sizeof(len) + len;
-
-       if ( data < end )
+  {
+    UInt16 typeLen = sizeof(UInt16);
+    size_t header = 0;
+    size_t tail = source.length();
+    NABoolean hasData = ( tail > 0 );
+  
+    const char* data = source.data();
+  
+    while ( header < tail ){
+      // get the length of the string
+      size_t begin = header;
+      size_t end = begin + typeLen;
+      // error, do not have enough buffer to read
+      if ( end > tail )
+        break;
+      NAString len;
+      source.extract(begin, end-1, len);
+  
+      // get the string
+      begin = end;
+      end = begin + (*(UInt16 *)(len.data()));
+      // if the string lengh is 0, continue
+      if ( end == begin) {
+        header = end;
+        if ( header < tail )
           result.append(",");
-   }
-   return hasData;
-}
+        continue;
+      } 
+      // error, do not have enough buffer to read
+      else if ( end > tail )
+        break;
+      source.extract(begin, end-1, result);
+      header = end;
+      if ( header < tail )
+        result.append(",");
+    }
+  
+    return hasData;
+  }
 
 const NAString HbaseRangeRows::getText() const
 {
