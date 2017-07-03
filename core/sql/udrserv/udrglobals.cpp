@@ -49,7 +49,8 @@
 #include "OperTypeEnum.h"
 #include "UdrDebug.h"
 #include "exp_function.h"
-
+#include "JavaObjectInterface.h"
+#include "Globals.h"
 
 #include "udrdefs.h"
 
@@ -305,39 +306,79 @@ LmLanguageManager *UdrGlobals::getOrCreateLM(LmResult &result,
   }
 }
 
+// small helper class to use functions in JavaObjectInterface
+class UdrGlobalsJavaObj : public JavaObjectInterface
+{
+public: 
+
+  UdrGlobalsJavaObj(NAHeap *heap) : JavaObjectInterface(heap, (jobject) -1) {}
+  JOI_RetCode initJVMForUDRServ(LmJavaOptions *options);
+};
+
+JOI_RetCode UdrGlobalsJavaObj::initJVMForUDRServ(LmJavaOptions *options)
+{
+  return initJVM(options);
+}
+
 LmLanguageManagerJava *UdrGlobals::getOrCreateJavaLM(LmResult &result,
                                                      ComDiagsArea *diags)
 {
+  result = LM_OK;
+
   if (javaLanguageManager_)
-  {
-    result = LM_OK;
     return javaLanguageManager_;
-  }
 
-  ComUInt32 lmJavaMax = 1;
+  // Note: For trusted UDRs, we use a T2 driver to do SQL from
+  // UDRs. This means that the UDR server contains the executor
+  // code. If we do SQL and that SQL needs another JVM, we need to
+  // share the JVM (and also the LmLanguageManagerJava). Therefore,
+  // create these objects in the executor and CLI globals.
+  TIMER_ON(initLangmanTimer);
 
-  TIMER_ON(initLangmanTimer)
-  javaLanguageManager_ = new (getUdrHeap())
-    LmLanguageManagerJava(result, commandLineMode_, lmJavaMax,
-                          getJavaOptions(), diags);
+  // create a JavaObjectInterface, just so we can call its method
+  // to create or attach to a JVM
+  UdrGlobalsJavaObj helper(udrHeap_);
 
-  TIMER_OFF(initLangmanTimer, "Call Langman Constructor")
-  LOG_FLUSH
+  helper.initJVMForUDRServ(getJavaOptions());
 
+  // now that we know that a JVM exists, create the language manager
+  // in the CLI globals
+  CliGlobals *cliGlobals = GetCliGlobals();
+
+  if (!cliGlobals)
+    cliGlobals = CliGlobals::createCliGlobals(TRUE);
+
+  javaLanguageManager_ = cliGlobals->getLanguageManagerJava();
+
+  TIMER_OFF(initLangmanTimer, "Call Langman Constructor (trusted)");
+  LOG_FLUSH;
+
+  // At a later time, we may want to use a T4 driver for isolated
+  // UDRs and create a stand-alone LmLanguageManagerJava here,
+  // using the code below.
   //
-  // Make sure LM pointer and result are consistent. Either we return
-  // a NULL pointer and an error result, or a non-NULL pointer and
-  // LM_OK.
+  // ComUInt32 lmJavaMax = 1;
   //
-  if (javaLanguageManager_ && result != LM_OK)
-  {
-    delete javaLanguageManager_;
-    javaLanguageManager_ = NULL;
-  }
-  if (!javaLanguageManager_ && result == LM_OK)
-  {
+  // TIMER_ON(initLangmanTimer)
+  // javaLanguageManager_ = new (getUdrHeap())
+  //   LmLanguageManagerJava(result, commandLineMode_, lmJavaMax,
+  //                         getJavaOptions(), diags);
+  //
+  // TIMER_OFF(initLangmanTimer, "Call Langman Constructor (isolated)")
+  // LOG_FLUSH
+  //
+  // // Make sure LM pointer and result are consistent. Either we return
+  // // a NULL pointer and an error result, or a non-NULL pointer and
+  // // LM_OK.
+  //
+  // if (javaLanguageManager_ && result != LM_OK)
+  // {
+  //   delete javaLanguageManager_;
+  //   javaLanguageManager_ = NULL;
+  // }
+
+  if (!javaLanguageManager_)
     result = LM_ERR;
-  }
 
   return javaLanguageManager_;
 

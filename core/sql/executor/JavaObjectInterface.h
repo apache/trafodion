@@ -32,6 +32,8 @@
 #include "jni.h"
 #include "Platform.h"
 
+class LmJavaOptions;
+
 #ifndef SEQ_TESTING
 #include "ex_god.h"
 #endif
@@ -82,7 +84,6 @@ protected:
       ,javaObj_(NULL)
       ,needToDetach_(false)
       ,isInitialized_(false)
-      ,isHBaseCompatibilityMode_(TRUE)
       ,debugPort_(debugPort)
       ,debugTimeout_(debugTimeout)
   {
@@ -95,7 +96,6 @@ protected:
       ,javaObj_(NULL)
       ,needToDetach_(false)
       ,isInitialized_(false)
-      ,isHBaseCompatibilityMode_(TRUE)
       ,debugPort_(0)
       ,debugTimeout_(0)
   {
@@ -113,10 +113,10 @@ protected:
   virtual ~JavaObjectInterface();
   
   // Create a new JVM
-  int createJVM();
+  int createJVM(LmJavaOptions *options);
   
   // Initialize the JVM.
-  JOI_RetCode    initJVM();
+  JOI_RetCode    initJVM(LmJavaOptions *options = NULL);
   
   // Initialize JVM and all the JNI configuration.
   // Must be called.
@@ -132,16 +132,6 @@ protected:
   void logError(std::string &cat, const char* methodName, jstring jresult);
   void logError(std::string &cat, const char* file, int line);
 
-  void setHBaseCompatibilityMode(bool val)
-  {
-    isHBaseCompatibilityMode_ = val;
-  }
-
-  bool isHBaseCompatibilityMode()
-  {
-    return isHBaseCompatibilityMode_;
-  }
-  
   JOI_RetCode initJNIEnv();
   char* buildClassPath();  
   
@@ -178,7 +168,6 @@ protected:
   jobject   javaObj_;
   bool      needToDetach_;
   bool      isInitialized_;
-  bool      isHBaseCompatibilityMode_;
   int       debugPort_;
   int       debugTimeout_;
   pid_t     tid_;

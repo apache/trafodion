@@ -2497,6 +2497,11 @@ private:
     const char *catName,
     const char *schName,
     const char *objName);
+
+  NAString getGrantedPrivCmd(
+    const NAString &roleList,
+    const char * cat);
+
   char * getRoleList(
     const Int32 userID,
     const char *catName,

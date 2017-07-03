@@ -1566,7 +1566,7 @@ public:
                                              NABoolean forceToFetch = TRUE);
     Lng32 updatePersistentSampleTableForIUS(NAString& sampleTableName, double sampleRate,
                                             NAString& targetTableName);
-    void generateIUSDeleteQuery(const NAString& smplTable, NAString& queryText);
+    void generateIUSDeleteQuery(const NAString& smplTable, NAString& queryText, NABoolean transactional);
     void generateIUSSelectInsertQuery(const NAString& smplTable,
                                       const NAString& sourceTable,
                                       NAString& queryText);

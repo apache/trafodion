@@ -247,7 +247,8 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                                   PARTITION BY 1 ORDER BY 2),
                             'USERID',
                             'TS',
-                            60000000));
+                            60000000))
+ORDER BY 2, 1, 3;
 
 SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
 FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
@@ -258,7 +259,8 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                                   PARTITION BY 1 ORDER BY 2),
                             'USERID',
                             'TS',
-                            60000000));
+                            60000000))
+ORDER BY 2, 1, 3;
 SELECT cast(CONVERTTIMESTAMP(ts) as TIME(6)), userid, session_id, ipAddr
 FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                                          JULIANTIMESTAMP(ts) as TS,
@@ -268,7 +270,8 @@ FROM UDF(sessionize_dynamic(TABLE(SELECT userid,
                                   PARTITION BY 1 ORDER BY 2),
                             'USERID',
                             'TS',
-                            60000000));
+                            60000000))
+ORDER BY 2, 1, 3;
 
 -- call sessionize_dynamic_shared, sharing the same DLL
 SELECT *
@@ -279,7 +282,8 @@ FROM UDF(sessionize_dynamic_shared(TABLE(SELECT userid,
                                          PARTITION BY ipaddr ORDER BY ts),
                                    'IPADDR',
                                    cast('TS' as char(2)),
-                                   60000000)) XO;
+                                   60000000)) XO
+ORDER BY ipaddr, session_id, sequence_no;
 
 -- uniqueness constraint avoids a groupby
 explain options 'f'
@@ -324,7 +328,8 @@ FROM UDF(sessionize_java(TABLE(SELECT userid,
                                PARTITION BY 1 ORDER BY 2),
                          'USERID',
                          'TS',
-                         60000000));
+                         60000000))
+ORDER BY 2, 1, 3;
 
 -- uniqueness constraint avoids a groupby
 prepare s from
@@ -337,7 +342,8 @@ FROM UDF(sessionize_java(TABLE(SELECT userid,
                          'IPADDR',
                          cast('TS' as char(2)),
                          60000000)) XO
-where session_id < 10;
+where session_id < 10
+ORDER BY 2, 1, 3;
 explain options 'f' s;
 execute s;
 

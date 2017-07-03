@@ -679,6 +679,7 @@ enum DefaultConstants
   USTAT_CHECK_HIST_ACCURACY,   // After stats collection, examine full table and calculate accuray of hists
   USTAT_COMPACT_VARCHARS,      // For internal sort, store only the actual # chars used in each value
   USTAT_CLUSTER_SAMPLE_BLOCKS, // number of blocks for cluster sampling
+  USTAT_DELETE_NO_ROLLBACK,    // If ON, use DELETE WITH NO ROLLBACK in incremental stats when updating sample table
   USTAT_ESTIMATE_HBASE_ROW_COUNT,  // If ON, estimate row count of HBase table instead of count(*), subject
                                    //     to USTAT_MIN_ESTIMATE_FOR_ROWCOUNT setting)
   USTAT_FORCE_TEMP,            // Force temporary table to be used
@@ -2609,8 +2610,7 @@ enum DefaultConstants
   USTAT_SAMPLE_PERCENT_DIFF,   // percentage diff allowed to use old sample in FetchCount().
   USTAT_MAX_SAMPLE_AGE,        // max days before a persistent sample is auto removed.
   USTAT_DEBUG_TEST,            // settings for testing ustat, normally empty.
-  USTAT_DEBUG_FORCE_FETCHCOUNT,// force call to FetchCount() from optimizer if ON.
-
+ 
   // Disallow/Allow left joins in MultiJoin framework
   LEFT_JOINS_SPOIL_JBB,
 

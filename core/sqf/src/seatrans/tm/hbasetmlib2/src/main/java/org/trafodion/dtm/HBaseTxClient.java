@@ -116,8 +116,8 @@ public class HBaseTxClient {
    void setupLog4j() {
         //System.out.println("In setupLog4J");
         System.setProperty("trafodion.root", System.getenv("TRAF_HOME"));
-        String confFile = System.getenv("TRAF_HOME")
-            + "/conf/log4j.dtm.config";
+        String confFile = System.getenv("TRAF_CONF")
+            + "/log4j.dtm.config";
         PropertyConfigurator.configure(confFile);
     }
 
@@ -127,7 +127,7 @@ public class HBaseTxClient {
       if (LOG.isDebugEnabled()) LOG.debug("Enter init, hBasePath:" + hBasePath);
       if (LOG.isTraceEnabled()) LOG.trace("mapTransactionStates " + mapTransactionStates + " entries " + mapTransactionStates.size());
       if (config == null) {
-         config = TrafConfiguration.create();
+         config = TrafConfiguration.create(TrafConfiguration.HBASE_CONF);
          connection = ConnectionFactory.createConnection(config);
       }
       config.set("hbase.zookeeper.quorum", zkServers);
@@ -206,7 +206,7 @@ public class HBaseTxClient {
       setupLog4j();
       if (LOG.isDebugEnabled()) LOG.debug("Enter init(" + dtmid + ")");
       if (config == null) {
-         config = TrafConfiguration.create();
+         config = TrafConfiguration.create(TrafConfiguration.HBASE_CONF);
          connection = ConnectionFactory.createConnection(config);
       }
       config.set("hbase.hregion.impl", "org.apache.hadoop.hbase.regionserver.transactional.TransactionalRegion");

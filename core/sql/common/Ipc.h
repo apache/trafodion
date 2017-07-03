@@ -3209,7 +3209,7 @@ private:
 // we need to be able to send 2 messages simultaneously. There are two
 // constants: an initial one to save resources, and a second one for
 // large queries to keep the number of ESPs low.  See logic on IpcEnvironment
-// constructor that allows these to be overridden with DEFINEs.
+// constructor that allows these to be overridden with environment variables.
 
 const Int32 InitialNowaitRequestsPerEsp = 15;
 const Int32 HighLoadNowaitRequestsPerEsp = 15;

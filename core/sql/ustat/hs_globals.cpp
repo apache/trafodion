@@ -6751,13 +6751,25 @@ Lng32 HSGlobalsClass::prepareForIUSAlgorithm1(Int64& rows)
                                                getWherePredicateForIUS(),
                                                1 // rows
                                               );
+
+  NABoolean transactional = (CmpCommon::getDefault(USTAT_DELETE_NO_ROLLBACK) == DF_OFF);
   
   NAString delQuery;
-  generateIUSDeleteQuery(*hssample_table, delQuery);
-  
-  retcode = HSFuncExecTransactionalQueryWithRetry(delQuery, -UERR_INTERNAL_ERROR, 
+  generateIUSDeleteQuery(*hssample_table, delQuery, transactional);
+
+  if (transactional)
+    {
+      retcode = HSFuncExecTransactionalQueryWithRetry(delQuery, -UERR_INTERNAL_ERROR, 
                               &xRows,"IUS S(i-1)-D operation",
                               NULL, NULL);
+    }
+  else
+    {
+      retcode = HSFuncExecQuery(delQuery, -UERR_INTERNAL_ERROR, 
+                              &xRows,"IUS S(i-1)-D operation",
+                              NULL, NULL);
+    }
+
   HSHandleError(retcode);
 
   if (LM->LogNeeded())
@@ -7076,8 +7088,9 @@ Lng32 HSGlobalsClass::UpdateIUSPersistentSampleTable(Int64 oldSampleSize,
   HSHandleError(retcode);
 
   // step 1  - delete the affected rows from PS
+  NABoolean transactional = (CmpCommon::getDefault(USTAT_DELETE_NO_ROLLBACK) == DF_OFF);
   NAString deleteQuery;
-  generateIUSDeleteQuery(*hssample_table, deleteQuery);
+  generateIUSDeleteQuery(*hssample_table, deleteQuery, transactional);
 
   if (LM->LogNeeded()) {
     LM->Log("query to delete from PS:");
@@ -7086,10 +7099,21 @@ Lng32 HSGlobalsClass::UpdateIUSPersistentSampleTable(Int64 oldSampleSize,
   }
 
   rowsAffected = 0;
-  retcode = HSFuncExecTransactionalQueryWithRetry(deleteQuery, -UERR_INTERNAL_ERROR,
+  if (transactional)
+    {
+      retcode = HSFuncExecTransactionalQueryWithRetry(deleteQuery, -UERR_INTERNAL_ERROR,
                             &rowsAffected,
                             "IUS delete from PS where",
                             NULL, NULL);
+    }
+  else
+    {
+      retcode = HSFuncExecQuery(deleteQuery, -UERR_INTERNAL_ERROR,
+                            &rowsAffected,
+                            "IUS delete from PS where",
+                            NULL, NULL);
+    }
+
   if (LM->LogNeeded()) {
     LM->StopTimer();
     sprintf(LM->msg, PF64 " rows deleted from persistent sample table.", rowsAffected);
@@ -12544,9 +12568,13 @@ NAString& HSGlobalsClass::getWherePredicateForIUS()
 // Return the following string in the queryText parameter:
 // delete from <smplTable> where <whereCondition>
 void HSGlobalsClass::generateIUSDeleteQuery(const NAString& smplTable,
-                                            NAString& queryText)
+                                            NAString& queryText,
+                                            NABoolean transactional)
 {
-  queryText = "DELETE FROM ";
+  if (transactional)
+    queryText = "DELETE FROM ";
+  else
+    queryText = "DELETE WITH NO ROLLBACK FROM ";
 
   queryText.append(smplTable.data());
 

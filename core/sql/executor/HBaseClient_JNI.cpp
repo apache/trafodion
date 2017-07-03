@@ -106,6 +106,8 @@ static const char* const hbcErrorEnumStr[] =
  ,"Java exception in deleteSnapshot()."
  ,"JNI NewStringUTF() in verifySnapshot()."
  ,"Java exception in verifySnapshot()."
+ ,"Preparing parameters for truncate()."
+ ,"Java exception in truncate()."
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -294,6 +296,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_HBC_DELETE_SNAPSHOT].jm_signature = "(Ljava/lang/String;)Z";
     JavaMethods_[JM_HBC_VERIFY_SNAPSHOT].jm_name      = "verifySnapshot";
     JavaMethods_[JM_HBC_VERIFY_SNAPSHOT].jm_signature = "(Ljava/lang/String;Ljava/lang/String;)Z";
+    JavaMethods_[JM_TRUNCATE   ].jm_name      = "truncate";
+    JavaMethods_[JM_TRUNCATE   ].jm_signature = "(Ljava/lang/String;ZJ)Z";
     rc = (HBC_RetCode)JavaObjectInterface::init(className, javaClass_, JavaMethods_, (Int32)JM_LAST, javaMethodsInitialized_);
     javaMethodsInitialized_ = TRUE;
     pthread_mutex_unlock(&javaMethodsInitMutex_);
@@ -942,6 +946,38 @@ HBC_RetCode HBaseClient_JNI::registerTruncateOnAbort(const char* fileName, Int64
 //////////////////////////////////////////////////////////////////////////////
 // 
 //////////////////////////////////////////////////////////////////////////////
+HBC_RetCode HBaseClient_JNI::truncate(const char* fileName, NABoolean preserveSplits, Int64 transID)
+{
+  QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::truncate(%s) called.", fileName);
+  if (initJNIEnv() != JOI_OK)
+     return HBC_ERROR_INIT_PARAM;
+
+  jstring js_fileName = jenv_->NewStringUTF(fileName);
+  if (js_fileName == NULL) 
+  {
+    GetCliGlobals()->setJniErrorStr(getErrorText(HBC_ERROR_DROP_PARAM));
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_TRUNCATE_PARAM;
+  }
+  jboolean j_preserveSplits = preserveSplits;
+  jlong j_tid = transID;  
+  // boolean drop(java.lang.String);
+  tsRecentJMFromJNI = JavaMethods_[JM_TRUNCATE].jm_full_name;
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_TRUNCATE].methodID, js_fileName, j_preserveSplits, j_tid);
+
+  if (jenv_->ExceptionCheck())
+  {
+    getExceptionDetails(jenv_);
+    logError(CAT_SQL_HBASE, __FILE__, __LINE__);
+    logError(CAT_SQL_HBASE, "HBaseClient_JNI::drop()", getLastError());
+    jenv_->PopLocalFrame(NULL);
+    return HBC_ERROR_TRUNCATE_EXCEPTION;
+  }
+
+  jenv_->PopLocalFrame(NULL);
+  return HBC_OK;
+}
+
 HBC_RetCode HBaseClient_JNI::drop(const char* fileName, JNIEnv* jenv, Int64 transID)
 {
   QRLogger::log(CAT_SQL_HBASE, LL_DEBUG, "HBaseClient_JNI::drop(%s) called.", fileName);
@@ -2530,7 +2566,7 @@ HBC_RetCode HBaseClient_JNI::insertRows(NAHeap *heap, const char *tableName,
      htc->setHbaseStats(hbs);
   }
   if (initJNIEnv() != JOI_OK) {
-    if (htc != NULL) 
+     if (htc != NULL) 
        NADELETE(htc, HTableClient_JNI, heap);
      return HBC_ERROR_INIT_PARAM;
   }

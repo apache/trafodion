@@ -52,6 +52,14 @@ def run():
             lines.append(line)
 
     lines.append('end node\n')
+    lines.append('\n')
+    lines.append('begin overflow\n')
+
+    for scratch_loc in scratch_locs:
+        line = 'hdd %s\n' % scratch_loc
+        lines.append(line)
+
+    lines.append('end overflow\n')
 
     # write out the node section
     with open(sqconfig_file, 'w') as f:

@@ -2802,7 +2802,7 @@ CoprocessorService, Coprocessor {
       switch(regionState) {
               case REGION_STATE_RECOVERING: // RECOVERING, already create a list of in-doubt txn, but still in the state of resolving them,
                            // retrieve all in-doubt txn from rmid and return them into a long a
-                    if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV:recoveryRequest in region starting" + regionInfo.getEncodedName() + " has in-doubt transaction " + indoubtTransactionsById.size());
+                    if (LOG.isInfoEnabled()) LOG.info("TRAF RCOV:recoveryRequest in region starting " + regionInfo.getEncodedName() + " has in-doubt transaction " + indoubtTransactionsById.size());
                     for (Entry<Long, List<WALEdit>> entry : indoubtTransactionsById.entrySet()) {
                           long tid = entry.getKey();
                           int nodeid = (int) TransactionState.getNodeId(tid);
@@ -4015,6 +4015,25 @@ CoprocessorService, Coprocessor {
     if (LOG.isTraceEnabled()) LOG.trace("Trafodion Recovery: region " + m_regionDetails + " is STARTED.");
   }
 
+  public static void WALSync(WAL wal, long transactionId, long txid) throws IOException
+  {
+     try {
+       if (txid == 0)
+          wal.sync();
+       else
+          wal.sync(txid);
+     } catch (IOException wale) {
+        wale.fillInStackTrace();
+        LOG.error("commitRequest txId: " + transactionId + " HLog seq " + txid + " Caught IOException in HLOG sync ", wale );
+        try {
+           Thread.sleep(1000);          ///1000 milliseconds is one second.
+        } catch(InterruptedException ex) {
+             Thread.currentThread().interrupt();
+        }
+        throw wale;
+     }
+  }
+
   /**
    * Commits the transaction
    * @param TrxTransactionState state
@@ -4435,7 +4454,7 @@ CoprocessorService, Coprocessor {
 						 false, 
 						 null);
 #endif
-           	this.tHLog.sync(txid);
+                WALSync(tHLog, transactionId, txid);
 
 #ifdef CDH5.7 APACHE1.2	
 		if (writeEntry != null) {
@@ -5507,7 +5526,7 @@ CoprocessorService, Coprocessor {
 				    + " HLog seq " 
 				    + txid
 				    );
-                       this.tHLog.sync(txid);
+                       WALSync(tHLog, transactionId, txid);
 #ifdef CDH5.7 APACHE1.2	
 		       if (writeEntry != null) {
 		            this.t_Region.getMVCC().completeAndWait(writeEntry);
@@ -6020,6 +6039,7 @@ TrxTransactionState isTransactionOnCommittedList(final long transactionId)
         else {
            state.prepareEditSize = state.getEdit().getCells().size();
         }
+        
 
 /*	
 		ArrayList<Cell> wkvs = state.getEdit().getCells();
@@ -6036,7 +6056,6 @@ TrxTransactionState isTransactionOnCommittedList(final long transactionId)
 		  
 #ifdef CDH5.7 APACHE1.2
                 txid = this.tHLog.append(this.m_Region.getTableDesc(), this.regionInfo, wk, state.getEdit(), false);
-		
 		writeEntry = wk.getWriteEntry();
 		mvccNum = writeEntry.getWriteNumber();
 	
@@ -6070,11 +6089,10 @@ TrxTransactionState isTransactionOnCommittedList(final long transactionId)
 						     + " flushHLOG: " + flushHLOG
 						     );
 #endif
-		if (flushHLOG) this.tHLog.sync(txid);
+		if (flushHLOG) WALSync(tHLog, transactionId, txid);
             }
             else {
-                  //if (LOG.isDebugEnabled()) LOG.debug("YYY0 commitRequest just SYNC -- EXIT txId: " + transactionId + " MAX HLog seq " + state.getFlushTxId());
-                  if (flushHLOG) this.tHLog.sync(state.getFlushTxId());
+                 if (flushHLOG) WALSync(tHLog, transactionId, state.getFlushTxId());
             }
 
 #ifdef CDH5.7 APACHE1.2	
@@ -6092,7 +6110,8 @@ TrxTransactionState isTransactionOnCommittedList(final long transactionId)
             //if (LOG.isTraceEnabled()) LOG.trace("TrxRegionEndpoint coprocessor:commitRequest COMMIT_OK -- EXIT txId: "
             // + transactionId + " regionTx: " + state.getIsRegionTx() + " HLog seq " + txid);
       } catch (IOException exp) {
-          LOG.error("commitRequest txId: " + transactionId + " HLog seq " + txid + " Caught IOException in HLOG appendNoSync ", exp );
+          exp.fillInStackTrace();
+          LOG.error("commitRequest txId: " + transactionId + " HLog seq " + txid + " Caught IOException in HLOG operations", exp );
           throw exp;
       }
  
@@ -6362,7 +6381,7 @@ TrxTransactionState isTransactionOnCommittedList(final long transactionId)
 					  false,
 					  null);
 #endif
-        this.tHLog.sync(txid);
+        WALSync(tHLog, transactionId, txid);
 
 #ifdef CDH5.7 APACHE1.2	
 		if (writeEntry != null) {
@@ -6780,12 +6799,12 @@ TrxTransactionState isTransactionOnCommittedList(final long transactionId)
       if (minStartSeqNumber == null) {
         minStartSeqNumber = Long.MAX_VALUE;  
       }
-
+      
       synchronized (commitedTransactionsBySequenceNumber) {
       choreCount++;
-      try{
-         this.tHLog.sync();
-      }catch (IOException ioe){
+      try {
+          WALSync(tHLog, -1, 0);
+      } catch (IOException ioe) {
          LOG.error("chore removeUnNeededCommitedTransactions Cleanup " + m_regionDetails + " exception: ", ioe);
       }
       if ((commitedTransactionsBySequenceNumber.size() != 0) && ((choreCount % 20) == 1)) {

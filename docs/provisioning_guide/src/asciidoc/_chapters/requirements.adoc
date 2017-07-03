@@ -162,28 +162,10 @@ have {project-name}, HBase, or HDFS servers on them.
 on the cluster where you intend to install {project-name}:
 
 * Hadoop Distributed File System (HDFS)
-* YARN with MapReduce version 2
 * ZooKeeper
 * HBase
 * Hive
 * Apache Ambari (Hortonworks) or Cloudera Manager (Cloudera) with associated embedded databases.
-
-The following distributions have been tested with {project-name}.^1^
-
-[cols="25%,15%,10%,50%",options="header"]
-|===
-| Distribution                                        | Version        | HBase Version | Installation Documentation
-| Cloudera Distribution Including Apache Hadoop (CDH) | 5.4            | 1.0           | http://www.cloudera.com/downloads/manager/5-4-0.html[CHD 5.4 Installation] 
-| Hortonworks Data Platform (HDP)                     | 2.3            | 1.1           | http://hortonworks.com/products/data-center/hdp/[HDP 2.3 Installation]
-|===
-
-1. Future releases of {project-name} will move away from distribution-specific integration. Instead, {project-name} will be tested with
-specific version of the Hadoop, HDFS, HBase, and other services/products only.
-2. When possible, install using *parcels* to simply the installation process.
-
-NOTE: {project-name} does not yet support installation on a non-distribution version of Hadoop; that is,
-Hadoop downloaded from the Apache web site. This restriction will be lifted in a later release of
-{project-name}.
 
 [[requirements-software-packages]]
 === Software Packages

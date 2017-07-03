@@ -176,19 +176,13 @@ static Int32 processCommandsFromFile(const char *filename, UdrGlobals &glob);
 static Int32 processSingleCommandFromFile(FILE *f, UdrGlobals &glob);
 // LCOV_EXCL_STOP
 
-// Changed the default to 512 to limit java heap size used by SQL processes.
-// Keep this define in sync with executor/JavaObjectInterface.cpp
-#define DEFAULT_JVM_MAX_HEAP_SIZE 512
-#define DEFAULT_COMPRESSED_CLASSSPACE_SIZE 128
-#define DEFAULT_MAX_METASPACE_SIZE 128
-
 static NAString initErrText("");
 /*************************************************************************
    Helper function to propagate all Java-related environment settings
    found in an optional configuration file into an LmJavaOptions instance.
 
    File must be in location indicated by envvar TRAFUDRCFG, or if not found, 
-   use default of $TRAF_HOME/conf/trafodion.udr.config
+   use default of $TRAF_CONF/trafodion.udr.config
 *************************************************************************/
 void readCfgFileSection ( const char *section, LmJavaOptions &javaOptions )
 {
@@ -229,35 +223,6 @@ void InitializeJavaOptionsFromEnvironment(LmJavaOptions &javaOptions
                                          )
 {
    char *val;
-
-   if ((val = getenv("CLASSPATH")))
-   {
-      javaOptions.addSystemProperty("java.class.path", val);
-   }
-   char maxHeapOption[64];
-   int maxHeapEnvvarMB = DEFAULT_JVM_MAX_HEAP_SIZE;
-   sprintf(maxHeapOption, "-Xmx%dm", maxHeapEnvvarMB);
-   javaOptions.addOption((const char *)maxHeapOption, TRUE);
-
-   char compressedClassSpaceSizeOptions[64];
-   int compressedClassSpaceSize = 0;
-   const char *compressedClassSpaceSizeStr = getenv("JVM_COMPRESSED_CLASS_SPACE_SIZE");
-   if (compressedClassSpaceSizeStr)
-      compressedClassSpaceSize = atoi(compressedClassSpaceSizeStr);
-   if (compressedClassSpaceSize <= 0)
-      compressedClassSpaceSize = DEFAULT_COMPRESSED_CLASSSPACE_SIZE;
-   sprintf(compressedClassSpaceSizeOptions, "-XX:CompressedClassSpaceSize=%dm", compressedClassSpaceSize);
-   javaOptions.addOption((const char *)compressedClassSpaceSizeOptions, TRUE);
-
-   char maxMetaspaceSizeOptions[64];
-   int maxMetaspaceSize = 0;
-   const char *maxMetaspaceSizeStr = getenv("JVM_MAX_METASPACE_SIZE");
-   if (maxMetaspaceSizeStr)
-      maxMetaspaceSize = atoi(maxMetaspaceSizeStr);
-   if (maxMetaspaceSize <= 0)
-      maxMetaspaceSize = DEFAULT_MAX_METASPACE_SIZE;
-   sprintf(maxMetaspaceSizeOptions, "-XX:MaxMetaspaceSize=%dm", maxMetaspaceSize);
-   javaOptions.addOption((const char *)maxMetaspaceSizeOptions, TRUE);
 
    /* Look for java startup options and envvars in configuration file */
    if (UdrCfgParser::cfgFileIsOpen(initErrText))

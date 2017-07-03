@@ -29,7 +29,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.hadoop.conf.Configuration;
+import org.trafodion.sql.TrafConfiguration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.SequenceFile;
@@ -45,20 +47,27 @@ import org.apache.hadoop.util.ReflectionUtils;
 
 public class SequenceFileReader {
 
-  Configuration conf = null;           // File system configuration
+  static Configuration conf = null;           // File system configuration
   SequenceFile.Reader reader = null;   // The HDFS SequenceFile reader object.
   Writable key = null;
   Writable row = null;
 //    LazySimpleSerDe serde = null;
   boolean isEOF = false;
   String lastError = null;  
+  static { 
+    String confFile = System.getProperty("trafodion.log4j.configFile");
+    if (confFile == null) {
+   	System.setProperty("trafodion.sql.log", System.getenv("TRAF_HOME") + "/logs/trafodion.sql.java.log");
+    	confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
+    }
+    PropertyConfigurator.configure(confFile);
+    conf = TrafConfiguration.create(TrafConfiguration.HDFS_CONF);
+  }
     
-	/**
-	 * Class Constructor
-	 */
-	SequenceFileReader() {
-    	conf = new Configuration();
-    	conf.set("fs.hdfs.impl","org.apache.hadoop.hdfs.DistributedFileSystem");
+  /**
+  * Class Constructor
+  */
+  SequenceFileReader() {
   }
     
   String getLastError() {

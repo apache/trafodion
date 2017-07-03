@@ -17532,13 +17532,6 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
       return NULL;
     }
 
-  // if this is a maintenance-type operation that must run on
-  // all nodes of the cluster or must run in parallel, regardless
-  // of the ATTEMPT_ESP_PARALLELISM CQD, then set a flag in the
-  // root node
-  if (getOperatorType() == REL_TABLE_MAPPING_BUILTIN_LOG_READER)
-    bindWA->getTopRoot()->setMustUseESPs(TRUE);
-
   // add the routine to the UdrStoiList.  The UdrStoi list is used
   // to check valid privileges
   LIST(OptUdrOpenInfo *) udrList = bindWA->getUdrStoiList ();

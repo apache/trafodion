@@ -152,17 +152,17 @@ public class HBaseClient {
     static {
     	//Some clients of this class e.g., DcsServer/JdbcT2 
     	//want to use use their own log4j.properties file instead
-    	//of the /conf/lo4j.hdf.config so they can see their
+    	//of the lo4j.hdf.config so they can see their
     	//log events in their own log files or console.
     	//So, check for alternate log4j.properties otherwise
     	//use the default HBaseClient config.
     	String confFile = System.getProperty("trafodion.log4j.configFile");
     	if (confFile == null) {
     		System.setProperty("trafodion.sql.log", System.getenv("TRAF_HOME") + "/logs/trafodion.sql.java.log");
-    		confFile = System.getenv("TRAF_HOME") + "/conf/log4j.sql.config";
+    		confFile = System.getenv("TRAF_CONF") + "/log4j.sql.config";
     	}
     	PropertyConfigurator.configure(confFile);
-        config = TrafConfiguration.create();
+        config = TrafConfiguration.create(TrafConfiguration.HBASE_CONF);
     }
 
     
@@ -191,7 +191,7 @@ public class HBaseClient {
            }
         }
     }
- 
+
     public boolean create(String tblName, Object[]  colFamNameList,
                           boolean isMVCC) 
         throws IOException, MasterNotRunningException {
@@ -644,6 +644,25 @@ public class HBaseClient {
         return true;
     }
 
+    public boolean truncate(String tblName, boolean preserveSplits, long transID)
+             throws MasterNotRunningException, IOException {
+        if (logger.isDebugEnabled()) logger.debug("HBaseClient.truncate(" + tblName + ") called.");
+        Admin admin = getConnection().getAdmin();
+        try {
+           if (transID != 0)  {
+              throw new IOException("Unsupported : Hbase truncate within a transaction");
+           }
+           else {
+              TableName tableName = TableName.valueOf(tblName);
+              admin.truncateTable(tableName, preserveSplits);
+           }
+        } finally {
+           admin.close();
+        }
+        return true;
+    }
+
+
     public boolean drop(String tblName, long transID)
              throws MasterNotRunningException, IOException {
         if (logger.isDebugEnabled()) logger.debug("HBaseClient.drop(" + tblName + ") called.");
@@ -740,7 +759,7 @@ public class HBaseClient {
                 switch (clusterStatsState) {
                 case 1: // open
                     {
-                        rsc = new TrafRegionStats();
+                        rsc = new TrafRegionStats(getConnection());
                         rsc.Open();
 
                         regionInfo = new byte[MAX_REGION_INFO_ROWS][];

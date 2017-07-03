@@ -175,7 +175,6 @@ SQScratchFile::SQScratchFile(ScratchSpace *scratchSpace,
 
 	  //other flags
 	  flags |= O_APPEND;
-	  flags |= O_NONBLOCK;
 	  flags |= O_NOATIME;
 
 	  //O_DIRECT is ON by default. User has to explicitly define

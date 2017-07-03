@@ -20,16 +20,12 @@
 # @@@ END COPYRIGHT @@@
 
 INSTALL_LIBDIR := ${TRAF_HOME}/export/lib
-INSTALL_SCRIPTSDIR := ${TRAF_HOME}/sql/scripts
 CP :=/bin/cp -f
 all:
 	@$(MAVEN) package -DskipTests
 	mkdir -p ${INSTALL_LIBDIR}
 	${CP} target/lib_mgmt-${TRAFODION_VER}.jar ${INSTALL_LIBDIR}/lib_mgmt.jar
-	${CP} src/main/resources/init_libmgmt.sh ${INSTALL_SCRIPTSDIR}/
-	@chmod +x ${INSTALL_SCRIPTSDIR}/init_libmgmt.sh
 clean:
 	@rm -f ${INSTALL_LIBDIR}/lib_mgmt.jar
-	@rm -f ${INSTALL_SCRIPTSDIR}/init_libmgmt.sh
 	@$(MAVEN) clean
 cleanall: clean

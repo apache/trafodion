@@ -671,7 +671,8 @@ ex_expr::exp_return_type convInt64ToAscii(char *target,
                           (char*)&source,
                           sizeof(Int64), REC_BIN64_SIGNED, scale, trgType,
                           flags,
-                          targetLen, targetScale);
+                          targetLen, targetScale,
+                          targetPrecision);
     return ex_expr::EXPR_ERROR;   
   } 
   
@@ -11825,7 +11826,8 @@ ex_expr::exp_return_type ex_conv_clause::eval(char *op_data[],
                               tgt->getDatatype(),
                               0,
                               tgt->getLength(),
-                              tgt->getScale());
+                              tgt->getScale(),
+                              tgt->getPrecision());
         retcode = ex_expr::EXPR_ERROR;
       }
       else if (((*diagsArea)->getWarningEntry(warningMark2 - counter + 1))->

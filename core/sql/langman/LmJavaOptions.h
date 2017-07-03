@@ -90,6 +90,9 @@ public:
   // whitespace from each individual option before inserting it.
   void addOptions(const char *options, const char *delimiters, NABoolean trim);
 
+  // find an option by its prefix and return its index or NULL_COLL_INDEX
+  CollIndex findByPrefix(const char *prefix) const;
+
   // Convenience function to add a single "-Dname=value" option
   void addSystemProperty(const char *name, const char *value);
 

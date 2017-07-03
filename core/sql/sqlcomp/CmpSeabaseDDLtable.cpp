@@ -9756,20 +9756,8 @@ void CmpSeabaseDDL::seabaseGrantRevoke(
   if (objectUID == 0 &&
       naTable && naTable->isHiveTable())
     {
-      // For native hive tables, grantor must be DB__ROOT or belong
-      // to one of the admin roles:  DB__ROOTROLE, DB__HIVEROLE
-      // In hive, you must be an admin, DB__ROOTROLE and DB__HIVEROLE
-      // is the equivalent of an admin.
-      if (!ComUser::isRootUserID() &&
-          !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
-          !ComUser::currentUserHasRole(HIVE_ROLE_ID)) 
-        {
-          *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
-          processReturn();
-          return;
-        }
-
-      // register this hive table in traf metadata
+      // Register this hive table in traf metadata
+      // Privilege checks performed by register code
       char query[(ComMAX_ANSI_IDENTIFIER_EXTERNAL_LEN*4) + 100];
       snprintf(query, sizeof(query),
                "register internal hive %s if not exists %s.\"%s\".\"%s\"",
@@ -10784,10 +10772,11 @@ void CmpSeabaseDDL::regOrUnregNativeObject(
   // to one of the admin roles:  DB__ROOTROLE, DB__HIVEROLE/DB__HBASEROLE.
   // In hive/hbase, you must be an admin, DB__ROOTROLE,DB__HIVEROLE/HBASEROLE
   // is the equivalent of an admin.
-  if (!ComUser::isRootUserID() &&
-      !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
-      ((isHive && !ComUser::currentUserHasRole(HIVE_ROLE_ID)) ||
-       (isHBase && !ComUser::currentUserHasRole(HBASE_ROLE_ID))))
+ if (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL) &&
+     !ComUser::isRootUserID() &&
+     !ComUser::currentUserHasRole(ROOT_ROLE_ID) &&
+     ((isHive && !ComUser::currentUserHasRole(HIVE_ROLE_ID)) ||
+      (isHBase && !ComUser::currentUserHasRole(HBASE_ROLE_ID))))
     {
       *CmpCommon::diags() << DgSqlCode (-CAT_NOT_AUTHORIZED);
       processReturn();
