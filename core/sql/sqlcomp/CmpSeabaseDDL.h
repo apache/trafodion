@@ -206,6 +206,11 @@ class CmpSeabaseDDL
 
   static short invalidateStats(Int64 tableUID);
 
+  short genHbaseRegionDescs(TrafDesc * desc,
+                            const NAString &catName, 
+                            const NAString &schName, 
+                            const NAString &objName);
+  
   NABoolean isAuthorizationEnabled();
 
   short existsInHbase(const NAString &objName,
@@ -1438,6 +1443,10 @@ public:
   short upgradeRepos(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
   short upgradeReposComplete(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
   short upgradeReposUndo(ExeCliInterface * cliInterface, CmpDDLwithStatusInfo *mdui);
+
+  NAString genHBaseObjName(const NAString &catName, 
+			   const NAString &schName,
+			   const NAString &objName);
 
 protected:
 

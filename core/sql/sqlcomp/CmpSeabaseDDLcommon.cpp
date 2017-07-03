@@ -3337,6 +3337,15 @@ static short isValidHbaseName(const char * str)
   return -1; // valid name
 }
 
+NAString CmpSeabaseDDL::genHBaseObjName(const NAString &catName, 
+                                        const NAString &schName,
+                                        const NAString &objName)
+{
+  NAString extNameForHbase =  "" ;
+  extNameForHbase += catName + "." + schName + "." + objName;
+  return extNameForHbase;
+}
+
 // RETURN: 1, exists. 0, does not exists. -1, error.
 short CmpSeabaseDDL::existsInSeabaseMDTable(
                                           ExeCliInterface *cliInterface,

@@ -420,6 +420,7 @@ Long TrafIndexesDesc::pack(void * space)
   files_desc.pack(space);
   keys_desc.pack(space);
   non_keys_desc.pack(space);
+  hbase_regionkey_desc.pack(space);
 
   return TrafDesc::pack(space);
 }
@@ -434,6 +435,7 @@ Lng32 TrafIndexesDesc::unpack(void * base, void * reallocator)
   if (files_desc.unpack(base, reallocator)) return -1;
   if (keys_desc.unpack(base, reallocator)) return -1;
   if (non_keys_desc.unpack(base, reallocator)) return -1;
+  if (hbase_regionkey_desc.unpack(base, reallocator)) return -1;
 
   return TrafDesc::unpack(base, reallocator);
 }

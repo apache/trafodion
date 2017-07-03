@@ -654,7 +654,10 @@ public:
   // Used specially for vertical partition column(s).
   DescStructPtr non_keys_desc;
 
-  char filler[24];
+  // for hbase's region keys
+  DescStructPtr hbase_regionkey_desc;
+
+  char filler[16];
 };
 
 class TrafKeysDesc : public TrafDesc {
