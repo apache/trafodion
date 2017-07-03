@@ -461,8 +461,10 @@ Int32 str_convertToHexAscii(const char * src,                   // in
 //    char * dataPointer = getDataPointer();
 //    Lng32 len = tupp_.getAllocatedSize();
 //
-//    printBrief(dataPointer, len) 
+//    printBrief(dataPointer, len) if you want an end of line
+//
+//    printBrief(dataPointer, len, FALSE) if you don't 
 //    
 NA_EIDPROC
-void printBrief(char* dataPointer, Lng32 keyLen); 
+void printBrief(char* dataPointer, Lng32 keyLen, NABoolean endLine = TRUE); 
 #endif // STR_H

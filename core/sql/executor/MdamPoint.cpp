@@ -138,6 +138,6 @@ void MdamPoint::printBrief() const
   char * dataPointer = getDataPointer();
   Lng32 keyLen = tupp_.getAllocatedSize();
 
-  printBrief(dataPointer, keyLen);
+  ::printBrief(dataPointer, keyLen, FALSE /* no end of line wanted */);
 }
 #endif

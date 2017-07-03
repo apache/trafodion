@@ -216,6 +216,9 @@ ifeq ($(FLAVOR),debug)
    SYS_CXXFLAGS += -O0
    SYS_DEFS += -D_DEBUG
 
+   # uncomment the next line if you want the MDAM run-time debugging code
+   #SYS_CXXFLAGS += -DNA_MDAM_EXECUTOR_DEBUG
+
    # for coverage checking support
    ifeq ($(SQ_COVERAGE),1)
       SYS_CXXFLAGS += --coverage

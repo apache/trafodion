@@ -1680,20 +1680,28 @@ void MdamKey::preCodeGen(ValueIdSet& executorPredicates,
   // might have wanted).  This code *does not* print any
   // *official* warnings (but it prints a warning to the console).
   // --------------------------------------------------------------------
-  // if the mdamkey has more than one disjunct and if one
-  // disjunct does not have key  predicates:
 
-  // Now, tell each element of the columnOrderListArray up to
-  // which column they contain valid key predicates:
+  // Note: The "for" loop below does two very important things:
+  // 1. Detects empty disjuncts (as discussed above) 
+  //
+  // and, while it is doing that,
+  //
+  // 2. Sets the stop column for each disjunct.
+  //
+  // Note that if we don't set the stop column, then MDAM will traverse
+  // *all* of the key columns, whether they have predicates or not, and
+  // performance will be terrible.
+
   NABoolean isEmpty = FALSE;
-  if (!partKeyPredsAdded)
+
     for (i=0; i < curDisjuncts->entries(); i++)
       {
         (*columnOrderListPtrArrayPtr_)[i]->setStopColumn(getStopColumn(i));
 
         // Find out if the disjunct has key preds:
         const ColumnOrderList& coList= *((*columnOrderListPtrArrayPtr_)[i]);
-        isEmpty = TRUE; // assume it is empty
+        if (!partKeyPredsAdded)
+          isEmpty = TRUE; // assume it is empty
         for (CollIndex j=0; j < coList.entries(); j++)
           {
             if (coList[j] AND (NOT coList[j]->isEmpty()))
@@ -1707,7 +1715,7 @@ void MdamKey::preCodeGen(ValueIdSet& executorPredicates,
             FSOWARNING("Empty disjunct");
             break;
           }
-      } // find out whether there is an empty disjunct
+      } // set stop columns and also find out whether there is an empty disjunct
 
   if (isEmpty)
     {
