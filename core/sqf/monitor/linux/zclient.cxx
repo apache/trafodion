@@ -472,6 +472,22 @@ void CZClient::CheckMyZNode( void )
     TRACE_EXIT;
 }
 
+int CZClient::ZooExistRetry(zhandle_t *zh, const char *path, int watch, struct Stat *stat)
+{
+    int retries = 0;
+    int rc;
+    rc = zoo_exists(zh, path, watch, stat);
+
+    // retry when loss zconnection, this may caused by one zookeeper server down
+    while ( rc == ZCONNECTIONLOSS && retries < ZOOKEEPER_RETRY_COUNT)
+    {
+        sleep(ZOOKEEPER_RETRY_WAIT);
+        retries++;
+        rc = zoo_exists(zh, path, watch, stat);
+    }
+    return rc;
+}
+
 int CZClient::GetClusterZNodes( String_vector *nodes )
 {
     const char method_name[] = "CZClient::GetClusterZNodes";
@@ -500,7 +516,7 @@ int CZClient::GetClusterZNodes( String_vector *nodes )
                         , method_name, __LINE__, trafCluster.c_str() );
         }
         // Verify the existence of the parent ZCLIENT_CLUSTER_ZNODE
-        rc = zoo_exists( ZHandle, trafCluster.c_str( ), 0, &stat );
+        rc = ZooExistRetry( ZHandle, trafCluster.c_str( ), 0, &stat );
         if ( rc == ZNONODE )
         {
             if (retries > 10)
@@ -565,7 +581,7 @@ int CZClient::GetZNodeData( string &monZnode, string &nodeName, int &pnid )
         trace_printf( "%s@%d monZnode=%s\n"
                     , method_name, __LINE__, monZnode.c_str() );
     }
-    rc = zoo_exists( ZHandle, monZnode.c_str( ), 0, &stat );
+    rc = ZooExistRetry( ZHandle, monZnode.c_str( ), 0, &stat );
     if ( rc == ZNONODE )
     {
         // return the error
@@ -692,16 +708,8 @@ int CZClient::InitializeZClient( void )
     TRACE_ENTRY;
 
     int rc;
-    int retries = 0;
 
     rc = MakeClusterZNodes();
-
-    while ( rc != ZOK && retries < ZOOKEEPER_RETRY_COUNT)
-    {
-        sleep(ZOOKEEPER_RETRY_WAIT);
-        retries++;
-        rc = MakeClusterZNodes();
-    }
 
     if ( rc == ZOK )
     {
@@ -730,7 +738,7 @@ bool CZClient::IsZNodeExpired( const char *nodeName, int &zerr )
 
     zerr = ZOK;
 
-    rc = zoo_exists( ZHandle, monZnode.c_str( ), 0, &stat );
+    rc = ZooExistRetry( ZHandle, monZnode.c_str( ), 0, &stat );
     if ( rc == ZNONODE )
     {
         expired = true;
@@ -800,7 +808,7 @@ int CZClient::MakeClusterZNodes( void )
     ss << zkRootNode_.c_str();
     string rootDir( ss.str( ) );
 
-    rc = zoo_exists( ZHandle, rootDir.c_str(), 0, &stat );
+    rc = ZooExistRetry( ZHandle, rootDir.c_str(), 0, &stat );
     switch (rc)
     {
     case ZOK:
@@ -834,7 +842,7 @@ int CZClient::MakeClusterZNodes( void )
        << zkRootNodeInstance_.c_str();
     string instanceDir( ss.str( ) );
 
-    rc = zoo_exists( ZHandle, instanceDir.c_str( ), 0, &stat );
+    rc = ZooExistRetry( ZHandle, instanceDir.c_str( ), 0, &stat );
     switch (rc)
     {
     case ZOK:
@@ -868,7 +876,7 @@ int CZClient::MakeClusterZNodes( void )
        << ZCLIENT_CLUSTER_ZNODE;
     string clusterDir( ss.str( ) );
 
-    rc = zoo_exists( ZHandle, clusterDir.c_str( ), 0, &stat );
+    rc = ZooExistRetry( ZHandle, clusterDir.c_str( ), 0, &stat );
     switch (rc)
     {
     case ZOK:
@@ -1165,7 +1173,7 @@ int CZClient::SetZNodeWatch( string &monZnode )
         trace_printf( "%s@%d monZnode=%s\n"
                     , method_name, __LINE__, monZnode.c_str() );
     }
-    rc = zoo_exists( ZHandle, monZnode.c_str( ), 0, &stat );
+    rc = ZooExistRetry( ZHandle, monZnode.c_str( ), 0, &stat );
     if ( rc == ZNONODE ||
          rc == ZCONNECTIONLOSS || 
          rc == ZOPERATIONTIMEOUT )

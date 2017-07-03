@@ -152,6 +152,7 @@ public:
     int     WatchNodeDelete( const char *nodeName );
 
 private:
+    int     ZooExistRetry(zhandle_t *zh, const char *path, int watch, struct Stat *stat);
     void    CheckCluster( void );
     void    CheckMyZNode( void );
     int     GetClusterZNodes( String_vector *children );
