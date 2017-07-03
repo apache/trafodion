@@ -4123,15 +4123,28 @@ void HSSample::makeTableName(NABoolean isPersSample)
     else
 #endif  /* _DEBUG */
       {
-        char objectIDStr[30];
-        char timestampStr[15];
+        char objectIDStr[30]; // room for 64-bit integer (20 digits max)
+        char zeroPaddedObjectIDStr[30];
+        char timestampStr[20]; // room for _<10 digits>_<6 digits>
         NA_timeval tv;
         NA_gettimeofday(&tv, 0);
 
+        // When constructing the sample table name, we use a fixed-length
+        // representation to minimize non-determinism in test logs. (We
+        // have found that variable-length representations are subject to
+        // havoc with line-wrapping semantics; it's harder to filter out
+        // non-determinism that wraps across lines.)
+
+        // convert object UID to a fixed-length string (with leading zeroes)
+        // note: object UIDs are always positive today
         convertInt64ToAscii(objDef->getObjectUID(), objectIDStr);
-        sprintf(timestampStr, "_%u_%u", (UInt32)tv.tv_sec, (UInt32)tv.tv_usec);
+        strcpy(zeroPaddedObjectIDStr,"000000000000000000000000"); // 20 zeroes
+        strcpy(zeroPaddedObjectIDStr+(20-strlen(objectIDStr)),objectIDStr);
+        
+        // use fixed length strings for the time stamp parts too
+        sprintf(timestampStr, "_%010u_%06u", (UInt32)tv.tv_sec, (UInt32)tv.tv_usec);
         sampleTable += TRAF_SAMPLE_PREFIX;  // "TRAF_SAMPLE_"
-        sampleTable += objectIDStr;
+        sampleTable += zeroPaddedObjectIDStr;
         sampleTable += timestampStr;
 
         // This is FALSE by default; we only set it here defensively in case it
