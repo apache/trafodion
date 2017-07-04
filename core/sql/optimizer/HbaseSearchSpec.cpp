@@ -103,12 +103,12 @@ static NABoolean extractKeyValuePairs(const NAString& source, NAString& result)
       // error, do not have enough buffer to read
       if ( end > tail )
         break;
-      NAString len;
-      source.extract(begin, end-1, len);
+      NAString tmp;
+      source.extract(begin, end-1, tmp);
   
       // get the string
       begin = end;
-      end = begin + (*(UInt16 *)(len.data()));
+      end = begin + (*(UInt16 *)(tmp.data()));
       // if the string lengh is 0, continue
       if ( end == begin) {
         header = end;
@@ -119,7 +119,10 @@ static NABoolean extractKeyValuePairs(const NAString& source, NAString& result)
       // error, do not have enough buffer to read
       else if ( end > tail )
         break;
-      source.extract(begin, end-1, result);
+      // add the new string but stop at any NUL characters
+      tmp.clear();
+      source.extract(begin, end-1, tmp);
+      result.append(tmp.data());
       header = end;
       if ( header < tail )
         result.append(",");
