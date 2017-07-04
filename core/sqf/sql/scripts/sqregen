@@ -44,7 +44,7 @@ function RegenConfig {
     cd $TRAF_HOME/sql/scripts
     ./regensq.pl $SQCONFIG_FILE
     if [ $? != 0 ]; then
-        echo "Failed to run regensq.pl."
+        echo "Regensq failed."
         exit $?
     fi
     echo "Copying Trafodion configuration file $SQCONFIG_FILE to all nodes"
