@@ -376,6 +376,12 @@ public:
     {return (hjFlags_ & LEFT_SIDE_IUD_OPERATION) !=0; }; 
   void setLeftSideIUD() { hjFlags_ |= LEFT_SIDE_IUD_OPERATION;};
 
+  NABoolean beforePredOnOuterOnly() const 
+    {return (hjFlags2_ & BEFORE_PRED_OUTER_ONLY) !=0; }; 
+  void setBeforePredOnOuterOnly() { hjFlags2_ |= BEFORE_PRED_OUTER_ONLY;};
+
+  AggrExpr * minMaxExpr() { return (AggrExpr*)((ex_expr*)minMaxExpr_); }
+
 protected:
   
   enum join_flags { SEMI_JOIN = 0x0001, 
@@ -395,6 +401,7 @@ protected:
                     CONSIDER_BUFFER_DEFRAG = 0x4000,
                     LEFT_SIDE_IUD_OPERATION = 0x8000
   };
+  enum join_flags2 { BEFORE_PRED_OUTER_ONLY = 0x0001 };
 
   ComTdbPtr    leftChildTdb_;                       // 00-07
   ComTdbPtr    rightChildTdb_;                      // 08-15
@@ -498,7 +505,8 @@ private:
   // from the parent.  With the min max opt, it has one
   // additional tuple for the min max values.
   ExCriDescPtr leftDownCriDesc_;                    // 352-369
-  char         fillersComTdbHashj_[6];              // 370-375
+  UInt16       hjFlags2_;                           // 370-371
+  char         fillersComTdbHashj_[4];              // 372-375
   
 
 protected:

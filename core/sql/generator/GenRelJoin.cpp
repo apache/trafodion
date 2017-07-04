@@ -1816,6 +1816,9 @@ short HashJoin::codeGen(Generator * generator) {
     }
   }
 
+  if (beforeJoinPredOnOuterOnly())
+    hashj_tdb->setBeforePredOnOuterOnly();
+
   generator->addToTotalOverflowMemory(
                       getEstimatedRunTimeOverflowSize(memQuota)
                                      );

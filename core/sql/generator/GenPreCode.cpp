@@ -2459,6 +2459,24 @@ RelExpr * Join::preCodeGen(Generator * generator,
 
         }
 
+      // if we have both equi join preds and a beforejoin pred
+      // Set a flag that will cause beforeJoinPred to be evaluated prior
+      // join equi pred during execution. This helps with join explosion
+      // if there are frequent matching values and the beforeJoinPred is
+      // highly selective. There is no downside to evaluating beforeJoinPred
+      // early, if it contains vids from outer only
+      if (!(getEquiJoinPredicates().isEmpty() || getJoinPred().isEmpty() || 
+	    isAntiSemiJoin()))
+      {
+	ValueIdSet dummy1, dummy2, dummy3, uncoveredPreds ;
+	child(0)->getGroupAttr()->coverTest(getJoinPred(),
+					    getGroupAttr()->getCharacteristicInputs(),
+					    dummy1, dummy2, NULL,
+					    &uncoveredPreds);
+	if (uncoveredPreds.isEmpty())
+	  setBeforeJoinPredOnOuterOnly();
+      }
+
     }
 
   if (precodeHalloweenLHSofTSJ)

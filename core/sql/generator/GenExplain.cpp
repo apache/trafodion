@@ -1338,6 +1338,9 @@ Join::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
        } 
  }
 
+ if (beforeJoinPredOnOuterOnly())
+   buffer += "other_join_pred_first: yes ";
+
  explainTuple->setDescription(buffer);
 
  return(explainTuple);
