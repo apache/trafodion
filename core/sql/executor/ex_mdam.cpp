@@ -762,6 +762,8 @@ while ((predIterator.positionToNextOr(&currentPred_)) &&
                                             columnGenInfo_->getLength(),
                                             mdamIntervalHeap,
                                             mdamRefListEntryHeap);
+                or_temp1.deleteAllIntervals(mdamIntervalHeap,
+                                            mdamRefListEntryHeap);
               }
           }
       }

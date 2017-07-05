@@ -1620,9 +1620,11 @@ Int32 str_convertToHexAscii(const char * src,               // in
 //    char * dataPointer = getDataPointer();
 //    Lng32 len = tupp_.getAllocatedSize();
 //
-//    printBrief(dataPointer, len) 
+//    printBrief(dataPointer, len) if you want an end of line
+//
+//    printBrief(dataPointer, len, FALSE) if you don't 
 //    
-void printBrief(char* dataPointer, Lng32 len) 
+void printBrief(char* dataPointer, Lng32 len, NABoolean endLine) 
 {
    // We don't know what the data type is, but we do know how
    // long the field is. So we will guess the data type.
@@ -1771,7 +1773,7 @@ void printBrief(char* dataPointer, Lng32 len)
        }
      }    
    cout << local;
-   // cout << *(Lng32 *)dataPointer;
-   // End test change
+   if (endLine)
+     cout << endl;
  }
 
