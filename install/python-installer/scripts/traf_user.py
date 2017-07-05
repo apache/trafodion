@@ -99,8 +99,6 @@ export TRAF_HOME="%s"
 export TRAF_VAR=$TRAF_HOME/tmp
 export MY_SQROOT=$TRAF_HOME # for compatibility
 export JAVA_HOME="%s"
-export NODE_LIST="%s"
-export MY_NODES="%s"
 export node_count="%s"
 export HADOOP_TYPE="%s"
 export ENABLE_HA="%s"
@@ -108,8 +106,17 @@ export ZOOKEEPER_NODES="%s"
 export ZOOKEEPER_PORT="%s"
 export SECURE_HADOOP="%s"
 export CLUSTERNAME="%s"
-""" % (traf_home, dbcfgs['java_home'], ' '.join(nodes), ' -w ' + ' -w '.join(nodes),
-       str(len(nodes)), hadoop_type, dbcfgs['enable_ha'], zk_nodes, zk_port, dbcfgs['secure_hadoop'], socket.gethostname())
+""" % (traf_home, dbcfgs['java_home'], str(len(nodes)), hadoop_type, dbcfgs['enable_ha'],
+       zk_nodes, zk_port, dbcfgs['secure_hadoop'], socket.gethostname())
+
+    # save additonal configs for elastic
+    trafodion_config += """
+export hbase_xml_file="%s"
+export hbase_lib_path="%s"
+export traf_user="%s"
+export traf_version="%s"
+export dcs_cnt_per_node="%s"
+""" % (dbcfgs['hbase_xml_file'], dbcfgs['hbase_lib_path'], dbcfgs['traf_user'], dbcfgs['traf_version'], dbcfgs['dcs_cnt_per_node'])
 
     run_cmd('mkdir -p %s' % TRAF_CFG_DIR)
     write_file(TRAF_CFG_FILE, trafodion_config)
@@ -125,7 +132,6 @@ export PATH=$PATH:$HADOOP_PREFIX/bin:$HADOOP_PREFIX/sbin:$HBASE_HOME/bin
 
     # set permission
     run_cmd('chown -R %s:%s %s*' % (traf_user, traf_group, TRAF_CFG_DIR))
-
 
     # set ulimits for trafodion user
     ulimits_config = '''

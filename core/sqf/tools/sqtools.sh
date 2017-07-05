@@ -23,12 +23,8 @@
 #
 
 function setup_my_nodes {
-    if [ -z "$MY_NODES" ]; then
-        echo
-    else
-        wnode_names=`trafconf -wname`
-        export MY_NODES="$wnode_names"
-    fi
+    export MY_NODES=`trafconf -wname`
+    export NODE_LIST=`trafconf -name`
 }
 
 function setup_sqpdsh {

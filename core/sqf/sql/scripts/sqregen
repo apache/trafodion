@@ -41,8 +41,15 @@ function Usage {
 
 function RegenConfig {
     echo "Regenerating Trafodion configuration: $SQCONFIG_FILE"
+    cd $TRAF_HOME/sql/scripts
     ./regensq.pl $SQCONFIG_FILE
-    exit $?;
+    if [ $? != 0 ]; then
+        echo "Regensq failed."
+        exit $?
+    fi
+    echo "Copying Trafodion configuration file $SQCONFIG_FILE to all nodes"
+    pdcp `trafconf -wname` $SQCONFIG_FILE $TRAF_HOME/sql/scripts/
+    exit $?
 }
 
 while [ $# != 0 ]
