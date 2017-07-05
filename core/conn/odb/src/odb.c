@@ -663,12 +663,9 @@ char nows[20],                  /* string with date/time in YYYY-MM-DD HH:MM:SS 
      chsch[64];                 /* Set Schema command */
 struct ovar *vv=0;              /* struct var pointer for the Interpreter */
 const char alnum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" ; /* look-up tab to generate random strings */
-
-struct OpointerNode /* record allocated pointer for later free */
-{
-    void *ptr;
-    struct OpointerNode *next;
-} *ptrHead, *ptrTail;
+void **globalPointers = NULL;       /* save pointers to buffers which may shared by many thread and length determined at run time */
+int nGlobalPointers = 0;            /* number of pointers in globalPointers */
+int naGlobalPointers = 0;           /* number of globalPointers allocated chunk */
 
 /* Functions prototypes */
 static void Oerr(int eid, int tid, unsigned int line, SQLHANDLE Ohandle, SQLSMALLINT Otype);
@@ -745,8 +742,7 @@ static char *parsehdfs(int eid, char *hdfs);
 unsigned long tspdiff ( struct timespec *start, struct timespec *end ) ;
 #endif
 static int ucs2toutf8 ( SQLCHAR *str, SQLLEN *len, SQLULEN bs, int bu2 ) ;
-static int appendGlobalPointerChain(void *ptr);
-static void freeGlobalPointerChain();
+static void addGlobalPointer(void *ptr);
 
 int main(int ac, char *av[])
 {
@@ -4329,7 +4325,12 @@ static void gclean(void)
         }
     }
     (void)SQLFreeHandle(SQL_HANDLE_ENV, Oenv);
-    freeGlobalPointerChain();
+
+    for (int i = 0; i < nGlobalPointers; ++i) /* free globalPointers buffer */
+    {
+        free(globalPointers[i]);
+    }
+    free(globalPointers);
 }
 
 /* cancel: executed in interactive mode when ^C is pressed:
@@ -4886,16 +4887,13 @@ static void etabadd(char type, char *run, int id)
             }
             else
             {
-                /* Allocate new buf to save Catalog/Schema/Object */
-                char *ptrCSO = (char *)malloc(strlen(etab[no].tgt) + 1);
-                strcpy(ptrCSO, etab[no].tgt);
-                if (appendGlobalPointerChain(ptrCSO))
-                {
-                    goto etabadd_exit;
-                }
+                /* Allocate new buf to save Catalog/Schema/Table */
+                char *ptrCST = (char *)malloc(strlen(etab[no].tgt) + 1);
+                strcpy(ptrCST, etab[no].tgt);
+                addGlobalPointer(ptrCST);
 
-                /* Split Catalog/Schema/Object */
-                splitcso(ptrCSO, etab[no].Ocso, 1);
+                /* Split Catalog/Schema/Table */
+                splitcso(ptrCST, etab[no].Ocso, 1);
                 if (f & 04000000000)  /* no catalog as null */
                     etab[no].Ocso[0] = '\0';
             }
@@ -13956,50 +13954,21 @@ static int ucs2toutf8 ( SQLCHAR *str, SQLLEN *len, SQLULEN bs, int bu2 )
     return(ret);
 }
 
-/* appendGlobalPointerChain:
- *      append ptr to global variable ptrHead list.
- *
- *      return: 0 on success, -1 on fail.
- */
-static int appendGlobalPointerChain(void *ptr)
+/* addGlobalPointer:
+*      add ptr globalPointers buffer
+*
+*      return: no return, exit on error
+*/
+static void addGlobalPointer(void *ptr)
 {
-    struct OpointerNode *pnew = (struct OpointerNode *)calloc(1, sizeof(struct OpointerNode));
-    if (pnew == NULL)
-    {
-        fprintf(stderr, "odb [main(%d)] - Error allocating memory for %s: [%d] %s\n", 
-            __LINE__, __FILE__, errno, strerror(errno));
-        return -1;
-    }
-    pnew->ptr = ptr;
-    if (ptrHead == NULL)
-    {
-        ptrHead = ptrTail = pnew;
-    }
-    else
-    {
-        ptrTail->next = pnew;
-        ptrTail = pnew;
-    }
-    return 0;
-}
-
-/* freeGlobalPointerChain:
- *      free global ptrHead list.
- */
-static void freeGlobalPointerChain()
-{
-    struct OpointerNode *pNext = NULL;
-    while (ptrHead)
-    {
-        pNext = ptrHead->next;
-        if (ptrHead->ptr)
-        {
-            free(ptrHead->ptr);
+    if (nGlobalPointers >= (naGlobalPointers * ETAB_CHUNK - 2)) { /* need new memory */
+        if ((globalPointers = realloc(globalPointers, ++naGlobalPointers*ETAB_CHUNK * sizeof(void *))) == (void *)NULL) {
+            fprintf(stderr, "%s [etabnew(%d)] - Error allocating %dth block of etab[] memory: [%d] %s\n",
+                __FILE__, __LINE__, naGlobalPointers, errno, strerror(errno));
+            exit(EX_OSERR);
         }
-        free(ptrHead);
-        ptrHead = pNext;
     }
-    ptrTail = NULL;
+    globalPointers[nGlobalPointers++] = ptr;
 }
 
 /* usagexit:
