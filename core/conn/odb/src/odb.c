@@ -664,6 +664,12 @@ char nows[20],                  /* string with date/time in YYYY-MM-DD HH:MM:SS 
 struct ovar *vv=0;              /* struct var pointer for the Interpreter */
 const char alnum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" ; /* look-up tab to generate random strings */
 
+struct OpointerNode /* record allocated pointer for later free */
+{
+    void *ptr;
+    struct OpointerNode *next;
+} *ptrHead, *ptrTail;
+
 /* Functions prototypes */
 static void Oerr(int eid, int tid, unsigned int line, SQLHANDLE Ohandle, SQLSMALLINT Otype);
 static void Otinfo(SQLCHAR *Oca, SQLCHAR *Osc, SQLCHAR *Ota, char ddl);
@@ -739,6 +745,8 @@ static char *parsehdfs(int eid, char *hdfs);
 unsigned long tspdiff ( struct timespec *start, struct timespec *end ) ;
 #endif
 static int ucs2toutf8 ( SQLCHAR *str, SQLLEN *len, SQLULEN bs, int bu2 ) ;
+static int appendGlobalPointerChain(void *ptr);
+static void freeGlobalPointerChain();
 
 int main(int ac, char *av[])
 {
@@ -4321,6 +4329,7 @@ static void gclean(void)
         }
     }
     (void)SQLFreeHandle(SQL_HANDLE_ENV, Oenv);
+    freeGlobalPointerChain();
 }
 
 /* cancel: executed in interactive mode when ^C is pressed:
@@ -4874,6 +4883,21 @@ static void etabadd(char type, char *run, int id)
             if ( !etab[no].tgt ) {
                 fprintf(stderr, "odb [etabadd(%d)] - Error: missing \'tgt\' operator\n", __LINE__ );
                 goto etabadd_exit;
+            }
+            else
+            {
+                /* Allocate new buf to save Catalog/Schema/Object */
+                char *ptrCSO = (char *)malloc(strlen(etab[no].tgt) + 1);
+                strcpy(ptrCSO, etab[no].tgt);
+                if (appendGlobalPointerChain(ptrCSO))
+                {
+                    goto etabadd_exit;
+                }
+
+                /* Split Catalog/Schema/Object */
+                splitcso(ptrCSO, etab[no].Ocso, 1);
+                if (f & 04000000000)  /* no catalog as null */
+                    etab[no].Ocso[0] = '\0';
             }
             if ( etab[no].flg2 & 0400000000 ) { /* user defined iobuff */
                 if ( !etab[no].iobuff ) {       /* iobuff set to zero */
@@ -6304,11 +6328,6 @@ static void Oload(int eid)
             etab[eid].flg2 & 0002 ? "WITH NO ROLLBACK " : "",
             etab[eid].tgt);
     }
-
-    /* Split Catalog/Schema/Object */
-    splitcso ( etab[eid].tgt, etab[eid].Ocso, 1);
-    if ( f & 04000000000 )  /* no catalog as null */
-        etab[eid].Ocso[0] = '\0';
 
     /* Allocate io buffer */
     if ( ( buff = malloc((size_t)etab[eid].buffsz) ) == (void *)NULL ) {
@@ -7992,11 +8011,6 @@ static void Oload2(int eid)
             goto oload2_exit;
         }
     }
-        
-    /* Split Catalog/Schema/Object */
-    splitcso ( etab[eid].tgt, etab[eid].Ocso, 1);
-    if ( f & 04000000000 )  /* no catalog as null */
-        etab[eid].Ocso[0] = '\0';
 
     /* Allocate io buffer */
     if ( ( buff = malloc((size_t)etab[eid].buffsz) ) == (void *)NULL ) {
@@ -8691,11 +8705,6 @@ static void OloadX(int eid)
         xttype = 1 ;
     if ( etab[eid].flg2 & 0200000000 )
         xdump = 1 ;
-
-    /* Split Catalog/Schema/Object */
-    splitcso ( etab[eid].tgt, etab[eid].Ocso, 1);
-    if ( f & 04000000000 )  /* no catalog as null */
-        etab[eid].Ocso[0] = '\0';
 
     /* Open input file */
     for ( i = j = 0; etab[eid].src[i] && i < sizeof(buff); i++ ) {
@@ -13945,6 +13954,52 @@ static int ucs2toutf8 ( SQLCHAR *str, SQLLEN *len, SQLULEN bs, int bu2 )
     if ( fb )
         free ( u8 ) ;                               /* free memory if allocated */
     return(ret);
+}
+
+/* appendGlobalPointerChain:
+ *      append ptr to global variable ptrHead list.
+ *
+ *      return: 0 on success, -1 on fail.
+ */
+static int appendGlobalPointerChain(void *ptr)
+{
+    struct OpointerNode *pnew = (struct OpointerNode *)calloc(1, sizeof(struct OpointerNode));
+    if (pnew == NULL)
+    {
+        fprintf(stderr, "odb [main(%d)] - Error allocating memory for %s: [%d] %s\n", 
+            __LINE__, __FILE__, errno, strerror(errno));
+        return -1;
+    }
+    pnew->ptr = ptr;
+    if (ptrHead == NULL)
+    {
+        ptrHead = ptrTail = pnew;
+    }
+    else
+    {
+        ptrTail->next = pnew;
+        ptrTail = pnew;
+    }
+    return 0;
+}
+
+/* freeGlobalPointerChain:
+ *      free global ptrHead list.
+ */
+static void freeGlobalPointerChain()
+{
+    struct OpointerNode *pNext = NULL;
+    while (ptrHead)
+    {
+        pNext = ptrHead->next;
+        if (ptrHead->ptr)
+        {
+            free(ptrHead->ptr);
+        }
+        free(ptrHead);
+        ptrHead = pNext;
+    }
+    ptrTail = NULL;
 }
 
 /* usagexit:
