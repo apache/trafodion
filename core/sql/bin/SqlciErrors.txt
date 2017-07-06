@@ -1087,7 +1087,7 @@ $1~String1 --------------------------------
 4015 42000 99999 BEGINNER MAJOR DBADMIN Aggregate functions are placed incorrectly: $0~string0.
 4016 42000 99999 BEGINNER MAJOR DBADMIN The number of derived columns ($0~int0) must equal the degree of the derived table ($1~int1).
 4017 42000 99999 BEGINNER MAJOR DBADMIN Derived column name $0~ColumnName was specified more than once.
-4018 42000 99999 BEGINNER MAJOR DBADMIN -- unused --
+4018 42000 99999 BEGINNER MAJOR DBADMIN Function $0~string0 does not support operands of type $1~String1.
 4019 42000 99999 BEGINNER MAJOR DBADMIN The select list of a subquery in a select list must be scalar (degree of one).
 4020 42000 99999 BEGINNER MAJOR DBADMIN Arithmetic operations on row value constructors are not allowed.
 4021 42000 99999 BEGINNER MAJOR DBADMIN The select list contains a nongrouping non-aggregated column, $0~ColumnName.

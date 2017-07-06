@@ -272,6 +272,7 @@ ParKeyWord ParKeyWords::keyWords_[] = {
   ParKeyWord("CREATE_SYNONYM",     TOK_CREATE_SYNONYM, NONRESTOKEN_),
   ParKeyWord("CREATE_VIEW",        TOK_CREATE_VIEW, NONRESTOKEN_),
   ParKeyWord("CROSS",              TOK_CROSS,       ANS_|RESWORD_),
+  ParKeyWord("CSV_FORMAT",         TOK_CSV_FORMAT,  NONRESTOKEN_),
   ParKeyWord("CUBE",               TOK_CUBE,        COMPAQ_|RESWORD_),
   ParKeyWord("CURDATE",            TOK_CURDATE,     NONRESTOKEN_),
   ParKeyWord("CURRENT",            TOK_CURRENT,     ANS_|RESWORD_|MPWORD_),

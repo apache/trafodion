@@ -7527,6 +7527,8 @@ const NAString BuiltinFunction::getText() const
       return "CONVERTTOBITS";
     case ITM_CONVERTTIMESTAMP:
       return "converttimestamp";
+    case ITM_CSV_FORMAT:
+      return "csv_format";
     case ITM_CURRENT_TIMESTAMP:
       return "current_timestamp";
     case ITM_CURRENT_TIMESTAMP_RUNNING:
