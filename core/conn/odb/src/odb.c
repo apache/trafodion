@@ -9908,16 +9908,7 @@ static void Oextract(int eid)
                 nr += etab[i].nr;
             }
         }
-        /* close single outut file */
-        if ( !(etab[eid].flg & 01000) ) {   /* non multiparted output */
-#ifdef HDFS
-            if ( etab[eid].fho )
-                (*hdfsclose)(hfs, etab[eid].fho);
-#endif
-            if ( etab[eid].fo && etab[eid].fo != stdout ) 
-                fclose ( etab[eid].fo );
-        }
-        /* Print stats */
+
         if ( etab[eid].flg2 & 04000000 ) {  /* initialize XML output buffer */
             xbuffl = snprintf(xbuff, xbuffl, "\n<%s>\n",
                 etab[eid].src ? etab[eid].src : "select" );
@@ -9933,6 +9924,18 @@ static void Oextract(int eid)
             (void)fwrite ( xbuff, 1, xbuffl, etab[eid].fo );
 #endif
         }
+
+        /* close single outut file */
+        if (!(etab[eid].flg & 01000)) {   /* non multiparted output */
+#ifdef HDFS
+            if (etab[eid].fho)
+                (*hdfsclose)(hfs, etab[eid].fho);
+#endif
+            if (etab[eid].fo && etab[eid].fo != stdout)
+                fclose(etab[eid].fo);
+        }
+
+        /* Print stats */
         fprintf(stderr,"[%d] %s Extract statistics:\n", ptid, odbid);
         if ( etab[eid].flg2 & 0100000 )     /* print custom SQL file name */
             fprintf(stderr,"\t[%d] Source (SQL file): %s\n", ptid, etab[eid].cols);
