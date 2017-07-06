@@ -2177,18 +2177,33 @@ short ex_hashj_tcb::workReadOuter() {
         Cluster * iCluster = buckets_[bucketId].getInnerCluster();
         HashTable * ht = iCluster->getHashTable();
         if (ht) {
-          if (rightSearchExpr_ == NULL) {
-            ht->positionSingleChain(&cursor_);
-          } else {
-            ht->position(&cursor_,
-                         leftEntry->getAtp(),
-                         workAtp_,
-                         hashJoinTdb().extRightRowAtpIndex1_,
-                         probeSearchExpr1_,
-                         hashValue_,
-                         doNotChainDup_,
-			 hashJoinTdb().isReturnRightOrdered() );
-          }
+	  NABoolean beforeMatch = TRUE;
+	  if ( beforeJoinPred1_ && hashJoinTdb().beforePredOnOuterOnly() ) {
+	    retCode = beforeJoinPred1_->eval(leftEntry->getAtp(), workAtp_);
+	    if (retCode == ex_expr::EXPR_ERROR)
+	    {
+	      return processError(leftEntry->getAtp());
+	    }
+	    else if (retCode != ex_expr::EXPR_TRUE)
+	    {
+	      cursor_.init();
+	      beforeMatch = FALSE;
+	    }
+	  }
+	  if (beforeMatch) {
+	    if (rightSearchExpr_ == NULL) {
+	      ht->positionSingleChain(&cursor_);
+	    } else {
+	      ht->position(&cursor_,
+			   leftEntry->getAtp(),
+			   workAtp_,
+			   hashJoinTdb().extRightRowAtpIndex1_,
+			   probeSearchExpr1_,
+			   hashValue_,
+			   doNotChainDup_,
+			   hashJoinTdb().isReturnRightOrdered() );
+	    }
+	  }
 	  if ((cursor_.getBeginRow() == NULL) && hashJoinStats_) {
 	    hashJoinStats_->incEmptyChains();
 	  }
@@ -2558,7 +2573,7 @@ short ex_hashj_tcb::workProbe() {
     // evaluate beforeJoinPredicate
     beforeJoinPred = phase2 ? beforeJoinPred1_ : beforeJoinPred2_ ;
 
-    if ( beforeJoinPred ) {
+    if ( beforeJoinPred && !hashJoinTdb().beforePredOnOuterOnly() ) {
       switch ( beforeJoinPred->eval(inputAndPhase2LeftRowAtp, workAtp_) ) {
       case ex_expr::EXPR_ERROR : return processError(inputAndPhase2LeftRowAtp);
       case ex_expr::EXPR_TRUE  : break;   // Before Predicate Passed !
@@ -2977,6 +2992,8 @@ void ex_hashj_tcb::workReadOuterCluster() {
   ex_queue_entry * downParentEntry =  parentQueue_.down->getHeadEntry();
   ex_hashj_private_state &  pstate =
           *((ex_hashj_private_state*) downParentEntry->pstate);
+  ex_expr::exp_return_type retCode;
+  NABoolean beforeMatch = TRUE;
 
   while (row) {
     
@@ -2999,19 +3016,35 @@ void ex_hashj_tcb::workReadOuterCluster() {
     // Adjust the datapointer in the work atp to point beyond the HashRow.
     workAtp_->getTupp(hashJoinTdb().extLeftRowAtpIndex_).
       setDataPointer(row->getData());
-    // get the inner clusters hash table and position on the first
-    // potential match
-    HashTable * ht = iCluster->getHashTable();
-    if (rightSearchExpr_ == NULL) {
-      ht->positionSingleChain(&cursor_);
-    } else {
-      ht->position(&cursor_,
-                   workAtp_,
-                   workAtp_,
-                   hashJoinTdb().extRightRowAtpIndex1_,
-                   probeSearchExpr2_,
-                   row->hashValue(), 
-                   doNotChainDup_);
+    beforeMatch = TRUE;
+    if ( beforeJoinPred2_ && hashJoinTdb().beforePredOnOuterOnly()) {
+      retCode = beforeJoinPred2_->eval(downParentEntry->getAtp(), workAtp_);
+      if (retCode == ex_expr::EXPR_ERROR)
+       {
+	 processError(downParentEntry->getAtp());
+	 return ;
+       }
+      else if (retCode != ex_expr::EXPR_TRUE)
+	{
+	  cursor_.init();
+	  beforeMatch = FALSE;
+	}
+    }
+    if (beforeMatch) {
+      // get the inner clusters hash table and position on the first
+      // potential match
+      HashTable * ht = iCluster->getHashTable();
+      if (rightSearchExpr_ == NULL) {
+	ht->positionSingleChain(&cursor_);
+      } else {
+	ht->position(&cursor_,
+		     workAtp_,
+		     workAtp_,
+		     hashJoinTdb().extRightRowAtpIndex1_,
+		     probeSearchExpr2_,
+		     row->hashValue(), 
+		     doNotChainDup_);
+      }
     }
     if (cursor_.getBeginRow() == NULL && onlyReturnResultsWhenInnerMatched_ ) {
       // Not matched.  Get the next row.

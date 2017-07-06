@@ -208,7 +208,8 @@ ComTdbHashj::ComTdbHashj(ComTdb * leftChildTdb,
     minMaxValsAtpIndex_(minMaxValsAtpIndex),
     minMaxRowLength_(minMaxRowLength),
     minMaxExpr_(minMaxExpr),
-    leftDownCriDesc_(leftDownCriDesc)
+    leftDownCriDesc_(leftDownCriDesc),
+    hjFlags2_(0)
 {
       // For now
       hjFlags_ = 0;

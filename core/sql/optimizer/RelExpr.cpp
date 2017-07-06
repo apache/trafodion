@@ -5301,6 +5301,8 @@ RelExpr * Join::copyTopNode(RelExpr *derivedNode, CollHeap* outHeap)
 
   result->isForTrafLoadPrep_ = isForTrafLoadPrep_;
 
+  result->beforeJoinPredOnOuterOnly_ = beforeJoinPredOnOuterOnly_;
+
   return RelExpr::copyTopNode(result, outHeap);
 }
 

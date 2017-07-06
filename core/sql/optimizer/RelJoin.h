@@ -157,6 +157,7 @@ public:
   , tsjForSideTreeInsert_(FALSE)
   , enableTransformToSTI_(FALSE)
   , isForTrafLoadPrep_(FALSE)
+  , beforeJoinPredOnOuterOnly_(FALSE)
   { }
 
   // copy ctor
@@ -258,6 +259,11 @@ public:
 
   NABoolean isFloatingJoin() const { return floatingJoin_; }
   void setFloatingJoin() { floatingJoin_ = TRUE; }
+
+
+  NABoolean beforeJoinPredOnOuterOnly() const
+  { return beforeJoinPredOnOuterOnly_; }
+  void setBeforeJoinPredOnOuterOnly() { beforeJoinPredOnOuterOnly_ = TRUE; }
 
   // Accessor method for returning any required order that was specified.
   // If there was a required order, it could only have come from a
@@ -1181,6 +1187,10 @@ private:
 
 
   NABoolean isForTrafLoadPrep_;
+  
+  // used for HJ and MJ (later). Causes beforeJoinPred to be evaluated prior
+  // to equi join pred in work() method.
+  NABoolean beforeJoinPredOnOuterOnly_;
 }; // class Join
 
 // -----------------------------------------------------------------------
