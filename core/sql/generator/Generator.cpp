@@ -795,18 +795,7 @@ NABoolean remapESPAllocationViaUserInputs(FragmentDir *fragDir,
   //
   NABoolean cycleSegs =
     (ActiveSchemaDB()->getDefaults()).getAsLong(CYCLIC_ESP_PLACEMENT);
-
-  
-  // Structures used to get the Super Node map for this query.
-  //
-  NAArray<CollIndex>* segmentList;
-  NAArray<NAList<CollIndex>*> *cpuList;
-  Int32 numCPUs;
-
-  //get active segments and their corresponding cpus
-  //
-  NABoolean error =
-    gpClusterInfo->getSuperNodemap(segmentList, cpuList, numCPUs);
+  Int32 numCPUs = gpClusterInfo->numOfPhysicalSMPs();
 
   ULng32 *utilcpus = new (heap) ULng32[numCPUs];
   ULng32 *utilsegs = new (heap) ULng32[numCPUs];
@@ -1082,28 +1071,14 @@ Generator::remapESPAllocationAS()
     ULng32 affinityGroupThreshold =
       ActiveSchemaDB()->getDefaults().getAsLong(DEFAULT_DEGREE_OF_PARALLELISM);
 
-    // Structures used to get the Super Node map for this query.
+    // A list of nodes in this cluster
     //
-    NAArray<CollIndex>* segmentList;
-    NAArray<NAList<CollIndex>*> *cpuList;
-    ULng32 numSegs;
-
-    //get active segments and their corresponding cpus
-    //
-    Int32 x;
-    NABoolean error =
-      gpClusterInfo->getSuperNodemap(segmentList, cpuList, x);
+    const NAList<CollIndex> &cpuList(gpClusterInfo->getCPUList());
+    Int32 numCPUs = cpuList.entries();
+    Int32 numSegs = 1;
 
     CollIndex espsPerNode = 
            ActiveSchemaDB()->getDefaults().getNumOfESPsPerNode();
-
-    NABoolean fakeEnv;
-    Int32 numCPUs = 
-           ActiveSchemaDB()->getDefaults().getTotalNumOfESPsInCluster(fakeEnv);
-
-    // The number of physical segments used by this query.
-    //
-    numSegs = segmentList->entries();
 
     // Adjust the affinityGroupThreshold so that numSegsThreshold will
     // be a power of 2.
@@ -1195,8 +1170,6 @@ Generator::remapESPAllocationAS()
       // ESP layer uses all segments.
       //
       ULng32 *cpus = new (wHeap()) ULng32[numCPUs];
-      ULng32 *segs = new (wHeap()) ULng32[numCPUs];
-      ULng32 *segsUsed = new (wHeap()) ULng32[numSegs];
 
           CollIndex segment = 0;
           CollIndex cpu = 0;
@@ -1213,8 +1186,7 @@ Generator::remapESPAllocationAS()
 
           for (i = 0; i < (CollIndex)numCPUs; i++) {
 
-            cpus[i] = (*(*cpuList)[segment])[cpu];
-            segs[i] = (*segmentList)[segment];
+            cpus[i] = cpuList[cpu];
 
 #ifdef _DEBUG
     if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
@@ -1230,10 +1202,7 @@ Generator::remapESPAllocationAS()
             //
             if((i % espsPerNode) == (espsPerNode-1))
 	       cpu++;
-            if (cpu >= (*cpuList)[segment]->entries() * espsPerNode) {
-              // gone thru all cpus in this segment. advance to next segment.
-              //
-              segment++;
+            if (cpu >= (cpuList.entries() * espsPerNode)) {
               cpu = 0;
             }
         }
@@ -1382,7 +1351,6 @@ Generator::remapESPAllocationAS()
                   // Set the cpu and segment for this node map entry.
                   //
                   nodeMap->setNodeNumber(j, cpu);
-                  nodeMap->setClusterNumber(j, (Lng32)segs[cpuNumber]);
                 }
 
                 // After remapping the node map (copy), make it the
@@ -1417,11 +1385,7 @@ Generator::remapESPAllocationAS()
           }
       }
       //     delete [] cpus;
-      //     delete [] segs;
-      //     delete [] segsUsed;
       //     NADELETEBASIC(cpus, wHeap());
-      //     NADELETEBASIC(segs, wHeap());
-      //     NADELETEBASIC(segsUsed, wHeap());
   }
 }
 

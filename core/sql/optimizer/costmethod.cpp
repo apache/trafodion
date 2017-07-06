@@ -3152,8 +3152,6 @@ CostMethodExchange::categorizeMessages(
 
   if (useNodeMaps && parentNodeMap->allNodesSpecified()
       && childNodeMap->allNodesSpecified()
-      && parentNodeMap->allClustersSpecified()
-      && childNodeMap->allClustersSpecified()
       && NOT CURRSTMT_OPTDEFAULTS->isFakeHardware())
     {
 

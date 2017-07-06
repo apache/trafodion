@@ -72,92 +72,6 @@ class NAClusterInfo;
 extern THREAD_P NAClusterInfo* gpClusterInfo;
 extern void setUpClusterInfo(CollHeap* heap);
 
-#define MAX_NUM_SMPS_NSK  16     // number of SMPs in the cluster for NSK
-#define MAX_NUM_SMPS_SQ   512    // number of CPUs in the cluster for SQ
-//<pb>
-ULng32 clusterNumHashFunc(const CollIndex& num);
-
-//used to encapsulate dp2 names
-class DP2name : public NABasicObject
-{
-  public:
-     DP2name(char* dp2name,CollHeap* heap);
-     void getDp2Name(char* &name)const;
-     NABoolean operator==(const DP2name & dp2Name);
-     ULng32 hash() const;
-     ~DP2name();
-  private:
-    char* dp2name_;
-    CollHeap* heap_;
-};
-
-//encapsulated information for a dp2 like cluster no., primary and secondary
-//cpu.
-class DP2info : public NABasicObject
-{
-  public:
-    DP2info(Lng32 clusterNum,Lng32 primary, Lng32 secondary);
-    void getDp2Info(Int32 & clusterNum, Int32& primary, Int32& secondary);
-    NABoolean operator==(DP2info dp2info)
-    {
-      if(dp2info.clusterNumber_==clusterNumber_ && dp2info.primaryCPU_ == primaryCPU_)
-        return TRUE;
-
-      return FALSE;
-
-    }
-  private:
-    Lng32 clusterNumber_;
-    Lng32 primaryCPU_;
-    Lng32 secondaryCPU_;
-};
-
-//encapsulated a basic list, provides a equality method and always requires
-//a heap pointer.
-
-class maps : public NABasicObject {
-public:
- 
-  maps(CollHeap * heap, CollIndex size =0)
-  {
-    list= new(heap) NAList<CollIndex>(heap,size);
-    listOfAggregationOnlyNodes = new(heap) NAList<CollIndex>(heap,size);
-  }
-
-  maps(NAList<CollIndex>* list, NAList<CollIndex>* listForAggrNodes) 
-  {
-    this->list = list;
-    this->listOfAggregationOnlyNodes = listForAggrNodes;
-  }
-
-  NABoolean operator==(maps cpuList)
-  {
-    if(*list==*(cpuList.list) && 
-       *listOfAggregationOnlyNodes == *(cpuList.listOfAggregationOnlyNodes)) return TRUE;
-    return FALSE;
-  }
-
-  ~maps()
-  {
-    delete list;
-    delete listOfAggregationOnlyNodes;
-  }
-
-  Int32 getCpuCount(NABoolean aggregationNodeOnly);
-  NAList<CollIndex>*  getCpuList(NABoolean aggregationNodeOnly = FALSE);
-
-  void insertToAggregationNodeList(CollIndex cpu) 
-    { listOfAggregationOnlyNodes->insert(cpu); };
-
-  NAList<CollIndex>* list;
-  NAList<CollIndex>* listOfAggregationOnlyNodes;
-};
-
-// for osim to work on nt
-#define FileSystemErrorRemoteNodeDown 250
-#define FileSystemErrorRemoteNodeUnavailable 18
-#define FileSystemErrorNamedProcessNotInDCT 14
-
 class NAClusterInfo : public NABasicObject
 {
 public:
@@ -189,23 +103,15 @@ public:
   // platform must define this.
   virtual void captureOSInfo(ofstream & f) const = 0;
 
+  Int32 getNumActiveCluster() const { return 1; }
   NABoolean smpActive(Int32 smp) const;
-
-  //This method returns the list of active clusters and a list of CPU for each
-  //cluster in the same order. It decides on active clusters based on default
-  //REMOTE_ESP_PARALLELISM. If we are going to implement CPU map, only this
-  //method needs to be augmented.
-  NABoolean getSuperNodemap(NAArray<CollIndex>* &clusterList,
-			    NAArray<NAList<CollIndex>*>* &cpuList, Int32 &cpuCount);
 
   // return total number of CPUs (includes all, that is, even down CPUs)
   Lng32 getTotalNumberOfCPUs();
+  const NAList<CollIndex> &getCPUList() { return cpuList_; }
 
-  Lng32 getNumActiveCluster();
   Lng32 mapNodeNameToNodeNum(const NAString &node) const;
   void cleanupPerStatement();
-
-  void setMaxOSV(QualifiedName &qualName, COM_VERSION osv);
 
   // The OSIM uses these following methods to capture and simulate
   // cluster information respectively.
@@ -222,43 +128,26 @@ public:
   void resetTestMode() { inTestMode_ = FALSE; };
 // LCOV_EXCL_STOP
 
-  NABoolean getUseAggregationNodesOnly() const 
-      { return useAggregationNodesOnly_; }
-
-  void setUseAggregationNodesOnly(NABoolean x);
-
 protected :
 
-  Int32 computeNumOfSMPs();
-
-  //Helper function for getSuperNodeMap(). This actually implements the
-  //active cluster algorithm.
-  void createActiveClusterList();
-
-  void getProcessorStatus(maps* & outcpuList,short clusterNum);
-
   //------------------------------------------------------------------------
-  // localCluster_ used to be the segment number.  On Linux, it is
-  // set to zero.
-  //------------------------------------------------------------------------
-  Int32 localCluster_;
-
-  //------------------------------------------------------------------------
-  // On NSK, localSMP_ is the CPU number within the segment.  On Linux,
   // localSMP_ is the current node ID.
   //------------------------------------------------------------------------
   short localSMP_;
-
-  //------------------------------------------------------------------------
-  // physical number of SMPs/Linux nodes (real configuration or OSIM config)
-  //------------------------------------------------------------------------
-  Int32 physicalSMPCount_;
 
   //------------------------------------------------------------------------
   // heap_ is where this NAClusterInfo was allocated.  This should be the
   // context heap.
   //------------------------------------------------------------------------
   CollHeap * heap_;
+
+  // ------------------------------------------------------------------------
+  // A list of node ids of available nodes. Typically, this will be
+  // a list of the numbers 0 ... n-1 but in some cases a node in
+  // the middle may be removed, so we end up with "holes" in the
+  // node ids.
+  // ------------------------------------------------------------------------
+  NAList<CollIndex> cpuList_;
 
   //------------------------------------------------------------------------
   // hashdictionary used to store the mapping of cluster name to cluster id
@@ -267,39 +156,11 @@ protected :
   //------------------------------------------------------------------------
   NAHashDictionary<Int32, NAString>* nodeIdToNodeNameMap_;
 
-  // ------------------------------------------------------------------------
-  // On NSK and Windows, this maps from cluster number to its cpu
-  // configuration.  On Linux, this maps the single system number to the
-  // Linux node IDs that are configured as aggregation (compute) nodes.
-  // This is also stored on the context heap as we don't expect it to change
-  // during a session.
-  // ------------------------------------------------------------------------
-  NAHashDictionary<CollIndex,maps> * clusterToCPUMap_;
-
-  // ------------------------------------------------------------------------
-
   // hashdictionary that maps nodeName to nodeId.
   NAHashDictionary<NAString, Int32> *nodeNameToNodeIdMap_;
 
-  // List containing the active clusters or the super node map where ESP's
-  // will be brought up.  
-  // This is stored on the statement heap.
-  // ------------------------------------------------------------------------
-  NAList<CollIndex> * activeClusters_;
-
   NABoolean inTestMode_; // test mode indicator
-
-  NABoolean useAggregationNodesOnly_; 
-
-private:
-  static NABoolean IsRemoteNodeDown(short error);
-  static const char *GetNodeName(const char *dp2Name, char *buffer, Int32 size);
-
-  COM_VERSION maxOSV_;
-  QualifiedName maxOSVName_;
 };
-
-#define MAX_NUM_TSES 1024
 
 class NAClusterInfoLinux : public NAClusterInfo
 {
@@ -324,27 +185,13 @@ public:
 
    void captureOSInfo(ofstream &) const;
 
-   // get the kth TSE entry from a list of sorted TSE elements
-   MS_Mon_Process_Info_Type* getTSEInfoForPOS(Int32 k);
-
-   // get the total number of TSE elements
-   Int32 numTSEsForPOS(); 
-
    Int32 get_pid() { return pid_; };
    Int32 get_nid() { return nid_; };
-
-protected:
-
-   void setupTSEinfoForPOS();
 
 private:
    void     determineLinuxSysInfo();
 
    void     simulateNAClusterInfoLinux();
-
-   // TSE info used by POS
-   MS_Mon_Process_Info_Type* tseInfo_;
-   Int32 numTSEs_;
 
    int pid_; // the pid of the current process 
    int nid_; // the nid of the current process 

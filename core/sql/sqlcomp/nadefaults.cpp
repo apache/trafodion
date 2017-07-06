@@ -1309,8 +1309,6 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDui1_6(ESP_NUM_FRAGMENTS,			"3"),
   DDui1_6(ESP_NUM_FRAGMENTS_WITH_QUOTAS,	"6"),
 
-  DDkwd__(ESP_ON_AGGREGATION_NODES_ONLY,       "OFF"),
-
   DDSint__(ESP_PRIORITY,                        "0"),
   DDSint__(ESP_PRIORITY_DELTA,                  "0"),
 
@@ -1567,8 +1565,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_MATR_NUM_BUFFERS,			"1"),
   DDui1__(GEN_MATR_SIZE_DOWN,			"2"),
   DDui1__(GEN_MATR_SIZE_UP,			"8"),
-  DDui___(GEN_MAX_NUM_PART_DISK_ENTRIES,       "3"),
-  DDui___(GEN_MAX_NUM_PART_NODE_ENTRIES,       "255"),
   DDui1__(GEN_MEM_PRESSURE_THRESHOLD,		"10000"),
   DDui1__(GEN_MJ_BUFFER_SIZE,			"32768"),
   DDui1__(GEN_MJ_NUM_BUFFERS,			"1"),
@@ -4338,7 +4334,6 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
       "DEF_PHYSICAL_MEMORY_AVAILABLE", //returned in KB not bytes
       "DEF_TOTAL_MEMORY_AVAILABLE",		 //returned in KB not bytes
       "DEF_VIRTUAL_MEMORY_AVAILABLE"
-      , "GEN_MAX_NUM_PART_DISK_ENTRIES"
       , "USTAT_IUS_PERSISTENT_CBF_PATH"
    }; //returned in KB not bytes
 
@@ -4554,30 +4549,6 @@ void NADefaults::updateSystemParameters(NABoolean reInit)
         ActiveSchemaDB()->
           getDefaults().
             updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-      }
-      break;
-
-   case GEN_MAX_NUM_PART_DISK_ENTRIES:
-      {
-
-       // Make sure the gpClusterInfo points at an NAClusterLinux object.
-       // In osim simulation mode, the pointer can point at a
-       // NAClusterNSK object, for which the method numTSEsForPOS() is not
-       // defined.
-       NAClusterInfoLinux* gpLinux =
-           dynamic_cast<NAClusterInfoLinux*>(gpClusterInfo);
-
-       if ( gpLinux ) {
-
-          UInt32 numTSEs = (UInt32)gpLinux->numTSEsForPOS();
-
-          utoa_(numTSEs, valuestr);
-          strcpy(newValue, valuestr);
-
-          if(reInit)
-            ActiveSchemaDB()->
-              getDefaults().updateCurrentDefaultsForOSIM(&defaultDefaults[j]);
-       }
       }
       break;
 
@@ -5826,13 +5797,6 @@ enum DefaultConstants NADefaults::validateAndInsert(const char *attrName,
 	}
 	break;
 	
-      case ESP_ON_AGGREGATION_NODES_ONLY:
-        {
-         NABoolean useAgg = (getToken(attrEnum) == DF_ON);
-         gpClusterInfo->setUseAggregationNodesOnly(useAgg);
-         break;
-        }
-
       case QUERY_TEXT_CACHE:
       {
         // If public schema is in use, query text cache has to be off
