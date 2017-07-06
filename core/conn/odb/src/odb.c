@@ -663,6 +663,9 @@ char nows[20],                  /* string with date/time in YYYY-MM-DD HH:MM:SS 
      chsch[64];                 /* Set Schema command */
 struct ovar *vv=0;              /* struct var pointer for the Interpreter */
 const char alnum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" ; /* look-up tab to generate random strings */
+void **globalPointers = NULL;       /* save pointers to buffers which may shared by many thread and length determined at run time */
+int nGlobalPointers = 0;            /* number of pointers in globalPointers */
+int naGlobalPointers = 0;           /* number of globalPointers allocated chunk */
 
 /* Functions prototypes */
 static void Oerr(int eid, int tid, unsigned int line, SQLHANDLE Ohandle, SQLSMALLINT Otype);
@@ -739,6 +742,7 @@ static char *parsehdfs(int eid, char *hdfs);
 unsigned long tspdiff ( struct timespec *start, struct timespec *end ) ;
 #endif
 static int ucs2toutf8 ( SQLCHAR *str, SQLLEN *len, SQLULEN bs, int bu2 ) ;
+static void addGlobalPointer(void *ptr);
 
 int main(int ac, char *av[])
 {
@@ -4321,6 +4325,12 @@ static void gclean(void)
         }
     }
     (void)SQLFreeHandle(SQL_HANDLE_ENV, Oenv);
+
+    for (int i = 0; i < nGlobalPointers; ++i) /* free globalPointers buffer */
+    {
+        free(globalPointers[i]);
+    }
+    free(globalPointers);
 }
 
 /* cancel: executed in interactive mode when ^C is pressed:
@@ -4874,6 +4884,18 @@ static void etabadd(char type, char *run, int id)
             if ( !etab[no].tgt ) {
                 fprintf(stderr, "odb [etabadd(%d)] - Error: missing \'tgt\' operator\n", __LINE__ );
                 goto etabadd_exit;
+            }
+            else
+            {
+                /* Allocate new buf to save Catalog/Schema/Table */
+                char *ptrCST = (char *)malloc(strlen(etab[no].tgt) + 1);
+                strcpy(ptrCST, etab[no].tgt);
+                addGlobalPointer(ptrCST);
+
+                /* Split Catalog/Schema/Table */
+                splitcso(ptrCST, etab[no].Ocso, 1);
+                if (f & 04000000000)  /* no catalog as null */
+                    etab[no].Ocso[0] = '\0';
             }
             if ( etab[no].flg2 & 0400000000 ) { /* user defined iobuff */
                 if ( !etab[no].iobuff ) {       /* iobuff set to zero */
@@ -6304,11 +6326,6 @@ static void Oload(int eid)
             etab[eid].flg2 & 0002 ? "WITH NO ROLLBACK " : "",
             etab[eid].tgt);
     }
-
-    /* Split Catalog/Schema/Object */
-    splitcso ( etab[eid].tgt, etab[eid].Ocso, 1);
-    if ( f & 04000000000 )  /* no catalog as null */
-        etab[eid].Ocso[0] = '\0';
 
     /* Allocate io buffer */
     if ( ( buff = malloc((size_t)etab[eid].buffsz) ) == (void *)NULL ) {
@@ -7992,11 +8009,6 @@ static void Oload2(int eid)
             goto oload2_exit;
         }
     }
-        
-    /* Split Catalog/Schema/Object */
-    splitcso ( etab[eid].tgt, etab[eid].Ocso, 1);
-    if ( f & 04000000000 )  /* no catalog as null */
-        etab[eid].Ocso[0] = '\0';
 
     /* Allocate io buffer */
     if ( ( buff = malloc((size_t)etab[eid].buffsz) ) == (void *)NULL ) {
@@ -8691,11 +8703,6 @@ static void OloadX(int eid)
         xttype = 1 ;
     if ( etab[eid].flg2 & 0200000000 )
         xdump = 1 ;
-
-    /* Split Catalog/Schema/Object */
-    splitcso ( etab[eid].tgt, etab[eid].Ocso, 1);
-    if ( f & 04000000000 )  /* no catalog as null */
-        etab[eid].Ocso[0] = '\0';
 
     /* Open input file */
     for ( i = j = 0; etab[eid].src[i] && i < sizeof(buff); i++ ) {
@@ -13945,6 +13952,23 @@ static int ucs2toutf8 ( SQLCHAR *str, SQLLEN *len, SQLULEN bs, int bu2 )
     if ( fb )
         free ( u8 ) ;                               /* free memory if allocated */
     return(ret);
+}
+
+/* addGlobalPointer:
+*      add ptr globalPointers buffer
+*
+*      return: no return, exit on error
+*/
+static void addGlobalPointer(void *ptr)
+{
+    if (nGlobalPointers >= (naGlobalPointers * ETAB_CHUNK - 2)) { /* need new memory */
+        if ((globalPointers = realloc(globalPointers, ++naGlobalPointers*ETAB_CHUNK * sizeof(void *))) == (void *)NULL) {
+            fprintf(stderr, "%s [etabnew(%d)] - Error allocating %dth block of etab[] memory: [%d] %s\n",
+                __FILE__, __LINE__, naGlobalPointers, errno, strerror(errno));
+            exit(EX_OSERR);
+        }
+    }
+    globalPointers[nGlobalPointers++] = ptr;
 }
 
 /* usagexit:
