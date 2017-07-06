@@ -317,15 +317,15 @@ CREATE TABLE TRAFODION.T142USER6.USER6
 OBJECT_NAME                                                                       GRANTOR_ID            GRANTEE_ID            (EXPR)  GRANTED_PRIVS         GRANTABLE_PRIVS
 --------------------------------------------------------------------------------  --------------------  --------------------  ------  --------------------  --------------------
 
-REFERENCEDTABLE                                                                                     -2                 33337  all     SIDU-R-               SIDU-R-             
-T142_L1                                                                                             -2                 33337  all     ---UG--               ---UG--             
-T142_TRANSLATEPRIVSB                                                                                -2                 33337  all     ------E               ------E             
-T142_TRANSLATEPRIVSB                                                                             33337                    -1  all     ------E               NONE                
-USER1                                                                                               -2                 33334  all     SIDU-R-               SIDU-R-             
-USER2                                                                                               -2                 33335  all     SIDU-R-               SIDU-R-             
-USER3                                                                                               -2                 33336  all     SIDU-R-               SIDU-R-             
-USER5                                                                                               -2                 33338  all     SIDU-R-               SIDU-R-             
-USER6                                                                                               -2                 33339  all     SIDU-R-               SIDU-R-             
+REFERENCEDTABLE                                                                                     -2                 33337  all     SIDU-R-               SIDU-R-             
+T142_L1                                                                                             -2                 33337  all     ---UG--               ---UG--             
+T142_TRANSLATEPRIVSB                                                                                -2                 33337  all     ------E               ------E             
+T142_TRANSLATEPRIVSB                                                                             33337                    -1  all     ------E               NONE                
+USER1                                                                                               -2                 33334  all     SIDU-R-               SIDU-R-             
+USER2                                                                                               -2                 33335  all     SIDU-R-               SIDU-R-             
+USER3                                                                                               -2                 33336  all     SIDU-R-               SIDU-R-             
+USER5                                                                                               -2                 33338  all     SIDU-R-               SIDU-R-             
+USER6                                                                                               -2                 33339  all     SIDU-R-               SIDU-R-             
 
 --- 9 row(s) selected.
 >>sh sqlci -i "TEST142(user1_cmds)" -u sql_user1;
@@ -481,20 +481,20 @@ End of MXCI Session
 OBJECT_NAME                                                                       GRANTOR_ID            GRANTEE_ID            (EXPR)  GRANTED_PRIVS         GRANTABLE_PRIVS
 --------------------------------------------------------------------------------  --------------------  --------------------  ------  --------------------  --------------------
 
-REFERENCEDTABLE                                                                                     -2                 33337  all     SIDU-R-               SIDU-R-             
-REFERENCEDTABLE                                                                                  33336                 33338  all     -----R-               NONE                
-REFERENCEDTABLE                                                                                  33337                 33334  1       -----R-               NONE                
-REFERENCEDTABLE                                                                                  33337                 33334  2       -----R-               NONE                
-REFERENCEDTABLE                                                                                  33337                 33334  all     -----R-               NONE                
-REFERENCEDTABLE                                                                                  33337                 33336  all     SIDU-R-               SIDU-R-             
-T142_L1                                                                                             -2                 33337  all     ---UG--               ---UG--             
-T142_TRANSLATEPRIVSB                                                                                -2                 33337  all     ------E               ------E             
-T142_TRANSLATEPRIVSB                                                                             33337                    -1  all     ------E               NONE                
-USER1                                                                                               -2                 33334  all     SIDU-R-               SIDU-R-             
-USER2                                                                                               -2                 33335  all     SIDU-R-               SIDU-R-             
-USER3                                                                                               -2                 33336  all     SIDU-R-               SIDU-R-             
-USER5                                                                                               -2                 33338  all     SIDU-R-               SIDU-R-             
-USER6                                                                                               -2                 33339  all     SIDU-R-               SIDU-R-             
+REFERENCEDTABLE                                                                                     -2                 33337  all     SIDU-R-               SIDU-R-             
+REFERENCEDTABLE                                                                                  33336                 33338  all     -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  1       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  2       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  all     -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33336  all     SIDU-R-               SIDU-R-             
+T142_L1                                                                                             -2                 33337  all     ---UG--               ---UG--             
+T142_TRANSLATEPRIVSB                                                                                -2                 33337  all     ------E               ------E             
+T142_TRANSLATEPRIVSB                                                                             33337                    -1  all     ------E               NONE                
+USER1                                                                                               -2                 33334  all     SIDU-R-               SIDU-R-             
+USER2                                                                                               -2                 33335  all     SIDU-R-               SIDU-R-             
+USER3                                                                                               -2                 33336  all     SIDU-R-               SIDU-R-             
+USER5                                                                                               -2                 33338  all     SIDU-R-               SIDU-R-             
+USER6                                                                                               -2                 33339  all     SIDU-R-               SIDU-R-             
 
 --- 14 row(s) selected.
 >>
@@ -673,23 +673,23 @@ End of MXCI Session
 OBJECT_NAME                                                                       GRANTOR_ID            GRANTEE_ID            (EXPR)  GRANTED_PRIVS         GRANTABLE_PRIVS
 --------------------------------------------------------------------------------  --------------------  --------------------  ------  --------------------  --------------------
 
-REFERENCEDTABLE                                                                                     -2                 33337  all     SIDU-R-               SIDU-R-             
-REFERENCEDTABLE                                                                                  33335                 33339  3       -----R-               NONE                
-REFERENCEDTABLE                                                                                  33336                 33338  all     -----R-               NONE                
-REFERENCEDTABLE                                                                                  33337                 33334  1       -----R-               NONE                
-REFERENCEDTABLE                                                                                  33337                 33334  2       -----R-               NONE                
-REFERENCEDTABLE                                                                                  33337                 33334  all     -----R-               NONE                
-REFERENCEDTABLE                                                                                  33337                 33335  3       -----R-               -----R-             
-REFERENCEDTABLE                                                                                  33337                 33335  4       -----R-               NONE                
-REFERENCEDTABLE                                                                                  33337                 33336  all     SIDU-R-               SIDU-R-             
-T142_L1                                                                                             -2                 33337  all     ---UG--               ---UG--             
-T142_TRANSLATEPRIVSB                                                                                -2                 33337  all     ------E               ------E             
-T142_TRANSLATEPRIVSB                                                                             33337                    -1  all     ------E               NONE                
-USER1                                                                                               -2                 33334  all     SIDU-R-               SIDU-R-             
-USER2                                                                                               -2                 33335  all     SIDU-R-               SIDU-R-             
-USER3                                                                                               -2                 33336  all     SIDU-R-               SIDU-R-             
-USER5                                                                                               -2                 33338  all     SIDU-R-               SIDU-R-             
-USER6                                                                                               -2                 33339  all     SIDU-R-               SIDU-R-             
+REFERENCEDTABLE                                                                                     -2                 33337  all     SIDU-R-               SIDU-R-             
+REFERENCEDTABLE                                                                                  33335                 33339  3       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33336                 33338  all     -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  1       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  2       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33334  all     -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33335  3       -----R-               -----R-             
+REFERENCEDTABLE                                                                                  33337                 33335  4       -----R-               NONE                
+REFERENCEDTABLE                                                                                  33337                 33336  all     SIDU-R-               SIDU-R-             
+T142_L1                                                                                             -2                 33337  all     ---UG--               ---UG--             
+T142_TRANSLATEPRIVSB                                                                                -2                 33337  all     ------E               ------E             
+T142_TRANSLATEPRIVSB                                                                             33337                    -1  all     ------E               NONE                
+USER1                                                                                               -2                 33334  all     SIDU-R-               SIDU-R-             
+USER2                                                                                               -2                 33335  all     SIDU-R-               SIDU-R-             
+USER3                                                                                               -2                 33336  all     SIDU-R-               SIDU-R-             
+USER5                                                                                               -2                 33338  all     SIDU-R-               SIDU-R-             
+USER6                                                                                               -2                 33339  all     SIDU-R-               SIDU-R-             
 
 --- 17 row(s) selected.
 >>

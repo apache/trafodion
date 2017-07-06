@@ -90,7 +90,7 @@ SQLUDR_LIBFUNC SQLUDR_INT32 translateBitmap(SQLUDR_INT32 *in1,
     }
   }
 
-  strcpy(out, result.c_str());
+  memcpy(out, result.c_str(), result.length());
   return SQLUDR_SUCCESS;
 }
 
