@@ -4499,8 +4499,8 @@ unsigned long ODBC::ConvertCharToCNumeric( SQL_NUMERIC_STRUCT& numericTmp, CHAR*
 unsigned long ODBC::ConvertCharToBigEndianCNumeric( SQL_NUMERIC_STRUCT& numericTmp, CHAR* cTmpBuf)
 {
 	unsigned long retcode = ConvertCharToCNumeric( numericTmp, cTmpBuf);
-	if (retcode == SQL_SUCCESS)
-		byte_swap((BYTE *)numericTmp.val, SQL_MAX_NUMERIC_LEN);
+/*	if (retcode == SQL_SUCCESS)
+		byte_swap((BYTE *)numericTmp.val, SQL_MAX_NUMERIC_LEN);*/
 
 	return retcode;
 }
