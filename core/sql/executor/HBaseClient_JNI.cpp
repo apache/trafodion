@@ -413,8 +413,6 @@ HTableClient_JNI* HBaseClient_JNI::getHTableClient(NAHeap *heap, const char* tab
      releaseHTableClient(htc);
      return NULL;
   }
-  htc->setTableName(tableName);
-  htc->setHbaseStats(hbs);
   jenv_->PopLocalFrame(NULL);
   return htc;
 }
