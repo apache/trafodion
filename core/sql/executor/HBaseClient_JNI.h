@@ -247,7 +247,7 @@ public:
 
     if (tableName_ != NULL)
     {
-        NADELETEBASIC(tableName_, heap);
+        NADELETEBASIC(tableName_, heap_);
         tableName_ = NULL;
     }
     tableName_ = new (heap_) char[len+1];
