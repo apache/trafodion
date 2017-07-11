@@ -245,6 +245,11 @@ public:
   {
     Int32 len = strlen(tableName);
 
+    if (tableName_ != NULL)
+    {
+        NADELETEBASIC(tableName_, heap_);
+        tableName_ = NULL;
+    }
     tableName_ = new (heap_) char[len+1];
     strcpy(tableName_, tableName);
   } 
