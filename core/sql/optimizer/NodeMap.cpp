@@ -768,8 +768,8 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
                                    NodeMapEntry::NOT_ACTIVE, type());
 
   //get a list of the nodes in the cluster
-  const NAList<CollIndex> &cpuList(gpClusterInfo->getCPUList());
-  Int32 cpuCount = cpuList.entries();
+  const NAArray<CollIndex> &cpuArray(gpClusterInfo->getCPUArray());
+  Int32 cpuCount = cpuArray.entries();
   Lng32 affinityDef = ActiveSchemaDB()->getDefaults().getAsLong(AFFINITY_VALUE);
 
   // "float" single ESP
@@ -812,9 +812,9 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
         // each ESP in an ESP exchange is active
         logicalMap->setPartitionState(espX, NodeMapEntry::ACTIVE);
         // assign ESP consumers to segments/cpus, round-robin
-        logicalMap->setNodeNumber(espX, cpuList[cpuX]);
+        logicalMap->setNodeNumber(espX, cpuArray[cpuX]);
         cpuX++; // advance to next cpu
-        if (cpuX >= cpuList.entries()) {
+        if (cpuX >= cpuArray.entries()) {
           cpuX = 0;
         }
       }

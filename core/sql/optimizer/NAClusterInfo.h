@@ -108,7 +108,7 @@ public:
 
   // return total number of CPUs (includes all, that is, even down CPUs)
   Lng32 getTotalNumberOfCPUs();
-  const NAList<CollIndex> &getCPUList() { return cpuList_; }
+  const NAArray<CollIndex> &getCPUArray() { return cpuArray_; }
 
   Lng32 mapNodeNameToNodeNum(const NAString &node) const;
   void cleanupPerStatement();
@@ -147,7 +147,7 @@ protected :
   // the middle may be removed, so we end up with "holes" in the
   // node ids.
   // ------------------------------------------------------------------------
-  NAList<CollIndex> cpuList_;
+  NAArray<CollIndex> cpuArray_;
 
   //------------------------------------------------------------------------
   // hashdictionary used to store the mapping of cluster name to cluster id

@@ -1200,10 +1200,10 @@ void NAClusterInfo::captureNAClusterInfo(ofstream & naclfile)
 
   naclfile << "  ";
   naclfile.width(10); naclfile << LOCAL_CLUSTER << "  ";
-  naclfile << cpuList_.entries() << " : ";
-  for (ci=0; ci<cpuList_.entries(); ci++)
+  naclfile << cpuArray_.entries() << " : ";
+  for (ci=0; ci<cpuArray_.entries(); ci++)
     {
-      naclfile.width(3); naclfile << cpuList_[ci] << " ";
+      naclfile.width(3); naclfile << cpuArray_[ci] << " ";
     }
   naclfile << endl;
 
@@ -1232,7 +1232,7 @@ void NAClusterInfo::simulateNAClusterInfo()
 
   const char* filepath = CURRCONTEXT_OPTSIMULATOR->getLogFilePath(OptimizerSimulator::NACLUSTERINFO);
 
-  cpuList_.clear();
+  cpuArray_.clear();
 
   ifstream naclfile(filepath);
 
@@ -1257,7 +1257,7 @@ void NAClusterInfo::simulateNAClusterInfo()
     }
     else if (!strcmp(var, "clusterToCPUMap_"))
     {
-      Int32 numClusters, clusterNum, cpuList_entries, cpuNum;
+      Int32 numClusters, clusterNum, cpuArray_entries, cpuNum;
 
       naclfile >> numClusters; naclfile.ignore(OSIM_LINEMAX, '\n');
       // we don't support multiple clusters at this time
@@ -1269,11 +1269,11 @@ void NAClusterInfo::simulateNAClusterInfo()
         for (i=0; i<numClusters; i++)
         {
           naclfile >> clusterNum;
-          naclfile >> cpuList_entries; naclfile.ignore(OSIM_LINEMAX, ':');
-          for (ci=0; ci<cpuList_entries; ci++)
+          naclfile >> cpuArray_entries; naclfile.ignore(OSIM_LINEMAX, ':');
+          for (ci=0; ci<cpuArray_entries; ci++)
           {
             naclfile >> cpuNum;
-            cpuList_.insert(cpuNum);
+            cpuArray_.insertAt(ci, cpuNum);
           }
           naclfile.ignore(OSIM_LINEMAX, '\n');
         }

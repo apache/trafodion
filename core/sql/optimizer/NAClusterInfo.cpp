@@ -187,7 +187,7 @@ static ULng32 intHashFunc(const Int32& Int)
 //==============================================================================
 NAClusterInfo::NAClusterInfo(CollHeap * heap)
  : heap_(heap), 
-   cpuList_(heap),
+   cpuArray_(heap),
    inTestMode_(FALSE)
 {
   OptimizerSimulator::osimMode mode = OptimizerSimulator::OFF;
@@ -244,7 +244,8 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
         if ((nodeInfo[i].type & MS_Mon_ZoneType_Aggregation) != 0 ||
             ((nodeInfo[i].type & MS_Mon_ZoneType_Storage) != 0 ))
         {
-          cpuList_.insert(nodeInfo[i].nid);
+          cpuArray_.insertAt(cpuArray_.entries(),
+                             nodeInfo[i].nid);
 
           // store nodeName-nodeId pairs
           NAString *key_nodeName = new (heap_) NAString(nodeInfo[i].node_name, heap_);
@@ -279,7 +280,7 @@ NAClusterInfo::NAClusterInfo(CollHeap * heap)
     case OptimizerSimulator::SIMULATE:
 
       nodeIdToNodeNameMap_ = NULL;
-      cpuList_.clear();
+      cpuArray_.clear();
       //load NAClusterInfo from OSIM file
       simulateNAClusterInfo();
       break;
@@ -339,13 +340,13 @@ NABoolean NAClusterInfo::NODE_ID_TO_NAME(Int32 nodeId, char *nodeName, short max
 Int32
 NAClusterInfo::numOfPhysicalSMPs()
 {
-  return cpuList_.entries();
+  return cpuArray_.entries();
 }
 
 Int32
 NAClusterInfo::numOfSMPs()
 {
-  Int32 result = cpuList_.entries();
+  Int32 result = cpuArray_.entries();
 
   // This is temporary patch for PARALLEL_NUM_ESPS issue. This CQD should
   // be used in many places for costing, NodeMap allocation, synthesizing
@@ -374,7 +375,7 @@ NAClusterInfo::numOfSMPs()
 // Returns total number of CPUs (including down CPUs)
 Lng32 NAClusterInfo::getTotalNumberOfCPUs()
 {
-  Lng32 cpuCount = cpuList_.entries();
+  Lng32 cpuCount = cpuArray_.entries();
 
 #ifndef NDEBUG
 // LCOV_EXCL_START

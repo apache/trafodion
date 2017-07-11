@@ -935,6 +935,9 @@ NABoolean remapESPAllocationViaUserInputs(FragmentDir *fragDir,
 
 // remapESPAllocationAS: Called by RelRoot::codeGen()
 
+// NOTE: This is likely not working at this time! Keep the value
+// of CQD AFFINITY_VALUE at '-2' for now.
+
 // Re-assign each ESP to a CPU for adaptive segmentation based on the
 // affinity value.
 //
@@ -1073,8 +1076,8 @@ Generator::remapESPAllocationAS()
 
     // A list of nodes in this cluster
     //
-    const NAList<CollIndex> &cpuList(gpClusterInfo->getCPUList());
-    Int32 numCPUs = cpuList.entries();
+    const NAArray<CollIndex> &cpuArray(gpClusterInfo->getCPUArray());
+    Int32 numCPUs = cpuArray.entries();
     Int32 numSegs = 1;
 
     CollIndex espsPerNode = 
@@ -1186,7 +1189,7 @@ Generator::remapESPAllocationAS()
 
           for (i = 0; i < (CollIndex)numCPUs; i++) {
 
-            cpus[i] = cpuList[cpu];
+            cpus[i] = cpu;
 
 #ifdef _DEBUG
     if ((CmpCommon::getDefault( NSK_DBG ) == DF_ON) &&
@@ -1202,7 +1205,7 @@ Generator::remapESPAllocationAS()
             //
             if((i % espsPerNode) == (espsPerNode-1))
 	       cpu++;
-            if (cpu >= (cpuList.entries() * espsPerNode)) {
+            if (cpu >= (cpuArray.entries() * espsPerNode)) {
               cpu = 0;
             }
         }
@@ -1350,7 +1353,7 @@ Generator::remapESPAllocationAS()
 
                   // Set the cpu and segment for this node map entry.
                   //
-                  nodeMap->setNodeNumber(j, cpu);
+                  nodeMap->setNodeNumber(j, cpuArray[cpu % numCPUs]);
                 }
 
                 // After remapping the node map (copy), make it the
