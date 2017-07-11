@@ -397,15 +397,6 @@ create table s01(a int not null, b int, c int, primary key(a));
 prepare x from select s.a from s01 s, (select t.b from t01 t group by t.b) x(u);
 
 --
--- test NAClusterInfo::setUseAggregationNodesOnly only
---
-cqd ESP_ON_AGGREGATION_NODES_ONLY 'on';
-
-prepare x from select s.a from s01 s <<+ cardinality 10e7>>, t01 t <<+ cardinality 10e5>> where s.a = t.b;
-
-cqd ESP_ON_AGGREGATION_NODES_ONLY reset;
-
---
 -- test CQD OPTIMIZER_HEURISTIC_3 'on'
 --
 
