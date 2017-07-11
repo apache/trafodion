@@ -143,31 +143,31 @@ cqd cache_histograms_in_kb reset;
 ?section run
 -- test returned rows with or without adding key column and test of all pushdown functions with null or non null column
 -- only one column retrieved
-explain select a from t140 where b>500;
+explain options 'c' select a from t140 where b>500;
 select a from t140 where b>=500;
 --verify that the column retrieved for null handling is not the _SALT_ for optimization of skips, salt being the last physical column
-explain select an from t140b where b<=200;
+explain options 'c' select an from t140b where b<=200;
 -- we should have 2 columns retrieved since an is nullable
-explain select an from t140 where b<=200;
+explain options 'c' select an from t140 where b<=200;
 select an from t140 where b<=200;
 -- should not get back 2 column, only one since predicate says an is not null
-explain select an from t140 where b=200 and an is not null;
+explain options 'c' select an from t140 where b=200 and an is not null;
 select an from t140 where b=200 and an is not null;
 -- should only get 2 column back since a is not null, no need to add key column
-explain select an, a from t140 where b!=500;
+explain options 'c' select an, a from t140 where b!=500;
 select an, a from t140 where b!=500;
 -- see if we handle null logic correctly
 select a from t140 where bn>=501;
 select an from t140 where bn<=201;
-explain select an from t140 where bn=201 and an is not null;
+explain options 'c' select an from t140 where bn=201 and an is not null;
 select an from t140 where bn=201 and an is not null;
-explain select an, a from t140 where bn!=501;
+explain options 'c' select an, a from t140 where bn!=501;
 select an, a from t140 where bn!=501;
 select a from t140 where an is null;
 select a from t140 where an is not null;
 select a from t140 where a between 20 and 40;
 -- make sure that we only retrieve one column as an cannot be null in the result set.
-explain select an from t140 where an between 20 and 40;
+explain options 'c' select an from t140 where an between 20 and 40;
 select an from t140 where an between 20 and 40;
 select an from t140 where an in (21,41,51,61,10);
 
@@ -177,13 +177,13 @@ cqd hbase_small_scanner 'OFF';
 cqd parallel_num_esps '1';
 -- force 2 threads
 cqd hbase_dop_parallel_scanner '2.0';
-explain select avg(a) from t140b;
+explain options 'c' select avg(a) from t140b;
 select avg(a) from t140b;
 -- force 100% of threads (with 2 partition this is 2 threads)
 cqd hbase_dop_parallel_scanner '1.0';
-explain select avg(a) from t140b;
+explain options 'c' select avg(a) from t140b;
 select avg(a) from t140b;
-explain select avg(a) from t140b;
+explain options 'c' select avg(a) from t140b;
 select avg(a) from t140b;
 cqd parallel_num_esps '1';
 cqd hbase_dop_parallel_scanner '1.0';

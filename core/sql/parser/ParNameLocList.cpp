@@ -1153,7 +1153,14 @@ void ParSetTextStartPosForDisplayExplain(ParNameLocList * pNameLocList)
   if (c == 0)
     qryStrPos = qryStrPos + strlen("EXPLAIN");
   else
-    qryStrPos = qryStrPos + strlen("'f'");
+    {
+      // At this point, tokStr contains the token that follows the "options"
+      // key word for the stmt "explain options '<str>' ..."
+      // Skip string that follows the "options" keyword
+      char * trailingQ = strchr((char*)tokStr.data()+1, '\'');
+      Int32 len = trailingQ - tokStr.data() + 1;
+      qryStrPos = qryStrPos + len;
+    }
 
   //
   // the position of the left parenthesis token is the starting

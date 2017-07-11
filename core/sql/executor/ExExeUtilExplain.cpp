@@ -829,6 +829,9 @@ short ExExeUtilDisplayExplainTcb::GetColumns()
                 return EXE_EXPLAIN_BAD_DATA;
             else                // indicator is zero, normal data
             {
+              if (exeUtilTdb().isOptionC())
+                cardinality_ = 100;
+              else
                 cardinality_  = *((float*)ptr);
             }
             break;
@@ -1124,6 +1127,11 @@ void ExExeUtilDisplayExplainTcb::FormatForF()
 	  *current++ = '*';
 	  --remaining_width;
 	}
+      else if (exeUtilTdb().isOptionC())
+	{
+	  *current++ = '#';
+	  --remaining_width;
+	}
       else
 	{
 	  par_proc = str_str(par_proc, " ");
@@ -1289,6 +1297,11 @@ void ExExeUtilDisplayExplainTcb::FormatForF()
 	  *current++ = '*';
 	  --remaining_width;
 	}
+      else if (exeUtilTdb().isOptionC())
+	{
+	  *current++ = '#';
+	  --remaining_width;
+	}
       else{
 	child_proc = str_str(child_proc, " ");
 	if (child_proc != 0)
@@ -1431,6 +1444,11 @@ void ExExeUtilDisplayExplainTcb::FormatForF()
 	  *current++ = '*';
 	  --remaining_width;
 	}
+      else if (exeUtilTdb().isOptionC())
+	{
+	  *current++ = '#';
+	  --remaining_width;
+	}
       else{
 	par_proc = str_str(par_proc, " ");
 	if (par_proc != 0)
@@ -1557,6 +1575,11 @@ void ExExeUtilDisplayExplainTcb::FormatForF()
       if (child_proc == 0)
 	{   //error, there should be a token present
 	  *current++ = '*';
+	  --remaining_width;
+	}
+      else if (exeUtilTdb().isOptionC())
+	{
+	  *current++ = '#';
 	  --remaining_width;
 	}
       else{
@@ -2164,7 +2187,106 @@ This routine will check for an empty line in the lines_ array and do
 nothing if there is no space.  It will set a "data loss" message in the
 last line if another line is attempted.
 *****/
-void ExExeUtilDisplayExplainTcb::FormatLine(const char *key, const char *val, Lng32 keySize,
+
+typedef struct {
+  const char * key;
+  const char * value;
+} FilterKeyValueStruct;
+const FilterKeyValueStruct filterKeyValue[] =
+  {
+    {"PLAN_ID", "###"},
+    {"ROWS_OUT", "###"},
+    {"EST_OPER_COST", "###"},
+    {"EST_TOTAL_COST", "###"},
+    {"REQUESTS_IN", "###"},
+    {"ROWS/REQUEST", "###"},
+    {"OPERATOR_COST", "###"},
+    {"ROLLUP_COST", "###"},
+    {"max_card_est", "###"},
+    {"max_max_cardinality", "###"},
+    {"total_overflow_size", "###"},
+    {"est_memory_per_cpu", "###"},
+    {"buffer_size", "###"},
+    {"memory_quota", "###"},
+    {"memory_quota_per_esp", "###"},
+    {"memory_limit_per_cpu", "###"},
+    {"cache_size", "###"},
+    {"probes", "###"},
+    {"successful_probes", "###"},
+    {"unique_probes", "###"},
+    {"duplicated_succ_probes", "###"},
+    {"rows_accessed", "###"},
+    {"affinity_value", "###"},
+    {"parent_processes", "###"},
+    {"child_processes", "###"},
+    {"num_cache_entries", "###"},
+    {"num_inner_tuples", "###"},
+    {"ObjectUIDs", "###"},
+    
+  };
+
+NABoolean ExExeUtilDisplayExplainTcb::filterKey(
+     const char *key, Lng32 keySize, char * value, char * retVal,
+     Lng32 &decLoc)
+{
+  if ((! key) || (keySize == 0))
+    return FALSE;
+
+  Int32 maxSize = sizeof(filterKeyValue) / sizeof(FilterKeyValueStruct);
+  
+  for (Int32 i = 0; i < maxSize; i++)
+    {
+      if (strcmp(key, filterKeyValue[i].key) == 0)
+        {
+          strcpy(retVal, filterKeyValue[i].value);
+          decLoc = strlen(filterKeyValue[i].value);
+          return TRUE;
+        }
+    }
+
+  // filter out key of pattern: esp_N_node_map
+  if ((strncmp(key, "esp_", 4) == 0) &&
+      (strstr(key, "_node_map")))
+    {
+      strcpy(retVal, "###");
+      decLoc = 3;
+      return TRUE;
+    }
+  else if ((strcmp(key, "child_partitioning_function") == 0) ||
+           (strcmp(key, "parent_partitioning_function") == 0))
+    {
+      // value for parent func has the form similar to: broadcast N times...
+      // value for child func has form similar to: hash2 partitioned N ways...
+      // Replace numbers in 'value' with '#'
+      Int32 i = 0;
+
+      // if child partitioning starts with hash1 or hash2, skip that token.
+      // We dont want the numbers in 'hash1'/'hash2' to be replaced.
+      if ((strcmp(key, "child_partitioning_function") == 0) &&
+          (strncmp(value, "hash1", 5) == 0) ||
+          (strncmp(value, "hash2", 5) == 0))
+        {
+          memcpy(retVal, value, 5);
+          i += 5;
+        }
+
+      while (i < strlen(value))
+        {
+          if ((value[i] >= '0') && (value[i] <= '9'))
+            retVal[i] = '#';
+          else
+            retVal[i] = value[i];
+          i++;
+        }
+
+      retVal[i] = 0;
+      return TRUE;
+    }
+
+  return FALSE;
+}
+
+void ExExeUtilDisplayExplainTcb::FormatLine(const char *key, const char *inval, Lng32 keySize,
                                             Lng32 valSize, Lng32 indent, Lng32 decLoc)
 {
     char *line;                 // ptr to line to insert
@@ -2174,6 +2296,8 @@ void ExExeUtilDisplayExplainTcb::FormatLine(const char *key, const char *val, Ln
     Lng32  keycut;               // size of keyword col permitted (cut if not zero)
     Lng32  field1;               // space for col 1, keyword
     
+    char valBuf[1000];
+    char * val = (char*)inval;
     // See if we can do anything
     if (cntLines_ >= MLINE) {                   // if output is full
       cnt = (Lng32)str_len(lines_[cntLines_-1]);// size line
@@ -2183,7 +2307,16 @@ void ExExeUtilDisplayExplainTcb::FormatLine(const char *key, const char *val, Ln
     }
     line = lines_[cntLines_];                   // point to empty line, don't change
     temp = line;                                // set working pointer
-    
+
+    if (exeUtilTdb().isOptionC() && key)
+      {
+        if (filterKey(key, keySize, val, valBuf, decLoc))
+          {
+            val = valBuf;
+            valSize = strlen(val);
+          }
+      }
+
     // Do the indent if needed
     if (indent > 0) {
       cnt = indent;                           // don't change input

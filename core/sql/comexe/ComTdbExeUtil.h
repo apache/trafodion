@@ -248,7 +248,6 @@ public:
 			      Int16 querycharset,
 			      char * moduleName,
 			      char * stmtName,
-			      char optionX, // explain format desired
 			      ex_expr * input_expr,
 			      ULng32 input_rowlen,
 			      ex_expr * output_expr,
@@ -304,12 +303,22 @@ public:
   // ---------------------------------------------------------------------
   NA_EIDPROC void displayContents(Space *space, ULng32 flag);
 
-  void setOptionX(char c);              // move from char to mask_
-
   NABoolean isOptionE() { return ((flags_ & OPTION_E) != 0); };
   NABoolean isOptionF() { return ((flags_ & OPTION_F) != 0); };
   NABoolean isOptionM() { return ((flags_ & OPTION_M) != 0); };
   NABoolean isOptionN() { return ((flags_ & OPTION_N) != 0); };
+  NABoolean isOptionC() { return ((flags_ & OPTION_C) != 0); };
+
+  void setOptionE(NABoolean v) 
+  {(v ? flags_ |= OPTION_E : flags_ &= ~OPTION_E); };
+  void setOptionF(NABoolean v) 
+  {(v ? flags_ |= OPTION_F : flags_ &= ~OPTION_F); };
+  void setOptionM(NABoolean v) 
+  {(v ? flags_ |= OPTION_M : flags_ &= ~OPTION_M); };
+  void setOptionN(NABoolean v) 
+  {(v ? flags_ |= OPTION_N : flags_ &= ~OPTION_N); };
+  void setOptionC(NABoolean v) 
+  {(v ? flags_ |= OPTION_C : flags_ &= ~OPTION_C); };
 
 private:
   enum OpToFlag
@@ -318,7 +327,7 @@ private:
     OPTION_E      = 0x0002,
     OPTION_M      = 0x0004,
     OPTION_N      = 0x0008,
-    OPTION_OFF    = 0xfff0
+    OPTION_C      = 0x0010
   };
 
   UInt32 flags_;                                      // 00-03

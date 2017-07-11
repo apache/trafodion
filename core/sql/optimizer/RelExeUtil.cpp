@@ -1042,7 +1042,8 @@ ExeUtilDisplayExplain::ExeUtilDisplayExplain(
      : ExeUtilExpr(opType, CorrName("DUMMY"), exprNode, NULL,
                    stmtText, stmtTextCharSet, oHeap),
        moduleName_(NULL), stmtName_(NULL),
-       optionX_('n'), optionsStr_(NULL)
+       optionsStr_(NULL),
+       flags_(0)
 {
   if (optionsStr)
     {
@@ -1075,9 +1076,108 @@ RelExpr * ExeUtilDisplayExplain::copyTopNode(RelExpr *derivedNode, CollHeap* out
 					       NULL, getExprNode(),
 					       outHeap);
 
-  result->optionX_ = optionX_;
+  result->flags_ = flags_;
 
   return ExeUtilExpr::copyTopNode(result, outHeap);
+}
+
+short ExeUtilDisplayExplain::setOptionX(char c, Int32 &numOptions)
+{
+  switch(c)
+    {
+    case 'e' : 
+      if (isOptionE())
+        return -1; // already specified
+      flags_ |= OPTION_E; 
+      numOptions++;
+      break;             // expert mode
+    case 'f' : 
+      if (isOptionF())
+        return -1; // already specified
+      flags_ |= OPTION_F; 
+      numOptions++;
+      break;             // formatted summary mode
+    case 'm' : 
+      if (isOptionM())
+        return -1; // already specified
+      flags_ |= OPTION_M; 
+      numOptions++;
+      break;             // machine readable mode
+    case 'n' : 
+      if (isOptionN())
+        return -1; // already specified
+      flags_ |= OPTION_N; 
+      numOptions++;
+      break;             // normal mode
+    case 'c' : 
+      if (isOptionC())
+        return -1; // already specified
+      flags_ |= OPTION_C; 
+      break;             // cleansed mode
+    default  : 
+      return -1; // error
+    }
+
+  return 0;
+}
+
+short ExeUtilDisplayExplain::setOptionsX()
+{
+  Int32 numOptions = 0;
+  if (optionsStr_)
+    {
+      if (strlen(optionsStr_) == 0)
+        return -1; // error, cannot be empty string
+
+      for (Int32 i = 0; i < strlen(optionsStr_); i++)
+        {
+          if (setOptionX(optionsStr_[i], numOptions))
+            return -1;
+        }
+    }
+
+  // nothing specified, set to normal full explain
+  if (numOptions == 0)
+    setOptionX('n', numOptions);
+
+  if (numOptions > 1)
+    return -1; // only one option can be specified
+
+  if ((CmpCommon::getDefault(EXPLAIN_OPTION_C) == DF_ON) &&
+      (isOptionN() || isOptionF()))
+    setOptionX('c', numOptions);
+
+  if ((isOptionC()) && (isOptionE() || isOptionM()))
+    return -1; // 'c' can only be specified with 'n' or 'f'
+  
+  return 0;
+}
+
+RelExpr * ExeUtilDisplayExplain::bindNode(BindWA *bindWA)
+{
+  if (nodeIsBound()) {
+    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
+    return this;
+  }
+
+  RelExpr * boundExpr = NULL;
+
+  if (setOptionsX())
+    {
+      NAString errStr("'");
+      errStr += optionsStr_;
+      errStr += "'";
+      *CmpCommon::diags() << DgSqlCode(-15517)
+                          << DgString0(errStr);
+      bindWA->setErrStatus();
+      return NULL;
+    }
+
+  boundExpr = ExeUtilExpr::bindNode(bindWA);
+  if (bindWA->errStatus()) 
+    return NULL;
+
+  return boundExpr;
 }
 
 // -----------------------------------------------------------------------
@@ -3924,60 +4024,6 @@ RelExpr * ExeUtilExpr::bindNode(BindWA *bindWA)
 
   return boundExpr;
 } // ExeUtilExpr::bindNode()
-
-// -----------------------------------------------------------------------
-// member functions for class ExeUtilDisplayExplain
-// -----------------------------------------------------------------------
-short ExeUtilDisplayExplain::setOptionsX()
-{
-  // optionX_ default set to 'n' by constructor
-  if (optionsStr_)                  // if specified by user, validate and save
-    {
-      char c = optionsStr_[0];      // pick up first char of input
-      if (c != '\0')                // if an option is provided
-        {
-          if (optionsStr_[1] != '\0') {c = '\0'; } // check if more than one, force fail
-        }
-      switch(c)
-        {
-          case 'e' :                // expert mode
-          case 'f' :                // summary mode
-          case 'm' :                // machine readable mode
-          case 'n' :                // normal mode
-            break;
-
-          default  :                // fail all else
-            return -1;
-        }
-      optionX_ = c;                 // it is valid, save it
-    }
-
-  return 0;
-}
-
-RelExpr * ExeUtilDisplayExplain::bindNode(BindWA *bindWA)
-{
-  if (nodeIsBound()) {
-    bindWA->getCurrentScope()->setRETDesc(getRETDesc());
-    return this;
-  }
-
-  RelExpr * boundExpr = NULL;
-
-  if (setOptionsX())
-    {
-      *CmpCommon::diags() << DgSqlCode(-15517);
-      bindWA->setErrStatus();
-
-      return NULL;
-    }
-
-  boundExpr = ExeUtilExpr::bindNode(bindWA);
-  if (bindWA->errStatus()) 
-    return NULL;
-
-  return boundExpr;
-}
 
 // -----------------------------------------------------------------------
 // member functions for class ExeUtilDisplayExplain

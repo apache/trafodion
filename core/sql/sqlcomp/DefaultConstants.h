@@ -3912,6 +3912,12 @@ enum DefaultConstants
   // This default is for internal testing usage only and not externalized.
   HIVE_NO_REGISTER_OBJECTS,
 
+  // if set, cleanse output of explain text by filtering values that
+  // may not be deterministic on different systems.
+  // Same as explain format: options 'c'
+  // Used during dev regressions to cleanse explain output.
+  EXPLAIN_OPTION_C,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

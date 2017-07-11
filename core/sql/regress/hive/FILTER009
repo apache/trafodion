@@ -28,23 +28,5 @@ if [ "$fil" = "" ]; then
 fi
 
 sed "
-s/^\([ ]*PLAN_ID[ ]*[\.]*\) .*/\1 removed/g
-s/Fragment ID: 0, Length: [0-9]*/Fragment ID: 0, Length: AnyLength/g
-s/^\([ ]*EST_TOTAL_COST[ ]*[\.]*\) .*/EST_TOTAL_COST... removed/g
-s/^\([ ]*EST_OPER_COST[ ]*[\.]*\) .*/EST_OPER_COST... removed/g
-s/^\(ROWS_OUT[ ]*[\.]*\) .*/ROWS_OUT... removed/g
-s/explain_plan_size = [0-9]*/explain_plan_size = removed/g
-s/max_card_est[ ]*[\.]* .*/max_card_est... removed/g
-s/max_max_cardinality[ ]*[\.]* .*/max_max_cardinality... removed/g
-s/max_max_cardinali[ ]*[\.]* .*/max_max_cardinality... removed/g
-s/max_max_cardinal[ ]*[\.]* .*/max_max_cardinality... removed/g
-s/est_memory_per_cpu[ ]*[\.]* .*/est_memory_per_cpu... removed/g
-s/probes[ ]*[\.]* .*/probes... removed/g
-s/duplicated_succ_pr[ ]*[\.]* .*/duplicated_succ_pr... removed/g
-s/rows_accessed[ ]*[\.]* .*/rows_accessed... removed/g
-s/num_cache_entries[ ]* .*/num_cache_entries... removed/g
-s/num_inner_tuples[ ]* .*/num_inner_tuples... removed/g
-s/REQUESTS_IN[ ]*[\.]* .*/REQUESTS_IN... removed/g
-s/ROWS\/REQUEST[ ]*[\.]* .*/ROWS\/REQUESTS... removed/g
 s/\/\* ObjectUID = *[0-9]*/ObjectUID = <UID removed>/g
 " $fil

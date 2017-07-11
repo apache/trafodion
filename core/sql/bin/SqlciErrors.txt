@@ -2800,7 +2800,7 @@ $3~String1.
 15514 ZZZZZ 99999 MMMMMMMM MMMMM MMMMMMM The value must be between 1 and 255 for the LIST command.
 15515 ZZZZZ 99999 MMMMMMMM MMMMM MMMMMMM This command is not allowed because a SELECT is in progress.
 15516 ZZZZZ 99999 MMMMMMMM MMMMM MMMMMMM This command is allowed only when a SELECT is in progress.
-15517 ZZZZZ 99999 MMMMMMMM MMMMM MMMMMMM An invalid option was specified.
+15517 ZZZZZ 99999 MMMMMMMM MMMMM MMMMMMM Specified string $0~string0 contains invalid options or invalid combination of options.
 15518 ZZZZZ 99999 MMMMMMMM MMMMM MMMMMMM The value must be between 1 and 32767 for LINE_SPACING option.
 15519 ZZZZZ 99999 MMMMMMMM MMMMM MMMMMMM The current PAGE_LENGTH $0~int0 value is insufficient for the report.  The PAGE_LENGTH should be $1~int1.
 15520 ZZZZZ 99999 MMMMMMMM MMMMM MMMMMMM The column value  $0~string0 is not in the DETAIL list. All TOTAL and SUBTOTAL items must be in the DETAIL list.

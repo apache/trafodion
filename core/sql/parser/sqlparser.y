@@ -2222,7 +2222,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <stringval>		default_identifier
 %type <stringval>               table_control_identifier
 %type <stringval>		optional_control_identifier
-%type <stringval>               optional_explain_options
+%type <stringval>               optional_options
 %type <exprnodeptrs>		shape_arg_list
 %type <stringval>		shape_identifier
 %type <tokval>			token_shape_identifier
@@ -15238,7 +15238,7 @@ exe_util_get_volatile_info : TOK_GET TOK_ALL TOK_VOLATILE TOK_SCHEMAS
 		 $$ = volSch;
 	       }
 
-explain_starting_tokens : TOK_EXPLAIN optional_explain_options
+explain_starting_tokens : TOK_EXPLAIN optional_options
                                 {
                                   ParNameLocListPtr = new (PARSERHEAP()) 
                                     ParNameLocList ( SQLTEXT()
@@ -17087,8 +17087,11 @@ exe_util_display_explain: explain_starting_tokens interactive_query_expression d
 		}
 
 /* type stringval */
-optional_explain_options : /* empty */
+optional_options : /* empty */
              { $$ = NULL; }
+         | TOK_OPTION QUOTED_STRING
+           /* DEFAULT_CHARSET has no effect on QUOTED_STRING in this context */
+             { $$ = $2; }
          | TOK_OPTIONS QUOTED_STRING
            /* DEFAULT_CHARSET has no effect on QUOTED_STRING in this context */
              { $$ = $2; }
@@ -22861,7 +22864,7 @@ show_statement:
 			      ColReference(new (PARSERHEAP()) ColRefName(TRUE, PARSERHEAP())));
 	     }
 
-	  | TOK_SHOWPLAN options TOK_EXPLAIN interactive_query_expression
+	  | TOK_SHOWPLAN options TOK_EXPLAIN optional_options interactive_query_expression
 	     {
 	       // create a dummy name so as to satisfy the constructor of
 	       // Describe. The tablename param is not used for SHOWPLAN qry.
@@ -33283,53 +33286,57 @@ create_synonym_stmt : TOK_CREATE TOK_SYNONYM
                                }
 
 /* type longint */
-options : /* empty */
-             { $$ = 0x0000000E; }
-         | TOK_OPTION QUOTED_STRING
-             {
-               // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
-	       Int32 i = 0;
-	       char *str = (char *)$2->data();
-	       ULng32 flag = 0;
-	       while(str[i] != '\0')
-		 {
-		   switch(str[i])
-		     {
-		     case ' ' :  break;
-		     case 'p' :  if (flag & 0x00000002)
-		       YYERROR;
-		     else
-		       flag = flag | 0x00000002;
-		     break;
-		     case 'e' :  if (flag & 0x00000004)
-		       YYERROR;
-		     else
-		       flag = flag | 0x00000004;
-		     break;
-		     case 't' :  if (flag & 0x00000008)
-		       YYERROR;
-		     else
-		       flag = flag | 0x00000008;
-		     break;
-		     case 'n' :  if (flag & 0x00000010)
-		       YYERROR;
-		     else
-		       flag = flag | 0x00000010;
-		     break;
-		     default  :  YYERROR;
-		     }
-		   i++;
-		 }
-	       // if only 'n' option is specified(no regenerate pcode),
-	       // then display everything.
-	       if (flag == 0x10)
-		 {
-		   flag |= 0x0E;
-		 }
-#pragma nowarn(1506)   // warning elimination 
-	       $$ = flag;
-#pragma warn(1506)   // warning elimination 
-	     }
+options : optional_options 
+           {
+             if ($1 == NULL)
+               {
+                 $$ = 0x0000000E;
+               }
+             else 
+               {
+                 // DEFAULT_CHARSET has no effect on QUOTED_STRING in this context
+                 Int32 i = 0;
+                 char *str = (char *)$1->data();
+                 ULng32 flag = 0;
+                 while(str[i] != '\0')
+                   {
+                     switch(str[i])
+                       {
+                       case ' ' :  break;
+                       case 'p' :  if (flag & 0x00000002)
+                           YYERROR;
+                         else
+                           flag = flag | 0x00000002;
+                         break;
+                       case 'e' :  if (flag & 0x00000004)
+                           YYERROR;
+                         else
+                           flag = flag | 0x00000004;
+                         break;
+                       case 't' :  if (flag & 0x00000008)
+                           YYERROR;
+                         else
+                           flag = flag | 0x00000008;
+                         break;
+                       case 'n' :  if (flag & 0x00000010)
+                           YYERROR;
+                         else
+                           flag = flag | 0x00000010;
+                         break;
+                       default  :  YYERROR;
+                       }
+                     i++;
+                   }
+                 // if only 'n' option is specified(no regenerate pcode),
+                 // then display everything.
+                 if (flag == 0x10)
+                   {
+                     flag |= 0x0E;
+                   }
+                 $$ = flag;
+               }
+           }
+
 cpu_identifier : SYSTEM_CPU_IDENTIFIER
                 {
                   $$ = $1;
