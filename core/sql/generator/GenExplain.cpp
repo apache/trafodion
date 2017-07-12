@@ -243,6 +243,7 @@ RelExpr::addExplainInfo(ComTdb * tdb,
     {
       explainTuple->
         setTotalCost((MINOF(rollUpCost->displayTotalCost(), 1e32)).getValue());
+
      // Set detail info for calibration:
       if (explainForCalibration)  
       {

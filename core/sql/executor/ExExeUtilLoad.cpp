@@ -2242,11 +2242,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
         step_ = UNLOAD_END_ERROR_;
         break;
       }
-      if (holdAndSetCQD("TRAF_UNLOAD_BYPASS_LIBHDFS", "ON") < 0)
-      {
-        step_ = UNLOAD_END_ERROR_;
-        break;
-      }
       if (hblTdb().getSkipWriteToFiles())
       {
         setEmptyTarget(FALSE);
@@ -2491,11 +2486,6 @@ short ExExeUtilHBaseBulkUnLoadTcb::work()
         }
       }
       if (restoreCQD("COMP_BOOL_226") < 0)
-      {
-        step_ = UNLOAD_ERROR_;
-        break;
-      }
-      if (restoreCQD("TRAF_UNLOAD_BYPASS_LIBHDFS") < 0)
       {
         step_ = UNLOAD_ERROR_;
         break;

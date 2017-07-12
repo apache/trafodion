@@ -25,7 +25,5 @@
 
 fil=$1
 sed "
-s/^\([ ]*PLAN_ID[ ]*[\.]*\) .*/\1 removed/g
-s/^\([ ]*ObjectUIDs[ ]*[\.]*\) .*/\1 removed/g
 " $fil
 

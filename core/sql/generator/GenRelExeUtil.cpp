@@ -306,7 +306,7 @@ TrafDesc *ExeUtilDisplayExplain::createVirtualTableDesc()
     (Lng32) CmpCommon::getDefaultNumeric(EXPLAIN_OUTPUT_ROW_SIZE);
   ComTdbVirtTableColumnInfo * vtci = NULL;
   
-  if (optionX_ != 'm')
+  if (NOT isOptionM())
     {
       vtci = ComTdbExeUtilDisplayExplain::getVirtTableOptionXColumnInfo();
       vtci->length = outputRowSize - 1;
@@ -418,7 +418,6 @@ short ExeUtilDisplayExplain::codeGen(Generator * generator)
 	 getStmtTextCharSet(),
 	 moduleName,
 	 stmtName,
-	 optionX_,
 	 0, 0, // no input expr
 	 0, 0, // no output expr
 	 0, 0, // no work cri desc
@@ -428,10 +427,14 @@ short ExeUtilDisplayExplain::codeGen(Generator * generator)
 	 returnedDesc,
 	 (queue_index)8,
 	 (queue_index)1024,
-#pragma nowarn(1506)   // warning elimination 
 	 2, // num buffers
 	 32000); // bufferSIze
-#pragma warn(1506)  // warning elimination 
+
+  exe_util_tdb->setOptionE(isOptionE());
+  exe_util_tdb->setOptionF(isOptionF());
+  exe_util_tdb->setOptionM(isOptionM());
+  exe_util_tdb->setOptionN(isOptionN());
+  exe_util_tdb->setOptionC(isOptionC());
 
   generator->initTdbFields(exe_util_tdb);
   
@@ -5700,7 +5703,6 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
   exe_util_tdb->setCompressType(compressType_);
   exe_util_tdb->setOneFile(oneFile_);
   exe_util_tdb->setMergePath(mergePathStr);
-  exe_util_tdb->setSkipWriteToFiles(CmpCommon::getDefault(TRAF_UNLOAD_SKIP_WRITING_TO_FILES) == DF_ON);
   exe_util_tdb->setOverwriteMergeFile(overwriteMergeFile_);
   exe_util_tdb->setScanType(scanType_);
   exe_util_tdb->setSnapshotSuffix(snapSuffixStr);

@@ -433,54 +433,6 @@ ExOperStats * ExFastExtractTcb::doAllocateStatsEntry(
                                          tdb);
   }
 }
-///////////////////////////////////
-///////////////////////////////////
-
-Lng32 ExHdfsFastExtractTcb::lobInterfaceInsert(ssize_t bytesToWrite)
-{
-  Int64 requestTag = 0;
-  Int64 descSyskey = 0;
-  return ExpLOBInterfaceInsert(lobGlob_,
-      fileName_,
-      targetLocation_,
-      (Lng32)Lob_External_HDFS_File,
-      hdfsHost_,
-      hdfsPort_,
-      0,
-      NULL,  //lobHandle == NULL -->simpleInsert
-      NULL,
-      NULL,
-      0,
-      NULL,
-      requestTag,
-      0,
-      descSyskey,
-      Lob_InsertDataSimple,
-      NULL,
-      Lob_None,//LobsSubOper so
-      1,  //waitedOp
-      currBuffer_->data_,
-      bytesToWrite,
-      0,     //bufferSize
-      myTdb().getHdfsReplication(),     //replication
-      0      //blockSize
-      );
-}
-
-Lng32 ExHdfsFastExtractTcb::lobInterfaceCreate()
-{
-  return   ExpLOBinterfaceCreate(lobGlob_,
-      fileName_,
-      targetLocation_,
-      (Lng32)Lob_External_HDFS_File,
-      hdfsHost_,
-      hdfsPort_,
-      0, //bufferSize -- 0 --> use default
-      myTdb().getHdfsReplication(), //replication
-      0 //bloclSize --0 -->use default
-      );
-
-}
 
 Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck
 (Int64 &failedModTS,
@@ -497,19 +449,6 @@ Lng32 ExHdfsFastExtractTcb::lobInterfaceDataModCheck
                                      failedLocBuf, failedLocBufLen);
 }
 
-
-Lng32 ExHdfsFastExtractTcb::lobInterfaceClose()
-{
-  return
-      ExpLOBinterfaceCloseFile
-      (lobGlob_,
-       fileName_,
-       NULL, //(char*)"",
-       (Lng32)Lob_External_HDFS_File,
-       hdfsHost_,
-       hdfsPort_);
-
-}
 
 ExHdfsFastExtractTcb::ExHdfsFastExtractTcb(
     const ExFastExtractTdb &fteTdb,
@@ -545,14 +484,11 @@ Int32 ExHdfsFastExtractTcb::fixup()
 
   ex_tcb::fixup();
 
-  if(!myTdb().getSkipWritingToFiles() &&
-     !myTdb().getBypassLibhdfs())
-    memset (hdfsHost_, '\0', sizeof(hdfsHost_));
-      strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
-      hdfsPort_ = myTdb().getHdfsPortNum();
-    ExpLOBinterfaceInit
-      (lobGlob_, getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE,hdfsHost_,hdfsPort_);
-
+  strncpy(hdfsHost_, myTdb().getHdfsHostName(), sizeof(hdfsHost_));
+  hdfsPort_ = myTdb().getHdfsPortNum();
+  ExpLOBinterfaceInit
+    (lobGlob_, getGlobals()->getDefaultHeap(),getGlobals()->castToExExeStmtGlobals()->getContext(),TRUE,hdfsHost_,hdfsPort_);
+  
   modTS_ = myTdb().getModTSforDir();
 
   return 0;
@@ -811,8 +747,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
 
       ComDiagsArea *da = NULL;
 
-      if (!myTdb().getSkipWritingToFiles())
-        if (myTdb().getTargetFile() )
+      if (myTdb().getTargetFile() )
         {
           Lng32 fileNum = getGlobals()->castToExExeStmtGlobals()->getMyInstanceNumber();
           memset (hdfsHost_, '\0', sizeof(hdfsHost_));
@@ -834,8 +769,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
           else
             snprintf(fileName_,999, "%s%d-%s-%d", "file", fileNum, pt,rand() % 1000);
 
-          if ((isSequenceFile() || myTdb().getBypassLibhdfs()) &&
-              !sequenceFileWriter_)
+          if (!sequenceFileWriter_)
           {
             sequenceFileWriter_ = new(getHeap())
                                      SequenceFileWriter((NAHeap *)getHeap());
@@ -848,47 +782,25 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
             }
           }
 
-          if (isSequenceFile()  ||  myTdb().getBypassLibhdfs())
-          {
-            strcat(targetLocation_, "//");
-            strcat(targetLocation_, fileName_);
-            if (isSequenceFile())
-              sfwRetCode = sequenceFileWriter_->open(targetLocation_, SFW_COMP_NONE);
-            else
-              sfwRetCode = sequenceFileWriter_->hdfsCreate(targetLocation_, isHdfsCompressed());
-            if (sfwRetCode != SFW_OK)
+          strcat(targetLocation_, "//");
+          strcat(targetLocation_, fileName_);
+          if (isSequenceFile())
+            sfwRetCode = sequenceFileWriter_->open(targetLocation_, SFW_COMP_NONE);
+          else
+            sfwRetCode = sequenceFileWriter_->hdfsCreate(targetLocation_, isHdfsCompressed());
+          if (sfwRetCode != SFW_OK)
             {
               createSequenceFileError(sfwRetCode);
               pstate.step_ = EXTRACT_ERROR;
               break;
             }
-          }
-          else
-          {
-            retcode = 0;
-            retcode = lobInterfaceCreate();
-            if (retcode < 0)
-            {
-              Lng32 cliError = 0;
-
-              Lng32 intParam1 = -retcode;
-              ComDiagsArea * diagsArea = NULL;
-              ExRaiseSqlError(getHeap(), &diagsArea,
-                  (ExeErrorCode)(8442), NULL, &intParam1,
-                  &cliError, NULL, (char*)"ExpLOBinterfaceCreate",
-                  getLobErrStr(intParam1));
-              pentry_down->setDiagsArea(diagsArea);
-              pstate.step_ = EXTRACT_ERROR;
-              break;
-            }
-          }
             
           if (feStats)
           {
             feStats->setPartitionNumber(fileNum);
           }
         }
-        else
+      else
         {
           updateWorkATPDiagsArea(__FILE__,__LINE__,"sockets are not supported");
           pstate.step_ = EXTRACT_ERROR;
@@ -1083,8 +995,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
     {
       ssize_t bytesToWrite = currBuffer_->bufSize_ - currBuffer_->bytesLeft_;
 
-      if (!myTdb().getSkipWritingToFiles())
-        if (isSequenceFile())
+      if (isSequenceFile())
         {
           sfwRetCode = sequenceFileWriter_->writeBuffer(currBuffer_->data_, bytesToWrite, myTdb().getRecordSeparator());
           if (sfwRetCode != SFW_OK)
@@ -1094,7 +1005,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
             break;
           }
         }
-        else  if (myTdb().getBypassLibhdfs())
+      else
         {
           sfwRetCode = sequenceFileWriter_->hdfsWrite(currBuffer_->data_, bytesToWrite);
           if (sfwRetCode != SFW_OK)
@@ -1104,25 +1015,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
             break;
           }
         }
-        else
-        {
-          retcode = 0;
-          retcode = lobInterfaceInsert(bytesToWrite);
-          if (retcode < 0)
-          {
-            Lng32 cliError = 0;
 
-            Lng32 intParam1 = -retcode;
-            ComDiagsArea * diagsArea = NULL;
-            ExRaiseSqlError(getHeap(), &diagsArea,
-                (ExeErrorCode)(8442), NULL, &intParam1,
-                &cliError, NULL, (char*)"ExpLOBInterfaceInsert",
-                getLobErrStr(intParam1));
-            pentry_down->setDiagsArea(diagsArea);
-            pstate.step_ = EXTRACT_ERROR;
-            break;
-          }
-        }
       if (feStats)
       {
         feStats->incReadyToSendBuffersCount();
@@ -1204,8 +1097,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       if (qParent_.up->isFull())
         return WORK_OK;
 
-      if (!myTdb().getSkipWritingToFiles())
-        if (isSequenceFile())
+      if (isSequenceFile())
         {
           sfwRetCode = sequenceFileWriter_->close();
           if (!errorOccurred_ && sfwRetCode != SFW_OK )
@@ -1215,7 +1107,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
             break;
           }
         }
-        else  if (myTdb().getBypassLibhdfs())
+      else
         {
           if (sequenceFileWriter_)
             {
@@ -1228,26 +1120,7 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
                 }
             }
         }
-        else
-        {
-          retcode = lobInterfaceClose();
-          if (! errorOccurred_ && retcode < 0)
-          {
-            Lng32 cliError = 0;
 
-            Lng32 intParam1 = -retcode;
-            ComDiagsArea * diagsArea = NULL;
-            ExRaiseSqlError(getHeap(), &diagsArea,
-                (ExeErrorCode)(8442), NULL, &intParam1,
-                &cliError, NULL,
-                (char*)"ExpLOBinterfaceCloseFile",
-                getLobErrStr(intParam1));
-            pentry_down->setDiagsArea(diagsArea);
-
-            pstate.step_ = EXTRACT_ERROR;
-            break;
-          }
-        }
       //insertUpQueueEntry will insert Q_NO_DATA into the up queue and
       //remove the head of the down queue
       insertUpQueueEntry(ex_queue::Q_NO_DATA, NULL, TRUE);

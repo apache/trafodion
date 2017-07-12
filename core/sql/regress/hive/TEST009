@@ -234,15 +234,15 @@ invoke hive.hive.store_sales;
 
 set schema hive.hive;
 prepare s from select * from store_sales where ss_item_sk = 1;
-explain s;
+explain options 'c' s;
 
 -- join with nested join
 control query shape nested_join(scan(path 'CUSTOMER'), 
       scan(path 'STORE_SALES'));
 prepare s from select * from customer, store_sales 
     where store_sales.ss_item_sk = customer.c_customer_sk;
-explain options 'f' s;
-explain s;
+explain options 'fc' s;
+explain options 'c' s;
 
 control query shape cut;
 set schema trafodion.sch;
@@ -263,7 +263,7 @@ create external table date_dim
 invoke hive.hive.date_dim;
 showddl hive.hive.date_dim;
 prepare s from select * from hive.hive.date_dim where d_date = date '2016-01-27';
-explain s;
+explain options 'c' s;
 
 drop external table if exists date_dim for hive.hive.date_dim;
 create external table date_dim 
@@ -272,7 +272,7 @@ create external table date_dim
 invoke hive.hive.date_dim;
 showddl hive.hive.date_dim;
 prepare s from select * from hive.hive.date_dim where d_date = date '2016-01-27';
-explain s;
+explain options 'c' s;
 
 
 -- error cases

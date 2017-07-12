@@ -1382,6 +1382,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   DDkwd__(EXPLAIN_IN_RMS, 		        "ON"),
 
+  DDkwd__(EXPLAIN_OPTION_C,                     "OFF"),
+
   DDui___(EXPLAIN_OUTPUT_ROW_SIZE,   "80"),
 
   DDui1__(EXPLAIN_ROOT_INPUT_VARS_MAX,           "2000"), // maximum number of inputs that we can tolerate to 
@@ -1391,6 +1393,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDkwd__(EXPLAIN_SPACE_OPT, 		        "ON"),
 
   DDkwd__(EXPLAIN_STRATEGIZER_PARAMETERS,  "OFF"),
+
   DDflte_(EX_OP_ALLOCATE_ATP,                   ".02"),
 
   // Calibration
@@ -3432,11 +3435,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // DTM Transaction Type: MVCC, SSCC
   XDDkwd__(TRAF_TRANS_TYPE,                            "MVCC"),
 
-  DDkwd__(TRAF_UNLOAD_BYPASS_LIBHDFS,                  "ON"),
   DD_____(TRAF_UNLOAD_DEF_DELIMITER,                   "|" ),
   DD_____(TRAF_UNLOAD_DEF_RECORD_SEPARATOR,            "\n" ),
   DDint__(TRAF_UNLOAD_HDFS_COMPRESS,                   "0"),
-  DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,           "OFF"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
   DDkwd__(TRAF_UPSERT_MODE,                            "MERGE"),
   DDkwd__(TRAF_UPSERT_TO_EFF_TREE,                     "ON"),

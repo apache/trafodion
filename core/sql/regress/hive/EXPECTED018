@@ -2471,35 +2471,4 @@ ss order by ca_address_id;
 >>log;
 regrhadoop.ksh fs -rm /user/trafodion/hive/exttables/unload_customer_demographics/*
 >>
->>CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'ON';
-
---- SQL operation complete.
->>UNLOAD  
-+>WITH PURGEDATA FROM TARGET
-+>INTO '/user/trafodion/hive/exttables/unload_customer_demographics'
-+>(select * from trafodion.hbase.customer_demographics_salt) ;
-Task: UNLOAD           Status: Started
-Task:  EXTRACT         Status: Started    Time: 2017-05-01 18:53:36.154
-       Rows Processed but NOT Written to Disk: 20000 
-Task:  EXTRACT         Status: Ended      Time: 2017-05-01 18:53:36.660
-Task:  EXTRACT         Status: Ended      Elapsed Time:    00:00:00.506
-
---- 20000 row(s) unloaded.
->>--sh sleep 10;
->>select count(*) from hive.hive.unload_customer_demographics;
-
-(EXPR)              
---------------------
-
-                   0
-
---- 1 row(s) selected.
->>
->>CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES reset;
-
---- SQL operation complete.
->>
->>
->>
->>
 >>log;

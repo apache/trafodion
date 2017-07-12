@@ -751,17 +751,4 @@ sh echo "regrhadoop.ksh fs -rm /user/trafodion/hive/exttables/unload_customer_de
 sh regrhadoop.ksh fs -rm /user/trafodion/hive/exttables/unload_customer_demographics/* ;
 log LOG018;
 
-CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES 'ON';
-UNLOAD  
-WITH PURGEDATA FROM TARGET
-INTO '/user/trafodion/hive/exttables/unload_customer_demographics'
-(select * from trafodion.hbase.customer_demographics_salt) ;
---sh sleep 10;
-select count(*) from hive.hive.unload_customer_demographics;
-
-CQD TRAF_UNLOAD_SKIP_WRITING_TO_FILES reset;
-
-
-
-
 log;

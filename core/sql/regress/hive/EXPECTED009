@@ -214,7 +214,7 @@ A            B            C
 >>invoke t009hivecust1;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.T009HIVECUST1
--- Definition current  Tue May 16 15:38:03 2017
+-- Definition current  Tue Jul 11 18:13:26 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -263,7 +263,7 @@ A            B            C
 >>invoke t009hivecust2;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.T009HIVECUST2
--- Definition current  Tue May 16 15:38:13 2017
+-- Definition current  Tue Jul 11 18:13:36 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -434,7 +434,7 @@ T009T2
 >>invoke hive.sch_t009.t009t1;
 
 -- Definition of hive table T009T1
--- Definition current  Tue May 16 15:39:45 2017
+-- Definition current  Tue Jul 11 18:14:50 2017
 
   (
     A                                INT
@@ -516,7 +516,7 @@ ROW_ID      COLS
 >>invoke bblike1;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.BBLIKE1
--- Definition current  Tue May 16 15:39:59 2017
+-- Definition current  Tue Jul 11 18:15:03 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -533,7 +533,7 @@ ROW_ID      COLS
 >>invoke bblike2;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.BBLIKE2
--- Definition current  Tue May 16 15:40:04 2017
+-- Definition current  Tue Jul 11 18:15:07 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -572,7 +572,7 @@ ROW_ID      COLS
 >>invoke hive.hive.store_sales;
 
 -- Definition of hive table STORE_SALES
--- Definition current  Tue May 16 15:40:10 2017
+-- Definition current  Tue Jul 11 18:15:13 2017
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -611,32 +611,32 @@ ROW_ID      COLS
 *** WARNING[6008] Statistics for column (SS_ITEM_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
->>explain s;
+>>explain options 'c' s;
 
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212361709210663826
-ROWS_OUT ............. 1,709
-EST_TOTAL_COST ........... 0.27
+PLAN_ID ................ ###
+ROWS_OUT ............... ###
+EST_TOTAL_COST ......... ###
 STATEMENT ................ select * from store_sales where ss_item_sk = 1;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN .............. 1
-ROWS_OUT ............. 1,709
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.27
+REQUESTS_IN ............ ###
+ROWS_OUT ............... ###
+EST_OPER_COST .......... ###
+EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ........... 2.77461e+06
+  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
   statement_index ........ 0
-  affinity_value ......... 0
-  max_max_cardinality  1,709
-  total_overflow_size .... 0.00 KB
+  affinity_value ....... ###
+  max_max_cardinality    ###
+  total_overflow_size    ###
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -674,12 +674,12 @@ DESCRIPTION
 
 HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.STORE_SALES
-REQUESTS_IN .............. 1
-ROWS_OUT ............. 1,709
-EST_OPER_COST ............ 0.27
-EST_TOTAL_COST ........... 0.27
+REQUESTS_IN ............ ###
+ROWS_OUT ............... ###
+EST_OPER_COST .......... ###
+EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ........... 2.77461e+06
+  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -729,25 +729,25 @@ DESCRIPTION
 *** WARNING[6008] Statistics for column (SS_ITEM_SK) from table HIVE.HIVE.STORE_SALES were not available. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
->>explain options 'f' s;
+>>explain options 'fc' s;
 
 LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 ---- ---- ---- --------------------  --------  --------------------  ---------
 
-3    .    4    root                                                  2.92E+006
-1    2    3    nested_join                                           2.92E+006
-.    .    2    hive_scan                       STORE_SALES           2.78E+001
-.    .    1    hive_scan                       CUSTOMER              1.04E+005
+3    .    4    root                                                  1.00E+002
+1    2    3    nested_join                                           1.00E+002
+.    .    2    hive_scan                       STORE_SALES           1.00E+002
+.    .    1    hive_scan                       CUSTOMER              1.00E+002
 
 --- SQL operation complete.
->>explain s;
+>>explain options 'c' s;
 
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212361709210888079
-ROWS_OUT ......... 2,920,643
-EST_TOTAL_COST ........... 1.07
+PLAN_ID ................ ###
+ROWS_OUT ............... ###
+EST_TOTAL_COST ......... ###
 STATEMENT ................ select *
                            from customer, store_sales
                            where store_sales.ss_item_sk =
@@ -757,19 +757,19 @@ MUST_MATCH ............... forced nested join(forced scan, forced scan)
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
-REQUESTS_IN .............. 1
-ROWS_OUT ......... 2,920,643
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 1.07
+REQUESTS_IN ............ ###
+ROWS_OUT ............... ###
+EST_OPER_COST .......... ###
+EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ........... 2.92064e+06
+  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
   statement_index ........ 0
-  affinity_value ......... 0
-  max_max_cardinal  2,920,643
-  total_overflow_size .... 0.00 KB
+  affinity_value ....... ###
+  max_max_cardinality    ###
+  total_overflow_size    ###
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -823,12 +823,12 @@ DESCRIPTION
 
 
 NESTED_JOIN ===============================  SEQ_NO 3        CHILDREN 1, 2
-REQUESTS_IN .............. 1
-ROWS_OUT ......... 2,920,642
-EST_OPER_COST ............ 0.5
-EST_TOTAL_COST ........... 1.07
+REQUESTS_IN ............ ###
+ROWS_OUT ............... ###
+EST_OPER_COST .......... ###
+EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ........... 2.92064e+06
+  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -838,12 +838,12 @@ DESCRIPTION
 
 HIVE_SCAN =================================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.STORE_SALES
-REQUESTS_IN ........ 104,843
-ROWS/REQUEST ............ 27.86
-EST_OPER_COST ............ 0.55
-EST_TOTAL_COST ........... 0.55
+REQUESTS_IN ............ ###
+ROWS/REQUEST ........... ###
+EST_OPER_COST .......... ###
+EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ........... 2.92064e+06
+  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -882,12 +882,12 @@ DESCRIPTION
 
 HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.CUSTOMER
-REQUESTS_IN .............. 1
-ROWS_OUT ........... 104,843
-EST_OPER_COST ............ 0.02
-EST_TOTAL_COST ........... 0.02
+REQUESTS_IN ............ ###
+ROWS_OUT ............... ###
+EST_OPER_COST .......... ###
+EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ..... 104,843
+  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -947,7 +947,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Tue May 16 15:40:16 2017
+-- Definition current  Tue Jul 11 18:15:19 2017
 
   (
     D_DATE_SK                        INT
@@ -1031,7 +1031,7 @@ CREATE TABLE DATE_DIM
 ;
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM;
-/* ObjectUID = 24899351381469208 */
+/* ObjectUID = 5537310018384739180 */
 
 /* Trafodion DDL */
 
@@ -1086,14 +1086,14 @@ CREATE EXTERNAL TABLE DATE_DIM
 *** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
->>explain s;
+>>explain options 'c' s;
 
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212361709220931595
-ROWS_OUT ................. 1
-EST_TOTAL_COST ........... 0.01
+PLAN_ID ................ ###
+ROWS_OUT ............... ###
+EST_TOTAL_COST ......... ###
 STATEMENT ................ select *
                            from hive.hive.date_dim
                            where d_date = date '2016-01-27';
@@ -1101,19 +1101,19 @@ STATEMENT ................ select *
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.01
+REQUESTS_IN ............ ###
+ROWS_OUT ............... ###
+EST_OPER_COST .......... ###
+EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ........... 1
+  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
   statement_index ........ 0
-  affinity_value ......... 0
-  max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
+  affinity_value ....... ###
+  max_max_cardinality    ###
+  total_overflow_size    ###
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1152,12 +1152,12 @@ DESCRIPTION
 
 HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.DATE_DIM
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 0.01
+REQUESTS_IN ............ ###
+ROWS_OUT ............... ###
+EST_OPER_COST .......... ###
+EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ........... 1
+  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -1182,7 +1182,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Tue May 16 15:40:28 2017
+-- Definition current  Tue Jul 11 18:15:35 2017
 
   (
     D_DATE_SK                        INT
@@ -1266,7 +1266,7 @@ CREATE TABLE DATE_DIM
 ;
 
 REGISTER /*INTERNAL*/ HIVE TABLE HIVE.HIVE.DATE_DIM;
-/* ObjectUID = 24899351381469208 */
+/* ObjectUID = 5537310018384739180 */
 
 /* Trafodion DDL */
 
@@ -1321,14 +1321,14 @@ CREATE EXTERNAL TABLE DATE_DIM
 *** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
->>explain s;
+>>explain options 'c' s;
 
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID .................. 212361709232113312
-ROWS_OUT ................. 1
-EST_TOTAL_COST ........... 0.01
+PLAN_ID ................ ###
+ROWS_OUT ............... ###
+EST_TOTAL_COST ......... ###
 STATEMENT ................ select *
                            from hive.hive.date_dim
                            where d_date = date '2016-01-27';
@@ -1336,19 +1336,19 @@ STATEMENT ................ select *
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0
-EST_TOTAL_COST ........... 0.01
+REQUESTS_IN ............ ###
+ROWS_OUT ............... ###
+EST_OPER_COST .......... ###
+EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ........... 1
+  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
   statement_index ........ 0
-  affinity_value ......... 0
-  max_max_cardinality .... 1
-  total_overflow_size .... 0.00 KB
+  affinity_value ....... ###
+  max_max_cardinality    ###
+  total_overflow_size    ###
   xn_access_mode ......... read_only
   xn_autoabort_interval    0
   auto_query_retry ....... enabled
@@ -1387,12 +1387,12 @@ DESCRIPTION
 
 HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.DATE_DIM
-REQUESTS_IN .............. 1
-ROWS_OUT ................. 1
-EST_OPER_COST ............ 0.01
-EST_TOTAL_COST ........... 0.01
+REQUESTS_IN ............ ###
+ROWS_OUT ............... ###
+EST_OPER_COST .......... ###
+EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ........... 1
+  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master

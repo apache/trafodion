@@ -120,7 +120,6 @@ ComTdbExeUtilDisplayExplain::ComTdbExeUtilDisplayExplain
  Int16 querycharset,
  char * moduleName,
  char * stmtName,
- char optionX,
  ex_expr * input_expr,
  ULng32 input_rowlen,
  ex_expr * output_expr,
@@ -129,7 +128,7 @@ ComTdbExeUtilDisplayExplain::ComTdbExeUtilDisplayExplain
  const unsigned short work_atp_index,
  Lng32 colDescSize,
  Lng32 outputRowSize,
-  ex_cri_desc * given_cri_desc,
+ ex_cri_desc * given_cri_desc,
  ex_cri_desc * returned_cri_desc,
  queue_index down,
  queue_index up,
@@ -152,22 +151,6 @@ ComTdbExeUtilDisplayExplain::ComTdbExeUtilDisplayExplain
        flags_(0)
 {
   setNodeType(ComTdb::ex_DISPLAY_EXPLAIN);
-
-  setOptionX(optionX);
-}
-
-void ComTdbExeUtilDisplayExplain::setOptionX(char c)    // move from char to mask_
-{
-  flags_ &= OPTION_OFF;                                 // clear in case reused
-  switch(c)
-    {
-      case 'e' : flags_ |= OPTION_E; break;             // expert mode
-      case 'f' : flags_ |= OPTION_F; break;             // summary mode
-      case 'm' : flags_ |= OPTION_M; break;             // machine readable mode
-      case 'n' : flags_ |= OPTION_N; break;             // normal mode
-      default  : assert(c == 'n');                      // always fail, input not supported
-    }
-  return;
 }
 
 Long ComTdbExeUtilDisplayExplain::pack(void * space)
@@ -197,12 +180,9 @@ void ComTdbExeUtilDisplayExplain::displayContents(Space * space,ULng32 flag)
       char buf[100];
       str_sprintf(buf, "\nFor ComTdbExeUtilDisplayExplain :");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-      
-      char c = 'm';
-      if (isOptionN()) {c = 'n';}
-      else if (isOptionF()) {c = 'f';}
-      else if (isOptionE()) {c = 'e';}
-      str_sprintf(buf,"optionX_ = %c", c);
+
+      str_sprintf(buf, "optionN = %d, optionF = %d, optionC = %d, optionE = %d, optionM = %d", 
+                  isOptionN(), isOptionF(), isOptionC(), isOptionE(), isOptionM());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
   

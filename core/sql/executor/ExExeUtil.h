@@ -627,6 +627,9 @@ class ExExeUtilDisplayExplainTcb : public ExExeUtilTcb
                     Lng32 &done);
   Lng32  IsNumberFmt(char *fieldptr) const;
   void  FormatFirstLine (void);
+  NABoolean filterKey(
+       const char *key, Lng32 keySize, char * value, char * retVal,
+       Lng32 &decLoc);
   void  FormatLine (const char *key, const char *val, Lng32 keySize, Lng32 valSize,
                     Lng32 indent = 0, Lng32 decLoc = 0);
   void  FormatLongLine (const char *key, char *val, Lng32 keySize, Lng32 valSize,

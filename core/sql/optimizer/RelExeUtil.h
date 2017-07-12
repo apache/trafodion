@@ -628,14 +628,46 @@ public:
 
   virtual NABoolean producesOutput() { return TRUE; }
 
+  NABoolean isOptionE() { return ((flags_ & OPTION_E) != 0); };
+  NABoolean isOptionF() { return ((flags_ & OPTION_F) != 0); };
+  NABoolean isOptionM() { return ((flags_ & OPTION_M) != 0); };
+  NABoolean isOptionN() { return ((flags_ & OPTION_N) != 0); };
+
+  // this option is used to cleanse and return deterministic explain output.
+  // when it is set, non-deterministic fields are filtered out and replaced
+  // with a deterministic pattern. Fields like cost or num esps, etc.
+  // Used during traf regressions run with explain/explain_options_f stmts
+  // to cleanse non-deterministic fields, if those fields are not relevant.
+  // Filtererd patterns are discussed in executor/ExExeUtilExplain.cpp.
+  NABoolean isOptionC() { return ((flags_ & OPTION_C) != 0); };
+
 protected:
+  enum OpToFlag
+  {
+    // formatted explain
+    OPTION_F      = 0x0001,
+
+    // expert mode explain
+    OPTION_E      = 0x0002,
+
+    // machine readable explain
+    OPTION_M      = 0x0004,
+
+    // normal full explain
+    OPTION_N      = 0x0008,
+    
+    // cleansed explain
+    OPTION_C      = 0x0010
+  };
+
   short setOptionsX();
+  short setOptionX(char c, Int32 &numOptions);
 
   char * moduleName_;
   char * stmtName_;
   char * optionsStr_;
 
-  char optionX_;                // explain [options 'x'] storage
+  UInt32 flags_;                                  
 };
 
 class ExeUtilDisplayExplainComplex : public ExeUtilDisplayExplain
