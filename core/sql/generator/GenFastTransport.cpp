@@ -481,9 +481,6 @@ static short ft_codegen(Generator *generator,
   tdb->setSequenceFile(isSequenceFile);
   tdb->setHdfsCompressed(CmpCommon::getDefaultNumeric(TRAF_UNLOAD_HDFS_COMPRESS)!=0);
 
-  tdb->setSkipWritingToFiles(CmpCommon::getDefault(TRAF_UNLOAD_SKIP_WRITING_TO_FILES) == DF_ON);
-  tdb->setBypassLibhdfs(CmpCommon::getDefault(TRAF_UNLOAD_BYPASS_LIBHDFS) == DF_ON);
-
   if ((hiveNAColArray) &&
       (hiveInsertErrMode == 2))
     {

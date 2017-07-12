@@ -5703,7 +5703,6 @@ short ExeUtilHBaseBulkUnLoad::codeGen(Generator * generator)
   exe_util_tdb->setCompressType(compressType_);
   exe_util_tdb->setOneFile(oneFile_);
   exe_util_tdb->setMergePath(mergePathStr);
-  exe_util_tdb->setSkipWriteToFiles(CmpCommon::getDefault(TRAF_UNLOAD_SKIP_WRITING_TO_FILES) == DF_ON);
   exe_util_tdb->setOverwriteMergeFile(overwriteMergeFile_);
   exe_util_tdb->setScanType(scanType_);
   exe_util_tdb->setSnapshotSuffix(snapSuffixStr);

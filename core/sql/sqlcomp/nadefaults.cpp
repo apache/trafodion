@@ -3435,11 +3435,9 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   // DTM Transaction Type: MVCC, SSCC
   XDDkwd__(TRAF_TRANS_TYPE,                            "MVCC"),
 
-  DDkwd__(TRAF_UNLOAD_BYPASS_LIBHDFS,                  "ON"),
   DD_____(TRAF_UNLOAD_DEF_DELIMITER,                   "|" ),
   DD_____(TRAF_UNLOAD_DEF_RECORD_SEPARATOR,            "\n" ),
   DDint__(TRAF_UNLOAD_HDFS_COMPRESS,                   "0"),
-  DDkwd__(TRAF_UNLOAD_SKIP_WRITING_TO_FILES,           "OFF"),
   DDkwd__(TRAF_UPSERT_ADJUST_PARAMS,                   "OFF"),
   DDkwd__(TRAF_UPSERT_MODE,                            "MERGE"),
   DDkwd__(TRAF_UPSERT_TO_EFF_TREE,                     "ON"),
