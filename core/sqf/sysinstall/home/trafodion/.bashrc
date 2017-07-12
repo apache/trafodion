@@ -67,3 +67,13 @@ if [ $? -ne 0 ]; then
     echo "***ERROR: Unable to set max open files. Current value $(ulimit -n)"
     echo $ETC_SECURITY_MSG
 fi
+
+# Do not modify this file, it may be over-written without notice.
+# For local customization to trafodion shell environment, add a file:
+#    ~trafodion/.bashrc.local
+# Be sure commands in local file do not write anything to stdout
+if [[ -r ~trafodion/.bashrc.local ]]
+then
+  source ~trafodion/.bashrc.local
+fi
+
