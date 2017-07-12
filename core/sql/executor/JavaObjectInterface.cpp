@@ -120,7 +120,16 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
   JavaVMOption jvm_options[
        MAX_NO_JVM_OPTIONS + (options ? options->entries() : 0)];
   int numJVMOptions = 0;
+
+  // variables for option strings used below
   char* classPathArg = NULL;
+  char maxHeapOptions[64];
+  char compressedClassSpaceSizeOptions[64];
+  char maxMetaspaceSizeOptions[64];
+  char initHeapOptions[64];
+  char debugOptions[100];
+  const char *oomOption = "-XX:+HeapDumpOnOutOfMemoryError";
+  char *oomDumpDir = NULL;
 
   // call the helper method defined above to check for already defined options
   if (!isDefinedInOptions(options, "-Djava.class.path="))
@@ -134,31 +143,26 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
 
   if (!isDefinedInOptions(options, "-Xmx"))
     {
-      char maxHeapOptions[64];
-      bool passMaxHeapToJVM = true;
       int maxHeapEnvvarMB = DEFAULT_JVM_MAX_HEAP_SIZE;
       const char *maxHeapSizeStr = getenv("JVM_MAX_HEAP_SIZE_MB");
       if (maxHeapSizeStr)
         {
           maxHeapEnvvarMB = atoi(maxHeapSizeStr);
           if (maxHeapEnvvarMB <= 0)
-            passMaxHeapToJVM = false;
+            maxHeapEnvvarMB = DEFAULT_JVM_MAX_HEAP_SIZE;
         }
-      if (passMaxHeapToJVM)
-        {
-          snprintf(maxHeapOptions, sizeof(maxHeapOptions),
-                   "-Xmx%dm", maxHeapEnvvarMB);
-          jvm_options[numJVMOptions].optionString = maxHeapOptions;
-          QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
-                        "Max heap option: %s",
-                        jvm_options[numJVMOptions].optionString);
-          numJVMOptions++;
-        }
+
+      snprintf(maxHeapOptions, sizeof(maxHeapOptions),
+               "-Xmx%dm", maxHeapEnvvarMB);
+      jvm_options[numJVMOptions].optionString = maxHeapOptions;
+      QRLogger::log(CAT_SQL_HDFS_JNI_TOP, LL_DEBUG,
+                    "Max heap option: %s",
+                    jvm_options[numJVMOptions].optionString);
+      numJVMOptions++;
     }
 
   if (!isDefinedInOptions(options, "-XX:CompressedClassSpaceSize="))
     {
-      char compressedClassSpaceSizeOptions[64];
       int compressedClassSpaceSize = 0;
       const char *compressedClassSpaceSizeStr = getenv("JVM_COMPRESSED_CLASS_SPACE_SIZE");
       if (compressedClassSpaceSizeStr)
@@ -177,7 +181,6 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
 
   if (!isDefinedInOptions(options, "-XX:MaxMetaspaceSize="))
     {
-      char maxMetaspaceSizeOptions[64];
       int maxMetaspaceSize = 0;
       const char *maxMetaspaceSizeStr = getenv("JVM_MAX_METASPACE_SIZE");
       if (maxMetaspaceSizeStr)
@@ -195,7 +198,6 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
 
   if (!isDefinedInOptions(options, "-Xms"))
     {
-      char initHeapOptions[64];
       const char *initHeapSizeStr = getenv("JVM_INIT_HEAP_SIZE_MB");
       if (initHeapSizeStr)
         {
@@ -225,7 +227,6 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
           if (debugTimeoutStr != NULL)
             debugTimeout_ = atoi(debugTimeoutStr);
           const char *suspendOnDebug = getenv("JVM_SUSPEND_ON_DEBUG");
-          char debugOptions[300];
 
           debugPort_ = debugPort;
           // to allow debugging multiple processes at the same time,
@@ -233,7 +234,9 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
           // add pid mod 1000 to the port number to use
           if (debugPort_ % 1000 == 0)
             debugPort_ += (GetCliGlobals()->myPin() % 1000);
-          sprintf(debugOptions,"-agentlib:jdwp=transport=dt_socket,address=%d,server=y,timeout=%d",
+          snprintf(debugOptions,
+                   sizeof(debugOptions),
+                   "-agentlib:jdwp=transport=dt_socket,address=%d,server=y,timeout=%d",
                   debugPort_,   debugTimeout_);
           if (suspendOnDebug != NULL)
             strcat(debugOptions, ",suspend=y");
@@ -247,8 +250,6 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
         }
     }
 
-  const char *oomOption = "-XX:+HeapDumpOnOutOfMemoryError";
-
   if (!isDefinedInOptions(options, oomOption))
     {
       jvm_options[numJVMOptions].optionString = (char *)oomOption;
@@ -259,7 +260,6 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
     {
       char *mySqRoot = getenv("TRAF_HOME");
       int len;
-      char *oomDumpDir = NULL;
       if (mySqRoot != NULL)
         {
           len = strlen(mySqRoot); 
@@ -290,6 +290,8 @@ int JavaObjectInterface::createJVM(LmJavaOptions *options)
   int ret = JNI_CreateJavaVM(&jvm_, (void**)&jenv_, &jvm_args);
   if (classPathArg)
     free(classPathArg);
+  if (oomDumpDir)
+    NADELETEBASIC(oomDumpDir, heap_);
   return ret;
 }
 
