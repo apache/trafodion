@@ -565,6 +565,7 @@ class ExEspManager
 				  Int32 nowaitDepth,
                                   NABoolean &espServerError,
                                   NABoolean soloFragment);
+  IpcCpuNum getRoundRobinCPU();
 
   // ESP state tracing >>
   enum EspStateEnum

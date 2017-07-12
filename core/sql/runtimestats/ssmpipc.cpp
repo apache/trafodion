@@ -288,23 +288,23 @@ SsmpGlobals::~SsmpGlobals()
 
 ULng32 SsmpGlobals::allocateServers()
 {
-  SEGMENT_INFO segInfo[MAX_NO_OF_SEGMENTS];
-  Lng32 noOfSegs = 0;
-  Int32 i, j;
-
   // Attempt connect to all SSCPs
   if (sscpServerClass_ == NULL)
   {
-    noOfSegs = ComRtGetSegsInfo(segInfo, MAX_NO_OF_SEGMENTS, noOfSegs,
-		heap_);
-    if (noOfSegs == 0)
+    Int32 noOfNodes;
+    Int32 *cpuArray = NULL;
+
+    noOfNodes = ComRtGetCPUArray(cpuArray, heap_);
+
+    if (noOfNodes == 0)
       return 0;
-    statsGlobals_->setNodesInCluster(noOfSegs);
+    statsGlobals_->setNodesInCluster(noOfNodes);
     sscpServerClass_ = new(heap_) IpcServerClass(ipcEnv_, IPC_SQLSSCP_SERVER, IPC_USE_PROCESS);
-    for (i = 0 ; i < noOfSegs ; i++)
+    for (Int32 i = 0 ; i < noOfNodes ; i++)
     {
-      allocateServer(NULL, 0, segInfo[i].segNo_);
+      allocateServer(NULL, 0, cpuArray[i]);
     }
+    NADELETEBASIC(cpuArray, heap_);
   }
   else
   {
