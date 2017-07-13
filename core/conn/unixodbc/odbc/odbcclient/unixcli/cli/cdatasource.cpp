@@ -862,6 +862,22 @@ short CDataSource::readDSValues(char *DSName,CConnect* pConnection)
 							path);
 	}
 
+    // Read AppUnicodeType Value
+    keyValueLength = sizeof(keyValueBuf);
+    len = GetMyPrivateProfileString(
+                        searchKey,
+                        "AppUnicodeType",
+                        "",
+                        keyValueBuf,
+                        keyValueLength,
+                        path);
+	if (len > 0){
+        if( strcmp(keyValueBuf,"utf8") == 0 )
+            gDrvrGlobal.ICUConv.m_AppUnicodeType == APP_UNICODE_TYPE_UTF8;
+        else if( strcmp(keyValueBuf,"utf16") == 0 )
+            gDrvrGlobal.ICUConv.m_AppUnicodeType == APP_UNICODE_TYPE_UTF16;
+    }
+
 
 
 	return ERROR_SUCCESS;

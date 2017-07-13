@@ -522,6 +522,22 @@ short CDataSource::readDSValues(char *DSName,CConnect* pConnection)
 	else
 		m_DS_UCS2Translation = TRUE;
 
+    // Read AppUnicodeType Value
+    keyValueLength = sizeof(keyValueBuf);
+    len = (gDrvrGlobal.fpSQLGetPrivateProfileString)(
+                        searchKey,
+                        "AppUnicodeType",
+                        "",
+                        keyValueBuf,
+                        keyValueLength,
+                        OdbcIniEnv);
+	if (len > 0)
+	{
+        if( strcmp(keyValueBuf,"utf8") == 0 )
+            gDrvrGlobal.ICUConv.m_AppUnicodeType == APP_UNICODE_TYPE_UTF8;
+        else if( strcmp(keyValueBuf,"utf16") == 0 )
+            gDrvrGlobal.ICUConv.m_AppUnicodeType == APP_UNICODE_TYPE_UTF16;
+    }
 
 	return ERROR_SUCCESS;
 }
