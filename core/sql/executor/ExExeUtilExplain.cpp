@@ -2194,6 +2194,9 @@ typedef struct {
 } FilterKeyValueStruct;
 const FilterKeyValueStruct filterKeyValue[] =
   {
+    {"MODULE_NAME", "###"},
+    {"plan_version", "###"},
+    {"statement_index", "###"},
     {"PLAN_ID", "###"},
     {"ROWS_OUT", "###"},
     {"EST_OPER_COST", "###"},
@@ -2202,6 +2205,7 @@ const FilterKeyValueStruct filterKeyValue[] =
     {"ROWS/REQUEST", "###"},
     {"OPERATOR_COST", "###"},
     {"ROLLUP_COST", "###"},
+    {"xn_autoabort_interval", "###"},
     {"max_card_est", "###"},
     {"max_max_cardinality", "###"},
     {"total_overflow_size", "###"},
@@ -2317,6 +2321,9 @@ void ExExeUtilDisplayExplainTcb::FormatLine(const char *key, const char *inval, 
           {
             val = valBuf;
             valSize = strlen(val);
+
+            if (exeUtilTdb().isOptionP())
+              return; // prune
           }
       }
 

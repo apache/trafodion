@@ -214,7 +214,7 @@ A            B            C
 >>invoke t009hivecust1;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.T009HIVECUST1
--- Definition current  Tue Jul 11 18:13:26 2017
+-- Definition current  Wed Jul 12 21:37:45 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -263,7 +263,7 @@ A            B            C
 >>invoke t009hivecust2;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.T009HIVECUST2
--- Definition current  Tue Jul 11 18:13:36 2017
+-- Definition current  Wed Jul 12 21:37:55 2017
 
   (
     SYSKEY                           LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
@@ -434,7 +434,7 @@ T009T2
 >>invoke hive.sch_t009.t009t1;
 
 -- Definition of hive table T009T1
--- Definition current  Tue Jul 11 18:14:50 2017
+-- Definition current  Wed Jul 12 21:39:07 2017
 
   (
     A                                INT
@@ -516,7 +516,7 @@ ROW_ID      COLS
 >>invoke bblike1;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.BBLIKE1
--- Definition current  Tue Jul 11 18:15:03 2017
+-- Definition current  Wed Jul 12 21:39:20 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -533,7 +533,7 @@ ROW_ID      COLS
 >>invoke bblike2;
 
 -- Definition of Trafodion table TRAFODION.HIVE_T009.BBLIKE2
--- Definition current  Tue Jul 11 18:15:07 2017
+-- Definition current  Wed Jul 12 21:39:25 2017
 
   (
     ROW_ID                           VARCHAR(100) CHARACTER SET ISO88591
@@ -572,7 +572,7 @@ ROW_ID      COLS
 >>invoke hive.hive.store_sales;
 
 -- Definition of hive table STORE_SALES
--- Definition current  Tue Jul 11 18:15:13 2017
+-- Definition current  Wed Jul 12 21:39:32 2017
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -614,7 +614,7 @@ ROW_ID      COLS
 >>explain options 'c' s;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
+MODULE_NAME ............ ###
 STATEMENT_NAME ........... S
 PLAN_ID ................ ###
 ROWS_OUT ............... ###
@@ -633,14 +633,14 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
+  statement_index ...... ###
   affinity_value ....... ###
   max_max_cardinality    ###
   total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
+  xn_autoabort_interval  ###
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
+  plan_version ......... ###
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -740,14 +740,10 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 .    .    1    hive_scan                       CUSTOMER              1.00E+002
 
 --- SQL operation complete.
->>explain options 'c' s;
+>>explain options 'p' s;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select *
                            from customer, store_sales
                            where store_sales.ss_item_sk =
@@ -757,23 +753,12 @@ MUST_MATCH ............... forced nested join(forced scan, forced scan)
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -823,12 +808,7 @@ DESCRIPTION
 
 
 NESTED_JOIN ===============================  SEQ_NO 3        CHILDREN 1, 2
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -838,12 +818,7 @@ DESCRIPTION
 
 HIVE_SCAN =================================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.STORE_SALES
-REQUESTS_IN ............ ###
-ROWS/REQUEST ........... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -882,12 +857,7 @@ DESCRIPTION
 
 HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.CUSTOMER
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -947,7 +917,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Tue Jul 11 18:15:19 2017
+-- Definition current  Wed Jul 12 21:39:40 2017
 
   (
     D_DATE_SK                        INT
@@ -1089,7 +1059,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 >>explain options 'c' s;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
+MODULE_NAME ............ ###
 STATEMENT_NAME ........... S
 PLAN_ID ................ ###
 ROWS_OUT ............... ###
@@ -1110,14 +1080,14 @@ DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
+  statement_index ...... ###
   affinity_value ....... ###
   max_max_cardinality    ###
   total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
+  xn_autoabort_interval  ###
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
+  plan_version ......... ###
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -1182,7 +1152,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Tue Jul 11 18:15:35 2017
+-- Definition current  Wed Jul 12 21:39:56 2017
 
   (
     D_DATE_SK                        INT
@@ -1321,14 +1291,10 @@ CREATE EXTERNAL TABLE DATE_DIM
 *** WARNING[6008] Statistics for column (D_DATE) from table HIVE.HIVE.DATE_DIM were not available. As a result, the access path chosen might not be the best possible.
 
 --- SQL command prepared.
->>explain options 'c' s;
+>>explain options 'p' s;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... S
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select *
                            from hive.hive.date_dim
                            where d_date = date '2016-01-27';
@@ -1336,23 +1302,12 @@ STATEMENT ................ select *
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -1387,12 +1342,7 @@ DESCRIPTION
 
 HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.DATE_DIM
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master

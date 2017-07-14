@@ -124,18 +124,18 @@
 +>  , SS_NET_PROFIT     
 +>from hive.hive.store_sales where ss_sold_date_sk is not null;
 Task:  LOAD            Status: Started    Object: TRAFODION.SCH.T140C
-Task:  CLEANUP         Status: Started    Time: 2017-07-11 18:08:30.847
-Task:  CLEANUP         Status: Ended      Time: 2017-07-11 18:08:30.869
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.022
-Task:  LOADING DATA    Status: Started    Time: 2017-07-11 18:08:30.869
+Task:  CLEANUP         Status: Started    Time: 2017-07-12 21:31:50.149
+Task:  CLEANUP         Status: Ended      Time: 2017-07-12 21:31:50.167
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.019
+Task:  LOADING DATA    Status: Started    Time: 2017-07-12 21:31:50.167
        Rows Processed: 2750311 
        Error Rows:     0 
-Task:  LOADING DATA    Status: Ended      Time: 2017-07-11 18:09:00.406
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:29.538
-Task:  COMPLETION      Status: Started    Time: 2017-07-11 18:09:00.406
+Task:  LOADING DATA    Status: Ended      Time: 2017-07-12 21:32:23.296
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:33.128
+Task:  COMPLETION      Status: Started    Time: 2017-07-12 21:32:23.296
        Rows Loaded:    2750311 
-Task:  COMPLETION      Status: Ended      Time: 2017-07-11 18:09:01.113
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.706
+Task:  COMPLETION      Status: Ended      Time: 2017-07-12 21:32:24.240
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.728
 
 --- 2750311 row(s) loaded.
 >>update statistics for table t140c on every column sample;
@@ -151,36 +151,21 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.706
 >>obey TEST140(run);
 >>-- test returned rows with or without adding key column and test of all pushdown functions with null or non null column
 >>-- only one column retrieved
->>explain options 'c' select a from t140 where b>500;
+>>explain options 'p' select a from t140 where b>500;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select a from t140 where b>500;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -194,18 +179,12 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.SCH.T140.A
 
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -214,10 +193,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   small_scanner .......... ON
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:3
   pushed_down_rpn ........ (#1:4>?)
   key_columns ............ UNIQ, UNIQ2
@@ -237,36 +213,21 @@ A
 
 --- 6 row(s) selected.
 >>--verify that the column retrieved for null handling is not the _SALT_ for optimization of skips, salt being the last physical column
->>explain options 'c' select an from t140b where b<=200;
+>>explain options 'p' select an from t140b where b<=200;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select an from t140b where b<=200;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -280,18 +241,12 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.SCH.T140B.AN
 
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140B
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -300,46 +255,28 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   small_scanner .......... ON
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:2,#1:6
   pushed_down_rpn ........ (#1:4<=?)
   key_columns ............ _SALT_, UNIQ, UNIQ2
 
 --- SQL operation complete.
 >>-- we should have 2 columns retrieved since an is nullable
->>explain options 'c' select an from t140 where b<=200;
+>>explain options 'p' select an from t140 where b<=200;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select an from t140 where b<=200;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -353,18 +290,12 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.SCH.T140.AN
 
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -373,10 +304,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   small_scanner .......... ON
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:2,#1:6
   pushed_down_rpn ........ (#1:4<=?)
   key_columns ............ UNIQ, UNIQ2
@@ -394,36 +322,21 @@ AN
 
 --- 4 row(s) selected.
 >>-- should not get back 2 column, only one since predicate says an is not null
->>explain options 'c' select an from t140 where b=200 and an is not null;
+>>explain options 'p' select an from t140 where b=200 and an is not null;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select an from t140 where b=200 and an is not null;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -437,19 +350,13 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.SCH.T140.AN
   input_variables ........ %(200)
 
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -458,10 +365,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   small_scanner .......... ON
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:6
   pushed_down_rpn ........ (#1:4=?)(#1:6 is_not_null.)AND
   key_columns ............ UNIQ, UNIQ2
@@ -476,36 +380,21 @@ AN
 
 --- 1 row(s) selected.
 >>-- should only get 2 column back since a is not null, no need to add key column
->>explain options 'c' select an, a from t140 where b!=500;
+>>explain options 'p' select an, a from t140 where b!=500;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select an, a from t140 where b!=500;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -519,18 +408,12 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
 
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -539,10 +422,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   small_scanner .......... ON
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:3,#1:6
   pushed_down_rpn ........ (#1:4<?)(#1:4>?)OR
   key_columns ............ UNIQ, UNIQ2
@@ -594,36 +474,21 @@ AN
          13
 
 --- 4 row(s) selected.
->>explain options 'c' select an from t140 where bn=201 and an is not null;
+>>explain options 'p' select an from t140 where bn=201 and an is not null;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select an from t140 where bn=201 and an is not null;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -637,19 +502,13 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.SCH.T140.AN
   input_variables ........ %(201)
 
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -658,10 +517,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   small_scanner .......... ON
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:6
   pushed_down_rpn ........ (#1:7=.?)(#1:6 is_not_null.)AND
   key_columns ............ UNIQ, UNIQ2
@@ -675,36 +531,21 @@ AN
          21
 
 --- 1 row(s) selected.
->>explain options 'c' select an, a from t140 where bn!=501;
+>>explain options 'p' select an, a from t140 where bn!=501;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select an, a from t140 where bn!=501;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -718,18 +559,12 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
 
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -738,10 +573,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   small_scanner .......... ON
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:3,#1:6
   pushed_down_rpn ........ (#1:7<.?)(#1:7>.?)OR
   key_columns ............ UNIQ, UNIQ2
@@ -808,36 +640,21 @@ A
 
 --- 5 row(s) selected.
 >>-- make sure that we only retrieve one column as an cannot be null in the result set.
->>explain options 'c' select an from t140 where an between 20 and 40;
+>>explain options 'p' select an from t140 where an between 20 and 40;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select an from t140 where an between 20 and 40;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -851,18 +668,12 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.SCH.T140.AN
 
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -871,10 +682,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   small_scanner .......... ON
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:6
   pushed_down_rpn ........ (#1:6>=.?)(#1:6<=.?)AND
   key_columns ............ UNIQ, UNIQ2
@@ -913,36 +721,21 @@ AN
 >>cqd hbase_dop_parallel_scanner '2.0';
 
 --- SQL operation complete.
->>explain options 'c' select avg(a) from t140b;
+>>explain options 'p' select avg(a) from t140b;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select avg(a) from t140b;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -958,19 +751,13 @@ DESCRIPTION
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  2
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * 10000 ...0)) / cast(count(1 )))) / 10000
                              ...0)))
 
 
 SORT_SCALAR_AGGR ==========================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -979,12 +766,7 @@ DESCRIPTION
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140B
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -993,10 +775,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   parallel_scanner ....... 2
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:3
   key_columns ............ _SALT_, UNIQ, UNIQ2
 
@@ -1013,36 +792,21 @@ DESCRIPTION
 >>cqd hbase_dop_parallel_scanner '1.0';
 
 --- SQL operation complete.
->>explain options 'c' select avg(a) from t140b;
+>>explain options 'p' select avg(a) from t140b;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select avg(a) from t140b;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -1058,19 +822,13 @@ DESCRIPTION
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  1
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * 10000 ...0)) / cast(count(1 )))) / 10000
                              ...0)))
 
 
 SORT_SCALAR_AGGR ==========================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -1079,12 +837,7 @@ DESCRIPTION
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140B
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -1093,10 +846,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   parallel_scanner ....... 1
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:3
   key_columns ............ _SALT_, UNIQ, UNIQ2
 
@@ -1109,36 +859,21 @@ DESCRIPTION
                   45
 
 --- 1 row(s) selected.
->>explain options 'c' select avg(a) from t140b;
+>>explain options 'p' select avg(a) from t140b;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select avg(a) from t140b;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
@@ -1153,19 +888,13 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... OFF
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  1
-  ObjectUIDs ........... ###
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * 10000 ...0)) / cast(count(1 )))) / 10000
                              ...0)))
 
 
 SORT_SCALAR_AGGR ==========================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -1174,12 +903,7 @@ DESCRIPTION
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T140B
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -1188,10 +912,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(incl)
   end_keys(incl)
-  cache_size ........... ###
   parallel_scanner ....... 1
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:3
   key_columns ............ _SALT_, UNIQ, UNIQ2
 

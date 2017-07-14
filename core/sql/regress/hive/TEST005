@@ -374,7 +374,6 @@ sh regrhive.ksh -f TEST005_junk | tee -a LOG005;
 -- should return error
 truncate hive.hive.t005part partition ('b=12');
 
-
 -- should return error
 purgedata hive.hive.thive;
 
@@ -384,26 +383,26 @@ showddl hive.hive.thive_insert_smallint;
 
 truncate hive.hive.thive_insert_smallint;
 cqd hive_insert_error_mode '0';
-insert into hive.hive.thive_insert_smallint values (10), (11111111), (21), 
-  (22222222);
+insert into hive.hive.thive_insert_smallint select * from 
+ (values (10), (11111111), (21), (22222222));
 select * from hive.hive.thive_insert_smallint;
 
 truncate hive.hive.thive_insert_smallint;
 cqd hive_insert_error_mode '1';
-insert into hive.hive.thive_insert_smallint values (10), (11111111), (21), 
-  (22222222);
+insert into hive.hive.thive_insert_smallint select * from
+ (values (10), (11111111), (21), (22222222));
 select * from hive.hive.thive_insert_smallint;
 
 truncate hive.hive.thive_insert_smallint;
 cqd hive_insert_error_mode '2';
-insert into hive.hive.thive_insert_smallint values (10), (11111111), (21), 
-  (22222222);
+insert into hive.hive.thive_insert_smallint select * from 
+ (values (10), (11111111), (21), (22222222));
 select * from hive.hive.thive_insert_smallint;
 
 truncate hive.hive.thive_insert_smallint;
 cqd hive_insert_error_mode '3';
-insert into hive.hive.thive_insert_smallint values (10), (11111111), (21), 
-  (22222222);
+insert into hive.hive.thive_insert_smallint select * from
+ (values (10), (11111111), (21), (22222222));
 select * from hive.hive.thive_insert_smallint;
 
 cqd hive_max_string_length_in_bytes '2';

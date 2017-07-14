@@ -66,43 +66,27 @@
 
 --- SQL operation complete.
 >>-- should have small scanner on and endKey populated (JIRA 1446)
->>explain options 'c' select * from t1311k where uniq >2 and uniq <5;
+>>explain options 'p' select * from t1311k where uniq >2 and uniq <5;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select * from t1311k where uniq >2 and uniq <5;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
   SCHEMA ................. T131SCH
   HBASE_SMALL_SCANNER .... SYSTEM
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.T131SCH.T1311K.UNIQ,
                              TRAFODION.T131SCH.T1311K.C1000,
                              TRAFODION.T131SCH.T1311K.STR1
@@ -110,12 +94,7 @@ DESCRIPTION
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T1311K
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -124,52 +103,33 @@ DESCRIPTION
   columns ................ all
   begin_keys(excl) ....... 2
   end_keys(excl) ......... 5
-  cache_size ........... ###
   small_scanner .......... ON
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:1
   key_columns ............ UNIQ
   executor_predicates .... (UNIQ > 2) and (UNIQ < 5)
 
 --- SQL operation complete.
->>explain options 'c' select * from t1311k where uniq >2 and uniq <99;
+>>explain options 'p' select * from t1311k where uniq >2 and uniq <99;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select * from t1311k where uniq >2 and uniq <99;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
   SCHEMA ................. T131SCH
   HBASE_SMALL_SCANNER .... SYSTEM
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.T131SCH.T1311K.UNIQ,
                              TRAFODION.T131SCH.T1311K.C1000,
                              TRAFODION.T131SCH.T1311K.STR1
@@ -177,12 +137,7 @@ DESCRIPTION
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T1311K
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -191,9 +146,6 @@ DESCRIPTION
   columns ................ all
   begin_keys(excl) ....... 2
   end_keys(excl) ........ 99
-  cache_size ........... ###
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:1
   key_columns ............ UNIQ
   executor_predicates .... (UNIQ > 2) and (UNIQ < 99)
@@ -312,43 +264,27 @@ UNIQ         C1000
 
 --- 96 row(s) selected.
 >>-- should get Small scanner off since the scanned rows do not fit in 64K block
->>explain options 'c' select * from t1311k where uniq >2 and uniq <30;
+>>explain options 'p' select * from t1311k where uniq >2 and uniq <30;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select * from t1311k where uniq >2 and uniq <30;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
   SCHEMA ................. T131SCH
   HBASE_SMALL_SCANNER .... SYSTEM
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.T131SCH.T1311K.UNIQ,
                              TRAFODION.T131SCH.T1311K.C1000,
                              TRAFODION.T131SCH.T1311K.STR1
@@ -356,12 +292,7 @@ DESCRIPTION
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T1311K
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -370,52 +301,33 @@ DESCRIPTION
   columns ................ all
   begin_keys(excl) ....... 2
   end_keys(excl) ........ 30
-  cache_size ........... ###
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:1
   key_columns ............ UNIQ
   executor_predicates .... (UNIQ > 2) and (UNIQ < 30)
 
 --- SQL operation complete.
 >>-- should get Small scanner on since the scanned rows fit in 128K block
->>explain options 'c' select * from t1311kbis where uniq >2 and uniq <30;
+>>explain options 'p' select * from t1311kbis where uniq >2 and uniq <30;
 
 ------------------------------------------------------------------ PLAN SUMMARY
-MODULE_NAME .............. DYNAMICALLY COMPILED
 STATEMENT_NAME ........... NOT NAMED
-PLAN_ID ................ ###
-ROWS_OUT ............... ###
-EST_TOTAL_COST ......... ###
 STATEMENT ................ select * from t1311kbis where uniq >2 and uniq <30;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
-  statement_index ........ 0
-  affinity_value ....... ###
-  max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
-  xn_autoabort_interval    0
   auto_query_retry ....... enabled
-  plan_version ....... 2,600
   embedded_arkcmp ........ used
   IS_SQLCI ............... ON
   LDAP_USERNAME
   SCHEMA ................. T131SCH
   HBASE_SMALL_SCANNER .... SYSTEM
   GENERATE_EXPLAIN ....... ON
-  ObjectUIDs ........... ###
   select_list ............ TRAFODION.T131SCH.T1311KBIS.UNIQ,
                              TRAFODION.T131SCH.T1311KBIS.C1000,
                              TRAFODION.T131SCH.T1311KBIS.STR1
@@ -423,12 +335,7 @@ DESCRIPTION
 
 TRAFODION_SCAN ============================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... T1311KBIS
-REQUESTS_IN ............ ###
-ROWS_OUT ............... ###
-EST_OPER_COST .......... ###
-EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -437,10 +344,7 @@ DESCRIPTION
   columns ................ all
   begin_keys(excl) ....... 2
   end_keys(excl) ........ 30
-  cache_size ........... ###
   small_scanner .......... ON
-  probes ............... ###
-  rows_accessed ........ ###
   column_retrieved ....... #1:1
   key_columns ............ UNIQ
   executor_predicates .... (UNIQ > 2) and (UNIQ < 30)

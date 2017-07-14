@@ -1110,9 +1110,15 @@ short ExeUtilDisplayExplain::setOptionX(char c, Int32 &numOptions)
       numOptions++;
       break;             // normal mode
     case 'c' : 
-      if (isOptionC())
+      if (isOptionC() && (NOT isOptionP()))
         return -1; // already specified
       flags_ |= OPTION_C; 
+      break;             // cleansed mode
+    case 'p' : 
+      if (isOptionP())
+        return -1; // already specified
+      flags_ |= OPTION_C; 
+      flags_ |= OPTION_P; 
       break;             // cleansed mode
     default  : 
       return -1; // error

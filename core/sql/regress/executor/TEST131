@@ -90,12 +90,12 @@ set schema t131sch;
 -- suspect this is because histogram is cached per session and we are starting a new session, reloading Histogram...
 cqd hbase_small_scanner 'SYSTEM';
 -- should have small scanner on and endKey populated (JIRA 1446)
-explain options 'c' select * from t1311k where uniq >2 and uniq <5;
-explain options 'c' select * from t1311k where uniq >2 and uniq <99;
+explain options 'p' select * from t1311k where uniq >2 and uniq <5;
+explain options 'p' select * from t1311k where uniq >2 and uniq <99;
 select uniq, c1000 from t1311k where uniq >2 and uniq <5;
 select uniq, c1000 from t1311k where uniq >2 and uniq <99;
 -- should get Small scanner off since the scanned rows do not fit in 64K block
-explain options 'c' select * from t1311k where uniq >2 and uniq <30;
+explain options 'p' select * from t1311k where uniq >2 and uniq <30;
 -- should get Small scanner on since the scanned rows fit in 128K block
-explain options 'c' select * from t1311kbis where uniq >2 and uniq <30;
+explain options 'p' select * from t1311kbis where uniq >2 and uniq <30;
 

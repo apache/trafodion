@@ -743,10 +743,16 @@ public:
   void setIsTrueUnion(NABoolean v)
   { (v ? otherFlags_ |= IS_TRUE_UNION : otherFlags_ &= ~IS_TRUE_UNION); };
 
+  NABoolean isCastTo()
+  { return (otherFlags_ & IS_CAST_TO) != 0; }
+  void setIsCastTo(NABoolean v)
+  { (v ? otherFlags_ |= IS_CAST_TO : otherFlags_ &= ~IS_CAST_TO); };
+
 private:
   enum
   {
-    IS_TRUE_UNION = 0x0001
+    IS_TRUE_UNION = 0x0001,
+    IS_CAST_TO    = 0x0002
   };
 
   // ValueIds of sources that are in corresponding positions

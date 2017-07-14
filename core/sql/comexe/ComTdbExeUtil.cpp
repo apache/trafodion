@@ -181,8 +181,9 @@ void ComTdbExeUtilDisplayExplain::displayContents(Space * space,ULng32 flag)
       str_sprintf(buf, "\nFor ComTdbExeUtilDisplayExplain :");
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-      str_sprintf(buf, "optionN = %d, optionF = %d, optionC = %d, optionE = %d, optionM = %d", 
-                  isOptionN(), isOptionF(), isOptionC(), isOptionE(), isOptionM());
+      str_sprintf(buf, "optionN = %d, optionF = %d, optionC = %d, optionP = %d, optionE = %d, optionM = %d", 
+                  isOptionN(), isOptionF(), isOptionC(), isOptionP(),
+                  isOptionE(), isOptionM());
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
   
