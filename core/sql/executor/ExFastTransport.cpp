@@ -975,6 +975,15 @@ ExWorkProcRetcode ExHdfsFastExtractTcb::work()
       break;
       case ex_queue::Q_SQLERROR:
       {
+        if ((centry->getDiagsArea()) &&
+            (!pentry_down->getDiagsArea()))
+          {
+            ComDiagsArea *diagsArea = pentry_down->getDiagsArea();
+            diagsArea = ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+            pentry_down->setDiagsArea(diagsArea);
+            pentry_down->getDiagsArea()->mergeAfter(*centry->getDiagsArea());
+          }
+
         pstate.step_ = EXTRACT_ERROR;
       }
       break;

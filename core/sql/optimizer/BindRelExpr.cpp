@@ -8685,6 +8685,8 @@ RelExpr *TupleList::bindNode(BindWA *bindWA)
       // the tuple list and target column
       //
       vidUnion->setSource(numTuples(), castToList()[j]);
+
+      vidUnion->setIsCastTo(TRUE);
     }
 
     vidUnion->bindNode(bindWA);
@@ -9703,6 +9705,17 @@ RelExpr *Insert::bindNode(BindWA *bindWA)
       return this;
     }
      
+    // if my child is a TupleList, then all tuples are to be converted/cast
+    // to the corresponding target type of the tgtColList.
+    // Pass on the tgtColList to TupleList so it can generate the Cast nodes
+    // with the target types during the TupleList::bindNode.
+    if (child(0)->getOperatorType() == REL_TUPLE_LIST) {
+      ValueIdList tgtColList;
+      getTableDesc()->getUserColumnList(tgtColList);
+      TupleList *tl = (TupleList *)child(0)->castToRelExpr();
+      tl->castToList() = tgtColList;
+    }
+ 
     RelExpr *feResult = FastExtract::makeFastExtractTree(
          getTableDesc(),
          child(0).getPtr(),

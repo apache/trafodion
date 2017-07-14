@@ -641,6 +641,11 @@ public:
   // Filtererd patterns are discussed in executor/ExExeUtilExplain.cpp.
   NABoolean isOptionC() { return ((flags_ & OPTION_C) != 0); };
 
+  // this option will cleanse(optionC()), prune and not return cleansed rows.
+  // This is useful to reduce the amount of explain output by eliminating
+  // cleansed rows.
+  NABoolean isOptionP() { return ((flags_ & OPTION_P) != 0); };
+
 protected:
   enum OpToFlag
   {
@@ -657,7 +662,10 @@ protected:
     OPTION_N      = 0x0008,
     
     // cleansed explain
-    OPTION_C      = 0x0010
+    OPTION_C      = 0x0010,
+
+    // pruned explain
+    OPTION_P      = 0x0020
   };
 
   short setOptionsX();

@@ -435,6 +435,7 @@ short ExeUtilDisplayExplain::codeGen(Generator * generator)
   exe_util_tdb->setOptionM(isOptionM());
   exe_util_tdb->setOptionN(isOptionN());
   exe_util_tdb->setOptionC(isOptionC());
+  exe_util_tdb->setOptionP(isOptionP());
 
   generator->initTdbFields(exe_util_tdb);
   

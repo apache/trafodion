@@ -355,4 +355,29 @@ select * from t031t1;
 set parserflags 1;
 select * from table(index_table t031const1);
 
+-- tuple list inserts with incompatible types
+drop table if exists t031t1 cascade;
+create table t031t1 (a int, b timestamp, c char(4) character set iso88591);
+insert into t031t1 values ('1', '2017-01-01 10:10:10', 2);
+insert into t031t1 values ('2', '2017-01-02 11:11:11', 3),
+                          ('3', '2017-01-03 11:11:11', 4),
+                          (4, timestamp '2017-01-04 11:11:11', '5');
+select * from t031t1;
+
+-- tuple list incompatible type inserts into hive tables
+cqd hive_max_string_length_in_bytes '10';
+process hive statement 'drop table if exists t031hive1';
+process hive statement 'create table t031hive1 (a int, b timestamp, c string)';
+insert into hive.hive.t031hive1 values ('1', '2017-01-01 10:10:10', 2);
+insert into hive.hive.t031hive1 values ('2', '2017-01-02 11:11:11', 3),
+                          ('3', '2017-01-03 11:11:11', 4),
+                          (4, timestamp '2017-01-04 11:11:11', '5');
+
+-- this insert should return overflow error
+insert into hive.hive.t031hive1 values (2, '2017-01-02 11:11:11', 'a'),
+                          (111111111111, '2017-01-03 11:11:11', 'b');
+
+select * from hive.hive.t031hive1;
+
+
 log;

@@ -5539,9 +5539,37 @@ const NAType *Translate::synthesizeType()
 #pragma nowarn(1506)   // warning elimination
 const NAType *ValueIdUnion::synthesizeType()
 {
-  const NAType *result = 0;
-
+  const NAType *result = NULL;
   CollIndex i = 0;
+
+  // if this is the case of insert values list tuples, then
+  // isTrueUnion() will not be set and isCastTo() will be set.
+  // Last entry of sources_ valueidlist will be set to target valueId,
+  // it is set in method TupleList::bindNode.
+  // Validate that each source entry is compatible with target type.
+  if ((NOT isTrueUnion()) &&
+      (isCastTo()))
+    {
+      result = &getSource(entries()-1).getType();
+      const NAType& opR = *result;
+      for (i = 0; i < entries()-1; i++) 
+        {
+          getSource(i).coerceType(*result);
+          ValueId vidI = getSource(i);
+          
+          const NAType& opI = vidI.getType();
+
+          if ((NOT opR.isCompatible(opI)) &&
+              (CmpCommon::getDefault(ALLOW_INCOMPATIBLE_OPERATIONS) == DF_OFF))
+            {
+              // 4055 The select lists or tuples must have compatible data types.
+              emitDyadicTypeSQLnameMsg(-4055, opR, opI);
+              return NULL;
+            }
+        } // for
+      return result;
+    }
+  
   for (i = 0; i < entries(); i++) {
     result = &getSource(i).getType();
     if (result->getTypeQualifier() != NA_UNKNOWN_TYPE)

@@ -308,6 +308,7 @@ public:
   NABoolean isOptionM() { return ((flags_ & OPTION_M) != 0); };
   NABoolean isOptionN() { return ((flags_ & OPTION_N) != 0); };
   NABoolean isOptionC() { return ((flags_ & OPTION_C) != 0); };
+  NABoolean isOptionP() { return ((flags_ & OPTION_P) != 0); };
 
   void setOptionE(NABoolean v) 
   {(v ? flags_ |= OPTION_E : flags_ &= ~OPTION_E); };
@@ -319,6 +320,8 @@ public:
   {(v ? flags_ |= OPTION_N : flags_ &= ~OPTION_N); };
   void setOptionC(NABoolean v) 
   {(v ? flags_ |= OPTION_C : flags_ &= ~OPTION_C); };
+  void setOptionP(NABoolean v) 
+  {(v ? flags_ |= OPTION_P : flags_ &= ~OPTION_P); };
 
 private:
   enum OpToFlag
@@ -327,7 +330,8 @@ private:
     OPTION_E      = 0x0002,
     OPTION_M      = 0x0004,
     OPTION_N      = 0x0008,
-    OPTION_C      = 0x0010
+    OPTION_C      = 0x0010,
+    OPTION_P      = 0x0020
   };
 
   UInt32 flags_;                                      // 00-03
