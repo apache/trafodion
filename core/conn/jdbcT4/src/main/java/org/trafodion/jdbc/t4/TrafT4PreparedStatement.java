@@ -1287,7 +1287,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.INTEGER:
 				tmpbd = Utility.getBigDecimalValue(locale, x);
 				//Utility.checkLongTruncation(parameterIndex, tmpbd);
-				//Utility.checkIntegerBoundary(locale, tmpbd);
+				Utility.checkIntegerBoundary(locale, tmpbd);
 				setInt(parameterIndex, tmpbd.intValue());
 				break;
 			case Types.BIGINT:
@@ -1296,6 +1296,10 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 				if (type == InterfaceResultSet.SQLTYPECODE_LARGEINT_UNSIGNED){
                 	Utility.checkUnsignedLongBoundary(locale, tmpbd);
 					setLong(parameterIndex, tmpbd);
+				} else if (type == InterfaceResultSet.SQLTYPECODE_INTEGER_UNSIGNED) {
+				    // if data is unsigned int ,the java.sql.type is -5 (bigint), our sql type is -401
+				    Utility.checkUnsignedIntegerBoundary(locale, tmpbd);
+				    setLong(parameterIndex, tmpbd);
 				} else{
 					Utility.checkLongBoundary(locale, tmpbd);
 					setLong(parameterIndex, tmpbd.longValue());
