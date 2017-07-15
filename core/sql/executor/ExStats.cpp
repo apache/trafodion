@@ -9401,7 +9401,8 @@ NABoolean ExMasterStats::filterForCpuStats(short subReqType,
 
    if (queryId_ == NULL)
       return FALSE;
-   if (subReqType != SQLCLI_STATS_REQ_UNMONITORED_QUERIES  &&
+   if (subReqType != SQLCLI_STATS_REQ_UNMONITORED_QUERIES && 
+         subReqType != SQLCLI_STATS_REQ_QUERIES_IN_COMPILE  &&
          (collectStatsType_ == (UInt16)ComTdb::ALL_STATS || 
          collectStatsType_ == (UInt16)ComTdb::NO_STATS))
       return FALSE;
@@ -9507,6 +9508,20 @@ NABoolean ExMasterStats::filterForCpuStats(short subReqType,
       {
          if (timeSinceBlocking(etTimeInSecs))
             retcode = TRUE;
+      }
+   }
+   else
+   if (subReqType == SQLCLI_STATS_REQ_QUERIES_IN_COMPILE) 
+   {
+      if (stmtState_ != Statement::PROCESS_ENDED_) 
+      {
+         if (compStartTime_ != -1 && compEndTime_ == -1) 
+         {
+            tsToCompare = compStartTime_;
+            lastActivity_ = (Int32)((currTimestamp-tsToCompare) / (Int64)1000000);
+            if (lastActivity_ >= etTimeInSecs) 
+               retcode = TRUE;
+         }
       }
    }
    return retcode;
@@ -9773,6 +9788,15 @@ Lng32 ExStatsTcb::str_parse_stmt_name(char *string, Lng32 len, char *nodeName,
       etTemp = ptr;
       etOffender = TRUE; 
       *subReqType = (short)SQLCLI_STATS_REQ_UNMONITORED_QUERIES;
+      retcode = SQLCLI_STATS_REQ_ET_OFFENDER;
+    }
+    else
+    if (strncasecmp(ptr, "QUERIES_IN_COMPILE", 21) == 0) 
+    {
+      ptr = str_tok(NULL, ',', &internal);
+      etTemp = ptr;
+      etOffender = TRUE; 
+      *subReqType = (short)SQLCLI_STATS_REQ_QUERIES_IN_COMPILE;
       retcode = SQLCLI_STATS_REQ_ET_OFFENDER;
     }
     else  

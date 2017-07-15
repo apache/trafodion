@@ -50,11 +50,12 @@ function usage()
                           in_client
                           dead
                           unmonitored
+                          in_compile
 
    -t|--time   Optional Default $DEFAULT_TIME
                values: 0 < <time> < $MAX_TIME_P1 
                Time span (in seconds) to search for matching offenders.  
-               Applies to scripts: dead,inactive,in_sql,in_client,unmonitored
+               Applies to scripts: dead,inactive,in_sql,in_client,unmonitored,in_compile
 
    -m|--memsize Optional Default $DEFAULT_MEMSIZE
                 Processes exceeding the given memory threshold in MB
@@ -190,6 +191,10 @@ case $SCRIPT in
    in_client)
      PREAMBLE="set param ?filter 'QUERIES_IN_CLIENT=$TIME$NODE'; "
      QUERY_FILE="$LSO_DIR/queries_in_client.sql"
+     ;;
+   in_compile)
+     PREAMBLE="set param ?filter 'QUERIES_IN_COMPILE=$TIME$NODE'; "
+     QUERY_FILE="$LSO_DIR/queries_in_compile.sql"
      ;;
    se_blocked)
      PREAMBLE="set param ?filter 'SE_BLOCKED=$TIME$NODE'; "
