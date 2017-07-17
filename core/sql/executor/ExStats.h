@@ -188,7 +188,7 @@ protected:
 // a generic counter used in ExOperStats (and deerived classes).
 // ExStatsCounter provides cnt, min, max, avg, sum, and var
 //////////////////////////////////////////////////////////////////
-class ExStatsCounter : public ExStatsBase {
+class ExStatsCounter {
 public:
 NA_EIDPROC
   ExStatsCounter();
@@ -3622,6 +3622,7 @@ NA_EIDPROC
   void setExeEndTime(Int64 exeEndTime)
   {
     exeEndTime_ = exeEndTime;
+    exeTimes_.addEntry(exeEndTime_-exeStartTime_);
   }
 
 NA_EIDPROC
@@ -3964,6 +3965,7 @@ private:
   Int32 numObjUIDs_;
   Int64 *objUIDs_;
   Int64  preallocdObjUIDs_[PreAllocatedObjUIDs];
+  ExStatsCounter exeTimes_;
 };
 
 

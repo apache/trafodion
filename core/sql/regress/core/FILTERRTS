@@ -53,6 +53,7 @@ s/Number of Cpus[ ]*[0-9,]*/Number of Cpus @numberofcpus@/
 s/Number of SQL Processes[ ]*[0-9,]*/Number of SQL Processes @numberofsqlprocesses@/
 s/Execution Priority[ ]*[0-9,-]*/Execution Priority @executionpriority@/
 s/Transaction Id[ ]*[\0-9A-Z().-]*/Transaction Id @transactionId@/
+s/Execute Time[ ]*[0-9,.]*/Execution Time@executionTime@/
 s/Node name[ ]*[\0-9A-Za-z().:-]*/Node name @nodeName@/
 s/RMS Version[ ]*[0-9,]*/RMS Version @rmsVersion@/
 s/SSCP PID[ ]*[0-9,]*/SSCP PID @sscpPID@/

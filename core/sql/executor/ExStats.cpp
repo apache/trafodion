@@ -8881,6 +8881,7 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
     "exePriority: %d transId: %Ld suspended: %s lastSuspendTime: %Ld "
     "LastErrorBeforeAQR: %d AQRNumRetries: %d DelayBeforeAQR: %d reclaimSpaceCnt: %d "
     "blockedInSQL: %d blockedInClient: %d  lastActivity: %d "
+    "exeCount: %Ld, exeTimeMin: %Ld exeTimeMax: %Ld exeTimeAvg: %Ld "
                   "sqlSrcLen: %d sqlSrc: \"%s\"",
               statType(),
               ((queryId_ != NULL) ? queryId_ : "NULL"),
@@ -8919,6 +8920,10 @@ void ExMasterStats::getVariableStatsInfo(char * dataBuffer,
               timeSinceBlocking(0),
               timeSinceUnblocking(0),
               lastActivity_,
+              exeTimes_.entryCnt(),
+              exeTimes_.min(),
+              exeTimes_.max(),
+              exeTimes_.mean(),  
               originalSqlTextLen_,
               ((sourceStr_ != NULL) ? sourceStr_ : ""));
   }
@@ -9262,6 +9267,18 @@ Lng32 ExMasterStats::getStatsItem(SQLSTATS_ITEM* sqlStats_item)
     break;
   case SQLSTATS_RECLAIM_SPACE_COUNT:
     sqlStats_item->int64_value = reclaimSpaceCount_;
+    break;
+  case SQLSTATS_EXECUTE_COUNT:
+    sqlStats_item->int64_value = exeTimes_.entryCnt();
+    break;
+  case SQLSTATS_EXECUTE_TIME_MIN:
+    sqlStats_item->int64_value = exeTimes_.min();
+    break;
+  case SQLSTATS_EXECUTE_TIME_MAX:
+    sqlStats_item->int64_value = exeTimes_.max();
+    break;
+  case SQLSTATS_EXECUTE_TIME_AVG:
+    sqlStats_item->int64_value = exeTimes_.mean();
     break;
   default:
     sqlStats_item->error_code = -EXE_STAT_NOT_FOUND;
