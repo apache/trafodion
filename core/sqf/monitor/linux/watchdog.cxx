@@ -51,6 +51,7 @@ bool traceOpen = false;
 char traceFileName[MAX_PROCESS_PATH];
 FILE *locio_trace_file = NULL;
 
+bool IsRealCluster = true;
 char MyPort[MPI_MAX_PORT_NAME] = {0};;
 char *MyName;
 char *dbgLine;
@@ -379,7 +380,19 @@ void process_startup(int argc, char *argv[])
     }
     else
     {
-        gp_local_mon_io->acquire_msg( &msg );
+        bool lv_done = false;
+        while ( ! lv_done )
+        {
+            gp_local_mon_io->acquire_msg( &msg );
+            if ( msg )
+            {
+                lv_done = true;
+            }
+            else
+            {
+                sleep( 5 );
+            }
+        }
 
         msg->type = MsgType_Service;
         msg->noreply = true;
@@ -752,6 +765,13 @@ int main (int argc, char *argv[])
     MyNid = atoi(argv[3]);
     MyPid = atoi (argv[4]);
     gv_ms_su_verif  = MyVerifier = atoi(argv[9]);
+
+    // Set flag to indicate whether we are operating in a real cluster
+    // or a virtual cluster.
+    if ( getenv("SQ_VIRTUAL_NODES") )
+    {
+        IsRealCluster = false;
+    }
 
     MonLog = new CMonLog( "log4cxx.monitor.wdg.config", "WDG", "alt.wdg", MyPNID, MyNid, MyPid, MyName  );
 

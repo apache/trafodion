@@ -160,7 +160,9 @@ CProcess::CProcess (CProcess * parent, int nid, int pid, PROCESSTYPE type,
     , ldpathStrId_(ldpathStrId)
     , firstInstance_(true)
     , cmpOrEsp_(false)
-    , sqRoot_()
+    , trafConf_()
+    , trafHome_()
+    , trafVar_()
     , fd_stdin_(-1)
     , fd_stdout_(-1)
     , fd_stderr_(-1)
@@ -1469,10 +1471,20 @@ bool CProcess::Create (CProcess *parent, int & result)
     if (env && isdigit(*env))
        numProcessThreads = atoi(env);
 
+    env = getenv( "TRAF_CONF" );
+    if (env)
+    {
+        trafConf_ = env ;
+    }
     env = getenv( "TRAF_HOME" );
     if (env)
     {
-        sqRoot_ = env ;
+        trafHome_ = env ;
+    }
+    env = getenv( "TRAF_VAR" );
+    if (env)
+    {
+        trafVar_ = env ;
     }
 
     // setup default environment variables from monitor or last CreateProcess call
@@ -1540,7 +1552,9 @@ bool CProcess::Create (CProcess *parent, int & result)
         setEnvStrVal ( childEnv, nextEnv, "MPI_INSTR", filename );
     }
 
-    setEnvStrVal ( childEnv, nextEnv, "TRAF_HOME", sqRoot_.c_str() );
+    setEnvStrVal ( childEnv, nextEnv, "TRAF_CONF", trafConf_.c_str() );
+    setEnvStrVal ( childEnv, nextEnv, "TRAF_HOME", trafHome_.c_str() );
+    setEnvStrVal ( childEnv, nextEnv, "TRAF_VAR", trafVar_.c_str() );
     setEnvStrVal ( childEnv, nextEnv, "USER", user );
     setEnvStrVal ( childEnv, nextEnv, "HOME", home );
     setEnvStrVal ( childEnv, nextEnv, "TERM", term );

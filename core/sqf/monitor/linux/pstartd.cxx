@@ -42,6 +42,7 @@ const char *MyName;
 char ga_ms_su_c_port[MPI_MAX_PORT_NAME] = {0}; // connection port - not used
 
 long trace_settings = 0;
+bool IsRealCluster = true;
 int MyPNID = -1;
 int MyZid = -1;
 int MyNid = -1;
@@ -1237,6 +1238,13 @@ int main (int argc, char *argv[])
     MyZid = monUtil.getZid();
     MyNid = monUtil.getNid();
     MyPid = monUtil.getPid();
+
+    // Set flag to indicate whether we are operating in a real cluster
+    // or a virtual cluster.
+    if ( getenv("SQ_VIRTUAL_NODES") )
+    {
+        IsRealCluster = false;
+    }
 
     MonLog = new CMonLog( "log4cxx.monitor.psd.config", "PSD", "alt.pstartd", MyPNID, MyNid, MyPid, MyName );
 
