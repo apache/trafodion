@@ -1894,7 +1894,6 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 			} else {
 				data = String.valueOf(getByte(columnIndex));
 			}
-			data = String.valueOf(getByte(columnIndex));
 			break;
 		case Types.REAL:
 			data = String.valueOf(getFloat(columnIndex));
