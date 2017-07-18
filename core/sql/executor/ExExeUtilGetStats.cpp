@@ -1781,6 +1781,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
   Lng32 intSize = 0;
   Lng32 valSize = 0;
   char timestampVal[50];
+  Lng32 microSecs;
 
   // if no parent request, return
   if (qparent_.down->isEmpty())
@@ -1979,7 +1980,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
       {
         if (masterStatsItems_ == NULL)
         {
-          maxMasterStatsItems_ = 32;
+          maxMasterStatsItems_ = 36;
           masterStatsItems_ = new (getGlobals()->getDefaultHeap()) 
                   SQLSTATS_ITEM[maxMasterStatsItems_];
           initSqlStatsItems(masterStatsItems_, maxMasterStatsItems_, FALSE);
@@ -2015,7 +2016,11 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           masterStatsItems_[29].statsItem_id = SQLSTATS_RECLAIM_SPACE_COUNT;
           masterStatsItems_[30].statsItem_id = SQLSTATS_CANCEL_TIME_ID;
           masterStatsItems_[31].statsItem_id = SQLSTATS_SUSPEND_TIME_ID;
-          // maxMasterStatsItems_ is set to 32
+          masterStatsItems_[32].statsItem_id = SQLSTATS_EXECUTE_COUNT;
+          masterStatsItems_[33].statsItem_id = SQLSTATS_EXECUTE_TIME_MIN;
+          masterStatsItems_[34].statsItem_id = SQLSTATS_EXECUTE_TIME_MAX;
+          masterStatsItems_[35].statsItem_id = SQLSTATS_EXECUTE_TIME_AVG;
+          // maxMasterStatsItems_ is set to 36
           masterStatsItems_[0].str_value = new (getGlobals()->getDefaultHeap())
                           char[ComSqlId::MAX_QUERY_ID_LEN+1];
           masterStatsItems_[0].str_max_len = ComSqlId::MAX_QUERY_ID_LEN;
@@ -2303,6 +2308,33 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           case SQLSTATS_RECLAIM_SPACE_COUNT:
             str_sprintf(statsBuf_, "%25s%-d", "No. of times reclaimed", 
 		 (Lng32)masterStatsItems_[i].int64_value);         
+            break;
+          case SQLSTATS_EXECUTE_COUNT:
+            str_sprintf(Int64Val, "%Ld", masterStatsItems_[i].int64_value);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(statsBuf_, "%25s%s", "No. of times executed", Int64Val);
+            break;
+          case SQLSTATS_EXECUTE_TIME_MIN:
+            microSecs = masterStatsItems_[i].int64_value % 1000000L;
+            str_sprintf(Int64Val, "%Ld", masterStatsItems_[i].int64_value/1000000);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(statsBuf_, "%25s%0s.%06d secs", "Min. Execute Time", Int64Val,microSecs);
+            break;
+          case SQLSTATS_EXECUTE_TIME_MAX:
+            microSecs = masterStatsItems_[i].int64_value % 1000000L;
+            str_sprintf(Int64Val, "%Ld", masterStatsItems_[i].int64_value/1000000);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(statsBuf_, "%25s%0s.%06d secs", "Max. Execute Time", Int64Val,microSecs);
+            break;
+          case SQLSTATS_EXECUTE_TIME_AVG:
+            microSecs = masterStatsItems_[i].int64_value % 1000000L;
+            str_sprintf(Int64Val, "%Ld", masterStatsItems_[i].int64_value/1000000);
+            intSize = str_len(Int64Val);
+            AddCommas(Int64Val,intSize); 
+            str_sprintf(statsBuf_, "%25s%0s.%06d secs", "Avg. Execute Time", Int64Val,microSecs);
             break;
           default:
             statsBuf_[0] = '\0';

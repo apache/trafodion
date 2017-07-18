@@ -1069,6 +1069,10 @@ enum SQLSTATS_ITEM_ID {
   SQLSTATS_RECLAIM_SPACE_COUNT = 201,
   SQLSTATS_SUBQUERY_TYPE = 202,
   SQLSTATS_PARENT_QUERY_SYSTEM = 203,
+  SQLSTATS_EXECUTE_COUNT = 204,
+  SQLSTATS_EXECUTE_TIME_MIN = 205,
+  SQLSTATS_EXECUTE_TIME_MAX = 206,
+  SQLSTATS_EXECUTE_TIME_AVG = 207,
 /* The following 3 enums are moved from operator level stats
   to here, however, the enum values are not changed to provide
   backward compatibility */
