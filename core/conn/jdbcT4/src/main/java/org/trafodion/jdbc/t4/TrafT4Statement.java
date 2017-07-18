@@ -1247,7 +1247,7 @@ public class TrafT4Statement extends TrafT4Handle implements java.sql.Statement 
 			if (desc == null) {
 				resultSet_[i] = null;
 			} else {
-				resultSet_[i] = new TrafT4ResultSet(this, desc, stmt_labels[i], true);
+				resultSet_[i] = new TrafT4ResultSet(this, desc, stmt_labels[i], this.sqlStmtType_==TRANSPORT.TYPE_CALL);
 				resultSet_[i].proxySyntax_ = proxySyntax[i];
 			}
 		}

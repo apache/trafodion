@@ -924,7 +924,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 		} else if (stmt_ != null) {
 			String cursorName;
 			cursorName = stmt_.cursorName_;
-			if (cursorName == null) {
+			if (cursorName == null || cursorName.trim().equals("")) {
 				cursorName = stmt_.stmtLabel_;
 			}
 			return cursorName;
