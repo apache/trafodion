@@ -253,15 +253,15 @@ returns 0. If value is greater than zero, returns 1.
 See the individual entry for the function.
 
 [[encryption_functions]]
- == Encryption Functions
- Use these functions within an SQL value expression to do data encryption or hashing:
+== Encryption Functions
+Use these functions within an SQL value expression to do data encryption or hashing:
 
- [cols="25%,75%"]
- |===
- | <<md5_function,MD5 Function>>         | Returns MD5 checksum
- | <<sha_function,SHA Function>>         | Returns SHA-1 160-bit checksum
- | <<sha2_function,SHA2 Function>>       | Returns SHA-2 checksum
- |===
+[cols="25%,75%"]
+|===
+| <<md5_function,MD5 Function>>         | Returns MD5 checksum
+| <<sha_function,SHA Function>>         | Returns SHA-1 160-bit checksum
+| <<sha2_function,SHA2 Function>>       | Returns SHA-2 checksum
+|===
 
 [[sequence_functions]]
 == Sequence Functions
@@ -3751,71 +3751,69 @@ This function returns 0 for the second input argument, since it is a valid IPV6 
 -------- -------
 1         0
 ```
+[[inet_aton_function]]
+== INET_ATON Function
+
+Given the dotted-quad representation of an IPv4 network address as a string,
+returns an integer that represents the numeric value of the address in network
+byte order (big endian). INET_ATON() returns NULL if it does not understand its argument.
+
+```
+INET_ATON( expression )
+```
+
+* `_expression_`
++
+specifies an expression that determines the values to include in the
+conversion of the IP address. The _expression_ cannot contain an aggregate
+function or a subquery. If the input value is NULL, INET_ATON returns NULL.
+See <<expressions,Expressions>>.
+
+[[examples_of_inet_aton]]
+=== Examples of INET_ATON
+
+
+```
+>>SELECT INET_ATON('10.0.5.9') from dual;
+
+(EXPR)
+-----------
+167773449
+```
 <<<
- +[[inet_aton_function]]
- +== INET_ATON Function
- +
- +Given the dotted-quad representation of an IPv4 network address as a string,
- +returns an integer that represents the numeric value of the address in network
- +byte order (big endian). INET_ATON() returns NULL if it does not understand its argument.
- +
- +```
- +INET_ATON( expression )
- +```
- +
- +* `_expression_`
- ++
- +specifies an expression that determines the values to include in the
- +conversion of the IP address. The _expression_ cannot contain an aggregate
- +function or a subquery. If the input value is NULL, INET_ATON returns NULL.
- +See <<expressions,Expressions>>.
- +
- +[[examples_of_inet_aton]]
- +=== Examples of INET_ATON
- +
- +
- +```
- +>>SELECT INET_ATON('10.0.5.9') from dual;
- +
- +(EXPR)
- +-----------
- +167773449
- +```
- +<<<
- +[[inet_ntoa_function]]
- +== INET_NTOA Function
- +
- +Given a numeric IPv4 network address in network byte order, returns the
- +dotted-quad string representation of the address as a nonbinary string in
- +the connection character set. INET_NTOA() returns NULL if it does
- +not understand its argument.
- +
- +```
- +INET_NTOA( expression )
- +```
- +
- +* `_expression_`
- ++
- +specifies an expression that determines the values to include in the
- +conversion of the number to IP address. The _expression_ cannot contain
- +an aggregate function or a subquery. If the input value is NULL, INET_NTOA
- +returns NULL.
- +See <<expressions,Expressions>>.
- +
- +[[examples_of_inet_ntoa]]
- +=== Examples of INET_NTOA
- +
- +this function will convert an integer into  the dotted-quad string
- +representation of the IP address.
- +
- +```
- +>>SELECT INET_NTOA(167773449) from dual
- +
- +(EXPR)
- +-------------
- +'10.0.5.9'
- +```
- +<<<
+[[inet_ntoa_function]]
+== INET_NTOA Function
+
+Given a numeric IPv4 network address in network byte order, returns the
+dotted-quad string representation of the address as a nonbinary string in
+the connection character set. INET_NTOA() returns NULL if it does
+not understand its argument.
+
+```
+INET_NTOA( expression )
+```
+
+* `_expression_`
++
+specifies an expression that determines the values to include in the
+conversion of the number to IP address. The _expression_ cannot contain
+an aggregate function or a subquery. If the input value is NULL, INET_NTOA
+returns NULL.
+See <<expressions,Expressions>>.
+
+[[examples_of_inet_ntoa]]
+=== Examples of INET_NTOA
+
+this function will convert an integer into  the dotted-quad string
+representation of the IP address.
+
+```
+>>SELECT INET_NTOA(167773449) from dual
+
+(EXPR)
+-------------
+'10.0.5.9'
+```
 [[isnull_function]]
 == ISNULL Function
 
