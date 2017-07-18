@@ -27,6 +27,7 @@ e)	DEAD_QUERIES
 f)	UNMONITORED_QUERIES
 g)      SE_BLOCKED_QUERIES
 h)      SE_OFFENDER_QUERIES
+i)      QUERIES_IN_COMPILE
 
 All dynamic SQL queries including child queries can be monitored using this 
 mechanism, because it uses direct access to the RMS infrastructure. RMS 
@@ -62,6 +63,7 @@ Here is the help from the offender script:
                           in_client
                           unmonitored
                           dead
+                          in_compile
 
    -t|--time   Optional Default 30
                values: 0 < <time> < 32768 
@@ -191,7 +193,7 @@ CURRENT_TIMESTAMP           TIME_IN_SECONDS       QUERY_ID                      
 ACTIVE QUERIES
 ================
 
-This statement lists queries which either have finished executing within the
+This script lists queries which either have finished executing within the
 given number of seconds or still being executed. The negative number in 
 LAST_ACTIVITY_SECS means that the query has completed that many seconds ago. 
 
@@ -203,7 +205,7 @@ CURRENT_TIMESTAMP           LAST_ACTIVITY_SECS    QUERY_ID                      
 INACTIVE QUERIES
 ================
 
-This statement lists allocated, prepared queries which either have finished 
+This script lists allocated, prepared queries which either have finished 
 executing, or are not yet executed. If the query is not yet executed, it will
 be selected only if it was compiled the given number of seconds ago. Similarly, 
 if the query has been executed, it will be selected only if it finished 
@@ -223,7 +225,7 @@ CURRENT_TIMESTAMP           LAST_ACTIVITY_SECS    QUERY_ID                      
 DEAD QUERIES
 ============
 
-This statement lists queries that have not been de-allocated by the master 
+This script lists queries that have not been de-allocated by the master 
 executor process when it exited (normally or abnormally), and which have 
 persisted after the process exit for a period longer than the given number of 
 seconds.
@@ -240,7 +242,7 @@ CURRENT_TIMESTAMP           LAST_ACTIVITY_SECS    BLOCKED_IN_SQL        BLOCKED_
 UNMONITORED QUERIES
 ===================
 
-This statement lists the queries for which the statistics collection type is 
+This script lists the queries for which the statistics collection type is 
 set to NO_STATS or ALL_STATS, either by SQL engine or by the user. 
 
 The SQL commands to list UNMONITORED queries are available at:
@@ -265,7 +267,7 @@ CURRENT_TIMESTAMP           LAST_ACTIVITY_SECS    QUERY_TYPE            QUERY_SU
 SE_BLOCKED_QUERIES
 ==================
 
-This statement lists queries which are blocked in the storage engine APIs 
+This script lists queries which are blocked in the storage engine APIs 
 for more than given number of seconds. The BLOCKED_FOR_SECS denotes how 
 long the storage engine API is blocked.
 
@@ -281,7 +283,7 @@ CURRENT_TIMESTAMP           NO_OF_PROCESSES  BLOCKED_FOR_SECS   QUERY_ID        
 SE_OFFENDING_QUERIES
 ====================
 
-This statement lists queries which has a total IO time of any operator 
+This script lists queries which has a total IO time of any operator 
 accessing the storage engine longer than the given number of seconds
 
 The SQL commands to list SE_BLOCKED queries are available at:
@@ -293,6 +295,15 @@ CURRENT_TIMESTAMP           TOTAL_IO_TIME_IN_SECS  PROCESS_ID   QUERY_ID        
 2017-01-18 14:20:03.604532                 1         000, 06390  MXID11000026007212351477539057002000000000206U3333300_107___SQLCI_DML_LAST__         TRAFODION.SELVA.CUSTOMER 
 2017-01-18 14:20:03.604532                 1         001, 06391  MXID11000026007212351477539057002000000000206U3333300_107___SQLCI_DML_LAST__         TRAFODION.SELVA.CUSTOMER
 
+QUERIES_IN_COMPILE
+==================
+
+This script lists queries that are being compiled for more than the given number of seconds
+
+CURRENT_TIMESTAMP           TIME_IN_SECONDS       NODE         PID          QUERY_ID   `                                                                  SOURCE_TEXT
+--------------------------  --------------------  -----------  -----------  ----------------------------------------------------------------------------  ----------------------
+
+2017-07-15 01:54:14.909780                  1860            0         5505  MXID11000005505212366841736965000000000000206U3333300_278___SQLCI_DML_LAST__ "select * from partsupp ;                                                                                                                                                                         
 
 LIMITING THE OUTPUT TO A NODE
 =============================
