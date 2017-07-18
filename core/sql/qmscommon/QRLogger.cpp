@@ -167,9 +167,6 @@ void getMyNidSuffix(char stringNidSuffix[])
 // **************************************************************************
 NABoolean QRLogger::initLog4cxx(const char* configFileName)
 {
-  if (gv_QRLoggerInitialized_)
-     return TRUE;
-
   NAString logFileName;
 
   if (gv_QRLoggerInitialized_)
@@ -213,54 +210,6 @@ NABoolean QRLogger::initLog4cxx(const char* configFileName)
     gv_QRLoggerInitialized_ = TRUE;
     return TRUE;
   }
-
-/* This code is kept around for the old QMS kind of logging
-   This can be deleted. But keeeping it around if we need
-   to do use the catgory later */
-
-/*
-
-  logFileName += "sql_events";
-  logFileName += logFileSuffix;
-  
-  log4cxx::PatternLayout *fileLayout = new log4cxx::PatternLayout();
-  fileLayout->setConversionPattern("%d, %p, %c, %m%n");
-  fileAppender_ = new log4cxx::RollingFileAppender(fileLayout, logFileName.data());
-
-  // Top level categories
-  initCategory(CAT_SQL_QMP, log4cxx::Level::getError());
-  initCategory(CAT_SQL_QMM, log4cxx::Level::getError());
-  initCategory(CAT_SQL_COMP_QR_COMMON, log4cxx::Level::getError());
-  initCategory(CAT_SQL_QMS, log4cxx::Level::getError());
-
-  initCategory(CAT_SQL, log4cxx::Level::getError());
-  switch (module_)
-  {
-    case QRL_NONE:
-    case QRL_MXCMP:
-      initCategory(CAT_SQL_COMP, log4cxx::Level::ERROR_INT);
-      log4cxx::Logger::getLogger(CAT_SQL_COMP)->setLevel(log4cxx::Level::getInfo());
-      log4cxx::Logger::getLogger(CAT_SQL_COMP)->setAdditivity(false);
-      break;
-
-    case QRL_ESP:
-      initCategory(CAT_SQL_ESP, log4cxx::Level::ERROR_INT);
-      log4cxx::Logger::getLogger(CAT_SQL_ESP)->setLevel(log4cxx::Level::getInfo());
-      log4cxx::Logger::getLogger(CAT_SQL_ESP)->setAdditivity(false);
-      break;
-
-    case QRL_MXEXE:
-      initCategory(CAT_SQL_EXE, log4cxx::Level::ERROR_INT);
-      log4cxx::Logger::getLogger(CAT_SQL_EXE)->setLevel(log4cxx::Level::getInfo());
-      log4cxx::Logger::getLogger(CAT_SQL_EXE)->setAdditivity(false);
-      break;
-      
-  }
-
-  introduceSelf();
-
-  // initialize sub categories here - they were removed since they are not currently being used
-*/
   return FALSE;
 }
 
