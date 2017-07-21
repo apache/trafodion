@@ -45,6 +45,7 @@ using namespace std;
 
 #define gettid() syscall(__NR_gettid)
 
+extern bool IsRealCluster;
 extern int MyPNID;
 extern CMonLog *MonLog;
 
@@ -121,30 +122,30 @@ CMonLog::CMonLog( const char *log4cxxConfig
     // Log4cxx logging
     char   hostname[MAX_PROCESSOR_NAME] = {'\0'};
     gethostname(hostname, MAX_PROCESSOR_NAME);
-
     char   logFileSuffix[MAX_FILE_NAME];
+
     if (myNid_ != -1)
     {
-        sprintf( logFileSuffix, ".%s.%s.%d.%d.log"
-               , (char *)&startTimeFmt_
+        sprintf( logFileSuffix, ".%s.%d.log"
                , hostname
-               , myNid_
-               , myPid_);
+               , myNid_);
     }
     else if (myPNid_ != -1)
     {
-        sprintf( logFileSuffix, ".%s.%s.%d.%d.log"
-               , (char *)&startTimeFmt_
+        sprintf( logFileSuffix, ".%s.%d.log"
                , hostname
-               , myPNid_
+               , myPNid_);
+    }
+    else if ( myPNid_ == -1 && !IsRealCluster)
+    {
+        sprintf( logFileSuffix, ".%s.%d.log"
+               , hostname
                , myPid_);
     }
     else
     {
-        sprintf( logFileSuffix, ".%s.%s.%d.log"
-               , (char *)&startTimeFmt_
-               , hostname
-               , myPid_);
+        sprintf( logFileSuffix, ".%s.log"
+               , hostname );
     }
 
     CommonLogger::instance().initLog4cxx(log4cxxConfig_.c_str(), logFileSuffix);

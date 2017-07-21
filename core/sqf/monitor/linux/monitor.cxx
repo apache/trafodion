@@ -961,6 +961,15 @@ int main (int argc, char *argv[])
 
     const char method_name[] = "main";
 
+    // Set flag to indicate whether we are operating in a real cluster
+    // or a virtual cluster.   This is used throughout the monitor when
+    // behavior differs for a real vs. virtual cluster environment.
+    if ( getenv("SQ_VIRTUAL_NODES") )
+    {
+        IsRealCluster = false;
+        Emulate_Down = true;
+    }
+
     MonLog = new CMonLog( "log4cxx.monitor.mon.config", "MON", "alt.mon", -1, -1, getpid(), "$MONITOR" );
 
     MonLog->setupInMemoryLog();
@@ -972,15 +981,6 @@ int main (int argc, char *argv[])
 #ifdef DMALLOC
     util_dmalloc_start();
 #endif
-
-    // Set flag to indicate whether we are operating in a real cluster
-    // or a virtual cluster.   This is used throughout the monitor when
-    // behavior differs for a real vs. virtual cluster environment.
-    if ( getenv("SQ_VIRTUAL_NODES") )
-    {
-        IsRealCluster = false;
-        Emulate_Down = true;
-    }
 
     // Save our execution path
     env = getenv("PWD");

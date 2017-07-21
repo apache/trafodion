@@ -44,6 +44,7 @@ using namespace std;
 
 bool debugFlag = true;
 
+bool IsRealCluster = true;
 bool ZClientEnabled = true;
 char Node_name[MAX_PROCESSOR_NAME] = {'\0'};
 char MyPNidStr[8];
