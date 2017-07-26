@@ -533,13 +533,6 @@ enum DefaultConstants
   GEN_UDR_SIZE_DOWN,
   GEN_UDR_SIZE_UP,
 
-
-  // --------------------------------------------------------------------------
-  // Defaults used by the Generator for Node and Disk Autonomy:
-  // --------------------------------------------------------------------------
-  GEN_MAX_NUM_PART_DISK_ENTRIES,
-  GEN_MAX_NUM_PART_NODE_ENTRIES,
-
   // -------------------------------------------------------------------------
   // Parameters used by the executor when dynamically resizing queues
   // (are stored in each TDB that is generated)
@@ -2947,8 +2940,6 @@ enum DefaultConstants
   POS_TEST_MODE, // for testing POS
   POS_TEST_NUM_NODES,
   POS_TEST_NUM_VOLUMES_PER_NODE,
-
-  ESP_ON_AGGREGATION_NODES_ONLY,
 
   // for default/public schema settings
   PUBLIC_SCHEMA_NAME,

@@ -53,7 +53,6 @@ using namespace std;
 #endif // NA_64BIT
 
 #define MAX_SEGMENT_NAME_LEN  255
-#define MAX_NO_OF_SEGMENTS    256
 #define PROCESSNAME_STRING_LEN    40
 #define PROGRAM_NAME_LEN    64
 #define BDR_CLUSTER_NAME_LEN 24
@@ -266,28 +265,13 @@ Lng32 extract_SMDLocation(
 Lng32 validate_SMDLocation(
       char *SMDLocation); /* in */
 
-#ifdef _DEBUG
-// -----------------------------------------------------------------------
-// Print an NT memory map (debug only)
-// -----------------------------------------------------------------------
-#if (MSC_VER >= 1300)
-void ComRtDisplayVirtualMemoryMap(std::ostream* outstream);
-#else
-void ComRtDisplayVirtualMemoryMap(ostream* outstream);
-#endif
-#endif
-NABoolean ComRtIsNeoSystem(void);
+// allocate and populate an array with entries for all the configured
+// CPUs (Trafodion node ids) and return the number of CPUs. Usually,
+// the array will contain node  ids 0 ... n-1, but sometimes there may
+// be holes in the assigned node ids, when CPUs (Linux nodes) get
+// removed from the cluster.
+Int32 ComRtGetCPUArray(Int32 *&cpuArray, NAHeap *heap);
 
-typedef struct SEGMENT_INFO
-{
-  char segName_[MAX_SEGMENT_NAME_LEN+1];
-  Lng32 segNo_;
-  Lng32 noOfCpus_;
-  Lng32 cpuStatus_;
-  NABoolean nodeDown_;
-} SEGMENT_INFO;
-Lng32 ComRtGetSegsInfo(SEGMENT_INFO *segs, Lng32 maxNoSegs, Lng32 &noOfSegs,
-		NAHeap *heap);
 NABoolean ComRtGetCpuStatus(char *nodeName, short cpuNum);
 Lng32 ComRtTransIdToText(Int64 transId, char *buf, short len);
 

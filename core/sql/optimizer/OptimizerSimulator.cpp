@@ -1186,34 +1186,26 @@ void NAClusterInfo::captureNAClusterInfo(ofstream & naclfile)
   // * activeClusters_;
   //
 
-  naclfile << "localCluster_: " << localCluster_ << endl
+  naclfile << "localCluster_: " << LOCAL_CLUSTER << endl
            << "localSMP_: " << localSMP_ << endl;
+  // number of clusters and their CPU (node) ids
+  // (right now there is always 1 cluster)
+  naclfile << "clusterToCPUMap_: 1 :" << endl;
 
-  CollIndex *key_collindex;  
-  maps *val_maps;
-  // Iterator for logging all the entries in clusterToCPUMap_ HashDictionary.
-  NAHashDictionaryIterator<CollIndex, maps> C2CPUIter (*clusterToCPUMap_, NULL, NULL);  
-  naclfile << "clusterToCPUMap_: " << C2CPUIter.entries() << " :" << endl;
-  if (C2CPUIter.entries() > 0)
-  {
-    // Write the header line for the table.
-    naclfile << "  ";
-    naclfile.width(10); 
-    naclfile << "clusterNum" << "  ";
-    naclfile << "cpuList" << endl;
-    for (i=0; i<C2CPUIter.entries(); i++)
+  // Write the header line for the table.
+  naclfile << "  ";
+  naclfile.width(10); 
+  naclfile << "clusterNum" << "  ";
+  naclfile << "cpuList" << endl;
+
+  naclfile << "  ";
+  naclfile.width(10); naclfile << LOCAL_CLUSTER << "  ";
+  naclfile << cpuArray_.entries() << " : ";
+  for (ci=0; ci<cpuArray_.entries(); ci++)
     {
-      C2CPUIter.getNext(key_collindex, val_maps);
-      naclfile << "  ";
-      naclfile.width(10); naclfile << *key_collindex << "  ";
-                          naclfile << val_maps->list->entries() << " : ";
-      for (ci=0; ci<val_maps->list->entries(); ci++)
-      {
-        naclfile.width(3); naclfile << (*(val_maps->list))[ci] << " ";
-      }
-      naclfile << endl;
+      naclfile.width(3); naclfile << cpuArray_[ci] << " ";
     }
-  }
+  naclfile << endl;
 
   Int32 * nodeID = NULL;
   NAString* nodeName = NULL;
@@ -1240,8 +1232,7 @@ void NAClusterInfo::simulateNAClusterInfo()
 
   const char* filepath = CURRCONTEXT_OPTSIMULATOR->getLogFilePath(OptimizerSimulator::NACLUSTERINFO);
 
-  activeClusters_= NULL;
-  physicalSMPCount_ = -1;
+  cpuArray_.clear();
 
   ifstream naclfile(filepath);
 
@@ -1256,7 +1247,9 @@ void NAClusterInfo::simulateNAClusterInfo()
     naclfile.getline(var, sizeof(var), ':');
     if(!strcmp(var, "localCluster_"))
     {
-      naclfile >> localCluster_; naclfile.ignore(OSIM_LINEMAX, '\n');
+      int dummyLocalCluster;
+
+      naclfile >> dummyLocalCluster; naclfile.ignore(OSIM_LINEMAX, '\n');
     }
     else if (!strcmp(var, "localSMP_"))
     {
@@ -1264,28 +1257,25 @@ void NAClusterInfo::simulateNAClusterInfo()
     }
     else if (!strcmp(var, "clusterToCPUMap_"))
     {
-      Int32 C2CPU_entries, clusterNum, cpuList_entries, cpuNum;
+      Int32 numClusters, clusterNum, cpuArray_entries, cpuNum;
 
-      clusterToCPUMap_ = new(heap_) NAHashDictionary<CollIndex,maps>(&clusterNumHashFunc,17,TRUE, heap_);
-      naclfile >> C2CPU_entries; naclfile.ignore(OSIM_LINEMAX, '\n');
-      if(C2CPU_entries > 0)
+      naclfile >> numClusters; naclfile.ignore(OSIM_LINEMAX, '\n');
+      // we don't support multiple clusters at this time
+      CMPASSERT(numClusters <= 1);
+      if(numClusters > 0)
       {
         // Read and ignore the header line.
         naclfile.ignore(OSIM_LINEMAX, '\n');
-        for (i=0; i<C2CPU_entries; i++)
+        for (i=0; i<numClusters; i++)
         {
           naclfile >> clusterNum;
-          naclfile >> cpuList_entries; naclfile.ignore(OSIM_LINEMAX, ':');
-          CollIndex *key_clusterNum = new(heap_) CollIndex(clusterNum);
-          maps *val_cpuList = new(heap_) maps(heap_);
-          for (ci=0; ci<cpuList_entries; ci++)
+          naclfile >> cpuArray_entries; naclfile.ignore(OSIM_LINEMAX, ':');
+          for (ci=0; ci<cpuArray_entries; ci++)
           {
             naclfile >> cpuNum;
-            val_cpuList->list->insert(cpuNum);
+            cpuArray_.insertAt(ci, cpuNum);
           }
           naclfile.ignore(OSIM_LINEMAX, '\n');
-          CollIndex *checkClusterNum = clusterToCPUMap_->insert(key_clusterNum, val_cpuList);
-          CMPASSERT(checkClusterNum);
         }
       }
     }
@@ -1301,7 +1291,6 @@ void NAClusterInfo::simulateNAClusterInfo()
                                                           (&NAString::hash, 101,TRUE,heap_);
       naclfile >> id_name_entries;
       naclfile.ignore(OSIM_LINEMAX, '\n');
-      physicalSMPCount_ = id_name_entries;
       for(i = 0; i < id_name_entries; i++)
       {
           naclfile >> nodeId >> nodeName;

@@ -812,21 +812,14 @@ char * ComRtGetIsoMappingName()
   return (char*)CharInfo::getCharSetName((CharInfo::CharSet)ime);
 }
 
-
-#ifdef _DEBUG
-#endif 
-
-NABoolean ComRtIsNeoSystem(void)
-{
-   return TRUE;
-}
-
-Lng32 ComRtGetSegsInfo(SEGMENT_INFO *segs, Lng32 maxNoSegs, Lng32 &noOfSegs, 
-				NAHeap *heap)
+Int32 ComRtGetCPUArray(Int32 *&cpuArray, NAHeap *heap)
 {
   Int32 nodeCount = 0;
+  Int32 configuredNodeCount=0;
   Int32 nodeMax = 0;
   MS_Mon_Node_Info_Entry_Type *nodeInfo = NULL;
+
+  cpuArray = NULL;
 
   // Get the number of nodes to know how much info space to allocate
   Int32 error = msg_mon_get_node_info(&nodeCount, 0, NULL);
@@ -836,36 +829,38 @@ Lng32 ComRtGetSegsInfo(SEGMENT_INFO *segs, Lng32 maxNoSegs, Lng32 &noOfSegs,
      return 0;
 
   // Allocate the space for node info entries
-  nodeInfo = new (heap) MS_Mon_Node_Info_Entry_Type[nodeCount];
+  nodeInfo = new(heap) MS_Mon_Node_Info_Entry_Type[nodeCount];
+  cpuArray = new(heap) Int32[nodeCount];
 
-  if (!nodeInfo)
+  if (!nodeInfo || !cpuArray)
      return 0;
   // Get the node info
-  memset(nodeInfo, 0, sizeof(nodeInfo));
+  memset(nodeInfo, 0, sizeof(MS_Mon_Node_Info_Entry_Type) * nodeCount);
   nodeMax = nodeCount;
   error = msg_mon_get_node_info(&nodeCount, nodeMax, nodeInfo);
   if (error != 0)
   { 
      NADELETEBASIC(nodeInfo, heap);
+     NADELETEBASIC(cpuArray, heap);
+     cpuArray = NULL;
      return 0;
   }
-  Int32 i;
-  Int32 j=0;
-  for (i = 0 ; i < nodeCount && j < maxNoSegs ; i++)
+
+  if (nodeCount > nodeMax)
+    // very unlikely, could happen if a node just got added
+    nodeCount = nodeMax;
+
+  for (Int32 i = 0; i < nodeCount; i++)
   {
      if (!nodeInfo[i].spare_node)
-     {
-        segs[j].segName_[0] = '\0';
-        segs[j].segNo_ = nodeInfo[i].nid;
-        segs[j].noOfCpus_ = 1;
-        segs[j].cpuStatus_ = 0x8000;
-        segs[j].nodeDown_ = FALSE;
-        j++;
-     }
+       {
+         cpuArray[configuredNodeCount] = nodeInfo[i].nid;
+         configuredNodeCount++;
+       }
   }
-  noOfSegs = j;
-  NADELETEARRAY(nodeInfo, nodeCount, MS_Mon_Node_Info_Entry_Type, heap);
-  return i;
+
+  NADELETEBASIC(nodeInfo, heap);
+  return configuredNodeCount;
 }
 
 NABoolean ComRtGetCpuStatus(char *nodeName, short cpuNum)
