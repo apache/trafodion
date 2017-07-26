@@ -479,9 +479,6 @@ private:
   ARRAY(LmRoutine *) trustedRoutines_;
   // SSMP manager for this context.
   ExSsmpManager *ssmpManager_;
-  IpcServerClass *cbServerClass_;
-  IpcServer *cbServer_;
-  bool cbServerInUse_;
   NABoolean dropInProgress_;
 
   // set to true if ddl stmts are issued.
@@ -582,14 +579,6 @@ public:
   inline IpcEnvironment * getEnvironment() { return env_; }
   inline ExEspManager * getEspManager() { return espManager_; }
   inline ExSsmpManager *getSsmpManager() { return ssmpManager_; }
-  inline IpcServerClass * getCbServerClass() { return cbServerClass_; }
-  bool canUseCbServer() { return !(cbServerInUse_ || (cbServer_ == NULL)); }
-  bool hasACbServer() { return cbServer_ != NULL; }
-  void takeCbServer(IpcServer *cbServer) { cbServer_ = cbServer; }
-  void doneWithCbServer() { cbServerInUse_ = false ; }
-  IpcServer * useCbServer() { cbServerInUse_ = true; return cbServer_; }
-  void lostCbServer() { doneWithCbServer(); cbServer_ = NULL; }
-
   inline ExeTraceInfo *getExeTraceInfo() { return exeTraceInfo_; }
   NAHeap *getIpcHeap() { return ipcHeap_; }
   inline ExUdrServerManager *getUdrServerManager() { return udrServerManager_; }

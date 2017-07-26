@@ -31,6 +31,7 @@
 #include "QueueIndex.h"
 #include "Ipc.h"
 #include "rts_msg.h"
+#include "ssmpipc.h"
 
 // -----------------------------------------------------------------------
 // Classes defined in this file
@@ -174,7 +175,8 @@ public:
 
   // constructor
   CancelMsgStream(IpcEnvironment *env, 
-                  ExCancelTcb *cancelTcb)
+                  ExCancelTcb *cancelTcb,
+                  ExSsmpManager *ssmpManager)
 
       : IpcMessageStream(env,
                          IPC_MSG_SSMP_REQUEST,
@@ -186,17 +188,23 @@ public:
 #endif
                          TRUE)
       , cancelTcb_(cancelTcb)
+      , ssmpManager_(ssmpManager)
   {
   }
   
   // method called upon send complete
+  virtual void actOnSend(IpcConnection *conn);
   virtual void actOnSendAllComplete();
  
   // method called upon receive complete
+  virtual void actOnReceive(IpcConnection *conn);
   virtual void actOnReceiveAllComplete();
+
+  void delinkConnection(IpcConnection *conn);
 
 private:
   ExCancelTcb *cancelTcb_;
+  ExSsmpManager *ssmpManager_;
 };
 
 

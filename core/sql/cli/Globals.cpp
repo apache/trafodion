@@ -465,11 +465,6 @@ ExSsmpManager *CliGlobals::getSsmpManager()
   return currContext()->getSsmpManager();
 }
 
-IpcServerClass *CliGlobals::getCbServerClass()
-{
-  return currContext()->getCbServerClass();
-}
-
 LmLanguageManager * CliGlobals::getLanguageManager(ComRoutineLanguage language)
 {
   switch (language)

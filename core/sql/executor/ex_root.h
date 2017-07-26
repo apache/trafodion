@@ -346,20 +346,7 @@ private:
   Lng32 lastQueueSize_;
 
   // Used to communicate control or cancel messages to broker, MXSSMP.
-
-  // Our cancel broker.  This IpcServer is owned by this root tcb, if
-  // havePrivateCbServer_ is true.  Otherwise it is owned by ContextCli, 
-  // which by design, is used by one thread at a time. 
-  //
-  // We will use the ContextCli's IpcServer for the normal case that
-  // queries are executed serially.  But if a query is aleady executing
-  // and then a second query is started, the second query will use a
-  // "private" cbServer_.  This means that the cancel broker is opened
-  // a second time.  Of course, we could allow up to 15 query's to
-  // concurrently share the ContextCli IpcServer, but for simplicity in
-  // design, we will not support sharing at this time.
   IpcServer * cbServer_;
-  bool havePrivateCbServer_;
 
   // An IpcMessageStream subclass, used to let cancel broker know
   // that a given query has started.
@@ -426,7 +413,8 @@ public:
 
   // constructor
   QueryStartedMsgStream(IpcEnvironment *env, 
-                        ex_root_tcb *rootTcb)
+                        ex_root_tcb *rootTcb, 
+                        ExSsmpManager *ssmpManager)
 
       : IpcMessageStream(env,
                          IPC_MSG_SSMP_REQUEST,
@@ -438,10 +426,12 @@ public:
 #endif
                          TRUE)
       , rootTcb_(rootTcb)
+      , ssmpManager_(ssmpManager)
   {
   }
   
   // method called upon send complete
+  virtual void actOnSend(IpcConnection *conn);
   virtual void actOnSendAllComplete();
 
   // methods called upon receive complete.
@@ -453,9 +443,11 @@ public:
   // case, we don't want this surviving stream to reference the
   // dealloc'd root tcb any more.
   void removeRootTcb()   { rootTcb_ = NULL; }
+  void delinkConnection(IpcConnection *conn);
 
 private:
   ex_root_tcb *rootTcb_;
+  ExSsmpManager *ssmpManager_;
 };
 
 // -----------------------------------------------------------------------
@@ -469,7 +461,8 @@ public:
 
   // constructor
   QueryFinishedMsgStream(IpcEnvironment *env, 
-                        ex_root_tcb *rootTcb)
+                        ex_root_tcb *rootTcb,
+                        ExSsmpManager *ssmpManager)
 
       : IpcMessageStream(env,
                          IPC_MSG_SSMP_REQUEST,
@@ -481,10 +474,12 @@ public:
 #endif
                          TRUE)
     , rootTcb_(rootTcb)
+    , ssmpManager_(ssmpManager)
   {
   }
   
   // method called upon send complete
+  virtual void actOnSend(IpcConnection *conn);
   virtual void actOnSendAllComplete();
  
   // methods called upon receive complete.
@@ -496,9 +491,10 @@ public:
   // case, we don't want this surviving stream to reference the
   // dealloc'd root tcb any more.
   void removeRootTcb()   { rootTcb_ = NULL; }
-
+  void delinkConnection(IpcConnection *conn);
 private:
   ex_root_tcb *rootTcb_;
+  ExSsmpManager *ssmpManager_;
 };
 
 #endif

@@ -57,7 +57,7 @@
 #include "seabed/ms.h"
 #include "seabed/int/opts.h"
 
-  #include <unistd.h>		// for getpid()
+#include <unistd.h>		// for getpid()
 
 #include "Globals.h"
 #include "Context.h"
@@ -74,6 +74,10 @@ NABoolean XAWAITIOX_MINUS_ONE = TRUE;
 
 #include "ComCextdecs.h"
 #include "Ex_esp_msg.h"
+
+#ifndef FS_MAX_NOWAIT_DEPTH
+#define FS_MAX_NOWAIT_DEPTH 16
+#endif
 
 // -----------------------------------------------------------------------
 // Methods for class IpcNodeName
@@ -4722,6 +4726,9 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
       allocatedServers_.insert(result);
     return result;
   }
+  NABoolean lv_usesTransactions = usesTransactions;
+  Lng32 lv_maxNowaitRequests = maxNowaitRequests;
+ 
   IpcConnection *serverConn = NULL;
   const char *className = NULL;
   IpcServerPortNumber defaultPortNumber = IPC_INVALID_SERVER_PORTNUMBER;
@@ -4884,10 +4891,14 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
       break;
     case IPC_SQLSSCP_SERVER:
       className = "sscp";
+      lv_usesTransactions = FALSE;
+      lv_maxNowaitRequests =  FS_MAX_NOWAIT_DEPTH-1;   
       overridingDefineName = "=_MX_SSCP_PROCESS_PREFIX"; 
       break;
     case IPC_SQLSSMP_SERVER:
       className = "ssmp";
+      lv_usesTransactions = FALSE;
+      lv_maxNowaitRequests =  FS_MAX_NOWAIT_DEPTH-1;   
       overridingDefineName = "=_MX_SSMP_PROCESS_PREFIX";
       break;
     default:
@@ -4914,10 +4925,10 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
 	       priority, //IPC_PRIORITY_DONT_CARE,
 	       allocationMethod_,
 	       (short) allocatedServers_.entries(),
-	       usesTransactions,
+	       lv_usesTransactions,
 	       FALSE,
                waitedCreation,
-	       maxNowaitRequests,
+	       lv_maxNowaitRequests,
 	       overridingDefineName,
 	       processName,
 	       parallelOpens);
