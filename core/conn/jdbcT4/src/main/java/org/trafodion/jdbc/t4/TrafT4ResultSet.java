@@ -1372,7 +1372,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 						}
 					} else {
 						throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-								"numeric_out_of_range", bd.longValue());
+								"numeric_out_of_range", bd);
 					}
 				} catch (NumberFormatException e2) {
 
