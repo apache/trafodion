@@ -50,6 +50,7 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 
 	@Override
 	public InputStream getAsciiStream() throws SQLException {
+		testAvailability();
 		if (data_ != null) {
 			return new ByteArrayInputStream(((String) data_).getBytes());
 		}
@@ -105,6 +106,7 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 
 	@Override
 	public long position(String searchstr, long start) throws SQLException {
+		testAvailability();
 		//start--;
 
 		if (start <= 0 || start > ((String) data_).length()) {
@@ -128,6 +130,7 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 
 	@Override
 	public OutputStream setAsciiStream(long pos) throws SQLException {
+		testAvailability();
 		if (pos < 1) {
 			throw TrafT4Messages.createSQLException(this.connection_.props_, this.connection_.getLocale(),
 					"out_of_lob_bound_msg", null);
@@ -138,12 +141,14 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 
 	@Override
 	public Writer setCharacterStream(long pos) throws SQLException {
+		testAvailability();
 		TrafT4Writer writer = new TrafT4Writer(this, pos);
 		return writer;
 	}
 
 	@Override
 	public int setString(long pos, String str) throws SQLException {
+		testAvailability();
 		int startIndex = (int) pos - 1;
 		if (startIndex < 0) {
 			throw TrafT4Messages.createSQLException(this.connection_.props_, this.connection_.getLocale(),
@@ -165,6 +170,7 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 
 	@Override
 	public int setString(long pos, String str, int offset, int len) throws SQLException {
+		testAvailability();
 		int start = (int) pos - 1;
 		String replacestr = str.substring(offset, offset + len);
 		StringBuilder buf = new StringBuilder(((String) data_));
@@ -179,6 +185,7 @@ public class TrafT4Clob extends TrafT4Lob implements Clob {
 
 	@Override
 	public void truncate(long len) throws SQLException {
+		testAvailability();
 		if (len > ((String) data_).length()) {
 			throw TrafT4Messages.createSQLException(connection_.props_, null, null, null);
 		}
