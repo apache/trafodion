@@ -2807,18 +2807,34 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
       return;
     }
   }
+  NABoolean diagsAreaAllocated = FALSE;
 
-  ExExeStmtGlobals * exe_glob = getGlobals()->castToExExeStmtGlobals();
-  ComDiagsArea *tempDiagsArea = exe_glob->getDiagsArea();
-  
+  if (diagsArea == NULL)
+  {
+     diagsAreaAllocated = TRUE;
+     diagsArea = ComDiagsArea::allocate(getHeap());
+  }
   ExSsmpManager *ssmpManager = context->getSsmpManager();
   cbServer_ = ssmpManager->getSsmpServer(
                                  cliGlobals->myNodeName(), 
-                                 cliGlobals->myCpu(), tempDiagsArea);
-  if (cbServer_ == NULL)
-    return ;
+                                 cliGlobals->myCpu(), diagsArea);
+  if (cbServer_ == NULL || cbServer_->getControlConnection() == NULL)		
+  {		
+      // We could not get a phandle for the cancel broker.  However,		
+      // let the query run (on the assumption that it will not need to 		
+      // be canceled) and convert any error conditions to warnings.		
 
-  
+      // tbd - figure a way retry registration later, as the query progresses.		
+      if (diagsArea != NULL)		
+         NegateAllErrors(diagsArea);		
+      return;
+  }
+  else if (diagsAreaAllocated)
+  {
+     diagsArea->decrRefCount();
+     diagsArea = NULL;
+  }
+
   // The stream's actOnSend method will delete (or call decrRefCount()) 
   // for this object.
   RtsQueryId *rtsQueryId = new (context->getIpcHeap()) 
@@ -2869,7 +2885,7 @@ void ex_root_tcb::deregisterCB()
   // Let MXSSMP know this query can no longer be suspended.  Also, here
   // is where we handle one possibilty:  the query can be suspended after
   // the ExScheduler::work method has made its final check of the root
-
+  // oper stats isSuspended_ flag, but before we get to this code where
   // we change ExMasterStats::readyToSuspend_ from READY to NOT_READY.
   // To handle this, the subject master will obtain the Stats semaphore
   // and test ExMasterStats::isSuspended_.  If set to true, it will

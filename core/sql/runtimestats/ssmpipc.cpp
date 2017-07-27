@@ -95,7 +95,20 @@ IpcServer *ExSsmpManager::getSsmpServer(char *nodeName, short cpuNum,
    {
      if (str_cmp(ssmpServer->castToIpcGuardianServer()->getProcessName(),
             tmpProcessName, processNameLen) == 0)
-        return ssmpServer;
+     {
+        GuaConnectionToServer *cbGCTS = ssmpServer->getControlConnection()->castToGuaConnectionToServer();
+
+        // We need to keep 2 entries free - To send QueryFinishedMessage and to get the response for query started message
+       if (cbGCTS->numReceiveCallbacksPending()+2 == cbGCTS->getNowaitDepth())
+       {
+          *diagsArea << DgSqlCode(-2026)
+            << DgString0(tmpProcessName)
+            << DgInt0(GetCliGlobals()->myCpu())
+            << DgInt1(GetCliGlobals()->myPin()); 
+          return NULL;
+       }
+       return ssmpServer;
+     }
      ssmpServer = (IpcServer *) ssmps_->getNext();
    }
 
@@ -119,7 +132,8 @@ IpcServer *ExSsmpManager::getSsmpServer(char *nodeName, short cpuNum,
        ssmpServer = NULL;
      }
    }
-
+   
+   
    return ssmpServer;
 }
 

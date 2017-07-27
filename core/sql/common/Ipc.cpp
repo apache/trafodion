@@ -4892,13 +4892,13 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
     case IPC_SQLSSCP_SERVER:
       className = "sscp";
       lv_usesTransactions = FALSE;
-      lv_maxNowaitRequests =  FS_MAX_NOWAIT_DEPTH-1;   
+      lv_maxNowaitRequests =  FS_MAX_NOWAIT_DEPTH;   
       overridingDefineName = "=_MX_SSCP_PROCESS_PREFIX"; 
       break;
     case IPC_SQLSSMP_SERVER:
       className = "ssmp";
       lv_usesTransactions = FALSE;
-      lv_maxNowaitRequests =  FS_MAX_NOWAIT_DEPTH-1;   
+      lv_maxNowaitRequests =  FS_MAX_NOWAIT_DEPTH;   
       overridingDefineName = "=_MX_SSMP_PROCESS_PREFIX";
       break;
     default:
