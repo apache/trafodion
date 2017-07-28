@@ -6115,13 +6115,13 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
                   newType = new SQLClob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024),
                          lobType.getLobStorage(),
                          TRUE, FALSE, TRUE,
-                         lob_input_limit_for_batch > lob_size ? lob_input_limit_for_batch : lob_size);
+                         lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size);
               }
               else {
               newType = new SQLBlob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024),
                                              lobType.getLobStorage(), 
                                              TRUE, FALSE, TRUE, 
-                                             lob_input_limit_for_batch > lob_size ? lob_input_limit_for_batch : lob_size);
+                                             lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size);
               }
               vid1.coerceType(*newType, NA_LOB_TYPE); 
               if (bindWA->getCurrentScope()->context()->inUpdate())
