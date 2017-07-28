@@ -99,7 +99,7 @@ IpcServer *ExSsmpManager::getSsmpServer(char *nodeName, short cpuNum,
         GuaConnectionToServer *cbGCTS = ssmpServer->getControlConnection()->castToGuaConnectionToServer();
 
         // We need to keep 2 entries free - To send QueryFinishedMessage and to get the response for query started message
-       if (cbGCTS->numReceiveCallbacksPending()+2 == cbGCTS->getNowaitDepth())
+       if (cbGCTS->numReceiveCallbacksPending()+2 >= cbGCTS->getNowaitDepth())
        {
           *diagsArea << DgSqlCode(-2026)
             << DgString0(tmpProcessName)
