@@ -543,7 +543,7 @@
 2023 ZZZZZ 99999 ADVANCED MAJOR DIALOUT Server process $0~string0 could not be created - $1~string1.
 2024 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Server Process $0~string0 is not running or could not be created. Operating System Error $1~int0 was returned.
 2025 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Server process $0~string0 could not be created - CPU is unavailable; $1~string1.
-2026 ZZZZZ 99999 UUUUUUUU UUUUU UUUUUUU ****Filler for IPC error.
+2026 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Server Process $0~string0 has reached allowed depth for nowait operation from the process $1~int0,$2~int1.
 2027 ZZZZZ 99999 ADVANCED MAJOR DBADMIN Operating system error $0~int0 while sending a startup message to process $1~string0.
 2028 ZZZZZ 99999 ADVANCED MAJOR DIALOUT OSS server process $0~string0 could not be created on $1~string1 - insufficient resources.
 2029 ZZZZZ 99999 BEGINNER MINOR DBADMIN The new min value is greater than the current max value $0~int0.

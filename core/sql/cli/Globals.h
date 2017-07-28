@@ -426,8 +426,6 @@ inline
   ExeTraceInfo * getExeTraceInfo();
   CLISemaphore *getSemaphore() { return cliSemaphore_; }
 
-  IpcServerClass * getCbServerClass();
-
   // for trusted UDR invocations from executor and compiler
   LmLanguageManager * getLanguageManager(ComRoutineLanguage language);
   LmLanguageManagerC * getLanguageManagerC();

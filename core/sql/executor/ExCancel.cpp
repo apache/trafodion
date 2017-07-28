@@ -114,7 +114,6 @@ void ExCancelTcb::freeResources()
     qparent_.down = NULL;
   }
   ex_assert(cancelStream_ == NULL, "freeResources called before step_ DONE.");
-  ex_assert(cbServer_ == NULL, "freeResources called before step_ DONE.");
 }
 
 ExWorkProcRetcode ExCancelTcb::work()
@@ -250,89 +249,32 @@ ExWorkProcRetcode ExCancelTcb::work()
               break;
             }
           }
+          ComDiagsArea *tempDiagsArea =
+                ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
+          tempDiagsArea->clear();
+ 
+          ContextCli *context = getGlobals()->castToExExeStmtGlobals()->
+                castToExMasterStmtGlobals()->getStatement()->getContext();
+          ExSsmpManager *ssmpManager = context->getSsmpManager(); 
+          cbServer_ = ssmpManager->getSsmpServer(
+                                 cliGlobals->myNodeName(), 
+                                 cliGlobals->myCpu(), tempDiagsArea);
+          if (cbServer_ == NULL) {
+             reportError(tempDiagsArea, true, EXE_CANCEL_PROCESS_NOT_FOUND, 
+                          nodeName_, cpu_);
 
-          // Testpoints for hard to reproduce problems:
-          bool fakeError8028 = false;
-          fakeError8028 = (getenv("HP_FAKE_ERROR_8028") != NULL);
-          if ((cliGlobals->getCbServerClass() == NULL) || fakeError8028)
-          {
-            ComDiagsArea *diagsArea = 
-              ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-
-            *diagsArea << DgSqlCode(-EXE_CANCEL_PROCESS_NOT_FOUND);
-            *diagsArea << DgString0("$ZSM000");
-
-            reportError(diagsArea);
-
-            step_ = DONE;
-            break;
-          }
-
-          ComDiagsArea *diagsArea = NULL;
-          bool fakeError2024 = false;
-          fakeError2024 = (getenv("HP_FAKE_ERROR_2024") != NULL);
-        
-          if (fakeError2024)
-          {
-            cbServer_ = NULL;
-            diagsArea =
-                  ComDiagsArea::allocate(getGlobals()->getDefaultHeap());
-            if (getenv("HP_FAKE_ERROR_8142"))
-            {
-               *diagsArea << DgSqlCode(-8142);
-               *diagsArea << DgString0(__FILE__);
-               *diagsArea << DgString1("cbServer_ is NULL");
-            }
-            else
-               *diagsArea << DgSqlCode(-2024);
+             step_ = DONE;
+             break;
           }
           else
-            cbServer_ = cliGlobals->getCbServerClass()->allocateServerProcess(
-                      &diagsArea, 
-                      cliGlobals->getEnvironment()->getHeap(),
-                      nodeName_,
-                      cpu_,
-                      IPC_PRIORITY_DONT_CARE,
-                      FALSE,  // usesTransactions 
-                      TRUE,   // waitedCreation
-                      2       // maxNowaitRequests -- cancel+(1 extra).
-                      );
-
-
-          if (cbServer_ == NULL || cbServer_->getControlConnection() == NULL)
-          {
-            ex_assert(diagsArea != NULL, 
-                      "allocateServerProcess failed, but no diags");
-
-            // look for SQLCode 2024 
-            // "*** ERROR[2024] Server Process $0~string0 
-            // is not running or could not be created. Operating System 
-            // Error $1~int0 was returned."
-            // Remap to cancel-specfic error 8028.
-            if (diagsArea->contains(-2024)  &&
-                cancelTdb().actionIsCancel())
-            {
-              diagsArea->deleteError(diagsArea->returnIndex(-2024));
-              reportError(diagsArea, true, EXE_CANCEL_PROCESS_NOT_FOUND, 
-                          nodeName_, cpu_);
-            }
-            else
-              reportError(diagsArea);
-
-            step_ = DONE;
-            break;
-          }
-
-          // the reportError method was not called -- see break above.
-          if (diagsArea != NULL)
-            diagsArea->decrRefCount();
+             tempDiagsArea->decrRefCount();
 
           //Create the stream on the IpcHeap, since we don't dispose 
           // of it immediately.  We just add it to the list of completed 
           // messages in the IpcEnv, and it is disposed of later.
 
           cancelStream_  = new (cliGlobals->getIpcHeap())
-                CancelMsgStream(cliGlobals->getEnvironment(), this);
+                CancelMsgStream(cliGlobals->getEnvironment(), this, ssmpManager);
 
           cancelStream_->addRecipient(cbServer_->getControlConnection());
 
@@ -541,12 +483,6 @@ ExWorkProcRetcode ExCancelTcb::work()
           cancelStream_->addToCompletedList();
           cancelStream_ = NULL;
         }
-        if (cbServer_)
-        {
-          cbServer_->release();
-          cbServer_ = NULL;
-        }
-
         ex_queue_entry * up_entry = qparent_.up->getTailEntry();
         up_entry->copyAtp(pentry_down);
         up_entry->upState.parentIndex = pentry_down->downState.parentIndex;
@@ -587,11 +523,10 @@ void ExCancelTcb::reportError(ComDiagsArea *da, bool addCondition,
       if (nodeName)
       {
         char processName[50];
-        CliGlobals *cliGlobals = getGlobals()->castToExExeStmtGlobals()->
-                     castToExMasterStmtGlobals()->getCliGlobals();
-      
-        cliGlobals->getCbServerClass()->getProcessName(nodeName, 
-          (short)str_len(nodeName), cpu, processName);
+        ContextCli *context = getGlobals()->castToExExeStmtGlobals()->
+                castToExMasterStmtGlobals()->getStatement()->getContext();
+        context->getSsmpManager()->getServerClass()->getProcessName(nodeName, (short)
+                           str_len(nodeName), cpu, processName);
         *diagsArea << DgString0(processName);
       }
 
@@ -615,12 +550,35 @@ void ExCancelTcb::reportError(ComDiagsArea *da, bool addCondition,
 // Methods for CancelMsgStream. 
 // -----------------------------------------------------------------------
 
+void CancelMsgStream::actOnSend(IpcConnection *conn)
+{
+  if (conn->getErrorInfo() != 0)
+     delinkConnection(conn);
+}
+
 void CancelMsgStream::actOnSendAllComplete()
 {
   clearAllObjects();
   receive(FALSE);   // FALSE means no-waited.
   return;
 }
+
+void CancelMsgStream::actOnReceive(IpcConnection *conn)
+{
+  if (conn->getErrorInfo() != 0)
+     delinkConnection(conn);
+}
+
+void CancelMsgStream::delinkConnection(IpcConnection *conn)
+{
+  char nodeName[MAX_SEGMENT_NAME_LEN+1];
+  IpcCpuNum cpu;
+
+  conn->getOtherEnd().getNodeName().getNodeNameAsString(nodeName);
+  cpu = conn->getOtherEnd().getCpuNum();
+  ssmpManager_->removeSsmpServer(nodeName, (short)cpu);
+}
+
 
 void CancelMsgStream::actOnReceiveAllComplete()
 {

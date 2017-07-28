@@ -1145,6 +1145,7 @@ public:
 
  inline Int32 getOpenRetries() const { return openRetries_; }
  inline void setOpenRetries(Int32 num) { openRetries_ =  num; }
+ inline unsigned short getNowaitDepth() { return nowaitDepth_; }
  void openRetryCleanup();
 
   // struct is public only to make the compiler happy
