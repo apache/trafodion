@@ -3051,7 +3051,7 @@ void ex_root_tcb::dumpCb()
   statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
                       cliGlobals->myPin(),savedPriority, savedStopMode);
   if (doDump)
-    cbServer_->getServerId().getPhandle().dumpAndStop(true, true);
+    cbServer_->getServerId().getPhandle().dumpAndStop(true, false);
 }
 
 // -----------------------------------------------------------------------
