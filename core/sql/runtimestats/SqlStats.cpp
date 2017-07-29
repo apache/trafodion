@@ -1871,6 +1871,8 @@ NABoolean checkIfRTSSemaphoreLocked()
       retcode = TRUE;
     } 
   }
+  else
+     retcode = TRUE;
   return retcode;
 }
 

@@ -2745,6 +2745,8 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals();
 
   CliGlobals *cliGlobals = glob->getCliGlobals();
+  if (cliGlobals->getStatsGlobals() == NULL)
+     return;
   ContextCli *context = cliGlobals->currContext();
 
   // Let MXSSMP know this query is ready to be suspended, since any ESPs will

@@ -292,8 +292,7 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     
   udrServerManager_ = new (ipcHeap_) ExUdrServerManager(env_);
 
-  if (cliGlobals->getStatsGlobals())
-    ssmpManager_ = new(ipcHeap_) ExSsmpManager(env_);
+  ssmpManager_ = new(ipcHeap_) ExSsmpManager(env_);
 
   seqGen_ = new(exCollHeap()) SequenceValueGenerator(exCollHeap());
 
