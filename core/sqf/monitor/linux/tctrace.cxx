@@ -162,7 +162,10 @@ void CTrafConfigTrace::TraceInit( bool traceEnabled
         }
     }
 
-    remove(trace_file_name);
+    if (!pathnameUsed)
+    {
+        remove(trace_file_name);
+    }
 
     // Get any trace settings that were specified via environment variables
     const char *value;
@@ -178,10 +181,13 @@ void CTrafConfigTrace::TraceInit( bool traceEnabled
         }
     }
 
-    // Get environment variable specifying whether tracing is enabled
-    tracingEnabled_ = GetEnvBool(strTraceEnable_);
-    // Get environment variable value for trace buffer size if specified
-    GetEnvInt(strTraceFileFb_, traceFileFb_);
+    if (!tracingEnabled_)
+    {
+        // Get environment variable specifying whether tracing is enabled
+        tracingEnabled_ = GetEnvBool(strTraceEnable_);
+        // Get environment variable value for trace buffer size if specified
+        GetEnvInt(strTraceFileFb_, traceFileFb_);
+    }
 
     // Convert the user specified trace level string to a number.  The
     // number can be specified as a decimal, octal or hexadecimal

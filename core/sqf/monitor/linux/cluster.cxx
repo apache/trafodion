@@ -62,6 +62,7 @@ using namespace std;
 #include "pnode.h"
 #include "reqqueue.h"
 #include "zclient.h"
+#include "commaccept.h"
 
 extern bool IAmIntegrating;
 extern bool IAmIntegrated;
@@ -90,6 +91,7 @@ extern CMonStats *MonStats;
 extern CRedirector Redirector;
 extern CMonLog *MonLog;
 extern CHealthCheck HealthCheck;
+extern CCommAccept CommAccept;
 extern CZClient    *ZClient;
 
 extern long next_test_delay;
@@ -344,28 +346,9 @@ void CCluster::NodeReady( CNode *spareNode )
         lnode->Up();
     }
 
-    switch( CommType )
-    {
-        case CommType_InfiniBand:
-            if ( joinComm_ != MPI_COMM_NULL )
-            {
-                MPI_Comm_free( &joinComm_ );
-                joinComm_ = MPI_COMM_NULL;
-            }
-            break;
-        case CommType_Sockets:
-            if ( joinSock_ != -1 )
-            {
-                close(joinSock_);
-                joinSock_ = -1;
-            }
-            break;
-        default:
-            // Programmer bonehead!
-            abort();
-    }
+    ResetIntegratingPNid();
     spareNode->SetActivatingSpare( false );
-    integratingPNid_ = -1;
+
     if ( MyNode->IsCreator() )
     {
         MyNode->SetCreator( false, -1, -1 );
@@ -749,7 +732,22 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         }
         else
         {
-            snprintf(port_fname, sizeof(port_fname), "%s/monitor.port.%s",getenv("MPI_TMPDIR"),node->GetName());
+            // Remove the domain portion of the name if any
+            char my_node_name[MPI_MAX_PROCESSOR_NAME];
+            char str1[MPI_MAX_PROCESSOR_NAME];
+            memset( str1, 0, MPI_MAX_PROCESSOR_NAME );
+            strcpy (str1, node->GetName() );
+        
+            char *str1_dot = strchr( (char *) str1, '.' );
+            if ( str1_dot )
+            {
+                memcpy( my_node_name, str1, str1_dot - str1 );
+            }
+            else
+            {
+                strcpy (my_node_name, str1 );
+            }
+            snprintf(port_fname, sizeof(port_fname), "%s/monitor.port.%s",getenv("MPI_TMPDIR"),my_node_name);
         }
         sprintf(temp_fname, "%s.bak", port_fname);
         remove(temp_fname);
@@ -805,27 +803,7 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         {
             if ( node->GetPNid() == integratingPNid_ )
             {
-                switch( CommType )
-                {
-                    case CommType_InfiniBand:
-                        if ( joinComm_ != MPI_COMM_NULL )
-                        {
-                            MPI_Comm_free( &joinComm_ );
-                            joinComm_ = MPI_COMM_NULL;
-                        }
-                        break;
-                    case CommType_Sockets:
-                        if ( joinSock_ != -1 )
-                        {
-                            close(joinSock_);
-                            joinSock_ = -1;
-                        }
-                        break;
-                    default:
-                        // Programmer bonehead!
-                        abort();
-                }
-                integratingPNid_ = -1;
+                ResetIntegratingPNid();
                 if ( MyNode->IsCreator() )
                 {
                     MyNode->SetCreator( false, -1, -1 );
@@ -1446,27 +1424,7 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                 }
             }
 
-            switch( CommType )
-            {
-                case CommType_InfiniBand:
-                    if ( joinComm_ != MPI_COMM_NULL )
-                    {
-                        MPI_Comm_free( &joinComm_ );
-                        joinComm_ = MPI_COMM_NULL;
-                    }
-                    break;
-                case CommType_Sockets:
-                    if ( joinSock_ != -1 )
-                    {
-                        close(joinSock_);
-                        joinSock_ = -1;
-                    }
-                    break;
-                default:
-                    // Programmer bonehead!
-                    abort();
-            }
-            integratingPNid_ = -1;
+            ResetIntegratingPNid();
             if ( MyNode->IsCreator() )
             {
                 MyNode->SetCreator( false, -1, -1 );
@@ -2855,7 +2813,19 @@ void CCluster::InitializeConfigCluster( void )
     if ( IsRealCluster )
     {   // Map node name to physical node id
         // (for virtual nodes physical node equals "rank" (previously set))
-        MyPNID = clusterConfig->GetPNid( Node_name );
+        if (MyPNID == -1)
+        {
+            MyPNID = clusterConfig->GetPNid( Node_name );
+            if (MyPNID == -1)
+            {
+                char buf[MON_STRING_BUF_SIZE];
+                snprintf(buf, sizeof(buf), "[%s@%d] Can't find node name=%s in cluster configuration\n",
+                         method_name, __LINE__, Node_name );
+                mon_log_write(MON_CLUSTER_INITCONFIGCLUSTER_1, SQ_LOG_CRIT, buf);
+
+                MPI_Abort(MPI_COMM_SELF,99);
+            }
+        }
     }
 
     Nodes->AddNodes( );
@@ -4026,6 +3996,51 @@ void CCluster::ReIntegrateSock( int initProblem )
     MyNode->SetState( State_Merged );
 
     delete[] nodeInfo;
+
+    TRACE_EXIT;
+}
+
+void CCluster::ResetIntegratingPNid( void )
+{
+    const char method_name[] = "CCluster::ResetIntegratingPNid";
+    TRACE_ENTRY;
+
+    switch( CommType )
+    {
+        case CommType_InfiniBand:
+            if ( joinComm_ != MPI_COMM_NULL )
+            {
+                MPI_Comm_free( &joinComm_ );
+                joinComm_ = MPI_COMM_NULL;
+            }
+            break;
+        case CommType_Sockets:
+            if ( joinSock_ != -1 )
+            {
+                close(joinSock_);
+                joinSock_ = -1;
+            }
+            break;
+        default:
+            // Programmer bonehead!
+            abort();
+    }
+
+    integratingPNid_ = -1;
+    // Indicate to the commAcceptor thread to begin accepting connections
+    CommAccept.setAccepting( true );
+
+    TRACE_EXIT;
+}
+
+void CCluster::SetIntegratingPNid( int pnid ) 
+{
+    const char method_name[] = "CCluster::SetIntegratingPNid";
+    TRACE_ENTRY;
+
+    integratingPNid_ = pnid;
+    // Indicate to the commAcceptor thread to stop accepting connections
+    CommAccept.setAccepting( false );
 
     TRACE_EXIT;
 }

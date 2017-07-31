@@ -1,0 +1,138 @@
+#!/bin/bash
+#
+#/bin/sh
+# @@@ START COPYRIGHT @@@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# @@@ END COPYRIGHT @@@
+#
+
+
+if [ -f $TRAF_HOME/sql/scripts/sqshell.env ]; then
+    . $TRAF_HOME/sql/scripts/sqshell.env
+fi
+
+if [[ -z ${TRAF_AGENT} ]]; then
+   echo  "***"
+   echo  "*** Starting Monitor processes"
+   echo  "***"
+
+sqshell <<eof 
+
+! Start the monitor processes across the cluster
+startup
+
+exit
+eof
+else
+   echo  "***"
+   echo  "*** Waiting for Monitor processes to start"
+   echo  "***"
+sqshell <<eof 
+
+! Waiting for the monitor processes to start across the cluster
+delay 15
+
+exit
+eof
+
+sqshell -c node info
+
+fi
+
+sqcheckmon
+let lv_checkmon_ret=$?
+if [ $lv_checkmon_ret '==' 0 ]; then
+   echo "Continuing with the Startup..."
+   echo
+else
+   echo "Aborting startup."
+   more $TRAF_HOME/logs/sqcheckmon.log
+   exit 1
+fi
+
+# If the 'shell.env' file does not exist, we are in a real cluster
+if [ -e $TRAF_HOME/sql/scripts/sqshell.env ]; then
+   sqshell -c set CLUSTERNAME=$CLUSTERNAME
+fi
+
+sqshell -a <<eof
+
+set SQ_MBTYPE=64d
+set MY_NODES=$MY_NODES
+set JAVA_HOME=$JAVA_HOME
+set MY_CLUSTER_ID=$MY_CLUSTER_ID
+set TRAF_FOUNDATION_READY=0
+
+exit
+eof
+
+# Starting TSID
+
+idtmstart
+sqshell -c delay 1
+
+echo  "***"
+echo  "*** Starting Cluster Monitor"
+echo  "***"
+
+cmonstart
+sqshell -c delay 1
+
+echo  "***"
+echo  "*** Starting Node Monitors"
+echo  "***"
+
+nmonstart
+
+echo  "***"
+echo  "*** Starting Distributed Transaction Manager (DTM)"
+echo  "***"
+
+tmstart
+tm_ret=$?
+if [ $tm_ret != 0 ]; then
+   echo "DTM start failed ..."
+   exit $tm_ret
+fi
+
+echo "SQ_START_RMS: " $SQ_START_RMS 
+if [[ $SQ_START_RMS == "1" ]]; then
+   echo "Starting RMS"
+   rmsstart
+   rms_start_status=$?
+   if [[ $rms_start_status != 0 ]]; then
+      echo "RMS start failed ..."
+      exit $rms_start_status
+   fi
+   echo "Started RMS"
+fi
+
+
+echo  "***"
+echo  "*** Trafodion Foundation Services are ready!"
+echo  "***"
+sqshell -a <<eof
+
+set TRAF_FOUNDATION_READY=1
+
+exit
+eof
+
+exit 0

@@ -50,10 +50,10 @@ Linux-x86_64/
 # sqgen / sqstart
 /logs/
 /sqcert/
-/sql/scripts/gomon.*
 /sql/scripts/sqconfig.db
-/sql/scripts/sqipcrm.out
-/sql/scripts/sqshell
+/sql/scripts/*.log
+/sql/scripts/*.out
+/sql/scripts/sqshell.env
 /sql/scripts/sq*.exit_status
 /sql/scripts/stdout_*
 /tmp/

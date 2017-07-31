@@ -3745,6 +3745,7 @@ void msg_mon_init() {
 int msg_mon_init_attach(const char *pp_where,
                         char       *pp_name) {
     char          la_host_name[MPI_MAX_PROCESSOR_NAME];
+    char          la_short_host_name[MPI_MAX_PROCESSOR_NAME];
     FILE         *lp_file;
     char         *lp_nid;
     char         *lp_nodes;
@@ -3777,14 +3778,29 @@ int msg_mon_init_attach(const char *pp_where,
             trace_where_printf(pp_where, "clearing su-pname\n");
         memset(ga_ms_su_pname, 0, MS_MON_MAX_PROCESS_NAME);
     }
+    memset( la_short_host_name, 0, MPI_MAX_PROCESSOR_NAME );
     gethostname(la_host_name, sizeof(la_host_name));
-    lp_nodes = getenv(gp_ms_env_sq_vnodes);
     char *tmpptr = la_host_name;
     while ( *tmpptr )
     {
         *tmpptr = (char)tolower( *tmpptr );
         tmpptr++;
     }
+    // Remove the domain portion of the name if any
+    char str1[MPI_MAX_PROCESSOR_NAME];
+    memset( str1, 0, MPI_MAX_PROCESSOR_NAME );
+    strcpy (str1, la_host_name );
+
+    char *str1_dot = strchr( (char *) str1, '.' );
+    if ( str1_dot )
+    {
+        memcpy( la_short_host_name, str1, str1_dot - str1 );
+    }
+    else
+    {
+        strcpy (la_short_host_name, str1 );
+    }
+    lp_nodes = getenv(gp_ms_env_sq_vnodes);
     lp_nid = getenv(gp_ms_env_sq_vnid);
     if ((lp_nid != NULL) && *lp_nid)
         lv_nid = atoi(lp_nid);
@@ -3804,7 +3820,7 @@ int msg_mon_init_attach(const char *pp_where,
         sprintf(&lv_file_name,
                 "%s/monitor.port.%s",
                 getenv(gp_ms_env_mpi_tmpdir),
-                la_host_name);
+                la_short_host_name);
         if (gv_ms_trace_mon)
             trace_where_printf(pp_where,
                                "reading %s (not using virtual nodes)\n",

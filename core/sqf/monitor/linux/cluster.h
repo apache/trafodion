@@ -131,7 +131,8 @@ public:
     struct message_def *JoinMessage( const char *node_name, int pnid, JOINING_PHASE phase );
     struct message_def *SpareUpMessage( const char *node_name, int nid );
     struct message_def *ReIntegErrorMessage( const char *msgText );
-    void SetIntegratingNid( int nid ) { integratingPNid_ = nid; };
+    void ResetIntegratingPNid( void );
+    void SetIntegratingPNid( int pnid );
     int HardNodeUp( int pnid, char *node_name );
     inline CNode *GetIntegratingNode() { return Node[integratingPNid_]; }
     inline CNode *GetNode( int pnid ) { return Node[pnid]; }

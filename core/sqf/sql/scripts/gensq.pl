@@ -21,12 +21,14 @@
 #
 # @@@ END COPYRIGHT @@@
 #
+use sqconfigdb;
 use sqnodes;
 use sqpersist;
 use POSIX;
 
 # Process types.  Must match values defined by the monitor in msgdef.h.
 my $ProcessType_Undefined = 0;
+my $ProcessType_DTM       = 2;
 my $ProcessType_Generic   = 4;
 my $ProcessType_SSMP      = 11;
 
@@ -91,45 +93,6 @@ sub printIDTMScript {
     print IDTM @rest;
 }
 
-sub printRMSScript {
-    ($dWhich, @rest) = @_;
-    if ($dWhich == 1) {
-       print SSMP @rest;
-       print SSCP @rest;
-    }
-    if ($dWhich == 2) {
-       print SSMP @rest;
-    }
-    if ($dWhich == 3) {
-       print SSCP @rest;
-    }
-    if ($dWhich == 0) {
-       print RMS @rest;
-    }
-}
-
-sub printRMSStopScript{
-    ($dWhich, @rest) = @_;
-    if ($dWhich == 1) {
-       print SSMPS @rest;
-       print SSCPS @rest;
-    }
-    if ($dWhich == 2) {
-       print SSMPS @rest;
-    }
-    if ($dWhich == 3) {
-       print SSCPS @rest;
-    }
-    if ($dWhich == 0) {
-       print RMSS @rest;
-    }
-}
-
-sub printTMScript {
-    ($dWhich, @rest) = @_;
-    print TM @rest;
-}
-
 sub getTime {
     return strftime("%a %b %d %H:%M:%S %Y\n", localtime(time));
 }
@@ -148,26 +111,26 @@ sub printInitialLines {
     printScript(1, "#!/bin/sh \n");
     printTime;
 
-    $smenv = "$ENV{'SQETC_DIR'}/seamonster.env";
-    if ( -e $smenv ) {
-      print "\nThe SeaMonster environment variable file $smenv exists.\n";
-      print "The file will not be re-generated.\n\n";
-    } else {
-      print "\nGenerating SeaMonster environment variable file: $smenv\n\n";
-      #Create SeaMonster environment variable file
-      open (ETC,">>$smenv")
-          or die("unable to open $smenv");
-      if ($bVirtualNodes == 1) {
-          print ETC "SM_VIRTUALNODE=1\n";
-      }
-      if (!$ENV{'SHARED_HARDWARE'} || $ENV{SHARED_HARDWARE} eq 'YES') {
-          print ETC "SM_PIPEDEPTH=6\n";
-          print ETC "SM_LOWATER=3\n";
-          print ETC "SM_BUFFSIZE=102400\n";
-          print ETC "SM_THRESHOLD_NBYTES=51200\n";
-      }
-      close(ETC);
-    }
+#    $smenv = "$ENV{'SQETC_DIR'}/seamonster.env";
+#    if ( -e $smenv ) {
+#      print "\nThe SeaMonster environment variable file $smenv exists.\n";
+#      print "The file will not be re-generated.\n\n";
+#    } else {
+#      print "\nGenerating SeaMonster environment variable file: $smenv\n\n";
+#      #Create SeaMonster environment variable file
+#      open (ETC,">>$smenv")
+#          or die("unable to open $smenv");
+#      if ($bVirtualNodes == 1) {
+#          print ETC "SM_VIRTUALNODE=1\n";
+#      }
+#      if (!$ENV{'SHARED_HARDWARE'} || $ENV{SHARED_HARDWARE} eq 'YES') {
+#          print ETC "SM_PIPEDEPTH=6\n";
+#          print ETC "SM_LOWATER=3\n";
+#          print ETC "SM_BUFFSIZE=102400\n";
+#          print ETC "SM_THRESHOLD_NBYTES=51200\n";
+#      }
+#      close(ETC);
+#    }
 
     $msenv = "$ENV{'SQETC_DIR'}/ms.env";
 
@@ -192,7 +155,6 @@ sub printInitialLines {
            # Allow specific mirroring ON override for virtual node
         print ETC "MS_STREAMS_MIN=20000\n";
         print ETC "MS_STREAMS_MAX=20000\n";
-
     }
     # Cluster
     else {
@@ -214,41 +176,41 @@ sub printInitialLines {
     print ETC "CLASSPATH=$ENV{'CLASSPATH'}:\n";
     close (ETC);
 
-    printScript(1, "\nshell <<eof \n");
-    $gShellStarted=1;
+#    printScript(1, "\nshell <<eof \n");
+#    $gShellStarted=1;
 
-    printScript(1, "\n");
+#    printScript(1, "\n");
 
-    printScript(1, "! Start the monitor processes across the cluster\n");
+#    printScript(1, "! Start the monitor processes across the cluster\n");
 
-    printScript(1, "startup\n");
+#    printScript(1, "startup\n");
 
-    genSQShellExit();
+#    genSQShellExit();
 
-    printScript(1, "\nsqcheckmon\n");
-    printScript(1, "let lv_checkmon_ret=\$\?\n");
-    printScript(1, "if [ \$lv_checkmon_ret '==' 0 ]; then\n");
-    printScript(1, "   echo \"Continuing with the Startup...\"\n");
-    printScript(1, "   echo\n");
-    printScript(1, "else\n");
-    printScript(1, "   echo \"Aborting startup.\"\n");
-    printScript(1, "   more $TRAF_HOME/logs/sqcheckmon.log\n");
-    printScript(1, "   exit 1\n");
-    printScript(1, "fi\n");
+#    printScript(1, "\nsqcheckmon\n");
+#    printScript(1, "let lv_checkmon_ret=\$\?\n");
+#    printScript(1, "if [ \$lv_checkmon_ret '==' 0 ]; then\n");
+#    printScript(1, "   echo \"Continuing with the Startup...\"\n");
+#    printScript(1, "   echo\n");
+#    printScript(1, "else\n");
+#    printScript(1, "   echo \"Aborting startup.\"\n");
+#    printScript(1, "   more \$TRAF_HOME/logs/sqcheckmon.log\n");
+#    printScript(1, "   exit 1\n");
+#    printScript(1, "fi\n");
 
 
-    genSQShellStart();
+#    genSQShellStart();
 
-    if ($bVirtualNodes == 0) {
-        printScript(1, "\nset CLUSTERNAME=\$CLUSTERNAME\n");
-    }
-    printScript(1, "\nset SQ_MBTYPE=$ENV{'SQ_MBTYPE'}\n");
-    printScript(1, "set MY_NODES=\$MY_NODES\n");
+#    if ($bVirtualNodes == 0) {
+#        printScript(1, "\nset CLUSTERNAME=\$CLUSTERNAME\n");
+#    }
+#    printScript(1, "\nset SQ_MBTYPE=$ENV{'SQ_MBTYPE'}\n");
+#    printScript(1, "\nset MY_NODES=\$MY_NODES\n");
 
-    sqconfigdb::addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
-    sqconfigdb::addDbClusterData( "TRAF_HOME", "$TRAF_HOME"); # comes out null
+#    sqconfigdb::addDbClusterData( "SQ_MBTYPE", $ENV{'SQ_MBTYPE'});
+#    sqconfigdb::addDbClusterData( "TRAF_HOME", "$TRAF_HOME"); # comes out null
 
-    genSQShellExit();
+#    genSQShellExit();
 
     $gbInitialLinesPrinted = 1;
 }
@@ -283,169 +245,37 @@ sub printScriptEndLines {
     printScript(1, "exit 0\n");
 }
 
-sub genSQShellExit {
+#sub genSQShellExit {
+#
+#    if ($gShellStarted == 1) {
+#        printScript(1, "\n");
+#        printScript(1, "exit\n");
+#        printScript(1, "eof\n");
+#
+#        $gShellStarted = 0;
+#    }
+#}
 
-    if ($gShellStarted == 1) {
-        printScript(1, "\n");
-        printScript(1, "exit\n");
-        printScript(1, "eof\n");
-
-        $gShellStarted = 0;
-    }
-}
-
-sub genSQShellStart {
-
-    if ($gShellStarted == 0) {
-        printScript(1, "\n");
-        printScript(1, "sqshell -a <<eof\n");
-
-        $gShellStarted = 1;
-    }
-}
-
-sub genRegWait {
-
-    my $l_registry  = @_[0];
-    my $l_svcname   = @_[1];
-    my $l_duration  = @_[2];
-    my $l_iteration = @_[3];
-
-    printScript(1, "\n");
-    printScript(1, "sqregck -r $l_registry -d $l_duration -i $l_iteration\n");
-    printScript(1, "sqr_stat=\$\?\n");
-    printScript(1, "if \[\[ \$sqr_stat == 0 \]\]; then\n");
-    printScript(1, "\techo \"The $l_svcname is Not Ready yet. Stopping further startup (if any).\"\n");
-    printScript(1, "\texit 1\n");
-    printScript(1, "else\n");
-    printScript(1, "\techo \"The $l_svcname is Ready.\"\n");
-    printScript(1, "fi\n");
-}
-
-sub genComponentTmWait {
-
-    my $l_compname  = @_[0];
-    my $l_duration  = @_[1];
-    my $l_iteration = @_[2];
-
-    printTMScript(1, "\n");
-    printTMScript(1, "sqcheck -c $l_compname -d $l_duration -i $l_iteration -r\n");
-    printTMScript(1, "sq_stat_$l_compname=\$\?\n");
-    printTMScript(1, "if \(\[ \$sq_stat_$l_compname '!=' 0 \] && [ \$sq_stat_$l_compname '!=' 1 \]\); then\n");
-    printTMScript(1, "\techo \"The $l_compname process(es) are Not Ready yet. Stopping further startup (if any).\"\n");
-    printTMScript(1, "\texit 1\n");
-    printTMScript(1, "else\n");
-    printTMScript(1, "\techo \"The $l_compname process(es) are Ready.\"\n");
-    printTMScript(1, "fi\n");
-}
-
-
-sub genIDTMSrv {
-    if ($SQ_IDTMSRV > 0) {
-        printIDTMScript(1, "#!/bin/sh\n");
-        printIDTMScript(1, "# Trafodion config/utility file generated @ ",getTime(),"\n");
-        
-        printIDTMScript(1, "sqshell -c persist exec TMID\n");
-        printIDTMScript(1, "exit $?\n");
-
-        printScript(1, "\nidtmstart\n");
-    }
-}
-
-sub genDTM {
-
-    printTMScript(1, "#!/bin/sh\n");
-    printTMScript(1, "# Trafodion config/utility file generated @ ",getTime(),"\n");
- 
-    printTMScript(1, "sqshell -a <<eof\n");
-    printTMScript(1, "\n! Start DTM\n");
-    printTMScript(1, "set DTM_RUN_MODE=2\n");
-    printTMScript(1, "set SQ_AUDITSVC_READY=1\n");
-    printTMScript(1, "set DTM_TLOG_PER_TM=1\n");
-    printTMScript(1, "persist exec DTM\n");
-    printTMScript(1, "delay 5\n");
-    printTMScript(1, "exit\n");
-    printTMScript(1, "eof\n");
-    
-    genComponentTmWait("dtm", 10, 60);
- 
-    printTMScript(1, "sqshell -a <<eof\n");
-    printTMScript(1, "! Generate DTM Event 1\n");
-    printTMScript(1, "event {DTM} 1\n");
-    printTMScript(1, "exit\n");
-    printTMScript(1, "eof\n");
-
-    printTMScript(1, "\n");
-    printTMScript(1, "echo \"Checking whether the transaction service is ready.\"\n");
-    printTMScript(1, "sqr_stat=0\n");
-    printTMScript(1, "while \[\[ \$sqr_stat == 0 \]\];\n");
-    printTMScript(1, "do\n");
-    printTMScript(1, "sqregck -r SQ_TXNSVC_READY -d 5 -i -1\n");
-    printTMScript(1, "sqr_stat=\$\?\n");
-    printTMScript(1, "done\n");
-    printTMScript(1, "echo \"The Transaction Service is Ready.\"\n");
-
-    printScript(1, "\ntmstart\n");
-    printScript(1, "tm_ret=\$?\n");
-    printScript(1, "if [ \$tm_ret != 0 ]; then\n");
-    printScript(1, "exit \$tm_ret\n");
-    printScript(1, "fi\n");
-}
-
-sub generateRMS {
-
-    genSQShellExit();
-
-    #Print out run RMS script
-    printScript(1, "\necho \"SQ_START_RMS: \" \$SQ_START_RMS \n");
-    printScript(1, "if [[ \$SQ_START_RMS == \"1\" ]]; then\n");
-    printScript(1, "echo \"Starting RMS\"\n");
-    
-    #generate rmsstart and rmsstop scripts
-    printRMSScript(0, "#!/bin/sh\n");
-    printRMSScript(0, "# Trafodion config/utility file generated @ ",getTime(),"\n");
-    printRMSScript(0, "\n# Start the RMS processes\n");
-    printRMSScript(0, "sscpstart\n");
-    printRMSScript(0, "ssmpstart\n");
-
-    printRMSStopScript(0, "#!/bin/sh\n");
-    printRMSStopScript(0, "# Trafodion config/utility file generated @ ",getTime(),"\n");
-    printRMSStopScript(0, "\n# Stop the RMS processes\n");
-    printRMSStopScript(0, "ssmpstop\n");
-    printRMSStopScript(0, "sscpstop\n");
-    printRMSStopScript(0, "\necho RMS Processes Stopped\n");
-
-    #generate ssmpstart, ssmpstop, sscpstart, sscpstop scripts
-    printRMSScript(1, "#!/bin/sh\n");
-    printRMSScript(1, "# Trafodion config/utility file generated @ ",getTime(),"\n");
-    printRMSScript(2, "\n# Start the SSMP processes\n");
-    printRMSScript(2, "sqshell -c persist exec SSMP\n");
-    printRMSScript(2, "exit \$?\n");
-    printRMSScript(3, "\n# Start the SSCP processes\n");
-    printRMSScript(3, "sqshell -c persist exec SSCP\n");
-    printRMSScript(3, "exit \$?\n");
-
-    printRMSStopScript(1, "#!/bin/sh\n");
-    printRMSStopScript(1, "# Trafodion config/utility file generated @ ",getTime(),"\n");
-    printRMSStopScript(2, "\n# Stop the SSMP processes\n");
-    printRMSStopScript(2, "sqshell -c persist kill SSMP\n");
-    printRMSStopScript(2, "exit \$?\n");
-    printRMSStopScript(3, "\n# Stop the SSCP processes\n");
-    printRMSStopScript(3, "sqshell -c persist kill SSCP\n");
-    printRMSStopScript(3, "exit \$?\n");
-   
-    printRMSScript(1, "\n");
-
-    printScript(1, "rmsstart\n");
-
-    #printScript(1, "\n! delay 5\n");
-
-    printScript(1, "\necho \"Started RMS\"\n");
-    printScript(1, "fi\n");
-}
+#sub genSQShellStart {
+#
+#    if ($gShellStarted == 0) {
+#        printScript(1, "\n");
+#        printScript(1, "sqshell -a <<eof\n");
+#
+#        $gShellStarted = 1;
+#    }
+#}
 
 sub printSQShellCommand {
     printScript(1, substr($_,1));
+}
+
+sub executeShellCommand {
+    $lv_cmd=substr($_,1);
+    print "Command: $lv_cmd";
+    $lv_cmd_output=`$lv_cmd` ;
+    print $lv_cmd_output;
+
 }
 
 
@@ -567,7 +397,7 @@ sub processOverflow {
         elsif(/^hdd/) {
             @hddLine = split(' ',$_);
             if(@hddLine[1]) {
-            push(@g_hddOverflow, @hddLine[1]);
+                push(@g_hddOverflow, @hddLine[1]);
             }
         }
         elsif(/^end overflow/) {
@@ -580,13 +410,13 @@ sub processFloatingIp {
     while (<>) {
         if (/^process/) {
             @this_line = split(/;/, $_);
-        if($#this_line >= 2) {
-            @external_ip = split(/=/,@this_line[2]);
-#            print "external_ip @external_ip\n";
-            if (($#external_ip >= 1) && (@external_ip[0] eq "external-ip")) {
-                $gFloatingExternalIp = @external_ip[1];
-                $gFloatingExternalIp =~ s/\s+$//; # remove trailing spaces, including new-line characters
-#                print "Floating External IP  $gFloatingExternalIp\n";
+            if($#this_line >= 2) {
+                @external_ip = split(/=/,@this_line[2]);
+#                print "external_ip @external_ip\n";
+                if (($#external_ip >= 1) && (@external_ip[0] eq "external-ip")) {
+                    $gFloatingExternalIp = @external_ip[1];
+                    $gFloatingExternalIp =~ s/\s+$//; # remove trailing spaces, including new-line characters
+#                    print "Floating External IP  $gFloatingExternalIp\n";
                 }
             }
         }
@@ -642,18 +472,18 @@ sub processFloatingIp {
             }
         }
         elsif(/^end floating_ip/) {
-#           printf "Floating Node Id : $gFloatingNodeId \n";
-           if ($gFloatingNodeId == -1) {
-               print "Error: floating_ip_node_id not provided. Please check your config file.\n";
-               print "Exiting..\n";
-               exit $BDR_ERROR;
-           }
-           if ($gFloatingExternalIp eq "") {
-               print "Error: bdr_ip_address is not provided, Please check your config file.\n";
-               print "Exiting..\n";
-               exit $BDR_ERROR;
-           }
-           return;
+#            printf "Floating Node Id : $gFloatingNodeId \n";
+            if ($gFloatingNodeId == -1) {
+                print "Error: floating_ip_node_id not provided. Please check your config file.\n";
+                print "Exiting..\n";
+                exit $BDR_ERROR;
+            }
+            if ($gFloatingExternalIp eq "") {
+                print "Error: bdr_ip_address is not provided, Please check your config file.\n";
+                print "Exiting..\n";
+                exit $BDR_ERROR;
+            }
+            return;
         }
     }
 }
@@ -668,91 +498,93 @@ sub printInitLinesAuxFiles {
 
 sub openFiles {
 
-    open (SQS,">$coldscriptFileName")
-        or die("unable to open $coldscriptFileName");
+#    open (SQS,">$coldscriptFileName")
+#        or die("unable to open $coldscriptFileName");
 
-    open (IDTM,">$startIDTM")
-        or die("unable to open $startIDTM");
+#    open (IDTM,">$startIDTM")
+#        or die("unable to open $startIDTM");
 
-    open (TM,">$startTM")
-        or die("unable to open $startTM");
+#    open (TM,">$startTM")
+#        or die("unable to open $startTM");
 
-    open (RMS,">$startRMS")
-        or die("unable to open $startRMS");
+#    open (RMS,">$startRMS")
+#        or die("unable to open $startRMS");
 
-    open (RMSS,">$stopRMS")
-        or die("unable to open $stopRMS");
+#    open (RMSS,">$stopRMS")
+#        or die("unable to open $stopRMS");
 
-    open (SSMP,">$startSSMP")
-        or die("unable to open $startSSMP");
+#    open (SSMP,">$startSSMP")
+#        or die("unable to open $startSSMP");
 
-    open (SSMPS,">$stopSSMP")
-        or die("unable to open $stopSSMP");
+#    open (SSMPS,">$stopSSMP")
+#        or die("unable to open $stopSSMP");
 
-    open (SSCP,">$startSSCP")
-        or die("unable to open $startSSCP");
+#    open (SSCP,">$startSSCP")
+#        or die("unable to open $startSSCP");
 
-    open (SSCPS,">$stopSSCP")
-        or die("unable to open $stopSSCP");
+#    open (SSCPS,">$stopSSCP")
+#        or die("unable to open $stopSSCP");
 
     sqconfigdb::openDb();
 }
 
 sub endGame {
 
-    open (SQSH,">$sqshell")
-        or die("unable to open $sqshell");
-    printInitLinesAuxFiles (SQSH);
-
     if ($bVirtualNodes == 1) {
+        open (SQSH,">$sqshell")
+            or die("unable to open $sqshell");
+        printInitLinesAuxFiles (SQSH);
+
         print SQSH "export SQ_VIRTUAL_NODES=$gdNumNodes\n";
         print SQSH "export SQ_VIRTUAL_NID=0\n";
+
+        close(SQSH);
+
+        print "\nGenerated SQ Shell environment file: $sqshell\n";
+
+        chmod 0700, $sqshell;
     }
-    print SQSH "\nshell \$1 \$2 \$3 \$4 \$5 \$6 \$7 \$8 \$9\n";
+#    print SQSH "\nshell \$1 \$2 \$3 \$4 \$5 \$6 \$7 \$8 \$9\n";
 
 
     print "\n";
-    print "Generated SQ startup script file: $coldscriptFileName\n";
-    print "Generated SQ Shell          file: $sqshell\n";
-    print "Generated IDTM Startup      file: $startIDTM\n";
-    print "Generated TM Startup        file: $startTM\n";
-    print "Generated RMS Startup       file: $startRMS\n";
-    print "Generated RMS Stop          file: $stopRMS\n";
-    print "Generated SSMP Startup      file: $startSSMP\n";
-    print "Generated SSMP Stop         file: $stopSSMP\n";
-    print "Generated SSCP Startup      file: $startSSCP\n";
-    print "Generated SSCP Stop         file: $stopSSCP\n";
+#    print "Generated SQ startup script file: $coldscriptFileName\n";
+#    print "Generated IDTM Startup      file: $startIDTM\n";
+#    print "Generated TM Startup        file: $startTM\n";
+#    print "Generated RMS Startup       file: $startRMS\n";
+#    print "Generated RMS Stop          file: $stopRMS\n";
+#    print "Generated SSMP Startup      file: $startSSMP\n";
+#    print "Generated SSMP Stop         file: $stopSSMP\n";
+#    print "Generated SSCP Startup      file: $startSSCP\n";
+#    print "Generated SSCP Stop         file: $stopSSCP\n";
 
-    close(SQS);
-    close(SQSH);
+#    close(SQS);
+#    close(DBZ);
 
-    close(DBZ);
+#    close(RMS);
+#    close(RMSS);
 
-    close(RMS);
-    close(RMSS);
+#    close(SSMP);
+#    close(SSMPS);
 
-    close(SSMP);
-    close(SSMPS);
-
-    close(SSCP);
-    close(SSCPS);
+#    close(SSCP);
+#    close(SSCPS);
 
 
-    chmod 0700, $coldscriptFileName;
+#    chmod 0700, $coldscriptFileName;
 
-    chmod 0700, $sqshell;
 
-    chmod 0700, $startIDTM;
-    chmod 0700, $startTM;
+#    chmod 0700, $startIDTM;
+#    chmod 0700, $startTM;
 
-    chmod 0700, $startRMS;
-    chmod 0700, $stopRMS;
+#    chmod 0700, $startRMS;
+#    chmod 0700, $stopRMS;
 
-    chmod 0700, $startSSMP;
-    chmod 0700, $stopSSMP;
+#    chmod 0700, $startSSMP;
+#    chmod 0700, $stopSSMP;
 
-    chmod 0700, $startSSCP;
-    chmod 0700, $stopSSCP;
+#    chmod 0700, $startSSCP;
+#    chmod 0700, $stopSSCP;
 }
 
 sub doInit {
@@ -764,20 +596,20 @@ sub doInit {
     # remaining args are input files
 
 
-    $startIDTM="idtmstart";
-    $startTM="tmstart";
+#    $startIDTM="idtmstart";
+#    $startTM="tmstart";
 
-    $startRMS="rmsstart";
-    $startSSMP="ssmpstart";
-    $startSSCP="sscpstart";
-    $stopRMS="rmsstop";
-    $stopSSMP="ssmpstop";
-    $stopSSCP="sscpstop";
+#    $startRMS="rmsstart";
+#    $startSSMP="ssmpstart";
+#    $startSSCP="sscpstart";
+#    $stopRMS="rmsstop";
+#    $stopSSMP="ssmpstop";
+#    $stopSSCP="sscpstop";
 
 
-    $coldscriptFileName=sprintf("%s.cold", $scriptFileName);
+#    $coldscriptFileName=sprintf("%s.cold", $scriptFileName);
 
-    $sqshell = "sqshell";
+    $sqshell = "sqshell.env";
 
     $gdNumCpuCores = `cat /proc/cpuinfo | grep "processor" | wc -l`;
 #print "The number of cores is $gdNumCpuCores\n";
@@ -812,6 +644,9 @@ while (<>) {
     elsif (/^%/) {
         printSQShellCommand;
     }
+    elsif (/^!/) {
+        executeShellCommand;
+    }
     else {
         if (/^#/) {
         }
@@ -825,13 +660,6 @@ while (<>) {
 }
 
 #printZoneList;
-
-genIDTMSrv();
-
-genDTM();
-
-generateRMS();
-
 
 printScriptEndLines;
 

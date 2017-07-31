@@ -409,7 +409,7 @@ int CPNodeConfigContainer::GetPNid( char *nodename )
     CPNodeConfig *config = head_;
     while (config)
     {
-        if ( strcmp( config->GetName(), nodename ) == 0 )
+        if ( hostnamecmp( config->GetName(), nodename ) == 0 )
         { 
             pnid = config->GetPNid();
             break;
@@ -429,7 +429,7 @@ CPNodeConfig *CPNodeConfigContainer::GetPNodeConfig( char *nodename )
     CPNodeConfig *config = head_;
     while (config)
     {
-        if ( strcmp( config->GetName(), nodename ) == 0 )
+        if ( hostnamecmp( config->GetName(), nodename ) == 0 )
         { 
             break;
         }
