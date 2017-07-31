@@ -361,6 +361,9 @@ char *Descriptor::getVarItem(desc_struct &descItem, Lng32 idxrow)
       else if (DFS2REC::isSQLVarChar(descItem.datatype)) {
 	  ptr += idxrow * (descItem.rowsetVarLayoutSize + descItem.vc_ind_length);
       }
+      else if (descItem.datatype == REC_BLOB || descItem.datatype == REC_CLOB) {
+          ptr += idxrow * (descItem.rowsetVarLayoutSize + 4);
+      }
       else {
 	ptr += idxrow * descItem.rowsetVarLayoutSize;
       }

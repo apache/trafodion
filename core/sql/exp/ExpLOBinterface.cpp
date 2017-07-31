@@ -658,9 +658,9 @@ Lng32 ExpLOBInterfaceUpdateAppend(void * exLobGlob,
   Ex_Lob_Error status;
   Int64 cliError = -1;
   Int64 srcLen = 0;
-  if((so == Lob_Memory) || (so== Lob_External_File))
+  if(so== Lob_External_File)
     srcLen = strlen(srcLobData);
-  else if (so == Lob_Buffer)
+  else if ((so == Lob_Buffer) || (so == Lob_Memory))
     srcLen = tgtLobLen;
   err = ExLobsOper(tgtLobName, 
                    lobHandle, handleLen, 
@@ -728,9 +728,9 @@ Lng32 ExpLOBInterfaceUpdate(void * exLobGlob,
   Ex_Lob_Error status;
   Int64 cliError = -1;
   Int64 sourceLen = 0;
-  if((so == Lob_Memory) || (so == Lob_External_File))
+  if(so == Lob_External_File)
     sourceLen = strlen(srcLobData);
-  else if (so == Lob_Buffer)
+  else if ((so == Lob_Buffer) || (so == Lob_Memory))
     sourceLen = tgtLobLen;
 
   err = ExLobsOper(tgtLobName, 

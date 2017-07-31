@@ -101,6 +101,11 @@ class LogicalByteArray {
 		loc += len;
 	}
 
+    void insertByteArray(byte[] value, int pos, int len) {
+        System.arraycopy(value, pos, array, loc, len);
+
+        loc += len;
+    }
 	void insertChar(char value) {
 		array[loc++] = (byte) value;
 	}

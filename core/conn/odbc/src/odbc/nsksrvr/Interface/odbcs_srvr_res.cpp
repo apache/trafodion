@@ -648,7 +648,7 @@ odbc_SQLSrvr_ExtractLob_ts_res_(
   , /* In   */ const CEE_handle_def *call_id_
   , /* In   */ const struct odbc_SQLsrvr_ExtractLob_exc_ *exception_
   , /* In   */ IDL_long_long  lobDataLen
-  , /* In   */ IDL_char       *lobDataValue
+  , /* In   */ BYTE       *lobDataValue
   )
 {
     CInterface* pnode = (CInterface *)objtag_;
@@ -681,6 +681,33 @@ odbc_SQLSrvr_ExtractLob_ts_res_(
     return sts;
 }
 
+void
+odbc_SQLSrvr_UpdateLob_ts_res_(
+	/* In   */ CEE_tag_def objtag_
+  , /* In   */ const CEE_handle_def * call_id_
+  , /* In   */ const struct odbc_SQLSvc_UpdateLob_exc_ * exception_
+  )
+{
+	CInterface * pnode = (CInterface *) objtag_;
+
+	CEE_status sts = CEE_SUCCESS;
+
+	IDL_short error;
+	CEERCV_IOMessage_reply_seq_ reply;
+
+	char * buffer = NULL;
+	UInt32 message_length = 0;
+
+	sts = odbc_SQLsrvr_UpdateLob_param_res_(
+		      pnode
+		    , buffer
+		    , message_length
+		    , exception_
+		    );
+
+	if (sts == CEE_SUCCESS)
+		sts = pnode->send_response(buffer, message_length, call_id_);
+}
 //LCOV_EXCL_START
 //LCOV_EXCL_STOP
 

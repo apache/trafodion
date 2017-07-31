@@ -21,6 +21,8 @@
 
 package org.trafodion.jdbc.t4;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.DataTruncation;
 import java.sql.Date;
@@ -119,23 +121,28 @@ class InterfaceStatement {
 		int nullValue = pstmt.inputDesc_[paramNumber].nullValue_;
 		int dataLength = pstmt.inputDesc_[paramNumber].maxLen_;
 
-                boolean shortLength = precision < Math.pow(2, 15);
-                int dataOffset = ((shortLength) ? 2 : 4);
+        int dataOffset = 2;
+        boolean shortLength = false;
+        if (dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH) {
+            shortLength = precision < Math.pow(2, 15);
+            dataOffset = ((shortLength) ? 2 : 4);
+            dataLength += dataOffset;
 
-		if ((dataType == InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH)
-		 || (dataType == InterfaceResultSet.SQLTYPECODE_BLOB)
-		 || (dataType == InterfaceResultSet.SQLTYPECODE_CLOB)) {
-			dataLength += dataOffset;
+            if (dataLength % 2 != 0)
+                dataLength++;
+        } else if (dataType == InterfaceResultSet.SQLTYPECODE_BLOB || dataType == InterfaceResultSet.SQLTYPECODE_CLOB) {
+            shortLength = false;
+            dataOffset = 4;
+            dataLength += dataOffset;
 
-			if (dataLength % 2 != 0)
-				dataLength++;
-		}
-
-		noNullValue = (noNullValue * paramRowCount) + (rowNumber * dataLength);
+            if (dataLength % 2 != 0)
+                dataLength++;
+        }
 
 		if (nullValue != -1)
 			nullValue = (nullValue * paramRowCount) + (rowNumber * 2);
 
+        noNullValue = (noNullValue * paramRowCount) + (rowNumber * dataLength);
 		if (paramValue == null) {
 			if (nullValue == -1) {
 				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale,
@@ -426,8 +433,7 @@ class InterfaceStatement {
 			break;
 		case InterfaceResultSet.SQLTYPECODE_VARCHAR_WITH_LENGTH:
 		case InterfaceResultSet.SQLTYPECODE_VARCHAR_LONG:
-		case InterfaceResultSet.SQLTYPECODE_BLOB:
-		case InterfaceResultSet.SQLTYPECODE_CLOB:
+
 			if (paramValue instanceof byte[]) {
 				tmpBarray = (byte[]) paramValue;
 			} else if (paramValue instanceof String) {
@@ -469,6 +475,59 @@ class InterfaceStatement {
 				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "invalid_string_parameter",
 						"VARCHAR data longer than column length: " + paramNumber);
 			}
+			break;
+		case InterfaceResultSet.SQLTYPECODE_BLOB:
+			if (paramValue instanceof InputStream) {
+				InputStream is = (InputStream)paramValue;
+				dataLen = 0;
+				try {
+					int bytesRead = is.read(values, noNullValue + dataOffset, maxLength - dataOffset);
+					dataLen = bytesRead;
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				System.arraycopy(Bytes.createIntBytes(dataLen, this.ic_.getByteSwap()), 0, values, noNullValue, dataOffset);
+			}
+			else {
+				tmpBarray = (byte[])paramValue;
+				dataLen = tmpBarray.length;
+				dataOffset = 4;
+	            if (maxLength > dataLen) {
+	                System.arraycopy(Bytes.createIntBytes(dataLen, this.ic_.getByteSwap()), 0, values, noNullValue, dataOffset);
+	                System.arraycopy(tmpBarray, 0, values, (noNullValue + dataOffset), dataLen);
+	            } else {
+	                throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "23",
+	                        "BLOB input data is longer than the length for column: " + paramNumber);
+	            }
+			}
+			break;
+		case InterfaceResultSet.SQLTYPECODE_CLOB:
+			String charSet = "";
+
+			try {
+				if (this.ic_.getISOMapping() == InterfaceUtilities.SQLCHARSETCODE_ISO88591
+						&& !this.ic_.getEnforceISO() && dataCharSet == InterfaceUtilities.SQLCHARSETCODE_ISO88591)
+					charSet = ic_.t4props_.getISO88591();
+				else
+				{
+					if(dataCharSet == InterfaceUtilities.SQLCHARSETCODE_UNICODE && this.ic_.getByteSwap())
+						charSet = "UTF-16LE";
+					else
+						charSet = InterfaceUtilities.getCharsetName(dataCharSet);
+				}
+				tmpBarray = ((String) paramValue).getBytes("UTF-8");
+			} catch (Exception e) {
+				throw TrafT4Messages.createSQLException(pstmt.connection_.props_, locale, "unsupported_encoding",
+						charSet);
+			}
+			dataLen = tmpBarray.length;
+			dataOffset = 4;
+			if (maxLength > dataLen) {
+			    System.arraycopy(Bytes.createIntBytes(dataLen, this.ic_.getByteSwap()), 0, values, noNullValue, dataOffset);
+			    System.arraycopy(tmpBarray, 0, values, (noNullValue + dataOffset), dataLen);
+			}
+			
 			break;
 		case InterfaceResultSet.SQLTYPECODE_INTEGER:
 			tmpbd = Utility.getBigDecimalValue(locale, paramValue);
@@ -772,10 +831,11 @@ class InterfaceStatement {
 
 			dataValue.buffer = new byte[bufLen];
 
+
 			for (int row = 0; row < paramRowCount; row++) {
 				for (int col = 0; col < paramCount; col++) {
 					try {
-						convertObjectToSQL2(locale, stmt, paramValues[row * paramCount + col], paramRowCount, col,
+                       convertObjectToSQL2(locale, stmt, paramValues[row * paramCount + col], paramRowCount, col,
 								dataValue.buffer, row - clientErrors.size());
 					} catch (TrafT4Exception e) {
 						if (paramRowCount == 1) // for single rows we need to

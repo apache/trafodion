@@ -1048,6 +1048,7 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
 					    CollHeap*h,
 					    ComDiagsArea** diagsArea)
 {
+
   ex_expr::exp_return_type err;
 
   err = insertDesc(op_data, h, diagsArea);
@@ -1306,6 +1307,11 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
   Int64 fromDescTS = 0;
   short fromSchNameLen = 0;
   char  fromSchName[ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1];
+  // call function with the lobname and source value
+  // to update it in the LOB.
+  // Get back offset and len of the LOB.
+  //  Int64 offset = 0;
+  Int64 lobLen = getOperand(1)->getLength();
   if (0) // TBD. fromLob())
     {
       Lng32 fromLobType;
@@ -1326,8 +1332,11 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
   LobsSubOper so = Lob_None;
   if (fromFile())
     so = Lob_File;
-  else if (fromString())
+  else if (fromString()) {
+      if (getOperand(1)->getVCIndicatorLength() > 0)
+          lobLen = getOperand(1)->getLength(op_data[1]-getOperand(1)->getVCIndicatorLength());
     so = Lob_Memory;
+  }
   else if (fromLob())
     so = Lob_Lob;
   else if (fromBuffer())
@@ -1356,11 +1365,6 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
 
   Lng32 cliError = 0;
 
-  // call function with the lobname and source value
-  // to update it in the LOB.
-  // Get back offset and len of the LOB.
-  //  Int64 offset = 0;
-  Int64 lobLen = getOperand(1)->getLength();
   char * data = op_data[1];
   if (fromBuffer())
     {

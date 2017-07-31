@@ -1859,13 +1859,11 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 	}
 
 	public Clob createClob() throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+        return new TrafT4Clob(this, null, null);
 	}
 
 	public Blob createBlob() throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
+        return new TrafT4Blob(this, null, null);
 	}
 
 	public NClob createNClob() throws SQLException {
