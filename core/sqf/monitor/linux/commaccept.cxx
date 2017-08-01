@@ -33,6 +33,7 @@ using namespace std;
 #include <signal.h>
 #include <unistd.h>
 
+extern CCommAccept CommAccept;
 extern CMonitor *Monitor;
 extern CNode *MyNode;
 extern CNodeContainer *Nodes;
@@ -42,7 +43,10 @@ extern char *ErrorMsg (int error_code);
 extern const char *StateString( STATE state);
 extern CommType_t CommType;
 
-CCommAccept::CCommAccept(): shutdown_(false), thread_id_(0)
+CCommAccept::CCommAccept()
+           : accepting_(true)
+           , shutdown_(false)
+           , thread_id_(0)
 {
     const char method_name[] = "CCommAccept::CCommAccept";
     TRACE_ENTRY;
@@ -366,7 +370,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
 
         Monitor->SetJoinComm( interComm );
 
-        Monitor->SetIntegratingNid( pnid );
+        Monitor->SetIntegratingPNid( pnid );
 
         Monitor->addNewComm( pnid, 1, intraComm );
 
@@ -454,8 +458,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
             node->SetState( State_Down );
 
             MPI_Comm_free ( &interComm );
-            Monitor->SetJoinComm( MPI_COMM_NULL );
-            Monitor->SetIntegratingNid( -1 );
+            Monitor->ResetIntegratingPNid();
         }
         else
         {
@@ -480,8 +483,7 @@ void CCommAccept::processNewComm(MPI_Comm interComm)
                 node->SetState( State_Down ); 
 
                 MPI_Comm_free ( &interComm );
-                Monitor->SetJoinComm( MPI_COMM_NULL );
-                Monitor->SetIntegratingNid( -1 );
+                Monitor->ResetIntegratingPNid();
             }
         }
     }
@@ -708,7 +710,7 @@ void CCommAccept::processNewSock( int joinFd )
 
         Monitor->SetJoinSock( joinFd );
 
-        Monitor->SetIntegratingNid( pnid );
+        Monitor->SetIntegratingPNid( pnid );
 
         // Connect to new monitor
         integratingFd = Monitor->MkCltSock( node->GetSyncPort() );
@@ -747,8 +749,7 @@ void CCommAccept::processNewSock( int joinFd )
 
             node->SetState( State_Down );
             close( joinFd );
-            Monitor->SetJoinSock( -1 );
-            Monitor->SetIntegratingNid( -1 );
+            Monitor->ResetIntegratingPNid();
             return;
         }
 
@@ -772,8 +773,7 @@ void CCommAccept::processNewSock( int joinFd )
                                                    , NULL );
             node->SetState( State_Down );
             close( joinFd );
-            Monitor->SetJoinSock( -1 );
-            Monitor->SetIntegratingNid( -1 );
+            Monitor->ResetIntegratingPNid();
         }
     }
 
@@ -821,16 +821,34 @@ void CCommAccept::commAcceptorIB()
 
     while (true)
     {
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if (isAccepting())
         {
-            trace_printf("%s@%d - Posting socket accept\n", method_name, __LINE__);
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf("%s@%d - Posting socket accept\n", method_name, __LINE__);
+            }
+    
+            mem_log_write(CMonLog::MON_CONNTONEWMON_1);
+            interComm = MPI_COMM_NULL;
+            rc = MPI_Comm_accept( MyCommPort, MPI_INFO_NULL, 0, MPI_COMM_SELF,
+                                  &interComm );
+        }
+        else
+        {
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf("%s@%d - Waiting to post accept\n", method_name, __LINE__);
+            }
+    
+            CLock::lock();
+            CLock::wait();
+            CLock::unlock();
+            if (!shutdown_)
+            {
+                continue; // Ok to accept another connection
+            }
         }
 
-        mem_log_write(CMonLog::MON_CONNTONEWMON_1);
-
-        interComm = MPI_COMM_NULL;
-        rc = MPI_Comm_accept( MyCommPort, MPI_INFO_NULL, 0, MPI_COMM_SELF,
-                              &interComm );
         if (shutdown_)
         {   // We are being notified to exit.
             break;
@@ -877,14 +895,31 @@ void CCommAccept::commAcceptorSock()
 
     while (true)
     {
-        if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+        if (isAccepting())
         {
-            trace_printf("%s@%d - Posting accept\n", method_name, __LINE__);
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf("%s@%d - Posting accept\n", method_name, __LINE__);
+            }
+    
+            mem_log_write(CMonLog::MON_CONNTONEWMON_1);
+            joinFd = Monitor->AcceptCommSock();
         }
-
-        mem_log_write(CMonLog::MON_CONNTONEWMON_1);
-
-        joinFd = Monitor->AcceptCommSock();
+        else
+        {
+            if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
+            {
+                trace_printf("%s@%d - Waiting to post accept\n", method_name, __LINE__);
+            }
+    
+            CLock::lock();
+            CLock::wait();
+            CLock::unlock();
+            if (!shutdown_)
+            {
+                continue; // Ok to accept another connection
+            }
+        }
         
         if (shutdown_)
         {   // We are being notified to exit.
@@ -922,6 +957,7 @@ void CCommAccept::shutdownWork(void)
     // Set flag that tells the commAcceptor thread to exit
     shutdown_ = true;   
     Monitor->ConnectToSelf();
+    CLock::wakeOne();
 
     if (trace_settings & TRACE_INIT)
         trace_printf("%s@%d waiting for commAccept thread %lx to exit.\n",
@@ -979,4 +1015,15 @@ void CCommAccept::start()
     }
 
     TRACE_EXIT;
+}
+
+void CCommAccept::setAccepting( bool accepting ) 
+{
+    CAutoLock lock( getLocker( ) );
+    accepting_ = accepting;
+    
+    if ( accepting_ )
+    {
+        CLock::wakeOne();
+    }
 }

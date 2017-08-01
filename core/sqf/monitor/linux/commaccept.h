@@ -28,8 +28,9 @@
 
 #include <pthread.h>
 #include <mpi.h>
+#include "lock.h"
 
-class CCommAccept
+class CCommAccept : public CLock
 {
 public:
 
@@ -37,8 +38,10 @@ public:
     virtual ~CCommAccept();
 
     void commAcceptor( void );
+    bool isAccepting( void ) { CAutoLock lock(getLocker()); return( accepting_ ); }
     void processNewComm( MPI_Comm interComm );
     void processNewSock( int sockFd );
+    void setAccepting( bool accepting );
     void start( void );
     void shutdownWork( void );
 
@@ -50,6 +53,7 @@ private:
     bool sendNodeInfoMPI( MPI_Comm interComm );
     bool sendNodeInfoSock( int sockFd );
 
+    bool accepting_;
     bool shutdown_;
 
     // commAccept thread's id

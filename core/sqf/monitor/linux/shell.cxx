@@ -808,7 +808,6 @@ bool attach( int nid, char *name, char *program )
     bool attached = false;
     int count;
     MPI_Status status;
-    char filename[MAX_PROCESS_PATH];
     struct message_def *saved_msg = msg;
     const char method_name[] = "attach";
     
@@ -851,15 +850,7 @@ bool attach( int nid, char *name, char *program )
             return true;
         }
     }
-    // Get monitor's port
-    if( getenv("SQ_VIRTUAL_NODES") )
-    {
-        sprintf(filename,"%s/monitor.port.%d.%s",getenv("MPI_TMPDIR"),nid,Node[nid]);
-    }
-    else
-    {
-        sprintf(filename,"%s/monitor.port.%s",getenv("MPI_TMPDIR"),Node[nid]);
-    }
+
     if ( trace_settings & TRACE_SHELL_CMD )
         trace_printf("%s@%d [%s] Attaching to monitor on nid=%d\n",
                      method_name, __LINE__, MyName, nid);
@@ -2758,7 +2749,6 @@ char *get_token (char *cmd, char *token, char *delimiter,
         if (*ptr == '{' 
          || *ptr == '}' 
          || *ptr == ':' 
-         || *ptr == ';' 
          || (*ptr == '-' && isDashDelim)
          || (*ptr == '=' && isEqDelim))
         {
@@ -4146,6 +4136,7 @@ bool persist_process_kill( CPersistConfig *persistConfig )
         {
             // Check monitors state of the target node
             rs = get_node_state( i, NULL, pnid, nodeState, integrating );
+            lnodesCount++;
             if ( rs == false || nodeState != State_Up || integrating )
             {
                 continue;
@@ -4164,7 +4155,6 @@ bool persist_process_kill( CPersistConfig *persistConfig )
                 printf( "Persistent process %s does not exist\n", processName);
                 continue;
             }
-            lnodesCount++;
             kill_process( -1, -1, processName, true );
         }
         break;
@@ -4255,11 +4245,11 @@ bool persist_process_start( CPersistConfig *persistConfig )
         {
             // Check monitors state of the target node
             rs = get_node_state( i, NULL, pnid, nodeState, integrating );
+            lnodesCount++;
             if ( rs == false || nodeState != State_Up || integrating )
             {
                 continue;
             }
-            lnodesCount++;
             get_persist_process_attributes( persistConfig
                                           , i
                                           , process_type

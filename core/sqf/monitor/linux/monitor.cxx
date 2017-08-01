@@ -947,10 +947,10 @@ int main (int argc, char *argv[])
     int i;
     int rc;
     bool done = false;
-    bool warmstart = false;
     char *env;
     char *nodename = NULL;
     char fname[MAX_PROCESS_PATH];
+    char short_node_name[MPI_MAX_PROCESSOR_NAME];
     char port_fname[MAX_PROCESS_PATH];
     char temp_fname[MAX_PROCESS_PATH];
     char buf[MON_STRING_BUF_SIZE];
@@ -1079,6 +1079,7 @@ int main (int argc, char *argv[])
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
     MPI_Comm_set_errhandler(MPI_COMM_SELF, MPI_ERRORS_RETURN);
     MPI_Comm_rank (MPI_COMM_WORLD, &MyPNID);
+
     MonLog->setPNid( MyPNID );
 
     gethostname(Node_name, MPI_MAX_PROCESSOR_NAME);
@@ -1087,6 +1088,22 @@ int main (int argc, char *argv[])
     {
         *tmpptr = (char)tolower( *tmpptr );
         tmpptr++;
+    }
+
+    // Remove the domain portion of the name if any
+    char str1[MPI_MAX_PROCESSOR_NAME];
+    memset( str1, 0, MPI_MAX_PROCESSOR_NAME );
+    memset( short_node_name, 0, MPI_MAX_PROCESSOR_NAME );
+    strcpy (str1, Node_name );
+
+    char *str1_dot = strchr( (char *) str1, '.' );
+    if ( str1_dot )
+    {
+        memcpy( short_node_name, str1, str1_dot - str1 );
+    }
+    else
+    {
+        strcpy (short_node_name, str1 );
     }
 
 #ifdef MULTI_TRACE_FILES
@@ -1154,6 +1171,16 @@ int main (int argc, char *argv[])
             case CommType_Sockets:
                 if ( isdigit (*argv[3]) )
                 {
+                    // In agent mode and when re-integrating (node up), all
+                    // monitors processes start as a cluster of 1 and join to the 
+                    // creator monitor to establish the real cluster.
+                    // Therefore, MyPNID will always be zero when in and
+                    // it is necessary to use the node name to obtain the correct
+                    // <pnid> from the configuration which occurs when creating the
+                    // CMonitor object down below. By setting MyPNID to -1, when the 
+                    // CCluster::InitializeConfigCluster() invoked during the creation
+                    // of the CMonitor object it will set MyPNID using Node_name.
+                    MyPNID = -1;
                     SMSIntegrating = IAmIntegrating = true;
                     strcpy( IntegratingMonitorPort, argv[3] );
                 }
@@ -1287,8 +1314,6 @@ int main (int argc, char *argv[])
                 , CALL_COMP_GETVERS2(monitor), CommTypeString( CommType ));
     mon_log_write(MON_MONITOR_MAIN_3, SQ_LOG_INFO, buf);
        
-    warmstart = (strcmp(argv[1],"WARM") == 0);
-
 #ifdef DMALLOC
     if (trace_settings & TRACE_INIT)
        trace_printf("%s@%d" "DMALLOC Option set" "\n", method_name, __LINE__);
@@ -1308,6 +1333,7 @@ int main (int argc, char *argv[])
         // This is also used for monitor logs, so start it early. 
         Redirector.start();
 
+        // CNodeContainer loads static configuration from database
         Nodes = new CNodeContainer ();
         Config = new CConfigContainer ();
         Monitor = new CMonitor (procTermSig);
@@ -1336,7 +1362,7 @@ int main (int argc, char *argv[])
         CommAccept.start();
         // Open file used to record process start/end times
         Monitor->openProcessMap ();
- 
+
         // Always using localio now, no other option
         SQ_theLocalIOToClient = new SQ_LocalIOToClient( MyPNID );
         assert (SQ_theLocalIOToClient);
@@ -1364,7 +1390,7 @@ int main (int argc, char *argv[])
         if (IsRealCluster)
         {
             snprintf(port_fname, sizeof(port_fname), "%s/monitor.port.%s",
-                     getenv("MPI_TMPDIR"), Node_name );
+                     getenv("MPI_TMPDIR"), short_node_name );
         }
         else
         {
@@ -1373,6 +1399,13 @@ int main (int argc, char *argv[])
                      getenv("MPI_TMPDIR"),MyPNID,Node_name);
         }
 
+        // Change Node_name what we have in our configuration
+        CNode *myNode = Nodes->GetNode(MyPNID);
+        if (myNode)
+        {
+            strcpy (Node_name, myNode->GetName()); 
+        }
+        
         // create with no caching, user read/write, group read/write, other read
         fd = open( port_fname
                    , O_RDWR | O_TRUNC | O_CREAT | O_DIRECT 
