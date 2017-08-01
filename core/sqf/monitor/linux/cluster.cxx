@@ -733,21 +733,22 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         else
         {
             // Remove the domain portion of the name if any
-            char my_node_name[MPI_MAX_PROCESSOR_NAME];
+            char short_node_name[MPI_MAX_PROCESSOR_NAME];
             char str1[MPI_MAX_PROCESSOR_NAME];
+            memset( short_node_name, 0, MPI_MAX_PROCESSOR_NAME );
             memset( str1, 0, MPI_MAX_PROCESSOR_NAME );
             strcpy (str1, node->GetName() );
         
             char *str1_dot = strchr( (char *) str1, '.' );
             if ( str1_dot )
             {
-                memcpy( my_node_name, str1, str1_dot - str1 );
+                memcpy( short_node_name, str1, str1_dot - str1 );
             }
             else
             {
-                strcpy (my_node_name, str1 );
+                strcpy (short_node_name, str1 );
             }
-            snprintf(port_fname, sizeof(port_fname), "%s/monitor.port.%s",getenv("MPI_TMPDIR"),my_node_name);
+            snprintf(port_fname, sizeof(port_fname), "%s/monitor.port.%s",getenv("MPI_TMPDIR"),short_node_name);
         }
         sprintf(temp_fname, "%s.bak", port_fname);
         remove(temp_fname);
