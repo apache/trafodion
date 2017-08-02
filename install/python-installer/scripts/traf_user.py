@@ -69,6 +69,13 @@ def run():
             run_cmd('groupadd %s > /dev/null 2>&1' % traf_group)
         traf_pwd = dbcfgs['traf_pwd']
         run_cmd('useradd --shell /bin/bash -m %s -g %s --home %s --password "$(openssl passwd %s)"' % (traf_user, traf_group, traf_user_dir, traf_pwd))
+    # hbase group is generally either hbase or hadoop, depending on distro
+    if cmd_output('getent group hbase'):
+        cmd_output('/usr/sbin/usermod -a -G hbase %s' % traf_user)
+    if cmd_output('getent group hadoop'):
+        cmd_output('/usr/sbin/usermod -a -G hadoop %s' % traf_user)
+    if cmd_output('getent group hive'):
+        cmd_output('/usr/sbin/usermod -a -G hive %s' % traf_user)
 
     if not os.path.exists(traf_user_dir):
         run_cmd('mkdir -p %s' % traf_user_dir)

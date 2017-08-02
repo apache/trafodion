@@ -530,7 +530,7 @@ cat /tmp/merged_customer_address | wc -l
 >>--------------------------
 >>--exp2
 >>explain options 'f' 
-+>UNLOAD EXTRACT TO '/bulkload/customer_demographics'
++>UNLOAD EXTRACT TO '/user/trafodion/bulkload/customer_demographics'
 +>select * from trafodion.hbase.customer_demographics 
 +><<+ cardinality 10e10 >>;
 
@@ -614,7 +614,7 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 +>WITH PURGEDATA FROM TARGET
 +>MERGE FILE  'merged_customer_demogs_3' OVERWRITE
 +>--COMPRESSION GZIP
-+>INTO '/bulkload/customer_demographics_salt'
++>INTO '/user/trafodion/bulkload/customer_demographics_salt'
 +>select * from trafodion.hbase.customer_demographics_salt 
 +><<+ cardinality 10e10 >>;
 Task: UNLOAD           Status: Started
