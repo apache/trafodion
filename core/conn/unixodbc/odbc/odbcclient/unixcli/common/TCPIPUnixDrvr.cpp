@@ -59,6 +59,7 @@ CTCPIPUnixDrvr::CTCPIPUnixDrvr()
 	m_hSocket = INVALID_SOCKET;
 
 	m_IOCompression = 0;
+	m_IOCompressionlimits = 1000;
 	m_hEvents[0] = NULL;
 	m_hEvents[1] = NULL;
 
@@ -440,7 +441,7 @@ bool DoIO (CTCPIPUnixDrvr* pTCPIPSystem, IDL_char* wbuffer, IDL_long write_count
 
 	RESET_ERRORS((long)pTCPIPSystem);
 
-	if (pTCPIPSystem->m_IOCompression != 0)
+	if ((pTCPIPSystem->m_IOCompression != 0)&&(pTCPIPSystem->odbcAPI != AS_API_GETOBJREF))
 	{
 		wheader.compress_ind = COMP_YES;
 		wheader.compress_type = pTCPIPSystem->m_IOCompression;
@@ -459,7 +460,7 @@ bool DoIO (CTCPIPUnixDrvr* pTCPIPSystem, IDL_char* wbuffer, IDL_long write_count
 
 	wheader.total_length = write_count;
 	wheader.hdr_type = WRITE_REQUEST_FIRST;
-	if (wheader.compress_ind == COMP_YES  && write_count > MIN_LENGTH_FOR_COMPRESSION)
+	if (wheader.compress_ind == COMP_YES  && write_count > pTCPIPSystem->m_IOCompressionlimits)
 		DoCompression(pTCPIPSystem, wheader, (unsigned char*)wbuffer, (unsigned int&)write_count);
 	else
 		wheader.compress_type = COMP_NO_COMPRESSION;

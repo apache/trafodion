@@ -192,6 +192,7 @@ char *ConnectKeywords[] =
 	"CERTIFICATEFILE",
 	"CERTIFICATEFILE_ACTIVE",
 	"COMPRESSION",
+	"COMPRESSIONLIMITS",
 	NULL
 };
 
@@ -228,6 +229,7 @@ char *ConnectLocalizedIdentifier[] =
 	"Certificate File",
 	"Certificate File Active",
 	"Compression",
+	"Compressionlimits",
 	NULL,
 };
 

@@ -88,7 +88,7 @@ private:
 	char		m_DSCertificateFile[MAX_SQL_IDENTIFIER_LEN + 1];
 	char		m_DSCertificateFileActive[MAX_SQL_IDENTIFIER_LEN + 1];
 	SQLUINTEGER	m_DSIOCompression;
-
+       int         m_DSIOCompressionlimits;
 	friend class CConnect;
 };
 
