@@ -25,9 +25,6 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -158,12 +155,6 @@ public abstract class TrafT4Lob {
 		}
 
 		for (long i = 0; i < valueBuffer.length;) {
-		    {
-		        System.out.println("before net transform");
-                DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                Date date = new Date();
-                System.out.println(dateFormat.format(date));
-            }
 			if (valueBuffer.length - i > chunkSize) {
 				wbuffer = UpdateLobMessage.marshal((short) 1, lobHandle_, valueBuffer.length, i, valueBuffer, i,
 						chunkSize,
@@ -175,12 +166,6 @@ public abstract class TrafT4Lob {
 						valueBuffer.length - i, this.connection_.ic_);
 				i = valueBuffer.length;
 			}
-			{
-			    System.out.println("after net transform");
-                DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                Date date = new Date();
-                System.out.println(dateFormat.format(date));
-            }
 			LogicalByteArray rbuffer = t4connection.getReadBuffer(TRANSPORT.SRVR_API_UPDATELOB, wbuffer);
 			UpdateLobReply ur = new UpdateLobReply(rbuffer, connection_.ic_);
 
