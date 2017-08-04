@@ -772,6 +772,10 @@ SQLRETURN CConnect::Connect(SQLCHAR *ServerName,
 	if (m_srvrTCPIPSystem != NULL)
 		m_srvrTCPIPSystem->m_IOCompression = m_IOCompression;
 
+	if (m_asTCPIPSystem != NULL)
+		m_asTCPIPSystem->m_IOCompressionThreshold = m_DSValue.m_DSIOCompressionThreshold;
+	if (m_srvrTCPIPSystem != NULL)
+		m_srvrTCPIPSystem->m_IOCompressionThreshold= m_DSValue.m_DSIOCompressionThreshold;
 	// Set the Assocation Service Object Reference
 	strcpy(m_ASSvc_ObjRef, m_DSValue.m_DSServer);
 	strcpy(buffer,m_DSValue.m_DSServer);

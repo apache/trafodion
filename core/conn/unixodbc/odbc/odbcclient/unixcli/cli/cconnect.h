@@ -469,7 +469,7 @@ private:
 	SQLUINTEGER		m_SecurityMode;
 	bool			m_RetryEncryption;
 	SQLUINTEGER	    m_IOCompression;
-
+       int             m_IOCompressionThreshold;
 	void reset(bool clearE=true);
 	friend class	CStmt;
 	friend class	CDesc;
