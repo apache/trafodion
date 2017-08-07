@@ -3241,7 +3241,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 
 		}
 
-		if ((retCode = ConvertCharToBigEndianCNumeric( numericTmp, cTmpBuf)) != SQL_SUCCESS)
+		if ((retCode = ConvertCharToCNumeric( numericTmp, cTmpBuf)) != SQL_SUCCESS)
 			return retCode;
 
 		DataPtr = &numericTmp;
