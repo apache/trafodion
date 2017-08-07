@@ -807,6 +807,9 @@ enum OperatorTypeEnum {
                         ITM_AES_ENCRYPT = 2641,
                         ITM_AES_DECRYPT = 2642,
 
+                        // More miscellaneous functions
+                        ITM_CSV_FORMAT = 2900,
+
                         // Items for needed for Translating to UCS2 output strings
                         ITM_DATEFMT     = 2990,
                         ITM_CURRNT_USER = 2991,

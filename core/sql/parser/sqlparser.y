@@ -561,6 +561,7 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_CRC32
 %token <tokval> TOK_CQD
 %token <tokval> TOK_CROSS
+%token <tokval> TOK_CSV_FORMAT          /* Trafodion extension */
 %token <tokval> TOK_CURDATE             /* ODBC extension  */ 
 %token <tokval> TOK_CURRENT
 %token <tokval> TOK_CURRENT_DATE
@@ -8961,6 +8962,11 @@ string_function :
         {
 
 	  $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_DECODE,$3);
+        }
+
+     | TOK_CSV_FORMAT '(' value_expression_list ')'
+        {
+          $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_CSV_FORMAT,$3);
         }
 
      | TOK_INSERT '(' value_expression ',' value_expression ',' 
@@ -34123,6 +34129,7 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_CONVERTTOHX_INTN
                       | TOK_COS
                       | TOK_COSH
+                      | TOK_CSV_FORMAT
                       | TOK_CURDATE
                       | TOK_CURTIME
                       | TOK_D_RANK 

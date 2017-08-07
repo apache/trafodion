@@ -10863,6 +10863,96 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
       }
     break;
 
+    case ITM_CSV_FORMAT:
+      {
+	bindChildren(bindWA);
+	if (bindWA->errStatus()) 
+	  return this;
+
+        // The way the arguments of CSV_FORMAT are represented in
+        // the parse tree is as a tree of ItemList nodes; so
+        // CSV_FORMAT(a,b,c,d) is represented as
+        //
+        //    this
+        //    /  \
+        //   a   ItemList
+        //         /  \
+        //        b   ItemList
+        //              /  \
+        //             c    d
+        //
+        // The code below traverses accordingly.
+       
+        ItemExpr * next = child(0)->castToItemExpr();     
+        ItemExpr * resultBoundTree = NULL;
+        while (next)  // while arguments remain to process
+          {
+            ItemExpr * childk = NULL;
+            if (next->getOperatorType() == ITM_ITEM_LIST)
+              {
+                childk = next->child(0);
+                next = next->child(1);
+              }
+            else
+              {
+                childk = next;
+                next = NULL;
+              }
+           
+            const NAType &type = childk->getValueId().getType();
+            switch (type.getTypeQualifier())
+              {
+                case NA_BOOLEAN_TYPE:
+                case NA_DATETIME_TYPE:
+                case NA_INTERVAL_TYPE:
+                case NA_NUMERIC_TYPE:
+                  {
+                    // TODO: Is VARCHAR(100) big enough? Consider bignums, for example. We could
+                    // probably be smarter about the length. E.g. VARCHAR(6) is big enough for SMALLINT.
+                    strcpy(buf,"CAST(@A1 AS VARCHAR(100))");
+                    parseTree = parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 1, childk);
+                    boundTree = parseTree->bindNode(bindWA);
+                    if (bindWA->errStatus()) 
+                      return this;
+                    break;
+                  }
+                case NA_CHARACTER_TYPE:
+                  {
+                    boundTree = childk;
+                    break;
+                  }
+                default:
+                  {
+                    // operand has an unsupported data type
+                    *CmpCommon::diags() << DgSqlCode(-4018)
+                                        << DgString0("CSV_FORMAT")
+                                        << DgString1(type.getTypeName().data());
+                    bindWA->setErrStatus();
+                    return this;
+                  }
+              }
+
+            strcpy(buf,"CASE WHEN POSITION(',' IN @A1) > 0 THEN '\"' || @A1 || '\"' ELSE @A1 END");
+            parseTree = parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 1, boundTree);
+            boundTree = parseTree->bindNode(bindWA);
+            if (bindWA->errStatus()) 
+              return this;
+
+            if (resultBoundTree)
+              {
+                strcpy(buf,"@A1 || ',' || @A2");
+                parseTree = parser.getItemExprTree(buf, strlen(buf), BINDITEMEXPR_STMTCHARSET, 2, resultBoundTree, boundTree);
+                boundTree = parseTree->bindNode(bindWA);
+                if (bindWA->errStatus()) 
+                  return this;
+              }
+            resultBoundTree = boundTree;
+          }
+
+        return resultBoundTree;    
+      }
+    break;
+
     case ITM_DAYNAME:
       {
 	// find the nullability of child
