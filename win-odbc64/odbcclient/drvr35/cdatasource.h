@@ -63,6 +63,7 @@ private:
 	char		m_DSReplacementChar[5];
 	BOOL		m_DSSelectRowsets;
 	SQLUINTEGER	m_DSIOCompression;
+	int             m_DSIOCompressionThreshold;
 	BOOL		m_DSRowsetErrorRecovery;
 	char		m_DSServerDSName[MAX_SQL_IDENTIFIER_LEN + 1];
 	char		m_DSServiceName[SQL_MAX_SERVICENAME_LEN + 1];

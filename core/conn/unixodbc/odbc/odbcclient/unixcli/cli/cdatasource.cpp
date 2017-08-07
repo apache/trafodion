@@ -34,9 +34,9 @@
 #define CONNECTION_TIMEOUT_DEFAULT	60
 #define LOGIN_TIMEOUT_DEFAULT		60
 #define	QUERY_TIMEOUT_DEFAULT		0
+#define IOCOMPRESSION_DEFAULT       1000
 #define FETCH_BUFFER_SIZE_DEFAULT	512 * 1024
 #define TCP_DEFAULT_PROCESS			"$ZTC0"
-
 // we are using the hpodbc driver manager
 extern int hpodbc_dmanager = 1;
 
@@ -93,7 +93,7 @@ CDataSource::CDataSource()
     m_DSCertificateFileActive[0] = '\0';
     strcpy(m_DSCertificateDir,"SYSTEM_DEFAULT");
     m_DSIOCompression = 0;
-
+    m_DSIOCompressionThreshold = 0;
     //
     // Read the ODBC section to get Certificate Directory Location
     //
@@ -613,7 +613,7 @@ short CDataSource::readDSValues(char *DSName,CConnect* pConnection)
 						keyValueLength,
 						path);
 	if (len > 0)
-	{	
+	{
 		if (strcmp((const char *)keyValueBuf, SYSTEM_DEFAULT) == 0)
 			m_DSQueryTimeout = QUERY_TIMEOUT_DEFAULT;
 		else
@@ -787,6 +787,29 @@ short CDataSource::readDSValues(char *DSName,CConnect* pConnection)
 			m_DSIOCompression = atol((const char *)keyValueBuf);
 		}
 	}
+
+//get threshold of compression ,default is 1000
+	keyValueLength = sizeof(keyValueBuf);
+	len = GetMyPrivateProfileString(
+						searchKey,
+						"CompressionThreshold",
+						NULL,
+						keyValueBuf,
+						keyValueLength,
+						path);
+
+	if (len > 0)
+	{
+		if (strcmp((const char *)keyValueBuf, SYSTEM_DEFAULT) == 0)
+			m_DSIOCompressionThreshold = IOCOMPRESSION_DEFAULT;
+		else
+		{
+			m_DSIOCompressionThreshold = atol((const char *)keyValueBuf);
+		}
+
+       }
+    else
+			m_DSIOCompressionThreshold = IOCOMPRESSION_DEFAULT;
 
 	keyValueLength = sizeof(m_DSServiceName);
 	len = GetMyPrivateProfileString(
@@ -993,6 +1016,15 @@ void CDataSource::updateDSValues(short DSNType, CONNECT_FIELD_ITEMS *connectFiel
 			        m_DSIOCompression = atol((const char *)AttrValue);
 				}
 				break;
+			case KEY_COMPRESSIONTHRESHOLD:
+			    if (stricmp(AttrValue, SYSTEM_DEFAULT) == 0){
+			        m_DSIOCompressionThreshold = IOCOMPRESSION_DEFAULT;
+	                    }
+				else
+				{
+					m_DSIOCompressionThreshold = atol((const char *)AttrValue);
+				}
+			    break;
 			default:
 				break;
 			}
