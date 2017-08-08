@@ -74,12 +74,15 @@ public class TestForeignKey {
 	public static void doTestSuiteSetup() throws Exception {
 		try{
 			_conn = DriverManager.getConnection(Utils.url, Utils.usr, Utils.pwd);
-			Statement stmt = _conn.createStatement();
-			
-			stmt.execute(strCreatePKTABLE1Query);
-			stmt.execute(strCreatePKTABLE2Query);
-			stmt.execute(strCreateFKTABLE1Query);
-			stmt.execute(strCreateFKTABLE2Query);
+            try (
+			    Statement stmt = _conn.createStatement();
+            )
+		    {	
+                stmt.execute(strCreatePKTABLE1Query);
+                stmt.execute(strCreatePKTABLE2Query);
+                stmt.execute(strCreateFKTABLE1Query);
+                stmt.execute(strCreateFKTABLE2Query);
+            }
 		}
 		catch (Exception e) {
 			System.out.println(e.getMessage());
@@ -96,12 +99,19 @@ public class TestForeignKey {
 		
 		try {
 			DatabaseMetaData metaData = _conn.getMetaData();
-			ResultSet rs = metaData.getImportedKeys("TRAFODION", Utils.schema, FKTABLE1);
 			int rowNum = 0;
-			while(rs.next()) {
-				compareForeignkeyWithExp("testGetImportedKeys", rowNum + 1, rs, expFkInfo[rowNum]);
-				rowNum += 1;
-			}
+            try (
+                 ResultSet rs = metaData.getImportedKeys("TRAFODION", Utils.schema, FKTABLE1);
+            )
+            {
+                while(rs.next()) {
+                    compareForeignkeyWithExp("testGetImportedKeys", rowNum + 1, rs, expFkInfo[rowNum]);
+                    rowNum += 1;
+                }
+            }
+            catch (Exception e) {
+                fail(e.getMessage());
+            }
 			assertEquals(rowNum, 2);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -117,12 +127,16 @@ public class TestForeignKey {
 		
 		try {
 			DatabaseMetaData metaData = _conn.getMetaData();
-			ResultSet rs = metaData.getExportedKeys("TRAFODION", Utils.schema, PKTABLE1);
-			int rowNum = 0;
-			while(rs.next()) {
-				compareForeignkeyWithExp("testGetExportedKeys", rowNum + 1, rs, expFkInfo[rowNum]);
-				rowNum += 1;
-			}
+            int rowNum = 0;
+            try (
+			    ResultSet rs = metaData.getExportedKeys("TRAFODION", Utils.schema, PKTABLE1);
+            )
+            {
+			    while(rs.next()) {
+			    	compareForeignkeyWithExp("testGetExportedKeys", rowNum + 1, rs, expFkInfo[rowNum]);
+			    	rowNum += 1;
+			    }
+            }
 			assertEquals(rowNum, 2);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -137,12 +151,16 @@ public class TestForeignKey {
 		
 		try {
 			DatabaseMetaData metaData = _conn.getMetaData();
-			ResultSet rs = metaData.getCrossReference("TRAFODION", Utils.schema, PKTABLE1, "TRAFODION", Utils.schema, FKTABLE1);
 			int rowNum = 0;
-			while(rs.next()) {
-				compareForeignkeyWithExp("testGetCrossReference", rowNum + 1, rs, expFkInfo[rowNum]);
-				rowNum += 1;
-			}
+            try (
+			    ResultSet rs = metaData.getCrossReference("TRAFODION", Utils.schema, PKTABLE1, "TRAFODION", Utils.schema, FKTABLE1);
+            )
+            {
+			    while(rs.next()) {
+			    	compareForeignkeyWithExp("testGetCrossReference", rowNum + 1, rs, expFkInfo[rowNum]);
+			    	rowNum += 1;
+			    }
+            }
 			assertEquals(rowNum, 1);
 		} catch (Exception e) {
 			e.printStackTrace();
