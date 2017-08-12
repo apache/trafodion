@@ -257,8 +257,8 @@ ExWorkProcRetcode ExCancelTcb::work()
                 castToExMasterStmtGlobals()->getStatement()->getContext();
           ExSsmpManager *ssmpManager = context->getSsmpManager(); 
           cbServer_ = ssmpManager->getSsmpServer(
-                                 cliGlobals->myNodeName(), 
-                                 cliGlobals->myCpu(), tempDiagsArea);
+                                 nodeName_,
+                                 cpu_, tempDiagsArea);
           if (cbServer_ == NULL) {
              reportError(tempDiagsArea, true, EXE_CANCEL_PROCESS_NOT_FOUND, 
                           nodeName_, cpu_);
