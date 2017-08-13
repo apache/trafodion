@@ -455,7 +455,7 @@ JOB:FIXED:23:10               <- insert into JOB characters starting at position
 Load as follows:
 
 ```
-$ odb64luo –u user –p xx –d dsn \ 
+$ odb64luo –u user –p xx –d dsn \
 -l src=frends1.dat:tgt=TRAFODION.MFTEST.FRIENDS1:map=ff.map:ns=\?:pc=32
 ```
 
@@ -494,16 +494,16 @@ You can use a mapfile like this:
 ```
 ~/Devel/odb $ cat person.map
 PID:SEQ:100
-FNAME:DSRAND:datasets/first_names.txt 
-LNAME:DSRAND:datasets/last_names.txt 
+FNAME:DSRAND:datasets/first_names.txt
+LNAME:DSRAND:datasets/last_names.txt
 COUNTRY:DSRAND:datasets/countries.txt
-CITY:DSRAND:datasets/cities.txt 
+CITY:DSRAND:datasets/cities.txt
 BDATE:DRAND:1800:2012
 SEX:LSTRAND:M,F,U
-EMAIL:EMRAND:3:12:5:8:com,edu,org,net 
-SALARY:NRAND:9:2 
-EMPL:DSRAND:datasets/fortune500.txt 
-NOTES:TXTRAND:20:80:datasets/lorem_ipsum.txt 
+EMAIL:EMRAND:3:12:5:8:com,edu,org,net
+SALARY:NRAND:9:2
+EMPL:DSRAND:datasets/fortune500.txt
+NOTES:TXTRAND:20:80:datasets/lorem_ipsum.txt
 LOADTS:CTSTAMP
 ```
 
@@ -599,7 +599,7 @@ Then:
 * Fifth column (`COMMENT`) is loaded with the fifth column in the input file (`COMMENT:4`)
 
 [[load_binary_files]]
-== Loading Binary Files
+== Load Binary Files
 Assuming that your back-end database (and your ODBC Driver) supports BLOB data types, or equivalent,
 you can use odb to directly load binary (or any other) files into a database column using the `[:em=char]` symbol
 to identify the file to be loaded into that specific database field.
@@ -636,6 +636,64 @@ $ odb64luo –u user –p xx –d dsn -l src=myphotos.csv:tgt=pers.myphotos:em=\
 odb considers the string following the “em” character as the path of the file to be loaded in that specific field.
 
 NOTE: odb does not load rows where the size of the input file is greater than the target database column.
+
+[[load_xml_files]]
+== Load XML Files
+Trafodion odb supports loading xml files into tables, the key construct for xml files can be an element or an attribute.
+
+=== Load XML Files Where Data is Stored in Element Nodes
+
+. Create a table.
+```
+./odb64luo -x "create table testxmlload(id int, name char(20))"
+```
+
+[start=2]
+. Suppose you have a xml file where data is stored in element nodes like the following.
+```
+-bash-4.1$ cat test.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+<id>1</id>
+<name>hello</name>
+</data>
+```
+
+TIP: To check what will be loaded before loading xml file into table, run the following command
+`./odb64luo -l src=test.xml :tgt=testxmlload:xmltag=data:xmldump`
+
+[start=3]
+. Load the test.xml file into the table, run the following command.
+```
+./odb64luo -l  src=test.xml:tgt=testxmlload:xmltag=data
+```
+
+TIP: `xmltag=data` means odb  will load data from the element nodes. For more information, see <<Data Loading Operators>>.
+
+=== Load XML Files Where Data is Stored in Attribute Nodes
+. Create a table.
+```
+./odb64luo -x "create table testxmlload(id int, name char(20))"
+```
+
+[start=2]
+. Suppose you have a xml file where data is stored in attribute nodes like the following.
+```
+-bash-4.1$ cat test.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<data id="1" name="hello"></data>
+```
+
+TIP: To check what will be loaded before loading xml file into table, run the following command.
+`./odb64luo -l src=test.xml:tgt=testxmlload:xmltag=data:xmldump`
+
+[start=3]
+. Load the test.xml file into the table, run the following command.
+```
+./odb64luo -l src=test.xml:tgt=testxmlload:xmltag=+data
+```
+
+TIP: `xmltag=+data` (with a plus sign specified) means odb will load data from the attribute nodes. For more information, see <<Data Loading Operators>>.
 
 <<<
 == Reduce the ODBC Buffer Size
@@ -682,7 +740,7 @@ And an input file that contains:
 The max length of the second field in this file is:
 
 ```
-~/Devel/odb $ awk -F\, 'BEGIN\{max=0} \{if(NF==2)\{len=length($i);if(len>max)max=len}} 
+~/Devel/odb $ awk -F\, 'BEGIN\{max=0} \{if(NF==2)\{len=length($i);if(len>max)max=len}}
 END\{print max}' tmx.dat
 15
 ```
@@ -782,7 +840,7 @@ The following table describes each extract operator:
 
 [cols="30%,70%",options="header",]
 |===
-| Extract option | Meaning 
+| Extract option | Meaning
 | `src=<CAT.SCH.TAB>\|-file` | Defines the source table(s). You can use: +
  +
 - a single table name (for example TRAFODION.MFTEST.LINEITEM) +
@@ -1119,7 +1177,7 @@ You can use odb to copy a list of tables from one database to another.
 *Example*
 
 ```
-~/Devel/odb $ cat tlist.txt 
+~/Devel/odb $ cat tlist.txt
 
 # List of tables to extract
 src=TRAFODION.MAURIZIO.ORDERS
@@ -1139,7 +1197,7 @@ Please note the `src=-tlist.txt`. This command copies:
 
 [cols="50%,50%",options="header",]
 |===
-| Source                        | Target 
+| Source                        | Target
 | `TRAFODION.MAURIZIO.ORDERS`   | `tpch.stg_orders`
 | `TRAFODION.MAURIZIO.CUSTOMER` | `tpch.stg_customer`
 | `TRAFODION.MAURIZIO.PART`     | `tpch.stg_part`
@@ -1157,10 +1215,10 @@ Using different _splitby columns_.
 ```
 ~/Devel/odb $ cat tlist2.txt
 
-# List of tables to extract and their “splitby columns” 
-src=TRAFODION.MAURIZIO.ORDERS:splitby=O_ORDERKEY 
-src=TRAFODION.MAURIZIO.CUSTOMER:splitby=C_CUSTOMERKEY 
-src=TRAFODION.MAURIZIO.PART:splitby=P_PARTKEY 
+# List of tables to extract and their “splitby columns”
+src=TRAFODION.MAURIZIO.ORDERS:splitby=O_ORDERKEY
+src=TRAFODION.MAURIZIO.CUSTOMER:splitby=C_CUSTOMERKEY
+src=TRAFODION.MAURIZIO.PART:splitby=P_PARTKEY
 src=TRAFODION.MAURIZIO.LINEITEM:splitby=L_PARTKEY
 ```
 
@@ -1226,6 +1284,3 @@ relational database. For example, you can copy to from HIVE and other databases 
 from/to Hadoop. odb interacts directly with the HDFS file system using *libhdfs*.
 +
 This option is currently available only under Linux.
-
-
-
