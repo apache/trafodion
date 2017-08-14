@@ -503,7 +503,7 @@ ADD_MONTHS(timestamp'2008-02-29 00:00:00',12,1)
 
 The ASCII function returns the integer that is the ASCII code of the
 first character in a character string expression associated with either
-the ISO8891 character set or the UTF8 character set.
+the ISO8859-1 character set or the UTF8 character set.
 
 ASCII is a {project-name} SQL extension.
 
@@ -2523,7 +2523,7 @@ timestamp or a date expression.
 DATE_PART is a {project-name} extension.
 
 ```
-DATEPART(text, datetime-expr)
+DATE_PART(text, datetime-expr)
 ```
 
 * `_text_`
