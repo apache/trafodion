@@ -301,7 +301,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 				if (!connection_.props_.getDelayedErrorMode()) {
 					return (new int[] {});
 				}
-			} 
+			}
 
 			try {
 				if (!usingRawRowset_)
@@ -426,7 +426,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 					"invalid_lob_commit_state", null);
 		}
 
-		execute(paramRowCount_ + 1, inDescLength, valueArray, queryTimeout_, isAnyLob_); 
+		execute(paramRowCount_ + 1, inDescLength, valueArray, queryTimeout_, isAnyLob_);
 		if (isAnyLob_) {
 
 
@@ -523,16 +523,18 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 		switch (dataType) {
 
-			
+
 		case Types.CHAR:
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
+		case Types.CLOB:
+		case Types.BLOB:
 		case Types.BINARY:  // At this time Database does not have
-			// this column data type 
+			// this column data type
 		case Types.VARBINARY:  // At this time Database does not
 			// have this column data type //#endif-java
 		case Types.LONGVARBINARY:  // At this time Database does not
-			// have this column data type 
+			// have this column data type
 			byte[] buffer = new byte[length];
 			try {
 				x.read(buffer);
@@ -613,7 +615,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 
 		switch (dataType) {
-		
+
 
 		case Types.DOUBLE:
 		case Types.DECIMAL:
@@ -628,12 +630,14 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		case Types.CHAR:
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
+		case Types.BLOB:
+		case Types.CLOB:
 		case Types.BINARY: // At this time Database does not have
-			// this column data type 
+			// this column data type
 		case Types.VARBINARY:  // At this time Database does not
-			// have this column data type 
+			// have this column data type
 		case Types.LONGVARBINARY:  // At this time Database does not
-			// have this column data type 
+			// have this column data type
 			byte[] buffer2 = new byte[length];
 
 			try {
@@ -668,10 +672,10 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 	 * Sets the designated parameter to the given <tt>Blob</tt> object. The
 	 * driver converts this to an SQL <tt>BLOB</tt> value when it sends it to
 	 * the database.
-	 * 
+	 *
 	 * @param i the first parameter is 1, the second is 2, ... @param x a <tt>Blob</tt>
 	 * object that maps an SQL <tt>BLOB</tt> value
-	 * 
+	 *
 	 * @throws SQLException invalid data type for column
 	 */
 	public void setBlob(int parameterIndex, Blob x) throws SQLException {
@@ -695,8 +699,14 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		validateSetInvocation(parameterIndex);
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		switch (dataType) {
-		
-			
+        case Types.CHAR:
+        case Types.VARCHAR:
+        case Types.LONGVARCHAR:
+		case Types.BLOB:
+		case Types.CLOB:
+            addParamValue(parameterIndex, x.getBytes(1, (int) x.length()));
+		    break;
+
 		default:
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
 					"invalid_datatype_for_column", null);
@@ -781,14 +791,16 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		validateSetInvocation(parameterIndex);
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		switch (dataType) {
-		
-			
+
+
 		case Types.CHAR:
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
 		case Types.BINARY:
 		case Types.VARBINARY:
 		case Types.LONGVARBINARY:
+		case Types.BLOB:
+		case Types.CLOB:
 			addParamValue(parameterIndex, tmpArray);
 			break;
 		default:
@@ -819,7 +831,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		validateSetInvocation(parameterIndex);
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		switch (dataType) {
-		
+
 
 		case Types.DECIMAL:
 		case Types.DOUBLE:
@@ -864,12 +876,12 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 	 * Sets the designated parameter to the given <tt>Clob</tt> object. The
 	 * driver converts this to an SQL <tt>CLOB</tt> value when it sends it to
 	 * the database.
-	 * 
+	 *
 	 * @param parameterIndex
 	 *            the first parameter is 1, the second is 2, ...
 	 * @param x
 	 *            a <tt>Clob</tt> object that maps an SQL <tt>CLOB</tt>
-	 * 
+	 *
 	 * @throws SQLException
 	 *             invalid data type for column, or restricted data type.
 	 */
@@ -894,14 +906,13 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		validateSetInvocation(parameterIndex);
 		dataType = inputDesc_[parameterIndex - 1].dataType_;
 		switch (dataType) {
-		
-			
-		case Types.DECIMAL:
-		case Types.DOUBLE:
-		case Types.FLOAT:
-		case Types.NUMERIC:
-			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-					"invalid_datatype_for_column", null);
+        case Types.CHAR:
+        case Types.VARCHAR:
+        case Types.LONGVARCHAR:
+        case Types.BLOB:
+        case Types.CLOB:
+            addParamValue(parameterIndex, x.getSubString(1, (int) x.length()));
+            break;
 		default:
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "restricted_data_type",
 					null);
@@ -1230,13 +1241,13 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 			case Types.CHAR:
 			case Types.VARCHAR:
 			case Types.LONGVARCHAR:
-                        case Types.BLOB:
-                        case Types.CLOB:
+			case Types.CLOB:
 				setString(parameterIndex, x.toString());
 				break;
 			case Types.VARBINARY:
 			case Types.BINARY:
 			case Types.LONGVARBINARY:
+			case Types.BLOB:
 				setBytes(parameterIndex, (byte[]) x);
 				break;
 			case Types.TIMESTAMP:
@@ -1426,15 +1437,16 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		case Types.CHAR:
 		case Types.VARCHAR:
 		case Types.LONGVARCHAR:
+		case Types.CLOB:
 		case Types.DATE:
 		case Types.TIME:
 		case Types.TIMESTAMP:
-		case Types.OTHER: // This type maps to the Database 
+		case Types.OTHER: // This type maps to the Database
 			// INTERVAL
 			addParamValue(parameterIndex, x);
 			break;
-			
-			
+
+
 		case Types.ARRAY:
 		case Types.BINARY:
 		case Types.BIT:
@@ -1725,12 +1737,12 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 	/**
 	 * This method will associate user defined data with the prepared statement.
 	 * The user defined data must be in SQL/MX rowwise rowset format.
-	 * 
+	 *
 	 * @param numRows
 	 *            the number of rows contained in buffer
 	 * @param buffer
 	 *            a buffer containing the rows
-	 * 
+	 *
 	 * @exception A
 	 *                SQLException is thrown
 	 */
@@ -1874,7 +1886,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 		isClosed_ = true;
 		if (rowsValue_ != null) {
 			rowsValue_.clear();
-			
+
 		}
 		if (lobObjects_ != null) {
 			lobObjects_.clear();
@@ -2386,8 +2398,8 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 	String moduleName_;
 	int moduleVersion_;
 	long moduleTimestamp_;
-	boolean isAnyLob_; 
-	ArrayList lobObjects_; 
+	boolean isAnyLob_;
+	ArrayList lobObjects_;
 
 	ArrayList rowsValue_;
 	Object[] paramsValue_;
@@ -2466,7 +2478,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 	public void setPoolable(boolean poolable) throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public boolean isPoolable() throws SQLException {
@@ -2476,7 +2488,7 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 	public void closeOnCompletion() throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public boolean isCloseOnCompletion() throws SQLException {
@@ -2496,106 +2508,133 @@ public class TrafT4PreparedStatement extends TrafT4Statement implements java.sql
 
 	public void setRowId(int parameterIndex, RowId x) throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public void setNString(int parameterIndex, String value)
 			throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	public void setNCharacterStream(int parameterIndex, Reader value,
 			long length) throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public void setNClob(int parameterIndex, NClob value) throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public void setClob(int parameterIndex, Reader reader, long length)
 			throws SQLException {
-		// TODO Auto-generated method stub
-		
+	    setCharacterStream(parameterIndex, reader, length);
 	}
 
 	public void setBlob(int parameterIndex, InputStream inputStream, long length)
 			throws SQLException {
-		// TODO Auto-generated method stub
-		
+		setBinaryStream(parameterIndex, inputStream, (int) length);
 	}
 
 	public void setNClob(int parameterIndex, Reader reader, long length)
 			throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public void setSQLXML(int parameterIndex, SQLXML xmlObject)
 			throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public void setAsciiStream(int parameterIndex, InputStream x, long length)
 			throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public void setBinaryStream(int parameterIndex, InputStream x, long length)
 			throws SQLException {
-		// TODO Auto-generated method stub
-		
+		setBinaryStream(parameterIndex, x, (int)length);
 	}
 
 	public void setCharacterStream(int parameterIndex, Reader reader,
 			long length) throws SQLException {
-		// TODO Auto-generated method stub
-		
+		try {
+		    char[] c = null;
+		    if (length > 0) {
+		        c = new char[(int)length];
+		        int numRead = 0;
+
+		        while (numRead < length) {
+		            int count = reader.read(c, numRead, (int) (length - numRead));
+
+		            if (count < 0) {
+		                break;
+		            }
+		            numRead += count;
+		        }
+		    }
+		    setString(parameterIndex, new String(c, 0, (int)length));
+		}
+		catch (Exception e) {
+
+		}
+
 	}
 
 	public void setAsciiStream(int parameterIndex, InputStream x)
 			throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public void setBinaryStream(int parameterIndex, InputStream x)
 			throws SQLException {
-		// TODO Auto-generated method stub
-		
+		addParamValue(parameterIndex, x);
 	}
 
 	public void setCharacterStream(int parameterIndex, Reader reader)
 			throws SQLException {
-		// TODO Auto-generated method stub
-		
+	    try {
+	        char[] c = null;
+	        int len = 0;
+
+	        c = new char[4096];
+	        StringBuilder builder = new StringBuilder();
+
+	        while ((len = reader.read(c)) != -1) {
+	            builder.append(c, 0, len);
+	        }
+
+	        setString(parameterIndex, builder.toString());
+	    }
+	    catch (Exception e) {
+
+	    }
 	}
 
 	public void setNCharacterStream(int parameterIndex, Reader value)
 			throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public void setClob(int parameterIndex, Reader reader) throws SQLException {
-		// TODO Auto-generated method stub
-		
+		setCharacterStream(parameterIndex, reader);
 	}
 
 	public void setBlob(int parameterIndex, InputStream inputStream)
 			throws SQLException {
-		// TODO Auto-generated method stub
-		
+		setBinaryStream(parameterIndex, inputStream);
 	}
 
 	public void setNClob(int parameterIndex, Reader reader) throws SQLException {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

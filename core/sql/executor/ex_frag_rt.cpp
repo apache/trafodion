@@ -2860,13 +2860,8 @@ ExEspDbEntry *ExEspManager::shareEsp(
   if (*creatingEsp == NULL) // Nowaited Creation of an ESP is not in progress
   {
     nowaitDepth = env_->getCCMaxWaitDepthLow();
-    IpcCpuNum nextCpu = 
-      (lastAssignedCpu_ == (maxCpuNum_ -1)) ? 0 : lastAssignedCpu_ + 1;
-
     if ( cpuNum == IPC_CPU_DONT_CARE )
-      // nextCpu now points to the CPU we should use
-      cpuNum = lastAssignedCpu_ = nextCpu;
-
+      cpuNum = getRoundRobinCPU();
 
     // look up the cache for esp to share
     NABoolean espServerError = FALSE;
@@ -3251,6 +3246,22 @@ ExEspDbEntry *ExEspManager::getEspFromCache(LIST(ExEspDbEntry *) &alreadyAssigne
       releaseEsp(badEsps[i], FALSE, prevState);
     }
   return result;
+}
+
+IpcCpuNum ExEspManager::getRoundRobinCPU()
+{
+  IpcCpuNum logCPUNum;
+  CliGlobals *cliGlobals = GetCliGlobals();
+
+  // lastAssignedCpu_ contains a "logical" CPU number (contiguous
+  // values 0 ... n-1). We increment this number by 1 (mod n) for
+  // every call.
+  logCPUNum        =
+  lastAssignedCpu_ = (lastAssignedCpu_ + 1) % cliGlobals->myNumCpus();
+
+  // now map this logical number to an actual node id, in case we have
+  // "holes" in the node ids (nodes were removed dynamically)
+  return cliGlobals->mapLogicalToPhysicalCPUNum(logCPUNum);
 }
 
 void ExEspManager::releaseEsp(ExEspDbEntry *esp, NABoolean verifyEsp,

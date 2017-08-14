@@ -62,6 +62,7 @@ public:
   IpcEnvironment *getIpcEnvironment() { return env_; }
   void removeSsmpServer(char *nodeName, short cpuNum);
   void cleanupDeletedSsmpServers();
+  IpcServerClass *getServerClass() { return ssmpServerClass_; }
 private:
   IpcEnvironment       *env_;
   IpcServerClass       *ssmpServerClass_;

@@ -6105,12 +6105,24 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
               ItemExpr *newChild;
               const NAType &desiredType = child(0)->getValueId().getType();
               SQLBlob &lobType = (SQLBlob&)desiredType;
+              short fs_datatype = child(0)->castToItemExpr()->getValueId().getType().getFSDatatype();
 
-              NAType * newType = new SQLBlob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024), 
+              NAType * newType = NULL;
+
+              double lob_input_limit_for_batch = CmpCommon::getDefaultNumeric(LOB_INPUT_LIMIT_FOR_BATCH);
+                  double lob_size = lobType.getLobLength();
+              if (fs_datatype == REC_CLOB) {
+                  newType = new SQLClob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024),
+                         lobType.getLobStorage(),
+                         TRUE, FALSE, TRUE,
+                         lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size);
+              }
+              else {
+              newType = new SQLBlob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024),
                                              lobType.getLobStorage(), 
                                              TRUE, FALSE, TRUE, 
-                                             CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024); 
-              //              vid1.coerceType(desiredType, NA_LOB_TYPE); 
+                                             lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size);
+              }
               vid1.coerceType(*newType, NA_LOB_TYPE); 
               if (bindWA->getCurrentScope()->context()->inUpdate())
                 {

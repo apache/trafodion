@@ -54,6 +54,7 @@ traf_clust_template = config['configurations']['traf-cluster-env']['content']
 traf_user = 'trafodion'
 traf_group = 'trafodion'
 hdfs_user = config['configurations']['hadoop-env']['hdfs_user']
+user_group = config['configurations']['cluster-env']['user_group']
 hbase_user = config['configurations']['hbase-env']['hbase_user']
 hbase_staging = config['configurations']['hbase-site']['hbase.bulkload.staging.dir']
 

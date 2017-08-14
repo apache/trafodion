@@ -4807,21 +4807,6 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 --- SQL command prepared.
 >>
 >>--
->>-- test NAClusterInfo::setUseAggregationNodesOnly only
->>--
->>cqd ESP_ON_AGGREGATION_NODES_ONLY 'on';
-
---- SQL operation complete.
->>
->>prepare x from select s.a from s01 s <<+ cardinality 10e7>>, t01 t <<+ cardinality 10e5>> where s.a = t.b;
-
---- SQL command prepared.
->>
->>cqd ESP_ON_AGGREGATION_NODES_ONLY reset;
-
---- SQL operation complete.
->>
->>--
 >>-- test CQD OPTIMIZER_HEURISTIC_3 'on'
 >>--
 >>

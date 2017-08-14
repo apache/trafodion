@@ -524,7 +524,6 @@ class TrafT4Desc {
 	String columnLabel_;
 	boolean isAutoIncrement_;
 	boolean isSearchable_;
-
 	boolean isValueSet_; // To denote if setXXX method is called for this
 	// parameter
 	// String paramValue_; // Contains the value of output parameter value

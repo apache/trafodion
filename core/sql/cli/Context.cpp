@@ -158,9 +158,6 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     catmanInfo_(NULL),
     flags_(0),
     ssmpManager_(NULL),
-    cbServerClass_(NULL),
-    cbServer_ (NULL),
-    cbServerInUse_(false),
     udrServerList_(NULL),
     udrRuntimeOptions_(NULL),
     udrRuntimeOptionDelimiters_(NULL),
@@ -295,11 +292,7 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     
   udrServerManager_ = new (ipcHeap_) ExUdrServerManager(env_);
 
-  if (cliGlobals->getStatsGlobals())
-    ssmpManager_ = new(ipcHeap_) ExSsmpManager(env_);
-
-  cbServerClass_ = new(ipcHeap_) IpcServerClass(env_, IPC_SQLSSMP_SERVER,
-    IPC_USE_PROCESS);  // use existing process.
+  ssmpManager_ = new(ipcHeap_) ExSsmpManager(env_);
 
   seqGen_ = new(exCollHeap()) SequenceValueGenerator(exCollHeap());
 
@@ -426,16 +419,7 @@ void ContextCli::deleteMe()
      NADELETE(udrServerManager_, ExUdrServerManager, ipcHeap_);
   if (ssmpManager_ != NULL)
      NADELETE(ssmpManager_, ExSsmpManager, ipcHeap_);
-  if (cbServer_ != NULL)
-  {
-    cbServer_->release();
-    cbServer_ = NULL;
-  }
-  if (cbServerClass_ != NULL)
-  {
-    NADELETE(cbServerClass_, IpcServerClass, ipcHeap_);
-    cbServerClass_ = NULL;
-  }
+
   if (exeTraceInfo_ != NULL)
   {
     delete exeTraceInfo_;
@@ -4532,10 +4516,10 @@ ExStatisticsArea *ContextCli::getMergedStats(
       (diagsArea_) << DgSqlCode(-EXE_RTS_INVALID_QID) << DgString0(statsReqStr);
       return NULL;
   }
-  ComDiagsArea *tempDisgsArea = &diagsArea_;
+  ComDiagsArea *tempDiagsArea = &diagsArea_;
   ExSsmpManager *ssmpManager = cliGlobals->getSsmpManager();
   IpcServer *ssmpServer = ssmpManager->getSsmpServer(nodeName, 
-           (cpu == -1 ?  cliGlobals->myCpu() : cpu), tempDisgsArea);
+           (cpu == -1 ?  cliGlobals->myCpu() : cpu), tempDiagsArea);
   if (ssmpServer == NULL)
     return NULL; // diags are in diagsArea_
 

@@ -238,6 +238,7 @@ private:
 	BOOL			m_ConnectionDead;
 	BOOL			m_SelectRowsets;
 	SQLUINTEGER		m_IOCompression;
+	int                     m_IOCompressionThreshold;
 	BOOL			m_ChangePassword; // for password expiry
 	BOOL			m_FlushFetchData; // For query driver which cannot handle huge data being returned.
 	SQLINTEGER      m_StartNode; // Node(cpu) to start the mxosrvr on - defaults to -1 (any)

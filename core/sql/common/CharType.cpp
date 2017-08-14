@@ -1519,7 +1519,7 @@ SQLlob::SQLlob(
 	    , allowSQLnull
 	    , allowSQLnull ? SQL_NULL_HDR_SIZE : 0
 	    , TRUE
-	    , SQL_VARCHAR_HDR_SIZE
+	    , SQL_VARCHAR_HDR_SIZE_4
 	    ),
     inlineIfPossible_(inlineIfPossible),
     externalFormat_(externalFormat),

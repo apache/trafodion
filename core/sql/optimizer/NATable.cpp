@@ -7223,9 +7223,6 @@ void NATable::setupForStatement()
   if(setupForStatement_)
     return;
 
-  if( NOT qualifiedName_.isSpecialTable() )
-    gpClusterInfo->setMaxOSV(qualifiedName_.getQualifiedNameObj(), osv_);
-
   //reset the clustering index
   if(clusteringIndex_)
     clusteringIndex_->setupForStatement();

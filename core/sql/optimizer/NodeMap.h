@@ -56,7 +56,7 @@ typedef LIST(const char*) DP2VolumeNamesContainer;
 //  Indication that any node is acceptable.
 //-----------------------------------------
 const Lng32 ANY_NODE = -1;
-const Lng32 ANY_CLUSTER = -1;
+const Lng32 LOCAL_CLUSTER = 0;
 
 //--------------------------------------------
 //  A node map entry associates a process with
@@ -78,7 +78,7 @@ public:
     partitionName_ (0),
     heap_          (0),
     nodeNumber_    (ANY_NODE),
-    clusterNumber_ (ANY_CLUSTER),
+    clusterNumber_ (LOCAL_CLUSTER),
     partitionState_(state),
     givenName_(0)
   {}
@@ -284,7 +284,7 @@ public:
 
   NodeMap* copy(CollHeap* heap = 0) const;
 
-  void setToRandCPU(CollIndex x) { setNodeNumber(x, randCPU(x)); }
+  void setToRandCPU(CollIndex x) { setNodeNumber(x, ANY_NODE); }
 
   inline CollIndex getNumEntries() const { return map_.entries(); }
 
@@ -299,7 +299,6 @@ public:
 
   NABoolean allNodesSpecified(void) const;
   NABoolean allNodesAreWildcards() const;
-  NABoolean allClustersSpecified()  const;
 
   //--------------------------------
   // Accessor functions.
@@ -405,14 +404,6 @@ private:
   CollHeap *heap() { return heap_; }
 
   void resetCachedValues();
-
-  // return randomly chosen cpu for given cluster
-  Lng32 randCPU(CollIndex C);
-
-  static THREAD_P RandomSequence* random_; // random number generator for floating ESPs
-  static THREAD_P NABoolean seeded; // flag for seeding random number generator 
-  static void seedIt(); // seed random number generator
-  static double random();
 
   // An array of pointers to node map entries.
   ARRAY (NodeMapEntry *) map_;

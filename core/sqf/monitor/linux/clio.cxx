@@ -362,6 +362,8 @@ Local_IO_To_Monitor::Local_IO_To_Monitor(int pv_pid)
     iv_client_buffers_max=SQ_LIO_MAX_BUFFERS;
 
     char la_node_name[MPI_MAX_PROCESSOR_NAME];
+    char la_short_node_name[MPI_MAX_PROCESSOR_NAME];
+    memset( la_short_node_name, 0, MPI_MAX_PROCESSOR_NAME );
     if (gethostname(la_node_name, MPI_MAX_PROCESSOR_NAME) == -1)
     {
         if (cv_trace)
@@ -375,6 +377,21 @@ Local_IO_To_Monitor::Local_IO_To_Monitor(int pv_pid)
     {
         *tmpptr = (char)tolower( *tmpptr);
         tmpptr++;
+    }
+
+    // Remove the domain portion of the name if any
+    char str1[MPI_MAX_PROCESSOR_NAME];
+    memset( str1, 0, MPI_MAX_PROCESSOR_NAME );
+    strcpy (str1, la_node_name );
+
+    char *str1_dot = strchr( (char *) str1, '.' );
+    if ( str1_dot )
+    {
+        memcpy( la_short_node_name, str1, str1_dot - str1 );
+    }
+    else
+    {
+        strcpy (la_short_node_name, str1 );
     }
 
     char *lp_nodes = getenv("SQ_VIRTUAL_NODES");
@@ -423,8 +440,8 @@ Local_IO_To_Monitor::Local_IO_To_Monitor(int pv_pid)
 
         sprintf(ip_port_fname,"%.*s/monitor.port.%s",
                 (int)(sizeof(ip_port_fname)-(sizeof("/monitor.port.")+11
-                                        +strlen(la_node_name))),
-                getenv("MPI_TMPDIR"), la_node_name);
+                                        +strlen(la_short_node_name))),
+                getenv("MPI_TMPDIR"), la_short_node_name);
 
     }
     // Assume nid zero if the global Seabed nid variable is not initialized

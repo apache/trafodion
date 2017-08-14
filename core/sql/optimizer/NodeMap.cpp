@@ -668,90 +668,6 @@ NodeMap::copy(CollHeap* heap) const
 
 } // NodeMap::copy()
 
-// load-time initialization
-THREAD_P RandomSequence* NodeMap::random_ = NULL;
-THREAD_P NABoolean       NodeMap::seeded = FALSE;
-
-// seed random number generator
-void NodeMap::seedIt()
-{
-  if (seeded)
-    return;
-  // else
-  Lng32 seed = CmpCommon::getDefaultLong(FLOAT_ESP_RANDOM_NUM_SEED);
-
-  if (!random_)
-    random_ = new (GetCliGlobals()->exCollHeap()) RandomSequence();
-
-  CLISemaphore * sema = GetCliGlobals()->getSemaphore();
-  sema->get();
-  if (!seeded) {
-    if (seed == 0) {
-      TimeVal tim;
-      GETTIMEOFDAY(&tim, 0);
-      seed = tim.tv_usec;
-    }
-    seed = seed % 65535;
-    random_->initialize(seed);
-    seeded = TRUE;
-  }
-  sema->release();
-}
-
-double NodeMap::random()
-{
-  double rv;
-  CMPASSERT(random_ != NULL);
-  CLISemaphore * sema = GetCliGlobals()->getSemaphore();
-  sema->get();
-  rv = random_->random();
-  sema->release();
-  return rv;
-}
-
-// return randomly chosen cpu for given segment
-Lng32 NodeMap::randCPU(CollIndex C)
-{
-  //get active segments and their corresponding cpus
-  NAArray<CollIndex>* clusterList;
-  NAArray<NAList<CollIndex>*> *cpuList;
-  Int32 cpuCount;
-  gpClusterInfo->getSuperNodemap(clusterList,cpuList,cpuCount);
-  // find segment C from supernodemap list
-  Lng32 cluster = getClusterNumber(C);
-  // default result is to return original cpu
-  Lng32 cpu = getNodeNumber(C); 
-  CollIndex clusX, ncpus = NULL_COLL_INDEX, nsegments = clusterList->entries();
-  for (clusX=0; clusX < nsegments; clusX++) {
-    ncpus = (*cpuList)[clusX]->entries();
-    if (cluster == Lng32((*clusterList)[clusX])) { // found segment
-      if (ncpus <= 1) {
-        // fall thru to return original cpu
-      }
-      else {
-        // seed the random number generator
-        seedIt();
-        // return randomly chosen cpu within given segment
-        cpu = (*(*cpuList)[clusX])[(CollIndex)floor(random()*ncpus)];
-      }
-    }
-  }
-  // didn't find segment -- in sql statements like
-  //   insert into d select ... from table (table s, location ...)
-  // it is possible not to find s' segment in the supernodemap.
-  // so, for these cases, do nothing:
-
-  // make sure we return a non-default cpu assignment
-  if (cpu == -1 && ncpus > 0) {
-    // seed the random number generator
-    seedIt();
-    // randomly choose cpu
-    cpu = (Lng32)floor(random()*ncpus);
-  }
-  return cpu;
-}
-
-//<pb>
 //==============================================================================
 //  Produce a logical node map with a specified number of entries using the
 // partition grouping algorithm of SQL/MX. Attempt to co-locate ESPs with their
@@ -851,21 +767,15 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
                                    logicalNumEntries,
                                    NodeMapEntry::NOT_ACTIVE, type());
 
-  NAArray<CollIndex>* clusterList;
-  NAArray<NAList<CollIndex>*> *cpuList;
-  //get active segments and their corresponding cpus
-  Int32 cpuCount;
-  NABoolean error = gpClusterInfo->getSuperNodemap(clusterList,cpuList,
-                                                   cpuCount);
+  //get a list of the nodes in the cluster
+  const NAArray<CollIndex> &cpuArray(gpClusterInfo->getCPUArray());
+  Int32 cpuCount = cpuArray.entries();
   Lng32 affinityDef = ActiveSchemaDB()->getDefaults().getAsLong(AFFINITY_VALUE);
 
   // "float" single ESP
   if (logicalNumEntries == 1 && forESP &&
       CmpCommon::getDefault(COMP_BOOL_83) == DF_ON) {
     // colocate consumer with randomly chosen producer segment & cpu
-    seedIt();
-    Lng32 randX = (Lng32)floor(random()*getNumEntries()); // pick any producer
-    logicalMap->setClusterNumber(0, getClusterNumber(randX));
     logicalMap->setToRandCPU(0);
     // ESP exchange is active
     logicalMap->setPartitionState(0, NodeMapEntry::ACTIVE);
@@ -902,16 +812,10 @@ NodeMap::synthesizeLogicalMap(const CollIndex logicalNumEntries,
         // each ESP in an ESP exchange is active
         logicalMap->setPartitionState(espX, NodeMapEntry::ACTIVE);
         // assign ESP consumers to segments/cpus, round-robin
-        logicalMap->setNodeNumber(espX, (*(*cpuList)[clusX])[cpuX]);
-        logicalMap->setClusterNumber(espX, (Lng32)(*clusterList)[clusX]);
+        logicalMap->setNodeNumber(espX, cpuArray[cpuX]);
         cpuX++; // advance to next cpu
-        if (cpuX >= (*cpuList)[clusX]->entries()) {
-          // gone thru all cpus in this segment. advance to next cluster.
-          clusX++;
+        if (cpuX >= cpuArray.entries()) {
           cpuX = 0;
-          if (clusX >= clusterList->entries()) {
-            clusX = 0;
-          }
         }
       }
     }
@@ -1227,32 +1131,6 @@ NABoolean NodeMap::allNodesAreWildcards() const
   for (CollIndex mapIdx = 0; mapIdx < getNumEntries(); mapIdx++)
     {
       if ( map_[mapIdx]->getDP2Name() != 0 )
-        {
-          return FALSE;
-        }
-    }
-
-  return TRUE;
-}
-//==============================================================================
-//  Determine if node map has a cluster specification for all entries.
-//
-// Input:
-//  none
-//
-// Output:
-//  none
-//
-// Return:
-//  TRUE if all node map entries have a cluster specification; FALSE otherwise.
-//
-//==============================================================================
-NABoolean
-NodeMap::allClustersSpecified() const
-{
-  for (CollIndex mapIdx = 0; mapIdx < getNumEntries(); mapIdx++)
-    {
-      if (getClusterNumber(mapIdx) == ANY_CLUSTER)
         {
           return FALSE;
         }

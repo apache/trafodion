@@ -362,11 +362,23 @@ inline
 
   Lng32 myNodeNumber() { return myNodeNumber_; };
   Int64 myStartTime() { return myStartTime_; };
-  // following methods are unused in seaquest
-  //LCOV_EXCL_START
-  Lng32 myNumSegments() { return myNumSegs_; };
+
+  // number of CPUs (Linux nodes) in the cluster
   Lng32 myNumCpus() { return myNumCpus_; };
-  //LCOV_EXCL_STOP
+  // an array of myNumCpus_ node ids, the index into
+  // this array is a "logical" CPU id (0 ... myNumCpus_-1)
+  // and the content of the array is a physical id,
+  // a node id (nid) of a node that actually exists
+  // (but still may be down)
+  const Int32 *myCPUArray() { return cpuArray_; }
+  // return the physical node id for a logical id,
+  // the physical id is always >= the logical id
+  Int32 mapLogicalToPhysicalCPUNum(Int32 ix)
+                          { return cpuArray_[ix % myNumCpus_]; }
+  // are logical/physical node ids the same?
+  NABoolean nodeIdsAreContiguous()
+           { return cpuArray_[myNumCpus_-1] == myNumCpus_ - 1; }
+
   IpcPriority myPriority() { return myPriority_; }
   void setMyPriority(IpcPriority p) { myPriority_= p; }
   //LCOV_EXCL_START
@@ -413,8 +425,6 @@ inline
   char * myProgName() { return myProgName_; }
   ExeTraceInfo * getExeTraceInfo();
   CLISemaphore *getSemaphore() { return cliSemaphore_; }
-
-  IpcServerClass * getCbServerClass();
 
   // for trusted UDR invocations from executor and compiler
   LmLanguageManager * getLanguageManager(ComRoutineLanguage language);
@@ -562,11 +572,10 @@ private:
   pid_t myPin_;
   Lng32  myNodeNumber_;
 
-  // number of segments on this system
-  Lng32 myNumSegs_;
-
-  // number of configured cpus on this system
+  // number of configured cpus (Linux nodes) on this system
+  // and an array with their node ids (nids)
   Lng32 myNumCpus_;
+  Int32 *cpuArray_;
 
   IpcPriority myPriority_;
   NABoolean priorityChanged_;

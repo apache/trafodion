@@ -2308,7 +2308,7 @@ odbc_SQLsrvr_ExtractLob_param_res_(
       , UInt32& message_length
       , const struct odbc_SQLsrvr_ExtractLob_exc_ *exception_
       , IDL_long_long lobDataLen
-      , IDL_char * lobDataValue
+      , BYTE * lobDataValue
 )
 {
     CEE_status sts = CEE_SUCCESS;
@@ -2397,8 +2397,86 @@ odbc_SQLsrvr_ExtractLob_param_res_(
     IDL_long_copy((IDL_long *)&lobDataLen, curptr);
     if (lobDataValue != NULL)
     {
-        IDL_charArray_copy(lobDataValue, curptr);
+        IDL_byteArray_copy(lobDataValue, lobDataLen, curptr);
     }
 
     return sts;
+}
+
+CEE_status
+odbc_SQLsrvr_UpdateLob_param_res_(
+        CInterface * pnode
+      , char* &buffer
+      , UInt32& message_length
+      , const struct odbc_SQLSvc_UpdateLob_exc_ *exception_
+)
+{
+	CEE_status sts = CEE_SUCCESS;
+	IDL_long wlength = 0;
+
+	char * curptr;
+
+	IDL_long exceptionLength = 0;
+
+	wlength += sizeof(HEADER);
+
+	// calculate length of the buffer for each parameter
+
+	//length of odbc_SQLSvc_UpdateLob_exc_
+	wlength += sizeof(exception_->exception_nr);
+	wlength += sizeof(exception_->exception_detail);
+
+	switch (exception_->exception_nr)
+	{
+		case odbc_SQLSvc_UpdateLob_ParamError_exn_:
+            wlength += sizeof(exceptionLength);
+            if (exception_->u.ParamError.ParamDesc != NULL)
+            {
+                exceptionLength = strlen(exception_->u.ParamError.ParamDesc) + 1;
+                wlength += exceptionLength;
+            }
+            break;
+		case odbc_SQLSvc_UpdateLob_InvalidConnect_exn_:
+            ERROR_DESC_LIST_length((ERROR_DESC_LIST_def *)&exception_->u.SQLError.errorList, wlength);
+            break;
+		case odbc_SQLSvc_UpdateLob_SQLError_exn_:
+        case odbc_SQLSvc_UpdateLob_SQLInvalidhandle_exn_:
+            break;
+        default:
+            break;
+    }
+
+
+    message_length = wlength;
+
+    buffer = pnode->w_allocate(message_length);
+    if (buffer == NULL)
+    {
+        return CEE_ALLOCFAIL;
+    }
+    curptr = (IDL_char *)(buffer + sizeof(HEADER));
+
+    IDL_long_copy((IDL_long *)&exception_->exception_nr, curptr);
+    IDL_long_copy((IDL_long *)&exception_->exception_detail, curptr);
+
+    switch(exception_->exception_nr)
+    {
+        case odbc_SQLSvc_UpdateLob_ParamError_exn_:
+        case odbc_SQLSvc_UpdateLob_InvalidConnect_exn_:
+            IDL_long_copy(&exceptionLength, curptr);
+
+            if (exception_->u.ParamError.ParamDesc != NULL)
+                IDL_charArray_copy((const IDL_char *)exception_->u.ParamError.ParamDesc, curptr);
+            break;
+
+        case odbc_SQLSvc_UpdateLob_SQLError_exn_:
+            ERROR_DESC_LIST_copy((ERROR_DESC_LIST_def *)&exception_->u.SQLError.errorList, curptr);
+            break;
+
+        case odbc_SQLSvc_UpdateLob_SQLInvalidhandle_exn_:
+            break;
+
+        default:
+            break;
+    }
 }

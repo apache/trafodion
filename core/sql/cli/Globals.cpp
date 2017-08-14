@@ -187,18 +187,9 @@ void CliGlobals::init( NABoolean espProcess,
 
   ComRtGetProcessPriority(myPriority_);
   savedPriority_ = (short)myPriority_;
-  myNumSegs_ = 0;
-  myNumCpus_ = 0;
-  SEGMENT_INFO * segs = new(&executorMemory_) SEGMENT_INFO[MAX_NO_OF_SEGMENTS];
-  ComRtGetSegsInfo(segs, MAX_NO_OF_SEGMENTS, myNumSegs_,
-           (NAHeap *)&executorMemory_);
-  for (Lng32 i = 0; i < myNumSegs_; i++)
-    {
-      myNumCpus_ += segs[i].noOfCpus_;
-    }
-  NADELETEARRAY(segs, MAX_NO_OF_SEGMENTS, SEGMENT_INFO, &executorMemory_);
+  myNumCpus_ = ComRtGetCPUArray(cpuArray_, (NAHeap *)&executorMemory_);
 
-   // create global structures for IPC environment
+  // create global structures for IPC environment
 #if !(defined(__SSCP) || defined(__SSMP))
 
   // check if Measure is enabled and allocate Measure process counters.
@@ -463,11 +454,6 @@ ExEspManager *CliGlobals::getEspManager()
 ExSsmpManager *CliGlobals::getSsmpManager()
 {
   return currContext()->getSsmpManager();
-}
-
-IpcServerClass *CliGlobals::getCbServerClass()
-{
-  return currContext()->getCbServerClass();
 }
 
 LmLanguageManager * CliGlobals::getLanguageManager(ComRoutineLanguage language)

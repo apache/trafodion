@@ -388,7 +388,19 @@ odbc_SQLSrvr_ExtractLob_sme_(
   , /* In    */ IDL_long extractLobAPI
   , /* In    */ IDL_string lobHandle
   , /* In    */ IDL_long_long &lobDataLen
-  , /* In    */ IDL_char* &lobDataValue);
+  , /* In    */ BYTE* &lobDataValue);
+
+extern "C" void
+odbc_SQLSrvr_UpdateLob_sme_(
+    /* In   */ CEE_tag_def objtag_
+  , /* In   */ const CEE_handle_def * call_id_
+  , /* In   */ odbc_SQLSvc_UpdateLob_exc_ * exception_
+  , /* In   */ IDL_short lobUpdateType
+  , /* In   */ IDL_string lobHandle
+  , /* In   */ IDL_long_long totalLength
+  , /* In   */ IDL_long_long offset
+  , /* In   */ IDL_long_long length
+  , /* In   */ BYTE * data);
 
 extern "C" void 
 GETMXCSWARNINGORERROR(

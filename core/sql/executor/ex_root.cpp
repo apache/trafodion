@@ -367,7 +367,6 @@ ex_root_tcb::ex_root_tcb(
      queryStartedStream_(NULL),
      queryFinishedStream_(NULL),
      cbServer_(NULL),
-     havePrivateCbServer_(false),
      cbCommStatus_(0),
       mayPinAudit_(false),
       mayLock_(false)
@@ -516,14 +515,6 @@ void ex_root_tcb::freeResources()
     // attempt to correlate retried errors with any particular Statement.
     glob->getIpcEnvironment()->logRetriedMessages();
   }
-
-  if (cbServer_ && havePrivateCbServer_)
-  {
-    cbServer_->release();
-    cbServer_ = NULL;
-    havePrivateCbServer_ = false;
-  }
-
   if (queryStartedStream_)
   {
     queryStartedStream_->removeRootTcb();
@@ -2754,6 +2745,8 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
     getGlobals()->castToExExeStmtGlobals()->castToExMasterStmtGlobals();
 
   CliGlobals *cliGlobals = glob->getCliGlobals();
+  if (cliGlobals->getStatsGlobals() == NULL)
+     return;
   ContextCli *context = cliGlobals->currContext();
 
   // Let MXSSMP know this query is ready to be suspended, since any ESPs will
@@ -2816,105 +2809,34 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
       return;
     }
   }
+  NABoolean diagsAreaAllocated = FALSE;
 
-  // See if an error happened on an earlier execution's finished message.
-  // Temporarily use the cliGlobal's IpcServer to check for error state.
-  if (context->canUseCbServer())
+  if (diagsArea == NULL)
   {
-    IpcServer * globalCbServer = context->useCbServer();
-    if (globalCbServer && 
-        globalCbServer->getControlConnection()  &&
-        globalCbServer->getControlConnection()->getErrorInfo() != 0)
-    {
-      globalCbServer->release();
-      context->lostCbServer();   // this method also calls doneWithCbServer.
-    }
-    else
-      context->doneWithCbServer();
+     diagsAreaAllocated = TRUE;
+     diagsArea = ComDiagsArea::allocate(getHeap());
+  }
+  ExSsmpManager *ssmpManager = context->getSsmpManager();
+  cbServer_ = ssmpManager->getSsmpServer(
+                                 cliGlobals->myNodeName(), 
+                                 cliGlobals->myCpu(), diagsArea);
+  if (cbServer_ == NULL || cbServer_->getControlConnection() == NULL)		
+  {		
+      // We could not get a phandle for the cancel broker.  However,		
+      // let the query run (on the assumption that it will not need to 		
+      // be canceled) and convert any error conditions to warnings.		
+
+      // tbd - figure a way retry registration later, as the query progresses.		
+      if (diagsArea != NULL)		
+         NegateAllErrors(diagsArea);		
+      return;
+  }
+  else if (diagsAreaAllocated)
+  {
+     diagsArea->decrRefCount();
+     diagsArea = NULL;
   }
 
-  // Also, fix any problem for a private server.
-  if (cbServer_ && 
-      cbServer_->getControlConnection()  &&
-      cbServer_->getControlConnection()->getErrorInfo() != 0)
-  {
-    ex_assert(havePrivateCbServer_, 
-              "Bad cleanup after finishQuery message.");
-    cbServer_->release();
-    cbServer_ = NULL;
-    havePrivateCbServer_ = false;
-
-  }
-
-  if (cbServer_ == NULL)
-  {
-    // Use context's IpcServer if it is allocated and not in use.
-    // If context's IpcServer is not allocated, create one, give it to 
-    // globals, and use it. 
-    // If context's IpcServer is allocated, but in use, create a private one,
-    // and remember to release it in ex_root_tcb::freeResources().
-
-    bool fakeAPrivateServer = false;
-#ifdef _DEBUG
-#ifdef NA_LINUX
-   fakeAPrivateServer = (NULL != getenv("CB_PRIVATE"));
-#endif
-#endif
-
-    if ((context->canUseCbServer()) && !fakeAPrivateServer)
-    {
-      cbServer_ = context->useCbServer();
-      havePrivateCbServer_ = false;
-    }
-    else
-    {
-      char nodeName[16];
-      nodeName[0] = '\\';
-      Lng32 nodeNameLen = str_len(cliGlobals->myNodeName()); 
-      str_cpy_all(&nodeName[1], cliGlobals->myNodeName(), nodeNameLen);
-      nodeName[1+nodeNameLen] = '\0';
-
-      IpcServer * cbServer = 
-          context->getCbServerClass()->allocateServerProcess(
-                      &diagsArea, 
-                      context->getIpcHeap(),
-                      nodeName,
-                      cliGlobals->myCpu(),
-                      IPC_PRIORITY_DONT_CARE,
-                      1,      //espLevel (not relevant)
-                      FALSE,  // usesTransactions 
-                      TRUE,   // waitedCreation
-                      3       // maxNowaitRequests -- start+finish+(1 extra).
-                      );
-      if (cbServer == NULL || cbServer->getControlConnection() == NULL)
-      {
-        // We could not get a phandle for the cancel broker.  However,
-        // let the query run (on the assumption that it will not need to 
-        // be canceled) and convert any error conditions to warnings.
-
-        // tbd - figure a way retry registration later, as the query progresses.
-        if (diagsArea != NULL)
-          NegateAllErrors(diagsArea);
-        return;
-      }
-
-      if (context->hasACbServer() || fakeAPrivateServer)
-      {
-        // this statement will use its own CB connection and will release
-        // it when done.
-        cbServer_ = cbServer;
-        havePrivateCbServer_ = true;
-      }
-      else
-      {
-        context->takeCbServer(cbServer);
-        cbServer_ = context->useCbServer();
-        havePrivateCbServer_ = false;
-      }
-
-    }
-  }
-  
   // The stream's actOnSend method will delete (or call decrRefCount()) 
   // for this object.
   RtsQueryId *rtsQueryId = new (context->getIpcHeap()) 
@@ -2937,7 +2859,7 @@ void ex_root_tcb::registerCB(ComDiagsArea *&diagsArea)
   if (queryStartedStream_ == NULL)
   {
     queryStartedStream_  = new (context->getIpcHeap())
-          QueryStartedMsgStream(context->getEnvironment(), this);
+          QueryStartedMsgStream(context->getEnvironment(), this, ssmpManager);
 
     queryStartedStream_->addRecipient(cbServer_->getControlConnection());
   }
@@ -2961,20 +2883,6 @@ void ex_root_tcb::deregisterCB()
 
   CliGlobals *cliGlobals = glob->getCliGlobals();
   ContextCli *context = cliGlobals->currContext();
-
-#if 0
-  bool allowUnitTestSuspend = false;
-  // This "unit test" has been unit tested but cannot be tested
-  // in the developer regression tests without slowing down 
-  // everybody's run, and also risking false positive due to 
-  // timing issues.  Hence, the use of LCOV. 
-  // LCOV_EXCL_START
-    allowUnitTestSuspend = (NULL != getenv("UNIT_TEST_LATE_SUSPEND"));
-
-  if (allowUnitTestSuspend)
-    DELAY(20*100);
-  // LCOV_EXCL_STOP
-#endif
 
   // Let MXSSMP know this query can no longer be suspended.  Also, here
   // is where we handle one possibilty:  the query can be suspended after
@@ -3032,30 +2940,6 @@ void ex_root_tcb::deregisterCB()
                cliGlobals->myPin(),savedPriority, savedStopMode);
   }
 
-  if (context->getCbServerClass() == NULL ||  
-      cbServer_ == NULL ||
-      cbServer_->getControlConnection() == NULL)
-    return;
-
-  if (cbServer_->getControlConnection()->getErrorInfo() != 0)
-  {
-    // Some IPC error happened after we registered.  No need to deregister.
-    if (havePrivateCbServer_)
-    {
-      ; // Private server will be cleanup up in destructor, or when the 
-        // query is re-executed - registerCB.
-    }
-    else
-    {
-      cbServer_ = NULL;
-      // Tell context that we are finished with his cbServer_.
-      // The ipc error will be cleaned up when registerCB is
-      // called next for this query or any other query.
-      context->doneWithCbServer();
-    }
-    return;
-  }
-
   // No started message sent, so no finished message should be sent.
   if (!isCbStartedMessageSent())
     return;
@@ -3090,7 +2974,7 @@ void ex_root_tcb::deregisterCB()
   if (queryFinishedStream_ == NULL)
   {
     queryFinishedStream_  = new (context->getIpcHeap())
-          QueryFinishedMsgStream(context->getEnvironment(), this);
+          QueryFinishedMsgStream(context->getEnvironment(), this, context->getSsmpManager());
 
     queryFinishedStream_->addRecipient(cbServer_->getControlConnection());
   }
@@ -3115,20 +2999,8 @@ void ex_root_tcb::setCbFinishedMessageReplied()
   ContextCli *context = glob->getCliGlobals()->currContext();
 
   cbCommStatus_ &= ~FINISHED_PENDING_; 
-
-  if (havePrivateCbServer_)
-  {
-    // Let my destructor release the server, since we are executing 
-    // from a callback it would not be safe to delete the IpcConnection
-    // object that called us.
-  }
-  else
-  {
-    // Tell context that we are finished with his cbServer_.
-    context->doneWithCbServer();
-    cbServer_ = NULL;
-  }
 }
+
 void ex_root_tcb::cbMessageWait(Int64 waitStartTime)
 {
   ExMasterStmtGlobals *master_glob = getGlobals()->
@@ -3181,12 +3053,18 @@ void ex_root_tcb::dumpCb()
   statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
                       cliGlobals->myPin(),savedPriority, savedStopMode);
   if (doDump)
-    cbServer_->getServerId().getPhandle().dumpAndStop(true, true);
+    cbServer_->getServerId().getPhandle().dumpAndStop(true, false);
 }
 
 // -----------------------------------------------------------------------
 // Methods for QueryStartedMsgStream. 
 // -----------------------------------------------------------------------
+
+void QueryStartedMsgStream::actOnSend(IpcConnection *conn)
+{
+  if (conn->getErrorInfo() != 0)
+     delinkConnection(conn);
+}
 
 void QueryStartedMsgStream::actOnSendAllComplete()
 {
@@ -3234,7 +3112,20 @@ void QueryStartedMsgStream::actOnReceive(IpcConnection *connection)
     }
     reply->decrRefCount();
   }
+  else 
+     delinkConnection(connection);
 }
+
+void QueryStartedMsgStream::delinkConnection(IpcConnection *conn)
+{
+  char nodeName[MAX_SEGMENT_NAME_LEN+1];
+  IpcCpuNum cpu;
+
+  conn->getOtherEnd().getNodeName().getNodeNameAsString(nodeName);
+  cpu = conn->getOtherEnd().getCpuNum();
+  ssmpManager_->removeSsmpServer(nodeName, (short)cpu);
+}
+
 
 void QueryStartedMsgStream::actOnReceiveAllComplete()
 {
@@ -3253,6 +3144,12 @@ void QueryStartedMsgStream::actOnReceiveAllComplete()
 // -----------------------------------------------------------------------
 // Methods for QueryFinishedMsgStream. 
 // -----------------------------------------------------------------------
+
+void QueryFinishedMsgStream::actOnSend(IpcConnection *conn)
+{
+  if (conn->getErrorInfo() != 0)
+     delinkConnection(conn);
+}
 
 void QueryFinishedMsgStream::actOnSendAllComplete()
 {
@@ -3280,6 +3177,18 @@ void QueryFinishedMsgStream::actOnReceive(IpcConnection *connection)
 
     reply->decrRefCount();
   }
+  else
+      delinkConnection(connection);
+}
+
+void QueryFinishedMsgStream::delinkConnection(IpcConnection *conn)
+{
+  char nodeName[MAX_SEGMENT_NAME_LEN+1];
+  IpcCpuNum cpu;
+
+  conn->getOtherEnd().getNodeName().getNodeNameAsString(nodeName);
+  cpu = conn->getOtherEnd().getCpuNum();
+  ssmpManager_->removeSsmpServer(nodeName, (short)cpu);
 }
 
 void QueryFinishedMsgStream::actOnReceiveAllComplete()

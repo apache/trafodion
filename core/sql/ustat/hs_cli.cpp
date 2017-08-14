@@ -5311,53 +5311,7 @@ NAString HSSample::getTempTablePartitionInfo(NABoolean unpartitionedSample,
            // For now, choosing numPartitionsNeeded to be even is safe.
            if (((numPartitionsNeeded % 2) != 0) AND (numPartitionsNeeded > 1))
              --numPartitionsNeeded;
-   
-           // If POS is going to be uzed, there are 3 possibilities
-           // 1. estimated Number of partitions of sample table is less than
-           // number of partitions on local node, assuming each partition holds
-           // at most HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
-           // (100MB/10MB is defaul) bytes of data.
-           // In this case we set POS to LOCAL_NODE and create exactly as many
-           // partitions as needed.
-           // 2. If case 1. is not true, (i.e. data in sample table will not fit on
-           // node, if we have HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
-           // bytes of data in each partition and 1 partition per disk) we heuristically
-           // multiply HIST_SCRATCH_VOL_THRESHOLD/HIST_FETCHCOUNT_SCRATCH_VOL_THRESHOLD
-           // by 3 and see if the sample table will now fit in the local node. If it
-           // does we set POS to LOCAL_NODE and provide POS with the sample table size.
-           // POS will create one partition in each disk on the local node and automatically
-           // adjust the extent size based on the sample table size. If the number of partitions
-           // in the source table is less than or equal to the number of partitions in the local
-           // node we choose this option too as we do not want the sample table to have more partitions
-           // than the base table.
-           // 3. If the sample table will not fit in the local node even when
-           // HIST_SCRATCH_VOL_THRESHOLD is multiplied by 3, then we set POS to MULTI_NODE and
-           // provide it with the sample table size. POS will create a sample table
-           // with one partition in each available disk in the multi-node with the appropriate
-           // extent size based on sample table size.
-   
-           NAString *localNodeName = getLocalNodeName();
-           NodeToCpuVolMapDB *volumeCache = ActiveSchemaDB()->getNodeToCpuVolMapDB();
-           Lng32 numVolsInLocalNode = volumeCache->getTotalNumOfVols(localNodeName);
-           if ( (numVolsInLocalNode > 0) &&
-                (numPartitionsNeeded > numVolsInLocalNode))
-           {
-             if ((numPartitionsNeeded < 3*numVolsInLocalNode) ||
-                 (objDef->getNumPartitions() <= numVolsInLocalNode))
-             {
-               usePOSLocalNodeWithTableSize = TRUE;
-               numPartitionsNeeded = numVolsInLocalNode;
-             }
-             else
-               usePOSMultiNode = TRUE ;
-   
-               sampleTableSizeInMB = (Lng32) ceil((double)sampleRowCount
-                                                              *
-                                                  objDef->getRecordLength()
-                                                              /
-                                                        MB_IN_BYTES);
-           }
-          } // end of USTAT_USE_GROUPING_FOR_SAMPLING is OFF
+           } // end of USTAT_USE_GROUPING_FOR_SAMPLING is OFF
      } // end of non hive tables
                                    /*=========================================*/
                                    /*   FLOAT PRIMARY KEY - NO PARTITIONING   */

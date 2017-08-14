@@ -4191,7 +4191,7 @@ InputOutputExpr::inputValues(atp_struct *atp,
 	    {
 	      // the first 4 bytes of data are actually the variable 
 	      // length indicator
-	      short VCLen;
+	      Lng32 VCLen;
 	      str_cpy_all((char *) &VCLen, source, sizeof(Int32));
 	      sourceLen = (Lng32) VCLen;
 	      source = &source[sizeof(Int32)];

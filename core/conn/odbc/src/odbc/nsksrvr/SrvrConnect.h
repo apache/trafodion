@@ -340,6 +340,18 @@ odbc_SQLSrvr_ExtractLob_ame_(
   , /* In   */ IDL_string  lobHandle
   );
 
+void
+odbc_SQLSrvr_UpdateLob_ame_(
+     /* In   */ CEE_tag_def objtag_
+  ,  /* In   */ const CEE_handle_def *call_id_
+  ,  /* In   */ IDL_short lobUpdateType
+  ,  /* In   */ IDL_string lobHandle
+  ,  /* In   */ IDL_long_long totalLength
+  ,  /* In   */ IDL_long_long offset
+  ,  /* In   */ IDL_long_long length
+  ,  /* In   */ BYTE * data
+  );
+
 bool SetHigherPriorityForMetaDataAccess();
 
 

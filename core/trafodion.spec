@@ -96,9 +96,19 @@ then
 fi
 if ! getent passwd trafodion > /dev/null
 then
-  /usr/sbin/useradd --shell /bin/bash -m trafodion -g trafodion -G hbase,hive --home /home/trafodion > /dev/null 2>&1
-else
-  /usr/sbin/usermod -a -G hbase,hive trafodion > /dev/null 2>&1
+  /usr/sbin/useradd --shell /bin/bash -m trafodion -g trafodion --home /home/trafodion > /dev/null 2>&1
+fi
+if getent group hbase > /dev/null
+then
+  /usr/sbin/usermod -a -G hbase trafodion > /dev/null 2>&1
+fi
+if getent group hive > /dev/null
+then
+  /usr/sbin/usermod -a -G hive trafodion > /dev/null 2>&1
+fi
+if getent group hadoop > /dev/null
+then
+  /usr/sbin/usermod -a -G hadoop trafodion > /dev/null 2>&1
 fi
 chmod go+rx /home/trafodion
 
