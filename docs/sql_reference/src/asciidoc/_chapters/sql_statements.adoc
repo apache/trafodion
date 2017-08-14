@@ -377,21 +377,19 @@ To run this statement, AUTOCOMMIT must be turned ON (the default) for the sessio
 ALTER TABLE name alter-action
 
 alter-action is:
-
      ADD [IF NOT EXISTS][COLUMN] column-definition
    | ADD [CONSTRAINT constraint-name] table-constraint
    | DROP CONSTRAINT constraint-name [RESTRICT]
    | RENAME TO new-name
    | DROP COLUMN [IF EXISTS] column-name
+   | ALTER COLUMN column-definition
 
 column-definition is:
-
    column-name data-type
       ([DEFAULT default]
          [[constraint constraint-name] column-constraint])
 
 data-type is:
-
      char[acter] [(length)[characters]]
          [CHARACTER SET char-set-name]
          [UPSHIFT] [[not] casespecific]
@@ -418,7 +416,6 @@ data-type is:
    | interval { start-field to end-field | single-field }
 
 default is:
-
      literal
    | null
    | currentdate
@@ -426,24 +423,20 @@ default is:
    | currenttimestamp }
 
 column-constraint is:
-
      not null
    | unique
    | check (condition)
    | references ref-spec
 
 table-constraint is:
-
      unique (column-list)
    | check (condition)
    | foreign key (column-list) references ref-spec
 
 ref-spec is:
-
    referenced-table [(column-list)]
 
 column-list is:
-
    column-name[, column-name]...
 ```
 
@@ -616,6 +609,16 @@ the clauses for the _column-definition_ are the same as described in add [column
 +
 drops the specified column from _table_, including the column’s data. you cannot drop a primary key column.
 
+* `alter column _column-definition_`
++
+alters the data-type of a column in an existing Trafodion table. The following conditions have to be met, else SQL error 1404 will be returned.
+
+** the old (existing) column datatype and new column datatype must be VARCHAR (variable length string datatype).
+** new column length must be greater than or equal to old column length.
+** old and new character sets must be the same.
+** altered columns cannot be part of primary key or secondary index key.
+** table cannot be a VOLATILE table.
+
 <<<
 [[alter_table_considerations]]
 === Considerations for ALTER TABLE
@@ -655,13 +658,54 @@ If the constraint refers to the other table in a query expression, you must also
 [[alter_table_examples]]
 ===  Example of ALTER TABLE
 
-This example adds a column:
+* This example adds a column.
 
 ```
 ALTER TABLE persnl.project
    ADD COLUMN projlead
       NUMERIC (4) UNSIGNED
 ```
+
+
+* This example alters a column of an existing table – showing both positive and negative cases.
+
+```
+>>INVOKE T;
+
+-- Definition of Trafodion table TRAFODION.SEABASE.T
+-- Definition current  Wed Jul  8 01:28:40 2015
+
+  (
+    SYSKEY    LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A         INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B         VARCHAR(30) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>ALTER TABLE T ALTER COLUMN B VARCHAR(40);
+
+--- SQL operation complete.
+>>INVOKE T;
+
+-- Definition of Trafodion table TRAFODION.SEABASE.T
+-- Definition current  Wed Jul  8 01:29:03 2015
+
+  (
+    SYSKEY     LARGEINT NO DEFAULT NOT NULL NOT DROPPABLE
+  , A          INT NO DEFAULT NOT NULL NOT DROPPABLE
+  , B          VARCHAR(40) CHARACTER SET ISO88591 COLLATE
+      DEFAULT DEFAULT NULL
+  )
+
+--- SQL operation complete.
+>>ALTER TABLE T ALTER COLUMN B VARCHAR(30);
+
+*** ERROR[1404] Datatype for column B cannot be altered.
+
+--- SQL operation failed with errors.
+```
+
 
 <<<
 [[alter_user_statement]]
