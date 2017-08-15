@@ -639,7 +639,7 @@ NOTE: odb does not load rows where the size of the input file is greater than th
 
 [[load_xml_files]]
 == Load XML Files
-Trafodion odb supports loading xml files into tables, the key construct for xml files can be an element or an attribute.
+Trafodion odb supports loading XML files into tables, the key construct for XML files can be an element or an attribute.
 
 === Load XML Files Where Data is Stored in Element Nodes
 
@@ -659,7 +659,7 @@ Trafodion odb supports loading xml files into tables, the key construct for xml 
 </data>
 ```
 
-TIP: To check what will be loaded before loading xml file into table, run the following command
+TIP: To check what will be loaded before loading XML file into table, run the following command
 `./odb64luo -l src=test.xml :tgt=testxmlload:xmltag=data:xmldump`
 
 [start=3]
@@ -677,14 +677,14 @@ TIP: `xmltag=data` means odb  will load data from the element nodes. For more in
 ```
 
 [start=2]
-. Suppose you have a xml file where data is stored in attribute nodes like the following.
+. Suppose you have a XML file where data is stored in attribute nodes like the following.
 ```
 -bash-4.1$ cat test.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <data id="1" name="hello"></data>
 ```
 
-TIP: To check what will be loaded before loading xml file into table, run the following command.
+TIP: To check what will be loaded before loading XML file into table, run the following command.
 `./odb64luo -l src=test.xml:tgt=testxmlload:xmltag=data:xmldump`
 
 [start=3]
