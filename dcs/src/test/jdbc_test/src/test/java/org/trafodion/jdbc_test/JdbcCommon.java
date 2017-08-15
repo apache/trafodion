@@ -117,11 +117,22 @@ public class JdbcCommon {
         StringBuilder buf = new StringBuilder(ddl);
         ddl = buf.toString();
 
+        Statement stmt = null;
         try {
-            _conn.createStatement().execute(ddl);
+            stmt = _conn.createStatement();
+            stmt.execute(ddl);
         } catch (Exception e) { 
             System.out.println(e.getMessage());
             fail("Failed to create table");
+        }
+        finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                }
+                catch (Exception e) {
+                }
+            }
         }
     }
 
@@ -154,10 +165,17 @@ public class JdbcCommon {
         if (commConn == null)
             commConn = getConnection();
 
+        Statement stmt = null;
         try {
-            commConn.createStatement().execute("create schema " + _catalog + "." + _schema);
+            stmt = commConn.createStatement();
+            stmt.execute("create schema " + _catalog + "." + _schema);
         } catch (Exception e) {
             // Do nothing, the schema may already exist.
+        }
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
         }
     }
 
@@ -165,10 +183,17 @@ public class JdbcCommon {
         if (commConn == null)
             commConn = getConnection();
 
+        Statement stmt = null;
         try {
-            commConn.createStatement().execute("drop schema " + _catalog + "." + _schema + " cascade");
+            stmt = commConn.createStatement();
+            stmt.execute("drop schema " + _catalog + "." + _schema + " cascade");
         } catch (Exception e) {
             // Do nothing, the schema may not exist.  
+        }
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
         }
     }
 
@@ -182,10 +207,12 @@ public class JdbcCommon {
         if (objDropList == null)
             return;
 
+        Statement stmt = null;
         for (String objname : objDropList) {
             for (int i = 0; i < 3; i++) {
                 try {
-                    commConn.createStatement().executeUpdate("drop " + objname + " cascade");
+                    stmt = commConn.createStatement();
+                    stmt.executeUpdate("drop " + objname + " cascade");
                     break; // no execption, break out here
                 } catch (Exception e) {
                     String msg = e.getMessage();
@@ -216,6 +243,11 @@ public class JdbcCommon {
                         // all rest are bad.
                         System.out.println(msg);
                         fail("Failed to drop object: " + objname);
+                    }
+                }
+                finally {
+                    if (stmt != null) {
+                        stmt.close();
                     }
                 }
             }

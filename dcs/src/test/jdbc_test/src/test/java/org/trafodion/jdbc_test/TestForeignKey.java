@@ -48,34 +48,40 @@ public class TestForeignKey {
 
 	private static final String strCreatePKTABLE1Query = "CREATE TABLE " + Utils.schema + "." + PKTABLE1 + "( "
 			+ PK1 + " INT NOT NULL PRIMARY KEY)";
-	private static final String strDropPKTABLE1Query = "DROP TABLE " + Utils.schema + "." + PKTABLE1;
+	private static final String strDropPKTABLE1Query = "DROP TABLE IF EXISTS " + Utils.schema + "." + PKTABLE1;
 
 	private static final String strCreatePKTABLE2Query = "CREATE TABLE " + Utils.schema + "." + PKTABLE2 + "( "
 			+ PK2 + " INT NOT NULL PRIMARY KEY)";
-	private static final String strDropPKTABLE2Query = "DROP TABLE " + Utils.schema + "." + PKTABLE2;
+	private static final String strDropPKTABLE2Query = "DROP TABLE IF EXISTS " + Utils.schema + "." + PKTABLE2;
 
 	private static final String strCreateFKTABLE1Query = "CREATE TABLE " + Utils.schema + "." + FKTABLE1 + "( "
 			+ FK1 + " INT NOT NULL, "
 			+ FK2 + " INT NOT NULL, "
 			+ "FOREIGN KEY (" + FK1 + ") REFERENCES " + Utils.schema + "." + PKTABLE1 + "(" + PK1 + "), "
 			+ "FOREIGN KEY (" + FK2 + ") REFERENCES " + Utils.schema + "." + PKTABLE2 + "(" + PK2 + "))";
-	private static final String strDropFKTABLE1Query = "DROP TABLE " + Utils.schema + "." + FKTABLE1;
+	private static final String strDropFKTABLE1Query = "DROP TABLE IF EXISTS " + Utils.schema + "." + FKTABLE1;
 
 	private static final String strCreateFKTABLE2Query = "CREATE TABLE " + Utils.schema + "." + FKTABLE2 + "( "
 			+ FK21 + " INT NOT NULL, "
 			+ FK22 + " INT NOT NULL, "
 			+ "FOREIGN KEY (" + FK21 + ") REFERENCES " + Utils.schema + "." + PKTABLE1 + "(" + PK1 + "), "
 			+ "FOREIGN KEY (" + FK22 + ") REFERENCES " + Utils.schema + "." + PKTABLE2 + "(" + PK2 + "))";
-	private static final String strDropFKTABLE2Query = "DROP TABLE " + Utils.schema + "." + FKTABLE2;
+	private static final String strDropFKTABLE2Query = "DROP TABLE IF EXISTS " + Utils.schema + "." + FKTABLE2;
 
 	private static Connection _conn;
 	
 	@BeforeClass
 	public static void doTestSuiteSetup() throws Exception {
+        Statement stmt = null;
 		try{
-			_conn = DriverManager.getConnection(Utils.url, Utils.usr, Utils.pwd);
-			Statement stmt = _conn.createStatement();
+			_conn = Utils.getUserConnection();
+			stmt = _conn.createStatement();
 			
+			// stmt.execute("set schema " + Utils.catalog + "." + Utils.schema);
+			stmt.execute(strDropFKTABLE1Query);
+			stmt.execute(strDropFKTABLE2Query);
+			stmt.execute(strDropPKTABLE1Query);
+			stmt.execute(strDropPKTABLE2Query);
 			stmt.execute(strCreatePKTABLE1Query);
 			stmt.execute(strCreatePKTABLE2Query);
 			stmt.execute(strCreateFKTABLE1Query);
@@ -85,6 +91,11 @@ public class TestForeignKey {
 			System.out.println(e.getMessage());
 			e.printStackTrace();
 		}
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
+        }
 	}
 	
 	@Test

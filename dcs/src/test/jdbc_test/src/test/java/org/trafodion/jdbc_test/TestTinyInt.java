@@ -44,9 +44,9 @@ public class TestTinyInt {
         String sql = "insert into tinyint_signed_tbl values (?,?);";
         try {
             conn = Utils.getUserConnection();
-            conn.createStatement().executeUpdate("cqd traf_tinyint_return_values 'ON'");//
-            conn.createStatement().executeUpdate("cqd traf_tinyint_input_params 'ON'");//
             stmt = conn.createStatement();
+            stmt.executeUpdate("cqd traf_tinyint_return_values 'ON'");//
+            stmt.executeUpdate("cqd traf_tinyint_input_params 'ON'");//
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists tinyint_signed_tbl (c0 int not null, c1 tinyint signed)");
             stmt.executeUpdate("delete from tinyint_signed_tbl");
@@ -77,9 +77,16 @@ public class TestTinyInt {
             e.printStackTrace();
             assertNull(e.getMessage());
         } finally {
-            stmt.close();
-            prepStmt.close();
-            conn.close();
+            if (stmt != null) {
+                stmt.close();
+            }
+            if (prepStmt != null) {
+                prepStmt.close();
+            }
+
+            if (conn != null) {
+                conn.close();
+            }
         }
     }
 
@@ -123,9 +130,17 @@ public class TestTinyInt {
             e.printStackTrace();
             assertNull(e.getMessage());
         } finally {
+            if (stmt != null) {
             stmt.close();
-            prepStmt.close();
-            conn.close();
+            }
+
+            if (prepStmt != null) {
+                prepStmt.close();
+            }
+
+            if (conn != null) {
+                conn.close();
+            }
         }
     }
 }
