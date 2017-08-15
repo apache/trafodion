@@ -44,8 +44,8 @@ public class TestBoolean {
         String sql = "insert into boolean_tbl values (?,?);";
         try {
             conn = Utils.getUserConnection();
-            conn.createStatement().executeUpdate("cqd traf_boolean_io 'ON'");
             stmt = conn.createStatement();
+            stmt.executeUpdate("cqd traf_boolean_io 'ON'");
             stmt.executeUpdate("set schema " + Utils.catalog + "." + Utils.schema);
             stmt.executeUpdate("create table if not exists boolean_tbl (c0 int not null, c1 boolean)");
             stmt.executeUpdate("delete from boolean_tbl");
@@ -75,9 +75,17 @@ public class TestBoolean {
             e.printStackTrace();
             assertNull(e.getMessage());
         } finally {
-            stmt.close();
-            prepStmt.close();
-            conn.close();
+            if (stmt != null) {
+                stmt.close();
+            }
+
+            if (prepStmt != null) {
+                prepStmt.close();
+            }
+
+            if (conn != null) {
+                conn.close();
+            }
         }
 
     }
