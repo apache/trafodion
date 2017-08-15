@@ -3664,7 +3664,7 @@ Please note the fixed length '6' in strmicmp: SELECT/UPDATET/DELETE/INSERT have 
                     }
                     pos += snprintf(&obuff[pos], obl - pos, "%s</%s>", os, (char *)&Ocnames[i*MAXCOL_LEN]);
                 }
-                pos += snprintf(&obuff[pos], obl - pos, "\n  <row>");
+                pos += snprintf(&obuff[pos], obl - pos, "\n  </row>");
             }
             break;
         case 3:                 /* Print Line Mode */
@@ -9686,7 +9686,7 @@ static void Oextract(int eid)
 #ifdef HDFS
         if ( etab[eid].fho ) {
             (*hdfswrite)(hfs, etab[eid].fho, (void *)xbuff, xbuffl);
-        } else if ( etab[eid].fho ) {
+        } else if ( etab[eid].fo ) {
             (void)fwrite ( xbuff, 1, xbuffl, etab[eid].fo );
         }
 #else
@@ -9910,7 +9910,7 @@ static void Oextract(int eid)
         }
 
         if ( etab[eid].flg2 & 04000000 ) {  /* initialize XML output buffer */
-            xbuffl = snprintf(xbuff, xbuffl, "\n<%s>\n",
+            xbuffl = snprintf(xbuff, xbuffl, "\n</%s>\n",
                 etab[eid].src ? etab[eid].src : "select" );
 #ifdef HDFS
             if ( etab[eid].fho ) {
