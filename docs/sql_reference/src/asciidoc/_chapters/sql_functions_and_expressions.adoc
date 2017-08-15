@@ -503,7 +503,7 @@ ADD_MONTHS(timestamp'2008-02-29 00:00:00',12,1)
 
 The ASCII function returns the integer that is the ASCII code of the
 first character in a character string expression associated with either
-the ISO8859-1 character set or the UTF8 character set.
+the ISO88591 character set or the UTF8 character set.
 
 ASCII is a {project-name} SQL extension.
 
@@ -720,7 +720,7 @@ The AUTHNAME function is similar to the <<user function,USER Function>>.
 === Considerations for AUTHNAME
 
 * This function can be specified only in the top level of a SELECT statement.
-* The value returned is string data type VARCHAR(128) and is in ISO8859-1 encoding.
+* The value returned is string data type VARCHAR(128) and is in ISO88591 encoding.
 
 [[examples_of_authname]]
 === Examples of AUTHNAME
@@ -1451,7 +1451,7 @@ CONCAT (character-expr-1, character-expr-2)
 +
 are SQL character value expressions (of data type CHAR or VARCHAR) that
 specify two strings of characters. Both character value expressions must
-be either ISO8859-1 character expressions or UTF8 character expressions.
+be either ISO88591 character expressions or UTF8 character expressions.
 The result of the CONCAT function is the concatenation of
 _character-expr-1_ with _character-expr-2_. The result type is CHAR if
 both expressions are of type CHAR and it is VARCHAR if either of the
@@ -1561,7 +1561,7 @@ the displayed output shows the internal value and is, consequently, not
 particularly meaningful to general users and is subject to change in
 future releases.
 
-CONVERTTOHEX returns ASCII characters in ISO8859-1 encoding.
+CONVERTTOHEX returns ASCII characters in ISO88591 encoding.
 
 <<<
 [[examples_of_converttohex]]
@@ -2079,7 +2079,7 @@ The CURRENT_USER function is similar to the <<user_function,USER Function>>.
 === Considerations for CURRENT_USER
 
 * This function can be specified only in the top level of a SELECT statement.
-* The value returned is string data type VARCHAR(128) and is in ISO8859-1 encoding.
+* The value returned is string data type VARCHAR(128) and is in ISO88591 encoding.
 
 
 [[examples_of_current_user]]
@@ -2429,7 +2429,7 @@ specifies a format for a datetime value. See <<datetime_literals,Datetime Litera
 [[considerations_for_dateformat]]
 === Considerations for DATEFORMAT
 
-The DATEFORMAT function returns the datetime value in ISO8859-1
+The DATEFORMAT function returns the datetime value in ISO88591
 encoding.
 
 [[examples_of_dateformat]]
@@ -2690,7 +2690,7 @@ TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
 [[considerations_for_dayname]]
 === Considerations for DAYNAME
 
-The DAYNAME function returns the name of the day in ISO8859-1.
+The DAYNAME function returns the name of the day in ISO88591.
 
 [[examples_of_dayname]]
 === Examples of DAYNAME
@@ -4641,7 +4641,7 @@ TIMESTAMP. See <<datetime_value_expressions,Datetime Value Expressions>>.
 [[considerations_for_monthname]]
 === Considerations for MONTHNAME
 
-The MONTHNAME function returns the name of the month in ISO8859-1.
+The MONTHNAME function returns the name of the month in ISO88591.
 
 [[examples_of_monthname]]
 === Examples of MONTHNAME
@@ -6899,7 +6899,7 @@ SPACE (length [, char-set-name])
 +
 specifies the number of characters to be returned. The number _count_
 must be a value greater than or equal to zero of exact numeric data type
-and with a scale of zero. _length_ cannot exceed 32768 for the ISO8859-1
+and with a scale of zero. _length_ cannot exceed 32768 for the ISO88591
 or UTF8 character sets.
 
 * `_char-set-name_`
@@ -7827,7 +7827,7 @@ is one of these translation names:
 [cols="25%l,25%l,25%l,25%",options="header"]
 |===
 | Translation Name | Source Character Set | Target Character Set | Comments
-| ISO88591TOUTF8   | ISO88591             | UTF8                 | Translates ISO8859-1 characters to UTF8 characters. No data loss is possible.
+| ISO88591TOUTF8   | ISO88591             | UTF8                 | Translates ISO88591 characters to UTF8 characters. No data loss is possible.
 | UTF8TOISO88591   | UTF8                 | ISO88591             | Translates UTF8 characters to ISO88591 characters. {project-name} SQL will
 display an error if it encounters a Unicode character that cannot be converted to the target character set.
 |===
@@ -8127,7 +8127,7 @@ and the <<current_user_function,CURRENT USER Function>>.
 === Considerations for USER
 
 * This function can be specified only in the top level of a SELECT statement.
-* The value returned is string data type VARCHAR(128) and is in ISO8859-1 encoding.
+* The value returned is string data type VARCHAR(128) and is in ISO88591 encoding.
 
 [[examples_of_user]]
 === Examples of USER
