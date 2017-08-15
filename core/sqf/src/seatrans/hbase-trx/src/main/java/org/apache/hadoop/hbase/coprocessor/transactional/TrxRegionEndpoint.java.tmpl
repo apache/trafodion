@@ -7536,7 +7536,8 @@ TrxTransactionState isTransactionOnCommittedList(final long transactionId)
                 } 
               more = scanner.next();
               }
-            }   
+            }
+            //scanner.close();  This API is not available until HBase 2.0
   
             if (sampleRowCount > ROWS_TO_SAMPLE) {
               // we read one KeyValue beyond the ROWS_TO_SAMPLE-eth row, so
@@ -7555,7 +7556,8 @@ TrxTransactionState isTransactionOnCommittedList(final long transactionId)
 
     } catch (IOException exp2) {
       if (LOG.isErrorEnabled()) LOG.error("Trafodion estimate row count encountered exception ", exp2);
-      t = exp2;  
+      if (t == null)  // don't bury the root cause if an exception also occurred in the for loop
+        t = exp2;  
     }
 
     // don't you just love Java + Maven? it takes 112 characters to specify the type of the next variable :-)

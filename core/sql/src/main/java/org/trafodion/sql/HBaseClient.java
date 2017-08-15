@@ -1437,10 +1437,7 @@ public class HBaseClient {
       boolean retcode = true; 
       rc[0] = 0;
 
-      HConnection connection = null;
-      HTableInterface table = null; 
-      connection = HConnectionManager.createConnection(config);
-      table = connection.getTable(tblName);
+      Table table = getConnection().getTable(TableName.valueOf(tblName));
 
       int putKVsSampled = 0;
       int nonPutKVsSampled = 0;
@@ -1564,9 +1561,7 @@ public class HBaseClient {
         // at the first family name, and multiply its length times the number of
         // columns. Even if more than one family is used in the future, presumably
         // they will all be the same short size.
-        Table htbl = getConnection().getTable(TableName.valueOf(tblName));
-        //HTable htbl = new HTable(config, tblName);
-        HTableDescriptor htblDesc = htbl.getTableDescriptor();
+        HTableDescriptor htblDesc = table.getTableDescriptor();
         HColumnDescriptor[] families = htblDesc.getColumnFamilies();
         rowSize += (families[0].getName().length * numCols);
       }
