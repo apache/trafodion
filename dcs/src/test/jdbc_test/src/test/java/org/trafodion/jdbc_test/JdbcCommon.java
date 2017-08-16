@@ -208,49 +208,52 @@ public class JdbcCommon {
             return;
 
         Statement stmt = null;
-        for (String objname : objDropList) {
-            for (int i = 0; i < 3; i++) {
-                try {
-                    stmt = commConn.createStatement();
-                    stmt.executeUpdate("drop " + objname + " cascade");
-                    break; // no execption, break out here
-                } catch (Exception e) {
-                    String msg = e.getMessage();
-                    if ((msg.contains("ERROR[1002]") &&
-                         msg.contains("does not exist")) ||
-                        (msg.contains("ERROR[1003]") && 
-                         msg.contains("does not exist")) ||
-                        (msg.contains("ERROR[1004]") &&
-                         msg.contains("does not exist"))) {
-                        // ERROR[1002]: catalog does not exist in SQ, 
-                        // ERROR[1003]: schema does not exist in SQ,
-                        // ERROR[1004]: schema does not exist in SQ,
-                        // we are done these cases.
-                        break;
-                    } 
-                    else if (msg.contains("ERROR[1389]") &&
-                        msg.contains("does not exist")) {
-                        // object does not exist in TRAF, we are done.
-                        break;
+        try {
+            stmt = commConn.createStatement();
+            for (String objname : objDropList) {
+                for (int i = 0; i < 3; i++) {
+                    try {
+                        stmt.executeUpdate("drop " + objname + " cascade");
+                        break; // no execption, break out here
                     }
-                    else if (i < 2 &&
-                        msg.contains("ERROR[1183]") &&
-                        msg.contains("Error 73")) {
-                        // error 73 should be reried up to 3 times.
-                        Thread.sleep(2000); // 2 secs
-                        System.out.println("see error 73, retrying...");
-                    } else {
-                        // all rest are bad.
-                        System.out.println(msg);
-                        fail("Failed to drop object: " + objname);
-                    }
-                }
-                finally {
-                    if (stmt != null) {
-                        stmt.close();
+                    catch (Exception e) {
+                        String msg = e.getMessage();
+                        if ((msg.contains("ERROR[1002]") &&
+                                    msg.contains("does not exist")) ||
+                                (msg.contains("ERROR[1003]") && 
+                                 msg.contains("does not exist")) ||
+                                (msg.contains("ERROR[1004]") &&
+                                 msg.contains("does not exist"))) {
+                            // ERROR[1002]: catalog does not exist in SQ, 
+                            // ERROR[1003]: schema does not exist in SQ,
+                            // ERROR[1004]: schema does not exist in SQ,
+                            // we are done these cases.
+                            break;
+                                 } 
+                        else if (msg.contains("ERROR[1389]") &&
+                                msg.contains("does not exist")) {
+                            // object does not exist in TRAF, we are done.
+                            break;
+                                }
+                        else if (i < 2 &&
+                                msg.contains("ERROR[1183]") &&
+                                msg.contains("Error 73")) {
+                            // error 73 should be reried up to 3 times.
+                            Thread.sleep(2000); // 2 secs
+                            System.out.println("see error 73, retrying...");
+                        } else {
+                            // all rest are bad.
+                            System.out.println(msg);
+                            fail("Failed to drop object: " + objname);
+                        }
                     }
                 }
             }
         }
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
+        }
+        }
     }
-}
