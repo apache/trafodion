@@ -638,7 +638,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 					return true;
 				default:
 					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-							"numeric_out_of_range", null);
+							"numeric_out_of_range", shortValue);
 				}
 			}
 		} else {
@@ -708,7 +708,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 					}
 				} else {
 					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-							"numeric_out_of_range", null);
+							"numeric_out_of_range", d1);
 				}
 			}
 			return retValue;
@@ -1243,7 +1243,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 			return (float) data;
 		} else {
 			throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(), "numeric_out_of_range",
-					null);
+			        data);
 		}
 	}
 
@@ -1306,7 +1306,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 					}
 				} else {
 					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-							"numeric_out_of_range", null);
+							"numeric_out_of_range", d);
 				}
 			}
 		} else {
@@ -1375,7 +1375,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 						}
 					} else {
 						throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-								"numeric_out_of_range", null);
+								"numeric_out_of_range", bd);
 					}
 				} catch (NumberFormatException e2) {
 
@@ -1394,7 +1394,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 						}
 					} else {
 						throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-								"numeric_out_of_range", null);
+								"numeric_out_of_range", d);
 					}
 				}
 			}
@@ -1753,7 +1753,7 @@ public class TrafT4ResultSet extends TrafT4Handle implements java.sql.ResultSet 
 					}
 				} else {
 					throw TrafT4Messages.createSQLException(connection_.props_, connection_.getLocale(),
-							"numeric_out_of_range", null);
+							"numeric_out_of_range", d);
 				}
 			}
 
