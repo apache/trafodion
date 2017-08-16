@@ -76,7 +76,11 @@ public class RequestUnknown {
             clientData.hdr = hdr;
         } catch (UnsupportedEncodingException ue){
             if(LOG.isErrorEnabled())
-                LOG.error("Exception in RequestUnknown: " + s.getRemoteSocketAddress() + ": " + ue.getMessage() );
+                LOG.error("UnsupportedEncodingException in RequestUnknown: " + s.getRemoteSocketAddress() + ": " + ue.getMessage(), ue);
+            cancelConnection = true;
+        } catch (Exception e){
+            if(LOG.isErrorEnabled())
+                LOG.error("Exception in RequestUnknown: " + s.getRemoteSocketAddress() + ": " + e.getMessage(), e);
             cancelConnection = true;
         }
         header = null;

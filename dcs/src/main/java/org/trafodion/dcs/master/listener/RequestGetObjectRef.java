@@ -57,11 +57,15 @@ public class RequestGetObjectRef {
             replyException = buildConnectReply(clientData);
         } catch (UnsupportedEncodingException ue){
             if(LOG.isErrorEnabled())
-                LOG.error("Exception in RequestGetObjectRef: " + s.getRemoteSocketAddress() + ": " + ue.getMessage() );
+                LOG.error("UnsupportedEncodingException in RequestGetObjectRef: " + s.getRemoteSocketAddress() + ": " + ue.getMessage(), ue);
             cancelConnection = true;
         } catch (IOException io){
             if(LOG.isErrorEnabled())
-                LOG.error("Exception in RequestGetObjectRef: " + s.getRemoteSocketAddress() + ": " + io.getMessage());
+                LOG.error("IOException in RequestGetObjectRef: " + s.getRemoteSocketAddress() + ": " + io.getMessage(), io);
+            cancelConnection = true;
+        } catch (Exception e){
+            if(LOG.isErrorEnabled())
+                LOG.error("Exception in RequestGetObjectRef: " + s.getRemoteSocketAddress() + ": " + e.getMessage(), e);
             cancelConnection = true;
         }
         // Return to sender

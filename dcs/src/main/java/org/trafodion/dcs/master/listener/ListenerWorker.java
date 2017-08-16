@@ -86,39 +86,43 @@ public class ListenerWorker extends Thread {
         DataEvent dataEvent;
     
         while(true) {
-            // Wait for data to become available
-            synchronized(queue) {
-                while(queue.isEmpty()) {
-                    try {
-                        queue.wait();
-                    } catch (InterruptedException e) {
+            try {
+                // Wait for data to become available
+                synchronized(queue) {
+                    while(queue.isEmpty()) {
+                        try {
+                            queue.wait();
+                        } catch (InterruptedException e) {
+                        }
                     }
+                    dataEvent = queue.remove(0);
                 }
-                dataEvent = queue.remove(0);
+                SelectionKey key = dataEvent.key;
+                SocketChannel client = (SocketChannel) key.channel();
+                Socket s = client.socket();
+                ClientData clientData = (ClientData) key.attachment();
+                ListenerService server = dataEvent.server;
+                dataEvent.key = null;
+                dataEvent.server = null;
+
+                switch (clientData.hdr.getOperationId()){
+                    case ListenerConstants.DCS_MASTER_GETSRVRAVAILABLE:
+                        clientData = requestGetObjectRef.processRequest(clientData, s);
+                        break;
+                    case ListenerConstants.DCS_MASTER_CANCELQUERY:
+                        clientData = requestCancelQuery.processRequest(clientData, s);
+                        break;
+                    default:
+                        clientData = requestUnknown.processRequest(clientData, s);
+                        break;
+                }
+                // Return to sender
+                int requestReply = clientData.requestReply;
+                key.attach(clientData);
+                server.send(new PendingRequest(key, requestReply));
+            } catch (Exception e){
+                LOG.error("Unexpected Exception", e);
             }
-            SelectionKey key = dataEvent.key;
-            SocketChannel client = (SocketChannel) key.channel();
-            Socket s = client.socket();
-            ClientData clientData = (ClientData) key.attachment();
-            ListenerService server = dataEvent.server;
-            dataEvent.key = null;
-            dataEvent.server = null;
-            
-            switch (clientData.hdr.getOperationId()){
-                case ListenerConstants.DCS_MASTER_GETSRVRAVAILABLE:
-                    clientData = requestGetObjectRef.processRequest(clientData, s);
-                    break;
-                case ListenerConstants.DCS_MASTER_CANCELQUERY:
-                    clientData = requestCancelQuery.processRequest(clientData, s);
-                    break;
-                default:
-                    clientData = requestUnknown.processRequest(clientData, s);
-                    break;
-            }
-            // Return to sender
-            int requestReply = clientData.requestReply;
-            key.attach(clientData);
-            server.send(new PendingRequest(key, requestReply));
         }
     }
 }
