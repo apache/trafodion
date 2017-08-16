@@ -76,15 +76,27 @@ public class TestBoolean {
             assertNull(e.getMessage());
         } finally {
             if (stmt != null) {
+                try {
                 stmt.close();
+                }
+                catch(SQLException e) {
+                }
             }
 
             if (prepStmt != null) {
+                try {
                 prepStmt.close();
+                }
+                catch (SQLException e) {
+                }
             }
 
             if (conn != null) {
+                try {
                 conn.close();
+                }
+                catch (SQLException e){
+                }
             }
         }
 

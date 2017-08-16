@@ -127,11 +127,19 @@ public class BatchTest extends JdbcCommon {
         }
         finally {
             if (upsertStmt != null) {
-                upsertStmt.close();
+                try {
+                    upsertStmt.close();
+                }
+                catch (SQLException e) {
+                }
             }
 
             if (selectStmt != null) {
-                selectStmt.close();
+                try {
+                    selectStmt.close();
+                }
+                catch (SQLException e) {
+                }
             }
         }
     }
@@ -220,11 +228,19 @@ public class BatchTest extends JdbcCommon {
         }
         finally {
             if (selectStmt != null) {
-                selectStmt.close();
+                try {
+                    selectStmt.close();
+                }
+                catch (SQLException e){
+                }
             }
 
             if (insertStmt != null) {
-                insertStmt.close();
+                try {
+                    insertStmt.close();
+                } 
+                catch (SQLException e){
+                }
             }
         }
     }
@@ -252,38 +268,58 @@ public class BatchTest extends JdbcCommon {
         expectedStatusArray = new int[]{-2, -2, -2, -2, -2};
 
         // Insert department records
-        PreparedStatement pstmt = _conn.prepareStatement(strInsert);
-        for(int i=0; i < deptName.length; ++i) {
-            pstmt.setInt(1, (i+1));
-            pstmt.setString(2, deptName[i]);
-            pstmt.addBatch();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = _conn.prepareStatement(strInsert);
+            for(int i=0; i < deptName.length; ++i) {
+                pstmt.setInt(1, (i+1));
+                pstmt.setString(2, deptName[i]);
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
         }
-        pstmt.executeBatch();
-        pstmt.close();
+        finally {
+            try {
+                pstmt.close();
+            }
+            catch (SQLException e) {
+            }
+            pstmt = null;
+        }
 
         // Insert employee records, which need to reference id from department
         // as foreign key.
-        pstmt = _conn.prepareStatement(strInsertFk);
-        for(int i=0; i < employeeName.length; ++i) {
-            pstmt.setInt(1, i);
-            pstmt.setInt(2, employeeDeptId[i]);
-            pstmt.setString(3, employeeName[i]);
-            pstmt.addBatch();
-        }
         try {
-            statusArray = pstmt.executeBatch();
-        } catch(SQLException sqle) {
-            assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED")); 
-            System.out.println(sqle.getMessage());
-            SQLException e = null;
-            e = sqle.getNextException();
-            do {
-                assertTrue(e.getMessage().contains("operation is prevented by referential integrity constraint"));
-                System.out.println(e.getMessage());
-                break;
-            } while((e = e.getNextException()) != null);
+            pstmt = _conn.prepareStatement(strInsertFk);
+            for(int i=0; i < employeeName.length; ++i) {
+                pstmt.setInt(1, i);
+                pstmt.setInt(2, employeeDeptId[i]);
+                pstmt.setString(3, employeeName[i]);
+                pstmt.addBatch();
+            }
+            try {
+                statusArray = pstmt.executeBatch();
+            } catch(SQLException sqle) {
+                assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED")); 
+                System.out.println(sqle.getMessage());
+                SQLException e = null;
+                e = sqle.getNextException();
+                do {
+                    assertTrue(e.getMessage().contains("operation is prevented by referential integrity constraint"));
+                    System.out.println(e.getMessage());
+                    break;
+                } while((e = e.getNextException()) != null);
+            }
         }
-        pstmt.close();
+        finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                }
+                catch (SQLException e) {
+                }
+            }
+        }
 
         Statement stmt = null; 
         try {

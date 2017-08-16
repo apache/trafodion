@@ -78,10 +78,18 @@ public class TestTinyInt {
             assertNull(e.getMessage());
         } finally {
             if (stmt != null) {
-                stmt.close();
+                try {
+                    stmt.close();
+                }
+                catch (SQLException e) {
+                }
             }
             if (prepStmt != null) {
+                try {
                 prepStmt.close();
+                }
+                catch (SQLException e){
+                }
             }
 
             if (conn != null) {
@@ -131,11 +139,19 @@ public class TestTinyInt {
             assertNull(e.getMessage());
         } finally {
             if (stmt != null) {
-            stmt.close();
+                try {
+                    stmt.close();
+                }
+                catch (SQLException e){
+                }
             }
 
             if (prepStmt != null) {
-                prepStmt.close();
+                try {
+                    prepStmt.close();
+                }
+                catch (SQLException e) {
+                }
             }
 
             if (conn != null) {
