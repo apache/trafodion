@@ -1732,6 +1732,10 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   // HBASE_CATALOG:                Catalog of "_ROW_" and "_CELL_" schemas
   // HBASE_COPROCESSORS:           Enable use of co-processors for aggregates.
   //                               need to set the coprocessor in HBase config file
+  // HBASE_ESTIMATE_ROW_COUNT_VIA_COPROCESSOR:  If ON, use a coprocessor when
+  //                               estimating row counts; if OFF, use client side
+  //                               code (the latter doesn't work if HBase encryption
+  //                               is being used)
   // HBASE_INTERFACE:              JNI or JNI_TRX (transactional interface)
   // HBASE_MAX_COLUMN_xxx_LENGTH:  Max length of some
   //                               string columns in the "_ROW_" and "_CELL_" schemas
@@ -1759,6 +1763,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
  // exposure.
  DDkwd__(HBASE_DELETE_COSTING,		             "ON"),
  DDflt0_(HBASE_DOP_PARALLEL_SCANNER,             "0."),
+ DDkwd__(HBASE_ESTIMATE_ROW_COUNT_VIA_COPROCESSOR,   "OFF"),
  DDkwd__(HBASE_FILTER_PREDS,		             "OFF"),
  DDkwd__(HBASE_HASH2_PARTITIONING,                   "ON"),
  DDui___(HBASE_INDEX_LEVEL,                          "0"),
