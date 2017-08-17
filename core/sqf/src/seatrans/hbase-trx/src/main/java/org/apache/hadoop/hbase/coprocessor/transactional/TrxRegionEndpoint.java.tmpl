@@ -151,6 +151,7 @@ import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.regionserver.RegionServerServices;
+import org.apache.hadoop.hbase.regionserver.StoreFileInfo;
 import org.apache.hadoop.hbase.Stoppable;
 import org.apache.hadoop.hbase.NotServingRegionException;
 import org.apache.hadoop.hbase.UnknownScannerException;
@@ -243,6 +244,8 @@ import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProt
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TlogTransactionStatesFromIntervalResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TlogWriteRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TlogWriteResponse;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafEstimateRowCountRequest;
+import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafEstimateRowCountResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TransactionalAggregateRequest;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TransactionalAggregateResponse;
 import org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrxRegionService;
@@ -7335,6 +7338,247 @@ TrxTransactionState isTransactionOnCommittedList(final long transactionId)
   public void setClosing(boolean value) {
     closing.set(value);
   }
+
+  // The following are methods for the Trafodion SQL coprocessors.
+
+  // compares two qualifiers as unsigned, lexicographically ordered byte strings
+
+  static private boolean isQualifierLessThanOrEqual(Cell nextKv, Cell currKv) {
+    int currLength = currKv.getQualifierLength(); 
+    int currOffset = currKv.getQualifierOffset();
+    byte [] currQual = currKv.getQualifierArray();
+    int nextLength = nextKv.getQualifierLength(); 
+    int nextOffset = nextKv.getQualifierOffset();
+    byte [] nextQual = nextKv.getQualifierArray();   
+
+    int minLength = nextLength;
+    if (currLength < nextLength)
+      minLength = currLength;
+
+    for (int i = 0; i < minLength; i++) {
+      // ugh... have to do some gymnastics to make this an
+      // unsigned comparison
+      int nextQualI = nextQual[i+nextOffset];
+      if (nextQualI < 0)
+        nextQualI = nextQualI + 256;
+      int currQualI = currQual[i+currOffset];
+      if (currQualI < 0)
+        currQualI = currQualI + 256;
+
+      if (nextQualI < currQualI)
+        return true;
+      else if (nextQualI > currQualI)
+        return false;
+      // else equal, move on to next byte
+    }
+
+    // the first minLength bytes are the same; the shorter array
+    // is regarded as less
+
+    boolean rc = (nextLength <= currLength);      
+
+    return rc;
+  }
+
+  
+  // debugging function
+
+  private static String bytesToHex(byte[] in) {
+    final StringBuilder builder = new StringBuilder();
+    for(byte b : in) {
+        builder.append(String.format("%02x", b));
+    }
+    return builder.toString();
+  }
+
+  // Returns data needed to estimate the row count in the table.
+  // Entry counts and total size in bytes are extracted from HFiles.
+  // For non-aligned tables (numCols > 1), sampling is done in order
+  // to estimate how many entries make up a row on average.
+
+  @Override
+  public void trafEstimateRowCount(RpcController controller,
+			           TrafEstimateRowCountRequest request,
+			           RpcCallback<TrafEstimateRowCountResponse> done) {
+
+    TrafEstimateRowCountResponse response = null;
+    Throwable t = null;
+
+    int numCols = request.getNumCols();
+
+    // To estimate incidence of nulls, read the first 500 rows worth
+    // of KeyValues.
+    final int ROWS_TO_SAMPLE = 500;
+    int putKVsSampled = 0;
+    int nonPutKVsSampled = 0;
+    int missingKVsCount = 0;
+    int sampleRowCount = 0;
+    long totalEntries = 0;   // KeyValues in all HFiles for table
+    long totalSizeBytes = 0; // Size of all HFiles for table 
+    long estimatedTotalPuts = 0;
+    boolean more = true;
+    long estimatedRowCount = 0;
+
+    // Access the file system to go directly to the table's HFiles.
+    // Create a reader for the file to access the KV entry count and
+    // size in bytes stored in the trailer block.
+    
+    // For aligned format tables, the number of rows equals the
+    // number of KeyValue entries. For non-aligned format, it's
+    // more complicated. There is a KeyValue entry for each 
+    // column value, except the KeyValue may be missing because
+    // the column has a null value or because the column has a
+    // default value that has not been materialized.
+
+    // For non-aligned format tables, we sample some rows and
+    // count how many entries there are per row, so our caller
+    // can estimate the average number of missing values per row.
+    // Once our caller has that estimate, it can estimate the
+    // number of rows.
+
+    // We only do the sampling for non-aligned tables (numCols > 1),
+    // and we only do it on the first HFile of the first Region.
+    // The first Region is detected by having a null start key.
+
+    CacheConfig cacheConf = new CacheConfig(config);
+    byte[] startKey = regionInfo.getStartKey();
+
+    // Get the list of store files in column family '#1'. There might
+    // not be any. For example, a new Trafodion table might be entirely
+    // in memstore with nothing written out yet. Or we may be accessing
+    // a native HBase table which lacks the '#1' colum family.
+    List<String> storeFileList = null;
+    try {
+      byte[] familyName = "#1".getBytes();
+      byte[][] familyNames = { familyName };
+      storeFileList = m_Region.getStoreFileList(familyNames);
+    }
+    catch (IllegalArgumentException iae) {
+      // this gets thrown when the column family doesn't exist;
+      // we'll just use an empty list instead
+      storeFileList = new ArrayList<String>();
+    }
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Trafodion estimate row count sees " + storeFileList.size() + " files.");
+      for (String sfn : storeFileList) {
+        LOG.debug("*** " + sfn);
+      }
+      if (startKey == null)
+        LOG.debug("startKey is null.");
+      else
+        LOG.debug("startKey.length is " + startKey.length + ", startKey is hex " + bytesToHex(startKey));
+    }
+ 
+    try {
+      FileSystem fileSystem = FileSystem.get(config);
+
+      for (String storeFileName : storeFileList) {
+        Path path = new Path(storeFileName);
+        // Make sure the file name conforms to HFile name pattern.
+        if (!StoreFileInfo.isHFile(path)) {
+          if (LOG.isDebugEnabled()) LOG.debug("Trafodion estimate row count file name " + path + " is not an HFile.");
+          continue;
+        }
+        HFile.Reader reader = HFile.createReader(fileSystem, path, cacheConf, config);
+        try {
+          totalEntries += reader.getEntries();
+          totalSizeBytes += reader.length();        
+          if (ROWS_TO_SAMPLE > 0 &&
+              numCols > 1 &&  // only need to do this for non-aligned format
+              (startKey == null || startKey.length == 0) &&  // first region only
+              totalEntries == reader.getEntries()) {  // first file only
+
+            // Trafodion column qualifiers are ordinal numbers, but are represented
+            // as varying length unsigned little-endian integers in lexicographical
+            // order. So, for example, in a table with 260 columns, the column
+            // qualifiers (if present) will be read in this order: 
+            // 1 (x'01'), 257 (x'0101'), 2 (x'02'), 258 (x'0201'), 3 (x'03'),
+            // 259 (x'0301'), 4 (x'04'), 260 (x'0401'), 5 (x'05'), 6 (x'06'), 
+            // 7 (x'07'), ...
+            // We have crossed the boundary to the next row if and only if the
+            // next qualifier read is less than or equal to the previous, 
+            // compared unsigned, lexicographically.
+
+            HFileScanner scanner = reader.getScanner(false, false, false);
+            scanner.seekTo();  //position at beginning of first data block
+
+            // the next line should succeed, as we know the HFile is non-empty
+            Cell currKv = scanner.getKeyValue();
+            while ((more) && (currKv.getTypeByte() != KeyValue.Type.Put.getCode())) {
+              nonPutKVsSampled++;
+              more = scanner.next();
+              currKv = scanner.getKeyValue();
+            }
+            if (more) {
+              // now we have the first KeyValue in the HFile
+
+              int putKVsThisRow = 1;
+              putKVsSampled++;
+              sampleRowCount++;  // we have at least one row
+              more = scanner.next();
+    
+              while ((more) && (sampleRowCount <= ROWS_TO_SAMPLE)) {
+                Cell nextKv = scanner.getKeyValue();
+                if (nextKv.getTypeByte() == KeyValue.Type.Put.getCode()) {
+                  if (isQualifierLessThanOrEqual(nextKv,currKv)) {
+                    // we have crossed a row boundary
+                    sampleRowCount++;
+                    missingKVsCount += (numCols - putKVsThisRow);
+                    putKVsThisRow = 1;
+                  } else {
+                    putKVsThisRow++;
+                  }
+                  currKv = nextKv;
+                  putKVsSampled++;
+                } else {
+                  nonPutKVsSampled++;  // don't count these toward the number
+                } 
+              more = scanner.next();
+              }
+            }
+            //scanner.close();  This API is not available until HBase 2.0
+  
+            if (sampleRowCount > ROWS_TO_SAMPLE) {
+              // we read one KeyValue beyond the ROWS_TO_SAMPLE-eth row, so
+              // adjust counts for that
+              putKVsSampled--;
+              sampleRowCount--;
+            }
+          }  // code for first file
+        } catch (IOException exp1) {
+          if (LOG.isErrorEnabled()) LOG.error("Trafodion estimate row count encountered exception ", exp1);
+          t = exp1;
+        } finally {
+          reader.close(false);
+        }
+      } // for
+
+    } catch (IOException exp2) {
+      if (LOG.isErrorEnabled()) LOG.error("Trafodion estimate row count encountered exception ", exp2);
+      if (t == null)  // don't bury the root cause if an exception also occurred in the for loop
+        t = exp2;  
+    }
+
+    // don't you just love Java + Maven? it takes 112 characters to specify the type of the next variable :-)
+    org.apache.hadoop.hbase.coprocessor.transactional.generated.TrxRegionProtos.TrafEstimateRowCountResponse.Builder
+      responseBuilder = TrafEstimateRowCountResponse.newBuilder();
+    responseBuilder.setTotalEntries(totalEntries).
+      setTotalSizeBytes(totalSizeBytes).
+      setPutKVsSampled(putKVsSampled).
+      setNonPutKVsSampled(nonPutKVsSampled).
+      setMissingKVsCount(missingKVsCount);
+
+    if (t != null)
+    {
+      responseBuilder.setHasException(true);
+      responseBuilder.setException(t.toString());
+    }
+
+    response = responseBuilder.build();
+    done.run(response);
+  }
+
   
 }
 

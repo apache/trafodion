@@ -356,6 +356,7 @@ class ExpHbaseInterface : public NABasicObject
                                  Int32 partialRowSize,
                                  Int32 numCols,
                                  Int32 retryLimitMilliSeconds,
+                                 NABoolean useCoprocessor,
                                  Int64& estRC,
                                  Int32& breadCrumb) = 0;
   virtual Lng32 getLatestSnapshot(const char * tableName, char *& snapshotName, NAHeap * heap) = 0;
@@ -670,6 +671,7 @@ virtual Lng32 initHFileParams(HbaseStr &tblName,
                                  Int32 partialRowSize,
                                  Int32 numCols,
                                  Int32 retryLimitMilliSeconds,
+                                 NABoolean useCoprocessor,
                                  Int64& estRC,
                                  Int32& breadCrumb);
 

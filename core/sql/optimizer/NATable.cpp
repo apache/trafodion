@@ -7883,11 +7883,21 @@ Int64 NATable::estimateHBaseRowCount(Int32 retryLimitMilliSeconds, Int32& errorC
       fqTblName.val[fqTblName.len] = '\0';
 
       Int32 partialRowSize = computeHBaseRowSizeFromMetaData();
+      NABoolean useCoprocessor = 
+        (CmpCommon::getDefault(HBASE_ESTIMATE_ROW_COUNT_VIA_COPROCESSOR) == DF_ON);
+
+      // Note: If in the future we support a hybrid parially aligned +
+      // partially non-aligned format, the following has to be revised.
+      CollIndex keyValueCountPerRow = 1;  // assume aligned format
+      if (!isAlignedFormat(NULL))
+        keyValueCountPerRow = colcount_;  // non-aligned; each column is a separate KV
+
       errorCode = ehi->estimateRowCount(fqTblName,
                                       partialRowSize,
-                                      colcount_,
+                                      keyValueCountPerRow,
                                       retryLimitMilliSeconds,
-                                      estRowCount,
+                                      useCoprocessor,
+                                      estRowCount /* out */,
                                       breadCrumb /* out */);
       NADELETEBASIC(fqTblName.val, STMTHEAP);
 

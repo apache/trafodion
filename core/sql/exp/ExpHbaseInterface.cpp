@@ -1490,6 +1490,7 @@ Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
                                               Int32 partialRowSize,
                                               Int32 numCols,
                                               Int32 retryLimitMilliSeconds,
+                                              NABoolean useCoprocessor,
                                               Int64& estRC,
                                               Int32& breadCrumb)
 {
@@ -1503,7 +1504,8 @@ Lng32 ExpHbaseInterface_JNI::estimateRowCount(HbaseStr& tblName,
 
   estRC = 0;
   retCode_ = client_->estimateRowCount(tblName.val, partialRowSize, numCols, 
-                                       retryLimitMilliSeconds, estRC, breadCrumb /* out */);
+                                       retryLimitMilliSeconds, useCoprocessor,
+                                       estRC, breadCrumb /* out */);
   return retCode_;
 }
 

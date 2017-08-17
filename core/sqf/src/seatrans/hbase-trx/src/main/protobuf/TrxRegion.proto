@@ -404,6 +404,23 @@ message TlogTransactionStatesFromIntervalResponse {
   optional bool hasException = 4;
 }
 
+message TrafEstimateRowCountRequest {
+  // numCols = 1 for aligned tables; = # columns for non-aligned tables
+  required int32 numCols = 1;  
+}
+
+message TrafEstimateRowCountResponse {
+  required int64 totalEntries = 1;
+  required int64 totalSizeBytes = 2;
+  // the next three values will be non-zero only for the first region,
+  // and only when the format is non-aligned
+  required int32 putKVsSampled = 3;
+  required int32 nonPutKVsSampled = 4;
+  required int32 missingKVsCount = 5;
+  optional string exception = 6;
+  optional bool hasException = 7;
+}
+
 message TransactionalAggregateRequest {
   /** The request passed to the TransactionalAggregateService consists of three parts
    *  (1) the (canonical) classname of the ColumnInterpreter implementation
@@ -510,6 +527,8 @@ service TrxRegionService {
     returns(TlogWriteResponse);
   rpc getTransactionStatesPriorToAsn(TlogTransactionStatesFromIntervalRequest)
     returns(TlogTransactionStatesFromIntervalResponse);
+  rpc trafEstimateRowCount(TrafEstimateRowCountRequest)
+    returns(TrafEstimateRowCountResponse);
   rpc GetMax (TransactionalAggregateRequest)
     returns (TransactionalAggregateResponse);
   rpc GetMin (TransactionalAggregateRequest) 

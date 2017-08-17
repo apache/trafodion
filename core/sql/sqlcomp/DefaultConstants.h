@@ -3413,6 +3413,10 @@ enum DefaultConstants
   // if ON, hbase coprocessors could be used, if the query allows it.
   HBASE_COPROCESSORS,
 
+  // if ON, use an HBase coprocessor when estimating row counts; if OFF use
+  // client-side code (the latter does not work if HBase encryption is in use)
+  HBASE_ESTIMATE_ROW_COUNT_VIA_COPROCESSOR,
+
   // if OFF or '0' is disabled, ON or '1' is simple pushdown, '2' is for advance pushdown
   // It will depends on the query on which predicates or sub-predicates could be pushed.
   HBASE_FILTER_PREDS,

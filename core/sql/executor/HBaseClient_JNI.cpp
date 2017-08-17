@@ -250,6 +250,8 @@ HBC_RetCode HBaseClient_JNI::init()
     JavaMethods_[JM_GET_HBLC   ].jm_signature = "()Lorg/trafodion/sql/HBulkLoadClient;";
     JavaMethods_[JM_EST_RC     ].jm_name      = "estimateRowCount";
     JavaMethods_[JM_EST_RC     ].jm_signature = "(Ljava/lang/String;III[J)Z";
+    JavaMethods_[JM_EST_RC_COPROC     ].jm_name      = "estimateRowCountViaCoprocessor";
+    JavaMethods_[JM_EST_RC_COPROC     ].jm_signature = "(Ljava/lang/String;III[J)Z";
     JavaMethods_[JM_REL_HBLC   ].jm_name      = "releaseHBulkLoadClient";
     JavaMethods_[JM_REL_HBLC   ].jm_signature = "(Lorg/trafodion/sql/HBulkLoadClient;)V";
     JavaMethods_[JM_GET_CAC_FRC].jm_name      = "getBlockCacheFraction";
@@ -1339,6 +1341,7 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
                                               Int32 partialRowSize,
                                               Int32 numCols,
                                               Int32 retryLimitMilliSeconds,
+                                              NABoolean useCoprocessor,
                                               Int64& rowCount,
                                               Int32& breadCrumb)
 {
@@ -1364,8 +1367,9 @@ HBC_RetCode HBaseClient_JNI::estimateRowCount(const char* tblName,
   jint jNumCols = numCols;
   jint jRetryLimitMilliSeconds = retryLimitMilliSeconds;
   jlongArray jRowCount = jenv_->NewLongArray(1);
-  tsRecentJMFromJNI = JavaMethods_[JM_EST_RC].jm_full_name;
-  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[JM_EST_RC].methodID,
+  enum JAVA_METHODS method = (useCoprocessor ? JM_EST_RC_COPROC : JM_EST_RC);
+  tsRecentJMFromJNI = JavaMethods_[method].jm_full_name;
+  jboolean jresult = jenv_->CallBooleanMethod(javaObj_, JavaMethods_[method].methodID,
                                               js_tblName, jPartialRowSize,
                                               jNumCols, jRetryLimitMilliSeconds, jRowCount);
   jboolean isCopy;
