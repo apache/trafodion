@@ -587,17 +587,15 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			break;
 		case SQL_BIGINT:
 #if !defined MXHPUX && !defined MXOSS && !defined MXAIX && !defined MXSUNSPARC
-//			sprintf( cTmpBuf, "%Ld", *((__int64 *)srcDataPtr));
             if (srcUnsigned)
-                snprintf( cTmpBuf, sizeof(unsigned __int64), "%lu", *((unsigned __int64 *)srcDataPtr));
+                sprintf( cTmpBuf, "%lu", *((unsigned __int64 *)srcDataPtr));
             else
-                snprintf( cTmpBuf, sizeof(__int64), "%ld", *((__int64 *)srcDataPtr));
+                sprintf( cTmpBuf, "%ld", *((__int64 *)srcDataPtr));
 #else
-//			sprintf( cTmpBuf, "%lld", *((__int64 *)srcDataPtr));
             if (srcUnsigned)
-                snprintf( cTmpBuf, sizeof(unsigned __int64), "%llu", *((unsigned __int64 *)srcDataPtr));
+                sprintf( cTmpBuf, "%llu", *((unsigned __int64 *)srcDataPtr));
             else
-                snprintf( cTmpBuf, sizeof(__int64), "%lld", *((__int64 *)srcDataPtr));
+                sprintf( cTmpBuf, "%lld", *((__int64 *)srcDataPtr));
 #endif
 			DataLen = strlen(cTmpBuf);
 			if (DataLen > targetLength)
