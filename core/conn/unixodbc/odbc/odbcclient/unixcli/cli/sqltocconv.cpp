@@ -421,7 +421,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
                 break;
             }
 		case SQL_WCHAR:
-			charlength = srcLength-1;
+			charlength = srcLength - 1;
 			if (charlength == 0)
 			{
 				if (targetStrLenPtr != NULL)
@@ -3555,7 +3555,10 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			{
 				if(CDataType == SQL_C_CHAR)
 				{
-					DataLen = charlength-Offset;
+			                if(srcCharSet == SQLCHARSETCODE_UCS2)
+					    DataLen = charlength / 2 - Offset;
+					else
+					    DataLen = charlength  - Offset;
 					if (DataLen >= targetLength)
 					{
 						DataLenTruncated = DataLen;
