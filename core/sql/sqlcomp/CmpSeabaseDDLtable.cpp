@@ -12681,7 +12681,9 @@ TrafDesc * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
         }
       else
         {
-          Int32 ctlFlags = GET_SNAPSHOTS; // get snapshot
+          Int32 ctlFlags = 0;
+          if (CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN) != DF_NONE)
+             ctlFlags = GET_SNAPSHOTS; // get snapshot
           if ((CmpCommon::getDefault(TRAF_READ_OBJECT_DESC) == DF_ON) &&
               (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
               (NOT includeInvalidDefs))
