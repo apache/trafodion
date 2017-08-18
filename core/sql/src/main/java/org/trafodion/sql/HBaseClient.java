@@ -666,6 +666,8 @@ public class HBaseClient {
            }
            else {
               TableName tableName = TableName.valueOf(tblName);
+              if (admin.isTableEnabled(tableName))
+                  admin.disableTable(tableName);
               admin.truncateTable(tableName, preserveSplits);
            }
         } finally {

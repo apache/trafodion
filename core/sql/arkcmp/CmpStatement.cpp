@@ -938,16 +938,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
       }
       Set_SqlParser_Flags (0);
 
-      // TEMPTEMP.
-      // Until support for metadata invalidation is in, clear up query cache for
-      // this process. That way statements issued later from this session will
-      // not see stale definitions.
-      // This also helps in running tests where tables are modified and accessed from
-      // the same session.
-      // This does not solve the issue of stale definition seen by other processes,
-      // that will be fixed once we have metadata invalidation.
-      CURRENTQCACHE->makeEmpty();
-
       return CmpStatement_SUCCESS;
     } // hbaseDDL
 
