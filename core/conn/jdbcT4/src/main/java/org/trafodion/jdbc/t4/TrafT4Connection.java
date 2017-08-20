@@ -1876,9 +1876,57 @@ public class TrafT4Connection extends PreparedStatementManager implements java.s
 		return null;
 	}
 
-	public boolean isValid(int timeout) throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+    public boolean isValid(int timeout) throws SQLException {
+        if (props_.t4Logger_.isLoggable(Level.FINE) == true) {
+            Object p[] = T4LoggingUtilities.makeParams(props_);
+            props_.t4Logger_.logp(Level.FINE, "TrafT4Connection", "isValid", "iValid", p);
+        }
+        if (props_.getLogWriter() != null) {
+            LogRecord lr = new LogRecord(Level.FINE, "");
+            Object p[] = T4LoggingUtilities.makeParams(props_);
+            lr.setParameters(p);
+            lr.setSourceClassName("TrafT4Connection");
+            lr.setSourceMethodName("isValid");
+            T4LogFormatter lf = new T4LogFormatter();
+            String temp = lf.format(lr);
+            props_.getLogWriter().println(temp);
+        }
+
+        Statement verifyStmt = null;
+        ResultSet rs = null;
+
+        try {
+            if (this._isClosed() || this.ic_.getNCSAddress().m_io.isSocketClosed()) {
+                return false;
+            }
+
+            verifyStmt = createStatement();
+            rs = verifyStmt.executeQuery("values(1)");
+            if (rs.next()) {
+                return true;
+            }
+        } catch (SQLException e) {
+            return false;
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                    rs = null;
+                }
+            } catch (SQLException e) {
+                // do nothing
+            }
+            try {
+                if (verifyStmt != null) {
+                    verifyStmt.close();
+                    verifyStmt = null;
+                }
+            } catch (SQLException e) {
+                // do nothing
+            }
+        }
+
+        return false;
 	}
 
 	public void setClientInfo(String name, String value)

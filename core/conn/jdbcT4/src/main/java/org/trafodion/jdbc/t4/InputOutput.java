@@ -679,4 +679,8 @@ class InputOutput {
 			// need be - see class comments.
 		}
 	}
+
+    public boolean isSocketClosed() {
+        return m_socket.isClosed();
+    }
 } // end class InputOutput
