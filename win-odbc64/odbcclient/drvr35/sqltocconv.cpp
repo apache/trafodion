@@ -3445,7 +3445,10 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 			}
 			else
 			{
-				DataLen = charlength-Offset;
+				if (srcCharSet == SQLCHARSETCODE_UCS2)
+					DataLen = charlength / 2 - Offset;
+				else
+					DataLen = charlength - Offset;
 				if (DataLen >= targetLength)
 				{
 					DataLenTruncated = DataLen;
