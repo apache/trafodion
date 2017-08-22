@@ -1949,7 +1949,7 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
    char logBuf[4096];
    lobDebugInfo("In ExLob::readCursorData",0,__LINE__,lobTrace_);
 
-   while ( (operLen < tgtSize) && !cursor.eod_ )
+   while ( (operLen <= tgtSize) && !cursor.eod_ )
    {
     
       if (cursor.bytesRead_ == cursor.descSize_) // time to read next chunck
@@ -1970,7 +1970,14 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
               continue;
          }
       }
-      
+      if (operLen == tgtSize)
+        {
+          //The cursor still has data available but wait until redrive since
+          //we have fetched all the data for this extract operation
+          hdfsCloseFile(fs_, fdData_);
+          fdData_ = NULL;
+          return LOB_OPER_OK;
+        }
       bytesAvailable = cursor.descSize_ - cursor.bytesRead_;
       bytesToCopy = min(bytesAvailable, tgtSize - operLen);
       offset = cursor.descOffset_ + cursor.bytesRead_;
