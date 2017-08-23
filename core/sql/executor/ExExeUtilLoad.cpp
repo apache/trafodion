@@ -3246,7 +3246,7 @@ short ExExeUtilLobExtractTcb::work()
 		break;
 	      }
 
-	    remainingBytes_ = (Lng32)lobDataOutputLen;
+	    remainingBytes_ = lobDataOutputLen;
 	    currPos_ = 0;
 
             
@@ -3309,33 +3309,11 @@ short ExExeUtilLobExtractTcb::work()
 				getLobErrStr(intParam1));
 		step_ = HANDLE_ERROR_;
 		break;
-	      }
+	      } 
 	    step_ = DONE_;
 	  }
 	  break;
 
-
-	case RETURN_STRING_:
-	  {
-	    if (qparent_.up->isFull())
-	      return WORK_OK;
-
-	    Lng32 size = MINOF((Lng32)lobTdb().dataExtractSizeIOAddr(), (Lng32)remainingBytes_);
-
-	    moveRowToUpQueue(&lobData_[currPos_], size);
-
-	    remainingBytes_ -= size;
-	    currPos_ += size;
-
-	    if (remainingBytes_ <= 0)
-	      {
-		step_ = READ_CURSOR_;
-		qparent_.down->removeHead();
-	      }
-
-	    return WORK_RESCHEDULE_AND_RETURN;
-	  }
-	  break;
    
 	case RETURN_STATUS_:
 	  {

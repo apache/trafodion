@@ -2978,7 +2978,7 @@ public:
   char * lobData2_;
   Int64 lobDataSpecifiedExtractLen_;
   Int64 lobDataLen_;
-  Lng32 remainingBytes_;
+  Int64 remainingBytes_;
   Lng32 currPos_;
   Lng32 numChildRows_;
   Int64 requestTag_;
