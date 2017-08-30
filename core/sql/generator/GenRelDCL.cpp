@@ -203,7 +203,7 @@ short RelTransaction::codeGen(Generator * generator)
       // location. Create that node.
       ItemExpr * daSize = 
 	new(generator->wHeap()) Cast (diagAreaSizeExpr_, 
-	new(generator->wHeap()) SQLInt(TRUE, FALSE));
+	new(generator->wHeap()) SQLInt(generator->wHeap(), TRUE, FALSE));
       daSize->setConstFoldingDisabled(TRUE);      
       
       daSize->bindNode(generator->getBindWA());
@@ -337,7 +337,7 @@ short RelSetTimeout::codeGen(Generator * generator)
       ItemExpr * toVal = 
 	new(generator->wHeap()) Cast(timeoutValueExpr_, 
 				     new(generator->wHeap()) 
-				     SQLInt(TRUE, FALSE));
+				     SQLInt(generator->wHeap(), TRUE, FALSE));
       toVal->setConstFoldingDisabled(TRUE);      
       
       toVal->bindNode(generator->getBindWA());

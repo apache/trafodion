@@ -3592,7 +3592,7 @@ short ExeUtilRegionStats::codeGen(Generator * generator)
       ItemExpr * inputExpr = new(generator->wHeap())
         Cast(inputColList_, 
              new (generator->wHeap())
-             SQLVarChar(inputColList_->getValueId().getType().getNominalSize(),
+             SQLVarChar(generator->wHeap(), inputColList_->getValueId().getType().getNominalSize(),
                         inputColList_->getValueId().getType().supportsSQLnull()));
       
       inputExpr->bindNode(generator->getBindWA());

@@ -7336,7 +7336,7 @@ ItemExpr * BuiltinFunction::preCodeGen(Generator * generator)
                 // the executor method assumes an ASCII string for the query id, so
                 // convert the value to a fixed char type in the ISO88591 char set
                 SQLChar * newTyp0 = new(generator->wHeap())
-                  SQLChar(typ0.getCharLimitInUCS2or4chars(),
+                  SQLChar(generator->wHeap(), typ0.getCharLimitInUCS2or4chars(),
                           typ0.supportsSQLnullLogical(),
                           typ0.isUpshifted(),
                           typ0.isCaseinsensitive(),
@@ -7359,7 +7359,7 @@ ItemExpr * BuiltinFunction::preCodeGen(Generator * generator)
                 // the executor method assumes an ASCII string for the query id, so
                 // convert the value to a fixed char type in the ISO88591 char set
                 SQLChar * newTyp1 = new(generator->wHeap())
-                  SQLChar(typ1.getCharLimitInUCS2or4chars(),
+                  SQLChar(generator->wHeap(), typ1.getCharLimitInUCS2or4chars(),
                           typ1.supportsSQLnullLogical(),
                           typ1.isUpshifted(),
                           typ1.isCaseinsensitive(),
@@ -7919,7 +7919,7 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
         IntervalType *interval = (IntervalType *) result_type;
         const Int16 DisAmbiguate = 0;
         child(1) = new(generator->wHeap()) Cast(child(1),
-                            new(generator->wHeap()) SQLNumeric(TRUE, /* signed */
+                            new(generator->wHeap()) SQLNumeric(generator->wHeap(), TRUE, /* signed */
 #pragma nowarn(1506)   // warning elimination
                                            interval->getTotalPrecision(),
                                            0,
@@ -7968,7 +7968,7 @@ ItemExpr * BiArith::preCodeGen(Generator * generator)
         IntervalType *interval = (IntervalType *) result_type;
         const Int16 DisAmbiguate = 0;
         child(1) = new(generator->wHeap()) Cast(child(1),
-                            new(generator->wHeap()) SQLNumeric(TRUE, /* signed */
+                            new(generator->wHeap()) SQLNumeric(generator->wHeap(), TRUE, /* signed */
 #pragma nowarn(1506)   // warning elimination
                                            interval->getTotalPrecision(),
                                            0,
@@ -8401,7 +8401,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 		  if (DFS2REC::isAnyVarChar(cType1.getFSDatatype()))
 		  {
 		    resultType = new (generator->wHeap())
-		      SQLVarChar( CharLenInfo(Prec, len),
+		      SQLVarChar(generator->wHeap(), CharLenInfo(Prec, len),
 				  cType1.supportsSQLnull(), 
 				  cType1.isUpshifted(),
 				  cType1.isCaseinsensitive(),
@@ -8413,7 +8413,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 		  else
 		  {
 		    resultType = new (generator->wHeap())
-		      SQLChar( CharLenInfo(Prec, len),
+		      SQLChar(generator->wHeap(), CharLenInfo(Prec, len),
 				  cType1.supportsSQLnull(), 
 				  cType1.isUpshifted(),
 				  cType1.isCaseinsensitive(),
@@ -8432,7 +8432,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 		  if (DFS2REC::isAnyVarChar(cType2.getFSDatatype()))
 		  {
 		    resultType = new (generator->wHeap())
-		      SQLVarChar( CharLenInfo(Prec, len),
+		      SQLVarChar(generator->wHeap(), CharLenInfo(Prec, len),
 				  cType2.supportsSQLnull(), 
 				  cType2.isUpshifted(),
 				  cType2.isCaseinsensitive(),
@@ -8444,7 +8444,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
 		  else
 		  {
 		    resultType = new (generator->wHeap())
-		      SQLChar( CharLenInfo(Prec, len),
+		      SQLChar(generator->wHeap(), CharLenInfo(Prec, len),
 				  cType2.supportsSQLnull(), 
 				  cType2.isUpshifted(),
 				  cType2.isCaseinsensitive(),
@@ -8573,7 +8573,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
                 new (generator->wHeap())
                 Cast(child(1),
                      new (generator->wHeap())
-                     SQLLargeInt(numOp2.isSigned(),
+                     SQLLargeInt(generator->wHeap(), numOp2.isSigned(),
                                  numOp2.supportsSQLnull()));
               
               newOp2 = newOp2->bindNode(generator->getBindWA());
@@ -8594,7 +8594,7 @@ ItemExpr * BiRelat::preCodeGen(Generator * generator)
                 new (generator->wHeap())
                 Cast(child(0),
                      new (generator->wHeap())
-                     SQLLargeInt(numOp1.isSigned(),
+                     SQLLargeInt(generator->wHeap(), numOp1.isSigned(),
                                  numOp1.supportsSQLnull()));
               
               newOp1 = newOp1->bindNode(generator->getBindWA());
@@ -8820,7 +8820,7 @@ ItemExpr * BitOperFunc::preCodeGen(Generator * generator)
 	      ItemExpr * newChild =
 		new (generator->wHeap()) 
 		Cast(child(i), 
-		     new (generator->wHeap()) SQLInt(FALSE,
+		     new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE,
 						 typ.supportsSQLnullLogical()));
 	      setChild(i, newChild);	
 
@@ -8931,7 +8931,7 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	    new (generator->wHeap())
 	    Cast(child(0),
 		 new (generator->wHeap())
-		 SQLLargeInt(TRUE,
+		 SQLLargeInt(generator->wHeap(), TRUE,
 			     child(0)->castToItemExpr()->
 			     getValueId().getType().supportsSQLnull()));
 	  newChild = newChild->bindNode(generator->getBindWA());
@@ -8961,7 +8961,7 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	    new (generator->wHeap())
 	    Cast(child(0),
 		 new (generator->wHeap())
-		 SQLLargeInt(TRUE,
+		 SQLLargeInt(generator->wHeap(), TRUE,
 			     child(0)->castToItemExpr()->
 			     getValueId().getType().supportsSQLnull()));
 	  newChild = newChild->bindNode(generator->getBindWA());
@@ -8990,7 +8990,7 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 	    new (generator->wHeap())
 	    Cast(child(0),
 		 new (generator->wHeap())
-		 SQLLargeInt(TRUE,
+		 SQLLargeInt(generator->wHeap(), TRUE,
                              child(0)->castToItemExpr()->
                              getValueId().getType().supportsSQLnull()));
 	  newChild = newChild->bindNode(generator->getBindWA());
@@ -9228,13 +9228,12 @@ ItemExpr * Cast::preCodeGen(Generator * generator)
 
 	    NAType * intermediateType =
 	      new(generator->wHeap())
-		SQLBigNum(intermediatePrecision,
+		SQLBigNum(generator->wHeap(), intermediatePrecision,
 			  intermediateScale,
 			  (sourceNumType->isBigNum() &&
 			   ((SQLBigNum*)sourceNumType)->isARealBigNum()),
 			  TRUE, // make it signed
-			  sourceNumType->supportsSQLnull(),
-			  NULL);
+			  sourceNumType->supportsSQLnull());
 
 	    child(0) = new(generator->wHeap()) Cast(child(0),intermediateType);
 
@@ -9288,7 +9287,7 @@ ItemExpr * CharFunc::preCodeGen(Generator * generator)
 
   // Insert a cast node to convert child to an INT.
   child(0) = new (generator->wHeap())
-    Cast(child(0), new (generator->wHeap()) SQLInt(FALSE,
+    Cast(child(0), new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE,
 						   typ1.supportsSQLnullLogical()));
 
   child(0)->bindNode(generator->getBindWA());
@@ -9363,7 +9362,7 @@ ItemExpr * ConvertTimestamp::preCodeGen(Generator * generator)
     child(0) = new(generator->wHeap())
                  Cast(child(0),
                       new(generator->wHeap())
-                        SQLLargeInt(TRUE, numeric->supportsSQLnull()));
+                        SQLLargeInt(generator->wHeap(), TRUE, numeric->supportsSQLnull()));
     child(0)->bindNode(generator->getBindWA());
   }
   child(0) = child(0)->preCodeGen(generator);
@@ -9392,7 +9391,7 @@ ItemExpr * Extract::preCodeGen(Generator * generator)
     child(0) = new(generator->wHeap())
                  Cast(child(0), dataConvError,
                       new(generator->wHeap())
-                        SQLInterval(interval->supportsSQLnull(),
+                        SQLInterval(generator->wHeap(), interval->supportsSQLnull(),
                                     interval->getStartField(),
                                     interval->getLeadingPrecision(),
                                     getExtractField()),
@@ -9426,7 +9425,7 @@ ItemExpr * JulianTimestamp::preCodeGen(Generator * generator)
     child(0) = new(generator->wHeap())
                  Cast(child(0),
                       new(generator->wHeap())
-                        SQLTimestamp(dt->supportsSQLnull(), 6));
+                        SQLTimestamp(generator->wHeap(), dt->supportsSQLnull(), 6));
     child(0)->bindNode(generator->getBindWA());
   }
   child(0) = child(0)->preCodeGen(generator);
@@ -10004,7 +10003,7 @@ ItemExpr * MathFunc::preCodeGen(Generator * generator)
       child(i) = new (generator->wHeap())
 	Cast(child(i),
 	     new (generator->wHeap()) SQLDoublePrecision(
-		  typ.supportsSQLnullLogical()));
+		  generator->wHeap(), typ.supportsSQLnullLogical()));
 
       child(i)->bindNode(generator->getBindWA());
 
@@ -10031,7 +10030,7 @@ ItemExpr * Modulus::preCodeGen(Generator * generator)
 	{
 	  // Insert a cast node to convert child to an LARGEINT.
 	  child(i) = new (generator->wHeap())
-	    Cast(child(i), new (generator->wHeap()) SQLLargeInt(TRUE,
+	    Cast(child(i), new (generator->wHeap()) SQLLargeInt(generator->wHeap(), TRUE,
 								typ.supportsSQLnullLogical()));
 	}
 
@@ -10106,7 +10105,7 @@ ItemExpr * PivotGroup::preCodeGen(Generator * generator)
                                                 0);
 
       NAType * newType = new(generator->getBindWA()->wHeap()) 
-        SQLVarChar(displayLen, type1.supportsSQLnull());
+        SQLVarChar(generator->getBindWA()->wHeap(), displayLen, type1.supportsSQLnull());
 
       childExpr = new (generator->getBindWA()->wHeap()) Cast(childExpr, newType);
       
@@ -10137,7 +10136,7 @@ ItemExpr * RandomNum::preCodeGen(Generator * generator)
 
       // Insert a cast node to convert child to an INT.
       child(0) = new (generator->wHeap())
-	Cast(child(0), new (generator->wHeap()) SQLInt(FALSE,
+	Cast(child(0), new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE,
 						       typ1.supportsSQLnullLogical()));
 
       child(0)->bindNode(generator->getBindWA());
@@ -10160,7 +10159,7 @@ ItemExpr * Repeat::preCodeGen(Generator * generator)
 
   // Insert a cast node to convert child 2 to an INT.
   child(1) = new (generator->wHeap())
-    Cast(child(1), new (generator->wHeap()) SQLInt(FALSE,
+    Cast(child(1), new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE,
 						   typ2.supportsSQLnullLogical()));
 
   child(1)->bindNode(generator->getBindWA());
@@ -10373,7 +10372,7 @@ ItemExpr * Substring::preCodeGen(Generator * generator)
 
 	  // Insert a cast node to convert child to an INT.
 	  child(i) = new (generator->wHeap())
-	    Cast(child(i), new (generator->wHeap()) SQLInt(TRUE,
+	    Cast(child(i), new (generator->wHeap()) SQLInt(generator->wHeap(), TRUE,
 							   typ1.supportsSQLnullLogical()));
 
 	  child(i)->bindNode(generator->getBindWA());

@@ -57,7 +57,8 @@ static const NAString LiteralBLOB("BLOB");
 static const NAString LiteralCLOB("CLOB");
 
 // constructor used for CHAR length semantics only
-CharType::CharType( const NAString&  adtName,
+CharType::CharType( NAMemory *h,
+                    const NAString&  adtName,
 		    Lng32            maxLenInBytesOrNAWchars,
 		    short            maxBytesPerChar,
 		    NABoolean        nullTerminated,
@@ -71,7 +72,7 @@ CharType::CharType( const NAString&  adtName,
 		    CharInfo::CharSet      encoding,
 		    Int32 vcIndLen // default is 0
 		  )
-      : NAType( adtName
+      : NAType(h, adtName
 		, NA_CHARACTER_TYPE
 		, (maxLenInBytesOrNAWchars + (nullTerminated ? 1 : 0)) * CharInfo::minBytesPerChar(cs)
 		, allowSQLnull
@@ -110,7 +111,8 @@ CharType::CharType( const NAString&  adtName,
 }
 
 // This constructor supports SJIS and UTF8 
-CharType::CharType( const NAString&  adtName,
+CharType::CharType( NAMemory *h,
+                    const NAString&  adtName,
 		    const CharLenInfo & maxLenInfo,
 		    short            maxBytesPerChar, // is maxBytesPerChar when cs is SJIS or UTF8
 		    NABoolean        nullTerminated,
@@ -123,7 +125,7 @@ CharType::CharType( const NAString&  adtName,
 		    CharInfo::Coercibility ce,
 		    CharInfo::CharSet      encoding
 		  )
-      : NAType( adtName
+      : NAType(h, adtName
 		, NA_CHARACTER_TYPE
 		, (maxLenInfo.getMaxLenInBytes() +
                     (nullTerminated ? CharInfo::minBytesPerChar(cs) : 0))
@@ -509,10 +511,10 @@ const NAType* CharType::synthesizeType(NATypeSynthRuleEnum synthRule,
   if (DFS2REC::isAnyVarChar(op1.getFSDatatype()) OR
       DFS2REC::isAnyVarChar(op2.getFSDatatype()) OR
       makeTypeVarchar)
-    return new(h) SQLVarChar(res_CharLenInfo, null, upshift, caseinsensitive,
+    return new(h) SQLVarChar(h, res_CharLenInfo, null, upshift, caseinsensitive,
 			     op1.getCharSet(), co, ce);
   else
-    return new(h) SQLChar(res_CharLenInfo, null, upshift, caseinsensitive, FALSE,
+    return new(h) SQLChar(h, res_CharLenInfo, null, upshift, caseinsensitive, FALSE,
 			  op1.getCharSet(), co, ce);
 } // synthesizeType()
 
@@ -894,7 +896,8 @@ NABoolean CharType::createSQLLiteral(const char * buf,
 
 
 #pragma nowarn(1506)   // warning elimination
-SQLChar::SQLChar(Lng32 maxLen,
+SQLChar::SQLChar(NAMemory *h,
+                 Lng32 maxLen,
 		 NABoolean allowSQLnull,
 		 NABoolean isUpShifted,
 		 NABoolean isCaseInsensitive,
@@ -904,7 +907,7 @@ SQLChar::SQLChar(Lng32 maxLen,
 		 CharInfo::Coercibility ce,
 		 CharInfo::CharSet encoding
 		 )
-     : CharType(varLenFlag ? LiteralVARCHAR : LiteralCHAR,
+     : CharType(h, varLenFlag ? LiteralVARCHAR : LiteralCHAR,
 		maxLen, CharInfo::maxBytesPerChar(cs),
 		FALSE, allowSQLnull, isUpShifted, isCaseInsensitive,
 		varLenFlag, cs, co, ce,
@@ -913,7 +916,8 @@ SQLChar::SQLChar(Lng32 maxLen,
 #pragma warn(1506)  // warning elimination
 
 #pragma nowarn(1506)   // warning elimination
-SQLChar::SQLChar(const CharLenInfo & maxLenInfo,
+SQLChar::SQLChar(NAMemory *h,
+                 const CharLenInfo & maxLenInfo,
 		 NABoolean allowSQLnull,
 		 NABoolean isUpShifted,
 		 NABoolean isCaseInsensitive,
@@ -923,7 +927,7 @@ SQLChar::SQLChar(const CharLenInfo & maxLenInfo,
 		 CharInfo::Coercibility ce,
 		 CharInfo::CharSet encoding
 		 )
-     : CharType(varLenFlag ? LiteralVARCHAR : LiteralCHAR,
+     : CharType(h, varLenFlag ? LiteralVARCHAR : LiteralCHAR,
 		maxLenInfo, CharInfo::maxBytesPerChar(cs),
 		FALSE, allowSQLnull, isUpShifted, isCaseInsensitive,
 		varLenFlag, cs, co, ce,
@@ -932,7 +936,8 @@ SQLChar::SQLChar(const CharLenInfo & maxLenInfo,
 #pragma warn(1506)  // warning elimination
 
 #pragma nowarn(1506)   // warning elimination
-SQLVarChar::SQLVarChar(Lng32 maxLen,
+SQLVarChar::SQLVarChar(NAMemory *h,
+                       Lng32 maxLen,
 		       NABoolean allowSQLnull,
 		       NABoolean isUpShifted,
 		       NABoolean isCaseInsensitive,
@@ -942,7 +947,7 @@ SQLVarChar::SQLVarChar(Lng32 maxLen,
 		       CharInfo::CharSet encoding,
                        Lng32 vcIndLen
 		      )
-    : CharType(LiteralVARCHAR,
+    : CharType(h, LiteralVARCHAR,
 	       maxLen, CharInfo::maxBytesPerChar(cs),
 	       FALSE, allowSQLnull, isUpShifted, isCaseInsensitive,
 	       TRUE, cs, co, ce,
@@ -953,7 +958,8 @@ SQLVarChar::SQLVarChar(Lng32 maxLen,
 #pragma warn(1506)  // warning elimination
 
 #pragma nowarn(1506)   // warning elimination
-SQLVarChar::SQLVarChar(const CharLenInfo & maxLenInfo,
+SQLVarChar::SQLVarChar(NAMemory *h, 
+                       const CharLenInfo & maxLenInfo,
 		       NABoolean allowSQLnull,
 		       NABoolean isUpShifted,
 		       NABoolean isCaseInsensitive,
@@ -962,7 +968,7 @@ SQLVarChar::SQLVarChar(const CharLenInfo & maxLenInfo,
 		       CharInfo::Coercibility ce,
 		       CharInfo::CharSet encoding
 		      )
-    : CharType(LiteralVARCHAR,
+    : CharType(h, LiteralVARCHAR,
 	       maxLenInfo, CharInfo::maxBytesPerChar(cs),
 	       FALSE, allowSQLnull, isUpShifted, isCaseInsensitive,
 	       TRUE, cs, co, ce,
@@ -1002,7 +1008,8 @@ NABoolean SQLVarChar::operator==(const NAType& other) const
 // in cli + rfork if a CharType is both nul-terminated and has a vc-header.
 // -----------------------------------------------------------------------
 #pragma nowarn(1506)   // warning elimination
-ANSIChar::ANSIChar(Lng32 maxLen,
+ANSIChar::ANSIChar(NAMemory *h,
+                   Lng32 maxLen,
 		   NABoolean allowSQLnull,
 		   NABoolean isUpShifted,
 		   NABoolean varLenFlag,	// *unused*
@@ -1011,7 +1018,7 @@ ANSIChar::ANSIChar(Lng32 maxLen,
 		   CharInfo::Coercibility ce,
 		   CharInfo::CharSet encoding
 		  )
-     : CharType(LiteralCHAR,
+     : CharType(h, LiteralCHAR,
 		maxLen, CharInfo::maxBytesPerChar(cs),
 		TRUE, allowSQLnull, isUpShifted, FALSE, FALSE, cs, co, ce,
 		encoding)
@@ -1129,7 +1136,7 @@ void CharType::generateTextThenSetDisplayDataType ( CharInfo::CharSet cs   // in
 
   if ( charLimit * getBytesPerChar() == sizeInBytes )
   {
-    ddt += LongToNAString(charLimit, (NAHeap *)ddt.heap());
+    ddt += LongToNAString(charLimit);
     if (charLimit EQU 1)
       ddt += " CHAR";
     else
@@ -1137,7 +1144,7 @@ void CharType::generateTextThenSetDisplayDataType ( CharInfo::CharSet cs   // in
   }
   else
   {
-    ddt += LongToNAString(sizeInBytes, (NAHeap *)ddt.heap());
+    ddt += LongToNAString(sizeInBytes);
     if (sizeInBytes EQU 1)
       ddt += " BYTE";
     else
@@ -1148,7 +1155,7 @@ void CharType::generateTextThenSetDisplayDataType ( CharInfo::CharSet cs   // in
 
   ddt += CharInfo::getCharSetName(cs);
 
-  setDisplayDataType(ddt.data());
+  setDisplayDataType(ddt);
 }
 
 // -----------------------------------------------------------------------
@@ -1403,11 +1410,11 @@ CharType::findPushDownCharType(CharInfo::CharSet cs,
 
 const CharType* CharType::desiredCharType(enum CharInfo::CharSet cs)
 {
-  static SQLChar unicodeChar(0, TRUE, FALSE, FALSE, FALSE, CharInfo::UNICODE);
-  static SQLChar latin1Char(0, TRUE, FALSE, FALSE, FALSE, CharInfo::ISO88591);
-  static SQLChar sjisChar(0, TRUE, FALSE, FALSE, FALSE, CharInfo::SJIS /* ... old kludge ... CharInfo::ISO88591 */, CharInfo::DefaultCollation, CharInfo::COERCIBLE, CharInfo::SJIS/*encoding*/);
-  // static SQLChar sjisUnicodeChar(0, TRUE, FALSE, FALSE, FALSE, CharInfo::SJIS, CharInfo::DefaultCollation, CharInfo::COERCIBLE, CharInfo::UNICODE/*encoding*/);
-  static SQLChar utf8Char(0, TRUE, FALSE, FALSE, FALSE, CharInfo::UTF8 /* ... old kludge ... CharInfo::ISO88591 */, CharInfo::DefaultCollation, CharInfo::COERCIBLE, CharInfo::UTF8/*encoding*/);
+  static SQLChar unicodeChar(NULL, 0, TRUE, FALSE, FALSE, FALSE, CharInfo::UNICODE);
+  static SQLChar latin1Char(NULL, 0, TRUE, FALSE, FALSE, FALSE, CharInfo::ISO88591);
+  static SQLChar sjisChar(NULL, 0, TRUE, FALSE, FALSE, FALSE, CharInfo::SJIS /* ... old kludge ... CharInfo::ISO88591 */, CharInfo::DefaultCollation, CharInfo::COERCIBLE, CharInfo::SJIS/*encoding*/);
+  // static SQLChar sjisUnicodeChar(NULL, 0, TRUE, FALSE, FALSE, FALSE, CharInfo::SJIS, CharInfo::DefaultCollation, CharInfo::COERCIBLE, CharInfo::UNICODE/*encoding*/);
+  static SQLChar utf8Char(NULL, 0, TRUE, FALSE, FALSE, FALSE, CharInfo::UTF8 /* ... old kludge ... CharInfo::ISO88591 */, CharInfo::DefaultCollation, CharInfo::COERCIBLE, CharInfo::UTF8/*encoding*/);
 
   switch ( cs ) {
     case CharInfo::UNICODE:
@@ -1458,7 +1465,7 @@ NAType* SQLVarChar::equivalentCharType(NAMemory *h, NABoolean quantizeLen)
   len_in_bytes = quantizeLen ? quantize(getNominalSize()) : getNominalSize() ;
 
   CharLenInfo CLInfo( len_in_chars, len_in_bytes );
-  return new(h) SQLChar(CLInfo, supportsSQLnull(), isUpshifted(),
+  return new(h) SQLChar(h, CLInfo, supportsSQLnull(), isUpshifted(),
                         isCaseinsensitive(), FALSE,
                         getCharSet(), getCollation(), getCoercibility());
 }
@@ -1473,7 +1480,7 @@ NAType* SQLChar::equivalentVarCharType(NAMemory *h, NABoolean quantizeLen)
   len_in_bytes = quantizeLen ? quantize(getNominalSize()) : getNominalSize() ;
 
   CharLenInfo CLInfo( len_in_chars, len_in_bytes );
-  return new(h) SQLVarChar(CLInfo, supportsSQLnull(), isUpshifted(),
+  return new(h) SQLVarChar(h, CLInfo, supportsSQLnull(), isUpshifted(),
 			   isCaseinsensitive(),
 			   getCharSet(), getCollation(), getCoercibility());
 }
@@ -1482,7 +1489,7 @@ NAType* SQLChar::equivalentVarCharType(NAMemory *h, NABoolean quantizeLen)
 NAType* ANSIChar::equivalentVarCharType(NAMemory *h, NABoolean quantizeLen)
 {
   Lng32 len = quantizeLen ? quantize(getStrCharLimit()) : getStrCharLimit();
-  return new(h) SQLVarChar(len, supportsSQLnull(), isUpshifted(),
+  return new(h) SQLVarChar(h, len, supportsSQLnull(), isUpshifted(),
 			   isCaseinsensitive(),
 			   getCharSet(), getCollation(), getCoercibility());
 }
@@ -1504,7 +1511,7 @@ short SQLLongVarChar::getTrueFSDatatype() const
 //////////////////////////////
 // class SQLlob
 //////////////////////////////
-SQLlob::SQLlob( 
+SQLlob::SQLlob(NAMemory *h, 
 	       NABuiltInTypeEnum  ev,
 	       Int64 lobLength, 
 	       LobsStorage ls,
@@ -1513,7 +1520,7 @@ SQLlob::SQLlob(
 	       NABoolean externalFormat,
 	       Lng32 extFormatLen
 		)
-  : NAType( (ev == NA_LOB_TYPE ? LiteralLOB : LiteralLOB)
+  : NAType(h, (ev == NA_LOB_TYPE ? LiteralLOB : LiteralLOB)
 	    , ev
 	    , (externalFormat ? extFormatLen : 512)
 	    , allowSQLnull
@@ -1558,7 +1565,7 @@ NAString SQLlob::getTypeSQLname(NABoolean terse) const
 /////////////////////////////////////
 // class SQLBlob
 /////////////////////////////////////
-SQLBlob::SQLBlob( 
+SQLBlob::SQLBlob(NAMemory *h, 
   Int64 blobLength, 
   LobsStorage lobStorage,
   NABoolean allowSQLnull,
@@ -1566,7 +1573,7 @@ SQLBlob::SQLBlob(
   NABoolean externalFormat,
   Lng32 extFormatLen
 )
-  : SQLlob(NA_LOB_TYPE,
+  : SQLlob(h, NA_LOB_TYPE,
 	   blobLength,
 	   lobStorage,
 	   allowSQLnull,
@@ -1600,7 +1607,7 @@ const NAType* SQLBlob::synthesizeType(NATypeSynthRuleEnum synthRule,
 
   if (synthRule == SYNTH_RULE_UNION)
     {
-      return new(h) SQLBlob(MAXOF(op1.getLobLength(), op2.getLobLength()),
+      return new(h) SQLBlob(h, MAXOF(op1.getLobLength(), op2.getLobLength()),
 			    op1.getLobStorage(),
 			    null);
     }
@@ -1611,7 +1618,7 @@ const NAType* SQLBlob::synthesizeType(NATypeSynthRuleEnum synthRule,
 /////////////////////////////////////
 // class SQLClob
 /////////////////////////////////////
-SQLClob::SQLClob( 
+SQLClob::SQLClob(NAMemory *h, 
   Int64 clobLength, 
   LobsStorage lobStorage,
   NABoolean allowSQLnull,
@@ -1619,7 +1626,7 @@ SQLClob::SQLClob(
   NABoolean externalFormat,
   Lng32 extFormatLen
 )
-  : SQLlob(NA_LOB_TYPE,
+  : SQLlob(h, NA_LOB_TYPE,
 	   clobLength,
 	   lobStorage,
 	   allowSQLnull,
@@ -1653,7 +1660,7 @@ const NAType* SQLClob::synthesizeType(NATypeSynthRuleEnum synthRule,
 
   if (synthRule == SYNTH_RULE_UNION)
     {
-      return new(h) SQLClob(MAXOF(op1.getLobLength(), op2.getLobLength()),
+      return new(h) SQLClob(h, MAXOF(op1.getLobLength(), op2.getLobLength()),
 			    op1.getLobStorage(),
 			    null);
     }

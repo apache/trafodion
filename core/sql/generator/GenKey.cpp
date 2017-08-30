@@ -97,7 +97,7 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
 
   ItemExpr * dataConversionErrorFlag = new(generator->wHeap())
     HostVar("_sys_dataConversionErrorFlag",
-            new(generator->wHeap()) SQLInt(TRUE,FALSE), // int not null
+            new(generator->wHeap()) SQLInt(generator->wHeap(), TRUE,FALSE), // int not null
             TRUE);
   ULng32 temp_varb_tupp_len;
 
@@ -275,7 +275,7 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
                   enode = new(generator->wHeap()) 
                              Cast(enode, 
                                    (new (generator->wHeap())
-                                          SQLChar( CharLenInfo(char_type.getStrCharLimit(),
+                                          SQLChar(generator->wHeap(),  CharLenInfo(char_type.getStrCharLimit(),
                                                    char_type.getDataStorageSize()),
                                           char_type.supportsSQLnull(),
                                           FALSE, FALSE, FALSE,
@@ -357,7 +357,7 @@ short ExpGenerator::buildKeyInfo(keyRangeGen ** keyInfo, // out -- generated obj
               if (!CollationInfo::isSystemCollation(char_type->getCollation()))
                 {
                   targetType = new(generator->wHeap()) 
-                                      SQLChar( CharLenInfo(char_type->getStrCharLimit(),
+                                      SQLChar(generator->wHeap(), CharLenInfo(char_type->getStrCharLimit(),
                                                            char_type->getDataStorageSize()),
                                       char_type -> supportsSQLnull(),
                                       FALSE, FALSE, FALSE,

@@ -330,7 +330,7 @@ static void replaceBaseValue(ItemExpr *incomingExpr,
 
 	   newExpr->synthTypeAndValueId(TRUE);
 	   //set type to original type after if has been changed to BigNum above
-	   newExpr->getValueId().changeType(new (heap) SQLLargeInt(1 /* signed */,
+	   newExpr->getValueId().changeType(new (heap) SQLLargeInt(heap, 1 /* signed */,
 								    0 /* not null */));
 	   incomingExpr->setChild(1,newExpr);
 	   found = TRUE;
@@ -913,7 +913,7 @@ short RelRoot::codeGen(Generator * generator)
 	str_itoa(i, str2);
 	str1 += str2;
 	item_expr = new(generator->wHeap()) HostVar(str1,
-						    new(generator->wHeap()) SQLUnknown);
+						    new(generator->wHeap()) SQLUnknown(generator->wHeap()));
 	item_expr->bindNode(generator->getBindWA());
 	blankHV = TRUE;
 	val_id = item_expr->getValueId();
@@ -3407,7 +3407,7 @@ short Sort::codeGen(Generator * generator)
 	      new(generator->wHeap())
 		Cast (skey_node,
 		      (new(generator->wHeap())
-			 SQLChar(
+			 SQLChar(generator->wHeap(),
                           CharLenInfo(char_type.getStrCharLimit(), char_type.getDataStorageSize()),
 			  char_type.supportsSQLnull(),
 			  FALSE, FALSE, FALSE,
@@ -3756,7 +3756,7 @@ short SortFromTop::codeGen(Generator * generator)
 			new(generator->wHeap())
 			Cast (srcVal,
 			      (new(generator->wHeap())
-			       SQLChar(
+			       SQLChar(generator->wHeap(),
                                     CharLenInfo(char_type.getStrCharLimit(), char_type.getDataStorageSize()),
 				    char_type.supportsSQLnull(),
 				    FALSE, FALSE, FALSE,

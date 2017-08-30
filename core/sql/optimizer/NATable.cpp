@@ -2905,200 +2905,180 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
 
     case REC_BPINT_UNSIGNED :
       type = new (heap)
-      SQLBPInt(column_desc->precision, column_desc->isNullable(), FALSE, heap);
+      SQLBPInt(heap, column_desc->precision, column_desc->isNullable(), FALSE);
       break;
 
     case REC_BIN8_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLTiny(TRUE,
-		 column_desc->isNullable(),
-                 heap
+	SQLTiny(heap, TRUE,
+		 column_desc->isNullable()
 		 );
       break;
     case REC_BIN8_UNSIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLTiny(FALSE,
-		 column_desc->isNullable(),
-                 heap
+	SQLTiny(heap, FALSE,
+		 column_desc->isNullable()
 		 );
       break;
 
     case REC_BIN16_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLSmall(TRUE,
-		 column_desc->isNullable(),
-                 heap
+	SQLSmall(heap, TRUE,
+		 column_desc->isNullable()
 		 );
       break;
     case REC_BIN16_UNSIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLSmall(FALSE,
-		 column_desc->isNullable(),
-                 heap
+	SQLSmall(heap, FALSE,
+		 column_desc->isNullable()
 		 );
       break;
 
     case REC_BIN32_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLInt(TRUE,
-	       column_desc->isNullable(),
-               heap
+	SQLInt(heap, TRUE,
+	       column_desc->isNullable()
 	       );
       break;
     case REC_BIN32_UNSIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLInt(FALSE,
-	       column_desc->isNullable(),
-               heap
+	SQLInt(heap, FALSE,
+	       column_desc->isNullable()
 	       );
       break;
     case REC_BIN64_SIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-	SQLLargeInt(TRUE,
-		    column_desc->isNullable(),
-                    heap
+	SQLLargeInt(heap, TRUE,
+		    column_desc->isNullable()
 		    );
       break;
     case REC_BIN64_UNSIGNED:
       if (column_desc->precision > 0)
 	type = new (heap)
-	SQLNumeric(column_desc->length,
+	SQLNumeric(heap, column_desc->length,
 		   column_desc->precision,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       else
 	type = new (heap)
-          SQLLargeInt(FALSE,
-		    column_desc->isNullable(),
-                    heap
+          SQLLargeInt(heap, FALSE,
+		    column_desc->isNullable()
 		    );
       break;
     case REC_DECIMAL_UNSIGNED:
       type = new (heap)
-	SQLDecimal(column_desc->length,
+	SQLDecimal(heap, column_desc->length,
 		   column_desc->scale,
 		   FALSE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       break;
     case REC_DECIMAL_LSE:
       type = new (heap)
-	SQLDecimal(column_desc->length,
+	SQLDecimal(heap, column_desc->length,
 		   column_desc->scale,
 		   TRUE,
-		   column_desc->isNullable(),
-                   heap
+		   column_desc->isNullable()
 		   );
       break;
     case REC_NUM_BIG_UNSIGNED:
       type = new (heap)
-	SQLBigNum(column_desc->precision,
+	SQLBigNum(heap, column_desc->precision,
 		  column_desc->scale,
 		  TRUE, // is a real bignum
 		  FALSE,
-		  column_desc->isNullable(),
-		  heap
+		  column_desc->isNullable()
 		  );
       break;
     case REC_NUM_BIG_SIGNED:
       type = new (heap)
-	SQLBigNum(column_desc->precision,
+	SQLBigNum(heap, column_desc->precision,
 		  column_desc->scale,
 		  TRUE, // is a real bignum
 		  TRUE,
-		  column_desc->isNullable(),
-		  heap
+		  column_desc->isNullable()
 		  );
       break;
 
     case REC_FLOAT32:
       type = new (heap)
-	SQLReal(column_desc->isNullable(), heap, column_desc->precision);
+	SQLReal(heap, column_desc->isNullable(), column_desc->precision);
       break;
 
     case REC_FLOAT64:
       type = new (heap)
-	SQLDoublePrecision(column_desc->isNullable(), heap, column_desc->precision);
+	SQLDoublePrecision(heap, column_desc->isNullable(), column_desc->precision);
       break;
 
     case REC_BYTE_F_DOUBLE:
       charCount /= SQL_DBCHAR_SIZE;	    // divide the storage length by 2
       type = new (heap)
-	SQLChar(charCount,
+	SQLChar(heap, charCount,
 		column_desc->isNullable(),
 		column_desc->isUpshifted(),
 		column_desc->isCaseInsensitive(),
@@ -3119,7 +3099,7 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
         if ( column_desc->precision > 0 )
            sizeInChars = column_desc->precision;
         type = new (heap)
-	SQLChar(CharLenInfo(sizeInChars, charCount/*in_bytes*/),
+	SQLChar(heap, CharLenInfo(sizeInChars, charCount/*in_bytes*/),
 		column_desc->isNullable(),
 		column_desc->isUpshifted(),
 		column_desc->isCaseInsensitive(),
@@ -3132,7 +3112,7 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
       }
       else // keep the old behavior
       type = new (heap)
-	SQLChar(charCount,
+	SQLChar(heap, charCount,
 		column_desc->isNullable(),
 		column_desc->isUpshifted(),
 		column_desc->isCaseInsensitive(),
@@ -3155,7 +3135,7 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
         if ( column_desc->precision > 0 )
            sizeInChars = column_desc->precision;
         type = new (heap)
-	SQLVarChar(CharLenInfo(sizeInChars, charCount/*in_bytes*/),
+	SQLVarChar(heap, CharLenInfo(sizeInChars, charCount/*in_bytes*/),
 		   column_desc->isNullable(),
 		   column_desc->isUpshifted(),
 		   column_desc->isCaseInsensitive(),
@@ -3167,7 +3147,7 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
       }
       else // keep the old behavior
       type = new (heap)
-	SQLVarChar(charCount,
+	SQLVarChar(heap, charCount,
 		   column_desc->isNullable(),
 		   column_desc->isUpshifted(),
 		   column_desc->isCaseInsensitive(),
@@ -3179,7 +3159,7 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
 
     case REC_BYTE_V_ASCII_LONG:
       type = new (heap)
-	SQLLongVarChar(charCount,
+	SQLLongVarChar(heap, charCount,
 		       FALSE,
 		       column_desc->isNullable(),
 		       column_desc->isUpshifted(),
@@ -3218,13 +3198,11 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
       break;
     case REC_INTERVAL:
       type = new (heap)
-         SQLInterval(column_desc->isNullable(),
+         SQLInterval(heap, column_desc->isNullable(),
 		    column_desc->datetimeStart(),
 		    column_desc->intervalleadingprec,
 		    column_desc->datetimeEnd(),
-		    column_desc->datetimefractprec,
-                    heap
-		    );
+		    column_desc->datetimefractprec);
       CMPASSERT(type);
       if (! ((SQLInterval *)type)->checkValid(CmpCommon::diags()))
          return TRUE;                                            // error
@@ -3241,19 +3219,19 @@ NABoolean createNAType(TrafColumnsDesc *column_desc	/*IN*/,
 
     case REC_BLOB :
       type = new (heap)
-	SQLBlob(column_desc->precision,Lob_Invalid_Storage,
+	SQLBlob(heap, column_desc->precision,Lob_Invalid_Storage,
 		column_desc->isNullable());
       break;
 
     case REC_CLOB :
       type = new (heap)
-	SQLClob(column_desc->precision,Lob_Invalid_Storage,
+	SQLClob(heap, column_desc->precision,Lob_Invalid_Storage,
 		column_desc->isNullable());
       break;
 
     case REC_BOOLEAN :
       {
-        type = new (heap) SQLBooleanNative(column_desc->isNullable());
+        type = new (heap) SQLBooleanNative(heap, column_desc->isNullable());
       }
       break;
 

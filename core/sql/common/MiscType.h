@@ -68,9 +68,8 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLBooleanBase(NABoolean allowSQLnull,
-             NABoolean isRelat,
-             NAMemory * heap=0);
+  SQLBooleanBase(NAMemory *heap, NABoolean allowSQLnull,
+             NABoolean isRelat);
 
   // ---------------------------------------------------------------------
   // A method which tells if a conversion error can occur when converting
@@ -93,8 +92,7 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLBooleanRelat(NABoolean sqlUnknownFlag = TRUE,
-                  NAMemory * heap=0);
+  SQLBooleanRelat(NAMemory *heap, NABoolean sqlUnknownFlag = TRUE);
   
   // ---------------------------------------------------------------------
   // A virtual function to return a copy of the type.
@@ -138,8 +136,7 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLBooleanNative(NABoolean allowSQLnull,
-                  NAMemory * heap=0);
+  SQLBooleanNative(NAMemory *heap, NABoolean allowSQLnull);
   
   // ---------------------------------------------------------------------
   // A virtual function to return a copy of the type.
@@ -192,8 +189,8 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLRowset(NAType *elementType, Lng32 maxNumElements, 
-            Lng32 numElements,NAMemory * heap=0);
+  SQLRowset(NAMemory *heap, NAType *elementType, Lng32 maxNumElements, 
+            Lng32 numElements);
   
   // ---------------------------------------------------------------------
   // Are the two types compatible?
@@ -281,9 +278,8 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLRecord(const NAType * elementType,
-            const SQLRecord * restOfRecord,
-			NAMemory * heap=0);
+  SQLRecord(NAMemory *heap, const NAType * elementType,
+            const SQLRecord * restOfRecord);
 
   // ---------------------------------------------------------------------
   // A virtual function to return a copy of the type.
@@ -350,8 +346,8 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLUnknown(NABoolean supportsSQLnull = FALSE,CollHeap * heap=0)
-  : NAType(LiteralUnknown, NA_UNKNOWN_TYPE, 2, supportsSQLnull, SQL_NULL_HDR_SIZE,FALSE,0,1,heap) {}
+  SQLUnknown(NAMemory *heap, NABoolean supportsSQLnull = FALSE)
+  : NAType(heap, LiteralUnknown, NA_UNKNOWN_TYPE, 2, supportsSQLnull, SQL_NULL_HDR_SIZE,FALSE,0,1) {}
   // copy ctor
   SQLUnknown(const SQLUnknown &unknown,NAMemory * heap=0)
 	  :NAType(unknown,heap)

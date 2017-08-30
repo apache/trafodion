@@ -1261,28 +1261,28 @@ static void downcastRangespecInt(Int64 val, Lng32 scale, NAType*& type,
     {
       *((Int16*)numBuf) = static_cast<Int16>(val);
       if (scale == 0)
-        type = new(heap) SQLSmall(TRUE, FALSE, heap);
+        type = new(heap) SQLSmall(heap, TRUE, FALSE);
       else
-        type = new(heap) SQLNumeric(sizeof(Int16), precision, scale,
-                                    TRUE, FALSE, heap);
+        type = new(heap) SQLNumeric(heap, sizeof(Int16), precision, scale,
+                                    TRUE, FALSE);
     }
   else if (val <= INT_MAX && val >= INT_MIN)
     {
       *((Int32*)numBuf) = static_cast<Int32>(val);
       if (scale == 0)
-        type = new(heap) SQLInt(TRUE, FALSE, heap);
+        type = new(heap) SQLInt(heap, TRUE, FALSE);
       else
-        type = new(heap) SQLNumeric(sizeof(Int32), precision, scale,
-                                    TRUE, FALSE, heap);
+        type = new(heap) SQLNumeric(heap, sizeof(Int32), precision, scale,
+                                    TRUE, FALSE);
     }
   else
     {
       *numBuf = val;
       if(scale == 0)
-        type = new(heap) SQLLargeInt(TRUE, FALSE, heap);
+        type = new(heap) SQLLargeInt(heap, TRUE, FALSE);
       else
-        type = new(heap) SQLNumeric(sizeof(Int64), precision, scale,
-                                    TRUE, FALSE, heap);
+        type = new(heap) SQLNumeric(heap, sizeof(Int64), precision, scale,
+                                    TRUE, FALSE);
     }
 }
 
@@ -1342,7 +1342,7 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                                   dtv.isValid(), QRLogicException,
                                   "Invalid date value reconstructed from Julian timestamp");
                 constValTextStr = dtv.getValueAsString(*dtType);
-                return new(mvqrHeap_) ConstValue(new(mvqrHeap_)SQLDate(FALSE, mvqrHeap_),
+                return new(mvqrHeap_) ConstValue(new(mvqrHeap_)SQLDate(mvqrHeap_, FALSE),
                                                  (void*)dtv.getValue(), dtv.getValueLen(),
                                                  &constValTextStr, mvqrHeap_);
                 break;
@@ -1367,9 +1367,8 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                                   "Invalid time value reconstructed from Int64 value");
                 constValTextStr = dtv.getValueAsString(*dtType);
                 return new(mvqrHeap_)
-                        ConstValue(new(mvqrHeap_)SQLTime(FALSE,
-                                                         dtType->getFractionPrecision(),
-                                                         mvqrHeap_),
+                        ConstValue(new(mvqrHeap_)SQLTime(mvqrHeap_, FALSE,
+                                                         dtType->getFractionPrecision()),
                                   (void*)dtv.getValue(), dtv.getValueLen(),
                                   &constValTextStr, mvqrHeap_);
                 break;
@@ -1387,9 +1386,8 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
                                   "Invalid timestamp value reconstructed from Julian timestamp");
                 constValTextStr = dtv.getValueAsString(*dtType);
                 return new(mvqrHeap_) ConstValue(new(mvqrHeap_)
-                                                   SQLTimestamp(FALSE, 
-                                                                dtType->getFractionPrecision(),
-                                                                mvqrHeap_),
+                                                   SQLTimestamp(mvqrHeap_, FALSE, 
+                                                                dtType->getFractionPrecision()),
                                                  (void*)dtv.getValue(),
                                                  dtv.getValueLen(),
 		                            &constValTextStr, mvqrHeap_);
@@ -1509,12 +1507,11 @@ ConstValue* OptRangeSpec::reconstituteInt64Value(NAType* type, Int64 val) const
           // the Normalizer rather than MVQR, because type constraints are not
           // incorporated in that case). See bug 2974.
           return new(mvqrHeap_) ConstValue(new(mvqrHeap_)SQLInterval
-                                                 (FALSE,
+                                                 (mvqrHeap_, FALSE,
                                                   intvlType->getEndField(),
                                                   leadingPrec,
                                                   intvlType->getEndField(),
-                                                  intvlType->getFractionPrecision(),
-                                                  mvqrHeap_),
+                                                  intvlType->getFractionPrecision()),
                                       (void*)intvlVal.getValue(),
                                       intvlVal.getValueLen(),
                                       &constValTextStr, mvqrHeap_);
@@ -1560,7 +1557,7 @@ ConstValue* OptRangeSpec::reconstituteDoubleValue(NAType* type, Float64 val) con
                     "Expecting approximate numeric type in "
                         "reconstituteDoubleValue");
 
-  NAType* constType = new(mvqrHeap_) SQLDoublePrecision(FALSE, mvqrHeap_);
+  NAType* constType = new(mvqrHeap_) SQLDoublePrecision(mvqrHeap_, FALSE);
   return new(mvqrHeap_) ConstValue(constType, &val, constType->getNominalSize(),
                                    &constValTextStr, mvqrHeap_);
 } // reconstituteDoubleValue()
@@ -1573,7 +1570,7 @@ ItemExpr* OptRangeSpec::makeSubrangeORBackbone(SubrangeBase* subrange,
   QRTRACER("makeSubrangeOrBackbone");
 
   NAType* type = getType()->newCopy(mvqrHeap_);
-  NAType* int64Type = new (mvqrHeap_) SQLLargeInt(TRUE, FALSE );
+  NAType* int64Type = new (mvqrHeap_) SQLLargeInt(mvqrHeap_, TRUE, FALSE );
   type->resetSQLnullFlag();
   type->resetSQLnullHdrSize();
   assertLogAndThrow(CAT_SQL_COMP_RANGE, logLevel_,

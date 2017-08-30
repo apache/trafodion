@@ -935,7 +935,7 @@ short HashGroupBy::codeGen(Generator * generator) {
   }
 
   leftExpr = new (generator->wHeap()) Cast(leftExpr, new (generator->wHeap())
-					   SQLInt(FALSE, FALSE));
+					   SQLInt(generator->wHeap(), FALSE, FALSE));
   leftExpr->setConstFoldingDisabled(TRUE);      
 
   // bind/type propagate the hash evaluation tree

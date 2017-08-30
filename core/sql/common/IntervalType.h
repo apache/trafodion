@@ -102,15 +102,14 @@ public:
   // Constructor functions
   // ---------------------------------------------------------------------
   IntervalType
-  ( NABoolean allowSQLnull
+  ( NAMemory *heap, NABoolean allowSQLnull
   , rec_datetime_field startField
   , UInt32 leadingPrec
   , rec_datetime_field endField
   , UInt32 fractionPrec = 0
-  , NAMemory * heap =0
   )
   : DatetimeIntervalCommonType
-  ( LiteralInterval //"INTERVAL"
+  ( heap, LiteralInterval //"INTERVAL"
   , NA_INTERVAL_TYPE
   , getStorageSize(startField, leadingPrec, endField, fractionPrec)
   , allowSQLnull
@@ -118,7 +117,7 @@ public:
   , endField
   , fractionPrec
   , getStorageSize(startField, leadingPrec, endField, fractionPrec)
-  , heap)
+  )
   , leadingPrecision_(leadingPrec)
   {                                         // this could be a valid interval if we change endField to SECOND
     if (endField == REC_DATE_FRACTION_MP && startField != REC_DATE_FRACTION_MP)
@@ -337,15 +336,14 @@ public:
   // Constructor functions
   // ---------------------------------------------------------------------
   SQLInterval
-  ( NABoolean allowSQLnull
+  ( NAMemory *h, NABoolean allowSQLnull
   , rec_datetime_field startField
   , UInt32 leadingPrec
   , rec_datetime_field endField
   , UInt32 fractionPrec = DEFAULT_FRACTION_PRECISION
-  , NAMemory *h=0
   )
-  : IntervalType(allowSQLnull, startField, leadingPrec, endField,
-                 endField >= REC_DATE_SECOND ? fractionPrec : 0, h)
+  : IntervalType(h, allowSQLnull, startField, leadingPrec, endField,
+                 endField >= REC_DATE_SECOND ? fractionPrec : 0)
   {}
 
 // copy ctor
@@ -391,21 +389,19 @@ public:
 
   // Constructors
   IntervalQualifier
-  ( rec_datetime_field startField
+  ( NAMemory *h, rec_datetime_field startField
   , UInt32 leadingPrec = DEFAULT_LEADING_PRECISION
-  , NAMemory *h = 0
   )
-  : SQLInterval(FALSE, startField, leadingPrec, startField, DEFAULT_FRACTION_PRECISION,h)
+  : SQLInterval(h, FALSE, startField, leadingPrec, startField, DEFAULT_FRACTION_PRECISION)
   {}
 
   IntervalQualifier
-  ( rec_datetime_field startField
+  ( NAMemory *h, rec_datetime_field startField
   , UInt32 leadingPrec
   , rec_datetime_field endField
   , UInt32 fractionPrec
-  , NAMemory *h=0
   )
-  : SQLInterval(FALSE, startField, leadingPrec, endField, fractionPrec,h)
+  : SQLInterval(h, FALSE, startField, leadingPrec, endField, fractionPrec)
   {}
 
 private:

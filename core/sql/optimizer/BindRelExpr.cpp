@@ -1058,12 +1058,12 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         ItemExpr * cast = new (bindWA->wHeap())
           Cast(col->getValueId().getItemExpr(),
                new (bindWA->wHeap())
-               SQLBigNum(MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
+               SQLBigNum(bindWA->wHeap(), MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
                          nTyp->getScale(),
                          FALSE,
                          FALSE,
-                         naType->supportsSQLnull(),
-                         NULL));
+                         naType->supportsSQLnull()
+                         ));
         
         cast = cast->bindNode(bindWA);
         if (bindWA->errStatus()) 
@@ -1084,7 +1084,7 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         ItemExpr * cast = new (bindWA->wHeap())
           Cast(col->getValueId().getItemExpr(),
                new (bindWA->wHeap())
-               SQLChar(SQL_BOOLEAN_DISPLAY_SIZE, naType->supportsSQLnull()));
+               SQLChar(bindWA->wHeap(), SQL_BOOLEAN_DISPLAY_SIZE, naType->supportsSQLnull()));
         
         cast = cast->bindNode(bindWA);
         if (bindWA->errStatus()) 
@@ -1109,11 +1109,11 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
         NumericType * newType;
         if (srcNum->getScale() == 0)
           newType = new (bindWA->wHeap())
-            SQLSmall(NOT srcNum->isUnsigned(),
+            SQLSmall(bindWA->wHeap(), NOT srcNum->isUnsigned(),
                      naType->supportsSQLnull());
         else
           newType = new (bindWA->wHeap())
-            SQLNumeric(sizeof(short), srcNum->getPrecision(), 
+            SQLNumeric(bindWA->wHeap(), sizeof(short), srcNum->getPrecision(), 
                        srcNum->getScale(),
                        NOT srcNum->isUnsigned(), 
                        naType->supportsSQLnull());
@@ -1186,12 +1186,11 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
               }
 
             newTyp = new (bindWA->wHeap())
-              SQLBigNum(newPrec,
+              SQLBigNum(bindWA->wHeap(), newPrec,
                         newScale,
                         ((SQLBigNum &)col->getValueId().getType()).isARealBigNum(),
                         nTyp->isSigned(),
-                        nTyp->supportsSQLnull(),
-                        NULL);
+                        nTyp->supportsSQLnull());
           }
           else if (oflow > 0) {
             // If it's not a computed expr, but a column w/ a legal type, re-loop
@@ -1258,11 +1257,11 @@ void castComputedColumnsToAnsiTypes(BindWA *bindWA,
             
             if (newScale == 0)
               newTyp = new (bindWA->wHeap())
-                         SQLLargeInt(TRUE, // hardware only supports signed
+                         SQLLargeInt(bindWA->wHeap(), TRUE, // hardware only supports signed
                                      nTyp->supportsSQLnull());
             else
               newTyp = new (bindWA->wHeap())
-                         SQLNumeric(sizeof(Int64),
+                         SQLNumeric(bindWA->wHeap(), sizeof(Int64),
                                     newPrec,
                                     newScale,
                                     nTyp->isSigned(),
@@ -4128,7 +4127,7 @@ ItemExpr * RelRoot::processGroupingID(ItemExpr * ie, BindWA *bindWA)
   
   Int64 multiplier = (Int64)pow(2, (childExprList.entries()-1));
   SQLLargeInt * li = 
-    new(bindWA->wHeap()) SQLLargeInt(FALSE, FALSE); // +ve value, no nulls
+    new(bindWA->wHeap()) SQLLargeInt(bindWA->wHeap(), FALSE, FALSE); // +ve value, no nulls
   for (CollIndex i = 0; i < (CollIndex)childExprList.entries(); i++)
     {
       ItemExpr * currChildIE = 
@@ -8334,7 +8333,7 @@ RelExpr *Scan::bindExpandedMaterializedView(BindWA *bindWA, NATable *naTable)
     // the select list of this MV, just fake it. It's value will never be
     // used anyway - just it's existance.
     ConstValue *dummySyskey = new(heap) ConstValue(0);
-    dummySyskey->changeType(new(heap) SQLLargeInt());
+    dummySyskey->changeType(new(heap) SQLLargeInt(heap));
     ItemExpr *dummySyskeyCol = dummySyskey->bindNode(bindWA);
     if (bindWA->errStatus())
       return this;
@@ -9603,7 +9602,7 @@ static void bindInsertRRKey(BindWA *bindWA, Insert *insert,
   //
   ItemExpr *partNum = new (heap)
     HostVar("_sys_hostVarInsertPartNum",
-      new (heap) SQLInt(FALSE,FALSE),   // int unsigned not null
+      new (heap) SQLInt(heap, FALSE,FALSE),   // int unsigned not null
       TRUE // is system-generated
      );
   partNum->synthTypeAndValueId();
@@ -9611,7 +9610,7 @@ static void bindInsertRRKey(BindWA *bindWA, Insert *insert,
 
   ItemExpr *rowPos = new (heap)
     HostVar("_sys_hostVarInsertRowPos",
-      new (heap) SQLInt(FALSE,FALSE),  // int unsigned not null
+      new (heap) SQLInt(heap, FALSE,FALSE),  // int unsigned not null
       TRUE // is system-generated
      );
   rowPos->synthTypeAndValueId();
@@ -9619,7 +9618,7 @@ static void bindInsertRRKey(BindWA *bindWA, Insert *insert,
 
   ItemExpr *totNumParts = new (heap)
     HostVar("_sys_hostVarInsertTotNumParts",
-      new (heap) SQLInt(FALSE,FALSE),  // int unsigned not null
+      new (heap) SQLInt(heap, FALSE,FALSE),  // int unsigned not null
       TRUE // is system-generated
      );
   totNumParts->synthTypeAndValueId();
@@ -11758,7 +11757,7 @@ RelExpr *MergeUpdate::bindNode(BindWA *bindWA)
   if (getProducedMergeIUDIndicator() == NULL_VALUE_ID)
     {
       ItemExpr *mergeIUDIndicator = new(bindWA->wHeap()) NATypeToItem(
-           new(bindWA->wHeap()) SQLChar(
+           new(bindWA->wHeap()) SQLChar(bindWA->wHeap(), 
                 1, FALSE, FALSE, FALSE, FALSE, CharInfo::ISO88591));
 
       mergeIUDIndicator = mergeIUDIndicator->bindNode(bindWA);
@@ -14193,7 +14192,7 @@ RelExpr *BuiltinTableValuedFunction::bindNode(BindWA *bindWA)
 	// type any param arguments to fixed char since runtime explain
 	// expects arguments to be fixed char.
 	Lng32 len = (Lng32)CmpCommon::getDefaultNumeric(VARCHAR_PARAM_DEFAULT_SIZE);
-	SQLChar c(len);
+	SQLChar c(NULL, len);
 	
 	for (Lng32 i = 0; i < numParams(); i++)
 	  {
@@ -15483,7 +15482,7 @@ RelExpr* Pack::bindNode(BindWA* bindWA)
     ItemExpr* rowFilter = NULL;
     ItemExpr* unPackItem;
     ItemExpr* numRows;
-    const NAType* typeInt = new(bindWA->wHeap()) SQLInt(TRUE,FALSE);
+    const NAType* typeInt = new(bindWA->wHeap()) SQLInt(bindWA->wHeap(), TRUE,FALSE);
 
     ValueIdList packedCols;
     resultTable->getValueIdList(packedCols);
@@ -15491,7 +15490,7 @@ RelExpr* Pack::bindNode(BindWA* bindWA)
     NAString hostVarName("_sys_UnPackIndex", bindWA->wHeap());
     hostVarName += bindWA->fabricateUniqueName();
     ItemExpr* indexHostVar = new(bindWA->wHeap())
-        HostVar(hostVarName,new(bindWA->wHeap()) SQLInt(TRUE,FALSE),TRUE);
+        HostVar(hostVarName,new(bindWA->wHeap()) SQLInt(bindWA->wHeap(), TRUE,FALSE),TRUE);
     indexHostVar->synthTypeAndValueId();
 
     for (CollIndex i=0; i < packedCols.entries(); i++)
@@ -15680,7 +15679,7 @@ RelExpr * Rowset::bindNode(BindWA* bindWA)
        NAString name = "__arrayinputsize" ;
        HostVar *node = new (bindWA->wHeap())
                                     HostVar(name,
-                                            new(bindWA->wHeap()) SQLInt(TRUE,FALSE),
+                                            new(bindWA->wHeap()) SQLInt(bindWA->wHeap(), TRUE,FALSE),
                                             TRUE);
        node->setHVRowsetForInputSize();
        root->addAtTopOfInputVarTree(node);
@@ -15756,13 +15755,13 @@ RelExpr * Rowset::bindNode(BindWA* bindWA)
       // is of size integer, so we do this cast. We do not allow null
       // values.
       rowsetSizeExpr = new (bindWA->wHeap())
-        Cast(rowsetSizeExpr, new (bindWA->wHeap()) SQLInt(TRUE,FALSE));
+        Cast(rowsetSizeExpr, new (bindWA->wHeap()) SQLInt(bindWA->wHeap(), TRUE,FALSE));
 
       // For dynamic rowsets, the parameter specifying rowset for input size
       // must be typed as an non-nullable integer.
       if (sizeExpr_->getOperatorType() == ITM_DYN_PARAM ) {
         sizeExpr_->synthTypeAndValueId();
-        SQLInt intType(TRUE,FALSE); // TRUE -> allow neagtive values, FALSE -> not nullable
+        SQLInt intType(bindWA->wHeap(), TRUE,FALSE); // TRUE -> allow neagtive values, FALSE -> not nullable
         (sizeExpr_->getValueId()).coerceType(intType, NA_NUMERIC_TYPE);
       }
 
@@ -15787,7 +15786,7 @@ RelExpr * Rowset::bindNode(BindWA* bindWA)
     indexName = "_sys_rowset_index" + bindWA->fabricateUniqueName();
   }
 
-  const NAType *indexType = new (bindWA->wHeap()) SQLInt(TRUE, FALSE);
+  const NAType *indexType = new (bindWA->wHeap()) SQLInt(bindWA->wHeap(), TRUE, FALSE);
   ItemExpr *indexHostVar = new (bindWA->wHeap())
     HostVar(indexName, indexType,
             TRUE // is system-generated
@@ -15974,7 +15973,7 @@ RelExpr * RowsetRowwise::bindNode(BindWA* bindWA)
   Lng32 maxRowsetSize = 
     (Lng32)((ConstValue *)arrayArea->rwrsMaxSize())->getExactNumericValue() ;
 
-  NAType * typ = new(bindWA->wHeap()) SQLInt(FALSE, FALSE); 
+  NAType * typ = new(bindWA->wHeap()) SQLInt(bindWA->wHeap(), FALSE, FALSE); 
   ItemExpr * rwrsInputSizeExpr = 
     new(bindWA->wHeap()) Cast(arrayArea->inputSize(), typ);
   if (bindWA->errStatus()) 
@@ -17350,13 +17349,12 @@ RelExpr *TableMappingUDF::bindNode(BindWA *bindWA)
           // In the TMUDF code, on the other hand, we compute the
           // storage size from the precision. So, make sure we follow
           // the TMUDF rules here, when we describe its input table
-          adjustedChildColType = new(heap) SQLNumeric(
+          adjustedChildColType = new(heap) SQLNumeric(heap,
                getBinaryStorageSize(childColType.getPrecision()),
                childColType.getPrecision(),
                childColType.getScale(),
                ((const NumericType &) childColType).isSigned(),
-               childColType.supportsSQLnull(),
-               heap);
+               childColType.supportsSQLnull());
         }
 
       childCol = new (heap) NAColumn(

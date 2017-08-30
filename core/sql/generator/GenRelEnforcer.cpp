@@ -657,7 +657,7 @@ short Exchange::codeGenForESP(Generator * generator)
         ItemExpr * cast = new (generator->wHeap()) 
           Cast(topPartExpr, 
                new (generator->wHeap()) 
-               SQLInt(FALSE,
+               SQLInt(generator->wHeap(), FALSE,
                       topPartExpr->getValueId().getType().
                       supportsSQLnullLogical()));
         
@@ -689,7 +689,7 @@ short Exchange::codeGenForESP(Generator * generator)
               ItemExpr * hashExprResult = new (generator->wHeap()) 
                 Cast( hashExpr, 
                      new (generator->wHeap()) 
-                     SQLLargeInt(TRUE, // allow negative values.
+                     SQLLargeInt(generator->wHeap(), TRUE, // allow negative values.
                                  FALSE // no nulls.
                           ));
 

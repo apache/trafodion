@@ -247,7 +247,7 @@ void ValueId::coerceType(enum NABuiltInTypeEnum desiredQualifier,
   NAType *desiredType = NULL;
   switch (desiredQualifier) {
   case NA_BOOLEAN_TYPE:
-    desiredType = new STMTHEAP SQLBooleanNative(originalType.supportsSQLnull());
+    desiredType = new STMTHEAP SQLBooleanNative(STMTHEAP, originalType.supportsSQLnull());
     break;
   case NA_CHARACTER_TYPE:
     {
@@ -258,7 +258,7 @@ void ValueId::coerceType(enum NABuiltInTypeEnum desiredQualifier,
 #pragma warning (default : 4244)  // warning elimination
 
       desiredType = new STMTHEAP
-	SQLVarChar(len, //DEFAULT_CHARACTER_LENGTH,
+	SQLVarChar(STMTHEAP, len, //DEFAULT_CHARACTER_LENGTH,
 		   originalType.supportsSQLnull(),
 		   FALSE/*isUpShifted*/,
 		   FALSE/*isCaseinsensitive*/,
@@ -271,7 +271,7 @@ void ValueId::coerceType(enum NABuiltInTypeEnum desiredQualifier,
     {
       Int16 DisAmbiguate = 0;
       desiredType = new STMTHEAP
-      SQLNumeric(TRUE,   		// signed
+      SQLNumeric(STMTHEAP, TRUE,   		// signed
                  MAX_NUMERIC_PRECISION,	// precision
                  6,    			// scale
                  DisAmbiguate, // added for 64bit proj.
@@ -355,16 +355,14 @@ void ValueId::coerceType(const NAType& desiredType,
     {
       if (desiredType.getFSDatatype() == REC_FLOAT32)
         newType = new STMTHEAP
-          SQLReal(desiredType.supportsSQLnull(),
-                  STMTHEAP,
+          SQLReal(STMTHEAP, desiredType.supportsSQLnull(),
                   desiredType.getPrecision());
       else
         // ieee double, tandem real and tandem double are all
         // cast as IEEE double. Tandem real is cast as ieee double as
         // it won't 'fit' into ieee real.
         newType = new STMTHEAP
-          SQLDoublePrecision(desiredType.supportsSQLnull(),
-                             STMTHEAP,
+          SQLDoublePrecision(STMTHEAP, desiredType.supportsSQLnull(),
                              desiredType.getPrecision());
     }
   else {
@@ -383,10 +381,10 @@ void ValueId::coerceType(const NAType& desiredType,
              NABoolean isSigned = numType.isSigned();
              if (numType.getScale() == 0)
                newType = new (STMTHEAP)
-                 SQLSmall(isSigned, desiredType.supportsSQLnull());
+                 SQLSmall(STMTHEAP, isSigned, desiredType.supportsSQLnull());
              else
                newType = new (STMTHEAP)
-                 SQLNumeric(sizeof(short), 
+                 SQLNumeric(STMTHEAP, sizeof(short), 
                             numType.getPrecision(), 
                             numType.getScale(),
                             isSigned, 
@@ -401,28 +399,26 @@ void ValueId::coerceType(const NAType& desiredType,
                {
 		 Int16 DisAmbiguate = 0;
                  newType = new (STMTHEAP)
-                   SQLLargeInt(nTyp.getScale(),
+                   SQLLargeInt(STMTHEAP, nTyp.getScale(),
                                DisAmbiguate,
                                TRUE,
-                               nTyp.supportsSQLnull(),
-                               NULL);
+                               nTyp.supportsSQLnull());
                }
              else
                {
                  newType = new (STMTHEAP)
-                   SQLBigNum(MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
+                   SQLBigNum(STMTHEAP, MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION,
                              nTyp.getScale(),
                              FALSE,
                              FALSE,
-                             nTyp.supportsSQLnull(),
-                             NULL);
+                             nTyp.supportsSQLnull());
                }
            }
 	 else if ((desiredType.getFSDatatype() == REC_BOOLEAN) &&
                   (CmpCommon::getDefault(TRAF_BOOLEAN_IO) == DF_OFF))
            {
              newType = new (STMTHEAP)
-               SQLVarChar(SQL_BOOLEAN_DISPLAY_SIZE, 
+               SQLVarChar(STMTHEAP, SQL_BOOLEAN_DISPLAY_SIZE, 
                           desiredType.supportsSQLnull());
            }
 	 else if (DFS2REC::isBigNum(desiredType.getFSDatatype()))
@@ -455,11 +451,10 @@ void ValueId::coerceType(const NAType& desiredType,
 			 CmpCommon::getDefaultNumeric(MAX_NUMERIC_PRECISION_ALLOWED));
 		 Lng32 scale     = MINOF(desiredType.getScale(), precision);
 		 newType = new (STMTHEAP)
-		   SQLBigNum(precision, scale, 
+		   SQLBigNum(STMTHEAP, precision, scale, 
 			     ((SQLBigNum&)desiredType).isARealBigNum(),
 			     ((NumericType&)desiredType).isSigned(),
-			     desiredType.supportsSQLnull(),
-			     NULL);
+			     desiredType.supportsSQLnull());
 	       }
 	     else
 	       {
@@ -472,7 +467,7 @@ void ValueId::coerceType(const NAType& desiredType,
 		   
 		 Int16 DisAmbiguate = 0;
 		 newType = new (STMTHEAP)
-		   SQLNumeric(isSigned,
+		   SQLNumeric(STMTHEAP, isSigned,
 			      precision,
 			      scale,
 			      DisAmbiguate, // added for 64bit proj.
@@ -5128,7 +5123,7 @@ NABoolean ValueIdList::canSimplify(ItemExpr *itemExpr,
 	return FALSE;
 
       NumericType * ntyp = new (CmpCommon::statementHeap())
-	SQLNumeric(4, scale, scale, TRUE, FALSE);
+	SQLNumeric(CmpCommon::statementHeap(), 4, scale, scale, TRUE, FALSE);
       Lng32 cval = (Lng32)div;
       char cvalStr[20];
       cvalStr[0] = '.';

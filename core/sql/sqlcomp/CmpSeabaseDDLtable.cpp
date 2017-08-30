@@ -2021,14 +2021,14 @@ short CmpSeabaseDDL::createSeabaseTable2(
   NABoolean implicitPK = FALSE;
 
   NAString syskeyColName("SYSKEY");
-  SQLLargeInt * syskeyType = new(STMTHEAP) SQLLargeInt(TRUE, FALSE, STMTHEAP);
+  SQLLargeInt * syskeyType = new(STMTHEAP) SQLLargeInt(STMTHEAP, TRUE, FALSE);
   ElemDDLColDef syskeyColDef(NULL, &syskeyColName, syskeyType, NULL,
                              STMTHEAP);
   ElemDDLColRef edcr("SYSKEY", COM_ASCENDING_ORDER);
   syskeyColDef.setColumnClass(COM_SYSTEM_COLUMN);
 
   NAString hbRowIdColName("ROW_ID");
-  SQLVarChar * hbRowIdType = new(STMTHEAP) SQLVarChar(1000, FALSE);
+  SQLVarChar * hbRowIdType = new(STMTHEAP) SQLVarChar(STMTHEAP, 1000, FALSE);
   ElemDDLColDef hbRowIdColDef(NULL, &hbRowIdColName, hbRowIdType, NULL,
                               STMTHEAP);
   ElemDDLColRef hbcr("ROW_ID", COM_ASCENDING_ORDER);
@@ -2188,7 +2188,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
         }
 
       NAString saltColName(ElemDDLSaltOptionsClause::getSaltSysColName());
-      SQLInt * saltType = new(STMTHEAP) SQLInt(FALSE, FALSE, STMTHEAP);
+      SQLInt * saltType = new(STMTHEAP) SQLInt(STMTHEAP, FALSE, FALSE);
       ElemDDLColDefault *saltDef = 
         new(STMTHEAP) ElemDDLColDefault(
              ElemDDLColDefault::COL_COMPUTED_DEFAULT);

@@ -477,7 +477,7 @@ RelRoot *finalize(RelExpr *top, NABoolean outputVarCntValid)
                       argInfo = TheProcArgTypes->get(ivName);
                       if (!argInfo)
                         argInfo = new (PARSERHEAP()) HVArgType
-                          (ivName, new (PARSERHEAP()) SQLUnknown);
+                          (ivName, new (PARSERHEAP()) SQLUnknown(PARSERHEAP()));
                       argInfo->useCount()++;
                       argInfo->intoCount()++;
                     }
@@ -658,7 +658,7 @@ HostVar *makeHostVar(NAString *hvName, NAString *indName, NABoolean isDynamic)
   HVArgType *argInfo = TheProcArgTypes ?
 		       TheProcArgTypes->get(hvName) : NULL;
   NAType    *naType  = argInfo ?
-		       argInfo->getType() : new (PARSERHEAP()) SQLUnknown;
+		       argInfo->getType() : new (PARSERHEAP()) SQLUnknown(PARSERHEAP());
   ComASSERT(naType);
   naType->setNullable(!!indName);
 
@@ -889,7 +889,7 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
 	returnValue = 
 	  new (PARSERHEAP()) ConstValue
 	  (new (PARSERHEAP()) SQLLargeInt
-	    ((Lng32)scale, 
+	    (PARSERHEAP(), (Lng32)scale, 
              (UInt16) 0, // 64-bit
 	     TRUE,
 	     FALSE),
@@ -900,7 +900,7 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
 	returnValue = 
 	  new (PARSERHEAP()) ConstValue
 	  (new (PARSERHEAP()) SQLNumeric
-	   (length,
+	   (PARSERHEAP(), length,
 	    (Lng32)strSize, // precision
 	    (Lng32)scale, 
 	    createSignedDatatype,
@@ -956,12 +956,11 @@ ItemExpr *literalOfNumericPassingScale(NAString *strptr, char sign,
     
       returnValue = new (PARSERHEAP()) ConstValue
 #pragma nowarn(1506)   // warning elimination 
-        (new (PARSERHEAP()) SQLBigNum(strSize, 
+        (new (PARSERHEAP()) SQLBigNum(PARSERHEAP(), strSize, 
                                       scale,
                                       TRUE,
                                       TRUE,
-                                      FALSE,
-				      NULL),
+                                      FALSE),
          (void *) bigNumData,
          bigNumSize,
          strptr);
@@ -1162,7 +1161,7 @@ ItemExpr *literalOfApproxNumeric(NAString *strptr, char sign)
     }
 
   returnValue = new (PARSERHEAP()) ConstValue (new (PARSERHEAP())
-					       SQLDoublePrecision(FALSE),
+					       SQLDoublePrecision(PARSERHEAP(), FALSE),
 					       (void *)&doubleVal,
 					       sizeof(double),
 					       strptr);
@@ -1184,12 +1183,11 @@ ItemExpr *literalOfInterval(NAString *strptr,
                               qualifier->getFractionPrecision(),
                               sign);
   IntervalType *intervalType = new (PARSERHEAP())
-		  SQLInterval(FALSE,
+		  SQLInterval(PARSERHEAP(), FALSE,
 			      qualifier->getStartField(),
 			      qualifier->getLeadingPrecision(),
 			      qualifier->getEndField(),
-			      qualifier->getFractionPrecision(),
-                              PARSERHEAP());
+			      qualifier->getFractionPrecision());
   strptr->prepend("'");
   strptr->append ("' ");
   strptr->append (intervalType->getIntervalQualifierAsString());
@@ -1229,7 +1227,7 @@ ItemExpr *literalOfDate(NAString *strptr, NABoolean noDealloc)
      *SqlParser_Diags << DgSqlCode(-3045) << DgString0(*strptr);
   else
     returnValue = new (PARSERHEAP()) ConstValue (new (PARSERHEAP())
-		    SQLDate(FALSE, PARSERHEAP()),
+		    SQLDate(PARSERHEAP(), FALSE),
 		    (void *) dtValue.getValue(),
 		    dtValue.getValueLen(),
 		    strptr);
@@ -1251,7 +1249,7 @@ ItemExpr *literalOfTime(NAString *strptr)
       *SqlParser_Diags << DgSqlCode(-3046) << DgString0(*strptr);
   else
     returnValue = new (PARSERHEAP()) ConstValue (new (PARSERHEAP())
-		    SQLTime(FALSE, fractionPrec,PARSERHEAP()),
+		    SQLTime(PARSERHEAP(), FALSE, fractionPrec),
 		    (void *) dtValue.getValue(),
 		    dtValue.getValueLen(),
 		    strptr);
@@ -1330,7 +1328,7 @@ ItemExpr *literalOfTimestamp(NAString *strptr)
   else
     returnValue = new (PARSERHEAP())
       ConstValue (new (PARSERHEAP())
-                  SQLTimestamp (FALSE, fractionPrec, PARSERHEAP()),
+                  SQLTimestamp (PARSERHEAP(), FALSE, fractionPrec),
                   (void *) dtValue.getValue(),
                   dtValue.getValueLen(),
                   strptr);
@@ -2057,7 +2055,7 @@ NAType *picNAType(const NABoolean      isString,
             Int32 maxBytesPerChar = CharInfo::maxBytesPerChar(charset);
             returnValue = new (PARSERHEAP())
               //            SQLChar(precision,TRUE,FALSE,isCaseinsensitive,FALSE,charset,collation,coerc);
-              SQLChar(CharLenInfo(characterLimit, maxLenInBytes),
+              SQLChar(PARSERHEAP(), CharLenInfo(characterLimit, maxLenInBytes),
                       TRUE,FALSE,isCaseinsensitive,FALSE,
                       charset,collation,coerc,eEncodingCharSet);
             assert(returnValue);
@@ -2066,7 +2064,7 @@ NAType *picNAType(const NABoolean      isString,
         case STYLE_UPSHIFT:
 	    returnValue = new (PARSERHEAP())
 #pragma nowarn(1506)   // warning elimination 
-  		SQLChar(precision,TRUE,TRUE,isCaseinsensitive,FALSE,charset,collation,coerc);
+  		SQLChar(PARSERHEAP(), precision,TRUE,TRUE,isCaseinsensitive,FALSE,charset,collation,coerc);
 #pragma warn(1506)  // warning elimination 
             assert(returnValue);
             break;
@@ -2105,7 +2103,7 @@ NAType *picNAType(const NABoolean      isString,
            else
               returnValue = new (PARSERHEAP())
 #pragma nowarn(1506)   // warning elimination 
-		SQLDecimal(precision,scale,hasSign);
+		SQLDecimal(PARSERHEAP(), precision,scale,hasSign);
 #pragma warn(1506)  // warning elimination 
            assert(returnValue);
            break;
@@ -2128,7 +2126,7 @@ NAType *picNAType(const NABoolean      isString,
               const Int16 DisAmbiguate = 0; // added for 64bit project
               returnValue = new (PARSERHEAP())
 #pragma nowarn(1506)   // warning elimination 
-		SQLNumeric(hasSign, precision, scale, DisAmbiguate);
+		SQLNumeric(PARSERHEAP(), hasSign, precision, scale, DisAmbiguate);
 #pragma warn(1506)  // warning elimination 
               assert(returnValue);
            }

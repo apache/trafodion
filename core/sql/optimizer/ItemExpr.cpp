@@ -3509,7 +3509,7 @@ ItemExpr * BiArith::foldConstants(ComDiagsArea *diagsArea,
               NAString runningOutOfNames(numstr, CmpCommon::statementHeap());
 
 	      result = new(CmpCommon::statementHeap()) SystemLiteral(
-		   new(CmpCommon::statementHeap()) SQLLargeInt(TRUE,FALSE),
+		   new(CmpCommon::statementHeap()) SQLLargeInt(CmpCommon::statementHeap(), TRUE,FALSE),
 		   (void *) &numResult,
 		   sizeof(numResult),
 		   &runningOutOfNames);
@@ -8335,13 +8335,13 @@ ItemExpr * CurrentTimestamp::construct
     {
       if (dtCode == DatetimeType::SUBTYPE_SQLDate)
         ie = new (heap)
-          Cast(ie, new (heap) SQLDate(FALSE, heap));
+          Cast(ie, new (heap) SQLDate(heap, FALSE));
       else if (dtCode == DatetimeType::SUBTYPE_SQLTime)
         ie = new (heap)
-          Cast(ie, new (heap) SQLTime(FALSE, fractPrec, heap));
+          Cast(ie, new (heap) SQLTime(heap, FALSE, fractPrec));
       else
         ie = new (heap)
-          Cast(ie, new (heap) SQLTimestamp(FALSE, fractPrec, heap));
+          Cast(ie, new (heap) SQLTimestamp(heap, FALSE, fractPrec));
     }
 
   return ie;
@@ -9119,7 +9119,7 @@ void PackFunc::deriveTypeFromFormatInfo()
 
   Lng32 dataSizeInBytes = (width_ < 0 ? (-width_-1)/8+1 : width_);
   Lng32 packedRowSizeInBytes = (base_ + dataSizeInBytes);
-  type_ = new(CmpCommon::statementHeap()) SQLChar(packedRowSizeInBytes,FALSE);
+  type_ = new(CmpCommon::statementHeap()) SQLChar(CmpCommon::statementHeap(), packedRowSizeInBytes,FALSE);
 }
 
 void PackFunc::deriveFormatInfoFromUnpackType(const NAType* unpackType)
@@ -9171,7 +9171,7 @@ void PackFunc::deriveFormatInfoFromUnpackType(const NAType* unpackType)
   Lng32 packedRowSizeInBytes = (base_ + dataSizeInBytes);
 
   // Synthesize type of the packed column.
-  type_ = new(CmpCommon::statementHeap()) SQLChar(packedRowSizeInBytes,FALSE);
+  type_ = new(CmpCommon::statementHeap()) SQLChar(CmpCommon::statementHeap(), packedRowSizeInBytes,FALSE);
   isFormatInfoValid_ = TRUE;
 }
 
@@ -9959,7 +9959,7 @@ const NAString KeyRangeCompare::getText() const
 ConstValue::ConstValue()
 : ItemExpr(ITM_CONSTANT)
      , isNull_(IS_NULL)
-     , type_(new (CmpCommon::statementHeap()) SQLUnknown(TRUE))
+     , type_(new (CmpCommon::statementHeap()) SQLUnknown(CmpCommon::statementHeap(), TRUE))
      , value_(NULL)
      , storageSize_(0)
      , text_(new (CmpCommon::statementHeap()) NAString("NULL", CmpCommon::statementHeap()))
@@ -9978,7 +9978,7 @@ ConstValue::ConstValue(Lng32 intval, NAMemory * outHeap)
            : ItemExpr(ITM_CONSTANT)
            , isNull_(IS_NOT_NULL)
            , textIsValidatedSQLLiteralInUTF8_(FALSE)
-           , type_(new (CmpCommon::statementHeap()) SQLInt(TRUE, FALSE))
+           , type_(new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), TRUE, FALSE))
 	   , isSystemSupplied_(FALSE)
            , locale_strval(0)
            , locale_wstrval(0)
@@ -10028,7 +10028,7 @@ void ConstValue::initCharConstValue
     {
       // create a varchar constant of length 0, in this case.
       type_ = new (outHeap)
-		SQLVarChar(0, FALSE, FALSE, FALSE,
+		SQLVarChar(outHeap, 0, FALSE, FALSE, FALSE,
 			   charSet, collation, coercibility);
       storageSize_ = type_->getVarLenHdrSize();
       value_ = (void *)( new (outHeap) 
@@ -10056,7 +10056,7 @@ void ConstValue::initCharConstValue
           , charSet                   // const CharInfo::CharSet cs
           );
         CMPASSERT(actualCharsCount >= 0); // no errors
-        type_ = new (outHeap) SQLChar ( CharLenInfo ( actualCharsCount
+        type_ = new (outHeap) SQLChar (outHeap,  CharLenInfo ( actualCharsCount
                                                     , strval.length() // str len in bytes
                                                     )
                                       , FALSE           // allowSQLnull
@@ -10071,7 +10071,7 @@ void ConstValue::initCharConstValue
       }
       else
       type_ = new (outHeap)
-		SQLChar(num_of_chars, FALSE, FALSE, FALSE, FALSE,
+		SQLChar(outHeap, num_of_chars, FALSE, FALSE, FALSE, FALSE,
 			charSet, collation, coercibility);
 
 
@@ -10126,7 +10126,7 @@ void ConstValue::initCharConstValue(const NAWString& strval,
     {
       // create a varchar constant of length 0, in this case.
       type_ = new (outHeap)
-		SQLVarChar(0, FALSE, FALSE, FALSE,
+		SQLVarChar(outHeap, 0, FALSE, FALSE, FALSE,
 			   charSet, collation, coercibility);
       storageSize_ = type_->getVarLenHdrSize();
       value_ = (void *)( new (outHeap) 
@@ -10159,7 +10159,7 @@ void ConstValue::initCharConstValue(const NAWString& strval,
       Int32 num_of_chars = (Int32)strval.length();
 
       type_ = new (outHeap)
-		SQLChar(num_of_chars, FALSE, FALSE, FALSE, FALSE,
+		SQLChar(outHeap, num_of_chars, FALSE, FALSE, FALSE, FALSE,
 			charSet, collation, coercibility);
 
 #pragma nowarn(1506)   // warning elimination

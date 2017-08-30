@@ -131,12 +131,12 @@ int CreateAllCharsExpr(const NAType &formalType,
 
   if (formalType.getTypeQualifier() != NA_CHARACTER_TYPE )
   {
-    typ = new (h) SQLVarChar(maxLength);
+    typ = new (h) SQLVarChar(h, maxLength);
   }
   else
   {
     const CharType &cFormalType = (CharType&)formalType;
-    typ = new (h) SQLVarChar( maxLength,
+    typ = new (h) SQLVarChar( h, maxLength,
                               cFormalType.supportsSQLnull(),
                               cFormalType.isUpshifted(),
                               cFormalType.isCaseinsensitive(),

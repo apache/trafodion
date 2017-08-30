@@ -862,7 +862,7 @@ short ExpGenerator::handleUnsupportedCast(Cast * castNode)
         {
           const IntervalType &srcInt = (IntervalType&)srcNAType; 
           newType = new (generator->wHeap())
-            SQLNumeric(sizeof(short), srcInt.getTotalPrecision(), 
+            SQLNumeric(generator->wHeap(), sizeof(short), srcInt.getTotalPrecision(), 
                        srcInt.getFractionPrecision(),
                        TRUE, srcNAType.supportsSQLnull());
         }
@@ -870,7 +870,7 @@ short ExpGenerator::handleUnsupportedCast(Cast * castNode)
         {
           const NumericType &srcNum = (NumericType&)srcNAType; 
            newType = new (generator->wHeap())
-             SQLNumeric(sizeof(short), srcNum.getPrecision(), 
+             SQLNumeric(generator->wHeap(), sizeof(short), srcNum.getPrecision(), 
                         srcNum.getScale(),
                         NOT srcNum.isUnsigned(), srcNAType.supportsSQLnull());
         }
@@ -881,11 +881,11 @@ short ExpGenerator::handleUnsupportedCast(Cast * castNode)
           if ((srcNum.getScale() == 0) &&
               (srcNum.binaryPrecision()))
             newType = new (generator->wHeap())
-              SQLSmall(NOT srcNum.isUnsigned(),
+              SQLSmall(generator->wHeap(), NOT srcNum.isUnsigned(),
                        tgtNAType.supportsSQLnull());
           else
             newType = new (generator->wHeap())
-              SQLNumeric(sizeof(short), srcNum.getPrecision(), 
+              SQLNumeric(generator->wHeap(), sizeof(short), srcNum.getPrecision(), 
                          srcNum.getScale(),
                          NOT srcNum.isUnsigned(), 
                          tgtNAType.supportsSQLnull());
@@ -898,11 +898,11 @@ short ExpGenerator::handleUnsupportedCast(Cast * castNode)
           if ((tgtNum.getScale() == 0) &&
               (tgtNum.binaryPrecision()))
             newType = new (generator->wHeap())
-              SQLSmall(NOT tgtNum.isUnsigned(),
+              SQLSmall(generator->wHeap(), NOT tgtNum.isUnsigned(),
                        tgtNAType.supportsSQLnull());
           else
             newType = new (generator->wHeap())
-              SQLNumeric(sizeof(short), tgtNum.getPrecision(), 
+              SQLNumeric(generator->wHeap(), sizeof(short), tgtNum.getPrecision(), 
                          tgtNum.getScale(),
                          NOT tgtNum.isUnsigned(), 
                          tgtNAType.supportsSQLnull());
@@ -931,7 +931,7 @@ short ExpGenerator::handleUnsupportedCast(Cast * castNode)
         new (generator->wHeap())
         Cast(castNode->child(0),
              new (generator->wHeap())
-             SQLLargeInt(numSrc.getScale(), 1,
+             SQLLargeInt(generator->wHeap(), numSrc.getScale(), 1,
                          TRUE,
                          srcNAType.supportsSQLnull()));
       ((Cast*)newChild)->setFlags(castNode->getFlags());
@@ -1150,7 +1150,7 @@ ItemExpr * ExpGenerator::convertIntervalToNumeric(const ValueId & source)
   if (sourceInterval.getStartField() != sourceInterval.getEndField())
     retTree = new(wHeap())
       Cast(retTree, new(wHeap())
-	   SQLInterval(sourceInterval.supportsSQLnull(),
+	   SQLInterval(wHeap(), sourceInterval.supportsSQLnull(),
 		       sourceInterval.getEndField(),
 		       sourceInterval.getTotalPrecision() -
 		       sourceInterval.getFractionPrecision(),
@@ -1162,7 +1162,7 @@ ItemExpr * ExpGenerator::convertIntervalToNumeric(const ValueId & source)
 #pragma nowarn(1506)   // warning elimination
   const Int16 DisAmbiguate = 0;
   retTree = new(wHeap())
-    Cast(retTree, new(wHeap()) SQLNumeric(TRUE, /* signed */
+    Cast(retTree, new(wHeap()) SQLNumeric(wHeap(), TRUE, /* signed */
 				     sourceInterval.getTotalPrecision(),
 				     sourceInterval.getFractionPrecision(),
 				     DisAmbiguate, // added for 64bit proj.
@@ -1198,7 +1198,7 @@ ItemExpr * ExpGenerator::convertNumericToInterval(const ValueId & source,
   //
 
   SQLInterval *interval =
-    new(wHeap()) SQLInterval(targetInterval.supportsSQLnull(),
+    new(wHeap()) SQLInterval(wHeap(), targetInterval.supportsSQLnull(),
                     targetInterval.getEndField(),
                     targetInterval.getTotalPrecision() -
                       targetInterval.getFractionPrecision(),
@@ -2147,7 +2147,7 @@ short ExpGenerator::generateBulkMoveAligned(
     // 5/21/98: Since the tuple is to be moved as a byte array,
     // the current SQLChar constructor should be sufficient.
 
-    NAType * type = new(generator->wHeap()) SQLChar((Int32)tupleLength, FALSE);
+    NAType * type = new(generator->wHeap()) SQLChar(generator->wHeap(), (Int32)tupleLength, FALSE);
     ItemExpr * bulkMoveSrc = new(generator->wHeap()) NATypeToItem(type);
     //ItemExpr * bulkMoveTgt = new(generator->wHeap()) Convert (bulkMoveSrc);
     ItemExpr * bulkMoveTgt = new(generator->wHeap()) Convert (bulkMoveSrc,
@@ -2355,7 +2355,7 @@ short ExpGenerator::generateBulkMove(ValueIdList inValIdList,
 // 5/21/98: Since the tuple is to be moved as a byte array,
 // the current SQLChar constructor should be sufficient.
 
-      NAType * type = new(generator->wHeap()) SQLChar(tupleLength, FALSE);
+      NAType * type = new(generator->wHeap()) SQLChar(generator->wHeap(), tupleLength, FALSE);
       ItemExpr * bulkMoveSrc = new(generator->wHeap()) NATypeToItem(type);
       ItemExpr * bulkMoveTgt = new(generator->wHeap()) Convert (bulkMoveSrc);
       bulkMoveTgt->synthTypeAndValueId();
@@ -3076,7 +3076,7 @@ short ExpGenerator::generateKeyEncodeExpr(const IndexDesc * indexDesc,
 	      col_node = new(wHeap())
 		Cast (col_node,
 		      (new(wHeap())
-		       SQLChar(CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
+		       SQLChar(wHeap(), CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
 			       col_node->getValueId().getType().supportsSQLnull(),
 			       FALSE, FALSE, FALSE,
 			       char_t.getCharSet(),
@@ -3307,7 +3307,7 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
                       (keycol->getValueId().getType().getVarLenHdrSize() > 0))
                     {
                       targetType = new(wHeap())
-                        ANSIChar(char_t.getDataStorageSize(),
+                        ANSIChar(wHeap(), char_t.getDataStorageSize(),
                                  keycol->getValueId().getType().supportsSQLnull(),
                                  FALSE,
                                  FALSE,
@@ -3319,7 +3319,7 @@ ItemExpr * ExpGenerator::generateKeyCast(const ValueId vid,
                   else
                     {
                       targetType = new(wHeap())
-                        SQLChar(CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
+                        SQLChar(wHeap(), CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
                                 keycol->getValueId().getType().supportsSQLnull(),
                                 FALSE,
                                 ((CharType*)targetType)->isCaseinsensitive(),

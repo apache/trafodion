@@ -283,12 +283,12 @@ LmExprResult CreateLmOutputExpr(const NAType &formalType,
     if (isResultSet || style != COM_STYLE_JAVA_CALL)
     {
       Lng32 maxLength = GetDisplayLength(formalType);
-      replyType = new (h) SQLChar(maxLength);
+      replyType = new (h) SQLChar(h, maxLength);
     }
     else
     {
       Lng32 maxLength = GetDisplayLength(formalType);
-      replyType = new (h) SQLVarChar(maxLength);
+      replyType = new (h) SQLVarChar(h, maxLength);
     }
   }
   else

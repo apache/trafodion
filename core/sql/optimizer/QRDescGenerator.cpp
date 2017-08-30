@@ -178,22 +178,22 @@ void EqualitySet::determineType()
     {
       // Binary precision smallint, int, largeint, real, double)
       if (magnitude < 50)
-        type_ = new(heap_) SQLSmall(isSigned, isNullable, heap_);
+        type_ = new(heap_) SQLSmall(heap_,isSigned, isNullable);
       else if (magnitude < 100)
-        type_ = new(heap_) SQLInt(isSigned, isNullable, heap_);
+        type_ = new(heap_) SQLInt(heap_, isSigned, isNullable);
       else if (magnitude < 200)
-        type_ = new(heap_) SQLLargeInt(isSigned, isNullable, heap_);
+        type_ = new(heap_) SQLLargeInt(heap_, isSigned, isNullable);
       else if (magnitude < 500)
-        type_ = new(heap_) SQLReal(isNullable, heap_);
+        type_ = new(heap_) SQLReal(heap_, isNullable);
       else
-        type_ = new(heap_) SQLDoublePrecision(isNullable, heap_);
+        type_ = new(heap_) SQLDoublePrecision(heap_, isNullable);
     }
   else
     {
       // @ZX need to amend this (and elsewhere) for SQLBigNum.
       // Numeric or Decimal -- type will be generated as Numeric
       const Int16 DisAmbiguate = 0;
-      type_ = new(heap_) SQLNumeric(isSigned, (magnitude / 10) + scale, scale,
+      type_ = new(heap_) SQLNumeric(heap_, isSigned, (magnitude / 10) + scale, scale,
                                     DisAmbiguate,  // added for 64bit proj.
                                     isNullable);
     }

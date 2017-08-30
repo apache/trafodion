@@ -204,7 +204,7 @@ NABoolean ItmBalance::isCovered(const ValueIdSet& newExternalInputs,
 const NAType *ItmBalance::synthesizeType()
 {
   // returns a signed, non-null integer
-  return new HEAP SQLInt(TRUE,FALSE);
+  return new HEAP SQLInt(HEAP, TRUE,FALSE);
 }
 
 double
@@ -517,5 +517,5 @@ ItemExpr * RandomSelection::copyTopNode(ItemExpr *derivedNode,
 const NAType *RandomSelection::synthesizeType()
 {
   // returns an int, unsigned and not null
-  return new HEAP SQLInt(FALSE,FALSE);
+  return new HEAP SQLInt(HEAP, FALSE,FALSE);
 }

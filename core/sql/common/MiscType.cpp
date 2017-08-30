@@ -43,18 +43,16 @@
 //  SQLBooleanBase : The boolean data type
 //
 // ***********************************************************************
-SQLBooleanBase::SQLBooleanBase(NABoolean allowSQLnull,
-                       NABoolean isRelat,
-                       NAMemory * heap) :
-     NAType(LiteralBoolean,
+SQLBooleanBase::SQLBooleanBase(NAMemory *heap, NABoolean allowSQLnull,
+                       NABoolean isRelat) :
+     NAType(heap, LiteralBoolean,
             NA_BOOLEAN_TYPE,
             (isRelat ? 4 : 1),  // dataStorageSize
             allowSQLnull,
             (allowSQLnull ? SQL_NULL_HDR_SIZE : 0),
             FALSE,              // variableLength
             0,                  // lengthHeaderSize
-            (isRelat ? 4 : 1),  // dataAlignment
-            heap                
+            (isRelat ? 4 : 1)  // dataAlignment
             )
 { 
 }
@@ -80,16 +78,15 @@ NABoolean SQLBooleanBase::errorsCanOccur(const NAType& target, NABoolean lax) co
 //  SQLBooleanRelat : The boolean data type
 //
 // ***********************************************************************
-SQLBooleanRelat::SQLBooleanRelat(NABoolean sqlUnknownFlag,
-                                 NAMemory * heap) :
-     SQLBooleanBase(FALSE, TRUE, heap),
+SQLBooleanRelat::SQLBooleanRelat(NAMemory *heap, NABoolean sqlUnknownFlag) :
+     SQLBooleanBase(heap, FALSE, TRUE),
      sqlUnknownFlag_(sqlUnknownFlag)
 { 
 }
 
 NAType * SQLBooleanRelat::newCopy(CollHeap* h) const
 {
-  return new(h) SQLBooleanRelat(sqlUnknownFlag_, h);
+  return new(h) SQLBooleanRelat(h, sqlUnknownFlag_);
 }
 
 // ***********************************************************************
@@ -121,7 +118,7 @@ const NAType* SQLBooleanRelat::synthesizeType(enum NATypeSynthRuleEnum synthRule
   // expressions.
   //
   if (synthRule == SYNTH_RULE_UNION)
-    return new(h) SQLBooleanRelat();
+    return new(h) SQLBooleanRelat(h);
 
   return NULL;
 } // synthesizeType()
@@ -132,15 +129,14 @@ const NAType* SQLBooleanRelat::synthesizeType(enum NATypeSynthRuleEnum synthRule
 //  SQLBooleanNative : The boolean data type
 //
 // ***********************************************************************
-SQLBooleanNative::SQLBooleanNative(NABoolean allowSQLnull,
-                                 NAMemory * heap) :
-     SQLBooleanBase(allowSQLnull, FALSE, heap)
+SQLBooleanNative::SQLBooleanNative(NAMemory *heap, NABoolean allowSQLnull) :
+     SQLBooleanBase(heap, allowSQLnull, FALSE)
 { 
 }
 
 NAType * SQLBooleanNative::newCopy(CollHeap* h) const
 {
-  return new(h) SQLBooleanNative(supportsSQLnull(), h);
+  return new(h) SQLBooleanNative(h, supportsSQLnull());
 }
 
 // ***********************************************************************
@@ -173,7 +169,7 @@ const NAType* SQLBooleanNative::synthesizeType(enum NATypeSynthRuleEnum synthRul
   //
   if (synthRule == SYNTH_RULE_UNION)
     return new(h) SQLBooleanNative
-      (operand1.supportsSQLnull() || operand2.supportsSQLnull());
+      (h, operand1.supportsSQLnull() || operand2.supportsSQLnull());
 
   return NULL;
 } // synthesizeType()
@@ -219,8 +215,8 @@ void SQLBooleanNative::maxRepresentableValue(void* bufPtr, Lng32* bufLen,
 //  SQLRecord : The record data type
 //
 // ***********************************************************************
-SQLRecord::SQLRecord(const NAType * elementType, const SQLRecord * restOfRecord,NAMemory * heap) :
-   NAType(LiteralRecord,
+SQLRecord::SQLRecord(NAMemory *heap, const NAType * elementType, const SQLRecord * restOfRecord) :
+   NAType(heap, LiteralRecord,
           NA_RECORD_TYPE,
           elementType->getTotalSize() +
                 (restOfRecord ? restOfRecord->getTotalSize()
@@ -231,8 +227,7 @@ SQLRecord::SQLRecord(const NAType * elementType, const SQLRecord * restOfRecord,
           0,                                      // SQLnullHdrSize
           FALSE,                                  // variableLength
           0,                                      // lengthHeaderSize
-          4,                                       // dataAlignment
-          heap),
+          4),                                       // dataAlignment
     elementType_(elementType),
     restOfRecord_(restOfRecord)
 {
@@ -244,7 +239,7 @@ SQLRecord::SQLRecord(const NAType * elementType, const SQLRecord * restOfRecord,
 
 NAType * SQLRecord::newCopy(CollHeap* h) const
 {
-  return new(h) SQLRecord(elementType_, restOfRecord_,h);
+  return new(h) SQLRecord(h, elementType_, restOfRecord_);
 }
 
 short SQLRecord::getFSDatatype() const 
@@ -351,9 +346,9 @@ NABoolean SQLRecord::errorsCanOccur(const NAType& target, NABoolean lax) const
 //  supported by SQL/MX.
 // ***********************************************************************
 
-SQLRowset::SQLRowset(NAType *elementType, Lng32 maxNumElements, 
-                     Lng32 numElements,NAMemory * heap) : 
-  NAType(LiteralRowset
+SQLRowset::SQLRowset(NAMemory *heap, NAType *elementType, Lng32 maxNumElements, 
+                     Lng32 numElements) : 
+  NAType(heap, LiteralRowset
          ,NA_ROWSET_TYPE
          ,elementType->getNominalSize()
          ,elementType->supportsSQLnull()
@@ -440,7 +435,7 @@ void SQLRowset::print(FILE* ofd, const char* indent)
 
 NAType * SQLRowset::newCopy(CollHeap* h) const
 {
-  return new(h) SQLRowset(elementType_, maxNumElements_, numElements_,h);
+  return new(h) SQLRowset(h, elementType_, maxNumElements_, numElements_);
 }
 
 NAType * SQLRowset::getElementType() const
@@ -476,7 +471,7 @@ const NAType* SQLRowset::synthesizeType(enum NATypeSynthRuleEnum synthRule,
     return NULL;
   }
 
-  return new(h) SQLRowset(elementType_, maxNumElements_, numElements_,h);
+  return new(h) SQLRowset(h, elementType_, maxNumElements_, numElements_);
 }
 
 Lng32 SQLRowset::getNumElements() const
