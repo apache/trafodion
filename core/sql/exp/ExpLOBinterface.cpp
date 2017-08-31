@@ -982,8 +982,9 @@ Lng32 ExpLOBInterfaceSelectCursor(void * exLobGlob,
                    waitedOp,
 		   exLobGlob,
 		   0,
-		   hdfsDetailError, 0,0,0,0,0,0,0,
+		   hdfsDetailError,0,0,0,0,0,0,0,
                    openType
+                   
 		   );
 
   if (err != LOB_OPER_OK)
@@ -994,6 +995,60 @@ Lng32 ExpLOBInterfaceSelectCursor(void * exLobGlob,
   return LOB_ACCESS_SUCCESS;
 }
 
+
+Lng32 ExpLOBInterfaceGetLobLength(void * exLobGlob, 
+				  char * lobName, 
+				  char * lobLoc,
+				  Lng32 lobType,
+				  char * lobHdfsServer,
+				  Lng32 lobHdfsPort,
+				  Int32 handleLen, 
+				  char * lobHandle,
+			          Int64 &outLobLen
+                                 
+				  )
+{
+  Ex_Lob_Error err;
+  
+  Int64 dummyParam = 0;
+  Int32 dummyParam2 = 0;
+  Ex_Lob_Error status;
+  Int64 cliError=0;
+  
+  LobsOper lo;
+  LobsSubOper so;
+  LobsStorage ls = (LobsStorage)lobType;
+  if (ls == Lob_External_HDFS_File)
+    so = Lob_External_File;
+  else 
+    so = Lob_Buffer;
+  err = ExLobsOper(lobName, 
+		   lobHandle, handleLen, 
+		   lobHdfsServer, lobHdfsPort,
+                   NULL, dummyParam2, 
+		   dummyParam, dummyParam, 
+		   outLobLen,
+                   dummyParam, dummyParam,
+		   status, cliError, 
+		   lobLoc, ls, //Lob_HDFS_File,
+		   NULL, 0, 
+		   dummyParam,NULL,
+		   Lob_GetLength,
+		   so,
+                   TRUE,
+		   exLobGlob,
+		   0,
+		   0, 0,0,0,0,0,0,0,
+                   0
+		   );
+
+  if (err != LOB_OPER_OK)
+    {
+      return -err;
+    }
+  
+  return LOB_ACCESS_SUCCESS;
+}
 Lng32 ExpLOBinterfaceStats(
 			    void * exLobGlob, 
 			    ExLobStats * lobStats,

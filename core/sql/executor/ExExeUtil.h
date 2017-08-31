@@ -2931,6 +2931,8 @@ public:
 			 ex_globals * glob = 0);
   
   virtual short work();
+  virtual ~ExExeUtilLobExtractTcb();
+  virtual void freeResources();
   
   ExExeUtilLobExtractTdb & lobTdb() const
   {
@@ -3036,7 +3038,8 @@ public:
 			 ex_globals * glob = 0);
   
   virtual short work();
-  
+  virtual ~ExExeUtilLobUpdateTcb();
+  virtual void freeResources();
   ExExeUtilLobUpdateTdb & lobTdb() const
   {
     return (ExExeUtilLobUpdateTdb &) tdb;

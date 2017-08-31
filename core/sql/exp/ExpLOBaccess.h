@@ -436,7 +436,7 @@ class ExLob : public NABasicObject
   Ex_Lob_Error purgeLob();
   Ex_Lob_Error closeFile();
   LobInputOutputFileType fileType(char *ioFileName);
-  Ex_Lob_Error closeCursor(char *handleIn, Int32 handleInLen);
+  Ex_Lob_Error closeCursor(char *handleIn, Int32 handleInLen,Int64 transId);
   Ex_Lob_Error closeDataCursorSimple(const char *fileName, ExLobGlobals *lobGlobals);
   
   Ex_Lob_Error doSanityChecks(char *dir, LobsStorage storage,
@@ -496,7 +496,7 @@ class ExLob : public NABasicObject
 
   ExLobStats *getStats() { return &stats_; }
   NAHeap *getLobGlobalHeap() { return lobGlobalHeap_;}
-
+  Ex_Lob_Error getLength(char *handleIn, Int32 handleInLen,Int64 &outLobLen,LobsSubOper so, Int64 transId);
   //    ExLobRequest *getRequest() { return &request_; }
   
   //The next 2 functions are not active at this point. They serve as an example
