@@ -2301,7 +2301,7 @@ short HbaseInsert::codeGen(Generator *generator)
           Lng32 cvl = givenType.getDisplayLength();
 
           NAType * asciiType = 
-            new (generator->wHeap()) SQLVarChar(cvl, givenType.supportsSQLnull());
+            new (generator->wHeap()) SQLVarChar(generator->wHeap(), cvl, givenType.supportsSQLnull());
           ie = new(generator->wHeap()) Cast(ie, asciiType);
         }
 

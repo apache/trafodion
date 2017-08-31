@@ -3052,6 +3052,7 @@ void GeneratorAbort(const char *file, Int32 line, const char * message)
   *CmpCommon::diags() << DgSqlCode(-7000) << DgString0(file)
                       << DgInt0(line) << DgString1(message);
 
+  abort();
   CmpInternalException("GeneratorAbort", __FILE__ , __LINE__).throwException();
 #else
   if (CmpCommon::context()->isDoNotAbort())

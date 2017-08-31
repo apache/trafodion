@@ -425,7 +425,7 @@ const NAType* IntervalType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                                            fractionPrecision);
     if (totalPrecision > SQLInterval::MAX_LEADING_PRECISION)
       leadingPrecision -= totalPrecision - SQLInterval::MAX_LEADING_PRECISION;
-    return new(h) SQLInterval(
+    return new(h) SQLInterval(h,
 		 op1.supportsSQLnull() || op2.supportsSQLnull(),
 		 startField,
 		 leadingPrecision,
@@ -445,7 +445,7 @@ const NAType* IntervalType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
 
     if ((op1.getLeadingPrecision() < leadingPrecision) ||
        (op2.supportsSQLnull() && !op1.supportsSQLnull()))
-      return new(h) SQLInterval (op1.supportsSQLnull() || op2.supportsSQLnull(),
+      return new(h) SQLInterval (h, op1.supportsSQLnull() || op2.supportsSQLnull(),
                                  op1.getStartField(),
                                  leadingPrecision,
                                  op1.getEndField(),
@@ -481,7 +481,7 @@ const NAType* IntervalType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
                                            intervalOp->getFractionPrecision());
     if (totalPrecision > SQLInterval::MAX_LEADING_PRECISION)
       leadingPrecision -= totalPrecision - SQLInterval::MAX_LEADING_PRECISION;
-    return new(h) SQLInterval(
+    return new(h) SQLInterval(h,
 		 intervalOp->supportsSQLnull() || numericOp->supportsSQLnull(),
 		 intervalOp->getStartField(),
 		 leadingPrecision,
@@ -757,7 +757,7 @@ IntervalValue::IntervalValue
 						  endField,
 						  fractionPrecision);
   if (storageSize == 0) {
-    SQLInterval triggerErrmsg(FALSE,
+    SQLInterval triggerErrmsg(NULL, FALSE,
 			      startField, leadingPrecision,
 			      endField,   fractionPrecision);
     return;

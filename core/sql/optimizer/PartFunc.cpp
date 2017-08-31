@@ -791,7 +791,7 @@ SinglePartitionPartitioningFunction::createPartitioningExpression()
   // ---------------------------------------------------------------------
   ItemExpr * partFunc = new (CmpCommon::statementHeap())
     Cast(new (CmpCommon::statementHeap()) SystemLiteral(0),
-	 new (CmpCommon::statementHeap()) SQLInt(FALSE,FALSE));
+	 new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE,FALSE));
 
   partFunc->synthTypeAndValueId();
   storeExpression(partFunc);
@@ -1115,11 +1115,11 @@ void PartitioningFunction::createBetweenPartitioningKeyPredicates(
           // the partition input values are two integer values: lo and hi part #
           loPart = new (CmpCommon::statementHeap())
             HostVar(pivLoName,
-                    new (CmpCommon::statementHeap()) SQLInt(FALSE,FALSE),
+                    new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE,FALSE),
                     TRUE);
           hiPart = new (CmpCommon::statementHeap())
             HostVar(pivHiName,
-                    new (CmpCommon::statementHeap()) SQLInt(FALSE,FALSE),
+                    new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE,FALSE),
                     TRUE);
           loPart->synthTypeAndValueId();
           hiPart->synthTypeAndValueId();
@@ -1160,9 +1160,8 @@ void PartitioningFunction::createBetweenPartitioningKeyPredicates(
           NAString numPartsLiteral(numPartsString);
           ConstValue *numPartns = new (CmpCommon::statementHeap())
             ConstValue(new (CmpCommon::statementHeap())
-                         SQLInt(FALSE,
-                                FALSE,
-                                CmpCommon::statementHeap()),
+                         SQLInt(CmpCommon::statementHeap(), FALSE,
+                                FALSE),
                        (void *) &numOfOrigPartns,
                        (Lng32) sizeof(numOfOrigPartns),
                        &numPartsLiteral,
@@ -1457,7 +1456,7 @@ getCastedSkewValueExpr(const EncodedValue& ev, const NAType& oType, CollHeap* he
   double x = ev.getDblValue();
   return new (heap) Cast(
        new (heap) ConstValue(
-             new (heap) SQLDoublePrecision(FALSE /* no SQL NULL*/, heap), 
+             new (heap) SQLDoublePrecision(heap, FALSE /* no SQL NULL*/), 
              (char*)&x, sizeof(x)
                             ), 
        &oType
@@ -1541,7 +1540,7 @@ TableHashPartitioningFunction::createPartitionSelectionExprInputs()
   ItemExpr *numParts = new (heap)
         HostVar(hvFabricatedName,
                 // int not null
-                new (heap) SQLInt(FALSE, FALSE),
+                new (heap) SQLInt(CmpCommon::statementHeap(), FALSE, FALSE),
                 // is system-supplied
                 TRUE);
   numParts->synthTypeAndValueId();
@@ -1553,7 +1552,7 @@ TableHashPartitioningFunction::createPartitionSelectionExprInputs()
   ItemExpr *partNum = new (heap)
         HostVar(hvFabricatedName,
                 // int not null
-                new (heap) SQLInt(FALSE, FALSE),
+                new (heap) SQLInt(CmpCommon::statementHeap(), FALSE, FALSE),
                 // is system-supplied
                 TRUE);
   partNum->synthTypeAndValueId();
@@ -1718,7 +1717,7 @@ TableHashPartitioningFunction::createPartitioningExpressionImp(NABoolean doVarCh
         {
           dataConversionErrorFlag =
             new (heap) HostVar("_sys_repartConvErrorFlg",
-                               new (heap) SQLInt(TRUE,FALSE),
+                               new (heap) SQLInt(heap, TRUE,FALSE),
                                TRUE);
           storeConvErrorExpr(dataConversionErrorFlag);
         }
@@ -1884,7 +1883,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
           {
             dataConversionErrorFlag =
               new (heap) HostVar("_sys_repartConvErrorFlg",
-                                 new (heap) SQLInt(TRUE,FALSE),
+                                 new (heap) SQLInt(heap, TRUE,FALSE),
                                  TRUE);
             storeConvErrorExpr(dataConversionErrorFlag);
           }
@@ -2371,7 +2370,7 @@ HashDistPartitioningFunction::buildPartitioningExpression(
 {
   CollHeap *heap = CmpCommon::statementHeap();
 
-  NAType *numPartsType = new (heap) SQLInt(FALSE,FALSE);
+  NAType *numPartsType = new (heap) SQLInt(heap, FALSE,FALSE);
   char buffer[20];
 
   // Create a ConstValue expression containing the original number of hash
@@ -2709,7 +2708,7 @@ ItemExpr *
 Hash2PartitioningFunction::buildPartitioningExpression(const ValueIdList &keyCols) const
 {
   CollHeap *heap = CmpCommon::statementHeap();
-  NAType *numPartsType = new (heap) SQLInt(FALSE,FALSE);
+  NAType *numPartsType = new (heap) SQLInt(heap, FALSE,FALSE);
 
   // Build a ConstValue expression of the scaled number of partitions.
   Lng32 numParts = getCountOfPartitions();
@@ -2757,7 +2756,7 @@ PartitioningFunction::getCastedItemExpre(ItemExpr* iv, const NAType& oType, Coll
           dataConversionErrorFlag =
             new (CmpCommon::statementHeap()) HostVar(
                  "_sys_repartConvErrorFlg",
-                 new (CmpCommon::statementHeap()) SQLInt(TRUE,FALSE),
+                 new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), TRUE,FALSE),
                  TRUE);
           storeConvErrorExpr(dataConversionErrorFlag);
        }
@@ -2825,7 +2824,7 @@ void SkewedDataPartitioningFunction::createPIV(ValueIdList &partInputValues)
   //
   ItemExpr *dummyPIV = new (CmpCommon::statementHeap())
     HostVar("_sys_dummySkewBusterPartNo",
-	    new (CmpCommon::statementHeap()) SQLInt(FALSE, FALSE),
+	    new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE, FALSE),
 	    TRUE);
   dummyPIV->synthTypeAndValueId();
 
@@ -4181,7 +4180,7 @@ void RangePartitioningFunction::createPartitioningKeyPredicates()
       ItemExpr *intervalExclusionIndicator =
 	new(CmpCommon::statementHeap()) HostVar(
 	     "_sys_hostVarExclRange",
-	     new(CmpCommon::statementHeap()) SQLInt(TRUE,FALSE),
+	     new(CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), TRUE,FALSE),
 	     TRUE);
       intervalExclusionIndicator->synthTypeAndValueId();
       partInputValues.insert(intervalExclusionIndicator->getValueId());
@@ -4595,7 +4594,7 @@ ItemExpr* RangePartitioningFunction::createPartitioningExpression()
 	  dataConversionErrorFlag =
 	    new (CmpCommon::statementHeap()) HostVar(
 		 "_sys_repartConvErrorFlg",
-		 new (CmpCommon::statementHeap()) SQLInt(TRUE,FALSE),
+		 new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), TRUE,FALSE),
 		 TRUE);
 	  storeConvErrorExpr(dataConversionErrorFlag);
 	}
@@ -5739,12 +5738,12 @@ void RoundRobinPartitioningFunction::createPartitioningKeyPredicates()
       //
       ItemExpr *loPart = new (CmpCommon::statementHeap())
         HostVar("_sys_HostVarLoRoundRobinPart",
-                new (CmpCommon::statementHeap()) SQLInt(FALSE, FALSE),
+                new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE, FALSE),
                 TRUE);
 
       ItemExpr *hiPart = new (CmpCommon::statementHeap())
         HostVar("_sys_HostVarHiRoundRobinPart",
-                new (CmpCommon::statementHeap()) SQLInt(FALSE, FALSE),
+                new (CmpCommon::statementHeap()) SQLInt(CmpCommon::statementHeap(), FALSE, FALSE),
                 TRUE);
 
       loPart->synthTypeAndValueId();
@@ -5844,7 +5843,7 @@ ItemExpr* RoundRobinPartitioningFunction::createPartitioningExpression()
   // The type of the partitioning key for round robin is always
   // SQLLargeInt (the type of SYSKEY)
   //
-  NAType *desiredType = new (heap) SQLLargeInt(TRUE, FALSE);
+  NAType *desiredType = new (heap) SQLLargeInt(heap, TRUE, FALSE);
 
   // The layout of the SYSKEY is
   //
@@ -5857,9 +5856,9 @@ ItemExpr* RoundRobinPartitioningFunction::createPartitioningExpression()
                     desiredType),
                new (heap)
                ConstValue(32)),
-         new (heap) SQLInt(FALSE,FALSE));
+         new (heap) SQLInt(heap, FALSE,FALSE));
 
-  NAType *numPartsType = new (heap) SQLInt(FALSE,FALSE);
+  NAType *numPartsType = new (heap) SQLInt(heap, FALSE,FALSE);
 
   Lng32 numParts = getCountOfOrigRRPartitions();
   char buffer[20];
@@ -5919,7 +5918,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
   //
   ItemExpr *numParts = new (heap) HostVar("_sys_hostVarNumParts",
                                           // int not null
-                                          new (heap) SQLInt(FALSE, FALSE),
+                                          new (heap) SQLInt(heap, FALSE, FALSE),
                                           // is system-supplied
                                           TRUE);
   numParts->synthTypeAndValueId();
@@ -5929,7 +5928,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
   //
   ItemExpr *partNum = new (heap) HostVar("_sys_hostVarPartNo",
                                          // int not null
-                                         new (heap) SQLInt(FALSE, FALSE),
+                                         new (heap) SQLInt(heap, FALSE, FALSE),
                                          // is system-supplied
                                          TRUE);
   partNum->synthTypeAndValueId();
@@ -5960,7 +5959,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
       new (heap) Modulus(new (heap) Cast(new (heap)
                                          BiArith(ITM_PLUS, partNum,
                                                  new (heap) SystemLiteral(1)),
-                                         new (heap) SQLInt(TRUE,FALSE)),
+                                         new (heap) SQLInt(heap, TRUE,FALSE)),
                          numParts);
 
     // Bind the expression.
@@ -5987,7 +5986,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
     // The type of the partitioning key for round robin is always
     // SQLLargeInt (the type of SYSKEY)
     //
-    NAType *desiredType = new (heap) SQLLargeInt(TRUE, FALSE);
+    NAType *desiredType = new (heap) SQLLargeInt(heap,TRUE, FALSE);
 
     // The partition selection expression is:
     //
@@ -6014,7 +6013,7 @@ createPartitionSelectionExpr(const SearchKey *partSearchKey,
                                              desiredType),
                                         new (heap)
                                         SystemLiteral(0x1000)),
-                                  new (heap) SQLInt(FALSE,FALSE)),
+                                  new (heap) SQLInt(heap, FALSE,FALSE)),
                              numParts);
 
     // Bind the expression.

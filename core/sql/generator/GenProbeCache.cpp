@@ -154,7 +154,7 @@ short ProbeCache::codeGen(Generator *generator)
   ItemExpr *hvAsIe = new (generator->wHeap()) Cast(
        probeHashAsIe, 
        new (generator->wHeap()) 
-            SQLInt(FALSE,   // false == unsigned.
+            SQLInt(generator->wHeap(), FALSE,   // false == unsigned.
                    FALSE    // false == not nullable.
                   ));
 
@@ -205,7 +205,7 @@ short ProbeCache::codeGen(Generator *generator)
               Cast (inputIe,
                     (new(generator->wHeap())
                       SQLChar(
-		          CharLenInfo(char_type.getStrCharLimit(), char_type.getDataStorageSize()),
+		          generator->wHeap(), CharLenInfo(char_type.getStrCharLimit(), char_type.getDataStorageSize()),
                           char_type.supportsSQLnull(),
                           FALSE, FALSE, FALSE,
                           char_type.getCharSet(),

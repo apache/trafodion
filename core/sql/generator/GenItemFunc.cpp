@@ -2111,7 +2111,7 @@ short RangeLookup::codeGen(Generator * generator)
   copySplitKeys(constKeyArray, keysLen);
 
   constValSplitKeys = new (generator->wHeap()) ConstValue(
-       new (generator->wHeap()) SQLChar(keysLen,FALSE),
+       new (generator->wHeap()) SQLChar(generator->wHeap(), keysLen,FALSE),
        constKeyArray,
        keysLen,
        NULL,
@@ -2306,7 +2306,7 @@ short RandomNum::codeGen(Generator *generator)
       ItemExpr * newChild = 
 	new (generator->wHeap()) 
 	Cast(child(0), 
-	     new (generator->wHeap()) SQLInt(FALSE, FALSE));
+	     new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE, FALSE));
       newChild = newChild->bindNode(generator->getBindWA());
       newChild->preCodeGen(generator);
 

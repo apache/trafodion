@@ -2913,32 +2913,32 @@ StmtDDLCreateRoutine::synthesize()
             {
             case COM_UUDF_PARAM_ACTION:
               pParamName2     = new(STMTHEAP) ElemDDLParamName("ACTION");
-              pParamDataType2 = new(STMTHEAP) SQLVarChar ( 1024  // long maxLength
+              pParamDataType2 = new(STMTHEAP) SQLVarChar (STMTHEAP, 1024  // long maxLength
                                                          , FALSE // NABoolean allowSQLnull
                                                          );
               break;
             case COM_UUDF_PARAM_SAS_FORMAT:
               pParamName2     = new(STMTHEAP) ElemDDLParamName("SAS_FORMAT");
-              pParamDataType2 = new(STMTHEAP) SQLVarChar ( 1024  // long maxLength
+              pParamDataType2 = new(STMTHEAP) SQLVarChar (STMTHEAP, 1024  // long maxLength
                                                          , FALSE // NABoolean allowSQLnull
                                                          );
               break;
             case COM_UUDF_PARAM_SAS_LOCALE:
               pParamName2     = new(STMTHEAP) ElemDDLParamName("SAS_LOCALE");
-              pParamDataType2 = new(STMTHEAP) SQLInt ( TRUE  // NABoolean allowNegValues
+              pParamDataType2 = new(STMTHEAP) SQLInt (STMTHEAP,  TRUE  // NABoolean allowNegValues
                                                      , FALSE // NABoolean allowSQLnull
                                                      );
               break;
             case COM_UUDF_PARAM_SAS_MODEL_INPUT_TABLE:
               pParamName2     = new(STMTHEAP) ElemDDLParamName("SAS_MODEL_INPUT_TABLE");
-              pParamDataType2 = new(STMTHEAP) SQLVarChar ( 1024  // long maxLength
+              pParamDataType2 = new(STMTHEAP) SQLVarChar (STMTHEAP, 1024  // long maxLength
                                                          , FALSE // NABoolean allowSQLnull
                                                          );
               break;
             default:
             case COM_UUDF_PARAM_OMITTED:           // any dummy data type would do
               pParamName2     = NULL;
-              pParamDataType2 = new(STMTHEAP) SQLChar ( 1     // long maxLength
+              pParamDataType2 = new(STMTHEAP) SQLChar (STMTHEAP, 1     // long maxLength
                                                       , FALSE // NABoolean allowSQLnull
                                                       );
               break;

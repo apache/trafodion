@@ -350,7 +350,7 @@ RelExpr* RelInternalSP::bindNode(BindWA *bindWA)
 	    str_cpy (&newInput[inputSize+1], defaultSchema.data(), defaultSchema.length());
 #pragma warn(1506)  // warning elimination 
 
-	    NAType *newType   = new (bindWA->wHeap()) SQLChar (newInputSize, FALSE);
+	    NAType *newType   = new (bindWA->wHeap()) SQLChar (bindWA->wHeap(), newInputSize, FALSE);
 	    ItemExpr *newItem = new (bindWA->wHeap()) ConstValue(newType, newInput, newInputSize );
 	    newItem->bindNode(bindWA);
 	    getProcAllParamsVids()[0] = newItem->getValueId();

@@ -1118,7 +1118,7 @@ ItemExpr* ItemExpr::performImplicitCasting(CharInfo::CharSet cs, BindWA *bindWA)
         {
            CharType myCharType = (const CharType&)type;
            Int32 bytesPerCh = myCharType.getBytesPerChar();
-           NAType * newType = new (HEAP) SQLChar( 
+           NAType * newType = new (HEAP) SQLChar(HEAP, 
                            ( cv_ValueId == NULL_VALUE_ID )
                            ? 0 : type.getNominalSize()/bytesPerCh,
                              TRUE, FALSE, FALSE, FALSE,
@@ -2457,7 +2457,7 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
 	  new (bindWA->wHeap())
 	  Cast((srcOpIndex == 0 ? op1 : op2),
 	    new (bindWA->wHeap())
-	    SQLDoublePrecision((srcOpIndex == 0 ? op1 : op2)->castToItemExpr()->getValueId().getType().supportsSQLnull()));
+	    SQLDoublePrecision(bindWA->wHeap(), (srcOpIndex == 0 ? op1 : op2)->castToItemExpr()->getValueId().getType().supportsSQLnull()));
     	newOp = newOp->bindNode(bindWA);
         break;
 
@@ -2477,7 +2477,7 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
 	    new (bindWA->wHeap())
 	    Cast((srcOpIndex == 0 ? op1 : op2),
 		 new (bindWA->wHeap())
-		 SQLLargeInt(TRUE,
+		 SQLLargeInt(bindWA->wHeap(), TRUE,
 			     (srcOpIndex == 0 ? op1 : op2)->castToItemExpr()->
 			     getValueId().getType().supportsSQLnull()));
 	  newOp = newOp->bindNode(bindWA);
@@ -2497,6 +2497,7 @@ static ItemExpr * ItemExpr_handleIncompatibleComparison(
 	  
 	  SQLInterval * newInterval =  
 	    new(bindWA->wHeap()) SQLInterval(
+                 bindWA->wHeap(),
 		 numeric.supportsSQLnull(),
 		 interval.getEndField(),
 		 maxDigits,
@@ -3323,11 +3324,11 @@ ItemExpr *BuiltinFunction::bindNode(BindWA *bindWA)
       {
         // type cast any params
 	ValueId vid1 = child(0)->getValueId();
-	SQLChar c1(ComSqlId::MAX_QUERY_ID_LEN);
+	SQLChar c1(NULL, ComSqlId::MAX_QUERY_ID_LEN);
 	vid1.coerceType(c1, NA_CHARACTER_TYPE);
         
         ValueId vid2 = child(1)->getValueId();
-	SQLChar c2(40, FALSE);
+	SQLChar c2(NULL, 40, FALSE);
 	vid2.coerceType(c2, NA_CHARACTER_TYPE);
 
 	const CharType &typ1 = (CharType&)child(0)->getValueId().getType();
@@ -3650,7 +3651,7 @@ ItemExpr *Concat::bindNode(BindWA *bindWA)
               new (bindWA->wHeap())
               Cast(child(srcChildIndex),
                    new (bindWA->wHeap())
-                   SQLChar(dLen,
+                   SQLChar(bindWA->wHeap(), dLen,
                            child(srcChildIndex)->castToItemExpr()->
                            getValueId().getType().supportsSQLnull()));
             newChild = newChild->bindNode(bindWA);
@@ -3713,7 +3714,7 @@ ItemExpr * ExtractOdbc::bindNode(BindWA * bindWA)
     {
       ItemExpr * newChild =
 	new (bindWA->wHeap()) Cast(child(0), new (bindWA->wHeap())
-				   SQLTimestamp(TRUE));
+				   SQLTimestamp(bindWA->wHeap(), TRUE));
       setChild(0, newChild);
     }
   unBind();
@@ -4256,7 +4257,7 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
             new (bindWA->wHeap())
             Cast(child(0),
                  new (bindWA->wHeap())
-                 SQLChar(formatStr_.length(),
+                 SQLChar(bindWA->wHeap(), formatStr_.length(),
                          child(0)->castToItemExpr()->
                          getValueId().getType().supportsSQLnull()));
           setChild(0, newChild->bindNode(bindWA));
@@ -4275,7 +4276,7 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
             new (bindWA->wHeap())
             Cast(child(0),
                  new (bindWA->wHeap())
-                 SQLLargeInt(TRUE,
+                 SQLLargeInt(bindWA->wHeap(), TRUE,
                              child(0)->castToItemExpr()->
                              getValueId().getType().supportsSQLnull()));
           setChild(0, newChild->bindNode(bindWA));
@@ -4297,7 +4298,7 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
             new (bindWA->wHeap())
             Cast(child(0),
                  new (bindWA->wHeap())
-                 SQLTime(child(0)->castToItemExpr()->
+                 SQLTime(bindWA->wHeap(), child(0)->castToItemExpr()->
                          getValueId().getType().supportsSQLnull(),
                          0));
         }
@@ -4307,7 +4308,7 @@ ItemExpr * DateFormat::bindNode(BindWA * bindWA)
             new (bindWA->wHeap())
             Cast(child(0),
                  new (bindWA->wHeap())
-                 SQLDate(child(0)->castToItemExpr()->
+                 SQLDate(bindWA->wHeap(), child(0)->castToItemExpr()->
                          getValueId().getType().supportsSQLnull()));
         }
       
@@ -4355,7 +4356,7 @@ ItemExpr *Trim::bindNode(BindWA *bindWA)
                 new (bindWA->wHeap())
                 Cast(child(1),
                      new (bindWA->wHeap())
-                     SQLChar(dLen, type1.supportsSQLnull()));
+                     SQLChar(bindWA->wHeap(), dLen, type1.supportsSQLnull()));
               
               newChild = newChild->bindNode(bindWA);
               if (bindWA->errStatus())
@@ -5058,7 +5059,7 @@ ItemExpr *Aggregate::bindNode(BindWA *bindWA)
 	    new (bindWA->wHeap())
 	    Cast(child(0),
 		 new (bindWA->wHeap())
-		 SQLDoublePrecision(type1.supportsSQLnull()));
+		 SQLDoublePrecision(bindWA->wHeap(), type1.supportsSQLnull()));
 	  setChild(0, newChild->bindNode(bindWA));
 	}
 
@@ -5415,7 +5416,7 @@ ItemExpr *Variance::bindNode(BindWA *bindWA)
   // Assumes that the type propogation will make the types
   // of the child of the ScalarVariance node all double precision floats.
   //
-  const NAType *desiredType = new (bindWA->wHeap()) SQLDoublePrecision(TRUE);
+  const NAType *desiredType = new (bindWA->wHeap()) SQLDoublePrecision(bindWA->wHeap(), TRUE);
 
   // Cast the first child to the desired type.
   // This is the itemExpr which should be distinct.
@@ -5737,6 +5738,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 				SQLInterval::MAX_LEADING_PRECISION);
 	      SQLInterval * interval =  
 		new(bindWA->wHeap()) SQLInterval(
+                     bindWA->wHeap(),
 		     naType1->supportsSQLnull(),
 		     datetime->getEndField(),
 		     maxDigits,
@@ -5759,11 +5761,10 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 	  const IntervalType*  interval  = (IntervalType*)naType1;
 	  if (interval->getEndField() > REC_DATE_DAY)
 	    {	  
-	   SQLTimestamp * ts = new(bindWA->wHeap()) SQLTimestamp ( naType0->supportsSQLnull(),
+	   SQLTimestamp * ts = new(bindWA->wHeap()) SQLTimestamp ( bindWA->wHeap(), naType0->supportsSQLnull(),
                                interval->getFractionPrecision() > datetime->getFractionPrecision()
                                ?interval->getFractionPrecision()
-                               :datetime->getFractionPrecision(),
-                               bindWA->wHeap()); 
+                               :datetime->getFractionPrecision());
 	   	      
 	   ItemExpr * newChild = 
 		new(bindWA->wHeap()) Cast(child(0), ts);
@@ -5789,6 +5790,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 				SQLInterval::MAX_LEADING_PRECISION);
 	      SQLInterval * newInterval =  
 		new(bindWA->wHeap()) SQLInterval(
+                     bindWA->wHeap(),
 		     numeric->supportsSQLnull(),
 		     interval->getEndField(),
 		     maxDigits,
@@ -5826,7 +5828,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 	      maxDigits = MINOF(maxDigits, 
 				SQLInterval::MAX_LEADING_PRECISION);
 	      SQLInterval * newInterval =  
-		new(bindWA->wHeap()) SQLInterval(
+		new(bindWA->wHeap()) SQLInterval(bindWA->wHeap(),
 		     numeric->supportsSQLnull(),
 		     interval->getEndField(),
 		     maxDigits,
@@ -5854,7 +5856,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(0),
 		     new (bindWA->wHeap())
-		     SQLNumeric(TRUE,
+		     SQLNumeric(bindWA->wHeap(), TRUE,
 				interval1->getTotalPrecision(),
 				0,
 				DisAmbiguate, // added for 64bit proj.
@@ -5868,7 +5870,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(1),
 		     new (bindWA->wHeap())
-		     SQLNumeric(TRUE,
+		     SQLNumeric(bindWA->wHeap(), TRUE,
 				interval2->getTotalPrecision(),
 				0,
 				DisAmbiguate, // added for 64bit proj.
@@ -5908,7 +5910,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
                   newChild = new (bindWA->wHeap())
                     Cast(child(0),
                          new (bindWA->wHeap())
-                         SQLDate(datetime1->supportsSQLnull()));
+                         SQLDate(bindWA->wHeap(), datetime1->supportsSQLnull()));
                   setChild(0, newChild->bindNode(bindWA));
                   if (bindWA->errStatus())
                     return this;
@@ -5919,7 +5921,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
                   newChild = new (bindWA->wHeap())
                     Cast(child(1),
                          new (bindWA->wHeap())
-                         SQLDate(datetime2->supportsSQLnull()));
+                         SQLDate(bindWA->wHeap(), datetime2->supportsSQLnull()));
                   setChild(1, newChild->bindNode(bindWA));
                   if (bindWA->errStatus())
                     return this;
@@ -5954,7 +5956,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(srcChildIndex),
 		     new (bindWA->wHeap())
-		     SQLLargeInt(TRUE,
+		     SQLLargeInt(bindWA->wHeap(), TRUE,
 				 child(srcChildIndex)->castToItemExpr()->
 				 getValueId().getType().supportsSQLnull()));
 	      setChild(srcChildIndex, newChild->bindNode(bindWA));
@@ -5967,7 +5969,7 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(srcChildIndex),
 		     new (bindWA->wHeap())
-		     SQLDoublePrecision(child(srcChildIndex)->castToItemExpr()->getValueId().getType().supportsSQLnull()));
+		     SQLDoublePrecision(bindWA->wHeap(), child(srcChildIndex)->castToItemExpr()->getValueId().getType().supportsSQLnull()));
 	      setChild(srcChildIndex, newChild->bindNode(bindWA));
 	    }
 	}
@@ -5993,10 +5995,10 @@ ItemExpr *BiArith::bindNode(BindWA *bindWA)
       const Int16 DisAmbiguate = 0;
       NAType * orig_result_type = result_type->newCopy(bindWA->wHeap());
       result_type = new(bindWA->wHeap()) 
-	SQLNumeric(TRUE,
+	SQLNumeric(bindWA->wHeap(), TRUE, 
 		   MAX_NUMERIC_PRECISION,
 		   result_type->getScale(),
-		   DisAmbiguate, // added for 64bit proj.
+                   DisAmbiguate,
 		   result_type->supportsSQLnull());
       getValueId().changeType(result_type);
 
@@ -6112,13 +6114,13 @@ ItemExpr *Assign::bindNode(BindWA *bindWA)
               double lob_input_limit_for_batch = CmpCommon::getDefaultNumeric(LOB_INPUT_LIMIT_FOR_BATCH);
                   double lob_size = lobType.getLobLength();
               if (fs_datatype == REC_CLOB) {
-                  newType = new SQLClob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024),
+                  newType = new (bindWA->wHeap()) SQLClob(bindWA->wHeap(), (CmpCommon::getDefaultNumeric(LOB_MAX_SIZE) * 1024 * 1024),
                          lobType.getLobStorage(),
                          TRUE, FALSE, TRUE,
                          lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size);
               }
               else {
-              newType = new SQLBlob((CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024),
+              newType = new (bindWA->wHeap()) SQLBlob(bindWA->wHeap(), (CmpCommon::getDefaultNumeric(LOB_MAX_SIZE)*1024*1024),
                                              lobType.getLobStorage(), 
                                              TRUE, FALSE, TRUE, 
                                              lob_input_limit_for_batch < lob_size ? lob_input_limit_for_batch : lob_size);
@@ -7311,7 +7313,7 @@ ItemExpr *Case::bindNode(BindWA *bindWA)
                     new (bindWA->wHeap())
                     Cast(thenClause,
                          new (bindWA->wHeap())
-                         SQLChar(dLen,
+                         SQLChar(bindWA->wHeap(), dLen,
                                  thenClause->
                                  getValueId().getType().supportsSQLnull()));
                   
@@ -8914,7 +8916,7 @@ ItemExpr *SelIndex::bindNode(BindWA *bindWA)
       // See RelRoot::transformGroupByWithOrdinalPhase2().
 
       // create a dummy type of type unknown.
-      NAType * type = new(bindWA->wHeap()) SQLUnknown();
+      NAType * type = new(bindWA->wHeap()) SQLUnknown(bindWA->wHeap());
       setValueId(createValueDesc(bindWA, this, type));
 
       if ((bindWA->inViewDefinition()) &&
@@ -9088,7 +9090,7 @@ ItemExpr *QuantifiedComp::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(0),
 		     new (bindWA->wHeap())
-		     SQLDoublePrecision(
+		     SQLDoublePrecision(bindWA->wHeap(),
 			  child(0)->castToItemExpr()->getValueId().
 			  getType().supportsSQLnull()));
 	      newChild = newChild->bindNode(bindWA);
@@ -9180,7 +9182,7 @@ ItemExpr *Substring::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(child(0), 
 		     new (bindWA->wHeap())
-		     SQLInt(TRUE, type1.supportsSQLnull()));
+		     SQLInt(bindWA->wHeap(), TRUE, type1.supportsSQLnull()));
 	      newChild = newChild->bindNode(bindWA);
 
 	      // Cast INT to CHAR(7).
@@ -9188,7 +9190,7 @@ ItemExpr *Substring::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(newChild,
 		     new (bindWA->wHeap())
-		     SQLChar(7, type1.supportsSQLnull()));
+		     SQLChar(bindWA->wHeap(), 7, type1.supportsSQLnull()));
 	      newChild = newChild->bindNode(bindWA);
 	      setChild(0, newChild);
 	    }
@@ -10153,7 +10155,7 @@ ItemExpr *ValueIdUnion::bindNode(BindWA *bindWA)
 		new (bindWA->wHeap())
 		Cast(getSource(srcChildIndex).getItemExpr(),
 		     new (bindWA->wHeap())
-		     SQLChar(dLen,
+		     SQLChar(bindWA->wHeap(), dLen,
 			     getSource(srcChildIndex).getType().
 			     supportsSQLnull()));
 	    }
@@ -10273,7 +10275,7 @@ ItemExpr * ValueIdUnion::tryToDoImplicitCasting( BindWA *bindWA )
   CMPASSERT( getValueId() == NULL_VALUE_ID ); // call this before assigning a value id
 
   CharType * MostGeneralType = new( bindWA->wHeap() )
-                                   SQLVarChar(savedMaxLen,
+                                   SQLVarChar(bindWA->wHeap(), savedMaxLen,
                                               savedAllowNull,
                                               savedUpShifted,
                                               savedCaseInsensitive,
@@ -11880,7 +11882,7 @@ ItemExpr *ZZZBinderFunction::bindNode(BindWA *bindWA)
                        // result in consuming additional precision.
                        // For example, round(99.00, -2) = 100.00 
                        const Int16 DisAmbiguate = 0;
-                       typeTemp = new(bindWA->wHeap()) SQLNumeric(type_op1.isSigned(),
+                       typeTemp = new(bindWA->wHeap()) SQLNumeric(bindWA->wHeap(), type_op1.isSigned(),
                                                                    MINOF(type_op1.getPrecision()+1,128),
                                                                    type_op1.getScale(),
                                                                    DisAmbiguate // added for 64bit proj.
@@ -12751,7 +12753,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
       
       // type cast any params
       ValueId vid1 = colName->getValueId();
-      SQLVarChar c1(CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_NAME_LENGTH));
+      SQLVarChar c1(NULL, CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_NAME_LENGTH));
       vid1.coerceType(c1, NA_CHARACTER_TYPE);
       
       hcco->setColName(colName);
@@ -12763,7 +12765,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
 
       // type cast any params
       ValueId vid2 = colValue->getValueId();
-      SQLVarChar c2(CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_VAL_LENGTH));
+      SQLVarChar c2(NULL, CmpCommon::getDefaultNumeric(HBASE_MAX_COLUMN_VAL_LENGTH));
       vid2.coerceType(c2, NA_CHARACTER_TYPE);
 
       hcco->setColVal(colValue);
@@ -12824,7 +12826,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
     } // for
 
   resultNull = TRUE;
-  NAType * childResultType = new(bindWA->wHeap()) SQLVarChar(colValMaxLen_,
+  NAType * childResultType = new(bindWA->wHeap()) SQLVarChar(bindWA->wHeap(), colValMaxLen_,
 							     resultNull);
   
   Lng32 totalLen = 0;
@@ -12835,7 +12837,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
     {
       HbaseColumnCreateOptions * hcco = (*hccol_)[i];
 
-      NAType * cnType = new(bindWA->wHeap()) SQLVarChar(colNameMaxLen_, FALSE);
+      NAType * cnType = new(bindWA->wHeap()) SQLVarChar(bindWA->wHeap(), colNameMaxLen_, FALSE);
       ItemExpr * cnChild =
 	new (bindWA->wHeap()) Cast(hcco->colName(), cnType);
       cnChild = cnChild->bindNode(bindWA);
@@ -12849,7 +12851,7 @@ ItemExpr *HbaseColumnCreate::bindNode(BindWA *bindWA)
       totalLen += newChild->getValueId().getType().getTotalSize();      
     }
 
-  resultType_ = new(bindWA->wHeap()) SQLVarChar(totalLen, FALSE);
+  resultType_ = new(bindWA->wHeap()) SQLVarChar(bindWA->wHeap(), totalLen, FALSE);
   
   // Binds self; Binds children; ColumnCreate::synthesize();
   boundExpr = Function::bindNode(bindWA);
@@ -12949,7 +12951,7 @@ ItemExpr *HbaseTimestamp::bindNode(BindWA *bindWA)
   colName_ = nac->getColName();
 
   NAType * tsValsType = 
-    new (bindWA->wHeap()) SQLVarChar(sizeof(Int64), FALSE);
+    new (bindWA->wHeap()) SQLVarChar(bindWA->wHeap(), sizeof(Int64), FALSE);
   tsVals_ = 
     new (bindWA->wHeap()) NATypeToItem(tsValsType);
   
@@ -13042,7 +13044,7 @@ ItemExpr *HbaseVersion::bindNode(BindWA *bindWA)
   colName_ = nac->getColName();
 
   NAType * tsValsType = 
-    new (bindWA->wHeap()) SQLVarChar(sizeof(Int64), FALSE);
+    new (bindWA->wHeap()) SQLVarChar(bindWA->wHeap(), sizeof(Int64), FALSE);
   tsVals_ = 
     new (bindWA->wHeap()) NATypeToItem(tsValsType);
   

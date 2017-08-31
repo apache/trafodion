@@ -171,7 +171,7 @@ ItemExpr* QRFunction::toItemExpr(const NAString& mvName, CollHeap* heap,
     // otherwise, ScalarVariance::preCodeGen will GenAssert.
     NABoolean isScalarVariance = (getFunctionName() == "Scalar Variance"  ||
                                 getFunctionName() == "Scalar Stddev" );
-    NAType *dbl = new(heap) SQLDoublePrecision(FALSE, heap);
+    NAType *dbl = new(heap) SQLDoublePrecision(heap, FALSE);
 
     // Loop over the arguments and call recursively.
     for (CollIndex i=0; i<args.entries(); i++)

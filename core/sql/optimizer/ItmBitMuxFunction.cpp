@@ -43,7 +43,7 @@ const NAType *ItmBitMuxFunction::synthesizeType() {
     size += type.getTotalSize();
   }
 
-  return new(CmpCommon::statementHeap()) SQLChar(size, FALSE);
+  return new(CmpCommon::statementHeap()) SQLChar(CmpCommon::statementHeap(), size, FALSE);
 };
 
 // copyTopNode

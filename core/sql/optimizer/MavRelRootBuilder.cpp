@@ -428,7 +428,7 @@ RelRoot *MavRelRootBuilder::buildRootForDelta(RelExpr *topNode)
     const MVColumnInfo *currentMavColumn = otherCols_[i];
     const NAString& colName = currentMavColumn->getColName();
 
-    const NAType *desiredType = new(heap_) SQLDoublePrecision(TRUE);
+    const NAType *desiredType = new(heap_) SQLDoublePrecision(heap_, TRUE);
     ItemExpr *countDepCol = buildDepColExpr(emptyCorrName, currentMavColumn->getDepCol1());
     ItemExpr *sumDepCol   = buildDepColExpr(emptyCorrName, currentMavColumn->getDepCol2());
     ItemExpr *sum2DepCol  = NULL;
@@ -667,7 +667,7 @@ RelRoot *MavRelRootBuilder::buildRootForOthers(RelExpr *topNode)
     MVColumnInfo *currentCol = otherCols_[i];
     const NAString& colName = currentCol->getColName();
 
-    const NAType *desiredType = new(heap_) SQLDoublePrecision(TRUE);
+    const NAType *desiredType = new(heap_) SQLDoublePrecision(heap_, TRUE);
 
     // Find the dependent SYS_CALC COUNT and SUM columns.
     ItemExpr *calcDep1 = 

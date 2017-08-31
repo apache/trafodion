@@ -4692,7 +4692,6 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
     {
       useRWRS = TRUE;
     }
-
   Int32 objOwnerID = (tableInfo) ? tableInfo->objOwnerID : SUPER_USER;
   Int32 schemaOwnerID = (tableInfo) ? tableInfo->schemaOwnerID : SUPER_USER;
   Int64 objectFlags = (tableInfo) ? tableInfo->objectFlags : 0;

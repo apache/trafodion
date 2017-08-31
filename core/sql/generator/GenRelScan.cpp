@@ -231,7 +231,7 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   if (DFS2REC::isDoubleCharacter(newGivenType->getFSDatatype()))
     {
       asciiType =  
-        new (h) SQLVarChar(sizeof(Int64)/2, newGivenType->supportsSQLnull(),
+        new (h) SQLVarChar(h, sizeof(Int64)/2, newGivenType->supportsSQLnull(),
                            FALSE, FALSE, newGivenType->getCharSet(),
                            CharInfo::DefaultCollation,
                            CharInfo::COERCIBLE,
@@ -243,7 +243,7 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   else if (  needTranslate == TRUE )
     {
       asciiType =  
-        new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull(),
+        new (h) SQLVarChar(h, sizeof(Int64), newGivenType->supportsSQLnull(),
                            FALSE, FALSE, CharInfo::GBK,
                            CharInfo::DefaultCollation,
                            CharInfo::COERCIBLE,
@@ -253,7 +253,7 @@ int HbaseAccess::createAsciiColAndCastExpr(Generator * generator,
   else
     {
       asciiType = 
-        new (h) SQLVarChar(sizeof(Int64), newGivenType->supportsSQLnull(),
+        new (h) SQLVarChar(h, sizeof(Int64), newGivenType->supportsSQLnull(),
                            FALSE, FALSE,
                            CharInfo::DefaultCharSet,
                            CharInfo::DefaultCollation,
@@ -355,7 +355,7 @@ int HbaseAccess::createAsciiColAndCastExpr3(Generator * generator,
       cvl = newGivenType->getNominalSize();
     }
 
-  asciiType = new (h) SQLVarChar(cvl, newGivenType->supportsSQLnull());
+  asciiType = new (h) SQLVarChar(h, cvl, newGivenType->supportsSQLnull());
 
   //  asciiValue = new (h) NATypeToItem(newGivenType->newCopy(h));
   asciiValue = new (h) NATypeToItem(asciiType);
@@ -1735,7 +1735,7 @@ short HbaseAccess::genRowIdExpr(Generator * generator,
 	      ie = new(generator->wHeap())
 		Cast (ie,
 		      (new(generator->wHeap())
-		       SQLChar(CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
+		       SQLChar(generator->wHeap(), CharLenInfo(char_t.getStrCharLimit(), char_t.getDataStorageSize()),
 			       givenType.supportsSQLnull(),
 			       FALSE, FALSE, FALSE,
 			       char_t.getCharSet(),
@@ -1828,7 +1828,7 @@ short HbaseAccess::genRowIdExprForNonSQ(Generator * generator,
 	  ie = new(generator->wHeap())
 	    Cast (ie,
 		  (new(generator->wHeap())
-		   ANSIChar(char_t.getDataStorageSize(),
+		   ANSIChar(generator->wHeap(), char_t.getDataStorageSize(),
 			    givenType.supportsSQLnull(),
 			    FALSE, FALSE, 
 			    char_t.getCharSet(),

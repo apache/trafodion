@@ -471,6 +471,8 @@ public:
   
   // useful for supplying hash functions to template hash collection ctors:
   static UInt32       hash(const NAString&);
+
+  NAMemory * heap() const { return fbstring_.heap(); }
 protected:
 
   // Special concatenation constructor:
@@ -492,8 +494,6 @@ private:
 
   void          clone(size_t nc); // Make self a distinct copy w. capacity nc
 
-  NAMemory * heap() const { return fbstring_.heap(); }
-  
   FBString fbstring_;
 friend
 SQLEXPORT_LIB_FUNC 

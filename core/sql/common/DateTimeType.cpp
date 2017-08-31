@@ -83,13 +83,12 @@ static const UInt32 daysInMonth[]   =  { 0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 
 //
 // ***********************************************************************
 
-DatetimeType::DatetimeType (const NAString & adtName,
+DatetimeType::DatetimeType (NAMemory *h, const NAString & adtName,
 			    NABoolean allowSQLnull,
 			    rec_datetime_field startField,
 			    rec_datetime_field endField,
-			    UInt32 fractionPrecision,
-			    NAMemory * h)
-     : DatetimeIntervalCommonType (adtName,
+			    UInt32 fractionPrecision)
+     : DatetimeIntervalCommonType (h, adtName,
 				   NA_DATETIME_TYPE,
 				   getStorageSize(startField,
 						  endField,
@@ -98,8 +97,8 @@ DatetimeType::DatetimeType (const NAString & adtName,
 				   startField,
 				   endField,
 				   fractionPrecision,
-				   1, /* no data alignment */
-				   h)
+				   1 /* no data alignment */
+				   )
        , displayFormat_(h)
 {
   assert(validate(startField, endField, fractionPrecision) != SUBTYPE_ILLEGAL);
@@ -434,15 +433,13 @@ DatetimeType* DatetimeType::constructSubtype(NABoolean allowSQLnull,
 					     NAMemory* h)
 {
   switch (validate(startField, endField, precision)) {
-    case SUBTYPE_SQLDate:       return new (h) SQLDate(allowSQLnull,h);
-    case SUBTYPE_SQLTime:       return new (h) SQLTime(allowSQLnull, precision,h);
-    case SUBTYPE_SQLTimestamp:  return new (h) SQLTimestamp(allowSQLnull, precision, h);
-
-    case SUBTYPE_SQLMPDatetime: return new (h) SQLMPDatetime( startField,
+    case SUBTYPE_SQLDate:       return new (h) SQLDate(h, allowSQLnull);
+    case SUBTYPE_SQLTime:       return new (h) SQLTime(h, allowSQLnull, precision);
+    case SUBTYPE_SQLTimestamp:  return new (h) SQLTimestamp(h, allowSQLnull, precision);
+    case SUBTYPE_SQLMPDatetime: return new (h) SQLMPDatetime(h, startField,
 							      endField,
 							      allowSQLnull,
-							      precision,
-							      h);
+							      precision);
 
     default:		       return NULL;
   }
@@ -607,13 +604,13 @@ const NAType* DatetimeType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
           {
             // this is DATE subtraction in modespecial4.
             // Result is numeric.
-            return new(h) SQLInt(); 
+            return new(h) SQLInt(h); 
           }
         else
           {
-            return new(h) SQLInterval(allowNulls, datetime1->getEndField(),
+            return new(h) SQLInterval(h, allowNulls, datetime1->getEndField(),
                                       12, datetime1->getEndField(),
-                                      fractionPrecision,h);
+                                      fractionPrecision);
           }
       }
     break;
@@ -673,7 +670,7 @@ const NAType* DatetimeType::synthesizeTernary(enum NATypeSynthRuleEnum synthRule
     const DatetimeType& op1 = (DatetimeType&) operand1;
     const DatetimeType& op2 = (DatetimeType&) operand2;
     const IntervalType& op3 = (IntervalType&) operand3;
-    return new(h) SQLInterval(op1.supportsSQLnull() || op2.supportsSQLnull(),
+    return new(h) SQLInterval(h, op1.supportsSQLnull() || op2.supportsSQLnull(),
 			      op3.getStartField(),
 			      op3.getLeadingPrecision(),
 			      op3.getEndField(),
@@ -743,7 +740,6 @@ void DatetimeType::getRepresentableValue(const char* inValueString,
       **stringLiteral += "\'";
       **stringLiteral += valueString;
       **stringLiteral += "\'";
-
 //LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
       if (getSubtype() == SUBTYPE_SQLMPDatetime)
        {
@@ -1303,7 +1299,6 @@ double SQLTimestamp::getMaxValue()  const
 }
 
 
-
 //LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
 double SQLMPDatetime::encode(void *bufPtr) const
 {
@@ -1342,6 +1337,7 @@ NABoolean SQLMPDatetime::isSupportedType(void) const
     return TRUE;
  }
 
+
 // ***********************************************************************
 //
 //  SQLMPDatetime::synthesizeType
@@ -1350,19 +1346,19 @@ NABoolean SQLMPDatetime::isSupportedType(void) const
 
 //LCOV_EXCL_START : cnu -- SQ does not support old SQLMP stuff
 const NAType*SQLMPDatetime::synthesizeType(enum NATypeSynthRuleEnum synthRule,
-					   const NAType& operand1,
-					   const NAType& operand2,
-					   NAMemory* h,
-					   UInt32 *flags) const
+                                          const NAType& operand1,
+                                          const NAType& operand2,
+                                          NAMemory* h,
+                                          UInt32 *flags) const
 {
   if (!operand1.isSupportedType() || !operand2.isSupportedType())
     return NULL;
   else
     return DatetimeType::synthesizeType(synthRule,
-					operand1,
-					operand2,
-					h,
-					flags);
+                                       operand1,
+                                       operand2,
+                                       h,
+                                       flags);
 }
 //LCOV_EXCL_STOP : cnu
 
@@ -1380,6 +1376,7 @@ NABoolean SQLMPDatetime::isCompatible(const NAType& other, UInt32 * flags) const
   else
     return DatetimeType::isCompatible(other, flags);
  }
+
 
 // ***********************************************************************
 //

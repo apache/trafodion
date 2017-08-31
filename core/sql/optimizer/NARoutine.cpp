@@ -219,7 +219,7 @@ NARoutine::NARoutine (  const QualifiedName &name
   for (CollIndex currentCol=0; currentCol<colCount; currentCol++)
   {
      // Create the new NAType.
-    newColType = new (heap) SQLVarChar ( 255
+    newColType = new (heap) SQLVarChar (heap, 255
                                         , 1
                                         , FALSE
 					, FALSE /*not caseinsensitive, for now*/

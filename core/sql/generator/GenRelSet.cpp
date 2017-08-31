@@ -240,7 +240,7 @@ short MergeUnion::codeGen(Generator * generator)
 	// We indicate that the whole array is to be copied
 	SQLRowset *rowsetInfo = (SQLRowset *) &(vidu_node->getResult().getType());
         SQLRowset *newRowset =  new (generator->wHeap()) 
-	                         SQLRowset(rowsetInfo->getElementType(),
+	                         SQLRowset(generator->wHeap(), rowsetInfo->getElementType(),
 	                                   rowsetInfo->getMaxNumElements(),
                                            rowsetInfo->getNumElements());
 	newRowset->useTotalSize() = TRUE;
@@ -264,7 +264,7 @@ short MergeUnion::codeGen(Generator * generator)
 	// We indicate that the whole array is to be copied
 	SQLRowset *rowsetInfo = (SQLRowset *) &(vidu_node->getResult().getType());
         SQLRowset *newRowset =  new (generator->wHeap()) 
-	                         SQLRowset(rowsetInfo->getElementType(),
+	                         SQLRowset(generator->wHeap(), rowsetInfo->getElementType(),
 	                                   rowsetInfo->getMaxNumElements(),
                                            rowsetInfo->getNumElements());
 	newRowset->useTotalSize() = TRUE;

@@ -1100,7 +1100,7 @@ void HostArraysWA::processArrayHostVar(ItemExpr *parent, Int32 childNumber)
       // will be determined on a later binding stage. In the case in which we are doing 
       // an INSERT, for instance, the types will be determined in the Insert node
       SQLRowset *rowsetType = 
-        new (bindWA_->wHeap()) SQLRowset((new (bindWA_->wHeap()) SQLUnknown()),
+        new (bindWA_->wHeap()) SQLRowset(bindWA_->wHeap(), (new (bindWA_->wHeap()) SQLUnknown(bindWA_->wHeap())),
 #pragma nowarn(1506)   // warning elimination 
                                           size, size);
 #pragma warn(1506)  // warning elimination 

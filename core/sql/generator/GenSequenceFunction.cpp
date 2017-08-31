@@ -97,7 +97,7 @@ ItemExpr *ItmSeqOffset::preCodeGen(Generator *generator)
     // (must be) signed; nulls allowed (if allowed by child1)   
    ItemExpr *castExpr   = new (wHeap) Cast (child(1),
                                            new (wHeap)
-                                           SQLInt(TRUE, cType.supportsSQLnullLogical()));
+                                           SQLInt(wHeap, TRUE, cType.supportsSQLnullLogical()));
    castExpr->synthTypeAndValueId(TRUE);
    child (1) = castExpr;
   }
@@ -117,7 +117,7 @@ ItemExpr *ItmLeadOlapFunction::preCodeGen(Generator *generator)
     CollHeap *wHeap = generator->wHeap();
     ItemExpr *castExpr   = new (wHeap) Cast (child(1),
                                            new (wHeap)
-                                           SQLInt(TRUE, cType.supportsSQLnullLogical()));
+                                           SQLInt(wHeap, TRUE, cType.supportsSQLnullLogical()));
     castExpr->synthTypeAndValueId(TRUE);
     child (1) = castExpr;
   }
@@ -138,7 +138,7 @@ ItemExpr *ItmLagOlapFunction::preCodeGen(Generator *generator)
     const NAType &cType = child(1)->getValueId().getType();
     ItemExpr *castExpr   = new (wHeap) Cast (child(1),
                                        new (wHeap)
-                                       SQLInt(TRUE, cType.supportsSQLnullLogical()));
+                                       SQLInt(wHeap, TRUE, cType.supportsSQLnullLogical()));
     castExpr->synthTypeAndValueId(TRUE);
     child (1) = castExpr;
   }
@@ -469,7 +469,7 @@ ItemExpr *ItmSeqOlapFunction::preCodeGen(Generator *generator)
   //
   ItemExpr *itmLocalCounter 
     = new(wHeap) HostVar("_sys_LocalCounter",
-			 new(wHeap) SQLInt(TRUE,FALSE),
+			 new(wHeap) SQLInt(wHeap, TRUE,FALSE),
 			 TRUE);
 
   // Expression to initailize the iterator.
@@ -617,7 +617,7 @@ ItemExpr *ItmSeqMovingFunction::preCodeGen(Generator *generator)
   //
   ItemExpr *itmLocalCounter 
     = new(wHeap) HostVar("_sys_LocalCounter",
-			 new(wHeap) SQLInt(TRUE,FALSE),
+			 new(wHeap) SQLInt(wHeap, TRUE,FALSE),
 			 TRUE);
 
   // Expression to initailize the iterator.

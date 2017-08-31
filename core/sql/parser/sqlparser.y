@@ -3322,7 +3322,7 @@ boolean_literal : truth_value
                     char v = ($1 == TOK_TRUE ? 1 : 0);
                     NAString literalBuf($1 == TOK_TRUE ? "TRUE" : "FALSE");
                     $$ = new (PARSERHEAP()) ConstValue 
-                      (new (PARSERHEAP()) SQLBooleanNative(FALSE),
+                      (new (PARSERHEAP()) SQLBooleanNative(PARSERHEAP(), FALSE),
                        (void *) &v, 1, &literalBuf);
                   }
 
@@ -5476,7 +5476,7 @@ actual_table_name : qualified_name
 				  HostVar *vvX = new (PARSERHEAP()) 
 				    HostVar(*defineName, new (PARSERHEAP()) 
 				      SQLChar(
-				        ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN));
+				        PARSERHEAP(), ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN));
 				  vvX->setIsDefine();
                                   $$ = new (PARSERHEAP())
 				    CorrName("envVar$", 
@@ -8144,7 +8144,7 @@ primary :     '(' value_expression ')'
                                   {
                                     SQLInterval *iq =
 				      new (PARSERHEAP()) SQLInterval(
-					TRUE,
+					PARSERHEAP(), TRUE,
 					$4->getStartField(),
 					$4->getLeadingPrecision(),
 					$4->getEndField(),
@@ -8824,7 +8824,7 @@ datetime_misc_function : TOK_CONVERTTIMESTAMP '(' value_expression ')'
      | TOK_EXTEND '(' value_expression ')'
                                 {
                                 DatetimeType *dt = new (PARSERHEAP())
-                                                SQLTimestamp(TRUE, SQLTimestamp::DEFAULT_FRACTION_PRECISION, PARSERHEAP());
+                                                SQLTimestamp(PARSERHEAP(), TRUE, SQLTimestamp::DEFAULT_FRACTION_PRECISION);
 
                                 $$ = new (PARSERHEAP()) Cast ($3, dt);
                                 }
@@ -9870,7 +9870,7 @@ misc_function :
                                                 HashDistPartHash($3),
                                                 new (PARSERHEAP())
                                                 Cast($5, new (PARSERHEAP())
-                                                     SQLInt(FALSE, FALSE)));
+                                                     SQLInt(PARSERHEAP(), FALSE, FALSE)));
                                 }
      | TOK_HASH2PARTFUNC '(' value_expression_list TOK_FOR value_expression ')'
                                 {
@@ -9879,7 +9879,7 @@ misc_function :
                                                  HashDistPartHash($3),
                                                  new (PARSERHEAP())
                                                  Cast($5, new (PARSERHEAP())
-                                                      SQLInt(FALSE, FALSE)));
+                                                      SQLInt(PARSERHEAP(), FALSE, FALSE)));
                                 }
      | TOK_RRPARTFUNC '(' value_expression TOK_FOR value_expression ')'
                                 {
@@ -9891,10 +9891,10 @@ misc_function :
                                                            new (PARSERHEAP()) 
                                                            ConstValue(32)),
                                                      new (PARSERHEAP())
-                                                     SQLInt(FALSE,FALSE)),
+                                                     SQLInt(PARSERHEAP(), FALSE,FALSE)),
                                                 new (PARSERHEAP())
                                                 Cast($5, new (PARSERHEAP())
-                                                     SQLInt(FALSE, FALSE))); */
+                                                     SQLInt(PARSERHEAP(), FALSE, FALSE))); */
                                 }
 
      | TOK_DATE_PART '(' QUOTED_STRING ',' value_expression  ')'
@@ -10024,7 +10024,7 @@ misc_function :
                             maybeNullable = FALSE;
                            }
 
-                         SQLInterval *iq = new (PARSERHEAP()) SQLInterval(maybeNullable, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+                         SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), maybeNullable, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
                          ItemExpr *iq2 =	new (PARSERHEAP()) Cast($5, iq);
                          $$ = new (PARSERHEAP())  BiArith(ITM_PLUS, $3,iq2);
 						 ((BiArith*) $$)->setStandardNormalization();
@@ -10046,7 +10046,7 @@ misc_function :
                             maybeNullable = FALSE;
                            }
 
-                         SQLInterval *iq = new (PARSERHEAP()) SQLInterval(maybeNullable, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+                         SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), maybeNullable, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
                          ItemExpr *iq2 =	new (PARSERHEAP()) Cast($5, iq);
                          $$ = new (PARSERHEAP())  BiArith(ITM_PLUS, $3,iq2);
 						 UInt32 value = $7;
@@ -10125,7 +10125,7 @@ misc_function :
 				}
          | TOK_COLUMN_LOOKUP '(' dml_column_reference ',' QUOTED_STRING ')'
                               {
-				NAType * type = new(PARSERHEAP()) SQLVarChar(100000);
+				NAType * type = new(PARSERHEAP()) SQLVarChar(PARSERHEAP(), 100000);
 				$$ = new (PARSERHEAP()) 
 				    HbaseColumnLookup($3, *$5, type);
 			      }
@@ -10401,54 +10401,54 @@ audit_image_object: TOK_INDEX_TABLE actual_table_name
 /* type token */
 datetime_keywords : TOK_QUARTER  ',' value_expression 		  // 3 months	Cast 3*num_expr to months
                    	{
-					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
 					$$ = new (PARSERHEAP()) 
 					       Cast(new (PARSERHEAP())BiArith(ITM_TIMES, $3,  new (PARSERHEAP()) ConstValue(3)), iq);
 					}                    
                    | TOK_WEEK   ',' value_expression 		  // 7 days	  Cast 7*num_expr to days
                     {
-					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
+					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
 					$$ = new (PARSERHEAP()) 
 					       Cast(new (PARSERHEAP())BiArith(ITM_TIMES, $3,  new (PARSERHEAP()) ConstValue(7)), iq);
 					}
                    | TOK_YEAR   ',' value_expression
 				    {
-					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_YEAR, 6, REC_DATE_YEAR, 1);
+					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_YEAR, 6, REC_DATE_YEAR, 1);
 					$$ = new (PARSERHEAP()) Cast($3, iq);
 					}
                    | TOK_MONTH  ',' value_expression 
 				    {
-					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
 					$$ = new (PARSERHEAP()) Cast($3, iq);
 					}
 				   | TOK_DAY    ',' value_expression 
                    	{
-					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
+					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
 					$$ = new (PARSERHEAP()) Cast($3, iq);
 					}
                    | TOK_M  ',' value_expression 
 				    {
-					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
 					$$ = new (PARSERHEAP()) Cast($3, iq);
 					}
 				   | TOK_D    ',' value_expression 
                    	{
-					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
+					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
 					$$ = new (PARSERHEAP()) Cast($3, iq);
 					}                   
                    | TOK_HOUR   ',' value_expression
                     {
-					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_HOUR, 8, REC_DATE_HOUR, 1);
+					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_HOUR, 8, REC_DATE_HOUR, 1);
 					$$ = new (PARSERHEAP()) Cast($3, iq);
 					}                    
                    | TOK_MINUTE ',' value_expression
 				    {
-					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MINUTE, 10, REC_DATE_MINUTE, 1);
+					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_MINUTE, 10, REC_DATE_MINUTE, 1);
 					$$ = new (PARSERHEAP()) Cast($3, iq);
 					}                    
                    | TOK_SECOND ',' value_expression 
 				    {
-					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_SECOND, 12, REC_DATE_SECOND, 1);
+					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_SECOND, 12, REC_DATE_SECOND, 1);
 					$$ = new (PARSERHEAP()) Cast($3, iq);
 					}
 				   | IDENTIFIER ',' value_expression
@@ -10456,43 +10456,43 @@ datetime_keywords : TOK_QUARTER  ',' value_expression 		  // 3 months	Cast 3*num
                       $1->toUpper();
                       if      ( *$1 == "YYYY" | *$1 == "YY" )
 					    {
-					      SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_YEAR, 6, REC_DATE_YEAR, 1);
+					      SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_YEAR, 6, REC_DATE_YEAR, 1);
 					      $$ = new (PARSERHEAP()) Cast($3, iq);
 					    }
                       else if ( *$1 == "MM" ) 
 				        {
-					      SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+					      SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
 					      $$ = new (PARSERHEAP()) Cast($3, iq);
 					    }                       
                       else if ( *$1 == "DD" ) 
                    	    {
-					       SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
+					       SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
 					       $$ = new (PARSERHEAP()) Cast($3, iq);
 					    }                       
                       else if ( *$1 == "HH"  ) 
                         {
-        					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_HOUR, 8, REC_DATE_HOUR, 1);
+        					SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_HOUR, 8, REC_DATE_HOUR, 1);
 		        			$$ = new (PARSERHEAP()) Cast($3, iq);
 					    }
                       else if ( *$1 == "MI" | *$1 == "N" ) 
 				        {
-				       	   SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MINUTE, 10, REC_DATE_MINUTE, 1);
+				       	   SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_MINUTE, 10, REC_DATE_MINUTE, 1);
 				       	   $$ = new (PARSERHEAP()) Cast($3, iq);
 					    }                       
                       else if ( *$1 == "SS" | *$1 == "S" ) 
 				        {
-					      SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_SECOND, 12, REC_DATE_SECOND, 1);
+					      SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_SECOND, 12, REC_DATE_SECOND, 1);
 					      $$ = new (PARSERHEAP()) Cast($3, iq);
 					    }                        
                       else if ( *$1 == "QQ" | *$1 == "Q" ) 
                         {
-					      SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+					      SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
 					      $$ = new (PARSERHEAP()) 
 					             Cast(new (PARSERHEAP())BiArith(ITM_TIMES, $3,  new (PARSERHEAP()) ConstValue(3)), iq);
 					    }                       
                       else if ( *$1 == "WK" | *$1 == "WW" ) 
                        	{
-				         SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
+				         SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
 					     $$ = new (PARSERHEAP()) 
 					          Cast(new (PARSERHEAP())BiArith(ITM_TIMES, $3,  new (PARSERHEAP()) ConstValue(7)), iq);
 				     	}
@@ -10508,43 +10508,43 @@ timestamp_keywords : IDENTIFIER ',' value_expression
     $1->toUpper();
     if ( *$1 == "SQL_TSI_YEAR" )
       {
-        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_YEAR, 6, REC_DATE_YEAR, 1);
+        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_YEAR, 6, REC_DATE_YEAR, 1);
         $$ = new (PARSERHEAP()) Cast($3, iq);
       }
     else if ( *$1 == "SQL_TSI_MONTH" )
       {
-        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
         $$ = new (PARSERHEAP()) Cast($3, iq);
       }
     else if ( *$1 == "SQL_TSI_DAY" )
       {
-        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
+        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
         $$ = new (PARSERHEAP()) Cast($3, iq);
       }
     else if ( *$1 == "SQL_TSI_HOUR" )
       {
-        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_HOUR, 8, REC_DATE_HOUR, 1);
+        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_HOUR, 8, REC_DATE_HOUR, 1);
         $$ = new (PARSERHEAP()) Cast($3, iq);
       }
     else if ( *$1 == "SQL_TSI_MINUTE" )
       {
-        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MINUTE, 10, REC_DATE_MINUTE, 1);
+        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_MINUTE, 10, REC_DATE_MINUTE, 1);
         $$ = new (PARSERHEAP()) Cast($3, iq);
       }
     else if ( *$1 == "SQL_TSI_SECOND" )
       {
-        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_SECOND, 12, REC_DATE_SECOND, 1);
+        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_SECOND, 12, REC_DATE_SECOND, 1);
         $$ = new (PARSERHEAP()) Cast($3, iq);
       }
     else if ( *$1 == "SQL_TSI_QUARTER" )
       {
-        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
+        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_MONTH, 6, REC_DATE_MONTH, 1);
         $$ = new (PARSERHEAP()) 
               Cast(new (PARSERHEAP())BiArith(ITM_TIMES, $3,  new (PARSERHEAP()) ConstValue(3)), iq);
       }
     else if ( *$1 == "SQL_TSI_WEEK" )
       {
-        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
+        SQLInterval *iq = new (PARSERHEAP()) SQLInterval(PARSERHEAP(), TRUE, REC_DATE_DAY, 6, REC_DATE_DAY, 1);
         $$ = new (PARSERHEAP()) 
         Cast(new (PARSERHEAP())BiArith(ITM_TIMES, $3,  new (PARSERHEAP()) ConstValue(7)), iq);
       }
@@ -10928,21 +10928,21 @@ predefined_type : date_time_type
 rowset_type : TOK_ROWSET unsigned_integer predefined_type
 	      {
 #pragma nowarn(1506)   // warning elimination 
-		$$ = new (PARSERHEAP()) SQLRowset( $3, $2, $2);
+		$$ = new (PARSERHEAP()) SQLRowset(PARSERHEAP(), $3, $2, $2);
 	      }
              | TOK_ROWSET unsigned_integer float_type
 	      {
-		$$ = new (PARSERHEAP()) SQLRowset( $3, $2, $2);
+		$$ = new (PARSERHEAP()) SQLRowset(PARSERHEAP(), $3, $2, $2);
 	      }
 
 /* type na_type */
 proc_arg_rowset_type : TOK_ROWSET unsigned_integer predefined_type
 	      {
-		$$ = new (PARSERHEAP()) SQLRowset( $3, $2, $2);
+		$$ = new (PARSERHEAP()) SQLRowset(PARSERHEAP(), $3, $2, $2);
 	      }
              | TOK_ROWSET unsigned_integer proc_arg_float_type
 	      {
-		$$ = new (PARSERHEAP()) SQLRowset( $3, $2, $2);
+		$$ = new (PARSERHEAP()) SQLRowset(PARSERHEAP(), $3, $2, $2);
 #pragma warn(1506)  // warning elimination
 	      }
 
@@ -10953,15 +10953,15 @@ numeric_type : non_int_type
 /* na type for the numeric */
 int_type : TOK_INTEGER signed_option
              {
-		$$ = new (PARSERHEAP()) SQLInt( $2, TRUE);
+		$$ = new (PARSERHEAP()) SQLInt(PARSERHEAP(),  $2, TRUE);
              }
 	 | TOK_SMALLINT signed_option
              {
-		$$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
+		$$ = new (PARSERHEAP()) SQLSmall( PARSERHEAP(), $2, TRUE);
              }
 	 | TOK_LARGEINT signed_option
              {
-               $$ = new (PARSERHEAP()) SQLLargeInt( $2, TRUE);
+               $$ = new (PARSERHEAP()) SQLLargeInt(PARSERHEAP(),  $2, TRUE);
              }
          | TOK_BIGINT signed_option
              {
@@ -10972,7 +10972,7 @@ int_type : TOK_INTEGER signed_option
                   yyerror(""); 
                   YYERROR;
                 }
-                $$ = new (PARSERHEAP()) SQLLargeInt ($2,TRUE);
+                $$ = new (PARSERHEAP()) SQLLargeInt (PARSERHEAP(), $2,TRUE);
                 // ((SQLLargeInt *)$$)->setDisplayDataType("BIGINT");
 	     }
 	 | TOK_BIT TOK_PRECISION TOK_INTEGER left_unsigned_right signed_option
@@ -10987,12 +10987,12 @@ int_type : TOK_INTEGER signed_option
                    *SqlParser_Diags << DgSqlCode(-3126);
 		   YYABORT;
 		}
-		$$ = new (PARSERHEAP()) SQLBPInt ($4, TRUE, FALSE);
+		$$ = new (PARSERHEAP()) SQLBPInt (PARSERHEAP(), $4, TRUE, FALSE);
 	     }
 	 | TOK_BIT
        { 
          // odbc SQL_BIT is single bit binary data
-         $$ = new (PARSERHEAP()) SQLChar(1);
+         $$ = new (PARSERHEAP()) SQLChar(PARSERHEAP(), 1);
          // ((SQLChar *)$$)->setDisplayDataType("BIT");
        }
 	 | TOK_TINYINT signed_option
@@ -11000,9 +11000,9 @@ int_type : TOK_INTEGER signed_option
          // odbc SQL_TINYINT is exact numeric value with precision 3 &
          // scale 0. signed: -128<=n<=127, unsigned: 0<=n<=255.
          if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
-           $$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
+           $$ = new (PARSERHEAP()) SQLSmall(PARSERHEAP(),  $2, TRUE);
          else
-           $$ = new (PARSERHEAP()) SQLTiny( $2, TRUE);
+           $$ = new (PARSERHEAP()) SQLTiny(PARSERHEAP(),  $2, TRUE);
        }
 	 | TOK_BYTEINT signed_option
        {
@@ -11010,9 +11010,9 @@ int_type : TOK_INTEGER signed_option
          // BYTEINT is supposed to be exact numeric value with precision 3 &
          // scale 0. signed: -128<=n<=127, unsigned: 0<=n<=255.
          if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
-           $$ = new (PARSERHEAP()) SQLSmall( $2, TRUE);
+           $$ = new (PARSERHEAP()) SQLSmall(PARSERHEAP(),  $2, TRUE);
          else
-           $$ = new (PARSERHEAP()) SQLTiny( $2, TRUE);
+           $$ = new (PARSERHEAP()) SQLTiny(PARSERHEAP(),  $2, TRUE);
        }
 
 numeric_type_token :    TOK_NUMERIC
@@ -11079,11 +11079,11 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
 	       if (($2->left() > MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION) ||
 		   (($2->left() > MAX_HARDWARE_SUPPORTED_UNSIGNED_NUMERIC_PRECISION) AND NOT $3))
 		 $$ = new (PARSERHEAP())
-		   SQLBigNum($2->left(), $2->right(), TRUE, $3, TRUE, NULL);
+		   SQLBigNum(PARSERHEAP(), $2->left(), $2->right(), TRUE, $3, TRUE);
 	       else {
 		 const Int16 DisAmbiguate = 0; // added for 64bit project
 		 $$ = new (PARSERHEAP())
-		   SQLNumeric( $3,$2->left(), $2->right(), DisAmbiguate );
+		   SQLNumeric(PARSERHEAP(), $3,$2->left(), $2->right(), DisAmbiguate );
 	       }
 	       delete $2;
              }
@@ -11096,7 +11096,7 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
                  prec = 18; 
 
 	       const Int16 DisAmbiguate = 0; // added for 64bit project
-	       $$ = new (PARSERHEAP()) SQLNumeric($2, prec, 0, DisAmbiguate);
+	       $$ = new (PARSERHEAP()) SQLNumeric(PARSERHEAP(), $2, prec, 0, DisAmbiguate);
 	     }
 	 | TOK_LSDECIMAL left_uint_uint_right signed_option
              {
@@ -11133,14 +11133,14 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
                     YYABORT;
                 }
 		$$ = new (PARSERHEAP())
-		  LSDecimal( $2->left(), $2->right(), $3);
+		  LSDecimal(PARSERHEAP(), $2->left(), $2->right(), $3);
                 delete $2;
 #pragma warn(1506)  // warning elimination
              }
 	 | TOK_LSDECIMAL signed_option 
              {
 	       // Default (precision,scale) for DECIMAL is (9,0)
-	       $$ = new (PARSERHEAP()) LSDecimal(9, 0, $2);
+	       $$ = new (PARSERHEAP()) LSDecimal(PARSERHEAP(),9, 0, $2);
 	     }
 	 | TOK_DECIMAL left_uint_uint_right signed_option
              {
@@ -11177,23 +11177,23 @@ non_int_type : numeric_type_token left_uint_uint_right signed_option
                     YYABORT;
                 }
 		$$ = new (PARSERHEAP())
-		  SQLDecimal( $2->left(), $2->right(), $3);
+		  SQLDecimal(PARSERHEAP(), $2->left(), $2->right(), $3);
                 delete $2;
 #pragma warn(1506)  // warning elimination
              }
 	 | TOK_DECIMAL signed_option
              {
 	       // Default (precision,scale) for DECIMAL is (9,0)
-	       $$ = new (PARSERHEAP()) SQLDecimal(9, 0, $2);
+	       $$ = new (PARSERHEAP()) SQLDecimal(PARSERHEAP(),9, 0, $2);
 	     }
 float_type : TOK_FLOAT
              {
-               //               $$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, NULL, SQL_DOUBLE_PRECISION, TRUE);
-               $$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, NULL, 0, TRUE);
+               //               $$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, SQL_DOUBLE_PRECISION, TRUE);
+               $$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, 0, TRUE);
              }
 	 | TOK_FLOAT left_unsigned_right
              {
-               $$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, NULL, $2, TRUE);
+               $$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, $2, TRUE);
 
                if (CmpCommon::getDefault(MODE_SPECIAL_4) == DF_OFF)
                  {
@@ -11203,15 +11203,15 @@ float_type : TOK_FLOAT
              }
 	 | TOK_REAL
              {
-		$$ = new (PARSERHEAP()) SQLReal(TRUE, PARSERHEAP());
+		$$ = new (PARSERHEAP()) SQLReal(PARSERHEAP(), TRUE); 
              }
 	 | TOK_DOUBLE TOK_PRECISION
              {
-		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, PARSERHEAP(), 0);
+		$$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, 0);
              }
 	 | TOK_SQL_DOUBLE
              {
-		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, PARSERHEAP(), 0);
+		$$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, 0);
              }
 
 /* na type for the ieee or tandem floats as PROCEDURE argument in mdf.
@@ -11219,32 +11219,32 @@ float_type : TOK_FLOAT
    not IEEE floats. This is for upward compatibility from pre R2 releases */
 proc_arg_float_type : TOK_FLOAT_IEEE
              {
-		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, PARSERHEAP(), 0);
+		$$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, 0);
              }
 	 | TOK_FLOAT_IEEE left_unsigned_right
              {
 #pragma nowarn(1506)  // warning elimination
-		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, NULL, $2);
+		$$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, $2);
 #pragma warn(1506)  // warning elimination
                 if (! ((SQLDoublePrecision *)$$)->checkValid(SqlParser_Diags))
                    YYERROR;
              }
 	 | TOK_REAL_IEEE
              {
-		$$ = new (PARSERHEAP()) SQLReal(TRUE, PARSERHEAP(), 0);
+		$$ = new (PARSERHEAP()) SQLReal(PARSERHEAP(), TRUE, 0);
              }
 	 | TOK_DOUBLE_IEEE
              {
-		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, PARSERHEAP(), 0);
+		$$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, 0);
              }
 	 | TOK_FLOAT
              {
-		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, PARSERHEAP(), 0);
+		$$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, 0);
              }
 	 | TOK_FLOAT left_unsigned_right
              {
 #pragma nowarn(1506)  // warning elimination
-		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, NULL, $2);
+		$$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE, $2);
 #pragma warn(1506)  // warning elimination
                 if (! ((SQLDoublePrecision *)$$)->checkValid(SqlParser_Diags))
                    YYERROR;
@@ -11253,13 +11253,13 @@ proc_arg_float_type : TOK_FLOAT_IEEE
              {
 	       // For upward compatability, 
 	       // REAL is IEEE real on NT, tandem real on NSK.
-		$$ = new (PARSERHEAP()) SQLReal(TRUE, PARSERHEAP(), 0);
+		$$ = new (PARSERHEAP()) SQLReal(PARSERHEAP(), TRUE, 0);
              }
 	 | TOK_DOUBLE TOK_PRECISION
              {
 	       // For upward compatability, 
 	       // DOUBLE is IEEE double on NT, tandem double on NSK.
-		$$ = new (PARSERHEAP()) SQLDoublePrecision(TRUE, PARSERHEAP(), 0);
+		$$ = new (PARSERHEAP()) SQLDoublePrecision(PARSERHEAP(), TRUE);
              }
 
 /* na_type */
@@ -11392,7 +11392,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                  {
                    maxLenInBytes = characterLimit * maxBytesPerChar;
                  }
-                 $$ = new (PARSERHEAP()) SQLChar ( CharLenInfo(characterLimit, maxLenInBytes), TRUE,
+                 $$ = new (PARSERHEAP()) SQLChar ( PARSERHEAP(), CharLenInfo(characterLimit, maxLenInBytes), TRUE,
                                                    $5, $6, FALSE, eCharSet, $4.collation_,
                                                    $4.coercibility_, eEncodingCharSet );
                  NAString ddt("CHAR", PARSERHEAP());
@@ -11401,7 +11401,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                else // keep the old behavior
 #pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) SQLChar
-			(specifiedLength, TRUE, $5, $6, FALSE, 
+			(PARSERHEAP(), specifiedLength, TRUE, $5, $6, FALSE, 
 			 eCharSet, $4.collation_, $4.coercibility_);
 #pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
@@ -11411,7 +11411,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
             {
 #pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) ANSIChar
-	       		($2, TRUE, $5, TRUE,
+	       		(PARSERHEAP(), $2, TRUE, $5, TRUE,
 			 $3, $4.collation_, $4.coercibility_);
 #pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
@@ -11461,7 +11461,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                  {
                    maxLenInBytes = characterLimit * maxBytesPerChar; 
                  }
-                 $$ = new (PARSERHEAP()) SQLVarChar ( CharLenInfo(characterLimit, maxLenInBytes),
+                 $$ = new (PARSERHEAP()) SQLVarChar ( PARSERHEAP(), CharLenInfo(characterLimit, maxLenInBytes),
                                                       TRUE, $6, $7, eCharSet, $5.collation_,
                                                       $5.coercibility_, eEncodingCharSet );
                  NAString ddt("VARCHAR", PARSERHEAP());
@@ -11470,7 +11470,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                else // keep the old behavior
 #pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) SQLVarChar
-			(specifiedLength, TRUE, $6, $7,
+			(PARSERHEAP(), specifiedLength, TRUE, $6, $7,
 			 eCharSet, $5.collation_, $5.coercibility_);
 #pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
@@ -11510,7 +11510,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                  {
                    maxLenInBytes = characterLimit * maxBytesPerChar;
                  }
-                 $$ = new (PARSERHEAP()) SQLVarChar ( CharLenInfo(characterLimit, maxLenInBytes), TRUE,
+                 $$ = new (PARSERHEAP()) SQLVarChar (PARSERHEAP(),  CharLenInfo(characterLimit, maxLenInBytes), TRUE,
                                                       $5, $6, eCharSet, $4.collation_,
                                                       $4.coercibility_, eEncodingCharSet );
                  NAString ddt("VARCHAR", PARSERHEAP());
@@ -11519,7 +11519,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
                else // keep the old behavior
 #pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) SQLVarChar
-			(specifiedLength, TRUE, $5, $6,
+			(PARSERHEAP(), specifiedLength, TRUE, $5, $6,
 			 eCharSet, $4.collation_, $4.coercibility_);
 #pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
@@ -11548,7 +11548,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
            Int32 maxBytesPerChar = CharInfo::maxBytesPerChar(eCharSet);
            // compute the length in UCS4 characters for the worse case scenarios
            Int32 characterLimit = maxLenInBytes ;
-           $$ = new (PARSERHEAP()) SQLLongVarChar ( CharLenInfo(characterLimit, maxLenInBytes),
+           $$ = new (PARSERHEAP()) SQLLongVarChar ( PARSERHEAP(), (characterLimit, maxLenInBytes),
                                                     FALSE, TRUE,
                                                     $5, $6, eCharSet, $4.collation_,
                                                     $4.coercibility_, eEncodingCharSet );
@@ -11558,7 +11558,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          }
          else // keep the old behavior
          $$ = new (PARSERHEAP()) SQLLongVarChar
-           (maxLenInBytes, FALSE, TRUE, $5, $6,
+           (PARSERHEAP(), maxLenInBytes, FALSE, TRUE, $5, $6,
             eCharSet, $4.collation_, $4.coercibility_);
          if (checkError3179($$)) YYERROR;
 
@@ -11607,7 +11607,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
            Int32 maxBytesPerChar = CharInfo::maxBytesPerChar(eCharSet);
            // compute the length in UCS4 characters for the worse case scenarios
            Int32 characterLimit = maxLenInBytes ;
-           $$ = new (PARSERHEAP()) SQLVarChar ( CharLenInfo ( characterLimit , maxLenInBytes)
+           $$ = new (PARSERHEAP()) SQLVarChar ( PARSERHEAP(), CharLenInfo ( characterLimit , maxLenInBytes)
                                               , TRUE // allowSQLnull
                                               , $6   // isUpShifted
                                               , $7   // isCaseInsensitive
@@ -11626,7 +11626,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          //   "create table t(c long varchar, w longwvarchar)" into
          //   "create table t(c varchar(n),   w varwchar(m))".
          $$ = new (PARSERHEAP()) SQLVarChar
-           (maxLenInBytes, TRUE, $6, $7, eCharSet, $5.collation_, $5.coercibility_);
+           (PARSERHEAP(), maxLenInBytes, TRUE, $6, $7, eCharSet, $5.collation_, $5.coercibility_);
          // end KLUDGE.
 #pragma warn(1506)  // warning elimination
 	       if (checkError3179($$)) YYERROR;
@@ -11636,7 +11636,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
             {
 #pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) SQLChar
-		 	($2, TRUE, $4, $5, FALSE,
+		 	(PARSERHEAP(), $2, TRUE, $4, $5, FALSE,
 			 SqlParser_NATIONAL_CHARSET,
 			 $3.collation_, $3.coercibility_);
 #pragma warn(1506)  // warning elimination
@@ -11646,7 +11646,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
             {
 #pragma nowarn(1506)  // warning elimination
                $$ = new (PARSERHEAP()) SQLVarChar
-		 	($2, TRUE, $4, $5,
+		 	(PARSERHEAP(), $2, TRUE, $4, $5,
 			 SqlParser_NATIONAL_CHARSET,
 			 $3.collation_, $3.coercibility_);
 #pragma warn(1506)  // warning elimination
@@ -11658,7 +11658,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          // of fixed string length n.
 #pragma nowarn(1506)  // warning elimination
          $$ = new (PARSERHEAP()) SQLChar
-           ($2, TRUE, $4, $5, FALSE, CharInfo::UNICODE, 
+           (PARSERHEAP(), $2, TRUE, $4, $5, FALSE, CharInfo::UNICODE, 
             $3.collation_, $3.coercibility_);
 #pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
@@ -11669,7 +11669,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          // character string with a maximum string length n.
 #pragma nowarn(1506)  // warning elimination
          $$ = new (PARSERHEAP()) SQLVarChar
-           ($2, TRUE, $4, $5, CharInfo::UNICODE, 
+           (PARSERHEAP(), $2, TRUE, $4, $5, CharInfo::UNICODE, 
             $3.collation_, $3.coercibility_);
 #pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
@@ -11680,7 +11680,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          // character data. Maximum length is data source-dependent (can be
          // set by control query default MAX_LONG_WVARCHAR_DEFAULT_SIZE).
          $$ = new (PARSERHEAP()) SQLLongVarChar
-           (getDefaultMaxLengthForLongVarChar(CharInfo::UNICODE), 
+           (PARSERHEAP(), getDefaultMaxLengthForLongVarChar(CharInfo::UNICODE), 
             FALSE, TRUE, $3, $4, CharInfo::UNICODE, 
             $2.collation_, $2.coercibility_);
          if (checkError3179($$)) YYERROR;
@@ -11703,7 +11703,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          }
 #pragma nowarn(1506)  // warning elimination
          $$ = new (PARSERHEAP()) SQLLongVarChar
-           ($2, TRUE, TRUE, $4, $5, CharInfo::UNICODE, 
+           (PARSERHEAP(), $2, TRUE, TRUE, $4, $5, CharInfo::UNICODE, 
             $3.collation_, $3.coercibility_);
 #pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
@@ -11712,7 +11712,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
        {
          // odbc SQL_BINARY is BINARY(n). Binary data of fixed length n.
 #pragma nowarn(1506)  // warning elimination
-         $$ = new (PARSERHEAP()) SQLChar($2, TRUE, FALSE, FALSE);
+         $$ = new (PARSERHEAP()) SQLChar(PARSERHEAP(), $2, TRUE, FALSE, FALSE);
 #pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
        }
@@ -11721,7 +11721,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          // odbc SQL_VARBINARY is VARBINARY(n). Variable length binary data 
          // of maximum length n. The maximum length is set by the user.
 #pragma nowarn(1506)  // warning elimination
-         $$ = new (PARSERHEAP()) SQLVarChar($2);
+         $$ = new (PARSERHEAP()) SQLVarChar(PARSERHEAP(), $2);
 #pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
        }
@@ -11729,7 +11729,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
        {
          // odbc SQL_LONGVARBINARY is LONG VARBINARY(n). Variable length 
          // binary data. Maximum length is data source-dependent.
-         $$ = new (PARSERHEAP()) SQLLongVarChar(0, FALSE);
+         $$ = new (PARSERHEAP()) SQLLongVarChar(PARSERHEAP(), 0, FALSE);
          if (checkError3179($$)) YYERROR;
        }
      | TOK_LONG TOK_VARBINARY left_unsigned_right
@@ -11751,7 +11751,7 @@ string_type : tok_char_or_character_or_byte new_optional_left_charlen_right char
          // soln 10-040610-6863 by temporarily mapping
          //   "create table t(b long varbinary(n))" into
          //   "create table t(b varchar(n))".
-         $$ = new (PARSERHEAP()) SQLVarChar($3);
+         $$ = new (PARSERHEAP()) SQLVarChar(PARSERHEAP(), $3);
          // end KLUDGE.
 #pragma warn(1506)  // warning elimination
          if (checkError3179($$)) YYERROR;
@@ -11771,24 +11771,24 @@ blob_type : TOK_BLOB blob_optional_left_len_right
             {
 	      if (CmpCommon::getDefault(TRAF_BLOB_AS_VARCHAR) == DF_ON)
 		{
-		  $$ = new (PARSERHEAP()) SQLVarChar($2);
+		  $$ = new (PARSERHEAP()) SQLVarChar(PARSERHEAP(), $2);
                   ((SQLVarChar*)$$)->setClientDataType("BLOB");
 		}
 	      else
 		{
-    		  $$ = new (PARSERHEAP()) SQLBlob ( $2 );
+    		  $$ = new (PARSERHEAP()) SQLBlob (PARSERHEAP(),  $2 );
 		}
             }
           | TOK_CLOB clob_optional_left_len_right
             {
 	      if (CmpCommon::getDefault(TRAF_CLOB_AS_VARCHAR) == DF_ON)
 		{
-		  $$ = new (PARSERHEAP()) SQLVarChar($2);
+		  $$ = new (PARSERHEAP()) SQLVarChar(PARSERHEAP(), $2);
                   ((SQLVarChar*)$$)->setClientDataType("CLOB");
 		}
 	      else
 		{
-                  $$ = new (PARSERHEAP()) SQLClob ( $2 );
+                  $$ = new (PARSERHEAP()) SQLClob (PARSERHEAP(),  $2 );
 		}
             }
  
@@ -11864,7 +11864,7 @@ clob_optional_left_len_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE optional_lob_un
 /* type na_type */
 boolean_type : TOK_BOOLEAN
             {
-              $$ = new (PARSERHEAP()) SQLBooleanNative (TRUE);
+              $$ = new (PARSERHEAP()) SQLBooleanNative (PARSERHEAP(), TRUE);
             }
 
 /* type pCharLenSpec */
@@ -12204,7 +12204,7 @@ left_uint_uint_right: '(' NUMERIC_LITERAL_EXACT_NO_SCALE ',' NUMERIC_LITERAL_EXA
 /* type na_type */
 date_time_type : TOK_DATE disableCharsetInference format_attributes
                           {
-                            $$ = new (PARSERHEAP()) SQLDate(TRUE,PARSERHEAP());
+                            $$ = new (PARSERHEAP()) SQLDate(PARSERHEAP(), TRUE);
                             SQLDate *pDate = (SQLDate *)$$;
                             // Leave the field blank if FORMAT clause not
                             // specified to leave SHOWDDL output remain
@@ -12221,29 +12221,26 @@ date_time_type : TOK_DATE disableCharsetInference format_attributes
                           }
                | TOK_TIME
                           {
-                              $$ = new (PARSERHEAP()) SQLTime(TRUE, 
-                                                              SQLTime::DEFAULT_FRACTION_PRECISION,
-                                                              PARSERHEAP());
+                              $$ = new (PARSERHEAP()) SQLTime(PARSERHEAP(), TRUE, 
+                                                              SQLTime::DEFAULT_FRACTION_PRECISION);
                           }
                | TOK_TIME ts_left_unsigned_right
                           {
-                              $$ = new (PARSERHEAP()) SQLTime(TRUE,
-                                                              $2,
-                                                              PARSERHEAP());
+                              $$ = new (PARSERHEAP()) SQLTime(PARSERHEAP(), TRUE,
+                                                              $2);
 
                               if (! ((SQLTime *)$$)->checkValid(SqlParser_Diags)) YYERROR;
                           }
 	       | TOK_TIMESTAMP disableCharsetInference  format_attributes
                           {
                               $$ = new (PARSERHEAP()) 
-                                SQLTimestamp(TRUE, 
-                                             SQLTimestamp::DEFAULT_FRACTION_PRECISION, 
-                                             PARSERHEAP() );
+                                SQLTimestamp(PARSERHEAP(), TRUE, 
+                                             SQLTimestamp::DEFAULT_FRACTION_PRECISION); 
                               restoreInferCharsetState();
                           }
 	       | TOK_TIMESTAMP ts_left_unsigned_right disableCharsetInference format_attributes
                           {
-                              $$ = new (PARSERHEAP()) SQLTimestamp(TRUE, $2, PARSERHEAP());
+                              $$ = new (PARSERHEAP()) SQLTimestamp(PARSERHEAP(), TRUE, $2);
                               if (! ((SQLTimestamp *)$$)->checkValid(SqlParser_Diags)) YYERROR;
                               restoreInferCharsetState();
                           }
@@ -12337,7 +12334,7 @@ datetime_fraction_field  : TOK_FRACTION                            // returned i
 interval_type : TOK_INTERVAL interval_qualifier
               {
                 $$ = new (PARSERHEAP())
-		  SQLInterval(TRUE,
+		  SQLInterval(PARSERHEAP(), TRUE,
 			      $2->getStartField(),
 			      $2->getLeadingPrecision(),
 			      $2->getEndField(),
@@ -12356,11 +12353,10 @@ interval_type : TOK_INTERVAL interval_qualifier
 interval_qualifier : start_field TOK_TO end_field
                    {
                       $$ = new (PARSERHEAP())
-	              IntervalQualifier($1->getStartField(),
+	              IntervalQualifier(PARSERHEAP(), $1->getStartField(),
                                         $1->getLeadingPrecision(),
 					$3->getEndField(),
-				        $3->getFractionPrecision(),
-                                        PARSERHEAP());
+				        $3->getFractionPrecision());
 
 		      // Check to see if FRACTION used, pass along to new object
 		      if($3->getDTIFlag(IntervalType::UNSUPPORTED_DDL_DATA_TYPE))
@@ -12379,11 +12375,10 @@ interval_qualifier : start_field TOK_TO end_field
                    | TOK_SECOND TOK_TO interval_fraction_field
                    {
                        $$ = new (PARSERHEAP()) 
-                           IntervalQualifier(REC_DATE_SECOND,
+                           IntervalQualifier(PARSERHEAP(), REC_DATE_SECOND,
                                      SQLInterval::DEFAULT_LEADING_PRECISION,
                                      REC_DATE_SECOND,
-                                     $3,
-                                     PARSERHEAP());
+                                     $3);
 
                       if (! $$->checkValid(SqlParser_Diags)) YYERROR;
 
@@ -12393,11 +12388,10 @@ interval_qualifier : start_field TOK_TO end_field
                    | TOK_SECOND ts_left_unsigned_right TOK_TO interval_fraction_field
                    {
                         $$ = new (PARSERHEAP())
-                          IntervalQualifier(REC_DATE_SECOND,
+                          IntervalQualifier(PARSERHEAP(), REC_DATE_SECOND,
                                     $2,
                                     REC_DATE_SECOND,
-                                    $4,
-                                    PARSERHEAP());
+                                    $4);
 
                         if (! $$->checkValid(SqlParser_Diags)) YYERROR;
 			
@@ -12407,19 +12401,17 @@ interval_qualifier : start_field TOK_TO end_field
                    | TOK_SECOND TOK_TO TOK_SECOND
                    {
                         $$ = new (PARSERHEAP()) 
-                            IntervalQualifier(REC_DATE_SECOND,
-                                              IntervalQualifier::DEFAULT_LEADING_PRECISION,
-                                              PARSERHEAP());
+                            IntervalQualifier(PARSERHEAP(), REC_DATE_SECOND,
+                                              IntervalQualifier::DEFAULT_LEADING_PRECISION);
                    }
 
                    | TOK_SECOND ts_left_unsigned_right TOK_TO TOK_SECOND
                    {
                         $$ = new (PARSERHEAP())
-                          IntervalQualifier(REC_DATE_SECOND,
+                          IntervalQualifier(PARSERHEAP(), REC_DATE_SECOND,
                                    $2,
                                    REC_DATE_SECOND,
-                                   0,
-                                   PARSERHEAP());
+                                   0);
                         if (! $$->checkValid(SqlParser_Diags)) YYERROR;
                     }
                     | fraction_only_interval
@@ -12433,51 +12425,47 @@ interval_qualifier : start_field TOK_TO end_field
 /* type intervalQualifier */
 start_field : non_second_datetime_field
             {
-              $$ = new (PARSERHEAP()) IntervalQualifier($1, IntervalQualifier::DEFAULT_LEADING_PRECISION, PARSERHEAP());
+              $$ = new (PARSERHEAP()) IntervalQualifier(PARSERHEAP(), $1, IntervalQualifier::DEFAULT_LEADING_PRECISION);
             }
             | non_second_datetime_field ts_left_unsigned_right
             {
-              $$ = new (PARSERHEAP()) IntervalQualifier($1, $2, PARSERHEAP());
+              $$ = new (PARSERHEAP()) IntervalQualifier(PARSERHEAP(), $1, $2);
             }
 
 fraction_only_interval :  TOK_FRACTION                           // returned in MP mode only
                 {                                  
                    $$ = new (PARSERHEAP())
-                        IntervalQualifier(REC_DATE_FRACTION_MP,
+                        IntervalQualifier(PARSERHEAP(), REC_DATE_FRACTION_MP,
                                       SQLInterval::DEFAULT_LEADING_PRECISION,
                                       REC_DATE_FRACTION_MP,
-                                      SQLInterval::MAX_FRACTION_PRECISION,
-                                      PARSERHEAP() );
+                                      SQLInterval::MAX_FRACTION_PRECISION);
                 }
                 | TOK_FRACTION ts_left_unsigned_right   
                 {                                  
                    $$ = new (PARSERHEAP())
-                        IntervalQualifier(REC_DATE_FRACTION_MP,
+                        IntervalQualifier(PARSERHEAP(), REC_DATE_FRACTION_MP,
                                       $2,
                                       REC_DATE_FRACTION_MP,
-                                      SQLInterval::MAX_FRACTION_PRECISION,
-                                      PARSERHEAP() );
+                                      SQLInterval::MAX_FRACTION_PRECISION);
                    if (! $$->checkValid(SqlParser_Diags)) YYERROR;
                 }
                 | TOK_FRACTION TOK_TO interval_fraction_field
                 {
                    $$ = new (PARSERHEAP())
-                        IntervalQualifier(REC_DATE_FRACTION_MP,
+                        IntervalQualifier(PARSERHEAP(), REC_DATE_FRACTION_MP,
                                       SQLInterval::DEFAULT_LEADING_PRECISION,
                                       REC_DATE_FRACTION_MP,
-                                      $3,
-                                      PARSERHEAP());
+                                      $3);
 
                    if (! $$->checkValid(SqlParser_Diags)) YYERROR;
                 }
                 | TOK_FRACTION ts_left_unsigned_right  TOK_TO interval_fraction_field
                 {
                    $$ = new (PARSERHEAP())
-                        IntervalQualifier(REC_DATE_FRACTION_MP,
+                        IntervalQualifier(PARSERHEAP(), REC_DATE_FRACTION_MP,
                                       $2,
                                       REC_DATE_FRACTION_MP,
-                                      $4,
-                                      PARSERHEAP());
+                                      $4);
 
                    if (! $$->checkValid(SqlParser_Diags)) YYERROR;
                 }
@@ -12493,31 +12481,29 @@ interval_fraction_field  : TOK_FRACTION                            // returned i
 /* type intervalQualifier */
 end_field : non_second_datetime_field
           {
-            $$ = new (PARSERHEAP()) IntervalQualifier($1, IntervalQualifier::DEFAULT_LEADING_PRECISION, PARSERHEAP());
+            $$ = new (PARSERHEAP()) IntervalQualifier(PARSERHEAP(), $1, IntervalQualifier::DEFAULT_LEADING_PRECISION);
           }
           | TOK_SECOND
           {
-            $$ = new (PARSERHEAP()) IntervalQualifier(REC_DATE_SECOND, IntervalQualifier::DEFAULT_LEADING_PRECISION, PARSERHEAP());
+            $$ = new (PARSERHEAP()) IntervalQualifier(PARSERHEAP(), REC_DATE_SECOND, IntervalQualifier::DEFAULT_LEADING_PRECISION);
           }
           | TOK_SECOND ts_left_unsigned_right
           {
              $$ = new (PARSERHEAP())
-	       IntervalQualifier(REC_DATE_SECOND,
+	       IntervalQualifier(PARSERHEAP(), REC_DATE_SECOND,
                             SQLInterval::DEFAULT_LEADING_PRECISION,
                             REC_DATE_SECOND,
-                            $2,
-                            PARSERHEAP());                 
+                            $2);
 
              if (! $$->checkValid(SqlParser_Diags)) YYERROR;
           }
           | interval_fraction_field
             {
              $$ = new (PARSERHEAP())
-	       IntervalQualifier(REC_DATE_SECOND,
+	       IntervalQualifier(PARSERHEAP(), REC_DATE_SECOND,
                             SQLInterval::DEFAULT_LEADING_PRECISION,
                             REC_DATE_SECOND,
-                            $1,
-                            PARSERHEAP());                 
+                            $1);
 
              if (! $$->checkValid(SqlParser_Diags)) YYERROR;
 
@@ -12533,14 +12519,13 @@ single_datetime_field : start_field
                       | TOK_SECOND
                       {
                         $$ = new (PARSERHEAP())
-			  IntervalQualifier(REC_DATE_SECOND,
-                                            IntervalQualifier::DEFAULT_LEADING_PRECISION,
-                                            PARSERHEAP());
+			  IntervalQualifier(PARSERHEAP(), REC_DATE_SECOND,
+                                            IntervalQualifier::DEFAULT_LEADING_PRECISION);
                       }
                       | TOK_SECOND ts_left_unsigned_right
                       {
                         $$ = new (PARSERHEAP())
-			  IntervalQualifier(REC_DATE_SECOND, $2, PARSERHEAP());
+			  IntervalQualifier(PARSERHEAP(), REC_DATE_SECOND, $2);
                         if (! $$->checkValid(SqlParser_Diags)) YYERROR;
                       }
                       | TOK_SECOND '(' unsigned_integer ',' unsigned_integer ')'
@@ -12552,11 +12537,10 @@ single_datetime_field : start_field
                         // to be 6.
                         //
                         $$ = new (PARSERHEAP())
-			  IntervalQualifier(REC_DATE_SECOND,
+			  IntervalQualifier(PARSERHEAP(), REC_DATE_SECOND,
 					    $3,
 					    REC_DATE_SECOND,
-					    $5,
-                                            PARSERHEAP());
+					    $5);
                         if (! $$->checkValid(SqlParser_Diags)) YYERROR;
                       }
 
@@ -13024,9 +13008,9 @@ insert_obj_to_lob_function :
 			        {
 				  ItemExpr *bufAddr = $4;
 				  ItemExpr *bufSize = $7;
-				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(PARSERHEAP(), TRUE,FALSE));
 				  bufSize = new (PARSERHEAP())
-				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(PARSERHEAP(), TRUE, FALSE));
 				  $$ = new (PARSERHEAP()) LOBinsert( bufAddr, bufSize, LOBoper::BUFFER_, FALSE);
 				}
                           | TOK_FILETOLOB '(' character_literal_sbyte ')'
@@ -13080,18 +13064,18 @@ update_obj_to_lob_function :
 			        {
 				  ItemExpr *bufAddr = $4;
 				  ItemExpr *bufSize = $7;
-				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(PARSERHEAP(), TRUE,FALSE));
 				  bufSize = new (PARSERHEAP())
-				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(PARSERHEAP(), TRUE, FALSE));
 				  $$ = new (PARSERHEAP()) LOBupdate( bufAddr, NULL,bufSize, LOBoper::BUFFER_, FALSE);
 				}
 			  | TOK_BUFFERTOLOB '(' TOK_LOCATION value_expression ',' TOK_SIZE value_expression ',' TOK_APPEND')'
 			        {
 				  ItemExpr *bufAddr = $4;
 				  ItemExpr *bufSize = $7;
-				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(TRUE,FALSE));
+				  bufAddr = new (PARSERHEAP())Cast(bufAddr, new (PARSERHEAP()) SQLLargeInt(PARSERHEAP(), TRUE,FALSE));
 				  bufSize = new (PARSERHEAP())
-				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+				    Cast(bufSize, new (PARSERHEAP()) SQLLargeInt(PARSERHEAP(), TRUE, FALSE));
 				  $$ = new (PARSERHEAP()) LOBupdate( bufAddr, NULL,bufSize, LOBoper::BUFFER_, TRUE);
 				}
 
@@ -14206,7 +14190,7 @@ rowwise_rowset_info : '(' TOK_MAX TOK_ROWSET TOK_SIZE literal ','
 			  {
 			    ((DynamicParam*)irs)->setDPRowsetForInputSize();
 			    irs = new (PARSERHEAP()) 
-			      Cast(irs, new (PARSERHEAP()) SQLInt(TRUE, FALSE));
+			      Cast(irs, new (PARSERHEAP()) SQLInt(PARSERHEAP(), TRUE, FALSE));
 			  }
 			else
 			  YYERROR;
@@ -14215,7 +14199,7 @@ rowwise_rowset_info : '(' TOK_MAX TOK_ROWSET TOK_SIZE literal ','
 			  {
 			    ((DynamicParam*)irml)->setRowwiseRowsetInputMaxRowlen();
 			    irml = new (PARSERHEAP()) 
-			      Cast(irml, new (PARSERHEAP()) SQLInt(TRUE, FALSE));
+			      Cast(irml, new (PARSERHEAP()) SQLInt(PARSERHEAP(), TRUE, FALSE));
 			  }
 			else
 			  YYERROR;
@@ -14224,7 +14208,7 @@ rowwise_rowset_info : '(' TOK_MAX TOK_ROWSET TOK_SIZE literal ','
 			  {
 			    ((DynamicParam *)rrb)->setRowwiseRowsetInputBuffer();
 			    rrb = new (PARSERHEAP()) 
-			      Cast(rrb, new (PARSERHEAP()) SQLLargeInt(TRUE, FALSE));
+			      Cast(rrb, new (PARSERHEAP()) SQLLargeInt(PARSERHEAP(), TRUE, FALSE));
 			  }
 			else
 			  YYERROR;
@@ -23887,7 +23871,7 @@ schema_definition : TOK_CREATE schema_class TOK_SCHEMA schema_name_clause char_s
 
                     // allocate the CharType object and pass it to StmDDLCreateSchema. 
                     // StmtDDLCreateSchema will free the memory there.
-                    CharType *charType = new CharType(CharType::LiteralSchema, 
+                    CharType *charType = new (PARSERHEAP()) CharType(PARSERHEAP(), CharType::LiteralSchema, 
                                                       0, 0, FALSE, FALSE, FALSE, FALSE, FALSE,
                                                       $5, $6.collation_, $6.coercibility_ );
                                                          
@@ -23911,7 +23895,7 @@ schema_definition : TOK_CREATE schema_class TOK_SCHEMA TOK_IF TOK_NOT TOK_EXISTS
 
                       // allocate the CharType object and pass it to StmDDLCreateSchema. 
                       // StmtDDLCreateSchema will free the memory there.
-                      CharType *charType = new CharType(CharType::LiteralSchema,
+                      CharType *charType = new (PARSERHEAP()) CharType(PARSERHEAP(), CharType::LiteralSchema,
                                                         0, 0, FALSE, FALSE, FALSE, FALSE, FALSE,
                                                         $8, $9.collation_, $9.coercibility_ );
 
@@ -24524,7 +24508,7 @@ routine_predef_type : predef_type
                    {
                      NumericType * nt = (NumericType*)$1;
                      $$ = new (PARSERHEAP()) 
-                       SQLSmall(NOT nt->isUnsigned(), $1->supportsSQLnull());
+                       SQLSmall(PARSERHEAP(), NOT nt->isUnsigned(), $1->supportsSQLnull());
                    }
                }
 
@@ -25550,7 +25534,7 @@ column_definition : qualified_name data_type optional_column_attributes
                                       if ((type->getTypeQualifier() == NA_DATETIME_TYPE) &&
                                           (type->getPrecision() == SQLDTCODE_DATE))
                                         {
-                                          type = new (PARSERHEAP()) SQLTimestamp(TRUE, 0, PARSERHEAP());
+                                          type = new (PARSERHEAP()) SQLTimestamp(PARSERHEAP(), TRUE, 0);
                                         }
 
                                       // change FLOAT(p) to NUMERIC(p)
@@ -25564,13 +25548,13 @@ column_definition : qualified_name data_type optional_column_attributes
 
                                           if (numPrec > MAX_HARDWARE_SUPPORTED_SIGNED_NUMERIC_PRECISION)
                                             type = new (PARSERHEAP()) 
-                                              SQLBigNum(numPrec, 0, TRUE, TRUE, TRUE, NULL);
+                                              SQLBigNum(PARSERHEAP(), numPrec, 0, TRUE, TRUE, TRUE);
                                           else
                                             {
                                               const Int16 DisAmbiguate = 0; // added for 64bit project
 
                                               type = new (PARSERHEAP()) 
-                                                SQLNumeric(TRUE, numPrec, 0, DisAmbiguate);
+                                                SQLNumeric(PARSERHEAP(), TRUE, numPrec, 0, DisAmbiguate);
                                             }
                                         }
                                     }

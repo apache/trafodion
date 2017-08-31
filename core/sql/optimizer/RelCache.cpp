@@ -241,7 +241,7 @@ RelExpr* Scan::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
       HostVar * hv = 
 	new(bindWA.wHeap()) 
 	HostVar(hvName, 
-		new(bindWA.wHeap()) SQLChar(CACHED_MAX_ANSI_NAME_EXTERNAL_LEN));
+		new(bindWA.wHeap()) SQLChar(bindWA.wHeap(), CACHED_MAX_ANSI_NAME_EXTERNAL_LEN));
       hv->setPrototypeValue(origName.getQualifiedNameAsString());
       hv->synthTypeAndValueId();
       hv->setIsCachedParam(TRUE);
@@ -265,7 +265,7 @@ RelExpr* Scan::normalizeForCache(CacheWA& cwa, BindWA& bindWA)
 	new(bindWA.wHeap()) char[CACHED_MAX_ANSI_NAME_EXTERNAL_LEN];
       strcpy(strval, origName.getQualifiedNameAsString().data());
       CharType * typ = 
-	new(bindWA.wHeap()) SQLChar(CACHED_MAX_ANSI_NAME_EXTERNAL_LEN, FALSE);
+	new(bindWA.wHeap()) SQLChar(bindWA.wHeap(), CACHED_MAX_ANSI_NAME_EXTERNAL_LEN, FALSE);
       ConstValue * cv = 
 	new(bindWA.wHeap()) ConstValue(typ, strval, CACHED_MAX_ANSI_NAME_EXTERNAL_LEN);
 
