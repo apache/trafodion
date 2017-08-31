@@ -6461,7 +6461,24 @@ odbc_SQLSrvr_ExtractLob_sme_(
 
     memset(lobDataValue, 0, lobDataLen + 1);
 
+    if (QryLobExtractSrvrStmt != NULL) {
+        QryLobExtractSrvrStmt->Close(SQL_CLOSE);
+    }
     memset(LobExtractQuery, 0, sizeof(LobExtractQuery));
+
+    if ((QryLobExtractSrvrStmt = getSrvrStmt("MXOSRVR_EXTRACRTLOB", TRUE)) == NULL)
+    {
+        SendEventMsg(MSG_MEMORY_ALLOCATION_ERROR,
+                     EVENTLOG_ERROR_TYPE,
+                     srvrGlobal->nskProcessInfo.processId,
+                     ODBCMX_SERVER,
+                     srvrGlobal->srvrObjRef,
+                     2,
+                     "EXTRACT LOB APIs",
+                     "Allocate Statement");
+        exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
+        exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_UNABLE_TO_ALLOCATE_SQL_STMT;
+    }
 
     snprintf(LobExtractQuery, sizeof(LobExtractQuery), "EXTRACT LOBTOBUFFER(LOB'%s', LOCATION %Ld, SIZE %Ld)", lobHandle, (Int64)lobDataValue, &lobDataLen);
 
@@ -6508,6 +6525,10 @@ odbc_SQLSrvr_ExtractLob_sme_(
             lobDataLen = 0;
             delete [] lobDataValue;
             lobDataValue = NULL;
+        }
+
+        if (QryLobExtractSrvrStmt != NULL) {
+            QryLobExtractSrvrStmt->Close(SQL_CLOSE);
         }
     }
 }
@@ -6589,6 +6610,10 @@ odbc_SQLSrvr_UpdateLob_sme_(
 
         exception_->exception_nr = odbc_SQLSvc_UpdateLob_ParamError_exn_;
         exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECUTE_FAILED;
+    }
+
+    if (QryLobUpdateSrvrStmt != NULL) {
+        QryLobUpdateSrvrStmt->Close(SQL_CLOSE);
     }
 
 }
