@@ -11692,8 +11692,13 @@ short CmpSeabaseDDL::genHbaseRegionDescs(TrafDesc * desc,
   if (ehi == NULL) 
     return -1;
   
-  const NAString extNameForHbase = genHBaseObjName
-    (catName, schName, objName);
+  NAString extNameForHbase;
+  if ((catName != HBASE_SYSTEM_CATALOG) ||
+      ((schName != HBASE_ROW_SCHEMA) && (schName != HBASE_CELL_SCHEMA)))
+    extNameForHbase = genHBaseObjName(catName, schName, objName);
+  else
+    // for HBASE._ROW_.objName or HBASE._CELL_.objName, just pass objName
+    extNameForHbase = objName;
 
   NAArray<HbaseStr>* endKeyArray  = 
     ehi->getRegionEndKeys(extNameForHbase);
