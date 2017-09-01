@@ -28,6 +28,11 @@
 --
 -- @@@ END COPYRIGHT @@@
 
+-- an existing bug causes process loop when infer_charset is ON
+-- and query invalidation needs to remove entries from query cache.
+-- Until this bug is fixed, turn query_cache OFF.
+cqd query_cache '0';
+
 obey TEST014(clnup);
 
 log LOG014 clear;
