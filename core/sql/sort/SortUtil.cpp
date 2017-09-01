@@ -924,7 +924,7 @@ NABoolean SortUtil::consumeMemoryQuota(UInt32 bufferSizeBytes)
           config_->callingTcb_->getGlobals()->castToExExeStmtGlobals();
     
     //Check if memory quota is available.
-    if(exe_glob->unusedMemoryQuota() < memNeededMB)
+    if(GetCliGlobals()->unusedMemoryQuota() < memNeededMB)
     {
       return FALSE;
     }
@@ -934,7 +934,7 @@ NABoolean SortUtil::consumeMemoryQuota(UInt32 bufferSizeBytes)
     config_->memoryQuotaMB_ += (short)memNeededMB;
     if(this->withinMemoryLimitsAndPressure(bufferSizeBytes))
     {
-      if(exe_glob->grabMemoryQuotaIfAvailable(memNeededMB))
+      if(GetCliGlobals()->grabMemoryQuotaIfAvailable(memNeededMB))
       {
         config_->memoryQuotaUsedBytes_ += bufferSizeBytes;
         return TRUE;
@@ -1013,7 +1013,7 @@ void SortUtil::returnExcessMemoryQuota(UInt32 overheadPerRecord)
     ExExeStmtGlobals* exe_glob = 
         config_->callingTcb_->getGlobals()->castToExExeStmtGlobals();
     
-    exe_glob->yieldMemoryQuota((UInt32) excessMemoryQuotaMB);
+    GetCliGlobals()->yieldMemoryQuota((UInt32) excessMemoryQuotaMB);
     config_->memoryQuotaMB_ -= (short)excessMemoryQuotaMB;
   }      
 }    
@@ -1030,7 +1030,7 @@ UInt32 SortUtil::getMaxAvailableQuotaMB(void)
    UInt32 maxAvailableQuotaMB =
             config_->memoryQuotaMB_ -
             (config_->memoryQuotaUsedBytes_/ONE_MB) +
-            exe_glob->unusedMemoryQuota();
+            GetCliGlobals()->unusedMemoryQuota();
                    
    return (maxAvailableQuotaMB);
 }

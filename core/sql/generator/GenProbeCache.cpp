@@ -450,7 +450,7 @@ short ProbeCache::codeGen(Generator *generator)
   return 0;
 }
 
-CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
 {
   const Lng32 probeSize = 
       getGroupAttr()->getCharacteristicInputs().getRowLength();
@@ -470,18 +470,25 @@ CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
   }
   const double outputBufferSize = resultSize * numBufferPoolEntries;  // in bytes
 
-  // totalMemory is perCPU at this point of time.
+  // totalMemory is perNode at this point of time.
   double totalMemory = cacheSize + outputBufferSize;
 
-  if ( perCPU == FALSE ) {
-     const PhysicalProperty* const phyProp = getPhysicalProperty();
-
-     if (phyProp != NULL)
-     {
-       PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-       totalMemory *= partFunc->getCountOfPartitions();
-     }
+  Lng32 numOfStreams = 1;
+  const PhysicalProperty* const phyProp = getPhysicalProperty();
+  if (phyProp)
+  {
+     PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
+     numOfStreams = partFunc->getCountOfPartitions();
+     if (numOfStreams <= 0)
+        numOfStreams = 1;
+     totalMemory *= numOfStreams;
   }
+  if (numStreams != NULL)
+     *numStreams = numOfStreams;
+  if ( perNode == TRUE ) 
+     totalMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
+  else
+     totalMemory /= numOfStreams;
 
   double  memoryLimitPerCpu =
       ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_PROBE_CACHE_IN_MB) * 1024 * 1024;
@@ -494,6 +501,9 @@ double ProbeCache::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
 {
   // tdb is ignored for ProbeCache because this operator
   // does not participate in the BMO quota system.
-   return getEstimatedRunTimeMemoryUsage(FALSE).value();
+  Lng32 numOfStreams = 1;
+  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
+  totalMemory = totalMemory * numOfStreams ;
+  return totalMemory.value();
 }
 

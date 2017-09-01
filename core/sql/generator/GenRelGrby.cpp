@@ -1474,6 +1474,7 @@ short HashGroupBy::codeGen(Generator * generator) {
   hashGrbyTdb->setScratchIOVectorSize((Int16)getDefault(SCRATCH_IO_VECTOR_SIZE_HASH));
 
   double memQuota = 0;
+  Lng32 numStreams;
 
   if(isPartialGroupBy) {
     // The Quota system does not apply to Partial GroupBy
@@ -1504,25 +1505,30 @@ short HashGroupBy::codeGen(Generator * generator) {
       // Apply quota system if either one the following two is true:
       //   1. the memory limit feature is turned off and more than one BMOs
       //   2. the memory limit feature is turned on
-      NABoolean mlimitPerCPU = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0;
+      NABoolean mlimitPerCPU = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
 
       if ( mlimitPerCPU || numBMOsInFrag > 1 ||
            (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
+        double bmoMemoryUsage = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
         memQuota =
            computeMemoryQuota(generator->getEspLevel() == 0,
                               mlimitPerCPU,
                               generator->getBMOsMemoryLimitPerCPU().value(),
-                              generator->getTotalNumBMOsPerCPU(),
+                              //generator->getTotalNumBMOsPerCPU(),
+                              generator->getTotalNumBMOs(),
                               generator->getTotalBMOsMemoryPerCPU().value(),
                               numBMOsInFrag, 
-                              generator->getFragmentDir()->getBMOsMemoryUsage()
+                              bmoMemoryUsage,
+                              numStreams
                              );
 
-        Lng32 hjGyMemoryLowbound = 
-            defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY);
+        Lng32 hjGyMemoryLowbound = defs.getAsLong(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY);
+        Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
 
         if ( memQuota < hjGyMemoryLowbound )
            memQuota = hjGyMemoryLowbound;
+        else if (memQuota >  memoryUpperbound)
+           memQuota = memoryUpperbound;
 
         hashGrbyTdb->setMemoryQuotaMB( UInt16(memQuota) );
       }
@@ -1626,7 +1632,7 @@ ExpTupleDesc::TupleDataFormat HashGroupBy::determineInternalFormat( const ValueI
 
 }
 
-CostScalar HashGroupBy::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar HashGroupBy::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
 {
   GroupAttributes * childGroupAttr = child(0).getGroupAttr();
   const CostScalar childRecordSize = childGroupAttr->getCharacteristicOutputs().getRowLength();
@@ -1642,52 +1648,29 @@ CostScalar HashGroupBy::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
   CostScalar totalHashTableMemory = 
     childRowCount * (childRecordSize + memOverheadPerRecord);
 
-  if ( perCPU == TRUE ) {
-     const PhysicalProperty* const phyProp = getPhysicalProperty();
-     if (phyProp)
-     {
-       PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-
-      // totalHashTableMemory is per CPU at this point of time.
-       totalHashTableMemory /= partFunc->getCountOfPartitions();
-     }
+  Lng32 numOfStreams = 1;
+  const PhysicalProperty* const phyProp = getPhysicalProperty();
+  if (phyProp)
+  {
+     PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
+     numOfStreams = partFunc->getCountOfPartitions();
+     if (numOfStreams <= 0)
+        numOfStreams = 1;
   }
+  if (numStreams != NULL)
+     *numStreams = numOfStreams;
+  if ( perNode == TRUE ) 
+     totalHashTableMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
+  else 
+     totalHashTableMemory /= numOfStreams;
   return totalHashTableMemory;
 }
 
 double HashGroupBy::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
 {
-  CostScalar totalHashTableMemory = getEstimatedRunTimeMemoryUsage(FALSE);
-
-  double memoryLimitPerCpu;
-  ULng32 memoryQuotaInMB = ((ComTdbHashGrby *)tdb)->memoryQuotaMB();
-  if (memoryQuotaInMB)
-    memoryLimitPerCpu = memoryQuotaInMB * 1024 * 1024 ;
-  else if ( isNotAPartialGroupBy() == FALSE)
-  {
-    memoryLimitPerCpu = 
-      ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_PARTIALHGB_IN_MB) * 1024 * 1024;
-  }
-  else
-  {
-    memoryLimitPerCpu = 
-        ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_AVAILABLE_IN_MB) * 1024 * 1024 ;
-  }
-
-  const PhysicalProperty* const phyProp = getPhysicalProperty();
   Lng32 numOfStreams = 1;
-  if (phyProp)
-  {
-    PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-    numOfStreams = partFunc->getCountOfPartitions();
-  }
-
-  CostScalar memoryPerCpu = totalHashTableMemory/numOfStreams ;
-  if ( memoryPerCpu > memoryLimitPerCpu ) 
-  {
-      memoryPerCpu = memoryLimitPerCpu;
-  }
-  totalHashTableMemory = memoryPerCpu * numOfStreams ;
+  CostScalar totalHashTableMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
+  totalHashTableMemory *= numOfStreams ;
   return totalHashTableMemory.value();
 }
 

@@ -363,11 +363,14 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
         sortType_.useIterQSForRunGeneration_ = 1;
         break;
   }   
+
+  sortHeap_ = new(getHeap()) NAHeap("Sort Heap", (NAHeap *)getHeap(), 204800);
   
   sortUtil_ = new(sortHeap_) SortUtil(sort_tdb.getExplainNodeId());
 
   sortDiag_ = NULL;
 
+  sortCfg_ = new(sortHeap_) SortUtilConfig(sortHeap_);
   sortCfg_ = new(sortHeap_) SortUtilConfig(sortHeap_);
 
   sortCfg_->setSortType(sortType_);

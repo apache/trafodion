@@ -1194,6 +1194,8 @@ public:
     bmoHeapAlloc_ = (Int32)(heap->getTotalSize() >> 10);
     bmoHeapUsage_ = (Int32)(heap->getAllocSize() >> 10);
     bmoHeapWM_ = (Int32)(heap->getHighWaterMark() >> 10);
+    if (bmoHeapAlloc_ > bmoHeapWM_)
+       bmoHeapWM_ = bmoHeapAlloc_;
   }
   inline void setScratchOverflowMode(Int16 overflowMode)
   {

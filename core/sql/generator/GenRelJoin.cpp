@@ -1784,7 +1784,7 @@ short HashJoin::codeGen(Generator * generator) {
   UInt16 numBMOsInFrag = (UInt16)generator->getFragmentDir()->getNumBMOs();
         
   double memQuota = 0;
-
+  Lng32 numStreams;
   if (mmu != 0) {
     memQuota = mmu;
     hashj_tdb->setMemoryQuotaMB(mmu);
@@ -1792,25 +1792,29 @@ short HashJoin::codeGen(Generator * generator) {
     // Apply quota system if either one the following two is true:
     //   1. the memory limit feature is turned off and more than one BMOs 
     //   2. the memory limit feature is turned on
-    NABoolean mlimitPerCPU = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0;
-
+    NABoolean mlimitPerCPU = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
+    
     if ( mlimitPerCPU || numBMOsInFrag > 1 ||
          (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
-
+        double bmoMemoryUsage = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
         memQuota = 
            computeMemoryQuota(generator->getEspLevel() == 0,
                               mlimitPerCPU,
                               generator->getBMOsMemoryLimitPerCPU().value(),
-                              generator->getTotalNumBMOsPerCPU(),
+                              generator->getTotalNumBMOs(),
                               generator->getTotalBMOsMemoryPerCPU().value(),
                               numBMOsInFrag, 
-                              generator->getFragmentDir()->getBMOsMemoryUsage()
+                              bmoMemoryUsage,
+                              numStreams
                              );
                                   
-        Lng32 hjMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN);
+        Lng32 hjMemoryLowbound = defs.getAsLong(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN);
+        Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
 
         if ( memQuota < hjMemoryLowbound )
            memQuota = hjMemoryLowbound;
+        else if (memQuota >  memoryUpperbound)
+           memQuota = memoryUpperbound;
            
         hashj_tdb->setMemoryQuotaMB( UInt16(memQuota) );
     }
@@ -1825,10 +1829,6 @@ short HashJoin::codeGen(Generator * generator) {
 
   double hjMemEst = getEstimatedRunTimeMemoryUsage(hashj_tdb);
   generator->addToTotalEstimatedMemory(hjMemEst);
-
-  generator->addToTotalOverflowMemory(
-                      getEstimatedRunTimeOverflowSize(memQuota)
-                                     );
 
   if ( generator->getRightSideOfFlow() )
     hashj_tdb->setPossibleMultipleCalls(TRUE);
@@ -2064,7 +2064,7 @@ ExpTupleDesc::TupleDataFormat HashJoin::determineInternalFormat( const ValueIdLi
 }
 
 
-CostScalar HashJoin::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar HashJoin::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
 {
   GroupAttributes * childGroupAttr = child(1).getGroupAttr();
   const CostScalar childRecordSize = childGroupAttr->getCharacteristicOutputs().getRowLength();
@@ -2087,47 +2087,25 @@ CostScalar HashJoin::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
   {
     partFunc = phyProp -> getPartitioningFunction() ;
     numOfStreams = partFunc->getCountOfPartitions();
+    if (numOfStreams <= 0)
+       numOfStreams = 1;
     if ( partFunc -> isAReplicationPartitioningFunction() == TRUE ) 
-    {
       totalHashTableMemory *= numOfStreams;
-    }
   }
-
-  if ( perCPU == TRUE ) {
+  if (numStreams != NULL)
+     *numStreams = numOfStreams;
+  if ( perNode == TRUE ) 
+     totalHashTableMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
+  else
      totalHashTableMemory /= numOfStreams;
-  }
-
   return totalHashTableMemory;
 }
 
 double HashJoin::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
 {
-  CostScalar totalHashTableMemory = getEstimatedRunTimeMemoryUsage(FALSE);
-
-  double memoryLimitPerCpu;
-  ULng32 memoryQuotaInMB = ((ComTdbHashj *)tdb)->memoryQuotaMB();
-  if (memoryQuotaInMB)
-    memoryLimitPerCpu = memoryQuotaInMB * 1024 * 1024 ;
-  else
-  {
-    memoryLimitPerCpu = 
-        ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_AVAILABLE_IN_MB) * 1024 * 1024 ;
-  }
-
   Lng32 numOfStreams = 1;
-  const PhysicalProperty* const phyProp = getPhysicalProperty() ;
-  if (phyProp)
-  {
-    PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-    numOfStreams = partFunc->getCountOfPartitions();
-  }
-
- CostScalar memoryPerCpu = totalHashTableMemory/numOfStreams ;
-  if ( memoryPerCpu > memoryLimitPerCpu ) 
-  {
-      memoryPerCpu = memoryLimitPerCpu;
-  }
-  totalHashTableMemory = memoryPerCpu * numOfStreams ;
+  CostScalar totalHashTableMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
+  totalHashTableMemory *= numOfStreams ;
   return totalHashTableMemory.value();
 }
 
@@ -3097,6 +3075,7 @@ short MergeJoin::codeGen(Generator * generator)
 
   double BMOsMemoryLimit = 0;
   UInt16 quotaMB = 0;
+  Lng32 numStreams;
 
   if ( CmpCommon::getDefaultLong(MJ_BMO_QUOTA_PERCENT) != 0) 
   {
@@ -3104,28 +3083,34 @@ short MergeJoin::codeGen(Generator * generator)
     //   1. the memory limit feature is turned off and more than one BMOs
     //   2. the memory limit feature is turned on
     NADefaults &defs = ActiveSchemaDB()->getDefaults();
-    NABoolean mlimitPerCPU = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0;
+    NABoolean mlimitPerCPU = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
   
     if ( mlimitPerCPU || numBMOsInFrag > 1 ||
          (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
   
+      double bmoMemoryUsage = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
       quotaMB = (UInt16)
           computeMemoryQuota(generator->getEspLevel() == 0,
                              mlimitPerCPU,
                              generator->getBMOsMemoryLimitPerCPU().value(),
-                             generator->getTotalNumBMOsPerCPU(),
+                             // generator->getTotalNumBMOsPerCPU(),
+                             generator->getTotalNumBMOs(),
                              generator->getTotalBMOsMemoryPerCPU().value(),
                              numBMOsInFrag, 
-                             generator->getFragmentDir()->getBMOsMemoryUsage()
+                             bmoMemoryUsage,
+                             numStreams
                              );
 
        Lng32 mjMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN);
+       Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
 
        if ( quotaMB < mjMemoryLowbound )
            quotaMB = (UInt16)mjMemoryLowbound;
+        else if (quotaMB >  memoryUpperbound)
+           quotaMB = memoryUpperbound;
     }
   } else {
-    Lng32 memoryMB = getExeMemoryAvailable(generator->getEspLevel() == 0, 0);
+    Lng32 memoryMB = getExeMemoryAvailable(generator->getEspLevel() == 0);
     quotaMB =  (UInt16)( (numBMOsInFrag > 1) ? (memoryMB/numBMOsInFrag) : 0 ) ;
   }
 

@@ -736,7 +736,7 @@ ExWorkProcRetcode ex_split_bottom_tcb::work()
             
             setWorkState(WORK_ON_REQUEST);
             glob_->clearAllActivatedSendTopTcbs();
-            glob_->resetMemoryQuota();
+            GetCliGlobals()->resetMemoryQuota();
             glob_->incExecutionCount();
 
           } // if (okToPush)

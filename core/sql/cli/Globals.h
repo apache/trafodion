@@ -431,10 +431,13 @@ inline
   LmLanguageManagerC * getLanguageManagerC();
   LmLanguageManagerJava * getLanguageManagerJava();
 
-
 #ifdef _DEBUG
   void deleteContexts();
 #endif  // _DEBUG
+  NABoolean grabMemoryQuotaIfAvailable(ULng32 size);
+  void resetMemoryQuota();
+  ULng32 unusedMemoryQuota();
+  void yieldMemoryQuota(ULng32 size);
 
 private:
   enum {
@@ -622,6 +625,7 @@ private:
   // for trusted UDR invocations from executor and compiler
   LmLanguageManagerC *langManC_;
   LmLanguageManagerJava *langManJava_;
+  NABoolean espProcess_;
 };
 #pragma warn(1506)   // warning elimination
 

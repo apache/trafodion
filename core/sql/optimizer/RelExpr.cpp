@@ -1988,41 +1988,32 @@ NABoolean RelExpr::containsNode(OperatorTypeEnum nodeType)
 }
 
 double RelExpr::computeMemoryQuota(NABoolean inMaster,
-                                   NABoolean perCPU,
-                                   double BMOsMemoryLimit, // in bytes 
-                                   UInt16 totalNumBMOs, // per CPU
-                                   double totalBMOsMemoryUsage, // per CPU, in bytes 
+                                   NABoolean perNode,
+                                   double BMOsMemoryLimit, // in MB 
+                                   UInt16 totalNumBMOs, // per query 
+                                   double totalBMOsMemoryUsage, // for all BMOs per node in bytes 
                                    UInt16 numBMOsPerFragment, // per fragment
-                                   double BMOsMemoryUsagePerFragment // per fragment, in bytes
+                                   double bmoMemoryUsage, // for the current BMO/Operator per node in bytes
+                                   Lng32 numStreams
                                    ) 
 {
-   if ( perCPU == TRUE ) {
+   if ( perNode == TRUE ) {
      Lng32 exeMem = Lng32(BMOsMemoryLimit/(1024*1024));
 
-     if ( inMaster && CmpCommon::getDefault(ODBC_PROCESS) == DF_ON ) {
-        
-        // Limiting the total memory in the master process when in both
-        // the per-CPU estimation and the ODBC mode.
-
-        NADefaults &defs = ActiveSchemaDB()->getDefaults();
-
-        Lng32 inCpuLimitDelta = 
-                    defs.getAsLong(EXE_MEMORY_AVAILABLE_IN_MB)
-                       -
-                    defs.getAsLong(EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB);
-
-        if ( inCpuLimitDelta < 0 )
-          inCpuLimitDelta = 50;
-
-        if (exeMem > inCpuLimitDelta)
-           exeMem = inCpuLimitDelta;
+     // the quota is allocated in proportion of the given BMO operator
+     // estimated memory usage to the total estimated memory usage of all BMOs
+     // The ratio can be capped by the CQD
+     double bmoMemoryRatio = bmoMemoryUsage / totalBMOsMemoryUsage;
+     double capMemoryRatio = 1; 
+     if (totalNumBMOs > 1) {
+        capMemoryRatio = ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_ESTIMATE_RATIO_CAP);
+        if (capMemoryRatio > 0 && capMemoryRatio <=1 && bmoMemoryRatio > capMemoryRatio)
+            bmoMemoryRatio = capMemoryRatio;
      }
-
-     // the quota is propotional to both the # of BMOs and the estimated memory 
-     // usage in the fragment, and evenly distrbuted among BMOs in the fragment.
-     return ((exeMem/2) * (BMOsMemoryUsagePerFragment/totalBMOsMemoryUsage + 
-                        double(numBMOsPerFragment)/totalNumBMOs)
-            ) / numBMOsPerFragment;
+     double bmoMemoryQuotaPerNode = exeMem * bmoMemoryRatio;
+     double numInstancesPerNode = numStreams / MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numStreams);
+     double bmoMemoryQuotaPerInstance =  bmoMemoryQuotaPerNode / numInstancesPerNode;
+     return bmoMemoryQuotaPerInstance;
   } else {
      // the old way to compute quota 
      Lng32 exeMem = getExeMemoryAvailable(inMaster);
@@ -2030,35 +2021,11 @@ double RelExpr::computeMemoryQuota(NABoolean inMaster,
   }
 }
 
-Lng32 RelExpr::getExeMemoryAvailable(NABoolean inMaster, 
-                                    Lng32 BMOsMemoryLimit) const
-{
-  Lng32 exeMemAvailMB = BMOsMemoryLimit;
-
-  if ((CmpCommon::getDefault(ODBC_PROCESS) == DF_ON) &&
-       inMaster  &&
-      (exeMemAvailMB != 0))  // if the cqd is zero, then we do not do BMO quota
-  {
-    // Adjustment because MXOSRVR has QIO segments in competition with 
-    // executor.
-    exeMemAvailMB -= 
-      ActiveSchemaDB()->getDefaults().getAsLong(
-                            EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB);
-
-    if (exeMemAvailMB < 50)
-      exeMemAvailMB = 50;
-  }
-
-  return exeMemAvailMB;
-}  // RelExpr::getExeMemoryAvailable() 
-
-
 Lng32 RelExpr::getExeMemoryAvailable(NABoolean inMaster) const
 {
    Lng32 exeMemAvailMB = 
       ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_AVAILABLE_IN_MB);
-
-   return getExeMemoryAvailable(inMaster, exeMemAvailMB);
+   return exeMemAvailMB;
 }
 
 // -----------------------------------------------------------------------

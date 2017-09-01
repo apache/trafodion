@@ -124,18 +124,18 @@
 +>  , SS_NET_PROFIT     
 +>from hive.hive.store_sales where ss_sold_date_sk is not null;
 Task:  LOAD            Status: Started    Object: TRAFODION.SCH.T140C
-Task:  CLEANUP         Status: Started    Time: 2017-07-12 21:31:50.149
-Task:  CLEANUP         Status: Ended      Time: 2017-07-12 21:31:50.167
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.019
-Task:  LOADING DATA    Status: Started    Time: 2017-07-12 21:31:50.167
+Task:  CLEANUP         Status: Started    Time: 2017-03-15 05:17:16.759
+Task:  CLEANUP         Status: Ended      Time: 2017-03-15 05:17:16.781
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.022
+Task:  LOADING DATA    Status: Started    Time: 2017-03-15 05:17:16.781
        Rows Processed: 2750311 
        Error Rows:     0 
-Task:  LOADING DATA    Status: Ended      Time: 2017-07-12 21:32:23.296
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:33.128
-Task:  COMPLETION      Status: Started    Time: 2017-07-12 21:32:23.296
+Task:  LOADING DATA    Status: Ended      Time: 2017-03-15 05:18:33.540
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:01:16.759
+Task:  COMPLETION      Status: Started    Time: 2017-03-15 05:18:33.540
        Rows Loaded:    2750311 
-Task:  COMPLETION      Status: Ended      Time: 2017-07-12 21:32:24.240
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.728
+Task:  COMPLETION      Status: Ended      Time: 2017-03-15 05:18:34.657
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.117
 
 --- 2750311 row(s) loaded.
 >>update statistics for table t140c on every column sample;
@@ -155,12 +155,14 @@ Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.728
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315173074373
 STATEMENT ................ select a from t140 where b>500;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -179,6 +181,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6364273405987054695
   select_list ............ TRAFODION.SCH.T140.A
 
 
@@ -217,12 +220,14 @@ A
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315173447116
 STATEMENT ................ select an from t140b where b<=200;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -241,6 +246,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6364273405987055175
   select_list ............ TRAFODION.SCH.T140B.AN
 
 
@@ -266,12 +272,14 @@ DESCRIPTION
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315173646450
 STATEMENT ................ select an from t140 where b<=200;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -290,6 +298,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6364273405987054695
   select_list ............ TRAFODION.SCH.T140.AN
 
 
@@ -326,12 +335,14 @@ AN
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315173857360
 STATEMENT ................ select an from t140 where b=200 and an is not null;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -350,6 +361,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6364273405987054695
   select_list ............ TRAFODION.SCH.T140.AN
   input_variables ........ %(200)
 
@@ -384,12 +396,14 @@ AN
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315174057982
 STATEMENT ................ select an, a from t140 where b!=500;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -408,6 +422,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6364273405987054695
   select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
 
 
@@ -478,12 +493,14 @@ AN
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315174338478
 STATEMENT ................ select an from t140 where bn=201 and an is not null;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -502,6 +519,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6364273405987054695
   select_list ............ TRAFODION.SCH.T140.AN
   input_variables ........ %(201)
 
@@ -535,12 +553,14 @@ AN
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315174528713
 STATEMENT ................ select an, a from t140 where bn!=501;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -559,6 +579,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6364273405987054695
   select_list ............ TRAFODION.SCH.T140.AN, TRAFODION.SCH.T140.A
 
 
@@ -644,12 +665,14 @@ A
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315174798695
 STATEMENT ................ select an from t140 where an between 20 and 40;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -668,6 +691,7 @@ DESCRIPTION
   SCHEMA ................. TRAFODION.SCH
   TRAF_ALIGNED_ROW_FORMAT  OFF
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6364273405987054695
   select_list ............ TRAFODION.SCH.T140.AN
 
 
@@ -725,12 +749,14 @@ AN
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315175120583
 STATEMENT ................ select avg(a) from t140b;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -751,6 +777,7 @@ DESCRIPTION
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  2
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6364273405987055175
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * 10000 ...0)) / cast(count(1 )))) / 10000
                              ...0)))
@@ -796,12 +823,14 @@ DESCRIPTION
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315175459703
 STATEMENT ................ select avg(a) from t140b;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -822,6 +851,7 @@ DESCRIPTION
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  1
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 6364273405987055175
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * 10000 ...0)) / cast(count(1 )))) / 10000
                              ...0)))
@@ -863,12 +893,14 @@ DESCRIPTION
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356315175459703
 STATEMENT ................ select avg(a) from t140b;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 3        ONLY CHILD 2
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -888,6 +920,7 @@ DESCRIPTION
   HBASE_SMALL_SCANNER .... OFF
   PARALLEL_NUM_ESPS ...... 1
   HBASE_DOP_PARALLEL_SCAN  1
+  ObjectUIDs ............. 6364273405987055175
   select_list ............ cast(cast((cast((cast((cast(sum(TRAFODION.SCH.T140B.
                              A)) * 10000 ...0)) / cast(count(1 )))) / 10000
                              ...0)))

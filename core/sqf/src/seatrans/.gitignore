@@ -15,4 +15,6 @@ hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/Trans
 hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/TrxTransactionState.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/client/ClientScanner98.java
 hbase-trx/src/main/java/org/apache/hadoop/hbase/client/TrafParallelClientScanner.java
+hbase-trx/src/main/java/org/apache/hadoop/hbase/coprocessor/transactional/SplitBalanceHelper.java
+hbase-trx/src/main/java/org/apache/hadoop/hbase/regionserver/transactional/TransactionalRegionScannerHolder.java
 

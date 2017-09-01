@@ -2696,9 +2696,6 @@ enum DefaultConstants
   // perform substring transformation (ICBC PoC)
   SUBSTRING_TRANSFORMATION,
 
-  // Memory not available for BMOs in master fragment in mxosrvr
-  // (mostly due to QIO).
-  EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB,
 
   // by default, a primary key or unique constraint must be non-nullable.
   // This default, if set, allows them to be nullable.
@@ -2906,19 +2903,16 @@ enum DefaultConstants
 
 
   // Total mem size (MB) for a query
-  EXE_MEMORY_LIMIT_PER_CPU, 
-
-  // The percent of total nBMO memory in EXE_MEMORY_LIMIT_PER_CPU 
-  EXE_MEMORY_LIMIT_NONBMOS_PERCENT, 
+  BMO_MEMORY_LIMIT_PER_NODE, 
 
   // lower-bound memory limit for BMOs 
-  EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN,
+  BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN,
   EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN,
-  EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY ,
-  EXE_MEMORY_LIMIT_LOWER_BOUND_SORT ,
+  BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY ,
+  BMO_MEMORY_LIMIT_LOWER_BOUND_SORT ,
 
   // lower-bound memory limit for nBMOs 
-  EXE_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE ,
+  BMO_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE ,
   EXE_MEMORY_LIMIT_LOWER_BOUND_PA ,
   EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE ,
   EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE ,
@@ -3905,6 +3899,9 @@ enum DefaultConstants
   // on hive could be created without registering them.
   // This default is for internal testing usage only and not externalized.
   HIVE_NO_REGISTER_OBJECTS,
+ 
+  BMO_MEMORY_LIMIT_UPPER_BOUND,
+  BMO_MEMORY_ESTIMATE_RATIO_CAP,
 
   // if set, cleanse output of explain text by filtering values that
   // may not be deterministic on different systems.

@@ -434,7 +434,7 @@ T009T2
 >>invoke hive.sch_t009.t009t1;
 
 -- Definition of hive table T009T1
--- Definition current  Wed Jul 12 21:39:07 2017
+-- Definition current  Wed Mar 15 05:29:50 2017
 
   (
     A                                INT
@@ -479,6 +479,8 @@ A            B            C            D
           1            9           12         1936
 
 --- 10 row(s) selected.
+-- Definition current  Wed Mar 15 05:30:03 2017
+-- Definition current  Wed Mar 15 05:30:05 2017
 >>
 >>obey TEST009(test_hbase);
 >>select count(*) from hbase."_ROW_"."baseball";
@@ -572,7 +574,7 @@ ROW_ID      COLS
 >>invoke hive.hive.store_sales;
 
 -- Definition of hive table STORE_SALES
--- Definition current  Wed Jul 12 21:39:32 2017
+-- Definition current  Wed Mar 15 05:30:20 2017
 
   (
     SS_SOLD_DATE_SK                  INT
@@ -616,7 +618,7 @@ ROW_ID      COLS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME ............ ###
 STATEMENT_NAME ........... S
-PLAN_ID ................ ###
+PLAN_ID .................. 212356315820604834
 ROWS_OUT ............... ###
 EST_TOTAL_COST ......... ###
 STATEMENT ................ select * from store_sales where ss_item_sk = 1;
@@ -629,14 +631,13 @@ ROWS_OUT ............... ###
 EST_OPER_COST .......... ###
 EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
   statement_index ...... ###
   affinity_value ....... ###
   max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
   xn_autoabort_interval  ###
   auto_query_retry ....... enabled
@@ -672,6 +673,7 @@ DESCRIPTION
   input_variables ........ %(1)
 
 
+  est_memory_per_node .... 29.297 KB
 HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.STORE_SALES
 REQUESTS_IN ............ ###
@@ -744,6 +746,8 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... S
+PLAN_ID .................. 212356315822978424
+EST_TOTAL_COST ...... 28,735.03
 STATEMENT ................ select *
                            from customer, store_sales
                            where store_sales.ss_item_sk =
@@ -753,7 +757,9 @@ MUST_MATCH ............... forced nested join(forced scan, forced scan)
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 4        ONLY CHILD 3
+EST_TOTAL_COST ...... 28,735.03
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -808,6 +814,7 @@ DESCRIPTION
 
 
 NESTED_JOIN ===============================  SEQ_NO 3        CHILDREN 1, 2
+EST_TOTAL_COST ...... 28,735.03
 DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -818,6 +825,8 @@ DESCRIPTION
 
 HIVE_SCAN =================================  SEQ_NO 2        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.STORE_SALES
+EST_OPER_COST ....... 28,734.5
+EST_TOTAL_COST ...... 28,734.5
 DESCRIPTION
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -917,7 +926,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Wed Jul 12 21:39:40 2017
+-- Definition current  Wed Mar 15 05:30:28 2017
 
   (
     D_DATE_SK                        INT
@@ -1061,7 +1070,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME ............ ###
 STATEMENT_NAME ........... S
-PLAN_ID ................ ###
+PLAN_ID .................. 212356315833683208
 ROWS_OUT ............... ###
 EST_TOTAL_COST ......... ###
 STATEMENT ................ select *
@@ -1076,14 +1085,13 @@ ROWS_OUT ............... ###
 EST_OPER_COST .......... ###
 EST_TOTAL_COST ......... ###
 DESCRIPTION
-  max_card_est ......... ###
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
   statement_index ...... ###
   affinity_value ....... ###
   max_max_cardinality    ###
-  total_overflow_size    ###
   xn_access_mode ......... read_only
   xn_autoabort_interval  ###
   auto_query_retry ....... enabled
@@ -1120,6 +1128,7 @@ DESCRIPTION
   input_variables ........ %(2016-01-27)
 
 
+  est_memory_per_node .... 35.400 KB
 HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.DATE_DIM
 REQUESTS_IN ............ ###
@@ -1152,7 +1161,7 @@ DESCRIPTION
 >>invoke hive.hive.date_dim;
 
 -- Definition of hive table DATE_DIM
--- Definition current  Wed Jul 12 21:39:56 2017
+-- Definition current  Wed Mar 15 05:30:46 2017
 
   (
     D_DATE_SK                        INT
@@ -1295,6 +1304,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... S
+PLAN_ID .................. 212356315851245875
 STATEMENT ................ select *
                            from hive.hive.date_dim
                            where d_date = date '2016-01-27';
@@ -1303,6 +1313,7 @@ STATEMENT ................ select *
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -1340,6 +1351,7 @@ DESCRIPTION
   input_variables ........ %(2016-01-27)
 
 
+  est_memory_per_node .... 35.400 KB
 HIVE_SCAN =================================  SEQ_NO 1        NO CHILDREN
 TABLE_NAME ............... HIVE.HIVE.DATE_DIM
 DESCRIPTION

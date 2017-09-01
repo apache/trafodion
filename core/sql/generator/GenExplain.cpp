@@ -320,10 +320,10 @@ RelExpr::addExplainInfo(ComTdb * tdb,
   NAString fragdescr;
 
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
-  double mlimit = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU);
+  double mlimit = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE);
   double quotaPerBMO = defs.getAsDouble(EXE_MEM_LIMIT_PER_BMO_IN_MB);
 
-  const char * memory_quota_str = "memory_quota_per_esp: %d MB " ;
+  const char * memory_quota_str = "memory_quota_per_instance: %d MB " ;
   if ( generator->getEspLevel() == 0 ) 
     memory_quota_str = "memory_quota: %d MB " ;
 
@@ -333,12 +333,12 @@ RelExpr::addExplainInfo(ComTdb * tdb,
          if ( quotaPerBMO > 0 || mlimit == 0 ) 
             break;
 
-         double BMOsMemoryLimit = 
-              generator->getBMOsMemoryLimitPerCPU().value() / (1024 * 1024);
+         double BMOsMemory = 
+              generator->getTotalBMOsMemoryPerCPU().value() / (1024 * 1024);
          double nBMOsTotalMemory = 
               (generator->getTotalNBMOsMemoryPerCPU()).value() / (1024 * 1024);
-         snprintf(buf, 120, "memory_limit_per_cpu: %.2f(total), %.2f(BMOs), %.2f(nBMOs) ", 
-                                   mlimit, BMOsMemoryLimit, nBMOsTotalMemory); 
+         snprintf(buf, 120, "est_memory_per_node: %.2f(Limit), %.2f(BMOs), %.2f(nBMOs) MB ", 
+                                   mlimit, BMOsMemory, nBMOsTotalMemory); 
          fragdescr += buf;
        } 
        break;
@@ -438,13 +438,13 @@ RelExpr::addExplainInfo(ComTdb * tdb,
       explainTuple->setDescription(rowsetNAR);
     }
 
-
   if ( mlimit > 0 && quotaPerBMO == 0 )
   {
      // Report estimate memory usage per CPU (both BMOs and nBMOs)
 
      NABoolean reportMemoryEst = TRUE;
-     switch (tdb->getNodeType()) {
+     ComTdb::ex_node_type nodeType = tdb->getNodeType();
+     switch (nodeType) {
        case ComTdb::ex_HASH_GRBY:
          reportMemoryEst = ((ComTdbHashGrby*)tdb)->memoryQuotaMB() > 0;
          break;
@@ -454,12 +454,21 @@ RelExpr::addExplainInfo(ComTdb * tdb,
        default:
          break;
      }
-             
      if ( reportMemoryEst == TRUE ) {
-        double memUsage = getEstimatedRunTimeMemoryUsage(TRUE).value()/1024;
-        if ( memUsage > 0 ) {
-          sprintf(buf, "est_memory_per_cpu: %.3f KB ", memUsage);
-          explainTuple->setDescription(buf);
+        if (nodeType == ComTdb::ex_HASH_GRBY || nodeType == ComTdb::ex_HASHJ
+               || nodeType == ComTdb::ex_SORT) {
+           double memUsage = getEstimatedRunTimeMemoryUsage(FALSE).value()/1024;
+           if ( memUsage > 0 ) {
+              sprintf(buf, "est_memory_per_instance: %.3f KB ", memUsage);
+              explainTuple->setDescription(buf);
+           }
+        }
+        else {
+           double memUsage = getEstimatedRunTimeMemoryUsage(TRUE).value()/1024;
+           if ( memUsage > 0 ) {
+              sprintf(buf, "est_memory_per_node: %.3f KB ", memUsage);
+              explainTuple->setDescription(buf);
+           }
         }
      }
   } else {
@@ -1423,7 +1432,7 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   ComTdbRoot *rootTdb = (ComTdbRoot *)tdb;
 
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
-  Lng32 mlimit = defs.getAsLong(EXE_MEMORY_LIMIT_PER_CPU);
+  Lng32 mlimit = defs.getAsLong(BMO_MEMORY_LIMIT_PER_NODE);
 
   if (mlimit == 0 && rootTdb->getQueryCostInfo())
   {

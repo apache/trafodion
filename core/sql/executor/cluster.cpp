@@ -503,7 +503,7 @@ void ClusterDB::yieldAllMemoryQuota()
 {
   if ( memoryQuotaMB_ == 0 || memoryQuotaMB_ <= minMemoryQuotaMB_ ) return; 
 
-  stmtGlobals_->yieldMemoryQuota( memoryQuotaMB_ - minMemoryQuotaMB_ );
+  GetCliGlobals()->yieldMemoryQuota( memoryQuotaMB_ - minMemoryQuotaMB_ );
 
   if ( doLog_ ) { // LOG -- to show that memory was yielded
     char msg[256];
@@ -511,7 +511,7 @@ void ClusterDB::yieldAllMemoryQuota()
 		"YIELDED ALL MEMORY ALLOWED: %u MB (%u). Unused pool %u MB",
 		memoryQuotaMB_-minMemoryQuotaMB_,
                 0, // NA_64BIT, use instance id later
-		stmtGlobals_->unusedMemoryQuota() );
+		GetCliGlobals()->unusedMemoryQuota() );
     // log an EMS event and continue
     SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, explainNodeId_);
   }
@@ -535,7 +535,7 @@ void ClusterDB::YieldQuota(UInt32 memNeeded)
   // if there is no memory to yield - then return 
   if ( memToYieldMB <= 1 ) return; // 1 MB - to avoid thrashing
 
-  stmtGlobals_->yieldMemoryQuota( memToYieldMB );  // Now yield 
+  GetCliGlobals()->yieldMemoryQuota( memToYieldMB );  // Now yield 
 
   if ( doLog_ ) { // LOG -- to show that memory was yielded
     char msg[256], msg1[64];
@@ -547,7 +547,7 @@ void ClusterDB::YieldQuota(UInt32 memNeeded)
 	    hashOperator_ == HASH_GROUP_BY ? "HGB" : 
 	        hashOperator_ == SEQUENCE_OLAP ? "OLAP" : "HJ", 
 	    memToYieldMB, id, msg1, memNeededMB,
-	    stmtGlobals_->unusedMemoryQuota());
+	    GetCliGlobals()->unusedMemoryQuota());
 
     // log an EMS event and continue
     SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, explainNodeId_);
@@ -628,7 +628,7 @@ void ClusterDB::yieldUnusedMemoryQuota(Cluster * theOFList,
   // if there is no memory to yield - then return 
   if ( memToYieldMB <= 1 ) return; // 1 MB - to avoid thrashing
 
-  stmtGlobals_->yieldMemoryQuota( memToYieldMB );  // Now yield 
+  GetCliGlobals()->yieldMemoryQuota( memToYieldMB );  // Now yield 
 
   if ( doLog_ ) { // LOG -- to show that memory was yielded
     char msg[256], msg1[64];
@@ -639,7 +639,7 @@ void ClusterDB::yieldUnusedMemoryQuota(Cluster * theOFList,
 		extraBuffers == 1 ? "HJ" : "HGB", memToYieldMB, 
 		0, // NA_64BIT, use instance id later
                 msg1, memNeededMB,
-		stmtGlobals_->unusedMemoryQuota());
+		GetCliGlobals()->unusedMemoryQuota());
 
     // log an EMS event and continue
     SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, explainNodeId_);
@@ -709,7 +709,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
     }
 
     // Try to increase the memory quota (from the global "pool") to meet need
-    if ( stmtGlobals_->grabMemoryQuotaIfAvailable(memNeededMB) ) {
+    if ( GetCliGlobals()->grabMemoryQuotaIfAvailable(memNeededMB) ) {
 
       memoryQuotaMB_ += memNeededMB ;  // got it
 
@@ -723,7 +723,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
 		    "GRABBED %u MB (%u). Memory used %u, now allowed %u MB, request size %u, unused pool %u",
 		    memNeededMB, 0, // NA_64BIT, use instance id later
                     memoryUsed_, 
-		    memoryQuotaMB_, reqSize,stmtGlobals_->unusedMemoryQuota() );
+		    memoryQuotaMB_, reqSize,GetCliGlobals()->unusedMemoryQuota() );
 	// log an EMS event and continue
 	SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, explainNodeId_);
       }

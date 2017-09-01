@@ -464,6 +464,14 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
 
   DDflte_(BMO_CITIZENSHIP_FACTOR,             "1."),
 
+  DDflte_(BMO_MEMORY_ESTIMATE_RATIO_CAP,             "0.7"),
+  DDui___(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY , "25"),
+  DDui___(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN,     "25"),
+  DDui___(BMO_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE , "25"),
+  DDui___(BMO_MEMORY_LIMIT_LOWER_BOUND_SORT ,        "200"),
+ XDDui___(BMO_MEMORY_LIMIT_PER_NODE,	             "10240"),
+  DDui___(BMO_MEMORY_LIMIT_UPPER_BOUND,              "1200"),
+
   DDui1__(BMO_MEMORY_SIZE,                      "204800"),
   // percentage of physical main memory availabe for BMO.
   // This value is only used by HJ and HGB to come up with
@@ -1335,22 +1343,9 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   // lower-bound memory limit for BMOs/nbmos (in MB)
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE, "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY , "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN, "10"),
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN, "10"),
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_PA , "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE , "10"),
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE , "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_SORT , "10"),
-
-  // total memory limit per CPU per query in MB
-  DDpct1_50(EXE_MEMORY_LIMIT_NONBMOS_PERCENT, "15"),
-  XDDui___(EXE_MEMORY_LIMIT_PER_CPU,	"0"),
-
-
-  // Memory not available for BMOs in master fragment in mxosrvr
-  // (mostly due to QIO).
-  DDui___(EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB,"544"),
 
  // Override the memory quota system; set limit per each and every BMO
  SDDflt__(EXE_MEM_LIMIT_PER_BMO_IN_MB,	        "0"),
@@ -5178,11 +5173,11 @@ NABoolean NADefaults::isReadonlyAttribute(const char* attrName) const
        ( stricmp(attrName, "VALIDATE_VIEWS_AT_OPEN_TIME") == 0 ) ||
        ( stricmp(attrName, "USER_EXPERIENCE_LEVEL") == 0 ) ||
        ( stricmp(attrName, "POS_DISKS_IN_SEGMENT") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN") == 0 ) ||
+       ( stricmp(attrName, "BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_SORT") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE") == 0 ) ||
+       ( stricmp(attrName, "BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY") == 0 ) ||
+       ( stricmp(attrName, "BMO_MEMORY_LIMIT_LOWER_BOUND_SORT") == 0 ) ||
+       ( stricmp(attrName, "BMO_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_PA") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE") == 0 ) ||

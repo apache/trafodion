@@ -772,13 +772,12 @@ RelExpr * PhysSequence::preCodeGen(Generator * generator,
   ///addCheckPartitionChangeExpr(generator->wHeap());
 
   transformOlapFunctions(generator->wHeap());
-
   if ( getUnboundedFollowing() ) {
     // Count this Seq as a BMO and add its needed memory to the total needed
     generator->incrNumBMOs();
     
     if ((ActiveSchemaDB()->getDefaults()).
-	getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
+	getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0)
       generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
   }
   else
@@ -1121,24 +1120,28 @@ PhysSequence::codeGen(Generator *generator)
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
   UInt16 mmu = (UInt16)(defs.getAsDouble(EXE_MEM_LIMIT_PER_BMO_IN_MB));
   UInt16 numBMOsInFrag = (UInt16)generator->getFragmentDir()->getNumBMOs();
+  Lng32 numStreams;
   if (mmu != 0)
     sequenceTdb->setMemoryQuotaMB(mmu);
   else {
     // Apply quota system if either one the following two is true:
     //   1. the memory limit feature is turned off and more than one BMOs 
     //   2. the memory limit feature is turned on
-    NABoolean mlimitPerCPU = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0;
+    NABoolean mlimitPerCPU = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
 
     if ( mlimitPerCPU || numBMOsInFrag > 1 ) {
 
+        double bmoMemoryUsage = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
         double memQuota = 
            computeMemoryQuota(generator->getEspLevel() == 0,
                               mlimitPerCPU,
                               generator->getBMOsMemoryLimitPerCPU().value(),
-                              generator->getTotalNumBMOsPerCPU(),
+                              //generator->getTotalNumBMOsPerCPU(),
+                              generator->getTotalNumBMOs(),
                               generator->getTotalBMOsMemoryPerCPU().value(),
                               numBMOsInFrag, 
-                              generator->getFragmentDir()->getBMOsMemoryUsage()
+                              bmoMemoryUsage,
+                              numStreams
                              );
                                   
         sequenceTdb->setMemoryQuotaMB( UInt16(memQuota) );
@@ -1286,7 +1289,7 @@ void PhysSequence::computeHistoryParams(Lng32 histRecLength,
 }
 
 
-CostScalar PhysSequence::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar PhysSequence::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
 {
   // input param is not used as this operator does not participate in the
   // quota system.
@@ -1303,23 +1306,32 @@ CostScalar PhysSequence::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
   // totalMemory is per CPU at this point of time.
   double totalMemory = historyBufferSizeInBytes;
 
-  if ( perCPU == FALSE ) {
-    const PhysicalProperty* const phyProp = getPhysicalProperty();
-    if (phyProp != NULL)
-    {
-      PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
-
-      // totalMemory is for all CPUs at this point of time.
-      totalMemory *= partFunc->getCountOfPartitions();
-    }
+  const PhysicalProperty* const phyProp = getPhysicalProperty();
+  Lng32 numOfStreams = 1;
+  if (phyProp != NULL)
+  {
+     PartitioningFunction * partFunc = phyProp -> getPartitioningFunction() ;
+     numOfStreams = partFunc->getCountOfPartitions();
+     if (numOfStreams <= 0)
+        numOfStreams = 1;
+     // totalMemory is for all CPUs at this point of time.
+     totalMemory *= numOfStreams;
   }
-
+  if (numStreams != NULL)
+     *numStreams = numOfStreams;
+  if ( perNode == TRUE ) 
+     totalMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
+  else
+     totalMemory /= numOfStreams;
   return totalMemory;
 }
 
 double PhysSequence::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
 {
-   return getEstimatedRunTimeMemoryUsage(FALSE).value();
+  Lng32 numOfStreams = 1;
+  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
+  totalMemory = totalMemory * numOfStreams ;
+  return totalMemory.value();
 }
 
 ExplainTuple*

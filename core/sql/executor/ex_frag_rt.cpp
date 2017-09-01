@@ -245,12 +245,8 @@ void ExRtFragTable::setInactiveState()
 // multi fragment esp - begin
 static NABoolean sv_esp_multi_fragment = TRUE;
 static UInt8 sv_esp_num_fragments = MAX_NUM_FRAGMENTS_PER_ESP;
-static UInt16 sv_esp_multi_fragment_vm = 4000;
-static NABoolean sv_esp_fragment_quotas = TRUE;
 static char *sv_envvar_esp_multi_fragment = 0;
 static char *sv_envvar_esp_num_fragments = 0;
-static char *sv_envvar_esp_multi_fragment_vm = 0;
-static char *sv_envvar_esp_fragment_quotas = 0;
 
 static
 void
@@ -264,18 +260,9 @@ getAssignedEspEnvVar()
 
   sv_envvar_esp_multi_fragment = getenv("ESP_MULTI_FRAGMENTS");
   sv_envvar_esp_num_fragments = getenv("ESP_NUM_FRAGMENTS");
-  sv_envvar_esp_multi_fragment_vm = getenv("ESP_MULTI_FRAGMENT_QUOTA_VM");
-  sv_envvar_esp_fragment_quotas = getenv("ESP_MULTI_FRAGMENT_QUOTAS");
   lv_checked = true;
 
   Int32 lv_i;
-  if (sv_envvar_esp_fragment_quotas) {
-    lv_i = atoi(sv_envvar_esp_fragment_quotas);
-    if (lv_i == 0)
-      sv_esp_fragment_quotas = FALSE;
-    else
-      sv_esp_fragment_quotas = TRUE;
-  }
   if (sv_envvar_esp_multi_fragment) {
     lv_i = atoi(sv_envvar_esp_multi_fragment);
     if (lv_i == 0)
@@ -283,21 +270,13 @@ getAssignedEspEnvVar()
     else
       sv_esp_multi_fragment = TRUE;
   }
-  if (sv_esp_fragment_quotas == TRUE)
-    sv_esp_num_fragments = MAX_NUM_FRAGMENTS_PER_ESP;
+  sv_esp_num_fragments = 6;
   if (sv_envvar_esp_num_fragments) {
     lv_i = atoi(sv_envvar_esp_num_fragments);
     if (lv_i > 0 && lv_i <= MAX_NUM_FRAGMENTS_PER_ESP) {
       sv_esp_num_fragments = (UInt8)lv_i;
     }
   }
-  if (sv_envvar_esp_multi_fragment_vm) {
-    lv_i = atoi(sv_envvar_esp_multi_fragment_vm);
-    if (lv_i >= 1500 && lv_i <=4000) {
-      sv_esp_multi_fragment_vm = (UInt16)lv_i;
-    }
-  }
-
   return;
 }
 // multi fragment esp - end
@@ -342,12 +321,8 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
 
   if (!sv_envvar_esp_multi_fragment)
     sv_esp_multi_fragment = fragDir_->espMultiFragments();
-  if (!sv_envvar_esp_fragment_quotas)
-    sv_esp_fragment_quotas = fragDir_->espFragmentQuotas();
   if (!sv_envvar_esp_num_fragments)
     sv_esp_num_fragments = fragDir_->espNumFragments();
-  if (!sv_envvar_esp_multi_fragment_vm)
-    sv_esp_multi_fragment_vm = fragDir_->espMultiFragmentVm();
 
  // de-coupling ESP with database uid if set
   const char *esp_with_uid = getenv("ESP_WITH_USERID");
@@ -383,12 +358,7 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
 	  AssignEspArrays assignEspArrays((NAHeap *)heap, fragEntry.numEsps_);
 	  Lng32 espLevel = fragDir_->getEspLevel(i);
           NABoolean soloFragment = fragDir_->soloFrag(i);
-          UInt16 fragmentMemoryQuota = fragDir_->getFragmentMemoryQuota(i);
           NABoolean containsBMOs = fragDir_->containsBMOs(i);
-          if (fragmentMemoryQuota == 0 && containsBMOs)
-            fragmentMemoryQuota = sv_esp_multi_fragment_vm - 400;
-          if (sv_esp_fragment_quotas == 0)
-            fragmentMemoryQuota = 0; // sv_esp_num_fragments will apply
 
   	  entryNumber = launchesStarted = 0;
           for (Lng32 e = 0; e < fragEntry.numEsps_ && state_ != ERROR; e++)
@@ -401,7 +371,7 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
 
 	      assignEspArrays.instance_[e]->clusterName_           = nodeMap->getClusterName(e);
 	      assignEspArrays.instance_[e]->cpuNum_                = cpuNum;
-	      assignEspArrays.instance_[e]->memoryQuota_           = fragmentMemoryQuota;
+	      assignEspArrays.instance_[e]->memoryQuota_           = 0;
 	      assignEspArrays.instance_[e]->state_                 = ESP_ASSIGNED;
 	      assignEspArrays.instance_[e]->fragmentHandle_        = NullFragInstanceHandle;
 	      assignEspArrays.instance_[e]->numControlMessages_    = 0;
@@ -497,7 +467,7 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
                 }
 	    }
 	  // for multi fragment esp - begin
-	  if (sv_esp_multi_fragment || sv_esp_fragment_quotas) {
+	  if (sv_esp_multi_fragment) {
 	    alreadyAssignedEsps.clear();
 	  }
 	  // for multi fragment esp - end
@@ -598,7 +568,7 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
           while (glob_->getIpcEnvironment()->getNumOpensInProgress() > 0)
             glob_->getIpcEnvironment()->getAllConnections()->waitOnAll(IpcInfiniteTimeout);
 	  // multi fragment esp - begin
-	  if (sv_esp_multi_fragment  || sv_esp_fragment_quotas)
+	  if (sv_esp_multi_fragment)
           {
 	    alreadyAssignedEsps.clear();
 	  }
@@ -1557,7 +1527,7 @@ void ExRtFragTable::releaseEsps(NABoolean closeAllOpens)
 		// multi fragment esp - begin 
 		if (fragInst->usedEsp_) {
 		  if ((releasedEsps.insert(fragInst->usedEsp_) == FALSE) && 
-		      (sv_esp_multi_fragment || sv_esp_fragment_quotas)) {
+		      (sv_esp_multi_fragment)) {
 		    // decrement the usageCount_ of fragInst->usedEsp_
 		    glob_->getEspManager( )->releaseEsp(fragInst->usedEsp_, glob_->verifyESP(), fragInst->usedEsp_->inUse());
 		  }
@@ -3113,7 +3083,7 @@ ExEspDbEntry *ExEspManager::getEspFromCache(LIST(ExEspDbEntry *) &alreadyAssigne
 
       ExEspDbEntry *e = espList->usedEntry(i);
 
-      if ((e->inUse_) && (e->soloFragment_ || soloFragment || !(sv_esp_multi_fragment || sv_esp_fragment_quotas) || e->statement_ != statement))
+      if ((e->inUse_) && (e->soloFragment_ || soloFragment || !(sv_esp_multi_fragment) || e->statement_ != statement))
 	continue;
 
       // don't reuse a broken ESP
@@ -3197,8 +3167,7 @@ ExEspDbEntry *ExEspManager::getEspFromCache(LIST(ExEspDbEntry *) &alreadyAssigne
 
       // we have found a free esp for reuse
       if ((2 * e->usageCount_ + 1 <= nowaitDepth) &&
-          (e->usageCount_ < sv_esp_num_fragments) &&
-          (e->totalMemoryQuota_ + 100 + memoryQuota < sv_esp_multi_fragment_vm))
+          (e->usageCount_ < sv_esp_num_fragments))
       {
         e->usageCount_++; // multi fragment esp
         e->statement_ = statement;

@@ -70,12 +70,14 @@
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356314945966316
 STATEMENT ................ select * from t1311k where uniq >2 and uniq <5;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -87,6 +89,7 @@ DESCRIPTION
   SCHEMA ................. T131SCH
   HBASE_SMALL_SCANNER .... SYSTEM
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5307053393310817782
   select_list ............ TRAFODION.T131SCH.T1311K.UNIQ,
                              TRAFODION.T131SCH.T1311K.C1000,
                              TRAFODION.T131SCH.T1311K.STR1
@@ -113,12 +116,14 @@ DESCRIPTION
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356314946168645
 STATEMENT ................ select * from t1311k where uniq >2 and uniq <99;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -130,6 +135,7 @@ DESCRIPTION
   SCHEMA ................. T131SCH
   HBASE_SMALL_SCANNER .... SYSTEM
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5307053393310817782
   select_list ............ TRAFODION.T131SCH.T1311K.UNIQ,
                              TRAFODION.T131SCH.T1311K.C1000,
                              TRAFODION.T131SCH.T1311K.STR1
@@ -268,12 +274,14 @@ UNIQ         C1000
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356314946403715
 STATEMENT ................ select * from t1311k where uniq >2 and uniq <30;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -285,6 +293,7 @@ DESCRIPTION
   SCHEMA ................. T131SCH
   HBASE_SMALL_SCANNER .... SYSTEM
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5307053393310817782
   select_list ............ TRAFODION.T131SCH.T1311K.UNIQ,
                              TRAFODION.T131SCH.T1311K.C1000,
                              TRAFODION.T131SCH.T1311K.STR1
@@ -311,12 +320,14 @@ DESCRIPTION
 
 ------------------------------------------------------------------ PLAN SUMMARY
 STATEMENT_NAME ........... NOT NAMED
+PLAN_ID .................. 212356314948478264
 STATEMENT ................ select * from t1311kbis where uniq >2 and uniq <30;
 
 
 ------------------------------------------------------------------ NODE LISTING
 ROOT ======================================  SEQ_NO 2        ONLY CHILD 1
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   fragment_id ............ 0
   parent_frag ............ (none)
   fragment_type .......... master
@@ -328,6 +339,7 @@ DESCRIPTION
   SCHEMA ................. T131SCH
   HBASE_SMALL_SCANNER .... SYSTEM
   GENERATE_EXPLAIN ....... ON
+  ObjectUIDs ............. 5307053393310820283
   select_list ............ TRAFODION.T131SCH.T1311KBIS.UNIQ,
                              TRAFODION.T131SCH.T1311KBIS.C1000,
                              TRAFODION.T131SCH.T1311KBIS.STR1
