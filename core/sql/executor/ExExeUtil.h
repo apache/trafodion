@@ -2931,6 +2931,8 @@ public:
 			 ex_globals * glob = 0);
   
   virtual short work();
+  virtual ~ExExeUtilLobExtractTcb();
+  virtual void freeResources();
   
   ExExeUtilLobExtractTdb & lobTdb() const
   {
@@ -2978,7 +2980,7 @@ public:
   char * lobData2_;
   Int64 lobDataSpecifiedExtractLen_;
   Int64 lobDataLen_;
-  Lng32 remainingBytes_;
+  Int64 remainingBytes_;
   Lng32 currPos_;
   Lng32 numChildRows_;
   Int64 requestTag_;
@@ -3036,7 +3038,8 @@ public:
 			 ex_globals * glob = 0);
   
   virtual short work();
-  
+  virtual ~ExExeUtilLobUpdateTcb();
+  virtual void freeResources();
   ExExeUtilLobUpdateTdb & lobTdb() const
   {
     return (ExExeUtilLobUpdateTdb &) tdb;

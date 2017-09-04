@@ -4298,7 +4298,7 @@ if (handleInStringFormat_)
     {
       exe_util_tdb->setRetrieveLength(TRUE);
     }
-  exe_util_tdb->setTotalBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE));
+  exe_util_tdb->setTotalBufSize(CmpCommon::getDefaultNumeric(LOB_MAX_CHUNK_MEM_SIZE)*1024*1024);
 
   generator->setCriDesc(givenDesc, Generator::DOWN);
   generator->setCriDesc(returnedDesc, Generator::UP);

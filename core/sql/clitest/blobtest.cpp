@@ -92,7 +92,7 @@ Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfL
   while ((retcode != 100) && !(retcode<0))
     {    
       retcode = cliInterface.clearExecFetchClose(NULL,NULL,statusBuf, &statusBufLen);
-      if (!retcode)
+      if (retcode>= 0)
 	{
 	memcpy((char*)&(lobFinalBuf[i]),(char *)lobDataBuf,lobExtractLen);
 	i += lobExtractLen;
@@ -107,6 +107,9 @@ Int32 extractLobToBuffer(CliGlobals *cliglob, char * lobHandle, Int64 &lengthOfL
 
       fclose(lobFileId);
     }
+  str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %Ld, SIZE 0) ", lobHandle, (Int64)lobDataBuf);
+ 
+  cliInterface.clearExecFetchClose(NULL,NULL,statusBuf, &statusBufLen);
   delete  lobFinalBuf;
   delete query;
   delete lobDataBuf;
@@ -142,13 +145,16 @@ Int32 extractLobToFileInChunks(CliGlobals *cliglob,  char * lobHandle, char *fil
   while ((retcode != 100) && !(retcode<0))
     {    
       retcode = cliInterface.clearExecFetchClose(NULL,NULL,statusBuf, &statusBufLen);
-      if (!retcode)
+      if (retcode>= 0)
 	{
 	  byteCount=fwrite(lobDataBuf,sizeof(char),*inputOutputAddr, lobFileId);
 	 cout << "Wrote " << byteCount << " bytes to file : " << filename << endl;
 	}
     }
-  
+  lobExtractLen = 0;
+  str_sprintf(query,"extract lobtobuffer(lob '%s', LOCATION %Ld, SIZE %Ld) ", lobHandle, (Int64)lobDataBuf, inputOutputAddr);
+  retcode = cliInterface.executeImmediatePrepare(query);
+  cliInterface.clearExecFetchClose(NULL,NULL,statusBuf, &statusBufLen);
 
   fclose(lobFileId);
 
