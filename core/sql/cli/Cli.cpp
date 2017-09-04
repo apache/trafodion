@@ -10261,7 +10261,10 @@ Lng32 SQLCLI_LOBcliInterface
   NADELETEBASIC(query, currContext.exHeap());
 
   if (NOT (inCliInterface && (*inCliInterface)))
-    delete cliInterface;
+    {
+      delete cliInterface;
+      cliInterface = NULL;
+    }
 
   if (cliRC < 0)
     {
