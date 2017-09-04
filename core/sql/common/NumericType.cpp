@@ -199,22 +199,20 @@ enum NumericType::NumericTypeEnum
 // The constructor
 // -----------------------------------------------------------------------
 
-NumericType::NumericType( const NAString&  adtName,
+NumericType::NumericType(NAMemory *heap, const NAString&  adtName,
 			 Lng32             dataStorageSize,
 			 Lng32             precision,
 			 Lng32             scale,
 			 Lng32             alignment,
 			 NABoolean        allowNegValues,
 			 NABoolean        allowSQLnull,
-			 NABoolean        varLenFlag,
-			 CollHeap * heap
+			 NABoolean        varLenFlag
 			)
-		  : NAType(adtName, NA_NUMERIC_TYPE, dataStorageSize,
+		  : NAType(heap, adtName, NA_NUMERIC_TYPE, dataStorageSize,
 			   allowSQLnull, SQL_NULL_HDR_SIZE
 			   , varLenFlag
 			   , ( varLenFlag ? SQL_VARCHAR_HDR_SIZE : 0 )
 			   , alignment
-			   , heap
 			   )
 {
   assert (scale <= precision);
@@ -584,11 +582,11 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
 
       switch (size) {
       case SQL_SMALL_SIZE:
-        return new(h) SQLSmall(isSigned, isNullable);
+        return new(h) SQLSmall(h, isSigned, isNullable);
       case SQL_INT_SIZE:
-        return new(h) SQLInt(isSigned, isNullable);
+        return new(h) SQLInt(h, isSigned, isNullable);
       case SQL_LARGE_SIZE:
-        return new(h) SQLLargeInt(isSigned, isNullable);
+        return new(h) SQLLargeInt(h, isSigned, isNullable);
       default:
         return NULL;
       }
@@ -712,18 +710,17 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
     // If the hardware doesn't support a binary numeric of the result's
     // precision, make the result a Big Num.
     //
-    return new(h) SQLBigNum(precision,
+    return new(h) SQLBigNum(h, precision,
 			    scale,
 			    isRealBigNum,
 			    isSigned,
-			    isNullable,
-			    NULL);
+			    isNullable);
   }
   //
   // If the result is DECIMAL, return a DECIMAL.
   //
   if (isDecimal)
-    return new(h) SQLDecimal(precision, scale, isSigned, isNullable);
+    return new(h) SQLDecimal(h, precision, scale, isSigned, isNullable);
   //
   // If the precision is more than 9, it must be signed.
   //
@@ -743,12 +740,12 @@ const NAType* NumericType::synthesizeType(enum NATypeSynthRuleEnum synthRule,
   //
   if (makeLargeint)
     {
-      NumericType * nat = new(h) SQLLargeInt(isSigned, isNullable);
+      NumericType * nat = new(h) SQLLargeInt(h,isSigned, isNullable);
       nat->setScale(scale);
       return nat;
     }
   else
-    return new(h) SQLNumeric(size, precision, scale, isSigned, isNullable);
+    return new(h) SQLNumeric(h, size, precision, scale, isSigned, isNullable);
 }
 
 // -----------------------------------------------------------------------
@@ -847,9 +844,9 @@ NABoolean NumericType::isEncodingNeeded() const
 //  Methods for SQLTiny
 // -----------------------------------------------------------------------
 
-SQLTiny::SQLTiny(NABoolean allowNegValues, NABoolean allowSQLnull,CollHeap * heap)
+SQLTiny::SQLTiny(NAMemory *heap, NABoolean allowNegValues, NABoolean allowSQLnull)
      : NumericType
-       ( LiteralTinyInt
+       ( heap, LiteralTinyInt
          , SQL_TINY_SIZE
          , (allowNegValues ? SQL_SMALL_PRECISION:SQL_USMALL_PRECISION)
          , 0
@@ -857,7 +854,6 @@ SQLTiny::SQLTiny(NABoolean allowNegValues, NABoolean allowSQLnull,CollHeap * hea
          , allowNegValues
          , allowSQLnull
          ,FALSE
-         ,heap
          )
 {
 } // SQLTiny()
@@ -965,9 +961,9 @@ NAString* SQLTiny::convertToString(double v, CollHeap* h) const
 //  Methods for SQLSmall
 // -----------------------------------------------------------------------
 
-SQLSmall::SQLSmall(NABoolean allowNegValues, NABoolean allowSQLnull,CollHeap * heap)
+SQLSmall::SQLSmall(NAMemory *heap, NABoolean allowNegValues, NABoolean allowSQLnull)
         : NumericType
-            ( LiteralSmallInt
+            ( heap, LiteralSmallInt
 	    , SQL_SMALL_SIZE
             , (allowNegValues ? SQL_SMALL_PRECISION:SQL_USMALL_PRECISION)
 	    , 0
@@ -975,7 +971,6 @@ SQLSmall::SQLSmall(NABoolean allowNegValues, NABoolean allowSQLnull,CollHeap * h
 	    , allowNegValues
             , allowSQLnull
 			,FALSE
-			,heap
             )
 {
 } // SQLSmall()
@@ -1084,11 +1079,10 @@ NAString* SQLSmall::convertToString(double v, CollHeap* h) const
 // -----------------------------------------------------------------------
 
 #pragma nowarn(1506)   // warning elimination
-SQLBPInt::SQLBPInt(UInt32 declared,
+SQLBPInt::SQLBPInt(NAMemory *heap, UInt32 declared,
 		   NABoolean allowSQLnull,
-		   NABoolean allowNegValues,
-		   CollHeap * heap)
-      : NumericType (LiteralBPInt	 // ADT Name
+		   NABoolean allowNegValues)
+      : NumericType (heap, LiteralBPInt	 // ADT Name
 		   , SQL_SMALL_SIZE      // StorageSize
 		   , declared	         // Precision
 		   , 0		         // Scale
@@ -1096,7 +1090,6 @@ SQLBPInt::SQLBPInt(UInt32 declared,
 		   , allowNegValues
 		   , allowSQLnull
 		   , FALSE
-		   , heap
 		    )
 {
   assert (declared > 0 && declared < 16); // size between 1 & 15
@@ -1203,9 +1196,9 @@ NAString* SQLBPInt::convertToString(double v, CollHeap* h) const
 //  Methods for SQLInt
 // -----------------------------------------------------------------------
 
-SQLInt::SQLInt(NABoolean allowNegValues, NABoolean allowSQLnull,CollHeap * heap)
+SQLInt::SQLInt(NAMemory *heap, NABoolean allowNegValues, NABoolean allowSQLnull)
       : NumericType
-	  ( LiteralInteger
+	  ( heap, LiteralInteger
 	  , SQL_INT_SIZE
           , (allowNegValues ? SQL_INT_PRECISION:SQL_UINT_PRECISION)
 	  , 0
@@ -1213,7 +1206,6 @@ SQLInt::SQLInt(NABoolean allowNegValues, NABoolean allowSQLnull,CollHeap * heap)
 	  , allowNegValues
           , allowSQLnull
 		  ,FALSE
-		  ,heap
           )
 {
 } // SQLInt()
@@ -1332,10 +1324,9 @@ NAString* SQLInt::convertToString(double v, CollHeap* h) const
 //  Methods for SQLLargeInt
 // -----------------------------------------------------------------------
 
-SQLLargeInt::SQLLargeInt(NABoolean allowNegValues, NABoolean allowSQLnull,
-			 CollHeap * heap)
+SQLLargeInt::SQLLargeInt(NAMemory *heap, NABoolean allowNegValues, NABoolean allowSQLnull)
       : NumericType
-	  ( LiteralLargeInt
+	  ( heap, LiteralLargeInt
 	  , 8/*SQL_L_INT_SIZE */
           , SQL_LARGE_PRECISION
 	  , 0
@@ -1343,17 +1334,15 @@ SQLLargeInt::SQLLargeInt(NABoolean allowNegValues, NABoolean allowSQLnull,
 	  , allowNegValues
           , allowSQLnull
 		  ,FALSE
-		  ,heap
           )
 {
 }   // SQLLargeInt()
 
-SQLLargeInt::SQLLargeInt(Lng32 scale,
+SQLLargeInt::SQLLargeInt(NAMemory *heap, Lng32 scale,
 			 UInt16 disAmbiguate,
-			 NABoolean allowNegValues, NABoolean allowSQLnull,
-			 CollHeap * heap)
+			 NABoolean allowNegValues, NABoolean allowSQLnull)
       : NumericType
-	  ( LiteralLargeInt
+	  ( heap, LiteralLargeInt
 	  , 8/*SQL_L_INT_SIZE */
           , SQL_LARGE_PRECISION
 	  , scale
@@ -1361,7 +1350,6 @@ SQLLargeInt::SQLLargeInt(Lng32 scale,
 	  , allowNegValues
           , allowSQLnull
 		  ,FALSE
-		  ,heap
           )
 {
 }   // SQLLargeInt()
@@ -1479,8 +1467,8 @@ NAString* SQLLargeInt::convertToString(double v, CollHeap* h) const
 //  Methods for SQLBigInt
 // -----------------------------------------------------------------------
 
-SQLBigInt::SQLBigInt(NABoolean allowNegValues, NABoolean allowSQLnull,CollHeap * heap)
-  : SQLLargeInt(allowNegValues, allowSQLnull,heap)
+SQLBigInt::SQLBigInt(NAMemory *heap, NABoolean allowNegValues, NABoolean allowSQLnull)
+  : SQLLargeInt(heap, allowNegValues, allowSQLnull)
 {
   setClientDataType("BIGINT");
 }
@@ -1489,11 +1477,10 @@ SQLBigInt::SQLBigInt(NABoolean allowNegValues, NABoolean allowSQLnull,CollHeap *
 //  Methods for SQLNumeric
 // -----------------------------------------------------------------------
 
-SQLNumeric::SQLNumeric(Lng32 length, Lng32 precision, Lng32 scale,
-		       NABoolean allowNegValues, NABoolean allowSQLnull,
-			   CollHeap * heap)
+SQLNumeric::SQLNumeric(NAMemory *heap, Lng32 length, Lng32 precision, Lng32 scale,
+		       NABoolean allowNegValues, NABoolean allowSQLnull)
 : NumericType
-  ( LiteralNumeric
+  ( heap, LiteralNumeric
    , length
    , precision
    , scale
@@ -1501,7 +1488,6 @@ SQLNumeric::SQLNumeric(Lng32 length, Lng32 precision, Lng32 scale,
    , allowNegValues
    , allowSQLnull
    ,FALSE
-   ,heap
    )
 {
 } // SQLNumeric()
@@ -1509,11 +1495,11 @@ SQLNumeric::SQLNumeric(Lng32 length, Lng32 precision, Lng32 scale,
 
 // Note: DisAmbiguate arg added so Compiler can distinguish between
 //       this constructor and the one above...for 64bit project.
-SQLNumeric::SQLNumeric(NABoolean allowNegValues, Lng32 precision, Lng32 scale,
+SQLNumeric::SQLNumeric(NAMemory *heap, NABoolean allowNegValues, Lng32 precision, Lng32 scale,
                        const Int16 DisAmbiguate,
                        NABoolean allowSQLnull)
 : NumericType
-  ( LiteralNumeric
+  ( heap, LiteralNumeric
    , getBinaryStorageSize(precision)
    , precision
    , scale
@@ -1996,12 +1982,11 @@ double SQLNumeric::getMaxValue() const
 //  Methods for SQLDecimal
 // -----------------------------------------------------------------------
 
-SQLDecimal::SQLDecimal(Lng32 length, Lng32 scale,
+SQLDecimal::SQLDecimal(NAMemory *heap, Lng32 length, Lng32 scale,
 		       NABoolean allowNegValues,
-		       NABoolean allowSQLnull,
-			   CollHeap * heap)
+		       NABoolean allowSQLnull)
 : NumericType
-  ( LiteralDecimal
+  ( heap, LiteralDecimal
    , length
    , length
    , scale
@@ -2009,7 +1994,6 @@ SQLDecimal::SQLDecimal(Lng32 length, Lng32 scale,
    , allowNegValues
    , allowSQLnull
    ,FALSE
-   ,heap
    )
 {
 } // SQLDecimal()
@@ -2185,13 +2169,12 @@ double SQLDecimal::getMaxValue()  const
 // methods for class SQLBigNum
 // ------------------------------------------------------
 
-SQLBigNum::SQLBigNum(Lng32 precision, Lng32 scale,
+SQLBigNum::SQLBigNum(NAMemory *heap, Lng32 precision, Lng32 scale,
 		     NABoolean isARealBigNum,
 		     NABoolean allowNegValues,
-		     NABoolean allowSQLnull,
-		     CollHeap * heap)
+		     NABoolean allowSQLnull)
 : NumericType
-  ( LiteralBigNum
+  ( heap, LiteralBigNum
    , BigNumHelper::ConvPrecisionToStorageLengthHelper(precision)
    , precision
    , scale
@@ -2199,7 +2182,6 @@ SQLBigNum::SQLBigNum(Lng32 precision, Lng32 scale,
    , allowNegValues
    , allowSQLnull
    , FALSE
-   , heap
    ),
   isARealBigNum_(isARealBigNum)
 {
@@ -2295,12 +2277,11 @@ const NAType* SQLBigNum::synthesizeType(
     return NULL;
   }
 
-  return new(h) SQLBigNum(precision,
+  return new(h) SQLBigNum(h, precision,
                           scale,
                           isRealBigNum,
                           isSigned,
-                          isNullable,
-			  NULL);
+                          isNullable);
 }
 
 double SQLBigNum::getNormalizedValue(void* buf) const
@@ -2451,10 +2432,10 @@ NAType* SQLBigNum::closestEquivalentExternalType(CollHeap* heap)const
 //  Methods for LSDecimal
 // -----------------------------------------------------------------------
 
-LSDecimal::LSDecimal(Lng32 length, Lng32 scale,
-		     NABoolean allowSQLnull,CollHeap * heap)
+LSDecimal::LSDecimal(NAMemory *heap, Lng32 length, Lng32 scale,
+		     NABoolean allowSQLnull)
 : NumericType
-( LiteralLSDecimal
+( heap, LiteralLSDecimal
   , length + 1    // first byte is sign, i.e., stargae size is length + 1
   , length
   , scale
@@ -2462,7 +2443,6 @@ LSDecimal::LSDecimal(Lng32 length, Lng32 scale,
   , TRUE
   , allowSQLnull
   ,FALSE
-  ,heap
   )
 {
 } // LSDecimal()
@@ -2584,8 +2564,8 @@ const NAType* SQLFloat::synthesizeType(enum NATypeSynthRuleEnum synthRule,
     return NULL;
   }
   precision = MINOF(precision, SQL_DOUBLE_PRECISION);
-  //  return new(h) SQLFloat(isNullable, precision);
-  return new(h) SQLDoublePrecision(isNullable, h, precision);
+  //  return new(h) SQLFloat(h, isNullable, precision);
+  return new(h) SQLDoublePrecision(h, isNullable, precision);
 }
 
 double SQLFloat::encode (void* bufPtr) const

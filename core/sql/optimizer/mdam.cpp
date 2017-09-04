@@ -1016,7 +1016,7 @@ static ItemExpr *convertCastToNarrow(ItemExpr *expr,
       return new(outHeap)
         Narrow(expr->child(0),
                new(outHeap) HostVar("_sys_ignored_CC_convErrorFlag",
-                                    new (outHeap) SQLInt(TRUE,FALSE),
+                                    new (outHeap) SQLInt(outHeap, TRUE,FALSE),
                                     TRUE),
                src->getType()->newCopy(outHeap));
     }

@@ -147,12 +147,11 @@ public:
   // ---------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------
-  DatetimeType (const NAString & adtName,
+  DatetimeType (NAMemory *h, const NAString & adtName,
                 NABoolean allowSQLnull,
                 rec_datetime_field startField,
                 rec_datetime_field endField,
-                UInt32 fractionPrecision = 0,
-                NAMemory * h=0);
+                UInt32 fractionPrecision = 0);
 
   // copy ctor
   DatetimeType (const DatetimeType & rhs, NAMemory * h=0) :
@@ -296,13 +295,12 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions 
   // ---------------------------------------------------------------------
-  SQLDate(NABoolean allowSQLnull = TRUE, NAMemory *h=0)
-       : DatetimeType (LiteralDate,
+  SQLDate(NAMemory *h, NABoolean allowSQLnull = TRUE)
+       : DatetimeType (h, LiteralDate,
                        allowSQLnull,
                        REC_DATE_YEAR,
                        REC_DATE_DAY,
-                       0,
-                       h) 
+                       0)
   {}
 
   // copy ctor
@@ -352,15 +350,13 @@ public:
   // ---------------------------------------------------------------------
   // Constructor functions
   // ---------------------------------------------------------------------
-  SQLTime(NABoolean allowSQLnull = TRUE, 
-	  UInt32 fractionPrecision = DEFAULT_FRACTION_PRECISION,
-          NAMemory *h=0)
-       : DatetimeType (LiteralTime,
+  SQLTime(NAMemory *h, NABoolean allowSQLnull = TRUE, 
+	  UInt32 fractionPrecision = DEFAULT_FRACTION_PRECISION)
+       : DatetimeType (h, LiteralTime,
                        allowSQLnull,
                        REC_DATE_HOUR,
                        REC_DATE_SECOND,
-                       fractionPrecision,
-                       h)
+                       fractionPrecision)
   {}
 
   // copy ctor
@@ -420,15 +416,13 @@ public:
   // Constructor functions
   // ---------------------------------------------------------------------
 
-  SQLTimestamp(NABoolean allowSQLnull = TRUE, 
-               UInt32 fractionPrecision = DEFAULT_FRACTION_PRECISION,
-               NAMemory * h=0)
-       : DatetimeType (LiteralTimestamp,
+  SQLTimestamp(NAMemory *h, NABoolean allowSQLnull = TRUE, 
+               UInt32 fractionPrecision = DEFAULT_FRACTION_PRECISION)
+       : DatetimeType (h, LiteralTimestamp,
                        allowSQLnull,
                        REC_DATE_YEAR,
                        REC_DATE_SECOND,
-                       fractionPrecision,
-                       h)
+                       fractionPrecision)
   {}
 
   // copy ctor
@@ -472,7 +466,7 @@ protected:
 private:
   
 }; // class SQLTimestamp
-#pragma warn(1506)  // warning elimination 
+#pragma warn(1506)   // warning elimination
 
 // ***********************************************************************
 //
@@ -484,19 +478,17 @@ class SQLMPDatetime : public DatetimeType
 {
 public:
 
-    SQLMPDatetime(rec_datetime_field startField,
+    SQLMPDatetime(NAMemory *h, rec_datetime_field startField,
                   rec_datetime_field endField,
                   NABoolean allowSQLnull = TRUE, 
-                  UInt32 fractionPrecision = DEFAULT_FRACTION_PRECISION,
-                  NAMemory * h=0)
-  : DatetimeType (LiteralDateTime,
+                  UInt32 fractionPrecision = DEFAULT_FRACTION_PRECISION)
+  : DatetimeType (h, LiteralDateTime,
                   allowSQLnull,
                   startField,
                   endField,
                   ((endField >= REC_DATE_SECOND) ?
                      fractionPrecision : 
-                                                  0),
-                  h)
+                                                  0))
   {}
 
         SQLMPDatetime (const SQLMPDatetime & rhs, NAMemory * h=0)
@@ -507,23 +499,24 @@ public:
         { return new (h) SQLMPDatetime(*this, h); }
 
         virtual double encode (void* bufPtr) const;
-   
-        virtual Lng32 getPrecision() const { return SQLDTCODE_MPDATETIME; } 
  
+        virtual Lng32 getPrecision() const { return SQLDTCODE_MPDATETIME; } 
+
         virtual Lng32 getScale() const { return getFractionPrecision(); }
 
         virtual NABoolean isCompatible(const NAType& other, UInt32 * flags = NULL) const;
   
         virtual const NAType* synthesizeType(enum NATypeSynthRuleEnum synthRule,     // in common\DateTime.cpp
-					     const NAType& operand1,
-					     const NAType& operand2,
-					     NAMemory* h,
-					     UInt32 *flags = NULL
-					     ) const;
+                                            const NAType& operand1,
+                                            const NAType& operand2,
+                                            NAMemory* h,
+                                            UInt32 *flags = NULL
+                                            ) const;
         virtual NABoolean isSupportedType() const;
 
 private:                                          
 };
+ 
 #pragma warn(1506)  // warning elimination 
 // ***********************************************************************
 //

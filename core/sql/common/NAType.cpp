@@ -78,15 +78,15 @@ NAType::NAType (const NAType & rhs, NAMemory * h)
        displayDataType_ (rhs.displayDataType_, h)
 {}
 
-NAType::NAType( const NAString&    adtName,
+NAType::NAType( NAMemory *h, 
+                const NAString&    adtName,
                 NABuiltInTypeEnum  ev,
                 Lng32               dataStorageSize,
                 NABoolean          nullable,
                 Lng32               SQLnullHdrSize,
                 NABoolean          varLenFlag,
                 Lng32               lengthHdrSize,
-                Lng32               dataAlignment,
-                NAMemory *         h
+                Lng32               dataAlignment
                 ) : typeName_ (h) // memleak fix
                   , displayDataType_ (h)
 {
@@ -556,14 +556,14 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
 
     case REC_NUM_BIG_SIGNED:
       {
-	SQLBigNum tmp(precision,scale,FALSE,TRUE,FALSE,NULL);
+	SQLBigNum tmp(NULL, precision,scale,FALSE,TRUE,FALSE);
 	d_len = tmp.getDisplayLength();
       }
       break;
 
     case REC_NUM_BIG_UNSIGNED:
       {
-	SQLBigNum tmp(precision,scale,FALSE,FALSE,FALSE,NULL);
+	SQLBigNum tmp(NULL, precision,scale,FALSE,FALSE,FALSE);
 	d_len = tmp.getDisplayLength();
       }
       break;
@@ -622,7 +622,7 @@ Lng32 NAType::getDisplayLength(Lng32 datatype,
         rec_datetime_field startField;
         rec_datetime_field endField;
         getIntervalFields(datatype, startField, endField);
-        SQLInterval interval(FALSE,
+        SQLInterval interval(NULL, FALSE,
                              startField,
                              (UInt32) precision,
                              endField,
@@ -966,22 +966,22 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
   if ( !strcmp(hiveType, "tinyint"))
     {
       if (CmpCommon::getDefault(TRAF_TINYINT_SUPPORT) == DF_OFF)
-        return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+        return new (heap) SQLSmall(heap, TRUE /* neg */, TRUE /* allow NULL*/);
       else
-        return new (heap) SQLTiny(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+        return new (heap) SQLTiny(heap, TRUE /* neg */, TRUE /* allow NULL*/);
     }
 
   if ( !strcmp(hiveType, "smallint"))
-    return new (heap) SQLSmall(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+    return new (heap) SQLSmall(heap, TRUE /* neg */, TRUE /* allow NULL*/);
  
   if ( !strcmp(hiveType, "int")) 
-    return new (heap) SQLInt(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+    return new (heap) SQLInt(heap, TRUE /* neg */, TRUE /* allow NULL*/);
 
   if ( !strcmp(hiveType, "bigint"))
-    return new (heap) SQLLargeInt(TRUE /* neg */, TRUE /* allow NULL*/, heap);
+    return new (heap) SQLLargeInt(heap, TRUE /* neg */, TRUE /* allow NULL*/);
 
   if ( !strcmp(hiveType, "boolean"))
-    return new (heap) SQLBooleanNative(TRUE, heap);
+    return new (heap) SQLBooleanNative(heap, TRUE);
  
   if ( !strcmp(hiveType, "string"))
     {
@@ -993,7 +993,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
       Int32 maxNumChars = 0;
       Int32 storageLen = lenInBytes;
       SQLVarChar * nat = 
-        new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
+        new (heap) SQLVarChar(heap, CharLenInfo(maxNumChars, storageLen),
                               TRUE, // allow NULL
                               FALSE, // not upshifted
                               FALSE, // not case-insensitive
@@ -1005,16 +1005,16 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     }
   
   if ( !strcmp(hiveType, "float"))
-    return new (heap) SQLReal(TRUE /* allow NULL*/, heap);
+    return new (heap) SQLReal(heap, TRUE /* allow NULL*/);
 
   if ( !strcmp(hiveType, "double"))
-    return new (heap) SQLDoublePrecision(TRUE /* allow NULL*/, heap);
+    return new (heap) SQLDoublePrecision(heap, TRUE /* allow NULL*/);
 
   if ( !strcmp(hiveType, "timestamp"))
-    return new (heap) SQLTimestamp(TRUE /* allow NULL */ , 6, heap);
+    return new (heap) SQLTimestamp(heap, TRUE /* allow NULL */ , 6);
 
   if ( !strcmp(hiveType, "date"))
-    return new (heap) SQLDate(TRUE /* allow NULL */ , heap);
+    return new (heap) SQLDate(heap, TRUE /* allow NULL */);
 
   if ( (!strncmp(hiveType, "varchar", 7)) ||
        (!strncmp(hiveType, "char", 4)))
@@ -1059,7 +1059,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     }
 
     if (!strncmp(hiveType, "char", 4))
-      return new (heap) SQLChar(CharLenInfo(maxNumChars, storageLen),
+      return new (heap) SQLChar(heap, CharLenInfo(maxNumChars, storageLen),
                                 TRUE, // allow NULL
                                 FALSE, // not upshifted
                                 FALSE, // not case-insensitive
@@ -1068,7 +1068,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
                                 CharInfo::DefaultCollation,
                                 CharInfo::IMPLICIT);
     else
-      return new (heap) SQLVarChar(CharLenInfo(maxNumChars, storageLen),
+      return new (heap) SQLVarChar(heap, CharLenInfo(maxNumChars, storageLen),
                                    TRUE, // allow NULL
                                    FALSE, // not upshifted
                                    FALSE, // not case-insensitive
@@ -1128,14 +1128,14 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     if( (p>0) && (p <= MAX_PRECISION_ALLOWED) ) //have precision between 1 - 18
     {
       if( ( s >=0 )  &&  ( s<= p) ) //have valid scale
-        return new (heap) SQLDecimal( p, s, TRUE, TRUE);
+        return new (heap) SQLDecimal(heap, p, s, TRUE, TRUE);
       else
         return NULL;
     }
     else if( p > MAX_PRECISION_ALLOWED)  
     {
       if ( (s>=0) && ( s<= p ) ) //have valid scale
-        return new (heap) SQLBigNum( p, s, TRUE, TRUE, TRUE, NULL);
+        return new (heap) SQLBigNum(heap, p, s, TRUE, TRUE, TRUE);
       else
         return NULL;
     }
@@ -1143,7 +1143,7 @@ NAType* NAType::getNATypeForHive(const char* hiveType, NAMemory* heap)
     else if( ( p == -1 ) && ( s == -1 ) )
     {
       // hive define decimal as decimal ( 10, 0 )
-      return new (heap) SQLDecimal( 10, 0, TRUE, TRUE);
+      return new (heap) SQLDecimal(heap, 10, 0, TRUE, TRUE);
     }
     else
     {

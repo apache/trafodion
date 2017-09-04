@@ -635,7 +635,7 @@ IntervalType* RangeSpec::parseIntervalTypeText(const char* text) const
     trailingField = leadingField;  // Only one field specified.
 
   // Construct and return the interval type.
-  return new(mvqrHeap_) SQLInterval(TRUE, leadingField, lp, trailingField, fp, mvqrHeap_);
+  return new(mvqrHeap_) SQLInterval(mvqrHeap_, TRUE, leadingField, lp, trailingField, fp);
 }
 
 void RangeSpec::addDenormalizedSubrange(const char* typeText,
@@ -657,36 +657,36 @@ void RangeSpec::addDenormalizedSubrange(const char* typeText,
 
   // Parse the type text and create the corresponding type object.
   if (!strncmp(typeText, "INTEGER", typeNameLen))
-    numType = new(mvqrHeap_) SQLInt(isSigned, TRUE/*don't care*/, mvqrHeap_);
+    numType = new(mvqrHeap_) SQLInt(mvqrHeap_, isSigned, TRUE/*don't care*/);
   else if (!strncmp(typeText, "SMALLINT", typeNameLen))
-    numType = new(mvqrHeap_) SQLSmall(isSigned, TRUE/*don't care*/, mvqrHeap_);
+    numType = new(mvqrHeap_) SQLSmall(mvqrHeap_, isSigned, TRUE/*don't care*/);
   else if (!strncmp(typeText, "NUMERIC", typeNameLen))
     {
       getPrecScale(typeText + typeNameLen, prec, scale);
-      numType = new(mvqrHeap_) SQLNumeric(isSigned, prec, scale,
+      numType = new(mvqrHeap_) SQLNumeric(mvqrHeap_, isSigned, prec, scale,
                                           DisAmbiguate); // added for 64bit proj.
     }
   else if (!strncmp(typeText, "DECIMAL", typeNameLen))
     {
       getPrecScale(typeText + typeNameLen, prec, scale);
-      numType = new(mvqrHeap_) SQLNumeric(isSigned, prec, scale,
+      numType = new(mvqrHeap_) SQLNumeric(mvqrHeap_, isSigned, prec, scale,
                                           DisAmbiguate); // added for 64bit proj.
     }
   else if (!strncmp(typeText, "REAL", typeNameLen))
-    numType = new(mvqrHeap_) SQLReal(TRUE/*don't care*/, mvqrHeap_);
+    numType = new(mvqrHeap_) SQLReal(mvqrHeap_, TRUE/*don't care*/);
   else if (!strncmp(typeText, "DATE", typeNameLen))
-    dtType = new(mvqrHeap_) SQLDate(TRUE/*don't care*/, mvqrHeap_);
+    dtType = new(mvqrHeap_) SQLDate(mvqrHeap_, TRUE/*don't care*/);
   else if (!strncmp(typeText, "TIME", typeNameLen))
     {
       // Only one value (fractional seconds precision) will be given for this.
       getPrecScale(typeText + typeNameLen, prec, scale);
-      dtType = new(mvqrHeap_) SQLTime(TRUE/*don't care*/, prec, mvqrHeap_);
+      dtType = new(mvqrHeap_) SQLTime(mvqrHeap_, TRUE/*don't care*/, prec);
     }
   else if (!strncmp(typeText, "TIMESTAMP", typeNameLen))
     {
       // Only one value (fractional seconds precision) will be given for this.
       getPrecScale(typeText + typeNameLen, prec, scale);
-      dtType = new(mvqrHeap_) SQLTimestamp(TRUE/*don't care*/, prec, mvqrHeap_);
+      dtType = new(mvqrHeap_) SQLTimestamp(mvqrHeap_, TRUE/*don't care*/, prec);
     }
   else if (!strncmp(typeText, "INTERVAL", typeNameLen))
     intvlType = parseIntervalTypeText(typeText + typeNameLen);

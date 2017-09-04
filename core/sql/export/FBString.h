@@ -984,7 +984,7 @@ public :
   enum Category {
     isSmall = 0,
     //isMedium = sizeof(size_t) == 4 ? 0x80000000 : 0x8000000000000000,
-    isLarge =  sizeof(size_t) == 4 ? 0x40000000 : 0x4000000000000000,
+    isLarge =  sizeof(size_t) == 4 ? 0x80000000 : 0x8000000000000000,
   };
   /* Which categorys string belongs to not always decided by its capacity or size.
    * It is decided when it's constructed and won't change until: 

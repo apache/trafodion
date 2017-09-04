@@ -2021,14 +2021,14 @@ short CmpSeabaseDDL::createSeabaseTable2(
   NABoolean implicitPK = FALSE;
 
   NAString syskeyColName("SYSKEY");
-  SQLLargeInt * syskeyType = new(STMTHEAP) SQLLargeInt(TRUE, FALSE, STMTHEAP);
+  SQLLargeInt * syskeyType = new(STMTHEAP) SQLLargeInt(STMTHEAP, TRUE, FALSE);
   ElemDDLColDef syskeyColDef(NULL, &syskeyColName, syskeyType, NULL,
                              STMTHEAP);
   ElemDDLColRef edcr("SYSKEY", COM_ASCENDING_ORDER);
   syskeyColDef.setColumnClass(COM_SYSTEM_COLUMN);
 
   NAString hbRowIdColName("ROW_ID");
-  SQLVarChar * hbRowIdType = new(STMTHEAP) SQLVarChar(1000, FALSE);
+  SQLVarChar * hbRowIdType = new(STMTHEAP) SQLVarChar(STMTHEAP, 1000, FALSE);
   ElemDDLColDef hbRowIdColDef(NULL, &hbRowIdColName, hbRowIdType, NULL,
                               STMTHEAP);
   ElemDDLColRef hbcr("ROW_ID", COM_ASCENDING_ORDER);
@@ -2188,7 +2188,7 @@ short CmpSeabaseDDL::createSeabaseTable2(
         }
 
       NAString saltColName(ElemDDLSaltOptionsClause::getSaltSysColName());
-      SQLInt * saltType = new(STMTHEAP) SQLInt(FALSE, FALSE, STMTHEAP);
+      SQLInt * saltType = new(STMTHEAP) SQLInt(STMTHEAP, FALSE, FALSE);
       ElemDDLColDefault *saltDef = 
         new(STMTHEAP) ElemDDLColDefault(
              ElemDDLColDefault::COL_COMPUTED_DEFAULT);
@@ -11692,8 +11692,13 @@ short CmpSeabaseDDL::genHbaseRegionDescs(TrafDesc * desc,
   if (ehi == NULL) 
     return -1;
   
-  const NAString extNameForHbase = genHBaseObjName
-    (catName, schName, objName);
+  NAString extNameForHbase;
+  if ((catName != HBASE_SYSTEM_CATALOG) ||
+      ((schName != HBASE_ROW_SCHEMA) && (schName != HBASE_CELL_SCHEMA)))
+    extNameForHbase = genHBaseObjName(catName, schName, objName);
+  else
+    // for HBASE._ROW_.objName or HBASE._CELL_.objName, just pass objName
+    extNameForHbase = objName;
 
   NAArray<HbaseStr>* endKeyArray  = 
     ehi->getRegionEndKeys(extNameForHbase);
@@ -12681,7 +12686,9 @@ TrafDesc * CmpSeabaseDDL::getSeabaseTableDesc(const NAString &catName,
         }
       else
         {
-          Int32 ctlFlags = GET_SNAPSHOTS; // get snapshot
+          Int32 ctlFlags = 0;
+          if (CmpCommon::getDefault(TRAF_TABLE_SNAPSHOT_SCAN) != DF_NONE)
+             ctlFlags = GET_SNAPSHOTS; // get snapshot
           if ((CmpCommon::getDefault(TRAF_READ_OBJECT_DESC) == DF_ON) &&
               (!Get_SqlParser_Flags(INTERNAL_QUERY_FROM_EXEUTIL)) &&
               (NOT includeInvalidDefs))

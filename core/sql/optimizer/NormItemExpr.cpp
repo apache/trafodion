@@ -4772,7 +4772,7 @@ ItemExpr * ItmSeqDiff1::transformDiff1()
     {
      ItemExpr *castExpr   = new HEAP Cast (tfm2,
                                           new HEAP
-                                          SQLLargeInt(TRUE, TRUE)); // (must be) signed; nulls allowed
+                                          SQLLargeInt(HEAP, TRUE, TRUE)); // (must be) signed; nulls allowed
      tfm2 = castExpr;
     }
 
@@ -4849,7 +4849,7 @@ ItemExpr * ItmSeqDiff2::transformDiff2()
     {
      ItemExpr *castExpr   = new HEAP Cast (tfm2,
                                           new HEAP
-                                          SQLLargeInt(TRUE, TRUE)); // (must be) signed; nulls allowed
+                                          SQLLargeInt(HEAP, TRUE, TRUE)); // (must be) signed; nulls allowed
      tfm2 = castExpr;
     }
 
@@ -5015,7 +5015,7 @@ void ItmSeqRunningFunction::transformNode(NormWA & normWARef,
 //--------------------------------------------------------------------------------------
 ItemExpr * ItmSeqRunningFunction::transformRunningVariance()
 {
-  const NAType *desiredType    = new HEAP SQLDoublePrecision(TRUE);
+  const NAType *desiredType    = new HEAP SQLDoublePrecision(HEAP, TRUE);
   ItemExpr *childDouble        = new HEAP Cast(child(0), desiredType);
   ItemExpr *childDoubleSquared = new HEAP BiArith(ITM_TIMES,                       // x * x
                                                 childDouble,
@@ -5189,7 +5189,7 @@ void ItmSeqOlapFunction::transformNode(NormWA & normWARef,
 
 ItemExpr * ItmSeqOlapFunction::transformOlapVariance(CollHeap *wHeap)
 {
-  const NAType *desiredType    = new (wHeap) SQLDoublePrecision(TRUE);
+  const NAType *desiredType    = new (wHeap) SQLDoublePrecision(wHeap, TRUE);
   ItemExpr *childDouble        = new (wHeap) Cast(child(0), desiredType);
   ItemExpr *childDoubleSquared = new (wHeap) BiArith(ITM_TIMES,                       // x * x
                                                 childDouble,
@@ -5819,7 +5819,7 @@ ItemExpr * ItmSeqMovingFunction::transformMovingMinMax()
 //
 ItemExpr * ItmSeqMovingFunction::transformMovingVariance()
 {
-  const NAType *desiredType    = new HEAP SQLDoublePrecision(TRUE);
+  const NAType *desiredType    = new HEAP SQLDoublePrecision(HEAP, TRUE);
   ItemExpr *childDouble        = new HEAP Cast(child(0), desiredType);
   ItemExpr *childDoubleSquared = new HEAP BiArith(ITM_TIMES,                       // x * x
                                                 childDouble,

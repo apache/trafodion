@@ -1334,9 +1334,9 @@ SQLRETURN SRVR::BuildSQLDesc(SQLDESC_ID *pDesc,
 					ODBCPrecision, SignType, Nullable, totalMemLen,	SQLCharset, ODBCCharset,
 					IntLeadPrec, ColumnHeading);
 		HANDLE_ERROR(retcode, sqlWarning);
-		if (DataType == SQLTYPECODE_LARGEINT && Precision == 0 && Scale > 0)
-			ODBCDataType = SQL_NUMERIC;
-		
+                if (DataType == SQLTYPECODE_LARGEINT && Precision == 0 && Scale > 0)
+                   ODBCDataType = SQL_NUMERIC;
+
 		implDesc[i-1].charSet = SQLCharset;
 		implDesc[i-1].dataType = DataType;
 		implDesc[i-1].length = Length;
@@ -1457,6 +1457,18 @@ SQLRETURN SRVR::BuildSQLDesc2(SQLDESC_ID *pDesc,
 		delete implDesc;
 		implDesc = NULL;
 	}
+
+	if (SqlDescInfo != NULL)
+	{
+		delete SqlDescInfo;
+		SqlDescInfo = NULL;
+	}
+        
+        if (SQLDesc != NULL)
+        {
+           delete SQLDesc;
+           SQLDesc = NULL;
+        }
 
 	if (numEntries > 0)
 	{
@@ -1742,13 +1754,6 @@ SQLRETURN SRVR::BuildSQLDesc2(SQLDESC_ID *pDesc,
 						implDesc,SqlDescInfo);
 
 	SQLDescLen = totalDescLength;
-/*
-	if (SqlDescInfo != NULL)
-	{
-		delete [] SqlDescInfo;
-		SqlDescInfo = NULL;
-	}
-*/
 //	if (sqlBulkFetchPossible && (sqlQueryType == SQL_SELECT_NON_UNIQUE || sqlQueryType == SQL_SP_RESULT_SET))
 	if (bRWRS)
 	{

@@ -224,7 +224,7 @@ short RelInternalSP::codeGen(Generator * generator)
 	  cn = new(generator->wHeap()) 
 	    Cast ((getProcAllParamsVids())[i].getItemExpr(), 
 		  (new(generator->wHeap())
-		   SQLChar(
+		   SQLChar(generator->wHeap(),
 		           CharLenInfo(char_type.getStrCharLimit(), char_type.getDataStorageSize()),
 			   char_type.supportsSQLnull(),
 			   FALSE, FALSE, FALSE,

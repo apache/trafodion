@@ -884,9 +884,9 @@ short HashJoin::codeGen(Generator * generator) {
     // common/BaseType.h). It could be made a bigger datatype,
     // if need be.
     buildHashTree = new (generator->wHeap())
-	Cast(buildHashTree, new (generator->wHeap()) SQLInt(FALSE, FALSE));
+	Cast(buildHashTree, new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE, FALSE));
     probeHashTree = new (generator->wHeap())
-	Cast(probeHashTree, new (generator->wHeap()) SQLInt(FALSE, FALSE));
+	Cast(probeHashTree, new (generator->wHeap()) SQLInt(generator->wHeap(), FALSE, FALSE));
     buildHashTree->setConstFoldingDisabled(TRUE);
     probeHashTree->setConstFoldingDisabled(TRUE);
 

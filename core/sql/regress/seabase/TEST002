@@ -57,6 +57,18 @@ sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2I1';
 
 select * from t002t2;
 
+-- purgedata should preserve regions
+get region stats for table t002t2;
+purgedata t002t2;
+get region stats for table t002t2;
+select * from t002t2;
+
+insert into t002t2 values (1,2);
+
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2';
+sh regrhbase.ksh flush 'TRAFODION.T002SCH.T002T2I1';
+
+select * from t002t2;
 
 ?section region_stats
 set schema t002sch;

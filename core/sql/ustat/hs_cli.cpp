@@ -3224,7 +3224,8 @@ template <class T> class HSBin : public SQLInt {
 public:
 
   HSBin(Lng32 id)
-    : id_(id) {}
+    : SQLInt(NULL)
+    , id_(id) {}
   ~HSBin() {}
   double encode(void *data) const
   {  return *((T *)data);  }
@@ -3242,7 +3243,8 @@ class HSLargeint : public SQLInt {
 public:
 
   HSLargeint(Lng32 id)
-    : id_(id) {}
+    : SQLInt(NULL)
+    , id_(id) {}
   ~HSLargeint() {}
   double encode(void *data) const
   {  return convertInt64ToDouble(*((Int64 *)data)); }
@@ -3258,7 +3260,7 @@ class HSDate : public SQLDate {
 
 public:
 
-  HSDate() : SQLDate(FALSE /*nullflag*/) {}
+  HSDate() : SQLDate(NULL, FALSE /*nullflag*/) {}
   double encode(void *data) const
   {
     ULng32 w[4];
@@ -3283,12 +3285,12 @@ NAType* ConstructNumericType( Long addr
   NAType *type;
   switch(length) {
   case 1:
-    type = new(currHeap) SQLTiny(allowNeg, nullflag, currHeap);
+    type = new(currHeap) SQLTiny(currHeap, allowNeg, nullflag);
     break;
   case 2:
     if (!ALIGN2(addr))
       {
-        type = new(currHeap) SQLSmall(allowNeg, nullflag, currHeap);
+        type = new(currHeap) SQLSmall(currHeap, allowNeg, nullflag);
         break;
       }
     if (allowNeg)  // 2-byte aligned
@@ -3299,7 +3301,7 @@ NAType* ConstructNumericType( Long addr
   case 4:
     if (!ALIGN4(addr))
       {
-        type = new(currHeap) SQLInt(allowNeg, nullflag, currHeap);
+        type = new(currHeap) SQLInt(currHeap, allowNeg, nullflag);
         break;
       }
     if (allowNeg)  // 4-byte aligned
@@ -3310,16 +3312,16 @@ NAType* ConstructNumericType( Long addr
   case 8:
     if (!ALIGN8(addr))
       {
-        type = new(currHeap) SQLLargeInt(allowNeg, nullflag);
+        type = new(currHeap) SQLLargeInt(currHeap, allowNeg, nullflag);
         break;
       }
     if (allowNeg)  // 8-byte aligned
       type = new(currHeap) HSLargeint(id);
     else
-      type = new(currHeap) SQLLargeInt(allowNeg, nullflag);
+      type = new(currHeap) SQLLargeInt(currHeap, allowNeg, nullflag);
     break;
   default:
-    type = new(currHeap) SQLNumeric(length, precision, scale, allowNeg, nullflag, currHeap);
+    type = new(currHeap) SQLNumeric(currHeap, length, precision, scale, allowNeg, nullflag);
     break;
   }
   return type;
@@ -3435,29 +3437,29 @@ Lng32 HSCursor::buildNAType()
 	  //datatype = ((precision <= SQL_REAL_PRECISION) ?
 	  //           REC_FLOAT32 : REC_FLOAT64);
 	  if (datatype == REC_FLOAT32)
-	    type = new(heap_) SQLReal(nullflag, NULL, precision);
+	    type = new(heap_) SQLReal(heap_, nullflag, precision);
 	  else  if (datatype == REC_FLOAT64)
-	    type = new(heap_) SQLDoublePrecision(nullflag, NULL, precision);
+	    type = new(heap_) SQLDoublePrecision(heap_, nullflag, precision);
 	  break;
         //
         //
         case REC_DECIMAL_UNSIGNED:
-          type = new(heap_) SQLDecimal(length, scale, FALSE, nullflag, heap_);
+          type = new(heap_) SQLDecimal(heap_, length, scale, FALSE, nullflag);
           break;
         case REC_DECIMAL_LSE:
-          type = new(heap_) SQLDecimal(length, scale, TRUE, nullflag, heap_);
+          type = new(heap_) SQLDecimal(heap_, length, scale, TRUE, nullflag);
           break;
         case REC_NUM_BIG_UNSIGNED:
-          type = new(heap_) SQLBigNum(precision, scale, FALSE, FALSE, nullflag, heap_);
+          type = new(heap_) SQLBigNum(heap_, precision, scale, FALSE, FALSE, nullflag);
           break;
         case REC_NUM_BIG_SIGNED:
-          type = new(heap_) SQLBigNum(precision, scale, FALSE, TRUE, nullflag, heap_);
+          type = new(heap_) SQLBigNum(heap_, precision, scale, FALSE, TRUE, nullflag);
           break;
          //
         //
         case REC_BYTE_F_ASCII:
         case REC_NCHAR_F_UNICODE:
-          type = new(heap_) SQLChar(    length
+          type = new(heap_) SQLChar(heap_,    length
                              ,   nullflag
                              #ifdef FULL_CHARSET_SUPPORT  //##NCHAR: to be done!
                              ,   colDesc_[i].upshifted
@@ -3470,7 +3472,7 @@ Lng32 HSCursor::buildNAType()
           break;
         case REC_BYTE_V_ASCII:
         case REC_NCHAR_V_UNICODE:
-          type = new(heap_) SQLVarChar( length
+          type = new(heap_) SQLVarChar(heap_,  length
                              ,   nullflag
                              #ifdef FULL_CHARSET_SUPPORT  //##NCHAR: to be done!
                              ,   colDesc_[i].upshifted
@@ -3486,14 +3488,14 @@ Lng32 HSCursor::buildNAType()
 	  // be encoded correctly.
 	case REC_DATETIME:
 	case REC_INTERVAL:
-          type = new(heap_) SQLChar(    length
+          type = new(heap_) SQLChar(heap_,    length
                              ,   nullflag
                             );
 
 	  break;
 
         case REC_BOOLEAN:
-          type = new(heap_) SQLBooleanNative(nullflag,heap_);
+          type = new(heap_) SQLBooleanNative(heap_, nullflag);
           break;
 
         default:

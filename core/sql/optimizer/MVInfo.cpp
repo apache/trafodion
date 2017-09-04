@@ -1403,7 +1403,7 @@ MVColumnInfo::MVColumnInfo (const MVColumnInfo& other,
 	// This is a dependent COUNT for MIN or MAX on a character column. 
 	// The COUNT column type must be a numeric type.
 	colDataType_ = new(heap) 
-	  SQLLargeInt(TRUE, FALSE); // LARGEINT SIGNED NOT NULL.
+	  SQLLargeInt(heap, TRUE, FALSE); // LARGEINT SIGNED NOT NULL.
       }
       break;
 
@@ -1603,7 +1603,7 @@ MVColumnInfo::MVColumnInfo (MVInfoForDDL&   mvInfoObj,
   // create a new system column name: SYS_COUNTSTAR<running number>
   mvInfoObj.NewSystemColumName(NAString("COUNTSTAR"), colName_);
   colDataType_ = new(heap) 
-    SQLLargeInt(TRUE, FALSE);  // LARGEINT SIGNED NO NULLS
+    SQLLargeInt(heap, TRUE, FALSE);  // LARGEINT SIGNED NO NULLS
 
   setNotNull(TRUE);
   colType_ = COM_MVCOL_AGGREGATE;

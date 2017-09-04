@@ -265,7 +265,6 @@ NAString LongToNAString(Lng32 l)
   return NAString(resultstr);
 }
 
-
 NAString UnsignedToNAString(UInt32 u)
 {
   char resultstr[100];

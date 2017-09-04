@@ -4692,7 +4692,6 @@ short CmpSeabaseDDL::updateSeabaseMDTable(
     {
       useRWRS = TRUE;
     }
-
   Int32 objOwnerID = (tableInfo) ? tableInfo->objOwnerID : SUPER_USER;
   Int32 schemaOwnerID = (tableInfo) ? tableInfo->schemaOwnerID : SUPER_USER;
   Int64 objectFlags = (tableInfo) ? tableInfo->objectFlags : 0;
@@ -8602,11 +8601,6 @@ void CmpSeabaseDDL::updateVersion()
 
 }
 
-// this method truncates an hbase table by dropping it and then recreating
-// it. Options that were used for the original hbase table are stored in
-// traf metadata and are passed in to hbase during table create.
-// When hbase truncate api is available (HBAse 1.0 and later), then this
-// method will call it instead of drop/recreate.
 // truncate is a non-transactional operation. Caller need to restore back
 // the truncated table if an error occurs.
 short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart, 
@@ -8624,60 +8618,19 @@ short CmpSeabaseDDL::truncateHbaseTable(const NAString &catalogNamePart,
   hbaseTable.val = (char*)extNameForHbase.data();
   hbaseTable.len = extNameForHbase.length();
 
-  // drop this table from hbase
-  retcode = dropHbaseTable(ehi, &hbaseTable, FALSE, FALSE);
+  // if salted table, preserve splits.
+  if (naTable->hasSaltedColumn())
+    retcode = ehi->truncate(hbaseTable, TRUE, TRUE);
+  else
+    retcode = ehi->truncate(hbaseTable, FALSE, TRUE);
   if (retcode)
     {
-      processReturn();
-      return -1;
-    }
+      *CmpCommon::diags() << DgSqlCode(-8448)
+                          << DgString0((char*)"ExpHbaseInterface::truncate()")
+                          << DgString1(getHbaseErrStr(-retcode))
+                          << DgInt0(-retcode)
+                          << DgString2((char*)GetCliGlobals()->getJniErrorStr().data());
 
-  // and recreate it.
-  NAFileSet * naf = naTable->getClusteringIndex();
-
-  NAList<HbaseCreateOption*> * hbaseCreateOptions = 
-    naTable->hbaseCreateOptions();
-  Lng32 numSaltPartns = naf->numSaltPartns();
-  Lng32 numSaltSplits = numSaltPartns - 1;
-  Lng32 numSplits = 0;
-  const Lng32 numKeys = naf->getIndexKeyColumns().entries();
-  Lng32 keyLength = naf->getKeyLength();
-  char ** encodedKeysBuffer = NULL;
-
-  TrafDesc * tableDesc = (TrafDesc*)naTable->getTableDesc();
-  TrafDesc * colDescs = tableDesc->tableDesc()->columns_desc; 
-  TrafDesc * keyDescs = (TrafDesc*)naf->getKeysDesc();
-
-  if (createEncodedKeysBuffer(encodedKeysBuffer/*out*/,
-                              numSplits/*out*/,
-                              colDescs, keyDescs,
-                              numSaltPartns,
-                              numSaltSplits,
-                              NULL,
-                              numKeys, 
-                              keyLength,
-                              FALSE))
-    {
-      processReturn();
-      return -1;
-    }
-  
-  std::vector<NAString> userColFamVec;
-  std::vector<NAString> trafColFamVec;
-  NAString outColFam;
-  for (int i = 0; i < naTable->allColFams().entries(); i++)
-    {
-      processColFamily(naTable->allColFams()[i], outColFam,
-                       &userColFamVec, &trafColFamVec);
-    } // for
-  
-  retcode = createHbaseTable(ehi, &hbaseTable, trafColFamVec,
-                             hbaseCreateOptions,
-                             numSplits, keyLength, 
-                             encodedKeysBuffer,
-                             FALSE);
-  if (retcode == -1)
-    {
       processReturn();
       return -1;
     }
@@ -8739,7 +8692,7 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
       
       return;
     }
-  
+
   ActiveSchemaDB()->getNATableDB()->useCache();
 
   BindWA bindWA(ActiveSchemaDB(), CmpCommon::context(), FALSE/*inDDL*/);
@@ -8848,7 +8801,6 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
       return;
     }
                                  
-  NABoolean asyncDrop = (CmpCommon::getDefault(HBASE_ASYNC_DROP_TABLE) == DF_ON);
   NABoolean ddlXns = ddlExpr->ddlXns();
   if (truncateHbaseTable(catalogNamePart, schemaNamePart, objectNamePart,
                          naTable, ehi))
@@ -8876,29 +8828,12 @@ void CmpSeabaseDDL::purgedataHbaseTable(DDLExpr * ddlExpr,
           NAString catName = qn.getCatalogName();
           NAString schName = qn.getSchemaName();
           NAString idxName = qn.getObjectName();
-          NAString extNameForIndex = catName + "." + schName + "." + idxName;
 
-          HbaseStr hbaseIndex;
-          hbaseIndex.val = (char*)extNameForIndex.data();
-          hbaseIndex.len = extNameForIndex.length();
-          
-          // drop this table from hbase
-          retcode = dropHbaseTable(ehi, &hbaseIndex, FALSE, ddlXns);
+          retcode = truncateHbaseTable(catName, schName, idxName,
+                                       naTable, ehi);
           if (retcode)
             {
               deallocEHI(ehi); 
-              
-              processReturn();
-              
-              return;
-            }
-          
-          retcode = createHbaseTable(ehi, &hbaseIndex, SEABASE_DEFAULT_COL_FAMILY,
-                                     naf->hbaseCreateOptions());
-          if (retcode == -1)
-            {
-              deallocEHI(ehi); 
-              
               processReturn();
               
               return;
