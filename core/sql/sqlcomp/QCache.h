@@ -82,8 +82,6 @@ typedef CacheData*  CacheDataPtr;
 typedef CacheEntry* CacheEntryPtr;
 typedef TextData*   TextDataPtr;
 
-#define AM_AN_MPALIAS_QUERY " AmAnMpAliasQ "
-
 ULng32 getDefaultInK(const Int32& key);
 
 class CQDefault : public NABasicObject {
@@ -1487,11 +1485,6 @@ class QCache : public NABasicObject {
   //           from cache. This is used by recompiles to make sure all
   //           outdated cached entries that match a query are decached.
 
-  // decache all mpalias queries
-  void deCacheAliases();
-  // modifies: cache
-  // effects : decaches all mpalias queries
-
   // decache a preparser cache entry
   void deCachePreParserEntry
     (TextKey  *stmt); // (IN) : key of a preparser cache entry
@@ -1792,10 +1785,6 @@ class QueryCache {
     (TextKey   *stmt, // (IN) : sql statement to be de-cached
      RelExpr   *qry)  // (IN) : sql query
     { if (cache_) cache_->deCacheAll(stmt, qry); }
-
-  // decache all mpalias queries
-  void deCacheAliases()
-    { if (cache_) cache_->deCacheAliases(); }
 
   // decache a preparser cache entry
   void deCachePreParserEntry

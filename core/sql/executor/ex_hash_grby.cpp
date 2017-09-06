@@ -75,7 +75,7 @@ const char *ex_hash_grby_tcb::HashGrbyPhaseStr[] = {
 NABoolean ex_hash_grby_tcb::needStatsEntry()
 {
   ComTdb::CollectStatsType statsType = getGlobals()->getStatsArea()->getCollectStatsType();
-  // stats are collected for ALL and MEASURE options.
+  // stats are collected for ALL and OPERATOR options.
   if (statsType == ComTdb::ALL_STATS || statsType == ComTdb::OPERATOR_STATS)
     return TRUE;
   else
@@ -166,14 +166,10 @@ ex_hash_grby_tcb::ex_hash_grby_tcb(const ex_hash_grby_tdb &  hash_grby_tdb,
 { 
   bmoStats_ = NULL;
   hashGroupByStats_ = NULL;
-#ifndef __EID
   heap_ = new (glob->getDefaultHeap()) NAHeap("Hash Groupby Heap", (NAHeap *)glob->getDefaultHeap());
 
   // set the memory monitor
   memMonitor_ = getGlobals()->castToExExeStmtGlobals()->getMemoryMonitor();
-#else
-  heap_ = glob->getDefaultHeap();
-#endif
   
   // Copy all expression pointers. This must be done first because 
   // some of the pointers are used subsequently (i.e. bitMuxExpr_) in
@@ -470,8 +466,6 @@ short ex_hash_grby_tcb::work() {
       workReadChild();
     } break;
 
-#ifndef __EID
-
     case HASH_GRBY_READ_OF_ROW: {
       if (parentQueue_.up->isFull())
 	    return WORK_OK;
@@ -509,8 +503,6 @@ short ex_hash_grby_tcb::work() {
 	// I/O is not done yet
         return WORK_CALL_AGAIN;
     } break;
-
-#endif
 
     case HASH_GRBY_EVALUATE: {
       workEvaluate();
@@ -654,7 +646,6 @@ short ex_hash_grby_tcb::work() {
       // pass it to parent. rc_ has the error code and
       // oldState_ tells us in which state the error occured
       ComDiagsArea * diags = NULL;
-#ifndef __EID
       if(rc_ == EXE_SORT_ERROR)
         {
           char msg[512];
@@ -678,7 +669,6 @@ short ex_hash_grby_tcb::work() {
                                   msg);
         }
       else
-#endif
         diags = ExRaiseSqlError(heap_, downParentEntry, (ExeErrorCode)-rc_); 
 
       downParentEntry->setDiagsArea(diags);
@@ -728,7 +718,6 @@ void ex_hash_grby_tcb::workInitialize() {
 
   ULng32 noOfClusters = 0;
 
-#ifndef __EID
   // We use memUsagePercent_ of the physical memory for the HGB.
   ULng32 availableMemory = memMonitor_->getPhysMemInBytes() / 100
       * hashGrbyTdb().memUsagePercent_;
@@ -739,19 +728,12 @@ void ex_hash_grby_tcb::workInitialize() {
   if ( hashGrbyTdb().memoryQuotaMB() > 10 && // mem quota set? (10MB, 2 B safe)
        hashGrbyTdb().memoryQuotaMB() * ONE_MEG < availableMemory ) 
     availableMemory = hashGrbyTdb().memoryQuotaMB() * ONE_MEG ; 
-#else
-  // in DP2 just use 10 MB
-  ULng32 availableMemory = 10 * ONE_MEG;
-#endif
 
   haveSpilled_ = FALSE;
-#if !defined (__EID)
   ioTimer_.resetTimer();
-#endif
 
   if (!hashGrbyTdb().isPartialGroup_) {
 
-#ifndef __EID
     // size of inner table (including row headers and hash chains) in bytes
     // This may be a very large number, max out at 8 GB and take at
     // least 100 KB. Don't completely trust the optimizer ;-)
@@ -788,7 +770,6 @@ void ex_hash_grby_tcb::workInitialize() {
     // the extreme case, each cluster has only one bucket and only one buffer
     ULng32 maxNoOfClusters = totalBuffers/bucketsPerCluster;
     noOfClusters = MINOF(noOfClusters, maxNoOfClusters);
-#endif
   }
   else {
     // partial group by. we need only one cluster. If this cluster is full
@@ -798,8 +779,6 @@ void ex_hash_grby_tcb::workInitialize() {
 
     // Memory to be used for pHGB.
     //
-#ifndef __EID
-
     // For Partial Groupby in ESP, use a limited amount of memory
     // Based on CQD EXE_MEMORY_FOR_PARTIALHGB_MB.
     // Default to 100 MB, minimum setting 10 MB
@@ -810,7 +789,6 @@ void ex_hash_grby_tcb::workInitialize() {
     } else if(availableMemory < 10 * ONE_MEG) {
       availableMemory = 10 * ONE_MEG;  
     } // LCOV_EXCL_STOP  
-#endif
     
     // reset the counter for every run.
     partialGroupbyMissCounter_ = 0;
@@ -843,15 +821,12 @@ void ex_hash_grby_tcb::workInitialize() {
 				    buckets_,
 				    bucketCount_,
 				    availableMemory,
-#ifndef __EID
 				    memMonitor_,
 				    hashGrbyTdb().pressureThreshold_,
 				    getGlobals()->castToExExeStmtGlobals(),
-#endif
 				    &rc_,
 				    hashGrbyTdb().isPartialGroup_,  // no O/F
 				    hashGrbyTdb().isPartialGroup_,
-#ifndef __EID
 				    hashGrbyTdb().minBuffersToFlush_,
 				    hashGrbyTdb().numInBatch_,
 
@@ -874,7 +849,6 @@ void ex_hash_grby_tcb::workInitialize() {
 				    0,
 				    0,
 				    0,
-#endif
 				    hashGrbyTdb().initialHashTableSize_,
 				    getStatsEntry()
                                     );
@@ -901,9 +875,7 @@ void ex_hash_grby_tcb::workInitialize() {
       break;
   }
 
-#ifndef __EID
   clusterDb_->setBMOMaxMemThresholdMB(hashGrbyTdb().getBMOMaxMemThresholdMB());
-#endif 
 
   Cluster * cluster = NULL;
   ULng32 i;
@@ -1177,11 +1149,7 @@ void ex_hash_grby_tcb::workReadChild() {
 	  }
 	} else // (distinct) New group, no aggregates
 	  if ( cluster->getState() == Cluster::CHAINED ) // not spilled yet
-            #ifdef __EID
-              returnResultCurrentRow();
-            #else
-	      returnResultCurrentRow(cluster->getLastDataPointer()); // return this row now up to the parent
-            #endif
+            returnResultCurrentRow(cluster->getLastDataPointer()); // return this row now up to the parent
       }
       else {
 	// we couldn't insert the row. If we got an error, handle it.
@@ -1242,14 +1210,13 @@ void ex_hash_grby_tcb::workReadChild() {
     // remove the row from the child's queue
     childQueue_.up->removeHead();
 
-#ifndef __EID
     if ( hashGrbyTdb().logDiagnostics() ) { // LOG
 
       // Report memory quota allocation grabbing while reading child rows
       if ( clusterDb_->memoryQuotaMB() > hashGrbyTdb().memoryQuotaMB() ) {
 	char msg[512];
 	sprintf(msg, "HGB End reading input (%u). GRABBED additional quota %u MB",
-		    0, // NA_64BIT, use instance id later
+		    0,
 		    clusterDb_->memoryQuotaMB() - 
 		    hashGrbyTdb().memoryQuotaMB());
 	// log an EMS event and continue
@@ -1317,8 +1284,6 @@ void ex_hash_grby_tcb::workReadChild() {
     // global count of unused memory, so that other BMOs may use this memory
     clusterDb_->yieldUnusedMemoryQuota(ofClusterList_, bucketCount_ ); 
     
-#endif
-
   } break;
 
   case ex_queue::Q_SQLERROR: {
@@ -1451,8 +1416,6 @@ Int32 ex_hash_grby_tcb::workReadChildBitMux() {
   return 0;
 }
 // LCOV_EXCL_STOP
-
-#ifndef __EID
 
 /////////////////////////////////////////////////////////////////////////////
 // read rows from the overflow buffer and aggregate them into the
@@ -1620,7 +1583,6 @@ void ex_hash_grby_tcb::workSpill() {
     // all I/Os are done, go back to the state were we came from
     setState(oldState_);
     clusterDb_->setClusterToFlush(NULL);
-#ifndef __EID
     if ( hashGrbyTdb().logDiagnostics() ) {
       Int64 elapsedIOTime = ioTimer_.endTimer();   // stop timing, get current total
       if (!haveSpilled_) {
@@ -1633,15 +1595,12 @@ void ex_hash_grby_tcb::workSpill() {
 	haveSpilled_ = TRUE;
       }
     }
-#endif
   }
   else {
     numIOChecks_++;
-#ifndef __EID
     if ( hashGrbyTdb().logDiagnostics() ) {
       ioTimer_.startTimer();                    // start accumulating time
     }
-#endif
     if (rc_)
       setState(HASH_GRBY_ERROR);
   };
@@ -1663,8 +1622,6 @@ void ex_hash_grby_tcb::workReadBuffer() {
       setState(HASH_GRBY_ERROR);
   };
 };
-
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // workEvaluate: prepare clusters for next phase
@@ -1701,8 +1658,6 @@ void ex_hash_grby_tcb::workEvaluate() {
       }
     }
 
-#ifndef __EID
-
     else {
       // the cluster is FLUSHED/SPILLED.
 
@@ -1736,12 +1691,8 @@ void ex_hash_grby_tcb::workEvaluate() {
       cluster->releaseAllHashBuffers();
     };
 
-#endif
-
     cluster = clusterDb_->getClusterList();
   };
-
-#ifndef __EID
 
   // all clusters are now either processed or on the overFlowList.
 
@@ -1817,7 +1768,6 @@ void ex_hash_grby_tcb::workEvaluate() {
     return;
   }
 
-#endif
   // no more clusters to process. We are done unless there are bitmux
   // rows to return (and aggregation is used, so these rows weren't returned)
   if ( bitMuxTable_ && hbAggrExpr_ )
@@ -1887,7 +1837,7 @@ ULng32 ex_hash_grby_tcb::workReturnRows(NABoolean tryToDefrag) {
       }
       if (resultPool_->get_free_tuple(workAtp_->getTupp(resultRowAtpIndex_),*rowLenPtr))
         return 2 ; //WORK_POOL_BLOCKED;
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG))
       char txt[] = "hashgrpby";
       SqlBuffer * buf = resultPool_->getCurrentBuffer();
       sql_buffer_pool::logDefragInfo(txt,
@@ -1953,7 +1903,6 @@ ULng32 ex_hash_grby_tcb::workReturnRows(NABoolean tryToDefrag) {
       matchCount_++;
       upParentEntry->upState.setMatchNo(matchCount_);
 
-#ifndef __EID
       if ( matchCount_ == 1 && haveSpilled_ ) {
 	// haveSpilled_ indicates that an overflow took place (Only for distinct
 	// HGB the overflow occurs after the return of the first row, but that
@@ -1963,7 +1912,6 @@ ULng32 ex_hash_grby_tcb::workReturnRows(NABoolean tryToDefrag) {
 					  "HASH GRBY returns first row.", 
 					  hashGrbyTdb().getExplainNodeId());
       }
-#endif
       
       // insert into parent up queue
       parentQueue_.up->insert();
@@ -2084,7 +2032,6 @@ void ex_hash_grby_tcb::workDone() {
 
   parentQueue_.down->removeHead();
 
-#ifndef __EID
   if ( haveSpilled_ && hashGrbyTdb().logDiagnostics() ) {
     char msg[256];
     Int64 elapsedIOTime = ioTimer_.endTimer();// stop timing, get current total
@@ -2096,7 +2043,6 @@ void ex_hash_grby_tcb::workDone() {
 	       hashGrbyTdb().getExplainNodeId());
     numIOChecks_ = 0;
   }
-#endif
 
   setState(HASH_GRBY_EMPTY);
   parentQueue_.up->insert();
@@ -2116,11 +2062,9 @@ void ex_hash_grby_tcb::workDone() {
   };
 
   if (clusterDb_) {
-#ifndef __EID
     // Yield memory allocated back to global count of unused memory, so that
     // other BMOs may use this memory
     clusterDb_->yieldAllMemoryQuota();  // yield all of the alloc memory
-#endif
 
     delete clusterDb_;
     clusterDb_ = NULL;

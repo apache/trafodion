@@ -1029,22 +1029,12 @@ double SQLInterval::encode(void *bufPtr) const
     val = temp;
     break;
   }
-#ifdef NA_64BIT
-  // dg64 - a bit of a guess
   case sizeof(Int32): {
     Int32 temp;
     memcpy((char *) &temp, valPtr, sizeof(Int32));
     val = temp;
     break;
   }
-#else
-  case sizeof(Lng32): {
-    Lng32 temp;
-    memcpy((char *) &temp, valPtr, sizeof(Lng32));
-    val = temp;
-    break;
-  }
-#endif
   case sizeof(Int64): {
     Int64 temp;
     memcpy((char *) &temp, valPtr, sizeof(Int64));

@@ -84,16 +84,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ex_split_top_tdb()
+  ex_split_top_tdb()
   {}
 
-  NA_EIDPROC virtual ~ex_split_top_tdb()
+  virtual ~ex_split_top_tdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -245,7 +245,7 @@ public:
   virtual Int32 numChildren() const;
   virtual const ex_tcb* getChild(Int32 pos) const;
 
-  virtual NA_EIDPROC ExOperStats *doAllocateStatsEntry(CollHeap *heap,
+  virtual ExOperStats *doAllocateStatsEntry(CollHeap *heap,
                                                        ComTdb *tdb);
 
 private:

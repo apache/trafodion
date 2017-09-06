@@ -1,7 +1,7 @@
 /* -*-C++-*-
 ******************************************************************************
 *
-* File:         termpfile.C
+* File:         tempfile.C
 * Description:  Methods temporary overflow files
 *
 *               
@@ -35,72 +35,3 @@
 ******************************************************************************
 */
 
-// begining of regular compilation
-#include "Platform.h"
-#include "tempfile.h"
-#include <fcntl.h>
-
-#include <stdio.h>
-
-
-TempFile::TempFile()
-  : fd_(-1),
-    offset_(-1) {
-};
-
-TempFile::~TempFile() {
-  TFclose();
-};
-
-void TempFile::TFread(FilePos * position,
-			 char * buffer,
-			 Int32 size) {
-  if ((position->fileId_ != fd_) ||
-      (!position->valid() ||
-      ((position->offset_ + size) > offset_)))
-    ex_assert(0, "tried to read from non existing temporary file");
-  lseek(fd_, offset_, SEEK_SET);
-  read(fd_, buffer, size);
-};
-
-void TempFile::TFwrite(FilePos * position,
-		       char * buffer,
-		       Int32 size) {
-  if (fd_ == -1) {
-    fd_ = open(name_, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-
-    if (fd_ == -1)
-    {
-      // we couldn't create the tmpfile. Too bad!!
-      printf ("temporary file name: %s\n", name_);
-      ex_assert(0, "unable to open temporary file");
-    };
-    offset_ = 0;
-  };
-
-  lseek(fd_, offset_, SEEK_SET);
-  write(fd_, buffer, size);
-  // return the file position of the written buffer
-  position->fileId_ = fd_;
-  position->offset_ = offset_;
-
-  // the offset has changed
-  offset_ += size;
-};
-
-void TempFile::TFclose() {
-  if (fd_ > -1) {
-    ex_assert((close(fd_) == 0), "unable to close temporary file");
-    ex_assert((unlink(name_) == 0), "unable to purge temporary file");
-    fd_ = -1;
-  };
-  offset_ = -1;
-};
-
-NABoolean TempFile::ioComplete() {
-  return FALSE; // for NSK, no overlapped io
-};
-
-NABoolean TempFile::ioSucessfull() {
-  return TRUE;
-};

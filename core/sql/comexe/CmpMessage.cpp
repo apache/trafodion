@@ -262,13 +262,11 @@ void CmpMessageReplyBasic::unpackMyself(IpcMessageObjType objType,
 CmpCompileInfo::CmpCompileInfo(char * sourceStr, Lng32 sourceStrLen,
 			       Lng32 sourceStrCharSet,
 			       char * schemaName, Lng32 schemaNameLen,
-			       char * recompControlInfo, Lng32 recompControlInfoLen,
                                ULng32 inputArrayMaxsize, short atomicity)
      : flags_(0),
        sqltext_(sourceStr), sqlTextLen_(sourceStrLen),
        sqlTextCharSet_(sourceStrCharSet),
        schemaName_(schemaName), schemaNameLen_(schemaNameLen),
-       recompControlInfo_(recompControlInfo), recompControlInfoLen_(recompControlInfoLen),
        inputArrayMaxsize_(inputArrayMaxsize)
 {
   if (atomicity == 1) {
@@ -291,8 +289,6 @@ CmpCompileInfo::CmpCompileInfo()
     sqlTextCharSet_(0),
     schemaName_(NULL), 
     schemaNameLen_(0),
-    recompControlInfo_(NULL), 
-    recompControlInfoLen_(0),
     inputArrayMaxsize_(0)
 {
   str_pad(fillerBytes_, FILLERSIZE, '\0');
@@ -306,8 +302,6 @@ void CmpCompileInfo::init()
   sqlTextCharSet_ = 0;
   schemaName_ = NULL; 
   schemaNameLen_ = 0;
-  recompControlInfo_ = NULL; 
-  recompControlInfoLen_ = 0;
   inputArrayMaxsize_ = 0;
 }
 
@@ -321,8 +315,7 @@ Lng32 CmpCompileInfo::getLength()
 Lng32 CmpCompileInfo::getVarLength()
 {
   return ROUND8(sqlTextLen_) + 
-    ROUND8(schemaNameLen_) 
-    + ROUND8(recompControlInfoLen_);
+    ROUND8(schemaNameLen_);
 }
 
 void CmpCompileInfo::packVars(char * buffer, CmpCompileInfo *ci,
@@ -340,13 +333,6 @@ void CmpCompileInfo::packVars(char * buffer, CmpCompileInfo *ci,
       str_cpy_all(&buffer[nextOffset], (char *)schemaName_, schemaNameLen_);
       ci->schemaName_ = (char *)nextOffset;
       nextOffset += ROUND8(schemaNameLen_);
-    }
-
-  if (recompControlInfo_ && (recompControlInfoLen_ > 0))
-    {
-      str_cpy_all(&buffer[nextOffset], (char *)recompControlInfo_, recompControlInfoLen_);
-      ci->recompControlInfo_ = (char *)nextOffset;
-      nextOffset += ROUND8(recompControlInfoLen_);
     }
 }
 
@@ -375,15 +361,10 @@ void CmpCompileInfo::unpack(char * base)
       schemaName_ = base + (Lng32)(Long)schemaName_;
     }
 
-  if (recompControlInfo_)
-    {
-      recompControlInfo_ = base + (Lng32)(Long)recompControlInfo_;
-    }
 }
 
 void CmpCompileInfo::getUnpackedFields(char* &sqltext,
-				       char* &schemaName,
-				       char* &recompControlInfo)
+				       char* &schemaName)
 {
   char * base = (char *)this;
 
@@ -397,11 +378,6 @@ void CmpCompileInfo::getUnpackedFields(char* &sqltext,
       schemaName = base + (Lng32)(Long)schemaName_;
     }
 
-  recompControlInfo = NULL;
-  if (recompControlInfo_)
-    {
-      recompControlInfo = base + (Lng32)(Long)recompControlInfo_;
-    }
 }
 
 const short CmpCompileInfo::getRowsetAtomicity()
@@ -446,11 +422,9 @@ CmpDDLwithStatusInfo::CmpDDLwithStatusInfo()
 
 CmpDDLwithStatusInfo::CmpDDLwithStatusInfo(char * sourceStr, Lng32 sourceStrLen,
                                            Lng32 sourceStrCharSet,
-                                           char * schemaName, Lng32 schemaNameLen, 
-                                           char * recompControlInfo, Lng32 recompControlInfoLen)
+                                           char * schemaName, Lng32 schemaNameLen)
   : CmpCompileInfo(sourceStr, sourceStrLen, sourceStrCharSet,
                    schemaName, schemaNameLen,
-                   recompControlInfo, recompControlInfoLen,
                    0, 0)
 {
   statusFlags_ = 0;
@@ -649,7 +623,6 @@ IpcMessageObjSize CmpMessageReplyCode::packMyself(IpcMessageBufferPtr& buffer)
   return size;
 }
 
-#ifdef NA_CMPDLL
 IpcMessageObjSize
 CmpMessageReplyCode::copyFragsToBuffer(IpcMessageBufferPtr& buffer)
 {
@@ -673,7 +646,6 @@ CmpMessageReplyCode::copyFragsToBuffer(IpcMessageBufferPtr& buffer)
 
   return size;
 }
-#endif // NA_CMPDLL
 
 // -----------------------------------------------------------------------
 // methods for CmpMessageRequest

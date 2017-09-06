@@ -466,7 +466,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %token <tokval> TOK_ASC
 %token <tokval> TOK_ASCII
 %token <tokval> TOK_ATOMIC
-%token <tokval> TOK_AUDIT_IMAGE 		// Utilities.
 %token <tokval> TOK_AUDITONREFRESH		// MV
 %token <tokval> TOK_AUTOABORT
 %token <tokval> TOK_AUTOBEGIN
@@ -854,7 +853,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 // %token <tokval> TOK_M -- already defined below
 %token <tokval> TOK_MONTHNAME
 %token <tokval> TOK_MORE                /* ANSI SQL non-reserved word */
-%token <tokval> TOK_MPLOC               /* Tandem extension non-reserved word */
 %token <tokval> TOK_MRANK               /* Tandem extension non-reserved word */
 %token <tokval> TOK_MSTDDEV             /* Tandem extension non-reserved word */
 %token <tokval> TOK_MSUM                /* Tandem extension non-reserved word */
@@ -2003,9 +2001,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <item>				insert_value_expression_list_paren
 // left recursion for insert statement values.
 
-%type <item>                audit_image_value
-%type <item>                audit_image_arg_list
-%type <corrName>            audit_image_object
 %type <hbaseColumnCreateOptionsList>                hbase_column_create_list
 %type <hbaseColumnCreateOptions>                hbase_column_create_value
 %type <item>      			cast_specification
@@ -2484,7 +2479,6 @@ static void enableMakeQuotedStringISO88591Mechanism()
 %type <boolean>                 optional_with_shared_access_clause
 %type <stringval>               fully_expanded_guardian_loc_name
 %type <stringval>               guardian_location_name
-%type <stringval>               guardian_subvolume_name
 %type <stringval>               partition_name
 %type <pElemDDL>  		location_list
 %type <pElemDDL>  		source_location_list
@@ -10080,12 +10074,6 @@ misc_function :
 				  ((BiArith*) $$)->setStandardNormalization();
                 }
 
-     | TOK_AUDIT_IMAGE '(' audit_image_object ',' '(' audit_image_arg_list ')' ')'
-             {
-	       // Create an AuditImage function.
-	       $$ = new(PARSERHEAP()) AuditImage(*$3, $6);
-	     }
-
          | TOK_LAST_DAY '(' value_expression ')'
              {
 	       $$ = new (PARSERHEAP()) ZZZBinderFunction(ITM_LAST_DAY, $3);
@@ -10327,76 +10315,6 @@ date_time_operand : TOK_YEAR    { $$ = ITM_DATEDIFF_YEAR   ;}
                       }
                     }
 
-/* type corrname  */
-audit_image_object: TOK_INDEX_TABLE actual_table_name 
-                           {
-			     // This syntax is only allowed if the internal 
-			     // parser flag is set, since this is internal syntax.
-			     // For showplan, note that currently, the internal 
-			     // sqlparser flags are not correctly propagated to 
-			     // the second mxcmp, hence a check for the control
-			     // session value for showplan is also needed.
-			     const NAString * val =
-			       ActiveControlDB()->getControlSessionValue("SHOWPLAN");
-			     if (((val) && (*val == "ON")) ||
-				 (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE)) 
-#ifdef _DEBUG
-                                 || (getenv("TEST_INTERNAL_SYNTAX"))
-#endif // _DEBUG
-                                )
-			       {
-				 $2->setSpecialType(ExtendedQualName::INDEX_TABLE);
-				 $$ = $2;
-			       }
-                               else
-                               {
-                                 yyerror(""); YYERROR;
-                               }
-			   } // TOK_INDEX_TABLE
-                    | TOK_TABLE actual_table_name 
-                        {
-			  
-			  // Enable AUDIT_IMAGE functions for tables. 
-			  // This is used only for testing purpose right now.
-			  if (CmpCommon::getDefault(AUDIT_IMAGE_FOR_TABLES) == DF_ON)
-			    {
-			      // This syntax is only allowed if the internal 
-			      // parser flag is set, since this is internal 
-			      // syntax. For showplan, note that currently, 
-			      // the internal sqlparser flags are not correctly 
-			      // propagated to the second mxcmp,
-			      // hence a check for the control session value for 
-			      // showplan is also needed.
-			      
-			      // In addition, AuditImage for TOK_TABLE must be allowed
-			      // only if CQD AUDIT_IMAGE_FOR_TABLES is set to ON.
-			      const NAString * val =
-				ActiveControlDB()->getControlSessionValue("SHOWPLAN");
-			      if (((val) && (*val == "ON")) ||
-				  (Get_SqlParser_Flags(ALLOW_SPECIALTABLETYPE))
-#ifdef _DEBUG
-                                  || (getenv("TEST_INTERNAL_SYNTAX"))
-#endif // _DEBUG
-                                 )
-				{
-				  // NORMAL_TABLE should be the default. Setting it 
-				  // anyway to be consistent with its INDEX_TABLE 
-				  // counterpart.
-				  $2->setSpecialType(ExtendedQualName::NORMAL_TABLE);
-				  $$ = $2;
-				}
-                                else
-                                {
-                                   yyerror(""); YYERROR;
-                                }
-			      
-			    } // End of CQD AUDIT_IMAGE_FOR_TABLES
-                            else
-                            {
-                               yyerror(""); YYERROR;
-                            }
-			}
-
 // The value_expression must be cast to the Token Type
 /* type token */
 datetime_keywords : TOK_QUARTER  ',' value_expression 		  // 3 months	Cast 3*num_expr to months
@@ -10555,20 +10473,6 @@ timestamp_keywords : IDENTIFIER ',' value_expression
         YYERROR;
       }
   }
-
-/* type item */
-audit_image_arg_list:  audit_image_value 
-                      {
-			$$ = $1;
-                      }
-                      | audit_image_value ',' audit_image_arg_list
-                      {
-			$$ = new(PARSERHEAP()) ItemList($1, $3);
-                      }
-
-/* type item */
-audit_image_value : value_expression
-
 
 /* type item */
 encode_key_cast_spec : cast_specification
@@ -21524,19 +21428,6 @@ declare_or_set_cqd: TOK_DECLARE TOK_CATALOG character_string_literal
                                     ControlQueryDefault(
                                       SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), "NAMETYPE", *$3);
 				}
-                  | TOK_DECLARE TOK_MPLOC character_string_literal
-                                {
-                                  // DEFAULT_CHARSET has no effect on character_string_literal in this context
-                                  $$ = new (PARSERHEAP())
-                                    ControlQueryDefault(
-                                      SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), "MP_SUBVOLUME", *$3);
-                                }
-                  | TOK_DECLARE TOK_MPLOC guardian_subvolume_name
-                                {
-                                  $$ = new (PARSERHEAP())
-                                    ControlQueryDefault(
-                                      SQLTEXT(), (CharInfo::CharSet)SQLTEXTCHARSET(), "MP_SUBVOLUME", *$3);
-                                }
 
 		  /* The SET flavor is dynamic (the extra TRUE flag).
 		  /* See the comments way at the top for when
@@ -21627,17 +21518,6 @@ declare_or_set_cqd: TOK_DECLARE TOK_CATALOG character_string_literal
 				  $$ = normalizeDynamicCQD(
 				    "NAMETYPE", *$3);
 				}
-                  | TOK_SET TOK_MPLOC character_string_literal 
-                                {
-                                  // DEFAULT_CHARSET has no effect on character_string_literal in this context
-				  $$ = normalizeDynamicCQD(
-				    "MP_SUBVOLUME", *$3);
-                                }
-                  | TOK_SET TOK_MPLOC guardian_subvolume_name 
-                                {
-				  $$ = normalizeDynamicCQD(
-				    "MP_SUBVOLUME", *$3);
-                                }
 
 /* type tokval */
 query_shape_options : TOK_IMPLICIT TOK_EXCHANGE
@@ -22773,9 +22653,6 @@ show_statement:
                case ExtendedQualName::TRIGTEMP_TABLE:
                  labelAnsiNameSpace = COM_TRIGTEMP_TABLE_NAME;
                  break;
-               case ExtendedQualName::RESOURCE_FORK:
-                 labelAnsiNameSpace = COM_TABLE_NAME;
-                 break;
                default :
                  // There should be a case for every special type that
                  // is specified by the production extended_label_name.
@@ -23103,15 +22980,6 @@ collate_clause : TOK_COLLATE TOK_DEFAULT   { $$ = CharInfo::DefaultCollation; }
 		     //
 		     $$ = CharInfo::UNKNOWN_COLLATION;
 		     NABoolean lookupNameAsNSK = FALSE;
-		     if (SqlParser_NAMETYPE == DF_NSK) {
-		       if (qn->getCatalogName().isNull()) {
-			 lookupNameAsNSK = TRUE;
-			 if (qn->getSchemaName().isNull()) {
-			   NAString n(qn->getObjectName());
-			   $$ = CharInfo::getCollationEnum(n, lookupNameAsNSK);
-			 }	// SJIS
-		       }	// Y.SJIS or SJIS
-		     }		// NAMETYPE NSK
 
 		     if ($$ == CharInfo::UNKNOWN_COLLATION) {
 
@@ -28905,18 +28773,6 @@ location_definition : guardian_location_name
  */
 
 /* type stringval */
-/* ...lu-shung... kludge */
-// Use identifier instead of regular_identifier to allow reserved words all 
-// caps in double quotes as subvolume name.  Double quotes are handled in 
-// ValidateNSKNamePart::validate of DefaultValidator.cpp and
-// ComMPLoc::parse of ComMPLoc.cpp.
-guardian_subvolume_name : guardian_volume_name '.' identifier
-                                {
-                                  $1->append("." + *$3);
-                                  delete $3;
-                                  $$ = $1;
-                                }
-/* type stringval */
 guardian_location_name : guardian_volume_name
                        | guardian_volume_name '.' 
 		         regular_identifier   '.'
@@ -33753,7 +33609,6 @@ nonreserved_word :      TOK_ABORT
                       | TOK_MORE
                       | TOK_MOVE
                       | TOK_MOVEMENT
-                      | TOK_MPLOC             /* Tandem extension */
                       | TOK_MTS
                       | TOK_MV  
                       | TOK_MULTI            /* Long Running */
@@ -34084,7 +33939,6 @@ nonreserved_func_word:  TOK_ABS
                       | TOK_ASIN
                       | TOK_ATAN
                       | TOK_ATAN2
-                      | TOK_AUDIT_IMAGE  // Utilities
                       | TOK_AUTHNAME
                       | TOK_AUTHTYPE
                       | TOK_BITAND

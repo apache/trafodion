@@ -39,10 +39,8 @@
 #include "Platform.h"
 
 
-#ifndef __EID
 #include <stdio.h>
 #include <stdlib.h>
-#endif
 
 #include "exp_stdh.h"
 #include "exp_clause_derived.h"
@@ -59,7 +57,6 @@
 ///////////////////////////////////////////////////////////
 // class ex_clause
 ///////////////////////////////////////////////////////////
-NA_EIDPROC
 void ex_clause::copyOperands(ex_clause* clause, Space* space)
 {
   NABoolean showplan = (clause->getOperand() ?
@@ -160,7 +157,7 @@ void ex_clause::copyOperands(ex_clause* clause, Space* space)
   }
 }
 
-NA_EIDPROC 
+
 ex_clause::ex_clause(clause_type type, 
 		     OperatorTypeEnum oper_type,
 		     short num_operands, 
@@ -421,9 +418,6 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_RANGE_LOOKUP:
 	  setClassID(FUNC_RANGE_LOOKUP_ID);
 	  break;
-	case ITM_AUDIT_IMAGE:
-	  setClassID(FUNC_AUDIT_ROW_IMAGE);
-	  break;
 	case ITM_OFFSET:
 	  setClassID(FUNC_OFFSET_ID);
 	  break;
@@ -499,12 +493,8 @@ ex_clause::ex_clause(clause_type type,
 	case ITM_NVL:
 	  setClassID(FUNC_NVL);
 	  break;
-    case ITM_JSONOBJECTFIELDTEXT:
+        case ITM_JSONOBJECTFIELDTEXT:
 	  setClassID(FUNC_JSON_ID);
-	  break;
-      
-	case ITM_EXTRACT_COLUMNS:
-	  setClassID(FUNC_EXTRACT_COLUMNS);
 	  break;
 	case ITM_QUERYID_EXTRACT:
 	  setClassID(FUNC_QUERYID_EXTRACT);
@@ -667,7 +657,7 @@ ex_clause::ex_clause(clause_type type,
 };
 
 
-NA_EIDPROC ex_clause::~ex_clause()
+ex_clause::~ex_clause()
 {
 }
 
@@ -676,7 +666,7 @@ NA_EIDPROC ex_clause::~ex_clause()
 // with the given class ID; used by NAVersionedObject::driveUnpack().
 // -----------------------------------------------------------------------
 #pragma nowarn(1506)  // warning elimination 
-NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
+char *ex_clause::findVTblPtr(short classID)
 {
   char *vtblPtr;
   switch (classID)
@@ -898,9 +888,6 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
     case ex_clause::FUNC_RANGE_LOOKUP_ID:
       GetVTblPtr(vtblPtr, ExFunctionRangeLookup);
       break;
-    case ex_clause::FUNC_AUDIT_ROW_IMAGE:
-      GetVTblPtr(vtblPtr, ExAuditImage);
-      break;
     case ex_clause::FUNC_OFFSET_ID:
       GetVTblPtr(vtblPtr, ExpSequenceFunction);
       break;
@@ -960,9 +947,6 @@ NA_EIDPROC char *ex_clause::findVTblPtr(short classID)
       break;
     case ex_clause::FUNC_JSON_ID:
       GetVTblPtr(vtblPtr, ex_function_json_object_field_text);
-      break;
-    case ex_clause::FUNC_EXTRACT_COLUMNS:
-      GetVTblPtr(vtblPtr, ExFunctionExtractColumns);
       break;
     case ex_clause::FUNC_QUERYID_EXTRACT:
       GetVTblPtr(vtblPtr, ex_function_queryid_extract);
@@ -1115,7 +1099,7 @@ ex_expr::exp_return_type ex_clause::processNulls(char *null_data[],
   return ex_expr::EXPR_OK;
 }
 
-NA_EIDPROC Long ex_clause::packClause(void * space, Lng32 /*size*/)
+Long ex_clause::packClause(void * space, Lng32 /*size*/)
 {
   if (op_) {
     if (op_[0]->showplan()) {
@@ -1129,12 +1113,12 @@ NA_EIDPROC Long ex_clause::packClause(void * space, Lng32 /*size*/)
   return NAVersionedObject::pack(space);
 }
 
-NA_EIDPROC Long ex_clause::pack(void * space)
+Long ex_clause::pack(void * space)
 {
   return packClause(space, sizeof(ex_clause));
 }
 
-NA_EIDPROC Lng32 ex_clause::unpackClause(void *base, void * reallocator)
+Lng32 ex_clause::unpackClause(void *base, void * reallocator)
 {
   if (op_) {
     if (op_.unpackShallow(base)) return -1;
@@ -1150,12 +1134,12 @@ NA_EIDPROC Lng32 ex_clause::unpackClause(void *base, void * reallocator)
   return NAVersionedObject::unpack(base, reallocator);
 }
 
-NA_EIDPROC Lng32 ex_clause::unpack(void *base, void * reallocator)
+Lng32 ex_clause::unpack(void *base, void * reallocator)
 {
   return unpackClause(base, reallocator);
 }
 
-NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
+const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
 {
   switch (ote)
     {
@@ -1444,8 +1428,6 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_PAGROUP: return "ITM_PAGROUP";
     // LCOV_EXCL_STOP
     case ITM_HASH2_DISTRIB: return "ITM_HASH2_DISTRIB";
-    // LCOV_EXCL_START
-    case ITM_EXTRACT_COLUMNS: return "ITM_EXTRACT_COLUMNS";
 
     case ITM_HEADER: return "ITM_HEADER";
 
@@ -1551,7 +1533,6 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     case ITM_SET_TRANS_MULTI_COMMIT: return "ITM_SET_TRANS_MULTI_COMMIT";
 
     case ITM_LAST_ITEM_OP: return "ITM_LAST_ITEM_OP";
-    case ITM_AUDIT_IMAGE: return "ITM_AUDIT_IMAGE";
     case ITM_UNIQUE_ID: return "ITM_UNIQUE_ID";
     case ITM_ROWNUM: return "ITM_ROWNUM";
     case ITM_HBASE_COLUMN_LOOKUP: return "ITM_HBASE_COLUMN_LOOKUP";
@@ -1568,16 +1549,14 @@ NA_EIDPROC const char * getOperTypeEnumAsString(Int16 /*OperatorTypeEnum*/ ote)
     // when adding new types
     default: 
       {
-#ifndef __EID
 	cout << "OperatorType must be added to getOperTypeEnumAsString()"
 	     << ote << endl;
-#endif  // __EID
 	return "Add To getOperTypeEnumAsString()";
       }
     }
 }
 
-NA_EIDPROC char * exClauseGetText(OperatorTypeEnum ote)
+char * exClauseGetText(OperatorTypeEnum ote)
 {
   char * itmText = (char *)getOperTypeEnumAsString(ote);
   
@@ -1657,10 +1636,8 @@ void ex_clause::displayContents(Space * space, const char * displayStr,
                                    (showplan 
                                    ? getOperand(i+numOperands_) 
                                    : NULL));
-   #ifndef __EID
    str_sprintf(buf, "\n");
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-   #endif  
 #pragma warn(1506)  // warning elimination 
   }
  }
@@ -1936,7 +1913,6 @@ void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/
 {
   setInstruction();
 
-#ifndef __EID
   char buf[100];
   str_sprintf(buf, "  Clause #%d: ex_arith_clause", clauseNum);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
@@ -1947,8 +1923,6 @@ void ex_arith_clause::displayContents(Space * space, const char * /*displayStr*/
 		  (short)arithRoundingMode_, (getDivToDownscale() ? 1 : 0));
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
-
-#endif
 
   ex_clause::displayContents(space, (const char *)NULL, clauseNum, constsArea, 0,
                              ex_arith_clause::getInstruction(getInstrArrayIndex()),
@@ -1983,7 +1957,6 @@ void bool_result_clause::displayContents(Space * space, const char * /*displaySt
 
 void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
-#ifndef __EID
   char buf[100];
   str_sprintf(buf, "  Clause #%d: ex_branch_clause", clauseNum);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
@@ -2009,8 +1982,6 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
   str_sprintf(buf, "    branch to = #%d ",branch_clause->clauseNum());
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-#endif
-
   if (getNumOperands() == 0)
     return;
 
@@ -2026,10 +1997,8 @@ void ex_branch_clause::displayContents(Space * space, const char * /*displayStr*
                                    (showplan
                                    ? getOperand(i+getNumOperands())
                                    : NULL));
-   #ifndef __EID
    str_sprintf(buf, "\n");
    space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-   #endif
 #pragma warn(1506)  // warning elimination
    }
   }
@@ -2117,28 +2086,6 @@ void ex_like_clause_doublebyte::displayContents(Space * space, const char * /*di
   ex_clause::displayContents(space, "ex_like_clause_doublebyte", clauseNum, constsArea);
 }
 
-void ExAuditImage::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
-{
-   ex_clause::displayContents(space, "ExAuditImage", clauseNum, constsArea);
-   // LCOV_EXCL_STOP
-
-   // Make sure that you display the ex_expr auditImageExpr_ also.
-   // This ex_expr is enclosed within a header and footer.
-#ifndef __EID
-  char buf[100];
-   str_sprintf(buf, "Start of %s (Clause #%d: %s) \n", "ExAuditRowImageExpr", clauseNum, "ExAuditImage"); 
-  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));  
-#endif
-   
- ((ex_expr *)auditImageContainerExpr_->getExpr())->displayContents(space,
-                                                                   -1 /* mode */, 
-                                                                   "ExAuditRowImageExpr");
-#ifndef __EID
-    str_sprintf(buf, "End of %s (Clause #%d: %s) \n", "ExAuditRowImageExpr", clauseNum, "ExAuditImage"); 
-  space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));  
-#endif 
-}
-
 void ExFunctionHbaseTimestamp::displayContents(Space * space, const char * /*displayStr*/, Int32 clauseNum, char * constsArea)
 {
   char buf[100];
@@ -2176,7 +2123,7 @@ void ex_function_dateformat::displayContents(Space * space, const char * /*displ
 }
 
 // Function to compare two strings. 
-NA_EIDPROC Int32 charStringCompareWithPad(char* in_s1, Int32 length1, 
+Int32 charStringCompareWithPad(char* in_s1, Int32 length1, 
                                           char* in_s2, Int32 length2, 
                                           char space)
 {
@@ -2232,7 +2179,7 @@ NA_EIDPROC Int32 charStringCompareWithPad(char* in_s1, Int32 length1,
     return compare_code;
 }
 
-NA_EIDPROC Int32 wcharStringCompareWithPad(NAWchar* s1, Int32 length1, 
+Int32 wcharStringCompareWithPad(NAWchar* s1, Int32 length1, 
                                            NAWchar* s2, Int32 length2, 
                                            NAWchar space)
 {

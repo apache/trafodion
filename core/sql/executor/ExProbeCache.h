@@ -57,16 +57,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExProbeCacheTdb()
+  ExProbeCacheTdb()
   {}
 
-  NA_EIDPROC virtual ~ExProbeCacheTdb()
+  virtual ~ExProbeCacheTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -146,7 +146,7 @@ public:
     }
 
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 

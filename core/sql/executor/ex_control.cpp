@@ -55,9 +55,7 @@
 #include  "ex_ddl.h"
 #include  "ComRtUtils.h"
 #include  "ComUser.h"
-#ifdef NA_CMPDLL
 #include  "CmpContext.h"
-#endif // NA_CMPDLL
 
 ex_tcb * ExControlTdb::build(ex_globals * glob)
 {
@@ -182,11 +180,9 @@ short ExControlTcb::work()
   
 
   // Only a STATIC compile will actually affect Arkcmp's context.
-  CmpCompileInfo c(buf, usedlen, sqlTextCharSet, NULL, 0, NULL, 0, 0, 0);
+  CmpCompileInfo c(buf, usedlen, sqlTextCharSet, NULL, 0, 0, 0);
   size_t dataLen = c.getLength();
-#ifdef NA_CMPDLL
   NABoolean saveControl = FALSE;  // if save controls in exe ControlInfoTables
-#endif // NA_CMPDLL
   char * data = new(getHeap()) char[dataLen];
   c.pack(data);
   ContextCli *currCtxt = getGlobals()->castToExExeStmtGlobals()->
@@ -194,8 +190,6 @@ short ExControlTcb::work()
   ExSqlComp *cmp = NULL;
   Int32 cmpStatus = 0;
   {
-#ifdef NA_CMPDLL
-
     // If use embedded compiler, send the settings to it
     if (currCtxt->getSessionDefaults()->callEmbeddedArkcmp() &&
         currCtxt->isEmbeddedArkcmpInitialized() && (CmpCommon::context()) &&
@@ -234,7 +228,7 @@ short ExControlTcb::work()
             dummyReply = NULL;
           }
       }
-#endif // NA_CMPDLL
+
     // if there is an error using embedded compiler or we are already in the 
     // embedded compiler, send this to a regular compiler .
     if (!currCtxt->getSessionDefaults()->callEmbeddedArkcmp()  ||
@@ -279,179 +273,175 @@ short ExControlTcb::work()
 					   getGlobals(), cmp->getDiags());
 		  }
 		else
-#ifdef NA_CMPDLL
 		  saveControl = TRUE;
-#endif // NA_CMPDLL
 	      }  // sendSettingsToCompiler(i) is true
 	  }  // i < currCtxt->getNumArkcmps()
       } //cmpStatus= 0) || (CmpCommon::context()->getRecursionLevel() > 0
-#ifdef NA_CMPDLL
+
     if (saveControl)
-#endif // NA_CMPDLL
-	      {
-		// Add control info to executor ControlInfoTable.
-		currCtxt->
-		  getControlArea()->addControl(
-					       controlTdb().getType(),
-					       controlTdb().reset_,
-					       buf,      usedlen,
-					       value[1], len[1],
-					       value[2], len[2],
-					       value[3], len[3],
-                                          controlTdb().getControlActionType(),
-                                          ExControlEntry::UPON_ALL,
-                                          controlTdb().isNonResettable());
-
-		// reset processing of setOnce cqds if a cqd * reset reset
-		// is seen while the setOnce parserflags is set.
-		// This indicates that ndcs has sent a cqd * reset reset
-		// after setting all the cqds from its DSN.
-		if (((currCtxt->getSqlParserFlags() & 0x400000) != 0) &&
-		    (controlTdb().getType() == DEFAULT_) &&
-		    (controlTdb().reset_ == -1) &&
-		    (value[1] != NULL) &&
-		    (len[1] == 0) &&
-		    (value[2] != NULL) &&
-		    (! str_cmp_ne(value[2], "RESET")))
-		  {
-		    currCtxt->resetSqlParserFlags(0x400000);
-		  }
-
-		// Add cqds which are also ssds(set session defaults) to
-		// the session defaults table.
-		if (controlTdb().getType() == DEFAULT_)
-		  {
-		    if (strcmp(value[1], "AUTO_QUERY_RETRY") == 0)
-		      {
-			if (strcmp(value[2], "OFF") == 0)
-			  currCtxt->getSessionDefaults()->setAqrType(0);
-			else if (strcmp(value[2], "SYSTEM") == 0)
-			  currCtxt->getSessionDefaults()->setAqrType(1);
-			else if (strcmp(value[2], "ON") == 0)
-			  currCtxt->getSessionDefaults()->setAqrType(2);
-		      }
-		    else if (strcmp(value[1], "AUTO_QUERY_RETRY_WARNINGS") == 0)
-		      {
-			if (strcmp(value[2], "ON") == 0)
-			  currCtxt->getSessionDefaults()->setAQRWarnings(1);
-			else
-			  currCtxt->getSessionDefaults()->setAQRWarnings(0);
-		      }
-		    else if (strcmp(value[1], "CATALOG") == 0)
-		      {
-			currContext->getSessionDefaults()->
-			  setCatalog(value[2], strlen(value[2]));
-		      }
-		    else if (strcmp(value[1], "DBTR_PROCESS") == 0)
-		      {
-			if (strcmp(value[2], "ON") == 0)
-			  currContext->getSessionDefaults()->setDbtrProcess(TRUE);
-		      }
-		    else if (strcmp(value[1], "IS_SQLCI") == 0)
-		      {
-			if (strcmp(value[2], "ON") == 0)
-			  currContext->getSessionDefaults()->setMxciProcess(TRUE);
-		      }
-		    else if (strcmp(value[1], "NVCI_PROCESS") == 0)
-		      {
-			if (strcmp(value[2], "ON") == 0)
-                        {
-			  currContext->getSessionDefaults()->setNvciProcess(TRUE);
-                          currContext->getSessionDefaults()->setStatisticsViewType(SQLCLI_PERTABLE_STATS);
-                        }
-		      }
-		    else if (strcmp(value[1], "ODBC_PROCESS") == 0)
-		      {
-			if (strcmp(value[2], "ON") == 0)
-                        {
-			  currContext->getSessionDefaults()->setOdbcProcess(TRUE);
-                          currContext->getSessionDefaults()->setStatisticsViewType(SQLCLI_PERTABLE_STATS);
-                        }
-		      }
-		    else if (strcmp(value[1], "MARIAQUEST_PROCESS") == 0)
-		      {
-			if (strcmp(value[2], "ON") == 0)
-                        {
-			  currContext->getSessionDefaults()->setMariaQuestProcess(TRUE);
-                        }
-		      }
-		    else if (strcmp(value[1], "JDBC_PROCESS") == 0)
-		      {
-			if (strcmp(value[2], "ON") == 0)
-                        {
-			  currContext->getSessionDefaults()->setJdbcProcess(TRUE);
-                          currContext->getSessionDefaults()->setStatisticsViewType(SQLCLI_PERTABLE_STATS);
-                        }
-		      }
-                    else if (strcmp(value[1], "MODE_SEABASE") == 0)
-                    {
-                      if (strcmp(value[2], "ON") == 0)
-		        currContext->getSessionDefaults()->setModeSeabase(TRUE);
-                      else 
-		        currContext->getSessionDefaults()->setModeSeabase(FALSE);
-                    }
-		    else if (strcmp(value[1], "SCHEMA") == 0)
-		      {
-			currContext->getSessionDefaults()->
-			  setSchema(value[2], strlen(value[2]));
-		      }
-		    else if (strcmp(value[1], "USER_EXPERIENCE_LEVEL") == 0)
-		      {
-			currContext->getSessionDefaults()->
-			  setUEL(value[2], strlen(value[2]));
-		      }
-                    else if (strcmp(value[1], "REDRIVE_CTAS") == 0)
-		      {
-                        if (strcmp(value[2], "ON") == 0)
-			  currContext->getSessionDefaults()->setRedriveCTAS(TRUE);
-                        else
-                          currContext->getSessionDefaults()->setRedriveCTAS(FALSE);
-		      }
-                    else if (strcmp(value[1], "EXSM_TRACE_FILE_PREFIX") == 0)
-                    {
-                      char *prefix = value[2];
-                      if (prefix != NULL)
-                        currContext->getSessionDefaults()->
-                          setExSMTraceFilePrefix(prefix, strlen(prefix));
-                    }
-                    else if (strcmp(value[1], "EXSM_TRACE_LEVEL") == 0)
-                    {
-                      int lvl = (int) strtoul(value[2], NULL, 10);
-                      currContext->getSessionDefaults()->
-                        setExSMTraceLevel(lvl);
-                    }
-		    else if (strcmp(value[1], "CALL_EMBEDDED_ARKCMP") == 0)
-		      {
-			if ((strcmp(value[2], "TRUE") == 0) || 
-			    (strcmp(value[2], "ON") == 0)
-			    )
-                        {
-			  currContext->getSessionDefaults()->setCallEmbeddedArkcmp(TRUE);
-                        }
-			else if  ((strcmp(value[2], "FALSE") == 0) || 
-				  (strcmp(value[2], "OFF") == 0)
-			    )
-                        {
-			  currContext->getSessionDefaults()->setCallEmbeddedArkcmp(FALSE);
-                        }
-		      }
-                   else if (strcmp(value[1], "ESP_IDLE_TIMEOUT") == 0)
-                   {
-                      int lvl = (int) strtoul(value[2], NULL, 10);
-                      currContext->getSessionDefaults()->
-                        setEspIdleTimeout(lvl);
-                   }
-                   else if (strcmp(value[1], "COMPILER_IDLE_TIMEOUT") == 0)
-                   {
-                      int lvl = (int) strtoul(value[2], NULL, 10);
-                      currContext->getSessionDefaults()->
-                        setCompilerIdleTimeout(lvl);
-                   }
-		  }
-	      }
+      {
+        // Add control info to executor ControlInfoTable.
+        currCtxt->
+          getControlArea()->addControl(
+               controlTdb().getType(),
+               controlTdb().reset_,
+               buf,      usedlen,
+               value[1], len[1],
+               value[2], len[2],
+               value[3], len[3],
+               controlTdb().getControlActionType(),
+               ExControlEntry::UPON_ALL,
+               controlTdb().isNonResettable());
+        
+        // reset processing of setOnce cqds if a cqd * reset reset
+        // is seen while the setOnce parserflags is set.
+        // This indicates that ndcs has sent a cqd * reset reset
+        // after setting all the cqds from its DSN.
+        if (((currCtxt->getSqlParserFlags() & 0x400000) != 0) &&
+            (controlTdb().getType() == DEFAULT_) &&
+            (controlTdb().reset_ == -1) &&
+            (value[1] != NULL) &&
+            (len[1] == 0) &&
+            (value[2] != NULL) &&
+            (! str_cmp_ne(value[2], "RESET")))
+          {
+            currCtxt->resetSqlParserFlags(0x400000);
+          }
+        
+        // Add cqds which are also ssds(set session defaults) to
+        // the session defaults table.
+        if (controlTdb().getType() == DEFAULT_)
+          {
+            if (strcmp(value[1], "AUTO_QUERY_RETRY") == 0)
+              {
+                if (strcmp(value[2], "OFF") == 0)
+                  currCtxt->getSessionDefaults()->setAqrType(0);
+                else if (strcmp(value[2], "SYSTEM") == 0)
+                  currCtxt->getSessionDefaults()->setAqrType(1);
+                else if (strcmp(value[2], "ON") == 0)
+                  currCtxt->getSessionDefaults()->setAqrType(2);
+              }
+            else if (strcmp(value[1], "AUTO_QUERY_RETRY_WARNINGS") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  currCtxt->getSessionDefaults()->setAQRWarnings(1);
+                else
+                  currCtxt->getSessionDefaults()->setAQRWarnings(0);
+              }
+            else if (strcmp(value[1], "CATALOG") == 0)
+              {
+                currContext->getSessionDefaults()->
+                  setCatalog(value[2], strlen(value[2]));
+              }
+            else if (strcmp(value[1], "DBTR_PROCESS") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  currContext->getSessionDefaults()->setDbtrProcess(TRUE);
+              }
+            else if (strcmp(value[1], "IS_SQLCI") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  currContext->getSessionDefaults()->setMxciProcess(TRUE);
+              }
+            else if (strcmp(value[1], "NVCI_PROCESS") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  {
+                    currContext->getSessionDefaults()->setNvciProcess(TRUE);
+                    currContext->getSessionDefaults()->setStatisticsViewType(SQLCLI_PERTABLE_STATS);
+                  }
+              }
+            else if (strcmp(value[1], "ODBC_PROCESS") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  {
+                    currContext->getSessionDefaults()->setOdbcProcess(TRUE);
+                    currContext->getSessionDefaults()->setStatisticsViewType(SQLCLI_PERTABLE_STATS);
+                  }
+              }
+            else if (strcmp(value[1], "MARIAQUEST_PROCESS") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  {
+                    currContext->getSessionDefaults()->setMariaQuestProcess(TRUE);
+                  }
+              }
+            else if (strcmp(value[1], "JDBC_PROCESS") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  {
+                    currContext->getSessionDefaults()->setJdbcProcess(TRUE);
+                    currContext->getSessionDefaults()->setStatisticsViewType(SQLCLI_PERTABLE_STATS);
+                  }
+              }
+            else if (strcmp(value[1], "MODE_SEABASE") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  currContext->getSessionDefaults()->setModeSeabase(TRUE);
+                else 
+                  currContext->getSessionDefaults()->setModeSeabase(FALSE);
+              }
+            else if (strcmp(value[1], "SCHEMA") == 0)
+              {
+                currContext->getSessionDefaults()->
+                  setSchema(value[2], strlen(value[2]));
+              }
+            else if (strcmp(value[1], "USER_EXPERIENCE_LEVEL") == 0)
+              {
+                currContext->getSessionDefaults()->
+                  setUEL(value[2], strlen(value[2]));
+              }
+            else if (strcmp(value[1], "REDRIVE_CTAS") == 0)
+              {
+                if (strcmp(value[2], "ON") == 0)
+                  currContext->getSessionDefaults()->setRedriveCTAS(TRUE);
+                else
+                  currContext->getSessionDefaults()->setRedriveCTAS(FALSE);
+              }
+            else if (strcmp(value[1], "EXSM_TRACE_FILE_PREFIX") == 0)
+              {
+                char *prefix = value[2];
+                if (prefix != NULL)
+                  currContext->getSessionDefaults()->
+                    setExSMTraceFilePrefix(prefix, strlen(prefix));
+              }
+            else if (strcmp(value[1], "EXSM_TRACE_LEVEL") == 0)
+              {
+                int lvl = (int) strtoul(value[2], NULL, 10);
+                currContext->getSessionDefaults()->
+                  setExSMTraceLevel(lvl);
+              }
+            else if (strcmp(value[1], "CALL_EMBEDDED_ARKCMP") == 0)
+              {
+                if ((strcmp(value[2], "TRUE") == 0) || 
+                    (strcmp(value[2], "ON") == 0)
+                    )
+                  {
+                    currContext->getSessionDefaults()->setCallEmbeddedArkcmp(TRUE);
+                  }
+                else if  ((strcmp(value[2], "FALSE") == 0) || 
+                          (strcmp(value[2], "OFF") == 0)
+                          )
+                  {
+                    currContext->getSessionDefaults()->setCallEmbeddedArkcmp(FALSE);
+                  }
+              }
+            else if (strcmp(value[1], "ESP_IDLE_TIMEOUT") == 0)
+              {
+                int lvl = (int) strtoul(value[2], NULL, 10);
+                currContext->getSessionDefaults()->
+                  setEspIdleTimeout(lvl);
+              }
+            else if (strcmp(value[1], "COMPILER_IDLE_TIMEOUT") == 0)
+              {
+                int lvl = (int) strtoul(value[2], NULL, 10);
+                currContext->getSessionDefaults()->
+                  setCompilerIdleTimeout(lvl);
+              }
+          }
+      }
   }
   getHeap()->deallocateMemory(data);
-  
 
   // all ok. Return EOF.
   ex_queue_entry * up_entry = qparent_.up->getTailEntry();

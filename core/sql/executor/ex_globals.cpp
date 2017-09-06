@@ -119,7 +119,6 @@ void ex_globals::deleteMe(NABoolean fatalError)
 
   if (statsArea_)
   {
-#ifndef __EID
     StatsGlobals *statsGlobals = getStatsGlobals();
     if (statsGlobals == NULL)
     {
@@ -135,9 +134,6 @@ void ex_globals::deleteMe(NABoolean fatalError)
       NADELETE(statsArea_, ExStatisticsArea, statsArea_->getHeap());
       statsGlobals->releaseStatsSemaphore(semId, getPid(), savedPriority, savedStopMode);
     }
-#else
-    NADELETE(statsArea_, ExStatisticsArea, statsArea_->getHeap());
-#endif
   }
   statsArea_ = NULL;
   cleanupTcbs();

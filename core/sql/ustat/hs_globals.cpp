@@ -62,7 +62,6 @@
 #include "CompException.h"
 #include "SQLTypeDefs.h"
 #include "csconvert.h"
-#include "ReadTableDef.h"
 #include "exp_clause_derived.h"  // convDoIt
 #include "ExSqlComp.h" // for NAExecTrans()
 #include "sql_id.h"
@@ -15102,7 +15101,6 @@ static short convInt64ToAscii(char *target,
 // 1 byte for at least one digit after decimal point
 // 5 bytes for exponent (E+DDD)
 ///////////////////////////////////////////////////////////////////
-//NA_EIDPROC
 static short convFloat64ToAscii(char *target,
 		 Lng32 targetLen,
 			double source,

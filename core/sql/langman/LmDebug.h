@@ -60,7 +60,7 @@ void lmDebug(const char *, ...);
 #define LM_DEBUG5(msg,a1,a2,a3,a4,a5)
 #endif
 
-#if defined(LM_DEBUG) && !defined(NA_WINNT)
+#if defined(LM_DEBUG)
 void debugLmSignalHandlers();
 #define LM_DEBUG_SIGNAL_HANDLERS(msg) \
 lmDebug(msg); \

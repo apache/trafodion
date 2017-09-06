@@ -57,7 +57,6 @@
 #include "ComMPLoc.h"
 #include "CmpContext.h"
 #include "CompException.h"
-#include "ReadTableDef.h"
 #include "hs_globals.h"
 #include "hs_cli.h"
 #include "hs_auto.h"
@@ -3738,8 +3737,6 @@ Lng32 HSCursor::fetchNumColumn( const char *clistr
 
   switch(colDesc_[0].length)
     {
-#ifdef NA_64BIT
-    // dg64 - Int64 already taken care of below
     case sizeof(Int32):
       {
         Int32 tmp;
@@ -3752,20 +3749,6 @@ Lng32 HSCursor::fetchNumColumn( const char *clistr
           *pLargeValue = (Int64)tmp;
         break;
       }
-#else
-    case sizeof(Lng32):
-      {
-        Lng32 tmp;
-        memcpy((char *) &tmp,
-               colDesc_[0].data,
-               sizeof(Lng32));
-        if (pSmallValue != NULL)
-          *pSmallValue = tmp;
-        if (pLargeValue != NULL)
-          *pLargeValue = (Int64)tmp;
-        break;
-      }
-#endif
     case sizeof(Int64):
       {
         Int64 tmp;
@@ -3811,7 +3794,7 @@ Lng32 HSCursor::fetchCharNumColumn(const char *clistr, NAString &value1, Int64 &
   {
     // Copy varchar output to 'value'.  First byte is length of varchar.
     // Varchar data starts at byte 3.
-#if defined(NA_LITTLE_ENDIAN) || defined(NA_WINNT)
+#if defined(NA_LITTLE_ENDIAN)
     char length = colDesc_[0].data[0];
 #elif defined(NA_BIG_ENDIAN)
     char length = colDesc_[0].data[1];

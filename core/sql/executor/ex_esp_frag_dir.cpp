@@ -1182,9 +1182,7 @@ void ExEspControlMessage::actOnReceive(IpcConnection *connection)
                 int otherCPU, otherPID, otherNode_unused;
                 SB_Int64_Type seqNum = -1;
                 phandle.decompose(otherCPU, otherPID, otherNode_unused
-#ifdef SQ_PHANDLE_VERIFIER
                                  , seqNum
-#endif
                                  );
                 
                 sm_target_t target;

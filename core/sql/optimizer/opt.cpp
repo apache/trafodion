@@ -3773,8 +3773,8 @@ OptDefaults::OptDefaults(CollHeap* h) : heap_(h)
    readAheadMaxBlocks_ =16.0;
    acceptableInputEstLogPropError_ = 0.5;
    taskCount_ = 0;
-   optTaskLimit_ = INT_MAX; // NA_64BIT - revisit for large value
-   enumPotentialThreshold_ = INT_MAX; // NA_64BIT - revisit for large value
+   optTaskLimit_ = INT_MAX;
+   enumPotentialThreshold_ = INT_MAX;
    level1Constant1_ = 100;
    level1Constant2_ = 100;
    level1ImmunityLimit_ = 5000;

@@ -45,12 +45,9 @@
 #include <fstream>
 using namespace std;
 #include "seabed/ms.h"
-#ifdef NA_64BIT
-// dg64 - the following includes defines min
 #ifdef min
 #undef min
 #endif // min
-#endif // NA_64BIT
 
 #define MAX_SEGMENT_NAME_LEN  255
 #define PROCESSNAME_STRING_LEN    40
@@ -189,9 +186,7 @@ Lng32 ComRtGetProgramInfo(char * pathName,    /* out */
 			 Int64  &processCreateTime,
 			  char *processNameString,
 			  char *parentProcessNameString = NULL
-#ifdef SQ_PHANDLE_VERIFIER
                          , SB_Verif_Type *verifier = NULL
-#endif
 			 );
 
 // OUT: processPriority: current priority of process
@@ -226,7 +221,7 @@ const char * ComRtGetEnvValueFromEnvvars(const char ** envvars,
 					 const char * envvar,
 					 Lng32 * envvarPos = NULL);
 
-#if defined (_DEBUG) && !defined (ARKFS_OPEN) && !defined (__EID)
+#if defined (_DEBUG)
 // -----------------------------------------------------------------------
 // Convenient handling of envvars: Return a value if one exists
 // NB: DEBUG mode only!

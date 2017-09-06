@@ -949,8 +949,7 @@ short ExExeUtilGetStatisticsTcb::work()
 		break;
 	      }
 
-	    if ((statsMergeType_ == SQLCLIDEV_MEASURE_STATS) ||
-		(statsMergeType_ == SQLCLIDEV_ACCUMULATED_STATS) ||
+            if ((statsMergeType_ == SQLCLIDEV_ACCUMULATED_STATS) ||
 		(statsMergeType_ == SQLCLIDEV_PERTABLE_STATS) ||
                 (statsMergeType_ == SQLCLI_PROGRESS_STATS))
 	      {
@@ -1058,9 +1057,7 @@ short ExExeUtilGetStatisticsTcb::work()
 	    if ((NOT getStatsTdb().oldFormat()) &&
 		(NOT getStatsTdb().shortFormat()))
 	      {
-		if (statsMergeType_ == SQLCLIDEV_MEASURE_STATS)
-		  strcpy(statsType, "MEASURE");
-		else if (statsMergeType_ == SQLCLIDEV_ACCUMULATED_STATS)
+		if (statsMergeType_ == SQLCLIDEV_ACCUMULATED_STATS)
 		  strcpy(statsType, "ACCUMULATED");
 		else if (statsMergeType_ == SQLCLIDEV_PERTABLE_STATS)
 		  strcpy(statsType, "PERTABLE");

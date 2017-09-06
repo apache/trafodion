@@ -44,49 +44,45 @@
 
 #pragma warning ( disable : 4251 )
 
-class SQLEXP_LIB_FUNC  ex_function_abs : public ex_function_clause {
+class ex_function_abs : public ex_function_clause {
 public:
-NA_EIDPROC
   ex_function_abs(OperatorTypeEnum oper_type,
 			 Attributes ** attr, Space * space)
 	: ex_function_clause(oper_type, 2, attr, space)
     {};
-NA_EIDPROC
   ex_function_abs()
     {
     };
 
  
-NA_EIDPROC
   ex_expr::exp_return_type eval(char *op_data[],
 				CollHeap*,
 				ComDiagsArea** diagsArea = 0);
   // Display
   //
-  NA_EIDPROC virtual void displayContents(Space * space, const char * displayStr, 
+  virtual void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_function_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 };
 
-class SQLEXP_LIB_FUNC  ExFunctionBitOper : public ex_function_clause {
+class ExFunctionBitOper : public ex_function_clause {
 public:
-NA_EIDPROC
   ExFunctionBitOper(OperatorTypeEnum oper_type,  short numOperands,
 		    Attributes ** attr, Space * space)
        : ex_function_clause(oper_type, numOperands, attr, space)
@@ -94,44 +90,41 @@ NA_EIDPROC
     setType(ex_clause::MATH_FUNCTION_TYPE);
   };
 
-  NA_EIDPROC
   ExFunctionBitOper()
     {
     };
 
  
-  NA_EIDPROC ex_expr::exp_return_type pCodeGenerate(Space *space, UInt32 f);
+  ex_expr::exp_return_type pCodeGenerate(Space *space, UInt32 f);
 
-NA_EIDPROC
   ex_expr::exp_return_type eval(char *op_data[],
 				CollHeap*,
 				ComDiagsArea** diagsArea = 0);
   // Display
   //
-  NA_EIDPROC virtual void displayContents(Space * space, const char * displayStr, 
+  virtual void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_function_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 };
 
-class SQLEXP_LIB_FUNC  ExFunctionMath : public ex_function_clause {
+class ExFunctionMath : public ex_function_clause {
 public:
-NA_EIDPROC
   ExFunctionMath(OperatorTypeEnum oper_type, short numOperands, 
 			 Attributes ** attr, Space * space)
 	: ex_function_clause(oper_type, numOperands, attr, space)
@@ -139,43 +132,40 @@ NA_EIDPROC
     setType(ex_clause::MATH_FUNCTION_TYPE);
   };
 
-NA_EIDPROC
   ExFunctionMath()
        : ex_function_clause()
     {
     };
 
  
-NA_EIDPROC
   ex_expr::exp_return_type eval(char *op_data[],
 				CollHeap*,
 				ComDiagsArea** diagsArea = 0);
 
-NA_EIDPROC
   ex_expr::exp_return_type evalUnsupportedOperations(char *op_data[],
 						     CollHeap *heap,
 						     ComDiagsArea** diagsArea);
 
   // Display
   //
-  NA_EIDPROC virtual void displayContents(Space * space, const char * displayStr, 
+  virtual void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_function_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 };
 

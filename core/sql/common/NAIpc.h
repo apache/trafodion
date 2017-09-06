@@ -97,7 +97,7 @@ public:
   // stdin and stdout (both Unix and NSK).
   // ---------------------------------------------------------------------
   NAMessage(IpcNetworkDomain domain
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 	    // when compiling on NSK systems the default is $RECEIVE
 	    = IPC_DOM_GUA_PHANDLE
 #else

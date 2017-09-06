@@ -96,15 +96,9 @@ const Int32  MAX_OTHERBUF_LEN = ComAnsiNamePart::MAX_IDENTIFIER_EXT_LEN+1+1;
 #define SELECTED_MESSAGE	"--- %d row(s) selected."
 #define SELECTED_BUT_MESSAGE	"--- %d row(s) selected (but none displayed)."
 #define SELECTED_FIRST_ROW_DISPLAY_MESSAGE "--- %d row(s) selected (and first row displayed)."
-#ifdef NA_64BIT
 #define INSERTED_MESSAGE	"--- %ld row(s) inserted."
 #define UPDATED_MESSAGE		"--- %ld row(s) updated."
 #define DELETED_MESSAGE		"--- %ld row(s) deleted."
-#else
-#define INSERTED_MESSAGE	"--- %Ld row(s) inserted."
-#define UPDATED_MESSAGE		"--- %Ld row(s) updated."
-#define DELETED_MESSAGE		"--- %Ld row(s) deleted."
-#endif // NA_64BIT
 #define OP_COMPLETE_MESSAGE	"--- SQL operation complete."
 #define OP_COMPLETED_ERRORS	"--- SQL operation failed with errors."
 #define OP_COMPLETED_WARNINGS	"--- SQL operation completed with warnings."
@@ -365,7 +359,7 @@ void HandleCLIError(Lng32 &error, SqlciEnv *sqlci_env,
 		    const char *outtext = msgtext;
 		    size_t pfxl = strlen("*** ERROR[20109] ");
 		    
-#if defined(USE_WCHAR) && !defined(NA_NSK)
+#if defined(USE_WCHAR)
 		    if (wcsncmp(msgtext, L"*** ERROR[20109] ", pfxl) == 0)
 #else
 		      if (strncmp(msgtext,  "*** ERROR[20109] ", pfxl) == 0)

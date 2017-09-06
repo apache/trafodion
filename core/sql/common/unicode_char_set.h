@@ -65,50 +65,32 @@ public:
 
    enum CHAR_CODE_POINTS {SPACE=0x0020, PERCENT=0x0025, UNDERSCORE=0x005F};
 
-NA_EIDPROC
    unicode_char_set() {};
 
-#ifndef PRIV_SRL 
-NA_EIDPROC
    virtual ~unicode_char_set() {};
-#else
-NA_EIDPROC ~unicode_char_set() {};
-#endif // PRIV_SRL 
 
-NA_EIDPROC
    static NAWchar to_upper(const NAWchar);
 
-#if !defined(__EID) && !defined(CLI_PRIV_SRL)
-NA_EIDPROC
    static void to_upper(NAWchar *, size_t, NAWString &);
-#endif
 
 static Lng32 to_upper(NAWchar *, Lng32 , NAWchar *, Lng32);
 
 // For full case mapping, an lower case character may map to 
 // more than one upper case character
-NA_EIDPROC
    static NAWchar* to_upper_full(const NAWchar);
 
-NA_EIDPROC
    static NAWchar to_lower(const NAWchar);
 
-NA_EIDPROC
    static NAWchar space_char() { return unicode_char_set::SPACE; };
 
-NA_EIDPROC
    static NAWchar null_char() {return 0;};
 
-NA_EIDPROC
    static NAWchar underscore_char() { return unicode_char_set::UNDERSCORE; };
 
-NA_EIDPROC
    static NAWchar percent_char() { return unicode_char_set::PERCENT; };
 
-NA_EIDPROC
    static NAWchar maxCharValue() { return USHRT_MAX; };
 
-NA_EIDPROC
    static short bytesPerChar() { return sizeof(NAWchar); };
 
    static NABoolean isValidUCS2CodePoint(NAWchar wc)

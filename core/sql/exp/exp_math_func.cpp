@@ -76,14 +76,12 @@
 #define HUGE_VAL_REAL64         1.15792089237316192E+77
 #define HUGE_VAL_INT64          0777777777777777777777
 
-NA_EIDPROC
 ex_expr::exp_return_type convInt64ToDec(char *target,
                                         Lng32 targetLen,
                                         Int64 source,
                                         CollHeap *heap,
                                         ComDiagsArea** diagsArea);
 
-NA_EIDPROC
 ex_expr::exp_return_type convDoubleToBigNum(char *target,
                                             Lng32 targetLen,
                                             Lng32 targetType,

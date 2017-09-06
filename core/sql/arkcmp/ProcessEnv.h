@@ -55,10 +55,8 @@ public:
   
   void cleanup();
   void setEnv(char** newenvs, Lng32 nEnvs);
-#ifdef NA_CMPDLL
   void addOrChangeEnv(char **newenvs, Lng32 nEnvs);
   void resetEnv(const char *envName);
-#endif // NA_CMPDLL
   Int32 unsetEnv(char* env);  
   Int32 chdir(char* dir);
   void dumpEnvs();
@@ -66,9 +64,6 @@ public:
   virtual ~ProcessEnv();
   
 private:
-#ifndef NA_CMPDLL
-  void addOrChangeEnv(char **newenvs, Lng32 nEnvs);
-#endif // ! NA_CMPDLL
   void removeEnv(char **newenvs, Lng32 nEnvs);
 
   CollHeap *heap_;

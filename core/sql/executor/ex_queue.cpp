@@ -676,7 +676,6 @@ void ex_queue_entry::initializeState(const ex_queue::queue_type type)
   }
 }
 
-NA_EIDPROC
 const char * NodeTypeToString(ComTdb::ex_node_type nodeType)
 {
   const char * tdbName;
@@ -823,7 +822,6 @@ void ex_queue::injectErrorOrCancel()
           {
             needsError = TRUE;
             qe->upState.status = Q_SQLERROR;
-  #if (!defined (__EID) && !defined(NA_C89))
             cerr << "Converting a Q_OK_MMORE to a Q_SQLERROR, from "
                  << NodeTypeToString(unblockSubtask_->getTcb()->getNodeType())
                  << "(" << unblockSubtask_->getTcb() << ")" 
@@ -831,7 +829,6 @@ void ex_queue::injectErrorOrCancel()
                  << NodeTypeToString(insertSubtask_->getTcb()->getNodeType())
                  << "(" << insertSubtask_->getTcb() << ")" 
                  << endl;
-  #endif
             break;
           }
         case Q_NO_DATA:
@@ -844,7 +841,6 @@ void ex_queue::injectErrorOrCancel()
               newQNODATA->upState.status  = Q_NO_DATA;
               newQNODATA->getAtp()->copyAtp(qe->getAtp());
               tail_++;
-#if (!defined (__EID) && !defined(NA_C89))
               cerr << "Injecting a Q_SQLERROR before a Q_NO_DATA, from " 
                  << NodeTypeToString(unblockSubtask_->getTcb()->getNodeType())
                  << "(" << unblockSubtask_->getTcb() << ")" 
@@ -852,7 +848,6 @@ void ex_queue::injectErrorOrCancel()
                  << NodeTypeToString(insertSubtask_->getTcb()->getNodeType())
                  << "(" << insertSubtask_->getTcb() << ")" 
                  << endl;
-#endif
             }
           break;
         default:
@@ -879,7 +874,6 @@ void ex_queue::injectErrorOrCancel()
 
 void ex_queue::logHeader()
 {
-#if (!defined (__EID) && !defined(NA_C89))
   if (upDown_ == UP_QUEUE)
     {
       cerr 
@@ -899,14 +893,11 @@ void ex_queue::logHeader()
            << "(" << insertSubtask_->getTcb() << ")" 
            ;
     }
-
-#endif  
 }
 
 void ex_queue::logRemoveHead()
 {
 #if 0  
-#if (!defined (__EID) && !defined(NA_C89))
 
     ex_queue_entry *qe = &queue_[head_ & mask_];
 
@@ -956,7 +947,6 @@ void ex_queue::logRemoveHead()
        cerr << ", pi " << qe->downState.parentIndex;
    }
   cerr << endl;
-#endif
 #endif
 }
 

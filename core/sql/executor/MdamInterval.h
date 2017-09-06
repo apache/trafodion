@@ -63,7 +63,7 @@ public:
 
   // Constructor.
   // $$$$ Possibly testing only.
-  NA_EIDPROC inline MdamInterval(const tupp & beginTupp,
+  inline MdamInterval(const tupp & beginTupp,
 				 const MdamEnums::MdamInclusion beginInclusion,
 				 const tupp & endTupp,
 				 const MdamEnums::MdamInclusion endInclusion,
@@ -71,20 +71,20 @@ public:
 				 FixedSizeHeapManager & mdamRefListEntryHeap);
 
   // Constructor without a disjunctNum.  Building of MdamRefList is deferred.
-  NA_EIDPROC  MdamInterval(const tupp & beginTupp,
+   MdamInterval(const tupp & beginTupp,
 				 const MdamEnums::MdamInclusion beginInclusion,
 				 const tupp & endTupp,
 				 const MdamEnums::MdamInclusion endInclusion);
 
   // Constructor without a disjunctNum.  Building of MdamRefList is deferred.
-  NA_EIDPROC  MdamInterval(MdamEndPoint & beginEndPoint,
+   MdamInterval(MdamEndPoint & beginEndPoint,
 				 MdamEndPoint & endEndPoint);
 
   // This constructor meets the special requirements of
   // MdamIntervalList::unionSeparateDisjuncts.  These requirements are:
   //  + reverse the inclusion of endEndPoint if it is of type BEGIN, and
   //  + build a reference list.
-  NA_EIDPROC MdamInterval(MdamEndPoint & beginEndPoint,
+  MdamInterval(MdamEndPoint & beginEndPoint,
 			  MdamEndPoint & endEndPoint,
 			  MdamInterval * intervalPtr0,
 			  MdamInterval * intervalPtr1,
@@ -92,28 +92,28 @@ public:
 			  FixedSizeHeapManager & mdamRefListEntryHeap);
 
   // Destructor.
-  NA_EIDPROC ~MdamInterval();
+  ~MdamInterval();
 
   // Operator new.
-  NA_EIDPROC inline void * operator new(size_t size,
+  inline void * operator new(size_t size,
 					FixedSizeHeapManager & mdamIntervalHeap);
 
   // Operator new with just size_t.  This should never be called.
-  NA_EIDPROC  void * operator new(size_t size);
+   void * operator new(size_t size);
 
   // Operator delete.  This should never be called.
-  NA_EIDPROC  void operator delete(void *);
+   void operator delete(void *);
 
 
   // Determines if a value is contained within this interval.
-  NA_EIDPROC NABoolean contains(const ULng32 keyLen, const char * v)
+  NABoolean contains(const ULng32 keyLen, const char * v)
        const;
 
   // Create the Reference list for an interval.  The new reference list is
   // a copy of the reference list associated with interval1Ptr.  disjunctNum
   // is inserted into the new list if the interval pointed to by interval2Ptr
   // is active.
-  NA_EIDPROC void createRefList(const MdamInterval * interval1Ptr,
+  void createRefList(const MdamInterval * interval1Ptr,
 				const MdamInterval * interval2Ptr,
 				const Int32 disjunctNum,
 				FixedSizeHeapManager & mdamRefListEntryHeap);
@@ -124,49 +124,49 @@ public:
   // Otherwise, it returns false.  Failure can occur if the begin
   // end point is excluded and incrementing the value results
   // in an error or a value that is outside the interval.
-  NA_EIDPROC NABoolean getFirstValue(const ULng32 keyLen, char * s)
+  NABoolean getFirstValue(const ULng32 keyLen, char * s)
        const;
 
   // Const function to get nextMdamIntervalPtr_.
-  NA_EIDPROC inline MdamInterval * getNextMdamIntervalPtr() const;
+  inline MdamInterval * getNextMdamIntervalPtr() const;
 
   // Get function that obtains the next value in an interval.  The
   // value is stored at the location specified by s.  If the operation
   // is successful, the function returns true.  Otherwise, it returns
   // false.  Failure can occur if incrementing the value results in an
   // error or a value that is outside the interval.
-  NA_EIDPROC NABoolean getNextValue(const ULng32 keyLen, char * s) const;
+  NABoolean getNextValue(const ULng32 keyLen, char * s) const;
 
   // Const function to get the address of the beginning or ending point.
-  NA_EIDPROC MdamPoint * getPointPtr
+  MdamPoint * getPointPtr
     (const MdamEnums::MdamEndPointType endPointType);
 
   // Function to get the address of the MdamRefList.
-  NA_EIDPROC inline MdamRefList * getRefListPtr();
+  inline MdamRefList * getRefListPtr();
 
   // This function inserts a single disjunct number into the reference list
   // associated with this MdamInterval.
-  NA_EIDPROC inline void insertDisjunctNum(const Int32 disjunctNum,
+  inline void insertDisjunctNum(const Int32 disjunctNum,
 				FixedSizeHeapManager & mdamRefListEntryHeap);
 
   // Release resources associated with this interval.
   // This is used prior to returning the interval to the free list.
-  NA_EIDPROC inline void release(FixedSizeHeapManager & mdamRefListEntryHeap);
+  inline void release(FixedSizeHeapManager & mdamRefListEntryHeap);
 
   // Release reference list entries associated with this interval.
-  NA_EIDPROC inline void releaseRefListEntries(FixedSizeHeapManager & mdamRefListEntryHeap);
+  inline void releaseRefListEntries(FixedSizeHeapManager & mdamRefListEntryHeap);
 
   // Release tupp storage associated with this interval.
-  NA_EIDPROC inline void releaseTupps();
+  inline void releaseTupps();
 
   // Print functions.
   #ifdef NA_MDAM_EXECUTOR_DEBUG
-  NA_EIDPROC void print(const char * header = "") const;
-  NA_EIDPROC void printBrief() const;
+  void print(const char * header = "") const;
+  void printBrief() const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG */
 
   // Mutator function to set nextMdamIntervalPtr_.
-  NA_EIDPROC void setNextMdamIntervalPtr(MdamInterval * nextMdamIntervalPtr);
+  void setNextMdamIntervalPtr(MdamInterval * nextMdamIntervalPtr);
 
 
 private:

@@ -41,10 +41,6 @@
 
 #include "Platform.h"
 #include "NAStdlib.h"
-//#ifndef NA_NO_C_RUNTIME
-//#include <stdio.h>
-//#endif
-#include "SqlExportDllDefines.h"
 #include "NABoolean.h"
 
 #ifndef NULL
@@ -149,16 +145,12 @@ typedef NAMemory CollHeap ;
 // memory management for classes derived from it.
 // -----------------------------------------------------------------------
 
-class SQLEXPORT_LIB_FUNC NABasicObject
+class NABasicObject
 {
 
 // NT_PORT ( bd 12/10/96 )
 protected:
-#ifndef PRIV_SRL 
-NA_EIDPROC  virtual ~NABasicObject() {};
-#else
-NA_EIDPROC  ~NABasicObject() {};
-#endif // PRIV_SRL 
+ virtual ~NABasicObject() {};
 
 public:
 
@@ -172,25 +164,25 @@ public:
   // do "delete h_;"!  Likewise, the assignment operator here does not
   // overwrite the h_ pointer.
 
-  NA_EIDPROC NABasicObject();
-  NA_EIDPROC NABasicObject(const NABasicObject&);
-  NA_EIDPROC NABasicObject& operator=(const NABasicObject&);
+  NABasicObject();
+  NABasicObject(const NABasicObject&);
+  NABasicObject& operator=(const NABasicObject&);
 
-  NA_EIDPROC void* operator new[](size_t t, NAMemory* h = 0,  NABoolean failureIsFatal = TRUE);
+  void* operator new[](size_t t, NAMemory* h = 0,  NABoolean failureIsFatal = TRUE);
   void operator delete[](void*);
   void operator delete[](void*, NAMemory*, NABoolean);
 
   // In the future, when the compiler supports the operator new[] and
   // operator [] delete, they should be added here for array allocation.
-  // NA_EIDPROC void* operator new[](size_t, NAMemory* h = 0,  NABoolean failureIsFatal = TRUE);
+  // void* operator new[](size_t, NAMemory* h = 0,  NABoolean failureIsFatal = TRUE);
   // void operator delete[](void*, etc... -- see .C file comments...)
 
-  NA_EIDPROC void* operator new(size_t t, NAMemory* h = 0, NABoolean failureIsFatal = TRUE );
-  NA_EIDPROC void* operator new(size_t t, void* loc, NAMemory* h = 0);
+  void* operator new(size_t t, NAMemory* h = 0, NABoolean failureIsFatal = TRUE );
+  void* operator new(size_t t, void* loc, NAMemory* h = 0);
 
-  NA_EIDPROC void operator delete(void*);
-  NA_EIDPROC void operator delete(void*, NAMemory*, NABoolean); 
-  NA_EIDPROC void operator delete(void*, void*, NAMemory*); 
+  void operator delete(void*);
+  void operator delete(void*, NAMemory*, NABoolean); 
+  void operator delete(void*, void*, NAMemory*); 
 
   // The CollHeap* returned is where this object is allocated from;
   // if this object is allocated through new, it will be some CollHeap* or 0.
@@ -200,7 +192,7 @@ public:
   // CollHeap* as further memory allocation, it is the user's
   // responsibility to make sure the object is not from stack.
 
-  NA_EIDPROC NAMemory* collHeap()	      { return h_; }
+  NAMemory* collHeap()	      { return h_; }
 
   // The delete operator sets the object-being-deleted's heap pointer to the
   // invalid value below.  Thus dangling pointers to this object can *sometimes*
@@ -223,16 +215,16 @@ public:
   // to be out-of-bounds for a heap.  (0x0 already has a meaning: that no heap
   // is to be used, just the global new/delete.)
 
-  NA_EIDPROC static CollHeap* invalidHeapPtr() { return (CollHeap*)0x1; }
-  NA_EIDPROC static CollHeap* systemHeapPtr()  { return (CollHeap*)0x0; }
-  NA_EIDPROC Int32 maybeInvalidObject()	       { return h_ == invalidHeapPtr();}
+  static CollHeap* invalidHeapPtr() { return (CollHeap*)0x1; }
+  static CollHeap* systemHeapPtr()  { return (CollHeap*)0x0; }
+  Int32 maybeInvalidObject()	       { return h_ == invalidHeapPtr();}
 
   // For smart-pointer callers, some defensive programming for Debug build.
   // For some reason, this method won't link into the NSK mxcmp static object.
 #if !defined(NDEBUG)
-    NA_EIDPROC Int32 checkInvalidObject(const void* const referencingObject=NULL);
+    Int32 checkInvalidObject(const void* const referencingObject=NULL);
 #else
-    NA_EIDPROC Int32 checkInvalidObject(const void* const = NULL) 
+    Int32 checkInvalidObject(const void* const = NULL) 
 					       { return 0/*not invalid*/; }
 #endif
 
@@ -243,10 +235,6 @@ private:
 
   CollHeap* h_;
 
-#ifdef PRIV_SRL
-  void * dummyvtbl_; //solve offset problems for priv srls
-#endif //PRIV_SRL
-
 };
 
 // -----------------------------------------------------------------------
@@ -255,12 +243,10 @@ private:
 // other than system area, use the overloaded new.
 // -----------------------------------------------------------------------
 
-SQLEXPORT_LIB_FUNC
 void * operator new(size_t size, CollHeap* h);
 
-SQLEXPORT_LIB_FUNC
 void * operator new[](size_t size, CollHeap* h);
-SQLEXPORT_LIB_FUNC
+
 void * operator new[](size_t size, CollHeap* h, NABoolean failureIsFatal);
 
 // The following operator delete functions will be called to free memory if

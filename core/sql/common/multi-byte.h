@@ -27,11 +27,6 @@
 
 #include <sys/types.h>
 
-#ifndef NA_EIDPROC
-#define NA_EIDPROC
-#define _resident
-#endif
-
 /*
  * Macros
  */

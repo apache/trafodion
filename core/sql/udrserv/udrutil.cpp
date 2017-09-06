@@ -620,7 +620,7 @@ void doMessageBox(UdrGlobals *UdrGlob, Int32 trLevel,
 }
 // LCOV_EXCL_STOP
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 void sleepIfPropertySet(LmLanguageManager &lm,
 	const char *property,
 	ComDiagsArea *d)
@@ -648,7 +648,7 @@ NABoolean getLmProperty(LmLanguageManager &lm,
   }
   return ok;
 }
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
 
 // This function is used by the signal/trap/exit handler code.
 // It is moved from UdrFFDC.cpp file to avoid compilation errors.

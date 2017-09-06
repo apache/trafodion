@@ -55,21 +55,21 @@ class MdamIntervalListIterator
 public:
 
   // Constructor.
-  NA_EIDPROC MdamIntervalListIterator
+  MdamIntervalListIterator
     (const MdamIntervalList & intervalListRef)
            : intervalListRef_(intervalListRef),
            intervalPtr_(intervalListRef.firstIntervalPtr_)
   { }
 
   // Destructor.
-  NA_EIDPROC ~MdamIntervalListIterator() {}
+  ~MdamIntervalListIterator() {}
 
   // Iteration operator returns a pointer to the next interval on each call.
   // It is safe to use this operator even if the intervals are being deleted.
-  NA_EIDPROC inline MdamInterval * operator()();
+  inline MdamInterval * operator()();
 
   // This function resets the iterator to the beginning of the list.
-  NA_EIDPROC inline void init();
+  inline void init();
 
 
 private:

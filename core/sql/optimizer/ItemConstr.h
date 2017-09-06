@@ -597,7 +597,7 @@ private:
 //
 // The whole scheme with the ComplementaryRIConstraint's array of columns
 // "parallel" to the defining constraint's columns assumes that constraint info
-// is is stored in CatMan (or at least by the ReadTableDef/NATable) in the
+// is stored in CatMan (or at least by NATable) in the
 // manner described for this example:
 //   CREATE TABLE U ... CONSTRAINT U0 UNIQUE(V,W,X)    [ or PRIMARY KEY(V,W,X) ]
 //   CREATE TABLE F ... CONSTRAINT R1 FOREIGN KEY(G,H,I) REFERENCES U(X,W,V)

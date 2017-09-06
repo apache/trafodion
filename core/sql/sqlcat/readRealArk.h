@@ -21,11 +21,3 @@
 // @@@ END COPYRIGHT @@@
 //
 **********************************************************************/
-#ifndef READREALARK_H
-#define READREALARK_H
-
-#include "ComSmallDefs.h"
-#include "ObjectNames.h"
-
-
-#endif // READREALARK_H

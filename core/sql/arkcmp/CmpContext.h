@@ -62,13 +62,10 @@
 #include "hs_cmp.h"		// for uStatID_;
 #include "NAAssert.h"		// required after including a RogueWave file!
 
-#ifdef NA_CMPDLL
 #include "CmpMessage.h"
-#endif // NA_CMPDLL
 
 #include "SharedPtr.h"
 
-class ReadTableDef;
 class SchemaDB;
 class ControlDB;
 class CmpStatement;
@@ -303,9 +300,6 @@ public :
   // clean up globals at the end of each statement. 
   void cleanup(NABoolean exception=TRUE);
 
-  // sqlcat globals
-  ReadTableDef* readTableDef_;
-
   // optimizer globals
 
   // SchemaDB and initialization procedure at the beginning of each statement
@@ -383,7 +377,6 @@ public :
   void switchBackContext();
   void resetContext();
 
-#ifdef NA_CMPDLL
   Int32
   compileDirect(char *data, UInt32 dataLen, CollHeap *outHeap, Int32 charset,
                 CmpMessageObj::MessageTypeEnum op, char *&gen_code,
@@ -401,7 +394,6 @@ public :
   void setNumSQNodes(CollIndex n) { numSQNodes_ = n; }
   NABoolean getHasVirtualSQNodes() { return hasVirtualSQNodes_; }
   void setHasVirtualSQNodes(NABoolean v) { hasVirtualSQNodes_ = v; }
-#endif // NA_CMPDLL
 
   // used by sendAllControlsAndFlags() and restoreAllControlsAndFlags()
   Int32 getCntlCount() { return allControlCount_; }

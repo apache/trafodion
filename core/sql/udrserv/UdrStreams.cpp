@@ -251,7 +251,7 @@ void UdrServerDataStream::actOnReceive(IpcConnection *conn)
   
 } // UdrServerDataStream::actOnReceive()
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 void
 UdrGuaControlConnection::actOnSystemMessage(
   short                  messageNum,

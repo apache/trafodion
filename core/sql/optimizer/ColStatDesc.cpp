@@ -9500,12 +9500,7 @@ MultiColumnUecList::findDenom (const ValueIdSet & columns) const
 // all tablePtrs should be 4-byte aligned, so divide by 4
 // to get a better hash value
 ULng32 TableDescHashFn (const TableDesc & tablePtr)
-#ifdef NA_64BIT
 { return (ULng32)((Long)&tablePtr/8) ; }
-#else
-{ return (ULng32)&tablePtr/4 ; }
-#endif
-
 
 #pragma nowarn(262)   // warning elimination
 NABoolean

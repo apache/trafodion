@@ -221,12 +221,7 @@ enum IpcMessageTypeEnum
 
 };
 
-#ifdef NA_64BIT
-// dg64 - 32-bit message type
 typedef Int32  IpcMessageType;
-#else
-typedef Lng32 IpcMessageType;
-#endif
 
 // -----------------------------------------------------------------------
 // Types for objects inside messages (a different space of numbers for
@@ -236,22 +231,12 @@ typedef Lng32 IpcMessageType;
 // allows us to manage the enum types separately per component of the
 // SQL system without forcing global recompiles on small changes.
 // -----------------------------------------------------------------------
-#ifdef NA_64BIT
 typedef Int32  IpcMessageObjType;
-// dg64 - 32-bit message obj type
-#else
-typedef Lng32 IpcMessageObjType;
-#endif
 
 // -----------------------------------------------------------------------
 // Version of a message header or of an object in a message
 // -----------------------------------------------------------------------
-#ifdef NA_64BIT
-// dg64 - 32-bit message obj version type
 typedef Int32  IpcMessageObjVersion;
-#else
-typedef Lng32 IpcMessageObjVersion;
-#endif
 
 // -----------------------------------------------------------------------
 // Reserved numbers for certain common objects in messages, to be
@@ -284,34 +269,19 @@ const IpcMessageObjVersion IpcCurrSqlDiagnosticsAreaVersion = 100;
 const IpcMessageObjVersion IpcCurrSqlStatisticsVersion      = 100;
 const IpcMessageObjVersion IpcCurrProcessIdVersion          = 100;
 
-#ifdef NA_64BIT
-// dg64 - 32-bit message type
 typedef Int32  IpcMessageType;
-#else
-typedef Lng32 IpcMessageType;
-#endif
 
 // -----------------------------------------------------------------------
 // size of objects in bytes
 // -----------------------------------------------------------------------
 
-#ifdef NA_64BIT
-// dg64 - 32-bit message obj size
 typedef UInt32  IpcMessageObjSize;
-#else
-typedef ULng32 IpcMessageObjSize;
-#endif
 
 // -----------------------------------------------------------------------
 // Reference count of a message header or of an object in a message
 // (used mainly when objects are shared across the IPC interface)
 // -----------------------------------------------------------------------
-#ifdef NA_64BIT
-// dg64 - 32-bit message ref count
 typedef Int32   IpcMessageRefCount;
-#else
-typedef Lng32  IpcMessageRefCount;
-#endif
 
 // -----------------------------------------------------------------------
 // A buffer pointer to a raw, byte-adressable  message buffer, used for
@@ -356,23 +326,14 @@ const short IpcMyAlignment = IpcAlignment8;
 // a value of 100 means 1 sec), 0 means return immediately,
 // IpcInfiniteTimeout waits forever
 // -----------------------------------------------------------------------
-#ifdef NA_64BIT
 typedef Int32  IpcTimeout;
-#else
-typedef Lng32 IpcTimeout;
-#endif
 const IpcTimeout IpcImmediately = 0;
 const IpcTimeout IpcInfiniteTimeout = -1;
 
 // -----------------------------------------------------------------------
 // CPU number in a node
 // -----------------------------------------------------------------------
-#ifdef NA_64BIT
-// dg64 - 32-bit cpu num
 typedef Int32  IpcCpuNum;
-#else
-typedef Lng32 IpcCpuNum;
-#endif
 
 // an invalid CPU number in a node
 const IpcCpuNum IPC_CPU_DONT_CARE = -1;
@@ -380,12 +341,7 @@ const IpcCpuNum IPC_CPU_DONT_CARE = -1;
 // -----------------------------------------------------------------------
 // Priority of a started process
 // -----------------------------------------------------------------------
-#ifdef NA_64BIT
-// dg64 - 32-bit priority
 typedef Int32  IpcPriority;
-#else
-typedef Lng32 IpcPriority;
-#endif
 
 const IpcPriority IPC_PRIORITY_DONT_CARE = -1;
 

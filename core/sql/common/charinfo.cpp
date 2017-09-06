@@ -171,7 +171,7 @@ NABoolean CharInfo::isCharSetSupported(CharSet cs)
   if (cs >= CHARSET_MIN && cs <= CHARSET_MAX)
     {
       // Special for running regress/fullstack/TEST001 on NSK:
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
       if (IF_WIDE == FALSE &&
           mapCSArray[cs-CHARSET_MIN].maxBytesPerChar > 1 &&	// SJIS or UNICODE
           getenv("NCHAR_SJIS_DEBUG"))
@@ -188,7 +188,7 @@ NABoolean CharInfo::isCharSetFullySupported(CharSet cs)
   if (cs >= CHARSET_MIN && cs <= CHARSET_MAX)
     {
       // Special for running regress/fullstack/TEST001 on NSK:
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
       if (IF_WIDE == FALSE &&
           mapCSArray[cs-CHARSET_MIN].maxBytesPerChar > 1 &&	// SJIS or UNICODE
           getenv("NCHAR_SJIS_DEBUG"))
@@ -223,7 +223,7 @@ NABoolean CharInfo::isMsgCharSetSupported(CharSet cs) {
 // see TESTCHARSET in CmpMain.cpp
 void CharInfo::toggleCharSetSupport(CharSet cs)
 {
-#ifdef NA_DEBUG_C_RUNTIME		
+#ifdef _DEBUG		
     size_t i;
     for (i = 0; i < SIZEOF_CS; i++)
       if (cs == mapCSArray[i].cs)
@@ -485,10 +485,6 @@ Int32 CollationDB::getCollationFlags(CharInfo::Collation co) const
 // (can be delimited and contain spaces).
 //
 // So we must check that any spaces are *trailing* spaces only.
-//
-// The smdio/CmColumnsRow.cpp and sqlcat/ReadTableDef.cpp
-// callers do not have a '\0'-terminated string,
-// hence our needing this length arg to pass in.
 //
 // We can't use plain old strcmp here, because we want both
 //	"SJIS"  and  "SJIS  "

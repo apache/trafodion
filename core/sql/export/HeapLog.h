@@ -40,7 +40,6 @@
 #include <stddef.h>
 #include "HeapID.h"
 #include "NABoolean.h"
-#include "SqlExportDllDefines.h"
 
 // -----------------------------------------------------------------------
 // Expand to empty if this is a release build or heaplog is not importable.
@@ -138,7 +137,7 @@ typedef enum HeapControlEnum
 // -----------------------------------------------------------------------
 class HeapLog;
 
-class SQLEXPORT_LIB_FUNC HeapLogRoot {
+class HeapLogRoot {
 
 public:
   

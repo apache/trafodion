@@ -53,12 +53,12 @@
 /////////////////////////////////////////
 // Class ex_aggregate_clause            //
 /////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ex_aggregate_clause : public ex_clause {
+class  ex_aggregate_clause : public ex_clause {
 public:
   // Construction
   //
-  NA_EIDPROC ex_aggregate_clause(){};
-  NA_EIDPROC ex_aggregate_clause(OperatorTypeEnum oper_type,
+  ex_aggregate_clause(){};
+  ex_aggregate_clause(OperatorTypeEnum oper_type,
 				 short num_operands,
 				 Attributes ** attr,
 				 Space * space);
@@ -66,48 +66,48 @@ public:
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 0; };
 
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
-  NA_EIDPROC virtual ex_expr::exp_return_type init();
-  NA_EIDPROC virtual ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 1; };
+  virtual ex_expr::exp_return_type init();
+  virtual ex_expr::exp_return_type eval(char *op_data[],
 						   CollHeap * = 0,
 						   ComDiagsArea** = 0);  
 
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC virtual ex_expr::exp_return_type 
+  Long pack(void *);
+  virtual ex_expr::exp_return_type 
     pCodeGenerate(Space *space, UInt32 flags);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 };
 
-class SQLEXP_LIB_FUNC  ex_aggr_one_row_clause : public ex_aggregate_clause {
+class  ex_aggr_one_row_clause : public ex_aggregate_clause {
 public:	
   // Construction
   //
-  NA_EIDPROC ex_aggr_one_row_clause(){};
-  NA_EIDPROC ex_aggr_one_row_clause(OperatorTypeEnum oper_type,
+  ex_aggr_one_row_clause(){};
+  ex_aggr_one_row_clause(OperatorTypeEnum oper_type,
 				    short num_operands,
 				    Attributes ** attr,
 				    Space * space)
@@ -116,36 +116,36 @@ public:
  
   // Execution
   //
-  NA_EIDPROC ex_expr::exp_return_type init();
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  ex_expr::exp_return_type init();
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);  
 
   // Fixup
   //
-  NA_EIDPROC ex_expr::exp_return_type 
+  ex_expr::exp_return_type 
        pCodeGenerate(Space *space, UInt32 flags);  
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
                                   Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_aggregate_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
   
 private:  
@@ -160,12 +160,12 @@ private:
 
 };
 
-class SQLEXP_LIB_FUNC  ex_aggr_any_true_max_clause : public ex_aggregate_clause {
+class  ex_aggr_any_true_max_clause : public ex_aggregate_clause {
 public:	
   // Construction
   //
-  NA_EIDPROC ex_aggr_any_true_max_clause(){};
-  NA_EIDPROC ex_aggr_any_true_max_clause(OperatorTypeEnum oper_type,
+  ex_aggr_any_true_max_clause(){};
+  ex_aggr_any_true_max_clause(OperatorTypeEnum oper_type,
 					 short num_operands,
 					 Attributes ** attr,
 					 Space * space)
@@ -174,36 +174,36 @@ public:
  
   // Execution
   //
-  NA_EIDPROC ex_expr::exp_return_type init();
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  ex_expr::exp_return_type init();
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);  
 
   // Fixup
   //
-  NA_EIDPROC ex_expr::exp_return_type 
+  ex_expr::exp_return_type 
        pCodeGenerate(Space *space, UInt32 flags);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
                                   Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_aggregate_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
 private:  
@@ -219,12 +219,12 @@ private:
 
 };
 
-class SQLEXP_LIB_FUNC  ex_aggr_min_max_clause : public ex_aggregate_clause {
+class  ex_aggr_min_max_clause : public ex_aggregate_clause {
 public:	
   // Construction
   //
-  NA_EIDPROC ex_aggr_min_max_clause(){};
-  NA_EIDPROC ex_aggr_min_max_clause(OperatorTypeEnum oper_type,
+  ex_aggr_min_max_clause(){};
+  ex_aggr_min_max_clause(OperatorTypeEnum oper_type,
 				    short num_operands,
 				    Attributes ** attr,
 				    Space * space)
@@ -233,35 +233,35 @@ public:
  
   // Execution
   //
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);  
 
   // Fixup
   //
-  NA_EIDPROC ex_expr::exp_return_type 
+  ex_expr::exp_return_type 
        pCodeGenerate(Space *space, UInt32 flags);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_aggregate_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
 
 private:  
   // ---------------------------------------------------------------------
@@ -274,7 +274,7 @@ private:
   // ---------------------------------------------------------------------
 };
 
-class SQLEXP_LIB_FUNC  ExFunctionGrouping : public ex_aggregate_clause {
+class  ExFunctionGrouping : public ex_aggregate_clause {
 public:
   ExFunctionGrouping(OperatorTypeEnum oper_type,
                      short num_operands,
@@ -293,11 +293,11 @@ public:
                                 CollHeap* = 0, 
                                 ComDiagsArea** = 0);  
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
                                   Int32 clauseNum, char * constsArea);
 
   Int16 getRollupGroupIndex() { return rollupGroupIndex_; }
@@ -311,12 +311,12 @@ private:
   // ---------------------------------------------------------------------
 };
 
-class SQLEXP_LIB_FUNC  ex_pivot_group_clause : public ex_aggregate_clause {
+class  ex_pivot_group_clause : public ex_aggregate_clause {
 public:	
   // Construction
   //
-  NA_EIDPROC ex_pivot_group_clause(){};
-  NA_EIDPROC ex_pivot_group_clause(OperatorTypeEnum oper_type,
+  ex_pivot_group_clause(){};
+  ex_pivot_group_clause(OperatorTypeEnum oper_type,
                                    short num_operands,
                                    Attributes ** attr,
                                    char * delim,
@@ -338,23 +338,23 @@ public:
                                 CollHeap * = 0,
                                 ComDiagsArea ** = 0);
 
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 1; };
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 1; };
   
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
                                   Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_aggregate_clause::populateImageVersionIDArray();
@@ -474,7 +474,7 @@ enum ArithInstruction {
   NEGATE_BOOLEAN                =70
 };
 
-class SQLEXP_LIB_FUNC  ex_arith_clause : public ex_clause {
+class  ex_arith_clause : public ex_clause {
 
   typedef struct {
     OperatorTypeEnum op;
@@ -489,13 +489,13 @@ public:
 
   // Construction
   //
-  NA_EIDPROC ex_arith_clause(){};
-  NA_EIDPROC ex_arith_clause(OperatorTypeEnum oper_type,
+  ex_arith_clause(){};
+  ex_arith_clause(OperatorTypeEnum oper_type,
 			     Attributes ** attr,
 			     Space * space,
 			     short arithRoundingMode,
 			     NABoolean divToDownscale);
-  NA_EIDPROC ex_arith_clause(clause_type type,
+  ex_arith_clause(clause_type type,
 			     OperatorTypeEnum oper_type,
 			     Attributes ** attr,
 			     Space * space);
@@ -531,32 +531,32 @@ public:
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 1; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 1; };
+  Int32 isNullInNullOut() const { return 1; };
+  Int32 isNullRelevant() const { return 1; };
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 1; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);  
 
-  NA_EIDPROC ex_expr::exp_return_type evalUnsupportedOperations(
+  ex_expr::exp_return_type evalUnsupportedOperations(
        char *op_data[],
        CollHeap * heap,
        ComDiagsArea ** diagsArea);  
 
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC ex_expr::exp_return_type pCodeGenerate(Space *space,
+  Long pack(void *);
+  ex_expr::exp_return_type pCodeGenerate(Space *space,
 						    UInt32 flags);
 
   // pcode for unary arith operators, like NEGATE.
   ex_expr::exp_return_type unaryArithPCodeGenerate
     (Space *space, UInt32 flags);
 
-  NA_EIDPROC ex_expr::exp_return_type fixup(Space * space = 0,
+  ex_expr::exp_return_type fixup(Space * space = 0,
 					    CollHeap * exHeap = 0,
 					    char * constants_area = 0,
 					    char * temps_area = 0,
@@ -566,24 +566,24 @@ public:
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
   
 private:
@@ -604,60 +604,60 @@ private:
   // ---------------------------------------------------------------------
   char             fillers_[18];          // 06-23
 
-  NA_EIDPROC const ArithInstrStruct * getMatchingRow(OperatorTypeEnum op,
+  const ArithInstrStruct * getMatchingRow(OperatorTypeEnum op,
 						    short datatype1,
 						    short datatype2,
 						    short resulttype);
 
-  NA_EIDPROC const ArithInstruction computeCaseIndex(OperatorTypeEnum op,
+  const ArithInstruction computeCaseIndex(OperatorTypeEnum op,
 						     Attributes * attr1,
 						     Attributes * attr2,
 						     Attributes * result);
 
-  NA_EIDPROC NABoolean getDivToDownscale()   
+  NABoolean getDivToDownscale()   
   { return (flags_ & DIV_TO_DOWNSCALE) != 0;}
-  NA_EIDPROC void setDivToDownscale(NABoolean v)      
+  void setDivToDownscale(NABoolean v)      
   { (v ? flags_ |= DIV_TO_DOWNSCALE : flags_ &= ~DIV_TO_DOWNSCALE); }
   
 };
 
-class SQLEXP_LIB_FUNC  ex_arith_sum_clause : public ex_arith_clause {
+class  ex_arith_sum_clause : public ex_arith_clause {
 public:
-  NA_EIDPROC ex_arith_sum_clause() {};
-  NA_EIDPROC ex_arith_sum_clause(OperatorTypeEnum oper_type,
+  ex_arith_sum_clause() {};
+  ex_arith_sum_clause(OperatorTypeEnum oper_type,
 				 Attributes ** attr,
 				 Space * space);
 
 
-  NA_EIDPROC ex_expr::exp_return_type pCodeGenerate(Space *space, 
+  ex_expr::exp_return_type pCodeGenerate(Space *space, 
 						    UInt32 flags);
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC ex_expr::exp_return_type processNulls(char *op_data[],
+  Int32 isNullInNullOut() const { return 0; };
+  ex_expr::exp_return_type processNulls(char *op_data[],
   						   CollHeap * = 0,
 						   ComDiagsArea ** = 0);
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
   
 private:   
@@ -671,43 +671,43 @@ private:
 
 };
 
-class SQLEXP_LIB_FUNC  ex_arith_count_clause : public ex_arith_clause {
+class  ex_arith_count_clause : public ex_arith_clause {
 public:
-  NA_EIDPROC ex_arith_count_clause() {};
-  NA_EIDPROC ex_arith_count_clause(OperatorTypeEnum oper_type,
+  ex_arith_count_clause() {};
+  ex_arith_count_clause(OperatorTypeEnum oper_type,
 				   Attributes ** attr,
 				   Space * space);
 
 
-  NA_EIDPROC ex_expr::exp_return_type pCodeGenerate(Space *space
+  ex_expr::exp_return_type pCodeGenerate(Space *space
 						    , UInt32 flags);
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC ex_expr::exp_return_type processNulls(char *op_data[],
+  Int32 isNullInNullOut() const { return 0; };
+  ex_expr::exp_return_type processNulls(char *op_data[],
   						   CollHeap * = 0,
 						   ComDiagsArea ** = 0);
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_arith_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
   
 private:   
@@ -724,54 +724,54 @@ private:
 /////////////////////////////////////////
 // Class bool_clause                   //
 /////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ex_bool_clause : public ex_clause {
+class  ex_bool_clause : public ex_clause {
 public:
   // Construction
   //
-  NA_EIDPROC ex_bool_clause(){};
-  NA_EIDPROC ex_bool_clause(OperatorTypeEnum oper_type,
+  ex_bool_clause(){};
+  ex_bool_clause(OperatorTypeEnum oper_type,
 			    Attributes ** attr,
 			    Space * space);
 
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 0; };
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 1; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);  
 
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC ex_expr::exp_return_type 
+  Long pack(void *);
+  ex_expr::exp_return_type 
     pCodeGenerate(Space *space, UInt32 flags);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
 
 private:
   // ---------------------------------------------------------------------
@@ -787,53 +787,53 @@ private:
 ////////////////////////////////////////////////
 // Class bool_result_clause
 ///////////////////////////////////////////////
-class SQLEXP_LIB_FUNC  bool_result_clause : public ex_clause {
+class  bool_result_clause : public ex_clause {
 public:
   // Construction
   //
-  NA_EIDPROC bool_result_clause(){};
-  NA_EIDPROC bool_result_clause(OperatorTypeEnum oper_type, Attributes ** attr,
+  bool_result_clause(){};
+  bool_result_clause(OperatorTypeEnum oper_type, Attributes ** attr,
 				Space * space);
 
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 0; };
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 1; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);
 
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC ex_expr::exp_return_type 
+  Long pack(void *);
+  ex_expr::exp_return_type 
     pCodeGenerate(Space *space, UInt32 flags);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
 
 private:
   // ---------------------------------------------------------------------
@@ -849,37 +849,37 @@ private:
 /////////////////////////////////////////
 // Class branch_clause                 //
 /////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ex_branch_clause : public ex_clause {
+class  ex_branch_clause : public ex_clause {
 public:
   // Construction
   //
-  NA_EIDPROC ex_branch_clause() : saved_next_clause(NULL), branch_clause(NULL)
+  ex_branch_clause() : saved_next_clause(NULL), branch_clause(NULL)
     {};
-  NA_EIDPROC ex_branch_clause(OperatorTypeEnum oper_type,
+  ex_branch_clause(OperatorTypeEnum oper_type,
 			      Attributes ** attr,
 			      Space * space);
 
-  NA_EIDPROC ex_branch_clause(OperatorTypeEnum oper_type,
+  ex_branch_clause(OperatorTypeEnum oper_type,
 			      Space * space);
 
 
   // Accessors
   //
-  //NA_EIDPROC inline void set_branch_clause(ex_clause*);
+  //inline void set_branch_clause(ex_clause*);
   inline void set_branch_clause(ex_clause *clause_)
   {
     branch_clause = clause_;
   };
-  //NA_EIDPROC inline void set_saved_next(ex_clause*);
+  //inline void set_saved_next(ex_clause*);
   inline void set_saved_next(ex_clause *clause_)
   {
     saved_next_clause = clause_;
   };
-  NA_EIDPROC inline ex_clause * get_branch_clause()
+  inline ex_clause * get_branch_clause()
   {
     return branch_clause;
   };
-  //NA_EIDPROC inline ex_clause * get_saved_next();
+  //inline ex_clause * get_saved_next();
   inline ex_clause * get_saved_next()
   {
     return saved_next_clause;
@@ -887,52 +887,52 @@ public:
 
   // This is a branching clause
   //
-  NA_EIDPROC Int32 isBranchingClause() const { return 1; };
+  Int32 isBranchingClause() const { return 1; };
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 0; };
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 1; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);
 
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC Lng32 unpack(void *, void * reallocator);
-  NA_EIDPROC ex_expr::exp_return_type fixup(Space * space = 0,
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+  ex_expr::exp_return_type fixup(Space * space = 0,
                                             CollHeap * exHeap = 0,
                                             char * constants_area = 0,
                                             char * temps_area = 0,
                                             char * persistentArea = 0,
                                             short = 0,
 					    NABoolean spaceCompOnly = FALSE);
-  NA_EIDPROC ex_expr::exp_return_type 
+  ex_expr::exp_return_type 
     pCodeGenerate(Space *space, UInt32 flags);
 
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
 private:   
@@ -1185,7 +1185,7 @@ enum CompInstruction {
   COMP_NOT_SUPPORTED  =191
 };
 
-class SQLEXP_LIB_FUNC  ex_comp_clause : public ex_clause {
+class  ex_comp_clause : public ex_clause {
 
   typedef struct {
     OperatorTypeEnum op;
@@ -1199,9 +1199,9 @@ public:
 
   // Construction
   //
-  NA_EIDPROC ex_comp_clause(): flags_(0)
+  ex_comp_clause(): flags_(0)
   {  };
-  NA_EIDPROC ex_comp_clause(OperatorTypeEnum oper_type,
+  ex_comp_clause(OperatorTypeEnum oper_type,
 			    Attributes ** attr,
 			    Space * space,
 			    ULng32 flags_);
@@ -1209,7 +1209,7 @@ public:
 
   // Accessors
   //
-  NA_EIDPROC inline CompInstruction getInstruction()
+  inline CompInstruction getInstruction()
   {
     if (getInstrArrayIndex() >= 0)
       return getInstruction(getInstrArrayIndex());
@@ -1217,12 +1217,12 @@ public:
       return COMP_NOT_SUPPORTED;
   };
 
-  NA_EIDPROC void setInstruction();
-  NA_EIDPROC void setInstruction(OperatorTypeEnum op,
+  void setInstruction();
+  void setInstruction(OperatorTypeEnum op,
 				 Attributes * attr1,
 				 Attributes * attr2);
 
-  NA_EIDPROC short isComparisonSupported(OperatorTypeEnum op,
+  short isComparisonSupported(OperatorTypeEnum op,
 					 Attributes * attr1,
 					 Attributes * attr2);
 
@@ -1239,30 +1239,30 @@ public:
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type processNulls(char *op_data[],
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 1; };
+  ex_expr::exp_return_type processNulls(char *op_data[],
   						   CollHeap * = 0,
 						   ComDiagsArea ** = 0);
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 1; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0); 
 
-  NA_EIDPROC ex_expr::exp_return_type evalUnsupportedOperations(
+  ex_expr::exp_return_type evalUnsupportedOperations(
        char *op_data[],
        CollHeap * heap,
        ComDiagsArea ** diagsArea);  
 
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC ex_expr::exp_return_type 
+  Long pack(void *);
+  ex_expr::exp_return_type 
     pCodeGenerate(Space *space, UInt32 flags);
-  NA_EIDPROC ex_expr::exp_return_type fixup(Space * space = 0,
+  ex_expr::exp_return_type fixup(Space * space = 0,
 					    CollHeap * exHeap = 0,
 					    char * constants_area = 0,
 					    char * temps_area = 0,
@@ -1272,30 +1272,30 @@ public:
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
 
-  NA_EIDPROC  NABoolean getCollationEncodeComp() 
+   NABoolean getCollationEncodeComp() 
   {
     return ((flags_ & COLLATION_ENCODE_COMP) != 0);
   }
-  NA_EIDPROC  void setCollationEncodeComp(NABoolean v) 
+   void setCollationEncodeComp(NABoolean v) 
   {
     (v) ? flags_ |= COLLATION_ENCODE_COMP: flags_ &= ~COLLATION_ENCODE_COMP;
   }
@@ -1323,15 +1323,15 @@ private:
   // that the size of the object remains the same (and is modulo 8).
   // ---------------------------------------------------------------------
   char             fillers_[24];          // 08-31
-  NA_EIDPROC ex_expr::exp_return_type processResult(Int32 compare_code, Lng32* result,
+  ex_expr::exp_return_type processResult(Int32 compare_code, Lng32* result,
 					      CollHeap *heap,
 					      ComDiagsArea** diagsArea);
   
-  NA_EIDPROC const CompInstrStruct * getMatchingRow(OperatorTypeEnum op,
+  const CompInstrStruct * getMatchingRow(OperatorTypeEnum op,
 						   short datatype1,
 						   short datatype2);
 
-  NA_EIDPROC const CompInstruction computeCaseIndex(OperatorTypeEnum op,
+  const CompInstruction computeCaseIndex(OperatorTypeEnum op,
 						    Attributes * attr1,
 						    Attributes * attr2);
 };
@@ -1698,7 +1698,7 @@ enum ConvInstruction {
   CONV_BIN8U_BIN8S                     =286
 };
 
-class SQLEXP_LIB_FUNC  ex_conv_clause : public ex_clause {
+class  ex_conv_clause : public ex_clause {
 
   typedef struct {
     short type_op1; // left operand
@@ -1711,13 +1711,13 @@ public:
 
   // Construction
   //
-  NA_EIDPROC ex_conv_clause()
+  ex_conv_clause()
   {
     lastVOAoffset_ = 0;
     lastVcIndicatorLength_ = 0;
     lastNullIndicatorLength_ = 0;
   };
-  NA_EIDPROC ex_conv_clause(OperatorTypeEnum oper_type, 
+  ex_conv_clause(OperatorTypeEnum oper_type, 
 			    Attributes ** attr, 
 			    Space * space,
                             short num_operands = 2, 
@@ -1740,21 +1740,21 @@ public:
 
   // Accessors
   // 
-  NA_EIDPROC void setInstruction();
+  void setInstruction();
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const ;
+  Int32 isNullInNullOut() const ;
 
-  NA_EIDPROC Int32 isNullRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type processNulls(char *op_data[],
+  Int32 isNullRelevant() const { return 1; };
+  ex_expr::exp_return_type processNulls(char *op_data[],
   						   CollHeap * = 0,
 						   ComDiagsArea ** = 0);
 
   // Execution
   // 
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 1; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);  
 
@@ -1767,7 +1767,7 @@ public:
       return CONV_NOT_SUPPORTED;
   };
 
-  NA_EIDPROC ConvInstruction findInstruction(short sourceType, Lng32 sourceLen,
+  ConvInstruction findInstruction(short sourceType, Lng32 sourceLen,
                                              short targetType, Lng32 targetLen,
                                              Lng32 scaleDifference);
 
@@ -1788,22 +1788,22 @@ public:
 
   Lng32 findIndexIntoInstrArray(ConvInstruction ci);
 
-  NA_EIDPROC NABoolean treatAllSpacesAsZero()
+  NABoolean treatAllSpacesAsZero()
     { return ((flags_ & TREAT_ALL_SPACES_AS_ZERO) != 0); };
 
-  NA_EIDPROC void setTreatAllSpacesAsZero(NABoolean v)
+  void setTreatAllSpacesAsZero(NABoolean v)
     { (v) ? flags_ |= TREAT_ALL_SPACES_AS_ZERO : flags_ &= ~TREAT_ALL_SPACES_AS_ZERO; }
 
-  NA_EIDPROC NABoolean allowSignInInterval()
+  NABoolean allowSignInInterval()
     { return ((flags_ & ALLOW_SIGN_IN_INTERVAL) != 0); };
 
-  NA_EIDPROC void setAllowSignInInterval(NABoolean v)
+  void setAllowSignInInterval(NABoolean v)
     { (v) ? flags_ |= ALLOW_SIGN_IN_INTERVAL : flags_ &= ~ALLOW_SIGN_IN_INTERVAL; }
 
-  NA_EIDPROC NABoolean noDatetimeValidation()
+  NABoolean noDatetimeValidation()
     { return ((flags_ & NO_DATETIME_VALIDATION) != 0); };
 
-  NA_EIDPROC void setNoDatetimeValidation(NABoolean v)
+  void setNoDatetimeValidation(NABoolean v)
     { (v) ? flags_ |= NO_DATETIME_VALIDATION : flags_ &= ~NO_DATETIME_VALIDATION; }
 
   NABoolean srcIsVarcharPtr()   { return (flags_ & SRC_IS_VARCHAR_PTR) != 0; }
@@ -1812,10 +1812,10 @@ public:
  
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC ex_expr::exp_return_type 
+  Long pack(void *);
+  ex_expr::exp_return_type 
     pCodeGenerate(Space *space, UInt32 flags);
-  NA_EIDPROC ex_expr::exp_return_type fixup(Space * space = 0,
+  ex_expr::exp_return_type fixup(Space * space = 0,
 					    CollHeap * exHeap = 0,
 					    char * constants_area = 0,
 					    char * temps_area = 0,
@@ -1825,58 +1825,58 @@ public:
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 				  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC void setLastVOAoffset( UInt32 v)
+  void setLastVOAoffset( UInt32 v)
   {
     lastVOAoffset_ = v;
   }
 
-  NA_EIDPROC UInt32 getLastVOAoffset()
+  UInt32 getLastVOAoffset()
   {
     return lastVOAoffset_;
   }
 
-  NA_EIDPROC void setLastVcIndicatorLength( Int16 v)
+  void setLastVcIndicatorLength( Int16 v)
   {
 	  lastVcIndicatorLength_ = v;
   }
-  NA_EIDPROC void setLastNullIndicatorLength( Int16 v)
+  void setLastNullIndicatorLength( Int16 v)
   {
     lastNullIndicatorLength_ = v;
   }
 
-  NA_EIDPROC void setComputedLength( UInt32 v)
+  void setComputedLength( UInt32 v)
   {
     computedLength_ = v;
   }
-  NA_EIDPROC UInt32 getComputedLength( )
+  UInt32 getComputedLength( )
   {
     return computedLength_;
   }
-  NA_EIDPROC void setAlignment( Int16 v)
+  void setAlignment( Int16 v)
   {
     alignment_ = v;
   }
-  NA_EIDPROC Int16 getAlignment()
+  Int16 getAlignment()
   {
     return alignment_;
   }
@@ -2001,8 +2001,6 @@ inline int requiresNoConvOrVal(Lng32 sourceLen, Lng32 sourcePrecision, Lng32 sou
         )));
 }
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ex_expr::exp_return_type
 convDoIt(char * source,
          Lng32 sourceLen,
@@ -2022,7 +2020,6 @@ convDoIt(char * source,
          Lng32 * dataConversionErrorFlag = 0,
 	 ULng32 flags = 0);
 
-SQLEXP_LIB_FUNC
 ex_expr::exp_return_type
 scaleDoIt(char *operand,              // ptr to operand
           Lng32 operandLen,           // len of operand
@@ -2067,19 +2064,18 @@ inline void swapBytes(void *ptr, UInt32 size)
    }
 }
 
-SQLEXP_LIB_FUNC
 ex_expr::exp_return_type swapBytes(Attributes *attr,
                                    void *ptr);
 /////////////////////////////////////////
 // Class ex_function_clause            //
 /////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ex_function_clause : public ex_clause {
+class  ex_function_clause : public ex_clause {
 
 public:
   // Construction
   //
-  NA_EIDPROC ex_function_clause(){};
-  NA_EIDPROC ex_function_clause(OperatorTypeEnum oper_type,
+  ex_function_clause(){};
+  ex_function_clause(OperatorTypeEnum oper_type,
 				short num_operands,
 				Attributes ** attr,
 				Space * space);
@@ -2087,33 +2083,33 @@ public:
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 1; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 1; };
+  Int32 isNullInNullOut() const { return 1; };
+  Int32 isNullRelevant() const { return 1; };
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
+  Int32 isEvalRelevant() const { return 1; };
 
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC ex_expr::exp_return_type 
+  Long pack(void *);
+  ex_expr::exp_return_type 
     pCodeGenerate(Space *space, UInt32 flags);
 
-  NA_EIDPROC NABoolean derivedFunction()
+  NABoolean derivedFunction()
     { return ((flags_ & DERIVED_FUNCTION) != 0); };
 
-  NA_EIDPROC void setDerivedFunction(NABoolean v)
+  void setDerivedFunction(NABoolean v)
     { (v) ? flags_ |= DERIVED_FUNCTION: flags_ &= ~DERIVED_FUNCTION; }
 
-  NA_EIDPROC NABoolean caseInsensitiveOperation()
+  NABoolean caseInsensitiveOperation()
     { return ((flags_ & CI_OPERATION) != 0); };
 
-  NA_EIDPROC void setCaseInsensitiveOperation(NABoolean v)
+  void setCaseInsensitiveOperation(NABoolean v)
     { (v) ? flags_ |= CI_OPERATION: flags_ &= ~CI_OPERATION; }
 
 
-  NA_EIDPROC OperatorTypeEnum origFunctionOperType()
+  OperatorTypeEnum origFunctionOperType()
                        { return (OperatorTypeEnum)origFunctionOperType_; }
   void setOrigFunctionOperType(OperatorTypeEnum type)
                                   { origFunctionOperType_ = (Int16)type; }
@@ -2122,24 +2118,24 @@ public:
   
   // Display
   //
-  NA_EIDPROC virtual void displayContents(Space * space, const char * displayStr, 
+  virtual void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
 private:
@@ -2173,73 +2169,73 @@ private:
 /////////////////////////////////////////
 // Class ex_inout_clause
 /////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ex_inout_clause : public ex_clause {
+class  ex_inout_clause : public ex_clause {
 public:
   // Consruction
   //
-  NA_EIDPROC ex_inout_clause() { flags_ = 0; };
-  NA_EIDPROC ex_inout_clause(OperatorTypeEnum oper_type, Attributes ** attr,
+  ex_inout_clause() { flags_ = 0; };
+  ex_inout_clause(OperatorTypeEnum oper_type, Attributes ** attr,
 			     Space * space);
 
 
   // Accessors
   //
-  NA_EIDPROC inline char * getName(){ return name; };
-  NA_EIDPROC inline void setName(char * name_){ name = name_; };
+  inline char * getName(){ return name; };
+  inline void setName(char * name_){ name = name_; };
 
-  NA_EIDPROC inline char * getHeading(){ return heading_; };
-  NA_EIDPROC inline void setHeading(char * heading){ heading_ = heading; };
+  inline char * getHeading(){ return heading_; };
+  inline void setHeading(char * heading){ heading_ = heading; };
 
-  NA_EIDPROC inline char * getTableName(){ return table_name_; };
-  NA_EIDPROC inline void setTableName(char * tn){ table_name_ = tn; };
+  inline char * getTableName(){ return table_name_; };
+  inline void setTableName(char * tn){ table_name_ = tn; };
 
-  NA_EIDPROC inline char * getSchemaName(){ return schema_name_; };
-  NA_EIDPROC inline void setSchemaName(char * sn){ schema_name_ = sn; };
+  inline char * getSchemaName(){ return schema_name_; };
+  inline void setSchemaName(char * sn){ schema_name_ = sn; };
 
-  NA_EIDPROC inline char * getCatalogName(){ return catalog_name_; };
-  NA_EIDPROC inline void setCatalogName(char * cn){ catalog_name_ = cn; };
+  inline char * getCatalogName(){ return catalog_name_; };
+  inline void setCatalogName(char * cn){ catalog_name_ = cn; };
 
-  //  NA_EIDPROC inline ex_conv_clause* &getConvClause(){ return convHVClause_; };
+  //  inline ex_conv_clause* &getConvClause(){ return convHVClause_; };
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 0; };
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 0; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 0; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);  
 
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC Lng32 unpack(void *, void * reallocator);
-  NA_EIDPROC ex_expr::exp_return_type 
+  Long pack(void *);
+  Lng32 unpack(void *, void * reallocator);
+  ex_expr::exp_return_type 
     pCodeGenerate(Space *space, UInt32 flags);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
   short getParamMode() { return paramMode_; }
@@ -2297,52 +2293,52 @@ private:
 /////////////////////////////////////////
 // Class noop_clause                   //
 /////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ex_noop_clause : public ex_clause {
+class  ex_noop_clause : public ex_clause {
 
 public:
   // Construction
   //
-  NA_EIDPROC ex_noop_clause();
+  ex_noop_clause();
 
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 0; };
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 0; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 0; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);  
 
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC ex_expr::exp_return_type 
+  Long pack(void *);
+  ex_expr::exp_return_type 
     pCodeGenerate(Space *space, UInt32 flags);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
 private:   
@@ -2361,54 +2357,54 @@ private:
 /////////////////////////////////////////
 // Class un_logic_clause               //
 /////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ex_unlogic_clause : public ex_clause {
+class  ex_unlogic_clause : public ex_clause {
 
 public:
   // Construction
   //
-  NA_EIDPROC ex_unlogic_clause(){};
-  NA_EIDPROC ex_unlogic_clause(OperatorTypeEnum oper_type, 
+  ex_unlogic_clause(){};
+  ex_unlogic_clause(OperatorTypeEnum oper_type, 
 			       Attributes ** attr, Space * space);
 
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 0; };
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 0; };
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 1; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);  
 
   // Fixup
   //
-  NA_EIDPROC Long pack(void *);
-  NA_EIDPROC ex_expr::exp_return_type 
+  Long pack(void *);
+  ex_expr::exp_return_type 
     pCodeGenerate(Space *space, UInt32 flags);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
 
 private:
 
@@ -2423,16 +2419,16 @@ private:
 };
 
 
-class SQLEXP_LIB_FUNC  ExRegexpClauseBase : public ex_clause {
+class  ExRegexpClauseBase : public ex_clause {
 
 public:
   // Construction
   //
-  NA_EIDPROC ExRegexpClauseBase() 
+  ExRegexpClauseBase() 
   {
     setCollation(CharInfo::DefaultCollation);
   }
-  NA_EIDPROC ExRegexpClauseBase(OperatorTypeEnum oper_type,
+  ExRegexpClauseBase(OperatorTypeEnum oper_type,
 			    short num_operands,
 			    Attributes ** attr,
 			    Space * space) :
@@ -2446,26 +2442,26 @@ public:
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type processNulls(char *op_data[],
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 1; };
+  ex_expr::exp_return_type processNulls(char *op_data[],
   						   CollHeap * = 0,
 						   ComDiagsArea ** = 0);
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 1; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0) = 0;
 
   // Fixup
   //
-  NA_EIDPROC Long pack (void *) = 0;
+  Long pack (void *) = 0;
   
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea)
     {};
 
@@ -2473,25 +2469,25 @@ public:
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
 
-  NA_EIDPROC inline char* getPatternStr()
+  inline char* getPatternStr()
   {
     return patternStr_;
   }
 
-  NA_EIDPROC inline void setPatternStr(char* pat)
+  inline void setPatternStr(char* pat)
   {
     patternStr_ = pat;
   }
@@ -2507,12 +2503,12 @@ public:
   // ---------------------------------------------------------------------
 protected:
   
-  NA_EIDPROC inline CharInfo::Collation getCollation()
+  inline CharInfo::Collation getCollation()
   {
     return (CharInfo::Collation) collation_;
   }
 
-  NA_EIDPROC inline void setCollation(CharInfo::Collation v)
+  inline void setCollation(CharInfo::Collation v)
   {
     collation_ = (Int16) v;
   }
@@ -2522,9 +2518,6 @@ union {
   LikePattern     *pattern_;          // 00-07
   char            *patternStr_;
 };
-#ifndef NA_64BIT
-  char             fillerPattern_[4]; // 04-07
-#endif
 
   Int16 collation_; //08-09
 
@@ -2539,13 +2532,13 @@ union {
 
 
 // Added for unicode like function
-class SQLEXP_LIB_FUNC  ExRegexpClauseChar : public ExRegexpClauseBase {
+class  ExRegexpClauseChar : public ExRegexpClauseBase {
 
 public:
   // Construction
   //
-  NA_EIDPROC ExRegexpClauseChar() {};
-  NA_EIDPROC ExRegexpClauseChar(OperatorTypeEnum oper_type, 
+  ExRegexpClauseChar() {};
+  ExRegexpClauseChar(OperatorTypeEnum oper_type, 
 			    short num_operands,
 			    Attributes ** attr,
 			    Space * space);
@@ -2553,34 +2546,34 @@ public:
 
   // Execution
   //
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);
 
   // Fixup
   //
-  NA_EIDPROC Long pack (void *);
+  Long pack (void *);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ExRegexpClauseBase::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
 private:
@@ -2597,16 +2590,16 @@ private:
 // Class like_clause            //
 //////////////////////////////////
 
-class SQLEXP_LIB_FUNC  ex_like_clause_base : public ex_clause {
+class  ex_like_clause_base : public ex_clause {
 
 public:
   // Construction
   //
-  NA_EIDPROC ex_like_clause_base() 
+  ex_like_clause_base() 
   {
     setCollation(CharInfo::DefaultCollation);
   }
-  NA_EIDPROC ex_like_clause_base(OperatorTypeEnum oper_type,
+  ex_like_clause_base(OperatorTypeEnum oper_type,
 			    short num_operands,
 			    Attributes ** attr,
 			    Space * space) :
@@ -2620,27 +2613,27 @@ public:
 
   // Null Semantics
   //
-  NA_EIDPROC Int32 isNullInNullOut() const { return 0; };
-  NA_EIDPROC Int32 isNullRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type processNulls(char *op_data[],
+  Int32 isNullInNullOut() const { return 0; };
+  Int32 isNullRelevant() const { return 1; };
+  ex_expr::exp_return_type processNulls(char *op_data[],
   						   CollHeap * = 0,
 						   ComDiagsArea ** = 0);
 
   // Execution
   //
-  NA_EIDPROC Int32 isEvalRelevant() const { return 1; };
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  Int32 isEvalRelevant() const { return 1; };
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0) = 0;
 
   // Fixup
   //
-  NA_EIDPROC Long pack (void *) = 0;
-  NA_EIDPROC ex_expr::exp_return_type pCodeGenerate(Space *space, UInt32 flags);
+  Long pack (void *) = 0;
+  ex_expr::exp_return_type pCodeGenerate(Space *space, UInt32 flags);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea)
     {};
 
@@ -2648,25 +2641,25 @@ public:
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ex_clause::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
 
-  NA_EIDPROC inline char* getPatternStr()
+  inline char* getPatternStr()
   {
     return patternStr_;
   }
 
-  NA_EIDPROC inline void setPatternStr(char* pat)
+  inline void setPatternStr(char* pat)
   {
     patternStr_ = pat;
   }
@@ -2682,12 +2675,12 @@ public:
   // ---------------------------------------------------------------------
 protected:
   
-  NA_EIDPROC inline CharInfo::Collation getCollation()
+  inline CharInfo::Collation getCollation()
   {
     return (CharInfo::Collation) collation_;
   }
 
-  NA_EIDPROC inline void setCollation(CharInfo::Collation v)
+  inline void setCollation(CharInfo::Collation v)
   {
     collation_ = (Int16) v;
   }
@@ -2697,9 +2690,6 @@ union {
   LikePattern     *pattern_;          // 00-07
   char            *patternStr_;
 };
-#ifndef NA_64BIT
-  char             fillerPattern_[4]; // 04-07
-#endif
 
   Int16 collation_; //08-09
 
@@ -2713,13 +2703,13 @@ union {
 };
 
 // Added for unicode like function
-class SQLEXP_LIB_FUNC  ex_like_clause_char : public ex_like_clause_base {
+class  ex_like_clause_char : public ex_like_clause_base {
 
 public:
   // Construction
   //
-  NA_EIDPROC ex_like_clause_char() {};
-  NA_EIDPROC ex_like_clause_char(OperatorTypeEnum oper_type, 
+  ex_like_clause_char() {};
+  ex_like_clause_char(OperatorTypeEnum oper_type, 
 			    short num_operands,
 			    Attributes ** attr,
 			    Space * space);
@@ -2727,34 +2717,34 @@ public:
 
   // Execution
   //
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);
 
   // Fixup
   //
-  NA_EIDPROC Long pack (void *);
+  Long pack (void *);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_like_clause_base::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
 private:
@@ -2768,13 +2758,13 @@ private:
 
 };
 
-class SQLEXP_LIB_FUNC  ex_like_clause_doublebyte: public ex_like_clause_base {
+class  ex_like_clause_doublebyte: public ex_like_clause_base {
 
 public:
   // Construction
   //
-  NA_EIDPROC ex_like_clause_doublebyte() {};
-  NA_EIDPROC ex_like_clause_doublebyte(OperatorTypeEnum oper_type, 
+  ex_like_clause_doublebyte() {};
+  ex_like_clause_doublebyte(OperatorTypeEnum oper_type, 
 			    short num_operands,
 			    Attributes ** attr,
 			    Space * space);
@@ -2782,34 +2772,34 @@ public:
 
   // Execution
   //
-  NA_EIDPROC ex_expr::exp_return_type eval(char *op_data[],
+  ex_expr::exp_return_type eval(char *op_data[],
 					   CollHeap * = 0,
 					   ComDiagsArea ** = 0);
 
   // Fixup
   //
-  NA_EIDPROC Long pack (void *);
+  Long pack (void *);
 
   // Display
   //
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
 				  Int32 clauseNum, char * constsArea);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   };
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     ex_like_clause_base::populateImageVersionIDArray();
   };
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); };
+  virtual short getClassSize() { return (short)sizeof(*this); };
   // ---------------------------------------------------------------------
 
 private:

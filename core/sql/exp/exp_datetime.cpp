@@ -1221,7 +1221,6 @@ short ExpDatetime::subDatetimeDatetime(Attributes *datetimeOpType,
 // project.
 // ===================================================================
 //
-NA_EIDPROC
 static Lng32
 scaleFraction(Int32 srcFractPrec,
               Lng32 srcFraction,
@@ -1371,7 +1370,6 @@ ExpDatetime::currentTimeStamp(char *dstData,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static Lng32
 sizeofDatetimeFields(rec_datetime_field startField,
                      rec_datetime_field endField,
@@ -1411,7 +1409,6 @@ sizeofDatetimeFields(rec_datetime_field startField,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static short
 copyDatetimeFields(rec_datetime_field startField,
                    rec_datetime_field endField,
@@ -1474,7 +1471,6 @@ copyDatetimeFields(rec_datetime_field startField,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static short
 minimumTimeStamp(char *dstData,
                  rec_datetime_field dstStartField,
@@ -1686,7 +1682,6 @@ ExpDatetime::extractDatetime(rec_datetime_field srcStartField,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static
 ExpDatetime::DatetimeFormats
 determineFormat(char *src,
@@ -1778,7 +1773,6 @@ determineFormat(char *src,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static
 NABoolean
 containsField(rec_datetime_field field,
@@ -1843,7 +1837,6 @@ containsField(rec_datetime_field field,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static
 NABoolean
 scanField(char *&src,
@@ -3102,7 +3095,6 @@ ExpDatetime::convAsciiToDate(char *srcData,
 // project.
 // =====================================================================
 //
-NA_EIDPROC
 static void
 convertToAscii(Lng32 value, char *&result, UInt32 width)
 {
@@ -3127,7 +3119,6 @@ convertToAscii(Lng32 value, char *&result, UInt32 width)
   result += width;
 }
 
-NA_EIDPROC
 static void 
 convertMonthToStr(Lng32 value, char *&result, UInt32 width)
 {
@@ -3817,8 +3808,6 @@ short ExpDatetime::convAsciiDatetimeToASCII(char *srcData,
 }
 
 
-#ifndef __EID
-
 // getFieldName() ====================================================
 // This static helper function of the ExpDatetime class returns the
 // string (char *) value of the given datetime field.  For example, if
@@ -3869,7 +3858,6 @@ getFieldName(rec_datetime_field field)
 //
 // This method is only called from the generator
 // (ExpGenerator::addDefaultValue() in generator/GenExpGenerator.cpp)
-// thus the #ifndef __EID above.
 //
 // This method was added as part of the MP Datetime Compatibility
 // project.
@@ -3973,6 +3961,3 @@ ExpDatetime::getDefaultStringValue(CollHeap *heap)
 
   return ptr;
 }
-
-
-#endif

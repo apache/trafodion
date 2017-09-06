@@ -34,11 +34,9 @@
  *
  *****************************************************************************
  */
-#include "SqlExportDllDefines.h"
-
 class ExceptionCallBack;
 
-class SQLEXPORT_LIB_FUNC NAInternalError {
+class NAInternalError {
 private:
   static ExceptionCallBack *pExceptionCallBack_;
 public:

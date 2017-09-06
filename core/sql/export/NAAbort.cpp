@@ -116,21 +116,14 @@ int NAAssertMutexLock()
 
 #include "Platform.h"
 
-
-
-#if (defined(__TANDEM) || defined(NA_LINUX))  && !defined(__EID)
 extern short getRTSSemaphore();     // Functions implemented in SqlStats.cpp
 extern void releaseRTSSemaphore();
-#endif
 
 #include "BaseTypes.h" // for declaration of NAAbort()
 #include "NAAssert.h"  // for declaration of NAAssert()
 #include "NAError.h"   // for ARKCMP_EXCEPTION_EPILOGUE()
 
 #include <setjmp.h>
-#include "SqlExportDllDefines.h"
-
-
 
 #include <iostream>
 #include "ExceptionCallBack.h"
@@ -182,7 +175,7 @@ void registerAbortCallBack(AbortCallBack *pACB)
   pAbortCallBack = pACB;
 }
 
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf* ExportJmpBufPtr; 
+extern THREAD_P jmp_buf* ExportJmpBufPtr; 
 
 #include "logmxevent.h"
 
@@ -232,7 +225,6 @@ void assert_botch_no_abend( const char *f, Int32 l, const char * m)
 #pragma warn(770)  // warning elimination 
 void assert_botch_abend( const char *f, Int32 l, const char * m, const char *c)
 {
-#ifndef __EID
   NAAssertMutexLock(); // Assure "termination synchronization"
   int pid = (int) getpid();
 
@@ -293,7 +285,4 @@ void assert_botch_abend( const char *f, Int32 l, const char * m, const char *c)
   else
 #endif
     abort();
-#else
-  assert_botch_in_eid(f, l, m);
-#endif
 }

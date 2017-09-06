@@ -30,7 +30,6 @@
 //  by regress/core/TESTMEM and increase the regression runtime substantially.
 //
 //-------------------------------------------------------------------------
-#undef __EID // force non-mmap based allocation
 #include "NAMemory.h"
 #include <fstream>
 #include <unistd.h>

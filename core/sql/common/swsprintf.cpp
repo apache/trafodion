@@ -79,7 +79,6 @@
 
 //#define FLOATING_POINT 1
 
-NA_EIDPROC
 Int32
 vfprintf(SPRINTF_BUF* fp, const NAWchar* fmt0, va_list ap);
 
@@ -152,7 +151,6 @@ static Int32 exponent __P((char *, Int32, Int32));
 #define	SHORTINT	0x040		/* short integer */
 #define	ZEROPAD		0x080		/* zero (as opposed to blank) pad */
 #define FPT		0x100		/* Floating point number */
-NA_EIDPROC
 Int32
 vfprintf(SPRINTF_BUF* fp, const NAWchar* fmt0, va_list ap)
 {

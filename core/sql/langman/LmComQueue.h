@@ -139,9 +139,6 @@ class Queue
   Q_EntryPtr   curr;                                             // 16-31
 
   CollHeap    *heap_;
-#ifndef NA_64BIT
-  char         fillersQueue1_[4];
-#endif                                                           // 32-39
 
   Int32        numEntries_;                                      // 40-43
   

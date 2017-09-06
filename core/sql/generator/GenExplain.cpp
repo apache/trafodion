@@ -1395,8 +1395,6 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   // on different systems.
   if ((child(0) && child(0)->castToRelExpr()->getOperatorType() == REL_DDL) &&
       (sqlmxRegress))
-      //      (val = ActiveControlDB()->getControlSessionValue("EXPLAIN")) &&
-      //      (*val == "ON"))
     {  
       explainTuple->setDescription(statement);
 
@@ -1405,10 +1403,6 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
 
 
   char buf[20];
-
-  statement += "statement_index: ";
-  sprintf(buf,"%d ", CmpCommon::statement()->getStmtIndex());
-  statement += buf;
 
   // For Adaptive Segmentation
   //

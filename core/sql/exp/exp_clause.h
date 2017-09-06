@@ -71,7 +71,7 @@ class ex_clause;
 // Class ex_clause
 /////////////////////////////////////////////////
 #pragma nowarn(1506)   // warning elimination 
-class SQLEXP_LIB_FUNC  ex_clause : public NAVersionedObject {
+class ex_clause : public NAVersionedObject {
 public:
   // Possible types of clauses
   // (these codes must remain invariant across future versions)
@@ -172,8 +172,6 @@ public:
     FUNC_NULLIFZERO          =87,
     FUNC_NVL                 =88,
     FUNC_HASH2_DISTRIB_ID    =89,
-    FUNC_EXTRACT_COLUMNS     =90,
-    FUNC_AUDIT_ROW_IMAGE     =91,
     FUNC_HEADER              =92,
     FUNC_QUERYID_EXTRACT     =93,
     FUNC_BIT_OPER_ID         =94,
@@ -229,22 +227,22 @@ public:
   
   // Construction, Destruction
   //
-  NA_EIDPROC ex_clause() : NAVersionedObject(CLAUSE_ANCHOR), 
+  ex_clause() : NAVersionedObject(CLAUSE_ANCHOR), 
     nextClause_(NULL), op_(NULL) {};
-  NA_EIDPROC ex_clause(clause_type type_,
+  ex_clause(clause_type type_,
 		       OperatorTypeEnum operType_,
 		       short num_operands_,
 		       Attributes ** op_,
 		       Space * space_);
-  NA_EIDPROC ~ex_clause();
+  ~ex_clause();
 
   // Bookkeeping Accessors
   //
-  NA_EIDPROC void generateClause(char *pt);
-  NA_EIDPROC inline clause_type getType();
-  NA_EIDPROC inline void setType(clause_type t);
+  void generateClause(char *pt);
+  inline clause_type getType();
+  inline void setType(clause_type t);
 
-  NA_EIDPROC inline OperatorTypeEnum getOperType()
+  inline OperatorTypeEnum getOperType()
   {return (OperatorTypeEnum)operType_;};
 
   // PCode Methods
@@ -257,10 +255,10 @@ public:
   // a clause. If not redefined, the default implementations generates
   // PCode to set up for and call the clause->eval() method.
   //
-  NA_EIDPROC inline PCILink *getPCIList() { return pciLink_; };
-  NA_EIDPROC inline void setPCIList(PCILink *pciLink) {
+  inline PCILink *getPCIList() { return pciLink_; };
+  inline void setPCIList(PCILink *pciLink) {
     pciLink_ = pciLink; };
-  NA_EIDPROC virtual ex_expr::exp_return_type pCodeGenerate(Space *space,
+  virtual ex_expr::exp_return_type pCodeGenerate(Space *space,
 							    UInt32 flags);
 
   // Null Processing Methods
@@ -289,49 +287,49 @@ public:
   // isSpecialNulls - Return TRUE if NULL should compare bigger than maximum
   // value
   //
-  NA_EIDPROC virtual Int32 isNullInNullOut() const 
+  virtual Int32 isNullInNullOut() const 
     { return 1;}; // must be redefined in derived classes
-  NA_EIDPROC virtual Int32 isNullRelevant() const
+  virtual Int32 isNullRelevant() const
     { return 1;}; // must be redefined in derived classes
-  NA_EIDPROC inline Int32 isAnyInputNullable() {
+  inline Int32 isAnyInputNullable() {
     return flags_ & ANY_INPUT_NULLABLE; };
 
-  NA_EIDPROC inline Int32 isAnyOutputNullable() {
+  inline Int32 isAnyOutputNullable() {
     return flags_ & ANY_OUTPUT_NULLABLE; };
  
-  NA_EIDPROC inline Int32 isAnyOperandNullable() { 
+  inline Int32 isAnyOperandNullable() { 
     return flags_ & (ANY_INPUT_NULLABLE | ANY_OUTPUT_NULLABLE); };
 
-  NA_EIDPROC inline Int32 useProcessNulls() {
+  inline Int32 useProcessNulls() {
     return flags_ & USE_PROCESS_NULLS; 
   };
 
-  NA_EIDPROC void setProcessNulls() {
+  void setProcessNulls() {
     if(isNullRelevant() && (flags_ & (ANY_INPUT_NULLABLE|ANY_OUTPUT_NULLABLE)))
       flags_ |= USE_PROCESS_NULLS;
   };
-  NA_EIDPROC void setSpecialNulls() { flags_ |= SPECIAL_NULLS; };
-  NA_EIDPROC Int32 isSpecialNulls()   { return (flags_ & SPECIAL_NULLS) != 0; };
+  void setSpecialNulls() { flags_ |= SPECIAL_NULLS; };
+  Int32 isSpecialNulls()   { return (flags_ & SPECIAL_NULLS) != 0; };
 
   NABoolean noPCodeAvailable() { return (flags_ & NO_PCODE_AVAILABLE) != 0; };
-  NA_EIDPROC void setNoPCodeAvailable(NABoolean v) 
+  void setNoPCodeAvailable(NABoolean v) 
   {
     (v ? flags_ |= NO_PCODE_AVAILABLE : flags_ &= ~NO_PCODE_AVAILABLE);
   };
 
-  NA_EIDPROC NABoolean handleIndirectVC() { return (flags_ & HANDLE_INDIRECT_VC) != 0; };
-  NA_EIDPROC void setHandleIndirectVC(NABoolean v) 
+  NABoolean handleIndirectVC() { return (flags_ & HANDLE_INDIRECT_VC) != 0; };
+  void setHandleIndirectVC(NABoolean v) 
   {
     (v ? flags_ |= HANDLE_INDIRECT_VC : flags_ &= ~HANDLE_INDIRECT_VC);
   };
 
-  NA_EIDPROC NABoolean forInsertUpdate() { return (flags_ & FOR_INSERT_UPDATE) != 0; };
-  NA_EIDPROC void setForInsertUpdate(NABoolean v) 
+  NABoolean forInsertUpdate() { return (flags_ & FOR_INSERT_UPDATE) != 0; };
+  void setForInsertUpdate(NABoolean v) 
   {
     (v ? flags_ |= FOR_INSERT_UPDATE : flags_ &= ~FOR_INSERT_UPDATE);
   };
 
-  NA_EIDPROC inline Int32 getAllFlags() { return flags_ ; };
+  inline Int32 getAllFlags() { return flags_ ; };
 
   //
   // SPECIAL TRUNCATION FLAG 
@@ -341,14 +339,14 @@ public:
   //
   // The following two methods are used only in ex_conv_clause objects
 
-  NA_EIDPROC void setCheckTruncationFlag()
+  void setCheckTruncationFlag()
                                     {flags_ |= CHECK_STRING_TRUNCATION;};
-  NA_EIDPROC Int32 getCheckTruncationFlag()
+  Int32 getCheckTruncationFlag()
                                     {return (flags_ & CHECK_STRING_TRUNCATION); }
 
-  NA_EIDPROC void setNoTruncationWarningsFlag()
+  void setNoTruncationWarningsFlag()
                                     {flags_ |= NO_STRING_TRUNCATION_WARNINGS; };
-  NA_EIDPROC Int32 getNoTruncationWarningsFlag()
+  Int32 getNoTruncationWarningsFlag()
                                     { return (flags_ & NO_STRING_TRUNCATION_WARNINGS); }
 
     // Branch handling
@@ -365,43 +363,43 @@ public:
   // addBranchTarget - Increments the number of branch clauses
   // which target this clause.
   //
-  NA_EIDPROC virtual Int32 isBranchingClause() const { return 0; };
-  NA_EIDPROC Int32 isBranchTarget() const { return numberBranchTargets_ != 0; };
-  NA_EIDPROC Int32 getNumberBranchTargets() { return numberBranchTargets_; }; 
-  NA_EIDPROC void setNumberBranchTargets(Int32 num) { numberBranchTargets_ = num; };
-  NA_EIDPROC void addBranchTarget() { numberBranchTargets_++; };
+  virtual Int32 isBranchingClause() const { return 0; };
+  Int32 isBranchTarget() const { return numberBranchTargets_ != 0; };
+  Int32 getNumberBranchTargets() { return numberBranchTargets_; }; 
+  void setNumberBranchTargets(Int32 num) { numberBranchTargets_ = num; };
+  void addBranchTarget() { numberBranchTargets_++; };
 
     
-  NA_EIDPROC unsigned short &clauseNum() { return clauseNum_; }
+  unsigned short &clauseNum() { return clauseNum_; }
 
   // Operand Accessors
   //
-  NA_EIDPROC inline short getNumOperands();
-  NA_EIDPROC inline Attributes *getOperand(short operand_num);
-  NA_EIDPROC inline AttributesPtr *getOperand();
-  NA_EIDPROC inline void setOperand(AttributesPtrPtr& attr_);
+  inline short getNumOperands();
+  inline Attributes *getOperand(short operand_num);
+  inline AttributesPtr *getOperand();
+  inline void setOperand(AttributesPtrPtr& attr_);
 
   // Clause List Accessors
   //
-  NA_EIDPROC inline ex_clause *getNextClause();
-  NA_EIDPROC inline void setNextClause(ex_clause *clause_);
-  NA_EIDPROC inline void setNextPackedClause(Int64 offset);
-  NA_EIDPROC inline void setNext(Lng32 next_clause_offset);
-  NA_EIDPROC inline void setLastClause();
+  inline ex_clause *getNextClause();
+  inline void setNextClause(ex_clause *clause_);
+  inline void setNextPackedClause(Int64 offset);
+  inline void setNext(Lng32 next_clause_offset);
+  inline void setLastClause();
 
   // Packing, Unpacking, and Fixup
   //
-  NA_EIDPROC virtual Long pack(void *);
-  NA_EIDPROC virtual Lng32 unpack(void *, void * reallocator);
-  NA_EIDPROC Long packClause(void *, Lng32 size);
-  NA_EIDPROC Lng32 unpackClause(void *base, void * reallocator);
+  virtual Long pack(void *);
+  virtual Lng32 unpack(void *, void * reallocator);
+  Long packClause(void *, Lng32 size);
+  Lng32 unpackClause(void *base, void * reallocator);
 
   virtual Lng32 initClause(){return 0;};
 
   // SpaceCompOnly: if TRUE, then compute space requirement only.
   //                Do not make any changes to the generated expressions,
   //                (like assigning tempsArea, assigning generated pcode, etc).
-  NA_EIDPROC virtual ex_expr::exp_return_type fixup(Space * space = 0,
+  virtual ex_expr::exp_return_type fixup(Space * space = 0,
 						    CollHeap * exHeap = 0,
 						    char * constants_area = 0,
 						    char * temps_area = 0,
@@ -445,27 +443,27 @@ public:
   // op_data[-2*MAX_OPERANDS], etc.
   //
   //
-  NA_EIDPROC virtual Int32 isEvalRelevant() const
+  virtual Int32 isEvalRelevant() const
   { return 1;}; // must be redefined in derived classes
-  NA_EIDPROC virtual ex_expr::exp_return_type processNulls(char *op_data[],
+  virtual ex_expr::exp_return_type processNulls(char *op_data[],
 							   CollHeap * = 0,
 							   ComDiagsArea ** = 0);
-  NA_EIDPROC virtual ex_expr::exp_return_type eval(char *op_data[],
+  virtual ex_expr::exp_return_type eval(char *op_data[],
 						   CollHeap * = 0,
 						   ComDiagsArea ** = 0);
  
   // Display
   //
-  NA_EIDPROC virtual void displayContents(Space * space, const char * displayStr, 
+  virtual void displayContents(Space * space, const char * displayStr, 
 					  Int32 clauseNum, char * constsArea);
   
-  NA_EIDPROC void displayContents(Space * space, const char * displayStr, 
+  void displayContents(Space * space, const char * displayStr, 
                                   Int32 clauseNum, char * constsArea, 
                                   UInt32 clauseFlags,
                                   Int16 instruction = -1,
                                   const char * instrText = NULL);
 
-  NA_EIDPROC static void clearVOA(Attributes *attr, atp_struct *atp)
+  static void clearVOA(Attributes *attr, atp_struct *atp)
   {
     CollIndex atpIdx = attr->getAtpIndex();
     
@@ -474,7 +472,7 @@ public:
   }
 
 
-  NA_EIDPROC static void setRowLength(Attributes * attr, 
+  static void setRowLength(Attributes * attr, 
 				      atp_struct * atp,
 				      UInt32     * rowLen,
 				      UInt32       newLength)
@@ -492,14 +490,14 @@ public:
   }
 
 
-  NA_EIDPROC static void setVoaData(char *dataPtr, UInt32 voaOffset, UInt32 value)
+  static void setVoaData(char *dataPtr, UInt32 voaOffset, UInt32 value)
    {
      assert(dataPtr);
      if (voaOffset != ExpOffsetMax)
        str_cpy_all(dataPtr + voaOffset, (char *)&value, ExpVoaSize);
    }
   
-  NA_EIDPROC static void evalSetRowLength(Attributes *attr, 
+  static void evalSetRowLength(Attributes *attr, 
 					  atp_struct *atp,
 					  UInt32     *rowLen,
 					  UInt32      newLength)
@@ -519,26 +517,26 @@ public:
       *rowLen = newLength;
   }
 
-  NA_EIDPROC void copyOperands(ex_clause* clause, Space* space);
+  void copyOperands(ex_clause* clause, Space* space);
 
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(0,getClassVersionID());
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
-  NA_EIDPROC virtual char *findVTblPtr(short classID);
+  virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual char *findVTblPtr(short classID);
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC void setExeGlobals(ex_globals * glob)
+  void setExeGlobals(ex_globals * glob)
   {
     globals_ = glob;
   }
@@ -547,7 +545,7 @@ public:
   void setInstrArrayIndex(Int16 index) { instrArrayIndex_ = index; }
 
 protected:
-  NA_EIDPROC ex_globals * getExeGlobals() 
+  ex_globals * getExeGlobals() 
   {
     return globals_;
   }
@@ -555,9 +553,6 @@ protected:
 private:  
   ExClausePtr                nextClause_;          // 00-07
   PCILink                   *pciLink_;             // 08-15
-#ifndef NA_64BIT
-  char                       fillerpciLink_[4];    // 12-15
-#endif
   AttributesPtrPtr           op_;                  // 16-23
   UInt16                     clauseNum_;           // 24-25
   UInt16                     numberBranchTargets_; // 26-27
@@ -644,11 +639,11 @@ inline void ex_clause::setNextPackedClause(Int64 offset){
 };
 
 // functions to compare two strings
-NA_EIDPROC Int32 charStringCompareWithPad(char* in_s1, Int32 length1, 
+Int32 charStringCompareWithPad(char* in_s1, Int32 length1, 
                                           char* in_s2, Int32 length2, 
                                           char space);
 
-NA_EIDPROC Int32 wcharStringCompareWithPad(NAWchar* s1, Int32 length1, 
+Int32 wcharStringCompareWithPad(NAWchar* s1, Int32 length1, 
                                            NAWchar* s2, Int32 length2, 
                                            NAWchar space);
 #endif

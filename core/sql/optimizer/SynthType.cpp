@@ -87,7 +87,6 @@ static void shortenTypeSQLname(const NAType &op,
   }
 }
 
-// This one's NOT static -- GenRfork calls it!
 void emitDyadicTypeSQLnameMsg(Lng32 sqlCode,
 			      const NAType &op1,
 			      const NAType &op2,
@@ -6649,76 +6648,6 @@ const NAType *ItmSeqNotTHISFunction::synthesizeType()
  NAType *result = operand.newCopy(HEAP);
  result->setNullable(TRUE);
  return result;
-}
-
-// -----------------------------------------------------------------------
-// member functions for class AuditImage
-// -----------------------------------------------------------------------
-
-const NAType *AuditImage::synthesizeType()
-{
-  const NAType * type = NULL;
-
-  const NATable *naTable = getNATable();
-
-  // The data types of the columns (in order) in the object
-  // must match the data types of columns specified in the
-  // expression list for AUDIT_IMAGE. The columns in the expression
-  // list form the children of AUDIT_IMAGE node.
-
-  const NAColumnArray &naColumns = naTable->getNAColumnArray();
-  for (UInt32 i=0; i < naColumns.entries(); i++)
-    {
-
-      const NAColumn *tableNACol = naColumns[i];
-      const NAType *tableColumnType = tableNACol->getType();
-
-      // Populate member varaible columnTypeList_ (to be used
-      // during codeGen. See AuditImage::codeGen()) with the
-      // column types of the object.
-      columnTypeList_.insert(tableColumnType);
-
-      // Actual datatype checking is done only for non-Constants.
-      // Compatiblity type checking is done for Constants.
-      // Note: Constants are used only for internal testing.
-      const NAType *childType = &children()[i].getValueId().getType();
-      if (children()[i].getPtr()->getOperatorType() == ITM_CONSTANT ||
-	  childType->getTypeQualifier() == NA_UNKNOWN_TYPE)
-	{
-	  children()[i].getValueId().coerceType(*tableColumnType);
-	  // the coerceType method above might have changed
-	  // the childType. So, get it one more time.
-	  childType = &children()[i].getValueId().getType();
-	  if (NOT childType->isCompatible(*tableColumnType))
- 	    {
-	      *CmpCommon::diags() << DgSqlCode(-4316)
-				  << DgTableName(getObjectName().getQualifiedNameAsString())
-				  << DgColumnName(tableNACol->getColName());
-	      return NULL;
-	    }
-	}
-      else
-	{
-	  // Not a constant, so enforce type checking; but w.r.t NULL - check
-	  // only if it's physical and not if the value of
-	  // has the exact enum NAType::SupportsSQLnull.
- 	  if (!(tableColumnType->equalPhysical(*childType)))
-	    {
-	      *CmpCommon::diags() << DgSqlCode(-4316)
-				  << DgTableName(getObjectName().getQualifiedNameAsString())
-				  << DgColumnName(tableNACol->getColName());
-	      return NULL;
-	    }
-	}
-    }
-
-
-  const Lng32 recordLength = naTable->getRecordLength();
-
-  type = new HEAP
-    SQLVarChar(HEAP, recordLength);
-
-  return type;
 }
 
 const NAType * HbaseColumnLookup::synthesizeType()

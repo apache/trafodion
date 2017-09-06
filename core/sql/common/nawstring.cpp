@@ -150,7 +150,6 @@ NAWString::replace(size_t pos, size_t n1, const NAWchar* cs, size_t n2)
   return *this;
 }
 
-SQLEXPORT_LIB_FUNC
 NAWString operator+(const NAWString& s1, const NAWString& s2)
 {
  // Use the special concatenation constructor:
@@ -249,7 +248,6 @@ size_t NAWString::index(const NAWchar* pattern, size_t patLen, size_t startIndex
 // call (C macro expansion/invocation) to deallocate the buffer.
 // -----------------------------------------------------------------------
 //LCOV_EXCL_START :cnu -- As of 8/30/2011, no callers in SQ SQL except copyNAWString() which has no callers
-SQLEXPORT_LIB_FUNC
 NAWchar * newNAWcharBuffer(const NAWString& naws, CollHeap *heap)
 {
   size_t len = naws.length();
@@ -285,7 +283,6 @@ NAWchar * newNAWcharBuffer(const NAWString& naws, CollHeap *heap)
 // call (C macro expansion/invocation) to deallocate the buffer.
 // -----------------------------------------------------------------------
 //LCOV_EXCL_START :cnu -- As of 8/30/2011, no callers in SQ SQL except copyNAWString() which has no callers
-SQLEXPORT_LIB_FUNC
 NAWchar * newNAWcharBufferContainingAnEmptyString(CollHeap *heap)
 {
   NAWchar* buf = NULL;
@@ -306,7 +303,6 @@ NAWchar * newNAWcharBufferContainingAnEmptyString(CollHeap *heap)
 // -----------------------------------------------------------------------
 // Remove whitespace (spaces and tabs) from front or back or both
 // -----------------------------------------------------------------------
-SQLEXPORT_LIB_FUNC
 void TrimNAWStringSpace(NAWString& ns, NAString::stripType eStripType) // default is NAString::trailing
 {
   StringPos i;

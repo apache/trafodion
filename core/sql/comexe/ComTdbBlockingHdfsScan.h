@@ -124,16 +124,8 @@ public:
 		 queue_index down,
 		 queue_index up,
 		 Cardinality estimatedRowCount,
-#ifdef NA_64BIT
                  Int32  numBuffers,
-#else
-                 Lng32 numBuffers,
-#endif
-#ifdef NA_64BIT
                  UInt32  bufferSize
-#else
-                 ULng32 bufferSize
-#endif
                  );
 
   ~ComTdbBlockingHdfsScan();

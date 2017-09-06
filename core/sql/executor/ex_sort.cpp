@@ -66,9 +66,10 @@ const char *ExSortTcb::SortPhaseStr[] = {
 NABoolean ExSortTcb::needStatsEntry()
 {
   ComTdb::CollectStatsType statsType = getGlobals()->getStatsArea()->getCollectStatsType();
-  // stats are collected for ALL and MEASURE options.
-  if (statsType == ComTdb::MEASURE_STATS || statsType == ComTdb::ALL_STATS || 
-    statsType == ComTdb::OPERATOR_STATS)
+
+  // stats are collected for ALL or OPERATOR options.
+  if (statsType == ComTdb::ALL_STATS || 
+      statsType == ComTdb::OPERATOR_STATS)
     return TRUE;
   else
     return FALSE;
@@ -80,11 +81,11 @@ ExOperStats * ExSortTcb::doAllocateStatsEntry(CollHeap *heap,
   ExBMOStats *stat;
 
   ComTdb::CollectStatsType statsType = getGlobals()->getStatsArea()->getCollectStatsType();
-  if (statsType == ComTdb::MEASURE_STATS)
+  if (statsType == ComTdb::ACCUMULATED_STATS)
   {
-    // measure or accum stats
+    // accum stats
     ex_assert(getGlobals()->getStatsArea()->numEntries() == 1,
-	      "Must have one and only one entry for measure/accum stats case");
+	      "Must have one and only one entry for accum stats case");
     getGlobals()->getStatsArea()->position();
     setStatsEntry(getGlobals()->getStatsArea()->getNext());
     return NULL;

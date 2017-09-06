@@ -81,12 +81,10 @@ public:
   // ---------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------
-  NA_EIDPROC
   NAErrorParam(Lng32 l) : errParamType_(NAERROR_PARAM_TYPE_INTEGER),
                          longValue_(l)
   { }
 
-  NA_EIDPROC
   NAErrorParam(char * s) : errParamType_(NAERROR_PARAM_TYPE_CHAR_STRING),
                            stringValue_(s)
   { }
@@ -94,7 +92,7 @@ public:
   // ---------------------------------------------------------------------
   // Destructor
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ~NAErrorParam() {};
+  virtual ~NAErrorParam() {};
 
   // ---------------------------------------------------------------------
   // Ideally, there should be just one method for returning a string for
@@ -126,13 +124,13 @@ public:
   //       }
   //
   // ---------------------------------------------------------------------
-  NA_EIDPROC NAErrorParamType getNAErrorParamType() const
+  NAErrorParamType getNAErrorParamType() const
   { return errParamType_; }
 
-  NA_EIDPROC Lng32 getIntegerNAErrorParam() const
+  Lng32 getIntegerNAErrorParam() const
   { return longValue_; }
 
-  NA_EIDPROC char * getStringNAErrorParam() const
+  char * getStringNAErrorParam() const
   { return stringValue_; }
 
 protected:
@@ -157,7 +155,7 @@ public:
   // The first argument, numParams, ends up deciding how many of the
   // following parameters are relevant.
   // ---------------------------------------------------------------------
-  NA_EIDPROC NAErrorParamArray(Lng32 numParams = 0,
+  NAErrorParamArray(Lng32 numParams = 0,
             NAErrorParam * errParam0 = 0,
             NAErrorParam * errParam1 = 0,
             NAErrorParam * errParam2 = 0,
@@ -170,17 +168,17 @@ public:
             NAErrorParam * errParam9 = 0
            );
 
-  NA_EIDPROC virtual ~NAErrorParamArray();
+  virtual ~NAErrorParamArray();
 
   // ---------------------------------------------------------------------
   // How many NAErrorParams are contained in the NAErrorParamArray?
   // ---------------------------------------------------------------------
-  NA_EIDPROC Lng32 entries() const { return numParams_; }
+  Lng32 entries() const { return numParams_; }
 
   // ---------------------------------------------------------------------
   // Accessor function.
   // ---------------------------------------------------------------------
-  NA_EIDPROC NAErrorParam * getNAErrorParam(Lng32 paramNo) const
+  NAErrorParam * getNAErrorParam(Lng32 paramNo) const
   {
     if (  (paramNo >= 0) && (paramNo < numParams_ ) )
       return array_[paramNo].errParam_;
@@ -249,7 +247,7 @@ public:
   // ---------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------
-  NA_EIDPROC NAError(const NAErrorCode errCode = 0,
+  NAError(const NAErrorCode errCode = 0,
           const NAErrorType errType = NAERROR_NONE,
       const NASubsys subsys = NA_UNKNOWN,
       NAErrorParamArray * errParams = 0,
@@ -261,19 +259,19 @@ public:
   // ---------------------------------------------------------------------
   // Destructor
   // ---------------------------------------------------------------------
-  NA_EIDPROC ~NAError();
+  ~NAError();
 
   // ---------------------------------------------------------------------
   // Accessor functions.
   // ---------------------------------------------------------------------
-  NA_EIDPROC NAErrorCode getErrCode() const { return errCode_; }
-  NA_EIDPROC NAErrorType getErrType() const { return errType_; }
-  NA_EIDPROC NASubsys  getSubsys() const { return subsysId_; }
+  NAErrorCode getErrCode() const { return errCode_; }
+  NAErrorType getErrType() const { return errType_; }
+  NASubsys  getSubsys() const { return subsysId_; }
 
   // ---------------------------------------------------------------------
   // Error Parameters.
   // ---------------------------------------------------------------------
-  NA_EIDPROC Lng32 getErrParamCount() const
+  Lng32 getErrParamCount() const
     {
       if (errParams_)
     return errParams_->entries();
@@ -281,7 +279,7 @@ public:
     return 0;
     }
 
-  NA_EIDPROC NAErrorParam * getNAErrorParam(Lng32 paramNo) const
+  NAErrorParam * getNAErrorParam(Lng32 paramNo) const
   {
     if (errParams_)
       return errParams_->getNAErrorParam(paramNo);
@@ -292,22 +290,22 @@ public:
   // ---------------------------------------------------------------------
   // Procedure name and line numbers.
   // ---------------------------------------------------------------------
-  NA_EIDPROC char * getProcName() const { return procName_; }
+  char * getProcName() const { return procName_; }
 
-  NA_EIDPROC Lng32  getLineNumber() const { return lineNumber_; }
+  Lng32  getLineNumber() const { return lineNumber_; }
 
   // ---------------------------------------------------------------------
   // Method for traversing error list
   // ---------------------------------------------------------------------
-  NA_EIDPROC void setNext(NAError * errPtr) { next_ = errPtr; }
-  NA_EIDPROC NAError * getNext() const { return next_; }
+  void setNext(NAError * errPtr) { next_ = errPtr; }
+  NAError * getNext() const { return next_; }
 
   // ---------------------------------------------------------------------
   // Linearization and De-linearization functions to copy SQLDiagArea
   // tree to and from contiguous storage.
   // ---------------------------------------------------------------------
-  NA_EIDPROC Long pack(void * space);
-  NA_EIDPROC Lng32 unpack(Lng32);
+  Long pack(void * space);
+  Lng32 unpack(Lng32);
 
 private:
 
@@ -347,7 +345,7 @@ public:
   // ---------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------
-  NA_EIDPROC NAErrorStack(Lng32 maxSize)
+  NAErrorStack(Lng32 maxSize)
               : maxEntries_(maxSize), numEntries_(0), errEntry_(0),
         nextEntry_(0), iterEntries_(0)
   {
@@ -356,17 +354,17 @@ public:
   // ---------------------------------------------------------------------
   // Destructor
   // ---------------------------------------------------------------------
-  NA_EIDPROC ~NAErrorStack();
+  ~NAErrorStack();
 
   // ---------------------------------------------------------------------
   // Method for initializing an error stack - once per statement
   // ---------------------------------------------------------------------
-  NA_EIDPROC void clear();
+  void clear();
 
   // ---------------------------------------------------------------------
   // Method for returning the error code for the latest error
   // ---------------------------------------------------------------------
-  NA_EIDPROC NAErrorCode getErrCode()
+  NAErrorCode getErrCode()
   {
     if (errEntry_ != (NAError *)0)
       return errEntry_->getErrCode();
@@ -377,13 +375,13 @@ public:
   // ---------------------------------------------------------------------
   // Method for adding a new Error
   // ---------------------------------------------------------------------
-  NA_EIDPROC void addErrEntry(NAError * errPtr);
+  void addErrEntry(NAError * errPtr);
 
   // ---------------------------------------------------------------------
   // Iterator over all errors
   // ---------------------------------------------------------------------
-  NA_EIDPROC NAError * getFirst(); // initialize the iterator
-  NA_EIDPROC NAError * getNext();  // behaviour undefined unless getFirst() was called
+  NAError * getFirst(); // initialize the iterator
+  NAError * getNext();  // behaviour undefined unless getFirst() was called
 
 private:
 

@@ -138,7 +138,6 @@ private:
 static NAList<SqlstateInfo*> listOfSqlstates_(NULL);
 static pthread_mutex_t       listOfSqlstates_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-SQLERRORS_LIB_FUNC 
 NABoolean GetSqlstateInfo(Lng32 sqlcode, char * sqlstate,
 			  NABoolean &fabricatedSqlstate)
 {
@@ -168,7 +167,6 @@ NABoolean GetSqlstateInfo(Lng32 sqlcode, char * sqlstate,
   return found;
 }
 
-SQLERRORS_LIB_FUNC 
 void AddSqlstateInfo(Lng32 sqlcode, char * sqlstate,
 		     NABoolean fabricatedSqlstate)
 {

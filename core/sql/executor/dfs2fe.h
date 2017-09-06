@@ -657,7 +657,6 @@ enum ExeDfs2feEnum
    , FEMOREDATA		  = dfs2fe_base + 1179
    , FESEQUENCE        = dfs2fe_base + 1180
    , FESIDETREE        = dfs2fe_base + 1181
-   , FERFORKLOCKED     = dfs2fe_base + 1182
    , FENOSQLMX         = dfs2fe_base + 1183
    , FECPUSWITCHED     = dfs2fe_base + 1184
    , FESQLMXINTERNALERR= dfs2fe_base + 1185

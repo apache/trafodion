@@ -225,7 +225,7 @@ const char * ComTdbUnion::getExpressionName(Int32 pos) const
     return NULL;
 }
 
-NA_EIDPROC void ComTdbUnion::displayContents(Space * space,ULng32 flag)
+void ComTdbUnion::displayContents(Space * space,ULng32 flag)
 {
       ComTdb::displayContents(space,flag & 0xFFFFFFFE);
 

@@ -68,7 +68,7 @@ keyRangeGen::keyRangeGen(key_type keyType,
 // This method returns the virtual function table pointer for an object
 // with the given class ID; used by NAVersionedObject::driveUnpack().
 // -----------------------------------------------------------------------
-NA_EIDPROC char *keyRangeGen::findVTblPtr(short classID)
+char *keyRangeGen::findVTblPtr(short classID)
 {
   char *vtblPtr;
   switch (classID)

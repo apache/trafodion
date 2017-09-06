@@ -69,7 +69,7 @@ class ComSchemaName;
 class ComAnsiNamePart;
 
 #pragma nowarn(1506)   // warning elimination 
-class SQLCLI_LIB_FUNC Logfile {
+class Logfile {
 
 private:
 

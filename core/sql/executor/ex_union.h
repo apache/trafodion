@@ -72,16 +72,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ex_union_tdb()
+  ex_union_tdb()
   {}
 
-  NA_EIDPROC virtual ~ex_union_tdb()
+  virtual ~ex_union_tdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -133,35 +133,27 @@ public:
   };
 
   // Constructor
-NA_EIDPROC
   ex_union_tcb(const ex_union_tdb &  union_tdb,    // 
 	       const ex_tcb *    left_tcb,    // left queue pair
 	       const ex_tcb *    right_tcb,   // right queue pair
 	       ex_globals *glob
 	       );
         
-NA_EIDPROC
   ~ex_union_tcb();  
 
-NA_EIDPROC
   void        freeResources();  // free resources
-NA_EIDPROC
   virtual void  registerSubtasks();
 
-NA_EIDPROC
   ExWorkProcRetcode work();            // not used for this TCB
-NA_EIDPROC
   ExWorkProcRetcode workDown();        // pass requests down to child
-NA_EIDPROC
   ExWorkProcRetcode workUp();          // pass results up to parent
 
-NA_EIDPROC 
+
   static  ExWorkProcRetcode sWorkUp(ex_tcb *tcb)
                            { return ((ex_union_tcb *) tcb)->workUp(); }
-NA_EIDPROC
   static ExWorkProcRetcode sWorkDown(ex_tcb *tcb)
                          { return ((ex_union_tcb *) tcb)->workDown(); }
-NA_EIDPROC 
+
   static ExWorkProcRetcode sCancel(ex_tcb *tcb)
                     { return ((ex_union_tcb *) tcb)->processCancel(); }
   
@@ -191,22 +183,16 @@ virtual const ex_tcb* getChild(Int32 pos) const
       return NULL;
 }
 
-NA_EIDPROC
   inline ex_expr * moveExpr(Int32 i)
   { return (i == 0 ? union_tdb().leftExpr_ : union_tdb().rightExpr_); }
 
-NA_EIDPROC
   inline ex_expr * mergeExpr() const { return union_tdb().mergeExpr_; }
 
-NA_EIDPROC
   inline ex_expr * condExpr() const { return union_tdb().condExpr_; }
 
-NA_EIDPROC
   inline ex_expr * trigExceptExpr() const { return union_tdb().trigExceptExpr_;}
 
-NA_EIDPROC
   virtual Int32 numChildren() const { return union_tdb().numChildren(); }
-//NA_EIDPROC
 //  virtual const ex_tcb* getChild(int pos) const;
   virtual Int32 hasNoOutputs() const {return FALSE;};
 protected:
@@ -219,13 +205,9 @@ protected:
 
   queue_index   processedInputs_;    // next parent down queue entry to process
 
-NA_EIDPROC
   virtual void start();		     // send next request down to children
-NA_EIDPROC
   virtual void stop();		     // send EOD to parent
-NA_EIDPROC
   virtual ExWorkProcRetcode processCancel(); // check for cancelled request
-NA_EIDPROC
   virtual void processError(ex_union_private_state &pstate, Int32 &endOfData,
                             atp_struct* atp);
 
@@ -235,7 +217,6 @@ NA_EIDPROC
   // no the method returns whether the current request is at end of
   // data (EOD entries in both child queues) or not. The procedure
   // also needs to set pstate.childStates_[i] to DONE_, if appropriate.
-NA_EIDPROC
   virtual Int32 whichSide(ex_union_private_state &  pstate,
 			Int32 &side,
 			Int32 &endOfData);
@@ -249,14 +230,12 @@ class ex_m_union_tcb : public ex_union_tcb
 {
 public:
   // Constructor
-NA_EIDPROC
   ex_m_union_tcb(const ex_union_tdb &  union_tdb,    // 
 		 const ex_tcb *    left_tcb,    // left queue pair
 		 const ex_tcb *    right_tcb,   // right queue pair
 		 ex_globals *glob
 		 );
         
-NA_EIDPROC
   virtual Int32 whichSide(ex_union_private_state &  pstate,
 			Int32 &side,
 			Int32 &endOfData);
@@ -270,7 +249,6 @@ class ex_o_union_tcb : public ex_union_tcb
 {
 public:
   // Constructor
-NA_EIDPROC
   ex_o_union_tcb(const ex_union_tdb &  union_tdb,    // 
 		 const ex_tcb *    left_tcb,    // left queue pair
 		 const ex_tcb *    right_tcb,   // right queue pair
@@ -279,52 +257,40 @@ NA_EIDPROC
 		 Int32 hasNoOutputs
 		 );
         
-NA_EIDPROC
   virtual Int32 whichSide(ex_union_private_state &  pstate,
 			Int32 &side,
 			Int32 &endOfData);
   
-NA_EIDPROC
   ExWorkProcRetcode workDownLeft();        // pass requests down to child
 
   ExWorkProcRetcode workDownBlockedLeft();        // pass requests down to child
   
-NA_EIDPROC
   ExWorkProcRetcode workDownRight();        // pass requests down to child
 
-NA_EIDPROC
   virtual ExWorkProcRetcode processCancel();     // Cancel request 
 
-NA_EIDPROC
   static ExWorkProcRetcode sWorkPhase1(ex_tcb *tcb)
                          { return ((ex_o_union_tcb *) tcb)->workDownLeft(); }
 
-NA_EIDPROC
   static ExWorkProcRetcode sWorkBlockedPhase1(ex_tcb *tcb)
                          { return ((ex_o_union_tcb *) tcb)->workDownBlockedLeft(); }
 
-NA_EIDPROC
   static ExWorkProcRetcode sWorkPhase2(ex_tcb *tcb)
                          { return ((ex_o_union_tcb *) tcb)->workDownRight(); }
 
-NA_EIDPROC
   static ExWorkProcRetcode sCancel(ex_tcb *tcb)
                          { return ((ex_o_union_tcb *) tcb)->processCancel(); }
 
-NA_EIDPROC
   virtual void  registerSubtasks();
 
   virtual Int32 hasNoOutputs() const {return hasNoOutputs_;};
 
 private:
-NA_EIDPROC
   void startLeftchild();
-NA_EIDPROC
   void startRightchild();
 
   // Helper to determine which child's (left or right) parent is farther 
   // from the parent down ex_queue's head_.
-NA_EIDPROC
   queue_index whichSideParentIndex();
 
   short rightRequestCnt_;  // a counter for pipelining requests to right child
@@ -360,42 +326,32 @@ NA_EIDPROC
 class ex_c_union_tcb : public ex_union_tcb
 {
 public:
-NA_EIDPROC
   ex_c_union_tcb(const ex_union_tdb &union_tdb,    
 		 const ex_tcb *left_tcb, 
 		 const ex_tcb *right_tcb,
 		 ex_globals *glob);
         
-NA_EIDPROC
   virtual void registerSubtasks();
 
-NA_EIDPROC
   ExWorkProcRetcode condWorkDown();
 
-NA_EIDPROC
   static ExWorkProcRetcode sCondWorkDown(ex_tcb *tcb)
                          { return ((ex_c_union_tcb *) tcb)->condWorkDown(); }
 
 //issue a EXE_CS_EOD or a EXE_CS_EOD_ROLLBACK_ERROR type error/warning for
 //conditional union
-NA_EIDPROC
   void processEODErrorOrWarning(NABoolean isWarning) ;
 
 protected:
 
-NA_EIDPROC
   virtual void start();		  
-NA_EIDPROC
   virtual void stop();		
 
-NA_EIDPROC
   virtual Int32 whichSide(ex_union_private_state &pstate,
 			Int32 &side,
 			Int32 &endOfData);
 
-NA_EIDPROC
   virtual ExWorkProcRetcode processCancel(); 
-NA_EIDPROC
   virtual void processError(ex_union_private_state &pstate, Int32 &endOfData,
                             atp_struct* atp);
 
@@ -427,19 +383,14 @@ class ex_union_private_state : public ex_tcb_private_state
   Int32 whichChild_; // which side of conditional union to execute.
 
 
-NA_EIDPROC
   void           init();        // initialize state
 
 public:
 
-NA_EIDPROC
   ex_union_private_state(const ex_union_tcb * tcb); //constructor
-NA_EIDPROC
   ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
-NA_EIDPROC
   ~ex_union_private_state();  // destructor
 
-NA_EIDPROC
   Int32 validChild() const {return whichChild_ >= 0 && whichChild_ <=1; }
 
 };

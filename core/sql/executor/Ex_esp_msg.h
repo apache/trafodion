@@ -1132,14 +1132,8 @@ public:
                                             { return f_.fragmentLength_; }
   inline char *getFragment() const                   { return fragment_; }
   inline Lng32 getNumTemps() const                 { return f_.numTemps_; }
-#ifndef NA_TMFNOTYETSUPPORTED
   inline NABoolean getNeedsTransaction() const
                               { return (NABoolean) f_.needsTransaction_; }
-#else
-  inline NABoolean getNeedsTransaction() const
-                              { return (NABoolean) 0; }
-
-#endif
   inline NABoolean getDisplayInGui() const
                                   { return (NABoolean) f_.displayInGui_; }
 

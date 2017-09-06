@@ -61,12 +61,6 @@ void IpcSockLogTimestamp(Int32 fdesc); // see bottom of file
 const Int32 SOCKET_ERROR = -1;
 typedef size_t length_t;
 
-
-// for system procedure calls (close,dup2,fork,execve)
-#if defined(NA_OSS) || defined(NA_HSC_LINUX) || defined(NA_HSC_HPUX) || defined(NA_HSC_LINUX)
-# include <unistd.h>
-#endif
-
 #include <errno.h>
 #include <sys/time.h>
 
@@ -416,12 +410,7 @@ SockPortNumber SockSocket::bindOrConnect(const SockIPAddress &ipAddr,
 
   // return the port that the socket is now bound to
 
-#ifdef NA_64BIT
-  // dg64 - use 64-bit i/f
   socklen_t namelen = sizeof(targetSockAddr);
-#else
-  length_t namelen = sizeof(targetSockAddr);
-#endif
   retcode = ::getsockname(fdesc_,&targetSockAddr,&namelen);
   if (retcode == SOCKET_ERROR)
     setFromerrno("::getsockname()");
@@ -814,12 +803,7 @@ NABoolean SockSocket::accept(SockFdesc &fdesc, IpcTimeout timeout)
     } // non-infinite timeout
 
   struct sockaddr clientSockAddr;
-#ifdef NA_64BIT
-  // dg64 - use 64-bit i/f
   socklen_t addrlen = sizeof(clientSockAddr);
-#else
-  length_t addrlen = sizeof(clientSockAddr);
-#endif
 
   // call the accept() system call, waiting until a client wants to connect
   Int32 retcode = ::accept(fdesc_,&clientSockAddr,&addrlen);
@@ -1427,8 +1411,6 @@ SockControlConnection::SockControlConnection(
   cout << "Listening to port " << setw(11) << listnerPortNum_ << "\n" << flush;
 }
 
-#ifdef NA_64BIT
-// dg64 - stub
 SockControlConnection::SockControlConnection(
      IpcEnvironment *env, Int32 inheritedSocket, Int32 passedPort, const char *eye)
      : IpcControlConnection(IPC_DOM_INTERNET),
@@ -1436,8 +1418,6 @@ SockControlConnection::SockControlConnection(
 {
     assert(0);
 }
-#endif
-
 
 IpcConnection *SockControlConnection::getConnection() const
 {

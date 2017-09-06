@@ -23,10 +23,6 @@
 
 #include "Platform.h" // Must precede zsysc.h or weird errors occur
 
-#ifndef NA_LINUX
-#include <zsysc.h>
-#endif
-
 #include "QmsRequest.h"
 #include "QmsQms.h"
 #include "QmsInitializer.h"
@@ -35,14 +31,6 @@
 using namespace QR;
 #define XML_BUFF_SIZE 32768
 
-#ifdef NA_NSK
-extern "C" 
-{
-  #include "cextdecs.h(PROCESSHANDLE_TO_FILENAME_, \
-                       PROCESSHANDLE_GETMINE_,     \
-                       PROCESS_GETINFO_)"
-}
-#elif defined (NA_LINUX)
 #include "seabed/fs.h"
 #include "seabed/ms.h"
 #include "seabed/int/opts.h"
@@ -53,7 +41,6 @@ extern "C" {
 #include "cextdecs/cextdecs.h"
 #include "zsysc.h"
 }
-#endif
 
 QRMessageRequest::~QRMessageRequest()
 {
@@ -182,21 +169,8 @@ void QRCommandLineRequest::getNextParameter(NAString& param)
 QmsGuaReceiveControlConnection::QmsGuaReceiveControlConnection(IpcEnvironment* env)
   : GuaReceiveControlConnection(env)
 {
-#ifndef NA_LINUX
-  // Get the name of this qms process.
-  short myProcHandle[10];
-  short actualLen;
-  PROCESSHANDLE_GETMINE_(myProcHandle);
-  PROCESSHANDLE_TO_FILENAME_(myProcHandle, procName_,
-                             PROCESSNAME_STRING_LEN, &actualLen);
-  procName_[actualLen] = '\0';
-#else // (NA_LINUX)
-
   memset(procName_, 0, sizeof(procName_));
   short retval = msg_mon_get_my_process_name(procName_, sizeof(procName_) - 1);
-
-#endif
-
 
   // If the process is "unnamed" (i.e., the name is not one we assign to a
   // public qms), mark it as private, so we'll know to terminate if we get a

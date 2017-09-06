@@ -46,20 +46,8 @@
 #include "SQLTypeDefs.h"
 #include "exp_clause_derived.h"
 
-#if (!defined (__TANDEM) && !defined(__EID))
 #include <iostream>
-#endif
 #include <stdlib.h>
-
-#if !defined( NA_NSK) && defined( NA_IX86 )
-
-#if defined( NA_MSVC )
-#   include <limits.h>
-#endif
-
-#pragma warning( default : 4035 )
-
-#endif
 
 #pragma warning (disable : 4273)  //warning elimination
 BigNum::BigNum(Lng32 length, Lng32 precision, short scale, short unSigned)

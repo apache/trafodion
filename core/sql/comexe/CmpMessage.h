@@ -90,7 +90,6 @@ public:
       INTERNALSP_REQUEST,
       INTERNALSP_GETNEXT,
       ENVS_REFRESH,
-      READTABLEDEF_REQUEST,
       SQLTEXT_RECOMPILE, // tells mxcmp to decache & recompile query
       SQLTEXT_STATIC_RECOMPILE,
       END_SESSION,
@@ -185,7 +184,7 @@ protected:
                       char* strPtr, ULng32 maxSize,
                       ULng32& sizeMoved);
 
-  NA_EIDPROC void advanceSize(IpcMessageObjSize &size, 
+  void advanceSize(IpcMessageObjSize &size, 
 		   const void * const buffPtr, Lng32 sz=0)
     {
       const Int32 lenSize = sizeof(CmpMsgBufLenType);
@@ -196,7 +195,7 @@ protected:
 
   ID id_;
   
-  NA_EIDPROC void advanceSize(IpcMessageObjSize &size, Int64 i64)
+  void advanceSize(IpcMessageObjSize &size, Int64 i64)
   { size += sizeof(i64); }
 
   IpcMessageObjSize packIntoBuffer(char* &buffer, Int64 i64)
@@ -310,7 +309,6 @@ public:
   CmpCompileInfo(char * sourceStr, Lng32 sourceStrLen,
 		 Lng32 sourceStrCharSet,
 		 char * schemaName, Lng32 schemaNameLen, 
-		 char * recompControlInfo, Lng32 recompControlInfoLen,
 		 ULng32 inputArrayMaxsize,
 		 short rowsetAtomicity);
   CmpCompileInfo();
@@ -326,16 +324,11 @@ public:
   void unpack(char * base);
   
   void getUnpackedFields(char* &sqltext,
-			 char* &schemaName,
-			 char* &recompControlInfo);
+			 char* &schemaName);
 
   const ULng32 getInputArrayMaxsize() {return inputArrayMaxsize_ ;}
 
   const short getRowsetAtomicity();
-
-  NABoolean nametypeNsk() { return (flags_ & NAMETYPE_NSK) != 0; }
-  void setNametypeNsk(NABoolean v)      
-           { (v ? flags_ |= NAMETYPE_NSK : flags_ &= ~NAMETYPE_NSK); }
 
   NABoolean odbcProcess() { return (flags_ & ODBC_PROCESS) != 0; }
   void setOdbcProcess(NABoolean v)      
@@ -382,7 +375,7 @@ public:
   void setDoNotCachePlan(NABoolean v)
     { (v ? flags_ |= DO_NOT_CACHE_PLAN : flags_ &= ~DO_NOT_CACHE_PLAN); }
 
-  enum { FILLERSIZE = 56 /* used to be 60 - took 4 bytes for sqlTextCharSet_ */ } ; // of original 72
+  enum { FILLERSIZE = 60 };
 
 protected:
   enum Flags 
@@ -430,10 +423,8 @@ protected:
   ULng32 inputArrayMaxsize_;  // 32-35
   ULng32 flags_;              // 36-39
 
-  char * recompControlInfo_;         // 40-43
-  Lng32  recompControlInfoLen_;      // 44-47
-  Lng32  sqlTextCharSet_;            // 48-51   
-  char fillerBytes_[FILLERSIZE];     // 52-107   
+  Lng32  sqlTextCharSet_;            // 40-43
+  char fillerBytes_[FILLERSIZE];     // 44-103
 };
 #pragma warn(1506)  // warning elimination 
 
@@ -854,8 +845,7 @@ class CmpDDLwithStatusInfo : public CmpCompileInfo
 
   CmpDDLwithStatusInfo(char * sourceStr, Lng32 sourceStrLen,
                        Lng32 sourceStrCharSet,
-                       char * schemaName, Lng32 schemaNameLen, 
-                       char * recompControlInfo, Lng32 recompControlInfoLen);
+                       char * schemaName, Lng32 schemaNameLen);
   
   short getClassSize() { return (short)sizeof(CmpDDLwithStatusInfo); }
   Lng32 getLength();
@@ -1096,9 +1086,7 @@ public:
   IpcMessageObjSize mypackedLength();
   IpcMessageObjSize packMyself(IpcMessageBufferPtr& buffer);
 
-#ifdef NA_CMPDLL
   IpcMessageObjSize copyFragsToBuffer(IpcMessageBufferPtr& buffer);
-#endif // NA_CMPDLL
 
 private:
   

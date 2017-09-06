@@ -18,24 +18,3 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
-#ifndef DLL_EXPORT_DEFINES_H
-#define DLL_EXPORT_DEFINES_H
-
-#undef SQLCLI_LIB_FUNC
-
-#if (defined (CLI_DLL) && !defined (NA_NSK))
-	#ifdef SQLCLI_LIB
-		#define SQLCLI_LIB_FUNC __declspec( dllexport )
-	#else
-		#define SQLCLI_LIB_FUNC __declspec( dllimport )
-	#endif
-#else
-	#define SQLCLI_LIB_FUNC
-#endif
-#ifdef NA_64BIT
-  // dg64 - get rid of _declspec
-  #undef SQLCLI_LIB_FUNC
-  #define SQLCLI_LIB_FUNC
-#endif
-
-#endif // DLL_EXPORT_DEFINES.h

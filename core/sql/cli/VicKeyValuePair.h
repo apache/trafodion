@@ -20,17 +20,3 @@
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
-// Vicz: base data structure 
-
-class VicKeyValuePair : public NABasicObject 
-{
-public:
-
-  void * key_;
-
-  void * value_;
-
-  inline VicKeyValuePair(void *key, void *value)
-    : key_(key), value_(value){}
-
-};

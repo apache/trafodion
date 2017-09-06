@@ -78,16 +78,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExUnPackRowsTdb()
+  ExUnPackRowsTdb()
   {}
 
-  NA_EIDPROC virtual ~ExUnPackRowsTdb()
+  virtual ~ExUnPackRowsTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -182,7 +182,6 @@ public:
   //    IN: Contains references to global executor information,
   //        notably the space object used to allocate objects.
   //
-  NA_EIDPROC
   ExUnPackRowsTcb(const ExUnPackRowsTdb &unPackTdb,
                   const ex_tcb &childTdb,    
                   ex_globals *glob);
@@ -190,7 +189,6 @@ public:
 
   // Destructor
   //
-  NA_EIDPROC
   ~ExUnPackRowsTcb();  
 
   // Free up any run-time resources.
@@ -198,35 +196,29 @@ public:
   // (Does not free up the queues, should it).
   // Called by the destructor.
   //
-  NA_EIDPROC
   void freeResources(); 
 
   // Register all the UnPackRows subtasks with the scheduler.
   //
-  NA_EIDPROC
   void registerSubtasks();
 
   // The basic work method for a TCB.  UnPackRows does not
   // use this method, but rather uses three subtasks.
   // - sWorkDown(), sWorkUp() and sCancel().
   //
-  NA_EIDPROC
   ExWorkProcRetcode work();
 
   // Work method to pass requests from parent down to child.
   //
-  NA_EIDPROC
   ExWorkProcRetcode workDown();
 
   // Work method to recieve results from child, process and
   // pass up to parent.
   //
-  NA_EIDPROC
   virtual ExWorkProcRetcode workUp();
   
   // Stub to workUp() used by scheduler.
   //
-  NA_EIDPROC
   // warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkUp(ex_tcb *tcb)
   {
@@ -235,7 +227,6 @@ public:
   
   // Stub to workDown() used by scheduler.
   // 
-  NA_EIDPROC
   // warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkDown(ex_tcb *tcb)
   {
@@ -244,7 +235,6 @@ public:
   
   // Stub to processCancel() used by scheduler.
   //
-  NA_EIDPROC
 // warning elimination (removed "inline")
   static ExWorkProcRetcode sCancel(ex_tcb *tcb)
   {
@@ -253,35 +243,29 @@ public:
 
   // Return the parent queue pair.
   //
-  NA_EIDPROC
 // warning elimination (removed "inline")
   ex_queue_pair getParentQueue() const { return qParent_; }
 
   // Return a reference to the UnPackRows TDB associated with this 
   // UnPackRows TCB.
   //
-  NA_EIDPROC
   inline ExUnPackRowsTdb &unPackRowsTdb() const 
   {
     return(ExUnPackRowsTdb &)tdb; 
   }
 
-  NA_EIDPROC
   inline ex_expr *packingFactor() { return unPackRowsTdb().packingFactor_; }
   
   // Return the UnPackRows expression 
   //
-  NA_EIDPROC
   inline ex_expr *unPackColsExpr() { return unPackRowsTdb().unPackColsExpr_; }
 
   // UnPackRows has one child.
   //
-  NA_EIDPROC
   virtual Int32 numChildren() const { return 1; }   
 
   // Return the child of the UnPackRows node by position.
   //
-  NA_EIDPROC
   virtual const ex_tcb * getChild(Int32 pos) const 
   {
     if(pos == 0) return childTcb_;
@@ -380,18 +364,14 @@ class ExUnPackRowsPrivateState : public ex_tcb_private_state
 
   Int32 nextCLIErrorRowNum_;
 
-  NA_EIDPROC
   void init();        
 
 public:
 
-  NA_EIDPROC
   ExUnPackRowsPrivateState(const ExUnPackRowsTcb * tcb); 
 
-  NA_EIDPROC
   ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
 
-  NA_EIDPROC
   ~ExUnPackRowsPrivateState();  
 };
 
@@ -410,7 +390,6 @@ class ExUnPackRowwiseRowsTcb : public ex_tcb
 public:
 
   // Constructor
-  NA_EIDPROC
   ExUnPackRowwiseRowsTcb(const ExUnPackRowsTdb &unPackTdb,
 			 ex_globals *glob);
           

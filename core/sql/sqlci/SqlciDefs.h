@@ -61,10 +61,6 @@ enum dml_type
   DML_OSIM_TYPE
 };
 
-  #ifdef ERROR
-    #undef ERROR
-  #endif
-
 enum SQLCI_CLI_RETCODE
 {
   SQL_Success = 0, SQL_Eof = 100, SQL_Error = -1, SQL_Warning = 1, SQL_Canceled = -8007,

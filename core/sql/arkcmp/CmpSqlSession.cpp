@@ -85,7 +85,7 @@ Lng32 CmpSqlSession::getUserInfoFromCLI()
 {
 
   NABoolean doDebug = FALSE;
-#if defined (NA_DEBUG_C_RUNTIME)
+#ifdef _DEBUG
   doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
   if (doDebug)
     printf("[DBUSER:%d] BEGIN CmpSqlSession::getUserInfoFromCLI\n",
@@ -165,7 +165,7 @@ Lng32 CmpSqlSession::setDatabaseUser(Int32 userID, const char *userName)
 {
 
   NABoolean doDebug = FALSE;
-#if defined(NA_DEBUG_C_RUNTIME)
+#ifdef _DEBUG
   doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
   if (doDebug)
   {

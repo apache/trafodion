@@ -1278,8 +1278,8 @@ short ExExeUtilTcb::alterDDLLock(NABoolean add, char * tableName,
   ExExeStmtGlobals *exeGlob = getGlobals()->castToExExeStmtGlobals();
   ExMasterStmtGlobals *masterGlob = exeGlob->castToExMasterStmtGlobals();
 
-  AnsiOrNskName aonn(tableName);
-  aonn.convertAnsiOrNskName(FALSE);
+  AnsiName aonn(tableName);
+  aonn.convertAnsiName(FALSE);
   char * parts[4];
   Lng32 numParts;
   aonn.extractParts(numParts, parts);
@@ -1609,13 +1609,13 @@ Lng32 ExExeUtilTcb::extractParts
   Lng32 rc = 0;
 
   // We want to ignore any "." dots within a delimited
-  // name.  The AnsiOrNskName object is ultimately deleted
+  // name.  The AnsiName object is ultimately deleted
   // in the ExExeUtilMainObjectTcb destructor.
   
   if (extractedPartsObj_)
     delete extractedPartsObj_;
 
-  extractedPartsObj_ = new (getHeap()) AnsiOrNskName(objectName);
+  extractedPartsObj_ = new (getHeap()) AnsiName(objectName);
   if ((rc = extractedPartsObj_->extractParts(numParts, parts)) != 0 ||
       (numParts != 3))
     {
@@ -1795,7 +1795,7 @@ Lng32 ExExeUtilTcb::extractParts
     strcpy(parts2, parts[2]);
   }
 
-  /* The AnsiOrNskName() method strips out the leading
+  /* The AnsiName() method strips out the leading
      and ending double quotes.  The following code
      is no longer needed.
 

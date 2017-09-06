@@ -46,45 +46,36 @@ class ComDiagsArea;
 // See executor/ex_stored_proc.cpp for details about these
 // procs...
 ////////////////////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 short ExSPPrepareInputBuffer(void * inputBuffer);
 
-SQLCLI_LIB_FUNC
 short ExSPPosition(void * inputBuffer);
 
-SQLCLI_LIB_FUNC
 short ExSPGetInputRow(void * inputBuffer,   // IN:  input sql buffer
 		      void* &controlInfo,   // OUT: control info 
 		      char* &rowPtr,        // OUT: pointer to the row
 		      ULng32 &rowLen);// OUT: length of returned row
 
-SQLCLI_LIB_FUNC
 short ExSPInitReplyBuffer(void * replyBuffer, 
 			  ULng32 replyBufLen);
 
-SQLCLI_LIB_FUNC
 short ExSPPutReplyRow(void * replyBuffer,     // IN: the reply buffer
 		      void * controlInfo,     // IN: control info
 		      char * replyRow,        // IN: pointer to reply row
 		      ULng32 rowLen,   // IN: length of reply row
 		      ComDiagsArea* diagsDesc);// IN: pointer to diags
 
-SQLCLI_LIB_FUNC
 short ExSPPrepareReplyBuffer(void * replyBuffer);
 
-SQLCLI_LIB_FUNC
 short ExSPUnpackIOExpr(void * & extractInputExpr,
 		       void * & moveOutputExpr,
 		       CollHeap * heap);
 
-SQLCLI_LIB_FUNC
 short ExSPExtractInputValue(void * extractInputExpr,
 			    ULng32 fieldNum, char * inputRow,
 			    char * data, ULng32 datalen,
                             NABoolean casting, // if TRUE,data in varchar, to be casted
 			    ComDiagsArea * diagsArea);
 
-SQLCLI_LIB_FUNC
 short ExSPMoveOutputValue(void * moveOutputExpr,
 			  ULng32 fieldNum, char * outputRow,
 			  char * data, ULng32 datalen,

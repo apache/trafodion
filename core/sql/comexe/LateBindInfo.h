@@ -51,7 +51,7 @@
 class Queue;
 class NAMemory;
 class ExpTupleDesc;
-class AnsiOrNskName;
+class AnsiName;
 class ResolvedNameListPre1800;
 
 // ---------------------------------------------------------------------
@@ -71,7 +71,7 @@ class ResolvedNameListPre1800;
 class UninitializedMvName : public NABasicObject
 {
 public:       
-    NA_EIDPROC UninitializedMvName();    
+    UninitializedMvName();    
 
     char * getPhysicalName() { return physicalName_; }
     char * getAnsiName() { return ansiName_; }
@@ -154,9 +154,6 @@ public:
   void setEnvVar(short v) { (v ? flags_ |= ENV_VAR : flags_ &= ~ENV_VAR); };
   NABoolean isEnvVar() { return (flags_ & ENV_VAR) != 0; };
 
-  void setDefine(short v) { (v ? flags_ |= DEFINE : flags_ &= ~DEFINE); };
-  NABoolean isDefine() { return (flags_ & DEFINE) != 0; };
-
   void setCachedParam(short v) { (v ? flags_ |= CACHED_PARAM : flags_ &= ~CACHED_PARAM); };
   NABoolean isCachedParam() { return (flags_ & CACHED_PARAM) != 0; };
 
@@ -168,20 +165,6 @@ public:
 
   void setView(short v) {(v ? flags_ |= IS_VIEW : flags_ &= ~IS_VIEW); };
   NABoolean isView() { return (flags_ & IS_VIEW) != 0; };
-
-  void setMPalias(short v) {(v ? flags_ |= IS_MPALIAS : flags_ &= ~IS_MPALIAS); };
-  NABoolean isMPalias() { return (flags_ & IS_MPALIAS) != 0; };
-
-// Set to avoid similarity check and recompilation
-  void setAvoidSimCheck(short v)
-  {
-    if (v) flags_ |= NAME_ONLY; else flags_ &= ~NAME_ONLY;
-  }
-  
-  // Force skipping the similarity check (while still resolving the
-  // physical name.) Used in special statements (e.g., SET TABLE TIMEOUT)
-  // when only the table name is needed, not its meta data 
-  NABoolean isAvoidSimCheck() { return((flags_ & NAME_ONLY) ? TRUE : FALSE); };
 
   void setAnsiNameChange(short v) { (v ? runtimeFlags_ |= ANSI_NAME_CHANGE : runtimeFlags_ &= ~ANSI_NAME_CHANGE); };
   NABoolean isAnsiNameChange() { return (runtimeFlags_ & ANSI_NAME_CHANGE) != 0; };
@@ -200,14 +183,11 @@ public:
   NABoolean isLastUsedNameCompEmbedded() { return (runtimeFlags_ & LASTUSED_NAME_STR_PTR) == 0; };
 
   static NABoolean makeSQLIdentifier(char * invalue, char * outvalue);
-  static NABoolean applyMPAliasDefaults(char * invalue, 
-					char * outvalue,
-					char * defValString);
   
-  AnsiOrNskName *getLastUsedName(NAMemory *heap);
+  AnsiName *getLastUsedName(NAMemory *heap);
   void setCompileTimeName(char *name, NAMemory *heap);
   void setLastUsedName(char *name, NAMemory *heap);
-  void setLastUsedName(AnsiOrNskName *name);
+  void setLastUsedName(AnsiName *name);
   Long pack(void *);
   Lng32 unpack(void *, void * reallocator);
 
@@ -259,12 +239,7 @@ private:
                               // Used when the variable name is the
                               // name of a resource fork.
     IS_INDEX = 0x0008,        // this is an index.
-    DEFINE = 0x0010,          // name is a guardian Define
     IS_VIEW = 0x0020,         // this is a view
-    IS_MPALIAS = 0x0040,      // the variable contains an mpalias name.
-    NAME_ONLY = 0x0080,        // variable, but only the table-name is needed
-                              // (not the table's meta-data.) So avoid simila
-                              // check and recompilation. Used by SET TIMEOUT
     COMP_NAME_STR_PTR = 0x0100, //  If not set, compileTimeAnsiName is the embedded string
     CACHED_PARAM = 0x0200 // prototyped hvar for cached tablenames.
   };
@@ -274,7 +249,7 @@ private:
     ANSI_NAME_CHANGE = 0x0001, IGNORE_TS = 0x0002, VIEW_NAME_CHANGE = 0x0004,
     RESERVED_NAME = 0x0008,
     LASTUSED_NAME_STR_PTR = 0x0010,
-    LASTUSED_NAME_CLASS_PTR =0x0020, // If set, LastUsedName points to AnsiOrNskName, else is the
+    LASTUSED_NAME_CLASS_PTR =0x0020, // If set, LastUsedName points to AnsiName, else is the
 				// character string embedded in LateBindInfo
   };
 
@@ -291,7 +266,7 @@ private:
   // Valid if this is a variable name and not an env var.
   Int16 inputListIndex_;                                          //  12- 13
 
-  // name of hvar/param/envVar/define used to input the table name.
+  // name of hvar/param/envVar used to input the table name.
   char varName_[MAX_ANSI_IDENTIFIER_LEN+1/*null terminator*/];    //  14-272
  
   // the ANSI name as known at compile time. Could be:
@@ -395,10 +370,6 @@ public:
   void getRecompLateNameInfoListPre1800(char * buffer);
   void resetRuntimeFlags();
 
-  NABoolean definePresent() { return (flags_ & DEFINE_PRESENT) != 0; };
-  void setDefinePresent(short v) 
-  { (v ? flags_ |= DEFINE_PRESENT : flags_ &= ~DEFINE_PRESENT); };
-
   NABoolean viewPresent() { return (flags_ & VIEW_PRESENT) != 0; };
   void setViewPresent(short v) 
   { (v ? flags_ |= VIEW_PRESENT : flags_ &= ~VIEW_PRESENT); };
@@ -415,13 +386,12 @@ public:
 private:
   enum Flags
   { 
-    DEFINE_PRESENT = 0x0001, // one or more DEFINEs used in query
     VIEW_PRESENT = 0x0002,   // one or more views used in query
     ENVVARS_PRESENT = 0x0004, // one or more envvars as tablenames used
                               // in the query.
     VARIABLE_PRESENT = 0x0008 // one of more tablenames used in the query
                               // are passed in as variables.
-                              // (hostvar, defines or envvars)
+                              // (hostvar, envvars)
   };
  
   UInt32 flags_;                                                //   00-  03
@@ -436,21 +406,18 @@ private:
 // ---------------------------------------------------------------------
 typedef NAVersionedObjectPtrTempl<LateNameInfoList> LateNameInfoListPtr;
 
-class AnsiOrNskName : public NABasicObject
+class AnsiName : public NABasicObject
 {
 public:
-  AnsiOrNskName(char *inName);
+  AnsiName(char *inName);
   
   char *getInternalName() ;
   char *getExternalName() ;
   Int16 extractParts(Lng32 &numParts,
 		char *parts[]);
-  Int16 equals(AnsiOrNskName *name);
-  Int16 convertAnsiOrNskName(bool doCheck = TRUE);
+  Int16 equals(AnsiName *name);
+  Int16 convertAnsiName(bool doCheck = TRUE);
   Int16 fillInMissingParts(char *schemaName);
-  bool  isNskName();
-  Int16 updateNSKInternalName(char *inName);
-  Int16 quoteNSKExtName();
 private:
 
   char  extName_[MAX_ANSI_NAME_LENGTH]; // Given (external) 3-part name
@@ -460,12 +427,10 @@ private:
   // for the 3-part interal name the same as that for the 3-part external name.
   char	intName_[MAX_ANSI_NAME_LENGTH];
   Int16 noOfParts_;
-  bool  isNskName_; // TRUE if NSK name, FALSE if ansi name
   char  parts_[4][ComMAX_1_PART_EXTERNAL_UTF8_NAME_LEN_IN_BYTES+1]; // in UTF8
   bool  isValid_;  // The flag that denotes if the name is checked and extracted into parts
   bool  isError_;  
 };
-
 
 ///////////////////////////////////////////////////////////
 // class TrafSimilarityTableInfo

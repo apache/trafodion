@@ -56,12 +56,7 @@
 #include "exp_clause_derived.h"
 
 // WARNING: assuming varchar length indicator of sizeof(long) == 4
-#ifdef NA_64BIT
-// dg64 - should be 4 bytes - see WARNING above
 #define VCPREFIX_LEN sizeof(Int32)
-#else
-#define VCPREFIX_LEN sizeof(Lng32)
-#endif
 
 // extern declaration
 extern short
@@ -483,19 +478,9 @@ void setVCLength(char * tgt, Lng32 len, size_t vcPrefixLength)
        return;
    }
 
-#ifdef NA_64BIT
-    // dg64 - should be 4 bytes
    if (vcPrefixLength == sizeof(Int32))
-#else
-   if (vcPrefixLength == sizeof(Lng32))
-#endif
    {
-#ifdef NA_64BIT
-      // dg64 - should be 4 bytes
       str_cpy_all(tgt, (char *)&len, sizeof(Int32));
-#else
-      str_cpy_all(tgt, (char *)&len, sizeof(Lng32));
-#endif
    }
    else if (vcPrefixLength == sizeof(short))
    {
@@ -521,19 +506,9 @@ Lng32 getVCLength(const char * source_string, size_t vcPrefixLength)
        return 0L;
    }
 
-#ifdef NA_64BIT
-   // dg64 - should be 4 bytes
    if (vcPrefixLength == sizeof(Int32))
-#else
-   if (vcPrefixLength == sizeof(Lng32))
-#endif
    {
-#ifdef NA_64BIT
-      // dg64 - should be 4 bytes
       str_cpy_all((char *)&returned_len, source_string, sizeof(Int32));
-#else
-      str_cpy_all((char *)&returned_len, source_string, sizeof(Lng32));
-#endif
    }
    else if (vcPrefixLength == sizeof(short))
    {
@@ -2271,12 +2246,7 @@ RETCODE Descriptor::setDescItem(Lng32 entry, Lng32 what_to_set,
       case SQLDESC_LENGTH:
       case SQLDESC_IND_TYPE:
         targetType = REC_BIN32_SIGNED;
-#ifdef NA_64BIT
-        // dg64 - should be 4 bytes
         targetLen = sizeof(Int32);
-#else
-        targetLen = sizeof(Lng32);
-#endif
         targetPrecision = 31;
         targetScale = 0;
         break;

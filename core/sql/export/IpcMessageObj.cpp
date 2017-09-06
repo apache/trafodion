@@ -74,12 +74,7 @@ IpcMessageObj::IpcMessageObj(IpcBufferedMsgStream* msgStream)
     swapFourBytes(s_.objType_);
     swapFourBytes(s_.objVersion_);
     swapFourBytes(s_.objLength_);
-#ifdef NA_64BIT
-    // dg64 - TODO?
     assert(0); // didn't implement
-#else
-    swapFourBytes((ULng32 &) s_.next_);
-#endif
     s_.refCount_ = 1; // an object comes with an initial refcount of 1
     s_.endianness_ = IpcMyEndianness;
     }
@@ -112,7 +107,6 @@ IpcMessageObj::~IpcMessageObj()
     }
 }
 
-#ifndef __EID   // not needed in DP2 yet, Larry Schumacher
 ///////////////////////////////////////////////////////////////////////////////
 // used to allocate a packed send object.
 void* IpcMessageObj::operator new(size_t size,
@@ -124,7 +118,6 @@ void* IpcMessageObj::operator new(size_t size,
   alignSizeForNextObj(appendStart);
   return (msgStream.sendMsgObj(appendStart + appendDataLen));
 }
-#endif          
 
 IpcMessageObjSize IpcMessageObj::packObjIntoMessage(
                IpcMessageBufferPtr buffer)
@@ -292,15 +285,9 @@ IpcMessageObjSize IpcMessageObj::packBaseClassIntoMessage(
   IpcMessageObjSize copyLen = sizeof(IpcMessageObj);
   char *savedVPtr = getMyVPtr();
 
-#ifdef NA_64BIT
   assert(copyLen == 48 AND
 	 sizeof(s_) == 40 AND
 	 (char *) this == ((char *) &s_ - sizeof(char *)));
-#else
-  assert(copyLen == 32 AND
-	 sizeof(s_) == 28 AND
-	 (char *) this == ((char *) &s_ - sizeof(char *)));
-#endif
 
   // wipe out the virtual function pointer before moving data
   // (makes sure that the copied object doesn't have a stray pointer in it)
@@ -821,12 +808,7 @@ NABoolean checkCharStarInBuffer (
     /* IN    */ IpcConstMessageBufferPtr lastByte )
 {
   NABoolean result = TRUE;
-#ifdef NA_64BIT
-  // dg64 - should be 4 bytes
   Int32  dataLength = 0;
-#else
-  Lng32 dataLength = 0;
-#endif
   if (!checkAndUnpackBuffer(buffer, sizeof(dataLength),
                             (char *) &dataLength, lastByte))
   {

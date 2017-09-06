@@ -81,11 +81,7 @@ void QmmGuaReceiveControlConnection::actOnSystemMessage
 
       case ZSYS_VAL_SMSG_CLOSE:
       case ZSYS_VAL_SMSG_PROCDEATH:
-#ifdef NA_LINUX
         qmm_->handleClientExit((short *)&(clientPhandle.phandle_), messageNum);
-#else
-        qmm_->handleClientExit(&clientPhandle.phandle_[0], messageNum);
-#endif
         if (connection)
           connection->setFatalError(NULL);  //@ZX
         break;
@@ -191,8 +187,6 @@ void Qmm::handleClientExit(const short* phandle, short messageNum)
   short result = 0;
   NABoolean qmpDied = FALSE;
 
-#ifdef NA_LINUX
-
   Int32 lc_pin;
   Int32 lc_cpu;
   Int32 lc_seg;
@@ -210,13 +204,6 @@ void Qmm::handleClientExit(const short* phandle, short messageNum)
      qmpDied = TRUE;
   }
 
-#else
-
-      result = PROCESSHANDLE_DECOMPOSE_(const_cast<short*>(phandle),
-                                          &cpu, &pin, &segmentNumber);
-  if (result)
-#endif
-
   if (!qmpDied)
     {
       // When a qms dies we are delivered a null connection pointer and handle.
@@ -231,7 +218,6 @@ void Qmm::handleClientExit(const short* phandle, short messageNum)
           qmsStub = qmsPool_[i];
           NABoolean processDoesNotExist = FALSE;
 
-#ifdef NA_LINUX
           char procName[200];
           short result = -1;
        
@@ -248,9 +234,6 @@ void Qmm::handleClientExit(const short* phandle, short messageNum)
           if (result || (lc_cpu < 0) || (lc_pin < 0))
             processDoesNotExist = TRUE;
 
-#else
-          processDoesNotExist = PROCESS_GETINFO_((short*)qmsStub->getProcessHandle()) == 4;
-#endif
           if (qmsStub->getStatus() == QmsStub::RUNNING && processDoesNotExist)
             {
               found = TRUE;
@@ -292,7 +275,6 @@ void Qmm::handleClientExit(const short* phandle, short messageNum)
       "*** Process %d,%d on segment %d has terminated, message=%d. ***",
                 cpu, pin, segmentNumber, messageNum);
 
-#ifdef NA_LINUX
   if (qmp_ && *qmp_ == *(SB_Phandle_Type *)phandle)
     {
       QRLogger::log(CAT_QR_IPC, LL_INFO,
@@ -300,15 +282,6 @@ void Qmm::handleClientExit(const short* phandle, short messageNum)
       qmp_->scheduleRestart();
     }
   else if (*getQmsStub(segmentNumber, cpu) == *(SB_Phandle_Type *)phandle)
-#else
-  if (qmp_ && *qmp_ == phandle)
-    {
-      QRLogger::log(CAT_QR_IPC, LL_ERROR,
-        "*** QMP has died, will attempt to restart...");
-      qmp_->scheduleRestart();
-    }
-  else if (*getQmsStub(segmentNumber, cpu) == phandle)
-#endif
     {
       // This probably never gets executed; process handle usually delivered
       // for a qms termination is null, and is handled in loop above that looks
@@ -342,7 +315,6 @@ void Qmm::allocateQms()
                                    /*qmsMsgStream_,*/ ipcEnv_, heap_);
 }
 
-#ifdef NA_LINUX
 void Qmm::allocateQmsPool()
 {
   short qmsInx = 0;
@@ -421,95 +393,6 @@ void Qmm::checkAndRetryQms(Int16 maxRetries, Int16 delaySeconds)
     }
 }
 
-#endif
-
-#ifdef NA_NSK
-void Qmm::allocateQmsPool()
-{
-  char segmentName[SEGMENT_NAME_LEN + 1];
-  short result;
-  short segmentNumber = 0;
-  short lastSegmentNumber = MAX_SEGMENTS;
-  short segmentNameLen;
-  do
-    {
-      //result = NODENUMBER_TO_NODENAME_(segmentNumber,(short*)segmentName);
-      result = NODENUMBER_TO_NODENAME_(lastSegmentNumber, segmentName,
-                                       SEGMENT_NAME_LEN, &segmentNameLen);
-      QRLogger::log(CAT_QR_IPC, LL_DEBUG,
-        "Result for segment %d is %d", lastSegmentNumber, result);
-      segmentName[segmentNameLen] = '\0';
-      if (result != 0)
-        lastSegmentNumber--;
-    }
-  while (lastSegmentNumber > 0 && result != 0);
-
-  assertLogAndThrow1(CAT_QR_IPC, LL_ERROR,
-                     lastSegmentNumber, QmmException,
-                     "No segments found, result for segment 1 is %d", result);
-  QRLogger::log(CAT_QR_IPC, LL_DEBUG,
-    "Last segment number found = %d", lastSegmentNumber);
-
-  short qmsInx = 0;
-  short cpu;
-  qmsCount_ = lastSegmentNumber * CPUS_PER_SEGMENT;
-  qmsPool_ = new(heap_) QmsStub*[qmsCount_];
-  UInt32 processorStatus;
-  Int32 processorsInSegment;
-  UInt32 processorBitmap;
-  for (segmentNumber = 1; segmentNumber <= lastSegmentNumber; segmentNumber++)
-    {
-      segmentNameLen = 0;  // make sure we have empty name if fail
-      result = NODENUMBER_TO_NODENAME_(segmentNumber, segmentName,
-                                       SEGMENT_NAME_LEN, &segmentNameLen);
-      segmentName[segmentNameLen] = '\0';
-      QRLogger::log(CAT_QR_IPC, LL_DEBUG,
-        "Segment %d: result=%d, name=%s", segmentNumber, result, segmentName);
-      if (result == 0)
-        {
-          // REMOTEPROCESSORSTATUS not available for NT, but not needed.
-          #ifdef NA_NSK 
-          processorStatus = REMOTEPROCESSORSTATUS(segmentNumber);
-          #else
-          processorStatus = PROCESSORSTATUS();
-          #endif
-          processorsInSegment = processorStatus>>16;
-          QRLogger::log(CAT_QR_IPC, LL_DEBUG,
-            "%d processors in segment %d", processorsInSegment, segmentNumber);
-          processorBitmap = processorStatus & 0x0000FFFF;
-
-          // Create a qms stub for each possible cpu in the cluster, including
-          // a placeholder for any missing cpu. If it is down, it could come on
-          // line later and we will be notified via a system message. If it is
-          // nonexistent (segment has fewer than 16 processors), we still include
-          // a slot for it to allow two-dimensional referencing of a particular
-          // qms stub using segment number and cpu number.
-          for (cpu = 0; cpu < CPUS_PER_SEGMENT; cpu++)
-            {
-              qmsPool_[qmsInx++] = 
-                        new(heap_) QmsStub(segmentNumber, segmentName,
-                                           cpu, result,
-                                           cpu < processorsInSegment,
-                                           processorBitmap & (0x00008000 >> cpu),
-                                           ipcEnv_, //qmsMsgStream_,
-                                           heap_);
-            }
-        }
-      else
-        {
-          // As with unreachable cpu of a reachable segment, we need slots for
-          // the cpus of a down segment in case it becomes available, and to
-          // allow for accurate indexing using seg#/cpu#.
-          qmsPool_[qmsInx++] = new(heap_) QmsStub(segmentNumber, segmentName,
-                                                  cpu, result,
-                                                  FALSE, FALSE, 
-                                                  ipcEnv_, //qmsMsgStream_, 
-                                                  heap_);
-        }
-    }
-}  // allocateQmsPool()
-#endif
-
 void Qmm::startQmp(short cpu)
 {
   if (qmp_)
@@ -519,28 +402,8 @@ void Qmm::startQmp(short cpu)
 
 NABoolean QmpStub::start()
 {
-#ifndef NA_WINNT
-
   char* baseProcName = MvQueryRewriteServer::getProcessName(IPC_SQLQMP_SERVER, NULL, cpu_);
 
-#ifdef NA_NSK
-  baseProcName = strrchr(baseProcName, '/');
-  if (baseProcName)
-  {
-     *baseProcName = '$';
-     short rc = 0;
-     short phandle[10];
-     rc = PROCESSSTRING_SCAN_(baseProcName, strlen(baseProcName), , phandle);
-
-     if (*phandle != -1)
-     {
-       QRLogger::log(CAT_QR_IPC, LL_INFO,
-         "qmm found existing qmp process, not starting new one.");
-         setProcessHandle(phandle);
-         return TRUE;
-     }
-  }
-#else
   SB_Phandle_Type *phandle;
   phandle = get_phandle_with_retry(baseProcName);
 
@@ -551,9 +414,6 @@ NABoolean QmpStub::start()
     setProcessHandle(*phandle);
     return TRUE;
   }
-#endif //NA_NSK
-
-#endif //NA_WINNT
 
   switch ((Int32)qmpStartOpt_)
     {
@@ -606,11 +466,7 @@ void QmpStub::allocateProcess(IpcEnvironment& ipcEnv, short cpu)
       
       QRLogger::log(CAT_QR_IPC, LL_DEBUG,
         "QMP process started on cpu #%d", qmpServer_->getServerId().getCpuNum());
-#ifdef NA_LINUX
       setProcessHandle(qmpServer_->getServerId().getPhandle().phandle_);
-#else
-      setProcessHandle(&qmpServer_->getServerId().getPhandle().phandle_[0]);
-#endif
     }
   else
     {
@@ -623,263 +479,6 @@ void QmpStub::allocateProcess(IpcEnvironment& ipcEnv, short cpu)
 //#pragma nowarn(770)   // warning elimination 
 void QmpStub::spawnProcess(IpcEnvironment& ipcEnv, short cpu) //, ComDiagsArea **diags, CollHeap *diagsHeap)
 {
-#ifdef NA_NSK
-  Lng32                           newPid;           // new OSS procid
-  Lng32                           nowaitTag;        // for nowait proc create
-  char                           *argv[5];         // argv for new process
-  char                           **envp = NULL;    // ptr to environment/NULL
-  zsys_ddl_fdinfo_def            fdinfo;           // duplicated file descs
-  zsys_ddl_fdentry_def           *fdentry = &fdinfo.z_fdentry; // array of ent.
- // const long                     numFileDescs = 1; // # entries in fdinfo
-  zsys_ddl_inheritance_def       inheritance;      // signal masks
-  zsys_ddl_processextension_def  processExtension; // create options
-  zsys_ddl_processresults_def    processResults;   // return values
-
-  char* progFileName;
-  const char* progName;
-  char progFileNameBuf[1000];
-  char defaultsName[1000];
-  Int32 defaultsNameLen = 0;  
-  Int32 retcode; 
-  Int32 nodeNameLen  = 0;
-  GuaErrorNumber guardianError;
- 
-  // variable that holds the mxmcp program name
-  char                         mxcmpVerProg[9]; 
-  short                        cmpVersion; 
-  char                         drcliname[9];
-  char                         drclipname[9];
-  
-  char valueBuf[128];
-  short valueBufLen;
-  
-  progName = "mxqmp";
-
-#pragma nowarn(1506)   // warning elimination 
-  short progNameLen = str_len(progName);
-#pragma warn(1506)  // warning elimination 
-  char localSegmentName[SEGMENT_NAME_LEN + 1];
-  short localSegmentNameLen;
-  short result = NODENUMBER_TO_NODENAME_(-1,localSegmentName,
-                                         SEGMENT_NAME_LEN,
-                                         &localSegmentNameLen);
-  assertLogAndThrow1(CAT_QR_IPC, LL_ERROR,
-                     result==0, QmmException,
-                     "Could not get name of local segment, error is %d", result);
-  localSegmentName[localSegmentNameLen] = '\0';
-
-  str_cpy(&defaultsName[defaultsNameLen], localSegmentName, localSegmentNameLen);
-  defaultsNameLen += localSegmentNameLen;
-  defaultsName[defaultsNameLen] = '.';
-  defaultsNameLen++;
-  // now the program file looks like "\node."
-  
-  // now add the default subvolume for program files, "$SYSTEM.SYSTEM."
-  str_cpy(&defaultsName[defaultsNameLen],"$SYSTEM.SYSTEM",14);
-  //assert(defaultsNameLen+15 < IpcMaxGuardianPathNameLength);
-  defaultsNameLen += 14;
-
-  char overridingDefineForProgFile[] = "=_MX_QMP_PROG_FILE_NAME";
-  Int32 overridingDefineLen = str_len(overridingDefineForProgFile);
-
-  char* progfileFromEnvvar = NULL;
-#ifndef NDEBUG
-  progfileFromEnvvar = 
-    getenv((overridingDefineForProgFile[0] == '=') 
-	    ? &overridingDefineForProgFile[1]
-	    : overridingDefineForProgFile);
-#endif
-  if (progfileFromEnvvar != NULL)
-    {
-      str_pad(progFileNameBuf, IpcMaxGuardianPathNameLength, '\0');
-      strcpy(progFileNameBuf, progfileFromEnvvar);
-      progFileName = progFileNameBuf;
-    }
-  else
-    {
-      //// If the define for downrev compiler subvolume is set, check that and
-      //// change the defaultsName to point to that subvolume instead.
-      //if (cmpVersion != COM_VERS_MXV)
-      //{
-      //  char dummy1[16];
-      //  char dummy2[16];
-      //  char dummy3[24];
-      //  short progdefnamelen = 0;
-      //  if (DEFINEINFO("=_MX_CMP_DR_SUBVOL      ",
-      //		 dummy1,
-      //		 dummy2,
-      //		 dummy3,
-      //		 24,
-      //		 &progdefnamelen) == 0)
-      //    {
-      //      str_pad(defaultsName, 1000, '\0');
-      //      strcpy(defaultsName, "=_MX_CMP_DR_SUBVOL      ");
-      //      defaultsNameLen = 24;
-      //    }
-      //}
-
-      // correcting overridingDefineForProgFile with correct Node name     
-      char overridingDefineValue[36];
-      short overridingDefineValueLen = 0;
-      retcode = ComRtGetDefine((char *)overridingDefineForProgFile,
-		               overridingDefineValue,
-			       sizeof(overridingDefineValue),
-			       overridingDefineValueLen);
-      if (retcode == 0)
-      {
-        // Extract filename and volume/subvolume name from the define
-        // value which is in the form \\NODENAME.$VOL.SUBVOL.FILENAME
-	char *fileNameFromDefineValue;
-	short index = overridingDefineValueLen;
-	while (overridingDefineValue[index] != '.' && index >= 0)
-	  index--;
-	fileNameFromDefineValue = &overridingDefineValue[index+1];
-
-	char *volSubvolFromDefineValue =
-          str_chr(overridingDefineValue, '$');
-	overridingDefineValue[index] = '\0';  // replace '.' before file
-	                                      // name with '\0'
-
-        ComRtDeleteDefine((char *)overridingDefineForProgFile);
-        ComRtAddDefine((char *)overridingDefineForProgFile,
-		       fileNameFromDefineValue,
-		       NULL, // local nodename will be assumed
-		       volSubvolFromDefineValue);
-      }
-
-      if (( retcode = guardianError= 
-	    FILENAME_RESOLVE_((char*) progName,
-			      progNameLen,
-			      valueBuf,
-			      128,
-			      &valueBufLen,
-			      32 + 8, // allow DEFINEs
-			      (char *) overridingDefineForProgFile,
-#pragma nowarn(1506)   // warning elimination 
-			      overridingDefineLen,
-#pragma warn(1506)  // warning elimination 
-			      NULL, // no search
-			      0,
-			      defaultsName,
-#pragma nowarn(1506)   // warning elimination 
-			      defaultsNameLen) ) == 0 )
-#pragma warn(1506)  // warning elimination 
-	
-	{
-	  short pathLen; // a dummy
-	  
-	  // We got a Guardian name for the object file (must be an
-	  // executable OSS program file in the /G directory)
-	  retcode = guardianError = FILENAME_TO_PATHNAME_(valueBuf,
-						   valueBufLen,
-						   progFileNameBuf,
-						   1000,
-						   &pathLen);
-	  if (guardianError == 0)
-	    // success, we converted the cheat define to an OSS name
-	    progFileName = progFileNameBuf;
-          else
-            assertLogAndThrow3(CAT_QMM, LL_ERROR,
-                               FALSE, QmmException,
-                               "Error %d returned from FILENAME_TO_PATHNAME_ "
-                               "for file name %.*s",
-                               guardianError, valueBufLen, valueBuf);
-	}
-      else
-        assertLogAndThrow3(CAT_QMM, LL_ERROR,
-                           FALSE, QmmException,
-                           "Error %d returned from FILENAME_RESOLVE_ "
-                           "for file name %s",
-                           guardianError, progNameLen, progName);
-
-    }
-
-  progFileName[IpcMaxGuardianPathNameLength-1] = 0;  // limit length
-  QRLogger::log(CAT_QMM, LL_DEBUG,
-    "spawn: using prog file name %s", progFileName);
-
-  // ---------------------------------------------------------------------
-  // Prepare input parameters for PROCESS_SPAWN_
-  // ---------------------------------------------------------------------
-
-  // argv first
-  argv[0] = (char *) progName;
-  argv[1] = "-oss";
-  argv[2] = NULL;
- 
-  Lng32 structLen     = sizeof(fdinfo);
-  str_pad((char *) &fdinfo,structLen,0);
-  fdinfo.z_len       = structLen;
-  fdinfo.z_timeout   = 7200; // wait at most 2 hour
-  fdinfo.z_umask     = -1;
-  fdinfo.z_fdcount   = 0;
-  fdentry[0].z_fd    = 0;
-  fdentry[0].z_dupfd = 0;
-  fdentry[0].z_name  = (zsys_ddl_char_extaddr_def) 0;
-  fdentry[0].z_oflag = 0;
-  fdentry[0].z_mode = 0;
-
-  // use the environment from ipc environment
-  envp = ipcEnv.getEnvVars();
-
-  // initialize inheritance struct (all zeroes for now)
-  str_pad((char*)&inheritance, sizeof(inheritance), 0);
-
-  // input parameters for process attributes
-  str_pad((char *) &processExtension, sizeof(processExtension), 0);
-  processExtension.z_len = sizeof(processExtension);
-  processExtension.z_memorypages = -1;
-  processExtension.z_jobid = -1;
-  processExtension.z_priority = IPC_PRIORITY_DONT_CARE;
-  processExtension.z_cpu = cpu;
-  processExtension.z_mainstackmax = 4 * 1024 * 1024;  // 4 MB of main stack
-  processExtension.z_heapmax      = 384 * 1024 * 1024; // 384 MB heap max
-
-  // Can't call getServerProcessName() in the IPC code to get the process name,
-  // it returns a Guardian process name.
-  char* qmpProcName = MvQueryRewriteServer::getProcessName(IPC_SQLQMP_SERVER,
-                                                           NULL, cpu, heap_);
-  processExtension.z_nameoptions = 1;
-  processExtension.z_processname = (zsys_ddl_char_extaddr_def)qmpProcName;
-
-  // debugQmp_ is initialized to FALSE; usually we will break here when debugging
-  // qmm and modify the value so it will launch qmp in the debugger.
-  if (debugQmp_)
-    {
-      processExtension.z_debugoptions |=
-      ZSYS_VAL_PCREATOPT_RUND | 
-      ZSYS_VAL_PCREATOPT_SAVEABEND |
-      ZSYS_VAL_PCREATOPT_INSPECT;
-    }
-  
-  // identify length of return structure
-  str_pad((char *) &processResults, sizeof(processResults), 0);
-  processResults.z_len = sizeof(processResults);
-
-  newPid = PROCESS_SPAWN_(
-       progFileName,
-       &fdinfo,
-       argv,
-       envp,
-       &inheritance,
-       sizeof(inheritance),
-       &processExtension,
-       &processResults,
-       -1,  // nowait
-       NULL);
-
-  //populateDiagsAreaFromTPCError(*diags,diagsHeap);
-  assertLogAndThrow3(CAT_QR_IPC, LL_ERROR,
-                     processResults.z_errno == 0, QmmException,
-                     "Attempt to spawn QMP process failed: "
-                     "error = %d, tpcerror = %d, tcpdetail = %d",
-                     processResults.z_errno,
-                     processResults.z_tpcerror,
-                     processResults.z_tpcdetail);
-
-  setProcessHandle((short*)processResults.z_phandle.u_z_data.z_word);
-
-#elif defined (NA_LINUX)
    SB_Phandle_Type p_handle;
    const char* progFile = "tdm_arkqmp";
 
@@ -928,84 +527,7 @@ void QmpStub::spawnProcess(IpcEnvironment& ipcEnv, short cpu) //, ComDiagsArea *
                         NULL);   /* pid */
 
   setProcessHandle(p_handle);
-
-#else
-  launchNSKLiteProcess(ipcEnv, cpu);
-#endif
 }
-
-#ifdef NA_WINNT
-void QmpStub::launchNSKLiteProcess(IpcEnvironment& ipcEnv, short p_pe)
-{
-  // a character string with the program file name
-  const Int32                    maxLengthOfCommandLineArgs = 32;
-  char                         progFileName[(IpcMaxGuardianPathNameLength +
-	                                         maxLengthOfCommandLineArgs)];
-
-  // parameters to NSKProcessCreate
-  NSK_PORT_HANDLE	p_phandle;
-
-  // -----------------------------------------------------------------
-  // create the program file name from the class name and the overriding
-  // define name.
-  //
-  // for now, we form the name from an environment variable. if the
-  // environment variable is not present then we form the name from
-  // the class name. we look for environment variables of the form
-  // =_ARK_???_PROG_FILE_NAME
-  //
-  // names which are formed from class names are hard coded below.
-  //
-  // the long term plan is to form the name from the registry while allowing
-  // overrides for development and debugging purposes only
-  // 
-  // note we REQUIRE the name to be identical on each PE !!!
-  // -----------------------------------------------------------------
-
-  strcpy(progFileName, "tdm_arkqmp.exe");
-
-  // ---------------------------------------------------------------------
-  // Set the run time arguments in the command line
-  // ---------------------------------------------------------------------
-  strcat(progFileName, " -guardian");
-
-  // ---------------------------------------------------------------------
-  // start a new process on the specified PE with the specified
-  // program file
-  // ---------------------------------------------------------------------
-
-  // use the environment from ipc environment
-  void* envp = ipcEnv.getEnvVars();
-  Lng32 envpLen = ipcEnv.getEnvVarsLen();
-  Lng32 procCreateError = NSKProcessCreate
-    ((char*)&progFileName			// command string
-     , NORMAL_PRIORITY_CLASS                    // priority
-     , p_pe					// pe (aka cpu)
-     , &p_phandle			        // lpNSKphandle
-     , 0 					// portclass - devtype 0 == process
-     , 0 					// portsubclass - devsubtype 0
-     , NAMED_AUTO			        // nmopt $RECEIVE
-     , NULL					// pr_name
-     , NULL					// process_desc    ?????
-     , -1			        // waited
-     , USE_CALLER_ENV		                // create_options
-     , NULL					// env_block
-     , 0					// env_block_size
-     , 0					// pfs_size
-     , NULL					// lph my port
-     );
-  
-   //if (getenv("SQL_MSGBOX_PROCESS") != NULL)
-   //  {
-   //    MessageBox( NULL, "Requester: Process Launched", (CHAR *)&progFileName, MB_OK|MB_ICONINFORMATION );
-   //  };
-  
-  assertLogAndThrow1(CAT_QR_IPC, LL_ERROR,
-                     procCreateError == NO_ERROR, QmmException,
-                     "Attempt to launch NSKLite process failed with error %d",
-                     procCreateError);
-}
-#endif
 
 void Qmm::relayPendingPubsToQms()
 {
@@ -1288,10 +810,6 @@ void QRProcessStub::checkRestarts()
 
 void QRProcessStub::nullProcessHandle()
 {
-#ifndef NA_LINUX
-  for (Int32 i=0; i<10; i++)
-    processHandle_[i] = -1;
-#endif
 }
 
 QmsStub::QmsStub(short segmentNumber, char* segmentName, short cpuNumber,
@@ -1384,11 +902,7 @@ NABoolean QmsStub::start()
       qmsMsgStream_->addRecipient(qmsServer_->getControlConnection());
       status_ = RUNNING;
 
-#ifdef NA_LINUX
       setProcessHandle(qmsServer_->getServerId().getPhandle().phandle_);
-#else
-      setProcessHandle(&qmsServer_->getServerId().getPhandle().phandle_[0]);
-#endif
       QRLogger::log(CAT_QR_IPC, LL_DEBUG,
         "QMS process started on cpu #%d", qmsServer_->getServerId().getCpuNum());
       MvQueryRewriteServer::initQms(qmsServer_, heap_);

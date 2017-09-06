@@ -54,7 +54,6 @@
 #define   SQLPARSERGLOBALS_FLAGS				  
 #include "SqlParserGlobals.h"
 #include "SchemaDB.h"
-#include "ReadTableDef.h"
 
 THREAD_P char *hs_input = NULL;
 THREAD_P HSGlobalsClass *hs_globals_y = NULL; // Declare global pointer to hs_globals.  Used by 

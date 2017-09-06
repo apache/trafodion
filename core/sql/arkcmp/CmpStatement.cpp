@@ -67,7 +67,6 @@
 #include "CmpStoredProc.h"
 #include "CmpDescribe.h"
 #include "ProcessEnv.h"
-#include "ReadTableDef.h"
 #include "SchemaDB.h"
 #include "ControlDB.h"
 #include "Context.h"
@@ -109,11 +108,9 @@
 
 #include "UdfDllInteraction.h"
 
-#include "rtdu.h"
-
 //#include "SqlParserGlobals.h"  // must be the last #include.
 
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf ExportJmpBuf;
+extern THREAD_P jmp_buf ExportJmpBuf;
 
 // -----------------------------------------------------------------------
 // helper routines for CmpStatement class
@@ -151,7 +148,6 @@ CmpStatement::CmpStatement(CmpContext* context,
   sqlTextStr_ = NULL;
   sqlTextLen_ = 0;
   sqlTextCharSet_ = (Lng32)SQLCHARSETCODE_UNKNOWN;
-  measureStatementIndex_ = 0;
   recompiling_ = FALSE;
   isDDL_ = FALSE;
   isSMDRecompile_ = FALSE;
@@ -324,7 +320,6 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
 					    NABoolean &catSchNameRecvd,
 					    NAString &currCatName,
 					    NAString &currSchName,
-					    char* &recompControlInfo,
 					    NABoolean &nametypeNsk,
 					    NABoolean &odbcProcess,
 					    NABoolean &noTextCache,
@@ -333,7 +328,7 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
 					    NABoolean &doNotCachePlan)
 {
   char * catSchStr = NULL;
-  cmpInfo->getUnpackedFields(sqlStr, catSchStr, recompControlInfo);
+  cmpInfo->getUnpackedFields(sqlStr, catSchStr);
   sqlStrLen = cmpInfo->getSqlTextLen();
   
   catSchNameRecvd = FALSE;
@@ -363,15 +358,6 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
   aqrPrepare  = cmpInfo->aqrPrepare();
   standaloneQuery = cmpInfo->standaloneQuery();
   doNotCachePlan = cmpInfo->doNotCachePlan();
-
-  if (recompControlInfo)
-    {
-      // if recompControlInfo is received, then ignore the specialized
-      // default values (catSchStr, nametypeNsk, odbcProcess).
-      // Values from recompControlInfo will be used to get to
-      // them. Return from here.
-      return FALSE;
-    }
 
   if (catSchStr)
     {
@@ -403,7 +389,6 @@ static NABoolean processRecvdCmpCompileInfo(CmpStatement *cmpStmt,
        }
     }
 
-  nametypeNsk = cmpInfo->nametypeNsk();
   odbcProcess = cmpInfo->odbcProcess();
 
   return FALSE;				// no error
@@ -421,7 +406,6 @@ CmpStatement::process (const CmpMessageSQLText& sqltext)
   Lng32 inputCS = 0;
   NAString currCatName;
   NAString currSchName;
-  char * recompControlInfo = NULL;
   NABoolean isSchNameRecvd;
   NABoolean nametypeNsk;
   NABoolean odbcProcess;
@@ -438,7 +422,6 @@ CmpStatement::process (const CmpMessageSQLText& sqltext)
 				 inputCS,
 				 isSchNameRecvd, 
 				 currCatName, currSchName, 
-				 recompControlInfo,
 				 nametypeNsk,
 				 odbcProcess,
 				 noTextCache,
@@ -540,76 +523,6 @@ CmpStatement::process (const CmpMessageSQLText& sqltext)
 }
 
 CmpStatement::ReturnStatus
-CmpStatement::setupRecompControlInfo(char * recompControlInfo,
-				     CmpMain * cmpmain,
-				     Lng32 charset)
-{
-  // process recompControlInfo, if received
-  if (! recompControlInfo)
-    return CmpStatement_SUCCESS;
-
-  RtduRecompControlInfo * rci = (RtduRecompControlInfo*)recompControlInfo;
-  rci->unpackIt((char*)rci);
-  
-  // unpack the defaults in rci->defaults..
-  context_->schemaDB_->getDefaults().unpackDefaultsFromBuffer(rci->numCqdInfoEntries(),
-							      rci->cqdInfo());
-  // set up current defaults from rci->defaults.
-  context_->schemaDB_->getDefaults().createNewDefaults(rci->numCqdInfoEntries(),
-						       rci->cqdInfo());
-  
-  
-  // save current CTO and reset ctList_.
-  context_->controlDB_->saveCurrentCTO();
-  
-  if (rci->ctoInfoLength() > 0)
-    {
-      context_->controlDB_->unpackControlTableOptionsFromBuffer(rci->ctoInfo());
-    }
-  
-  // save current CQS and reset requiredShape.
-  context_->controlDB_->saveCurrentCQS();
-  
-  // if a shape as been sent, use it.
-  if (rci->cqsInfoLength() > 0)
-    {
-      // compile the CQS passed in. Do not generate code for it.
-      char * genCode = NULL;
-      ULng32 genCodeLen = 0;
-      QueryText qText(rci->cqsInfo(), SQLCHARSETCODE_ISO88591);
-
-      CmpMain::ReturnStatus rs = 
-	cmpmain->sqlcompStatic(qText, 0, 
-			       &genCode, &genCodeLen,
-			       outHeap_, CmpMain::PRECODEGEN, 
-			       charset);
-    }
-
-  return CmpStatement_SUCCESS;
-}
-
-CmpStatement::ReturnStatus
-CmpStatement::restoreRecompControlInfo(char * recompControlInfo)
-{
-  if (! recompControlInfo)
-    return CmpStatement_SUCCESS;
-
-  RtduRecompControlInfo * rci = (RtduRecompControlInfo*)recompControlInfo;
-
-  // restore the original cqd.
-  context_->schemaDB_->getDefaults().restoreDefaults(rci->numCqdInfoEntries(),
-						     rci->cqdInfo());
-  
-  // restore saved CTO
-  context_->controlDB_->restoreCurrentCTO();
-  
-  // restore saved CQS
-  context_->controlDB_->restoreCurrentCQS();
-
-  return CmpStatement_SUCCESS;
-}
-
-CmpStatement::ReturnStatus
 CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
 {
   CmpMain cmpmain;
@@ -621,7 +534,6 @@ CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
   Lng32 inputCS = 0;
   NAString currCatName;
   NAString currSchName;
-  char * recompControlInfo = NULL;
   NABoolean isSchNameRecvd;
   NABoolean nametypeNsk;
   NABoolean odbcProcess;
@@ -638,7 +550,6 @@ CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
 				 inputCS,
 				 isSchNameRecvd, 
 				 currCatName, currSchName,
-				 recompControlInfo,
 				 nametypeNsk,
 				 odbcProcess,
 				 noTextCache,
@@ -657,11 +568,6 @@ CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
 
   sqlTextStr_ = sqlStr;
   sqlTextLen_ = sqlStrLen;
-
-  // process recompControlInfo, if received
-  if (recompControlInfo)
-    setupRecompControlInfo(recompControlInfo, &cmpmain, inputCS);
-
 
   // set ODBC_PROCESS default.
   NABoolean odbcProcessChanged = FALSE;
@@ -718,10 +624,6 @@ CmpStatement::process (const CmpMessageCompileStmt& compilestmt)
       context_->schemaDB_->getDefaults().setSchemaTrustedFast(currSchName);
     }
 
-  if (recompControlInfo)
-    restoreRecompControlInfo(recompControlInfo);
-
-
   if (odbcProcessChanged)
     {
       // restore the original odbc process setting
@@ -758,7 +660,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
   Lng32 inputCS = 0;
   NAString currCatName;
   NAString currSchName;
-  char * recompControlInfo = NULL;
   NABoolean isSchNameRecvd;
   NABoolean nametypeNsk;
   NABoolean odbcProcess;
@@ -777,7 +678,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
 				 inputCS,
 				 isSchNameRecvd, 
 				 currCatName, currSchName, 
-				 recompControlInfo,
 				 nametypeNsk,
 				 odbcProcess,
 				 noTextCache,
@@ -788,9 +688,6 @@ CmpStatement::process (const CmpMessageDDL& statement)
 
   CmpCommon::context()->sqlSession()->setParentQid(
     statement.getParentQid());
-  // process recompControlInfo, if received
-  if (recompControlInfo)
-    setupRecompControlInfo(recompControlInfo, &cmpmain);
 
   cmpmain.setSqlParserFlags(statement.getFlags());
 
@@ -850,16 +747,13 @@ CmpStatement::process (const CmpMessageDDL& statement)
         {
 	  sqlTextStr_ = NULL;
 	  sqlTextLen_ = 0;
-	  if (recompControlInfo)
-	    restoreRecompControlInfo(recompControlInfo);
+
 	  return CmpStatement_ERROR;
         }
       
       sqlTextStr_ = NULL;
       sqlTextLen_ = 0;
-      
-      if (recompControlInfo)
-	restoreRecompControlInfo(recompControlInfo);
+
       return CmpStatement_SUCCESS;
     }
 
@@ -1048,7 +942,6 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
   Lng32 inputCS = 0;
   NAString currCatName;
   NAString currSchName;
-  char * recompControlInfo = NULL;
   NABoolean isSchNameRecvd;
   NABoolean nametypeNsk;
   NABoolean odbcProcess;
@@ -1067,7 +960,6 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
 				 inputCS,
 				 isSchNameRecvd, 
 				 currCatName, currSchName, 
-				 recompControlInfo,
 				 nametypeNsk,
 				 odbcProcess,
 				 noTextCache,
@@ -1076,10 +968,6 @@ CmpStatement::process(const CmpMessageDDLwithStatus &statement)
 				 doNotCachePlan))
     return CmpStatement_ERROR;
   CmpCommon::context()->sqlSession()->setParentQid(statement.getParentQid());
-
-  // process recompControlInfo, if received
-  if (recompControlInfo)
-    setupRecompControlInfo(recompControlInfo, &cmpmain);
 
   cmpmain.setSqlParserFlags(statement.getFlags());
 
@@ -1357,7 +1245,6 @@ CmpStatement::process (const CmpMessageObj& request)
   // CmpMessageDescribe
   // CmpMessageUpdateHist
   // CmpMessageSetTrans
-  // CmpMessageReadTableDef
   // CmpMessageEndSession
   // Reset the parent qid and the requests that has parent qid will set it later
   CmpCommon::context()->sqlSession()->setParentQid(NULL);

@@ -675,13 +675,10 @@ void ExpLOBinsert::displayContents(Space * space, const char * displayStr,
 {
   ex_clause::displayContents(space, "ExpLOBinsert", clauseNum, constsArea);
 
-#ifndef __EID
   char buf[100];
 
   str_sprintf(buf, "    liFlags_ = %d", liFlags_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#endif
-
 }
 
 ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
@@ -758,13 +755,6 @@ ex_expr::exp_return_type ExpLOBiud::insertDesc(char *op_data[],
   
 
   Lng32 waitedOp = 0;
-#ifdef __EID
-  waitedOp = 0; // nowaited op from EID/TSE process
-#else
-  waitedOp = 1;
-#endif
-
-  //temptemp. Remove after ExLobsOper adds nowaited support.
   waitedOp = 1;
 
   // temp. Pass lobLen. When ExLobsOper fixes it so len is not needed during
@@ -987,13 +977,6 @@ ex_expr::exp_return_type ExpLOBiud::insertData(Lng32 handleLen,
 
  
   Lng32 waitedOp = 0;
-#ifdef __EID
-  waitedOp = 0; // nowaited op from EID/TSE process
-#else
-  waitedOp = 1;
-#endif
-
-  //temptemp. Remove after ExLobsOper adds nowaited support.
   waitedOp = 1;
 
   Lng32 cliError = 0;
@@ -1058,11 +1041,9 @@ ex_expr::exp_return_type ExpLOBinsert::eval(char *op_data[],
   if(fromEmpty())
     return err;
 
-#ifndef __EID
   char * handle = op_data[0];
   Lng32 handleLen = getOperand(0)->getLength();
   err = insertData(handleLen, handle, op_data, h, diagsArea);
-#endif
 
   return err;
 }
@@ -1119,13 +1100,6 @@ ex_expr::exp_return_type ExpLOBdelete::eval(char *op_data[],
     return ex_expr::EXPR_ERROR;
 
   Lng32 waitedOp = 0;
-#ifdef __EID
-  waitedOp = 0; // nowaited op from EID/TSE process
-#else
-  waitedOp = 1;
-#endif
-
-  //temptemp. Remove after ExLobsOper adds nowaited support.
   waitedOp = 1;
 
   Lng32 cliError = 0;
@@ -1188,13 +1162,10 @@ void ExpLOBupdate::displayContents(Space * space, const char * displayStr,
 {
   ExpLOBoper::displayContents(space, "ExpLOBupdate", clauseNum, constsArea);
 
-#ifndef __EID
   char buf[100];
 
   str_sprintf(buf, "    luFlags_ = %d", luFlags_);
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#endif
-
 }
 
 ex_expr::exp_return_type 
@@ -1354,13 +1325,6 @@ ex_expr::exp_return_type ExpLOBupdate::eval(char *op_data[],
   else
     lobMaxSize = getLobMaxSize();
   Lng32 waitedOp = 0;
-#ifdef __EID
-  waitedOp = 0; // nowaited op from EID/TSE process
-#else
-  waitedOp = 1;
-#endif
-
-  //temptemp. Remove after ExLobsOper adds nowaited support.
   waitedOp = 1;
 
   Lng32 cliError = 0;
@@ -1554,14 +1518,8 @@ ex_expr::exp_return_type ExpLOBconvert::eval(char *op_data[],
   Lng32 waitedOp = 0;
   Int64 lobLen = 0; 
   char *lobData = NULL;
-#ifdef __EID
-  waitedOp = 0; // nowaited op from EID/TSE process
-#else
   waitedOp = 1;
-#endif
 
-  //temptemp. Remove after ExLobsOper adds nowaited support.
-  waitedOp = 1;
   extractFromLOBhandle(&flags, &lobType, &lobNum, &uid,
 			   &descKey, &descTS, 
 			   &schNameLen, schName,

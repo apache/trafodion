@@ -48,7 +48,6 @@
 // SqlBufferNeededSize or SqlBufferGetTuppSize to include this file (11/01/2003)
 //
 
-NA_EIDPROC
 static inline ULng32 SqlBufferHeaderSize(SqlBufferHeader::BufferType bufType)
 {
   // Return the buffer header size 
@@ -77,7 +76,6 @@ static inline ULng32 SqlBufferHeaderSize(SqlBufferHeader::BufferType bufType)
   return (headerSize);
 }
 
-NA_EIDPROC
 static inline ULng32 SqlBufferGetTuppSize(
      Lng32 recordLength = 0,
      SqlBufferHeader::BufferType bufType = SqlBufferHeader::NORMAL_)
@@ -90,7 +88,6 @@ static inline ULng32 SqlBufferGetTuppSize(
   
 }
 
-NA_EIDPROC
 static inline ULng32 SqlBufferNeededSize(Lng32 numTuples = 0, 
 				  Lng32 recordLength = 0,
 				  SqlBufferHeader::BufferType bufType = SqlBufferHeader::NORMAL_)

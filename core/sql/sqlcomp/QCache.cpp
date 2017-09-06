@@ -301,7 +301,6 @@ CompilerEnv::CompilerEnv(NAHeap *h, CmpPhase phase,
         case QUERY_CACHE_STATISTICS_FILE:
         case QUERY_TEMPLATE_CACHE:
         case QUERY_TEXT_CACHE:
-        case QUERY_CACHE_MPALIAS:
         case SHARE_TEMPLATE_CACHED_PLANS: 
           break;
           // skip these CQD settings -- they are represented in CacheKey
@@ -2484,27 +2483,6 @@ void QCache::deCacheAll(TextKey *stmt, RelExpr *qry)
   // else it's not in cache, so we're done
 }
 
-// decache all mpalias queries
-// LCOV_EXCL_START
-void QCache::deCacheAliases()
-{
-  // decache all entries whose keys indicate they are mpalias queries
-  LRUList::iterator mru = begin();
-  while (mru != end()) {
-    KeyDataPair& entry = *mru;
-    // am I an mpalias query?
-    if (entry.first_ &&
-        !((CacheKey*)(entry.first_))->contains(AM_AN_MPALIAS_QUERY))
-      ++mru; // no, advance to next entry.
-    else { // yes.
-      if (entry.first_)
-        deCache((CacheKey*)(entry.first_)); // decache it.
-      mru = begin(); // restart iterator.
-    }
-  }
-}
-// LCOV_EXCL_STOP
-
 // increment number of compiles
 void QCache::incNOfCompiles(IpcMessageObjType op)
 {
@@ -2756,7 +2734,7 @@ QCache* QCache::resizeCache(ULng32 maxSize, ULng32 maxVictims)
         freeLRUentries(getFreeSize() + currentSize - maxSize -
                  ULng32(totalHashTblSize_ * 
                          (1 - float(maxSize) / currentSize)), 
-                 INT_MAX);  // NA_64BIT - revisit if large value is needed.
+                 INT_MAX);
       }
     }
     else { // desired size is bigger

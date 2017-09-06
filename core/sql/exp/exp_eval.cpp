@@ -73,15 +73,12 @@ double MathConvReal64ToReal64(double op1, Int16 * ov);
   ( ((result) & 0x80000000) ? ((result) ^ 0x80000002) : (result) )
 
 
-NA_EIDPROC
 void setVCLength(char * VCLen, Int32 VCLenSize, UInt32 value);
 
 // --------------------------------------------------------------------
 // Generate 31 bit hash value by
 // multiplication, shift, and xor for every 4 byte.
 // --------------------------------------------------------------------
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 UInt32 FastHash(char *data, Int32 length) 
 {
   // FastHash should be removed someday
@@ -176,7 +173,6 @@ UInt32 FastHash(char *data, Int32 length)
 //
 static const Int32 nullBitmapData[] = { 0, 0, 0, 0 };
 
-NA_EIDPROC
 ex_expr::exp_return_type getDefaultValueForAddedColumn(
      UInt32 field_num, // field number whose default value is to be
                               // computed. Zero based.
@@ -242,8 +238,6 @@ ex_expr::exp_return_type getDefaultValueForAddedColumn(
 // are stored next to each other in packed format(varchar
 // fields are stored without blank padding).
 /////////////////////////////////////////////////////////
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 void computeDataPtr(char * start_data_ptr, // start of data row
 		    Int32 field_num,       // field number whose address is to be
 		                           // computed. Zero based.
@@ -887,7 +881,6 @@ ex_expr::exp_return_type ex_expr::evalClauses(ex_clause *clause,
   return retcode;
 }
 
-NA_EIDPROC
 static ex_expr::exp_return_type alignAndEval(ex_clause * clause,
 					     char ** op_data,
 					     CollHeap * heap,
@@ -2313,7 +2306,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
   char *opData[3 * ex_clause::MAX_OPERANDS];
   char **opDataData = &opData[2 * ex_clause::MAX_OPERANDS];
 
-  // dg64 - stack contains addresses
+  // stack contains addresses
   Long stack[258];
 
   // The first N entries in the stack are reserved for pointers to 
@@ -2324,7 +2317,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
   //
   atp_struct *atps[] = { atp1, atp2 };
 
-  // dg64 - Use Long for stack
+  // Use Long for stack
   stack[1] = (Long)(castToExExpr()->getMyConstantsArea());
   stack[2] = (Long)(castToExExpr()->getTempsArea());
   stack[3] = (Long)(castToExExpr()->getMyPersistentArea());
@@ -4301,7 +4294,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       PTR_DEF_ASSIGN(Int64, result, 0);
       PTR_DEF_ASSIGN(Int64, xptr, 2);
       PTR_DEF_ASSIGN(Int64, yptr, 4);
-#if (defined NA_YOS || defined (NA_LINUX)) && !defined _DEBUG
+#if (!defined _DEBUG)
       Int64 x = *xptr, y = *yptr;
       Int64 z = x + y;
 
@@ -4348,7 +4341,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       PTR_DEF_ASSIGN(Int64, result, 0);
       PTR_DEF_ASSIGN(Int32, xptr32, 2);
       PTR_DEF_ASSIGN(Int64, yptr, 4);
-#if (defined (NA_YOS) || defined (NA_LINUX)) && !defined _DEBUG
+#if (!defined _DEBUG)
 
       Int64 x = (Int64) *xptr32 , y = *yptr;
       Int64 z = x + y;
@@ -4396,7 +4389,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       PTR_DEF_ASSIGN(Int64, result, 0);
       PTR_DEF_ASSIGN(Int64, xptr, 2);
       PTR_DEF_ASSIGN(Int64, yptr, 4);
-#if (defined NA_YOS || defined (NA_LINUX)) && !defined _DEBUG
+#if (!defined _DEBUG)
       Int64 x = *xptr, y = *yptr;
       Int64 z = x - y;
 
@@ -4523,7 +4516,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
       PTR_DEF_ASSIGN(Int64, result, 0);
       PTR_DEF_ASSIGN(Int64, xptr, 2);
       PTR_DEF_ASSIGN(Int64, yptr, 4);
-#if (defined (NA_YOS) || defined (NA_LINUX)) && !defined _DEBUG
+#if (!defined _DEBUG)
 
       Int64 x = *xptr, y = *yptr;
 
@@ -4952,7 +4945,7 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
     {
       PTR_DEF_ASSIGN(Int64, result, 0 );
       PTR_DEF_ASSIGN(Int32, yptr, 2 );
-#if (defined (NA_YOS) || defined (NA_LINUX)) && !defined _DEBUG
+#if (!defined _DEBUG)
       Int32 y = *yptr;
       Int64 x = *result;
 
@@ -6368,7 +6361,6 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	DEF_ASSIGN(Int32, bitwiseNOT , 4 );
 	Int64 result = *resultPtr;
 
-//SQ_LINUX #ifndef NA_HSC
 	result ^= 0x8000000000000000LL;
 #ifdef NA_LITTLE_ENDIAN
 	result = reversebytes(result);
@@ -6533,7 +6525,6 @@ ex_expr::exp_return_type ex_expr::evalPCode(PCodeBinary* pCode32,
 	result = reversebytes(result);
 #endif // NA_LITTLE_ENDIAN      
 
-//SQ_LINUX #ifndef NA_HSC
 	result ^= 0x8000000000000000LL;
 	* outputPtr = result ;
 

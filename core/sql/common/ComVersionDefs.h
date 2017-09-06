@@ -104,7 +104,7 @@ inline
 COM_VERSION  ComVersion_GetCurrentSchemaVersion (void) {return COM_VERS_CURR_SCHEMA;};
 inline  
 COM_VERSION  ComVersion_GetMXV (void) {return COM_VERS_MXV;};
-inline NA_EIDPROC
+inline
 COM_VERSION  ComVersion_GetCurrentPlanVersion (void) {return COM_VERS_CURR_PLAN;};
 
 //

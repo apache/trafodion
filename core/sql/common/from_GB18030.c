@@ -149,7 +149,6 @@ static const gb4idx_ucs_t gb4idx_ucs_table[] = { 0, 0    } ;
 static const ucs_gb4idx_t ucs_gb4idx_table[] = { 0, 0, 0 } ;
 #endif
 
-NA_EIDPROC
 static int
 compare_gb4idx_ucs(gb4idx_ucs_t *ptr1, gb4idx_ucs_t *ptr2)
 {
@@ -174,14 +173,12 @@ compare_gb4idx_ucs(gb4idx_ucs_t *ptr1, gb4idx_ucs_t *ptr2)
 	return(factor) ;
 }
 
-NA_EIDPROC
 static int
 compare_gb4idx_ucs_C(const void *ptr1, const void *ptr2) //JAC - CAST FUNCTION needed to make our NT compiler happy
 {
   return compare_gb4idx_ucs( (gb4idx_ucs_t *) ptr1, (gb4idx_ucs_t *) ptr2 );
 }
 
-NA_EIDPROC
 static int
 compare_ucs_gb4idx(ucs_gb4idx_t *ptr1, ucs_gb4idx_t *ptr2)
 {
@@ -205,7 +202,6 @@ compare_ucs_gb4idx(ucs_gb4idx_t *ptr1, ucs_gb4idx_t *ptr2)
     return(0) ;	/* A match */
 }
 
-NA_EIDPROC
 static int
 compare_ucs_gb4idx_C(const void *ptr1, const void *ptr2) //JAC - CAST FUNCTION needed to make our NT compiler happy
 {
@@ -218,7 +214,6 @@ compare_ucs_gb4idx_C(const void *ptr1, const void *ptr2) //JAC - CAST FUNCTION n
  * a 2-byte GB18030 code if the value >= 0xa1a1. Otherwise, it is assumed
  * to be a 4-byte index and converted to a 4-byte GB18030 code.
  */
-NA_EIDPROC
 static uint_t
 tudc_to_gb(int udc)
 {
@@ -240,7 +235,6 @@ tudc_to_gb(int udc)
  *	-1 - Invalid sequence (EILSEQ)
  *	-2 - Input incomplete
  */
-NA_EIDPROC
 int
 __gb18030_index(_LC_fcconv_iconv_t * cd, uchar_t **in, int len)
 {
@@ -320,7 +314,6 @@ __gb18030_index(_LC_fcconv_iconv_t * cd, uchar_t **in, int len)
 /*
  * This routine maps UDC characters in Unicode to those in GB18030
  */
-NA_EIDPROC
 WChar_t	  // JAC
 __UDC_to_gb18030(ucs4_t ucs)
 {
@@ -341,7 +334,6 @@ __UDC_to_gb18030(ucs4_t ucs)
 /*
  * This routine maps UCS characters to 4-byte GB18030 characters
  */
-NA_EIDPROC
 WChar_t	  // JAC
 __UCS_to_gb18030(ucs4_t ucs)
 {

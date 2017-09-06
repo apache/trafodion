@@ -40,11 +40,11 @@
 #include "SqlExpDllDefines.h"
 #include "Platform.h"
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #include	<stdio.h>
 #include	<iostream>
 #include	<stdlib.h>
-#endif  // NA_DEBUG_C_RUNTIME
+#endif  // _DEBUG
 
 #include "ComPackDefs.h"
 #include "dfs2rec.h"

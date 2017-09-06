@@ -46,7 +46,7 @@
 
 #pragma warning ( disable : 4251 )
 
-class SQLEXP_LIB_FUNC  ExpDatetime : public SimpleType {
+class ExpDatetime : public SimpleType {
 
 public:
   // these enums must be in the same order as the datetimeFormat[] array 
@@ -135,20 +135,15 @@ public:
 
   enum arithOps {DATETIME_ADD, DATETIME_SUB};
 
-NA_EIDPROC
   ExpDatetime();
-NA_EIDPROC
   ~ExpDatetime();
 
-NA_EIDPROC
   static Int64 getTotalDays(short year, short month, short day);
 
-NA_EIDPROC
   static short getDatetimeFields(Lng32 datetimeCode,
                                  rec_datetime_field &startField,
                                  rec_datetime_field &endField);
 
-NA_EIDPROC
   void convertDatetimeToInterval(rec_datetime_field datetimeStartField,
                                  rec_datetime_field datetimeEndField,
                                  short fractionPrecision,
@@ -156,20 +151,17 @@ NA_EIDPROC
                                  char *datetimeOpData,
                                  Int64 &interval) const;
 
-NA_EIDPROC
   static short getYearMonthDay(Int64 totalDays,
                                short &year,
                                char &month,
                                char &day);
 
-NA_EIDPROC
   short convertIntervalToDatetime(Int64 interval,
                                   rec_datetime_field startField,
                                   rec_datetime_field endField,
                                   short fractionPrecision,
                                   char *datetimeOpData) const;
 
-NA_EIDPROC
   static short validateDate(rec_datetime_field startField,
                             rec_datetime_field endField,
                             char *datetimeOpData,
@@ -177,14 +169,11 @@ NA_EIDPROC
                             short intervalFlag,
                             NABoolean &LastDayPrevMonth);
 
-NA_EIDPROC
   static short validateTime(const char *datetimeOpData);
 
-NA_EIDPROC
   short compDatetimes(char *datetimeOpData1,
                       char *datetimeOpData2);
 
-NA_EIDPROC
   short arithDatetimeInterval(ExpDatetime::arithOps operation,
                               ExpDatetime *datetimeOpType,
                               Attributes *intervalOpType,
@@ -194,7 +183,6 @@ NA_EIDPROC
                               CollHeap *heap,
                               ComDiagsArea** diagsArea);
 
-NA_EIDPROC
   short subDatetimeDatetime(Attributes *datetimeOpType,
                             Attributes *intervalOpType,
                             char *datetimeOpData1,
@@ -203,32 +191,25 @@ NA_EIDPROC
                             CollHeap *heap,
                             ComDiagsArea** diagsArea) const;
 
-NA_EIDPROC
   static short getDisplaySize(Lng32 datetimeCode,
 			      short fractionPrecision);
 		       
-NA_EIDPROC
   static Lng32 getDatetimeFormatLen(Lng32 format, NABoolean to_date,
 				   rec_datetime_field startField,
 				   rec_datetime_field endField);
 
-NA_EIDPROC
   Attributes * newCopy();
 
-NA_EIDPROC
   Attributes * newCopy(CollHeap *);
 
-NA_EIDPROC
   void copyAttrs(Attributes *source_); // copy source attrs to this.
 
   // ---------------------------------------------------------------------
   // Perform type-safe pointer casts.
   // ---------------------------------------------------------------------
-NA_EIDPROC
   virtual
   ExpDatetime* castToExpDatetime();
 
-NA_EIDPROC
   short convDatetimeDatetime(char *srcData,
                              rec_datetime_field dstStartField,
                              rec_datetime_field dstEndField,
@@ -238,13 +219,11 @@ NA_EIDPROC
 			     short validateFlag,
                              NABoolean *roundedDownFlag = NULL);
 
-NA_EIDPROC
   static short currentTimeStamp(char *dstData,
                                 rec_datetime_field startField,
                                 rec_datetime_field endField,
                                 short fractPrec);
 
-NA_EIDPROC
   short extractDatetime(rec_datetime_field srcStartField,
                         rec_datetime_field srcEndField,
                         short srcFractPrec,
@@ -273,7 +252,6 @@ NA_EIDPROC
                             ComDiagsArea** diagsArea,
                             ULng32 flags);
 
-NA_EIDPROC
   short convAsciiToDate(char *target,
                         Lng32 targetLen,
                         char *source,
@@ -283,7 +261,6 @@ NA_EIDPROC
                         ComDiagsArea** diagsArea,
                         ULng32 flags);
 
-NA_EIDPROC
   Lng32 convDatetimeToASCII(char *srcData,
                            char *dstData,
                            Lng32 dstLen,
@@ -292,7 +269,6 @@ NA_EIDPROC
                            CollHeap *heap,
                            ComDiagsArea** diagsArea);
 
-NA_EIDPROC
   static Lng32 convNumericTimeToASCII(char *srcData,
 				     char *dstData,
 				     Lng32 dstLen,
@@ -301,7 +277,6 @@ NA_EIDPROC
 				     CollHeap *heap,
 				     ComDiagsArea** diagsArea);
   
-NA_EIDPROC
 static
   short convAsciiDatetimeToASCII(char *srcData,
 				 Lng32 srcPrecision,
@@ -318,18 +293,18 @@ static
   // ---------------------------------------------------------------------
   // Redefinition of methods inherited from NAVersionedObject.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(2,getClassVersionID());
     SimpleType::populateImageVersionIDArray();
   }
 
-  NA_EIDPROC virtual short getClassSize() { return (short)sizeof(*this); }
+  virtual short getClassSize() { return (short)sizeof(*this); }
   // ---------------------------------------------------------------------
 
   static const char * getDatetimeFormatStr(Lng32 frmt)

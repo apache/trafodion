@@ -403,7 +403,7 @@ NABoolean IsCIdentifier(const char *id)
 
 NABoolean /*NAString::*/setMPLoc()
 {
-  if (!SqlParser_Initialized() || SqlParser_NAMETYPE == DF_NSK)
+  if (!SqlParser_Initialized() )
     return TRUE;
   else
     return FALSE;

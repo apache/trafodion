@@ -7751,8 +7751,7 @@ OptSqlTableOpenInfo *setupStoi(OptSqlTableOpenInfo *&optStoi_,
   // notion to begin with.
   if ((naTable->getSpecialType() == ExtendedQualName::TRIGTEMP_TABLE) ||
       (naTable->getSpecialType() == ExtendedQualName::IUD_LOG_TABLE) ||
-      (naTable->getSpecialType() == ExtendedQualName::INDEX_TABLE) ||
-      (naTable->getSpecialType() == ExtendedQualName::RESOURCE_FORK))
+      (naTable->getSpecialType() == ExtendedQualName::INDEX_TABLE))
   {
     return NULL;
   }
@@ -14540,20 +14539,6 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
       NAString cat(catsch.getCatalogNameAsAnsiString(),bindWA->wHeap());
       NAString sch(catsch.getUnqualifiedSchemaNameAsAnsiString(),bindWA->wHeap());
       //
-      if (SqlParser_NAMETYPE == DF_NSK) {
-// LCOV_EXCL_START - nsk
-        // The cat & sch from the BindWA are really from MPLOC.
-        // Get the real ANSI cat & sch, prepending them to the strings
-        // and put the MPLOC info in parens.
-        const SchemaName &csAnsi = ActiveSchemaDB()->getDefaultSchema();
-        NAString cAnsi(csAnsi.getCatalogNameAsAnsiString(),bindWA->wHeap());
-        NAString sAnsi(csAnsi.getUnqualifiedSchemaNameAsAnsiString(),bindWA->wHeap());
-        cat.prepend(cAnsi + " (");
-        cat += ")";
-        sch.prepend(sAnsi + " (");
-        sch += ")";
-// LCOV_EXCL_STOP
-      }
       *CmpCommon::diags() << DgSqlCode(-ABS(ShowSchema::DiagSqlCode()))
         << DgCatalogName(cat) << DgSchemaName (sch);
       bindWA->setErrStatus();
@@ -14629,8 +14614,6 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
   index_desc->indexesDesc()->colcount = table_desc->tableDesc()->colcount;
   index_desc->indexesDesc()->blocksize = 4096; // anything > 0
 
-  // Cannot simply point to same files desc as the table one,
-  // because then ReadTableDef::deleteTree frees same memory twice (error)
   TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
   index_desc->indexesDesc()->files_desc = i_files_desc;
 
@@ -14679,28 +14662,6 @@ RelExpr *Describe::bindNode(BindWA *bindWA)
           // do not override schema for showddl
           bindWA->setToOverrideSchema(FALSE);  
           
-          // if this is a showlabel command on a resource fork, 
-          // but the describedTableName
-          // is not a fully qualified rfork name, then get the rfork name
-          // for the specified table.
-          if ((getFormat() == Describe::LABEL_) &&
-              (describedTableName_.getSpecialType() == ExtendedQualName::RESOURCE_FORK) &&
-              (describedTableName_.getLocationName().isNull()))
-            {
-              describedTableName_.setSpecialType(ExtendedQualName::NORMAL_TABLE);
-              NATable *naTable = bindWA->getNATable(describedTableName_);
-              if (NOT bindWA->errStatus())
-                {
-                  // replace the describedTableName with its rfork name.
-                  describedTableName_.setSpecialType(ExtendedQualName::RESOURCE_FORK);
-                
-                  NAString rforkName = naTable->getClusteringIndex()->getFileSetName().getQualifiedNameAsString();
-                  char * rforkNameData = (char*)(rforkName.data());
-                  rforkNameData[rforkName.length()-1] += 1;
-                  describedTableName_.setLocationName(rforkName);
-                }
-            }
-
           // check if we need to consider public schema before 
           // describedTableName_ is qualified by getNATable
           if (describedTableName_.getQualifiedNameObj().getSchemaName().isNull())

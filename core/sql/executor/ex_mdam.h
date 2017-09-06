@@ -86,25 +86,25 @@ class MdamPredIterator : public ExGod
 
 public:
 
-   NA_EIDPROC MdamPredIterator(MdamColumn * first,Lng32 maxDisjunctNumber);
+   MdamPredIterator(MdamColumn * first,Lng32 maxDisjunctNumber);
 
-   NA_EIDPROC ~MdamPredIterator()
+   ~MdamPredIterator()
        {  };
 
-   NA_EIDPROC Lng32 getNextDisjunctNumber();  // -1 means no more disjuncts
+   Lng32 getNextDisjunctNumber();  // -1 means no more disjuncts
 
    // In the next three methods, currentPred is state stored in MdamColumn
    // objects, but updated by these methods only.
 
    // FALSE means no more predicates
-   NA_EIDPROC NABoolean positionToNextOr(MdamPred **currentPred);
+   NABoolean positionToNextOr(MdamPred **currentPred);
 
    // 0 (NULL) means no more predicates
    // for this key column within this predicate  
-   NA_EIDPROC MdamPred * getNextPred(MdamPred **currentPred); 
+   MdamPred * getNextPred(MdamPred **currentPred); 
    
    // Position the predicate list to the current disjunct.
-   NA_EIDPROC void positionToCurrentDisjunct(MdamPred **currentPred);
+   void positionToCurrentDisjunct(MdamPred **currentPred);
 
 };
 
@@ -189,7 +189,7 @@ public:
 
   enum getNextValueReturnType { TRAVERSE_DOWN, TRAVERSE_UP, SUBSET, PROBE };
 
-  NA_EIDPROC MdamColumn(MdamColumn * previous,
+  MdamColumn(MdamColumn * previous,
 			MdamColumnGen *columnGenInfo,
 			ex_globals *glob,
 			sql_buffer_pool *pool,
@@ -198,15 +198,15 @@ public:
 			unsigned short valueAtpIndex,
                         const ex_tcb *tcb);
 
-  NA_EIDPROC ~MdamColumn();
+  ~MdamColumn();
 
   // methods used to build an Mdam network
 
-  NA_EIDPROC void initCurrentPred()
+  void initCurrentPred()
   { currentPred_ = columnGenInfo_->getFirstPred(); };
   
   // returns TRUE if the disjunct number is in some stop list
-  NA_EIDPROC NABoolean buildDisjunct(MdamPredIterator & predIterator,
+  NABoolean buildDisjunct(MdamPredIterator & predIterator,
 				     sql_buffer_pool *pool,
 				     atp_struct *atp0,
 				     atp_struct *atp1,
@@ -220,29 +220,29 @@ public:
                                       mdamRefListEntrysForStopListsHeap,
                                      Lng32 & dataConvErrorFlag);
 
-  NA_EIDPROC void tossDisjunct(FixedSizeHeapManager & mdamIntervalHeap,
+  void tossDisjunct(FixedSizeHeapManager & mdamIntervalHeap,
                                FixedSizeHeapManager & mdamRefListEntryHeap);
 
-  NA_EIDPROC void mergeDisjunct(Lng32 disjunct_number,
+  void mergeDisjunct(Lng32 disjunct_number,
 				FixedSizeHeapManager & mdamIntervalHeap,
 				FixedSizeHeapManager & mdamRefListEntryHeap);
 
-  NA_EIDPROC NABoolean disjunctIsEmpty();
+  NABoolean disjunctIsEmpty();
 
   // Method used to destroy an Mdam network.
-  NA_EIDPROC void releaseNetwork(FixedSizeHeapManager & mdamIntervalHeap,
+  void releaseNetwork(FixedSizeHeapManager & mdamIntervalHeap,
                                  FixedSizeHeapManager & mdamRefListEntryHeap);
 
   // Member function used when we are done with the plan.
-  NA_EIDPROC void release(FixedSizeHeapManager & mdamRefListEntrysForStopListsHeap);
+  void release(FixedSizeHeapManager & mdamRefListEntrysForStopListsHeap);
 
   // methods used to traverse an Mdam network
-  NA_EIDPROC MdamIntervalList & getIntervalList();
+  MdamIntervalList & getIntervalList();
 
-  NA_EIDPROC MdamColumn * nextColumn() { return next_; };
-  NA_EIDPROC MdamColumn * previousColumn() { return previous_; };
+  MdamColumn * nextColumn() { return next_; };
+  MdamColumn * previousColumn() { return previous_; };
 
-  NA_EIDPROC NABoolean initNextValue();
+  NABoolean initNextValue();
 
   // returns TRAVERSE_DOWN if a value was obtained, and the current
   // interval is not a subset interval; SUBSET if values were obtained
@@ -259,30 +259,30 @@ public:
   //                        (but might not be the same value)
   //                        beginExclFlag and endExclFlag are both set and
   //                        should be applied to the key range as a whole
-  NA_EIDPROC getNextValueReturnType getNextValue(ULng32 pFRCounter,
+  getNextValueReturnType getNextValue(ULng32 pFRCounter,
 						 char *bktarget,
 						 char *ektarget,
 						 short &beginExclFlag,
 						 short &endExclFlag,
 			   FixedSizeHeapManager & mdamRefListEntryHeap);
 
-  NA_EIDPROC void reportProbeResult(char *keyData);
+  void reportProbeResult(char *keyData);
 
-  NA_EIDPROC void completeKey(char *bktarget,
+  void completeKey(char *bktarget,
                               char *ektarget,
                               short bkexcl,
                               short ekexcl);
 
-  NA_EIDPROC ULng32 getOffset() 
+  ULng32 getOffset() 
     { return columnGenInfo_->getOffset(); };
 
   // Print function.
   #ifdef NA_MDAM_EXECUTOR_DEBUG
-  NA_EIDPROC void print(const char * header = "") const;
+  void print(const char * header = "") const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG */
 
 private:
-  NA_EIDPROC void setNextColumn(MdamColumn * next);
+  void setNextColumn(MdamColumn * next);
 
 
 
@@ -326,39 +326,39 @@ class keyMdamEx : public keyRangeEx
   NABoolean complementKeysBeforeReturning_;
 
 public:
-  NA_EIDPROC keyMdamEx(const keyRangeGen & tdb_key,
+  keyMdamEx(const keyRangeGen & tdb_key,
 		       const short in_version,
 		       sql_buffer_pool *pool,
 		       ex_globals *glob,
                        const ex_tcb *tcb);
  
-  NA_EIDPROC ~keyMdamEx();
+  ~keyMdamEx();
 
-  NA_EIDPROC virtual ExeErrorCode initNextKeyRange(sql_buffer_pool *pool,
+  virtual ExeErrorCode initNextKeyRange(sql_buffer_pool *pool,
 					           atp_struct * atp0);
 
-  NA_EIDPROC virtual getNextKeyRangeReturnType getNextKeyRange
+  virtual getNextKeyRangeReturnType getNextKeyRange
     (atp_struct * atp0,NABoolean fetchRangeHadRows,
      NABoolean detectNullRange = TRUE); 
 
-  NA_EIDPROC virtual void reportProbeResult(char *keyData);
+  virtual void reportProbeResult(char *keyData);
 
   // release tupp storage
-  NA_EIDPROC void release();
+  void release();
 
-  NA_EIDPROC keyMdamGen & getGenInfo()
+  keyMdamGen & getGenInfo()
   { return (keyMdamGen &)tdbKey_; };
 
 private:
   // Returns zero if memory for MdamRefListEntry's and MdamInterval's
   // is successfully acquired.  Otherwise, returns ExeErrorCode.
-  NA_EIDPROC ExeErrorCode buildNetwork(sql_buffer_pool *pool,atp_struct *atp0);
+  ExeErrorCode buildNetwork(sql_buffer_pool *pool,atp_struct *atp0);
 
-  NA_EIDPROC void destroyNetwork();
+  void destroyNetwork();
 
   // Print function.
   #ifdef NA_MDAM_EXECUTOR_DEBUG
-  NA_EIDPROC void print(const char * header = "") const;
+  void print(const char * header = "") const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG */
 
 };

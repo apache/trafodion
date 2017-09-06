@@ -95,66 +95,66 @@ private:
 public:
 
   // default constructor needed by UNPACK
-  NA_EIDPROC keyRangeGen()
+  keyRangeGen()
    : NAVersionedObject(-1)
   {}
 
-  NA_EIDPROC keyRangeGen(key_type keyType,
+  keyRangeGen(key_type keyType,
 		    ULng32 keyLen,
 		    ex_cri_desc * workCriDesc,
 		    unsigned short keyValuesAtpIndex,
 		    unsigned short excludeFlagAtpIndex,
 		    unsigned short dataConvErrorFlagAtpIndex);
 
-  NA_EIDPROC virtual ~keyRangeGen() { };
+  virtual ~keyRangeGen() { };
 
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual char *findVTblPtr(short classID);
+  virtual char *findVTblPtr(short classID);
 
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(0,getClassVersionID());
   }
 
-  NA_EIDPROC virtual short getClassSize()
+  virtual short getClassSize()
                                      { return (short)sizeof(keyRangeGen); }
 
   virtual keySingleSubsetGen * castToKeySingleSubsetGen() { return NULL; }
   virtual keyMdamGen * castToKeyMdamGen() { return NULL; }
 
   // for UNPACK
-  NA_EIDPROC void fixupVTblPtr(); 
+  void fixupVTblPtr(); 
  
   // accessor functions
-  NA_EIDPROC key_type getType() { return (key_type) keyType_; };
+  key_type getType() { return (key_type) keyType_; };
 
-  NA_EIDPROC ULng32 getKeyLength() const
+  ULng32 getKeyLength() const
   { return keyLength_; };
-  NA_EIDPROC ex_cri_desc * getWorkCriDesc() const
+  ex_cri_desc * getWorkCriDesc() const
   { return workCriDesc_; };
-  NA_EIDPROC unsigned short getKeyValuesAtpIndex() const
+  unsigned short getKeyValuesAtpIndex() const
   { return keyValuesAtpIndex_; };
-  NA_EIDPROC unsigned short getExcludeFlagAtpIndex() const
+  unsigned short getExcludeFlagAtpIndex() const
   { return excludeFlagAtpIndex_; };
-  NA_EIDPROC unsigned short getDataConvErrorFlagAtpIndex() const
+  unsigned short getDataConvErrorFlagAtpIndex() const
   { return dataConvErrorFlagAtpIndex_; };
 
-  NA_EIDPROC UInt16 getKeytag() const
+  UInt16 getKeytag() const
     { return keytag_; };
-  NA_EIDPROC void setKeytag(UInt16 kt)
+  void setKeytag(UInt16 kt)
     { keytag_ = kt; };
 
-  NA_EIDPROC virtual Long pack(void *);
-  NA_EIDPROC virtual Lng32 unpack(void *, void * reallocator);
+  virtual Long pack(void *);
+  virtual Lng32 unpack(void *, void * reallocator);
 
-  NA_EIDPROC virtual ex_expr* getExpressionNode(Int32 pos)  { return NULL; }
+  virtual ex_expr* getExpressionNode(Int32 pos)  { return NULL; }
     
 };
 

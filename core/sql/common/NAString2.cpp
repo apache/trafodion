@@ -43,24 +43,13 @@
 #include "ComSizeDefs.h"
 #include "NAWinNT.h"
 
-#ifndef CLI_PRIV_SRL
 #include "NAString.h"
 #include "nawstring.h"
-#else
-// ComGetNameInterfaceCharSet() is declared and defined in NAString.h
-#include "ComCharSetDefs.h"
-inline SQLCHARSET_CODE ComGetNameInterfaceCharSet()
-{
-  return SQLCHARSETCODE_UTF8;
-}
-#endif
-#include "sqlcli.h"
 
+#include "sqlcli.h"
 
 // move this method to NAString.h later.
 NABoolean setMPLoc();
-
-
 
 // -----------------------------------------------------------------------
 static NABoolean NAString2_isUpper(unsigned char c,
@@ -263,7 +252,6 @@ void ToAnsiIdentifier3(const char * inputData, size_t inputLen,
 
 } // ToAnsiIdentifier3
 
-#ifndef CLI_PRIV_SRL
 // -----------------------------------------------------------------------
 // Remove whitespace (spaces and tabs) from front or back or both
 // -----------------------------------------------------------------------
@@ -330,5 +318,3 @@ void RemoveTrailingZeros(NAString &ns)
      ns.remove(++i);
   }
 }
-
-#endif

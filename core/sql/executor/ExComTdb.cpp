@@ -53,9 +53,6 @@
 #include "ex_onlj.h"
 #include "ex_tuple_flow.h"
 #include "ExFastTransport.h"
-
-
-#ifndef __EID
 #include "ex_root.h"
 #include "ex_mj.h"
 #include "ex_hashj.h"
@@ -80,9 +77,6 @@
 #include "ExCancel.h"
 #include "ExHdfsScan.h"
 #include "ExHbaseAccess.h"
-
-
-#endif
 
 // -----------------------------------------------------------------------
 // When called within tdm_sqlcli.dll, fixupVTblPtr() translates to a call
@@ -124,7 +118,7 @@ void ComTdb::fixupVTblPtrExe()
 // implemented in the comexe project (in ComTdb.cpp) which returns the
 // pointer for an "compiler TDB".
 // -----------------------------------------------------------------------
-NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
+char *ComTdb::findVTblPtrExe(short classID)
 {
   char *vtblptr = NULL;
   switch (classID)
@@ -212,8 +206,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
-// LCOV_EXCL_START
-
     case ex_NON_LEAF_TUPLE:
     {
 #pragma nowarn(1506)   // warning elimination 
@@ -221,10 +213,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
 #pragma warn(1506)  // warning elimination 
       break;
     }
-
-#ifndef __EID
-
-// LCOV_EXCL_STOP
 
     case ex_CONTROL_QUERY:
     {
@@ -241,7 +229,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
 #pragma warn(1506)  // warning elimination 
       break;
     }
-#endif
 
     case ex_ONLJ:
     {
@@ -282,7 +269,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
-#ifndef __EID
     case ex_UDR:
     {
 #pragma nowarn(1506)   // warning elimination 
@@ -361,7 +347,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
 #pragma warn(1506)  // warning elimination 
       break;
     }
-#endif
 
     case ex_TUPLE_FLOW:
     {
@@ -371,7 +356,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrExe(short classID)
       break;
     }
 
-#ifndef __EID
     case ex_SET_TIMEOUT:  
     {
 #pragma nowarn(1506)   // warning elimination 
@@ -733,7 +717,6 @@ case ex_LOB_INFO:
       break;
     }
 
-#endif
     default:
       ex_assert(0, "findVTblPtrExe(): Cannot find entry of this ClassId"); // LCOV_EXCL_LINE
       break;
@@ -741,7 +724,6 @@ case ex_LOB_INFO:
   return vtblptr;
 }
 
-NA_EIDPROC
 void fixupExeVtblPtr(ComTdb * tdb)
 {
   for (Int32 i = 0; i < tdb->numChildren(); i++)
@@ -755,7 +737,6 @@ void fixupExeVtblPtr(ComTdb * tdb)
  
 }
 
-NA_EIDPROC
 void fixupComVtblPtr(ComTdb * tdb)
 {
   for (Int32 i = 0; i < tdb->numChildren(); i++)
@@ -769,7 +750,6 @@ void fixupComVtblPtr(ComTdb * tdb)
  
 }
 
-NA_EIDPROC
 void resetBufSize(ex_tcb * tcb, Lng32 &tcbSpaceNeeded, Lng32 &poolSpaceNeeded)
 {
   for (Int32 i = 0; i < tcb->numChildren(); i++)
@@ -805,7 +785,6 @@ void resetBufSize(ex_tcb * tcb, Lng32 &tcbSpaceNeeded, Lng32 &poolSpaceNeeded)
 }
 
 #pragma nowarn(262)   // warning elimination 
-NA_EIDPROC
 Lng32 getTotalTcbSpace(char*inTdb, char * otherInfo, char * parentMemory)
 {
   ComTdb * tdb = (ComTdb*)inTdb;
@@ -820,7 +799,6 @@ Lng32 getTotalTcbSpace(char*inTdb, char * otherInfo, char * parentMemory)
   NAHeap heap("temp heap", (NAHeap*)parentMemory, 32000 /*blocksize*/);
   ex_globals * g = NULL;
 
-#ifndef __EID
   switch (tdb->getNodeType())
     {
 // LCOV_EXCL_START
@@ -843,8 +821,6 @@ Lng32 getTotalTcbSpace(char*inTdb, char * otherInfo, char * parentMemory)
       break;
 
     }
-#else
-#endif
 
   g->setComputeSpace(TRUE);
 
