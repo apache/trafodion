@@ -6506,6 +6506,31 @@ odbc_SQLSrvr_ExtractLob_sme_(
                 exception_->u.SQLError.errorList._buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer;
                 exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECUTE_FAILED;
             }
+
+            IDL_long_long zeroValue = 0;
+            snprintf(LobExtractQuery, sizeof(LobExtractQuery), "EXTRACT LOBTOBUFFER(LOB'%s', LOCATION %Ld, SIZE %Ld)", lobHandle, (Int64)lobDataValue, &zeroValue);
+
+            retcode = QryLobExtractSrvrStmt->ExecDirect(NULL, LobExtractQuery, EXTERNAL_STMT, TYPE_CALL, SQL_ASYNC_ENABLE_OFF, 0);
+
+            if (retcode == SQL_ERROR)
+            {
+                ERROR_DESC_def *p_buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer;
+                strncpy(RequestError, p_buffer->errorText, sizeof(RequestError) - 1);
+
+                SendEventMsg(MSG_SQL_ERROR,
+                        EVENTLOG_ERROR_TYPE,
+                        srvrGlobal->nskProcessInfo.processId,
+                         ODBCMX_SERVER,
+                         srvrGlobal->srvrObjRef,
+                         2,
+                         p_buffer->sqlcode,
+                         RequestError);
+
+                exception_->exception_nr = odbc_SQLsrvr_ExtractLob_ParamError_exn_;
+                exception_->u.SQLError.errorList._length = QryLobExtractSrvrStmt->sqlError.errorList._length;
+                exception_->u.SQLError.errorList._buffer = QryLobExtractSrvrStmt->sqlError.errorList._buffer;
+                exception_->u.ParamError.ParamDesc = SQLSVC_EXCEPTION_EXECUTE_FAILED;
+            }
         }
         catch (...)
         {
