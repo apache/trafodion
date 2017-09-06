@@ -780,6 +780,8 @@ short HashGroupBy::codeGen(Generator * generator) {
 	BiRelat(ITM_EQUAL, itemExpr, convNode);
       biRelat->setSpecialNulls(-1);
       biRelat->bindNode(generator->getBindWA());
+      if (generator->getBindWA()->errStatus())
+        GenExit();
       hbSearchValIds.insert(biRelat->getValueId());
     }
   };

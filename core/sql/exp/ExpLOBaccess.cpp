@@ -230,21 +230,6 @@ Ex_Lob_Error ExLob::fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOff
     if (cliErr == 100 )
       {
         isEOD= TRUE;
-        cliErr = SQL_EXEC_LOBcliInterface(handleIn, handleLenIn, 
-				     NULL, NULL,
-                                     (char *)&dummyParam, (Lng32 *)&dummyParam,
-                                     LOB_CLI_SELECT_CLOSE, LOB_CLI_ExecImmed,
-                                     &dummyParam, &dummyParam,
-                                     &dummyParam, &dummyParam, 
-				     &cliInterface,
-                                          transId,lobTrace_);
-        if (cliErr <0 ) 
-          {
-            str_sprintf(logBuf, "LOB_CLI_SELECT_CLOSE Returned cli error  %d",cliErr);
-            lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
-            err = LOB_DESC_READ_ERROR;
-            return err;
-          }
         
       }
     else
@@ -256,9 +241,17 @@ Ex_Lob_Error ExLob::fetchCursor(char *handleIn, Int32 handleLenIn, Int64 &outOff
             char temp[blackBoxLen+1];
             str_cpy_and_null(temp, blackBox, blackBoxLen, '\0', '0', TRUE);
             lobDataFile_ = temp;
+            outOffset = offset;
+            err=statSourceFile(temp,outSize);
+            if (err != LOB_OPER_OK)
+              return err;
           }
-        outOffset = offset;
-        outSize = size;
+        else
+          {
+            outOffset = offset;
+            outSize = size;
+          }
+        
       }
 
     str_sprintf(logBuf, " Returned after ::fetchCursor %Ld,%Ld",outOffset,outSize);
@@ -804,6 +797,62 @@ Ex_Lob_Error ExLob::readExternalSourceFile(char *srcfile, char *&fileData, Int32
   return LOB_OPER_OK;
 }
 
+Ex_Lob_Error ExLob::getLength(char *handleIn, Int32 handleInLen,Int64 &outLobLen,LobsSubOper so, Int64 transId)
+{
+  char logBuf[4096];
+  Int32 cliErr = 0;
+  Ex_Lob_Error err=LOB_OPER_OK; 
+  char *blackBox = new(getLobGlobalHeap()) char[MAX_LOB_FILE_NAME_LEN+6];
+  Int32 blackBoxLen = 0;
+  Int64 dummy = 0;
+  Int32 dummy2 = 0;
+  if (so != Lob_External_File)
+    {
+      
+      cliErr = SQL_EXEC_LOBcliInterface(handleIn, handleInLen,NULL,NULL,NULL,NULL,LOB_CLI_SELECT_LOBLENGTH,LOB_CLI_ExecImmed, 0,&outLobLen, 0, 0,0,transId,lobTrace_);
+    
+      if (cliErr < 0 ) {
+        str_sprintf(logBuf,"CLI SELECT_LOBLENGTH returned error %d",cliErr);
+        lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
+  
+        return LOB_DESC_READ_ERROR;
+      }
+    }
+    else
+      {
+        //Get the lob external filename from the descriptor file and get the length of the file
+        cliErr = SQL_EXEC_LOBcliInterface(handleIn, 
+                                          handleInLen, 
+                                          blackBox, &blackBoxLen,
+                                          NULL, 0,
+                                          LOB_CLI_SELECT_UNIQUE, LOB_CLI_ExecImmed,
+                                          &dummy, &dummy,
+                                          &dummy, &dummy, 
+                                          0,
+                                          transId,lobTrace_);
+        if (cliErr < 0 ) {
+          str_sprintf(logBuf,"CLI SELECT_LOBLENGTH returned error %d",cliErr);
+          lobDebugInfo(logBuf, 0,__LINE__,lobTrace_);
+  
+          return LOB_DESC_READ_ERROR;
+        }
+        if (blackBox && blackBoxLen >0 )
+          {
+            // we have received the external data file name from the 
+            // descriptor table
+            
+            char temp[blackBoxLen+1];
+            str_cpy_and_null(temp, blackBox, blackBoxLen, '\0', '0', TRUE);
+            
+            
+            err=statSourceFile(temp,outLobLen);
+            if (err != LOB_OPER_OK)
+              return err;
+          }
+       
+      }
+  return err;
+}
 Ex_Lob_Error ExLob::writeDesc(Int64 &sourceLen, char *source, LobsSubOper subOper, Int64 &descNumOut, Int64 &operLen, Int64 lobMaxSize,Int64 lobMaxChunkMemSize,Int64 lobGCLimit, char * handleIn, Int32 handleInLen, char *blackBox, Int32 *blackBoxLen, char *handleOut, Int32 &handleOutLen, Int64 xnId, void *lobGlobals)
 {
   Ex_Lob_Error err=LOB_OPER_OK; 
@@ -1566,7 +1615,7 @@ Ex_Lob_Error ExLob::readCursor(char *tgt, Int64 tgtSize, char *handleIn, Int32 h
     if (cursor.eod_) {
        // remove cursor from the map.
        // server has already closed the cursor. 
-       closeCursor(handleIn, handleInLen); 
+      closeCursor(handleIn, handleInLen,transId); 
        // indicate EOD to SQL
        operLen = 0; 
        return LOB_OPER_OK;
@@ -1585,17 +1634,48 @@ Ex_Lob_Error ExLob::readCursor(char *tgt, Int64 tgtSize, char *handleIn, Int32 h
 
 
 
-Ex_Lob_Error ExLob::closeCursor(char *handleIn, Int32 handleInLen)
+Ex_Lob_Error ExLob::closeCursor(char *handleIn, Int32 handleInLen, Int64 transId)
 {
   char logBuf[4096];
+  Int64 dummyParam = 0;
+  Int32 cliErr = 0;
+  Ex_Lob_Error err = LOB_OPER_OK;
   lobCursors_it it = lobCursors_.find(string(handleIn, handleInLen));
+  if (it == lobCursors_.end())
+    {
+      // cursor already closed
+      return LOB_OPER_OK;                         
+    }
+
+  void *cliInterface = it->second.cliInterface_;
+  if (cliInterface)
+    {
+      cliErr = SQL_EXEC_LOBcliInterface(handleIn, handleInLen, 
+                                        NULL, NULL,
+                                        (char *)&dummyParam, (Lng32 *)&dummyParam,
+                                        LOB_CLI_SELECT_CLOSE, LOB_CLI_ExecImmed,
+                                        &dummyParam, &dummyParam,
+                                        &dummyParam, &dummyParam, 
+                                        &cliInterface,
+                                        transId,lobTrace_);
+      if (cliErr <0 ) 
+        {
+          str_sprintf(logBuf, "LOB_CLI_SELECT_CLOSE Returned cli error  %d",cliErr);
+          lobDebugInfo(logBuf,0,__LINE__,lobTrace_);
+          err = LOB_DESC_READ_ERROR;
+          return err;
+        }
+    }
   if (it != lobCursors_.end())
     {
       str_sprintf(logBuf,"closing cursor for handle");
       lobDebugInfo(logBuf,0,__LINE__,lobTrace_);    
       lobCursors_.erase(it);
     }
-    return LOB_OPER_OK;
+  
+ 
+      
+  return LOB_OPER_OK;
 }
 
 Ex_Lob_Error ExLob::allocateDesc(ULng32 size, Int64 &descNum, Int64 &dataOffset, Int64 lobMaxSize, Int64 lobMaxChunkMemLen, char *handleIn, Int32 handleInLen, Int64 lobGCLimit, void *lobGlobals)
@@ -2021,6 +2101,7 @@ Ex_Lob_Error ExLob::readCursorData(char *tgt, Int64 tgtSize, cursor_t &cursor, I
       operLen += bytesRead;
       tgt += bytesRead;
    }
+  
    hdfsCloseFile(fs_, fdData_);
    fdData_ = NULL;
    return LOB_OPER_OK;
@@ -2110,7 +2191,7 @@ Ex_Lob_Error ExLob::readDataToMem(char *memAddr,
 	 	 
       if (err==LOB_OPER_OK)
 	closeCursor(handleIn, 
-		    handleLenIn);
+		    handleLenIn,transId);
       else
 	return err;
     }
@@ -2225,7 +2306,7 @@ Ex_Lob_Error ExLob::readDataToLocalFile(char *fileName,  Int64 offset, Int64 siz
 	    tgtOffset += chunkSize;     
 	  }
 	closeCursor(handleIn, 
-		    handleInLen);
+		    handleInLen,transId);
       }
     close(fdDestFile);
     return LOB_OPER_OK;
@@ -2352,7 +2433,7 @@ Ex_Lob_Error ExLob::readDataToHdfsFile(char *tgtFileName,  Int64 offset, Int64 s
 
 	}
       closeCursor(handleIn, 
-		  handleInLen);	    
+		  handleInLen,transId);	    
     }
   hdfsCloseFile(fs_, fdTgtFile);
   fdTgtFile=NULL;
@@ -2637,7 +2718,11 @@ Ex_Lob_Error ExLobsOper (
       if (blackBox)
         (lobGlobals->getHeap())->deallocateMemory((char*) blackBox);
       break;
-
+    case Lob_GetLength:
+      {
+        err = lobPtr->getLength(handleIn, handleInLen,retOperLen,subOperation,transId);  
+      }
+      break;
     case Lob_ReadDesc: // read desc only. Needed for pass thru.
       err = lobPtr->getDesc(desc,handleIn,handleInLen,(char *)blackBox, &blackBoxLen,handleOut,handleOutLen,transId); 
       retOperLen = 0;
@@ -2704,7 +2789,7 @@ Ex_Lob_Error ExLobsOper (
       break;
 
     case Lob_CloseCursor:
-      err = lobPtr->closeCursor(handleIn, handleInLen);
+      err = lobPtr->closeCursor(handleIn, handleInLen,transId);
       break;
 
     case Lob_CloseDataCursorSimple:
