@@ -117,11 +117,22 @@ public class JdbcCommon {
         StringBuilder buf = new StringBuilder(ddl);
         ddl = buf.toString();
 
+        Statement stmt = null;
         try {
-            _conn.createStatement().execute(ddl);
+            stmt = _conn.createStatement();
+            stmt.execute(ddl);
         } catch (Exception e) { 
             System.out.println(e.getMessage());
             fail("Failed to create table");
+        }
+        finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                }
+                catch (Exception e) {
+                }
+            }
         }
     }
 
@@ -154,10 +165,17 @@ public class JdbcCommon {
         if (commConn == null)
             commConn = getConnection();
 
+        Statement stmt = null;
         try {
-            commConn.createStatement().execute("create schema " + _catalog + "." + _schema);
+            stmt = commConn.createStatement();
+            stmt.execute("create schema " + _catalog + "." + _schema);
         } catch (Exception e) {
             // Do nothing, the schema may already exist.
+        }
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
         }
     }
 
@@ -165,10 +183,17 @@ public class JdbcCommon {
         if (commConn == null)
             commConn = getConnection();
 
+        Statement stmt = null;
         try {
-            commConn.createStatement().execute("drop schema " + _catalog + "." + _schema + " cascade");
+            stmt = commConn.createStatement();
+            stmt.execute("drop schema " + _catalog + "." + _schema + " cascade");
         } catch (Exception e) {
             // Do nothing, the schema may not exist.  
+        }
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
         }
     }
 
@@ -182,43 +207,53 @@ public class JdbcCommon {
         if (objDropList == null)
             return;
 
-        for (String objname : objDropList) {
-            for (int i = 0; i < 3; i++) {
-                try {
-                    commConn.createStatement().executeUpdate("drop " + objname + " cascade");
-                    break; // no execption, break out here
-                } catch (Exception e) {
-                    String msg = e.getMessage();
-                    if ((msg.contains("ERROR[1002]") &&
-                         msg.contains("does not exist")) ||
-                        (msg.contains("ERROR[1003]") && 
-                         msg.contains("does not exist")) ||
-                        (msg.contains("ERROR[1004]") &&
-                         msg.contains("does not exist"))) {
-                        // ERROR[1002]: catalog does not exist in SQ, 
-                        // ERROR[1003]: schema does not exist in SQ,
-                        // ERROR[1004]: schema does not exist in SQ,
-                        // we are done these cases.
-                        break;
-                    } 
-                    else if (msg.contains("ERROR[1389]") &&
-                        msg.contains("does not exist")) {
-                        // object does not exist in TRAF, we are done.
-                        break;
+        Statement stmt = null;
+        try {
+            stmt = commConn.createStatement();
+            for (String objname : objDropList) {
+                for (int i = 0; i < 3; i++) {
+                    try {
+                        stmt.executeUpdate("drop " + objname + " cascade");
+                        break; // no execption, break out here
                     }
-                    else if (i < 2 &&
-                        msg.contains("ERROR[1183]") &&
-                        msg.contains("Error 73")) {
-                        // error 73 should be reried up to 3 times.
-                        Thread.sleep(2000); // 2 secs
-                        System.out.println("see error 73, retrying...");
-                    } else {
-                        // all rest are bad.
-                        System.out.println(msg);
-                        fail("Failed to drop object: " + objname);
+                    catch (Exception e) {
+                        String msg = e.getMessage();
+                        if ((msg.contains("ERROR[1002]") &&
+                                    msg.contains("does not exist")) ||
+                                (msg.contains("ERROR[1003]") && 
+                                 msg.contains("does not exist")) ||
+                                (msg.contains("ERROR[1004]") &&
+                                 msg.contains("does not exist"))) {
+                            // ERROR[1002]: catalog does not exist in SQ, 
+                            // ERROR[1003]: schema does not exist in SQ,
+                            // ERROR[1004]: schema does not exist in SQ,
+                            // we are done these cases.
+                            break;
+                                 } 
+                        else if (msg.contains("ERROR[1389]") &&
+                                msg.contains("does not exist")) {
+                            // object does not exist in TRAF, we are done.
+                            break;
+                                }
+                        else if (i < 2 &&
+                                msg.contains("ERROR[1183]") &&
+                                msg.contains("Error 73")) {
+                            // error 73 should be reried up to 3 times.
+                            Thread.sleep(2000); // 2 secs
+                            System.out.println("see error 73, retrying...");
+                        } else {
+                            // all rest are bad.
+                            System.out.println(msg);
+                            fail("Failed to drop object: " + objname);
+                        }
                     }
                 }
             }
         }
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
+        }
+        }
     }
-}

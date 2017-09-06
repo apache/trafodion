@@ -331,6 +331,19 @@ Lng32 ExpLOBinterfaceEmptyDirectory(void * lobGlob,
                             short  replication =0,
                             int    blocksize=0);
 
+Lng32 ExpLOBInterfaceGetLobLength(void * exLobGlob, 
+				  char * lobName, 
+				  char * lobLoc,
+				  Lng32 lobType,
+				  char * lobHdfsServer,
+				  Lng32 lobHdfsPort,
+				  Int32 handleLen, 
+				  char * lobHandle,
+			          Int64 &outLobLen 
+                                  
+				  );
+
+
 /*
 class HdfsFileInfo
 {

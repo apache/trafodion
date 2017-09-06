@@ -53,11 +53,21 @@ public class BatchTest extends JdbcCommon {
     private static final String strSelectFk = "SELECT * FROM " + BATCH_TEST_TABLE_FK + " ORDER BY EID ASCENDING";
 
     private void cleanTable() {
+        Statement stmt = null;
         try {
-            Statement stmt = _conn.createStatement();
+            stmt = _conn.createStatement();
             stmt.execute(strDelete);
         } catch(Exception e) {
             // do nothing
+        }
+        finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                }
+                catch (Exception e) {
+                }
+            }
         }
     }
 
@@ -88,28 +98,50 @@ public class BatchTest extends JdbcCommon {
 
         // Start to prepare and execute the batch insert
         long startTime = System.currentTimeMillis();
-        PreparedStatement upsertStmt = _conn.prepareStatement(strUpsert);
-        for(int i=0; i < ROW_COUNT; ++i) {
-            upsertStmt.setInt(1, i);
-            upsertStmt.setString(2, "Traf The World " + i);
-            upsertStmt.addBatch();
-        }
-        statusArray = upsertStmt.executeBatch();
-        long endTime = System.currentTimeMillis();
-        System.out.println("Time consumption for batch inserting "
-                + ROW_COUNT + " rows is " + (endTime - startTime)  + " milli seconds");
-        assertArrayEquals(expectedStatusArray, statusArray);
+        PreparedStatement upsertStmt = null;
+        PreparedStatement selectStmt = null;
 
-        // Fetch the data from the table to see if the data inserted succeeded
-        PreparedStatement selectStmt = _conn.prepareStatement(strSelect);
-        ResultSet rs = selectStmt.executeQuery();
-        int rowCount = 0;
-        while(rs.next()) {
-            assertEquals(rowCount, rs.getInt(1));
-            assertEquals("Traf The World " + String.valueOf(rowCount), rs.getString(2));
-            rowCount++;
+        try {
+            upsertStmt = _conn.prepareStatement(strUpsert);
+            for(int i=0; i < ROW_COUNT; ++i) {
+                upsertStmt.setInt(1, i);
+                upsertStmt.setString(2, "Traf The World " + i);
+                upsertStmt.addBatch();
+            }
+            statusArray = upsertStmt.executeBatch();
+            long endTime = System.currentTimeMillis();
+            System.out.println("Time consumption for batch inserting "
+                    + ROW_COUNT + " rows is " + (endTime - startTime)  + " milli seconds");
+            assertArrayEquals(expectedStatusArray, statusArray);
+
+            // Fetch the data from the table to see if the data inserted succeeded
+            selectStmt = _conn.prepareStatement(strSelect);
+            ResultSet rs = selectStmt.executeQuery();
+            int rowCount = 0;
+            while(rs.next()) {
+                assertEquals(rowCount, rs.getInt(1));
+                assertEquals("Traf The World " + String.valueOf(rowCount), rs.getString(2));
+                rowCount++;
+            }
+            assertEquals(rowCount, ROW_COUNT);
         }
-        assertEquals(rowCount, ROW_COUNT);
+        finally {
+            if (upsertStmt != null) {
+                try {
+                    upsertStmt.close();
+                }
+                catch (SQLException e) {
+                }
+            }
+
+            if (selectStmt != null) {
+                try {
+                    selectStmt.close();
+                }
+                catch (SQLException e) {
+                }
+            }
+        }
     }
 
     /* Currently SQL does not have the ability to dump individual row, which
@@ -158,38 +190,59 @@ public class BatchTest extends JdbcCommon {
             }
         }
         int expectedRowCount = 8;
+        PreparedStatement insertStmt = null;
+        Statement selectStmt = null;
 
-        // Start to prepare and execute the batch upsert
-        PreparedStatement insertStmt = _conn.prepareStatement(strInsert);
-        for(int i=0; i < 10; ++i) {
-            insertStmt.setInt(1, idArray[i]);
-            insertStmt.setString(2, nameArray[i]);
-            insertStmt.addBatch();
-        }
-        
         try {
-            statusArray = insertStmt.executeBatch();
-        } catch(SQLException sqle) {
-            assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED")); 
-            SQLException e = null;
-            e = sqle.getNextException();
-            do {
-                assertTrue(e.getMessage().contains("ERROR[8102] The operation is prevented by a unique constraint"));
-            } while((e = e.getNextException()) != null);
-        }
-        
-        //assertArrayEquals(expectedStatusArray, statusArray);
+            // Start to prepare and execute the batch upsert
+            insertStmt = _conn.prepareStatement(strInsert);
+            for(int i=0; i < 10; ++i) {
+                insertStmt.setInt(1, idArray[i]);
+                insertStmt.setString(2, nameArray[i]);
+                insertStmt.addBatch();
+            }
+            
+            try {
+                statusArray = insertStmt.executeBatch();
+            } catch(SQLException sqle) {
+                assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED")); 
+                SQLException e = null;
+                e = sqle.getNextException();
+                do {
+                    assertTrue(e.getMessage().contains("ERROR[8102] The operation is prevented by a unique constraint"));
+                } while((e = e.getNextException()) != null);
+            }
+            
+            //assertArrayEquals(expectedStatusArray, statusArray);
 
-        int rowCount = 0;
-        ResultSet rs = _conn.createStatement().executeQuery(strSelect);
-        while(rs.next()) {
-            System.out.println("ID = " + rs.getString(1) + ", Name = " + rs.getString(2));
-            assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
-            assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
-            rowCount++;
+            int rowCount = 0;
+            selectStmt = _conn.createStatement();
+            ResultSet rs = selectStmt.executeQuery(strSelect);
+            while(rs.next()) {
+                System.out.println("ID = " + rs.getString(1) + ", Name = " + rs.getString(2));
+                assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
+                assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
+                rowCount++;
+            }
+            rs.close();
         }
-        rs.close();
-        insertStmt.close();
+        finally {
+            if (selectStmt != null) {
+                try {
+                    selectStmt.close();
+                }
+                catch (SQLException e){
+                }
+            }
+
+            if (insertStmt != null) {
+                try {
+                    insertStmt.close();
+                } 
+                catch (SQLException e){
+                }
+            }
+        }
     }
 
     /* Currently SQL does not have the ability to dump individual row, which
@@ -215,50 +268,79 @@ public class BatchTest extends JdbcCommon {
         expectedStatusArray = new int[]{-2, -2, -2, -2, -2};
 
         // Insert department records
-        PreparedStatement pstmt = _conn.prepareStatement(strInsert);
-        for(int i=0; i < deptName.length; ++i) {
-            pstmt.setInt(1, (i+1));
-            pstmt.setString(2, deptName[i]);
-            pstmt.addBatch();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = _conn.prepareStatement(strInsert);
+            for(int i=0; i < deptName.length; ++i) {
+                pstmt.setInt(1, (i+1));
+                pstmt.setString(2, deptName[i]);
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
         }
-        pstmt.executeBatch();
-        pstmt.close();
+        finally {
+            try {
+                pstmt.close();
+            }
+            catch (SQLException e) {
+            }
+            pstmt = null;
+        }
 
         // Insert employee records, which need to reference id from department
         // as foreign key.
-        pstmt = _conn.prepareStatement(strInsertFk);
-        for(int i=0; i < employeeName.length; ++i) {
-            pstmt.setInt(1, i);
-            pstmt.setInt(2, employeeDeptId[i]);
-            pstmt.setString(3, employeeName[i]);
-            pstmt.addBatch();
-        }
         try {
-            statusArray = pstmt.executeBatch();
-        } catch(SQLException sqle) {
-            assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED")); 
-            System.out.println(sqle.getMessage());
-            SQLException e = null;
-            e = sqle.getNextException();
-            do {
-                assertTrue(e.getMessage().contains("operation is prevented by referential integrity constraint"));
-                System.out.println(e.getMessage());
-                break;
-            } while((e = e.getNextException()) != null);
+            pstmt = _conn.prepareStatement(strInsertFk);
+            for(int i=0; i < employeeName.length; ++i) {
+                pstmt.setInt(1, i);
+                pstmt.setInt(2, employeeDeptId[i]);
+                pstmt.setString(3, employeeName[i]);
+                pstmt.addBatch();
+            }
+            try {
+                statusArray = pstmt.executeBatch();
+            } catch(SQLException sqle) {
+                assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED")); 
+                System.out.println(sqle.getMessage());
+                SQLException e = null;
+                e = sqle.getNextException();
+                do {
+                    assertTrue(e.getMessage().contains("operation is prevented by referential integrity constraint"));
+                    System.out.println(e.getMessage());
+                    break;
+                } while((e = e.getNextException()) != null);
+            }
         }
-        pstmt.close();
+        finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                }
+                catch (SQLException e) {
+                }
+            }
+        }
 
-        ResultSet rs = _conn.createStatement().executeQuery(strSelectFk);
-        int rowCount = 0;
-        while(rs.next()) {
-            if(rowCount == 4)
-                break;
-            assertEquals(rowCount, rs.getInt(1));
-            assertEquals(employeeDeptId[rowCount], rs.getInt(2));
-            assertEquals(employeeName[rowCount], rs.getString(3));
-            rowCount++;
+        Statement stmt = null; 
+        try {
+            stmt = _conn.createStatement();
+            ResultSet rs = stmt.executeQuery(strSelectFk);
+            int rowCount = 0;
+            while(rs.next()) {
+                if(rowCount == 4)
+                    break;
+                assertEquals(rowCount, rs.getInt(1));
+                assertEquals(employeeDeptId[rowCount], rs.getInt(2));
+                assertEquals(employeeName[rowCount], rs.getString(3));
+                rowCount++;
+            }
+            rs.close();
         }
-        rs.close();
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
+        }
     }
 
     /* Normally, when there's invalid value in an individual row of a batch,
@@ -300,20 +382,21 @@ public class BatchTest extends JdbcCommon {
         int expectedRowCount = 9;
 
         // Start to prepare and execute the batch upsert
-        PreparedStatement insertStmt = _conn.prepareStatement(strInsert);
-        for(int i=0; i < 10; ++i) {
-            insertStmt.setInt(1, idArray[i]);
-            if(i != 2)
-                insertStmt.setString(2, nameArray[i]);
-            else
-                insertStmt.setString(2, nameArray[i] + nameArray[i]
-                        + nameArray[i] + nameArray[i] + nameArray[i]
-                        + nameArray[i] + nameArray[i] + nameArray[i]
-                        + nameArray[i] + nameArray[i] + nameArray[i] );
-            insertStmt.addBatch();
-        }
-        
+        PreparedStatement insertStmt = null;
         try {
+            insertStmt = _conn.prepareStatement(strInsert);
+            for(int i=0; i < 10; ++i) {
+                insertStmt.setInt(1, idArray[i]);
+                if(i != 2)
+                    insertStmt.setString(2, nameArray[i]);
+                else
+                    insertStmt.setString(2, nameArray[i] + nameArray[i]
+                            + nameArray[i] + nameArray[i] + nameArray[i]
+                            + nameArray[i] + nameArray[i] + nameArray[i]
+                            + nameArray[i] + nameArray[i] + nameArray[i] );
+                insertStmt.addBatch();
+            }
+        
             statusArray = insertStmt.executeBatch();
         } catch(SQLException sqle) {
             assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED")); 
@@ -325,18 +408,32 @@ public class BatchTest extends JdbcCommon {
                 System.out.println(e.getMessage());
             } while((e = e.getNextException()) != null);
         }
+        finally {
+            if (insertStmt != null) {
+                insertStmt.close();
+            }
+        }
         
         //assertArrayEquals(expectedStatusArray, statusArray);
 
-        int rowCount = 0;
-        ResultSet rs = _conn.createStatement().executeQuery(strSelect);
-        while(rs.next()) {
-            assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
-            assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
-            rowCount++;
+        Statement stmt = null;
+
+        try {
+            int rowCount = 0;
+            stmt = _conn.createStatement();
+            ResultSet rs = stmt.executeQuery(strSelect);
+            while(rs.next()) {
+                assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
+                assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
+                rowCount++;
+            }
+            rs.close();
         }
-        rs.close();
-        insertStmt.close();
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
+        }
     }
 
     @Test
@@ -376,27 +473,36 @@ public class BatchTest extends JdbcCommon {
         int expectedRowCount = 8;
 
         // Start to prepare and execute the batch upsert
-        PreparedStatement upsertStmt = _conn.prepareStatement(strUpsert);
-        for(int i=0; i < 10; ++i) {
-            upsertStmt.setInt(1, idArray[i]);
-            upsertStmt.setString(2, nameArray[i]);
-            upsertStmt.addBatch();
-        }
-        
-        statusArray = upsertStmt.executeBatch();
-        
-        assertArrayEquals(expectedStatusArray, statusArray);
+        PreparedStatement upsertStmt = null;
+        Statement stmt = null;
+        try {
+            upsertStmt = _conn.prepareStatement(strUpsert);
+            for(int i=0; i < 10; ++i) {
+                upsertStmt.setInt(1, idArray[i]);
+                upsertStmt.setString(2, nameArray[i]);
+                upsertStmt.addBatch();
+            }
+            
+            statusArray = upsertStmt.executeBatch();
+            
+            assertArrayEquals(expectedStatusArray, statusArray);
 
-        int rowCount = 0;
-        ResultSet rs = _conn.createStatement().executeQuery(strSelect);
-        while(rs.next()) {
-            assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
-            assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
-            rowCount++;
+            int rowCount = 0;
+            stmt = _conn.createStatement();
+            ResultSet rs = stmt.executeQuery(strSelect);
+            while(rs.next()) {
+                assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
+                assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
+                rowCount++;
+            }
+            assertEquals(rowCount, expectedRowCount);
+            rs.close();
         }
-        assertEquals(rowCount, expectedRowCount);
-        rs.close();
-        upsertStmt.close();
+        finally {
+            if (upsertStmt != null) {
+                upsertStmt.close();
+            }
+        }
     }
 
     @Test
@@ -440,25 +546,33 @@ public class BatchTest extends JdbcCommon {
         }
 
         // Insert original records
-        PreparedStatement pstmt = _conn.prepareStatement(strInsert);
-        for(int i=0; i < idArray.length; ++i) {
-            pstmt.setInt(1, i);
-            pstmt.setString(2, nameArray[i]);
-            pstmt.addBatch();
-        }
-        pstmt.executeBatch();
-        pstmt.close();
-
-        // Update existing records
-        pstmt = _conn.prepareStatement(strUpdate);
-        for(int i=0; i < updateNameArray.length; ++i) {
-            pstmt.setInt(1, i+5);
-            pstmt.setString(2, updateNameArray[i]);
-            pstmt.setInt(3, i+5);
-            pstmt.addBatch();
-        }
-
+        PreparedStatement pstmt = null;
         try {
+            pstmt = _conn.prepareStatement(strInsert);
+            for(int i=0; i < idArray.length; ++i) {
+                pstmt.setInt(1, i);
+                pstmt.setString(2, nameArray[i]);
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+        }
+        finally {
+            if (pstmt != null) {
+                pstmt.close();
+            }
+        }
+
+        pstmt = null;
+        try {
+            // Update existing records
+            pstmt = _conn.prepareStatement(strUpdate);
+            for(int i=0; i < updateNameArray.length; ++i) {
+                pstmt.setInt(1, i+5);
+                pstmt.setString(2, updateNameArray[i]);
+                pstmt.setInt(3, i+5);
+                pstmt.addBatch();
+            }
+
             statusArray = pstmt.executeBatch();
         } catch(SQLException sqle) {
             assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED")); 
@@ -470,17 +584,30 @@ public class BatchTest extends JdbcCommon {
                 System.out.println(e.getMessage());
             } while((e = e.getNextException()) != null);
         }
+        finally {
+            if (pstmt != null) {
+                pstmt.close();
+            }
+        }
         
         //assertArrayEquals(expectedStatusArray, statusArray);
 
-        int rowCount = 0;
-        ResultSet rs = _conn.createStatement().executeQuery(strSelect);
-        while(rs.next()) {
-            assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
-            rowCount++;
+        Statement stmt = null;
+        try {
+            int rowCount = 0;
+            stmt = _conn.createStatement();
+            ResultSet rs = stmt.executeQuery(strSelect);
+            while(rs.next()) {
+                assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
+                rowCount++;
+            }
+            rs.close();
         }
-        rs.close();
-        pstmt.close();
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
+        }
     }
 
     /* Currently SQL does not have the ability to dump individual row, which
@@ -536,25 +663,33 @@ public class BatchTest extends JdbcCommon {
         }
 
         // Insert original records
-        PreparedStatement pstmt = _conn.prepareStatement(strInsert);
-        for(int i=0; i < idArray.length; ++i) {
-            pstmt.setInt(1, i);
-            pstmt.setString(2, nameArray[i]);
-            pstmt.addBatch();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = _conn.prepareStatement(strInsert);
+            for(int i=0; i < idArray.length; ++i) {
+                pstmt.setInt(1, i);
+                pstmt.setString(2, nameArray[i]);
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
         }
-        pstmt.executeBatch();
-        pstmt.close();
-
-        // Update existing records
-        pstmt = _conn.prepareStatement(strUpdate);
-        for(int i=0; i < updateNameArray.length; ++i) {
-            pstmt.setInt(1, updateIdArray[i]);
-            pstmt.setString(2, updateNameArray[i]);
-            pstmt.setInt(3, i+5);
-            pstmt.addBatch();
+        finally {
+            if (pstmt != null) {
+                pstmt.close();
+            }
         }
+        pstmt = null;
 
         try {
+            // Update existing records
+            pstmt = _conn.prepareStatement(strUpdate);
+            for(int i=0; i < updateNameArray.length; ++i) {
+                pstmt.setInt(1, updateIdArray[i]);
+                pstmt.setString(2, updateNameArray[i]);
+                pstmt.setInt(3, i+5);
+                pstmt.addBatch();
+            }
+
             statusArray = pstmt.executeBatch();
         } catch(SQLException sqle) {
             assertTrue(sqle.getMessage().toUpperCase().contains("BATCH UPDATE FAILED")); 
@@ -566,17 +701,30 @@ public class BatchTest extends JdbcCommon {
                 System.out.println(e.getMessage());
             } while((e = e.getNextException()) != null);
         }
+        finally {
+            if (pstmt != null) {
+                pstmt.close();
+            }
+        }
         
         //assertArrayEquals(expectedStatusArray, statusArray);
 
+        Statement stmt = null;
         int rowCount = 0;
-        ResultSet rs = _conn.createStatement().executeQuery(strSelect);
-        while(rs.next()) {
-            //assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
-            //assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
-            rowCount++;
+        try {
+            stmt = _conn.createStatement();
+            ResultSet rs = stmt.executeQuery(strSelect);
+            while(rs.next()) {
+                //assertEquals(expectedIdArray[rs.getRow()-1], rs.getInt(1));
+                //assertEquals(expectedNameArray[rs.getRow()-1], rs.getString(2));
+                rowCount++;
+            }
+            rs.close();
         }
-        rs.close();
-        pstmt.close();
+        finally {
+            if (stmt != null) {
+                stmt.close();
+            }
+        }
     }
 }
