@@ -36,8 +36,6 @@ CPPSRC := cmpargs.cpp \
 	ProcessEnv.cpp \
 	QueryCacheSt.cpp \
 	NATableSt.cpp \
-	rtdu.cpp \
-	rtdu2.cpp \
 	vers_libarkcmp.cpp
 
 INCLUDE_DIRS := sqludr

@@ -143,7 +143,7 @@ public:
   { 
     MIN_SESSION_ID_LEN = 
     PREFIX_LEN + VERSION_LEN + SEGMENT_LEN +
-// in case NA_LINUX Cpu and Segment number are at the same location
+    // in case Cpu and Segment number are at the same location
     PIN_LEN + STARTTS_LEN + SESSIONNUM_LEN + USERNAMELEN_LEN +
     SESSIONNAMELEN_LEN
   };
@@ -184,10 +184,10 @@ public:
     USERNAME_OFFSET    = USERNAMELEN_OFFSET + USERNAMELEN_LEN
   };
     
-NA_EIDPROC    
+   
   ComSqlId(CollHeap * heap);
 
-NA_EIDPROC    
+   
   static Lng32 getSqlQueryIdAttr
    (Lng32 attr,         // which attr (SqlQueryIDAttr)
     char * queryId,    // query ID
@@ -198,7 +198,7 @@ NA_EIDPROC
                        // the returned value.
     char * stringValue); // null terminated returned value for string attrs.
 
-NA_EIDPROC    
+   
   static Lng32 getSqlSessionIdAttr
    (Lng32 attr,         // which attr (SqlQueryIDAttr)
     char * queryId,    // query ID
@@ -210,7 +210,7 @@ NA_EIDPROC
     char * stringValue); // null terminated returned value for string attrs.
 
 
-NA_EIDPROC    
+   
   static Lng32 createSqlSessionId
   (char * sessionId,            // INOUT
    Lng32 maxSessionIdLen,       // IN
@@ -226,7 +226,7 @@ NA_EIDPROC
    const char *userSessionName  // IN
    );
    
-NA_EIDPROC    
+   
   static Lng32 createSqlQueryId
   (char * queryId,           // INOUT
    Lng32 maxQueryIdLen,       // IN
@@ -238,7 +238,7 @@ NA_EIDPROC
    char * queryName          // IN
    );
 
-NA_EIDPROC    
+   
   static Lng32 extractSqlSessionIdAttrs
   (const char * sessionId,       // IN
    Lng32 sessionIdLen,        // IN
@@ -255,7 +255,7 @@ NA_EIDPROC
    );
 
   // returns a compact form of query id which is shipped to dp2.
-NA_EIDPROC    
+   
   static Lng32 getDp2QueryIdString
   (char * queryId,
    Lng32 queryIdLen,
@@ -263,7 +263,6 @@ NA_EIDPROC
    Lng32 &dp2QueryIdLen
    );
 
-NA_EIDPROC
   static Lng32 decomposeDp2QueryIdString
   (char * queryId,                    // input: buffer containing dp2 query id
    Lng32 queryIdLen,                   // input: length of query id
@@ -276,7 +275,7 @@ NA_EIDPROC
    );
 
 private:
-  NA_EIDPROC    
+     
   static Lng32 getSqlIdAttr
    (Lng32 attr,         // which attr (SqlQueryIDAttr)
     const char * queryId,// query ID

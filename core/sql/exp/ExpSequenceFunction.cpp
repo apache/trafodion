@@ -157,15 +157,9 @@ ex_expr::exp_return_type ExpSequenceFunction::pCodeGenerate(Space *space, UInt32
             PCIT::getMemoryAddressingMode(attrs[0]->getDatatype()),
             PCIT::getMemoryAddressingMode(attrs[1]->getDatatype()));
 
-#ifdef NA_64BIT
     OL ol((Int64)isOLAP(), (Int64)0, index, 
           attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
           attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset());
-#else
-    OL ol((PCIType::Operand)isOLAP(), (PCIType::Operand)0, index, 
-          attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
-          attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset());
-#endif
 
     // Add the OFFSET instruction.
     //
@@ -184,17 +178,10 @@ ex_expr::exp_return_type ExpSequenceFunction::pCodeGenerate(Space *space, UInt32
             PCIT::getMemoryAddressingMode(attrs[0]->getDatatype()),
             PCIT::getMemoryAddressingMode(attrs[1]->getDatatype()));
 
-#ifdef NA_64BIT
     OL ol((Int64)(isOLAP()), (Int64)0,
           attrs[2]->getAtp(), attrs[2]->getAtpIndex(), attrs[2]->getOffset(),
           attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
           attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset());
-#else
-    OL ol((PCIType::Operand)(isOLAP()), (PCIType::Operand)0,
-          attrs[2]->getAtp(), attrs[2]->getAtpIndex(), attrs[2]->getOffset(),
-          attrs[0]->getAtp(), attrs[0]->getAtpIndex(), attrs[0]->getOffset(),
-          attrs[1]->getAtp(), attrs[1]->getAtpIndex(), attrs[1]->getOffset());
-#endif
 
     // Add the OFFSET instruction.
     //

@@ -68,11 +68,12 @@ bool sql_diagnostics = false;
 Int32 SRVR::WSQL_EXEC_AddModule (
 		/*IN*/ SQLMODULE_ID * module_name)
 { 
+  // this SQL_EXEC_AddModule is an obsolete call. It should be removed.
+
 	SRVRTRACE_ENTER(WSQL_AddModule);
 
 	INIT
-	retcode = SQL_EXEC_AddModule (
-		module_name);
+          retcode = 0; //SQL_EXEC_AddModule (module_name);
 	SRVRTRACE_EXIT(WSQL_AddModule);
 	RETURN 
 }

@@ -136,7 +136,6 @@ Int32 ProcessEnv::unsetEnv(char* env)
   return 0;
 }
 
-#ifdef NA_CMPDLL
 void ProcessEnv::resetEnv(const char* envName)
 {
   if (!envName)
@@ -172,7 +171,6 @@ void ProcessEnv::resetEnv(const char* envName)
     envs_.remove(deleteArray[j]);
   }
 }
-#endif // NA_CMPDLL
 
 Int32 ProcessEnv::chdir(char* dir) 
 {

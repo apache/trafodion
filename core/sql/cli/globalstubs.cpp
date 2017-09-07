@@ -35,20 +35,3 @@
  *****************************************************************************
  */
 
-extern "C"
-void NAAbort__FPciT1(void){};
-
-extern "C"
-void NAAssert__FPcT1i(void){};
-
-extern "C"
-void __ct__13NABasicObjectFv(void){};
-
-extern "C"
-void __dl__13NABasicObjectSFPv(void){};
-
-extern "C"
-void __dt__8NAStringFv(void){};
-
-extern "C"
-void __nw__13NABasicObjectSFUiP8CollHeap(void){};

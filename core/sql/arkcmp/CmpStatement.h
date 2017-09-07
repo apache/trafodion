@@ -132,10 +132,6 @@ public:
   void setSqlTextLen(Lng32 txtLen) { sqlTextLen_ = txtLen; }
   void setSqlTextCharSet(Lng32 charSet) { sqlTextCharSet_ = charSet; }
 
-  // get/set statement index
-  Int32 getStmtIndex() const { return measureStatementIndex_; }
-  void setStmtIndex(Int32 si) { measureStatementIndex_ = si; }
-
   void setSMDRecompile(NABoolean TorF ) {isSMDRecompile_ = TorF;}
   // set the exceptionRaised_ flag;
   void exceptionRaised();
@@ -282,9 +278,6 @@ private:
   Lng32  sqlTextLen_;
   Lng32  sqlTextCharSet_;
 
-  // statement index stored in the module file, mainly used by MEASURE
-  Int32 measureStatementIndex_;
-
   //flag, indicates if this is a recompilation
   NABoolean recompiling_;
 
@@ -302,11 +295,6 @@ private:
 
   // force a shape
   CqsWA*       cqsWA_;
-
-  ReturnStatus setupRecompControlInfo(char * recompControlInfo,
-				      CmpMain * cmpmain,
-				      Lng32 charset=SQLCHARSETCODE_UNKNOWN);
-  ReturnStatus restoreRecompControlInfo(char * recompControlInfo);
 
   QueryAnalysis* queryAnalysis_;
 

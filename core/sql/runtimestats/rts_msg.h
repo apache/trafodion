@@ -119,7 +119,6 @@ typedef Int64 RtsHandle;
 #define INVALID_RTS_HANDLE 0
 #define RtsHandleIsValid(x) ( (x) != (INVALID_RTS_HANDLE) )
 
-#ifndef __EID
 //----------------------------------------------------------------------
 // RTS message base class
 //
@@ -1195,6 +1194,5 @@ private:
 
 };
 
-#endif // __EID
 #endif // _RTS_EXE_IPC_H_
 

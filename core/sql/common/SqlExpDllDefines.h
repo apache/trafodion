@@ -21,30 +21,3 @@
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
 
-#ifndef SQLEXPDLL_H
-#define SQLEXPDLL_H
-
-#include "Platform.h"
-
-  #ifdef __EID
-    #define SQLEXP_LIB_FUNC
-  #else
-    #ifdef EXP_DLL
-      #define SQLEXP_LIB_FUNC __declspec( dllexport )
-    #else
-      #ifdef UDRSERV_BUILD
-        #define SQLEXP_LIB_FUNC
-      #else
-        #define SQLEXP_LIB_FUNC __declspec( dllimport )
-      #endif // UDRSERV_BUILD
-    #endif // EXP_DLL
-  #endif // __EID
-#ifdef NA_64BIT
-  // dg64 - get rid of __declspec
-  #undef SQLEXP_LIB_FUNC
-  #define SQLEXP_LIB_FUNC
-#endif
-
-#endif // SQLEXPDLL_H
-
-

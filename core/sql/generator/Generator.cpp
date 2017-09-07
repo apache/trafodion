@@ -415,8 +415,6 @@ RelExpr * Generator::preGenCode(RelExpr * expr_node)
       	collectStatsType_ = ComTdb::ALL_STATS;
       else if (tmp == "ACCUMULATED")
 	collectStatsType_ = ComTdb::ACCUMULATED_STATS;
-      else if (tmp == "MEASURE")
-	collectStatsType_ = ComTdb::MEASURE_STATS;
       else if (tmp == "PERTABLE")
 	collectStatsType_ = ComTdb::PERTABLE_STATS;
       else if (tmp == "OPERATOR")
@@ -1837,7 +1835,7 @@ TrafDesc * Generator::createRefConstrDescStructs(
  
 }
 
-static Lng32 createDescStructs(char * rforkName,
+static Lng32 createDescStructs(char * tableName,
                                Int32 numCols,
                                ComTdbVirtTableColumnInfo * columnInfo,
                                Int32 numKeys,
@@ -1851,7 +1849,7 @@ static Lng32 createDescStructs(char * rforkName,
   UInt32 reclen = 0;
 
   // create column descs
-  colDescs = Generator::createColDescs(rforkName, columnInfo, (Int16) numCols,
+  colDescs = Generator::createColDescs(tableName, columnInfo, (Int16) numCols,
                                        reclen, space);
 
   keyDescs = Generator::createKeyDescs(numKeys, keyInfo, space);
@@ -2273,8 +2271,6 @@ TrafDesc * Generator::createVirtualTableDesc
   if (privInfo)
       priv_desc = createPrivDescs(privInfo, space);
 
-  // cannot simply point to same files desc as the table one,
-  // because then ReadTableDef::deleteTree frees same memory twice (error)
   TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, space);
   i_files_desc->filesDesc()->setAudited(TRUE); // audited table
   index_desc->indexesDesc()->files_desc = i_files_desc;

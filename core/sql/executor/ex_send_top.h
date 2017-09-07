@@ -79,16 +79,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ex_send_top_tdb()
+  ex_send_top_tdb()
   {}
 
-  NA_EIDPROC virtual ~ex_send_top_tdb()
+  virtual ~ex_send_top_tdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
   // ---------------------------------------------------------------------
   // send top nodes are usually built such that many tcbs exist for a
@@ -188,7 +188,7 @@ public:
 
   virtual const ex_tcb* getChild(Int32 pos) const;
 
-  virtual NA_EIDPROC ExOperStats *doAllocateStatsEntry(CollHeap *heap,
+  virtual ExOperStats *doAllocateStatsEntry(CollHeap *heap,
                                                        ComTdb *tdb);
 
                   // Tell the server that we lost interest in a request

@@ -57,14 +57,12 @@ class BigNumHelper {
 public:
 
 // The following method adds two Big Nums (without signs).
-NA_EIDPROC
 static short AddHelper(Lng32 dataLength,
 		       char * leftData,
 		       char * rightData,
 		       char * resultData);
 
 // The following method subtracts one Big Num from another (without signs).
-NA_EIDPROC
 static short SubHelper(Lng32 dataLength,
 		       char * leftData,
 		       char * rightData,
@@ -73,7 +71,6 @@ static short SubHelper(Lng32 dataLength,
 // The following method multiplies two Big Nums (without signs).
 // The assumption is that the result is big enough to hold the
 // product.
-NA_EIDPROC
 static short MulHelper(Lng32 resultLength,
                        Lng32 leftLength,
 		       Lng32 rightLength,
@@ -84,7 +81,6 @@ static short MulHelper(Lng32 resultLength,
 // The following method divides one Big Num by another (both without signs),
 // only if the divisor fits in an unsigned short. It returns 1 if there is
 // a remainder, 0 if there is no remainder, and -1 if there is an error.
-NA_EIDPROC
 static short SimpleDivHelper(Lng32 dividendLength,
 			     Lng32 divisorLength,
 			     char * dividendData,
@@ -93,7 +89,6 @@ static short SimpleDivHelper(Lng32 dividendLength,
 
 // The following method divides one Big Num by another (both without signs).
 // It returns 1 if there is a remainder, 0 if there is no remainder. 
-NA_EIDPROC
 static short DivHelper(Lng32 dividendLength,
 		       Lng32 divisorLength,
 		       char * dividendData,
@@ -104,7 +99,6 @@ static short DivHelper(Lng32 dividendLength,
 // The following method converts a given Big Num (without sign) into
 // its equivalent BCD string representation (with the more significant decimal
 // digits in the lower addresses).
-NA_EIDPROC
 static short ConvBigNumToBcdHelper(Lng32 sourceLength,
 			           Lng32 targetLength,
 			           char * sourceData,
@@ -114,7 +108,6 @@ static short ConvBigNumToBcdHelper(Lng32 sourceLength,
 // The following method converts a given BCD string representation (without sign,
 // and with the more significant decimal digits in the lower addresses) 
 // into its equivalent Big Num representation.
-NA_EIDPROC
 static short ConvBcdToBigNumHelper(Lng32 sourceLength,
 			           Lng32 targetLength,
 			           char * sourceData,
@@ -123,7 +116,6 @@ static short ConvBcdToBigNumHelper(Lng32 sourceLength,
 // The following method converts a given Big Num (with sign) into
 // its equivalent BCD string representation (with the more significant
 // decimal digits in the lower addresses).
-NA_EIDPROC
 static short ConvBigNumWithSignToBcdHelper(Lng32 sourceLength,
 			                   Lng32 targetLength,
 			                   char * sourceData,
@@ -133,7 +125,6 @@ static short ConvBigNumWithSignToBcdHelper(Lng32 sourceLength,
 // The following method converts a given BCD string representation 
 // (with sign, and with the more significant decimal digits in the lower
 // addresses) into its equivalent Big Num representation.
-NA_EIDPROC
 static short ConvBcdToBigNumWithSignHelper(Lng32 sourceLength,
 			                   Lng32 targetLength,
 			                   char * sourceData,
@@ -142,7 +133,6 @@ static short ConvBcdToBigNumWithSignHelper(Lng32 sourceLength,
 // The following method converts a given Big Num (without sign) into
 // its equivalent ASCII string representation (with the more significant
 // decimal digits in the lower addresses).
-NA_EIDPROC
 static short ConvBigNumToAsciiHelper(Lng32 sourceLength,
 			             Lng32 targetLength,
 			             char * sourceData,
@@ -152,7 +142,6 @@ static short ConvBigNumToAsciiHelper(Lng32 sourceLength,
 // The following method converts a given ASCII string representation 
 // (without sign, and with the more significant decimal digits in the lower
 // addresses) into its equivalent Big Num representation.
-NA_EIDPROC
 static short ConvAsciiToBigNumHelper(Lng32 sourceLength,
 			             Lng32 targetLength,
 			             char * sourceData,
@@ -161,7 +150,6 @@ static short ConvAsciiToBigNumHelper(Lng32 sourceLength,
 // The following method converts a given Big Num (with sign) into
 // its equivalent ASCII string representation (with the more significant
 // decimal digits in the lower addresses).
-NA_EIDPROC
 static short ConvBigNumWithSignToAsciiHelper(Lng32 sourceLength,
 			                     Lng32 targetLength,
 			                     char * sourceData,
@@ -171,7 +159,6 @@ static short ConvBigNumWithSignToAsciiHelper(Lng32 sourceLength,
 // The following method converts a given ASCII string representation 
 // (with sign, and with the more significant decimal digits in the lower
 // addresses) into its equivalent Big Num representation.
-NA_EIDPROC
 static short ConvAsciiToBigNumWithSignHelper(Lng32 sourceLength,
 			                     Lng32 targetLength,
 			                     char * sourceData,
@@ -180,26 +167,22 @@ static short ConvAsciiToBigNumWithSignHelper(Lng32 sourceLength,
 // Given a desired precision of a Big Num, the following method calculates 
 // the required storage length (including the sign). We assume that the
 // precision is > 0.  Storage will always be at a minimum 8 bytes.
-NA_EIDPROC
 static Lng32 ConvPrecisionToStorageLengthHelper(Lng32 precision);
 
 // The following method converts an integer, 10^exponent, to a Big Num 
 // representation (without sign). The given exponent should be >= 0.
-NA_EIDPROC
 static short ConvPowersOfTenToBigNumHelper(Lng32 exponent,
                                            Lng32 targetLength,
                                            Lng32 * finalTargetLength,
                                            char * targetData);
 
 // The following converts an Int64 to a Big Num (with sign).
-NA_EIDPROC
 static short ConvInt64ToBigNumWithSignHelper(Lng32 targetLength,
                                              Int64 sourceData,
                                              char * targetData,
                                              NABoolean isUnsigned);
 
 // The following converts a Big Num (with sign) into an Int64.
-NA_EIDPROC
 static short ConvBigNumWithSignToInt64Helper(Lng32 sourceLength,
                                              char * sourceData,
                                              void * targetData,
@@ -215,7 +198,6 @@ static short ConvBigNumWithSignToInt64Helper(Lng32 sourceLength,
 //   2: the result was rounded down to LLONG_MAX
 //   3: the result was rounded up
 //   4: the result was rounded down
-NA_EIDPROC
 static short ConvBigNumWithSignToInt64AndScaleHelper(Lng32 sourceLength,
                                                      char * sourceData,
                                                      Int64 * targetData,
@@ -223,7 +205,6 @@ static short ConvBigNumWithSignToInt64AndScaleHelper(Lng32 sourceLength,
                                                      NAMemory * heap);
 
 // The following converts a Big Num to a Big Num.
-NA_EIDPROC
 static short ConvBigNumWithSignToBigNumWithSignHelper(Lng32 sourceLength,
                                                       Lng32 targetLength,
                                                       char * sourceData,

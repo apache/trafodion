@@ -335,8 +335,6 @@ NABoolean CmpSPOutputFormat::SetFormat(Lng32 nCols,
     table_desc->tableDesc()->colcount;
   index_desc->indexesDesc()->blocksize = 4096; // anything > 0
 
-  // cannot simply point to same files desc as the table one,
-  // because then ReadTableDef::deleteTree frees same memory twice (error)
   TrafDesc * i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
   index_desc->indexesDesc()->files_desc = i_files_desc;
 
@@ -392,9 +390,6 @@ NABoolean CmpSPOutputFormat::getKeysDesc(Lng32 nKeys,
   return TRUE;
 }
 
-// ##TODO:  this code might be better put into ReadTableDef or readRealArk.cpp
-// ##For now for new data types, etc. this piece will be changed accordingly.
- 
 NABoolean CmpSPOutputFormat::ElemDDLColDef2ColumnDescStruct
   (ElemDDLColDef* elem,
   const char* tableName,

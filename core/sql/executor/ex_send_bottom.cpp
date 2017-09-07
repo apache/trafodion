@@ -199,9 +199,7 @@ ex_send_bottom_tcb::ex_send_bottom_tcb(
     Int32 otherCPU, otherPID, otherNode;
     SB_Int64_Type seqNum = 0;
     phandle.decompose2(otherCPU, otherPID, otherNode
-#ifdef SQ_PHANDLE_VERIFIER
                       , seqNum
-#endif
                       );
     
     // Seaquest Node num == old cpuNum
@@ -809,7 +807,7 @@ short ex_send_bottom_tcb::checkReply()
 	       TRUE,                // diags areas are external.
 	       isDiagsAreaToBeSent, //);// Already have a DA.
 	       defragTd_
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG))
 	       ,this
 #endif
 	       );

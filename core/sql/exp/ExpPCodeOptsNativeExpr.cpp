@@ -23,8 +23,6 @@
 
 // Native Expressions only officially supported on Linux for now.
 
-//#ifndef __EID  /* MOVED THIS LINE DOWN PAST PCodeCfg::NExLog() */
-
 ///////////////////////////////////////////////////////////////////////
 //
 // The following are a few notes regarding native exprs
@@ -86,8 +84,6 @@ void PCodeCfg::NExLog(const char *data)
      fileout << data ;
    }
 }
-
-#ifndef __EID
 
 #if NExprDbgLvl > VV_NO
 //
@@ -9375,10 +9371,8 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
   NABoolean debug = FALSE;
   NABoolean lowerOptLevel = FALSE; // Used to reduce jit opt level.
 
-//#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
   if (getenv("NATIVE_EXPR_DEBUG"))
     debug = TRUE;
-//#endif
 
   PCodeOperand *src1, *src2, *res;
 
@@ -12391,4 +12385,3 @@ void PCodeCfg::layoutNativeCode(Space* showplanSpace = NULL)
 }
 #endif /* NA_LINUX_LIBJIT */
 
-#endif /* __EID */

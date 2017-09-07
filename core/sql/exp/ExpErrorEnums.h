@@ -201,11 +201,6 @@ enum ExeErrorCode
   EXE_RELEASE_WORK_TIMEOUT              = 8584,
   EXE_SCHEMA_SECURITY_CHANGED           = 8585,
   EXE_ASSIGN_ESPS_ERROR                 = 8586,
-  EXE_IAR_MFMAP_BAD                     = 8590,
-  EXE_IAR_ERROR_EXTRACTING_COLUMNS      = 8591,
-  EXE_IAR_NO_MFMAP                      = 8592,
-  EXE_IAR_MISSING_COLS_COMPRESSED_AUDIT = 8593,
-  EXE_AUDIT_IMAGE_EXPR_EVAL_ERROR       = 8594, 
   EXE_MERGE_STMT_ERROR                  = 8595,
   EXE_ESP_CHANGE_PRIORITY_FAILED        = 8596,
   EXE_RECOMPILE_AUTO_QUERY_RETRY        = 8597,
@@ -273,11 +268,6 @@ enum ExeErrorCode
   EXE_PARALLEL_EXECUTION_ERROR		= 8700,
   EXE_PARALLEL_EXTRACT_OPEN_ERROR       = 8701,
   EXE_PARALLEL_EXTRACT_CONNECT_ERROR    = 8702,
-
-  // ---------------------------------------------------------------------
-  // Warning from updating Measure SQL counters.
-  // ---------------------------------------------------------------------
-  EXE_MEASURE                           = 8710,
 
   //----------------------------------------------------------------------
   // Errors generated in the CLI code
@@ -410,7 +400,6 @@ enum ExeErrorCode
   CLI_INVALID_CHARSET_FOR_DESCRIPTOR    = 8895,
   CLI_CHARSET_MISMATCH                  = 8896,
 
-  CLI_SHADOW_RPC_EXCEPTION		= 8897,
   CLI_INTERNAL_ERROR			= 8898,
   CLI_LAST_ERROR			= 8899,
 

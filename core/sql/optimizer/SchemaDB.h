@@ -93,7 +93,7 @@ public:
   // --------------------------------------------------------------------
   // Constructor function
   // --------------------------------------------------------------------
-  SchemaDB(ReadTableDef *rtd) ;
+  SchemaDB() ;
 
   // copy ctor
   SchemaDB(const SchemaDB & orig) ; // not written
@@ -107,7 +107,6 @@ public:
   // Accessor functions
   // --------------------------------------------------------------------
   NATableDB       * getNATableDB()          { return &tableDB_; }
-  ReadTableDef	  * getReadTableDef()       { return readTableDef_; }
   ValueDescArray  & getValueDescArray()     { return valueDArray_; }
   NADefaults      & getDefaults()           { return defaults_; }
   NARoutineDB     * getNARoutineDB()        { return &routineDB_; }
@@ -136,8 +135,6 @@ public:
   // now **ONLY** CmpContext should manage the init/cleanupPerStatement
   // calls, which is the current mechanism!
   //
-  // This is also a convenient spot to hide transaction ends and begins;
-  // see ReadTableDef.[hC] for fuller discussion.
   // --------------------------------------------------------------------
   void createStmtTables();      // no longer used (formerly required)
   void dropStmtTables();        // no longer used
@@ -179,8 +176,7 @@ private:
   // SQL compiler terminates processing. For now, (11/20/96) tableDB_
   // needs to be cleanup up for each statement, because it is caching
   // the information without checking the timestamp for reload if 
-  // necessary. After integrated with catman ReadTableDef code, it
-  // will only be reloaded if necessary.
+  // necessary.
   // --------------------------------------------------------------------
   NATableDB tableDB_;
 
@@ -198,11 +194,6 @@ private:
   // the query. This collection is rebuilt for each SQL statement.
   // --------------------------------------------------------------------
   DomainDescList domainDList_;
-
-  // --------------------------------------------------------------------
-  // ReadTableDef server
-  // --------------------------------------------------------------------
-  ReadTableDef *readTableDef_;
 
   // --------------------------------------------------------------------
   // In-memory table of defaults values.

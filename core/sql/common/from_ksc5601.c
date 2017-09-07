@@ -56,7 +56,6 @@
  *	-1 - Invalid sequence (EILSEQ)
  *	-2 - Input incomplete
  */
-NA_EIDPROC
 int
 __cp949_index(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
 {
@@ -85,7 +84,6 @@ __cp949_index(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
 /*
  * This routine enables table lookup of BMP UDC characters to cp949
  */
-NA_EIDPROC
 WChar_t  // JAC
 __UDC_to_cp949(ucs4_t ucs)
 {

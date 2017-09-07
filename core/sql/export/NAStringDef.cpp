@@ -624,7 +624,6 @@ NAString::clone(size_t nc)
 
 /****************** Related global functions ***********************/
 
-SQLEXPORT_LIB_FUNC
 NABoolean 
 operator==(const NAString& s1, const char* s2)
 {
@@ -637,7 +636,6 @@ operator==(const NAString& s1, const char* s2)
 }
 
 // Return a lower-case version of str:
-SQLEXPORT_LIB_FUNC
 NAString 
 toLower(const NAString& str)
 {
@@ -653,7 +651,6 @@ toLower(const NAString& str)
 }
 
 // Return an upper-case version of str:
-SQLEXPORT_LIB_FUNC
 NAString 
 toUpper(const NAString& str)
 {
@@ -668,7 +665,6 @@ toUpper(const NAString& str)
   return temp;
 }
 
-SQLEXPORT_LIB_FUNC
 NAString 
 operator+(const NAString& s, const char* cs)
 {
@@ -676,7 +672,6 @@ operator+(const NAString& s, const char* cs)
   return NAString(s.data(), s.length(), cs, strlen(cs), s.heap());
 }            
 
-SQLEXPORT_LIB_FUNC
 NAString 
 operator+(const NAString& s, const char c)
 {
@@ -685,7 +680,6 @@ operator+(const NAString& s, const char c)
   return NAString(s.data(), s.length(), temp.data(), temp.length(), s.heap());
 }            
 
-SQLEXPORT_LIB_FUNC
 NAString 
 operator+(const char* cs, const NAString& s)
 {
@@ -693,7 +687,6 @@ operator+(const char* cs, const NAString& s)
   return NAString(cs, strlen(cs), s.data(), s.length(), s.heap());
 }
 
-SQLEXPORT_LIB_FUNC
 NAString 
 operator+(const NAString& s1, const NAString& s2)
 {
@@ -824,7 +817,6 @@ NASubString::operator=(const char* cs)
   return *this;
 }
 
-SQLEXPORT_LIB_FUNC
 NABoolean 
 operator==(const NASubString& ss, const char* cs)
 {
@@ -841,7 +833,6 @@ operator==(const NASubString& ss, const char* cs)
   return (i == ss.extent_);
 }
 
-SQLEXPORT_LIB_FUNC
 NABoolean 
 operator==(const NASubString& ss, const NAString& s)
 {
@@ -850,7 +841,6 @@ operator==(const NASubString& ss, const NAString& s)
   return !memcmp(ss.str_->data() + ss.begin_, s.data(), ss.extent_);
 }
 
-SQLEXPORT_LIB_FUNC
 NABoolean 
 operator==(const NASubString& s1, const NASubString& s2)
 {
@@ -965,7 +955,6 @@ NAString::mbLength() const
  * the streambuf.
  */
 
-SQLEXPORT_LIB_FUNC
 ostream& 
 operator<<(ostream& os, const NAString& s)
 {

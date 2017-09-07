@@ -44,7 +44,7 @@
 #include "NAType.h"
 #include "DTICommonType.h"
 #include "Int64.h"
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #include <iostream>
 #endif
 
@@ -128,12 +128,12 @@ public:
       {
 	makeInvalid();
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 	// All callers *should be* immediately calling the checkValid() method
 	// and so this debugging info *should be* unnecessary.  Delete it!
 	cerr << "Invalid interval specification " <<
 		getTypeSQLname(TRUE /*terse*/) << endl;
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
       }
   }
 
@@ -152,12 +152,12 @@ public:
       {
 	makeInvalid();
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 	// All callers *should be* immediately calling the checkValid() method
 	// and so this debugging info *should be* unnecessary.  Delete it!
 	cerr << "Invalid interval specification " <<
 		getTypeSQLname(TRUE /*terse*/) << endl;
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
       }
   }
 

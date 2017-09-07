@@ -54,10 +54,8 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
 						UInt32 f) {
 
 #ifdef _DEBUG
-#ifndef __EID
   if (getenv("NO_PCODE"))
     return ex_expr::EXPR_OK;
-#endif
 #endif
 
   // If the expression mode does not indicate that PCODE is "ON", then
@@ -78,7 +76,6 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
   PCodeBinary *pCode = NULL;
   NABoolean versionOK = TRUE;
 #ifdef _DEBUG
-#ifndef __EID
   // for debug
   char  *buf;
   Int32 bufLen = 0;  // to store PCode in ascii for to buf, set it to 16384
@@ -88,7 +85,6 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
     if (buf == NULL)  // failed to get memory
       bufLen = 0;
   }
-#endif
 #endif
 
   if (pCode_.getPointer()) {
@@ -175,15 +171,10 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
       // If offset is UINT_MAX, pcode is normally generated unless
       // CQD says otherwise or if this operation is for insert/update.
       for(short i = 0; i < clause->getNumOperands(); i++) {
-#if defined(__EID)
-	if ((clause->getOperand(i)->getOffset() == UINT_MAX) ||
-            (clause->getOperand(i)->isAddedCol() && !pCodeSpecialFields()))
-#else
 	if (((clause->getOperand(i)->getOffset() == UINT_MAX) && 
               !handleIndirectVC()) ||                             
             (clause->getOperand(i)->isAddedCol() && 
               !pCodeSpecialFields()))
-#endif
         {
 	  setPCodeObject(0);
 	  pCode_ = 0;
@@ -269,10 +260,8 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
   }
 
 #ifdef _DEBUG
-#ifndef __EID
   if (dumpPci == 1)
     PCode::dumpContents(code, buf, bufLen);
-#endif
 #endif
 
   // Fixup PCI CLAUSE_BRANCH instructions. Modify the corresponding TARGET
@@ -310,10 +299,8 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
 
 
 #ifdef _DEBUG
-#ifndef __EID
   if (dumpPci == 1)
     PCode::dumpContents(code, buf, bufLen);
-#endif
 #endif
 
   // Fixup addresses. This requires a pass over
@@ -386,10 +373,8 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
   }
 
 #ifdef _DEBUG
-#ifndef __EID
   if (dumpPci == 1)
     PCode::dumpContents(code, buf, bufLen);
-#endif
 #endif
 
 
@@ -419,7 +404,7 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
 
       PCI *storePci = iter.first();
 
-#if (defined (_DEBUG) && !(defined(__EID)))
+#if (defined (_DEBUG))
       if(!getenv("PCODE_NO_MOVE_REMOVE"))
 #endif
         // Case 1:
@@ -537,7 +522,7 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
 
               storePci = iter.next();
             } // while (storePci)
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
           GenAssert(inBranch == 0, "Unmatched branch and target instruction")
 #endif
         }  // !getenv("PCODE_NO_MOVE_REMOVE")
@@ -688,7 +673,7 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
                 // Standard Sizes are: 1, 2, 4 and 8 byte moves.
                 // This avoids doing a str_cpy_all for these standard sizes.
                 //
-#if (defined (_DEBUG) && !(defined(__EID)))
+#if (defined (_DEBUG))
                 if (!getenv("PCODE_NO_STD_MOVE"))
 #endif
                   {
@@ -745,7 +730,7 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
 	          }
 	    }    // if PCIT::MOVE_MBIN8_MBIN8_IBIN32S
         else
-#if (defined (_DEBUG) && !(defined(__EID)))
+#if (defined (_DEBUG))
              if(!getenv("PCODE_NO_FLOAT_RANGE_REMOVE"))
             {
 #endif
@@ -768,7 +753,7 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
                         }
                     }
                 }
-#if (defined (_DEBUG) && !(defined(__EID)))
+#if (defined (_DEBUG))
             }  // !getenv("PCODE_NO_FLOAT_RANGE_REMOVE")
 #endif
 
@@ -777,10 +762,8 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
     } // PCODE_OPTIMIZE
 
 #ifdef _DEBUG
-#ifndef __EID
   if (dumpPci == 1)
     PCode::dumpContents(code, buf, bufLen);
-#endif
 #endif
 
   // Since the call to get the base data address for a tupp is relatively
@@ -931,7 +914,7 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
   }
 
   //#ifndef NDEBUG
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   if(getenv("PCODE_PRINT")) {
     fprintf(stderr, "PCode ...\n");
     PCode::print(code);
@@ -940,10 +923,8 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
 #endif
 
 #ifdef _DEBUG
-#ifndef __EID
   if (dumpPci == 1)
     PCode::dumpContents(code, buf, bufLen);
-#endif
 #endif
 
   codeObject->setPCIList(code);
@@ -958,24 +939,20 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
   pCode_.getPointer()->setContainsClauseEval(containsClauseEval);
 
 #ifdef _DEBUG
-#ifndef __EID
   if (dumpPci == 1)
     PCode::dumpContents(pCode_.getPointer()->getPCodeBinary(), buf, bufLen);
-#endif
 #endif
 
   // get rid of the temporary object
   if (! ex_expr_base::forShowplan(f)) 
     setPCodeObject(0);
 
-#ifndef __EID
   // Perform PCODE optimizations
   if (pCodeMode_ & PCODE_LLO) {
     PCodeCfg* cfg = new(heap) PCodeCfg(this, atpMap, atpIndexMap, heap, space);
     cfg->optimize();
     NADELETE(cfg, PCodeCfg, heap);
   }
-#endif
 
   // see if move fastpath could be done.
   // In this case, we move source to target directly without going
@@ -984,10 +961,8 @@ ex_expr::exp_return_type ex_expr::pCodeGenerate(Space * space,
   // 
   PCodeBinary *pc = getPCodeBinary();
 #ifdef _DEBUG
-#ifndef __EID
   if (getenv("NO_PCODE_MOVE_FASTPATH"))
     return ex_expr::EXPR_OK;
-#endif
 #endif
   if (pc)
     {

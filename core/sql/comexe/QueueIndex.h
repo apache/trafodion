@@ -39,12 +39,7 @@
 // definition of queue_index needs to be known as compiler time since
 // objects of it are passed as arguments to the TDB constructors.
 
-#ifdef NA_64BIT
-// dg64 - 32-bits on disk
 typedef UInt32  queue_index;
-#else
-typedef ULng32 queue_index;
-#endif
 
 #endif
 

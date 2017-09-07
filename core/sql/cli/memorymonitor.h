@@ -38,7 +38,6 @@
  *
  *****************************************************************************
  */
-//SQ_LINUX #ifdef NA_WINNT
 
 #include <fstream>
 #include "NAMemory.h"
@@ -118,8 +117,6 @@ private:
   Lng32 sampleInterval_;                // in milliseconds
 
   NABoolean loggerEnabled_;
-
-//SQ_LINUX #ifdef NA_WINNT
 
 // SQ_LINUX will use Win32 API for worker thread to update pressure.
   static NABoolean threadIsCreated_;

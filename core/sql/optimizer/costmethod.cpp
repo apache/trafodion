@@ -7146,7 +7146,7 @@ CostMethodHashGroupBy::computePassCost(NABoolean         isFirstPass,
 
   // this check was added to prevent overflowing.  11/06/00
   if ( noOfClustersToBeProcessed_ > INT_MAX/MIN_ONE(noOfClustersSpilled) )
-    noOfClustersToBeProcessed_ = INT_MAX; // NA_64BIT revisit for large value
+    noOfClustersToBeProcessed_ = INT_MAX;
   else
     noOfClustersToBeProcessed_ *= noOfClustersSpilled;
 

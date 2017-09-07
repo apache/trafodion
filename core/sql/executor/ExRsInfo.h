@@ -233,7 +233,7 @@ private:
   ULng32 numReturnedByLastCall_;
   ULng32 numClosedSinceLastCall_;
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 public:
   void ExRsPrintf(const char *formatString, ...) const;
   NABoolean debugEnabled() const { return debug_; }

@@ -85,16 +85,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ex_split_bottom_tdb()
+  ex_split_bottom_tdb()
   {}
 
-  NA_EIDPROC virtual ~ex_split_bottom_tdb()
+  virtual ~ex_split_bottom_tdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
   ex_split_bottom_tcb *buildESPTcbTree(ExExeStmtGlobals * glob,
                                        ExEspFragInstanceDir *espInstanceDir,
@@ -201,7 +201,7 @@ public:
   void setLocalSendBottom(CollIndex s);
 
   // Enforce query CPU limit.
-  NA_EIDPROC virtual void cpuLimitExceeded();
+  virtual void cpuLimitExceeded();
 
 private:
 

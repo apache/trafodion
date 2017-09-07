@@ -45,10 +45,7 @@
 #include "str.h"
 #include "ExStats.h"
 #include "ExpError.h"
-#ifndef __EID
 #include "cli_stdh.h"
-#endif
-
 
 /////////////////////////////////////////////////////////////////////////
 //

@@ -47,48 +47,30 @@
 class ControlInfo 
 {
 public:
-NA_EIDPROC
   ControlInfo(): ciFlags_(HAS_NOTHING) {};
-NA_EIDPROC
   ~ControlInfo(){};
   
-NA_EIDPROC
   inline up_state &getUpState();
-NA_EIDPROC
   inline down_state &getDownState();
-NA_EIDPROC 
+
   inline ULng32 getBufferSequenceNumber();
-NA_EIDPROC 
+
   inline void setBufferSequenceNumber(ULng32 snum);
-NA_EIDPROC
   inline NABoolean getIsDiagsAreaPresent() const;
-NA_EIDPROC
   inline void setIsDiagsAreaPresent(NABoolean);
-NA_EIDPROC
   inline NABoolean getIsDiagsAreaUnpacked() const;
-NA_EIDPROC
   inline void setIsDiagsAreaUnpacked(NABoolean);
 // an external diags area is one that gets sent outside of the sql_buffer
-NA_EIDPROC
   inline NABoolean getIsExtDiagsAreaPresent() const;
-NA_EIDPROC
   inline void setIsExtDiagsAreaPresent(NABoolean);
-NA_EIDPROC
   inline NABoolean getIsDataRowPresent() const;
-NA_EIDPROC
   inline void setIsDataRowPresent(NABoolean);
-NA_EIDPROC
   inline NABoolean getIsStatsAreaPresent() const;
-NA_EIDPROC
   inline void setIsStatsAreaPresent(NABoolean);
 // an external stats area is one that gets sent outside of the sql_buffer
-NA_EIDPROC
   inline NABoolean getIsExtStatsAreaPresent() const;
-NA_EIDPROC
   inline void setIsExtStatsAreaPresent(NABoolean);
-NA_EIDPROC
   inline void resetFlags();
-NA_EIDPROC
   inline void copyFlags(const ControlInfo &other);
 
 private:

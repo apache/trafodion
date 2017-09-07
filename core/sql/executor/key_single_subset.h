@@ -73,7 +73,7 @@ private:
 
 public:
 
-  NA_EIDPROC keySingleSubsetEx(const keyRangeGen & tdb_key,
+  keySingleSubsetEx(const keyRangeGen & tdb_key,
 			       const short in_version,
 			       sql_buffer_pool *pool,
 			       ex_globals *g,
@@ -81,42 +81,42 @@ public:
                                const ex_tcb * tcb);
 				  
 
-  NA_EIDPROC virtual ~keySingleSubsetEx();
+  virtual ~keySingleSubsetEx();
 
-  //  NA_EIDPROC virtual void freeResources(); -- just inherit from base class
+  //  virtual void freeResources(); -- just inherit from base class
 
-  NA_EIDPROC virtual void display() const {};
+  virtual void display() const {};
 
   // key range iterator methods
-  NA_EIDPROC virtual ExeErrorCode initNextKeyRange(sql_buffer_pool *pool,
+  virtual ExeErrorCode initNextKeyRange(sql_buffer_pool *pool,
 			        		   atp_struct *atp0);
-  NA_EIDPROC virtual getNextKeyRangeReturnType getNextKeyRange(
+  virtual getNextKeyRangeReturnType getNextKeyRange(
        atp_struct *atp0,NABoolean fetchRangeHadRows,
        NABoolean detectNullRange = TRUE);  
 
   // inlines to save some typing
-  NA_EIDPROC inline keySingleSubsetGen & tdbBeginEndKey() const
+  inline keySingleSubsetGen & tdbBeginEndKey() const
     { return (keySingleSubsetGen &)tdbKey_; } 
 
-  NA_EIDPROC inline ex_expr * bkPred() const
+  inline ex_expr * bkPred() const
     { return tdbBeginEndKey().bkPred(); };
 
-  NA_EIDPROC inline ex_expr * ekPred() const
+  inline ex_expr * ekPred() const
     { return tdbBeginEndKey().ekPred(); };
 
-  NA_EIDPROC inline ex_expr * bkExcludedExpr() const
+  inline ex_expr * bkExcludedExpr() const
     { return tdbBeginEndKey().bkExcludedExpr(); }
 
-  NA_EIDPROC inline ex_expr * ekExcludedExpr() const
+  inline ex_expr * ekExcludedExpr() const
     { return tdbBeginEndKey().ekExcludedExpr(); }
 
-  NA_EIDPROC inline short isBkeyExcluded() const 
+  inline short isBkeyExcluded() const 
     { return tdbBeginEndKey().isBkeyExcluded();}
 
-  NA_EIDPROC inline short isEkeyExcluded() const 
+  inline short isEkeyExcluded() const 
     { return tdbBeginEndKey().isEkeyExcluded();}
 
-  NA_EIDPROC inline Lng32 getExcludeFlagValue() const 
+  inline Lng32 getExcludeFlagValue() const 
     { return excludeFlag_; }
 };
 

@@ -196,12 +196,7 @@ public:
   //
   // 64-bit Project: Cast 'this' to "long" first to avoid C++ error
   //
-#ifdef NA_64BIT
   ULng32 hash() const { return (ULng32) ((Long)this/8);}
-#else
-  ULng32 hash() const { return (ULng32) this/4;}
-#endif
-
 
   // get local predicates for this table
   ValueIdSet getLocalPreds();

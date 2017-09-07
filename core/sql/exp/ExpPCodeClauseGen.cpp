@@ -201,11 +201,7 @@ ex_expr::exp_return_type ex_clause::pCodeGenerate(Space *space, UInt32 f) {
   // clause->eval(), and then pops the stack.
   //
   AML aml(PCIT::IPTR, PCIT::IBIN32S);
-#ifdef NA_64BIT
   OL ol((Int64)this, useProcessNulls);
-#else
-  OL ol((PCIType::Operand)this, useProcessNulls);
-#endif
   PCI pci(PCIT::Op_CLAUSE_EVAL, aml, ol);
  
   setNoPCodeAvailable(TRUE);
@@ -228,11 +224,7 @@ ex_expr::exp_return_type ex_clause::pCodeGenerate(Space *space, UInt32 f) {
   if(branchEndA)
   {
     AML aml1;
-#ifdef NA_64BIT
     OL ol1((Int64)branchEndA);
-#else
-    OL ol1((PCIType::Operand)branchEndA);
-#endif
     PCI pci1(PCIT::Op_TARGET, aml1, ol1);
     code.append(pci1);
   }
@@ -248,11 +240,7 @@ ex_expr::exp_return_type ex_clause::pCodeGenerate(Space *space, UInt32 f) {
       ex_branch_clause *branchClause = (ex_branch_clause*)this;
       ex_clause *targetClause = branchClause->get_branch_clause();
       AML aml(PCIT::IPTR, PCIT::IPTR);
-#ifdef NA_64BIT
       OL ol((Int64)targetClause, (Int64)this);
-#else
-      OL ol((PCIType::Operand)targetClause, (PCIType::Operand)this);
-#endif
       PCI pci(PCIT::Op_CLAUSE_BRANCH, aml, ol);
       code.append(pci);
     }
@@ -278,10 +266,8 @@ ex_expr::exp_return_type ex_inout_clause::pCodeGenerate(Space *space, UInt32 f) 
 ex_expr::exp_return_type ex_aggr_min_max_clause::pCodeGenerate(Space *space, UInt32 f) {
 
 #ifdef _DEBUG
-#ifndef __EID
   if (getenv("NO_PCODE_MIN_MAX"))
     return ex_clause::pCodeGenerate(space, f);
-#endif
 #endif
 
   if ((getOperand(1)->getNullFlag()) ||
@@ -366,11 +352,7 @@ ex_expr::exp_return_type ex_aggr_min_max_clause::pCodeGenerate(Space *space, UIn
   // End branch target.
   //
   AML aml6;
-#ifdef NA_64BIT
   OL ol6((Int64)branchTgt);
-#else
-  OL ol6((PCIType::Operand)branchTgt);
-#endif
   PCI pci6(PCIType::Op_TARGET, aml6, ol6);
   code.append(pci6);
     
@@ -402,7 +384,7 @@ ex_expr::exp_return_type ex_function_clause::pCodeGenerate(Space *space, UInt32 
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type ex_function_encode::pCodeGenerate(Space *space, UInt32 f) {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_ENCODE")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -570,11 +552,7 @@ ex_expr::exp_return_type ex_function_encode::pCodeGenerate(Space *space, UInt32 
   if(branchToEnd)
   {
     AML aml;
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol);
     code.append(pci);
   }
@@ -623,7 +601,7 @@ ex_expr::exp_return_type ex_aggr_any_true_max_clause::pCodeGenerate(Space *space
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type ex_bool_clause::pCodeGenerate(Space *space, UInt32 f) { 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_BOOL")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -693,7 +671,7 @@ ex_expr::exp_return_type ex_bool_clause::pCodeGenerate(Space *space, UInt32 f) {
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type bool_result_clause::pCodeGenerate(Space *space, UInt32 f) { 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_BOOL_RESULT")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -753,15 +731,9 @@ ex_expr::exp_return_type ex_branch_clause::pCodeGenerate(Space *space, UInt32 f)
   
   ex_clause *targetClause = get_branch_clause();
   AML aml(PCIT::IPTR, PCIT::IPTR, PCIT::MBIN32S, PCIT::MBIN32S);
-#ifdef NA_64BIT
   OL ol((Int64)targetClause, (Int64)0,
 	attrs[0]->getAtp(), attrs[0]->getAtpIndex(), (Int32)attrs[0]->getOffset(),
 	attrs[1]->getAtp(), attrs[1]->getAtpIndex(), (Int32)attrs[1]->getOffset());
-#else
-  OL ol((PCIType::Operand)targetClause, 0,
-	attrs[0]->getAtp(), attrs[0]->getAtpIndex(), (Int32)attrs[0]->getOffset(),
-	attrs[1]->getAtp(), attrs[1]->getAtpIndex(), (Int32)attrs[1]->getOffset());
-#endif // NA_64BIT
 
   // Generate the branch instruction
   //
@@ -794,7 +766,7 @@ ex_expr::exp_return_type ex_branch_clause::pCodeGenerate(Space *space, UInt32 f)
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type ex_comp_clause::pCodeGenerate(Space *space, UInt32 f) { 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_COMP")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -1383,11 +1355,7 @@ ex_expr::exp_return_type ex_comp_clause::pCodeGenerate(Space *space, UInt32 f) {
   if(branchToEnd)
   {
     AML aml; 
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol); 
     code.append(pci);
   }
@@ -1431,7 +1399,7 @@ ex_expr::exp_return_type ex_noop_clause::pCodeGenerate(Space *space, UInt32 f) {
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type ex_unlogic_clause::pCodeGenerate(Space *space, UInt32 f) {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_UNLOGIC")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -1498,7 +1466,7 @@ ex_expr::exp_return_type ex_unlogic_clause::pCodeGenerate(Space *space, UInt32 f
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type ex_function_bool::pCodeGenerate(Space *space, UInt32 f) {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_BOOL")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -1563,7 +1531,7 @@ ex_expr::exp_return_type ExHDPHash::pCodeGenerate(Space *space, UInt32 f)
   // again, resulting in an infinite loop.  So just duplicate the code below
   // and keep it up-to-date.
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_HASH")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -1687,11 +1655,7 @@ ex_expr::exp_return_type ExHDPHash::pCodeGenerate(Space *space, UInt32 f)
   if(branchToEnd)
     {
       AML aml;
-#ifdef NA_64BIT
       OL ol((Int64)branchToEnd);
-#else
-      OL ol((PCIType::Operand)branchToEnd);
-#endif
       PCI pci(PCIT::Op_TARGET, aml, ol);
       code.append(pci);
     }
@@ -1717,7 +1681,7 @@ ex_expr::exp_return_type ExHDPHash::pCodeGenerate(Space *space, UInt32 f)
 ex_expr::exp_return_type ex_function_hash::pCodeGenerate(Space *space, UInt32 f)
 {
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_HASH")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -1793,11 +1757,7 @@ ex_expr::exp_return_type ex_function_hash::pCodeGenerate(Space *space, UInt32 f)
   if(branchToEnd)
     {
       AML aml; 
-#ifdef NA_64BIT
       OL ol((Int64)branchToEnd);
-#else
-      OL ol((PCIType::Operand)branchToEnd);
-#endif
       PCI pci(PCIT::Op_TARGET, aml, ol); 
       code.append(pci);
     }
@@ -1822,7 +1782,7 @@ ex_expr::exp_return_type ex_function_hash::pCodeGenerate(Space *space, UInt32 f)
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type ExHDPHashComb::pCodeGenerate(Space *space, UInt32 f) {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_HASHCOMB")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -1886,7 +1846,7 @@ ex_expr::exp_return_type ExHDPHashComb::pCodeGenerate(Space *space, UInt32 f) {
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type ExHashComb::pCodeGenerate(Space *space, UInt32 f) {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_HASHCOMB")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -1942,7 +1902,7 @@ ex_expr::exp_return_type ExHashComb::pCodeGenerate(Space *space, UInt32 f) {
 //
 //
 ex_expr::exp_return_type ex_function_replace_null::pCodeGenerate(Space *space, UInt32 f){
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_REPLACE_NULL")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -2020,17 +1980,13 @@ ex_expr::exp_return_type ex_function_replace_null::pCodeGenerate(Space *space, U
 
 // Helpers for working with attributes
 //
-NA_EIDPROC
 Int32 isSameAttribute(Attributes *attrA, Attributes *attrB) {
   if(attrA->getAtpIndex() != attrB->getAtpIndex()) return 0;
   if(attrA->getOffset() != attrB->getOffset()) return 0;
   return 1;
 };
-NA_EIDPROC
 Int32 isConstantAttribute(Attributes *attr) { return attr->getAtpIndex() == 0; };
-NA_EIDPROC
 Int32 isTemporaryAttribute(Attributes *attr) { return attr->getAtpIndex() == 1;};
-NA_EIDPROC
 Int32 isAtpAttribute(Attributes *attr) { return attr->getAtpIndex() > 1; };
 
 ex_expr::exp_return_type ex_arith_clause::unaryArithPCodeGenerate
@@ -2101,11 +2057,7 @@ ex_expr::exp_return_type ex_arith_clause::unaryArithPCodeGenerate
   if(branchToEnd)
   {
     AML aml; 
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol); 
     code.append(pci);
   }
@@ -2129,7 +2081,7 @@ ex_expr::exp_return_type ex_arith_clause::unaryArithPCodeGenerate
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type ex_arith_clause::pCodeGenerate(Space *space, UInt32 f) {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_ARITH")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -2414,11 +2366,7 @@ ex_expr::exp_return_type ex_arith_clause::pCodeGenerate(Space *space, UInt32 f) 
   if(branchToEnd)
   {
     AML aml; 
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol); 
     code.append(pci);
   }
@@ -2441,7 +2389,7 @@ ex_expr::exp_return_type ex_arith_clause::pCodeGenerate(Space *space, UInt32 f) 
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type ex_arith_sum_clause::pCodeGenerate(Space *space, UInt32 f) {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_ARITH_SUM")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -2588,7 +2536,7 @@ ex_expr::exp_return_type ex_arith_count_clause::pCodeGenerate(Space *space, UInt
   return ex_clause::pCodeGenerate(space, f);
 };
 
-NA_EIDPROC static void computeBounds(Attributes *attr, Int64 &lowBounds, 
+static void computeBounds(Attributes *attr, Int64 &lowBounds, 
 			  UInt64 &highBounds, Int32 &bigBounds, Int32 &isSigned)
 {
 const  UInt64 decimalPrecision[] = {
@@ -2734,7 +2682,7 @@ const  Int32 bpPrecision[] = { 0, 1, 3, 7, 15, 31, 63, 127, 255, 511,
 // EFFECTS: stores pointer to PCodeObject in clause
 //
 ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging...
   if(getenv("PCODE_NO_CONV")) return ex_clause::pCodeGenerate(space, f);
 #endif
@@ -3026,11 +2974,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
       if (nullJmp)
 	{
 	  AML aml;
-#ifdef NA_64BIT
 	  OL ol((Int64) nullJmp);
-#else
-	  OL ol((PCIType::Operand) nullJmp);
-#endif
 	  PCI pci(PCIT::Op_TARGET, aml, ol);
 	  code.append(pci);
 	}
@@ -3069,7 +3013,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
     return ex_clause::pCodeGenerate(space, f);
   }
   
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // Allow 64 -> 64 with differing scale
   //
   if(getInstruction() == CONV_BIN64S_BIN64S)
@@ -3156,7 +3100,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
       }
   }
 
-#if (defined (_DEBUG) && !(defined(__EID)))
+#if (defined (_DEBUG) )
   if(!getenv("NO_PCODE_FLOAT_RANGE"))
 #endif
     if( getInstruction() == CONV_FLOAT64_FLOAT64 &&
@@ -3367,11 +3311,7 @@ ex_expr::exp_return_type ex_conv_clause::pCodeGenerate(Space *space, UInt32 f) {
   if(nullBranch)
   {
     AML aml; 
-#ifdef NA_64BIT
     OL ol((Int64)nullBranch);
-#else
-    OL ol((PCIType::Operand)nullBranch);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol); 
     code.append(pci);
   }
@@ -3423,7 +3363,7 @@ ex_expr::exp_return_type ExUnPackCol::pCodeGenerate(Space *space, UInt32 f) {
 
   /*
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // For debugging to disable the pCode generation
   if(getenv("PCODE_NO_UNPACK"))
     // Generate the default clause_eval instruction.
@@ -3648,11 +3588,7 @@ ex_expr::exp_return_type ex_function_mod::pCodeGenerate(Space *space, UInt32 f)
   if(branchEnd)
   {
     AML aml1;
-#ifdef NA_64BIT
     OL ol1((Int64)branchEnd);
-#else
-    OL ol1((PCIType::Operand)branchEnd);
-#endif
     PCI pci1(PCIT::Op_TARGET, aml1, ol1);
     code.append(pci1);
   }
@@ -3703,11 +3639,7 @@ ex_function_nullifzero::pCodeGenerate(Space *space, UInt32 f)
   if (nullBranch)
     {
       AML aml; 
-#ifdef NA_64BIT
       OL ol((Int64)nullBranch);
-#else
-      OL ol((PCIType::Operand)nullBranch);
-#endif
       PCI pci(PCIT::Op_TARGET, aml, ol); 
       code.append(pci);
     }
@@ -3855,11 +3787,7 @@ ex_expr::exp_return_type ex_function_nvl::pCodeGenerate(Space *space, UInt32 f)
   if (nullBranch)
   {
     AML aml;
-#ifdef NA_64BIT
     OL ol((Int64)nullBranch);
-#else
-    OL ol((PCIType::Operand)nullBranch);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol);
     code.append(pci);
   }
@@ -4018,11 +3946,7 @@ ex_function_concat::pCodeGenerate(Space *space, UInt32 f)
   if(branchToEnd)
   {
     AML aml;
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol);
     code.append(pci);
   }
@@ -4120,11 +4044,7 @@ ex_expr::exp_return_type ex_function_substring::pCodeGenerate(Space *space,
   if (nullBranch)
   {
     AML aml;
-#ifdef NA_64BIT
     OL ol((Int64)nullBranch);
-#else
-    OL ol((PCIType::Operand)nullBranch);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol);
     code.append(pci);
   }
@@ -4178,11 +4098,7 @@ ex_expr::exp_return_type ExFunctionBitOper::pCodeGenerate(Space *space, UInt32 f
   if(branchToEnd)
   {
     AML aml; 
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol); 
     code.append(pci);
   }
@@ -4292,11 +4208,7 @@ ex_function_upper::pCodeGenerate(Space *space, UInt32 f)
   if (nullBranch)
     {
       AML aml;
-#ifdef NA_64BIT
       OL ol((Int64)nullBranch);
-#else
-      OL ol((PCIType::Operand)nullBranch);
-#endif
       PCI pci(PCIT::Op_TARGET, aml, ol);
       code.append(pci);
     }
@@ -4371,11 +4283,7 @@ ex_function_lower::pCodeGenerate(Space *space, UInt32 f)
   if (nullBranch)
     {
       AML aml;
-#ifdef NA_64BIT
       OL ol((Int64)nullBranch);
-#else
-      OL ol((PCIType::Operand)nullBranch);
-#endif
       PCI pci(PCIT::Op_TARGET, aml, ol);
       code.append(pci);
     }
@@ -4457,11 +4365,7 @@ ex_function_trim_char::pCodeGenerate(Space *space, UInt32 f)
   if (nullBranch)
     {
       AML aml;
-#ifdef NA_64BIT
       OL ol((Int64)nullBranch);
-#else
-      OL ol((PCIType::Operand)nullBranch);
-#endif
       PCI pci(PCIT::Op_TARGET, aml, ol);
       code.append(pci);
     }
@@ -4527,11 +4431,7 @@ ex_function_char_length_doublebyte::pCodeGenerate(Space *space, UInt32 f)
   if(branchToEnd)
   {
     AML aml;
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol);
     code.append(pci);
   }
@@ -4597,11 +4497,7 @@ ex_function_char_length::pCodeGenerate(Space *space, UInt32 f)
   if(branchToEnd)
   {
     AML aml;
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol);
     code.append(pci);
   }
@@ -4669,11 +4565,7 @@ ExFunctionRepeat::pCodeGenerate(Space *space, UInt32 f)
   if (nullBranch)
     {
       AML aml;
-#ifdef NA_64BIT
       OL ol((Int64)nullBranch);
-#else
-      OL ol((PCIType::Operand)nullBranch);
-#endif
       PCI pci(PCIT::Op_TARGET, aml, ol);
       code.append(pci);
     }
@@ -4742,11 +4634,7 @@ ex_function_position::pCodeGenerate(Space *space, UInt32 f)
   if(branchToEnd)
   {
     AML aml;
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol);
     code.append(pci);
   }
@@ -4915,11 +4803,7 @@ ex_like_clause_base::pCodeGenerate(Space *space, UInt32 f)
   if(branchToEnd)
   {
     AML aml;
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol);
     code.append(pci);
   }
@@ -5000,11 +4884,7 @@ ex_function_extract::pCodeGenerate(Space *space, UInt32 f)
   if(branchToEnd)
   {
     AML aml;
-#ifdef NA_64BIT
     OL ol((Int64)branchToEnd);
-#else
-    OL ol((PCIType::Operand)branchToEnd);
-#endif
     PCI pci(PCIT::Op_TARGET, aml, ol);
     code.append(pci);
   }

@@ -81,16 +81,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ex_send_bottom_tdb()
+  ex_send_bottom_tdb()
   {}
 
-  NA_EIDPROC virtual ~ex_send_bottom_tdb()
+  virtual ~ex_send_bottom_tdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
   // allocate one node to communicate with a particular parent instance
   virtual ex_send_bottom_tcb * buildInstance(ExExeStmtGlobals * glob,
@@ -190,7 +190,7 @@ public:
 
   IpcConnection * getClient();
 
-  virtual NA_EIDPROC ExOperStats *doAllocateStatsEntry(CollHeap *heap,
+  virtual ExOperStats *doAllocateStatsEntry(CollHeap *heap,
                                                        ComTdb *tdb);
 
   void setExtractConsumerFlag(NABoolean b) { isExtractConsumer_ = b; }

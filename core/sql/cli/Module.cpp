@@ -45,7 +45,6 @@ Module::Module(const char * module_name, Lng32 len, char * pathName,
                Lng32 pathNameLen, NAHeap *heap)
      : module_name_len_(len), path_name_len_(pathNameLen), 
        heap_(heap), statementCount_(0),
-       stmtCntrsSpace_(NULL),
        vproc_(NULL)
 {
   module_name_ = (char *)
@@ -61,8 +60,7 @@ Module::Module(const char * module_name, Lng32 len, char * pathName,
   path_name_[pathNameLen] = 0;
 
 }
-// ss-cc_change . The desctructore for module is never called.
-//LCOV_EXCL_START
+
 Module::~Module()
 {
   if (module_name_)
@@ -70,51 +68,7 @@ Module::~Module()
       heap_->deallocateMemory(module_name_);
     }
   module_name_ = 0;
-
-  if (stmtCntrsSpace_)
-    {
-      heap_->deallocateMemory(stmtCntrsSpace_);
-    }
-  stmtCntrsSpace_ = 0;
 }
-//LCOV_EXCL_STOP
 
-void Module::allocStmtCntrsSpace(NABoolean measEnabled)
-{
-  if (statementCount_ == 0)
-    return;
 
-  // allocate a block of contiguous memery for measure statement counters
-  // of all statements in one module.
-
-  stmtCntrsSpace_ = (char *)heap_->allocateMemory((size_t) (statementCount_ * sizeof (ExMeasStmtCntrs)));
-
-  // initialize each statement counters space.
-
-  // mid = PXFS_PATHNAME_RESOLVE_(moduleName)  
-  //char * mid = this->getPathName();
-
-  ExMeasStmtCntrs * stmtCntrs;
-  for (Int32 i = 0; i < statementCount_; i++)
-    {
-      stmtCntrs = (ExMeasStmtCntrs *)getStmtCntrsSpace(i);
-      stmtCntrs->init(i);
-    };
-  if (measEnabled)
-    {
-      // call Measure to setup statment counters.
-      stmtCntrs = (ExMeasStmtCntrs *)stmtCntrsSpace_;
-      stmtCntrs->ExMeasStmtCntrsBump(statementCount_, module_name_,
-				     (Int32)module_name_len_);
-    }
-};
-
-char * Module::getStmtCntrsSpace (Int32 statementIndex)
-{
-  // get individule counter space
-  assert (statementIndex < statementCount_);
-  if (stmtCntrsSpace_)
-    return stmtCntrsSpace_ + (statementIndex * sizeof (ExMeasStmtCntrs));
-  else return 0;
-};
   

@@ -92,7 +92,6 @@ static const ModName internalSystemSchemaModNameList[] = {
   ,{"CMSMDIOWRITEM_N29_000"} 
   ,{"MVQR_N29_000"} 
   ,{"READDEF_N29_000"} 
-  ,{"RFORK_N29_000"} 
   ,{"SQLHIST_N29_000"} 
   ,{"SQLUTILS_N29_000"} 
   ,{"HP_ROUTINES_N29_000"} 
@@ -516,7 +515,7 @@ const char * ComRtGetEnvValueFromEnvvars(const char ** envvars,
   return NULL;
 }
 
-#if defined (_DEBUG) && !defined (ARKFS_OPEN) && !defined (__EID)
+#if defined (_DEBUG)
 // -----------------------------------------------------------------------
 // Convenient handling of envvars: Return a value if one exists
 // NB: DEBUG mode only!
@@ -706,9 +705,7 @@ Lng32 ComRtGetProgramInfo(char * pathName,    /* out */
 			 Int64  &processCreateTime,
 			 char *processNameString,
 			 char *parentProcessNameString
-#ifdef SQ_PHANDLE_VERIFIER
                          , SB_Verif_Type *verifier
-#endif
 )
 {
   Lng32 retcode = 0;
@@ -721,10 +718,8 @@ Lng32 ComRtGetProgramInfo(char * pathName,    /* out */
   myPhandle.decompose();
   cpu = myPhandle.getCpu();
   pin = myPhandle.getPin();
-#ifdef SQ_PHANDLE_VERIFIER
   if (verifier)
     *verifier = myPhandle.getSeqNum();
-#endif
 
   // Map the node number to cpu
   nodeNumber = cpu;

@@ -160,7 +160,7 @@ SockIPAddress IpcNodeName::getIPAddress() const
 
 NABoolean GuaProcessHandle::operator == (const GuaProcessHandle &other) const
 {
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
   // on NSK, do the right thing and call a system procedure to compare
   return compare(other);
 #else
@@ -177,12 +177,7 @@ void GuaProcessHandle::dumpAndStop(bool doDump, bool doStop) const
   if (doDump)
     msg_mon_dump_process_name(NULL, phandle.getPhandleString(), coreFile);
   if (doStop)
-#ifdef SQ_PHANDLE_VERIFIER
     msg_mon_stop_process_name(phandle.getPhandleString()); 
-#else
-    msg_mon_stop_process(phandle.getPhandleString(), 
-                         phandle.getCpu(), phandle.getPin());
-#endif
 }
 
 // -----------------------------------------------------------------------
@@ -222,7 +217,7 @@ IpcProcessId::IpcProcessId(const char *asciiRepresentation) :
 {
   domain_ = IPC_DOM_INVALID;
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
   // On NSK, try to interpret the string as a PHANDLE first
   if (phandle_.fromAscii(asciiRepresentation))
     domain_ = IPC_DOM_GUA_PHANDLE;
@@ -358,7 +353,7 @@ IpcNodeName IpcProcessId::getNodeName() const
     {
       return IpcNodeName(SockIPAddress(pid_.ipAddress_)); // LCOV_EXCL_LINE
     }
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
   else if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       return IpcNodeName(phandle_);
@@ -379,7 +374,7 @@ IpcNodeName IpcProcessId::getNodeName() const
 
 IpcCpuNum IpcProcessId::getCpuNum() const
 {
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       // ask Guardian to get the CPU number out of the phandle
@@ -400,7 +395,7 @@ Int32 IpcProcessId::toAscii(char *outBuf, Int32 outBufLen) const
   char outb[300] = "";	  // Initialize in case this is called
   Int32 outLen = 0;
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
       outLen = phandle_.toAscii(outb,300);
@@ -475,7 +470,7 @@ IpcConnection * IpcProcessId::createConnectionToServer(
       return new(env->getHeap()) SockConnection(env,*this,FALSE);
 // LCOV_EXCL_STOP
     }
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
   else if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
 	return new(env->getHeap()) GuaConnectionToServer(env,
@@ -489,7 +484,7 @@ IpcConnection * IpcProcessId::createConnectionToServer(
                                               dataConnectionToEsp
                                               );
     }
-#endif //defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG)
+#endif //defined(NA_GUARDIAN_IPC)
   else
     {
       return NULL;
@@ -500,9 +495,7 @@ IpcMessageObjSize IpcProcessId::packedLength()
 {
   // we pack the domain type and then the phandle or socket process id
   IpcMessageObjSize result = baseClassPackedLength() + sizeof(domain_);
-#ifdef NA_64BIT
   result += sizeof(spare_);
-#endif
 
   if (domain_ == IPC_DOM_GUA_PHANDLE)
     {
@@ -525,10 +518,8 @@ IpcMessageObjSize IpcProcessId::packObjIntoMessage(IpcMessageBufferPtr buffer)
   str_cpy_all(buffer,(const char *) &domain_, sizeof(domain_));
   result += sizeof(domain_);
   buffer += sizeof(domain_);
-#ifdef NA_64BIT
   result += sizeof(spare_);
   buffer += sizeof(spare_);
-#endif
 
   // ---------------------------------------------------------------------
   // NOTE: this code assumes that the OS dependent information (phandle
@@ -566,9 +557,7 @@ void IpcProcessId::unpackObj(IpcMessageObjType objType,
 
   str_cpy_all((char *) &domain_, buffer, sizeof(domain_));
   buffer += sizeof(domain_);
-#ifdef NA_64BIT
   buffer += sizeof(spare_);
-#endif
 
   // check the supplied length
   assert(objSize == packedLength());
@@ -1385,9 +1374,7 @@ Int32 IpcAllConnections::printConnTrace(Int32 lineno, char *buf)
           GuaProcessHandle *otherEnd = (GuaProcessHandle *)&(c->getOtherEnd().getPhandle().phandle_);
           if (otherEnd)
             otherEnd->decompose(cpu, pin, node
-#ifdef SQ_PHANDLE_VERIFIER
                                , seqNum
-#endif
                                );
         }
       rv = sprintf(buf, "%.4d  %8p  %.4s  %.3d,%.8d %" PRId64 " %s\n",
@@ -2126,11 +2113,7 @@ InternalMsgHdrInfoStruct::InternalMsgHdrInfoStruct(
     swapTwoBytes(sockReplyTag_);
     swapFourBytes(eyeCatcher_);
     swapFourBytes(seqNum_);
-#ifdef NA_64BIT
     assert(0); // Need swapEightBytes() to swap msgStreamId_!
-#else
-    swapFourBytes(msgStreamId_);
-#endif // NA_64BIT
     setEndianness(IpcMyEndianness);
     }
   }
@@ -4627,7 +4610,7 @@ IpcServerClass::IpcServerClass(IpcEnvironment *env,
   }
   if (allocationMethod_ == IPC_ALLOC_DONT_CARE)
     {
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 	  // NA_WINNT is set and NA_GUARDIAN_IPC is set
 	  // The standard method on NT is to create a Guardian process
 	  // in order to run in an NT only or simulated environment we can set an environment
@@ -4909,7 +4892,7 @@ IpcServer * IpcServerClass::allocateServerProcess(ComDiagsArea **diags,
   switch (allocationMethod_)
     {
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
     case IPC_LAUNCH_GUARDIAN_PROCESS:
     case IPC_SPAWN_OSS_PROCESS:
     case IPC_USE_PROCESS:
@@ -5357,7 +5340,7 @@ IpcProcessId IpcEnvironment::getMyOwnProcessId(IpcNetworkDomain dom)
     }
   else if (dom == IPC_DOM_GUA_PHANDLE)
     {
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
       // for Guardian, just get the phandle from the operating system
       return IpcProcessId(MyGuaProcessHandle());
 #else
@@ -5814,9 +5797,7 @@ void IpcAllConnections::printConnTraceLine(char *buffer, int *rsp_len, IpcConnec
         GuaProcessHandle *otherEnd = (GuaProcessHandle *)&(conn->getOtherEnd().getPhandle().phandle_);
         if (otherEnd)
           otherEnd->decompose(cpu, pin, node
-#ifdef SQ_PHANDLE_VERIFIER
                              , seqNum
-#endif
                              );
       }
 

@@ -54,16 +54,8 @@
 #include  "ex_error.h"
 #include  "ExSqlComp.h"
 
-#ifdef NA_CMPDLL
 #include  "CmpContext.h"
-#endif // NA_CMPDLL
-
-
-
 #include "ExCextdecs.h"
-
-
-
 #include "dtm/tm.h"
 
 ExTransaction::ExTransaction(CliGlobals * cliGlob, CollHeap *heap)

@@ -363,7 +363,7 @@ public:
 			NABoolean useExternalDA = FALSE,
 			NABoolean callerHasExternalDA = FALSE,
 			tupp_descriptor * defragTd = NULL
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG))
 			,ex_tcb * tcb = NULL
 #endif
 			,NABoolean noMoveWarnings = FALSE
@@ -466,7 +466,6 @@ protected:
 #pragma warn(1506)  // warning elimination 
 
 /*
-NA_EIDPROC
 unsigned long SqlBufferNeededSize(long numTuples = 0, 
 				  long recordLength = 0,
 				  SqlBufferHeader::BufferType bufType = SqlBufferHeader::NORMAL_);
@@ -599,7 +598,7 @@ public:
 			NABoolean useExternalDA = FALSE,
 			NABoolean callerHasExternalDA = FALSE,
 			tupp_descriptor * defragTd = NULL
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG))
 			,ex_tcb * tcb = NULL  // for debuggin
 #endif
 			,NABoolean noMoveWarnings = FALSE
@@ -1351,7 +1350,7 @@ public:
 			NABoolean useExternalDA = FALSE,
 			NABoolean callerHasExternalDA = FALSE,
 			tupp_descriptor * defragTd = NULL
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG))
                         ,ex_tcb * tcb = NULL  // for debuggin
 #endif
 			,NABoolean noMoveWarnings = FALSE
@@ -1525,7 +1524,6 @@ private:
 /*
 definitions moved to sql_buffer_size.h
 
-NA_EIDPROC
 static unsigned long SqlBufferGetTuppSize(
      long recordLength = 0,
      SqlBufferHeader::BufferType bufType = SqlBufferHeader::NORMAL_)
@@ -1542,7 +1540,6 @@ static unsigned long SqlBufferGetTuppSize(
 // given number of records with a given length are to be stored
 
 
-NA_EIDPROC
 static unsigned long SqlBufferNeededSize(long numTuples, 
 					 long recordLength,
 					 SqlBufferHeader::BufferType bufType)
@@ -1641,10 +1638,8 @@ public:
   inline void set_max_number_of_buffers(Lng32 maxnumbuf)
 			{maxNumberOfBuffers_ = maxnumbuf;}
 
-#if (!defined(NA_NSK) && defined(_DEBUG))  ||  !defined(__EID)
-// for debugging purposes
-void printAllBufferInfo();
-#endif
+  // for debugging purposes
+  void printAllBufferInfo();
 
 
   Lng32 getTotalMemorySize() { return memoryUsed_;}
@@ -1692,7 +1687,7 @@ void printAllBufferInfo();
     return defragTd_;
   }
 
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG))
   static void logDefragInfo(char * txt,
                             Lng32 neededSpace,
                             Lng32 actNeededSpace,

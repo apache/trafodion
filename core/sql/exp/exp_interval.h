@@ -43,25 +43,21 @@
 #include "exp_attrs.h"
 #include "dfs2rec.h"
 
-class SQLEXP_LIB_FUNC  ExpInterval : public SimpleType {
+class ExpInterval : public SimpleType {
 
 public:
 
-NA_EIDPROC
 static short getIntervalStartField(Lng32 fsDatatype,
 				   rec_datetime_field &startField);
 
-NA_EIDPROC
 static short getIntervalEndField(Lng32 fsDatatype,
 				 rec_datetime_field &endField);
   
-NA_EIDPROC
 static Lng32 getStorageSize(rec_datetime_field startField,
 			   UInt32 leadingPrecision,
 			   rec_datetime_field endField,
 			   UInt32 fractionPrecision = 0);
   
-NA_EIDPROC
 static Lng32 getDisplaySize(Lng32 fsDatatype,
 			   short leadingPrecision,
 			   short fractionPrecision);

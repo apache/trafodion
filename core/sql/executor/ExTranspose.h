@@ -78,16 +78,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExTransposeTdb()
+  ExTransposeTdb()
   {}
 
-  NA_EIDPROC virtual ~ExTransposeTdb()
+  virtual ~ExTransposeTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -183,7 +183,6 @@ public:
   //    IN: Contains references to global executor information,
   //        notably the space object used to allocate objects.
   //
-  NA_EIDPROC
   ExTransposeTcb(const ExTransposeTdb &transTdb,
 		 const ex_tcb &childTdb,    
 		 ex_globals *glob);
@@ -191,7 +190,6 @@ public:
 
   // Destructor
   //
-  NA_EIDPROC
   ~ExTransposeTcb();  
 
   // Free up any run-time resources.
@@ -199,35 +197,30 @@ public:
   // (Does not free up the queues, should it).
   // Called by the destructor.
   //
-  NA_EIDPROC
   void freeResources(); 
 
   // Register all the transpose subtasks with the scheduler.
   //
-  NA_EIDPROC
   void registerSubtasks();
 
   // The basic work method for a TCB.  Transpose does not
   // use this method, but rather uses three subtasks.
   // - sWorkDown(), sWorkUp() and sCancel().
   //
-  NA_EIDPROC
   ExWorkProcRetcode work();
 
   // Work method to pass requests from parent down to child.
   //
-  NA_EIDPROC
   ExWorkProcRetcode workDown();
 
   // Work method to recieve results from child, process and
   // pass up to parent.
   //
-  NA_EIDPROC
   ExWorkProcRetcode workUp();
   
   // Stub to workUp() used by scheduler.
   //
-  NA_EIDPROC 
+  
 // warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkUp(ex_tcb *tcb)
   {
@@ -236,7 +229,6 @@ public:
   
   // Stub to workDown() used by scheduler.
   // 
-  NA_EIDPROC
 // warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkDown(ex_tcb *tcb)
   {
@@ -245,7 +237,6 @@ public:
   
   // Stub to processCancel() used by scheduler.
   // 
-  NA_EIDPROC
 // warning elimination (removed "inline")
   static ExWorkProcRetcode sCancel(ex_tcb *tcb)
   {
@@ -254,34 +245,28 @@ public:
 
   // Return the parent queue pair.
   //
-  NA_EIDPROC
 // warning elimination (removed "inline")
   ex_queue_pair getParentQueue() const { return qParent_; }
 
   // Return a reference to the Transpose TDB associated with this 
   // Transpose TCB.
   //
-  NA_EIDPROC
   inline ExTransposeTdb &transTdb() const { return (ExTransposeTdb&)tdb; }
 
   // Return the transpose expression (index by number).
   //
-  NA_EIDPROC
   inline ex_expr * transColExpr(Int32 i) { return transTdb().transColExprs_[i]; }
 
   // Return the selection Predicate.
   //
-  NA_EIDPROC
   inline ex_expr * afterTransPred() { return transTdb().afterTransPred_; }
 
   // Transpose has one child.
   //
-  NA_EIDPROC
   virtual Int32 numChildren() const { return 1; }   
 
   // Return the child of the transpose node by position.
   //
-  NA_EIDPROC
   virtual const ex_tcb * getChild(Int32 pos) const {
     if(pos == 0) return childTcb_;
     return NULL;
@@ -316,13 +301,11 @@ protected:
   // send next request down to children
   // Called by workDown()
   //
-  NA_EIDPROC
   void start();
 
   // send EOD to parent
   // Called when child return Q_NO_DATA in queue.
   //
-  NA_EIDPROC
   void stop();
 
   // Process cancell requests.
@@ -346,18 +329,14 @@ class ExTransposePrivateState : public ex_tcb_private_state
 
   ExTransposeTcb::TransChildState childState_;
 
-  NA_EIDPROC
   void init();        
 
 public:
 
-  NA_EIDPROC
   ExTransposePrivateState(const ExTransposeTcb * tcb); 
 
-  NA_EIDPROC
   ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
 
-  NA_EIDPROC
   ~ExTransposePrivateState();  
 };
 

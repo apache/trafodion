@@ -74,7 +74,6 @@ Int32 isAlNum8859_1(NAWchar c);
 Int32 isSpace8859_1(NAWchar c);
 Int32 isHexDigit8859_1(NAWchar c); // 0, 1, .., A, B, C, D, E, F (case insensitive)
 
-NA_EIDPROC
 Int32 isDigit8859_1(NAWchar c);
 
 Int32 isCaseInsensitive8859_1(NAWchar c); // ISO 8859-1 char for which there is no
@@ -87,7 +86,6 @@ Int32 isCaseInsensitive8859_1(NAWchar c); // ISO 8859-1 char for which there is 
 // return 0 if left == right,
 // return 1 if left > right.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 inline Int32 str_cmp(const char *left, const char *right, Int32 length)
 {
   Int32 result = memcmp(left, right, length);
@@ -96,7 +94,6 @@ inline Int32 str_cmp(const char *left, const char *right, Int32 length)
   else
     return ((result > 0)? 1: -1);
 }
-NA_EIDPROC
 Int32 str_cmp_ne(const char *left, const char *right);
 
 // str_cmp_c() takes two strings as arguments and returns a value less
@@ -105,7 +102,6 @@ Int32 str_cmp_ne(const char *left, const char *right);
 // than the second, or zero if the two strings are equal. The 
 // comparison is done by comparing the coded (ascii) value of the 
 // chararacters, character by character.
-NA_EIDPROC
 Int32 (str_cmp_c)(const char *s1, const char *s2);
 
 // The str_ncmp() function shall compare not more than n bytes 
@@ -114,7 +110,6 @@ Int32 (str_cmp_c)(const char *s1, const char *s2);
 // non-zero return value is determined by the sign of the difference 
 // between the values of the first pair of bytes (both interpreted
 //  as type unsigned char) that differ in the strings being compared.
-NA_EIDPROC
 Int32 (str_ncmp)(const char *s1, const char *s2, size_t n);
 
 // The str_str() function shall locate the first occurrence in the 
@@ -123,7 +118,6 @@ Int32 (str_ncmp)(const char *s1, const char *s2, size_t n);
 // function returns the pointer to the matching string in s1 or a 
 // null pointer if a match is not found. If s2 is an empty string,
 //  the function returns s1.
-NA_EIDPROC
 char *(str_str)(const char *s1, const char *s2);
 
 // The str_chr() function shall locate the first occurrence of c 
@@ -132,7 +126,6 @@ char *(str_str)(const char *s1, const char *s2);
 //  returns the location of the found character, or a null pointer 
 //  if the character was not found.
 //  This function is used to find certain characters in strings.
-NA_EIDPROC
 char *(str_chr)(const char *s, Int32 c);
 
 // The str_replace() function shall locate all occurrences in the 
@@ -143,13 +136,11 @@ char *(str_chr)(const char *s, Int32 c);
 // The function returns the pointer to the replaced string s1 or a 
 // null pointer if a match is not found. If s2 or s3 are empty strings,
 //  or do not have the same length, the function returns NULL.
-NA_EIDPROC
 char *(str_replace)(char *s1, const char *s2, const char *s3);
 
 // -----------------------------------------------------------------------
 // fill string <str>  for <length> bytes with <padchar>
 // -----------------------------------------------------------------------
-NA_EIDPROC
 inline
 Int32 str_pad(char *str, Int32 length, char padchar = ' ')
 {
@@ -182,14 +173,12 @@ Int32 str_pad(char *str, Int32 length, char padchar = ' ')
 //          work.  You may want to use str_cpy_all() instead; that
 //          routine works more like memcpy() and behaves well.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 str_cpy(char *tgt, const char *src, Int32 tgtlen, char padchar = ' ');
 
 // -----------------------------------------------------------------------
 // This routine behaves like str_cpy except that the length of
 // the target is also supplied.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 byte_str_cpy(char *tgt, Int32 tgtlen, 
 		 const char *src, Int32 srclen, char padchar);
 
@@ -199,7 +188,6 @@ Int32 byte_str_cpy(char *tgt, Int32 tgtlen,
 // s1. If copying takes place between objects that overlap, 
 // the behavior is undefined. The function returns s1. No value is 
 // used to indicate an error.
-NA_EIDPROC
 char *(str_cpy_c)(char *s1, const char *s2);
 
 // The str_ncpy() function shall copy not more than n bytes (bytes 
@@ -210,13 +198,11 @@ char *(str_cpy_c)(char *s1, const char *s2);
 // shall be appended to the copy in the array pointed to by s1, until
 //  n bytes in all are written. The function shall return s1; 
 //  no return value is reserved to indicate an error.
-NA_EIDPROC
 char *(str_ncpy)(char *s1, const char *s2, size_t n);
 
 // -----------------------------------------------------------------------
 // concatenate <first> and <second> and store the result in <result>
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 str_cat(const char *first, const char *second, char *result);
 
 
@@ -228,21 +214,17 @@ Int32 str_cat(const char *first, const char *second, char *result);
 // This function is used to attach one string to the end of another
 // string. It is imperative that the first string (s1) have the space 
 // needed to store both strings.
-NA_EIDPROC
 char *(str_cat_c)(char *s1, const char *s2);
 
 // -----------------------------------------------------------------------
 // convert <i> to ASCII and store the result in <outstr>
 // -----------------------------------------------------------------------
-NA_EIDPROC
 char *str_itoa(ULng32 i, char *outstr);
-NA_EIDPROC
 char *str_ltoa(Int64 i, char *outstr);
 
 // -----------------------------------------------------------------------
 // convert instr to numeric and return in i. String must be numbers only.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int64 str_atoi(const char * instr, Lng32 instrLen);
 
 // convert a scaled exact numeric string and return as float.
@@ -253,13 +235,11 @@ double str_ftoi(const char * instr, Lng32 instrLen);
 // the compiler is fixed to inline routines with calls to assert, 
 // Remove callAssert() in callers and replace with direct call to 
 // assert.
-NA_EIDPROC
 void callAssert(const char* tgt, const char* src, Lng32 length);
 
 // -----------------------------------------------------------------------
 // move <length> bytes from <src> to <tgt>
 // -----------------------------------------------------------------------
-NA_EIDPROC
 inline void str_cpy_all(char *tgt, const char *src, Lng32 length)
 {
   if ((!tgt || !src) && length)
@@ -281,7 +261,6 @@ inline void str_cpy_all(char *tgt, const char *src, Lng32 length)
 // move <length> bytes from <src> to <tgt>
 //   handles overlapping memory between target and source
 // -----------------------------------------------------------------------
-NA_EIDPROC
 void str_memmove(char *tgt, const char *src, Lng32 length);
 
 // -----------------------------------------------------------------------
@@ -292,14 +271,12 @@ void str_memmove(char *tgt, const char *src, Lng32 length);
 //
 // Compare convertNAString in String.h
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 str_varchar_alloc_and_copy(char *tgt, const char *src, Lng32 length);
 
 // -----------------------------------------------------------------------
 // Copies <src> to <tgt> for <length> bytes.
 // Removes trailing <blank_char>s by putting an <end_char> as terminator.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 str_cpy_and_null(char * tgt,
 		       const char * src,
 		       Lng32 length,
@@ -312,31 +289,27 @@ Int32 str_cpy_and_null(char * tgt,
 // else downshifts.
 // Src and Tgt may point to the same location.
 // ---------------------------------------------------------------
-NA_EIDPROC
 Int32 str_cpy_convert(char * tgt, char * src,
 		Lng32 length, Int32 upshift);
      
-NA_EIDPROC
 Int32 str_len(const char * s);
 
 // -----------------------------------------------------------------------
 // "Increments" a string.  If successful, 0 is returned.  Otherwise, 1
 // is returned.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 str_inc(const ULng32 length, char * s);
 
 // -----------------------------------------------------------------------
 // Complements a string.  
 // -----------------------------------------------------------------------
-NA_EIDPROC
 void str_complement(const ULng32 length, char * s);
 
 //------------------------------------------------------------------------
 // Our own version of sprintf that provides a subset of the functionality
 // of sprintf as we cannot call C runtime from the SQL executor.
 //------------------------------------------------------------------------
-NA_EIDPROC 
+
 Int32 str_sprintf(char *, const char *, ...);
 
 // -----------------------------------------------------------------------
@@ -349,13 +322,9 @@ Int32 str_sprintf(char *, const char *, ...);
 //      bytes decoded
 // -----------------------------------------------------------------------
 
-NA_EIDPROC
 Lng32 str_encoded_len(Lng32 byteLen);
-NA_EIDPROC
 Lng32 str_encode(char *tgt, Lng32 tgtMaxLen, void *src, Lng32 srcLen);
-NA_EIDPROC
 Lng32 str_decoded_len(Lng32 srcLen);
-NA_EIDPROC
 Lng32 str_decode(void *tgt, Lng32 tgtMaxLen, const char *src, Lng32 srcLen);
 
 //------------------------------------------------------------------------
@@ -378,14 +347,13 @@ char * str_strip_blanks(char *src , Lng32 &len,
 // characters to be allowed as part of the Id, then a null termintated string
 // of these chars needs to be passed in eg : "$#"
 //------------------------------------------------------------------------
-NA_EIDPROC Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen,short mustValidate = 1, char *allowedChar = 0);
+Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen,short mustValidate = 1, char *allowedChar = 0);
 //int strSprintf(char * buffer, char * format, ...);
 
 // -----------------------------------------------------------------------
 // following function is used to extract a name that may be delimited
 // from a given string.  The name may end with a separator or end of line. 
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 extractDelimitedName (char* tgt,  const char* const src, const char sep = '.');
 
 // -----------------------------------------------------------------------
@@ -393,10 +361,9 @@ Int32 extractDelimitedName (char* tgt,  const char* const src, const char sep = 
 // given a qualified table name. Either the catalog or schema name can be
 // a delimited identifier name.
 // -----------------------------------------------------------------------
-NA_EIDPROC 
+
 void extractCatSchemaNames (char* catName, char *schName, char* qualTabName);
 
-NA_EIDPROC 
 //inline
 Int32 mem_cpy_all(void *tgt, const void *src, Lng32 length);
 //{
@@ -410,7 +377,6 @@ Int32 mem_cpy_all(void *tgt, const void *src, Lng32 length);
 //}
 
 
-NA_EIDPROC
 // Similar to strtok, but for the following
 // Only one character can be delimiter
 // Third parameter char **internal should not be manipulated by the caller
@@ -422,11 +388,8 @@ char *str_tok(char *inStr, char c, char **internal);
 // String compression and decompression functions using RLE method
 // See str.cpp for details
 //------------------------------------------------------------------------
-NA_EIDPROC
 size_t str_compress_size(const char *src, const size_t len);
-NA_EIDPROC
 size_t str_compress(char *tgt, const char *src, const size_t len);
-NA_EIDPROC
 size_t str_decompress(char *tgt, const char *src, const size_t srcLen);
 
 // -----------------------------------------------------------------------
@@ -437,7 +400,6 @@ size_t str_decompress(char *tgt, const char *src, const size_t srcLen);
 // The computed length includes neither the NULL terminator character
 // nor the 0x (or 0X) prefix.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 size_t str_computeHexAsciiLen(size_t srcByteLen);
 
 // -----------------------------------------------------------------------
@@ -446,7 +408,6 @@ size_t str_computeHexAsciiLen(size_t srcByteLen);
 // The output string does not include the 0x prefix.  By default a
 // NULL character - i.e. '\0' - is appended to the output string.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 str_convertToHexAscii(const char * src,                   // in
                           const size_t srcLength,             // in
                           char *       result,                // out
@@ -465,6 +426,5 @@ Int32 str_convertToHexAscii(const char * src,                   // in
 //
 //    printBrief(dataPointer, len, FALSE) if you don't 
 //    
-NA_EIDPROC
 void printBrief(char* dataPointer, Lng32 keyLen, NABoolean endLine = TRUE); 
 #endif // STR_H

@@ -18,7 +18,6 @@
 // under the License.
 //
 // @@@ END COPYRIGHT @@@
-
 #include "SCMVersHelp.h"
 
 // component version
@@ -26,6 +25,4 @@
 #define VERS_CV_MIN 0
 #define VERS_CV_UPD 1
 
-// LCOV_EXCL_START
 VERS_LIB(libsqlcat)
-// LCOV_EXCL_STOP

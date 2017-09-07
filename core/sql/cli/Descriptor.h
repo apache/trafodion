@@ -60,7 +60,7 @@ class CliStatement;
 // BulkMoveInfo
 // -----------------------------------------------------------------------
 
-class SQLCLI_LIB_FUNC BulkMoveInfo 
+class BulkMoveInfo 
 {
 public:
   friend class Descriptor;
@@ -130,7 +130,7 @@ private:
 // Descriptor
 // -----------------------------------------------------------------------
 #pragma warning (disable : 4275)   //warning elimination
-class SQLCLI_LIB_FUNC Descriptor : public ExGod {
+class Descriptor : public ExGod {
 #pragma warning (default : 4275)   //warning elimination
   enum Flags
   {

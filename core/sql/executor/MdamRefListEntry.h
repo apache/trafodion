@@ -54,7 +54,7 @@ class MdamRefListEntry
     // Constructor for use on an empty list.
     // nextEntryPtr_ is set to point to the newly-created node to begin a
     // circularly-linked list.
-    NA_EIDPROC MdamRefListEntry(const Int32 disjunctNum)
+    MdamRefListEntry(const Int32 disjunctNum)
        :  disjunctNum_(disjunctNum)  /* NT_PORT , nextEntryPtr_(this) */
     {
 	    nextEntryPtr_ = this;
@@ -63,7 +63,7 @@ class MdamRefListEntry
     // Constructor for use on a non-empty list.
     // The new node is inserted into the linked list following the node pointed
     // to by beforePtr.
-    NA_EIDPROC MdamRefListEntry(const Int32 disjunctNum,
+    MdamRefListEntry(const Int32 disjunctNum,
 				       MdamRefListEntry * beforePtr)
        :  disjunctNum_(disjunctNum),
        nextEntryPtr_(beforePtr->nextEntryPtr_)
@@ -72,36 +72,36 @@ class MdamRefListEntry
     }
 
     // Destructor.
-    NA_EIDPROC inline ~MdamRefListEntry();
+    inline ~MdamRefListEntry();
 
     // Operator new.
-    NA_EIDPROC inline void * operator new(size_t size,
+    inline void * operator new(size_t size,
 		FixedSizeHeapManager & mdamRefListEntryHeap);
 
     // Operator new with just size_t.  This should never be called.
-    NA_EIDPROC void * operator new(size_t size)
+    void * operator new(size_t size)
     {
     ex_assert(0,"MdamRefListEntry::operator new(size_t) called.");
     return 0;
     }
 
     // Operator delete.  This should never be called.
-    NA_EIDPROC void operator delete(void *)
+    void operator delete(void *)
     {
     ex_assert(0,"MdamRefListEntry::operator delete(void *) called.");
     }
 
 
     // Get function for disjunctNum_.
-    NA_EIDPROC inline Int32 getDisjunctNum() const;
+    inline Int32 getDisjunctNum() const;
 
     // Get function for nextEntryPtr_.
-    NA_EIDPROC inline MdamRefListEntry * getNextEntryPtr();
+    inline MdamRefListEntry * getNextEntryPtr();
 
     // This function returns beforePtr to prepare for an insertion.
     // The object for which the function is called must be the last
     // entry of a reference list.
-    NA_EIDPROC MdamRefListEntry * positionBeforePtr(const Int32 disjunctNum);
+    MdamRefListEntry * positionBeforePtr(const Int32 disjunctNum);
 
 
   private:

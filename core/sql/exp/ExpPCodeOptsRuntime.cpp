@@ -128,7 +128,7 @@ PCodePredicateGroup::PCodePredicateGroup(CollHeap* heap,
   //cost_ = (cost_ < 100) ? 1 : (cost_/100 * 100);
 }
 
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
 
 void PCodePredicateGroup::print()
 {
@@ -156,7 +156,7 @@ void PCodePredicateGroup::print()
   printf("\n");
 }
 
-#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#endif // defined(_DEBUG)
 
 //
 // Gets invoked BEFORE predicate groups within unit have been shuffled.  This
@@ -644,9 +644,9 @@ NABoolean PCodePredicateGroup::findUnits(GROUPLIST& unit,
   PCodePredicateGroup *sibling, *group = this;
   NABoolean unitFound = FALSE;
 
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
   NABoolean debug = FALSE;
-#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#endif // defined(_DEBUG)
 
   // The group is part of the unit, so add to unit and remove from workList
   unit.insert(group);
@@ -777,14 +777,14 @@ NABoolean PCodePredicateGroup::findUnits(GROUPLIST& unit,
   if (!isStatic)
     group->adjustCost(unit);
 
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
   if (debug) {
     printf("Unit found:\n");
     for (i=0; i < unit.entries(); i++)
       unit[i]->print();
     printf("\n");
   }
-#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#endif // defined(_DEBUG)
 
   // Record the fact on whether or not this unit contains a predicate group
   // with a write operand.
@@ -857,14 +857,14 @@ NABoolean PCodePredicateGroup::findUnits(GROUPLIST& unit,
       group->getWrites().insert(unit[i]->getWrites()[j]);
   }
 
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
   if (debug) {
     printf("Unit after swap:\n");
     for (i=0; i < unit.entries(); i++)
       unit[i]->print();
     printf("\n");
   }
-#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#endif // defined(_DEBUG)
 
   // Merge the rest of the unit into the leader predicate group
   while (unit.entries() > 1) {

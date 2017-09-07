@@ -41,13 +41,13 @@
 // macro ComASSERT does nothing.
 // -----------------------------------------------------------------------
 
-#if defined(NDEBUG) || defined(NA_NO_C_RUNTIME)
+#if defined(NDEBUG)
   #define ComASSERT(ex)
 #else
   #define ComASSERT(ex) { if (!(ex)) NAAssert("" # ex "", __FILE__, __LINE__); }
 #endif
 
-#if defined(NDEBUG) || defined(__EID)
+#if defined(NDEBUG)
   #define ComDEBUG(ex)
   // An ABORT macro is defined in BaseTypes.h specifically for EID; must be used
   //#define ComABORT(ex){ if (!(ex)) NAAbort(__FILE__, __LINE__, "" # ex ""); }

@@ -304,9 +304,6 @@ void ExHeapStats::DisplayLongMemStats(ostream &os, char *ind, size_t minSize)
     case NAMemory::NO_MEMORY_TYPE:
             os << "NO_MEMORY_TYPE" << endl;
             break;
-    case NAMemory::DP2_MEMORY:
-            os << "DP2_MEMORY" << endl;
-            break;
     case NAMemory::EXECUTOR_MEMORY:
             os << "EXECUTOR_MEMORY" << endl;
              break;
@@ -390,9 +387,6 @@ void ExSpaceStats::DisplayLongMemStats(ostream &os, char *ind, size_t minSize)
 
   switch (space->ComSpace::type_)
   {
-    case ComSpace::DP2_SPACE:
-            os << "DP2_SPACE" << endl;
-            break;
     case ComSpace::EXECUTOR_SPACE:
             os << "EXECUTOR_SPACE" << endl;
             break;

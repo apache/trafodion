@@ -123,7 +123,7 @@ public:
   
   void      display() const;
 
-  NA_EIDPROC Int32 getBottomNumParts() {return bottomNumParts_;}
+  Int32 getBottomNumParts() {return bottomNumParts_;}
 
   // for GUI
   virtual const ComTdb* getChild(Int32 pos) const;

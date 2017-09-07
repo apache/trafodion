@@ -87,16 +87,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ex_root_tdb()
+  ex_root_tdb()
   {}
 
-  NA_EIDPROC virtual ~ex_root_tdb()
+  virtual ~ex_root_tdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(CliGlobals *cliGlobals, 
+  virtual ex_tcb *build(CliGlobals *cliGlobals, 
                                    ex_globals *globals);
 
 private:
@@ -303,7 +303,7 @@ public:
   void dumpCb();
 
   // Enforce query CPU limit.
-  NA_EIDPROC virtual void cpuLimitExceeded();
+  virtual void cpuLimitExceeded();
 
 private:
 

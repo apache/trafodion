@@ -190,7 +190,6 @@ private:
   // Some helper routines for internal usage
 
   NABoolean getEnvironment(char* &data, ULng32 &size);
-  NABoolean oneProcess();
 
   // preSendRequest is to initialize the objects for each request.
   ReturnStatus preSendRequest(NABoolean doRefreshEnvs);

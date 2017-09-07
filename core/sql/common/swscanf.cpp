@@ -114,7 +114,6 @@ typedef quad_t (*ccfnT)(const NAWchar*);
 #include <string.h>
 
 
-NA_EIDPROC
 Int32
 __srefill(SCANBUF* fp)
 	
@@ -122,7 +121,6 @@ __srefill(SCANBUF* fp)
    return 1;
 }
 
-NA_EIDPROC
 void ungetc(NAWchar c, SCANBUF* fp)
 {
    fp->_p--;
@@ -135,7 +133,6 @@ void ungetc(NAWchar c, SCANBUF* fp)
  * closing `]'.  The table has a 1 wherever characters should be
  * considered part of the scanset.
  */
-NA_EIDPROC
 static NAWchar *
 __sccl(NAWchar* tab, NAWchar* fmt)
 {
@@ -236,7 +233,6 @@ doswitch:
 /*
  * vfscanf
  */
-NA_EIDPROC
 Int32
 __svfscanf(SCANBUF* fp, NAWchar const* fmt0, va_list ap)
 {
@@ -844,7 +840,6 @@ match_failure:
 	return (nassigned);
 }
 
-NA_EIDPROC
 Int32 na_swscanf(const NAWchar *str, NAWchar const *fmt, ...)
 {
 	Int32 ret;

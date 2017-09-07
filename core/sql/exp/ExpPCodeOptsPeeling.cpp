@@ -25,7 +25,7 @@
 
 // Forward declarations
 
-NA_EIDPROC static void setNeg1ConstantsForNullBranch(PCodeInst* inst,
+static void setNeg1ConstantsForNullBranch(PCodeInst* inst,
                                                      NABitVector& zeroes,
                                                      NABitVector& ones,
                                                      NABitVector& neg1);
@@ -58,10 +58,8 @@ void PCodeCfg::reorderPredicatesHelper()
       PCodeBlock* retBlk;
       PCodeInst *retInst, *branch;
 
-#ifdef NA_64BIT
-// 64BIT revisit -- hard-coded indexes on the source side may not be correct
       branch = srcBlock->insertNewInstAfter(NULL, PCIT::BRANCH_OR);
-      // for 64bit BRANCH_OR code[0] is opcode, code[1] and code[2] are target
+      // BRANCH_OR code[0] is opcode, code[1] and code[2] are target
       // clause pointer; code[3] and code[4] are 64-bit 0; code[5] and code[6]
       // for operand #1; code[7] and code[8] for operand #2
       branch->code[3] = 0; // not necessary to clear
@@ -70,14 +68,6 @@ void PCodeCfg::reorderPredicatesHelper()
       branch->code[6] = lastInst->prev->code[2];
       branch->code[7] = branch->code[5];
       branch->code[8] = branch->code[6];
-#else // !NA_64BIT
-      branch = srcBlock->insertNewInstAfter(NULL, PCIT::BRANCH_OR);
-      branch->code[2] = 0; // not necessary to clear
-      branch->code[3] = lastInst->prev->code[1];
-      branch->code[4] = lastInst->prev->code[2];
-      branch->code[5] = branch->code[3];
-      branch->code[6] = branch->code[4];
-#endif // NA_64BIT
 
       branch->reloadOperands(this);
 
@@ -1323,7 +1313,6 @@ PCodeBlock::determineTargetBlock(NABitVector& zeroes,
 // Make the assumption that the provided instruction (a null branch) is not
 // taken, and set the known constants for the operands involved in the inst.
 //
-NA_EIDPROC
 static void setNeg1ConstantsForNullBranch(PCodeInst* inst,
                                           NABitVector& zeroes,
                                           NABitVector& ones,

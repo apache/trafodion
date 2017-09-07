@@ -81,7 +81,6 @@
 #include "OptimizerSimulator.h"
 #include "parser.h"
 #include "PhyProp.h"
-#include "ReadTableDef.h"
 #include "SQLCLIdev.h"
 #include "Sqlcomp.h"
 #include "StmtNode.h"
@@ -120,7 +119,7 @@ extern NABoolean FindLeaks;
 THREAD_P Int32 CostScalar::ovflwCount_ = 0;
 THREAD_P Int32 CostScalar::udflwCount_ = 0;
 
-#if !defined(NA_NSK) && !defined(NDEBUG)
+#if !defined(NDEBUG)
   NABoolean TraceCatManMemAlloc = FALSE;
 #endif
 
@@ -184,7 +183,6 @@ static Int32 sqlcompTestExit(QueryText& input)
 }
 
 #ifdef _DEBUG
-// LCOV_EXCL_START
 // for debugging only
 // +7 below is to get past "insert " in input_str, e.g. "insert INTOINSPECT;"
 static Int32 sqlcompTest(QueryText& input)
@@ -261,32 +259,10 @@ static Int32 sqlcompTest(QueryText& input)
   {
     return 1;
   }
-  else if (strncmp(input_str, "GETDEFAULTVOLUMES", 17) == 0)
-  {
-    NAString heading;
-    NAString listOfVols;
-    heading =
-      "List of DP2 Volumes derived from SQL_EXEC_GetListOfVolumes_Internal():";
-    const char *const * p = SQL_EXEC_GetListOfVolumes_Internal();
-    for (; p NEQ NULL AND *p NEQ NULL; p++)
-      listOfVols += *p + NAString(",");
-    if (listOfVols[listOfVols.length()-1] EQU ',')
-      listOfVols.remove(listOfVols.length()-1);
-    *CmpCommon::diags() << DgSqlCode(3066) << DgString0(heading);
-    *CmpCommon::diags() << DgSqlCode(3066) << DgString0(listOfVols);
-    return 1;
-  }
 
   return 0;
 }
-// LCOV_EXCL_STOP
 #endif  // !defined(NDEBUG)
-
-#if !defined(NA_NSK) && defined(NA_DEBUG_GUI)
-// On Windows XP, the call to LoadLibrary may fail with error 10093
-// ("Either the application has not called WSAStartup, or WSAStartup
-// failed").  This function calls WSAStartup() to fix the problem.
-#endif // NA_DEBUG_GUI
 
 // -----------------------------------------------------------------------
 // -----------------------------------------------------------------------
@@ -1784,11 +1760,7 @@ fixupCompilationStats(ComTdbRoot *rootTdb,
     //
     // converting the offset to a pointer.
     CompilationStatsData *cmpStatsData = 
-#ifdef NA_64BIT
       (CompilationStatsData*)rootSpace->convertToPtr(offset);
-#else
-      (CompilationStatsData*)rootSpace->convertToPtr(int64ToInt32(offset));
-#endif
               
     CMPASSERT(NULL != cmpStatsData);
     //
@@ -2145,11 +2117,6 @@ CmpMain::ReturnStatus CmpMain::compile(const char *input_str,           //IN
     if (compileFromCache(input_str, charset, queryExpr, bindWA, cachewa,
                          gen_code, gen_code_len, (NAHeap*)heap, op,
                          bPatchOK, *begTime)) {
-      // binder (via bindNode->getNATable->NATable->readTableDef->
-      // beginTransaction...) does a "begin work;" which requires a
-      // matching "commit work;" or "rollback work;" (via endTransaction),
-      // otherwise, mxcmp emits "ERROR[8819] Begin transaction failed
-      // while preparing the statement" messages.
       if (cacheable) *cacheable = cachewa.isCacheable();
       if (!bPatchOK) {
         sqlcompCleanup(input_str, queryExpr, TRUE);

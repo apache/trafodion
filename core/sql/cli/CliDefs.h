@@ -41,9 +41,6 @@
 
 // -----------------------------------------------------------------------
 
-#	ifdef ERROR
-#		undef ERROR
-#	endif
 enum RETCODE 
 {
   SUCCESS = 0, SQL_EOF = 100, ERROR = -1, WARNING = 1, 

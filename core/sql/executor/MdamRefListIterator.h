@@ -56,14 +56,14 @@ class MdamRefListIterator
 public:
 
   // Constructor.
-  NA_EIDPROC MdamRefListIterator(const MdamRefList * RefListPtr);
+  MdamRefListIterator(const MdamRefList * RefListPtr);
   
   // Iteration operator returns a boolean that indicates if there was or
   // was not a "next" entry and the corresponding disjunct number.
-  NA_EIDPROC NABoolean operator () (Int32 & disjunctNum_);
+  NABoolean operator () (Int32 & disjunctNum_);
 
   // Iteration operator returns a pointer to the next entry.
-  NA_EIDPROC MdamRefListEntry * operator()();
+  MdamRefListEntry * operator()();
 
 private:
 

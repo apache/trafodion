@@ -43,7 +43,6 @@
 #include "str.h"
 
 // constructor (Allocate and initialize) for an Atp
-NA_EIDPROC SQLEXP_LIB_FUNC
 atp_struct * allocateAtp(ex_cri_desc * criDesc, CollHeap * space)
 {
   // Allocate space for the atp_struct (which has room for one tupp in
@@ -78,7 +77,6 @@ atp_struct * allocateAtp(ex_cri_desc * criDesc, CollHeap * space)
 
 // Create an atp inside a pre-allocated buffer instead of allocating it from
 // a space object. Used by ExpDP2Expr.
-NA_EIDPROC SQLEXP_LIB_FUNC
 atp_struct * createAtpInBuffer(ex_cri_desc * criDesc, char * & buf)
 {
   atp_struct * atp = (atp_struct *)buf;
@@ -103,7 +101,6 @@ atp_struct * createAtpInBuffer(ex_cri_desc * criDesc, char * & buf)
   return atp;
 }
 
-NA_EIDPROC SQLEXP_LIB_FUNC
 atp_struct * allocateAtp(Lng32 numTuples, CollHeap * space)
 {
   // Allocate space for the atp_struct (which has room for one tupp in
@@ -136,14 +133,12 @@ atp_struct * allocateAtp(Lng32 numTuples, CollHeap * space)
   return atp;
 }
 
-NA_EIDPROC SQLEXP_LIB_FUNC
 void deallocateAtp(atp_struct * atp, CollHeap * space)
 {
   if (space)
     space->deallocateMemory((char *)atp);
 }
 
-NA_EIDPROC SQLEXP_LIB_FUNC
 atp_struct * allocateAtpArray(
      ex_cri_desc * criDesc, Lng32 cnt, Int32 *atpSize, CollHeap * space, NABoolean failureIsFatal)
 {
@@ -189,7 +184,6 @@ atp_struct * allocateAtpArray(
   return atpStart;
 }
 
-NA_EIDPROC SQLEXP_LIB_FUNC
 void deallocateAtpArray(atp_struct ** atp, CollHeap * space)
 {
   if (space)

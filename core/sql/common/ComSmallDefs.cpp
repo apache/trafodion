@@ -68,16 +68,7 @@
 // This function now for non-NSKLite platforms only (UNIX)
 Int64 ComSmallDef_local_GetTimeStamp(void)
 {
-  //#if defined(NA_HSC_LINUX) || defined(NA_LINUX)
-#if defined(NA_HSC_LINUX)
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  return(Int64(tv.tv_usec) + (Int64(tv.tv_sec)*Int64(1000000L)));
-
-#else
   return(JULIANTIMESTAMP());
-
-#endif
 }
 
 

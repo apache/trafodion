@@ -428,9 +428,6 @@ enum OperatorTypeEnum {
                         // returns operand2 if operand1 is null
                         ITM_NVL               = 2150,
 
-                        // Functions for Utilities
-                        ITM_AUDIT_IMAGE = 2151,
-
                         // return NULL if 2 arguments match, else return 1st arg
                         ITM_NULLIF            = 2152,
 
@@ -645,7 +642,6 @@ enum OperatorTypeEnum {
                         ITM_PAGROUP = 2370,
                         ITM_HASH2_DISTRIB = 2371,
                         ITM_IDENTITY = 2372,
-                        ITM_EXTRACT_COLUMNS = 2373,
                         ITM_QUERYID_EXTRACT = 2374,
                         ITM_HEADER = 2375,
                         ITM_RANGE_SPEC_FUNC = 2376,

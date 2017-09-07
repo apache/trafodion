@@ -45,19 +45,17 @@
 #include "Int64.h"
 #include "ExpError.h"
 
-#ifndef __EID
 #include "seabed/ms.h"
 #include <stdlib.h>
 #include <unistd.h>
 extern void releaseRTSSemaphore();  // Functions implemented in SqlStats.cpp
 #include "logmxevent.h"
-#endif
 
 #include <byteswap.h>
 
 #include "ComRtUtils.h"
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #include <time.h>
 #include <sys/time.h>
 #include "PortProcessCalls.h"
@@ -67,7 +65,7 @@ extern void releaseRTSSemaphore();  // Functions implemented in SqlStats.cpp
 // This is a "helper" function that factors out a bunch of code
 // from the packedLength() routines.
 
-NA_EIDPROC static
+static
 inline void advanceSize(IpcMessageObjSize &size, const char * const buffPtr)
 {
   const Int32 lenSize = sizeof(  Lng32);
@@ -77,7 +75,7 @@ inline void advanceSize(IpcMessageObjSize &size, const char * const buffPtr)
 }
 
 //UR2
-NA_EIDPROC static
+static
 inline void advanceSize(IpcMessageObjSize &size, const NAWchar * const buffPtr)
 {
   const Int32 lenSize = sizeof(  Lng32);  
@@ -88,7 +86,6 @@ inline void advanceSize(IpcMessageObjSize &size, const NAWchar * const buffPtr)
 
 
 
-// NA_EIDPROC
 // static NABoolean isValidIsoMappingCharSet(CharInfo::CharSet cs)
 // {
 //   if (cs == CharInfo::ISO88591 ||
@@ -99,16 +96,12 @@ inline void advanceSize(IpcMessageObjSize &size, const NAWchar * const buffPtr)
 //     return FALSE;
 // }
 
-NA_EIDPROC
 static NABoolean isSingleByteCharSet(CharInfo::CharSet cs)
 {
   if (cs == CharInfo::ISO88591) return TRUE;
   if (cs == CharInfo::UTF8) return TRUE; // is variable-length/width multi-byte char-set but treat it as a C/C++ string
   if (cs == CharInfo::SJIS) return TRUE; // is variable-length/width multi-byte char-set but treat it as a C/C++ string
   if (cs == CharInfo::UNICODE)  return FALSE;
-#if defined(NA_NO_C_RUNTIME) || defined(__EID)
-  return TRUE;	     // in exe and DP2, everything else is a single-byte cs
-#else
 
   // a "mini-cache" to avoid proc call, for performance.
   static THREAD_P CharInfo::CharSet cachedCS    = CharInfo::UnknownCharSet;
@@ -119,7 +112,6 @@ static NABoolean isSingleByteCharSet(CharInfo::CharSet cs)
     cachedSByte = (CharInfo::maxBytesPerChar(cs) == 1);
   }
   return cachedSByte;
-#endif
 }
 
 
@@ -171,11 +163,7 @@ ComCondition::ComCondition (CollHeap* heapPtr) :
    // Make sure the size of ComCondition remains constant
    // If you hit this after change or add new member, adjust the fillers_ size
    Int32 classSize = sizeof(ComCondition);
-#ifdef NA_64BIT
    assert(classSize == 376);
-#else
-   assert(classSize == 264);
-#endif
 }
 
 ComCondition::ComCondition () :
@@ -221,11 +209,7 @@ ComCondition::ComCondition () :
    // Make sure the size of ComCondition remains constant
    // If you hit this after change or add new member, adjust the fillers_ size
    Int32 classSize = sizeof(ComCondition);
-#ifdef NA_64BIT
    assert(classSize == 376);
-#else
-   assert(classSize == 264);
-#endif
 }
 
 // The destructor must free all of the char buffers which
@@ -1350,14 +1334,9 @@ void ComCondition::setConditionNumber(ComDiagBigInt newCondition)
    conditionNumber_ = newCondition;
 }
 
-#ifndef __EID
-#endif // no __EID
-
 void ComCondition::setSQLCODE (Lng32 newSQLCODE)
 {
   theSQLCODE_ = newSQLCODE;
-
-#ifndef __EID
 
   if ( ! (theSQLCODE_ < 0) ) return; // if not an error return
 
@@ -1377,7 +1356,7 @@ void ComCondition::setSQLCODE (Lng32 newSQLCODE)
       
 	while ( loopError ) // To exit loop in gdb do: set var loopError=0
 	  {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
             // In the debug build, notify the user we are looping by
             // printing to stdout every 60 seconds
             if (loopCount % 20 == 0)
@@ -1464,9 +1443,6 @@ void ComCondition::setSQLCODE (Lng32 newSQLCODE)
        genLinuxCorefile( (char *)
          "Generating core-file to capture internal error scenario.");
   }
-// LCOV_EXCL_STOP
-
-#endif // no __EID
 }
 
 void ComCondition::setRowNumber(  Lng32 newRowNumber)
@@ -1478,8 +1454,6 @@ void ComCondition::setNskCode(  Lng32 newNskCode)
 {
    nskCode_ = newNskCode;
 
-#ifndef __EID
-   // LCOV_EXCL_START
    char *reqErrorStr = NULL;
    Lng32 reqError = 0;
 
@@ -1521,8 +1495,6 @@ void ComCondition::setNskCode(  Lng32 newNskCode)
        abort();  // dump core
      }
    }
-   // LCOV_EXCL_STOP
-#endif // no __EID
 }
 
 // Getting and Setting the Optional Parameters
@@ -1661,12 +1633,7 @@ ComDiagsArea::ComDiagsArea (CollHeap* ptr): IpcMessageObj(IPC_SQL_DIAG_AREA,0),
    // Make sure the size of ComDiagsArea remains constant
    // If you hit this after change or add new member, adjust the fillers_ size
    Int32 classSize = sizeof(ComDiagsArea);
-#ifdef NA_64BIT
-   // dg64 - size changed
    assert(classSize == 328);
-#else
-   assert(classSize == 240);
-#endif
 }
 
 ComDiagsArea::ComDiagsArea () :             IpcMessageObj(IPC_SQL_DIAG_AREA,0),
@@ -1691,13 +1658,8 @@ ComDiagsArea::ComDiagsArea () :             IpcMessageObj(IPC_SQL_DIAG_AREA,0),
    Int32 classSize = sizeof(ComDiagsArea);
 
 
-#ifndef NA_64BIT
-   assert(classSize == 240);
-#else
    // if (classSize != 320) printf("classSize=%d @ %d\n", classSize, __LINE__);
-   // dg64 - size changed
    assert(classSize == 328);
-#endif
 }
 
 
@@ -2081,7 +2043,7 @@ IpcMessageObjSize ComDiagsArea::packObjIntoMessage(char* buffer,
   short num = (short) errors_.entries();
   short numToPack = num;
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // In the debug build we allow the UDR server to generate a corrupt
   // packed object. This allows us to test error handling in the
   // executor. The MXUDR_DEBUG_BUILD variable is always set by the
@@ -2180,7 +2142,7 @@ IpcMessageObjSize ComDiagsArea::packObjIntoMessage32(char* buffer,
   short num = (short) errors_.entries();
   short numToPack = num;
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // In the debug build we allow the UDR server to generate a corrupt
   // packed object. This allows us to test error handling in the
   // executor. The MXUDR_DEBUG_BUILD variable is always set by the
@@ -3168,7 +3130,6 @@ void ComDiagsArea::mergeAfter(const ComDiagsArea& source)
    //
    //   assert( theSQLFunction_ == source.theSQLFunction_);
 
-#ifndef __EID
    // if lengthLimit of source is greater than that of target
    // then the  target lengthLimit is assigned that of the source. 
    // Note that NO_LIMIT_ON_ERROR_CONDITIONS
@@ -3180,9 +3141,7 @@ void ComDiagsArea::mergeAfter(const ComDiagsArea& source)
 	    (source.lengthLimit_ > lengthLimit_)) {
     lengthLimit_ = source.lengthLimit_ ;
    }
-#endif
 
-   // VO, Feb 2004:
    //    changed to preserve insertion order of the conditions
 
    for (Int32 index = (((nfMark != -1) ? (nfMark+1):1)); index <= source.getNumber(); index++)

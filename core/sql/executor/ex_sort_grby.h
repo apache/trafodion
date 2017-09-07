@@ -72,16 +72,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ex_sort_grby_tdb()
+  ex_sort_grby_tdb()
   {}
 
-  NA_EIDPROC virtual ~ex_sort_grby_tdb()
+  virtual ~ex_sort_grby_tdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -135,13 +135,11 @@ protected:
 
 public:
   // Constructor
-NA_EIDPROC
   ex_sort_grby_tcb(const ex_sort_grby_tdb & sort_grby_tdb,    
 		   const ex_tcb &    child_tcb , // child queue pair
 		   ex_globals * glob
 		   );
   
-NA_EIDPROC
   ~ex_sort_grby_tcb();  
   
   enum sort_grby_step {
@@ -175,7 +173,6 @@ NA_EIDPROC
 
   // return a pair of queue pointers to the parent node. Needed only during
   // construction of nodes.
-  NA_EIDPROC
   ex_queue_pair getParentQueue() const
   {
     return (qparent_);
@@ -272,8 +269,8 @@ class ex_sort_grby_private_state : public ex_tcb_private_state
   
 public:
 
-  NA_EIDPROC ex_sort_grby_private_state();
-  NA_EIDPROC ~ex_sort_grby_private_state();
+  ex_sort_grby_private_state();
+  ~ex_sort_grby_private_state();
 
 private:
 

@@ -69,7 +69,7 @@ typedef NAVersionedObjectPtrArrayTempl<AttributesPtr> AttributesPtrPtr;
 // Size of each VOA array entry for SQLMX_FORMAT.
 // The SQLMX_ALIGNED_FORMAT has its own constant in ExpAlignedFormat.h
 static const UInt32 ExpVoaSize = sizeof(Int32);
-static const UInt32 ExpOffsetMax = UINT_MAX; // NA_64BIT
+static const UInt32 ExpOffsetMax = UINT_MAX;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ static const UInt32 ExpOffsetMax = UINT_MAX; // NA_64BIT
 // class ExpTupleDesc
 //
 ////////////////////////////////////////////////////////////////////
-class SQLEXP_LIB_FUNC  ExpTupleDesc : public NAVersionedObject
+class ExpTupleDesc : public NAVersionedObject
 {
 public:
   //

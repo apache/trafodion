@@ -1231,7 +1231,6 @@ Int32 ItemExpr::shouldPushTranslateDown(CharInfo::CharSet chrset) const
      case ITM_MOVING_MIN:            // b) possibly different orderings
      case ITM_SCALAR_MIN:            // b) ordering, also may eliminate data
      case ITM_SCALAR_MAX:            // b) ordering, also may eliminate data
-     case ITM_AUDIT_IMAGE:           // a), b) output is binary disguised as ISO
      case ITM_OLAP_MAX:              // b) ordering, also may eliminate data
      case ITM_OLAP_MIN:              // b) ordering, also may eliminate data
      case ITM_CONVERTTOHEX:          // b) operator depends on encoding
@@ -12595,42 +12594,6 @@ ItemExpr *ItmSequenceFunction::bindNode(BindWA *bindWA)
     return equivId.getItemExpr();
   else
     return getValueId().getItemExpr();
-}
-
-//-------------------------------------------------------------------------
-//
-// member functions for class AuditImage
-//
-//-------------------------------------------------------------------------
-ItemExpr *AuditImage::bindNode(BindWA *bindWA)
-{
-  if (nodeIsBound())
-    return getValueId().getItemExpr();
-
-  ItemExpr * boundExpr = NULL;
-     
-  // Obtain the NATable for the objectName.
-  NATable *table = bindWA->getNATable(getObjectName());
-  if (bindWA->errStatus()) return NULL; 
-
-  setNATable(table);
-
-  // The number of columns in the object must match the number of columns
-  // in the expression list for AUDIT_IMAGE. The columns in the expression
-  // list form the children of AUDIT_IMAGE node.
-  if (table->getColumnCount() != (ULng32) getArity())
-    {
-      *CmpCommon::diags() << DgSqlCode(-4315)
-			  << DgTableName(getObjectName().getQualifiedNameAsString());
-      bindWA->setErrStatus();
-      return NULL;
-    }
- 
-  // Binds self; Binds children; AuditImage::synthesize();
-  boundExpr = Function::bindNode(bindWA);
-  if (bindWA->errStatus()) return NULL;
- 
-  return boundExpr;
 }
 
 //---------------------------------------------------------------------------

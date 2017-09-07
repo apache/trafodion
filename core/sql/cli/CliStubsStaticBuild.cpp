@@ -20,45 +20,4 @@
 //
 // @@@ END COPYRIGHT @@@
 **********************************************************************/
-/* -*-C++-*-
- *****************************************************************************
- *
- * File:         CliStubs.cpp
- * Description:  CLI Stubs.
- *               
- *               
- * Created:      3/22/2002
- * Language:     C++
- *
- *
- *
- *
- *****************************************************************************
- */
-
-// -----------------------------------------------------------------------
-
-#include "NAType.h"
-#include "CharType.h"
-//ss_cc_change : unused function
-#ifndef NA_CMPDLL
-//LCOV_EXCL_START
-NABoolean NAType::isComparable(const NAType &other,
-                               ItemExpr *parentOp,
-                               Int32 emitErr) const
-{ return FALSE; }
-//LCOV_EXCL_STOP
-
-NABoolean CharType::isComparable(const NAType &other,
-                               ItemExpr *parentOp,
-                               Int32 emitErr) const
-{ return FALSE; }
-#endif  // Not NA_CMPDLL
-
-
-
-
-
-
-
 

@@ -54,21 +54,18 @@ struct ex_queue_pair;
 // attached diagnostics area, then an empty one is allocated in heap "heap",
 // and the indicated condition added to it.  In either case, a pointer to
 // the new condition is returned through parameter "cond".
-NA_EIDPROC
 ComDiagsArea *ExRaiseSqlError(CollHeap* heap, ex_queue_entry* req,
 			      ExeErrorCode code, 
 			      Lng32 * intParam1 = NULL,
 			      char * stringParam1 = NULL,
 			      ComCondition** cond=NULL);
 
-NA_EIDPROC
 ComDiagsArea *ExRaiseSqlWarning(CollHeap* heap, ex_queue_entry* req,
 				ExeErrorCode code, 
 				Lng32 * intParam1 = NULL,
 				char * stringParam1 = NULL,
 				ComCondition** cond=NULL);
 
-NA_EIDPROC
 void ExHandleArkcmpErrors(ex_queue_pair  &qparent,
 			  ex_queue_entry *down_entry,
 			  Lng32 matchNo,
@@ -76,7 +73,6 @@ void ExHandleArkcmpErrors(ex_queue_pair  &qparent,
 			  ComDiagsArea   *da,
 			  ExeErrorCode    err = EXE_INTERNAL_ERROR);
 
-NA_EIDPROC
 void ExHandleErrors(ex_queue_pair  &qparent,
 		    ex_queue_entry *down_entry,
 		    Lng32 matchNo,

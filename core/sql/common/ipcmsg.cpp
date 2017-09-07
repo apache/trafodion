@@ -69,7 +69,7 @@ enum {FS_SMS_VERSION_MAY94 = 1};
 #include <fcntl.h>
 #include "logmxevent.h"
 
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 // all of these files are OK in the executor environment (PRIV, no globals)
 extern "C" {
 //#include <cextdecs.h>

@@ -58,7 +58,6 @@
 // unicode.org.
 ///////////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 inline Int32 in_range(Int32 x, Int32 lower, Int32 upper) 
 {
    return ( lower <= x  &&  x <= upper ) ? 1 : 0;
@@ -80,7 +79,7 @@ typedef struct SJISCodeBound {
 // will be stored. In case the result argument is NULL or the buffer it points
 // at is not big enough, the function allocates memory from the heap
 // (if the heap pointer is not NULL), or from the C run-time system heap
-// (if NA_NO_C_RUNTIME is not defined), and returns the result.
+// and returns the result.
 //
 // If memory allocation fails, the function returns NULL.
 // If any illegal characters are encountered, the function also returns NULL.
@@ -282,7 +281,6 @@ typedef struct Unicode2SjisMap
 // The function only returns the SJIS that are double-byte.  Hense it is static.
 //
 static
-NA_EIDPROC
 NABoolean binarySearchU2STable(NAWchar u, NAWchar& sjis)
 {
 
@@ -328,7 +326,6 @@ NABoolean binarySearchU2STable(NAWchar u, NAWchar& sjis)
 // bytes is returned by the function. The function returns 0 if the 
 // Unicode character is not mappable from SJIS.
 //
-NA_EIDPROC
 Int32 unicodeToSjisChar(NAWchar wc, unsigned char *sjis, NABoolean allowInvalidCodePoint)
 {
    NAWchar t;
@@ -369,7 +366,7 @@ Int32 unicodeToSjisChar(NAWchar wc, unsigned char *sjis, NABoolean allowInvalidC
 // The optional sjisString argument holds the buffer into which the Unicode string
 // will be stored. In case the argument is NULL or it is not big enough, 
 // the function allocates memory from the heap (if the heap pointer is not NULL), 
-// or from the C run-time system heap (if NA_NO_C_RUNTIME is not defined). 
+// or from the C run-time system heap.
 // If the memory allocation fails, the function returns 0. If any illegal 
 // characters are encountered, the function also returns 0.
 //

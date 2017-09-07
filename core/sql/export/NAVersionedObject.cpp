@@ -75,7 +75,7 @@
 // This arrangement avoids the dependence on the constructors of sub-
 // classes of NAVersionedObject on setting these values correctly.
 // ---------------------------------------------------------------------
-NA_EIDPROC NAVersionedObject::NAVersionedObject(Int16 classID)
+NAVersionedObject::NAVersionedObject(Int16 classID)
     : classID_(classID),
       reallocatedAddress_(NULL),
       imageSize_(0)
@@ -92,14 +92,14 @@ NA_EIDPROC NAVersionedObject::NAVersionedObject(Int16 classID)
 // platform and vice versa. Typically, this only involves toggling the
 // endianness of some members.
 // ---------------------------------------------------------------------
-NA_EIDPROC void NAVersionedObject::convertToReferencePlatform()
+void NAVersionedObject::convertToReferencePlatform()
   {
 #ifndef NA_LITTLE_ENDIAN
     toggleEndianness();
 #endif
   }
 
-NA_EIDPROC void NAVersionedObject::convertToLocalPlatform()
+void NAVersionedObject::convertToLocalPlatform()
   {
 #ifndef NA_LITTLE_ENDIAN
     toggleEndianness();
@@ -114,7 +114,7 @@ NA_EIDPROC void NAVersionedObject::convertToLocalPlatform()
 // The left-over space will be zero'ed. Finally, reallocatedAddress_
 // field in the older object is set to the address of the new object.
 // ---------------------------------------------------------------------
-NA_EIDPROC NAVersionedObject *NAVersionedObject::reallocateImage(void * reallocator)
+NAVersionedObject *NAVersionedObject::reallocateImage(void * reallocator)
   {
     Space *space = (Space *)reallocator;
 
@@ -137,7 +137,7 @@ NA_EIDPROC NAVersionedObject *NAVersionedObject::reallocateImage(void * realloca
 // the image has been reallocated so that it is big enough to make this
 // expansion.
 // ---------------------------------------------------------------------
-NA_EIDPROC void NAVersionedObject::makeRoomForNewVersion(
+void NAVersionedObject::makeRoomForNewVersion(
                                                   short oldSubClassSize,
                                                   short newSubClassSize)
   {
@@ -216,7 +216,7 @@ NA_EIDPROC void NAVersionedObject::makeRoomForNewVersion(
 // which is not supported anymore. Also notice that the versionIDArray_
 // should only be updated at initNewMembers().
 // ---------------------------------------------------------------------
-NA_EIDPROC Lng32 NAVersionedObject::migrateToNewVersion(
+Lng32 NAVersionedObject::migrateToNewVersion(
                                            NAVersionedObject *&newImage)
   {
     short tempimagesize = getClassSize();
@@ -278,7 +278,7 @@ NA_EIDPROC Lng32 NAVersionedObject::migrateToNewVersion(
 // later when 64-bit platforms are really available since it doesn't
 // affect object layout.
 // ---------------------------------------------------------------------
-NA_EIDPROC Long NAVersionedObject::drivePack(void *space, short isSpacePtr)
+Long NAVersionedObject::drivePack(void *space, short isSpacePtr)
   {
     // -----------------------------------------------------------------
     // If the object has already been packed, just convert the pointer
@@ -376,7 +376,7 @@ NA_EIDPROC Long NAVersionedObject::drivePack(void *space, short isSpacePtr)
 // ptrToAnchorClass (second form, see below) is a pointer to an object
 //                  that has the desired virtual function pointer
 // ---------------------------------------------------------------------
-NA_EIDPROC NAVersionedObject *NAVersionedObject::driveUnpack(
+NAVersionedObject *NAVersionedObject::driveUnpack(
                                     void *base,
 				    char *vtblPtr,
 				    void * reallocator)
@@ -400,12 +400,8 @@ NA_EIDPROC NAVersionedObject *NAVersionedObject::driveUnpack(
       else
         return reallocatedAddress_.getPointer();
     }
-#ifdef NA_64BIT
-    // dg64 - the 32-bit module files have junk in them, so let's try zero
-    //        at least in the high-order 32-bits
     else
       reallocatedAddress_ = (NAVersionedObjectPtr) NULL ;
-#endif
 
     // -----------------------------------------------------------------
     // Fix the Version Header to the endianness of the local platform
@@ -477,7 +473,7 @@ NA_EIDPROC NAVersionedObject *NAVersionedObject::driveUnpack(
     return objPtr;
   }
 
-NA_EIDPROC NAVersionedObject *NAVersionedObject::driveUnpack(
+NAVersionedObject *NAVersionedObject::driveUnpack(
                                     void *base,
 				    NAVersionedObject *ptrToAnchorClass,
 				    void * reallocator)

@@ -40,12 +40,6 @@
 
 
 #include "exp_stdh.h"
-// #ifndef __EID
-// #include <stdio.h>
-// #include <stdlib.h>
-// #endif
-// 
-// #include "ComPackDefs.h"
 #include "exp_attrs.h"
 #include "exp_clause_derived.h"
 #include "exp_bignum.h"
@@ -78,7 +72,7 @@ void SimpleType::copyAttrs(Attributes *source_) // copy source attrs to this.
   *this = *(SimpleType *)source_;
 }
 
-NA_EIDPROC Attributes::Attributes(short complex_type) : 
+Attributes::Attributes(short complex_type) : 
   NAVersionedObject(AttribAnchorID)
 {
   datatype_ = -1;
@@ -129,7 +123,7 @@ NA_EIDPROC Attributes::Attributes(short complex_type) :
 // This method returns the virtual function table pointer for an object
 // with the given class ID; used by NAVersionedObject::driveUnpack().
 // -----------------------------------------------------------------------
-NA_EIDPROC char *Attributes::findVTblPtr(short classID)
+char *Attributes::findVTblPtr(short classID)
 {
   char *vtblPtr;
   switch (classID)
@@ -159,14 +153,14 @@ NA_EIDPROC char *Attributes::findVTblPtr(short classID)
   return vtblPtr;
 }
 
-NA_EIDPROC Long Attributes::pack(void * space)
+Long Attributes::pack(void * space)
 {
   defaultValue_.pack(space);
 
   return NAVersionedObject::pack(space);
 }
 
-NA_EIDPROC Lng32 Attributes::unpack(void * base, void * reallocator)
+Lng32 Attributes::unpack(void * base, void * reallocator)
 {
   if (defaultValue_.unpack(base)) return -1;
   return NAVersionedObject::unpack(base, reallocator);
@@ -212,7 +206,6 @@ void Attributes::fixup(Space * /*space*/,
 
 }
 
-NA_EIDPROC SQLEXP_LIB_FUNC
 char * getDatatypeAsString(Int32 datatype, NABoolean extFormat = false )
 {
 switch (datatype)
@@ -240,15 +233,9 @@ switch (datatype)
   case REC_NUM_BIG_SIGNED: return extFormat? (char *)"NUMERIC":(char *)"REC_NUM_BIG_SIGNED";
 
   case REC_BYTE_F_ASCII: return extFormat? (char *)"CHAR":(char *)"REC_BYTE_F_ASCII";
-#ifdef READTABLEDEF_IMPLEMENTATION
-  case REC_BYTE_F_ASCII_UP: return extFormat? (char *)"CHAR UPSHIFT":(char *)"REC_BYTE_F_ASCII_UP";
-#endif
   case REC_NCHAR_F_UNICODE: return extFormat? (char *)"NCHAR":(char *)"REC_NCHAR_F_UNICODE";
 
   case REC_BYTE_V_ASCII: return extFormat? (char *)"VARCHAR":(char *)"REC_BYTE_V_ASCII";
-#ifdef READTABLEDEF_IMPLEMENTATION
-  case REC_BYTE_V_ASCII_UP: return extFormat? (char *)"VARCHAR UPSHIFT":(char *)"REC_BYTE_V_ASCII_UP";
-#endif
   case REC_NCHAR_V_UNICODE: return extFormat? (char *)"NCHAR VARYING":(char *)"REC_NCHAR_V_UNICODE";
   case REC_BYTE_V_ASCII_LONG: return extFormat? (char *)"VARCHAR":(char *)"REC_BYTE_V_ASCII_LONG";
 
@@ -327,7 +314,6 @@ Attributes * ShowplanAttributes::newCopy(CollHeap * heap)
 void Attributes::displayContents(Space * space, Int32 operandNum,
 				 char * constsArea, Attributes * spAttr)
 {
-#ifndef __EID
   char buf[250];
   char r[15];
 
@@ -466,7 +452,6 @@ void Attributes::displayContents(Space * space, Int32 operandNum,
 	       ((ShowplanAttributes *)spAttr)->text() : ""));
       space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     }
-#endif   // __EID
 }
 
 ExpDatetime * 
@@ -549,27 +534,27 @@ NABoolean ComplexType::operator==(const Attributes& other) const
     return FALSE;
 }
 
-NA_EIDPROC NABoolean isAddedColumn(Attributes * srcAttr,
-                                   NABoolean tableHasAddedColumns,
-                                   NABoolean tableHasVariableColumns,
-                                   ULng32 offsetOfFirstFixedFieldInRec,
-                                   ULng32 recordLength,
-                                   char * recordPtr
-                                  )
+NABoolean isAddedColumn(Attributes * srcAttr,
+                        NABoolean tableHasAddedColumns,
+                        NABoolean tableHasVariableColumns,
+                        ULng32 offsetOfFirstFixedFieldInRec,
+                        ULng32 recordLength,
+                        char * recordPtr
+                        )
 {
    // Check if this is an added column.
    // There are 4 cases to check for:
    // (1) The column is a variable column and the offset to the first
-   //     fixed field in the audit row image is greater than the offset
+   //     fixed field is greater than the offset
    //     to VOA entry for this column.
    // (2) This is a fixed column and its offset is greater than the
-   //     length of the audit image passed in, and there are no varchar
-   //     columns in the audit row image.
+   //     length of the row in, and there are no varchar
+   //     columns in the roq
    // (3) This is a fixed column and its offset is greater than
    //     the offset for the first variable length column in the audit
    //     row image.
    // (4) This is a fixed column, but there are no previous fixed fields
-   //     in the audit row image.
+   //     in the row
    if (((srcAttr->isAddedCol()) || (tableHasAddedColumns)) &&
        (((srcAttr->getVCIndicatorLength() > 0) &&
          (srcAttr->getVoaOffset() >= offsetOfFirstFixedFieldInRec)) ||

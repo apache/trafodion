@@ -147,7 +147,6 @@ ExpTupleDesc::~ExpTupleDesc()
 // columns.  The added columns follow the original fixed columns and are NOT
 // ordered on their byte boundary, but put in the list in the order they
 // were added.
-NA_EIDPROC
 static Int16 orderFixedFieldsByAlignment( Attributes    ** attrs,
                                           NAList<UInt32> * fixedFields)
 {
@@ -243,7 +242,7 @@ Int16 ExpTupleDesc::computeOffsets(Attributes    * attr,
 }
 
 // This code is the same for fixed fields and GuOutput fields.
-NA_EIDPROC static
+static
 void computeOffsetOfFixedField(Attributes **  attrs,
 			       UInt32         fieldIdx,
                                UInt32         bitmapOffset,

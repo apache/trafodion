@@ -477,7 +477,6 @@ public:
 			  ISP_TABLE, 		// Internal Stored Procedure
 			  LOAD_TABLE,
 			  PARTITION_TABLE,
-			  RESOURCE_FORK,
 			  VIRTUAL_TABLE,
 			  IUD_LOG_TABLE, 
 			  RANGE_LOG_TABLE,
@@ -667,11 +666,6 @@ private:
 // These are 'virtual' tables for special purpose needs.
 // Binder uses this information to 'generate' table descriptors.
 // Ustat does not fetch real histograms for virtual tables.
-//   E.g., RESOURCE_FORK is a SQL table that doesn't exist in metadata
-//   as a base table.
-//   So, any sql dml operation on resource fork is done by specifying a
-//   special syntax in the SQL statement that tells if this is a resource fork.
-//   "SELECT * FROM TABLE (RESOURCE_FORK <rfork-guardian-name>)" is an example.
 // -----------------------------------------------------------------------
 class CorrName : public NABasicObject
 {
@@ -741,19 +735,6 @@ public:
        flagbits_(corr.flagbits_)
   {}
 
-/*
-// c89 can't distinguish between the non-tandem version of
-// this constructor and the above constructor taking four NAString
-// arguments (what?  It can't tell a NABoolean is not a NAString, or,
-// somebody wrote a conversion operator from NABoolean to NAString?)
-// May need more investigation, but this fix certainly works.  -wlr-
-#ifndef __TANDEM
-  #define CORRNAME_CTOR_const const
-#else
-  #define CORRNAME_CTOR_const
-#endif
-  CorrName(CORRNAME_CTOR_const NAString& corrName,
-*/
   CorrName(const NAString& corrName,
   	   NABoolean isFabricated,
            CollHeap * h=0,

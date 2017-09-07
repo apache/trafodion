@@ -65,16 +65,11 @@ class ex_tcb_private_state : public ExGod
   Lng32 errorCode_;
 
 public:
-NA_EIDPROC
   ex_tcb_private_state();
-NA_EIDPROC
   virtual ex_tcb_private_state * allocate_new(const ex_tcb * tcb);
-NA_EIDPROC
   virtual ~ex_tcb_private_state();
 
-NA_EIDPROC
   inline Lng32 getErrorCode(){return errorCode_;}
-NA_EIDPROC
   inline void setErrorCode(Lng32 error_code){errorCode_ = error_code;}
 
 };

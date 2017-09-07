@@ -1018,13 +1018,13 @@ private:
   UInt32 flags_;
 
   // ---------------------------------------------------------------------
-  // NORMAL, INDEX, RFORK, VIRTUAL, etc.
+  // NORMAL, INDEX, VIRTUAL, etc.
   // ---------------------------------------------------------------------
   // ExtendedQualName::SpecialTableType specialType_;
 
   // ---------------------------------------------------------------------
   // Extended Qualified name for the table. This also has the specialType
-  // (NORMAL, INDEX, RFORK, VIRTUAL, etc.) and the location Name.
+  // (NORMAL, INDEX, VIRTUAL, etc.) and the location Name.
   // ---------------------------------------------------------------------
   ExtendedQualName qualifiedName_;
 

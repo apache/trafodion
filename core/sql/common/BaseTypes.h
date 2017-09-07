@@ -237,14 +237,8 @@ extern void NADebug();
 // Abnormal program termination
 // -----------------------------------------------------------------------
 
-#include "SqlExportDllDefines.h"
-
-#ifdef __EID
-#define ABORT(msg)	{}
-#else
 #define ABORT(msg)	NAAbort (__FILE__, __LINE__, (msg))
-extern void SQLEXPORT_LIB_FUNC NAAbort (const char *, Int32, const char *);
-#endif
+extern void NAAbort (const char *, Int32, const char *);
 
 // -----------------------------------------------------------------------
 // the NAString datatype used to be Tools.h++'s RWCString; now it's a

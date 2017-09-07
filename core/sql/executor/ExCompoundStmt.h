@@ -164,16 +164,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExCatpoundStmtTdb()
+  ExCatpoundStmtTdb()
   {}
 
-  NA_EIDPROC virtual ~ExCatpoundStmtTdb()
+  virtual ~ExCatpoundStmtTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -214,86 +214,60 @@ class ExCatpoundStmtTcb : public ex_tcb
 
 public:
   // Standard TCB methods.
-NA_EIDPROC
   ExCatpoundStmtTcb(const ExCatpoundStmtTdb &tdb,  
                     const ex_tcb &left,   
                     const ex_tcb &right, 
                     ex_globals *glob);
         
-NA_EIDPROC
   ~ExCatpoundStmtTcb();  
 
-NA_EIDPROC
   void freeResources() {}  
-NA_EIDPROC
   void registerSubtasks();
 
-NA_EIDPROC
   virtual const ex_tcb* getChild(Int32 pos) const;
-NA_EIDPROC
   virtual Int32 numChildren() const { return 2; }   
 
-NA_EIDPROC
   ExWorkProcRetcode work();
 
 private:
   // CS TCB specific methods.
   
-NA_EIDPROC
   ex_queue_pair getParentQueue() const { return qparent_; }
 
-NA_EIDPROC
   ExWorkProcRetcode workDownLeft();
-NA_EIDPROC
   ExWorkProcRetcode workLeft2Right();
-NA_EIDPROC
   ExWorkProcRetcode workUp();
-NA_EIDPROC
   ExWorkProcRetcode workCancel();
   
-NA_EIDPROC
   static ExWorkProcRetcode sWorkDownLeft(ex_tcb *tcb)
   { return ((ExCatpoundStmtTcb *) tcb)->workDownLeft(); }
-NA_EIDPROC
   static ExWorkProcRetcode sWorkLeft2Right(ex_tcb *tcb)
   { return ((ExCatpoundStmtTcb *) tcb)->workLeft2Right(); }
-NA_EIDPROC
   static ExWorkProcRetcode sWorkUp(ex_tcb *tcb)
   { return ((ExCatpoundStmtTcb *) tcb)->workUp(); }
-NA_EIDPROC 
+
   static ExWorkProcRetcode sWorkCancel(ex_tcb *tcb)
   { return ((ExCatpoundStmtTcb *) tcb)->workCancel(); }
 
-NA_EIDPROC
   void      startLeftChild();
-NA_EIDPROC
   void      flowLeft2Right(ex_queue_entry *lentry);
-NA_EIDPROC
   void      flowParent2Right(queue_index pindex);
-NA_EIDPROC
   void      passChildReplyUp(ex_queue_entry *centry);
 
-NA_EIDPROC
   void      processError(atp_struct *atp, ComDiagsArea *da);
-NA_EIDPROC
   void      processCardinalityError(ex_queue_entry *centry);
-NA_EIDPROC
   void      processEODErrorOrWarning(NABoolean isWarning);
 
 
-NA_EIDPROC
   inline ExCatpoundStmtTdb & csTdb() const
     { return (ExCatpoundStmtTdb &) tdb; }
 
-NA_EIDPROC
   inline NABoolean expectingRightRows() const
     { return csTdb().expectingRightRows(); }
 
-NA_EIDPROC
   inline NABoolean expectingLeftRows() const
     { return csTdb().expectingLeftRows(); }
 
-NA_EIDPROC
   inline NABoolean afterUpdate() const
     { return csTdb().afterUpdate(); }
 
@@ -329,18 +303,14 @@ class ExCatpoundStmtPrivateState : public ex_tcb_private_state
   
 public:
   // Standard private state methods.
-NA_EIDPROC
   ExCatpoundStmtPrivateState(const ExCatpoundStmtTcb *tcb)
   { init(); }
 
-NA_EIDPROC
   ~ExCatpoundStmtPrivateState(){} 
 
-NA_EIDPROC
   ex_tcb_private_state * allocate_new(const ex_tcb *tcb);
 
 private:
-NA_EIDPROC
   void           init();
 
 private:

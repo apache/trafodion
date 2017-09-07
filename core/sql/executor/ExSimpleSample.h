@@ -70,16 +70,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExSimpleSampleTdb()
+  ExSimpleSampleTdb()
   {}
 
-  NA_EIDPROC virtual ~ExSimpleSampleTdb()
+  virtual ~ExSimpleSampleTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -126,36 +126,28 @@ public:
   //       with the parent.
   //     - initializes local state.
   //
-  NA_EIDPROC
   ExSimpleSampleTcb(const ExSimpleSampleTdb& sampleTdb,
                     const ex_tcb& childTdb,
                     ex_globals *glob);
   // Destructor
-  NA_EIDPROC
   ~ExSimpleSampleTcb();
 
   // Free up any run-time resources.
-  NA_EIDPROC
   void freeResources();
 
   // Register all the pack subtasks with the scheduler.
-  NA_EIDPROC
   void registerSubtasks();
 
   // The basic work method for a TCB. SimpleSample does not use this method.
-  NA_EIDPROC
   ExWorkProcRetcode work();
 
   // Work method to pass requests from parent down to child.
-  NA_EIDPROC
   ExWorkProcRetcode workDown();
 
   // Work method to recieve results from child, process and pass up to parent.
-  NA_EIDPROC
   ExWorkProcRetcode workUp();
 
   // Stub to workUp() used by scheduler.
-  NA_EIDPROC
 // warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkUp(ex_tcb *tcb)
   {
@@ -163,7 +155,6 @@ public:
   }
 
   // Stub to workDown() used by scheduler.
-  NA_EIDPROC
 // warning elimination (removed "inline")
   static ExWorkProcRetcode sWorkDown(ex_tcb *tcb)
   {
@@ -171,30 +162,25 @@ public:
   } 
 
   // Stub to processCancel() used by scheduler.
-  // NA_EIDPROC
   // static inline ExWorkProcRetcode sCancel(ex_tcb *tcb)
   // {
   //   return ((ExSimpleSampleTcb *) tcb)->processCancel();
   // }
 
   // Return the parent queue pair. 
-  NA_EIDPROC
 // warning elimination (removed "inline")
   ex_queue_pair getParentQueue() const { return qParent_; }
 
   // Return a reference to the TDB associated with this TCB.
-  NA_EIDPROC
   inline ExSimpleSampleTdb& simpleSampleTdb() const
   {
     return (ExSimpleSampleTdb &) tdb;
   }
 
   // SimpleSample has one child.
-  NA_EIDPROC
   virtual Int32 numChildren() const { return 1; }
 
   // Return the child of the pack node by position.
-  NA_EIDPROC
   virtual const ex_tcb* getChild(Int32 pos) const
   {
     if(pos == 0) return childTcb_;

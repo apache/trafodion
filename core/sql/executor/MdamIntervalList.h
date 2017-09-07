@@ -74,47 +74,47 @@ public:
 
   // Default constructor creates an empty list.
   #if defined ( NA_MDAM_EXECUTOR_DEBUG_ILTF )
-  NA_EIDPROC MdamIntervalList(const Lng32 callerTag = -1);
+  MdamIntervalList(const Lng32 callerTag = -1);
   #else
-  NA_EIDPROC  MdamIntervalList();
+   MdamIntervalList();
   #endif /* NA_MDAM_EXECUTOR_DEBUG_ILTF */
 
   // Destructor.
-  NA_EIDPROC ~MdamIntervalList();
+  ~MdamIntervalList();
 
   // Appends an MdamInterval onto an MdamIntervalList.  Warning: caller
   // must ensure that the new interval is disjoint and in order.  No
   // integrity checks are performed.
-  NA_EIDPROC MdamIntervalList & append(MdamInterval * interval);
+  MdamIntervalList & append(MdamInterval * interval);
 
   #if defined ( NA_MDAM_EXECUTOR_DEBUG_ILTF )
-  NA_EIDPROC Lng32 countIntervals() const;
+  Lng32 countIntervals() const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG_ILTF */
 
   // Delete all intervals in the list.
-  NA_EIDPROC void deleteAllIntervals(FixedSizeHeapManager & mdamIntervalHeap,
+  void deleteAllIntervals(FixedSizeHeapManager & mdamIntervalHeap,
                                      FixedSizeHeapManager & mdamRefListEntryHeap);
 
   // This function inserts a single disjunct number into the reference list
   // associated with each MdamInterval on the MdamIntervalList.
-  NA_EIDPROC void insertDisjunctNum(const Int32 disjunctNum,
+  void insertDisjunctNum(const Int32 disjunctNum,
                               FixedSizeHeapManager & mdamRefListEntryHeap);
 
   // Performs an intersect operation on two interval lists to produce a
   // result list.  The this list and the otherList are inputs to the
   // intersect operation.  The result replaces the this list.  The
   // original interval list entries for the this list are deleted.
-  NA_EIDPROC MdamIntervalList & intersect
+  MdamIntervalList & intersect
     (const MdamIntervalList & otherList,
      const ULng32 keyLen,
      FixedSizeHeapManager & mdamIntervalHeap,
      FixedSizeHeapManager & mdamRefListEntryHeap);
 
   // Determine if an interval list is empty.
-  NA_EIDPROC inline NABoolean isEmpty() const;
+  inline NABoolean isEmpty() const;
 
   #if defined ( NA_MDAM_EXECUTOR_DEBUG_ILTF )
-  NA_EIDPROC void logEvent(const Lng32 functionId,
+  void logEvent(const Lng32 functionId,
                            const Lng32 intervalCount = 0,
                            const Int64 otherListId = -1,
                            const Lng32 callerTag = -1) const;
@@ -122,8 +122,8 @@ public:
 
   // Print functions.
   #if defined ( NA_MDAM_EXECUTOR_DEBUG )
-  NA_EIDPROC void print(const char * header = "") const;
-  NA_EIDPROC void printBrief() const;
+  void print(const char * header = "") const;
+  void printBrief() const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG */
 
   // Performs an union operation on two interval lists to produce a
@@ -131,7 +131,7 @@ public:
   // with them.  The this list and the otherList are inputs to the
   // union operation.  The result replaces the this list.  The
   // original interval list entries for this list are deleted.
-  NA_EIDPROC MdamIntervalList & unionSameDisjunct
+  MdamIntervalList & unionSameDisjunct
     (const MdamIntervalList & otherList,
      const ULng32 keyLen,
      FixedSizeHeapManager & mdamIntervalHeap,
@@ -144,7 +144,7 @@ public:
   // instead.  The this list and the otherList are inputs to the
   // intersect operation.  The result replaces the this list.  The
   // original interval list entries for the this list are deleted.
-  NA_EIDPROC MdamIntervalList & unionSeparateDisjuncts
+  MdamIntervalList & unionSeparateDisjuncts
     (const MdamIntervalList & otherList,
      const Int32 disjunctNum,
      const ULng32 keyLen,
@@ -162,7 +162,7 @@ private:
 
   // Give all intervals from this list and put them in otherList.
   // this list becomes empty.
-  NA_EIDPROC void giveAllIntervals(MdamIntervalList & otherList);
+  void giveAllIntervals(MdamIntervalList & otherList);
 
   #if defined ( NA_MDAM_EXECUTOR_DEBUG_ILTF )
   const Int64 intervalListId_;

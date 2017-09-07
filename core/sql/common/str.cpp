@@ -45,10 +45,7 @@
 
 #include <stdarg.h>
 
-
-#if !defined(__EID) && !defined(ARKFS_OPEN)
 #include "ComResWords.h"
-#endif
 
 /*
  ******************************************************************
@@ -56,7 +53,6 @@
  *
  */
 
-NA_EIDPROC
 Int32 isUpper8859_1(NAWchar c)
 {
   if ((c >= 'A') && (c <= 'Z'))
@@ -75,7 +71,6 @@ Int32 isUpper8859_1(NAWchar c)
 }
 
 
-NA_EIDPROC
 Int32 isLower8859_1(NAWchar c)
 {
   if ((c >= 'a') && (c <= 'z'))
@@ -94,7 +89,6 @@ Int32 isLower8859_1(NAWchar c)
 }
 
 
-NA_EIDPROC
 Int32 isAlpha8859_1(NAWchar c)
 {
   if (((c >= 'a') && (c <= 'z')) ||
@@ -115,19 +109,16 @@ Int32 isAlpha8859_1(NAWchar c)
   return FALSE;
 }
 
-NA_EIDPROC
 Int32 isHexDigit8859_1(NAWchar c)
 {
    return (isDigit8859_1(c) || ('A' <= c AND c <= 'F' ) || ( 'a' <= c AND c <= 'f'));
 }
 
-NA_EIDPROC
 Int32 isAlNum8859_1(NAWchar c)
 {
   return (isAlpha8859_1(c) || isDigit8859_1(c));
 }
 
-NA_EIDPROC
 Int32 isSpace8859_1(NAWchar c)
 {
   if (((c >= 0x09) && (c <= 0x0d))  ||
@@ -137,7 +128,6 @@ Int32 isSpace8859_1(NAWchar c)
   return FALSE;
 }
 
-NA_EIDPROC
 Int32 isDigit8859_1(NAWchar c) // ISO 8859-1 char set safe isdigit routine
 {
   if ((c >= '0') && (c <= '9'))
@@ -145,7 +135,6 @@ Int32 isDigit8859_1(NAWchar c) // ISO 8859-1 char set safe isdigit routine
   return FALSE;
 }
 
-NA_EIDPROC
 Int32 isCaseInsensitive8859_1(NAWchar c) // ISO 8859-1 char for which there is no
                                // upcase equivalent.  hex values 0xDF & 0xFF
 {
@@ -1037,7 +1026,6 @@ char * str_strip_blanks(char *src , Lng32 &len,
   return &src[i];
 }
 
-#if !defined(__EID) && !defined(ARKFS_OPEN)
 //------------------------------------------------
 //See .h file for explanation on parameters etc
 //------------------------------------------------
@@ -1164,17 +1152,12 @@ Lng32 str_to_ansi_id(char *src, char *tgt,Lng32 &tgtLen, short mustValidate, cha
   tgt = pBuf;
   return 0;
 }
-#endif
-
-
-
 
 // -----------------------------------------------------------------------
 // following two functions are used to return the catalog and schema names
 // given a qualified table name. Either the catalog or schema name can be
 // a delimited identifier name.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 extractDelimitedName (char* tgt,  const char* const src, const char sep)
 {
    Int32 i = 0, j = 0;
@@ -1208,7 +1191,6 @@ Int32 extractDelimitedName (char* tgt,  const char* const src, const char sep)
    return (i);
 }
 
-NA_EIDPROC
 void extractCatSchemaNames (char* catName, char *schName, char* qualTabName)
 {
    assert(catName && schName && qualTabName);

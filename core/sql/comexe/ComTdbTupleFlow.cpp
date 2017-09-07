@@ -127,7 +127,7 @@ const char * ComTdbTupleFlow::getExpressionName(Int32 pos) const
     return NULL;
 }
 
-NA_EIDPROC void ComTdbTupleFlow::displayContents(Space * space,ULng32 flag)
+void ComTdbTupleFlow::displayContents(Space * space,ULng32 flag)
 {
       ComTdb::displayContents(space,flag & 0xFFFFFFFE);
 

@@ -64,9 +64,7 @@ extern void my_mpi_fclose();
 #include "CompException.h"
 #include "StmtCompilationMode.h"
 
-#if defined(NA_LINUX) && !defined(__EID)
 extern void releaseRTSSemaphore();  // Functions implemented in SqlStats.cpp
-#endif
 
 // LCOV_EXCL_START :dpm
 void NADebug()
@@ -104,9 +102,7 @@ void NAArkcmpExceptionEpilogue()
 // wrapper for exit(), calling NAError_stub_for_breakpoints() first
 void NAExit(Int32 status)
 {
-#ifndef __EID
     NAAssertMutexLock(); // Serialize termination
-#endif
     releaseRTSSemaphore();
   if (status)
     NAError_stub_for_breakpoints(); // LCOV_EXCL_LINE :dpm

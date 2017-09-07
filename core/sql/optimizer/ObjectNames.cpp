@@ -55,12 +55,11 @@
 
 #include "ComSmallDefs.h"
 
+#include "ComResWords.h"
 
 #include "SqlParserGlobals.h"			// must be last
 
-#if !defined(__EID) && !defined(ARKFS_OPEN)
-#include "ComResWords.h"
-#endif
+
 // -----------------------------------------------------------------------
 // Context variable for "getXxxAsAnsiString()" methods simplifies the
 // calling interface (we don't have to pass a boolean all over the place).
@@ -428,12 +427,6 @@ Int32 QualifiedName::extractAndDefaultNameParts(const SchemaName& defCatSch
       // If NAMETYPE NSK, catName will become  \SYS.$VOL
         catName = defCatSch.getCatalogName();
       }
-    }
-    else if (SqlParser_NAMETYPE == DF_NSK &&
-	     *catName.data() == '$' &&
-	     SqlParser_MPLOC.hasSystemName()) {
-      // If user specified only a $VOL, fill in the current default \SYS.
-      catName.prepend(SqlParser_MPLOC.getSystemName() + ".");
     }
 
     if (schName.isNull()) {
@@ -1496,7 +1489,6 @@ ComAnsiNameSpace ExtendedQualName::convSpecialTableTypeToAnsiNameSpace( const Sp
   case  MV_TABLE:
   case  PARTITION_TABLE:
   case  TRIGTEMP_TABLE:
-  case  RESOURCE_FORK:
   case  VIRTUAL_TABLE:
   case  MVS_UMD:
     return COM_TABLE_NAME;
@@ -1628,10 +1620,7 @@ ostream& operator<< (ostream& out, TaskMonitor t)
   return out<< "Time = " <<
   ((double) t.timer()) / CLOCKS_PER_SEC
   << " us (microsecond)" <<
-//#if defined(NA_LINUX)
-   //"\tET = " << out.fixed << out.precision(6) << t.elapsed_time() << " s" << 
    "\tET = " << t.elapsed_time() << " s" << 
-//#endif
   " \tCounts = "<<t.count()<<" \tGoodCnts = "<<t.goodcount();
 }
 

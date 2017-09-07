@@ -1493,8 +1493,6 @@ SQLNumeric::SQLNumeric(NAMemory *heap, Lng32 length, Lng32 precision, Lng32 scal
 } // SQLNumeric()
 
 
-// Note: DisAmbiguate arg added so Compiler can distinguish between
-//       this constructor and the one above...for 64bit project.
 SQLNumeric::SQLNumeric(NAMemory *heap, NABoolean allowNegValues, Lng32 precision, Lng32 scale,
                        const Int16 DisAmbiguate,
                        NABoolean allowSQLnull)
@@ -1776,12 +1774,7 @@ NAString* SQLNumeric::convertToString(double v, CollHeap* h)  const
         }
         break;
 
-#ifdef NA_64BIT
-        // dg64 - a bit of a guess
         case sizeof(Int32):
-#else
-        case sizeof(Lng32):
-#endif
         {
 	   Lng32 temp = (Lng32)v;
 	   signedLongToAscii(temp, nameBuf);
@@ -1870,12 +1863,7 @@ double SQLNumeric::getMinValue() const
 	    }
 	    break;
 
-#ifdef NA_64BIT
-            // dg64 - a bit of a guess
 	    case sizeof(Int32):
-#else
-	    case sizeof(Lng32):
-#endif
 	    {
 	       Lng32 temp = 0;
 	       Lng32 i=0;
@@ -1935,12 +1923,7 @@ double SQLNumeric::getMaxValue() const
         }
         break;
 
-#ifdef NA_64BIT
-        // dg64 - a bit of a guess
         case sizeof(Int32):
-#else
-        case sizeof(Lng32):
-#endif
         {
 	   Lng32 temp = 0;
 	   Lng32 i=0;

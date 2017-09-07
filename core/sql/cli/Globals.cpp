@@ -77,14 +77,8 @@ CliGlobals * cli_globals = NULL;
 // segment id.
 #endif
 
-
-
-#ifdef NA_CMPDLL
 #include "CmpContext.h"
-#endif // NA_CMPDLL
 
-//ss_cc_change
-//LCOV_EXCL_START
 CliGlobals::CliGlobals(NABoolean espProcess)
      : inConstructor_(TRUE),
        executorMemory_("Global Executor Memory",0,0,
@@ -118,9 +112,7 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        defaultContext_(NULL),
        langManC_(NULL),
        langManJava_(NULL)
-#ifdef SQ_PHANDLE_VERIFIER
        , myVerifier_(-1)
-#endif
 {
   globalsAreInitialized_ = FALSE;
   executorMemory_.setThreadSafe();
@@ -171,19 +163,15 @@ void CliGlobals::init( NABoolean espProcess,
 				  myNodeNumber_, myNodeName_, nodeNameLen, 
 				  myStartTime_, myProcessNameString_,
 				  parentProcessNameString_
-#ifdef SQ_PHANDLE_VERIFIER
                                   , &myVerifier_
-#endif
                                  );
 
   if (retcomrt)
   {
-    char errStr[128];//LCOV_EXCL_LINE
-    sprintf (errStr, "Could not initialize CLI globals.ComRtGetProgramInfo returned an error :%d.", retcomrt);//LCOV_EXCL_LINE
-    ex_assert(0,errStr);//LCOV_EXCL_LINE
+    char errStr[128];
+    sprintf (errStr, "Could not initialize CLI globals.ComRtGetProgramInfo returned an error :%d.", retcomrt);
+    ex_assert(0,errStr);
   }
-
-  
 
   ComRtGetProcessPriority(myPriority_);
   savedPriority_ = (short)myPriority_;
@@ -192,35 +180,7 @@ void CliGlobals::init( NABoolean espProcess,
   // create global structures for IPC environment
 #if !(defined(__SSCP) || defined(__SSMP))
 
-  // check if Measure is enabled and allocate Measure process counters.
-  measProcCntrs_ = NULL;
-  measProcEnabled_  = 0;
-  measStmtEnabled_  = 0;
-  measSubsysRunning_ = 0;
-  
-  measProcCntrs_ = new(&executorMemory_) ExMeasProcCntrs();  
-
-  // Ask Measure for status
-  ExMeasGetStatus( measStmtEnabled_,
-		   measProcEnabled_,
-		   measSubsysRunning_ );
-
-  if (measProcEnabled_)
-    {
-      //ss_cc_change This will not get hit on seaquest
-      //LCOV_EXCL_START
-      Int32 measError = measProcCntrs_->ExMeasProcCntrsBump();
-      if (measError)
-	{
-	  NADELETEBASIC (measProcCntrs_, &executorMemory_);
-	  measProcCntrs_ = NULL;
-	  measProcEnabled_  = 0;
-	  measStmtEnabled_  = 0;
-	}
-      //LCOV_EXCL_STOP
-    }
-
-    ipcHeap_ = new(&executorMemory_) NAHeap("IPC Heap",
+  ipcHeap_ = new(&executorMemory_) NAHeap("IPC Heap",
                                      NAMemory::IPC_MEMORY, 2048 * 1024);
     ipcHeap_->setThreadSafe();
   if (! espProcess)
@@ -939,14 +899,12 @@ Lng32 CliGlobals::setEnvVar(const char * name, const char * value,
 
   envvarsContext_++;
 
-#ifdef NA_CMPDLL
   // need to set the env to the embedded compiler too
   if (currContext()->isEmbeddedArkcmpInitialized())
     {
       currContext()->getEmbeddedArkcmpContext()
                    ->setArkcmpEnvDirect(name, value, reset);
     }
-#endif // NA_CMPDLL
 
   return sendEnvironToMxcmp();
 }

@@ -181,13 +181,13 @@ void processAnUnLoadMessage(UdrGlobals *UdrGlob,
     ServerDebug("[UdrServ (%s)] Send Unload Reply", moduleName);
   }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   if (UdrGlob && UdrGlob->getJavaLM())
   {
     sleepIfPropertySet(*(UdrGlob->getJavaLM()),
                        "MXUDR_UNLOAD_DELAY", diags);
   }
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
 
   sendControlReply(UdrGlob, msgStream, NULL);
 

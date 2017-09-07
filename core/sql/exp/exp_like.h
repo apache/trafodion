@@ -44,13 +44,12 @@
 #include "csconvert.h"
 #include "NLSConversion.h"
 
-class SQLEXP_LIB_FUNC  LikePatternString : public NABasicObject
+class  LikePatternString : public NABasicObject
 {
 public:
   //
   // Constructor.
   //
-NA_EIDPROC
   LikePatternString
   ( const char* pattern
   , UInt16 patternLen
@@ -75,14 +74,12 @@ NA_EIDPROC
   , underscoreChar_len_(underscoreChar_len)
   {}
 
-NA_EIDPROC
   ~LikePatternString() {}
   //
   // Accessor functions.
   //
   CharInfo::CharSet getPatternCharSet() const { return patternCS_ ; }
 
-NA_EIDPROC
   UInt16 getLength() const { return patternLen_; }
 private:
   const char* pattern_;
@@ -100,14 +97,13 @@ private:
 
 };
 
-class SQLEXP_LIB_FUNC  LikePatternStringIterator
+class  LikePatternStringIterator
 {
 public:
   //
   // Construct an iterator that points to the first character in the given
   // pattern.
   //
-NA_EIDPROC
   LikePatternStringIterator
   ( const LikePatternString& pattern
   )
@@ -116,7 +112,6 @@ NA_EIDPROC
   {
     determineCharType();
   }
-NA_EIDPROC
   ~LikePatternStringIterator() {}
   //
   // Determine the current character's classification.
@@ -128,7 +123,6 @@ NA_EIDPROC
   , PERCENT
   , CharType_ERROR
   };
-NA_EIDPROC
   void determineCharType()
   {
     if (currentChar_ >= pattern_.endOfPattern_)
@@ -165,16 +159,13 @@ NA_EIDPROC
   //
   // Accessor functions.
   //
-NA_EIDPROC
   operator CharType() const 		{ return charType_; }
 
-NA_EIDPROC
   const char* getCurrentChar()
   {
     return currentChar_;
   }
 
-NA_EIDPROC
   Int16 getChar(char* ch) const
   {
     Int16 chrLen = pattern_.bytesPerChar_;
@@ -198,13 +189,11 @@ NA_EIDPROC
     return( chrLen );
   }
 
-NA_EIDPROC
   UInt16 getBytesPerChar() const { return pattern_.bytesPerChar_; }
 
   //
   // Return TRUE if the current character is equal to the given character.
   //
-NA_EIDPROC
   NABoolean thisCharIsEqualTo(const char* ch, const UInt16 ch_len) const
   {
     if ( currentChar_ + ch_len > pattern_.endOfPattern_ )
@@ -218,7 +207,6 @@ NA_EIDPROC
   // Advance to the next character in the pattern.
   //
 
-NA_EIDPROC
   void operator += (Int32 numBytesToAdd)
   {
     currentChar_ += numBytesToAdd;
@@ -310,13 +298,12 @@ LikePatternString "%%ABC__%%%DEF%" is represented as:
 
 ******************************************************************************/
 
-class SQLEXP_LIB_FUNC  LikePatternClause : public NABasicObject
+class  LikePatternClause : public NABasicObject
 {
 public:
   //
   // Constructor.
   //
-NA_EIDPROC
   LikePatternClause
   ( LikePatternStringIterator::CharType charType
   , char* patternBuf
@@ -330,30 +317,22 @@ NA_EIDPROC
   , encodedPattern_(NULL)
   {}
 
-NA_EIDPROC
   ~LikePatternClause() {}
   //
   // Accessor functions.
   //
-NA_EIDPROC
   LikePatternStringIterator::CharType getType() const { return charType_; }
-NA_EIDPROC
   char* getPattern() const 			{ return pattern_; }
-NA_EIDPROC
   UInt16 getLength() const 		{ return length_; }
-NA_EIDPROC
   void setLength(UInt16 length) 
     { length_ = length; }
 
-NA_EIDPROC
   LikePatternClause* getNextClause() const 	{ return nextClause_; }
-NA_EIDPROC
   LikePatternClause* getPreviousClause() const 	{ return previousClause_; }
   //
   // Set the clause's character classification.  It indicates the type of
   // character that will be stored in the clause.
   //
-NA_EIDPROC
   void setType(LikePatternStringIterator::CharType charType)
   {
     charType_ = charType;
@@ -361,7 +340,6 @@ NA_EIDPROC
   //
   // Append the given character to the clause.
   //
-NA_EIDPROC
   void append(const LikePatternStringIterator& i)
   {
     length_ += i.getChar(getPattern() + getLength());
@@ -369,7 +347,6 @@ NA_EIDPROC
   //
   // Append the given clause to the current clause.
   //
-NA_EIDPROC
   void append(LikePatternClause* clause)
     {
       nextClause_ = clause;
@@ -378,22 +355,17 @@ NA_EIDPROC
   //
   // Return TRUE if the clause matches the given text.
   //
-NA_EIDPROC
   NABoolean matches(const char* text); 
 
-NA_EIDPROC
   CharInfo::Collation getCollation() const
   { return co_; }
 
-NA_EIDPROC
   void setCollation(CharInfo::Collation collation)
     { co_ = collation; }
 
-NA_EIDPROC
   unsigned char* getEncodedPattern()
     { return encodedPattern_; }
 
-NA_EIDPROC
   void setEncodedPattern(unsigned char* encodedPattern)
     { encodedPattern_ = encodedPattern; }
 
@@ -415,13 +387,12 @@ private:
 
 };
 
-class SQLEXP_LIB_FUNC  LikePatternHeader : public LikePatternClause
+class  LikePatternHeader : public LikePatternClause
 {
 public:
   //
   // Constructor.
   //
-NA_EIDPROC
   LikePatternHeader
   ( LikePatternStringIterator::CharType charType
   , char* patternBuf
@@ -440,7 +411,6 @@ NA_EIDPROC
   //
   // Destructor.
   //
-NA_EIDPROC
  ~LikePatternHeader()
   {
     // If we have allocated space for encodedHeader, deallocate it.
@@ -459,21 +429,15 @@ NA_EIDPROC
   //
   // Accessor functions.
   //
-NA_EIDPROC
   LikePatternClause* getLastClause() const 	{ return lastClause_; }
-NA_EIDPROC
   UInt16 getLength() const 		{ return length_; }
-NA_EIDPROC
   UInt16 getClauseLength() const
   		{ return ((LikePatternClause *)this)->getLength(); }
-NA_EIDPROC
   LikePatternHeader* getNextHeader() const 	{ return nextHeader_; }
-NA_EIDPROC
   CollHeap* getExHeap() const 			{ return exHeap_; }
   //
   // Append the given character to the header.
   //
-NA_EIDPROC
   void append(const LikePatternStringIterator& i)
   {
     if (i != getLastClause()->getType()) {
@@ -487,7 +451,6 @@ NA_EIDPROC
   //
   // Append a new clause to the header.
   //
-NA_EIDPROC
   void addNewClause(LikePatternStringIterator::CharType charType)
   {
     length_ += getLastClause()->getLength();
@@ -500,7 +463,6 @@ NA_EIDPROC
   // Terminate the clause chain with a NULL pointer and compute the header
   // length.
   //
-NA_EIDPROC
   void endClauses()
   {
     length_ += getLastClause()->getLength();
@@ -508,32 +470,25 @@ NA_EIDPROC
   //
   // Append the given header to the current header.
   //
-NA_EIDPROC
   void append(LikePatternHeader* header) { nextHeader_ = header; }
   //
   // Return TRUE if the header matches the beginning of the given text.
   //
-NA_EIDPROC
 NABoolean matches(const char* text, 
                   Int32 &headerMatchLen, 
                   CharInfo::CharSet cs = CharInfo::ISO88591);
 
-NA_EIDPROC
 NABoolean matchesR(const char* text, const char* &endText,
                    CharInfo::CharSet cs = CharInfo::ISO88591);
 
-NA_EIDPROC
   ExeErrorCode error() const { return error_; }
 
-NA_EIDPROC
   void setError(ExeErrorCode exeErrorCode)
     { error_ = exeErrorCode; }
 
-NA_EIDPROC
   unsigned char* getEncodedHeader()
     { return encodedHeader_; }
 
-NA_EIDPROC
   void setEncodedHeader(unsigned char *encodedHeader)
     { encodedHeader_ = encodedHeader; }
 
@@ -551,13 +506,12 @@ private:
 
 };
 
-class SQLEXP_LIB_FUNC  LikePattern : public LikePatternHeader
+class  LikePattern : public LikePatternHeader
 {
 public:
   //
   // Constructor.
   //
-NA_EIDPROC
   LikePattern
   ( const LikePatternString& pattern
   , CollHeap* exHeap
@@ -567,17 +521,14 @@ NA_EIDPROC
   //
   // Destructor.
   //
-NA_EIDPROC
  ~LikePattern();
   //
   // Return TRUE if the pattern is invalid.
   //
-NA_EIDPROC
   ExeErrorCode error() const { return error_; }
   //
   // Return TRUE if the pattern matches the given text string.
   //
-NA_EIDPROC
   NABoolean matches(const char* text, UInt16 textLen,
                     CharInfo::CharSet cs = CharInfo::ISO88591);
 

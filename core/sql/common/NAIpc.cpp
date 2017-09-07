@@ -107,7 +107,7 @@ NAMessage::NAMessage(IpcNetworkDomain domain) :
     {
       switch (domain)
 	{
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
+#if (defined(NA_GUARDIAN_IPC))
 	case IPC_DOM_GUA_PHANDLE:
 
 	  // open $RECEIVE

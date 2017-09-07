@@ -43,9 +43,7 @@
 #include "unicode_char_set.h"
 #include "BaseTypes.h"
 
-#if  !defined(_EID) && !defined(CLI_PRIV_SRL)
 #include "nawstring.h"
-#endif
 
 // 4/10/98  Unicode char/string manipulations
 
@@ -80,7 +78,6 @@ static const unicode_mapping_t unicode_upper2lower_mapping_table[] =
 };
 
 
-NA_EIDPROC
 NAWchar 
 binary_search(NAWchar wc, Int32 lower, Int32 upper, 
               unicode_mapping_t table[])
@@ -99,7 +96,6 @@ binary_search(NAWchar wc, Int32 lower, Int32 upper,
 }
 
 // search the lower to upper full mapping table
-NA_EIDPROC
 NAWchar* 
 binary_search(NAWchar wc, Int32 lower, Int32 upper, 
               unicode_mapping_full_t table[])
@@ -154,7 +150,6 @@ NAWchar* unicode_char_set::to_upper_full(const NAWchar x)
 // by ConstValue::toUpper() while applying upper method on constants.
 // The 'len' number of chars in 'str' are upshifted and the result
 // is kept in 'upStr'.
-#if !defined(__EID) && !defined(CLI_PRIV_SRL)
 void
 unicode_char_set::to_upper(NAWchar *str, size_t len, NAWString &upStr)
 {
@@ -179,7 +174,6 @@ unicode_char_set::to_upper(NAWchar *str, size_t len, NAWString &upStr)
     }
   }
 }
-#endif
 
 /*
 long unicode_char_set::to_upper(NAWchar *str, long srcLen,

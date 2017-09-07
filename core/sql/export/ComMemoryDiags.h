@@ -37,8 +37,6 @@
 *
 **************************************************************************** */
 
-#include "SqlExportDllDefines.h"
-
 // -----------------------------------------------------------------------
 //  The following classes are defined in this file.
 // -----------------------------------------------------------------------
@@ -75,7 +73,7 @@ class ostream ; // forward decl
 // The static data member is initialized in ComMemoryDiags.cpp.
 //
 
-class SQLEXPORT_LIB_FUNC ComMemoryDiags {
+class ComMemoryDiags {
 public:
   static ostream *& DumpMemoryInfo() { return dumpMemoryInfo_ ; }
 private:

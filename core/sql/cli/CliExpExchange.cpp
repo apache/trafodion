@@ -48,9 +48,6 @@
 #include "cli_stdh.h"
 #include "exp_datetime.h"
 #include "exp_interval.h"
-#if defined( NA_SHADOWCALLS )
-#include "sqlclisp.h" //shadow
-#endif
 #include "exp_expr.h"
 #include "ExRLE.h"
 
@@ -465,9 +462,9 @@ Descriptor::BulkMoveStatus Descriptor::checkBulkMoveStatusV1(
   //  if (! getenv("DOSLOWBULKMOVE"))
   //    return BULK_MOVE_OFF;
   if (getenv("BULKMOVEOFF"))
-    return BULK_MOVE_OFF;//LCOV_EXCL_LINE
+    return BULK_MOVE_OFF;
   else if (getenv("BULKMOVEDISALLOWED"))
-    return BULK_MOVE_DISALLOWED;//LCOV_EXCL_LINE
+    return BULK_MOVE_DISALLOWED;
 #endif
 
   desc_struct  &descItem =  desc[entry - 1]; // Zero base
@@ -1068,9 +1065,6 @@ InputOutputExpr::outputValues(atp_struct *atp,
   Lng32   targetPrecision;
   char * targetVarPtr = NULL;
   char * targetIndPtr = NULL;
-#if defined( NA_SHADOWCALLS )
-  char * bimodalIndPtr = NULL;
-#endif
   char * targetVCLen  = NULL;
   short  targetVCLenSize = 0;
   
@@ -1410,12 +1404,7 @@ InputOutputExpr::outputValues(atp_struct *atp,
         if (tempTarget && output_desc->rowwiseRowset() && (NOT output_desc->rowwiseRowsetDisabled()))
 	  tempTarget = tempTarget + output_desc->getCurrRowOffsetInRowwiseRowset();
          
-#if defined( NA_SHADOWCALLS )
-        bimodalIndPtr = (char *)tempTarget;
-        targetIndPtr = SqlCliSp_GetBufPtr(bimodalIndPtr, FALSE);
-#else
         targetIndPtr = (char *)tempTarget;
-#endif
 	
         if ((operand->getVCIndicatorLength()) && (sourceVCLenInd)) {
           if (operand->getVCIndicatorLength() == sizeof(short))
