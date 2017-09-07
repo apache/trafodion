@@ -70,16 +70,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExOnljTdb()
+  ExOnljTdb()
   {}
 
-  NA_EIDPROC virtual ~ExOnljTdb()
+  virtual ~ExOnljTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------

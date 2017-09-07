@@ -66,7 +66,6 @@
 #include "FragDir.h"
 #include "HeapLog.h"
 #include "parser.h"
-#include "ReadTableDef.h"
 #include "RelControl.h"
 #include "RelExpr.h"
 #include "RelExeUtil.h"
@@ -1399,7 +1398,7 @@ static short CmpGetPlan(SQLSTMT_ID &stmt_id,
                         char* &srcStrBuf, Lng32 &srcStrSize)
 {
   Lng32 retcode = 0;
-  ULong stmtHandle = (ULong)stmt_id.handle;  // NA_64BIT
+  ULong stmtHandle = (ULong)stmt_id.handle;
 
   // Now get the generated code to describe the plan.
   // do not advance to next statement yet, if all stmts are to be retrieved.

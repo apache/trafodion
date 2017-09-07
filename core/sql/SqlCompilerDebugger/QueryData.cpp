@@ -124,7 +124,6 @@ void *QueryData::GetAnalysis()
 void QueryData::SetTDBData(void *tdb, void *fragDir) 
 {
   m_tdb = tdb;
-  #if defined(NA_64BIT)
   union {
      struct {
         unsigned int low;
@@ -134,9 +133,6 @@ void QueryData::SetTDBData(void *tdb, void *fragDir)
   } tmp;
   tmp.ptr = tdb;
     m_baseAddr = tmp.data.low;
-  #else
-  m_baseAddr = (Lng32)tdb;
-  #endif
   m_fragDir = fragDir;
 } 
 void QueryData::GetTDBData(void **tdb, void **fragDir, Lng32 & baseAddr) 

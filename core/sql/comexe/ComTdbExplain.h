@@ -137,7 +137,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   // The index of the ATP being returned to the parent, that has the
   // new row (explain Info)

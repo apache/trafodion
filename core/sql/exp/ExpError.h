@@ -65,8 +65,6 @@ class ComCondition;
 // above version in that it puts an error condition in the supplied
 // ComDiagsArea rather than in a copy.
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExAddCondition(NAMemory * heap, ComDiagsArea** diagsArea,
 			     Lng32 err, ComCondition** cond=NULL,
 			     Lng32 * intParam1 = NULL,
@@ -76,8 +74,6 @@ ComDiagsArea *ExAddCondition(NAMemory * heap, ComDiagsArea** diagsArea,
 			     const char * stringParam2 = NULL,
 			     const char * stringParam3 = NULL);
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseSqlError(NAMemory * heap, ComDiagsArea** diagsArea,
 			      ExeErrorCode err, ComCondition** cond=NULL,
 			      Lng32 * intParam1 = NULL,
@@ -87,12 +83,8 @@ ComDiagsArea *ExRaiseSqlError(NAMemory * heap, ComDiagsArea** diagsArea,
 			      const char * stringParam2 = NULL,
 			      const char * stringParam3 = NULL);
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseSqlWarning(NAMemory * heap, ComDiagsArea** diagsArea,
 				ExeErrorCode err, ComCondition** cond=NULL);
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseSqlWarning(NAMemory * heap, ComDiagsArea** diagsArea,
                               ExeErrorCode err, ComCondition** cond,
                               Lng32 * intParam1 = NULL,
@@ -101,16 +93,12 @@ ComDiagsArea *ExRaiseSqlWarning(NAMemory * heap, ComDiagsArea** diagsArea,
                               const char * stringParam1 = NULL,
                               const char * stringParam2 = NULL,
                               const char * stringParam3 = NULL);
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseFunctionSqlError(NAMemory * heap, 
 				      ComDiagsArea** diagsArea,
 				      ExeErrorCode err, 
 				      NABoolean derivedFunction = FALSE,
 				      OperatorTypeEnum origOperType = ITM_FIRST_ITEM_OP,
 				      ComCondition** cond=NULL);
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap, 
 				    ComDiagsArea** diagsArea,
 				    ExeErrorCode err, 
@@ -119,16 +107,12 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                                     char *op2 = NULL,
                                     char *op3 = NULL);
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap, 
 				    ComDiagsArea** diagsArea,
 				    ExeErrorCode err, 
 				    ex_clause *clause,
                                     char *op_data[]);
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap, 
 				    ComDiagsArea** diagsArea,
 				    ExeErrorCode err, 
@@ -141,8 +125,6 @@ ComDiagsArea *ExRaiseDetailSqlError(CollHeap* heap,
                                     Int32 tgtLength = -1,
                                     Int32 tgtScale = -1,
                                     Int32 tgtPrecision = 0);
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 char *stringToHex(char * out, Int32 outLen, char * in, Int32 inLen);
                                                                 
 #endif /* EXP_ERROR_H */

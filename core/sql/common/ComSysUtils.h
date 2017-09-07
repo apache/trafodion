@@ -150,26 +150,19 @@ inline UInt64 reversebytes( UInt64 xx )
     return sink.xx;
 }
 
-#ifdef NA_64BIT /* Needed when _int64 and Int64 don't resolve to same basic type */
-/*inline _int64 reversebytes( _int64 sometexianendian )
-{
-  return( (_int64) reversebytes( (Int64) sometexianendian ) );
-} */
-#endif
-
-#endif  // NA_LITTLE_ENDIAN and NA_WINNT
+#endif  // NA_LITTLE_ENDIAN
 //----------------------------------------------------------------
 
 #endif
 
-NA_EIDPROC 
+
 void copyInteger (void *destination, Int32 targetLength, 
 		  void *sourceAddress, Int32 sourceLength);
 
 void copyToInteger1 (Int8 *destination, void *sourceAddress, Int32 sourceSize);
-NA_EIDPROC 
+
 void copyToInteger2 (short *destination, void *sourceAddress, Int32 sourceSize);
-NA_EIDPROC 
+
 void copyToInteger4 (Lng32 *destination, void *sourceAddress, Int32 sourceSize);
-NA_EIDPROC 
+
 void copyToInteger8 (Int64 *destination, void *sourceAddress, Int32 sourceSize);

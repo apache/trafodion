@@ -39,10 +39,8 @@
 #include "NABoolean.h"
 #include "ComSizeDefs.h"
 #include "ComCharSetDefs.h"
-#if !defined (ARKFS_OPEN) 
-  #include "ComDiags.h"
-  #include "ComSmallDefs.h"
-#endif
+#include "ComDiags.h"
+#include "ComSmallDefs.h"
 
   #ifndef __DERROR__
     #include "fs/feerrors.h"
@@ -307,8 +305,6 @@ void ComFeatureVersionInfoSPInputTypeToLiteral ( const FeatureVersionInfoSPInput
 FeatureVersionInfoSPInputType ComFeatureVersionInfoSPLiteralToInputType 
                                                ( const char * inputTypeLiteral );
 
-
-#if !defined (ARKFS_OPEN) 
 //----------------------------------------------------------------------
 //
 //  Translate an anchor file access error to something more sensible.
@@ -352,9 +348,7 @@ private:
 //         objects survive the table name's allocation.
 //
 //     NB: Metadata access through DDOL will not use this class in R2.0. That is,
-//         utilities will not perform the SMD table error translation. The RFork
-//         error translation is done by the DDL layer, utilities that access RForks 
-//         using classes from DDL will see RFork access error translation.
+//         utilities will not perform the SMD table error translation.
 //
 class MetaDataErrorTranslator : public ComDiagsTranslator
 {
@@ -408,8 +402,6 @@ private:
   Lng32 nskError_;
 
 };
-
-#endif
 
 //----------------------------------------------------------------------
 //

@@ -55,77 +55,62 @@
 class NAString;
 class NAWString;
 
-NA_EIDPROC
 NAWcharBuf* 
 ISO88591ToUnicode(const charBuf& iso88591String, CollHeap *heap, 
                   NAWcharBuf*& unicodeString, NABoolean addNullAtEnd = TRUE);
 
-NA_EIDPROC
 charBuf* 
 unicodeToISO88591(const NAWcharBuf& unicodeString, CollHeap* heap, 
                   charBuf*& iso88591String, NABoolean addNullAtEnd = TRUE,
                   NABoolean allowInvalidCodePoint = TRUE);
 
-NA_EIDPROC
 NAWcharBuf* 
 csetToUnicode(const charBuf& csetString, CollHeap *heap, 
                   NAWcharBuf*& unicodeString, Int32 cset, Int32 &errorcode,
                   NABoolean addNullAtEnd = TRUE, Int32 *charCount=NULL, Int32 *errorByteOff=NULL);
 
-NA_EIDPROC
 charBuf* 
 unicodeTocset(const NAWcharBuf& unicodeString, CollHeap* heap, 
                   charBuf*& csetString, Int32 cset, Int32 &errorcode, NABoolean addNullAtEnd = TRUE,
                   NABoolean allowInvalidCodePoint = TRUE, Int32 *charCount=NULL, Int32 *errorByteOff=NULL);
 
-NA_EIDPROC
 NAWcharBuf* 
 sjisToUnicode(const charBuf& sjisString, CollHeap *heap, 
               NAWcharBuf*& unicodeString, NABoolean addNullAtEnd = TRUE);
 
-NA_EIDPROC
 charBuf* 
 unicodeToSjis(const NAWcharBuf& unicodeString, CollHeap *heap, 
               charBuf*& sjisString, NABoolean addNullAtEnd = TRUE,
                   NABoolean allowInvalidCodePoint = TRUE);
 
-NA_EIDPROC
 charBuf* 
 unicodeToUtf8(const NAWcharBuf& unicodeString, CollHeap *heap, 
               charBuf*& utf8String, NABoolean addNullAtEnd = TRUE,
                   NABoolean allowInvalidCodePoint = TRUE);
 
-NA_EIDPROC
 NAWcharBuf*
 ksc5601ToUnicode(const charBuf& ksc5601String, CollHeap *heap,
               NAWcharBuf*& unicodeString, NABoolean addNullAtEnd = TRUE);
 
-NA_EIDPROC
 charBuf*
 unicodeToKsc5601(const NAWcharBuf& unicodeString, CollHeap *heap,
               charBuf*& ksc5601String, NABoolean addNullAtEnd = TRUE,
                   NABoolean allowInvalidCodePoint = TRUE);
 
-NA_EIDPROC
 Int32 unicodeToSjisChar(char *sjis, NAWchar wc);
 
-NA_EIDPROC
 cnv_charset convertCharsetEnum (Int32/*i.e. enum CharInfo::CharSet*/ inset);
 
-NA_EIDPROC
 const char* getCharsetAsString(Int32/*i.e. enum CharInfo::CharSet*/ charset);
 
-NA_EIDPROC
 Lng32 UnicodeStringToLocale(Lng32/*i.e. enum CharInfo::CharSet*/ charset,
                   const NAWchar* wstr, Lng32 wstrLen, char* buf, Lng32 bufLen, NABoolean addNullAtEnd = TRUE,
                   NABoolean allowInvalidCodePoint = TRUE);
 
 
-NA_EIDPROC
 Lng32 LocaleStringToUnicode(Lng32/*i.e. enum CharInfo::CharSet*/ charset,
                   const char* str, Lng32 strLen, NAWchar* wstrBuf, Lng32 wstrBufLen, NABoolean addNullAtEnd = TRUE);
 
-NA_EIDPROC
 Int32 localeConvertToUTF8(char* source,
                   Lng32 sourceLen,
                   char* target,
@@ -135,7 +120,6 @@ Int32 localeConvertToUTF8(char* source,
                   Lng32  *charCount = NULL,
                   Lng32  *errorByteOff = NULL);
 
-NA_EIDPROC
 Int32 UTF8ConvertToLocale(char* source,
                         Lng32 sourceLen,
                         char* target,
@@ -171,7 +155,6 @@ Int32 UTF8ConvertToLocale(char* source,
 // Note that classes NAMemory and CollHeap are the same except for
 // the names.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 ComputeWidthInBytesOfMbsForDisplay ( const char * pp_cpMbs                // in
                                          , const Int32 pv_iMbsLenInBytes        // in
                                          , const Int32 pv_iMaxDisplayLenInBytes // in
@@ -191,7 +174,6 @@ Int32 ComputeWidthInBytesOfMbsForDisplay ( const char * pp_cpMbs                
 // Return an error code (a negative number) if encounters an error.  The
 // error code values are defined in w:/common/csconvert.h.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 ComputeStrLenInNAWchars (const char * pStr,
                                const Int32  strLenInBytes,
                                const CharInfo::CharSet cs,
@@ -205,7 +187,6 @@ Int32 ComputeStrLenInNAWchars (const char * pStr,
 // Return an error code (a negative number) if encounters an error.  The
 // error code values are defined in w:/common/csconvert.h.
 // -----------------------------------------------------------------------
-NA_EIDPROC
 Int32 ComputeStrLenInUCS4chars (const char * pStr,
                                 const Int32 strLenInBytes,
                                 const CharInfo::CharSet cs);
@@ -235,7 +216,6 @@ typedef char CollHeap;
 #define NABoolean Int32
 #define TRUE 1
 #define FALSE 0
-#define NA_EIDPROC
 #define NADELETEBASIC(buf_, heap_)
 #define NADELETE(buf_, T_, heap_)
 #include "stringBuf.h"

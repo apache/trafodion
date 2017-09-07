@@ -56,13 +56,13 @@
 // Define UDR_DEBUG only if we are doing a debug build with the C
 // runtime library
 //
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #ifndef UDR_DEBUG
 #define UDR_DEBUG 1
 #endif // not UDR_DEBUG
-#else  // NA_DEBUG_C_RUNTIME
+#else  // _DEBUG
 #undef UDR_DEBUG
-#endif // NA_DEBUG_C_RUNTIME else
+#endif // _DEBUG else
 
 //
 // Define a local assert macro. We define UdrExeAssert to something

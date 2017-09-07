@@ -46,9 +46,7 @@
 #include "ComSqlexedbg.h"
 #include "Platform.h"
 
-#ifndef __EID
 #include "ComExeTrace.h"
-#endif
 
 // -----------------------------------------------------------------------
 
@@ -119,12 +117,7 @@ typedef ExWorkProcRetcode (*ExWorkProcPtr)(ex_tcb *);
 // do not do it by default.
 // -----------------------------------------------------------------------
 
-#ifdef __EID
-// #define TRACE_DP2_CPU_LIMIT 
-const Int32 NumLastCalled = 256;
-#else
 const Int32 NumLastCalled = 8;
-#endif
 
 struct TraceEntry {
   ExSubtask         *lastCalledTask_;
@@ -234,7 +227,7 @@ public:
 
   Int32 hasActiveEvents(ex_tcb *tcb);
 
-  NA_EIDPROC inline NABoolean externalEventCompleted(void)
+  inline NABoolean externalEventCompleted(void)
     { return externalEventCompleted_; };
 
   // ---------------------------------------------------------------------
@@ -247,25 +240,25 @@ public:
   // definition of ExSubtask follows this class.)
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC inline void setExternalEventCompleted(void)
+  inline void setExternalEventCompleted(void)
     { externalEventCompleted_ = TRUE; };
 
-  NA_EIDPROC void setRootTcb(ex_tcb *tcb);
+  void setRootTcb(ex_tcb *tcb);
 
   // ---------------------------------------------------------------------
   // Query limits: next three methods support the ability to raise an error
   // if a query takes too much of a ESP or master's CPU time.  These are 
   // defined also for exe-in-dp2, though the feature is not used there.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void setMaxCpuTime(Int64 m) { maxCpuTime_ = m * 1000L * 1000L; }
+  void setMaxCpuTime(Int64 m) { maxCpuTime_ = m * 1000L * 1000L; }
 
-  NA_EIDPROC void setCpuLimitCheckFreq(Int32 m) { 
+  void setCpuLimitCheckFreq(Int32 m) { 
     maxSubtaskLoops_ = m; 
     subtaskLoopCnt_ = maxSubtaskLoops_;    // A trick to ensure we check CPU 
                                            // time on the the first iteration.
   }
 
-  NA_EIDPROC NABoolean checkSuspendAndLimit();
+  NABoolean checkSuspendAndLimit();
 
   // ---------------------------------------------------------------------
   // Method to start the GUI
@@ -276,18 +269,16 @@ public:
   // Method to aid in diagnosing looping problems
   // ---------------------------------------------------------------------
 
-  NA_EIDPROC inline ExSubtask * getLastCalledTask(void) const 
+  inline ExSubtask * getLastCalledTask(void) const 
     { return (lastCalledIdx_ == -1 ? 0 : 
               subtaskTrace_[lastCalledIdx_].lastCalledTask_);}
 
   // ---------------------------------------------------------------------
   // Method to aid executor tracing
   // ---------------------------------------------------------------------
-#ifndef __EID
   Int32 printALiner(Int32 lineno, char *buf);
   static Int32 getALine(void * mine, Int32 lineno, char * buf)
                { return ((ExScheduler *) mine)->printALiner(lineno, buf); }
-#endif // not __EID
 
 private:
 
@@ -303,11 +294,8 @@ private:
   // helps with debugging loops
   TraceEntry          subtaskTrace_[NumLastCalled];
   Int32                 lastCalledIdx_;
-#ifndef __EID
   // helps with executor tracing
   ExeTrace            *exeTrace_;
-#endif // not __EID
-
 
   // list of rarely used subtasks (could keep multiple of these later)
   ExExceptionSubtask *exceptionSubtask_;

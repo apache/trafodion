@@ -109,7 +109,7 @@
 #define Max_BIG5_chr 0xF9FF      /* Max for using lookup table */
 #define BAD_UCS_VAL 0x0000FFFF
 
-NA_EIDPROC size_t Our_mbtowc_big5_ucs4(WChar_t *pwc, const char *ts, size_t maxlen,
+size_t Our_mbtowc_big5_ucs4(WChar_t *pwc, const char *ts, size_t maxlen,
                                        _LC_charmap_t *hdl)
 {
     uchar_t *s = (uchar_t *)ts	;
@@ -169,7 +169,7 @@ err_exit:
 #define Min_SJIS_chr 0x8140  /* Min for using lookup table */
 #define Max_SJIS_chr 0xFC4B  /* Max for using lookup table */
 
-NA_EIDPROC size_t Our_mbtowc_sjis_ucs4(WChar_t *pwc, const char *ts, size_t maxlen,
+size_t Our_mbtowc_sjis_ucs4(WChar_t *pwc, const char *ts, size_t maxlen,
                                        _LC_charmap_t *hdl)
 {
     uchar_t *s = (uchar_t *)ts	;
@@ -250,7 +250,7 @@ err_exit:
 #define Min_KSC_chr 0x8141  /* Min for using lookup table */
 #define Max_KSC_chr 0xFEFE  /* Max for using lookup table */
 
-NA_EIDPROC size_t Our_mbtowc_cp949_ucs4(WChar_t *pwc, const char *ts, size_t maxlen,
+size_t Our_mbtowc_cp949_ucs4(WChar_t *pwc, const char *ts, size_t maxlen,
                                        _LC_charmap_t *hdl)
 {
     uchar_t *s = (uchar_t *)ts	;
@@ -317,7 +317,7 @@ err_exit:
 #define EUCJP_ROW_LEN  (0xFE - 0xA1 + 1)
 #define EUCJP_NUM_ROWS  (0xFE - 0xA1 +1)
 
-NA_EIDPROC size_t Our_mbtowc_eucjp_ucs4(WChar_t *pwc, const char *ts, size_t maxlen,
+size_t Our_mbtowc_eucjp_ucs4(WChar_t *pwc, const char *ts, size_t maxlen,
                                        _LC_charmap_t *hdl)
 {
     uchar_t *s = (uchar_t *)ts	;
@@ -402,7 +402,7 @@ err_exit:
  */
 #define Max_BIG5_UCS_val (0xFFFE)
 
-NA_EIDPROC int Our_wctomb_big5_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
+int Our_wctomb_big5_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
 {
     WChar_t mb = 0 ;
 
@@ -452,7 +452,7 @@ NA_EIDPROC int Our_wctomb_big5_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
  */
 #define Max_KSC_UCS_val (0xFFFE)
 
-NA_EIDPROC int Our_wctomb_cp949_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
+int Our_wctomb_cp949_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
 {
     WChar_t mb = 0 ;
 
@@ -508,7 +508,7 @@ NA_EIDPROC int Our_wctomb_cp949_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
  */
 #define Max_SJIS_UCS_val (0xFFFE)
 
-NA_EIDPROC int Our_wctomb_sjis_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
+int Our_wctomb_sjis_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
 {
     WChar_t mb = 0 ;
 
@@ -562,7 +562,7 @@ NA_EIDPROC int Our_wctomb_sjis_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
  * NOTE: It is the caller's responsibility to ensure output array is 
  *       big enough.
  */
-NA_EIDPROC int Our_wctomb_eucjp_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
+int Our_wctomb_eucjp_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
 {
     WChar_t mb = 0 ;
 
@@ -711,8 +711,8 @@ NA_EIDPROC int Our_wctomb_eucjp_ucs4(char *s, WChar_t wc, _LC_charmap_t *hdl)
 /*
  * Dummy pctomb() and pcstombs() routines
  */
-NA_EIDPROC int __pctomb_mb_ucs4  () { return(-1) ; }
-NA_EIDPROC int __pcstombs_mb_ucs4() { return(-1) ; }
+int __pctomb_mb_ucs4  () { return(-1) ; }
+int __pcstombs_mb_ucs4() { return(-1) ; }
 
 /*
  * Dummy cell4_t table
@@ -811,7 +811,7 @@ const static int	WCDMAPVAL = WCDMAP  ;
 /*
  * Map a wide character code (UCS) to its multibyte format
  */
-NA_EIDPROC inline static WChar_t WCGETVAL(WChar_t wc) //JAC
+inline static WChar_t WCGETVAL(WChar_t wc) //JAC
 {
     int row = ROW(wc) ;
     if ((row >= WCROWSIZE) || ((row = WCROW[row]) == UCS2_BAD))
@@ -828,7 +828,7 @@ NA_EIDPROC inline static WChar_t WCGETVAL(WChar_t wc) //JAC
 /*
  * Map a multibyte index to wide character encoding
  */
-NA_EIDPROC inline static WChar_t MBGETVAL(int idx) //JAC
+inline static WChar_t MBGETVAL(int idx) //JAC
 {
     int row = ROW(idx) ;
     if ((row >= MBROWSIZE) || ((row = MBROW[row]) == UCS2_BAD))
@@ -845,7 +845,7 @@ NA_EIDPROC inline static WChar_t MBGETVAL(int idx) //JAC
 /*--------------------[ Conversion routines start here ]---------------------*/
 
 #ifdef USING_OPEN_SOURCE_MBLEN
-NA_EIDPROC int MBLEN(const char *ts, size_t maxlen, _LC_charmap_t *hdl)
+int MBLEN(const char *ts, size_t maxlen, _LC_charmap_t *hdl)
 {
     uchar_t *s = (uchar_t *)ts	;
 #ifdef DONT_NEED_THIS // JAC
@@ -886,7 +886,7 @@ NA_EIDPROC int MBLEN(const char *ts, size_t maxlen, _LC_charmap_t *hdl)
 }
 #endif // USING_OPEN_SOURCE_MBLEN
 
-NA_EIDPROC size_t MBTOWC(WChar_t *pwc, const char *ts, size_t maxlen, _LC_charmap_t *hdl) // JAC
+size_t MBTOWC(WChar_t *pwc, const char *ts, size_t maxlen, _LC_charmap_t *hdl) // JAC
 {
     uchar_t *s = (uchar_t *)ts	;
     WChar_t wc			;   //JAC
@@ -1033,7 +1033,7 @@ err_exit:
     return((size_t)-1);
 }
 
-NA_EIDPROC int WCTOMB(char *s, WChar_t wc, _LC_charmap_t *hdl) // JAC
+int WCTOMB(char *s, WChar_t wc, _LC_charmap_t *hdl) // JAC
 {
     WChar_t mb = 0 ;
 #ifdef DONT_NEED_THIS // JAC
@@ -1150,7 +1150,7 @@ success_exit:
 }
 
 #ifdef USING_OPEN_SOURCE_MBSTOWCS
-NA_EIDPROC size_t MBSTOWCS(WChar_t *pwcs, const char *ts, size_t n, _LC_charmap_t *hdl) // JAC
+size_t MBSTOWCS(WChar_t *pwcs, const char *ts, size_t n, _LC_charmap_t *hdl) // JAC
 {
     uchar_t *s = (uchar_t *)ts  ;
     WChar_t  wc			;  // JAC
@@ -1231,7 +1231,7 @@ NA_EIDPROC size_t MBSTOWCS(WChar_t *pwcs, const char *ts, size_t n, _LC_charmap_
 #endif // USING_OPEN_SOURCE_MBSTOWCS
 
 #ifdef USING_OPEN_SOURCE_WCSTOMBS
-NA_EIDPROC size_t WCSTOMBS(char *s, const WChar_t *pwcs, size_t n, _LC_charmap_t *hdl) // JAC
+size_t WCSTOMBS(char *s, const WChar_t *pwcs, size_t n, _LC_charmap_t *hdl) // JAC
 {
 #ifdef DONT_NEED_THIS // JAC
     int     cnt, len, row ;
@@ -1301,7 +1301,7 @@ NA_EIDPROC size_t WCSTOMBS(char *s, const WChar_t *pwcs, size_t n, _LC_charmap_t
 #endif // USING_OPEN_SOURCE_WCSTOMBS
 
 #ifdef USING_OPEN_SOURCE_MBTOPC
-NA_EIDPROC size_t
+size_t
 MBTOPC(WChar_t *pwc, char *ts, size_t maxlen, int *err, _LC_charmap_t *hdl) // JAC
 {
     uchar_t *s=(uchar_t *)ts	;  /* Better to work with unsigned char.  */
@@ -1368,7 +1368,7 @@ MBTOPC(WChar_t *pwc, char *ts, size_t maxlen, int *err, _LC_charmap_t *hdl) // J
 #endif // USING_OPEN_SOURCE_MBTOPC
 
 #ifdef USING_OPEN_SOURCE_MBSTOPCS
-NA_EIDPROC size_t MBSTOPCS(WChar_t *pwcs, size_t pwcs_len, const char *s, size_t s_len, /* JAC */
+size_t MBSTOPCS(WChar_t *pwcs, size_t pwcs_len, const char *s, size_t s_len, /* JAC */
 		int stopchr, char **endptr, int *err, _LC_charmap_t *hdl)
 {
     int      pwcs_cnt = 0	;

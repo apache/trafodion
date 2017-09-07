@@ -65,20 +65,20 @@ class MdamEndPoint
 public:
   
   // Default constructor.
-  NA_EIDPROC MdamEndPoint();
+  MdamEndPoint();
 
   // This constructor is passed a pointer to the interval from which the
   // MdamPoint is taken.  Point type is also passed to specify which of the
   // two points to use.
-  NA_EIDPROC MdamEndPoint(MdamInterval * intervalPtr,
+  MdamEndPoint(MdamInterval * intervalPtr,
 	                  MdamEnums::MdamEndPointType endPointType,
 	                  const Int32 logicalIntervalListNumber);
 
   // Destructor.
-  NA_EIDPROC ~MdamEndPoint() {}
+  ~MdamEndPoint() {}
 
   // Adjust the interval pointer to track the active reference list.
-  NA_EIDPROC void adjustIntervalPtr(MdamInterval * & intervalPtr,
+  void adjustIntervalPtr(MdamInterval * & intervalPtr,
                                     const Int32 logicalIntervalListNumber) const;
 
   // Assign intervalPtr[1] in this to the corresponding value in other.
@@ -86,48 +86,48 @@ public:
   // represents points from both interval lists.  intervalPtr is the
   // only data member that needs to be transferred.  All others are
   // equal or the points wouldn't have been treated as duplicates.
-  NA_EIDPROC inline void assignIntervalPtr1(const MdamEndPoint * other);
+  inline void assignIntervalPtr1(const MdamEndPoint * other);
 
   // Determine if the point is a begin endpoint.  
-  NA_EIDPROC inline NABoolean begin() const;
+  inline NABoolean begin() const;
 
   // Compare two endpoints.  The function determines if the endpoint pointed
   // to by this is {less than | equal to | greater than} the endpoint pointed
   // to by other.
-  NA_EIDPROC MdamEnums::MdamOrder compare
+  MdamEnums::MdamOrder compare
       (const MdamEndPoint * other, const ULng32 keyLen) const;
 
   // Determine if the point is a end endpoint.  
-  NA_EIDPROC inline NABoolean end() const;
+  inline NABoolean end() const;
 
   // Determine if the point exists.  
-  NA_EIDPROC inline NABoolean exists() const;
+  inline NABoolean exists() const;
 
   // Get function for inclusion.
-  NA_EIDPROC inline MdamEnums::MdamInclusion getInclusion();
+  inline MdamEnums::MdamInclusion getInclusion();
 
   // Get function for pointPtr_.
-  NA_EIDPROC inline const MdamPoint * getPointPtr() const;
+  inline const MdamPoint * getPointPtr() const;
 
   // If an interval were to be formed using this MdamEndPoint as the end endpoint
   // and previousEndPoint MdamEndPoint as the begin endpoint, this function determines
   // if the resulting interval would be empty.
-  NA_EIDPROC NABoolean givesNonEmptyInterval
+  NABoolean givesNonEmptyInterval
     (const MdamEndPoint * previousEndPoint, const ULng32 keyLen) const;
 
   // Print function.
   #ifdef NA_MDAM_EXECUTOR_DEBUG
-  NA_EIDPROC void print(const char * header = "") const;
+  void print(const char * header = "") const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG */
 
   // Reset an endpoint to its newly-constructed state.
-  NA_EIDPROC void reset();
+  void reset();
 
   // Reverse inclusion.
-  NA_EIDPROC void reverseInclusion();
+  void reverseInclusion();
 
   // Set member data items to reflect the specified endpoint.
-  NA_EIDPROC void set(MdamInterval * intervalPtr,
+  void set(MdamInterval * intervalPtr,
 	              MdamEnums::MdamEndPointType endPointType,
 	              const Int32 logicalIntervalListNumber);
 

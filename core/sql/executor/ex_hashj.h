@@ -71,16 +71,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ex_hashj_tdb()
+  ex_hashj_tdb()
   {}
 
-  NA_EIDPROC virtual ~ex_hashj_tdb()
+  virtual ~ex_hashj_tdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -171,8 +171,8 @@ public:
 
   static const char *HashJoinPhaseStr[];
 
-  virtual NA_EIDPROC NABoolean needStatsEntry();
-  virtual NA_EIDPROC ExOperStats *doAllocateStatsEntry(CollHeap *heap,
+  virtual NABoolean needStatsEntry();
+  virtual ExOperStats *doAllocateStatsEntry(CollHeap *heap,
                                                        ComTdb *tdb);
 
 protected:

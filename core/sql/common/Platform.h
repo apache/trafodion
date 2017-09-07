@@ -37,9 +37,6 @@
  */
 
 #ifdef __gnu_linux__
-
-
-
 #endif   /* __gnu_linux__ */
 
 
@@ -70,7 +67,7 @@
 // been set because some other target may have been defined.  The following
 // should set it correctly on Linux.
 */
-#if defined(NA_LINUX) && !defined(USE_EMBEDDED_SQL_DEFINITIONS)
+#if !defined(USE_EMBEDDED_SQL_DEFINITIONS)
 #include <endian.h>
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #undef NA_BIG_ENDIAN
@@ -120,15 +117,6 @@
 #define NA_GUARDIAN_IPC
 #endif
 
-#ifndef NA_NO_GUARDIAN_IPC /* allow override from dev environment*/
-#define NA_GUARDIAN_IPC
-#endif
-
-
-
-
-
-
 #if defined( NA_C89 ) || defined( NA_MSVC )
 /* ----------------------------------------------------------------------- */
 /* C89 and MSVC perform template instantiation at compile time,            */
@@ -161,9 +149,8 @@
 #define NA_IEEE_FLOAT
 
 #define NA_EIDPROC
-#define _resident
-
-
+#define SQLEXP_LIB_FUNC
+#define SQLEXPORT_LIB_FUNC
 
 /* Use ANSI standard namespace for .NET and new GCC compilers. */
 #if (_MSC_VER >= 1300) || (__GNUC__ >= 3)
@@ -183,13 +170,9 @@
 
 #define NA_WIDE_CHARACTER
 
-
-
-
-#if !defined(NDEBUG) && !defined(NA_NO_C_RUNTIME)
+#if !defined(NDEBUG)
     #define NA_DEBUG_C_RUNTIME
 #endif
-
 
      /* Linux with the gcc compiler */
      typedef int TInt32;
@@ -268,7 +251,7 @@ typedef double          Float64;
   typedef long Int64;
   typedef unsigned long UInt64;
 
-#elif (defined( NA_WINNT ) || defined(NA_LINUX)) && !defined(USE_EMBEDDED_SQL_DEFINITIONS )     /* NT_PORT SK 08/13/96 */
+#elif (defined( NA_WINNT )) && !defined(USE_EMBEDDED_SQL_DEFINITIONS )     /* NT_PORT SK 08/13/96 */
 
   typedef _int64 Int64;
   typedef unsigned __int64 UInt64;

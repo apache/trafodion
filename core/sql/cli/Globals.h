@@ -149,7 +149,6 @@ public:
   void setExProcessStats(ExProcessStats *processStats)
   { processStats_ = processStats; }
 
-SQLCLI_LIB_FUNC
   ExSqlComp * getArkcmp(short index = 0);
 
   IpcEnvironment *getEnvironment();
@@ -244,16 +243,6 @@ SQLCLI_LIB_FUNC
 		   ULng32 length,
 		   Lng32          &retcode);
 
-  // Measure support
-  inline NABoolean getMeasStmtEnabled() { return measStmtEnabled_; }
-  inline NABoolean getMeasProcEnabled() { return measProcEnabled_; }
-  inline NABoolean getMeasSubsysRunning() { return measSubsysRunning_; }
-#ifndef BUILD_MUSE
-  inline ExMeasProcCntrs * getMeasProcCntrs() { return measProcCntrs_; }
-#else
-  inline void * getMeasProcCntrs() { return measProcCntrs_; }
-#endif
-
   inline NABoolean breakEnabled() { return breakEnabled_; }
   inline void setBreakEnabled(NABoolean enabled) 
                { breakEnabled_ = enabled; 
@@ -305,7 +294,6 @@ SQLCLI_LIB_FUNC
   const char* getJniErrorStrPtr();
   void updateTransMode(TransMode *transMode);
 
-SQLCLI_LIB_FUNC
 
 inline
   short getGlobalSbbCount()
@@ -356,9 +344,7 @@ inline
   char * myNodeName() { return myNodeName_; }
   Int32 myCpu() { return myCpu_; };
   Int32 myPin() { return myPin_; };
-#ifdef SQ_PHANDLE_VERIFIER
   SB_Verif_Type myVerifier() const {return myVerifier_;}
-#endif
 
   Lng32 myNodeNumber() { return myNodeNumber_; };
   Int64 myStartTime() { return myStartTime_; };
@@ -506,17 +492,6 @@ private:
   char sysVolName_[ 18 ];  // '$' + VOLNAME +  '.' +
                           // SUBVOL + null-terminator
 
-
-  NABoolean measProcEnabled_;
-  NABoolean measStmtEnabled_;
-  NABoolean measSubsysRunning_;
-
-#ifndef BUILD_MUSE
-  ExMeasProcCntrs * measProcCntrs_;
-#else
-  void * measProcCntrs_;
-#endif
-
   // copy of the oss envvars
   char ** envvars_;
 
@@ -569,9 +544,7 @@ private:
   // node, cpu and pin this process is running at.
   char myNodeName_[8];
   Int32 myCpu_;
-#ifdef SQ_PHANDLE_VERIFIER
   SB_Verif_Type myVerifier_;
-#endif
   pid_t myPin_;
   Lng32  myNodeNumber_;
 
@@ -638,7 +611,6 @@ private:
 // a lot of times. It is better to cache the pointer to the globals.
 // -----------------------------------------------------------------------
 
-SQLCLI_LIB_FUNC
 CliGlobals * GetCliGlobals();
 
 #endif /* __cplusplus */

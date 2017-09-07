@@ -61,8 +61,6 @@
 #include "Stats.h"
 #include "CmpSqlSession.h"
 
-#include "ReadTableDef.h"
-
 #include "ExSqlComp.h"          // for NAExecTrans
 
 #include "hs_globals.h"

@@ -135,7 +135,6 @@ static const uchar_t idx_to_sjis[] =
  *	-1 - Invalid sequence (EILSEQ)
  *	-2 - Input incomplete
  */
-NA_EIDPROC
 int
 __sjis_index(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
 {
@@ -167,7 +166,6 @@ __sjis_index(_LC_fcconv_iconv_t *cd, uchar_t **in, int len)
 /*
  * This routine map UDC characters in Unicode to those in SJIS
  */
-NA_EIDPROC
 WChar_t // JAC
 __UDC_to_sjis(ucs4_t ucs)
 {

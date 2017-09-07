@@ -444,11 +444,6 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
   DDkwd__(ATTEMPT_ESP_PARALLELISM,		"ON"),
   DDkwd__(ATTEMPT_REVERSE_SYNCHRONOUS_ORDER,    "ON"),
 
- //  Online Populate Index uses AuditImage for index tables only.
- // By setting this CQD to ON, one can generate AuditImage for
- // tables also.
- DDkwd__(AUDIT_IMAGE_FOR_TABLES,	       "OFF"),
-
   DDkwd__(AUTOMATIC_RECOMPILATION,		"OFF"),
 
   DDkwd__(AUTO_QUERY_RETRY,                     "SYSTEM"),
@@ -1539,10 +1534,6 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_HSHJ_NUM_BUFFERS,			"1"),
   DDui1__(GEN_HSHJ_SIZE_DOWN,			"2048"),
   DDui1__(GEN_HSHJ_SIZE_UP,			"2048"),
-  DDui1__(GEN_IAR_BUFFER_SIZE,                  "10240"),
-  DDui1__(GEN_IAR_NUM_BUFFERS,                  "1"),
-  DDui1__(GEN_IAR_SIZE_DOWN,                    "2"),
-  DDui1__(GEN_IAR_SIZE_UP,                      "4"),
   DDui1__(GEN_IMDT_BUFFER_SIZE,			"2"),
   DDui1__(GEN_IMDT_NUM_BUFFERS,			"1"),
   DDui1__(GEN_IMDT_SIZE_DOWN,			"2"),
@@ -2944,7 +2935,6 @@ SDDkwd__(ISO_MAPPING,           (char *)SQLCHARSETSTRING_ISO88591),
  // the largest number of cache entries that an unusually large cache
  // entry is allowed to displace from mxcmp's cache of query plans
  DD0_200000(QUERY_CACHE_MAX_VICTIMS,      "10"),
- DDkwd__(QUERY_CACHE_MPALIAS,               "OFF"),
  DD0_255(QUERY_CACHE_REQUIRED_PREFIX_KEYS, "255"),
  DDkwd__(QUERY_CACHE_RUNTIME,               "ON"),
 SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
@@ -2982,11 +2972,6 @@ SDDflt0_(QUERY_CACHE_SELECTIVITY_TOLERANCE,       "0"),
  DDkwd__(RANGESPEC_TRANSFORMATION,         "ON"), // RangeSpec Transformation CQD.
  // To be ANSI compliant you would have to set this default to 'FALSE'
  DDkwd__(READONLY_CURSOR,			"TRUE"),
-
- // ReadTableDef compares transactional identifiers during endTransaction() processing
- DDkwd__(READTABLEDEF_TRANSACTION_ASSERT,			"OFF"),
- DDkwd__(READTABLEDEF_TRANSACTION_ENABLE_WARNINGS,		"OFF"),
- DDint__(READTABLEDEF_TRANSACTION_TESTPOINT,                    "0"),
 
  DDflt0_(READ_AHEAD_MAX_BLOCKS,	    "16.0"),
  // OFF means Ansi/NIST setting, ON is more similar to the SQL/MP behavior
@@ -3631,7 +3616,6 @@ XDDkwd__(SUBQUERY_UNNESTING,			"ON"),
   DDkwd__(USTAT_USE_SLIDING_SAMPLE_RATIO,       "ON"), // Trend sampling rate down w/increasing table size, going
                                                        //   flat at 1%.
  XDDflt1_(USTAT_YOULL_LIKELY_BE_SORRY,          "100000000"),  // guard against unintentional long-running UPDATE STATS
-  DDkwd__(VALIDATE_RFORK_REDEF_TS,	        "OFF"),
 
   DDkwd__(VALIDATE_VIEWS_AT_OPEN_TIME,		"OFF"),
 
@@ -4032,7 +4016,6 @@ void NADefaults::initCurrentDefaultsWithDefaultDefaults()
     {
       currentDefaults_[GENERATE_EXPLAIN] = "ON";
       currentDefaults_[DO_RUNTIME_EID_SPACE_COMPUTATION] = "ON";
-      currentDefaults_[DETAILED_STATISTICS] = "MEASURE";
     }
   else
     {
@@ -6337,7 +6320,6 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "LOCAL_NODE",
   "LOG",
   "MAXIMUM",
-  "MEASURE",
   "MEDIUM",
   "MEDIUM_LOW",
   "MERGE",
@@ -6346,7 +6328,6 @@ const char *NADefaults::keywords_[DF_lastToken] = {
   "MULTI_NODE",
   "MVCC",
   "NONE",
-  "NSK",
   "OFF",
   "ON",
   "OPENS_FOR_WRITE",
@@ -6585,7 +6566,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       break;
 
     case DETAILED_STATISTICS:
-      if (tok == DF_ALL || tok == DF_MEASURE ||
+      if (tok == DF_ALL ||
 	  tok == DF_ACCUMULATED || tok == DF_OPERATOR ||
 	  tok == DF_PERTABLE || tok == DF_OFF)
 	isValid = TRUE;
@@ -6627,7 +6608,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
            tok == DF_REPSEL || tok == DF_QS)
           isValid = TRUE;
      break;
-    case QUERY_CACHE_MPALIAS:
+
     case QUERY_TEMPLATE_CACHE:
     case SHARE_TEMPLATE_CACHED_PLANS:
     case VSBB_TEST_MODE:
@@ -6708,8 +6689,7 @@ DefaultToken NADefaults::token(Int32 attrEnum,
       break;
 
     case NAMETYPE:
-      if (tok == DF_ANSI	 || tok == DF_SHORTANSI ||
-          tok == DF_NSK)
+      if (tok == DF_ANSI	 || tok == DF_SHORTANSI)
         isValid = TRUE;
       break;
 

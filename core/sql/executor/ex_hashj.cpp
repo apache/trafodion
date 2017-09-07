@@ -216,13 +216,12 @@ void ex_hashj_tcb::registerSubtasks()
 NABoolean ex_hashj_tcb::needStatsEntry()
 {
   ComTdb::CollectStatsType statsType = getGlobals()->getStatsArea()->getCollectStatsType();
-  // stats are collected for ALL and MEASURE options.
+  // stats are collected for ALL and OPERATOR options.
   if (statsType == ComTdb::ALL_STATS || statsType == ComTdb::OPERATOR_STATS)
     return TRUE;
   else
     return FALSE;
 }
-
 
 ExOperStats * ex_hashj_tcb::doAllocateStatsEntry(CollHeap *heap, ComTdb *tdb)
 {
@@ -1051,7 +1050,6 @@ ExWorkProcRetcode ex_hashj_tcb::workUp() {
       if (!da  ||  !da->contains((Lng32) -rc_))
         {
           ComDiagsArea * diags = NULL;
-#ifndef __EID
           if(rc_ == EXE_SORT_ERROR)
             {
               char msg[512];
@@ -1076,7 +1074,6 @@ ExWorkProcRetcode ex_hashj_tcb::workUp() {
               
             }
           else
-#endif
             diags = ExRaiseSqlError(heap_, downParentEntry,
 	                           (ExeErrorCode) -rc_);
 
@@ -1479,9 +1476,7 @@ NABoolean ex_hashj_tcb::allocateClusters() {
       clusterDb_->setScratchOverflowMode(SCRATCH_DISK);
       break;
   }
-#ifndef __EID
   clusterDb_->setBMOMaxMemThresholdMB(hashJoinTdb().getBMOMaxMemThresholdMB());
-#endif 
   bucketIdx = 0;
   Cluster * cluster = NULL;
   ULng32 i;
@@ -1966,7 +1961,6 @@ void ex_hashj_tcb::workEndPhase1() {
       return;
     }
 
-#if !defined(__EID)
   // Yield memory quota (or if needed, flush another in-memory cluster 
   // to free more memory for phase 2) .
   //    first get some information about the clusters (number, sizes, etc.)
@@ -2019,7 +2013,7 @@ void ex_hashj_tcb::workEndPhase1() {
     if ( clusterDb_->memoryQuotaMB() > hashJoinTdb().memoryQuotaMB() ) {
       char msg[512];
       str_sprintf(msg, "HJ End Phase 1 (%d). GRABBED additional quota %d MB",
-		  0, // NA_64BIT, use instance id later
+		  0,
 		  clusterDb_->memoryQuotaMB() - hashJoinTdb().memoryQuotaMB());
       // log an EMS event and continue
       SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, tdb.getExplainNodeId());
@@ -2030,7 +2024,7 @@ void ex_hashj_tcb::workEndPhase1() {
       
       str_sprintf(msg, 
 		  "HJ End Phase 1 (%d). #inner rows: %Ld, #buckets: %d, #clusters: %d, #flushed: %d, total size %d MB, cluster size max- %d MB min- %d, variable size records: %s",
-		  0, // NA_64BIT, use instance id later
+		  0,
 		  totalRightRowsRead_,
 		  bucketCount_ , numClusters, numFlushed, 
 		  totalSize, maxSize, minSize,
@@ -2040,7 +2034,6 @@ void ex_hashj_tcb::workEndPhase1() {
     }
   } // if logDiagnostics
 
-#endif
   // all clusters are prepared. Go on with phase 2 of the join
   pstate.setPhase(PHASE_2, bmoStats_);
 
@@ -2355,7 +2348,6 @@ void ex_hashj_tcb::workEndPhase2() {
   clusterDb_->yieldUnusedMemoryQuota();
 
   // Log -- end of phase 2
-#if !defined(__EID)
   if ( hashJoinTdb().logDiagnostics() /* && clusterDb_->sawPressure() */ ) {
     // L O G
     //   count the number of clusters 
@@ -2380,14 +2372,13 @@ void ex_hashj_tcb::workEndPhase2() {
     char msg[1024];
     str_sprintf(msg, 
 		"HJ End of Phase 2 (%d). Total outer size %d MB, cluster size max- %d MB min- %d MB, variable size records: %s",
-		0, // NA_64BIT, use instance id later
+		0,
                 totalSize, maxSize, minSize,
                 hashJoinTdb().useVariableLength() ? "y" : "n");
     // log an EMS event and continue
     SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, tdb.getExplainNodeId());
   
   }
-#endif
 
   // all clusters are prepared. Go on with phase 3 of the join
   // set the first inner cluster to read
@@ -2424,7 +2415,6 @@ void ex_hashj_tcb::resetClusterForHashLoop(Cluster *iCluster)
 void ex_hashj_tcb::prepareForNextPairOfClusters(Cluster *iCluster)
 {
 
-#if !defined(__EID)
   if ( hashJoinTdb().logDiagnostics() /* && clusterDb_->sawPressure() */ ) {
     // L O G
     Int64 currTime = NA_JulianTimestamp();
@@ -2452,16 +2442,14 @@ void ex_hashj_tcb::prepareForNextPairOfClusters(Cluster *iCluster)
     {
       str_sprintf(msg, 
 		  "HJ Finished cluster (%d) in Phase 3 (%d) with %d Hash-Loop iterations.",
-		  0, // NA_64BIT, use some id later (ULng32)iCluster & 0xFFF, 
-		  0, // NA_64BIT, use some id later (ULng32)clusterDb_ & 0xFFF,  
+		  0,
+		  0,
 		  iCluster->numLoops() + 1);   // add uncounted last iter
       // log an EMS event and continue
       SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, tdb.getExplainNodeId());
     }
 #endif
   }
-
-#endif
 
   // we are done with this pair of clusters; delete them and process
   // the next pair;
@@ -3137,7 +3125,6 @@ void ex_hashj_tcb::workDone() {
   if(!hashJoinTdb().isUniqueHashJoin())
     releaseResultTupps();
 
-#if !defined(__EID)
   if ( hashJoinTdb().logDiagnostics() && 
        !hashJoinTdb().isUniqueHashJoin()
        /* && clusterDb_->sawPressure() */ ) {
@@ -3164,7 +3151,7 @@ void ex_hashj_tcb::workDone() {
 #else
     str_sprintf(msg, 
 		"HJ Finished Phase 3 (%d)",
-		0 // NA_64BIT, use instance id later
+		0
                 );
 
 #endif
@@ -3172,7 +3159,6 @@ void ex_hashj_tcb::workDone() {
     SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, tdb.getExplainNodeId());
    
   }
-#endif
 
   // When Reuse is applied the inner clusters/buckets should be kept!
   if ( ! isReuse() ) {
@@ -3743,7 +3729,7 @@ short ExUniqueHashJoinTcb::workReadInner(UInt32 defragLength)
             bufferPool_->castToSerial()->setRowLength(dataPointer, defragLength);
           }
 
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG))
           char txt[] = "hashjU";
           sql_buffer_pool::logDefragInfo(txt,bufferPool_->getMaxRowLength(),
                                          ROUND4(defragLength) + sizeof(HashRow),

@@ -51,17 +51,12 @@ class Module : public ExGod {
   Int32 statementCount_;
   COM_VERSION version_;
   char * vproc_;
-  char * stmtCntrsSpace_;  // contiguous block of memory for all measure
-                           // statement counters in one module.
   
 public:
   Module(const char * module_name, Lng32 module_name_len, 
          char * pathName, Lng32 pathNameLen, NAHeap *heap);
   ~Module();
 
-  void allocStmtCntrsSpace(NABoolean measEnabled);
-  char * getStmtCntrsSpace (Int32 statementIndex); /* get individule counter */
-  
   inline char * getModuleName() { return module_name_; };
   inline Lng32 getModuleNameLen() { return module_name_len_; };
   inline char * getPathName() { return path_name_; };

@@ -293,12 +293,7 @@ short RelSetTimeout::codeGen(Generator * generator)
     char * varName;
     GenAssert(hv->getName().data(), "Hostvar pointer must have name");
 
-#pragma nowarn(1506)   // warning elimination 
     lateNameInfo->setEnvVar(hv->isEnvVar());
-#pragma warn(1506)  // warning elimination 
-#pragma nowarn(1506)   // warning elimination 
-    lateNameInfo->setDefine(hv->isDefine());
-#pragma warn(1506)  // warning elimination 
 
     varName = convertNAString(hv->getName(), generator->wHeap());
     strcpy(lateNameInfo->variableName(), varName);
@@ -309,7 +304,6 @@ short RelSetTimeout::codeGen(Generator * generator)
     lateNameInfo->setLastUsedName(prototypeValue, space);
     strcpy(lateNameInfo->resolvedPhyName(), prototypeValue);
     lateNameInfo->setVariable(1);
-    lateNameInfo->setAvoidSimCheck(TRUE); 
   } // end of host-var
   else if ( isForAllTables_ ) { // a "*" was specified for a table name
     strcpy( lateNameInfo->resolvedPhyName(), "*" );  // special mark

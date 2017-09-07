@@ -217,29 +217,6 @@ ComSchemaName::scan(const NAString &externalSchemaName,
   size_t externalSchemaNameLen = externalSchemaName.length();
   bytesScanned = 0;
 
-  #define COPY_VALIDATED_STRING(x)	\
-		      ComAnsiNamePart(x, ComAnsiNamePart::INTERNAL_FORMAT)
-
-  if (( SqlParser_Initialized() && SqlParser_NAMETYPE == DF_NSK)       ||
-      (!SqlParser_Initialized() && *externalSchemaName.data() == '\\')) {
-    ComMPLoc loc(externalSchemaName);
-    switch (loc.getFormat()) {
-      case ComMPLoc::SUBVOL:
-		catalogNamePart_ = COPY_VALIDATED_STRING(loc.getSysDotVol());
-		schemaNamePart_  = COPY_VALIDATED_STRING(loc.getSubvolName());
-		bytesScanned = externalSchemaNameLen;
-		return TRUE;
-
-      case ComMPLoc::FILE:
-		if (!loc.hasSubvolName()) {
-		  catalogNamePart_ = "";
-		  schemaNamePart_  = COPY_VALIDATED_STRING(loc.getFileName());
-		  bytesScanned = externalSchemaNameLen;
-		  return TRUE;
-		}
-    }
-  }
-
   // Each ComAnsiNamePart ctor below must be preceded by "count = 0;"
   // -- see ComAnsiNamePart.cpp, and for a better scan implementation,
   //    see ComObjectName::scan() + ComObjectName(bytesScanned) ctor.

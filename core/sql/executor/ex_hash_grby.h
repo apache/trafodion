@@ -78,16 +78,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ex_hash_grby_tdb()
+  ex_hash_grby_tdb()
   {}
 
-  NA_EIDPROC virtual ~ex_hash_grby_tdb()
+  virtual ~ex_hash_grby_tdb()
   {}    // LCOV_EXCL_LINE
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -152,9 +152,7 @@ class ex_hash_grby_tcb : public ex_tcb {
 
   Space * space_;
   CollHeap * heap_;
-#ifndef __EID
   MemoryMonitor * memMonitor_;
-#endif
 
   const ex_tcb    * childTcb_;
   ex_queue_pair     parentQueue_;
@@ -260,91 +258,64 @@ class ex_hash_grby_tcb : public ex_tcb {
   //CIF buffer defragmentation
   tupp_descriptor * defragTd_;
 
-NA_EIDPROC
   void workInitialize();
 
-NA_EIDPROC
   void workReadChild();
 
-NA_EIDPROC
   Int32 workReadChildBitMux();
 
-NA_EIDPROC
   void workReadOverFlowRow();
 
-NA_EIDPROC
   void workSpill();
 
-NA_EIDPROC
   void workReadBuffer();
 
-NA_EIDPROC
   void workEvaluate();
 
-NA_EIDPROC
   ULng32 workReturnRows(NABoolean tryToDefrag);
 
-NA_EIDPROC
   void workDone();
 
-NA_EIDPROC
   void workHandleError(atp_struct* atp = NULL);
 
-NA_EIDPROC
   inline void setState(HashGrbyState state) {
     oldState_ = state_;
     state_ = state;
 };
 
-NA_EIDPROC
   inline NABoolean isReadingFromChild() const { return readingChild_; }
 
-NA_EIDPROC
   inline void inReadingFromChild() { readingChild_ = TRUE; }
 
-NA_EIDPROC
   inline void doneReadingFromChild() { readingChild_ = FALSE; }
 
-NA_EIDPROC
   void returnResultCurrentRow(HashRow * dataPointer = NULL);
 
-NA_EIDPROC
   void resetClusterAndReadFromChild(); // Tmobile.
 
 public:
   static const char *HashGrbyPhaseStr[];
 
-NA_EIDPROC
   ex_hash_grby_tcb(const ex_hash_grby_tdb & hash_grby_tdb,    
 		   const ex_tcb &    childTcb,
 		   ex_globals * glob); 
   
-NA_EIDPROC
   ~ex_hash_grby_tcb();  
 
-NA_EIDPROC
   void freeResources();  // free resources
 
-NA_EIDPROC
   void registerSubtasks();
   
-NA_EIDPROC
   short work();  // when scheduled to do work
 
-NA_EIDPROC
   inline ex_hash_grby_tdb & hashGrbyTdb() const;
 
-NA_EIDPROC
   ex_queue_pair getParentQueue() const { return parentQueue_; }
 
-NA_EIDPROC
   virtual const ex_tcb* getChild(Int32 pos) const;
 
-NA_EIDPROC
   virtual Int32 numChildren() const { return 1; }
-NA_EIDPROC
   virtual NABoolean needStatsEntry();
-NA_EIDPROC
   virtual ExOperStats *doAllocateStatsEntry(CollHeap *heap,
                                                        ComTdb *tdb);
 
@@ -358,7 +329,6 @@ NA_EIDPROC
   History     : Yeogirl Yun                                      8/14/95
                  Initial Revision.
 *****************************************************************************/
-NA_EIDPROC
 inline const ex_tcb* ex_hash_grby_tcb::getChild(Int32 pos) const {
   ex_assert((pos >= 0), ""); // LCOV_EXCL_START
   if (pos == 0)
@@ -373,7 +343,6 @@ inline const ex_tcb* ex_hash_grby_tcb::getChild(Int32 pos) const {
 //
 ///////////////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 inline ex_hash_grby_tdb & ex_hash_grby_tcb::hashGrbyTdb() const {
   return (ex_hash_grby_tdb &) tdb;
 };

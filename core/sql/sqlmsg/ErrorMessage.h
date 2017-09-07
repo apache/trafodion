@@ -43,7 +43,6 @@
 
 #undef max
 #undef min
-#undef ERROR
 
 class SqlciEnv;
 

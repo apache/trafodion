@@ -36,9 +36,7 @@
 
 #include <limits.h>
 
-#ifndef __EID
 #include <stdlib.h>
-#endif
 
 #include "NAAssert.h"
 #include "exp_space.h"
@@ -62,9 +60,6 @@ Space::~Space()
   Block * currBlock = firstBlock_;
   switch (type_)
     {
-    case DP2_SPACE:
-      break;
-      
     case EXECUTOR_SPACE:
       {
 	// later change it to deallocate from executor segment. TBD.
@@ -72,10 +67,7 @@ Space::~Space()
 	  {
 	    Block * nextBlock = currBlock->getNext();
 	    
-#ifndef __EID	  
 	    free(currBlock);
-	    
-#endif	  
 	    currBlock = nextBlock;
 	  }
       }
@@ -87,10 +79,7 @@ Space::~Space()
 	  {
 	    Block * nextBlock = currBlock->getNext();
 	    
-#ifndef __EID	  
 	    free(currBlock);
-	    
-#endif	  
 	    currBlock = nextBlock;
 	  }
       }
@@ -105,10 +94,6 @@ Lng32 Space::defaultBlockSize(SpaceType type)
   // use default size
   switch (type)
     {
-    case DP2_SPACE:
-      block_size = DP2_BLOCK_MAX_SIZE;
-      break;
-      
     case EXECUTOR_SPACE:
       block_size = EXECUTOR_BLOCK_MAX_SIZE;
       break;
@@ -141,35 +126,11 @@ Block * Space::allocateBlock(SpaceType type, Lng32 in_block_size)
       
   switch (type)
     {
-    case DP2_SPACE:
-      {
-#ifdef __EID
-	short rc;
-	Lng32 memaddr;
-
-	rc = DP2_EXECUTOR_ADD_MEMORY (block_size,
-				      &memaddr);
-
-	block_ptr = (char *)memaddr + sizeof(SSCB_Buffer_Struct);
-	data_ptr 
-	  = (char *)(memaddr + sizeof(SSCB_Buffer_Struct) + 
-		     ((((sizeof(Block)-1)/8)+1)*8));
-	data_size 
-	  = block_size - (sizeof(SSCB_Buffer_Struct) + 
-			  ((((sizeof(Block)-1)/8)+1)*8));
-#else
-        block_ptr = NULL;
-#endif
-      }
-      break;
-      
     case EXECUTOR_SPACE:
       {
 	// allocate space from executor extended segment. TBD.
 	// For now, get it from system space.
-#ifndef __EID	
 	block_ptr = (char *)malloc(block_size);
-#endif
 	data_ptr = block_ptr + ((((sizeof(Block)-1)/8)+1)*8);
 	data_size = block_size - ((((sizeof(Block)-1)/8)+1)*8);
       }
@@ -178,9 +139,7 @@ Block * Space::allocateBlock(SpaceType type, Lng32 in_block_size)
     case SYSTEM_SPACE:
       {
 	// allocate space from system heap.
-#ifndef __EID	
 	block_ptr = (char *)malloc(block_size);
-#endif
 	data_ptr = block_ptr + ((((sizeof(Block)-1)/8)+1)*8);
 	data_size = block_size - ((((sizeof(Block)-1)/8)+1)*8);
 	
@@ -273,18 +232,10 @@ char *Space::allocateAndCopyToAlignedSpace(const char* dp,
 	assert(dlen <= USHRT_MAX);	// NT_PORT ( bd 10/30/96 ) added missing semicolon
 	*(short *)rp = dlen;
 	break;
-#ifdef NA_64BIT
-    // dg64 - Use correct MAX
     case sizeof(Int32):
 	assert(dlen <= UINT_MAX);	// NT_PORT ( bd 10/30/96 ) added missing semicolon
 	*(Int32 *)rp = dlen;
 	break;
-#else
-    case sizeof(Lng32):
-	assert(dlen <= ULONG_MAX);	// NT_PORT ( bd 10/30/96 ) added missing semicolon
-	*(Lng32 *)rp = dlen;
-	break;
-#endif
     default:	
 	assert(0==1);
   }

@@ -1771,10 +1771,7 @@ CorrName * corrNameFromStrings(ShortStringSequence *names)
 
   const NAString &tblName = qn->getObjectName();
 
-  if ((qn->getCatalogName() == "") && (SqlParser_NAMETYPE == DF_NSK))
-    result = new (PARSERHEAP()) CorrName(*qn, PARSERHEAP(), tblName);
-  else
-    result = new (PARSERHEAP()) CorrName(*qn, PARSERHEAP());
+  result = new (PARSERHEAP()) CorrName(*qn, PARSERHEAP());
 
   ComASSERT(result);
 

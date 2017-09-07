@@ -461,11 +461,10 @@ ExOperStats * ex_split_bottom_tcb::doAllocateStatsEntry(CollHeap *heap,
       if (ss != NULL)
         ((ExFragRootOperStats *)stat)->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
     }
-    else if ((statsType == ComTdb::MEASURE_STATS) ||
-	   (statsType == ComTdb::ACCUMULATED_STATS))
+  else if (statsType == ComTdb::ACCUMULATED_STATS)
     {
-      // if measure or accumulated statistics are to be collected, allocate
-      // one measure stats entry and insert it into the queue.
+      // if accumulated statistics are to be collected, allocate
+      // one stats entry and insert it into the queue.
       // All executor operators that collect stats will use this
       // entry to update stats.
       // These stats are not associated with any particular

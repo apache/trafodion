@@ -84,7 +84,7 @@
 #include "seabed/fs.h"
 #include "seabed/ms.h"
 
-NA_EIDPROC inline void advanceSize2(UInt32 &size, const char * const buffPtr)
+inline void advanceSize2(UInt32 &size, const char * const buffPtr)
 {
   const Int32 lenSize = sizeof(Lng32);
   size += lenSize;
@@ -1141,44 +1141,6 @@ ExUDRBaseStats *ExOperStats::castToExUDRBaseStats()
 {
   return NULL;
 }
-
-void MeasureInDp2::unpackBuffer(const char* &buffer, Lng32 version)
-{
-  if (version == _STATS_PRE_RTS_VERSION)
-  {
-    str_cpy_all((char*)this, buffer,sizeof(*this)-sizeof(processBusyTime_)-sizeof(lockWaits_));
-    buffer += (sizeof(*this)-sizeof(processBusyTime_)-sizeof(lockWaits_)); 
-    processBusyTime_ = 0;
-    lockWaits_ = 0;
-  }
-  else
-  if (version >= _STATS_RTS_VERSION)
-  {
-    str_cpy_all((char*)this, buffer,sizeof(*this));
-    buffer += sizeof(*this);  
-  }
-  else
-    return;
-}
-
-void MeasureOltInDp2::unpackBuffer(const char* &buffer, Lng32 version)
-{
-  if (version == _STATS_PRE_RTS_VERSION)
-  {
-    str_cpy_all((char*)this, buffer,sizeof(*this)-sizeof(processBusyTime_)-sizeof(lockWaits_));
-    buffer += (sizeof(*this)-sizeof(processBusyTime_)-sizeof(lockWaits_));  
-    processBusyTime_ = 0;
-    lockWaits_ = 0;
-  }
-  else
-  if (version >= _STATS_RTS_VERSION)
-  {
-    str_cpy_all((char*)this, buffer,sizeof(*this));
-    buffer += sizeof(*this);  
-  }
-  else
-    return;
-}  
 
 const char * ExOperStats::getNumValTxt(Int32 i) const 
 { 
@@ -3153,12 +3115,7 @@ void ExPartitionAccessStats::merge(ExPartitionAccessStats* other)
   openTime_ += other->openTime_;
 }
 
-#ifdef NA_64BIT
-// dg64 - match return type
 UInt32        ExPartitionAccessStats::packedLength()
-#else
-ULng32 ExPartitionAccessStats::packedLength()
-#endif
 {
   UInt32 size = ExOperStats::packedLength();
   alignSizeForNextObj(size);
@@ -5440,8 +5397,6 @@ ExStatisticsArea::ExStatisticsArea(NAMemory * heap, Lng32 sendBottomNum,
     sendBottomNum_(sendBottomNum),
     sendBottomCnt_(0),
     collectStatsType_(cst) ,
-    deallocStmtCntrs_(FALSE),
-    stmtCntrs_(NULL),
     flags_(0),
     masterStats_(NULL),
     rootStats_(NULL),
@@ -5542,10 +5497,6 @@ ExStatisticsArea::~ExStatisticsArea()
 {
   removeEntries();
 
-  if ( stmtCntrs_ && deallocStmtCntrs_ ) {
-    heap_->deallocateMemory((void *)stmtCntrs_);
-    stmtCntrs_ = NULL;
-  }
   if (masterStats_ != NULL)
   {
     NADELETE(masterStats_, ExMasterStats, masterStats_->getHeap());
@@ -6237,14 +6188,6 @@ IpcMessageObjSize ExStatisticsArea::packedLength()
 {
 
   IpcMessageObjSize  size = 0;
-
-  /*
-  if ((statsInDp2()) &&
-      ((numEntries() == 1) &&
-       ((getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
-	(getCollectStatsType() == ComTdb::MEASURE_STATS) ||
-	(getCollectStatsType() == ComTdb::PERTABLE_STATS))))
-	*/
   if (smallStatsObj())
     {
       size = sizeof(unsigned char) // version
@@ -6509,8 +6452,7 @@ void
 ExStatisticsArea::unpackSmallObjFromEid(IpcConstMessageBufferPtr buffer,
 					Lng32 version)
 {
-  if ((getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
-      (getCollectStatsType() == ComTdb::MEASURE_STATS))
+  if (getCollectStatsType() == ComTdb::ACCUMULATED_STATS)
   {
     ExMeasStats * stat = new(heap_) ExMeasStats(heap_);
     stat->setStatsInDp2(statsInDp2());
@@ -6959,8 +6901,6 @@ const char *ExStatisticsArea::getStatsTypeText(short statsType)
   {
   case SQLCLI_NO_STATS: 
     return "NO_STATS";
-  case SQLCLI_MEASURE_STATS:
-    return "MEASURE_STATS";
   case SQLCLI_ACCUMULATED_STATS:
     return "ACCUMULATED_STATS";
   case SQLCLI_PERTABLE_STATS:

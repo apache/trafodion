@@ -122,10 +122,8 @@ Section missing, generate compiler error
 
 extern char * exClauseGetText(OperatorTypeEnum ote);
 
-NA_EIDPROC
 void setVCLength(char * VCLen, Lng32 VCLenSize, ULng32 value);
 
-NA_EIDPROC
 static void ExRaiseJSONError(CollHeap* heap, ComDiagsArea** diagsArea, JsonReturnType type);
 
 
@@ -213,7 +211,6 @@ ExPAGroup::ExPAGroup(){};
 ExFunctionPack::ExFunctionPack(){};
 ExUnPackCol::ExUnPackCol(){};
 ExFunctionRangeLookup::ExFunctionRangeLookup(){};
-ExAuditImage::ExAuditImage(){};
 ExFunctionCrc32::ExFunctionCrc32(){};
 ExFunctionMd5::ExFunctionMd5(){};
 ExFunctionSha::ExFunctionSha(){};
@@ -929,15 +926,6 @@ ExFunctionRangeLookup::ExFunctionRangeLookup(Attributes** attr,
      : ex_function_clause(ITM_RANGE_LOOKUP, 3, attr, space),
        numParts_(numParts),
        partKeyLen_(partKeyLen)
-{
-} 
-
-ExAuditImage::ExAuditImage(Attributes** attr,
-			   Space* space,
-			   ExpDP2ExprPtr auditImageContainerExpr
-			   )
-  : ex_function_clause(ITM_AUDIT_IMAGE, 2, attr, space),
-    auditImageContainerExpr_(auditImageContainerExpr)
 {
 } 
 
@@ -1976,7 +1964,6 @@ ex_expr::exp_return_type ExFunctionChar::eval(char *op_data[],CollHeap* heap,
       // in multi-byte form (i.e. in big-endian order).
       if (getOperType() == ITM_NCHAR_MP_CHAR) 
       {
-//SQ_LINUX #ifdef NA_WINNT
 		*(NAWchar*)op_data[0] = reversebytesUS(wcharCode);
       } else
         *(NAWchar*)op_data[0] = wcharCode;
@@ -2359,7 +2346,6 @@ ex_expr::exp_return_type ex_function_position_doublebyte::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 };
 // LCOV_EXCL_START
-NA_EIDPROC
 static Lng32 findTokenPosition(char * sourceStr, Lng32 sourceLen,
 			      char * searchStr, Lng32 searchLen,
 			      short bytesPerChar)
@@ -2673,7 +2659,6 @@ ex_expr::exp_return_type ex_function_converttimestamp::eval(char *op_data[],
   Int64 juliantimestamp;
   str_cpy_all((char *) &juliantimestamp, op_data[1], sizeof(juliantimestamp));
   const Int64 minJuliantimestamp = (Int64) 1487311632 * (Int64) 100000000;
-//SQ_LINUX #ifndef NA_HSC
   const Int64 maxJuliantimestamp = (Int64) 2749273487LL * (Int64) 100000000 +
                                                         (Int64)  99999999;
   if ((juliantimestamp < minJuliantimestamp) ||
@@ -3112,7 +3097,6 @@ short exp_function_get_user(
   short result = FEOK;
   Int32 lActualLen = 0;
 
-#if !defined (__EID)
   Int32 userID;
 
   if (userType == ITM_SESSION_USER)
@@ -3135,7 +3119,6 @@ short exp_function_get_user(
   }
   else 
     result = FEBUFTOOSMALL;
-#endif
 
   if (((result == FEOK) || (result == FEBUFTOOSMALL)) && actualLength)
     *actualLength = lActualLen;
@@ -4463,7 +4446,6 @@ ULng32 ex_function_hash::HashHash(ULng32 inValue) {
   register ULng32 u, v, c, d, k0;
   ULng32 a1, a2, b1, b2;
   
-//SQ_LINUX #ifndef NA_HSC
   ULng32 c1 = (ULng32)5233452345LL;   
   ULng32 c2 = (ULng32)8578458478LL;  
   ULng32 d1 = 1862598173LL;
@@ -5200,7 +5182,7 @@ ex_expr::exp_return_type ExFunctionShift::eval(char *op_data[],
   return ex_expr::EXPR_OK;
 }
 // LCOV_EXCL_STOP
-NA_EIDPROC static
+static
 ex_expr::exp_return_type getDoubleValue(double *dest,
                                         char *source,
                                         Attributes *operand,
@@ -5218,7 +5200,7 @@ ex_expr::exp_return_type getDoubleValue(double *dest,
     
 }
 
-NA_EIDPROC static
+static
 ex_expr::exp_return_type setDoubleValue(char *dest,
                                         Attributes *operand,
                                         double *source,
@@ -5987,7 +5969,7 @@ void ExFunctionRandomNum::initSeed(char *op_data[])
 }
 
 
-NA_EIDPROC void ExFunctionRandomNum::genRand(char *op_data[])
+void ExFunctionRandomNum::genRand(char *op_data[])
 {
   // Initialize seed if not already done
   initSeed(op_data);
@@ -7108,7 +7090,7 @@ ExFunctionHbaseColumnsDisplay::eval(char *op_data[], CollHeap *heap,
 	}
     }
 
-  // store the audit row image length in the varlen indicator.
+  // store the row length in the varlen indicator.
   getOperand(0)->setVarLength((result-resultStart), op_data[-MAX_OPERANDS]);
 
   return ex_expr::EXPR_OK;
@@ -7264,78 +7246,6 @@ ExFunctionHbaseVersion::eval(char *op_data[], CollHeap *heap,
 
   return ex_expr::EXPR_OK;
 }
-
-/////////////////////////////////////////////////////////////////
-// ExAuditImage::eval() 
-// The ExAuditImage clause evaluates the auditRowImageExpr_ and
-// stores the result from it into the result of ExAuditImage. 
-// auditRowImageExpr_ constructs the audit row image in SQLMX_FORMAT.
-/////////////////////////////////////////////////////////////////
-ex_expr::exp_return_type 
-ExAuditImage::eval(char *op_data[], CollHeap *heap, 
-                        ComDiagsArea **diagsArea)
-{
-  // op_data[0] points to result. The result is a varchar.
-  Attributes *resultAttr   = getOperand(0);
-
-  // This cri desc generated at codeGen() time to generate audit row image
-  // has 3 entries: 0, for consts. 1, for temps. 
-  // 2, for the audit row image.
-  // 3, where the input tuple in EXPLODED format will be available.
-  ex_cri_desc * auditImageWorkCriDesc = auditImageContainerExpr_->criDesc();
-
-  short auditImageAtpIndex   = 2;  // where audit row image will be built 
-  
-  //Allocate ATP to evaluate the auditRowImageExpr_
-  atp_struct *auditImageWorkAtp = auditImageContainerExpr_->getWorkAtp();
-
-   // Set the data pointer to point to the resultAttr's data space.
-  auditImageWorkAtp->getTupp(auditImageAtpIndex).setDataPointer(op_data[0]);
-  
-  ex_expr * auditRowImageExpr = (ex_expr *)auditImageContainerExpr_->getExpr();
-
-  
-  Attributes *inputs = getOperand(1);
-
-  // set the inputs tuple to point to the temp tuple
-  short inputsAtpIndex   = 3;  // where the inputs to audit row image 
-                               // is available.  
-
-  auditImageWorkAtp->getTupp(inputsAtpIndex).setDataPointer(op_data[1]);
-  
-  
-  // Setting the auditRowImageLength to the length from the tuple descriptor.
-  // This length is computed during compile time.
-  // For a row with variable length field(s), the eval() method re-calculates 
-  // the row length and modifies the auditRowImageLength variable.
-  ULng32 auditRowImageLength = auditImageWorkCriDesc->getTupleDescriptor(auditImageAtpIndex)->tupleDataLength();
-
-  ex_expr::exp_return_type retCode = ex_expr::EXPR_OK;
-
-  retCode = auditRowImageExpr->eval(auditImageWorkAtp,     // Input - atp1
-				    0,                        // None - atp2
-				    NULL,                     // heap
-				    -1,                       // datalen
-				    &auditRowImageLength      // Output
-				    );
-  
-  if (retCode == ex_expr::EXPR_ERROR)
-    {
-      *diagsArea = auditImageWorkAtp->getDiagsArea();
-      ExRaiseFunctionSqlError(heap, diagsArea, EXE_AUDIT_IMAGE_EXPR_EVAL_ERROR,
-			      derivedFunction(),
-			      origFunctionOperType());
-
-      return retCode;
-    }
-
-  // store the audit row image length in the varlen indicator.
-  getOperand(0)->setVarLength(auditRowImageLength, op_data[-MAX_OPERANDS]);
- 
-  return ex_expr::EXPR_OK;
-}
-
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -7761,7 +7671,6 @@ short ex_function_encode::decodeKeyValue(Attributes * attr,
   return 0;
 }
 
-NA_EIDPROC 
 static Lng32 convAsciiLength(Attributes * attr)
 {
   Lng32 d_len = 0;
@@ -7900,65 +7809,6 @@ static Lng32 convAsciiLength(Attributes * attr)
     }
   
   return d_len;
-}
-
-// LCOV_EXCL_START
-// This is a function clause used by INTERPRET_AS_ROW to extract specific
-// columns as specified by an extraction column list from an audit row image
-// (compressed or uncompressed). The input to this function is an audit row
-// image, possibly a modified field map (for compressed audit), and a list 
-// of columns to extract. The output is a tuple in exploded format made up of
-// the extracted columns.
-ExFunctionExtractColumns::ExFunctionExtractColumns 
-                                           (OperatorTypeEnum operType,
-                                            short numOperands,
-                                            Attributes ** attr,
-                                            Space *space,
-                                            UInt32 compressedAudit,
-                                            ULng32 *extractColList,
-                                            ULng32 encodedKeyLength,
-                                            ExpTupleDesc *auditImageTupleDesc,
-                                            ExpTupleDesc *extractedRowTupleDesc)
-           : ex_function_clause(operType, numOperands, attr, space)
-{
-   if (numOperands == 2)
-      flags_.mfMapIsNullConst_ = 1;
-   flags_.auditCompressionFlag_ = compressedAudit;
-   extractColList_ = (Lng32 *)extractColList;
-   numColsToExtract_ = extractedRowTupleDesc->numAttrs();
-   auditRowImageDesc_ = auditImageTupleDesc;
-   extractedRowDesc_ = extractedRowTupleDesc;
-   encodedKeyLen_ = encodedKeyLength;
-}
-
-ExFunctionExtractColumns::ExFunctionExtractColumns(void)
-{
-}
-
-// This is the function that does the bulk of the work of extracting
-// columns from an audit row image (compressed or uncompressed) as part
-// of the work done by the function INTERPRET_AS_ROW.
-ex_expr::exp_return_type ExFunctionExtractColumns::eval(char * op_data[],
-                                                        CollHeap *heap,
-                                                        ComDiagsArea **diags)
-{
-   return ex_expr::EXPR_ERROR;
-}
-
-Long ExFunctionExtractColumns::pack (void * space)
-{
-   auditRowImageDesc_.pack(space);
-   extractedRowDesc_.pack(space);
-   extractColList_.pack(space);
-   return packClause(space, sizeof(ExFunctionExtractColumns));
-}
-
-Lng32 ExFunctionExtractColumns::unpack (void * base, void * reallocator)
-{
-   if (auditRowImageDesc_.unpack(base, reallocator)) return -1;
-   if (extractedRowDesc_.unpack(base, reallocator)) return -1;
-   if (extractColList_.unpack(base)) return -1;
-   return unpackClause(base, reallocator);
 }
 
 //helper function, convert a string into IPV4 , if valid, it can support leading and padding space

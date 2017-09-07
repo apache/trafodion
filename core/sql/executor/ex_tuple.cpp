@@ -171,7 +171,7 @@ ExWorkProcRetcode ExTupleLeafTcb::work()
   if (qparent.down->isEmpty())
     return WORK_OK;
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   //
   // This block of code is for UDR testing only. It lets us create a 
   // situation where a non-UDR node in the dataflow tree returns
@@ -181,7 +181,7 @@ ExWorkProcRetcode ExTupleLeafTcb::work()
   {
     return WORK_BAD_ERROR;
   }
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
 
   ex_queue_entry * pentry_down = qparent.down->getHeadEntry();
   ExTuplePrivateState *  pstate 

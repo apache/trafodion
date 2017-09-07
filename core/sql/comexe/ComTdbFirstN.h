@@ -72,12 +72,12 @@ public:
   // ---------------------------------------------------------------------
   // Redefine virtual functions required for Versioning.
   //----------------------------------------------------------------------
-  NA_EIDPROC virtual unsigned char getClassVersionID()
+  virtual unsigned char getClassVersionID()
   {
     return 1;
   }
 
-  NA_EIDPROC virtual void populateImageVersionIDArray()
+  virtual void populateImageVersionIDArray()
   {
     setImageVersionID(1,getClassVersionID());
     ComTdb::populateImageVersionIDArray();
@@ -108,7 +108,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual void displayContents(Space *space,ULng32 flag);
+  virtual void displayContents(Space *space,ULng32 flag);
 
   Int64 firstNRows() { return firstNRows_; }
 protected:

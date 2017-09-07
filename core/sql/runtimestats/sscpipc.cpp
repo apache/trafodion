@@ -35,9 +35,7 @@
 #include <semaphore.h>
 #include "nsk/nskport.h"
 #include "seabed/ms.h"
-#if defined (SQ_NEW_PHANDLE)
 #include "seabed/fs.h"
-#endif // SQ_NEW_PHANDLE
 #include "NAStdlib.h"
 #include "zsysc.h"
 #include "ExStats.h"

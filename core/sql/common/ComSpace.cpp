@@ -47,16 +47,11 @@ extern ostream *TraceFile;
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __EID
-  #include "ExeDp2.h"
-#endif
-
 #include "ComASSERT.h"
 #include "ComSpace.h"
 #include "str.h"
 #include "HeapLog.h"
 
-NA_EIDPROC
 void * operator new(size_t size, Space *s)
 {
   if (s)
@@ -87,7 +82,6 @@ ComSpace::ComSpace(SpaceType type, NABoolean fillUp, char *name)
   allocSize_ = 0;
 }
 
-NA_EIDPROC
 ComSpace::~ComSpace()
 {
   destroy();
@@ -101,9 +95,8 @@ void Space::setType(SpaceType type, Lng32 initialSize)
 
 void Space::setParent(CollHeap * parent) {
   // make sure that we haven't allocated anything yet. If something
-  // is already allocated, we do not set parent_!! Also, parent_
-  // is not set for DP2_SPACE
-  if ((allocSize_) || (type_ == DP2_SPACE))
+  // is already allocated, we do not set parent_.
+  if (allocSize_)
     return;
 
   parent_ = parent;
@@ -119,7 +112,6 @@ void Space::freeBlocks(void) {
   // free up all the blocks attached to this space pointer.
   Block * currBlock = firstBlock_;
   switch (type_) {
-  case DP2_SPACE:
   case SINGLE_BLOCK_SPACE:
     break;
 
@@ -162,10 +154,6 @@ Lng32 Space::defaultBlockSize(SpaceType type)
   // use default size
   switch (type)
     {
-    case DP2_SPACE:
-      //      block_size = DP2_BLOCK_MAX_SIZE;
-      block_size = 32768;
-      break;
     case EXECUTOR_SPACE:
     case GENERATOR_SPACE:
     case SYSTEM_SPACE:
@@ -181,7 +169,7 @@ Lng32 Space::defaultBlockSize(SpaceType type)
 
 // Round up input value to nearest multiple of 8.
 //
-NA_EIDPROC static Lng32 roundUp8(Lng32 val)
+static Lng32 roundUp8(Lng32 val)
 {
   ULng32 uval = (ULng32) val;
 
@@ -262,32 +250,6 @@ Block * Space::allocateBlock(SpaceType type,
   }
   else {
     switch (type) {
-    case DP2_SPACE: {
-#ifdef __EID
-      short rc;
-      void * memaddr = 0;
-
-      rc = DP2_EXECUTOR_ADD_MEMORY (block_size, &memaddr);
-
-      //fprintf(stdout,"alloc %d bytes, retcode %d, memaddr %d\n",
-      //        block_size, rc, memaddr);
-      //fflush(stdout);
-
-      // if the allocation failed, return NULL
-      if (rc != FEOK)
-	return NULL;
-
-#ifdef TRACE_DP2_MALLOCS
-      *TraceFile << "DP2_EXECUTOR_ADD_MEMORY alloc'd " << block_size
-		 << " bytes at " << (void *) memaddr
-		 << " which the executor will use as a Space block." << endl;
-#endif
-
-      block_ptr = (char *)memaddr;
-#endif
-    }
-    break;
-
     case EXECUTOR_SPACE:
     case GENERATOR_SPACE:
     case SYSTEM_SPACE: {
@@ -344,9 +306,7 @@ char *Space::privateAllocateSpace(ULng32 size, NABoolean failureIsFatal) {
       // we do something special in firstAllocation
       const NABoolean firstAllocation = TRUE ;
       firstBlock_ = lastBlock_ = searchList_ =
-#pragma nowarn(1506)   // warning elimination
         allocateBlock(type_, size, firstAllocation, NULL, failureIsFatal);
-#pragma warn(1506)  // warning elimination
     }
 
   if (firstBlock_ == NULL)
@@ -387,9 +347,7 @@ char *Space::privateAllocateSpace(ULng32 size, NABoolean failureIsFatal) {
     // space not found in any existing block.
     // Allocate a new one and append it to the last block.
     // The minimum space allocated in a block is max size for 'type'.
-#pragma nowarn(1506)   // warning elimination
       currBlock = allocateBlock(type_, size, FALSE, NULL, failureIsFatal);
-#pragma warn(1506)  // warning elimination
 
       // return if we couldn't allocate a block
       if (currBlock == NULL)
@@ -424,9 +382,7 @@ char *Space::privateAllocateSpace(ULng32 size, NABoolean failureIsFatal) {
 
 void * Space::allocateSpaceMemory(size_t size, NABoolean failureIsFatal) {
       void * rc = allocateAlignedSpace(size, failureIsFatal);
-#pragma nowarn(1506)   // warning elimination
       HEAPLOG_ADD_ENTRY(rc, size, heapID_.heapNum, getName())
-#pragma warn(1506)  // warning elimination
       if (rc) return rc;
       if (failureIsFatal && size > 0)
         {
@@ -477,39 +433,21 @@ char *Space::allocateAndCopyToAlignedSpace(const char *dp,
 	break;
     case sizeof(char):
 	ComASSERT(dlen <= UCHAR_MAX)
-#pragma nowarn(1506)   // warning elimination
 	*(char *)rp = dlen;
-#pragma warn(1506)  // warning elimination
 	break;
     case sizeof(short):
 	ComASSERT(dlen <= USHRT_MAX)
-#pragma nowarn(1506)   // warning elimination
 	*(short *)rp = dlen;
-#pragma warn(1506)  // warning elimination
 	break;
-#ifdef NA_64BIT
-    // dg64 - a bit of a guess
     case sizeof(Int32):
 	ComASSERT(dlen <= UINT_MAX)
-#pragma nowarn(1506)   // warning elimination 
 	*(Int32 *)rp = dlen;
-#pragma warn(1506)  // warning elimination 
 	break;
-#else
-    case sizeof(Lng32):
-	ComASSERT(dlen <= ULONG_MAX)
-#pragma nowarn(1506)   // warning elimination
-	*(Lng32 *)rp = dlen;
-#pragma warn(1506)  // warning elimination
-	break;
-#endif
     default:
 	ComASSERT(0==1);
   }
   char* rdp = rp + countPrefixSize;
-#pragma nowarn(1506)   // warning elimination
   str_cpy_all(rdp, dp, dlen);
-#pragma warn(1506)  // warning elimination
   if ((countPrefixSize == 0) && (NOT noSizeAdjustment))
     rdp[dlen] = '\0';
 
@@ -625,9 +563,7 @@ void* Space::convertToPtr(Long offset) const
 Lng32 Space::allocAndCopy(void * from, ULng32 size, NABoolean failureIsFatal)
 {
   char * to = allocateAlignedSpace(size, failureIsFatal);
-#pragma nowarn(1506)   // warning elimination
   str_cpy_all(to, (char *)from, size);
-#pragma warn(1506)  // warning elimination
   return (convertToOffset(to));
 }
 // LCOV_EXCL_STOP
@@ -678,9 +614,8 @@ char * Space::makeContiguous(char * out_buf, ULng32 out_buflen)
   return out_buf;
 }
 
-#if (defined(_DEBUG) || defined(NSK_MEMDEBUG)) && !defined(__EID) && !defined(STAND_ALONE)
+#if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 
-// LCOV_EXCL_START
 void Space::dumpSpaceInfo(ostream* outstream, Lng32 indent) {
   char ind[100];
   Lng32 indIdx = 0;
@@ -691,9 +626,6 @@ void Space::dumpSpaceInfo(ostream* outstream, Lng32 indent) {
     outstream = &cerr;
   *outstream << ind << "Dump of Space: " << this << " (";
   switch (type_) {
-  case DP2_SPACE:
-    *outstream << "DP2_SPACE";
-    break;
   case EXECUTOR_SPACE:
     *outstream << "EXECUTOR_SPACE";
       break;
@@ -710,7 +642,6 @@ void Space::dumpSpaceInfo(ostream* outstream, Lng32 indent) {
 	     << ind << "Total Allocated Size (Bytes): " << allocSize_ << endl;
 
 }
-// LCOV_EXCL_STOP
 #endif
 
 /////////////////////////////////////////////

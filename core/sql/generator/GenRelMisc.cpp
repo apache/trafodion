@@ -40,7 +40,6 @@
 #include "ComOptIncludes.h"
 #include "GroupAttr.h"
 #include "ItemColRef.h"
-#include "ReadTableDef.h"
 #include "RelEnforcer.h"
 #include "RelJoin.h"
 #include "RelExeUtil.h"
@@ -1664,17 +1663,9 @@ short RelRoot::codeGen(Generator * generator)
 	      char * varName;
 	      GenAssert(hv->getName().data(), "Hostvar pointer must have name");
 
-#pragma nowarn(1506)   // warning elimination
 	      lateNameInfo->setEnvVar(hv->isEnvVar());
-#pragma warn(1506)  // warning elimination
 
-#pragma nowarn(1506)   // warning elimination
-	      lateNameInfo->setDefine(hv->isDefine());
-#pragma warn(1506)  // warning elimination
-
-#pragma nowarn(1506)   // warning elimination
 	      lateNameInfo->setCachedParam(hv->isCachedParam());
-#pragma warn(1506)  // warning elimination
 
 	      varName = convertNAString(hv->getName(), generator->wHeap());
 	      strcpy(lateNameInfo->variableName(), varName);
@@ -1795,7 +1786,6 @@ short RelRoot::codeGen(Generator * generator)
   for (j = 0; j < numEntries; j++)
     lnil->setLateNameInfo(j,((LateNameInfo *)(lnil + 1)) + j);
 
-  NABoolean definePresent = FALSE;
   NABoolean viewPresent = FALSE;
   NABoolean variablePresent = FALSE;
 
@@ -1813,14 +1803,12 @@ short RelRoot::codeGen(Generator * generator)
 	  if (src->isVariable())
 	    {
               doTablenameOltOpt = FALSE;
-	      if (src->isDefine())
-		definePresent = TRUE;
 	    }
 
 	  // *tgt = *src wouldn't work since it doesn't copy over the vtblptr.
 	  memmove(tgt,src,sizeof(LateNameInfo));
 	  // find the position of this hostvar in input var list.
-	  if ((src->isVariable()) && (! src->isEnvVar()) && (! src->isDefine()))
+	  if ((src->isVariable()) && (! src->isEnvVar()))
 	    {
 	      if (tgt->isCachedParam())
 		{
@@ -1854,18 +1842,11 @@ short RelRoot::codeGen(Generator * generator)
         {
 	  if (NOT tgt->isVariable())
 	    {
-	      if (NOT tgt->isMPalias())
-		tgt->setAnsiPhySame(TRUE);
-	      else
-		tgt->setAnsiPhySame(FALSE);
+              tgt->setAnsiPhySame(TRUE);
 	    }
 	  else
 	    {
-	      if (tgt->isMPalias())
-		tgt->setAnsiPhySame(FALSE);
-	      else if (tgt->isDefine())
-		tgt->setAnsiPhySame(TRUE);
-	      else if (tgt->isEnvVar())
+	      if (tgt->isEnvVar())
 		tgt->setAnsiPhySame(TRUE);
 	      else
 		{
@@ -1888,9 +1869,6 @@ short RelRoot::codeGen(Generator * generator)
 	      char * compileTimeAnsiName = space->AllocateAndCopyToAlignedSpace(
 		   qn.getQualifiedNameAsAnsiString(), 0);
               tgt->setCompileTimeName(compileTimeAnsiName, space);
-	      
-	      if (tgt->isView())
-		tgt->setMPalias(1);
 	    }
 	} // else
       
@@ -1916,10 +1894,6 @@ short RelRoot::codeGen(Generator * generator)
       // through the resolveNames in the CLI. Do this only for NSK
 	} // for
     }
-
-#pragma nowarn(1506)   // warning elimination
-  lnil->setDefinePresent(definePresent);
-#pragma warn(1506)  // warning elimination
 
 #pragma nowarn(1506)   // warning elimination
   lnil->setViewPresent(viewPresent);
@@ -2733,7 +2707,6 @@ short RelRoot::codeGen(Generator * generator)
       if ((NOT root_tdb->getUpdAbortOnError()) &&
 	  (NOT root_tdb->getUpdSavepointOnError()) &&
 	  (NOT root_tdb->getUpdPartialOnError()) &&
-	  (NOT definePresent) &&
 	  (retryableStmt) &&
 	  (NOT root_tdb->thereIsACompoundStatement()))
 	{
@@ -5342,8 +5315,6 @@ TrafDesc *ProxyFunc::createVirtualTableDesc()
     table_desc->tableDesc()->colcount;
   index_desc->indexesDesc()->blocksize = 4096; // doesn't matter.
 
-  // cannot simply point to same files desc as the table one,
-  // because then ReadTableDef::deleteTree frees same memory twice (error)
   TrafDesc *i_files_desc = TrafAllocateDDLdesc(DESC_FILES_TYPE, NULL);
   i_files_desc->filesDesc()->setAudited(TRUE); // audited table
   index_desc->indexesDesc()->files_desc = i_files_desc;

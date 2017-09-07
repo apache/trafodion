@@ -53,15 +53,13 @@
 #include "NewDel.h"
 #include "opt.h"
 #include "NAExit.h"
-#include "SqlExportDllDefines.h"
 #include "QCache.h"
 #include "CompException.h"
 #include "CostMethod.h"
-#include "ReadTableDef.h"
 #include "NAExecTrans.h"
 
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf ExportJmpBuf;
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf CmpInternalErrorJmpBuf;
+extern THREAD_P jmp_buf ExportJmpBuf;
+extern THREAD_P jmp_buf CmpInternalErrorJmpBuf;
 
 // This is a global variable used per process to identify whether this 
 // arkcmp process is spawned for internal stored procedure execution.
@@ -338,22 +336,10 @@ void ExCmpMessage::actOnReceive(IpcConnection* )
       // CmpMessageDescribe
       // CmpMessageUpdateHist
       // CmpMessageSetTrans
-      // CmpMessageReadTableDef
       // CmpMessageEndSession
       // Reset the parent qid and the requests that has parent qid will set it later
       if (CmpCommon::context() && CmpCommon::context()->sqlSession())
         CmpCommon::context()->sqlSession()->setParentQid(NULL);
-
-      // Checks to see if there is currently an active TMF transaction
-      // and set a flag in the readTableDef structure
-      CmpContext *pContext = CmpCommon::context();
-      /* 
-	 Int64 transId = -1;
-	 NABoolean transInProgress = FALSE;
-	 // this call inherits transaction id, if one has been passed in.
-	 if (NAExecTrans(0, transId))
-	 transInProgress = TRUE;
-      */
 
       switch (typ=getNextObjType()) 
       {

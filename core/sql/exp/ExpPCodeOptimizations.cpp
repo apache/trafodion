@@ -26,14 +26,12 @@
 #include "CmpCommon.h"
 #include "PCodeExprCache.h"
 
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
   #define DUMP_PHASE(str,flag1,flag2) \
     if (flag1) printBlocks(str, flag2);
 #else
   #define DUMP_PHASE(str,flag1,flag2)
 #endif
-
-
 
 /*****************************************************************************
  * Debug code
@@ -252,7 +250,7 @@ void PCodeOperand::print( PCodeCfg *cfg )
 /*****************************************************************************
  * Hash functions for hash table
  *****************************************************************************/
-NA_EIDPROC ULng32 constHashFunc(const PCodeConstants& c) {
+ULng32 constHashFunc(const PCodeConstants& c) {
   char* data = (char*)c.data_;
   ULng32 val = 0;
   Int32 i;
@@ -263,19 +261,19 @@ NA_EIDPROC ULng32 constHashFunc(const PCodeConstants& c) {
   return val + c.align_;
 }
 
-NA_EIDPROC ULng32 nullTripleHashFunc(const NullTriple& o) {
+ULng32 nullTripleHashFunc(const NullTriple& o) {
   return (o.atp_ * 1000) + o.idx_ + o.off_;
 }
 
-NA_EIDPROC ULng32 operandHashFunc(const PCodeOperand& o) {
+ULng32 operandHashFunc(const PCodeOperand& o) {
   return (o.stackIndex_ * 1000) + o.offset_ + o.nullBitIndex_;
 }
 
-NA_EIDPROC ULng32 collIndexHashFunc(const CollIndex & o) {
+ULng32 collIndexHashFunc(const CollIndex & o) {
   return (ULng32)o;
 }
 
-NA_EIDPROC ULng32 collIndexHashFunc2(const CollIndex & o) {
+ULng32 collIndexHashFunc2(const CollIndex & o) {
   return (ULng32)o;
 }
 
@@ -287,7 +285,7 @@ NA_EIDPROC ULng32 collIndexHashFunc2(const CollIndex & o) {
 // from the input on 64-bit platform, it wouldn't affect the quality of
 // the hash value in most cases because the pcode binaries are normally
 // stored in a confined area in the optimization phase.
-NA_EIDPROC ULng32 targetHashFunc(const ULong & o) {
+ULng32 targetHashFunc(const ULong & o) {
   ULng32 v = (ULong)o;
   return v;
 }
@@ -1939,11 +1937,11 @@ void PCodeCfg::runtimeOptimize()
 
   assert (expr_->getType() == ex_expr::exp_SCAN_PRED);
 
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
   if (getenv("PCODE_LLO_DEBUG"))
     debug = 1;
 
-#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#endif // defined(_DEBUG)
 
   if (enableOpt) {
     // First translate pcode bytecode into PCodeInst objects
@@ -2000,7 +1998,7 @@ void PCodeCfg::optimize()
                       MERGE_BLOCKS |
                       REMOVE_EMPTY_BLOCKS;
 
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
   //static unsigned int count = 0;
   //static unsigned int limit = 5000000; // count=69 is problem
 
@@ -2019,7 +2017,7 @@ void PCodeCfg::optimize()
 
   //if (++count > limit)
   //  return;
-#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#endif // defined(_DEBUG)
 
   // If this pcode sequence can't be optimized, or if decided to disable opts,
   // return.
@@ -2029,10 +2027,10 @@ void PCodeCfg::optimize()
   if ( !canPCodeBeOptimized(pCode , pcodeExprIsCacheable , savedUnOptPCodeLen ) ||
        !enableOpt )
   {
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
    if ( debugSome )
      NExLog( "FOUND: PCODE EXPRESSION NOT EVEN OPTIMIZABLE\n" );
-#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#endif // defined(_DEBUG)
     return;
   }
 
@@ -2042,7 +2040,7 @@ void PCodeCfg::optimize()
   if ( optFlags_ & OPT_PCODE_CACHE_DISABLED )
      pcodeExprIsCacheable = FALSE ;
 
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
   if ( debugSome )
   {
     if ( pcodeExprIsCacheable )
@@ -2050,7 +2048,7 @@ void PCodeCfg::optimize()
     else
        NExLog( "FOUND: PCODE EXPRESSION IS NOT cacheable\n" );
   }
-#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#endif // defined(_DEBUG)
 
   // Initialize counters
   initInstructionCounters();
@@ -2256,9 +2254,9 @@ void PCodeCfg::optimize()
   if ( usingCachedPCodeExpr )
      goto considerNativeCodeGen ;
 
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
   if (debugSome) NExLog("-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
-#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#endif // defined(_DEBUG)
 
 #if OPT_PCC_DEBUG==1
 
@@ -2507,8 +2505,6 @@ considerNativeCodeGen:
 
   Int32 constsLenAfterOpt = newConstsAreaLen_ ;
 
-#if defined(NA_LINUX) && ! defined(__EID)
-
 #if OPT_PCC_DEBUG==1
   UInt64 totalNEgenTime = 0;
 #endif // OPT_PCC_DEBUG==1
@@ -2542,7 +2538,6 @@ considerNativeCodeGen:
       expr_->setEvalPtr( (ex_expr::evalPtrType)( (CollIndex) 0 ) );//Ensure NULL!
 
   }
-#endif // defined(NA_LINUX) && ! defined(__EID)
 
   if ( ! usingCachedPCodeExpr )
   {
@@ -2654,8 +2649,6 @@ PCodeCfg::~PCodeCfg() {
 
 void PCodeCfg::destroy()
 {
-#ifndef __EID
-
   // If we're not dealing with runtime optimizations happening in EID, then
   // all memory can be quickly deallocated by deleting the main heap_, followed
   // by individual deletes of the member variables.
@@ -2678,128 +2671,7 @@ void PCodeCfg::destroy()
   NADELETEBASIC(neg1_, origHeap_);
 
   delete(heap_);
-
-#else
-
-  // Since we're in EID, that implies that we were called at runtime.  In this
-  // case, all memory was allocated within the eid heap object (and not in a
-  // heap within this heap).  As such, we delete all the objects the old
-  // fashion way.  Perhaps there is a better way of doing this, but seeing as
-  // how runtimeOptimize() is very rarely called, this should have little to
-  // no perf impact.
-
-  CollIndex i;
-
-  // Delete operands
-  //
-  // Destroy all key-value pairs in operands and operandsMap list since the
-  // objects contained in them were dynamically allocated and no longer needed.
-  //
-  if (operandToIndexMap_) {
-    PCodeOperand* key;
-    CollIndex* value;
-    NAHashDictionaryIterator<PCodeOperand, CollIndex> iter(*operandToIndexMap_);
-
-    for (i=0; i < iter.entries(); i++) {
-      iter.getNext(key, value);
-      NADELETEBASIC(key, heap_);
-      NADELETEBASIC(value, heap_);
-    }
-
-    delete operandToIndexMap_;
-  }
-
-  //
-  // Delete constants hash tables
-  //
-  if (constToOffsetMap_) {
-    PCodeConstants* key;
-    CollIndex* value;
-    NAHashDictionaryIterator<PCodeConstants,CollIndex> iter(*constToOffsetMap_);
-
-    for (i=0; i < iter.entries(); i++) {
-      iter.getNext(key, value);
-      NADELETEBASIC(key, heap_);
-      NADELETEBASIC(value, heap_);
-    }
-
-    delete constToOffsetMap_;
-  }
-
-  // Since offsetToConstMap_ is just the reverse of constToOffsetMap_, nothing
-  // to do but delete the hash table.
-  if (offsetToConstMap_)
-    delete offsetToConstMap_;
-
-  // Destroy nullToPadMap hash table
-  if (nullToPadMap_) {
-    NullTriple* key;
-    Int32* value;
-    NAHashDictionaryIterator<NullTriple, Int32> iter(*(nullToPadMap_));
-
-    for (i=0; i < iter.entries(); i++) {
-      iter.getNext(key, value);
-      NADELETEBASIC(key, heap_);
-      NADELETEBASIC(value, heap_);
-    }
-
-    delete nullToPadMap_;
-  }
-
-  // Since indexToOperandMap_ is just the reverse mapping of operandToIndexMap_,
-  // no need to delete key-value pairs for it since they were already deleted
-  // above.
-  if (indexToOperandMap_)
-    delete indexToOperandMap_;
-
-  // Destroy keys in the targets_ table since those objects were dynamically
-  // allocated.
-  if (targets_) {
-    ULong * key;
-    PCodeBinary * value;
-    NAHashDictionaryIterator<ULong, PCodeBinary> iter(*targets_);
-
-    for (i=0; i < iter.entries(); i++) {
-      iter.getNext(key, value);
-      NADELETEBASIC(key, heap_);
-    }
-
-    delete targets_;
-  }
-
-  // Delete insts
-  if (allInsts_) {
-    for (i=0; i < allInsts_->entries(); i++)
-      NADELETE(allInsts_->at(i), PCodeInst, heap_);
-
-    delete(allInsts_);
-  }
-
-  // Delete blocks
-  if (allBlocks_) {
-    for (i=0; i < allBlocks_->entries(); i++) {
-      PCodeBlock* block = allBlocks_->at(i);
-
-      if (block->reachingDefsTab_) {
-        block->reachingDefsTab_->destroy();
-        NADELETE(block->reachingDefsTab_, ReachDefsTable, heap_);
-      }
-
-      NADELETEBASIC(block, heap_);
-    }
-
-    delete(allBlocks_);
-  }
-
-  // Delete constant vectors
-  delete (zeroes_);
-  delete (ones_);
-  delete (neg1_);
-
-#endif
 }
-
-#ifndef __EID
 
 void PCodeCfg::generateShowPlan(PCodeBinary* pCode, Space* space)
 {
@@ -2812,9 +2684,9 @@ void PCodeCfg::generateShowPlan(PCodeBinary* pCode, Space* space)
   createInsts(pCode);
   createCfg();
 
-#if defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#if defined(_DEBUG)
   NExLog("-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n");
-#endif // defined(_DEBUG) && !defined(NA_NO_C_RUNTIME)
+#endif // defined(_DEBUG)
 
   DUMP_PHASE("CFG [0]", TRUE, FALSE);
 
@@ -2940,9 +2812,6 @@ void PCodeCfg::generateShowPlan(PCodeBinary* pCode, Space* space)
                                   sizeof(short) );
     }
 }
-
-#endif // __EID
-
 
 /*****************************************************************************
  * PCodeCfg
@@ -3439,18 +3308,10 @@ void PCodeCfg::removeReachingDefs()
 {
   FOREACH_BLOCK_FAST(block, firstInst, lastInst, inst) {
     if (block->reachingDefsTab_) {
-#ifdef __EID
-      // in cmpiler, we'll delete whole rDefsHeap_ instead of individual
-      // reaching Defs Tables
-      block->reachingDefsTab_->destroy();
-      NADELETE(block->reachingDefsTab_, ReachDefsTable, heap_);
-#endif
       block->reachingDefsTab_ = NULL;
     }
   } ENDFE_BLOCK_FAST
-#ifndef __EID
   delete(rDefsHeap_);
-#endif
 
   rDefsHeap_ = NULL;
 }
@@ -3515,12 +3376,8 @@ void PCodeCfg::computeReachingDefs(Int32 flags)
 
   NABoolean noTemps = flags & 0x1;
 
-#ifndef __EID
   // Allocate reach defs memory in separate heap for faster destruction.
   rDefsHeap_ = new(heap_) NAHeap("Pcode Rdef", (NAHeap*)heap_, (Lng32)32768);
-#else
-  rDefsHeap_ = heap_;
-#endif
 
   // Initialize reaching defs table for each live block
   FOREACH_BLOCK_REV_DFO(block, firstInst, lastInst, index) {
@@ -3825,12 +3682,10 @@ void PCodeCfg::assignBlockOffsetsAndFixup(BLOCKLIST& blockList)
                              PCode::getInstructionLength(inst->code)) - 1;
         }
 
-#ifdef NA_64BIT
         // Null branch PCode Binaries do not contail address operands
         if (inst->isAnyLogicalBranch())
           *((Long*)(targetOffsetPtrs[j])) = targetOffset;
         else
-#endif
           *(targetOffsetPtrs[j]) = (Int32)targetOffset;
       }
     }
@@ -7138,12 +6993,6 @@ NABoolean PCodeCfg::canPCodeBeOptimized( PCodeBinary * pCode
     if (clause->getClassID() == ex_clause::INOUT_TYPE)
       return FALSE;
 
-    // ExAuditImage clauses contain auditRowImageExpr pointers which point
-    // back to data (temps in particular) used by parent (like a function call
-    // with reference parameters).  We can't optimize across multiple exprs.
-    else if (clause->getClassID() == ex_clause::FUNC_AUDIT_ROW_IMAGE)
-      return FALSE;
-
     // Clauses evaluated before HbaseColumnCreate directly update the result
     // buffer of this clause. Pcode optimization will remove those pre-clauses
     // as their output is not directly referenced in another clause.
@@ -7278,7 +7127,7 @@ NABoolean PCodeCfg::createInsts (PCodeBinary * pcode)
 //
 // Used for Aligned Format to get null bit index of column
 //
-NA_EIDPROC static Int32 getBitIndex(PCodeBinary *code, const Int32 idx)
+static Int32 getBitIndex(PCodeBinary *code, const Int32 idx)
 {
   Attributes* attr = (Attributes*)GetPCodeBinaryAsPtr(code, idx);
   if (attr->getTupleFormat() == ExpTupleDesc::SQLMX_ALIGNED_FORMAT)

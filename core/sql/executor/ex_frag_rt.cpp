@@ -55,7 +55,7 @@
 #include "ComDistribution.h"
 #include "sql_buffer_size.h"
 // #include "MXVersion.h"
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG) || defined(NA_HSC))
+#if (defined(NA_GUARDIAN_IPC))
 #include "ExCextdecs.h"
 #endif
 
@@ -1276,13 +1276,8 @@ void ExRtFragTable::assignPartRangesAndTA(NABoolean /*initial*/)
 			    new(ipcHeap) ExMsgTransId
                                    (ipcHeap,
                                     glob_->getTransid(),
-#if (defined (NA_LINUX) && defined (SQ_NEW_PHANDLE))
                                     (short *)&(inst->usedEsp_->getIpcServer()->
                                         getServerId().getPhandle().phandle_));
-#else
-                                    (short *)inst->usedEsp_->getIpcServer()->
-                                        getServerId().getPhandle().phandle_);
-#endif // NA_LINUX 
 
 			  *workMsg << *msgTransId;
 			  
@@ -1734,7 +1729,7 @@ void ExRtFragTable::addLoadRequestToMessage(ExMasterEspMessage *msg,
   userID = *((Int32 *) pUserID);
   userName = context->getDatabaseUserName();
   userNameLen = (Int32) strlen(userName) + 1;
-#if defined(NA_DEBUG_C_RUNTIME)
+#ifdef _DEBUG
   if (fragDir_->getType(fragId) == ExFragDir::ESP)
   {
     NABoolean doDebug = (getenv("DBUSER_DEBUG") ? TRUE : FALSE);
@@ -2063,9 +2058,7 @@ void ExRtFragTable::dumpSMRouteTable()
           inst->usedEsp_->getIpcServer()->getServerId();
 
         processId.getPhandle().decompose(cpu, pin, node
-#ifdef SQ_PHANDLE_VERIFIER
                                         , seqNum
-#endif
                                         );
         node = ExSM_GetNodeID(cpu);
 

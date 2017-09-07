@@ -57,7 +57,6 @@
 // -----------------------------------------------------------------------
 // Used in constructor to retrieve PCODE environment variables.
 // -----------------------------------------------------------------------
-#ifndef __EID
 /*static char *GetEnv(char *eye, char *prefix)
 {
   char buffer[32];
@@ -71,9 +70,7 @@
 
   return getenv(buffer);
 }*/
-#endif
 
-// LCOV_EXCL_START
 // This method is called only if params parameter is sent to ComTdb constructor
 // and no where in the code the ComTdb constructor is being called with
 // params paramter.  It was tested by removing the the param parameter
@@ -83,18 +80,8 @@ void ComTdbParams::getValues(Cardinality &estimatedRowCount,
 			     ExCriDescPtr &criUp,
 			     queue_index &sizeDown,
 			     queue_index &sizeUp,
-#ifdef NA_64BIT
-                             // dg64 - match signature
 			     Int32  &numBuffers,
-#else
-			     Lng32 &numBuffers,
-#endif
-#ifdef NA_64BIT
-                             // dg64 - match signature
 			     UInt32  &bufferSize,
-#else
-			     ULng32 &bufferSize,
-#endif
 			     Int32 &firstNRows)
 {
   estimatedRowCount = estimatedRowCount_;
@@ -105,12 +92,11 @@ void ComTdbParams::getValues(Cardinality &estimatedRowCount,
   numBuffers = numBuffers_;
   firstNRows = firstNRows_;
 }
-// LCOV_EXCL_STOP
 
 // -----------------------------------------------------------------------
 // TDB constructor & Destructor
 // -----------------------------------------------------------------------
-NA_EIDPROC ComTdb::ComTdb(
+ComTdb::ComTdb(
      ex_node_type type,
      const char *eye,
      Cardinality estRowsUsed,
@@ -118,18 +104,8 @@ NA_EIDPROC ComTdb::ComTdb(
      ex_cri_desc *criUp,
      queue_index sizeDown,
      queue_index sizeUp,
-#ifdef NA_64BIT
-     // dg64 - match signature
      Int32  numBuffers,
-#else
-     Lng32 numBuffers,
-#endif
-#ifdef NA_64BIT
-     // dg64 - match signature
      UInt32  bufferSize,
-#else
-     ULng32 bufferSize,
-#endif
      Lng32          uniqueId,
      ULng32 initialQueueSizeDown,
      ULng32 initialQueueSizeUp,
@@ -178,14 +154,14 @@ NA_EIDPROC ComTdb::ComTdb(
 
 }
 
-NA_EIDPROC ComTdb::ComTdb()
+ComTdb::ComTdb()
   : NAVersionedObject(-1),
   overflowMode_(OFM_DISK)
 {
 
 }
 
-NA_EIDPROC ComTdb::~ComTdb()
+ComTdb::~ComTdb()
 {
   // ---------------------------------------------------------------------
   // Change the eye catcher
@@ -194,7 +170,7 @@ NA_EIDPROC ComTdb::~ComTdb()
   
 }
 
-NA_EIDPROC Long ComTdb::pack(void *space)
+Long ComTdb::pack(void *space)
 {
   criDescDown_.pack(space); 
   criDescUp_.pack(space); 
@@ -203,7 +179,7 @@ NA_EIDPROC Long ComTdb::pack(void *space)
   return NAVersionedObject::pack(space);
 }
 
-NA_EIDPROC Lng32 ComTdb::unpack(void * base, void * reallocator)
+Lng32 ComTdb::unpack(void * base, void * reallocator)
 {
   if(criDescDown_.unpack(base, reallocator)) return -1; 
   if(criDescUp_.unpack(base, reallocator)) return -1; 
@@ -215,10 +191,9 @@ NA_EIDPROC Lng32 ComTdb::unpack(void * base, void * reallocator)
 // Used by the internal SHOWPLAN command to get attributes of a TDB in a
 // string.
 // -----------------------------------------------------------------------
-NA_EIDPROC void ComTdb::displayContents(Space * space,ULng32 flag)
+void ComTdb::displayContents(Space * space,ULng32 flag)
 {
 
-#ifndef __EID
   char buf[100];
   str_sprintf(buf, "Contents of %s [%d]:", getNodeName(),getExplainNodeId());
   Int32 j = str_len(buf);
@@ -262,7 +237,6 @@ NA_EIDPROC void ComTdb::displayContents(Space * space,ULng32 flag)
       		space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
     		}
     }
- #endif
 
   if(flag & 0x00000001)
     {
@@ -271,7 +245,7 @@ NA_EIDPROC void ComTdb::displayContents(Space * space,ULng32 flag)
     }
 }
 
-NA_EIDPROC void ComTdb::displayExpression(Space *space,ULng32 flag)
+void ComTdb::displayExpression(Space *space,ULng32 flag)
 {
   char buf[100];
   
@@ -289,10 +263,8 @@ NA_EIDPROC void ComTdb::displayExpression(Space *space,ULng32 flag)
 						  (char *)getExpressionName(i),flag);
 	  else
 	    {
-#ifndef __EID
 	      str_sprintf(buf, "Expression: %s is NULL\n", (char *)getExpressionName(i));
 	      space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
-#endif
 	    }
 	}
     }
@@ -314,7 +286,7 @@ NA_EIDPROC void ComTdb::displayExpression(Space *space,ULng32 flag)
     }
 }
 
-NA_EIDPROC void ComTdb::displayChildren(Space *space,ULng32 flag)
+void ComTdb::displayChildren(Space *space,ULng32 flag)
 {
   for (Int32 i = 0; i < numChildren(); i++)
     {
@@ -331,7 +303,7 @@ NA_EIDPROC void ComTdb::displayChildren(Space *space,ULng32 flag)
 // Executor version of the TDB.
 // -----------------------------------------------------------------------
 // LCOV_EXCL_START
-NA_EIDPROC void ComTdb::fixupVTblPtrCom()
+void ComTdb::fixupVTblPtrCom()
 {
 }
 // LCOV_EXCL_STOP
@@ -343,7 +315,7 @@ NA_EIDPROC void ComTdb::fixupVTblPtrCom()
 // implemented in the executor project (in ExComTdb.cpp) which returns
 // the pointer for an "executor TDB".
 // -----------------------------------------------------------------------
-NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
+char *ComTdb::findVTblPtrCom(short classID)
 {
   char *vtblptr = NULL;
   switch (classID)
@@ -428,8 +400,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
 #pragma warn(1506)  // warning elimination 
       break;
     }
-
-#ifndef __EID
 
     case ex_TUPLE:
     {
@@ -866,7 +836,6 @@ NA_EIDPROC char *ComTdb::findVTblPtrCom(short classID)
       break;
     }
 
-#endif
     default:
       break;
 // LCOV_EXCL_STOP

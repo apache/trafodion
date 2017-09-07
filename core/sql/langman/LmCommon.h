@@ -36,23 +36,19 @@
 #include "ComSmallDefs.h"
 #include "ComDiags.h"
 
-  #ifdef __EID
-    #define SQLLM_LIB_FUNC
+#ifdef LMCOMP_BUILD
+  // This is for the lmcomp library which gets statically linked
+  // into tdm_arkcmp
+  #define SQLLM_LIB_FUNC
+#else
+  #ifdef LM_DLL
+    // This is for building the LM DLL
+    #define SQLLM_LIB_FUNC __declspec( dllexport )
   #else
-    #ifdef LMCOMP_BUILD
-      // This is for the lmcomp library which gets statically linked
-      // into tdm_arkcmp
-      #define SQLLM_LIB_FUNC
-    #else
-      #ifdef LM_DLL
-        // This is for building the LM DLL
-        #define SQLLM_LIB_FUNC __declspec( dllexport )
-      #else
-        // This is for LM DLL callers
-        #define SQLLM_LIB_FUNC __declspec( dllimport )
-      #endif
-    #endif
+    // This is for LM DLL callers
+    #define SQLLM_LIB_FUNC __declspec( dllimport )
   #endif
+#endif
 
 //////////////////////////////////////////////////////////////////////
 //

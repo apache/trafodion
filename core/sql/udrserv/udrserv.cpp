@@ -90,8 +90,8 @@ DEFINE_DOVERS(tdm_udrserv)
 // Global pointer to the UdrGlobals instance
 UdrGlobals *UDR_GLOBALS = NULL;
 
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf ExportJmpBuf;
-extern THREAD_P SQLEXPORT_LIB_FUNC jmp_buf* ExportJmpBufPtr;
+extern THREAD_P jmp_buf ExportJmpBuf;
+extern THREAD_P jmp_buf* ExportJmpBufPtr;
 
 void processASessionMessage(UdrGlobals *UdrGlob,
                             UdrServerReplyStream &msgStream,
@@ -361,7 +361,7 @@ Int32 main(Int32 argc, char **argv)
 
 static void runServer(Int32 argc, char **argv)
 {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   UDR_DEBUG1("Process ID: %ld", (Lng32) GETPID());
   UDR_DEBUG0("[BEGIN argv]");
   Int32 i;
@@ -396,7 +396,7 @@ static void runServer(Int32 argc, char **argv)
     showMsgBox = TRUE;
   }
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   putenv((char *)"MXUDR_DEBUG_BUILD=1");
 #endif
 
@@ -483,7 +483,7 @@ static void runServer(Int32 argc, char **argv)
         UdrServerReplyStream *stream = replyStreams[0];
         replyStreams.removeAt(0);
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
           Lng32 crashPoint = 0;
 #endif
         if (stream->moreObjects())
@@ -491,7 +491,7 @@ static void runServer(Int32 argc, char **argv)
           UdrIpcObjectType msgType =
            (UdrIpcObjectType) stream->getNextObjType();
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
           // Bring the process down if an environment variable value
           // matches the message type
           const char *crashString = getenv("MXUDR_CRASH_POINT");
@@ -511,7 +511,7 @@ static void runServer(Int32 argc, char **argv)
           // Do some real work on the incoming message
           processARequest(UDR_GLOBALS, *stream, *env);
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
           // Bring the process down if the environment variable checked
           // earlier has a negative value and its positive value matches
           // the message type
@@ -1088,7 +1088,7 @@ static void displayUsageInfo()
   fprintf(stdout, "    Verify UDR Server and Language Manager startup.\n");
   fprintf(stdout, "\n");
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   // The "-invoke" and "-obey" options are supported in the release
   // build but we do not tell users about them in this help message.
   fprintf(stdout, "  mxudr -invoke [-n N] [-param java|c] [-rs numRS]\n");

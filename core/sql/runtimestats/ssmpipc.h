@@ -216,10 +216,8 @@ public:
     ipcEnv_ = ipcEnv;
     ssmpGlobals_ = ssmpGlobals;
     heap_ = heap;
-#ifndef __EID
     handle_ = INVALID_RTS_HANDLE;
     wmsProcess_ = FALSE;
-#endif
   }
 
   ~SsmpNewIncomingConnectionStream();
@@ -256,23 +254,18 @@ public:
   void clearSscpDiagsArea() { sscpDiagsArea_->decrRefCount(); 
                               sscpDiagsArea_ = NULL; }
 
-#ifndef __EID
   inline RtsHandle getHandle() { return handle_; }
   inline void setHandle(const RtsHandle h) { handle_ = h; }
   inline NABoolean isWmsProcess() { return wmsProcess_; }
   inline void setWmsProcess(NABoolean flag) { wmsProcess_ = flag; }
-#endif
 private:
 
   NAHeap *heap_;
   IpcEnvironment *ipcEnv_;
   SsmpGlobals *ssmpGlobals_;
   ComDiagsArea *sscpDiagsArea_;
-#ifndef __EID
   RtsHandle handle_;
   NABoolean wmsProcess_;
-#endif
-
 }; // SsmpNewIncomingConnectionStream
 
 // -----------------------------------------------------------------------

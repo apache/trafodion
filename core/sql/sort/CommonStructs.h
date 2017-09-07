@@ -53,9 +53,6 @@
   #ifdef min
     #undef min
   #endif
-  #ifdef ERROR
-    #undef ERROR
-  #endif
 
 #include "NABasicObject.h"
 

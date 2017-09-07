@@ -39,11 +39,6 @@
 
 #include "Platform.h"
 
-
-#if (!defined (__TANDEM) && !defined(__EID))
-#include <iostream>
-#endif
-
 #include "exp_stdh.h"
 #include "exp_clause_derived.h"
 #include "exp_datetime.h"
@@ -325,8 +320,6 @@ Int64 EXP_FIXED_OV_DIV(Int64 op1, Int64 op2, short * ov)
 //Int64 EXP_FIXED_OV_DIV(Int64 op1, Int64 op2, short * ov);
 
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 short EXP_FIXED_BIGN_OV_MUL(Attributes * op1,
                         Attributes * op2,
                         char * op_data[])
@@ -379,8 +372,6 @@ short EXP_FIXED_BIGN_OV_MUL(Attributes * op1,
   return 0;
 }
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 short EXP_FIXED_BIGN_OV_DIV(Attributes * op1,
                         Attributes * op2,
                         char * op_data[])
@@ -437,8 +428,6 @@ short EXP_FIXED_BIGN_OV_DIV(Attributes * op1,
   return 0;
 }
 
-NA_EIDPROC
-SQLEXP_LIB_FUNC
 Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
                         Attributes * op2,
                         char * op_data[],
@@ -563,7 +552,6 @@ Int64 EXP_FIXED_BIGN_OV_MOD(Attributes * op1,
   return result;
 }
 
-NA_EIDPROC
 static void CopyAttributes(char *dst, char *dstNull, char *dstVC, 
 			   Attributes *dstAttr,
 			   char *src, char *srcNotNull,char *srcVC,

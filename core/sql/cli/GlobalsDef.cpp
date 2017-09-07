@@ -42,4 +42,4 @@
 // to link cli.lib
 
 __declspec(dllexport) CliGlobals * cli_globals = 0;
-THREAD_P SQLEXPORT_LIB_FUNC jmp_buf ExportJmpBuf;
+THREAD_P jmp_buf ExportJmpBuf;

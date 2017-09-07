@@ -54,48 +54,34 @@ class HashRow {
   friend class HashTable;
   friend class HashBufferSerial;
 public:
-NA_EIDPROC
   inline HashRow() {};
-NA_EIDPROC
   inline ~HashRow() {};
-NA_EIDPROC
   void print(ULng32 rowlength);
-NA_EIDPROC
   inline SimpleHashValue hashValue() const { return hashValue_ & MASK31; }
 
   // Return the raw hash value (no masking)
-  NA_EIDPROC
   inline SimpleHashValue hashValueRaw() const { return hashValue_; }
 
-NA_EIDPROC
   inline void setHashValue(SimpleHashValue hv) { hashValue_ = hv & MASK31; }
 
   // Set the hash value to the raw hash value (no masking)
-  NA_EIDPROC
   inline void setHashValueRaw(SimpleHashValue hv) { hashValue_ = hv; }
 
-NA_EIDPROC
   inline NABoolean bitSet() const { return ((hashValue_ & ~MASK31) != 0L) ; }
-NA_EIDPROC
   inline void setBit(NABoolean val)
 	 { if ( val ) hashValue_ |= ~MASK31 ; else hashValue_ &= MASK31 ;}
-NA_EIDPROC
 inline void setNext (HashRow *next) {next_ = next;}
-NA_EIDPROC
 inline HashRow *next() const {return next_;}
 
-NA_EIDPROC
 inline char *getData() const {
   return ((char *)this) + sizeof(HashRow);
 }
 
-NA_EIDPROC
 inline UInt32 getRowLength() const {
   return *((UInt32 *)getData());
 }
 
 private:
-NA_EIDPROC
 inline void setRowLength(UInt32 rowLen) {
   *((UInt32 *)getData()) = rowLen;
 }

@@ -122,20 +122,16 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual void displayContents(Space *space,ULng32 flag);
+  virtual void displayContents(Space *space,ULng32 flag);
 
-  NA_EIDPROC
   inline NABoolean expectingLeftRows() const
                 { return (csErrFlags_ & ROWS_FROM_LEFT) != 0; }
 
-  NA_EIDPROC
   inline NABoolean expectingRightRows() const
                 { return (csErrFlags_ & ROWS_FROM_RIGHT) != 0; }
 
-  NA_EIDPROC
   inline NABoolean afterUpdate() const
                 { return (csErrFlags_ & AFTER_UPDATE) != 0; }
-  NA_EIDPROC
   inline NABoolean inNotAtomicStmt() const       { return (flags_ & IN_NOT_ATOMIC_STMT) != 0; }
 
 

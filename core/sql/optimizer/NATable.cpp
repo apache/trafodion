@@ -36,10 +36,8 @@
 
 #undef  _DP2NT_
 #define _DP2NT_
-// #define NA_ARKFS
 #define __ROSETTA
 #undef _DP2NT_
-// #undef NA_ARKFS
 #undef __ROSETTA
 
 #include "NATable.h"
@@ -3375,7 +3373,7 @@ NABoolean createNAColumns(TrafDesc *column_desc_list	/*IN*/,
       NAColumn *newColumn = NULL;
       if (column_desc->colname[0] != '\0')
         {
-	  // Standard named column from ReadTableDef...
+	  // Standard named column
           CMPASSERT(column_desc->colnumber >= 0);
 
          char* defaultValue = column_desc->defaultvalue;
@@ -5035,7 +5033,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
 
    MonitorMemoryUsage_Enter((char*)mmPhase.data(), heap_, TRUE);
 
-   // Do a readTableDef, if table descriptor has not been passed in
+   // Do a metadata read, if table descriptor has not been passed in
    //
    TrafDesc * table_desc;
    Int32 *maxIndexLevelsPtr = new (STMTHEAP) Int32;
@@ -5276,7 +5274,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
        //
        // The updatable flag is false for an MP view only if it is NOT a
        // protection view. Therefore updatable == FALSE iff it is a
-       // shorthand view. See ReadTableDef.cpp, l. 3379.
+       // shorthand view.
        //
 
        viewFileName_ = NULL;
@@ -5456,12 +5454,7 @@ NABoolean NATable::fetchObjectUIDForNativeTable(const CorrName& corrName,
        Int32 catStrLen = 0;
        Int32 schemaStrLen = 0;
        Int32 fileStrLen = 0;
-#ifdef NA_64BIT
-       // dg64 - match signature
        int_32 primaryNodeNum=0;
-#else
-       Int32 primaryNodeNum=0;
-#endif
        short error = 0;
 
        //clusteringIndex has physical filename that can be used to check
@@ -7526,7 +7519,6 @@ NATable * NATableDB::get(const ExtendedQualName* key, BindWA* bindWA, NABoolean 
       const Int64 tableRedefTime = cachedNATable->getRedefTime();
       //Get last catalog operation time
       Int64 labelCatalogOpTime = tableRedefTime;
-      Int64 rforkCatalogOpTime = tableRedefTime;
       Int64 currentSchemaRedefTS = 0;
       Int64 cachedSchemaRedefTS = 0;
 

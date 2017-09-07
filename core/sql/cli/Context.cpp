@@ -73,9 +73,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#if defined( NA_SHADOWCALLS )
-#include "sqlclisp.h"
-#endif
 
 #include "ComplexObject.h"
 #include "CliMsgObj.h"
@@ -92,10 +89,8 @@
 #include <sys/syscall.h>
 #include <pwd.h>
 
-#ifdef NA_CMPDLL
 #include "CmpCommon.h"
 #include "arkcmp_proc.h"
-#endif
 
 #include "ExRsInfo.h"
 #include "../../dbsecurity/auth/inc/dbUserAuth.h"
@@ -105,7 +100,7 @@
 
 // Printf-style tracing macros for the debug build. The macros are
 // no-ops in the release build.
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 #include <stdarg.h>
 #define StmtListDebug0(s,f) StmtListPrintf((s),(f))
 #define StmtListDebug1(s,f,a) StmtListPrintf((s),(f),(a))
@@ -122,20 +117,10 @@
 #define StmtListDebug5(s,f,a,b,c,d,e)
 #endif
 
+#include "dtm/tm.h"
 
-  #include "dtm/tm.h"
-
-#ifdef NA_CMPDLL
 #include  "CmpContext.h"
-#endif  // NA_CMPDLL
-// forward declarations
 
-static
-SQLSTMT_ID* getStatementId(plt_entry_struct * plte,
-                           char * start_stmt_name,
-                           SQLSTMT_ID * stmt_id,
-                           NAHeap *heap);
-                           
 ContextCli::ContextCli(CliGlobals *cliGlobals)
   // the context heap's parent is the basic executor memory
   : cliGlobals_(cliGlobals),
@@ -497,997 +482,6 @@ static Int32 allocAndReadPos(ModuleOSFile &file,
   return retcode;
 }
 
-RETCODE ContextCli::addModule(const SQLMODULE_ID * module_id, 
-                              NABoolean tsCheck,
-                              NABoolean unpackTDBs, char * moduleDir,
-                              NABoolean lookInGlobalModDir)
-{
-  const char * module_name = module_id->module_name;
-  Lng32 module_nm_len = getModNameLen(module_id);
- 
-  // use this Space for versioning
-  Space vspc;
-  //NAVersionedObject::setReallocator(&vspc);
-
-  module_header_struct dm, *latestModHdr, modHdrCls;
-  
-  ModuleOSFile file;
-  const Int32 max_modname_len = 1024;
-  char m_name[max_modname_len];
-  Lng32 m_name_len;
-  Int32 error = 0;
-  short isSystemModule = 0;
-
-  // odbc spawns mxosrvr (an oss executable stored as a guardian file) 
-  // as an oss process. So,
-  // we cannot assume moduleDir is always NULL for Guardian executables.
-  // Nor can we avoid having to check the global dir if moduleDir is not
-  // null. In the case of zmxosrvr, moduleDir is /G/vol/subvol and we 
-  // have to search /usr/tandem/sqlmx/USERMODULES before declaring 8809.
-
-  // look for the module in moduleDir first.
-  Lng32 retcode = ComRtGetModuleFileName
-    (module_name, moduleDir, m_name, max_modname_len, 
-     NULL,
-     NULL,
-     &m_name_len, isSystemModule);
-  if (retcode || m_name_len >= max_modname_len)
-    {
-      diagsArea_ << DgSqlCode(- CLI_NO_INSTALL_DIR)
-                 << DgInt0(retcode);
-      return ERROR;
-    }
-  else if ((error = file.open(m_name)) == 4002 || error == 11) // not found
-    {
-      if ((!moduleDir) || // above try was for global dir
-          (NOT lookInGlobalModDir)) // do not look for module in global
-                                    // mod dir, if cannot find it in local
-        {
-          // there's no local module dir to try
-          diagsArea_ << DgSqlCode(- CLI_MODULEFILE_OPEN_ERROR)
-                     << DgString0(m_name)
-                     << DgInt0(error);
-          return ERROR;
-        }
-      else // above try was for a local dir
-        {
-          // now try the global dir
-          retcode = ComRtGetModuleFileName
-            (module_name, NULL, m_name, max_modname_len, 
-	     NULL,
-	     NULL,
-             &m_name_len, isSystemModule);
-          if (retcode || m_name_len >= max_modname_len)
-            {
-              diagsArea_ << DgSqlCode(- CLI_NO_INSTALL_DIR)
-                         << DgInt0(retcode);
-              return ERROR;
-            }
-          else if ((error = file.open(m_name)) != 0) // open failed
-            {
-              diagsArea_ << DgSqlCode(- CLI_MODULEFILE_OPEN_ERROR)
-                         << DgString0(m_name)
-                         << DgInt0(error);
-              return ERROR;
-            }
-        }
-    }
-  else if (error != 0) // module file exists but open failed
-    {
-      diagsArea_ << DgSqlCode(- CLI_MODULEFILE_OPEN_ERROR)
-                 << DgString0(m_name)
-                 << DgInt0(error);
-      return ERROR;
-    }
-
-  Module * module = new(exCollHeap())
-    Module(module_name, module_nm_len, &m_name[0], m_name_len, exHeap());
-  
-  // read the module header
-  short countRead = 0;
-  if ((file.readpos((char *)&dm, 0, sizeof(module_header_struct), countRead))
-      )
-    {
-      // an error during reading of module file or the file is shorter
-      // than the module header.
-      diagsArea_ << DgSqlCode(-CLI_MODULEFILE_CORRUPTED) << DgString0(m_name);
-      return ERROR;
-    }
-
-  // give versioning a chance to massage/migrate it to this version
-  latestModHdr = (module_header_struct*)dm.driveUnpack(&dm, &modHdrCls, &vspc);
-  if (!latestModHdr) {
-    // error: version is no longer supported
-    diagsArea_ << DgSqlCode(-CLI_MODULE_HDR_VERSION_ERROR) 
-               << DgString0(m_name);
-    return ERROR;
-  }
-
-  module->setVersion((COM_VERSION)latestModHdr->getModuleVersion());
-
-  const char * real_module_name = NULL;
-  char real_module_name_buf[max_modname_len];
-  if (module_name[0] == '/')
-    {
-      // module name is fully qualified, it contains the path before
-      // the actual name. 
-      // Fine the real module name.
-      Lng32 len = (Int32)strlen(module_name);
-      
-      // find the directory name.
-      Lng32 i = len-1;
-      NABoolean done = FALSE;
-      NABoolean dQuoteSeen = FALSE;
-      while ((i > 0) && (NOT done))
-        {
-          if (module_name[i] == '"')
-            dQuoteSeen = NOT dQuoteSeen;
-          
-          if (NOT dQuoteSeen)
-            {
-              if (module_name[i] == '/')
-                {
-                  done = TRUE;
-                  continue;
-                }
-            }
-          i--;
-        }
-      
-      i++;
-      
-      Int32 j = 0;
-      while (i < len)
-        real_module_name_buf[j++] = module_name[i++];
-      real_module_name_buf[j] = 0;
-
-      real_module_name = real_module_name_buf;
-    }
-  else
-    real_module_name = module_name;
-
-  Lng32 errCode = latestModHdr->RtduStructIsCorrupt();
-  if (errCode ||
-      (strncmp(latestModHdr->module_name, real_module_name, module_nm_len) != 0) ||
-      ((tsCheck) &&
-       (latestModHdr->prep_timestamp != module_id->creation_timestamp))
-     )
-    {
-      // the module file is corrupted or has invalid data
-      if (!errCode) errCode = -CLI_MODULEFILE_CORRUPTED;
-      diagsArea_ << DgSqlCode(errCode) << DgString0(m_name);
-      return ERROR;
-    }
-
-  plt_header_struct * plt = 0, *latestPLTHdr=0, pltHdrCls;
-  plt_entry_struct * plte = 0, *latestPLTE, plteCls;
-
-  dlt_header_struct * dlt = 0, *latestDLTHdr=0, dltHdrCls;
-  dlt_entry_struct * dlte = 0, *latestDLTE, dlteCls;
-
-  SQLMODULE_ID * local_module_id;
-  SQLDESC_ID   * desc_id;
-  SQLSTMT_ID   * stmt_id;
-
-  Descriptor * descriptor = NULL;
-  Statement * statement;
-
-  char * source_area = 0;
-  char * object_area = 0;
-  
-  char * schema_names_area = NULL;
-
-  char * recomp_control_info_area = NULL;
-
-  char * vproc_area = NULL;
-
-  char * start_stmt_name = 0;
-  char * start_desc_name = 0;
-
-  local_module_id =
-     (SQLMODULE_ID *)(exHeap()->allocateMemory(sizeof(SQLMODULE_ID)));
-  init_SQLMODULE_ID(local_module_id);
-
-  char * mn =
-    (char *)(exHeap()->allocateMemory((size_t)(module_nm_len + 1)));
-  str_cpy_all(mn, module_name, module_nm_len);
-  mn[module_nm_len] = 0;
-
-  local_module_id->module_name = mn;
-  local_module_id->module_name_len = module_nm_len;
-
-  stmt_id =
-     (SQLSTMT_ID *)(exHeap()->allocateMemory(sizeof(SQLSTMT_ID)));
-  init_SQLCLI_OBJ_ID(stmt_id);
-
-  stmt_id->module = local_module_id;
-  stmt_id->identifier = 0;
-  stmt_id->handle = 0;
-
-  desc_id =
-     (SQLDESC_ID *)(exHeap()->allocateMemory(sizeof(SQLDESC_ID)));
-  init_SQLCLI_OBJ_ID(desc_id);
-
-  desc_id->module = local_module_id;
-  desc_id->identifier = 0;
-  desc_id->handle = 0;
-  
-  if (latestModHdr->source_area_length > 0)
-    {
-      if (allocAndReadPos(file, source_area,
-                          latestModHdr->source_area_offset,
-                          (Int32)latestModHdr->source_area_length,
-                          exHeap(), diagsArea_, m_name))
-        return ERROR;
-    }
-
-  if (latestModHdr->schema_names_area_length > 0)
-    {
-      if (allocAndReadPos(file, schema_names_area,
-                          latestModHdr->schema_names_area_offset,
-                          latestModHdr->schema_names_area_length,
-                          exHeap(), diagsArea_, m_name))
-        return ERROR;
-    }
-
-  if (latestModHdr->object_area_length > 0)
-    {
-      if (allocAndReadPos(file, object_area,
-                          latestModHdr->object_area_offset,
-                          latestModHdr->object_area_length,
-                          exHeap(), diagsArea_, m_name))
-        return ERROR;
-    }
-
-  if (latestModHdr->recomp_control_area_length > 0)
-    {
-      if (allocAndReadPos(file, recomp_control_info_area,
-                          latestModHdr->recomp_control_area_offset,
-                          latestModHdr->recomp_control_area_length,
-                          exHeap(), diagsArea_, m_name))
-        return ERROR;
-    }
-
-  if (latestModHdr->dlt_area_offset > 0)
-    {
-      if (allocAndReadPos(file, (char *&)dlt,
-                          latestModHdr->dlt_area_offset,
-                          latestModHdr->dlt_area_length,
-                          exHeap(), diagsArea_, m_name))
-        return ERROR;
-      
-      // give versioning a chance to massage/migrate it to this version
-      latestDLTHdr = (dlt_header_struct*)dlt->driveUnpack(dlt, &dltHdrCls, &vspc);
-      if (!latestDLTHdr) {
-        // error: version is no longer supported
-        diagsArea_ << DgSqlCode(-CLI_MOD_DLT_HDR_VERSION_ERROR) 
-                   << DgString0(m_name);
-        return ERROR;
-      }
-
-      errCode = latestDLTHdr->RtduStructIsCorrupt();
-      if (errCode)
-        {
-          exHeap()->deallocateMemory(dlt);
-          exHeap()->deallocateMemory(local_module_id);
-          exHeap()->deallocateMemory(stmt_id);
-          exHeap()->deallocateMemory(desc_id);
-          if (source_area)
-             exHeap()->deallocateMemory(source_area);
-          if (schema_names_area)
-             exHeap()->deallocateMemory(schema_names_area);
-          if (recomp_control_info_area)
-             exHeap()->deallocateMemory(recomp_control_info_area);
-          if (object_area)
-             exHeap()->deallocateMemory(object_area);
-
-          // the module file is corrupted or has invalid data
-          diagsArea_ << DgSqlCode(errCode) << DgString0(m_name);
-          return ERROR;
-        }
-
-      Lng32 num_descs = latestDLTHdr->num_descriptors;
-      char * desc_area = 0;
-
-      if (allocAndReadPos(file, desc_area,
-                          latestModHdr->descriptor_area_offset,
-                          latestModHdr->descriptor_area_length,
-                          exHeap(), diagsArea_, m_name))
-        return ERROR;
-
-      desc_id->name_mode = desc_name;
-
-      start_desc_name = (((char *)(latestDLTHdr)) 
-                         + latestModHdr->dlt_hdr_length
-                         + (num_descs) * latestModHdr->dlt_entry_length);
-      
-#ifdef NA_64BIT
-      // dg64 - should be 4 bytes
-      Int32  length;
-#else
-      Lng32 length;
-#endif
-      desc_header_struct *desc, *latestDescHdr, descHdrCls;
-     
-      for (Lng32 i = 0; i < num_descs; i++)
-        {
-          // get ith descriptor location table entry
-          dlte = latestDLTHdr->getDLTEntry(i, latestModHdr->dlt_entry_length);
-
-          // give versioning a chance to massage/migrate it to this version
-          latestDLTE = (dlt_entry_struct*)dlte->driveUnpack(dlte, &dlteCls, &vspc);
-          if (!latestDLTE) {
-            // error: version is no longer supported
-            diagsArea_ << DgSqlCode(-CLI_MOD_DLT_ENT_VERSION_ERROR) 
-                       << DgString0(m_name);
-            return ERROR;
-          }
-
-          str_cpy_all((char *)&length, 
-                      start_desc_name + latestDLTE->descname_offset, 4);
-          
-          if (desc_id->identifier) {
-               exHeap()->deallocateMemory((char*)desc_id->identifier);
-               desc_id->identifier = 0;
-          }
-          char * id =
-            (char *)(exHeap()->allocateMemory((size_t)(length + 1)));
-          str_cpy_all(id, 
-                      start_desc_name + latestDLTE->descname_offset + 4, 
-                      length);
-          id[length] = '\0';
-          desc_id->identifier = id;
-          desc_id->identifier_len = length;
-
-          desc_id->handle = 0;
-          
-          allocateDesc(desc_id, 500);
-          
-          descriptor = getDescriptor(desc_id);
-          
-          // get descriptor header
-          desc = (desc_header_struct *)(&desc_area[latestDLTE->descriptor_offset]);
-        
-          // give versioning a chance to massage/migrate it to this version
-          latestDescHdr = (desc_header_struct*)
-            desc->driveUnpack(desc, &descHdrCls, &vspc);
-          if (!latestDescHdr) {
-            // error: version is no longer supported
-            diagsArea_ << DgSqlCode(-CLI_MOD_DESC_HDR_VERSION_ERROR) 
-                       << DgString0(m_name);
-            return ERROR;
-          }
-
-          descriptor->alloc(latestDescHdr->num_entries);
-          
-          desc_entry_struct *de, *latestDE, deCls;
-          register Lng32 num_entries = latestDescHdr->num_entries;
-          Lng32     rowsetSize = 0;
-
-          for (register Lng32 j = 1; j <= num_entries; j++)
-            {
-              // get j-1th descriptor entry
-              de = latestDescHdr->getDescEntry
-                (j-1, latestModHdr->desc_entry_length);
-              
-              // give versioning a chance to massage/migrate it to this version
-              latestDE = (desc_entry_struct*)de->driveUnpack(de, &deCls, &vspc);
-              if (!latestDE) {
-                // error: version is no longer supported
-                diagsArea_ << DgSqlCode(-CLI_MOD_DESC_ENT_VERSION_ERROR) 
-                           << DgString0(m_name);
-                return ERROR;
-              }
-              
-              if (latestDE->rowsetSize > 0)
-                {
-                  if (rowsetSize == 0 || latestDE->rowsetSize < rowsetSize) {
-                    rowsetSize = latestDE->rowsetSize;
-                    descriptor->setDescItem(0, SQLDESC_ROWSET_SIZE, 
-                                            rowsetSize, 0);
-                  }              
-                  descriptor->setDescItem(j, SQLDESC_ROWSET_VAR_LAYOUT_SIZE,
-                                          latestDE->length, 0);
-                }
-              
-              // This line of code is not necessary because internally
-              // we record the FStype in the datatype field.
-              // Besides, SQLDESC_TYPE and the FS datatype are not
-              // compatible.
-              // descriptor->setDescItem(j, SQLDESC_TYPE,
-              //                                latestDE->datatype, 0);
-
-              descriptor->setDescItem(j, SQLDESC_TYPE_FS,
-                                        latestDE->datatype, 0);
-              descriptor->setDescItem(j, SQLDESC_LENGTH,
-                                         latestDE->length, 0);
-              descriptor->setDescItem(j, SQLDESC_PRECISION,
-                                         latestDE->precision, 0);
-              descriptor->setDescItem(j, SQLDESC_SCALE,
-                                         latestDE->scale, 0);
-              descriptor->setDescItem(j, SQLDESC_NULLABLE,
-                                         latestDE->nullable, 0);
-
-              if (latestDE->datatype == REC_DATETIME)
-                {
-                  descriptor->setDescItem(j, SQLDESC_DATETIME_CODE,
-                                          latestDE->precision, 0);
-
-                  // SQLDESC_PRECISION is used to set fractional precision.
-                  // ANSI.
-                  descriptor->setDescItem(j, SQLDESC_PRECISION,
-                                          latestDE->fractional_precision, 0);
-
-                }
-              else if ((latestDE->datatype >= REC_MIN_INTERVAL) &&
-                       (latestDE->datatype <= REC_MAX_INTERVAL))
-                {
-                  descriptor->setDescItem(j, SQLDESC_INT_LEAD_PREC,
-                                          latestDE->precision, 0);
-
-                  // SQLDESC_PRECISION is used to set fractional precision.
-                  // ANSI.
-                  descriptor->setDescItem(j, SQLDESC_PRECISION,
-                                          latestDE->fractional_precision, 0);
-                }
-              // The SQLDESC_CHAR_SET_NAM has to be set for 
-              // charsets other than ISO88591 to work properly.
-              else if ((latestDE->datatype >= REC_MIN_CHARACTER) &&
-                       (latestDE->datatype <= REC_MAX_CHARACTER))
-                {
-                  CharInfo::CharSet cs = (CharInfo::CharSet)(latestDE->charset_offset);
-
-                  // the charset_offset field is not initialized to a valid
-                  // value in R1.8, it contains a value of 0(unknown).
-                  // Treat that value as ISO88591 in R2.
-                  if (((COM_VERSION) latestModHdr->getModuleVersion() == 
-                       COM_VERS_R1_8) &&
-                      (cs == CharInfo::UnknownCharSet))
-                    cs = CharInfo::ISO88591;
-
-                  descriptor->setDescItem(j, SQLDESC_CHAR_SET_NAM, 0, 
-                                         (char*)CharInfo::getCharSetName(cs));
-
-
-                  if ( CharInfo::maxBytesPerChar(cs) == SQL_DBCHAR_SIZE )
-                     descriptor->setDescItem(j, SQLDESC_LENGTH,
-                                         (latestDE->length)/SQL_DBCHAR_SIZE, 0);
-                }
-
-              // For JDBC use. ordinal positon is not used, so we set to 0
-              descriptor->setDescItem(j, SQLDESC_PARAMETER_INDEX, j, 0);
-              if (latestDLTE->desc_type == dlt_entry_struct::INPUT_DESC_TYPE){
-                descriptor->setDescItem(j, SQLDESC_PARAMETER_MODE, PARAMETER_MODE_IN, 0);
-                descriptor->setDescItem(j, SQLDESC_ORDINAL_POSITION, 0, 0);
-              }
-              else{
-                descriptor->setDescItem(j, SQLDESC_PARAMETER_MODE, PARAMETER_MODE_OUT, 0);
-                descriptor->setDescItem(j, SQLDESC_ORDINAL_POSITION, 0, 0);
-              }
-              
-
-#if 0
-// what else is really there on disk?
-fprintf(stderr, "latestDescHdr->desc_entry[%d]\n", j);
-fprintf(stderr, "   Int32   datatype              = %d ;\n", latestDE->datatype);
-fprintf(stderr, "   Int32   length                = %d ;\n", latestDE->length);
-fprintf(stderr, "   short nullable              = %d ;\n",  latestDE->nullable);
-fprintf(stderr, "   Int32   charset_offset        = %d ;\n", latestDE->charset_offset);
-fprintf(stderr, "   Int32   coll_seq_offset       = %d ;\n", latestDE->coll_seq_offset);
-fprintf(stderr, "   Int32   scale                 = %d ;\n", latestDE->scale);
-fprintf(stderr, "   Int32   precision             = %d ;\n", latestDE->precision);
-fprintf(stderr, "   Int32   fractional_precision  = %d ;\n", latestDE->fractional_precision);
-fprintf(stderr, "   Int32   output_name_offset    = %d ;\n", latestDE->output_name_offset);
-fprintf(stderr, "   short generated_output_name = %d ;\n",  latestDE->generated_output_name);
-fprintf(stderr, "   Int32   heading_offset        = %d ;\n", latestDE->heading_offset);
-fprintf(stderr, "   short string_format         = %d ;\n",  latestDE->string_format);
-fprintf(stderr, "   Int32   var_ptr               = %p ;\n", latestDE->var_ptr);
-fprintf(stderr, "   Int32   var_data              = %p ;\n", latestDE->var_data);
-fprintf(stderr, "   Int32   ind_ptr               = %p ;\n", latestDE->ind_ptr);
-fprintf(stderr, "   Int32   ind_data              = %d ;\n", latestDE->ind_data);
-fprintf(stderr, "   Int32   datatype_ind          = %d ;\n", latestDE->datatype_ind);
-fflush(stderr);
-// what may be at those offsets?
-if (latestDE->charset_offset > 0) {
-fprintf(stderr, "   char * charset        = %s ;\n",
- (char *)((char *)latestDescHdr + latestDE->charset_offset));
-fflush(stderr); }
-if (latestDE->coll_seq_offset > 0) {
-fprintf(stderr, "   char * coll_seq       = %s ;\n",
- (char *)((char *)latestDescHdr + latestDE->coll_seq_offset));
-fflush(stderr); }
-if (latestDE->output_name_offset > 0) {
-fprintf(stderr, "   char * output_name    = %s ;\n",
- (char *)((char *)latestDescHdr + latestDE->output_name_offset));
-fflush(stderr); }
-if (latestDE->heading_offset > 0) {
-fprintf(stderr, "   char * heading        = %s ;\n",
- (char *)((char *)latestDescHdr + latestDE->heading_offset));
-fflush(stderr); }
-
-#endif
-      
-            }
-          
-        } // for (i< numDesc), iterate on descriptors
-        exHeap()->deallocateMemory(desc_area);
-    }  /* dlt area present */
-       
-   if (latestModHdr->plt_area_offset > 0) 
-    {
-      if (allocAndReadPos(file, (char *&) plt,
-                          latestModHdr->plt_area_offset,
-                          latestModHdr->plt_area_length,
-                          exHeap(), diagsArea_, m_name))
-        return ERROR;
-
-      // give versioning a chance to massage/migrate it to this version
-      latestPLTHdr = (plt_header_struct*)plt->driveUnpack(plt, &pltHdrCls, &vspc);
-      if (!latestPLTHdr) {
-        // error: version is no longer supported
-        diagsArea_ << DgSqlCode(-CLI_MOD_PLT_HDR_VERSION_ERROR) 
-                   << DgString0(m_name);
-        return ERROR;
-      }
-
-      errCode = latestPLTHdr->RtduStructIsCorrupt();
-      if (errCode)
-        {
-          exHeap()->deallocateMemory(plt);
-          exHeap()->deallocateMemory(local_module_id);
-          exHeap()->deallocateMemory(stmt_id);
-          exHeap()->deallocateMemory(desc_id);
-          if (dlt)
-             exHeap()->deallocateMemory(dlt);
-          if (source_area)
-             exHeap()->deallocateMemory(source_area);
-          if (schema_names_area)
-             exHeap()->deallocateMemory(schema_names_area);
-          if (object_area)
-             exHeap()->deallocateMemory(object_area);
-
-          // the module file is corrupted or has invalid data
-          diagsArea_ << DgSqlCode(errCode) << DgString0(m_name);
-          return ERROR;
-        }
-
-      if (latestPLTHdr->num_procedures >= 1)
-        {
-          Int32 num_procs = latestPLTHdr->num_procedures;
-          module->setStatementCount( num_procs );
-
-          start_stmt_name = (((char *)(latestPLTHdr)) 
-                         + latestModHdr->plt_hdr_length 
-                         + (num_procs) * latestModHdr->plt_entry_length);
-          
-#ifdef NA_64BIT
-          // dg64 - should be 4 bytes
-          Int32  length;
-#else
-          Lng32 length;
-#endif
-          
-          for (Lng32 i = 0; i < num_procs; i++)
-            {
-              // get ith procedure location table entry
-              plte = latestPLTHdr->getPLTEntry(i, latestModHdr->plt_entry_length);
-              
-              // give versioning a chance to massage/migrate it to this version
-              latestPLTE = (plt_entry_struct*)plte->driveUnpack(plte, &plteCls, &vspc);
-              if (!latestPLTE) {
-                // error: version is no longer supported
-                diagsArea_ << DgSqlCode(-CLI_MOD_PLT_ENT_VERSION_ERROR) 
-                           << DgString0(m_name);
-                return ERROR;
-              }
-
-              stmt_id = getStatementId(latestPLTE, start_stmt_name, stmt_id,
-                                       exHeap());
-
-              if (latestPLTE->curname_offset >= 0)
-                {
-                  if (stmt_id->name_mode == stmt_name)
-                    {
-                      statement = getStatement(stmt_id);
-                      if (!statement)
-                        {
-                          allocateStmt(stmt_id, Statement::DYNAMIC_STMT);
-                        }
-                    }
-
-                  str_cpy_all((char *)&length,
-                      (start_stmt_name + latestPLTE->curname_offset),
-                      sizeof(length));
-
-                  char * curname =
-                      (char *)(exHeap()->allocateMemory((size_t)(length + 1)));
-                  str_cpy_all(curname,
-                              start_stmt_name + latestPLTE->curname_offset + 4,
-                              length);
-                  curname[length] = '\0';
-                  
-                  stmt_id->name_mode  = cursor_name;
-                  allocateStmt(stmt_id, curname, Statement::STATIC_STMT, module);
-
-                  // now make stmt_id suitable to look up the new statement...
-                  const char * stmtname = stmt_id->identifier;
-                  stmt_id->identifier = curname;
-                  stmt_id->identifier_len = length;
-                  exHeap()->deallocateMemory((char*)stmtname);
-                }       
-              else
-                {
-                  SQLSTMT_ID * cloned_stmt = NULL;
-                  allocateStmt(stmt_id, Statement::STATIC_STMT, cloned_stmt, module);
-                }       
-
-              statement = getStatement(stmt_id);
-              // this flag indicates whether the statement is a holdable cursor.
-              // This flag will be propagated to the leave operators, partition access
-              // upon opening the statement - For pubsub holdable
-              statement->setPubsubHoldable(diagsArea_, latestPLTE->holdable);
-
-              // copy statement index from PLTE
-              assert (latestPLTE->statementIndex < module->getStatementCount());
-              statement->setStatementIndex(latestPLTE->statementIndex);
-
-              if (latestPLTE->source_offset >= 0)
-                {
-                  statement->copyInSourceStr(source_area + latestPLTE->source_offset,
-                                             latestPLTE->source_length);
-                }
-              
-              if (latestPLTE->schema_name_offset >= 0)
-                {
-                  statement->copySchemaName(schema_names_area + latestPLTE->schema_name_offset,
-                                           latestPLTE->schema_name_length);
-                }
-              
-              if (latestPLTE->gen_object_offset >= 0)
-                {
-                  statement->copyGenCode(object_area + latestPLTE->gen_object_offset,
-                                         latestPLTE->gen_object_length,
-                                         unpackTDBs);
-                }
-              else
-                {
-#pragma nowarn(1506)   // warning elimination 
-                  statement->setRecompWarn(latestPLTE->recompWarn());
-#pragma warn(1506)  // warning elimination 
-                }
-if (latestPLTE->recomp_control_info_offset >= 0)
-                {
-                  statement->copyRecompControlInfo(recomp_control_info_area,
-                                                   recomp_control_info_area + 
-                                                   latestPLTE->recomp_control_info_offset,
-                                                   latestPLTE->recomp_control_info_length);
-                }
-
-#pragma nowarn(1506)   // warning elimination 
-              statement->setNametypeNsk(latestPLTE->nametypeNsk());
-#pragma warn(1506)  // warning elimination 
-
-#pragma nowarn(1506)   // warning elimination 
-              statement->setOdbcProcess(latestPLTE->odbcProcess());
-              statement->setSystemModuleStmt(isSystemModule);
-#pragma warn(1506)  // warning elimination 
-            } /* for , iterate on statements */
-
-        }
-    } /* plt area present */
-  
-
-  if (latestModHdr->vproc_area_length > 0)
-    {
-      if (allocAndReadPos(file, vproc_area,
-                          latestModHdr->vproc_area_offset,
-                          (Int32)latestModHdr->vproc_area_length,
-                          exHeap(), diagsArea_, m_name))
-        return ERROR;
-
-      module->setVproc(vproc_area);
-    }
-
-  if (latestDLTHdr)
-    {
-      for (Lng32 i = 0; i < latestDLTHdr->num_descriptors; i++)
-        {
-      // get ith descriptor location table entry
-      dlte = latestDLTHdr->getDLTEntry(i, latestModHdr->dlt_entry_length);
-
-      // give versioning a chance to massage/migrate it to this version
-      latestDLTE = (dlt_entry_struct*)dlte->driveUnpack(dlte, &dlteCls, &vspc);
-      if (!latestDLTE) {
-        // error: version is no longer supported
-        diagsArea_ << DgSqlCode(-CLI_MOD_DLT_ENT_VERSION_ERROR) 
-                   << DgString0(m_name);
-        return ERROR;
-      }
-
-          if (latestDLTE->stmtname_offset >= 0)
-            {
-#ifdef NA_64BIT
-              // dg64 - should be 4 bytes
-              Int32  length;
-#else
-              Lng32 length;
-#endif
-              
-              str_cpy_all((char *)&length, 
-                      start_desc_name + latestDLTE->stmtname_offset, 4);
-              
-              if (stmt_id->identifier) {
-                exHeap()->deallocateMemory((char*)stmt_id->identifier);
-                stmt_id->identifier = 0;
-              }
-              char * id =
-                 (char *)(exHeap()->allocateMemory((size_t)(length + 1)));
-              str_cpy_all(id, 
-                      start_desc_name + latestDLTE->stmtname_offset + 4 , 
-                      length);
-              id[length] = '\0';
-
-              stmt_id->identifier = id;
-              stmt_id->identifier_len = length;
-          
-              stmt_id->handle = 0;
-              
-              statement = getStatement(stmt_id);
-            
-              if (statement)
-              {
-                enum SQLWHAT_DESC descType;
-                if (latestDLTE->desc_type == dlt_entry_struct::INPUT_DESC_TYPE)
-                  descType = SQLWHAT_INPUT_DESC;
-                else
-                  descType = SQLWHAT_OUTPUT_DESC;
-                statement->addDefaultDesc(descriptor, descType);
-              } // if(statement)
-            }
-        }
-    }
-  
-  if (latestPLTHdr)
-    {
-      for (Lng32 i = 0; i < latestPLTHdr->num_procedures; i++)
-        {
-      // get ith procedure location table entry
-      plte = latestPLTHdr->getPLTEntry(i, latestModHdr->plt_entry_length);
-
-      // give versioning a chance to massage/migrate it to this version
-      latestPLTE = (plt_entry_struct*)plte->driveUnpack(plte, &plteCls, &vspc);
-      if (!latestPLTE) {
-        // error: version is no longer supported
-        diagsArea_ << DgSqlCode(-CLI_MOD_PLT_ENT_VERSION_ERROR) 
-                   << DgString0(m_name);
-        return ERROR;
-      }
-
-          stmt_id = getStatementId(latestPLTE, start_stmt_name, stmt_id,
-                                   exHeap());
-          if (stmt_id &&
-             (latestPLTE->curname_offset >= 0) &&
-              (stmt_id->name_mode == stmt_name))
-             {
-#ifdef NA_64BIT
-             // dg64 - should be 4 bytes
-             Int32  length;
-#else
-             Lng32 length;
-#endif
-
-             str_cpy_all((char *)&length,
-                         (start_stmt_name + latestPLTE->curname_offset), 4);
-             char * curname =
-                     (char *)(exHeap()->allocateMemory((size_t)(length + 1)));
-             str_cpy_all(curname,
-                         start_stmt_name + latestPLTE->curname_offset + 4, 
-                         length);
-             curname[length] = '\0';
-#if 0
-  fprintf(stderr, "Looking for special cursor '%s' for statement %s\n",
-                  curname,
-                  stmt_id->identifier);
-#endif
-             if (stmt_id->identifier)
-                {
-                exHeap()->deallocateMemory((char *)stmt_id->identifier);
-                stmt_id->identifier = 0;
-                }
-             stmt_id->identifier = curname;
-             stmt_id->identifier_len = length;
-
-             stmt_id->name_mode  = cursor_name;
-             }
-          statement = getStatement(stmt_id);
-#if 0
-  if (!statement)
-  {
-     fprintf(stderr, "Could not find ");
-     if (stmt_id->name_mode == cursor_name)
-     {
-        fprintf(stderr, "CURSOR %s\n", stmt_id->identifier);
-     }
-     else
-     {
-        fprintf(stderr, "STATEMENT %s\n", stmt_id->identifier);
-     }
-  }
-#endif
-        
-          if (latestPLTE->input_desc_entry >= 0)
-            {
-          // get input descriptor entry
-              dlte = latestDLTHdr->getDLTEntry
-            (latestPLTE->input_desc_entry, latestModHdr->dlt_entry_length);
-              
-          // give versioning a chance to massage/migrate it to this version
-          latestDLTE = (dlt_entry_struct*)dlte->driveUnpack(dlte, &dlteCls, &vspc);
-          if (!latestDLTE) {
-            // error: version is no longer supported
-            diagsArea_ << DgSqlCode(-CLI_MOD_DLT_ENT_VERSION_ERROR) 
-                       << DgString0(m_name);
-            return ERROR;
-          }
-
-#ifdef NA_64BIT
-              // dg64 - should be 4 bytes
-              Int32  length;
-#else
-              Lng32 length;
-#endif
-              
-              str_cpy_all((char *)&length, 
-                      (start_desc_name + latestDLTE->descname_offset), 4);
-              
-              if (desc_id->identifier) {
-                exHeap()->deallocateMemory((char *)desc_id->identifier);
-                desc_id->identifier = 0;
-              }
-              char * id =
-                 (char *)(exHeap()->allocateMemory((size_t)(length + 1)));
-              str_cpy_all(id, start_desc_name + latestDLTE->descname_offset + 4, length);
-              id[length] = '\0';
-              desc_id->identifier = id;
-              desc_id->identifier_len = length;
-              
-              descriptor = getDescriptor(desc_id);
-
-              statement->addDefaultDesc(descriptor, SQLWHAT_INPUT_DESC);
-
-              // select desc info and move them into desc
-              if (unpackTDBs)
-              {
-                // the static Call desc is "wide" by default,
-                // in the future, we may choose to store flags in the
-                // desc_struct to represent the "wide"/"narrow" mode.
-                // or have a dynamic runtime flag to control the mode.
-                if (statement->getRootTdb() &&
-                    statement->getRootTdb()->hasCallStmtExpressions())
-                  descriptor->setDescTypeWide(TRUE);
-                
-                RETCODE retCode =
-                  statement->addDescInfoIntoStaticDesc(descriptor,
-                                                       SQLWHAT_INPUT_DESC,
-                                                       diags());
-                ex_assert(retCode>=0, "failed to add desc info.");
-              }
-            }
-          
-          if (latestPLTE->output_desc_entry >= 0)
-            {
-          // get output descriptor entry
-              dlte = latestDLTHdr->getDLTEntry
-            (latestPLTE->output_desc_entry, latestModHdr->dlt_entry_length);
-              
-          // give versioning a chance to massage/migrate it to this version
-          latestDLTE = (dlt_entry_struct*)dlte->driveUnpack(dlte, &dlteCls, &vspc);
-          if (!latestDLTE) {
-            // error: version is no longer supported
-            diagsArea_ << DgSqlCode(-CLI_MOD_DLT_ENT_VERSION_ERROR) 
-                       << DgString0(m_name);
-            return ERROR;
-          }
-
-#ifdef NA_64BIT
-              // dg64 - should be 4 bytes
-              Int32  length;
-#else
-              Lng32 length;
-#endif
-              
-              str_cpy_all((char *)&length, 
-                      (start_desc_name+ latestDLTE->descname_offset), 4);
-              
-              if (desc_id->identifier) {
-                exHeap()->deallocateMemory((char *)desc_id->identifier);
-                desc_id->identifier = 0;
-              }
-              char * id =
-                 (char *)(exHeap()->allocateMemory((size_t)(length + 1)));
-              str_cpy_all(id, 
-                      start_desc_name + latestDLTE->descname_offset + 4, 
-                      length);
-              id[length] = '\0';
-              desc_id->identifier =id;
-              desc_id->identifier_len = length;
-              
-              descriptor = getDescriptor(desc_id);
-              statement->addDefaultDesc(descriptor, SQLWHAT_OUTPUT_DESC);
-
-              if (unpackTDBs)
-              {
-                if (statement->getRootTdb() &&
-                    statement->getRootTdb()->hasCallStmtExpressions())
-                  descriptor->setDescTypeWide(TRUE);
-                
-                RETCODE retCode =
-                  statement->addDescInfoIntoStaticDesc(descriptor,
-                                                       SQLWHAT_OUTPUT_DESC,
-                                                       diags());
-                ex_assert(retCode>=0, "failed to add desc info");
-              }
-
-            }
-        } // for loop
-    }
-
-  if (dlt) {
-    exHeap()->deallocateMemory(dlt);
-    dlt = 0;
-  }
-
-  if (plt) {
-    exHeap()->deallocateMemory(plt);
-    plt = 0;
-  }
-
-  if (source_area) {
-    exHeap()->deallocateMemory(source_area);
-    source_area = 0;
-  }
-
-  if (schema_names_area) {
-    exHeap()->deallocateMemory(schema_names_area);
-    schema_names_area = 0;
-  }
-
-  if (recomp_control_info_area) {
-    exHeap()->deallocateMemory(recomp_control_info_area);
-    recomp_control_info_area = 0;
-  }
-
-  if (object_area) {
-    exHeap()->deallocateMemory(object_area);
-    object_area = 0;
-  }
-
-  if (stmt_id->identifier) {
-    exHeap()->deallocateMemory((char *)stmt_id->identifier);
-    stmt_id->identifier = 0;
-  }
-  exHeap()->deallocateMemory(stmt_id);
-  stmt_id = 0;
-
-  if (desc_id->identifier) {
-    exHeap()->deallocateMemory((char *)desc_id->identifier);
-    desc_id->identifier = 0;
-  }
-  exHeap()->deallocateMemory(desc_id);
-  desc_id = 0;
-
-  if (local_module_id->module_name) {
-    exHeap()->deallocateMemory((char *)local_module_id->module_name);
-    local_module_id->module_name = 0;
-  }
-  exHeap()->deallocateMemory(local_module_id);
-  local_module_id = 0;
-
-  moduleList()->insert(module_name, module_nm_len, (void *)module);
-  
-  return SUCCESS;
-}
- 
 RETCODE ContextCli::allocateDesc(SQLDESC_ID * descriptor_id, Lng32 max_entries)
 {
   const char * hashData;
@@ -1520,115 +514,6 @@ RETCODE ContextCli::allocateDesc(SQLDESC_ID * descriptor_id, Lng32 max_entries)
   
   descriptorList()->insert(hashData, hashDataLength, (void*)descriptor);
   return SUCCESS;
-}
-
-RETCODE ContextCli::dropModule(const SQLMODULE_ID * module_id)
-{
-  const char * module_name = module_id->module_name;
-  Lng32 module_nm_len = getModNameLen(module_id);
-
-  Module * module;
-  moduleList()->position(module_name, module_nm_len);
-  NABoolean found = FALSE;
-  while ((NOT found) &&
-         (module = (Module *)moduleList()->getNext()))
-    {
-      if ((module_nm_len == module->getModuleNameLen()) &&
-          (str_cmp(module_id->module_name, 
-                   module->getModuleName(),
-                   module_nm_len) == 0) )
-        found = TRUE;  // found
-    }
-
-  if (NOT found)
-    {
-      // caller should have validated that module has been added.
-      return ERROR;
-    }
-
-  NABoolean done = FALSE;
-  while (NOT done)
-    {
-      Statement * statement;
-      NABoolean found = FALSE;
-      statementList_->position();
-      while ((NOT found) &&
-             (statement = (Statement *)statementList_->getNext()))
-        {
-          if ((statement->getModule()) &&
-              (statement->getModule() == module) &&
-              (statement->getStmtId()))
-            {
-              found = TRUE;
-            }
-        } // while
-
-      if (found)
-        {
-          // Should we ignore errors from deallocStmt?? TBD.
-          if (deallocStmt(statement->getStmtId(), TRUE))
-            return ERROR;
-        }
-      else
-        done = TRUE;
-    } // while not done
-
-  done = FALSE;
-  while (NOT done)
-    {
-      Descriptor *desc;
-      NABoolean found = FALSE;
-      descriptorList()->position();
-      while ((NOT found) &&
-             (desc = (Descriptor *)descriptorList()->getNext()))
-        {
-          if ((desc->getModuleId()) &&
-              (desc->getModuleId()->module_name) &&
-              (strcmp(desc->getModuleId()->module_name, module_name) == 0))
-            {
-              found = TRUE;
-            }
-        } // while
-      
-      if (found)
-        {
-          // Should we ignore errors from deallocDesc?? TBD.
-          if (deallocDesc(desc->getDescName(), TRUE))
-            return ERROR;
-        }
-      else
-        done = TRUE;
-    } // while not done
-  
-  moduleList()->remove(module);
-
-  delete module;
-
-  return SUCCESS;
-}
-
-Module * ContextCli::getModule(const SQLMODULE_ID * module_id)
-{
-  const char * module_name = module_id->module_name;
-  Lng32 module_nm_len = getModNameLen(module_id);
-
-  Module * module;
-  moduleList()->position(module_name, module_nm_len);
-  NABoolean found = FALSE;
-  while ((NOT found) &&
-         (module = (Module *)moduleList()->getNext()))
-    {
-      if ((module_nm_len == module->getModuleNameLen()) &&
-          (str_cmp(module_id->module_name, 
-                   module->getModuleName(),
-                   module_nm_len) == 0) )
-        found = TRUE;  // found
-    }
-
-  if (found)
-    return module;
-  else
-    return NULL;
 }
 
 RETCODE ContextCli::deallocDesc(SQLDESC_ID * desc_id,
@@ -1734,9 +619,6 @@ Descriptor *ContextCli::getDescriptor(SQLDESC_ID * descriptor_id)
         {
         case desc_handle:
           if (descriptor_id->handle == descriptor->getDescHandle()) {
-#if defined( NA_SHADOWCALLS )
-                SqlCliSp_StoreDescriptor(descriptor_id, (void *)descriptor);
-#endif
             return descriptor;
           }
           break;
@@ -1761,9 +643,6 @@ Descriptor *ContextCli::getDescriptor(SQLDESC_ID * descriptor_id)
                 exHeap()->deallocateMemory(desc1);
                 desc1 = 0;
               }
-#if defined( NA_SHADOWCALLS )
-                  SqlCliSp_StoreDescriptor(descriptor_id, (void *)descriptor); //shadow
-#endif
               return descriptor;
             }
           break;
@@ -2001,62 +880,9 @@ Statement *ContextCli::getStatement(SQLSTMT_ID * statement_id, HashQueue * stmtL
     return 0;
 }
 
-static
-SQLSTMT_ID * getStatementId(plt_entry_struct * plte,
-                            char * start_stmt_name,
-                            SQLSTMT_ID * stmt_id,
-                            NAHeap *heap)
-{
-#ifdef NA_64BIT
-  // dg64 - should be 4 bytes
-  Int32  length;
-#else
-  Lng32 length;
-#endif
-  
-  if (plte->stmtname_offset >= 0)
-    {
-      stmt_id->name_mode = stmt_name;
-      str_cpy_all((char *)&length, (start_stmt_name + plte->stmtname_offset), 4);
-      
-      if (stmt_id->identifier) {
-        heap->deallocateMemory((char *)stmt_id->identifier);
-        stmt_id->identifier = 0;
-      }
-      char * id =
-        (char *)(heap->allocateMemory((size_t)(length + 1)));
-
-      str_cpy_all(id, start_stmt_name + plte->stmtname_offset + 4, length);
-      id[length] = '\0';
-      stmt_id->identifier = id;
-      stmt_id -> identifier_len = length;
-    }
-  else if (plte->curname_offset >= 0)
-    {
-      stmt_id->name_mode = cursor_name;
-
-      str_cpy_all((char *)&length, (start_stmt_name + plte->curname_offset), 4);
-
-      if (stmt_id->identifier) {
-        heap->deallocateMemory((char *)stmt_id->identifier);
-        stmt_id->identifier = 0;
-      }
-      char * id =
-         (char *)(heap->allocateMemory((size_t)(length + 1)));
-      str_cpy_all(id, start_stmt_name + plte->curname_offset + 4, length);
-      id[length] = '\0';
-      stmt_id->identifier = id;
-      stmt_id -> identifier_len = length;
-    }
-
-  return stmt_id;
-}  
-  
-
 RETCODE ContextCli::allocateStmt(SQLSTMT_ID * statement_id,
                                  Statement::StatementType stmt_type,
-                                 SQLSTMT_ID * cloned_from_stmt_id,
-                                 Module *module)
+                                 SQLSTMT_ID * cloned_from_stmt_id)
 {
   const char * hashData = NULL;
   ULng32 hashDataLength = 0;
@@ -2102,7 +928,7 @@ RETCODE ContextCli::allocateStmt(SQLSTMT_ID * statement_id,
     }
   
   Statement * statement = 
-    new(exCollHeap()) Statement(statement_id, cliGlobals_, stmt_type, NULL, module);
+    new(exCollHeap()) Statement(statement_id, cliGlobals_, stmt_type, NULL, NULL);
 
   if (cloned_from_stmt)
     statement->bindTo(cloned_from_stmt);
@@ -2129,56 +955,11 @@ RETCODE ContextCli::allocateStmt(SQLSTMT_ID * statement_id,
   return SUCCESS;
 }
 
-
-// private internal method - only called from ContextCli::addModule()
-RETCODE ContextCli::allocateStmt(SQLSTMT_ID * statement_id,
-                                 char * cn, 
-                                 Statement::StatementType stmt_type,
-                                 Module *module)
-{
-  char * hashData = NULL;
-  ULng32 hashDataLength = 0;
-
-  if (statement_id->name_mode != cursor_name)
-    {
-      diagsArea_ << DgSqlCode(-CLI_INTERNAL_ERROR);
-      return ERROR;
-    }
-
-  // find if this cursor already exists & return error, if it does...
-  const char * sn = statement_id->identifier;  // save the statement name
-  statement_id->identifier = cn;         // do the lookup with cursor name
-  if (getStatement(statement_id))
-    {
-      statement_id->identifier = sn;     // restore the statement name
-      diagsArea_ << DgSqlCode(- CLI_DUPLICATE_STMT);
-      return ERROR;
-    }
-
-  statement_id->identifier = sn;         // restore the statement name
-
-  Statement * statement = 
-    new(exCollHeap()) Statement(statement_id, cliGlobals_, stmt_type, cn, module);
-
-  hashData = cn;
-  hashDataLength = strlen(hashData);
-  
-  StmtListDebug1(statement, "Adding %p to statementList_", statement);
-
-  semaphoreLock();
-  statementList()->insert(hashData, hashDataLength, (void *) statement);
-  if (processStats_!= NULL)
-     processStats_->incStmtCount(stmt_type);
-  semaphoreRelease();
-
-  return SUCCESS;
-}
-
 RETCODE ContextCli::deallocStmt(SQLSTMT_ID * statement_id,
                                 NABoolean deallocStaticStmt)
 {
   // for now, dump memory info before deleting the statement
-#if defined(_DEBUG) && !defined(__EID) && !defined(NA_NSK)
+#if defined(_DEBUG)
   char * filename = getenv("MEMDUMP");
   if (filename) {
     // open output file sytream.
@@ -3029,7 +1810,7 @@ NABoolean ContextCli::reclaimStatements()
     return FALSE;
   
 
-#if defined(_DEBUG) && !defined(__EID)
+#if defined(_DEBUG)
   char *reclaimAfter = NULL;
   Lng32 reclaimIf = (reclaimAfter == NULL)? 0: atol(reclaimAfter);
 
@@ -3160,7 +1941,7 @@ void ContextCli::removeFromCloseStatementList(Statement * statement,
                  statement);
 }
 
-#if defined(_DEBUG) && !defined(__EID) && !defined(NA_NSK)
+#if defined(_DEBUG)
 
 void ContextCli::dumpStatementInfo()
 {
@@ -3646,7 +2427,7 @@ RETCODE ContextCli::cleanupChildStmt(Statement *child)
 
 } // ContextCLI::cleanupChildStmt()
 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 void ContextCli::StmtListPrintf(const Statement *s,
                                 const char *formatString, ...) const
 {
@@ -3944,7 +2725,6 @@ void ContextCli::endMxcmpSession(NABoolean cleanupEsps,
   if (clearCmpCache)
     flags |= CmpMessageEndSession::CLEAR_CACHE;
 
-#ifdef NA_CMPDLL
   Int32 cmpStatus = 2;  // assume failure
   if (getSessionDefaults()->callEmbeddedArkcmp() &&
       isEmbeddedArkcmpInitialized() &&
@@ -3980,29 +2760,26 @@ void ContextCli::endMxcmpSession(NABoolean cleanupEsps,
        (cmpStatus != 0 || (CmpCommon::context()->getRecursionLevel() > 0) ||
         getArkcmp()->getServer())))
     {
-#endif  // NA_CMPDLL
-  // send request to mxcmp so it can cleanup esps started by it
-  // and reset nonResetable attributes.
-  // Ignore errors.
-  if (getNumArkcmps() > 0)
-    {
-      short indexIntoCompilerArray = getIndexToCompilerArray();  
-      ExSqlComp::ReturnStatus status = 
-        cliGlobals_->getArkcmp(indexIntoCompilerArray)->sendRequest
-        (EXSQLCOMP::END_SESSION, (char*)&flags, sizeof(Lng32));
-      
-      if (status == ExSqlComp::SUCCESS)
+      // send request to mxcmp so it can cleanup esps started by it
+      // and reset nonResetable attributes.
+      // Ignore errors.
+      if (getNumArkcmps() > 0)
         {
-          status = 
-            cliGlobals_->getArkcmp(indexIntoCompilerArray)->getReply(
-                 dummyReply, dummyLength);
-          cliGlobals_->getArkcmp(indexIntoCompilerArray)->
-            getHeap()->deallocateMemory((void*)dummyReply);
+          short indexIntoCompilerArray = getIndexToCompilerArray();  
+          ExSqlComp::ReturnStatus status = 
+            cliGlobals_->getArkcmp(indexIntoCompilerArray)->sendRequest
+            (EXSQLCOMP::END_SESSION, (char*)&flags, sizeof(Lng32));
+          
+          if (status == ExSqlComp::SUCCESS)
+            {
+              status = 
+                cliGlobals_->getArkcmp(indexIntoCompilerArray)->getReply(
+                     dummyReply, dummyLength);
+              cliGlobals_->getArkcmp(indexIntoCompilerArray)->
+                getHeap()->deallocateMemory((void*)dummyReply);
+            }
         }
-    }
-#ifdef NA_CMPDLL
     }  // end if (getSessionDefaults()->callEmbeddedArkcmp() && ...
-#endif  // NA_CMPDLL
 }
 
 void ContextCli::resetAttributes()
@@ -5251,9 +4028,6 @@ RETCODE ContextCli::authQuery(
 
 }
 //*********************** End of ContextCli::authQuery *************************
-
-
-
 
 
 // Public method to update the databaseUserID_ and databaseUserName_

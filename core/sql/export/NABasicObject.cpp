@@ -37,7 +37,6 @@
 #include "Platform.h"
 
 
-#ifndef __EID
 #ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
@@ -45,7 +44,6 @@ using namespace std;
 #include <iostream>
 #endif
 #include <stdlib.h>
-#endif
 
 #include "ComASSERT.h"
 #include "NAMemory.h"
@@ -63,22 +61,18 @@ using namespace std;
 // Stack or statically allocated objects will just have random garbage in
 // this field but as long as noone tries to "delete" them (as noone should)
 // that will not matter (except to the Purify tool which may report UMR errors).
-NA_EIDPROC
 NABasicObject::NABasicObject() {}
 
 // Note that this just ignores the passed object, which is correct:
 // we do *not* want to copy its heap pointer!
-NA_EIDPROC
 NABasicObject::NABasicObject(const NABasicObject&) {}
 
 // Note that this just ignores the passed object, which is correct:
 // we do *not* want to copy its heap pointer!
 // Otherwise, a default operator= on a NABasicObject-derived class would 
 // overwrite the heap pointer, a very bad thing.
-NA_EIDPROC
 NABasicObject& NABasicObject::operator=(const NABasicObject&) { return *this; }
 
-NA_EIDPROC
 void* NABasicObject::operator new(size_t t, CollHeap* h, NABoolean failureIsFatal) 
 {
   if (t < sizeof(NABasicObject))
@@ -120,7 +114,6 @@ void* NABasicObject::operator new(size_t t, CollHeap* h, NABoolean failureIsFata
   return p;
 }
 
-NA_EIDPROC
 void* NABasicObject::operator new(size_t t, void* loc, NAMemory* h) 
 {
   if (loc != NULL)
@@ -130,7 +123,6 @@ void* NABasicObject::operator new(size_t t, void* loc, NAMemory* h)
   }
   return 0;
 }
-NA_EIDPROC
 void NABasicObject::operator delete(void* p)
 {
   if (p)	// "delete NULL;" is legal in C++, obviously a no-op
@@ -141,12 +133,10 @@ void NABasicObject::operator delete(void* p)
       if (h == invalidHeapPtr())
         {
 	  #ifndef NDEBUG
-	  #ifndef __EID
 	    cerr << "**WARNING: " << __FILE__ << ": "
 	         << "Ignoring attempt to delete pointer twice    "
 	         << "(possible memory leak at " << p << "; need to run Purify)"
 		 << endl;
-	  #endif
 	  #endif
 	  return;
 	}
@@ -163,7 +153,6 @@ void NABasicObject::operator delete(void* p)
 }
 
 
-NA_EIDPROC
 void NABasicObject::operator delete(void* p, NAMemory*h, NABoolean f)
 {
    if (p)
@@ -175,13 +164,11 @@ void NABasicObject::operator delete(void* p, NAMemory*h, NABoolean f)
    }
 }
 
-NA_EIDPROC
 void NABasicObject::operator delete(void* p, void*, NAMemory*)
 {
   // This shouldn't do anything.
 }
 
-NA_EIDPROC
 void* NABasicObject::operator new[](size_t t, CollHeap* h, NABoolean failureIsFatal) 
 {
   if (t < sizeof(NABasicObject))
@@ -225,7 +212,6 @@ void* NABasicObject::operator new[](size_t t, CollHeap* h, NABoolean failureIsFa
   return p;
 }
 
-NA_EIDPROC
 void NABasicObject::operator delete[](void* p)
 {
 #if 0
@@ -238,12 +224,10 @@ void NABasicObject::operator delete[](void* p)
       if (h == invalidHeapPtr())
         {
 	  #ifndef NDEBUG
-	  #ifndef __EID
 	    cerr << "**WARNING: " << __FILE__ << ": "
 	         << "Ignoring attempt to delete pointer twice    "
 	         << "(possible memory leak at " << p << "; need to run Purify)"
 		 << endl;
-	  #endif
 	  #endif
 	  return;
 	}
@@ -263,7 +247,6 @@ void NABasicObject::operator delete[](void* p)
 }
 
 // This function will be called if the constructor throws an exception.
-NA_EIDPROC
 void NABasicObject::operator delete[](void* p,  NAMemory* h, NABoolean)
 {
    if ( p ) {
@@ -274,13 +257,12 @@ void NABasicObject::operator delete[](void* p,  NAMemory* h, NABoolean)
    }
 }
 
-//NA_EIDPROC 
+//
 //void* operator new[](size_t, NAMemory* h, NABoolean failureIsFatal)
 //{
 //return NABasicObject::operator new(t, h, failureIsFatal);
 //}
 
-//NA_EIDPROC
 //void* NABasicObject::operator delete[](void* p /* , another arg; see C++ ARM*/)
 //{
 // We need to call multiple destructors here, one for each object in
@@ -301,8 +283,6 @@ void NABasicObject::operator delete[](void* p,  NAMemory* h, NABoolean)
 // This finds latent bugs.)
 
 #if !defined(NDEBUG)
-#ifndef __EID
-  NA_EIDPROC
   Int32 NABasicObject::checkInvalidObject(const void* const referencingObject)
   {
     if (this && maybeInvalidObject())
@@ -328,8 +308,6 @@ void NABasicObject::operator delete[](void* p,  NAMemory* h, NABoolean)
     return 0;
   }
 #endif
-#endif
-
 
 // -----------------------------------------------------------------------
 // overloaded new operator for CollHeap*
@@ -346,7 +324,6 @@ void NABasicObject::operator delete[](void* p,  NAMemory* h, NABoolean)
 // The compiler does not support exception yet. Should be done when
 // the compiler supports exception.
 //
-NA_EIDPROC
 void* operator new (size_t t, CollHeap* h)
 {
 
@@ -365,7 +342,6 @@ void* operator new (size_t t, CollHeap* h)
 
 }
 
-NA_EIDPROC
 void* operator new[] (size_t t, CollHeap* h)
 {
   //return ( (h) ? h->allocateMemory(t) : (::new char[t] ) );
@@ -385,7 +361,6 @@ void* operator new[] (size_t t, CollHeap* h)
 
 }
 
-NA_EIDPROC
 void* operator new[] (size_t t, CollHeap* h, NABoolean failureIsFatal)
 {
   if (NOT_CHECK_NAHEAP(h))

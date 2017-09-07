@@ -44,7 +44,6 @@
 #include "GroupAttr.h"
 #include "AllRelExpr.h"
 #include "RelPackedRows.h"
-#include "ReadTableDef.h"
 #include "Generator.h"
 #include "GenExpGenerator.h"
 #include "dfs2rec.h"

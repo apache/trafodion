@@ -119,7 +119,7 @@ Lng32 ComTdbSortGrby::unpack(void * base, void * reallocator)
   if(havingExpr_.unpack(base, reallocator)) return -1;
   return ComTdb::unpack(base, reallocator);
 }
-NA_EIDPROC void ComTdbSortGrby::displayContents(Space * space,ULng32 flag)
+void ComTdbSortGrby::displayContents(Space * space,ULng32 flag)
 {
       ComTdb::displayContents(space,flag & 0xFFFFFFFE);
 

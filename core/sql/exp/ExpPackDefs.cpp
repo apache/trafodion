@@ -54,7 +54,7 @@
 /////////////////////////////////////////////////////
 // pack procs for classes ex_expr, OutputExpr
 /////////////////////////////////////////////////////
-NA_EIDPROC void ex_expr::packStuff(void * space_)
+void ex_expr::packStuff(void * space_)
 {
   //Following code packs ex_clause elements iteratively.
   ex_clause *keepClause = NULL;
@@ -86,13 +86,12 @@ NA_EIDPROC void ex_expr::packStuff(void * space_)
   pCode_.pack(space_);  
 }
 
-NA_EIDPROC Long ex_expr::pack(void * space_)
+Long ex_expr::pack(void * space_)
 {
   packStuff(space_);
   return NAVersionedObject::pack(space_);
 }
 
-NA_EIDPROC
 void ex_expr_lean::convAddrToOffsetInPCode(void * space) {
   PCodeBinary *pcode = getPCodeBinary();
   if (!pcode)
@@ -116,7 +115,7 @@ void ex_expr_lean::convAddrToOffsetInPCode(void * space) {
   pCodeLean_ = (PCodeBinary*)((Space *)space)->convertToOffset((char*)pCodeLean_);
 }
 
-NA_EIDPROC Long ex_expr_lean::pack(void * space_)
+Long ex_expr_lean::pack(void * space_)
 {
   constantsArea_.pack(space_);
   tempsArea_.pack(space_);
@@ -128,7 +127,7 @@ NA_EIDPROC Long ex_expr_lean::pack(void * space_)
   return NAVersionedObject::pack(space_);
 }
 
-NA_EIDPROC Long AggrExpr::pack(void * space_)
+Long AggrExpr::pack(void * space_)
 {
   initExpr_.pack(space_);
   perrecExpr_.pack(space_);
@@ -139,7 +138,7 @@ NA_EIDPROC Long AggrExpr::pack(void * space_)
   return ex_expr::pack(space_);
 }
 
-NA_EIDPROC Long InputOutputExpr::pack(void * space_)
+Long InputOutputExpr::pack(void * space_)
 {
   return ex_expr::pack(space_);
 }
@@ -148,362 +147,362 @@ NA_EIDPROC Long InputOutputExpr::pack(void * space_)
 // pack procs for clauses
 //////////////////////////////////////////////
 
-NA_EIDPROC Long ex_aggregate_clause::pack(void * space_)
+Long ex_aggregate_clause::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_aggregate_clause));
 }
 
-NA_EIDPROC Long ex_arith_clause::pack(void * space_)
+Long ex_arith_clause::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_arith_clause));
 }
 
-NA_EIDPROC Long ex_unlogic_clause::pack(void * space_)
+Long ex_unlogic_clause::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_unlogic_clause));
 }
 
-NA_EIDPROC Long ExRegexpClauseChar::pack(void * space_)
+Long ExRegexpClauseChar::pack(void * space_)
 {
   return packClause(space_, sizeof(ExRegexpClauseChar));
 }
 
-NA_EIDPROC Long ex_like_clause_char::pack(void * space_)
+Long ex_like_clause_char::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_like_clause_char));
 }
 
-NA_EIDPROC Long ex_like_clause_doublebyte::pack(void * space_)
+Long ex_like_clause_doublebyte::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_like_clause_doublebyte));
 }
 
-NA_EIDPROC Long ex_bool_clause::pack(void * space_)
+Long ex_bool_clause::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_bool_clause));
 }
 
-NA_EIDPROC Long bool_result_clause::pack(void * space_)
+Long bool_result_clause::pack(void * space_)
 {
   return packClause(space_, sizeof(bool_result_clause));
 }
 
-NA_EIDPROC Long ex_branch_clause::pack(void * space_)
+Long ex_branch_clause::pack(void * space_)
 {
   saved_next_clause.pack(space_);
   branch_clause.pack(space_);
   return packClause(space_, sizeof(ex_branch_clause));
 }
 
-NA_EIDPROC Long ex_comp_clause::pack(void * space_)
+Long ex_comp_clause::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_comp_clause));
 }
 
-NA_EIDPROC Long ex_conv_clause::pack(void * space_)
+Long ex_conv_clause::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_conv_clause));
 }
 
-NA_EIDPROC Long ex_function_clause::pack(void * space_)
+Long ex_function_clause::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_clause));
 }
 
-NA_EIDPROC Long ex_function_concat::pack(void * space_)
+Long ex_function_concat::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_concat));
 }  
 
-NA_EIDPROC Long ex_function_substring::pack(void * space_)
+Long ex_function_substring::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_substring));
 }  
 
-NA_EIDPROC Long ex_function_substring_doublebyte::pack(void * space_)
+Long ex_function_substring_doublebyte::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_substring_doublebyte));
 }  
 
-NA_EIDPROC Long ex_function_trim_char::pack(void * space_)
+Long ex_function_trim_char::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_trim_char));
 }  
 
-NA_EIDPROC Long ex_function_trim_doublebyte::pack(void * space_)
+Long ex_function_trim_doublebyte::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_trim_doublebyte));
 }  
 
-NA_EIDPROC Long ex_function_lower::pack(void * space_)
+Long ex_function_lower::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_lower));
 }  
 
-NA_EIDPROC Long ex_function_upper::pack(void * space_)
+Long ex_function_upper::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_upper));
 }  
 
-NA_EIDPROC Long ex_function_translate::pack(void * space_)
+Long ex_function_translate::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_translate));
 }  
 
-NA_EIDPROC Long ExFunctionAscii::pack(void * space_)
+Long ExFunctionAscii::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionAscii));
 }
 
-NA_EIDPROC Long ExFunctionChar::pack(void * space_)
+Long ExFunctionChar::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionChar));
 }
 
-NA_EIDPROC Long ExFunctionConvertHex::pack(void * space_)
+Long ExFunctionConvertHex::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionConvertHex));
 }
 
-NA_EIDPROC Long ExFunctionRepeat::pack(void * space_)
+Long ExFunctionRepeat::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionRepeat));
 }
 
-NA_EIDPROC Long ExFunctionReplace::pack(void * space_)
+Long ExFunctionReplace::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionReplace));
 }
 
 // 12/17/97: added for unicode UPPER()
-NA_EIDPROC Long ex_function_upper_unicode::pack(void * space_)
+Long ex_function_upper_unicode::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_upper_unicode));
 }  
 
-NA_EIDPROC Long ex_function_lower_unicode::pack(void * space_)
+Long ex_function_lower_unicode::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_lower_unicode));
 }  
 
-NA_EIDPROC Long ex_function_char_length::pack(void * space_)
+Long ex_function_char_length::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_char_length));
 }  
 
-NA_EIDPROC Long ex_function_char_length_doublebyte::pack(void * space_)
+Long ex_function_char_length_doublebyte::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_char_length_doublebyte));
 }  
 
-NA_EIDPROC Long ex_function_oct_length::pack(void * space_)
+Long ex_function_oct_length::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_oct_length));
 }  
 
-NA_EIDPROC Long ex_function_position::pack(void * space_)
+Long ex_function_position::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_position));
 }  
 
-NA_EIDPROC Long ex_function_position_doublebyte::pack(void * space_)
+Long ex_function_position_doublebyte::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_position_doublebyte));
 }  
 
-NA_EIDPROC Long ExFunctionTokenStr::pack(void * space_)
+Long ExFunctionTokenStr::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionTokenStr));
 }  
 
-NA_EIDPROC Long ex_function_current::pack(void * space_)
+Long ex_function_current::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_current));
 }  
 
-NA_EIDPROC Long ex_function_encode::pack(void * space_)
+Long ex_function_encode::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_encode));
 }
 
 //++Triggers -
-NA_EIDPROC Long ex_function_unique_execute_id::pack(void * space_)
+Long ex_function_unique_execute_id::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_unique_execute_id));
 } 
 
-NA_EIDPROC Long ex_function_get_triggers_status::pack(void * space_)
+Long ex_function_get_triggers_status::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_get_triggers_status));
 } 
 
-NA_EIDPROC Long ex_function_get_bit_value_at::pack(void * space_)
+Long ex_function_get_bit_value_at::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_get_bit_value_at));
 } 
 //--Triggers -
 
-NA_EIDPROC Long ex_function_is_bitwise_and_true::pack(void * space_)
+Long ex_function_is_bitwise_and_true::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_is_bitwise_and_true));
 } 
 //--MV
 
-NA_EIDPROC Long ex_function_explode_varchar::pack(void * space_)
+Long ex_function_explode_varchar::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_explode_varchar));
 }  
  
-NA_EIDPROC Long ex_function_hash::pack(void * space_)
+Long ex_function_hash::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_hash));
 }  
 
-NA_EIDPROC Long ex_function_hivehash::pack(void * space_)
+Long ex_function_hivehash::pack(void * space_)
 {
   Lng32 x = sizeof(ex_function_hivehash);
   return packClause(space_, sizeof(ex_function_hivehash));
 }  
 
-NA_EIDPROC Long ExHashComb::pack(void * space_)
+Long ExHashComb::pack(void * space_)
 {
   return packClause(space_, sizeof(ExHashComb));
 }
 
-NA_EIDPROC Long ExHiveHashComb::pack(void * space_)
+Long ExHiveHashComb::pack(void * space_)
 {
   return packClause(space_, sizeof(ExHiveHashComb));
 }
 
-NA_EIDPROC Long ExHDPHash::pack(void * space_)
+Long ExHDPHash::pack(void * space_)
 {
   return packClause(space_, sizeof(ExHDPHash));
 }  
 
-NA_EIDPROC Long ExHDPHashComb::pack(void * space_)
+Long ExHDPHashComb::pack(void * space_)
 {
   return packClause(space_, sizeof(ExHDPHashComb));
 }
 
-NA_EIDPROC Long ex_function_replace_null::pack(void * space_)
+Long ex_function_replace_null::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_replace_null));
 }  
 
-NA_EIDPROC Long ex_function_mod::pack(void * space_)
+Long ex_function_mod::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_mod));
 }  
 
-NA_EIDPROC Long ex_function_mask::pack(void * space_)
+Long ex_function_mask::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_mask));
 }
 
-NA_EIDPROC Long ExFunctionShift::pack(void * space_)
+Long ExFunctionShift::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionShift));
 }  
 
-NA_EIDPROC Long ex_function_converttimestamp::pack(void * space_)
+Long ex_function_converttimestamp::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_converttimestamp));
 }  
 
-NA_EIDPROC Long ex_function_dateformat::pack(void * space_)
+Long ex_function_dateformat::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_dateformat));
 }  
 
-NA_EIDPROC Long ex_function_dayofweek::pack(void * space_)
+Long ex_function_dayofweek::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_dayofweek));
 }  
 
-NA_EIDPROC Long ex_function_extract::pack(void * space_)
+Long ex_function_extract::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_extract));
 }  
 
-NA_EIDPROC Long ex_function_juliantimestamp::pack(void * space_)
+Long ex_function_juliantimestamp::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_juliantimestamp));
 }  
 
-NA_EIDPROC Long ex_function_exec_count::pack(void * space_)
+Long ex_function_exec_count::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_exec_count));
 }  
 
-NA_EIDPROC Long ex_function_curr_transid::pack(void * space_)
+Long ex_function_curr_transid::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_curr_transid));
 }  
 
-NA_EIDPROC Long ex_function_ansi_user::pack(void * space_)
+Long ex_function_ansi_user::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_ansi_user));
 }
 
-NA_EIDPROC Long ex_function_user::pack(void * space_)
+Long ex_function_user::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_user));
 }  
 
-NA_EIDPROC Long ex_function_nullifzero::pack(void * space_)
+Long ex_function_nullifzero::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_nullifzero));
 }  
 
-NA_EIDPROC Long ex_function_nvl::pack(void * space_)
+Long ex_function_nvl::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_nvl));
 }  
 
-NA_EIDPROC Long ex_function_json_object_field_text::pack(void * space_)
+Long ex_function_json_object_field_text::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_json_object_field_text));
 }  
 
 
-NA_EIDPROC Long ex_function_queryid_extract::pack(void * space_)
+Long ex_function_queryid_extract::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_function_queryid_extract));
 }  
 
-NA_EIDPROC Long ExFunctionUniqueId::pack(void * space_)
+Long ExFunctionUniqueId::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionUniqueId));
 }  
 
-NA_EIDPROC Long ExFunctionRowNum::pack(void * space_)
+Long ExFunctionRowNum::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionUniqueId));
 }  
 
-NA_EIDPROC Long ExFunctionHbaseColumnLookup::pack(void * space_)
+Long ExFunctionHbaseColumnLookup::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionHbaseColumnLookup));
 }  
 
-NA_EIDPROC Long ExFunctionHbaseColumnsDisplay::pack(void * space_)
+Long ExFunctionHbaseColumnsDisplay::pack(void * space_)
 {
   colNames_.pack(space_);
 
   return packClause(space_, sizeof(ExFunctionHbaseColumnsDisplay));
 }  
 
-NA_EIDPROC Long ExFunctionHbaseColumnCreate::pack(void * space_)
+Long ExFunctionHbaseColumnCreate::pack(void * space_)
 {
   return packClause(space_, sizeof(ExFunctionHbaseColumnCreate));
 }  
 
-NA_EIDPROC Long ex_noop_clause::pack(void * space_)
+Long ex_noop_clause::pack(void * space_)
 {
   return packClause(space_, sizeof(ex_noop_clause));
 }
 
-NA_EIDPROC Long ex_inout_clause::pack(void * space_)
+Long ex_inout_clause::pack(void * space_)
 {
   name.pack(space_);
   heading_.pack(space_);
@@ -513,24 +512,24 @@ NA_EIDPROC Long ex_inout_clause::pack(void * space_)
   return packClause(space_, sizeof(ex_inout_clause));
 }
 
-NA_EIDPROC Long ExFunctionSVariance::pack(void * space)
+Long ExFunctionSVariance::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionSVariance));
 }  
 
-NA_EIDPROC Long ExFunctionSStddev::pack(void * space)
+Long ExFunctionSStddev::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionSStddev));
 }  
 
-NA_EIDPROC Long ExpRaiseErrorFunction::pack(void * space)
+Long ExpRaiseErrorFunction::pack(void * space)
 {
   constraintName_.pack(space);
   tableName_.pack(space);
   return packClause(space, sizeof(ExpRaiseErrorFunction));
 }  
 
-NA_EIDPROC Long ExFunctionRandomNum::pack(void * space)
+Long ExFunctionRandomNum::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionRandomNum));
 }  
@@ -540,37 +539,37 @@ Long ExFunctionRandomSelection::pack(void * space)
   return packClause(space, sizeof(ExFunctionRandomSelection));
 }  
 
-NA_EIDPROC Long ExProgDistrib::pack(void * space)
+Long ExProgDistrib::pack(void * space)
 {
   return packClause(space, sizeof(ExProgDistrib));
 }
 
-NA_EIDPROC Long ExProgDistribKey::pack(void * space)
+Long ExProgDistribKey::pack(void * space)
 {
   return packClause(space, sizeof(ExProgDistribKey));
 }  
 
-NA_EIDPROC Long ExPAGroup::pack(void * space)
+Long ExPAGroup::pack(void * space)
 {
   return packClause(space, sizeof(ExPAGroup));
 }
 
-NA_EIDPROC Long ExHash2Distrib::pack(void * space)
+Long ExHash2Distrib::pack(void * space)
 {
   return packClause(space, sizeof(ExHash2Distrib));
 }
 
-NA_EIDPROC Long ExFunctionPack::pack(void * space)
+Long ExFunctionPack::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionPack));
 }
 
-NA_EIDPROC Long ExFunctionRangeLookup::pack(void * space)
+Long ExFunctionRangeLookup::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionRangeLookup));
 }
 
-NA_EIDPROC Long ExUnPackCol::pack(void * space)
+Long ExUnPackCol::pack(void * space)
 {
   return packClause(space, sizeof(ExUnPackCol));
 }
@@ -586,63 +585,57 @@ Long ExFunctionInternalTimestamp::pack(void * space)
   return packClause(space, sizeof(ExFunctionInternalTimestamp));
 }  
 
-NA_EIDPROC Long ExAuditImage::pack(void * space_)
-{
-  auditImageContainerExpr_.pack(space_);
-  return packClause(space_, sizeof(ExAuditImage));
-}
-
 Long ExHeaderClause::pack(void * space)
 {
   return packClause(space, sizeof(ExHeaderClause));
 }  
 
-NA_EIDPROC Long ExFunctionSha::pack(void * space)
+Long ExFunctionSha::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionSha));
 }
 
-NA_EIDPROC Long ExFunctionSha2::pack(void * space)
+Long ExFunctionSha2::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionSha2));
 }
 
-NA_EIDPROC Long ExFunctionMd5::pack(void * space)
+Long ExFunctionMd5::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionMd5));
 }
 
-NA_EIDPROC Long ExFunctionCrc32::pack(void * space)
+Long ExFunctionCrc32::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionCrc32));
 }
 
-NA_EIDPROC Long ExFunctionIsIP::pack(void * space)
+Long ExFunctionIsIP::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionIsIP));
 }
 
-NA_EIDPROC Long ExFunctionSoundex::pack(void * space)
+Long ExFunctionSoundex::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionSoundex));
 }
 
-NA_EIDPROC Long ExFunctionInetAton::pack(void * space)
+Long ExFunctionInetAton::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionInetAton));
 }
 
-NA_EIDPROC Long ExFunctionInetNtoa::pack(void * space)
+Long ExFunctionInetNtoa::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionInetNtoa));
 }
 
-NA_EIDPROC Long ExFunctionAESEncrypt::pack(void * space)
+Long ExFunctionAESEncrypt::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionAESEncrypt));
 }
 
-NA_EIDPROC Long ExFunctionAESDecrypt::pack(void * space)
+Long ExFunctionAESDecrypt::pack(void * space)
 {
   return packClause(space, sizeof(ExFunctionAESDecrypt));
 }
@@ -650,7 +643,7 @@ NA_EIDPROC Long ExFunctionAESDecrypt::pack(void * space)
 // U N P A C K
 // -----------------------------------------------------------------------
 
-NA_EIDPROC Lng32 ex_expr::unpack(void *base, void * reallocator)
+Lng32 ex_expr::unpack(void *base, void * reallocator)
 {
   ExClausePtr currClausePtr;
   ex_clause *nextClause;
@@ -687,7 +680,6 @@ NA_EIDPROC Lng32 ex_expr::unpack(void *base, void * reallocator)
   return NAVersionedObject::unpack(base, reallocator);
 }
 
-NA_EIDPROC
 void ex_expr_lean::convOffsetToAddrInPCode(void* base) {
   pCodeLean_ = (PCodeBinary*)((char *)base - (Long)(pCodeLean_));
 
@@ -714,7 +706,7 @@ void ex_expr_lean::convOffsetToAddrInPCode(void* base) {
   
 }
 
-NA_EIDPROC Lng32 ex_expr_lean::unpack(void *base, void * reallocator)
+Lng32 ex_expr_lean::unpack(void *base, void * reallocator)
 {
   if (constantsArea_.unpack(base)) return -1;
   if (tempsArea_.unpack(base)) return -1;
@@ -725,7 +717,7 @@ NA_EIDPROC Lng32 ex_expr_lean::unpack(void *base, void * reallocator)
   return NAVersionedObject::unpack(base, reallocator);
 }
 
-NA_EIDPROC Lng32 AggrExpr::unpack(void *base, void * reallocator)
+Lng32 AggrExpr::unpack(void *base, void * reallocator)
 {
   if (initExpr_.unpack(base, reallocator)) return -1;
   if (perrecExpr_.unpack(base, reallocator)) return -1;
@@ -737,14 +729,14 @@ NA_EIDPROC Lng32 AggrExpr::unpack(void *base, void * reallocator)
 }
 
 
-NA_EIDPROC Lng32 ex_branch_clause::unpack(void *base, void * reallocator)
+Lng32 ex_branch_clause::unpack(void *base, void * reallocator)
 {
   if (branch_clause.unpack(base, reallocator)) return -1;
   if (saved_next_clause.unpack(base, reallocator)) return -1;
   return unpackClause(base, reallocator);
 }
 
-NA_EIDPROC Lng32 ex_inout_clause::unpack(void *base, void * reallocator)
+Lng32 ex_inout_clause::unpack(void *base, void * reallocator)
 {
   if (name.unpack(base)) return -1;
   if (heading_.unpack(base)) return -1;
@@ -756,24 +748,19 @@ NA_EIDPROC Lng32 ex_inout_clause::unpack(void *base, void * reallocator)
 }
 
 
-NA_EIDPROC Lng32 ExpRaiseErrorFunction::unpack(void *base, void * reallocator)
+Lng32 ExpRaiseErrorFunction::unpack(void *base, void * reallocator)
 {
   if (constraintName_.unpack(base)) return -1;
   if (tableName_.unpack(base)) return -1;
   return unpackClause(base, reallocator);
 }
-NA_EIDPROC Lng32 ExAuditImage::unpack(void *base, void * reallocator)
-{
-  if (auditImageContainerExpr_.unpack(base, reallocator)) return -1;
-  return unpackClause(base, reallocator);
-}
 
-NA_EIDPROC Lng32 ExFunctionHbaseColumnCreate::unpack(void *base, void * reallocator)
+Lng32 ExFunctionHbaseColumnCreate::unpack(void *base, void * reallocator)
 {
   return unpackClause(base, reallocator);
 }
 
-NA_EIDPROC Lng32 ExFunctionHbaseColumnsDisplay::unpack(void *base, void * reallocator)
+Lng32 ExFunctionHbaseColumnsDisplay::unpack(void *base, void * reallocator)
 {
   if (colNames_.unpack(base)) return -1;
 

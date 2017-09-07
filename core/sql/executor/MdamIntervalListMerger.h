@@ -62,7 +62,7 @@ class MdamIntervalListMerger
 public:
 
   // Constructor.
-  NA_EIDPROC MdamIntervalListMerger
+  MdamIntervalListMerger
     (const MdamIntervalList * intervalListPtr0,
      const MdamIntervalList * intervalListPtr1,
      const ULng32 keyLen)
@@ -81,16 +81,16 @@ public:
 
 
   // Destructor.
-  NA_EIDPROC ~MdamIntervalListMerger();
+  ~MdamIntervalListMerger();
 
   // Iteration operator returns the next endpoint on each call.
-  NA_EIDPROC NABoolean operator()(MdamEndPoint & mdamEndPoint);
+  NABoolean operator()(MdamEndPoint & mdamEndPoint);
 
   // Get the number of active intervals for the most recent iteration call.
-  NA_EIDPROC inline Int32 getActiveIntervals() const;
+  inline Int32 getActiveIntervals() const;
 
   // Get the number of active intervals for the previous iteration call.
-  NA_EIDPROC inline Int32 getPreviousActiveIntervals() const;
+  inline Int32 getPreviousActiveIntervals() const;
 
 private:
 

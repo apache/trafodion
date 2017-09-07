@@ -48,7 +48,6 @@
 // Uncomment the line below to debug new PCode instructions.
 // #define SQLMX_DEBUG_PCIT
 
-NA_EIDPROC
 PCodeSegment::PCodeSegment(PCodeBinary* pcode) : NAVersionedObject() {
   str_cpy_all((char*)&eyeCatcher_, PC_eyeCatcher, PC_eyeCatcherSize);
   flags_ = 0;
@@ -57,38 +56,32 @@ PCodeSegment::PCodeSegment(PCodeBinary* pcode) : NAVersionedObject() {
 }
 
 
-NA_EIDPROC
 unsigned char PCodeSegment::getClassVersionID() {
   return 1;
 }
 
 
-NA_EIDPROC
 Long PCodeSegment::pack(void *space) {
   convAddrToOffsetInPCode(space);
   pCodeSegment_.pack(space);
   return NAVersionedObject::pack(space);
 }
 
-NA_EIDPROC
 Lng32 PCodeSegment::unpack(void *base, void * reallocator) {
   if (pCodeSegment_.unpack(base)) return -1;
   convOffsetToAddrInPCode(base);
   return NAVersionedObject::unpack(base, reallocator);
 }
 
-NA_EIDPROC
 Int32 PCodeSegment::getPCodeSegmentSize() {
   return pCodeSegmentSize_;
 }
 
-NA_EIDPROC
 void PCodeSegment::setPCodeSegmentSize(Int32 size) {
   pCodeSegmentSize_ = size;
 }
 
 
-NA_EIDPROC
 short PCodeSegment::getClassSize() {
   Int32 trueSize = sizeof(*this) + getPCodeSegmentSize();
   return( (short)(trueSize + (trueSize % 8)) );
@@ -101,7 +94,6 @@ short PCodeSegment::getClassSize() {
 // passed in space object and replace the old attributes pointer in the pcode
 // segment with the new pointer
 //
-NA_EIDPROC
 void PCodeSegment::replaceAttributesPtr(ex_clause* clauses, Space* space)
 {
   Int32 addrBuf[6];
@@ -186,7 +178,6 @@ void PCodeSegment::replaceAttributesPtr(ex_clause* clauses, Space* space)
 
 // Locate the clause pointer "oldClause" in the pcode segment and replace it
 // with the clause "newClause".
-NA_EIDPROC
 void PCodeSegment::replaceClauseEvalPtr(ex_clause* oldClause,
                                         ex_clause* newClause)
 {
@@ -225,7 +216,6 @@ void PCodeSegment::replaceClauseEvalPtr(ex_clause* oldClause,
 //
 // convOffsetToAddrInPCode translates the offsets to addresses
 // -----------------------------------------------------------------------
-NA_EIDPROC
 void PCodeSegment::convAddrToOffsetInPCode(void * space) {
   PCodeBinary *pcode = getPCodeBinary();
   if (!pcode)
@@ -246,7 +236,6 @@ void PCodeSegment::convAddrToOffsetInPCode(void * space) {
   }
 }
 
-NA_EIDPROC
 void PCodeSegment::convOffsetToAddrInPCode(void* base) {
   PCodeBinary *pcode = getPCodeBinary();
   if (!pcode)
@@ -1161,31 +1150,19 @@ Int32 *PCode::getEmbeddedAddresses(Int32 opcode, Int32 addr[]) {
         break;
 
       case PCIT::CLAUSE_BRANCH:
-#ifdef NA_64BIT
         addr[0] = 3;  // address of branch clause starts from pcode[3]
-#else
-        addr[0] = 2;
-#endif
         addr[1] = -1;
         break;
 
     case PCIT::NULL_VIOLATION_MPTR32_MPTR32_IPTR_IPTR:
       addr[0] = 5;
-#ifdef NA_64BIT
       addr[1] = 7;  // address of 2nd attributes struct starts from pcode[7]
-#else
-      addr[1] = 6;
-#endif
       addr[2] = -1;
       break;
 
     case PCIT::NOT_NULL_BRANCH_MBIN32S_MBIN16S_MBIN16S_IBIN32S:
       addr[0] = 7;
-#ifdef NA_64BIT
       addr[1] = 9;  // should be pcode[9], but don't know if this opcode is used
-#else
-      addr[1] = 8;
-#endif
       addr[2] = -1;
       break;
 
@@ -1206,7 +1183,6 @@ Int32 PCode::getInstructionLength(PCodeBinary * pcode) {
     NAAssert(tmpbuf, __FILE__ , __LINE__ );
   }
 
-// 64BIT : should here be a switch statement?
   if ((opcode == PCIT::HASHCOMB_BULK_MBIN32U) ||
       (opcode == PCIT::NOT_NULL_BRANCH_BULK) ||
       (opcode == PCIT::MOVE_BULK) ||
@@ -1254,11 +1230,11 @@ PCIT::Instruction PCode::getInstruction(PCI *pci) {
               return (PCIT::Instruction)opcodeMap[i].opcode;
           } 
       } 
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   fprintf(stderr, 
           "ERROR(getInstruction) -- Unknown instruction, opcode = %d\n", 
           pci->getOperation());
-#endif // NA_DEBUG_C_RUNTIME
+#endif // _DEBUG
   ExpAssert(0, "Unknown PCode Instruction");
 
   return(PCIT::NOP);
@@ -1356,7 +1332,7 @@ void PCIT::operandString(Int32 operand, char* buffer) {
 }
 
 void PCode::print(PCIList code) {
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
   PCIListIter iter(code);
   for(PCI *pci = iter.first(); pci; pci = iter.next()) {
     pci->print();
@@ -1364,7 +1340,7 @@ void PCode::print(PCIList code) {
   }
 #endif
 }
-#ifdef NA_DEBUG_C_RUNTIME
+#ifdef _DEBUG
 void PCI::print() {
     char buffer[32];
     PCIT::operandString(operation_, buffer);
@@ -1388,7 +1364,6 @@ void PCI::print() {
 };
 #endif
 
-#ifndef __EID
 void PCode::displayContents(PCIList code, Space *space) {
   char buf[256];
   char operandBuf[32];
@@ -1473,8 +1448,6 @@ void PCode::displayContents(PCodeBinary* pCode, Space *space) {
   str_sprintf(buf, "\n");
   space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 }
-
-#endif
 
 Int32 PCode::dumpContents(PCIList code, char * buf, Int32 bufLen) {
   char operandBuf[32];
@@ -2468,11 +2441,7 @@ PCIID PCode::generateJumpAndBranch(Attributes *dst,
   if (notNullBranch)
     {
       AML aml;
-#ifdef NA_64BIT
       OL ol((Int64) notNullBranch);
-#else
-      OL ol((PCIType::Operand) notNullBranch);
-#endif
       PCI pci(PCIT::Op_TARGET, aml, ol);
       code.append(pci);
     }
@@ -2607,12 +2576,7 @@ void PCode::preClausePCI(ex_clause *clause, PCIList& code) {
     for(Int32 i=0; i<clause->getNumberBranchTargets(); i++)
     {
       AML aml;
-#ifdef NA_64BIT
-      // dg64 - match signature
       OL ol((Int64) clause);
-#else
-      OL ol((PCIType::Operand) clause);
-#endif
       PCI pci(PCIT::Op_TARGET, aml, ol);
       code.append(pci);
     }
@@ -2695,11 +2659,7 @@ PCIID PCode::nullBranchHelper(AttributesPtr *attrs,
                 attrA->getNullIndOffset(),
                 attrB->getAtp(), attrB->getAtpIndex(),
                 attrB->getNullIndOffset(),
-#ifdef NA_64BIT
                 (Int64)attrA, (Int64)attrB
-#else
-                (PCIType::Operand)attrA, (PCIType::Operand)attrB
-#endif
                 );
           PCI pci(PCIT::Op_NULL_VIOLATION, aml, ol);
           code.append(pci);
@@ -2765,13 +2725,8 @@ PCIID PCode::nullBranchHelper(AttributesPtr *attrs,
           AML aml(PCIT::MPTR32,PCIT::MPTR32,PCIT::IPTR,PCIT::IPTR);
           OL ol(attrA->getAtp(),attrA->getAtpIndex(),attrA->getNullIndOffset(),
                 attrA->getAtp(),attrA->getAtpIndex(),attrA->getNullIndOffset(),
-#ifdef NA_64BIT
                 (Int64)attrA,
                 (Int64)0
-#else
-                (PCIType::Operand)attrA,
-                (Int32)0
-#endif
                 );
           PCI pci(PCIT::Op_NULL_VIOLATION, aml, ol);
           code.append(pci);

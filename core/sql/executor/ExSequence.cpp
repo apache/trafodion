@@ -1490,9 +1490,7 @@ void ExSequenceTcb::createCluster()
       clusterDb_->setScratchOverflowMode(SCRATCH_DISK);
       break;
   }
-#ifndef __EID
   clusterDb_->setBMOMaxMemThresholdMB(myTdb().getBMOMaxMemThresholdMB());
-#endif 
 
   cluster_ = new(heap_) Cluster(Cluster::IN_MEMORY,
 				       clusterDb_,

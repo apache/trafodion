@@ -49,7 +49,6 @@
 // pointers. To be called after receiving the input buffer
 // from Executor and before retrieving rows from it.
 ///////////////////////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 short ExSPPrepareInputBuffer(void * inputBuffer)
 {
   SqlBuffer * ib = (SqlBuffer *)inputBuffer;
@@ -66,7 +65,6 @@ short ExSPPrepareInputBuffer(void * inputBuffer)
 // called before retrieving input rows from it.
 // RETURNS: 0, if all ok. -1, in case of an error.
 /////////////////////////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 short ExSPPosition(void * inputBuffer)
 {
   SqlBuffer * ib = (SqlBuffer *)inputBuffer;
@@ -93,7 +91,6 @@ short ExSPPosition(void * inputBuffer)
 // RETURNS: 0, if all is Ok. 1, if all rows have been returned.
 //          -1, in case of error.
 ////////////////////////////////////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 short ExSPGetInputRow(void * inputBuffer,   // IN:  input sql buffer
 		      void* &controlInfo,   // OUT: control info 
 		      char* &rowPtr,        // OUT: pointer to the row
@@ -131,7 +128,6 @@ short ExSPGetInputRow(void * inputBuffer,   // IN:  input sql buffer
 // Once the reply buffer is sent from Arkcmp to Executor, it
 // must be re-initialized by calling this proc again.
 /////////////////////////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 short ExSPInitReplyBuffer(void * replyBuffer, 
 			  ULng32 replyBufLen)
 {
@@ -162,7 +158,6 @@ short ExSPInitReplyBuffer(void * replyBuffer,
 //        -1, in case of error.
 //         2 in case of warning. 
 /////////////////////////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 short ExSPPutReplyRow(void * replyBuffer,     // IN: the reply buffer
 		      void * controlInfo,     // IN: control info
 		      char * replyRow,        // IN: pointer to reply row
@@ -255,7 +250,6 @@ short ExSPPutReplyRow(void * replyBuffer,     // IN: the reply buffer
 // offsets. To be called before sending the reply buffer to
 // Executor.
 ///////////////////////////////////////////////////////////
-SQLCLI_LIB_FUNC
 short ExSPPrepareReplyBuffer(void * replyBuffer)
 {
   SqlBuffer * rb = (SqlBuffer *)replyBuffer;
@@ -271,7 +265,6 @@ short ExSPPrepareReplyBuffer(void * replyBuffer)
   return 0;
 }
 
-SQLCLI_LIB_FUNC
 short ExSPUnpackIOExpr(void * & extractInputExpr,
 		       void * & moveOutputExpr,
 		       CollHeap * heap)
@@ -315,7 +308,6 @@ short ExSPUnpackIOExpr(void * & extractInputExpr,
   return 0;
 }
 
-SQLCLI_LIB_FUNC
 short ExSPExtractInputValue(void * extractInputExpr,
 			    ULng32 fieldNum, char * inputRow,
 			    char * data, ULng32 datalen, NABoolean casting,
@@ -327,7 +319,6 @@ short ExSPExtractInputValue(void * extractInputExpr,
 	       );
 }
 
-SQLCLI_LIB_FUNC
 short ExSPMoveOutputValue(void * moveOutputExpr,
 			  ULng32 fieldNum, char * outputRow,
 			  char * data, ULng32 datalen, NABoolean casting,

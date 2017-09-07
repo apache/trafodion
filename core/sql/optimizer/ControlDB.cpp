@@ -452,12 +452,7 @@ void ControlDB::setControlDefault(ControlQueryDefault *def)
       }
     }
     break;
-  case QUERY_CACHE_MPALIAS:
-    // turning off mpalias query caching decaches any mpalias queries
-    if (CmpCommon::getDefault(QUERY_CACHE_MPALIAS) == DF_OFF) {
-      CURRENTQCACHE->deCacheAliases();
-    }
-    break;
+
   case QUERY_CACHE_STATISTICS: // is now a no-op
     break;
   case QUERY_CACHE_AVERAGE_PLAN_SIZE:

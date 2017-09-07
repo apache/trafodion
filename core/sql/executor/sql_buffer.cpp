@@ -222,7 +222,7 @@ SqlBufferBase::moveStatus
 				       NABoolean useExternalDA,
 				       NABoolean callerHasExternalDA,
 				       tupp_descriptor * defragTd
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
 				       ,ex_tcb * tcb
 #endif
 				       ,NABoolean noMoveWarnings
@@ -411,7 +411,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
                                             NABoolean useExternalDA,
                                             NABoolean callerHasExternalDA,
                                             tupp_descriptor * defragTd
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
                                             ,ex_tcb * tcb
 #endif
 					    ,NABoolean noMoveWarnings
@@ -575,7 +575,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
       {
         defragLength = rowLen;
 
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
         char txt[] = "exchange";
         sql_buffer_pool::logDefragInfo(txt,
                         SqlBufferGetTuppSize(projRowLen, bufType()),
@@ -602,53 +602,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
 
 	  if (controlInfoMoved == TRUE)
 	    remove_tuple_desc();
-#if defined(__EID)          
-	  if (getTotalTuppDescs() == 0)
-          {
-            if (diagsArea == NULL)
-            {
-              // tbd - is expr ever null?  Is expr->getHeap() ?
-              diagsArea = ComDiagsArea::allocate(expr->getHeap());
-            }
-            *diagsArea  << DgSqlCode(-EXE_ROWLENGTH_EXCEEDS_BUFFER);
 
-            up_state errorUpState;
-            errorUpState.status = ex_queue::Q_SQLERROR;
-
-            tupp_descriptor * dDesc = NULL;
-            Int32 moveRetcode = 0;
-
-            moveRetcode = moveInSendOrReplyData(isSend,// false b/c this is EID
-						doMoveControl,
-						FALSE,   // <-------- doMoveData.
-						&errorUpState,
-						controlInfoLen,
-						controlInfo,
-						projRowLen,
-						outTdesc,
-						diagsArea ,
-						&dDesc,
-						expr, atp1, workAtp,
-						destAtp, 
-						tuppIndex, 
-						doMoveStats,
-						statsArea, 
-						statsDesc, 
-						useExternalDA, 
-						useExternalDA,
-						NULL,
-						noMoveWarnings
-                                 );
-            ex_assert((moveRetcode != SqlBuffer::BUFFER_FULL),
-                      "sending an empty buffer from EID");
-
-            if (dDesc)
-            {
-              diagsArea->packObjIntoMessage(dDesc->getTupleAddress());
-              diagsArea->decrRefCount();
-            }
-          }
-#endif
           return SqlBuffer::BUFFER_FULL;
 	}
       
@@ -793,7 +747,7 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
                                    useExternalDA, 
                                    useExternalDA, // always have ext. DA if used
                                    defragTd
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
                                    ,tcb
 #endif
 				   ,noMoveWarnings
@@ -855,53 +809,6 @@ SqlBuffer::moveStatus SqlBuffer::moveInSendOrReplyData(NABoolean isSend,
 
 	  if (daMark >= 0)
 	    diagsArea->rewind(daMark);
-#if defined(__EID)          
-	  if (getTotalTuppDescs() == 0)
-          {
-           //there is no room for DA even, clear DA and send one condition only
-            if(!space_available(diagsArea->packedLength()))
-              diagsArea->clear();
-
-            *diagsArea  << DgSqlCode(-EXE_ROWLENGTH_EXCEEDS_BUFFER);
-
-            up_state errorUpState;
-            errorUpState.status = ex_queue::Q_SQLERROR;
-
-            tupp_descriptor * dDesc = NULL;
-            Int32 moveRetcode ;
-
-            moveRetcode = moveInSendOrReplyData(isSend,// false b/c this is EID
-                                 doMoveControl,
-                                 FALSE,   // <-------- doMoveData.
-                                 &errorUpState,
-                                 controlInfoLen,
-                                 controlInfo,
-                                 projRowLen,
-                                 outTdesc,
-                                 diagsArea ,
-                                 &dDesc,
-                                 expr, atp1, workAtp,
-                                 destAtp, 
-                                 tuppIndex, 
-				 doMoveStats,
-                                 statsArea, 
-                                 statsDesc, 
-                                 useExternalDA, 
-                                 useExternalDA,
-				 NULL,
-				 noMoveWarnings
-                                 );
-            ex_assert((moveRetcode != SqlBuffer::BUFFER_FULL),
-                      "Sending an empty buffer from EID");
-
-            if (dDesc)
-            {
-              diagsArea->packObjIntoMessage(dDesc->getTupleAddress());
-              diagsArea->decrRefCount();
-            }
-          
-          }
-#endif
 
 	  return  SqlBuffer::BUFFER_FULL;  // not enough space.
 	}
@@ -2628,7 +2535,6 @@ void sql_buffer_pool::compact_buffers()
     }
 }
 
-#if (!defined(NA_NSK) && defined(_DEBUG))  ||  !defined(__EID)
 // for debugging purposes
 void sql_buffer_pool::printAllBufferInfo() {
   staticBufferList_->position();
@@ -2640,7 +2546,6 @@ void sql_buffer_pool::printAllBufferInfo() {
   while (buf = (SqlBuffer *)dynBufferList_->getNext())
     buf->printInfo();
 };
-#endif
 
 SqlBufferBase * sql_buffer_pool::findBuffer(Lng32 freeSpace,
 					    Int32 mustBeEmpty)
@@ -2695,11 +2600,6 @@ SqlBufferBase * sql_buffer_pool::getBuffer(Lng32 freeSpace,
   free_buffers();
 
   result = findBuffer(freeSpace,mustBeEmpty);
-
-// #if defined(NA_WINNT) && defined(_DEBUG)
-//   if (! result)
-//     printAllBufferInfo();
-// #endif
 
   if (! result)
     {
@@ -2817,7 +2717,7 @@ sql_buffer_pool::moveIn(atp_struct *atp1,
     }
     if (!get_free_tuple(atp2->getTupp(tuppIndex), defRowLen))
     {
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
       char txt[] = "hashj";
       SqlBuffer *buf = getCurrentBuffer();
       sql_buffer_pool::logDefragInfo(txt,
@@ -3214,7 +3114,7 @@ SqlBufferBase::moveStatus
 				      NABoolean useExternalDA,
 				      NABoolean callerHasExternalDA,
 				      tupp_descriptor * defragTd
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
 				      ,ex_tcb * tcb
 #endif
 				       ,NABoolean noMoveWarnings
@@ -3621,7 +3521,7 @@ NABoolean SqlBufferOltSmall::moveOutReplyData(void * currQState,
   return FALSE;
 }
 
-#if (defined (NA_LINUX) && defined(_DEBUG) && !defined(__EID))
+#if (defined(_DEBUG) )
 void sql_buffer_pool::logDefragInfo(char * txt,
                                     Lng32 neededSpace,
                                     Lng32 actNeededSpace,

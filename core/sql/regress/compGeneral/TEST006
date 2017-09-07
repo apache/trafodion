@@ -440,10 +440,6 @@ control query default OVERRIDE_SYSKEY 'ON';
 prepare xx from select * from t006t7;
 control query default OVERRIDE_SYSKEY reset;
 
-control query default VALIDATE_RFORK_REDEF_TS 'ON';
-prepare xx from select * from t006t7;
-control query default VALIDATE_RFORK_REDEF_TS reset;
-
 control query default COMP_BOOL_108 'OFF';
 prepare xx from select * from t006t2, t006t3 where log(t006t2.a)  =  log(t006t3.a);
 control query default COMP_BOOL_108 reset;

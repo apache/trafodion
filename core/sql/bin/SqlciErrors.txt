@@ -1403,7 +1403,6 @@ $1~String1 --------------------------------
 4416 ZZZZZ 99999 BEGINNER MINOR LOGONLY Certificate has been updated
 4417 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Error in shared segment
 4418 ZZZZZ 99999 BEGINNER MAJOR LOGONLY Unauthorized user
-4419 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Mismatched transaction identifiers during end transaction: Compiler transid $0~string0, Executor transid $0~string1, TMF transid $0~string2, TMF tcbref $0~string3.
 4450 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Function $0~String0 is not a built-in function or registered user-defined function.
 4451 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Action $0~String0 is not a registered action for user-defined function $1~String1.
 4452 ZZZZZ 99999 BEGINNER MAJOR DBADMIN Function $0~String0 expects $1~Int0 input values but was called with $2~Int1 values.

@@ -59,7 +59,7 @@
 class ComTdbRoot;
 
 
-#if !defined(__EID) && defined(_DEBUG) && defined(TRACE_ESP_ACCESS)
+#if defined(_DEBUG) && defined(TRACE_ESP_ACCESS)
 
 #include "ComCextdecs.h"
 // Comment in and build to trace an ESPAccess ESP process
@@ -262,7 +262,7 @@ ExExeStmtGlobals::ExExeStmtGlobals(short num_temps,
   diagsArea_ = NULL;
   resolvedNameList_ = NULL;
 
-#if !defined(__EID) && defined(_DEBUG) && defined (TRACE_ESP_ACCESS)
+#if defined(_DEBUG) && defined (TRACE_ESP_ACCESS)
   espTraceList_ = new(getDefaultHeap()) ESPTraceList(this, getDefaultHeap());
 #endif
   
@@ -372,7 +372,7 @@ void ExExeStmtGlobals::deleteMe(NABoolean fatalError)
   // don't be fooled! The next statement does nothing... (don't know why)
   deleteMemory(this);
 
-#if !defined(__EID) && defined(_DEBUG) && defined (TRACE_ESP_ACCESS)
+#if defined(_DEBUG) && defined (TRACE_ESP_ACCESS)
   if (espTraceList_)
     {
       NADELETE(espTraceList_, ESPTraceList, getDefaultHeap());
@@ -598,7 +598,6 @@ ExMasterStmtGlobals::ExMasterStmtGlobals(
   statement_ = statement;
   rowsAffected_ = 0;
   cancelState_ = CLI_CANCEL_TCB_INVALID;
-  stmtCntrs_ = NULL;
   resultSetInfo_ = NULL;
   extractInfo_ = NULL;
   verifyESP_ = FALSE;
@@ -981,17 +980,11 @@ void ExMasterStmtGlobals::insertExtractEsp(const IpcProcessId &pid)
   Lng32 len = str_len(pidBuf);
 
   const GuaProcessHandle &phandle = pid.getPhandle();
-#if (defined (NA_LINUX) && defined (SQ_NEW_PHANDLE))
   Int32 cpu = -1, pin = -1;
-#else
-  short cpu = -1, pin = -1;
-#endif // NA_LINUX
   Int32 nodeNumber = -1;
   SB_Int64_Type seqNum = 0;
   Lng32 guaError = phandle.decompose(cpu, pin, nodeNumber
-#ifdef SQ_PHANDLE_VERIFIER
                                     , seqNum
-#endif
                                     );
   if (guaError != 0)
   {
@@ -1004,11 +997,9 @@ void ExMasterStmtGlobals::insertExtractEsp(const IpcProcessId &pid)
   str_cpy_all(esp->phandleText_, pidBuf, len + 1);
   esp->cpu_ = cpu;
   esp->nodeNumber_ = nodeNumber;
-#ifdef SQ_PHANDLE_VERIFIER
   // tbd - parallel extract - extract master executor will need to use 
   // verifier as part of process name. Need to test this and see if it 
   // is happening correctly. Maybe defer until we support parallel extract.
-#endif
 }
 
 void ExMasterStmtGlobals::insertExtractSecurityKey(const char *key)
@@ -1352,8 +1343,7 @@ void ExEspStmtGlobals::setReplyTag(Int64 transid, short replyTag)
 
 NABoolean ExEspStmtGlobals::restoreTransaction()
 {
-#if (defined(NA_GUARDIAN_IPC) || defined(NA_GUARDIAN_MSG))
-#ifndef NA_TMFNOTYETSUPPORTED 
+#if (defined(NA_GUARDIAN_IPC))
   if (replyTag_ != GuaInvalidReplyTag)
     {
       // we do have a transaction work request, switch to its transaction
@@ -1371,9 +1361,6 @@ NABoolean ExEspStmtGlobals::restoreTransaction()
       return NOT espFragInstanceDir_->
 	getFragment(myHandle_)->getNeedsTransaction();
     }
-#else
-  return TRUE;
-#endif
 #else
   // without TMF, just wing it and return TRUE, if browse access
   ex_assert(NOT espFragInstanceDir_->

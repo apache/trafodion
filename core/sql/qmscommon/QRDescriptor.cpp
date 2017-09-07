@@ -1749,11 +1749,7 @@ void QRNumericVal::setNumericVal(Int64 unscaledVal, Int32 scale)
   // the new value.
   snprintf(buf, 
           sizeof(buf),
-          #ifdef NA_64BIT
           "%0*ld",
-          #else
-          "%0*Ld",
-          #endif // NA_64BIT
           scale + (unscaledVal < 0),  // add one for sign if negative
           unscaledVal);
   stringRep_ = buf;

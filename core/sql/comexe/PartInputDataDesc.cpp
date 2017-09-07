@@ -45,7 +45,6 @@
 #include "ExpAtp.h"
 #include "ComPackDefs.h"
 
-#define NA_NO_C_RUNTIME
 #include "BaseTypes.h"
 
 // -----------------------------------------------------------------------
@@ -444,7 +443,7 @@ Lng32 ExHash2PartInputData::unpack(void * base, void * reallocator)
 // This method returns the virtual function table pointer for an object
 // with the given class ID; used by NAVersionedObject::driveUnpack().
 // -----------------------------------------------------------------------
-NA_EIDPROC char *ExPartInputDataDesc::findVTblPtr(short classID)
+char *ExPartInputDataDesc::findVTblPtr(short classID)
 {
   char *vtblPtr;
   switch (classID)

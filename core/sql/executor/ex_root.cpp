@@ -139,8 +139,7 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
   UInt32 numOfNewEspsStarted = 0; // num of new esps started by this operator.
   UInt32 numOfTotalEspsUsed = 0;  // num of total esps used by this operator.
   Int64 newprocessTime = 0;
-  if ((getCollectStatsType() == ComTdb::MEASURE_STATS) ||
-      (getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
+  if ((getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
       (getCollectStatsType() == ComTdb::OPERATOR_STATS) ||
       (getCollectStatsType() == ComTdb::PERTABLE_STATS))
     {
@@ -151,10 +150,9 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
   rtFragTable->assignEsps(TRUE, numOfTotalEspsUsed, numOfNewEspsStarted 
                           );
 
-  if (((getCollectStatsType() == ComTdb::MEASURE_STATS) ||
-       (getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
+  if (((getCollectStatsType() == ComTdb::ACCUMULATED_STATS) ||
        (getCollectStatsType() == ComTdb::OPERATOR_STATS) ||
-      (getCollectStatsType() == ComTdb::PERTABLE_STATS)) &&
+       (getCollectStatsType() == ComTdb::PERTABLE_STATS)) &&
       (numOfNewEspsStarted > 0))
     {
       newprocessTime = JULIANTIMESTAMP(OMIT,OMIT,OMIT,OMIT) - newprocessTime;
@@ -603,11 +601,10 @@ ExOperStats * ex_root_tcb::doAllocateStatsEntry(CollHeap *heap, ComTdb *tdb)
     if (ss != NULL)
       ((ExFragRootOperStats *)stat)->setQueryId(ss->getQueryId(), ss->getQueryIdLen());
   }
-  else if (statsType == ComTdb::MEASURE_STATS ||
-	  statsType == ComTdb::ACCUMULATED_STATS)
+  else if (statsType == ComTdb::ACCUMULATED_STATS)
   {
-    // if measure or accumulated statistics are to be collected, allocate
-    // one measure stats entry and insert it into the queue.
+    // if accumulated statistics are to be collected, allocate
+    // one stats entry and insert it into the queue.
     // All executor operators that collect stats will use this
     // entry to update stats.
     // These stats are not associated with any particular
@@ -1839,7 +1836,7 @@ Int32 ex_root_tcb::fetch(CliGlobals *cliGlobals,
 		    // Note that NA_JulianTimestamp is in micro seconds and that
 		    //  streamTimeout_ is in .01 seconds
                     Int64 wait64 = streamTimeout_; // to avoid timeout overflow
-                    // Extra time may be needed, if Measure is running for stats
+                    // Extra time may be needed
                     IpcTimeout extraTime = 0;
                     if (getGlobals()->statsEnabled())
                         extraTime = 100;

@@ -29,9 +29,6 @@
 #include "QRLogger.h"
 #include "Collections.h"
 
-#ifndef NA_LINUX
-#include <zsysc.h>
-#else
 #include "seabed/fs.h"
 #include "seabed/ms.h"
 #include "seabed/int/opts.h"
@@ -43,7 +40,6 @@ extern "C" {
 #include "zsysc.h"
 }
 
-#endif
 
 // Classes defined in this file.
 class QmmException;
@@ -226,7 +222,6 @@ class QRProcessStub : public NABasicObject
     virtual ~QRProcessStub()
       {}
 
-#ifdef NA_LINUX
     Int32 operator==(SB_Phandle_Type ph) const
       {
         return !memcmp((char*)&processHandle_, (char*)&ph, sizeof(SB_Phandle_Type));
@@ -241,35 +236,6 @@ class QRProcessStub : public NABasicObject
       {
         memcpy(&processHandle_, &ph, sizeof(SB_Phandle_Type));
       }
-#else
-    //int operator==(const zsys_ddl_phandle_def& ph) const
-    Int32 operator==(const short* ph) const
-      {
-        // @ZXros -- following won't compile now on Windows. Used in Qmm::handleClientExit() to see who died.
-#ifdef NA_NSK
-        //return !strncmp(processHandle_.u_z_data.z_byte, ph.u_z_data.z_byte, 20);
-        return !memcmp((char*)processHandle_, (char*)ph, 20);
-                        //sizeof(zsys_ddl_phandle_def));
-#else
-        return 0;
-#endif
-      }
-
-    const short* getProcessHandle() const
-      {
-        return &processHandle_[0];
-      }
-
-    //void setProcessHandle(const zsys_ddl_phandle_def& ph)
-    void setProcessHandle(const short* ph)
-      {
-        //processHandle_ = ph;
-        memcpy((char*)processHandle_, (char*)ph, 20);
-          //sizeof(zsys_ddl_phandle_def));// zsys_ddl_phandle_def_Size);
-      }
-
-#endif
-
     Int64 getLockoutEndTS() const
       {
         return lockoutEndTS_;
@@ -289,11 +255,7 @@ class QRProcessStub : public NABasicObject
     void setLockout();
 
     //zsys_ddl_phandle_def processHandle_;
-#ifdef NA_LINUX
     SB_Phandle_Type processHandle_;
-#else
-    short processHandle_[10];
-#endif
     Int64 lockoutEndTS_;
     Lng32 retryNumber_;
     CollHeap* heap_;

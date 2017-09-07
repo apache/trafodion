@@ -264,15 +264,6 @@ ExExplainTcb::loadModule()
 		       );
 #pragma warn(1506)  // warning elimination 
       //moduleId.module_name = modName_;
-
-      // If the module isn't already loaded (added) load it
-      if(!context->moduleAdded(&moduleId))
-	{
-	  rc = context->addModule(&moduleId, FALSE /*no timestamp check*/,
-				  TRUE /* unpack tdbs*/, 
-				  (modDir_[0] ? modDir_ : NULL),
-				  FALSE /*do not look in global mod dir*/);
-	}
     }
   
   // Get a pointer to the statement list for this context.

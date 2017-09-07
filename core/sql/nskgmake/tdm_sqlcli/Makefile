@@ -23,7 +23,6 @@
 
 CPPSRC := CliDll.cpp \
 	StoredProcInterface.cpp \
-	rtdu.cpp \
 	vers_libcli.cpp
 
 SRCPATH := cli catman smdio

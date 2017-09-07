@@ -73,16 +73,16 @@ public:
   // retrieval of the virtual table function pointer of the class while
   // unpacking. An empty constructor is enough.
   // ---------------------------------------------------------------------
-  NA_EIDPROC ExSortTdb()
+  ExSortTdb()
   {}
 
-  NA_EIDPROC virtual ~ExSortTdb()
+  virtual ~ExSortTdb()
   {}
 
   // ---------------------------------------------------------------------
   // Build a TCB for this TDB. Redefined in the Executor project.
   // ---------------------------------------------------------------------
-  NA_EIDPROC virtual ex_tcb *build(ex_globals *globals);
+  virtual ex_tcb *build(ex_globals *globals);
 
 private:
   // ---------------------------------------------------------------------
@@ -304,7 +304,7 @@ public:
   virtual ExOperStats *doAllocateStatsEntry(CollHeap *heap,
 					    ComTdb *tdb);
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 };
@@ -348,7 +348,7 @@ public:
 
   virtual void registerSubtasks();  // register work procedures with scheduler
 
-  NA_EIDPROC virtual ex_tcb_private_state * allocatePstates(
+  virtual ex_tcb_private_state * allocatePstates(
        Lng32 &numElems,      // inout, desired/actual elements
        Lng32 &pstateLength); // out, length of one element
 

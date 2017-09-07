@@ -39,7 +39,6 @@
 #define IPCMESSAGEOBJ_H
 
 #include "Platform.h"
-#include "SqlExportDllDefines.h"
 #include "str.h"
 
 
@@ -74,7 +73,7 @@ class IpcMessageBuffer;
 // the message. A virtual method can also be used to determine the
 // length of the message when it gets packed into the message.
 // -----------------------------------------------------------------------
-class SQLEXPORT_LIB_FUNC IpcMessageObj
+class IpcMessageObj
 {
   friend class IpcMessageStream;
   friend class IpcBufferedMsgStream;
@@ -102,8 +101,6 @@ public:
   // destructor
   virtual ~IpcMessageObj();
 
-#ifndef __EID // not needed in DP2 yet, Larry Schumacher
-
   // used to allocate a packed send object. Operator "new" gets
   // packedObj from class IpcBufferedMsgStream, then sets "this =
   // packedObj" for constructor.  "AppendDataLen" allows raw data
@@ -116,8 +113,6 @@ public:
   void* operator new(size_t size,
                                 IpcBufferedMsgStream& msgStream,
                                 IpcMessageObjSize appendDataLen = 0);
-
-#endif // !__EID
 
   // used to perform copyless receive. User must get packedObj from
   // IpcBufferedMsgStream::receiveMsgObj(). "new" sets "this = packedObj"
@@ -467,19 +462,16 @@ private:
 // has sufficient space for an item of a given size.
 // -----------------------------------------------------------------------
 
-SQLEXPORT_LIB_FUNC
-NA_EIDPROC IpcMessageObjSize packCharStarIntoBuffer(IpcMessageBufferPtr &buffer,
+IpcMessageObjSize packCharStarIntoBuffer(IpcMessageBufferPtr &buffer,
 						    char* strPtr,
                                                   NABoolean swapBytes = FALSE);
 
 // UR2
-SQLEXPORT_LIB_FUNC
-NA_EIDPROC IpcMessageObjSize packCharStarIntoBuffer(IpcMessageBufferPtr &buffer, 
+IpcMessageObjSize packCharStarIntoBuffer(IpcMessageBufferPtr &buffer, 
                                  NAWchar* strPtr,
                                  NABoolean swapBytes = FALSE);
 
-SQLEXPORT_LIB_FUNC
-NA_EIDPROC inline IpcMessageObjSize packStrIntoBuffer(char* &buffer,
+inline IpcMessageObjSize packStrIntoBuffer(char* &buffer,
                                                       char* targetObj,
                                                       ULng32 objSize)
 {
@@ -488,12 +480,10 @@ NA_EIDPROC inline IpcMessageObjSize packStrIntoBuffer(char* &buffer,
   return objSize;
 }
 
-SQLEXPORT_LIB_FUNC
-NA_EIDPROC void unpackBuffer(const char* &buffer,
+void unpackBuffer(const char* &buffer,
 			     char* &strPtr, CollHeap* collHeapPtr);
 
-SQLEXPORT_LIB_FUNC
-NA_EIDPROC inline void unpackStrFromBuffer(const char* &buffer,
+inline void unpackStrFromBuffer(const char* &buffer,
                                            char* targetObj,
                                            ULng32 objSize)
 {
@@ -501,24 +491,20 @@ NA_EIDPROC inline void unpackStrFromBuffer(const char* &buffer,
   buffer += objSize;
 }
 
-SQLEXPORT_LIB_FUNC
-NA_EIDPROC void skipCharStarInBuffer(const char* &buffer);
+void skipCharStarInBuffer(const char* &buffer);
 
-SQLEXPORT_LIB_FUNC
-NA_EIDPROC NABoolean checkBuffer (
+NABoolean checkBuffer (
     /* INOUT */ IpcConstMessageBufferPtr &buffer,
     /* IN    */ ULng32 dataLength,
     /* IN    */ IpcConstMessageBufferPtr lastByte );
 
-SQLEXPORT_LIB_FUNC
-NA_EIDPROC NABoolean checkAndUnpackBuffer (
+NABoolean checkAndUnpackBuffer (
     /* INOUT */ IpcConstMessageBufferPtr &buffer,
     /* IN    */ ULng32 dataLength,
     /* OUT   */ char *dataPtr,
     /* IN    */ IpcConstMessageBufferPtr lastByte );
 
-SQLEXPORT_LIB_FUNC
-NA_EIDPROC NABoolean checkCharStarInBuffer (
+NABoolean checkCharStarInBuffer (
     /* INOUT */ IpcConstMessageBufferPtr &buffer,
     /* IN    */ NABoolean sameEndianness,
     /* IN    */ IpcConstMessageBufferPtr lastByte );
@@ -532,11 +518,10 @@ NA_EIDPROC NABoolean checkCharStarInBuffer (
 // before returning FALSE. Current the epilogue's only purpose is as a
 // debugging aid. By setting a breakpoint on the epilogue you can
 // quickly track down the cause of a checkObj() failure.
-SQLEXPORT_LIB_FUNC
-NA_EIDPROC void ipcIntegrityCheckEpilogue(NABoolean status);
+void ipcIntegrityCheckEpilogue(NABoolean status);
 
 template <class ScalarType>
-NA_EIDPROC inline IpcMessageObjSize packIntoBuffer(char* &buffer, 
+inline IpcMessageObjSize packIntoBuffer(char* &buffer, 
 		ScalarType scalarVariable)
 {
   // * (ScalarType *) buffer = scalarVariable;
@@ -546,7 +531,7 @@ NA_EIDPROC inline IpcMessageObjSize packIntoBuffer(char* &buffer,
 }
 
 template <class ScalarType>
-NA_EIDPROC inline IpcMessageObjSize packIntoBuffer(char* &buffer, 
+inline IpcMessageObjSize packIntoBuffer(char* &buffer, 
 		ScalarType scalarVariable,
                 NABoolean swapBytes)
 {
@@ -572,7 +557,7 @@ NA_EIDPROC inline IpcMessageObjSize packIntoBuffer(char* &buffer,
 }
 
 template <class ScalarType>
-NA_EIDPROC inline void unpackBuffer(const char* &buffer,
+inline void unpackBuffer(const char* &buffer,
 				    ScalarType& scalarVariable)
 {
   // scalarVariable = * (ScalarType *) buffer;
@@ -582,11 +567,7 @@ NA_EIDPROC inline void unpackBuffer(const char* &buffer,
   buffer += sizeof(ScalarType);
 }
 
-#ifdef NA_64BIT
-// may need swapEightBytes(long &b8)
-// and swapEightBytes(unsigned long &b8)
-#else
-NA_EIDPROC inline void swapFourBytes(Long &b4)
+inline void swapFourBytes(UInt32 &b4)
 {
   char *c4 = (char *) (&b4);
   char x;
@@ -595,7 +576,7 @@ NA_EIDPROC inline void swapFourBytes(Long &b4)
   x = c4[1]; c4[1] = c4[2]; c4[2] = x;
 }
 
-NA_EIDPROC inline void swapFourBytes(ULong &b4)
+inline void swapFourBytes(Int32 &b4)
 {
   char *c4 = (char *) (&b4);
   char x;
@@ -604,37 +585,7 @@ NA_EIDPROC inline void swapFourBytes(ULong &b4)
   x = c4[1]; c4[1] = c4[2]; c4[2] = x;
 }
 
-#endif
-
-#ifdef NA_64BIT
-// dg64 - match signature
-NA_EIDPROC inline void swapFourBytes(UInt32 &b4)
-#else
-NA_EIDPROC inline void swapFourBytes(ULng32 &b4)
-#endif
-{
-  char *c4 = (char *) (&b4);
-  char x;
-
-  x = c4[0]; c4[0] = c4[3]; c4[3] = x;
-  x = c4[1]; c4[1] = c4[2]; c4[2] = x;
-}
-
-#ifdef NA_64BIT
-// dg64 - match signature
-NA_EIDPROC inline void swapFourBytes(Int32 &b4)
-#else
-NA_EIDPROC inline void swapFourBytes(Lng32 &b4)
-#endif
-{
-  char *c4 = (char *) (&b4);
-  char x;
-
-  x = c4[0]; c4[0] = c4[3]; c4[3] = x;
-  x = c4[1]; c4[1] = c4[2]; c4[2] = x;
-}
-
-NA_EIDPROC inline void swapTwoBytes(unsigned short &b2)
+inline void swapTwoBytes(unsigned short &b2)
 {
   char *c2 = (char *) (&b2);
   char x;
@@ -642,7 +593,7 @@ NA_EIDPROC inline void swapTwoBytes(unsigned short &b2)
   x = c2[0]; c2[0] = c2[1]; c2[1] = x;
 }
 
-NA_EIDPROC inline void swapTwoBytes(short &b2)
+inline void swapTwoBytes(short &b2)
 {
   char *c2 = (char *) (&b2);
   char x;

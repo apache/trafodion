@@ -51,7 +51,6 @@
 
 #include "ComTdbTimeout.h" 
 
-#ifndef __EID
 #include "ComTdbControl.h"
 #include "ComTdbRoot.h"
 #include "ComTdbOnlj.h"
@@ -79,10 +78,3 @@
 #include "ComTdbHdfsScan.h"
 #include "ComTdbHbaseAccess.h"
 #endif
-
-#endif
-
-
-
-
-

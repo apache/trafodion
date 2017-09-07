@@ -73,7 +73,7 @@
 
 DEFINE_DOVERS(sqlci)
 
-#if defined(_DEBUG) && !defined(NA_NSK)
+#if defined(_DEBUG)
 #include "security/dsecure.h"
 #define psecure_h_including_section
 #define psecure_h_security_psb_set_
@@ -344,15 +344,3 @@ Int32 main (Int32 argc, char *argv[])
 #endif  // _DEBUG
   return 0;
 }
-
-
-#ifndef NA_CMPDLL
-#include "NAType.h"
-NABoolean NAType::isComparable(const NAType &other,
-			       ItemExpr *parentOp,
-			       Int32 emitErr) const
-{ return FALSE; }
-
-#endif  // Not NA_CMPDLL
-
-

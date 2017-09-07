@@ -51,9 +51,6 @@
   #ifdef min
     #undef min
   #endif
-  #ifdef ERROR
-    #undef ERROR
-  #endif
 
 #include "Int64.h"
 

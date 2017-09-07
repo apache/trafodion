@@ -588,7 +588,7 @@ public:
   // ---------------------------------------------------------------------
   // Used by the internal SHOWPLAN command to get attributes of a TDB.
   // ---------------------------------------------------------------------
-  NA_EIDPROC void displayContents(Space *space, ULng32 flag);
+  void displayContents(Space *space, ULng32 flag);
 
   // Virtual routines to provide a consistent interface to TDB's
 

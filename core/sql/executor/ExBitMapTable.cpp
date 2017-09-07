@@ -107,12 +107,6 @@ ExBitMapTable::ExBitMapTable(Int32 keySize, Int32 dataSize, Int32 countOffset,
   //
   numberHashBuckets_ = ROUND2(memSize_ / (sizeof(char*) + rowSize_));
 
-//#ifdef _DEBUG
-//#ifndef _EID
- // if(getenv("EX_BITMAP_BUCKETS"))
-  //  numberHashBuckets_ = atoi(getenv("EX_BITMAP_BUCKETS"));
-//#endif
-//#endif
 
   // Compute the maximum number of groups that can be stored in the table. 
   //

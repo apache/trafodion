@@ -53,8 +53,6 @@ extern void my_mpi_fclose();
 DEFINE_DOVERS(tdm_arkcmp)
 
 
-#include "SqlExportDllDefines.h"
-
 #include "CmpMessage.h"
 #include "CmpConnection.h"
 #include "CmpContext.h"

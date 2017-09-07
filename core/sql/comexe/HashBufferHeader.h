@@ -49,15 +49,10 @@ class HashBufferHeader {
   friend class HashBuffer;
   friend class HashBufferSerial;
 private:
-NA_EIDPROC
   HashBufferHeader();
-NA_EIDPROC
  ~HashBufferHeader() {};
-NA_EIDPROC
   inline ULng32 getRowCount() const;
-NA_EIDPROC
   inline void setRowCount(ULng32 rowCount);
-NA_EIDPROC
   inline void incRowCount();
 
   ULng32 rowCount_;      // # rows in buffer (pointer to next free row)
@@ -72,17 +67,14 @@ NA_EIDPROC
 // inline functions of HashBufferHeader
 /////////////////////////////////////////////////////////////////////////////
 
-NA_EIDPROC
 inline ULng32 HashBufferHeader::getRowCount() const {
   return rowCount_;
 };
 
-NA_EIDPROC
 inline void HashBufferHeader::setRowCount(ULng32 rowCount) {
   rowCount_ = rowCount;
 };
 
-NA_EIDPROC
 inline void HashBufferHeader::incRowCount() {
   rowCount_++;
 };

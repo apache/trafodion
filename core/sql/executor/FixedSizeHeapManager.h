@@ -63,37 +63,37 @@ friend class FixedSizeHeapManagerBlock;
 public:
 
   // Constructor.
-  NA_EIDPROC FixedSizeHeapManager(const size_t elementSize,
+  FixedSizeHeapManager(const size_t elementSize,
 				  const Lng32 numberOfElements);
 
   // Destructor.
-  NA_EIDPROC  ~FixedSizeHeapManager();
+   ~FixedSizeHeapManager();
 
   // Obtains the memory for the heap.  Returns 0 if successful and an
   // ExeErrorCode if not successful.  Builds the free list.
-  NA_EIDPROC ExeErrorCode acquireHeapMemory(NAMemory * defaultHeapPtr);
+  ExeErrorCode acquireHeapMemory(NAMemory * defaultHeapPtr);
 
   // Allocate an element on the heap.
-  NA_EIDPROC void * allocateElement(size_t size);
+  void * allocateElement(size_t size);
 
   // Returns true if the heap memory has been acquired.  Otherwise, returns
   // false.
-  NA_EIDPROC NABoolean heapMemoryAcquired() const;
+  NABoolean heapMemoryAcquired() const;
 
   // Print the status of the heap.
   #ifdef NA_MDAM_EXECUTOR_DEBUG
-  NA_EIDPROC void print(const char * header = "") const;
+  void print(const char * header = "") const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG */
 
   // Release an element from the heap and return the space to the free list.
-  NA_EIDPROC inline void releaseElement(void * elementPtr);
+  inline void releaseElement(void * elementPtr);
 
   // Release heap memory.
-  NA_EIDPROC void releaseHeapMemory();
+  void releaseHeapMemory();
 
   // Returns true if there is space available for an element on the heap.
   // Retruns false if the heap is full or memory not acquired.
-  NA_EIDPROC inline NABoolean elementSpaceAvailable() const;
+  inline NABoolean elementSpaceAvailable() const;
 
 
 private:
@@ -120,7 +120,7 @@ private:
   Lng32 sizeBlockRounded_;
 
   // Copy constructor disallowed.
-  NA_EIDPROC inline FixedSizeHeapManager(const FixedSizeHeapManager &);
+  inline FixedSizeHeapManager(const FixedSizeHeapManager &);
 
 }; // class FixedSizeHeapManager
 
@@ -171,19 +171,19 @@ class FixedSizeHeapManagerBlock
 public:
 
   // Constructor.
-  NA_EIDPROC FixedSizeHeapManagerBlock(FixedSizeHeapManager & fixedSizeHeapManagerRef,
+  FixedSizeHeapManagerBlock(FixedSizeHeapManager & fixedSizeHeapManagerRef,
                                        const Lng32 numberOfElements,
                                        const size_t rawMemorySize);
 
   // Destructor.
-  NA_EIDPROC inline ~FixedSizeHeapManagerBlock();
+  inline ~FixedSizeHeapManagerBlock();
 
   // Operator new.
-  NA_EIDPROC inline void * operator new(size_t, char * ptr);
+  inline void * operator new(size_t, char * ptr);
 
 
   // Get function for nextBlockPtr_.
-  NA_EIDPROC inline FixedSizeHeapManagerBlock * getNextBlockPtr();
+  inline FixedSizeHeapManagerBlock * getNextBlockPtr();
 
 
 private:
@@ -205,7 +205,7 @@ private:
 
   // Print function.
   #ifdef NA_MDAM_EXECUTOR_DEBUG
-  NA_EIDPROC void print(const char * header = "") const;
+  void print(const char * header = "") const;
   #endif /* NA_MDAM_EXECUTOR_DEBUG */
 
 }; // class FixedSizeHeapManagerBlock

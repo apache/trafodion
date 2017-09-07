@@ -128,12 +128,7 @@ UdrGlobals::UdrGlobals(NAHeap *udrheap, NAHeap *ipcheap)
   Int32 i;
   Int32 j;
   for (i=0; i<UDRMAXOPENERS_V100; i++)
-#if (defined (NA_LINUX) && defined (SQ_NEW_PHANDLE))
-          XPROCESSHANDLE_NULLIT_(&(gOpenerPhandle_[i].phandle_));
-#else
-	  for (j=0; j<10; j++)
-		gOpenerPhandle_[i].phandle_[j] = NULL;
-#endif // NA_LINUX
+    XPROCESSHANDLE_NULLIT_(&(gOpenerPhandle_[i].phandle_));
 
   str_cpy_all(serverName_, "tdm_udrserv", str_len("tdm_udrserv"));
   serverName_[str_len("tdm_udrserv")] = '\0';

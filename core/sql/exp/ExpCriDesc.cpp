@@ -60,7 +60,7 @@ ex_cri_desc::ex_cri_desc(const unsigned short numTuples, void * space_) :
   flags_ = 0;
 };
 
-NA_EIDPROC Long ex_cri_desc::pack(void * space)
+Long ex_cri_desc::pack(void * space)
 {
   if ( ! (flags_ & PACKED)) // REVISIT
     {
@@ -70,7 +70,7 @@ NA_EIDPROC Long ex_cri_desc::pack(void * space)
   return NAVersionedObject::pack(space);
 }
 
-NA_EIDPROC Lng32 ex_cri_desc::unpack(void * base, void * reallocator)
+Lng32 ex_cri_desc::unpack(void * base, void * reallocator)
 {
   if (flags_ & PACKED) // REVISIT
     {
@@ -80,7 +80,7 @@ NA_EIDPROC Lng32 ex_cri_desc::unpack(void * base, void * reallocator)
   return NAVersionedObject::unpack(base, reallocator);
 }
 
-NA_EIDPROC void ex_cri_desc::display(const char* title)
+void ex_cri_desc::display(const char* title)
 {
    cout << title << endl;
 

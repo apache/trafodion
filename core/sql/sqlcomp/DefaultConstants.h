@@ -1805,8 +1805,6 @@ enum DefaultConstants
   QUERY_TEMPLATE_CACHE,
   // turn pre-parser query caching ON or OFF
   QUERY_TEXT_CACHE,
-  // enable/disable caching of mpalias queries
-  QUERY_CACHE_MPALIAS,
 
   // allows users to specify a limit on the number of nonfatal errors that will be
   // tolerated for a non-atomic statement.
@@ -2134,17 +2132,7 @@ enum DefaultConstants
   // Controls for utility testware support (query plan logging and testpoints)
   SQLMX_UTIL_EXPLAIN_PLAN,
 
-  // Controls for INTERPRET_AS_ROW
-  GEN_IAR_BUFFER_SIZE,
-  GEN_IAR_NUM_BUFFERS,
-  GEN_IAR_SIZE_DOWN,
-  GEN_IAR_SIZE_UP,
-
-  AUDIT_IMAGE_FOR_TABLES,
-
   ALLOW_DP2_ROW_SAMPLING,
-
-
 
   POS_ALLOW_NON_PK_TABLES,
   INCORPORATE_SKEW_IN_COSTING,
@@ -2943,11 +2931,8 @@ enum DefaultConstants
   // for schema access control
   DEFAULT_SCHEMA_ACCESS_ONLY,
 
-  VALIDATE_RFORK_REDEF_TS,
-
   // PUBLISH/UNPUBLISH command
   PUBLISHING_ROLES,
-
 
   // default used to test catman features
   CAT_TEST_BOOL,
@@ -3013,16 +2998,6 @@ enum DefaultConstants
 
 // Gen Sol:10-100408-9393
   ALLOW_RISKY_UPDATE_WITH_NO_ROLLBACK,
-
-  // Assert if a fatal transaction identifier mismatch is found.
-  READTABLEDEF_TRANSACTION_ASSERT,
-
-  // Allow non-fatal transaction identifier mismatch warnings to be posted
-  // from ReadTableDef
-  READTABLEDEF_TRANSACTION_ENABLE_WARNINGS,
-
-  // Force transaction mismatch errors for testing
-  READTABLEDEF_TRANSACTION_TESTPOINT,
 
   // used for controlling multi-join transformation level.
   ASYMMETRIC_JOIN_TRANSFORMATION,
@@ -3997,7 +3972,6 @@ enum DefaultToken {
  DF_LOCAL_NODE,
  DF_LOG,
  DF_MAXIMUM,
- DF_MEASURE,
  DF_MEDIUM,
  DF_MEDIUM_LOW,
  DF_MERGE,
@@ -4006,7 +3980,6 @@ enum DefaultToken {
  DF_MULTI_NODE,
  DF_MVCC,
  DF_NONE,
- DF_NSK,
  DF_OFF,
  DF_ON,
  DF_OPENS_FOR_WRITE,
