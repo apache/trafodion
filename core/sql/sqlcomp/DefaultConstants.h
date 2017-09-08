@@ -3883,6 +3883,10 @@ enum DefaultConstants
   // Threshold when TOPN sort becomes a regular sort
   GEN_SORT_TOPN_THRESHOLD,
 
+  // Ratio of BMO_MEMORY_LIMIT_PER_NODE that will be divided
+  // equally across all BMO operators 
+  BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

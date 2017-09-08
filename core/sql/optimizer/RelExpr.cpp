@@ -1999,20 +1999,35 @@ double RelExpr::computeMemoryQuota(NABoolean inMaster,
                                    ) 
 {
    if ( perNode == TRUE ) {
-     Lng32 exeMem = Lng32(BMOsMemoryLimit/(1024*1024));
+      Lng32 exeMem = Lng32(BMOsMemoryLimit/(1024*1024));
 
-     // the quota is allocated in proportion of the given BMO operator
+     // the quota is allocated in 2 parts
+     // The constant part divided equally across all bmo operators
+     // The variable part allocated in proportion of the given BMO operator
      // estimated memory usage to the total estimated memory usage of all BMOs
+   
      // The ratio can be capped by the CQD
+     double equalQuotaShareRatio = 0;
+     equalQuotaShareRatio = ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO);
+/*
+     char *equalQuotaShareRatioStr = getenv("BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO");
+     if (equalQuotaShareRatioStr != NULL)
+         equalQuotaShareRatio = atof(equalQuotaShareRatioStr);
+*/
+     double constMemQuota = 0;
+     double variableMemLimit = exeMem;
+     if (equalQuotaShareRatio > 0 && totalNumBMOs > 1) {
+        constMemQuota = (exeMem * equalQuotaShareRatio )/ totalNumBMOs;
+        variableMemLimit = (1-equalQuotaShareRatio) * exeMem;
+     }
      double bmoMemoryRatio = bmoMemoryUsage / totalBMOsMemoryUsage;
      double capMemoryRatio = 1; 
      if (totalNumBMOs > 1) {
         capMemoryRatio = ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_ESTIMATE_RATIO_CAP);
         if (capMemoryRatio > 0 && capMemoryRatio <=1 && bmoMemoryRatio > capMemoryRatio)
-            bmoMemoryRatio = capMemoryRatio;
+           bmoMemoryRatio = capMemoryRatio;
      }
-     bmoQuotaRatio = bmoMemoryRatio;
-     double bmoMemoryQuotaPerNode = exeMem * bmoMemoryRatio;
+     double bmoMemoryQuotaPerNode = constMemQuota + (variableMemLimit * bmoMemoryRatio);
      double numInstancesPerNode = numStreams / MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numStreams);
      double bmoMemoryQuotaPerInstance =  bmoMemoryQuotaPerNode / numInstancesPerNode;
      return bmoMemoryQuotaPerInstance;
