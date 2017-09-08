@@ -1994,7 +1994,8 @@ double RelExpr::computeMemoryQuota(NABoolean inMaster,
                                    double totalBMOsMemoryUsage, // for all BMOs per node in bytes 
                                    UInt16 numBMOsPerFragment, // per fragment
                                    double bmoMemoryUsage, // for the current BMO/Operator per node in bytes
-                                   Lng32 numStreams
+                                   Lng32 numStreams,
+                                   double &bmoQuotaRatio
                                    ) 
 {
    if ( perNode == TRUE ) {
@@ -2010,6 +2011,7 @@ double RelExpr::computeMemoryQuota(NABoolean inMaster,
         if (capMemoryRatio > 0 && capMemoryRatio <=1 && bmoMemoryRatio > capMemoryRatio)
             bmoMemoryRatio = capMemoryRatio;
      }
+     bmoQuotaRatio = bmoMemoryRatio;
      double bmoMemoryQuotaPerNode = exeMem * bmoMemoryRatio;
      double numInstancesPerNode = numStreams / MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numStreams);
      double bmoMemoryQuotaPerInstance =  bmoMemoryQuotaPerNode / numInstancesPerNode;
@@ -2017,6 +2019,7 @@ double RelExpr::computeMemoryQuota(NABoolean inMaster,
   } else {
      // the old way to compute quota 
      Lng32 exeMem = getExeMemoryAvailable(inMaster);
+     bmoQuotaRatio = BMOQuotaRatio::NO_RATIO;
      return exeMem / numBMOsPerFragment; 
   }
 }

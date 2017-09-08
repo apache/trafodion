@@ -117,7 +117,7 @@ namespace ExOverflow
 #endif
       if (yieldMB)
       {
-        GetCliGlobals()->yieldMemoryQuota(yieldMB);
+        exeGlobals_->yieldMemoryQuota(yieldMB);
       }
     }
 
@@ -184,7 +184,7 @@ namespace ExOverflow
       ByteCount quotaIncrease = (ByteCount) (totalBytes - quota_);
 #endif
       UInt32 quotaIncreaseMB = (quotaIncrease + ONE_MEGABYTE - 1)/ ONE_MEGABYTE;
-      if (GetCliGlobals()->grabMemoryQuotaIfAvailable(quotaIncreaseMB))
+      if (exeGlobals_->grabMemoryQuotaIfAvailable(quotaIncreaseMB))
       {
         quota_ += (quotaIncreaseMB * ONE_MEGABYTE);
       }

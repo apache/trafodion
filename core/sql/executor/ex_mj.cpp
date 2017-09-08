@@ -206,7 +206,7 @@ ex_mj_tcb::ex_mj_tcb(const ex_mj_tdb & mj_tdb,
 
       if (assumedMaxMB < quotaMB)
       {
-        GetCliGlobals()->yieldMemoryQuota(quotaMB - assumedMaxMB);
+        stmtGlobals->yieldMemoryQuota(quotaMB - assumedMaxMB);
         quotaMB = assumedMaxMB;
       }
     }

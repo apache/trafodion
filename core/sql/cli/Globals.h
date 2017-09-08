@@ -424,7 +424,7 @@ inline
   void resetMemoryQuota();
   ULng32 unusedMemoryQuota();
   void yieldMemoryQuota(ULng32 size);
-
+  NABoolean isEspProcess() { return espProcess_; }
 private:
   enum {
     DEFAULT_CONTEXT_HANDLE = 2000

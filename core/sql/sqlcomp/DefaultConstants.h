@@ -2833,8 +2833,6 @@ enum DefaultConstants
   // These CQDs are for Multi-Fragment ESPs
   ESP_MULTI_FRAGMENTS,
   ESP_NUM_FRAGMENTS,
-  ESP_NUM_FRAGMENTS_WITH_QUOTAS,
-  ESP_MULTI_FRAGMENT_QUOTAS,
   ESP_MULTI_FRAGMENT_QUOTA_VM,
   EXE_SINGLE_BMO_QUOTA, // Quota system applys to fragments with single BMO
 
@@ -2900,8 +2898,6 @@ enum DefaultConstants
   BMO_MEMORY_LIMIT_LOWER_BOUND_SORT ,
 
   // lower-bound memory limit for nBMOs 
-  BMO_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE ,
-  EXE_MEMORY_LIMIT_LOWER_BOUND_PA ,
   EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE ,
   EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE ,
 
@@ -3883,6 +3879,9 @@ enum DefaultConstants
   // Same as explain format: options 'c'
   // Used during dev regressions to cleanse explain output.
   EXPLAIN_OPTION_C,
+
+  // Threshold when TOPN sort becomes a regular sort
+  GEN_SORT_TOPN_THRESHOLD,
 
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!

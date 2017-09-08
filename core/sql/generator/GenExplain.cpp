@@ -334,9 +334,9 @@ RelExpr::addExplainInfo(ComTdb * tdb,
             break;
 
          double BMOsMemory = 
-              generator->getTotalBMOsMemoryPerCPU().value() / (1024 * 1024);
+              generator->getTotalBMOsMemoryPerNode().value() / (1024 * 1024);
          double nBMOsTotalMemory = 
-              (generator->getTotalNBMOsMemoryPerCPU()).value() / (1024 * 1024);
+              (generator->getTotalNBMOsMemoryPerNode()).value() / (1024 * 1024);
          snprintf(buf, 120, "est_memory_per_node: %.2f(Limit), %.2f(BMOs), %.2f(nBMOs) MB ", 
                                    mlimit, BMOsMemory, nBMOsTotalMemory); 
          fragdescr += buf;
@@ -470,14 +470,8 @@ RelExpr::addExplainInfo(ComTdb * tdb,
               explainTuple->setDescription(buf);
            }
         }
-     }
-  } else {
-     if ( generator->getOperEstimatedMemory() > 0 ) {
-       sprintf(buf, "est_memory_per_cpu: %d KB ", 
-          generator->getOperEstimatedMemory());
-       explainTuple->setDescription(buf);
-     }
-  }
+    }
+  } 
 
   //calls virtual subclass-specific function
   addSpecificExplainInfo(explainTuple, tdb, generator);
@@ -1426,7 +1420,7 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   ComTdbRoot *rootTdb = (ComTdbRoot *)tdb;
 
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
-  Lng32 mlimit = defs.getAsLong(BMO_MEMORY_LIMIT_PER_NODE);
+  ULng32 mlimit = defs.getAsLong(BMO_MEMORY_LIMIT_PER_NODE);
 
   if (mlimit == 0 && rootTdb->getQueryCostInfo())
   {

@@ -1784,7 +1784,9 @@ short HashJoin::codeGen(Generator * generator) {
   UInt16 numBMOsInFrag = (UInt16)generator->getFragmentDir()->getNumBMOs();
         
   double memQuota = 0;
+  double memQuotaRatio;
   Lng32 numStreams;
+  double bmoMemoryUsagePerNode = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
   if (mmu != 0) {
     memQuota = mmu;
     hashj_tdb->setMemoryQuotaMB(mmu);
@@ -1792,32 +1794,34 @@ short HashJoin::codeGen(Generator * generator) {
     // Apply quota system if either one the following two is true:
     //   1. the memory limit feature is turned off and more than one BMOs 
     //   2. the memory limit feature is turned on
-    NABoolean mlimitPerCPU = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
+    NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
     
-    if ( mlimitPerCPU || numBMOsInFrag > 1 ||
+    if ( mlimitPerNode || numBMOsInFrag > 1 ||
          (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
-        double bmoMemoryUsage = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
         memQuota = 
            computeMemoryQuota(generator->getEspLevel() == 0,
-                              mlimitPerCPU,
-                              generator->getBMOsMemoryLimitPerCPU().value(),
+                              mlimitPerNode,
+                              generator->getBMOsMemoryLimitPerNode().value(),
                               generator->getTotalNumBMOs(),
-                              generator->getTotalBMOsMemoryPerCPU().value(),
+                              generator->getTotalBMOsMemoryPerNode().value(),
                               numBMOsInFrag, 
-                              bmoMemoryUsage,
-                              numStreams
+                              bmoMemoryUsagePerNode,
+                              numStreams,
+                              memQuotaRatio
                              );
-                                  
-        Lng32 hjMemoryLowbound = defs.getAsLong(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN);
-        Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
+    }                                
+    Lng32 hjMemoryLowbound = defs.getAsLong(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN);
+    Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
 
-        if ( memQuota < hjMemoryLowbound )
-           memQuota = hjMemoryLowbound;
-        else if (memQuota >  memoryUpperbound)
-           memQuota = memoryUpperbound;
-           
-        hashj_tdb->setMemoryQuotaMB( UInt16(memQuota) );
+    if ( memQuota < hjMemoryLowbound ) {
+       memQuota = hjMemoryLowbound;
+       memQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
     }
+    else if (memQuota >  memoryUpperbound)
+       memQuota = memoryUpperbound;
+       memQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
+    hashj_tdb->setMemoryQuotaMB( UInt16(memQuota) );
+    hashj_tdb->setBmoQuotaRatio(memQuotaRatio);
   }
 
   if (beforeJoinPredOnOuterOnly())
@@ -1828,6 +1832,7 @@ short HashJoin::codeGen(Generator * generator) {
                                      );
 
   double hjMemEst = getEstimatedRunTimeMemoryUsage(hashj_tdb);
+  hashj_tdb->setEstimatedMemoryUsage(hjMemEst / 1024);
   generator->addToTotalEstimatedMemory(hjMemEst);
 
   if ( generator->getRightSideOfFlow() )
@@ -1845,12 +1850,6 @@ short HashJoin::codeGen(Generator * generator) {
   defs.getFloat(BMO_CITIZENSHIP_FACTOR, bmoCtzFactor);
   hashj_tdb->setBmoCitizenshipFactor((Float32)bmoCtzFactor);
 
-  Lng32 hjMemEstInKBPerCPU = (Lng32)(hjMemEst / 1024) ;
-  hjMemEstInKBPerCPU = hjMemEstInKBPerCPU/
-    (MAXOF(generator->compilerStatsInfo().dop(),1));
-  hashj_tdb->setHjMemEstInMbPerCpu
-    ( Float32(MAXOF(hjMemEstInKBPerCPU/1024,1)) );
-
 
   // For now, use variable for all CIF rows based on resizeCifRecord
   if(resizeCifRecord){ //tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT) {
@@ -1861,14 +1860,12 @@ short HashJoin::codeGen(Generator * generator) {
     }
   }
 
-
-  if(!generator->explainDisabled()) {
-    generator->setOperEstimatedMemory(hjMemEstInKBPerCPU);
+  hashj_tdb->setHjMemEstInKBPerNode(bmoMemoryUsagePerNode / 1024);
+  if (!generator->explainDisabled()) {
 
     generator->setExplainTuple(
        addExplainInfo(hashj_tdb, leftExplainTuple, rightExplainTuple, generator));
 
-    generator->setOperEstimatedMemory(0);
   }
 
   hashj_tdb->setReturnRightOrdered( returnRightOrdered() );
@@ -3076,42 +3073,43 @@ short MergeJoin::codeGen(Generator * generator)
   double BMOsMemoryLimit = 0;
   UInt16 quotaMB = 0;
   Lng32 numStreams;
+  double memQuotaRatio;
+  double bmoMemoryUsage = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
 
+  NADefaults &defs = ActiveSchemaDB()->getDefaults();
   if ( CmpCommon::getDefaultLong(MJ_BMO_QUOTA_PERCENT) != 0) 
   {
     // Apply quota system if either one the following two is true:
     //   1. the memory limit feature is turned off and more than one BMOs
     //   2. the memory limit feature is turned on
-    NADefaults &defs = ActiveSchemaDB()->getDefaults();
-    NABoolean mlimitPerCPU = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
+    NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
   
-    if ( mlimitPerCPU || numBMOsInFrag > 1 ||
+    if ( mlimitPerNode || numBMOsInFrag > 1 ||
          (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
   
-      double bmoMemoryUsage = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
       quotaMB = (UInt16)
           computeMemoryQuota(generator->getEspLevel() == 0,
-                             mlimitPerCPU,
-                             generator->getBMOsMemoryLimitPerCPU().value(),
-                             // generator->getTotalNumBMOsPerCPU(),
+                             mlimitPerNode,
+                             generator->getBMOsMemoryLimitPerNode().value(),
                              generator->getTotalNumBMOs(),
-                             generator->getTotalBMOsMemoryPerCPU().value(),
+                             generator->getTotalBMOsMemoryPerNode().value(),
                              numBMOsInFrag, 
                              bmoMemoryUsage,
-                             numStreams
+                             numStreams,
+                             memQuotaRatio
                              );
-
-       Lng32 mjMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN);
-       Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
-
-       if ( quotaMB < mjMemoryLowbound )
-           quotaMB = (UInt16)mjMemoryLowbound;
-        else if (quotaMB >  memoryUpperbound)
-           quotaMB = memoryUpperbound;
     }
+    Lng32 mjMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN);
+    Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
+
+    if ( quotaMB < mjMemoryLowbound ) {
+       quotaMB = (UInt16)mjMemoryLowbound;
+       memQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
+    }
+    else if (quotaMB >  memoryUpperbound)
+      quotaMB = memoryUpperbound;
   } else {
-    Lng32 memoryMB = getExeMemoryAvailable(generator->getEspLevel() == 0);
-    quotaMB =  (UInt16)( (numBMOsInFrag > 1) ? (memoryMB/numBMOsInFrag) : 0 ) ;
+    Lng32 quotaMB = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN);
   }
 
 
@@ -3166,7 +3164,7 @@ short MergeJoin::codeGen(Generator * generator)
   }
   mj_tdb->setOverflowMode(generator->getOverflowMode());
 
-  if(!generator->explainDisabled()) {
+  if (!generator->explainDisabled()) {
     generator->setExplainTuple(
          addExplainInfo(mj_tdb, leftExplainTuple, rightExplainTuple, generator));
   }

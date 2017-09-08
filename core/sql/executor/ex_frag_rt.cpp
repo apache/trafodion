@@ -241,51 +241,12 @@ void ExRtFragTable::setInactiveState()
   numRootRequests_--;
 }
 
-#define MAX_NUM_FRAGMENTS_PER_ESP 6
-// multi fragment esp - begin
-static NABoolean sv_esp_multi_fragment = TRUE;
-static UInt8 sv_esp_num_fragments = MAX_NUM_FRAGMENTS_PER_ESP;
-static char *sv_envvar_esp_multi_fragment = 0;
-static char *sv_envvar_esp_num_fragments = 0;
-
-static
-void
-getAssignedEspEnvVar()
-{
-  static bool lv_checked = false;
-
-  if (lv_checked) {
-    return;
-  }
-
-  sv_envvar_esp_multi_fragment = getenv("ESP_MULTI_FRAGMENTS");
-  sv_envvar_esp_num_fragments = getenv("ESP_NUM_FRAGMENTS");
-  lv_checked = true;
-
-  Int32 lv_i;
-  if (sv_envvar_esp_multi_fragment) {
-    lv_i = atoi(sv_envvar_esp_multi_fragment);
-    if (lv_i == 0)
-      sv_esp_multi_fragment = FALSE;
-    else
-      sv_esp_multi_fragment = TRUE;
-  }
-  sv_esp_num_fragments = 6;
-  if (sv_envvar_esp_num_fragments) {
-    lv_i = atoi(sv_envvar_esp_num_fragments);
-    if (lv_i > 0 && lv_i <= MAX_NUM_FRAGMENTS_PER_ESP) {
-      sv_esp_num_fragments = (UInt8)lv_i;
-    }
-  }
-  return;
-}
-// multi fragment esp - end
-
 void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
 			       UInt32 &numOfTotalEspsUsed,
 			       UInt32 &numOfEspsStarted
                                )
 {
+  Int16 esp_multi_fragment, esp_num_fragments;
   Int32 entryNumber, numEntries, launchesStarted, launchesCompleted;
 
   if (state_ == NO_ESPS_USED)
@@ -299,10 +260,7 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
   ComDiagsArea *diags = glob_->getDiagsArea();
 
   LIST(ExEspDbEntry *) alreadyAssignedEsps(heap);
-  // multi fragment esp - begin
-  getAssignedEspEnvVar(); // sets the static variable: sv_esp_multi_fragment
   // Note: alreadyAssignedEsps is cleared after assigning ESPs for all the instances of a fragment
-  // multi fragment esp - end
 
   // $$$$ check with the resource governor
 
@@ -319,10 +277,8 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
   Lng32 idleTimeout = getEspIdleTimeout();
   Lng32 assignTimeWindow = currentContext->getSessionDefaults()->getEspAssignTimeWindow();
 
-  if (!sv_envvar_esp_multi_fragment)
-    sv_esp_multi_fragment = fragDir_->espMultiFragments();
-  if (!sv_envvar_esp_num_fragments)
-    sv_esp_num_fragments = fragDir_->espNumFragments();
+  esp_multi_fragment = fragDir_->espMultiFragments();
+  esp_num_fragments = fragDir_->espNumFragments();
 
  // de-coupling ESP with database uid if set
   const char *esp_with_uid = getenv("ESP_WITH_USERID");
@@ -409,7 +365,9 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
                     idleTimeout,
                     assignTimeWindow,
 		    &assignEspArrays.creatingEspEntry_[entryNumber],
-                    soloFragment
+                    soloFragment, 
+                    esp_multi_fragment,
+                    esp_num_fragments 
 		    );
 
                 break; // Retry is done in IpcGuardianServer::launchNSKLiteProcess
@@ -467,7 +425,7 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
                 }
 	    }
 	  // for multi fragment esp - begin
-	  if (sv_esp_multi_fragment) {
+	  if (esp_multi_fragment) {
 	    alreadyAssignedEsps.clear();
 	  }
 	  // for multi fragment esp - end
@@ -501,7 +459,9 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
 		    idleTimeout,
                     assignTimeWindow,
 		    &assignEspArrays.creatingEspEntry_[entryNumber],
-                    soloFragment);
+                    soloFragment,
+                    esp_multi_fragment,
+                    esp_num_fragments);
 	      if (assignEspArrays.creatingEspEntry_[entryNumber] && assignEspArrays.creatingEspEntry_[entryNumber]->isReady())
               {
                 if (glob_->getIpcEnvironment()->getNumOpensInProgress() >= FS_MAX_CONCUR_NOWAIT_OPENS)
@@ -568,7 +528,7 @@ void ExRtFragTable::assignEsps(NABoolean /*checkResourceGovernor*/,
           while (glob_->getIpcEnvironment()->getNumOpensInProgress() > 0)
             glob_->getIpcEnvironment()->getAllConnections()->waitOnAll(IpcInfiniteTimeout);
 	  // multi fragment esp - begin
-	  if (sv_esp_multi_fragment)
+	  if (esp_multi_fragment)
           {
 	    alreadyAssignedEsps.clear();
 	  }
@@ -1522,7 +1482,7 @@ void ExRtFragTable::releaseEsps(NABoolean closeAllOpens)
 		// multi fragment esp - begin 
 		if (fragInst->usedEsp_) {
 		  if ((releasedEsps.insert(fragInst->usedEsp_) == FALSE) && 
-		      (sv_esp_multi_fragment)) {
+		      fragDir_->espMultiFragments()) {
 		    // decrement the usageCount_ of fragInst->usedEsp_
 		    glob_->getEspManager( )->releaseEsp(fragInst->usedEsp_, glob_->verifyESP(), fragInst->usedEsp_->inUse());
 		  }
@@ -2807,7 +2767,9 @@ ExEspDbEntry *ExEspManager::shareEsp(
      Lng32 idleTimeout,
      Lng32 assignTimeWindow,
      IpcGuardianServer **creatingEsp,
-     NABoolean soloFragment)
+     NABoolean soloFragment,
+     Int16 esp_multi_fragment,
+     Int16 esp_num_fragments)
 {
   Int32 nowaitDepth;
   IpcServer *server;
@@ -2828,7 +2790,7 @@ ExEspDbEntry *ExEspManager::shareEsp(
 
     // look up the cache for esp to share
     NABoolean espServerError = FALSE;
-    result = getEspFromCache(alreadyAssignedEsps, statementHeap, statement, clusterName, cpuNum, memoryQuota, user_id, verifyESP, espLevel, idleTimeout, assignTimeWindow, nowaitDepth, espServerError, soloFragment);
+    result = getEspFromCache(alreadyAssignedEsps, statementHeap, statement, clusterName, cpuNum, memoryQuota, user_id, verifyESP, espLevel, idleTimeout, assignTimeWindow, nowaitDepth, espServerError, soloFragment, esp_multi_fragment, esp_num_fragments);
     if (espServerError == TRUE)
       // found error from ESP already assigned to prev segment
       {
@@ -2857,7 +2819,7 @@ ExEspDbEntry *ExEspManager::shareEsp(
       // remote segment not available. look up cache for esp on local segment.
       ptrToClusterName = cliGlobals_->myNodeName();
       NABoolean espServerError = FALSE;
-      result = getEspFromCache(alreadyAssignedEsps, statementHeap, statement, ptrToClusterName, cpuNum, memoryQuota, user_id, verifyESP, espLevel, idleTimeout, assignTimeWindow, nowaitDepth, espServerError, soloFragment);
+      result = getEspFromCache(alreadyAssignedEsps, statementHeap, statement, ptrToClusterName, cpuNum, memoryQuota, user_id, verifyESP, espLevel, idleTimeout, assignTimeWindow, nowaitDepth, espServerError, soloFragment, esp_multi_fragment, esp_num_fragments);
       if (espServerError == TRUE)
         // found error from ESP already assigned to prev segment
         {
@@ -3000,7 +2962,9 @@ ExEspDbEntry *ExEspManager::getEspFromCache(LIST(ExEspDbEntry *) &alreadyAssigne
                                             Lng32 assignTimeWindow,
 					    Int32 nowaitDepth,
                                             NABoolean &espServerError,
-                                            NABoolean soloFragment)
+                                            NABoolean soloFragment,
+                                            Int16 esp_multi_fragment,
+                                            Int16 esp_num_fragments)
 {
   ExEspDbEntry *result = NULL;
   LIST(ExEspDbEntry *) badEsps(statementHeap);
@@ -3076,7 +3040,7 @@ ExEspDbEntry *ExEspManager::getEspFromCache(LIST(ExEspDbEntry *) &alreadyAssigne
 
       ExEspDbEntry *e = espList->usedEntry(i);
 
-      if ((e->inUse_) && (e->soloFragment_ || soloFragment || !(sv_esp_multi_fragment) || e->statement_ != statement))
+      if ((e->inUse_) && (e->soloFragment_ || soloFragment || !(esp_multi_fragment) || e->statement_ != statement))
 	continue;
 
       // don't reuse a broken ESP
@@ -3160,7 +3124,7 @@ ExEspDbEntry *ExEspManager::getEspFromCache(LIST(ExEspDbEntry *) &alreadyAssigne
 
       // we have found a free esp for reuse
       if ((2 * e->usageCount_ + 1 <= nowaitDepth) &&
-          (e->usageCount_ < sv_esp_num_fragments))
+          (e->usageCount_ < esp_num_fragments))
       {
         e->usageCount_++; // multi fragment esp
         e->statement_ = statement;

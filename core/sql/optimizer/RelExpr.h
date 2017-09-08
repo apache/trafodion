@@ -305,7 +305,8 @@ public:
                             double totalBMOsMemoryUsage,
                             UInt16 numBMOsPerFragment,
                             double BMOMemoryUsage,
-                            Lng32  numStreams
+                            Lng32  numStreams,
+                            double &memQuotaRatio
                            );
 
  

@@ -924,7 +924,7 @@ NABoolean SortUtil::consumeMemoryQuota(UInt32 bufferSizeBytes)
           config_->callingTcb_->getGlobals()->castToExExeStmtGlobals();
     
     //Check if memory quota is available.
-    if(GetCliGlobals()->unusedMemoryQuota() < memNeededMB)
+    if(exe_glob->unusedMemoryQuota() < memNeededMB)
     {
       return FALSE;
     }
@@ -934,7 +934,7 @@ NABoolean SortUtil::consumeMemoryQuota(UInt32 bufferSizeBytes)
     config_->memoryQuotaMB_ += (short)memNeededMB;
     if(this->withinMemoryLimitsAndPressure(bufferSizeBytes))
     {
-      if(GetCliGlobals()->grabMemoryQuotaIfAvailable(memNeededMB))
+      if(exe_glob->grabMemoryQuotaIfAvailable(memNeededMB))
       {
         config_->memoryQuotaUsedBytes_ += bufferSizeBytes;
         return TRUE;
@@ -1013,7 +1013,7 @@ void SortUtil::returnExcessMemoryQuota(UInt32 overheadPerRecord)
     ExExeStmtGlobals* exe_glob = 
         config_->callingTcb_->getGlobals()->castToExExeStmtGlobals();
     
-    GetCliGlobals()->yieldMemoryQuota((UInt32) excessMemoryQuotaMB);
+    exe_glob->yieldMemoryQuota((UInt32) excessMemoryQuotaMB);
     config_->memoryQuotaMB_ -= (short)excessMemoryQuotaMB;
   }      
 }    
@@ -1030,7 +1030,7 @@ UInt32 SortUtil::getMaxAvailableQuotaMB(void)
    UInt32 maxAvailableQuotaMB =
             config_->memoryQuotaMB_ -
             (config_->memoryQuotaUsedBytes_/ONE_MB) +
-            GetCliGlobals()->unusedMemoryQuota();
+            exe_glob->unusedMemoryQuota();
                    
    return (maxAvailableQuotaMB);
 }
@@ -1042,7 +1042,7 @@ NABoolean SortUtil::withinMemoryLimitsAndPressure(Int64 reqMembytes)
   //BMO only enabled if greater than zero.
   if(config_ == NULL || config_->initialMemoryQuotaMB_ <= 0)
     return FALSE;
-
+/*
   //config_.heapAddr_->getUsage will return false as long as there exists a 
   //possibility of allocating additional executor segments when there
   //is demand for memory allocation. Once we reach a limit of allocating
@@ -1064,7 +1064,7 @@ NABoolean SortUtil::withinMemoryLimitsAndPressure(Int64 reqMembytes)
     return FALSE;
 // LCOV_EXCL_STOP
   }
-  
+*/  
   if(!memMonitor_)
   {
 // LCOV_EXCL_START
@@ -1143,7 +1143,7 @@ if(!config_->getDisableCmpHintsOverflow())
   //do the following check if sort has not overflowed.
   if(state_ < SORT_SEND_END)
   {
-    Float32 E = config_->getSortMemEstInMbPerCpu();   //expected memory consumption by sort
+    Float32 E = config_->getSortMemEstInKBPerNode() / 1024;   //expected memory consumption by sort
     
 #ifdef FUTURE_WORK
     //check extreme case first. Expected cannot be more than
@@ -1164,7 +1164,7 @@ if(!config_->getDisableCmpHintsOverflow())
     {
 // LCOV_EXCL_START
       E = MAXOF( E, C *( 1 + estimateErrorPenalty));
-      config_->setSortMemEstInMbPerCpu(E);
+      config_->setSortMemEstInKBPerNode(E * 1024);
 // LCOV_EXCL_STOP
     }
 

@@ -2906,12 +2906,8 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
                   }
               }
             // In case of master, the unused memory quota needs to be reset
-            // with every statement execution. Hence, when there are multiple
-            // statements active in the master, the unused memory quota management
-            // may not work as expected
-            // Currently only one active statement can be assigned to an ESP
-            // So, esp unused memory quota management should work correctly. 
-            context_->resetMemoryQuota();
+            // with every statement execution. 
+            statementGlobals_->resetMemoryQuota();
 	    /* execute it */
             if( root_tdb )
             {            

@@ -1477,6 +1477,8 @@ short HashGroupBy::codeGen(Generator * generator) {
 
   double memQuota = 0;
   Lng32 numStreams;
+  double memQuotaRatio;
+  double bmoMemoryUsagePerNode = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
 
   if(isPartialGroupBy) {
     // The Quota system does not apply to Partial GroupBy
@@ -1507,38 +1509,35 @@ short HashGroupBy::codeGen(Generator * generator) {
       // Apply quota system if either one the following two is true:
       //   1. the memory limit feature is turned off and more than one BMOs
       //   2. the memory limit feature is turned on
-      NABoolean mlimitPerCPU = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
+      NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
 
-      if ( mlimitPerCPU || numBMOsInFrag > 1 ||
+      if ( mlimitPerNode || numBMOsInFrag > 1 ||
            (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
-        double bmoMemoryUsage = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
         memQuota =
            computeMemoryQuota(generator->getEspLevel() == 0,
-                              mlimitPerCPU,
-                              generator->getBMOsMemoryLimitPerCPU().value(),
-                              //generator->getTotalNumBMOsPerCPU(),
+                              mlimitPerNode,
+                              generator->getBMOsMemoryLimitPerNode().value(),
                               generator->getTotalNumBMOs(),
-                              generator->getTotalBMOsMemoryPerCPU().value(),
+                              generator->getTotalBMOsMemoryPerNode().value(),
                               numBMOsInFrag, 
-                              bmoMemoryUsage,
-                              numStreams
+                              bmoMemoryUsagePerNode,
+                              numStreams,
+                              memQuotaRatio
                              );
-
-        Lng32 hjGyMemoryLowbound = defs.getAsLong(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY);
-        Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
-
-        if ( memQuota < hjGyMemoryLowbound )
-           memQuota = hjGyMemoryLowbound;
-        else if (memQuota >  memoryUpperbound)
-           memQuota = memoryUpperbound;
-
-        hashGrbyTdb->setMemoryQuotaMB( UInt16(memQuota) );
       }
+      Lng32 hjGyMemoryLowbound = defs.getAsLong(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY);
+      Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
+      if ( memQuota < hjGyMemoryLowbound ) {
+          memQuota = hjGyMemoryLowbound;
+          memQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
+      }
+      else if (memQuota >  memoryUpperbound)
+          memQuota = memoryUpperbound;
+
+      hashGrbyTdb->setMemoryQuotaMB( UInt16(memQuota) );
+      hashGrbyTdb->setBmoQuotaRatio(memQuotaRatio);
     }
 
-    generator->addToTotalOverflowMemory(
-          getEstimatedRunTimeOverflowSize(memQuota)
-                                    );
   }
 
   generator->addToTotalOverflowMemory(
@@ -1551,16 +1550,11 @@ short HashGroupBy::codeGen(Generator * generator) {
 			  getAsULong(EXE_TEST_HASH_FORCE_OVERFLOW_EVERY));
 
   double hashGBMemEst = getEstimatedRunTimeMemoryUsage(hashGrbyTdb);
+  hashGrbyTdb->setEstimatedMemoryUsage(hashGBMemEst / 1024);
   generator->addToTotalEstimatedMemory(hashGBMemEst);
 
   if ( generator->getRightSideOfFlow() ) 
     hashGrbyTdb->setPossibleMultipleCalls(TRUE);
-
-  Lng32 hgbMemEstInKBPerCPU = (Lng32)(hashGBMemEst / 1024) ;
-  hgbMemEstInKBPerCPU = hgbMemEstInKBPerCPU/
-    (MAXOF(generator->compilerStatsInfo().dop(),1));
-  hashGrbyTdb->setHgbMemEstInMbPerCpu
-    ( Float32(MAXOF(hgbMemEstInKBPerCPU/1024,1)) );
 
   // For now use variable size records whenever Aligned format is
   // used.
@@ -1573,16 +1567,12 @@ short HashGroupBy::codeGen(Generator * generator) {
   }
 
   hashGrbyTdb->setCIFON((tupleFormat == ExpTupleDesc::SQLMX_ALIGNED_FORMAT));
-  if(!generator->explainDisabled()) {
-    generator->setOperEstimatedMemory(hgbMemEstInKBPerCPU);
-
+  hashGrbyTdb->setHgbMemEstInKBPerNode(bmoMemoryUsagePerNode / 1024 );
+  if (!generator->explainDisabled()) {
     generator->setExplainTuple(
        addExplainInfo(hashGrbyTdb, childExplainTuple, 0, generator));
 
-    generator->setOperEstimatedMemory(0);
   }
-
-
 
   // set the new up cri desc.
   generator->setCriDesc(returnedDesc, Generator::UP);

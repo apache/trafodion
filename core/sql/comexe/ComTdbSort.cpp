@@ -90,10 +90,11 @@ ComTdbSort::ComTdbSort(ex_expr * sort_key_expr,
 #pragma warn(1506)  // warning elimination 
   sortOptions_(sort_options),
   flags_(0),
-  sortMemEstInMbPerCpu_(0),
+  sortMemEstInKBPerNode_(0),
   sortGrowthPercent_(sortGrowthPercent),
   bmoCitizenshipFactor_(0),
-  pMemoryContingencyMB_(0)
+  pMemoryContingencyMB_(0),
+  topNThreshold_(-1) 
 {
 
 }
@@ -151,8 +152,8 @@ void ComTdbSort::displayContents(Space * space,ULng32 flag)
 	    str_sprintf(buf,"tuppIndex_ = %d", tuppIndex_);
             space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
-            str_sprintf(buf,"sortMemEstInMbPerCpu = %f, estimateErrorPenalty = %d ",
-                sortMemEstInMbPerCpu_, sortGrowthPercent_);
+            str_sprintf(buf,"sortMemEstInKBPerNode_ = %f, estimateErrorPenalty = %d ",
+                sortMemEstInKBPerNode_, sortGrowthPercent_);
             space->allocateAndCopyToAlignedSpace(buf, str_len(buf), sizeof(short));
 
             str_sprintf(buf,"bmoCitizenshipFactor = %f, PhyMemoryContingencyMB = %d ",

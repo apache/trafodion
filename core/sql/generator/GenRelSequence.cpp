@@ -781,7 +781,7 @@ RelExpr * PhysSequence::preCodeGen(Generator * generator,
       generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
   }
   else
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
 
   markAsPreCodeGenned();
 
@@ -1088,18 +1088,11 @@ PhysSequence::codeGen(Generator *generator)
   generator->addToTotalEstimatedMemory(sequenceMemEst);
 
   if(!generator->explainDisabled()) {
-    Lng32 seqMemEstInKBPerCPU = (Lng32)(sequenceMemEst / 1024) ;
-    seqMemEstInKBPerCPU = seqMemEstInKBPerCPU/
-      (MAXOF(generator->compilerStatsInfo().dop(),1));
-    generator->setOperEstimatedMemory(seqMemEstInKBPerCPU);
-
     generator->
       setExplainTuple(addExplainInfo(sequenceTdb,
                                      childExplainTuple,
                                      0,
                                      generator));
-
-    generator->setOperEstimatedMemory(0);
   }
 
   sequenceTdb->setScratchIOVectorSize((Int16)getDefault(SCRATCH_IO_VECTOR_SIZE_HASH));
@@ -1121,31 +1114,41 @@ PhysSequence::codeGen(Generator *generator)
   UInt16 mmu = (UInt16)(defs.getAsDouble(EXE_MEM_LIMIT_PER_BMO_IN_MB));
   UInt16 numBMOsInFrag = (UInt16)generator->getFragmentDir()->getNumBMOs();
   Lng32 numStreams;
+  double bmoMemoryUsagePerNode = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
+  double memQuota = 0;
+  double memQuotaRatio;
   if (mmu != 0)
     sequenceTdb->setMemoryQuotaMB(mmu);
   else {
     // Apply quota system if either one the following two is true:
     //   1. the memory limit feature is turned off and more than one BMOs 
     //   2. the memory limit feature is turned on
-    NABoolean mlimitPerCPU = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
+    NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
 
-    if ( mlimitPerCPU || numBMOsInFrag > 1 ) {
-
-        double bmoMemoryUsage = getEstimatedRunTimeMemoryUsage(TRUE, &numStreams).value();
+    if ( mlimitPerNode || numBMOsInFrag > 1 ) {
         double memQuota = 
            computeMemoryQuota(generator->getEspLevel() == 0,
-                              mlimitPerCPU,
-                              generator->getBMOsMemoryLimitPerCPU().value(),
-                              //generator->getTotalNumBMOsPerCPU(),
+                              mlimitPerNode,
+                              generator->getBMOsMemoryLimitPerNode().value(),
                               generator->getTotalNumBMOs(),
-                              generator->getTotalBMOsMemoryPerCPU().value(),
+                              generator->getTotalBMOsMemoryPerNode().value(),
                               numBMOsInFrag, 
-                              bmoMemoryUsage,
-                              numStreams
+                              bmoMemoryUsagePerNode,
+                              numStreams,
+                              memQuotaRatio
                              );
-                                  
-        sequenceTdb->setMemoryQuotaMB( UInt16(memQuota) );
     }
+    Lng32 seqMemoryLowbound = defs.getAsLong(EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE);
+    Lng32 memoryUpperbound = defs.getAsLong(BMO_MEMORY_LIMIT_UPPER_BOUND);
+
+    if ( memQuota < seqMemoryLowbound ) {
+       memQuota = seqMemoryLowbound;
+       memQuotaRatio = BMOQuotaRatio::MIN_QUOTA;
+    }
+    else if (memQuota >  memoryUpperbound)
+       memQuota = memoryUpperbound;
+           
+    sequenceTdb->setMemoryQuotaMB( UInt16(memQuota) );
   }
 
   generator->setCriDesc(givenCriDesc, Generator::DOWN);

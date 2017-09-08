@@ -308,7 +308,7 @@ ClusterDB::ClusterDB(HashOperator hashOperator,
 		     Float32 bmoCitizenshipFactor,
 		     Int32  pMemoryContingencyMB, 
 		     Float32 estimateErrorPenalty,
-		     Float32 hashMemEstInMbPerCpu,
+		     Float32 hashMemEstInKBPerNode,
 		     ULng32 initialHashTableSize,
 		     ExOperStats * hashOperStats
 		     )
@@ -364,7 +364,7 @@ ClusterDB::ClusterDB(HashOperator hashOperator,
     bmoCitizenshipFactor_(bmoCitizenshipFactor),
     pMemoryContingencyMB_(pMemoryContingencyMB), 
     estimateErrorPenalty_(estimateErrorPenalty),
-    hashMemEstInMbPerCpu_(hashMemEstInMbPerCpu),
+    hashMemEstInKBPerNode_(hashMemEstInKBPerNode),
 
     totalPhase3TimeNoHL_(0),
     maxPhase3Time_(0),
@@ -476,7 +476,7 @@ void ClusterDB::yieldAllMemoryQuota()
 {
   if ( memoryQuotaMB_ == 0 || memoryQuotaMB_ <= minMemoryQuotaMB_ ) return; 
 
-  GetCliGlobals()->yieldMemoryQuota( memoryQuotaMB_ - minMemoryQuotaMB_ );
+  stmtGlobals_->yieldMemoryQuota( memoryQuotaMB_ - minMemoryQuotaMB_ );
 
   if ( doLog_ ) { // LOG -- to show that memory was yielded
     char msg[256];
@@ -508,7 +508,7 @@ void ClusterDB::YieldQuota(UInt32 memNeeded)
   // if there is no memory to yield - then return 
   if ( memToYieldMB <= 1 ) return; // 1 MB - to avoid thrashing
 
-  GetCliGlobals()->yieldMemoryQuota( memToYieldMB );  // Now yield 
+  stmtGlobals_->yieldMemoryQuota( memToYieldMB );  // Now yield 
 
   if ( doLog_ ) { // LOG -- to show that memory was yielded
     char msg[256], msg1[64];
@@ -520,7 +520,7 @@ void ClusterDB::YieldQuota(UInt32 memNeeded)
 	    hashOperator_ == HASH_GROUP_BY ? "HGB" : 
 	        hashOperator_ == SEQUENCE_OLAP ? "OLAP" : "HJ", 
 	    memToYieldMB, id, msg1, memNeededMB,
-	    GetCliGlobals()->unusedMemoryQuota());
+	    stmtGlobals_->unusedMemoryQuota());
 
     // log an EMS event and continue
     SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, explainNodeId_);
@@ -601,7 +601,7 @@ void ClusterDB::yieldUnusedMemoryQuota(Cluster * theOFList,
   // if there is no memory to yield - then return 
   if ( memToYieldMB <= 1 ) return; // 1 MB - to avoid thrashing
 
-  GetCliGlobals()->yieldMemoryQuota( memToYieldMB );  // Now yield 
+  stmtGlobals_->yieldMemoryQuota( memToYieldMB );  // Now yield 
 
   if ( doLog_ ) { // LOG -- to show that memory was yielded
     char msg[256], msg1[64];
@@ -612,7 +612,7 @@ void ClusterDB::yieldUnusedMemoryQuota(Cluster * theOFList,
 		extraBuffers == 1 ? "HJ" : "HGB", memToYieldMB, 
 		0,
                 msg1, memNeededMB,
-		GetCliGlobals()->unusedMemoryQuota());
+		stmtGlobals_->unusedMemoryQuota());
 
     // log an EMS event and continue
     SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, explainNodeId_);
@@ -679,7 +679,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
     }
 
     // Try to increase the memory quota (from the global "pool") to meet need
-    if ( GetCliGlobals()->grabMemoryQuotaIfAvailable(memNeededMB) ) {
+    if ( stmtGlobals_->grabMemoryQuotaIfAvailable(memNeededMB) ) {
 
       memoryQuotaMB_ += memNeededMB ;  // got it
 
@@ -693,7 +693,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
 		    "GRABBED %u MB (%u). Memory used %u, now allowed %u MB, request size %u, unused pool %u",
 		    memNeededMB, 0,
                     memoryUsed_, 
-		    memoryQuotaMB_, reqSize,GetCliGlobals()->unusedMemoryQuota() );
+		    memoryQuotaMB_, reqSize,stmtGlobals_->unusedMemoryQuota() );
 	// log an EMS event and continue
 	SQLMXLoggingArea::logExecRtInfo(NULL, 0, msg, explainNodeId_);
       }
@@ -714,6 +714,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
     }
   }
 
+/*
   // Check if we are running out of address space or swap space.
   // getUsage() would return TRUE if and only if memory gets crowded (i.e. we 
   // failed at least once to allocate a desired flat segment size, and the 
@@ -736,7 +737,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
       return FALSE;
     }
   }
-
+*/
 
   if (memMonitor_ && memoryUsed_ >= minMemBeforePressureCheck_ ) {
 
@@ -863,7 +864,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
       // do the following check if HJ still in phase 1.
       if ( checkCompilerHints )
 	{
-	  Float32 E = hashMemEstInMbPerCpu_ ; //expected memory consumption
+	  Float32 E = hashMemEstInKBPerNode_ / 1024 ; //expected memory consumption
 	  
 #ifdef FUTURE_WORK
 	  //check extreme case first. Expected cannot be more than
@@ -898,7 +899,7 @@ NABoolean ClusterDB::enoughMemory(ULng32 reqSize, NABoolean checkCompilerHints)
 	  if ( C > E ) // consumed memory exceeded the expected -- adjust E
 	    {
 	      E = C * ( 1 + estimateErrorPenalty ) ;
-	      hashMemEstInMbPerCpu_ = E ;
+	      hashMemEstInKBPerNode_ = E * 1024;
 	    }
 	  
 	  Float32 m = E - C;  //delta memory required to avoid overflow.

@@ -1403,7 +1403,7 @@ NABoolean ex_hashj_tcb::allocateClusters() {
 
   ULng32 minB4Chk = hashJoinTdb().getBmoMinMemBeforePressureCheck() * ONE_MEG;
   // estimate memory needed in phase 1 (not incl. hash tables)
-  Float32 memEstInMbPerCpu = (Float32)(innerTableSize / ONE_MEG) ;
+  Float32 memEstInKBPerNode = (Float32)(innerTableSize / 1024) ;
 
   // Only set cross product optimizations on when there is no
   // right search expression 
@@ -1450,7 +1450,7 @@ NABoolean ex_hashj_tcb::allocateClusters() {
 				    hashJoinTdb().getMemoryContingencyMB(),
 				    // to estimate the error penalty
 				    hashJoinTdb().hjGrowthPercent(),
-				    memEstInMbPerCpu, // estimate mem needed
+				    memEstInKBPerNode, // estimate mem needed
 
 				    0,    // Hash-Table not resizable
 				    getStatsEntry()

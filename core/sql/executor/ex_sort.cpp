@@ -178,7 +178,8 @@ void ExSortTcb::setupPoolBuffers(ex_queue_entry *pentry_down)
   //sortPool_.
   if((pentry_down->downState.request == ex_queue::GET_N) &&
      (pentry_down->downState.requestValue > 0) &&
-     (sortTdb().topNSortEnabled()))
+     (sortTdb().topNSortEnabled()) &&
+     (pentry_down->downState.requestValue <= sortTdb().getTopNThreshold()))
   {
     topNSortPool_ = new(sortSpace_)
                     ExSimpleSQLBuffer(pentry_down->downState.requestValue + 1,
@@ -392,7 +393,7 @@ ExSortTcb::ExSortTcb(const ExSortTdb & sort_tdb,
   sortCfg_->setScratchIOVectorSize(st->sortOptions_->scratchIOVectorSize());
   sortCfg_->setBmoCitizenshipFactor(st->getBmoCitizenshipFactor());
   sortCfg_->setMemoryContingencyMB(st->getMemoryContingencyMB());
-  sortCfg_->setSortMemEstInMbPerCpu(st->getSortMemEstInMbPerCpu());
+  sortCfg_->setSortMemEstInKBPerNode(st->getSortMemEstInKBPerNode());
   sortCfg_->setEstimateErrorPenalty(st->sortGrowthPercent());
   sortCfg_->setBmoMaxMemThresholdMB(st->sortOptions_->bmoMaxMemThresholdMB());
   sortCfg_->setIntermediateScratchCleanup(st->sortOptions_->intermediateScratchCleanup());

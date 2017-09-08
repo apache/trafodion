@@ -1036,16 +1036,14 @@ short Exchange::codeGenForESP(Generator * generator)
 
     if(!generator->explainDisabled())
     {
-      Lng32 sbMemEstInKBPerCPU = (Lng32) ((totalMemoryST + totalMemorySB) / 1024) ;
-      sbMemEstInKBPerCPU = sbMemEstInKBPerCPU/
+      Lng32 sbMemEstInKBPerNode = (Lng32) ((totalMemoryST + totalMemorySB) / 1024) ;
+      sbMemEstInKBPerNode = sbMemEstInKBPerNode/
         (MAXOF(generator->compilerStatsInfo().dop(),1));
-      generator->setOperEstimatedMemory(sbMemEstInKBPerCPU);
        
       generator->setExplainTuple(
 	  addExplainInfo(splitBottom, childExplainTuple, 0, generator));
       sendBottom->setExplainNodeId(generator->getExplainNodeId());
 
-      generator->setOperEstimatedMemory(0);
     }
     
     // ExplainTuple *sendBotExplain = 
@@ -1393,11 +1391,6 @@ CostScalar Exchange::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *nu
     // split top. 
   }
 
-
-  const PhysicalProperty* const phyProp = getPhysicalProperty();
-  if (phyProp != NULL) {
-     memoryRequired = numTopEsps * memoryRequired;
-  }
   if (numStreams != NULL)
      *numStreams = numTopEsps;
   if ( perNode == TRUE ) 

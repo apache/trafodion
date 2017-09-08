@@ -2157,7 +2157,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       // total per node
       double m = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) * (1024*1024);
 
-      generator->setBMOsMemoryLimitPerCPU(m);
+      generator->setBMOsMemoryLimitPerNode(m);
 
     }
 
@@ -6660,6 +6660,7 @@ RelExpr * Sort::preCodeGen(Generator * generator,
 				       numUnblockedHalloweenScansBefore);
 	}
     }
+  topNRows_ = generator->getTopNRows();
   return this;
 
 } // Sort::preCodeGen()
@@ -6729,7 +6730,7 @@ RelExpr *ProbeCache::preCodeGen(Generator * generator,
   */
 
   if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0)
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
 
   markAsPreCodeGenned();
   return this;
@@ -7234,7 +7235,7 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
     } // isEspExchange() && !eliminateThisExchange
   
   if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0)
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
   
   return result;
   
@@ -10817,6 +10818,12 @@ RelExpr * FirstN::preCodeGen(Generator * generator,
 {
   if (nodeIsPreCodeGenned())
     return this;
+
+
+  if (getFirstNRows() > 0)
+     generator->setTopNRows(getFirstNRows());
+  else
+     generator->setTopNRows(ActiveSchemaDB()->getDefaults().getAsULong(GEN_SORT_TOPN_THRESHOLD));
 
   if (! RelExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;

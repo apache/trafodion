@@ -107,6 +107,7 @@ public:
 	      CollHeap *oHeap = CmpCommon::statementHeap()) :
        RelExpr(REL_SORT,child,NULL,oHeap),
        sortNRows_(FALSE), 
+       topNRows_(0),
        collectNFErrors_(FALSE),
        forcedHalloweenProtection_(FALSE),
        checkAccessToSelfRefTable_(FALSE)
@@ -117,6 +118,7 @@ public:
        RelExpr(REL_SORT,child, NULL, oHeap),
        sortKey_(sortKey),
        sortNRows_(FALSE), 
+       topNRows_(0),
        collectNFErrors_(FALSE),
        forcedHalloweenProtection_(FALSE),
        checkAccessToSelfRefTable_(FALSE)
@@ -126,6 +128,7 @@ public:
        RelExpr(REL_SORT,child),
        arrangedCols_(arrangedCols),
        sortNRows_(FALSE), 
+       topNRows_(0),
     forcedHalloweenProtection_(FALSE),
     checkAccessToSelfRefTable_(FALSE),
     collectNFErrors_(FALSE)
@@ -233,6 +236,8 @@ protected:
   ValueIdList PartialSortKeyFromChild_;
 
   NABoolean collectNFErrors_;
+
+  ULng32 topNRows_;
 
   short generateTdb(Generator * generator,
                     ComTdb * child_tdb,

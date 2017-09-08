@@ -634,6 +634,7 @@ public:
   ex_cri_desc *getCriDescUp() { return criDescUp_; };
   void setCriDescUp(ex_cri_desc *cri) { criDescUp_ = cri; };
 
+  virtual Float32 getEstimatedMemoryUsage() { return 0; }
   enum Type
   {
     TABLE_INFO,

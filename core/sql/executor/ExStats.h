@@ -1061,6 +1061,7 @@ private:
   Int16 scratchOverflowMode_;   // 0 - disk 1 - SSD
   Int32 topN_;                 // TOPN value
   Int64 interimRowCount_;
+  Float32 estMemoryUsage_;
   Int16 phase_;
 };
 
