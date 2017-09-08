@@ -189,6 +189,23 @@ Lng32 HSHbaseTableDef::getColumnNames()
     return retcode;
   }
 
+// local function used by the X::DescribeColumnNames functions
+NAString getAnsiName(NAString & columnName)
+  {
+    NAString ansiName = ToAnsiIdentifier(columnName);
+    NAString dblQuote="\"";
+    NAString result;
+
+    // Surround ANSI name with double quotes, if not already delimited.
+    if (ansiName.data()[0] == '"')
+      result = ansiName;
+    else
+      result = dblQuote+ansiName+dblQuote;
+
+    return result;
+  }
+
+
 Lng32 HSSqTableDef::DescribeColumnNames()
   {
     Lng32 entry, len;
@@ -292,7 +309,7 @@ Lng32 HSSqTableDef::DescribeColumnNames()
         HSHandleError(retcode_);
         colName[len] = '\0';
         *colInfo_[i].colname = &*colName;
-        *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
+        *colInfo_[i].externalColumnName = getAnsiName(*colInfo_[i].colname);
                                                   /*== GET COLUMN DATATYPE ==*/
         retcode_ = SQL_EXEC_GetDescItem(outputDesc, entry,
                                         SQLDESC_TYPE_FS,
@@ -1033,7 +1050,7 @@ Lng32 HSHiveTableDef::DescribeColumnNames()
     {
       *(colInfo_[i].colname) = hiveColDesc->name_;
       colInfo_[i].colname->toUpper();
-      *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
+      *colInfo_[i].externalColumnName = getAnsiName(*colInfo_[i].colname);
 
       NAType* natype = getSQColTypeForHive(hiveColDesc->type_, STMTHEAP);
       colInfo_[i].datatype = natype->getFSDatatype();
@@ -1328,7 +1345,7 @@ Lng32 HSHbaseTableDef::DescribeColumnNames()
     {
       colInfo_[i].colnum = i;  // position of col in table
       *(colInfo_[i].colname) = colArr[i]->getColName();
-      *colInfo_[i].externalColumnName = ToAnsiIdentifier(*colInfo_[i].colname);
+      *colInfo_[i].externalColumnName = getAnsiName(*colInfo_[i].colname);
       natype = colArr[i]->getType();
       colInfo_[i].datatype = natype->getFSDatatype();
       colInfo_[i].nullflag = natype->supportsSQLnullLogical();
