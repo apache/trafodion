@@ -2078,12 +2078,6 @@ LC   RC   OP   OPERATOR              OPT       DESCRIPTION           CARD
 
 --- SQL operation complete.
 >>
-PLAN_ID .................. 212356313965892034
-  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
-  ObjectUIDs ............. 8107166460522328383, 8107166460522328813
-PLAN_ID .................. 212356313967422361
-  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
-  ObjectUIDs ............. 8107166460522329555, 8107166460522329995
 >>
 >>
 >>
