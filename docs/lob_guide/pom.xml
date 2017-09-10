@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+ <!-- 
+* @@@ START COPYRIGHT @@@                                                       
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+-->
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.apache.trafodion</groupId>
+  <artifactId>sql-reference-manual</artifactId>
+  <version>${env.TRAFODION_VER}</version>
+  <packaging>pom</packaging>
+  <name>Trafodion SQL Reference Manual</name>
+  <description>This manual describes reference information about the syntax of SQL statements, 
+               functions, and other SQL language elements supported by the Trafodion project’s 
+               database software.
+  </description>
+  <url>http://trafodion.incubator.apache.org</url>
+  <inceptionYear>2015</inceptionYear>
+  <parent>
+    <groupId>org.apache.trafodion</groupId>
+    <artifactId>trafodion</artifactId>
+    <relativePath>../../pom.xml</relativePath>
+    <version>1.3.0</version>
+  </parent>
+
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+  </licenses>
+
+  <organization>
+    <name>Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
+  </organization>
+
+  <issueManagement>
+    <system>JIRA</system>
+    <url>http://issues.apache.org/jira/browse/TRAFODION</url>
+  </issueManagement>
+
+  <scm>
+    <connection>scm:git:http://git-wip-us.apache.org/repos/asf/incubator-trafodion.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-trafodion.git</developerConnection>
+    <url>https://git-wip-us.apache.org/repos/asf?p=incubator-trafodion.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://jenkins.esgyn.com</url>
+  </ciManagement>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <asciidoctor.maven.plugin.version>1.5.2.1</asciidoctor.maven.plugin.version>
+    <asciidoctorj.pdf.version>1.5.0-alpha.11</asciidoctorj.pdf.version>
+    <asciidoctorj.version>1.5.4</asciidoctorj.version>
+    <rubygems.prawn.version>2.0.2</rubygems.prawn.version>
+    <jruby.version>9.0.4.0</jruby.version>
+    <dependency.locations.enabled>false</dependency.locations.enabled>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>rubygems-proxy-releases</id>
+      <name>RubyGems.org Proxy (Releases)</name>
+      <url>http://rubygems-proxy.torquebox.org/releases</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+  
+  <dependencies>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>prawn</artifactId>
+      <version>${rubygems.prawn.version}</version>
+      <type>gem</type>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-complete</artifactId>
+      <version>${jruby.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.asciidoctor</groupId>
+      <artifactId>asciidoctorj</artifactId>
+      <version>${asciidoctorj.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>de.saumya.mojo</groupId>
+        <artifactId>gem-maven-plugin</artifactId>
+        <version>1.0.10</version>
+        <configuration>
+          <!-- align JRuby version with AsciidoctorJ to avoid redundant downloading -->
+          <jrubyVersion>${jruby.version}</jrubyVersion>
+          <gemHome>${project.build.directory}/gems</gemHome>
+          <gemPath>${project.build.directory}/gems</gemPath>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>initialize</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.7</version>
+        <configuration>
+          <encoding>UTF-8</encoding>
+          <attributes>
+            <generateReports>false</generateReports>
+          </attributes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.asciidoctor</groupId>
+        <artifactId>asciidoctor-maven-plugin</artifactId>
+        <version>${asciidoctor.maven.plugin.version}</version> 
+        <dependencies>
+          <dependency>
+            <groupId>org.asciidoctor</groupId>
+            <artifactId>asciidoctorj-pdf</artifactId>
+            <version>${asciidoctorj.pdf.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.asciidoctor</groupId>
+            <artifactId>asciidoctorj</artifactId>
+            <version>${asciidoctorj.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <sourceDirectory>${basedir}/src</sourceDirectory>
+          <gemPath>${project.build.directory}/gems-provided</gemPath>
+        </configuration>
+        <executions>
+          <execution>
+            <id>generate-html-doc</id> 
+            <goals>
+              <goal>process-asciidoc</goal> 
+            </goals>
+            <phase>site</phase>
+            <configuration>
+              <doctype>book</doctype>
+              <backend>html5</backend>
+              <sourceHighlighter>coderay</sourceHighlighter>
+              <outputDirectory>${basedir}/target/site</outputDirectory>
+              <requires>
+                <require>${basedir}/../shared/google-analytics-postprocessor.rb</require>
+              </requires>
+              <attributes>
+                <!-- Location of centralized stylesheet -->
+                <stylesheet>${basedir}/../shared/trafodion-manuals.css</stylesheet>
+                <project-version>${env.TRAFODION_VER}</project-version>
+                <project-name>Trafodion</project-name>
+                <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
+                <project-support>user@trafodion.incubator.apache.org</project-support>
+                <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
+                <build-date>${maven.build.timestamp}</build-date>
+                <google-analytics-account>UA-72491210-1</google-analytics-account>
+              </attributes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-pdf-doc</id>
+            <phase>site</phase>
+            <goals>
+              <goal>process-asciidoc</goal>
+            </goals>
+            <configuration>
+              <doctype>book</doctype>
+              <backend>pdf</backend>
+              <sourceHighlighter>coderay</sourceHighlighter>
+              <outputDirectory>${basedir}/target</outputDirectory>
+              <attributes>
+                <project-version>${env.TRAFODION_VER}</project-version>
+                <project-name>Trafodion</project-name>
+                <project-logo>${basedir}/../shared/trafodion-logo.jpg</project-logo>
+                <project-support>user@trafodion.incubator.apache.org</project-support>
+                <docs-url>http://trafodion.incubator.apache.org/docs</docs-url>
+                <build-date>${maven.build.timestamp}</build-date>
+                <pdf-stylesdir>${basedir}/../shared</pdf-stylesdir>
+                <pdf-style>trafodion</pdf-style>
+                <icons>font</icons>
+                <pagenums/>
+                <toc/>
+                <idprefix/>
+                <idseparator>-</idseparator>
+              </attributes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin> 
+      <!-- Copy files to the web-site end destinations. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
+        <inherited>false</inherited>
+        <executions>
+          <execution>
+            <id>populate-release-directories</id>
+            <phase>post-site</phase>
+            <configuration>
+              <target name="Populate Release Directories">
+                <!-- The website uses the following organization for the docs/target/docs directory:
+                  - To ensure a known location, the base directory contains the LATEST version of the web book and the PDF files.
+                  - The know location is docs/target/docs/<document>
+                  - target/docs/<version>/<document> contains version-specific renderings of the documents.
+                  - target/docs/<version>/<document> contains the PDF version and the web book. The web book is named index.html
+                --> 
+                <!-- Copy the PDF file to its target directories -->
+                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/sql_reference/Trafodion_SQL_Reference_Manual.pdf" />
+                <copy file="${basedir}/target/index.pdf" tofile="${basedir}/../target/docs/${project.version}/sql_reference/Trafodion_SQL_Reference_Manual.pdf" />
+                <!-- Copy the Web Book files to their target directories -->
+                <copy todir="${basedir}/../target/docs/sql_reference">
+                  <fileset dir="${basedir}/target/site">
+                    <include name="**/*.*"/>  <!--All sub-directories, too-->
+                  </fileset>
+                </copy>
+                <copy todir="${basedir}/../target/docs/${project.version}/sql_reference">
+                  <fileset dir="${basedir}/target/site">
+                    <include name="**/*.*"/>  <!--All sub-directories, too-->
+                  </fileset>
+                </copy>
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <!-- Included because this is required. No reports are generated. -->
+  <reporting>
+    <excludeDefaults>true</excludeDefaults>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>2.8</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+    </plugins>
+  </reporting>
+
+  <distributionManagement>
+    <site>
+      <id>trafodion.incubator.apache.org</id>
+      <name>Trafodion Website at incubator.apache.org</name>
+      <!-- On why this is the tmp dir and not trafodion.incubator.apache.org, see
+      https://issues.apache.org/jira/browse/HBASE-7593?focusedCommentId=13555866&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-13555866
+      -->
+      <url>file:///tmp</url>
+    </site>
+  </distributionManagement>
+</project>

@@ -1,0 +1,152 @@
+////
+/**
+* @@@ START COPYRIGHT @@@
+*
+* Licensed to the Apache Software Foundation (ASF) under one
+* or more contributor license agreements.  See the NOTICE file
+* distributed with this work for additional information
+* regarding copyright ownership.  The ASF licenses this file
+* to you under the Apache License, Version 2.0 (the
+* "License"); you may not use this file except in compliance
+* with the License.  You may obtain a copy of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*
+* @@@ END COPYRIGHT @@@
+*/
+////
+
+[#introduction]
+= Introduction
+
+[#what is lOB]
+== What is LOB
+
+LOB (Large Object), a set of large object data types used to store large volumes of data, provides random and piece-wise access to the data. 
+
+Database support for LOB is not universal.
+
+[#lob data types]
+== LOB Data Types
+
+The following are the data types supported by Trafodion. +
+
+
+[caption="Table 1-1 "]
+.Descriptions for BLOB and CLOB
+[cols="30%,70%",options="header"]
+|===
+| *Data Type*         | *Desciprtion*
+| BLOB                | Binary Large Object. + 
+
+Holds large blocks of unstructured data in binary format. +
+
+BLOB is ideal for storing and handling unstructured data, such as images, audio, video and other multimedia objects.
+| CLOB                | Character Large Object. +
+
+Stores unusually large amounts of string data in character set format. +
+
+CLOB is ideal for storing and processing semi-structured data, such as large document or string.
+|===
+
+[#lob storage]
+== LOB Storage
+
+The basic design idea is to allow a database row to have multiple LOB columns and a table to have multiple such rows. The design takes a combination approach of rows store and column store. 
+
+When a SQL table with LOB column is created, there are several dependent objects that are created to hold metadata information on the LOB as well as the data.
+
+The LOB data itself is stored in HDFS while the Trafodion table contains a unique LOB handle for each row/column. The LOB handle provides the identifier that is used to query the LOB metadata tables to find the location of the LOB data files.
+
+The naming conventions for the LOB tables are as follows: 
+[caption="Table 1-2 "]
+.Naming Conventions for LOB Tables
+[cols="2*",options="header"]
+|===
+2+|*Naming Conventions*
+| SQL Table                | TLOB 
+| LOB MD table +
+(one per SQL table containing LOB columns)
+                           | LOBMD_{object UID}
+| LOB Descriptor Handle Table +
+(one per LOB column)
+                           | LOBDescHandle_{object UID}_{LOB number}
+| LOB Descriptor Chunks Table +
+(one per LOB column)
+                           | LOBDescChunks_{object UID}_{LOB number}
+| LOB Data Table + 
+(in HDFS one per LOB column)
+                           | LOBP_{object UID}_{LOB number}
+|===
+
+[#lob handle]
+== LOB Handle
+
+The LOB handle is used to describe a LOB value. A SQL table that contains a LOB column will contain this handle structure in each row for each LOB value inserted.
+
+The actual LOB data will be stored in unstructured HDFS files as column store whereas the LOB handle—that describes the location, offset information, descriptor information and so on can be thought of as a unique identifier to the lob data, is stored in the database row of the table as a traditional row store. 
+
+The handle can be thought of as a file locator as is more commonly referred to in LOB related terminology. 
+
+[#external structure]
+=== External Structure
+
+The following is an external structure that is stored in the row of a SQL table:
+
+LOBH00000002000100047335557604604880171074381106028370118212279894381354363017"TRAFODION"."SCH"
+
+[#lob restrictions]
+== LOB Restrictions
+
+* LOB columns cannot appear in FROM clauses as join predicates.
+* LOB columns cannot appear in STORE BY, ORDER BY or GROUP BY clauses.
+* LOB columns cannot appear in WHERE clauses as predicates other than LIKE (meaning that no comparison is allowed).
+* LOB columns cannot appear in SELECT clauses as aggregate function arguments.
+* LOB columns cannot appear in SELECT DISTINCT clauses.
+* LOB columns cannot be used as primary keys.
+* LOB columns cannot be used in CREATE INDEX statements.
+* LOB columns cannot be used in statistics update statements.
+* The file that contains data to insert from or to extract to need to be on platform linux or HDFS files.
+
+[#lob related sql statements and functions]
+== LOB Related SQL Statements and Functions
+
+[#supported sql statements]
+=== Supported SQL Statements
+
+The following SQL statements are supported:
+
+* CREATE TABLE
+* SELECT
+* INSERT
+* UPDATE
+* UPDATE with APPEND option 
+* EXTRACT
+
+[#unsupported sql statements]
+=== Unsupported SQL Statements
+
+The following SQL statements are not supported:
+
+* ALTER TABLE
+* MERGE
+
+[#supported lob conversion sql functions]
+=== Supported LOB Conversion SQL Functions
+
+The following LOB conversion SQL functions are supported:
+
+* LOBTOSTRING
+* LOBTOFILE
+* LOBTOBUFFER
+* STRINGTOLOB
+* FILETOLOB
+* BUFFERTOLOB
+* EXTERNALTOLOB
