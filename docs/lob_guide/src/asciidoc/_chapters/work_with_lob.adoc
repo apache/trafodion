@@ -265,3 +265,241 @@ EXECUTE S USING 'fgfgfhfhfhfhhfhfhfhjfkkfkffllflflfll';
 ```
 INSERT INTO t130lob2 VALUES (1, empty_blob());
 ```
+
+[#insert into a sql table containing lob columns using select clause]
+== Insert into a SQL Table Containing LOB Columns Using Select Clause
+
+[#syntax]
+=== Syntax
+
+```
+INSERT INTO target-table [(target-col-list-expr)] SELECT [source-col-list-expr] FROM source-table
+```
+
+```
+target-col-list-expr is: 
+target-colname[, target-colname]...
+
+target-colname is: 
+trafodion lob column name
+
+source-col-list-expr is: 
+source-colname[, source-colname]...
+
+source-colname is: 
+hive varchar column name          | 
+trafodion varchar column name     | 
+trafodion char column name        |
+trafodion lob column name
+
+source-table is: 
+hive table                        |
+trafodion table 
+```
+
+[#semantics]
+=== semantics
+
+* `_target-col-list-expr_`
++
+Names a single column or multiple columns enclosed in parentheses in the target table in which to insert values. 
+
++
+The data type of each target column must be compatible with the data type of its corresponding source value. 
+
++
+Within the list, each target column must have the same position as its associated source value.
+
+** `_target-colname_` 
++
+is a SQL identifier that specifies a target column name.
+
+* `_source-col-list-expr_`
++
+Names a single column or multiple columns enclosed in parentheses in the source table from which to get values. 
+
+** `_source-colname_` 
++
+is a SQL identifier that specifies a source column name.
+
+[#considerations]
+=== Considerations
+
+When inserting from a source Trafodion table column into a target table, the source column subtype of the LOB column needs to match the target table column. That is, you cannot insert from an external LOB column into a regular LOB column in the target. They both need to be the same type. 
+
+The source for the *select clause* can be any of the following: 
+
+* A source hive table column that is a hive varchar column
+* A source table column that is a Trafodion varchar, char and LOB column
+* A source table column that is also a LOB datatype.
+
+[#examples]
+=== Examples 
+* This example inserts the first 10 rows of d_date_sk and d_date_id selected from the source hive table hive.hive.date_dim into the target table t130lob2.
++
+```
+INSERT INTO t130lob2 SELECT [first 10] d_date_sk,d_date_id FROM hive.hive.date_dim;
+```
+
+* This example inserts the c1 and c2 selected from the source Trafodion table t130var into the c1 and c2 of the target table t130lob2.
++
+```
+INSERT INTO t130lob2(c1,c2) SELECT c1,c2 FROM t130var;
+```
+
+* This example inserts the c1 and c2 selected from the source Trafodion table t130char into the c1 and c2 of the target table t130lob2.
++
+```
+INSERT INTO t130lob2(c1,c2) SELECT c1,c2 FROM t130char;
+```
+
+* This example inserts the c1, c2 and c3 selected from the source Trafodion table t130lob2 into the target table t130lob3, and then shows the result.
++
+```
+INSERT INTO t130lob3 SELECT c1,c2,c3 FROM t130lob2;
+SELECT c1,lobtostring(c2,100),lobtostring(c3,100) FROM t130lob3;
+```
+
+[#update a sql table containing lob columns]
+== Update a SQL Table Containing LOB Columns
+
+The source for updating a LOB can be divided into 2 groups:
+
+* Update using parameters/functions
+* Update using LOB handle
+
+[#update using parameters/functions]
+=== Update Using Parameters/Functions
+
+The following parameters/functions can be used to update.
+
+* A parameter.
+* `EMPTY_BLOB` or `EMPTY_CLOB`.
+* An in-memory lob which is a simple string data.  
++
+To insert this string, a literal needs to be provided.
+* An on-platform file (linux/hdfs file) containing text or binary data.  
+* A user buffer of a specified length allocated in user space.
+* An external LOB file in HDFS.
+
+[#syntax]
+==== Syntax 
+
+```
+UPDATE table-name {set-clause-type1 | set-clause-type2} 
+```
+
+```
+set-clause-type1 is: 
+SET set-clause[, set-clause ].. 
+
+set-clause is: 	
+lob_column-name = {lob_query-expr} 
+
+lob_query-expr is:
+NULL | ?                                                                                |
+EMPTY_BLOB()                                                                            |
+EMPTY_CLOB()                                                                            |                                                
+STRINGTOLOB('string literal expression'[, APPEND])                                      |
+FILETOLOB('lob source file name'[, APPEND])                                             |
+BUFFERTOLOB(LOCATION lob source buffer address, LENGTH lob length value[, APPEND])      |
+EXTERNALTOLOB('external lob source file name'[, APPEND])
+
+lob source file name is:
+hdfs:///{local hdfs file name}      |  
+{local linux file name}             |
+{file:///linux file name} 
+
+external lob source file name is: 
+hdfs:///{local hdfs file name}
+```
+
+[#semantics]
+==== Semantics
+
+For more information, see Semantics in <<insert into a sql table containing lob columns,Insert into a SQL Table Containing LOB Columns>>.
+
+[#examples]
+==== Examples
+
+* In the table tlob1where c1 is 3, updates (appends) the value of c2 to lob_update.txt.
++
+```
+UPDATE tlob1 SET c2=filetolob('lob_update.txt', append) WHERE c1 = 3;
+```
+
+* In the table tlob1, updates (overwrites) the c2 to anoush.jpg.
++
+```
+UPDATE tlob1 SET c2=filetolob('anoush.jpg');
+```
+
+* In the table tlob1 where c1 is 3, updates (appends) the c2 to lob_update.txt stored in hdfs:///lobs/.
++
+```
+UPDATE tlob1 SET c2=filetolob('hdfs:///lobs/lob_update.txt', append) WHERE c1 = 3;
+```
+
+* In the table tlob1, updates (overwrites) the c2 to the buffer location at 1254674 with 4000-byte length.
++
+```
+UPDATE tlob1 SET c2=buffertolob(LOCATION 12546474, SIZE 4000);
+```
+
+* In the table tlob130ext where c1 is 2, updates (overwrites) the c4 to lob_input_d1.txt stored in hdfs:///lobs/.
++
+```
+UPDATE tlob130ext SET c4=externaltolob('hdfs:///lobs/lob_input_d1.txt') WHERE c1=2;
+```
+
+* In the table t130lob2 where c1 is 1, updates (overwrites) the c2 to xyxyxyxyxyxyx.
++
+```
+PREPARE S FROM UPDATE t130lob2 SET c2=? WHERE c1 =1;
+EXECUTE S USING 'xyxyxyxyxyxyx';
+```
+
+[# update using lob handle]
+=== Update Using Lob Handle
+
+A LOB handle is specified to the update (similar to extract). 
+
+[#syntax]
+==== Syntax 
+
+```
+UPDATE LOB (LOB 'lob handle', lob update expression)
+```
+
+```
+lob update expression is: 
+LOCATION lob source buffer address, LENGTH lob length value [, APPEND])      |        
+EMPTY_BLOB()                                                                 | 
+EMPTY_CLOB()
+```
+
+For more information about examples, see http://trafodion.incubator.apache.org/docs/jdbct4ref_guide/index.html[*Trafodion JDBC Type 4 Programmer’s Reference Guide*].
+
+[#considerations]
+=== Considerations
+
+* The keyword `'APPEND'` can be used to append to lob data that may already exist in a LOB column. If it is not specified, the data is overwritten.
+
+* When a LOB column is updated or overwritten, a new section is written into the LOB data file. The old section remains in HDFS but won’t have any pointer or reference to it.
+
+* When a LOB column is appended, a new chunk is inserted into HDFS and a new row is added in the LOB Descriptor Chunks table to keep track of this new chunk, belonging to the existing row/LOB data. 
+
++
+So a LOB column that contains data that has been appended several times can contain multiple descriptor rows in the Descriptor Chunks table to describe where each chunk belonging to this LOB begins/ends.
+
+* APPEND cannot be used on function `EXTERNALTOLOB`.
+
+* When an external LOB is updated outside of Trafodion, an update needs to be done to update the descriptor files in Trafodion. 
++
+For example, if the external file changes in size, the descriptor file needs to be updated to reflect that. Since this is outside the control of Trafodion, the user needs to do this. If not, when extracting data, only partial data may be returned. 
+
+* If a column is declared with the `STORAGE 'External'` attribute, the `STRINGTOLOB` or `FILETOLOB` functions cannot be used to insert data into that column. 
++
+Similarly, if a column is declared without the `STORAGE 'External'` attribute, the `EXTERNALTOLOB` function cannot be used to insert/update data into that column.
++
+That is, once the storage for a LOB column is declared at CREATE time, the attribute is set and cannot be modified. 
