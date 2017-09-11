@@ -2929,7 +2929,8 @@ short CmpSeabaseDDL::createSeabaseTable2(
        
       if (rc < 0)
         {
-          //sss TBD need to retrive the cli diags here.
+          // retrieve the cli diags here.
+          CmpCommon::diags()->mergeAfter(*(GetCliGlobals()->currContext()->getDiagsArea()));
           *CmpCommon::diags() << DgSqlCode(-CAT_CREATE_OBJECT_ERROR)
                               << DgTableName(extTableName);
           deallocEHI(ehi); 	   
@@ -4403,6 +4404,8 @@ short CmpSeabaseDDL::dropSeabaseTable2(
                                     lobLocList,NULL,lobHdfsServer, lobHdfsPort,0,lobTrace);
       if (rc < 0)
 	{
+          // retrieve the cli diags here.
+          CmpCommon::diags()->mergeAfter( *(GetCliGlobals()->currContext()->getDiagsArea()));
 	  *CmpCommon::diags() << DgSqlCode(-CAT_UNABLE_TO_DROP_OBJECT)
 			      << DgTableName(extTableName);
 	  deallocEHI(ehi); 
