@@ -10519,7 +10519,7 @@ Lng32 SQLCLI_LOB_GC_Interface
                
   if (rc )
     {
-      cliRC = 9999; // Warning 
+      cliRC = 1; // Warning 
       ComDiagsArea * da = &diags;
       lobDebugInfo("compactLobDataFile Failed",0,__LINE__,lobTrace);
 
@@ -10667,7 +10667,7 @@ Lng32 SQLCLI_LOBddlInterface
 	    
 	    if (rc)
 	      {
-		cliRC = -9999;
+		cliRC = 0;
 		ComDiagsArea * da = &diags;
 		ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
@@ -10734,22 +10734,7 @@ Lng32 SQLCLI_LOBddlInterface
 	
 	// drop descriptor table
 	for (Lng32 i = 0; i < numLOBs; i++)
-	  {
-	    Lng32 rc = ExpLOBoper::dropLOB
-	      (NULL, currContext.exHeap(),(void *)&currContext,
-	       lobLocList[i],hdfsPort,hdfsServer,
-	       objectUID, lobNumList[i]);
-	    
-	    if (rc)
-	      {
-		cliRC = -9999;
-		ComDiagsArea * da = &diags;
-		ExRaiseSqlError(currContext.exHeap(), &da, 
-			    (ExeErrorCode)(8442), NULL, &cliRC    , 
-			    &rc, NULL, (char*)"ExpLOBInterfaceDrop  ",
-			    getLobErrStr(rc));
-		goto error_return;
-	      }
+	  {	   
 	    
 	    // drop LOB descriptor and LOB header tables
 	    char lobHandle[LOB_HANDLE_LEN];
@@ -10782,7 +10767,28 @@ Lng32 SQLCLI_LOBddlInterface
 	      }
 	    
 	  } // for
-	
+        //If all the descriptor tables got dropped correctly, drop the hdfs 
+        //lob data files.  Note that if there is an error in the drop of the 
+        //descriptor tables above , the transaction will restore each of the 
+        //above tables . 
+        for (Lng32 i = 0; i < numLOBs; i++)
+	  {
+	    Lng32 rc = ExpLOBoper::dropLOB
+	      (NULL, currContext.exHeap(),(void *)&currContext,
+	       lobLocList[i],hdfsPort,hdfsServer,
+	       objectUID, lobNumList[i]);
+            // Ignore 'not found' error from hdfs file deletes until this is made transactional just like Hbase tables are.
+            if (rc && (rc != -LOB_DATA_FILE_DELETE_ERROR))
+	      {
+		cliRC = -1;
+		ComDiagsArea * da = &diags;
+		ExRaiseSqlError(currContext.exHeap(), &da, 
+			    (ExeErrorCode)(8442), NULL, &cliRC    , 
+			    &rc, NULL, (char*)"ExpLOBInterfaceDrop  ",
+			    getLobErrStr(rc));
+		goto error_return;
+                }
+          }//for
       }
       break;
 
@@ -10813,9 +10819,9 @@ Lng32 SQLCLI_LOBddlInterface
 	       lobLocList[i],hdfsPort, hdfsServer,
 	       objectUID, lobNumList[i]);
 	    
-	    if (rc)
+	    if (rc && rc != -LOB_DATA_FILE_DELETE_ERROR)
 	      {
-		cliRC = -9999;
+		cliRC = -1;
 		ComDiagsArea * da = &diags;
 		ExRaiseSqlError(currContext.exHeap(), &da, 
 			    (ExeErrorCode)(8442), NULL, &cliRC    , 
