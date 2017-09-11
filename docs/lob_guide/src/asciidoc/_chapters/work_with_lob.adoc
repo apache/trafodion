@@ -1,0 +1,267 @@
+[#work with lob]
+= Work with LOB
+
+[#create a sql table with lob columns]
+== Create a SQL Table with LOB Columns
+
+When creating a SQL table with LOB columns, following relevant tables and files are created as well:
+
+* One LOB MD table.
+* Two dependent descriptor tables.
+* HDFS data file (locates at /user/trafodion/lobs) for each column.
+
+[#syntax]
+== Syntax
+
+```
+CREATE TABLE table-name (lob-column-spec[, lob-column-spec]…)
+```
+
+```
+lob-column-spec is:
+column {lob type}
+
+lob type is:
+BLOB | CLOB [({numeric literal} [unit])] [STORAGE 'storage literal']
+
+unit is:
+empty | 
+K     | 
+M     | 
+G 
+```
+
+[#semantics]
+=== Semantics
+
+* `_storage literal_`
+
++
+Currently Trafodion only support `'EXTERNAL'` here. 
+
++
+External LOB object that are not managed by Trafodion.
+
+* `_empty_`
+
++
+Number of bytes specified by the numeric literal.
+
+* `_K_`
+
++
+Numeric literal value * 1024.
+
+* `_M_`
+
++
+Numeric literal value * 1024 * 1024.
+
+* `_G_`
+
++
+Numeric literal value * 1024 * 1024 * 1024.
+
+[#examples]
+=== Examples
+
+* This example creates a table tlob1 with 2 columns and primary key on the c1.
+
++
+
+```
+CREATE TABLE tlob1 (c1 INT NOT NULL, c2 BLOB, PRIMARY KEY (c1));
+```
+
+* This example creates a table tlob2 with 3 columns and primary key on the c1.
+
++
+
+```
+CREATE TABLE tlob2 (c1 INT NOT NULL, c2 BLOB, c3 CLOB, PRIMARY KEY (c1));
+```
+
+* This example creates a table tlob130txt_limit50 with 2 columns and primary key on the c1.
+
++
+
+```
+CREATE TABLE tlob130txt_limit50 (c1 INT NOT NULL, c2 CLOB(50), PRIMARY KEY (c1));
+```
+
+* This example creates a table tlob130bin_limit1K with 2 columns and primary key on the c1.
+
++
+
+```
+CREATE TABLE tlob130bin_limit1K (c1 INT NOT NULL, c2 BLOB(1 K), PRIMARY KEY (c1));
+```
+
+* This example creates a table tlob130ext with 4 columns and primary key on the c1.
+
++
+
+```
+CREATE TABLE tlob130ext (c1 INT NOT NULL, c2 BLOB, c3 CLOB, c4 BLOB STORAGE 'EXTERNAL', PRIMARY KEY (c1));
+```
+
+[#hdfs location of lob data]
+=== HDFS Location of LOB Data
+
+When a LOB table is created, the underlying LOB data needs to be stored in HDFS.It is in the /user/trafodion/lobs by default. 
+
+All columns of a table that are declared as LOB types will have all their data in one file derived from the Object UID and the LOB number of that column which gets assigned during creation.
+
+The following is a LOB file with 2 columns you will see 2 files in HDFS:
+
+/user/trafodion/lobs /LOBP_03683514167332904796_0001
+
+/user/trafodion/lobs/LOBP_03683514167332904796_0002
+
+As rows are added to this column, the LOB data for each row gets appended to the corresponding column’s LOB data file. 
+
+[#insert into a sql table containing lob columns]
+== Insert into a SQL Table Containing LOB Columns
+
+[#syntax]
+=== Syntax
+
+```
+INSERT INTO table-name [(target-col-list)] insert-source
+```
+
+```
+target-col-list is: 
+colname[, colname]... 
+
+insert-source is: 
+VALUES(lob_query-expr[, lob_query-expr])
+
+lob_query-expr is: 
+NULL | ?                                                                     |
+EMPTY_BLOB()                                                                 |
+EMPTY_CLOB()                                                                 |                                     
+STRINGTOLOB('string literal expression')                                     |
+FILETOLOB('lob source file name')                                            |
+BUFFERTOLOB(LOCATION lob source buffer address, LENGTH lob length value)     |
+EXTERNALTOLOB('external lob source file name')              
+
+lob source file name is:
+hdfs:///{local hdfs file name}     |  
+{local linux file name}            |
+{file:///linux file name} 
+
+external lob source file name is: 
+hdfs:///{local hdfs file name}
+``` 
+[#semantics]
+=== Semantics
+
+* `_EMPTY_BLOB(), EMPTY_CLOB()_`
++
+Returns an empty LOB handle.     
+
+* `_STRINGTOLOB_`
++
+Converts a simple string literal into LOB format. 
+
+** `_string literal expression_`
++
+is a series of characters enclosed in single quotes.
+
+* `_FILETOLOB_`
++
+Converts data from a local linux/hdfs file into LOB format.
+
+* `_BUFFERTOLOB_`
++
+Takes an address and a size of an input buffer, and converts the data pointed to by that buffer into LOB. 
+
+** `_lob source buffer address_`
++
+The long value of the user buffer address in int64.
+
+** `_lob length value_`
++
+The length of the user specified lob buffer in int64.
+
+[#considerations]
+=== Considerations
+
+The source for inserting into a LOB can be any of the following:
+
+* A parameter.
++
+An unnamed parameter can be used to prepare a statement and then during an execution, either a function or a simple string parameter can be passed in which will be converted to LOB data.
+
+* `EMPTY_BLOB()` or `EMPTY_CLOB()` 
+
+** If `EMPTY_BLOB()` or `EMPTY_CLOB()` is specified, then a dummy lob handle is created. 
+
+*** No data is associated with the empty LOBs yet, but these dummy LOB handles can later be used to populate with new LOB data. If the LOB had data previously associated with it, it will be erased.
+
+*** The dummy LOB handle will get the same datatype as the underlying column.
++
+For example, if the LOB column was defined as `'EXTERNAL'` during table creation, then the LOB column gets that type. If it’s not defined, then it is considered as a regular LOB. 
+
+** An empty LOB is distinct from a LOB containing a string of length zero or a null LOB.
+
+* An in-memory LOB which is a simple string data. 
++
+To insert a string literal, you need to provide `STRINGTOLOB('string literal expression')`.
+
+* An on-platform file (linux/hdfs file) containing binary or text data.
++
+To insert an on-platform file, you need to provide `FILETOLOB('lob source file name')`.   
+
+* A user buffer of a specified length allocated in user space.
++
+To insert a buffer, you need to provide the address and size of the buffer.
+
+* An external LOB.
++ 
+When an external LOB is specified via `EXTERNALTOLOB('external lob source file name')`, the data associated with the external HDFS file is not transferred into the Trafodion LOB. Instead, Trafodion stores the file path/handle of the external file. 
++
+For example, if you have a directory of pictures, you can specify the full hdfs path to each picture file to this function and the path will get stored in the Trafodion table. Later during retrieval, the file name will be used to go to the actual file to retrieve the data. 
+
+[#examples]
+=== Examples
+
+* This example uses the `STRINGTOLOB` function that converts a simple string literal into LOB format before inserting.
++
+```
+INSERT INTO tlob1 VALUES(1,stringtolob('inserted row'));
+```
+
+* This example uses the `FILETOLOB` function that converts data from a local file into LOB format, and stores all data into HDFS associated with that column/row.
++
+```
+INSERT INTO tlob130txt1 VALUES(1,filetolob('lob_input_a1.txt'));
+```
+
+* This example takes an int64 value as an input which is an address to a buffer and a size parameter. The buffer contents are converted to LOB format and stored in HDFS.
++
+```
+INSERT INTO tlob1 VALUES (1, buffertolob(LOCATION 124647474, SIZE 2048));
+```
+
+* This example uses different functions to convert strings, files, external lob into LOB data. The EXTERNALTOLOB function takes an external file. 
++
+```
+INSERT INTO tlob130ext VALUES(1, STRINGTOLOB('first lob'),                                           
+FILETOLOB('hdfs:///lobs/lob_input_a1.txt'), 
+EXTERNALTOLOB('hdfs:///lobs/lob_input_a1.txt'));
+```
+
+* This example uses a parameter.
++
+```
+PREPARE S FROM INSERT INTO t130lob2 VALUES (1, ?);
+EXECUTE S USING 'fgfgfhfhfhfhhfhfhfhjfkkfkffllflflfll';
+```
+
+* This example uses the `EMPTY_BLOB` function to insert an empty lob and creates a dummy lob handle. 
++
+```
+INSERT INTO t130lob2 VALUES (1, empty_blob());
+```
