@@ -2905,7 +2905,9 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
                     break;
                   }
               }
-
+            // In case of master, the unused memory quota needs to be reset
+            // with every statement execution. 
+            statementGlobals_->resetMemoryQuota();
 	    /* execute it */
             if( root_tdb )
             {            

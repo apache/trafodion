@@ -263,8 +263,8 @@ public:
     void setMemoryContingencyMB(Int32 mCMB) {  pMemoryContingencyMB_ = mCMB;} 
     Int32 getMemoryContingencyMB(void)  { return pMemoryContingencyMB_; }
     
-    void setSortMemEstInMbPerCpu(Float32 s) {sortMemEstInMbPerCpu_=s;}
-    Float32 getSortMemEstInMbPerCpu() {return sortMemEstInMbPerCpu_;}
+    void setSortMemEstInKBPerNode(Float32 s) {sortMemEstInKBPerNode_=s;}
+    Float32 getSortMemEstInKBPerNode() {return sortMemEstInKBPerNode_;}
     
     void setEstimateErrorPenalty(Float32 e) {estimateErrorPenalty_ = e;}
     Float32 getEstimateErrorPenalty() {return estimateErrorPenalty_;}
@@ -388,7 +388,7 @@ private:
 
       Float32 estimateErrorPenalty_;
 
-      Float32 sortMemEstInMbPerCpu_;
+      Float32 sortMemEstInKBPerNode_;
 
       UInt16  bmoMaxMemThresholdMB_;
 

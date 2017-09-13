@@ -662,7 +662,9 @@ typedef struct {
   double overflowSize;
   short queryType;
   short subqueryType;
-  char filler[28];
+  float bmoMemLimitPerNode;
+  float estBmoMemPerNode;
+  char filler[20];
 } SQL_QUERY_COMPILER_STATS_INFO;
 
 /* struct to hold statistics to be returned. */
@@ -1174,6 +1176,7 @@ enum SQLSTATS_ITEM_ID {
   SQLSTATS_SCRATCH_READ_COUNT = 162,
   SQLSTATS_SCRATCH_WRITE_COUNT = 163,
   SQLSTATS_SCRATCH_IO_MAX_TIME = 164,
+  SQLSTATS_BMO_EST_MEMORY = 165,
   SQLSTATS_BMO_PHASE = 166,
   SQLSTATS_INTERIM_ROW_COUNT = 167,
 /* SQLSTATS_ITEM_ID for UDR_BASE_STATS */

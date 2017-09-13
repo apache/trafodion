@@ -1023,6 +1023,8 @@ public:
     bmoHeapAlloc_ = (Int32)(heap->getTotalSize() >> 10);
     bmoHeapUsage_ = (Int32)(heap->getAllocSize() >> 10);
     bmoHeapWM_ = (Int32)(heap->getHighWaterMark() >> 10);
+    if (bmoHeapAlloc_ > bmoHeapWM_)
+       bmoHeapWM_ = bmoHeapAlloc_;
   }
   inline void setScratchOverflowMode(Int16 overflowMode)
   {
@@ -1059,6 +1061,7 @@ private:
   Int16 scratchOverflowMode_;   // 0 - disk 1 - SSD
   Int32 topN_;                 // TOPN value
   Int64 interimRowCount_;
+  Float32 estMemoryUsage_;
   Int16 phase_;
 };
 

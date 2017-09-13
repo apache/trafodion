@@ -268,7 +268,6 @@ private:
 
   NABasicPtr compileInfo_;                          // 88 - 95
   Int32 compileInfoLen_;                            // 96 - 99
-
   char filler_[42];                                 // 100 - 141
 };
 
@@ -310,6 +309,8 @@ public:
   UInt16 &ofMode() { return ofMode_; }
   Int16 &queryType() { return queryType_; }
   Int16 &subqueryType() { return subqueryType_; }
+  double &bmoMemLimitPerNode() { return bmoMemLimitPerNode_; }
+  double &estBmoMemPerNode() { return estBmoMemPerNode_; }
 
   NABoolean mandatoryCrossProduct() { return (flags_ & MANDATORY_CROSS_PRODUCT) != 0; }
   void setMandatoryCrossProduct(NABoolean v)      
@@ -370,7 +371,9 @@ private:
   UInt16 ofMode_;
   Int16 queryType_;
   Int16 subqueryType_;
-  char   filler_[48];
+  double bmoMemLimitPerNode_;
+  double estBmoMemPerNode_;
+  char   filler_[32];
 };
 
 // the enum values assigned to the enums must be the same as the

@@ -616,7 +616,7 @@ ROW_ID      COLS
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME ............ ###
 STATEMENT_NAME ........... S
-PLAN_ID ................ ###
+PLAN_ID ................ 212356315820604834
 ROWS_OUT ............... ###
 EST_TOTAL_COST ......... ###
 STATEMENT ................ select * from store_sales where ss_item_sk = 1;
@@ -629,6 +629,7 @@ ROWS_OUT ............... ###
 EST_OPER_COST .......... ###
 EST_TOTAL_COST ......... ###
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)
@@ -1060,7 +1061,7 @@ CREATE EXTERNAL TABLE DATE_DIM
 ------------------------------------------------------------------ PLAN SUMMARY
 MODULE_NAME ............ ###
 STATEMENT_NAME ........... S
-PLAN_ID ................ ###
+PLAN_ID ................ 212356315833683208
 ROWS_OUT ............... ###
 EST_TOTAL_COST ......... ###
 STATEMENT ................ select *
@@ -1075,6 +1076,7 @@ ROWS_OUT ............... ###
 EST_OPER_COST .......... ###
 EST_TOTAL_COST ......... ###
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est ......... ###
   fragment_id ............ 0
   parent_frag ............ (none)

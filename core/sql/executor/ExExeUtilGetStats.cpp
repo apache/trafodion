@@ -3095,7 +3095,7 @@ short ExExeUtilGetRTSStatisticsTcb::work()
           bmoStatsItems_[17].statsItem_id = SQLSTATS_SCRATCH_IO_TIME;
           bmoStatsItems_[18].statsItem_id = SQLSTATS_SCRATCH_IO_MAX_TIME;
                   
-          // maxBMOStatsItems_ is set to 19 
+          // maxBMOStatsItems_ is set to 18 
           // TDB_NAME
           bmoStatsItems_[1].str_value = new (getGlobals()->getDefaultHeap())
                       char[MAX_TDB_NAME_LEN+1];

@@ -232,6 +232,7 @@ struct DefaultDefault
 #define	 DDui0_5(name,value)		 DD(name,value,&validateUIntFrom0To5)
 #define	XDDui0_5(name,value)		XDD(name,value,&validateUIntFrom0To5)
 #define	 DDui1_6(name,value)		 DD(name,value,&validateUIntFrom1To6)
+#define	 DDui1_8(name,value)		 DD(name,value,&validateUIntFrom1To8)
 #define	 DDui1_10(name,value)		 DD(name,value,&validateUIntFrom1To10)
 #define	 DDui2_10(name,value)		 DD(name,value,&validateUIntFrom2To10)
 #define	 DDui1500_4000(name,value)	 DD(name,value,&validateUIntFrom1500To4000)
@@ -301,6 +302,7 @@ const ValidateUInt2		validateUI512(512);	// pos multiples of 512 only
 const ValidateUIntFrom0To5	validateUIntFrom0To5;	// integer from 0 to 5
 const ValidateUIntFrom1500To4000 validateUIntFrom1500To4000;	// integer from 1 to 6
 const ValidateUIntFrom1To6	validateUIntFrom1To6;	// integer from 1 to 6
+const ValidateUIntFrom1To8	validateUIntFrom1To8;	// integer from 1 to 8
 const ValidateUIntFrom1To10	validateUIntFrom1To10;	// integer from 1 to 10
 const ValidateUIntFrom2To10	validateUIntFrom2To10;	// integer from 2 to 10
 const ValidateIPCBuf		validateIPCBuf;	// for IPC message buffers (DP2 msgs)
@@ -458,6 +460,14 @@ SDDkwd__(ALLOW_DP2_ROW_SAMPLING,               "SYSTEM"),
  XDDkwd__(BLOCK_TO_PREVENT_HALLOWEEN,           "ON"),
 
   DDflte_(BMO_CITIZENSHIP_FACTOR,             "1."),
+
+  DDflte_(BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO,        "0.5"),
+  DDflte_(BMO_MEMORY_ESTIMATE_RATIO_CAP,             "0.7"),
+  DDui___(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY , "25"),
+  DDui___(BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN,     "25"),
+  DDui___(BMO_MEMORY_LIMIT_LOWER_BOUND_SORT ,        "200"),
+ XDDui___(BMO_MEMORY_LIMIT_PER_NODE_IN_MB,	     "10240"),
+  DDui___(BMO_MEMORY_LIMIT_UPPER_BOUND,              "1200"),
 
   DDui1__(BMO_MEMORY_SIZE,                      "204800"),
   // percentage of physical main memory availabe for BMO.
@@ -1299,10 +1309,8 @@ SDDui___(CYCLIC_ESP_PLACEMENT,                  "1"),
   DDSint__(ESP_FIXUP_PRIORITY_DELTA,            "0"),
   DDint__(ESP_IDLE_TIMEOUT,                    "1800"), // To match with set session defaults value
   DDkwd__(ESP_MULTI_FRAGMENTS,			"ON"),
-  DDkwd__(ESP_MULTI_FRAGMENT_QUOTAS,		"ON"),
   DDui1500_4000(ESP_MULTI_FRAGMENT_QUOTA_VM,	"4000"),
-  DDui1_6(ESP_NUM_FRAGMENTS,			"3"),
-  DDui1_6(ESP_NUM_FRAGMENTS_WITH_QUOTAS,	"6"),
+  DDui1_8(ESP_NUM_FRAGMENTS,			"3"),
 
   DDSint__(ESP_PRIORITY,                        "0"),
   DDSint__(ESP_PRIORITY_DELTA,                  "0"),
@@ -1330,22 +1338,8 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
 
   // lower-bound memory limit for BMOs/nbmos (in MB)
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE, "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY , "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN, "10"),
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN, "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_PA , "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE , "10"),
   DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE , "10"),
-  DDui___(EXE_MEMORY_LIMIT_LOWER_BOUND_SORT , "10"),
-
-  // total memory limit per CPU per query in MB
-  DDpct1_50(EXE_MEMORY_LIMIT_NONBMOS_PERCENT, "15"),
-  XDDui___(EXE_MEMORY_LIMIT_PER_CPU,	"0"),
-
-
-  // Memory not available for BMOs in master fragment in mxosrvr
-  // (mostly due to QIO).
-  DDui___(EXE_MEMORY_RESERVED_FOR_MXOSRVR_IN_MB,"544"),
 
  // Override the memory quota system; set limit per each and every BMO
  SDDflt__(EXE_MEM_LIMIT_PER_BMO_IN_MB,	        "0"),
@@ -1635,6 +1629,7 @@ SDDkwd__(EXE_DIAGNOSTIC_EVENTS,		"OFF"),
   DDui1__(GEN_SORT_SIZE_DOWN,			"2"),
   DDui1__(GEN_SORT_SIZE_UP,			"1024"),
   DDkwd__(GEN_SORT_TOPN,		        "ON"),
+  DDui1__(GEN_SORT_TOPN_THRESHOLD,              "10000"),
   DDui1__(GEN_SPLB_BUFFER_SIZE,			"2"),
   DDui1__(GEN_SPLB_NUM_BUFFERS,			"1"),
   DDui1__(GEN_SPLB_SIZE_DOWN,			"2"),
@@ -5161,12 +5156,10 @@ NABoolean NADefaults::isReadonlyAttribute(const char* attrName) const
        ( stricmp(attrName, "VALIDATE_VIEWS_AT_OPEN_TIME") == 0 ) ||
        ( stricmp(attrName, "USER_EXPERIENCE_LEVEL") == 0 ) ||
        ( stricmp(attrName, "POS_DISKS_IN_SEGMENT") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN") == 0 ) ||
+       ( stricmp(attrName, "BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_MERGEJOIN") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_SORT") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_PROBE_CACHE") == 0 ) ||
-       ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_PA") == 0 ) ||
+       ( stricmp(attrName, "BMO_MEMORY_LIMIT_LOWER_BOUND_HASHGROUPBY") == 0 ) ||
+       ( stricmp(attrName, "BMO_MEMORY_LIMIT_LOWER_BOUND_SORT") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_SEQUENCE") == 0 ) ||
        ( stricmp(attrName, "EXE_MEMORY_LIMIT_LOWER_BOUND_EXCHANGE") == 0 ) ||
        ( stricmp(attrName, "SORT_ALGO") == 0 ) ||

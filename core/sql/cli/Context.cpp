@@ -171,7 +171,8 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     arkcmpInitFailed_(&exHeap_),
     trustedRoutines_(&exHeap_),
     roleIDs_(NULL),
-    numRoles_(0)
+    numRoles_(0),
+    unusedBMOsMemoryQuota_(0)
 {
   exHeap_.setJmpBuf(cliGlobals->getJmpBuf());
   cliSemaphore_ = new (&exHeap_) CLISemaphore();

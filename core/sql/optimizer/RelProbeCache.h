@@ -74,7 +74,7 @@ public:
 
   virtual short codeGen(Generator *g);
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perCPU);
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams = NULL);
   virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb);
 
   virtual const NAString getText() const;

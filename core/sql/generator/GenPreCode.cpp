@@ -2154,34 +2154,10 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       // Compute the total available memory quota for BMOs
       NADefaults &defs               = ActiveSchemaDB()->getDefaults();
 
-      // total per CPU
-      double m = defs.getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) * (1024*1024);
+      // total per node
+      double m = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) * (1024*1024);
 
-      // total memory usage for all nBMOs 
-      double m1 = (generator->getTotalNBMOsMemoryPerCPU()).value();
-
-      // total memory limit for all BMOs
-      double m2 = m-m1;
-
-      double ratio = 
-          defs.getAsDouble(EXE_MEMORY_LIMIT_NONBMOS_PERCENT) / 100;
-
-      if ( m2 < 0 ) {
-         // EXE_MEMORY_LIMIT_PER_CPU is set too small, set the total 
-         // memory limit for BMOs to zero. When the memory quota for
-         // each BMO is computed (via method RelExpr::computeMemoryQuota()),
-         // the lower-bound for each BMO will kick in and each will receive
-         // a quota equal to the lower-bound value.
-         m2 = 0;
-      } else { 
-
-         // nBMOs use more memory than the portion, adjust m2 to 
-         // that of (1-ratio)*m
-         if (m1 > m*ratio )
-           m2 = m*(1-ratio);
-      }
-
-      generator->setBMOsMemoryLimitPerCPU(m2);
+      generator->setBMOsMemoryLimitPerNode(m);
 
     }
 
@@ -3757,7 +3733,7 @@ RelExpr * HashJoin::preCodeGen(Generator * generator,
   // Count this BMO and add its needed memory to the total needed
   generator->incrNumBMOs();
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
     generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
 
 
@@ -6007,7 +5983,7 @@ RelExpr * GroupByAgg::preCodeGen(Generator * generator,
     // Count this BMO and add its needed memory to the total needed
     generator->incrNumBMOs();
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
       generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
 
   }
@@ -6650,7 +6626,7 @@ RelExpr * Sort::preCodeGen(Generator * generator,
       if (CmpCommon::getDefault(SORT_MEMORY_QUOTA_SYSTEM) != DF_OFF) {
         generator->incrNumBMOs();
 
-        if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
+        if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
           generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
       }
     }
@@ -6684,6 +6660,7 @@ RelExpr * Sort::preCodeGen(Generator * generator,
 				       numUnblockedHalloweenScansBefore);
 	}
     }
+  topNRows_ = generator->getTopNRows();
   return this;
 
 } // Sort::preCodeGen()
@@ -6752,8 +6729,8 @@ RelExpr *ProbeCache::preCodeGen(Generator * generator,
     generator->incrNumBMOs();
   */
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
 
   markAsPreCodeGenned();
   return this;
@@ -7257,8 +7234,8 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
       
     } // isEspExchange() && !eliminateThisExchange
   
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(EXE_MEMORY_LIMIT_PER_CPU) > 0)
-    generator->incrNBMOsMemoryPerCPU(getEstimatedRunTimeMemoryUsage(TRUE));
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
+    generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
   
   return result;
   
@@ -10841,6 +10818,12 @@ RelExpr * FirstN::preCodeGen(Generator * generator,
 {
   if (nodeIsPreCodeGenned())
     return this;
+
+
+  if (getFirstNRows() > 0)
+     generator->setTopNRows(getFirstNRows());
+  else
+     generator->setTopNRows(ActiveSchemaDB()->getDefaults().getAsULong(GEN_SORT_TOPN_THRESHOLD));
 
   if (! RelExpr::preCodeGen(generator,externalInputs,pulledNewInputs))
     return NULL;

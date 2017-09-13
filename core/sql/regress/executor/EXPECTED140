@@ -124,18 +124,18 @@
 +>  , SS_NET_PROFIT     
 +>from hive.hive.store_sales where ss_sold_date_sk is not null;
 Task:  LOAD            Status: Started    Object: TRAFODION.SCH.T140C
-Task:  CLEANUP         Status: Started    Time: 2017-07-12 21:31:50.149
-Task:  CLEANUP         Status: Ended      Time: 2017-07-12 21:31:50.167
-Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.019
-Task:  LOADING DATA    Status: Started    Time: 2017-07-12 21:31:50.167
+Task:  CLEANUP         Status: Started    Time: 2017-03-15 05:17:16.759
+Task:  CLEANUP         Status: Ended      Time: 2017-03-15 05:17:16.781
+Task:  CLEANUP         Status: Ended      Elapsed Time:    00:00:00.022
+Task:  LOADING DATA    Status: Started    Time: 2017-03-15 05:17:16.781
        Rows Processed: 2750311 
        Error Rows:     0 
-Task:  LOADING DATA    Status: Ended      Time: 2017-07-12 21:32:23.296
-Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:00:33.128
-Task:  COMPLETION      Status: Started    Time: 2017-07-12 21:32:23.296
+Task:  LOADING DATA    Status: Ended      Time: 2017-03-15 05:18:33.540
+Task:  LOADING DATA    Status: Ended      Elapsed Time:    00:01:16.759
+Task:  COMPLETION      Status: Started    Time: 2017-03-15 05:18:33.540
        Rows Loaded:    2750311 
-Task:  COMPLETION      Status: Ended      Time: 2017-07-12 21:32:24.240
-Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:00.728
+Task:  COMPLETION      Status: Ended      Time: 2017-03-15 05:18:34.657
+Task:  COMPLETION      Status: Ended      Elapsed Time:    00:00:01.117
 
 --- 2750311 row(s) loaded.
 >>update statistics for table t140c on every column sample;

@@ -527,7 +527,9 @@ class ExEspManager
 	 Lng32 idleTimeout,
 	 Lng32 assignTimeWindow,
 	 IpcGuardianServer **creatingEsp,
-	 NABoolean soloFragment);
+	 NABoolean soloFragment,
+	 Int16 esp_multi_fragment,
+         Int16 esp_num_fragments);
 
     void releaseEsp(ExEspDbEntry *esp, NABoolean verifyEsp, NABoolean badEsp);
 
@@ -564,7 +566,9 @@ class ExEspManager
                                   Lng32 assignTimeWindow,
 				  Int32 nowaitDepth,
                                   NABoolean &espServerError,
-                                  NABoolean soloFragment);
+                                  NABoolean soloFragment,
+	                          Int16 esp_multi_fragment,
+                                  Int16 esp_num_fragments);
   IpcCpuNum getRoundRobinCPU();
 
   // ESP state tracing >>

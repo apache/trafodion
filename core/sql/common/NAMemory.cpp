@@ -2489,6 +2489,7 @@ NABoolean NAMemory::getUsage(size_t * lastBlockSize, size_t * freeSize, size_t *
   return crowded;
 }
 
+
 // ---------------------------------------------------------------------------
 // NASegGlobals methods
 // ---------------------------------------------------------------------------
