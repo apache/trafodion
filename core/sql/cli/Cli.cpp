@@ -8325,19 +8325,15 @@ Lng32 SQLCLI_RegisterQuery(CliGlobals *cliGlobals,
   StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
   if (statsGlobals == NULL)
     return retcode;
-  short error;
-  short savedPriority, savedStopMode;
+  int error;
   error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-                 cliGlobals->myPin(), 
-                savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
-
+                 cliGlobals->myPin());
   retcode = statsGlobals->registerQuery(diags, cliGlobals->myPin(), queryId, 
                             fragId, tdbId, explainTdbId, collectStatsType, instNum, 
                             (ComTdb::ex_node_type)tdbType,
                             tdbName, tdbNameLen);
   statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
-            cliGlobals->myPin(), savedPriority, savedStopMode);
+            cliGlobals->myPin());
   return retcode;
 
 } 
@@ -8354,16 +8350,13 @@ Lng32 SQLCLI_DeregisterQuery(CliGlobals *cliGlobals,
   StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
   if (statsGlobals == NULL)
     return retcode;
-  short error;
-  short savedPriority, savedStopMode;
+  int error;
   error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-                 cliGlobals->myPin(), 
-                savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                 cliGlobals->myPin());
   retcode = statsGlobals->deregisterQuery(diags, cliGlobals->myPin(), queryId,
                             fragId);
   statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
-            cliGlobals->myPin(), savedPriority, savedStopMode);
+            cliGlobals->myPin());
   return retcode;
 }
 

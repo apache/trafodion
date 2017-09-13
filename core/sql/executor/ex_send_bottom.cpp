@@ -591,17 +591,12 @@ short ex_send_bottom_tcb::checkRequest()
                if (statsGlobals != NULL)
                {
                   Long semId = getGlobals()->getSemId();
-                  short savedPriority, savedStopMode;
-                  short error = statsGlobals->getStatsSemaphore(semId,
-                                       getGlobals()->getPid(),
-                                       savedPriority, savedStopMode,
-                                       FALSE /*shouldTimeout*/);
-                  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                  int error = statsGlobals->getStatsSemaphore(semId,
+                                       getGlobals()->getPid());
                   statsArea->setDonotUpdateCounters(FALSE);
                   statsArea->restoreDop();
                   statsGlobals->releaseStatsSemaphore(semId, 
-                      getGlobals()->getPid(),
-                      savedPriority, savedStopMode);
+                      getGlobals()->getPid());
                }
                else
                {
@@ -916,17 +911,12 @@ short ex_send_bottom_tcb::checkReply()
 	  if (statsGlobals != NULL)
           {
             Long semId = getGlobals()->getSemId();
-            short savedPriority, savedStopMode;
-            short error = statsGlobals->getStatsSemaphore(semId, 
-                                                    getGlobals()->getPid(),
-                                                    savedPriority, savedStopMode,
-                                                    FALSE /*shouldTimeout*/);
-            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+            int error = statsGlobals->getStatsSemaphore(semId, 
+                                                    getGlobals()->getPid());
 	    *workMsgStream_ << *(getGlobals()->getStatsArea());
 	    getGlobals()->getStatsArea()->initEntries();
             getGlobals()->getStatsArea()->setDonotUpdateCounters(TRUE);
-            statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid(),
-                      savedPriority, savedStopMode);
+            statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid());
           }
           else
           {

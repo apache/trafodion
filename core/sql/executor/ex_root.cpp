@@ -243,14 +243,9 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
             }
           else
             {
-              short savedPriority, savedStopMode;
-              short error = 
+              int error = 
                 statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-                  cliGlobals->myPin(), savedPriority, savedStopMode,
-                  FALSE /*shouldTimeout*/);
-
-              ex_assert(error == 0, "getStatsSemaphore() returned an error");
-
+                  cliGlobals->myPin());
               statsArea = new(cliGlobals->getStatsHeap())
                               ExStatisticsArea(cliGlobals->getStatsHeap(), 0, 
                               getCollectStatsType());
@@ -271,7 +266,7 @@ ex_tcb * ex_root_tdb::build(CliGlobals *cliGlobals, ex_globals * glob)
               statsArea->setRtsStatsCollectEnabled(getCollectRtsStats());
               root_tcb->allocateStatsEntry();
               statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(), 
-                                 cliGlobals->myPin(),savedPriority, savedStopMode);
+                                 cliGlobals->myPin());
             }
         }
       statsArea->setExplainPlanId(explainPlanId_);
@@ -2903,12 +2898,8 @@ void ex_root_tcb::deregisterCB()
     mStats = sStats->getMasterStats();
   if (statsGlobals && mStats && mStats->isReadyToSuspend())
   {
-    short savedPriority, savedStopMode;
-    short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-                cliGlobals->myPin(), savedPriority, savedStopMode,
-                FALSE /*shouldTimeout*/);
-
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+                cliGlobals->myPin());
 
     while (mStats->isQuerySuspended())
     {
@@ -2917,14 +2908,11 @@ void ex_root_tcb::deregisterCB()
       // test in an automated script.
       // LCOV_EXCL_START
       statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
-               cliGlobals->myPin(),savedPriority, savedStopMode);
+               cliGlobals->myPin());
       DELAY(300);
 
-      short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-                  cliGlobals->myPin(), savedPriority, savedStopMode,
-                  FALSE /*shouldTimeout*/);
-
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+                  cliGlobals->myPin());
       // LCOV_EXCL_STOP
     }
 
@@ -2934,7 +2922,7 @@ void ex_root_tcb::deregisterCB()
 
     // Now it is safe to let MXSSMP process another SUSPEND.
     statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
-               cliGlobals->myPin(),savedPriority, savedStopMode);
+               cliGlobals->myPin());
   }
 
   // No started message sent, so no finished message should be sent.
@@ -3034,11 +3022,8 @@ void ex_root_tcb::dumpCb()
   StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
   if (statsGlobals == NULL)
     return; 
-  short savedPriority, savedStopMode;
-  short error =
-         statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-          cliGlobals->myPin(), savedPriority, savedStopMode,
-          FALSE /*shouldTimeout*/);
+  int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+          cliGlobals->myPin());
   bool doDump = false;
   Int64 timenow = NA_JulianTimestamp();
   if ((timenow - statsGlobals->getSsmpDumpTimestamp()) > 
@@ -3048,7 +3033,7 @@ void ex_root_tcb::dumpCb()
     statsGlobals->setSsmpDumpTimestamp(timenow);
   }
   statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),
-                      cliGlobals->myPin(),savedPriority, savedStopMode);
+                      cliGlobals->myPin());
   if (doDump)
     cbServer_->getServerId().getPhandle().dumpAndStop(true, false);
 }
