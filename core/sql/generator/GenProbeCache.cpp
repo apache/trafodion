@@ -481,7 +481,7 @@ CostScalar ProbeCache::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *
   }
   if (numStreams != NULL)
      *numStreams = numOfStreams;
-  if ( perNode == TRUE ) 
+  if (perNode)
      totalMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
   else
      totalMemory /= numOfStreams;

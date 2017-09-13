@@ -1103,8 +1103,8 @@ void CliGlobals::deleteContexts()
 // The unused BMO memory quota can now be utilized by the other
 // BMO instances from the same or different fragment
 // In case of ESP process, the unused memory quota is maintained
-// at the defaultContext. In case of master process, the ununsed
-// memory quota is maintained in the context of the connection
+// at the default context. In case of master process, the ununsed
+// memory quota is maintained in statement globals
 
 NABoolean CliGlobals::grabMemoryQuotaIfAvailable(ULng32 size)
 {

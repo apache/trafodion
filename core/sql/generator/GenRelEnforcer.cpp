@@ -1393,7 +1393,7 @@ CostScalar Exchange::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *nu
 
   if (numStreams != NULL)
      *numStreams = numTopEsps;
-  if ( perNode == TRUE ) 
+  if (perNode) 
      memoryRequired /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numTopEsps);
   else
      memoryRequired /= numTopEsps;

@@ -2791,7 +2791,7 @@ short RelRoot::codeGen(Generator * generator)
   if(generator->hiveAccess())
     root_tdb->setHiveAccess(TRUE);
 
-  root_tdb->setBmoMemoryLimitPerNode(ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_LIMIT_PER_NODE));
+  root_tdb->setBmoMemoryLimitPerNode(ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB));
   root_tdb->setEstBmoMemoryPerNode(generator->getTotalBMOsMemoryPerNode().value());
 
   Int32 numSikEntries = securityKeySet_.entries();
@@ -2911,7 +2911,7 @@ short RelRoot::codeGen(Generator * generator)
 
       // now set the values of the previously allocated directory entry
 
-      NABoolean mlimitPerNode = CmpCommon::getDefaultLong(BMO_MEMORY_LIMIT_PER_NODE) > 0;
+      NABoolean mlimitPerNode = CmpCommon::getDefaultLong(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
       UInt16 BMOsMemoryUsage = 0;
       if (mlimitPerNode == TRUE)
         BMOsMemoryUsage = (UInt16)compFragDir->getBMOsMemoryUsage(i);
@@ -3121,7 +3121,7 @@ short Sort::generateTdb(Generator * generator,
       //   1. the memory limit feature is turned off and more than one BMOs
       //   2. the memory limit feature is turned on
       
-      NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
+      NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
   
       if ( mlimitPerNode || numBMOsInFrag > 1 ||
          (numBMOsInFrag == 1 && CmpCommon::getDefault(EXE_SINGLE_BMO_QUOTA) == DF_ON)) {
@@ -3950,7 +3950,7 @@ CostScalar Sort::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStr
   }
   if (numStreams != NULL)
      *numStreams = numOfStreams;
-  if ( perNode == TRUE ) 
+  if (perNode) 
       totalMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
   else
       totalMemory /= numOfStreams;

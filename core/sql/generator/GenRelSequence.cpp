@@ -777,7 +777,7 @@ RelExpr * PhysSequence::preCodeGen(Generator * generator,
     generator->incrNumBMOs();
     
     if ((ActiveSchemaDB()->getDefaults()).
-	getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0)
+	getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
       generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
   }
   else
@@ -1123,7 +1123,7 @@ PhysSequence::codeGen(Generator *generator)
     // Apply quota system if either one the following two is true:
     //   1. the memory limit feature is turned off and more than one BMOs 
     //   2. the memory limit feature is turned on
-    NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0;
+    NABoolean mlimitPerNode = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0;
 
     if ( mlimitPerNode || numBMOsInFrag > 1 ) {
         double memQuota = 
@@ -1322,7 +1322,7 @@ CostScalar PhysSequence::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32
   }
   if (numStreams != NULL)
      *numStreams = numOfStreams;
-  if ( perNode == TRUE ) 
+  if (perNode) 
      totalMemory /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numOfStreams);
   else
      totalMemory /= numOfStreams;

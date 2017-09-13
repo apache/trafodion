@@ -2009,11 +2009,6 @@ double RelExpr::computeMemoryQuota(NABoolean inMaster,
      // The ratio can be capped by the CQD
      double equalQuotaShareRatio = 0;
      equalQuotaShareRatio = ActiveSchemaDB()->getDefaults().getAsDouble(BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO);
-/*
-     char *equalQuotaShareRatioStr = getenv("BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO");
-     if (equalQuotaShareRatioStr != NULL)
-         equalQuotaShareRatio = atof(equalQuotaShareRatioStr);
-*/
      double constMemQuota = 0;
      double variableMemLimit = exeMem;
      if (equalQuotaShareRatio > 0 && totalNumBMOs > 1) {
@@ -2027,6 +2022,7 @@ double RelExpr::computeMemoryQuota(NABoolean inMaster,
         if (capMemoryRatio > 0 && capMemoryRatio <=1 && bmoMemoryRatio > capMemoryRatio)
            bmoMemoryRatio = capMemoryRatio;
      }
+     bmoQuotaRatio = bmoMemoryRatio;
      double bmoMemoryQuotaPerNode = constMemQuota + (variableMemLimit * bmoMemoryRatio);
      double numInstancesPerNode = numStreams / MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numStreams);
      double bmoMemoryQuotaPerInstance =  bmoMemoryQuotaPerNode / numInstancesPerNode;

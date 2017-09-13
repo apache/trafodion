@@ -2889,7 +2889,7 @@ enum DefaultConstants
 
 
   // Total mem size (MB) for a query
-  BMO_MEMORY_LIMIT_PER_NODE, 
+  BMO_MEMORY_LIMIT_PER_NODE_IN_MB, 
 
   // lower-bound memory limit for BMOs 
   BMO_MEMORY_LIMIT_LOWER_BOUND_HASHJOIN,
@@ -3883,7 +3883,7 @@ enum DefaultConstants
   // Threshold when TOPN sort becomes a regular sort
   GEN_SORT_TOPN_THRESHOLD,
 
-  // Ratio of BMO_MEMORY_LIMIT_PER_NODE that will be divided
+  // Ratio of BMO_MEMORY_LIMIT_PER_NODE_IN_MB that will be divided
   // equally across all BMO operators 
   BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO,
 

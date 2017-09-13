@@ -208,8 +208,8 @@ protected:
   char filler_1[2];                                     // 78-79
   Int32 topNThreshold_;                                 // 80-83
   Float32 estMemoryUsage_;                             // 84-87
-  Float32 bmoQuotaRatio_;                              // 88-92
-  char fillersComTdbSort_[4];                          // 93-96
+  Float32 bmoQuotaRatio_;                              // 88-91
+  char fillersComTdbSort_[4];                          // 92-95
 
 public:
 

@@ -2155,7 +2155,7 @@ RelExpr * RelRoot::preCodeGen(Generator * generator,
       NADefaults &defs               = ActiveSchemaDB()->getDefaults();
 
       // total per node
-      double m = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) * (1024*1024);
+      double m = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) * (1024*1024);
 
       generator->setBMOsMemoryLimitPerNode(m);
 
@@ -3733,7 +3733,7 @@ RelExpr * HashJoin::preCodeGen(Generator * generator,
   // Count this BMO and add its needed memory to the total needed
   generator->incrNumBMOs();
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0)
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
     generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
 
 
@@ -5983,7 +5983,7 @@ RelExpr * GroupByAgg::preCodeGen(Generator * generator,
     // Count this BMO and add its needed memory to the total needed
     generator->incrNumBMOs();
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0)
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
       generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
 
   }
@@ -6626,7 +6626,7 @@ RelExpr * Sort::preCodeGen(Generator * generator,
       if (CmpCommon::getDefault(SORT_MEMORY_QUOTA_SYSTEM) != DF_OFF) {
         generator->incrNumBMOs();
 
-        if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0)
+        if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
           generator->incrBMOsMemory(getEstimatedRunTimeMemoryUsage(TRUE));
       }
     }
@@ -6729,7 +6729,7 @@ RelExpr *ProbeCache::preCodeGen(Generator * generator,
     generator->incrNumBMOs();
   */
 
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0)
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
     generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
 
   markAsPreCodeGenned();
@@ -7234,7 +7234,7 @@ RelExpr * Exchange::preCodeGen(Generator * generator,
       
     } // isEspExchange() && !eliminateThisExchange
   
-  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE) > 0)
+  if ((ActiveSchemaDB()->getDefaults()).getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB) > 0)
     generator->incrNBMOsMemoryPerNode(getEstimatedRunTimeMemoryUsage(TRUE));
   
   return result;

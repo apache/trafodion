@@ -320,7 +320,7 @@ RelExpr::addExplainInfo(ComTdb * tdb,
   NAString fragdescr;
 
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
-  double mlimit = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE);
+  double mlimit = defs.getAsDouble(BMO_MEMORY_LIMIT_PER_NODE_IN_MB);
   double quotaPerBMO = defs.getAsDouble(EXE_MEM_LIMIT_PER_BMO_IN_MB);
 
   const char * memory_quota_str = "memory_quota_per_instance: %d MB " ;
@@ -1420,7 +1420,7 @@ RelRoot::addSpecificExplainInfo(ExplainTupleMaster *explainTuple,
   ComTdbRoot *rootTdb = (ComTdbRoot *)tdb;
 
   NADefaults &defs = ActiveSchemaDB()->getDefaults();
-  ULng32 mlimit = defs.getAsLong(BMO_MEMORY_LIMIT_PER_NODE);
+  ULng32 mlimit = defs.getAsLong(BMO_MEMORY_LIMIT_PER_NODE_IN_MB);
 
   if (mlimit == 0 && rootTdb->getQueryCostInfo())
   {
