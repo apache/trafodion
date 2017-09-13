@@ -25,13 +25,11 @@
 -->
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.trafodion</groupId>
-  <artifactId>sql-reference-manual</artifactId>
+  <artifactId>sql-large-objects-guide</artifactId>
   <version>${env.TRAFODION_VER}</version>
   <packaging>pom</packaging>
-  <name>Trafodion SQL Reference Manual</name>
-  <description>This manual describes reference information about the syntax of SQL statements, 
-               functions, and other SQL language elements supported by the Trafodion project’s 
-               database software.
+  <name>Trafodion SQL Large Objects Guide</name>
+  <description>This guide describes how to use Large Object (LOB) datatypes in Trafodion SQL.
   </description>
   <url>http://trafodion.incubator.apache.org</url>
   <inceptionYear>2015</inceptionYear>

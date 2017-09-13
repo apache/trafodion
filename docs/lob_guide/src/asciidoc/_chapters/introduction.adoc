@@ -26,8 +26,8 @@
 [#introduction]
 = Introduction
 
-[#what is lOB]
-== What is LOB
+[#what is a lOB]
+== What is a LOB
 
 LOB (Large Object), a set of large object data types used to store large volumes of data, provides random and piece-wise access to the data. 
 
@@ -53,17 +53,17 @@ BLOB is ideal for storing and handling unstructured data, such as images, audio,
 
 Stores unusually large amounts of string data in character set format. +
 
-CLOB is ideal for storing and processing semi-structured data, such as large document or string.
+CLOB is ideal for storing and processing semi-structured data, such as a large document or string.
 |===
 
 [#lob storage]
 == LOB Storage
 
-The basic design idea is to allow a database row to have multiple LOB columns and a table to have multiple such rows. The design takes a combination approach of rows store and column store. 
+The basic design idea is to allow a database row to have multiple LOB columns and a table to have multiple such rows. The design takes a combination approach of row store and column store. 
 
-When a SQL table with LOB column is created, there are several dependent objects that are created to hold metadata information on the LOB as well as the data.
+When a SQL table with a LOB column is created, there are several dependent objects that are created to hold metadata information on the LOB as well as the data.
 
-The LOB data itself is stored in HDFS while the Trafodion table contains a unique LOB handle for each row/column. The LOB handle provides the identifier that is used to query the LOB metadata tables to find the location of the LOB data files.
+The LOB data itself is stored in an HDFS file while the Trafodion table contains a unique LOB handle for each LOB value. The LOB handle provides the identifier that is used to query the LOB metadata tables to find the location of the LOB data files.
 
 The naming conventions for the LOB tables are as follows: 
 [caption="Table 1-2 "]
