@@ -103,6 +103,8 @@ extern char* VprocString;
 
 #define STRICT_SCHEMA_ENV_VAL_SIZE 100
 
+#define MAX_DOUBLE_TO_CHAR_LEN 308 + 12
+
 typedef enum SRVR_TYPE
 {
 	SRVR_UNKNOWN = 0,

@@ -867,7 +867,7 @@ bool double_to_char (double number, int precision, char* string, short size)
 {
     bool rc = false;
     char format[16];
-    char buf[512];
+    char buf[MAX_DOUBLE_TO_CHAR_LEN];
 
     sprintf(format, "%%.%dl%c", precision, number < 1e-6 ? 'g':'f');
     sprintf(buf, format, number);

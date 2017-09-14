@@ -167,7 +167,7 @@ unsigned long ODBC::ConvertSQLToC(SQLINTEGER	ODBCAppVersion,
 	USHORT		usTmp;
 	SLONG		lTmp;
 	ULONG		ulTmp;
-	CHAR		cTmpBuf[132];
+	CHAR		cTmpBuf[MAX_DOUBLE_TO_CHAR_LEN];
 	CHAR		cTmpBuf1[30];
 	__int64		tempVal64;
 	__int64		power;
