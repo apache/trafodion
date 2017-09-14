@@ -199,7 +199,7 @@ void CliGlobals::init( NABoolean espProcess,
     // before cli_globals is fully initialized, but it is being done
     // here because the code below expects it 
     cli_globals = this;
-    short error;
+    int error;
     statsGlobals_ = (StatsGlobals *)shareStatsSegment(shmId_);
     if (statsGlobals_ == NULL
       || (statsGlobals_ != NULL && 
@@ -226,10 +226,7 @@ void CliGlobals::init( NABoolean espProcess,
       //LCOV_EXCL_STOP
       else
       {
-        short savedPriority, savedStopMode;
-        error = statsGlobals_->getStatsSemaphore(semId_, myPin_, 
-                      savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-        ex_assert(error == 0, "getStatsSemaphore() returned an error");
+        error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
 
         statsHeap_ = (NAHeap *)statsGlobals_->
                getStatsHeap()->allocateHeapMemory(sizeof *statsHeap_, FALSE);
@@ -247,7 +244,7 @@ void CliGlobals::init( NABoolean espProcess,
 	statsGlobals_->addProcess(myPin_, statsHeap_);
         processStats_ = statsGlobals_->getExProcessStats(myPin_);
         processStats_->setStartTime(myStartTime_);
-	statsGlobals_->releaseStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode);
+	statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
       }
     }
     // create a default context and make it the current context
@@ -330,12 +327,9 @@ CliGlobals::~CliGlobals()
   }
   if (statsGlobals_ != NULL)
   {
-    short savedPriority, savedStopMode;
-    error = statsGlobals_->getStatsSemaphore(semId_, myPin_, 
-              savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
     statsGlobals_->removeProcess(myPin_);
-    statsGlobals_->releaseStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode);
+    statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
     sem_close((sem_t *)semId_);
   }
 }

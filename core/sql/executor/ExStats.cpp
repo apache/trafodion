@@ -7550,14 +7550,10 @@ short ExStatsTcb::work()
                           if (statsGlobals != NULL)
                           {
                             semId = getGlobals()->getSemId();
-                            short savedPriority, savedStopMode;
-                            short error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid(), 
-                                  savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-                            ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                            int error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid());
                             stats_->merge(stats, statsMergeType_);
                             setDeleteStats(TRUE);
-                            statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid(),
-                                      savedPriority, savedStopMode);
+                            statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid());
                           }
                           else
                           {
@@ -7623,14 +7619,10 @@ short ExStatsTcb::work()
                             if (statsGlobals != NULL)
                             {
                               semId = getGlobals()->getSemId();
-                              short savedPriority, savedStopMode;
-                              short error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid(), 
-                                    savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-                              ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                              int error = statsGlobals->getStatsSemaphore(semId, getGlobals()->getPid());
                               stats_->merge(stats, statsMergeType_);
                               setDeleteStats(TRUE);
-                              statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid(),
-                                        savedPriority, savedStopMode);
+                              statsGlobals->releaseStatsSemaphore(semId, getGlobals()->getPid());
                             }
                             else
                             {
@@ -9493,16 +9485,12 @@ void ExMasterStats::setInvalidationKeys(CliGlobals *cliGlobals,
   if ((numSIKeys > PreAllocatedSikKeys) || 
       (numObjUIDs > PreAllocatedObjUIDs))
   {
-    short savedPriority, savedStopMode;
     Long semId = cliGlobals->getSemId();
     StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
     if (statsGlobals)
     {
-      short error = statsGlobals->getStatsSemaphore(
-                    semId, cliGlobals->myPin(), 
-                    savedPriority, savedStopMode,
-                    FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(
+                    semId, cliGlobals->myPin());
     }
 
     if (numSIKeys > PreAllocatedSikKeys)
@@ -9520,8 +9508,7 @@ void ExMasterStats::setInvalidationKeys(CliGlobals *cliGlobals,
 
     if (statsGlobals)
       statsGlobals->releaseStatsSemaphore(
-                      semId, cliGlobals->myPin(), 
-                      savedPriority, savedStopMode);
+                      semId, cliGlobals->myPin());
   }
 
   numSIKeys_ = numSIKeys;

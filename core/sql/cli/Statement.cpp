@@ -678,18 +678,15 @@ Statement::~Statement()
   {
     if (stmtStats_ != NULL)
     {
-      short savedPriority, savedStopMode;
-      short error = cliGlobals_->getStatsGlobals()->getStatsSemaphore(cliGlobals_->getSemId(),
-                    cliGlobals_->myPin(), savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = cliGlobals_->getStatsGlobals()->getStatsSemaphore(cliGlobals_->getSemId(),
+                    cliGlobals_->myPin());
       if (stmtStats_->getMasterStats() != NULL)
 	{
 	  stmtStats_->getMasterStats()->setStmtState(Statement::DEALLOCATED_);
 	  stmtStats_->getMasterStats()->setEndTimes(! stmtStats_->aqrInProgress());
 	}
       cliGlobals_->getStatsGlobals()->removeQuery(cliGlobals_->myPin(), stmtStats_);
-      cliGlobals_->getStatsGlobals()->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
-                      savedPriority, savedStopMode);
+      cliGlobals_->getStatsGlobals()->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin());
     }
   }
   else
@@ -1916,14 +1913,10 @@ Lng32 Statement::unpackAndInit(ComDiagsArea &diagsArea,
         rootTdb->getFragDir()->getExplainFragDirEntry
                  (fragOffset, fragLen, topNodeOffset) == 0)
     {
-      short savedPriority, savedStopMode;
-      short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-            cliGlobals_->myPin(), savedPriority, savedStopMode, 
-            FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
+            cliGlobals_->myPin());
       stmtStats_->setExplainFrag((void *)(((char *)root_tdb)+fragOffset), fragLen, topNodeOffset);
-      statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
-                          savedPriority, savedStopMode);
+      statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin());
     }
   }
   return prepareReturn ((RETCODE)retcode);
@@ -2639,15 +2632,11 @@ RETCODE Statement::execute(CliGlobals * cliGlobals, Descriptor * input_desc,
               StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
               if (statsGlobals != NULL)
               {
-                short savedPriority, savedStopMode;
-                short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-						      cliGlobals->myPin(), savedPriority, savedStopMode, 
-                                                      FALSE /*shouldTimeout*/);
-                ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+						      cliGlobals->myPin());
                 statsArea->initEntries();
                 statsArea->restoreDop();
-                statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),cliGlobals->myPin(),
-                          savedPriority, savedStopMode);
+                statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),cliGlobals->myPin());
               }
               else
               {
@@ -3961,15 +3950,11 @@ RETCODE Statement::doOltExecute(CliGlobals *cliGlobals,
       StatsGlobals *statsGlobals = cliGlobals->getStatsGlobals();
       if (statsGlobals != NULL)
       {
-        short savedPriority, savedStopMode;
-        short error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-					      cliGlobals->myPin(), savedPriority, savedStopMode,
-					      FALSE /*shouldTimeout*/);
-        ex_assert(error == 0, "getStatsSemaphore() returned an error");
+        int error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
+					      cliGlobals->myPin());
         statsArea->initEntries();
         statsArea->restoreDop();
-        statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),cliGlobals->myPin(),
-	  savedPriority, savedStopMode);
+        statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(),cliGlobals->myPin());
       }
       else
       {
@@ -4202,11 +4187,8 @@ void Statement::releaseStats()
     if (statsGlobals != NULL && stmtStats_ != NULL &&
         (Int32)myStats->getCollectStatsType() != SQLCLI_ALL_STATS) 
     {
-      short savedPriority, savedStopMode;
-      short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-                            cliGlobals_->myPin(), 
-                            savedPriority, savedStopMode, FALSE );
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
+                            cliGlobals_->myPin());
       // Make sure the ex_globals doesn't delete this stats area
       // in case of dynamic statements, since stmtStats is also
       // pointing to the same area
@@ -4218,8 +4200,7 @@ void Statement::releaseStats()
       // Set the StmtStats that can be used to reset the used flag
       context_->setPrevStmtStats(stmtStats_);
       statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),
-                                cliGlobals_->myPin(), 
-                                savedPriority, savedStopMode);
+                                cliGlobals_->myPin());
     }
     else
     {
@@ -6102,9 +6083,8 @@ ExStatisticsArea *Statement::getCompileStatsArea()
 void Statement::setStmtStats(NABoolean autoRetry)
 {
   StatsGlobals *statsGlobals = NULL;
-  short error;
+  int error;
   NABoolean stmtStatsRetained = FALSE;
-  short savedPriority, savedStopMode;
   StmtStats *stmtStats = NULL;
   if (stmtStats_ != NULL)
   {
@@ -6115,9 +6095,7 @@ void Statement::setStmtStats(NABoolean autoRetry)
   if (statsGlobals != NULL)
   {
     error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-                  cliGlobals_->myPin(), savedPriority, savedStopMode,
-                  FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                  cliGlobals_->myPin());
     if (autoRetry)
     {
       if (getUniqueStmtId() != NULL)
@@ -6180,8 +6158,7 @@ void Statement::setStmtStats(NABoolean autoRetry)
     }
     else
       stmtStats_ = NULL;
-    statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(), cliGlobals_->myPin(),
-       savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(), cliGlobals_->myPin());
   }
   else
   {
@@ -7045,11 +7022,8 @@ NABoolean Statement::updateChildQid()
   if (statsGlobals != NULL && uniqueStmtId_ != NULL && parentQid_ != NULL &&
       getStatsArea() != NULL && stmtStats_ != NULL && stmtStats_->updateChildQid())
   {
-    short savedPriority, savedStopMode;
-    short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-          cliGlobals_->myPin(), savedPriority, savedStopMode, 
-          FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
+          cliGlobals_->myPin());
     StmtStats *ss = statsGlobals->getMasterStmtStats(parentQid_, str_len(parentQid_), RtsQueryId::ANY_QUERY_);
     if (ss != NULL)
     {
@@ -7061,8 +7035,7 @@ NABoolean Statement::updateChildQid()
           parentIsCanceled = TRUE;
       }
     }
-    statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
-                    savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin());
   }
   return parentIsCanceled;
 }

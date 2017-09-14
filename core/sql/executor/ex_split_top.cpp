@@ -389,19 +389,16 @@ void ex_split_top_tcb::allocateStatsEntry(Int32 c, ex_tcb *childTcb)
   ex_globals * glob    = getGlobals();
   StatsGlobals *statsGlobals = getGlobals()->getStatsGlobals();
   Long semId;
-  short savedPriority, savedStopMode;
   if (statsGlobals != NULL)
   {
     semId = glob->getSemId();
-    short error = statsGlobals->getStatsSemaphore(semId, glob->getPid(), 
-      savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    int error = statsGlobals->getStatsSemaphore(semId, glob->getPid());
   }
   childTcb->allocateStatsEntry();
   if (childTcb->getStatsEntry()->getCollectStatsType() == ComTdb::ALL_STATS)
     childTcb->getStatsEntry()->setSubInstNum(c);
   if (statsGlobals != NULL)
-    statsGlobals->releaseStatsSemaphore(semId, glob->getPid(), savedPriority, savedStopMode);
+    statsGlobals->releaseStatsSemaphore(semId, glob->getPid());
 }
 
 void ex_split_top_tcb::addChild(Int32 c, NABoolean atWorktime, ExOperStats* statsEntry)

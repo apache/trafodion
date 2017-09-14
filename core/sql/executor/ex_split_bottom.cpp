@@ -135,11 +135,8 @@ ex_split_bottom_tcb * ex_split_bottom_tdb::buildESPTcbTree(
     }
     else
     {
-      short savedPriority, savedStopMode;
-      short error = statsGlobals->getStatsSemaphore(espInstanceDir->getSemId(),
-                      espInstanceDir->getPid(), savedPriority, savedStopMode,
-                      FALSE /*shouldTimeout*/);
-      ex_assert(error == 0, "getStatsSemaphore() returned an error");
+      int error = statsGlobals->getStatsSemaphore(espInstanceDir->getSemId(),
+                      espInstanceDir->getPid());
       statsArea = new(espInstanceDir->getStatsHeap())
         ExStatisticsArea(espInstanceDir->getStatsHeap(), numOfParentInstances,
 		       getCollectStatsType());
@@ -151,8 +148,7 @@ ex_split_bottom_tcb * ex_split_bottom_tdb::buildESPTcbTree(
       statsArea->setRtsStatsCollectEnabled(getCollectRtsStats());
       glob->setStatsArea(statsArea);
       result->allocateStatsEntry();
-      statsGlobals->releaseStatsSemaphore(espInstanceDir->getSemId(), espInstanceDir->getPid(),
-                savedPriority, savedStopMode);
+      statsGlobals->releaseStatsSemaphore(espInstanceDir->getSemId(), espInstanceDir->getPid());
     }
   }
   else
