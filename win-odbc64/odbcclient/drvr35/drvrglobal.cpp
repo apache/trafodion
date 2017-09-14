@@ -865,77 +865,18 @@ bool use_gcvt(double number, char* string, short size)
 
 bool double_to_char (double number, int precision, char* string, short size)
 {
-	char *buffer,*temp ;
-	bool rc = true;
+    bool rc = false;
+    char format[16];
+    char buf[512];
 
-	int	decimal_spot,
-		sign,
-		count,
-		current_location = 0,
-		length;
+    sprintf(format, "%%.%dl%c", precision, number < 1e-6 ? 'g':'f');
+    sprintf(buf, format, number);
 
-	*string = 0;
+    if (size > strlen(buf)) {
+        strcpy(string, buf);
+        rc = true;
+    }
 
-	temp = _fcvt (number, precision, &decimal_spot, &sign) ;
-	length = strlen(temp);
-	if (length == 0)
-	{
-		return use_gcvt(number,string,size);
-	}
-	if (length > precision)
-		buffer = (char *) malloc (length + 3) ;
-	else
-		buffer = (char *) malloc (precision + 3) ;
-
-	if (buffer == NULL)
-		return false;
-
-/* Add negative sign if required. */ 
-
-	if (sign)
-		buffer [current_location++] = '-' ;
-
-/* Place decimal point in the correct location. */ 
-
-	if (decimal_spot > 0)
-	{
-		strncpy (&buffer [current_location], temp, decimal_spot) ;
-		buffer [decimal_spot + current_location] = '.' ;
-		strcpy (&buffer [decimal_spot + current_location + 1],
-					&temp [decimal_spot]) ;
-	}
-	else
-	{
-		buffer [current_location] = '.' ;
-		for(count = current_location;
-			count< abs(decimal_spot)+current_location; count++)
-			buffer [count + 1] = '0' ;
-		strcpy (&buffer [count + 1], temp) ;
-	}
-
-	rSup(buffer);
-	length = strlen(buffer);
-	if (buffer[0] == '.' || (buffer[0] == '-' && buffer[1] == '.')) length++;
-
-	if (length>size)
-		rc = use_gcvt(number,string,size);
-	else
-	{
-		if (buffer[0] == '.')
-		{
-			strcpy( string, "0");
-			strcat( string, buffer);
-		}
-		else if (buffer[0] == '-' && buffer[1] == '.')
-		{
-			strcpy( string, "-0");
-			strcat( string, &buffer[1]);
-		}
-		else
-			strcpy( string, buffer);
-	}
-
-	free (buffer);
 	return rc;
 } 
 
