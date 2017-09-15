@@ -129,7 +129,7 @@ public:
 
   void setParent(CollHeap * parent);
 
-  char * allocateAlignedSpace(ULng32 size, NABoolean failureIsFatal = TRUE);
+  char * allocateAlignedSpace(size_t size, NABoolean failureIsFatal = TRUE);
 
   char * allocateAndCopyToAlignedSpace(const char* dp,
 				       size_t dlen,

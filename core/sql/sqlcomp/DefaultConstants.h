@@ -3887,6 +3887,8 @@ enum DefaultConstants
   // equally across all BMO operators 
   BMO_MEMORY_EQUAL_QUOTA_SHARE_RATIO,
 
+  EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB,
+
   // This enum constant must be the LAST one in the list; it's a count,
   // not an Attribute (it's not IN DefaultDefaults; it's the SIZE of it)!
   __NUM_DEFAULT_ATTRIBUTES

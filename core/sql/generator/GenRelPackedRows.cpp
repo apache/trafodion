@@ -414,8 +414,18 @@ PhysUnPackRows::codeGen(Generator *generator)
       // queue size values represent initial (and final) queue
       // sizes (not max queue sizes).
       //
-      queue_index upQueueSize = 
-        (queue_index)getGroupAttr()->getOutputLogPropList()[0]->getResultCardinality().value();
+      ULng32 rowsetSize = 
+          getGroupAttr()->getOutputLogPropList()[0]->getResultCardinality().value();
+      double  memoryLimitPerInstance =
+              ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB) * 1024 * 1024;
+      double estimatedMemory = rowsetSize * unPackColsTupleLen;
+ 
+      if (estimatedMemory > memoryLimitPerInstance)
+      {
+         estimatedMemory = memoryLimitPerInstance;
+         rowsetSize = estimatedMemory / unPackColsTupleLen;
+      }
+      queue_index upQueueSize = rowsetSize; 
 
       // Make sure it is at least 1024.
       upQueueSize = (upQueueSize < 1024 ? 1024 : upQueueSize);
