@@ -58,8 +58,6 @@
 #include "sqlcmd.h"
 #include "SQLCLIdev.h"
 #include "InputStmt.h"
-#include "SqlciRWCmd.h"
-#include "SqlciCSCmd.h"
 #include "CmpCommon.h"
 #include "ComDiags.h"
 #include "copyright.h"
@@ -202,7 +200,6 @@ BOOL CtrlHandler(DWORD ctrlType) {
 // The signal interrupt handler.  When break is hit, this function
 // will be called.
 
-#pragma nowarn(770)   // warning elimination 
 void interruptHandler (Int32 signalType)
 {
    void (*intHandler_addr) (Int32);
@@ -276,7 +273,6 @@ SqlciEnv::SqlciEnv(short serv_type, NABoolean macl_rw_flag)
   prepared_stmts = new SqlciList<PrepStmt>;
   param_list = new SqlciList<Param>;
   pattern_list = new SqlciList<Param>;
-  define_list = new SqlciList<Define>;
   envvar_list = new SqlciList<Envvar>;
   cursorList_ = new SqlciList<CursorStmt>;
   sqlci_stats = new SqlciStats();
@@ -300,9 +296,6 @@ SqlciEnv::SqlciEnv(short serv_type, NABoolean macl_rw_flag)
   defaultCatAndSch_ = NULL;
 
   userNameFromCommandLine_ = "";
-
-  report_env = new SqlciRWEnv(); // initialize the report writer environment variable
-  cs_env = new SqlciCSEnv(); // initialize the macl environment variable.
 
   // A break flag macl_rw_flag was added to the constructor in order for the SqlciEnv
   // constructor not to call the MACL & Report Writer Constructors
@@ -367,7 +360,6 @@ SqlciEnv::~SqlciEnv()
   delete param_list;
   delete pattern_list;
   delete cursorList_;
-  delete define_list;
   delete envvar_list;
   delete sqlci_stats;
   sqlci_stmts = 0;
@@ -592,20 +584,10 @@ static void SqlciEnv_prologue_to_run(SqlciEnv *sqlciEnv)
   // Protect our startup CQDs and SET SCHEMA (from any SQL_MXCI_INITIALIZATION)
   // from being RESET.  User may still manually alter them, of course.
   //
-
-
-
-
   SqlCmd::executeQuery("CONTROL QUERY DEFAULT * RESET RESET;", sqlciEnv);
-
-
-
 
   // tell CLI that datetime & interval values are to be input/output in internal format.
   SqlCmd::executeQuery("SET SESSION DEFAULT INTERNAL_FORMAT_IO 'ON';", sqlciEnv);
-
-  // get the defaults
-  Define::getDefaults(sqlciEnv->defaultSubvol());
 
   // get sqlmx_terminal_charset if environment variable exists
   const char *termCS = getenv("SQLMX_TERMINAL_CHARSET");
@@ -795,9 +777,7 @@ Int32 SqlciEnv::executeCommands(InputStmt *& input_stmt)
 	     if (!isInteractiveSession())
 	       get_logfile()->WriteAll(command);
 	     else if (get_logfile()->IsOpen())
-#pragma nowarn(1506)   // warning elimination 
 	       get_logfile()->Write(command, strlen(command));
-#pragma warn(1506)  // warning elimination 
 	     sqlci_parser(&command[2], &command[2], &sqlci_node,this);
 
 	     if (sqlci_node)
@@ -879,9 +859,7 @@ Int32 SqlciEnv::executeCommands(InputStmt *& input_stmt)
 
 	    sprintf(buf, "total opens = %d, total closes = %d", total_opens, total_closes);
 
-#pragma nowarn(1506)   // warning elimination 
 	    get_logfile()->WriteAll(buf, strlen(buf));
-#pragma warn(1506)  // warning elimination 
 	}
 
 	// Delete the stmt if not one of those we saved on the history list
@@ -1022,52 +1000,6 @@ void SqlciEnv::updateDefaultCatAndSch()
   resetSpecialError();
 }
 
-/////////////////////////////////////////
-// Processing of Report Writer class.
-// the constructor and destructor are 
-// defined here.  Set the Report Writer 
-// mode and Select In Progress mode to be
-// FALSE at this time.  Also instantiate
-// the Interface executor here.
-/////////////////////////////////////////
-
-SqlciRWEnv::SqlciRWEnv() 
-{ 
-  rwEnv_ = NULL;
-  rwSelect_ = FALSE;
-  rwExe_ = new SqlciRWInterfaceExecutor();
-  // Any memory required by RW should be derived from 
-  // system heap only. RW should not do any memory
-  // allocation or deallocation on its own.  All memory
-  // must be got by calling methods on this pointer 
-  // provided by MXCI.
-  heap_ = new NAHeap((char *) "reportwriter_heap",
-                     NAMemory::DERIVED_FROM_SYS_HEAP); 
-}
-
-SqlciRWEnv::~SqlciRWEnv() 
-{
-}
-
-/////////////////////////////////////////
-// Processing of MACL class.
-// the constructor and destructor are 
-// defined here.  Set the Report Writer 
-// mode and Select In Progress mode to be
-// FALSE at this time.  Also instantiate
-// the Interface executor here.
-/////////////////////////////////////////
-
-SqlciCSEnv::SqlciCSEnv() 
-{ 
-  csEnv_ = NULL;
-  csExe_ = new SqlciCSInterfaceExecutor();
-}
-
-SqlciCSEnv::~SqlciCSEnv() 
-{
-}
-
 // This is the command which will show the user
 // which mode they are in.
 
@@ -1078,14 +1010,6 @@ void SqlciEnv::showMode(ModeType mode_)
         case SQL_:
             cout << "The current mode is SQL mode." << endl;	    
             break;
-
-	case REPORT_:
-	    cout << "The current mode is REPORT WRITER mode." << endl;
-	    break;
-        
-       case MXCS_:
-           cout << "The current mode is MXCS mode." << endl;
-           break;
 
 	default:
 
@@ -1193,9 +1117,7 @@ short Env::process(SqlciEnv *sqlci_env)
   log->WriteAllWithoutEOL("MESSAGEFILE VRSN   ");
   char vmsgcode[10];
   sprintf(vmsgcode, "%d", SQLERRORS_MSGFILE_VERSION_INFO);
-#pragma nowarn(1506)   // warning elimination 
   Error vmsg(vmsgcode, strlen(vmsgcode), Error::ENVCMD_);
-#pragma warn(1506)  // warning elimination 
   vmsg.process(sqlci_env);
 
   ComAnsiNamePart defaultCat;

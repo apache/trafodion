@@ -57,9 +57,9 @@
 #include "NLSConversion.h"
 #include "ExSMCommon.h"
 
-  #include <fcntl.h>
-	#include <signal.h>	
-  #include "MsgCat.h"
+#include <fcntl.h>
+#include <signal.h>	
+#include <nl_types.h>
 
 // ----------------------------------------------------
 // Definitions common to both _WINDOWS and non-WINDOWS.

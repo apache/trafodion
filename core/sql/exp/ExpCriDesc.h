@@ -41,7 +41,6 @@
 class ExpTupleDesc;
 class ex_cri_desc;
 
-#include "SqlExpDllDefines.h"
 #include "NAVersionedObject.h"
 #include "exp_tuple_desc.h"
 

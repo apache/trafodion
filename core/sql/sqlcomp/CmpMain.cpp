@@ -63,7 +63,7 @@
 #include "AllRelExpr.h"
 #include "BindWA.h"
 #include "CacheWA.h"
-#include "catapirequest.h"
+
 #include "ComDiags.h"
 #include "CmpCommon.h"
 #include "CmpErrors.h"

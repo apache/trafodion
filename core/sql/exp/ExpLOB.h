@@ -41,7 +41,6 @@
  */
 
 
-#include "SqlExpDllDefines.h"
 #include "exp_clause.h"
 #include "ExpLOBenums.h"
 

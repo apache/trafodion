@@ -37,7 +37,6 @@
 #ifndef EXP_SQL_TUPP_H
 #define EXP_SQL_TUPP_H
 
-#include "SqlExpDllDefines.h"
 #include "BaseTypes.h"
 
 // Local defines for assertions

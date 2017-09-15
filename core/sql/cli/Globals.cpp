@@ -48,7 +48,6 @@
 #include "ex_stdh.h"
 #include "ex_frag_rt.h"
 #include "memorymonitor.h"
-#include "ExMeas.h"
 #include "ExStats.h"
 #include "ExUdrServer.h"
 #include "ExSqlComp.h"

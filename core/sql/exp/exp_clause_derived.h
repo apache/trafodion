@@ -41,7 +41,6 @@
 #ifndef EXP_CLAUSE_DERIVED_H
 #define EXP_CLAUSE_DERIVED_H
 
-#include "SqlExpDllDefines.h"
 #include "exp_clause.h"
 #include "exp_like.h"
 #include <byteswap.h>

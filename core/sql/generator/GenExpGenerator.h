@@ -42,7 +42,7 @@
 #include "Generator.h"
 #include "exp_expr.h"
 #include "GenMapTable.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "exp_tuple_desc.h"
 #include "parser.h"
 #include "ComKeyRange.h"

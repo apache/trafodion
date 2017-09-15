@@ -37,7 +37,6 @@
  *****************************************************************************
  */
 
-#include "SqlExpDllDefines.h"
 #include "Platform.h"
 
 #ifdef _DEBUG
@@ -48,7 +47,7 @@
 
 #include "ComPackDefs.h"
 #include "dfs2rec.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "str.h"
 #include "exp_expr.h"
 #include "exp_clause.h"

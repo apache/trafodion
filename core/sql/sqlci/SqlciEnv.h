@@ -57,18 +57,12 @@
 #include "Define.h"
 #include "Param.h"
 #include "Prepare.h"
-#include "CSInterface.h"
 
 // forward references
 class SqlciStats;
-class SqlciRWEnv;
-class SqlciRWInterfaceExecutor;
-class SqlciCSEnv;
-class SqlciCSInterfaceExecutor;
 class ComSchemaName;
 class ComAnsiNamePart;
 
-#pragma nowarn(1506)   // warning elimination 
 class Logfile {
 
 private:
@@ -114,44 +108,6 @@ public:
   NABoolean noDisplay() { return flags_ & NO_DISPLAY; };
   void setNoDisplay(NABoolean v);
 };
-#pragma warn(1506)  // warning elimination 
-
-
-// SqlciRWEnv class.  
-class SqlciRWEnv {
-
-private:			
-	NABoolean       rwSelect_;
-	void *		rwEnv_; // Pointer to ReportWriter's env.  This is a handle to their env.
-	SqlciRWInterfaceExecutor * rwExe_;
-	NAHeap		*heap_;
-
-public:
-	SqlciRWEnv();
-	~SqlciRWEnv();
-	NABoolean           isSelectInProgress()		{ return rwSelect_; }
-	void                setSelectInProgress(NABoolean val)  { rwSelect_ = val; }
-	void*               &rwEnv()				{ return rwEnv_; }
-	SqlciRWInterfaceExecutor *rwExe()			{ return rwExe_; }   
-	NAHeap                   *rwHeap()			{ return heap_;  }
-};
-
-
-// SqlciCSEnv class.
-class SqlciCSEnv {
-
-private:
-  void * csEnv_; // Pointer to their MACL environment.  This is a handle to their env.
-  SqlciCSInterfaceExecutor *csExe_;
-
-public:
-  SqlciCSEnv();
-  ~SqlciCSEnv();
-  void* &csEnv()                      { return csEnv_; }
-  SqlciCSInterfaceExecutor *csExe()   { return csExe_; }
-
-};
-
 
 class SqlciEnv
 {
@@ -169,12 +125,9 @@ private:
   SqlciList<PrepStmt> *prepared_stmts;
   SqlciList<Param>    *param_list;
   SqlciList<Param>    *pattern_list;
-  SqlciList<Define>   *define_list;
   SqlciList<Envvar>   *envvar_list;
   SqlciList<CursorStmt> *cursorList_;
   SqlciStats          *sqlci_stats;
-  SqlciRWEnv          *report_env; //Pointer to ReportWriter's Environement.
-  SqlciCSEnv          *cs_env;  // Pointer to MACL's Environment.
   ULng32	      list_count;
 
   CharInfo::CharSet terminal_charset_;
@@ -226,7 +179,7 @@ private:
 public:
   enum {MAX_LISTCOUNT = UINT_MAX };
   enum {MAX_FRAGMENT_LEN_OVERFLOW = 900};
-  enum ModeType { SQL_, REPORT_, MXCS_, DISPLAY_ }; // Modes in which MXCI can exist.
+  enum ModeType { SQL_, DISPLAY_ }; // Modes in which MXCI can exist.
 
   ModeType mode;
 
@@ -272,15 +225,10 @@ public:
   SqlciList<PrepStmt> *get_prep_stmts()   	{ return prepared_stmts; }
   SqlciList<Param>    *get_paramlist()    	{ return param_list; }
   SqlciList<Param>    *get_patternlist()        { return pattern_list; }
-  SqlciList<Define>   *get_definelist()   	{ return define_list; }
   SqlciList<Envvar>   *get_envvarlist()   	{ return envvar_list; }
   SqlciList<CursorStmt> *getCursorList()        { return cursorList_; }
   SqlciStats          *getStats()         	{ return sqlci_stats; }
-  SqlciRWEnv          *sqlciRWEnv()	        { return report_env; }
-  SqlciCSEnv          *sqlciCSEnv()             { return cs_env; }
-  NABoolean           isReportWriterMode()      { if (mode == REPORT_) return TRUE; else return FALSE;};
   void                setMode(ModeType mode_)   { mode = mode_; }
-  NABoolean           isMXCSMode() { if (mode == MXCS_) return TRUE; else return FALSE;};
   void                showMode(ModeType mode_) ;
   ModeType            getMode()                 { return mode;}
   void                setListCount(ULng32 num = MAX_LISTCOUNT) { list_count = num; }

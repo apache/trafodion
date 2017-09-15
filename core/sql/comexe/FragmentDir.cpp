@@ -39,7 +39,7 @@
 
 #include "FragmentDir.h"
 //#include "Generator.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 
 // -----------------------------------------------------------------------
 // forward declarations

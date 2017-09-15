@@ -93,47 +93,6 @@ short Reset::reset_control(SqlciEnv * sqlci_env)
   return 0;
 }
 
-short Reset::reset_define(SqlciEnv * sqlci_env)
-{
-  if (!get_argument())
-    {
-      /* RESET all defines */
-      Define * define = sqlci_env->get_definelist()->getFirst();
-      while (define)
-	{
-	  define->reset(sqlci_env);
-	  sqlci_env->get_definelist()->remove(define->getName());
-	  define = sqlci_env->get_definelist()->getNext();
-	}
-    }
-  else
-    {
-      // DEFINEs are case insensitive (currently).
-      // Upcase the argument.
-      char * define_name = new char[strlen(get_argument())+1];
-      
-      // NT_PORT 7/10/96 (LS) changed k definition from int to size_t
-      //
-      for (size_t k=0; k < strlen(get_argument()); k++)
-	{
-#pragma nowarn(1506)   // warning elimination 
-	  define_name[k] = toupper((get_argument())[k]);
-#pragma warn(1506)  // warning elimination 
-	}
-      define_name[strlen(get_argument())] = 0;
- 
-      Define * define = sqlci_env->get_definelist()->get(define_name);
-      if (define)
-	{
-	  define->reset(sqlci_env);
-	  sqlci_env->get_definelist()->remove(define_name);
-	}
-      delete define_name;
-    }
-  
-  return 0;
-}
-
 short Reset::reset_param(SqlciEnv * sqlci_env)
 {
   if (!get_argument())
@@ -195,10 +154,6 @@ short Reset::process(SqlciEnv * sqlci_env)
     {
     case CONTROL_:
       retcode = reset_control(sqlci_env);
-      break;
-
-    case DEFINE_:
-      retcode = reset_define(sqlci_env);
       break;
 
     case PARAM_:

@@ -53,7 +53,6 @@
 #include "csconvert.h"
 #include "ulexer.h"
 
-#include "catapirequest.h"
 #include "CmpContext.h"
 #include "CmpStatement.h"
 #include "CmpErrLog.h"
@@ -1497,6 +1496,7 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
 	}
     }
 
+#ifdef __ignore
   // Check for "CREATE TANDEM_CAT_REQUEST&" 
   if (ns.index(CATAPI) == 0)
     {                 
@@ -1523,6 +1523,7 @@ NABoolean Parser::processSpecialDDL(const char* inputStr, size_t inputStrLen, Ch
 
       specialDDL = TRUE;      
     }
+#endif
 
   // If a special DDL is found, go ahead and create a DDLExpr node
   if (specialDDL)

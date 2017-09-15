@@ -52,7 +52,7 @@ class ostream;
 //    allocateMemory, deallocateMemory methods defined.
 //
 // -class NASpace: public CollHeap
-//    NASpace acts as a Space in exp_space.h
+//    NASpace acts as a Space in ComSpace.h
 //
 // -class NAMFHeap: public CollHeap
 //    NAMFHeap use malloc/free.

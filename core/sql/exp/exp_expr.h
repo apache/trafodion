@@ -41,7 +41,6 @@
 
 // -----------------------------------------------------------------------
 
-#include "SqlExpDllDefines.h"
 #include "NAVersionedObject.h" // for NAVersionedObject
 #include "ExpAtp.h"
 #include "ExpPCode.h"

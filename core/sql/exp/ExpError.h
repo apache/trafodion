@@ -37,7 +37,6 @@
 #ifndef EXP_ERROR_H
 #define EXP_ERROR_H
 
-#include "SqlExpDllDefines.h"
 #include <stdio.h>
 
 class ComDiagsArea;

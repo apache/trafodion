@@ -47,8 +47,6 @@
 #include "ComDiags.h"
 #include "str.h"
 #include "SqlciParseGlobals.h"
-#include "SqlciRWCmd.h"
-#include "SqlciCSCmd.h"
 #include "SqlciError.h"
 #include "sqlcmd.h"
 
@@ -73,9 +71,7 @@ static Int32 sqlci_parser_subproc(char *instr, char *origstr, SqlciNode ** node,
   if (origstr)
     {
       // remove trailing blanks
-#pragma nowarn(1506)   // warning elimination 
       Lng32 j = strlen(origstr) - 1;
-#pragma warn(1506)  // warning elimination 
       while ((j >= 0) && (origstr[j] == ' '))
 	j--;
       origstr[j+1] = 0;
@@ -182,44 +178,7 @@ Int32 sqlci_parser_syntax_error_cleanup(char *instr, SqlciEnv *sqlci_env)
 
 Int32 sqlci_parser_handle_report_writer(SqlciEnv *sqlci_env, Lng32 retval)
 {
-  // if success in parsing so far and we have a valid SqlciParseTree which
-  // is a SqlciNode then you check for RW mode or MACL/MXCS mode.
-  if (!retval) 
-    {
-      if ( (sqlci_env->sqlciRWEnv()->isSelectInProgress()) &&
-	   !(SqlciParseTree->isAllowedInSIP())
-	   )
-	{
-	  SqlciError (SQLCI_RW_SELECT_IN_PROGRESS,
-		      (ErrorParam *) 0 );
-	  delete SqlciParseTree;
-	  SqlciParseTree = NULL;
-	  return 0;
-	}
-      else if ( !(sqlci_env->sqlciRWEnv()->isSelectInProgress()) &&
-		!(SqlciParseTree->isAllowedInRWMode())
-		)
-	{
-	  SqlciError (SQLCI_RW_ALLOWED_ONLY_DURING_SIP,
-		      (ErrorParam *) 0 );
-	  delete SqlciParseTree;
-	  SqlciParseTree = NULL;
-	  return 0;
-	}
-      else if ((sqlci_env->isMXCSMode()) && !(SqlciParseTree->isAllowedInCSMode()))
-      {
-	  delete SqlciParseTree;
-        SqlciParseTree = (SqlciNode *)new SqlciCSQueryCmd(SqlciParse_OriginalStr,
-                               (Lng32)strlen(SqlciParse_OriginalStr));
-	assert(SqlciParseTree->isSqlciNode());
-        return 1;
-
-      }
-      else
-	return 1;
-    }
-  else
-    return 1;
+  return 0;
 }
 
 Int32 sqlci_parser_handle_error(SqlciNode **node, Lng32 retval)
@@ -228,26 +187,7 @@ Int32 sqlci_parser_handle_error(SqlciNode **node, Lng32 retval)
   
   if (retval && syntaxError_)
     {	
-      if (SqlciEnvGlobal->isReportWriterMode())
-	{
-	  SqlciParseTree = (SqlciNode *)new SqlciRWQueryCmd(SqlciParse_OriginalStr,
-			(Lng32)strlen(SqlciParse_OriginalStr));
-	  assert(SqlciParseTree->isSqlciNode());
-	  *node = SqlciParseTree;	
-	  sqlci_DA.clear(); // clear the diagonistics
-	  return 0;
-	}
-      else if (SqlciEnvGlobal->isMXCSMode())
-      {
-        SqlciParseTree = (SqlciNode *)new SqlciCSQueryCmd(SqlciParse_OriginalStr,
-                               (Lng32)strlen(SqlciParse_OriginalStr));
-	  assert(SqlciParseTree->isSqlciNode());
-	  *node = SqlciParseTree;	
-	  sqlci_DA.clear(); // clear the diagonistics
-	  return 0;
-      }
-      else
-	return retval;
+      return retval;
     }
   else
     return retval;

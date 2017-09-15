@@ -41,7 +41,6 @@
  */
 
 
-#include "SqlExpDllDefines.h"
 #include "SequenceGeneratorAttributes.h"
 #include "ComQueue.h"
 

@@ -63,9 +63,6 @@
 #include <setjmp.h>
 
 #include "NAMemory.h"
-#ifndef BUILD_MUSE
-#include "ExMeas.h"
-#endif
 #include "sqlcli.h"
 #include "QuasiFileManager.h"
 #include "Ipc.h"

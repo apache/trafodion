@@ -60,13 +60,6 @@ public:
   ShellCmd(const shell_cmd_type cmd_type_, char * argument_);
   ~ShellCmd();
   inline char * get_argument(){return argument;};
-  // overloaded function from SqlciNode.  All the Shell
-  // commands are not allowed in SIP mode.  So this
-  // will retunr FALSE at the base class ShellCmd level
-  // instead of overloading the function at Chdir and Ls level.
-  NABoolean isAllowedInSIP() { return FALSE; }
-  NABoolean isAllowedInRWMode() { return TRUE; }
-  NABoolean isAllowedInCSMode() { return TRUE; }
 };
 
 class Chdir : public ShellCmd {

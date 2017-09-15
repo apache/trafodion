@@ -59,7 +59,7 @@
 #include	"ExScheduler.h"
 #include        "ex_io_control.h"
 #include	"sql_buffer.h"
-#include        "exp_space.h"
+#include        "ComSpace.h"
 #include        "dfs2rec.h"
 
 #endif // EX_STDH_H
