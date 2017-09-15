@@ -866,8 +866,8 @@ bool use_gcvt(double number, char* string, short size)
 bool double_to_char (double number, int precision, char* string, short size)
 {
     bool rc = false;
-    char format[16];
-    char buf[MAX_DOUBLE_TO_CHAR_LEN];
+    char format[16] = { '\0' };
+    char buf[MAX_DOUBLE_TO_CHAR_LEN] = { '\0' };
 
     sprintf(format, "%%.%dlg", precision);
     sprintf(buf, format, number);
