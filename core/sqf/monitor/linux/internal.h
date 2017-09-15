@@ -443,6 +443,9 @@ typedef struct nodeId_s
     int  creatorShellPid;
     Verifier_t creatorShellVerifier;
     bool creator;  // NEW monitor set to true to tell creator it is the CREATOR
+    bool ping;     // Monitor sets to true to tell remote monitor
+                   // it is just checking that it can communicate with it.
+                   // Used during allgather reconnect 
 } nodeId_t;
 
 typedef struct nodeStatus_s
