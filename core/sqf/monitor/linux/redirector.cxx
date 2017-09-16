@@ -1271,11 +1271,23 @@ void CRedirectStderr::handleOutput(ssize_t count, char *buffer)
     if ( buf )
     {
         memset(buf, 0, buf_size);
-        ssize_t size = snprintf(buf, 
-                                (buf_size<MON_EVENT_BUF_SIZE)?buf_size:MON_EVENT_BUF_SIZE, 
-                                "STDERR redirected from %s.%s.%d.%d: %s",
-                                nodeName(), processName(), nid(), pid(), buffer );
-        if ( size > 0 && buf[size-1] != '\n') buf[size-1] = '\n';
+        // Copy up to MON_EVENT_BUF_SIZE
+        ssize_t size = snprintf( buf
+                               , (buf_size<MON_EVENT_BUF_SIZE)?buf_size:MON_EVENT_BUF_SIZE
+                               , "STDERR redirected from %s.%s.%d.%d: %s"
+                               ,  nodeName(), processName(), nid(), pid(), buffer );
+        if ( size > 0 )
+        {
+            if (size >= MON_EVENT_BUF_SIZE )
+            { // truncated
+                buf[MON_EVENT_BUF_SIZE-2] = '\n';
+                buf[MON_EVENT_BUF_SIZE-1] = 0;
+            }
+            else if ( buf[size-1] != '\n')
+            {
+                buf[size-1] = '\n';
+            }
+        }
         mon_log_write(MON_REDIR_STDERR, SQ_LOG_INFO, buf);
 
         delete [] buf;
