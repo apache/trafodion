@@ -876,7 +876,7 @@ bool double_to_char (double number, int precision, char* string, short size)
     precision = precision < size ? precision : size - 1;
 
     // precission should be limit to a reasonable range.
-    if ((precision < 0) && (precision >(DBL_MANT_DIG - DBL_MIN_EXP))) {
+    if ((precision < 0) || (precision >(DBL_MANT_DIG - DBL_MIN_EXP))) {
         goto fun_exit;
     }
 
