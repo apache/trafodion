@@ -1036,16 +1036,14 @@ short Exchange::codeGenForESP(Generator * generator)
 
     if(!generator->explainDisabled())
     {
-      Lng32 sbMemEstInKBPerCPU = (Lng32) ((totalMemoryST + totalMemorySB) / 1024) ;
-      sbMemEstInKBPerCPU = sbMemEstInKBPerCPU/
+      Lng32 sbMemEstInKBPerNode = (Lng32) ((totalMemoryST + totalMemorySB) / 1024) ;
+      sbMemEstInKBPerNode = sbMemEstInKBPerNode/
         (MAXOF(generator->compilerStatsInfo().dop(),1));
-      generator->setOperEstimatedMemory(sbMemEstInKBPerCPU);
        
       generator->setExplainTuple(
 	  addExplainInfo(splitBottom, childExplainTuple, 0, generator));
       sendBottom->setExplainNodeId(generator->getExplainNodeId());
 
-      generator->setOperEstimatedMemory(0);
     }
     
     // ExplainTuple *sendBotExplain = 
@@ -1328,7 +1326,7 @@ ExpTupleDesc::TupleDataFormat Exchange::determineInternalFormat( const ValueIdLi
                                             considerBufferDefrag);
 
 }
-CostScalar Exchange::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
+CostScalar Exchange::getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams)
 {
    //////////////////////////////////////
    // compute the buffer length (for both 
@@ -1393,20 +1391,21 @@ CostScalar Exchange::getEstimatedRunTimeMemoryUsage(NABoolean perCPU)
     // split top. 
   }
 
-  if ( perCPU == FALSE ) {
-
-    const PhysicalProperty* const phyProp = getPhysicalProperty();
-    if (phyProp != NULL) {
-      memoryRequired = numTopEsps * memoryRequired;
-    }
-  }
-
+  if (numStreams != NULL)
+     *numStreams = numTopEsps;
+  if (perNode) 
+     memoryRequired /= MINOF(MAXOF(((NAClusterInfoLinux*)gpClusterInfo)->getTotalNumberOfCPUs(), 1), numTopEsps);
+  else
+     memoryRequired /= numTopEsps;
   return memoryRequired;
 }
 
 double Exchange::getEstimatedRunTimeMemoryUsage(ComTdb * tdb)
 {
-  return (getEstimatedRunTimeMemoryUsage(FALSE)).value();
+  Lng32 numOfStreams = 1;
+  CostScalar totalMemory = getEstimatedRunTimeMemoryUsage(FALSE, &numOfStreams);
+  totalMemory = totalMemory * numOfStreams ;
+  return totalMemory.value();
 }
 
 bool Exchange::thisExchangeCanUseSM(BindWA *bindWA) const

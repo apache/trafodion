@@ -112,6 +112,7 @@ CliGlobals::CliGlobals(NABoolean espProcess)
        langManC_(NULL),
        langManJava_(NULL)
        , myVerifier_(-1)
+       , espProcess_(espProcess)
 {
   globalsAreInitialized_ = FALSE;
   executorMemory_.setThreadSafe();
@@ -197,7 +198,7 @@ void CliGlobals::init( NABoolean espProcess,
     // before cli_globals is fully initialized, but it is being done
     // here because the code below expects it 
     cli_globals = this;
-    short error;
+    int error;
     statsGlobals_ = (StatsGlobals *)shareStatsSegment(shmId_);
     if (statsGlobals_ == NULL
       || (statsGlobals_ != NULL && 
@@ -224,10 +225,7 @@ void CliGlobals::init( NABoolean espProcess,
       //LCOV_EXCL_STOP
       else
       {
-        short savedPriority, savedStopMode;
-        error = statsGlobals_->getStatsSemaphore(semId_, myPin_, 
-                      savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-        ex_assert(error == 0, "getStatsSemaphore() returned an error");
+        error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
 
         statsHeap_ = (NAHeap *)statsGlobals_->
                getStatsHeap()->allocateHeapMemory(sizeof *statsHeap_, FALSE);
@@ -245,7 +243,7 @@ void CliGlobals::init( NABoolean espProcess,
 	statsGlobals_->addProcess(myPin_, statsHeap_);
         processStats_ = statsGlobals_->getExProcessStats(myPin_);
         processStats_->setStartTime(myStartTime_);
-	statsGlobals_->releaseStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode);
+	statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
       }
     }
     // create a default context and make it the current context
@@ -328,12 +326,9 @@ CliGlobals::~CliGlobals()
   }
   if (statsGlobals_ != NULL)
   {
-    short savedPriority, savedStopMode;
-    error = statsGlobals_->getStatsSemaphore(semId_, myPin_, 
-              savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
-    ex_assert(error == 0, "getStatsSemaphore() returned an error");
+    error = statsGlobals_->getStatsSemaphore(semId_, myPin_);
     statsGlobals_->removeProcess(myPin_);
-    statsGlobals_->releaseStatsSemaphore(semId_, myPin_, savedPriority, savedStopMode);
+    statsGlobals_->releaseStatsSemaphore(semId_, myPin_);
     sem_close((sem_t *)semId_);
   }
 }
@@ -1097,6 +1092,52 @@ void CliGlobals::deleteContexts()
     }
 }
 #endif  // _DEBUG
+
+// The unused BMO memory quota can now be utilized by the other
+// BMO instances from the same or different fragment
+// In case of ESP process, the unused memory quota is maintained
+// at the default context. In case of master process, the ununsed
+// memory quota is maintained in statement globals
+
+NABoolean CliGlobals::grabMemoryQuotaIfAvailable(ULng32 size)
+{
+  ContextCli *context;
+  if (espProcess_)
+     context = defaultContext_;
+  else
+     context = currContext();
+  return context->grabMemoryQuotaIfAvailable(size);
+}
+
+void CliGlobals::resetMemoryQuota() 
+{
+  ContextCli *context;
+  if (espProcess_)
+     context = defaultContext_;
+  else
+     context = currContext();
+  return context->resetMemoryQuota();
+}
+
+ULng32 CliGlobals::unusedMemoryQuota() 
+{ 
+  ContextCli *context;
+  if (espProcess_)
+     context = defaultContext_;
+  else
+     context = currContext();
+  return context->unusedMemoryQuota();
+}
+
+void CliGlobals::yieldMemoryQuota(ULng32 size)
+{
+  ContextCli *context;
+  if (espProcess_)
+     context = defaultContext_;
+  else
+     context = currContext();
+  return context->yieldMemoryQuota(size);
+}
 
 void SQ_CleanupThread(void *arg)
 {

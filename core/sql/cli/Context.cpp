@@ -171,7 +171,8 @@ ContextCli::ContextCli(CliGlobals *cliGlobals)
     arkcmpInitFailed_(&exHeap_),
     trustedRoutines_(&exHeap_),
     roleIDs_(NULL),
-    numRoles_(0)
+    numRoles_(0),
+    unusedBMOsMemoryQuota_(0)
 {
   exHeap_.setJmpBuf(cliGlobals->getJmpBuf());
   cliSemaphore_ = new (&exHeap_) CLISemaphore();
@@ -3231,16 +3232,11 @@ ExStatisticsArea *ContextCli::getMergedStats(
         StatsGlobals *statsGlobals = cliGlobals_->getStatsGlobals();
         if (statsGlobals != NULL)
         {
-          short savedPriority, savedStopMode;
-          short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-                                                      cliGlobals_->myPin(),
-                                                      savedPriority, savedStopMode,
-                                                      FALSE );
-          ex_assert(error == 0, "getStatsSemaphore() returned an error");
+          int error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
+                                                      cliGlobals_->myPin());
           stats->merge(statsTmp, tmpStatsMergeType);
           setDeleteStats(TRUE);
-          statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
-                          savedPriority, savedStopMode);
+          statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin());
         }
         else
         {
@@ -3529,8 +3525,8 @@ Lng32 ContextCli::GetStatistics2(
 void ContextCli::setStatsArea(ExStatisticsArea *stats, NABoolean isStatsCopy,
                               NABoolean inSharedSegment, NABoolean getSemaphore)
 {
-   StatsGlobals *statsGlobals = cliGlobals_->getStatsGlobals();
-   short savedPriority, savedStopMode, error;
+  int error;
+  StatsGlobals *statsGlobals = cliGlobals_->getStatsGlobals();
 
   // Delete Stats only when it is different from the incomng stats
   if (statsCopy() && stats_ != NULL && stats != stats_)
@@ -3539,15 +3535,12 @@ void ContextCli::setStatsArea(ExStatisticsArea *stats, NABoolean isStatsCopy,
     {
       if (statsGlobals != NULL)
       {
-        short error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-                                                      cliGlobals_->myPin(), 
-                                                      savedPriority, savedStopMode, FALSE );
-        ex_assert(error == 0, "getStatsSemaphore() returned an error");
+        error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
+                                                      cliGlobals_->myPin());
       }
       NADELETE(stats_, ExStatisticsArea, stats_->getHeap());
       if (statsGlobals != NULL)
-        statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin(),
-                          savedPriority, savedStopMode);
+        statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),cliGlobals_->myPin());
     }
     else
       NADELETE(stats_, ExStatisticsArea, stats_->getHeap());
@@ -3565,14 +3558,13 @@ void ContextCli::setStatsArea(ExStatisticsArea *stats, NABoolean isStatsCopy,
         if (getSemaphore)
         {
            error = statsGlobals->getStatsSemaphore(cliGlobals_->getSemId(),
-                  cliGlobals_->myPin(), savedPriority, savedStopMode, FALSE );
-           ex_assert(error == 0, "getStatsSemaphore() returned an error");
+                  cliGlobals_->myPin());
         }
         prevStmtStats_->setStmtStatsUsed(FALSE);
         statsGlobals->removeQuery(cliGlobals_->myPin(), prevStmtStats_); 
         if (getSemaphore)
            statsGlobals->releaseStatsSemaphore(cliGlobals_->getSemId(),
-              cliGlobals_->myPin(), savedPriority, savedStopMode);
+                                   cliGlobals_->myPin());
       }
     }
     else

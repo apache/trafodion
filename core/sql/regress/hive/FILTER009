@@ -29,4 +29,5 @@ fi
 
 sed "
 s/\/\* ObjectUID = *[0-9]*/ObjectUID = <UID removed>/g
+s/est_memory_per_node[ ]*[\.]* .*/est_memory_per_node... removed/g
 " $fil

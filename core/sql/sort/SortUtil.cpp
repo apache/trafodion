@@ -1042,7 +1042,7 @@ NABoolean SortUtil::withinMemoryLimitsAndPressure(Int64 reqMembytes)
   //BMO only enabled if greater than zero.
   if(config_ == NULL || config_->initialMemoryQuotaMB_ <= 0)
     return FALSE;
-
+/*
   //config_.heapAddr_->getUsage will return false as long as there exists a 
   //possibility of allocating additional executor segments when there
   //is demand for memory allocation. Once we reach a limit of allocating
@@ -1064,7 +1064,7 @@ NABoolean SortUtil::withinMemoryLimitsAndPressure(Int64 reqMembytes)
     return FALSE;
 // LCOV_EXCL_STOP
   }
-  
+*/  
   if(!memMonitor_)
   {
 // LCOV_EXCL_START
@@ -1143,7 +1143,7 @@ if(!config_->getDisableCmpHintsOverflow())
   //do the following check if sort has not overflowed.
   if(state_ < SORT_SEND_END)
   {
-    Float32 E = config_->getSortMemEstInMbPerCpu();   //expected memory consumption by sort
+    Float32 E = config_->getSortMemEstInKBPerNode() / 1024;   //expected memory consumption by sort
     
 #ifdef FUTURE_WORK
     //check extreme case first. Expected cannot be more than
@@ -1164,7 +1164,7 @@ if(!config_->getDisableCmpHintsOverflow())
     {
 // LCOV_EXCL_START
       E = MAXOF( E, C *( 1 + estimateErrorPenalty));
-      config_->setSortMemEstInMbPerCpu(E);
+      config_->setSortMemEstInKBPerNode(E * 1024);
 // LCOV_EXCL_STOP
     }
 

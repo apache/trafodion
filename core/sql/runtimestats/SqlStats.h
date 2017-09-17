@@ -361,16 +361,12 @@ public:
                   NABoolean calledFromRemoveProcess = FALSE); 
 
   // global scan when the stmtList is positioned from begining and searched for pid
-  short openStatsSemaphore(Long &semId);
-  short getStatsSemaphore(Long &semId, pid_t pid, short &savedPriority, 
-       short &savedStopMode, NABoolean shouldTimeout = FALSE);
-  void releaseStatsSemaphore(Long &semId, pid_t pid, short savedPriority, 
-       short savedStopMode, NABoolean canAssert = TRUE);
+  int openStatsSemaphore(Long &semId);
+  int getStatsSemaphore(Long &semId, pid_t pid);
+  void releaseStatsSemaphore(Long &semId, pid_t pid);
 
-  short releaseAndGetStatsSemaphore(Long &semId, 
-       pid_t pid, pid_t releasePid,
-       short &savedPriority,
-       short &savedStopMode, NABoolean shouldTimeout = FALSE);
+  int releaseAndGetStatsSemaphore(Long &semId, 
+       pid_t pid, pid_t releasePid);
   void cleanupDanglingSemaphore(NABoolean checkForSemaphoreHolder);
   void checkForDeadProcesses(pid_t myPid);
   SyncHashQueue *getStmtStatsList() { return stmtStatsList_; }

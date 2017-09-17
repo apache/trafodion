@@ -193,21 +193,17 @@ void runServer(Int32 argc, char **argv)
       NAProcessHandle myPhandle;
       myPhandle.getmine();
       myPhandle.decompose();
-      short savedPriority, savedStopMode;
-      short error =
+      int error =
            statsGlobals->releaseAndGetStatsSemaphore(
                      statsGlobals->getSsmpProcSemId(),
                      (pid_t) myPhandle.getPin(),
-                     (pid_t) prevSsmpPhandle.getPin(),
-                     savedPriority, savedStopMode,
-                     FALSE /*shouldTimeout*/);
+                     (pid_t) prevSsmpPhandle.getPin());
       ex_assert(error == 0,
                "releaseAndGetStatsSemaphore() returned error");
 
       statsGlobals->releaseStatsSemaphore(
                      statsGlobals->getSsmpProcSemId(),
-                     (pid_t) myPhandle.getPin(),
-                     savedPriority, savedStopMode);
+                     (pid_t) myPhandle.getPin());
     }
   }
   // LCOV_EXCL_STOP

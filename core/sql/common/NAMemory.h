@@ -393,8 +393,9 @@ public:
   inline NASegGlobals * getSegGlobals() { return segGlobals_; }
   char *getName() {  return name_; }
   NAMemoryType getType() {  return type_; }
+
   NABoolean getUsage(size_t* lastSegSize, size_t* freeSize, size_t* totalSize);
-  // for debugging
+
   NABoolean containsAddress(void *addr)
         { return NABlock::blockHolding(firstBlk_, addr) != NULL; }
 

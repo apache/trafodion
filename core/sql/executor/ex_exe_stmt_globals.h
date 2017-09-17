@@ -307,18 +307,38 @@ public:
 
   inline NABoolean grabMemoryQuotaIfAvailable(ULng32 size)
   { 
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->grabMemoryQuotaIfAvailable(size);
     if ( unusedBMOsMemoryQuota_ < size ) return FALSE;
     unusedBMOsMemoryQuota_ -= size ;
     return TRUE;
   }
 
-  inline void resetMemoryQuota() { unusedBMOsMemoryQuota_ = 0 ; }
+  inline void resetMemoryQuota() 
+  {
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->resetMemoryQuota();
+    unusedBMOsMemoryQuota_ = 0 ; 
+  }
 
-  inline ULng32 unusedMemoryQuota() { return unusedBMOsMemoryQuota_; }
+  inline ULng32 unusedMemoryQuota() 
+  { 
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->unusedMemoryQuota();
+    return unusedBMOsMemoryQuota_;
+  }
 
   inline void yieldMemoryQuota(ULng32 size) 
-  { unusedBMOsMemoryQuota_ += size; }
-
+  { 
+    CliGlobals *cli_globals = GetCliGlobals();
+    if (cli_globals->isEspProcess())
+       return cli_globals->yieldMemoryQuota(size);
+    unusedBMOsMemoryQuota_ += size; 
+  }
+  
   // getStreamTimeout: return TRUE (FALSE) if the stream-timeout was set (was
   // not set). If set, the timeoutValue parameter would return that value
   virtual NABoolean getStreamTimeout( Lng32 & timeoutValue );

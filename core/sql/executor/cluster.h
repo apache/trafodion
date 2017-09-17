@@ -604,7 +604,7 @@ public:
 	     Float32 bmoCitizenshipFactor = 0,
 	     Int32  pMemoryContingencyMB = 0, 
 	     Float32 estimateErrorPenalty = 0,
-	     Float32 hashMemEstInMbPerCpu = 0,
+	     Float32 hashMemEstInKBPerNode = 0,
 	     ULng32 initialHashTableSize = 0, // default not resizable
 	     ExOperStats * hashOperStats = NULL
 );
@@ -749,7 +749,7 @@ private:
   Float32 bmoCitizenshipFactor_;
   Int32  pMemoryContingencyMB_; 
   Float32 estimateErrorPenalty_;
-  Float32 hashMemEstInMbPerCpu_;
+  Float32 hashMemEstInKBPerNode_;
 
   Int64 totalPhase3TimeNoHL_;
   Int64 maxPhase3Time_;

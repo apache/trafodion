@@ -104,18 +104,14 @@ StatsGlobals::StatsGlobals(void *baseAddr, short envType, Lng32 maxSegSize)
 void StatsGlobals::init()
 {
   Long semId;
-  short error;
-  short savedPriority, savedStopMode;
+  int error;
   char myNodeName[MAX_SEGMENT_NAME_LEN+1];
 
   error = openStatsSemaphore(semId);
   ex_assert(error == 0, "BINSEM_OPEN returned an error");
 
-  error = getStatsSemaphore(semId, GetCliGlobals()->myPin(),  savedPriority,
-                                savedStopMode,
-                                FALSE /*shouldTimeout*/);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
-  
+  error = getStatsSemaphore(semId, GetCliGlobals()->myPin());
+
   stmtStatsList_ = new (&statsHeap_) SyncHashQueue(&statsHeap_, 512);
   rmsStats_ = new (&statsHeap_) ExRMSStats(&statsHeap_);
   recentSikeys_ = new (&statsHeap_) SyncHashQueue(&statsHeap_, 512);
@@ -134,8 +130,7 @@ void StatsGlobals::init()
     myNodeName[0] = '\0';
   rmsStats_->setNodeName(myNodeName);
   createMemoryMonitor();
-  releaseStatsSemaphore(semId, GetCliGlobals()->myPin(), savedPriority,
-            savedStopMode);
+  releaseStatsSemaphore(semId, GetCliGlobals()->myPin());
   sem_close((sem_t *)semId);
 }
 
@@ -265,8 +260,7 @@ static Int32 CheckDeadTs    = 0;
 
 void StatsGlobals::checkForDeadProcesses(pid_t myPid)
 {
-  short error = 0;
-  short savedPriority, savedStopMode;
+  int error = 0;
 
   if (statsArray_ == NULL)
     return;
@@ -296,10 +290,7 @@ void StatsGlobals::checkForDeadProcesses(pid_t myPid)
 
   CheckDeadTs = ts.tv_sec;
 
-  error = getStatsSemaphore(ssmpProcSemId_,
-                            myPid, savedPriority,
-                            savedStopMode, FALSE);
-  ex_assert(error == 0, "Error from getStatsSemaphore.");
+  error = getStatsSemaphore(ssmpProcSemId_, myPid);
 
   int pidRemainingToCheck = 20;
   pid_t firstPid = pidToCheck_;
@@ -328,9 +319,7 @@ void StatsGlobals::checkForDeadProcesses(pid_t myPid)
         removeProcess(pidToCheck_);
     }
   }
-
-  releaseStatsSemaphore(ssmpProcSemId_, myPid,
-                      savedPriority, savedStopMode);
+  releaseStatsSemaphore(ssmpProcSemId_, myPid);
 }
 
 // We expect a death message to be delivered to MXSSMP by the monitor
@@ -455,29 +444,32 @@ StmtStats *StatsGlobals::addQuery(pid_t pid, char *queryId, Lng32 queryIdLen,
     return NULL;
 }
 
-short StatsGlobals::getStatsSemaphore(Long &semId, pid_t pid, 
-          short &savedPriority, short &savedStopMode, NABoolean shouldTimeout)
+int StatsGlobals::getStatsSemaphore(Long &semId, pid_t pid)
 {
-  short error = 0;
+  int error = 0;
   timespec ts;
-  Int32 ln_error;
-  ln_error = sem_trywait((sem_t *)semId);
+  error = sem_trywait((sem_t *)semId);
   NABoolean retrySemWait = FALSE;
   NABoolean resetClock = TRUE;
-  if (ln_error != 0)
+  char buf[100];
+  if (error != 0)
   {
     do
     { 
     retrySemWait = FALSE;
     if (resetClock)
     {
-       if ((ln_error = clock_gettime(CLOCK_REALTIME, &ts)) < 0)
-          return ln_error; 
+       if ((error = clock_gettime(CLOCK_REALTIME, &ts)) < 0) {
+          error = errno;
+          sprintf(buf, "getStatsSemaphore() returning an error %d", error);
+          ex_assert(FALSE, buf); 
+          return error; 
+       }
        ts.tv_sec += 3;
     }
     resetClock = FALSE;
-    ln_error = sem_timedwait((sem_t *)semId, &ts);
-    if (ln_error != 0) 
+    error = sem_timedwait((sem_t *)semId, &ts);
+    if (error != 0) 
     {
       switch (errno)
       {
@@ -515,14 +507,16 @@ short StatsGlobals::getStatsSemaphore(Long &semId, pid_t pid,
     semPid_ = pid;
     semPidCreateTime_ = GetCliGlobals()->myStartTime();
     clock_gettime(CLOCK_REALTIME, &lockingTimestamp_);
+    return error;
   }
+  sprintf(buf, "getStatsSemaphore() returning an error %d", error);
+  ex_assert(FALSE, buf);
   return error;
 }
 
-void StatsGlobals::releaseStatsSemaphore(Long &semId, pid_t pid, 
-         short savedPriority, short savedStopMode, NABoolean canAssert)
+void StatsGlobals::releaseStatsSemaphore(Long &semId, pid_t pid)
 {
-  short error = 0;
+  int error = 0;
   pid_t tempPid;
   NABoolean tempIsBeingUpdated;
   Int64 tempSPCT;
@@ -535,8 +529,8 @@ void StatsGlobals::releaseStatsSemaphore(Long &semId, pid_t pid,
   semPid_ = -1;
   semPidCreateTime_ = 0;
   isBeingUpdated_ = FALSE;
-  Int32 ln_error = sem_post((sem_t *)semId);
-  if (ln_error == -1)
+  error = sem_post((sem_t *)semId);
+  if (error == -1)
      error = errno;
   if (error != 0)
   {
@@ -547,13 +541,11 @@ void StatsGlobals::releaseStatsSemaphore(Long &semId, pid_t pid,
   ex_assert(error == 0, "sem_post failed");
 }
 
-short StatsGlobals::releaseAndGetStatsSemaphore(Long &semId, pid_t pid, 
-        pid_t releasePid,
-        short &savedPriority, short &savedStopMode, NABoolean shouldTimeout)
+int StatsGlobals::releaseAndGetStatsSemaphore(Long &semId, pid_t pid, 
+        pid_t releasePid)
 {
-   short error = 0;
+   int error = 0;
    pid_t tempPid;
-   Int32 ln_error;
 
    ex_assert(releasePid != -1, "release pid is -1");
    if (semPid_ == releasePid)
@@ -563,8 +555,8 @@ short StatsGlobals::releaseAndGetStatsSemaphore(Long &semId, pid_t pid,
       errorSemPid_ = tempPid ;
       releasingSemPid_ = pid;
       clock_gettime(CLOCK_REALTIME, &releasingTimestamp_);
-      ln_error = sem_post((sem_t *)semId);
-      if (ln_error == -1)
+      error = sem_post((sem_t *)semId);
+      if (error == -1)
       {
          semPid_ = tempPid;
          releasingSemPid_ = -1;
@@ -572,8 +564,7 @@ short StatsGlobals::releaseAndGetStatsSemaphore(Long &semId, pid_t pid,
          return error;
       }
    }
-   error = getStatsSemaphore(semId, pid, savedPriority, savedStopMode,
-                          shouldTimeout); 
+   error = getStatsSemaphore(semId, pid);
    return error;
 } 
 
@@ -702,9 +693,9 @@ short StatsGlobals::removeQuery(pid_t pid, StmtStats *stmtStats,
   return retcode;
 }
 
-short StatsGlobals::openStatsSemaphore(Long &semId)
+int StatsGlobals::openStatsSemaphore(Long &semId)
 {
-  short error = 0;
+  int error = 0;
 
   sem_t *ln_semId = sem_open((const char *)getRmsSemName(), 0);
   if (ln_semId == SEM_FAILED)
@@ -1103,12 +1094,8 @@ Lng32 StatsGlobals::getSecInvalidKeys(
                           Int32 *returnedNumSiKeys)
 {
   Lng32 retcode = 0;
-  short savedPriority;
-  short savedStopMode;
-  short error = getStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin(), 
-                           savedPriority, savedStopMode,
-                           FALSE); 
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+  int error = getStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin());
+
   Int32 numToReturn = 0;
   RecentSikey *recentSikey = NULL;
   recentSikeys_->position();
@@ -1125,8 +1112,7 @@ Lng32 StatsGlobals::getSecInvalidKeys(
   if (numToReturn > maxNumSiKeys)
     retcode = -CLI_INSUFFICIENT_SIKEY_BUFF ;
 
-  releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin(),
-                        savedPriority, savedStopMode);
+  releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin());
   return retcode;
 }
 
@@ -1457,37 +1443,26 @@ void StatsGlobals::cleanup_SQL(
                  pid_t myPid
                  )
 {
-  short savedPriority = 0;
-  short savedStopMode = 0;
   if (myPid != getSsmpPid())
      return;
   Long semId = ssmpProcSemId_;
-  short error =
-                releaseAndGetStatsSemaphore(
-                  semId, myPid, pidToCleanup,
-                  savedPriority, savedStopMode, FALSE /*shouldTimeout*/);
+  int error = releaseAndGetStatsSemaphore(
+                  semId, myPid, pidToCleanup);
   ex_assert(error == 0, 
             "releaseAndGetStatsSemaphore() returned an error");
 
   removeProcess(pidToCleanup);
-  releaseStatsSemaphore(
-                  semId, myPid,
-                  savedPriority, savedStopMode);
+  releaseStatsSemaphore(semId, myPid);
 }
 
 void StatsGlobals::verifyAndCleanup(pid_t pidThatDied, SB_Int64_Type seqNum)
 {
-  short savedPriority = 0;
-  short savedStopMode = 0;
-  short error = getStatsSemaphore(ssmpProcSemId_, getSsmpPid(), 
-                                  savedPriority, savedStopMode, FALSE);
-  ex_assert(error == 0, "getStatsSemaphore() returned an error");
+  int error = getStatsSemaphore(ssmpProcSemId_, getSsmpPid());
   if (statsArray_ && 
       (statsArray_[pidThatDied].processId_ == pidThatDied) &&
       (statsArray_[pidThatDied].phandleSeqNum_ == seqNum))
     removeProcess(pidThatDied);
-  releaseStatsSemaphore(ssmpProcSemId_, getSsmpPid(),
-                        savedPriority, savedStopMode);
+  releaseStatsSemaphore(ssmpProcSemId_, getSsmpPid());
 }
 
 void StatsGlobals::updateMemStats(pid_t pid, 
@@ -1713,17 +1688,14 @@ short getRTSSemaphore()
   short retcode = 0;
   CliGlobals *cliGlobals = GetCliGlobals();
   StatsGlobals *statsGlobals = NULL;
-  short error;
-  short savedPriority, savedStopMode;
+  int error;
   if (cliGlobals) 
     statsGlobals = cliGlobals->getStatsGlobals();
   if (statsGlobals)
   {
      if (statsGlobals->getSemPid() != cliGlobals->myPin())
      { 
-       error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(),
-            cliGlobals->myPin(), savedPriority, savedStopMode, FALSE); 
-       ex_assert(error == 0, "getStatsSemaphore() returned an error");
+       error = statsGlobals->getStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin());
        retcode = 1;
 
      }
@@ -1744,7 +1716,6 @@ void updateMemStats()
 
 void releaseRTSSemaphore()
 {
-  short savedStopMode = 0;
   CliGlobals *cliGlobals = GetCliGlobals();
   StatsGlobals *statsGlobals = NULL;
   if (cliGlobals) 
@@ -1757,8 +1728,7 @@ void releaseRTSSemaphore()
       // the stack trace if the process is being aborted. releaseRTSSemaphore
       // will be called even when the process is not aborting
       statsGlobals->setAbortedSemPid();
-      statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin(),
-            (short)cliGlobals->myPriority(), savedStopMode);
+      statsGlobals->releaseStatsSemaphore(cliGlobals->getSemId(), cliGlobals->myPin());
     }
   }
 }

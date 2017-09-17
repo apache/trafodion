@@ -163,23 +163,23 @@ Generator::Generator(CmpContext* currentCmpContext) :
   tempSpace_ = NULL;
 
   numBMOs_ = 0;
-  totalNumBMOsPerCPU_ = 0;
+  totalNumBMOsPerNode_ = 0;
 
   BMOsMemoryPerFrag_ = 0;
-  totalBMOsMemoryPerCPU_ = 0;
+  totalBMOsMemoryPerNode_ = 0;
 
-  nBMOsMemoryPerCPU_ = 0;
+  nBMOsMemoryPerNode_ = 0;
 
-  BMOsMemoryLimitPerCPU_ = 0;
+  BMOsMemoryLimitPerNode_ = 0;
 
-  totalNumBMOsPerCPU_ = 0;
+  totalNumBMOsPerNode_ = 0;
 
   BMOsMemoryPerFrag_ = 0;
-  totalBMOsMemoryPerCPU_ = 0;
+  totalBMOsMemoryPerNode_ = 0;
 
-  nBMOsMemoryPerCPU_ = 0;
+  nBMOsMemoryPerNode_ = 0;
 
-  BMOsMemoryLimitPerCPU_ = 0;
+  BMOsMemoryLimitPerNode_ = 0;
   
   totalNumBMOs_ = 0;
 
@@ -288,6 +288,7 @@ Generator::Generator(CmpContext* currentCmpContext) :
   //
   computeStats_ = FALSE;
   explainInRms_ = TRUE;
+  topNRows_ = 0;
 }
 
 void Generator::initTdbFields(ComTdb *tdb)
@@ -1041,16 +1042,6 @@ Generator::remapESPAllocationAS()
       
     NABoolean cycleSegs = (layersInCycle > 0);
 
-    // Use CQD ESP_NUM_FRAGMENTS_WITH_QUOTAS when the multi-ESP is on. That is
-    // we will shift the layers within a SQ node subset <n> times before we
-    // advance to next SQ node subset. Here <n> is the value of the cqd
-    // ESP_NUM_FRAGMENTS_WITH_QUOTAS. When the layer (or fragment) contains BMOs, then, 
-    // the layer is counted twice.
-    // 
-    if ( CmpCommon::getDefault(ESP_MULTI_FRAGMENT_QUOTAS) ==  DF_ON ) 
-      layersInCycle = 
-          (ActiveSchemaDB()->getDefaults()).getAsLong(ESP_NUM_FRAGMENTS_WITH_QUOTAS);
-      
     // if shiftESPs TRUE, then shift node map within each segment.
     //
     NABoolean shiftESPs =

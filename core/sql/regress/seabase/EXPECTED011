@@ -156,6 +156,7 @@ ROWS_OUT ................. 7
 EST_OPER_COST ............ 0
 EST_TOTAL_COST ........... 0.01
 DESCRIPTION
+  est_memory_per_node .... 10240.00(Limit), 0.00(BMOs), 0.00(nBMOs) MB
   max_card_est .......... 11
   fragment_id ............ 0
   parent_frag ............ (none)

@@ -434,7 +434,7 @@ public:
   virtual NABoolean isBigMemoryOperator(const Context* context,
                                         const Lng32 planNumber);
 
-  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perCPU);
+  virtual CostScalar getEstimatedRunTimeMemoryUsage(NABoolean perNode, Lng32 *numStreams = NULL);
   virtual double getEstimatedRunTimeMemoryUsage(ComTdb * tdb);
 
 

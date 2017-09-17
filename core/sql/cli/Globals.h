@@ -414,11 +414,14 @@ inline
   LmLanguageManagerC * getLanguageManagerC();
   LmLanguageManagerJava * getLanguageManagerJava();
 
-
 #ifdef _DEBUG
   void deleteContexts();
 #endif  // _DEBUG
-
+  NABoolean grabMemoryQuotaIfAvailable(ULng32 size);
+  void resetMemoryQuota();
+  ULng32 unusedMemoryQuota();
+  void yieldMemoryQuota(ULng32 size);
+  NABoolean isEspProcess() { return espProcess_; }
 private:
   enum {
     DEFAULT_CONTEXT_HANDLE = 2000
@@ -592,6 +595,7 @@ private:
   // for trusted UDR invocations from executor and compiler
   LmLanguageManagerC *langManC_;
   LmLanguageManagerJava *langManJava_;
+  NABoolean espProcess_;
 };
 #pragma warn(1506)   // warning elimination
 
