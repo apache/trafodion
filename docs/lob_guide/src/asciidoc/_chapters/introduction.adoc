@@ -98,7 +98,7 @@ The handle can be thought of as a file locator as is more commonly referred to i
 [#external structure]
 === External Structure
 
-The following is an external structure that is stored in the row of a SQL table:
+The following is an example of an external structure that is stored in the row of a SQL table:
 
 LOBH00000002000100047335557604604880171074381106028370118212279894381354363017"TRAFODION"."SCH"
 
@@ -113,7 +113,7 @@ LOBH00000002000100047335557604604880171074381106028370118212279894381354363017"T
 * LOB columns cannot be used as primary keys.
 * LOB columns cannot be used in CREATE INDEX statements.
 * LOB columns cannot be used in statistics update statements.
-* The file that contains data to insert from or to extract to need to be on platform linux or HDFS files.
+* The file that contains data to insert from or to extract to needs to be on platform as a Linux or HDFS files.
 
 [#lob related sql statements and functions]
 == LOB Related SQL Statements and Functions

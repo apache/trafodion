@@ -62,7 +62,7 @@ G
 * `_storage literal_`
 
 +
-Currently Trafodion only support `'EXTERNAL'` here. 
+Currently Trafodion only supports `'EXTERNAL'` here. 
 
 +
 External LOB object that are not managed by Trafodion.
@@ -133,17 +133,17 @@ CREATE TABLE tlob130ext (c1 INT NOT NULL, c2 BLOB, c3 CLOB, c4 BLOB STORAGE 'EXT
 [#hdfs location of lob data]
 === HDFS Location of LOB Data
 
-When a LOB table is created, the underlying LOB data needs to be stored in HDFS.It is in the /user/trafodion/lobs by default. 
+When a LOB table is created, the underlying LOB data needs to be stored in HDFS. It is in the /user/trafodion/lobs by default. 
 
-All columns of a table that are declared as LOB types will have all their data in one file derived from the Object UID and the LOB number of that column which gets assigned during creation.
+All columns of a table that are declared as LOB types will have all their data in one file derived from the table's Object UID and the LOB number of that column which gets assigned during creation.
 
 The following is a LOB file with 2 columns you will see 2 files in HDFS:
 
-/user/trafodion/lobs /LOBP_03683514167332904796_0001
+/user/trafodion/lobs/LOBP_03683514167332904796_0001
 
 /user/trafodion/lobs/LOBP_03683514167332904796_0002
 
-As rows are added to this column, the LOB data for each row gets appended to the corresponding column’s LOB data file. 
+As rows are added to this table, the LOB data for each row gets appended to the corresponding column’s LOB data file. 
 
 [#insert into a sql table containing lob columns]
 == Insert into a SQL Table Containing LOB Columns
@@ -231,7 +231,7 @@ For example, if the LOB column was defined as `'EXTERNAL'` during table creation
 
 ** An empty LOB is distinct from a LOB containing a string of length zero or a null LOB.
 
-* An in-memory LOB which is a simple string data. 
+* An in-memory LOB which is simple string data. 
 +
 To insert a string literal, you need to provide `STRINGTOLOB('string literal expression')`.
 
@@ -258,7 +258,7 @@ For example, if you have a directory of pictures, you can specify the full hdfs 
 INSERT INTO tlob1 VALUES(1,stringtolob('inserted row'));
 ```
 
-* This example uses the `FILETOLOB` function that converts data from a local file into LOB format, and stores all data into HDFS associated with that column/row.
+* This example uses the `FILETOLOB` function that converts data from a local file into LOB format, and stores all data into HDFS associated with that value.
 +
 ```
 INSERT INTO tlob130txt1 VALUES(1,filetolob('lob_input_a1.txt'));
@@ -306,7 +306,8 @@ target-col-list-expr is:
 target-colname[, target-colname]...
 
 target-colname is: 
-trafodion lob column name
+lob-column-name                   |
+other-column-name
 
 source-col-list-expr is: 
 source-colname[, source-colname]...
@@ -327,7 +328,7 @@ trafodion table
 
 * `_target-col-list-expr_`
 +
-Names a single column or multiple columns enclosed in parentheses in the target table in which to insert values. 
+names a single column or multiple columns enclosed in parentheses in the target table in which to insert values. 
 
 +
 The data type of each target column must be compatible with the data type of its corresponding source value. 
@@ -341,7 +342,7 @@ is a SQL identifier that specifies a target column name.
 
 * `_source-col-list-expr_`
 +
-Names a single column or multiple columns enclosed in parentheses in the source table from which to get values. 
+names a single column or multiple columns enclosed in parentheses in the source table from which to get values. 
 
 ** `_source-colname_` 
 +
@@ -453,31 +454,31 @@ For more information, see Semantics in <<insert into a sql table containing lob 
 UPDATE tlob1 SET c2=filetolob('lob_update.txt', append) WHERE c1 = 3;
 ```
 
-* In the table tlob1, updates (overwrites) the c2 to anoush.jpg.
+* In the table tlob1, updates (overwrites) the value of c2 to anoush.jpg.
 +
 ```
 UPDATE tlob1 SET c2=filetolob('anoush.jpg');
 ```
 
-* In the table tlob1 where c1 is 3, updates (appends) the c2 to lob_update.txt stored in hdfs:///lobs/.
+* In the table tlob1 where c1 is 3, updates (appends) the value of c2 to lob_update.txt stored in hdfs:///lobs/.
 +
 ```
 UPDATE tlob1 SET c2=filetolob('hdfs:///lobs/lob_update.txt', append) WHERE c1 = 3;
 ```
 
-* In the table tlob1, updates (overwrites) the c2 to the buffer location at 1254674 with 4000-byte length.
+* In the table tlob1, updates (overwrites) the value of c2 to the buffer location at 1254674 with 4000-byte length.
 +
 ```
 UPDATE tlob1 SET c2=buffertolob(LOCATION 12546474, SIZE 4000);
 ```
 
-* In the table tlob130ext where c1 is 2, updates (overwrites) the c4 to lob_input_d1.txt stored in hdfs:///lobs/.
+* In the table tlob130ext where c1 is 2, updates (overwrites) the value of c4 to lob_input_d1.txt stored in hdfs:///lobs/.
 +
 ```
 UPDATE tlob130ext SET c4=externaltolob('hdfs:///lobs/lob_input_d1.txt') WHERE c1=2;
 ```
 
-* In the table t130lob2 where c1 is 1, updates (overwrites) the c2 to xyxyxyxyxyxyx.
+* In the table t130lob2 where c1 is 1, updates (overwrites) the value of the c2 to xyxyxyxyxyxyx.
 +
 ```
 PREPARE S FROM UPDATE t130lob2 SET c2=? WHERE c1 =1;
@@ -584,7 +585,7 @@ Extract from a LOB column into a target user buffer of a specified size.
 +
 Trafodion engine will retrieve exactly the amount of requested data. 
 +
-The user/application will be responsible for redriving the extract until EOD. 
+The user/application will be responsible for redriving the extract until end of data. 
 +
 The extracted buffer data can then be written to files or another location as the application chooses. 
 
@@ -619,7 +620,7 @@ If the target file does not exist, an error will be raised.
 +
 If the target file exists, Trafodion will truncate and write to it. 
 +
-If the target file does not exist, create a table, then write to it. 
+If the target file does not exist, Trafodion will create a file and write to it.
 
 * `APPEND`
 +
@@ -631,7 +632,7 @@ If the target file does not exist, an error will be raised.
 +
 If the target file exists, Trafodion will append to it. 
 +
-If the target file does not exist, create a table, then write to it. 
+If the target file does not exist, Trafodion will create a file and append to it. 
 
 [#considerations]
 ==== Considerations
@@ -661,7 +662,7 @@ Success. Targetfile:tlob130_deep.jpg  Length: 159018
 [#extract lob data into a user specified buffer]
 === Extract Lob Data into a User Specified Buffer
 
-Extract from a LOB column into a target user buffer of a specified size. Trafodion engine will retrieve exactly the amount of requested data. The user/application will be responsible for redriving the extract until EOD. Then the extracted buffer data can be written to files or another location as the application chooses. 
+Extract from a LOB column into a target user buffer of a specified size. The Trafodion engine will retrieve exactly the amount of requested data. The user/application will be responsible for redriving the extract until end of data. Then the extracted buffer data can be written to files or another location as the application chooses. 
 
 Extract LOB data into a user specified buffer like a cursor until EOD is returned. For this method, the user specifies an input buffer and specifies the input length in an in/out variable. 
 
