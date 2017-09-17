@@ -72,7 +72,7 @@
 #include "ComRtUtils.h"
 #include "ComSmallDefs.h"
 class ContextCli;
-class CliStatement;  // $$$ possibly a stub for QuasiFileberManager
+class Statement;  // $$$ possibly a stub for QuasiFileberManager
 class ComDiagsArea; // $$$ possibly a stub for QuasiFileberManager
 class ExEspManager;
 class ExSsmpManager;

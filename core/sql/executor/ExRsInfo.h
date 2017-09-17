@@ -47,7 +47,7 @@ class ExRsInfo;
 // Forward declarations
 class NAMemory;
 class ExUdrServer;
-class CliStatement;
+class Statement;
 class ExExeStmtGlobals;
 class UdrClientControlStream;
 
@@ -73,21 +73,21 @@ private:
   virtual ~RsInfo();
 
   //Accessors
-  CliStatement * getStatement() const {return statement_;} 
+  Statement * getStatement() const {return statement_;} 
   NABoolean getOpenAttempted() const {return openAttempted_;} 
   NABoolean getCloseAttempted() const {return closeAttempted_;} 
   NABoolean isPrepared() const {return prepared_;}
   char * getProxySyntax() const { return proxySyntax_;} 
   
   //Mutators
-  void setStatement(CliStatement *statement) {statement_ = statement;}
+  void setStatement(Statement *statement) {statement_ = statement;}
   void setOpenAttempted(NABoolean flag) {openAttempted_ = flag;}
   void setCloseAttempted(NABoolean flag) {closeAttempted_ = flag;}
   void setPrepared(NABoolean flag) {prepared_ = flag;}
   void setProxySyntax(char *proxySyntax) {proxySyntax_ = proxySyntax;}  
 
   //Class data members
-  CliStatement *statement_;
+  Statement *statement_;
   NABoolean openAttempted_;
   NABoolean closeAttempted_;
   NABoolean prepared_;
@@ -109,8 +109,8 @@ public:
   void populate(ULng32 index,   
                 const char * proxySyntax);   
   void bind(ULng32 index,       
-            CliStatement * statement);   
-  void unbind(CliStatement *statement);   
+            Statement * statement);   
+  void unbind(Statement *statement);   
   void setOpenAttempted(ULng32 index);  
   void setCloseAttempted(ULng32 index);  
   void setPrepared(ULng32 index); 
@@ -120,13 +120,13 @@ public:
   NABoolean closeAttempted(ULng32 index) const;
   NABoolean isPrepared(ULng32 index) const;
   NABoolean getRsInfo(ULng32 position,    // IN
-                      CliStatement *&statement,     // OUT
+                      Statement *&statement,     // OUT
                       const char *&proxySyntax,  // OUT
                       NABoolean &openAttempted,  // OUT
                       NABoolean &closeAttempted, // OUT
                       NABoolean &isPrepared)     // OUT
     const;
-  ULng32 getIndex(CliStatement * statement) const;
+  ULng32 getIndex(Statement * statement) const;
 
   ExUdrServer * getUdrServer() const {return udrServer_;}
   const IpcProcessId & getIpcProcessId() const {return ipcProcessId_;} 

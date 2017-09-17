@@ -392,7 +392,6 @@ static char * FCString (const char *idString, int isFC)
 %token DISPLAY_QC_ENTRIES
 %token DISPLAY_QC_ENTRIES_NOTIME
 %token DISPLAY_USE_OF
-%token DUP
 %token EDIT
 %token MXCI_TOK_ENV
 %token EXIT
@@ -432,8 +431,6 @@ static char * FCString (const char *idString, int isFC)
 %token MODIFYV
 %token NEXT
 %token NOEtoken
-%token NODE_VOL_NAME
-%token NSK_NAME
 %token OBEY
 %token OBJECTtoken
 %token OFtoken
@@ -548,8 +545,6 @@ static char * FCString (const char *idString, int isFC)
 %type <sql_cmd_type> sql_cmd
 %type <shell_cmd_type> shell_cmd
 %type <stringval_type> IDENTIFIER
-%type <stringval_type> NODE_VOL_NAME
-%type <stringval_type> NSK_NAME
 %type <stringval_type> PARAM_NAME
 %type <stringval_type> PATTERN_NAME
 %type <stringval_type> PID_VALUE
@@ -1929,7 +1924,6 @@ dml_type :
 	|	SIGNAL			{$$ = DML_CONTROL_TYPE;}
 	|	INTERNAL		{$$ = DML_CONTROL_TYPE;}
 	|	MVLOG			{$$ = DML_CONTROL_TYPE;} 
-	|	DUP			{$$ = DML_DDL_TYPE;}
 	|	PURGEDATA		{$$ = DML_DDL_TYPE;}
 	|	TRUNCATE		{$$ = DML_DDL_TYPE;}
 	|	WITH                    {$$ = DML_DDL_TYPE;}

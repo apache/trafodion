@@ -513,7 +513,7 @@ class ExEspManager
 	 ComDiagsArea **diags,
 	 LIST(ExEspDbEntry *) &alreadyAssignedEsps,
 	 CollHeap *statementHeap,
-         CliStatement *statement,
+         Statement *statement,
 	 const char * clusterName,
 	 NABoolean &startedANewEsp, // returns TRUE, if a new esp was started
 	 IpcCpuNum cpuNum,
@@ -555,7 +555,7 @@ class ExEspManager
   private:
     ExEspDbEntry *getEspFromCache(LIST(ExEspDbEntry *) &alreadyAssignedEsps, // multi fragment esp
                                   CollHeap *statementHeap,
-				  CliStatement *statement,
+				  Statement *statement,
                                   const char *clusterName,
                                   IpcCpuNum cpuNum,
                                   short memoryQuota,
@@ -657,7 +657,7 @@ class ExEspDbEntry : public NABasicObject
   bool           inUse_;
   short          totalMemoryQuota_;
   Lng32           usageCount_;   // how many fragment instances use this process - multi-fragment
-  CliStatement      *statement_;   // Allow multiple fragments for just this statement
+  Statement      *statement_;   // Allow multiple fragments for just this statement
   bool           soloFragment_;
 };
 

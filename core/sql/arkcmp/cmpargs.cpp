@@ -33,7 +33,7 @@
 ******************************************************************************
 */
 
-#include "Platform.h"                                     // NT_PORT SK 02/08/97
+#include "Platform.h"   
 
 #include <ctype.h>
 #include <iostream>

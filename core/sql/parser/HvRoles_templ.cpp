@@ -23,7 +23,7 @@
 // This file holds the implementation code supporting the
 // HostVarRoles_vec class.
 
-#include "Platform.h"                                     // NT_PORT SK 02/08/97
+#include "Platform.h" 
 
 // Always good to assert yourself.
 #include <assert.h>

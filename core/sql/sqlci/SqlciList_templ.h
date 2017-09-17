@@ -76,8 +76,6 @@ public:
   T * getNext();
 };
 
-// NT_PORT ( bd 10/28/96 )
-//JMHPORT
 #if defined(NA_COMPILE_INSTANTIATE)
 #include "SqlciList_templ.cpp"
 #endif  // NA_COMPILE_INSTANTIATE

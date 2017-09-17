@@ -61,7 +61,6 @@
 #include "NAMemory.h"
 #include "ParserMsg.h"
 #include "parser.h"
-#include "purify.h"
 #include "QueryText.h"
 #include "RelExeUtil.h"
 #include "RelMisc.h"		// for RelRoot

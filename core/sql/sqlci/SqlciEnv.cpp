@@ -1071,9 +1071,7 @@ short Env::process(SqlciEnv *sqlci_env)
 
   log->WriteAllWithoutEOL("CURRENT DIRECTORY  ");
 
-  // NT_PORT (bv 10/24/96) Added NA_MAX_PATH here and in common/Platform.h
   log->WriteAll(getcwd((char *)NULL, NA_MAX_PATH));
-
 
   log->WriteAllWithoutEOL("LIST_COUNT         ");
   char buf[100];

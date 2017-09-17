@@ -3443,12 +3443,8 @@ private:
 // -----------------------------------------------------------------------
 // Default heap for IPC, using global operator new and delete
 // -----------------------------------------------------------------------
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-class ostream; // needed for decl below
-#endif
 
 // convenience function to make sure a diagnostics area is allocated
 void IpcAllocateDiagsArea(ComDiagsArea *&diags, CollHeap *diagsHeap);

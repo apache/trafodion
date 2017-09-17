@@ -38,12 +38,8 @@
 
 #include "ComSpace.h"
 
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-class ostream;
-#endif
 
 // -----------------------------------------------------------------------
 // This file contains the memory management classes :

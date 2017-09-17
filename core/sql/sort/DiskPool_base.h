@@ -88,7 +88,7 @@ public:
                                    ULng32 espInstance, 
                                    ULng32 numEsps,
                                    unsigned short threshold
-                                  ) = 0; // NT_PORT ( ls 2/7/97 )
+                                  ) = 0; 
 
   DiskDetails **getDiskTablePtr() const {return diskTablePtr_;};
   DiskDetails **getLocalDisksPtr() const {return localDisksPtr_;};
@@ -101,14 +101,14 @@ public:
 
 
 #ifdef FORDEBUG
-  virtual NABoolean printDiskTable() = 0; // NT_PORT ( ls 2/7/97 )
+  virtual NABoolean printDiskTable() = 0;
 #endif
 
   protected:
 
   virtual void assignWeight(DiskDetails *diskPtr) = 0;
 
-  virtual NABoolean refreshDisk(DiskDetails *diskPtr) = 0; // NT_PORT (2/7/97 )
+  virtual NABoolean refreshDisk(DiskDetails *diskPtr) = 0;
   virtual NABoolean computeNumScratchFiles(DiskDetails *diskPtr )= 0;
                                         // index into the diskdetails pointer
   Int32 numberOfDisks_;

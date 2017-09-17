@@ -43,14 +43,9 @@
 #include <stddef.h>
 #include "CollHeap.h"
 
-
 class Block;
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-class ostream;
-#endif
 
 /////////////////////////////////////////////////////
 //

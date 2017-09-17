@@ -21,9 +21,8 @@
 #ifndef __DFS2FE__
 #define __DFS2FE__
 
-#include "Platform.h"                                     // NT_PORT SK 02/10/97
+#include "Platform.h"
 
-// NT Port - vs 01/22/97
 #define dfs2fe_base		20000
 
 enum ExeDfs2feEnum

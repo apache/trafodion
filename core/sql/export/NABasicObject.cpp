@@ -36,13 +36,8 @@
 
 #include "Platform.h"
 
-
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-#include <iostream>
-#endif
 #include <stdlib.h>
 
 #include "ComASSERT.h"

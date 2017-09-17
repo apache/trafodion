@@ -478,8 +478,8 @@ NABoolean GroupAttributes::hasCardConstraint(Cardinality &minNumOfRows,
 {
   NABoolean found = FALSE;
 
-  minNumOfRows = (Cardinality)0;  // NT_PORT ( bd 10/22/96 ) cast to Cardinality
-  maxNumOfRows = (Cardinality)INFINITE_CARDINALITY;  // NT_PORT ( bd 10/22/96 ) cast to Cardinality
+  minNumOfRows = (Cardinality)0;
+  maxNumOfRows = (Cardinality)INFINITE_CARDINALITY;
 
   for (ValueId x= constraints_.init();
        constraints_.next(x);

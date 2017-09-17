@@ -400,7 +400,7 @@ NABoolean NAType::computeNextKeyValue(NAString &keyValue) const
 //LCOV_EXCL_START :
 void NAType::print(FILE* ofd, const char* indent)
 {
-#ifdef TRACING_ENABLED  // NT_PORT ( bd 8/4/96 )
+#ifdef TRACING_ENABLED 
   fprintf(ofd,"%s nominal size %d, total %d\n",
           indent,getNominalSize(),getTotalSize());
 #endif

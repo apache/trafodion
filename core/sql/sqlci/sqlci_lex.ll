@@ -91,10 +91,6 @@ extern "C" { int yylex(void); }
 extern "C" { int yylex(void); }
 #endif
 
-#ifndef NA_FLEXBUILD  
-#undef input
-#define input()  SqlciInput()
-#else  // NT_PORT
 # undef YY_INPUT
 #define YY_INPUT(buffer,result,maxsize)\
 {\
@@ -104,7 +100,6 @@ extern "C" { int yylex(void); }
     else\
         result=1;\
 }
-#endif  // NA_FLEXBUILD
 
 #undef unput
 #define unput(c) SqlciUnput(c)
@@ -112,45 +107,11 @@ extern "C" { int yylex(void); }
 #define yylval sqlcilval
 #define yyerror sqlcierror
 
-#ifndef NA_FLEXBUILD  // NT_PORT ( bd 10/6/96 ) moving to flex/bison BEGIN
-void sqlci_unput_(int c);
-char sqlci_input_();
-
-char SqlciInput(void)
-{
-
-  short x;
-  x = sqlci_input_();
-
-  return x;
-}
-      
-#endif  // NT_PORT ( bd 10/6/96 ) moving to flex/bison END
-
 // put back a previously read input character that wasn't needed
 void SqlciUnput(char c)
 {
-#ifndef NA_FLEXBUILD  // NT_PORT ( bd 10/6/96 ) moving to flex/bison BEGIN
- sqlci_unput_(c);
-#else
  SqlciParse_InputPos--;
-#endif  // NT_PORT ( bd 10/6/96 ) moving to flex/bison END
 }
-
-#ifndef NA_FLEXBUILD  // NT_PORT ( bd 10/6/96 ) moving to flex/bison BEGIN
-void sqlci_unput_(int c)
-{
- SqlciParse_InputPos--;
-};
-
-char sqlci_input_()
-{
-  char a;
-  
-  a = SqlciParse_InputStr[SqlciParse_InputPos++];
-  return a;
-}
-#endif  // NT_PORT ( bd 10/6/96 ) moving to flex/bison END
 
 // handle EOF in the input stream and let lex continue
 // with the next input file
@@ -226,7 +187,6 @@ B			[ \t\n]+
 [Dd][Ii][Ss][Pp][Ll][Aa][Yy]_[Qq][Cc]_[Ee][Nn][Tt][Rr][Ii][Ee][Ss] return_IDENT_or_TOKEN(DISPLAY_QC_ENTRIES,0);
 [Dd][Ii][Ss][Pp][Ll][Aa][Yy]_[Qq][Cc]_[Ee][Nn][Tt][Rr][Ii][Ee][Ss]_[Nn][Oo][Tt][Ii][Mm][Ee] return_IDENT_or_TOKEN(DISPLAY_QC_ENTRIES_NOTIME,0);
 [Dd][Ii][Ss][Pp][Ll][Aa][Yy]{B}[Uu][Ss][Ee]{B}[Oo][Ff]          return_IDENT_or_TOKEN(DISPLAY_USE_OF, 0);
-[Dd][Uu][Pp]   			       return_IDENT_or_TOKEN(DUP, 0);
 [Ee][Nn][Vv]  			       return_IDENT_or_TOKEN(MXCI_TOK_ENV, 0);
 [Ee][Nn][Vv][Vv][Aa][Rr]  	       return_IDENT_or_TOKEN(ENVVARtoken, 0);
 [Ee][Tt]                               return_IDENT_or_TOKEN(COMMIT, 0);
@@ -490,22 +450,6 @@ B			[ \t\n]+
                                 SqlciParse_IdentifierExpected = 0;
                 return_IDENT_or_TOKEN(FILENAME, 0);
                         }
-\\{G}\.\${G}\.{G}\.{G}	   {
-                                if (yylval.stringval_type)
-                                  delete [] yylval.stringval_type;
-                                yylval.stringval_type = new char[strlen(yytext)+1];
-                strcpy(yylval.stringval_type, yytext);
-                                return(NSK_NAME);
-                           }
-
-\\{G}\.\${G}               {
-                                if (yylval.stringval_type)
-	                              delete [] yylval.stringval_type;
-                                yylval.stringval_type = new char[strlen(yytext)+1];
-				strcpy(yylval.stringval_type, yytext);
-                                return(NODE_VOL_NAME);
-                           }
-
 \\{G}\.[0-9]*\,[0-9]*      {
                                 if (yylval.stringval_type)
 	                              delete [] yylval.stringval_type;
@@ -532,9 +476,7 @@ B			[ \t\n]+
 
 %%
 
-#ifdef NA_FLEXBUILD
 void SqlciLexReinit()
 {
     sqlcirestart(0);
 }
-#endif

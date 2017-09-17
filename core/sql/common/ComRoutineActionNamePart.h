@@ -39,14 +39,8 @@
 
 #include "Platform.h"
 #include "NAWinNT.h"  // for wchar (tcr)
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-#pragma nowarn (1506) // warning elimination
-#include <iostream.h>
-#pragma warn (1506) // warning elimination
-#endif
 #include <string.h>
 #include "ComOperators.h"
 #include "ComSmallDefs.h"

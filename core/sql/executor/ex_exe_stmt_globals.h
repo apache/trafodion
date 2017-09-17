@@ -147,7 +147,7 @@ class MemoryMonitor;
 class ExMsgResourceInfo;
 class ExScratchFileOptions;
 class ComTdbRoot;
-class CliStatement;
+class Statement;
 class ExUdrServer;
 class ExRsInfo;
 class ex_send_top_tcb;
@@ -468,7 +468,7 @@ public:
 
   ExMasterStmtGlobals(short num_temps,
 		      CliGlobals *cliGlobals,
-                      CliStatement *statement,
+                      Statement *statement,
 		      short create_gui_sched = 0,
 		      Space * space = NULL,
 		      CollHeap * heap = NULL);
@@ -528,7 +528,7 @@ public:
   Int64 getRowsAffected() const           {return rowsAffected_;}
   void setRowsAffected(Int64 newRows)             {rowsAffected_ = newRows;}
 
-  inline CliStatement *getStatement()                 { return statement_; }
+  inline Statement *getStatement()                 { return statement_; }
 
   // For asynchronous CLI cancel.
   inline CancelState getCancelState() const           {return cancelState_;}
@@ -601,7 +601,7 @@ private:
   ExRtFragTable *fragTable_;
 
   // Current statement
-  CliStatement *statement_;
+  Statement *statement_;
 
   // rows affected during the execution of this statement.
   // Applies to rows updated/deleted/inserted ONLY.

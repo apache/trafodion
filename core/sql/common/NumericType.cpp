@@ -802,7 +802,7 @@ NABoolean NumericType::createSQLLiteral(const char * buf,
 // -----------------------------------------------------------------------
 void NumericType::print(FILE* ofd, const char* indent)
 {
-#ifdef TRACING_ENABLED  // NT_PORT ( bd 8/4/96 )
+#ifdef TRACING_ENABLED 
   fprintf(ofd,"%s %s\n",indent,getTypeSQLname());
 #endif
 } // NumericType::print()

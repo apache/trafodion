@@ -40,12 +40,8 @@
  */
 
 
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-#include <iostream>
-#endif
 
 #include <stdio.h>
 #include "NAAssert.h"   // required after including a RogueWave file!

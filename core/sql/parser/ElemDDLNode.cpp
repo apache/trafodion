@@ -1982,7 +1982,7 @@ ElemDDLNode::print(FILE * f,
                    const char * prefix,
                    const char * suffix) const
 {
-#ifdef TRACING_ENABLED  // NT_PORT ( bd 8/4/96 )
+#ifdef TRACING_ENABLED 
   fprintf(f,"%s%s(%s)\n", prefix, (const char *)getText(), suffix);
 #endif
 }

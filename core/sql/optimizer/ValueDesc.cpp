@@ -534,7 +534,7 @@ ValueId::getNAColumn(NABoolean okIfNotColumn) const
       return NULL;
     CMPASSERT(okIfNotColumn);
   }
-  return NULL;  // NT_PORT
+  return NULL;
 }
 
 

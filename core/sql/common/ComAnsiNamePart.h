@@ -40,12 +40,8 @@
 
 #include "Platform.h"
 #include "NAWinNT.h"		// for wchar (tcr)
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-#include <iostream>
-#endif
 #include <string.h>
 #include "ComOperators.h"
 #include "ComSmallDefs.h"

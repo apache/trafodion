@@ -528,7 +528,6 @@ public:
       len_etc.datetime_.len = (unsigned short) len;
   };
 
-#ifdef NA_CATMAN_SIM
   Lng32 getBeginType()
   {
     if (type == REC_DATETIME)
@@ -556,7 +555,6 @@ public:
     if (type == REC_DATETIME)
       len_etc.datetime_.end_type = (unsigned short) etype;
   };
-#endif  // NA_CATMAN_SIM
 
   unsigned char flags;
   unsigned char type;

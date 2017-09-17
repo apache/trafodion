@@ -342,13 +342,7 @@ public:
 
   inline CollIndex getUsedLength() const {return usedLength_; }
 
-// The c89 compiler doesn't recognize the friend declaration above.
-// For now, make all methods public when using c89.
-
-#if !defined( NA_MSVC ) && !defined(NA_NO_FRIENDS_WITH_TEMPLATE_REFS)
-
-protected:                                                // NT_PORT SK 04/08/97
-#endif // ! NA_MSVC && ! NA_NO_FRIENDS_WITH_TEMPLATE_REFS
+  //protected:      
 
   // default constructor(empty collection)
   NACollection(CollIndex initLen = 0) : heap_(NULL)
