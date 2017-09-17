@@ -867,16 +867,42 @@ bool double_to_char (double number, int precision, char* string, short size)
 {
     bool rc = false;
     char format[16] = { '\0' };
+    size_t actualLen = 0;
+
+    // make sure any precision of possible double value can be format to the buf. 
     char buf[MAX_DOUBLE_TO_CHAR_LEN] = { '\0' };
 
-    sprintf(format, "%%.%dlg", precision);
-    sprintf(buf, format, number);
+    // precision should less than size
+    precision = precision < size ? precision : size - 1;
 
-    if (size > strlen(buf)) {
-        strcpy(string, buf);
-        rc = true;
+    // precission should be limit to a reasonable range.
+    if ((precision < 0) && (precision >(DBL_MANT_DIG - DBL_MIN_EXP))) {
+        goto fun_exit;
     }
 
+    // we want to return reasonable value even when caller didn't provide sufficiently buffer. 
+    // here using loop because actualLen may increase even precision decrease when fix-point
+    // notation to exponential notation. for example:
+    // for double d = 12345678.9, the caller only provide size=8.
+    // d will first convert to "1.234568e+07", actualLen == 12. then convert to "1.2e+07".
+    do {
+        if (sprintf(format, "%%.%dlg", precision) < 0) {
+            goto fun_exit;
+        }
+        if ((actualLen = sprintf(buf, format, number)) < 0) {
+            goto fun_exit;
+        }
+        if (size > actualLen) {
+            strcpy(string, buf);
+            rc = true;
+            break;
+        }
+        else {
+            precision -= (actualLen - size + 1);
+        }
+    } while ((precision >= 0));
+
+fun_exit:
 	return rc;
 } 
 
