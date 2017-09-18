@@ -153,12 +153,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\JsonReader.c" />
     <ClCompile Include="..\src\memcpy_wrapper.c" />
     <ClCompile Include="..\src\mreadline.c" />
     <ClCompile Include="..\src\odb.c" />
     <ClCompile Include="..\src\versodb.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\JsonReader.h" />
     <ClInclude Include="..\src\verslib.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
