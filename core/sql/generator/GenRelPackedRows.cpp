@@ -27,6 +27,7 @@
 #include "GenExpGenerator.h"
 #include "ExpCriDesc.h"
 #include "ComTdbUnPackRows.h"
+#include "ex_queue.h"
 
 // PhysUnPackRows::preCodeGen() -------------------------------------------
 // Perform local query rewrites such as for the creation and
@@ -414,14 +415,22 @@ PhysUnPackRows::codeGen(Generator *generator)
       // queue size values represent initial (and final) queue
       // sizes (not max queue sizes).
       //
-      queue_index upQueueSize = 
-        (queue_index)getGroupAttr()->getOutputLogPropList()[0]->getResultCardinality().value();
+      ULng32 rowsetSize = 
+          getGroupAttr()->getOutputLogPropList()[0]->getResultCardinality().value();
+      double  memoryLimitPerInstance =
+              ActiveSchemaDB()->getDefaults().getAsLong(EXE_MEMORY_FOR_UNPACK_ROWS_IN_MB) * 1024 * 1024;
 
-      // Make sure it is at least 1024.
-      upQueueSize = (upQueueSize < 1024 ? 1024 : upQueueSize);
+      rowsetSize = (rowsetSize < 1024 ? 1024 : rowsetSize);
+      double estimatedMemory = rowsetSize * unPackColsTupleLen;
+ 
+      if (estimatedMemory > memoryLimitPerInstance)
+      {
+         estimatedMemory = memoryLimitPerInstance;
+         rowsetSize = estimatedMemory / unPackColsTupleLen;
+         rowsetSize = MAXOF(rowsetSize, 1);
+      }
 
-      // Make sure that it is not more the 64K.
-      upQueueSize = (upQueueSize > 65536 ? 65536 : upQueueSize);
+      queue_index upQueueSize = ex_queue::roundUp2Power((queue_index)rowsetSize);
 
       unPackTdb =
 	new (space) ComTdbUnPackRows(childTdb,

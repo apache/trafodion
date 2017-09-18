@@ -381,6 +381,8 @@ char *Space::privateAllocateSpace(ULng32 size, NABoolean failureIsFatal) {
 }
 
 void * Space::allocateSpaceMemory(size_t size, NABoolean failureIsFatal) {
+      if (! checkSize(size, failureIsFatal))
+         return NULL;
       void * rc = allocateAlignedSpace(size, failureIsFatal);
       HEAPLOG_ADD_ENTRY(rc, size, heapID_.heapNum, getName())
       if (rc) return rc;
@@ -398,9 +400,11 @@ void * Space::allocateSpaceMemory(size_t size, NABoolean failureIsFatal) {
 }
 
 
-char *Space::allocateAlignedSpace(ULng32 size, NABoolean failureIsFatal) {
+char *Space::allocateAlignedSpace(size_t size, NABoolean failureIsFatal) {
   if (size <= 0)
-    return 0;
+    return NULL;
+  if (! checkSize(size, failureIsFatal))
+     return NULL;
 
   // return aligned space on an 8 byte boundary
   return privateAllocateSpace((ULng32) roundUp8((Lng32)size), failureIsFatal);
@@ -425,6 +429,9 @@ char *Space::allocateAndCopyToAlignedSpace(const char *dp,
       else
 	alen = countPrefixSize + dlen;
     }
+
+  if (! checkSize(alen, failureIsFatal))
+     return NULL;
 
   char* rp = allocateAlignedSpace(alen, failureIsFatal);
 

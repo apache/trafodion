@@ -86,6 +86,8 @@ class NATreeFragment;
 class MemBinsem;
 class SegmentStatus;
 
+#define MAX_MEMORY_SIZE_IN_AN_ALLOC  INT_MAX
+
 
 // MemoryStats is used for dynamically allocated statistics (when MEMDEBUG=1 or higher)
 // and if NAHeap::dump() is called.
@@ -403,6 +405,8 @@ public:
   void setSharedMemory() { sharedMemory_ = TRUE; }
 
   NABoolean isComSpace(void) { return derivedClass_ == COMSPACE_CLASS; } ;
+ 
+  NABoolean checkSize(size_t size, NABoolean failureIsFatal);
 
 protected:
 
