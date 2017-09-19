@@ -346,17 +346,15 @@ void CCluster::NodeReady( CNode *spareNode )
         lnode->Up();
     }
 
-    ResetIntegratingPNid();
     spareNode->SetActivatingSpare( false );
-
     if ( MyNode->IsCreator() )
     {
         MyNode->SetCreator( false, -1, -1 );
     }
+    ResetIntegratingPNid();
 
     TRACE_EXIT;
 }
-
 
 // Assigns a new TMLeader if given pnid is same as TmLeaderNid 
 // TmLeader is a logical node num. 
@@ -850,11 +848,11 @@ void CCluster::HardNodeDown (int pnid, bool communicate_state)
         {
             if ( node->GetPNid() == integratingPNid_ )
             {
-                ResetIntegratingPNid();
                 if ( MyNode->IsCreator() )
                 {
                     MyNode->SetCreator( false, -1, -1 );
                 }
+                ResetIntegratingPNid();
             }
             node->KillAllDown();
             node->SetState( State_Down ); 
@@ -1472,11 +1470,11 @@ int CCluster::HardNodeUp( int pnid, char *node_name )
                 }
             }
 
-            ResetIntegratingPNid();
             if ( MyNode->IsCreator() )
             {
                 MyNode->SetCreator( false, -1, -1 );
             }
+            ResetIntegratingPNid();
 
             if (trace_settings & (TRACE_INIT | TRACE_RECOVERY))
                trace_printf( "%s@%d" " - New monitor %s, pnid=%d, state=%s, spare=%d\n"
@@ -8810,7 +8808,7 @@ int CCluster::ReceiveSock(char *buf, int size, int sockFd)
             }
             else
             {
-                sizeCount -= received;
+                sizeCount -= readCount;
                 readAgain = true;
             }
         }

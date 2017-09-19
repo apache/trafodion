@@ -2464,17 +2464,19 @@ void CIntSnapshotReq::performRequest()
     }
 
     // estimate size of snapshot buffer
-    // about 100 bytes per process, 1.5 times total
-    int procSize = Nodes->ProcessCount() * 1.75 * 100;
-    int spareNodeSize = Nodes->GetSpareNodesList()->size() * sizeof(int); // pnids
+    // about 100 bytes per process, 2 times total
+    int procSize = Nodes->ProcessCount() * 2 * 100;
+    int idsSize = Nodes->GetSNodesCount() * sizeof(int); // spare pnids
+    idsSize += (Nodes->GetPNodesCount() + Nodes->GetLNodesCount()) * sizeof(int); // pnid/nid map
+    idsSize += Nodes->GetLNodesCount() * sizeof(int);    // nids
 
     if (trace_settings & (TRACE_REQUEST | TRACE_INIT | TRACE_RECOVERY))
-        trace_printf("%s@%d - Snapshot sizes, procSize = %d, spareNodeSize = %d\n",
-                      method_name, __LINE__, procSize, spareNodeSize);
+        trace_printf("%s@%d - Snapshot sizes, procSize = %d, idsSize = %d\n",
+                      method_name, __LINE__, procSize, idsSize);
 
-    mem_log_write(MON_REQQUEUE_SNAPSHOT_4, procSize, spareNodeSize);
+    mem_log_write(MON_REQQUEUE_SNAPSHOT_4, procSize, idsSize);
 
-    snapshotBuf = (char *) malloc (procSize + spareNodeSize); 
+    snapshotBuf = (char *) malloc (procSize + idsSize); 
 
     if (!snapshotBuf) 
     {
