@@ -98,6 +98,8 @@ bool MpiInitialized = false;
 bool SpareNodeColdStandby = true;
 bool ElasticityEnabled = true;
 
+int   lastDeathNid = -1;
+int   lastDeathPid = -1;
 bool  waitDeathPending = false;
 int   waitDeathNid;
 int   waitDeathPid;
@@ -993,6 +995,7 @@ void nodePendingComplete()
 void waitDeathComplete()
 {
     waitDeathLock.lock();
+    waitDeathPending = false;
     waitDeathLock.wakeOne();
     waitDeathLock.unlock();
 }
@@ -1094,7 +1097,6 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         {
             if ( recv_msg->u.request.u.down.nid == waitDeathNid )
             {   // Node is down so process is down too.
-                waitDeathPending = false;
                 waitDeathComplete();
             }
         }
@@ -1127,7 +1129,6 @@ void recv_notice_msg(struct message_def *recv_msg, int )
         {
             if ( msg->u.request.u.quiesce.nid == waitDeathNid )
             {   // Node is quiesced so process is down too.
-                waitDeathPending = false;
                 waitDeathComplete();
             }
         }
@@ -1179,12 +1180,13 @@ void recv_notice_msg(struct message_def *recv_msg, int )
                     recv_msg->u.request.u.death.nid,
                     recv_msg->u.request.u.death.pid);
         }
+        lastDeathNid = recv_msg->u.request.u.death.nid;
+        lastDeathPid = recv_msg->u.request.u.death.pid;
         if ( waitDeathPending )
         {
             if ( recv_msg->u.request.u.death.nid == waitDeathNid
               && recv_msg->u.request.u.death.pid == waitDeathPid )
             {
-                waitDeathPending = false;
                 waitDeathComplete();
             }
         }
@@ -1604,7 +1606,6 @@ char *find_end_of_token (char *cmd, int maxlen, bool isEqDelim, bool isDashDelim
        && *ptr 
        && *ptr != ' ' 
        && *ptr != ',' 
-       && *ptr != ';' 
        && *ptr != '{' 
        && *ptr != '}' 
        && *ptr != ':')
@@ -2706,6 +2707,23 @@ void get_server_death (int nid, int pid)
         request_notice(nid, pid, transid);
     }
 
+    if ( lastDeathNid == nid
+      && lastDeathPid == pid )
+    {
+        if ( trace_settings & TRACE_SHELL_CMD )
+            trace_printf("%s@%d [%s] death message already received from nid=%d, "
+                         "pid=%d.\n", method_name, __LINE__, MyName, nid, pid);
+
+        lastDeathNid = -1;
+        lastDeathPid = -1;
+
+        if ( trace_settings & TRACE_SHELL_CMD )
+            trace_printf("%s@%d [%s] Exiting wait for process death\n",
+                         method_name, __LINE__, MyName);
+
+        return;
+    }
+    
     if ( trace_settings & TRACE_SHELL_CMD )
         trace_printf("%s@%d [%s] waiting for death message from nid=%d, "
                      "pid=%d.\n", method_name, __LINE__, MyName, nid, pid);
