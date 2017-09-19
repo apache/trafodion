@@ -1242,7 +1242,7 @@ void emitError( Lng32 ErrNum, char *stringType, Lng32 numArgs, ... )
       va_start( ap, numArgs );
       assert( numArgs < 11 ); // at most, 10 arguments are acceptable
 
-      for( UInt32 argNum = 0; argNum < (UInt32)numArgs; argNum++ )  // NT_PORT ( bd 12/9/96 )
+      for( UInt32 argNum = 0; argNum < (UInt32)numArgs; argNum++ )
          if ( stringType[ argNum ] == 'T' )  {
             assert( strIdx < 5 );
 #pragma nowarn(1506)   // warning elimination 

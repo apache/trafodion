@@ -40,7 +40,7 @@
 
 #include "GenMapTable.h"
 #include "FragmentDir.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "exp_clause.h"
 #include "str.h"
 #include "Int64.h"

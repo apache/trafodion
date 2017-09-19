@@ -41,29 +41,21 @@
 #include <stdlib.h>
 #include <fstream>
 
-  #ifdef _DEBUG
-    #include <string.h>
-  #endif
-
-#if 0
-#define DllImport
-#include "guardian/pprcinfz.h"
+#ifdef _DEBUG
+#include <string.h>
 #endif
 
 #include <dlfcn.h>  
 
 
-  #include "ComMemoryDiags.h"		// ComMemoryDiags::DumpMemoryInfo()
-
-
-#define NA_LINUX_QT
+#include "ComMemoryDiags.h"		// ComMemoryDiags::DumpMemoryInfo()
 
 #include "CmpContext.h"
 #include "Analyzer.h"
 #include "AllRelExpr.h"
 #include "BindWA.h"
 #include "CacheWA.h"
-#include "catapirequest.h"
+
 #include "ComDiags.h"
 #include "CmpCommon.h"
 #include "CmpErrors.h"
@@ -292,16 +284,11 @@ void CmpMain::initGuiDisplay(RelExpr *queryExpr)
 #ifdef NA_DEBUG_GUI
   NABoolean CmpMain::guiDisplay(Sqlcmpdbg::CompilationPhase phase, RelExpr* q)
   {
-#if defined(NA_LINUX_QT)
       if (((RelRoot *)q)->getDisplayTree() && CmpMain::pExpFuncs_)
       {
         initializeGUIData(CmpMain::pExpFuncs_);
         CmpMain::pExpFuncs_->fpDisplayQueryTree(phase, q, NULL);
       }
-#else
-      if (((RelRoot *)q)->getDisplayTree())
-        cout << "Sorry... gui display is not supported in this environment.\n";
-#endif
     return FALSE;
   }
 #endif
@@ -322,8 +309,6 @@ void CmpMain::initGuiDisplay(RelExpr *queryExpr)
 //--------------------------------------------------------------------
 void CmpMain::loadSqlCmpDbgDLL_msGui()
 {
-#if   defined(NA_LINUX_QT) // NA_WINNT
-
   if ( CmpMain::msGui_ == NULL ) // If no Compiler Instance is currently using debugger
   {
      CmpMain::msGui_ = CmpCommon::context();     // Claim ownership of debugger
@@ -348,8 +333,6 @@ void CmpMain::loadSqlCmpDbgDLL_msGui()
      if ( dlptr == NULL )
         CmpMain::msGui_ = NULL ;  //This Compiler Instance cannot use debugger
   }
-
-#endif // NA_LINUX_QT
   // free the DLL module
 }
 #endif // NA_DEBUG_GUI
@@ -468,7 +451,6 @@ void CmpMain::sqlcompCleanup(const char *input_str,
     cmpTracker->logCompilerStatusOnInterval(trackingInterval);
   }
   
-#if defined(NA_LINUX_QT)
   if( dlptr  &&  CmpMain::msGui_ == CmpCommon::context() && CURRENTSTMT->displayGraph())
   {	
     int ret = dlclose(dlptr);
@@ -477,10 +459,6 @@ void CmpMain::sqlcompCleanup(const char *input_str,
   }	
 
   CURRENTSTMT->clearDisplayGraph();
-#endif
-
-
-
 }
 
 RelExpr *CmpMain::transform(NormWA &normWA, RelExpr *queryExpr)

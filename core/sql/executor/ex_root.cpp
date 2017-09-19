@@ -2383,7 +2383,7 @@ Int32 ex_root_tcb::cancel(ExExeStmtGlobals * glob, ComDiagsArea *&diagsArea,
               // diags area. It would be nice to have a more general
               // fix, but meanwhile, we store off the curr context diags 
               // area before calling scheduler and restore afterwards.
-              CliStatement *statement = 
+              Statement *statement = 
                 glob->castToExMasterStmtGlobals()->getStatement();
               ContextCli *context = statement->getContext();
               ComDiagsArea *savedContextDiags = context->diags().copy();

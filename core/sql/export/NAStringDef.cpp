@@ -55,9 +55,7 @@
 
 #include "str.h"
 #include <fstream>
-#ifdef NA_STD_NAMESPACE
 using namespace std;
-#endif // NA_STD_NAMESPACE
 
 // we're using the multithread-safe versions here
 #define MULTITHREAD_LOCK

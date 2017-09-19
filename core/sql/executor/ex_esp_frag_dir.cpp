@@ -48,7 +48,7 @@
 #include "ex_tcb.h"
 #include "ex_split_bottom.h"
 #include "ex_send_bottom.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "ComDiags.h"
 #include "LateBindInfo.h"
 #include "NAHeap.h"

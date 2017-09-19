@@ -45,7 +45,6 @@
 #include "ComTdb.h"
 #include "ex_tcb.h"
 #include "ex_root.h"
-#include "ExMeas.h"
 #include "ExStats.h"
 #include "ExSqlComp.h"
 #include "ex_transaction.h"

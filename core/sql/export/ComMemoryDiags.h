@@ -42,14 +42,8 @@
 // -----------------------------------------------------------------------
 class ComMemoryDiags;   // used to diagnose memory leaks
 
-
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-class ostream ; // forward decl 
-#endif
-
 
 //
 // class ComMemoryDiags is simply a wrapper around the static data member

@@ -135,7 +135,7 @@ ostream & operator << (ostream &s, const ComUID &uid)
   num = uid.data;
   while (num > 0)
   {
-    digit = (Int32) (num % 10);          // NT_PORT (10/17/96)
+    digit = (Int32) (num % 10);     
     num = num / 10;
 #pragma nowarn(1506)   // warning elimination
     buf[i--] = digit+'0';

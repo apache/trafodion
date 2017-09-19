@@ -38,7 +38,7 @@
  *****************************************************************************
  */
 
-#include <stdio.h>  // NT_PORT ( bd 10/24/96 ) define NULL
+#include <stdio.h> 
 #include <iostream>
 
 #include "Platform.h"

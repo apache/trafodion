@@ -72,8 +72,7 @@ class ExRsInfo;
 class AQRStatementInfo;
 class StrTarget;
 
-class CliStatement;
-#define Statement CliStatement
+class Statement;
 
 ////////////////////////////////////////////////////////////////////////
 // this class stores statement information that is needed on each cli
@@ -413,7 +412,6 @@ private:
   void buildConsumerQueryTemplate();
 
   // returns true, if plan has been fixed up. 0, otherwise.
-  // NT_PORT ( bd 10/22/96 )
   inline short fixupState();
   inline void  setFixupState(short state);
   

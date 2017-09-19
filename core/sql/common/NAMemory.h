@@ -64,12 +64,8 @@ template <class T> class NAList;
 #endif // _DEBUG
 
 #if (defined(_DEBUG) || defined(NSK_MEMDEBUG))
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#else
-class ostream;
-#endif
 #endif // (defined(_DEBUG) || defined(NSK_MEMDEBUG))
 
 #include <unistd.h>

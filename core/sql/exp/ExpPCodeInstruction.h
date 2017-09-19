@@ -68,7 +68,6 @@ typedef Int32 PCodeBinary;
 // Currently 1 on 32-bit platform and 2 on 64-bit platform
 #define PCODEBINARIES_PER_PTR sizeof(char*)/sizeof(PCodeBinary)
 
-#include "SqlExpDllDefines.h"
 // PCIType
 //
 // The PCIType class encapsulates and provides a uniform name space

@@ -1712,7 +1712,7 @@ DisjunctArray * BiLogic::mdamTreeWalk()
       break;
     }
 
-   return 0; // NT_PORT ( bd 1/14/96 ) Eliminate compiler warning
+   return 0;
 } // BiLogic::mdamTreeWalk()
 
 // MDAMR

@@ -1532,7 +1532,7 @@ void SearchKeyWorkSpace::analyzeSearchPredicates
 			     const ValueIdSet & externalInputs
 			     )
 {
-  for (CollIndex keyNum = 0; keyNum < (CollIndex)keyCount_; keyNum++)  // NT_PORT ( bd 10/22/96 ) cast to CollIndex
+  for (CollIndex keyNum = 0; keyNum < (CollIndex)keyCount_; keyNum++)
     {
       // Set the value contained in the key predicate (if any)
       // for this key column (i.e. bound):

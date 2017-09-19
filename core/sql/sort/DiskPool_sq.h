@@ -65,7 +65,7 @@ private:
 
   short factorImportanceTotalFreeSpace_;
   short factorImportanceNumScrFiles_;  
-  SortError *sortError_; // NT_PORT ( ls 2/7/97 )
+  SortError *sortError_;
 };
 
 //--------------------------------------------------------------------------

@@ -44,7 +44,7 @@
 /*#include "ExpLOBexternal.h"*/
 
 class ComDiagsArea;
-class CliStatement;
+class Statement;
 class ComTdb;
 class ExStatisticsArea;
 

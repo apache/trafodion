@@ -87,7 +87,6 @@ DEFINE_DOVERS(sqlci)
 #endif
 
 #include "EHException.h"
-#include "MxciEHCallBack.h"
 
 #ifdef _DEBUG_RTS
 #include "ComQueue.h"

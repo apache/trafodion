@@ -45,12 +45,7 @@
 #include "HeapLog.h"
 #include "HeapLogImpl.h"
 
-
-#ifdef NA_STD_NAMESPACE
 using namespace std;
-#endif
-
-
 
 #define HEAP_NUM_BASE         19
 #define HEAP_NUM_RESERVED      9

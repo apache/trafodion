@@ -77,10 +77,8 @@ const char * ComRtGetNextInternalModName(Lng32 &index, char * modNameBuf);
 // Class to read an oss file by oss path name or Guardian File name
 // -----------------------------------------------------------------------
 
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#endif
 
 class ModuleOSFile
 {

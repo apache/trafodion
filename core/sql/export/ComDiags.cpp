@@ -3381,11 +3381,7 @@ void ComDiagsArea::destroyMe()
 
 void ComDiagsArea::DiagsCondition::destroyMe()
 {
-#ifdef NA_MSVC                              // NT_PORT (bsv 11/7/96)
   this -> DiagsCondition::~DiagsCondition();
-#else
-  this -> ComDiagsArea::DiagsCondition::~DiagsCondition();
-#endif
 }
 
 ComDiagsArea::DiagsCondition &

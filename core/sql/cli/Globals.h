@@ -63,9 +63,6 @@
 #include <setjmp.h>
 
 #include "NAMemory.h"
-#ifndef BUILD_MUSE
-#include "ExMeas.h"
-#endif
 #include "sqlcli.h"
 #include "QuasiFileManager.h"
 #include "Ipc.h"
@@ -75,7 +72,7 @@
 #include "ComRtUtils.h"
 #include "ComSmallDefs.h"
 class ContextCli;
-class CliStatement;  // $$$ possibly a stub for QuasiFileberManager
+class Statement;  // $$$ possibly a stub for QuasiFileberManager
 class ComDiagsArea; // $$$ possibly a stub for QuasiFileberManager
 class ExEspManager;
 class ExSsmpManager;

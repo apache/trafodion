@@ -40,7 +40,7 @@
 
 
 
-#include "Platform.h"                           // NT_PORT SK 02/08/97
+#include "Platform.h"           
 #include "Collections.h"
 #include "ProcessEnv.h"
 #include "CmpCommon.h"

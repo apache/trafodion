@@ -137,7 +137,6 @@ PhysicalProperty::compareProperties (const PhysicalProperty &other) const
 #pragma warn(1506)  // warning elimination
   Lng32 minEntries = MINOF(myKeyCount,otherKeyCount);
 
-  // NT_PORT ( bd 10/22/96 ) cast to CollIndex
   for (CollIndex index = 0; index < (CollIndex)minEntries; index++)
     if (NOT (sortKey_[index] == other.sortKey_[index]))
       {
@@ -580,7 +579,7 @@ ReqdPhysicalProperty::compareRequirements(const ReqdPhysicalProperty &other) con
 	otherSortEntries = 0;
 
       // The columns in coreesponding positions must be the same.
-      for (CollIndex i = 0; i < (CollIndex)MINOF(mySortEntries,otherSortEntries); i++)  // NT_PORT ( bd 10/22/96 ) cast to CollIndex
+      for (CollIndex i = 0; i < (CollIndex)MINOF(mySortEntries,otherSortEntries); i++) 
 	{
 	  if (NOT (orderedBy_->at(i) == other.orderedBy_->at(i)))
 	    {

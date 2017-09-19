@@ -55,11 +55,7 @@
 #include "CmpContext.h"
 #include "CmpCommon.h"
 
-
-
-#ifdef NA_STD_NAMESPACE
 using namespace std;
-#endif
 
 //****************************************************************************
 // CHARSET stuff

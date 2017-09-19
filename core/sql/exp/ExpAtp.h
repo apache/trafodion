@@ -38,7 +38,6 @@
 #ifndef EXP_ATP_H
 #define EXP_ATP_H
 
-#include "SqlExpDllDefines.h"
 // Local defines for assertions
 //
 //#define ExAtpAssert(a,b) ex_assert(a,b)

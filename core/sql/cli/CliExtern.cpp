@@ -75,7 +75,6 @@
 #include "memorymonitor.h"
 
 #include "dfs2rec.h"
-#include "ExMeas.h"
 #include "Statement.h"
 #include "ComSqlId.h"
 

@@ -325,9 +325,7 @@ short FCRepeat::process(SqlciEnv * sqlci_env)
   // ignore if "!" is in an obey file, or stdin redirected from a file
   // (should we display an informative error message?)
   if (!sqlci_env->isInteractiveNow())
-#pragma nowarn(1506)   // warning elimination 
     return retval;
-#pragma warn(1506)  // warning elimination 
 
   InputStmt * input_stmt = 0;
 
@@ -385,9 +383,7 @@ short FCRepeat::process(SqlciEnv * sqlci_env)
       SqlciError(SQLCI_NO_STMT_MATCH, (ErrorParam *) 0);
     }
   
-#pragma nowarn(1506)   // warning elimination 
   return retval;
-#pragma warn(1506)  // warning elimination 
 }
 
 
@@ -405,9 +401,7 @@ short FixCommand::process(SqlciEnv * sqlci_env)
   // ignore if FC is in an obey file, or stdin redirected from a file
   // (should we display an informative error message?)
   if (!sqlci_env->isInteractiveNow())
-#pragma nowarn(1506)   // warning elimination 
     return retval;
-#pragma warn(1506)  // warning elimination 
 
   InputStmt *input_stmt = 0, *stmt = 0;
 
@@ -556,8 +550,6 @@ short FixCommand::process(SqlciEnv * sqlci_env)
       SqlciError(SQLCI_NO_STMT_MATCH, (ErrorParam *) 0);
     }
 
-#pragma nowarn(1506)   // warning elimination 
   return retval;
-#pragma warn(1506)  // warning elimination 
 } // end FixCommand::process
 

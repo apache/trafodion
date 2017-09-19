@@ -21,8 +21,7 @@
 # @@@ END COPYRIGHT @@@
 #######################################################################
 
-CPPSRC := SqlciMain.cpp \
-	MxciEHCallBack.cpp
+CPPSRC := SqlciMain.cpp 
 
 EARLY_DLLS:= -ljsig
 

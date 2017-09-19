@@ -36,9 +36,6 @@
 
 #include "Platform.h"
 
-
-#include "SqlExpDllDefines.h"
-
 #include <setjmp.h>
 
 THREAD_P jmp_buf ExportJmpBuf;

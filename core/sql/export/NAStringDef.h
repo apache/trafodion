@@ -42,10 +42,8 @@
 
 #include "Platform.h"
 
-#ifdef NA_STD_NAMESPACE
 #include <iosfwd>
 using namespace std;
-#endif 
 
 // -----------------------------------------------------------------------
 //

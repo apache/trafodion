@@ -39,7 +39,7 @@
 
 #include "ComPackDefs.h"
 #include "ExpCriDesc.h"
-#include "exp_space.h"
+#include "ComSpace.h"
 #include "exp_tuple_desc.h"
 #include <iostream>
 

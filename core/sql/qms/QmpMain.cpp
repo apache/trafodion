@@ -32,15 +32,12 @@
 #include "QmpPublish.h"
 #include "NAType.h"
 
-#ifdef NA_LINUX
 #include "nsk/nskport.h"
 #include "seabed/ms.h"
 #include "seabed/fs.h"
 extern void my_mpi_fclose();
 #include "SCMVersHelp.h"
 DEFINE_DOVERS(tdm_arkqmp)
-#endif
-
 
 /**
  * \file
@@ -115,17 +112,14 @@ static NABoolean processCommandLine(Int32 argc, char *argv[])
   return TRUE;
 } // End of processCommandLine
 
-#ifdef NA_LINUX
 extern "C"
 {
 Int32 sq_fs_dllmain();
 }
-#endif
 
 
 Int32 main(Int32 argc, char *argv[])
 {
-#ifdef NA_LINUX
   dovers(argc, argv);
 
   try
@@ -143,7 +137,6 @@ Int32 main(Int32 argc, char *argv[])
     exit(1);
   }
   // LCOV_EXCL_STOP
-#endif
 
   NAHeap qmpHeap("QMP Heap", NAMemory::DERIVED_FROM_SYS_HEAP, (Lng32)131072);
 

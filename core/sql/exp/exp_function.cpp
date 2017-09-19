@@ -2803,7 +2803,7 @@ ex_expr::exp_return_type ex_function_dayofweek::eval(char *op_data[],
   day = *datetimeOpData;
   interval = datetimeOpType->getTotalDays(year, month, day);
 #pragma nowarn(1506)   // warning elimination 
-  unsigned short result = (unsigned short)((interval + 1) % 7) + 1;  // NT_PORT ( bd 12/9/96 ) cast to unsigned short
+  unsigned short result = (unsigned short)((interval + 1) % 7) + 1;
 #pragma warn(1506)  // warning elimination 
   str_cpy_all(op_data[0], (char *) &result, sizeof(result));
   return ex_expr::EXPR_OK;

@@ -39,7 +39,6 @@
 #ifndef ExpPCodeList_h
 #define ExpPCodeList_h
 
-#include "SqlExpDllDefines.h"
 #include "ExpPCodeInstruction.h"
 
 // Forward External Declaractions

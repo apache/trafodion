@@ -109,7 +109,7 @@
 
 #endif
 
-#if defined (NA_LITTLE_ENDIAN) || defined(NA_MXCS)                            // NT_PORT SK 08/13/96
+#if defined (NA_LITTLE_ENDIAN) || defined(NA_MXCS)
 #ifndef LLONG_MAX
 #define LLONG_MAX _I64_MAX
 #endif

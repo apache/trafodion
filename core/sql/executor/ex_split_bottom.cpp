@@ -1698,7 +1698,7 @@ const ex_tcb* ex_split_bottom_tcb::getChild(Int32 pos) const
   ex_assert((pos >= 0), "");
   if (pos == 0)
     return tcbChild_;
-  else if (pos > 0 AND pos <= (Int32)sendNodes_.entries())  // NT_PORT ( bd 12/6/96 )
+  else if (pos > 0 AND pos <= (Int32)sendNodes_.entries())
     return (ex_tcb *) sendNodes_[pos-1];
   else
     return NULL;

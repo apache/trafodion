@@ -39,7 +39,7 @@
 
 
 #include <stdlib.h>
-#include "Platform.h"                                    // NT_PORT SK 02/08/97
+#include "Platform.h"
 #include "ComDiags.h"
 #include "CmpCommon.h"
 #include "cli_stdh.h"

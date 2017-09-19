@@ -51,7 +51,6 @@
 #include "ssmpipc.h"
 #include "ComCextdecs.h"
 #include "ex_tcb.h"
-#include "ExMeas.h"
 #include "SQLCLIdev.h"
 #include "ExExeUtil.h"
 #include "ExpLOBstats.h"

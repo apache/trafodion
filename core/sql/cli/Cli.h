@@ -45,7 +45,7 @@
 #include "SQLCLIdev.h"
 #include "ExpLOBexternal.h"
 #include "ComDiags.h"
-class CliStatement;
+class Statement;
 class CliGlobals;
 class ContextCli;
 class Descriptor;

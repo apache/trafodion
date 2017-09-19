@@ -137,9 +137,7 @@ PrepStmt::PrepStmt(const char * stmt_name_, dml_type type_)
   stmt_name = new char[strlen(stmt_name_) + 1];
   strcpy(stmt_name, stmt_name_);
 
-#pragma nowarn(1506)   // warning elimination 
   stmt_name_len = strlen(stmt_name);
-#pragma warn(1506)  // warning elimination 
  
   stmt_str = 0;
   sql_src = 0;
@@ -228,9 +226,7 @@ void PrepStmt::set(const char * str,
       strcpy(stmt_str, str);
     }
 
-#pragma nowarn(1506)   // warning elimination 
   stmt_str_len = strlen(str);
-#pragma warn(1506)  // warning elimination 
   
   sql_src = sql_src_;
   stmt = stmt_;
@@ -244,11 +240,8 @@ void PrepStmt::set(const char * str,
 
 short PrepStmt::contains(const char * value) const
 {
-#pragma warning (disable : 4018)   //warning elimination
-// 3/25/97: need rework in the future on strlen(value).
   if ( stmt_name_len != strlen(value) )
     return 0;
-#pragma warning (default : 4018)   //warning elimination
 
   if (str_cmp(stmt_name, value, stmt_name_len) == 0)
     return -1;
@@ -267,9 +260,7 @@ CursorStmt::CursorStmt(char * cursorName,
 {
   cursorName_ = new char[strlen(cursorName) + 1];
   strcpy(cursorName_, cursorName);
-#pragma nowarn(1506)   // warning elimination 
   cursorNameLen_ = strlen(cursorName_);
-#pragma warn(1506)  // warning elimination 
 }
 
 CursorStmt::~CursorStmt()
@@ -282,10 +273,8 @@ CursorStmt::~CursorStmt()
 
 short CursorStmt::contains(const char * value) const
 {
-#pragma warning (disable : 4018)   //warning elimination
   if ( cursorNameLen_ != strlen(value) )
     return 0;
-#pragma warning (default : 4018)   //warning elimination
 
   if (str_cmp(cursorName_, value, cursorNameLen_) == 0)
     return -1;

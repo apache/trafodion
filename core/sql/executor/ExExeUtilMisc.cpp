@@ -55,7 +55,6 @@
 #include  "ComSmallDefs.h"
 //#include  "hdfs.h" //will replace with LOB interface
 #include <unistd.h>
-//#include  "catapirequest.h"
 
 //////////////////////////////////////////////////////////
 // classes defined in this file:

@@ -36,7 +36,7 @@
  *****************************************************************************
  */
 
-#include "Platform.h"                                     // NT_PORT SK 02/10/97
+#include "Platform.h" 
 
 
 #include "exp_stdh.h"

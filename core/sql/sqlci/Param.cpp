@@ -372,7 +372,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       converted_value = new char[targetLen];
 
 
-#pragma nowarn(1506)   // warning elimination 
     ex_expr::exp_return_type ok;
     CharInfo::CharSet TCS = sqlci_env->getTerminalCharset();
     CharInfo::CharSet ISOMAPCS = sqlci_env->getIsoMappingCharset();
@@ -429,7 +428,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       // desctructor.
       return SQL_Error; // error case
     }
-#pragma warn(1506)  // warning elimination
     
   };
   break;
@@ -444,7 +442,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
     UInt32 flags = 0;
     flags |= CONV_NO_HADOOP_DATE_FIX;
 
-#pragma nowarn(1506)   // warning elimination 
     ex_expr::exp_return_type ok = convDoIt(value,
 					   sourceLen, 
 					   sourceType,
@@ -467,7 +464,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       {
 	return SQL_Error; // error case
       }
-#pragma warn(1506)  // warning elimination
   };
   break;
 
@@ -488,7 +484,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
     // convert target back to string.
     converted_value = new char[targetLen];
     Lng32 convFlags = CONV_ALLOW_SIGN_IN_INTERVAL;
-#pragma nowarn(1506)   // warning elimination 
     short ok = 
       convDoItMxcs(value,
 		   sourceLen, 
@@ -509,7 +504,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       // desctructor.
       return SQL_Error; // error case
     }
-#pragma warn(1506)  // warning elimination
   };
   break;
 
@@ -517,7 +511,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
   case REC_NUM_BIG_SIGNED:
   {
     converted_value = new char[targetLen];
-#pragma nowarn(1506)   // warning elimination 
     short ok = 
       convDoItMxcs(value,
 		   sourceLen, 
@@ -538,7 +531,6 @@ short Param::convertValue(SqlciEnv * sqlci_env, short targetType,
       // desctructor.
       return SQL_Error; // error case
     }
-#pragma warn(1506)  // warning elimination
     
   };
   break;

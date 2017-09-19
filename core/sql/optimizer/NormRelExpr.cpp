@@ -5865,7 +5865,6 @@ void Scan::rewriteNode(NormWA & normWARef)
   // -------------------------------------------------------------------------
   // Normalize the indexes.
   // -------------------------------------------------------------------------
-  // NT_PORT ( bd 7/16/96 ) cast to int
   for (i = 0;
        i < (Int32)getTableDesc()->getIndexes().entries();
        i++)
@@ -6626,7 +6625,6 @@ void GenericUpdate::rewriteNode(NormWA & normWARef)
   // -------------------------------------------------------------------------
   // Normalize the indexes.
   // -------------------------------------------------------------------------
-  // NT_PORT ( bd 7/16/96 ) cast to int
   for (j = 0;
        j < (Int32)getTableDesc()->getIndexes().entries();
        j++)

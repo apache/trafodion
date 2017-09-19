@@ -2312,7 +2312,7 @@ RelExpr * Join::preCodeGen(Generator * generator,
 
       ValueIdSet discardSet;
       CollIndex ne = nullInstantiatedOutput().entries();
-      for (CollIndex j = 0; j < ne; j++)              // NT_PORT FIX SK 07/16/96
+      for (CollIndex j = 0; j < ne; j++) 
 	{
 	  instNullId = nullInstantiatedOutput_[j];
 	  GenAssert(instNullId.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL,"NOT instNullId.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL");
@@ -2356,7 +2356,7 @@ RelExpr * Join::preCodeGen(Generator * generator,
       availableValues += child(1)->getGroupAttr()->getCharacteristicOutputs();
 
       CollIndex neR = nullInstantiatedForRightJoinOutput().entries();
-      for (CollIndex j = 0; j < neR; j++)              // NT_PORT FIX SK 07/16/96
+      for (CollIndex j = 0; j < neR; j++) 
 	{
 	  instNullIdForRightJoin = nullInstantiatedForRightJoinOutput_[j];
 	  GenAssert(instNullIdForRightJoin.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL,"NOT instNullId.getItemExpr()->getOperatorType() == ITM_INSTANTIATE_NULL");

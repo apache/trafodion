@@ -43,7 +43,7 @@
  *****************************************************************************
  */
 
-#include "Platform.h"			// NT_PORT (bv 10/18/96) 
+#include "Platform.h"		       
 #include "SqlciCmd.h"			// Statistics class enum
 #include <sys/time.h>
 
