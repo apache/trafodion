@@ -3545,7 +3545,7 @@ unsigned long ODBC::ConvertCharToNumeric(SQLPOINTER srcDataPtr,
     rTrim(cTmpBuf);
     tempLen = strlen(cTmpBuf);
     errno = 0;
-	dTmp = strtod(cTmpBuf, &errorCharPtr);
+	dTmp = strtold(cTmpBuf, &errorCharPtr);
 	if (errno == ERANGE || errorCharPtr < (cTmpBuf + tempLen))
 		return IDS_22_003;
 	return SQL_SUCCESS;
